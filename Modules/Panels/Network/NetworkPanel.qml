@@ -7,6 +7,7 @@ import qs.Commons
 import qs.Modules.MainScreen
 import qs.Modules.Panels.Settings
 import qs.Services.Networking
+import qs.Services.System
 import qs.Services.UI
 import qs.Widgets
 
@@ -20,6 +21,7 @@ SmartPanel {
   // Ethernet details UI state (mirrors Wi‑Fi info behavior)
   property bool ethernetInfoExpanded: false
   property bool ethernetDetailsGrid: (Settings.data.network.wifiDetailsViewMode === "grid")
+  property int ipVersion: 4
 
   // Unified panel view mode: "wifi" | "ethernet" (persisted)
   property string panelViewMode: "wifi"
@@ -44,12 +46,23 @@ SmartPanel {
     }
   }
 
+  // Effectively visible tracking
+  readonly property bool effectivelyVisible: root.visible && Window.window && Window.window.visible
+
+  onEffectivelyVisibleChanged: {
+    if (effectivelyVisible) {
+      SystemStatService.registerComponent("network-panel");
+      NetworkService.scan();
+      // Preload active Wi‑Fi details so Info shows instantly
+      NetworkService.refreshActiveWifiDetails();
+      // Also fetch Ethernet details if connected
+      NetworkService.refreshActiveEthernetDetails();
+    } else {
+      SystemStatService.unregisterComponent("network-panel");
+    }
+  }
+
   onOpened: {
-    NetworkService.scan();
-    // Preload active Wi‑Fi details so Info shows instantly
-    NetworkService.refreshActiveWifiDetails();
-    // Also fetch Ethernet details if connected
-    NetworkService.refreshActiveEthernetDetails();
     // Restore last view if valid, otherwise choose what's available (prefer Wi‑Fi when both exist)
     if (Settings.data.network.networkPanelView) {
       const last = Settings.data.network.networkPanelView;
@@ -95,7 +108,13 @@ SmartPanel {
               id: modeIcon
               icon: panelViewMode === "wifi" ? (Settings.data.network.wifiEnabled ? "wifi" : "wifi-off") : (NetworkService.hasEthernet() ? (NetworkService.ethernetConnected ? "ethernet" : "ethernet") : "ethernet-off")
               pointSize: Style.fontSizeXXL
-              color: panelViewMode === "wifi" ? (Settings.data.network.wifiEnabled ? Color.mPrimary : Color.mOnSurfaceVariant) : (NetworkService.ethernetConnected ? Color.mPrimary : Color.mOnSurfaceVariant)
+              color: {
+                if (panelViewMode === "wifi") {
+                  return Settings.data.network.wifiEnabled ? Color.mPrimary : Color.mOnSurfaceVariant;
+                } else {
+                  return NetworkService.ethernetConnected ? Color.mPrimary : Color.mOnSurfaceVariant;
+                }
+              }
               MouseArea {
                 anchors.fill: parent
                 hoverEnabled: true
@@ -110,7 +129,7 @@ SmartPanel {
                     panelViewMode = "wifi";
                   }
                 }
-                onEntered: TooltipService.show(parent, panelViewMode === "wifi" ? I18n.tr("common.ethernet") : I18n.tr("common.wifi"))
+                onEntered: TooltipService.show(parent, panelViewMode === "wifi" ? I18n.tr("common.wifi") : I18n.tr("common.ethernet"))
                 onExited: TooltipService.hide()
               }
             }
@@ -296,7 +315,7 @@ SmartPanel {
                 }
 
                 NBusyIndicator {
-                  running: true
+                  running: visible && root.effectivelyVisible
                   color: Color.mPrimary
                   size: Style.baseWidgetSize
                   Layout.alignment: Qt.AlignHCenter
@@ -426,6 +445,19 @@ SmartPanel {
                   delegate: NBox {
                     id: ethItem
 
+                    HoverHandler {
+                      id: itemHover
+                    }
+
+                    function getContentColors(defaultColors = [Color.mSurface, Color.mOnSurface]) {
+                      if (modelData.connected) {
+                        // Special alpha for connected item background
+                        let bgAlpha = Math.min(1.15 - Color.panelBackgroundOpacity, 0.75);
+                        return [Qt.alpha(Color.mPrimary, bgAlpha), Color.mOnPrimary];
+                      }
+                      return defaultColors;
+                    }
+
                     Layout.fillWidth: true
                     Layout.leftMargin: Style.marginXS
                     Layout.rightMargin: Style.marginXS
@@ -433,7 +465,8 @@ SmartPanel {
                     radius: Style.radiusM
                     border.width: Style.borderS
                     border.color: modelData.connected ? Color.mPrimary : Color.mOutline
-                    color: modelData.connected ? Qt.alpha(Color.mPrimary, Math.min(1.15 - Color.panelBackgroundOpacity, 0.75)) : Color.mSurface
+                    color: ethItem.getContentColors()[0]
+
                     ColumnLayout {
                       id: ethItemColumn
                       width: parent.width - Style.margin2M
@@ -450,10 +483,20 @@ SmartPanel {
                         // Click handling for the whole header row is provided by a sibling MouseArea
                         // anchored to this row (defined right after this RowLayout).
 
-                        NIcon {
-                          icon: "ethernet"
-                          pointSize: Style.fontSizeXXL
-                          color: modelData.connected ? Color.mPrimary : Color.mOnSurface
+                        Rectangle {
+                          id: ethIconBg
+                          Layout.preferredWidth: Style.baseWidgetSize
+                          Layout.preferredHeight: Style.baseWidgetSize
+                          radius: Style.radiusM
+                          color: Color.smartAlpha(Color.mSurfaceVariant)
+                          Layout.alignment: Qt.AlignVCenter
+
+                          NIcon {
+                            anchors.centerIn: parent
+                            icon: NetworkService.getIcon()
+                            pointSize: Style.fontSizeXXL
+                            color: ethItem.getContentColors()[1]
+                          }
                         }
 
                         ColumnLayout {
@@ -461,10 +504,10 @@ SmartPanel {
                           spacing: 2
 
                           NText {
-                            text: modelData.ifname
+                            text: modelData.connectionName || modelData.ifname
                             pointSize: Style.fontSizeM
                             font.weight: modelData.connected ? Style.fontWeightBold : Style.fontWeightMedium
-                            color: Color.mOnSurface
+                            color: ethItem.getContentColors()[1]
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                           }
@@ -472,20 +515,68 @@ SmartPanel {
                           RowLayout {
                             spacing: Style.marginXS
 
-                            // Connected badge (mirrors Wi‑Fi chip)
-                            Rectangle {
-                              visible: modelData.connected
-                              color: Color.mPrimary
-                              radius: height * 0.5
-                              width: ethConnectedText.implicitWidth + Style.margin2S
-                              height: ethConnectedText.implicitHeight + (Style.margin2XXS)
+                            NText {
+                              text: {
+                                if (modelData.connected) {
+                                  switch (NetworkService.networkConnectivity) {
+                                  case "full":
+                                    return I18n.tr("common.connected");
+                                  case "limited":
+                                  case "unknown":
+                                    return I18n.tr("wifi.panel.internet-limited");
+                                  case "portal":
+                                    return I18n.tr("wifi.panel.action-required");
+                                  default:
+                                    return NetworkService.networkConnectivity;
+                                  }
+                                }
+                                return I18n.tr("common.disconnected");
+                              }
+                              pointSize: Style.fontSizeXXS
+                              color: (!modelData.connected || NetworkService.networkConnectivity === "limited" || NetworkService.networkConnectivity === "portal" || NetworkService.networkConnectivity === "unknown") ? Color.mError : ethItem.getContentColors()[1]
+                            }
+
+                            // Network speed indicators (visible when connected and speed > 0)
+                            RowLayout {
+                              visible: (modelData.connected && NetworkService.networkConnectivity === "full") && (SystemStatService.rxSpeed > 0 || SystemStatService.txSpeed > 0)
+                              spacing: 2
+                              Layout.leftMargin: Style.marginXS
+                              Layout.fillWidth: false
+
+                              NIcon {
+                                visible: SystemStatService.rxSpeed > 0
+                                icon: "arrow-down"
+                                pointSize: Style.fontSizeXXS
+                                color: Qt.alpha(ethItem.getContentColors()[1], Style.opacityHeavy)
+                              }
 
                               NText {
-                                id: ethConnectedText
-                                anchors.centerIn: parent
-                                text: I18n.tr("common.connected")
+                                visible: SystemStatService.rxSpeed > 0
+                                text: SystemStatService.formatSpeed(SystemStatService.rxSpeed)
                                 pointSize: Style.fontSizeXXS
-                                color: Color.mOnPrimary
+                                color: Qt.alpha(ethItem.getContentColors()[1], Style.opacityHeavy)
+                                elide: Text.ElideNone
+                              }
+
+                              Item {
+                                visible: SystemStatService.rxSpeed > 0 && SystemStatService.txSpeed > 0
+                                width: Style.marginXS
+                                height: 1
+                              }
+
+                              NIcon {
+                                visible: SystemStatService.txSpeed > 0
+                                icon: "arrow-up"
+                                pointSize: Style.fontSizeXXS
+                                color: Qt.alpha(ethItem.getContentColors()[1], Style.opacityHeavy)
+                              }
+
+                              NText {
+                                visible: SystemStatService.txSpeed > 0
+                                text: SystemStatService.formatSpeed(SystemStatService.txSpeed)
+                                pointSize: Style.fontSizeXXS
+                                color: Qt.alpha(ethItem.getContentColors()[1], Style.opacityHeavy)
+                                elide: Text.ElideNone
                               }
                             }
                           }
@@ -493,6 +584,7 @@ SmartPanel {
 
                         // Info button on the right
                         NIconButton {
+                          visible: itemHover.hovered
                           icon: "info"
                           tooltipText: I18n.tr("common.info")
                           baseSize: Style.baseWidgetSize * 0.8
@@ -562,6 +654,8 @@ SmartPanel {
                           anchors.fill: parent
                           anchors.margins: Style.marginS
                           anchors.rightMargin: Style.baseWidgetSize
+                          flow: ethernetDetailsGrid ? GridLayout.TopToBottom : GridLayout.LeftToRight
+                          rows: ethernetDetailsGrid ? 3 : 6
                           columns: ethernetDetailsGrid ? 2 : 1
                           columnSpacing: Style.marginM
                           rowSpacing: Style.marginXS
@@ -574,13 +668,10 @@ SmartPanel {
                           }
 
                           // --- Item 1: Interface ---
-                          // Grid: Row 0, Col 0 | List: Row 0
                           RowLayout {
                             Layout.fillWidth: true
                             Layout.preferredWidth: 1
                             spacing: Style.marginXS
-                            Layout.row: 0
-                            Layout.column: 0
                             NIcon {
                               icon: "ethernet"
                               pointSize: Style.fontSizeXS
@@ -617,55 +708,63 @@ SmartPanel {
                                   const value = (NetworkService.activeEthernetDetails.ifname && NetworkService.activeEthernetDetails.ifname.length > 0) ? NetworkService.activeEthernetDetails.ifname : (NetworkService.activeEthernetIf || "");
                                   if (value.length > 0) {
                                     Quickshell.execDetached(["wl-copy", value]);
-                                    ToastService.showNotice(I18n.tr("common.ethernet"), I18n.tr("toast.bluetooth.address-copied"), "ethernet");
+                                    ToastService.showNotice(I18n.tr("common.ethernet"), I18n.tr("common.copied-to-clipboard"), "ethernet");
                                   }
                                 }
                               }
                             }
                           }
 
-                          // --- Item 2: Internet connectivity --
-                          // Grid: Row 1, Col 0 | List: Row 1
+                          // --- Item 2: Hardware Address ---
                           RowLayout {
                             Layout.fillWidth: true
                             Layout.preferredWidth: 1
-                            Layout.row: 1
-                            Layout.column: 0
                             spacing: Style.marginXS
                             NIcon {
-                              // If the selected Ethernet interface is disconnected, show an explicit disconnected state
-                              icon: modelData.connected ? (NetworkService.internetConnectivity ? "world" : "world-off") : "world-off"
+                              icon: "hash"
                               pointSize: Style.fontSizeXS
-                              color: modelData.connected ? (NetworkService.internetConnectivity ? Color.mOnSurface : Color.mError) : Color.mError
+                              color: Color.mOnSurface
                               Layout.alignment: Qt.AlignVCenter
                               MouseArea {
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                onEntered: TooltipService.show(parent, I18n.tr("wifi.panel.internet-status"))
+                                onEntered: TooltipService.show(parent, I18n.tr("bluetooth.panel.device-address"))
                                 onExited: TooltipService.hide()
                               }
                             }
                             NText {
-                              // Show "Disconnected" when the interface itself is down
-                              text: modelData.connected ? (NetworkService.internetConnectivity ? I18n.tr("wifi.panel.internet-connected") : I18n.tr("wifi.panel.internet-limited")) : I18n.tr("common.disconnected")
+                              text: NetworkService.activeEthernetDetails.hwAddr || "-"
                               pointSize: Style.fontSizeXS
-                              color: modelData.connected ? (NetworkService.internetConnectivity ? Color.mOnSurface : Color.mError) : Color.mError
+                              color: Color.mOnSurface
                               Layout.fillWidth: true
                               Layout.alignment: Qt.AlignVCenter
                               wrapMode: ethernetDetailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
                               elide: ethernetDetailsGrid ? Text.ElideRight : Text.ElideNone
                               maximumLineCount: ethernetDetailsGrid ? 1 : 6
                               clip: true
+
+                              MouseArea {
+                                anchors.fill: parent
+                                enabled: (NetworkService.activeEthernetDetails.hwAddr || "").length > 0
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
+                                onExited: TooltipService.hide()
+                                onClicked: {
+                                  const value = NetworkService.activeEthernetDetails.hwAddr || "";
+                                  if (value.length > 0) {
+                                    Quickshell.execDetached(["wl-copy", value]);
+                                    ToastService.showNotice(I18n.tr("common.ethernet"), I18n.tr("common.copied-to-clipboard"), "ethernet");
+                                  }
+                                }
+                              }
                             }
                           }
 
-                          // --- Iterm 3: Link speed ---
-                          // Grid: Row 2, Col 0 | List: Row 2
+                          // --- Item 3: Link speed ---
                           RowLayout {
                             Layout.fillWidth: true
                             Layout.preferredWidth: 1
-                            Layout.row: 2
-                            Layout.column: 0
                             spacing: Style.marginXS
                             NIcon {
                               icon: "gauge"
@@ -692,46 +791,10 @@ SmartPanel {
                             }
                           }
 
-                          // --- Item 4: Gateway ---
-                          // Grid: Row 2, Col 1 | List: Row 5 (Last)
+                          // --- Item 4: IPv4 || IPv6 ---
                           RowLayout {
                             Layout.fillWidth: true
                             Layout.preferredWidth: 1
-                            Layout.row: ethernetDetailsGrid ? 2 : 5
-                            Layout.column: ethernetDetailsGrid ? 1 : 0
-                            spacing: Style.marginXS
-                            NIcon {
-                              icon: "router"
-                              pointSize: Style.fontSizeXS
-                              color: Color.mOnSurface
-                              Layout.alignment: Qt.AlignVCenter
-                              MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onEntered: TooltipService.show(parent, I18n.tr("common.gateway"))
-                                onExited: TooltipService.hide()
-                              }
-                            }
-                            NText {
-                              text: NetworkService.activeEthernetDetails.gateway4 || "-"
-                              pointSize: Style.fontSizeXS
-                              color: Color.mOnSurface
-                              Layout.fillWidth: true
-                              Layout.alignment: Qt.AlignVCenter
-                              wrapMode: ethernetDetailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
-                              elide: ethernetDetailsGrid ? Text.ElideRight : Text.ElideNone
-                              maximumLineCount: ethernetDetailsGrid ? 1 : 6
-                              clip: true
-                            }
-                          }
-
-                          // --- Item 5: IPv4 ---
-                          // Grid: Row 0, Col 1 | List: Row 3
-                          RowLayout {
-                            Layout.fillWidth: true
-                            Layout.preferredWidth: 1
-                            Layout.row: ethernetDetailsGrid ? 0 : 3
-                            Layout.column: ethernetDetailsGrid ? 1 : 0
                             spacing: Style.marginXS
                             NIcon {
                               icon: "network"
@@ -741,12 +804,16 @@ SmartPanel {
                               MouseArea {
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                onEntered: TooltipService.show(parent, I18n.tr("wifi.panel.ipv4"))
+                                onEntered: TooltipService.show(parent, root.ipVersion === 4 ? I18n.tr("wifi.panel.ipv4") : I18n.tr("wifi.panel.ipv6"))
                                 onExited: TooltipService.hide()
+                                onClicked: {
+                                  root.ipVersion = root.ipVersion === 4 ? 6 : 4;
+                                  TooltipService.show(parent, root.ipVersion === 4 ? I18n.tr("wifi.panel.ipv4") : I18n.tr("wifi.panel.ipv6"));
+                                }
                               }
                             }
                             NText {
-                              text: NetworkService.activeEthernetDetails.ipv4 || "-"
+                              text: root.ipVersion === 4 ? (NetworkService.activeEthernetDetails.ipv4 || "-") : ((NetworkService.activeEthernetDetails.ipv6 || []).join(", ") || "-")
                               pointSize: Style.fontSizeXS
                               color: Color.mOnSurface
                               Layout.fillWidth: true
@@ -756,33 +823,29 @@ SmartPanel {
                               maximumLineCount: ethernetDetailsGrid ? 1 : 6
                               clip: true
 
-                              // Click-to-copy Ethernet IPv4 address
+                              // Click-to-copy Ethernet IP address
                               MouseArea {
                                 anchors.fill: parent
-                                // Normalize to string to avoid undefined -> bool assignment warnings
-                                enabled: (NetworkService.activeEthernetDetails.ipv4 || "").length > 0
+                                enabled: root.ipVersion === 4 ? (NetworkService.activeEthernetDetails.ipv4 || "").length > 0 : (NetworkService.activeEthernetDetails.ipv6 || []).length > 0
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
                                 onExited: TooltipService.hide()
                                 onClicked: {
-                                  const value = NetworkService.activeEthernetDetails.ipv4 || "";
+                                  const value = root.ipVersion === 4 ? (NetworkService.activeEthernetDetails.ipv4 || "") : ((NetworkService.activeEthernetDetails.ipv6 || []).join(", ") || "");
                                   if (value.length > 0) {
                                     Quickshell.execDetached(["wl-copy", value]);
-                                    ToastService.showNotice(I18n.tr("common.ethernet"), I18n.tr("toast.bluetooth.address-copied"), "ethernet");
+                                    ToastService.showNotice(I18n.tr("common.ethernet"), I18n.tr("common.copied-to-clipboard"), "ethernet");
                                   }
                                 }
                               }
                             }
                           }
 
-                          // --- Item 6: DNS ---
-                          // Grid: Row 1, Col 1 | List: Row 4
+                          // --- Item 5: DNS ---
                           RowLayout {
                             Layout.fillWidth: true
                             Layout.preferredWidth: 1
-                            Layout.row: ethernetDetailsGrid ? 1 : 4
-                            Layout.column: ethernetDetailsGrid ? 1 : 0
                             spacing: Style.marginXS
                             NIcon {
                               icon: "world"
@@ -792,12 +855,16 @@ SmartPanel {
                               MouseArea {
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                onEntered: TooltipService.show(parent, I18n.tr("wifi.panel.dns"))
+                                onEntered: TooltipService.show(parent, root.ipVersion === 4 ? I18n.tr("wifi.panel.dns") + " (" + I18n.tr("wifi.panel.ipv4") + ")" : I18n.tr("wifi.panel.dns") + " (" + I18n.tr("wifi.panel.ipv6") + ")")
                                 onExited: TooltipService.hide()
+                                onClicked: {
+                                  root.ipVersion = root.ipVersion === 4 ? 6 : 4;
+                                  TooltipService.show(parent, root.ipVersion === 4 ? I18n.tr("wifi.panel.dns") + " (" + I18n.tr("wifi.panel.ipv4") + ")" : I18n.tr("wifi.panel.dns") + " (" + I18n.tr("wifi.panel.ipv6") + ")");
+                                }
                               }
                             }
                             NText {
-                              text: NetworkService.activeEthernetDetails.dns || "-"
+                              text: root.ipVersion === 4 ? ((NetworkService.activeEthernetDetails.dns4 || []).join(", ") || "-") : ((NetworkService.activeEthernetDetails.dns6 || []).join(", ") || "-")
                               pointSize: Style.fontSizeXS
                               color: Color.mOnSurface
                               Layout.fillWidth: true
@@ -806,6 +873,74 @@ SmartPanel {
                               elide: ethernetDetailsGrid ? Text.ElideRight : Text.ElideNone
                               maximumLineCount: ethernetDetailsGrid ? 1 : 6
                               clip: true
+
+                              // Click-to-copy Ethernet DNS
+                              MouseArea {
+                                anchors.fill: parent
+                                enabled: root.ipVersion === 4 ? (NetworkService.activeEthernetDetails.dns4 || []).length > 0 : (NetworkService.activeEthernetDetails.dns6 || []).length > 0
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
+                                onExited: TooltipService.hide()
+                                onClicked: {
+                                  const value = root.ipVersion === 4 ? ((NetworkService.activeEthernetDetails.dns4 || []).join(", ") || "") : ((NetworkService.activeEthernetDetails.dns6 || []).join(", ") || "");
+                                  if (value.length > 0) {
+                                    Quickshell.execDetached(["wl-copy", value]);
+                                    ToastService.showNotice(I18n.tr("common.ethernet"), I18n.tr("common.copied-to-clipboard"), "ethernet");
+                                  }
+                                }
+                              }
+                            }
+                          }
+
+                          // --- Item 6: Gateway ---
+                          RowLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 1
+                            spacing: Style.marginXS
+                            NIcon {
+                              icon: "router"
+                              pointSize: Style.fontSizeXS
+                              color: Color.mOnSurface
+                              Layout.alignment: Qt.AlignVCenter
+                              MouseArea {
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onEntered: TooltipService.show(parent, root.ipVersion === 4 ? I18n.tr("common.gateway") + " (" + I18n.tr("wifi.panel.ipv4") + ")" : I18n.tr("common.gateway") + " (" + I18n.tr("wifi.panel.ipv6") + ")")
+                                onExited: TooltipService.hide()
+                                onClicked: {
+                                  root.ipVersion = root.ipVersion === 4 ? 6 : 4;
+                                  TooltipService.show(parent, root.ipVersion === 4 ? I18n.tr("common.gateway") + " (" + I18n.tr("wifi.panel.ipv4") + ")" : I18n.tr("common.gateway") + " (" + I18n.tr("wifi.panel.ipv6") + ")");
+                                }
+                              }
+                            }
+                            NText {
+                              text: root.ipVersion === 4 ? (NetworkService.activeEthernetDetails.gateway4 || "-") : ((NetworkService.activeEthernetDetails.gateway6 || []).join(", ") || "-")
+                              pointSize: Style.fontSizeXS
+                              color: Color.mOnSurface
+                              Layout.fillWidth: true
+                              Layout.alignment: Qt.AlignVCenter
+                              wrapMode: ethernetDetailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
+                              elide: ethernetDetailsGrid ? Text.ElideRight : Text.ElideNone
+                              maximumLineCount: ethernetDetailsGrid ? 1 : 6
+                              clip: true
+
+                              // Click-to-copy Ethernet Gateway
+                              MouseArea {
+                                anchors.fill: parent
+                                enabled: root.ipVersion === 4 ? (NetworkService.activeEthernetDetails.gateway4 || "").length > 0 : (NetworkService.activeEthernetDetails.gateway6 || []).length > 0
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
+                                onExited: TooltipService.hide()
+                                onClicked: {
+                                  const value = root.ipVersion === 4 ? (NetworkService.activeEthernetDetails.gateway4 || "") : ((NetworkService.activeEthernetDetails.gateway6 || []).join(", ") || "");
+                                  if (value.length > 0) {
+                                    Quickshell.execDetached(["wl-copy", value]);
+                                    ToastService.showNotice(I18n.tr("common.ethernet"), I18n.tr("common.copied-to-clipboard"), "ethernet");
+                                  }
+                                }
+                              }
                             }
                           }
                         }

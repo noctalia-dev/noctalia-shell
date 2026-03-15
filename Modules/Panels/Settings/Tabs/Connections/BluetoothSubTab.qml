@@ -370,18 +370,33 @@ Item {
     NBox {
       id: device
 
+      HoverHandler {
+        id: itemHover
+      }
+
       readonly property bool canConnect: BluetoothService.canConnect(modelData)
       readonly property bool canDisconnect: BluetoothService.canDisconnect(modelData)
       readonly property bool canPair: BluetoothService.canPair(modelData)
       readonly property bool isBusy: BluetoothService.isDeviceBusy(modelData)
       readonly property bool isExpanded: root.expandedDeviceKey === BluetoothService.deviceKey(modelData)
 
+      function getContentColors(defaultColors = [Color.mSurface, Color.mOnSurface]) {
+        if (modelData.pairing || modelData.state === BluetoothDeviceState.Connecting) {
+          return [Color.mPrimary, Color.mOnPrimary];
+        }
+        if (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) {
+          // Special alpha for connected item background
+          let bgAlpha = Math.min(1.15 - Color.panelBackgroundOpacity, 0.75);
+          return [Qt.alpha(Color.mPrimary, bgAlpha), Color.mOnPrimary];
+        }
+        if (modelData.blocked || modelData.state === BluetoothDeviceState.Disconnecting) {
+          return [Color.mError, Color.mOnError];
+        }
+        return defaultColors;
+      }
+
       function getContentColor(defaultColor = Color.mOnSurface) {
-        if (modelData.pairing || modelData.state === BluetoothDeviceState.Connecting)
-          return Color.mPrimary;
-        if (modelData.blocked || modelData.state === BluetoothDeviceState.Disconnecting)
-          return Color.mError;
-        return defaultColor;
+        return getContentColors([Color.mSurface, defaultColor])[1];
       }
 
       Layout.fillWidth: true
@@ -389,7 +404,7 @@ Item {
       radius: Style.radiusM
       clip: true
 
-      color: (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) ? Qt.alpha(Color.mPrimary, Math.min(1.15 - Color.panelBackgroundOpacity, 0.75)) : Color.mSurface
+      color: device.getContentColors()[0]
 
       ColumnLayout {
         id: deviceColumn
@@ -403,11 +418,20 @@ Item {
           spacing: Style.marginM
           Layout.alignment: Qt.AlignVCenter
 
-          NIcon {
-            icon: BluetoothService.getDeviceIcon(modelData)
-            pointSize: Style.fontSizeXXL
-            color: modelData.connected ? Color.mPrimary : device.getContentColor(Color.mOnSurface)
+          Rectangle {
+            id: deviceIconBg
+            Layout.preferredWidth: Style.baseWidgetSize
+            Layout.preferredHeight: Style.baseWidgetSize
+            radius: Style.radiusM
+            color: Color.smartAlpha(Color.mSurfaceVariant)
             Layout.alignment: Qt.AlignVCenter
+
+            NIcon {
+              anchors.centerIn: parent
+              icon: BluetoothService.getDeviceIcon(modelData)
+              pointSize: Style.fontSizeXXL
+              color: device.getContentColors()[1]
+            }
           }
 
           ColumnLayout {
@@ -419,7 +443,7 @@ Item {
               pointSize: Style.fontSizeM
               font.weight: modelData.connected ? Style.fontWeightBold : Style.fontWeightMedium
               elide: Text.ElideRight
-              color: device.getContentColor(Color.mOnSurface)
+              color: device.getContentColors()[1]
               Layout.fillWidth: true
             }
 
@@ -450,7 +474,7 @@ Item {
                   return BatteryService.getIcon(b !== null ? b : 0, false, false, b !== null);
                 }
                 pointSize: Style.fontSizeXS
-                color: device.getContentColor(Color.mOnSurface)
+                color: device.getContentColors()[1]
               }
               NText {
                 text: {
@@ -471,7 +495,7 @@ Item {
             spacing: Style.marginS
 
             NIconButton {
-              visible: modelData.connected
+              visible: itemHover.hovered && modelData.connected
               icon: "info"
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.8
@@ -482,7 +506,7 @@ Item {
             }
 
             NIconButton {
-              visible: !root.showOnlyLists && (modelData.paired || modelData.trusted) && !modelData.connected && !isBusy && !modelData.blocked
+              visible: itemHover.hovered && !root.showOnlyLists && (modelData.paired || modelData.trusted) && !modelData.connected && !isBusy && !modelData.blocked
               icon: "trash"
               tooltipText: I18n.tr("common.unpair")
               baseSize: Style.baseWidgetSize * 0.8
@@ -491,7 +515,7 @@ Item {
 
             NButton {
               id: button
-              visible: (modelData.state !== BluetoothDeviceState.Connecting)
+              visible: itemHover.hovered && (modelData.state !== BluetoothDeviceState.Connecting)
               enabled: (canConnect || canDisconnect || (root.showOnlyLists ? false : canPair)) && !isBusy
               outlined: !button.hovered
               fontSize: Style.fontSizeS
@@ -552,6 +576,8 @@ Item {
             id: infoColumn
             anchors.fill: parent
             anchors.margins: Style.marginS
+            flow: root.detailsGrid ? GridLayout.TopToBottom : GridLayout.LeftToRight
+            rows: root.detailsGrid ? 3 : 6
             columns: root.detailsGrid ? 2 : 1
             columnSpacing: Style.marginM
             rowSpacing: Style.marginXS
@@ -561,8 +587,6 @@ Item {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
               spacing: Style.marginXS
-              Layout.row: detailsGrid ? 0 : 0
-              Layout.column: 0
               NIcon {
                 icon: BluetoothService.getSignalIcon(modelData)
                 pointSize: Style.fontSizeXS
@@ -580,8 +604,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 0 : 1
-              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               NIcon {
                 icon: {
@@ -605,8 +627,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 1 : 2
-              Layout.column: 0
               spacing: Style.marginXS
               NIcon {
                 icon: "link"
@@ -624,8 +644,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 1 : 3
-              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               NIcon {
                 icon: "shield-check"
@@ -643,8 +661,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 2 : 4
-              Layout.column: 0
               spacing: Style.marginXS
               NIcon {
                 icon: "hash"
@@ -663,8 +679,6 @@ Item {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
               Layout.topMargin: -Style.marginXXS
-              Layout.row: detailsGrid ? 2 : 5
-              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               visible: Settings.data.network.bluetoothAutoConnect
               NIcon {

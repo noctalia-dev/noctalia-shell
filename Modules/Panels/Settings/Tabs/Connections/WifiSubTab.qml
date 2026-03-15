@@ -21,6 +21,11 @@ Item {
 
   // State properties
   property string passwordSsid: ""
+  property string identity: ""
+  property string enterpriseEap: "peap"
+  property string enterprisePhase2: "mschapv2"
+  property string enterpriseAnonIdentity: ""
+  property string enterpriseCaCert: ""
   property string expandedSsid: ""
   property string infoSsid: ""
   property int ipVersion: 4
@@ -91,10 +96,20 @@ Item {
   // Actions
   function requestPassword(ssid) {
     passwordSsid = ssid;
+    identity = "";
+    enterpriseEap = "peap";
+    enterprisePhase2 = "mschapv2";
+    enterpriseAnonIdentity = "";
+    enterpriseCaCert = "";
     expandedSsid = "";
   }
-  function submitPassword(ssid, password) {
-    NetworkService.connect(ssid, password);
+  function submitPassword(ssid, password, identity = "") {
+    NetworkService.connect(ssid, password, false, identity, {
+                             eap: enterpriseEap,
+                             phase2: enterprisePhase2,
+                             anonIdentity: enterpriseAnonIdentity,
+                             caCert: enterpriseCaCert
+                           });
     passwordSsid = "";
   }
   function cancelPassword() {
@@ -141,8 +156,7 @@ Item {
                 return "wifi-off";
               }
               if (root.connectedNetworks.length > 0) {
-                const net = root.connectedNetworks[0];
-                return NetworkService.signalIcon(net.signal, true);
+                return NetworkService.getSignalInfo(root.connectedNetworks[0].signal, true).icon;
               }
               return "wifi";
             }
@@ -182,6 +196,7 @@ Item {
       Layout.fillWidth: true
       Layout.preferredHeight: connectedCol.implicitHeight + Style.margin2M
       border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
+      color: showOnlyLists ? Color.mSurfaceVariant : "transparent"
 
       ColumnLayout {
         id: connectedCol
@@ -212,6 +227,7 @@ Item {
       Layout.fillWidth: true
       Layout.preferredHeight: savedCol.implicitHeight + Style.margin2M
       border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
+      color: showOnlyLists ? Color.mSurfaceVariant : "transparent"
 
       ColumnLayout {
         id: savedCol
@@ -242,6 +258,7 @@ Item {
       Layout.fillWidth: true
       Layout.preferredHeight: availableCol.implicitHeight + Style.margin2M
       border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
+      color: showOnlyLists ? Color.mSurfaceVariant : "transparent"
 
       ColumnLayout {
         id: availableCol
@@ -298,7 +315,7 @@ Item {
             }
 
             NText {
-              text: I18n.tr("wifi.panel.add-hidden-network")
+              text: I18n.tr("wifi.panel.add-network")
               pointSize: Style.fontSizeM
               color: Color.mOnSurface
               Layout.fillWidth: true
@@ -364,7 +381,14 @@ Item {
 
     property string customSsid: ""
     property string customPassword: ""
+    property string customIdentity: ""
     property string customSecurityKey: "wpa2-psk"
+    property string customEnterpriseEap: "peap"
+    property string customEnterprisePhase2: "mschapv2"
+    property string customEnterpriseAnonIdentity: ""
+    property string customEnterpriseCaCert: ""
+    property bool customShowPassword: false
+    property bool customIsHidden: false
 
     onOpened: {
       customSsidInput.inputItem.forceActiveFocus();
@@ -413,7 +437,7 @@ Item {
           spacing: Style.marginXS
 
           NText {
-            text: I18n.tr("wifi.panel.add-hidden-network")
+            text: I18n.tr("wifi.panel.add-network")
             pointSize: Style.fontSizeL
             font.weight: Style.fontWeightBold
             color: Color.mOnSurface
@@ -434,7 +458,12 @@ Item {
         onTextChanged: addNetworkPopup.customSsid = text
         onAccepted: {
           if (addNetworkPopup.customSsid.length > 0 && (addNetworkPopup.customSecurityKey === "open" || addNetworkPopup.customPassword.length > 0)) {
-            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey);
+            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
+                                           eap: addNetworkPopup.customEnterpriseEap,
+                                           phase2: addNetworkPopup.customEnterprisePhase2,
+                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
+                                           caCert: addNetworkPopup.customEnterpriseCaCert
+                                         }, addNetworkPopup.customIsHidden);
             addNetworkPopup.close();
           }
         }
@@ -449,6 +478,98 @@ Item {
                     }
       }
 
+      ColumnLayout {
+        visible: addNetworkPopup.customSecurityKey.indexOf("-eap") !== -1
+        Layout.fillWidth: true
+        spacing: Style.marginM
+
+        NComboBox {
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.enterprise.eap-method")
+          model: [
+            {
+              key: "peap",
+              name: "PEAP"
+            },
+            {
+              key: "ttls",
+              name: "TTLS"
+            }
+          ]
+          currentKey: addNetworkPopup.customEnterpriseEap
+          onSelected: key => addNetworkPopup.customEnterpriseEap = key
+        }
+
+        NComboBox {
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.enterprise.phase2-auth")
+          model: [
+            {
+              key: "mschapv2",
+              name: "MSCHAPv2"
+            },
+            {
+              key: "pap",
+              name: "PAP"
+            },
+            {
+              key: "mschap",
+              name: "MSCHAP"
+            },
+            {
+              key: "chap",
+              name: "CHAP"
+            }
+          ]
+          currentKey: addNetworkPopup.customEnterprisePhase2
+          onSelected: key => addNetworkPopup.customEnterprisePhase2 = key
+        }
+      }
+
+      NTextInput {
+        id: customAnonIdentityInput
+        Layout.fillWidth: true
+        inputIconName: "user-question"
+        visible: addNetworkPopup.customSecurityKey.indexOf("-eap") !== -1
+        placeholderText: I18n.tr("wifi.enterprise.anonymous-identity")
+        label: I18n.tr("wifi.enterprise.anonymous-identity")
+        text: addNetworkPopup.customEnterpriseAnonIdentity
+        onTextChanged: addNetworkPopup.customEnterpriseAnonIdentity = text
+      }
+
+      RowLayout {
+        Layout.fillWidth: true
+        spacing: Style.marginM
+        visible: addNetworkPopup.customSecurityKey.indexOf("-eap") !== -1
+
+        NTextInput {
+          id: customCaCertInput
+          Layout.fillWidth: true
+          inputIconName: "certificate"
+          placeholderText: I18n.tr("wifi.enterprise.ca-cert")
+          label: I18n.tr("wifi.enterprise.ca-cert")
+          text: addNetworkPopup.customEnterpriseCaCert
+          onTextChanged: addNetworkPopup.customEnterpriseCaCert = text
+        }
+
+        NIconButton {
+          icon: "folder-open"
+          Layout.alignment: Qt.AlignBottom
+          onClicked: caCertPicker.openForAddNetwork()
+        }
+      }
+
+      NTextInput {
+        id: customIdentityInput
+        Layout.fillWidth: true
+        inputIconName: "user"
+        visible: addNetworkPopup.customSecurityKey.indexOf("-eap") !== -1
+        placeholderText: I18n.tr("wifi.enterprise.username")
+        label: I18n.tr("wifi.enterprise.username")
+        text: addNetworkPopup.customIdentity
+        onTextChanged: addNetworkPopup.customIdentity = text
+      }
+
       NTextInput {
         id: customPasswordInput
         Layout.fillWidth: true
@@ -458,12 +579,37 @@ Item {
         label: I18n.tr("common.password")
         text: addNetworkPopup.customPassword
         onTextChanged: addNetworkPopup.customPassword = text
-        inputItem.echoMode: TextInput.Password
+        inputItem.echoMode: addNetworkPopup.customShowPassword ? TextInput.Normal : TextInput.Password
         onAccepted: {
           if (addNetworkPopup.customSsid.length > 0 && addNetworkPopup.customPassword.length > 0) {
-            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey);
+            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
+                                           eap: addNetworkPopup.customEnterpriseEap,
+                                           phase2: addNetworkPopup.customEnterprisePhase2,
+                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
+                                           caCert: addNetworkPopup.customEnterpriseCaCert
+                                         }, addNetworkPopup.customIsHidden);
             addNetworkPopup.close();
           }
+        }
+      }
+
+      RowLayout {
+        Layout.fillWidth: true
+        spacing: Style.marginM
+
+        NCheckbox {
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.panel.show-password")
+          checked: addNetworkPopup.customShowPassword
+          onToggled: checked => addNetworkPopup.customShowPassword = checked
+          visible: addNetworkPopup.customSecurityKey !== "open"
+        }
+
+        NCheckbox {
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.panel.hidden-network")
+          checked: addNetworkPopup.customIsHidden
+          onToggled: checked => addNetworkPopup.customIsHidden = checked
         }
       }
 
@@ -489,9 +635,14 @@ Item {
           text: I18n.tr("common.connect")
           backgroundColor: Color.mPrimary
           textColor: Color.mOnPrimary
-          enabled: addNetworkPopup.customSsid.length > 0 && (addNetworkPopup.customSecurityKey === "open" || addNetworkPopup.customPassword.length > 0)
+          enabled: addNetworkPopup.customSsid.length > 0 && (addNetworkPopup.customSecurityKey === "open" || addNetworkPopup.customPassword.length > 0) && (addNetworkPopup.customSecurityKey.indexOf("-eap") === -1 || addNetworkPopup.customIdentity.length > 0)
           onClicked: {
-            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey);
+            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
+                                           eap: addNetworkPopup.customEnterpriseEap,
+                                           phase2: addNetworkPopup.customEnterprisePhase2,
+                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
+                                           caCert: addNetworkPopup.customEnterpriseCaCert
+                                         }, addNetworkPopup.customIsHidden);
             addNetworkPopup.close();
           }
         }
@@ -505,15 +656,22 @@ Item {
     NBox {
       id: networkItem
 
+      HoverHandler {
+        id: itemHover
+      }
+
       readonly property bool isBusy: NetworkService.connectingTo === modelData.ssid || NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid
       readonly property bool isExpanded: root.infoSsid === modelData.ssid
+      readonly property bool isEnterprise: NetworkService.isEnterprise(modelData.security)
 
       function getContentColors(defaultColors = [Color.mSurface, Color.mOnSurface]) {
         if (root.passwordSsid === modelData.ssid || NetworkService.connectingTo === modelData.ssid) {
           return [Color.mPrimary, Color.mOnPrimary];
         }
         if (modelData.connected && NetworkService.internetConnectivity && NetworkService.disconnectingFrom !== modelData.ssid) {
-          return [Color.mPrimary, Color.mOnPrimary];
+          // Special alpha for connected item background from HEAD branch
+          let bgAlpha = Math.min(1.15 - Color.panelBackgroundOpacity, 0.75);
+          return [Qt.alpha(Color.mPrimary, bgAlpha), Color.mOnPrimary];
         }
         if (NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid) {
           return [Color.mError, Color.mOnError];
@@ -543,17 +701,26 @@ Item {
           spacing: Style.marginM
           Layout.alignment: Qt.AlignVCenter
 
-          NIcon {
-            icon: NetworkService.signalIcon(modelData.signal, modelData.connected)
-            pointSize: Style.fontSizeXXL
-            color: networkItem.getContentColors()[1]
+          Rectangle {
+            id: signalIconBg
+            Layout.preferredWidth: Style.baseWidgetSize
+            Layout.preferredHeight: Style.baseWidgetSize
+            radius: Style.radiusM
+            color: Color.smartAlpha(Color.mSurfaceVariant)
             Layout.alignment: Qt.AlignVCenter
 
-            MouseArea {
-              anchors.fill: parent
-              hoverEnabled: true
-              onEntered: TooltipService.show(parent, NetworkService.getSignalStrengthLabel(modelData.signal) + " (" + modelData.signal + "%)")
-              onExited: TooltipService.hide()
+            NIcon {
+              anchors.centerIn: parent
+              icon: NetworkService.getSignalInfo(modelData.signal, modelData.connected).icon
+              pointSize: Style.fontSizeXXL
+              color: networkItem.getContentColors()[1]
+
+              MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                onEntered: TooltipService.show(parent, NetworkService.getSignalInfo(modelData.signal, modelData.connected).label + " (" + modelData.signal + "%)")
+                onExited: TooltipService.hide()
+              }
             }
           }
 
@@ -611,9 +778,10 @@ Item {
 
               // Network speed indicators (visible when connected and speed > 0)
               RowLayout {
-                visible: modelData.connected && (SystemStatService.rxSpeed > 0 || SystemStatService.txSpeed > 0)
+                visible: (modelData.connected && NetworkService.networkConnectivity === "full") && (SystemStatService.rxSpeed > 0 || SystemStatService.txSpeed > 0)
                 spacing: 2
                 Layout.leftMargin: Style.marginXS
+                Layout.fillWidth: false
 
                 NIcon {
                   visible: SystemStatService.rxSpeed > 0
@@ -627,6 +795,7 @@ Item {
                   text: SystemStatService.formatSpeed(SystemStatService.rxSpeed)
                   pointSize: Style.fontSizeXXS
                   color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
+                  elide: Text.ElideNone
                 }
 
                 Item {
@@ -647,6 +816,7 @@ Item {
                   text: SystemStatService.formatSpeed(SystemStatService.txSpeed)
                   pointSize: Style.fontSizeXXS
                   color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
+                  elide: Text.ElideNone
                 }
               }
             }
@@ -661,13 +831,13 @@ Item {
 
             NBusyIndicator {
               visible: networkItem.isBusy
-              running: visible
+              running: visible && root.effectivelyVisible
               color: networkItem.getContentColors()[1]
               size: Style.baseWidgetSize * 0.5
             }
 
             NIconButton {
-              visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
+              visible: itemHover.hovered && modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
               icon: "info"
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.8
@@ -686,7 +856,7 @@ Item {
             }
 
             NIconButton {
-              visible: !root.showOnlyLists && (modelData.existing || modelData.cached) && !modelData.connected && !networkItem.isBusy
+              visible: itemHover.hovered && !root.showOnlyLists && (modelData.existing || modelData.cached) && !modelData.connected && !networkItem.isBusy
               icon: "trash"
               tooltipText: I18n.tr("tooltips.forget-network")
               baseSize: Style.baseWidgetSize * 0.8
@@ -699,7 +869,7 @@ Item {
 
             NButton {
               id: button
-              visible: !modelData.connected && NetworkService.connectingTo !== modelData.ssid && root.passwordSsid !== modelData.ssid
+              visible: itemHover.hovered && !modelData.connected && NetworkService.connectingTo !== modelData.ssid && root.passwordSsid !== modelData.ssid
               enabled: !NetworkService.connecting && !networkItem.isBusy
               fontSize: Style.fontSizeS
               backgroundColor: Color.mPrimary
@@ -716,7 +886,7 @@ Item {
 
             NButton {
               id: disconnectButton
-              visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
+              visible: itemHover.hovered && modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
               text: I18n.tr("common.disconnect")
               fontSize: Style.fontSizeS
               backgroundColor: Color.mSurfaceVariant
@@ -763,6 +933,8 @@ Item {
             id: infoColumn
             anchors.fill: parent
             anchors.margins: Style.marginS
+            flow: root.detailsGrid ? GridLayout.TopToBottom : GridLayout.LeftToRight
+            rows: root.detailsGrid ? 3 : 6
             columns: root.detailsGrid ? 2 : 1
             columnSpacing: Style.marginM
             rowSpacing: Style.marginXS
@@ -779,8 +951,6 @@ Item {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
               spacing: Style.marginXS
-              Layout.row: 0
-              Layout.column: 0
               NIcon {
                 icon: "network"
                 pointSize: Style.fontSizeXS
@@ -823,8 +993,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 1 : 1
-              Layout.column: 0
               spacing: Style.marginXS
               NIcon {
                 icon: "router"
@@ -847,8 +1015,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 2 : 2
-              Layout.column: 0
               spacing: Style.marginXS
               NIcon {
                 icon: "gauge"
@@ -872,8 +1038,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 0 : 3
-              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               NIcon {
                 icon: "network"
@@ -891,20 +1055,20 @@ Item {
                 }
               }
               NText {
-                text: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.ipv4 || "-") : (NetworkService.activeWifiDetails.ipv6 || "-")
+                text: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.ipv4 || "-") : ((NetworkService.activeWifiDetails.ipv6 || []).join(", ") || "-")
                 pointSize: Style.fontSizeXS
                 color: Color.mOnSurface
                 Layout.fillWidth: true
 
                 MouseArea {
                   anchors.fill: parent
-                  enabled: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.ipv4 && NetworkService.activeWifiDetails.ipv4.length > 0) : (NetworkService.activeWifiDetails.ipv6 && NetworkService.activeWifiDetails.ipv6.length > 0)
+                  enabled: root.ipVersion === 4 ? !!(NetworkService.activeWifiDetails.ipv4 && NetworkService.activeWifiDetails.ipv4.length > 0) : !!(NetworkService.activeWifiDetails.ipv6 && NetworkService.activeWifiDetails.ipv6.length > 0)
                   hoverEnabled: true
                   cursorShape: Qt.PointingHandCursor
                   onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
                   onExited: TooltipService.hide()
                   onClicked: {
-                    const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.ipv4 || "") : (NetworkService.activeWifiDetails.ipv6 || "");
+                    const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.ipv4 || "") : ((NetworkService.activeWifiDetails.ipv6 || []).join(", ") || "");
                     if (value.length > 0) {
                       Quickshell.execDetached(["wl-copy", value]);
                       ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
@@ -917,8 +1081,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 1 : 4
-              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               NIcon {
                 icon: "world"
@@ -936,20 +1098,20 @@ Item {
                 }
               }
               NText {
-                text: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.dns4 || "-") : (NetworkService.activeWifiDetails.dns6 || "-")
+                text: root.ipVersion === 4 ? ((NetworkService.activeWifiDetails.dns4 || []).join(", ") || "-") : ((NetworkService.activeWifiDetails.dns6 || []).join(", ") || "-")
                 pointSize: Style.fontSizeXS
                 color: Color.mOnSurface
                 Layout.fillWidth: true
 
                 MouseArea {
                   anchors.fill: parent
-                  enabled: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.dns4 && NetworkService.activeWifiDetails.dns4.length > 0) : (NetworkService.activeWifiDetails.dns6 && NetworkService.activeWifiDetails.dns6.length > 0)
+                  enabled: root.ipVersion === 4 ? !!(NetworkService.activeWifiDetails.dns4 && NetworkService.activeWifiDetails.dns4.length > 0) : !!(NetworkService.activeWifiDetails.dns6 && NetworkService.activeWifiDetails.dns6.length > 0)
                   hoverEnabled: true
                   cursorShape: Qt.PointingHandCursor
                   onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
                   onExited: TooltipService.hide()
                   onClicked: {
-                    const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.dns4 || "") : (NetworkService.activeWifiDetails.dns6 || "");
+                    const value = root.ipVersion === 4 ? ((NetworkService.activeWifiDetails.dns4 || []).join(", ") || "") : ((NetworkService.activeWifiDetails.dns6 || []).join(", ") || "");
                     if (value.length > 0) {
                       Quickshell.execDetached(["wl-copy", value]);
                       ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
@@ -962,8 +1124,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 2 : 5
-              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               NIcon {
                 icon: "router"
@@ -981,20 +1141,20 @@ Item {
                 }
               }
               NText {
-                text: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.gateway4 || "-") : (NetworkService.activeWifiDetails.gateway6 || "-")
+                text: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.gateway4 || "-") : ((NetworkService.activeWifiDetails.gateway6 || []).join(", ") || "-")
                 pointSize: Style.fontSizeXS
                 color: Color.mOnSurface
                 Layout.fillWidth: true
 
                 MouseArea {
                   anchors.fill: parent
-                  enabled: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.gateway4 && NetworkService.activeWifiDetails.gateway4.length > 0) : (NetworkService.activeWifiDetails.gateway6 && NetworkService.activeWifiDetails.gateway6.length > 0)
+                  enabled: root.ipVersion === 4 ? !!(NetworkService.activeWifiDetails.gateway4 && NetworkService.activeWifiDetails.gateway4.length > 0) : !!(NetworkService.activeWifiDetails.gateway6 && NetworkService.activeWifiDetails.gateway6.length > 0)
                   hoverEnabled: true
                   cursorShape: Qt.PointingHandCursor
                   onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
                   onExited: TooltipService.hide()
                   onClicked: {
-                    const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.gateway4 || "") : (NetworkService.activeWifiDetails.gateway6 || "");
+                    const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.gateway4 || "") : ((NetworkService.activeWifiDetails.gateway6 || []).join(", ") || "");
                     if (value.length > 0) {
                       Quickshell.execDetached(["wl-copy", value]);
                       ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
@@ -1010,72 +1170,251 @@ Item {
         Rectangle {
           visible: root.passwordSsid === modelData.ssid && !networkItem.isBusy
           Layout.fillWidth: true
-          height: passwordRow.implicitHeight + Style.margin2S
+          height: passwordLayout.implicitHeight + Style.margin2S
           color: Color.mSurfaceVariant
           border.color: Color.mOutline
           border.width: Style.borderS
           radius: Style.iRadiusXS
 
-          RowLayout {
-            id: passwordRow
+          ColumnLayout {
+            id: passwordLayout
             anchors.fill: parent
             anchors.margins: Style.marginS
-            spacing: Style.marginM
+            spacing: Style.marginS
 
-            Rectangle {
+            // Inputs Container
+            ColumnLayout {
               Layout.fillWidth: true
-              Layout.fillHeight: true
-              radius: Style.iRadiusXS
-              color: Color.mSurface
-              border.color: pwdInput.activeFocus ? Color.mSecondary : Color.mOutline
-              border.width: Style.borderS
+              spacing: Style.marginS
 
-              TextInput {
-                id: pwdInput
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.margins: Style.marginS
-                font.family: Settings.data.ui.fontFixed
-                font.pointSize: Style.fontSizeS
-                color: Color.mOnSurface
-                echoMode: TextInput.Password
-                selectByMouse: true
-                focus: visible
-                passwordCharacter: "●"
-                onVisibleChanged: {
-                  if (visible) {
-                    forceActiveFocus();
-                  }
-                }
-                onAccepted: {
-                  if (text && !NetworkService.connecting) {
-                    root.submitPassword(modelData.ssid, text);
-                  }
+              // Enterprise Configuration
+              ColumnLayout {
+                visible: networkItem.isEnterprise
+                Layout.fillWidth: true
+                spacing: Style.marginS
+
+                NComboBox {
+                  Layout.fillWidth: true
+                  label: I18n.tr("wifi.enterprise.eap-method")
+                  model: [
+                    {
+                      key: "peap",
+                      name: "PEAP"
+                    },
+                    {
+                      key: "ttls",
+                      name: "TTLS"
+                    }
+                  ]
+                  currentKey: root.enterpriseEap
+                  onSelected: key => root.enterpriseEap = key
                 }
 
-                NText {
-                  visible: parent.text.length === 0
+                NComboBox {
+                  Layout.fillWidth: true
+                  label: I18n.tr("wifi.enterprise.phase2-auth")
+                  model: [
+                    {
+                      key: "mschapv2",
+                      name: "MSCHAPv2"
+                    },
+                    {
+                      key: "pap",
+                      name: "PAP"
+                    },
+                    {
+                      key: "mschap",
+                      name: "MSCHAP"
+                    },
+                    {
+                      key: "chap",
+                      name: "CHAP"
+                    }
+                  ]
+                  currentKey: root.enterprisePhase2
+                  onSelected: key => root.enterprisePhase2 = key
+                }
+
+                RowLayout {
+                  Layout.fillWidth: true
+                  spacing: Style.marginS
+
+                  Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Style.baseWidgetSize * 0.9
+                    radius: Style.iRadiusXS
+                    color: Color.mSurface
+                    border.color: caCertInput.activeFocus ? Color.mSecondary : Color.mOutline
+                    border.width: Style.borderS
+
+                    TextInput {
+                      id: caCertInput
+                      anchors.left: parent.left
+                      anchors.right: parent.right
+                      anchors.verticalCenter: parent.verticalCenter
+                      anchors.margins: Style.marginS
+                      font.family: Settings.data.ui.fontFixed
+                      font.pointSize: Style.fontSizeS
+                      color: Color.mOnSurface
+                      selectByMouse: true
+                      text: root.enterpriseCaCert
+                      onTextChanged: root.enterpriseCaCert = text
+
+                      NText {
+                        visible: parent.text.length === 0
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: I18n.tr("wifi.enterprise.ca-cert")
+                        color: Color.mOnSurfaceVariant
+                        pointSize: Style.fontSizeS
+                      }
+                    }
+                  }
+
+                  NIconButton {
+                    icon: "folder-open"
+                    baseSize: Style.baseWidgetSize * 0.8
+                    onClicked: caCertPicker.openForInline()
+                  }
+                }
+              }
+
+              // Anonymous Identity field (Enterprise only)
+              Rectangle {
+                visible: networkItem.isEnterprise
+                Layout.fillWidth: true
+                Layout.preferredHeight: Style.baseWidgetSize * 0.9
+                radius: Style.iRadiusXS
+                color: Color.mSurface
+                border.color: anonIdentityInput.activeFocus ? Color.mSecondary : Color.mOutline
+                border.width: Style.borderS
+
+                TextInput {
+                  id: anonIdentityInput
+                  anchors.left: parent.left
+                  anchors.right: parent.right
                   anchors.verticalCenter: parent.verticalCenter
-                  text: I18n.tr("wifi.panel.enter-password")
-                  color: Color.mOnSurfaceVariant
-                  pointSize: Style.fontSizeS
+                  anchors.margins: Style.marginS
+                  font.family: Settings.data.ui.fontFixed
+                  font.pointSize: Style.fontSizeS
+                  color: Color.mOnSurface
+                  selectByMouse: true
+                  text: root.enterpriseAnonIdentity
+                  onTextChanged: root.enterpriseAnonIdentity = text
+                  onAccepted: identityInput.forceActiveFocus()
+
+                  NText {
+                    visible: parent.text.length === 0
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: I18n.tr("wifi.enterprise.anonymous-identity")
+                    color: Color.mOnSurfaceVariant
+                    pointSize: Style.fontSizeS
+                  }
+                }
+              }
+
+              // Identity field (Enterprise only)
+              Rectangle {
+                visible: networkItem.isEnterprise
+                Layout.fillWidth: true
+                Layout.preferredHeight: Style.baseWidgetSize * 0.9
+                radius: Style.iRadiusXS
+                color: Color.mSurface
+                border.color: identityInput.activeFocus ? Color.mSecondary : Color.mOutline
+                border.width: Style.borderS
+
+                TextInput {
+                  id: identityInput
+                  anchors.left: parent.left
+                  anchors.right: parent.right
+                  anchors.verticalCenter: parent.verticalCenter
+                  anchors.margins: Style.marginS
+                  font.family: Settings.data.ui.fontFixed
+                  font.pointSize: Style.fontSizeS
+                  color: Color.mOnSurface
+                  selectByMouse: true
+                  onVisibleChanged: {
+                    if (visible) {
+                      forceActiveFocus();
+                    }
+                  }
+                  onAccepted: pwdInput.forceActiveFocus()
+
+                  NText {
+                    visible: parent.text.length === 0
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: I18n.tr("wifi.enterprise.username")
+                    color: Color.mOnSurfaceVariant
+                    pointSize: Style.fontSizeS
+                  }
+                }
+              }
+
+              // Password field
+              Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: Style.baseWidgetSize * 0.9
+                radius: Style.iRadiusXS
+                color: Color.mSurface
+                border.color: pwdInput.activeFocus ? Color.mSecondary : Color.mOutline
+                border.width: Style.borderS
+
+                TextInput {
+                  id: pwdInput
+                  anchors.left: parent.left
+                  anchors.right: parent.right
+                  anchors.verticalCenter: parent.verticalCenter
+                  anchors.margins: Style.marginS
+                  font.family: Settings.data.ui.fontFixed
+                  font.pointSize: Style.fontSizeS
+                  color: Color.mOnSurface
+                  echoMode: TextInput.Password
+                  selectByMouse: true
+                  passwordCharacter: "●"
+                  onVisibleChanged: {
+                    if (visible && !networkItem.isEnterprise) {
+                      forceActiveFocus();
+                    }
+                  }
+                  onAccepted: {
+                    if (text && !NetworkService.connecting) {
+                      if (!networkItem.isEnterprise || identityInput.text.length > 0) {
+                        root.submitPassword(modelData.ssid, text, identityInput.text);
+                      }
+                    }
+                  }
+
+                  NText {
+                    visible: parent.text.length === 0
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: networkItem.isEnterprise ? I18n.tr("wifi.enterprise.password") : I18n.tr("wifi.panel.enter-password")
+                    color: Color.mOnSurfaceVariant
+                    pointSize: Style.fontSizeS
+                  }
                 }
               }
             }
 
-            NButton {
-              text: I18n.tr("common.connect")
-              fontSize: Style.fontSizeS
-              enabled: pwdInput.text.length > 0 && !NetworkService.connecting
-              outlined: true
-              onClicked: root.submitPassword(modelData.ssid, pwdInput.text)
-            }
+            RowLayout {
+              Layout.fillWidth: true
+              spacing: Style.marginS
 
-            NIconButton {
-              icon: "close"
-              baseSize: Style.baseWidgetSize * 0.8
-              onClicked: root.cancelPassword()
+              Item {
+                Layout.fillWidth: true
+              }
+
+              NButton {
+                text: I18n.tr("common.connect")
+                fontSize: Style.fontSizeS
+                enabled: pwdInput.text.length > 0 && (!networkItem.isEnterprise || identityInput.text.length > 0) && !NetworkService.connecting
+                outlined: true
+                onClicked: root.submitPassword(modelData.ssid, pwdInput.text, identityInput.text)
+              }
+
+              NIconButton {
+                icon: "close"
+                baseSize: Style.baseWidgetSize * 0.8
+                onClicked: root.cancelPassword()
+              }
             }
           }
         }
@@ -1129,5 +1468,33 @@ Item {
         }
       }
     }
+  }
+
+  NFilePicker {
+    id: caCertPicker
+    title: I18n.tr("wifi.enterprise.ca-cert")
+    nameFilters: ["*.pem", "*.crt", "*.cer", "*.der", "*"]
+
+    property bool isForAddNetwork: false
+
+    function openForInline() {
+      isForAddNetwork = false;
+      openFilePicker();
+    }
+
+    function openForAddNetwork() {
+      isForAddNetwork = true;
+      openFilePicker();
+    }
+
+    onAccepted: paths => {
+                  if (paths.length > 0) {
+                    if (isForAddNetwork) {
+                      addNetworkPopup.customEnterpriseCaCert = paths[0];
+                    } else {
+                      root.enterpriseCaCert = paths[0];
+                    }
+                  }
+                }
   }
 }

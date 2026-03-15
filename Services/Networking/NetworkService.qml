@@ -47,31 +47,31 @@ Singleton {
     },
     {
       key: "wep",
-      name: "WEP"
+      name: I18n.tr("wifi.panel.security-wep")
     },
     {
       key: "wpa-psk",
-      name: "WPA"
+      name: I18n.tr("wifi.panel.security-wpa")
     },
     {
       key: "wpa2-psk",
-      name: "WPA2/WPA3"
+      name: I18n.tr("wifi.panel.security-wpa23")
     },
     {
       key: "sae",
-      name: "WPA3"
+      name: I18n.tr("wifi.panel.security-wpa3")
     },
     {
       key: "wpa-eap",
-      name: "WPA Enterprise"
+      name: I18n.tr("wifi.panel.security-wpa-ent")
     },
     {
       key: "wpa2-eap",
-      name: "WPA2 Enterprise"
+      name: I18n.tr("wifi.panel.security-wpa2-ent")
     },
     {
       key: "wpa3-eap",
-      name: "WPA3 Enterprise"
+      name: I18n.tr("wifi.panel.security-wpa3-ent")
     }
   ]
 
@@ -80,7 +80,7 @@ Singleton {
   property string activeWifiIf: ""
   property bool detailsLoading: false
   property double activeWifiDetailsTimestamp: 0
-  // Cache TTL to avoid spamming nmcli/iw on rapid toggles
+  // Cache TTL to avoid spamming nmcli on rapid toggles
   property int activeWifiDetailsTtlMs: 5000
 
   // Persistent cache
@@ -305,10 +305,16 @@ Singleton {
     refreshActiveEthernetDetails();
   }
 
-  function connect(ssid, password = "", isHidden = false) {
+  function connect(ssid, password = "", isHidden = false, identity = "", enterpriseConfig = {}) {
     if (!ProgramCheckerService.nmcliAvailable || connecting) {
       return;
     }
+
+    if (isEnterprise(networks[ssid] ? networks[ssid].security : "")) {
+      connectManual(ssid, password, "wpa-eap", identity, enterpriseConfig);
+      return;
+    }
+
     connecting = true;
     connectingTo = ssid;
     lastError = "";
@@ -329,7 +335,7 @@ Singleton {
     connectProcess.running = true;
   }
 
-  function connectManual(ssid, password, securityKey) {
+  function connectManual(ssid, password, securityKey, identity = "", enterpriseConfig = {}, isHidden = false) {
     if (!ProgramCheckerService.nmcliAvailable || connecting) {
       return;
     }
@@ -340,6 +346,12 @@ Singleton {
     manualConnectProcess.ssid = ssid;
     manualConnectProcess.password = password;
     manualConnectProcess.securityKey = securityKey;
+    manualConnectProcess.identity = identity;
+    manualConnectProcess.isHidden = isHidden;
+    manualConnectProcess.eap = enterpriseConfig.eap || "peap";
+    manualConnectProcess.phase2 = enterpriseConfig.phase2 || "mschapv2";
+    manualConnectProcess.anonIdentity = enterpriseConfig.anonIdentity || "";
+    manualConnectProcess.caCert = enterpriseConfig.caCert || "";
     manualConnectProcess.running = true;
   }
 
@@ -408,52 +420,83 @@ Singleton {
   }
 
   // Helper functions
-  function signalIcon(signal, isConnected) {
-    if (isConnected === undefined) {
-      isConnected = false;
+  function getSignalInfo(signal, isConnected) {
+    let icon = "";
+    if (isConnected) {
+      if (root.networkConnectivity === "limited") {
+        icon = "wifi-exclamation";
+      } else if (root.networkConnectivity === "portal" || root.networkConnectivity === "unknown") {
+        icon = "wifi-question";
+      }
     }
-    if (isConnected && !root.internetConnectivity) {
-      return "world-off";
+    // This is a draft actual ranges can be changed.
+    const label = signal >= 80 ? I18n.tr("wifi.signal.excellent") : signal >= 60 ? I18n.tr("wifi.signal.good") : signal >= 35 ? I18n.tr("wifi.signal.fair") : signal >= 15 ? I18n.tr("wifi.signal.poor") : I18n.tr("wifi.signal.weak");
+    if (!icon) {
+      icon = signal >= 80 ? "wifi" : signal >= 60 ? "wifi-3" : signal >= 35 ? "wifi-2" : signal >= 15 ? "wifi-1" : "wifi-0";
     }
-    if (signal >= 80) {
-      return "wifi";
-    }
-    if (signal >= 50) {
-      return "wifi-2";
-    }
-    if (signal >= 20) {
-      return "wifi-1";
-    }
-    return "wifi-0";
+    return {
+      icon,
+      label
+    };
   }
 
   function isSecured(security) {
     return security && security !== "--" && security.trim() !== "";
   }
 
-  function getSignalStrengthLabel(signal) {
-    switch (true) {
-    case (signal >= 80):
-      return I18n.tr("wifi.signal.excellent");
-    case (signal >= 50):
-      return I18n.tr("wifi.signal.good");
-    case (signal >= 20):
-      return I18n.tr("wifi.signal.fair");
-    default:
-      return I18n.tr("wifi.signal.poor");
+  function isEnterprise(security) {
+    if (!security) {
+      return false;
     }
+    const s = security.toUpperCase();
+    return s.indexOf("802.1X") !== -1 || s.indexOf("EAP") !== -1 || s.indexOf("ENTERPRISE") !== -1;
   }
 
   function parseIpDetails(text) {
     const details = {
+      connectionName: "",
       ipv4: "",
       gateway4: "",
-      ipv6: "",
-      gateway6: "",
       dns4: [],
+      ipv6: [],
+      gateway6: [],
       dns6: [],
-      dns: "",
-      connectionName: ""
+      hwAddr: "",
+      nmSpeed: ""
+    };
+    const addUnique = (arr, val) => {
+      if (val && arr.indexOf(val) === -1) {
+        arr.push(val);
+      }
+    };
+    const handlers = {
+      "GENERAL.CONNECTION": v => {
+        details.connectionName = v;
+      },
+      "GENERAL.HWADDR": v => {
+        details.hwAddr = v;
+      },
+      "CAPABILITIES.SPEED": v => {
+        details.nmSpeed = v;
+      },
+      "IP4.ADDRESS": v => {
+        details.ipv4 = v.split("/")[0];
+      },
+      "IP4.GATEWAY": v => {
+        details.gateway4 = v;
+      },
+      "IP6.ADDRESS": v => {
+        addUnique(details.ipv6, v.split("/")[0]);
+      },
+      "IP6.GATEWAY": v => {
+        addUnique(details.gateway6, v);
+      },
+      "IP4.DNS": v => {
+        addUnique(details.dns4, v);
+      },
+      "IP6.DNS": v => {
+        addUnique(details.dns6, v);
+      }
     };
     const lines = text.split("\n");
     for (let i = 0; i < lines.length; i++) {
@@ -465,39 +508,72 @@ Singleton {
       if (idx === -1) {
         continue;
       }
-      const key = line.substring(0, idx);
-      const val = line.substring(idx + 1);
-      if (key === "GENERAL.CONNECTION") {
-        details.connectionName = val;
-      } else if (key.indexOf("IP4.ADDRESS") === 0) {
-        details.ipv4 = val.split("/")[0];
-      } else if (key === "IP4.GATEWAY") {
-        details.gateway4 = val;
-      } else if (key.indexOf("IP6.ADDRESS") === 0) {
-        details.ipv6 = val.split("/")[0];
-      } else if (key === "IP6.GATEWAY") {
-        details.gateway6 = val;
-      } else if (key.indexOf("IP4.DNS") === 0) {
-        if (val && details.dns4.indexOf(val) === -1) {
-          details.dns4.push(val);
-        }
-      } else if (key.indexOf("IP6.DNS") === 0) {
-        if (val && details.dns6.indexOf(val) === -1) {
-          details.dns6.push(val);
-        }
+      const key = line.substring(0, idx).replace(/\[\d+\]$/, "");
+      const val = line.substring(idx + 1).trim();
+      if (handlers[key]) {
+        handlers[key](val);
       }
     }
-    details.dns4 = details.dns4.join(", ");
-    details.dns6 = details.dns6.join(", ");
-    details.dns = [].concat(details.dns4 ? [details.dns4] : [], details.dns6 ? [details.dns6] : []).join(", ");
+
     return details;
+  }
+
+  // Functions used in /Modules/Panels/ControlCenter/Widgets/Network.qml & /Modules/Bar/Widgets/Network.qml
+  function getStatustxt() {
+    if (root.connecting) {
+      return root.connectingTo ? I18n.tr("common.connecting") + " " + root.connectingTo : I18n.tr("common.connecting");
+    }
+
+    let p = [];
+
+    // Ethernet
+    if (root.ethernetConnected) {
+      const eth = root.activeEthernetDetails;
+      const name = eth.connectionName || (root.ethernetInterfaces.length > 0 ? root.ethernetInterfaces[0].connectionName : "") || "";
+      const speed = eth.speed || "";
+      p.push(name + (speed ? " - " + speed : ""));
+    }
+
+    // Wi-Fi
+    if (root.activeWifiIf) {
+      const wl = root.activeWifiDetails;
+      const speed = wl.rateShort || wl.rate || "";
+      const connectedNet = Object.values(root.networks).find(net => net.connected);
+      const name = connectedNet ? connectedNet.ssid : (wl.connectionName || "");
+      p.push(name + (speed ? " - " + speed : ""));
+    }
+
+    if (p.length > 0) {
+      return p.join(" + "); // p.length > 0 & === 1 no join used. (eg: Only Wi-Fi)
+    }
+
+    return I18n.tr("common.disconnected"); // p.length === 0
+  }
+
+  function getIcon() {
+    // This function doesn't know what to do when more than one ethernet device is connected. most people doesn't use but just in case.
+    if (root.ethernetConnected) {
+      switch (root.networkConnectivity) {
+      case "limited":
+        return "ethernet-exclamation";
+      case "portal":
+      case "unknown":
+        return "ethernet-question";
+      case "full":
+        return "ethernet";
+      default:
+        return "ethernet-off";
+      }
+    }
+    const connectedNet = Object.values(root.networks).find(net => net.connected); // This might be inefficient...
+    return connectedNet ? root.getSignalInfo(connectedNet.signal, true).icon : "wifi-off";
   }
 
   // Processes
   Process {
     id: ethernetStateProcess
     running: ProgramCheckerService.nmcliAvailable
-    command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"]
+    command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device"]
 
     stdout: StdioCollector {
       onStreamFinished: {
@@ -513,6 +589,7 @@ Singleton {
             var ifname = parts[0];
             var type = parts[1];
             var state = parts[2];
+            var conName = parts.slice(3).join(":") || "";
 
             if (type === "wifi") {
               wifiAvailable = true;
@@ -522,7 +599,8 @@ Singleton {
               ethList.push({
                              ifname: ifname,
                              state: state,
-                             connected: isConn
+                             connected: isConn,
+                             connectionName: conName
                            });
               if (isConn && !connected) {
                 connected = true;
@@ -576,7 +654,7 @@ Singleton {
   Process {
     id: ethernetDeviceListProcess
     running: false
-    command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"]
+    command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device"]
 
     stdout: StdioCollector {
       onStreamFinished: {
@@ -589,6 +667,7 @@ Singleton {
             const dev = parts[0];
             const type = parts[1];
             const state = parts[2];
+            const conName = parts.slice(3).join(":") || "";
             if (state === "unmanaged") {
               continue;
             }
@@ -599,7 +678,8 @@ Singleton {
               ethList.push({
                              ifname: dev,
                              state: state,
-                             connected: state === "connected"
+                             connected: state === "connected",
+                             connectionName: conName
                            });
             }
           }
@@ -642,7 +722,7 @@ Singleton {
     property string ifname: ""
     running: false
     // Speed is resolved via ethtool fallback below to avoid stderr warnings
-    command: ["nmcli", "-t", "-f", "GENERAL.CONNECTION,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS", "device", "show", ifname]
+    command: ["nmcli", "-t", "-f", "GENERAL.CONNECTION,GENERAL.HWADDR,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS,IP6.ADDRESS,IP6.GATEWAY,IP6.DNS", "device", "show", ifname]
 
     stdout: StdioCollector {
       onStreamFinished: {
@@ -659,7 +739,7 @@ Singleton {
         details.gateway6 = parsed.gateway6;
         details.dns4 = parsed.dns4;
         details.dns6 = parsed.dns6;
-        details.dns = parsed.dns;
+        details.hwAddr = parsed.hwAddr;
 
         root.activeEthernetDetails = details;
         // If speed missing, try sysfs first, then fallback to ethtool
@@ -703,10 +783,13 @@ Singleton {
           root.activeEthernetDetails = details;
           root.activeEthernetDetailsTimestamp = Date.now();
           root.ethernetDetailsLoading = false;
-        } else {
+        } else if (ProgramCheckerService.ethtoolAvailable) {
           // Fallback to ethtool if sysfs unreadable or invalid
           ethernetEthtoolProcess.ifname = ethernetSysfsSpeedProcess.ifname;
           ethernetEthtoolProcess.running = true;
+        } else {
+          root.activeEthernetDetailsTimestamp = Date.now();
+          root.ethernetDetailsLoading = false;
         }
       }
     }
@@ -809,25 +892,27 @@ Singleton {
     id: wifiDeviceShowProcess
     property string ifname: ""
     running: false
-    command: ["nmcli", "-t", "-f", "IP4.ADDRESS,IP4.GATEWAY,IP4.DNS,IP6.ADDRESS,IP6.GATEWAY,IP6.DNS", "device", "show", ifname]
+    command: ["nmcli", "-t", "-f", "GENERAL.CONNECTION,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS,IP6.ADDRESS,IP6.GATEWAY,IP6.DNS,CAPABILITIES.SPEED", "device", "show", ifname]
+    // Find Signal (%) Bandwidth (MHz) Rate (Mbit/s) Freq (MHz) Chan (int)
 
     stdout: StdioCollector {
       onStreamFinished: {
         const details = root.activeWifiDetails || ({});
         const parsed = root.parseIpDetails(text);
 
+        details.connectionName = parsed.connectionName;
         details.ipv4 = parsed.ipv4;
         details.gateway4 = parsed.gateway4;
         details.ipv6 = parsed.ipv6;
         details.gateway6 = parsed.gateway6;
         details.dns4 = parsed.dns4;
         details.dns6 = parsed.dns6;
-        details.dns = parsed.dns;
+        details.nmSpeed = parsed.nmSpeed;
         root.activeWifiDetails = details;
 
         // Try to get link rate (best effort)
-        wifiIwLinkProcess.ifname = wifiDeviceShowProcess.ifname;
-        wifiIwLinkProcess.running = true;
+        wifiDetailsProcess.ifname = wifiDeviceShowProcess.ifname;
+        wifiDetailsProcess.running = true;
       }
     }
     stderr: StdioCollector {
@@ -841,45 +926,43 @@ Singleton {
     }
   }
 
-  // Optional: query Wi‑Fi bitrate and link info via iw if available
+  // Optional: query Wi‑Fi bitrate and link info via nmcli
   Process {
-    id: wifiIwLinkProcess
+    id: wifiDetailsProcess
     property string ifname: ""
     running: false
-    command: ["sh", "-c", "iw dev '" + ifname + "' link 2>/dev/null; iw dev '" + ifname + "' info 2>/dev/null || true"]
+    command: ["nmcli", "-t", "-f", "IN-USE,SIGNAL,RATE,CHAN,FREQ,BANDWIDTH", "device", "wifi", "list", "ifname", ifname]
 
     stdout: StdioCollector {
       onStreamFinished: {
         const details = root.activeWifiDetails || ({});
         let rate = "";
         let freq = "";
-        let iwChannel = "";
-        let iwWidth = "";
+        let channel = "";
+        let width = "";
+        let signal = "";
+
         const lines = text.split("\n");
-        for (var k = 0; k < lines.length; k++) {
-          var line2 = lines[k].trim();
-          var low = line2.toLowerCase();
-          if (low.indexOf("tx bitrate:") === 0) {
-            rate = line2.substring(11).trim();
-          } else if (low.indexOf("freq:") === 0) {
-            freq = line2.substring(5).trim();
-          } else if (low.indexOf("channel") === 0) {
-            // Parse "channel 9 (2452 MHz), width: 20 MHz, center1: 2452 MHz"
-            var chanMatch = line2.match(/channel\s+(\d+)/i);
-            if (chanMatch) {
-              iwChannel = chanMatch[1];
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line.startsWith("*")) {
+            // Found the in-use network
+            // Format: *:SIGNAL:RATE:CHAN:FREQ:BANDWIDTH
+            const parts = line.split(":");
+            if (parts.length >= 6) {
+              signal = parts[1];
+              rate = parts[2];
+              channel = parts[3];
+              freq = parts[4].replace(" MHz", "");
+              width = parts[5];
             }
-            var widthMatchInfo = line2.match(/width:\s+(\d+)\s+MHz/i);
-            if (widthMatchInfo) {
-              iwWidth = widthMatchInfo[1] + " MHz";
-            }
+            break;
           }
         }
 
-        // Determine band and channel from frequency
+        // Determine band from frequency
         // https://en.wikipedia.org/wiki/List_of_WLAN_channels
         let band = "";
-        let channel = iwChannel;
         if (freq) {
           const f = +freq;
           if (f) {
@@ -887,27 +970,14 @@ Singleton {
               // https://en.wikipedia.org/wiki/List_of_WLAN_channels#6_GHz_(802.11ax_and_802.11be)
               case (f >= 5925 && f < 7125):
               band = "6 GHz";
-              if (!channel) {
-                channel = Math.round((f - 5940) / 5).toString();
-              }
               break;
               // https://en.wikipedia.org/wiki/List_of_WLAN_channels#5_GHz_(802.11a/h/n/ac/ax/be)
               case (f >= 5150 && f < 5925):
               band = "5 GHz";
-              if (!channel) {
-                channel = Math.round((f - 5000) / 5).toString();
-              }
               break;
               // https://en.wikipedia.org/wiki/List_of_WLAN_channels#2.4_GHz_(802.11b/g/n/ax/be)
               case (f >= 2400 && f < 2500):
               band = "2.4 GHz";
-              if (!channel) {
-                if (f === 2484) {
-                  channel = "14";
-                } else {
-                  channel = Math.round((f - 2407) / 5).toString();
-                }
-              }
               break;
               default:
               band = `${f} MHz`;
@@ -917,16 +987,7 @@ Singleton {
 
         // Shorten verbose bitrate strings like: "360.0 MBit/s VHT-MCS 8 40MHz short GI"
         let rateShort = "";
-        let width = iwWidth;
         if (rate) {
-          // Extract width from bitrate if not already found in info (fallback)
-          if (!width) {
-            var widthMatchBitrate = rate.match(/(\d+)MHz/i);
-            if (widthMatchBitrate) {
-              width = widthMatchBitrate[1] + " MHz";
-            }
-          }
-
           var parts = rate.trim().split(" ");
           // compact consecutive spaces
           var compact = [];
@@ -959,12 +1020,20 @@ Singleton {
           }
         }
 
-        // Enhance band string with channel and width: "Band / Ch Channel (Width)"
+        // Enhance band string with channel and width: "Band / Channel (Width)"
         let enhancedBand = band;
         if (channel && width) {
-          enhancedBand = `${band} / Ch ${channel} (${width})`;
+          enhancedBand = `${band} / ${channel} (${width})`;
         } else if (channel) {
-          enhancedBand = `${band} / Ch ${channel}`;
+          enhancedBand = `${band} / ${channel}`;
+        }
+
+        // Use dynamic speed if available
+        if (details.nmSpeed) {
+          rate = details.nmSpeed;
+          // Standardize 'Mb/s' to 'Mbit/s' for UI consistency
+          rate = rate.replace(/Mb\/s/i, "Mbit/s");
+          rateShort = rate;
         }
 
         details.rate = rate;
@@ -972,6 +1041,7 @@ Singleton {
         details.band = enhancedBand;
         details.channel = channel;
         details.width = width;
+        details.signal = signal;
         root.activeWifiDetails = details;
         root.activeWifiDetailsTimestamp = Date.now();
         root.detailsLoading = false;
@@ -980,7 +1050,7 @@ Singleton {
     stderr: StdioCollector {
       onStreamFinished: {
         if (text && text.trim()) {
-          Logger.w("Network", "iw link stderr:", text.trim());
+          Logger.w("Network", "nmcli wifi details stderr:", text.trim());
         }
         root.activeWifiDetailsTimestamp = Date.now();
         root.detailsLoading = false;
@@ -1414,42 +1484,48 @@ Singleton {
     property string ssid: ""
     property string password: ""
     property string securityKey: ""
+    property string identity: ""
+    property string eap: "peap"
+    property string phase2: "mschapv2"
+    property string anonIdentity: ""
+    property string caCert: ""
+    property bool isHidden: false
     running: false
 
     command: {
-      var script = `
-      SSID="$1"
-      PWD="$2"
-      SEC="$3"
+      const nmArgs = ["connection", "add", "type", "wifi", "con-name", ssid, "ssid", ssid, "--", "802-11-wireless.hidden", isHidden ? "yes" : "no"];
 
-      UUID=$(nmcli -t -f UUID,TYPE,NAME connection show | grep ":802-11-wireless:$SSID$" | head -n1 | cut -d: -f1)
-      if [ -n "$UUID" ]; then
-          nmcli connection delete uuid "$UUID" 2>/dev/null || true
-      fi
+      if (securityKey === "wpa-psk" || securityKey === "wpa2-psk") {
+        nmArgs.push("wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password);
+      } else if (securityKey === "sae") {
+        nmArgs.push("wifi-sec.key-mgmt", "sae", "wifi-sec.psk", password);
+      } else if (securityKey === "wep") {
+        nmArgs.push("wifi-sec.key-mgmt", "none", "wifi-sec.wep-key0", password);
+      } else if (securityKey && securityKey.indexOf("-eap") !== -1) {
+        nmArgs.push("wifi-sec.key-mgmt", "wpa-eap", "802-1x.eap", eap, "802-1x.phase2-auth", phase2, "802-1x.identity", identity, "802-1x.password", password);
 
-      case "$SEC" in
-          wpa-psk|wpa2-psk)
-              nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PWD" 802-11-wireless.hidden yes
-              ;;
-          sae)
-              nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt sae wifi-sec.psk "$PWD" 802-11-wireless.hidden yes
-              ;;
-          wep)
-              nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt none wifi-sec.wep-key0 "$PWD" 802-11-wireless.hidden yes
-              ;;
-          *-eap)
-              # Enterprise not fully supported in Stage 1
-              echo "Enterprise networks not supported yet"
-              exit 1
-              ;;
-          *)
-              nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- 802-11-wireless.hidden yes
-              ;;
-      esac
-      nmcli connection up id "$SSID"
-    `;
+        if (anonIdentity) {
+          nmArgs.push("802-1x.anonymous-identity", anonIdentity);
+        }
 
-      return ["sh", "-c", script, "--", ssid, password, securityKey];
+        if (caCert) {
+          nmArgs.push("802-1x.ca-cert", caCert);
+        }
+      }
+
+      const script = `
+        SSID="$1"
+        shift
+        # Remove existing wifi profile with same SSID to avoid conflict
+        UUID=$(nmcli -t -f UUID,TYPE,NAME connection show | grep ":802-11-wireless:$SSID$" | head -n1 | cut -d: -f1)
+        if [ -n "$UUID" ]; then
+            nmcli connection delete uuid "$UUID" 2>/dev/null || true
+        fi
+        nmcli "$@"
+        nmcli connection up id "$SSID"
+      `;
+
+      return ["sh", "-c", script, "--", ssid].concat(nmArgs);
     }
     environment: ({
                     "LC_ALL": "C"
@@ -1547,39 +1623,39 @@ Singleton {
     // Try multiple common profile name patterns
     command: {
       var script = `
-ssid="$1"
-deleted=false
+        ssid="$1"
+        deleted=false
 
-# Try to find a wifi connection with this SSID and delete it
-UUID=$(nmcli -t -f UUID,TYPE,NAME connection show | grep ":802-11-wireless:$ssid$" | head -n1 | cut -d: -f1)
-if [ -n "$UUID" ]; then
-    if nmcli connection delete uuid "$UUID" 2>/dev/null; then
-        echo "Deleted profile: $ssid ($UUID)"
-        deleted=true
-    fi
-fi
-
-# Fallback: try common patterns if UUID lookup failed
-if [ "$deleted" = "false" ]; then
-    # Try "Auto $ssid" pattern
-    if nmcli connection delete id "Auto $ssid" 2>/dev/null; then
-        echo "Deleted profile: Auto $ssid"
-        deleted=true
-    fi
-
-    # Try "$ssid 1", "$ssid 2", etc. patterns
-    for i in 1 2 3; do
-        if nmcli connection delete id "$ssid $i" 2>/dev/null; then
-            echo "Deleted profile: $ssid $i"
-            deleted=true
+        # Try to find a wifi connection with this SSID and delete it
+        UUID=$(nmcli -t -f UUID,TYPE,NAME connection show | grep ":802-11-wireless:$ssid$" | head -n1 | cut -d: -f1)
+        if [ -n "$UUID" ]; then
+            if nmcli connection delete uuid "$UUID" 2>/dev/null; then
+                echo "Deleted profile: $ssid ($UUID)"
+                deleted=true
+            fi
         fi
-    done
-fi
 
-if [ "$deleted" = "false" ]; then
-    echo "No profiles found for SSID: $ssid"
-fi
-`;
+        # Fallback: try common patterns if UUID lookup failed
+        if [ "$deleted" = "false" ]; then
+            # Try "Auto $ssid" pattern
+            if nmcli connection delete id "Auto $ssid" 2>/dev/null; then
+                echo "Deleted profile: Auto $ssid"
+                deleted=true
+            fi
+
+            # Try "$ssid 1", "$ssid 2", etc. patterns
+            for i in 1 2 3; do
+                if nmcli connection delete id "$ssid $i" 2>/dev/null; then
+                    echo "Deleted profile: $ssid $i"
+                    deleted=true
+                fi
+            done
+        fi
+
+        if [ "$deleted" = "false" ]; then
+            echo "No profiles found for SSID: $ssid"
+        fi
+      `;
 
       return ["sh", "-c", script, "--", ssid];
     }
