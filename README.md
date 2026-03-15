@@ -165,16 +165,6 @@ We welcome contributions of any size - bug fixes, new features, documentation im
 
 ---
 
-## ⭐ Star History
-
-<p align="center">
-  <a href="https://github.com/noctalia-dev/noctalia-shell/stargazers">
-    <img src="https://api.noctalia.dev/stars" alt="Star History" />
-  </a>
-</p>
-
----
-
 ## 💜 Credits
 
 A heartfelt thank you to our incredible community of [**contributors**](https://github.com/noctalia-dev/noctalia-shell/graphs/contributors). We are immensely grateful for your dedicated participation and the constructive feedback you've provided, which continue to shape and improve our project for everyone.
@@ -200,3 +190,13 @@ Thank you to everyone who supports the project! 💜
 ## 📄 License
 
 MIT License - see [LICENSE](./LICENSE) for details.
+
+---
+
+## ⭐ Star History
+
+<p align="center">
+  <a href="https://github.com/noctalia-dev/noctalia-shell/stargazers">
+    <img src="https://api.noctalia.dev/stars" alt="Star History" />
+  </a>
+</p>
