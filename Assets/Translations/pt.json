@@ -1558,6 +1558,8 @@
       "installed-no-plugins-description": "Instale os plugins da seção \"Disponível\".",
       "installed-no-plugins-label": "Nenhum plugin instalado",
       "installing": "Instalando {plugin}...",
+      "notify-updates": "Notificações de atualização de plugins",
+      "notify-updates-description": "Mostrar um popup de notificação quando novas atualizações de plugins estiverem disponíveis.",
       "open-plugin-page": "Abrir página do plugin",
       "open-plugins-tab": "Abrir configurações de plugins",
       "plugin-settings-title": "Configurações do {plugin}",

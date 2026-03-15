@@ -1558,6 +1558,8 @@
       "installed-no-plugins-description": "Installeer plugins uit de sectie \"Beschikbaar\".",
       "installed-no-plugins-label": "Geen plugins geïnstalleerd",
       "installing": "{plugin} installeren...",
+      "notify-updates": "Plugin-updatemeldingen",
+      "notify-updates-description": "Toon een melding wanneer nieuwe plug-in-updates beschikbaar zijn.",
       "open-plugin-page": "Open plug-in pagina",
       "open-plugins-tab": "Open plugininstellingen",
       "plugin-settings-title": "{plugin} Instellingen",

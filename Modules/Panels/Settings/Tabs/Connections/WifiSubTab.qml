@@ -664,14 +664,20 @@ Item {
       readonly property bool isExpanded: root.infoSsid === modelData.ssid
       readonly property bool isEnterprise: NetworkService.isEnterprise(modelData.security)
 
-      function getContentColor(defaultColor = Color.mOnSurface) {
+      function getContentColors(defaultColors = [Color.mSurface, Color.mOnSurface]) {
         if (root.passwordSsid === modelData.ssid || NetworkService.connectingTo === modelData.ssid) {
-          return Color.mPrimary;
+          return [Color.mPrimary, Color.mOnPrimary];
+        }
+        if (modelData.connected && NetworkService.internetConnectivity && NetworkService.disconnectingFrom !== modelData.ssid) {
+          return [Color.mPrimary, Color.mOnPrimary];
         }
         if (NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid) {
-          return Color.mError;
+          return [Color.mError, Color.mOnError];
         }
-        return defaultColor;
+        if (modelData.connected && !NetworkService.internetConnectivity) {
+          return [Color.mError, Color.mOnError];
+        }
+        return defaultColors;
       }
 
       Layout.fillWidth: true
@@ -679,7 +685,7 @@ Item {
       radius: Style.radiusM
       clip: true
 
-      color: (modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid) ? Qt.alpha(Color.mPrimary, Math.min(1.15 - Color.panelBackgroundOpacity, 0.75)) : Color.mSurface
+      color: networkItem.getContentColors()[0]
 
       ColumnLayout {
         id: deviceColumn
@@ -701,11 +707,11 @@ Item {
             color: Color.smartAlpha(Color.mSurfaceVariant)
             Layout.alignment: Qt.AlignVCenter
 
-            NIcon {
-              anchors.centerIn: parent
-              icon: NetworkService.getSignalInfo(modelData.signal, modelData.connected).icon
-              pointSize: Style.fontSizeXXL
-              color: modelData.connected ? (NetworkService.internetConnectivity ? Color.mPrimary : Color.mError) : networkItem.getContentColor(Color.mOnSurface)
+          NIcon {
+            icon: NetworkService.signalIcon(modelData.signal, modelData.connected)
+            pointSize: Style.fontSizeXXL
+            color: networkItem.getContentColors()[1]
+            Layout.alignment: Qt.AlignVCenter
 
               MouseArea {
                 anchors.fill: parent
@@ -725,7 +731,7 @@ Item {
               pointSize: Style.fontSizeM
               font.weight: modelData.connected ? Style.fontWeightBold : Style.fontWeightMedium
               elide: Text.ElideRight
-              color: networkItem.getContentColor(Color.mOnSurface)
+              color: networkItem.getContentColors()[1]
               Layout.fillWidth: true
             }
 
@@ -735,7 +741,7 @@ Item {
               NIcon {
                 icon: NetworkService.isSecured(modelData.security) ? "lock" : "lock-open"
                 pointSize: Style.fontSizeXXS
-                color: networkItem.getContentColor(Color.mOnSurfaceVariant)
+                color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
                 visible: !modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid && NetworkService.forgettingNetwork !== modelData.ssid
               }
 
@@ -765,15 +771,7 @@ Item {
                   return NetworkService.isSecured(modelData.security) ? modelData.security : I18n.tr("wifi.panel.security-open");
                 }
                 pointSize: Style.fontSizeXXS
-                color: {
-                  if (modelData.connected) {
-                    return (NetworkService.networkConnectivity === "full") ? Color.mPrimary : Color.mError;
-                  }
-                  if (NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid) {
-                    return Color.mError;
-                  }
-                  return networkItem.getContentColor(Color.mOnSurfaceVariant);
-                }
+                color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
               }
 
               // Network speed indicators (visible when connected and speed > 0)
@@ -787,15 +785,14 @@ Item {
                   visible: SystemStatService.rxSpeed > 0
                   icon: "arrow-down"
                   pointSize: Style.fontSizeXXS
-                  color: networkItem.getContentColor(Color.mOnSurfaceVariant)
+                  color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
                 }
 
                 NText {
                   visible: SystemStatService.rxSpeed > 0
                   text: SystemStatService.formatSpeed(SystemStatService.rxSpeed)
                   pointSize: Style.fontSizeXXS
-                  color: networkItem.getContentColor(Color.mOnSurfaceVariant)
-                  elide: Text.ElideNone
+                  color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
                 }
 
                 Item {
@@ -808,15 +805,14 @@ Item {
                   visible: SystemStatService.txSpeed > 0
                   icon: "arrow-up"
                   pointSize: Style.fontSizeXXS
-                  color: networkItem.getContentColor(Color.mOnSurfaceVariant)
+                  color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
                 }
 
                 NText {
                   visible: SystemStatService.txSpeed > 0
                   text: SystemStatService.formatSpeed(SystemStatService.txSpeed)
                   pointSize: Style.fontSizeXXS
-                  color: networkItem.getContentColor(Color.mOnSurfaceVariant)
-                  elide: Text.ElideNone
+                  color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
                 }
               }
             }
@@ -832,7 +828,7 @@ Item {
             NBusyIndicator {
               visible: networkItem.isBusy
               running: visible && root.effectivelyVisible
-              color: Color.mPrimary
+              color: networkItem.getContentColors()[1]
               size: Style.baseWidgetSize * 0.5
             }
 
@@ -841,6 +837,10 @@ Item {
               icon: "info"
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.8
+              colorBg: Color.mSurfaceVariant
+              colorFg: Color.mOnSurface
+              colorBorder: "transparent"
+              colorBorderHover: "transparent"
               onClicked: {
                 if (root.infoSsid === modelData.ssid) {
                   root.infoSsid = "";
@@ -856,6 +856,10 @@ Item {
               icon: "trash"
               tooltipText: I18n.tr("tooltips.forget-network")
               baseSize: Style.baseWidgetSize * 0.8
+              colorBg: Color.mSurfaceVariant
+              colorFg: Color.mOnSurface
+              colorBorder: "transparent"
+              colorBorderHover: "transparent"
               onClicked: root.requestForget(modelData.ssid)
             }
 
@@ -863,9 +867,9 @@ Item {
               id: button
               visible: itemHover.hovered && !modelData.connected && NetworkService.connectingTo !== modelData.ssid && root.passwordSsid !== modelData.ssid
               enabled: !NetworkService.connecting && !networkItem.isBusy
-              outlined: !button.hovered
               fontSize: Style.fontSizeS
               backgroundColor: Color.mPrimary
+              textColor: Color.mOnPrimary
               text: I18n.tr("common.connect")
               onClicked: {
                 if (modelData.existing || modelData.cached || !NetworkService.isSecured(modelData.security)) {
@@ -880,9 +884,9 @@ Item {
               id: disconnectButton
               visible: itemHover.hovered && modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
               text: I18n.tr("common.disconnect")
-              outlined: !disconnectButton.hovered
               fontSize: Style.fontSizeS
-              backgroundColor: Color.mError
+              backgroundColor: Color.mSurfaceVariant
+              textColor: Color.mOnSurface
               onClicked: NetworkService.disconnect(modelData.ssid)
             }
           }

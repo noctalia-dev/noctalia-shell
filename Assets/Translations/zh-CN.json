@@ -1558,6 +1558,8 @@
       "installed-no-plugins-description": "从“可用”部分安装插件。",
       "installed-no-plugins-label": "未安装插件",
       "installing": "正在安装 {plugin}...",
+      "notify-updates": "插件更新通知",
+      "notify-updates-description": "当有新的插件更新可用时，显示通知弹窗。",
       "open-plugin-page": "打开插件页面",
       "open-plugins-tab": "打开插件设置",
       "plugin-settings-title": "{plugin} 设置",

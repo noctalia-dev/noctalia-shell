@@ -1558,6 +1558,8 @@
       "installed-no-plugins-description": "從 \"可用\"頁面來安裝外掛模組",
       "installed-no-plugins-label": "沒有安裝外掛模組",
       "installing": "正在安裝 {plugin}...",
+      "notify-updates": "外掛程式更新通知",
+      "notify-updates-description": "當有新的外掛程式更新可用時，顯示通知彈出視窗。",
       "open-plugin-page": "打開模組頁面",
       "open-plugins-tab": "開啟外掛模組設定",
       "plugin-settings-title": "{plugin} 設定",

@@ -1558,6 +1558,8 @@
       "installed-no-plugins-description": "Installera insticksmoduler från avsnittet \"Tillgängliga\".",
       "installed-no-plugins-label": "Inga insticksmoduler installerade",
       "installing": "Installerar {plugin}...",
+      "notify-updates": "Meddelanden om plugin-uppdateringar",
+      "notify-updates-description": "Visa en notifikationspopup när nya plugin-uppdateringar är tillgängliga.",
       "open-plugin-page": "Öppna insticksmodulsida",
       "open-plugins-tab": "Öppna insticksmodulinställningar",
       "plugin-settings-title": "Inställningar för {plugin}",
