@@ -79,47 +79,12 @@ Item {
 
   BarPill {
     id: pill
-
     screen: root.screen
     oppositeDirection: BarService.getPillDirection(root)
     customIconColor: Color.resolveColorKeyOptional(root.iconColorKey)
     customTextColor: Color.resolveColorKeyOptional(root.textColorKey)
-    icon: {
-      try {
-        if (NetworkService.ethernetConnected) {
-          return NetworkService.internetConnectivity ? "ethernet" : "ethernet-off";
-        }
-        let connected = false;
-        let signalStrength = 0;
-        for (const net in NetworkService.networks) {
-          if (NetworkService.networks[net].connected) {
-            connected = true;
-            signalStrength = NetworkService.networks[net].signal;
-            break;
-          }
-        }
-        return connected ? NetworkService.signalIcon(signalStrength, true) : "wifi-off";
-      } catch (error) {
-        Logger.e("Wi-Fi", "Error getting icon:", error);
-        return "wifi-off";
-      }
-    }
-    text: {
-      try {
-        if (NetworkService.ethernetConnected) {
-          return "";
-        }
-        for (const net in NetworkService.networks) {
-          if (NetworkService.networks[net].connected) {
-            return net;
-          }
-        }
-        return "";
-      } catch (error) {
-        Logger.e("Wi-Fi", "Error getting ssid:", error);
-        return "error";
-      }
-    }
+    icon: NetworkService.getIcon()
+    text: NetworkService.getStatustxt()
     autoHide: false
     forceOpen: !isBarVertical && root.displayMode === "alwaysShow"
     forceClose: isBarVertical || root.displayMode === "alwaysHide" || text === ""
@@ -134,31 +99,7 @@ Item {
       if (PanelService.getPanel("networkPanel", screen)?.isPanelOpen) {
         return "";
       }
-      try {
-        if (NetworkService.ethernetConnected) {
-          const d = NetworkService.activeEthernetDetails || ({});
-          let base = "";
-          if (d.ifname && d.ifname.length > 0)
-            base = d.ifname;
-          else if (d.connectionName && d.connectionName.length > 0)
-            base = d.connectionName;
-          else if (NetworkService.activeEthernetIf && NetworkService.activeEthernetIf.length > 0)
-            base = NetworkService.activeEthernetIf;
-          else
-            base = I18n.tr("common.ethernet");
-          const speed = (d.speed && d.speed.length > 0) ? d.speed : "";
-          return speed ? (base + " — " + speed) : base;
-        }
-        // Wi‑Fi tooltip: SSID — link speed (if available)
-        if (pill.text !== "") {
-          const w = NetworkService.activeWifiDetails || ({});
-          const rate = (w.rateShort && w.rateShort.length > 0) ? w.rateShort : (w.rate || "");
-          return rate && rate.length > 0 ? (pill.text + " — " + rate) : pill.text;
-        }
-      } catch (e) {
-        // noop
-      }
-      return I18n.tr("common.wifi");
+      return pill.text; // pill.text is exact copy of getStatustxt
     }
   }
 }
