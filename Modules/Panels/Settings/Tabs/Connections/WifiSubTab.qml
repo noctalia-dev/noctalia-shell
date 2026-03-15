@@ -648,10 +648,6 @@ Item {
     NBox {
       id: networkItem
 
-      HoverHandler {
-        id: itemHover
-      }
-
       readonly property bool isBusy: NetworkService.connectingTo === modelData.ssid || NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid
       readonly property bool isExpanded: root.infoSsid === modelData.ssid
       readonly property bool isEnterprise: NetworkService.isEnterprise(modelData.security)
@@ -661,9 +657,7 @@ Item {
           return [Color.mPrimary, Color.mOnPrimary];
         }
         if (modelData.connected && NetworkService.internetConnectivity && NetworkService.disconnectingFrom !== modelData.ssid) {
-          // Special alpha for connected item background from HEAD branch
-          let bgAlpha = Math.min(1.15 - Color.panelBackgroundOpacity, 0.75);
-          return [Qt.alpha(Color.mPrimary, bgAlpha), Color.mOnPrimary];
+          return [Color.mPrimary, Color.mOnPrimary];
         }
         if (NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid) {
           return [Color.mError, Color.mOnError];
@@ -829,7 +823,7 @@ Item {
             }
 
             NIconButton {
-              visible: itemHover.hovered && modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
+              visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
               icon: "info"
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.8
@@ -848,7 +842,7 @@ Item {
             }
 
             NIconButton {
-              visible: itemHover.hovered && !root.showOnlyLists && (modelData.existing || modelData.cached) && !modelData.connected && !networkItem.isBusy
+              visible: !root.showOnlyLists && (modelData.existing || modelData.cached) && !modelData.connected && !networkItem.isBusy
               icon: "trash"
               tooltipText: I18n.tr("tooltips.forget-network")
               baseSize: Style.baseWidgetSize * 0.8
@@ -861,7 +855,7 @@ Item {
 
             NButton {
               id: button
-              visible: itemHover.hovered && !modelData.connected && NetworkService.connectingTo !== modelData.ssid && root.passwordSsid !== modelData.ssid
+              visible: !modelData.connected && NetworkService.connectingTo !== modelData.ssid && root.passwordSsid !== modelData.ssid
               enabled: !NetworkService.connecting && !networkItem.isBusy
               fontSize: Style.fontSizeS
               backgroundColor: Color.mPrimary
@@ -878,7 +872,7 @@ Item {
 
             NButton {
               id: disconnectButton
-              visible: itemHover.hovered && modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
+              visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
               text: I18n.tr("common.disconnect")
               fontSize: Style.fontSizeS
               backgroundColor: Color.mSurfaceVariant
