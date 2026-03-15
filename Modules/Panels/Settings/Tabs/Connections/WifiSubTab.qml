@@ -687,26 +687,18 @@ Item {
           spacing: Style.marginM
           Layout.alignment: Qt.AlignVCenter
 
-          Rectangle {
-            id: signalIconBg
-            Layout.preferredWidth: Style.baseWidgetSize
-            Layout.preferredHeight: Style.baseWidgetSize
-            radius: Style.radiusM
-            color: Color.smartAlpha(Color.mSurfaceVariant)
-            Layout.alignment: Qt.AlignVCenter
+          NIcon {
+            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+            horizontalAlignment: Text.AlignLeft
+            icon: NetworkService.getSignalInfo(modelData.signal, modelData.connected).icon
+            pointSize: Style.fontSizeXXL
+            color: networkItem.getContentColors()[1]
 
-            NIcon {
-              anchors.centerIn: parent
-              icon: NetworkService.getSignalInfo(modelData.signal, modelData.connected).icon
-              pointSize: Style.fontSizeXXL
-              color: networkItem.getContentColors()[1]
-
-              MouseArea {
-                anchors.fill: parent
-                hoverEnabled: true
-                onEntered: TooltipService.show(parent, NetworkService.getSignalInfo(modelData.signal, modelData.connected).label + " (" + modelData.signal + "%)")
-                onExited: TooltipService.hide()
-              }
+            MouseArea {
+              anchors.fill: parent
+              hoverEnabled: true
+              onEntered: TooltipService.show(parent, NetworkService.getSignalInfo(modelData.signal, modelData.connected).label + " (" + modelData.signal + "%)")
+              onExited: TooltipService.hide()
             }
           }
 
