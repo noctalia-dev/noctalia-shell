@@ -271,40 +271,52 @@ Item {
     Settings.data.dock.pinnedApps = pinnedApps;
   }
 
-  // Deferred to next event-loop tick via Qt.callLater to avoid re-entrant incubation:
-  // Calling localWorkspaces.append() synchronously there causes the inner Repeater to
-  // create WorkspacePill delegates mid-finalization, corrupting the V4 heap
-  // (SIGSEGV in QV4::Object::insertMember).
-  Component.onCompleted: Qt.callLater(refreshWorkspaces)
+  // Deferred to next event-loop iteration via Timer { interval: 0 } to avoid
+  // re-entrant incubation: Qt.callLater() can still fire within the same event
+  // processing cycle, so it is not sufficient. localWorkspaces.append() inside
+  // refreshWorkspaces() causes the Repeater to create WorkspacePill delegates
+  // mid-incubation, corrupting the V4 heap (SIGSEGV in QV4::Object::insertMember).
+  Timer {
+    id: refreshTimer
+    interval: 0
+    onTriggered: root.refreshWorkspaces()
+  }
+
+  function scheduleRefresh() {
+    if (!root.isDestroying)
+      refreshTimer.restart();
+  }
+
+  Component.onCompleted: scheduleRefresh()
 
   Component.onDestruction: {
     root.isDestroying = true;
   }
 
-  onScreenChanged: Qt.callLater(refreshWorkspaces)
-  onScreenNameChanged: Qt.callLater(refreshWorkspaces)
-  onHideUnoccupiedChanged: Qt.callLater(refreshWorkspaces)
+  onScreenChanged: scheduleRefresh()
+  onScreenNameChanged: scheduleRefresh()
+  onHideUnoccupiedChanged: scheduleRefresh()
   onAppVisibleChanged: {
     if (appVisible) {
-      Qt.callLater(refreshWorkspaces);
+      scheduleRefresh();
     }
   }
 
   Connections {
     target: CompositorService
     function onWorkspacesChanged() {
-      Qt.callLater(refreshWorkspaces);
+      scheduleRefresh();
     }
     function onWindowListChanged() {
       if (appVisible || showLabelsOnlyWhenOccupied) {
         root.windowRevision++;
-        Qt.callLater(refreshWorkspaces);
+        scheduleRefresh();
       }
     }
     function onActiveWindowChanged() {
       if (appVisible) {
         root.windowRevision++;
-        Qt.callLater(refreshWorkspaces);
+        scheduleRefresh();
       }
     }
   }
