@@ -362,6 +362,7 @@
     "showLauncherIcon": false,
     "launcherPosition": "end",
     "launcherUseDistroLogo": false,
+    "launcherIcon": "",
     "launcherIconColor": "none",
     "pinnedStatic": false,
     "inactiveIndicators": false,

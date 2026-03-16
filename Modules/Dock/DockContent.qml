@@ -237,7 +237,13 @@ Item {
               return -1;
             }
             readonly property var launcherMetadata: BarWidgetRegistry.widgetMetadata["Launcher"]
-            readonly property string launcherIcon: launcherWidgetSettings.icon || (launcherMetadata && launcherMetadata.icon ? launcherMetadata.icon : "search")
+            readonly property string launcherIcon: {
+              if (Settings.data.dock.launcherIcon !== undefined && Settings.data.dock.launcherIcon !== "")
+                return Settings.data.dock.launcherIcon;
+              if (launcherWidgetSettings.icon !== undefined && launcherWidgetSettings.icon !== "")
+                return launcherWidgetSettings.icon;
+              return (launcherMetadata && launcherMetadata.icon) ? launcherMetadata.icon : "search";
+            }
             readonly property string launcherIconColorKey: {
               if (Settings.data.dock.launcherIconColor !== undefined)
                 return Settings.data.dock.launcherIconColor;
@@ -279,7 +285,7 @@ Item {
                 color: Color.resolveColorKey(launcherButton.launcherIconColorKey)
                 visible: !launcherButton.launcherUseDistroLogo
               }
-              
+
               IconImage {
                 anchors.centerIn: parent
                 width: dockRoot.iconSize * 0.8
