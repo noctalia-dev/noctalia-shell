@@ -237,7 +237,13 @@ Item {
               return -1;
             }
             readonly property var launcherMetadata: BarWidgetRegistry.widgetMetadata["Launcher"]
-            readonly property string launcherIcon: launcherWidgetSettings.icon || (launcherMetadata && launcherMetadata.icon ? launcherMetadata.icon : "search")
+            readonly property string launcherIcon: {
+              if (Settings.data.dock.launcherIcon !== undefined && Settings.data.dock.launcherIcon !== "")
+                return Settings.data.dock.launcherIcon;
+              if (launcherWidgetSettings.icon !== undefined && launcherWidgetSettings.icon !== "")
+                return launcherWidgetSettings.icon;
+              return (launcherMetadata && launcherMetadata.icon) ? launcherMetadata.icon : "search";
+            }
             readonly property string launcherIconColorKey: {
               if (Settings.data.dock.launcherIconColor !== undefined)
                 return Settings.data.dock.launcherIconColor;
@@ -246,6 +252,15 @@ Item {
               if (launcherMetadata && launcherMetadata.iconColor !== undefined)
                 return launcherMetadata.iconColor;
               return "none";
+            }
+            readonly property bool launcherUseDistroLogo: {
+              if (Settings.data.dock.launcherUseDistroLogo !== undefined)
+                return Settings.data.dock.launcherUseDistroLogo;
+              if (launcherWidgetSettings.useDistroLogo !== undefined)
+                return launcherWidgetSettings.useDistroLogo;
+              if (launcherMetadata && launcherMetadata.useDistroLogo !== undefined)
+                return launcherMetadata.useDistroLogo;
+              return false;
             }
 
             Item {
@@ -268,6 +283,24 @@ Item {
                 icon: launcherButton.launcherIcon
                 pointSize: dockRoot.iconSize * 0.7
                 color: Color.resolveColorKey(launcherButton.launcherIconColorKey)
+                visible: !launcherButton.launcherUseDistroLogo
+              }
+
+              IconImage {
+                anchors.centerIn: parent
+                width: dockRoot.iconSize * 0.8
+                height: width
+                source: launcherButton.launcherUseDistroLogo ? HostService.osLogo : ""
+                visible: source !== ""
+                smooth: true
+                asynchronous: true
+                layer.enabled: visible
+                layer.effect: ShaderEffect {
+                  property color targetColor: Color.resolveColorKey(launcherButton.launcherIconColorKey)
+                  property real colorizeMode: 2.0
+
+                  fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/appicon_colorize.frag.qsb")
+                }
               }
             }
 

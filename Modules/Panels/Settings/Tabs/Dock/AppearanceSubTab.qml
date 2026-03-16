@@ -1,13 +1,17 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
 import qs.Commons
+import qs.Services.System
 import qs.Widgets
 
 ColumnLayout {
   id: root
   spacing: Style.marginL
   Layout.fillWidth: true
+
+  readonly property color launcherPreviewColor: Color.resolveColorKey((Settings.data.dock.launcherIconColor !== undefined) ? Settings.data.dock.launcherIconColor : "none")
 
   NToggle {
     Layout.fillWidth: true
@@ -348,6 +352,74 @@ ColumnLayout {
       currentKey: Settings.data.dock.launcherPosition
       defaultValue: Settings.getDefaultValue("dock.launcherPosition")
       onSelected: key => Settings.data.dock.launcherPosition = key
+    }
+
+    NToggle {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.showLauncherIcon
+      label: I18n.tr("panels.dock.appearance-launcher-use-distro-logo-label")
+      description: I18n.tr("panels.dock.appearance-launcher-use-distro-logo-description")
+      checked: Settings.data.dock.launcherUseDistroLogo
+      defaultValue: Settings.getDefaultValue("dock.launcherUseDistroLogo")
+      onToggled: checked => Settings.data.dock.launcherUseDistroLogo = checked
+    }
+
+    RowLayout {
+      visible: Settings.data.dock.showLauncherIcon
+      Layout.fillWidth: true
+
+      NLabel {
+        Layout.fillWidth: true
+        label: I18n.tr("panels.dock.appearance-launcher-icon-label")
+        description: I18n.tr("panels.dock.appearance-launcher-icon-description")
+      }
+
+      NIconButton {
+        visible: !Settings.data.dock.launcherUseDistroLogo
+        enabled: !Settings.data.dock.launcherUseDistroLogo
+        icon: (Settings.data.dock.launcherIcon && Settings.data.dock.launcherIcon !== "") ? Settings.data.dock.launcherIcon : "search"
+        colorFg: root.launcherPreviewColor
+        colorFgHover: root.launcherPreviewColor
+        tooltipText: I18n.tr("bar.control-center.browse-library")
+        onClicked: launcherIconPicker.open()
+      }
+
+      Rectangle {
+        visible: Settings.data.dock.launcherUseDistroLogo
+        width: Style.toOdd(Style.baseWidgetSize * Style.uiScaleRatio)
+        height: width
+        radius: Math.min(Style.iRadiusL, width / 2)
+        color: Color.smartAlpha(Color.mSurfaceVariant)
+        border.color: Color.mOutline
+        border.width: Style.borderS
+        opacity: Style.opacityMedium
+
+        Image {
+          anchors.centerIn: parent
+          width: parent.width * 0.62
+          height: width
+          source: HostService.osLogo
+          fillMode: Image.PreserveAspectFit
+          smooth: true
+          asynchronous: true
+          layer.enabled: visible
+          layer.effect: ShaderEffect {
+            property color targetColor: root.launcherPreviewColor
+            property real colorizeMode: 2.0
+
+            fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/appicon_colorize.frag.qsb")
+          }
+        }
+      }
+    }
+
+    NIconPicker {
+      id: launcherIconPicker
+      initialIcon: (Settings.data.dock.launcherIcon && Settings.data.dock.launcherIcon !== "") ? Settings.data.dock.launcherIcon : "search"
+      onIconSelected: iconName => {
+                        Settings.data.dock.launcherIcon = iconName;
+                        Settings.saveImmediate();
+                      }
     }
 
     NColorChoice {
