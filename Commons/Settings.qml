@@ -555,6 +555,7 @@ Singleton {
       property bool colorizeIcons: false
       property bool showLauncherIcon: false
       property string launcherPosition: "end" // "start", "end"
+      property bool launcherUseDistroLogo: false
       property string launcherIconColor: "none"
       property bool pinnedStatic: false
       property bool inactiveIndicators: false

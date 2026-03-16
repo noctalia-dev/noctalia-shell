@@ -350,6 +350,16 @@ ColumnLayout {
       onSelected: key => Settings.data.dock.launcherPosition = key
     }
 
+    NToggle {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.showLauncherIcon
+      label: I18n.tr("panels.dock.appearance-launcher-use-distro-logo-label")
+      description: I18n.tr("panels.dock.appearance-launcher-use-distro-logo-description")
+      checked: Settings.data.dock.launcherUseDistroLogo
+      defaultValue: Settings.getDefaultValue("dock.launcherUseDistroLogo")
+      onToggled: checked => Settings.data.dock.launcherUseDistroLogo = checked
+    }
+
     NColorChoice {
       Layout.fillWidth: true
       visible: Settings.data.dock.showLauncherIcon
