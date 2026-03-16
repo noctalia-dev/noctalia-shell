@@ -648,10 +648,6 @@ Item {
     NBox {
       id: networkItem
 
-      HoverHandler {
-        id: itemHover
-      }
-
       readonly property bool isBusy: NetworkService.connectingTo === modelData.ssid || NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid
       readonly property bool isExpanded: root.infoSsid === modelData.ssid
       readonly property bool isEnterprise: NetworkService.isEnterprise(modelData.security)
@@ -819,7 +815,7 @@ Item {
             }
 
             NIconButton {
-              visible: itemHover.hovered && modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
+              visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
               icon: "info"
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.75
@@ -838,7 +834,7 @@ Item {
             }
 
             NIconButton {
-              visible: itemHover.hovered && !root.showOnlyLists && (modelData.existing || modelData.cached) && !modelData.connected && !networkItem.isBusy
+              visible: !root.showOnlyLists && (modelData.existing || modelData.cached) && !modelData.connected && !networkItem.isBusy
               icon: "trash"
               tooltipText: I18n.tr("tooltips.forget-network")
               baseSize: Style.baseWidgetSize * 0.75
@@ -883,7 +879,7 @@ Item {
           visible: networkItem.isExpanded
           Layout.fillWidth: true
           implicitHeight: infoColumn.implicitHeight + Style.margin2S
-          radius: Style.radiusS
+          radius: Style.radiusXS
           color: Color.mSurfaceVariant
           border.width: Style.borderS
           border.color: Style.boxBorderColor
