@@ -836,8 +836,9 @@ Loader {
           WlrLayershell.namespace: "noctalia-dock-" + (screen?.name || "unknown")
           WlrLayershell.exclusionMode: exclusive ? ExclusionMode.Auto : ExclusionMode.Ignore
 
-          // Slide animation: content slides inside a fixed window, no margin animation
-          property int slideDistance: (isVertical ? dockContainerWrapper.contentWidth : dockContainerWrapper.contentHeight) + floatingMargin + 10
+          // Slide animation: content slides inside a fixed window, no margin animation.
+          // Only reserve extra space for sliding when auto-hide is enabled
+          property int slideDistance: autoHide ? ((isVertical ? dockContainerWrapper.contentWidth : dockContainerWrapper.contentHeight) + floatingMargin + 10) : 0
           property real slideOffset: hidden ? slideDistance : 0
 
           Behavior on slideOffset {
@@ -864,7 +865,9 @@ Loader {
             }
           }
 
-          // Window sized to fit content + slide distance so content can slide off-edge
+          // Window sized to fit content + slide distance so content can slide off-edge.
+          // When auto-hide is disabled, slideDistance is 0 so the window (and thus
+          // the exclusion zone) matches the dock content size.
           implicitWidth: dockContainerWrapper.width + (isVertical ? slideDistance : 0)
           implicitHeight: dockContainerWrapper.height + (!isVertical ? slideDistance : 0)
 
