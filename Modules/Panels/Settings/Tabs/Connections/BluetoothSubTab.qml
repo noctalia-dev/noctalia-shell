@@ -385,9 +385,7 @@ Item {
           return [Color.mPrimary, Color.mOnPrimary];
         }
         if (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) {
-          // Special alpha for connected item background
-          let bgAlpha = Math.min(1.15 - Color.panelBackgroundOpacity, 0.75);
-          return [Qt.alpha(Color.mPrimary, bgAlpha), Color.mOnPrimary];
+          return [Color.mPrimary, Color.mOnPrimary];
         }
         if (modelData.blocked || modelData.state === BluetoothDeviceState.Disconnecting) {
           return [Color.mError, Color.mOnError];
@@ -482,8 +480,15 @@ Item {
           RowLayout {
             spacing: Style.marginS
 
+            NBusyIndicator {
+              visible: isBusy
+              running: visible && root.effectivelyVisible
+              color: device.getContentColors()[1]
+              size: Style.baseWidgetSize * 0.5
+            }
+
             NIconButton {
-              visible: itemHover.hovered && modelData.connected
+              visible: itemHover.hovered && modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting
               icon: "info"
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.75
@@ -503,10 +508,11 @@ Item {
 
             NButton {
               id: button
-              visible: (modelData.state !== BluetoothDeviceState.Connecting)
+              visible: modelData.state !== BluetoothDeviceState.Connecting && modelData.state !== BluetoothDeviceState.Disconnecting
               enabled: (canConnect || canDisconnect || (root.showOnlyLists ? false : canPair)) && !isBusy
               fontSize: Style.fontSizeS
-              backgroundColor: modelData.connected ? Color.mError : Color.mPrimary
+              backgroundColor: modelData.connected ? Color.mSurfaceVariant : Color.mPrimary
+              textColor: modelData.connected ? Color.mOnSurface : Color.mOnPrimary
               text: {
                 if (modelData.pairing)
                   return I18n.tr("common.pairing");
@@ -518,7 +524,6 @@ Item {
                   return I18n.tr("common.pair");
                 return I18n.tr("common.connect");
               }
-              icon: (isBusy ? "busy" : null)
               onClicked: {
                 if (modelData.connected) {
                   BluetoothService.disconnectDevice(modelData);

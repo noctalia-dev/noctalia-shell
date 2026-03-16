@@ -331,14 +331,14 @@ Item {
     }
 
     Item {
-      visible: !showOnlyLists
+      visible: !showOnlyLists && Settings.data.network.wifiEnabled
       Layout.fillWidth: true
     }
 
     // Airplane Mode
     NBox {
       id: miscSettingsBox
-      visible: !root.showOnlyLists && Settings.data.network.wifiEnabled
+      visible: !root.showOnlyLists
       Layout.fillWidth: true
       Layout.preferredHeight: miscSettingsCol.implicitHeight + Style.margin2XL
       color: Color.mSurface
