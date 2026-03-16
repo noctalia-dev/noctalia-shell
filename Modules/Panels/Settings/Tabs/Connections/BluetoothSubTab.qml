@@ -385,9 +385,7 @@ Item {
           return [Color.mPrimary, Color.mOnPrimary];
         }
         if (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) {
-          // Special alpha for connected item background
-          let bgAlpha = Math.min(1.15 - Color.panelBackgroundOpacity, 0.75);
-          return [Qt.alpha(Color.mPrimary, bgAlpha), Color.mOnPrimary];
+          return [Color.mPrimary, Color.mOnPrimary];
         }
         if (modelData.blocked || modelData.state === BluetoothDeviceState.Disconnecting) {
           return [Color.mError, Color.mOnError];
@@ -482,11 +480,22 @@ Item {
           RowLayout {
             spacing: Style.marginS
 
+            NBusyIndicator {
+              visible: isBusy
+              running: visible && root.effectivelyVisible
+              color: device.getContentColors()[1]
+              size: Style.baseWidgetSize * 0.5
+            }
+
             NIconButton {
-              visible: itemHover.hovered && modelData.connected
+              visible: itemHover.hovered && modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting
               icon: "info"
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.75
+              colorBg: Color.mSurfaceVariant
+              colorFg: Color.mOnSurface
+              colorBorder: "transparent"
+              colorBorderHover: "transparent"
               onClicked: {
                 const key = BluetoothService.deviceKey(modelData);
                 root.expandedDeviceKey = (root.expandedDeviceKey === key) ? "" : key;
@@ -498,15 +507,20 @@ Item {
               icon: "trash"
               tooltipText: I18n.tr("common.unpair")
               baseSize: Style.baseWidgetSize * 0.75
+              colorBg: Color.mPrimary
+              colorFg: Color.mOnPrimary
+              colorBorder: "transparent"
+              colorBorderHover: "transparent"
               onClicked: BluetoothService.unpairDevice(modelData)
             }
 
             NButton {
               id: button
-              visible: (modelData.state !== BluetoothDeviceState.Connecting)
+              visible: modelData.state !== BluetoothDeviceState.Connecting && modelData.state !== BluetoothDeviceState.Disconnecting
               enabled: (canConnect || canDisconnect || (root.showOnlyLists ? false : canPair)) && !isBusy
               fontSize: Style.fontSizeS
-              backgroundColor: modelData.connected ? Color.mError : Color.mPrimary
+              backgroundColor: modelData.connected ? Color.mSurfaceVariant : Color.mPrimary
+              textColor: modelData.connected ? Color.mOnSurface : Color.mOnPrimary
               text: {
                 if (modelData.pairing)
                   return I18n.tr("common.pairing");
@@ -518,7 +532,6 @@ Item {
                   return I18n.tr("common.pair");
                 return I18n.tr("common.connect");
               }
-              icon: (isBusy ? "busy" : null)
               onClicked: {
                 if (modelData.connected) {
                   BluetoothService.disconnectDevice(modelData);
@@ -542,7 +555,7 @@ Item {
           radius: Style.radiusS
           color: Color.mSurfaceVariant
           border.width: Style.borderS
-          border.color: Color.mOutline
+          border.color: Style.boxBorderColor
           clip: true
 
           NIconButton {
@@ -551,7 +564,7 @@ Item {
             anchors.margins: Style.marginS
             icon: root.detailsGrid ? "layout-list" : "layout-grid"
             tooltipText: root.detailsGrid ? I18n.tr("tooltips.list-view") : I18n.tr("tooltips.grid-view")
-            baseSize: Style.baseWidgetSize * 0.75
+            baseSize: Style.baseWidgetSize * 0.65
             onClicked: {
               root.detailsGrid = !root.detailsGrid;
               Settings.data.network.bluetoothDetailsViewMode = root.detailsGrid ? "grid" : "list";
