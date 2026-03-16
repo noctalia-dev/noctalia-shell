@@ -272,10 +272,22 @@ Item {
             }
           }
 
-          windowsList.push(windowData);
-          windowCache[windowData.id] = windowData;
+          // Normalize to a plain, backend-independent window object
+          const normalized = {
+            "id": windowData.id ? String(windowData.id) : "",
+            "title": windowData.title ? String(windowData.title) : "",
+            "appId": windowData.appId ? String(windowData.appId) : "",
+            "workspaceId": (typeof windowData.workspaceId === "number" && !isNaN(windowData.workspaceId)) ? windowData.workspaceId : -1,
+            "isFocused": windowData.isFocused === true,
+            "output": windowData.output ? String(windowData.output) : "",
+            "x": (typeof windowData.x === "number" && !isNaN(windowData.x)) ? windowData.x : 0,
+            "y": (typeof windowData.y === "number" && !isNaN(windowData.y)) ? windowData.y : 0
+          };
 
-          if (windowData.isFocused) {
+          windowsList.push(normalized);
+          windowCache[normalized.id] = normalized;
+
+          if (normalized.isFocused) {
             newFocusedIndex = windowsList.length - 1;
           }
         }
@@ -323,6 +335,10 @@ Item {
         }
       } catch (e) {}
 
+      // Normalize coordinates to safe numeric values
+      const safeX = (typeof x === "number" && !isNaN(x)) ? x : 0;
+      const safeY = (typeof y === "number" && !isNaN(y)) ? y : 0;
+
       return {
         "id": windowId,
         "title": title,
@@ -330,8 +346,8 @@ Item {
         "workspaceId": wsId || -1,
         "isFocused": focused,
         "output": output,
-        "x": x,
-        "y": y
+        "x": safeX,
+        "y": safeY
       };
     } catch (e) {
       return null;
