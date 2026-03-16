@@ -54,11 +54,11 @@ ColumnLayout {
 
       NCheckbox {
         required property string modelData
-
         label: {
           var key = "wallpaper.transitions." + modelData;
           return I18n.tr(key);
         }
+        labelSize: Style.fontSizeM
         checked: Settings.data.wallpaper.transitionType.includes(modelData)
         onToggled: {
           var arr = Array.from(Settings.data.wallpaper.transitionType);
