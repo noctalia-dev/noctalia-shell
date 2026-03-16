@@ -1200,7 +1200,7 @@
   {
     "labelKey": "panels.dock.appearance-launcher-icon-label",
     "descriptionKey": "panels.dock.appearance-launcher-icon-description",
-    "widget": "NIconButton",
+    "widget": "NLabel",
     "tab": 5,
     "tabLabel": "panels.dock.title",
     "subTab": 0,
