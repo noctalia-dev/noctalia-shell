@@ -236,6 +236,7 @@ Item {
   // Safe window update
   function safeUpdateWindows() {
     try {
+      Logger.d("HyprlandService", "safeUpdateWindows() start");
       const windowsList = [];
       windowCache = {};
 
@@ -246,6 +247,7 @@ Item {
       }
 
       const hlToplevels = Hyprland.toplevels.values;
+      Logger.d("HyprlandService", "safeUpdateWindows() toplevels:", hlToplevels.length);
       let newFocusedIndex = -1;
 
       // Get active workspaces to filter focus
@@ -294,6 +296,7 @@ Item {
       }
 
       windows = toSortedWindowList(windowsList);
+      Logger.d("HyprlandService", "safeUpdateWindows() windows after sort:", windows.length);
 
       if (newFocusedIndex !== focusedWindowIndex) {
         focusedWindowIndex = newFocusedIndex;
