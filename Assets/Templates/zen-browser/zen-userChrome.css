@@ -86,6 +86,7 @@
 #stop-button .toolbarbutton-icon,
 #PanelUI-menu-button .toolbarbutton-icon,
 #unified-extensions-button .toolbarbutton-icon,
+#nav-bar-overflow-button .toolbarbutton-icon,
 #zen-toggle-compact-mode .toolbarbutton-icon {
   fill: var(--primary) !important;
   color: var(--primary) !important;
