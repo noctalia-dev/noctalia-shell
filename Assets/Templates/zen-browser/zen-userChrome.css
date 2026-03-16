@@ -115,16 +115,25 @@ toolbar .toolbarbutton-1 {
   color: var(--text) !important;
 }
 
-#urlbar-background {
-  background-color: var(--surface) !important;
+#urlbar-input::selection {
+  background-color: var(--primary) !important;
+  color: var(--on_primary) !important;
+}
+
+.urlbar-background {
+  background-color: var(--base) !important;
 }
 
 #urlbar-input-container {
-  background-color: transparent !important;
+  background-color: var(--base) !important;
 }
 
 .urlbarView-url {
   color: var(--primary) !important;
+}
+
+.urlbarView-favicon {
+  background-color: var(--base) !important;
 }
 
 #urlbar-results {
