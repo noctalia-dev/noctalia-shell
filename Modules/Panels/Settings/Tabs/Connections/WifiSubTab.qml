@@ -842,8 +842,8 @@ Item {
               icon: "trash"
               tooltipText: I18n.tr("tooltips.forget-network")
               baseSize: Style.baseWidgetSize * 0.75
-              colorBg: Color.mSurfaceVariant
-              colorFg: Color.mOnSurface
+              colorBg: Color.mPrimary
+              colorFg: Color.mOnPrimary
               colorBorder: "transparent"
               colorBorderHover: "transparent"
               onClicked: root.requestForget(modelData.ssid)
@@ -886,7 +886,7 @@ Item {
           radius: Style.radiusS
           color: Color.mSurfaceVariant
           border.width: Style.borderS
-          border.color: Color.mOutline
+          border.color: Style.boxBorderColor
           clip: true
 
           onVisibleChanged: {
@@ -903,7 +903,7 @@ Item {
             anchors.margins: Style.marginS
             icon: root.detailsGrid ? "layout-list" : "layout-grid"
             tooltipText: root.detailsGrid ? I18n.tr("tooltips.list-view") : I18n.tr("tooltips.grid-view")
-            baseSize: Style.baseWidgetSize * 0.75
+            baseSize: Style.baseWidgetSize * 0.65
             onClicked: {
               root.detailsGrid = !root.detailsGrid;
               Settings.data.network.wifiDetailsViewMode = root.detailsGrid ? "grid" : "list";

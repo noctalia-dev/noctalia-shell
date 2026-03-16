@@ -492,6 +492,10 @@ Item {
               icon: "info"
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.75
+              colorBg: Color.mSurfaceVariant
+              colorFg: Color.mOnSurface
+              colorBorder: "transparent"
+              colorBorderHover: "transparent"
               onClicked: {
                 const key = BluetoothService.deviceKey(modelData);
                 root.expandedDeviceKey = (root.expandedDeviceKey === key) ? "" : key;
@@ -503,6 +507,10 @@ Item {
               icon: "trash"
               tooltipText: I18n.tr("common.unpair")
               baseSize: Style.baseWidgetSize * 0.75
+              colorBg: Color.mPrimary
+              colorFg: Color.mOnPrimary
+              colorBorder: "transparent"
+              colorBorderHover: "transparent"
               onClicked: BluetoothService.unpairDevice(modelData)
             }
 
@@ -547,7 +555,7 @@ Item {
           radius: Style.radiusS
           color: Color.mSurfaceVariant
           border.width: Style.borderS
-          border.color: Color.mOutline
+          border.color: Style.boxBorderColor
           clip: true
 
           NIconButton {
@@ -556,7 +564,7 @@ Item {
             anchors.margins: Style.marginS
             icon: root.detailsGrid ? "layout-list" : "layout-grid"
             tooltipText: root.detailsGrid ? I18n.tr("tooltips.list-view") : I18n.tr("tooltips.grid-view")
-            baseSize: Style.baseWidgetSize * 0.75
+            baseSize: Style.baseWidgetSize * 0.65
             onClicked: {
               root.detailsGrid = !root.detailsGrid;
               Settings.data.network.bluetoothDetailsViewMode = root.detailsGrid ? "grid" : "list";
