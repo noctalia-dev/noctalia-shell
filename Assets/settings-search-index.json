@@ -1186,6 +1186,30 @@
     ]
   },
   {
+    "labelKey": "panels.dock.appearance-launcher-use-distro-logo-label",
+    "descriptionKey": "panels.dock.appearance-launcher-use-distro-logo-description",
+    "widget": "NToggle",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance",
+    "visibleWhen": [
+      "Settings.data.dock.showLauncherIcon"
+    ]
+  },
+  {
+    "labelKey": "panels.dock.appearance-launcher-icon-label",
+    "descriptionKey": "panels.dock.appearance-launcher-icon-description",
+    "widget": "NIconButton",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance",
+    "visibleWhen": [
+      "Settings.data.dock.showLauncherIcon"
+    ]
+  },
+  {
     "labelKey": "common.select-icon-color",
     "descriptionKey": null,
     "widget": "NColorChoice",
