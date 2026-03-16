@@ -72,33 +72,8 @@ Item {
   Loader {
     id: loader
     anchors.fill: parent
-    asynchronous: false
-
-    // Deferred activation to prevent re-entrant incubation crash:
-    // When ListModel.append() creates this delegate, the Repeater is mid-incubation.
-    // If this Loader activates synchronously (asynchronous: false) during delegate
-    // finalization, it triggers nested QQmlIncubatorPrivate::incubate which corrupts
-    // the V4 heap (SIGSEGV in QV4::Object::insertMember).
-    // Deferring to the next event loop iteration breaks the nesting.
-    property bool _ready: false
-    active: _ready && root.checkWidgetExists() && (root.reloadCounter >= 0)
-
-    Timer {
-      id: activateTimer
-      interval: 0
-      onTriggered: loader._ready = true
-    }
-
-    Component.onCompleted: activateTimer.start()
-
-    // Reset _ready when reloadCounter changes to force a deferred re-activation
-    Connections {
-      target: root
-      function onReloadCounterChanged() {
-        loader._ready = false;
-        activateTimer.restart();
-      }
-    }
+    asynchronous: true
+    active: root.checkWidgetExists() && (root.reloadCounter >= 0)
 
     sourceComponent: {
       // Depend on reloadCounter to force re-fetch of component
