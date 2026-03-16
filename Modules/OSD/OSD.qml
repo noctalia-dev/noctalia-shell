@@ -29,7 +29,9 @@ Variants {
 
     required property ShellScreen modelData
 
-    active: false
+    // Keep PanelWindow always loaded to avoid creating Wayland surfaces during
+    // monitor hotplug, which races with wl_output teardown and crashes.
+    active: true
 
     // OSD State
     property int currentOSDType: -1 // OSD.Type enum value, -1 means none
@@ -222,25 +224,14 @@ Variants {
 
       currentOSDType = type;
 
-      if (!root.active) {
-        root.active = true;
-      }
-
       if (root.item) {
         root.item.showOSD();
-      } else {
-        Qt.callLater(() => {
-                       if (root.item)
-                       root.item.showOSD();
-                     });
       }
     }
 
     function hideOSD() {
       if (root.item?.osdItem) {
         root.item.osdItem.hideImmediately();
-      } else if (root.active) {
-        root.active = false;
       }
     }
 
@@ -508,6 +499,9 @@ Variants {
       implicitHeight: verticalMode ? (isShortMode ? lockKeyVHeight : longVHeight) : longHHeight
       color: "transparent"
 
+      // Click-through — OSD is display-only, no input needed
+      mask: Region {}
+
       WlrLayershell.namespace: "noctalia-osd-" + (screen?.name || "unknown")
       WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
       WlrLayershell.layer: Settings.data.osd?.overlayLayer ? WlrLayer.Overlay : WlrLayer.Top
@@ -547,7 +541,6 @@ Variants {
             osdItem.visible = false;
             root.currentOSDType = -1;
             root.lastLockKeyChanged = "";
-            root.active = false;
           }
         }
 
@@ -837,7 +830,6 @@ Variants {
           osdItem.scale = 0.85;
           osdItem.visible = false;
           root.currentOSDType = -1;
-          root.active = false;
         }
       }
 
