@@ -7,7 +7,6 @@ import qs.Widgets
 Popup {
   id: root
   modal: true
-  closePolicy: Popup.NoAutoClose
   dim: true
   anchors.centerIn: parent
 

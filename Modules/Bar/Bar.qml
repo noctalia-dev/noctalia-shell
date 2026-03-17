@@ -142,18 +142,13 @@ Item {
     }
   }
 
-  // Initialize models — deferred via Timer (Qt.callLater can fire in same event cycle)
-  // to avoid re-entrant incubation: Component.onCompleted fires during finalization,
+  // Initialize models — deferred to next event-loop tick via Qt.callLater to avoid
+  // re-entrant incubation: Component.onCompleted fires during QQmlObjectCreator::finalize,
   // and ListModel.append synchronously creates Repeater delegates whose own finalization
   // can corrupt the V4 heap (SIGSEGV in QV4::Object::insertMember).
-  Timer {
-    id: initModelsTimer
-    interval: 0
-    onTriggered: root._initModels()
-  }
   Component.onCompleted: {
     Logger.d("Bar", "Bar Component.onCompleted for screen:", screen?.name);
-    initModelsTimer.restart();
+    Qt.callLater(root._initModels);
   }
 
   function _initModels() {

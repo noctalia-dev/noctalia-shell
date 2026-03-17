@@ -20,7 +20,7 @@ Singleton {
   readonly property bool hasInput: !!source
   readonly property list<PwNode> sinks: deviceNodes.sinks
   readonly property list<PwNode> sources: deviceNodes.sources
-  readonly property real maxVolume: Settings.data.audio.volumeOverdrive ? 1.5 : 1.0
+
   readonly property real epsilon: 0.005
 
   // Fallback state sourced from wpctl when PipeWire node values go stale.
@@ -30,10 +30,11 @@ Singleton {
   property bool wpctlOutputMuted: true
 
   function clampOutputVolume(vol: real): real {
+    const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
     if (vol === undefined || isNaN(vol)) {
       return 0;
     }
-    return Math.max(0, Math.min(root.maxVolume, vol));
+    return Math.max(0, Math.min(maxVolume, vol));
   }
 
   function refreshWpctlOutputState(): void {
@@ -68,9 +69,9 @@ Singleton {
       return clampOutputVolume(wpctlOutputVolume);
     }
 
-    if (!sink?.audio) {
-      return 0;
-    }
+    if (!sink?.audio)
+    return 0;
+
     return clampOutputVolume(sink.audio.volume);
   }
   readonly property bool muted: {
@@ -82,14 +83,13 @@ Singleton {
 
   // Input Volume - read directly from device
   readonly property real inputVolume: {
-    if (!source?.audio) {
-      return 0;
-    }
+    if (!source?.audio)
+    return 0;
     const vol = source.audio.volume;
-    if (vol === undefined || isNaN(vol)) {
-      return 0;
-    }
-    return Math.max(0, Math.min(root.maxVolume, vol));
+    if (vol === undefined || isNaN(vol))
+    return 0;
+    const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+    return Math.max(0, Math.min(maxVolume, vol));
   }
   readonly property bool inputMuted: source?.audio?.muted ?? true
 
@@ -299,9 +299,8 @@ Singleton {
   }
 
   function getAppKey(node): string {
-    if (!node || !node.properties) {
+    if (!node || !node.properties)
       return "";
-    }
     var props = node.properties;
     var binary = props["application.process.binary"] || "";
     if (binary) {
@@ -309,38 +308,30 @@ Singleton {
       return parts[parts.length - 1].toLowerCase();
     }
     var appName = props["application.name"] || "";
-    if (appName) {
+    if (appName)
       return appName.toLowerCase();
-    }
     var appId = props["application.id"] || "";
-    if (appId) {
+    if (appId)
       return appId.toLowerCase();
-    }
-
     return "";
   }
 
   function setAppStreamVolume(appKey: string, volume: real): void {
-    if (!appKey) {
-      return;
-    }
+    if (!appKey)
+    return;
     var o = appVolumeOverrides;
-    if (!o[appKey]) {
-      o[appKey] = {};
-    }
-
+    if (!o[appKey])
+    o[appKey] = {};
     o[appKey].volume = volume;
     appVolumeOverrides = o;
   }
 
   function setAppStreamMuted(appKey: string, muted: bool): void {
-    if (!appKey) {
-      return;
-    }
+    if (!appKey)
+    return;
     var o = appVolumeOverrides;
-    if (!o[appKey]) {
-      o[appKey] = {};
-    }
+    if (!o[appKey])
+    o[appKey] = {};
     o[appKey].muted = muted;
     appVolumeOverrides = o;
   }
@@ -351,24 +342,19 @@ Singleton {
 
   function _applyAppOverrides(): void {
     var streams = root.appStreams;
-    if (!streams) {
-      return;
-    }
-
+    if (!streams)
+    return;
     var currentIds = {};
     _isApplyingAppOverride = true;
     for (var i = 0; i < streams.length; i++) {
       var s = streams[i];
-      if (!s) {
-        continue;
-      }
-
+      if (!s)
+      continue;
       currentIds[s.id] = true;
       var key = getAppKey(s);
       var ov = key ? appVolumeOverrides[key] : null;
-      if (!ov || !s.audio) {
-        continue;
-      }
+      if (!ov || !s.audio)
+      continue;
       if (ov.volume !== undefined && Math.abs(s.audio.volume - ov.volume) > root.epsilon) {
         s.audio.volume = ov.volume;
       }
@@ -435,6 +421,9 @@ Singleton {
         root.refreshWpctlOutputState();
       }
     }
+
+    stdout: StdioCollector {}
+    stderr: StdioCollector {}
   }
 
   Process {
@@ -448,6 +437,7 @@ Singleton {
     }
 
     stdout: StdioCollector {}
+    stderr: StdioCollector {}
   }
 
   Process {
@@ -465,6 +455,9 @@ Singleton {
       }
       root.refreshWpctlOutputState();
     }
+
+    stdout: StdioCollector {}
+    stderr: StdioCollector {}
   }
 
   Process {
@@ -474,6 +467,9 @@ Singleton {
     onExited: function (_code) {
       root.refreshWpctlOutputState();
     }
+
+    stdout: StdioCollector {}
+    stderr: StdioCollector {}
   }
 
   // Watch output device changes for clamping
@@ -499,12 +495,14 @@ Singleton {
         return;
       }
 
+      const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+
       // If volume exceeds max, clamp it (but only if we didn't just set it)
-      if (vol > root.maxVolume) {
+      if (vol > maxVolume) {
         root.isSettingOutputVolume = true;
         Qt.callLater(() => {
-                       if (root.sink?.audio && root.sink.audio.volume > root.maxVolume) {
-                         root.sink.audio.volume = root.maxVolume;
+                       if (root.sink?.audio && root.sink.audio.volume > maxVolume) {
+                         root.sink.audio.volume = maxVolume;
                        }
                        root.isSettingOutputVolume = false;
                      });
@@ -537,12 +535,14 @@ Singleton {
         return;
       }
 
+      const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+
       // If volume exceeds max, clamp it (but only if we didn't just set it)
-      if (vol > root.maxVolume) {
+      if (vol > maxVolume) {
         root.isSettingInputVolume = true;
         Qt.callLater(() => {
-                       if (root.source?.audio && root.source.audio.volume > root.maxVolume) {
-                         root.source.audio.volume = root.maxVolume;
+                       if (root.source?.audio && root.source.audio.volume > maxVolume) {
+                         root.source.audio.volume = maxVolume;
                        }
                        root.isSettingInputVolume = false;
                      });
@@ -555,10 +555,11 @@ Singleton {
     if (!Pipewire.ready || (!sink?.audio && !wpctlAvailable)) {
       return;
     }
-    if (volume >= root.maxVolume) {
+    const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+    if (volume >= maxVolume) {
       return;
     }
-    setVolume(Math.min(root.maxVolume, volume + stepVolume));
+    setVolume(Math.min(maxVolume, volume + stepVolume));
   }
 
   function decreaseVolume() {
@@ -641,11 +642,11 @@ Singleton {
   }
 
   function getOutputIcon() {
-    if (muted) {
+    if (muted)
       return "volume-mute";
-    }
 
-    const clampedVolume = Math.max(0, Math.min(volume, root.maxVolume));
+    const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+    const clampedVolume = Math.max(0, Math.min(volume, maxVolume));
 
     // Show volume-x icon when volume is effectively 0% (within rounding threshold)
     if (clampedVolume < root.epsilon) {
@@ -662,10 +663,11 @@ Singleton {
     if (!Pipewire.ready || !source?.audio) {
       return;
     }
-    if (inputVolume >= root.maxVolume) {
+    const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+    if (inputVolume >= maxVolume) {
       return;
     }
-    setInputVolume(Math.min(root.maxVolume, inputVolume + stepVolume));
+    setInputVolume(Math.min(maxVolume, inputVolume + stepVolume));
   }
 
   function decreaseInputVolume() {
@@ -681,7 +683,8 @@ Singleton {
       return;
     }
 
-    const clampedVolume = Math.max(0, Math.min(root.maxVolume, newVolume));
+    const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+    const clampedVolume = Math.max(0, Math.min(maxVolume, newVolume));
     const delta = Math.abs(clampedVolume - source.audio.volume);
     if (delta < root.epsilon) {
       return;

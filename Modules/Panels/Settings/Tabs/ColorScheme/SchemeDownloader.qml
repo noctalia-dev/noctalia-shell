@@ -37,8 +37,8 @@ Popup {
   height: Math.min(800, contentColumn.implicitHeight + Style.margin2XL)
   padding: Style.marginXL
   modal: true
-  closePolicy: Popup.NoAutoClose
   dim: false
+  closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
   anchors.centerIn: parent
 
   // Helper function to get color from cached scheme data

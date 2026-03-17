@@ -34,7 +34,6 @@ Popup {
   height: content.implicitHeight + padding * 2
   padding: Style.marginXL
   modal: true
-  closePolicy: Popup.NoAutoClose
   dim: false
   anchors.centerIn: parent
 

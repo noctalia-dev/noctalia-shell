@@ -257,11 +257,10 @@ PopupWindow {
       contentHeight = tooltipText.implicitHeight;
     }
 
-    const extraPad = isGridMode ? gridPaddingVertical : 0;
-    const tipWidth = Math.ceil(Math.min(contentWidth + ((padding + extraPad) * 2), maxWidth));
+    const tipWidth = Math.ceil(Math.min(contentWidth + (padding * 2), maxWidth));
     root.implicitWidth = tipWidth;
 
-    const tipHeight = Math.ceil(contentHeight + ((padding + extraPad) * 2));
+    const tipHeight = Math.ceil(contentHeight + (padding * 2));
     root.implicitHeight = tipHeight;
 
     // Get target's global position and convert to screen-relative
@@ -499,11 +498,10 @@ PopupWindow {
       contentHeight = tooltipText.implicitHeight;
     }
 
-    const extraPad = isGridMode ? gridPaddingVertical : 0;
-    const tipWidth = Math.ceil(Math.min(contentWidth + ((padding + extraPad) * 2), maxWidth));
+    const tipWidth = Math.ceil(Math.min(contentWidth + (padding * 2), maxWidth));
     root.implicitWidth = tipWidth;
 
-    const tipHeight = Math.ceil(contentHeight + ((padding + extraPad) * 2));
+    const tipHeight = Math.ceil(contentHeight + (padding * 2));
     root.implicitHeight = tipHeight;
 
     // Reposition based on current direction (screen-relative)
@@ -645,7 +643,7 @@ PopupWindow {
       color: Color.mSurface
       border.color: Color.mOutline
       border.width: Style.borderS
-      radius: Math.min(Style.radiusS, Math.min(width, height) / 3)
+      radius: Style.radiusS
 
       // Only show content when we have content
       visible: root.text !== "" || root.isGridMode
