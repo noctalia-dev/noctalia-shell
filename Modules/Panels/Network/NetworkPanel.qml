@@ -617,7 +617,7 @@ SmartPanel {
                           color: Color.mSurfaceVariant
                           radius: Style.radiusXS
                           border.width: Style.borderS
-                          border.color: Color.mOutline
+                          border.color: Style.boxBorderColor
                           implicitHeight: ethInfoGrid.implicitHeight + Style.margin2S
                           clip: true
                           Layout.topMargin: Style.marginXS
