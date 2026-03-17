@@ -32,21 +32,13 @@ Item {
     onTriggered: safeUpdate()
   }
 
-  // Coalesces workspace updates: onRawEvent calls refreshWorkspaces() which
-  // triggers onValuesChanged synchronously in the same call stack, then
-  // onRawEvent itself also restarts this timer — without deferral the
-  // ListModel gets cleared+repopulated twice per event. The timer coalesces
-  // these into a single update and avoids synchronous ListModel mutations
-  // during signal cascades that can crash the V4 engine (SIGSEGV in
-  // QV4::Object::insertMember).
-  Timer {
-    id: workspaceUpdateTimer
-    interval: 0
-    repeat: false
-    onTriggered: {
-      safeUpdateWorkspaces();
-      workspaceChanged();
-    }
+  // Deferred via Qt.callLater to coalesce workspace updates: onRawEvent calls
+  // refreshWorkspaces() which triggers onValuesChanged synchronously in the
+  // same call stack — without deferral the ListModel gets cleared+repopulated
+  // twice per event. Qt.callLater deduplicates by function identity.
+  function _deferredWorkspaceUpdate() {
+    safeUpdateWorkspaces();
+    workspaceChanged();
   }
 
   // Initialization
@@ -488,7 +480,7 @@ Item {
     target: Hyprland.workspaces
     enabled: initialized
     function onValuesChanged() {
-      workspaceUpdateTimer.restart();
+      Qt.callLater(_deferredWorkspaceUpdate);
     }
   }
 
@@ -506,10 +498,10 @@ Item {
     function onRawEvent(event) {
       Hyprland.refreshWorkspaces();
       Hyprland.refreshToplevels();
-      // Workspace and window updates are deferred via timers to avoid
-      // re-entrant incubation — refreshWorkspaces()/refreshToplevels()
-      // trigger onValuesChanged which restarts the respective timers.
-      workspaceUpdateTimer.restart();
+      // Workspace and window updates are deferred — refreshWorkspaces()/
+      // refreshToplevels() trigger onValuesChanged which also calls
+      // Qt.callLater, so the deduplication coalesces into one update.
+      Qt.callLater(_deferredWorkspaceUpdate);
       updateTimer.restart();
 
       const monitorsEvents = ["configreloaded", "monitoradded", "monitorremoved", "monitoraddedv2", "monitorremovedv2"];
