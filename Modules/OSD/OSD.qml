@@ -251,6 +251,14 @@ Variants {
         showOSD(OSD.Type.Volume);
       }
 
+      function onVolumeAtMaximum() {
+        showOSD(OSD.Type.Volume);
+      }
+
+      function onVolumeAtMinimum() {
+        showOSD(OSD.Type.Volume);
+      }
+
       function onMutedChanged() {
         if (AudioService.consumeOutputOSDSuppression())
           return;

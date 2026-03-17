@@ -73,6 +73,28 @@ Item {
         externalHideTimer.restart();
       }
     }
+
+    function onVolumeAtMaximum() {
+      if (!firstVolumeReceived) {
+       firstVolumeReceived = true;
+      } else {
+        // Hide any tooltip while the pill is visible / being updated
+        TooltipService.hide();
+        pill.show();
+        externalHideTimer.restart();
+      }
+    }
+
+    function onVolumeAtMinimum() {
+      if (!firstVolumeReceived) {
+       firstVolumeReceived = true;
+      } else {
+        // Hide any tooltip while the pill is visible / being updated
+        TooltipService.hide();
+        pill.show();
+        externalHideTimer.restart();
+      }
+    }
   }
 
   Timer {
