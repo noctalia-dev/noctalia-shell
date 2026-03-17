@@ -393,7 +393,7 @@ Item {
       Layout.preferredHeight: deviceColumn.implicitHeight + (Style.marginXL)
       radius: Style.radiusM
       clip: true
-
+      forceOpaque: true
       color: device.getContentColors()[0]
 
       ColumnLayout {
@@ -444,7 +444,7 @@ Item {
               }
               visible: text !== ""
               pointSize: Style.fontSizeXS
-              color: device.getContentColors([Color.mSurfaceVariant, Color.mOnSurfaceVariant])[1]
+              color: Qt.alpah(device.getContentColors([Color.mSurfaceVariant, Color.mOnSurfaceVariant])[1], Style.opacityHeavy)
             }
 
             RowLayout {
@@ -456,7 +456,7 @@ Item {
                   return BatteryService.getIcon(b !== null ? b : 0, false, false, b !== null);
                 }
                 pointSize: Style.fontSizeXS
-                color: device.getContentColors()[1]
+                color: Qt.alpah(device.getContentColors()[1], Style.opacityHeavy)
               }
               NText {
                 text: {
@@ -464,7 +464,7 @@ Item {
                   return b === null ? "-" : (b + "%");
                 }
                 pointSize: Style.fontSizeXS
-                color: device.getContentColors([Color.mSurfaceVariant, Color.mOnSurfaceVariant])[1]
+                color: Qt.alpah(device.getContentColors([Color.mSurfaceVariant, Color.mOnSurfaceVariant])[1], Style.opacityHeavy)
               }
             }
           }

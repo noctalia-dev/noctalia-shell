@@ -459,6 +459,7 @@ SmartPanel {
                       Layout.rightMargin: Style.marginXS
                       implicitHeight: ethItemColumn.implicitHeight + Style.margin2M
                       radius: Style.radiusM
+                      forceOpaque: true
                       color: ethItem.getContentColors()[0]
 
                       ColumnLayout {
@@ -518,7 +519,7 @@ SmartPanel {
                                   return I18n.tr("common.disconnected");
                                 }
                                 pointSize: Style.fontSizeXXS
-                                color: (!modelData.connected || NetworkService.networkConnectivity === "limited" || NetworkService.networkConnectivity === "portal" || NetworkService.networkConnectivity === "unknown") ? Color.mError : ethItem.getContentColors()[1]
+                                color: Qt.alpha(ethItem.getContentColors()[1], Style.opacityHeavy)
                               }
 
                               // Network speed indicators (visible when connected and speed > 0)

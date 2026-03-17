@@ -672,7 +672,7 @@ Item {
       Layout.preferredHeight: deviceColumn.implicitHeight + (Style.marginXL)
       radius: Style.radiusM
       clip: true
-
+      forceOpaque: true
       color: networkItem.getContentColors()[0]
 
       ColumnLayout {
