@@ -24,12 +24,29 @@ Item {
   property var workspaceCache: ({})
   property var windowCache: ({})
 
-  // Debounce timer for updates
+  // Debounce timer for window updates
   Timer {
     id: updateTimer
     interval: 50
     repeat: false
     onTriggered: safeUpdate()
+  }
+
+  // Coalesces workspace updates: onRawEvent calls refreshWorkspaces() which
+  // triggers onValuesChanged synchronously in the same call stack, then
+  // onRawEvent itself also restarts this timer — without deferral the
+  // ListModel gets cleared+repopulated twice per event. The timer coalesces
+  // these into a single update and avoids synchronous ListModel mutations
+  // during signal cascades that can crash the V4 engine (SIGSEGV in
+  // QV4::Object::insertMember).
+  Timer {
+    id: workspaceUpdateTimer
+    interval: 0
+    repeat: false
+    onTriggered: {
+      safeUpdateWorkspaces();
+      workspaceChanged();
+    }
   }
 
   // Initialization
@@ -471,8 +488,7 @@ Item {
     target: Hyprland.workspaces
     enabled: initialized
     function onValuesChanged() {
-      safeUpdateWorkspaces();
-      workspaceChanged();
+      workspaceUpdateTimer.restart();
     }
   }
 
@@ -490,8 +506,10 @@ Item {
     function onRawEvent(event) {
       Hyprland.refreshWorkspaces();
       Hyprland.refreshToplevels();
-      safeUpdateWorkspaces();
-      workspaceChanged();
+      // Workspace and window updates are deferred via timers to avoid
+      // re-entrant incubation — refreshWorkspaces()/refreshToplevels()
+      // trigger onValuesChanged which restarts the respective timers.
+      workspaceUpdateTimer.restart();
       updateTimer.restart();
 
       const monitorsEvents = ["configreloaded", "monitoradded", "monitorremoved", "monitoraddedv2", "monitorremovedv2"];
