@@ -85,6 +85,12 @@ Item {
   property ListModel centerWidgetsModel: ListModel {}
   property ListModel rightWidgetsModel: ListModel {}
 
+  // Guard: set when Bar is destroyed; prevents Qt.callLater callbacks from running
+  // during/after teardown (avoids SIGSEGV in QV4::Object::insertMember when rapid
+  // workspace switch causes load/unload overlap with async widget incubation)
+  property bool _destroyed: false
+  Component.onDestruction: root._destroyed = true
+
   // Sync a ListModel with widget data, preserving delegates when only settings change
   function syncWidgetModel(model, newWidgets) {
     var validWidgets = filterValidWidgets(newWidgets);
@@ -134,6 +140,8 @@ Item {
   }
 
   function _syncFromRevision() {
+    if (root._destroyed)
+      return;
     var widgets = Settings.getBarWidgetsForScreen(screen?.name);
     if (widgets) {
       syncWidgetModel(leftWidgetsModel, widgets.left);
@@ -152,6 +160,8 @@ Item {
   }
 
   function _initModels() {
+    if (root._destroyed)
+      return;
     var widgets = Settings.getBarWidgetsForScreen(screen?.name);
     if (widgets) {
       syncWidgetModel(leftWidgetsModel, widgets.left);

@@ -91,6 +91,10 @@ Item {
     onLoaded: {
       if (!item)
         return;
+      // Guard: if parent chain is torn down (Bar content unload during rapid workspace
+      // switch), skip registration to avoid SIGSEGV in QV4 during async incubation
+      if (!root.parent || !root.parent.parent || !widgetScreen?.name)
+        return;
 
       Logger.d("BarWidgetLoader", "Loading widget", widgetId, "on screen:", widgetScreen.name);
 

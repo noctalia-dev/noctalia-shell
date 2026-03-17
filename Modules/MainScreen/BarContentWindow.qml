@@ -152,10 +152,11 @@ PanelWindow {
   // start the unload timer), unmapping the Wayland surface mid-animation.
   property bool contentLoaded: false
 
-  // Timer to delay unload until after fade animation
+  // Timer to delay unload until after fade animation.
+  // Extra buffer (250ms) when auto-hide to reduce race with rapid workspace switch (SIGSEGV in QV4).
   Timer {
     id: unloadTimer
-    interval: Style.animationFast + 50
+    interval: Style.animationFast + (barWindow.autoHide ? 250 : 50)
     onTriggered: {
       // Only unload if still hidden AND not about to show (prevents unload/reload race)
       if (barWindow.isHidden && !showTimer.running) {
