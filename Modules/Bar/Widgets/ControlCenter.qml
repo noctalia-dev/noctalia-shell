@@ -50,7 +50,7 @@ NIconButton {
   // If using distro logo, don't use theme icon.
   icon: (customIconPath === "" && !useDistroLogo) ? customIcon : ""
   tooltipText: {
-    if (!screen || PanelService.getPanel("controlCenterPanel", screen)?.isPanelOpen) {
+    if (PanelService.getPanel("controlCenterPanel", screen)?.isPanelOpen) {
       return "";
     } else {
       return I18n.tr("tooltips.open-control-center");

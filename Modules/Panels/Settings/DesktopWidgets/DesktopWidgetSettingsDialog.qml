@@ -26,6 +26,7 @@ Popup {
   height: Math.min(content.implicitHeight + padding * 2, maxHeight)
   padding: Style.marginXL
   modal: true
+  closePolicy: Popup.NoAutoClose
   dim: false
 
   // Center in parent

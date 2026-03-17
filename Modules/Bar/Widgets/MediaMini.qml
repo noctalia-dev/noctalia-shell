@@ -408,7 +408,7 @@ Item {
                }
 
     onEntered: {
-      if (screen && (isVertical || scrollingMode === "never") && !PanelService.getPanel("mediaPlayerPanel", screen)?.isPanelOpen) {
+      if ((isVertical || scrollingMode === "never") && !PanelService.getPanel("mediaPlayerPanel", screen)?.isPanelOpen) {
         TooltipService.show(root, title, BarService.getTooltipDirection(root.screen?.name));
       }
     }

@@ -370,10 +370,6 @@ Item {
     NBox {
       id: device
 
-      HoverHandler {
-        id: itemHover
-      }
-
       readonly property bool canConnect: BluetoothService.canConnect(modelData)
       readonly property bool canDisconnect: BluetoothService.canDisconnect(modelData)
       readonly property bool canPair: BluetoothService.canPair(modelData)
@@ -488,7 +484,7 @@ Item {
             }
 
             NIconButton {
-              visible: itemHover.hovered && modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting
+              visible: modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting
               icon: "info"
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.75
@@ -503,7 +499,7 @@ Item {
             }
 
             NIconButton {
-              visible: itemHover.hovered && !root.showOnlyLists && (modelData.paired || modelData.trusted) && !modelData.connected && !isBusy && !modelData.blocked
+              visible: !root.showOnlyLists && (modelData.paired || modelData.trusted) && !modelData.connected && !isBusy && !modelData.blocked
               icon: "trash"
               tooltipText: I18n.tr("common.unpair")
               baseSize: Style.baseWidgetSize * 0.75
@@ -552,7 +548,7 @@ Item {
           visible: device.isExpanded
           Layout.fillWidth: true
           implicitHeight: infoColumn.implicitHeight + Style.margin2S
-          radius: Style.radiusS
+          radius: Style.radiusXS
           color: Color.mSurfaceVariant
           border.width: Style.borderS
           border.color: Style.boxBorderColor

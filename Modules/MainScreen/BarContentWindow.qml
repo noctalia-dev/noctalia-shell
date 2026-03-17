@@ -167,15 +167,30 @@ PanelWindow {
   }
 
   // When hidden changes, handle load/unload
+  // Defer content load when showing to avoid re-entrant incubation crash:
+  // barAutoHideStateChanged fires during workspace switch or window open. Setting
+  // contentLoaded=true synchronously triggers barLoader to create Bar+widgets.
+  // That nests QQmlIncubatorPrivate::incubate inside the signal handler, which
+  // can corrupt the V4 heap (SIGSEGV in QV4::Object::insertMember). Use Timer
+  // (not Qt.callLater - it can fire in same event cycle) to break the nesting.
   onIsHiddenChanged: {
     if (isHidden) {
       // Start fade out, then unload after animation
       unloadTimer.restart();
     } else {
-      // Load immediately when showing
       unloadTimer.stop();
       deferredUnloadTimer.stop();
-      contentLoaded = true;
+      showContentTimer.restart();
+    }
+  }
+
+  Timer {
+    id: showContentTimer
+    interval: 0
+    onTriggered: {
+      if (!barWindow.isHidden) {
+        contentLoaded = true;
+      }
     }
   }
 
@@ -201,10 +216,10 @@ PanelWindow {
         // Bar hidden — start debounced unload
         deferredUnloadTimer.restart();
       } else {
-        // Bar shown — cancel pending unload, ensure content is loaded
+        // Bar shown — cancel pending unload, defer content load (same nesting concern)
         deferredUnloadTimer.stop();
         if (!barWindow.isHidden) {
-          barWindow.contentLoaded = true;
+          showContentTimer.restart();
         }
       }
     }

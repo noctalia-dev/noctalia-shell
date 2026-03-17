@@ -196,19 +196,41 @@ Singleton {
   // Track last workspace ID to detect actual workspace changes
   property var lastWorkspaceId: null
 
-  // Workspace switch handler - directly show bar on the focused workspace screen
+  // Workspace switch handler - show bar on the focused workspace screen
+  // Deferred via Timer to avoid re-entrant incubation: setScreenHidden emits
+  // barAutoHideStateChanged which triggers BarContentWindow to load bar content.
+  // Loading Bar+widgets synchronously during workspaceChanged nests QQmlIncubatorPrivate
+  // inside the signal handler, corrupting the V4 heap (SIGSEGV in QV4::Object::insertMember).
+  Timer {
+    id: workspaceShowBarTimer
+    interval: 0
+    property string pendingScreenName: ""
+    onTriggered: {
+      if (pendingScreenName === "")
+        return;
+      var screenName = pendingScreenName;
+      pendingScreenName = "";
+      setScreenHidden(screenName, false);
+      if (!root.isBarHovered(screenName)) {
+        barHoverStateChanged(screenName, false);
+      }
+    }
+  }
+
   Connections {
     target: CompositorService
     function onWorkspaceChanged() {
       if (!Settings.data.bar.showOnWorkspaceSwitch)
-        return;
-      if (Settings.data.bar.displayMode !== "auto_hide")
         return;
 
       var ws = CompositorService.getCurrentWorkspace();
       if (!ws || !ws.output) {
         return;
       }
+
+      var screenName = ws.output || "";
+      if (Settings.getBarDisplayModeForScreen(screenName) !== "auto_hide")
+        return;
 
       // Only trigger if workspace actually changed
       var currentWsId = ws.id;
@@ -217,16 +239,10 @@ Singleton {
       }
       root.lastWorkspaceId = currentWsId;
 
-      var screenName = ws.output || "";
       Logger.d("BarService", "Workspace switched to:", currentWsId, "on screen:", screenName);
 
-      // Show bar immediately
-      setScreenHidden(screenName, false);
-
-      // Only trigger hideTimer if not already hovered (e.g., mouse on trigger zone)
-      if (!root.isBarHovered(screenName)) {
-        barHoverStateChanged(screenName, false);
-      }
+      workspaceShowBarTimer.pendingScreenName = screenName;
+      workspaceShowBarTimer.restart();
     }
   }
 
