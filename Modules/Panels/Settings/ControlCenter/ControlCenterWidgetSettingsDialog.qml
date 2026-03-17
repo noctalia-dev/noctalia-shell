@@ -32,6 +32,7 @@ Popup {
   height: Math.min(content.implicitHeight + dialogPadding * 2, maxHeight)
   padding: 0
   modal: true
+  closePolicy: Popup.NoAutoClose
   anchors.centerIn: parent
 
   onOpened: {
