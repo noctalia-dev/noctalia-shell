@@ -386,6 +386,7 @@ Singleton {
       property bool useSolidColor: false
       property color solidColor: "#1a1a2e"
       property bool automationEnabled: false
+      property bool automationFavoritesOnly: false
       property string wallpaperChangeMode: "random" // "random" or "alphabetical"
       property int randomIntervalSec: 300 // 5 min
       property int transitionDuration: 1500 // 1500 ms

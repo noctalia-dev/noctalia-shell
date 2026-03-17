@@ -2506,6 +2506,15 @@
     "subTabLabel": "common.automation"
   },
   {
+    "labelKey": "panels.wallpaper.automation-favorites-only-label",
+    "descriptionKey": "panels.wallpaper.automation-favorites-only-description",
+    "widget": "NToggle",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 2,
+    "subTabLabel": "common.automation"
+  },
+  {
     "labelKey": "panels.wallpaper.automation-interval-label",
     "descriptionKey": "panels.wallpaper.automation-interval-description",
     "widget": "NSpinBox",

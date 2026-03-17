@@ -43,6 +43,14 @@ ColumnLayout {
       defaultValue: Settings.getDefaultValue("wallpaper.wallpaperChangeMode")
     }
 
+    NToggle {
+      label: I18n.tr("panels.wallpaper.automation-favorites-only-label")
+      description: I18n.tr("panels.wallpaper.automation-favorites-only-description")
+      checked: Settings.data.wallpaper.automationFavoritesOnly
+      onToggled: checked => Settings.data.wallpaper.automationFavoritesOnly = checked
+      defaultValue: Settings.getDefaultValue("wallpaper.automationFavoritesOnly")
+    }
+
     NSpinBox {
       label: I18n.tr("panels.wallpaper.automation-interval-label")
       description: I18n.tr("panels.wallpaper.automation-interval-description")
