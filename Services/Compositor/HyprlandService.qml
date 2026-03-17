@@ -246,7 +246,7 @@ Item {
       }
 
       const hlToplevels = Hyprland.toplevels.values;
-      let newFocusedIndex = -1;
+      let focusedWindowId = null;
 
       // Get active workspaces to filter focus
       const activeWorkspaceIds = {};
@@ -288,12 +288,23 @@ Item {
           windowCache[normalized.id] = normalized;
 
           if (normalized.isFocused) {
-            newFocusedIndex = windowsList.length - 1;
+            focusedWindowId = normalized.id;
           }
         }
       }
 
       windows = toSortedWindowList(windowsList);
+
+      // Resolve focused index from sorted list (order changes after sort)
+      let newFocusedIndex = -1;
+      if (focusedWindowId) {
+        for (let k = 0; k < windows.length; k++) {
+          if (windows[k].id === focusedWindowId) {
+            newFocusedIndex = k;
+            break;
+          }
+        }
+      }
 
       if (newFocusedIndex !== focusedWindowIndex) {
         focusedWindowIndex = newFocusedIndex;
