@@ -245,7 +245,6 @@ Item {
   // Safe window update
   function safeUpdateWindows() {
     try {
-      Logger.d("HyprlandService", "safeUpdateWindows() start");
       const windowsList = [];
       windowCache = {};
 
@@ -304,7 +303,6 @@ Item {
       }
 
       windows = toSortedWindowList(windowsList);
-      Logger.d("HyprlandService", "safeUpdateWindows() windows after sort:", windows.length);
 
       // Resolve focused index from sorted list (order changes after sort)
       let newFocusedIndex = -1;
