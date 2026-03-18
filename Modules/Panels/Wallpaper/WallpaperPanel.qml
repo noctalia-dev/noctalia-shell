@@ -1835,7 +1835,7 @@ SmartPanel {
               pageInput.inputItem.focus = false;
             }
 
-            onAccepted: submitPage()
+            onEditingFinished: submitPage()
           }
 
           NText {

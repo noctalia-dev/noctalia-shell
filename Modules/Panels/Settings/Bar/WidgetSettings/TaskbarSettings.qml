@@ -164,7 +164,7 @@ ColumnLayout {
     description: I18n.tr("bar.taskbar.title-width-description")
     text: widgetData.titleWidth || widgetMetadata.titleWidth
     placeholderText: I18n.tr("placeholders.enter-width-pixels")
-    onEditingFinished: saveSettings()
+    onTextChanged: saveSettings()
     defaultValue: String(widgetMetadata.titleWidth)
   }
 

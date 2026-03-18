@@ -139,7 +139,7 @@ ColumnLayout {
     description: I18n.tr("bar.custom-button.general-tooltip-text-description")
     placeholderText: I18n.tr("placeholders.enter-tooltip")
     text: _settings.generalTooltipText
-    onEditingFinished: {
+    onTextChanged: {
       _settings.generalTooltipText = text;
       saveSettings();
     }
@@ -164,7 +164,7 @@ ColumnLayout {
     description: I18n.tr("bar.custom-button.left-click-description")
     placeholderText: I18n.tr("placeholders.enter-command")
     text: _settings.onClicked
-    onEditingFinished: {
+    onTextChanged: {
       _settings.onClicked = text;
       saveSettings();
     }
@@ -177,7 +177,7 @@ ColumnLayout {
     description: I18n.tr("bar.custom-button.right-click-description")
     placeholderText: I18n.tr("placeholders.enter-command")
     text: _settings.onRightClicked
-    onEditingFinished: {
+    onTextChanged: {
       _settings.onRightClicked = text;
       saveSettings();
     }
@@ -190,7 +190,7 @@ ColumnLayout {
     description: I18n.tr("bar.custom-button.middle-click-description")
     placeholderText: I18n.tr("placeholders.enter-command")
     text: _settings.onMiddleClicked
-    onEditingFinished: {
+    onTextChanged: {
       _settings.onMiddleClicked = text;
       saveSettings();
     }
@@ -238,7 +238,7 @@ ColumnLayout {
             Layout.fillWidth: true
             placeholderText: I18n.tr("panels.control-center.shortcuts-custom-button-state-checks-command")
             text: model.command
-            onEditingFinished: {
+            onTextChanged: {
               updateStateCheck(currentIndex, text, model.icon);
             }
           }

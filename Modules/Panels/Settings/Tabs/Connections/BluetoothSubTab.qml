@@ -754,7 +754,7 @@ Item {
             inputItem.forceActiveFocus();
           }
         }
-        inputItem.onAccepted: {
+        inputItem.onEditingFinished: {
           if (text.length > 0) {
             BluetoothService.submitPin(text);
             text = "";

@@ -73,7 +73,7 @@ ColumnLayout {
     description: I18n.tr("panels.launcher.settings-clipboard-watch-text-description")
     Layout.fillWidth: true
     text: Settings.data.appLauncher.clipboardWatchTextCommand
-    onEditingFinished: Settings.data.appLauncher.clipboardWatchTextCommand = text
+    onTextChanged: Settings.data.appLauncher.clipboardWatchTextCommand = text
     enabled: Settings.data.appLauncher.enableClipboardHistory
     visible: Settings.data.appLauncher.enableClipboardHistory
   }
@@ -83,7 +83,7 @@ ColumnLayout {
     description: I18n.tr("panels.launcher.settings-clipboard-watch-image-description")
     Layout.fillWidth: true
     text: Settings.data.appLauncher.clipboardWatchImageCommand
-    onEditingFinished: Settings.data.appLauncher.clipboardWatchImageCommand = text
+    onTextChanged: Settings.data.appLauncher.clipboardWatchImageCommand = text
     enabled: Settings.data.appLauncher.enableClipboardHistory
     visible: Settings.data.appLauncher.enableClipboardHistory
   }

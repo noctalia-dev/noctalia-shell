@@ -332,7 +332,7 @@ ColumnLayout {
       buttonIcon: "folder-open"
       buttonTooltip: I18n.tr("setup.wallpaper.dir-browse")
       Layout.fillWidth: true
-      onInputEditingFinished: {
+      onInputTextChanged: text => {
         selectedDirectory = text;
         directoryChanged(text);
       }

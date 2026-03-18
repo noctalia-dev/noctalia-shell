@@ -448,7 +448,7 @@ Item {
         label: I18n.tr("wifi.panel.network-name-ssid")
         text: addNetworkPopup.customSsid
         onTextChanged: addNetworkPopup.customSsid = text
-        onAccepted: {
+        onEditingFinished: {
           if (addNetworkPopup.customSsid.length > 0 && (addNetworkPopup.customSecurityKey === "open" || addNetworkPopup.customPassword.length > 0)) {
             NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
                                            eap: addNetworkPopup.customEnterpriseEap,
@@ -572,7 +572,7 @@ Item {
         text: addNetworkPopup.customPassword
         onTextChanged: addNetworkPopup.customPassword = text
         inputItem.echoMode: addNetworkPopup.customShowPassword ? TextInput.Normal : TextInput.Password
-        onAccepted: {
+        onEditingFinished: {
           if (addNetworkPopup.customSsid.length > 0 && addNetworkPopup.customPassword.length > 0) {
             NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
                                            eap: addNetworkPopup.customEnterpriseEap,
@@ -1278,7 +1278,7 @@ Item {
                   selectByMouse: true
                   text: root.enterpriseAnonIdentity
                   onTextChanged: root.enterpriseAnonIdentity = text
-                  onAccepted: identityInput.forceActiveFocus()
+                  onEditingFinished: identityInput.forceActiveFocus()
 
                   NText {
                     visible: parent.text.length === 0
@@ -1315,7 +1315,7 @@ Item {
                       forceActiveFocus();
                     }
                   }
-                  onAccepted: pwdInput.forceActiveFocus()
+                  onEditingFinished: pwdInput.forceActiveFocus()
 
                   NText {
                     visible: parent.text.length === 0
@@ -1353,7 +1353,7 @@ Item {
                       forceActiveFocus();
                     }
                   }
-                  onAccepted: {
+                  onEditingFinished: {
                     if (text && !NetworkService.connecting) {
                       if (!networkItem.isEnterprise || identityInput.text.length > 0) {
                         root.submitPassword(modelData.ssid, text, identityInput.text);

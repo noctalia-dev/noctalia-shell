@@ -174,8 +174,10 @@ ColumnLayout {
         description: I18n.tr("bar.clock.horizontal-bar-description")
         placeholderText: "HH:mm\\nd MMMM yyyy"
         text: valueFormat
-        onTextChanged: valueFormat = text
-        onEditingFinished: settingsChanged(saveSettings())
+        onTextChanged: {
+          valueFormat = text
+          settingsChanged(saveSettings())
+        }
         Component.onCompleted: {
           if (inputItem) {
             inputItem.onActiveFocusChanged.connect(function () {

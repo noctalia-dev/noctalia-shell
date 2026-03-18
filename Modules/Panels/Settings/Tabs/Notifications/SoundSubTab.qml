@@ -99,7 +99,7 @@ ColumnLayout {
       text: Settings.data.notifications?.sounds?.normalSoundFile ?? ""
       buttonIcon: "folder-open"
       buttonTooltip: I18n.tr("panels.notifications.sounds-files-select-file")
-      onInputEditingFinished: {
+      onInputTextChanged: text => {
         const soundPath = text;
         Settings.data.notifications.sounds.normalSoundFile = soundPath;
         Settings.data.notifications.sounds.lowSoundFile = soundPath;
@@ -132,7 +132,7 @@ ColumnLayout {
         text: Settings.data.notifications?.sounds?.lowSoundFile ?? ""
         buttonIcon: "folder-open"
         buttonTooltip: I18n.tr("panels.notifications.sounds-files-select-file")
-        onInputEditingFinished: Settings.data.notifications.sounds.lowSoundFile = text
+        onInputTextChanged: text => Settings.data.notifications.sounds.lowSoundFile = text
         onButtonClicked: root.openLowPicker()
       }
     }
@@ -154,7 +154,7 @@ ColumnLayout {
         text: Settings.data.notifications?.sounds?.normalSoundFile ?? ""
         buttonIcon: "folder-open"
         buttonTooltip: I18n.tr("panels.notifications.sounds-files-select-file")
-        onInputEditingFinished: Settings.data.notifications.sounds.normalSoundFile = text
+        onInputTextChanged: text => Settings.data.notifications.sounds.normalSoundFile = text
         onButtonClicked: root.openNormalPicker()
       }
     }
@@ -176,7 +176,7 @@ ColumnLayout {
         text: Settings.data.notifications?.sounds?.criticalSoundFile ?? ""
         buttonIcon: "folder-open"
         buttonTooltip: I18n.tr("panels.notifications.sounds-files-select-file")
-        onInputEditingFinished: Settings.data.notifications.sounds.criticalSoundFile = text
+        onInputTextChanged: text => Settings.data.notifications.sounds.criticalSoundFile = text
         onButtonClicked: root.openCriticalPicker()
       }
     }
@@ -198,7 +198,7 @@ ColumnLayout {
       Layout.fillWidth: true
       placeholderText: I18n.tr("panels.notifications.sounds-excluded-apps-placeholder")
       text: Settings.data.notifications?.sounds?.excludedApps ?? ""
-      onEditingFinished: Settings.data.notifications.sounds.excludedApps = text
+      onTextChanged: Settings.data.notifications.sounds.excludedApps = text
     }
   }
 }

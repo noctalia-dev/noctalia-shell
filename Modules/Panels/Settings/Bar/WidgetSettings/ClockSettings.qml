@@ -140,8 +140,10 @@ ColumnLayout {
         description: I18n.tr("bar.clock.horizontal-bar-description")
         placeholderText: "HH:mm ddd, MMM dd"
         text: valueFormatHorizontal
-        onTextChanged: valueFormatHorizontal = text
-        onEditingFinished: saveSettings()
+        onTextChanged: {
+          valueFormatHorizontal = text
+          saveSettings()
+        }
         Component.onCompleted: {
           if (inputItem) {
             inputItem.onActiveFocusChanged.connect(function () {
@@ -166,8 +168,10 @@ ColumnLayout {
         // Tokens are Qt format tokens and must not be localized
         placeholderText: "HH mm dd MM"
         text: valueFormatVertical
-        onTextChanged: valueFormatVertical = text
-        onEditingFinished: saveSettings()
+        onTextChanged: {
+          valueFormatVertical = text
+          saveSettings()
+        }
         Component.onCompleted: {
           if (inputItem) {
             inputItem.onActiveFocusChanged.connect(function () {
@@ -187,8 +191,10 @@ ColumnLayout {
         description: I18n.tr("bar.clock.tooltip-format-description")
         placeholderText: "HH:mm, ddd MMM dd"
         text: valueTooltipFormat
-        onTextChanged: valueTooltipFormat = text
-        onEditingFinished: saveSettings()
+        onTextChanged: {
+          valueTooltipFormat = text
+          saveSettings()
+        }
         Component.onCompleted: {
           if (inputItem) {
             inputItem.onActiveFocusChanged.connect(function () {

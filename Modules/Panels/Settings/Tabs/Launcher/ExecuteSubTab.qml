@@ -15,7 +15,7 @@ ColumnLayout {
     description: I18n.tr("panels.launcher.settings-terminal-command-description")
     Layout.fillWidth: true
     text: Settings.data.appLauncher.terminalCommand
-    onEditingFinished: {
+    onTextChanged: {
       Settings.data.appLauncher.terminalCommand = text;
     }
   }
@@ -35,7 +35,7 @@ ColumnLayout {
     text: Settings.data.appLauncher.customLaunchPrefix
     enabled: Settings.data.appLauncher.customLaunchPrefixEnabled
     visible: Settings.data.appLauncher.customLaunchPrefixEnabled
-    onEditingFinished: Settings.data.appLauncher.customLaunchPrefix = text
+    onTextChanged: Settings.data.appLauncher.customLaunchPrefix = text
   }
 
   NTextInput {
@@ -44,6 +44,6 @@ ColumnLayout {
     Layout.fillWidth: true
     text: Settings.data.appLauncher.screenshotAnnotationTool
     placeholderText: I18n.tr("panels.launcher.settings-annotation-tool-placeholder")
-    onEditingFinished: Settings.data.appLauncher.screenshotAnnotationTool = text
+    onTextChanged: Settings.data.appLauncher.screenshotAnnotationTool = text
   }
 }

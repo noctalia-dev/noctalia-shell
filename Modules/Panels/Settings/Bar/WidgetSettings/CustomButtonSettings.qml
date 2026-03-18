@@ -139,8 +139,10 @@ ColumnLayout {
     description: I18n.tr("bar.custom-button.general-tooltip-text-description")
     placeholderText: I18n.tr("placeholders.enter-tooltip")
     text: valueGeneralTooltipText
-    onTextChanged: valueGeneralTooltipText = text
-    onEditingFinished: saveSettings()
+    onTextChanged: {
+      valueGeneralTooltipText = text
+      saveSettings()
+    }
     defaultValue: widgetMetadata.generalTooltipText
   }
 
@@ -174,8 +176,10 @@ ColumnLayout {
     description: I18n.tr("bar.custom-button.ipc-identifier-description")
     placeholderText: I18n.tr("placeholders.enter-ipc-identifier")
     text: valueIpcIdentifier
-    onTextChanged: valueIpcIdentifier = text
-    onEditingFinished: saveSettings()
+    onTextChanged: {
+      valueIpcIdentifier = text
+      saveSettings()
+    }
     defaultValue: widgetMetadata.ipcIdentifier
   }
 
@@ -189,7 +193,7 @@ ColumnLayout {
       description: I18n.tr("bar.custom-button.left-click-description")
       placeholderText: I18n.tr("placeholders.enter-command")
       text: widgetData?.leftClickExec || widgetMetadata.leftClickExec
-      onEditingFinished: saveSettings()
+      onTextChanged: saveSettings()
       defaultValue: widgetMetadata.leftClickExec
     }
 
@@ -219,7 +223,7 @@ ColumnLayout {
       description: I18n.tr("bar.custom-button.right-click-description")
       placeholderText: I18n.tr("placeholders.enter-command")
       text: widgetData?.rightClickExec || widgetMetadata.rightClickExec
-      onEditingFinished: saveSettings()
+      onTextChanged: saveSettings()
       defaultValue: widgetMetadata.rightClickExec
     }
 
@@ -249,7 +253,7 @@ ColumnLayout {
       description: I18n.tr("bar.custom-button.middle-click-description")
       placeholderText: I18n.tr("placeholders.enter-command")
       text: widgetData.middleClickExec || widgetMetadata.middleClickExec
-      onEditingFinished: saveSettings()
+      onTextChanged: saveSettings()
       defaultValue: widgetMetadata.middleClickExec
     }
 
@@ -299,7 +303,7 @@ ColumnLayout {
         description: I18n.tr("bar.custom-button.wheel-description")
         placeholderText: I18n.tr("placeholders.enter-command")
         text: widgetData?.wheelExec || widgetMetadata?.wheelExec
-        onEditingFinished: saveSettings()
+        onTextChanged: saveSettings()
         defaultValue: widgetMetadata.wheelExec
       }
 
@@ -334,7 +338,7 @@ ColumnLayout {
           description: I18n.tr("bar.custom-button.wheel-up-description")
           placeholderText: I18n.tr("placeholders.enter-command")
           text: widgetData?.wheelUpExec || widgetMetadata?.wheelUpExec
-          onEditingFinished: saveSettings()
+          onTextChanged: saveSettings()
           defaultValue: widgetMetadata.wheelUpExec
         }
 
@@ -364,7 +368,7 @@ ColumnLayout {
           description: I18n.tr("bar.custom-button.wheel-down-description")
           placeholderText: I18n.tr("placeholders.enter-command")
           text: widgetData?.wheelDownExec || widgetMetadata?.wheelDownExec
-          onEditingFinished: saveSettings()
+          onTextChanged: saveSettings()
           defaultValue: widgetMetadata.wheelDownExec
         }
 
@@ -451,7 +455,7 @@ ColumnLayout {
     description: valueTextStream ? I18n.tr("bar.custom-button.display-command-output-stream-description") : I18n.tr("bar.custom-button.display-command-output-description")
     placeholderText: I18n.tr("placeholders.command-example")
     text: widgetData?.textCommand || widgetMetadata.textCommand
-    onEditingFinished: saveSettings()
+    onTextChanged: saveSettings()
     defaultValue: widgetMetadata.textCommand
   }
 
@@ -463,7 +467,7 @@ ColumnLayout {
     description: I18n.tr("bar.custom-button.collapse-condition-description")
     placeholderText: I18n.tr("placeholders.enter-text-to-collapse")
     text: widgetData?.textCollapse || widgetMetadata.textCollapse
-    onEditingFinished: saveSettings()
+    onTextChanged: saveSettings()
     defaultValue: widgetMetadata.textCollapse
   }
 
@@ -475,7 +479,7 @@ ColumnLayout {
     description: I18n.tr("bar.custom-button.refresh-interval-description")
     placeholderText: String(widgetMetadata.textIntervalMs)
     text: widgetData && widgetData.textIntervalMs !== undefined ? String(widgetData.textIntervalMs) : ""
-    onEditingFinished: saveSettings()
+    onTextChanged: saveSettings()
     defaultValue: String(widgetMetadata.textIntervalMs)
   }
 

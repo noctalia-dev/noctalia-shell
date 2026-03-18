@@ -110,7 +110,7 @@ ColumnLayout {
     description: I18n.tr("bar.media-mini.max-width-description")
     placeholderText: widgetMetadata.maxWidth
     text: valueMaxWidth
-    onEditingFinished: saveSettings()
+    onTextChanged: saveSettings()
     defaultValue: String(widgetMetadata.maxWidth)
   }
 

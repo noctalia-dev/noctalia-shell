@@ -119,7 +119,7 @@ ColumnLayout {
       buttonIcon: "folder-open"
       buttonTooltip: I18n.tr("panels.wallpaper.settings-folder-label")
       Layout.fillWidth: true
-      onInputEditingFinished: Settings.data.wallpaper.directory = text
+      onInputTextChanged: text => Settings.data.wallpaper.directory = text
       onButtonClicked: root.openMainFolderPicker()
     }
 
@@ -164,7 +164,7 @@ ColumnLayout {
               buttonIcon: "folder-open"
               buttonTooltip: I18n.tr("panels.wallpaper.settings-monitor-specific-tooltip")
               Layout.fillWidth: true
-              onInputEditingFinished: WallpaperService.setMonitorDirectory(modelData.name, text)
+              onInputTextChanged: text => WallpaperService.setMonitorDirectory(modelData.name, text)
               onButtonClicked: root.openMonitorFolderPicker(modelData.name)
             }
           }
