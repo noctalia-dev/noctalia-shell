@@ -1900,6 +1900,15 @@
     "subTabLabel": "common.history"
   },
   {
+    "labelKey": "panels.notifications.rules-label",
+    "descriptionKey": "panels.notifications.rules-description",
+    "widget": "NLabel",
+    "tab": 9,
+    "tabLabel": "common.notifications",
+    "subTab": 5,
+    "subTabLabel": "panels.notifications.rules-tab"
+  },
+  {
     "labelKey": "panels.notifications.sounds-unavailable-label",
     "descriptionKey": "panels.notifications.sounds-unavailable-description",
     "widget": "NLabel",

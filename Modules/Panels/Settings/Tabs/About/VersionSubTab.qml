@@ -258,12 +258,13 @@ ColumnLayout {
     onExited: function (exitCode) {
       if (exitCode === 0) {
         var output = stdout.text.trim();
-        // Format: "noctalia-qs 0.3.0, revision abc12345, distributed by: ..."
+        // Format (old): "noctalia-qs 0.3.0, revision abc12345, distributed by: ..."
+        // Format (new): "noctalia-qs 0.0.9 (revision b602b69c81d96a1d7c645328feb7b1e1d4b7b7a4, distributed by Unset)"
         // Only set if this is actually noctalia-qs; leave empty for upstream quickshell
-        var match = output.match(/noctalia-qs\s+(\S+),\s+revision\s*([0-9a-f]*)/i);
+        var match = output.match(/noctalia-qs\s+(\S+?)[\s,(]+revision\s*([0-9a-f]*)/i);
         if (match) {
           root.qsVersion = match[1];
-          root.qsRevision = match[2];
+          root.qsRevision = match[2] ? match[2].substring(0, 9) : "";
         }
       }
     }
