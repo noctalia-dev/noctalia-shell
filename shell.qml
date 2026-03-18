@@ -112,6 +112,7 @@ ShellRoot {
           IdleService.init();
           PowerProfileService.init();
           HostService.init();
+          NotificationRulesService.init();
           GitHubService.init();
           SupporterService.init();
           CustomButtonIPCService.init();

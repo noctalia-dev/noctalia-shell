@@ -11,6 +11,7 @@ import qs.Commons
 import qs.Services.Compositor
 import qs.Services.Media
 import qs.Services.Power
+import qs.Services.System
 import qs.Services.UI
 
 Singleton {
@@ -139,28 +140,15 @@ Singleton {
     const quickshellId = notification.id;
     const data = createData(notification);
 
-    // Check if we should save to history based on urgency
-    const saveToHistorySettings = Settings.data.notifications?.saveToHistory;
-    if (saveToHistorySettings && !notification.transient) {
-      let shouldSave = true;
-      switch (data.urgency) {
-      case 0: // low
-        shouldSave = saveToHistorySettings.low !== false;
-        break;
-      case 1: // normal
-        shouldSave = saveToHistorySettings.normal !== false;
-        break;
-      case 2: // critical
-        shouldSave = saveToHistorySettings.critical !== false;
-        break;
-      }
-      if (shouldSave) {
-        addToHistory(data);
-      }
-    } else if (!notification.transient) {
-      // Default behavior: save all if settings not configured
-      addToHistory(data);
+    const ruleAction = NotificationRulesService.evaluate(data.appName, data.summary, data.body);
+    if (ruleAction === "block")
+      return;
+    if (ruleAction === "hide") {
+      trySaveToHistory(data, notification);
+      return;
     }
+
+    trySaveToHistory(data, notification);
 
     if (root.doNotDisturb || PowerProfileService.noctaliaPerformanceMode)
       return;
@@ -180,7 +168,8 @@ Singleton {
 
     // Add new notification
     addPopup(quickshellId, notification, data);
-    playNotificationSound(data.urgency, data.appName);
+    if (ruleAction !== "mute")
+      playNotificationSound(data.urgency, data.appName);
   }
 
   function playNotificationSound(urgency, appName) {
@@ -586,6 +575,25 @@ Singleton {
   }
 
   // History management
+  function trySaveToHistory(data, notification) {
+    if (notification.transient)
+      return;
+    const s = Settings.data.notifications?.saveToHistory;
+    if (s) {
+      let ok = true;
+      if (data.urgency === 0)
+        ok = s.low !== false;
+      else if (data.urgency === 1)
+        ok = s.normal !== false;
+      else if (data.urgency === 2)
+        ok = s.critical !== false;
+      if (ok)
+        addToHistory(data);
+    } else {
+      addToHistory(data);
+    }
+  }
+
   function addToHistory(data) {
     // Defer list insertion to prevent re-entrant QML incubation crash.
     // See addPopup for full explanation.
