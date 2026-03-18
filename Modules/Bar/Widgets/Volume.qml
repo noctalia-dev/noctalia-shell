@@ -76,7 +76,7 @@ Item {
 
     function onVolumeAtMaximum() {
       if (!firstVolumeReceived) {
-       firstVolumeReceived = true;
+        firstVolumeReceived = true;
       } else {
         // Hide any tooltip while the pill is visible / being updated
         TooltipService.hide();
@@ -87,7 +87,7 @@ Item {
 
     function onVolumeAtMinimum() {
       if (!firstVolumeReceived) {
-       firstVolumeReceived = true;
+        firstVolumeReceived = true;
       } else {
         // Hide any tooltip while the pill is visible / being updated
         TooltipService.hide();

@@ -20,8 +20,10 @@ PanelWindow {
   // Note: screen property is inherited from PanelWindow and should be set by parent
   color: "transparent" // Transparent - background is in MainScreen below
 
-  // Make window pass-through when content is unloaded or bar is hidden via IPC
-  visible: contentLoaded && BarService.effectivelyVisible
+  // Window invisible when auto-hidden (blocks input) or toggled off via IPC.
+  // windowVisible stays true briefly after isHidden to allow fade-out animation.
+  property bool windowVisible: !isHidden
+  visible: contentLoaded && windowVisible && BarService.effectivelyVisible
 
   Component.onCompleted: {
     Logger.d("BarContentWindow", "Bar content window created for screen:", barWindow.screen?.name);
@@ -146,66 +148,41 @@ PanelWindow {
     right: barPosition === "right" || !barIsVertical
   }
 
-  // Track if content should be loaded (stays true during fade-out animation).
-  // Must NOT be a binding to isHidden — on the first hide cycle the binding
-  // would flip contentLoaded false synchronously (before onIsHiddenChanged can
-  // start the unload timer), unmapping the Wayland surface mid-animation.
+  // Content stays loaded once initialized — never unloaded during auto-hide.
+  // Destroying and recreating widgets on every hide/show cycle caused nested
+  // QML incubation crashes (SIGSEGV in QV4::Object::insertMember) because
+  // async widget Loaders complete during incubateFor() and their onLoaded
+  // handlers trigger signal cascades mid-incubation.
+  // The bar is hidden via opacity + window visibility instead.
   property bool contentLoaded: false
 
-  // Timer to delay unload until after fade animation
+  // Delay window hide to allow fade-out animation to complete
   Timer {
-    id: unloadTimer
-    interval: Style.animationFast + 50
+    id: windowHideTimer
+    interval: Style.animationFast
     onTriggered: {
-      // Only unload if still hidden AND not about to show (prevents unload/reload race)
-      if (barWindow.isHidden && !showTimer.running) {
-        // Clear hover state before unloading to prevent issues during destruction
-        barWindow.barHovered = false;
-        barWindow.contentLoaded = false;
-      }
+      if (barWindow.isHidden)
+        barWindow.windowVisible = false;
     }
   }
 
-  // When hidden changes, handle load/unload
   onIsHiddenChanged: {
     if (isHidden) {
-      // Start fade out, then unload after animation
-      unloadTimer.restart();
+      // Delay window hide so fade-out is visible
+      windowHideTimer.restart();
     } else {
-      // Load immediately when showing
-      unloadTimer.stop();
-      deferredUnloadTimer.stop();
-      contentLoaded = true;
-    }
-  }
-
-  // Debounced content unload when bar visibility is toggled.
-  // Rapid toggles keep widgets alive; content is only unloaded after the bar
-  // has been continuously hidden for the debounce period.
-  Timer {
-    id: deferredUnloadTimer
-    interval: 1000
-    onTriggered: {
-      if (!BarService.effectivelyVisible) {
-        barWindow.barHovered = false;
-        barWindow.contentLoaded = false;
-        Logger.d("BarContentWindow", "Debounced content unload for screen:", barWindow.screen?.name);
-      }
+      windowHideTimer.stop();
+      windowVisible = true;
+      if (!contentLoaded)
+        contentLoaded = true;
     }
   }
 
   Connections {
     target: BarService
     function onEffectivelyVisibleChanged() {
-      if (!BarService.effectivelyVisible) {
-        // Bar hidden — start debounced unload
-        deferredUnloadTimer.restart();
-      } else {
-        // Bar shown — cancel pending unload, ensure content is loaded
-        deferredUnloadTimer.stop();
-        if (!barWindow.isHidden) {
-          barWindow.contentLoaded = true;
-        }
+      if (BarService.effectivelyVisible && !barWindow.isHidden && !barWindow.contentLoaded) {
+        barWindow.contentLoaded = true;
       }
     }
   }
@@ -222,7 +199,7 @@ PanelWindow {
   implicitWidth: barIsVertical ? barHeight : barWindow.screen.width
   implicitHeight: barIsVertical ? barWindow.screen.height : barHeight
 
-  // Bar content loader - unloads when hidden to prevent input
+  // Bar content loader - loaded once, stays active for lifetime
   Loader {
     id: barLoader
     anchors.fill: parent

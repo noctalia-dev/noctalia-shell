@@ -249,11 +249,15 @@ Singleton {
   }
 
   function syncWindows() {
+    const ws = backend && backend.windows ? backend.windows : [];
+    Logger.d("CompositorService", "syncWindows() from backend length:", ws.length);
+
     windows.clear();
-    const ws = backend.windows;
     for (var i = 0; i < ws.length; i++) {
       windows.append(ws[i]);
     }
+    Logger.d("CompositorService", "syncWindows() model count:", windows.count);
+
     // Emit signal to notify listeners that window list has been updated
     windowListChanged();
   }

@@ -196,6 +196,25 @@ Singleton {
   // Track last workspace ID to detect actual workspace changes
   property var lastWorkspaceId: null
 
+  // Debounce rapid workspace switches to reduce load/unload races (SIGSEGV in QV4)
+  property string _pendingWorkspaceScreen: ""
+
+  Timer {
+    id: workspaceDebounceTimer
+    interval: 80
+    repeat: false
+    onTriggered: {
+      var screen = root._pendingWorkspaceScreen;
+      root._pendingWorkspaceScreen = "";
+      if (screen) {
+        setScreenHidden(screen, false);
+        if (!root.isBarHovered(screen)) {
+          barHoverStateChanged(screen, false);
+        }
+      }
+    }
+  }
+
   // Workspace switch handler - directly show bar on the focused workspace screen
   Connections {
     target: CompositorService
@@ -220,13 +239,10 @@ Singleton {
       var screenName = ws.output || "";
       Logger.d("BarService", "Workspace switched to:", currentWsId, "on screen:", screenName);
 
-      // Show bar immediately
-      setScreenHidden(screenName, false);
-
-      // Only trigger hideTimer if not already hovered (e.g., mouse on trigger zone)
-      if (!root.isBarHovered(screenName)) {
-        barHoverStateChanged(screenName, false);
-      }
+      // Debounce: rapid switches (e.g. external monitor ↔ laptop) cause overlapping
+      // bar load/unload; 80ms delay coalesces them and reduces QV4 incubation races
+      root._pendingWorkspaceScreen = screenName;
+      workspaceDebounceTimer.restart();
     }
   }
 

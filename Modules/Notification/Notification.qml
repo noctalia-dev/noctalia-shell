@@ -28,11 +28,9 @@ Variants {
 
     property ListModel notificationModel: NotificationService.popupModel
 
-    // Deferred activation to prevent re-entrant QML incubation crash.
-    // Direct binding to notificationModel.count would activate the Loader
-    // synchronously during ListModel.insert(), causing nested incubation
-    // (Loader + inner Repeater both processing the model) which crashes
-    // the V4 engine in QV4::Object::insertMember.
+    // Deferred activation via Qt.callLater to avoid activating the Loader
+    // synchronously during ListModel.insert() (which would cause nested
+    // incubation with the inner Repeater).
     property bool shouldBeActive: false
     active: shouldBeActive || delayTimer.running
 
@@ -43,12 +41,8 @@ Variants {
       repeat: false
     }
 
-    // Deferred activation timer - activates Loader on next event loop iteration
-    Timer {
-      id: activationTimer
-      interval: 0
-      repeat: false
-      onTriggered: root.shouldBeActive = true
+    function activate() {
+      shouldBeActive = true;
     }
 
     Connections {
@@ -56,7 +50,7 @@ Variants {
       function onCountChanged() {
         if (notificationModel.count > 0) {
           if (!root.shouldBeActive) {
-            activationTimer.restart();
+            Qt.callLater(root.activate);
           }
         } else if (root.shouldBeActive) {
           root.shouldBeActive = false;

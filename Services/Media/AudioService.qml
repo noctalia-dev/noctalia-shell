@@ -29,8 +29,8 @@ Singleton {
   property real wpctlOutputVolume: 0
   property bool wpctlOutputMuted: true
 
-  signal volumeAtMaximum()
-  signal volumeAtMinimum()
+  signal volumeAtMaximum
+  signal volumeAtMinimum
 
   function clampOutputVolume(vol: real): real {
     if (vol === undefined || isNaN(vol)) {

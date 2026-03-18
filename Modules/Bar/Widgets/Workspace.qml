@@ -271,20 +271,12 @@ Item {
     Settings.data.dock.pinnedApps = pinnedApps;
   }
 
-  // Deferred to next event-loop iteration via Timer { interval: 0 } to avoid
-  // re-entrant incubation: Qt.callLater() can still fire within the same event
-  // processing cycle, so it is not sufficient. localWorkspaces.append() inside
-  // refreshWorkspaces() causes the Repeater to create WorkspacePill delegates
-  // mid-incubation, corrupting the V4 heap (SIGSEGV in QV4::Object::insertMember).
-  Timer {
-    id: refreshTimer
-    interval: 0
-    onTriggered: root.refreshWorkspaces()
-  }
-
+  // Deferred via Qt.callLater to avoid synchronous ListModel mutations during
+  // signal cascades. Qt.callLater deduplicates by function identity, so rapid
+  // calls from multiple signal handlers coalesce into a single refresh.
   function scheduleRefresh() {
     if (!root.isDestroying)
-      refreshTimer.restart();
+      Qt.callLater(root.refreshWorkspaces);
   }
 
   Component.onCompleted: scheduleRefresh()
