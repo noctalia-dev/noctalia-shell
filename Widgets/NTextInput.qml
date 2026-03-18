@@ -167,7 +167,7 @@ ColumnLayout {
             font.pointSize: root.fontSize * Style.uiScaleRatio
             font.weight: root.fontWeight
 
-            onTextEdited: root.editingFinished()
+            onEditingFinished: root.editingFinished()
             onAccepted: root.accepted()
 
             // Override mouse handling to prevent propagation
