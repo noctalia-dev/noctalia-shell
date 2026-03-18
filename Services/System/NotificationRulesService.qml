@@ -26,7 +26,8 @@ Singleton {
     onLoaded: {
       try {
         const parsed = JSON.parse(rulesFileView.text());
-        root.rules = Array.isArray(parsed.rules) ? parsed.rules : [];
+        const raw = Array.isArray(parsed.rules) ? parsed.rules : [];
+        root.rules = raw.filter(r => (r.pattern || "").trim() !== "");
       } catch (e) {
         root.rules = [];
       }
@@ -42,6 +43,7 @@ Singleton {
 
   function save() {
     Quickshell.execDetached(["mkdir", "-p", Settings.configDir]);
+    root.rules = root.rules.filter(r => (r.pattern || "").trim() !== "");
     rulesAdapter.rules = root.rules;
     rulesFileView.writeAdapter();
   }

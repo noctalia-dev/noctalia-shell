@@ -1505,7 +1505,6 @@
       "rules-delete": "Delete rule",
       "rules-description": "Match app name or content. First match wins.",
       "rules-edit": "Edit rule",
-      "rules-empty-pattern": "(empty)",
       "rules-label": "Filter rules",
       "rules-pattern-label": "Pattern",
       "rules-pattern-placeholder": "firefox, discord, or /regex/",

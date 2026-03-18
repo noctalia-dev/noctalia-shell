@@ -37,8 +37,11 @@ ColumnLayout {
     } catch (e) {}
 
     editPopup._savedSlot = function (pattern, action) {
+      const trimmed = (pattern || "").trim();
+      if (trimmed === "")
+        return;
       var arr = (NotificationRulesService.rules || []).slice();
-      var rule = { "pattern": pattern, "action": action };
+      var rule = { "pattern": trimmed, "action": action };
       if (index >= 0 && index < arr.length) {
         arr[index] = rule;
       } else {
@@ -80,7 +83,7 @@ ColumnLayout {
 
       NLabel {
         Layout.fillWidth: true
-        label: (entryDelegate.isRegex ? "regex: " : "") + (entryDelegate.pattern || I18n.tr("panels.notifications.rules-empty-pattern"))
+        label: (entryDelegate.isRegex ? "regex: " : "") + entryDelegate.pattern
         description: entryDelegate.action === "block" ? I18n.tr("panels.notifications.rules-action-block") : (entryDelegate.action === "mute" ? I18n.tr("panels.notifications.rules-action-mute") : I18n.tr("panels.notifications.rules-action-hide"))
         labelColor: entryDelegate.pattern ? Color.mPrimary : Color.mOnSurface
       }

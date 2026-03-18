@@ -110,6 +110,7 @@ Popup {
         icon: "check"
         backgroundColor: Color.mPrimary
         textColor: Color.mOnPrimary
+        enabled: patternInput.text.trim() !== ""
         onClicked: {
           root.saved(patternInput.text.trim(), _selectedAction || "block");
           root.close();
