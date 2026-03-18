@@ -180,7 +180,7 @@ Singleton {
 
     // Add new notification
     addPopup(quickshellId, notification, data);
-    playNotificationSound(data.urgency, notification.appName);
+    playNotificationSound(data.urgency, data.appName);
   }
 
   function playNotificationSound(urgency, appName) {
