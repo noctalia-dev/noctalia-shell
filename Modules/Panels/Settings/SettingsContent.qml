@@ -860,7 +860,7 @@ Item {
               }
 
               onTextChanged: root.searchText = text
-              onEditingFinished: {
+              onAccepted: {
                 if (root.searchText.trim() !== "")
                   root.searchActivate();
               }
