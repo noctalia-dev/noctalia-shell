@@ -538,6 +538,7 @@
     "unpin": "Unpin",
     "update": "Update",
     "upload": "Upload",
+    "username": "Username",
     "userspace-reboot": "Userspace Reboot",
     "version": "Version",
     "vibrant": "Vibrant",
@@ -552,13 +553,16 @@
     "width": "Width",
     "wifi": "Wi-Fi",
     "windows": "Windows",
-    "yes": "Yes",
-    "username": "Username"
+    "yes": "Yes"
   },
   "control-center": {
     "power-profile": {
       "tooltip-action": "Power Profile",
       "tooltip-disabled": "Install power-profiles-daemon to use power profiles"
+    },
+    "wifi": {
+      "label-disconnected": "Wi-Fi disconnected",
+      "label-ethernet": "Ethernet"
     }
   },
   "display-modes": {
@@ -1139,14 +1143,14 @@
       "appearance-indicator-opacity-label": "Indicator opacity",
       "appearance-indicator-thickness-description": "Toggle a thicker hidden dock indicator (6px instead of 3px).",
       "appearance-indicator-thickness-label": "Thicker indicator",
+      "appearance-launcher-icon-description": "Choose the icon used for the dock launcher.",
+      "appearance-launcher-icon-label": "Launcher icon",
       "appearance-launcher-position-description": "Choose where the launcher icon appears in the dock.",
       "appearance-launcher-position-end": "End",
       "appearance-launcher-position-label": "Launcher position",
       "appearance-launcher-position-start": "Start",
       "appearance-launcher-use-distro-logo-description": "Use your distribution logo as the dock launcher icon.",
       "appearance-launcher-use-distro-logo-label": "Use distro logo instead of icon",
-      "appearance-launcher-icon-description": "Choose the icon used for the dock launcher.",
-      "appearance-launcher-icon-label": "Launcher icon",
       "appearance-pinned-static-description": "Always push pinned app icons to the left in static order.",
       "appearance-pinned-static-label": "Static pinned apps",
       "appearance-position-description": "Choose where the dock appears on screen.",
@@ -1427,7 +1431,9 @@
     "network": {
       "bluetooth-description": "Activate Bluetooth management.",
       "bluetooth-rssi-polling-description": "Periodically sample RSSI for connected devices via bluetoothctl. May not be available for all devices; uses minimal resources when enabled.",
-      "bluetooth-rssi-polling-label": "Bluetooth signal polling"
+      "bluetooth-rssi-polling-label": "Bluetooth signal polling",
+      "desc": "Manage Wi-Fi and Bluetooth connections.",
+      "wifi-description": "Manage wireless networks (requires NetworkManager)."
     },
     "notifications": {
       "duration-critical-urgency-description": "How long critical priority notifications stay visible.",
@@ -1450,6 +1456,21 @@
       "history-normal-urgency-description": "Save normal priority notifications to history.",
       "history-normal-urgency-label": "Save normal urgency to history",
       "monitors-desc": "Show notification on specific monitors. Defaults to all if none are chosen.",
+      "rules-action-block": "Block",
+      "rules-action-block-desc": "Skips completely.",
+      "rules-action-hide": "Hide",
+      "rules-action-hide-desc": "No popup, no sound, adds to history.",
+      "rules-action-label": "Action",
+      "rules-action-mute": "Mute",
+      "rules-action-mute-desc": "No sound, still shows popup and in history.",
+      "rules-add": "Add rule",
+      "rules-delete": "Delete rule",
+      "rules-description": "Match app name or content. First match wins.",
+      "rules-edit": "Edit rule",
+      "rules-label": "Filter rules",
+      "rules-pattern-label": "Pattern",
+      "rules-pattern-placeholder": "firefox, discord, or /regex/",
+      "rules-tab": "Rules",
       "settings-always-on-top-description": "Display notifications above fullscreen windows and other layers.",
       "settings-background-opacity-description": "Adjust the opacity of notification backgrounds.",
       "settings-density-description": "Choose the notification card density.",
@@ -1496,22 +1517,7 @@
       "toast-keyboard-description": "Show a toast when the keyboard layout changes.",
       "toast-keyboard-label": "Keyboard layout",
       "toast-media-description": "Show a toast when media playback state changes.",
-      "toast-media-label": "Media",
-      "rules-add": "Add rule",
-      "rules-action-block": "Block",
-      "rules-action-label": "Action",
-      "rules-action-hide": "Hide",
-      "rules-action-mute": "Mute",
-      "rules-delete": "Delete rule",
-      "rules-description": "Match app name or content. First match wins.",
-      "rules-edit": "Edit rule",
-      "rules-label": "Filter rules",
-      "rules-pattern-label": "Pattern",
-      "rules-pattern-placeholder": "firefox, discord, or /regex/",
-      "rules-action-block-desc": "Skips completely.",
-      "rules-action-hide-desc": "No popup, no sound, adds to history.",
-      "rules-action-mute-desc": "No sound, still shows popup and in history.",
-      "rules-tab": "Rules"
+      "toast-media-label": "Media"
     },
     "osd": {
       "always-on-top-description": "Display OSD above fullscreen windows and other layers.",
@@ -1988,6 +1994,7 @@
     "keyboard-layout": "{layout} keyboard layout",
     "list-view": "List view",
     "manage-vpn": "VPN connections",
+    "manage-wifi": "Wi-Fi",
     "max-widgets-reached": "Maximum widgets reached",
     "microphone-volume-at": "Microphone volume: {volume}%",
     "move-to-section": "Move to {section}",
@@ -2160,9 +2167,18 @@
     "tooltip-placeholder": "Placeholder"
   },
   "wifi": {
+    "enterprise": {
+      "anonymous-identity": "Anonymous Identity",
+      "ca-cert": "CA Certificate",
+      "eap-method": "EAP Method",
+      "password": "User password",
+      "phase2-auth": "Phase 2 Authentication",
+      "username": "Identity / Username"
+    },
     "panel": {
       "action-required": "Action required",
       "add-hidden-network": "Add hidden network",
+      "add-network": "Add network",
       "available-interfaces": "Available interfaces",
       "available-networks": "Available networks",
       "disabled": "Wi‑Fi is disabled",
@@ -2173,6 +2189,7 @@
       "forget": "Forget",
       "forget-network": "Forget this network",
       "forgetting": "Forgetting...",
+      "hidden-network": "Hidden network",
       "interface": "Network interface",
       "internet-connected": "Internet connected",
       "internet-limited": "No internet",
@@ -2181,22 +2198,22 @@
       "ipv6": "IPv6",
       "known-networks": "Known networks",
       "link-speed": "Link speed",
+      "network-name-ssid": "Network name (SSID)",
       "no-ethernet-devices": "No Ethernet devices detected",
       "no-networks": "No Wi‑Fi networks found",
       "saved": "Saved",
+      "scan-again": "Scan again",
       "searching": "Searching for networks...",
-      "add-network": "Add network",
-      "show-password": "Show password",
-      "hidden-network": "Hidden network",
-      "network-name-ssid": "Network name (SSID)",
       "security-open": "Open",
-      "security-wpa": "WPA",
       "security-wep": "WEP",
-      "security-wpa23": "WPA2/WPA3",
-      "security-wpa3": "WPA3",
+      "security-wpa": "WPA",
       "security-wpa-ent": "WPA Enterprise",
       "security-wpa2-ent": "WPA2 Enterprise",
-      "security-wpa3-ent": "WPA3 Enterprise"
+      "security-wpa23": "WPA2/WPA3",
+      "security-wpa3": "WPA3",
+      "security-wpa3-ent": "WPA3 Enterprise",
+      "show-password": "Show password",
+      "title": "Wi‑Fi"
     },
     "signal": {
       "excellent": "Excellent",
@@ -2204,14 +2221,6 @@
       "good": "Good",
       "poor": "Poor",
       "weak": "Weak"
-    },
-    "enterprise": {
-      "username": "Identity / Username",
-      "password": "User password",
-      "anonymous-identity": "Anonymous Identity",
-      "eap-method": "EAP Method",
-      "phase2-auth": "Phase 2 Authentication",
-      "ca-cert": "CA Certificate"
     }
   }
 }
