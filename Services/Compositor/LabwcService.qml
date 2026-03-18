@@ -31,22 +31,40 @@ Item {
     updateWindows();
     connectWorkspaceSignals();
     syncWorkspaces();
-    Logger.i("LabwcService", "Service started (native ext-workspace-v1)");
+    Logger.i("LabwcService", "Service started (ext-workspace-v1)");
   }
 
-  // Watch for workspaces being added/removed from the model
+  // Watch for windowsets being added/removed
   Connections {
-    target: WindowManager.workspaces
+    target: WindowManager
 
-    function onValuesChanged() {
+    function onWindowsetsChanged() {
       root.connectWorkspaceSignals();
+      Qt.callLater(root.syncWorkspaces);
+    }
+
+    function onWindowsetProjectionsChanged() {
       Qt.callLater(root.syncWorkspaces);
     }
   }
 
-  // Connect to property change signals on each native workspace object
+  // Re-check windowsets after a short delay - the Wayland protocol data
+  // may arrive after init and the changed signal can be missed
+  Timer {
+    interval: 500
+    running: true
+    repeat: false
+    onTriggered: {
+      if (WindowManager.windowsets.length > 0) {
+        root.connectWorkspaceSignals();
+        root.syncWorkspaces();
+      }
+    }
+  }
+
+  // Connect to property change signals on each native windowset object
   function connectWorkspaceSignals() {
-    const nativeWs = WindowManager.workspaces.values;
+    const nativeWs = WindowManager.windowsets;
     const newConnected = {};
 
     for (const ws of nativeWs) {
@@ -77,8 +95,7 @@ Item {
   }
 
   function syncWorkspaces() {
-    const nativeWs = WindowManager.workspaces.values;
-    const groups = WindowManager.workspaceGroups.values;
+    const nativeWs = WindowManager.windowsets;
 
     workspaces.clear();
     nativeWorkspaceMap = {};
@@ -91,12 +108,12 @@ Item {
         continue;
       }
 
-      // Find which outputs this workspace's group spans
+      // Find which outputs this windowset's projection spans
       let outputName = "";
-      if (ws.group) {
-        const groupScreens = ws.group.screens;
-        if (groupScreens && groupScreens.length > 0) {
-          outputName = groupScreens[0].name || "";
+      if (ws.projection) {
+        const projScreens = ws.projection.screens;
+        if (projScreens && projScreens.length > 0) {
+          outputName = projScreens[0].name || "";
         }
       }
 
