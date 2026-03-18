@@ -15,7 +15,7 @@ SmartPanel {
   preferredWidth: 800 * Style.uiScaleRatio
   preferredHeight: 600 * Style.uiScaleRatio
   preferredWidthRatio: 0.5
-  preferredHeightRatio: 0.45
+  preferredHeightRatio: 0.7
 
   // Positioning
   readonly property string screenBarPosition: Settings.getBarPositionForScreen(screen?.name)
@@ -1835,7 +1835,6 @@ SmartPanel {
               pageInput.inputItem.focus = false;
             }
 
-            onEditingFinished: submitPage()
             onAccepted: submitPage()
           }
 
