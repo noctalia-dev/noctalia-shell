@@ -333,9 +333,9 @@ ColumnLayout {
       buttonTooltip: I18n.tr("setup.wallpaper.dir-browse")
       Layout.fillWidth: true
       onInputTextChanged: text => {
-        selectedDirectory = text;
-        directoryChanged(text);
-      }
+                            selectedDirectory = text;
+                            directoryChanged(text);
+                          }
       onButtonClicked: directoryPicker.open()
     }
   }

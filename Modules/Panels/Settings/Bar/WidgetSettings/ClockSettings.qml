@@ -141,8 +141,8 @@ ColumnLayout {
         placeholderText: "HH:mm ddd, MMM dd"
         text: valueFormatHorizontal
         onTextChanged: {
-          valueFormatHorizontal = text
-          saveSettings()
+          valueFormatHorizontal = text;
+          saveSettings();
         }
         Component.onCompleted: {
           if (inputItem) {
@@ -169,8 +169,8 @@ ColumnLayout {
         placeholderText: "HH mm dd MM"
         text: valueFormatVertical
         onTextChanged: {
-          valueFormatVertical = text
-          saveSettings()
+          valueFormatVertical = text;
+          saveSettings();
         }
         Component.onCompleted: {
           if (inputItem) {
@@ -192,8 +192,8 @@ ColumnLayout {
         placeholderText: "HH:mm, ddd MMM dd"
         text: valueTooltipFormat
         onTextChanged: {
-          valueTooltipFormat = text
-          saveSettings()
+          valueTooltipFormat = text;
+          saveSettings();
         }
         Component.onCompleted: {
           if (inputItem) {

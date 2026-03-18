@@ -100,11 +100,11 @@ ColumnLayout {
       buttonIcon: "folder-open"
       buttonTooltip: I18n.tr("panels.notifications.sounds-files-select-file")
       onInputTextChanged: text => {
-        const soundPath = text;
-        Settings.data.notifications.sounds.normalSoundFile = soundPath;
-        Settings.data.notifications.sounds.lowSoundFile = soundPath;
-        Settings.data.notifications.sounds.criticalSoundFile = soundPath;
-      }
+                            const soundPath = text;
+                            Settings.data.notifications.sounds.normalSoundFile = soundPath;
+                            Settings.data.notifications.sounds.lowSoundFile = soundPath;
+                            Settings.data.notifications.sounds.criticalSoundFile = soundPath;
+                          }
       onButtonClicked: root.openUnifiedPicker()
     }
   }

@@ -73,15 +73,24 @@ Popup {
         Layout.fillWidth: true
         label: I18n.tr("panels.notifications.rules-action-label")
         model: [
-          { "key": "block", "name": I18n.tr("panels.notifications.rules-action-block") },
-          { "key": "mute", "name": I18n.tr("panels.notifications.rules-action-mute") },
-          { "key": "hide", "name": I18n.tr("panels.notifications.rules-action-hide") }
+          {
+            "key": "block",
+            "name": I18n.tr("panels.notifications.rules-action-block")
+          },
+          {
+            "key": "mute",
+            "name": I18n.tr("panels.notifications.rules-action-mute")
+          },
+          {
+            "key": "hide",
+            "name": I18n.tr("panels.notifications.rules-action-hide")
+          }
         ]
         currentKey: actionValue
         onSelected: key => {
-          actionValue = key;
-          _selectedAction = key;
-        }
+                      actionValue = key;
+                      _selectedAction = key;
+                    }
       }
 
       NLabel {

@@ -82,8 +82,8 @@ ColumnLayout {
     placeholderText: I18n.tr("panels.audio.external-mixer-placeholder")
     text: valueMiddleClickCommand
     onTextChanged: {
-      valueMiddleClickCommand = text
-      saveSettings()
+      valueMiddleClickCommand = text;
+      saveSettings();
     }
     defaultValue: widgetMetadata.middleClickCommand
   }

@@ -41,7 +41,10 @@ ColumnLayout {
       if (trimmed === "")
         return;
       var arr = (NotificationRulesService.rules || []).slice();
-      var rule = { "pattern": trimmed, "action": action };
+      var rule = {
+        "pattern": trimmed,
+        "action": action
+      };
       if (index >= 0 && index < arr.length) {
         arr[index] = rule;
       } else {

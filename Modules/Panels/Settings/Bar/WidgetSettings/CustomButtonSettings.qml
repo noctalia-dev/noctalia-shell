@@ -140,8 +140,8 @@ ColumnLayout {
     placeholderText: I18n.tr("placeholders.enter-tooltip")
     text: valueGeneralTooltipText
     onTextChanged: {
-      valueGeneralTooltipText = text
-      saveSettings()
+      valueGeneralTooltipText = text;
+      saveSettings();
     }
     defaultValue: widgetMetadata.generalTooltipText
   }
@@ -177,8 +177,8 @@ ColumnLayout {
     placeholderText: I18n.tr("placeholders.enter-ipc-identifier")
     text: valueIpcIdentifier
     onTextChanged: {
-      valueIpcIdentifier = text
-      saveSettings()
+      valueIpcIdentifier = text;
+      saveSettings();
     }
     defaultValue: widgetMetadata.ipcIdentifier
   }

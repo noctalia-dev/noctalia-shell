@@ -175,8 +175,8 @@ ColumnLayout {
         placeholderText: "HH:mm\\nd MMMM yyyy"
         text: valueFormat
         onTextChanged: {
-          valueFormat = text
-          settingsChanged(saveSettings())
+          valueFormat = text;
+          settingsChanged(saveSettings());
         }
         Component.onCompleted: {
           if (inputItem) {
