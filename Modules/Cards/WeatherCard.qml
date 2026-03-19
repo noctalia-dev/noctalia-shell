@@ -61,7 +61,7 @@ NBox {
         }
 
         // Limit update rate to avoid using too much processing power
-        property real time: parent.shaderTime - (parent.shaderTime % (1 / ( root.isRaining ? 3 : root.isSnowing ? 6 : 2)))
+        property real time: parent.shaderTime - (parent.shaderTime % (1 / (root.isRaining ? 3 : root.isSnowing ? 6 : 2)))
         property real itemWidth: weatherEffect.width
         property real itemHeight: weatherEffect.height
         property color bgColor: root.color
