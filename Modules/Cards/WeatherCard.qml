@@ -45,8 +45,8 @@ NBox {
       NumberAnimation on shaderTime {
         loops: Animation.Infinite
         from: 0
-        to: 1000
-        duration: 100000
+        to: root.isSnowing ? 900 : 3000
+        duration: 300000
       }
 
       ShaderEffect {
@@ -60,7 +60,8 @@ NBox {
           hideSource: root.isRaining // Only hide for rain (distortion), show for snow
         }
 
-        property real time: parent.shaderTime
+        // Limit update rate to avoid using too much processing power
+        property real time: parent.shaderTime - (parent.shaderTime % (1 / ( root.isRaining ? 3 : root.isSnowing ? 6 : 2)))
         property real itemWidth: weatherEffect.width
         property real itemHeight: weatherEffect.height
         property color bgColor: root.color
