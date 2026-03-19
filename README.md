@@ -48,7 +48,7 @@ A beautiful, minimal desktop shell for Wayland that actually gets out of your wa
 - 🔒 Lock screen
 - 🧩 Desktop widgets (clock, media player and more)
 - 💡 OSD for volume and brightness
-- 🔌 30+ plugins available ([explore plugins](https://noctalia.dev/plugins/))
+- 🔌 Nearly 100 plugins available ([explore plugins](https://noctalia.dev/plugins/))
 - 🪄 Setup wizard for first-time users
 - ⚡ Built on Quickshell for performance
 
