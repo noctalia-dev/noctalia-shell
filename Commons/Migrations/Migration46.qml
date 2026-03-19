@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import qs.Commons
 
 QtObject {
   id: root
@@ -7,8 +8,7 @@ QtObject {
   function migrate(adapter, logger, rawJson) {
     logger.i("Migration46", "Removing legacy PAM configuration file");
 
-    const shellName = "noctalia";
-    const configDir = Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/";
+    const configDir = Settings.configDir;
     const pamConfigDir = configDir + "pam";
     // Remove the entire pam directory if it exists
     const script = `rm -rf '${pamConfigDir}'`;

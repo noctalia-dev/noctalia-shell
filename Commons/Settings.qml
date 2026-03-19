@@ -28,8 +28,9 @@ Singleton {
   readonly property int settingsVersion: 59
   property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
-  readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
-  readonly property string cacheDir: Quickshell.env("NOCTALIA_CACHE_DIR") || (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/" + shellName + "/"
+  readonly property string configDir: ensureTrailingSlash(Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/")
+  readonly property string cacheDir: ensureTrailingSlash(Quickshell.env("NOCTALIA_CACHE_DIR") || (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/" + shellName + "/")
+
   readonly property string settingsFile: Quickshell.env("NOCTALIA_SETTINGS_FILE") || (configDir + "settings.json")
   readonly property string defaultLocation: "Tokyo"
   readonly property string defaultAvatar: Quickshell.env("HOME") + "/.face"
@@ -777,7 +778,13 @@ Singleton {
   }
 
   // -----------------------------------------------------
-  // Function to preprocess paths by expanding "~" to user's home directory
+  // Preprocess paths by adding trailing "/"
+  function ensureTrailingSlash(path) {
+    return path.endsWith("/") ? path : path + "/";
+  }
+
+  // -----------------------------------------------------
+  // Preprocess paths by expanding "~" to user's home directory
   function preprocessPath(path) {
     if (typeof path !== "string" || path === "") {
       return path;

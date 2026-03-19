@@ -121,15 +121,14 @@ async def refresh_theme():
 
 
 async def get_config_dir() -> Path:
-    # 1. project-specific override
-    if value := os.environ.get("NOCTALIA_CONFIG_DIR"):
-        return Path(value).expanduser()
+    # Returns the XDG config home (e.g. ~/.config)
+    # GTK config lives at ~/.config/gtk-3.0/ and ~/.config/gtk-4.0/.
 
-    # 2. XDG standard
+    # 1. XDG standard
     if value := os.environ.get("XDG_CONFIG_HOME"):
         return Path(value).expanduser()
 
-    # 3. fallback
+    # 2. fallback
     return Path.home() / ".config"
 
 
