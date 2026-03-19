@@ -10,6 +10,7 @@ RowLayout {
   property real minimumWidth: 280
   property real popupHeight: 180
 
+  property bool selectOnNavigation: true
   property string label: ""
   property string description: ""
   property ListModel model: {}
@@ -152,7 +153,10 @@ RowLayout {
     }
   }
 
-  onSearchTextChanged: filterModel()
+  onSearchTextChanged: {
+    filterModel();
+    listView.currentIndex = 0;
+  }
 
   NLabel {
     label: root.label
@@ -236,6 +240,86 @@ RowLayout {
           text: root.searchText
           onTextChanged: root.searchText = text
           fontSize: Style.fontSizeS
+
+          Keys.onUpPressed: {
+            if (listView.currentIndex > 0) {
+              listView.currentIndex--;
+              listView.positionViewAtIndex(listView.currentIndex, ListView.Contain);
+
+              if (root.selectOnNavigation) {
+                selectHighlighted()
+              }
+            }
+          }
+
+          Keys.onDownPressed: {
+            if (listView.currentIndex < listView.count - 1) {
+              listView.currentIndex++;
+              listView.positionViewAtIndex(listView.currentIndex, ListView.Contain);
+
+              if (root.selectOnNavigation) {
+                selectHighlighted()
+              }
+            }
+          }
+
+          Keys.onReturnPressed: {
+            selectHighlighted()
+            combo.popup.close();
+          }
+          Keys.onEnterPressed:  {
+            selectHighlighted()
+            combo.popup.close();
+          }
+
+          Keys.onEscapePressed: combo.popup.close()
+
+          Keys.onPressed: (event) => {
+            switch (event.key) {
+              case Qt.Key_Home:
+                listView.currentIndex = 0;
+                listView.positionViewAtIndex(0, ListView.Beginning);
+                event.accepted = true;
+                break;
+              case Qt.Key_End:
+                listView.currentIndex = listView.count - 1;
+                listView.positionViewAtIndex(listView.count - 1, ListView.End);
+                event.accepted = true;
+                break;
+              case Qt.Key_PageUp:
+                listView.currentIndex = Math.max(0, listView.currentIndex - pageStep());
+                listView.positionViewAtIndex(listView.currentIndex, ListView.Contain);
+                event.accepted = true;
+                break;
+              case Qt.Key_PageDown:
+                listView.currentIndex = Math.min(listView.count - 1, listView.currentIndex + pageStep());
+                listView.positionViewAtIndex(listView.currentIndex, ListView.Contain);
+                event.accepted = true;
+                break;
+              default:
+                return;
+            }
+
+            if (root.selectOnNavigation) {
+              selectHighlighted()
+            }
+          }
+
+          function selectHighlighted() {
+            if (listView.currentIndex >= 0
+                && listView.model
+                && listView.currentIndex < listView.model.count) {
+              var selectedKey = listView.model.get(listView.currentIndex).key;
+              root.selected(selectedKey);
+            }
+          }
+
+          function pageStep() {
+            if (listView.count === 0 || listView.contentHeight === 0)
+              return 1;
+            var rowHeight = listView.contentHeight / listView.count;
+            return Math.max(1, Math.floor(listView.height / rowHeight));
+          }
         }
 
         NListView {
@@ -246,6 +330,11 @@ RowLayout {
           model: combo.popup.visible ? root.activeModel : null
           horizontalPolicy: ScrollBar.AlwaysOff
           verticalPolicy: ScrollBar.AsNeeded
+
+          onCurrentIndexChanged: {
+            if (currentIndex >= 0)
+              positionViewAtIndex(currentIndex, ListView.Contain);
+          }
 
           delegate: root.delegate ? root.delegate : defaultDelegate
 
@@ -378,12 +467,15 @@ RowLayout {
         if (combo.popup.visible) {
           // Ensure the model is filtered when popup opens
           filterModel();
+          listView.currentIndex = Math.max(0, root.findIndexInActiveModel(root.currentKey));
           // Small delay to ensure the popup is fully rendered
           Qt.callLater(() => {
                          if (searchInput && searchInput.inputItem) {
                            searchInput.inputItem.forceActiveFocus();
                          }
                        });
+        } else {
+          root.searchText = "";
         }
       }
     }
