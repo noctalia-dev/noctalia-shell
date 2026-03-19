@@ -1062,7 +1062,7 @@ SmartPanel {
             if (itemY < viewportTop) {
               contentY = Math.max(0, itemY - cellHeight);
             } else if (itemY + cellHeight > viewportBottom) {
-              contentY = itemY + cellHeight - height + cellHeight;
+              contentY = Math.min(contentHeight - height, itemY + cellHeight - height);
             }
           }
         }
@@ -1532,7 +1532,7 @@ SmartPanel {
               if (itemY < viewportTop) {
                 contentY = Math.max(0, itemY - cellHeight);
               } else if (itemY + cellHeight > viewportBottom) {
-                contentY = itemY + cellHeight - height + cellHeight;
+                contentY = Math.min(contentHeight - height, itemY + cellHeight - height);
               }
             }
           }
