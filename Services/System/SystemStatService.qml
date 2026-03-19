@@ -58,7 +58,6 @@ Singleton {
   property var diskUsedGb: ({}) // Used space in GB per mount point
   property var diskAvailableGb: ({}) // available space in GB per mount point
   property var diskSizeGb: ({}) // Total size in GB per mount point
-  property var diskAvailGb: ({})
   property real rxSpeed: 0
   property real txSpeed: 0
   property real zfsArcSizeKb: 0 // ZFS ARC cache size in KB
@@ -244,15 +243,6 @@ Singleton {
     return isDiskCritical(diskPath, available) ? criticalColor : (isDiskWarning(diskPath, available) ? warningColor : Color.mPrimary);
   }
 
-  // Helper function for color resolution based on value and thresholds
-  function getStatColor(value, warningThreshold, criticalThreshold) {
-    if (value >= criticalThreshold)
-      return criticalColor;
-    if (value >= warningThreshold)
-      return warningColor;
-    return Color.mPrimary;
-  }
-
   // Internal state for CPU calculation
   property var prevCpuStats: null
   property var prevCpuCoresStats: null
@@ -274,11 +264,6 @@ Singleton {
   property int intelTempMaxFiles: 20 // Will test up to temp20_input
 
   // Thermal zone fallback (for ARM SoCs with SCMI sensors, etc.)
-  // Matches thermal zone types containing "cpu" and picks the hottest big-core zone.
-  // Also provides GPU temp via zones like "gpu-avg-thermal" or "gpu0-thermal".
-  readonly property var thermalZoneCpuPatterns: ["cpu-b", "cpu-m", "cpu"]
-  readonly property var thermalZoneGpuPatterns: ["gpu-avg", "gpu0", "gpu"]
-  property string cpuThermalZonePath: ""
   property var cpuThermalZonePaths: [] // All matching CPU zones for averaging
   property string gpuThermalZonePath: ""
 
