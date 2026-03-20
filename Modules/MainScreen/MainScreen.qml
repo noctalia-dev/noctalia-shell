@@ -92,11 +92,6 @@ PanelWindow {
   property bool _needsFullscreen: isAnyPanelOpen || PanelService.closingPanel !== null || _dimmerAnimating
   property bool _dimmerAnimating: false
 
-  // Whether the window is actually collapsed (bar-sized) right now.
-  // Uses actual window dimensions so barPlaceholder coordinates switch in sync
-  // with the compositor resize, avoiding a 1-frame bar background flash.
-  readonly property bool _isCollapsed: !isFramed && (root.width < (screen?.width ?? 1) || root.height < (screen?.height ?? 1))
-
   // Shadow padding for collapsed window — shadow extends beyond bar into the screen
   readonly property real _shadowPadding: (Settings.data.general.enableShadows && !PowerProfileService.noctaliaPerformanceMode) ? Style.shadowBlurMax + Math.max(Math.abs(Style.shadowHorizontalOffset), Math.abs(Style.shadowVerticalOffset)) : 0
   // Inner padding: the side facing into the screen needs at least shadow clearance
@@ -485,7 +480,7 @@ PanelWindow {
       // Expose bar dimensions directly on this Item for BarBackground
       // Use screen dimensions directly
       x: {
-        if (root._isCollapsed) {
+        if (!root._needsFullscreen && !root.isFramed) {
           // Collapsed: bar is at margin from screen edge, shadow extends inward.
           // For right bar the window faces left (inner side first), so bar starts after shadow clearance.
           return barPosition === "right" ? root._innerPaddingH : barMarginH;
@@ -497,7 +492,7 @@ PanelWindow {
         return barMarginH;
       }
       y: {
-        if (root._isCollapsed) {
+        if (!root._needsFullscreen && !root.isFramed) {
           return barPosition === "bottom" ? root._innerPaddingV : barMarginV;
         }
         if (barPosition === "bottom")
