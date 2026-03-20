@@ -13,10 +13,34 @@ Singleton {
   property var locale: Qt.locale()
   property string systemDetectedLangCode: ""
   property string fullLocaleCode: "" // Preserves regional locale variants
-  // Static list of available translations — update when adding/removing translation files
-  property var availableLanguages: ["en", "de", "es", "fr", "hu", "it", "ja", "ko-KR", "ku", "nl", "nn-HN", "nn-NO", "pl", "pt", "ru", "sv", "tr", "uk-UA", "zh-CN", "zh-TW"]
   property var translations: ({})
   property var fallbackTranslations: ({})
+
+  // Static list of available translations — update when adding/removing translation files
+  property var availableLanguages: ["en", "de", "es", "fr", "hu", "it", "ja", "ko-KR", "ku", "nl", "nn-HN", "nn-NO", "pl", "pt", "ru", "sv", "tr", "uk-UA", "vi", "zh-CN", "zh-TW"]
+
+  // Default date format per language (used by lock screen, etc.)
+  readonly property var dateFormats: ({
+                                        "de": "dddd, d. MMMM",
+                                        "en": "dddd, MMMM d",
+                                        "es": "dddd, d 'de' MMMM",
+                                        "fr": "dddd d MMMM",
+                                        "hu": "dddd, MMMM d.",
+                                        "it": "dddd d MMMM",
+                                        "ja": "yyyy年M月d日 dddd",
+                                        "ko": "yyyy년 M월 d일 dddd",
+                                        "ku": "dddd, dê MMMM",
+                                        "nl": "dddd d MMMM",
+                                        "nn": "dddd d. MMMM",
+                                        "pl": "dddd, d MMMM",
+                                        "pt": "dddd, d 'de' MMMM",
+                                        "ru": "dddd, d MMMM",
+                                        "sv": "dddd d MMMM",
+                                        "tr": "dddd, d MMMM",
+                                        "uk": "dddd, d MMMM",
+                                        "vi": "dddd, d MMMM",
+                                        "zh": "yyyy年M月d日 dddd"
+                                      })
 
   // Signals for reactive updates
   signal languageChanged(string newLanguage)
@@ -186,28 +210,6 @@ Singleton {
       fullLocale: "en"
     };
   }
-
-  // Default date format per language (used by lock screen, etc.)
-  readonly property var dateFormats: ({
-                                        "de": "dddd, d. MMMM",
-                                        "en": "dddd, MMMM d",
-                                        "es": "dddd, d 'de' MMMM",
-                                        "fr": "dddd d MMMM",
-                                        "hu": "dddd, MMMM d.",
-                                        "it": "dddd d MMMM",
-                                        "ja": "yyyy年M月d日 dddd",
-                                        "ko": "yyyy년 M월 d일 dddd",
-                                        "ku": "dddd, dê MMMM",
-                                        "nl": "dddd d MMMM",
-                                        "nn": "dddd d. MMMM",
-                                        "pl": "dddd, d MMMM",
-                                        "pt": "dddd, d 'de' MMMM",
-                                        "ru": "dddd, d MMMM",
-                                        "sv": "dddd d MMMM",
-                                        "tr": "dddd, d MMMM",
-                                        "uk": "dddd, d MMMM",
-                                        "zh": "yyyy年M月d日 dddd"
-                                      })
 
   function dateFormat() {
     var lang = langCode.split("-")[0];
