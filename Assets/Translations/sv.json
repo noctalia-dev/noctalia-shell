@@ -2115,6 +2115,10 @@
     "thunderstorm": "Åskväder"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "Visa länkhastighet",
+      "show-link-speed-description": "Visa nätverkets länkhastighet bredvid Wi-Fi-namnet i widgeten"
+    },
     "color-picker": {
       "palette-description": "Välj bland ett stort utbud av fördefinierade färger.",
       "palette-label": "Palett",

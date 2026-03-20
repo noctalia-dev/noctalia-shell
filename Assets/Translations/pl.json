@@ -2115,6 +2115,10 @@
     "thunderstorm": "Burza"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "Pokaż prędkość łącza",
+      "show-link-speed-description": "Wyświetl prędkość połączenia sieciowego obok nazwy Wi-Fi w widżecie"
+    },
     "color-picker": {
       "palette-description": "Wybierz z szerokiej gamy predefiniowanych kolorów.",
       "palette-label": "Paleta",

@@ -2115,6 +2115,10 @@
     "thunderstorm": "Гроза"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "Показывать скорость соединения",
+      "show-link-speed-description": "Отображать скорость сетевого соединения рядом с именем Wi-Fi в виджете"
+    },
     "color-picker": {
       "palette-description": "Выберите из широкого диапазона предопределённых цветов.",
       "palette-label": "Палитра",

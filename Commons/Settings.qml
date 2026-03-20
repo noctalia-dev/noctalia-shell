@@ -586,6 +586,7 @@ Singleton {
       property bool bluetoothHideUnnamedDevices: false
       property bool disableDiscoverability: false
       property bool bluetoothAutoConnect: true
+      property bool showLinkSpeedInWidget: false
     }
 
     // session menu

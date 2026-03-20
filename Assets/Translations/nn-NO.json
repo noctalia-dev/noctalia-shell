@@ -1955,6 +1955,10 @@
     "thunderstorm": "Storm"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "Vis linkhastigheit",
+      "show-link-speed-description": "Vis nettverkslinkhastigheita ved sidan av Wi-Fi-namnet i widgeten"
+    },
     "color-picker": {
       "palette-description": "Vel frå mange ulike fargar.",
       "palette-label": "Palett",

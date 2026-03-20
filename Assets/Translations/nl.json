@@ -2115,6 +2115,10 @@
     "thunderstorm": "Onweer"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "Link snelheid tonen",
+      "show-link-speed-description": "Toon de netwerk linksnelheid naast de Wi-Fi naam in de widget"
+    },
     "color-picker": {
       "palette-description": "Kies uit een breed scala aan vooraf gedefinieerde kleuren.",
       "palette-label": "Palet",

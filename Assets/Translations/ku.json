@@ -1775,6 +1775,10 @@
     "thunderstorm": "Bahoza bruskî"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "Leztiya girêdanê nîşan bide",
+      "show-link-speed-description": "Leztiya girêdana torê li aliyê navê Wi-Fi yê di widget de nîşan bide"
+    },
     "color-picker": {
       "palette-description": "Ji rêzek fereh ji rengên pêşdanasînkirî hilbijêre.",
       "palette-label": "Destgeh",
