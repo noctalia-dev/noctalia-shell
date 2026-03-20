@@ -495,7 +495,7 @@ Variants {
         let base = Style.marginM;
         if (screenBarPosition === position) {
           const isVertical = position === "top" || position === "bottom";
-          const floatExtra = Math.ceil(Settings.data.bar.floating ? (isVertical ? Settings.data.bar.marginVertical : Settings.data.bar.marginHorizontal) : 0);
+          const floatExtra = Math.ceil(Settings.data.bar.barType === "floating" ? (isVertical ? Settings.data.bar.marginVertical : Settings.data.bar.marginHorizontal) : 0);
           return barHeight + base + floatExtra;
         }
 

@@ -100,8 +100,9 @@ Loader {
       readonly property string barPosition: Settings.getBarPositionForScreen(modelData?.name)
       readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
       readonly property bool barIsFramed: Settings.data.bar.barType === "framed" && hasBar
-      readonly property real barMarginH: Settings.data.bar.floating ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
-      readonly property real barMarginV: Settings.data.bar.floating ? Math.ceil(Settings.data.bar.marginVertical) : 0
+      readonly property bool barFloating: Settings.data.bar.barType === "floating"
+      readonly property real barMarginH: barFloating ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
+      readonly property real barMarginV: barFloating ? Math.ceil(Settings.data.bar.marginVertical) : 0
       readonly property int barHeight: Style.getBarHeightForScreen(modelData?.name)
       readonly property bool staticPanelOpen: {
         if (!isAttachedMode)
@@ -878,10 +879,10 @@ Loader {
           anchors.right: dockPosition === "right"
 
           // Static margins — no animation, window stays put
-          margins.top: dockPosition === "top" ? (barAtSameEdge && !exclusive ? barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginVertical : 0) + floatingMargin : floatingMargin) : 0
-          margins.bottom: dockPosition === "bottom" ? (barAtSameEdge && !exclusive ? barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginVertical : 0) + floatingMargin : floatingMargin) : 0
-          margins.left: dockPosition === "left" ? (barAtSameEdge && !exclusive ? barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginHorizontal : 0) + floatingMargin : floatingMargin) : 0
-          margins.right: dockPosition === "right" ? (barAtSameEdge && !exclusive ? barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginHorizontal : 0) + floatingMargin : floatingMargin) : 0
+          margins.top: dockPosition === "top" ? (barAtSameEdge && !exclusive ? barHeight + (barFloating ? Settings.data.bar.marginVertical : 0) + floatingMargin : floatingMargin) : 0
+          margins.bottom: dockPosition === "bottom" ? (barAtSameEdge && !exclusive ? barHeight + (barFloating ? Settings.data.bar.marginVertical : 0) + floatingMargin : floatingMargin) : 0
+          margins.left: dockPosition === "left" ? (barAtSameEdge && !exclusive ? barHeight + (barFloating ? Settings.data.bar.marginHorizontal : 0) + floatingMargin : floatingMargin) : 0
+          margins.right: dockPosition === "right" ? (barAtSameEdge && !exclusive ? barHeight + (barFloating ? Settings.data.bar.marginHorizontal : 0) + floatingMargin : floatingMargin) : 0
 
           // Container wrapper for animations
           Item {
@@ -889,10 +890,10 @@ Loader {
 
             // Helper properties for orthogonal bar detection
             readonly property string screenBarPosition: Settings.getBarPositionForScreen(modelData?.name)
-            readonly property bool barOnLeft: hasBar && screenBarPosition === "left" && !Settings.data.bar.floating
-            readonly property bool barOnRight: hasBar && screenBarPosition === "right" && !Settings.data.bar.floating
-            readonly property bool barOnTop: hasBar && screenBarPosition === "top" && !Settings.data.bar.floating
-            readonly property bool barOnBottom: hasBar && screenBarPosition === "bottom" && !Settings.data.bar.floating
+            readonly property bool barOnLeft: hasBar && screenBarPosition === "left" && !barFloating
+            readonly property bool barOnRight: hasBar && screenBarPosition === "right" && !barFloating
+            readonly property bool barOnTop: hasBar && screenBarPosition === "top" && !barFloating
+            readonly property bool barOnBottom: hasBar && screenBarPosition === "bottom" && !barFloating
 
             // Calculate padding needed to shift center to match exclusive mode
             readonly property int extraTop: (isVertical && !exclusive && barOnTop) ? barHeight : 0

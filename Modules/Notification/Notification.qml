@@ -96,7 +96,7 @@ Variants {
       readonly property bool isCentered: location === "top" || location === "bottom"
 
       readonly property string barPos: Settings.getBarPositionForScreen(notifWindow.screen?.name)
-      readonly property bool isFloating: Settings.data.bar.floating
+      readonly property bool isFloating: Settings.data.bar.barType === "floating"
       readonly property real barHeight: Style.getBarHeightForScreen(notifWindow.screen?.name)
 
       readonly property bool isFramed: Settings.data.bar.barType === "framed"

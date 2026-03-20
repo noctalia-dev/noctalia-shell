@@ -442,7 +442,7 @@ PanelWindow {
       readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
       readonly property bool isFramed: Settings.data.bar.barType === "framed"
       readonly property real frameThickness: Settings.data.bar.frameThickness ?? 12
-      readonly property bool barFloating: Settings.data.bar.floating || false
+      readonly property bool barFloating: Settings.data.bar.barType === "floating"
       readonly property real barMarginH: barFloating ? Math.floor(Settings.data.bar.marginHorizontal) : 0
       readonly property real barMarginV: barFloating ? Math.floor(Settings.data.bar.marginVertical) : 0
       readonly property real barHeight: Style.getBarHeightForScreen(screen?.name)

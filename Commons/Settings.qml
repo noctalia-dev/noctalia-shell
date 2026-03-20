@@ -192,7 +192,6 @@ Singleton {
       property bool useSeparateOpacity: false
 
       // Floating bar settings
-      property bool floating: false
       property int marginVertical: 4
       property int marginHorizontal: 4
 
