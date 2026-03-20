@@ -1,8 +1,8 @@
 pragma Singleton
+import Qt.labs.folderlistmodel 2.10
+import QtQml.Models
 
 import QtQuick
-import QtQml.Models
-import Qt.labs.folderlistmodel 2.10
 import Quickshell
 import Quickshell.Io
 import qs.Commons
@@ -51,29 +51,29 @@ Singleton {
         path: filePath + "/brightness"
         onTextChanged: () => {
           if (!this.isWanted)
-            return
+          return;
           if (!this.initialCheckDone) {
-            this.initialCheckDone = true
-            return
+            this.initialCheckDone = true;
+            return;
           }
 
-          var state = !this.text().startsWith("0")
+          var state = !this.text().startsWith("0");
           switch (fileName.split("::")[1]) {
             case "numlock":
-              root.numLockOn = state
-              root.numLockChanged(state)
-              Logger.i("LockKeysService", "Num Lock:", state, this.path);
-              break
+            root.numLockOn = state;
+            root.numLockChanged(state);
+            Logger.i("LockKeysService", "Num Lock:", state, this.path);
+            break;
             case "capslock":
-              root.capsLockOn = state
-              root.capsLockChanged(state)
-              Logger.i("LockKeysService", "Caps Lock:", state, this.path);
-              break
+            root.capsLockOn = state;
+            root.capsLockChanged(state);
+            Logger.i("LockKeysService", "Caps Lock:", state, this.path);
+            break;
             case "scrolllock":
-              root.scrollLockOn = state
-              root.scrollLockChanged(state)
-              Logger.i("LockKeysService", "Scroll Lock:", state, this.path);
-              break
+            root.scrollLockOn = state;
+            root.scrollLockChanged(state);
+            Logger.i("LockKeysService", "Scroll Lock:", state, this.path);
+            break;
           }
         }
 
@@ -84,11 +84,11 @@ Singleton {
               case "numlock":
               case "capslock":
               case "scrolllock":
-                return true
+              return true;
             }
           }
           Logger.i("LockKeysService", "ignoring:", this.path);
-          return false
+          return false;
         }
 
         // Skip first OSD event if one fires immediately after enabling
@@ -97,7 +97,7 @@ Singleton {
           target: root
           function onShouldRunChanged() {
             if (root.shouldRun) {
-              this.initialCheckDone = false
+              this.initialCheckDone = false;
             }
           }
         }
