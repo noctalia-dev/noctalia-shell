@@ -133,6 +133,13 @@ Singleton {
       Logger.i("Network", "System resumed - forcing state poll");
       ethernetStateProcess.running = true;
       root.scan();
+
+      // NetworkManager usually takes a few seconds to reconnect to a new/known AP
+      // after waking up. Delayed scans handle the UI refresh automatically.
+      delayedScanTimer.interval = 3000;
+      delayedScanTimer.restart();
+      resumeScanTimer.restart();
+
       root.refreshActiveWifiDetails();
       root.refreshActiveEthernetDetails();
       connectivityCheckProcess.running = true;
@@ -209,6 +216,13 @@ Singleton {
   Timer {
     id: delayedScanTimer
     interval: 7000
+    onTriggered: scan()
+  }
+
+  // Secondary scan timer for resume double-checking (5 seconds)
+  Timer {
+    id: resumeScanTimer
+    interval: 5000
     onTriggered: scan()
   }
 
