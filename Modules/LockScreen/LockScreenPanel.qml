@@ -196,7 +196,7 @@ Item {
         visible: batteryIndicator.isReady || keyboardLayout.currentLayout !== "Unknown" || LockKeysService.capsLockOn
 
         NIcon {
-          icon: "letter-c"
+          icon: "lock"
           pointSize: Style.fontSizeM
           color: LockKeysService.capsLockOn ? Color.mPrimary : Qt.alpha(Color.mOnSurfaceVariant, 0.5)
         }
@@ -658,7 +658,7 @@ Item {
             visible: batteryIndicator.isReady || keyboardLayout.currentLayout !== "Unknown" || LockKeysService.capsLockOn
 
             NIcon {
-              icon: "letter-c"
+              icon: "lock"
               pointSize: Style.fontSizeM
               color: LockKeysService.capsLockOn ? Color.mPrimary : Qt.alpha(Color.mOnSurfaceVariant, 0.5)
             }
@@ -704,7 +704,7 @@ Item {
             spacing: Style.marginL
 
             NIcon {
-              icon: "lock"
+              icon: "login-2"
               pointSize: Style.fontSizeL
               color: passwordInput.activeFocus ? Color.mPrimary : Color.mOnSurfaceVariant
               anchors.verticalCenter: parent.verticalCenter
