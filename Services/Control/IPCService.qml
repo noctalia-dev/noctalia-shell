@@ -494,13 +494,13 @@ Singleton {
     function togglePanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("audioPanel", screen);
-                                              panel?.toggle();
+                                              panel?.toggle(null, "Volume");
                                             });
     }
     function openPanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("audioPanel", screen);
-                                              panel?.open();
+                                              panel?.open(null, "Volume");
                                             });
     }
     function closePanel() {
