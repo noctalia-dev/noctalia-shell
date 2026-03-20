@@ -103,20 +103,6 @@ Variants {
       }
     }
 
-    // Screen corners - 4 small PanelWindows, one per corner
-    Repeater {
-      model: ["topLeft", "topRight", "bottomLeft", "bottomRight"]
-      delegate: Loader {
-        active: windowItem.windowLoaded && windowItem.shouldBeActive
-        asynchronous: false
-
-        sourceComponent: ScreenCornerWindow {
-          screen: windowItem.modelData
-          corner: modelData
-        }
-      }
-    }
-
     // BarExclusionZone - created after MainScreen has fully loaded
     // Note: Exclusion zone should NOT be affected by hideOnOverview setting.
     // When bar is hidden during overview, the exclusion zone should remain to prevent

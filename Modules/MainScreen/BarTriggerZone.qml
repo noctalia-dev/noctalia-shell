@@ -26,6 +26,7 @@ PanelWindow {
   focusable: false
 
   WlrLayershell.namespace: "noctalia-bar-trigger-" + (screen?.name || "unknown")
+  WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.exclusionMode: ExclusionMode.Ignore
 
   // Anchor to bar's edge

@@ -774,6 +774,7 @@ Loader {
           margins.left: peekCenterOffsetX
 
           WlrLayershell.namespace: "noctalia-dock-indicator-" + (screen?.name || "unknown")
+          WlrLayershell.layer: WlrLayer.Top
           WlrLayershell.exclusionMode: ExclusionMode.Ignore
           WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
           implicitHeight: isVertical ? peekEdgeLength : indicatorThickness
