@@ -348,6 +348,13 @@ Item {
       w = root.preferredWidth;
     }
     var panelWidth = Math.min(w, root.width - effMarginL - effMarginR);
+    // For floating bars, additionally clamp to available space accounting for corner insets
+    if (root.barFloating && !root.barIsVertical) {
+      var floatCornerInset = Style.radiusL * 2;
+      var floatBarLeftEdge = root.barMarginH + floatCornerInset;
+      var floatMaxWidth = root.width - floatBarLeftEdge - root.barMarginH - floatCornerInset;
+      panelWidth = Math.min(panelWidth, floatMaxWidth);
+    }
 
     var h;
     // Priority 1: Content-driven size (dynamic)
