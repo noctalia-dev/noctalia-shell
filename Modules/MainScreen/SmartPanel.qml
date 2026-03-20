@@ -368,6 +368,13 @@ Item {
       h = root.preferredHeight;
     }
     var panelHeight = Math.min(h, root.height - root.barHeight - effMarginT - effMarginB);
+    // For vertical floating bars, clamp panelHeight to available space accounting for corner insets
+    if (root.barFloating && root.barIsVertical) {
+      var floatCornerInsetV = Style.radiusL * 2;
+      var floatBarTopEdge = root.barMarginV + floatCornerInsetV;
+      var floatMaxHeight = root.height - floatBarTopEdge - root.barMarginV - floatCornerInsetV;
+      panelHeight = Math.min(panelHeight, floatMaxHeight);
+    }
 
     // Update panelBackground target size (will be animated)
     panelBackground.targetWidth = panelWidth;
