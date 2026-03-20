@@ -348,6 +348,13 @@ Item {
       w = root.preferredWidth;
     }
     var panelWidth = Math.min(w, root.width - effMarginL - effMarginR);
+    // For floating bars, additionally clamp to available space accounting for corner insets
+    if (root.barFloating && !root.barIsVertical) {
+      var floatCornerInset = Style.radiusL * 2;
+      var floatBarLeftEdge = root.barMarginH + floatCornerInset;
+      var floatMaxWidth = root.width - floatBarLeftEdge - root.barMarginH - floatCornerInset;
+      panelWidth = Math.min(panelWidth, floatMaxWidth);
+    }
 
     var h;
     // Priority 1: Content-driven size (dynamic)
@@ -361,6 +368,13 @@ Item {
       h = root.preferredHeight;
     }
     var panelHeight = Math.min(h, root.height - root.barHeight - effMarginT - effMarginB);
+    // For vertical floating bars, clamp panelHeight to available space accounting for corner insets
+    if (root.barFloating && root.barIsVertical) {
+      var floatCornerInsetV = Style.radiusL * 2;
+      var floatBarTopEdge = root.barMarginV + floatCornerInsetV;
+      var floatMaxHeight = root.height - floatBarTopEdge - root.barMarginV - floatCornerInsetV;
+      panelHeight = Math.min(panelHeight, floatMaxHeight);
+    }
 
     // Update panelBackground target size (will be animated)
     panelBackground.targetWidth = panelWidth;
