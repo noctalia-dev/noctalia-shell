@@ -671,6 +671,19 @@ Singleton {
   }
 
   IpcHandler {
+    target: "airplaneMode"
+    function toggle() {
+      BluetoothService.setAirplaneMode(!Settings.data.network.airplaneModeEnabled);
+    }
+    function enable() {
+      BluetoothService.setAirplaneMode(true);
+    }
+    function disable() {
+      BluetoothService.setAirplaneMode(false);
+    }
+  }
+
+  IpcHandler {
     target: "battery"
     function togglePanel() {
       root.screenDetector.withCurrentScreen(screen => {
