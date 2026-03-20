@@ -1327,9 +1327,11 @@ Item {
             opacityTrigger.start();
           }
 
-          // Start open watchdog timer
-          root.openWatchdogActive = true;
-          openWatchdogTimer.start();
+          // Start open watchdog timer (skip when animations disabled - everything completes synchronously)
+          if (!root.animationsDisabled) {
+            root.openWatchdogActive = true;
+            openWatchdogTimer.start();
+          }
 
           opened();
         });
