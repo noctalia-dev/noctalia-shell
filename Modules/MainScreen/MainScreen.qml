@@ -44,7 +44,9 @@ PanelWindow {
   }
 
   // Wayland
-  WlrLayershell.layer: WlrLayer.Top
+  // As this is always rendered, putting it on the top layer
+  // would prevent direct scanout for other Wayland clients.
+  // WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.namespace: "noctalia-background-" + (screen?.name || "unknown")
   WlrLayershell.exclusionMode: ExclusionMode.Ignore // Don't reserve space - BarExclusionZone handles that
   WlrLayershell.keyboardFocus: {
