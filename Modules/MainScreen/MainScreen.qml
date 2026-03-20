@@ -92,6 +92,11 @@ PanelWindow {
   property bool _needsFullscreen: isAnyPanelOpen || PanelService.closingPanel !== null || _dimmerAnimating
   property bool _dimmerAnimating: false
 
+  // Whether the window is actually collapsed (bar-sized) right now.
+  // Uses actual window dimensions so barPlaceholder coordinates switch in sync
+  // with the compositor resize, avoiding a 1-frame bar background flash.
+  readonly property bool _isCollapsed: !isFramed && (root.width < (screen?.width ?? 1) || root.height < (screen?.height ?? 1))
+
   // Shadow padding for collapsed window — shadow extends beyond bar into the screen
   readonly property real _shadowPadding: (Settings.data.general.enableShadows && !PowerProfileService.noctaliaPerformanceMode) ? Style.shadowBlurMax + Math.max(Math.abs(Style.shadowHorizontalOffset), Math.abs(Style.shadowVerticalOffset)) : 0
   // Inner padding: the side facing into the screen needs at least shadow clearance
@@ -478,19 +483,25 @@ PanelWindow {
       }
 
       // Expose bar dimensions directly on this Item for BarBackground
-      // Use root.width/height so the formula works identically whether the window
-      // is fullscreen or collapsed to bar-size — no coordinate-system switch needed,
-      // which eliminates the 1-frame bar flash during resize transitions.
+      // Use screen dimensions directly
       x: {
+        if (root._isCollapsed) {
+          // Collapsed: bar is at margin from screen edge, shadow extends inward.
+          // For right bar the window faces left (inner side first), so bar starts after shadow clearance.
+          return barPosition === "right" ? root._innerPaddingH : barMarginH;
+        }
         if (barPosition === "right")
-          return root.width - barHeight - barMarginH;
+          return (screen?.width ?? 0) - barHeight - barMarginH;
         if (isFramed && !barIsVertical)
           return frameThickness;
         return barMarginH;
       }
       y: {
+        if (root._isCollapsed) {
+          return barPosition === "bottom" ? root._innerPaddingV : barMarginV;
+        }
         if (barPosition === "bottom")
-          return root.height - barHeight - barMarginV;
+          return (screen?.height ?? 0) - barHeight - barMarginV;
         if (isFramed && barIsVertical)
           return frameThickness;
         return barMarginV;
