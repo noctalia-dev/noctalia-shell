@@ -399,6 +399,15 @@ Singleton {
       assignToSlot(1, null);
     }
 
+    // Reset closedImmediately after the current event cycle so all Behaviors
+    // that check it have processed their snaps. Cannot rely on MainScreen's
+    // onColorChanged because the color may already be transparent (dimmerOpacity=0).
+    if (closedImmediately) {
+      Qt.callLater(() => {
+                     closedImmediately = false;
+                   });
+    }
+
     // Reset keyboard init state
     isInitializingKeyboard = false;
     keyboardInitTimer.stop();

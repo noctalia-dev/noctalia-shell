@@ -145,8 +145,10 @@ Item {
 
   // Panel visibility and sizing
   visible: isPanelVisible
-  width: parent ? parent.width : 0
-  height: parent ? parent.height : 0
+  // Always use screen dimensions for layout — MainScreen may be collapsed to bar-sized when idle,
+  // but panels must compute positions and sizes against the full screen.
+  width: screen?.width ?? (parent ? parent.width : 0)
+  height: screen?.height ?? (parent ? parent.height : 0)
 
   // Panel control functions
   function toggle(buttonItem, buttonName) {
@@ -290,6 +292,11 @@ Item {
     PanelService.closedPanel(root);
     closed();
 
+    // Flush pending double-buffered Wayland state (blur regions) that won't
+    // be committed otherwise — after an app launch the compositor may stop
+    // sending frame callbacks, leaving the render loop idle.
+    Window.window?.flushWaylandState();
+
     Logger.d("SmartPanel", "Panel closed immediately", objectName);
   }
 
@@ -315,6 +322,9 @@ Item {
 
     PanelService.closedPanel(root);
     closed();
+
+    // Flush pending double-buffered Wayland state (blur regions).
+    Window.window?.flushWaylandState();
 
     Logger.d("SmartPanel", "Panel close finalized", objectName);
   }

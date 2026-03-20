@@ -44,9 +44,6 @@ PanelWindow {
   }
 
   // Wayland
-  // As this is always rendered, putting it on the top layer
-  // would prevent direct scanout for other Wayland clients.
-  // WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.namespace: "noctalia-background-" + (screen?.name || "unknown")
   WlrLayershell.exclusionMode: ExclusionMode.Ignore // Don't reserve space - BarExclusionZone handles that
   WlrLayershell.keyboardFocus: {
@@ -70,17 +67,36 @@ PanelWindow {
   }
 
   anchors {
-    top: true
-    bottom: true
-    left: true
-    right: true
+    top: isFramed || _needsFullscreen || _barPosition !== "bottom"
+    bottom: isFramed || _needsFullscreen || _barPosition !== "top"
+    left: isFramed || _needsFullscreen || _barPosition !== "right"
+    right: isFramed || _needsFullscreen || _barPosition !== "left"
   }
+
+  // Implicit sizes control the non-anchored dimension when collapsed (3 anchors).
+  // Layout: [margin] [bar] [max(margin, shadow)] — screen-edge side uses margin, inner side uses whichever is larger.
+  // When fullscreen (4 anchors), compositor ignores these.
+  implicitWidth: Math.ceil(barPlaceholder.barMarginH + barPlaceholder.barHeight + _innerPaddingH)
+  implicitHeight: Math.ceil(barPlaceholder.barMarginV + barPlaceholder.barHeight + _innerPaddingV)
 
   // Desktop dimming when panels are open
   property real dimmerOpacity: Settings.data.general.dimmerOpacity ?? 0.8
   property bool isPanelOpen: (PanelService.openedPanel !== null) && (PanelService.openedPanel.screen === screen)
   property bool isPanelClosing: (PanelService.openedPanel !== null) && PanelService.openedPanel.isClosing
   property bool isAnyPanelOpen: PanelService.openedPanel !== null
+
+  // Dynamic fullscreen management — collapse to bar-sized when idle to avoid fullscreen compositor damage
+  readonly property bool isFramed: Settings.data.bar.barType === "framed"
+  readonly property string _barPosition: Settings.getBarPositionForScreen(screen?.name)
+  readonly property bool _barIsVertical: _barPosition === "left" || _barPosition === "right"
+  property bool _needsFullscreen: isAnyPanelOpen || PanelService.closingPanel !== null || _dimmerAnimating
+  property bool _dimmerAnimating: false
+
+  // Shadow padding for collapsed window — shadow extends beyond bar into the screen
+  readonly property real _shadowPadding: (Settings.data.general.enableShadows && !PowerProfileService.noctaliaPerformanceMode) ? Style.shadowBlurMax + Math.max(Math.abs(Style.shadowHorizontalOffset), Math.abs(Style.shadowVerticalOffset)) : 0
+  // Inner padding: the side facing into the screen needs at least shadow clearance
+  readonly property real _innerPaddingH: Math.max(barPlaceholder.barMarginH, _shadowPadding)
+  readonly property real _innerPaddingV: Math.max(barPlaceholder.barMarginV, _shadowPadding)
 
   color: {
     if (dimmerOpacity > 0 && isPanelOpen && !isPanelClosing) {
@@ -94,6 +110,7 @@ PanelWindow {
     ColorAnimation {
       duration: isPanelClosing ? Style.animationFaster : Style.animationNormal
       easing.type: Easing.OutQuad
+      onRunningChanged: root._dimmerAnimating = running
     }
   }
 
@@ -463,6 +480,11 @@ PanelWindow {
       // Expose bar dimensions directly on this Item for BarBackground
       // Use screen dimensions directly
       x: {
+        if (!root._needsFullscreen && !root.isFramed) {
+          // Collapsed: bar is at margin from screen edge, shadow extends inward.
+          // For right bar the window faces left (inner side first), so bar starts after shadow clearance.
+          return barPosition === "right" ? root._innerPaddingH : barMarginH;
+        }
         if (barPosition === "right")
           return (screen?.width ?? 0) - barHeight - barMarginH;
         if (isFramed && !barIsVertical)
@@ -470,6 +492,9 @@ PanelWindow {
         return barMarginH;
       }
       y: {
+        if (!root._needsFullscreen && !root.isFramed) {
+          return barPosition === "bottom" ? root._innerPaddingV : barMarginV;
+        }
         if (barPosition === "bottom")
           return (screen?.height ?? 0) - barHeight - barMarginV;
         if (isFramed && barIsVertical)
@@ -546,9 +571,6 @@ PanelWindow {
         return -1;
       }
     }
-
-    // Screen Corners
-    ScreenCorners {}
 
     // Blur behind the bar and open panels
     // Helper object holding computed properties for blur regions
