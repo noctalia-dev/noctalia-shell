@@ -31,6 +31,9 @@ SmartPanel {
   panelAnchorLeft: pluginInstance?.panelAnchorLeft ?? false
   panelAnchorRight: pluginInstance?.panelAnchorRight ?? false
 
+  // Allow plugin to override the panel background color (e.g. for transparent mode)
+  panelBackgroundColor: pluginInstance?.panelBackgroundColor ?? Color.mSurface
+
   // Panel content is dynamically loaded
   panelContent: Component {
     Item {
