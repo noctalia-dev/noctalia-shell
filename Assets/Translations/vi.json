@@ -2115,6 +2115,10 @@
     "thunderstorm": "Bão"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "Hiển thị tốc độ liên kết",
+      "show-link-speed-description": "Hiển thị tốc độ liên kết mạng bên cạnh tên Wi-Fi trong widget"
+    },
     "color-picker": {
       "palette-description": "Chọn từ nhiều màu sắc có sẵn.",
       "palette-label": "Bảng màu",

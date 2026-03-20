@@ -2115,6 +2115,10 @@
     "thunderstorm": "Gewitter"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "Linkgeschwindigkeit anzeigen",
+      "show-link-speed-description": "Die Netzwerk-Linkgeschwindigkeit neben dem WLAN-Namen im Widget anzeigen"
+    },
     "color-picker": {
       "palette-description": "Wählen Sie aus einer großen Auswahl vordefinierter Farben.",
       "palette-label": "Palette",

@@ -71,4 +71,17 @@ ColumnLayout {
                 }
     defaultValue: widgetMetadata.textColor
   }
+
+  NToggle {
+    id: showLinkSpeedSwitch
+    Layout.fillWidth: true
+    label: I18n.tr("widgets.network.show-link-speed")
+    description: I18n.tr("widgets.network.show-link-speed-description")
+    checked: Settings.data.network.showLinkSpeedInWidget
+    onToggled: checked => {
+                 Settings.data.network.showLinkSpeedInWidget = checked;
+               }
+    defaultValue: widgetMetadata.showLinkSpeedInWidget
+  }
 }
+

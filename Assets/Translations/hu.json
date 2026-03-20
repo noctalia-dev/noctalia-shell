@@ -2115,6 +2115,10 @@
     "thunderstorm": "Zivatar"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "Kapcsolat sebesség megjelenítése",
+      "show-link-speed-description": "A hálózati kapcsolat sebességének megjelenítése a widget Wi-Fi neve mellett"
+    },
     "color-picker": {
       "palette-description": "Válassz az előre meghatározott színek széles skálájából.",
       "palette-label": "Paletta",

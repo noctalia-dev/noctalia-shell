@@ -2115,6 +2115,10 @@
     "thunderstorm": "Fırtına"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "Bağlantı hızını göster",
+      "show-link-speed-description": "Widget'te Wi-Fi adının yanında ağ bağlantı hızını göster"
+    },
     "color-picker": {
       "palette-description": "Önceden tanımlı renkler geniş yelpazesinden seçin.",
       "palette-label": "Palet",

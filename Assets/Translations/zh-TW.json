@@ -2115,6 +2115,10 @@
     "thunderstorm": "閃電暴雨"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "顯示連線速度",
+      "show-link-speed-description": "在小工具中的Wi-Fi名稱旁顯示網路連線速度"
+    },
     "color-picker": {
       "palette-description": "從各種預先設定的顏色中挑選",
       "palette-label": "調色盤",

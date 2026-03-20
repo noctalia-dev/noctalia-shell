@@ -2115,6 +2115,10 @@
     "thunderstorm": "뇌우"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "연결 속도 표시",
+      "show-link-speed-description": "위젯의 Wi-Fi 이름 옆에 네트워크 연결 속도를 표시합니다"
+    },
     "color-picker": {
       "palette-description": "다양한 미리 정의된 색상 중에서 선택하세요.",
       "palette-label": "팔레트",

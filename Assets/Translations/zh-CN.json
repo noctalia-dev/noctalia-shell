@@ -2115,6 +2115,10 @@
     "thunderstorm": "雷暴"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "显示连接速度",
+      "show-link-speed-description": "在小组件中的Wi-Fi名称旁显示网络连接速度"
+    },
     "color-picker": {
       "palette-description": "从各种预定义颜色中选择。",
       "palette-label": "调色板",
