@@ -94,7 +94,7 @@ stdenvNoCC.mkDerivation {
     qtWrapperArgs+=(
       --prefix PATH : ${lib.makeBinPath (runtimeDeps ++ extraPackages)}
       --prefix XDG_DATA_DIRS : ${wayland-scanner}/share
-      --add-flags "-p $out/share/noctalia-shell"
+      --set-default QS_CONFIG_PATH "$out/share/noctalia-shell"
       ${lib.optionalString calendarSupport "--prefix GI_TYPELIB_PATH : ${giTypelibPath}"}
     )
   '';
