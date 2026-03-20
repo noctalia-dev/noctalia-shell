@@ -2115,6 +2115,10 @@
     "thunderstorm": "雷雨"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "リンク速度を表示",
+      "show-link-speed-description": "ウィジェットのWi-Fi名の横にネットワークリンク速度を表示する"
+    },
     "color-picker": {
       "palette-description": "豊富なプリセットカラーから選択します。",
       "palette-label": "パレット",

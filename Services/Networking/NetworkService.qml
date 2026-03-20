@@ -530,7 +530,7 @@ Singleton {
       const eth = root.activeEthernetDetails;
       const name = eth.connectionName || (root.ethernetInterfaces.length > 0 ? root.ethernetInterfaces[0].connectionName : "") || "";
       const speed = eth.speed || "";
-      p.push(name + (speed ? " - " + speed : ""));
+      p.push(name + (speed && Settings.data.network.showLinkSpeedInWidget ? " - " + speed : ""));
     }
 
     // Wi-Fi
@@ -539,7 +539,7 @@ Singleton {
       const speed = wl.rateShort || wl.rate || "";
       const connectedNet = Object.values(root.networks).find(net => net.connected);
       const name = connectedNet ? connectedNet.ssid : (wl.connectionName || "");
-      p.push(name + (speed ? " - " + speed : ""));
+      p.push(name + (speed && Settings.data.network.showLinkSpeedInWidget ? " - " + speed : ""));
     }
 
     if (p.length > 0) {
@@ -1721,3 +1721,4 @@ Singleton {
     }
   }
 }
+

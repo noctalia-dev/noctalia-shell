@@ -2115,6 +2115,10 @@
     "thunderstorm": "Orage"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "Afficher la vitesse de liaison",
+      "show-link-speed-description": "Afficher la vitesse de liaison réseau à côté du nom Wi-Fi dans le widget"
+    },
     "color-picker": {
       "palette-description": "Choisissez parmi une large gamme de couleurs prédéfinies.",
       "palette-label": "Palette",

@@ -2115,6 +2115,10 @@
     "thunderstorm": "Temporale"
   },
   "widgets": {
+    "network": {
+      "show-link-speed": "Mostra velocità del collegamento",
+      "show-link-speed-description": "Visualizza la velocità di collegamento della rete accanto al nome Wi-Fi nel widget"
+    },
     "color-picker": {
       "palette-description": "Scegli da un’ampia gamma di colori predefiniti.",
       "palette-label": "Tavolozza",
