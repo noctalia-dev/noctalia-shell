@@ -15,6 +15,12 @@ Singleton {
   property string schemesDirectory: Quickshell.shellDir + "/Assets/ColorScheme"
   property string downloadedSchemesDirectory: Settings.configDir + "colorschemes"
   property string colorsJsonFilePath: Settings.configDir + "colors.json"
+  readonly property string gtkRefreshScript: Quickshell.shellDir + "/Scripts/python/src/theming/gtk-refresh.py"
+
+  function pushSystemColorScheme() {
+    const mode = Settings.data.colorSchemes.darkMode ? "dark" : "light";
+    Quickshell.execDetached(["python3", gtkRefreshScript, "--appearance-only", mode]);
+  }
 
   Connections {
     target: Settings.data.colorSchemes
@@ -24,6 +30,7 @@ Singleton {
         // Re-apply current scheme to pick the right variant
         applyScheme(Settings.data.colorSchemes.predefinedScheme);
       }
+      root.pushSystemColorScheme();
       // Toast: dark/light mode switched
       const enabled = !!Settings.data.colorSchemes.darkMode;
       const label = enabled ? I18n.tr("tooltips.switch-to-dark-mode") : I18n.tr("tooltips.switch-to-light-mode");
@@ -38,6 +45,7 @@ Singleton {
     // do not remove
     Logger.i("ColorScheme", "Service started");
     loadColorSchemes();
+    Qt.callLater(pushSystemColorScheme);
   }
 
   function loadColorSchemes() {

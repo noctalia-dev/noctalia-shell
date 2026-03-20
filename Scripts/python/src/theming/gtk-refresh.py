@@ -89,21 +89,22 @@ async def apply_gtk4_colors(config_dir: Path):
     return ensure_gtk_css_import(gtk_css, colors_file, "GTK4")
 
 
-async def refresh_theme():
+async def sync_system_appearance(mode: str, *, update_gtk_theme: bool = True) -> None:
+    """
+    Push light/dark to org.gnome.desktop.interface (gsettings or dconf fallback).
+    Used by the GTK template post-hook (also sets gtk-theme when update_gtk_theme)
+    and by Noctalia on dark-mode toggle (--appearance-only: color-scheme only).
+    """
     has_gsettings = shutil.which("gsettings")
     has_dconf = shutil.which("dconf")
 
     if not has_gsettings and not has_dconf:
-        print("No gsettings or dconf found, skip GTK refresh")
+        print("No gsettings or dconf found, skip system appearance sync")
         return
 
-    if mode == "light":
-        target_theme = "adw-gtk3"
-    else:
-        target_theme = "adw-gtk3-dark"
-
-    theme_available = theme_exists(target_theme)
-    if not theme_available:
+    target_theme = "adw-gtk3" if mode == "light" else "adw-gtk3-dark"
+    theme_available = update_gtk_theme and theme_exists(target_theme)
+    if update_gtk_theme and not theme_available:
         print(f"Theme '{target_theme}' not found, skipping GTK theme set")
 
     if has_gsettings:
@@ -132,7 +133,28 @@ async def get_config_dir() -> Path:
     return Path.home() / ".config"
 
 
+def parse_args():
+    argv = sys.argv[1:]
+    appearance_only = False
+    if argv and argv[0] == "--appearance-only":
+        appearance_only = True
+        argv = argv[1:]
+    if len(argv) != 1 or argv[0] not in ("dark", "light"):
+        print(
+            "Usage: gtk-refresh.py [--appearance-only] (dark|light)",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return appearance_only, argv[0]
+
+
 async def main():
+    appearance_only, mode = parse_args()
+
+    if appearance_only:
+        await sync_system_appearance(mode, update_gtk_theme=False)
+        return
+
     config_dir = await get_config_dir()
 
     if not config_dir.is_dir():
@@ -145,13 +167,11 @@ async def main():
     results = await asyncio.gather(apply_gtk3_colors(config_dir), apply_gtk4_colors(config_dir))
 
     if all(results):
-        await refresh_theme()
+        await sync_system_appearance(mode, update_gtk_theme=True)
         print("GTK colors applied successfully")
     else:
         sys.exit(1)
 
 
 if __name__ == "__main__":
-    mode = sys.argv[1]  # light or dark
-
     asyncio.run(main())
