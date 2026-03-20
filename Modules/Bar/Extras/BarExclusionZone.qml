@@ -25,7 +25,6 @@ PanelWindow {
   mask: Region {}
 
   // Wayland layer shell configuration
-  WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.namespace: "noctalia-bar-exclusion-" + (screen?.name || "unknown")
   WlrLayershell.exclusionMode: ExclusionMode.Auto
 
