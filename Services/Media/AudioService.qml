@@ -14,6 +14,10 @@ Singleton {
   property var lastVolumeFeedbackTime: 0
   readonly property int minVolumeFeedbackInterval: 100
 
+  // Track the last sink that produced volume feedback so we can suppress the
+  // initial onVolumeChanged that fires on startup and device switches.
+  property PwNode _lastFeedbackSink: null
+
   // Devices
   readonly property PwNode sink: Pipewire.ready ? Pipewire.defaultAudioSink : null
   readonly property PwNode source: validatedSource
@@ -500,6 +504,12 @@ Singleton {
       const vol = root.sink.audio.volume;
       if (vol === undefined || isNaN(vol)) {
         return;
+      }
+
+      if (root.sink !== root._lastFeedbackSink) {
+        root._lastFeedbackSink = root.sink;
+      } else {
+        playVolumeFeedback(clampOutputVolume(vol));
       }
 
       // If volume exceeds max, clamp it (but only if we didn't just set it)
