@@ -572,9 +572,6 @@ PanelWindow {
       }
     }
 
-    // Screen Corners
-    ScreenCorners {}
-
     // Blur behind the bar and open panels
     // Helper object holding computed properties for blur regions
     QtObject {
