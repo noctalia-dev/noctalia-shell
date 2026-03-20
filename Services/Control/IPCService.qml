@@ -637,7 +637,7 @@ Singleton {
     function togglePanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var networkPanel = PanelService.getPanel("networkPanel", screen);
-                                              networkPanel?.toggle(null, "WiFi");
+                                              networkPanel?.toggle(null, "Network");
                                             });
     }
   }
