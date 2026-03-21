@@ -444,7 +444,7 @@ Item {
               }
               visible: text !== ""
               pointSize: Style.fontSizeXS
-              color: Qt.alpah(device.getContentColors([Color.mSurfaceVariant, Color.mOnSurfaceVariant])[1], Style.opacityHeavy)
+              color: Qt.alpha(device.getContentColors([Color.mSurfaceVariant, Color.mOnSurfaceVariant])[1], Style.opacityHeavy)
             }
 
             RowLayout {
@@ -456,7 +456,7 @@ Item {
                   return BatteryService.getIcon(b !== null ? b : 0, false, false, b !== null);
                 }
                 pointSize: Style.fontSizeXS
-                color: Qt.alpah(device.getContentColors()[1], Style.opacityHeavy)
+                color: Qt.alpha(device.getContentColors()[1], Style.opacityHeavy)
               }
               NText {
                 text: {
@@ -464,7 +464,7 @@ Item {
                   return b === null ? "-" : (b + "%");
                 }
                 pointSize: Style.fontSizeXS
-                color: Qt.alpah(device.getContentColors([Color.mSurfaceVariant, Color.mOnSurfaceVariant])[1], Style.opacityHeavy)
+                color: Qt.alpha(device.getContentColors([Color.mSurfaceVariant, Color.mOnSurfaceVariant])[1], Style.opacityHeavy)
               }
             }
           }
