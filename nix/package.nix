@@ -3,7 +3,6 @@
   extraPackages ? [ ],
   runtimeDeps ? [
     brightnessctl
-    cava
     cliphist
     ddcutil
     wlsunset
@@ -21,7 +20,6 @@
   quickshell,
   # runtime deps
   brightnessctl,
-  cava,
   cliphist,
   ddcutil,
   wlsunset,
