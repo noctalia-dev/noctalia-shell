@@ -529,6 +529,9 @@ Variants {
       WlrLayershell.layer: Settings.data.osd?.overlayLayer ? WlrLayer.Overlay : WlrLayer.Top
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
 
+      // Click-through — OSD is display-only, no input needed
+      mask: Region {}
+
       Item {
         id: osdItem
         anchors.fill: parent
