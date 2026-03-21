@@ -685,6 +685,7 @@ Singleton {
       property bool volumeOverdrive: false
       property int spectrumFrameRate: 30
       property string visualizerType: "linear"
+      property bool spectrumMirrored: true
       property list<string> mprisBlacklist: []
       property string preferredPlayer: ""
       property bool volumeFeedback: false

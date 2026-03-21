@@ -271,6 +271,7 @@ Item {
               values: SpectrumService.values
               fillColor: Color.mPrimary
               opacity: 0.4
+              mirrored: Settings.data.audio.spectrumMirrored
             }
           }
 
@@ -284,6 +285,7 @@ Item {
               values: SpectrumService.values
               fillColor: Color.mPrimary
               opacity: 0.4
+              mirrored: Settings.data.audio.spectrumMirrored
             }
           }
 
@@ -297,6 +299,7 @@ Item {
               values: SpectrumService.values
               fillColor: Color.mPrimary
               opacity: 0.4
+              mirrored: Settings.data.audio.spectrumMirrored
             }
           }
 

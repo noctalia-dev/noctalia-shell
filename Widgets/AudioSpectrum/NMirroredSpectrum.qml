@@ -8,6 +8,7 @@ Item {
   property int strokeWidth: 0
   property var values: []
   property bool vertical: false
+  property bool mirrored: true
 
   // Minimum signal properties
   property bool showMinimumSignal: false
@@ -15,7 +16,7 @@ Item {
 
   // Pre-compute mirroring
   readonly property int valuesCount: (values && values.length !== undefined) ? values.length : 0
-  readonly property int totalBars: valuesCount * 2
+  readonly property int totalBars: mirrored ? valuesCount * 2 : valuesCount
   readonly property real barSlotSize: totalBars > 0 ? (vertical ? height : width) / totalBars : 0
   readonly property bool highQuality: (Settings.data.audio.visualizerType === "low") ? false : true
   readonly property real centerY: height / 2
@@ -25,10 +26,7 @@ Item {
     model: root.totalBars
 
     Rectangle {
-      // The first half of bars are a mirror image (reversed values array).
-      // The second half of bars are in normal order.
-      property int valueIndex: index < root.valuesCount ? root.valuesCount - 1 - index // Mirrored half
-                                                        : index - root.valuesCount // Normal half
+      property int valueIndex: root.mirrored ? (index < root.valuesCount ? root.valuesCount - 1 - index : index - root.valuesCount) : index
 
       property real rawAmp: (root.values && root.values[valueIndex] !== undefined) ? root.values[valueIndex] : 0
       property real amp: (root.showMinimumSignal && rawAmp === 0) ? root.minimumSignalValue : rawAmp

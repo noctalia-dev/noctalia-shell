@@ -12,6 +12,7 @@ layout(std140, binding = 0) uniform buf {
   float count;
   float texWidth;
   float vertical;
+  float mirrored;
 };
 
 // Sample amplitude from data texture (R channel)
@@ -53,9 +54,16 @@ void main() {
   float axisPos = (vertical > 0.5) ? uv.y : uv.x;
   float crossPos = (vertical > 0.5) ? uv.x : uv.y;
 
-  // Mirror: value[0] at center, value[count-1] at edges
-  float distFromCenter = abs(axisPos - 0.5) * 2.0;
-  float dataIdx = distFromCenter * max(count - 1.0, 1.0);
+  // Map axis position to data index
+  float dataIdx;
+  if (mirrored > 0.5) {
+    // Mirror: value[0] at center, value[count-1] at edges
+    float distFromCenter = abs(axisPos - 0.5) * 2.0;
+    dataIdx = distFromCenter * max(count - 1.0, 1.0);
+  } else {
+    // Linear: value[0] at left/top, value[count-1] at right/bottom
+    dataIdx = axisPos * max(count - 1.0, 1.0);
+  }
 
   // Interpolated amplitude, clamped to valid range
   float amplitude = clamp(evalCurve(dataIdx), 0.0, 1.0);

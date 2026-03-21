@@ -795,6 +795,8 @@
       "on-middle-clicked-description": "Command to execute when the button is middle-clicked.",
       "panel-applications-empty": "No applications are currently playing audio",
       "title": "Audio",
+      "spectrum-mirrored-description": "Mirror the spectrum so low frequencies are in the center. When off, low frequencies are on the left and high on the right.",
+      "spectrum-mirrored-label": "Mirror spectrum",
       "visualizer-type-description": "Choose a visualization type for media playback.",
       "visualizer-type-label": "Visualization type",
       "volumes-desc": "Adjust volume controls and audio levels.",

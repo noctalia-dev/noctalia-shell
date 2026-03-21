@@ -63,6 +63,15 @@
     "subTabLabel": "common.visualizer"
   },
   {
+    "labelKey": "panels.audio.spectrum-mirrored-label",
+    "descriptionKey": "panels.audio.spectrum-mirrored-description",
+    "widget": "NToggle",
+    "tab": 14,
+    "tabLabel": "panels.audio.title",
+    "subTab": 3,
+    "subTabLabel": "common.visualizer"
+  },
+  {
     "labelKey": "panels.audio.media-frame-rate-label",
     "descriptionKey": "panels.audio.media-frame-rate-description",
     "widget": "NComboBox",

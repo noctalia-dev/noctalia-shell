@@ -35,6 +35,14 @@ ColumnLayout {
     onSelected: key => Settings.data.audio.visualizerType = key
   }
 
+  NToggle {
+    label: I18n.tr("panels.audio.spectrum-mirrored-label")
+    description: I18n.tr("panels.audio.spectrum-mirrored-description")
+    checked: Settings.data.audio.spectrumMirrored
+    defaultValue: Settings.getDefaultValue("audio.spectrumMirrored")
+    onToggled: Settings.data.audio.spectrumMirrored = checked
+  }
+
   NComboBox {
     label: I18n.tr("panels.audio.media-frame-rate-label")
     description: I18n.tr("panels.audio.media-frame-rate-description")
