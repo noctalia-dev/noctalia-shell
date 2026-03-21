@@ -12,6 +12,7 @@ Singleton {
 
   property var schemes: []
   property bool scanning: false
+  property bool activateUserSavedAfterSave: false
   property string schemesDirectory: Quickshell.shellDir + "/Assets/ColorScheme"
   property string downloadedSchemesDirectory: Settings.configDir + "colorschemes"
   readonly property string userSavedSchemeId: "User-saved-theme"
@@ -250,6 +251,15 @@ Singleton {
           return line.length > 0;
         });
         files.sort(function (a, b) {
+          var fileA = a.split("/");
+          var fileB = b.split("/");
+          var idA = fileA[fileA.length - 1].replace(".json", "");
+          var idB = fileB[fileB.length - 1].replace(".json", "");
+          if (idA === userSavedSchemeId && idB !== userSavedSchemeId)
+            return -1;
+          if (idB === userSavedSchemeId && idA !== userSavedSchemeId)
+            return 1;
+
           var nameA = getBasename(a).toLowerCase();
           var nameB = getBasename(b).toLowerCase();
           return nameA.localeCompare(nameB);
@@ -257,6 +267,14 @@ Singleton {
         schemes = files;
         scanning = false;
         Logger.d("ColorScheme", "Listed", schemes.length, "schemes");
+
+        if (activateUserSavedAfterSave) {
+          activateUserSavedAfterSave = false;
+          Settings.data.colorSchemes.useWallpaperColors = false;
+          setPredefinedScheme(I18n.tr("panels.color-scheme.user-saved-theme-name"));
+          return;
+        }
+
         // Normalize stored scheme to basename and re-apply if necessary
         var stored = Settings.data.colorSchemes.predefinedScheme;
         if (stored) {
@@ -323,6 +341,7 @@ Singleton {
       if (exitCode === 0) {
         Logger.i("ColorScheme", "Saved user scheme:", schemePath);
         ToastService.showNotice(I18n.tr("panels.color-scheme.title"), I18n.tr("common.save") + ": " + schemeDisplayName, "settings-color-scheme");
+        activateUserSavedAfterSave = true;
         loadColorSchemes();
       } else {
         Logger.e("ColorScheme", "Failed to save user scheme:", schemePath);
