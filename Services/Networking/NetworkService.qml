@@ -131,6 +131,8 @@ Singleton {
     target: Time
     function onResumed() {
       Logger.i("Network", "System resumed - forcing state poll");
+      // Reset so periodic connectivity check triggers a rescan after NM reconnects
+      root.networkConnectivity = "unknown";
       ethernetStateProcess.running = true;
       root.scan();
       root.refreshActiveWifiDetails();
