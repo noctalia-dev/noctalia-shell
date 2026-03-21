@@ -57,6 +57,11 @@ Variants {
       id: window
       color: "transparent"
       screen: screenLoader.modelData
+      mask: DesktopWidgetRegistry.editMode ? null : emptyRegion
+
+      Region {
+        id: emptyRegion
+      }
 
       WlrLayershell.layer: WlrLayer.Bottom
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
