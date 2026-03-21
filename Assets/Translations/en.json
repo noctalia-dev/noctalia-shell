@@ -941,6 +941,8 @@
         "tonal-spot": "Material Design default algorithm. Creates balanced palettes using tonal variations of the source color.",
         "vibrant": "Maximizes color saturation for bold, eye-catching palettes with vivid tones."
       },
+      "save-current-description": "Save the current wallpaper-based palette as a predefined scheme for later use when wallpaper colors are disabled.",
+      "user-saved-theme-name": "User saved theme",
       "predefined-desc": "Choose from a collection of predefined color schemes.",
       "predefined-generate-templates-label": "Generate templates for predefined schemes",
       "predefined-title": "Predefined color schemes",

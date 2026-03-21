@@ -34,6 +34,8 @@ ColumnLayout {
       schemeName = "Tokyo Night";
     } else if (schemeName === "Rosepine") {
       schemeName = "Rose Pine";
+    } else if (schemeName === "User-saved-theme") {
+      return I18n.tr("panels.color-scheme.user-saved-theme-name");
     }
 
     return schemeName;
@@ -291,6 +293,25 @@ ColumnLayout {
             radius: width * 0.5
             color: modelData
           }
+        }
+      }
+
+      RowLayout {
+        width: parent.width
+        spacing: Style.marginM
+
+        NText {
+          Layout.fillWidth: true
+          wrapMode: Text.WordWrap
+          text: I18n.tr("panels.color-scheme.save-current-description")
+          pointSize: Style.fontSizeS
+          color: Color.mOnSurfaceVariant
+        }
+
+        NButton {
+          text: I18n.tr("common.save")
+          icon: "device-floppy"
+          onClicked: ColorSchemeService.saveCurrentAsUserScheme()
         }
       }
     }
