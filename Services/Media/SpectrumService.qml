@@ -21,7 +21,7 @@ Singleton {
 
     // TODO Remove in may 2026
     if (!_initialized) {
-      _initialized: true;
+      _initialized = true;
       _setBandsCount();
     }
   }
