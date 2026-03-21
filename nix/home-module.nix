@@ -6,17 +6,24 @@
 }:
 let
   cfg = config.programs.noctalia-shell;
-  jsonFormat = pkgs.formats.json { };
-  tomlFormat = pkgs.formats.toml { };
 
   generateJson =
     name: value:
     if lib.isString value then
       pkgs.writeText "noctalia-${name}.json" value
-    else if builtins.isPath value || lib.isStorePath value then
+    else if builtins.isPath value then
       value
     else
-      jsonFormat.generate "noctalia-${name}.json" value;
+      pkgs.writers.writeJSON "noctalia-${name}.json" value;
+
+  generateToml =
+    name: value:
+    if lib.isString value then
+      pkgs.writeText "noctalia-${name}.toml" value
+    else if builtins.isPath value then
+      value
+    else
+      pkgs.writers.writeTOML "noctalia-${name}.toml" value;
 in
 {
   options.programs.noctalia-shell = {
@@ -33,7 +40,7 @@ in
       type =
         with lib.types;
         oneOf [
-          jsonFormat.type
+          attrs
           str
           path
         ];
@@ -65,7 +72,7 @@ in
       type =
         with lib.types;
         oneOf [
-          jsonFormat.type
+          (attrsOf str)
           str
           path
         ];
@@ -99,7 +106,7 @@ in
       type =
         with lib.types;
         oneOf [
-          tomlFormat.type
+          attrs
           str
           path
         ];
@@ -128,7 +135,7 @@ in
       type =
         with lib.types;
         oneOf [
-          jsonFormat.type
+          attrs
           str
           path
         ];
@@ -161,7 +168,7 @@ in
       type =
         with lib.types;
         attrsOf (oneOf [
-          jsonFormat.type
+          attrs
           str
           path
         ]);
@@ -189,14 +196,14 @@ in
         PartOf = [ config.wayland.systemd.target ];
         After = [ config.wayland.systemd.target ];
         X-Restart-Triggers =
-          lib.optional (cfg.settings != { }) "${config.xdg.configFile."noctalia/settings.json".source}"
-          ++ lib.optional (cfg.colors != { }) "${config.xdg.configFile."noctalia/colors.json".source}"
-          ++ lib.optional (cfg.plugins != { }) "${config.xdg.configFile."noctalia/plugins.json".source}"
+          lib.optional (cfg.settings != { }) config.xdg.configFile."noctalia/settings.json".source
+          ++ lib.optional (cfg.colors != { }) config.xdg.configFile."noctalia/colors.json".source
+          ++ lib.optional (cfg.plugins != { }) config.xdg.configFile."noctalia/plugins.json".source
           ++ lib.optional (
             cfg.user-templates != { }
-          ) "${config.xdg.configFile."noctalia/user-templates.toml".source}"
+          ) config.xdg.configFile."noctalia/user-templates.toml".source
           ++ lib.mapAttrsToList (
-            name: _: "${config.xdg.configFile."noctalia/plugins/${name}/settings.json".source}"
+            name: _: config.xdg.configFile."noctalia/plugins/${name}/settings.json".source
           ) cfg.pluginSettings;
       };
 
@@ -221,13 +228,7 @@ in
         source = generateJson "plugins" cfg.plugins;
       };
       "noctalia/user-templates.toml" = lib.mkIf (cfg.user-templates != { }) {
-        source =
-          if lib.isString cfg.user-templates then
-            pkgs.writeText "noctalia-user-templates.toml" cfg.user-templates
-          else if builtins.isPath cfg.user-templates || lib.isStorePath cfg.user-templates then
-            cfg.user-templates
-          else
-            tomlFormat.generate "noctalia-user-templates.toml" cfg.user-templates;
+        source = generateToml "user-templates" cfg.user-templates;
       };
     }
     // lib.mapAttrs' (
