@@ -17,6 +17,7 @@ Popup {
   property var nameFilters: ["*"]
   property bool showDirs: true
   property bool showHiddenFiles: false
+  property bool allowMultiSelection: false
 
   property var selectedPaths: []
   property string currentPath: initialPath
@@ -578,13 +579,39 @@ Popup {
                              if (model.fileIsDir) {
                                // In folder mode, single click selects the folder
                                if (root.selectionMode === "folders") {
-                                 filePickerPanel.currentSelection = [model.filePath];
+                                 if (root.allowMultiSelection && (mouse.modifiers & Qt.ShiftModifier)) {
+                                   // Deep copy otherwise the isSelected might not get updated.
+                                   var list = JSON.parse(JSON.stringify(filePickerPanel.currentSelection));
+                                   const index = list.indexOf(model.filePath);
+                                   if (index > -1) {
+                                     list.splice(index, 1);
+                                     filePickerPanel.currentSelection = list;
+                                   } else {
+                                     list.push(model.filePath);
+                                     filePickerPanel.currentSelection = list;
+                                   }
+                                 } else {
+                                   filePickerPanel.currentSelection = [model.filePath];
+                                 }
                                }
                                // In file mode, single click on folder does nothing (must double-click to enter)
                              } else {
                                // Single click on file selects it (only in file mode)
                                if (root.selectionMode === "files") {
-                                 filePickerPanel.currentSelection = [model.filePath];
+                                 if (root.allowMultiSelection && (mouse.modifiers & Qt.ShiftModifier)) {
+                                   // Deep copy otherwise the isSelected might not get updated.
+                                   var list = JSON.parse(JSON.stringify(filePickerPanel.currentSelection));
+                                   const index = list.indexOf(model.filePath);
+                                   if (index > -1) {
+                                     list.splice(index, 1);
+                                     filePickerPanel.currentSelection = list;
+                                   } else {
+                                     list.push(model.filePath);
+                                     filePickerPanel.currentSelection = list;
+                                   }
+                                 } else {
+                                   filePickerPanel.currentSelection = [model.filePath];
+                                 }
                                }
                              }
                            }
@@ -677,13 +704,39 @@ Popup {
                              if (model.fileIsDir) {
                                // In folder mode, single click selects the folder
                                if (root.selectionMode === "folders") {
-                                 filePickerPanel.currentSelection = [model.filePath];
+                                 // Deep copy otherwise the isSelected might not get updated.
+                                 if (root.allowMultiSelection && (mouse.modifiers & Qt.ShiftModifier)) {
+                                   var list = JSON.parse(JSON.stringify(filePickerPanel.currentSelection));
+                                   const index = list.indexOf(model.filePath);
+                                   if (index > -1) {
+                                     list.splice(index, 1);
+                                     filePickerPanel.currentSelection = list;
+                                   } else {
+                                     list.push(model.filePath);
+                                     filePickerPanel.currentSelection = list;
+                                   }
+                                 } else {
+                                   filePickerPanel.currentSelection = [model.filePath];
+                                 }
                                }
                                // In file mode, single click on folder does nothing (must double-click to enter)
                              } else {
                                // Single click on file selects it (only in file mode)
                                if (root.selectionMode === "files") {
-                                 filePickerPanel.currentSelection = [model.filePath];
+                                 if (root.allowMultiSelection && (mouse.modifiers & Qt.ShiftModifier)) {
+                                   // Deep copy otherwise the isSelected might not get updated.
+                                   var list = JSON.parse(JSON.stringify(filePickerPanel.currentSelection));
+                                   const index = list.indexOf(model.filePath);
+                                   if (index > -1) {
+                                     list.splice(index, 1);
+                                     filePickerPanel.currentSelection = list;
+                                   } else {
+                                     list.push(model.filePath);
+                                     filePickerPanel.currentSelection = list;
+                                   }
+                                 } else {
+                                   filePickerPanel.currentSelection = [model.filePath];
+                                 }
                                }
                              }
                            }
