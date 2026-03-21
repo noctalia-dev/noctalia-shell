@@ -27,7 +27,7 @@ var constants = {
 function evaluate(expression) {
     try {
         // Fixes decimal arithmetic
-        var cleanExpr = expression.replace(/\s+/g, '').toLowerCase();
+        var cleanExpr = expression.replace(/\s+/g, '').replace(/,/g, '.').toLowerCase();
         
         // Allows numbers (including decimals), basic operators, and explicitly permitted math terms only
         var safeRegex = /^(\d*\.?\d+|[+\-*/()^%,]|sin|cos|tan|asin|acos|atan|atan2|sinh|cosh|tanh|asinh|acosh|atanh|log|ln|exp|pow|sqrt|cbrt|abs|floor|ceil|round|trunc|min|max|random|pi|e|sind|cosd|tand)+$/;
