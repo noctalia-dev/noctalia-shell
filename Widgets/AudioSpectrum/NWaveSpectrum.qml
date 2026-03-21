@@ -13,7 +13,7 @@ Item {
 
   // Minimum signal properties
   property bool showMinimumSignal: false
-  property real minimumSignalValue: 0.05 // Default to 5% of height
+  property real minimumSignalValue: 0.01 // Default to 1% of height
 
   readonly property int valuesCount: (values && values.length !== undefined) ? values.length : 0
   readonly property bool hasData: valuesCount >= 2
