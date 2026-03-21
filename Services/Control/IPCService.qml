@@ -494,19 +494,19 @@ Singleton {
     function togglePanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("audioPanel", screen);
-                                              panel?.toggle();
+                                              panel?.toggle(null, "Volume");
                                             });
     }
     function openPanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("audioPanel", screen);
-                                              panel?.open();
+                                              panel?.open(null, "Volume");
                                             });
     }
     function closePanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("audioPanel", screen);
-                                              panel?.close();
+                                              panel?.close(null, "Volume");
                                             });
     }
   }
@@ -516,6 +516,7 @@ Singleton {
     function toggle() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var sessionMenuPanel = PanelService.getPanel("sessionMenuPanel", screen);
+                                              // Session Menu is never open near the bar
                                               sessionMenuPanel?.toggle();
                                             });
     }
@@ -637,7 +638,7 @@ Singleton {
     function togglePanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var networkPanel = PanelService.getPanel("networkPanel", screen);
-                                              networkPanel?.toggle(null, "WiFi");
+                                              networkPanel?.toggle(null, "Network");
                                             });
     }
   }
