@@ -106,14 +106,13 @@ Singleton {
     }
     // Check preinstalled directory first, then downloaded directory
     var preinstalledPath = schemesDirectory + "/" + schemeName + "/" + schemeName + ".json";
-    var downloadedPath = downloadedSchemesDirectory + "/" + schemeName + "/" + schemeName + ".json";
     // Try to find the scheme in the loaded schemes list to determine which directory it's in
     for (var i = 0; i < schemes.length; i++) {
       if (schemes[i].indexOf("/" + schemeName + "/") !== -1 || schemes[i].indexOf("/" + schemeName + ".json") !== -1) {
         return schemes[i];
       }
     }
-    // Fallback: prefer preinstalled, then downloaded
+    // Fallback: prefer preinstalled path
     return preinstalledPath;
   }
 
@@ -339,7 +338,6 @@ Singleton {
 
     onExited: function (exitCode) {
       if (exitCode === 0) {
-        Logger.i("ColorScheme", "Saved user scheme:", schemePath);
         ToastService.showNotice(I18n.tr("panels.color-scheme.title"), I18n.tr("common.save") + ": " + schemeDisplayName, "settings-color-scheme");
         activateUserSavedAfterSave = true;
         loadColorSchemes();

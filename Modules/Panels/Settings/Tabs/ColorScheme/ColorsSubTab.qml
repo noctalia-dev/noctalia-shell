@@ -22,23 +22,7 @@ ColumnLayout {
   signal openDownloadPopup
 
   function extractSchemeName(schemePath) {
-    var pathParts = schemePath.split("/");
-    var filename = pathParts[pathParts.length - 1];
-    var schemeName = filename.replace(".json", "");
-
-    if (schemeName === "Noctalia-default") {
-      schemeName = "Noctalia (default)";
-    } else if (schemeName === "Noctalia-legacy") {
-      schemeName = "Noctalia (legacy)";
-    } else if (schemeName === "Tokyo-Night") {
-      schemeName = "Tokyo Night";
-    } else if (schemeName === "Rosepine") {
-      schemeName = "Rose Pine";
-    } else if (schemeName === "User-saved-theme") {
-      return I18n.tr("panels.color-scheme.user-saved-theme-name");
-    }
-
-    return schemeName;
+    return ColorSchemeService.getBasename(schemePath);
   }
 
   function getSchemeColor(schemeName, colorKey) {
