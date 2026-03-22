@@ -288,23 +288,15 @@ SmartPanel {
                     onPressedChanged: function (pressed) {
                       localOutputVolumeChanging = pressed;
                     }
-
-                    MouseArea {
-                      anchors.fill: parent
-                      hoverEnabled: true
-                      acceptedButtons: Qt.NoButton
-                      propagateComposedEvents: true
-
-                      onWheel: wheel => {
-                                 if (AudioService.sink) {
-                                   const delta = wheel.angleDelta.y || wheel.angleDelta.x;
-                                   const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
-                                   const increment = delta > 0 ? step : -step;
-                                   const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
-                                   const newValue = Math.max(0, Math.min(maxVolume, localOutputVolume + increment));
-                                   localOutputVolume = newValue;
-                                 }
-                               }
+                    onWheel: function (event) {
+                      if (AudioService.sink) {
+                        const delta = event.angleDelta.y || event.angleDelta.x;
+                        const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
+                        const increment = delta > 0 ? step : -step;
+                        const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+                        const newValue = Math.max(0, Math.min(maxVolume, localOutputVolume + increment));
+                        localOutputVolume = newValue;
+                      }
                     }
                   }
 
@@ -382,23 +374,15 @@ SmartPanel {
                     onPressedChanged: function (pressed) {
                       localInputVolumeChanging = pressed;
                     }
-
-                    MouseArea {
-                      anchors.fill: parent
-                      hoverEnabled: true
-                      acceptedButtons: Qt.NoButton
-                      propagateComposedEvents: true
-
-                      onWheel: wheel => {
-                                 if (AudioService.source) {
-                                   const delta = wheel.angleDelta.y || wheel.angleDelta.x;
-                                   const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
-                                   const increment = delta > 0 ? step : -step;
-                                   const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
-                                   const newValue = Math.max(0, Math.min(maxVolume, localInputVolume + increment));
-                                   localInputVolume = newValue;
-                                 }
-                               }
+                    onWheel: function (event) {
+                      if (AudioService.source) {
+                        const delta = event.angleDelta.y || event.angleDelta.x;
+                        const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
+                        const increment = delta > 0 ? step : -step;
+                        const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+                        const newValue = Math.max(0, Math.min(maxVolume, localInputVolume + increment));
+                        localInputVolume = newValue;
+                      }
                     }
                   }
 
@@ -723,23 +707,15 @@ SmartPanel {
                             AudioService.setPanelAppStreamVolume(appBox.modelData, value);
                           }
                         }
-
-                        MouseArea {
-                          anchors.fill: parent
-                          hoverEnabled: true
-                          acceptedButtons: Qt.NoButton
-                          propagateComposedEvents: true
-
-                          onWheel: wheel => {
-                                     if (appBox.nodeAudio && appBox.modelData && appBox.modelData.ready === true) {
-                                       const delta = wheel.angleDelta.y || wheel.angleDelta.x;
-                                       const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
-                                       const increment = delta > 0 ? step : -step;
-                                       const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
-                                       const newValue = Math.max(0, Math.min(maxVolume, appBox.nodeAudio.volume + increment));
-                                       appBox.nodeAudio.volume = newValue;
-                                     }
-                                   }
+                        onWheel: function (event) {
+                          if (appBox.nodeAudio && appBox.modelData && appBox.modelData.ready === true) {
+                            const delta = event.angleDelta.y || event.angleDelta.x;
+                            const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
+                            const increment = delta > 0 ? step : -step;
+                            const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+                            const newValue = Math.max(0, Math.min(maxVolume, appBox.nodeAudio.volume + increment));
+                            appBox.nodeAudio.volume = newValue;
+                          }
                         }
                       }
 

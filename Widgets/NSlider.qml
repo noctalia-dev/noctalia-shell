@@ -23,6 +23,8 @@ Slider {
   readonly property real trackRadius: Math.min(Style.iRadiusL, trackHeight / 2)
   readonly property real cutoutExtra: Math.round((Style.baseWidgetSize * 0.1 * Style.uiScaleRatio) / 2) * 2
 
+  signal wheel(WheelEvent event)
+
   padding: cutoutExtra / 2
 
   snapMode: snapAlways ? Slider.SnapAlways : Slider.SnapOnRelease
@@ -39,6 +41,16 @@ Slider {
 
     readonly property real fillWidth: root.visualPosition * width
 
+    MouseArea {
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      height: root.knobDiameter
+      hoverEnabled: true
+      acceptedButtons: Qt.NoButton
+      propagateComposedEvents: true
+      onWheel: event => root.wheel(event)
+    }
     // Background track
     Shape {
       anchors.fill: parent
