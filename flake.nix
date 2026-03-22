@@ -24,6 +24,16 @@
           self.overlays.default
         ]
       );
+
+      mkDate =
+        longDate:
+        nixpkgs.lib.concatStringsSep "-" [
+          (builtins.substring 0 4 longDate)
+          (builtins.substring 4 2 longDate)
+          (builtins.substring 6 2 longDate)
+        ];
+
+      version = mkDate (self.lastModifiedDate or "19700101") + "_" + (self.shortRev or "dirty");
     in
     {
       formatter = eachSystem (system: pkgsFor.${system}.nixfmt);
@@ -33,22 +43,14 @@
       });
 
       overlays = {
-        default = final: prev: {
-          noctalia-shell = final.callPackage ./nix/package.nix {
-            version =
-              let
-                mkDate =
-                  longDate:
-                  final.lib.concatStringsSep "-" [
-                    (builtins.substring 0 4 longDate)
-                    (builtins.substring 4 2 longDate)
-                    (builtins.substring 6 2 longDate)
-                  ];
-              in
-              mkDate (self.lastModifiedDate or "19700101") + "_" + (self.shortRev or "dirty");
-            quickshell = noctalia-qs.packages.${prev.stdenv.hostPlatform.system}.default;
-          };
-        };
+        default = nixpkgs.lib.composeManyExtensions [
+          noctalia-qs.overlays.default
+          (final: prev: {
+            noctalia-shell = final.callPackage ./nix/package.nix {
+              inherit version;
+            };
+          })
+        ];
       };
 
       devShells = eachSystem (system: {
