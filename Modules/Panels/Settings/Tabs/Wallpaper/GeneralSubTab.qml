@@ -175,6 +175,39 @@ ColumnLayout {
 
   NDivider {
     Layout.fillWidth: true
+  }
+
+  NToggle {
+    label: I18n.tr("panels.wallpaper.settings-use-original-images-label")
+    description: I18n.tr("panels.wallpaper.settings-use-original-images-description")
+    checked: Settings.data.wallpaper.useOriginalImages
+    onToggled: checked => Settings.data.wallpaper.useOriginalImages = checked
+    defaultValue: Settings.getDefaultValue("wallpaper.useOriginalImages")
+  }
+
+  RowLayout {
+    spacing: Style.marginM
+    Layout.fillWidth: true
+
+    NLabel {
+      label: I18n.tr("panels.wallpaper.settings-clear-cache-label")
+      description: I18n.tr("panels.wallpaper.settings-clear-cache-description")
+      Layout.fillWidth: true
+    }
+
+    NButton {
+      icon: "trash"
+      text: I18n.tr("panels.wallpaper.settings-clear-cache-button")
+      outlined: true
+      onClicked: {
+        ImageCacheService.clearLarge();
+        ToastService.showNotice(I18n.tr("panels.wallpaper.settings-clear-cache-toast"));
+      }
+    }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
     visible: CompositorService.isNiri
   }
 

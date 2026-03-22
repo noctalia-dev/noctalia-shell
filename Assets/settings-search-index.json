@@ -2578,6 +2578,24 @@
     "subTabLabel": "common.general"
   },
   {
+    "labelKey": "panels.wallpaper.settings-use-original-images-label",
+    "descriptionKey": "panels.wallpaper.settings-use-original-images-description",
+    "widget": "NToggle",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
+    "labelKey": "panels.wallpaper.settings-clear-cache-label",
+    "descriptionKey": "panels.wallpaper.settings-clear-cache-description",
+    "widget": "NLabel",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
     "labelKey": "panels.wallpaper.settings-enable-overview-label",
     "descriptionKey": "panels.wallpaper.settings-enable-overview-description",
     "widget": "NToggle",
