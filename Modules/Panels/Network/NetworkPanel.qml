@@ -36,6 +36,7 @@ SmartPanel {
       ethernetInfoExpanded = false;
       if (NetworkService.wifiEnabled && !NetworkService.scanningActive) {
         NetworkService.scan();
+        NetworkService.refreshActiveWifiDetails();
       }
     } else {
       if (NetworkService.ethernetConnected) {
@@ -50,11 +51,13 @@ SmartPanel {
   onEffectivelyVisibleChanged: {
     if (effectivelyVisible) {
       SystemStatService.registerComponent("network-panel");
-      NetworkService.scan();
-      // Preload active Wi‑Fi details so Info shows instantly
-      NetworkService.refreshActiveWifiDetails();
-      // Also fetch Ethernet details if connected
-      NetworkService.refreshActiveEthernetDetails();
+      if (NetworkService.wifiEnabled && !NetworkService.scanningActive) {
+        NetworkService.scan();
+        NetworkService.refreshActiveWifiDetails();
+      }
+      if (NetworkService.ethernetConnected) {
+        NetworkService.refreshActiveEthernetDetails();
+      }
     } else {
       SystemStatService.unregisterComponent("network-panel");
     }
@@ -178,14 +181,12 @@ SmartPanel {
               text: I18n.tr("common.wifi")
               tabIndex: 0
               checked: modeTabBar.currentIndex === 0
-              enabled: NetworkService.wifiAvailable
             }
 
             NTabButton {
               text: I18n.tr("common.ethernet")
               tabIndex: 1
               checked: modeTabBar.currentIndex === 1
-              enabled: NetworkService.ethernetAvailable
             }
           }
         }

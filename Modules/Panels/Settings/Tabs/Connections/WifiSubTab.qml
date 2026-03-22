@@ -75,26 +75,17 @@ Item {
   onEffectivelyVisibleChanged: {
     if (effectivelyVisible) {
       SystemStatService.registerComponent("wifi-subtab");
-      if (NetworkService.wifiEnabled && !NetworkService.scanningActive) {
+      if (NetworkService.wifiEnabled && !NetworkService.scanningActive && !showOnlyLists) {
         NetworkService.scan();
+        NetworkService.refreshActiveWifiDetails();
       }
     } else {
       SystemStatService.unregisterComponent("wifi-subtab");
-      NetworkService.scanningActive = false;
-    }
-  }
-
-  Component.onCompleted: {
-    if (effectivelyVisible) {
-      SystemStatService.registerComponent("wifi-subtab");
     }
   }
 
   Component.onDestruction: {
     SystemStatService.unregisterComponent("wifi-subtab");
-    if (effectivelyVisible) {
-      NetworkService.scanningActive = false;
-    }
   }
 
   // Actions
