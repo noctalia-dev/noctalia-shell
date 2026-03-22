@@ -730,6 +730,12 @@ Singleton {
 
   // -------------------------------------------------------------------
   function refreshWallpapersList() {
+    // Wait for imageMagickAvailable to be correctly set for ImageCacheService.imageFilters
+    if (!ImageCacheService.initialized) {
+      Qt.callLater(refreshWallpapersList);
+      return;
+    }
+
     var mode = Settings.data.wallpaper.viewMode;
     Logger.d("Wallpaper", "refreshWallpapersList", "viewMode:", mode);
     scanningCount = 0;
