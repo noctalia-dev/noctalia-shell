@@ -44,6 +44,13 @@ Rectangle {
   property real globalLastMouseY: 0
   property bool globalMouseInitialized: false
   property bool mouseTrackingReady: false // Delay tracking until panel is settled
+  property bool categoryTransitionRunning: false
+  property real resultsSlideInOffset: 0
+  property real resultsSlideInOpacity: 1
+  property real resultsSnapshotOffset: 0
+  property real resultsSnapshotOpacity: 0
+  property real resultsSnapshotTargetOffset: 0
+  property int pendingCategoryTabIndex: -1
 
   readonly property bool animationsDisabled: Settings.data.general.animationDisabled
 
@@ -189,6 +196,7 @@ Rectangle {
   function onClosed() {
     searchText = "";
     ignoreMouseHover = true;
+    resetCategoryTransitionVisuals();
     for (let provider of providers) {
       if (provider.onClosed)
         provider.onClosed();
@@ -197,6 +205,73 @@ Rectangle {
 
   function close() {
     requestClose();
+  }
+
+  function resetCategoryTransitionVisuals() {
+    categoryTransitionRunning = false;
+    pendingCategoryTabIndex = -1;
+    resultsSlideInOffset = 0;
+    resultsSlideInOpacity = 1;
+    resultsSnapshotOffset = 0;
+    resultsSnapshotOpacity = 0;
+    resultsSnapshot.visible = false;
+    categorySlideTransition.stop();
+  }
+
+  function selectCategoryWithSlide(tabIndex) {
+    if (!showProviderCategories || !currentProvider || !currentProvider.selectCategory)
+      return;
+
+    const cats = providerCategories;
+    if (!cats || tabIndex < 0 || tabIndex >= cats.length)
+      return;
+
+    const currentIdx = cats.indexOf(currentProvider.selectedCategory);
+    if (tabIndex === currentIdx)
+      return;
+
+    const canAnimate = !animationsDisabled && resultsViewport.width > 0 && resultsViewport.height > 0;
+    if (!canAnimate) {
+      currentProvider.selectCategory(cats[tabIndex]);
+      categoryTabs.currentIndex = tabIndex;
+      return;
+    }
+
+    if (categoryTransitionRunning)
+      resetCategoryTransitionVisuals();
+
+    const movingForward = tabIndex > currentIdx;
+    const slideDistance = Math.max(1, resultsViewport.width + Style.marginXL);
+
+    resultsSnapshot.visible = true;
+    resultsSnapshotOffset = 0;
+    resultsSnapshotOpacity = 1;
+    resultsSnapshotTargetOffset = movingForward ? -slideDistance : slideDistance;
+
+    resultsSlideInOffset = movingForward ? slideDistance : -slideDistance;
+    resultsSlideInOpacity = 0.0;
+
+    pendingCategoryTabIndex = tabIndex;
+    categoryTransitionRunning = true;
+    resultsSnapshot.scheduleUpdate();
+
+    Qt.callLater(() => {
+                   if (!categoryTransitionRunning || pendingCategoryTabIndex < 0)
+                     return;
+
+                   const pendingIndex = pendingCategoryTabIndex;
+                   pendingCategoryTabIndex = -1;
+
+                   const pendingCategories = providerCategories;
+                   if (!pendingCategories || pendingIndex >= pendingCategories.length) {
+                     resetCategoryTransitionVisuals();
+                     return;
+                   }
+
+                   currentProvider.selectCategory(pendingCategories[pendingIndex]);
+                   categoryTabs.currentIndex = pendingIndex;
+                   categorySlideTransition.restart();
+                 });
   }
 
   // Public API
@@ -454,8 +529,7 @@ Rectangle {
         var cats = providerCategories;
         var idx = cats.indexOf(currentProvider.selectedCategory);
         var nextIdx = (idx + 1) % cats.length;
-        currentProvider.selectCategory(cats[nextIdx]);
-        categoryTabs.currentIndex = nextIdx;
+        selectCategoryWithSlide(nextIdx);
       } else {
         selectNextWrapped();
       }
@@ -466,8 +540,7 @@ Rectangle {
         var cats2 = providerCategories;
         var idx2 = cats2.indexOf(currentProvider.selectedCategory);
         var prevIdx = ((idx2 - 1) % cats2.length + cats2.length) % cats2.length;
-        currentProvider.selectCategory(cats2[prevIdx]);
-        categoryTabs.currentIndex = prevIdx;
+        selectCategoryWithSlide(prevIdx);
       } else {
         selectPreviousWrapped();
       }
@@ -672,19 +745,76 @@ Rectangle {
           tooltipText: root.currentProvider.getCategoryName ? root.currentProvider.getCategoryName(modelData) : modelData
           tabIndex: index
           checked: categoryTabs.currentIndex === index
-          onClicked: root.currentProvider.selectCategory(modelData)
+          onClicked: root.selectCategoryWithSlide(index)
         }
       }
     }
 
     // Results view
-    Loader {
-      id: resultsViewLoader
+    Item {
+      id: resultsViewport
       Layout.fillWidth: true
       Layout.leftMargin: Style.marginL
       Layout.rightMargin: Style.marginL
       Layout.fillHeight: true
-      sourceComponent: root.isSingleView ? singleViewComponent : (root.isGridView ? gridViewComponent : listViewComponent)
+      clip: true
+
+      ShaderEffectSource {
+        id: resultsSnapshot
+        visible: false
+        width: parent.width
+        height: parent.height
+        y: 0
+        sourceItem: resultsViewLoader
+        hideSource: false
+        live: false
+        smooth: true
+        z: 2
+        x: root.resultsSnapshotOffset
+        opacity: root.resultsSnapshotOpacity
+      }
+
+      Loader {
+        id: resultsViewLoader
+        width: parent.width
+        height: parent.height
+        x: root.resultsSlideInOffset
+        opacity: root.resultsSlideInOpacity
+        sourceComponent: root.isSingleView ? singleViewComponent : (root.isGridView ? gridViewComponent : listViewComponent)
+      }
+    }
+
+    ParallelAnimation {
+      id: categorySlideTransition
+      NumberAnimation {
+        target: root
+        property: "resultsSlideInOffset"
+        to: 0
+        duration: Style.animationNormal
+        easing.type: Easing.OutCubic
+      }
+      NumberAnimation {
+        target: root
+        property: "resultsSlideInOpacity"
+        to: 1
+        duration: Style.animationNormal
+        easing.type: Easing.OutCubic
+      }
+      NumberAnimation {
+        target: root
+        property: "resultsSnapshotOffset"
+        to: root.resultsSnapshotTargetOffset
+        duration: Style.animationNormal
+        easing.type: Easing.OutCubic
+      }
+      NumberAnimation {
+        target: root
+        property: "resultsSnapshotOpacity"
+        to: 0.25
+        duration: Style.animationNormal
+        easing.type: Easing.OutCubic
+      }
+      onFinished: root.resetCategoryTransitionVisuals()
     }
 
     // --------------------------
