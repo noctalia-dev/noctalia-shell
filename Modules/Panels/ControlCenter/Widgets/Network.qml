@@ -8,14 +8,14 @@ import qs.Widgets
 NIconButtonHot {
   property ShellScreen screen
   icon: NetworkService.getIcon()
-  tooltipText: NetworkService.getStatusText()
+  tooltipText: NetworkService.getStatusText(true)
   onClicked: {
     var panel = PanelService.getPanel("networkPanel", screen);
     panel?.toggle(this);
   }
   onRightClicked: {
     if (!Settings.data.network.airplaneModeEnabled) {
-      NetworkService.setWifiEnabled(!Settings.data.network.wifiEnabled);
+      NetworkService.setWifiEnabled(!NetworkService.wifiEnabled);
     }
   }
 }
