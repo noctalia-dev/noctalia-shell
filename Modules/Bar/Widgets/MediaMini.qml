@@ -460,7 +460,7 @@ Item {
 
     function repaint() {
       if (this.visible && this.opacity > 0)
-        requestPaint()
+        requestPaint();
     }
 
     onProgressChanged: repaint()
