@@ -34,7 +34,6 @@ float fetchData(float idx, int ch) {
 float cubicHermite(float y0, float y1, float y2, float y3, float t) {
   float m1 = (y2 - y0) * 0.25;
   float m2 = (y3 - y1) * 0.25;
-
   float t2 = t * t;
   float t3 = t2 * t;
   return (2.0 * t3 - 3.0 * t2 + 1.0) * y1
@@ -56,6 +55,38 @@ float evalCurve(float dataIdx, int ch) {
   );
 }
 
+// Squared distance from point p to line segment a→b
+float segDistSq(vec2 p, vec2 a, vec2 b) {
+  vec2 ab = b - a;
+  float len2 = dot(ab, ab);
+  float t = len2 > 0.0 ? clamp(dot(p - a, ab) / len2, 0.0, 1.0) : 0.0;
+  vec2 proj = a + t * ab;
+  vec2 d = p - proj;
+  return dot(d, d);
+}
+
+// Minimum distance from fragment to curve via multi-segment sampling.
+// Samples the curve at 9 half-pixel-spaced x-positions (±2px neighborhood)
+// and returns the minimum distance to the 8 line segments between them.
+float curveDistance(float dataIdx, float pixStep, float normY, int ch) {
+  vec2 frag = vec2(0.0, normY * resY);
+
+  float px = -2.0;
+  float py = evalCurve(dataIdx - 2.0 * pixStep, ch) * resY;
+  vec2 d0 = frag - vec2(px, py);
+  float best = dot(d0, d0);
+
+  for (int i = 1; i <= 8; i++) {
+    float cx = -2.0 + float(i) * 0.5;
+    float cy = evalCurve(dataIdx + cx * pixStep, ch) * resY;
+    best = min(best, segDistSq(frag, vec2(px, py), vec2(cx, cy)));
+    px = cx;
+    py = cy;
+  }
+
+  return sqrt(best);
+}
+
 // Premultiplied alpha over compositing
 vec4 blendOver(vec4 src, vec4 dst) {
   return src + dst * (1.0 - src.a);
@@ -72,9 +103,9 @@ void main() {
   if (count1 >= 4.0) {
     float segs = count1 - 3.0;
     float di = 2.0 + scroll1 + uv.x * segs;
-    float pixStep1 = dFdx(di);
+    float pixStep = dFdx(di);
     float cy = evalCurve(di, 0);
-    float cyNext = evalCurve(di + pixStep1, 0);
+    float cyNext = evalCurve(di + pixStep, 0);
 
     // Fill below curve (gradient: opaque at top, transparent at bottom)
     if (graphFillOpacity > 0.0 && normY <= cy) {
@@ -82,11 +113,13 @@ void main() {
       result = blendOver(vec4(lineColor1.rgb * a, a), result);
     }
 
-    // Perpendicular distance to the line segment between adjacent samples
+    // Multi-segment distance for accurate AA at peaks and steep sections.
+    // AA width derived analytically from curve slope: (|sinθ|+|cosθ|)
+    // gives the ideal SDF fwidth (~1.0–1.41) without GPU derivative noise.
+    float dist = curveDistance(di, pixStep, normY, 0);
     float slope1 = (cyNext - cy) * resY;
-    float vDist1 = (normY - cy) * resY;
-    float dist1 = abs(vDist1) * inversesqrt(slope1 * slope1 + 1.0);
-    float sa = smoothstep(halfW + aaSize, halfW, dist1) * lineColor1.a;
+    float aa = (abs(slope1) + 1.0) * inversesqrt(slope1 * slope1 + 1.0) * aaSize * 2.0;
+    float sa = smoothstep(halfW + aa, halfW, dist) * lineColor1.a;
     result = blendOver(vec4(lineColor1.rgb * sa, sa), result);
   }
 
@@ -94,19 +127,19 @@ void main() {
   if (count2 >= 4.0) {
     float segs = count2 - 3.0;
     float di = 2.0 + scroll2 + uv.x * segs;
-    float pixStep2 = dFdx(di);
+    float pixStep = dFdx(di);
     float cy = evalCurve(di, 1);
-    float cyNext = evalCurve(di + pixStep2, 1);
+    float cyNext = evalCurve(di + pixStep, 1);
 
     if (graphFillOpacity > 0.0 && normY <= cy) {
       float a = graphFillOpacity * normY * lineColor2.a;
       result = blendOver(vec4(lineColor2.rgb * a, a), result);
     }
 
+    float dist = curveDistance(di, pixStep, normY, 1);
     float slope2 = (cyNext - cy) * resY;
-    float vDist2 = (normY - cy) * resY;
-    float dist2 = abs(vDist2) * inversesqrt(slope2 * slope2 + 1.0);
-    float sa = smoothstep(halfW + aaSize, halfW, dist2) * lineColor2.a;
+    float aa = (abs(slope2) + 1.0) * inversesqrt(slope2 * slope2 + 1.0) * aaSize * 2.0;
+    float sa = smoothstep(halfW + aa, halfW, dist) * lineColor2.a;
     result = blendOver(vec4(lineColor2.rgb * sa, sa), result);
   }
 
