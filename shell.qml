@@ -171,9 +171,7 @@ ShellRoot {
     }
   }
 
-  // ---------------------------------------------
   // Delayed initialization and wizard/changelog
-  // ---------------------------------------------
   Timer {
     id: delayedInitTimer
     running: false
