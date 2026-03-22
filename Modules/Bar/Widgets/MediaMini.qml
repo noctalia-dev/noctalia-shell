@@ -458,13 +458,18 @@ Item {
     property real progress: 0
     property real lineWidth: 2
 
-    onProgressChanged: requestPaint()
-    Component.onCompleted: requestPaint()
+    function repaint() {
+      if (this.visible && this.opacity > 0)
+        requestPaint()
+    }
+
+    onProgressChanged: repaint()
+    Component.onCompleted: repaint()
 
     Connections {
       target: Color
       function onMPrimaryChanged() {
-        requestPaint();
+        repaint();
       }
     }
 
