@@ -794,6 +794,8 @@
       "media-title": "Reproductores multimedia",
       "on-middle-clicked-description": "Comando para ejecutar cuando se hace clic con el botón central.",
       "panel-applications-empty": "Actualmente no hay aplicaciones reproduciendo audio",
+      "spectrum-mirrored-description": "Refleja el espectro para que las frecuencias bajas estén en el centro. Cuando está desactivado, las frecuencias bajas están a la izquierda y las altas a la derecha.",
+      "spectrum-mirrored-label": "Espectro espejo",
       "title": "Audio",
       "visualizer-type-description": "Elige un tipo de visualización para la reproducción de medios.",
       "visualizer-type-label": "Tipo de visualización",

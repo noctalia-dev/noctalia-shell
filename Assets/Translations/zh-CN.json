@@ -794,6 +794,8 @@
       "media-title": "媒体播放器",
       "on-middle-clicked-description": "鼠标中键点击时执行的命令。",
       "panel-applications-empty": "目前没有应用程序正在播放音频",
+      "spectrum-mirrored-description": "镜像频谱，使低频位于中心。关闭时，低频在左侧，高频在右侧。",
+      "spectrum-mirrored-label": "镜像频谱",
       "title": "音频",
       "visualizer-type-description": "选择媒体播放的可视化类型。",
       "visualizer-type-label": "可视化类型",

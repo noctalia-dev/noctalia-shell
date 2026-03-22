@@ -794,6 +794,8 @@
       "media-title": "媒體播放器",
       "on-middle-clicked-description": "在點擊中鍵時要執行的指令",
       "panel-applications-empty": "沒有正在播放音訊的程式",
+      "spectrum-mirrored-description": "鏡像頻譜，使低頻位於中央。關閉時，低頻在左側，高頻在右側。",
+      "spectrum-mirrored-label": "鏡像頻譜",
       "title": "音訊",
       "visualizer-type-description": "選擇媒體播放時的視覺效果樣式",
       "visualizer-type-label": "視覺效果樣式",

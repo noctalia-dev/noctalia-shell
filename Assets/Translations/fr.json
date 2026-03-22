@@ -794,6 +794,8 @@
       "media-title": "Lecteurs multimédias",
       "on-middle-clicked-description": "Commande à exécuter lorsque le bouton du milieu est cliqué.",
       "panel-applications-empty": "Aucune application ne lit actuellement de l'audio",
+      "spectrum-mirrored-description": "Inverse le spectre pour que les basses fréquences soient au centre. Quand désactivé, les basses fréquences sont à gauche et les hautes à droite.",
+      "spectrum-mirrored-label": "Spectre miroir",
       "title": "Audio",
       "visualizer-type-description": "Choisissez un type de visualisation pour la lecture de médias.",
       "visualizer-type-label": "Type de visualisation",

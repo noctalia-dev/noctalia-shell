@@ -794,6 +794,8 @@
       "media-title": "Ortam oynatıcıları",
       "on-middle-clicked-description": "Düğmeye orta tıklama yapıldığında yürütülecek komut.",
       "panel-applications-empty": "Şu anda ses çalan uygulama yok",
+      "spectrum-mirrored-description": "Spektrumu yansıt, böylece düşük frekanslar merkezde olur. Kapalıyken, düşük frekanslar solda ve yüksek frekanslar sağda olur.",
+      "spectrum-mirrored-label": "Spektrum aynalama",
       "title": "Ses",
       "visualizer-type-description": "Medya oynatma için bir görselleştirme türü seçin.",
       "visualizer-type-label": "Görselleştirme türü",

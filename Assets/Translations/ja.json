@@ -794,6 +794,8 @@
       "media-title": "メディアプレーヤー",
       "on-middle-clicked-description": "ボタンを中クリックしたときに実行するコマンド。",
       "panel-applications-empty": "現在音声を再生中のアプリケーションはありません",
+      "spectrum-mirrored-description": "スペクトルをミラーリングし、低周波を中央に配置します。オフの場合、低周波は左、高周波は右になります。",
+      "spectrum-mirrored-label": "ミラースペクトル",
       "title": "サウンド",
       "visualizer-type-description": "メディア再生の可視化タイプを選択してください。",
       "visualizer-type-label": "視覚化の種類",

@@ -794,6 +794,8 @@
       "media-title": "Mediaspelare",
       "on-middle-clicked-description": "Kommando som ska utföras när knappen klickas på med mittknappen.",
       "panel-applications-empty": "Inga applikationer spelar upp ljud för närvarande",
+      "spectrum-mirrored-description": "Spegla spektrumet så att låga frekvenser är i mitten. När avstängt är låga frekvenser till vänster och höga till höger.",
+      "spectrum-mirrored-label": "Speglad spektrum",
       "title": "Ljud",
       "visualizer-type-description": "Välj en visualiseringstyp för medieuppspelning.",
       "visualizer-type-label": "Visualiseringstyp",

@@ -794,6 +794,8 @@
       "media-title": "Odtwarzacze mediów",
       "on-middle-clicked-description": "Komenda do wykonania po kliknięciu środkowym przyciskiem myszy.",
       "panel-applications-empty": "Żadna aplikacja nie odtwarza obecnie dźwięku",
+      "spectrum-mirrored-description": "Odbij spektrum tak, aby niskie częstotliwości były w centrum. Gdy wyłączone, niskie częstotliwości są po lewej, a wysokie po prawej.",
+      "spectrum-mirrored-label": "Lustrzane spektrum",
       "title": "Audio",
       "visualizer-type-description": "Wybierz typ wizualizacji odtwarzania multimediów.",
       "visualizer-type-label": "Typ wizualizacji",

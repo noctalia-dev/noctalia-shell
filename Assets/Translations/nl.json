@@ -794,6 +794,8 @@
       "media-title": "Mediaplayers",
       "on-middle-clicked-description": "Commando dat moet worden uitgevoerd wanneer er met de middelste muisknop op de knop wordt geklikt.",
       "panel-applications-empty": "Er spelen momenteel geen applicaties audio af",
+      "spectrum-mirrored-description": "Spiegel het spectrum zodat lage frequenties in het midden zijn. Indien uitgeschakeld, zijn lage frequenties links en hoge rechts.",
+      "spectrum-mirrored-label": "Spiegelspectrum",
       "title": "Audio",
       "visualizer-type-description": "Kies een visualisatietype voor mediaweergave.",
       "visualizer-type-label": "Visualisatietype",

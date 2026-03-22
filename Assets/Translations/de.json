@@ -794,6 +794,8 @@
       "media-title": "Medienplayer",
       "on-middle-clicked-description": "Befehl, der ausgeführt wird, wenn die Schaltfläche mit der mittleren Maustaste angeklickt wird.",
       "panel-applications-empty": "Derzeit geben keine Anwendungen Audio wieder",
+      "spectrum-mirrored-description": "Spiegele das Spektrum, sodass tiefe Frequenzen in der Mitte sind. Wenn ausgeschaltet, sind tiefe Frequenzen links und hohe rechts.",
+      "spectrum-mirrored-label": "Spektrum spiegeln",
       "title": "Audio",
       "visualizer-type-description": "Wählen Sie einen Visualisierungstyp für die Medienwiedergabe.",
       "visualizer-type-label": "Visualisierungsart",

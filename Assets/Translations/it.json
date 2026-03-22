@@ -794,6 +794,8 @@
       "media-title": "Lettori multimediali",
       "on-middle-clicked-description": "Comando da eseguire quando il pulsante riceve clic centrale.",
       "panel-applications-empty": "Nessuna applicazione sta riproducendo audio",
+      "spectrum-mirrored-description": "Specchia lo spettro in modo che le basse frequenze siano al centro. Quando disattivato, le basse frequenze sono a sinistra e le alte a destra.",
+      "spectrum-mirrored-label": "Spettro speculare",
       "title": "Audio",
       "visualizer-type-description": "Scegli un tipo di visualizzazione per la riproduzione multimediale.",
       "visualizer-type-label": "Tipo visualizzazione",

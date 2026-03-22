@@ -794,6 +794,8 @@
       "media-title": "미디어 재생기",
       "on-middle-clicked-description": "버튼을 가운데 클릭했을 때 실행할 명령입니다.",
       "panel-applications-empty": "현재 오디오를 재생 중인 애플리케이션이 없습니다.",
+      "spectrum-mirrored-description": "스펙트럼을 미러링하여 저주파수가 중앙에 오도록 합니다. 비활성화 시 저주파수는 왼쪽에, 고주파수는 오른쪽에 있습니다.",
+      "spectrum-mirrored-label": "스펙트럼 미러",
       "title": "오디오",
       "visualizer-type-description": "미디어 재생 시 사용할 비주얼라이저 유형을 선택하세요.",
       "visualizer-type-label": "비주얼라이저 유형",
