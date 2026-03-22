@@ -29,6 +29,7 @@ RowLayout {
   // Signals
   signal moved(real value)
   signal pressedChanged(bool pressed, real value)
+  signal wheel(WheelEvent event)
 
   readonly property bool sliderActive: slider.activeFocus || slider.pressed
   readonly property bool isValueChanged: defaultValue !== undefined && (value !== defaultValue)
@@ -82,6 +83,7 @@ RowLayout {
         heightRatio: root.customHeightRatio > 0 ? root.customHeightRatio : root.heightRatio
         onMoved: root.moved(value)
         onPressedChanged: root.pressedChanged(pressed, value)
+        onWheel: event => root.wheel(event)
       }
 
       NText {
