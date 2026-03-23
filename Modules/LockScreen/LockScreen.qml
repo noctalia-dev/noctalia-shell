@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Pam
 import Quickshell.Wayland
 import qs.Commons
@@ -66,6 +67,247 @@ Loader {
     Item {
       id: lockContainer
 
+      property var pendingPasteEditor: null
+
+      function textCodePoints(text) {
+        return Array.from(text || "");
+      }
+
+      function textLength(text) {
+        return textCodePoints(text).length;
+      }
+
+      function clampPosition(position, text) {
+        if (text === undefined)
+          text = lockContext.currentText;
+        return Math.max(0, Math.min(position, textLength(text)));
+      }
+
+      function isWordChar(character) {
+        return /[0-9A-Za-z_]/.test(character);
+      }
+
+      function previousWordBoundary(text, position) {
+        const chars = textCodePoints(text);
+        let index = Math.max(0, Math.min(position, chars.length));
+
+        while (index > 0 && /\s/.test(chars[index - 1])) {
+          index--;
+        }
+
+        while (index > 0 && isWordChar(chars[index - 1])) {
+          index--;
+        }
+
+        while (index > 0 && !/\s/.test(chars[index - 1]) && !isWordChar(chars[index - 1])) {
+          index--;
+        }
+
+        return index;
+      }
+
+      function nextWordBoundary(text, position) {
+        const chars = textCodePoints(text);
+        let index = Math.max(0, Math.min(position, chars.length));
+
+        while (index < chars.length && /\s/.test(chars[index])) {
+          index++;
+        }
+
+        while (index < chars.length && isWordChar(chars[index])) {
+          index++;
+        }
+
+        while (index < chars.length && !/\s/.test(chars[index]) && !isWordChar(chars[index])) {
+          index++;
+        }
+
+        return index;
+      }
+
+      function clampEditorState(editor) {
+        const length = textLength(lockContext.currentText);
+        editor.cursorPosition = Math.max(0, Math.min(editor.cursorPosition, length));
+        editor.selectionAnchor = Math.max(0, Math.min(editor.selectionAnchor, length));
+      }
+
+      function moveCursor(editor, position, extendSelection) {
+        if (extendSelection === undefined)
+          extendSelection = false;
+        const clamped = clampPosition(position);
+        if (!extendSelection) {
+          editor.selectionAnchor = clamped;
+        } else if (!editor.hasSelection) {
+          editor.selectionAnchor = editor.cursorPosition;
+        }
+        editor.cursorPosition = clamped;
+      }
+
+      function replaceRange(text, start, end, replacement) {
+        const chars = textCodePoints(text);
+        chars.splice(start, end - start, ...textCodePoints(replacement));
+        return chars.join("");
+      }
+
+      function replaceSelection(editor, replacement) {
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        lockContext.currentText = replaceRange(lockContext.currentText, start, end, replacement);
+        const nextCursor = start + textLength(replacement);
+        editor.cursorPosition = nextCursor;
+        editor.selectionAnchor = nextCursor;
+      }
+
+      function deleteBackward(editor, byWord) {
+        if (byWord === undefined)
+          byWord = false;
+        if (editor.hasSelection) {
+          replaceSelection(editor, "");
+          return;
+        }
+
+        if (editor.cursorPosition <= 0)
+          return;
+
+        const start = byWord ? previousWordBoundary(lockContext.currentText, editor.cursorPosition) : editor.cursorPosition - 1;
+        lockContext.currentText = replaceRange(lockContext.currentText, start, editor.cursorPosition, "");
+        editor.cursorPosition = start;
+        editor.selectionAnchor = start;
+      }
+
+      function deleteForward(editor, byWord) {
+        if (byWord === undefined)
+          byWord = false;
+        if (editor.hasSelection) {
+          replaceSelection(editor, "");
+          return;
+        }
+
+        const length = textLength(lockContext.currentText);
+        if (editor.cursorPosition >= length)
+          return;
+
+        const end = byWord ? nextWordBoundary(lockContext.currentText, editor.cursorPosition) : editor.cursorPosition + 1;
+        lockContext.currentText = replaceRange(lockContext.currentText, editor.cursorPosition, end, "");
+        editor.selectionAnchor = editor.cursorPosition;
+      }
+
+      function insertText(editor, text) {
+        if (!text)
+          return;
+        replaceSelection(editor, text);
+      }
+
+      function selectAll(editor) {
+        editor.selectionAnchor = 0;
+        editor.cursorPosition = textLength(lockContext.currentText);
+      }
+
+      function pasteClipboardText(editor) {
+        if (pasteClipboardProc.running)
+          return;
+        pendingPasteEditor = editor;
+        pasteClipboardProc.command = ["wl-paste", "--no-newline"];
+        pasteClipboardProc.running = true;
+      }
+
+      function handlePasswordKey(editor, event, allowCancelTimer) {
+        if (allowCancelTimer === undefined)
+          allowCancelTimer = false;
+        if (lockContext.unlockInProgress)
+          return;
+
+        const modifiers = event.modifiers;
+        const shiftPressed = (modifiers & Qt.ShiftModifier) !== 0;
+        const ctrlPressed = (modifiers & Qt.ControlModifier) !== 0;
+        const altPressed = (modifiers & Qt.AltModifier) !== 0;
+        const metaPressed = (modifiers & Qt.MetaModifier) !== 0;
+
+        if (Keybinds.checkKey(event, 'enter', Settings)) {
+          lockContext.tryUnlock();
+          event.accepted = true;
+          return;
+        }
+
+        if (allowCancelTimer && Keybinds.checkKey(event, 'escape', Settings) && panelComponent.timerActive) {
+          panelComponent.cancelTimer();
+          event.accepted = true;
+          return;
+        }
+
+        if (ctrlPressed && !altPressed && !metaPressed && event.key === Qt.Key_A) {
+          selectAll(editor);
+          event.accepted = true;
+          return;
+        }
+
+        if (!altPressed && !metaPressed && ((ctrlPressed && event.key === Qt.Key_V) || (shiftPressed && event.key === Qt.Key_Insert))) {
+          pasteClipboardText(editor);
+          event.accepted = true;
+          return;
+        }
+
+        if (event.key === Qt.Key_Left) {
+          if (editor.hasSelection && !shiftPressed && !ctrlPressed) {
+            moveCursor(editor, editor.selectionStart);
+          } else {
+            moveCursor(editor, ctrlPressed ? previousWordBoundary(lockContext.currentText, editor.cursorPosition) : editor.cursorPosition - 1, shiftPressed);
+          }
+          event.accepted = true;
+          return;
+        }
+
+        if (event.key === Qt.Key_Right) {
+          if (editor.hasSelection && !shiftPressed && !ctrlPressed) {
+            moveCursor(editor, editor.selectionEnd);
+          } else {
+            moveCursor(editor, ctrlPressed ? nextWordBoundary(lockContext.currentText, editor.cursorPosition) : editor.cursorPosition + 1, shiftPressed);
+          }
+          event.accepted = true;
+          return;
+        }
+
+        if (event.key === Qt.Key_Home) {
+          moveCursor(editor, 0, shiftPressed);
+          event.accepted = true;
+          return;
+        }
+
+        if (event.key === Qt.Key_End) {
+          moveCursor(editor, textLength(lockContext.currentText), shiftPressed);
+          event.accepted = true;
+          return;
+        }
+
+        if (event.key === Qt.Key_Backspace) {
+          deleteBackward(editor, ctrlPressed);
+          event.accepted = true;
+          return;
+        }
+
+        if (event.key === Qt.Key_Delete) {
+          deleteForward(editor, ctrlPressed);
+          event.accepted = true;
+          return;
+        }
+
+        if (!ctrlPressed && !altPressed && !metaPressed && event.text && !/[\u0000-\u001f\u007f]/.test(event.text)) {
+          insertText(editor, event.text);
+          event.accepted = true;
+        }
+      }
+
+      Process {
+        id: pasteClipboardProc
+        stdout: StdioCollector {}
+        onExited: (exitCode, exitStatus) => {
+          if (exitCode === 0 && lockContainer.pendingPasteEditor) {
+            lockContainer.insertText(lockContainer.pendingPasteEditor, String(stdout.text));
+          }
+          lockContainer.pendingPasteEditor = null;
+        }
+      }
+
       LockContext {
         id: lockContext
         onUnlocked: {
@@ -96,7 +338,7 @@ Loader {
           Loader {
             anchors.fill: parent
             active: true
-            sourceComponent: (!lockContainer.anyConfiguredMonitorConnected || Settings.data.general.lockScreenMonitors.includes(lockSurface.screen?.name)) ? fullLockScreenComponent : blackScreenComponent
+            sourceComponent: (!lockContainer.anyConfiguredMonitorConnected || Settings.data.general.lockScreenMonitors.includes(lockSurface.screen ? lockSurface.screen.name : "")) ? fullLockScreenComponent : blackScreenComponent
           }
 
           Component {
@@ -283,38 +525,29 @@ Loader {
                   }
                 }
 
-                // Hidden input that receives actual text
-                TextInput {
+                // Hidden editor that receives raw key events without opening an IME text-input path.
+                FocusScope {
                   id: passwordInput
                   width: 0
                   height: 0
                   visible: false
                   enabled: !lockContext.unlockInProgress
-                  echoMode: TextInput.Password
-                  passwordMaskDelay: 0
+                  readonly property string text: lockContext.currentText
+                  property int cursorPosition: lockContainer.textLength(lockContext.currentText)
+                  property int selectionAnchor: cursorPosition
+                  readonly property int selectionStart: Math.min(cursorPosition, selectionAnchor)
+                  readonly property int selectionEnd: Math.max(cursorPosition, selectionAnchor)
+                  readonly property bool hasSelection: cursorPosition !== selectionAnchor
 
-                  // Bidirectional sync — avoids a declarative binding which breaks on input
-                  onTextChanged: {
-                    if (lockContext.currentText !== text)
-                      lockContext.currentText = text;
-                  }
                   Connections {
                     target: lockContext
                     function onCurrentTextChanged() {
-                      if (passwordInput.text !== lockContext.currentText)
-                        passwordInput.text = lockContext.currentText;
+                      lockContainer.clampEditorState(passwordInput);
                     }
                   }
 
                   Keys.onPressed: function (event) {
-                    if (Keybinds.checkKey(event, 'enter', Settings)) {
-                      lockContext.tryUnlock();
-                      event.accepted = true;
-                    }
-                    if (Keybinds.checkKey(event, 'escape', Settings) && panelComponent.timerActive) {
-                      panelComponent.cancelTimer();
-                      event.accepted = true;
-                    }
+                    lockContainer.handlePasswordKey(passwordInput, event, true);
                   }
 
                   Component.onCompleted: forceActiveFocus()
@@ -340,33 +573,28 @@ Loader {
               anchors.fill: parent
               color: "black"
 
-              TextInput {
+              FocusScope {
                 id: blackScreenPasswordInput
                 width: 0
                 height: 0
                 visible: false
                 enabled: !lockContext.unlockInProgress
-                echoMode: TextInput.Password
-                passwordMaskDelay: 0
+                readonly property string text: lockContext.currentText
+                property int cursorPosition: lockContainer.textLength(lockContext.currentText)
+                property int selectionAnchor: cursorPosition
+                readonly property int selectionStart: Math.min(cursorPosition, selectionAnchor)
+                readonly property int selectionEnd: Math.max(cursorPosition, selectionAnchor)
+                readonly property bool hasSelection: cursorPosition !== selectionAnchor
 
-                // Bidirectional sync — avoids a declarative binding which breaks on input
-                onTextChanged: {
-                  if (lockContext.currentText !== text)
-                    lockContext.currentText = text;
-                }
                 Connections {
                   target: lockContext
                   function onCurrentTextChanged() {
-                    if (blackScreenPasswordInput.text !== lockContext.currentText)
-                      blackScreenPasswordInput.text = lockContext.currentText;
+                    lockContainer.clampEditorState(blackScreenPasswordInput);
                   }
                 }
 
                 Keys.onPressed: function (event) {
-                  if (Keybinds.checkKey(event, 'enter', Settings)) {
-                    lockContext.tryUnlock();
-                    event.accepted = true;
-                  }
+                  lockContainer.handlePasswordKey(blackScreenPasswordInput, event);
                 }
 
                 Component.onCompleted: forceActiveFocus()
