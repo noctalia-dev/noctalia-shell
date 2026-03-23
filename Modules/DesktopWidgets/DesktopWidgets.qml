@@ -57,6 +57,11 @@ Variants {
       id: window
       color: "transparent"
       screen: screenLoader.modelData
+      mask: DesktopWidgetRegistry.editMode ? null : emptyRegion
+
+      Region {
+        id: emptyRegion
+      }
 
       WlrLayershell.layer: WlrLayer.Bottom
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
@@ -307,7 +312,7 @@ Variants {
           visible: DesktopWidgetRegistry.editMode && Settings.data.desktopWidgets.enabled
 
           readonly property string barPos: Settings.getBarPositionForScreen(window.screen?.name)
-          readonly property bool barFloating: Settings.data.bar.floating || false
+          readonly property bool barFloating: Settings.data.bar.barType === "floating"
           readonly property real barHeight: Style.getBarHeightForScreen(window.screen?.name)
 
           readonly property int barOffsetTop: {

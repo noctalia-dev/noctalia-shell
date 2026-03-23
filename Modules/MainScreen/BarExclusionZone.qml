@@ -20,7 +20,7 @@ PanelWindow {
 
   readonly property bool autoHide: Settings.getBarDisplayModeForScreen(screen?.name) === "auto_hide"
   readonly property bool nonExclusive: Settings.getBarDisplayModeForScreen(screen?.name) === "non_exclusive"
-  readonly property bool barFloating: Settings.data.bar.floating || false
+  readonly property bool barFloating: Settings.data.bar.barType === "floating"
   readonly property real barMarginH: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
   readonly property real barMarginV: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginVertical) : 0
   // Allow users to enable a 1-physical-pixel inset for the exclusion zone so window borders can bleed under the bar

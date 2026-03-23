@@ -136,7 +136,7 @@ SmartPanel {
             maxValue2: Math.max(SystemStatService.cpuTempHistoryMax + 5, 1)
             color: Color.mPrimary
             color2: Color.mSecondary
-            strokeWidth: 1.5 * Style.uiScaleRatio
+            strokeWidth: Math.max(1, Style.uiScaleRatio)
             fill: true
             fillOpacity: 0.15
             updateInterval: SystemStatService.cpuUsageIntervalMs
@@ -190,7 +190,7 @@ SmartPanel {
             minValue: 0
             maxValue: 100
             color: Color.mPrimary
-            strokeWidth: 1.5 * Style.uiScaleRatio
+            strokeWidth: Math.max(1, Style.uiScaleRatio)
             fill: true
             fillOpacity: 0.15
             updateInterval: SystemStatService.memIntervalMs
@@ -262,7 +262,7 @@ SmartPanel {
             maxValue2: SystemStatService.txMaxSpeed
             color: Color.mPrimary
             color2: Color.mSecondary
-            strokeWidth: 1.5 * Style.uiScaleRatio
+            strokeWidth: Math.max(1, Style.uiScaleRatio)
             fill: true
             fillOpacity: 0.15
             updateInterval: SystemStatService.networkIntervalMs

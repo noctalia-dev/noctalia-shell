@@ -63,6 +63,15 @@
     "subTabLabel": "common.visualizer"
   },
   {
+    "labelKey": "panels.audio.spectrum-mirrored-label",
+    "descriptionKey": "panels.audio.spectrum-mirrored-description",
+    "widget": "NToggle",
+    "tab": 14,
+    "tabLabel": "panels.audio.title",
+    "subTab": 3,
+    "subTabLabel": "common.visualizer"
+  },
+  {
     "labelKey": "panels.audio.media-frame-rate-label",
     "descriptionKey": "panels.audio.media-frame-rate-description",
     "widget": "NComboBox",
@@ -2563,6 +2572,24 @@
     "labelKey": "panels.wallpaper.settings-monitor-specific-label",
     "descriptionKey": "panels.wallpaper.settings-monitor-specific-description",
     "widget": "NToggle",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
+    "labelKey": "panels.wallpaper.settings-use-original-images-label",
+    "descriptionKey": "panels.wallpaper.settings-use-original-images-description",
+    "widget": "NToggle",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
+    "labelKey": "panels.wallpaper.settings-clear-cache-label",
+    "descriptionKey": "panels.wallpaper.settings-clear-cache-description",
+    "widget": "NLabel",
     "tab": 3,
     "tabLabel": "common.wallpaper",
     "subTab": 0,

@@ -471,7 +471,6 @@ ColumnLayout {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
                   Settings.data.bar.barType = modelData.key;
-                  Settings.data.bar.floating = (modelData.key === "floating");
                 }
               }
 

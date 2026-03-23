@@ -102,7 +102,7 @@ Item {
   readonly property bool hasBar: modelData && modelData.name ? (Settings.data.bar.monitors.includes(modelData.name) || (Settings.data.bar.monitors.length === 0)) : false
   readonly property bool isFramed: Settings.data.bar.barType === "framed" && hasBar
   readonly property real frameThickness: Settings.data.bar.frameThickness ?? 12
-  readonly property bool barFloating: Settings.data.bar.floating
+  readonly property bool barFloating: Settings.data.bar.barType === "floating"
   readonly property real barMarginH: (barFloating && barShouldShow) ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
   readonly property real barMarginV: (barFloating && barShouldShow) ? Math.ceil(Settings.data.bar.marginVertical) : 0
   readonly property real attachmentOverlap: 1 // Panel extends into bar area to fix hairline gap with fractional scaling
@@ -348,6 +348,11 @@ Item {
       w = root.preferredWidth;
     }
     var panelWidth = Math.min(w, root.width - effMarginL - effMarginR);
+    // For floating bars, additionally clamp to available space accounting for corner insets
+    if (root.barFloating && !root.barIsVertical) {
+      var floatCornerInset = Style.radiusL * 2;
+      panelWidth = Math.min(panelWidth, root.width - 2 * (root.barMarginH + floatCornerInset));
+    }
 
     var h;
     // Priority 1: Content-driven size (dynamic)
@@ -361,6 +366,11 @@ Item {
       h = root.preferredHeight;
     }
     var panelHeight = Math.min(h, root.height - root.barHeight - effMarginT - effMarginB);
+    // For vertical floating bars, clamp panelHeight to available space accounting for corner insets
+    if (root.barFloating && root.barIsVertical) {
+      var floatCornerInset = Style.radiusL * 2;
+      panelHeight = Math.min(panelHeight, root.height - 2 * (root.barMarginV + floatCornerInset));
+    }
 
     // Update panelBackground target size (will be animated)
     panelBackground.targetWidth = panelWidth;

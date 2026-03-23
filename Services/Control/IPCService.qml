@@ -506,7 +506,7 @@ Singleton {
     function closePanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("audioPanel", screen);
-                                              panel?.close();
+                                              panel?.close(null, "Volume");
                                             });
     }
   }
@@ -516,6 +516,7 @@ Singleton {
     function toggle() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var sessionMenuPanel = PanelService.getPanel("sessionMenuPanel", screen);
+                                              // Session Menu is never open near the bar
                                               sessionMenuPanel?.toggle();
                                             });
     }
@@ -622,7 +623,7 @@ Singleton {
   IpcHandler {
     target: "wifi"
     function toggle() {
-      NetworkService.setWifiEnabled(!Settings.data.network.wifiEnabled);
+      NetworkService.setWifiEnabled(!NetworkService.wifiEnabled);
     }
     function enable() {
       NetworkService.setWifiEnabled(true);

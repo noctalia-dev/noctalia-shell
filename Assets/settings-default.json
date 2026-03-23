@@ -15,7 +15,6 @@
     "enableExclusionZoneInset": true,
     "backgroundOpacity": 0.93,
     "useSeparateOpacity": false,
-    "floating": false,
     "marginVertical": 4,
     "marginHorizontal": 4,
     "frameThickness": 8,
@@ -217,6 +216,7 @@
     "transitionEdgeSmoothness": 0.05,
     "panelPosition": "follow_bar",
     "hideWallpaperFilenames": false,
+    "useOriginalImages": false,
     "overviewBlur": 0.4,
     "overviewTint": 0.6,
     "useWallhaven": false,
@@ -379,7 +379,6 @@
     "indicatorOpacity": 0.6
   },
   "network": {
-    "wifiEnabled": true,
     "airplaneModeEnabled": false,
     "bluetoothRssiPollingEnabled": false,
     "bluetoothRssiPollIntervalMs": 60000,
@@ -485,6 +484,7 @@
     "volumeOverdrive": false,
     "spectrumFrameRate": 30,
     "visualizerType": "linear",
+    "spectrumMirrored": true,
     "mprisBlacklist": [],
     "preferredPlayer": "",
     "volumeFeedback": false,

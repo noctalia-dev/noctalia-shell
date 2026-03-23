@@ -120,10 +120,10 @@ Item {
     mipmap: false
     antialiasing: true
 
-    layer.enabled: true
+    layer.enabled: Settings.data.general.lockScreenBlur > 0 && !PowerProfileService.noctaliaPerformanceMode
     layer.smooth: false
     layer.effect: MultiEffect {
-      blurEnabled: !PowerProfileService.noctaliaPerformanceMode && (Settings.data.general.lockScreenBlur > 0)
+      blurEnabled: true
       blur: Settings.data.general.lockScreenBlur
       blurMax: 48
     }

@@ -160,6 +160,7 @@ NBox {
           values: SpectrumService.values
           fillColor: Color.mPrimary
           opacity: 0.8
+          mirrored: Settings.data.audio.spectrumMirrored
         }
       }
 
@@ -170,6 +171,7 @@ NBox {
           values: SpectrumService.values
           fillColor: Color.mPrimary
           opacity: 0.8
+          mirrored: Settings.data.audio.spectrumMirrored
         }
       }
 
@@ -180,6 +182,7 @@ NBox {
           values: SpectrumService.values
           fillColor: Color.mPrimary
           opacity: 0.8
+          mirrored: Settings.data.audio.spectrumMirrored
         }
       }
     }

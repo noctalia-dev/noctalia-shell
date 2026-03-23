@@ -147,7 +147,7 @@ Item {
       readonly property real frameThickness: Settings.data.bar.frameThickness ?? 8
 
       readonly property string barPos: Settings.getBarPositionForScreen(panel.screen?.name)
-      readonly property bool isFloating: Settings.data.bar.floating
+      readonly property bool isFloating: Settings.data.bar.barType === "floating"
       readonly property real barHeight: Style.getBarHeightForScreen(panel.screen?.name)
 
       // Calculate bar and frame offsets for each edge separately

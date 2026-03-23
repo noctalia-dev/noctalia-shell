@@ -425,6 +425,7 @@ Item {
       fillColor: Color.mPrimary
       opacity: 0.4
       barPosition: root.barPosition
+      mirrored: Settings.data.audio.spectrumMirrored
     }
   }
 
@@ -436,6 +437,7 @@ Item {
       values: SpectrumService.values
       fillColor: Color.mPrimary
       opacity: 0.4
+      mirrored: Settings.data.audio.spectrumMirrored
     }
   }
 
@@ -447,6 +449,7 @@ Item {
       values: SpectrumService.values
       fillColor: Color.mPrimary
       opacity: 0.4
+      mirrored: Settings.data.audio.spectrumMirrored
     }
   }
 
@@ -455,13 +458,18 @@ Item {
     property real progress: 0
     property real lineWidth: 2
 
-    onProgressChanged: requestPaint()
-    Component.onCompleted: requestPaint()
+    function repaint() {
+      if (this.visible && this.opacity > 0)
+        requestPaint();
+    }
+
+    onProgressChanged: repaint()
+    Component.onCompleted: repaint()
 
     Connections {
       target: Color
       function onMPrimaryChanged() {
-        requestPaint();
+        repaint();
       }
     }
 

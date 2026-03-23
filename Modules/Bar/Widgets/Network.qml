@@ -46,9 +46,9 @@ Item {
 
     model: [
       {
-        "label": Settings.data.network.wifiEnabled ? I18n.tr("actions.disable-wifi") : I18n.tr("actions.enable-wifi"),
+        "label": NetworkService.wifiEnabled ? I18n.tr("actions.disable-wifi") : I18n.tr("actions.enable-wifi"),
         "action": "toggle-wifi",
-        "icon": Settings.data.network.wifiEnabled ? "wifi-off" : "wifi",
+        "icon": NetworkService.wifiEnabled ? "wifi-off" : "wifi",
         "enabled": !Settings.data.network.airplaneModeEnabled && NetworkService.wifiAvailable
       },
       {
@@ -68,7 +68,7 @@ Item {
                    PanelService.closeContextMenu(screen);
 
                    if (action === "toggle-wifi") {
-                     NetworkService.setWifiEnabled(!Settings.data.network.wifiEnabled);
+                     NetworkService.setWifiEnabled(!NetworkService.wifiEnabled);
                    } else if (action === "wifi-settings") {
                      SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, 0, screen);
                    } else if (action === "widget-settings") {
@@ -84,7 +84,7 @@ Item {
     customIconColor: Color.resolveColorKeyOptional(root.iconColorKey)
     customTextColor: Color.resolveColorKeyOptional(root.textColorKey)
     icon: NetworkService.getIcon()
-    text: NetworkService.getStatusText()
+    text: NetworkService.getStatusText(false)
     autoHide: false
     forceOpen: !isBarVertical && root.displayMode === "alwaysShow"
     forceClose: isBarVertical || root.displayMode === "alwaysHide" || text === ""
@@ -99,7 +99,7 @@ Item {
       if (PanelService.getPanel("networkPanel", screen)?.isPanelOpen) {
         return "";
       }
-      return pill.text; // pill.text is exact copy of getStatusText
+      return NetworkService.getStatusText(true);
     }
   }
 }

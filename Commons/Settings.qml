@@ -192,7 +192,6 @@ Singleton {
       property bool useSeparateOpacity: false
 
       // Floating bar settings
-      property bool floating: false
       property int marginVertical: 4
       property int marginHorizontal: 4
 
@@ -395,6 +394,7 @@ Singleton {
       property real transitionEdgeSmoothness: 0.05
       property string panelPosition: "follow_bar"
       property bool hideWallpaperFilenames: false
+      property bool useOriginalImages: false
       property real overviewBlur: 0.4
       property real overviewTint: 0.6
       // Wallhaven settings
@@ -576,7 +576,6 @@ Singleton {
 
     // network
     property JsonObject network: JsonObject {
-      property bool wifiEnabled: true
       property bool airplaneModeEnabled: false
       property bool bluetoothRssiPollingEnabled: false  // Opt-in Bluetooth RSSI polling (uses bluetoothctl)
       property int bluetoothRssiPollIntervalMs: 60000 // Polling interval in milliseconds for RSSI queries
@@ -687,6 +686,7 @@ Singleton {
       property bool volumeOverdrive: false
       property int spectrumFrameRate: 30
       property string visualizerType: "linear"
+      property bool spectrumMirrored: true
       property list<string> mprisBlacklist: []
       property string preferredPlayer: ""
       property bool volumeFeedback: false

@@ -23,7 +23,7 @@ Item {
   property real maxValue2: maxValue
 
   // Style settings
-  property real strokeWidth: 1.5
+  property real strokeWidth: 1
   property bool fill: true
   property real fillOpacity: 0.15
   property real antialiasing: 0.5

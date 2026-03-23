@@ -1,4 +1,6 @@
 pragma Singleton
+import Qt.labs.folderlistmodel 2.10
+import QtQml.Models
 
 import QtQuick
 import Quickshell
@@ -36,82 +38,77 @@ Singleton {
   // Flag to track if this is the initial check to avoid OSD triggers
   property bool initialCheckDone: false
 
-  Process {
-    id: stateCheckProcess
+  Instantiator {
+    model: FolderListModel {
+      id: folderModel
+      folder: Qt.resolvedUrl("/sys/class/leds")
+      showFiles: false
+      showOnlyReadable: true
+    }
+    delegate: Component {
+      FileView {
+        id: fileView
+        path: filePath + "/brightness"
+        onTextChanged: () => {
+          if (!this.isWanted)
+          return;
+          if (!this.initialCheckDone) {
+            this.initialCheckDone = true;
+            return;
+          }
 
-    property string checkCommand: " \
-caps=0; cat /sys/class/leds/input*::capslock/brightness 2>/dev/null | grep -q 1 && caps=1; echo \"caps:${caps}\"; \
-num=0; cat /sys/class/leds/input*::numlock/brightness 2>/dev/null | grep -q 1 && num=1; echo \"num:${num}\"; \
-scroll=0; cat /sys/class/leds/input*::scrolllock/brightness 2>/dev/null | grep -q 1 && scroll=1; echo \"scroll:${scroll}\"; \
-"
-    command: ["sh", "-c", stateCheckProcess.checkCommand]
+          var state = !this.text().startsWith("0");
+          switch (fileName.split("::")[1]) {
+            case "numlock":
+            root.numLockOn = state;
+            root.numLockChanged(state);
+            Logger.i("LockKeysService", "Num Lock:", state, this.path);
+            break;
+            case "capslock":
+            root.capsLockOn = state;
+            root.capsLockChanged(state);
+            Logger.i("LockKeysService", "Caps Lock:", state, this.path);
+            break;
+            case "scrolllock":
+            root.scrollLockOn = state;
+            root.scrollLockChanged(state);
+            Logger.i("LockKeysService", "Scroll Lock:", state, this.path);
+            break;
+          }
+        }
 
-    stdout: StdioCollector {
-      onStreamFinished: {
-        var lines = this.text.trim().split('\n');
-        for (var i = 0; i < lines.length; i++) {
-          var parts = lines[i].split(':');
-          if (parts.length === 2) {
-            var key = parts[0];
-            var newState = (parts[1] === '1');
+        // FolderListModel only provides filters for file names, not folders
+        property bool isWanted: {
+          if (fileName.startsWith("input") && fileName.includes("::")) {
+            switch (fileName.split("::")[1]) {
+              case "numlock":
+              case "capslock":
+              case "scrolllock":
+              return true;
+            }
+          }
+          Logger.i("LockKeysService", "ignoring:", this.path);
+          return false;
+        }
 
-            if (key === "caps") {
-              if (root.capsLockOn !== newState) {
-                root.capsLockOn = newState;
-                if (root.initialCheckDone) {
-                  root.capsLockChanged(newState);
-                }
-                Logger.i("LockKeysService", "Caps Lock:", capsLockOn);
-              }
-            } else if (key === "num") {
-              if (root.numLockOn !== newState) {
-                root.numLockOn = newState;
-                if (root.initialCheckDone) {
-                  root.numLockChanged(newState);
-                }
-                Logger.i("LockKeysService", "Num Lock:", numLockOn);
-              }
-            } else if (key === "scroll") {
-              if (root.scrollLockOn !== newState) {
-                root.scrollLockOn = newState;
-                if (root.initialCheckDone) {
-                  root.scrollLockChanged(newState);
-                }
-                Logger.i("LockKeysService", "Scroll Lock:", scrollLockOn);
-              }
+        // Skip first OSD event if one fires immediately after enabling
+        property bool initialCheckDone: false
+        property variant connections: Connections {
+          target: root
+          function onShouldRunChanged() {
+            if (root.shouldRun) {
+              this.initialCheckDone = false;
             }
           }
         }
-        // Set initialCheckDone to true after the first check is complete
-        if (!root.initialCheckDone) {
-          root.initialCheckDone = true;
+
+        // sysfs does not provide change notifications
+        property variant refreshTimer: Timer {
+          interval: 200
+          running: root.shouldRun && fileView.isWanted
+          repeat: true
+          onTriggered: fileView.reload()
         }
-      }
-    }
-    stderr: StdioCollector {
-      onStreamFinished: {
-        if (this.text.trim().length > 0)
-        Logger.i("LockKeysService", "Error running state check:", this.text.trim());
-      }
-    }
-  }
-
-  onShouldRunChanged: {
-    if (shouldRun) {
-      // Reset initial check so first poll after re-enable doesn't trigger OSD
-      root.initialCheckDone = false;
-      stateCheckProcess.running = true;
-    }
-  }
-
-  Timer {
-    id: pollTimer
-    interval: 200
-    running: root.shouldRun
-    repeat: true
-    onTriggered: {
-      if (!stateCheckProcess.running) {
-        stateCheckProcess.running = true;
       }
     }
   }

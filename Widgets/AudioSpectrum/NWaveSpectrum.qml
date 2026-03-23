@@ -9,10 +9,11 @@ Item {
   property int strokeWidth: 0
   property var values: []
   property bool vertical: false
+  property bool mirrored: true
 
   // Minimum signal properties
   property bool showMinimumSignal: false
-  property real minimumSignalValue: 0.05 // Default to 5% of height
+  property real minimumSignalValue: 0.01 // Default to 1% of height
 
   readonly property int valuesCount: (values && values.length !== undefined) ? values.length : 0
   readonly property bool hasData: valuesCount >= 2
@@ -63,6 +64,7 @@ Item {
     property real count: root.valuesCount
     property real texWidth: dataRow.width
     property real vertical: root.vertical ? 1.0 : 0.0
+    property real mirrored: root.mirrored ? 1.0 : 0.0
 
     fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/wave_spectrum.frag.qsb")
     blending: true

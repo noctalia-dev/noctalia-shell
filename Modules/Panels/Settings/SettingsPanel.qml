@@ -20,7 +20,7 @@ SmartPanel {
 
   readonly property string barDensity: Settings.data.bar.density
   readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
-  readonly property bool barFloating: Settings.data.bar.floating
+  readonly property bool barFloating: Settings.data.bar.barType === "floating"
   readonly property real barMarginH: barFloating ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
   readonly property real barMarginV: barFloating ? Math.ceil(Settings.data.bar.marginVertical) : 0
 
