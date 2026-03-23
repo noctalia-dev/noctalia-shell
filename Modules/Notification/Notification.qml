@@ -350,12 +350,13 @@ Variants {
 
             function runAction(actionId, isDismissed) {
               if (!isDismissed) {
-                NotificationService.focusSenderWindow(model.appName);
-                NotificationService.invokeActionAndSuppressClose(notificationId, actionId);
-              } else if (Settings.data.notifications.clearDismissed) {
-                NotificationService.removeFromHistory(notificationId);
+                if (NotificationService.invokeActionAndSuppressClose(notificationId, actionId))
+                  card.animateOut();
+              } else {
+                if (Settings.data.notifications.clearDismissed)
+                  NotificationService.removeFromHistory(notificationId);
+                card.animateOut();
               }
-              card.animateOut();
             }
 
             Timer {
@@ -527,9 +528,11 @@ Variants {
                               var hasDefault = actions.some(function (a) {
                                 return a.identifier === "default";
                               });
-                              if (hasDefault) {
-                                card.runAction("default", false);
+                              if (hasDefault && NotificationService.invokeActionAndSuppressClose(notificationId, "default")) {
+                                card.animateOut();
                               } else {
+                                // Without a default action, or if invoking it fails,
+                                // the best fallback is focusing the sender window by app identity.
                                 NotificationService.focusSenderWindow(model.appName);
                                 card.animateOut();
                               }
