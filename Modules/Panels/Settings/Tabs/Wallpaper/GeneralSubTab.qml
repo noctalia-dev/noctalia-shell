@@ -160,11 +160,12 @@ ColumnLayout {
             }
 
             NTextInputButton {
+              id: monitorDirInput
               text: WallpaperService.getMonitorDirectory(modelData.name)
               buttonIcon: "folder-open"
               buttonTooltip: I18n.tr("panels.wallpaper.settings-monitor-specific-tooltip")
               Layout.fillWidth: true
-              onInputTextChanged: text => WallpaperService.setMonitorDirectory(modelData.name, text)
+              onInputEditingFinished: WallpaperService.setMonitorDirectory(modelData.name, monitorDirInput.text)
               onButtonClicked: root.openMonitorFolderPicker(modelData.name)
             }
           }
