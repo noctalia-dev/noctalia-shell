@@ -370,17 +370,24 @@ Singleton {
         continue;
       }
 
+      var isNewStream = !_knownAppStreamIds[s.id];
       currentIds[s.id] = true;
+
       var key = getAppKey(s);
       var ov = key ? appVolumeOverrides[key] : null;
       if (!ov || !s.audio) {
         continue;
       }
-      if (ov.volume !== undefined && Math.abs(s.audio.volume - ov.volume) > root.epsilon) {
-        s.audio.volume = ov.volume;
-      }
-      if (ov.muted !== undefined && s.audio.muted !== ov.muted) {
-        s.audio.muted = ov.muted;
+
+      // ONLY sync the volume to the override if the stream is NEW.
+      // E.g., a new track starts playing, or Firefox is restarted.
+      if (isNewStream) {
+        if (ov.volume !== undefined && Math.abs(s.audio.volume - ov.volume) > root.epsilon) {
+          s.audio.volume = ov.volume;
+        }
+        if (ov.muted !== undefined && s.audio.muted !== ov.muted) {
+          s.audio.muted = ov.muted;
+        }
       }
     }
     _knownAppStreamIds = currentIds;
