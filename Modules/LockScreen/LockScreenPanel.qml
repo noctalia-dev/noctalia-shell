@@ -796,6 +796,8 @@ Item {
                       id: icon
 
                       required property int index
+                      // This will be called with index = -1 when the TextInput is deleted
+                      // So we make sur index is positive to avoid warning on array accesses
                       property bool drawCustomChar: index >= 0 && Settings.data.general.passwordChars
                       // Flip color when this dot falls inside the active selection range
                       property bool isSelected: index >= 0 && passwordInput.selectionStart !== passwordInput.selectionEnd && index >= passwordInput.selectionStart && index < passwordInput.selectionEnd
