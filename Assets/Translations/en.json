@@ -944,6 +944,8 @@
       "predefined-desc": "Choose from a collection of predefined color schemes.",
       "predefined-generate-templates-label": "Generate templates for predefined schemes",
       "predefined-title": "Predefined color schemes",
+      "sync-gsettings-description": "Match the system theme to the active light or dark variant.",
+      "sync-gsettings-label": "Sync system theme",
       "templates-desc": "Apply colors to external applications.",
       "templates-filter-description": "Show templates from a specific category.",
       "templates-filter-label": "Filter by category",

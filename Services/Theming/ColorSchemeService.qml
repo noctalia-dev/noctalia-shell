@@ -18,6 +18,8 @@ Singleton {
   readonly property string gtkRefreshScript: Quickshell.shellDir + "/Scripts/python/src/theming/gtk-refresh.py"
 
   function pushSystemColorScheme() {
+    if (!Settings.data.colorSchemes.syncGsettings)
+      return;
     const mode = Settings.data.colorSchemes.darkMode ? "dark" : "light";
     Quickshell.execDetached(["python3", gtkRefreshScript, "--appearance-only", mode]);
   }

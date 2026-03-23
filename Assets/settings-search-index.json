@@ -525,6 +525,15 @@
     "subTabLabel": "common.colors"
   },
   {
+    "labelKey": "panels.color-scheme.sync-gsettings-label",
+    "descriptionKey": "panels.color-scheme.sync-gsettings-description",
+    "widget": "NToggle",
+    "tab": 2,
+    "tabLabel": "panels.color-scheme.title",
+    "subTab": 0,
+    "subTabLabel": "common.colors"
+  },
+  {
     "labelKey": "panels.color-scheme.dark-mode-mode-label",
     "descriptionKey": "panels.color-scheme.dark-mode-mode-description",
     "widget": "NComboBox",
