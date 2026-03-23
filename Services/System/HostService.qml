@@ -36,9 +36,9 @@ Singleton {
       return realName;
     }
 
-    // Fallback: capitalized $USER
+    // Fallback: $USER as-is (login names are case-sensitive on some systems)
     if (username && username.length > 0) {
-      return username.charAt(0).toUpperCase() + username.slice(1);
+      return username;
     }
 
     // Last resort: placeholder
