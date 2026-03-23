@@ -218,6 +218,16 @@ Rectangle {
     categorySlideTransition.stop();
   }
 
+  function applyCategorySelection(tabIndex, categories) {
+    const categoryList = categories || providerCategories;
+    if (!categoryList || tabIndex < 0 || tabIndex >= categoryList.length)
+      return false;
+
+    currentProvider.selectCategory(categoryList[tabIndex]);
+    categoryTabs.currentIndex = tabIndex;
+    return true;
+  }
+
   function selectCategoryWithSlide(tabIndex) {
     if (!showProviderCategories || !currentProvider || !currentProvider.selectCategory)
       return;
@@ -232,8 +242,7 @@ Rectangle {
 
     const canAnimate = !animationsDisabled && resultsViewport.width > 0 && resultsViewport.height > 0;
     if (!canAnimate) {
-      currentProvider.selectCategory(cats[tabIndex]);
-      categoryTabs.currentIndex = tabIndex;
+      applyCategorySelection(tabIndex, cats);
       return;
     }
 
@@ -263,13 +272,10 @@ Rectangle {
                    pendingCategoryTabIndex = -1;
 
                    const pendingCategories = providerCategories;
-                   if (!pendingCategories || pendingIndex >= pendingCategories.length) {
+                   if (!applyCategorySelection(pendingIndex, pendingCategories)) {
                      resetCategoryTransitionVisuals();
                      return;
                    }
-
-                   currentProvider.selectCategory(pendingCategories[pendingIndex]);
-                   categoryTabs.currentIndex = pendingIndex;
                    categorySlideTransition.restart();
                  });
   }
