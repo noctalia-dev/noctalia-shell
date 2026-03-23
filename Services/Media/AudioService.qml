@@ -296,12 +296,9 @@ Singleton {
     objects: [...root.sinks, ...root.sources]
   }
 
-  // Per-app volume persistence (re-applied when a new stream node appears after the
-  // previous one left the graph). External changes (in-app mixers) update overrides via
-  // Instantiator below — we do not periodically re-push overrides, or idle streams can
-  // desync (UI shows override while PipeWire keeps the real level).
+  // Per-app volume persistence (survives stream recreation on track change/seek)
   property var appVolumeOverrides: ({})
-  property var _appStreamOverrideAppliedIds: ({})
+  property var _knownAppStreamIds: ({})
   property bool _isApplyingAppOverride: false
 
   PwObjectTracker {
@@ -366,21 +363,6 @@ Singleton {
     }
 
     var currentIds = {};
-    for (var c = 0; c < streams.length; c++) {
-      var sc = streams[c];
-      if (sc) {
-        currentIds[sc.id] = true;
-      }
-    }
-
-    var prevApplied = root._appStreamOverrideAppliedIds;
-    var applied = {};
-    for (var id in prevApplied) {
-      if (prevApplied.hasOwnProperty(id) && currentIds[id]) {
-        applied[id] = true;
-      }
-    }
-
     _isApplyingAppOverride = true;
     for (var i = 0; i < streams.length; i++) {
       var s = streams[i];
@@ -388,12 +370,10 @@ Singleton {
         continue;
       }
 
+      currentIds[s.id] = true;
       var key = getAppKey(s);
       var ov = key ? appVolumeOverrides[key] : null;
       if (!ov || !s.audio) {
-        continue;
-      }
-      if (applied[s.id]) {
         continue;
       }
       if (ov.volume !== undefined && Math.abs(s.audio.volume - ov.volume) > root.epsilon) {
@@ -402,10 +382,9 @@ Singleton {
       if (ov.muted !== undefined && s.audio.muted !== ov.muted) {
         s.audio.muted = ov.muted;
       }
-      applied[s.id] = true;
     }
+    _knownAppStreamIds = currentIds;
     _isApplyingAppOverride = false;
-    _appStreamOverrideAppliedIds = applied;
   }
 
   Connections {
@@ -421,39 +400,12 @@ Singleton {
     onTriggered: root._applyAppOverrides()
   }
 
-  Instantiator {
-    model: root.appStreams
-    delegate: Connections {
-      target: modelData && modelData.audio ? modelData.audio : null
-
-      function onVolumeChanged() {
-        if (root._isApplyingAppOverride) {
-          return;
-        }
-        const node = modelData;
-        if (!node || !node.audio) {
-          return;
-        }
-        const key = root.getAppKey(node);
-        if (key) {
-          root.setAppStreamVolume(key, node.audio.volume);
-        }
-      }
-
-      function onMutedChanged() {
-        if (root._isApplyingAppOverride) {
-          return;
-        }
-        const node = modelData;
-        if (!node || !node.audio) {
-          return;
-        }
-        const key = root.getAppKey(node);
-        if (key) {
-          root.setAppStreamMuted(key, node.audio.muted);
-        }
-      }
-    }
+  Timer {
+    id: _appOverrideEnforcer
+    interval: 1000
+    running: Object.keys(root.appVolumeOverrides).length > 0 && root.appStreams.length > 0
+    repeat: true
+    onTriggered: root._applyAppOverrides()
   }
 
   Component.onCompleted: {
