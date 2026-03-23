@@ -855,14 +855,10 @@ SmartPanel {
         WallpaperService.setBrowsePath(targetScreen.name, path);
         return;
       }
-      if (Settings.data.wallpaper.themedWallpapers.enabled) {
-        ToastService.showNotice(
-          I18n.tr("panels.wallpaper.settings-theme-toggle-label"),
-          I18n.tr("panels.wallpaper.settings-theme-select-item-notice")
-        );
-        return;
-      }
       var screen = Settings.data.wallpaper.setWallpaperOnAllMonitors ? undefined : targetScreen.name;
+      if (Settings.data.wallpaper.themedWallpapers.enabled) {
+        WallpaperService.disableThemedWallpapers();
+      }
       WallpaperService.changeWallpaper(path, screen);
       WallpaperService.applyFavoriteTheme(path, screen);
     }
@@ -1336,20 +1332,105 @@ SmartPanel {
                   }
                 }
 
-                // Dark/light mode indicator
-                Rectangle {
+                // Dark/light mode toggle for the favorite wallpaper
+                Item {
+                  id: paletteModeIndicator
                   width: paletteRow.diameter
                   height: paletteRow.diameter
-                  radius: width * 0.5
-                  color: Color.mSurface
-                  border.color: Color.mShadow
-                  border.width: Style.borderS
 
-                  NIcon {
-                    icon: paletteRow.isDark ? "moon" : "sun"
-                    pointSize: parent.width * 0.45
-                    color: Color.mOnSurface
-                    anchors.centerIn: parent
+                  property string normalizedWallpaperPath: Settings.preprocessPath(wallpaperItem.wallpaperPath)
+                  property string darkThemePath: Settings.preprocessPath(Settings.data.wallpaper.themedWallpapers.dark || "")
+                  property string lightThemePath: Settings.preprocessPath(Settings.data.wallpaper.themedWallpapers.light || "")
+                  property bool darkAssigned: !!normalizedWallpaperPath && !!darkThemePath && normalizedWallpaperPath === darkThemePath
+                  property bool lightAssigned: !!normalizedWallpaperPath && !!lightThemePath && normalizedWallpaperPath === lightThemePath
+                  property int assignedCount: (darkAssigned ? 1 : 0) + (lightAssigned ? 1 : 0)
+                  property string selectedMode: assignedCount === 2 ? currentThemeMode : (darkAssigned ? "dark" : lightAssigned ? "light" : "")
+                  property string currentThemeMode: Settings.data.colorSchemes.darkMode ? "dark" : "light"
+                  property string indicatorIcon: paletteModeIndicator.selectedMode === "" ?
+                    "circle-off" :
+                    paletteModeIndicator.selectedMode === "dark" ? "moon" : "sun"
+
+                  function oppositeMode(mode) {
+                    return mode === "dark" ? "light" : "dark";
+                  }
+
+                  function clearMode(mode) {
+                    if (!mode)
+                      return;
+                    if (mode === "dark") {
+                      Settings.data.wallpaper.themedWallpapers.dark = "";
+                    } else {
+                      Settings.data.wallpaper.themedWallpapers.light = "";
+                    }
+                    if (!Settings.data.wallpaper.themedWallpapers.dark && !Settings.data.wallpaper.themedWallpapers.light) {
+                      Settings.data.wallpaper.themedWallpapers.enabled = false;
+                    }
+                  }
+
+                  Rectangle {
+                    id: indicatorCircle
+                    anchors.fill: parent
+                    radius: width * 0.5
+                    color: Color.mSurface
+                    border.color: indicatorHoverHandler.hovered ? Color.mPrimary : Color.mShadow
+                    border.width: Style.borderS
+
+                    Rectangle {
+                      anchors.fill: parent
+                      radius: parent.radius
+                      color: Color.mHover
+                      opacity: indicatorHoverHandler.hovered ? 0.8 : 0
+
+                      Behavior on opacity {
+                        NumberAnimation {
+                          duration: Style.animationFast
+                        }
+                      }
+                    }
+
+                    RowLayout {
+                      anchors.centerIn: parent
+                      spacing: paletteModeIndicator.selectedMode === "" ? Style.marginXXS : 0
+
+                      NIcon {
+                        icon: paletteModeIndicator.indicatorIcon
+                        pointSize: Style.toOdd(paletteRow.diameter * 0.45)
+                        color: Color.mOnSurface
+                      }
+                    }
+                  }
+
+                  HoverHandler {
+                    id: indicatorHoverHandler
+                  }
+
+                  MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: mouse => {
+                      if (wallpaperItem.isDirectory)
+                        return;
+                      if (mouse.button === Qt.RightButton) {
+                        if (paletteModeIndicator.assignedCount === 0) {
+                          WallpaperService.setThemedWallpaper(paletteModeIndicator.oppositeMode(paletteModeIndicator.currentThemeMode), wallpaperItem.wallpaperPath);
+                        } else if (paletteModeIndicator.assignedCount === 1) {
+                          paletteModeIndicator.clearMode(paletteModeIndicator.selectedMode);
+                        } else {
+                          paletteModeIndicator.clearMode(paletteModeIndicator.oppositeMode(paletteModeIndicator.currentThemeMode));
+                        }
+                        return;
+                      }
+
+                      if (paletteModeIndicator.assignedCount === 0) {
+                        WallpaperService.setThemedWallpaper(paletteModeIndicator.currentThemeMode, wallpaperItem.wallpaperPath);
+                      } else if (paletteModeIndicator.assignedCount === 1) {
+                        WallpaperService.setThemedWallpaper(paletteModeIndicator.oppositeMode(paletteModeIndicator.selectedMode), wallpaperItem.wallpaperPath);
+                      } else {
+                        paletteModeIndicator.clearMode(paletteModeIndicator.currentThemeMode);
+                      }
+                    }
                   }
                 }
 
@@ -1367,67 +1448,6 @@ SmartPanel {
                 }
               }
 
-              // Themed wallpaper markers (Top-center)
-              Rectangle {
-                id: themedMarker
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.topMargin: Style.marginS
-                radius: Style.radiusL
-                color: Color.mSurfaceVariant
-                border.color: Color.mOutline
-                border.width: Style.borderS
-                z: 5
-                implicitWidth: themedRow.implicitWidth + Style.marginXS * 2
-                implicitHeight: themedRow.implicitHeight + Style.marginXS * 2
-                property bool isThemedActive: !wallpaperItem.isDirectory &&
-                  ((typeof hoverHandler !== "undefined" && hoverHandler.hovered) ||
-                    (!Settings.data.wallpaper.themedWallpapers.enabled && wallpaperGridView.currentIndex === index))
-                transform: Translate {
-                  id: themedMarkerTranslate
-                  y: themedMarker.isThemedActive ? 0 : -Style.marginS
-                  Behavior on y {
-                    NumberAnimation {
-                      duration: Style.animationFast
-                      easing.type: Easing.OutCubic
-                    }
-                  }
-                }
-                opacity: themedMarker.isThemedActive ? 1 : 0
-                Behavior on opacity {
-                  NumberAnimation {
-                    duration: Style.animationFast
-                  }
-                }
-                enabled: themedMarker.isThemedActive
-
-                RowLayout {
-                  id: themedRow
-                  anchors.centerIn: parent
-                  spacing: Style.marginXS
-
-                  NIconButton {
-                    icon: "moon"
-                    tooltipText: I18n.tr("wallpaper.panel.theme-assign-dark-tooltip")
-                    baseSize: Style.baseWidgetSize * 0.7
-                    enabled: !wallpaperItem.isDirectory
-                    colorBg: wallpaperItem.darkMode ? Color.mPrimary : Color.mSurface
-                    colorFg: wallpaperItem.darkMode ? Color.mOnPrimary : Color.mOnSurfaceVariant
-                    onClicked: WallpaperService.setThemedWallpaper("dark", wallpaperItem.wallpaperPath)
-                  }
-
-                  NIconButton {
-                    icon: "sun"
-                    tooltipText: I18n.tr("wallpaper.panel.theme-assign-light-tooltip")
-                    baseSize: Style.baseWidgetSize * 0.7
-                    enabled: !wallpaperItem.isDirectory
-                    colorBg: wallpaperItem.lightMode ? Color.mPrimary : Color.mSurface
-                    colorFg: wallpaperItem.lightMode ? Color.mOnPrimary : Color.mOnSurfaceVariant
-                    onClicked: WallpaperService.setThemedWallpaper("light", wallpaperItem.wallpaperPath)
-                  }
-                }
-              }
-
               Rectangle {
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -1435,7 +1455,7 @@ SmartPanel {
                 height: imageContainer.imageHeight
                 color: Color.mSurface
                 radius: Style.radiusM
-                opacity: Settings.data.wallpaper.themedWallpapers.enabled ? 0 :
+                opacity: (wallpaperItem.darkMode || wallpaperItem.lightMode) ? 0 :
                   (hoverHandler.hovered || wallpaperItem.isSelected || wallpaperGridView.currentIndex === index ? 0 : 0.3)
                 Behavior on opacity {
                   NumberAnimation {

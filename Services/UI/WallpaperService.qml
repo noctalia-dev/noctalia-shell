@@ -493,6 +493,18 @@ Singleton {
     applyThemedWallpaperForMode(mode);
   }
 
+  function disableThemedWallpapers() {
+    if (!Settings.data.wallpaper.themedWallpapers.enabled &&
+      !Settings.data.wallpaper.themedWallpapers.dark &&
+      !Settings.data.wallpaper.themedWallpapers.light) {
+      return;
+    }
+
+    Settings.data.wallpaper.themedWallpapers.dark = "";
+    Settings.data.wallpaper.themedWallpapers.light = "";
+    Settings.data.wallpaper.themedWallpapers.enabled = false;
+  }
+
   function setThemedWallpaper(mode, path) {
     if (!mode || !path)
       return;
