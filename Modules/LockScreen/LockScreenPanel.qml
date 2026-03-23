@@ -700,6 +700,20 @@ Item {
 
           property bool passwordVisible: false
 
+          // Ctrl + A to highlight the portion
+          Shortcut {
+            sequence: StandardKey.SelectAll
+            enabled: passwordInput.activeFocus
+            onActivated: passwordInput.selectAll()
+          }
+
+          // Esc to clear selection
+          Shortcut {
+            sequences: [StandardKey.Cancel]
+            enabled: passwordInput.activeFocus && passwordInput.selectionStart !== passwordInput.selectionEnd
+            onActivated: passwordInput.deselect()
+          }
+
           Row {
             anchors.left: parent.left
             anchors.leftMargin: 18
@@ -746,13 +760,24 @@ Item {
                 }
               }
 
-              // Password display - show dots or actual text based on passwordVisible
+              // Password dots display with selection support
               Item {
                 width: Math.min(passwordDisplayContent.width, 550)
                 height: 20
                 visible: passwordInput.text.length > 0 && !parent.parent.parent.passwordVisible
                 anchors.verticalCenter: parent.verticalCenter
                 clip: true
+
+                // Proportional selection highlight behind the dots
+                Rectangle {
+                  id: selectionHighlight
+                  visible: passwordInput.selectionStart !== passwordInput.selectionEnd && passwordInput.text.length > 0
+                  color: Qt.alpha(Color.mPrimary, 0.8)
+                  height: parent.height + Style.marginS
+                  anchors.verticalCenter: parent.verticalCenter
+                  x: (passwordInput.selectionStart / passwordInput.text.length) * passwordDisplayContent.width
+                  width: ((passwordInput.selectionEnd - passwordInput.selectionStart) / passwordInput.text.length) * passwordDisplayContent.width
+                }
 
                 Row {
                   id: passwordDisplayContent
@@ -774,10 +799,12 @@ Item {
                       // This will be called with index = -1 when the TextInput is deleted
                       // So we make sur index is positive to avoid warning on array accesses
                       property bool drawCustomChar: index >= 0 && Settings.data.general.passwordChars
+                      // Flip color when this dot falls inside the active selection range
+                      property bool isSelected: index >= 0 && passwordInput.selectionStart !== passwordInput.selectionEnd && index >= passwordInput.selectionStart && index < passwordInput.selectionEnd
 
                       icon: drawCustomChar ? iconRepeater.passwordChars[index % iconRepeater.passwordChars.length] : "circle-filled"
                       pointSize: Style.fontSizeL
-                      color: Color.mPrimary
+                      color: isSelected ? Color.mOnPrimary : Color.mPrimary
                       opacity: 1.0
                       scale: animationsEnabled ? 0.5 : 1
                       ParallelAnimation {
@@ -799,6 +826,60 @@ Item {
                     }
                   }
                 }
+
+                // Mouse area for click-to-position and drag-to-select
+                MouseArea {
+                  anchors.fill: parent
+                  cursorShape: Qt.IBeamCursor
+
+                  property int dragStartPos: 0
+                  property bool pendingSelectAll: false
+
+                  // Resets double-click state if user pauses too long between clicks
+                  Timer {
+                    id: doubleClickResetTimer
+                    interval: 600
+                    onTriggered: parent.pendingSelectAll = false
+                  }
+
+                  function charIndexFromX(mouseX) {
+                    if (passwordInput.text.length === 0)
+                      return 0;
+                    var charWidth = passwordDisplayContent.width / passwordInput.text.length;
+                    // floor so clicking anywhere on a dot selects that dot, not the next
+                    return Math.max(0, Math.min(passwordInput.text.length - 1, Math.floor(mouseX / charWidth)));
+                  }
+
+                  onPressed: function (mouse) {
+                    doubleClickResetTimer.stop();
+                    passwordInput.forceActiveFocus();
+                    dragStartPos = charIndexFromX(mouse.x);
+                    passwordInput.cursorPosition = dragStartPos;
+                  }
+
+                  onPositionChanged: function (mouse) {
+                    pendingSelectAll = false;
+                    var curPos = charIndexFromX(mouse.x);
+                    if (curPos <= dragStartPos) {
+                      passwordInput.select(curPos, dragStartPos + 1);
+                    } else {
+                      passwordInput.select(dragStartPos, curPos + 1);
+                    }
+                  }
+
+                  onDoubleClicked: function (mouse) {
+                    passwordInput.forceActiveFocus();
+                    if (pendingSelectAll) {
+                      passwordInput.selectAll();
+                      pendingSelectAll = false;
+                    } else {
+                      var pos = charIndexFromX(mouse.x);
+                      passwordInput.select(pos, Math.min(pos + 1, passwordInput.text.length));
+                      pendingSelectAll = true;
+                      doubleClickResetTimer.restart();
+                    }
+                  }
+                }
               }
 
               NText {
@@ -815,13 +896,14 @@ Item {
                 width: 2
                 height: 20
                 color: Color.mPrimary
-                visible: passwordInput.activeFocus && passwordInput.text.length > 0
+                // Hide the cursor when text is selected
+                visible: passwordInput.activeFocus && passwordInput.text.length > 0 && passwordInput.selectionStart === passwordInput.selectionEnd
                 anchors.verticalCenter: parent.verticalCenter
 
                 // Smooth fade animation (when animations enabled)
                 SequentialAnimation on opacity {
                   loops: Animation.Infinite
-                  running: root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length > 0
+                  running: root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length > 0 && passwordInput.selectionStart === passwordInput.selectionEnd
                   NumberAnimation {
                     to: 0
                     duration: 530
@@ -835,7 +917,7 @@ Item {
                 // Simple toggle (when animations disabled) — no per-frame repaints
                 Timer {
                   interval: 530
-                  running: !root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length > 0
+                  running: !root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length > 0 && passwordInput.selectionStart === passwordInput.selectionEnd
                   repeat: true
                   onTriggered: parent.opacity = parent.opacity > 0.5 ? 0 : 1
                 }
