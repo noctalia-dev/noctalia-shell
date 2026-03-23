@@ -211,6 +211,21 @@ Loader {
         pasteClipboardProc.running = true;
       }
 
+      function handlePasteExit(exitCode, exitStatus, stdoutText, stderrText) {
+        const editor = pendingPasteEditor;
+        pendingPasteEditor = null;
+
+        if (exitCode === 0) {
+          if (editor) {
+            insertText(editor, String(stdoutText));
+          }
+          return;
+        }
+
+        const errorDetails = stderrText ? ` stderr: ${stderrText}` : "";
+        Logger.w("LockScreen", `Clipboard paste failed with exit code ${exitCode}, exit status ${exitStatus}.${errorDetails}`);
+      }
+
       function handlePasswordKey(editor, event, allowCancelTimer) {
         if (allowCancelTimer === undefined)
           allowCancelTimer = false;
@@ -300,12 +315,10 @@ Loader {
       Process {
         id: pasteClipboardProc
         stdout: StdioCollector {}
+        stderr: StdioCollector {}
         onExited: (exitCode, exitStatus) => {
-          if (exitCode === 0 && lockContainer.pendingPasteEditor) {
-            lockContainer.insertText(lockContainer.pendingPasteEditor, String(stdout.text));
-          }
-          lockContainer.pendingPasteEditor = null;
-        }
+                    lockContainer.handlePasteExit(exitCode, exitStatus, stdout.text, String(stderr.text || "").trim());
+                  }
       }
 
       LockContext {
