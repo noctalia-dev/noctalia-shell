@@ -898,7 +898,7 @@ Item {
                 visible: passwordInput.activeFocus && passwordInput.text.length > 0 && passwordInput.selectionStart === passwordInput.selectionEnd
                 anchors.verticalCenter: parent.verticalCenter
 
-								// Smooth fade animation (when animations enabled)
+                // Smooth fade animation (when animations enabled)
                 SequentialAnimation on opacity {
                   loops: Animation.Infinite
                   running: root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length > 0 && passwordInput.selectionStart === passwordInput.selectionEnd
