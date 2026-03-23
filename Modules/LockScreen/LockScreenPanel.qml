@@ -709,7 +709,7 @@ Item {
 
           // Esc to clear selection
           Shortcut {
-            sequences: [StandardKey.Cancel]
+            sequence: StandardKey.Cancel
             enabled: passwordInput.activeFocus && passwordInput.selectionStart !== passwordInput.selectionEnd
             onActivated: passwordInput.deselect()
           }
@@ -737,7 +737,6 @@ Item {
                 visible: passwordInput.activeFocus && passwordInput.text.length === 0
                 anchors.verticalCenter: parent.verticalCenter
 
-                // Smooth fade animation (when animations enabled)
                 SequentialAnimation on opacity {
                   loops: Animation.Infinite
                   running: root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length === 0
@@ -751,7 +750,6 @@ Item {
                   }
                 }
 
-                // Simple toggle (when animations disabled) — no per-frame repaints
                 Timer {
                   interval: 530
                   running: !root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length === 0
@@ -773,7 +771,7 @@ Item {
                   id: selectionHighlight
                   visible: passwordInput.selectionStart !== passwordInput.selectionEnd && passwordInput.text.length > 0
                   color: Qt.alpha(Color.mPrimary, 0.8)
-                  height: parent.height + 6
+                  height: parent.height + Style.marginS
                   anchors.verticalCenter: parent.verticalCenter
                   x: (passwordInput.selectionStart / passwordInput.text.length) * passwordDisplayContent.width
                   width: ((passwordInput.selectionEnd - passwordInput.selectionStart) / passwordInput.text.length) * passwordDisplayContent.width
@@ -796,8 +794,6 @@ Item {
                       id: icon
 
                       required property int index
-                      // This will be called with index = -1 when the TextInput is deleted
-                      // So we make sur index is positive to avoid warning on array accesses
                       property bool drawCustomChar: index >= 0 && Settings.data.general.passwordChars
                       // Flip color when this dot falls inside the active selection range
                       property bool isSelected: index >= 0 && passwordInput.selectionStart !== passwordInput.selectionEnd && index >= passwordInput.selectionStart && index < passwordInput.selectionEnd
@@ -900,7 +896,6 @@ Item {
                 visible: passwordInput.activeFocus && passwordInput.text.length > 0 && passwordInput.selectionStart === passwordInput.selectionEnd
                 anchors.verticalCenter: parent.verticalCenter
 
-                // Smooth fade animation (when animations enabled)
                 SequentialAnimation on opacity {
                   loops: Animation.Infinite
                   running: root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length > 0 && passwordInput.selectionStart === passwordInput.selectionEnd
@@ -914,7 +909,6 @@ Item {
                   }
                 }
 
-                // Simple toggle (when animations disabled) — no per-frame repaints
                 Timer {
                   interval: 530
                   running: !root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length > 0 && passwordInput.selectionStart === passwordInput.selectionEnd
