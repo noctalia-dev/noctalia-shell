@@ -164,6 +164,15 @@ Singleton {
     Qt.callLater(refreshWallpapersList);
   }
 
+  // Cache restore updates currentWallpapers without _setWallpaper, so wallpaperChanged does not fire.
+  function _scheduleThemeSyncFromCachedWallpaper() {
+    Qt.callLater(function () {
+      if (Settings.data.colorSchemes.useWallpaperColors) {
+        AppThemeService.generate();
+      }
+    });
+  }
+
   // -------------------------------------------------
   function translateModels() {
     // Wait for i18n to be ready by retrying every time
@@ -1125,6 +1134,7 @@ Singleton {
 
       Logger.d("Wallpaper", "Loaded wallpapers from cache file:", Object.keys(root.currentWallpapers).length, "screens");
       root.isInitialized = true;
+      root._scheduleThemeSyncFromCachedWallpaper();
     }
 
     onLoadFailed: error => {
@@ -1132,6 +1142,7 @@ Singleton {
       root.currentWallpapers = {};
       Logger.d("Wallpaper", "Cache file doesn't exist or failed to load, starting with empty wallpapers");
       root.isInitialized = true;
+      root._scheduleThemeSyncFromCachedWallpaper();
     }
   }
 
