@@ -27,7 +27,7 @@ Rectangle {
   }
 
   // Expose for preview panel positioning
-  readonly property var resultsView: resultsViewLoader.item
+  readonly property var resultsView: resultsSwapView.item
 
   // State
   property string searchText: ""
@@ -189,6 +189,8 @@ Rectangle {
   function onClosed() {
     searchText = "";
     ignoreMouseHover = true;
+    if (resultsSwapView)
+      resultsSwapView.resetVisuals();
     for (let provider of providers) {
       if (provider.onClosed)
         provider.onClosed();
@@ -197,6 +199,38 @@ Rectangle {
 
   function close() {
     requestClose();
+  }
+
+  function applyCategorySelection(tabIndex, categories) {
+    const categoryList = categories || providerCategories;
+    if (!categoryList || tabIndex < 0 || tabIndex >= categoryList.length)
+      return false;
+
+    currentProvider.selectCategory(categoryList[tabIndex]);
+    categoryTabs.currentIndex = tabIndex;
+    return true;
+  }
+
+  function selectCategoryWithSlide(tabIndex) {
+    if (!showProviderCategories || !currentProvider || !currentProvider.selectCategory)
+      return;
+
+    const cats = providerCategories;
+    if (!cats || tabIndex < 0 || tabIndex >= cats.length)
+      return;
+
+    const currentIdx = cats.indexOf(currentProvider.selectedCategory);
+    if (tabIndex === currentIdx)
+      return;
+
+    const canAnimate = !animationsDisabled && resultsSwapView.width > 0 && resultsSwapView.height > 0;
+    if (!canAnimate) {
+      applyCategorySelection(tabIndex, cats);
+      return;
+    }
+
+    const direction = tabIndex > currentIdx ? 1 : -1;
+    resultsSwapView.swap(direction, () => applyCategorySelection(tabIndex, providerCategories));
   }
 
   // Public API
@@ -454,8 +488,7 @@ Rectangle {
         var cats = providerCategories;
         var idx = cats.indexOf(currentProvider.selectedCategory);
         var nextIdx = (idx + 1) % cats.length;
-        currentProvider.selectCategory(cats[nextIdx]);
-        categoryTabs.currentIndex = nextIdx;
+        selectCategoryWithSlide(nextIdx);
       } else {
         selectNextWrapped();
       }
@@ -466,8 +499,7 @@ Rectangle {
         var cats2 = providerCategories;
         var idx2 = cats2.indexOf(currentProvider.selectedCategory);
         var prevIdx = ((idx2 - 1) % cats2.length + cats2.length) % cats2.length;
-        currentProvider.selectCategory(cats2[prevIdx]);
-        categoryTabs.currentIndex = prevIdx;
+        selectCategoryWithSlide(prevIdx);
       } else {
         selectPreviousWrapped();
       }
@@ -672,18 +704,19 @@ Rectangle {
           tooltipText: root.currentProvider.getCategoryName ? root.currentProvider.getCategoryName(modelData) : modelData
           tabIndex: index
           checked: categoryTabs.currentIndex === index
-          onClicked: root.currentProvider.selectCategory(modelData)
+          onClicked: root.selectCategoryWithSlide(index)
         }
       }
     }
 
     // Results view
-    Loader {
-      id: resultsViewLoader
+    NSlideSwapView {
+      id: resultsSwapView
       Layout.fillWidth: true
       Layout.leftMargin: Style.marginL
       Layout.rightMargin: Style.marginL
       Layout.fillHeight: true
+      animationsEnabled: !root.animationsDisabled
       sourceComponent: root.isSingleView ? singleViewComponent : (root.isGridView ? gridViewComponent : listViewComponent)
     }
 
