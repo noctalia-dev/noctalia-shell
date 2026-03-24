@@ -35,7 +35,8 @@ Item {
   }
 
   readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
-  readonly property bool isVertical: barPosition === "left" || barPosition === "right"
+  readonly property bool forceHorizontal: widgetSettings.forceHorizontal !== undefined ? widgetSettings.forceHorizontal : false
+  readonly property bool isVertical: !forceHorizontal && (barPosition === "left" || barPosition === "right")
   readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
 
   // Content dimensions for implicit sizing
