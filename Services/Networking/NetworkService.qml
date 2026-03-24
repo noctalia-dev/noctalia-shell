@@ -59,6 +59,7 @@ Singleton {
   property bool _internetConnectivity: false
   property string lastError: ""
   property int activeDetailsTtlMs: 10000
+
   // Ethernet properties
   property var ethernetInterfaces: ([])
   property var activeEthernetDetails: ({})
@@ -66,6 +67,7 @@ Singleton {
   property string activeEthernetIf: ""
   property bool ethernetDetailsLoading: false
   property double activeEthernetDetailsTimestamp: 0
+
   // Wi-Fi properties
   readonly property bool wifiEnabled: Networking.wifiEnabled
   property var networks: ({})
@@ -75,6 +77,7 @@ Singleton {
   property bool wifiDetailsLoading: false
   property double activeWifiDetailsTimestamp: 0
   property bool wifiInit: false
+
   // Wi-Fi adapter/connection properties
   property bool connecting: false
   property string connectingTo: ""
@@ -84,10 +87,14 @@ Singleton {
   property bool scanningActive: false
   property var existingProfiles: ({})
 
+  // Airplane mode status
+  property bool airplaneModeEnabled: false
+  property bool airplaneModeToggled: false
+
   Connections {
     target: root
     function onWifiEnabledChanged() {
-      if (!root.wifiInit || BluetoothService.airplaneModeToggled) {
+      if (!root.wifiInit) {
         return;
       }
       wifiDebounce.restart();
@@ -129,11 +136,14 @@ Singleton {
   // Prevent an initial "Wi-Fi enabled" toast and trigger initial scan
   Timer {
     id: wifiInitTimer
-    interval: 100
+    interval: 500
     onTriggered: {
       root.wifiInit = true;
       if (root.wifiEnabled) {
-        root.scan();
+        scan();
+      }
+      if (!root.wifiEnabled && BluetoothService.blocked) {
+        root.airplaneModeEnabled = true;
       }
     }
   }
@@ -143,14 +153,17 @@ Singleton {
     id: wifiDebounce
     interval: 300
     onTriggered: {
+      if (root.airplaneModeToggled) {
+        root.airplaneModeToggled = false;
+        return;
+      }
       if (root.wifiEnabled) {
         ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("common.enabled"), "wifi");
         connectivityCheckProcess.running = true;
         deviceStatusProcess.running = true;
-        root.scan();
+        scan();
       } else {
         ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("common.disabled"), "wifi-off");
-        root.scanningActive = false;
         root.networks = ({});
       }
     }
@@ -172,30 +185,6 @@ Singleton {
     onTriggered: scan()
   }
 
-  // Refresh details for the currently active Wi‑Fi link
-  function refreshActiveWifiDetails() {
-    const now = Date.now();
-    if (wifiDetailsLoading || (activeWifiIf && wifiConnected && activeWifiDetails && (now - activeWifiDetailsTimestamp) < activeDetailsTtlMs)) {
-      return;
-    }
-    if (wifiConnected && activeWifiIf) {
-      wifiDetailsLoading = true;
-      deviceStatusProcess.running = true;
-    }
-  }
-
-  // Refresh details for the currently active Ethernet link
-  function refreshActiveEthernetDetails() {
-    const now = Date.now();
-    if (ethernetDetailsLoading || activeEthernetIf && activeEthernetDetails && (now - activeEthernetDetailsTimestamp) < activeDetailsTtlMs) {
-      return;
-    }
-    if (ethernetConnected && activeEthernetIf) {
-      ethernetDetailsLoading = true;
-      deviceStatusProcess.running = true;
-    }
-  }
-
   // Core functions
   function setWifiEnabled(enabled) {
     if (!ProgramCheckerService.nmcliAvailable) {
@@ -203,6 +192,16 @@ Singleton {
     }
     Logger.i("Wi-Fi", "SetWifiEnabled", enabled);
     Networking.wifiEnabled = enabled;
+  }
+
+  function setAirplaneMode(state) {
+    if (state) {
+      Quickshell.execDetached(["rfkill", "block", "wifi"]);
+      Quickshell.execDetached(["rfkill", "block", "bluetooth"]);
+    } else {
+      Quickshell.execDetached(["rfkill", "unblock", "wifi"]);
+      Quickshell.execDetached(["rfkill", "unblock", "bluetooth"]);
+    }
   }
 
   function scan() {
@@ -274,6 +273,30 @@ Singleton {
     // Remove from system
     forgetProcess.ssid = ssid;
     forgetProcess.running = true;
+  }
+
+  // Refresh details for the currently active Wi‑Fi link
+  function refreshActiveWifiDetails() {
+    const now = Date.now();
+    if (wifiDetailsLoading || (activeWifiIf && wifiConnected && activeWifiDetails && (now - activeWifiDetailsTimestamp) < activeDetailsTtlMs)) {
+      return;
+    }
+    if (wifiConnected && activeWifiIf) {
+      wifiDetailsLoading = true;
+      deviceStatusProcess.running = true;
+    }
+  }
+
+  // Refresh details for the currently active Ethernet link
+  function refreshActiveEthernetDetails() {
+    const now = Date.now();
+    if (ethernetDetailsLoading || activeEthernetIf && activeEthernetDetails && (now - activeEthernetDetailsTimestamp) < activeDetailsTtlMs) {
+      return;
+    }
+    if (ethernetConnected && activeEthernetIf) {
+      ethernetDetailsLoading = true;
+      deviceStatusProcess.running = true;
+    }
   }
 
   // Helper function to immediately update network status
@@ -411,7 +434,7 @@ Singleton {
       return root.connectingTo ? I18n.tr("common.connecting") + " " + root.connectingTo : I18n.tr("common.connecting");
     }
 
-    if (Settings.data.network.airplaneModeEnabled) {
+    if (NetworkService.airplaneModeEnabled) {
       return I18n.tr("toast.airplane-mode.title");
     }
     if (!root.wifiEnabled) {
@@ -438,7 +461,7 @@ Singleton {
   }
 
   function getIcon(forceEthernet = false) {
-    if (Settings.data.network.airplaneModeEnabled && !forceEthernet) {
+    if (NetworkService.airplaneModeEnabled && !forceEthernet) {
       return "plane";
     }
 

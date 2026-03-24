@@ -149,7 +149,7 @@ Item {
             icon: NetworkService.wifiEnabled ? "wifi" : "wifi-off"
             checked: NetworkService.wifiEnabled
             onToggled: checked => NetworkService.setWifiEnabled(checked)
-            enabled: ProgramCheckerService.nmcliAvailable && !Settings.data.network.airplaneModeEnabled && NetworkService.wifiAvailable
+            enabled: ProgramCheckerService.nmcliAvailable && !NetworkService.airplaneModeEnabled && NetworkService.wifiAvailable
             Layout.alignment: Qt.AlignVCenter
           }
         }
@@ -338,9 +338,9 @@ Item {
         NToggle {
           label: I18n.tr("toast.airplane-mode.title")
           description: I18n.tr("toast.airplane-mode.description")
-          icon: Settings.data.network.airplaneModeEnabled ? "plane" : "plane-off"
-          checked: Settings.data.network.airplaneModeEnabled
-          onToggled: checked => BluetoothService.setAirplaneMode(checked)
+          icon: NetworkService.airplaneModeEnabled ? "plane" : "plane-off"
+          checked: NetworkService.airplaneModeEnabled
+          onToggled: checked => NetworkService.setAirplaneMode(checked)
         }
       }
     }
