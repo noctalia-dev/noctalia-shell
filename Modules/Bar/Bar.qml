@@ -9,6 +9,7 @@ import qs.Modules.Bar.Extras
 import qs.Modules.Notification
 import qs.Modules.Panels.Settings
 import qs.Services.Compositor
+import qs.Services.Media
 import qs.Services.UI
 import qs.Widgets
 
@@ -469,6 +470,15 @@ Item {
                 bar.switchWorkspaceByOffset(direction);
               } else if (bar.barWheelAction === "content") {
                 CompositorService.scrollWorkspaceContent(direction);
+              } else if (bar.barWheelAction === "volume") {
+                var volumeDirection = bar.barWheelAccumulatedDelta > 0 ? 1 : -1;
+                if (Settings.data.bar.reverseScroll)
+                  volumeDirection *= -1;
+                if (volumeDirection > 0) {
+                  AudioService.increaseVolume();
+                } else {
+                  AudioService.decreaseVolume();
+                }
               }
               bar.barWheelCooldown = true;
               barWheelDebounce.restart();
