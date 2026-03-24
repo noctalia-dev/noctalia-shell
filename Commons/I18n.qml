@@ -17,7 +17,7 @@ Singleton {
   property var fallbackTranslations: ({})
 
   // Static list of available translations — update when adding/removing translation files
-  property var availableLanguages: ["en", "de", "es", "fr", "hu", "it", "ja", "ko-KR", "ku", "nl", "nn-HN", "nn-NO", "pl", "pt", "ru", "sv", "tr", "uk-UA", "vi", "zh-CN", "zh-TW"]
+  property var availableLanguages: ["en", "cs", "de", "es", "fr", "hu", "it", "ja", "ko-KR", "ku", "nl", "nn-HN", "nn-NO", "pl", "pt", "ru", "sv", "tr", "uk-UA", "vi", "zh-CN", "zh-TW"]
 
   // Default date format per language (used by lock screen, etc.)
   readonly property var dateFormats: ({
