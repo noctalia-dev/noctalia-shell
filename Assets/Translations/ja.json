@@ -944,6 +944,8 @@
       "predefined-desc": "あらかじめ用意された配色から選択します。",
       "predefined-generate-templates-label": "プリセット配色のテンプレートを生成する",
       "predefined-title": "プリセット配色",
+      "sync-gsettings-description": "システムテーマをアクティブなライトまたはダークのバリアントに合わせます。",
+      "sync-gsettings-label": "システムテーマを同期",
       "templates-desc": "外部アプリケーションに配色を適用します。",
       "templates-filter-description": "特定のカテゴリのテンプレートを表示します。",
       "templates-filter-label": "カテゴリで絞り込む",
@@ -2227,7 +2229,7 @@
       "excellent": "優秀",
       "fair": "普通",
       "good": "良い",
-      "poor": "弱い",
+      "poor": "不良",
       "weak": "弱い"
     }
   }

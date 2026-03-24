@@ -944,6 +944,8 @@
       "predefined-desc": "從一批預先設計好的配色中選擇",
       "predefined-generate-templates-label": "為預先設計的配色建立模板",
       "predefined-title": "預先設計的配色",
+      "sync-gsettings-description": "將系統主題與活動的淺色或深色變體匹配。",
+      "sync-gsettings-label": "同步系統主題",
       "templates-desc": "套用顏色至外部應用程式",
       "templates-filter-description": "顯示特定類別的模板",
       "templates-filter-label": "按類別篩選",
@@ -2227,7 +2229,7 @@
       "excellent": "優秀",
       "fair": "良好",
       "good": "尚可",
-      "poor": "不佳",
+      "poor": "差",
       "weak": "弱"
     }
   }

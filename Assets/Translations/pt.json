@@ -944,6 +944,8 @@
       "predefined-desc": "Escolha entre uma coleção de esquemas de cores predefinidos.",
       "predefined-generate-templates-label": "Gerar modelos para esquemas predefinidos",
       "predefined-title": "Esquemas de cores predefinidos",
+      "sync-gsettings-description": "Corresponder o tema do sistema à variante clara ou escura ativa.",
+      "sync-gsettings-label": "Sincronizar Tema do Sistema",
       "templates-desc": "Aplicar cores a aplicações externas.",
       "templates-filter-description": "Mostrar templates de uma categoria específica.",
       "templates-filter-label": "Filtrar por categoria",
@@ -2227,7 +2229,7 @@
       "excellent": "Excelente",
       "fair": "Razoável",
       "good": "Bom",
-      "poor": "Fraco",
+      "poor": "Ruim",
       "weak": "Fraco"
     }
   }

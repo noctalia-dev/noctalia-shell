@@ -944,6 +944,8 @@
       "predefined-desc": "Wybierz z kolekcji predefiniowanych schematów kolorów.",
       "predefined-generate-templates-label": "Generuj szablony dla predefiniowanych schematów",
       "predefined-title": "Predefiniowane schematy kolorów",
+      "sync-gsettings-description": "Dopasuj motyw systemowy do aktywnego wariantu jasnego lub ciemnego.",
+      "sync-gsettings-label": "Synchronizuj Motyw Systemowy",
       "templates-desc": "Zastosuj kolory w aplikacjach zewnętrznych.",
       "templates-filter-description": "Pokaż szablony z określonej kategorii.",
       "templates-filter-label": "Filtruj według kategorii",
@@ -2227,7 +2229,7 @@
       "excellent": "Doskonały",
       "fair": "Przeciętny",
       "good": "Dobry",
-      "poor": "Słaby",
+      "poor": "Zły",
       "weak": "Słaby"
     }
   }

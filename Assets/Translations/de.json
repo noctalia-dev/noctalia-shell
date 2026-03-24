@@ -944,6 +944,8 @@
       "predefined-desc": "Wählen Sie aus einer Sammlung vordefinierter Farbschemata.",
       "predefined-generate-templates-label": "Templates für vordefinierte Schemata generieren",
       "predefined-title": "Vordefinierte Farbschemata",
+      "sync-gsettings-description": "Das Systemdesign an die aktive helle oder dunkle Variante anpassen.",
+      "sync-gsettings-label": "Systemdesign Synchronisieren",
       "templates-desc": "Farben auf externe Anwendungen anwenden.",
       "templates-filter-description": "Vorlagen aus einer bestimmten Kategorie anzeigen.",
       "templates-filter-label": "Nach Kategorie filtern",
@@ -2227,7 +2229,7 @@
       "excellent": "Ausgezeichnet",
       "fair": "Mäßig",
       "good": "Gut",
-      "poor": "Schwach",
+      "poor": "Schlecht",
       "weak": "Schwach"
     }
   }

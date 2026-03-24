@@ -944,6 +944,8 @@
       "predefined-desc": "Välj från en samling fördefinierade färgscheman.",
       "predefined-generate-templates-label": "Generera mallar för fördefinierade scheman",
       "predefined-title": "Fördefinierade färgscheman",
+      "sync-gsettings-description": "Matcha systemtemat med den aktiva ljusa eller mörka varianten.",
+      "sync-gsettings-label": "Synkronisera Systemtema",
       "templates-desc": "Tillämpa färger på externa applikationer.",
       "templates-filter-description": "Visa mallar från en specifik kategori.",
       "templates-filter-label": "Filtrera efter kategori",

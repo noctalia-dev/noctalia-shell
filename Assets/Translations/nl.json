@@ -944,6 +944,8 @@
       "predefined-desc": "Kies uit een verzameling vooraf gedefinieerde kleurenschema's.",
       "predefined-generate-templates-label": "Sjablonen genereren voor vooraf gedefinieerde schema's",
       "predefined-title": "Vooraf gedefinieerde kleurenschema's",
+      "sync-gsettings-description": "Pas het systeemthema aan de actieve lichte of donkere variant aan.",
+      "sync-gsettings-label": "Systeemthema Synchroniseren",
       "templates-desc": "Pas kleuren toe op externe applicaties.",
       "templates-filter-description": "Sjablonen uit een specifieke categorie weergeven.",
       "templates-filter-label": "Filteren op categorie",
@@ -2227,7 +2229,7 @@
       "excellent": "Uitstekend",
       "fair": "Redelijk",
       "good": "Goed",
-      "poor": "Zwak",
+      "poor": "Slecht",
       "weak": "Zwak"
     }
   }

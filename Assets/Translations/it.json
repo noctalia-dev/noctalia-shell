@@ -944,6 +944,8 @@
       "predefined-desc": "Scegli da una raccolta di schemi colore predefiniti.",
       "predefined-generate-templates-label": "Genera template per schemi predefiniti",
       "predefined-title": "Schemi colore predefiniti",
+      "sync-gsettings-description": "Abbina il tema di sistema alla variante chiara o scura attiva.",
+      "sync-gsettings-label": "Sincronizza Tema di Sistema",
       "templates-desc": "Applica colori ad applicazioni esterne.",
       "templates-filter-description": "Mostra template di una categoria specifica.",
       "templates-filter-label": "Filtra per categoria",

@@ -944,6 +944,8 @@
       "predefined-desc": "Choisissez parmi une collection de jeux de couleurs prédéfinis.",
       "predefined-generate-templates-label": "Générer des modèles pour les schémas prédéfinis",
       "predefined-title": "Jeux de couleurs prédéfinis",
+      "sync-gsettings-description": "Adapter le thème du système à la variante claire ou sombre active.",
+      "sync-gsettings-label": "Synchroniser le Thème Système",
       "templates-desc": "Appliquer des couleurs aux applications externes.",
       "templates-filter-description": "Afficher les modèles d'une catégorie spécifique.",
       "templates-filter-label": "Filtrer par catégorie",
@@ -2227,7 +2229,7 @@
       "excellent": "Excellent",
       "fair": "Moyen",
       "good": "Bien",
-      "poor": "Faible",
+      "poor": "Mauvais",
       "weak": "Faible"
     }
   }

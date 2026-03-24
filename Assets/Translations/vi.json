@@ -944,6 +944,8 @@
       "predefined-desc": "Chọn từ một bộ sưu tập các bảng màu có sẵn.",
       "predefined-generate-templates-label": "Tạo mẫu cho các lược đồ cài sẵn",
       "predefined-title": "Sơ Đồ Màu Định Sẵn",
+      "sync-gsettings-description": "Khớp chủ đề hệ thống với biến thể sáng hoặc tối đang hoạt động.",
+      "sync-gsettings-label": "Đồng Bộ Hóa Chủ Đề Hệ Thống",
       "templates-desc": "Áp dụng màu sắc cho các ứng dụng bên ngoài.",
       "templates-filter-description": "Hiển thị các mẫu từ một danh mục cụ thể.",
       "templates-filter-label": "Lọc theo danh mục",
@@ -1827,7 +1829,7 @@
   "session-menu": {
     "action-in-seconds": "{action} trong {seconds} giây...",
     "cancel-timer": "Hủy hẹn giờ",
-    "title": "Menu Phiên"
+    "title": "Menu Hệ thống"
   },
   "setup": {
     "all-done": "Hoàn tất!",
@@ -2025,7 +2027,7 @@
     "refresh-wallpaper-list": "Làm mới danh sách hình nền",
     "remove-widget": "Gỡ bỏ tiện ích",
     "search-close": "Đóng tìm kiếm",
-    "session-menu": "Menu Phiên",
+    "session-menu": "Menu Hệ thống",
     "show-all-devices": "Hiển thị tất cả thiết bị",
     "switch-to-dark-mode": "Chế độ tối",
     "switch-to-light-mode": "Chế độ sáng",

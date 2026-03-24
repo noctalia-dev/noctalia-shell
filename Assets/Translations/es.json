@@ -944,6 +944,8 @@
       "predefined-desc": "Elige entre una colección de esquemas de colores predefinidos.",
       "predefined-generate-templates-label": "Generar plantillas para esquemas predefinidos",
       "predefined-title": "Esquemas de colores predefinidos",
+      "sync-gsettings-description": "Adaptar el tema del sistema a la variante clara u oscura activa.",
+      "sync-gsettings-label": "Sincronizar Tema del Sistema",
       "templates-desc": "Aplicar colores a aplicaciones externas.",
       "templates-filter-description": "Mostrar plantillas de una categoría específica.",
       "templates-filter-label": "Filtrar por categoría",
@@ -2227,7 +2229,7 @@
       "excellent": "Excelente",
       "fair": "Razonable",
       "good": "Bueno",
-      "poor": "Pobre",
+      "poor": "Malo",
       "weak": "Débil"
     }
   }

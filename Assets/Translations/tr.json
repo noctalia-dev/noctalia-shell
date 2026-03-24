@@ -944,6 +944,8 @@
       "predefined-desc": "Önceden tanımlanmış renk şemaları koleksiyonundan seçim yapın.",
       "predefined-generate-templates-label": "Önceden tanımlanmış şemalar için şablonlar oluşturun",
       "predefined-title": "Önceden tanımlanmış renk şemaları",
+      "sync-gsettings-description": "Sistem temasını aktif açık veya koyu varyantla eşleştir.",
+      "sync-gsettings-label": "Sistem Temasını Senkronize Et",
       "templates-desc": "Renkleri harici uygulamalara uygula.",
       "templates-filter-description": "Belirli bir kategoriden şablonları göster.",
       "templates-filter-label": "Kategoriye göre filtrele",
@@ -1753,9 +1755,9 @@
       "look-feel-transition-duration-label": "Geçiş süresi",
       "look-feel-transition-type-description": "Duvar kâğıtları arasında geçiş yaparken animasyon türü.",
       "look-feel-transition-type-label": "Geçiş türü",
-      "settings-clear-cache-button": "Önbelleği Temizle",
+      "settings-clear-cache-button": "Önbelleği temizle",
       "settings-clear-cache-description": "Önbelleğe alınmış yeniden boyutlandırılmış duvar kağıtlarını temizleyerek disk alanını boşaltın.",
-      "settings-clear-cache-label": "Duvar Kağıdı Önbelleği",
+      "settings-clear-cache-label": "Duvar kağıdı önbelleği",
       "settings-clear-cache-toast": "Duvar kağıdı önbelleği temizlendi",
       "settings-desc": "Duvar kâğıtlarının nasıl yönetileceğini ve görüntüleneceğini kontrol edin.",
       "settings-enable-management-description": "Duvar kâğıtlarını Noctalia ile yönetin. Başka bir uygulamayı kullanmayı tercih ediyorsanız işareti kaldırın.",
@@ -2227,7 +2229,7 @@
       "excellent": "Mükemmel",
       "fair": "Orta",
       "good": "İyi",
-      "poor": "Zayıf",
+      "poor": "Kötü",
       "weak": "Zayıf"
     }
   }

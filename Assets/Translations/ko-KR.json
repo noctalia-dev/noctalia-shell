@@ -944,6 +944,8 @@
       "predefined-desc": "미리 정의된 색상 구성 모음에서 선택하세요.",
       "predefined-generate-templates-label": "미리 정의된 구성에 대한 템플릿 생성",
       "predefined-title": "미리 정의된 색상 구성",
+      "sync-gsettings-description": "시스템 테마를 활성 밝거나 어두운 변형에 맞춥니다.",
+      "sync-gsettings-label": "시스템 테마 동기화",
       "templates-desc": "외부 애플리케이션에 색상을 적용합니다.",
       "templates-filter-description": "특정 카테고리의 템플릿을 표시합니다.",
       "templates-filter-label": "카테고리로 필터링",
@@ -2227,7 +2229,7 @@
       "excellent": "매우 좋음",
       "fair": "보통",
       "good": "좋음",
-      "poor": "나쁨",
+      "poor": "불량",
       "weak": "약함"
     }
   }
