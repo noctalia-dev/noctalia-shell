@@ -168,7 +168,9 @@
       "show-num-lock-description": "Display Num Lock status.",
       "show-num-lock-label": "Num Lock",
       "show-scroll-lock-description": "Display Scroll Lock status.",
-      "show-scroll-lock-label": "Scroll Lock"
+      "show-scroll-lock-label": "Scroll Lock",
+      "force-horizontal-label": "Force Horizontal Layout",
+      "force-horizontal-description": "Keep icons side-by-side even on vertical bars"
     },
     "media-mini": {
       "compact-mode-description": "Enable a space-saving layout for the media player panel.",
@@ -944,8 +946,6 @@
       "predefined-desc": "Choose from a collection of predefined color schemes.",
       "predefined-generate-templates-label": "Generate templates for predefined schemes",
       "predefined-title": "Predefined color schemes",
-      "sync-gsettings-description": "Match the system theme to the active light or dark variant.",
-      "sync-gsettings-label": "Sync system theme",
       "templates-desc": "Apply colors to external applications.",
       "templates-filter-description": "Show templates from a specific category.",
       "templates-filter-label": "Filter by category",
