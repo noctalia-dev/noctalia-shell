@@ -59,7 +59,10 @@ Item {
   }
   readonly property bool hideUnoccupied: (widgetSettings.hideUnoccupied !== undefined) ? widgetSettings.hideUnoccupied : widgetMetadata.hideUnoccupied
   readonly property bool followFocusedScreen: (widgetSettings.followFocusedScreen !== undefined) ? widgetSettings.followFocusedScreen : widgetMetadata.followFocusedScreen
-  readonly property int characterCount: isVertical ? 2 : ((widgetSettings.characterCount !== undefined) ? widgetSettings.characterCount : widgetMetadata.characterCount)
+  readonly property int characterCount: {
+    const count = (widgetSettings.characterCount !== undefined) ? widgetSettings.characterCount : widgetMetadata.characterCount;
+    return isVertical ? Math.min(count, 2) : count;
+  }
 
   // Pill size setting (0.5-1.0 range)
   readonly property real pillSize: (widgetSettings.pillSize !== undefined) ? widgetSettings.pillSize : widgetMetadata.pillSize
