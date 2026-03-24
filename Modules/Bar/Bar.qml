@@ -9,6 +9,7 @@ import qs.Modules.Bar.Extras
 import qs.Modules.Notification
 import qs.Modules.Panels.Settings
 import qs.Services.Compositor
+import qs.Services.Media
 import qs.Services.UI
 import qs.Widgets
 
@@ -441,7 +442,7 @@ Item {
           }
         }
 
-        // Scroll on empty bar area to switch workspaces
+        // Scroll on empty bar area action
         WheelHandler {
           id: barWheelHandler
           target: bar
@@ -449,8 +450,6 @@ Item {
           enabled: bar.barWheelAction !== "none"
 
           onWheel: function (event) {
-            if (bar.barWheelCooldown)
-              return;
             if (bar.isPointOverWidget(event.x, event.y))
               return;
 
@@ -458,9 +457,29 @@ Item {
             var dx = event.angleDelta.x;
             var useDy = Math.abs(dy) >= Math.abs(dx);
             var delta = useDy ? dy : dx;
+            var step = 120;
+
+            if (bar.barWheelAction === "volume") {
+              if (Settings.data.bar.reverseScroll)
+                delta *= -1;
+
+              bar.barWheelAccumulatedDelta += delta;
+              if (bar.barWheelAccumulatedDelta >= step) {
+                AudioService.increaseVolume();
+                bar.barWheelAccumulatedDelta = 0;
+                event.accepted = true;
+              } else if (bar.barWheelAccumulatedDelta <= -step) {
+                AudioService.decreaseVolume();
+                bar.barWheelAccumulatedDelta = 0;
+                event.accepted = true;
+              }
+              return;
+            }
+
+            if (bar.barWheelCooldown)
+              return;
 
             bar.barWheelAccumulatedDelta += delta;
-            var step = 120;
             if (Math.abs(bar.barWheelAccumulatedDelta) >= step) {
               var direction = bar.barWheelAccumulatedDelta > 0 ? -1 : 1;
               if (Settings.data.bar.reverseScroll)

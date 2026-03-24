@@ -25,6 +25,10 @@ ColumnLayout {
               "name": I18n.tr("common.none")
             },
             {
+              "key": "volume",
+              "name": I18n.tr("common.volume")
+            },
+            {
               "key": "workspace",
               "name": I18n.tr("panels.bar.behavior-workspace-scroll-option-workspace")
             }
