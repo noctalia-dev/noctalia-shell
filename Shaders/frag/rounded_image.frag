@@ -90,9 +90,12 @@ void main() {
     float alpha = 1.0 - smoothstep(-0.5, 0.5, distance);
 
     // Sample the texture (or use transparent for letterbox)
-    vec4 color = inLetterbox ? vec4(0.0) : texture(source, imageUV);
+    // Clamp UV to prevent texture wrapping artifacts from floating-point imprecision
+    vec4 color = inLetterbox ? vec4(0.0) : texture(source, clamp(imageUV, vec2(0.0), vec2(1.0)));
 
     // Apply the rounded mask and opacity
-    float finalAlpha = color.a * alpha * itemOpacity * ubuf.qt_Opacity;
-    fragColor = vec4(color.rgb * finalAlpha, finalAlpha);
+    // Qt textures use premultiplied alpha (color.rgb already contains rgb * alpha),
+    // so we only multiply by the external mask factors, not by color.a again
+    float mask = alpha * itemOpacity * ubuf.qt_Opacity;
+    fragColor = color * mask;
 }
