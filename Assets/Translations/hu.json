@@ -945,7 +945,7 @@
       "predefined-generate-templates-label": "Sablonok generálása előre definiált sémákhoz",
       "predefined-title": "Előre definiált színsémák",
       "sync-gsettings-description": "Illeszd a rendszer témáját az aktív világos vagy sötét változathoz.",
-      "sync-gsettings-label": "Rendszertéma Szinkronizálása",
+      "sync-gsettings-label": "Rendszertéma szinkronizálása",
       "templates-desc": "Színek alkalmazása külő alkalmazásokra.",
       "templates-filter-description": "Sablonok megjelenítése egy adott kategóriából.",
       "templates-filter-label": "Szűrés kategória szerint",
