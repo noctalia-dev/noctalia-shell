@@ -296,16 +296,18 @@ Singleton {
     objects: [...root.sinks, ...root.sources]
   }
 
-  // Per-app volume persistence (survives stream recreation on track change/seek)
+  // Per-app volume state for the panel (updated when dragging sliders). As in
+  // 0c79aed, we only push overrides onto PipeWire for *new* stream node IDs —
+  // never for already-known IDs (fixes pause / notification fighting since 4.7).
+  // Debounced PipeWire → overrides sync keeps overrides aligned with in-app
+  // volume so overrides are not stale when a new node appears after quit/reload.
   property var appVolumeOverrides: ({})
   property var _knownAppStreamIds: ({})
-  property bool _isApplyingAppOverride: false
 
   PwObjectTracker {
     objects: root.appStreams
   }
 
-  // Keep appVolumeOverrides aligned with PipeWire when apps change volume/mute.
   Item {
     width: 0
     height: 0
@@ -320,26 +322,44 @@ Singleton {
         target: modelData?.audio ?? null
 
         function onVolumeChanged() {
-          if (root._isApplyingAppOverride || !modelData?.audio) {
-            return;
-          }
-          var key = root.getAppKey(modelData);
-          if (key) {
-            root.setAppStreamVolume(key, modelData.audio.volume);
-          }
+          root._schedulePipewireOverrideSync();
         }
 
         function onMutedChanged() {
-          if (root._isApplyingAppOverride || !modelData?.audio) {
-            return;
-          }
-          var key = root.getAppKey(modelData);
-          if (key) {
-            root.setAppStreamMuted(key, modelData.audio.muted);
-          }
+          root._schedulePipewireOverrideSync();
         }
       }
     }
+  }
+
+  function _flushPipewireOverrideSync(): void {
+    var streams = root.appStreams;
+    if (!streams) {
+      return;
+    }
+    for (var i = 0; i < streams.length; i++) {
+      var s = streams[i];
+      if (!s || !s.audio) {
+        continue;
+      }
+      var key = getAppKey(s);
+      if (!key) {
+        continue;
+      }
+      setAppStreamVolume(key, s.audio.volume);
+      setAppStreamMuted(key, s.audio.muted);
+    }
+  }
+
+  function _schedulePipewireOverrideSync(): void {
+    _pipewireOverrideSyncDebounce.restart();
+  }
+
+  Timer {
+    id: _pipewireOverrideSyncDebounce
+    interval: 450
+    repeat: false
+    onTriggered: root._flushPipewireOverrideSync()
   }
 
   function getAppKey(node): string {
@@ -401,62 +421,46 @@ Singleton {
 
     var prevKnown = root._knownAppStreamIds;
     var currentIds = {};
-    _isApplyingAppOverride = true;
     for (var i = 0; i < streams.length; i++) {
       var s = streams[i];
       if (!s) {
         continue;
       }
 
+      var isNewStream = !prevKnown[s.id];
       currentIds[s.id] = true;
       var key = getAppKey(s);
       var ov = key ? appVolumeOverrides[key] : null;
-
-      // New stream node (reload, app restart, etc.): adopt PipeWire state into
-      // overrides so we do not force an outdated Noctalia-only value.
-      if (key && s.audio && !prevKnown[s.id]) {
-        var seeded = appVolumeOverrides;
-        if (!seeded[key]) {
-          seeded[key] = {};
-        }
-        seeded[key].volume = s.audio.volume;
-        seeded[key].muted = s.audio.muted;
-        appVolumeOverrides = seeded;
-        ov = seeded[key];
-      }
-
       if (!ov || !s.audio) {
         continue;
       }
-      if (ov.volume !== undefined && Math.abs(s.audio.volume - ov.volume) > root.epsilon) {
-        s.audio.volume = ov.volume;
-      }
-      if (ov.muted !== undefined && s.audio.muted !== ov.muted) {
-        s.audio.muted = ov.muted;
+
+      // Same logic as 0c79aed: only apply stored levels when PipeWire exposes a
+      // new stream node (new track, reload, app restart). Existing nodes keep
+      // whatever volume the app / PipeWire reports — avoids pause desync.
+      if (isNewStream) {
+        if (ov.volume !== undefined && Math.abs(s.audio.volume - ov.volume) > root.epsilon) {
+          s.audio.volume = ov.volume;
+        }
+        if (ov.muted !== undefined && s.audio.muted !== ov.muted) {
+          s.audio.muted = ov.muted;
+        }
       }
     }
     _knownAppStreamIds = currentIds;
-    _isApplyingAppOverride = false;
   }
 
   Connections {
     target: root
     function onAppStreamsChanged() {
       _appOverrideTimer.restart();
+      root._schedulePipewireOverrideSync();
     }
   }
 
   Timer {
     id: _appOverrideTimer
     interval: 50
-    onTriggered: root._applyAppOverrides()
-  }
-
-  Timer {
-    id: _appOverrideEnforcer
-    interval: 1000
-    running: Object.keys(root.appVolumeOverrides).length > 0 && root.appStreams.length > 0
-    repeat: true
     onTriggered: root._applyAppOverrides()
   }
 
