@@ -170,13 +170,13 @@ function saveSettings() {
   }
 	NToggle {
 		Layout.fillWidth: true
-		label: "Force Horizontal Layout"
-		description: "Keep icons side-by-side even on vertical bars"
+		label: I18n.tr("bar.lock-keys.force-horizontal-label")
+		description: I18n.tr("bar.lock-keys.force-horizontal-description")
 		checked: valueForceHorizontal
 		onToggled: checked => {
 					 valueForceHorizontal = checked;
 					 saveSettings();
 				   }
-		defaultValue: false
+		defaultValue: widgetMetadata.forceHorizontal
 	  }  
 }
