@@ -305,6 +305,43 @@ Singleton {
     objects: root.appStreams
   }
 
+  // Keep appVolumeOverrides aligned with PipeWire when apps change volume/mute.
+  Item {
+    width: 0
+    height: 0
+    visible: false
+
+    Repeater {
+      model: root.appStreams
+
+      delegate: Connections {
+        required property var modelData
+
+        target: modelData?.audio ?? null
+
+        function onVolumeChanged() {
+          if (root._isApplyingAppOverride || !modelData?.audio) {
+            return;
+          }
+          var key = root.getAppKey(modelData);
+          if (key) {
+            root.setAppStreamVolume(key, modelData.audio.volume);
+          }
+        }
+
+        function onMutedChanged() {
+          if (root._isApplyingAppOverride || !modelData?.audio) {
+            return;
+          }
+          var key = root.getAppKey(modelData);
+          if (key) {
+            root.setAppStreamMuted(key, modelData.audio.muted);
+          }
+        }
+      }
+    }
+  }
+
   function getAppKey(node): string {
     if (!node || !node.properties) {
       return "";
@@ -362,6 +399,7 @@ Singleton {
       return;
     }
 
+    var prevKnown = root._knownAppStreamIds;
     var currentIds = {};
     _isApplyingAppOverride = true;
     for (var i = 0; i < streams.length; i++) {
@@ -373,6 +411,20 @@ Singleton {
       currentIds[s.id] = true;
       var key = getAppKey(s);
       var ov = key ? appVolumeOverrides[key] : null;
+
+      // New stream node (reload, app restart, etc.): adopt PipeWire state into
+      // overrides so we do not force an outdated Noctalia-only value.
+      if (key && s.audio && !prevKnown[s.id]) {
+        var seeded = appVolumeOverrides;
+        if (!seeded[key]) {
+          seeded[key] = {};
+        }
+        seeded[key].volume = s.audio.volume;
+        seeded[key].muted = s.audio.muted;
+        appVolumeOverrides = seeded;
+        ov = seeded[key];
+      }
+
       if (!ov || !s.audio) {
         continue;
       }
