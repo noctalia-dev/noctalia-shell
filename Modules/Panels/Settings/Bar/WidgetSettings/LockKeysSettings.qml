@@ -25,8 +25,8 @@ ColumnLayout {
   property string scrollIcon: widgetData.scrollLockIcon !== undefined ? widgetData.scrollLockIcon : widgetMetadata.scrollLockIcon
 
   property bool valueHideWhenOff: widgetData.hideWhenOff !== undefined ? widgetData.hideWhenOff : (widgetMetadata.hideWhenOff !== undefined ? widgetMetadata.hideWhenOff : false)
-
-  function saveSettings() {
+  property bool valueForceHorizontal: widgetData.forceHorizontal !== undefined ? widgetData.forceHorizontal : false
+function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.showCapsLock = valueShowCapsLock;
     settings.showNumLock = valueShowNumLock;
@@ -35,8 +35,9 @@ ColumnLayout {
     settings.numLockIcon = numIcon;
     settings.scrollLockIcon = scrollIcon;
     settings.hideWhenOff = valueHideWhenOff;
+    settings.forceHorizontal = valueForceHorizontal; // Add this line
     settingsChanged(settings);
-  }
+}
 
   RowLayout {
     spacing: Style.marginM
@@ -167,4 +168,15 @@ ColumnLayout {
                }
     defaultValue: widgetMetadata.hideWhenOff
   }
+	NToggle {
+		Layout.fillWidth: true
+		label: "Force Horizontal Layout"
+		description: "Keep icons side-by-side even on vertical bars"
+		checked: valueForceHorizontal
+		onToggled: checked => {
+					 valueForceHorizontal = checked;
+					 saveSettings();
+				   }
+		defaultValue: false
+	  }  
 }
