@@ -57,10 +57,19 @@ Variants {
       id: window
       color: "transparent"
       screen: screenLoader.modelData
-      mask: DesktopWidgetRegistry.editMode ? null : emptyRegion
+      mask: DesktopWidgetRegistry.editMode ? null : widgetsMask
+
+      // Dynamic mask: combine clickable regions for each loaded widget
+      property var _maskRegions: []
+
+      Component {
+        id: maskRegionComponent
+        Region {}
+      }
 
       Region {
-        id: emptyRegion
+        id: widgetsMask
+        regions: window._maskRegions
       }
 
       WlrLayershell.layer: WlrLayer.Bottom
@@ -278,6 +287,7 @@ Variants {
 
             required property var modelData
             required property int index
+            property var _maskRegion: null
 
             sourceComponent: {
               // Access registeredWidgets and pluginReloadCounter to create reactive binding
@@ -293,6 +303,13 @@ Variants {
                 item.widgetData = modelData;
                 item.widgetIndex = index;
 
+                // Create mask region so this widget receives mouse input
+                _maskRegion = maskRegionComponent.createObject(window);
+                _maskRegion.item = item;
+                var newRegions = window._maskRegions.slice();
+                newRegions.push(_maskRegion);
+                window._maskRegions = newRegions;
+
                 // Inject plugin API for plugin widgets
                 if (DesktopWidgetRegistry.isPluginWidget(modelData.id)) {
                   var pluginId = modelData.id.replace("plugin:", "");
@@ -301,6 +318,18 @@ Variants {
                     item.pluginApi = api;
                   }
                 }
+              }
+            }
+
+            // Clean up mask region when widget unloads
+            onItemChanged: {
+              if (!item && _maskRegion) {
+                var region = _maskRegion;
+                _maskRegion = null;
+                window._maskRegions = window._maskRegions.filter(function (r) {
+                  return r !== region;
+                });
+                region.destroy();
               }
             }
           }
