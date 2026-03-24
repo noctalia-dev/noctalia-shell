@@ -241,57 +241,46 @@ RowLayout {
           onTextChanged: root.searchText = text
           fontSize: Style.fontSizeS
 
-          Keys.onPressed: (event) => {
-            if (Keybinds.checkKey(event, 'enter', Settings)) {
-              selectHighlighted()
-              combo.popup.close();
-              event.accepted = true;
-              return;
-            }
+          Keys.onPressed: event => {
+                            if (Keybinds.checkKey(event, 'enter', Settings)) {
+                              selectHighlighted();
+                              combo.popup.close();
+                              event.accepted = true;
+                              return;
+                            }
 
-            if (Keybinds.checkKey(event, 'escape', Settings)) {
-              combo.popup.close()
-              event.accepted = true;
-              return;
-            }
+                            if (Keybinds.checkKey(event, 'escape', Settings)) {
+                              combo.popup.close();
+                              event.accepted = true;
+                              return;
+                            }
 
-            if (Keybinds.checkKey(event, 'up', Settings)) {
-              if (listView.currentIndex > 0) {
-                listView.currentIndex--;
-                listView.positionViewAtIndex(listView.currentIndex, ListView.Contain);
-                if (root.selectOnNavigation)
-                  selectHighlighted();
-              }
-              event.accepted = true;
-              return;
-            }
+                            if (Keybinds.checkKey(event, 'up', Settings)) {
+                              if (listView.currentIndex > 0) {
+                                listView.currentIndex--;
+                                if (root.selectOnNavigation)
+                                selectHighlighted();
+                              }
+                              event.accepted = true;
+                              return;
+                            }
 
-            if (Keybinds.checkKey(event, 'down', Settings)) {
-              if (listView.currentIndex < listView.count - 1) {
-                listView.currentIndex++;
-                listView.positionViewAtIndex(listView.currentIndex, ListView.Contain);
-                if (root.selectOnNavigation)
-                  selectHighlighted();
-              }
-              event.accepted = true;
-              return;
-            }
-          }
+                            if (Keybinds.checkKey(event, 'down', Settings)) {
+                              if (listView.currentIndex < listView.count - 1) {
+                                listView.currentIndex++;
+                                if (root.selectOnNavigation)
+                                selectHighlighted();
+                              }
+                              event.accepted = true;
+                              return;
+                            }
+                          }
 
           function selectHighlighted() {
-            if (listView.currentIndex >= 0
-                && listView.model
-                && listView.currentIndex < listView.model.count) {
+            if (listView.currentIndex >= 0 && listView.model && listView.currentIndex < listView.model.count) {
               var selectedKey = listView.model.get(listView.currentIndex).key;
               root.selected(selectedKey);
             }
-          }
-
-          function pageStep() {
-            if (listView.count === 0 || listView.contentHeight === 0)
-              return 1;
-            var rowHeight = listView.contentHeight / listView.count;
-            return Math.max(1, Math.floor(listView.height / rowHeight));
           }
         }
 
