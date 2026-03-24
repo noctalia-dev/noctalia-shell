@@ -61,8 +61,9 @@ Item {
     snapshot.scheduleUpdate();
 
     Qt.callLater(() => {
-                   if (!_running)
+                   if (!_running) {
                      return;
+                   }
 
                    const applyFn = _pendingApplyChange;
                    _pendingApplyChange = null;
