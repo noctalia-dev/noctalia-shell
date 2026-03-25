@@ -47,16 +47,16 @@ Singleton {
         id: fileView
         path: filePath + "/brightness"
         onTextChanged: () => {
-          if (!this.isWanted)
+          if (!fileView.isWanted)
           return;
 
-          var state = !this.text().startsWith("0");
+          var state = !fileView.text().startsWith("0");
           var kind = fileName.split("::")[1];
 
           // First read after polling starts: sync bar/UI from sysfs without firing
           // *Changed signals (OSD listens to those and would flash on startup).
-          if (!this.initialCheckDone) {
-            this.initialCheckDone = true;
+          if (!fileView.initialCheckDone) {
+            fileView.initialCheckDone = true;
             switch (kind) {
               case "numlock":
               root.numLockOn = state;
@@ -100,7 +100,7 @@ Singleton {
               return true;
             }
           }
-          Logger.i("LockKeysService", "ignoring:", this.path);
+          Logger.i("LockKeysService", "ignoring:", fileView.path);
           return false;
         }
 
@@ -110,7 +110,7 @@ Singleton {
           target: root
           function onShouldRunChanged() {
             if (root.shouldRun) {
-              this.initialCheckDone = false;
+              fileView.initialCheckDone = false;
             }
           }
         }
