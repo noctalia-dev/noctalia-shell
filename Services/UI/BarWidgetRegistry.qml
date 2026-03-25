@@ -180,7 +180,8 @@ Singleton {
                                     "capsLockIcon": "letter-c",
                                     "numLockIcon": "letter-n",
                                     "scrollLockIcon": "letter-s",
-                                    "hideWhenOff": false
+                                    "hideWhenOff": false,
+                                    "forceHorizontal": false
                                   },
                                   "Launcher": {
                                     "useDistroLogo": false,

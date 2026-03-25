@@ -97,6 +97,7 @@
     },
     "LockKeys": {
       "showCapsLock": true,
+      "forceHorizontal": true,      
       "showNumLock": true,
       "showScrollLock": true,
       "capsLockIcon": "letter-c",
