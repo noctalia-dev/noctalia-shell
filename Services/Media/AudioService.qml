@@ -314,28 +314,30 @@ Singleton {
     Repeater {
       model: root.appStreams
 
-      delegate: Connections {
+      delegate: Item {
         required property var modelData
 
-        target: modelData?.audio ?? null
+        Connections {
+          target: modelData?.audio ?? null
 
-        function onVolumeChanged() {
-          if (root._isApplyingAppOverride || !modelData?.audio) {
-            return;
+          function onVolumeChanged() {
+            if (root._isApplyingAppOverride || !modelData?.audio) {
+              return;
+            }
+            var key = root.getAppKey(modelData);
+            if (key) {
+              root.setAppStreamVolume(key, modelData.audio.volume);
+            }
           }
-          var key = root.getAppKey(modelData);
-          if (key) {
-            root.setAppStreamVolume(key, modelData.audio.volume);
-          }
-        }
 
-        function onMutedChanged() {
-          if (root._isApplyingAppOverride || !modelData?.audio) {
-            return;
-          }
-          var key = root.getAppKey(modelData);
-          if (key) {
-            root.setAppStreamMuted(key, modelData.audio.muted);
+          function onMutedChanged() {
+            if (root._isApplyingAppOverride || !modelData?.audio) {
+              return;
+            }
+            var key = root.getAppKey(modelData);
+            if (key) {
+              root.setAppStreamMuted(key, modelData.audio.muted);
+            }
           }
         }
       }
