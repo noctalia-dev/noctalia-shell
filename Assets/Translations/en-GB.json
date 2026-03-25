@@ -168,7 +168,9 @@
       "show-num-lock-description": "Display Num Lock status.",
       "show-num-lock-label": "Num Lock",
       "show-scroll-lock-description": "Display Scroll Lock status.",
-      "show-scroll-lock-label": "Scroll Lock"
+      "show-scroll-lock-label": "Scroll Lock",
+      "force-horizontal-label": "Force Horizontal Layout",
+      "force-horizontal-description": "Keep icons side-by-side even on vertical bars"
     },
     "media-mini": {
       "compact-mode-description": "Enable a space-saving layout for the media player panel.",

@@ -25,7 +25,7 @@ ColumnLayout {
   property string scrollIcon: widgetData.scrollLockIcon !== undefined ? widgetData.scrollLockIcon : widgetMetadata.scrollLockIcon
 
   property bool valueHideWhenOff: widgetData.hideWhenOff !== undefined ? widgetData.hideWhenOff : (widgetMetadata.hideWhenOff !== undefined ? widgetMetadata.hideWhenOff : false)
-  property bool valueForceHorizontal: widgetData.forceHorizontal !== undefined ? widgetData.forceHorizontal : false
+  property bool valueForceHorizontal: widgetData.forceHorizontal !== undefined ? widgetData.forceHorizontal
 function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.showCapsLock = valueShowCapsLock;
@@ -172,7 +172,7 @@ function saveSettings() {
 		Layout.fillWidth: true
 		label: I18n.tr("bar.lock-keys.force-horizontal-label")
 		description: I18n.tr("bar.lock-keys.force-horizontal-description")
-		checked: valueForceHorizontal
+		checked: widgetMetadata.forceHorizontal
 		onToggled: checked => {
 					 valueForceHorizontal = checked;
 					 saveSettings();
