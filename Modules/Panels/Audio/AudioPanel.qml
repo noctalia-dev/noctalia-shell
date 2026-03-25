@@ -715,6 +715,9 @@ SmartPanel {
                             const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
                             const newValue = Math.max(0, Math.min(maxVolume, appBox.nodeAudio.volume + increment));
                             appBox.nodeAudio.volume = newValue;
+                            var key = AudioService.getAppKey(appBox.modelData);
+                            if (key)
+                              AudioService.setAppStreamVolume(key, newValue);
                           }
                         }
                       }
