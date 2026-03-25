@@ -60,16 +60,16 @@ ColumnLayout {
         }
         labelSize: Style.fontSizeM
         checked: Settings.data.wallpaper.transitionType.includes(modelData)
-        onToggled: {
-          var arr = Array.from(Settings.data.wallpaper.transitionType);
-          if (checked) {
-            if (!arr.includes(modelData))
-              arr.push(modelData);
-          } else {
-            arr = arr.filter(k => k !== modelData);
-          }
-          Settings.data.wallpaper.transitionType = arr;
-        }
+        onToggled: checked => {
+                     var arr = Array.from(Settings.data.wallpaper.transitionType);
+                     if (checked) {
+                       if (!arr.includes(modelData))
+                       arr.push(modelData);
+                     } else {
+                       arr = arr.filter(k => k !== modelData);
+                     }
+                     Settings.data.wallpaper.transitionType = arr;
+                   }
       }
     }
   }
