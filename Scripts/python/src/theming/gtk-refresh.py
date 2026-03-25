@@ -53,15 +53,16 @@ def ensure_gtk_css_import(gtk_css: Path, colors_file: Path, label: str) -> bool:
         print(f"Error: {label} noctalia.css not found at {colors_file}", file=sys.stderr)
         return False
 
-    # If gtk.css is a symlink, replace it with a regular file
-    if gtk_css.is_symlink():
-        gtk_css.unlink()
-
-    if gtk_css.exists():
+    if gtk_css.exists() or gtk_css.is_symlink():
         content = gtk_css.read_text()
         # Already has the import (flexible: allow optional whitespace / different quoting)
         if "noctalia.css" in content and "@import" in content:
             return True
+        # Need to modify — convert symlink to regular file first
+        if gtk_css.is_symlink():
+            resolved = gtk_css.resolve()
+            gtk_css.unlink()
+            gtk_css.write_text(resolved.read_text())
         # Append import to the end
         new_content = content.rstrip()
         if new_content and not new_content.endswith("\n"):
