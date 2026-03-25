@@ -62,11 +62,23 @@ Item {
       }
     }
 
+    // Fallback texture provider to avoid null source warnings
+    ShaderEffectSource {
+      id: _safeFallback
+      sourceItem: Rectangle {
+        width: 1
+        height: 1
+        color: "transparent"
+      }
+      visible: false
+      live: false
+    }
+
     ShaderEffect {
       anchors.fill: parent
       anchors.margins: root.borderWidth
       visible: !root.showFallback && root.imageSource !== null && root.status === Image.Ready
-      property var source: root.imageSource
+      property var source: root.imageSource ?? _safeFallback
       property real itemWidth: width
       property real itemHeight: height
       property real sourceWidth: root.imageSource?.sourceSize.width ?? 0
