@@ -29,7 +29,7 @@ Item {
   readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
   readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
 
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   property var widgetSettings: {
     if (section && sectionWidgetIndex >= 0 && screenName) {
       var widgets = Settings.getBarWidgetsForScreen(screenName)[section];
