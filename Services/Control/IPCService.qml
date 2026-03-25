@@ -282,6 +282,10 @@ Singleton {
         Logger.e("IPC", "Failed to parse toast JSON: " + error);
       }
     }
+
+    function dismiss() {
+      ToastService.dismissToast();
+    }
   }
 
   // Idle Inhibitor / Keep Awake
