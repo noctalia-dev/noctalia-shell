@@ -60,12 +60,27 @@ ColumnLayout {
     onTokenClicked: token => root.insertToken(token)
   }
 
-  NToggle {
+  NComboBox {
     label: I18n.tr("panels.lock-screen.password-chars-label")
     description: I18n.tr("panels.lock-screen.password-chars-description")
-    checked: Settings.data.general.passwordChars
-    onToggled: checked => Settings.data.general.passwordChars = checked
+    model: [
+      {
+        "key": "circles",
+        "name": I18n.tr("panels.lock-screen.circle-password-chars")
+      },
+      {
+        "key": "random",
+        "name": I18n.tr("panels.lock-screen.random-password-chars")
+      },
+      {
+        "key": "invisible",
+        "name": I18n.tr("panels.lock-screen.invisible-password-chars")
+      }
+    ]
+    currentKey: Settings.data.general.passwordChars
+    onSelected: key => Settings.data.general.passwordChars = key
     defaultValue: Settings.getDefaultValue("general.passwordChars")
+    z: 10
   }
 
   NToggle {
