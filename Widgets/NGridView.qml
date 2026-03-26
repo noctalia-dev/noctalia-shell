@@ -112,6 +112,20 @@ Item {
     wheelScrollAnimation.restart();
   }
 
+  function animateToContentY(targetY) {
+    const clampedY = root.clampScrollY(targetY);
+
+    if (!Settings.data.general.smoothScrollEnabled || Settings.data.general.animationDisabled || gridView.dragging || gridView.flicking) {
+      gridView.contentY = clampedY;
+      root._wheelTargetY = clampedY;
+      return;
+    }
+
+    root._wheelTargetY = clampedY;
+    wheelScrollAnimation.to = clampedY;
+    wheelScrollAnimation.restart();
+  }
+
   // Track selection index for gradient visibility (set externally)
   property int trackedSelectionIndex: -1
 
@@ -155,7 +169,25 @@ Item {
 
   // Forward GridView methods
   function positionViewAtIndex(index, mode) {
+    const shouldAnimate = mode === GridView.Contain;
+    if (!shouldAnimate) {
+      gridView.positionViewAtIndex(index, mode);
+      root._wheelTargetY = gridView.contentY;
+      return;
+    }
+
+    const previousY = gridView.contentY;
     gridView.positionViewAtIndex(index, mode);
+    const targetY = root.clampScrollY(gridView.contentY);
+
+    if (Math.abs(targetY - previousY) < 0.5) {
+      root._wheelTargetY = targetY;
+      return;
+    }
+
+    gridView.contentY = previousY;
+    root._wheelTargetY = previousY;
+    root.animateToContentY(targetY);
   }
 
   function positionViewAtBeginning() {

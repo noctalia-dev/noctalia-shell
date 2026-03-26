@@ -100,9 +100,41 @@ Item {
     wheelScrollAnimation.restart();
   }
 
+  function animateToContentY(targetY) {
+    const clampedY = root.clampScrollY(targetY);
+
+    if (!Settings.data.general.smoothScrollEnabled || Settings.data.general.animationDisabled || listView.dragging || listView.flicking) {
+      listView.contentY = clampedY;
+      root._wheelTargetY = clampedY;
+      return;
+    }
+
+    root._wheelTargetY = clampedY;
+    wheelScrollAnimation.to = clampedY;
+    wheelScrollAnimation.restart();
+  }
+
   // Forward ListView methods
   function positionViewAtIndex(index, mode) {
+    const shouldAnimate = mode === ListView.Contain;
+    if (!shouldAnimate) {
+      listView.positionViewAtIndex(index, mode);
+      root._wheelTargetY = listView.contentY;
+      return;
+    }
+
+    const previousY = listView.contentY;
     listView.positionViewAtIndex(index, mode);
+    const targetY = root.clampScrollY(listView.contentY);
+
+    if (Math.abs(targetY - previousY) < 0.5) {
+      root._wheelTargetY = targetY;
+      return;
+    }
+
+    listView.contentY = previousY;
+    root._wheelTargetY = previousY;
+    root.animateToContentY(targetY);
   }
 
   function positionViewAtBeginning() {
