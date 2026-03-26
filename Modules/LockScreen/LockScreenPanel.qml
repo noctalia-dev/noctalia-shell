@@ -787,7 +787,7 @@ Item {
                   Repeater {
                     id: iconRepeater
                     model: ScriptModel {
-                      values: Array(passwordInput.text.length)
+                      values: Settings.data.general.passwordChars !== "invisible" ? Array(passwordInput.text.length) : []
                     }
 
                     property list<string> passwordChars: ["circle-filled", "pentagon-filled", "michelin-star-filled", "square-rounded-filled", "guitar-pick-filled", "blob-filled", "triangle-filled"]
@@ -798,7 +798,7 @@ Item {
                       required property int index
                       // This will be called with index = -1 when the TextInput is deleted
                       // So we make sur index is positive to avoid warning on array accesses
-                      property bool drawCustomChar: index >= 0 && Settings.data.general.passwordChars
+                      property bool drawCustomChar: index >= 0 && Settings.data.general.passwordChars === "random"
                       // Flip color when this dot falls inside the active selection range
                       property bool isSelected: index >= 0 && passwordInput.selectionStart !== passwordInput.selectionEnd && index >= passwordInput.selectionStart && index < passwordInput.selectionEnd
 
