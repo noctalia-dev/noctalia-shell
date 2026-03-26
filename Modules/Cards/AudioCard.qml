@@ -79,13 +79,13 @@ NBox {
     onTriggered: {
       // Only sync if sink hasn't changed
       if (AudioService.sink && AudioService.sink.id === lastSinkId) {
-        if (Math.abs(localOutputVolume - AudioService.volume) >= 0.01) {
+        if (Math.round(Math.abs(localOutputVolume - AudioService.volume) * 100) / 100 >= 0.01) {
           AudioService.setVolume(localOutputVolume);
         }
       }
       // Only sync if source hasn't changed
       if (AudioService.source && AudioService.source.id === lastSourceId) {
-        if (Math.abs(localInputVolume - AudioService.inputVolume) >= 0.01) {
+        if (Math.round(Math.abs(localInputVolume - AudioService.inputVolume) * 100) / 100 >= 0.01) {
           AudioService.setInputVolume(localInputVolume);
         }
       }
