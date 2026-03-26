@@ -92,6 +92,20 @@ NBox {
     }
   }
 
+  // Timer to reset local*VolumeChanging variables after onWheel events
+  Timer {
+    id: wheelDebounceTimer
+    interval: 100
+    repeat: false
+    onTriggered: {
+      if (panelContent.localOutputVolumeChanging)
+        panelContent.localOutputVolumeChanging = false;
+      if (panelContent.localInputVolumeChanging)
+        panelContent.localInputVolumeChanging = false;
+    }
+  }
+
+  // Connections to update local volumes when AudioService changes
   Connections {
     target: AudioService
     function onVolumeChanged() {
@@ -185,6 +199,8 @@ NBox {
         tooltipDirection: "bottom"
         onWheel: function (wheel) {
           if (outputVolumeSlider.enabled && AudioService.sink) {
+            localOutputVolumeChanging = true;
+            wheelDebounceTimer.restart();
             const delta = wheel.angleDelta.y || wheel.angleDelta.x;
             const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
             const increment = delta > 0 ? step : -step;
@@ -244,6 +260,8 @@ NBox {
         tooltipDirection: "bottom"
         onWheel: function (wheel) {
           if (inputVolumeSlider.enabled && AudioService.source) {
+            localInputVolumeChanging = true;
+            wheelDebounceTimer.restart();
             const delta = wheel.angleDelta.y || wheel.angleDelta.x;
             const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
             const increment = delta > 0 ? step : -step;

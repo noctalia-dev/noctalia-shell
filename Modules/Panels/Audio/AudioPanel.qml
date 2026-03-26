@@ -146,6 +146,18 @@ SmartPanel {
       }
     }
 
+    Timer {
+      id: wheelDebounceTimer
+      interval: 100
+      repeat: false
+      onTriggered: {
+        if (panelContent.localOutputVolumeChanging)
+          panelContent.localOutputVolumeChanging = false;
+        if (panelContent.localInputVolumeChanging)
+          panelContent.localInputVolumeChanging = false;
+      }
+    }
+
     // Find application streams that are actually playing audio (connected to default sink)
     // Use linkGroups to find nodes connected to the default audio sink
     // Note: We need to use link IDs since source/target properties require binding
@@ -290,6 +302,8 @@ SmartPanel {
                     }
                     onWheel: function (event) {
                       if (AudioService.sink) {
+                        localOutputVolumeChanging = true;
+                        wheelDebounceTimer.restart();
                         const delta = event.angleDelta.y || event.angleDelta.x;
                         const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
                         const increment = delta > 0 ? step : -step;
@@ -376,6 +390,8 @@ SmartPanel {
                     }
                     onWheel: function (event) {
                       if (AudioService.source) {
+                        localInputVolumeChanging = true;
+                        wheelDebounceTimer.restart();
                         const delta = event.angleDelta.y || event.angleDelta.x;
                         const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
                         const increment = delta > 0 ? step : -step;
