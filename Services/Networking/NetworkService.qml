@@ -105,9 +105,11 @@ Singleton {
   Connections {
     target: Time
     function onResumed() {
-      Logger.i("Network", "System resumed - forcing state poll");
-      deviceStatusProcess.restart();
-      connectivityCheckProcess.restart();
+      if (ProgramCheckerService.nmcliAvailable) {
+        Logger.i("Network", "System resumed - forcing state poll");
+        deviceStatusProcess.restart();
+        connectivityCheckProcess.restart();
+      }
     }
   }
 
@@ -153,6 +155,9 @@ Singleton {
     id: wifiDebounce
     interval: 300
     onTriggered: {
+      if (!ProgramCheckerService.nmcliAvailable) {
+        return;
+      }
       if (root.airplaneModeToggled) {
         root.airplaneModeToggled = false;
         if (root.wifiEnabled) {

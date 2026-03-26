@@ -14,4 +14,5 @@ NIconButtonHot {
   onClicked: {
     NetworkService.setAirplaneMode(!NetworkService.airplaneModeEnabled);
   }
+  enabled: NetworkService.wifiAvailable && BluetoothService.bluetoothAvailable
 }

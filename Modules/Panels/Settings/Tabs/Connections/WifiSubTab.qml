@@ -149,7 +149,7 @@ Item {
             icon: NetworkService.wifiEnabled ? "wifi" : "wifi-off"
             checked: NetworkService.wifiEnabled
             onToggled: checked => NetworkService.setWifiEnabled(checked)
-            enabled: ProgramCheckerService.nmcliAvailable && !NetworkService.airplaneModeEnabled && NetworkService.wifiAvailable
+            enabled: !NetworkService.airplaneModeEnabled && NetworkService.wifiAvailable
             Layout.alignment: Qt.AlignVCenter
           }
         }
@@ -324,7 +324,7 @@ Item {
     // Airplane Mode
     NBox {
       id: miscSettingsBox
-      visible: !root.showOnlyLists
+      visible: !root.showOnlyLists && miscSettingsCol.visibleChildren.length > 0
       Layout.fillWidth: true
       Layout.preferredHeight: miscSettingsCol.implicitHeight + Style.margin2XL
       color: Color.mSurface
@@ -336,6 +336,7 @@ Item {
         spacing: Style.marginM
 
         NToggle {
+          visible: NetworkService.wifiAvailable && BluetoothService.bluetoothAvailable
           label: I18n.tr("toast.airplane-mode.title")
           description: I18n.tr("toast.airplane-mode.description")
           icon: NetworkService.airplaneModeEnabled ? "plane" : "plane-off"
