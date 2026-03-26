@@ -46,48 +46,68 @@ Singleton {
       FileView {
         id: fileView
         path: filePath + "/brightness"
-        onTextChanged: () => {
+        // sysfs brightness can fail transiently (e.g. resume); omit console spam like other sysfs FileViews.
+        printErrors: false
+        watchChanges: false
+
+        function parseBrightnessLedOn(raw) {
+          var t = raw.trim();
+          if (t === "" || !/^[0-9]+$/.test(t))
+            return null;
+          return parseInt(t, 10) !== 0;
+        }
+
+        function applyLockState(kind, state, emitIfChanged) {
+          switch (kind) {
+          case "numlock":
+            if (emitIfChanged && root.numLockOn !== state) {
+              root.numLockOn = state;
+              root.numLockChanged(state);
+              Logger.i("LockKeysService", "Num Lock:", state, fileView.path);
+            } else if (!emitIfChanged) {
+              root.numLockOn = state;
+            }
+            break;
+          case "capslock":
+            if (emitIfChanged && root.capsLockOn !== state) {
+              root.capsLockOn = state;
+              root.capsLockChanged(state);
+              Logger.i("LockKeysService", "Caps Lock:", state, fileView.path);
+            } else if (!emitIfChanged) {
+              root.capsLockOn = state;
+            }
+            break;
+          case "scrolllock":
+            if (emitIfChanged && root.scrollLockOn !== state) {
+              root.scrollLockOn = state;
+              root.scrollLockChanged(state);
+              Logger.i("LockKeysService", "Scroll Lock:", state, fileView.path);
+            } else if (!emitIfChanged) {
+              root.scrollLockOn = state;
+            }
+            break;
+          }
+        }
+
+        // Only apply after a successful read — failed reloads must not update UI (empty text is not "off").
+        onLoaded: {
           if (!fileView.isWanted)
           return;
+          var state = fileView.parseBrightnessLedOn(fileView.text());
+          if (state === null)
+          return;
 
-          var state = !fileView.text().startsWith("0");
           var kind = fileName.split("::")[1];
 
           // First read after polling starts: sync bar/UI from sysfs without firing
           // *Changed signals (OSD listens to those and would flash on startup).
           if (!fileView.initialCheckDone) {
             fileView.initialCheckDone = true;
-            switch (kind) {
-              case "numlock":
-              root.numLockOn = state;
-              break;
-              case "capslock":
-              root.capsLockOn = state;
-              break;
-              case "scrolllock":
-              root.scrollLockOn = state;
-              break;
-            }
+            fileView.applyLockState(kind, state, false);
             return;
           }
 
-          switch (kind) {
-            case "numlock":
-            root.numLockOn = state;
-            root.numLockChanged(state);
-            Logger.i("LockKeysService", "Num Lock:", state, this.path);
-            break;
-            case "capslock":
-            root.capsLockOn = state;
-            root.capsLockChanged(state);
-            Logger.i("LockKeysService", "Caps Lock:", state, this.path);
-            break;
-            case "scrolllock":
-            root.scrollLockOn = state;
-            root.scrollLockChanged(state);
-            Logger.i("LockKeysService", "Scroll Lock:", state, this.path);
-            break;
-          }
+          fileView.applyLockState(kind, state, true);
         }
 
         // FolderListModel only provides filters for file names, not folders
@@ -100,7 +120,6 @@ Singleton {
               return true;
             }
           }
-          Logger.i("LockKeysService", "ignoring:", fileView.path);
           return false;
         }
 

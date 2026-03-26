@@ -250,7 +250,7 @@ Item {
 
     clip: true
     boundsBehavior: Flickable.StopAtBounds
-    
+
     NumberAnimation {
       id: wheelScrollAnimation
       target: listView
