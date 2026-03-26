@@ -203,7 +203,11 @@ Singleton {
     } else if (stage === "suspend") {
       if (Settings.data.idle.suspendCommand)
         Quickshell.execDetached(["sh", "-c", Settings.data.idle.suspendCommand]);
-      CompositorService.suspend();
+      if (Settings.data.general.lockOnSuspend) {
+        CompositorService.lockAndSuspend();
+      } else {
+        CompositorService.suspend();
+      }
       root.suspendRequested();
     } else {
       Logger.w("IdleService", "Unknown idle stage action:", stage);
