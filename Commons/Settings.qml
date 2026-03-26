@@ -319,6 +319,7 @@ Singleton {
         property list<string> keyRemove: ["Del"]
       }
       property bool reverseScroll: false
+      property bool smoothScrollEnabled: true
     }
 
     // ui

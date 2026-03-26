@@ -1051,19 +1051,8 @@ SmartPanel {
         bottomMargin: Style.marginS
 
         onCurrentIndexChanged: {
-          // Synchronize scroll with current item position
           if (currentIndex >= 0) {
-            let row = Math.floor(currentIndex / columns);
-            let itemY = row * cellHeight;
-            let viewportTop = contentY;
-            let viewportBottom = viewportTop + height;
-
-            // If item is out of view, scroll
-            if (itemY < viewportTop) {
-              contentY = Math.max(0, itemY - cellHeight);
-            } else if (itemY + cellHeight > viewportBottom) {
-              contentY = Math.min(contentHeight - height, itemY + cellHeight - height);
-            }
+            positionViewAtIndex(currentIndex, GridView.Contain);
           }
         }
 
@@ -1524,16 +1513,7 @@ SmartPanel {
 
           onCurrentIndexChanged: {
             if (currentIndex >= 0) {
-              let row = Math.floor(currentIndex / columns);
-              let itemY = row * cellHeight;
-              let viewportTop = contentY;
-              let viewportBottom = viewportTop + height;
-
-              if (itemY < viewportTop) {
-                contentY = Math.max(0, itemY - cellHeight);
-              } else if (itemY + cellHeight > viewportBottom) {
-                contentY = Math.min(contentHeight - height, itemY + cellHeight - height);
-              }
+              positionViewAtIndex(currentIndex, GridView.Contain);
             }
           }
 
