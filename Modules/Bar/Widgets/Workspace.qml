@@ -909,7 +909,7 @@ Item {
           anchors.centerIn: groupedWorkspaceNumberContainer
           width: groupedWorkspaceNumberContainer.width + 12 * root.masterProgress
           height: groupedWorkspaceNumberContainer.height + 12 * root.masterProgress
-          radius: width / 2
+          radius: Math.min(Style.radiusL, width / 2)
           color: "transparent"
           border.color: root.effectColor
           border.width: Math.max(1, Math.round((2 + 4 * (1.0 - root.masterProgress))))

@@ -51,7 +51,7 @@ Rectangle {
       Layout.preferredWidth: 70
       Layout.preferredHeight: 70
       Layout.alignment: Qt.AlignVCenter
-      radius: width / 2
+      radius: Math.min(Style.iRadiusL, width / 2)
       color: "transparent"
 
       Rectangle {

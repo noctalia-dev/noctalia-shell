@@ -217,7 +217,7 @@ Item {
     anchors.centerIn: pill
     width: pillContainer.pillWidth + 18 * masterProgress * scale
     height: pillContainer.pillHeight + 18 * masterProgress * scale
-    radius: width / 2
+    radius: Style.radiusM
     color: "transparent"
     border.color: effectColor
     border.width: Math.max(1, Math.round((2 + 6 * (1.0 - masterProgress))))

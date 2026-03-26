@@ -20,9 +20,10 @@ ColumnLayout {
     NImageRounded {
       Layout.preferredWidth: 128 * Style.uiScaleRatio
       Layout.preferredHeight: width
-      radius: width / 2
+      radius: Math.min(Style.iRadiusM * 8, width / 2)
       imagePath: Settings.preprocessPath(Settings.data.general.avatarImage)
       fallbackIcon: "person"
+      fallbackIconSize: width / 4
       borderColor: Color.mPrimary
       borderWidth: Style.borderM
       Layout.alignment: Qt.AlignTop
