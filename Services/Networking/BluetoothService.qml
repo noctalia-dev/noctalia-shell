@@ -147,7 +147,7 @@ Singleton {
 
   Timer {
     id: ctlPollTimer
-    interval: 2000
+    interval: 250
     running: false
     onTriggered: {
       if (!adapter || !ProgramCheckerService.bluetoothctlAvailable) {
@@ -172,19 +172,19 @@ Singleton {
     }
   }
 
+  // Check if airplane mode has been toggled
   function checkAirplaneMode() {
     var isAirplaneModeActive = !NetworkService.wifiEnabled && adapter.state === BluetoothAdapter.Blocked
-    // Check if airplane mode has been toggled
     if (isAirplaneModeActive && !NetworkService.airplaneModeEnabled) {
       NetworkService.airplaneModeToggled = true;
       NetworkService.airplaneModeEnabled = true;
       ToastService.showNotice(I18n.tr("toast.airplane-mode.title"), I18n.tr("common.enabled"), "plane");
-      Logger.i("AirplaneMode", "Wi-Fi & Bluetooth adapter blocked");
+      Logger.i("AirplaneMode", "Enabled");
     } else if (!isAirplaneModeActive && NetworkService.airplaneModeEnabled) {
       NetworkService.airplaneModeToggled = true;
       NetworkService.airplaneModeEnabled = false;
       ToastService.showNotice(I18n.tr("toast.airplane-mode.title"), I18n.tr("common.disabled"), "plane-off");
-      Logger.i("AirplaneMode", "Wi-Fi & Bluetooth adapter unblocked");
+      Logger.i("AirplaneMode", "Disabled");
     } else if (adapter.enabled) {
       ToastService.showNotice(I18n.tr("common.bluetooth"), I18n.tr("common.enabled"), "bluetooth");
       Logger.d("Bluetooth", "Adapter enabled");

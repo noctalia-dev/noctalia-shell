@@ -155,6 +155,31 @@ Singleton {
     onTriggered: {
       if (root.airplaneModeToggled) {
         root.airplaneModeToggled = false;
+        if (root.wifiEnabled) {
+          connectivityCheckProcess.running = true;
+          deviceStatusProcess.running = true;
+          scan();
+        } else {
+          root.networks = ({});
+        }
+        return;
+      }
+      var isAirplaneModeActive = !root.wifiEnabled && BluetoothService.blocked
+      // Extra check for Airplane Mode if Bluetooth has been blocked before Wi-Fi
+      if (isAirplaneModeActive && !root.airplaneModeEnabled) {
+        root.airplaneModeEnabled = true;
+        ToastService.showNotice(I18n.tr("toast.airplane-mode.title"), I18n.tr("common.enabled"), "plane");
+        Logger.i("AirplaneMode", "Enabled");
+        root.networks = ({});
+        return;
+      }
+      // Extra check for Airplane Mode if Wi-Fi has been unblocked before Bluetooth
+      if (!isAirplaneModeActive && root.airplaneModeEnabled) {
+        root.airplaneModeEnabled = false;
+        ToastService.showNotice(I18n.tr("toast.airplane-mode.title"), I18n.tr("common.disabled"), "plane-off");
+        Logger.i("AirplaneMode", "Disabled");
+        deviceStatusProcess.restart();
+        scan();
         return;
       }
       if (root.wifiEnabled) {
@@ -196,11 +221,10 @@ Singleton {
 
   function setAirplaneMode(state) {
     if (state) {
-      Quickshell.execDetached(["rfkill", "block", "wifi"]);
-      Quickshell.execDetached(["rfkill", "block", "bluetooth"]);
+      Quickshell.execDetached(["rfkill", "block", "all"]);
     } else {
-      Quickshell.execDetached(["rfkill", "unblock", "wifi"]);
-      Quickshell.execDetached(["rfkill", "unblock", "bluetooth"]);
+      Quickshell.execDetached(["rfkill", "unblock", "all"]);
+
     }
   }
 
