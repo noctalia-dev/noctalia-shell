@@ -41,16 +41,6 @@ Slider {
 
     readonly property real fillWidth: root.visualPosition * width
 
-    MouseArea {
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.verticalCenter: parent.verticalCenter
-      height: root.knobDiameter
-      hoverEnabled: true
-      acceptedButtons: Qt.NoButton
-      propagateComposedEvents: true
-      onWheel: event => root.wheel(event)
-    }
     // Background track
     Shape {
       anchors.fill: parent
@@ -261,5 +251,13 @@ Slider {
         }
       }
     }
+  }
+
+  MouseArea {
+    anchors.fill: parent
+    hoverEnabled: true
+    acceptedButtons: Qt.NoButton
+    propagateComposedEvents: true
+    onWheel: event => root.wheel(event)
   }
 }
