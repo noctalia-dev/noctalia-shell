@@ -335,16 +335,16 @@ hyprland)
         echo -e "\n$INCLUDE_LINE\n" >"$CONFIG_FILE"
         echo "Created new config file with noctalia theme."
     else
-        if [ -L "$CONFIG_FILE" ] && [ ! -w "$CONFIG_FILE" ]; then
-            echo "Detected read-only symlink, converting to local file..."
-            cp --remove-destination "$(readlink -f "$CONFIG_FILE")" "$CONFIG_FILE"
-            chmod +w "$CONFIG_FILE"
-        fi
-
         # Check if noctalia theme source already exists (flexible matching)
         if grep -qE 'source\s*=\s*.*noctalia.*\.conf' "$CONFIG_FILE"; then
             echo "Theme already included, skipping modification."
         else
+            # Only convert symlink when we actually need to write
+            if [ -L "$CONFIG_FILE" ] && [ ! -w "$CONFIG_FILE" ]; then
+                echo "Detected read-only symlink, converting to local file..."
+                cp --remove-destination "$(readlink -f "$CONFIG_FILE")" "$CONFIG_FILE"
+                chmod +w "$CONFIG_FILE"
+            fi
             # Add the include line to the end of the file
             echo -e "\n$INCLUDE_LINE\n" >>"$CONFIG_FILE"
             echo "✅ Added noctalia theme include to config."
@@ -372,6 +372,12 @@ sway)
         if grep -qE 'include\s+.*noctalia' "$CONFIG_FILE"; then
             echo "Theme already included, skipping modification."
         else
+            # Only convert symlink when we actually need to write
+            if [ -L "$CONFIG_FILE" ] && [ ! -w "$CONFIG_FILE" ]; then
+                echo "Detected read-only symlink, converting to local file..."
+                cp --remove-destination "$(readlink -f "$CONFIG_FILE")" "$CONFIG_FILE"
+                chmod +w "$CONFIG_FILE"
+            fi
             # Add the include line to the end of the file
             echo -e "\n$INCLUDE_LINE\n" >>"$CONFIG_FILE"
             echo "✅ Added noctalia theme include to config."
@@ -399,6 +405,12 @@ scroll)
         if grep -qE 'include\s+.*noctalia' "$CONFIG_FILE"; then
             echo "Theme already included, skipping modification."
         else
+            # Only convert symlink when we actually need to write
+            if [ -L "$CONFIG_FILE" ] && [ ! -w "$CONFIG_FILE" ]; then
+                echo "Detected read-only symlink, converting to local file..."
+                cp --remove-destination "$(readlink -f "$CONFIG_FILE")" "$CONFIG_FILE"
+                chmod +w "$CONFIG_FILE"
+            fi
             # Add the include line to the end of the file
             echo -e "\n$INCLUDE_LINE\n" >>"$CONFIG_FILE"
             echo "Added noctalia theme include to config."

@@ -55,6 +55,9 @@ Singleton {
     function showBar() {
       BarService.show();
     }
+    function peek() {
+      BarService.peek();
+    }
     function setDisplayMode(mode: string, screen: string) {
       if (mode === "always_visible" || mode === "non_exclusive" || mode === "auto_hide") {
         if (!screen || screen === "all") {

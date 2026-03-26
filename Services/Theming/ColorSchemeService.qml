@@ -5,6 +5,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Services.Theming
 import qs.Services.UI
 
 Singleton {
@@ -17,8 +18,12 @@ Singleton {
   property string colorsJsonFilePath: Settings.configDir + "colors.json"
   readonly property string gtkRefreshScript: Quickshell.shellDir + "/Scripts/python/src/theming/gtk-refresh.py"
 
-  function pushSystemColorScheme() {
+  // force: when true, always push (e.g. user enabled "Sync system theme"). When false/omitted,
+  // skip if the GTK template is enabled so we do not race its post-hook on every darkMode flip.
+  function pushSystemColorScheme(force) {
     if (!Settings.data.colorSchemes.syncGsettings)
+      return;
+    if (!force && TemplateProcessor.isTemplateEnabled("gtk"))
       return;
     const mode = Settings.data.colorSchemes.darkMode ? "dark" : "light";
     Quickshell.execDetached(["python3", gtkRefreshScript, "--appearance-only", mode]);
@@ -47,7 +52,6 @@ Singleton {
     // do not remove
     Logger.i("ColorScheme", "Service started");
     loadColorSchemes();
-    Qt.callLater(pushSystemColorScheme);
   }
 
   function loadColorSchemes() {

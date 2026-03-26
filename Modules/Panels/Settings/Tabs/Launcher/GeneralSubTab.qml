@@ -122,7 +122,7 @@ ColumnLayout {
     description: I18n.tr("panels.launcher.settings-icon-mode-description")
     checked: Settings.data.appLauncher.iconMode === "native"
     onToggled: checked => Settings.data.appLauncher.iconMode = checked ? "native" : "tabler"
-    defaultValue: Settings.getDefaultValue("appLauncher.iconMode")
+    defaultValue: Settings.getDefaultValue("appLauncher.iconMode") === "native"
   }
 
   NToggle {
