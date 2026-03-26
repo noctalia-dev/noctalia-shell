@@ -80,16 +80,6 @@ Singleton {
     }
   }
 
-  // Re-run polling once bluetoothctl availability is known
-  Connections {
-    target: ProgramCheckerService
-    function onBluetoothctlAvailableChanged() {
-      if (ProgramCheckerService.bluetoothctlAvailable) {
-        ctlPollTimer.restart();
-      }
-    }
-  }
-
   // Track adapter state changes
   Connections {
     target: adapter

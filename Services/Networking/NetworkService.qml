@@ -106,8 +106,8 @@ Singleton {
     target: Time
     function onResumed() {
       Logger.i("Network", "System resumed - forcing state poll");
-      deviceStatusProcess.running = true;
-      connectivityCheckProcess.running = true;
+      deviceStatusProcess.restart();
+      connectivityCheckProcess.restart();
     }
   }
 
@@ -156,8 +156,8 @@ Singleton {
       if (root.airplaneModeToggled) {
         root.airplaneModeToggled = false;
         if (root.wifiEnabled) {
-          connectivityCheckProcess.running = true;
-          deviceStatusProcess.running = true;
+          connectivityCheckProcess.restart();
+          deviceStatusProcess.restart();
           scan();
         } else {
           root.networks = ({});
@@ -178,14 +178,15 @@ Singleton {
         root.airplaneModeEnabled = false;
         ToastService.showNotice(I18n.tr("toast.airplane-mode.title"), I18n.tr("common.disabled"), "plane-off");
         Logger.i("AirplaneMode", "Disabled");
+        connectivityCheckProcess.restart();
         deviceStatusProcess.restart();
         scan();
         return;
       }
       if (root.wifiEnabled) {
         ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("common.enabled"), "wifi");
-        connectivityCheckProcess.running = true;
-        deviceStatusProcess.running = true;
+        connectivityCheckProcess.restart();
+        deviceStatusProcess.restart();
         scan();
       } else {
         ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("common.disabled"), "wifi-off");
@@ -224,7 +225,6 @@ Singleton {
       Quickshell.execDetached(["rfkill", "block", "all"]);
     } else {
       Quickshell.execDetached(["rfkill", "unblock", "all"]);
-
     }
   }
 
@@ -307,7 +307,7 @@ Singleton {
     }
     if (wifiConnected && activeWifiIf) {
       wifiDetailsLoading = true;
-      deviceStatusProcess.running = true;
+      deviceStatusProcess.restart();
     }
   }
 
@@ -319,7 +319,7 @@ Singleton {
     }
     if (ethernetConnected && activeEthernetIf) {
       ethernetDetailsLoading = true;
-      deviceStatusProcess.running = true;
+      deviceStatusProcess.restart();
     }
   }
 
@@ -1165,7 +1165,7 @@ Singleton {
       onRead: data => {
         if (data.endsWith(": connected") || data.endsWith(": disconnected")) {
           Logger.d("Network", "State changed: " + data);
-          deviceStatusProcess.running = true;
+          deviceStatusProcess.restart();
         }
       }
     }
