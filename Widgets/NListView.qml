@@ -73,6 +73,32 @@ Item {
 
   // Scroll speed multiplier for mouse wheel (1.0 = default, higher = faster)
   property real wheelScrollMultiplier: 2.0
+  property int smoothWheelAnimationDuration: Style.animationNormal
+  property real _wheelTargetY: 0
+
+  function clampScrollY(value) {
+    return Math.max(0, Math.min(value, listView.contentHeight - listView.height));
+  }
+
+  function applyWheelScroll(delta) {
+    if (!root.contentOverflows)
+      return;
+
+    const step = delta * root.wheelScrollMultiplier;
+
+    if (!Settings.data.general.smoothScrollEnabled || Settings.data.general.animationDisabled) {
+      listView.contentY = root.clampScrollY(listView.contentY - step);
+      root._wheelTargetY = listView.contentY;
+      return;
+    }
+
+    if (!wheelScrollAnimation.running)
+      root._wheelTargetY = listView.contentY;
+
+    root._wheelTargetY = root.clampScrollY(root._wheelTargetY - step);
+    wheelScrollAnimation.to = root._wheelTargetY;
+    wheelScrollAnimation.restart();
+  }
 
   // Forward ListView methods
   function positionViewAtIndex(index, mode) {
@@ -124,6 +150,7 @@ Item {
   implicitHeight: 200
 
   Component.onCompleted: {
+    _wheelTargetY = listView.contentY;
     createGradients();
   }
 
@@ -191,6 +218,31 @@ Item {
 
     clip: true
     boundsBehavior: Flickable.StopAtBounds
+    
+    NumberAnimation {
+      id: wheelScrollAnimation
+      target: listView
+      property: "contentY"
+      duration: root.smoothWheelAnimationDuration
+      easing.type: Easing.OutCubic
+    }
+
+    onDraggingChanged: {
+      if (dragging) {
+        wheelScrollAnimation.stop();
+        root._wheelTargetY = contentY;
+      }
+    }
+
+    onFlickingChanged: {
+      if (flicking) {
+        wheelScrollAnimation.stop();
+        root._wheelTargetY = contentY;
+      }
+    }
+
+    onContentHeightChanged: root._wheelTargetY = root.clampScrollY(root._wheelTargetY)
+    onHeightChanged: root._wheelTargetY = root.clampScrollY(root._wheelTargetY)
 
     WheelHandler {
       enabled: !root.contentOverflows
@@ -205,8 +257,7 @@ Item {
       acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
       onWheel: event => {
                  const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 2;
-                 const newY = listView.contentY - (delta * root.wheelScrollMultiplier);
-                 listView.contentY = Math.max(0, Math.min(newY, listView.contentHeight - listView.height));
+                 root.applyWheelScroll(delta);
                  event.accepted = true;
                }
     }

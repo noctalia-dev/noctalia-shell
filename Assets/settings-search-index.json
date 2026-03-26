@@ -1280,6 +1280,14 @@
     "subTab": null
   },
   {
+    "labelKey": "panels.general.smooth-scrolling-label",
+    "descriptionKey": "panels.general.smooth-scrolling-description",
+    "widget": "NToggle",
+    "tab": 0,
+    "tabLabel": "common.general",
+    "subTab": null
+  },
+  {
     "labelKey": "panels.general.keybinds-title",
     "descriptionKey": "panels.general.keybinds-description",
     "widget": "NLabel",
