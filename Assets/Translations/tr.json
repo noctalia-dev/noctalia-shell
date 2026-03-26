@@ -668,6 +668,7 @@
       "display-mode-always-visible": "Her Zaman Görünür",
       "type-floating": "Yüzen",
       "type-framed": "Çerçeveli",
+      "type-island": "Island",
       "type-simple": "Basit"
     },
     "control-center": {

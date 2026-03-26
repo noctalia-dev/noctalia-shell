@@ -65,6 +65,7 @@ Item {
   readonly property var barItem: barRegion
 
   // Bar positioning properties (per-screen)
+  readonly property bool barIsland: Settings.data.bar.barType === "island"
   readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
   readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
   readonly property bool barFloating: Settings.data.bar.barType === "floating"

@@ -668,6 +668,7 @@
       "display-mode-always-visible": "Всегда видны",
       "type-floating": "Плавающий",
       "type-framed": "В рамке",
+      "type-island": "Island",
       "type-simple": "Простой"
     },
     "control-center": {

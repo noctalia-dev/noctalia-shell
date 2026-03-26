@@ -668,6 +668,7 @@
       "display-mode-always-visible": "Vždy viditelný",
       "type-floating": "Plovoucí",
       "type-framed": "Orámovaný",
+      "type-island": "Island",
       "type-simple": "Jednoduchý"
     },
     "control-center": {

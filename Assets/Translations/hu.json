@@ -668,6 +668,7 @@
       "display-mode-always-visible": "Mindig látható",
       "type-floating": "Lebegő",
       "type-framed": "Keretes",
+      "type-island": "Island",
       "type-simple": "Egyszerű"
     },
     "control-center": {

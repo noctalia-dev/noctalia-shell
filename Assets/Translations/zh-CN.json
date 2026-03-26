@@ -668,6 +668,7 @@
       "display-mode-always-visible": "始终可见",
       "type-floating": "悬浮",
       "type-framed": "边框",
+      "type-island": "Island",
       "type-simple": "简约"
     },
     "control-center": {

@@ -16,13 +16,14 @@ PanelWindow {
 
   // Edge to anchor to and thickness to reserve
   property string edge: Settings.getBarPositionForScreen(screen?.name)
-  property real thickness: (edge === Settings.getBarPositionForScreen(screen?.name)) ? Style.getBarHeightForScreen(screen?.name) : (Settings.data.bar.frameThickness ?? 12)
+  property real thickness: (Settings.data.bar.barType === "framed" && edge !== Settings.getBarPositionForScreen(screen?.name)) ? (Settings.data.bar.frameThickness ?? 12) : Style.getBarHeightForScreen(screen?.name)
 
   readonly property bool autoHide: Settings.getBarDisplayModeForScreen(screen?.name) === "auto_hide"
   readonly property bool nonExclusive: Settings.getBarDisplayModeForScreen(screen?.name) === "non_exclusive"
   readonly property bool barFloating: Settings.data.bar.barType === "floating"
-  readonly property real barMarginH: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
-  readonly property real barMarginV: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginVertical) : 0
+  readonly property bool barIsland: Settings.data.bar.barType === "island"
+  readonly property real barMarginH: ((barFloating || (barIsland && (edge === "top" || edge === "bottom"))) && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
+  readonly property real barMarginV: ((barFloating || (barIsland && (edge === "left" || edge === "right"))) && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginVertical) : 0
   // Allow users to enable a 1-physical-pixel inset for the exclusion zone so window borders can bleed under the bar
   readonly property real bleedOffset: Settings.data.bar.enableExclusionZoneInset ? 1.0 : 0.0
   readonly property real bleedInset: {

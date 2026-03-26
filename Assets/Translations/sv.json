@@ -668,6 +668,7 @@
       "display-mode-always-visible": "Alltid synlig",
       "type-floating": "Flytande",
       "type-framed": "Inramad",
+      "type-island": "Island",
       "type-simple": "Enkel"
     },
     "control-center": {

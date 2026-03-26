@@ -663,6 +663,7 @@
       "display-mode-always-visible": "Alltid synleg",
       "type-floating": "Flytande",
       "type-framed": "I ramme",
+      "type-island": "Island",
       "type-simple": "Endefram"
     },
     "control-center": {
