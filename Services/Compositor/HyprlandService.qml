@@ -24,6 +24,130 @@ Item {
   property var workspaceCache: ({})
   property var windowCache: ({})
 
+  property var displayBackend: ({
+   _transformCode: function(transform) {
+     const tMap = {
+       "normal": "0", "Normal": "0",
+       "90": "1", "180": "2", "270": "3",
+       "flipped": "4", "Flipped": "4",
+       "flipped-90": "5", "Flipped90": "5",
+       "flipped-180": "6", "Flipped180": "6",
+       "flipped-270": "7", "Flipped270": "7"
+     };
+     return tMap[transform] || "0";
+   },
+   _buildMonitorCmd: function(outputName, cfg) {
+     const mode = cfg.modeStr || "preferred";
+     const x = Math.round(cfg.x || 0);
+     const y = Math.round(cfg.y || 0);
+     const scale = cfg.scale !== undefined ? cfg.scale : 1;
+     const transform = this._transformCode(cfg.transform);
+     return ["hyprctl", "keyword", "monitor", outputName + "," + mode + "," + x + "x" + y + "," + scale + ",transform," + transform];
+   },
+   generateRevertCmds: function(snap, curSnap) {
+     let pending = [];
+     let onOffCmds = [];
+     for (const outputName in snap) {
+       const s = snap[outputName];
+       const cur = curSnap[outputName] || {};
+
+       if (s.enabled !== cur.enabled) {
+         if (s.enabled === false) {
+           onOffCmds.push(["hyprctl", "keyword", "monitor", outputName + ",disable"]);
+         } else {
+           onOffCmds.push(this._buildMonitorCmd(outputName, s));
+         }
+       }
+
+       if (s.enabled === false)
+         continue;
+
+       if (s.modeStr !== cur.modeStr || s.scale !== cur.scale || Math.round(s.x) !== Math.round(cur.x) || Math.round(s.y) !== Math.round(cur.y)) {
+         pending.push(this._buildMonitorCmd(outputName, s));
+       }
+
+       if (s.transform !== cur.transform) {
+         pending.push(this._buildMonitorCmd(outputName, s));
+       }
+     }
+     return onOffCmds.concat(pending);
+   },
+   parseFetch: function(rawData) {
+     let data = {};
+     for (let i = 0; i < rawData.length; i++) {
+       const mon = rawData[i];
+       let outData = {
+         name: mon.name,
+         enabled: mon.disabled !== true,
+         logical: {
+           x: mon.x,
+           y: mon.y,
+           width: Math.floor(mon.width / mon.scale),
+           height: Math.floor(mon.height / mon.scale),
+           scale: mon.scale,
+           transform: mon.transform === 1 ? "90"
+             : mon.transform === 2 ? "180"
+             : mon.transform === 3 ? "270"
+             : mon.transform === 4 ? "Flipped"
+             : mon.transform === 5 ? "Flipped90"
+             : mon.transform === 6 ? "Flipped180"
+             : mon.transform === 7 ? "Flipped270"
+             : "Normal"
+         },
+         make: mon.make,
+         model: mon.model,
+         vrr_enabled: mon.vrr,
+         current_mode: 0,
+         modes: []
+       };
+
+       for (let j = 0; j < (mon.availableModes || []).length; j++) {
+         const modeStr = mon.availableModes[j];
+         const parts = modeStr.split('@');
+         if (parts.length === 2) {
+           const dims = parts[0].split('x');
+           let rate = parseFloat(parts[1].replace('Hz', '')) * 1000;
+           outData.modes.push({
+                                width: parseInt(dims[0]),
+                                height: parseInt(dims[1]),
+                                refresh_rate: rate
+                              });
+           if (parseInt(dims[0]) === mon.width && parseInt(dims[1]) === mon.height && Math.abs(rate / 1000 - mon.refreshRate) < 1.0) {
+             outData.current_mode = outData.modes.length - 1;
+           }
+         }
+       }
+       data[mon.name] = outData;
+     }
+     return data;
+   },
+   buildSetModeCmd: function(outputName, cfg) {
+     return [this._buildMonitorCmd(outputName, cfg)];
+   },
+   buildSetScaleCmd: function(outputName, cfg) {
+     return [this._buildMonitorCmd(outputName, cfg)];
+   },
+   buildSetTransformCmd: function(outputName, cfg) {
+     return [this._buildMonitorCmd(outputName, cfg)];
+   },
+   buildSetVrrCmd: function() {
+     return [];
+   },
+   buildToggleOutputCmd: function(outputName, enabled) {
+     return [["hyprctl", "keyword", "monitor", outputName + "," + (enabled ? "preferred,auto,1" : "disable")]];
+   },
+   buildPositionsCmds: function(targetConfig) {
+     let pending = [];
+     for (const name in targetConfig) {
+       const cfg = targetConfig[name];
+       if (cfg.enabled === false)
+         continue;
+       pending.push(this._buildMonitorCmd(name, cfg));
+     }
+     return pending;
+   }
+})
+
   // Debounce timer for window updates
   Timer {
     id: updateTimer

@@ -24,6 +24,126 @@ Item {
 
   property var outputCache: ({})
   property var workspaceCache: ({})
+  property var displayBackend: ({
+    generateRevertCmds: function (snap, curSnap) {
+      let pending = [];
+      let onOffCmds = [];
+      for (const outputName in snap) {
+        const s = snap[outputName];
+        const cur = curSnap[outputName] || {};
+
+        if (s.enabled !== cur.enabled) {
+          onOffCmds.push(["niri", "msg", "output", outputName, s.enabled ? "on" : "off"]);
+        }
+
+        if (s.enabled === false)
+          continue;
+
+        if (s.modeStr && s.modeStr !== cur.modeStr) {
+          pending.push(["niri", "msg", "output", outputName, "mode", s.modeStr]);
+        }
+        if (s.scale !== cur.scale) {
+          pending.push(["niri", "msg", "output", outputName, "scale", String(s.scale)]);
+        }
+        if (s.transform !== cur.transform) {
+          const tMap = {
+            "Normal": "normal",
+            "90": "90",
+            "180": "180",
+            "270": "270",
+            "Flipped": "flipped",
+            "Flipped90": "flipped-90",
+            "Flipped180": "flipped-180",
+            "Flipped270": "flipped-270"
+          };
+          pending.push(["niri", "msg", "output", outputName, "transform", tMap[s.transform] || "normal"]);
+        }
+        if (Math.round(s.x) !== Math.round(cur.x) || Math.round(s.y) !== Math.round(cur.y)) {
+          pending.push(["niri", "msg", "output", outputName, "position", "set", "--", String(Math.round(s.x)), String(Math.round(s.y))]);
+        }
+        if (s.vrr_enabled !== cur.vrr_enabled) {
+          pending.push(["niri", "msg", "output", outputName, "vrr", s.vrr_enabled ? "on" : "off"]);
+        }
+      }
+      return onOffCmds.concat(pending);
+    },
+    parseFetch: function (rawData) {
+      const data = {};
+
+      function resolveEnabled(mon) {
+        if (!mon)
+          return false;
+        if (mon.enabled !== undefined)
+          return mon.enabled !== false;
+        if (mon.active !== undefined)
+          return mon.active === true;
+        if (mon.logical === null || mon.current_mode === null)
+          return false;
+        return true;
+      }
+
+      if (Array.isArray(rawData)) {
+        for (let i = 0; i < rawData.length; i++) {
+          const mon = rawData[i];
+          if (!mon || !mon.name)
+            continue;
+          mon.enabled = resolveEnabled(mon);
+          data[mon.name] = mon;
+        }
+        return data;
+      }
+
+      if (rawData && typeof rawData === "object") {
+        for (const outputName in rawData) {
+          const mon = rawData[outputName];
+          if (!mon)
+            continue;
+          if (!mon.name)
+            mon.name = outputName;
+          mon.enabled = resolveEnabled(mon);
+          data[mon.name] = mon;
+        }
+        return data;
+      }
+
+      return {};
+    },
+    buildSetModeCmd: function (outputName, cfg) {
+      return [["niri", "msg", "output", outputName, "mode", cfg.modeStr]];
+    },
+    buildSetScaleCmd: function (outputName, cfg) {
+      return [["niri", "msg", "output", outputName, "scale", String(cfg.scale)]];
+    },
+    buildSetTransformCmd: function (outputName, cfg) {
+      const tMap = {
+        "Normal": "normal",
+        "90": "90",
+        "180": "180",
+        "270": "270",
+        "Flipped": "flipped",
+        "Flipped90": "flipped-90",
+        "Flipped180": "flipped-180",
+        "Flipped270": "flipped-270"
+      };
+      return [["niri", "msg", "output", outputName, "transform", tMap[cfg.transform] || "normal"]];
+    },
+    buildSetVrrCmd: function (outputName, cfg) {
+      return [["niri", "msg", "output", outputName, "vrr", cfg.vrr_enabled ? "on" : "off"]];
+    },
+    buildToggleOutputCmd: function (outputName, enabled) {
+      return [["niri", "msg", "output", outputName, enabled ? "on" : "off"]];
+    },
+    buildPositionsCmds: function (targetConfig) {
+      let pending = [];
+      for (const name in targetConfig) {
+        const cfg = targetConfig[name];
+        if (cfg.enabled === false)
+          continue;
+        pending.push(["niri", "msg", "output", name, "position", "set", "--", String(Math.round(cfg.x)), String(Math.round(cfg.y))]);
+      }
+      return pending;
+    }
+  })
 
   function initialize() {
     Niri.refreshOutputs();

@@ -1,0 +1,1078 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import Quickshell
+import Quickshell.Io
+import qs.Commons
+import qs.Services.Hardware
+import qs.Services.UI
+import qs.Widgets
+
+ColumnLayout {
+  id: root
+  Layout.fillWidth: true
+  Layout.fillHeight: true
+
+  property var monitors: Quickshell.screens || []
+  property string selectedOutput: ""
+
+  function formatEdidHex(raw) {
+    const hex = String(raw || "").replace(/[^0-9a-fA-F]/g, "").toLowerCase();
+    if (hex.length === 0) return "";
+
+    const lines = [];
+    for (let i = 0; i < hex.length; i += 32) {
+      const row = hex.slice(i, i + 32);
+      const bytes = [];
+      for (let j = 0; j < row.length; j += 2)
+        bytes.push(row.slice(j, j + 2));
+      lines.push(bytes.join(" "));
+    }
+    return lines.join("\n");
+  }
+
+  function parseEdid(raw) {
+    let hex = String(raw || "").replace(/[^0-9a-fA-F]/g, "");
+    if (hex.length % 2 !== 0)
+      hex = hex.slice(0, hex.length - 1);
+
+    if (hex.length < 256)
+      return { valid: false, error: I18n.tr("panels.display.edid-invalid") };
+
+    const bytes = [];
+    for (let i = 0; i + 1 < hex.length; i += 2)
+      bytes.push(parseInt(hex.slice(i, i + 2), 16));
+
+    if (bytes.length < 128)
+      return { valid: false, error: I18n.tr("panels.display.edid-invalid") };
+
+    const header = [0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00];
+    let baseOffset = -1;
+    for (let i = 0; i <= bytes.length - header.length; i++) {
+      let match = true;
+      for (let j = 0; j < header.length; j++) {
+        if (bytes[i + j] !== header[j]) {
+          match = false;
+          break;
+        }
+      }
+      if (match) {
+        baseOffset = i;
+        break;
+      }
+    }
+    if (baseOffset < 0 || baseOffset + 128 > bytes.length)
+      return { valid: false, error: I18n.tr("panels.display.edid-invalid") };
+
+    const mfgCode = (bytes[baseOffset + 8] << 8) | bytes[baseOffset + 9];
+    const manufacturer = String.fromCharCode(
+      64 + ((mfgCode >> 10) & 0x1f),
+      64 + ((mfgCode >> 5) & 0x1f),
+      64 + (mfgCode & 0x1f)
+    );
+    const productCode = bytes[baseOffset + 10] | (bytes[baseOffset + 11] << 8);
+    const serial = (bytes[baseOffset + 12]) | (bytes[baseOffset + 13] << 8) | (bytes[baseOffset + 14] << 16) | (bytes[baseOffset + 15] << 24);
+    const week = bytes[baseOffset + 16];
+    const year = 1990 + bytes[baseOffset + 17];
+    const version = bytes[baseOffset + 18] + "." + bytes[baseOffset + 19];
+    const isDigital = (bytes[baseOffset + 20] & 0x80) !== 0;
+    const widthCm = bytes[baseOffset + 21];
+    const heightCm = bytes[baseOffset + 22];
+    const gamma = bytes[baseOffset + 23] === 0xff ? I18n.tr("common.unknown") : ((bytes[baseOffset + 23] + 100) / 100).toFixed(2);
+
+    let monitorName = "";
+    let monitorSerialText = "";
+    let preferredMode = "";
+
+    for (let d = 0; d < 4; d++) {
+      const base = baseOffset + 54 + d * 18;
+      if (base + 17 >= bytes.length)
+        break;
+
+      const pxClock = bytes[base] | (bytes[base + 1] << 8);
+      if (pxClock !== 0 && preferredMode === "") {
+        const hActive = bytes[base + 2] | ((bytes[base + 4] & 0xf0) << 4);
+        const hBlank = bytes[base + 3] | ((bytes[base + 4] & 0x0f) << 8);
+        const vActive = bytes[base + 5] | ((bytes[base + 7] & 0xf0) << 4);
+        const vBlank = bytes[base + 6] | ((bytes[base + 7] & 0x0f) << 8);
+        const hTotal = hActive + hBlank;
+        const vTotal = vActive + vBlank;
+        let hz = "";
+        if (hTotal > 0 && vTotal > 0) {
+          const refresh = (pxClock * 10000) / (hTotal * vTotal);
+          hz = " @ " + refresh.toFixed(2) + " Hz";
+        }
+        preferredMode = hActive + "x" + vActive + hz;
+      }
+
+      if (bytes[base] === 0x00 && bytes[base + 1] === 0x00 && bytes[base + 2] === 0x00) {
+        const tag = bytes[base + 3];
+        let txt = "";
+        for (let i = base + 5; i < base + 18; i++) {
+          if (bytes[i] === 0x0a || bytes[i] === 0x00)
+            break;
+          txt += String.fromCharCode(bytes[i]);
+        }
+        txt = txt.trim();
+        if (tag === 0xfc && txt)
+          monitorName = txt;
+        if (tag === 0xff && txt)
+          monitorSerialText = txt;
+      }
+    }
+
+    return {
+      valid: true,
+      manufacturer: manufacturer,
+      productCode: productCode,
+      serial: (serial >>> 0),
+      serialText: monitorSerialText,
+      week: week,
+      year: year,
+      version: version,
+      inputType: isDigital ? I18n.tr("panels.display.edid-input-digital") : I18n.tr("panels.display.edid-input-analog"),
+      size: (widthCm > 0 && heightCm > 0)
+            ? I18n.tr("panels.display.edid-size-cm", { "width": widthCm, "height": heightCm })
+            : I18n.tr("common.unknown"),
+      gamma: gamma,
+      monitorName: monitorName,
+      preferredMode: preferredMode
+    };
+  }
+
+  function formatParsedEdid(raw) {
+    const p = parseEdid(raw);
+    if (!p.valid)
+      return p.error;
+
+    const lines = [];
+    if (p.monitorName) lines.push(I18n.tr("panels.display.edid-field-monitor-name", { "value": p.monitorName }));
+    lines.push(I18n.tr("panels.display.edid-field-manufacturer-id", { "value": p.manufacturer }));
+    lines.push(I18n.tr("panels.display.edid-field-product-code", { "value": p.productCode }));
+    lines.push(I18n.tr("panels.display.edid-field-serial-number", { "value": p.serialText || p.serial }));
+    lines.push(I18n.tr("panels.display.edid-field-version", { "value": p.version }));
+    lines.push(I18n.tr("panels.display.edid-field-manufactured", { "week": p.week, "year": p.year }));
+    lines.push(I18n.tr("panels.display.edid-field-input-type", { "value": p.inputType }));
+    lines.push(I18n.tr("panels.display.edid-field-physical-size", { "value": p.size }));
+    lines.push(I18n.tr("panels.display.edid-field-gamma", { "value": p.gamma }));
+    if (p.preferredMode) lines.push(I18n.tr("panels.display.edid-field-preferred-mode", { "value": p.preferredMode }));
+    return lines.join("\n");
+  }
+
+  function formatEdidDetails(rawHex, decodedText) {
+    const decoded = String(decodedText || "").trim();
+    if (decoded !== "")
+      return decoded;
+    return formatParsedEdid(rawHex);
+  }
+
+  function buildEdidCopyPayload() {
+    const output = DisplayService.edidOutputName || root.selectedOutput || "-";
+    const decoded = typeof DisplayService.edidDecoded !== "undefined" ? DisplayService.edidDecoded : "";
+    const shown = formatEdidDetails(DisplayService.edidHex, decoded);
+    const rawHex = String(DisplayService.edidHex || "").trim();
+
+    return [
+      I18n.tr("panels.display.edid-title", { "output": output }),
+      "",
+      shown,
+      "",
+      "----- RAW EDID HEX (NOT SHOWN IN UI) -----",
+      rawHex
+    ].join("\n");
+  }
+
+  function enabledMonitorCount() {
+    const outputs = DisplayService.outputsList || [];
+    const tc = DisplayService.targetConfig || {};
+    let count = 0;
+    for (const out of outputs) {
+      const conf = tc[out.name];
+      const isEnabled = conf && conf.enabled !== undefined ? conf.enabled : (out.enabled !== false);
+      if (isEnabled) count++;
+    }
+    return count;
+  }
+
+  Component.onCompleted: {
+    DisplayService.refresh();
+  }
+
+  NBox {
+    Layout.fillWidth: true
+    implicitHeight: warningContent.implicitHeight + 2 * Style.marginM
+    visible: DisplayService.compositor === "readonly"
+    color: Qt.alpha(Color.mError, 0.15)
+    border.color: Color.mError
+    
+    RowLayout {
+      id: warningContent
+      anchors.fill: parent
+      anchors.margins: Style.marginM
+      spacing: Style.marginM
+      
+      ColumnLayout {
+        Layout.fillWidth: true
+        spacing: 2
+        NText {
+          text: I18n.tr("panels.display.hw-control-unavailable") || "Hardware Control Unavailable"
+          pointSize: Style.fontSizeM
+          font.weight: Style.fontWeightBold
+          color: Color.mError
+          Layout.fillWidth: true
+        }
+        NText {
+          text: I18n.tr("panels.display.hw-control-unavailable-desc") || "Rendering in read-only mode."
+          pointSize: Style.fontSizeS
+          color: Color.mOnSurfaceVariant
+          wrapMode: Text.WordWrap
+          Layout.fillWidth: true
+        }
+      }
+    }
+  }
+
+  ColumnLayout {
+    Layout.fillWidth: true
+    spacing: Style.marginL
+    enabled: DisplayService.compositor !== "readonly"
+    opacity: enabled ? 1.0 : 0.5
+
+      // Layout Section Header
+      NText {
+        text: I18n.tr("panels.display.monitor-layout")
+        pointSize: Style.fontSizeXL
+        font.weight: Style.fontWeightBold
+        color: Color.mOnSurface
+      }
+
+      NText {
+        text: I18n.tr("panels.display.monitor-drag-info")
+        pointSize: Style.fontSizeS
+        color: Color.mOnSurfaceVariant
+      }
+
+      NBox {
+        id: canvasContainer
+        Layout.fillWidth: true
+        Layout.preferredHeight: 220 * Style.uiScaleRatio
+        color: Color.mSurface
+        border.color: Style.boxBorderColor
+        clip: true
+
+        property real snapGuideX: -1
+        property real snapGuideY: -1
+
+        property var canvasBounds: {
+          // Compute logical layout extents from enabled outputs and pending targetConfig overrides.
+          const outputs = DisplayService.outputsList;
+          const tc = DisplayService.targetConfig;
+          if (!outputs || outputs.length === 0)
+            return { minX: 0, minY: 0, maxX: 1, maxY: 1, totalW: 1, totalH: 1 };
+
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          for (const out of outputs) {
+            const conf = tc ? tc[out.name] : null;
+            if (conf && conf.enabled === false) continue;
+            if (!conf && out.enabled === false) continue;
+            
+            const lx = conf && conf.x !== undefined ? conf.x : (out.logical ? out.logical.x : 0);
+            const ly = conf && conf.y !== undefined ? conf.y : (out.logical ? out.logical.y : 0);
+            const lw = conf && conf.logicalWidth !== undefined ? conf.logicalWidth : (out.logical ? out.logical.width : 1920);
+            const lh = conf && conf.logicalHeight !== undefined ? conf.logicalHeight : (out.logical ? out.logical.height : 1080);
+            minX = Math.min(minX, lx);
+            minY = Math.min(minY, ly);
+            maxX = Math.max(maxX, lx + lw);
+            maxY = Math.max(maxY, ly + lh);
+          }
+          if (minX === Infinity) return { minX: 0, minY: 0, maxX: 1, maxY: 1, totalW: 1, totalH: 1 };
+          return { minX, minY, maxX, maxY, totalW: maxX - minX, totalH: maxY - minY };
+        }
+
+        property real previewScale: {
+          // Fit the entire logical layout into the preview canvas with stable padding.
+          const b = canvasBounds;
+          const padX = 60 * Style.uiScaleRatio;
+          const padY = 40 * Style.uiScaleRatio;
+          const availW = canvasContainer.width - padX * 2;
+          const availH = canvasContainer.height - padY * 2;
+          if (b.totalW <= 0 || b.totalH <= 0) return 0.1;
+          return Math.min(availW / b.totalW, availH / b.totalH, 0.3);
+        }
+
+        property real offsetX: (canvasContainer.width - canvasBounds.totalW * previewScale) / 2
+        property real offsetY: (canvasContainer.height - canvasBounds.totalH * previewScale) / 2
+
+        // Snap computation: find nearest edge/center alignment against other enabled outputs.
+        function computeSnap(draggedName, newX, newY, previewW, previewH) {
+          const threshold = 5; // pixels in preview space
+          let bestSnapX = null, bestDX = threshold;
+          let bestSnapY = null, bestDY = threshold;
+          let guideX = -1, guideY = -1;
+
+          const dragLeft = newX;
+          const dragRight = newX + previewW;
+          const dragCenterX = newX + previewW / 2;
+          const dragTop = newY;
+          const dragBottom = newY + previewH;
+          const dragCenterY = newY + previewH / 2;
+
+          const outputs = DisplayService.outputsList;
+          const tc = DisplayService.targetConfig;
+          for (const out of outputs) {
+            if (out.name === draggedName) continue;
+
+            const conf = tc ? tc[out.name] : null;
+            if (conf && conf.enabled === false) continue;
+            if (!conf && out.enabled === false) continue;
+            
+            const lx = conf && conf.x !== undefined ? conf.x : (out.logical ? out.logical.x : 0);
+            const ly = conf && conf.y !== undefined ? conf.y : (out.logical ? out.logical.y : 0);
+            const lw = conf && conf.logicalWidth !== undefined ? conf.logicalWidth : (out.logical ? out.logical.width : 1920);
+            const lh = conf && conf.logicalHeight !== undefined ? conf.logicalHeight : (out.logical ? out.logical.height : 1080);
+
+            const ox = offsetX + (lx - canvasBounds.minX) * previewScale;
+            const oy = offsetY + (ly - canvasBounds.minY) * previewScale;
+            const ow = lw * previewScale;
+            const oh = lh * previewScale;
+
+            const otherLeft = ox;
+            const otherRight = ox + ow;
+            const otherCenterX = ox + ow / 2;
+            const otherTop = oy;
+            const otherBottom = oy + oh;
+            const otherCenterY = oy + oh / 2;
+
+            const xSnaps = [
+              { d: Math.abs(dragLeft - otherLeft),    sx: otherLeft,              gx: otherLeft },        
+              { d: Math.abs(dragRight - otherRight),  sx: otherRight - previewW,  gx: otherRight },       
+              { d: Math.abs(dragLeft - otherRight),   sx: otherRight,             gx: otherRight },       
+              { d: Math.abs(dragRight - otherLeft),   sx: otherLeft - previewW,   gx: otherLeft },        
+              { d: Math.abs(dragCenterX - otherCenterX), sx: otherCenterX - previewW / 2, gx: otherCenterX }
+            ];
+            for (const s of xSnaps) {
+              if (s.d < bestDX) { bestDX = s.d; bestSnapX = s.sx; guideX = s.gx; }
+            }
+
+            const ySnaps = [
+              { d: Math.abs(dragTop - otherTop),      sy: otherTop,               gy: otherTop },         
+              { d: Math.abs(dragBottom - otherBottom), sy: otherBottom - previewH,  gy: otherBottom },      
+              { d: Math.abs(dragTop - otherBottom),   sy: otherBottom,             gy: otherBottom },      
+              { d: Math.abs(dragBottom - otherTop),   sy: otherTop - previewH,     gy: otherTop },         
+              { d: Math.abs(dragCenterY - otherCenterY), sy: otherCenterY - previewH / 2, gy: otherCenterY }
+            ];
+            for (const s of ySnaps) {
+              if (s.d < bestDY) { bestDY = s.d; bestSnapY = s.sy; guideY = s.gy; }
+            }
+          }
+
+          return { snapX: bestSnapX, snapY: bestSnapY, guideX: guideX, guideY: guideY };
+        }
+
+        Repeater {
+          model: DisplayService.outputsList
+
+          delegate: Rectangle {
+            id: monitorRect
+
+            property var outputData: modelData
+            property string outName: outputData.name || ""
+            property var targetConf: DisplayService.targetConfig[outName] || null
+            property real logicalX: targetConf && targetConf.x !== undefined ? targetConf.x : (outputData.logical ? outputData.logical.x : 0)
+            property real logicalY: targetConf && targetConf.y !== undefined ? targetConf.y : (outputData.logical ? outputData.logical.y : 0)
+            property real logicalW: targetConf && targetConf.logicalWidth !== undefined ? targetConf.logicalWidth : (outputData.logical ? outputData.logical.width : 1920)
+            property real logicalH: targetConf && targetConf.logicalHeight !== undefined ? targetConf.logicalHeight : (outputData.logical ? outputData.logical.height : 1080)
+            property bool isSelected: root.selectedOutput === outName
+            property bool isEnabled: targetConf && targetConf.enabled !== undefined ? targetConf.enabled : (outputData.enabled !== false)
+            property bool isLastEnabled: isEnabled && root.enabledMonitorCount() <= 1
+
+            property real dataX: canvasContainer.offsetX + (logicalX - canvasContainer.canvasBounds.minX) * canvasContainer.previewScale
+            property real dataY: canvasContainer.offsetY + (logicalY - canvasContainer.canvasBounds.minY) * canvasContainer.previewScale
+
+            x: dataX
+            y: dataY
+            width: logicalW * canvasContainer.previewScale
+            height: logicalH * canvasContainer.previewScale
+
+            radius: Style.radiusM
+            color: isSelected ? Color.mPrimary : Color.mSurfaceVariant
+            border.color: isSelected ? Color.mPrimary : Style.boxBorderColor
+            border.width: isSelected ? 2 : 1
+            opacity: monitorDragArea.dragging ? 0.7 : 1.0
+            visible: isEnabled
+
+            Behavior on x { enabled: !monitorDragArea.dragging; NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+            Behavior on y { enabled: !monitorDragArea.dragging; NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+
+            ColumnLayout {
+              anchors.centerIn: parent
+              spacing: 2
+
+              NText {
+                text: monitorRect.outName
+                pointSize: Style.fontSizeS
+                font.weight: Style.fontWeightBold
+                color: monitorRect.isSelected ? Color.mOnPrimary : Color.mOnSurface
+                Layout.alignment: Qt.AlignHCenter
+                elide: Text.ElideRight
+                Layout.maximumWidth: monitorRect.width - 8
+              }
+
+              NText {
+                text: monitorRect.logicalW + "×" + monitorRect.logicalH
+                pointSize: Style.fontSizeXS
+                color: monitorRect.isSelected ? Color.mOnPrimary : Color.mOnSurfaceVariant
+                Layout.alignment: Qt.AlignHCenter
+                visible: monitorRect.width > 60
+              }
+            }
+
+            MouseArea {
+              id: monitorDragArea
+              anchors.fill: parent
+              hoverEnabled: true
+              preventStealing: true
+
+              property bool dragging: false
+              property real dragStartMouseX: 0
+              property real dragStartMouseY: 0
+              property real dragStartRectX: 0
+              property real dragStartRectY: 0
+
+              cursorShape: monitorRect.isLastEnabled ? Qt.ArrowCursor : (dragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor)
+
+              onPressed: function(mouse) {
+                if (monitorRect.isLastEnabled) {
+                  root.selectedOutput = monitorRect.outName;
+                  return;
+                }
+                const canvasPos = mapToItem(canvasContainer, mouse.x, mouse.y);
+                dragStartMouseX = canvasPos.x;
+                dragStartMouseY = canvasPos.y;
+                dragStartRectX = monitorRect.x;
+                dragStartRectY = monitorRect.y;
+                dragging = true;
+              }
+
+              onPositionChanged: function(mouse) {
+                if (!dragging) return;
+                const canvasPos = mapToItem(canvasContainer, mouse.x, mouse.y);
+                let newX = dragStartRectX + (canvasPos.x - dragStartMouseX);
+                let newY = dragStartRectY + (canvasPos.y - dragStartMouseY);
+
+                const snap = canvasContainer.computeSnap(
+                  monitorRect.outName, newX, newY,
+                  monitorRect.width, monitorRect.height
+                );
+
+                if (snap.snapX !== null) newX = snap.snapX;
+                if (snap.snapY !== null) newY = snap.snapY;
+
+                monitorRect.x = newX;
+                monitorRect.y = newY;
+
+                canvasContainer.snapGuideX = snap.guideX;
+                canvasContainer.snapGuideY = snap.guideY;
+              }
+
+              onReleased: function(mouse) {
+                if (!dragging) return;
+                dragging = false;
+
+                const canvasPos = mapToItem(canvasContainer, mouse.x, mouse.y);
+                const dx = Math.abs(canvasPos.x - dragStartMouseX);
+                const dy = Math.abs(canvasPos.y - dragStartMouseY);
+
+                canvasContainer.snapGuideX = -1;
+                canvasContainer.snapGuideY = -1;
+
+                // Treat tiny pointer movement as a click-to-select, not a drag commit.
+                if (dx < 3 && dy < 3) {
+                  root.selectedOutput = monitorRect.outName;
+                  monitorRect.x = Qt.binding(function() { return monitorRect.dataX; });
+                  monitorRect.y = Qt.binding(function() { return monitorRect.dataY; });
+                  return;
+                }
+
+                // Convert preview coordinates back into logical layout coordinates.
+                const newLogicalX = canvasContainer.canvasBounds.minX + (monitorRect.x - canvasContainer.offsetX) / canvasContainer.previewScale;
+                const newLogicalY = canvasContainer.canvasBounds.minY + (monitorRect.y - canvasContainer.offsetY) / canvasContainer.previewScale;
+
+                DisplayService.setPositionNormalized(monitorRect.outName, newLogicalX, newLogicalY);
+                
+                root.selectedOutput = monitorRect.outName;
+                monitorRect.x = Qt.binding(function() { return monitorRect.dataX; });
+                monitorRect.y = Qt.binding(function() { return monitorRect.dataY; });
+              }
+            }
+          }
+        }
+
+        Rectangle {
+          visible: canvasContainer.snapGuideX >= 0
+          x: canvasContainer.snapGuideX
+          y: 0
+          width: 1
+          height: canvasContainer.height
+          color: Color.mSecondary
+          opacity: 0.8
+          z: 50
+        }
+
+        Rectangle {
+          visible: canvasContainer.snapGuideY >= 0
+          x: 0
+          y: canvasContainer.snapGuideY
+          width: canvasContainer.width
+          height: 1
+          color: Color.mSecondary
+          opacity: 0.8
+          z: 50
+        }
+
+        NText {
+          anchors.centerIn: parent
+          text: I18n.tr("common.loading")
+          pointSize: Style.fontSizeM
+          color: Color.mOnSurfaceVariant
+          visible: DisplayService.loading && DisplayService.outputsList.length === 0
+        }
+      }
+
+      NDivider { Layout.fillWidth: true; Layout.topMargin: Style.marginS; Layout.bottomMargin: Style.marginS }
+
+      NText {
+        text: I18n.tr("panels.display.monitor-settings")
+        pointSize: Style.fontSizeXL
+        font.weight: Style.fontWeightBold
+        color: Color.mOnSurface
+      }
+
+      Repeater {
+        model: DisplayService.outputsList
+        delegate: NBox {
+          id: monitorCard
+          Layout.fillWidth: true
+          implicitHeight: monitorCardCol.implicitHeight + 2 * Style.marginL
+          color: root.selectedOutput === monitorName ? Qt.alpha(Color.mPrimary, 0.1) : Color.mSurface
+          border.color: root.selectedOutput === monitorName ? Color.mPrimary : Style.boxBorderColor
+
+          property var outData: modelData
+          property string monitorName: outData.name || ""
+          property var logicalData: outData.logical || {
+            x: targetConf && targetConf.x !== undefined ? targetConf.x : 0,
+            y: targetConf && targetConf.y !== undefined ? targetConf.y : 0,
+            width: targetConf && targetConf.logicalWidth !== undefined ? targetConf.logicalWidth : 0,
+            height: targetConf && targetConf.logicalHeight !== undefined ? targetConf.logicalHeight : 0,
+            scale: targetConf && targetConf.scale !== undefined ? targetConf.scale : 1.0,
+            transform: targetConf && targetConf.transform !== undefined ? targetConf.transform : "Normal"
+          }
+          property var modes: outData.modes || []
+          property int currentModeIdx: outData.current_mode || 0
+          property var targetConf: DisplayService.targetConfig[monitorName] || null
+          property bool isEnabled: targetConf && targetConf.enabled !== undefined ? targetConf.enabled : (outData.enabled !== false)
+          property bool isLastEnabled: isEnabled && root.enabledMonitorCount() <= 1
+
+          property string targetModeStr: targetConf && targetConf.modeStr ? targetConf.modeStr : ""
+          property string targetResolution: targetModeStr.indexOf("@") > 0 ? targetModeStr.split("@")[0] : ""
+          property string targetRefreshRate: targetModeStr.indexOf("@") > 0 ? targetModeStr.split("@")[1] : ""
+
+          property var uniqueResolutions: {
+            // Keep one option per WxH; refresh rate is selected in a dedicated combobox.
+            const resMap = {};
+            const resList = [];
+            for (let i = 0; i < modes.length; i++) {
+              const m = modes[i];
+              const key = m.width + "x" + m.height;
+              if (!resMap[key]) {
+                resMap[key] = true;
+                resList.push({ "key": key, "name": key });
+              }
+            }
+            return resList;
+          }
+
+          property var currentMode: modes[currentModeIdx] || {}
+          property string currentResolution: {
+            if (currentMode.width && currentMode.height) return currentMode.width + "x" + currentMode.height;
+            return targetResolution || "0x0";
+          }
+
+          function refreshRatesFor(resolution) {
+            // Build sorted refresh-rate options for a selected resolution.
+            const rates = [];
+            const rateSet = {};
+            const parts = resolution.split("x");
+            const w = parseInt(parts[0]) || 0;
+            const h = parseInt(parts[1]) || 0;
+            for (let i = 0; i < modes.length; i++) {
+              const m = modes[i];
+              if (m.width === w && m.height === h) {
+                const rateHz = (m.refresh_rate / 1000).toFixed(3);
+                if (!rateSet[rateHz]) {
+                  rateSet[rateHz] = true;
+                  let label = parseFloat(rateHz).toFixed(2) + " Hz";
+                  if (m.is_preferred) label += " ★";
+                  rates.push({ "key": rateHz, "name": label });
+                }
+              }
+            }
+            rates.sort((a, b) => parseFloat(b.key) - parseFloat(a.key));
+            return rates;
+          }
+
+          property string currentRefreshRate: currentMode.refresh_rate ? (currentMode.refresh_rate / 1000).toFixed(3) : (targetRefreshRate || "60.000")
+
+          TapHandler {
+            onTapped: root.selectedOutput = monitorCard.monitorName
+          }
+
+          ColumnLayout {
+            id: monitorCardCol
+            anchors.fill: parent
+            anchors.margins: Style.marginL
+            spacing: Style.marginM
+
+            RowLayout {
+              Layout.fillWidth: true
+              spacing: Style.marginM
+
+              NIcon {
+                icon: "device-desktop"
+                Layout.alignment: Qt.AlignVCenter
+              }
+
+              ColumnLayout {
+                spacing: 2
+                Layout.fillWidth: true
+
+                NText {
+                  text: monitorCard.monitorName
+                  pointSize: Style.fontSizeM
+                  font.weight: Style.fontWeightBold
+                  color: Color.mPrimary
+                }
+
+                NText {
+                  text: {
+                    const parts = [];
+                    if (outData.make) parts.push(outData.make);
+                    if (outData.model) parts.push(outData.model);
+                    if (outData.physical_size) parts.push(outData.physical_size[0] + "×" + outData.physical_size[1] + " mm");
+                    return parts.join(" · ") || I18n.tr("common.unknown");
+                  }
+                  pointSize: Style.fontSizeXS
+                  color: Color.mOnSurfaceVariant
+                  elide: Text.ElideRight
+                  Layout.fillWidth: true
+                }
+              }
+              NIconButton {
+                icon: "info-circle"
+                tooltipText: I18n.tr("panels.display.read-edid")
+                onClicked: {
+                  root.selectedOutput = monitorCard.monitorName;
+                  DisplayService.readEdid(monitorCard.monitorName);
+                  edidDialog.open();
+                }
+              }
+            }
+
+            GridLayout {
+              columns: 4
+              columnSpacing: Style.marginL
+              rowSpacing: Style.marginS
+              Layout.fillWidth: true
+              visible: DisplayService.compositor !== "readonly"
+              enabled: monitorCard.isEnabled
+              opacity: enabled ? 1.0 : 0.5
+
+              ColumnLayout {
+                spacing: 2
+                visible: !monitorCard.isLastEnabled
+                NText { text: I18n.tr("common.position"); color: Color.mOnSurfaceVariant; pointSize: Style.fontSizeXS }
+                NText { text: "(" + (logicalData.x || 0) + ", " + (logicalData.y || 0) + ")"; color: Color.mOnSurface; pointSize: Style.fontSizeS }
+              }
+              ColumnLayout {
+                spacing: 2
+                NText { text: I18n.tr("panels.display.logical-size"); color: Color.mOnSurfaceVariant; pointSize: Style.fontSizeXS }
+                NText { text: (logicalData.width || 0) + "×" + (logicalData.height || 0); color: Color.mOnSurface; pointSize: Style.fontSizeS }
+              }
+              ColumnLayout {
+                spacing: 2
+                NText { text: I18n.tr("common.scale"); color: Color.mOnSurfaceVariant; pointSize: Style.fontSizeXS }
+                NText { text: (logicalData.scale || 1.0).toFixed(2) + "x"; color: Color.mOnSurface; pointSize: Style.fontSizeS }
+              }
+              ColumnLayout {
+                spacing: 2
+                NText { text: I18n.tr("panels.display.rotation"); color: Color.mOnSurfaceVariant; pointSize: Style.fontSizeXS }
+                NText { 
+                  text: {
+                    const t = logicalData.transform || "Normal";
+                    // Simplistic transform labels
+                    if (t === "90") return "90°";
+                    if (t === "180") return "180°";
+                    if (t === "270") return "270°";
+                    if (t.startsWith("Flipped")) return I18n.tr("panels.display.flipped") || "Flipped";
+                    return I18n.tr("common.normal");
+                  }
+                  color: Color.mOnSurface; 
+                  pointSize: Style.fontSizeS 
+                }
+              }
+            }
+
+            NDivider { visible: DisplayService.compositor !== "readonly"; Layout.fillWidth: true }
+
+            NComboBox {
+              visible: DisplayService.compositor !== "readonly"
+              enabled: monitorCard.isEnabled
+              Layout.fillWidth: true
+              label: I18n.tr("common.resolution")
+              model: monitorCard.uniqueResolutions
+              currentKey: monitorCard.currentResolution
+              onSelected: function(key) {
+                const rates = monitorCard.refreshRatesFor(key);
+                if (rates.length > 0) {
+                  const modeStr = key + "@" + rates[0].key;
+                  DisplayService.setMode(monitorCard.monitorName, modeStr);
+                }
+              }
+            }
+
+            NComboBox {
+              visible: DisplayService.compositor !== "readonly"
+              enabled: monitorCard.isEnabled
+              Layout.fillWidth: true
+              label: I18n.tr("panels.display.refresh-rate")
+              model: monitorCard.refreshRatesFor(monitorCard.currentResolution)
+              currentKey: monitorCard.currentRefreshRate
+              onSelected: function(key) {
+                const modeStr = monitorCard.currentResolution + "@" + key;
+                DisplayService.setMode(monitorCard.monitorName, modeStr);
+              }
+            }
+
+            NSpinBox {
+              id: scaleSpinBox
+              Layout.fillWidth: true
+              visible: DisplayService.compositor !== "readonly"
+              enabled: monitorCard.isEnabled
+              label: I18n.tr("common.scale")
+              minimum: 25
+              maximum: 400
+              stepSize: 5
+              suffix: "%"
+              value: Math.round((logicalData.scale || 1.0) * 100)
+              defaultValue: 100
+              
+              Timer {
+                id: scaleDebounceTimer
+                interval: 600
+                repeat: false
+                onTriggered: {
+                  // Debounce slider edits so compositor commands are not spammed while typing.
+                  let s = scaleSpinBox.value / 100.0;
+                  if (Math.abs(s - (logicalData.scale || 1.0)) > 0.01) {
+                    DisplayService.setScale(monitorCard.monitorName, s);
+                  }
+                }
+              }
+
+              onValueChanged: function() {
+                scaleDebounceTimer.restart();
+              }
+            }
+
+            NComboBox {
+              visible: DisplayService.compositor !== "readonly"
+              enabled: monitorCard.isEnabled
+              Layout.fillWidth: true
+              label: I18n.tr("panels.display.rotation")
+              model: [
+                { key: "Normal", name: I18n.tr("common.normal")},
+                { key: "90", name: "90°" },
+                { key: "180", name: "180°" },
+                { key: "270", name: "270°" },
+                { key: "Flipped", name: I18n.tr("panels.display.flipped") },
+                { key: "Flipped90", name: I18n.tr("panels.display.flipped-angle", { "angle": "90°" }) },
+                { key: "Flipped180", name: I18n.tr("panels.display.flipped-angle", { "angle": "180°" }) },
+                { key: "Flipped270", name: I18n.tr("panels.display.flipped-angle", { "angle": "270°" }) }
+              ]
+              currentKey: logicalData.transform || "Normal"
+              defaultValue: "Normal"
+              onSelected: function(key) {
+                DisplayService.setTransform(monitorCard.monitorName, key);
+              }
+            }
+
+            NToggle {
+              visible: DisplayService.compositor !== "readonly"
+              enabled: monitorCard.isEnabled
+              Layout.fillWidth: true
+              label: I18n.tr("panels.display.vrr")
+              checked: targetConf && targetConf.vrr_enabled !== undefined ? targetConf.vrr_enabled === true : (outData.vrr_enabled === true)
+              defaultValue: false
+              onToggled: function(checked) {
+                DisplayService.setVrr(monitorCard.monitorName, checked);
+              }
+            }
+
+            NToggle {
+              visible: DisplayService.compositor !== "readonly"
+              enabled: !monitorCard.isLastEnabled
+              Layout.fillWidth: true
+              label: I18n.tr("common.enable-display")
+              checked: {
+                const tc = DisplayService.targetConfig[monitorCard.monitorName];
+                return tc && tc.enabled !== undefined ? tc.enabled : (outData.enabled !== false);
+              }
+              onToggled: function(checked) {
+                DisplayService.toggleOutput(monitorCard.monitorName, checked);
+              }
+            }
+
+          }
+        }
+      }
+
+      Item { Layout.preferredHeight: Style.marginL; Layout.fillWidth: true }
+    }
+
+  Popup {
+    id: edidDialog
+    parent: Overlay.overlay
+    anchors.centerIn: parent
+    width: Math.min(640 * Style.uiScaleRatio, parent.width * 0.95)
+    height: Math.min(520 * Style.uiScaleRatio, parent.height * 0.9)
+    modal: true
+    focus: true
+    dim: true
+    padding: Style.marginL
+
+    background: Rectangle {
+      color: Color.mSurface
+      radius: Style.radiusL
+      border.color: Color.mOutline
+      border.width: Style.borderS
+    }
+
+    contentItem: ColumnLayout {
+      spacing: Style.marginL
+
+      NHeader {
+        Layout.fillWidth: true
+        label: I18n.tr("panels.display.edid-title", {
+                         "output": DisplayService.edidOutputName || root.selectedOutput || "-"
+                       })
+        description: I18n.tr("panels.display.edid-description")
+      }
+
+      NBox {
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        color: Color.mSurfaceVariant
+        border.color: Style.boxBorderColor
+        clip: true
+
+        Loader {
+          anchors.fill: parent
+          anchors.margins: Style.marginM
+          active: true
+          sourceComponent: DisplayService.edidLoading ? edidLoadingComponent :
+                           (DisplayService.edidError !== "" ? edidErrorComponent : edidContentComponent)
+        }
+      }
+
+      RowLayout {
+        Layout.fillWidth: true
+        spacing: Style.marginM
+
+        NButton {
+          text: I18n.tr("common.refresh")
+          enabled: (DisplayService.edidOutputName || root.selectedOutput || "") !== ""
+          onClicked: DisplayService.readEdid(DisplayService.edidOutputName || root.selectedOutput)
+        }
+
+        Item { Layout.fillWidth: true }
+
+        NButton {
+          text: I18n.tr("panels.display.copy-edid")
+          enabled: !DisplayService.edidLoading && String(DisplayService.edidHex || "").trim() !== ""
+          onClicked: {
+            copyEdidProc.payload = root.buildEdidCopyPayload();
+            copyEdidProc.running = true;
+          }
+        }
+
+        NButton {
+          text: I18n.tr("common.close")
+          onClicked: edidDialog.close()
+        }
+      }
+    }
+
+    Component {
+      id: edidLoadingComponent
+      Item {
+        NText {
+          anchors.centerIn: parent
+          text: I18n.tr("common.loading")
+          pointSize: Style.fontSizeM
+          color: Color.mOnSurfaceVariant
+        }
+      }
+    }
+
+    Component {
+      id: edidErrorComponent
+      Item {
+        NText {
+          anchors.fill: parent
+          text: DisplayService.edidError || I18n.tr("panels.display.edid-empty")
+          pointSize: Style.fontSizeS
+          color: Color.mError
+          wrapMode: Text.WordWrap
+          verticalAlignment: Text.AlignVCenter
+        }
+      }
+    }
+
+    Component {
+      id: edidContentComponent
+      ScrollView {
+        clip: true
+
+        TextEdit {
+          id: edidDetailsText
+          width: parent.width
+          readOnly: true
+          selectByMouse: true
+          text: root.formatEdidDetails(DisplayService.edidHex, (typeof DisplayService.edidDecoded !== "undefined" ? DisplayService.edidDecoded : ""))
+          color: Color.mOnSurface
+          font.family: "monospace"
+          font.pixelSize: Math.max(11, Style.fontSizeS * Style.uiScaleRatio)
+          wrapMode: TextEdit.Wrap
+          textFormat: TextEdit.PlainText
+          leftPadding: 0
+          rightPadding: 0
+          topPadding: 0
+          bottomPadding: 0
+        }
+      }
+    }
+
+    Process {
+      id: copyEdidProc
+      property string payload: ""
+      command: [
+        "sh",
+        "-c",
+        'payload="$1"; if command -v wl-copy >/dev/null 2>&1; then printf "%s" "$payload" | wl-copy; elif command -v xclip >/dev/null 2>&1; then printf "%s" "$payload" | xclip -selection clipboard; else echo "No clipboard tool found (wl-copy/xclip)" >&2; exit 1; fi',
+        "sh",
+        payload
+      ]
+      running: false
+
+      stderr: StdioCollector {
+        onStreamFinished: {
+          const err = text.trim();
+          if (err.length > 0)
+            ToastService.showWarning(I18n.tr("panels.display.read-edid"), err);
+        }
+      }
+
+      onExited: function(exitCode) {
+        if (exitCode === 0) {
+          ToastService.showNotice(I18n.tr("panels.display.read-edid"), I18n.tr("common.copied-to-clipboard"));
+        } else {
+          ToastService.showWarning(I18n.tr("panels.display.read-edid"), I18n.tr("panels.display.edid-copy-failed"));
+        }
+      }
+    }
+  }
+
+  Popup {
+    id: revertDialog
+    parent: Overlay.overlay
+    anchors.centerIn: parent
+    width: Math.min(420 * Style.uiScaleRatio, parent.width * 0.9)
+    modal: true
+    focus: true
+    closePolicy: Popup.NoAutoClose
+    dim: true
+    padding: Style.marginXL
+    // Mirrors DisplayService confirmation window for temporary topology changes.
+    visible: DisplayService.awaitingConfirmation
+
+    background: Rectangle {
+      color: Color.mSurface
+      radius: Style.radiusL
+      border.color: Color.mOutline
+      border.width: Style.borderS
+    }
+
+    contentItem: ColumnLayout {
+      spacing: Style.marginL
+      
+      NText {
+        text: I18n.tr("panels.display.keep-changes")
+        pointSize: Style.fontSizeXL
+        font.weight: Style.fontWeightBold
+        color: Color.mOnSurface
+        Layout.alignment: Qt.AlignHCenter
+      }
+      
+      NText {
+        text: I18n.tr("panels.display.reverting-in-seconds", {
+                        "seconds": DisplayService.revertCountdown
+                      })
+        pointSize: Style.fontSizeM
+        color: Color.mOnSurfaceVariant
+        Layout.alignment: Qt.AlignHCenter
+      }
+
+      Rectangle {
+        Layout.fillWidth: true
+        Layout.topMargin: Style.marginS
+        Layout.bottomMargin: Style.marginS
+        height: 6 * Style.uiScaleRatio
+        radius: 3 * Style.uiScaleRatio
+        color: Color.mSurfaceVariant
+
+        Rectangle {
+          width: parent.width * (DisplayService.revertCountdown / Math.max(DisplayService.revertTimeoutSec, 1))
+          height: parent.height
+          radius: parent.radius
+          color: Color.mError
+
+          Behavior on width {
+            NumberAnimation { duration: 900; easing.type: Easing.Linear }
+          }
+        }
+      }
+      
+      RowLayout {
+        Layout.alignment: Qt.AlignHCenter
+        spacing: Style.marginL
+        
+        NButton {
+          Layout.preferredWidth: 120 * Style.uiScaleRatio
+          Layout.preferredHeight: 40 * Style.uiScaleRatio
+          text: I18n.tr("common.revert")
+          outlined: true
+          onClicked: DisplayService.doRevert()
+        }
+        
+        NButton {
+          Layout.preferredWidth: 120 * Style.uiScaleRatio
+          Layout.preferredHeight: 40 * Style.uiScaleRatio
+          text: I18n.tr("common.keep")
+          backgroundColor: Color.mPrimary
+          textColor: Color.mOnPrimary
+          onClicked: DisplayService.confirmChange()
+        }
+      }
+    }
+  }
+}

@@ -72,6 +72,11 @@ ColumnLayout {
       tabIndex: 1
       checked: subTabBar.currentIndex === 1
     }
+    NTabButton {
+      text: I18n.tr("common.monitor")
+      tabIndex: 2
+      checked: subTabBar.currentIndex === 2
+    }
   }
 
   Item {
@@ -88,5 +93,6 @@ ColumnLayout {
       timeOptions: timeOptions
       onCheckWlsunset: wlsunsetCheck.running = true
     }
+    MonitorSubTab {}
   }
 }

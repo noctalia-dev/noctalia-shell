@@ -283,6 +283,14 @@ Singleton {
     backend.queryDisplayScales();
   }
 
+  // Display configuration backend exposed to DisplayService.
+  function getDisplayBackend() {
+    if (backend && backend.displayBackend) {
+      return backend.displayBackend;
+    }
+    return null;
+  }
+
   // Called by backend when display scales are ready
   function onDisplayScalesUpdated(scales) {
     displayScales = scales;
