@@ -10,7 +10,7 @@ Singleton {
   // actionLabel: optional label for clickable action link
   // actionCallback: optional function to call when action is clicked
   signal notify(string title, string description, string icon, string type, int duration, string actionLabel, var actionCallback)
-  signal dismiss()
+  signal dismiss
 
   // Convenience methods
   function showNotice(title, description = "", icon = "", duration = 3000, actionLabel = "", actionCallback = null) {
@@ -25,7 +25,7 @@ Singleton {
     notify(title, description, "", "error", duration, actionLabel, actionCallback);
   }
 
-  function dismissToast(){
+  function dismissToast() {
     dismiss();
   }
 }

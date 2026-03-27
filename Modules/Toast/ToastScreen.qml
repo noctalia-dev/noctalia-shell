@@ -46,7 +46,7 @@ Item {
     quickSwitchTimer.stop();
   }
 
-  function dismissToast(){
+  function dismissToast() {
     if (windowLoader.item) {
       hideTimer.stop();
       windowLoader.item.hideToast();
