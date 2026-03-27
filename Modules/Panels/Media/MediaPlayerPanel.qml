@@ -14,7 +14,8 @@ SmartPanel {
   id: root
 
   preferredWidth: Math.round((root.isSideBySide ? 480 : 360) * Style.uiScaleRatio)
-  preferredHeight: Math.round((root.compactMode ? 240 : (root.showAlbumArt ? 560 : 300)) * Style.uiScaleRatio)
+  // Fallback only; SmartPanel uses panelContent.contentPreferredHeight when set.
+  preferredHeight: Math.round((root.compactMode ? 240 : 400) * Style.uiScaleRatio)
 
   property var mediaMiniSettings: {
     const widget = BarService.lookupWidget("MediaMini", screen?.name);
@@ -73,9 +74,16 @@ SmartPanel {
     id: playerContent
     anchors.fill: parent
 
-    readonly property real contentPreferredHeight: (root.compactMode ? 240 : (root.showAlbumArt ? 560 : 300)) * Style.uiScaleRatio
-
-    // Old loader removed from here
+    // implicitHeight + mainLayout vertical anchors.margins (each Style.marginL).
+    readonly property real contentPreferredHeight: {
+      const m = mainLayout.implicitHeight + 2 * Style.marginL;
+      const scale = Style.uiScaleRatio;
+      if (root.compactMode)
+        return Math.max(m, 240 * scale);
+      if (!root.showAlbumArt)
+        return Math.max(m, 300 * scale);
+      return Math.max(m, 260 * scale);
+    }
 
     property Component visualizerSource: {
       switch (root.visualizerType) {
@@ -90,7 +98,6 @@ SmartPanel {
       }
     }
 
-    // Layout
     ColumnLayout {
       id: mainLayout
       anchors.fill: parent
@@ -229,10 +236,9 @@ SmartPanel {
         }
       }
 
-      // Adaptive Content Area
       NBox {
         Layout.fillWidth: true
-        Layout.fillHeight: true
+        Layout.preferredHeight: mediaContentGrid.implicitHeight + Style.marginM + Style.marginM
 
         // Visualizer background for content area
         Loader {
@@ -243,7 +249,10 @@ SmartPanel {
         }
 
         GridLayout {
-          anchors.fill: parent
+          id: mediaContentGrid
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: parent.top
           anchors.leftMargin: root.compactMode ? Style.marginL : Style.marginM
           anchors.rightMargin: root.compactMode ? Style.marginL : Style.marginM
           anchors.topMargin: Style.marginM
@@ -255,21 +264,35 @@ SmartPanel {
           // Album Art (Vertical in normal, Horizontal in compact)
           Item {
             id: albumArtItem
-            Layout.preferredWidth: {
-              if (root.compactMode)
-                return Math.round(110 * Style.uiScaleRatio);
-              return Math.min(parent.width, parent.height - controlsLayout.implicitHeight - parent.rowSpacing);
-            }
-            Layout.preferredHeight: Layout.preferredWidth
+            readonly property real compactArtSize: Math.round(110 * Style.uiScaleRatio)
+            readonly property bool artSizeKnown: artSizeProbe.status === Image.Ready && artSizeProbe.sourceSize.width > 0 && artSizeProbe.sourceSize.height > 0
+            readonly property real artAspectRatio: artSizeKnown ? artSizeProbe.sourceSize.width / artSizeProbe.sourceSize.height : 1
+            // Non-compact: height from width÷aspect so grid implicit height does not depend on panel height (no layout loop).
+            readonly property real artBoxW: root.compactMode ? compactArtSize : Math.max(parent.width, 1)
+            readonly property real artBoxH: root.compactMode ? compactArtSize : (artBoxW / Math.max(artAspectRatio, 0.001))
+            readonly property real fitArtW: artBoxW / artBoxH > artAspectRatio ? artBoxH * artAspectRatio : artBoxW
+            readonly property real fitArtH: artBoxW / artBoxH > artAspectRatio ? artBoxH : artBoxW / artAspectRatio
+
+            Layout.preferredWidth: fitArtW
+            Layout.preferredHeight: fitArtH
+            Layout.minimumWidth: fitArtW
+            Layout.maximumWidth: fitArtW
+            Layout.minimumHeight: fitArtH
+            Layout.maximumHeight: fitArtH
             Layout.fillWidth: false
             Layout.fillHeight: false
             Layout.alignment: Qt.AlignHCenter
             visible: root.showAlbumArt
 
+            Image {
+              id: artSizeProbe
+              visible: false
+              asynchronous: true
+              source: MediaService.trackArtUrl
+            }
+
             NImageRounded {
-              anchors.centerIn: parent
-              width: Math.min(parent.width, parent.height)
-              height: width
+              anchors.fill: parent
               radius: root.compactMode ? Style.radiusM : Style.radiusL
               imagePath: MediaService.trackArtUrl
               imageFillMode: Image.PreserveAspectCrop
@@ -279,9 +302,7 @@ SmartPanel {
             }
 
             Loader {
-              anchors.centerIn: parent
-              width: Math.min(parent.width, parent.height)
-              height: width
+              anchors.fill: parent
               anchors.margins: Style.marginS
               z: 2
               active: !!(root.needsSpectrum && root.showAlbumArt)
@@ -367,7 +388,7 @@ SmartPanel {
               id: progressWrapper
               visible: (MediaService.currentPlayer && MediaService.trackLength > 0)
               Layout.fillWidth: true
-              Layout.preferredHeight: root.compactMode ? (Style.baseWidgetSize * 0.4) : (Style.baseWidgetSize * 0.5)
+              Layout.preferredHeight: progressColumn.implicitHeight
 
               property real localSeekRatio: -1
               property real lastSentSeekRatio: -1
@@ -396,55 +417,74 @@ SmartPanel {
                 }
               }
 
-              NSlider {
-                id: progressSlider
-                anchors.fill: parent
-                from: 0
-                to: 1
-                stepSize: 0
-                snapAlways: false
-                enabled: MediaService.trackLength > 0 && MediaService.canSeek
-                heightRatio: 0.4
+              ColumnLayout {
+                id: progressColumn
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                spacing: 2
 
-                value: (!MediaService.isSeeking) ? progressWrapper.progressRatio : (progressWrapper.localSeekRatio >= 0 ? progressWrapper.localSeekRatio : 0)
+                Item {
+                  Layout.fillWidth: true
+                  Layout.preferredHeight: root.compactMode ? (Style.baseWidgetSize * 0.4) : (Style.baseWidgetSize * 0.5)
 
-                onMoved: {
-                  progressWrapper.localSeekRatio = value;
-                  seekDebounce.restart();
-                }
-                onPressedChanged: {
-                  if (pressed) {
-                    MediaService.isSeeking = true;
-                    progressWrapper.localSeekRatio = value;
-                    MediaService.seekByRatio(value);
-                    progressWrapper.lastSentSeekRatio = value;
-                  } else {
-                    seekDebounce.stop();
-                    MediaService.seekByRatio(value);
-                    MediaService.isSeeking = false;
-                    progressWrapper.localSeekRatio = -1;
-                    progressWrapper.lastSentSeekRatio = -1;
+                  NSlider {
+                    id: progressSlider
+                    anchors.fill: parent
+                    from: 0
+                    to: 1
+                    stepSize: 0
+                    snapAlways: false
+                    enabled: MediaService.trackLength > 0 && MediaService.canSeek
+                    heightRatio: 0.4
+
+                    value: (!MediaService.isSeeking) ? progressWrapper.progressRatio : (progressWrapper.localSeekRatio >= 0 ? progressWrapper.localSeekRatio : 0)
+
+                    onMoved: {
+                      progressWrapper.localSeekRatio = value;
+                      seekDebounce.restart();
+                    }
+                    onPressedChanged: {
+                      if (pressed) {
+                        MediaService.isSeeking = true;
+                        progressWrapper.localSeekRatio = value;
+                        MediaService.seekByRatio(value);
+                        progressWrapper.lastSentSeekRatio = value;
+                      } else {
+                        seekDebounce.stop();
+                        MediaService.seekByRatio(value);
+                        MediaService.isSeeking = false;
+                        progressWrapper.localSeekRatio = -1;
+                        progressWrapper.lastSentSeekRatio = -1;
+                      }
+                    }
                   }
                 }
-              }
 
-              NText {
-                anchors.left: parent.left
-                anchors.top: parent.bottom
-                anchors.topMargin: 2 // Small gap for side-by-side mode
-                text: MediaService.positionString || "0:00"
-                pointSize: Style.fontSizeXS
-                color: Color.mOnSurfaceVariant
-                visible: parent.visible
-              }
-              NText {
-                anchors.right: parent.right
-                anchors.top: parent.bottom
-                anchors.topMargin: 2
-                text: MediaService.lengthString || "0:00"
-                pointSize: Style.fontSizeXS
-                color: Color.mOnSurfaceVariant
-                visible: parent.visible
+                RowLayout {
+                  Layout.fillWidth: true
+                  spacing: 0
+
+                  NText {
+                    text: MediaService.positionString || "0:00"
+                    pointSize: Style.fontSizeXS
+                    color: Color.mOnSurfaceVariant
+                    visible: progressWrapper.visible
+                  }
+
+                  Item {
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                  }
+
+                  NText {
+                    text: MediaService.lengthString || "0:00"
+                    pointSize: Style.fontSizeXS
+                    color: Color.mOnSurfaceVariant
+                    horizontalAlignment: Text.AlignRight
+                    visible: progressWrapper.visible
+                  }
+                }
               }
             }
 
