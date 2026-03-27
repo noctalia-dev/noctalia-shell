@@ -189,6 +189,9 @@ Singleton {
     node: root.sink
   }
 
+  // Track all streams globally to prevent binding loops for filtered out streams
+  readonly property var streamNodes: Pipewire.ready ? Pipewire.nodes.values.filter(n => n && n.isStream) : []
+
   // Find application streams that are connected to the default sink
   readonly property var appStreams: {
     if (!Pipewire.ready || !root.sink) {
@@ -240,8 +243,10 @@ Singleton {
         continue;
       }
 
-      // If it's a stream node, add it directly
-      if (sourceNode.isStream && sourceNode.audio) {
+      // Filter out filter (intermediate) streams
+      const isVirtual = (sourceNode.properties && sourceNode.properties["node.virtual"]) || "";
+      // If it's an application stream node, add it directly
+      if (sourceNode.isStream && sourceNode.audio && !isVirtual) {
         if (!connectedStreamIds[sourceNode.id]) {
           connectedStreamIds[sourceNode.id] = true;
           connectedStreams.push(sourceNode);
@@ -269,6 +274,12 @@ Singleton {
           const nodeName = node.name || "";
           const nodeMediaName = (node.properties && node.properties["media.name"]) || "";
           if (nodeName === "quickshell" || nodeMediaName === "quickshell") {
+            continue;
+          }
+
+          // Filter out filter streams
+          const nodeIsVirtual = (node.properties && node.properties["node.virtual"]) || "";
+          if (nodeIsVirtual) {
             continue;
           }
 
@@ -302,7 +313,7 @@ Singleton {
   property bool _isApplyingAppOverride: false
 
   PwObjectTracker {
-    objects: root.appStreams
+    objects: root.streamNodes
   }
 
   // Keep appVolumeOverrides aligned with PipeWire when apps change volume/mute.
