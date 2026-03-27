@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_run:
+    workflows: ["update flake"]
+    types:
+      - completed
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
