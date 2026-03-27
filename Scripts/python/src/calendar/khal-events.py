@@ -60,10 +60,16 @@ def main():
         duration
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    except subprocess.TimeoutExpired:
+        print("[]", file=sys.stderr)
+        sys.exit(1)
     output = result.stdout.strip()
 
     for line in output.split('\n'):
+        if not line:
+            continue
         day_events = json.loads(line)
         print(json.dumps([convert_event(e, khal_format) for e in day_events]))
 
