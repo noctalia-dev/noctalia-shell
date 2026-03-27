@@ -359,7 +359,7 @@ Singleton {
       "id": "scroll",
       "name": "Scroll",
       "category": "compositor",
-      "input": "sway",
+      "input": "scroll",
       "outputs": [
         {
           "path": "~/.config/scroll/noctalia"
