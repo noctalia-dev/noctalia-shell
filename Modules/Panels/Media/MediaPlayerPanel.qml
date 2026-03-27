@@ -13,7 +13,7 @@ import qs.Widgets.AudioSpectrum
 SmartPanel {
   id: root
 
-  preferredWidth: Math.round((root.isSideBySide ? 480 : 400) * Style.uiScaleRatio)
+  preferredWidth: Math.round((root.isSideBySide ? 480 : 360) * Style.uiScaleRatio)
   preferredHeight: Math.round((root.compactMode ? 240 : (root.showAlbumArt ? 560 : 300)) * Style.uiScaleRatio)
 
   property var mediaMiniSettings: {
@@ -95,7 +95,7 @@ SmartPanel {
       id: mainLayout
       anchors.fill: parent
       anchors.margins: Style.marginL
-      spacing: Style.marginL
+      spacing: root.compactMode ? Style.marginL : Style.marginM
       z: 1
 
       NBox {
@@ -250,20 +250,26 @@ SmartPanel {
           anchors.bottomMargin: Style.marginM
           columns: root.isSideBySide ? 2 : 1
           columnSpacing: Style.marginL
-          rowSpacing: Style.marginL
+          rowSpacing: root.compactMode ? Style.marginL : Style.marginM
 
           // Album Art (Vertical in normal, Horizontal in compact)
           Item {
             id: albumArtItem
-            Layout.preferredWidth: root.compactMode ? Math.round(110 * Style.uiScaleRatio) : parent.width
-            Layout.preferredHeight: root.compactMode ? Math.round(110 * Style.uiScaleRatio) : (root.showAlbumArt ? -1 : 0)
-            Layout.fillWidth: !root.compactMode
-            Layout.fillHeight: !root.compactMode && root.showAlbumArt
-            Layout.alignment: Qt.AlignVCenter
+            Layout.preferredWidth: {
+              if (root.compactMode)
+                return Math.round(110 * Style.uiScaleRatio);
+              return Math.min(parent.width, parent.height - controlsLayout.implicitHeight - parent.rowSpacing);
+            }
+            Layout.preferredHeight: Layout.preferredWidth
+            Layout.fillWidth: false
+            Layout.fillHeight: false
+            Layout.alignment: Qt.AlignHCenter
             visible: root.showAlbumArt
 
             NImageRounded {
-              anchors.fill: parent
+              anchors.centerIn: parent
+              width: Math.min(parent.width, parent.height)
+              height: width
               radius: root.compactMode ? Style.radiusM : Style.radiusL
               imagePath: MediaService.trackArtUrl
               imageFillMode: Image.PreserveAspectCrop
@@ -273,7 +279,9 @@ SmartPanel {
             }
 
             Loader {
-              anchors.fill: parent
+              anchors.centerIn: parent
+              width: Math.min(parent.width, parent.height)
+              height: width
               anchors.margins: Style.marginS
               z: 2
               active: !!(root.needsSpectrum && root.showAlbumArt)
@@ -283,7 +291,9 @@ SmartPanel {
 
           ColumnLayout {
             id: controlsLayout
-            Layout.fillWidth: true
+            Layout.preferredWidth: root.compactMode ? -1 : albumArtItem.width
+            Layout.fillWidth: root.compactMode
+            Layout.alignment: Qt.AlignHCenter
             Layout.fillHeight: root.compactMode
             spacing: root.compactMode ? Style.marginXS : Style.marginS
 
