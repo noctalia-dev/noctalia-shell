@@ -141,7 +141,7 @@ class TemplateRenderer:
     _BLOCK_RE = re.compile(r'<\*\s*(.*?)\s*\*>', re.DOTALL)
 
     # Regex for expression tags: {{ ... }}
-    _EXPR_RE = re.compile(r"\{\{\s*([^}\n]+?)\s*\}\}")
+    _EXPR_RE = re.compile(r"\{\{([^}\n]+?)\}\}")
 
     def __init__(self, theme_data: dict[str, dict[str, str]], verbose: bool = True, default_mode: str = "dark", image_path: Optional[str] = None, scheme_type: str = "content"):
         self.theme_data = theme_data
