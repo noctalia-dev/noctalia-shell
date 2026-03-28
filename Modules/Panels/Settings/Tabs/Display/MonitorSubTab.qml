@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
 import qs.Commons
 import qs.Services.Hardware
 import qs.Services.UI
@@ -150,6 +151,36 @@ ColumnLayout {
   function isInternalOutputName(outputName) {
     const name = String(outputName || "").toUpperCase();
     return name.startsWith("EDP") || name.startsWith("LVDS") || name.startsWith("DSI");
+  }
+
+  function outputIndexForScreenName(screenName) {
+    const screen = String(screenName || "");
+    if (screen === "")
+      return -1;
+
+    const outputs = DisplayService.outputsList || [];
+    for (let i = 0; i < outputs.length; i++) {
+      if (String(outputs[i].name || "") === screen)
+        return i + 1;
+    }
+
+    // Fallback to runtime screen order when output names don't match one-to-one.
+    const screens = Quickshell.screens || [];
+    for (let i = 0; i < screens.length; i++) {
+      if (String(screens[i].name || "") === screen)
+        return i + 1;
+    }
+
+    return -1;
+  }
+
+  function outputLabelForScreenName(screenName) {
+    const screen = String(screenName || "");
+    if (screen === "")
+      return "";
+
+    const idx = outputIndexForScreenName(screen);
+    return idx > 0 ? (idx + "  " + screen) : screen;
   }
 
   Component.onCompleted: {
@@ -981,6 +1012,57 @@ ColumnLayout {
 
       Item { Layout.preferredHeight: Style.marginL; Layout.fillWidth: true }
     }
+
+  // Per-screen monitor identifier overlay shown while this settings sub-tab is visible.
+  Variants {
+    id: monitorIdentifierOverlay
+    model: root.visible ? (Quickshell.screens || []) : []
+
+    delegate: PanelWindow {
+      id: identifierWindow
+      required property ShellScreen modelData
+
+      readonly property string identifierLabel: root.outputLabelForScreenName(modelData ? modelData.name : "")
+
+      visible: identifierLabel !== ""
+      screen: modelData
+      color: "transparent"
+
+      WlrLayershell.namespace: "noctalia-display-identifiers-" + (screen ? screen.name : "unknown")
+      WlrLayershell.layer: WlrLayer.Overlay
+      WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+      WlrLayershell.exclusionMode: ExclusionMode.Ignore
+
+      anchors.top: true
+      anchors.left: true
+      margins.top: Math.max(Style.marginL, 12)
+      margins.left: Math.max(Style.marginL, 12)
+
+      implicitWidth: badge.implicitWidth
+      implicitHeight: badge.implicitHeight
+
+      mask: Region {}
+
+      Rectangle {
+        id: badge
+        radius: Style.radiusM
+        color: Qt.alpha(Color.mSurface, 0.9)
+        border.color: Qt.alpha(Color.mPrimary, 0.95)
+        border.width: Math.max(Style.borderS, 2)
+        implicitWidth: textItem.implicitWidth + Style.marginXL * 12.8
+        implicitHeight: textItem.implicitHeight + Style.marginL * 9.6
+
+        NText {
+          id: textItem
+          anchors.centerIn: parent
+          text: identifierWindow.identifierLabel
+          pointSize: Style.fontSizeXXXL
+          font.weight: Style.fontWeightBold
+          color: Color.mOnSurface
+        }
+      }
+    }
+  }
 
   Popup {
     id: edidDialog
