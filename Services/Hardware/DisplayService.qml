@@ -784,40 +784,54 @@ Singleton
       return summary;
 
     summary.monitorName = _extractEdidField(text, [
-      /Display Product Name:\s*([^\n\r]+)/i,
+      /Display Product Name:\s*'?([^'\n\r]+)'?/i,
       /Monitor name:\s*([^\n\r]+)/i,
       /ModelName\s+"([^"]+)"/i
     ]);
+
     summary.manufacturerId = _extractEdidField(text, [
-      /Manufacturer:\s*([A-Za-z0-9]{3})\b/i,
+      /Manufacturer:\s*([A-Za-z0-9]+)/i,
       /VendorName\s+"([^"]+)"/i
     ]);
+
     summary.productCode = _extractEdidField(text, [
-      /Product(?:\s+ID|\s+Code)\s*:\s*([^\n\r]+)/i,
       /Model:\s*([^\n\r]+)/i,
+      /Product(?:\s+ID|\s+Code)\s*:\s*([^\n\r]+)/i,
       /Model\s+0x([0-9a-f]+)/i
     ]);
+
     summary.serialText = _extractEdidField(text, [
-      /Display Product Serial Number:\s*([^\n\r]+)/i,
+      /Display Product Serial Number:\s*'?([^'\n\r]+)'?/i,
       /Serial Number:\s*([^\n\r]+)/i,
       /Serial Number\s+"([^"]+)"/i,
       /Identifier\s+"([^"]+)"/i
     ]);
+
     summary.serialNumber = _extractEdidField(text, [
       /Serial number:\s*([^\n\r]+)/i
     ]);
+
     summary.version = _extractEdidField(text, [
+      /EDID.*?Version[^\n\r:]*:\s*([0-9]+\.[0-9]+)/i,
       /EDID(?:\s+Version)?\s*:?\s*([0-9]+\.[0-9]+)/i
     ]);
+
     summary.inputType = _extractEdidField(text, [
+      /((?:Digital|Analog)\s+display)/i,
+      /([A-Za-z0-9-]+\s+interface)/i,
       /Input type:\s*([^\n\r]+)/i
     ]);
+
     summary.preferredMode = _extractEdidField(text, [
+      /DTD\s+1:\s*([^\n\r]+)/i,
       /Preferred\s+timing[^\n\r]*?:\s*([^\n\r]+)/i,
       /Preferred mode:\s*([^\n\r]+)/i,
-      /DTD\s+1:\s*([^\n\r]+)/i,
       /Modeline\s+"([^"]+)"/i
     ]);
+
+    if (summary.preferredMode) {
+      summary.preferredMode = summary.preferredMode.replace(/\s{2,}/g, ' ').trim();
+    }
 
     const madeMatch = text.match(/Made\s+in:\s+week\s+([0-9]+)\s+of\s+([0-9]{4})/i);
     if (madeMatch) {
