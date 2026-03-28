@@ -1024,8 +1024,9 @@ Singleton {
     // Set current language (can't use binding in Qt.createQmlObject string)
     api.currentLanguage = I18n.langCode;
 
-    // Set pre-loaded settings and translations (available immediately!)
-    api.pluginSettings = settings || {};
+    // Merge manifest defaults with loaded settings (user settings take priority)
+    var defaults = (manifest.metadata && manifest.metadata.defaultSettings) || {};
+    api.pluginSettings = Object.assign({}, defaults, settings || {});
     api.pluginTranslations = translations || {};
     api.pluginFallbackTranslations = fallbackTranslations || {};
 

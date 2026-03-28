@@ -61,12 +61,27 @@ Item {
     enabled: BarWidgetRegistry.isPluginWidget(root.widgetId)
 
     function onPluginWidgetRegistryUpdated() {
-      // Force the loader to reload by toggling active
       if (BarWidgetRegistry.hasWidget(root.widgetId)) {
         root.reloadCounter++;
+        // Plugin widgets use setSource, so also trigger reload directly
+        if (root._isPlugin && loader.active)
+          root._loadPluginWidget();
         Logger.d("BarWidgetLoader", "Plugin widget registry updated, reloading:", root.widgetId);
       }
     }
+  }
+
+  readonly property bool _isPlugin: BarWidgetRegistry.isPluginWidget(widgetId)
+
+  function _loadPluginWidget() {
+    var comp = BarWidgetRegistry.getWidget(root.widgetId);
+    if (!comp)
+      return;
+    var pluginId = root.widgetId.replace("plugin:", "");
+    var api = PluginService.getPluginAPI(pluginId);
+    loader.setSource(comp.url, api ? {
+                                       "pluginApi": api
+                                     } : {});
   }
 
   Loader {
@@ -75,10 +90,23 @@ Item {
     asynchronous: true
     active: root.checkWidgetExists() && (root.reloadCounter >= 0)
 
-    sourceComponent: {
-      // Depend on reloadCounter to force re-fetch of component
-      var _ = root.reloadCounter;
-      return root.checkWidgetExists() ? BarWidgetRegistry.getWidget(root.widgetId) : null;
+    // Core widgets use sourceComponent; plugin widgets use setSource()
+    // so pluginApi is available from the first binding evaluation.
+    // Binding is set imperatively to avoid sourceComponent interfering with setSource.
+    Component.onCompleted: {
+      if (root._isPlugin) {
+        root._loadPluginWidget();
+      } else {
+        sourceComponent = Qt.binding(function () {
+          var _ = root.reloadCounter;
+          return root.checkWidgetExists() ? BarWidgetRegistry.getWidget(root.widgetId) : null;
+        });
+      }
+    }
+
+    onActiveChanged: {
+      if (active && root._isPlugin)
+        root._loadPluginWidget();
     }
 
     // Unregister when the loaded item is destroyed (Loader deactivated or sourceComponent changed)
@@ -117,17 +145,6 @@ Item {
       // Set screen property
       if (item.hasOwnProperty("screen")) {
         item.screen = widgetScreen;
-      }
-
-      // Inject plugin API for plugin widgets
-      // The API is fully populated (settings/translations already loaded) by PluginService
-      if (BarWidgetRegistry.isPluginWidget(widgetId)) {
-        var pluginId = widgetId.replace("plugin:", "");
-        var api = PluginService.getPluginAPI(pluginId);
-        if (api && item.hasOwnProperty("pluginApi")) {
-          item.pluginApi = api;
-          Logger.d("BarWidgetLoader", "Injected plugin API for", widgetId);
-        }
       }
 
       // Unregister any previous registration before registering the new instance

@@ -164,16 +164,14 @@ SmartPanel {
     // Get plugin API
     var api = PluginService.getPluginAPI(pluginId);
 
-    // Activate loader and set component simultaneously
+    // Use setSource with initial properties so pluginApi is available
+    // from the first binding evaluation (before onLoaded)
     root.contentLoader.active = true;
-    root.contentLoader.sourceComponent = component;
+    root.contentLoader.setSource(component.url, api ? {
+                                                        "pluginApi": api
+                                                      } : {});
 
-    // Immediately inject API (before any bindings evaluate)
     if (root.contentLoader.item) {
-      if (root.contentLoader.item.hasOwnProperty("pluginApi")) {
-        root.contentLoader.item.pluginApi = api;
-      }
-
       root.pluginInstance = root.contentLoader.item;
       root.currentPluginId = pluginId;
 

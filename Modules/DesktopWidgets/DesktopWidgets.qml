@@ -288,12 +288,37 @@ Variants {
             required property var modelData
             required property int index
             property var _maskRegion: null
+            readonly property bool _isPlugin: DesktopWidgetRegistry.isPluginWidget(modelData.id)
 
-            sourceComponent: {
-              // Access registeredWidgets and pluginReloadCounter to create reactive binding
-              var _ = root.pluginReloadCounter;
-              var widgets = root.registeredWidgets;
-              return widgets[modelData.id] || null;
+            // Core widgets use sourceComponent; plugin widgets use setSource()
+            // so pluginApi is available from the first binding evaluation.
+            // Binding is set imperatively to avoid sourceComponent interfering with setSource.
+            Component.onCompleted: {
+              if (_isPlugin) {
+                _loadPluginWidget();
+              } else {
+                sourceComponent = Qt.binding(function () {
+                  var _ = root.pluginReloadCounter;
+                  var widgets = root.registeredWidgets;
+                  return widgets[modelData.id] || null;
+                });
+              }
+            }
+
+            onActiveChanged: {
+              if (active && _isPlugin)
+                _loadPluginWidget();
+            }
+
+            function _loadPluginWidget() {
+              var comp = root.registeredWidgets[modelData.id];
+              if (!comp)
+                return;
+              var pluginId = modelData.id.replace("plugin:", "");
+              var api = PluginService.getPluginAPI(pluginId);
+              setSource(comp.url, api ? {
+                                          "pluginApi": api
+                                        } : {});
             }
 
             onLoaded: {
@@ -309,15 +334,6 @@ Variants {
                 var newRegions = window._maskRegions.slice();
                 newRegions.push(_maskRegion);
                 window._maskRegions = newRegions;
-
-                // Inject plugin API for plugin widgets
-                if (DesktopWidgetRegistry.isPluginWidget(modelData.id)) {
-                  var pluginId = modelData.id.replace("plugin:", "");
-                  var api = PluginService.getPluginAPI(pluginId);
-                  if (api && item.hasOwnProperty("pluginApi")) {
-                    item.pluginApi = api;
-                  }
-                }
               }
             }
 
