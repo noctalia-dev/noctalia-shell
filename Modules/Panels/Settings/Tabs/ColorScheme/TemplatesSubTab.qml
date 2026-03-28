@@ -13,17 +13,16 @@ ColumnLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
 
-    // Helper to format path description
+  // Helper to format path description
   function getDesc(fallbackPath) {
     return I18n.tr("panels.color-scheme.templates-write-path", {
-                      "filepath": fallbackPath
-                    });
-                  }
+                     "filepath": fallbackPath
+                   });
+  }
 
   // Build a combined list of all available templates from TemplateRegistry, sorted alphabetically
   readonly property var allTemplates: {
     var templates = [];
-
 
     // Add terminals with category "terminal"
     for (var i = 0; i < TemplateRegistry.terminals.length; i++) {
