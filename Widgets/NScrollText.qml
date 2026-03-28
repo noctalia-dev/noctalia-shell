@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Layouts
 import qs.Commons
 
@@ -39,13 +40,10 @@ Item {
   property real scrollCycleDuration: Math.max(4000, root.text.length * 120)
   property real resettingDuration: 300
 
-  // gradient controls
-  property bool showGradients: true
-  property real gradientWidth: Math.round(12 * Style.uiScaleRatio)
-  property color gradientColor: Color.mSurfaceVariant
-  property real cornerRadius: 0
-
-  readonly property bool gradientsEnabled: root.showGradients && Settings.data.bar.capsuleOpacity >= 1.0
+  // Fade controls
+  property real fadeExtent: 0.1
+  property real fadeCornerRadius: 0
+  property bool fadeRoundLeftCorners: true
 
   readonly property real contentWidth: {
     if (!titleText.item)
@@ -55,9 +53,16 @@ Item {
   }
   readonly property real measuredWidth: scrollContainer.width
 
-  clip: true
   implicitWidth: alwaysMaxWidth ? maxWidth : Math.min(maxWidth, contentWidth)
   implicitHeight: titleText.height
+
+  layer.enabled: true
+  layer.effect: MultiEffect {
+    maskEnabled: true
+    maskThresholdMin: 0.5
+    maskSpreadAtMin: 1.0
+    maskSource: fadeMask
+  }
 
   enum ScrollState {
     None = 0,
@@ -178,62 +183,36 @@ Item {
     }
   }
 
-  // Fade Gradients
+  // Transparency Fade Rectangle
   Rectangle {
-    id: leftGradient
-    anchors.left: parent.left
-    anchors.top: parent.top
-    anchors.bottom: parent.bottom
-    width: root.gradientWidth
-    z: 2
-    visible: root.gradientsEnabled && root.contentWidth > root.maxWidth
-    radius: root.cornerRadius
-    opacity: scrollContainer.x < -1 ? 1 : 0
+    id: fadeMask
+    width: root.width
+    height: root.height
+    topLeftRadius: fadeRoundLeftCorners ? fadeCornerRadius : 0
+    bottomLeftRadius: fadeRoundLeftCorners ? fadeCornerRadius : 0
+    topRightRadius: fadeCornerRadius
+    bottomRightRadius: fadeCornerRadius
     gradient: Gradient {
-      orientation: Gradient.Horizontal
-      GradientStop {
-        position: 0.0
-        color: root.gradientColor
-      }
-      GradientStop {
-        position: 1.0
-        color: "transparent"
-      }
-    }
-    Behavior on opacity {
-      NumberAnimation {
-        duration: Style.animationFast
-        easing.type: Easing.InOutQuad
-      }
-    }
-  }
-
-  Rectangle {
-    id: rightGradient
-    anchors.right: parent.right
-    anchors.top: parent.top
-    anchors.bottom: parent.bottom
-    width: root.gradientWidth
-    z: 2
-    visible: root.gradientsEnabled && root.contentWidth > root.maxWidth
-    radius: root.cornerRadius
-    opacity: 1 // Always show if overflowing as it loops
-    gradient: Gradient {
-      orientation: Gradient.Horizontal
       GradientStop {
         position: 0.0
         color: "transparent"
       }
       GradientStop {
+        position: fadeExtent
+        color: "white"
+      }
+      GradientStop {
+        position: 1 - fadeExtent
+        color: "white"
+      }
+      GradientStop {
         position: 1.0
-        color: root.gradientColor
+        color: "transparent"
       }
+      orientation: Gradient.Horizontal
     }
-    Behavior on opacity {
-      NumberAnimation {
-        duration: Style.animationFast
-        easing.type: Easing.InOutQuad
-      }
-    }
+    layer.enabled: true
+    layer.smooth: true
+    opacity: 0 // Great for debugging! Will show the white masks
   }
 }

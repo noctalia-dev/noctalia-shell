@@ -340,8 +340,8 @@ SmartPanel {
                     return NScrollText.ScrollMode.Hover;
                   return NScrollText.ScrollMode.Never;
                 }
-                gradientColor: Color.mSurfaceVariant
-                cornerRadius: Style.radiusM
+                fadeExtent: 0.01
+                fadeCornerRadius: Style.radiusM
 
                 delegate: NText {
                   pointSize: root.compactMode ? Style.fontSizeL : Style.fontSizeXL
@@ -371,8 +371,8 @@ SmartPanel {
                     return NScrollText.ScrollMode.Hover;
                   return NScrollText.ScrollMode.Never;
                 }
-                gradientColor: Color.mSurfaceVariant
-                cornerRadius: Style.radiusM
+                fadeExtent: 0.01
+                fadeCornerRadius: Style.radiusM
 
                 delegate: NText {
                   pointSize: root.compactMode ? Style.fontSizeS : Style.fontSizeM
