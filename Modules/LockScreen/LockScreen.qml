@@ -66,12 +66,45 @@ Loader {
     Item {
       id: lockContainer
 
+      readonly property bool transitionsEnabled: Settings.data.general.lockScreenAnimations
+
+      property real transitionProgress: transitionsEnabled ? 0.0 : 1.0
+
+      NumberAnimation {
+        id: lockEnter
+        target: lockContainer
+        property: "transitionProgress"
+        to: 1.0
+        duration: Style.animationNormal
+        easing.type: Easing.OutCubic
+        running: transitionsEnabled
+      }
+
+      function unlockScreen() {
+        lockSession.locked = false;
+        root.scheduleUnloadAfterUnlock();
+        lockContext.currentText = "";
+      }
+
+      NumberAnimation {
+        id: lockExit
+        target: lockContainer
+        property: "transitionProgress"
+        to: 0.0
+        duration: Style.animationNormal
+        easing.type: Easing.InCubic
+        onFinished: unlockScreen()
+      }
+
       LockContext {
         id: lockContext
         onUnlocked: {
-          lockSession.locked = false;
-          root.scheduleUnloadAfterUnlock();
-          lockContext.currentText = "";
+          if (transitionsEnabled) {
+            lockEnter.stop();
+            lockExit.start();
+            return;
+          }
+          unlockScreen();
         }
         onFailed: {
           lockContext.currentText = "";
@@ -123,10 +156,12 @@ Loader {
               LockScreenBackground {
                 id: backgroundComponent
                 screen: lockSurface.screen
+                transitionProgress: lockContainer.transitionProgress
               }
 
               Item {
                 anchors.fill: parent
+                opacity: lockContainer.transitionProgress
 
                 // Mouse area to trigger focus on cursor movement (workaround for Hyprland focus issues)
                 MouseArea {

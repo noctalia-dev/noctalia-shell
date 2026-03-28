@@ -7,6 +7,7 @@
   shellcheck,
   jsonfmt,
   lefthook,
+  python3,
   kdePackages,
   mkShellNoCC,
 }:
@@ -29,6 +30,11 @@ mkShellNoCC {
 
     # CoC
     lefthook # githooks
+    python3 # dev scripts
     kdePackages.qtdeclarative # qmlfmt, qmllint, qmlls and etc; Qt6
   ];
+
+  shellHook = ''
+    lefthook install
+  '';
 }
