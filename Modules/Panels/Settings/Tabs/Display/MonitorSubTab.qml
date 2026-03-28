@@ -147,6 +147,11 @@ ColumnLayout {
     return count;
   }
 
+  function isInternalOutputName(outputName) {
+    const name = String(outputName || "").toUpperCase();
+    return name.startsWith("EDP") || name.startsWith("LVDS") || name.startsWith("DSI");
+  }
+
   Component.onCompleted: {
     DisplayService.refresh();
   }
@@ -512,6 +517,45 @@ ColumnLayout {
 
           property var outData: modelData
           property string monitorName: outData.name || ""
+          property var screenData: {
+            const screens = Quickshell.screens || [];
+            for (let i = 0; i < screens.length; i++) {
+              if ((screens[i].name || "") === monitorName)
+                return screens[i];
+            }
+            return null;
+          }
+          property var brightnessMonitor: screenData ? BrightnessService.getMonitorForScreen(screenData) : null
+          property real localBrightness: 0.5
+          property bool localBrightnessChanging: false
+          readonly property string automaticOptionLabel: {
+            var baseLabel = I18n.tr("panels.display.monitors-backlight-device-auto-option");
+            var autoDevicePath = (BrightnessService.availableBacklightDevices && BrightnessService.availableBacklightDevices.length > 0) ? BrightnessService.availableBacklightDevices[0] : "";
+            if (autoDevicePath === "")
+              return baseLabel;
+
+            var autoDeviceName = BrightnessService.getBacklightDeviceName(autoDevicePath) || autoDevicePath;
+            return baseLabel + "(" + autoDeviceName + ")";
+          }
+          readonly property var backlightDeviceOptions: {
+            var options = [
+                  {
+                    "key": "",
+                    "name": automaticOptionLabel
+                  }
+                ];
+
+            var devices = BrightnessService.availableBacklightDevices || [];
+            for (var i = 0; i < devices.length; i++) {
+              var devicePath = devices[i];
+              var deviceName = BrightnessService.getBacklightDeviceName(devicePath) || devicePath;
+              options.push({
+                             "key": devicePath,
+                             "name": deviceName
+                           });
+            }
+            return options;
+          }
           property var logicalData: outData.logical || {
             x: targetConf && targetConf.x !== undefined ? targetConf.x : 0,
             y: targetConf && targetConf.y !== undefined ? targetConf.y : 0,
@@ -580,6 +624,38 @@ ColumnLayout {
             onTapped: root.selectedOutput = monitorCard.monitorName
           }
 
+          onBrightnessMonitorChanged: {
+            if (brightnessMonitor && !localBrightnessChanging)
+              localBrightness = brightnessMonitor.brightness || 0.5;
+          }
+
+          Connections {
+            target: BrightnessService
+            function onMonitorBrightnessChanged(monitor, newBrightness) {
+              if (monitor === brightnessMonitor && !localBrightnessChanging)
+                localBrightness = newBrightness;
+            }
+          }
+
+          Connections {
+            target: brightnessMonitor
+            ignoreUnknownSignals: true
+            function onBrightnessUpdated() {
+              if (brightnessMonitor && !localBrightnessChanging)
+                localBrightness = brightnessMonitor.brightness || 0;
+            }
+          }
+
+          Timer {
+            id: brightnessDebounceTimer
+            interval: 120
+            repeat: false
+            onTriggered: {
+              if (brightnessMonitor && brightnessMonitor.brightnessControlAvailable && Math.abs(localBrightness - brightnessMonitor.brightness) >= 0.005)
+                brightnessMonitor.setBrightness(localBrightness);
+            }
+          }
+
           ColumnLayout {
             id: monitorCardCol
             anchors.fill: parent
@@ -591,7 +667,7 @@ ColumnLayout {
               spacing: Style.marginM
 
               NIcon {
-                icon: "device-desktop"
+                icon: root.isInternalOutputName(monitorCard.monitorName) ? "device-laptop" : "device-desktop"
                 Layout.alignment: Qt.AlignVCenter
               }
 
@@ -674,6 +750,80 @@ ColumnLayout {
                   pointSize: Style.fontSizeS 
                 }
               }
+            }
+
+            NDivider { Layout.fillWidth: true }
+
+            RowLayout {
+              Layout.fillWidth: true
+              spacing: Style.marginL
+
+              NText {
+                text: I18n.tr("common.brightness")
+                Layout.preferredWidth: 90
+                Layout.alignment: Qt.AlignVCenter
+              }
+
+              NValueSlider {
+                id: brightnessSlider
+                from: 0
+                to: 1
+                value: localBrightness
+                stepSize: 0.01
+                enabled: brightnessMonitor ? brightnessMonitor.brightnessControlAvailable : false
+                onMoved: value => {
+                           if (brightnessMonitor && brightnessMonitor.brightnessControlAvailable) {
+                             localBrightness = value;
+                             brightnessDebounceTimer.restart();
+                           }
+                         }
+                onPressedChanged: (pressed, value) => {
+                                    localBrightnessChanging = pressed;
+                                    if (brightnessMonitor && brightnessMonitor.brightnessControlAvailable) {
+                                      localBrightness = value;
+                                      brightnessDebounceTimer.restart();
+                                    }
+                                  }
+                Layout.fillWidth: true
+              }
+
+              NText {
+                text: brightnessMonitor ? Math.round(localBrightness * 100) + "%" : "N/A"
+                Layout.preferredWidth: 55
+                horizontalAlignment: Text.AlignRight
+                Layout.alignment: Qt.AlignVCenter
+                opacity: brightnessMonitor && !brightnessMonitor.brightnessControlAvailable ? 0.5 : 1.0
+              }
+
+              Item {
+                Layout.preferredWidth: 30
+                Layout.fillHeight: true
+                NIcon {
+                  icon: brightnessMonitor && brightnessMonitor.method == "internal" ? "device-laptop" : "device-desktop"
+                  anchors.right: parent.right
+                  anchors.verticalCenter: parent.verticalCenter
+                  opacity: brightnessMonitor && !brightnessMonitor.brightnessControlAvailable ? 0.5 : 1.0
+                }
+              }
+            }
+
+            NText {
+              visible: brightnessMonitor && !brightnessMonitor.brightnessControlAvailable && !(brightnessMonitor.method === "internal" && brightnessMonitor.initInProgress)
+              text: !Settings.data.brightness.enableDdcSupport ? I18n.tr("panels.display.monitors-brightness-unavailable-ddc-disabled") : I18n.tr("panels.display.monitors-brightness-unavailable-generic")
+              pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+              Layout.fillWidth: true
+              wrapMode: Text.WordWrap
+            }
+
+            NComboBox {
+              Layout.fillWidth: true
+              visible: brightnessMonitor && brightnessMonitor.method === "internal"
+              label: I18n.tr("panels.display.monitors-backlight-device-label")
+              description: I18n.tr("panels.display.monitors-backlight-device-description")
+              model: backlightDeviceOptions
+              currentKey: BrightnessService.getMappedBacklightDevice(monitorCard.monitorName) || ""
+              onSelected: key => BrightnessService.setMappedBacklightDevice(monitorCard.monitorName, key)
             }
 
             NDivider { visible: DisplayService.compositor !== "readonly"; Layout.fillWidth: true }
@@ -788,6 +938,45 @@ ColumnLayout {
 
           }
         }
+      }
+
+      NDivider {
+        Layout.fillWidth: true
+        Layout.topMargin: Style.marginS
+        Layout.bottomMargin: Style.marginS
+      }
+
+      NSpinBox {
+        Layout.fillWidth: true
+        label: I18n.tr("panels.display.monitors-brightness-step-label")
+        description: I18n.tr("panels.display.monitors-brightness-step-description")
+        minimum: 1
+        maximum: 50
+        value: Settings.data.brightness.brightnessStep
+        stepSize: 1
+        suffix: "%"
+        onValueChanged: Settings.data.brightness.brightnessStep = value
+        defaultValue: Settings.getDefaultValue("brightness.brightnessStep")
+      }
+
+      NToggle {
+        Layout.fillWidth: true
+        label: I18n.tr("panels.display.monitors-enforce-minimum-label")
+        description: I18n.tr("panels.display.monitors-enforce-minimum-description")
+        checked: Settings.data.brightness.enforceMinimum
+        onToggled: checked => Settings.data.brightness.enforceMinimum = checked
+        defaultValue: Settings.getDefaultValue("brightness.enforceMinimum")
+      }
+
+      NToggle {
+        Layout.fillWidth: true
+        label: I18n.tr("panels.display.monitors-external-brightness-label")
+        description: I18n.tr("panels.display.monitors-external-brightness-description")
+        checked: Settings.data.brightness.enableDdcSupport
+        onToggled: checked => {
+                     Settings.data.brightness.enableDdcSupport = checked;
+                   }
+        defaultValue: Settings.getDefaultValue("brightness.enableDdcSupport")
       }
 
       Item { Layout.preferredHeight: Style.marginL; Layout.fillWidth: true }
