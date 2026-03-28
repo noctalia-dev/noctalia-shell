@@ -26,7 +26,7 @@ Item {
     // For vertical dock, swap width and height logic
     width: dockRoot.isVertical ? Math.round(dockRoot.iconSize * 1.5) : Math.min(dockLayout.implicitWidth + Style.marginXL, dockRoot.maxWidth)
     height: dockRoot.isVertical ? Math.min(dockLayout.implicitHeight + Style.marginXL, dockRoot.maxHeight) : Math.round(dockRoot.iconSize * 1.5)
-    color: Qt.alpha(Color.mSurface, (isAttachedMode ? 0 : Settings.data.dock.backgroundOpacity))
+    color: Qt.alpha(Color.mSurface, (isAttachedMode ? 0 : Color.adaptiveOpacity(Settings.data.dock.backgroundOpacity)))
 
     // Anchor based on padding to achieve centering shift
     anchors.horizontalCenter: extraLeft > 0 || extraRight > 0 ? undefined : parent.horizontalCenter
@@ -39,7 +39,7 @@ Item {
 
     radius: Style.radiusL
     border.width: Style.borderS
-    border.color: Qt.alpha(Color.mOutline, (isAttachedMode ? 0 : Settings.data.dock.backgroundOpacity))
+    border.color: Qt.alpha(Color.mOutline, (isAttachedMode ? 0 : Color.adaptiveOpacity(Settings.data.dock.backgroundOpacity)))
 
     MouseArea {
       id: dockMouseArea

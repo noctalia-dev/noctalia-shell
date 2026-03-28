@@ -549,9 +549,9 @@ Variants {
                 id: cardBackground
                 anchors.fill: parent
                 radius: Style.radiusL
-                border.color: Qt.alpha(Color.mOutline, Settings.data.notifications.backgroundOpacity || 1.0)
+                border.color: Qt.alpha(Color.mOutline, Color.adaptiveOpacity(Settings.data.notifications.backgroundOpacity) || 1.0)
                 border.width: Style.borderS
-                color: Qt.alpha(Color.mSurface, Settings.data.notifications.backgroundOpacity || 1.0)
+                color: Qt.alpha(Color.mSurface, Color.adaptiveOpacity(Settings.data.notifications.backgroundOpacity) || 1.0)
 
                 // Progress bar
                 Rectangle {
@@ -570,7 +570,7 @@ Variants {
 
                     color: {
                       var baseColor = model.urgency === 2 ? Color.mError : model.urgency === 0 ? Color.mOnSurface : Color.mPrimary;
-                      return Qt.alpha(baseColor, Settings.data.notifications.backgroundOpacity || 1.0);
+                      return Qt.alpha(baseColor, Color.adaptiveOpacity(Settings.data.notifications.backgroundOpacity) || 1.0);
                     }
 
                     antialiasing: true

@@ -38,7 +38,7 @@ Item {
 
       // Enable layer caching to prevent continuous re-rendering
       layer.enabled: true
-      opacity: Color.panelBackgroundOpacity
+      opacity: Color.adaptiveOpacity(Settings.data.ui.panelBackgroundOpacity)
 
       Shape {
         id: unifiedBackgroundsShape
@@ -106,7 +106,7 @@ Item {
         anchors.fill: parent
 
         layer.enabled: true
-        opacity: Color.panelBackgroundOpacity
+        opacity: Color.adaptiveOpacity(Settings.data.ui.panelBackgroundOpacity)
 
         Shape {
           id: panelBackgroundsShape

@@ -392,7 +392,6 @@ ColumnLayout {
         color: Color.smartAlpha(Color.mSurfaceVariant)
         border.color: Color.mOutline
         border.width: Style.borderS
-        opacity: Style.opacityMedium
 
         Image {
           anchors.centerIn: parent
