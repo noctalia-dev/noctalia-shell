@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
@@ -255,6 +256,9 @@ Item {
           id: titleContainer
           text: windowTitle
           Layout.alignment: Qt.AlignVCenter
+          Layout.preferredHeight: root.capsuleHeight
+          fadeRoundLeftCorners: !showIcon
+
           maxWidth: {
             // Calculate available width based on other elements
             var iconWidth = (showIcon && windowIcon.visible ? (iconSize + Style.marginS) : 0);
@@ -270,9 +274,8 @@ Item {
             return NScrollText.ScrollMode.Never;
           }
           forcedHover: mainMouseArea.containsMouse
-          gradientColor: Style.capsuleColor
-          gradientWidth: Math.round(8 * Style.uiScaleRatio)
-          cornerRadius: Style.radiusM
+          fadeExtent: 0.1
+          fadeCornerRadius: Style.radiusM
 
           NText {
             text: windowTitle
