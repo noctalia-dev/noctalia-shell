@@ -36,6 +36,7 @@ Singleton
     if (typeof CompositorService === "undefined") return "fallback";
     if (CompositorService.isHyprland) return "hyprland";
     if (CompositorService.isNiri) return "niri";
+    if (CompositorService.isSway) return "sway";
     return "fallback";
   }
 
@@ -49,6 +50,10 @@ Singleton
 
     if (hint === "niri") {
       return 'if [ -n "$NIRI_SOCKET" ] && command -v niri >/dev/null 2>&1; then printf \'{"compositor":"niri", "data":%s}\\n\' "$(niri msg --json outputs)"; else printf \'{"compositor":"niri", "data":[]}\\n\'; fi';
+    }
+
+    if (hint === "sway") {
+      return 'if [ -n "$SWAYSOCK" ]; then msg="swaymsg"; desk=$(printf "%s" "${XDG_CURRENT_DESKTOP:-}" | tr "[:upper:]" "[:lower:]"); if printf "%s" "$desk" | grep -q "scroll" && command -v scrollmsg >/dev/null 2>&1; then msg="scrollmsg"; fi; if command -v "$msg" >/dev/null 2>&1; then printf \'{"compositor":"sway", "data":%s}\\n\' "$("$msg" -t get_outputs -r)"; else printf \'{"compositor":"sway", "data":[]}\\n\'; fi; else printf \'{"compositor":"sway", "data":[]}\\n\'; fi';
     }
 
     if (hint === "wlroots") {
