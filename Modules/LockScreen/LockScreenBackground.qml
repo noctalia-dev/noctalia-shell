@@ -121,9 +121,29 @@ Item {
   // Also used as fade in / fade out backdrop
   ScreencopyView {
     id: lockBgScreencopy
-    visible: useEffects && (useScreencopy || useWallpaper)
     anchors.fill: parent
     captureSource: screen
+    visible: lockBgRender.visible && lockBgRender.opacity < 0.99
+
+    // This is to observe a bug where screen is null on the first lock
+    // and is only a valid value after 1ms into the lock screen...
+    Timer {
+      id: recaptureWhenEmpty
+      interval: 1
+      repeat: false
+      onTriggered: {
+        Logger.w("LockScreenBackground", "Screen after is: ", screen);
+        // there's no use for this after the screen's already locked
+        // lockBgScreencopy.captureFrame()
+      }
+    }
+
+    Component.onCompleted: {
+      if (!hasContent) {
+        Logger.w("LockScreenBackground", "Screen now is: ", screen);
+        recaptureWhenEmpty.start();
+      }
+    }
   }
 
   // If using a solid color wallpaper
@@ -155,8 +175,8 @@ Item {
     source: useScreencopy ? lockBgScreencopy : lockBgImage
 
     blurEnabled: Settings.data.general.lockScreenBlur > 0
-    blur: Settings.data.general.lockScreenBlur
-    blurMax: 128
+    blur: Settings.data.general.lockScreenBlur * transitionProgress
+    blurMax: 64
 
     Rectangle {
       anchors.fill: parent
