@@ -101,18 +101,6 @@ Singleton {
     }
   }
 
-  // Handle system resume to refresh state and connectivity
-  Connections {
-    target: Time
-    function onResumed() {
-      if (ProgramCheckerService.nmcliAvailable) {
-        Logger.i("Network", "System resumed - forcing state poll");
-        deviceStatusProcess.restart();
-        connectivityCheckProcess.restart();
-      }
-    }
-  }
-
   // Start initial checks when nmcli becomes available
   Connections {
     target: ProgramCheckerService
@@ -161,8 +149,6 @@ Singleton {
       if (root.airplaneModeToggled) {
         root.airplaneModeToggled = false;
         if (root.wifiEnabled) {
-          connectivityCheckProcess.restart();
-          deviceStatusProcess.restart();
           scan();
         } else {
           root.networks = ({});
@@ -183,15 +169,11 @@ Singleton {
         root.airplaneModeEnabled = false;
         ToastService.showNotice(I18n.tr("toast.airplane-mode.title"), I18n.tr("common.disabled"), "plane-off");
         Logger.i("AirplaneMode", "Disabled");
-        connectivityCheckProcess.restart();
-        deviceStatusProcess.restart();
         scan();
         return;
       }
       if (root.wifiEnabled) {
         ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("common.enabled"), "wifi");
-        connectivityCheckProcess.restart();
-        deviceStatusProcess.restart();
         scan();
       } else {
         ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("common.disabled"), "wifi-off");
@@ -312,7 +294,7 @@ Singleton {
     }
     if (wifiConnected && activeWifiIf) {
       wifiDetailsLoading = true;
-      deviceStatusProcess.restart();
+      deviceStatusProcess.running = true;
     }
   }
 
@@ -324,7 +306,7 @@ Singleton {
     }
     if (ethernetConnected && activeEthernetIf) {
       ethernetDetailsLoading = true;
-      deviceStatusProcess.restart();
+      deviceStatusProcess.running = true;
     }
   }
 
@@ -1170,7 +1152,8 @@ Singleton {
       onRead: data => {
         if (data.endsWith(": connected") || data.endsWith(": disconnected")) {
           Logger.d("Network", "State changed: " + data);
-          deviceStatusProcess.restart();
+          deviceStatusProcess.running = true;
+          connectivityCheckProcess.running = true;
         }
       }
     }
