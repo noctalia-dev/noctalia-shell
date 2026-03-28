@@ -38,6 +38,10 @@ FloatingWindow {
         settingsContent._pendingSubTab = subTabId;
       settingsContent.initialize();
       isInitialized = true;
+      // Tab content persists in window mode; if no subtab specified and the
+      // tab content is still loaded (same tab), reset to first subtab
+      if (subTabId < 0 && settingsContent.activeTabContent)
+        settingsContent.setSubTabIndex(0);
     }
   }
 
