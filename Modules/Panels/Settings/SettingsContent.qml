@@ -1176,8 +1176,11 @@ Item {
 
         ColumnLayout {
           id: contentLayout
-          anchors.fill: parent
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          anchors.horizontalCenter: parent.horizontalCenter
           anchors.margins: Style.marginL
+          width: Math.min(parent.width - Style.marginL * 2, 780 * Style.uiScaleRatio)
           spacing: Style.marginS
 
           // Header row
