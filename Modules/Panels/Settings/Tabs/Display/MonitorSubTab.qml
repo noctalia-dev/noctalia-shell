@@ -17,6 +17,7 @@ ColumnLayout {
   property var monitors: Quickshell.screens || []
   property string selectedOutput: ""
   property bool edidShowRawDecoded: false
+  readonly property bool canConfigureDisplayTopology: DisplayService.compositor !== "readonly"
 
   function formatEdidHex(raw) {
     const hex = String(raw || "").replace(/[^0-9a-fA-F]/g, "").toLowerCase();
@@ -224,8 +225,6 @@ ColumnLayout {
   ColumnLayout {
     Layout.fillWidth: true
     spacing: Style.marginL
-    enabled: DisplayService.compositor !== "readonly"
-    opacity: enabled ? 1.0 : 0.5
 
       // Layout Section Header
       NText {
@@ -243,6 +242,8 @@ ColumnLayout {
 
       NBox {
         id: canvasContainer
+        enabled: root.canConfigureDisplayTopology
+        opacity: enabled ? 1.0 : 0.5
         Layout.fillWidth: true
         Layout.preferredHeight: 220 * Style.uiScaleRatio
         color: Color.mSurface
@@ -528,7 +529,11 @@ ColumnLayout {
         }
       }
 
-      NDivider { Layout.fillWidth: true; Layout.topMargin: Style.marginS; Layout.bottomMargin: Style.marginS }
+      NDivider {
+        Layout.fillWidth: true
+        Layout.topMargin: Style.marginS
+        Layout.bottomMargin: Style.marginS
+      }
 
       NText {
         text: I18n.tr("panels.display.monitor-settings")
