@@ -15,6 +15,7 @@ ColumnLayout {
 
   property var monitors: Quickshell.screens || []
   property string selectedOutput: ""
+  property bool edidShowRawDecoded: false
 
   function formatEdidHex(raw) {
     const hex = String(raw || "").replace(/[^0-9a-fA-F]/g, "").toLowerCase();
@@ -31,155 +32,107 @@ ColumnLayout {
     return lines.join("\n");
   }
 
-  function parseEdid(raw) {
-    let hex = String(raw || "").replace(/[^0-9a-fA-F]/g, "");
-    if (hex.length % 2 !== 0)
-      hex = hex.slice(0, hex.length - 1);
-
-    if (hex.length < 256)
-      return { valid: false, error: I18n.tr("panels.display.edid-invalid") };
-
-    const bytes = [];
-    for (let i = 0; i + 1 < hex.length; i += 2)
-      bytes.push(parseInt(hex.slice(i, i + 2), 16));
-
-    if (bytes.length < 128)
-      return { valid: false, error: I18n.tr("panels.display.edid-invalid") };
-
-    const header = [0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00];
-    let baseOffset = -1;
-    for (let i = 0; i <= bytes.length - header.length; i++) {
-      let match = true;
-      for (let j = 0; j < header.length; j++) {
-        if (bytes[i + j] !== header[j]) {
-          match = false;
-          break;
-        }
-      }
-      if (match) {
-        baseOffset = i;
-        break;
-      }
-    }
-    if (baseOffset < 0 || baseOffset + 128 > bytes.length)
-      return { valid: false, error: I18n.tr("panels.display.edid-invalid") };
-
-    const mfgCode = (bytes[baseOffset + 8] << 8) | bytes[baseOffset + 9];
-    const manufacturer = String.fromCharCode(
-      64 + ((mfgCode >> 10) & 0x1f),
-      64 + ((mfgCode >> 5) & 0x1f),
-      64 + (mfgCode & 0x1f)
-    );
-    const productCode = bytes[baseOffset + 10] | (bytes[baseOffset + 11] << 8);
-    const serial = (bytes[baseOffset + 12]) | (bytes[baseOffset + 13] << 8) | (bytes[baseOffset + 14] << 16) | (bytes[baseOffset + 15] << 24);
-    const week = bytes[baseOffset + 16];
-    const year = 1990 + bytes[baseOffset + 17];
-    const version = bytes[baseOffset + 18] + "." + bytes[baseOffset + 19];
-    const isDigital = (bytes[baseOffset + 20] & 0x80) !== 0;
-    const widthCm = bytes[baseOffset + 21];
-    const heightCm = bytes[baseOffset + 22];
-    const gamma = bytes[baseOffset + 23] === 0xff ? I18n.tr("common.unknown") : ((bytes[baseOffset + 23] + 100) / 100).toFixed(2);
-
-    let monitorName = "";
-    let monitorSerialText = "";
-    let preferredMode = "";
-
-    for (let d = 0; d < 4; d++) {
-      const base = baseOffset + 54 + d * 18;
-      if (base + 17 >= bytes.length)
-        break;
-
-      const pxClock = bytes[base] | (bytes[base + 1] << 8);
-      if (pxClock !== 0 && preferredMode === "") {
-        const hActive = bytes[base + 2] | ((bytes[base + 4] & 0xf0) << 4);
-        const hBlank = bytes[base + 3] | ((bytes[base + 4] & 0x0f) << 8);
-        const vActive = bytes[base + 5] | ((bytes[base + 7] & 0xf0) << 4);
-        const vBlank = bytes[base + 6] | ((bytes[base + 7] & 0x0f) << 8);
-        const hTotal = hActive + hBlank;
-        const vTotal = vActive + vBlank;
-        let hz = "";
-        if (hTotal > 0 && vTotal > 0) {
-          const refresh = (pxClock * 10000) / (hTotal * vTotal);
-          hz = " @ " + refresh.toFixed(2) + " Hz";
-        }
-        preferredMode = hActive + "x" + vActive + hz;
-      }
-
-      if (bytes[base] === 0x00 && bytes[base + 1] === 0x00 && bytes[base + 2] === 0x00) {
-        const tag = bytes[base + 3];
-        let txt = "";
-        for (let i = base + 5; i < base + 18; i++) {
-          if (bytes[i] === 0x0a || bytes[i] === 0x00)
-            break;
-          txt += String.fromCharCode(bytes[i]);
-        }
-        txt = txt.trim();
-        if (tag === 0xfc && txt)
-          monitorName = txt;
-        if (tag === 0xff && txt)
-          monitorSerialText = txt;
-      }
-    }
-
-    return {
-      valid: true,
-      manufacturer: manufacturer,
-      productCode: productCode,
-      serial: (serial >>> 0),
-      serialText: monitorSerialText,
-      week: week,
-      year: year,
-      version: version,
-      inputType: isDigital ? I18n.tr("panels.display.edid-input-digital") : I18n.tr("panels.display.edid-input-analog"),
-      size: (widthCm > 0 && heightCm > 0)
-            ? I18n.tr("panels.display.edid-size-cm", { "width": widthCm, "height": heightCm })
-            : I18n.tr("common.unknown"),
-      gamma: gamma,
-      monitorName: monitorName,
-      preferredMode: preferredMode
-    };
-  }
-
-  function formatParsedEdid(raw) {
-    const p = parseEdid(raw);
-    if (!p.valid)
-      return p.error;
+  function formatEdidSummary(summaryObj) {
+    const s = summaryObj && typeof summaryObj === "object" ? summaryObj : null;
+    if (!s)
+      return "";
 
     const lines = [];
-    if (p.monitorName) lines.push(I18n.tr("panels.display.edid-field-monitor-name", { "value": p.monitorName }));
-    lines.push(I18n.tr("panels.display.edid-field-manufacturer-id", { "value": p.manufacturer }));
-    lines.push(I18n.tr("panels.display.edid-field-product-code", { "value": p.productCode }));
-    lines.push(I18n.tr("panels.display.edid-field-serial-number", { "value": p.serialText || p.serial }));
-    lines.push(I18n.tr("panels.display.edid-field-version", { "value": p.version }));
-    lines.push(I18n.tr("panels.display.edid-field-manufactured", { "week": p.week, "year": p.year }));
-    lines.push(I18n.tr("panels.display.edid-field-input-type", { "value": p.inputType }));
-    lines.push(I18n.tr("panels.display.edid-field-physical-size", { "value": p.size }));
-    lines.push(I18n.tr("panels.display.edid-field-gamma", { "value": p.gamma }));
-    if (p.preferredMode) lines.push(I18n.tr("panels.display.edid-field-preferred-mode", { "value": p.preferredMode }));
+    if (s.monitorName)
+      lines.push(I18n.tr("panels.display.edid-field-monitor-name", { "value": s.monitorName }));
+    if (s.manufacturerId)
+      lines.push(I18n.tr("panels.display.edid-field-manufacturer-id", { "value": s.manufacturerId }));
+    if (s.productCode)
+      lines.push(I18n.tr("panels.display.edid-field-product-code", { "value": s.productCode }));
+
+    const serialValue = s.serialText || s.serialNumber;
+    if (serialValue)
+      lines.push(I18n.tr("panels.display.edid-field-serial-number", { "value": serialValue }));
+
+    if (s.version)
+      lines.push(I18n.tr("panels.display.edid-field-version", { "value": s.version }));
+
+    if (s.week !== null && s.year !== null) {
+      lines.push(I18n.tr("panels.display.edid-field-manufactured", { "week": s.week, "year": s.year }));
+    } else if (s.year !== null) {
+      lines.push(I18n.tr("panels.display.edid-field-manufactured", { "week": I18n.tr("common.unknown"), "year": s.year }));
+    }
+
+    if (s.inputType)
+      lines.push(I18n.tr("panels.display.edid-field-input-type", { "value": s.inputType }));
+
+    const widthCm = s.sizeCm && s.sizeCm.width !== null ? s.sizeCm.width : null;
+    const heightCm = s.sizeCm && s.sizeCm.height !== null ? s.sizeCm.height : null;
+    if (widthCm !== null && heightCm !== null) {
+      const sizeText = I18n.tr("panels.display.edid-size-cm", { "width": widthCm, "height": heightCm });
+      lines.push(I18n.tr("panels.display.edid-field-physical-size", { "value": sizeText }));
+    }
+
+    if (s.preferredMode)
+      lines.push(I18n.tr("panels.display.edid-field-preferred-mode", { "value": s.preferredMode }));
+
+    if (s.source)
+      lines.push(I18n.tr("panels.display.edid-field-decoder", { "value": s.source }));
+
+    if (s.warnings && s.warnings.length > 0) {
+      for (let i = 0; i < s.warnings.length; i++)
+        lines.push("! " + s.warnings[i]);
+    }
+
     return lines.join("\n");
   }
 
-  function formatEdidDetails(rawHex, decodedText) {
+  function formatEdidDetails(rawHex, decodedText, showRawDecoded) {
     const decoded = String(decodedText || "").trim();
+    const decodeError = String(typeof DisplayService.edidDecodeError !== "undefined" ? DisplayService.edidDecodeError : "").trim();
+
+    if (showRawDecoded === true) {
+      if (decoded !== "")
+        return decoded;
+      if (decodeError !== "")
+        return decodeError;
+      const formattedRawOnly = formatEdidHex(rawHex);
+      if (formattedRawOnly !== "")
+        return formattedRawOnly;
+      return I18n.tr("panels.display.edid-empty");
+    }
+
+    const summary = formatEdidSummary(typeof DisplayService.edidSummary !== "undefined" ? DisplayService.edidSummary : null);
+    if (summary !== "")
+      return summary;
+
     if (decoded !== "")
       return decoded;
-    return formatParsedEdid(rawHex);
+
+    if (decodeError !== "")
+      return decodeError;
+
+    const formattedRaw = formatEdidHex(rawHex);
+    if (formattedRaw !== "")
+      return formattedRaw;
+
+    return I18n.tr("panels.display.edid-empty");
   }
 
   function buildEdidCopyPayload() {
     const output = DisplayService.edidOutputName || root.selectedOutput || "-";
-    const decoded = typeof DisplayService.edidDecoded !== "undefined" ? DisplayService.edidDecoded : "";
-    const shown = formatEdidDetails(DisplayService.edidHex, decoded);
-    const rawHex = String(DisplayService.edidHex || "").trim();
+    const decoded = typeof DisplayService.edidDecoded !== "undefined" ? String(DisplayService.edidDecoded || "") : "";
+    const shown = formatEdidDetails(DisplayService.edidHex, decoded, root.edidShowRawDecoded);
+    const decodeError = String(typeof DisplayService.edidDecodeError !== "undefined" ? DisplayService.edidDecodeError : "").trim();
 
-    return [
+    const sections = [
       I18n.tr("panels.display.edid-title", { "output": output }),
       "",
-      shown,
-      "",
-      "----- RAW EDID HEX (NOT SHOWN IN UI) -----",
-      rawHex
-    ].join("\n");
+      shown
+    ];
+
+    if (decodeError !== "")
+      sections.push("", I18n.tr("panels.display.edid-section-decode-error"), decodeError);
+
+    if (decoded.trim() !== "" && decoded.trim() !== shown.trim())
+      sections.push("", I18n.tr("panels.display.edid-section-decoded-output"), decoded);
+
+    return sections.join("\n");
   }
 
   function enabledMonitorCount() {
@@ -672,6 +625,7 @@ ColumnLayout {
                 tooltipText: I18n.tr("panels.display.read-edid")
                 onClicked: {
                   root.selectedOutput = monitorCard.monitorName;
+                  root.edidShowRawDecoded = false;
                   DisplayService.readEdid(monitorCard.monitorName);
                   edidDialog.open();
                 }
@@ -860,13 +814,45 @@ ColumnLayout {
     contentItem: ColumnLayout {
       spacing: Style.marginL
 
-      NHeader {
+      RowLayout {
         Layout.fillWidth: true
-        label: I18n.tr("panels.display.edid-title", {
-                         "output": DisplayService.edidOutputName || root.selectedOutput || "-"
-                       })
-        description: I18n.tr("panels.display.edid-description")
+        spacing: Style.marginM
+        Layout.alignment: Qt.AlignTop
+
+        ColumnLayout {
+          Layout.fillWidth: true
+          spacing: Style.marginXXS
+
+          NText {
+            text: I18n.tr("panels.display.edid-title", {
+                           "output": DisplayService.edidOutputName || root.selectedOutput || "-"
+                         })
+            pointSize: Style.fontSizeXL
+            font.weight: Style.fontWeightSemiBold
+            color: Color.mPrimary
+          }
+
+          NText {
+            text: I18n.tr("panels.display.edid-description")
+            pointSize: Style.fontSizeM
+            color: Color.mOnSurfaceVariant
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+          }
+        }
+
+        NButton {
+          text: I18n.tr("panels.display.edid-view-original")
+          fontSize: Style.fontSizeS
+          Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+          outlined: !root.edidShowRawDecoded
+          onClicked: {
+            root.edidShowRawDecoded = !root.edidShowRawDecoded;
+          }
+        }
       }
+
+      // Item { Layout.preferredHeight: Style.marginL; Layout.fillWidth: true }
 
       NBox {
         Layout.fillWidth: true
@@ -891,7 +877,10 @@ ColumnLayout {
         NButton {
           text: I18n.tr("common.refresh")
           enabled: (DisplayService.edidOutputName || root.selectedOutput || "") !== ""
-          onClicked: DisplayService.readEdid(DisplayService.edidOutputName || root.selectedOutput)
+          onClicked: {
+            root.edidShowRawDecoded = false;
+            DisplayService.readEdid(DisplayService.edidOutputName || root.selectedOutput);
+          }
         }
 
         Item { Layout.fillWidth: true }
@@ -948,7 +937,11 @@ ColumnLayout {
           width: parent.width
           readOnly: true
           selectByMouse: true
-          text: root.formatEdidDetails(DisplayService.edidHex, (typeof DisplayService.edidDecoded !== "undefined" ? DisplayService.edidDecoded : ""))
+          text: root.formatEdidDetails(
+                  DisplayService.edidHex,
+                  (typeof DisplayService.edidDecoded !== "undefined" ? DisplayService.edidDecoded : ""),
+                  root.edidShowRawDecoded
+                )
           color: Color.mOnSurface
           font.family: "monospace"
           font.pixelSize: Math.max(11, Style.fontSizeS * Style.uiScaleRatio)
