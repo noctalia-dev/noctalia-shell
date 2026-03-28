@@ -43,24 +43,54 @@ Singleton
     return "fallback";
   }
 
+  function _joinShell(parts) {
+    return parts.join(" ");
+  }
+
   function _buildFetchScript() {
     const hint = _getDisplayBackendHint();
     const readonlyScript = _buildReadonlyFetchDataScript();
 
     if (hint === "hyprland") {
-      return 'if [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ] && command -v hyprctl >/dev/null 2>&1; then printf \'{"compositor":"hyprland", "data":%s}\\n\' "$(hyprctl monitors all -j)"; else printf \'{"compositor":"hyprland", "data":[]}\\n\'; fi';
+      return _joinShell([
+        'if [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ] && command -v hyprctl >/dev/null 2>&1;',
+        'then printf \'{"compositor":"hyprland", "data":%s}\\n\' "$(hyprctl monitors all -j)";',
+        'else printf \'{"compositor":"hyprland", "data":[]}\\n\';',
+        'fi'
+      ]);
     }
 
     if (hint === "niri") {
-      return 'if [ -n "$NIRI_SOCKET" ] && command -v niri >/dev/null 2>&1; then printf \'{"compositor":"niri", "data":%s}\\n\' "$(niri msg --json outputs)"; else printf \'{"compositor":"niri", "data":[]}\\n\'; fi';
+      return _joinShell([
+        'if [ -n "$NIRI_SOCKET" ] && command -v niri >/dev/null 2>&1;',
+        'then printf \'{"compositor":"niri", "data":%s}\\n\' "$(niri msg --json outputs)";',
+        'else printf \'{"compositor":"niri", "data":[]}\\n\';',
+        'fi'
+      ]);
     }
 
     if (hint === "sway") {
-      return 'if [ -n "$SWAYSOCK" ]; then msg="swaymsg"; desk=$(printf "%s" "${XDG_CURRENT_DESKTOP:-}" | tr "[:upper:]" "[:lower:]"); if printf "%s" "$desk" | grep -q "scroll" && command -v scrollmsg >/dev/null 2>&1; then msg="scrollmsg"; fi; if command -v "$msg" >/dev/null 2>&1; then printf \'{"compositor":"sway", "data":%s}\\n\' "$("$msg" -t get_outputs -r)"; else printf \'{"compositor":"sway", "data":[]}\\n\'; fi; else printf \'{"compositor":"sway", "data":[]}\\n\'; fi';
+      return _joinShell([
+        'if [ -n "$SWAYSOCK" ]; then',
+        'msg="swaymsg";',
+        'desk=$(printf "%s" "${XDG_CURRENT_DESKTOP:-}" | tr "[:upper:]" "[:lower:]");',
+        'if printf "%s" "$desk" | grep -q "scroll" && command -v scrollmsg >/dev/null 2>&1; then msg="scrollmsg"; fi;',
+        'if command -v "$msg" >/dev/null 2>&1; then',
+        'printf \'{"compositor":"sway", "data":%s}\\n\' "$("$msg" -t get_outputs -r)";',
+        'else printf \'{"compositor":"sway", "data":[]}\\n\';',
+        'fi;',
+        'else printf \'{"compositor":"sway", "data":[]}\\n\';',
+        'fi'
+      ]);
     }
 
     if (hint === "wlroots") {
-      return 'if command -v wlr-randr >/dev/null 2>&1 && wlr-randr --json >/dev/null 2>&1; then printf \'{"compositor":"wlroots", "data":%s}\\n\' "$(wlr-randr --json)"; else printf \'{"compositor":"wlroots", "data":[]}\\n\'; fi';
+      return _joinShell([
+        'if command -v wlr-randr >/dev/null 2>&1 && wlr-randr --json >/dev/null 2>&1;',
+        'then printf \'{"compositor":"wlroots", "data":%s}\\n\' "$(wlr-randr --json)";',
+        'else printf \'{"compositor":"wlroots", "data":[]}\\n\';',
+        'fi'
+      ]);
     }
 
     if (hint === "readonly") {
@@ -68,11 +98,31 @@ Singleton
     }
 
     // Fallback: try generic wlroots tooling, then readonly fallback.
-    return 'if command -v wlr-randr >/dev/null 2>&1 && wlr-randr --json >/dev/null 2>&1; then printf \'{"compositor":"wlroots", "data":%s}\\n\' "$(wlr-randr --json)"; else ' + readonlyScript + ' fi';
+    return _joinShell([
+      'if command -v wlr-randr >/dev/null 2>&1 && wlr-randr --json >/dev/null 2>&1;',
+      'then printf \'{"compositor":"wlroots", "data":%s}\\n\' "$(wlr-randr --json)";',
+      'else',
+      readonlyScript,
+      'fi'
+    ]);
   }
 
   function _buildReadonlyFetchDataScript() {
-    return 'outputs="["; for dev in /sys/class/drm/card*-*; do if [ -e "$dev/status" ] && grep -q "^connected$" "$dev/status" 2>/dev/null; then name=$(basename "$dev" | cut -d"-" -f2-); mode=""; width=0; height=0; if [ -r "$dev/modes" ]; then mode=$(head -n1 "$dev/modes" 2>/dev/null | tr -d "\\r"); fi; case "$mode" in [0-9]*x[0-9]*) width=${mode%x*}; height=${mode#*x};; esac; outputs+="{\\"name\\":\\"$name\\",\\"enabled\\":true,\\"width\\":$width,\\"height\\":$height},"; fi; done; outputs="${outputs%,}]"; if [ "$outputs" = "]" ]; then outputs="[]"; fi; printf \'{"compositor":"readonly", "data":%s}\\n\' "$outputs";';
+    return _joinShell([
+      'outputs="[";',
+      'for dev in /sys/class/drm/card*-*; do',
+      'if [ -e "$dev/status" ] && grep -q "^connected$" "$dev/status" 2>/dev/null; then',
+      'name=$(basename "$dev" | cut -d"-" -f2-);',
+      'mode=""; width=0; height=0;',
+      'if [ -r "$dev/modes" ]; then mode=$(head -n1 "$dev/modes" 2>/dev/null | tr -d "\\r"); fi;',
+      'case "$mode" in [0-9]*x[0-9]*) width=${mode%x*}; height=${mode#*x};; esac;',
+      'outputs+="{\\"name\\":\\"$name\\",\\"enabled\\":true,\\"width\\":$width,\\"height\\":$height},";',
+      'fi;',
+      'done;',
+      'outputs="${outputs%,}]";',
+      'if [ "$outputs" = "]" ]; then outputs="[]"; fi;',
+      'printf \'{"compositor":"readonly", "data":%s}\\n\' "$outputs";'
+    ]);
   }
 
   function _getScreenByOutputName(outputName) {
@@ -834,10 +884,39 @@ Singleton
     edidDecodeProcess.outputName = outputName;
     edidDecodeProcess.decodedStdout = "";
     edidDecodeProcess.decodeStderr = "";
+    const pythonHexDecoder =
+      'if ! python3 - "$hex" "$tmp" <<"PY"\n' +
+      'import pathlib\n' +
+      'import sys\n' +
+      'hex_data = sys.argv[1].strip()\n' +
+      'out_path = pathlib.Path(sys.argv[2])\n' +
+      'try:\n' +
+      '    out_path.write_bytes(bytes.fromhex(hex_data))\n' +
+      'except ValueError:\n' +
+      '    sys.exit(1)\n' +
+      'PY\n' +
+      'then echo "Failed to decode EDID hex" >&2; exit 2; fi;';
+    const decodeScript = _joinShell([
+      'hex=$(printf "%s" "$1" | tr -d "[:space:]");',
+      'if [ -z "$hex" ]; then echo "Empty EDID hex payload" >&2; exit 1; fi;',
+      'tmp=$(mktemp);',
+      'cleanup(){ rm -f "$tmp"; };',
+      'trap cleanup EXIT;',
+      'if command -v xxd >/dev/null 2>&1; then',
+      'if ! printf "%s" "$hex" | xxd -r -p > "$tmp" 2>/dev/null; then echo "Failed to decode EDID hex" >&2; exit 2; fi;',
+      'elif command -v python3 >/dev/null 2>&1; then',
+      pythonHexDecoder,
+      'else echo "Need xxd or python3 to decode EDID hex" >&2; exit 3; fi;',
+      'if command -v edid-decode >/dev/null 2>&1; then',
+      'echo "__EDID_SOURCE__:edid-decode"; edid-decode "$tmp";',
+      'elif command -v parse-edid >/dev/null 2>&1; then',
+      'echo "__EDID_SOURCE__:parse-edid"; parse-edid < "$tmp";',
+      'else echo "No external EDID decoder found (install edid-decode or parse-edid)" >&2; exit 127; fi'
+    ]);
     edidDecodeProcess.command = [
       "bash",
       "-c",
-      'hex=$(printf "%s" "$1" | tr -d "[:space:]"); if [ -z "$hex" ]; then echo "Empty EDID hex payload" >&2; exit 1; fi; tmp=$(mktemp); cleanup(){ rm -f "$tmp"; }; trap cleanup EXIT; if command -v xxd >/dev/null 2>&1; then if ! printf "%s" "$hex" | xxd -r -p > "$tmp" 2>/dev/null; then echo "Failed to decode EDID hex" >&2; exit 2; fi; elif command -v python3 >/dev/null 2>&1; then if ! python3 - "$hex" "$tmp" <<"PY"\nimport pathlib\nimport sys\nhex_data = sys.argv[1].strip()\nout_path = pathlib.Path(sys.argv[2])\ntry:\n    out_path.write_bytes(bytes.fromhex(hex_data))\nexcept ValueError:\n    sys.exit(1)\nPY\n then echo "Failed to decode EDID hex" >&2; exit 2; fi; else echo "Need xxd or python3 to decode EDID hex" >&2; exit 3; fi; if command -v edid-decode >/dev/null 2>&1; then echo "__EDID_SOURCE__:edid-decode"; edid-decode "$tmp"; elif command -v parse-edid >/dev/null 2>&1; then echo "__EDID_SOURCE__:parse-edid"; parse-edid < "$tmp"; else echo "No external EDID decoder found (install edid-decode or parse-edid)" >&2; exit 127; fi',
+      decodeScript,
       "sh",
       normalizedHex
     ];
@@ -878,10 +957,20 @@ Singleton
     edidReadProcess.outputName = out;
     edidReadProcess.rawHex = "";
     edidReadProcess.readStderr = "";
+    const readScript = _joinShell([
+      'name="$1"; path="";',
+      'for p in /sys/class/drm/card*-"$name"/edid; do if [ -r "$p" ]; then path="$p"; break; fi; done;',
+      'if [ -z "$path" ]; then echo "EDID file not found for output: $name" >&2; exit 1; fi;',
+      'if command -v xxd >/dev/null 2>&1; then',
+      'xxd -p -c 32 "$path";',
+      'elif command -v hexdump >/dev/null 2>&1; then',
+      'hexdump -ve "1/1 \\"%02x\\"" "$path";',
+      'else od -An -tx1 -v "$path" | tr -d " \\n"; fi'
+    ]);
     edidReadProcess.command = [
       "bash",
       "-c",
-      'name="$1"; path=""; for p in /sys/class/drm/card*-"$name"/edid; do if [ -r "$p" ]; then path="$p"; break; fi; done; if [ -z "$path" ]; then echo "EDID file not found for output: $name" >&2; exit 1; fi; if command -v xxd >/dev/null 2>&1; then xxd -p -c 32 "$path"; elif command -v hexdump >/dev/null 2>&1; then hexdump -ve "1/1 \"%02x\"" "$path"; else od -An -tx1 -v "$path" | tr -d " \n"; fi',
+      readScript,
       "sh",
       out
     ];
