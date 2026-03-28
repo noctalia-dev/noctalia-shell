@@ -40,7 +40,7 @@ Item {
   property real scrollCycleDuration: Math.max(4000, root.text.length * 120)
   property real resettingDuration: 300
 
-  // Fade controls
+  // Fade controls (fadeExtent: 0.0–0.5, fraction of width that fades)
   property real fadeExtent: 0.1
   property real fadeCornerRadius: 0
   property bool fadeRoundLeftCorners: true
@@ -56,7 +56,7 @@ Item {
   implicitWidth: alwaysMaxWidth ? maxWidth : Math.min(maxWidth, contentWidth)
   implicitHeight: titleText.height
 
-  layer.enabled: true
+  layer.enabled: contentWidth > maxWidth
   layer.effect: MultiEffect {
     maskEnabled: true
     maskThresholdMin: 0.5
@@ -213,6 +213,6 @@ Item {
     }
     layer.enabled: true
     layer.smooth: true
-    opacity: 0 // Great for debugging! Will show the white masks
+    opacity: 0
   }
 }
