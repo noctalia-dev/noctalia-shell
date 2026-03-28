@@ -31,6 +31,9 @@ Singleton
   property string edidHex: ""
   property string edidDecoded: ""
   property string edidError: ""
+  property string edidDecodeError: ""
+  property var edidSummary: ({})
+  property int edidRequestId: 0
 
   function _getDisplayBackendHint() {
     if (typeof CompositorService === "undefined") return "fallback";
@@ -675,26 +678,206 @@ Singleton
     fetchProcess.running = true;
   }
 
+  function _makeEmptyEdidSummary(outputName) {
+    return {
+      output: String(outputName || ""),
+      source: "",
+      parseStatus: "idle",
+      monitorName: "",
+      manufacturerId: "",
+      productCode: "",
+      serialText: "",
+      serialNumber: "",
+      week: null,
+      year: null,
+      version: "",
+      inputType: "",
+      sizeCm: {width: null, height: null},
+      preferredMode: "",
+      warnings: []
+    };
+  }
+
+  function _extractEdidField(text, patterns) {
+    for (let i = 0; i < patterns.length; i++) {
+      const m = String(text || "").match(patterns[i]);
+      if (!m) continue;
+      for (let j = 1; j < m.length; j++) {
+        if (m[j] !== undefined && String(m[j]).trim() !== "")
+          return String(m[j]).trim();
+      }
+    }
+    return "";
+  }
+
+  function _splitDecodedEdidOutput(rawText) {
+    const marker = "__EDID_SOURCE__:";
+    const full = String(rawText || "").trim();
+    if (full.indexOf(marker) !== 0)
+      return {source: "", text: full};
+
+    const lines = full.split("\n");
+    const firstLine = lines.shift() || "";
+    return {
+      source: firstLine.slice(marker.length).trim(),
+      text: lines.join("\n").trim()
+    };
+  }
+
+  function _buildEdidSummary(decodedText, outputName, source, parseStatus) {
+    const text = String(decodedText || "");
+    const summary = _makeEmptyEdidSummary(outputName);
+    summary.source = String(source || "");
+    summary.parseStatus = String(parseStatus || "decoded");
+
+    if (text.trim() === "")
+      return summary;
+
+    summary.monitorName = _extractEdidField(text, [
+      /Display Product Name:\s*([^\n\r]+)/i,
+      /Monitor name:\s*([^\n\r]+)/i,
+      /ModelName\s+"([^"]+)"/i
+    ]);
+    summary.manufacturerId = _extractEdidField(text, [
+      /Manufacturer:\s*([A-Za-z0-9]{3})\b/i,
+      /VendorName\s+"([^"]+)"/i
+    ]);
+    summary.productCode = _extractEdidField(text, [
+      /Product(?:\s+ID|\s+Code)\s*:\s*([^\n\r]+)/i,
+      /Model:\s*([^\n\r]+)/i,
+      /Model\s+0x([0-9a-f]+)/i
+    ]);
+    summary.serialText = _extractEdidField(text, [
+      /Display Product Serial Number:\s*([^\n\r]+)/i,
+      /Serial Number:\s*([^\n\r]+)/i,
+      /Serial Number\s+"([^"]+)"/i,
+      /Identifier\s+"([^"]+)"/i
+    ]);
+    summary.serialNumber = _extractEdidField(text, [
+      /Serial number:\s*([^\n\r]+)/i
+    ]);
+    summary.version = _extractEdidField(text, [
+      /EDID(?:\s+Version)?\s*:?\s*([0-9]+\.[0-9]+)/i
+    ]);
+    summary.inputType = _extractEdidField(text, [
+      /Input type:\s*([^\n\r]+)/i
+    ]);
+    summary.preferredMode = _extractEdidField(text, [
+      /Preferred\s+timing[^\n\r]*?:\s*([^\n\r]+)/i,
+      /Preferred mode:\s*([^\n\r]+)/i,
+      /DTD\s+1:\s*([^\n\r]+)/i,
+      /Modeline\s+"([^"]+)"/i
+    ]);
+
+    const madeMatch = text.match(/Made\s+in:\s+week\s+([0-9]+)\s+of\s+([0-9]{4})/i);
+    if (madeMatch) {
+      const weekNum = parseInt(madeMatch[1], 10);
+      const yearNum = parseInt(madeMatch[2], 10);
+      summary.week = isNaN(weekNum) ? null : weekNum;
+      summary.year = isNaN(yearNum) ? null : yearNum;
+    } else {
+      const weekNum = parseInt(_extractEdidField(text, [/Manufacture\s+week:\s*([0-9]+)/i]), 10);
+      const yearNum = parseInt(_extractEdidField(text, [/Manufacture\s+year:\s*([0-9]{4})/i]), 10);
+      summary.week = isNaN(weekNum) ? null : weekNum;
+      summary.year = isNaN(yearNum) ? null : yearNum;
+    }
+
+    const sizeCm = text.match(/Maximum\s+image\s+size:\s*([0-9]+)\s*cm\s*x\s*([0-9]+)\s*cm/i);
+    if (sizeCm) {
+      summary.sizeCm.width = parseInt(sizeCm[1], 10);
+      summary.sizeCm.height = parseInt(sizeCm[2], 10);
+    } else {
+      const sizeMm = text.match(/DisplaySize\s+([0-9]+)\s+([0-9]+)/i);
+      if (sizeMm) {
+        const widthMm = parseInt(sizeMm[1], 10);
+        const heightMm = parseInt(sizeMm[2], 10);
+        if (!isNaN(widthMm) && !isNaN(heightMm)) {
+          summary.sizeCm.width = Math.round(widthMm / 10);
+          summary.sizeCm.height = Math.round(heightMm / 10);
+        }
+      }
+    }
+
+    const warnings = [];
+    const lines = text.split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line !== "" && /(warning|fail)/i.test(line)) {
+        warnings.push(line);
+        if (warnings.length >= 5)
+          break;
+      }
+    }
+    summary.warnings = warnings;
+
+    return summary;
+  }
+
+  function _startEdidDecode(rawHex, outputName, requestId) {
+    const normalizedHex = String(rawHex || "").replace(/\s+/g, "").toLowerCase();
+    root.edidDecoded = "";
+    root.edidDecodeError = "";
+    root.edidSummary = _makeEmptyEdidSummary(outputName);
+    root.edidSummary.parseStatus = "decoding";
+
+    if (normalizedHex === "") {
+      root.edidDecodeError = "Empty EDID payload";
+      root.edidSummary.parseStatus = "decode_error";
+      root.edidLoading = false;
+      return;
+    }
+
+    if (edidDecodeProcess.running)
+      edidDecodeProcess.running = false;
+
+    edidDecodeProcess.requestId = requestId;
+    edidDecodeProcess.outputName = outputName;
+    edidDecodeProcess.decodedStdout = "";
+    edidDecodeProcess.decodeStderr = "";
+    edidDecodeProcess.command = [
+      "bash",
+      "-c",
+      'hex=$(printf "%s" "$1" | tr -d "[:space:]"); if [ -z "$hex" ]; then echo "Empty EDID hex payload" >&2; exit 1; fi; tmp=$(mktemp); cleanup(){ rm -f "$tmp"; }; trap cleanup EXIT; if command -v xxd >/dev/null 2>&1; then if ! printf "%s" "$hex" | xxd -r -p > "$tmp" 2>/dev/null; then echo "Failed to decode EDID hex" >&2; exit 2; fi; elif command -v python3 >/dev/null 2>&1; then if ! python3 - "$hex" "$tmp" <<"PY"\nimport pathlib\nimport sys\nhex_data = sys.argv[1].strip()\nout_path = pathlib.Path(sys.argv[2])\ntry:\n    out_path.write_bytes(bytes.fromhex(hex_data))\nexcept ValueError:\n    sys.exit(1)\nPY\n then echo "Failed to decode EDID hex" >&2; exit 2; fi; else echo "Need xxd or python3 to decode EDID hex" >&2; exit 3; fi; if command -v edid-decode >/dev/null 2>&1; then echo "__EDID_SOURCE__:edid-decode"; edid-decode "$tmp"; elif command -v parse-edid >/dev/null 2>&1; then echo "__EDID_SOURCE__:parse-edid"; parse-edid < "$tmp"; else echo "No external EDID decoder found (install edid-decode or parse-edid)" >&2; exit 127; fi',
+      "sh",
+      normalizedHex
+    ];
+    edidDecodeProcess.running = true;
+  }
+
   function readEdid(outputName) {
     const out = String(outputName || "").trim();
     if (out === "") {
       root.edidError = "Invalid output name";
       root.edidHex = "";
       root.edidDecoded = "";
+      root.edidDecodeError = "";
+      root.edidSummary = _makeEmptyEdidSummary("");
+      root.edidSummary.parseStatus = "read_error";
       root.edidLoading = false;
       return;
     }
+
+    root.edidRequestId++;
+    const requestId = root.edidRequestId;
 
     root.edidOutputName = out;
     root.edidHex = "";
     root.edidDecoded = "";
     root.edidError = "";
+    root.edidDecodeError = "";
+    root.edidSummary = _makeEmptyEdidSummary(out);
+    root.edidSummary.parseStatus = "loading";
     root.edidLoading = true;
 
     if (edidReadProcess.running)
       edidReadProcess.running = false;
+    if (edidDecodeProcess.running)
+      edidDecodeProcess.running = false;
 
+    edidReadProcess.requestId = requestId;
     edidReadProcess.outputName = out;
+    edidReadProcess.rawHex = "";
+    edidReadProcess.readStderr = "";
     edidReadProcess.command = [
       "bash",
       "-c",
@@ -856,6 +1039,121 @@ Singleton
     _applyTopologyChange(snap, cmds);
   }
 
+  Process {
+    id: edidReadProcess
+    property int requestId: 0
+    property string outputName: ""
+    property string rawHex: ""
+    property string readStderr: ""
+    command: []
+    running: false
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        if (edidReadProcess.requestId !== root.edidRequestId)
+          return;
+
+        const raw = String(text || "").replace(/\s+/g, "").toLowerCase();
+        if (raw.length > 0) {
+          edidReadProcess.rawHex = raw;
+          root.edidError = "";
+        }
+      }
+    }
+
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (edidReadProcess.requestId !== root.edidRequestId)
+          return;
+
+        const err = text.trim();
+        if (err.length > 0)
+          edidReadProcess.readStderr = err;
+      }
+    }
+
+    onExited: function (exitCode) {
+      if (edidReadProcess.requestId !== root.edidRequestId)
+        return;
+
+      const raw = String(edidReadProcess.rawHex || "").trim();
+      if (exitCode !== 0 || raw === "") {
+        root.edidError = edidReadProcess.readStderr !== "" ? edidReadProcess.readStderr : "Failed to read EDID";
+        root.edidHex = "";
+        root.edidDecoded = "";
+        root.edidDecodeError = "";
+        root.edidSummary = _makeEmptyEdidSummary(edidReadProcess.outputName);
+        root.edidSummary.parseStatus = "read_error";
+        root.edidLoading = false;
+        return;
+      }
+
+      root.edidHex = raw;
+      root.edidError = "";
+      root._startEdidDecode(raw, edidReadProcess.outputName, edidReadProcess.requestId);
+    }
+  }
+
+  Process {
+    id: edidDecodeProcess
+    property int requestId: 0
+    property string outputName: ""
+    property string decodedStdout: ""
+    property string decodeStderr: ""
+    command: []
+    running: false
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        if (edidDecodeProcess.requestId !== root.edidRequestId)
+          return;
+        edidDecodeProcess.decodedStdout = text;
+      }
+    }
+
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (edidDecodeProcess.requestId !== root.edidRequestId)
+          return;
+        const err = text.trim();
+        if (err.length > 0)
+          edidDecodeProcess.decodeStderr = err;
+      }
+    }
+
+    onExited: function (exitCode) {
+      if (edidDecodeProcess.requestId !== root.edidRequestId)
+        return;
+
+      if (exitCode === 0) {
+        const payload = root._splitDecodedEdidOutput(edidDecodeProcess.decodedStdout);
+        const decoded = String(payload.text || "").trim();
+        root.edidDecoded = decoded;
+        root.edidDecodeError = "";
+        root.edidSummary = root._buildEdidSummary(
+          decoded,
+          edidDecodeProcess.outputName,
+          payload.source,
+          decoded !== "" ? "decoded" : "decoded_empty"
+        );
+      } else {
+        const errText = String(edidDecodeProcess.decodeStderr || "").trim();
+        const decodeError = errText !== "" ? errText : "Failed to decode EDID";
+        root.edidDecoded = "";
+        root.edidDecodeError = decodeError;
+        root.edidSummary = root._buildEdidSummary(
+          "",
+          edidDecodeProcess.outputName,
+          "",
+          exitCode === 127 ? "decoder_unavailable" : "decode_error"
+        );
+        root.edidSummary.warnings = [decodeError];
+      }
+
+      root.edidLoading = false;
+    }
+  }
+
   Component.onCompleted: {
     Logger.i("DisplayService", "Service started with backend:", root._getDisplayBackendHint());
     refresh();
@@ -913,40 +1211,4 @@ Singleton
     }
   }
 
-  Process {
-    id: edidReadProcess
-    property string outputName: ""
-    command: []
-    running: false
-
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const raw = text.trim();
-        if (raw.length > 0) {
-          root.edidHex = raw;
-          root.edidError = "";
-        }
-      }
-    }
-
-    stderr: StdioCollector {
-      onStreamFinished: {
-        const err = text.trim();
-        if (err.length > 0) {
-          root.edidError = err;
-          root.edidHex = "";
-          root.edidDecoded = "";
-        }
-      }
-    }
-
-    onExited: function (exitCode) {
-      if (exitCode !== 0 && root.edidError === "") {
-        root.edidError = "Failed to read EDID";
-        root.edidHex = "";
-        root.edidDecoded = "";
-      }
-      root.edidLoading = false;
-    }
-  }
 }
