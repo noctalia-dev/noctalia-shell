@@ -140,6 +140,13 @@ Popup {
 
   // Helper function to open at mouse position
   function openAt(x, y) {
+    if (root.parent) {
+      var menuWidth = root.width;
+      var itemCount = root.filteredModel.length;
+      var menuHeight = Math.max(itemCount * root.itemHeight + Math.max(0, itemCount - 1) * listView.spacing, root.itemHeight) + root.topPadding + root.bottomPadding;
+      x = Math.max(0, Math.min(x, root.parent.width - menuWidth));
+      y = Math.max(0, Math.min(y, root.parent.height - menuHeight));
+    }
     root.x = x;
     root.y = y;
     root.open();
