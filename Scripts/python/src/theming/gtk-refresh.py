@@ -58,17 +58,23 @@ def ensure_gtk_css_import(gtk_css: Path, colors_file: Path, label: str) -> bool:
         # Already has the import (flexible: allow optional whitespace / different quoting)
         if "noctalia.css" in content and "@import" in content:
             return True
-        # Need to modify — convert symlink to regular file first
+        # Need to modify — handle symlinks carefully
+        target = gtk_css
         if gtk_css.is_symlink():
             resolved = gtk_css.resolve()
-            gtk_css.unlink()
-            gtk_css.write_text(resolved.read_text())
+            if os.access(resolved, os.W_OK):
+                # Writable symlink (e.g. dotfiles): edit the target directly
+                target = resolved
+            else:
+                # Read-only symlink (e.g. NixOS): convert to local file
+                gtk_css.unlink()
+                gtk_css.write_text(resolved.read_text())
         # Append import to the end
         new_content = content.rstrip()
         if new_content and not new_content.endswith("\n"):
             new_content += "\n"
         new_content += "\n" + GTK_IMPORT + "\n"
-        gtk_css.write_text(new_content)
+        target.write_text(new_content)
         print(f"Appended {label} noctalia.css import to gtk.css")
     else:
         gtk_css.write_text(GTK_IMPORT + "\n")
