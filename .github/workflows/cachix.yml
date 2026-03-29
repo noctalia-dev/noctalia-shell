@@ -15,6 +15,7 @@ on:
 jobs:
   cache:
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'noctalia-dev/noctalia-shell' }}
     steps:
       - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v31
