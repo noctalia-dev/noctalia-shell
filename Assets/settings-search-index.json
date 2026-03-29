@@ -372,6 +372,18 @@
     ]
   },
   {
+    "labelKey": "panels.bar.appearance-floating-outer-edge-rounding-label",
+    "descriptionKey": "panels.bar.appearance-floating-outer-edge-rounding-description",
+    "widget": "NToggle",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance",
+    "visibleWhen": [
+      "Settings.data.bar.barType === \"floating\""
+    ]
+  },
+  {
     "labelKey": "panels.bar.appearance-auto-hide-delay-label",
     "descriptionKey": "panels.bar.appearance-auto-hide-delay-description",
     "widget": "NValueSlider",

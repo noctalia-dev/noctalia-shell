@@ -849,6 +849,8 @@
       "appearance-margins-description": "Adjust the margins around the floating bar.",
       "appearance-margins-horizontal": "Horizontal Margin ",
       "appearance-margins-vertical": "Vertical Margin",
+      "appearance-floating-outer-edge-rounding-description": "When the floating bar touches a screen edge, draw outward rounding on that edge. Requires the opposite margin to be at least {minMargin}px (container radius + screen corners radius).",
+      "appearance-floating-outer-edge-rounding-label": "Outer rounding on touching edge",
       "appearance-outer-corners-description": "Display outwardly curved corners on the bar.",
       "appearance-outer-corners-label": "Outer corners",
       "appearance-position-description": "Choose where to place the bar on the screen.",

@@ -297,9 +297,15 @@ ColumnLayout {
   }
 
   ColumnLayout {
+    id: floatingSettings
     visible: Settings.data.bar.barType === "floating"
     spacing: Style.marginL
     Layout.fillWidth: true
+
+    readonly property real floatingOuterRoundingThreshold: Style.radiusL + Style.screenRadius
+    readonly property bool floatingOuterRoundingAllowed: (Settings.data.bar.position === "top" || Settings.data.bar.position === "bottom")
+      ? Settings.data.bar.marginHorizontal >= floatingOuterRoundingThreshold
+      : Settings.data.bar.marginVertical >= floatingOuterRoundingThreshold
 
     NDivider {
       Layout.fillWidth: true
@@ -325,6 +331,18 @@ ColumnLayout {
       value: Settings.data.bar.marginHorizontal
       defaultValue: Settings.getDefaultValue("bar.marginHorizontal")
       onValueChanged: Settings.data.bar.marginHorizontal = value
+    }
+
+    NToggle {
+      Layout.fillWidth: true
+      label: I18n.tr("panels.bar.appearance-floating-outer-edge-rounding-label")
+      description: I18n.tr("panels.bar.appearance-floating-outer-edge-rounding-description", {
+                             minMargin: Math.ceil(floatingSettings.floatingOuterRoundingThreshold)
+                           })
+      checked: Settings.data.bar.floatingOuterEdgeRounding
+      enabled: floatingSettings.floatingOuterRoundingAllowed
+      defaultValue: Settings.getDefaultValue("bar.floatingOuterEdgeRounding")
+      onToggled: checked => Settings.data.bar.floatingOuterEdgeRounding = checked
     }
   }
 
