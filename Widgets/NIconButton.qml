@@ -45,7 +45,7 @@ Item {
   implicitWidth: buttonSize
   implicitHeight: buttonSize
 
-  opacity: root.enabled ? Style.opacityFull : Style.opacityMedium
+  opacity: enabled ? 1.0 : 0.6
 
   // Visual button - stays at buttonSize, centered in parent
   Rectangle {
@@ -96,7 +96,7 @@ Item {
     hoverEnabled: true
     onEntered: {
       hovering = root.enabled ? true : false;
-      if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
+      if (hovering && tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
         TooltipService.show(root, tooltipText, tooltipDirection);
       }
       root.entered();

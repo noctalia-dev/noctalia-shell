@@ -21,8 +21,6 @@ RowLayout {
   signal exited
 
   Layout.fillWidth: true
-
-  opacity: enabled ? 1.0 : 0.6
   spacing: Style.marginM
 
   readonly property bool isValueChanged: (defaultValue !== undefined) && (checked !== defaultValue)
@@ -44,9 +42,9 @@ RowLayout {
   Rectangle {
     id: switcher
 
+    opacity: enabled ? 1.0 : 0.6
     Layout.alignment: Qt.AlignVCenter
     Layout.margins: Style.borderS
-
     implicitWidth: Math.round(root.baseSize * .85) * 2
     implicitHeight: Math.round(root.baseSize * .5) * 2
     radius: Math.min(Style.iRadiusL, height / 2)

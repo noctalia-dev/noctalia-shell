@@ -120,7 +120,6 @@ NBox {
   signal openPluginSettingsRequested(var pluginManifest)
 
   color: Color.mSurface
-  opacity: enabled ? 1.0 : 0.6
   Layout.fillWidth: true
   z: flowDragArea.dragStarted ? 5000 : 0
 

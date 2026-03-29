@@ -38,6 +38,10 @@ Popup {
   property real itemPadding: Style.marginM
   property int verticalPolicy: ScrollBar.AsNeeded
   property int horizontalPolicy: ScrollBar.AsNeeded
+  // Optional: explicit item whose bounds the menu must stay within.
+  // When unset, openAtItem auto-detects the nearest clipping ancestor.
+  property Item constrainTo: null
+  property Item _detectedConstraint: null
 
   signal triggered(string action)
 
@@ -140,6 +144,20 @@ Popup {
 
   // Helper function to open at mouse position
   function openAt(x, y) {
+    if (root.parent) {
+      var menuWidth = root.width;
+      var itemCount = root.filteredModel.length;
+      var menuHeight = Math.max(itemCount * root.itemHeight + Math.max(0, itemCount - 1) * listView.spacing, root.itemHeight) + root.topPadding + root.bottomPadding;
+      var constraint = root.constrainTo || root._detectedConstraint;
+      if (constraint) {
+        var tl = constraint.mapToItem(root.parent, 0, 0);
+        x = Math.max(tl.x, Math.min(x, tl.x + constraint.width - menuWidth));
+        y = Math.max(tl.y, Math.min(y, tl.y + constraint.height - menuHeight));
+      } else {
+        x = Math.max(0, Math.min(x, root.parent.width - menuWidth));
+        y = Math.max(0, Math.min(y, root.parent.height - menuHeight));
+      }
+    }
     root.x = x;
     root.y = y;
     root.open();
@@ -147,6 +165,17 @@ Popup {
 
   // Helper function to open at item
   function openAtItem(item, mouseX, mouseY) {
+    if (!root.constrainTo) {
+      root._detectedConstraint = null;
+      var p = item;
+      while (p && p !== root.parent) {
+        if (p.clip && p.width > 0 && p.height > 0) {
+          root._detectedConstraint = p;
+          break;
+        }
+        p = p.parent;
+      }
+    }
     var pos = item.mapToItem(root.parent, mouseX || 0, mouseY || 0);
     openAt(pos.x, pos.y);
   }

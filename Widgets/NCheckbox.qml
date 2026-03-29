@@ -23,7 +23,6 @@ RowLayout {
   signal exited
 
   Layout.fillWidth: true
-  opacity: enabled ? 1.0 : 0.6
 
   NLabel {
     label: root.label
@@ -40,6 +39,7 @@ RowLayout {
   Rectangle {
     id: box
 
+    opacity: enabled ? 1.0 : 0.6
     Layout.margins: Style.borderS
     implicitWidth: Style.toOdd(root.baseSize)
     implicitHeight: Style.toOdd(root.baseSize)
