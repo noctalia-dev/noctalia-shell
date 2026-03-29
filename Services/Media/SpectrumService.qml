@@ -19,14 +19,14 @@ Singleton {
   function registerComponent(componentId) {
     root._registeredComponents[componentId] = true;
     root._registeredComponents = Object.assign({}, root._registeredComponents);
-    Logger.d("Spectrum", "Component registered:", componentId, "- total:", root.registeredCount);
+    Logger.d("Spectrum", "Component registered:", componentId, "- total:", root._registeredCount);
   }
 
   // Unregister a component when it no longer needs audio data.
   function unregisterComponent(componentId) {
     delete root._registeredComponents[componentId];
     root._registeredComponents = Object.assign({}, root._registeredComponents);
-    Logger.d("Spectrum", "Component unregistered:", componentId, "- total:", root.registeredCount);
+    Logger.d("Spectrum", "Component unregistered:", componentId, "- total:", root._registeredCount);
   }
 
   // Check if a component is registered

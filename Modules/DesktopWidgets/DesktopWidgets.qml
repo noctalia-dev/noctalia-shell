@@ -290,43 +290,47 @@ Variants {
             property var _maskRegion: null
             readonly property bool _isPlugin: DesktopWidgetRegistry.isPluginWidget(modelData.id)
 
-            // Core widgets use sourceComponent; plugin widgets use setSource()
-            // so pluginApi is available from the first binding evaluation.
-            // Binding is set imperatively to avoid sourceComponent interfering with setSource.
-            Component.onCompleted: {
-              if (_isPlugin) {
-                _loadPluginWidget();
-              } else {
-                sourceComponent = Qt.binding(function () {
-                  var _ = root.pluginReloadCounter;
-                  var widgets = root.registeredWidgets;
-                  return widgets[modelData.id] || null;
-                });
-              }
-            }
+            // All widgets use setSource() so that screen, widgetData, and
+            // widgetIndex are set as initial properties, available during
+            // Component.onCompleted. This prevents registration-key
+            // mismatches in widgets that build IDs from screen.name.
+            Component.onCompleted: _loadWidget()
 
             onActiveChanged: {
-              if (active && _isPlugin)
-                _loadPluginWidget();
+              if (active)
+                _loadWidget();
             }
 
-            function _loadPluginWidget() {
-              var comp = root.registeredWidgets[modelData.id];
+            function _loadWidget() {
+              var widgetId = modelData.id;
+              var comp = root.registeredWidgets[widgetId];
               if (!comp)
                 return;
-              var pluginId = modelData.id.replace("plugin:", "");
-              var api = PluginService.getPluginAPI(pluginId);
-              setSource(comp.url, api ? {
-                                          "pluginApi": api
-                                        } : {});
+
+              var props = {
+                "screen": window.screen,
+                "widgetData": modelData,
+                "widgetIndex": index
+              };
+
+              if (_isPlugin) {
+                var pluginId = widgetId.replace("plugin:", "");
+                var api = PluginService.getPluginAPI(pluginId);
+                if (api)
+                  props.pluginApi = api;
+                setSource(comp.url, props);
+              } else {
+                // Core widgets: use explicit URL (inline Component.url
+                // returns the registry file, not the widget file)
+                var url = DesktopWidgetRegistry.widgetUrls[widgetId];
+                if (url)
+                  setSource(url, props);
+              }
             }
 
             onLoaded: {
               if (item) {
-                item.screen = window.screen;
                 item.parent = widgetsContainer;
-                item.widgetData = modelData;
-                item.widgetIndex = index;
 
                 // Create mask region so this widget receives mouse input
                 _maskRegion = maskRegionComponent.createObject(window);

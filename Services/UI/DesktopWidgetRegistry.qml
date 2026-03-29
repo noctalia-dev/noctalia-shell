@@ -36,6 +36,12 @@ Singleton {
   // Created in Component.onCompleted to ensure Components are ready
   property var widgets: ({})
 
+  // Explicit URLs for core widgets. Inline Component.url returns the parent
+  // file's URL, so we need these for Loader.setSource() with initial properties.
+  // Plugin widgets use their Component.url directly (loaded from actual files).
+  readonly property string _widgetsDir: Quickshell.shellDir + "/Modules/DesktopWidgets/Widgets/"
+  property var widgetUrls: ({})
+
   Component.onCompleted: {
     // Initialize widgets object after Components are ready
     var widgetsObj = {};
@@ -45,6 +51,14 @@ Singleton {
     widgetsObj["SystemStat"] = systemStatComponent;
     widgetsObj["AudioVisualizer"] = audioVisualizerComponent;
     widgets = widgetsObj;
+
+    var urlsObj = {};
+    urlsObj["Clock"] = _widgetsDir + "DesktopClock.qml";
+    urlsObj["MediaPlayer"] = _widgetsDir + "DesktopMediaPlayer.qml";
+    urlsObj["Weather"] = _widgetsDir + "DesktopWeather.qml";
+    urlsObj["SystemStat"] = _widgetsDir + "DesktopSystemStat.qml";
+    urlsObj["AudioVisualizer"] = _widgetsDir + "DesktopAudioVisualizer.qml";
+    widgetUrls = urlsObj;
 
     Logger.i("DesktopWidgetRegistry", "Service started");
   }
