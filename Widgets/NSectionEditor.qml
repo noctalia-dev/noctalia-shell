@@ -39,6 +39,7 @@ NBox {
     return "arrow-right"; // Default fallback icon
   }
 
+  property var pluginSettingsEntryPoints: ["settings"]
   property var widgetRegistry: null
   property string settingsDialogComponent: "invalid-settings-dialog"
   property var screen: null // Screen reference for per-screen widget settings
@@ -117,7 +118,7 @@ NBox {
   signal moveWidget(string fromSection, int index, string toSection)
   signal dragPotentialStarted
   signal dragPotentialEnded
-  signal openPluginSettingsRequested(var pluginManifest)
+  signal openPluginSettingsRequested(var pluginManifest, string settingsEntryPoint)
 
   color: Color.mSurface
   Layout.fillWidth: true
@@ -199,7 +200,13 @@ NBox {
     if (root.widgetRegistry && root.widgetRegistry.isPluginWidget(widgetId)) {
       var pluginId = widgetId.replace("plugin:", "");
       var manifest = PluginRegistry.getPluginManifest(pluginId);
-      return manifest?.entryPoints?.settings !== undefined;
+      if (!manifest?.entryPoints)
+        return false;
+      for (var i = 0; i < root.pluginSettingsEntryPoints.length; i++) {
+        if (manifest.entryPoints[root.pluginSettingsEntryPoints[i]] !== undefined)
+          return true;
+      }
+      return false;
     }
 
     // Check if it's a core widget with user settings
@@ -212,23 +219,38 @@ NBox {
 
   // Open settings for a widget
   function openWidgetSettings(index, widgetData) {
-    // Check if this is a plugin widget
+    // Check if this is a plugin widget with a generic "settings" entry point
     var isPlugin = root.widgetRegistry && root.widgetRegistry.isPluginWidget(widgetData.id);
 
     if (isPlugin) {
-      // Handle plugin settings - emit signal for parent to handle
       var pluginId = widgetData.id.replace("plugin:", "");
       var manifest = PluginRegistry.getPluginManifest(pluginId);
 
-      if (!manifest || !manifest.entryPoints?.settings) {
+      var settingsKey = null;
+      if (manifest?.entryPoints) {
+        for (var i = 0; i < root.pluginSettingsEntryPoints.length; i++) {
+          if (manifest.entryPoints[root.pluginSettingsEntryPoints[i]] !== undefined) {
+            settingsKey = root.pluginSettingsEntryPoints[i];
+            break;
+          }
+        }
+      }
+      if (!manifest || !settingsKey) {
         Logger.e("NSectionEditor", "Plugin settings not found for:", pluginId);
         return;
       }
 
-      // Emit signal to request opening plugin settings
-      root.openPluginSettingsRequested(manifest);
-    } else {
-      // Handle core widget settings
+      // "desktopWidgetSettings" is handled by the settingsDialogComponent
+      // (DesktopWidgetSettingsDialog) which passes widgetSettings/save properly.
+      // Only generic "settings" goes through the plugin settings popup.
+      if (settingsKey !== "desktopWidgetSettings") {
+        root.openPluginSettingsRequested(manifest, settingsKey);
+        return;
+      }
+    }
+
+    // Handle core widgets and plugin desktop widget settings
+    {
       var component = Qt.createComponent(Qt.resolvedUrl(root.settingsDialogComponent));
 
       function instantiateAndOpen() {

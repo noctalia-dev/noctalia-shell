@@ -109,7 +109,8 @@ ColumnLayout {
         onRemoveWidget: (section, index) => _removeWidgetFromMonitor(modelData.name, index)
         onMoveWidget: (fromSection, index, toSection) => _moveWidgetToMonitor(fromSection, index, toSection)
         onUpdateWidgetSettings: (section, index, settings) => _updateWidgetSettingsForMonitor(modelData.name, index, settings)
-        onOpenPluginSettingsRequested: manifest => pluginSettingsDialog.openPluginSettings(manifest)
+        pluginSettingsEntryPoints: ["desktopWidgetSettings", "settings"]
+        onOpenPluginSettingsRequested: (manifest, entryPoint) => pluginSettingsDialog.openPluginSettings(manifest, entryPoint)
       }
     }
   }
