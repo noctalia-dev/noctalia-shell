@@ -246,6 +246,18 @@ Singleton {
     }
   }
 
+  // Build a shell command that sparse-clones repoUrl into a fresh temp dir,
+  // runs `body` there, then cleans up. We cd into the temp dir immediately so
+  // a stale/deleted process cwd can't break git; stderr is left to the caller
+  // so failures are diagnosable. GIT_TERMINAL_PROMPT=0 prevents hanging on
+  // private repos that would otherwise prompt for credentials.
+  function sparseCloneCmd(repoUrl, body) {
+    return "temp_dir=$(mktemp -d) && cd \"$temp_dir\""
+        + " && GIT_TERMINAL_PROMPT=0 git clone --filter=blob:none --sparse --depth=1 --quiet '" + repoUrl + "' ."
+        + " && " + body
+        + "; ec=$?; rm -rf \"$temp_dir\"; exit $ec";
+  }
+
   // Refresh available plugins from all sources
   function refreshAvailablePlugins() {
     // If fetches are already in progress, don't start new ones
@@ -274,10 +286,9 @@ Singleton {
     Logger.d("PluginService", "Fetching registry from:", repoUrl);
 
     // Use git sparse-checkout to fetch only registry.json (--no-cone for single file)
-    // GIT_TERMINAL_PROMPT=0 prevents hanging on private repos that need auth
-    var fetchCmd = "temp_dir=$(mktemp -d) && GIT_TERMINAL_PROMPT=0 git clone --filter=blob:none --sparse --depth=1 --quiet '" + repoUrl + "' \"$temp_dir\" 2>/dev/null && cd \"$temp_dir\" && git sparse-checkout set --no-cone /registry.json 2>/dev/null && cat \"$temp_dir/registry.json\"; rm -rf \"$temp_dir\"";
+    var fetchCmd = sparseCloneCmd(repoUrl, "git sparse-checkout set --no-cone /registry.json && cat registry.json");
 
-    var fetchProcess = Qt.createQmlObject('import QtQuick; import Quickshell.Io; Process { command: ["sh", "-c", "' + fetchCmd.replace(/"/g, '\\"') + '"]; stdout: StdioCollector {} }', root, "FetchRegistry_" + Date.now());
+    var fetchProcess = Qt.createQmlObject('import QtQuick; import Quickshell.Io; Process { command: ["sh", "-c", "' + fetchCmd.replace(/"/g, '\\"') + '"]; stdout: StdioCollector {}; stderr: StdioCollector {} }', root, "FetchRegistry_" + Date.now());
 
     activeFetches[source.url] = fetchProcess;
 
@@ -288,7 +299,8 @@ Singleton {
       Logger.d("PluginService", "Registry response length:", response ? response.length : 0);
 
       if (!response || response.trim() === "") {
-        Logger.e("PluginService", "Empty response from", source.name);
+        var err = fetchProcess.stderr.text.trim();
+        Logger.e("PluginService", "Empty response from", source.name, err ? ("- " + err) : "");
         delete activeFetches[source.url];
         fetchProcess.destroy();
         return;
@@ -439,19 +451,21 @@ Singleton {
     var repoUrl = source.url;
 
     // Use git sparse-checkout to clone only the plugin subfolder
-    // GIT_TERMINAL_PROMPT=0 prevents hanging on private repos that need auth
     // Note: We download from the original pluginId folder in the repo, but save to compositeKey folder
-    var downloadCmd = "temp_dir=$(mktemp -d) && GIT_TERMINAL_PROMPT=0 git clone --filter=blob:none --sparse --depth=1 --quiet '" + repoUrl + "' \"$temp_dir\" 2>/dev/null && cd \"$temp_dir\" && git sparse-checkout set '" + pluginId + "' 2>/dev/null && mkdir -p '" + pluginDir + "' && rm -f \"$temp_dir/" + pluginId + "/settings.json\" && cp -r \"$temp_dir/" + pluginId
-        + "/.\" '" + pluginDir + "/'; exit_code=$?; rm -rf \"$temp_dir\"; exit $exit_code";
+    var downloadCmd = sparseCloneCmd(repoUrl, "git sparse-checkout set '" + pluginId + "'"
+        + " && mkdir -p '" + pluginDir + "'"
+        + " && rm -f '" + pluginId + "/settings.json'"
+        + " && cp -r '" + pluginId + "/.' '" + pluginDir + "/'");
 
     // Mark as installing
     var newInstalling = Object.assign({}, root.installingPlugins);
     newInstalling[pluginId] = true;
     root.installingPlugins = newInstalling;
 
-    var downloadProcess = Qt.createQmlObject('import QtQuick; import Quickshell.Io; Process { command: ["sh", "-c", "' + downloadCmd.replace(/"/g, '\\"') + '"] }', root, "DownloadPlugin_" + pluginId);
+    var downloadProcess = Qt.createQmlObject('import QtQuick; import Quickshell.Io; Process { command: ["sh", "-c", "' + downloadCmd.replace(/"/g, '\\"') + '"]; stderr: StdioCollector {} }', root, "DownloadPlugin_" + pluginId);
 
     downloadProcess.exited.connect(function (exitCode) {
+      var err = downloadProcess.stderr.text.trim();
       // Mark as finished (remove from installing)
       var currentInstalling = Object.assign({}, root.installingPlugins);
       delete currentInstalling[pluginId];
@@ -489,9 +503,9 @@ Singleton {
           }
         });
       } else {
-        Logger.e("PluginService", "Failed to download plugin:", compositeKey);
+        Logger.e("PluginService", "Failed to download plugin:", compositeKey, err ? ("- " + err) : "");
         if (callback)
-          callback(false, "Download failed");
+          callback(false, "Download failed" + (err ? ": " + err : ""));
       }
 
       downloadProcess.destroy();
