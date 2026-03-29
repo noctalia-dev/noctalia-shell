@@ -140,9 +140,9 @@ Rectangle {
     cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
 
     onEntered: {
-      root.hovered = true;
+      root.hovered = root.enabled ? true : false;
       root.entered();
-      if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
+      if (hovered && tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
         TooltipService.show(root, root.tooltipText);
       }
     }
