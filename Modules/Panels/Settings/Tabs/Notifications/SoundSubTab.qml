@@ -100,6 +100,12 @@ ColumnLayout {
       buttonIcon: "folder-open"
       buttonTooltip: I18n.tr("panels.notifications.sounds-files-select-file")
       onInputTextChanged: text => {
+                            // When separate sounds are enabled, this row is hidden but still
+                            // bound to normalSoundFile; user edits to normal still update that
+                            // key and would re-trigger this handler and wipe low/critical.
+                            if (Settings.data.notifications.sounds.separateSounds) {
+                              return;
+                            }
                             const soundPath = text;
                             Settings.data.notifications.sounds.normalSoundFile = soundPath;
                             Settings.data.notifications.sounds.lowSoundFile = soundPath;
