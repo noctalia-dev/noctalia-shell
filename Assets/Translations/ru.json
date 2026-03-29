@@ -1227,6 +1227,8 @@
       "screen-corners-solid-black-label": "Сплошные чёрные углы",
       "screen-corners-title": "Углы экрана",
       "settings-copied": "Настройки скопированы в буфер обмена",
+      "smooth-scrolling-description": "Анимировать прокрутку списков для более плавного использования колеса.",
+      "smooth-scrolling-label": "Плавная прокрутка",
       "tab-basics": "Основное",
       "tab-keybinds": "Горячие клавиши"
     },

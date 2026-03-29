@@ -1227,6 +1227,8 @@
       "screen-corners-solid-black-label": "黑色邊角",
       "screen-corners-title": "畫面邊角",
       "settings-copied": "已複製設定至剪貼簿",
+      "smooth-scrolling-description": "為列表捲動新增動畫，以獲得更流暢的滾輪體驗。",
+      "smooth-scrolling-label": "平滑捲動",
       "tab-basics": "基礎",
       "tab-keybinds": "按鍵綁定"
     },

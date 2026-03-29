@@ -1227,6 +1227,8 @@
       "screen-corners-solid-black-label": "角を黒く塗りつぶす",
       "screen-corners-title": "画面の角",
       "settings-copied": "設定をクリップボードにコピーしました",
+      "smooth-scrolling-description": "リストのスクロールをアニメーション化して、よりスムーズなホイール操作を実現します。",
+      "smooth-scrolling-label": "スムーズスクロール",
       "tab-basics": "基本",
       "tab-keybinds": "キーバインド"
     },

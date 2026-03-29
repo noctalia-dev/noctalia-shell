@@ -1227,6 +1227,8 @@
       "screen-corners-solid-black-label": "Tömör fekete sarkok",
       "screen-corners-title": "Képernyősarkok",
       "settings-copied": "Beállítások a vágólapra másolva",
+      "smooth-scrolling-description": "Listagörgetés animálása a gördülékenyebb görgőélményért.",
+      "smooth-scrolling-label": "Simább görgetés",
       "tab-basics": "Alapok",
       "tab-keybinds": "Gyorsbillentyűk"
     },

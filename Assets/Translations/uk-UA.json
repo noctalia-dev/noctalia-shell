@@ -1227,6 +1227,8 @@
       "screen-corners-solid-black-label": "Суцільні чорні кути",
       "screen-corners-title": "Кути екрана",
       "settings-copied": "Налаштування скопійовано до буфера обміну",
+      "smooth-scrolling-description": "Анімувати прокручування списків для плавнішого досвіду використання колеса.",
+      "smooth-scrolling-label": "Плавне прокручування",
       "tab-basics": "Основи",
       "tab-keybinds": "Гарячі клавіші"
     },

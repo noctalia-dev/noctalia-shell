@@ -1227,6 +1227,8 @@
       "screen-corners-solid-black-label": "Coins noirs unis",
       "screen-corners-title": "Coins de l'écran",
       "settings-copied": "Paramètres copiés dans le presse-papier",
+      "smooth-scrolling-description": "Animer le défilement des listes pour une expérience de molette plus fluide.",
+      "smooth-scrolling-label": "Défilement fluide",
       "tab-basics": "Bases",
       "tab-keybinds": "Raccourcis clavier"
     },
