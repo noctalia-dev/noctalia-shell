@@ -1610,6 +1610,10 @@ Singleton {
         Settings.data.desktopWidgets.monitorWidgets = desktopWidgetsBackup;
         Logger.d("PluginService", "Restored desktop widget settings");
 
+        // Persist restored layout immediately to prevent race with file watcher reload
+        // (the earlier disablePlugin write triggers a reload that can overwrite the restore)
+        Settings.saveImmediate();
+
         // Remove from updates list
         var updates = Object.assign({}, root.pluginUpdates);
         delete updates[pluginId];
@@ -1628,6 +1632,7 @@ Singleton {
 
         // Restore desktop widget settings even on failure
         Settings.data.desktopWidgets.monitorWidgets = desktopWidgetsBackup;
+        Settings.saveImmediate();
 
         if (callback)
           callback(false, error);
