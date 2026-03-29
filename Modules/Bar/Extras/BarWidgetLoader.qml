@@ -73,15 +73,44 @@ Item {
 
   readonly property bool _isPlugin: BarWidgetRegistry.isPluginWidget(widgetId)
 
-  function _loadPluginWidget() {
-    var comp = BarWidgetRegistry.getWidget(root.widgetId);
-    if (!comp)
+  // Build initial properties that must be available during Component.onCompleted.
+  // This prevents registration-key mismatches in widgets that build IDs from
+  // screen.name, section, or sectionWidgetIndex.
+  // All standard bar widget props are passed for both core and plugin widgets.
+  // Plugins that don't define some of these properties will get harmless warnings
+  // but still load correctly — and plugins that DO define them (e.g. for unique
+  // SpectrumService keys with multiple instances) get correct values from the start.
+  function _initialProps() {
+    return {
+      "screen": widgetScreen,
+      "widgetId": widgetProps.widgetId || "",
+      "section": widgetProps.section || "",
+      "sectionWidgetIndex": widgetProps.sectionWidgetIndex || 0,
+      "sectionWidgetsCount": widgetProps.sectionWidgetsCount || 0
+    };
+  }
+
+  // Core widget URLs: file names match widget IDs exactly
+  readonly property string _barWidgetsDir: Quickshell.shellDir + "/Modules/Bar/Widgets/"
+
+  function _loadWidget() {
+    if (!BarWidgetRegistry.hasWidget(root.widgetId))
       return;
-    var pluginId = root.widgetId.replace("plugin:", "");
-    var api = PluginService.getPluginAPI(pluginId);
-    loader.setSource(comp.url, api ? {
-                                       "pluginApi": api
-                                     } : {});
+
+    var props = _initialProps();
+
+    if (_isPlugin) {
+      var comp = BarWidgetRegistry.getWidget(root.widgetId);
+      if (!comp)
+        return;
+      var pluginId = root.widgetId.replace("plugin:", "");
+      var api = PluginService.getPluginAPI(pluginId);
+      if (api)
+        props.pluginApi = api;
+      loader.setSource(comp.url, props);
+    } else {
+      loader.setSource(_barWidgetsDir + root.widgetId + ".qml", props);
+    }
   }
 
   Loader {
@@ -90,23 +119,13 @@ Item {
     asynchronous: true
     active: root.checkWidgetExists() && (root.reloadCounter >= 0)
 
-    // Core widgets use sourceComponent; plugin widgets use setSource()
-    // so pluginApi is available from the first binding evaluation.
-    // Binding is set imperatively to avoid sourceComponent interfering with setSource.
-    Component.onCompleted: {
-      if (root._isPlugin) {
-        root._loadPluginWidget();
-      } else {
-        sourceComponent = Qt.binding(function () {
-          var _ = root.reloadCounter;
-          return root.checkWidgetExists() ? BarWidgetRegistry.getWidget(root.widgetId) : null;
-        });
-      }
-    }
+    // All widgets use setSource() so that screen and widget properties
+    // are set as initial properties, available during Component.onCompleted.
+    Component.onCompleted: root._loadWidget()
 
     onActiveChanged: {
-      if (active && root._isPlugin)
-        root._loadPluginWidget();
+      if (active)
+        root._loadWidget();
     }
 
     // Unregister when the loaded item is destroyed (Loader deactivated or sourceComponent changed)
@@ -135,16 +154,11 @@ Item {
         });
       }
 
-      // Apply properties to loaded widget
+      // Apply remaining widget properties (screen is already set as initial prop)
       for (var prop in widgetProps) {
         if (item.hasOwnProperty(prop)) {
           item[prop] = widgetProps[prop];
         }
-      }
-
-      // Set screen property
-      if (item.hasOwnProperty("screen")) {
-        item.screen = widgetScreen;
       }
 
       // Unregister any previous registration before registering the new instance
