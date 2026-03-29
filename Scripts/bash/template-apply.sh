@@ -339,7 +339,7 @@ hyprland)
         if grep -qE 'source\s*=\s*.*noctalia.*\.conf' "$CONFIG_FILE"; then
             echo "Theme already included, skipping modification."
         else
-            # Only convert symlink when we actually need to write
+            # Only convert symlink when we actually need to write (NixOS read-only symlinks)
             if [ -L "$CONFIG_FILE" ] && [ ! -w "$CONFIG_FILE" ]; then
                 echo "Detected read-only symlink, converting to local file..."
                 cp --remove-destination "$(readlink -f "$CONFIG_FILE")" "$CONFIG_FILE"
@@ -372,7 +372,7 @@ sway)
         if grep -qE 'include\s+.*noctalia' "$CONFIG_FILE"; then
             echo "Theme already included, skipping modification."
         else
-            # Only convert symlink when we actually need to write
+            # Only convert symlink when we actually need to write (NixOS read-only symlinks)
             if [ -L "$CONFIG_FILE" ] && [ ! -w "$CONFIG_FILE" ]; then
                 echo "Detected read-only symlink, converting to local file..."
                 cp --remove-destination "$(readlink -f "$CONFIG_FILE")" "$CONFIG_FILE"
@@ -453,9 +453,24 @@ mango)
                 grep -E "^($COLOR_VARS)\s*=" "$conf_file" >>"$BACKUP_FILE"
 
                 # Remove color definitions from original file
-                sed -i -E "/^($COLOR_VARS)\s*=/d" "$conf_file"
+                if [ -L "$conf_file" ] && [ ! -w "$conf_file" ]; then
+                    # Read-only symlink (e.g. NixOS): convert to local file
+                    cp --remove-destination "$(readlink -f "$conf_file")" "$conf_file"
+                    chmod +w "$conf_file"
+                    sed -i -E "/^($COLOR_VARS)\s*=/d" "$conf_file"
+                else
+                    # Edit the real file, preserving any writable symlink
+                    sed -i -E "/^($COLOR_VARS)\s*=/d" "$(readlink -f "$conf_file")"
+                fi
             fi
         done
+
+        # Only convert symlink when we actually need to write
+        if [ -L "$MAIN_CONFIG" ] && [ ! -w "$MAIN_CONFIG" ]; then
+            echo "Detected read-only symlink, converting to local file..."
+            cp --remove-destination "$(readlink -f "$MAIN_CONFIG")" "$MAIN_CONFIG"
+            chmod +w "$MAIN_CONFIG"
+        fi
 
         # Add source line to main config
         if [ -f "$MAIN_CONFIG" ]; then
