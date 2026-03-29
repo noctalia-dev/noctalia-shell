@@ -1892,8 +1892,6 @@
       "apikey-label": "API-lykel",
       "apikey-managed-by-env": "Styrt med NOCTALIA_WALLHAVEN_API_KEY miljøvariabel.",
       "apikey-placeholder": "Skriv inn API-lyklen din for Wallhaven",
-      "apply-all-monitors-description": "Gjev det valde bakgrunnsbiletet til alle skjermar.",
-      "apply-all-monitors-label": "Gjev til alle skjermar.",
       "categories-anime": "Anime",
       "categories-label": "Kategoriar",
       "categories-people": "Folk",
