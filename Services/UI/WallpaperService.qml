@@ -59,6 +59,9 @@ Singleton {
   // Wallpaper panel: which appearance slot (light/dark) new selections apply to — like picking a monitor tab
   property string wallpaperSelectionAppearance: "light"
 
+  // Bumped when favorites are added/removed so grid delegates can refresh star state
+  property int favoritesRevision: 0
+
   // Signal emitted when browse path changes for a screen
   signal browsePathChanged(string screenName, string path)
 
@@ -1329,6 +1332,28 @@ Singleton {
     return Settings.data.wallpaper.favorites[favoriteIndex];
   }
 
+  // Palette / UI for a favorited path. When light and dark use the same wallpaper, pick one stable entry (no slot switching).
+  function getFavoriteForDisplay(path) {
+    if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
+      var anyIdx = _findAnyFavoriteIndexForPath(path);
+      if (anyIdx !== _favoriteNotFound) {
+        return Settings.data.wallpaper.favorites[anyIdx];
+      }
+      return null;
+    }
+    var slot = _normalizeAppearanceSlot(root.wallpaperSelectionAppearance);
+    var idx = _findFavoriteIndex(path, slot);
+    if (idx !== _favoriteNotFound) {
+      return Settings.data.wallpaper.favorites[idx];
+    }
+    var otherSlot = slot === "dark" ? "light" : "dark";
+    idx = _findFavoriteIndex(path, otherSlot);
+    if (idx !== _favoriteNotFound) {
+      return Settings.data.wallpaper.favorites[idx];
+    }
+    return null;
+  }
+
   // -------------------------------------------------------------------
   function toggleFavorite(path, appearanceSlot) {
     var slot;
@@ -1349,6 +1374,7 @@ Singleton {
     }
 
     Settings.data.wallpaper.favorites = favorites;
+    root.favoritesRevision++;
     favoritesChanged(path);
   }
 

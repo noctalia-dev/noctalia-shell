@@ -141,6 +141,8 @@ SmartPanel {
     property var currentScreen: Quickshell.screens[currentScreenIndex]
     property string filterText: ""
     property int appearanceTabIndex: 0
+    readonly property bool headerScreensStripAvailable: !Settings.data.wallpaper.setWallpaperOnAllMonitors || Settings.data.wallpaper.enableMultiMonitorDirectories
+    readonly property bool headerDevicesButtonVisible: Quickshell.screens.length > 1 || Settings.data.wallpaper.enableMultiMonitorDirectories
     property alias screenRepeater: screenRepeater
 
     Component.onCompleted: {
@@ -295,6 +297,26 @@ SmartPanel {
             }
 
             NIconButton {
+              visible: Settings.data.wallpaper.enabled
+              icon: "sun"
+              tooltipText: Settings.data.wallpaper.linkLightAndDarkWallpapers ? I18n.tr("wallpaper.panel.header-sun-linked-tooltip") : I18n.tr("wallpaper.panel.header-sun-separate-tooltip")
+              baseSize: Style.baseWidgetSize * 0.8
+              colorBg: !Settings.data.wallpaper.linkLightAndDarkWallpapers ? Color.mPrimary : Color.smartAlpha(Color.mSurfaceVariant)
+              colorFg: !Settings.data.wallpaper.linkLightAndDarkWallpapers ? Color.mOnPrimary : Color.mPrimary
+              onClicked: Settings.data.wallpaper.linkLightAndDarkWallpapers = !Settings.data.wallpaper.linkLightAndDarkWallpapers
+            }
+
+            NIconButton {
+              visible: Settings.data.wallpaper.enabled && panelContent.headerDevicesButtonVisible
+              icon: "devices"
+              tooltipText: Settings.data.wallpaper.setWallpaperOnAllMonitors ? I18n.tr("wallpaper.panel.header-devices-apply-all-tooltip") : I18n.tr("wallpaper.panel.header-devices-per-monitor-tooltip")
+              baseSize: Style.baseWidgetSize * 0.8
+              colorBg: !Settings.data.wallpaper.setWallpaperOnAllMonitors ? Color.mPrimary : Color.smartAlpha(Color.mSurfaceVariant)
+              colorFg: !Settings.data.wallpaper.setWallpaperOnAllMonitors ? Color.mOnPrimary : Color.mPrimary
+              onClicked: Settings.data.wallpaper.setWallpaperOnAllMonitors = !Settings.data.wallpaper.setWallpaperOnAllMonitors
+            }
+
+            NIconButton {
               icon: "palette"
               tooltipText: I18n.tr("wallpaper.panel.solid-color-tooltip")
               baseSize: Style.baseWidgetSize * 0.8
@@ -323,23 +345,6 @@ SmartPanel {
           }
 
           NDivider {
-            Layout.fillWidth: true
-          }
-
-          NToggle {
-            label: I18n.tr("wallpaper.panel.apply-all-monitors-label")
-            description: I18n.tr("wallpaper.panel.apply-all-monitors-description")
-            checked: Settings.data.wallpaper.setWallpaperOnAllMonitors
-            onToggled: checked => Settings.data.wallpaper.setWallpaperOnAllMonitors = checked
-            Layout.fillWidth: true
-          }
-
-          NToggle {
-            label: I18n.tr("wallpaper.panel.link-light-dark-label")
-            description: I18n.tr("wallpaper.panel.link-light-dark-description")
-            checked: Settings.data.wallpaper.linkLightAndDarkWallpapers
-            onToggled: checked => Settings.data.wallpaper.linkLightAndDarkWallpapers = checked
-            defaultValue: Settings.getDefaultValue("wallpaper.linkLightAndDarkWallpapers")
             Layout.fillWidth: true
           }
 
@@ -372,10 +377,9 @@ SmartPanel {
             }
           }
 
-          // Monitor tabs
           NTabBar {
             id: screenTabBar
-            visible: (!Settings.data.wallpaper.setWallpaperOnAllMonitors || Settings.data.wallpaper.enableMultiMonitorDirectories)
+            visible: panelContent.headerScreensStripAvailable
             Layout.fillWidth: true
             currentIndex: currentScreenIndex
             onCurrentIndexChanged: currentScreenIndex = currentIndex
@@ -685,31 +689,19 @@ SmartPanel {
     property bool isBrowseMode: Settings.data.wallpaper.viewMode === "browse"
     property int _browseScanGeneration: 0
 
-    // Order: (1) favorites for the active Light/Dark tab, (2) favorites only for the other appearance,
-    // (3) everything else. Legacy favorites without "appearance" still match via WallpaperService (darkMode on entry).
+    // All favorited wallpapers (any light/dark slot) first, then the rest
     function sortFavoritesToTop(items) {
-      var forThisAppearance = [];
-      var forOtherAppearance = [];
+      var favs = [];
       var rest = [];
-      var app = WallpaperService.wallpaperSelectionAppearance;
       for (var i = 0; i < items.length; i++) {
         var it = items[i];
-        if (!it.isDirectory) {
-          var path = it.path;
-          var here = WallpaperService.isFavorite(path, app);
-          var any = WallpaperService.isFavorite(path);
-          if (here) {
-            forThisAppearance.push(it);
-          } else if (any) {
-            forOtherAppearance.push(it);
-          } else {
-            rest.push(it);
-          }
+        if (!it.isDirectory && WallpaperService.isFavorite(it.path)) {
+          favs.push(it);
         } else {
           rest.push(it);
         }
       }
-      return forThisAppearance.concat(forOtherAppearance).concat(rest);
+      return favs.concat(rest);
     }
 
     // Rebuild filteredItems and sync to wallpaperModel (full replacement, no animation).
@@ -1130,7 +1122,10 @@ SmartPanel {
             property string wallpaperPath: model.path ?? ""
             property bool isDirectory: model.isDirectory ?? false
             property bool isSelected: !isDirectory && (wallpaperPath === currentWallpaper)
-            property bool isFavorited: !isDirectory && WallpaperService.isFavorite(wallpaperPath, WallpaperService.wallpaperSelectionAppearance)
+            property bool isFavorited: {
+              WallpaperService.favoritesRevision;
+              return !isDirectory && WallpaperService.isFavorite(wallpaperPath);
+            }
             property string filename: model.name ?? wallpaperPath.split('/').pop()
             property string cachedPath: ""
 
@@ -1312,10 +1307,13 @@ SmartPanel {
                 property int _favRevision: 0
                 property var favData: {
                   _favRevision;
+                  WallpaperService.favoritesRevision;
                   WallpaperService.wallpaperSelectionAppearance;
-                  return WallpaperService.getFavorite(wallpaperItem.wallpaperPath, WallpaperService.wallpaperSelectionAppearance);
+                  Settings.data.wallpaper.linkLightAndDarkWallpapers;
+                  return WallpaperService.getFavoriteForDisplay(wallpaperItem.wallpaperPath);
                 }
                 property var colors: favData && favData.paletteColors ? favData.paletteColors : []
+                readonly property bool showAppearanceSlotBadge: !Settings.data.wallpaper.linkLightAndDarkWallpapers
                 property bool isDark: {
                   if (!favData) {
                     return false;
@@ -1337,11 +1335,12 @@ SmartPanel {
                   }
                 }
 
-                // Dark/light mode indicator
+                // Light/dark slot (only when wallpapers differ per appearance — hidden when linked)
                 Rectangle {
                   width: paletteRow.diameter
                   height: paletteRow.diameter
                   radius: width * 0.5
+                  visible: paletteRow.showAppearanceSlotBadge
                   color: Color.mSurface
                   border.color: Color.mShadow
                   border.width: Style.borderS
