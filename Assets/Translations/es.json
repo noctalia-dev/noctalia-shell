@@ -1227,6 +1227,8 @@
       "screen-corners-solid-black-label": "Esquinas negras sólidas",
       "screen-corners-title": "Esquinas de la pantalla",
       "settings-copied": "Ajustes copiados al portapapeles",
+      "smooth-scrolling-description": "Animar el desplazamiento de listas para una experiencia de rueda más fluida.",
+      "smooth-scrolling-label": "Desplazamiento suave",
       "tab-basics": "Básico",
       "tab-keybinds": "Atajos de teclado"
     },

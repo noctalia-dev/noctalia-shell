@@ -1227,6 +1227,8 @@
       "screen-corners-solid-black-label": "Solid black corners",
       "screen-corners-title": "Screen corners",
       "settings-copied": "Settings copied to clipboard",
+      "smooth-scrolling-description": "Animate list scrolling for a smoother wheel experience.",
+      "smooth-scrolling-label": "Smooth scrolling",
       "tab-basics": "Basics",
       "tab-keybinds": "Keybinds"
     },

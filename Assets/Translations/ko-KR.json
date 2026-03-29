@@ -1227,6 +1227,8 @@
       "screen-corners-solid-black-label": "검은색 모서리",
       "screen-corners-title": "화면 모서리",
       "settings-copied": "설정이 클립보드에 복사됨",
+      "smooth-scrolling-description": "목록 스크롤 애니메이션을 적용하여 더 부드러운 휠 경험을 제공합니다.",
+      "smooth-scrolling-label": "부드러운 스크롤",
       "tab-basics": "기본",
       "tab-keybinds": "키 바인딩"
     },
