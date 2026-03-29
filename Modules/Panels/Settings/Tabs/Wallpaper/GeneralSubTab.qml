@@ -182,6 +182,7 @@ ColumnLayout {
     label: I18n.tr("panels.wallpaper.settings-use-original-images-label")
     description: I18n.tr("panels.wallpaper.settings-use-original-images-description")
     checked: Settings.data.wallpaper.useOriginalImages
+    enabled: Settings.data.wallpaper.enabled
     onToggled: checked => Settings.data.wallpaper.useOriginalImages = checked
     defaultValue: Settings.getDefaultValue("wallpaper.useOriginalImages")
   }
@@ -189,6 +190,7 @@ ColumnLayout {
   RowLayout {
     spacing: Style.marginM
     Layout.fillWidth: true
+    enabled: Settings.data.wallpaper.enabled
 
     NLabel {
       label: I18n.tr("panels.wallpaper.settings-clear-cache-label")
@@ -228,10 +230,9 @@ ColumnLayout {
 
     NValueSlider {
       Layout.fillWidth: true
-      enabled: Settings.data.wallpaper.overviewEnabled
+      visible: Settings.data.wallpaper.overviewEnabled
       label: I18n.tr("panels.wallpaper.settings-overview-blur-strength-label")
       description: I18n.tr("panels.wallpaper.settings-overview-blur-strength-description")
-      visible: CompositorService.isNiri
       from: 0.0
       to: 1.0
       stepSize: 0.01
@@ -244,10 +245,9 @@ ColumnLayout {
 
     NValueSlider {
       Layout.fillWidth: true
-      enabled: Settings.data.wallpaper.overviewEnabled
+      visible: Settings.data.wallpaper.overviewEnabled
       label: I18n.tr("panels.wallpaper.settings-overview-tint-label")
       description: I18n.tr("panels.wallpaper.settings-overview-tint-description")
-      visible: CompositorService.isNiri
       from: 0.0
       to: 1.0
       stepSize: 0.01
