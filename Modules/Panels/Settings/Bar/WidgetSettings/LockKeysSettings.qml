@@ -27,7 +27,7 @@ ColumnLayout {
   property bool valueHideWhenOff: widgetData.hideWhenOff !== undefined ? widgetData.hideWhenOff : (widgetMetadata.hideWhenOff !== undefined ? widgetMetadata.hideWhenOff : false)
   property bool valueForceHorizontal: widgetData.forceHorizontal !== undefined ? widgetData.forceHorizontal : (widgetMetadata.forceHorizontal !== undefined ? widgetMetadata.forceHorizontal : false)
 
-function saveSettings() {
+  function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.showCapsLock = valueShowCapsLock;
     settings.showNumLock = valueShowNumLock;
@@ -38,7 +38,7 @@ function saveSettings() {
     settings.hideWhenOff = valueHideWhenOff;
     settings.forceHorizontal = valueForceHorizontal; // Add this line
     settingsChanged(settings);
-}
+  }
 
   RowLayout {
     spacing: Style.marginM
@@ -48,9 +48,9 @@ function saveSettings() {
       description: I18n.tr("bar.lock-keys.show-caps-lock-description")
       checked: valueShowCapsLock
       onToggled: checked => {
-                   valueShowCapsLock = checked;
-                   saveSettings();
-                 }
+        valueShowCapsLock = checked;
+        saveSettings();
+      }
       defaultValue: widgetMetadata.showCapsLock
     }
 
@@ -86,9 +86,9 @@ function saveSettings() {
       description: I18n.tr("bar.lock-keys.show-num-lock-description")
       checked: valueShowNumLock
       onToggled: checked => {
-                   valueShowNumLock = checked;
-                   saveSettings();
-                 }
+        valueShowNumLock = checked;
+        saveSettings();
+      }
       defaultValue: widgetMetadata.showNumLock
     }
 
@@ -124,9 +124,9 @@ function saveSettings() {
       description: I18n.tr("bar.lock-keys.show-scroll-lock-description")
       checked: valueShowScrollLock
       onToggled: checked => {
-                   valueShowScrollLock = checked;
-                   saveSettings();
-                 }
+        valueShowScrollLock = checked;
+        saveSettings();
+      }
       defaultValue: widgetMetadata.showScrollLock
     }
 
@@ -164,21 +164,20 @@ function saveSettings() {
     description: I18n.tr("bar.lock-keys.hide-when-off-description")
     checked: valueHideWhenOff
     onToggled: checked => {
-                 valueHideWhenOff = checked;
-                 saveSettings();
-               }
+      valueHideWhenOff = checked;
+      saveSettings();
+    }
     defaultValue: widgetMetadata.hideWhenOff
   }
-	NToggle {
-		Layout.fillWidth: true
-		label: I18n.tr("bar.lock-keys.force-horizontal-label")
-		description: I18n.tr("bar.lock-keys.force-horizontal-description")
-		checked: valueForceHorizontal
-		onToggled: checked => {
-					 valueForceHorizontal = checked;
-					 saveSettings();
-				   }
-		defaultValue: widgetMetadata.forceHorizontal
-	  }  
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("bar.lock-keys.force-horizontal-label")
+    description: I18n.tr("bar.lock-keys.force-horizontal-description")
+    checked: valueForceHorizontal
+    onToggled: checked => {
+      valueForceHorizontal = checked;
+      saveSettings();
+    }
+    defaultValue: widgetMetadata.forceHorizontal
+  }
 }
-

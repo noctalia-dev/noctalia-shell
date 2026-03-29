@@ -12,312 +12,312 @@ Singleton {
 
   // Widget registry object mapping widget names to components
   property var widgets: ({
-                           "ActiveWindow": activeWindowComponent,
-                           "AudioVisualizer": audioVisualizerComponent,
-                           "Battery": batteryComponent,
-                           "Bluetooth": bluetoothComponent,
-                           "Brightness": brightnessComponent,
-                           "Clock": clockComponent,
-                           "ControlCenter": controlCenterComponent,
-                           "CustomButton": customButtonComponent,
-                           "DarkMode": darkModeComponent,
-                           "KeepAwake": keepAwakeComponent,
-                           "KeyboardLayout": keyboardLayoutComponent,
-                           "LockKeys": lockKeysComponent,
-                           "Launcher": launcherComponent,
-                           "MediaMini": mediaMiniComponent,
-                           "Microphone": microphoneComponent,
-                           "Network": networkComponent,
-                           "NightLight": nightLightComponent,
-                           "NoctaliaPerformance": noctaliaPerformanceComponent,
-                           "NotificationHistory": notificationHistoryComponent,
-                           "PowerProfile": powerProfileComponent,
-                           "SessionMenu": sessionMenuComponent,
-                           "Settings": settingsComponent,
-                           "Spacer": spacerComponent,
-                           "SystemMonitor": systemMonitorComponent,
-                           "Taskbar": taskbarComponent,
-                           "Tray": trayComponent,
-                           "Volume": volumeComponent,
-                           "VPN": vpnComponent,
-                           "WallpaperSelector": wallpaperSelectorComponent,
-                           "Workspace": workspaceComponent
-                         })
+    "ActiveWindow": activeWindowComponent,
+    "AudioVisualizer": audioVisualizerComponent,
+    "Battery": batteryComponent,
+    "Bluetooth": bluetoothComponent,
+    "Brightness": brightnessComponent,
+    "Clock": clockComponent,
+    "ControlCenter": controlCenterComponent,
+    "CustomButton": customButtonComponent,
+    "DarkMode": darkModeComponent,
+    "KeepAwake": keepAwakeComponent,
+    "KeyboardLayout": keyboardLayoutComponent,
+    "LockKeys": lockKeysComponent,
+    "Launcher": launcherComponent,
+    "MediaMini": mediaMiniComponent,
+    "Microphone": microphoneComponent,
+    "Network": networkComponent,
+    "NightLight": nightLightComponent,
+    "NoctaliaPerformance": noctaliaPerformanceComponent,
+    "NotificationHistory": notificationHistoryComponent,
+    "PowerProfile": powerProfileComponent,
+    "SessionMenu": sessionMenuComponent,
+    "Settings": settingsComponent,
+    "Spacer": spacerComponent,
+    "SystemMonitor": systemMonitorComponent,
+    "Taskbar": taskbarComponent,
+    "Tray": trayComponent,
+    "Volume": volumeComponent,
+    "VPN": vpnComponent,
+    "WallpaperSelector": wallpaperSelectorComponent,
+    "Workspace": workspaceComponent
+  })
 
   property var widgetSettingsMap: ({
-                                     "ActiveWindow": "WidgetSettings/ActiveWindowSettings.qml",
-                                     "AudioVisualizer": "WidgetSettings/AudioVisualizerSettings.qml",
-                                     "Battery": "WidgetSettings/BatterySettings.qml",
-                                     "Bluetooth": "WidgetSettings/BluetoothSettings.qml",
-                                     "Brightness": "WidgetSettings/BrightnessSettings.qml",
-                                     "Clock": "WidgetSettings/ClockSettings.qml",
-                                     "ControlCenter": "WidgetSettings/ControlCenterSettings.qml",
-                                     "CustomButton": "WidgetSettings/CustomButtonSettings.qml",
-                                     "DarkMode": "WidgetSettings/DarkModeSettings.qml",
-                                     "KeepAwake": "WidgetSettings/KeepAwakeSettings.qml",
-                                     "KeyboardLayout": "WidgetSettings/KeyboardLayoutSettings.qml",
-                                     "Launcher": "WidgetSettings/LauncherSettings.qml",
-                                     "LockKeys": "WidgetSettings/LockKeysSettings.qml",
-                                     "MediaMini": "WidgetSettings/MediaMiniSettings.qml",
-                                     "Microphone": "WidgetSettings/MicrophoneSettings.qml",
-                                     "Network": "WidgetSettings/NetworkSettings.qml",
-                                     "NightLight": "WidgetSettings/NightLightSettings.qml",
-                                     "NoctaliaPerformance": "WidgetSettings/NoctaliaPerformanceSettings.qml",
-                                     "NotificationHistory": "WidgetSettings/NotificationHistorySettings.qml",
-                                     "PowerProfile": "WidgetSettings/PowerProfileSettings.qml",
-                                     "SessionMenu": "WidgetSettings/SessionMenuSettings.qml",
-                                     "Settings": "WidgetSettings/SettingsSettings.qml",
-                                     "Spacer": "WidgetSettings/SpacerSettings.qml",
-                                     "SystemMonitor": "WidgetSettings/SystemMonitorSettings.qml",
-                                     "Taskbar": "WidgetSettings/TaskbarSettings.qml",
-                                     "Tray": "WidgetSettings/TraySettings.qml",
-                                     "Volume": "WidgetSettings/VolumeSettings.qml",
-                                     "VPN": "WidgetSettings/VPNSettings.qml",
-                                     "WallpaperSelector": "WidgetSettings/WallpaperSelectorSettings.qml",
-                                     "Workspace": "WidgetSettings/WorkspaceSettings.qml"
-                                   })
+    "ActiveWindow": "WidgetSettings/ActiveWindowSettings.qml",
+    "AudioVisualizer": "WidgetSettings/AudioVisualizerSettings.qml",
+    "Battery": "WidgetSettings/BatterySettings.qml",
+    "Bluetooth": "WidgetSettings/BluetoothSettings.qml",
+    "Brightness": "WidgetSettings/BrightnessSettings.qml",
+    "Clock": "WidgetSettings/ClockSettings.qml",
+    "ControlCenter": "WidgetSettings/ControlCenterSettings.qml",
+    "CustomButton": "WidgetSettings/CustomButtonSettings.qml",
+    "DarkMode": "WidgetSettings/DarkModeSettings.qml",
+    "KeepAwake": "WidgetSettings/KeepAwakeSettings.qml",
+    "KeyboardLayout": "WidgetSettings/KeyboardLayoutSettings.qml",
+    "Launcher": "WidgetSettings/LauncherSettings.qml",
+    "LockKeys": "WidgetSettings/LockKeysSettings.qml",
+    "MediaMini": "WidgetSettings/MediaMiniSettings.qml",
+    "Microphone": "WidgetSettings/MicrophoneSettings.qml",
+    "Network": "WidgetSettings/NetworkSettings.qml",
+    "NightLight": "WidgetSettings/NightLightSettings.qml",
+    "NoctaliaPerformance": "WidgetSettings/NoctaliaPerformanceSettings.qml",
+    "NotificationHistory": "WidgetSettings/NotificationHistorySettings.qml",
+    "PowerProfile": "WidgetSettings/PowerProfileSettings.qml",
+    "SessionMenu": "WidgetSettings/SessionMenuSettings.qml",
+    "Settings": "WidgetSettings/SettingsSettings.qml",
+    "Spacer": "WidgetSettings/SpacerSettings.qml",
+    "SystemMonitor": "WidgetSettings/SystemMonitorSettings.qml",
+    "Taskbar": "WidgetSettings/TaskbarSettings.qml",
+    "Tray": "WidgetSettings/TraySettings.qml",
+    "Volume": "WidgetSettings/VolumeSettings.qml",
+    "VPN": "WidgetSettings/VPNSettings.qml",
+    "WallpaperSelector": "WidgetSettings/WallpaperSelectorSettings.qml",
+    "Workspace": "WidgetSettings/WorkspaceSettings.qml"
+  })
 
   property var widgetMetadata: ({
-                                  "ActiveWindow": {
-                                    "showIcon": true,
-                                    "hideMode": "hidden",
-                                    "scrollingMode": "hover",
-                                    "maxWidth": 145,
-                                    "useFixedWidth": false,
-                                    "colorizeIcons": false,
-                                    "textColor": "none"
-                                  },
-                                  "AudioVisualizer": {
-                                    "width": 200,
-                                    "colorName": "primary",
-                                    "hideWhenIdle": false
-                                  },
-                                  "Battery": {
-                                    "displayMode": "graphic-clean",
-                                    "deviceNativePath": "__default__",
-                                    "showPowerProfiles": false,
-                                    "showNoctaliaPerformance": false,
-                                    "hideIfNotDetected": true,
-                                    "hideIfIdle": false
-                                  },
-                                  "Bluetooth": {
-                                    "displayMode": "onhover",
-                                    "iconColor": "none",
-                                    "textColor": "none"
-                                  },
-                                  "Brightness": {
-                                    "displayMode": "onhover",
-                                    "iconColor": "none",
-                                    "textColor": "none",
-                                    "applyToAllMonitors": false
-                                  },
-                                  "Clock": {
-                                    "clockColor": "none",
-                                    "useCustomFont": false,
-                                    "customFont": "",
-                                    "formatHorizontal": "HH:mm ddd, MMM dd",
-                                    "formatVertical": "HH mm - dd MM",
-                                    "tooltipFormat": "HH:mm ddd, MMM dd"
-                                  },
-                                  "ControlCenter": {
-                                    "useDistroLogo": false,
-                                    "icon": "noctalia",
-                                    "customIconPath": "",
-                                    "colorizeDistroLogo": false,
-                                    "colorizeSystemIcon": "none",
-                                    "enableColorization": false
-                                  },
-                                  "CustomButton": {
-                                    "icon": "heart",
-                                    "showIcon": true,
-                                    "showExecTooltip": true,
-                                    "showTextTooltip": true,
-                                    "generalTooltipText": "",
-                                    "hideMode": "alwaysExpanded",
-                                    "leftClickExec": "",
-                                    "leftClickUpdateText": false,
-                                    "rightClickExec": "",
-                                    "rightClickUpdateText": false,
-                                    "middleClickExec": "",
-                                    "middleClickUpdateText": false,
-                                    "textCommand": "",
-                                    "textStream": false,
-                                    "textIntervalMs": 3000,
-                                    "textCollapse": "",
-                                    "parseJson": false,
-                                    "wheelExec": "",
-                                    "wheelUpExec": "",
-                                    "wheelDownExec": "",
-                                    "wheelMode": "unified",
-                                    "wheelUpdateText": false,
-                                    "wheelUpUpdateText": false,
-                                    "wheelDownUpdateText": false,
-                                    "maxTextLength": {
-                                      "horizontal": 10,
-                                      "vertical": 10
-                                    },
-                                    "enableColorization": false,
-                                    "colorizeSystemIcon": "none",
-                                    "ipcIdentifier": ""
-                                  },
-                                  "DarkMode": {
-                                    "iconColor": "none"
-                                  },
-                                  "KeepAwake": {
-                                    "iconColor": "none",
-                                    "textColor": "none"
-                                  },
-                                  "KeyboardLayout": {
-                                    "displayMode": "onhover",
-                                    "showIcon": true,
-                                    "iconColor": "none",
-                                    "textColor": "none"
-                                  },
-                                  "LockKeys": {
-                                    "showCapsLock": true,
-                                    "showNumLock": true,
-                                    "showScrollLock": true,
-                                    "capsLockIcon": "letter-c",
-                                    "numLockIcon": "letter-n",
-                                    "scrollLockIcon": "letter-s",
-                                    "hideWhenOff": false,
-                                    "forceHorizontal": false
-                                  },
-                                  "Launcher": {
-                                    "useDistroLogo": false,
-                                    "icon": "rocket",
-                                    "customIconPath": "",
-                                    "colorizeSystemIcon": "none",
-                                    "enableColorization": false,
-                                    "iconColor": "none"
-                                  },
-                                  "MediaMini": {
-                                    "hideMode": "hidden",
-                                    "scrollingMode": "hover",
-                                    "maxWidth": 145,
-                                    "useFixedWidth": false,
-                                    "hideWhenIdle": false,
-                                    "showAlbumArt": true,
-                                    "showArtistFirst": true,
-                                    "showVisualizer": false,
-                                    "showProgressRing": true,
-                                    "visualizerType": "linear",
-                                    "textColor": "none",
-                                    "compactMode": false,
-                                    "panelShowAlbumArt": true
-                                  },
-                                  "Microphone": {
-                                    "displayMode": "onhover",
-                                    "middleClickCommand": "pwvucontrol || pavucontrol",
-                                    "iconColor": "none",
-                                    "textColor": "none"
-                                  },
-                                  "NotificationHistory": {
-                                    "showUnreadBadge": true,
-                                    "hideWhenZero": false,
-                                    "hideWhenZeroUnread": false,
-                                    "unreadBadgeColor": "primary",
-                                    "iconColor": "none"
-                                  },
-                                  "SessionMenu": {
-                                    "iconColor": "error"
-                                  },
-                                  "Settings": {
-                                    "iconColor": "none"
-                                  },
-                                  "Spacer": {
-                                    "width": 20
-                                  },
-                                  "SystemMonitor": {
-                                    "compactMode": true,
-                                    "iconColor": "none",
-                                    "textColor": "none",
-                                    "useMonospaceFont": true,
-                                    "usePadding": false,
-                                    "showCpuUsage": true,
-                                    "showCpuCores": false,
-                                    "showCpuFreq": false,
-                                    "showCpuTemp": true,
-                                    "showGpuTemp": false,
-                                    "showLoadAverage": false,
-                                    "showMemoryUsage": true,
-                                    "showMemoryAsPercent": false,
-                                    "showSwapUsage": false,
-                                    "showNetworkStats": false,
-                                    "showDiskUsage": false,
-                                    "showDiskUsageAsPercent": false,
-                                    "showDiskAvailable": false,
-                                    "diskPath": "/"
-                                  },
-                                  "Taskbar": {
-                                    "onlySameOutput": true,
-                                    "onlyActiveWorkspaces": true,
-                                    "hideMode": "hidden",
-                                    "colorizeIcons": false,
-                                    "showTitle": false,
-                                    "titleWidth": 120,
-                                    "showPinnedApps": true,
-                                    "smartWidth": true,
-                                    "maxTaskbarWidth": 40,
-                                    "iconScale": 0.8
-                                  },
-                                  "Tray": {
-                                    "blacklist": [],
-                                    "colorizeIcons": false,
-                                    "chevronColor": "none",
-                                    "pinned": [],
-                                    "drawerEnabled": true,
-                                    "hidePassive": false
-                                  },
-                                  "VPN": {
-                                    "displayMode": "onhover",
-                                    "iconColor": "none",
-                                    "textColor": "none"
-                                  },
-                                  "Network": {
-                                    "displayMode": "onhover",
-                                    "iconColor": "none",
-                                    "textColor": "none"
-                                  },
-                                  "NightLight": {
-                                    "iconColor": "none"
-                                  },
-                                  "NoctaliaPerformance": {
-                                    "iconColor": "none"
-                                  },
-                                  "PowerProfile": {
-                                    "iconColor": "none"
-                                  },
-                                  "Workspace": {
-                                    "labelMode": "index",
-                                    "followFocusedScreen": false,
-                                    "hideUnoccupied": false,
-                                    "characterCount": 2,
-                                    "showApplications": false,
-                                    "showApplicationsHover": false,
-                                    "showLabelsOnlyWhenOccupied": true,
-                                    "colorizeIcons": false,
-                                    "unfocusedIconsOpacity": 1.0,
-                                    "groupedBorderOpacity": 1.0,
-                                    "enableScrollWheel": true,
-                                    "iconScale": 0.8,
-                                    "focusedColor": "primary",
-                                    "occupiedColor": "secondary",
-                                    "emptyColor": "secondary",
-                                    "showBadge": true,
-                                    "pillSize": 0.6,
-                                    "fontWeight": "bold"
-                                  },
-                                  "Volume": {
-                                    "displayMode": "onhover",
-                                    "middleClickCommand": "pwvucontrol || pavucontrol",
-                                    "iconColor": "none",
-                                    "textColor": "none"
-                                  },
-                                  "WallpaperSelector": {
-                                    "iconColor": "none"
-                                  }
-                                })
+    "ActiveWindow": {
+      "showIcon": true,
+      "hideMode": "hidden",
+      "scrollingMode": "hover",
+      "maxWidth": 145,
+      "useFixedWidth": false,
+      "colorizeIcons": false,
+      "textColor": "none"
+    },
+    "AudioVisualizer": {
+      "width": 200,
+      "colorName": "primary",
+      "hideWhenIdle": false
+    },
+    "Battery": {
+      "displayMode": "graphic-clean",
+      "deviceNativePath": "__default__",
+      "showPowerProfiles": false,
+      "showNoctaliaPerformance": false,
+      "hideIfNotDetected": true,
+      "hideIfIdle": false
+    },
+    "Bluetooth": {
+      "displayMode": "onhover",
+      "iconColor": "none",
+      "textColor": "none"
+    },
+    "Brightness": {
+      "displayMode": "onhover",
+      "iconColor": "none",
+      "textColor": "none",
+      "applyToAllMonitors": false
+    },
+    "Clock": {
+      "clockColor": "none",
+      "useCustomFont": false,
+      "customFont": "",
+      "formatHorizontal": "HH:mm ddd, MMM dd",
+      "formatVertical": "HH mm - dd MM",
+      "tooltipFormat": "HH:mm ddd, MMM dd"
+    },
+    "ControlCenter": {
+      "useDistroLogo": false,
+      "icon": "noctalia",
+      "customIconPath": "",
+      "colorizeDistroLogo": false,
+      "colorizeSystemIcon": "none",
+      "enableColorization": false
+    },
+    "CustomButton": {
+      "icon": "heart",
+      "showIcon": true,
+      "showExecTooltip": true,
+      "showTextTooltip": true,
+      "generalTooltipText": "",
+      "hideMode": "alwaysExpanded",
+      "leftClickExec": "",
+      "leftClickUpdateText": false,
+      "rightClickExec": "",
+      "rightClickUpdateText": false,
+      "middleClickExec": "",
+      "middleClickUpdateText": false,
+      "textCommand": "",
+      "textStream": false,
+      "textIntervalMs": 3000,
+      "textCollapse": "",
+      "parseJson": false,
+      "wheelExec": "",
+      "wheelUpExec": "",
+      "wheelDownExec": "",
+      "wheelMode": "unified",
+      "wheelUpdateText": false,
+      "wheelUpUpdateText": false,
+      "wheelDownUpdateText": false,
+      "maxTextLength": {
+        "horizontal": 10,
+        "vertical": 10
+      },
+      "enableColorization": false,
+      "colorizeSystemIcon": "none",
+      "ipcIdentifier": ""
+    },
+    "DarkMode": {
+      "iconColor": "none"
+    },
+    "KeepAwake": {
+      "iconColor": "none",
+      "textColor": "none"
+    },
+    "KeyboardLayout": {
+      "displayMode": "onhover",
+      "showIcon": true,
+      "iconColor": "none",
+      "textColor": "none"
+    },
+    "LockKeys": {
+      "showCapsLock": true,
+      "showNumLock": true,
+      "showScrollLock": true,
+      "capsLockIcon": "letter-c",
+      "numLockIcon": "letter-n",
+      "scrollLockIcon": "letter-s",
+      "hideWhenOff": false,
+      "forceHorizontal": false
+    },
+    "Launcher": {
+      "useDistroLogo": false,
+      "icon": "rocket",
+      "customIconPath": "",
+      "colorizeSystemIcon": "none",
+      "enableColorization": false,
+      "iconColor": "none"
+    },
+    "MediaMini": {
+      "hideMode": "hidden",
+      "scrollingMode": "hover",
+      "maxWidth": 145,
+      "useFixedWidth": false,
+      "hideWhenIdle": false,
+      "showAlbumArt": true,
+      "showArtistFirst": true,
+      "showVisualizer": false,
+      "showProgressRing": true,
+      "visualizerType": "linear",
+      "textColor": "none",
+      "compactMode": false,
+      "panelShowAlbumArt": true
+    },
+    "Microphone": {
+      "displayMode": "onhover",
+      "middleClickCommand": "pwvucontrol || pavucontrol",
+      "iconColor": "none",
+      "textColor": "none"
+    },
+    "NotificationHistory": {
+      "showUnreadBadge": true,
+      "hideWhenZero": false,
+      "hideWhenZeroUnread": false,
+      "unreadBadgeColor": "primary",
+      "iconColor": "none"
+    },
+    "SessionMenu": {
+      "iconColor": "error"
+    },
+    "Settings": {
+      "iconColor": "none"
+    },
+    "Spacer": {
+      "width": 20
+    },
+    "SystemMonitor": {
+      "compactMode": true,
+      "iconColor": "none",
+      "textColor": "none",
+      "useMonospaceFont": true,
+      "usePadding": false,
+      "showCpuUsage": true,
+      "showCpuCores": false,
+      "showCpuFreq": false,
+      "showCpuTemp": true,
+      "showGpuTemp": false,
+      "showLoadAverage": false,
+      "showMemoryUsage": true,
+      "showMemoryAsPercent": false,
+      "showSwapUsage": false,
+      "showNetworkStats": false,
+      "showDiskUsage": false,
+      "showDiskUsageAsPercent": false,
+      "showDiskAvailable": false,
+      "diskPath": "/"
+    },
+    "Taskbar": {
+      "onlySameOutput": true,
+      "onlyActiveWorkspaces": true,
+      "hideMode": "hidden",
+      "colorizeIcons": false,
+      "showTitle": false,
+      "titleWidth": 120,
+      "showPinnedApps": true,
+      "smartWidth": true,
+      "maxTaskbarWidth": 40,
+      "iconScale": 0.8
+    },
+    "Tray": {
+      "blacklist": [],
+      "colorizeIcons": false,
+      "chevronColor": "none",
+      "pinned": [],
+      "drawerEnabled": true,
+      "hidePassive": false
+    },
+    "VPN": {
+      "displayMode": "onhover",
+      "iconColor": "none",
+      "textColor": "none"
+    },
+    "Network": {
+      "displayMode": "onhover",
+      "iconColor": "none",
+      "textColor": "none"
+    },
+    "NightLight": {
+      "iconColor": "none"
+    },
+    "NoctaliaPerformance": {
+      "iconColor": "none"
+    },
+    "PowerProfile": {
+      "iconColor": "none"
+    },
+    "Workspace": {
+      "labelMode": "index",
+      "followFocusedScreen": false,
+      "hideUnoccupied": false,
+      "characterCount": 2,
+      "showApplications": false,
+      "showApplicationsHover": false,
+      "showLabelsOnlyWhenOccupied": true,
+      "colorizeIcons": false,
+      "unfocusedIconsOpacity": 1.0,
+      "groupedBorderOpacity": 1.0,
+      "enableScrollWheel": true,
+      "iconScale": 0.8,
+      "focusedColor": "primary",
+      "occupiedColor": "secondary",
+      "emptyColor": "secondary",
+      "showBadge": true,
+      "pillSize": 0.6,
+      "fontWeight": "bold"
+    },
+    "Volume": {
+      "displayMode": "onhover",
+      "middleClickCommand": "pwvucontrol || pavucontrol",
+      "iconColor": "none",
+      "textColor": "none"
+    },
+    "WallpaperSelector": {
+      "iconColor": "none"
+    }
+  })
 
   // Component definitions - these are loaded once at startup
   property Component activeWindowComponent: Component {
