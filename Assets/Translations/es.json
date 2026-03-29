@@ -2066,6 +2066,8 @@
       "categories-people": "Personas",
       "color-extraction-disabled": "Usar extracción de colores del fondo de pantalla",
       "color-extraction-enabled": "Usar esquemas de color predefinidos",
+      "link-light-dark-description": "Usar un mismo fondo de pantalla para la apariencia clara y oscura. Desactiva para elegir imágenes diferentes.",
+      "link-light-dark-label": "Mismo fondo de pantalla para claro y oscuro",
       "order-asc": "Ascendente",
       "order-desc": "Descendente",
       "order-label": "Orden",

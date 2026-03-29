@@ -2066,6 +2066,8 @@
       "categories-people": "人物",
       "color-extraction-disabled": "使用壁纸颜色提取",
       "color-extraction-enabled": "使用预设配色方案",
+      "link-light-dark-description": "为浅色和深色外观使用同一张壁纸。关闭此选项以选择不同的图片。",
+      "link-light-dark-label": "明暗模式使用相同壁纸",
       "order-asc": "升序",
       "order-desc": "降序",
       "order-label": "顺序",

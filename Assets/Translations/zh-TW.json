@@ -2066,6 +2066,8 @@
       "categories-people": "人物",
       "color-extraction-disabled": "使用桌布顏色擷取",
       "color-extraction-enabled": "使用預設配色方案",
+      "link-light-dark-description": "為淺色和深色外觀使用同一張桌布。關閉此選項以選擇不同的圖片。",
+      "link-light-dark-label": "明暗模式使用相同桌布",
       "order-asc": "升序",
       "order-desc": "降序",
       "order-label": "排序",

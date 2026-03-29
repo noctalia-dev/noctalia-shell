@@ -2066,6 +2066,8 @@
       "categories-people": "인물",
       "color-extraction-disabled": "배경화면 색상 추출 사용",
       "color-extraction-enabled": "사전 정의된 색상 구성표 사용",
+      "link-light-dark-description": "밝고 어두운 테마 모두에 하나의 배경화면을 사용합니다. 끄면 다른 이미지를 선택할 수 있습니다.",
+      "link-light-dark-label": "밝고 어두운 모드에 동일한 배경화면",
       "order-asc": "오름차순",
       "order-desc": "내림차순",
       "order-label": "순서",

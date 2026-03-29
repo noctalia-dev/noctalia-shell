@@ -2066,6 +2066,8 @@
       "categories-people": "People",
       "color-extraction-disabled": "Use wallpaper colour extraction",
       "color-extraction-enabled": "Use predefined colour schemes",
+      "link-light-dark-description": "Use one wallpaper for both light and dark appearance. Turn off to pick different images.",
+      "link-light-dark-label": "Same wallpaper for light and dark",
       "order-asc": "Ascending",
       "order-desc": "Descending",
       "order-label": "Order",

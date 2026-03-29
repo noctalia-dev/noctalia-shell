@@ -2066,6 +2066,8 @@
       "categories-people": "Personer",
       "color-extraction-disabled": "Använd bakgrundsfärgsutvinning",
       "color-extraction-enabled": "Använd fördefinierade färgscheman",
+      "link-light-dark-description": "Använd en bakgrundsbild för både ljust och mörkt utseende. Stäng av för att välja olika bilder.",
+      "link-light-dark-label": "Samma bakgrundsbild för ljust och mörkt",
       "order-asc": "Stigande",
       "order-desc": "Fallande",
       "order-label": "Ordning",

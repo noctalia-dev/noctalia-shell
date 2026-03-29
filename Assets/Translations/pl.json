@@ -2066,6 +2066,8 @@
       "categories-people": "Ludzie",
       "color-extraction-disabled": "Użyj ekstrakcji kolorów tapety",
       "color-extraction-enabled": "Użyj predefiniowanych schematów kolorów",
+      "link-light-dark-description": "Użyj jednej tapety dla jasnego i ciemnego wyglądu. Wyłącz, aby wybrać inne obrazy.",
+      "link-light-dark-label": "Ta sama tapeta dla trybu jasnego i ciemnego",
       "order-asc": "Rosnąco",
       "order-desc": "Malejąco",
       "order-label": "Kolejność",

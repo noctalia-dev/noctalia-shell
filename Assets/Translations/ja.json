@@ -2066,6 +2066,8 @@
       "categories-people": "人物",
       "color-extraction-disabled": "壁紙の色抽出を使用する",
       "color-extraction-enabled": "事前定義された配色スキームを使用する",
+      "link-light-dark-description": "ライトとダークの両方の外観に同じ壁紙を使用します。オフにすると、異なる画像を選択できます。",
+      "link-light-dark-label": "ライトとダークで同じ壁紙",
       "order-asc": "昇順",
       "order-desc": "降順",
       "order-label": "順序",

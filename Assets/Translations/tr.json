@@ -2066,6 +2066,8 @@
       "categories-people": "İnsanlar",
       "color-extraction-disabled": "Duvar kağıdı renk çıkarma kullan",
       "color-extraction-enabled": "Önceden tanımlanmış renk şemalarını kullan",
+      "link-light-dark-description": "Hem açık hem de koyu görünüm için tek bir duvar kağıdı kullanın. Farklı görseller seçmek için kapatın.",
+      "link-light-dark-label": "Açık ve koyu için aynı duvar kağıdı",
       "order-asc": "Artan",
       "order-desc": "Azalan",
       "order-label": "Sıra",

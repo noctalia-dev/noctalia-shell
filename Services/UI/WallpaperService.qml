@@ -139,11 +139,21 @@ Singleton {
     function onSortOrderChanged() {
       root.refreshWallpapersList();
     }
+    function onLinkLightAndDarkWallpapersChanged() {
+      if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
+        root.wallpaperSelectionAppearance = Settings.data.colorSchemes.darkMode ? "dark" : "light";
+        root._syncWallpaperSlotsWhenLinking();
+      }
+      root._notifyAllWallpapersChanged();
+    }
   }
 
   Connections {
     target: Settings.data.colorSchemes
     function onDarkModeChanged() {
+      if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
+        root.wallpaperSelectionAppearance = Settings.data.colorSchemes.darkMode ? "dark" : "light";
+      }
       // Restore scheme from favorite for this light/dark slot before wallpaper refresh
       root.reapplyFavoriteThemeForActiveWallpaper();
       root._notifyAllWallpapersChanged();
@@ -569,9 +579,18 @@ Singleton {
         return;
       }
       var p = _pathsFromEntry(e);
-      var old = slot === "dark" ? p.dark : p.light;
-      if (old && old !== newPath) {
-        paths.push(old);
+      if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
+        if (p.light && p.light !== newPath) {
+          paths.push(p.light);
+        }
+        if (p.dark && p.dark !== newPath && p.dark !== p.light) {
+          paths.push(p.dark);
+        }
+      } else {
+        var old = slot === "dark" ? p.dark : p.light;
+        if (old && old !== newPath) {
+          paths.push(old);
+        }
       }
     }
 
@@ -595,7 +614,16 @@ Singleton {
     }
 
     unique.forEach(function (path) {
-      if (path && path !== newPath && isFavorite(path, slot)) {
+      if (!path || path === newPath) {
+        return;
+      }
+      if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
+        ["light", "dark"].forEach(function (app) {
+          if (isFavorite(path, app)) {
+            updateFavoriteColorScheme(path, app);
+          }
+        });
+      } else if (isFavorite(path, slot)) {
         updateFavoriteColorScheme(path, slot);
       }
     });
@@ -627,6 +655,36 @@ Singleton {
     return "";
   }
 
+  function _syncWallpaperSlotsWhenLinking() {
+    var names = new Set(Object.keys(currentWallpapers));
+    for (var i = 0; i < Quickshell.screens.length; i++) {
+      names.add(Quickshell.screens[i].name);
+    }
+    names.forEach(function (name) {
+      var e = currentWallpapers[name];
+      if (!e) {
+        return;
+      }
+      var eff = _entryToEffectivePath(e);
+      if (!eff) {
+        return;
+      }
+      var merged = {
+        light: eff,
+        dark: eff
+      };
+      if (_entriesEqual(e, merged)) {
+        return;
+      }
+      currentWallpapers[name] = merged;
+      saveTimer.restart();
+      root.wallpaperChanged(name, eff);
+    });
+    if (randomWallpaperTimer.running) {
+      randomWallpaperTimer.restart();
+    }
+  }
+
   function _setWallpaper(screenName, path, appearanceSlot) {
     if (path === "" || path === undefined) {
       return;
@@ -641,7 +699,12 @@ Singleton {
     var oldEntry = currentWallpapers[screenName];
     var p = _pathsFromEntry(oldEntry);
     var newEntry;
-    if (slot === "dark") {
+    if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
+      newEntry = {
+        light: path,
+        dark: path
+      };
+    } else if (slot === "dark") {
       newEntry = {
         light: p.light || p.dark || path,
         dark: path
@@ -1431,6 +1494,11 @@ Singleton {
       root.usedRandomWallpapers = wallpaperCacheAdapter.usedRandomWallpapers || {};
 
       root._ensureObjectWallpaperEntries();
+
+      if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
+        root.wallpaperSelectionAppearance = Settings.data.colorSchemes.darkMode ? "dark" : "light";
+        root._syncWallpaperSlotsWhenLinking();
+      }
 
       // Load default wallpaper from cache if it exists, otherwise use Noctalia default
       if (wallpaperCacheAdapter.defaultWallpaper && wallpaperCacheAdapter.defaultWallpaper !== "") {

@@ -2066,6 +2066,8 @@
       "categories-people": "Emberek",
       "color-extraction-disabled": "Háttérkép színkivonás használata",
       "color-extraction-enabled": "Előre meghatározott színsémák használata",
+      "link-light-dark-description": "Egy háttérkép használata világos és sötét megjelenéshez is. Kapcsolja ki, hogy különböző képeket választhasson.",
+      "link-light-dark-label": "Ugyanaz a háttérkép világos és sötét módhoz",
       "order-asc": "Növekvő",
       "order-desc": "Csökkenő",
       "order-label": "Sorrend",

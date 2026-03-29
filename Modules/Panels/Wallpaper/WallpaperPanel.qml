@@ -334,9 +334,18 @@ SmartPanel {
             Layout.fillWidth: true
           }
 
+          NToggle {
+            label: I18n.tr("wallpaper.panel.link-light-dark-label")
+            description: I18n.tr("wallpaper.panel.link-light-dark-description")
+            checked: Settings.data.wallpaper.linkLightAndDarkWallpapers
+            onToggled: checked => Settings.data.wallpaper.linkLightAndDarkWallpapers = checked
+            defaultValue: Settings.getDefaultValue("wallpaper.linkLightAndDarkWallpapers")
+            Layout.fillWidth: true
+          }
+
           NTabBar {
             id: appearanceTabBar
-            visible: Settings.data.wallpaper.enabled
+            visible: Settings.data.wallpaper.enabled && !Settings.data.wallpaper.linkLightAndDarkWallpapers
             Layout.fillWidth: true
             currentIndex: panelContent.appearanceTabIndex
             spacing: Style.marginM

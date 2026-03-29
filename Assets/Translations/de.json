@@ -2066,6 +2066,8 @@
       "categories-people": "Personen",
       "color-extraction-disabled": "Hintergrundbild-Farbenextraktion verwenden",
       "color-extraction-enabled": "Vordefinierte Farbschemata nutzen",
+      "link-light-dark-description": "Einen Hintergrund für helles und dunkles Erscheinungsbild verwenden. Deaktivieren, um verschiedene Bilder auszuwählen.",
+      "link-light-dark-label": "Gleiches Hintergrundbild für hell und dunkel",
       "order-asc": "Aufsteigend",
       "order-desc": "Absteigend",
       "order-label": "Reihenfolge",

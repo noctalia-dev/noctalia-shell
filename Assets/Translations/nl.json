@@ -2066,6 +2066,8 @@
       "categories-people": "Mensen",
       "color-extraction-disabled": "Achtergrondkleurextractie gebruiken",
       "color-extraction-enabled": "Voorgedefinieerde kleurenschema's gebruiken",
+      "link-light-dark-description": "Gebruik één achtergrond voor zowel lichte als donkere weergave. Schakel uit om verschillende afbeeldingen te kiezen.",
+      "link-light-dark-label": "Zelfde achtergrond voor licht en donker",
       "order-asc": "Oplopend",
       "order-desc": "Aflopend",
       "order-label": "Volgorde",

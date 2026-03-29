@@ -382,6 +382,7 @@ Singleton {
       property bool showHiddenFiles: false
       property string viewMode: "single" // "single" | "recursive" | "browse"
       property bool setWallpaperOnAllMonitors: true
+      property bool linkLightAndDarkWallpapers: true
       property string fillMode: "crop"
       property color fillColor: "#000000"
       property bool useSolidColor: false

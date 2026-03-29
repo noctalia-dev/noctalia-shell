@@ -2066,6 +2066,8 @@
       "categories-people": "Persone",
       "color-extraction-disabled": "Usa estrazione colori dallo sfondo",
       "color-extraction-enabled": "Usa schemi colore predefiniti",
+      "link-light-dark-description": "Usa un solo sfondo per l'aspetto chiaro e scuro. Disattiva per scegliere immagini diverse.",
+      "link-light-dark-label": "Stesso sfondo per chiaro e scuro",
       "order-asc": "Crescente",
       "order-desc": "Decrescente",
       "order-label": "Ordine",

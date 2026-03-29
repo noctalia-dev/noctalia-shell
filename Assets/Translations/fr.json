@@ -2066,6 +2066,8 @@
       "categories-people": "Personnes",
       "color-extraction-disabled": "Utiliser l'extraction des couleurs du fond d'écran",
       "color-extraction-enabled": "Utiliser les schémas de couleurs prédéfinis",
+      "link-light-dark-description": "Utiliser un seul fond d'écran pour l'apparence claire et sombre. Désactivez pour choisir différentes images.",
+      "link-light-dark-label": "Même fond d'écran pour clair et sombre",
       "order-asc": "Croissant",
       "order-desc": "Décroissant",
       "order-label": "Ordre",

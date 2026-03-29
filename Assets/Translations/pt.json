@@ -2066,6 +2066,8 @@
       "categories-people": "Pessoas",
       "color-extraction-disabled": "Usar extração de cores do papel de parede",
       "color-extraction-enabled": "Usar esquemas de cores predefinidos",
+      "link-light-dark-description": "Usar um único papel de parede para a aparência clara e escura. Desative para escolher imagens diferentes.",
+      "link-light-dark-label": "Mesmo papel de parede para claro e escuro",
       "order-asc": "Crescente",
       "order-desc": "Decrescente",
       "order-label": "Ordem",
