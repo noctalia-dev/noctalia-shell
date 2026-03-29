@@ -269,7 +269,7 @@ Singleton {
           barVisible: BarService.isVisible,
           openedPanel: PanelService.openedPanel?.objectName || "",
           lockScreenActive: PanelService.lockScreen?.active || false,
-          wallpapers: WallpaperService.currentWallpapers || {},
+          wallpapers: WallpaperService.getWallpapersEffectiveMap(),
           desktopWidgetsEditMode: DesktopWidgetRegistry.editMode || false,
           // -------------
           display: shellStateData.display || {},

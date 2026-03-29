@@ -140,6 +140,7 @@ SmartPanel {
     }
     property var currentScreen: Quickshell.screens[currentScreenIndex]
     property string filterText: ""
+    property int appearanceTabIndex: 0
     property alias screenRepeater: screenRepeater
 
     Component.onCompleted: {
@@ -218,6 +219,8 @@ SmartPanel {
         if (wallhavenView && wallhavenView.gridView) {
           wallhavenView.gridView.currentIndex = -1;
         }
+        panelContent.appearanceTabIndex = Settings.data.colorSchemes.darkMode ? 1 : 0;
+        WallpaperService.wallpaperSelectionAppearance = panelContent.appearanceTabIndex === 1 ? "dark" : "light";
         // Give initial focus to search input
         Qt.callLater(() => {
                        if (searchInput.inputItem) {
@@ -331,6 +334,35 @@ SmartPanel {
             Layout.fillWidth: true
           }
 
+          NTabBar {
+            id: appearanceTabBar
+            visible: Settings.data.wallpaper.enabled
+            Layout.fillWidth: true
+            currentIndex: panelContent.appearanceTabIndex
+            spacing: Style.marginM
+            distributeEvenly: true
+
+            onCurrentIndexChanged: {
+              if (currentIndex < 0) {
+                return;
+              }
+              panelContent.appearanceTabIndex = currentIndex;
+              WallpaperService.wallpaperSelectionAppearance = currentIndex === 1 ? "dark" : "light";
+              Settings.data.colorSchemes.darkMode = currentIndex === 1;
+            }
+
+            NTabButton {
+              text: I18n.tr("wallpaper.panel.appearance-light-tab")
+              tabIndex: 0
+              checked: appearanceTabBar.currentIndex === 0
+            }
+            NTabButton {
+              text: I18n.tr("wallpaper.panel.appearance-dark-tab")
+              tabIndex: 1
+              checked: appearanceTabBar.currentIndex === 1
+            }
+          }
+
           // Monitor tabs
           NTabBar {
             id: screenTabBar
@@ -435,13 +467,6 @@ SmartPanel {
                                   event.accepted = true;
                                 }
                               }
-            }
-
-            NIconButton {
-              icon: Settings.data.colorSchemes.darkMode ? "moon" : "sun"
-              tooltipText: Settings.data.colorSchemes.darkMode ? I18n.tr("tooltips.switch-to-light-mode") : I18n.tr("tooltips.switch-to-dark-mode")
-              baseSize: Style.baseWidgetSize * 0.8
-              onClicked: Settings.data.colorSchemes.darkMode = !Settings.data.colorSchemes.darkMode
             }
 
             NIconButton {
@@ -651,18 +676,31 @@ SmartPanel {
     property bool isBrowseMode: Settings.data.wallpaper.viewMode === "browse"
     property int _browseScanGeneration: 0
 
-    // Sort favorites to the top (only for non-directory items)
+    // Order: (1) favorites for the active Light/Dark tab, (2) favorites only for the other appearance,
+    // (3) everything else. Legacy favorites without "appearance" still match via WallpaperService (darkMode on entry).
     function sortFavoritesToTop(items) {
-      var favorited = [];
-      var nonFavorited = [];
+      var forThisAppearance = [];
+      var forOtherAppearance = [];
+      var rest = [];
+      var app = WallpaperService.wallpaperSelectionAppearance;
       for (var i = 0; i < items.length; i++) {
-        if (!items[i].isDirectory && WallpaperService.isFavorite(items[i].path)) {
-          favorited.push(items[i]);
+        var it = items[i];
+        if (!it.isDirectory) {
+          var path = it.path;
+          var here = WallpaperService.isFavorite(path, app);
+          var any = WallpaperService.isFavorite(path);
+          if (here) {
+            forThisAppearance.push(it);
+          } else if (any) {
+            forOtherAppearance.push(it);
+          } else {
+            rest.push(it);
+          }
         } else {
-          nonFavorited.push(items[i]);
+          rest.push(it);
         }
       }
-      return favorited.concat(nonFavorited);
+      return forThisAppearance.concat(forOtherAppearance).concat(rest);
     }
 
     // Rebuild filteredItems and sync to wallpaperModel (full replacement, no animation).
@@ -789,7 +827,13 @@ SmartPanel {
       target: WallpaperService
       function onWallpaperChanged(screenName, path) {
         if (targetScreen !== null && screenName === targetScreen.name) {
-          currentWallpaper = WallpaperService.getWallpaper(targetScreen.name);
+          currentWallpaper = WallpaperService.getWallpaperPathForSlot(targetScreen.name, WallpaperService.wallpaperSelectionAppearance);
+        }
+      }
+      function onWallpaperSelectionAppearanceChanged() {
+        if (targetScreen !== null) {
+          currentWallpaper = WallpaperService.getWallpaperPathForSlot(targetScreen.name, WallpaperService.wallpaperSelectionAppearance);
+          updateFiltered(false);
         }
       }
       function onWallpaperDirectoryChanged(screenName, directory) {
@@ -823,7 +867,7 @@ SmartPanel {
         return;
       }
 
-      currentWallpaper = WallpaperService.getWallpaper(targetScreen.name);
+      currentWallpaper = WallpaperService.getWallpaperPathForSlot(targetScreen.name, WallpaperService.wallpaperSelectionAppearance);
 
       if (isBrowseMode) {
         // In browse mode, scan current directory for both files and directories
@@ -854,8 +898,8 @@ SmartPanel {
         WallpaperService.setBrowsePath(targetScreen.name, path);
       } else {
         var screen = Settings.data.wallpaper.setWallpaperOnAllMonitors ? undefined : targetScreen.name;
-        WallpaperService.changeWallpaper(path, screen);
-        WallpaperService.applyFavoriteTheme(path, screen);
+        WallpaperService.changeWallpaper(path, screen, WallpaperService.wallpaperSelectionAppearance);
+        WallpaperService.applyFavoriteTheme(path, screen, WallpaperService.wallpaperSelectionAppearance);
       }
     }
 
@@ -1077,7 +1121,7 @@ SmartPanel {
             property string wallpaperPath: model.path ?? ""
             property bool isDirectory: model.isDirectory ?? false
             property bool isSelected: !isDirectory && (wallpaperPath === currentWallpaper)
-            property bool isFavorited: !isDirectory && WallpaperService.isFavorite(wallpaperPath)
+            property bool isFavorited: !isDirectory && WallpaperService.isFavorite(wallpaperPath, WallpaperService.wallpaperSelectionAppearance)
             property string filename: model.name ?? wallpaperPath.split('/').pop()
             property string cachedPath: ""
 
@@ -1240,7 +1284,7 @@ SmartPanel {
 
                 TapHandler {
                   onTapped: {
-                    WallpaperService.toggleFavorite(wallpaperItem.wallpaperPath);
+                    WallpaperService.toggleFavorite(wallpaperItem.wallpaperPath, WallpaperService.wallpaperSelectionAppearance);
                   }
                 }
               }
@@ -1259,10 +1303,22 @@ SmartPanel {
                 property int _favRevision: 0
                 property var favData: {
                   _favRevision;
-                  return WallpaperService.getFavorite(wallpaperItem.wallpaperPath);
+                  WallpaperService.wallpaperSelectionAppearance;
+                  return WallpaperService.getFavorite(wallpaperItem.wallpaperPath, WallpaperService.wallpaperSelectionAppearance);
                 }
                 property var colors: favData && favData.paletteColors ? favData.paletteColors : []
-                property bool isDark: favData ? favData.darkMode : false
+                property bool isDark: {
+                  if (!favData) {
+                    return false;
+                  }
+                  if (favData.appearance === "dark") {
+                    return true;
+                  }
+                  if (favData.appearance === "light") {
+                    return false;
+                  }
+                  return favData.darkMode === true;
+                }
 
                 Connections {
                   target: WallpaperService
@@ -1840,11 +1896,13 @@ SmartPanel {
       if (typeof WallhavenService !== "undefined") {
         WallhavenService.downloadWallpaper(wallpaper, function (success, localPath) {
           if (success) {
+            var whScreen = Settings.data.wallpaper.setWallpaperOnAllMonitors ? undefined : Quickshell.screens[currentScreenIndex].name;
             if (!Settings.data.wallpaper.setWallpaperOnAllMonitors && currentScreenIndex < Quickshell.screens.length) {
-              WallpaperService.changeWallpaper(localPath, Quickshell.screens[currentScreenIndex].name);
+              WallpaperService.changeWallpaper(localPath, Quickshell.screens[currentScreenIndex].name, WallpaperService.wallpaperSelectionAppearance);
             } else {
-              WallpaperService.changeWallpaper(localPath, undefined);
+              WallpaperService.changeWallpaper(localPath, undefined, WallpaperService.wallpaperSelectionAppearance);
             }
+            WallpaperService.applyFavoriteTheme(localPath, whScreen, WallpaperService.wallpaperSelectionAppearance);
           }
         });
       }

@@ -56,6 +56,9 @@ Singleton {
   // Browse mode: track current browse path per screen (separate from root directory)
   property var currentBrowsePaths: ({})
 
+  // Wallpaper panel: which appearance slot (light/dark) new selections apply to — like picking a monitor tab
+  property string wallpaperSelectionAppearance: "light"
+
   // Signal emitted when browse path changes for a screen
   signal browsePathChanged(string screenName, string path)
 
@@ -121,7 +124,7 @@ Singleton {
       } else {
         for (var i = 0; i < Quickshell.screens.length; i++) {
           var screenName = Quickshell.screens[i].name;
-          root.wallpaperChanged(screenName, currentWallpapers[screenName] || root.defaultWallpaper);
+          root.wallpaperChanged(screenName, root.getWallpaper(screenName) || root.defaultWallpaper);
         }
       }
     }
@@ -135,6 +138,15 @@ Singleton {
     }
     function onSortOrderChanged() {
       root.refreshWallpapersList();
+    }
+  }
+
+  Connections {
+    target: Settings.data.colorSchemes
+    function onDarkModeChanged() {
+      // Restore scheme from favorite for this light/dark slot before wallpaper refresh
+      root.reapplyFavoriteThemeForActiveWallpaper();
+      root._notifyAllWallpapersChanged();
     }
   }
 
@@ -167,6 +179,7 @@ Singleton {
   // Cache restore updates currentWallpapers without _setWallpaper, so wallpaperChanged does not fire.
   function _scheduleThemeSyncFromCachedWallpaper() {
     Qt.callLater(function () {
+      root.reapplyFavoriteThemeForActiveWallpaper();
       if (Settings.data.colorSchemes.useWallpaperColors) {
         AppThemeService.generate();
       }
@@ -279,6 +292,153 @@ Singleton {
   }
 
   // -------------------------------------------------------------------
+  // Per-screen wallpaper: persisted as { light, dark } (legacy string loads are normalized)
+  // -------------------------------------------------------------------
+  function _isSplitWallpaperEntry(entry) {
+    if (!entry || typeof entry !== "object") {
+      return false;
+    }
+    return entry.light !== undefined || entry.dark !== undefined;
+  }
+
+  function _pathsFromEntry(entry) {
+    if (!entry) {
+      return {
+        light: "",
+        dark: ""
+      };
+    }
+    if (typeof entry === "string") {
+      return {
+        light: entry,
+        dark: entry
+      };
+    }
+    return {
+      light: entry.light || "",
+      dark: entry.dark || ""
+    };
+  }
+
+  function _cloneWallpaperEntry(entry) {
+    if (typeof entry === "string") {
+      return {
+        light: entry,
+        dark: entry
+      };
+    }
+    var p = _pathsFromEntry(entry);
+    return {
+      light: p.light,
+      dark: p.dark
+    };
+  }
+
+  function _entriesEqual(a, b) {
+    if (a === b) {
+      return true;
+    }
+    if (typeof a === "string" && typeof b === "string") {
+      return a === b;
+    }
+    if (typeof a === "string" || typeof b === "string") {
+      return false;
+    }
+    if (!_isSplitWallpaperEntry(a) || !_isSplitWallpaperEntry(b)) {
+      return false;
+    }
+    var pa = _pathsFromEntry(a);
+    var pb = _pathsFromEntry(b);
+    return pa.light === pb.light && pa.dark === pb.dark;
+  }
+
+  function _entryToEffectivePath(entry) {
+    if (!entry) {
+      return "";
+    }
+    if (typeof entry === "string") {
+      return entry;
+    }
+    var p = _pathsFromEntry(entry);
+    if (Settings.data.colorSchemes.darkMode) {
+      return p.dark || p.light || "";
+    }
+    return p.light || p.dark || "";
+  }
+
+  function _normalizeAppearanceSlot(slot) {
+    return slot === "dark" ? "dark" : "light";
+  }
+
+  function _defaultAppearanceSlotForChange(slot) {
+    if (slot === "light" || slot === "dark") {
+      return slot;
+    }
+    return Settings.data.colorSchemes.darkMode ? "dark" : "light";
+  }
+
+  function getWallpaperPathForSlot(screenName, appearanceSlot) {
+    if (Settings.data.wallpaper.useSolidColor) {
+      return createSolidColorPath(Settings.data.wallpaper.solidColor.toString());
+    }
+    var slot = _normalizeAppearanceSlot(appearanceSlot);
+    var entry = currentWallpapers[screenName];
+    if (!entry) {
+      return "";
+    }
+    var p = _pathsFromEntry(entry);
+    if (slot === "dark") {
+      return p.dark || p.light || "";
+    }
+    return p.light || p.dark || "";
+  }
+
+  function getWallpapersEffectiveMap() {
+    var out = {};
+    for (var i = 0; i < Quickshell.screens.length; i++) {
+      var n = Quickshell.screens[i].name;
+      out[n] = getWallpaper(n);
+    }
+    return out;
+  }
+
+  function _ensureObjectWallpaperEntries() {
+    var names = {};
+    Object.keys(currentWallpapers).forEach(function (k) {
+      names[k] = true;
+    });
+    for (var i = 0; i < Quickshell.screens.length; i++) {
+      names[Quickshell.screens[i].name] = true;
+    }
+    Object.keys(names).forEach(function (name) {
+      var e = currentWallpapers[name];
+      if (!e) {
+        return;
+      }
+      if (typeof e === "string") {
+        currentWallpapers[name] = {
+          light: e,
+          dark: e
+        };
+      } else if (_isSplitWallpaperEntry(e)) {
+        var p = _pathsFromEntry(e);
+        currentWallpapers[name] = {
+          light: p.light || p.dark || "",
+          dark: p.dark || p.light || ""
+        };
+      }
+    });
+    saveTimer.restart();
+  }
+
+  function _notifyAllWallpapersChanged() {
+    for (var i = 0; i < Quickshell.screens.length; i++) {
+      var n = Quickshell.screens[i].name;
+      root.wallpaperChanged(n, getWallpaper(n));
+    }
+  }
+
+  // -------------------------------------------------------------------
   // Get specific monitor wallpaper data
   function getMonitorConfig(screenName) {
     var monitors = Settings.data.wallpaper.monitorDirectories;
@@ -346,8 +506,12 @@ Singleton {
     if (Settings.data.wallpaper.useSolidColor) {
       return createSolidColorPath(Settings.data.wallpaper.solidColor.toString());
     }
-    if (currentWallpapers[screenName]) {
-      return currentWallpapers[screenName];
+    var entry = currentWallpapers[screenName];
+    if (entry) {
+      var effective = _entryToEffectivePath(entry);
+      if (effective) {
+        return effective;
+      }
     }
 
     // Try to inherit wallpaper from another active screen
@@ -360,39 +524,79 @@ Singleton {
   }
 
   // -------------------------------------------------------------------
-  function changeWallpaper(path, screenName) {
+  function changeWallpaper(path, screenName, appearanceSlot) {
     // Turn off solid color mode when selecting a wallpaper
     if (Settings.data.wallpaper.useSolidColor) {
       Settings.data.wallpaper.useSolidColor = false;
     }
 
+    var slot = _defaultAppearanceSlotForChange(appearanceSlot);
+
     // Save current favorite color schemes before switching away.
     // This must happen before applyFavoriteTheme (called by the UI)
     // overwrites the settings that _createFavoriteEntry reads.
-    _saveOutgoingFavorites(path, screenName);
+    _saveOutgoingFavorites(path, screenName, slot);
 
     if (screenName !== undefined) {
-      _setWallpaper(screenName, path);
+      _setWallpaper(screenName, path, slot);
     } else {
       var allScreenNames = new Set(Object.keys(currentWallpapers));
       for (var i = 0; i < Quickshell.screens.length; i++) {
         allScreenNames.add(Quickshell.screens[i].name);
       }
-      allScreenNames.forEach(name => _setWallpaper(name, path));
+      allScreenNames.forEach(name => _setWallpaper(name, path, slot));
     }
   }
 
   // -------------------------------------------------------------------
   // Save the color scheme of any favorited wallpapers that are about
   // to be replaced, while the current settings still reflect them.
-  function _saveOutgoingFavorites(newPath, screenName) {
-    var outgoing = screenName !== undefined ? [currentWallpapers[screenName]] : Object.values(currentWallpapers);
+  function _saveOutgoingFavorites(newPath, screenName, appearanceSlot) {
+    var paths = [];
+    var slot = _normalizeAppearanceSlot(appearanceSlot);
 
-    var unique = [...new Set(outgoing)];
+    function collectFromEntry(e) {
+      if (!e) {
+        return;
+      }
+      if (typeof e === "string") {
+        if (e && e !== newPath) {
+          paths.push(e);
+        }
+        return;
+      }
+      if (!_isSplitWallpaperEntry(e)) {
+        return;
+      }
+      var p = _pathsFromEntry(e);
+      var old = slot === "dark" ? p.dark : p.light;
+      if (old && old !== newPath) {
+        paths.push(old);
+      }
+    }
+
+    if (screenName !== undefined) {
+      collectFromEntry(currentWallpapers[screenName]);
+    } else {
+      var names = new Set(Object.keys(currentWallpapers));
+      for (var i = 0; i < Quickshell.screens.length; i++) {
+        names.add(Quickshell.screens[i].name);
+      }
+      names.forEach(function (name) {
+        collectFromEntry(currentWallpapers[name]);
+      });
+    }
+
+    var unique = [];
+    for (var j = 0; j < paths.length; j++) {
+      if (unique.indexOf(paths[j]) === -1) {
+        unique.push(paths[j]);
+      }
+    }
 
     unique.forEach(function (path) {
-      if (path && path !== newPath && isFavorite(path)) {
-        updateFavoriteColorScheme(path);
+      if (path && path !== newPath && isFavorite(path, slot)) {
+        updateFavoriteColorScheme(path, slot);
       }
     });
   }
@@ -401,15 +605,29 @@ Singleton {
   function _inheritWallpaperFromExistingScreen(screenName) {
     for (var i = 0; i < Quickshell.screens.length; i++) {
       var otherName = Quickshell.screens[i].name;
-      if (otherName !== screenName && currentWallpapers[otherName]) {
-        _setWallpaper(screenName, currentWallpapers[otherName]);
-        return currentWallpapers[otherName];
+      if (otherName === screenName) {
+        continue;
       }
+      var entry = currentWallpapers[otherName];
+      if (!entry) {
+        continue;
+      }
+      var cloned = _cloneWallpaperEntry(entry);
+      if (_entriesEqual(currentWallpapers[screenName], cloned)) {
+        return _entryToEffectivePath(cloned);
+      }
+      currentWallpapers[screenName] = cloned;
+      saveTimer.restart();
+      root.wallpaperChanged(screenName, _entryToEffectivePath(cloned));
+      if (randomWallpaperTimer.running) {
+        randomWallpaperTimer.restart();
+      }
+      return _entryToEffectivePath(cloned);
     }
     return "";
   }
 
-  function _setWallpaper(screenName, path) {
+  function _setWallpaper(screenName, path, appearanceSlot) {
     if (path === "" || path === undefined) {
       return;
     }
@@ -419,21 +637,30 @@ Singleton {
       return;
     }
 
-    var oldPath = currentWallpapers[screenName] || "";
-    if (oldPath === path) {
+    var slot = _normalizeAppearanceSlot(appearanceSlot);
+    var oldEntry = currentWallpapers[screenName];
+    var p = _pathsFromEntry(oldEntry);
+    var newEntry;
+    if (slot === "dark") {
+      newEntry = {
+        light: p.light || p.dark || path,
+        dark: path
+      };
+    } else {
+      newEntry = {
+        light: path,
+        dark: p.dark || p.light || path
+      };
+    }
+
+    if (_entriesEqual(oldEntry, newEntry)) {
       return;
     }
 
-    // Update cache directly
-    currentWallpapers[screenName] = path;
-
-    // Save to cache file with debounce
+    currentWallpapers[screenName] = newEntry;
     saveTimer.restart();
+    root.wallpaperChanged(screenName, _entryToEffectivePath(newEntry));
 
-    // Emit signal for this specific wallpaper change
-    root.wallpaperChanged(screenName, path);
-
-    // Restart the random wallpaper timer
     if (randomWallpaperTimer.running) {
       randomWallpaperTimer.restart();
     }
@@ -534,7 +761,7 @@ Singleton {
           // Get or initialize index for this screen
           if (alphabeticalIndices[screenName] === undefined) {
             // Find current wallpaper in list to set initial index
-            var currentWallpaper = currentWallpapers[screenName] || "";
+            var currentWallpaper = getWallpaper(screenName) || "";
             var foundIndex = wallpaperList.indexOf(currentWallpaper);
             alphabeticalIndices[screenName] = (foundIndex >= 0) ? foundIndex : 0;
           }
@@ -556,7 +783,7 @@ Singleton {
         var key = "all";
         if (alphabeticalIndices[key] === undefined) {
           // Find current wallpaper in list to set initial index
-          var currentWallpaper = currentWallpapers[Screen.name] || "";
+          var currentWallpaper = getWallpaper(Screen.name) || "";
           var foundIndex = wallpaperList.indexOf(currentWallpaper);
           alphabeticalIndices[key] = (foundIndex >= 0) ? foundIndex : 0;
         }
@@ -920,7 +1147,7 @@ Singleton {
 
           // Reset alphabetical indices when list changes
           if (alphabeticalIndices[screenName] !== undefined) {
-            var currentWallpaper = currentWallpapers[screenName] || "";
+            var currentWallpaper = getWallpaper(screenName) || "";
             var foundIndex = files.indexOf(currentWallpaper);
             alphabeticalIndices[screenName] = (foundIndex >= 0) ? foundIndex : 0;
           }
@@ -968,10 +1195,32 @@ Singleton {
   readonly property int _favoriteNotFound: -1
 
   // -------------------------------------------------------------------
-  function _findFavoriteIndex(path) {
+  function _favoriteAppearanceSlot(f) {
+    if (f.appearance === "light" || f.appearance === "dark") {
+      return f.appearance;
+    }
+    return f.darkMode ? "dark" : "light";
+  }
+
+  function _findFavoriteIndex(path, appearanceSlot) {
     var favorites = Settings.data.wallpaper.favorites;
     var searchPath = Settings.preprocessPath(path);
+    var slot = _normalizeAppearanceSlot(appearanceSlot);
 
+    for (var i = 0; i < favorites.length; i++) {
+      if (Settings.preprocessPath(favorites[i].path) !== searchPath) {
+        continue;
+      }
+      if (_favoriteAppearanceSlot(favorites[i]) === slot) {
+        return i;
+      }
+    }
+    return _favoriteNotFound;
+  }
+
+  function _findAnyFavoriteIndexForPath(path) {
+    var favorites = Settings.data.wallpaper.favorites;
+    var searchPath = Settings.preprocessPath(path);
     for (var i = 0; i < favorites.length; i++) {
       if (Settings.preprocessPath(favorites[i].path) === searchPath) {
         return i;
@@ -981,11 +1230,13 @@ Singleton {
   }
 
   // -------------------------------------------------------------------
-  function _createFavoriteEntry(path) {
+  function _createFavoriteEntry(path, appearanceSlot) {
+    var app = _normalizeAppearanceSlot(appearanceSlot);
     return {
       "path": path,
+      "appearance": app,
       "colorScheme": Settings.data.colorSchemes.predefinedScheme,
-      "darkMode": Settings.data.colorSchemes.darkMode,
+      "darkMode": app === "dark",
       "useWallpaperColors": Settings.data.colorSchemes.useWallpaperColors,
       "generationMethod": Settings.data.colorSchemes.generationMethod,
       "paletteColors": [Color.mPrimary.toString(), Color.mSecondary.toString(), Color.mTertiary.toString(), Color.mError.toString()]
@@ -993,37 +1244,97 @@ Singleton {
   }
 
   // -------------------------------------------------------------------
-  function isFavorite(path) {
-    return _findFavoriteIndex(path) !== _favoriteNotFound;
+  function isFavorite(path, appearanceSlot) {
+    if (appearanceSlot === undefined || appearanceSlot === null || appearanceSlot === "") {
+      return _findAnyFavoriteIndexForPath(path) !== _favoriteNotFound;
+    }
+    return _findFavoriteIndex(path, appearanceSlot) !== _favoriteNotFound;
   }
 
   // -------------------------------------------------------------------
-  function getFavorite(path) {
-    var favoriteIndex = _findFavoriteIndex(path);
-    if (favoriteIndex === _favoriteNotFound)
+  function getFavorite(path, appearanceSlot) {
+    var slot;
+    if (appearanceSlot !== undefined && appearanceSlot !== null && appearanceSlot !== "") {
+      slot = _normalizeAppearanceSlot(appearanceSlot);
+    } else {
+      slot = _normalizeAppearanceSlot(root.wallpaperSelectionAppearance);
+    }
+    var favoriteIndex = _findFavoriteIndex(path, slot);
+    if (favoriteIndex === _favoriteNotFound) {
       return null;
+    }
     return Settings.data.wallpaper.favorites[favoriteIndex];
   }
 
   // -------------------------------------------------------------------
-  function toggleFavorite(path) {
+  function toggleFavorite(path, appearanceSlot) {
+    var slot;
+    if (appearanceSlot !== undefined && appearanceSlot !== null && appearanceSlot !== "") {
+      slot = _normalizeAppearanceSlot(appearanceSlot);
+    } else {
+      slot = _normalizeAppearanceSlot(root.wallpaperSelectionAppearance);
+    }
     var favorites = Settings.data.wallpaper.favorites.slice();
-    var existingIndex = _findFavoriteIndex(path);
+    var existingIndex = _findFavoriteIndex(path, slot);
 
     if (existingIndex !== _favoriteNotFound) {
       favorites.splice(existingIndex, 1);
-      Logger.d("Wallpaper", "Removed favorite:", path);
+      Logger.d("Wallpaper", "Removed favorite:", path, slot);
     } else {
-      favorites.push(_createFavoriteEntry(path));
-      Logger.d("Wallpaper", "Added favorite:", path);
+      favorites.push(_createFavoriteEntry(path, slot));
+      Logger.d("Wallpaper", "Added favorite:", path, slot);
     }
 
     Settings.data.wallpaper.favorites = favorites;
     favoritesChanged(path);
   }
 
+  // Apply saved scheme from a favorite entry (path + appearance must already match the slot you care about).
+  function _applyFavoriteThemeFromEntry(favorite) {
+    if (!favorite) {
+      return;
+    }
+
+    var favApp = _favoriteAppearanceSlot(favorite);
+    var targetDark = favApp === "dark";
+
+    var generationMethodChanging = Settings.data.colorSchemes.generationMethod !== favorite.generationMethod;
+    var darkModeChanging = Settings.data.colorSchemes.darkMode !== targetDark;
+    var useWallpaperColorsChanging = Settings.data.colorSchemes.useWallpaperColors !== favorite.useWallpaperColors;
+
+    Settings.data.colorSchemes.useWallpaperColors = favorite.useWallpaperColors;
+    Settings.data.colorSchemes.predefinedScheme = favorite.colorScheme;
+    Settings.data.colorSchemes.generationMethod = favorite.generationMethod;
+    Settings.data.colorSchemes.darkMode = targetDark;
+
+    // If nothing triggered AppThemeService via change handlers, regenerate once.
+    if (!generationMethodChanging && !darkModeChanging && !useWallpaperColorsChanging) {
+      AppThemeService.generate();
+    } else if (!generationMethodChanging && !darkModeChanging && useWallpaperColorsChanging) {
+      AppThemeService.generate();
+    }
+  }
+
+  // When light/dark changes (or on startup), re-load scheme from the favorite for the wallpaper now shown for that slot.
+  function reapplyFavoriteThemeForActiveWallpaper() {
+    var effectiveMonitor = Settings.data.colorSchemes.monitorForColors;
+    if (effectiveMonitor === "" || effectiveMonitor === undefined) {
+      effectiveMonitor = Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "";
+    }
+    var wp = getWallpaper(effectiveMonitor);
+    if (!wp || isSolidColorPath(wp)) {
+      return;
+    }
+    var slot = Settings.data.colorSchemes.darkMode ? "dark" : "light";
+    var favorite = getFavorite(wp, slot);
+    if (!favorite) {
+      return;
+    }
+    _applyFavoriteThemeFromEntry(favorite);
+  }
+
   // -------------------------------------------------------------------
-  function applyFavoriteTheme(path, screenName) {
+  function applyFavoriteTheme(path, screenName, appearanceSlot) {
     // Only apply theme if the wallpaper is on the monitor driving colors
     var effectiveMonitor = Settings.data.colorSchemes.monitorForColors;
     if (effectiveMonitor === "" || effectiveMonitor === undefined) {
@@ -1033,37 +1344,32 @@ Singleton {
       return;
     }
 
-    var favorite = getFavorite(path);
-    if (!favorite)
-      return;
-
-    // Track which auto-triggered properties are changing to avoid redundant generation calls
-    var generationMethodChanging = Settings.data.colorSchemes.generationMethod !== favorite.generationMethod;
-    var darkModeChanging = Settings.data.colorSchemes.darkMode !== favorite.darkMode;
-
-    // Update settings to match the favorite's saved color scheme
-    Settings.data.colorSchemes.useWallpaperColors = favorite.useWallpaperColors;
-    Settings.data.colorSchemes.predefinedScheme = favorite.colorScheme;
-    Settings.data.colorSchemes.generationMethod = favorite.generationMethod;
-    Settings.data.colorSchemes.darkMode = favorite.darkMode;
-
-    // Only explicitly trigger generation if the auto-triggered properties didn't change.
-    // If generationMethod or darkMode changed, their change handlers already called generate().
-    if (!generationMethodChanging && !darkModeChanging) {
-      AppThemeService.generate();
+    var slot;
+    if (appearanceSlot !== undefined && appearanceSlot !== null && appearanceSlot !== "") {
+      slot = _normalizeAppearanceSlot(appearanceSlot);
+    } else {
+      slot = _normalizeAppearanceSlot(root.wallpaperSelectionAppearance);
     }
+    var favorite = getFavorite(path, slot);
+    if (!favorite) {
+      return;
+    }
+
+    _applyFavoriteThemeFromEntry(favorite);
   }
 
   // -------------------------------------------------------------------
-  function updateFavoriteColorScheme(path) {
-    var existingIndex = _findFavoriteIndex(path);
-    if (existingIndex === _favoriteNotFound)
+  function updateFavoriteColorScheme(path, appearanceSlot) {
+    var slot = _normalizeAppearanceSlot(appearanceSlot);
+    var existingIndex = _findFavoriteIndex(path, slot);
+    if (existingIndex === _favoriteNotFound) {
       return;
+    }
 
     var favorites = Settings.data.wallpaper.favorites.slice();
-    favorites[existingIndex] = _createFavoriteEntry(favorites[existingIndex].path);
+    favorites[existingIndex] = _createFavoriteEntry(favorites[existingIndex].path, slot);
     Settings.data.wallpaper.favorites = favorites;
-    Logger.d("Wallpaper", "Updated color scheme for favorite:", path);
+    Logger.d("Wallpaper", "Updated color scheme for favorite:", path, slot);
     favoriteDataUpdated(path);
   }
 
@@ -1086,8 +1392,9 @@ Singleton {
       effectiveMonitor = Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "";
     }
     var wp = getWallpaper(effectiveMonitor);
-    if (wp && isFavorite(wp)) {
-      updateFavoriteColorScheme(wp);
+    var app = Settings.data.colorSchemes.darkMode ? "dark" : "light";
+    if (wp && isFavorite(wp, app)) {
+      updateFavoriteColorScheme(wp, app);
     }
   }
 
@@ -1122,6 +1429,8 @@ Singleton {
       // Load wallpapers from cache file
       root.currentWallpapers = wallpaperCacheAdapter.wallpapers || {};
       root.usedRandomWallpapers = wallpaperCacheAdapter.usedRandomWallpapers || {};
+
+      root._ensureObjectWallpaperEntries();
 
       // Load default wallpaper from cache if it exists, otherwise use Noctalia default
       if (wallpaperCacheAdapter.defaultWallpaper && wallpaperCacheAdapter.defaultWallpaper !== "") {
