@@ -1431,7 +1431,7 @@ Singleton {
         if (root.pendingFavoriteSchemeRefresh && root.pendingFavoriteSchemeRefresh.path === path && root.pendingFavoriteSchemeRefresh.slot === slot) {
           root.pendingFavoriteSchemeRefresh = null;
         }
-      } else {
+      } else if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
         favorites[anyIdx] = _createFavoriteEntry(path, slot);
         Logger.d("Wallpaper", "Moved favorite to other appearance:", path, slot);
         root.scheduleFavoriteSchemeSnapshot(path, slot);
@@ -1441,6 +1441,18 @@ Singleton {
             "path": path,
             "slot": slot
           };
+        }
+      } else {
+        // Separate light/dark wallpapers: star is remove-only (no sun/moon hint for "move" vs unfavorite).
+        favorites.splice(anyIdx, 1);
+        Logger.d("Wallpaper", "Removed favorite (star on other appearance tab, separate wallpapers):", path);
+        if (favoriteSchemeDebounceTimer.pendingPath === path) {
+          favoriteSchemeDebounceTimer.stop();
+          favoriteSchemeDebounceTimer.pendingPath = "";
+          favoriteSchemeDebounceTimer.pendingSlot = "";
+        }
+        if (root.pendingFavoriteSchemeRefresh && root.pendingFavoriteSchemeRefresh.path === path) {
+          root.pendingFavoriteSchemeRefresh = null;
         }
       }
     } else {
