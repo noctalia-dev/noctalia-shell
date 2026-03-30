@@ -49,7 +49,7 @@ Item {
         "label": NetworkService.wifiEnabled ? I18n.tr("actions.disable-wifi") : I18n.tr("actions.enable-wifi"),
         "action": "toggle-wifi",
         "icon": NetworkService.wifiEnabled ? "wifi-off" : "wifi",
-        "enabled": !Settings.data.network.airplaneModeEnabled && NetworkService.wifiAvailable
+        "enabled": !NetworkService.airplaneModeEnabled && NetworkService.wifiAvailable
       },
       {
         "label": I18n.tr("common.wifi") + " " + I18n.tr("tooltips.open-settings"),
