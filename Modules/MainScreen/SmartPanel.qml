@@ -290,6 +290,11 @@ Item {
     PanelService.closedPanel(root);
     closed();
 
+    // Flush pending double-buffered Wayland state (blur regions) that won't
+    // be committed otherwise — after an app launch the compositor may stop
+    // sending frame callbacks, leaving the render loop idle.
+    Window.window?.flushWaylandState();
+
     Logger.d("SmartPanel", "Panel closed immediately", objectName);
   }
 
@@ -315,6 +320,9 @@ Item {
 
     PanelService.closedPanel(root);
     closed();
+
+    // Flush pending double-buffered Wayland state (blur regions).
+    Window.window?.flushWaylandState();
 
     Logger.d("SmartPanel", "Panel close finalized", objectName);
   }
