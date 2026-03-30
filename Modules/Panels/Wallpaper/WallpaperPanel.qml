@@ -1348,11 +1348,12 @@ SmartPanel {
                   id: paletteRowRow
                   spacing: Style.marginXS
 
-                  // Sun/moon = appearance slot this path was starred for (not the current tab)
+                  // Sun/moon only when light/dark share one wallpaper (which appearance the favorite targets)
                   Rectangle {
                     width: paletteRow.diameter
                     height: paletteRow.diameter
                     radius: width * 0.5
+                    visible: Settings.data.wallpaper.linkLightAndDarkWallpapers
                     color: Color.mSurface
                     border.color: Color.mShadow
                     border.width: Style.borderS
