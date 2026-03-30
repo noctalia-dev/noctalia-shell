@@ -7,6 +7,7 @@ import Quickshell.Io
 import Quickshell.Services.UPower
 import qs.Commons
 import qs.Services.Networking
+import qs.Services.System
 import qs.Services.UI
 
 Singleton {
@@ -21,19 +22,20 @@ Singleton {
   readonly property real warningThreshold: Settings.data.systemMonitor.batteryWarningThreshold
   readonly property real criticalThreshold: Settings.data.systemMonitor.batteryCriticalThreshold
   readonly property string batteryIcon: getIcon(batteryPercentage, batteryCharging, batteryPluggedIn, batteryReady)
+  readonly property bool upowerInstalled: ProgramCheckerService.upowerdAvailable
 
-  readonly property var laptopBatteries: UPower.devices.values.filter(d => d.isLaptopBattery).sort((x, y) => {
-                                                                                                     // Force DisplayDevice to the top
-                                                                                                     if (x.nativePath.includes("DisplayDevice"))
-                                                                                                     return -1;
-                                                                                                     if (y.nativePath.includes("DisplayDevice"))
-                                                                                                     return 1;
+  readonly property var laptopBatteries: upowerInstalled ? (UPower.devices?.values || []).filter(d => d.isLaptopBattery).sort((x, y) => {
+                                                                                                                                // Force DisplayDevice to the top
+                                                                                                                                if (x.nativePath.includes("DisplayDevice"))
+                                                                                                                                return -1;
+                                                                                                                                if (y.nativePath.includes("DisplayDevice"))
+                                                                                                                                return 1;
 
-                                                                                                     // Standard string comparison works for BAT0 vs BAT1
-                                                                                                     return x.nativePath.localeCompare(y.nativePath, undefined, {
-                                                                                                                                         numeric: true
-                                                                                                                                       });
-                                                                                                   })
+                                                                                                                                // Standard string comparison works for BAT0 vs BAT1
+                                                                                                                                return x.nativePath.localeCompare(y.nativePath, undefined, {
+                                                                                                                                                                    numeric: true
+                                                                                                                                                                  });
+                                                                                                                              }) : []
 
   readonly property var bluetoothBatteries: {
     var list = [];
@@ -47,8 +49,8 @@ Singleton {
     return list;
   }
 
-  readonly property var _laptopBattery: UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : null)
-  readonly property var _bluetoothBattery: bluetoothBatteries.length > 0 ? bluetoothBatteries[0] : null
+  readonly property var _laptopBattery: upowerInstalled ? (UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : null)) : null
+  readonly property var _bluetoothBattery: upowerInstalled ? (bluetoothBatteries.length > 0 ? bluetoothBatteries[0] : null) : null
 
   property var deviceModel: {
     var model = [

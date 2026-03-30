@@ -117,11 +117,48 @@ SmartPanel {
         }
       }
 
+      // UPower not installed
+      NBox {
+        id: noupwr
+        visible: !BatteryService.upowerInstalled
+        Layout.fillWidth: true
+        Layout.preferredHeight: noupwrColumn.implicitHeight + Style.margin2M
+
+        ColumnLayout {
+          id: noupwrColumn
+          anchors.fill: parent
+          anchors.margins: Style.marginM
+          spacing: Style.marginL
+
+          Item {
+            Layout.fillHeight: true
+          }
+
+          NIcon {
+            icon: "battery-exclamation"
+            pointSize: 48
+            color: Color.mOnSurfaceVariant
+            Layout.alignment: Qt.AlignHCenter
+          }
+
+          NText {
+            text: I18n.tr("battery.no-upower")
+            pointSize: Style.fontSizeL
+            color: Color.mOnSurfaceVariant
+            Layout.alignment: Qt.AlignHCenter
+          }
+
+          Item {
+            Layout.fillHeight: true
+          }
+        }
+      }
+
       // Charge level + health/time
       NBox {
         Layout.fillWidth: true
         implicitHeight: chargeLayout.implicitHeight + Style.margin2L
-        visible: BatteryService.laptopBatteries.length > 0 || BatteryService.bluetoothBatteries.length > 0
+        visible: BatteryService.upowerInstalled && (BatteryService.laptopBatteries.length > 0 || BatteryService.bluetoothBatteries.length > 0)
 
         ColumnLayout {
           id: chargeLayout
@@ -293,7 +330,7 @@ SmartPanel {
       NBox {
         Layout.fillWidth: true
         height: controlsLayout.implicitHeight + Style.margin2L
-        visible: showPowerProfiles || showNoctaliaPerformance
+        visible: BatteryService.upowerInstalled && (showPowerProfiles || showNoctaliaPerformance)
 
         ColumnLayout {
           id: controlsLayout

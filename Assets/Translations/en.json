@@ -333,7 +333,8 @@
     "plugged-in": "Plugged in",
     "power-profile": "Power profile",
     "time-left": "Time left: {time}",
-    "time-until-full": "Time until full: {time}"
+    "time-until-full": "Time until full: {time}",
+    "no-upower": "Upower is not installed."
   },
   "bluetooth": {
     "panel": {

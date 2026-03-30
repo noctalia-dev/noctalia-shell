@@ -53,12 +53,15 @@ Item {
   readonly property bool isLowBattery: isReady ? BatteryService.isLowBattery(selectedDevice) : false
   readonly property bool isCriticalBattery: isReady ? BatteryService.isCriticalBattery(selectedDevice) : false
 
-  // Visibility: show if hideIfNotDetected is false, or if battery is ready
-  readonly property bool shouldShow: !hideIfNotDetected || (isReady && (hideIfIdle ? !isPluggedIn : true))
+  // Visibility: show if hideIfNotDetected is false, or if battery is ready, or if UPower is missing (to show error)
+  readonly property bool shouldShow: !BatteryService.upowerInstalled || !hideIfNotDetected || (isReady && (hideIfIdle ? !isPluggedIn : true))
   readonly property string deviceNativePath: widgetSettings.deviceNativePath !== undefined ? widgetSettings.deviceNativePath : widgetMetadata.deviceNativePath
   readonly property var selectedDevice: BatteryService.isDevicePresent(BatteryService.findDevice(deviceNativePath)) ? BatteryService.findDevice(deviceNativePath) : null
 
   readonly property var tooltipContent: {
+    if (!BatteryService.upowerInstalled) {
+      return I18n.tr("battery.no-upower");
+    }
     if (!isReady || !isPresent) {
       return I18n.tr("battery.no-battery-detected");
     }
