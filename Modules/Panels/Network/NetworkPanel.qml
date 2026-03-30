@@ -65,19 +65,11 @@ SmartPanel {
 
   onOpened: {
     // Restore last view if valid, otherwise choose what's available (prefer Wi‑Fi when both exist)
-    if (Settings.data.network.networkPanelView) {
-      const last = Settings.data.network.networkPanelView;
-      if (last === "ethernet" && NetworkService.ethernetAvailable) {
-        panelViewMode = "ethernet";
-      } else {
-        panelViewMode = "wifi";
-      }
+    const last = Settings.data.network.networkPanelView;
+    if (NetworkService.ethernetAvailable && (last === "ethernet" || !NetworkService.wifiEnabled)) {
+      panelViewMode = "ethernet";
     } else {
-      if (!NetworkService.wifiEnabled && NetworkService.ethernetAvailable) {
-        panelViewMode = "ethernet";
-      } else {
-        panelViewMode = "wifi";
-      }
+      panelViewMode = "wifi";
     }
     panelViewPersistEnabled = true;
   }
