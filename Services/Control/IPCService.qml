@@ -705,13 +705,13 @@ Singleton {
   IpcHandler {
     target: "airplaneMode"
     function toggle() {
-      BluetoothService.setAirplaneMode(!Settings.data.network.airplaneModeEnabled);
+      NetworkService.setAirplaneMode(!NetworkService.airplaneModeEnabled);
     }
     function enable() {
-      BluetoothService.setAirplaneMode(true);
+      NetworkService.setAirplaneMode(true);
     }
     function disable() {
-      BluetoothService.setAirplaneMode(false);
+      NetworkService.setAirplaneMode(false);
     }
   }
 

@@ -144,7 +144,7 @@ SmartPanel {
               id: wifiSwitch
               visible: panelViewMode === "wifi"
               checked: NetworkService.wifiEnabled
-              enabled: !Settings.data.network.airplaneModeEnabled && NetworkService.wifiAvailable
+              enabled: !NetworkService.airplaneModeEnabled && NetworkService.wifiAvailable
               onToggled: checked => NetworkService.setWifiEnabled(checked)
               baseSize: Style.baseWidgetSize * 0.7 // Slightly smaller
             }
