@@ -69,6 +69,7 @@ Loader {
   onScreenCapturesChanged: {
     let captureCount = Object.keys(screenCaptures).length;
     if (captureCount > 0 && captureCount === Quickshell.screens.length) {
+      screenCopies.active = false;
       root.locked = true;
     }
   }
@@ -88,7 +89,6 @@ Loader {
 
   function unlockAndUnload() {
     locked = false;
-    screenCopies.active = false;
     unloadAfterUnlockTimer.start();
   }
 
