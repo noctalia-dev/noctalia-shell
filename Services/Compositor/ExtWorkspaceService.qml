@@ -93,7 +93,10 @@ Item {
     workspaces.clear();
     nativeWorkspaceMap = {};
 
-    let idx = 1;
+    /* Per-output (projection) index: compositors expose one workspace group per
+    * monitor with names "1"…"9". A single global idx produced 10–18 on the
+    * second head because all windowsets were merged into one list. */
+    const perOutputNextIdx = {};
 
     for (const ws of nativeWs) {
       if (!ws.shouldDisplay) {
@@ -106,6 +109,18 @@ Item {
         if (projScreens && projScreens.length > 0) {
           outputName = projScreens[0].name || "";
         }
+      }
+
+      const groupKey = outputName || "_";
+      let idx;
+      const numericName = ws.name && /^\d+$/.test(String(ws.name)) ? parseInt(ws.name, 10) : NaN;
+      if (!isNaN(numericName) && numericName >= 1) {
+        idx = numericName;
+      } else {
+        if (perOutputNextIdx[groupKey] === undefined) {
+          perOutputNextIdx[groupKey] = 1;
+        }
+        idx = perOutputNextIdx[groupKey]++;
       }
 
       const wsEntry = {
@@ -122,8 +137,6 @@ Item {
 
       workspaces.append(wsEntry);
       nativeWorkspaceMap[wsEntry.id] = ws;
-
-      idx++;
     }
 
     updateWindowWorkspaces();
