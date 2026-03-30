@@ -678,7 +678,7 @@ Singleton {
           }
 
           let enhancedBand = band;
-          if (channel && width) {
+          if (channel && width && width !== "0 MHz") {
             enhancedBand = `${band} / ${channel} (${width})`;
           } else if (channel) {
             enhancedBand = `${band} / ${channel}`;
