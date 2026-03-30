@@ -164,7 +164,7 @@ Singleton {
 
   // Check if airplane mode has been toggled
   function checkAirplaneMode() {
-    var isAirplaneModeActive = !NetworkService.wifiEnabled && adapter.state === BluetoothAdapter.Blocked
+    var isAirplaneModeActive = !NetworkService.wifiEnabled && adapter.state === BluetoothAdapter.Blocked;
     if (isAirplaneModeActive && !NetworkService.airplaneModeEnabled) {
       NetworkService.airplaneModeToggled = true;
       NetworkService.airplaneModeEnabled = true;

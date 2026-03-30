@@ -155,7 +155,7 @@ Singleton {
         }
         return;
       }
-      var isAirplaneModeActive = !root.wifiEnabled && BluetoothService.blocked
+      var isAirplaneModeActive = !root.wifiEnabled && BluetoothService.blocked;
       // Extra check for Airplane Mode if Bluetooth has been blocked before Wi-Fi
       if (isAirplaneModeActive && !root.airplaneModeEnabled) {
         root.airplaneModeEnabled = true;

@@ -1307,6 +1307,11 @@ Singleton {
   // -------------------------------------------------------------------
   // Favorites
   // -------------------------------------------------------------------
+  // TODO (~few weeks): Remove per-favorite `darkMode` (the boolean on each
+  // Settings.data.wallpaper.favorites[] entry). It duplicates `appearance` and is
+  // unrelated to Settings.data.colorSchemes.darkMode (global shell light/dark).
+  // Plan: one-time migration, then drop writes and the fallback in _favoriteAppearanceSlot.
+  // -------------------------------------------------------------------
   readonly property int _favoriteNotFound: -1
 
   // -------------------------------------------------------------------
@@ -1371,7 +1376,8 @@ Singleton {
       "path": path,
       "appearance": app,
       "colorScheme": Settings.data.colorSchemes.predefinedScheme,
-      "darkMode": app === "dark",
+      "darkMode": app === "dark" // TODO: remove per-favorite field (see Favorites section note)
+                  ,
       "useWallpaperColors": Settings.data.colorSchemes.useWallpaperColors,
       "generationMethod": Settings.data.colorSchemes.generationMethod,
       "paletteColors": [Color.mPrimary.toString(), Color.mSecondary.toString(), Color.mTertiary.toString(), Color.mError.toString()]
