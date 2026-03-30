@@ -65,7 +65,7 @@ Item {
         root.reloadCounter++;
         // Plugin widgets use setSource, so also trigger reload directly
         if (root._isPlugin && loader.active)
-          root._loadPluginWidget();
+          root._loadWidget();
         Logger.d("BarWidgetLoader", "Plugin widget registry updated, reloading:", root.widgetId);
       }
     }
