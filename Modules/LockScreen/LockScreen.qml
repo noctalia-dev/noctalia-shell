@@ -9,12 +9,19 @@ import qs.Services.Compositor
 import qs.Services.Hardware
 import qs.Services.Keyboard
 import qs.Services.Media
+import qs.Services.Power
 import qs.Services.UI
 import qs.Widgets
 
 Loader {
   id: root
+
+  // Starts the lock screen when activated
   active: false
+
+  // Only controls the state of the session lock
+  // Decoupled because we need to capture the screen first
+  property bool locked: false
 
   // Track if the visualizer should be shown (lockscreen active + media playing + non-compact mode)
   readonly property bool needsSpectrum: root.active && !Settings.data.general.compactLockScreen && Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none"
@@ -31,6 +38,10 @@ Loader {
     } else {
       LockKeysService.unregisterComponent("lockscreen");
     }
+
+    // Trigger locksreen when loader is active
+    if (root.active)
+      startLockScreen();
   }
 
   onNeedsSpectrumChanged: {
@@ -51,6 +62,23 @@ Loader {
     LockKeysService.unregisterComponent("lockscreen");
   }
 
+  // Dictionary of screen name to ItemGrabResult of screen captures
+  property var screenCaptures: ({})
+
+  // Wait until all screens are captured before locking
+  onScreenCapturesChanged: {
+    let captureCount = Object.keys(screenCaptures).length;
+    if (captureCount > 0 && captureCount === Quickshell.screens.length) {
+      root.locked = true;
+    }
+  }
+
+  // When lock is requested, clear previous captures and activate SCVs
+  function startLockScreen() {
+    screenCaptures = {};
+    screenCopies.active = true;
+  }
+
   Timer {
     id: unloadAfterUnlockTimer
     interval: 250
@@ -58,17 +86,58 @@ Loader {
     onTriggered: root.active = false
   }
 
-  function scheduleUnloadAfterUnlock() {
+  function unlockAndUnload() {
+    locked = false;
+    screenCopies.active = false;
     unloadAfterUnlockTimer.start();
+  }
+
+  // Image grabber for each connected screen
+  Loader {
+    id: screenCopies
+    active: false
+
+    sourceComponent: Instantiator {
+      model: Quickshell.screens
+
+      delegate: PanelWindow {
+        anchors {
+          top: true
+          left: true
+          right: true
+          bottom: true
+        }
+        exclusionMode: ExclusionMode.Ignore
+        screen: modelData
+        color: "transparent"
+
+        ScreencopyView {
+          anchors.fill: parent
+          captureSource: screen
+
+          // Only grab an image when content is ready
+          onHasContentChanged: {
+            if (hasContent) {
+              grabToImage(function (result) {
+                // Store a ref to the result to avoid GC
+                root.screenCaptures[screen.name] = result;
+                // Manually call changed to trigger mutation signal
+                root.screenCapturesChanged();
+              });
+            }
+          }
+        }
+      }
+    }
   }
 
   sourceComponent: Component {
     Item {
       id: lockContainer
 
-      readonly property bool transitionsEnabled: Settings.data.general.lockScreenAnimations
+      readonly property bool canTransition: Settings.data.general.lockScreenAnimations && !PowerProfileService.noctaliaPerformanceMode
 
-      property real transitionProgress: transitionsEnabled ? 0.0 : 1.0
+      property real transitionProgress: canTransition ? 0.0 : 1.0
 
       NumberAnimation {
         id: lockEnter
@@ -77,12 +146,11 @@ Loader {
         to: 1.0
         duration: Style.animationNormal
         easing.type: Easing.OutCubic
-        running: transitionsEnabled
+        running: root.locked && canTransition
       }
 
       function unlockScreen() {
-        lockSession.locked = false;
-        root.scheduleUnloadAfterUnlock();
+        root.unlockAndUnload();
         lockContext.currentText = "";
       }
 
@@ -99,7 +167,7 @@ Loader {
       LockContext {
         id: lockContext
         onUnlocked: {
-          if (transitionsEnabled) {
+          if (canTransition) {
             lockEnter.stop();
             lockExit.start();
             return;
@@ -121,10 +189,11 @@ Loader {
 
       WlSessionLock {
         id: lockSession
-        locked: root.active
+        locked: root.locked
 
         WlSessionLockSurface {
           id: lockSurface
+          color: "black"
 
           Loader {
             anchors.fill: parent
@@ -156,6 +225,7 @@ Loader {
               LockScreenBackground {
                 id: backgroundComponent
                 screen: lockSurface.screen
+                screenGrab: lockSurface.screen ? (root.screenCaptures[lockSurface.screen.name] || null) : null
                 transitionProgress: lockContainer.transitionProgress
               }
 

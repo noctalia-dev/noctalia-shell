@@ -11,7 +11,11 @@ Item {
   id: root
   anchors.fill: parent
 
+  // Screen of the lock surface
   required property ShellScreen screen
+
+  // ItemGrabResult of the screen copy for this surface
+  required property var screenGrab
 
   // Cached wallpaper path - exposed for parent components
   property string resolvedWallpaperPath: ""
@@ -111,39 +115,16 @@ Item {
     });
   }
 
-  // Opaque black at the very bottom to prevent white flash
-  Rectangle {
-    anchors.fill: parent
-    color: "black"
-  }
-
   // A copy of the screen to use as background
   // Also used as fade in / fade out backdrop
-  ScreencopyView {
+  Image {
     id: lockBgScreencopy
     anchors.fill: parent
-    captureSource: screen
-    visible: lockBgRender.visible && lockBgRender.opacity < 0.99
+    source: screenGrab ? screenGrab.url : ""
 
-    // This is to observe a bug where screen is null on the first lock
-    // and is only a valid value after 1ms into the lock screen...
-    Timer {
-      id: recaptureWhenEmpty
-      interval: 1
-      repeat: false
-      onTriggered: {
-        Logger.w("LockScreenBackground", "Screen after is: ", screen);
-        // there's no use for this after the screen's already locked
-        // lockBgScreencopy.captureFrame()
-      }
-    }
-
-    Component.onCompleted: {
-      if (!hasContent) {
-        Logger.w("LockScreenBackground", "Screen now is: ", screen);
-        recaptureWhenEmpty.start();
-      }
-    }
+    cache: false
+    fillMode: Image.PreserveAspectCrop
+    visible: screenGrab && lockBgRender.visible && lockBgRender.opacity < 1.0
   }
 
   // If using a solid color wallpaper
@@ -171,7 +152,7 @@ Item {
     id: lockBgRender
     anchors.fill: parent
     opacity: transitionProgress
-    visible: useEffects && (useScreencopy || useWallpaper)
+    visible: useEffects && ((screenGrab && useScreencopy) || useWallpaper)
     source: useScreencopy ? lockBgScreencopy : lockBgImage
 
     blurEnabled: Settings.data.general.lockScreenBlur > 0
