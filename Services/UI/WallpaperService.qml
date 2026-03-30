@@ -62,8 +62,45 @@ Singleton {
   // Bumped when favorites are added/removed so grid delegates can refresh star state
   property int favoritesRevision: 0
 
+  // After favoriting, refresh snapshot once theme colors finish transitioning
+  property var pendingFavoriteSchemeRefresh: null
+
   // Signal emitted when browse path changes for a screen
   signal browsePathChanged(string screenName, string path)
+
+  Timer {
+    id: favoriteSchemeDebounceTimer
+    interval: 450
+    repeat: false
+    property string pendingPath: ""
+    property string pendingSlot: ""
+    onTriggered: {
+      var p = pendingPath;
+      var s = pendingSlot;
+      pendingPath = "";
+      pendingSlot = "";
+      if (p && root.isFavorite(p)) {
+        root.updateFavoriteColorScheme(p, s);
+      }
+    }
+  }
+
+  function scheduleFavoriteSchemeSnapshot(path, slot) {
+    Qt.callLater(function () {
+      if (root.isFavorite(path)) {
+        root.updateFavoriteColorScheme(path, slot);
+      }
+    });
+    favoriteSchemeDebounceTimer.pendingPath = path;
+    favoriteSchemeDebounceTimer.pendingSlot = slot;
+    favoriteSchemeDebounceTimer.restart();
+    if (Color.isTransitioning) {
+      root.pendingFavoriteSchemeRefresh = {
+        "path": path,
+        "slot": slot
+      };
+    }
+  }
 
   Connections {
     target: Settings.data.wallpaper
@@ -175,6 +212,7 @@ Singleton {
     Logger.i("Wallpaper", "Service started");
 
     translateModels();
+    Qt.callLater(root._dedupeWallpaperFavoritesByPath);
 
     // Initialize cache file path
     Qt.callLater(() => {
@@ -429,16 +467,30 @@ Singleton {
         return;
       }
       if (typeof e === "string") {
-        currentWallpapers[name] = {
-          light: e,
-          dark: e
-        };
+        if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
+          currentWallpapers[name] = {
+            light: e,
+            dark: e
+          };
+        } else {
+          currentWallpapers[name] = {
+            light: e,
+            dark: e
+          };
+        }
       } else if (_isSplitWallpaperEntry(e)) {
         var p = _pathsFromEntry(e);
-        currentWallpapers[name] = {
-          light: p.light || p.dark || "",
-          dark: p.dark || p.light || ""
-        };
+        if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
+          currentWallpapers[name] = {
+            light: p.light || p.dark || "",
+            dark: p.dark || p.light || ""
+          };
+        } else {
+          currentWallpapers[name] = {
+            light: p.light || "",
+            dark: p.dark || ""
+          };
+        }
       }
     });
     saveTimer.restart();
@@ -620,15 +672,12 @@ Singleton {
       if (!path || path === newPath) {
         return;
       }
-      if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
-        ["light", "dark"].forEach(function (app) {
-          if (isFavorite(path, app)) {
-            updateFavoriteColorScheme(path, app);
-          }
-        });
-      } else if (isFavorite(path, slot)) {
-        updateFavoriteColorScheme(path, slot);
+      var favIdx = _findAnyFavoriteIndexForPath(path);
+      if (favIdx === _favoriteNotFound) {
+        return;
       }
+      var app = _favoriteAppearanceSlot(Settings.data.wallpaper.favorites[favIdx]);
+      updateFavoriteColorScheme(path, app);
     });
   }
 
@@ -709,13 +758,13 @@ Singleton {
       };
     } else if (slot === "dark") {
       newEntry = {
-        light: p.light || p.dark || path,
+        light: p.light || "",
         dark: path
       };
     } else {
       newEntry = {
         light: path,
-        dark: p.dark || p.light || path
+        dark: p.dark || ""
       };
     }
 
@@ -1272,7 +1321,6 @@ Singleton {
     var favorites = Settings.data.wallpaper.favorites;
     var searchPath = Settings.preprocessPath(path);
     var slot = _normalizeAppearanceSlot(appearanceSlot);
-
     for (var i = 0; i < favorites.length; i++) {
       if (Settings.preprocessPath(favorites[i].path) !== searchPath) {
         continue;
@@ -1295,6 +1343,27 @@ Singleton {
     return _favoriteNotFound;
   }
 
+  function _dedupeWallpaperFavoritesByPath() {
+    var favorites = Settings.data.wallpaper.favorites;
+    if (!favorites || !favorites.length) {
+      return;
+    }
+    var seen = {};
+    var out = [];
+    for (var i = 0; i < favorites.length; i++) {
+      var key = Settings.preprocessPath(favorites[i].path);
+      if (!key || seen[key]) {
+        continue;
+      }
+      seen[key] = true;
+      out.push(favorites[i]);
+    }
+    if (out.length !== favorites.length) {
+      Settings.data.wallpaper.favorites = out;
+      root.favoritesRevision++;
+    }
+  }
+
   // -------------------------------------------------------------------
   function _createFavoriteEntry(path, appearanceSlot) {
     var app = _normalizeAppearanceSlot(appearanceSlot);
@@ -1310,6 +1379,7 @@ Singleton {
   }
 
   // -------------------------------------------------------------------
+  // Favorites are per (path, light|dark): at most one entry per path, tagged with the tab you starred from.
   function isFavorite(path, appearanceSlot) {
     if (appearanceSlot === undefined || appearanceSlot === null || appearanceSlot === "") {
       return _findAnyFavoriteIndexForPath(path) !== _favoriteNotFound;
@@ -1317,45 +1387,21 @@ Singleton {
     return _findFavoriteIndex(path, appearanceSlot) !== _favoriteNotFound;
   }
 
-  // -------------------------------------------------------------------
-  function getFavorite(path, appearanceSlot) {
-    var slot;
-    if (appearanceSlot !== undefined && appearanceSlot !== null && appearanceSlot !== "") {
-      slot = _normalizeAppearanceSlot(appearanceSlot);
-    } else {
-      slot = _normalizeAppearanceSlot(root.wallpaperSelectionAppearance);
-    }
-    var favoriteIndex = _findFavoriteIndex(path, slot);
-    if (favoriteIndex === _favoriteNotFound) {
+  // Single favorite entry per path; use _favoriteAppearanceSlot(entry) for light vs dark it was starred under.
+  function favoriteEntryForPath(path) {
+    var idx = _findAnyFavoriteIndexForPath(path);
+    if (idx === _favoriteNotFound) {
       return null;
     }
-    return Settings.data.wallpaper.favorites[favoriteIndex];
+    return Settings.data.wallpaper.favorites[idx];
   }
 
-  // Palette / UI for a favorited path. When light and dark use the same wallpaper, pick one stable entry (no slot switching).
   function getFavoriteForDisplay(path) {
-    if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
-      var anyIdx = _findAnyFavoriteIndexForPath(path);
-      if (anyIdx !== _favoriteNotFound) {
-        return Settings.data.wallpaper.favorites[anyIdx];
-      }
-      return null;
-    }
-    var slot = _normalizeAppearanceSlot(root.wallpaperSelectionAppearance);
-    var idx = _findFavoriteIndex(path, slot);
-    if (idx !== _favoriteNotFound) {
-      return Settings.data.wallpaper.favorites[idx];
-    }
-    var otherSlot = slot === "dark" ? "light" : "dark";
-    idx = _findFavoriteIndex(path, otherSlot);
-    if (idx !== _favoriteNotFound) {
-      return Settings.data.wallpaper.favorites[idx];
-    }
-    return null;
+    return favoriteEntryForPath(path);
   }
 
   // -------------------------------------------------------------------
-  function toggleFavorite(path, appearanceSlot) {
+  function toggleFavorite(path, appearanceSlot, screenName) {
     var slot;
     if (appearanceSlot !== undefined && appearanceSlot !== null && appearanceSlot !== "") {
       slot = _normalizeAppearanceSlot(appearanceSlot);
@@ -1363,28 +1409,74 @@ Singleton {
       slot = _normalizeAppearanceSlot(root.wallpaperSelectionAppearance);
     }
     var favorites = Settings.data.wallpaper.favorites.slice();
-    var existingIndex = _findFavoriteIndex(path, slot);
+    var anyIdx = _findAnyFavoriteIndexForPath(path);
+    var applyWallpaperForSlot = false;
 
-    if (existingIndex !== _favoriteNotFound) {
-      favorites.splice(existingIndex, 1);
-      Logger.d("Wallpaper", "Removed favorite:", path, slot);
+    if (anyIdx !== _favoriteNotFound) {
+      var existingSlot = _favoriteAppearanceSlot(favorites[anyIdx]);
+      if (existingSlot === slot) {
+        favorites.splice(anyIdx, 1);
+        Logger.d("Wallpaper", "Removed favorite:", path, slot);
+        if (favoriteSchemeDebounceTimer.pendingPath === path && favoriteSchemeDebounceTimer.pendingSlot === slot) {
+          favoriteSchemeDebounceTimer.stop();
+          favoriteSchemeDebounceTimer.pendingPath = "";
+          favoriteSchemeDebounceTimer.pendingSlot = "";
+        }
+        if (root.pendingFavoriteSchemeRefresh && root.pendingFavoriteSchemeRefresh.path === path && root.pendingFavoriteSchemeRefresh.slot === slot) {
+          root.pendingFavoriteSchemeRefresh = null;
+        }
+      } else {
+        favorites[anyIdx] = _createFavoriteEntry(path, slot);
+        Logger.d("Wallpaper", "Moved favorite to other appearance:", path, slot);
+        root.scheduleFavoriteSchemeSnapshot(path, slot);
+        applyWallpaperForSlot = true;
+        if (root.pendingFavoriteSchemeRefresh && root.pendingFavoriteSchemeRefresh.path === path) {
+          root.pendingFavoriteSchemeRefresh = {
+            "path": path,
+            "slot": slot
+          };
+        }
+      }
     } else {
       favorites.push(_createFavoriteEntry(path, slot));
       Logger.d("Wallpaper", "Added favorite:", path, slot);
+      root.scheduleFavoriteSchemeSnapshot(path, slot);
+      applyWallpaperForSlot = true;
     }
 
     Settings.data.wallpaper.favorites = favorites;
     root.favoritesRevision++;
+
+    if (applyWallpaperForSlot) {
+      var scr;
+      if (Settings.data.wallpaper.setWallpaperOnAllMonitors) {
+        scr = undefined;
+      } else if (screenName !== undefined && screenName !== null && screenName !== "") {
+        scr = screenName;
+      } else if (Quickshell.screens.length > 0) {
+        scr = Quickshell.screens[0].name;
+      } else {
+        scr = undefined;
+      }
+      root.changeWallpaper(path, scr, slot);
+      root.applyFavoriteTheme(path, scr, slot);
+    }
+
     favoritesChanged(path);
   }
 
-  // Apply saved scheme from a favorite entry (path + appearance must already match the slot you care about).
-  function _applyFavoriteThemeFromEntry(favorite) {
+  // Apply saved scheme from a favorite. Optional appearanceSlotOverride sets light vs dark target (UI tab or system mode).
+  function _applyFavoriteThemeFromEntry(favorite, appearanceSlotOverride) {
     if (!favorite) {
       return;
     }
 
-    var favApp = _favoriteAppearanceSlot(favorite);
+    var favApp;
+    if (appearanceSlotOverride !== undefined && appearanceSlotOverride !== null && appearanceSlotOverride !== "") {
+      favApp = _normalizeAppearanceSlot(appearanceSlotOverride);
+    } else {
+      favApp = _favoriteAppearanceSlot(favorite);
+    }
     var targetDark = favApp === "dark";
 
     var generationMethodChanging = Settings.data.colorSchemes.generationMethod !== favorite.generationMethod;
@@ -1415,11 +1507,11 @@ Singleton {
       return;
     }
     var slot = Settings.data.colorSchemes.darkMode ? "dark" : "light";
-    var favorite = getFavorite(wp, slot);
+    var favorite = favoriteEntryForPath(wp);
     if (!favorite) {
       return;
     }
-    _applyFavoriteThemeFromEntry(favorite);
+    _applyFavoriteThemeFromEntry(favorite, slot);
   }
 
   // -------------------------------------------------------------------
@@ -1439,12 +1531,16 @@ Singleton {
     } else {
       slot = _normalizeAppearanceSlot(root.wallpaperSelectionAppearance);
     }
-    var favorite = getFavorite(path, slot);
+    var favorite = favoriteEntryForPath(path);
     if (!favorite) {
       return;
     }
 
-    _applyFavoriteThemeFromEntry(favorite);
+    var schemeSlot = slot;
+    if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
+      schemeSlot = _favoriteAppearanceSlot(favorite);
+    }
+    _applyFavoriteThemeFromEntry(favorite, schemeSlot);
   }
 
   // -------------------------------------------------------------------
@@ -1481,10 +1577,15 @@ Singleton {
       effectiveMonitor = Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "";
     }
     var wp = getWallpaper(effectiveMonitor);
-    var app = Settings.data.colorSchemes.darkMode ? "dark" : "light";
-    if (wp && isFavorite(wp, app)) {
-      updateFavoriteColorScheme(wp, app);
+    if (!wp) {
+      return;
     }
+    var favIdx = _findAnyFavoriteIndexForPath(wp);
+    if (favIdx === _favoriteNotFound) {
+      return;
+    }
+    var app = _favoriteAppearanceSlot(Settings.data.wallpaper.favorites[favIdx]);
+    updateFavoriteColorScheme(wp, app);
   }
 
   // -------------------------------------------------------------------

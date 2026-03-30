@@ -669,6 +669,7 @@ SmartPanel {
 
   // Component for each screen's wallpaper view
   component WallpaperScreenView: Item {
+    id: wallpaperScreenView
     property var targetScreen
     property alias gridView: wallpaperGridView
 
@@ -689,7 +690,7 @@ SmartPanel {
     property bool isBrowseMode: Settings.data.wallpaper.viewMode === "browse"
     property int _browseScanGeneration: 0
 
-    // All favorited wallpapers (any light/dark slot) first, then the rest
+    // Favorited paths (any light/dark) first, then the rest
     function sortFavoritesToTop(items) {
       var favs = [];
       var rest = [];
@@ -1230,6 +1231,7 @@ SmartPanel {
                 width: 28
                 height: 28
                 radius: width / 2
+                z: 6
                 color: Color.mSecondary
                 border.color: Color.mOutline
                 border.width: Style.borderS
@@ -1240,6 +1242,11 @@ SmartPanel {
                   pointSize: Style.fontSizeM
                   color: Color.mOnSecondary
                   anchors.centerIn: parent
+                }
+
+                MouseArea {
+                  anchors.fill: parent
+                  onClicked: {}
                 }
               }
 
@@ -1258,7 +1265,7 @@ SmartPanel {
                   return starHoverHandler.hovered ? Color.mSurfaceVariant : Color.mSurface;
                 }
                 opacity: wallpaperItem.isFavorited || starHoverHandler.hovered ? 1.0 : 0.7
-                z: 5
+                z: 11
 
                 Behavior on color {
                   ColorAnimation {
@@ -1288,19 +1295,23 @@ SmartPanel {
 
                 TapHandler {
                   onTapped: {
-                    WallpaperService.toggleFavorite(wallpaperItem.wallpaperPath, WallpaperService.wallpaperSelectionAppearance);
+                    var mon = Settings.data.wallpaper.setWallpaperOnAllMonitors ? undefined : (wallpaperScreenView.targetScreen ? wallpaperScreenView.targetScreen.name : undefined);
+                    WallpaperService.toggleFavorite(wallpaperItem.wallpaperPath, WallpaperService.wallpaperSelectionAppearance, mon);
                   }
                 }
               }
 
-              // Palette color dots (bottom-center, favorites only)
-              Row {
+              // Palette color dots (bottom-center, favorites only) — taps must not fall through to selectItem
+              Item {
                 id: paletteRow
                 anchors.bottom: img.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottomMargin: Style.marginS
-                spacing: Style.marginXS
-                z: 5
+                z: 10
+                implicitWidth: paletteRowRow.implicitWidth
+                implicitHeight: paletteRowRow.implicitHeight
+                width: implicitWidth
+                height: implicitHeight
                 visible: wallpaperItem.isFavorited && paletteRow.colors.length > 0
 
                 property int diameter: 25 * Style.uiScaleRatio
@@ -1308,12 +1319,10 @@ SmartPanel {
                 property var favData: {
                   _favRevision;
                   WallpaperService.favoritesRevision;
-                  WallpaperService.wallpaperSelectionAppearance;
                   Settings.data.wallpaper.linkLightAndDarkWallpapers;
                   return WallpaperService.getFavoriteForDisplay(wallpaperItem.wallpaperPath);
                 }
                 property var colors: favData && favData.paletteColors ? favData.paletteColors : []
-                readonly property bool showAppearanceSlotBadge: !Settings.data.wallpaper.linkLightAndDarkWallpapers
                 property bool isDark: {
                   if (!favData) {
                     return false;
@@ -1335,35 +1344,43 @@ SmartPanel {
                   }
                 }
 
-                // Light/dark slot (only when wallpapers differ per appearance — hidden when linked)
-                Rectangle {
-                  width: paletteRow.diameter
-                  height: paletteRow.diameter
-                  radius: width * 0.5
-                  visible: paletteRow.showAppearanceSlotBadge
-                  color: Color.mSurface
-                  border.color: Color.mShadow
-                  border.width: Style.borderS
+                Row {
+                  id: paletteRowRow
+                  spacing: Style.marginXS
 
-                  NIcon {
-                    icon: paletteRow.isDark ? "moon" : "sun"
-                    pointSize: parent.width * 0.45
-                    color: Color.mOnSurface
-                    anchors.centerIn: parent
-                  }
-                }
-
-                Repeater {
-                  model: paletteRow.colors
-
+                  // Sun/moon = appearance slot this path was starred for (not the current tab)
                   Rectangle {
                     width: paletteRow.diameter
                     height: paletteRow.diameter
                     radius: width * 0.5
-                    color: modelData
+                    color: Color.mSurface
                     border.color: Color.mShadow
                     border.width: Style.borderS
+
+                    NIcon {
+                      icon: paletteRow.isDark ? "moon" : "sun"
+                      pointSize: parent.width * 0.45
+                      color: Color.mOnSurface
+                      anchors.centerIn: parent
+                    }
                   }
+
+                  Repeater {
+                    model: paletteRow.colors
+
+                    Rectangle {
+                      width: paletteRow.diameter
+                      height: paletteRow.diameter
+                      radius: width * 0.5
+                      color: modelData
+                      border.color: Color.mShadow
+                      border.width: Style.borderS
+                    }
+                  }
+                }
+
+                TapHandler {
+                  onTapped: {}
                 }
               }
 
