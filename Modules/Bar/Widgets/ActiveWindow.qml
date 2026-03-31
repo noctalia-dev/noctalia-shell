@@ -40,6 +40,7 @@ Item {
 
   // Widget settings - matching MediaMini pattern
   readonly property bool showIcon: (widgetSettings.showIcon !== undefined) ? widgetSettings.showIcon : (widgetMetadata.showIcon || false)
+  readonly property bool showText: (widgetSettings.showText !== undefined) ? widgetSettings.showText : (widgetMetadata.showText || false)
   readonly property string hideMode: (widgetSettings.hideMode !== undefined) ? widgetSettings.hideMode : (widgetMetadata.hideMode || "hidden")
   readonly property string scrollingMode: (widgetSettings.scrollingMode !== undefined) ? widgetSettings.scrollingMode : (widgetMetadata.scrollingMode || "hover")
 
@@ -98,14 +99,17 @@ Item {
     // Icon width (if visible)
     if (showIcon) {
       contentWidth += iconSize;
-      contentWidth += Style.marginS; // Spacing after icon
+      if (showText) {
+        contentWidth += Style.marginS; // Spacing after icon
+      }
     }
 
     // Text width (use the measured width)
-    contentWidth += titleContainer.measuredWidth;
-
-    // Additional small margin for text
-    contentWidth += Style.margin2XXS;
+    if (showText) {
+      contentWidth += titleContainer.measuredWidth;
+      // Additional small margin for text
+      contentWidth += Style.margin2XXS;
+    }
 
     // Add container margins
     contentWidth += margins;
@@ -257,6 +261,7 @@ Item {
           Layout.alignment: Qt.AlignVCenter
           Layout.preferredHeight: root.capsuleHeight
           fadeRoundLeftCorners: !showIcon
+          visible: showText
 
           maxWidth: {
             // Calculate available width based on other elements

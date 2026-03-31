@@ -79,6 +79,7 @@ Singleton {
 
   property var widgetMetadata: ({
                                   "ActiveWindow": {
+                                    "showText": true,
                                     "showIcon": true,
                                     "hideMode": "hidden",
                                     "scrollingMode": "hover",
