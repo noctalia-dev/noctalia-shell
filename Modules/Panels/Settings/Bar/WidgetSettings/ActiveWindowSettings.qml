@@ -82,6 +82,18 @@ ColumnLayout {
 
     NToggle {
         Layout.fillWidth: true
+        label: I18n.tr("bar.active-window.show-app-text-label")
+        description: I18n.tr("bar.active-window.show-app-text-description")
+        checked: root.valueShowText
+        onToggled: checked => {
+            root.valueShowText = checked;
+            saveSettings();
+        }
+        defaultValue: widgetMetadata.showText
+    }
+
+    NToggle {
+        Layout.fillWidth: true
         label: I18n.tr("bar.active-window.show-app-icon-label")
         description: I18n.tr("bar.active-window.show-app-icon-description")
         checked: root.valueShowIcon
@@ -103,18 +115,6 @@ ColumnLayout {
         }
         visible: root.valueShowIcon
         defaultValue: widgetMetadata.colorizeIcons
-    }
-
-    NToggle {
-        Layout.fillWidth: true
-        label: I18n.tr("bar.active-window.show-app-text-label")
-        description: I18n.tr("bar.active-window.show-app-text-description")
-        checked: root.valueShowText
-        onToggled: checked => {
-            root.valueShowText = checked;
-            saveSettings();
-        }
-        defaultValue: widgetMetadata.showText
     }
 
     NTextInput {

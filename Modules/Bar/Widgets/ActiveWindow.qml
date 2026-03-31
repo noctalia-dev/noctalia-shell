@@ -40,7 +40,7 @@ Item {
 
     // Widget settings - matching MediaMini pattern
     readonly property bool showIcon: (widgetSettings.showIcon !== undefined) ? widgetSettings.showIcon : (widgetMetadata.showIcon || false)
-    readonly property bool showText: false //(widgetSettings.showText !== undefined) ? widgetSettings.showText : (widgetMetadata.showText || false)
+    readonly property bool showText: (widgetSettings.showText !== undefined) ? widgetSettings.showText : (widgetMetadata.showText || false)
     readonly property string hideMode: (widgetSettings.hideMode !== undefined) ? widgetSettings.hideMode : (widgetMetadata.hideMode || "hidden")
     readonly property string scrollingMode: (widgetSettings.scrollingMode !== undefined) ? widgetSettings.scrollingMode : (widgetMetadata.scrollingMode || "hover")
 
