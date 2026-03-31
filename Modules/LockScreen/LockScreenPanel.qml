@@ -488,11 +488,34 @@ Item {
           Layout.preferredWidth: 180
           spacing: Style.marginM
 
-          NIcon {
+          Item {
+            Layout.preferredWidth: lockMainWeatherIconSide
+            Layout.preferredHeight: lockMainWeatherIconSide
             Layout.alignment: Qt.AlignVCenter
-            icon: weatherReady ? LocationService.weatherSymbolFromCode(LocationService.data.weather.current_weather.weathercode, LocationService.data.weather.current_weather.is_day) : "weather-cloud-off"
-            pointSize: Style.fontSizeXXXL
-            color: Color.mPrimary
+            readonly property int lockMainWeatherIconSide: Math.round(Style.fontSizeXXXL * Style.uiScaleRatio * 1.6)
+
+            NIcon {
+              visible: !LocationService.taliaWeatherMascotDayActive || !weatherReady
+              anchors.centerIn: parent
+              icon: weatherReady ? LocationService.weatherSymbolFromCode(LocationService.data.weather.current_weather.weathercode, LocationService.data.weather.current_weather.is_day) : "weather-cloud-off"
+              pointSize: Style.fontSizeXXXL
+              color: Color.mPrimary
+            }
+            Loader {
+              active: LocationService.taliaWeatherMascotDayActive && weatherReady
+              anchors.fill: parent
+              asynchronous: true
+              sourceComponent: Component {
+                Image {
+                  anchors.fill: parent
+                  fillMode: Image.PreserveAspectFit
+                  smooth: true
+                  mipmap: true
+                  asynchronous: true
+                  source: Qt.resolvedUrl(LocationService.taliaWeatherImageFromCode(LocationService.data.weather.current_weather.weathercode, LocationService.data.weather.current_weather.is_day))
+                }
+              }
+            }
           }
 
           ColumnLayout {
@@ -579,11 +602,34 @@ Item {
                 Layout.fillWidth: true
               }
 
-              NIcon {
+              Item {
+                Layout.preferredWidth: lockForecastWeatherIconSide
+                Layout.preferredHeight: lockForecastWeatherIconSide
                 Layout.alignment: Qt.AlignHCenter
-                icon: LocationService.weatherSymbolFromCode(LocationService.data.weather.daily.weathercode[index])
-                pointSize: Style.fontSizeXL
-                color: Color.mOnSurfaceVariant
+                readonly property int lockForecastWeatherIconSide: Math.round(Style.fontSizeXL * Style.uiScaleRatio * 1.6)
+
+                NIcon {
+                  visible: !LocationService.taliaWeatherMascotDayActive
+                  anchors.centerIn: parent
+                  icon: LocationService.weatherSymbolFromCode(LocationService.data.weather.daily.weathercode[index])
+                  pointSize: Style.fontSizeXL
+                  color: Color.mOnSurfaceVariant
+                }
+                Loader {
+                  active: LocationService.taliaWeatherMascotDayActive
+                  anchors.fill: parent
+                  asynchronous: true
+                  sourceComponent: Component {
+                    Image {
+                      anchors.fill: parent
+                      fillMode: Image.PreserveAspectFit
+                      smooth: true
+                      mipmap: true
+                      asynchronous: true
+                      source: Qt.resolvedUrl(LocationService.taliaWeatherImageFromCode(LocationService.data.weather.daily.weathercode[index]))
+                    }
+                  }
+                }
               }
 
               NText {

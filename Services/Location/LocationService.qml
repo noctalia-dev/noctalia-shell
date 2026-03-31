@@ -10,8 +10,17 @@ Singleton {
   id: root
 
   property string locationFile: Quickshell.env("NOCTALIA_WEATHER_FILE") || (Settings.cacheDir + "location.json")
-  property int weatherUpdateFrequency: 30 * 60 // 30 minutes expressed in seconds
+  property int weatherUpdateFrequency: 30 * 60
   property bool isFetchingWeather: false
+
+  // Talia weather
+  readonly property int taliaMascotWeatherMonth: 3
+  readonly property int taliaMascotWeatherDay: 1
+
+  readonly property bool taliaWeatherMascotDayActive: {
+    const d = Time.now;
+    return d.getMonth() === root.taliaMascotWeatherMonth && d.getDate() === root.taliaMascotWeatherDay;
+  }
 
   readonly property alias data: adapter
 
@@ -264,6 +273,22 @@ Singleton {
     if (code >= 95 && code <= 99)
       return "weather-cloud-lightning";
     return "weather-cloud";
+  }
+
+  // --------------------------------
+  function taliaWeatherImageFromCode(code, isDay) {
+    if (code >= 40 && code <= 49)
+      return Quickshell.shellDir + "/Assets/Talia/TaliaDazed.png";
+    if (code >= 95 && code <= 99)
+      return Quickshell.shellDir + "/Assets/Talia/TaliaFear.png";
+    var wet = (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || (code >= 71 && code <= 77) || (code >= 85 && code <= 86);
+    if (wet)
+      return Quickshell.shellDir + "/Assets/Talia/TaliaSob.png";
+    if ((code === 0 || code === 1 || code === 2) && isDay === false)
+      return Quickshell.shellDir + "/Assets/Talia/TaliaVampire.png";
+    if ((code === 0 && isDay === true) || code === 1 || code === 2)
+      return Quickshell.shellDir + "/Assets/Talia/TaliaParty.png";
+    return Quickshell.shellDir + "/Assets/Talia/TaliaBlank.png";
   }
 
   // --------------------------------

@@ -45,8 +45,8 @@ Item {
 
   readonly property bool shouldShow: (currentVisualizerType !== "" && currentVisualizerType !== "none") && (!hideWhenIdle || MediaService.isPlaying)
 
-  // Register/unregister with SpectrumService based on visibility
-  readonly property string spectrumComponentId: "bar:audiovisualizer:" + root.screen.name + ":" + root.section + ":" + root.sectionWidgetIndex
+  // Register/unregister with SpectrumService based on visibility (use screenName — screen can be null after DPMS/output changes)
+  readonly property string spectrumComponentId: "bar:audiovisualizer:" + screenName + ":" + root.section + ":" + root.sectionWidgetIndex
 
   onShouldShowChanged: {
     if (root.shouldShow) {
@@ -140,14 +140,16 @@ Item {
 
     onTriggered: action => {
                    contextMenu.close();
-                   PanelService.closeContextMenu(screen);
+                   if (screen) {
+                     PanelService.closeContextMenu(screen);
+                   }
 
                    if (action === "cycle-visualizer") {
                      const types = ["linear", "mirrored", "wave"];
                      const currentIndex = types.indexOf(currentVisualizerType);
                      const nextIndex = (currentIndex + 1) % types.length;
                      Settings.data.audio.visualizerType = types[nextIndex];
-                   } else if (action === "widget-settings") {
+                   } else if (action === "widget-settings" && screen) {
                      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
                    }
                  }
@@ -163,7 +165,9 @@ Item {
 
     onClicked: mouse => {
                  if (mouse.button === Qt.RightButton) {
-                   PanelService.showContextMenu(contextMenu, root, screen);
+                   if (screen) {
+                     PanelService.showContextMenu(contextMenu, root, screen);
+                   }
                  } else {
                    const types = ["linear", "mirrored", "wave"];
                    const currentIndex = types.indexOf(currentVisualizerType);
