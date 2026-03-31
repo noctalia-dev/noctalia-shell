@@ -39,6 +39,14 @@ Singleton {
   readonly property int iRadiusM: Math.round(16 * Settings.data.general.iRadiusRatio)
   readonly property int iRadiusL: Math.round(20 * Settings.data.general.iRadiusRatio)
 
+  // Bar widget radii: bar capsules and bar widget surfaces
+  readonly property int barRadiusXXXS: Math.round(3 * Settings.data.bar.widgetRadiusRatio)
+  readonly property int barRadiusXXS: Math.round(4 * Settings.data.bar.widgetRadiusRatio)
+  readonly property int barRadiusXS: Math.round(8 * Settings.data.bar.widgetRadiusRatio)
+  readonly property int barRadiusS: Math.round(12 * Settings.data.bar.widgetRadiusRatio)
+  readonly property int barRadiusM: Math.round(16 * Settings.data.bar.widgetRadiusRatio)
+  readonly property int barRadiusL: Math.round(20 * Settings.data.bar.widgetRadiusRatio)
+
   readonly property int screenRadius: Math.round(20 * Settings.data.general.screenRadiusRatio)
 
   // Border
