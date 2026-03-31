@@ -481,9 +481,6 @@ Rectangle {
       event.accepted = true;
       break;
     case Qt.Key_End:
-      if (searchInput.inputItem && searchInput.inputItem.activeFocus && (event.modifiers & Qt.ShiftModifier)) {
-        break;
-      }
       selectLast();
       event.accepted = true;
       break;
