@@ -138,7 +138,7 @@ class TemplateRenderer:
     COLOR_ARG_FILTERS = {"blend", "harmonize"}
 
     # Regex for block delimiters: <* ... *>
-    _BLOCK_RE = re.compile(r'<\*\s*(.*?)\s*\*>', re.DOTALL)
+    _BLOCK_RE = re.compile(r'<\*(.*?)\*>', re.DOTALL)
 
     # Regex for expression tags: {{ ... }}
     _EXPR_RE = re.compile(r"\{\{([^}\n]+?)\}\}")
