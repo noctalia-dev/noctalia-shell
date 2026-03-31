@@ -408,8 +408,15 @@ Item {
                }
 
     onEntered: {
-      if (screen && (isVertical || scrollingMode === "never") && !PanelService.getPanel("mediaPlayerPanel", screen)?.isPanelOpen) {
-        TooltipService.show(root, title, BarService.getTooltipDirection(root.screen?.name));
+      if (!root || !screen) {
+        return;
+      }
+      var scrollMode = scrollingMode;
+      if ((isVertical || scrollMode === "never")) {
+        var panel = PanelService.getPanel("mediaPlayerPanel", screen);
+        if (panel && !panel.isPanelOpen) {
+          TooltipService.show(root, title, BarService.getTooltipDirection(root.screen?.name));
+        }
       }
     }
     onExited: TooltipService.hide()
