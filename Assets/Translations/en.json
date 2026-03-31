@@ -853,6 +853,8 @@
       "appearance-floating-label": "Floating bar",
       "appearance-font-scale-description": "Adjust the font size scale for text displayed in the bar.",
       "appearance-font-scale-label": "Font scale",
+      "appearance-widget-radius-description": "Adjust the corner roundness of bar widget capsules.",
+      "appearance-widget-radius-label": "Widget radius",
       "appearance-frame-radius": "Inner Radius",
       "appearance-frame-settings-description": "Adjust frame thickness and inner corner radius",
       "appearance-frame-settings-label": "Frame Settings",

@@ -219,6 +219,15 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.bar.appearance-widget-radius-label",
+    "descriptionKey": "panels.bar.appearance-widget-radius-description",
+    "widget": "NValueSlider",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.bar.appearance-widget-spacing-label",
     "descriptionKey": "panels.bar.appearance-widget-spacing-description",
     "widget": "NValueSlider",
