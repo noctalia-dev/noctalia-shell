@@ -474,10 +474,16 @@ Rectangle {
       event.accepted = true;
       break;
     case Qt.Key_Home:
+      if (searchInput.inputItem && searchInput.inputItem.activeFocus && (event.modifiers & Qt.ShiftModifier)) {
+        break;
+      }
       selectFirst();
       event.accepted = true;
       break;
     case Qt.Key_End:
+      if (searchInput.inputItem && searchInput.inputItem.activeFocus && (event.modifiers & Qt.ShiftModifier)) {
+        break;
+      }
       selectLast();
       event.accepted = true;
       break;
@@ -490,6 +496,9 @@ Rectangle {
       event.accepted = true;
       break;
     case Qt.Key_Delete:
+      if (searchInput.inputItem && searchInput.inputItem.activeFocus && searchInput.inputItem.selectedText.length > 0) {
+        break;
+      }
       if (selectedIndex >= 0 && results && results[selectedIndex]) {
         var item = results[selectedIndex];
         var provider = item.provider || currentProvider;
