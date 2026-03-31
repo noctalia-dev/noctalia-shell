@@ -7,6 +7,7 @@ import qs.Services.UI
 Slider {
   id: root
 
+  readonly property bool sliderActive: activeFocus || pressed
   property color fillColor: Color.mPrimary
   property var cutoutColor: Color.mSurface
   property bool snapAlways: true

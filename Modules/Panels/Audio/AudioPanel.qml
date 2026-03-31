@@ -27,6 +27,9 @@ SmartPanel {
     property bool localInputVolumeChanging: false
     property int lastSourceId: -1
 
+    readonly property bool outputVolumeGuard: outputVolumeSlider.sliderActive || localOutputVolumeChanging
+    readonly property bool inputVolumeGuard: inputVolumeSlider.sliderActive || localInputVolumeChanging
+
     // UI state (lazy-loaded with panelContent)
     property int currentTabIndex: 0
 
@@ -84,17 +87,7 @@ SmartPanel {
     Connections {
       target: AudioService
       function onVolumeChanged() {
-        if (!panelContent.localOutputVolumeChanging && AudioService.sink && AudioService.sink.id === panelContent.lastSinkId) {
-          var vol = AudioService.volume;
-          panelContent.localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
-        }
-      }
-    }
-
-    Connections {
-      target: AudioService.sink?.audio ? AudioService.sink?.audio : null
-      function onVolumeChanged() {
-        if (!panelContent.localOutputVolumeChanging && AudioService.sink && AudioService.sink.id === panelContent.lastSinkId) {
+        if (!panelContent.outputVolumeGuard && !AudioService.isSettingOutputVolume && AudioService.sink && AudioService.sink.id === panelContent.lastSinkId) {
           var vol = AudioService.volume;
           panelContent.localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
         }
@@ -104,7 +97,7 @@ SmartPanel {
     Connections {
       target: AudioService
       function onInputVolumeChanged() {
-        if (!panelContent.localInputVolumeChanging && AudioService.source && AudioService.source.id === panelContent.lastSourceId) {
+        if (!panelContent.inputVolumeGuard && !AudioService.isSettingInputVolume && AudioService.source && AudioService.source.id === panelContent.lastSourceId) {
           var vol = AudioService.inputVolume;
           panelContent.localInputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
         }
@@ -112,9 +105,19 @@ SmartPanel {
     }
 
     Connections {
-      target: AudioService.source?.audio ? AudioService.source?.audio : null
-      function onVolumeChanged() {
-        if (!panelContent.localInputVolumeChanging && AudioService.source && AudioService.source.id === panelContent.lastSourceId) {
+      target: outputVolumeSlider
+      function onSliderActiveChanged() {
+        if (!outputVolumeSlider.sliderActive && AudioService.sink && AudioService.sink.id === panelContent.lastSinkId) {
+          var vol = AudioService.volume;
+          panelContent.localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
+        }
+      }
+    }
+
+    Connections {
+      target: inputVolumeSlider
+      function onSliderActiveChanged() {
+        if (!inputVolumeSlider.sliderActive && AudioService.source && AudioService.source.id === panelContent.lastSourceId) {
           var vol = AudioService.inputVolume;
           panelContent.localInputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
         }
@@ -272,6 +275,7 @@ SmartPanel {
                   spacing: Style.marginM
 
                   NValueSlider {
+                    id: outputVolumeSlider
                     Layout.fillWidth: true
                     from: 0
                     to: Settings.data.audio.volumeOverdrive ? 1.5 : 1.0
@@ -287,7 +291,7 @@ SmartPanel {
                   }
 
                   NText {
-                    text: Math.round((localOutputVolumeChanging ? localOutputVolume : AudioService.volume) * 100) + "%"
+                    text: Math.round((panelContent.outputVolumeGuard ? localOutputVolume : AudioService.volume) * 100) + "%"
                     pointSize: Style.fontSizeM
                     family: Settings.data.ui.fontFixed
                     color: Color.mOnSurface
@@ -347,6 +351,7 @@ SmartPanel {
                   spacing: Style.marginM
 
                   NValueSlider {
+                    id: inputVolumeSlider
                     Layout.fillWidth: true
                     from: 0
                     to: Settings.data.audio.volumeOverdrive ? 1.5 : 1.0
@@ -362,7 +367,7 @@ SmartPanel {
                   }
 
                   NText {
-                    text: Math.round((localInputVolumeChanging ? localInputVolume : AudioService.inputVolume) * 100) + "%"
+                    text: Math.round((panelContent.inputVolumeGuard ? localInputVolume : AudioService.inputVolume) * 100) + "%"
                     pointSize: Style.fontSizeM
                     family: Settings.data.ui.fontFixed
                     color: Color.mOnSurface
