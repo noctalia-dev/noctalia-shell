@@ -36,7 +36,9 @@
       "hide-mode-description": "Điều khiển cách tiện ích hoạt động khi không có cửa sổ đang hoạt động.",
       "scrolling-mode-description": "Điều khiển khi nào bật cuộn văn bản cho các tiêu đề cửa sổ dài.",
       "show-app-icon-description": "Hiển thị biểu tượng ứng dụng bên cạnh tiêu đề cửa sổ.",
-      "show-app-icon-label": "Hiển thị biểu tượng ứng dụng"
+      "show-app-icon-label": "Hiển thị biểu tượng ứng dụng",
+      "show-app-text-description": "Hiển thị tiêu đề cửa sổ.",
+      "show-app-text-label": "Hiển thị tiêu đề cửa sổ"
     },
     "audio-visualizer": {
       "color-name-description": "Chọn màu cho bộ hiển thị trực quan.",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "Sử dụng các bảng màu tích hợp sẵn",
       "header-devices-apply-all-tooltip": "Chọn hình nền cho từng màn hình",
       "header-devices-per-monitor-tooltip": "Áp dụng cho tất cả màn hình",
+      "header-link-light-dark-tooltip": "Giữ hình nền khi chuyển đổi chủ đề",
+      "header-separate-light-dark-tooltip": "Tự động chuyển đổi hình nền theo chủ đề",
       "header-sun-linked-tooltip": "Tách riêng hình nền sáng và tối",
       "header-sun-separate-tooltip": "Cùng hình nền cho chế độ sáng và tối",
       "order-asc": "Tăng dần",

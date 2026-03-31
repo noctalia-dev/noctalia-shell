@@ -36,7 +36,9 @@
       "hide-mode-description": "Kontroluje zachowanie widżetu, gdy żadne okno nie jest aktywne.",
       "scrolling-mode-description": "Kontroluje, kiedy włączone jest przewijanie tekstu dla długich tytułów okien.",
       "show-app-icon-description": "Wyświetl ikonę aplikacji obok tytułu okna.",
-      "show-app-icon-label": "Pokaż ikonę aplikacji"
+      "show-app-icon-label": "Pokaż ikonę aplikacji",
+      "show-app-text-description": "Wyświetl tytuł okna.",
+      "show-app-text-label": "Pokaż tytuł okna"
     },
     "audio-visualizer": {
       "color-name-description": "Wybierz kolor dla wizualizatora.",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "Użyj predefiniowanych schematów kolorów",
       "header-devices-apply-all-tooltip": "Wybierz tapetę na monitor",
       "header-devices-per-monitor-tooltip": "Zastosuj do wszystkich monitorów",
+      "header-link-light-dark-tooltip": "Zachowaj tapetę przy zmianie motywu",
+      "header-separate-light-dark-tooltip": "Automatyczna zmiana tapety z motywem",
       "header-sun-linked-tooltip": "Oddzielne jasne i ciemne tapety",
       "header-sun-separate-tooltip": "Ta sama tapeta dla trybu jasnego i ciemnego",
       "order-asc": "Rosnąco",

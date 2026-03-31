@@ -36,7 +36,9 @@
       "hide-mode-description": "控制当没有活动窗口时小部件的行为。",
       "scrolling-mode-description": "控制何时为长窗口标题启用文本滚动。",
       "show-app-icon-description": "在窗口标题旁边显示应用程序图标。",
-      "show-app-icon-label": "显示应用图标"
+      "show-app-icon-label": "显示应用图标",
+      "show-app-text-description": "显示窗口标题。",
+      "show-app-text-label": "显示窗口标题"
     },
     "audio-visualizer": {
       "color-name-description": "选择可视化工具的颜色。",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "使用预设配色方案",
       "header-devices-apply-all-tooltip": "为每个显示器选择壁纸",
       "header-devices-per-monitor-tooltip": "应用到所有显示器",
+      "header-link-light-dark-tooltip": "切换主题时保留壁纸",
+      "header-separate-light-dark-tooltip": "随主题自动切换壁纸",
       "header-sun-linked-tooltip": "分离浅色和深色壁纸",
       "header-sun-separate-tooltip": "明暗模式使用相同壁纸",
       "order-asc": "升序",

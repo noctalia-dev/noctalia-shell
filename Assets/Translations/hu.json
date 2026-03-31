@@ -36,7 +36,9 @@
       "hide-mode-description": "A widget viselkedése, ha nincs aktív ablak.",
       "scrolling-mode-description": "Mikor engedélyezett a szöveggörgetés a hosszú ablakcímek esetén.",
       "show-app-icon-description": "Az alkalmazás ikonjának megjelenítése az ablakcím mellett.",
-      "show-app-icon-label": "Alkalmazásikon megjelenítése"
+      "show-app-icon-label": "Alkalmazásikon megjelenítése",
+      "show-app-text-description": "Ablak címének megjelenítése.",
+      "show-app-text-label": "Ablakcím megjelenítése"
     },
     "audio-visualizer": {
       "color-name-description": "A vizualizátor színe.",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "Előre meghatározott színsémák használata",
       "header-devices-apply-all-tooltip": "Háttérkép választása monitoronként",
       "header-devices-per-monitor-tooltip": "Alkalmazás minden monitorra",
+      "header-link-light-dark-tooltip": "Háttérkép megtartása téma váltásakor",
+      "header-separate-light-dark-tooltip": "Háttérkép automatikus váltása témával",
       "header-sun-linked-tooltip": "Külön világos és sötét háttérképek",
       "header-sun-separate-tooltip": "Ugyanaz a háttérkép világos és sötét módhoz",
       "order-asc": "Növekvő",

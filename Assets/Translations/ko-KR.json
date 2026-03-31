@@ -36,7 +36,9 @@
       "hide-mode-description": "활성 창이 없을 때 위젯의 동작 방식을 제어합니다.",
       "scrolling-mode-description": "창 제목이 길 때 텍스트 스크롤 활성화 시점을 제어합니다.",
       "show-app-icon-description": "창 제목 옆에 애플리케이션 아이콘을 표시합니다.",
-      "show-app-icon-label": "앱 아이콘 표시"
+      "show-app-icon-label": "앱 아이콘 표시",
+      "show-app-text-description": "창 제목 표시.",
+      "show-app-text-label": "창 제목 표시"
     },
     "audio-visualizer": {
       "color-name-description": "비주얼라이저의 색상을 선택합니다.",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "사전 정의된 색상 구성표 사용",
       "header-devices-apply-all-tooltip": "모니터별 배경화면 선택",
       "header-devices-per-monitor-tooltip": "모든 모니터에 적용",
+      "header-link-light-dark-tooltip": "테마 변경 시 배경화면 유지",
+      "header-separate-light-dark-tooltip": "테마에 따라 배경화면 자동 전환",
       "header-sun-linked-tooltip": "밝고 어두운 배경화면 분리",
       "header-sun-separate-tooltip": "밝고 어두운 모드에 동일한 배경화면",
       "order-asc": "오름차순",

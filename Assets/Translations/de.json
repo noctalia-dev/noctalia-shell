@@ -36,7 +36,9 @@
       "hide-mode-description": "Steuert das Verhalten des Widgets, wenn kein Fenster aktiv ist.",
       "scrolling-mode-description": "Steuern, wann Textscrolling für lange Fenstertitel aktiviert ist.",
       "show-app-icon-description": "Anwendungssymbol neben dem Fenstertitel anzeigen.",
-      "show-app-icon-label": "App-Symbol anzeigen"
+      "show-app-icon-label": "App-Symbol anzeigen",
+      "show-app-text-description": "Fenstertitel anzeigen.",
+      "show-app-text-label": "Fenstertitel anzeigen"
     },
     "audio-visualizer": {
       "color-name-description": "Wählen Sie die Farbe für den Visualisierer aus.",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "Vordefinierte Farbschemata nutzen",
       "header-devices-apply-all-tooltip": "Hintergrundbild pro Monitor wählen",
       "header-devices-per-monitor-tooltip": "Auf alle Monitore anwenden",
+      "header-link-light-dark-tooltip": "Hintergrundbild beim Themenwechsel beibehalten",
+      "header-separate-light-dark-tooltip": "Hintergrundbild automatisch mit dem Thema wechseln",
       "header-sun-linked-tooltip": "Helle und dunkle Hintergrundbilder trennen",
       "header-sun-separate-tooltip": "Gleiches Hintergrundbild für hell und dunkel",
       "order-asc": "Aufsteigend",

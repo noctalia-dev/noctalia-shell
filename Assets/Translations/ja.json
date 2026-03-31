@@ -36,7 +36,9 @@
       "hide-mode-description": "アクティブウィンドウがない場合のウィジェットの動作を制御します。",
       "scrolling-mode-description": "長いウィンドウタイトルのスクロール動作を制御します。",
       "show-app-icon-description": "ウィンドウタイトルの横にアプリアイコンを表示します。",
-      "show-app-icon-label": "アプリアイコンを表示"
+      "show-app-icon-label": "アプリアイコンを表示",
+      "show-app-text-description": "ウィンドウのタイトルを表示。",
+      "show-app-text-label": "ウィンドウタイトルを表示"
     },
     "audio-visualizer": {
       "color-name-description": "ビジュアライザーの色を選択します。",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "事前定義された配色スキームを使用する",
       "header-devices-apply-all-tooltip": "モニターごとに壁紙を選択",
       "header-devices-per-monitor-tooltip": "すべてのモニターに適用",
+      "header-link-light-dark-tooltip": "テーマ切り替え時に壁紙を維持",
+      "header-separate-light-dark-tooltip": "テーマに合わせて壁紙を自動切り替え",
       "header-sun-linked-tooltip": "ライトとダークの壁紙を分ける",
       "header-sun-separate-tooltip": "ライトとダークで同じ壁紙",
       "order-asc": "昇順",

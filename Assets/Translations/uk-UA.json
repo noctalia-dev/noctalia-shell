@@ -36,7 +36,9 @@
       "hide-mode-description": "Керує поведінкою віджета, коли немає активного вікна.",
       "scrolling-mode-description": "Керування, коли увімкнено прокрутку тексту для довгих заголовків вікон.",
       "show-app-icon-description": "Відображати значок застосунка біля заголовка вікна.",
-      "show-app-icon-label": "Показувати значок застосунка"
+      "show-app-icon-label": "Показувати значок застосунка",
+      "show-app-text-description": "Відображати заголовок вікна.",
+      "show-app-text-label": "Показувати заголовок вікна"
     },
     "audio-visualizer": {
       "color-name-description": "Вибрати колір для візуалізатора.",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "Використовувати попередньо визначені кольорові схеми",
       "header-devices-apply-all-tooltip": "Вибрати шпалери для кожного монітора",
       "header-devices-per-monitor-tooltip": "Застосувати до всіх моніторів",
+      "header-link-light-dark-tooltip": "Зберігати шпалери при зміні теми",
+      "header-separate-light-dark-tooltip": "Автоматична зміна шпалер з темою",
       "header-sun-linked-tooltip": "Окремі світлі та темні шпалери",
       "header-sun-separate-tooltip": "Однакові шпалери для світлого та темного режимів",
       "order-asc": "За зростанням",

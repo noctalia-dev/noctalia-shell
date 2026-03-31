@@ -36,7 +36,9 @@
       "hide-mode-description": "Styr hur widgeten beter sig när inget fönster är aktivt.",
       "scrolling-mode-description": "Styr när textrullning är aktiverad för långa fönstertitlar. ",
       "show-app-icon-description": "Visa applikationsikonen bredvid fönstertiteln.",
-      "show-app-icon-label": "Visa appikon"
+      "show-app-icon-label": "Visa appikon",
+      "show-app-text-description": "Visa fönstertiteln.",
+      "show-app-text-label": "Visa fönstertitel"
     },
     "audio-visualizer": {
       "color-name-description": "Välj färg för visualiseraren.",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "Använd fördefinierade färgscheman",
       "header-devices-apply-all-tooltip": "Välj bakgrundsbild per skärm",
       "header-devices-per-monitor-tooltip": "Tillämpa på alla bildskärmar",
+      "header-link-light-dark-tooltip": "Behåll bakgrundsbild vid temabyte",
+      "header-separate-light-dark-tooltip": "Byt bakgrundsbild automatiskt med tema",
       "header-sun-linked-tooltip": "Separata ljusa och mörka bakgrundsbilder",
       "header-sun-separate-tooltip": "Samma bakgrundsbild för ljust och mörkt",
       "order-asc": "Stigande",

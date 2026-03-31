@@ -36,7 +36,9 @@
       "hide-mode-description": "Contrôle le comportement du widget lorsqu'aucune fenêtre n'est active.",
       "scrolling-mode-description": "Contrôler quand le défilement de texte est activé pour les titres de fenêtre longs.",
       "show-app-icon-description": "Afficher l'icône de l'application à côté du titre de la fenêtre.",
-      "show-app-icon-label": "Afficher l'icône de l'application"
+      "show-app-icon-label": "Afficher l'icône de l'application",
+      "show-app-text-description": "Afficher le titre de la fenêtre.",
+      "show-app-text-label": "Afficher le titre de la fenêtre"
     },
     "audio-visualizer": {
       "color-name-description": "Sélectionnez la couleur du visualiseur.",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "Utiliser les schémas de couleurs prédéfinis",
       "header-devices-apply-all-tooltip": "Choisir le fond d'écran par moniteur",
       "header-devices-per-monitor-tooltip": "Appliquer à tous les moniteurs",
+      "header-link-light-dark-tooltip": "Garder le fond d'écran lors du changement de thème",
+      "header-separate-light-dark-tooltip": "Changer automatiquement le fond d'écran avec le thème",
       "header-sun-linked-tooltip": "Séparer les fonds d'écran clairs et sombres",
       "header-sun-separate-tooltip": "Même fond d'écran pour clair et sombre",
       "order-asc": "Croissant",

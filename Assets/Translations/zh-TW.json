@@ -36,7 +36,9 @@
       "hide-mode-description": "控制小工具在沒有活動視窗時的行為",
       "scrolling-mode-description": "控制視窗長標題時是否啟用文字捲動",
       "show-app-icon-description": "在視窗標題旁顯示程式圖示",
-      "show-app-icon-label": "顯示應用程式的圖示"
+      "show-app-icon-label": "顯示應用程式的圖示",
+      "show-app-text-description": "顯示視窗標題。",
+      "show-app-text-label": "顯示視窗標題"
     },
     "audio-visualizer": {
       "color-name-description": "選取視覺效果的顏色",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "使用預設配色方案",
       "header-devices-apply-all-tooltip": "為每個螢幕選擇桌布",
       "header-devices-per-monitor-tooltip": "套用到所有顯示器",
+      "header-link-light-dark-tooltip": "切換主題時保留桌布",
+      "header-separate-light-dark-tooltip": "隨主題自動切換桌布",
       "header-sun-linked-tooltip": "分離淺色和深色桌布",
       "header-sun-separate-tooltip": "明暗模式使用相同桌布",
       "order-asc": "升序",

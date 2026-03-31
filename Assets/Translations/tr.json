@@ -36,7 +36,9 @@
       "hide-mode-description": "Pencere aktif değilken araç takımlarının nasıl davrandığını kontrol eder.",
       "scrolling-mode-description": "Uzun pencere başlıkları için metin kaydırmanın ne zaman etkinleştirileceğini kontrol et.",
       "show-app-icon-description": "Pencere başlığı yanında uygulama simgesini göster.",
-      "show-app-icon-label": "Uygulama simgesini göster"
+      "show-app-icon-label": "Uygulama simgesini göster",
+      "show-app-text-description": "Pencere başlığını göster.",
+      "show-app-text-label": "Pencere başlığını göster"
     },
     "audio-visualizer": {
       "color-name-description": "Görselleştirici için renk seçin.",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "Önceden tanımlanmış renk şemalarını kullan",
       "header-devices-apply-all-tooltip": "Monitör başına duvar kağıdı seç",
       "header-devices-per-monitor-tooltip": "Tüm monitörlere uygula",
+      "header-link-light-dark-tooltip": "Tema değiştirirken duvar kağıdını koru",
+      "header-separate-light-dark-tooltip": "Temayla birlikte duvar kağıdını otomatik değiştir",
       "header-sun-linked-tooltip": "Açık ve koyu duvar kağıtlarını ayır",
       "header-sun-separate-tooltip": "Açık ve koyu için aynı duvar kağıdı",
       "order-asc": "Artan",

@@ -36,7 +36,9 @@
       "hide-mode-description": "Controla o comportamento do widget quando nenhuma janela está ativa.",
       "scrolling-mode-description": "Controlar quando a rolagem de texto está habilitada para títulos de janela longos.",
       "show-app-icon-description": "Exibir o ícone do aplicativo ao lado do título da janela.",
-      "show-app-icon-label": "Mostrar ícone do aplicativo"
+      "show-app-icon-label": "Mostrar ícone do aplicativo",
+      "show-app-text-description": "Exibir o título da janela.",
+      "show-app-text-label": "Mostrar título da janela"
     },
     "audio-visualizer": {
       "color-name-description": "Selecione a cor para o visualizador.",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "Usar esquemas de cores predefinidos",
       "header-devices-apply-all-tooltip": "Escolher papel de parede por monitor",
       "header-devices-per-monitor-tooltip": "Aplicar a todos os monitores",
+      "header-link-light-dark-tooltip": "Manter papel de parede ao mudar de tema",
+      "header-separate-light-dark-tooltip": "Trocar papel de parede automaticamente com o tema",
       "header-sun-linked-tooltip": "Separar papéis de parede claros e escuros",
       "header-sun-separate-tooltip": "Mesmo papel de parede para claro e escuro",
       "order-asc": "Crescente",

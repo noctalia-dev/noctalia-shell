@@ -36,7 +36,9 @@
       "hide-mode-description": "Bepaalt hoe de widget zich gedraagt wanneer er geen actief venster is.",
       "scrolling-mode-description": "Bepaalt wanneer tekstscrollen wordt ingeschakeld voor lange venstertitels.",
       "show-app-icon-description": "Toon het applicatiepictogram naast de venstertitel.",
-      "show-app-icon-label": "App-pictogram tonen"
+      "show-app-icon-label": "App-pictogram tonen",
+      "show-app-text-description": "Venstertitel weergeven.",
+      "show-app-text-label": "Venstertitel weergeven"
     },
     "audio-visualizer": {
       "color-name-description": "Selecteer de kleur voor de visualizer.",
@@ -2068,6 +2070,8 @@
       "color-extraction-enabled": "Voorgedefinieerde kleurenschema's gebruiken",
       "header-devices-apply-all-tooltip": "Kies achtergrond per monitor",
       "header-devices-per-monitor-tooltip": "Op alle monitoren toepassen",
+      "header-link-light-dark-tooltip": "Achtergrond behouden bij het wisselen van thema",
+      "header-separate-light-dark-tooltip": "Achtergrond automatisch wisselen met thema",
       "header-sun-linked-tooltip": "Aparte lichte en donkere achtergronden",
       "header-sun-separate-tooltip": "Zelfde achtergrond voor licht en donker",
       "order-asc": "Oplopend",
