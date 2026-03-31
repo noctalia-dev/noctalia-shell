@@ -32,6 +32,9 @@ Singleton {
   property bool wpctlStateValid: false
   property real wpctlOutputVolume: 0
   property bool wpctlOutputMuted: true
+  property bool wpctlInputStateValid: false
+  property real wpctlInputVolume: 0
+  property bool wpctlInputMuted: true
 
   signal volumeAtMaximum
   signal volumeAtMinimum
@@ -51,6 +54,14 @@ Singleton {
     wpctlStateProcess.running = true;
   }
 
+  function refreshWpctlInputState(): void {
+    if (!wpctlAvailable || wpctlInputStateProcess.running) {
+      return;
+    }
+    wpctlInputStateProcess.command = ["wpctl", "get-volume", "@DEFAULT_AUDIO_SOURCE@"];
+    wpctlInputStateProcess.running = true;
+  }
+
   function applyWpctlOutputState(raw: string): bool {
     const text = String(raw || "").trim();
     const match = text.match(/Volume:\s*([0-9]*\.?[0-9]+)/i);
@@ -66,6 +77,24 @@ Singleton {
     wpctlOutputVolume = clampOutputVolume(parsedVolume);
     wpctlOutputMuted = /\[MUTED\]/i.test(text);
     wpctlStateValid = true;
+    return true;
+  }
+
+  function applyWpctlInputState(raw: string): bool {
+    const text = String(raw || "").trim();
+    const match = text.match(/Volume:\s*([0-9]*\.?[0-9]+)/i);
+    if (!match || match.length < 2) {
+      return false;
+    }
+
+    const parsedVolume = Number(match[1]);
+    if (isNaN(parsedVolume)) {
+      return false;
+    }
+
+    wpctlInputVolume = Math.max(0, Math.min(root.maxVolume, parsedVolume));
+    wpctlInputMuted = /\[MUTED\]/i.test(text);
+    wpctlInputStateValid = true;
     return true;
   }
 
@@ -87,8 +116,11 @@ Singleton {
     return sink?.audio?.muted ?? true;
   }
 
-  // Input Volume - read directly from device
+  // Input volume (prefer wpctl state when available — matches set-volume % round-trip)
   readonly property real inputVolume: {
+    if (wpctlAvailable && wpctlInputStateValid) {
+      return Math.max(0, Math.min(root.maxVolume, wpctlInputVolume));
+    }
     if (!source?.audio) {
       return 0;
     }
@@ -98,7 +130,12 @@ Singleton {
     }
     return Math.max(0, Math.min(root.maxVolume, vol));
   }
-  readonly property bool inputMuted: source?.audio?.muted ?? true
+  readonly property bool inputMuted: {
+    if (wpctlAvailable && wpctlInputStateValid) {
+      return wpctlInputMuted;
+    }
+    return source?.audio?.muted ?? true;
+  }
 
   // Allow callers to skip the next OSD notification when they are already
   // presenting volume state (e.g. the Audio Panel UI). We track this as a short
@@ -504,6 +541,12 @@ Singleton {
         root.refreshWpctlOutputState();
       }
     }
+
+    function onSourceChanged() {
+      if (root.wpctlAvailable) {
+        root.refreshWpctlInputState();
+      }
+    }
   }
 
   Timer {
@@ -512,7 +555,10 @@ Singleton {
     interval: 20000
     running: root.wpctlAvailable
     repeat: true
-    onTriggered: root.refreshWpctlOutputState()
+    onTriggered: {
+      root.refreshWpctlOutputState();
+      root.refreshWpctlInputState();
+    }
   }
 
   Process {
@@ -523,8 +569,10 @@ Singleton {
     onExited: function (code) {
       root.wpctlAvailable = (code === 0);
       root.wpctlStateValid = false;
+      root.wpctlInputStateValid = false;
       if (root.wpctlAvailable) {
         root.refreshWpctlOutputState();
+        root.refreshWpctlInputState();
       }
     }
   }
@@ -565,6 +613,45 @@ Singleton {
 
     onExited: function (_code) {
       root.refreshWpctlOutputState();
+    }
+  }
+
+  Process {
+    id: wpctlInputStateProcess
+    running: false
+
+    onExited: function (code) {
+      if (code !== 0 || !root.applyWpctlInputState(stdout.text)) {
+        root.wpctlInputStateValid = false;
+      }
+    }
+
+    stdout: StdioCollector {}
+  }
+
+  Process {
+    id: wpctlSetInputVolumeProcess
+    running: false
+
+    onExited: function (code) {
+      root.isSettingInputVolume = false;
+      if (code !== 0) {
+        Logger.w("AudioService", "wpctl set-volume failed for default source, falling back to PipeWire node audio");
+        if (root.source?.audio) {
+          root.source.audio.muted = false;
+          root.source.audio.volume = Math.max(0, Math.min(root.maxVolume, root.wpctlInputVolume));
+        }
+      }
+      root.refreshWpctlInputState();
+    }
+  }
+
+  Process {
+    id: wpctlSetInputMuteProcess
+    running: false
+
+    onExited: function (_code) {
+      root.refreshWpctlInputState();
     }
   }
 
@@ -621,6 +708,10 @@ Singleton {
     target: source?.audio ?? null
 
     function onVolumeChanged() {
+      if (root.wpctlAvailable) {
+        root.refreshWpctlInputState();
+      }
+
       // Ignore volume changes if we're the one setting it (to prevent feedback loop)
       if (root.isSettingInputVolume) {
         return;
@@ -644,6 +735,12 @@ Singleton {
                        }
                        root.isSettingInputVolume = false;
                      });
+      }
+    }
+
+    function onMutedChanged() {
+      if (root.wpctlAvailable) {
+        root.refreshWpctlInputState();
       }
     }
   }
@@ -759,7 +856,7 @@ Singleton {
 
   // Input Control
   function increaseInputVolume() {
-    if (!Pipewire.ready || !source?.audio) {
+    if (!Pipewire.ready || (!source?.audio && !wpctlAvailable)) {
       return;
     }
     if (inputVolume >= root.maxVolume) {
@@ -769,30 +866,54 @@ Singleton {
   }
 
   function decreaseInputVolume() {
-    if (!Pipewire.ready || !source?.audio) {
+    if (!Pipewire.ready || (!source?.audio && !wpctlAvailable)) {
       return;
     }
     setInputVolume(Math.max(0, inputVolume - stepVolume));
   }
 
   function setInputVolume(newVolume: real) {
-    if (!Pipewire.ready || !source?.ready || !source?.audio) {
-      Logger.w("AudioService", "No source available or not ready");
+    if (!Pipewire.ready) {
       return;
     }
 
     const clampedVolume = Math.max(0, Math.min(root.maxVolume, newVolume));
-    const delta = Math.abs(clampedVolume - source.audio.volume);
+    var currentVol = 0;
+    if (wpctlAvailable && wpctlInputStateValid) {
+      currentVol = wpctlInputVolume;
+    } else if (source?.audio && source.audio.volume !== undefined && !isNaN(source.audio.volume)) {
+      currentVol = source.audio.volume;
+    }
+    const delta = Math.abs(clampedVolume - currentVol);
     if (delta < root.epsilon) {
       return;
     }
 
-    // Set flag to prevent feedback loop, then set the actual volume
+    if (wpctlAvailable) {
+      if (wpctlSetInputVolumeProcess.running) {
+        return;
+      }
+
+      isSettingInputVolume = true;
+      wpctlInputMuted = false;
+      wpctlInputVolume = clampedVolume;
+      wpctlInputStateValid = true;
+
+      const volumePct = Math.round(clampedVolume * 10000) / 100;
+      wpctlSetInputVolumeProcess.command = ["sh", "-c", "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 0 && wpctl set-volume @DEFAULT_AUDIO_SOURCE@ " + volumePct + "%"];
+      wpctlSetInputVolumeProcess.running = true;
+      return;
+    }
+
+    if (!source?.ready || !source?.audio) {
+      Logger.w("AudioService", "No source available or not ready");
+      return;
+    }
+
     isSettingInputVolume = true;
     source.audio.muted = false;
     source.audio.volume = clampedVolume;
 
-    // Clear flag after a short delay to allow external changes to be detected
     Qt.callLater(() => {
                    isSettingInputVolume = false;
                  });
@@ -825,8 +946,25 @@ Singleton {
   }
 
   function setInputMuted(muted: bool) {
-    if (!Pipewire.ready || !source?.audio) {
-      Logger.w("AudioService", "No source available or Pipewire not ready");
+    if (!Pipewire.ready) {
+      Logger.w("AudioService", "Pipewire not ready");
+      return;
+    }
+
+    if (wpctlAvailable) {
+      if (wpctlSetInputMuteProcess.running) {
+        return;
+      }
+
+      wpctlInputMuted = muted;
+      wpctlInputStateValid = true;
+      wpctlSetInputMuteProcess.command = ["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", muted ? "1" : "0"];
+      wpctlSetInputMuteProcess.running = true;
+      return;
+    }
+
+    if (!source?.audio) {
+      Logger.w("AudioService", "No source available");
       return;
     }
 
