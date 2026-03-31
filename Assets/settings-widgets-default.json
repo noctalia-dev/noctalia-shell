@@ -2,6 +2,7 @@
   "bar": {
     "ActiveWindow": {
       "showIcon": true,
+      "showText": true,
       "hideMode": "hidden",
       "scrollingMode": "hover",
       "maxWidth": 145,
@@ -77,7 +78,7 @@
       "maxTextLength": {
         "horizontal": 10,
         "vertical": 10
-      },
+      },"showIcon": true,
       "enableColorization": false,
       "colorizeSystemIcon": "none",
       "ipcIdentifier": ""
