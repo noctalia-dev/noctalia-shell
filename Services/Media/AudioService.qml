@@ -1055,11 +1055,6 @@ Singleton {
       _btProfileCache[cardName].activeProfile = profileName;
       bluetoothProfilesChanged(cardName);
     }
-
-    // Save preference if enabled
-    if (Settings.data.audio.rememberBluetoothProfiles) {
-      _saveProfilePreference(cardName, profileName);
-    }
   }
 
   // Parse pactl output and update cache
@@ -1110,41 +1105,8 @@ Singleton {
           activeProfile: activeMatch?.[1] || ""
         };
         bluetoothProfilesChanged(cardName);
-        _applyProfilePreference(cardName);
       }
     }
-  }
-
-  // Profile persistence
-  function _saveProfilePreference(cardName: string, profile: string): void {
-    var prefs = (Settings.data.audio.bluetoothProfilePreferences || []).filter(p => p.cardName !== cardName);
-    prefs.push({
-                 cardName,
-                 profile
-               });
-    Settings.data.audio.bluetoothProfilePreferences = prefs;
-  }
-
-  function _applyProfilePreference(cardName: string): void {
-    if (!Settings.data.audio.rememberBluetoothProfiles)
-    return;
-
-    const prefs = Settings.data.audio.bluetoothProfilePreferences || [];
-    const saved = prefs.find(p => p.cardName === cardName)?.profile;
-    if (!saved)
-    return;
-
-    const cached = _btProfileCache[cardName];
-    if (!cached?.profiles?.some(p => p.name === saved))
-    return;
-    if (cached.activeProfile === saved)
-    return;
-
-    // Apply saved profile
-    btProfileSetProcess.command = ["pactl", "set-card-profile", cardName, saved];
-    btProfileSetProcess.running = true;
-    cached.activeProfile = saved;
-    bluetoothProfilesChanged(cardName);
   }
 
   Process {
