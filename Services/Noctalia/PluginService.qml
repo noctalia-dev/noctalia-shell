@@ -269,13 +269,16 @@ Singleton {
 
   // Fetch plugin registry from a source using git sparse-checkout
   function fetchPluginRegistry(source) {
-    var repoUrl = source.url;
+    var urlParts = source.url.split('#branch=')
+    var repoUrl = urlParts[0];
+    var branch = urlParts[1]
+      ? "-b "+urlParts[1]+" --single-branch" : "";
 
     Logger.d("PluginService", "Fetching registry from:", repoUrl);
 
     // Use git sparse-checkout to fetch only registry.json (--no-cone for single file)
     // GIT_TERMINAL_PROMPT=0 prevents hanging on private repos that need auth
-    var fetchCmd = "temp_dir=$(mktemp -d) && GIT_TERMINAL_PROMPT=0 git clone --filter=blob:none --sparse --depth=1 --quiet '" + repoUrl + "' \"$temp_dir\" 2>/dev/null && cd \"$temp_dir\" && git sparse-checkout set --no-cone /registry.json 2>/dev/null && cat \"$temp_dir/registry.json\"; rm -rf \"$temp_dir\"";
+    var fetchCmd = "temp_dir=$(mktemp -d) && GIT_TERMINAL_PROMPT=0 git clone "+branch+" --filter=blob:none --sparse --depth=1 --quiet '" + repoUrl + "' \"$temp_dir\" 2>/dev/null && cd \"$temp_dir\" && git sparse-checkout set --no-cone /registry.json 2>/dev/null && cat \"$temp_dir/registry.json\"; rm -rf \"$temp_dir\"";
 
     var fetchProcess = Qt.createQmlObject('import QtQuick; import Quickshell.Io; Process { command: ["sh", "-c", "' + fetchCmd.replace(/"/g, '\\"') + '"]; stdout: StdioCollector {} }', root, "FetchRegistry_" + Date.now());
 
@@ -436,12 +439,15 @@ Singleton {
     Logger.i("PluginService", "Installing plugin:", compositeKey, "from", source.name);
 
     var pluginDir = PluginRegistry.getPluginDir(compositeKey);
-    var repoUrl = source.url;
+    var urlParts = source.url.split('#branch=')
+    var repoUrl = urlParts[0];
+    var branch = urlParts[1]
+      ? "-b "+urlParts[1]+" --single-branch" : "";
 
     // Use git sparse-checkout to clone only the plugin subfolder
     // GIT_TERMINAL_PROMPT=0 prevents hanging on private repos that need auth
     // Note: We download from the original pluginId folder in the repo, but save to compositeKey folder
-    var downloadCmd = "temp_dir=$(mktemp -d) && GIT_TERMINAL_PROMPT=0 git clone --filter=blob:none --sparse --depth=1 --quiet '" + repoUrl + "' \"$temp_dir\" 2>/dev/null && cd \"$temp_dir\" && git sparse-checkout set '" + pluginId + "' 2>/dev/null && mkdir -p '" + pluginDir + "' && rm -f \"$temp_dir/" + pluginId + "/settings.json\" && cp -r \"$temp_dir/" + pluginId
+    var downloadCmd = "temp_dir=$(mktemp -d) && GIT_TERMINAL_PROMPT=0 git clone "+branch+" --filter=blob:none --sparse --depth=1 --quiet '" + repoUrl + "' \"$temp_dir\" 2>/dev/null && cd \"$temp_dir\" && git sparse-checkout set '" + pluginId + "' 2>/dev/null && mkdir -p '" + pluginDir + "' && rm -f \"$temp_dir/" + pluginId + "/settings.json\" && cp -r \"$temp_dir/" + pluginId
         + "/.\" '" + pluginDir + "/'; exit_code=$?; rm -rf \"$temp_dir\"; exit $exit_code";
 
     // Mark as installing
