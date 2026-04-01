@@ -817,9 +817,7 @@
       "volumes-volume-feedback-description": "Play a feedback sound when adjusting volume.",
       "volumes-volume-feedback-label": "Play volume feedback sound",
       "volumes-volume-overdrive-description": "Allow raising volume above 100%. May not be supported by all hardware.",
-      "volumes-volume-overdrive-label": "Allow volume overdrive",
-      "bluetooth-remember-profiles-description": "Automatically apply your preferred audio profile when a Bluetooth device connects.",
-      "bluetooth-remember-profiles-label": "Remember Bluetooth audio profiles"
+      "volumes-volume-overdrive-label": "Allow volume overdrive"
     },
     "bar": {
       "appearance-auto-hide-delay-description": "Time before bar hides after mouse leaves",
