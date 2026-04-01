@@ -57,7 +57,7 @@ NIconButton {
 
   baseSize: Style.getCapsuleHeightForScreen(screen?.name)
   applyUiScale: false
-  customRadius: Style.radiusL
+  customRadius: Style.barRadiusL
   icon: NotificationService.doNotDisturb ? "bell-off" : "bell"
   tooltipText: {
     if (PanelService.getPanel("notificationHistoryPanel", screen)?.isPanelOpen) {

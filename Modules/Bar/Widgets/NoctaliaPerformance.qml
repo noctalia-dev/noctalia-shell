@@ -36,7 +36,7 @@ NIconButton {
 
   baseSize: Style.getCapsuleHeightForScreen(screen?.name)
   applyUiScale: false
-  customRadius: Style.radiusL
+  customRadius: Style.barRadiusL
   colorBg: PowerProfileService.noctaliaPerformanceMode ? Color.mPrimary : Style.capsuleColor
   colorFg: PowerProfileService.noctaliaPerformanceMode ? Color.mOnPrimary : Color.resolveColorKey(iconColorKey)
   border.color: Style.capsuleBorderColor

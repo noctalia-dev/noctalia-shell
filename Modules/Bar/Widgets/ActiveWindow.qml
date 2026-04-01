@@ -202,7 +202,7 @@ Item {
     y: isVerticalBar ? 0 : Style.pixelAlignCenter(parent.height, height)
     width: isVerticalBar ? ((!hasFocusedWindow) && hideMode === "hidden" ? 0 : verticalSize) : ((!hasFocusedWindow) && (hideMode === "hidden") ? 0 : dynamicWidth)
     height: isVerticalBar ? ((!hasFocusedWindow) && hideMode === "hidden" ? 0 : verticalSize) : capsuleHeight
-    radius: Style.radiusM
+    radius: Style.barRadiusM
     color: Style.capsuleColor
     border.color: Style.capsuleBorderColor
     border.width: Style.capsuleBorderWidth
@@ -279,7 +279,7 @@ Item {
           }
           forcedHover: mainMouseArea.containsMouse
           fadeExtent: 0.1
-          fadeCornerRadius: Style.radiusM
+          fadeCornerRadius: Style.barRadiusM
 
           NText {
             text: windowTitle

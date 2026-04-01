@@ -308,7 +308,7 @@ Item {
     height: capsuleContentHeight
     x: Style.pixelAlignCenter(parent.width, width)
     y: Style.pixelAlignCenter(parent.height, height)
-    radius: Style.radiusM
+    radius: Style.barRadiusM
     color: Style.capsuleColor
     border.color: Style.capsuleBorderColor
     border.width: Style.capsuleBorderWidth
@@ -359,7 +359,7 @@ Item {
       tooltipDirection: BarService.getTooltipDirection(root.screen?.name)
       baseSize: capsuleHeight
       applyUiScale: false
-      customRadius: Style.radiusL
+      customRadius: Style.barRadiusL
       colorBg: "transparent"
       colorFg: root.chevronColor
       colorBorder: "transparent"
@@ -555,7 +555,7 @@ Item {
       tooltipDirection: BarService.getTooltipDirection(root.screen?.name)
       baseSize: capsuleHeight
       applyUiScale: false
-      customRadius: Style.radiusL
+      customRadius: Style.barRadiusL
       colorBg: "transparent"
       colorFg: root.chevronColor
       colorBorder: "transparent"

@@ -79,7 +79,7 @@ Item {
     height: pillContainer.pillHeight
     x: Style.pixelAlignCenter(parent.width, width)
     y: Style.pixelAlignCenter(parent.height, height)
-    radius: Style.radiusM
+    radius: Style.barRadiusXS
     z: 0
 
     color: {

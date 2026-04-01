@@ -88,7 +88,7 @@ Item {
     id: pillBackground
     width: collapseToIcon ? pillHeight : root.width
     height: pillHeight
-    radius: Style.radiusM
+    radius: Style.barRadiusM
     color: root.bgColor
     anchors.verticalCenter: parent.verticalCenter
     border.color: Style.capsuleBorderColor
@@ -124,10 +124,10 @@ Item {
     color: "transparent" // Make pill background transparent to avoid double opacity
 
     // iconPosition takes precedence, fallback to oppositeDirection
-    topLeftRadius: iconPosition ? (iconPosition === "right" ? Style.radiusM : 0) : (oppositeDirection ? 0 : Style.radiusM)
-    bottomLeftRadius: iconPosition ? (iconPosition === "right" ? Style.radiusM : 0) : (oppositeDirection ? 0 : Style.radiusM)
-    topRightRadius: iconPosition ? (iconPosition === "right" ? 0 : Style.radiusM) : (oppositeDirection ? Style.radiusM : 0)
-    bottomRightRadius: iconPosition ? (iconPosition === "right" ? 0 : Style.radiusM) : (oppositeDirection ? Style.radiusM : 0)
+    topLeftRadius: iconPosition ? (iconPosition === "right" ? Style.barRadiusM : 0) : (oppositeDirection ? 0 : Style.barRadiusM)
+    bottomLeftRadius: iconPosition ? (iconPosition === "right" ? Style.barRadiusM : 0) : (oppositeDirection ? 0 : Style.barRadiusM)
+    topRightRadius: iconPosition ? (iconPosition === "right" ? 0 : Style.barRadiusM) : (oppositeDirection ? Style.barRadiusM : 0)
+    bottomRightRadius: iconPosition ? (iconPosition === "right" ? 0 : Style.barRadiusM) : (oppositeDirection ? Style.barRadiusM : 0)
     anchors.verticalCenter: parent.verticalCenter
 
     NText {
@@ -181,7 +181,7 @@ Item {
     id: iconCircle
     width: hasIcon ? pillHeight : 0
     height: pillHeight
-    radius: Math.min(Style.radiusL, width / 2)
+    radius: Math.min(Style.barRadiusL, width / 2)
     color: "transparent" // Make icon background transparent to avoid double opacity
     anchors.verticalCenter: parent.verticalCenter
 

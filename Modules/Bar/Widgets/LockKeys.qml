@@ -87,7 +87,7 @@ Item {
     color: Style.capsuleColor
     width: root.contentWidth
     height: root.contentHeight
-    radius: Style.radiusM
+    radius: Style.barRadiusM
     border.color: Style.capsuleBorderColor
     border.width: Style.capsuleBorderWidth
 

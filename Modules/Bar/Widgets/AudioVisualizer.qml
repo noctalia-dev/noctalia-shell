@@ -99,7 +99,7 @@ Item {
     width: root.contentWidth
     height: root.contentHeight
     anchors.centerIn: parent
-    radius: Style.radiusS
+    radius: Style.barRadiusS
     color: Style.capsuleColor
     border.color: Style.capsuleBorderColor
     border.width: Style.capsuleBorderWidth

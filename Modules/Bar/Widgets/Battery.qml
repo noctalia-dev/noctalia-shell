@@ -155,7 +155,7 @@ Item {
     anchors.centerIn: nBattery
     width: root.isBarVertical ? root.capsuleHeight : nBattery.width + Style.margin2S
     height: root.isBarVertical ? nBattery.height + Style.margin2S : root.capsuleHeight
-    radius: Math.min(Style.radiusL, width / 2)
+    radius: Math.min(Style.barRadiusL, width / 2)
     color: graphicMouseArea.containsMouse ? Color.mHover : Style.capsuleColor
     border.color: Style.capsuleBorderColor
     border.width: Style.capsuleBorderWidth

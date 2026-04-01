@@ -535,7 +535,7 @@ Item {
     visible: !appVisible
     width: isVertical ? capsuleHeight : parent.width
     height: isVertical ? parent.height : capsuleHeight
-    radius: Style.radiusM
+    radius: Style.barRadiusM
     color: Style.capsuleColor
     border.color: Style.capsuleBorderColor
     border.width: Style.capsuleBorderWidth
@@ -725,7 +725,7 @@ Item {
       width: Style.toOdd((hasWindows ? groupedIconsFlow.implicitWidth : root.iconSize) + (root.isVertical ? (root.baseItemSize - root.iconSize + Style.marginXS) : Style.marginXL))
       height: Style.toOdd((hasWindows ? groupedIconsFlow.implicitHeight : root.iconSize) + (root.isVertical ? Style.marginL : (root.baseItemSize - root.iconSize + Style.marginXS)))
       color: Style.capsuleColor
-      radius: Style.radiusS
+      radius: Style.barRadiusS
       border.color: Settings.data.bar.showOutline ? Style.capsuleBorderColor : Qt.alpha((workspaceModel.isFocused ? Color.mPrimary : (groupHoverHandler.hovered ? Color.mHover : Color.mOutline)), root.groupedBorderOpacity)
       border.width: Style.borderS
 

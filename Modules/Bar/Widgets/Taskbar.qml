@@ -653,7 +653,7 @@ Item {
     width: root.contentWidth
     height: root.contentHeight
     anchors.centerIn: parent
-    radius: Style.radiusM
+    radius: Style.barRadiusM
     color: Style.capsuleColor
     border.color: Style.capsuleBorderColor
     border.width: Style.capsuleBorderWidth
@@ -823,7 +823,7 @@ Item {
               width: parent.width
               height: root.capsuleHeight
               color: titleBgColor
-              radius: Style.radiusM
+              radius: Style.barRadiusM
 
               Behavior on color {
                 ColorAnimation {
