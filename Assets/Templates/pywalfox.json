@@ -17,6 +17,6 @@
     "color12": "",
     "color13": "{{colors.secondary.default.hex}}",
     "color14": "",
-    "color15": "{{colors.on_background.default.hex}}",
+    "color15": "{{colors.on_background.default.hex}}"
   }
 }
