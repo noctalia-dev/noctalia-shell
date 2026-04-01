@@ -51,21 +51,38 @@ ColumnLayout {
     Layout.fillWidth: true
     spacing: Style.marginS
 
-    NTextInput {
-      Layout.maximumWidth: root.width / 2
+    // Auto-locate
+    RowLayout {
+      Layout.fillWidth: true
+      spacing: Style.marginM
 
+      NToggle {
+        Layout.fillWidth: true
+        label: I18n.tr("panels.location.auto-locate-label")
+        description: I18n.tr("panels.location.auto-locate-description")
+        checked: Settings.data.location.autoLocate
+        onToggled: checked => Settings.data.location.autoLocate = checked
+        defaultValue: Settings.getDefaultValue("location.autoLocate")
+      }
+
+      NButton {
+        text: I18n.tr("panels.location.geolocate-now-button")
+        icon: "current-location"
+        enabled: !LocationService.isFetchingWeather
+        onClicked: LocationService.geolocateAndApply()
+      }
+    }
+
+    NTextInput {
+      visible: !Settings.data.location.autoLocate
+      Layout.maximumWidth: root.width / 2
       label: I18n.tr("panels.location.location-search-label")
       description: I18n.tr("panels.location.location-search-description")
-      text: Settings.data.location.name || Settings.defaultLocation
+      text: Settings.data.location.name
       placeholderText: I18n.tr("panels.location.location-search-placeholder")
       onEditingFinished: {
         // Verify the location has really changed to avoid extra resets
         var newLocation = text.trim();
-        // If empty, set to default location
-        if (newLocation === "") {
-          newLocation = Settings.defaultLocation;
-          text = Settings.defaultLocation; // Update the input field to show the default
-        }
         if (newLocation != Settings.data.location.name) {
           Settings.data.location.name = newLocation;
           LocationService.resetWeather();
@@ -80,28 +97,7 @@ ColumnLayout {
                                                        }) : ""
       pointSize: Style.fontSizeS
       color: Color.mOnSurfaceVariant
-    }
-  }
-
-  // Auto-locate
-  RowLayout {
-    Layout.fillWidth: true
-    spacing: Style.marginM
-
-    NToggle {
-      Layout.fillWidth: true
-      label: I18n.tr("panels.location.auto-locate-label")
-      description: I18n.tr("panels.location.auto-locate-description")
-      checked: Settings.data.location.autoLocate
-      onToggled: checked => Settings.data.location.autoLocate = checked
-      defaultValue: Settings.getDefaultValue("location.autoLocate")
-    }
-
-    NButton {
-      text: I18n.tr("panels.location.geolocate-now-button")
-      icon: "current-location"
-      enabled: !LocationService.isFetchingWeather
-      onClicked: LocationService.geolocateAndApply()
+      font.italic: true
     }
   }
 

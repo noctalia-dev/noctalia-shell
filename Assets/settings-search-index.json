@@ -2184,15 +2184,6 @@
     "subTabLabel": "common.location"
   },
   {
-    "labelKey": "panels.location.location-search-label",
-    "descriptionKey": "panels.location.location-search-description",
-    "widget": "NTextInput",
-    "tab": 17,
-    "tabLabel": "panels.region.title",
-    "subTab": 0,
-    "subTabLabel": "common.location"
-  },
-  {
     "labelKey": "panels.location.auto-locate-label",
     "descriptionKey": "panels.location.auto-locate-description",
     "widget": "NToggle",
@@ -2200,6 +2191,18 @@
     "tabLabel": "panels.region.title",
     "subTab": 0,
     "subTabLabel": "common.location"
+  },
+  {
+    "labelKey": "panels.location.location-search-label",
+    "descriptionKey": "panels.location.location-search-description",
+    "widget": "NTextInput",
+    "tab": 17,
+    "tabLabel": "panels.region.title",
+    "subTab": 0,
+    "subTabLabel": "common.location",
+    "visibleWhen": [
+      "!Settings.data.location.autoLocate"
+    ]
   },
   {
     "labelKey": "panels.location.weather-enabled-label",

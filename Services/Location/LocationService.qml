@@ -137,7 +137,6 @@ Singleton {
     }
 
     if (isFetchingWeather) {
-      Logger.w("Location", "Location update already in progress");
       return;
     }
 
@@ -176,7 +175,6 @@ Singleton {
     }
 
     if (isFetchingWeather) {
-      Logger.w("Location", "Weather is still fetching");
       return;
     }
 
@@ -194,6 +192,11 @@ Singleton {
 
   // Query geocoding API to convert location name to coordinates
   function geocodeLocation(locationName, callback, errorCallback) {
+    if (locationName === "") {
+      isFetchingWeather = false;
+      return;
+    }
+
     Logger.d("Location", "Geocoding location name");
     var geoUrl = "https://api.noctalia.dev/geocode?city=" + encodeURIComponent(locationName);
     var xhr = new XMLHttpRequest();
