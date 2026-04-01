@@ -74,16 +74,7 @@ SmartPanel {
     id: playerContent
     anchors.fill: parent
 
-    // implicitHeight + mainLayout vertical anchors.margins (each Style.marginL).
-    readonly property real contentPreferredHeight: {
-      const m = mainLayout.implicitHeight + 2 * Style.marginL;
-      const scale = Style.uiScaleRatio;
-      if (root.compactMode)
-        return Math.max(m, 240 * scale);
-      if (!root.showAlbumArt)
-        return Math.max(m, 300 * scale);
-      return Math.max(m, 260 * scale);
-    }
+    property real contentPreferredHeight: mainLayout.implicitHeight + Style.margin2L;
 
     property Component visualizerSource: {
       switch (root.visualizerType) {
@@ -102,8 +93,7 @@ SmartPanel {
       id: mainLayout
       anchors.fill: parent
       anchors.margins: Style.marginL
-      spacing: root.compactMode ? Style.marginL : Style.marginM
-      z: 1
+      spacing: Style.marginM
 
       NBox {
         Layout.fillWidth: true
@@ -238,7 +228,7 @@ SmartPanel {
 
       NBox {
         Layout.fillWidth: true
-        Layout.preferredHeight: mediaContentGrid.implicitHeight + Style.marginM + Style.marginM
+        Layout.preferredHeight: mediaContentGrid.implicitHeight + Style.margin2M
 
         // Visualizer background for content area
         Loader {
@@ -313,7 +303,7 @@ SmartPanel {
           ColumnLayout {
             id: controlsLayout
             Layout.preferredWidth: root.compactMode ? -1 : albumArtItem.width
-            Layout.fillWidth: root.compactMode
+            Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
             Layout.fillHeight: root.compactMode
             spacing: root.compactMode ? Style.marginXS : Style.marginS

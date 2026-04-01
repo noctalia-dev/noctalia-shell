@@ -108,7 +108,7 @@ SmartPanel {
         if (!view)
           return Style.marginL;
         var row = launcherCore.isGridView ? Math.floor(launcherCore.selectedIndex / launcherCore.gridColumns) : launcherCore.selectedIndex;
-        var gridCellSize = Math.floor((root.listPanelWidth - (2 * Style.marginXS) - ((launcherCore.targetGridColumns - 1) * Style.marginS)) / launcherCore.targetGridColumns);
+        var gridCellSize = Math.floor((root.listPanelWidth - Style.margin2XS - ((launcherCore.targetGridColumns - 1) * Style.marginS)) / launcherCore.targetGridColumns);
         var itemHeight = launcherCore.isGridView ? (gridCellSize + Style.marginXXS) : (launcherCore.entryHeight + (view.spacing || 0));
         var yPos = row * itemHeight - (view.contentY || 0);
         var mapped = view.mapToItem(ui, 0, yPos);
