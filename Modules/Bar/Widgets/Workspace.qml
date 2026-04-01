@@ -779,8 +779,13 @@ Item {
           delegate: Item {
             id: groupedTaskbarItem
 
-            width: root.iconSize
-            height: root.iconSize
+            // liveWindows is reassigned on scroll/focus; delegates can outlive rows and see null modelData
+            readonly property var win: modelData
+            readonly property bool winOk: win !== undefined && win !== null
+
+            width: winOk ? root.iconSize : 0
+            height: winOk ? root.iconSize : 0
+            visible: winOk
 
             HoverHandler {
               id: windowHoverHandler
@@ -794,22 +799,25 @@ Item {
 
               source: {
                 root.iconRevision; // Force re-evaluation when revision changes
-                return ThemeIcons.iconForAppId(modelData.appId?.toLowerCase());
+                const w = groupedTaskbarItem.win;
+                if (!w || !w.appId)
+                  return "";
+                return ThemeIcons.iconForAppId(w.appId.toLowerCase());
               }
               smooth: true
               asynchronous: true
-              opacity: modelData.isFocused ? Style.opacityFull : unfocusedIconsOpacity
-              layer.enabled: root.colorizeIcons && !modelData.isFocused
+              opacity: groupedTaskbarItem.winOk && groupedTaskbarItem.win.isFocused ? Style.opacityFull : unfocusedIconsOpacity
+              layer.enabled: root.colorizeIcons && groupedTaskbarItem.winOk && !groupedTaskbarItem.win.isFocused
 
               Rectangle {
                 id: groupedFocusIndicator
-                visible: modelData.isFocused || windowHoverHandler.hovered
+                visible: (groupedTaskbarItem.winOk && groupedTaskbarItem.win.isFocused) || windowHoverHandler.hovered
                 anchors.bottomMargin: -2
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: Style.toOdd(root.iconSize * 0.25)
                 height: 4
-                color: modelData.isFocused ? Color.mPrimary : Color.mHover
+                color: (groupedTaskbarItem.winOk && groupedTaskbarItem.win.isFocused) ? Color.mPrimary : Color.mHover
                 radius: Math.min(Style.radiusXXS, width / 2)
               }
 
@@ -828,22 +836,26 @@ Item {
               preventStealing: true
 
               onPressed: mouse => {
-                           if (mouse.button === Qt.LeftButton) {
-                             CompositorService.focusWindow(modelData);
+                           if (mouse.button === Qt.LeftButton && groupedTaskbarItem.winOk) {
+                             CompositorService.focusWindow(groupedTaskbarItem.win);
                            }
                          }
 
               onReleased: mouse => {
-                            if (mouse.button === Qt.RightButton) {
+                            if (mouse.button === Qt.RightButton && groupedTaskbarItem.winOk) {
+                              const w = groupedTaskbarItem.win;
                               mouse.accepted = true;
                               TooltipService.hide();
-                              root.selectedWindowId = modelData.id || modelData.address || "";
-                              root.selectedAppId = modelData.appId;
+                              root.selectedWindowId = w.id || w.address || "";
+                              root.selectedAppId = w.appId;
                               openGroupedContextMenu(groupedTaskbarItem);
                             }
                           }
               onEntered: {
-                TooltipService.show(groupedTaskbarItem, modelData.title || modelData.appId || "Unknown app.", BarService.getTooltipDirection(root.screenName));
+                if (!groupedTaskbarItem.winOk)
+                  return;
+                const w = groupedTaskbarItem.win;
+                TooltipService.show(groupedTaskbarItem, w.title || w.appId || "Unknown app.", BarService.getTooltipDirection(root.screenName));
               }
               onExited: {
                 TooltipService.hide();
