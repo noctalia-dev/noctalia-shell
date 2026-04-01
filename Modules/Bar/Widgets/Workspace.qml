@@ -784,9 +784,8 @@ Item {
             readonly property bool winOk: win !== undefined && win !== null
             readonly property bool isFocused: winOk && win.isFocused
 
-            width: winOk ? root.iconSize : 0
-            height: winOk ? root.iconSize : 0
-            visible: winOk
+            width: root.iconSize
+            height: root.iconSize
 
             HoverHandler {
               id: windowHoverHandler
@@ -800,10 +799,7 @@ Item {
 
               source: {
                 root.iconRevision; // Force re-evaluation when revision changes
-                const w = groupedTaskbarItem.win;
-                if (!w)
-                  return "";
-                return ThemeIcons.iconForAppId(w.appId?.toLowerCase());
+                return ThemeIcons.iconForAppId(groupedTaskbarItem.win?.appId?.toLowerCase());
               }
               smooth: true
               asynchronous: true
