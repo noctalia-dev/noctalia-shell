@@ -27,7 +27,7 @@ Singleton {
                                             "gnomeCalendarAvailable": ["sh", "-c", "command -v gnome-calendar"],
                                             "wtypeAvailable": ["sh", "-c", "command -v wtype"],
                                             "pythonAvailable": ["sh", "-c", "command -v python3"],
-                                            "upowerdAvailable": ["sh", "-c", "[ -x /usr/lib/upowerd ]"]
+                                            "upowerdAvailable": ["sh", "-c", "command -v upower"]
                                           })
 
   // Discord client auto-detection
