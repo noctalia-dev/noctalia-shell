@@ -1367,6 +1367,8 @@
       "title": "启动器"
     },
     "location": {
+      "auto-locate-description": "使用您的 IP 地址定期自动检测您的位置。",
+      "auto-locate-label": "自动定位",
       "calendar-cards-desc": "在日历面板中组织和启用/禁用卡片。",
       "calendar-cards-title": "日历卡",
       "calendar-header-label": "日历标题",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "使用模拟时钟样式",
       "date-time-week-numbers-description": "在日历中显示一年中的第几周（例如：第 38 周）。",
       "date-time-week-numbers-label": "显示周数",
+      "geolocate-now-button": "立即定位",
       "location-desc": "通过设置您的位置获取准确的天气和调度夜间模式。",
       "location-search-description": "例如：多伦多, 安大略省",
       "location-search-label": "搜索位置",

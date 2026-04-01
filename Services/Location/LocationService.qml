@@ -70,6 +70,16 @@ Singleton {
     return `${lat}, ${lon}`;
   }
 
+  // Auto-geolocate timer - periodically updates location via IP geolocation
+  Timer {
+    id: autoLocateTimer
+    interval: 30 * 60 * 1000
+    running: Settings.data.location.autoLocate
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: root.geolocateAndApply()
+  }
+
   // Update timer runs when weather is enabled or location-based scheduling is active
   Timer {
     id: updateTimer
@@ -242,6 +252,46 @@ Singleton {
     };
     xhr.open("GET", url);
     xhr.send();
+  }
+
+  // Geolocate via IP address using the Noctalia API
+  function geolocate(callback, errorCallback) {
+    Logger.d("Location", "Geolocating via IP");
+    var url = "https://api.noctalia.dev/geolocate";
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+        if (xhr.status === 200) {
+          try {
+            var data = JSON.parse(xhr.responseText);
+            if (data.lat != null) {
+              callback(data.lat, data.lng, data.city, data.country);
+            } else {
+              errorCallback("Location", "Geolocate: no coordinates returned");
+            }
+          } catch (e) {
+            errorCallback("Location", "Failed to parse geolocate data: " + e);
+          }
+        } else {
+          errorCallback("Location", "Geolocate error: " + xhr.status);
+        }
+      }
+    };
+    xhr.open("GET", url);
+    xhr.send();
+  }
+
+  // Geolocate via IP and apply the result as the current location
+  function geolocateAndApply() {
+    if (isFetchingWeather) {
+      Logger.w("Location", "Geolocate skipped, fetch already in progress");
+      return;
+    }
+    geolocate(function (lat, lng, city, country) {
+      Logger.i("Location", "Geolocated to", city + ",", country);
+      Settings.data.location.name = city;
+      resetWeather();
+    }, errorCallback);
   }
 
   // --------------------------------

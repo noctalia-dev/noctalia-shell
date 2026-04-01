@@ -1367,6 +1367,8 @@
       "title": "Launcher"
     },
     "location": {
+      "auto-locate-description": "Rileva automaticamente la tua posizione periodicamente usando il tuo indirizzo IP.",
+      "auto-locate-label": "Localizzazione Automatica",
       "calendar-cards-desc": "Organizza e abilita/disabilita le schede nel pannello calendario.",
       "calendar-cards-title": "Schede calendario",
       "calendar-header-label": "Intestazione calendario",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "Usa orologio stile analogico",
       "date-time-week-numbers-description": "Mostra nel calendario la settimana dell’anno (es. settimana 38).",
       "date-time-week-numbers-label": "Mostra numeri settimana",
+      "geolocate-now-button": "Localizza ora",
       "location-desc": "Ottieni meteo accurato e pianificazione Luce notturna impostando la tua posizione.",
       "location-search-description": "es. Torino, TO",
       "location-search-label": "Cerca una posizione",

@@ -1367,6 +1367,8 @@
       "title": "啟動器"
     },
     "location": {
+      "auto-locate-description": "使用您的 IP 位址定期自動偵測您的位置。",
+      "auto-locate-label": "自動定位",
       "calendar-cards-desc": "整理及啟用/停用在行事曆面板使用的卡片",
       "calendar-cards-title": "行事曆卡片",
       "calendar-header-label": "行事曆抬頭",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "使用類比時鐘",
       "date-time-week-numbers-description": "在行事曆顯示今年當週的週數 (例如: 第38週)",
       "date-time-week-numbers-label": "顯示週數",
+      "geolocate-now-button": "立即定位",
       "location-desc": "設定你的所在地以取得準確的天氣及夜光模式時間",
       "location-search-description": "例如: Taipei (英文)",
       "location-search-label": "搜尋位置",

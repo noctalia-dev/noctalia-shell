@@ -1367,6 +1367,8 @@
       "title": "Indító"
     },
     "location": {
+      "auto-locate-description": "Automata helymeghatározás az IP-cím alapján, rendszeres időközönként.",
+      "auto-locate-label": "Automatikus Helymeghatározás",
       "calendar-cards-desc": "A kártyák rendezésének engedélyezése/letiltása a naptár panelen.",
       "calendar-cards-title": "Naptárkártyák",
       "calendar-header-label": "Naptár fejléc",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "Analóg stílusú óra használata",
       "date-time-week-numbers-description": "Az év hetének megjelenítése (pl. 38. hét) a naptárban.",
       "date-time-week-numbers-label": "Hét számok megjelenítése",
+      "geolocate-now-button": "Helymeghatározás most",
       "location-desc": "Pontos időjárás és éjszakai fény ütemezés elérése a hely beállításával.",
       "location-search-description": "pl. Toronto, ON",
       "location-search-label": "Hely keresése",

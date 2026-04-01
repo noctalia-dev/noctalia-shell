@@ -74,13 +74,34 @@ ColumnLayout {
     }
 
     NText {
-      visible: LocationService.coordinatesReady
-      text: I18n.tr("system.location-display", {
-                      "name": LocationService.stableName,
-                      "coordinates": LocationService.displayCoordinates
-                    })
+      text: LocationService.coordinatesReady ? I18n.tr("system.location-display", {
+                                                         "name": LocationService.stableName,
+                                                         "coordinates": LocationService.displayCoordinates
+                                                       }) : ""
       pointSize: Style.fontSizeS
       color: Color.mOnSurfaceVariant
+    }
+  }
+
+  // Auto-locate
+  RowLayout {
+    Layout.fillWidth: true
+    spacing: Style.marginM
+
+    NToggle {
+      Layout.fillWidth: true
+      label: I18n.tr("panels.location.auto-locate-label")
+      description: I18n.tr("panels.location.auto-locate-description")
+      checked: Settings.data.location.autoLocate
+      onToggled: checked => Settings.data.location.autoLocate = checked
+      defaultValue: Settings.getDefaultValue("location.autoLocate")
+    }
+
+    NButton {
+      text: I18n.tr("panels.location.geolocate-now-button")
+      icon: "current-location"
+      enabled: !LocationService.isFetchingWeather
+      onClicked: LocationService.geolocateAndApply()
     }
   }
 

@@ -1367,6 +1367,8 @@
       "title": "Trình khởi chạy"
     },
     "location": {
+      "auto-locate-description": "Tự động phát hiện vị trí của bạn định kỳ bằng địa chỉ IP của bạn.",
+      "auto-locate-label": "Tự Động Định Vị",
       "calendar-cards-desc": "Sắp xếp và bật/tắt các thẻ trong bảng điều khiển lịch.",
       "calendar-cards-title": "Thẻ lịch",
       "calendar-header-label": "Tiêu đề Lịch",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "Sử dụng đồng hồ kiểu kim",
       "date-time-week-numbers-description": "Hiển thị tuần trong năm (ví dụ: tuần 38) trong lịch.",
       "date-time-week-numbers-label": "Hiển thị số tuần",
+      "geolocate-now-button": "Định vị ngay",
       "location-desc": "Nhận thông tin thời tiết chính xác và lên lịch Ánh sáng đêm bằng cách đặt vị trí của bạn.",
       "location-search-description": "ví dụ: Toronto, ON",
       "location-search-label": "Tìm kiếm một địa điểm",

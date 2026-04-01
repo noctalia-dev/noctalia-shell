@@ -1367,6 +1367,8 @@
       "title": "Startprogram"
     },
     "location": {
+      "auto-locate-description": "Upptäck automatiskt din plats periodiskt med hjälp av din IP-adress.",
+      "auto-locate-label": "Automatisk Lokalisering",
       "calendar-cards-desc": "Organisera och aktivera/inaktivera kort i kalenderpanelen.",
       "calendar-cards-title": "Kalenderkort",
       "calendar-header-label": "Kalenderrubrik",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "Använd analog klocka",
       "date-time-week-numbers-description": "Visa veckans nummer (t.ex. vecka 38) i kalendern.",
       "date-time-week-numbers-label": "Visa veckans nummer",
+      "geolocate-now-button": "Lokalisera nu",
       "location-desc": "Få exakt väderinformation och schemaläggning av nattbelysning genom att ange din plats.",
       "location-search-description": "t.ex. Stockholm, SE",
       "location-search-label": "Sök efter en plats",

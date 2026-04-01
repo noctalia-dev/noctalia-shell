@@ -1367,6 +1367,8 @@
       "title": "Launcher"
     },
     "location": {
+      "auto-locate-description": "Automatically detect your location periodically using your IP address.",
+      "auto-locate-label": "Auto-Locate",
       "calendar-cards-desc": "Organize and enable/disable cards in the calendar panel.",
       "calendar-cards-title": "Calendar cards",
       "calendar-header-label": "Calendar Header",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "Use analog style clock",
       "date-time-week-numbers-description": "Display the week of the year (e.g. week 38) in the calendar.",
       "date-time-week-numbers-label": "Show week numbers",
+      "geolocate-now-button": "Locate now",
       "location-desc": "Get accurate weather and Night Light scheduling by setting your location.",
       "location-search-description": "e.g. Toronto, ON",
       "location-search-label": "Search for a location",

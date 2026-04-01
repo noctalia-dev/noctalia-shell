@@ -1367,6 +1367,8 @@
       "title": "Lanzador"
     },
     "location": {
+      "auto-locate-description": "Detecta automáticamente tu ubicación periódicamente usando tu dirección IP.",
+      "auto-locate-label": "Auto-Localizar",
       "calendar-cards-desc": "Organizar y activar/desactivar tarjetas en el panel del calendario.",
       "calendar-cards-title": "Tarjetas de calendario",
       "calendar-header-label": "Encabezado del calendario",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "Usar reloj de estilo analógico",
       "date-time-week-numbers-description": "Muestra la semana del año (p. ej. Semana 38) en el calendario.",
       "date-time-week-numbers-label": "Mostrar números de semana",
+      "geolocate-now-button": "Localizar ahora",
       "location-desc": "Obtén el clima y la programación de la luz nocturna precisos estableciendo tu ubicación.",
       "location-search-description": "p. ej. Toronto, ON",
       "location-search-label": "Buscar una ubicación",

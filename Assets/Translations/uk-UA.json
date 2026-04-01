@@ -1367,6 +1367,8 @@
       "title": "Лаунчер"
     },
     "location": {
+      "auto-locate-description": "Автоматично визначати ваше місцезнаходження періодично, використовуючи вашу IP-адресу.",
+      "auto-locate-label": "Автоматичне Визначення",
       "calendar-cards-desc": "Організуйте та вмикайте/вимикайте картки на панелі календаря.",
       "calendar-cards-title": "Календарні картки",
       "calendar-header-label": "Заголовок календаря",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "Використовувати аналоговий годинник",
       "date-time-week-numbers-description": "Відображати номер тижня року (напр. тиждень 38) у календарі.",
       "date-time-week-numbers-label": "Показувати номери тижнів",
+      "geolocate-now-button": "Знайти зараз",
       "location-desc": "Отримуйте точну погоду та планування нічного світла, встановивши ваше розташування.",
       "location-search-description": "напр. Торонто, ОН",
       "location-search-label": "Шукати розташування",

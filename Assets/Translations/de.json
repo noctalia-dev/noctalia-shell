@@ -1367,6 +1367,8 @@
       "title": "Starter"
     },
     "location": {
+      "auto-locate-description": "Ermittelt Ihren Standort automatisch und regelmäßig anhand Ihrer IP-Adresse.",
+      "auto-locate-label": "Automatische Ortung",
       "calendar-cards-desc": "Karten im Kalender-Panel organisieren und aktivieren/deaktivieren.",
       "calendar-cards-title": "Kalenderkarten",
       "calendar-header-label": "Kalenderkopfzeile",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "Analoge Uhr verwenden",
       "date-time-week-numbers-description": "Zeige die Woche des Jahres (z.B. Woche 38) im Kalender an.",
       "date-time-week-numbers-label": "Wochennummern anzeigen",
+      "geolocate-now-button": "Jetzt orten",
       "location-desc": "Genaues Wetter und Nachtlicht-Planung durch Festlegung Ihres Standorts erhalten.",
       "location-search-description": "z.B. Dortmund, Deutschland",
       "location-search-label": "Nach einem Standort suchen",

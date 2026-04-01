@@ -1367,6 +1367,8 @@
       "title": "Başlatıcı"
     },
     "location": {
+      "auto-locate-description": "IP adresinizi kullanarak konumunuzu periyodik olarak otomatik olarak algılayın.",
+      "auto-locate-label": "Otomatik Konumlandırma",
       "calendar-cards-desc": "Takvim panelinde kartları düzenleyin ve etkinleştirin/devre dışı bırakın.",
       "calendar-cards-title": "Takvim kartları",
       "calendar-header-label": "Takvim başlığı",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "Analog tarzı saat kullan",
       "date-time-week-numbers-description": "Takvimde yılın haftasını (örn. 38. Hafta) gösterir.",
       "date-time-week-numbers-label": "Hafta numaralarını göster",
+      "geolocate-now-button": "Şimdi konumlandır",
       "location-desc": "Konumunuzu ayarlayarak hassas hava durumu ve gece ışığı zamanlaması alın.",
       "location-search-description": "örn. İstanbul, TR",
       "location-search-label": "Konum ara",

@@ -352,6 +352,7 @@ Singleton {
       property int firstDayOfWeek: -1 // -1 = auto (use locale), 0 = Sunday, 1 = Monday, 6 = Saturday
       property bool hideWeatherTimezone: false
       property bool hideWeatherCityName: false
+      property bool autoLocate: true
     }
 
     // calendar

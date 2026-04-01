@@ -1367,6 +1367,8 @@
       "title": "ランチャー"
     },
     "location": {
+      "auto-locate-description": "IPアドレスを使用して、定期的に現在地を自動検出します。",
+      "auto-locate-label": "自動検出",
       "calendar-cards-desc": "カレンダーパネルのカードを整理し、有効・無効を切り替えます。",
       "calendar-cards-title": "カレンダーカード",
       "calendar-header-label": "カレンダーヘッダー",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "アナログ時計を使用",
       "date-time-week-numbers-description": "カレンダーに週番号（例：第38週）を表示します。",
       "date-time-week-numbers-label": "週番号を表示",
+      "geolocate-now-button": "今すぐ検索",
       "location-desc": "場所を設定して、正確な天気情報や夜間モードのスケジュールを取得します。",
       "location-search-description": "例：東京、日本",
       "location-search-label": "場所を検索",

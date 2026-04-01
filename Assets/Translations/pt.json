@@ -1367,6 +1367,8 @@
       "title": "Lançador"
     },
     "location": {
+      "auto-locate-description": "Deteta automaticamente a sua localização periodicamente usando o seu endereço IP.",
+      "auto-locate-label": "Auto-Localização",
       "calendar-cards-desc": "Organize e ative/desative cartões no painel do calendário.",
       "calendar-cards-title": "Cartões de calendário",
       "calendar-header-label": "Cabeçalho do calendário",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "Use um relógio de estilo analógico",
       "date-time-week-numbers-description": "Exibe a semana do ano (p. ex. Semana 38) no calendário.",
       "date-time-week-numbers-label": "Mostrar números da semana",
+      "geolocate-now-button": "Localizar agora",
       "location-desc": "Obtenha previsão do tempo e agendamento de luz noturna precisos definindo sua localização.",
       "location-search-description": "p. ex. São Paulo, SP",
       "location-search-label": "Procurar por uma localização",

@@ -1367,6 +1367,8 @@
       "title": "Лаунчер"
     },
     "location": {
+      "auto-locate-description": "Автоматически определять ваше местоположение периодически, используя ваш IP-адрес.",
+      "auto-locate-label": "Автоматическое Определение",
       "calendar-cards-desc": "Организуйте и включайте/выключайте карточки в панели календаря.",
       "calendar-cards-title": "Карточки календаря",
       "calendar-header-label": "Заголовок календаря",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "Использовать аналоговый стиль часов",
       "date-time-week-numbers-description": "Отображает номер недели в году (например, неделя 38) в календаре.",
       "date-time-week-numbers-label": "Показывать номера недель",
+      "geolocate-now-button": "Найти сейчас",
       "location-desc": "Получите точную погоду и расписание ночного света, установив своё местоположение.",
       "location-search-description": "напр. Москва, RU",
       "location-search-label": "Поиск местоположения",

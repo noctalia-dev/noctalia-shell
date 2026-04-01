@@ -1367,6 +1367,8 @@
       "title": "Launcher"
     },
     "location": {
+      "auto-locate-description": "Automatycznie wykrywaj swoją lokalizację okresowo, używając adresu IP.",
+      "auto-locate-label": "Automatyczne Wykrywanie",
       "calendar-cards-desc": "Organizuj i włączaj/wyłączaj karty w panelu kalendarza.",
       "calendar-cards-title": "Karty kalendarza",
       "calendar-header-label": "Nagłówek kalendarza",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "Użyj zegara analogowego",
       "date-time-week-numbers-description": "Wyświetlaj numer tygodnia w roku (np. tydzień 38) w kalendarzu.",
       "date-time-week-numbers-label": "Pokaż numery tygodni",
+      "geolocate-now-button": "Zlokalizuj teraz",
       "location-desc": "Ustaw lokalizację, aby otrzymywać dokładną pogodę i harmonogram podświetlenia nocnego.",
       "location-search-description": "np. Warszawa, PL",
       "location-search-label": "Szukaj lokalizacji",

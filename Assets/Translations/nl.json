@@ -1367,6 +1367,8 @@
       "title": "Launcher"
     },
     "location": {
+      "auto-locate-description": "Detecteert automatisch uw locatie periodiek met behulp van uw IP-adres.",
+      "auto-locate-label": "Automatische Lokalisatie",
       "calendar-cards-desc": "Kaarten organiseren en in-/uitschakelen in het kalenderpaneel.",
       "calendar-cards-title": "Kalenderkaarten",
       "calendar-header-label": "Kalenderkop",
@@ -1384,6 +1386,7 @@
       "date-time-use-analog-label": "Analoge klok gebruiken",
       "date-time-week-numbers-description": "Toon het weeknummer van het jaar (bijv. week 38) in de kalender.",
       "date-time-week-numbers-label": "Weeknummers tonen",
+      "geolocate-now-button": "Nu lokaliseren",
       "location-desc": "Krijg nauwkeurige weersinformatie en nachtlichtplanning door je locatie in te stellen.",
       "location-search-description": "bijv. Toronto, ON",
       "location-search-label": "Zoek een locatie",

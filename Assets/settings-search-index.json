@@ -2193,6 +2193,15 @@
     "subTabLabel": "common.location"
   },
   {
+    "labelKey": "panels.location.auto-locate-label",
+    "descriptionKey": "panels.location.auto-locate-description",
+    "widget": "NToggle",
+    "tab": 17,
+    "tabLabel": "panels.region.title",
+    "subTab": 0,
+    "subTabLabel": "common.location"
+  },
+  {
     "labelKey": "panels.location.weather-enabled-label",
     "descriptionKey": "panels.location.weather-enabled-description",
     "widget": "NToggle",
