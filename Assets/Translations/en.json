@@ -796,6 +796,7 @@
       "media-title": "Media players",
       "on-middle-clicked-description": "Command to execute when the button is middle-clicked.",
       "panel-applications-empty": "No applications are currently playing audio",
+      "bluetooth-profile-tooltip": "Bluetooth profile: {profile}",
       "spectrum-mirrored-description": "Mirror the spectrum so low frequencies are in the center. When off, low frequencies are on the left and high on the right.",
       "spectrum-mirrored-label": "Mirror spectrum",
       "title": "Audio",
@@ -816,7 +817,9 @@
       "volumes-volume-feedback-description": "Play a feedback sound when adjusting volume.",
       "volumes-volume-feedback-label": "Play volume feedback sound",
       "volumes-volume-overdrive-description": "Allow raising volume above 100%. May not be supported by all hardware.",
-      "volumes-volume-overdrive-label": "Allow volume overdrive"
+      "volumes-volume-overdrive-label": "Allow volume overdrive",
+      "bluetooth-remember-profiles-description": "Automatically apply your preferred audio profile when a Bluetooth device connects.",
+      "bluetooth-remember-profiles-label": "Remember Bluetooth audio profiles"
     },
     "bar": {
       "appearance-auto-hide-delay-description": "Time before bar hides after mouse leaves",

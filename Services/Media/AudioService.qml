@@ -994,4 +994,193 @@ Singleton {
     }
     Pipewire.preferredDefaultAudioSource = newSource;
   }
+
+  // ===== Bluetooth Audio Profile Support =====
+  // Provides profile switching for Bluetooth audio devices (A2DP, HSP/HFP, etc.)
+  // Location: Audio Panel → Devices tab → Bluetooth icon button next to BT devices
+
+  property var _btProfileCache: ({})
+
+  signal bluetoothProfilesChanged(string cardName)
+
+  // Extract Bluetooth card name from a PipeWire node (e.g., "bluez_card.XX_XX_XX_XX_XX_XX")
+  function getBluetoothCardName(node: PwNode): string {
+    if (!node?.properties)
+      return "";
+
+    const props = node.properties;
+
+    // Direct card name (unlikely on sink/source nodes but check anyway)
+    const deviceName = props["device.name"] || "";
+    if (deviceName.startsWith("bluez_card."))
+      return deviceName;
+
+    // Construct from Bluetooth MAC address (most reliable)
+    const address = props["api.bluez5.address"] || "";
+    if (address)
+      return "bluez_card." + address.replace(/:/g, "_");
+
+    // Extract from node name (e.g., "bluez_output.40_58_99_49_42_0C.1")
+    const nodeName = node.name || "";
+    const match = nodeName.match(/bluez_(?:output|input)\.([0-9A-Fa-f_]+)/);
+    if (match)
+      return "bluez_card." + match[1];
+
+    return "";
+  }
+
+  // Get cached profile data for a card (returns null if not cached)
+  function getCachedBluetoothProfiles(cardName: string): var {
+    return _btProfileCache[cardName] || null;
+  }
+
+  // Query available profiles for a Bluetooth card
+  function queryBluetoothProfiles(cardName: string): void {
+    if (!cardName)
+    return;
+    btProfileQueryProcess.command = ["pactl", "list", "cards"];
+    btProfileQueryProcess.running = true;
+  }
+
+  // Set the active profile for a Bluetooth card
+  function setBluetoothProfile(cardName: string, profileName: string): void {
+    if (!cardName || !profileName)
+    return;
+
+    btProfileSetProcess.command = ["pactl", "set-card-profile", cardName, profileName];
+    btProfileSetProcess.running = true;
+
+    // Optimistic cache update
+    if (_btProfileCache[cardName]) {
+      _btProfileCache[cardName].activeProfile = profileName;
+      bluetoothProfilesChanged(cardName);
+    }
+
+    // Save preference if enabled
+    if (Settings.data.audio.rememberBluetoothProfiles) {
+      _saveProfilePreference(cardName, profileName);
+    }
+  }
+
+  // Parse pactl output and update cache
+  function _parsePactlCards(output: string): void {
+    for (const block of output.split(/(?=Card #\d+)/)) {
+      if (!block.includes("bluez"))
+      continue;
+
+      const nameMatch = block.match(/Name:\s*(\S+)/);
+      if (!nameMatch)
+      continue;
+      const cardName = nameMatch[1];
+
+      const profilesMatch = block.match(/Profiles:\n([\s\S]*?)(?=\n\tActive Profile:|\n\tPorts:|\nCard #|$)/);
+      if (!profilesMatch)
+      continue;
+
+      const profiles = [];
+      for (const line of profilesMatch[1].split("\n")) {
+        const m = line.match(/^\s+([a-zA-Z0-9_-]+):\s+(.+?)\s+\(sinks:/);
+        if (!m || m[1] === "off")
+        continue;
+
+        const name = m[1];
+        const desc = m[2];
+
+        // Format display name: "A2DP (AAC)" or "HSP/HFP (MSBC)"
+        let displayName = desc;
+        const codecMatch = desc.match(/codec\s+(\S+)\)?/i);
+        const codec = codecMatch ? ` (${codecMatch[1].replace(/\)$/, "")})` : "";
+
+        if (desc.includes("A2DP"))
+        displayName = "A2DP" + codec;
+        else if (desc.includes("HSP") || desc.includes("HFP"))
+        displayName = "HSP/HFP" + codec;
+
+        profiles.push({
+                        name,
+                        description: desc,
+                        displayName
+                      });
+      }
+
+      const activeMatch = block.match(/Active Profile:\s*(\S+)/);
+      if (profiles.length > 0) {
+        _btProfileCache[cardName] = {
+          profiles,
+          activeProfile: activeMatch?.[1] || ""
+        };
+        bluetoothProfilesChanged(cardName);
+        _applyProfilePreference(cardName);
+      }
+    }
+  }
+
+  // Profile persistence
+  function _saveProfilePreference(cardName: string, profile: string): void {
+    var prefs = (Settings.data.audio.bluetoothProfilePreferences || []).filter(p => p.cardName !== cardName);
+    prefs.push({
+                 cardName,
+                 profile
+               });
+    Settings.data.audio.bluetoothProfilePreferences = prefs;
+  }
+
+  function _applyProfilePreference(cardName: string): void {
+    if (!Settings.data.audio.rememberBluetoothProfiles)
+    return;
+
+    const prefs = Settings.data.audio.bluetoothProfilePreferences || [];
+    const saved = prefs.find(p => p.cardName === cardName)?.profile;
+    if (!saved)
+    return;
+
+    const cached = _btProfileCache[cardName];
+    if (!cached?.profiles?.some(p => p.name === saved))
+    return;
+    if (cached.activeProfile === saved)
+    return;
+
+    // Apply saved profile
+    btProfileSetProcess.command = ["pactl", "set-card-profile", cardName, saved];
+    btProfileSetProcess.running = true;
+    cached.activeProfile = saved;
+    bluetoothProfilesChanged(cardName);
+  }
+
+  Process {
+    id: btProfileQueryProcess
+    running: false
+    onExited: code => {
+      if (code === 0)
+      root._parsePactlCards(stdout.text);
+    }
+    stdout: StdioCollector {}
+  }
+
+  Process {
+    id: btProfileSetProcess
+    running: false
+    onExited: code => {
+      if (code !== 0) {
+        // Refresh to get actual state on failure
+        btProfileQueryProcess.command = ["pactl", "list", "cards"];
+        btProfileQueryProcess.running = true;
+      }
+    }
+  }
+
+  // Auto-query profiles when a Bluetooth device becomes active
+  Connections {
+    target: root
+    function onSinkChanged() {
+      const card = root.sink ? root.getBluetoothCardName(root.sink) : "";
+      if (card)
+        root.queryBluetoothProfiles(card);
+    }
+    function onSourceChanged() {
+      const card = root.source ? root.getBluetoothCardName(root.source) : "";
+      if (card)
+        root.queryBluetoothProfiles(card);
+    }
+  }
 }

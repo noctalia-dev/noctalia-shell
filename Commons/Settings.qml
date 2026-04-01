@@ -692,6 +692,9 @@ Singleton {
       property string preferredPlayer: ""
       property bool volumeFeedback: false
       property string volumeFeedbackSoundFile: ""
+      property bool rememberBluetoothProfiles: false
+      property list<var> bluetoothProfilePreferences: []
+      // Format: [{ "cardName": "bluez_card.XX_XX_XX_XX_XX_XX", "profile": "a2dp-sink" }, ...]
     }
 
     // brightness

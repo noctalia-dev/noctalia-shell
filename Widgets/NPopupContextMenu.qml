@@ -27,8 +27,13 @@ PopupWindow {
   property real targetWidth: 0
   property real targetHeight: 0
 
+  // Optional position hint override: "left", "right", "top", "bottom", or "" (auto)
+  // When set, overrides barPosition for positioning logic
+  property string positionHint: ""
+
   readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
   readonly property real barHeight: Style.getBarHeightForScreen(screen?.name)
+  readonly property string effectivePosition: positionHint !== "" ? positionHint : barPosition
 
   signal triggered(string action, var item)
 
@@ -96,13 +101,13 @@ PopupWindow {
       const targetGlobalX = anchorGlobalPos.x + targetOffsetX;
 
       // For right bar: position menu to the left of target
-      if (root.barPosition === "right") {
+      if (root.effectivePosition === "right") {
         let baseX = targetOffsetX - implicitWidth - Style.marginM;
         return baseX;
       }
 
       // For left bar: position menu to the right of target
-      if (root.barPosition === "left") {
+      if (root.effectivePosition === "left") {
         let baseX = targetOffsetX + effectiveWidth + Style.marginM;
         return baseX;
       }
@@ -153,10 +158,10 @@ PopupWindow {
 
       // Calculate base Y position based on bar orientation
       let baseY;
-      if (root.barPosition === "bottom") {
+      if (root.effectivePosition === "bottom") {
         // For bottom bar: position menu above the bar
         baseY = -(implicitHeight + Style.marginS);
-      } else if (root.barPosition === "top") {
+      } else if (root.effectivePosition === "top") {
         // For top bar: position menu below bar at consistent height
         // Compensate for anchor's Y position to ensure menu top is always at (barHeight + margin)
         baseY = barHeight + Style.marginS - anchorGlobalPos.y;
@@ -171,10 +176,10 @@ PopupWindow {
 
       // Define clipping boundaries based on bar position
       const topLimit = Style.marginM;
-      const bottomLimit = root.barPosition === "bottom" ? screen.height - barHeight - Style.marginS : screen.height - Style.marginM;
+      const bottomLimit = root.effectivePosition === "bottom" ? screen.height - barHeight - Style.marginS : screen.height - Style.marginM;
 
       // Adjust if menu would clip at top (skip for bottom bar - don't push menu down over bar)
-      if (menuScreenY < topLimit && root.barPosition !== "bottom") {
+      if (menuScreenY < topLimit && root.effectivePosition !== "bottom") {
         const adjustment = topLimit - menuScreenY;
         return baseY + adjustment;
       }
@@ -189,7 +194,7 @@ PopupWindow {
     }
 
     // Fallback if no screen
-    if (root.barPosition === "bottom") {
+    if (root.effectivePosition === "bottom") {
       return -implicitHeight - Style.marginS;
     }
     return barHeight;
