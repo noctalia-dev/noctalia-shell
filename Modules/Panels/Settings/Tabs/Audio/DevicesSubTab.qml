@@ -79,7 +79,7 @@ ColumnLayout {
     label: I18n.tr("panels.audio.bluetooth-remember-profiles-label")
     description: I18n.tr("panels.audio.bluetooth-remember-profiles-description")
     checked: Settings.data.audio.rememberBluetoothProfiles
-    onCheckedChanged: Settings.data.audio.rememberBluetoothProfiles = checked
+    onToggled: checked => Settings.data.audio.rememberBluetoothProfiles = checked
     Layout.fillWidth: true
   }
 }
