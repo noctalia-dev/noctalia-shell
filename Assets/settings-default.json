@@ -13,6 +13,7 @@
     "contentPadding": 2,
     "fontScale": 1,
     "widgetRadiusRatio": 1,
+    "overridePluginWidgetRadius": true,
     "enableExclusionZoneInset": true,
     "backgroundOpacity": 0.93,
     "useSeparateOpacity": false,

@@ -54,6 +54,24 @@ Item {
 
   // Force reload counter - incremented when plugin widget registry changes
   property int reloadCounter: 0
+  property var _pluginRadiusCache: []
+
+  function _getPluginRadiusCache(item) {
+    for (var i = 0; i < _pluginRadiusCache.length; i++) {
+      if (_pluginRadiusCache[i].item === item)
+        return _pluginRadiusCache[i];
+    }
+
+    var entry = {
+      item: item,
+      hasCustomRadius: item.hasOwnProperty("customRadius"),
+      customRadius: item.hasOwnProperty("customRadius") ? item.customRadius : undefined,
+      hasRadius: item.hasOwnProperty("radius"),
+      radius: item.hasOwnProperty("radius") ? item.radius : undefined
+    };
+    _pluginRadiusCache.push(entry);
+    return entry;
+  }
 
   // Listen for plugin widget registry changes to force reload
   Connections {
@@ -68,6 +86,16 @@ Item {
           root._loadWidget();
         Logger.d("BarWidgetLoader", "Plugin widget registry updated, reloading:", root.widgetId);
       }
+    }
+  }
+
+  // Apply plugin radius override live when setting changes (no widget reload).
+  Connections {
+    target: Settings.data.bar
+    enabled: root._isPlugin
+
+    function onOverridePluginWidgetRadiusChanged() {
+      root._applyPluginRadiusOverride(loader.item);
     }
   }
 
@@ -110,6 +138,40 @@ Item {
       loader.setSource(comp.url, props);
     } else {
       loader.setSource(_barWidgetsDir + root.widgetId + ".qml", props);
+    }
+  }
+
+  function _applyPluginRadiusOverride(item) {
+    if (!root._isPlugin || !item)
+      return;
+
+    if (item.hasOwnProperty("disableGlobalRadiusOverride") && item.disableGlobalRadiusOverride)
+      return;
+
+    var cache = root._getPluginRadiusCache(item);
+
+    if (!Settings.data.bar.overridePluginWidgetRadius) {
+      if (cache.hasCustomRadius)
+        item.customRadius = cache.customRadius;
+      else if (cache.hasRadius)
+        item.radius = cache.radius;
+      return;
+    }
+
+    if (item.hasOwnProperty("customRadius")) {
+      item.customRadius = Qt.binding(function () {
+        return Style.barRadiusL;
+      });
+      return;
+    }
+
+    if (item.hasOwnProperty("radius")) {
+      item.radius = Qt.binding(function () {
+        var baseRadius = Style.barRadiusM;
+        if (item.hasOwnProperty("width") && item.width > 0)
+          return Math.min(baseRadius, item.width / 2);
+        return baseRadius;
+      });
     }
   }
 
@@ -160,6 +222,9 @@ Item {
           item[prop] = widgetProps[prop];
         }
       }
+
+      // Keep plugin widgets aligned with bar radius setting unless plugin opts out.
+      root._applyPluginRadiusOverride(item);
 
       // Unregister any previous registration before registering the new instance
       root._unregister();

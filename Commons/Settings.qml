@@ -214,6 +214,7 @@ Singleton {
       property int contentPadding: 2
       property real fontScale: 1.0
       property real widgetRadiusRatio: 1.0
+      property bool overridePluginWidgetRadius: true
       property bool enableExclusionZoneInset: true
 
       // Bar background opacity settings
