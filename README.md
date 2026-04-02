@@ -24,7 +24,7 @@ Noctalia
 
 #### Core
 - [x] Add `replaces_id` support (update existing notifications)
-- [ ] Introduce basic event system (added / updated callbacks)
+- [x] Introduce basic event system (added / updated callbacks)
 - [x] Switch storage to stable container (deque + ID lookup)
 
 #### IPC

@@ -7,6 +7,11 @@
 int main() {
     try {
         NotificationManager manager;
+        manager.setEventCallback([](const Notification& n, NotificationEvent event) {
+            const char* kind = (event == NotificationEvent::Added) ? "added" : "updated";
+            std::cout << "[noctalia] event " << kind << " id=" << n.id << '\n';
+        });
+
         NotificationService service(manager);
 
         std::cout << "noctalia: listening on org.freedesktop.Notifications\n";

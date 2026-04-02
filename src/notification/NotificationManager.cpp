@@ -16,6 +16,10 @@ constexpr std::string_view urgency_str(Urgency u) noexcept {
 
 }
 
+void NotificationManager::setEventCallback(EventCallback callback) {
+    m_event_callback = std::move(callback);
+}
+
 uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
                                             std::string app_name,
                                             std::string summary,
@@ -38,6 +42,10 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
                       << " body=\""    << n.body << "\""
                       << " timeout="   << n.timeout << "ms"
                       << '\n';
+
+            if (m_event_callback) {
+                m_event_callback(n, NotificationEvent::Updated);
+            }
 
             return n.id;
         }
@@ -62,6 +70,10 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
               << " body=\""  << n.body << "\""
               << " timeout=" << n.timeout << "ms"
               << '\n';
+
+    if (m_event_callback) {
+        m_event_callback(n, NotificationEvent::Added);
+    }
 
     return n.id;
 }
