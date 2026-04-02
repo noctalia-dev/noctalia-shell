@@ -97,6 +97,7 @@ NBox {
     clip: true
 
     RowLayout {
+      visible: weatherReady
       Layout.fillWidth: true
       spacing: Style.marginS
 
@@ -115,14 +116,14 @@ NBox {
           readonly property int mainWeatherIconSide: Math.round(Style.fontSizeXXXL * 1.75 * Style.uiScaleRatio * 1.6)
 
           NIcon {
-            visible: !LocationService.taliaWeatherMascotActive || !weatherReady
+            visible: !LocationService.taliaWeatherMascotActive
             anchors.centerIn: parent
-            icon: weatherReady ? LocationService.weatherSymbolFromCode(LocationService.data.weather.current_weather.weathercode) : "weather-cloud-off"
+            icon: weatherReady ? LocationService.weatherSymbolFromCode(LocationService.data.weather.current_weather.weathercode) : ""
             pointSize: Style.fontSizeXXXL * 1.75
             color: Color.mPrimary
           }
           Loader {
-            active: LocationService.taliaWeatherMascotActive && weatherReady
+            active: LocationService.taliaWeatherMascotActive
             anchors.fill: parent
             asynchronous: true
             sourceComponent: Component {
@@ -153,11 +154,9 @@ NBox {
 
           RowLayout {
             NText {
-              visible: weatherReady
               text: {
-                if (!weatherReady) {
+                if (!weatherReady)
                   return "";
-                }
                 var temp = LocationService.data.weather.current_weather.temperature;
                 var suffix = "C";
                 if (Settings.data.location.useFahrenheit) {
@@ -258,10 +257,23 @@ NBox {
       }
     }
 
-    Loader {
-      active: !weatherReady
+    ColumnLayout {
+      visible: !weatherReady
       Layout.alignment: Qt.AlignCenter
-      sourceComponent: NBusyIndicator {}
+      spacing: Style.marginS
+
+      NBusyIndicator {
+        Layout.alignment: Qt.AlignCenter
+        visible: LocationService.locationConfigured
+      }
+
+      NText {
+        visible: !LocationService.locationConfigured
+        Layout.alignment: Qt.AlignCenter
+        text: I18n.tr("common.weather-no-location")
+        pointSize: Style.fontSizeS
+        color: Color.mOnSurfaceVariant
+      }
     }
   }
 }

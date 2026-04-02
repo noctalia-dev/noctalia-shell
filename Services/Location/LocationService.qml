@@ -26,6 +26,9 @@ Singleton {
 
   readonly property alias data: adapter
 
+  // True when the user has set a location name or enabled auto-locate
+  readonly property bool locationConfigured: Settings.data.location.name !== "" || Settings.data.location.autoLocate
+
   // Stable UI properties - only updated when location is successfully geocoded
   property bool coordinatesReady: false
   property string stableLatitude: ""
