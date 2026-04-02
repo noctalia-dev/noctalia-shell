@@ -27,7 +27,10 @@ public:
                           std::string summary,
                           std::string body,
                           int32_t     timeout,
-                          Urgency     urgency);
+                          Urgency     urgency,
+                          std::optional<std::string> icon = std::nullopt,
+                          std::optional<std::string> category = std::nullopt,
+                          std::optional<std::string> desktop_entry = std::nullopt);
 
     // All stored notifications.
     [[nodiscard]] const std::deque<Notification>& all() const noexcept;

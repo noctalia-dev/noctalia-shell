@@ -50,7 +50,7 @@ void NotificationService::run() {
 
 uint32_t NotificationService::onNotify(const std::string& app_name,
                                         uint32_t           replaces_id,
-                                        const std::string& /*app_icon*/,
+                                        const std::string& app_icon,
                                         const std::string& summary,
                                         const std::string& body,
                                         const std::vector<std::string>& /*actions*/,
@@ -61,7 +61,32 @@ uint32_t NotificationService::onNotify(const std::string& app_name,
         urgency = static_cast<Urgency>(it->second.get<uint8_t>());
     }
 
-    return m_manager.addOrReplace(replaces_id, app_name, summary, body, expire_timeout, urgency);
+    std::optional<std::string> icon;
+    if (!app_icon.empty()) {
+        icon = app_icon;
+    }
+    if (auto it = hints.find("image-path"); it != hints.end()) {
+        try {
+            icon = it->second.get<std::string>();
+        } catch (...) {}
+    }
+
+    std::optional<std::string> category;
+    if (auto it = hints.find("category"); it != hints.end()) {
+        try {
+            category = it->second.get<std::string>();
+        } catch (...) {}
+    }
+
+    std::optional<std::string> desktop_entry;
+    if (auto it = hints.find("desktop-entry"); it != hints.end()) {
+        try {
+            desktop_entry = it->second.get<std::string>();
+        } catch (...) {}
+    }
+
+    return m_manager.addOrReplace(replaces_id, app_name, summary, body,
+                                  expire_timeout, urgency, icon, category, desktop_entry);
 }
 
 std::vector<std::string> NotificationService::onGetCapabilities() {

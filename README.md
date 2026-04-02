@@ -33,7 +33,7 @@ Noctalia
 
 #### Data Model
 - [x] Extend Notification with base fields (app_name, summary, body, timeout, urgency)
-- [ ] Extend Notification with optional fields (icon, category, hints)
+- [x] Extend Notification with optional fields (icon, category, desktop_entry)
 
 #### Later
 - [ ] Notification closing/removal
