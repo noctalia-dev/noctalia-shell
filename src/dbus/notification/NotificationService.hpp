@@ -5,6 +5,7 @@
 #include <sdbus-c++/sdbus-c++.h>
 #include <memory>
 #include <tuple>
+#include <vector>
 
 // Exposes org.freedesktop.Notifications on the session bus.
 // Only the Notify method is stubbed for now.
@@ -30,6 +31,7 @@ private:
                       int32_t            expire_timeout);
 
     void onCloseNotification(uint32_t id);
+    void emitClose(uint32_t id, CloseReason reason);
 
     std::vector<std::string> onGetCapabilities();
 

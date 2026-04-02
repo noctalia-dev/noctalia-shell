@@ -6,6 +6,7 @@
 #include <deque>
 #include <functional>
 #include <unordered_map>
+#include <vector>
 
 enum class NotificationEvent {
     Added,
@@ -32,8 +33,11 @@ public:
                           std::optional<std::string> category = std::nullopt,
                           std::optional<std::string> desktop_entry = std::nullopt);
 
-    // Closes a notification by ID.
-    bool close(uint32_t id);
+    // Closes a notification by ID. Returns false if not found.
+    bool close(uint32_t id, CloseReason reason = CloseReason::ClosedByCall);
+
+    // Returns IDs of all notifications whose expiry_time has passed.
+    [[nodiscard]] std::vector<uint32_t> expiredIds() const;
 
     // All stored notifications.
     [[nodiscard]] const std::deque<Notification>& all() const noexcept;

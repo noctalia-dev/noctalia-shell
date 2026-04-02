@@ -14,6 +14,13 @@ constexpr std::string_view urgency_str(Urgency u) noexcept {
     return "unknown";
 }
 
+std::optional<TimePoint> schedule_expiry(int32_t timeout_ms) noexcept {
+    if (timeout_ms > 0) {
+        return Clock::now() + std::chrono::milliseconds(timeout_ms);
+    }
+    return std::nullopt;  // 0 = persistent, -1 = server default (treat as persistent for now)
+}
+
 }
 
 void NotificationManager::setEventCallback(EventCallback callback) {
@@ -56,6 +63,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
             n.icon     = std::move(icon);
             n.category = std::move(category);
             n.desktop_entry = std::move(desktop_entry);
+            n.expiry_time   = schedule_expiry(timeout);
 
             log_notification(n, "updated");
 
@@ -78,6 +86,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
         .icon          = std::move(icon),
         .category      = std::move(category),
         .desktop_entry = std::move(desktop_entry),
+        .expiry_time   = schedule_expiry(timeout),
     });
     m_id_to_index.emplace(id, m_notifications.size() - 1);
 
@@ -91,14 +100,16 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
     return n.id;
 }
 
-bool NotificationManager::close(uint32_t id) {
+bool NotificationManager::close(uint32_t id, CloseReason reason) {
     const auto it = m_id_to_index.find(id);
     if (it == m_id_to_index.end()) {
         return false;
     }
 
     const size_t index = it->second;
-    std::cout << "[noctalia] closed #" << id << '\n';
+    const char* reason_str = (reason == CloseReason::Expired) ? "expired" :
+                             (reason == CloseReason::Dismissed) ? "dismissed" : "closed";
+    std::cout << "[noctalia] " << reason_str << " #" << id << '\n';
 
     m_notifications.erase(m_notifications.begin() + static_cast<std::ptrdiff_t>(index));
     m_id_to_index.erase(it);
@@ -112,4 +123,15 @@ bool NotificationManager::close(uint32_t id) {
 
 const std::deque<Notification>& NotificationManager::all() const noexcept {
     return m_notifications;
+}
+
+std::vector<uint32_t> NotificationManager::expiredIds() const {
+    const auto now = Clock::now();
+    std::vector<uint32_t> ids;
+    for (const auto& n : m_notifications) {
+        if (n.expiry_time && now >= *n.expiry_time) {
+            ids.push_back(n.id);
+        }
+    }
+    return ids;
 }

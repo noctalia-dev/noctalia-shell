@@ -30,9 +30,9 @@ Noctalia
 - [ ] Stub `ActionInvoked` signal
 
 #### Lifecycle (Critical)
-- [ ] Handle timeout semantics (`-1` default, `0` persistent, `>0` custom)
-- [ ] Implement expiry system (timers / event loop)
-- [x] Emit `NotificationClosed` with reason (closed by call)
+- [x] Handle timeout semantics (`-1` default, `0` persistent, `>0` custom)
+- [x] Implement expiry system (timers / event loop)
+- [x] Emit `NotificationClosed` with reason (expired / closed by call)
 
 #### Core Behavior
 - [x] Fully implement `replaces_id` (in-place update)

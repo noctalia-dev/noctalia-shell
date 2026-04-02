@@ -1,11 +1,11 @@
 #include "NotificationService.hpp"
 
+#include <poll.h>
 #include <stdexcept>
 
 static const sdbus::ServiceName k_bus_name   {"org.freedesktop.Notifications"};
 static const sdbus::ObjectPath  k_object_path{"/org/freedesktop/Notifications"};
 static constexpr auto           k_interface  = "org.freedesktop.Notifications";
-static constexpr uint32_t       k_close_reason_closed_by_call = 3;
 
 NotificationService::NotificationService(NotificationManager& manager)
     : m_manager(manager)
@@ -52,7 +52,49 @@ NotificationService::NotificationService(NotificationManager& manager)
 }
 
 void NotificationService::run() {
-    m_connection->enterEventLoop();
+    // Manual event loop so we can tick expiry between D-Bus events.
+    while (true) {
+        auto poll_data = m_connection->getEventLoopPollData();
+
+        // Compute how long until the next notification expires.
+        int expiry_ms = -1;
+        const auto now = Clock::now();
+        for (const auto& n : m_manager.all()) {
+            if (n.expiry_time) {
+                const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    *n.expiry_time - now).count();
+                const int clamped = static_cast<int>(std::max<long long>(0, ms));
+                if (expiry_ms < 0 || clamped < expiry_ms) {
+                    expiry_ms = clamped;
+                }
+            }
+        }
+
+        // Poll for D-Bus events or until next expiry.
+        // getPollTimeout() may return -1 (indefinite); treat it as infinity so
+        // our expiry deadline always wins when set.
+        const int dbus_timeout = poll_data.getPollTimeout();
+        int poll_timeout;
+        if (expiry_ms >= 0 && dbus_timeout < 0) {
+            poll_timeout = expiry_ms;
+        } else if (expiry_ms >= 0) {
+            poll_timeout = std::min(expiry_ms, dbus_timeout);
+        } else {
+            poll_timeout = dbus_timeout;
+        }
+
+        struct pollfd pfd{.fd = poll_data.fd, .events = poll_data.events, .revents = 0};
+        ::poll(&pfd, 1, poll_timeout);
+
+        // Process any pending D-Bus messages.
+        while (m_connection->processPendingEvent()) {}
+
+        // Expire timed-out notifications.
+        for (const uint32_t id : m_manager.expiredIds()) {
+            emitClose(id, CloseReason::Expired);
+            m_manager.close(id, CloseReason::Expired);
+        }
+    }
 }
 
 uint32_t NotificationService::onNotify(const std::string& app_name,
@@ -101,13 +143,16 @@ std::vector<std::string> NotificationService::onGetCapabilities() {
 }
 
 void NotificationService::onCloseNotification(uint32_t id) {
-    if (!m_manager.close(id)) {
+    if (!m_manager.close(id, CloseReason::ClosedByCall)) {
         return;
     }
+    emitClose(id, CloseReason::ClosedByCall);
+}
 
+void NotificationService::emitClose(uint32_t id, CloseReason reason) {
     m_object->emitSignal("NotificationClosed")
         .onInterface(k_interface)
-        .withArguments(id, k_close_reason_closed_by_call);
+        .withArguments(id, static_cast<uint32_t>(reason));
 }
 
 std::tuple<std::string, std::string, std::string, std::string>
