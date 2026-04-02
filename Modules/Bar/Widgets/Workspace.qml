@@ -731,14 +731,14 @@ Item {
 
       Behavior on width {
         NumberAnimation {
-          duration: Style.animationNormal
-          easing.type: Easing.OutBack
+          duration: Style.animationFast
+          easing.type: Easing.OutCubic
         }
       }
       Behavior on height {
         NumberAnimation {
-          duration: Style.animationNormal
-          easing.type: Easing.OutBack
+          duration: Style.animationFast
+          easing.type: Easing.OutCubic
         }
       }
 
@@ -985,7 +985,7 @@ Item {
     Behavior on scale {
       NumberAnimation {
         duration: Style.animationFast
-        easing.type: Easing.OutBack
+        easing.type: Easing.OutCubic
         easing.overshoot: 1.2
       }
     }
