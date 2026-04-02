@@ -15,6 +15,7 @@ set(SDBUS_TARGET SDBusCpp::sdbus-c++)
 # --- Target ---
 add_executable(noctalia
     src/main.cpp
+    src/app/Application.cpp
     src/notification/NotificationManager.cpp
     src/dbus/NotificationService.cpp
 )
