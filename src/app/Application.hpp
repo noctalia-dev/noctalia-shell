@@ -2,6 +2,9 @@
 
 #include "dbus/notification/NotificationService.hpp"
 #include "notification/NotificationManager.hpp"
+#include "shell/BarShell.hpp"
+
+#include <memory>
 
 class Application {
 public:
@@ -10,6 +13,7 @@ public:
     void run();
 
 private:
+    BarShell m_shell;
     NotificationManager m_manager;
-    NotificationService m_service;
+    std::unique_ptr<NotificationService> m_service;
 };
