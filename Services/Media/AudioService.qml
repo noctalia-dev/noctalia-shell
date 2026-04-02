@@ -223,7 +223,12 @@ Singleton {
   // Track links to the default sink to find active streams
   PwNodeLinkTracker {
     id: sinkLinkTracker
-    node: root.sink
+  }
+
+  onSinkChanged: {
+    if (root.sink) {
+      sinkLinkTracker.node = root.sink;
+    }
   }
 
   // Track all streams globally to prevent binding loops for filtered out streams
