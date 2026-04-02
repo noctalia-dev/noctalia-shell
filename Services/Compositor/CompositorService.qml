@@ -373,7 +373,17 @@ Singleton {
     for (var i = 0; i < windows.count; i++) {
       var window = windows.get(i);
       if (window.workspaceId === workspaceId) {
-        windowsInWs.push(window);
+        // Snapshot to plain JS object so callers never hold live ListModel
+        // proxies that become invalid when syncWindows() clears the model.
+        windowsInWs.push({
+                           id: window.id,
+                           title: window.title,
+                           appId: window.appId,
+                           isFocused: window.isFocused,
+                           workspaceId: window.workspaceId,
+                           address: window.address,
+                           output: window.output
+                         });
       }
     }
     return windowsInWs;

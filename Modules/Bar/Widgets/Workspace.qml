@@ -779,9 +779,7 @@ Item {
           delegate: Item {
             id: groupedTaskbarItem
 
-            // liveWindows is reassigned on scroll/focus; delegates can outlive rows and see null modelData
-            readonly property bool winOk: modelData !== undefined && modelData !== null
-            readonly property bool isFocused: winOk && modelData.isFocused
+            readonly property bool isFocused: modelData?.isFocused ?? false
 
             width: root.iconSize
             height: root.iconSize
@@ -798,7 +796,7 @@ Item {
 
               source: {
                 root.iconRevision; // Force re-evaluation when revision changes
-                return ThemeIcons.iconForAppId(modelData.appId?.toLowerCase());
+                return ThemeIcons.iconForAppId(modelData?.appId?.toLowerCase());
               }
               smooth: true
               asynchronous: true
@@ -832,13 +830,13 @@ Item {
               preventStealing: true
 
               onPressed: mouse => {
-                           if (mouse.button === Qt.LeftButton && groupedTaskbarItem.winOk) {
+                           if (mouse.button === Qt.LeftButton && modelData) {
                              CompositorService.focusWindow(modelData);
                            }
                          }
 
               onReleased: mouse => {
-                            if (mouse.button === Qt.RightButton && groupedTaskbarItem.winOk) {
+                            if (mouse.button === Qt.RightButton && modelData) {
                               mouse.accepted = true;
                               TooltipService.hide();
                               root.selectedWindowId = modelData.id || modelData.address || "";
@@ -846,14 +844,14 @@ Item {
                               openGroupedContextMenu(groupedTaskbarItem);
                             }
                           }
-              // onEntered: {
-              //   if (!groupedTaskbarItem.winOk)
-              //     return;
-              //   TooltipService.show(groupedTaskbarItem, modelData.title || modelData.appId || "Unknown app.", BarService.getTooltipDirection(root.screenName));
-              // }
-              // onExited: {
-              //   TooltipService.hide();
-              // }
+              onEntered: {
+                if (!modelData)
+                  return;
+                TooltipService.show(groupedTaskbarItem, modelData.title || modelData.appId || "Unknown app.", BarService.getTooltipDirection(root.screenName));
+              }
+              onExited: {
+                TooltipService.hide();
+              }
             }
           }
         }
