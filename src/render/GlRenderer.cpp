@@ -14,7 +14,7 @@ constexpr EGLint kConfigAttributes[] = {
     EGL_RED_SIZE, 8,
     EGL_GREEN_SIZE, 8,
     EGL_BLUE_SIZE, 8,
-    EGL_ALPHA_SIZE, 0,
+    EGL_ALPHA_SIZE, 8,
     EGL_NONE,
 };
 
@@ -121,7 +121,10 @@ void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
     }
 
     glViewport(0, 0, static_cast<GLint>(width), static_cast<GLint>(height));
-    glClearColor(0.07f, 0.10f, 0.14f, 1.0f);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     m_roundedRectProgram.draw(
@@ -136,8 +139,13 @@ void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
             .green = 0.14f,
             .blue = 0.19f,
             .alpha = 1.0f,
+            .borderRed = 1.0f,
+            .borderGreen = 1.0f,
+            .borderBlue = 1.0f,
+            .borderAlpha = 0.85f,
             .radius = 10.0f,
             .softness = 1.2f,
+            .borderWidth = 1.0f,
         });
     m_roundedRectProgram.draw(
         static_cast<float>(m_surfaceWidth),
@@ -151,8 +159,13 @@ void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
             .green = 0.84f,
             .blue = 1.0f,
             .alpha = 1.0f,
+            .borderRed = 0.0f,
+            .borderGreen = 0.0f,
+            .borderBlue = 0.0f,
+            .borderAlpha = 0.0f,
             .radius = 2.0f,
             .softness = 0.8f,
+            .borderWidth = 0.0f,
         });
     m_roundedRectProgram.draw(
         static_cast<float>(m_surfaceWidth),
@@ -166,8 +179,13 @@ void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
             .green = 0.91f,
             .blue = 1.0f,
             .alpha = 1.0f,
+            .borderRed = 0.0f,
+            .borderGreen = 0.0f,
+            .borderBlue = 0.0f,
+            .borderAlpha = 0.0f,
             .radius = 2.0f,
             .softness = 0.8f,
+            .borderWidth = 0.0f,
         });
 
     if (eglSwapBuffers(m_eglDisplay, m_eglSurface) != EGL_TRUE) {
