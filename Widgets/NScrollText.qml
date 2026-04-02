@@ -195,35 +195,41 @@ Item {
   }
 
   // Transparency Fade Rectangle
-  Rectangle {
+  Item {
     id: fadeMask
-    width: root.width
-    height: root.height
-    topLeftRadius: fadeRoundLeftCorners ? fadeCornerRadius : 0
-    bottomLeftRadius: fadeRoundLeftCorners ? fadeCornerRadius : 0
-    topRightRadius: fadeCornerRadius
-    bottomRightRadius: fadeCornerRadius
-    gradient: Gradient {
-      GradientStop {
-        position: 0.0
-        color: "transparent"
+    anchors.fill: root
+
+    Rectangle {
+      anchors.centerIn: parent
+      width: parent.width
+      height: parent.height - 2 * Style.capsuleBorderWidth
+      topLeftRadius: root.fadeRoundLeftCorners ? root.fadeCornerRadius : 0
+      bottomLeftRadius: root.fadeRoundLeftCorners ? root.fadeCornerRadius : 0
+      topRightRadius: root.fadeCornerRadius
+      bottomRightRadius: root.fadeCornerRadius
+      gradient: Gradient {
+        GradientStop {
+          position: 0.0
+          color: "transparent"
+        }
+        GradientStop {
+          position: root.fadeExtent
+          color: "white"
+        }
+        GradientStop {
+          position: 1 - root.fadeExtent
+          color: "white"
+        }
+        GradientStop {
+          position: 1.0
+          color: "transparent"
+        }
+        orientation: Gradient.Horizontal
       }
-      GradientStop {
-        position: fadeExtent
-        color: "white"
-      }
-      GradientStop {
-        position: 1 - fadeExtent
-        color: "white"
-      }
-      GradientStop {
-        position: 1.0
-        color: "transparent"
-      }
-      orientation: Gradient.Horizontal
     }
+
     layer.enabled: true
     layer.smooth: true
-    opacity: 0
+    visible: false
   }
 }
