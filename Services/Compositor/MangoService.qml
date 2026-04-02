@@ -221,10 +221,12 @@ Item {
         let tagId = null;
 
         const os = outputState[outputName];
-        if (isFocused && os && (os.title || os.appId) && title === os.title && appId === os.appId) {
+        if (isFocused && os && !os.consumed && (os.title || os.appId) && title === os.title && appId === os.appId) {
           // Focused window: assign to the active tag from DWL metadata
           tagId = os.activeTagId;
           internal.windowTagMap[windowId] = tagId;
+          // Consume so a second toplevel with identical title+appId cannot also claim focus
+          os.consumed = true;
         } else if (internal.windowTagMap[windowId] !== undefined) {
           // Previously seen window: use remembered tag
           tagId = internal.windowTagMap[windowId];
