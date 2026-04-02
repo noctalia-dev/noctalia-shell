@@ -37,7 +37,7 @@
       "scrolling-mode-description": "Mikor engedélyezett a szöveggörgetés a hosszú ablakcímek esetén.",
       "show-app-icon-description": "Az alkalmazás ikonjának megjelenítése az ablakcím mellett.",
       "show-app-icon-label": "Alkalmazásikon megjelenítése",
-      "show-app-text-description": "Az aktív ablak címének megjelenítése.",
+      "show-app-text-description": "Ablakcím megjelenítése.",
       "show-app-text-label": "Ablakcím megjelenítése"
     },
     "audio-visualizer": {
@@ -1405,8 +1405,8 @@
       "weather-show-effects-label": "Időjárási effektek megjelenítése",
       "weather-show-in-calendar-description": "A napi időjárás-előrejelzés megjelenítése közvetlenül a naptárnézetben.",
       "weather-show-in-calendar-label": "Időjárás megjelenítése a naptárban",
-      "weather-talia-mascot-always-description": "Mindig Talia emojikat használj a tabler icons helyett.",
-      "weather-talia-mascot-always-label": "Mindig mutassa a Talia időjárás hangulatjeleket"
+      "weather-talia-mascot-always-description": "Talia hangulatjelek használata a Tabler ikonok helyett.",
+      "weather-talia-mascot-always-label": "Mindig jelenítse meg a Talia időjárás hangulatjeleket"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Ha az fprintd (ujjlenyomat-hitelesítés) aktív, ez az opció lehetővé teszi, hogy továbbra is jelszóval jelentkezz be ujjlenyomat helyett.",
