@@ -10,7 +10,7 @@ configure type=build-type:
     cmake -S . -B {{build-dir}} -DCMAKE_BUILD_TYPE={{type}}
 
 build:
-    cmake --build {{build-dir}}
+    cmake --build {{build-dir}} --parallel
 
 run:
     ./{{build-dir}}/noctalia
