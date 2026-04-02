@@ -62,8 +62,8 @@ Item {
   readonly property var selectedDevice: BatteryService.isDevicePresent(BatteryService.findDevice(deviceNativePath)) ? BatteryService.findDevice(deviceNativePath) : null
 
   readonly property var tooltipContent: {
-    if (!BatteryService.upowerInstalled) {
-      return I18n.tr("battery.no-upower");
+    if (!BatteryService.upowerInstalled && BatteryService.sysfsBatteryDetected && BatteryService.bluetoothBatteries.length === 0) {
+      return I18n.tr("battery.no-upower-title");
     }
     if (!isReady || !isPresent) {
       return I18n.tr("battery.no-battery-detected");

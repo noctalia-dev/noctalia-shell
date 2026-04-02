@@ -29,23 +29,23 @@ Singleton {
     id: sysfsCheck
     command: ["sh", "-c", "grep -q 'Battery' /sys/class/power_supply/*/type 2>/dev/null"]
     running: true
-    onExited: (exitCode) => {
-      root.sysfsBatteryDetected = (exitCode === 0); // If exit code is 0, we have a battery detected via sysfs. 
+    onExited: exitCode => {
+      root.sysfsBatteryDetected = (exitCode === 0); // If exit code is 0, we have a battery detected via sysfs.
     }
   }
 
-  readonly property var laptopBatteries: upowerInstalled ? (UPower.devices?.values || []).filter(d => d.isLaptopBattery).sort((x, y) => {
-                                                                                                                                // Force DisplayDevice to the top
-                                                                                                                                if (x.nativePath.includes("DisplayDevice"))
-                                                                                                                                return -1;
-                                                                                                                                if (y.nativePath.includes("DisplayDevice"))
-                                                                                                                                return 1;
+  readonly property var laptopBatteries: upowerInstalled ? (UPower.devices?.values || []).filter(d => d && d.isLaptopBattery).sort((x, y) => {
+                                                                                                                                     // Force DisplayDevice to the top
+                                                                                                                                     if (x.nativePath?.includes("DisplayDevice"))
+                                                                                                                                     return -1;
+                                                                                                                                     if (y.nativePath?.includes("DisplayDevice"))
+                                                                                                                                     return 1;
 
-                                                                                                                                // Standard string comparison works for BAT0 vs BAT1
-                                                                                                                                return x.nativePath.localeCompare(y.nativePath, undefined, {
-                                                                                                                                                                    numeric: true
-                                                                                                                                                                  });
-                                                                                                                              }) : []
+                                                                                                                                     // Standard string comparison works for BAT0 vs BAT1
+                                                                                                                                     return x.nativePath.localeCompare(y.nativePath, undefined, {
+                                                                                                                                                                         numeric: true
+                                                                                                                                                                       });
+                                                                                                                                   }) : []
 
   readonly property var bluetoothBatteries: {
     var list = [];
@@ -70,20 +70,42 @@ Singleton {
       }
     ];
 
-    if (!upowerInstalled || !UPower.devices) {
-      return model;
+    if (upowerInstalled && UPower.devices) {
+      const devices = UPower.devices.values || [];
+      for (let d of devices) {
+        if (!d || d.type === UPowerDeviceType.LinePower) {
+          continue;
+        }
+        model.push({
+                     key: d.nativePath || "",
+                     name: d.model || d.nativePath || I18n.tr("common.unknown")
+                   });
+      }
     }
 
-    const devices = UPower.devices.values || [];
-    for (let d of devices) {
-      if (!d || d.type === UPowerDeviceType.LinePower) {
-        continue;
+    // Add Bluetooth devices that aren't already in the model (via UPower)
+    const btDevices = bluetoothBatteries;
+    for (let bd of btDevices) {
+      if (!bd || !bd.address)
+      continue;
+
+      let added = false;
+      let macKey = bd.address.replace(/:/g, "_");
+      for (let x = 1; x < model.length; x++) {
+        if (model[x].key.includes(macKey)) {
+          added = true;
+          break;
+        }
       }
-      model.push({
-                   key: d.nativePath || "",
-                   name: d.model || d.nativePath || I18n.tr("common.unknown")
-                 });
+
+      if (!added) {
+        model.push({
+                     key: bd.address,
+                     name: bd.name || bd.deviceName || bd.address
+                   });
+      }
     }
+
     return model;
   }
 
@@ -94,19 +116,26 @@ Singleton {
       return primaryDevice;
     }
 
-    if (!upowerInstalled || !UPower.devices) {
-      return null;
-    }
-
-    const devices = UPower.devices.values || [];
-    for (let d of devices) {
-      if (d && d.nativePath === nativePath) {
-        if (d.type === UPowerDeviceType.LinePower) {
-          continue;
+    if (upowerInstalled && UPower.devices) {
+      const devices = UPower.devices.values || [];
+      for (let d of devices) {
+        if (d && d.nativePath === nativePath) {
+          if (d.type === UPowerDeviceType.LinePower) {
+            continue;
+          }
+          return d;
         }
-        return d;
       }
     }
+
+    // Search in Bluetooth batteries
+    const btDevices = bluetoothBatteries;
+    for (let bd of btDevices) {
+      if (bd && bd.address === nativePath) {
+        return bd;
+      }
+    }
+
     return null;
   }
 
@@ -136,7 +165,7 @@ Singleton {
       return false;
     }
     if (device.batteryAvailable !== undefined) {
-      return device.battery !== undefined;
+      return device.batteryAvailable && device.battery !== undefined;
     }
     return device.ready && device.percentage !== undefined;
   }
@@ -231,7 +260,7 @@ Singleton {
 
   function getIcon(percent, charging, pluggedIn, isReady) {
     if (!isReady) {
-      return "battery-exclamation";
+      return percent < 0 ? "battery-off" : "battery-exclamation";
     }
     if (charging) {
       return "battery-charging";
@@ -310,7 +339,7 @@ Singleton {
     const charging = isCharging(device);
     const pluggedIn = isPluggedIn(device);
     const level = isLowBattery(device) ? "low" : (isCriticalBattery(device) ? "critical" : "");
-    var deviceKey = device.nativePath;
+    var deviceKey = device.nativePath || device.address || "unknown";
 
     if (!_hasNotified[deviceKey]) {
       _hasNotified[deviceKey] = {
@@ -367,15 +396,16 @@ Singleton {
       required property var modelData
       property var device: findDevice(modelData.key)
       target: device
+      ignoreUnknownSignals: true
 
       function onPercentageChanged() {
-        if (device.isLaptopBattery && modelData.key !== "__default__") {
+        if (device && device.isLaptopBattery && modelData.key !== "__default__") {
           return;
         }
         checkDevice(device);
       }
       function onStateChanged() {
-        if (device.isLaptopBattery && modelData.key !== "__default__") {
+        if (device && device.isLaptopBattery && modelData.key !== "__default__") {
           return;
         }
         checkDevice(device);
