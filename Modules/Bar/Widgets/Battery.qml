@@ -53,8 +53,11 @@ Item {
   readonly property bool isLowBattery: isReady ? BatteryService.isLowBattery(selectedDevice) : false
   readonly property bool isCriticalBattery: isReady ? BatteryService.isCriticalBattery(selectedDevice) : false
 
-  // Visibility: show if hideIfNotDetected is false, or if battery is ready, or if UPower is missing (to show error)
-  readonly property bool shouldShow: !BatteryService.upowerInstalled || !hideIfNotDetected || (isReady && (hideIfIdle ? !isPluggedIn : true))
+  // Visibility logic:
+  // 1. Always show if hideIfNotDetected is false
+  // 2. Show if a battery is ready (unless hideIfIdle is true and it's plugged in)
+  // 3. Show UPower missing error only on laptops (detected via sysfs)
+  readonly property bool shouldShow: (!BatteryService.upowerInstalled && BatteryService.sysfsBatteryDetected) || !hideIfNotDetected || (isReady && (hideIfIdle ? !isPluggedIn : true))
   readonly property string deviceNativePath: widgetSettings.deviceNativePath !== undefined ? widgetSettings.deviceNativePath : widgetMetadata.deviceNativePath
   readonly property var selectedDevice: BatteryService.isDevicePresent(BatteryService.findDevice(deviceNativePath)) ? BatteryService.findDevice(deviceNativePath) : null
 

@@ -22,7 +22,17 @@ Singleton {
   readonly property real warningThreshold: Settings.data.systemMonitor.batteryWarningThreshold
   readonly property real criticalThreshold: Settings.data.systemMonitor.batteryCriticalThreshold
   readonly property string batteryIcon: getIcon(batteryPercentage, batteryCharging, batteryPluggedIn, batteryReady)
-  readonly property bool upowerInstalled: ProgramCheckerService.upowerdAvailable
+  readonly property bool upowerInstalled: ProgramCheckerService.upowerAvailable
+  property bool sysfsBatteryDetected: false
+
+  Process {
+    id: sysfsCheck
+    command: ["sh", "-c", "grep -q 'Battery' /sys/class/power_supply/*/type 2>/dev/null"]
+    running: true
+    onExited: (exitCode) => {
+      root.sysfsBatteryDetected = (exitCode === 0); // If exit code is 0, we have a battery detected via sysfs. 
+    }
+  }
 
   readonly property var laptopBatteries: upowerInstalled ? (UPower.devices?.values || []).filter(d => d.isLaptopBattery).sort((x, y) => {
                                                                                                                                 // Force DisplayDevice to the top
@@ -50,7 +60,7 @@ Singleton {
   }
 
   readonly property var _laptopBattery: upowerInstalled ? (UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : null)) : null
-  readonly property var _bluetoothBattery: upowerInstalled ? (bluetoothBatteries.length > 0 ? bluetoothBatteries[0] : null) : null
+  readonly property var _bluetoothBattery: bluetoothBatteries.length > 0 ? bluetoothBatteries[0] : null
 
   property var deviceModel: {
     var model = [
@@ -59,7 +69,12 @@ Singleton {
         "name": I18n.tr("bar.battery.device-default")
       }
     ];
-    const devices = UPower.devices?.values || [];
+
+    if (!upowerInstalled || !UPower.devices) {
+      return model;
+    }
+
+    const devices = UPower.devices.values || [];
     for (let d of devices) {
       if (!d || d.type === UPowerDeviceType.LinePower) {
         continue;
@@ -76,14 +91,14 @@ Singleton {
 
   function findDevice(nativePath) {
     if (!nativePath || nativePath === "__default__" || nativePath === "DisplayDevice") {
-      return _laptopBattery;
+      return primaryDevice;
     }
 
-    if (!UPower.devices) {
+    if (!upowerInstalled || !UPower.devices) {
       return null;
     }
 
-    const devices = UPower.devices?.values || [];
+    const devices = UPower.devices.values || [];
     for (let d of devices) {
       if (d && d.nativePath === nativePath) {
         if (d.type === UPowerDeviceType.LinePower) {

@@ -90,8 +90,8 @@ SmartPanel {
 
           NIcon {
             pointSize: Style.fontSizeXXL
-            color: (BatteryService.isCharging(primaryDevice) || BatteryService.isPluggedIn(primaryDevice)) ? Color.mPrimary : (BatteryService.isCriticalBattery(primaryDevice) || BatteryService.isLowBattery(primaryDevice)) ? Color.mError : Color.mOnSurface
-            icon: BatteryService.getIcon(BatteryService.getPercentage(primaryDevice), BatteryService.isCharging(primaryDevice), BatteryService.isPluggedIn(primaryDevice), BatteryService.isDeviceReady(primaryDevice))
+            color: BatteryService.isCharging(primaryDevice) || BatteryService.isPluggedIn(primaryDevice) ? Color.mPrimary : (BatteryService.isCriticalBattery(primaryDevice) || BatteryService.isLowBattery(primaryDevice)) ? Color.mError : Color.mOnSurface
+            icon: !BatteryService.upowerInstalled ? "battery-exclamation" : BatteryService.getIcon(BatteryService.getPercentage(primaryDevice), BatteryService.isCharging(primaryDevice), BatteryService.isPluggedIn(primaryDevice), BatteryService.isDeviceReady(primaryDevice))
           }
 
           ColumnLayout {
@@ -117,15 +117,15 @@ SmartPanel {
         }
       }
 
-      // UPower not installed
+      // UPower not installed & battery detected.
       NBox {
-        id: noupwr
-        visible: !BatteryService.upowerInstalled
+        id: upowerMissing
+        visible: !BatteryService.upowerInstalled && BatteryService.sysfsBatteryDetected
         Layout.fillWidth: true
-        Layout.preferredHeight: noupwrColumn.implicitHeight + Style.margin2M
+        Layout.preferredHeight: upowerMissingColumn.implicitHeight + Style.margin2M
 
         ColumnLayout {
-          id: noupwrColumn
+          id: upowerMissingColumn
           anchors.fill: parent
           anchors.margins: Style.marginM
           spacing: Style.marginL
@@ -142,8 +142,15 @@ SmartPanel {
           }
 
           NText {
-            text: I18n.tr("battery.no-upower")
+            text: I18n.tr("battery.no-upower-title")
             pointSize: Style.fontSizeL
+            color: Color.mOnSurfaceVariant
+            Layout.alignment: Qt.AlignHCenter
+          }
+
+          NText {
+            text: I18n.tr("battery.no-upower-description")
+            pointSize: Style.fontSizeS
             color: Color.mOnSurfaceVariant
             Layout.alignment: Qt.AlignHCenter
           }
@@ -158,7 +165,7 @@ SmartPanel {
       NBox {
         Layout.fillWidth: true
         implicitHeight: chargeLayout.implicitHeight + Style.margin2L
-        visible: BatteryService.upowerInstalled && (BatteryService.laptopBatteries.length > 0 || BatteryService.bluetoothBatteries.length > 0)
+        visible: BatteryService.laptopBatteries.length > 0 || BatteryService.bluetoothBatteries.length > 0
 
         ColumnLayout {
           id: chargeLayout
