@@ -122,6 +122,7 @@ add_executable(noctalia
     src/dbus/notification/NotificationService.cpp
     src/render/GlRenderer.cpp
     src/render/RendererFactory.cpp
+    src/render/RoundedRectProgram.cpp
     src/render/ShaderProgram.cpp
     src/render/SoftwareBarRenderer.cpp
     src/shell/BarShell.cpp

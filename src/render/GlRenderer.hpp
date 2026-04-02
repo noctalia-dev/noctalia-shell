@@ -1,7 +1,7 @@
 #pragma once
 
+#include "render/RoundedRectProgram.hpp"
 #include "render/Renderer.hpp"
-#include "render/ShaderProgram.hpp"
 
 #if NOCTALIA_HAVE_EGL
 #include <EGL/egl.h>
@@ -25,14 +25,6 @@ public:
                 std::uint32_t height) override;
 
 private:
-    void ensureProgram();
-    void drawRect(float x,
-                  float y,
-                  float width,
-                  float height,
-                  float red,
-                  float green,
-                  float blue) const;
     void cleanup();
 
 #if NOCTALIA_HAVE_EGL
@@ -43,8 +35,8 @@ private:
     EGLConfig m_eglConfig = nullptr;
     EGLContext m_eglContext = EGL_NO_CONTEXT;
     EGLSurface m_eglSurface = EGL_NO_SURFACE;
-    ShaderProgram m_program;
-    GLint m_positionLocation = -1;
-    GLint m_colorLocation = -1;
+    RoundedRectProgram m_roundedRectProgram;
+    std::uint32_t m_surfaceWidth = 0;
+    std::uint32_t m_surfaceHeight = 0;
 #endif
 };

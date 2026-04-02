@@ -1,11 +1,9 @@
 #include "render/GlRenderer.hpp"
 
-#include <array>
 #include <cstdint>
 #include <stdexcept>
 
 #if NOCTALIA_HAVE_EGL
-#include <EGL/eglext.h>
 #include <GLES2/gl2.h>
 #include <wayland-egl.h>
 #endif
@@ -27,24 +25,6 @@ constexpr EGLint kContextAttributes[] = {
     EGL_CONTEXT_CLIENT_VERSION, 2,
     EGL_NONE,
 };
-
-constexpr char kVertexShaderSource[] = R"(
-attribute vec2 a_position;
-
-void main() {
-    gl_Position = vec4(a_position, 0.0, 1.0);
-}
-)";
-
-constexpr char kFragmentShaderSource[] = R"(
-precision mediump float;
-
-uniform vec3 u_color;
-
-void main() {
-    gl_FragColor = vec4(u_color, 1.0);
-}
-)";
 #endif
 
 } // namespace
@@ -145,7 +125,9 @@ void GlRenderer::resize(std::uint32_t width, std::uint32_t height) {
         throw std::runtime_error("eglMakeCurrent failed during resize");
     }
 
-    ensureProgram();
+    m_surfaceWidth = width;
+    m_surfaceHeight = height;
+    m_roundedRectProgram.ensureInitialized();
 #else
     (void)width;
     (void)height;
@@ -168,10 +150,51 @@ void GlRenderer::render(std::span<std::uint32_t> /*pixels*/,
     glClearColor(0.07f, 0.10f, 0.14f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    drawRect(10.0f, 6.0f, static_cast<float>(width) - 20.0f, static_cast<float>(height) - 12.0f,
-             0.09f, 0.14f, 0.19f);
-    drawRect(18.0f, 12.0f, 116.0f, 4.0f, 0.41f, 0.84f, 1.0f);
-    drawRect(104.0f, 12.0f, 30.0f, 4.0f, 0.85f, 0.91f, 1.0f);
+    m_roundedRectProgram.draw(
+        static_cast<float>(m_surfaceWidth),
+        static_cast<float>(m_surfaceHeight),
+        10.0f,
+        6.0f,
+        static_cast<float>(width) - 20.0f,
+        static_cast<float>(height) - 12.0f,
+        RoundedRectStyle{
+            .red = 0.09f,
+            .green = 0.14f,
+            .blue = 0.19f,
+            .alpha = 1.0f,
+            .radius = 10.0f,
+            .softness = 1.2f,
+        });
+    m_roundedRectProgram.draw(
+        static_cast<float>(m_surfaceWidth),
+        static_cast<float>(m_surfaceHeight),
+        18.0f,
+        12.0f,
+        116.0f,
+        4.0f,
+        RoundedRectStyle{
+            .red = 0.41f,
+            .green = 0.84f,
+            .blue = 1.0f,
+            .alpha = 1.0f,
+            .radius = 2.0f,
+            .softness = 0.8f,
+        });
+    m_roundedRectProgram.draw(
+        static_cast<float>(m_surfaceWidth),
+        static_cast<float>(m_surfaceHeight),
+        104.0f,
+        12.0f,
+        30.0f,
+        4.0f,
+        RoundedRectStyle{
+            .red = 0.85f,
+            .green = 0.91f,
+            .blue = 1.0f,
+            .alpha = 1.0f,
+            .radius = 2.0f,
+            .softness = 0.8f,
+        });
 
     if (eglSwapBuffers(m_eglDisplay, m_eglSurface) != EGL_TRUE) {
         throw std::runtime_error("eglSwapBuffers failed");
@@ -183,81 +206,11 @@ void GlRenderer::render(std::span<std::uint32_t> /*pixels*/,
 #endif
 }
 
-void GlRenderer::ensureProgram() {
-#if NOCTALIA_HAVE_EGL
-    if (m_program.isValid()) {
-        return;
-    }
-
-    m_program.create(kVertexShaderSource, kFragmentShaderSource);
-    m_positionLocation = glGetAttribLocation(m_program.id(), "a_position");
-    m_colorLocation = glGetUniformLocation(m_program.id(), "u_color");
-
-    if (m_positionLocation < 0 || m_colorLocation < 0) {
-        throw std::runtime_error("failed to query shader attribute/uniform locations");
-    }
-#endif
-}
-
-void GlRenderer::drawRect(float x,
-                          float y,
-                          float width,
-                          float height,
-                          float red,
-                          float green,
-                          float blue) const {
-#if NOCTALIA_HAVE_EGL
-    if (width <= 0.0f || height <= 0.0f) {
-        return;
-    }
-
-    EGLint surfaceWidth = 0;
-    EGLint surfaceHeight = 0;
-    eglQuerySurface(m_eglDisplay, m_eglSurface, EGL_WIDTH, &surfaceWidth);
-    eglQuerySurface(m_eglDisplay, m_eglSurface, EGL_HEIGHT, &surfaceHeight);
-
-    if (surfaceWidth <= 0 || surfaceHeight <= 0) {
-        return;
-    }
-
-    const auto toNdcX = [surfaceWidth](float value) {
-        return (value / static_cast<float>(surfaceWidth)) * 2.0f - 1.0f;
-    };
-    const auto toNdcY = [surfaceHeight](float value) {
-        return 1.0f - (value / static_cast<float>(surfaceHeight)) * 2.0f;
-    };
-
-    const std::array<GLfloat, 12> vertices = {
-        toNdcX(x),         toNdcY(y),
-        toNdcX(x + width), toNdcY(y),
-        toNdcX(x),         toNdcY(y + height),
-        toNdcX(x),         toNdcY(y + height),
-        toNdcX(x + width), toNdcY(y),
-        toNdcX(x + width), toNdcY(y + height),
-    };
-
-    glUseProgram(m_program.id());
-    glUniform3f(m_colorLocation, red, green, blue);
-    glVertexAttribPointer(m_positionLocation, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
-    glEnableVertexAttribArray(m_positionLocation);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDisableVertexAttribArray(m_positionLocation);
-#else
-    (void)x;
-    (void)y;
-    (void)width;
-    (void)height;
-    (void)red;
-    (void)green;
-    (void)blue;
-#endif
-}
-
 void GlRenderer::cleanup() {
 #if NOCTALIA_HAVE_EGL
-    m_program.destroy();
-    m_positionLocation = -1;
-    m_colorLocation = -1;
+    m_roundedRectProgram.destroy();
+    m_surfaceWidth = 0;
+    m_surfaceHeight = 0;
 
     if (m_eglDisplay != EGL_NO_DISPLAY) {
         eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
