@@ -37,7 +37,7 @@
       "scrolling-mode-description": "Uzun pencere başlıkları için metin kaydırmanın ne zaman etkinleştirileceğini kontrol et.",
       "show-app-icon-description": "Pencere başlığı yanında uygulama simgesini göster.",
       "show-app-icon-label": "Uygulama simgesini göster",
-      "show-app-text-description": "Pencere başlığını göster.",
+      "show-app-text-description": "Etkin pencerenin başlığını göster.",
       "show-app-text-label": "Pencere başlığını göster"
     },
     "audio-visualizer": {
@@ -1404,7 +1404,9 @@
       "weather-show-effects-description": "Hava durumu kartında ek görsel efektler (yağmur, kar veya şimşek gibi) gösterir.",
       "weather-show-effects-label": "Hava efektlerini göster",
       "weather-show-in-calendar-description": "Günlük hava durumu tahminini doğrudan takvim görünümünüzde gösterin.",
-      "weather-show-in-calendar-label": "Takvimde hava durumunu göster"
+      "weather-show-in-calendar-label": "Takvimde hava durumunu göster",
+      "weather-talia-mascot-always-description": "tabler icons yerine her zaman Talia emojis kullanın.",
+      "weather-talia-mascot-always-label": "Talia hava durumu emojilerini her zaman göster"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "fprintd (parmak izi kimlik doğrulaması) etkin olduğunda, bu seçenek parmak izi yerine parolanızı kullanarak oturum açmanızı sağlar.",

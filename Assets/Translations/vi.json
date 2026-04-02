@@ -37,7 +37,7 @@
       "scrolling-mode-description": "Điều khiển khi nào bật cuộn văn bản cho các tiêu đề cửa sổ dài.",
       "show-app-icon-description": "Hiển thị biểu tượng ứng dụng bên cạnh tiêu đề cửa sổ.",
       "show-app-icon-label": "Hiển thị biểu tượng ứng dụng",
-      "show-app-text-description": "Hiển thị tiêu đề cửa sổ.",
+      "show-app-text-description": "Hiển thị tiêu đề của cửa sổ đang hoạt động.",
       "show-app-text-label": "Hiển thị tiêu đề cửa sổ"
     },
     "audio-visualizer": {
@@ -1404,7 +1404,9 @@
       "weather-show-effects-description": "Hiển thị các hiệu ứng hình ảnh bổ sung (như mưa, tuyết, hoặc sấm sét) trên thẻ thời tiết.",
       "weather-show-effects-label": "Hiển thị hiệu ứng thời tiết",
       "weather-show-in-calendar-description": "Hiển thị dự báo thời tiết hàng ngày trực tiếp trong chế độ xem lịch của bạn.",
-      "weather-show-in-calendar-label": "Hiển thị thời tiết trong lịch"
+      "weather-show-in-calendar-label": "Hiển thị thời tiết trong lịch",
+      "weather-talia-mascot-always-description": "Luôn sử dụng Talia emojis thay vì tabler icons.",
+      "weather-talia-mascot-always-label": "Luôn hiển thị biểu tượng cảm xúc thời tiết Talia"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Khi fprintd (xác thực vân tay) đang hoạt động, tùy chọn này cho phép bạn vẫn đăng nhập bằng mật khẩu được thay vì vân tay",

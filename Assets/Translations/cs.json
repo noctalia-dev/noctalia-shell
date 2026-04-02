@@ -37,7 +37,7 @@
       "scrolling-mode-description": "Řídí, kdy je povoleno posouvání textu pro dlouhé názvy oken.",
       "show-app-icon-description": "Zobrazit ikonu aplikace vedle názvu okna.",
       "show-app-icon-label": "Zobrazit ikonu aplikace",
-      "show-app-text-description": "Zobrazit název okna.",
+      "show-app-text-description": "Zobrazit název aktivního okna.",
       "show-app-text-label": "Zobrazit název okna"
     },
     "audio-visualizer": {
@@ -1404,7 +1404,9 @@
       "weather-show-effects-description": "Zobrazit další vizuální efekty (jako déšť, sníh nebo blesk) na kartě počasí.",
       "weather-show-effects-label": "Zobrazit efekty počasí",
       "weather-show-in-calendar-description": "Zobrazit denní předpověď počasí přímo v zobrazení kalendáře.",
-      "weather-show-in-calendar-label": "Zobrazit počasí v kalendáři"
+      "weather-show-in-calendar-label": "Zobrazit počasí v kalendáři",
+      "weather-talia-mascot-always-description": "Vždy používejte Talia emojis namísto tabler icons.",
+      "weather-talia-mascot-always-label": "Vždy zobrazovat emotikony počasí Talia"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Pokud je aktivní fprintd (otisky prstů), tato možnost umožňuje přihlásit se heslem místo otisku prstu.",

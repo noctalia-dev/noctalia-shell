@@ -37,7 +37,7 @@
       "scrolling-mode-description": "Bepaalt wanneer tekstscrollen wordt ingeschakeld voor lange venstertitels.",
       "show-app-icon-description": "Toon het applicatiepictogram naast de venstertitel.",
       "show-app-icon-label": "App-pictogram tonen",
-      "show-app-text-description": "Venstertitel weergeven.",
+      "show-app-text-description": "Toon de titel van het actieve venster.",
       "show-app-text-label": "Venstertitel weergeven"
     },
     "audio-visualizer": {
@@ -1404,7 +1404,9 @@
       "weather-show-effects-description": "Toon extra visuele effecten (zoals regen, sneeuw of bliksem) op de weerkaart.",
       "weather-show-effects-label": "Weerseffecten weergeven",
       "weather-show-in-calendar-description": "Toon de dagelijkse weersverwachting direct in je kalenderview.",
-      "weather-show-in-calendar-label": "Weer in kalender weergeven"
+      "weather-show-in-calendar-label": "Weer in kalender weergeven",
+      "weather-talia-mascot-always-description": "Gebruik altijd Talia emojis in plaats van tabler icons.",
+      "weather-talia-mascot-always-label": "Altijd Talia weer-emoji's tonen"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Wanneer fprintd (vingerafdrukauthenticatie) actief is, kunt u met deze optie nog steeds inloggen met uw wachtwoord in plaats van een vingerafdruk.",

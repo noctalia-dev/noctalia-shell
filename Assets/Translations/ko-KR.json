@@ -37,7 +37,7 @@
       "scrolling-mode-description": "창 제목이 길 때 텍스트 스크롤 활성화 시점을 제어합니다.",
       "show-app-icon-description": "창 제목 옆에 애플리케이션 아이콘을 표시합니다.",
       "show-app-icon-label": "앱 아이콘 표시",
-      "show-app-text-description": "창 제목 표시.",
+      "show-app-text-description": "활성 창의 제목을 표시합니다.",
       "show-app-text-label": "창 제목 표시"
     },
     "audio-visualizer": {
@@ -1404,7 +1404,9 @@
       "weather-show-effects-description": "날씨 카드에 추가 시각 효과(비, 눈, 번개 등)를 표시합니다.",
       "weather-show-effects-label": "날씨 효과 표시",
       "weather-show-in-calendar-description": "달력 뷰에 일일 일기 예보를 직접 표시합니다.",
-      "weather-show-in-calendar-label": "달력에 날씨 표시"
+      "weather-show-in-calendar-label": "달력에 날씨 표시",
+      "weather-talia-mascot-always-description": "tabler icons 대신 항상 Talia emojis를 사용하세요.",
+      "weather-talia-mascot-always-label": "항상 Talia 날씨 이모티콘 표시"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "fprintd(지문 인증)가 활성화된 경우, 이 옵션을 사용하면 지문 대신 비밀번호로 로그인할 수 있습니다.",

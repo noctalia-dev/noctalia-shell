@@ -37,7 +37,7 @@
       "scrolling-mode-description": "Controlla quando abilitare lo scorrimento del testo per titoli finestra lunghi.",
       "show-app-icon-description": "Mostra l’icona dell’applicazione accanto al titolo della finestra.",
       "show-app-icon-label": "Mostra icona app",
-      "show-app-text-description": "Visualizza il titolo della finestra.",
+      "show-app-text-description": "Mostra il titolo della finestra attiva.",
       "show-app-text-label": "Mostra titolo finestra"
     },
     "audio-visualizer": {
@@ -1404,7 +1404,9 @@
       "weather-show-effects-description": "Mostra effetti visivi aggiuntivi (come pioggia, neve o fulmini) sulla scheda meteo.",
       "weather-show-effects-label": "Mostra effetti meteo",
       "weather-show-in-calendar-description": "Mostra la previsione meteo giornaliera direttamente nella vista calendario.",
-      "weather-show-in-calendar-label": "Mostra meteo nel calendario"
+      "weather-show-in-calendar-label": "Mostra meteo nel calendario",
+      "weather-talia-mascot-always-description": "Usa sempre le Talia emojis invece delle tabler icons.",
+      "weather-talia-mascot-always-label": "Mostra sempre le emoji meteo di Talia"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Quando fprintd (autenticazione impronta digitale) è attivo, questa opzione ti consente comunque di accedere con la password invece che con l’impronta.",

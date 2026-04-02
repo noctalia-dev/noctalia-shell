@@ -37,7 +37,7 @@
       "scrolling-mode-description": "Kontroluje, kiedy włączone jest przewijanie tekstu dla długich tytułów okien.",
       "show-app-icon-description": "Wyświetl ikonę aplikacji obok tytułu okna.",
       "show-app-icon-label": "Pokaż ikonę aplikacji",
-      "show-app-text-description": "Wyświetl tytuł okna.",
+      "show-app-text-description": "Wyświetl tytuł aktywnego okna.",
       "show-app-text-label": "Pokaż tytuł okna"
     },
     "audio-visualizer": {
@@ -1404,7 +1404,9 @@
       "weather-show-effects-description": "Pokaż dodatkowe efekty wizualne (deszcz, śnieg, błyskawice) na karcie pogody.",
       "weather-show-effects-label": "Wyświetlaj efekty pogodowe",
       "weather-show-in-calendar-description": "Pokaż dzienną prognozę pogody bezpośrednio w widoku kalendarza.",
-      "weather-show-in-calendar-label": "Wyświetlaj pogodę w kalendarzu"
+      "weather-show-in-calendar-label": "Wyświetlaj pogodę w kalendarzu",
+      "weather-talia-mascot-always-description": "Zawsze używaj Talia emojis zamiast tabler icons.",
+      "weather-talia-mascot-always-label": "Zawsze pokazuj emotikony pogody Talia"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Gdy fprintd (uwierzytelnianie odciskiem palca) jest aktywne, ta opcja pozwala nadal logować się za pomocą hasła zamiast odcisku palca.",

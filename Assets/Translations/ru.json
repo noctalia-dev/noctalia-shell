@@ -37,7 +37,7 @@
       "scrolling-mode-description": "Управление прокруткой текста для длинных заголовков окон.",
       "show-app-icon-description": "Отображать иконку приложения рядом с заголовком окна.",
       "show-app-icon-label": "Показывать иконку приложения",
-      "show-app-text-description": "Отображать заголовок окна.",
+      "show-app-text-description": "Отобразить заголовок активного окна.",
       "show-app-text-label": "Показывать заголовок окна"
     },
     "audio-visualizer": {
@@ -1404,7 +1404,9 @@
       "weather-show-effects-description": "Отображает дополнительные визуальные эффекты (например, дождь, снег или молнию) на карточке погоды.",
       "weather-show-effects-label": "Отображать погодные эффекты",
       "weather-show-in-calendar-description": "Показывать ежедневный прогноз погоды непосредственно в вашем календаре.",
-      "weather-show-in-calendar-label": "Отображать погоду в календаре"
+      "weather-show-in-calendar-label": "Отображать погоду в календаре",
+      "weather-talia-mascot-always-description": "Всегда используйте Talia emojis вместо tabler icons.",
+      "weather-talia-mascot-always-label": "Всегда показывать погодные эмодзи Talia"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Когда fprintd (аутентификация по отпечатку пальца) активен, эта опция позволяет вам входить в систему с помощью пароля вместо отпечатка пальца.",

@@ -37,7 +37,7 @@
       "scrolling-mode-description": "Steuern, wann Textscrolling für lange Fenstertitel aktiviert ist.",
       "show-app-icon-description": "Anwendungssymbol neben dem Fenstertitel anzeigen.",
       "show-app-icon-label": "App-Symbol anzeigen",
-      "show-app-text-description": "Fenstertitel anzeigen.",
+      "show-app-text-description": "Den Titel des aktiven Fensters anzeigen.",
       "show-app-text-label": "Fenstertitel anzeigen"
     },
     "audio-visualizer": {
@@ -1404,7 +1404,9 @@
       "weather-show-effects-description": "Zeige zusätzliche visuelle Effekte (wie Regen, Schnee oder Blitze) auf der Wetterkarte an.",
       "weather-show-effects-label": "Wettereffekte anzeigen",
       "weather-show-in-calendar-description": "Zeige die tägliche Wettervorhersage direkt in deiner Kalenderansicht an.",
-      "weather-show-in-calendar-label": "Wetter im Kalender anzeigen"
+      "weather-show-in-calendar-label": "Wetter im Kalender anzeigen",
+      "weather-talia-mascot-always-description": "Verwenden Sie immer Talia emojis anstelle von tabler icons.",
+      "weather-talia-mascot-always-label": "Immer Talia Wetter-Emojis anzeigen"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Wenn fprintd (Fingerabdruck-Authentifizierung) aktiv ist, können Sie mit dieser Option weiterhin Ihr Passwort anstelle eines Fingerabdrucks verwenden.",

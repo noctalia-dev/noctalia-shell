@@ -37,7 +37,7 @@
       "scrolling-mode-description": "控制何时为长窗口标题启用文本滚动。",
       "show-app-icon-description": "在窗口标题旁边显示应用程序图标。",
       "show-app-icon-label": "显示应用图标",
-      "show-app-text-description": "显示窗口标题。",
+      "show-app-text-description": "显示活动窗口的标题。",
       "show-app-text-label": "显示窗口标题"
     },
     "audio-visualizer": {
@@ -1404,7 +1404,9 @@
       "weather-show-effects-description": "在天气卡片上显示额外的视觉效果（如雨、雪或闪电）。",
       "weather-show-effects-label": "显示天气效果",
       "weather-show-in-calendar-description": "直接在您的日历视图中显示每日天气预报。",
-      "weather-show-in-calendar-label": "在日历中显示天气"
+      "weather-show-in-calendar-label": "在日历中显示天气",
+      "weather-talia-mascot-always-description": "始终使用 Talia emojis 而不是 tabler icons。",
+      "weather-talia-mascot-always-label": "始终显示Talia天气表情"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "当 fprintd（指纹认证）处于活动状态时，此选项允许您使用密码而非指纹登录。",

@@ -37,7 +37,7 @@
       "scrolling-mode-description": "Styr när textrullning är aktiverad för långa fönstertitlar. ",
       "show-app-icon-description": "Visa applikationsikonen bredvid fönstertiteln.",
       "show-app-icon-label": "Visa appikon",
-      "show-app-text-description": "Visa fönstertiteln.",
+      "show-app-text-description": "Visa titeln på det aktiva fönstret.",
       "show-app-text-label": "Visa fönstertitel"
     },
     "audio-visualizer": {
@@ -1404,7 +1404,9 @@
       "weather-show-effects-description": "Visa ytterligare visuella effekter (som regn, snö eller blixtar) på väderkortet.",
       "weather-show-effects-label": "Visa vädereffekter",
       "weather-show-in-calendar-description": "Visa den dagliga väderprognosen direkt i din kalendervy.",
-      "weather-show-in-calendar-label": "Visa väder i kalendern"
+      "weather-show-in-calendar-label": "Visa väder i kalendern",
+      "weather-talia-mascot-always-description": "Använd alltid Talia emojis istället för tabler icons.",
+      "weather-talia-mascot-always-label": "Visa alltid Talia väder-emojis"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "När fprintd (fingeravtrycksautentisering) är aktivt, låter det här alternativet dig fortfarande logga in med ditt lösenord istället för ett fingeravtryck",

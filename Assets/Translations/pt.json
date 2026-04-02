@@ -37,7 +37,7 @@
       "scrolling-mode-description": "Controlar quando a rolagem de texto está habilitada para títulos de janela longos.",
       "show-app-icon-description": "Exibir o ícone do aplicativo ao lado do título da janela.",
       "show-app-icon-label": "Mostrar ícone do aplicativo",
-      "show-app-text-description": "Exibir o título da janela.",
+      "show-app-text-description": "Exibir o título da janela ativa.",
       "show-app-text-label": "Mostrar título da janela"
     },
     "audio-visualizer": {
@@ -1404,7 +1404,9 @@
       "weather-show-effects-description": "Mostra efeitos visuais adicionais (como chuva, neve ou relâmpagos) no cartão de clima.",
       "weather-show-effects-label": "Exibir efeitos climáticos",
       "weather-show-in-calendar-description": "Mostre a previsão do tempo diária diretamente na sua visualização de calendário.",
-      "weather-show-in-calendar-label": "Exibir clima no calendário"
+      "weather-show-in-calendar-label": "Exibir clima no calendário",
+      "weather-talia-mascot-always-description": "Sempre use Talia emojis em vez de tabler icons.",
+      "weather-talia-mascot-always-label": "Sempre mostrar os emojis de clima da Talia"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Quando o fprintd (autenticação por impressão digital) está ativo, esta opção permite-lhe iniciar sessão com a sua palavra-passe em vez de uma impressão digital.",
