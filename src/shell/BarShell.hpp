@@ -8,6 +8,11 @@ public:
     BarShell();
 
     bool initialize();
+    [[nodiscard]] bool isRunning() const noexcept;
+    [[nodiscard]] int displayFd() const noexcept;
+    void dispatchPending();
+    void dispatchReadable();
+    void flush();
     void run();
     const WaylandConnection& connection() const noexcept;
 

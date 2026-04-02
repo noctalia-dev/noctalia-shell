@@ -3,6 +3,7 @@
 #include "notification/NotificationManager.hpp"
 
 #include <sdbus-c++/sdbus-c++.h>
+#include <chrono>
 #include <memory>
 #include <tuple>
 #include <vector>
@@ -13,7 +14,10 @@ class NotificationService {
 public:
     explicit NotificationService(NotificationManager& manager);
 
-    void run();
+    [[nodiscard]] sdbus::IConnection::PollData getPollData() const;
+    void processPendingEvents();
+    [[nodiscard]] int nextExpiryTimeoutMs() const;
+    void processExpiredNotifications();
 
 private:
     NotificationManager&                    m_manager;

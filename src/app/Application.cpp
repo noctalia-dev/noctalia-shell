@@ -14,11 +14,13 @@ void Application::run() {
     m_shell.initialize();
 
     try {
-        m_service = std::make_unique<NotificationService>(m_manager);
+        m_notificationService = std::make_unique<NotificationService>(m_manager);
         std::cout << "noctalia: listening on org.freedesktop.Notifications\n";
-        m_service->run();
     } catch (const std::exception& e) {
         std::cout << "noctalia: notifications disabled: " << e.what() << '\n';
-        m_shell.run();
+        m_notificationService.reset();
     }
+
+    m_mainLoop = std::make_unique<MainLoop>(m_shell, m_notificationService.get());
+    m_mainLoop->run();
 }

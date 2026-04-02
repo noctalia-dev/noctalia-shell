@@ -1,8 +1,8 @@
 #include "wayland/LayerSurface.hpp"
 
+#include "render/RendererFactory.hpp"
 #include "wayland/WaylandConnection.hpp"
 
-#include <algorithm>
 #include <cerrno>
 #include <cstring>
 #include <iostream>
@@ -105,7 +105,15 @@ void LayerSurface::handleConfigure(void* data,
     self->m_height = (height == 0) ? kBarHeight : height;
     self->m_configured = true;
 
-    if (!self->createOrResizeBuffer(self->m_width, self->m_height)) {
+    if (self->m_renderer == nullptr) {
+        self->m_running = false;
+        return;
+    }
+
+    self->m_renderer->resize(self->m_width, self->m_height);
+
+    if (self->m_renderer->usesSharedMemory() &&
+        !self->createOrResizeBuffer(self->m_width, self->m_height)) {
         self->m_running = false;
         return;
     }
@@ -146,6 +154,8 @@ bool LayerSurface::createSurface() {
     if (m_surface == nullptr) {
         throw std::runtime_error("failed to create wl_surface");
     }
+
+    m_renderer = createBarRenderer(m_connection.display(), m_surface);
 
     wl_output* output = nullptr;
     if (!m_connection.outputs().empty()) {
@@ -230,11 +240,21 @@ bool LayerSurface::createOrResizeBuffer(std::uint32_t width, std::uint32_t heigh
 }
 
 void LayerSurface::render() {
-    if (m_surface == nullptr || m_shmBuffer.buffer == nullptr || m_bufferBusy) {
+    if (m_surface == nullptr || m_renderer == nullptr) {
         return;
     }
 
-    std::fill(m_shmBuffer.pixels.begin(), m_shmBuffer.pixels.end(), 0x00121A24u);
+    if (!m_renderer->usesSharedMemory()) {
+        requestFrame();
+        m_renderer->render({}, m_width, m_height);
+        return;
+    }
+
+    if (m_shmBuffer.buffer == nullptr || m_bufferBusy) {
+        return;
+    }
+
+    m_renderer->render(m_shmBuffer.pixels, m_width, m_height);
     std::memcpy(m_shmBuffer.data, m_shmBuffer.pixels.data(), m_shmBuffer.size);
 
     wl_surface_attach(m_surface, m_shmBuffer.buffer, 0, 0);
@@ -288,6 +308,7 @@ void LayerSurface::destroyBuffer() {
 
 void LayerSurface::cleanup() {
     destroyBuffer();
+    m_renderer.reset();
 
     if (m_layerSurface != nullptr) {
         zwlr_layer_surface_v1_destroy(m_layerSurface);

@@ -57,49 +57,42 @@ NotificationService::NotificationService(NotificationManager& manager)
     ).forInterface(k_interface);
 }
 
-void NotificationService::run() {
-    // Manual event loop so we can tick expiry between D-Bus events.
-    while (true) {
-        auto poll_data = m_connection->getEventLoopPollData();
+namespace {
 
-        // Compute how long until the next notification expires.
-        int expiry_ms = -1;
-        const auto now = Clock::now();
-        for (const auto& n : m_manager.all()) {
-            if (n.expiry_time) {
-                const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    *n.expiry_time - now).count();
-                const int clamped = static_cast<int>(std::max<long long>(0, ms));
-                if (expiry_ms < 0 || clamped < expiry_ms) {
-                    expiry_ms = clamped;
-                }
+int computeExpiryTimeoutMs(const NotificationManager& manager) {
+    int expiry_ms = -1;
+    const auto now = Clock::now();
+    for (const auto& n : manager.all()) {
+        if (n.expiry_time) {
+            const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                *n.expiry_time - now).count();
+            const int clamped = static_cast<int>(std::max<long long>(0, ms));
+            if (expiry_ms < 0 || clamped < expiry_ms) {
+                expiry_ms = clamped;
             }
         }
+    }
+    return expiry_ms;
+}
 
-        // Poll for D-Bus events or until next expiry.
-        // getPollTimeout() may return -1 (indefinite); treat it as infinity so
-        // our expiry deadline always wins when set.
-        const int dbus_timeout = poll_data.getPollTimeout();
-        int poll_timeout;
-        if (expiry_ms >= 0 && dbus_timeout < 0) {
-            poll_timeout = expiry_ms;
-        } else if (expiry_ms >= 0) {
-            poll_timeout = std::min(expiry_ms, dbus_timeout);
-        } else {
-            poll_timeout = dbus_timeout;
-        }
+} // namespace
 
-        struct pollfd pfd{.fd = poll_data.fd, .events = poll_data.events, .revents = 0};
-        ::poll(&pfd, 1, poll_timeout);
+sdbus::IConnection::PollData NotificationService::getPollData() const {
+    return m_connection->getEventLoopPollData();
+}
 
-        // Process any pending D-Bus messages.
-        while (m_connection->processPendingEvent()) {}
+void NotificationService::processPendingEvents() {
+    while (m_connection->processPendingEvent()) {}
+}
 
-        // Expire timed-out notifications.
-        for (const uint32_t id : m_manager.expiredIds()) {
-            emitClose(id, CloseReason::Expired);
-            m_manager.close(id, CloseReason::Expired);
-        }
+int NotificationService::nextExpiryTimeoutMs() const {
+    return computeExpiryTimeoutMs(m_manager);
+}
+
+void NotificationService::processExpiredNotifications() {
+    for (const uint32_t id : m_manager.expiredIds()) {
+        emitClose(id, CloseReason::Expired);
+        m_manager.close(id, CloseReason::Expired);
     }
 }
 

@@ -1,6 +1,9 @@
 #pragma once
 
+#include "render/Renderer.hpp"
+
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 struct wl_buffer;
@@ -54,6 +57,7 @@ private:
     void cleanup();
 
     WaylandConnection& m_connection;
+    std::unique_ptr<Renderer> m_renderer;
     wl_surface* m_surface = nullptr;
     zwlr_layer_surface_v1* m_layerSurface = nullptr;
     wl_callback* m_frameCallback = nullptr;
