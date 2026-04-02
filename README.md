@@ -22,24 +22,49 @@ Noctalia
 <details>
 <summary>Notification</summary>
 
-#### Core
-- [x] Add `replaces_id` support (update existing notifications)
-- [x] Introduce basic event system (added / updated callbacks)
-- [x] Switch storage to stable container (deque + ID lookup)
+#### DBus (Required)
+- [ ] Implement `CloseNotification`
+- [ ] Implement `GetCapabilities`
+- [x] Implement `GetServerInformation`
+- [ ] Emit `NotificationClosed`
+- [ ] Stub `ActionInvoked` signal
 
-#### IPC
-- [x] Design DBus interface skeleton (Notify method)
-- [x] Integrate sdbus-c++ (initial stub)
+#### Lifecycle (Critical)
+- [ ] Handle timeout semantics (`-1` default, `0` persistent, `>0` custom)
+- [ ] Implement expiry system (timers / event loop)
+- [ ] Emit `NotificationClosed` with correct reason
+
+#### Core Behavior
+- [x] Fully implement `replaces_id` (in-place update)
+- [x] Always return final notification ID
+- [ ] Prevent duplicate stacking when replacing
+
+#### Capabilities (Minimal)
+- [ ] Return `body`
+- [ ] Return `actions` (stubbed)
+
+#### Hints (Minimal Support)
+- [x] Parse hints dictionary safely
+- [x] Support `urgency`
+- [x] Support `image-path` or `app_icon`
+- [x] Ignore unknown hints
 
 #### Data Model
-- [x] Extend Notification with base fields (app_name, summary, body, timeout, urgency)
-- [x] Extend Notification with optional fields (icon, category, desktop_entry)
+- [x] Extend Notification with base fields (`app_name`, `summary`, `body`, `timeout`, `urgency`)
+- [x] Extend Notification with optional fields (`icon`, `category`, `desktop_entry`)
+
+#### Icons (Basic)
+- [x] Store `app_icon` or `image-path`
+- [ ] Display icon in UI layer
+
+#### Stability
+- [ ] Handle empty summary/body
+- [ ] Handle invalid DBus input gracefully
+- [x] Ensure no crashes on malformed hints
 
 #### Later
-- [ ] Notification closing/removal
-- [ ] Expiry handling (timeouts)
-- [ ] Actions (buttons + callbacks)
-- [ ] Full freedesktop.org compliance
+- [ ] Notification closing/removal API polish
+- [ ] Actions implementation (buttons + callbacks)
 
 </details>
 
