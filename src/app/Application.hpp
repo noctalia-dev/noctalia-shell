@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dbus/NotificationService.hpp"
+#include "dbus/notification/NotificationService.hpp"
 #include "notification/NotificationManager.hpp"
 
 class Application {

@@ -17,7 +17,7 @@ add_executable(noctalia
     src/main.cpp
     src/app/Application.cpp
     src/notification/NotificationManager.cpp
-    src/dbus/NotificationService.cpp
+    src/dbus/notification/NotificationService.cpp
 )
 
 target_include_directories(noctalia PRIVATE src)
