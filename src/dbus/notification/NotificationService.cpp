@@ -103,6 +103,19 @@ void NotificationService::run() {
     }
 }
 
+static constexpr size_t  k_max_string_len = 1024;
+static constexpr int32_t k_min_timeout    = -1;
+
+namespace {
+
+std::string clamp_str(std::string s) {
+    if (s.size() > k_max_string_len)
+        s.resize(k_max_string_len);
+    return s;
+}
+
+} // namespace
+
 uint32_t NotificationService::onNotify(const std::string& app_name,
                                         uint32_t           replaces_id,
                                         const std::string& app_icon,
@@ -111,37 +124,49 @@ uint32_t NotificationService::onNotify(const std::string& app_name,
                                         const std::vector<std::string>& /*actions*/,
                                         const std::map<std::string, sdbus::Variant>& hints,
                                         int32_t expire_timeout) {
+    // Sanitize scalar inputs
+    const int32_t timeout = std::max(expire_timeout, k_min_timeout);
+
+    // Urgency: default Normal, reject out-of-range byte values
     Urgency urgency = Urgency::Normal;
     if (auto it = hints.find("urgency"); it != hints.end()) {
-        urgency = static_cast<Urgency>(it->second.get<uint8_t>());
+        try {
+            const uint8_t raw = it->second.get<uint8_t>();
+            if (raw <= static_cast<uint8_t>(Urgency::Critical)) {
+                urgency = static_cast<Urgency>(raw);
+            }
+        } catch (...) {}
     }
 
     std::optional<std::string> icon;
     if (!app_icon.empty()) {
-        icon = app_icon;
+        icon = clamp_str(app_icon);
     }
     if (auto it = hints.find("image-path"); it != hints.end()) {
         try {
-            icon = it->second.get<std::string>();
+            icon = clamp_str(it->second.get<std::string>());
         } catch (...) {}
     }
 
     std::optional<std::string> category;
     if (auto it = hints.find("category"); it != hints.end()) {
         try {
-            category = it->second.get<std::string>();
+            category = clamp_str(it->second.get<std::string>());
         } catch (...) {}
     }
 
     std::optional<std::string> desktop_entry;
     if (auto it = hints.find("desktop-entry"); it != hints.end()) {
         try {
-            desktop_entry = it->second.get<std::string>();
+            desktop_entry = clamp_str(it->second.get<std::string>());
         } catch (...) {}
     }
 
-    return m_manager.addOrReplace(replaces_id, app_name, summary, body,
-                                  expire_timeout, urgency, icon, category, desktop_entry);
+    return m_manager.addOrReplace(replaces_id,
+                                  clamp_str(app_name),
+                                  clamp_str(summary),
+                                  clamp_str(body),
+                                  timeout, urgency, icon, category, desktop_entry);
 }
 
 std::vector<std::string> NotificationService::onGetCapabilities() {
