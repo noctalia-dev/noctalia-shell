@@ -18,6 +18,31 @@ Noctalia
 
 ## UI
 
+## To-Do
+<details>
+<summary>Notification</summary>
+
+#### Core
+- [ ] Add `replaces_id` support (update existing notifications)
+- [ ] Introduce basic event system (added / updated callbacks)
+- [ ] Switch storage to stable container (deque + ID lookup)
+
+#### IPC
+- [x] Design DBus interface skeleton (Notify method)
+- [x] Integrate sdbus-c++ (initial stub)
+
+#### Data Model
+- [x] Extend Notification with base fields (app_name, summary, body, timeout, urgency)
+- [ ] Extend Notification with optional fields (icon, category, hints)
+
+#### Later
+- [ ] Notification closing/removal
+- [ ] Expiry handling (timeouts)
+- [ ] Actions (buttons + callbacks)
+- [ ] Full freedesktop.org compliance
+
+</details>
+
 ## Build
 
 ```sh
