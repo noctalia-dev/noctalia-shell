@@ -1403,6 +1403,8 @@
       "weather-hide-timezone-label": "Hide timezone",
       "weather-show-effects-description": "Show additional visual effects (like rain, snow, or lightning) on the weather card.",
       "weather-show-effects-label": "Display weather effects",
+      "weather-talia-mascot-always-description": "Always use Talia emojis instead of tabler icons.",
+      "weather-talia-mascot-always-label": "Always show Talia weather emojis",
       "weather-show-in-calendar-description": "Show the daily weather forecast directly in your calendar view.",
       "weather-show-in-calendar-label": "Display weather in calendar"
     },

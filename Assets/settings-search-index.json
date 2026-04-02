@@ -2232,6 +2232,15 @@
     "subTabLabel": "common.location"
   },
   {
+    "labelKey": "panels.location.weather-talia-mascot-always-label",
+    "descriptionKey": "panels.location.weather-talia-mascot-always-description",
+    "widget": "NToggle",
+    "tab": 17,
+    "tabLabel": "panels.region.title",
+    "subTab": 0,
+    "subTabLabel": "common.location"
+  },
+  {
     "labelKey": "panels.location.weather-hide-city-label",
     "descriptionKey": "panels.location.weather-hide-city-description",
     "widget": "NToggle",

@@ -495,14 +495,14 @@ Item {
             readonly property int lockMainWeatherIconSide: Math.round(Style.fontSizeXXXL * Style.uiScaleRatio * 1.6)
 
             NIcon {
-              visible: !LocationService.taliaWeatherMascotDayActive || !weatherReady
+              visible: !LocationService.taliaWeatherMascotActive || !weatherReady
               anchors.centerIn: parent
               icon: weatherReady ? LocationService.weatherSymbolFromCode(LocationService.data.weather.current_weather.weathercode, LocationService.data.weather.current_weather.is_day) : "weather-cloud-off"
               pointSize: Style.fontSizeXXXL
               color: Color.mPrimary
             }
             Loader {
-              active: LocationService.taliaWeatherMascotDayActive && weatherReady
+              active: LocationService.taliaWeatherMascotActive && weatherReady
               anchors.fill: parent
               asynchronous: true
               sourceComponent: Component {
@@ -609,14 +609,14 @@ Item {
                 readonly property int lockForecastWeatherIconSide: Math.round(Style.fontSizeXL * Style.uiScaleRatio * 1.6)
 
                 NIcon {
-                  visible: !LocationService.taliaWeatherMascotDayActive
+                  visible: !LocationService.taliaWeatherMascotActive
                   anchors.centerIn: parent
                   icon: LocationService.weatherSymbolFromCode(LocationService.data.weather.daily.weathercode[index])
                   pointSize: Style.fontSizeXL
                   color: Color.mOnSurfaceVariant
                 }
                 Loader {
-                  active: LocationService.taliaWeatherMascotDayActive
+                  active: LocationService.taliaWeatherMascotActive
                   anchors.fill: parent
                   asynchronous: true
                   sourceComponent: Component {

@@ -62,14 +62,14 @@ DraggableDesktopWidget {
       Layout.alignment: Qt.AlignVCenter
 
       NIcon {
-        visible: !LocationService.taliaWeatherMascotDayActive || !weatherReady
+        visible: !LocationService.taliaWeatherMascotActive || !weatherReady
         anchors.centerIn: parent
         icon: weatherReady ? LocationService.weatherSymbolFromCode(currentWeatherCode, LocationService.data.weather.current_weather.is_day) : "weather-cloud-off"
         pointSize: Math.round(Style.fontSizeXXXL * 2 * widgetScale)
         color: weatherReady ? Color.mPrimary : Color.mOnSurfaceVariant
       }
       Loader {
-        active: LocationService.taliaWeatherMascotDayActive && weatherReady
+        active: LocationService.taliaWeatherMascotActive && weatherReady
         anchors.fill: parent
         asynchronous: true
         sourceComponent: Component {

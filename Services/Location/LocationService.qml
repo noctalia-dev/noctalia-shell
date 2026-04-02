@@ -22,6 +22,8 @@ Singleton {
     return d.getMonth() === root.taliaMascotWeatherMonth && d.getDate() === root.taliaMascotWeatherDay;
   }
 
+  readonly property bool taliaWeatherMascotActive: taliaWeatherMascotDayActive || Settings.data.location.weatherTaliaMascotAlways
+
   readonly property alias data: adapter
 
   // Stable UI properties - only updated when location is successfully geocoded
