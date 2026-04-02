@@ -1068,9 +1068,7 @@ Singleton {
 
       var defaultPath = Quickshell.shellDir + "/Assets/settings-default.json";
 
-      // Encode transfer it has base64 to avoid any escaping issue
-      var base64Data = Qt.btoa(jsonData);
-      Quickshell.execDetached(["sh", "-c", `echo "${base64Data}" | base64 -d > "${defaultPath}"`]);
+      Quickshell.execDetached(["sh", "-c", `cat > "${defaultPath}" << 'NOCTALIA_EOF'\n${jsonData}\nNOCTALIA_EOF`]);
     } catch (error) {
       Logger.e("Settings", "Failed to generate default settings file: " + error);
     }
@@ -1091,8 +1089,7 @@ Singleton {
 
       var defaultPath = Quickshell.shellDir + "/Assets/settings-widgets-default.json";
 
-      var base64Data = Qt.btoa(jsonData);
-      Quickshell.execDetached(["sh", "-c", `echo "${base64Data}" | base64 -d > "${defaultPath}"`]);
+      Quickshell.execDetached(["sh", "-c", `cat > "${defaultPath}" << 'NOCTALIA_EOF'\n${jsonData}\nNOCTALIA_EOF`]);
     } catch (error) {
       Logger.e("Settings", "Failed to generate widget default settings file: " + error);
     }
