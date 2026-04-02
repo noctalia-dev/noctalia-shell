@@ -1,0 +1,36 @@
+#pragma once
+
+#include "notification/NotificationManager.hpp"
+
+#include <sdbus-c++/sdbus-c++.h>
+#include <memory>
+#include <tuple>
+
+// Exposes org.freedesktop.Notifications on the session bus.
+// Only the Notify method is stubbed for now.
+class NotificationService {
+public:
+    explicit NotificationService(NotificationManager& manager);
+
+    void run();
+
+private:
+    NotificationManager&                    m_manager;
+    std::unique_ptr<sdbus::IConnection>     m_connection;
+    std::unique_ptr<sdbus::IObject>         m_object;
+
+    // D-Bus method handlers
+    uint32_t onNotify(const std::string& app_name,
+                      uint32_t           replaces_id,
+                      const std::string& app_icon,
+                      const std::string& summary,
+                      const std::string& body,
+                      const std::vector<std::string>& actions,
+                      const std::map<std::string, sdbus::Variant>& hints,
+                      int32_t            expire_timeout);
+
+    std::vector<std::string> onGetCapabilities();
+
+    std::tuple<std::string, std::string, std::string, std::string>
+    onGetServerInformation();
+};
