@@ -23,7 +23,7 @@
     "run-custom-command": "Egyéni parancs futtatása",
     "show-active-only": "Csak az aktívakat jelenítse meg",
     "show-all": "Összes megjelenítése",
-    "toggle-mute": "Némítás kapcsolása",
+    "toggle-mute": "Némítás be/ki",
     "widget-settings": "Widget beállítások"
   },
   "authentication": {
@@ -372,7 +372,7 @@
       "highlight-title": "Főbb újdonságok",
       "released": "Kiadva: {date}",
       "subtitle-fresh": "Köszönjük, hogy telepítette a Noctalia-t! Itt van, mi található ebben az összeállításban.",
-      "subtitle-updated": "Frissítve innen: {previousVersion}",
+      "subtitle-updated": "Frissítve erről: {previousVersion}",
       "title": "Újdonságok a {version} verzióban",
       "version": "verzió {version}",
       "version-new-user": "Új telepítés"
@@ -747,7 +747,7 @@
       "system-cpu": "CPU:",
       "system-disk": "Lemez:",
       "system-gpu": "GPU:",
-      "system-host": "Házigazda:",
+      "system-host": "Gépnév:",
       "system-install-hint": "Telepítsd a fastfetch programot a rendszerinformációk megtekintéséhez",
       "system-kernel": "Kernel:",
       "system-loading": "Rendszerinformációk betöltése…",
@@ -1163,7 +1163,7 @@
       "appearance-position-label": "Pozíció",
       "appearance-show-launcher-icon-description": "Az alkalmazásindító ikon megjelenítése a dokkban.",
       "appearance-show-launcher-icon-label": "Alkalmazásindító megjelenítése",
-      "appearance-sit-on-frame-description": "Igazítsa a dokkot a keret szegélyén belülre, ahelyett, hogy a tetején ülne.",
+      "appearance-sit-on-frame-description": "A dokk igazítása a keret szegélyén belülre, ahelyett, hogy a tetején ülne.",
       "appearance-sit-on-frame-label": "A dokk a kereten ül",
       "appearance-type-attached": "Rögzített",
       "appearance-type-description": "Lebegő, kapszula alakú sáv vagy statikus, a szélhez rögzített sáv.",
