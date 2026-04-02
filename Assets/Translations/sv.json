@@ -550,6 +550,7 @@
     "wallpaper": "Bakgrundsbild",
     "weather": "Väder",
     "weather-loading": "Läser in väder...",
+    "weather-no-location": "Ange en plats i Inställningarna för att se vädret",
     "week": "Vecka",
     "widgets": "Widgetar",
     "width": "Bredd",

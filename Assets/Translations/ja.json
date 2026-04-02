@@ -550,6 +550,7 @@
     "wallpaper": "壁紙",
     "weather": "天気",
     "weather-loading": "天気を読み込み中...",
+    "weather-no-location": "天気を表示するには、設定で場所を設定してください",
     "week": "週",
     "widgets": "ウィジェット",
     "width": "幅",

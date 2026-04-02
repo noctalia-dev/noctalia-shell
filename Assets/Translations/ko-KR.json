@@ -550,6 +550,7 @@
     "wallpaper": "배경화면",
     "weather": "날씨",
     "weather-loading": "날씨 로딩 중...",
+    "weather-no-location": "날씨를 보려면 설정에서 위치를 설정하세요",
     "week": "주",
     "widgets": "위젯",
     "width": "너비",

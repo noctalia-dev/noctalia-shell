@@ -550,6 +550,7 @@
     "wallpaper": "壁纸",
     "weather": "天气",
     "weather-loading": "正在加载天气...",
+    "weather-no-location": "在设置中设置位置以查看天气",
     "week": "周",
     "widgets": "小部件",
     "width": "宽度",

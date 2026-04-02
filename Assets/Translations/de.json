@@ -550,6 +550,7 @@
     "wallpaper": "Hintergrundbild",
     "weather": "Wetter",
     "weather-loading": "Wetter wird geladen...",
+    "weather-no-location": "Lege einen Standort in den Einstellungen fest, um das Wetter zu sehen",
     "week": "Woche",
     "widgets": "Widgets",
     "width": "Breite",
