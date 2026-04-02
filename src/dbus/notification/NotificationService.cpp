@@ -47,7 +47,13 @@ NotificationService::NotificationService(NotificationManager& manager)
             .withInputParamNames("id")
             .implementedAs([this](uint32_t id) {
                 onCloseNotification(id);
-            })
+            }),
+
+        sdbus::registerSignal("NotificationClosed")
+            .withParameters<uint32_t, uint32_t>("id", "reason"),
+
+        sdbus::registerSignal("ActionInvoked")
+            .withParameters<uint32_t, std::string>("id", "action_key")
     ).forInterface(k_interface);
 }
 
@@ -139,7 +145,7 @@ uint32_t NotificationService::onNotify(const std::string& app_name,
 }
 
 std::vector<std::string> NotificationService::onGetCapabilities() {
-    return {"body"};
+    return {"body", "actions"};
 }
 
 void NotificationService::onCloseNotification(uint32_t id) {

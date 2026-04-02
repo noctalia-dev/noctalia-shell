@@ -24,10 +24,10 @@ Noctalia
 
 #### DBus (Required)
 - [x] Implement `CloseNotification`
-- [ ] Implement `GetCapabilities`
+- [x] Implement `GetCapabilities`
 - [x] Implement `GetServerInformation`
 - [x] Emit `NotificationClosed`
-- [ ] Stub `ActionInvoked` signal
+- [x] Stub `ActionInvoked` signal
 
 #### Lifecycle (Critical)
 - [x] Handle timeout semantics (`-1` default, `0` persistent, `>0` custom)
@@ -40,8 +40,8 @@ Noctalia
 - [ ] Prevent duplicate stacking when replacing
 
 #### Capabilities (Minimal)
-- [ ] Return `body`
-- [ ] Return `actions` (stubbed)
+- [x] Return `body`
+- [x] Return `actions` (stubbed)
 
 #### Hints (Minimal Support)
 - [x] Parse hints dictionary safely
