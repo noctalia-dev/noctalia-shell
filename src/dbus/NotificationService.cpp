@@ -49,7 +49,7 @@ void NotificationService::run() {
 }
 
 uint32_t NotificationService::onNotify(const std::string& app_name,
-                                        uint32_t           /*replaces_id*/,
+                                        uint32_t           replaces_id,
                                         const std::string& /*app_icon*/,
                                         const std::string& summary,
                                         const std::string& body,
@@ -61,7 +61,7 @@ uint32_t NotificationService::onNotify(const std::string& app_name,
         urgency = static_cast<Urgency>(it->second.get<uint8_t>());
     }
 
-    return m_manager.add(app_name, summary, body, expire_timeout, urgency);
+    return m_manager.addOrReplace(replaces_id, app_name, summary, body, expire_timeout, urgency);
 }
 
 std::vector<std::string> NotificationService::onGetCapabilities() {

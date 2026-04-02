@@ -23,9 +23,9 @@ Noctalia
 <summary>Notification</summary>
 
 #### Core
-- [ ] Add `replaces_id` support (update existing notifications)
+- [x] Add `replaces_id` support (update existing notifications)
 - [ ] Introduce basic event system (added / updated callbacks)
-- [ ] Switch storage to stable container (deque + ID lookup)
+- [x] Switch storage to stable container (deque + ID lookup)
 
 #### IPC
 - [x] Design DBus interface skeleton (Notify method)
