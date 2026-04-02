@@ -497,7 +497,7 @@ Item {
             NIcon {
               visible: !LocationService.taliaWeatherMascotActive || !weatherReady
               anchors.centerIn: parent
-              icon: weatherReady ? LocationService.weatherSymbolFromCode(LocationService.data.weather.current_weather.weathercode, LocationService.data.weather.current_weather.is_day) : "weather-cloud-off"
+              icon: weatherReady ? LocationService.weatherSymbolFromCode(LocationService.data.weather.current_weather.weathercode) : "weather-cloud-off"
               pointSize: Style.fontSizeXXXL
               color: Color.mPrimary
             }
@@ -512,7 +512,7 @@ Item {
                   smooth: true
                   mipmap: true
                   asynchronous: true
-                  source: Qt.resolvedUrl(LocationService.taliaWeatherImageFromCode(LocationService.data.weather.current_weather.weathercode, LocationService.data.weather.current_weather.is_day))
+                  source: Qt.resolvedUrl(LocationService.taliaWeatherImageFromCode(LocationService.data.weather.current_weather.weathercode))
                 }
               }
             }

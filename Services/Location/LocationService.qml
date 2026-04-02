@@ -322,7 +322,8 @@ Singleton {
   }
 
   // --------------------------------
-  function weatherSymbolFromCode(code, isDay) {
+  function weatherSymbolFromCode(code) {
+    var isDay = data.weather ? data.weather.current_weather.is_day : true;
     if (code === 0)
       return isDay ? "weather-sun" : "weather-moon";
     if (code === 1 || code === 2)
@@ -347,7 +348,8 @@ Singleton {
   }
 
   // --------------------------------
-  function taliaWeatherImageFromCode(code, isDay) {
+  function taliaWeatherImageFromCode(code) {
+    var isDay = data.weather ? data.weather.current_weather.is_day : true;
     if (code >= 40 && code <= 49)
       return Quickshell.shellDir + "/Assets/Talia/TaliaDazed.png";
     if (code >= 95 && code <= 99)

@@ -117,7 +117,7 @@ NBox {
           NIcon {
             visible: !LocationService.taliaWeatherMascotActive || !weatherReady
             anchors.centerIn: parent
-            icon: weatherReady ? LocationService.weatherSymbolFromCode(LocationService.data.weather.current_weather.weathercode, LocationService.data.weather.current_weather.is_day) : "weather-cloud-off"
+            icon: weatherReady ? LocationService.weatherSymbolFromCode(LocationService.data.weather.current_weather.weathercode) : "weather-cloud-off"
             pointSize: Style.fontSizeXXXL * 1.75
             color: Color.mPrimary
           }
@@ -132,7 +132,7 @@ NBox {
                 smooth: true
                 mipmap: true
                 asynchronous: true
-                source: Qt.resolvedUrl(LocationService.taliaWeatherImageFromCode(currentWeatherCode, isDayTime))
+                source: Qt.resolvedUrl(LocationService.taliaWeatherImageFromCode(currentWeatherCode))
               }
             }
           }
