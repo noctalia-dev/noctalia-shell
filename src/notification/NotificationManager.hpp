@@ -32,6 +32,9 @@ public:
                           std::optional<std::string> category = std::nullopt,
                           std::optional<std::string> desktop_entry = std::nullopt);
 
+    // Closes a notification by ID.
+    bool close(uint32_t id);
+
     // All stored notifications.
     [[nodiscard]] const std::deque<Notification>& all() const noexcept;
 

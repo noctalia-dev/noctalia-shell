@@ -23,16 +23,16 @@ Noctalia
 <summary>Notification</summary>
 
 #### DBus (Required)
-- [ ] Implement `CloseNotification`
+- [x] Implement `CloseNotification`
 - [ ] Implement `GetCapabilities`
 - [x] Implement `GetServerInformation`
-- [ ] Emit `NotificationClosed`
+- [x] Emit `NotificationClosed`
 - [ ] Stub `ActionInvoked` signal
 
 #### Lifecycle (Critical)
 - [ ] Handle timeout semantics (`-1` default, `0` persistent, `>0` custom)
 - [ ] Implement expiry system (timers / event loop)
-- [ ] Emit `NotificationClosed` with correct reason
+- [x] Emit `NotificationClosed` with reason (closed by call)
 
 #### Core Behavior
 - [x] Fully implement `replaces_id` (in-place update)

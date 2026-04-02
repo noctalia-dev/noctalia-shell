@@ -29,6 +29,8 @@ private:
                       const std::map<std::string, sdbus::Variant>& hints,
                       int32_t            expire_timeout);
 
+    void onCloseNotification(uint32_t id);
+
     std::vector<std::string> onGetCapabilities();
 
     std::tuple<std::string, std::string, std::string, std::string>

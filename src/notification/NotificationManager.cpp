@@ -91,6 +91,25 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
     return n.id;
 }
 
+bool NotificationManager::close(uint32_t id) {
+    const auto it = m_id_to_index.find(id);
+    if (it == m_id_to_index.end()) {
+        return false;
+    }
+
+    const size_t index = it->second;
+    std::cout << "[noctalia] closed #" << id << '\n';
+
+    m_notifications.erase(m_notifications.begin() + static_cast<std::ptrdiff_t>(index));
+    m_id_to_index.erase(it);
+
+    for (size_t i = index; i < m_notifications.size(); ++i) {
+        m_id_to_index[m_notifications[i].id] = i;
+    }
+
+    return true;
+}
+
 const std::deque<Notification>& NotificationManager::all() const noexcept {
     return m_notifications;
 }

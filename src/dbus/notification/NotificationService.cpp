@@ -5,6 +5,7 @@
 static const sdbus::ServiceName k_bus_name   {"org.freedesktop.Notifications"};
 static const sdbus::ObjectPath  k_object_path{"/org/freedesktop/Notifications"};
 static constexpr auto           k_interface  = "org.freedesktop.Notifications";
+static constexpr uint32_t       k_close_reason_closed_by_call = 3;
 
 NotificationService::NotificationService(NotificationManager& manager)
     : m_manager(manager)
@@ -40,6 +41,12 @@ NotificationService::NotificationService(NotificationManager& manager)
             .withOutputParamNames("name", "vendor", "version", "spec_version")
             .implementedAs([this]() {
                 return onGetServerInformation();
+            }),
+
+        sdbus::registerMethod("CloseNotification")
+            .withInputParamNames("id")
+            .implementedAs([this](uint32_t id) {
+                onCloseNotification(id);
             })
     ).forInterface(k_interface);
 }
@@ -91,6 +98,16 @@ uint32_t NotificationService::onNotify(const std::string& app_name,
 
 std::vector<std::string> NotificationService::onGetCapabilities() {
     return {"body"};
+}
+
+void NotificationService::onCloseNotification(uint32_t id) {
+    if (!m_manager.close(id)) {
+        return;
+    }
+
+    m_object->emitSignal("NotificationClosed")
+        .onInterface(k_interface)
+        .withArguments(id, k_close_reason_closed_by_call);
 }
 
 std::tuple<std::string, std::string, std::string, std::string>
