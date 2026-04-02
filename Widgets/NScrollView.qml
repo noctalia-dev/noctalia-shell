@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Effects
 import QtQuick.Templates as T
 import qs.Commons
 
@@ -21,6 +22,8 @@ ScrollView {
   property bool showGradientMasks: true
   property color gradientColor: Color.mSurfaceVariant
   property int gradientHeight: 16
+  // Fade controls (fadeExtent: 0.0–0.5, fraction of height that fades)
+  property real fadeExtent: 0.01
   property bool reserveScrollbarSpace: true
   property real userRightPadding: 0
   // Keep scrollbars visible whenever overflow exists (without forcing visibility when not scrollable)
@@ -30,6 +33,8 @@ ScrollView {
   property real wheelScrollMultiplier: 2.0
   property int smoothWheelAnimationDuration: Style.animationNormal
   property real _wheelTargetY: 0
+
+  property Item _maskSourceItem: null
 
   function clampScrollY(value) {
     if (!root._internalFlickable)
@@ -70,52 +75,68 @@ ScrollView {
     createGradients();
   }
 
-  // Dynamically create gradient overlays to avoid interfering with ScrollView content management
+  Component {
+    id: maskEffectComponent
+    MultiEffect {
+      maskEnabled: true
+      maskThresholdMin: 0.5
+      maskSpreadAtMin: 1.0
+      maskSource: root._maskSourceItem
+    }
+  }
+
+  // Dynamically create fade to avoid interfering with ScrollView content management
   function createGradients() {
     if (!showGradientMasks)
       return;
 
-    Qt.createQmlObject(`
+    var item = Qt.createQmlObject(`
       import QtQuick
+      import QtQuick.Effects
       import qs.Commons
-      Rectangle {
-        x: root.leftPadding
-        y: root.topPadding
-        width: root.availableWidth
-        height: root.gradientHeight
-        z: 1
-        visible: root.showGradientMasks && root.verticalScrollable
-        opacity: root.contentItem.contentY <= 1 ? 0 : 1
-        Behavior on opacity {
-          NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
-        }
-        gradient: Gradient {
-          GradientStop { position: 0.0; color: root.gradientColor }
-          GradientStop { position: 1.0; color: "transparent" }
-        }
-      }
-    `, root, "topGradient");
+      Item {
+        anchors.fill: root
+        opacity: 0
 
-    Qt.createQmlObject(`
-      import QtQuick
-      import qs.Commons
-      Rectangle {
-        x: root.leftPadding
-        y: root.height - root.bottomPadding - height + 1
-        width: root.availableWidth
-        height: root.gradientHeight + 1
-        z: 1
-        visible: root.showGradientMasks && root.verticalScrollable
-        opacity: (root.contentItem.contentY + root.contentItem.height >= root.contentItem.contentHeight - 1) ? 0 : 1
-        Behavior on opacity {
-          NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
-        }
-        gradient: Gradient {
-          GradientStop { position: 0.0; color: "transparent" }
-          GradientStop { position: 1.0; color: root.gradientColor }
+        layer.enabled: true
+        layer.smooth: true
+
+        Rectangle {
+          anchors.centerIn: root
+          height: root.height
+          width: root.width
+          gradient: Gradient {
+            orientation: Gradient.Vertical
+            GradientStop {
+              position: 0.0
+              color: root.contentItem.contentY >= 1 ? "transparent" : "white"
+              Behavior on color {
+                ColorAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
+              }
+            }
+            GradientStop {
+              position: fadeExtent
+              color: "white"
+            }
+            GradientStop {
+              position: 1.0 - fadeExtent
+              color: "white"
+            }
+            GradientStop {
+              position: 1.0
+              color: (root.contentItem.contentY + root.contentItem.height <= root.contentItem.contentHeight - 1) ? "transparent" : "white"
+              Behavior on color {
+                ColorAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
+              }
+            }
+          }
         }
       }
-    `, root, "bottomGradient");
+    `, root, "scrollFadeMask");
+
+    root._maskSourceItem = item;
+    root.contentItem.layer.enabled = Qt.binding(() => root.showGradientMasks && root.verticalScrollable);
+    root.contentItem.layer.effect = maskEffectComponent;
   }
 
   // Reference to the internal Flickable for wheel handling
@@ -212,7 +233,6 @@ ScrollView {
           duration: Style.animationFast
         }
       }
-
       Behavior on color {
         ColorAnimation {
           duration: Style.animationFast
@@ -255,7 +275,6 @@ ScrollView {
           duration: Style.animationFast
         }
       }
-
       Behavior on color {
         ColorAnimation {
           duration: Style.animationFast
