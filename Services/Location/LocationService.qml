@@ -117,6 +117,7 @@ Singleton {
     adapter.name = "";
     adapter.weatherLastFetch = 0;
     adapter.weather = null;
+    isFetchingWeather = false;
     update();
   }
 
@@ -150,8 +151,6 @@ Singleton {
     }
 
     geocodeLocation(Settings.data.location.name, function (latitude, longitude, name, country) {
-      Logger.d("Location", "Geocoded", Settings.data.location.name, "to:", latitude, "/", longitude);
-
       adapter.name = Settings.data.location.name;
       adapter.latitude = latitude.toString();
       adapter.longitude = longitude.toString();
@@ -161,7 +160,7 @@ Singleton {
       root.coordinatesReady = true;
 
       isFetchingWeather = false;
-      Logger.i("Location", "Coordinates ready");
+      Logger.i("Location", `Geocoded ${Settings.data.location.name}: ${root.stableLatitude}, ${root.stableLongitude}`);
 
       if (locationChanged) {
         adapter.weatherLastFetch = 0;
@@ -216,7 +215,7 @@ Singleton {
             errorCallback("Location", "Failed to parse geocoding data: " + e);
           }
         } else {
-          errorCallback("Location", "Geocoding error: " + xhr.status);
+          errorCallback("Location", `Geocoding error: ${xhr.status} ${xhr.responseText}`);
         }
       }
     };
@@ -251,7 +250,7 @@ Singleton {
             errorCallback("Location", "Failed to parse weather data");
           }
         } else {
-          errorCallback("Location", "Weather fetch error: " + xhr.status);
+          errorCallback("Location", `Weather error: ${xhr.status} ${xhr.responseText}`);
         }
       }
     };
@@ -278,7 +277,7 @@ Singleton {
             errorCallback("Location", "Failed to parse geolocate data: " + e);
           }
         } else {
-          errorCallback("Location", "Geolocate error: " + xhr.status);
+          errorCallback("Location", `Geolocate error: ${xhr.status} ${xhr.responseText}`);
         }
       }
     };
@@ -318,7 +317,7 @@ Singleton {
 
   // --------------------------------
   function errorCallback(module, message) {
-    Logger.e(module, message);
+    Logger.w(module, message);
     isFetchingWeather = false;
   }
 
