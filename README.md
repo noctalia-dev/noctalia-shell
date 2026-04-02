@@ -14,6 +14,20 @@ Noctalia
 **inotify** <- config files etc  
 **toml++** or **glaze** <- config format (toml or json)  
 
+## Services
+- [ ] Notification Daemon
+- [ ] MPRIS
+- [ ] Pipewire
+- [ ] Network
+- [ ] Bluetooth
+- [ ] Battery
+- [ ] Power Profiles
+- [ ] System Tray
+- [ ] Spectrum
+- [ ] Niri
+- [ ] Hyprland
+- [ ] ...
+
 ## Avoid
 
 ## UI
