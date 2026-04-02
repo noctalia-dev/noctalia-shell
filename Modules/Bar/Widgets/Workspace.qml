@@ -846,14 +846,14 @@ Item {
                               openGroupedContextMenu(groupedTaskbarItem);
                             }
                           }
-              onEntered: {
-                if (!groupedTaskbarItem.winOk)
-                  return;
-                TooltipService.show(groupedTaskbarItem, modelData.title || modelData.appId || "Unknown app.", BarService.getTooltipDirection(root.screenName));
-              }
-              onExited: {
-                TooltipService.hide();
-              }
+              // onEntered: {
+              //   if (!groupedTaskbarItem.winOk)
+              //     return;
+              //   TooltipService.show(groupedTaskbarItem, modelData.title || modelData.appId || "Unknown app.", BarService.getTooltipDirection(root.screenName));
+              // }
+              // onExited: {
+              //   TooltipService.hide();
+              // }
             }
           }
         }
