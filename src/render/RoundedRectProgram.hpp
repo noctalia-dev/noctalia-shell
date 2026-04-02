@@ -2,9 +2,7 @@
 
 #include "render/ShaderProgram.hpp"
 
-#if NOCTALIA_HAVE_EGL
 #include <GLES2/gl2.h>
-#endif
 
 struct RoundedRectStyle {
     float red = 0.0f;
@@ -36,12 +34,10 @@ public:
 
 private:
     ShaderProgram m_program;
-#if NOCTALIA_HAVE_EGL
     GLint m_positionLocation = -1;
     GLint m_surfaceSizeLocation = -1;
     GLint m_rectLocation = -1;
     GLint m_colorLocation = -1;
     GLint m_radiusLocation = -1;
     GLint m_softnessLocation = -1;
-#endif
 };

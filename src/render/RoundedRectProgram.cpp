@@ -3,7 +3,6 @@
 #include <array>
 #include <stdexcept>
 
-#if NOCTALIA_HAVE_EGL
 namespace {
 
 constexpr char kVertexShaderSource[] = R"(
@@ -50,10 +49,8 @@ void main() {
 )";
 
 } // namespace
-#endif
 
 void RoundedRectProgram::ensureInitialized() {
-#if NOCTALIA_HAVE_EGL
     if (m_program.isValid()) {
         return;
     }
@@ -74,21 +71,16 @@ void RoundedRectProgram::ensureInitialized() {
         m_softnessLocation < 0) {
         throw std::runtime_error("failed to query rounded-rect shader locations");
     }
-#else
-    throw std::runtime_error("OpenGL/EGL support was not compiled in");
-#endif
 }
 
 void RoundedRectProgram::destroy() {
     m_program.destroy();
-#if NOCTALIA_HAVE_EGL
     m_positionLocation = -1;
     m_surfaceSizeLocation = -1;
     m_rectLocation = -1;
     m_colorLocation = -1;
     m_radiusLocation = -1;
     m_softnessLocation = -1;
-#endif
 }
 
 void RoundedRectProgram::draw(float surfaceWidth,
@@ -98,7 +90,6 @@ void RoundedRectProgram::draw(float surfaceWidth,
                               float width,
                               float height,
                               const RoundedRectStyle& style) const {
-#if NOCTALIA_HAVE_EGL
     if (!m_program.isValid() || width <= 0.0f || height <= 0.0f) {
         return;
     }
@@ -122,13 +113,4 @@ void RoundedRectProgram::draw(float surfaceWidth,
     glEnableVertexAttribArray(m_positionLocation);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glDisableVertexAttribArray(m_positionLocation);
-#else
-    (void)surfaceWidth;
-    (void)surfaceHeight;
-    (void)x;
-    (void)y;
-    (void)width;
-    (void)height;
-    (void)style;
-#endif
 }

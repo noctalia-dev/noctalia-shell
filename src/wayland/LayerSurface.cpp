@@ -1,19 +1,10 @@
 #include "wayland/LayerSurface.hpp"
 
-#include "render/RendererFactory.hpp"
+#include "render/GlRenderer.hpp"
 #include "wayland/WaylandConnection.hpp"
 
-#include <cerrno>
-#include <cstring>
 #include <iostream>
 #include <stdexcept>
-#include <string>
-
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include <wayland-client.h>
 
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
@@ -34,27 +25,6 @@ const zwlr_layer_surface_v1_listener kLayerSurfaceListener = {
 const wl_callback_listener kFrameListener = {
     .done = &LayerSurface::handleFrameDone,
 };
-
-const wl_buffer_listener kBufferListener = {
-    .release = &LayerSurface::handleBufferRelease,
-};
-
-int createAnonymousFile(std::size_t size) {
-    char fileTemplate[] = "/tmp/noctalia-layer-surface-XXXXXX";
-    const int fd = mkstemp(fileTemplate);
-    if (fd < 0) {
-        throw std::runtime_error("failed to create shm temp file");
-    }
-
-    unlink(fileTemplate);
-
-    if (ftruncate(fd, static_cast<off_t>(size)) != 0) {
-        close(fd);
-        throw std::runtime_error("failed to resize shm temp file");
-    }
-
-    return fd;
-}
 
 } // namespace
 
@@ -111,13 +81,6 @@ void LayerSurface::handleConfigure(void* data,
     }
 
     self->m_renderer->resize(self->m_width, self->m_height);
-
-    if (self->m_renderer->usesSharedMemory() &&
-        !self->createOrResizeBuffer(self->m_width, self->m_height)) {
-        self->m_running = false;
-        return;
-    }
-
     self->render();
 }
 
@@ -143,19 +106,14 @@ void LayerSurface::handleFrameDone(void* data,
     }
 }
 
-void LayerSurface::handleBufferRelease(void* data,
-                                       wl_buffer* /*buffer*/) {
-    auto* self = static_cast<LayerSurface*>(data);
-    self->m_bufferBusy = false;
-}
-
 bool LayerSurface::createSurface() {
     m_surface = wl_compositor_create_surface(m_connection.compositor());
     if (m_surface == nullptr) {
         throw std::runtime_error("failed to create wl_surface");
     }
 
-    m_renderer = createBarRenderer(m_connection.display(), m_surface);
+    m_renderer = std::make_unique<GlRenderer>();
+    m_renderer->bind(m_connection.display(), m_surface);
 
     wl_output* output = nullptr;
     if (!m_connection.outputs().empty()) {
@@ -191,77 +149,13 @@ bool LayerSurface::createSurface() {
     return true;
 }
 
-bool LayerSurface::createOrResizeBuffer(std::uint32_t width, std::uint32_t height) {
-    if (width == 0 || height == 0) {
-        return false;
-    }
-
-    const std::size_t pixelCount = static_cast<std::size_t>(width) * static_cast<std::size_t>(height);
-    const std::size_t bufferSize = pixelCount * sizeof(std::uint32_t);
-
-    destroyBuffer();
-
-    m_shmBuffer.fd = createAnonymousFile(bufferSize);
-    m_shmBuffer.size = bufferSize;
-    m_shmBuffer.data = mmap(nullptr, bufferSize, PROT_READ | PROT_WRITE, MAP_SHARED, m_shmBuffer.fd, 0);
-    if (m_shmBuffer.data == MAP_FAILED) {
-        const int savedErrno = errno;
-        close(m_shmBuffer.fd);
-        m_shmBuffer.fd = -1;
-        throw std::runtime_error("failed to mmap shm buffer: " + std::string(std::strerror(savedErrno)));
-    }
-
-    m_shmBuffer.pool = wl_shm_create_pool(
-        m_connection.shm(), m_shmBuffer.fd, static_cast<int32_t>(bufferSize));
-    if (m_shmBuffer.pool == nullptr) {
-        destroyBuffer();
-        throw std::runtime_error("failed to create wl_shm_pool");
-    }
-
-    m_shmBuffer.buffer = wl_shm_pool_create_buffer(
-        m_shmBuffer.pool,
-        0,
-        static_cast<int32_t>(width),
-        static_cast<int32_t>(height),
-        static_cast<int32_t>(width * sizeof(std::uint32_t)),
-        WL_SHM_FORMAT_XRGB8888);
-    if (m_shmBuffer.buffer == nullptr) {
-        destroyBuffer();
-        throw std::runtime_error("failed to create wl_buffer");
-    }
-
-    if (wl_buffer_add_listener(m_shmBuffer.buffer, &kBufferListener, this) != 0) {
-        destroyBuffer();
-        throw std::runtime_error("failed to add wl_buffer listener");
-    }
-
-    m_shmBuffer.pixels.resize(pixelCount);
-    return true;
-}
-
 void LayerSurface::render() {
     if (m_surface == nullptr || m_renderer == nullptr) {
         return;
     }
 
-    if (!m_renderer->usesSharedMemory()) {
-        requestFrame();
-        m_renderer->render({}, m_width, m_height);
-        return;
-    }
-
-    if (m_shmBuffer.buffer == nullptr || m_bufferBusy) {
-        return;
-    }
-
-    m_renderer->render(m_shmBuffer.pixels, m_width, m_height);
-    std::memcpy(m_shmBuffer.data, m_shmBuffer.pixels.data(), m_shmBuffer.size);
-
-    wl_surface_attach(m_surface, m_shmBuffer.buffer, 0, 0);
-    wl_surface_damage_buffer(m_surface, 0, 0, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height));
     requestFrame();
-    wl_surface_commit(m_surface);
-    m_bufferBusy = true;
+    m_renderer->render(m_width, m_height);
 }
 
 void LayerSurface::requestFrame() {
@@ -275,39 +169,12 @@ void LayerSurface::requestFrame() {
     }
 }
 
-void LayerSurface::destroyBuffer() {
+void LayerSurface::cleanup() {
     if (m_frameCallback != nullptr) {
         wl_callback_destroy(m_frameCallback);
         m_frameCallback = nullptr;
     }
 
-    if (m_shmBuffer.buffer != nullptr) {
-        wl_buffer_destroy(m_shmBuffer.buffer);
-        m_shmBuffer.buffer = nullptr;
-    }
-
-    if (m_shmBuffer.pool != nullptr) {
-        wl_shm_pool_destroy(m_shmBuffer.pool);
-        m_shmBuffer.pool = nullptr;
-    }
-
-    if (m_shmBuffer.data != nullptr && m_shmBuffer.data != MAP_FAILED) {
-        munmap(m_shmBuffer.data, m_shmBuffer.size);
-        m_shmBuffer.data = nullptr;
-    }
-
-    if (m_shmBuffer.fd >= 0) {
-        close(m_shmBuffer.fd);
-        m_shmBuffer.fd = -1;
-    }
-
-    m_shmBuffer.size = 0;
-    m_shmBuffer.pixels.clear();
-    m_bufferBusy = false;
-}
-
-void LayerSurface::cleanup() {
-    destroyBuffer();
     m_renderer.reset();
 
     if (m_layerSurface != nullptr) {

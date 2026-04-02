@@ -3,14 +3,11 @@
 #include <cstdint>
 #include <stdexcept>
 
-#if NOCTALIA_HAVE_EGL
 #include <GLES2/gl2.h>
 #include <wayland-egl.h>
-#endif
 
 namespace {
 
-#if NOCTALIA_HAVE_EGL
 constexpr EGLint kConfigAttributes[] = {
     EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
     EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
@@ -25,15 +22,10 @@ constexpr EGLint kContextAttributes[] = {
     EGL_CONTEXT_CLIENT_VERSION, 2,
     EGL_NONE,
 };
-#endif
 
 } // namespace
 
-GlRenderer::GlRenderer() {
-#if !NOCTALIA_HAVE_EGL
-    throw std::runtime_error("OpenGL/EGL support was not compiled in");
-#endif
-}
+GlRenderer::GlRenderer() = default;
 
 GlRenderer::~GlRenderer() {
     cleanup();
@@ -43,12 +35,7 @@ const char* GlRenderer::name() const noexcept {
     return "gl";
 }
 
-bool GlRenderer::usesSharedMemory() const noexcept {
-    return false;
-}
-
 void GlRenderer::bind(wl_display* display, wl_surface* surface) {
-#if NOCTALIA_HAVE_EGL
     if (display == nullptr || surface == nullptr) {
         throw std::runtime_error("OpenGL renderer requires a valid Wayland display and surface");
     }
@@ -81,15 +68,9 @@ void GlRenderer::bind(wl_display* display, wl_surface* surface) {
     if (m_eglContext == EGL_NO_CONTEXT) {
         throw std::runtime_error("eglCreateContext failed");
     }
-#else
-    (void)display;
-    (void)surface;
-    throw std::runtime_error("OpenGL/EGL support was not compiled in");
-#endif
 }
 
 void GlRenderer::resize(std::uint32_t width, std::uint32_t height) {
-#if NOCTALIA_HAVE_EGL
     if (width == 0 || height == 0) {
         return;
     }
@@ -128,16 +109,9 @@ void GlRenderer::resize(std::uint32_t width, std::uint32_t height) {
     m_surfaceWidth = width;
     m_surfaceHeight = height;
     m_roundedRectProgram.ensureInitialized();
-#else
-    (void)width;
-    (void)height;
-#endif
 }
 
-void GlRenderer::render(std::span<std::uint32_t> /*pixels*/,
-                        std::uint32_t width,
-                        std::uint32_t height) {
-#if NOCTALIA_HAVE_EGL
+void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
     if (m_eglDisplay == EGL_NO_DISPLAY || m_eglSurface == EGL_NO_SURFACE || m_eglContext == EGL_NO_CONTEXT) {
         throw std::runtime_error("OpenGL renderer is not ready");
     }
@@ -199,15 +173,9 @@ void GlRenderer::render(std::span<std::uint32_t> /*pixels*/,
     if (eglSwapBuffers(m_eglDisplay, m_eglSurface) != EGL_TRUE) {
         throw std::runtime_error("eglSwapBuffers failed");
     }
-#else
-    (void)width;
-    (void)height;
-    throw std::runtime_error("OpenGL/EGL support was not compiled in");
-#endif
 }
 
 void GlRenderer::cleanup() {
-#if NOCTALIA_HAVE_EGL
     m_roundedRectProgram.destroy();
     m_surfaceWidth = 0;
     m_surfaceHeight = 0;
@@ -239,5 +207,4 @@ void GlRenderer::cleanup() {
     m_eglConfig = nullptr;
     m_display = nullptr;
     m_surface = nullptr;
-#endif
 }

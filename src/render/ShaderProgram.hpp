@@ -1,8 +1,6 @@
 #pragma once
 
-#if NOCTALIA_HAVE_EGL
 #include <GLES2/gl2.h>
-#endif
 
 class ShaderProgram {
 public:

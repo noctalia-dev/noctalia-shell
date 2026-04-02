@@ -13,9 +13,9 @@ find_package(PkgConfig REQUIRED)
 find_package(sdbus-c++ REQUIRED)
 pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
 pkg_check_modules(WAYLAND_PROTOCOLS REQUIRED wayland-protocols)
-pkg_check_modules(EGL QUIET egl)
-pkg_check_modules(GLES2 QUIET glesv2)
-pkg_check_modules(WAYLAND_EGL QUIET wayland-egl)
+pkg_check_modules(EGL REQUIRED egl)
+pkg_check_modules(GLES2 REQUIRED glesv2)
+pkg_check_modules(WAYLAND_EGL REQUIRED wayland-egl)
 pkg_get_variable(WAYLAND_PROTOCOLS_PKGDATADIR wayland-protocols pkgdatadir)
 file(REAL_PATH "${WAYLAND_PROTOCOLS_PKGDATADIR}" WAYLAND_PROTOCOLS_PKGDATADIR)
 
@@ -121,10 +121,8 @@ add_executable(noctalia
     src/notification/NotificationManager.cpp
     src/dbus/notification/NotificationService.cpp
     src/render/GlRenderer.cpp
-    src/render/RendererFactory.cpp
     src/render/RoundedRectProgram.cpp
     src/render/ShaderProgram.cpp
-    src/render/SoftwareBarRenderer.cpp
     src/shell/BarShell.cpp
     src/wayland/LayerSurface.cpp
     src/wayland/WaylandConnection.cpp
@@ -133,11 +131,6 @@ add_executable(noctalia
     "${XDG_SHELL_PROTOCOL_C}"
 )
 target_compile_definitions(noctalia PRIVATE NOCTALIA_HAVE_WLR_LAYER_SHELL=1)
-if (EGL_FOUND AND GLES2_FOUND AND WAYLAND_EGL_FOUND)
-    target_compile_definitions(noctalia PRIVATE NOCTALIA_HAVE_EGL=1)
-else()
-    target_compile_definitions(noctalia PRIVATE NOCTALIA_HAVE_EGL=0)
-endif()
 
 add_dependencies(noctalia noctalia_wayland_protocols)
 

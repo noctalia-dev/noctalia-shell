@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 
-#if NOCTALIA_HAVE_EGL
 namespace {
 
 GLuint compileShader(GLenum type, const char* source) {
@@ -31,7 +30,6 @@ GLuint compileShader(GLenum type, const char* source) {
 }
 
 } // namespace
-#endif
 
 ShaderProgram::~ShaderProgram() {
     destroy();
@@ -54,7 +52,6 @@ ShaderProgram& ShaderProgram::operator=(ShaderProgram&& other) noexcept {
 }
 
 void ShaderProgram::create(const char* vertexSource, const char* fragmentSource) {
-#if NOCTALIA_HAVE_EGL
     destroy();
 
     const GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexSource);
@@ -84,20 +81,13 @@ void ShaderProgram::create(const char* vertexSource, const char* fragmentSource)
         destroy();
         throw std::runtime_error("shader link failed: " + log);
     }
-#else
-    (void)vertexSource;
-    (void)fragmentSource;
-    throw std::runtime_error("OpenGL/EGL support was not compiled in");
-#endif
 }
 
 void ShaderProgram::destroy() {
-#if NOCTALIA_HAVE_EGL
     if (m_program != 0) {
         glDeleteProgram(m_program);
         m_program = 0;
     }
-#endif
 }
 
 bool ShaderProgram::isValid() const noexcept {
