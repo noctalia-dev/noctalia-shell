@@ -178,9 +178,9 @@ async def main():
         await sync_system_appearance(mode, update_gtk_theme=True)
         print("GTK colors applied successfully")
     else:
-        # CSS setup failed; still align gsettings (color-scheme + gtk-theme when themes exist)
-        # so apps do not end up with mismatched prefer-dark vs adw-gtk3 (inverted look).
-        await sync_system_appearance(mode, update_gtk_theme=True)
+        # Still push light/dark preference so portal/GTK apps follow the shell even when
+        # gtk.css / noctalia.css setup failed.
+        await sync_system_appearance(mode, update_gtk_theme=False)
         sys.exit(1)
 
 

@@ -18,15 +18,12 @@ Singleton {
   property string colorsJsonFilePath: Settings.configDir + "colors.json"
   readonly property string gtkRefreshScript: Quickshell.shellDir + "/Scripts/python/src/theming/gtk-refresh.py"
 
-  // GTK template: post_hook runs gtk-refresh after CSS; skip here to avoid a second, early run.
-  // No GTK template: sync updates org.gnome.desktop.interface when the user enables it.
+  // prefer-light/prefer-dark only; GTK template post_hook still runs full gtk-refresh.
   function pushSystemColorScheme() {
     if (!Settings.data.colorSchemes.syncGsettings)
       return;
-    if (TemplateProcessor.isTemplateEnabled("gtk"))
-      return;
     const mode = Settings.data.colorSchemes.darkMode ? "dark" : "light";
-    Quickshell.execDetached(["python3", gtkRefreshScript, mode]);
+    Quickshell.execDetached(["python3", gtkRefreshScript, "--appearance-only", mode]);
   }
 
   Connections {
