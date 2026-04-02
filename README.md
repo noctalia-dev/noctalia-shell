@@ -58,9 +58,12 @@ Noctalia
 - [ ] Display icon in UI layer
 
 #### Stability
-- [ ] Handle empty summary/body
-- [ ] Handle invalid DBus input gracefully
+- [x] Handle empty summary/body
+- [x] Handle invalid DBus input gracefully
 - [x] Ensure no crashes on malformed hints
+- [x] Clamp oversized strings (1024 char limit)
+- [x] Validate urgency byte (0–2, default Normal)
+- [x] Clamp timeout to minimum -1
 
 #### Later
 - [ ] Notification closing/removal API polish
