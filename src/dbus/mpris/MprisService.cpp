@@ -30,6 +30,10 @@ bool is_mpris_bus_name(std::string_view name) {
     return name.starts_with("org.mpris.MediaPlayer2.");
 }
 
+bool is_valid_loop_status(std::string_view loop_status) {
+    return loop_status == "None" || loop_status == "Track" || loop_status == "Playlist";
+}
+
 template<typename T>
 T get_property_or(sdbus::IProxy& proxy, std::string_view interface_name,
                   std::string_view property_name, T fallback) {
@@ -123,6 +127,7 @@ std::map<std::string, sdbus::Variant> to_dbus_player(const MprisPlayerInfo& info
     player["artists"] = sdbus::Variant(info.artists);
     player["album"] = sdbus::Variant(info.album);
     player["art_url"] = sdbus::Variant(info.art_url);
+    player["loop_status"] = sdbus::Variant(info.loop_status);
     player["shuffle"] = sdbus::Variant(info.shuffle);
     player["volume"] = sdbus::Variant(info.volume);
     player["position_us"] = sdbus::Variant(info.position_us);
@@ -378,6 +383,37 @@ bool MprisService::setShuffleActive(bool shuffle) {
     return setShuffle(*active, shuffle);
 }
 
+bool MprisService::setLoopStatus(const std::string& bus_name, std::string loop_status) {
+    const auto it = m_players.find(bus_name);
+    if (it == m_players.end()) {
+        return false;
+    }
+
+    const auto proxy_it = m_player_proxies.find(bus_name);
+    if (proxy_it == m_player_proxies.end()) {
+        return false;
+    }
+
+    try {
+        proxy_it->second->setProperty("LoopStatus")
+            .onInterface(k_mpris_player_interface)
+            .toValue(std::move(loop_status));
+        addOrRefreshPlayer(bus_name);
+        return true;
+    } catch (const sdbus::Error& e) {
+        logWarn("mpris set-loop-status failed name={} err={}", bus_name, e.what());
+        return false;
+    }
+}
+
+bool MprisService::setLoopStatusActive(std::string loop_status) {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        return false;
+    }
+    return setLoopStatus(*active, std::move(loop_status));
+}
+
 std::optional<int64_t> MprisService::position(const std::string& bus_name) const {
     const auto it = m_players.find(bus_name);
     if (it == m_players.end()) {
@@ -424,6 +460,22 @@ std::optional<bool> MprisService::shuffleActive() const {
         return std::nullopt;
     }
     return shuffle(*active);
+}
+
+std::optional<std::string> MprisService::loopStatus(const std::string& bus_name) const {
+    const auto it = m_players.find(bus_name);
+    if (it == m_players.end()) {
+        return std::nullopt;
+    }
+    return it->second.loop_status;
+}
+
+std::optional<std::string> MprisService::loopStatusActive() const {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        return std::nullopt;
+    }
+    return loopStatus(*active);
 }
 
 bool MprisService::setPinnedPlayerPreference(const std::string& bus_name) {
@@ -595,6 +647,33 @@ void MprisService::registerControlApi() {
             .withOutputParamNames("success")
             .implementedAs([this](bool shuffle) {
                 return onSetShuffleActive(shuffle);
+            }),
+
+        sdbus::registerMethod("GetLoopStatusPlayer")
+            .withInputParamNames("player_bus_name")
+            .withOutputParamNames("loop_status")
+            .implementedAs([this](const std::string& bus_name) {
+                return onGetLoopStatusPlayer(bus_name);
+            }),
+
+        sdbus::registerMethod("GetLoopStatusActive")
+            .withOutputParamNames("loop_status")
+            .implementedAs([this]() {
+                return onGetLoopStatusActive();
+            }),
+
+        sdbus::registerMethod("SetLoopStatusPlayer")
+            .withInputParamNames("player_bus_name", "loop_status")
+            .withOutputParamNames("success")
+            .implementedAs([this](const std::string& bus_name, const std::string& loop_status) {
+                return onSetLoopStatusPlayer(bus_name, loop_status);
+            }),
+
+        sdbus::registerMethod("SetLoopStatusActive")
+            .withInputParamNames("loop_status")
+            .withOutputParamNames("success")
+            .implementedAs([this](const std::string& loop_status) {
+                return onSetLoopStatusActive(loop_status);
             }),
 
         sdbus::registerMethod("SeekPlayer")
@@ -1178,6 +1257,61 @@ bool MprisService::onSetShuffleActive(bool shuffle) {
     return onSetShufflePlayer(*active, shuffle);
 }
 
+std::string MprisService::onGetLoopStatusPlayer(const std::string& bus_name) const {
+    if (bus_name.empty()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
+                           "player_bus_name must not be empty");
+    }
+
+    const auto current_loop_status = loopStatus(bus_name);
+    if (!current_loop_status.has_value()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "player was not found");
+    }
+    return *current_loop_status;
+}
+
+std::string MprisService::onGetLoopStatusActive() const {
+    const auto current_loop_status = loopStatusActive();
+    if (!current_loop_status.has_value()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "no active player available");
+    }
+    return *current_loop_status;
+}
+
+bool MprisService::onSetLoopStatusPlayer(const std::string& bus_name, const std::string& loop_status) {
+    if (bus_name.empty()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
+                           "player_bus_name must not be empty");
+    }
+
+    if (!is_valid_loop_status(loop_status)) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
+                           "loop_status must be one of: None, Track, Playlist");
+    }
+
+    if (!m_players.contains(bus_name)) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "player was not found");
+    }
+
+    if (!setLoopStatus(bus_name, loop_status)) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotSupported"},
+                           "player does not support LoopStatus updates");
+    }
+    return true;
+}
+
+bool MprisService::onSetLoopStatusActive(const std::string& loop_status) {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "no active player available");
+    }
+    return onSetLoopStatusPlayer(*active, loop_status);
+}
+
 bool MprisService::onSetActivePlayerPreference(const std::string& bus_name) {
     if (bus_name.empty()) {
         throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
@@ -1221,6 +1355,7 @@ MprisPlayerInfo MprisService::readPlayerInfo(sdbus::IProxy& proxy, const std::st
         .artists = get_string_array_from_variant(metadata, "xesam:artist"),
         .album = get_string_from_variant(metadata, "xesam:album"),
         .art_url = get_string_from_variant(metadata, "mpris:artUrl"),
+        .loop_status = get_property_or(proxy, k_mpris_player_interface, "LoopStatus", std::string{"None"}),
         .shuffle = get_property_or(proxy, k_mpris_player_interface, "Shuffle", false),
         .volume = get_property_or(proxy, k_mpris_player_interface, "Volume", 1.0),
         .position_us = get_property_or(proxy, k_mpris_player_interface, "Position", int64_t{0}),

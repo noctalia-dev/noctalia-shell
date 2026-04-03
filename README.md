@@ -114,7 +114,7 @@ third_party/
 - [x] Seek + position controls
 - [x] Volume controls
 - [x] Shuffle controls
-- [ ] Loop status controls
+- [x] Loop status controls
 - [ ] Event debounce for noisy players
 
 </details>

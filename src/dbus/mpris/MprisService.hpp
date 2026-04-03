@@ -25,6 +25,7 @@ struct MprisPlayerInfo {
     std::vector<std::string> artists;
     std::string              album;
     std::string              art_url;
+    std::string              loop_status{"None"};
     bool                     shuffle{false};
     double                   volume{1.0};
     int64_t                  position_us{0};
@@ -60,12 +61,16 @@ public:
     bool setVolumeActive(double volume);
     bool setShuffle(const std::string& bus_name, bool shuffle);
     bool setShuffleActive(bool shuffle);
+    bool setLoopStatus(const std::string& bus_name, std::string loop_status);
+    bool setLoopStatusActive(std::string loop_status);
     [[nodiscard]] std::optional<int64_t> position(const std::string& bus_name) const;
     [[nodiscard]] std::optional<int64_t> positionActive() const;
     [[nodiscard]] std::optional<double> volume(const std::string& bus_name) const;
     [[nodiscard]] std::optional<double> volumeActive() const;
     [[nodiscard]] std::optional<bool> shuffle(const std::string& bus_name) const;
     [[nodiscard]] std::optional<bool> shuffleActive() const;
+    [[nodiscard]] std::optional<std::string> loopStatus(const std::string& bus_name) const;
+    [[nodiscard]] std::optional<std::string> loopStatusActive() const;
 
     bool setPinnedPlayerPreference(const std::string& bus_name);
     void clearPinnedPlayerPreference();
@@ -102,12 +107,16 @@ private:
     bool onSetVolumeActive(double volume);
     bool onSetShufflePlayer(const std::string& bus_name, bool shuffle);
     bool onSetShuffleActive(bool shuffle);
+    bool onSetLoopStatusPlayer(const std::string& bus_name, const std::string& loop_status);
+    bool onSetLoopStatusActive(const std::string& loop_status);
     int64_t onGetPositionPlayer(const std::string& bus_name) const;
     int64_t onGetPositionActive() const;
     double onGetVolumePlayer(const std::string& bus_name) const;
     double onGetVolumeActive() const;
     bool onGetShufflePlayer(const std::string& bus_name) const;
     bool onGetShuffleActive() const;
+    std::string onGetLoopStatusPlayer(const std::string& bus_name) const;
+    std::string onGetLoopStatusActive() const;
     bool onSetActivePlayerPreference(const std::string& bus_name);
     bool onClearActivePlayerPreference();
     bool onSetPreferredPlayers(const std::vector<std::string>& preferred_bus_names);
