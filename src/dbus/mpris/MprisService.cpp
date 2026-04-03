@@ -61,6 +61,20 @@ std::string get_string_from_variant(const std::map<std::string, sdbus::Variant>&
     }
 }
 
+std::string get_object_path_from_variant(const std::map<std::string, sdbus::Variant>& values,
+                                         std::string_view key) {
+    const auto it = values.find(std::string{key});
+    if (it == values.end()) {
+        return {};
+    }
+
+    try {
+        return it->second.get<sdbus::ObjectPath>();
+    } catch (const sdbus::Error&) {
+        return {};
+    }
+}
+
 std::vector<std::string> get_string_array_from_variant(
     const std::map<std::string, sdbus::Variant>& values,
     std::string_view key) {
@@ -103,15 +117,18 @@ std::map<std::string, sdbus::Variant> to_dbus_player(const MprisPlayerInfo& info
     player["identity"] = sdbus::Variant(info.identity);
     player["desktop_entry"] = sdbus::Variant(info.desktop_entry);
     player["playback_status"] = sdbus::Variant(info.playback_status);
+    player["track_id"] = sdbus::Variant(info.track_id);
     player["title"] = sdbus::Variant(info.title);
     player["artists"] = sdbus::Variant(info.artists);
     player["album"] = sdbus::Variant(info.album);
     player["art_url"] = sdbus::Variant(info.art_url);
+    player["position_us"] = sdbus::Variant(info.position_us);
     player["length_us"] = sdbus::Variant(info.length_us);
     player["can_play"] = sdbus::Variant(info.can_play);
     player["can_pause"] = sdbus::Variant(info.can_pause);
     player["can_go_next"] = sdbus::Variant(info.can_go_next);
     player["can_go_previous"] = sdbus::Variant(info.can_go_previous);
+    player["can_seek"] = sdbus::Variant(info.can_seek);
     return player;
 }
 
@@ -210,6 +227,106 @@ bool MprisService::previousActive() {
         return false;
     }
     return previous(*active);
+}
+
+bool MprisService::seek(const std::string& bus_name, int64_t offset_us) {
+    const auto it = m_players.find(bus_name);
+    if (it == m_players.end() || !it->second.can_seek) {
+        return false;
+    }
+
+    const auto proxy_it = m_player_proxies.find(bus_name);
+    if (proxy_it == m_player_proxies.end()) {
+        return false;
+    }
+
+    try {
+        proxy_it->second->callMethod("Seek")
+            .onInterface(k_mpris_player_interface)
+            .withArguments(offset_us);
+        addOrRefreshPlayer(bus_name);
+        return true;
+    } catch (const sdbus::Error& e) {
+        logWarn("mpris seek failed name={} err={}", bus_name, e.what());
+        return false;
+    }
+}
+
+bool MprisService::seekActive(int64_t offset_us) {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        return false;
+    }
+    return seek(*active, offset_us);
+}
+
+bool MprisService::setPosition(const std::string& bus_name, int64_t position_us) {
+    const auto it = m_players.find(bus_name);
+    if (it == m_players.end() || !it->second.can_seek) {
+        return false;
+    }
+
+    const auto proxy_it = m_player_proxies.find(bus_name);
+    if (proxy_it == m_player_proxies.end()) {
+        return false;
+    }
+
+    auto fallback_seek = [&]() {
+        int64_t current_position_us = it->second.position_us;
+        try {
+            const sdbus::Variant position_value = proxy_it->second->getProperty("Position")
+                .onInterface(k_mpris_player_interface);
+            current_position_us = position_value.get<int64_t>();
+        } catch (const sdbus::Error& e) {
+            logWarn("mpris position refresh failed name={} err={}, using cached value", bus_name, e.what());
+        }
+
+        const int64_t offset_us = position_us - current_position_us;
+        if (offset_us == 0) {
+            return true;
+        }
+        return seek(bus_name, offset_us);
+    };
+
+    if (it->second.track_id.empty()) {
+        // Some players don't expose track_id consistently; emulate absolute position with Seek.
+        return fallback_seek();
+    }
+
+    try {
+        proxy_it->second->callMethod("SetPosition")
+            .onInterface(k_mpris_player_interface)
+            .withArguments(sdbus::ObjectPath{it->second.track_id}, position_us);
+        addOrRefreshPlayer(bus_name);
+        return true;
+    } catch (const sdbus::Error& e) {
+        logWarn("mpris set-position failed name={} err={}, falling back to Seek", bus_name, e.what());
+        return fallback_seek();
+    }
+}
+
+bool MprisService::setPositionActive(int64_t position_us) {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        return false;
+    }
+    return setPosition(*active, position_us);
+}
+
+std::optional<int64_t> MprisService::position(const std::string& bus_name) const {
+    const auto it = m_players.find(bus_name);
+    if (it == m_players.end()) {
+        return std::nullopt;
+    }
+    return it->second.position_us;
+}
+
+std::optional<int64_t> MprisService::positionActive() const {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        return std::nullopt;
+    }
+    return position(*active);
 }
 
 bool MprisService::setPinnedPlayerPreference(const std::string& bus_name) {
@@ -314,6 +431,47 @@ void MprisService::registerControlApi() {
             .withOutputParamNames("has_pinned", "pinned_bus_name", "preferred_bus_names")
             .implementedAs([this]() {
                 return onGetPlayerPreferences();
+            }),
+
+        sdbus::registerMethod("GetPositionPlayer")
+            .withInputParamNames("player_bus_name")
+            .withOutputParamNames("position_us")
+            .implementedAs([this](const std::string& bus_name) {
+                return onGetPositionPlayer(bus_name);
+            }),
+
+        sdbus::registerMethod("GetPositionActive")
+            .withOutputParamNames("position_us")
+            .implementedAs([this]() {
+                return onGetPositionActive();
+            }),
+
+        sdbus::registerMethod("SeekPlayer")
+            .withInputParamNames("player_bus_name", "offset_us")
+            .withOutputParamNames("success")
+            .implementedAs([this](const std::string& bus_name, int64_t offset_us) {
+                return onSeekPlayer(bus_name, offset_us);
+            }),
+
+        sdbus::registerMethod("SeekActive")
+            .withInputParamNames("offset_us")
+            .withOutputParamNames("success")
+            .implementedAs([this](int64_t offset_us) {
+                return onSeekActive(offset_us);
+            }),
+
+        sdbus::registerMethod("SetPositionPlayer")
+            .withInputParamNames("player_bus_name", "position_us")
+            .withOutputParamNames("success")
+            .implementedAs([this](const std::string& bus_name, int64_t position_us) {
+                return onSetPositionPlayer(bus_name, position_us);
+            }),
+
+        sdbus::registerMethod("SetPositionActive")
+            .withInputParamNames("position_us")
+            .withOutputParamNames("success")
+            .implementedAs([this](int64_t position_us) {
+                return onSetPositionActive(position_us);
             }),
 
         sdbus::registerMethod("PlayPausePlayer")
@@ -505,6 +663,8 @@ void MprisService::addOrRefreshPlayer(const std::string& bus_name) {
                 previous_info.album != merged.album ||
                 previous_info.artists != merged.artists ||
                 previous_info.art_url != merged.art_url ||
+                previous_info.track_id != merged.track_id ||
+                previous_info.position_us != merged.position_us ||
                 previous_info.length_us != merged.length_us) {
                 emitTrackChanged(merged);
             }
@@ -685,6 +845,83 @@ bool MprisService::onPreviousActive() {
     return onPreviousPlayer(*active);
 }
 
+bool MprisService::onSeekPlayer(const std::string& bus_name, int64_t offset_us) {
+    if (bus_name.empty()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
+                           "player_bus_name must not be empty");
+    }
+
+    if (!m_players.contains(bus_name)) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "player was not found");
+    }
+
+    if (!seek(bus_name, offset_us)) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotSupported"},
+                           "player does not support Seek");
+    }
+    return true;
+}
+
+bool MprisService::onSeekActive(int64_t offset_us) {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "no active player available");
+    }
+    return onSeekPlayer(*active, offset_us);
+}
+
+bool MprisService::onSetPositionPlayer(const std::string& bus_name, int64_t position_us) {
+    if (bus_name.empty()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
+                           "player_bus_name must not be empty");
+    }
+
+    if (!m_players.contains(bus_name)) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "player was not found");
+    }
+
+    if (!setPosition(bus_name, position_us)) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotSupported"},
+                           "player does not support SetPosition");
+    }
+    return true;
+}
+
+bool MprisService::onSetPositionActive(int64_t position_us) {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "no active player available");
+    }
+    return onSetPositionPlayer(*active, position_us);
+}
+
+int64_t MprisService::onGetPositionPlayer(const std::string& bus_name) const {
+    if (bus_name.empty()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
+                           "player_bus_name must not be empty");
+    }
+
+    const auto pos = position(bus_name);
+    if (!pos.has_value()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "player was not found");
+    }
+    return *pos;
+}
+
+int64_t MprisService::onGetPositionActive() const {
+    const auto pos = positionActive();
+    if (!pos.has_value()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "no active player available");
+    }
+    return *pos;
+}
+
 bool MprisService::onSetActivePlayerPreference(const std::string& bus_name) {
     if (bus_name.empty()) {
         throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
@@ -723,14 +960,17 @@ MprisPlayerInfo MprisService::readPlayerInfo(sdbus::IProxy& proxy, const std::st
         .identity = get_property_or(proxy, k_mpris_root_interface, "Identity", std::string{}),
         .desktop_entry = get_property_or(proxy, k_mpris_root_interface, "DesktopEntry", std::string{}),
         .playback_status = get_property_or(proxy, k_mpris_player_interface, "PlaybackStatus", std::string{}),
+        .track_id = get_object_path_from_variant(metadata, "mpris:trackid"),
         .title = get_string_from_variant(metadata, "xesam:title"),
         .artists = get_string_array_from_variant(metadata, "xesam:artist"),
         .album = get_string_from_variant(metadata, "xesam:album"),
         .art_url = get_string_from_variant(metadata, "mpris:artUrl"),
+        .position_us = get_property_or(proxy, k_mpris_player_interface, "Position", int64_t{0}),
         .length_us = get_int64_from_variant(metadata, "mpris:length"),
         .can_play = get_property_or(proxy, k_mpris_player_interface, "CanPlay", false),
         .can_pause = get_property_or(proxy, k_mpris_player_interface, "CanPause", false),
         .can_go_next = get_property_or(proxy, k_mpris_player_interface, "CanGoNext", false),
         .can_go_previous = get_property_or(proxy, k_mpris_player_interface, "CanGoPrevious", false),
+        .can_seek = get_property_or(proxy, k_mpris_player_interface, "CanSeek", false),
     };
 }

@@ -20,15 +20,18 @@ struct MprisPlayerInfo {
     std::string              identity;
     std::string              desktop_entry;
     std::string              playback_status;
+    std::string              track_id;
     std::string              title;
     std::vector<std::string> artists;
     std::string              album;
     std::string              art_url;
+    int64_t                  position_us{0};
     int64_t                  length_us{0};
     bool                     can_play{false};
     bool                     can_pause{false};
     bool                     can_go_next{false};
     bool                     can_go_previous{false};
+    bool                     can_seek{false};
 
     bool operator==(const MprisPlayerInfo&) const = default;
 };
@@ -47,6 +50,12 @@ public:
     bool playPauseActive();
     bool nextActive();
     bool previousActive();
+    bool seek(const std::string& bus_name, int64_t offset_us);
+    bool seekActive(int64_t offset_us);
+    bool setPosition(const std::string& bus_name, int64_t position_us);
+    bool setPositionActive(int64_t position_us);
+    [[nodiscard]] std::optional<int64_t> position(const std::string& bus_name) const;
+    [[nodiscard]] std::optional<int64_t> positionActive() const;
 
     bool setPinnedPlayerPreference(const std::string& bus_name);
     void clearPinnedPlayerPreference();
@@ -75,6 +84,12 @@ private:
     bool onPlayPauseActive();
     bool onNextActive();
     bool onPreviousActive();
+    bool onSeekPlayer(const std::string& bus_name, int64_t offset_us);
+    bool onSeekActive(int64_t offset_us);
+    bool onSetPositionPlayer(const std::string& bus_name, int64_t position_us);
+    bool onSetPositionActive(int64_t position_us);
+    int64_t onGetPositionPlayer(const std::string& bus_name) const;
+    int64_t onGetPositionActive() const;
     bool onSetActivePlayerPreference(const std::string& bus_name);
     bool onClearActivePlayerPreference();
     bool onSetPreferredPlayers(const std::vector<std::string>& preferred_bus_names);
