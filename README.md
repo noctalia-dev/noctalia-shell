@@ -108,6 +108,7 @@ third_party/
 - [x] Query API (GetPlayers/GetActivePlayer)
 - [x] Signals (PlayersChanged/ActivePlayerChanged/TrackChanged)
 - [x] Active-player policy configuration (pin/prefer list)
+- [x] Sticky art_url fallback for async metadata updates and track switches
 - [ ] Seek + position controls
 - [ ] Volume/shuffle/loop controls
 - [ ] Event debounce for noisy players

@@ -470,8 +470,13 @@ void MprisService::addOrRefreshPlayer(const std::string& bus_name) {
         const auto existing = m_players.find(bus_name);
         if (existing == m_players.end()) {
             m_players.emplace(bus_name, info);
-            logInfo("mpris added player name={} identity=\"{}\" status={} title=\"{}\" artist=\"{}\"",
-                    info.bus_name, info.identity, info.playback_status, info.title, primary_artist(info.artists));
+            logInfo("mpris added player name={} identity=\"{}\" status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"",
+                info.bus_name,
+                info.identity,
+                info.playback_status,
+                info.title,
+                primary_artist(info.artists),
+                info.art_url);
             emitPlayersChanged();
             syncSignals(previous_active);
             return;
@@ -479,16 +484,29 @@ void MprisService::addOrRefreshPlayer(const std::string& bus_name) {
 
         if (existing->second != info) {
             const MprisPlayerInfo previous_info = existing->second;
-            existing->second = info;
-            logDebug("mpris updated player name={} status={} title=\"{}\" artist=\"{}\"",
-                     info.bus_name, info.playback_status, info.title, primary_artist(info.artists));
 
-            if (previous_info.title != info.title ||
-                previous_info.album != info.album ||
-                previous_info.artists != info.artists ||
-                previous_info.art_url != info.art_url ||
-                previous_info.length_us != info.length_us) {
-                emitTrackChanged(info);
+            // Some players publish metadata and art_url in separate updates.
+            // Keep last non-empty art_url until a new non-empty value arrives
+            // to avoid transient empty artwork bursts during track switches.
+            MprisPlayerInfo merged = info;
+            if (merged.art_url.empty() && !previous_info.art_url.empty()) {
+                merged.art_url = previous_info.art_url;
+            }
+
+            existing->second = merged;
+            logDebug("mpris updated player name={} status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"",
+                     merged.bus_name,
+                     merged.playback_status,
+                     merged.title,
+                     primary_artist(merged.artists),
+                     merged.art_url);
+
+            if (previous_info.title != merged.title ||
+                previous_info.album != merged.album ||
+                previous_info.artists != merged.artists ||
+                previous_info.art_url != merged.art_url ||
+                previous_info.length_us != merged.length_us) {
+                emitTrackChanged(merged);
             }
 
             syncSignals(previous_active);
