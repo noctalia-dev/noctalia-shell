@@ -18,7 +18,10 @@ private:
                                         const std::string& body,
                                         int32_t timeout,
                                         uint8_t urgency);
+    bool onSetVerboseLogs(bool enabled);
+    bool onGetVerboseLogs() const;
 
     InternalNotificationService& m_internal_notifications;
     std::unique_ptr<sdbus::IObject> m_object;
+    bool m_verbose_logs{true};
 };

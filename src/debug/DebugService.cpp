@@ -1,4 +1,4 @@
-#include "dbus/debug/DebugService.hpp"
+#include "debug/DebugService.hpp"
 
 #include "core/Log.hpp"
 #include "dbus/SessionBus.hpp"
@@ -16,7 +16,7 @@ Urgency clamp_urgency(uint8_t urgency) {
     return static_cast<Urgency>(urgency);
 }
 
-}
+} // namespace
 
 DebugService::DebugService(SessionBus& bus, InternalNotificationService& internal_notifications)
     : m_internal_notifications(internal_notifications) {
@@ -33,6 +33,19 @@ DebugService::DebugService(SessionBus& bus, InternalNotificationService& interna
                                   int32_t timeout,
                                   uint8_t urgency) {
                 return onEmitInternalNotification(app_name, summary, body, timeout, urgency);
+            }),
+
+        sdbus::registerMethod("SetVerboseLogs")
+            .withInputParamNames("enabled")
+            .withOutputParamNames("success")
+            .implementedAs([this](bool enabled) {
+                return onSetVerboseLogs(enabled);
+            }),
+
+        sdbus::registerMethod("GetVerboseLogs")
+            .withOutputParamNames("enabled")
+            .implementedAs([this]() {
+                return onGetVerboseLogs();
             })
     ).forInterface(k_debug_interface);
 }
@@ -49,4 +62,15 @@ uint32_t DebugService::onEmitInternalNotification(const std::string& app_name,
                                                         clamp_urgency(urgency));
     logInfo("debug internal notification emitted id={} app=\"{}\"", id, app_name);
     return id;
+}
+
+bool DebugService::onSetVerboseLogs(bool enabled) {
+    m_verbose_logs = enabled;
+    setLogLevel(enabled ? LogLevel::Debug : LogLevel::Info);
+    logInfo("debug verbose logs {}", enabled ? "enabled" : "disabled");
+    return true;
+}
+
+bool DebugService::onGetVerboseLogs() const {
+    return m_verbose_logs;
 }

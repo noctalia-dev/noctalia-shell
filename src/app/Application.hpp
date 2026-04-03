@@ -2,13 +2,14 @@
 
 #include "app/MainLoop.hpp"
 #include "compositor/niri/NiriCompositorService.hpp"
-#include "dbus/debug/DebugService.hpp"
+#include "debug/DebugService.hpp"
 #include "dbus/SessionBus.hpp"
 #include "dbus/mpris/MprisService.hpp"
 #include "dbus/notification/NotificationService.hpp"
 #include "notification/InternalNotificationService.hpp"
 #include "notification/NotificationManager.hpp"
 #include "shell/Bar.hpp"
+#include "system/SystemMonitorService.hpp"
 
 #include <atomic>
 #include <memory>
@@ -25,6 +26,7 @@ public:
 private:
     Bar m_bar;
     std::unique_ptr<SessionBus> m_bus;
+    std::unique_ptr<SystemMonitorService> m_systemMonitor;
     std::unique_ptr<NiriService> m_niriCompositor;
     std::unique_ptr<DebugService> m_debugService;
     std::unique_ptr<MprisService> m_mprisService;

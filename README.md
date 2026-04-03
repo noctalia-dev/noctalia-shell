@@ -45,6 +45,10 @@ just rebuild release  # release
 
 # Run
 just run
+
+# Toggle verbose debug logs at runtime
+gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug --method dev.noctalia.Debug.SetVerboseLogs false
+gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug --method dev.noctalia.Debug.SetVerboseLogs true
 ```
 
 <details>
@@ -119,7 +123,7 @@ Status indicators and controls that make the bar complete.
 - [ ] Brightness control + OSD
 - [ ] Network service (NetworkManager via DBus)
 - [ ] Bluetooth service (Bluez via DBus)
-- [ ] System stats (CPU, RAM, temperature)
+- [ ] System stats (CPU, RAM, temperature) (backend logging started: cpu/ram/temp)
 
 ### Phase 4 -- Desktop shell
 
