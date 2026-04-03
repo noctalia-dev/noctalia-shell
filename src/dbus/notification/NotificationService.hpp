@@ -4,7 +4,9 @@
 
 #include <sdbus-c++/sdbus-c++.h>
 #include <chrono>
+#include <map>
 #include <memory>
+#include <string>
 #include <tuple>
 #include <vector>
 
@@ -36,6 +38,8 @@ private:
 
     void onInvokeAction(uint32_t id, const std::string& action_key);
     void emitActionInvoked(uint32_t id, const std::string& action_key);
+
+    std::vector<std::map<std::string, sdbus::Variant>> onGetNotifications();
 
     std::vector<std::string> onGetCapabilities();
 

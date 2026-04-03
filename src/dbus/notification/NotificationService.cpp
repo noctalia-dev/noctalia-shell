@@ -39,6 +39,12 @@ NotificationService::NotificationService(SessionBus& bus, NotificationManager& m
                 return onGetCapabilities();
             }),
 
+        sdbus::registerMethod("GetNotifications")
+            .withOutputParamNames("notifications")
+            .implementedAs([this]() {
+                return onGetNotifications();
+            }),
+
         sdbus::registerMethod("GetServerInformation")
             .withOutputParamNames("name", "vendor", "version", "spec_version")
             .implementedAs([this]() {
@@ -164,6 +170,25 @@ uint32_t NotificationService::onNotify(const std::string& app_name,
 
 std::vector<std::string> NotificationService::onGetCapabilities() {
     return {"body", "actions"};
+}
+
+std::vector<std::map<std::string, sdbus::Variant>> NotificationService::onGetNotifications() {
+    std::vector<std::map<std::string, sdbus::Variant>> result;
+    for (const auto& n : m_manager.all()) {
+        std::map<std::string, sdbus::Variant> notif;
+        notif["id"] = sdbus::Variant(n.id);
+        notif["app_name"] = sdbus::Variant(n.app_name);
+        notif["summary"] = sdbus::Variant(n.summary);
+        notif["body"] = sdbus::Variant(n.body);
+        notif["timeout"] = sdbus::Variant(n.timeout);
+        notif["urgency"] = sdbus::Variant(static_cast<uint8_t>(n.urgency));
+        notif["actions"] = sdbus::Variant(n.actions);
+        notif["icon"] = sdbus::Variant(n.icon.value_or(""));
+        notif["category"] = sdbus::Variant(n.category.value_or(""));
+        notif["desktop_entry"] = sdbus::Variant(n.desktop_entry.value_or(""));
+        result.push_back(notif);
+    }
+    return result;
 }
 
 void NotificationService::onCloseNotification(uint32_t id) {

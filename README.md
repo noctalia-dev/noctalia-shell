@@ -92,6 +92,7 @@ third_party/
   - [x] Prevent duplicate stacking when replacing
   - [x] Actions implementation (D-Bus backend)
   - [x] Graceful shutdown (SIGTERM/SIGINT)
+  - [x] GetNotifications method (query all)
   - [ ] Display icon in UI layer (need Phase 1)
   - [ ] Closing/removal API polish
 
