@@ -2,8 +2,10 @@
 
 #include "core/Log.hpp"
 #include "render/Palette.hpp"
+#include "render/TextureManager.hpp"
+#include "render/scene/ImageNode.hpp"
 #include "render/scene/RectNode.hpp"
-#include "render/scene/TextNode.hpp"
+#include "ui/controls/Label.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -12,7 +14,7 @@
 
 namespace {
 
-constexpr std::uint32_t kBarHeight = 36;
+constexpr std::uint32_t kBarHeight = 42;
 
 } // namespace
 
@@ -178,11 +180,38 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
         });
         instance.sceneRoot->addChild(std::move(accent));
 
-        auto label = std::make_unique<TextNode>();
-        label->setText("Noctalia");
-        label->setFontSize(14.0f);
-        label->setColor(kRosePinePalette.text);
-        instance.labelNode = static_cast<TextNode*>(instance.sceneRoot->addChild(std::move(label)));
+        auto title = std::make_unique<Label>();
+        title->setText("Noctalia");
+        title->setFontSize(14.0f);
+        title->setColor(kRosePinePalette.text);
+        instance.titleLabel = static_cast<Label*>(instance.sceneRoot->addChild(std::move(title)));
+
+        // Test: truncated text
+        auto trunc = std::make_unique<Label>();
+        trunc->setText("This is a long label that should be truncated with an ellipsis");
+        trunc->setFontSize(12.0f);
+        trunc->setMaxWidth(120.0f);
+        trunc->setColor(kRosePinePalette.foam);
+        instance.truncLabel = static_cast<Label*>(instance.sceneRoot->addChild(std::move(trunc)));
+
+        // Test: image (try PNG first, fall back to SVG)
+        auto& texMgr = renderer->textureManager();
+        auto handle = texMgr.loadFromFile("/usr/share/icons/hicolor/48x48/apps/firefox.png", 24);
+        if (handle.id == 0) {
+            handle = texMgr.loadFromFile("/usr/share/icons/hicolor/scalable/apps/foot.svg", 24);
+        }
+        if (handle.id != 0) {
+            auto icon = std::make_unique<ImageNode>();
+            icon->setTextureId(handle.id);
+            icon->setPosition(300.0f, 6.0f);
+            icon->setSize(24.0f, 24.0f);
+            instance.sceneRoot->addChild(std::move(icon));
+        }
+
+        // Test: fade-in animation
+        instance.sceneRoot->setOpacity(0.0f);
+        instance.animations.animate(0.0f, 1.0f, 400.0f, Easing::EaseOutCubic,
+            [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); });
 
         renderer->setScene(instance.sceneRoot.get());
     }
@@ -194,10 +223,13 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     children[0]->setPosition(10.0f, 6.0f);
     children[0]->setSize(w - 20.0f, h - 12.0f);
 
-    // Center text label
-    const auto metrics = renderer->measureText(instance.labelNode->text(), instance.labelNode->fontSize());
-    const float labelX = (w - metrics.width) * 0.5f;
-    const float labelHeight = metrics.bottom - metrics.top;
-    const float labelBaseline = (h - labelHeight) * 0.5f - metrics.top;
-    instance.labelNode->setPosition(labelX, labelBaseline);
+    // Center title label
+    instance.titleLabel->measure(*renderer);
+    const float titleX = (w - instance.titleLabel->width()) * 0.5f;
+    const float titleY = (h - instance.titleLabel->height()) * 0.5f;
+    instance.titleLabel->setPosition(titleX, titleY);
+
+    // Truncated label
+    instance.truncLabel->measure(*renderer);
+    instance.truncLabel->setPosition(150.0f, (h - instance.truncLabel->height()) * 0.5f);
 }

@@ -26,6 +26,7 @@ public:
     void render() override;
     void setScene(Node* root) override;
     [[nodiscard]] TextMetrics measureText(std::string_view text, float fontSize) override;
+    [[nodiscard]] TextureManager& textureManager() override;
 
 private:
     void cleanup();
