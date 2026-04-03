@@ -113,7 +113,7 @@ third_party/
 - [x] Sticky art_url fallback for async metadata updates and track switches
 - [x] Seek + position controls
 - [x] Volume controls
-- [ ] Shuffle controls
+- [x] Shuffle controls
 - [ ] Loop status controls
 - [ ] Event debounce for noisy players
 

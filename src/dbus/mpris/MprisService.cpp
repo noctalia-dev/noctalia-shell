@@ -123,6 +123,7 @@ std::map<std::string, sdbus::Variant> to_dbus_player(const MprisPlayerInfo& info
     player["artists"] = sdbus::Variant(info.artists);
     player["album"] = sdbus::Variant(info.album);
     player["art_url"] = sdbus::Variant(info.art_url);
+    player["shuffle"] = sdbus::Variant(info.shuffle);
     player["volume"] = sdbus::Variant(info.volume);
     player["position_us"] = sdbus::Variant(info.position_us);
     player["length_us"] = sdbus::Variant(info.length_us);
@@ -346,6 +347,37 @@ bool MprisService::setVolumeActive(double volume) {
     return setVolume(*active, volume);
 }
 
+bool MprisService::setShuffle(const std::string& bus_name, bool shuffle) {
+    const auto it = m_players.find(bus_name);
+    if (it == m_players.end()) {
+        return false;
+    }
+
+    const auto proxy_it = m_player_proxies.find(bus_name);
+    if (proxy_it == m_player_proxies.end()) {
+        return false;
+    }
+
+    try {
+        proxy_it->second->setProperty("Shuffle")
+            .onInterface(k_mpris_player_interface)
+            .toValue(shuffle);
+        addOrRefreshPlayer(bus_name);
+        return true;
+    } catch (const sdbus::Error& e) {
+        logWarn("mpris set-shuffle failed name={} err={}", bus_name, e.what());
+        return false;
+    }
+}
+
+bool MprisService::setShuffleActive(bool shuffle) {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        return false;
+    }
+    return setShuffle(*active, shuffle);
+}
+
 std::optional<int64_t> MprisService::position(const std::string& bus_name) const {
     const auto it = m_players.find(bus_name);
     if (it == m_players.end()) {
@@ -376,6 +408,22 @@ std::optional<double> MprisService::volumeActive() const {
         return std::nullopt;
     }
     return volume(*active);
+}
+
+std::optional<bool> MprisService::shuffle(const std::string& bus_name) const {
+    const auto it = m_players.find(bus_name);
+    if (it == m_players.end()) {
+        return std::nullopt;
+    }
+    return it->second.shuffle;
+}
+
+std::optional<bool> MprisService::shuffleActive() const {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        return std::nullopt;
+    }
+    return shuffle(*active);
 }
 
 bool MprisService::setPinnedPlayerPreference(const std::string& bus_name) {
@@ -520,6 +568,33 @@ void MprisService::registerControlApi() {
             .withOutputParamNames("success")
             .implementedAs([this](double volume) {
                 return onSetVolumeActive(volume);
+            }),
+
+        sdbus::registerMethod("GetShufflePlayer")
+            .withInputParamNames("player_bus_name")
+            .withOutputParamNames("shuffle")
+            .implementedAs([this](const std::string& bus_name) {
+                return onGetShufflePlayer(bus_name);
+            }),
+
+        sdbus::registerMethod("GetShuffleActive")
+            .withOutputParamNames("shuffle")
+            .implementedAs([this]() {
+                return onGetShuffleActive();
+            }),
+
+        sdbus::registerMethod("SetShufflePlayer")
+            .withInputParamNames("player_bus_name", "shuffle")
+            .withOutputParamNames("success")
+            .implementedAs([this](const std::string& bus_name, bool shuffle) {
+                return onSetShufflePlayer(bus_name, shuffle);
+            }),
+
+        sdbus::registerMethod("SetShuffleActive")
+            .withInputParamNames("shuffle")
+            .withOutputParamNames("success")
+            .implementedAs([this](bool shuffle) {
+                return onSetShuffleActive(shuffle);
             }),
 
         sdbus::registerMethod("SeekPlayer")
@@ -1053,6 +1128,56 @@ bool MprisService::onSetVolumeActive(double volume) {
     return onSetVolumePlayer(*active, volume);
 }
 
+bool MprisService::onGetShufflePlayer(const std::string& bus_name) const {
+    if (bus_name.empty()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
+                           "player_bus_name must not be empty");
+    }
+
+    const auto current_shuffle = shuffle(bus_name);
+    if (!current_shuffle.has_value()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "player was not found");
+    }
+    return *current_shuffle;
+}
+
+bool MprisService::onGetShuffleActive() const {
+    const auto current_shuffle = shuffleActive();
+    if (!current_shuffle.has_value()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "no active player available");
+    }
+    return *current_shuffle;
+}
+
+bool MprisService::onSetShufflePlayer(const std::string& bus_name, bool shuffle) {
+    if (bus_name.empty()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
+                           "player_bus_name must not be empty");
+    }
+
+    if (!m_players.contains(bus_name)) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "player was not found");
+    }
+
+    if (!setShuffle(bus_name, shuffle)) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotSupported"},
+                           "player does not support Shuffle updates");
+    }
+    return true;
+}
+
+bool MprisService::onSetShuffleActive(bool shuffle) {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "no active player available");
+    }
+    return onSetShufflePlayer(*active, shuffle);
+}
+
 bool MprisService::onSetActivePlayerPreference(const std::string& bus_name) {
     if (bus_name.empty()) {
         throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
@@ -1096,6 +1221,7 @@ MprisPlayerInfo MprisService::readPlayerInfo(sdbus::IProxy& proxy, const std::st
         .artists = get_string_array_from_variant(metadata, "xesam:artist"),
         .album = get_string_from_variant(metadata, "xesam:album"),
         .art_url = get_string_from_variant(metadata, "mpris:artUrl"),
+        .shuffle = get_property_or(proxy, k_mpris_player_interface, "Shuffle", false),
         .volume = get_property_or(proxy, k_mpris_player_interface, "Volume", 1.0),
         .position_us = get_property_or(proxy, k_mpris_player_interface, "Position", int64_t{0}),
         .length_us = get_int64_from_variant(metadata, "mpris:length"),
