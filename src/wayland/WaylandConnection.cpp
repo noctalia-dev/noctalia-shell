@@ -144,7 +144,10 @@ void workspaceManagerWorkspace(void* data,
     self->onWorkspaceCreated(workspace);
 }
 
-void workspaceManagerDone(void* /*data*/, ext_workspace_manager_v1* /*manager*/) {}
+void workspaceManagerDone(void* data, ext_workspace_manager_v1* /*manager*/) {
+    auto* self = static_cast<WaylandConnection*>(data);
+    self->onWorkspaceManagerDone();
+}
 
 void workspaceManagerFinished(void* data, ext_workspace_manager_v1* /*manager*/) {
     auto* self = static_cast<WaylandConnection*>(data);
@@ -201,8 +204,12 @@ bool WaylandConnection::connect() {
     return true;
 }
 
-void WaylandConnection::setOutputChangeCallback(OutputChangeCallback callback) {
+void WaylandConnection::setOutputChangeCallback(ChangeCallback callback) {
     m_outputChangeCallback = std::move(callback);
+}
+
+void WaylandConnection::setWorkspaceChangeCallback(ChangeCallback callback) {
+    m_workspaceChangeCallback = std::move(callback);
 }
 
 bool WaylandConnection::isConnected() const noexcept {
@@ -366,7 +373,7 @@ void WaylandConnection::onWorkspaceCreated(ext_workspace_handle_v1* workspace) {
     if (workspace == nullptr) {
         return;
     }
-    m_workspaces.emplace(workspace, TrackedWorkspace{});
+    m_workspaces.emplace(workspace, WaylandConnection::Workspace{});
     ext_workspace_handle_v1_add_listener(workspace, &kWorkspaceListener, this);
 }
 
@@ -398,6 +405,12 @@ void WaylandConnection::onWorkspaceRemoved(ext_workspace_handle_v1* workspace) {
     m_workspaces.erase(workspace);
     if (workspace != nullptr) {
         ext_workspace_handle_v1_destroy(workspace);
+    }
+}
+
+void WaylandConnection::onWorkspaceManagerDone() {
+    if (m_workspaceChangeCallback) {
+        m_workspaceChangeCallback();
     }
 }
 
@@ -474,6 +487,32 @@ void WaylandConnection::cleanup() {
 
     m_outputs.clear();
     m_hasExtWorkspaceGlobal = false;
+}
+
+std::vector<WaylandConnection::Workspace> WaylandConnection::workspaces() const {
+    // Deduplicate by name -- ext-workspace reports per output group,
+    // so the same logical workspace appears multiple times.
+    std::vector<Workspace> result;
+    for (const auto& [handle, ws] : m_workspaces) {
+        if (ws.name.empty()) {
+            continue;
+        }
+        bool found = false;
+        for (auto& existing : result) {
+            if (existing.name == ws.name) {
+                existing.active = existing.active || ws.active;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            result.push_back(Workspace{.name = ws.name, .active = ws.active});
+        }
+    }
+    std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) {
+        return a.name < b.name;
+    });
+    return result;
 }
 
 void WaylandConnection::logStartupSummary() const {

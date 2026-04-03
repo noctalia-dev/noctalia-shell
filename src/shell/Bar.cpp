@@ -7,6 +7,7 @@
 #include "ui/controls/Box.hpp"
 #include "ui/widgets/ClockWidget.hpp"
 #include "ui/widgets/SpacerWidget.hpp"
+#include "ui/widgets/WorkspacesWidget.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -24,12 +25,22 @@ constexpr float kBarPaddingX = 16.0f;
 Bar::Bar() = default;
 
 bool Bar::initialize() {
-    if (!m_connection.connect()) {
+    if (!m_wayland.connect()) {
         return false;
     }
 
-    m_connection.setOutputChangeCallback([this]() {
+    m_wayland.setOutputChangeCallback([this]() {
         syncInstances();
+    });
+
+    m_wayland.setWorkspaceChangeCallback([this]() {
+        for (auto& inst : m_instances) {
+            if (inst->surface == nullptr || inst->surface->renderer() == nullptr) {
+                continue;
+            }
+            updateWidgets(*inst);
+            inst->surface->requestRedraw();
+        }
     });
 
     syncInstances();
@@ -42,45 +53,45 @@ bool Bar::isRunning() const noexcept {
 }
 
 int Bar::displayFd() const noexcept {
-    if (!m_connection.isConnected()) {
+    if (!m_wayland.isConnected()) {
         return -1;
     }
-    return wl_display_get_fd(m_connection.display());
+    return wl_display_get_fd(m_wayland.display());
 }
 
 void Bar::dispatchPending() {
-    if (!m_connection.isConnected()) {
+    if (!m_wayland.isConnected()) {
         return;
     }
-    if (wl_display_dispatch_pending(m_connection.display()) < 0) {
+    if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
         throw std::runtime_error("failed to dispatch pending Wayland events");
     }
 }
 
 void Bar::dispatchReadable() {
-    if (!m_connection.isConnected()) {
+    if (!m_wayland.isConnected()) {
         return;
     }
-    if (wl_display_dispatch(m_connection.display()) < 0) {
+    if (wl_display_dispatch(m_wayland.display()) < 0) {
         throw std::runtime_error("failed to dispatch Wayland events");
     }
 }
 
 void Bar::flush() {
-    if (!m_connection.isConnected()) {
+    if (!m_wayland.isConnected()) {
         return;
     }
-    if (wl_display_flush(m_connection.display()) < 0) {
+    if (wl_display_flush(m_wayland.display()) < 0) {
         throw std::runtime_error("failed to flush Wayland display");
     }
 }
 
 const WaylandConnection& Bar::connection() const noexcept {
-    return m_connection;
+    return m_wayland;
 }
 
 void Bar::syncInstances() {
-    const auto& outputs = m_connection.outputs();
+    const auto& outputs = m_wayland.outputs();
 
     std::erase_if(m_instances, [&outputs](const auto& inst) {
         bool found = std::any_of(outputs.begin(), outputs.end(),
@@ -117,7 +128,7 @@ void Bar::createInstance(const WaylandOutput& output) {
         .defaultHeight = kBarHeight,
     };
 
-    instance->surface = std::make_unique<LayerSurface>(m_connection, std::move(config));
+    instance->surface = std::make_unique<LayerSurface>(m_wayland, std::move(config));
 
     auto* inst = instance.get();
     instance->surface->setConfigureCallback(
@@ -143,12 +154,10 @@ void Bar::destroyInstance(std::uint32_t outputName) {
 }
 
 void Bar::populateWidgets(BarInstance& instance) {
-    // Left: clock
     instance.startWidgets.push_back(std::make_unique<ClockWidget>());
 
-    // Center: (empty for now)
+    instance.centerWidgets.push_back(std::make_unique<WorkspacesWidget>(m_wayland));
 
-    // Right: clock (demo -- shows both sides work)
     instance.endWidgets.push_back(std::make_unique<ClockWidget>());
 }
 
@@ -191,13 +200,13 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
             return box;
         };
 
-        auto left = makeSection(kSectionGap);
+        auto start = makeSection(kSectionGap);
         auto center = makeSection(kSectionGap);
-        auto right = makeSection(kSectionGap);
+        auto end = makeSection(kSectionGap);
 
-        instance.startSection = static_cast<Box*>(instance.sceneRoot->addChild(std::move(left)));
+        instance.startSection = static_cast<Box*>(instance.sceneRoot->addChild(std::move(start)));
         instance.centerSection = static_cast<Box*>(instance.sceneRoot->addChild(std::move(center)));
-        instance.endSection = static_cast<Box*>(instance.sceneRoot->addChild(std::move(right)));
+        instance.endSection = static_cast<Box*>(instance.sceneRoot->addChild(std::move(end)));
 
         // Create widgets and transfer their roots to section boxes
         auto initWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets, Box* section) {
@@ -220,6 +229,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
             [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); });
 
         renderer->setScene(instance.sceneRoot.get());
+        instance.surface->setSceneRoot(instance.sceneRoot.get());
     }
 
     // Layout
@@ -229,19 +239,15 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     children[0]->setPosition(10.0f, 6.0f);
     children[0]->setSize(w - 20.0f, h - 12.0f);
 
-    // Update widgets
-    for (auto& widget : instance.startWidgets) {
-        widget->update(*renderer);
-        widget->layout(*renderer, w, h);
-    }
-    for (auto& widget : instance.centerWidgets) {
-        widget->update(*renderer);
-        widget->layout(*renderer, w, h);
-    }
-    for (auto& widget : instance.endWidgets) {
-        widget->update(*renderer);
-        widget->layout(*renderer, w, h);
-    }
+    // Layout widgets
+    auto layoutWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
+        for (auto& widget : widgets) {
+            widget->layout(*renderer, w, h);
+        }
+    };
+    layoutWidgets(instance.startWidgets);
+    layoutWidgets(instance.centerWidgets);
+    layoutWidgets(instance.endWidgets);
 
     // Layout section boxes
     instance.startSection->layout(*renderer);
@@ -260,4 +266,46 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     const float rightX = w - instance.endSection->width() - kBarPaddingX;
     const float rightY = (h - instance.endSection->height()) * 0.5f;
     instance.endSection->setPosition(rightX, rightY);
+}
+
+void Bar::updateWidgets(BarInstance& instance) {
+    auto* renderer = instance.surface->renderer();
+    if (renderer == nullptr) {
+        return;
+    }
+
+    const auto w = static_cast<float>(instance.surface->width());
+    const auto h = static_cast<float>(instance.surface->height());
+
+    auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets, Box* section) {
+        bool changed = false;
+        for (auto& widget : widgets) {
+            widget->update(*renderer);
+            if (widget->root() != nullptr && widget->root()->dirty()) {
+                changed = true;
+                widget->layout(*renderer, w, h);
+            }
+        }
+        if (changed) {
+            section->layout(*renderer);
+        }
+    };
+
+    updateSection(instance.startWidgets, instance.startSection);
+    updateSection(instance.centerWidgets, instance.centerSection);
+    updateSection(instance.endWidgets, instance.endSection);
+
+    // Reposition sections if sizes changed
+    if (instance.startSection->dirty() || instance.centerSection->dirty() || instance.endSection->dirty()) {
+        const float contentY = (h - instance.startSection->height()) * 0.5f;
+        instance.startSection->setPosition(kBarPaddingX, contentY);
+
+        const float centerX = (w - instance.centerSection->width()) * 0.5f;
+        const float centerY = (h - instance.centerSection->height()) * 0.5f;
+        instance.centerSection->setPosition(centerX, centerY);
+
+        const float rightX = w - instance.endSection->width() - kBarPaddingX;
+        const float rightY = (h - instance.endSection->height()) * 0.5f;
+        instance.endSection->setPosition(rightX, rightY);
+    }
 }

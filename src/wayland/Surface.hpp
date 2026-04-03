@@ -15,6 +15,7 @@ class WaylandConnection;
 class Surface {
 public:
     using ConfigureCallback = std::function<void(std::uint32_t width, std::uint32_t height)>;
+    using UpdateCallback = std::function<void()>;
 
     explicit Surface(WaylandConnection& connection);
     virtual ~Surface();
@@ -27,7 +28,10 @@ public:
     [[nodiscard]] bool isRunning() const noexcept;
 
     void setConfigureCallback(ConfigureCallback callback);
+    void setUpdateCallback(UpdateCallback callback);
+    void requestRedraw();
     void setAnimationManager(AnimationManager* manager) noexcept { m_animationManager = manager; }
+    void setSceneRoot(Node* root) noexcept { m_sceneRoot = root; }
     [[nodiscard]] Renderer* renderer() const noexcept;
     [[nodiscard]] std::uint32_t width() const noexcept { return m_width; }
     [[nodiscard]] std::uint32_t height() const noexcept { return m_height; }
@@ -53,7 +57,9 @@ protected:
 private:
     std::unique_ptr<Renderer> m_renderer;
     AnimationManager* m_animationManager = nullptr;
+    Node* m_sceneRoot = nullptr;
     ConfigureCallback m_configureCallback;
+    UpdateCallback m_updateCallback;
     wl_callback* m_frameCallback = nullptr;
     std::uint32_t m_lastFrameTime = 0;
     bool m_running = false;

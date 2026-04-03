@@ -25,7 +25,8 @@ private:
     void destroyInstance(std::uint32_t outputName);
     void populateWidgets(BarInstance& instance);
     void buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height);
+    void updateWidgets(BarInstance& instance);
 
-    WaylandConnection m_connection;
+    WaylandConnection m_wayland;
     std::vector<std::unique_ptr<BarInstance>> m_instances;
 };

@@ -2,6 +2,7 @@
 
 #include "render/AnimationManager.hpp"
 #include "render/GlRenderer.hpp"
+#include "render/scene/Node.hpp"
 #include "wayland/WaylandConnection.hpp"
 
 #include <stdexcept>
@@ -44,16 +45,21 @@ void Surface::handleFrameDone(void* data,
         }
         self->m_lastFrameTime = callbackData;
         self->m_animationManager->tick(deltaMs);
+    }
 
-        if (self->m_animationManager->hasActive() && self->m_running && self->m_configured) {
-            self->render();
-            self->requestFrame();
-            return;
-        }
+    if (self->m_updateCallback) {
+        self->m_updateCallback();
     }
 
     if (self->m_running && self->m_configured) {
-        self->requestFrame();
+        bool dirty = self->m_sceneRoot != nullptr && self->m_sceneRoot->dirty();
+        bool animating = self->m_animationManager != nullptr && self->m_animationManager->hasActive();
+
+        if (dirty || animating) {
+            self->render();
+            self->requestFrame();
+        }
+        // Frame loop stops here when idle. Restarted by requestRedraw().
     }
 }
 
@@ -95,6 +101,17 @@ void Surface::setConfigureCallback(ConfigureCallback callback) {
     m_configureCallback = std::move(callback);
 }
 
+void Surface::setUpdateCallback(UpdateCallback callback) {
+    m_updateCallback = std::move(callback);
+}
+
+void Surface::requestRedraw() {
+    if (m_running && m_configured && m_frameCallback == nullptr) {
+        render();
+        requestFrame();
+    }
+}
+
 Renderer* Surface::renderer() const noexcept {
     return m_renderer.get();
 }
@@ -106,6 +123,10 @@ void Surface::render() {
 
     requestFrame();
     m_renderer->render();
+
+    if (m_sceneRoot != nullptr) {
+        m_sceneRoot->clearDirty();
+    }
 }
 
 void Surface::requestFrame() {

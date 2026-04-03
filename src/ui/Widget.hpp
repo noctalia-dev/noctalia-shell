@@ -2,6 +2,7 @@
 
 #include "render/scene/Node.hpp"
 
+#include <functional>
 #include <memory>
 
 class AnimationManager;
@@ -9,6 +10,8 @@ class Renderer;
 
 class Widget {
 public:
+    using RedrawCallback = std::function<void()>;
+
     virtual ~Widget() = default;
 
     virtual void create(Renderer& renderer) = 0;
@@ -19,14 +22,16 @@ public:
     [[nodiscard]] float width() const noexcept;
     [[nodiscard]] float height() const noexcept;
 
-    // Transfer ownership of root node to caller (e.g., for adding to a Box).
-    // Widget keeps a raw pointer for updates.
     std::unique_ptr<Node> releaseRoot();
 
     void setAnimationManager(AnimationManager* mgr) noexcept;
+    void setRedrawCallback(RedrawCallback callback);
 
 protected:
+    void requestRedraw();
+
     std::unique_ptr<Node> m_root;
     Node* m_rootPtr = nullptr;
     AnimationManager* m_animations = nullptr;
+    RedrawCallback m_redrawCallback;
 };

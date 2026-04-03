@@ -38,10 +38,11 @@ public:
     WaylandConnection(const WaylandConnection&) = delete;
     WaylandConnection& operator=(const WaylandConnection&) = delete;
 
-    using OutputChangeCallback = std::function<void()>;
+    using ChangeCallback = std::function<void()>;
 
     bool connect();
-    void setOutputChangeCallback(OutputChangeCallback callback);
+    void setOutputChangeCallback(ChangeCallback callback);
+    void setWorkspaceChangeCallback(ChangeCallback callback);
 
     bool isConnected() const noexcept;
     bool hasRequiredGlobals() const noexcept;
@@ -63,13 +64,14 @@ public:
                                    wl_registry* registry,
                                    std::uint32_t name);
 
-private:
-    struct TrackedWorkspace {
+public:
+    struct Workspace {
         std::string name;
         bool active = false;
     };
 
-public:
+    [[nodiscard]] std::vector<Workspace> workspaces() const;
+
     // Internal callback entrypoints used by C listeners for ext-workspace.
     void onWorkspaceGroupCreated(ext_workspace_group_handle_v1* group);
     void onWorkspaceGroupRemoved(ext_workspace_group_handle_v1* group);
@@ -77,6 +79,7 @@ public:
     void onWorkspaceNameChanged(ext_workspace_handle_v1* workspace, const char* name);
     void onWorkspaceStateChanged(ext_workspace_handle_v1* workspace, std::uint32_t state);
     void onWorkspaceRemoved(ext_workspace_handle_v1* workspace);
+    void onWorkspaceManagerDone();
     void onWorkspaceManagerFinished();
 
 private:
@@ -100,6 +103,7 @@ private:
     bool m_hasExtWorkspaceGlobal = false;
     std::vector<WaylandOutput> m_outputs;
     std::vector<ext_workspace_group_handle_v1*> m_workspaceGroups;
-    std::unordered_map<ext_workspace_handle_v1*, TrackedWorkspace> m_workspaces;
-    OutputChangeCallback m_outputChangeCallback;
+    std::unordered_map<ext_workspace_handle_v1*, Workspace> m_workspaces;
+    ChangeCallback m_outputChangeCallback;
+    ChangeCallback m_workspaceChangeCallback;
 };

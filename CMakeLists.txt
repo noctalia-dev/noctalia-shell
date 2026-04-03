@@ -180,6 +180,7 @@ add_executable(noctalia
     src/ui/controls/Label.cpp
     src/ui/widgets/ClockWidget.cpp
     src/ui/widgets/SpacerWidget.cpp
+    src/ui/widgets/WorkspacesWidget.cpp
     src/wayland/Surface.cpp
     src/wayland/LayerSurface.cpp
     src/wayland/WaylandConnection.cpp

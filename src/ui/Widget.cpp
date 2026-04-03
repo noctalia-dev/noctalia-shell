@@ -18,3 +18,13 @@ std::unique_ptr<Node> Widget::releaseRoot() {
 void Widget::setAnimationManager(AnimationManager* mgr) noexcept {
     m_animations = mgr;
 }
+
+void Widget::setRedrawCallback(RedrawCallback callback) {
+    m_redrawCallback = std::move(callback);
+}
+
+void Widget::requestRedraw() {
+    if (m_redrawCallback) {
+        m_redrawCallback();
+    }
+}
