@@ -1,51 +1,68 @@
 #include "app/MainLoop.hpp"
 
+#include "dbus/SessionBus.hpp"
 #include "dbus/notification/NotificationService.hpp"
 #include "shell/Bar.hpp"
 
 #include <poll.h>
 #include <stdexcept>
 
-MainLoop::MainLoop(Bar& bar, NotificationService* notifications)
+MainLoop::MainLoop(Bar& bar, SessionBus* bus, NotificationService* notifications)
     : m_bar(bar)
+    , m_bus(bus)
     , m_notifications(notifications) {}
 
 void MainLoop::run() {
-    if (m_notifications == nullptr) {
-        m_bar.run();
-        return;
-    }
-
     while (m_bar.isRunning()) {
         m_bar.dispatchPending();
         m_bar.flush();
 
-        auto dbusPollData = m_notifications->getPollData();
-        const int dbusTimeout = dbusPollData.getPollTimeout();
-        const int expiryTimeout = m_notifications->nextExpiryTimeoutMs();
-
-        int pollTimeout = dbusTimeout;
-        if (expiryTimeout >= 0 && (pollTimeout < 0 || expiryTimeout < pollTimeout)) {
-            pollTimeout = expiryTimeout;
+        int pollTimeout = -1;
+        if (m_notifications != nullptr) {
+            const int expiryTimeout = m_notifications->nextExpiryTimeoutMs();
+            if (expiryTimeout >= 0) {
+                pollTimeout = expiryTimeout;
+            }
         }
 
-        struct pollfd pollFds[] = {
-            {.fd = m_bar.displayFd(), .events = POLLIN, .revents = 0},
-            {.fd = dbusPollData.fd, .events = dbusPollData.events, .revents = 0},
-            {.fd = dbusPollData.eventFd, .events = POLLIN, .revents = 0},
-        };
+        if (m_bus != nullptr) {
+            auto dbusPollData = m_bus->getPollData();
+            const int dbusTimeout = dbusPollData.getPollTimeout();
+            if (dbusTimeout >= 0 && (pollTimeout < 0 || dbusTimeout < pollTimeout)) {
+                pollTimeout = dbusTimeout;
+            }
 
-        if (::poll(pollFds, 3, pollTimeout) < 0) {
-            throw std::runtime_error("failed to poll shell and notification fds");
-        }
+            struct pollfd pollFds[] = {
+                {.fd = m_bar.displayFd(), .events = POLLIN, .revents = 0},
+                {.fd = dbusPollData.fd, .events = dbusPollData.events, .revents = 0},
+                {.fd = dbusPollData.eventFd, .events = POLLIN, .revents = 0},
+            };
 
-        if ((pollFds[0].revents & POLLIN) != 0) {
-            m_bar.dispatchReadable();
+            if (::poll(pollFds, 3, pollTimeout) < 0) {
+                throw std::runtime_error("failed to poll fds");
+            }
+
+            if ((pollFds[0].revents & POLLIN) != 0) {
+                m_bar.dispatchReadable();
+            } else {
+                m_bar.dispatchPending();
+            }
+
+            m_bus->processPendingEvents();
         } else {
-            m_bar.dispatchPending();
+            struct pollfd pollFd = {.fd = m_bar.displayFd(), .events = POLLIN, .revents = 0};
+
+            if (::poll(&pollFd, 1, pollTimeout) < 0) {
+                throw std::runtime_error("failed to poll wayland fd");
+            }
+
+            if ((pollFd.revents & POLLIN) != 0) {
+                m_bar.dispatchReadable();
+            }
         }
 
-        m_notifications->processPendingEvents();
-        m_notifications->processExpiredNotifications();
+        if (m_notifications != nullptr) {
+            m_notifications->processExpiredNotifications();
+        }
     }
 }

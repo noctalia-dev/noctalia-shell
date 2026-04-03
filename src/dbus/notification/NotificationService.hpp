@@ -8,20 +8,17 @@
 #include <tuple>
 #include <vector>
 
-// Exposes org.freedesktop.Notifications on the session bus.
-// Only the Notify method is stubbed for now.
+class SessionBus;
+
 class NotificationService {
 public:
-    explicit NotificationService(NotificationManager& manager);
+    NotificationService(SessionBus& bus, NotificationManager& manager);
 
-    [[nodiscard]] sdbus::IConnection::PollData getPollData() const;
-    void processPendingEvents();
     [[nodiscard]] int nextExpiryTimeoutMs() const;
     void processExpiredNotifications();
 
 private:
     NotificationManager&                    m_manager;
-    std::unique_ptr<sdbus::IConnection>     m_connection;
     std::unique_ptr<sdbus::IObject>         m_object;
 
     // D-Bus method handlers

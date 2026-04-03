@@ -18,7 +18,6 @@ public:
     void dispatchPending();
     void dispatchReadable();
     void flush();
-    void run();
     const WaylandConnection& connection() const noexcept;
 
 private:

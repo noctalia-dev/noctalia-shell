@@ -1,17 +1,19 @@
 #include "NotificationService.hpp"
 
-#include <poll.h>
+#include "core/Log.hpp"
+#include "dbus/SessionBus.hpp"
+
 #include <stdexcept>
 
 static const sdbus::ServiceName k_bus_name   {"org.freedesktop.Notifications"};
 static const sdbus::ObjectPath  k_object_path{"/org/freedesktop/Notifications"};
 static constexpr auto           k_interface  = "org.freedesktop.Notifications";
 
-NotificationService::NotificationService(NotificationManager& manager)
+NotificationService::NotificationService(SessionBus& bus, NotificationManager& manager)
     : m_manager(manager)
 {
-    m_connection = sdbus::createSessionBusConnection(k_bus_name);
-    m_object     = sdbus::createObject(*m_connection, k_object_path);
+    bus.connection().requestName(k_bus_name);
+    m_object = sdbus::createObject(bus.connection(), k_object_path);
 
     m_object->addVTable(
         sdbus::registerMethod("Notify")
@@ -76,14 +78,6 @@ int computeExpiryTimeoutMs(const NotificationManager& manager) {
 }
 
 } // namespace
-
-sdbus::IConnection::PollData NotificationService::getPollData() const {
-    return m_connection->getEventLoopPollData();
-}
-
-void NotificationService::processPendingEvents() {
-    while (m_connection->processPendingEvent()) {}
-}
 
 int NotificationService::nextExpiryTimeoutMs() const {
     return computeExpiryTimeoutMs(m_manager);

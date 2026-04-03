@@ -8,8 +8,21 @@
 
 #include <wayland-client-core.h>
 
+namespace {
+
+constexpr std::uint32_t kBarHeight = 36;
+
+} // namespace
+
 Bar::Bar()
-    : m_layerSurface(m_connection) {}
+    : m_layerSurface(m_connection, LayerSurfaceConfig{
+        .nameSpace = "noctalia-bar",
+        .layer = LayerShellLayer::Top,
+        .anchor = LayerShellAnchor::Top | LayerShellAnchor::Left | LayerShellAnchor::Right,
+        .height = kBarHeight,
+        .exclusiveZone = static_cast<std::int32_t>(kBarHeight),
+        .defaultHeight = kBarHeight,
+    }) {}
 
 bool Bar::initialize() {
     if (!m_connection.connect()) {
@@ -64,12 +77,6 @@ void Bar::flush() {
 
     if (wl_display_flush(m_connection.display()) < 0) {
         throw std::runtime_error("failed to flush Wayland display");
-    }
-}
-
-void Bar::run() {
-    while (m_layerSurface.isRunning()) {
-        m_layerSurface.dispatch();
     }
 }
 

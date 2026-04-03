@@ -1,34 +1,54 @@
 #pragma once
 
-#include "render/Renderer.hpp"
+#include "wayland/Surface.hpp"
 
 #include <cstdint>
-#include <functional>
-#include <memory>
-struct wl_callback;
-struct wl_surface;
+#include <string>
+
 struct zwlr_layer_surface_v1;
 
-class WaylandConnection;
+enum class LayerShellLayer : std::uint32_t {
+    Background = 0,
+    Bottom = 1,
+    Top = 2,
+    Overlay = 3,
+};
 
-class LayerSurface {
+enum class LayerShellKeyboard : std::uint32_t {
+    None = 0,
+    Exclusive = 1,
+    OnDemand = 2,
+};
+
+namespace LayerShellAnchor {
+    inline constexpr std::uint32_t Top    = 1;
+    inline constexpr std::uint32_t Bottom = 2;
+    inline constexpr std::uint32_t Left   = 4;
+    inline constexpr std::uint32_t Right  = 8;
+}
+
+struct LayerSurfaceConfig {
+    std::string nameSpace = "noctalia";
+    LayerShellLayer layer = LayerShellLayer::Top;
+    std::uint32_t anchor = 0;
+    std::uint32_t width = 0;
+    std::uint32_t height = 0;
+    std::int32_t exclusiveZone = 0;
+    std::int32_t marginTop = 0;
+    std::int32_t marginRight = 0;
+    std::int32_t marginBottom = 0;
+    std::int32_t marginLeft = 0;
+    LayerShellKeyboard keyboard = LayerShellKeyboard::None;
+    std::uint32_t defaultWidth = 1920;
+    std::uint32_t defaultHeight = 0;
+};
+
+class LayerSurface : public Surface {
 public:
-    using ConfigureCallback = std::function<void(std::uint32_t width, std::uint32_t height)>;
+    LayerSurface(WaylandConnection& connection, LayerSurfaceConfig config);
+    ~LayerSurface() override;
 
-    explicit LayerSurface(WaylandConnection& connection);
-    ~LayerSurface();
-
-    LayerSurface(const LayerSurface&) = delete;
-    LayerSurface& operator=(const LayerSurface&) = delete;
-
-    bool initialize();
-    bool isRunning() const noexcept;
-    void dispatch();
-
-    void setConfigureCallback(ConfigureCallback callback);
-    [[nodiscard]] Renderer* renderer() const noexcept;
-    [[nodiscard]] std::uint32_t width() const noexcept { return m_width; }
-    [[nodiscard]] std::uint32_t height() const noexcept { return m_height; }
+    bool initialize() override;
 
     static void handleConfigure(void* data,
                                 zwlr_layer_surface_v1* layerSurface,
@@ -37,24 +57,8 @@ public:
                                 std::uint32_t height);
     static void handleClosed(void* data,
                              zwlr_layer_surface_v1* layerSurface);
-    static void handleFrameDone(void* data,
-                                wl_callback* callback,
-                                std::uint32_t callbackData);
 
 private:
-    bool createSurface();
-    void render();
-    void requestFrame();
-    void cleanup();
-
-    WaylandConnection& m_connection;
-    std::unique_ptr<Renderer> m_renderer;
-    ConfigureCallback m_configureCallback;
-    wl_surface* m_surface = nullptr;
+    LayerSurfaceConfig m_config;
     zwlr_layer_surface_v1* m_layerSurface = nullptr;
-    wl_callback* m_frameCallback = nullptr;
-    bool m_running = false;
-    bool m_configured = false;
-    std::uint32_t m_width = 0;
-    std::uint32_t m_height = 0;
 };

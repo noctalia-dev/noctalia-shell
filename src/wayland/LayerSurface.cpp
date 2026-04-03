@@ -1,7 +1,6 @@
 #include "wayland/LayerSurface.hpp"
 
 #include "core/Log.hpp"
-#include "render/GlRenderer.hpp"
 #include "wayland/WaylandConnection.hpp"
 
 #include <stdexcept>
@@ -11,28 +10,22 @@
 
 namespace {
 
-constexpr std::uint32_t kBarHeight = 36;
-constexpr std::uint32_t kAnchorMask =
-    ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP |
-    ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT |
-    ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
-
 const zwlr_layer_surface_v1_listener kLayerSurfaceListener = {
     .configure = &LayerSurface::handleConfigure,
     .closed = &LayerSurface::handleClosed,
 };
 
-const wl_callback_listener kFrameListener = {
-    .done = &LayerSurface::handleFrameDone,
-};
-
 } // namespace
 
-LayerSurface::LayerSurface(WaylandConnection& connection)
-    : m_connection(connection) {}
+LayerSurface::LayerSurface(WaylandConnection& connection, LayerSurfaceConfig config)
+    : Surface(connection)
+    , m_config(std::move(config)) {}
 
 LayerSurface::~LayerSurface() {
-    cleanup();
+    if (m_layerSurface != nullptr) {
+        zwlr_layer_surface_v1_destroy(m_layerSurface);
+        m_layerSurface = nullptr;
+    }
 }
 
 bool LayerSurface::initialize() {
@@ -41,82 +34,9 @@ bool LayerSurface::initialize() {
         return false;
     }
 
-    if (!createSurface()) {
+    if (!createWlSurface()) {
         return false;
     }
-
-    m_running = true;
-    return true;
-}
-
-bool LayerSurface::isRunning() const noexcept {
-    return m_running;
-}
-
-void LayerSurface::dispatch() {
-    if (!m_running) {
-        return;
-    }
-
-    if (wl_display_dispatch(m_connection.display()) < 0) {
-        throw std::runtime_error("failed to dispatch Wayland events");
-    }
-}
-
-void LayerSurface::handleConfigure(void* data,
-                                   zwlr_layer_surface_v1* layerSurface,
-                                   std::uint32_t serial,
-                                   std::uint32_t width,
-                                   std::uint32_t height) {
-    auto* self = static_cast<LayerSurface*>(data);
-    zwlr_layer_surface_v1_ack_configure(layerSurface, serial);
-
-    self->m_width = (width == 0) ? 1920 : width;
-    self->m_height = (height == 0) ? kBarHeight : height;
-    self->m_configured = true;
-
-    if (self->m_renderer == nullptr) {
-        self->m_running = false;
-        return;
-    }
-
-    self->m_renderer->resize(self->m_width, self->m_height);
-    if (self->m_configureCallback) {
-        self->m_configureCallback(self->m_width, self->m_height);
-    }
-    self->render();
-}
-
-void LayerSurface::handleClosed(void* data,
-                                zwlr_layer_surface_v1* /*layerSurface*/) {
-    auto* self = static_cast<LayerSurface*>(data);
-    self->m_running = false;
-}
-
-void LayerSurface::handleFrameDone(void* data,
-                                   wl_callback* callback,
-                                   std::uint32_t /*callbackData*/) {
-    auto* self = static_cast<LayerSurface*>(data);
-
-    if (callback != nullptr) {
-        wl_callback_destroy(callback);
-    }
-
-    self->m_frameCallback = nullptr;
-
-    if (self->m_running && self->m_configured) {
-        self->requestFrame();
-    }
-}
-
-bool LayerSurface::createSurface() {
-    m_surface = wl_compositor_create_surface(m_connection.compositor());
-    if (m_surface == nullptr) {
-        throw std::runtime_error("failed to create wl_surface");
-    }
-
-    m_renderer = std::make_unique<GlRenderer>();
-    m_renderer->bind(m_connection.display(), m_surface);
 
     wl_output* output = nullptr;
     if (!m_connection.outputs().empty()) {
@@ -127,8 +47,8 @@ bool LayerSurface::createSurface() {
         m_connection.layerShell(),
         m_surface,
         output,
-        ZWLR_LAYER_SHELL_V1_LAYER_TOP,
-        "noctalia-bar");
+        static_cast<std::uint32_t>(m_config.layer),
+        m_config.nameSpace.c_str());
     if (m_layerSurface == nullptr) {
         throw std::runtime_error("failed to create layer surface");
     }
@@ -137,67 +57,39 @@ bool LayerSurface::createSurface() {
         throw std::runtime_error("failed to add layer surface listener");
     }
 
-    zwlr_layer_surface_v1_set_anchor(m_layerSurface, kAnchorMask);
-    zwlr_layer_surface_v1_set_size(m_layerSurface, 0, kBarHeight);
-    zwlr_layer_surface_v1_set_exclusive_zone(m_layerSurface, static_cast<int32_t>(kBarHeight));
-    zwlr_layer_surface_v1_set_margin(m_layerSurface, 0, 0, 0, 0);
+    zwlr_layer_surface_v1_set_anchor(m_layerSurface, m_config.anchor);
+    zwlr_layer_surface_v1_set_size(m_layerSurface, m_config.width, m_config.height);
+    zwlr_layer_surface_v1_set_exclusive_zone(m_layerSurface, m_config.exclusiveZone);
+    zwlr_layer_surface_v1_set_margin(m_layerSurface,
+        m_config.marginTop, m_config.marginRight,
+        m_config.marginBottom, m_config.marginLeft);
     zwlr_layer_surface_v1_set_keyboard_interactivity(
-        m_layerSurface, ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_NONE);
+        m_layerSurface, static_cast<std::uint32_t>(m_config.keyboard));
 
     wl_surface_commit(m_surface);
     if (wl_display_roundtrip(m_connection.display()) < 0) {
         throw std::runtime_error("failed during layer surface initial roundtrip");
     }
 
+    setRunning(true);
     return true;
 }
 
-void LayerSurface::setConfigureCallback(ConfigureCallback callback) {
-    m_configureCallback = std::move(callback);
+void LayerSurface::handleConfigure(void* data,
+                                   zwlr_layer_surface_v1* layerSurface,
+                                   std::uint32_t serial,
+                                   std::uint32_t width,
+                                   std::uint32_t height) {
+    auto* self = static_cast<LayerSurface*>(data);
+    zwlr_layer_surface_v1_ack_configure(layerSurface, serial);
+
+    self->onConfigure(
+        (width == 0) ? self->m_config.defaultWidth : width,
+        (height == 0) ? self->m_config.defaultHeight : height);
 }
 
-Renderer* LayerSurface::renderer() const noexcept {
-    return m_renderer.get();
-}
-
-void LayerSurface::render() {
-    if (m_surface == nullptr || m_renderer == nullptr) {
-        return;
-    }
-
-    requestFrame();
-    m_renderer->render(m_width, m_height);
-}
-
-void LayerSurface::requestFrame() {
-    if (m_frameCallback != nullptr) {
-        return;
-    }
-
-    m_frameCallback = wl_surface_frame(m_surface);
-    if (m_frameCallback != nullptr) {
-        wl_callback_add_listener(m_frameCallback, &kFrameListener, this);
-    }
-}
-
-void LayerSurface::cleanup() {
-    if (m_frameCallback != nullptr) {
-        wl_callback_destroy(m_frameCallback);
-        m_frameCallback = nullptr;
-    }
-
-    m_renderer.reset();
-
-    if (m_layerSurface != nullptr) {
-        zwlr_layer_surface_v1_destroy(m_layerSurface);
-        m_layerSurface = nullptr;
-    }
-
-    if (m_surface != nullptr) {
-        wl_surface_destroy(m_surface);
-        m_surface = nullptr;
-    }
-
-    m_running = false;
-    m_configured = false;
+void LayerSurface::handleClosed(void* data,
+                                zwlr_layer_surface_v1* /*layerSurface*/) {
+    auto* self = static_cast<LayerSurface*>(data);
+    self->setRunning(false);
 }
