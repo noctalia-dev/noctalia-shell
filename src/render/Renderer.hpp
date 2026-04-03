@@ -4,6 +4,7 @@
 #include <string_view>
 
 class Node;
+class TextureManager;
 struct wl_display;
 struct wl_surface;
 
@@ -25,4 +26,5 @@ public:
     virtual void render() = 0;
     virtual void setScene(Node* root) = 0;
     [[nodiscard]] virtual TextMetrics measureText(std::string_view text, float fontSize) = 0;
+    [[nodiscard]] virtual TextureManager& textureManager() = 0;
 };

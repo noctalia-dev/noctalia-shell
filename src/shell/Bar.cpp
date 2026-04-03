@@ -2,6 +2,8 @@
 
 #include "core/Log.hpp"
 #include "render/Palette.hpp"
+#include "render/TextureManager.hpp"
+#include "render/scene/ImageNode.hpp"
 #include "render/scene/RectNode.hpp"
 #include "render/scene/TextNode.hpp"
 
@@ -12,7 +14,7 @@
 
 namespace {
 
-constexpr std::uint32_t kBarHeight = 36;
+constexpr std::uint32_t kBarHeight = 42;
 
 } // namespace
 
@@ -183,6 +185,34 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
         label->setFontSize(14.0f);
         label->setColor(kRosePinePalette.text);
         instance.labelNode = static_cast<TextNode*>(instance.sceneRoot->addChild(std::move(label)));
+
+        // Test: truncated text
+        auto truncLabel = std::make_unique<TextNode>();
+        truncLabel->setText("This is a long label that should be truncated with an ellipsis");
+        truncLabel->setFontSize(12.0f);
+        truncLabel->setMaxWidth(120.0f);
+        truncLabel->setColor(kRosePinePalette.foam);
+        truncLabel->setPosition(150.0f, 22.0f);
+        instance.sceneRoot->addChild(std::move(truncLabel));
+
+        // Test: image (try PNG first, fall back to SVG)
+        auto& texMgr = renderer->textureManager();
+        auto handle = texMgr.loadFromFile("/usr/share/icons/hicolor/48x48/apps/firefox.png", 24);
+        if (handle.id == 0) {
+            handle = texMgr.loadFromFile("/usr/share/icons/hicolor/scalable/apps/foot.svg", 24);
+        }
+        if (handle.id != 0) {
+            auto icon = std::make_unique<ImageNode>();
+            icon->setTextureId(handle.id);
+            icon->setPosition(300.0f, 6.0f);
+            icon->setSize(24.0f, 24.0f);
+            instance.sceneRoot->addChild(std::move(icon));
+        }
+
+        // Test: fade-in animation
+        instance.sceneRoot->setOpacity(0.0f);
+        instance.animations.animate(0.0f, 1.0f, 400.0f, Easing::EaseOutCubic,
+            [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); });
 
         renderer->setScene(instance.sceneRoot.get());
     }

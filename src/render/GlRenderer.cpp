@@ -152,6 +152,10 @@ void GlRenderer::setScene(Node* root) {
     m_sceneRoot = root;
 }
 
+TextureManager& GlRenderer::textureManager() {
+    return m_textureManager;
+}
+
 TextMetrics GlRenderer::measureText(std::string_view text, float fontSize) {
     auto m = m_textRenderer.measure(text, fontSize);
     return TextMetrics{.width = m.width, .top = m.top, .bottom = m.bottom};
