@@ -70,6 +70,10 @@ void Bar::reload() {
     syncInstances();
 }
 
+void Bar::closeAllInstances() {
+    m_instances.clear();
+}
+
 void Bar::onOutputChange() {
     syncInstances();
 }

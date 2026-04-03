@@ -17,6 +17,7 @@ public:
 
     bool initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService);
     void reload();
+    void closeAllInstances();
     void onOutputChange();
     void onWorkspaceChange();
     [[nodiscard]] bool isRunning() const noexcept;

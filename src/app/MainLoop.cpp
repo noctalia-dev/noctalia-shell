@@ -3,6 +3,7 @@
 #include "app/Application.hpp"
 #include "config/ConfigService.hpp"
 #include "config/StateService.hpp"
+#include "core/Log.hpp"
 #include "dbus/SessionBus.hpp"
 #include "dbus/notification/NotificationService.hpp"
 #include "shell/Bar.hpp"
@@ -33,6 +34,11 @@ void MainLoop::run() {
         }
         if (wl_display_flush(m_wayland.display()) < 0) {
             throw std::runtime_error("failed to flush Wayland display");
+        }
+
+        // Check if shutdown was requested since the last iteration
+        if (Application::s_shutdown_requested) {
+            break;
         }
 
         int pollTimeout = -1;
@@ -113,5 +119,18 @@ void MainLoop::run() {
         if (m_notifications != nullptr) {
             m_notifications->processExpiredNotifications();
         }
+    }
+
+    // Close all UI surfaces immediately and flush Wayland to make them disappear
+    // This happens while we're still in a valid Wayland/display context
+    logDebug("closing bar surfaces for clean shutdown");
+    m_bar.closeAllInstances();
+    
+    // Dispatch any pending surface destroy messages and flush to compositor
+    if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
+        logWarn("failed to dispatch pending Wayland events during shutdown");
+    }
+    if (wl_display_flush(m_wayland.display()) < 0) {
+        logWarn("failed to flush Wayland display during shutdown");
     }
 }

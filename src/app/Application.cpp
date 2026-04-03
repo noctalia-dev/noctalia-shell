@@ -3,7 +3,6 @@
 #include "core/Log.hpp"
 
 #include <csignal>
-#include <cstdlib>
 #include <stdexcept>
 
 std::atomic<bool> Application::s_shutdown_requested{false};
@@ -30,9 +29,22 @@ Application::Application()
 }
 
 Application::~Application() {
-    // D-Bus cleanup can block on exit, so exit immediately without waiting
-    // for D-Bus to fully disconnect. The OS will clean up resources anyway.
-    std::exit(0);
+    // Explicitly clean up D-Bus services before the bus connection is destroyed
+    // This ensures clean disconnection and prevents blocking on shutdown
+    if (m_bus != nullptr) {
+        // Process any pending D-Bus events to ensure clean state
+        m_bus->processPendingEvents();
+        
+        // Destroy services in reverse order they were created
+        m_notificationService.reset();
+        m_mprisService.reset();
+        m_debugService.reset();
+        
+        // Process any final cleanup events
+        m_bus->processPendingEvents();
+    }
+    
+    // MainLoop will be destroyed next, then SessionBus
 }
 
 void Application::run() {
