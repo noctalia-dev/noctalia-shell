@@ -26,7 +26,7 @@ struct BarConfig {
     std::uint32_t height = 42;
     float padding = 16.0f;
     float gap = 8.0f;
-    std::vector<std::string> startWidgets = {"clock"};
+    std::vector<std::string> startWidgets = {};
     std::vector<std::string> centerWidgets = {"workspaces"};
     std::vector<std::string> endWidgets = {"clock"};
     std::vector<BarMonitorOverride> monitorOverrides;
