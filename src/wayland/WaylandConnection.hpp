@@ -12,6 +12,7 @@ struct wl_output;
 struct wl_registry;
 struct wl_seat;
 struct wl_shm;
+struct wl_array;
 struct zwlr_layer_shell_v1;
 struct zxdg_output_manager_v1;
 struct ext_workspace_manager_v1;
@@ -67,7 +68,9 @@ public:
 
 public:
     struct Workspace {
+        std::string id;
         std::string name;
+        std::vector<std::uint32_t> coordinates;  // N-dimensional position in workspace grid
         bool active = false;
     };
 
@@ -82,7 +85,9 @@ public:
     void onWorkspaceGroupWorkspaceEnter(ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace);
     void onWorkspaceGroupWorkspaceLeave(ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace);
     void onWorkspaceCreated(ext_workspace_handle_v1* workspace);
+    void onWorkspaceIdChanged(ext_workspace_handle_v1* workspace, const char* id);
     void onWorkspaceNameChanged(ext_workspace_handle_v1* workspace, const char* name);
+    void onWorkspaceCoordinatesChanged(ext_workspace_handle_v1* workspace, wl_array* coordinates);
     void onWorkspaceStateChanged(ext_workspace_handle_v1* workspace, std::uint32_t state);
     void onWorkspaceRemoved(ext_workspace_handle_v1* workspace);
     void onWorkspaceManagerDone();

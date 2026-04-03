@@ -59,7 +59,7 @@ void WorkspacesWidget::update(Renderer& renderer) {
         m_cachedState.clear();
         m_cachedState.reserve(current.size());
         for (const auto& ws : current) {
-            m_cachedState.push_back(WaylandConnection::Workspace{.name = ws.name, .active = ws.active});
+            m_cachedState.push_back(WaylandConnection::Workspace{.id = ws.id, .name = ws.name, .coordinates = ws.coordinates, .active = ws.active});
         }
 
         rebuild(renderer);
