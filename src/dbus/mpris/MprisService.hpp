@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -47,6 +48,12 @@ public:
     bool nextActive();
     bool previousActive();
 
+    bool setPinnedPlayerPreference(const std::string& bus_name);
+    void clearPinnedPlayerPreference();
+    void setPreferredPlayers(std::vector<std::string> preferred_bus_names);
+    [[nodiscard]] std::optional<std::string> pinnedPlayerPreference() const;
+    [[nodiscard]] const std::vector<std::string>& preferredPlayers() const noexcept;
+
 private:
     void registerControlApi();
     void emitPlayersChanged();
@@ -68,6 +75,10 @@ private:
     bool onPlayPauseActive();
     bool onNextActive();
     bool onPreviousActive();
+    bool onSetActivePlayerPreference(const std::string& bus_name);
+    bool onClearActivePlayerPreference();
+    bool onSetPreferredPlayers(const std::vector<std::string>& preferred_bus_names);
+    [[nodiscard]] std::tuple<bool, std::string, std::vector<std::string>> onGetPlayerPreferences() const;
 
     SessionBus&                                                     m_bus;
     std::unique_ptr<sdbus::IObject>                                 m_control_object;
@@ -76,4 +87,6 @@ private:
     std::unordered_map<std::string, MprisPlayerInfo>                m_players;
     std::string                                                      m_last_active_player;
     std::string                                                      m_last_emitted_active_player;
+    std::optional<std::string>                                       m_pinned_player_preference;
+    std::vector<std::string>                                         m_preferred_players;
 };

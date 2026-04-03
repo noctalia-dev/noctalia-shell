@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <map>
+#include <unordered_set>
 #include <sdbus-c++/IObject.h>
 #include <sdbus-c++/IProxy.h>
 #include <sdbus-c++/Types.h>
@@ -211,6 +212,50 @@ bool MprisService::previousActive() {
     return previous(*active);
 }
 
+bool MprisService::setPinnedPlayerPreference(const std::string& bus_name) {
+    if (!m_players.contains(bus_name)) {
+        return false;
+    }
+
+    const auto previous_active = activePlayer();
+    m_pinned_player_preference = bus_name;
+    syncSignals(previous_active);
+    return true;
+}
+
+void MprisService::clearPinnedPlayerPreference() {
+    const auto previous_active = activePlayer();
+    m_pinned_player_preference.reset();
+    syncSignals(previous_active);
+}
+
+void MprisService::setPreferredPlayers(std::vector<std::string> preferred_bus_names) {
+    std::unordered_set<std::string> seen;
+    std::vector<std::string> normalized;
+    normalized.reserve(preferred_bus_names.size());
+
+    for (auto& bus_name : preferred_bus_names) {
+        if (bus_name.empty()) {
+            continue;
+        }
+        if (seen.insert(bus_name).second) {
+            normalized.push_back(std::move(bus_name));
+        }
+    }
+
+    const auto previous_active = activePlayer();
+    m_preferred_players = std::move(normalized);
+    syncSignals(previous_active);
+}
+
+std::optional<std::string> MprisService::pinnedPlayerPreference() const {
+    return m_pinned_player_preference;
+}
+
+const std::vector<std::string>& MprisService::preferredPlayers() const noexcept {
+    return m_preferred_players;
+}
+
 void MprisService::registerControlApi() {
     m_bus.connection().requestName(k_noctalia_mpris_bus_name);
     m_control_object = sdbus::createObject(m_bus.connection(), k_noctalia_mpris_object_path);
@@ -243,6 +288,32 @@ void MprisService::registerControlApi() {
                     return std::make_tuple(false, std::map<std::string, sdbus::Variant>{});
                 }
                 return std::make_tuple(true, to_dbus_player(*active));
+            }),
+
+        sdbus::registerMethod("SetActivePlayerPreference")
+            .withInputParamNames("player_bus_name")
+            .withOutputParamNames("success")
+            .implementedAs([this](const std::string& bus_name) {
+                return onSetActivePlayerPreference(bus_name);
+            }),
+
+        sdbus::registerMethod("ClearActivePlayerPreference")
+            .withOutputParamNames("success")
+            .implementedAs([this]() {
+                return onClearActivePlayerPreference();
+            }),
+
+        sdbus::registerMethod("SetPreferredPlayers")
+            .withInputParamNames("preferred_bus_names")
+            .withOutputParamNames("success")
+            .implementedAs([this](const std::vector<std::string>& preferred_bus_names) {
+                return onSetPreferredPlayers(preferred_bus_names);
+            }),
+
+        sdbus::registerMethod("GetPlayerPreferences")
+            .withOutputParamNames("has_pinned", "pinned_bus_name", "preferred_bus_names")
+            .implementedAs([this]() {
+                return onGetPlayerPreferences();
             }),
 
         sdbus::registerMethod("PlayPausePlayer")
@@ -446,8 +517,26 @@ void MprisService::removePlayer(const std::string& bus_name) {
 }
 
 std::optional<std::string> MprisService::chooseActivePlayer() const {
+    if (m_pinned_player_preference.has_value() &&
+        m_players.contains(*m_pinned_player_preference)) {
+        return *m_pinned_player_preference;
+    }
+
+    for (const auto& bus_name : m_preferred_players) {
+        const auto it = m_players.find(bus_name);
+        if (it != m_players.end() && it->second.playback_status == "Playing") {
+            return bus_name;
+        }
+    }
+
     for (const auto& [bus_name, player] : m_players) {
         if (player.playback_status == "Playing") {
+            return bus_name;
+        }
+    }
+
+    for (const auto& bus_name : m_preferred_players) {
+        if (m_players.contains(bus_name)) {
             return bus_name;
         }
     }
@@ -576,6 +665,36 @@ bool MprisService::onPreviousActive() {
                            "no active player available");
     }
     return onPreviousPlayer(*active);
+}
+
+bool MprisService::onSetActivePlayerPreference(const std::string& bus_name) {
+    if (bus_name.empty()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
+                           "player_bus_name must not be empty");
+    }
+
+    if (!setPinnedPlayerPreference(bus_name)) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "player was not found");
+    }
+    return true;
+}
+
+bool MprisService::onClearActivePlayerPreference() {
+    clearPinnedPlayerPreference();
+    return true;
+}
+
+bool MprisService::onSetPreferredPlayers(const std::vector<std::string>& preferred_bus_names) {
+    setPreferredPlayers(preferred_bus_names);
+    return true;
+}
+
+std::tuple<bool, std::string, std::vector<std::string>> MprisService::onGetPlayerPreferences() const {
+    if (!m_pinned_player_preference.has_value()) {
+        return {false, "", m_preferred_players};
+    }
+    return {true, *m_pinned_player_preference, m_preferred_players};
 }
 
 MprisPlayerInfo MprisService::readPlayerInfo(sdbus::IProxy& proxy, const std::string& bus_name) const {
