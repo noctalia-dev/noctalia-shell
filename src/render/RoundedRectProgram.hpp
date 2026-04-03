@@ -5,9 +5,22 @@
 
 #include <GLES2/gl2.h>
 
+enum class FillMode {
+    Solid,
+    LinearGradient,
+};
+
+enum class GradientDirection {
+    Horizontal,
+    Vertical,
+};
+
 struct RoundedRectStyle {
     Color fill{};
+    Color fillEnd{};
     Color border{};
+    FillMode fillMode = FillMode::Solid;
+    GradientDirection gradientDirection = GradientDirection::Horizontal;
     float radius = 0.0f;
     float softness = 1.0f;
     float borderWidth = 0.0f;
@@ -39,7 +52,10 @@ private:
     GLint m_quadRectLocation = -1;
     GLint m_rectLocation = -1;
     GLint m_colorLocation = -1;
+    GLint m_fillEndColorLocation = -1;
     GLint m_borderColorLocation = -1;
+    GLint m_fillModeLocation = -1;
+    GLint m_gradientDirectionLocation = -1;
     GLint m_radiusLocation = -1;
     GLint m_softnessLocation = -1;
     GLint m_borderWidthLocation = -1;

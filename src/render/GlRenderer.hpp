@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render/LinearGradientProgram.hpp"
 #include "render/RoundedRectProgram.hpp"
 #include "render/Renderer.hpp"
 
@@ -28,6 +29,7 @@ private:
     EGLConfig m_eglConfig = nullptr;
     EGLContext m_eglContext = EGL_NO_CONTEXT;
     EGLSurface m_eglSurface = EGL_NO_SURFACE;
+    LinearGradientProgram m_linearGradientProgram;
     RoundedRectProgram m_roundedRectProgram;
     std::uint32_t m_surfaceWidth = 0;
     std::uint32_t m_surfaceHeight = 0;

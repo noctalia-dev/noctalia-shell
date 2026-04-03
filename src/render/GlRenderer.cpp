@@ -1,4 +1,5 @@
 #include "render/GlRenderer.hpp"
+#include "render/Palette.hpp"
 
 #include <cstdint>
 #include <stdexcept>
@@ -108,6 +109,7 @@ void GlRenderer::resize(std::uint32_t width, std::uint32_t height) {
 
     m_surfaceWidth = width;
     m_surfaceHeight = height;
+    m_linearGradientProgram.ensureInitialized();
     m_roundedRectProgram.ensureInitialized();
 }
 
@@ -135,39 +137,30 @@ void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
         static_cast<float>(width) - 20.0f,
         static_cast<float>(height) - 12.0f,
         RoundedRectStyle{
-            .fill = rgba(0.09f, 0.14f, 0.19f),
-            .border = rgba(1.0f, 1.0f, 1.0f, 0.85f),
+            .fill = kRosePinePalette.overlay,
+            .fillEnd = kRosePinePalette.surface,
+            .border = rgba(
+                kRosePinePalette.text.r,
+                kRosePinePalette.text.g,
+                kRosePinePalette.text.b,
+                0.85f),
+            .fillMode = FillMode::LinearGradient,
+            .gradientDirection = GradientDirection::Vertical,
             .radius = 10.0f,
             .softness = 1.2f,
             .borderWidth = 1.0f,
         });
-    m_roundedRectProgram.draw(
+    m_linearGradientProgram.draw(
         static_cast<float>(m_surfaceWidth),
         static_cast<float>(m_surfaceHeight),
         18.0f,
         12.0f,
         116.0f,
         4.0f,
-        RoundedRectStyle{
-            .fill = rgba(0.41f, 0.84f, 1.0f),
-            .border = rgba(0.0f, 0.0f, 0.0f, 0.0f),
-            .radius = 2.0f,
-            .softness = 0.8f,
-            .borderWidth = 0.0f,
-        });
-    m_roundedRectProgram.draw(
-        static_cast<float>(m_surfaceWidth),
-        static_cast<float>(m_surfaceHeight),
-        104.0f,
-        12.0f,
-        30.0f,
-        4.0f,
-        RoundedRectStyle{
-            .fill = rgba(0.85f, 0.91f, 1.0f),
-            .border = rgba(0.0f, 0.0f, 0.0f, 0.0f),
-            .radius = 2.0f,
-            .softness = 0.8f,
-            .borderWidth = 0.0f,
+        LinearGradientStyle{
+            .start = kRosePinePalette.foam,
+            .end = kRosePinePalette.iris,
+            .horizontal = true,
         });
 
     if (eglSwapBuffers(m_eglDisplay, m_eglSurface) != EGL_TRUE) {
@@ -176,6 +169,7 @@ void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
 }
 
 void GlRenderer::cleanup() {
+    m_linearGradientProgram.destroy();
     m_roundedRectProgram.destroy();
     m_surfaceWidth = 0;
     m_surfaceHeight = 0;
