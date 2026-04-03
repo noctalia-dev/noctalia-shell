@@ -91,6 +91,7 @@ third_party/
 - Notification daemon (DBus)
   - [x] Prevent duplicate stacking when replacing
   - [x] Actions implementation (D-Bus backend)
+  - [x] Graceful shutdown (SIGTERM/SIGINT)
   - [ ] Display icon in UI layer (need Phase 1)
   - [ ] Closing/removal API polish
 

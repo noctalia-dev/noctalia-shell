@@ -1,5 +1,6 @@
 #pragma once
 
+class Application;
 class Bar;
 class NotificationService;
 class SessionBus;

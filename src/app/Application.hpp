@@ -6,6 +6,7 @@
 #include "notification/NotificationManager.hpp"
 #include "shell/Bar.hpp"
 
+#include <atomic>
 #include <memory>
 
 class Application {
@@ -13,6 +14,9 @@ public:
     Application();
 
     void run();
+
+    // Public for signal handler
+    static std::atomic<bool> s_shutdown_requested;
 
 private:
     Bar m_bar;

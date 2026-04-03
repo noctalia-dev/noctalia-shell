@@ -2,7 +2,20 @@
 
 #include "core/Log.hpp"
 
+#include <csignal>
 #include <stdexcept>
+
+std::atomic<bool> Application::s_shutdown_requested{false};
+
+namespace {
+
+void signal_handler(int signum) {
+    if (signum == SIGTERM || signum == SIGINT) {
+        Application::s_shutdown_requested = true;
+    }
+}
+
+}  // namespace
 
 Application::Application() {
     logInfo("noctalia hello");
@@ -14,6 +27,10 @@ Application::Application() {
 }
 
 void Application::run() {
+    // Install signal handlers for graceful shutdown
+    std::signal(SIGTERM, signal_handler);
+    std::signal(SIGINT, signal_handler);
+
     m_bar.initialize();
 
     try {
@@ -35,4 +52,6 @@ void Application::run() {
 
     m_mainLoop = std::make_unique<MainLoop>(m_bar, m_bus.get(), m_notificationService.get());
     m_mainLoop->run();
+
+    logInfo("shutdown");
 }
