@@ -1,6 +1,7 @@
 #include "app/MainLoop.hpp"
 
 #include "app/Application.hpp"
+#include "config/ConfigService.hpp"
 #include "dbus/SessionBus.hpp"
 #include "dbus/notification/NotificationService.hpp"
 #include "shell/Bar.hpp"
@@ -10,11 +11,13 @@
 #include <poll.h>
 #include <stdexcept>
 
-MainLoop::MainLoop(Bar& bar, SessionBus* bus, NotificationService* notifications, TimeService* time)
+MainLoop::MainLoop(Bar& bar, SessionBus* bus, NotificationService* notifications,
+                   TimeService* time, ConfigService* config)
     : m_bar(bar)
     , m_bus(bus)
     , m_notifications(notifications)
-    , m_time(time) {}
+    , m_time(time)
+    , m_config(config) {}
 
 void MainLoop::run() {
     while (m_bar.isRunning() && !Application::s_shutdown_requested) {
@@ -32,48 +35,49 @@ void MainLoop::run() {
             }
         }
 
+        // Build poll fd list
+        std::vector<pollfd> pollFds;
+        pollFds.push_back({.fd = m_bar.displayFd(), .events = POLLIN, .revents = 0});
+
         if (m_bus != nullptr) {
             auto dbusPollData = m_bus->getPollData();
             const int dbusTimeout = dbusPollData.getPollTimeout();
             if (dbusTimeout >= 0 && (pollTimeout < 0 || dbusTimeout < pollTimeout)) {
                 pollTimeout = dbusTimeout;
             }
+            pollFds.push_back({.fd = dbusPollData.fd, .events = dbusPollData.events, .revents = 0});
+            pollFds.push_back({.fd = dbusPollData.eventFd, .events = POLLIN, .revents = 0});
+        }
 
-            struct pollfd pollFds[] = {
-                {.fd = m_bar.displayFd(), .events = POLLIN, .revents = 0},
-                {.fd = dbusPollData.fd, .events = dbusPollData.events, .revents = 0},
-                {.fd = dbusPollData.eventFd, .events = POLLIN, .revents = 0},
-            };
+        int configFdIdx = -1;
+        if (m_config != nullptr && m_config->watchFd() >= 0) {
+            configFdIdx = static_cast<int>(pollFds.size());
+            pollFds.push_back({.fd = m_config->watchFd(), .events = POLLIN, .revents = 0});
+        }
 
-            const int pollResult = ::poll(pollFds, 3, pollTimeout);
-            if (pollResult < 0) {
-                if (errno == EINTR) {
-                    continue;  // Signal received, check shutdown flag
-                }
-                throw std::runtime_error("failed to poll fds");
+        const int pollResult = ::poll(pollFds.data(), pollFds.size(), pollTimeout);
+        if (pollResult < 0) {
+            if (errno == EINTR) {
+                continue;
             }
+            throw std::runtime_error("failed to poll fds");
+        }
 
-            if ((pollFds[0].revents & POLLIN) != 0) {
-                m_bar.dispatchReadable();
-            } else {
-                m_bar.dispatchPending();
-            }
-
-            m_bus->processPendingEvents();
+        // Dispatch Wayland events
+        if ((pollFds[0].revents & POLLIN) != 0) {
+            m_bar.dispatchReadable();
         } else {
-            struct pollfd pollFd = {.fd = m_bar.displayFd(), .events = POLLIN, .revents = 0};
+            m_bar.dispatchPending();
+        }
 
-            const int pollResult = ::poll(&pollFd, 1, pollTimeout);
-            if (pollResult < 0) {
-                if (errno == EINTR) {
-                    continue;  // Signal received, check shutdown flag
-                }
-                throw std::runtime_error("failed to poll wayland fd");
-            }
+        // Dispatch D-Bus events
+        if (m_bus != nullptr) {
+            m_bus->processPendingEvents();
+        }
 
-            if ((pollFd.revents & POLLIN) != 0) {
-                m_bar.dispatchReadable();
-            }
+        // Check config file changes
+        if (configFdIdx >= 0 && (pollFds[static_cast<std::size_t>(configFdIdx)].revents & POLLIN) != 0) {
+            m_config->checkReload();
         }
 
         if (m_time != nullptr) {

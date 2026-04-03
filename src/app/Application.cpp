@@ -81,7 +81,7 @@ void Application::run() {
         }
     }
 
-    m_mainLoop = std::make_unique<MainLoop>(m_bar, m_bus.get(), m_notificationService.get(), &m_timeService);
+    m_mainLoop = std::make_unique<MainLoop>(m_bar, m_bus.get(), m_notificationService.get(), &m_timeService, &m_configService);
     m_mainLoop->run();
 
     logInfo("shutdown");

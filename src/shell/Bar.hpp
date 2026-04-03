@@ -16,6 +16,7 @@ public:
     Bar();
 
     bool initialize(ConfigService* config, TimeService* timeService);
+    void reload();
     [[nodiscard]] bool isRunning() const noexcept;
     [[nodiscard]] int displayFd() const noexcept;
     void dispatchPending();

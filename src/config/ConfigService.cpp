@@ -12,6 +12,8 @@
 
 #include <cstdlib>
 #include <filesystem>
+#include <sys/inotify.h>
+#include <unistd.h>
 
 namespace {
 
@@ -54,13 +56,95 @@ bool matchesOutput(const std::string& match, const WaylandOutput& output) {
 } // namespace
 
 ConfigService::ConfigService() {
-    auto path = configPath();
-    if (!path.empty() && std::filesystem::exists(path)) {
-        loadFromFile(path);
+    m_configPath = configPath();
+    if (!m_configPath.empty() && std::filesystem::exists(m_configPath)) {
+        loadFromFile(m_configPath);
     } else {
         logInfo("config: no config file found, using defaults");
         m_config.bars.push_back(BarConfig{});
     }
+    setupWatch();
+}
+
+ConfigService::~ConfigService() {
+    if (m_watchFd >= 0 && m_inotifyFd >= 0) {
+        inotify_rm_watch(m_inotifyFd, m_watchFd);
+    }
+    if (m_inotifyFd >= 0) {
+        ::close(m_inotifyFd);
+    }
+}
+
+void ConfigService::setReloadCallback(ReloadCallback callback) {
+    m_reloadCallback = std::move(callback);
+}
+
+void ConfigService::checkReload() {
+    if (m_inotifyFd < 0) {
+        return;
+    }
+
+    // Drain inotify events, check if our config file was involved
+    alignas(inotify_event) char buf[4096];
+    bool configChanged = false;
+    const auto configFilename = std::filesystem::path(m_configPath).filename().string();
+
+    while (true) {
+        const auto n = ::read(m_inotifyFd, buf, sizeof(buf));
+        if (n <= 0) {
+            break;
+        }
+
+        // Walk through events to check filenames
+        std::size_t offset = 0;
+        while (offset < static_cast<std::size_t>(n)) {
+            auto* event = reinterpret_cast<inotify_event*>(buf + offset);
+            if (event->len > 0 && configFilename == event->name) {
+                configChanged = true;
+            }
+            offset += sizeof(inotify_event) + event->len;
+        }
+    }
+
+    if (!configChanged) {
+        return;
+    }
+
+    m_config = Config{};
+    if (!m_configPath.empty() && std::filesystem::exists(m_configPath)) {
+        loadFromFile(m_configPath);
+    } else {
+        m_config.bars.push_back(BarConfig{});
+    }
+
+    if (m_reloadCallback) {
+        m_reloadCallback();
+    }
+}
+
+void ConfigService::setupWatch() {
+    if (m_configPath.empty()) {
+        return;
+    }
+
+    m_inotifyFd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+    if (m_inotifyFd < 0) {
+        logWarn("config: inotify_init1 failed, hot reload disabled");
+        return;
+    }
+
+    // Watch the directory (not just the file) to catch editors that rename+create
+    auto dir = std::filesystem::path(m_configPath).parent_path().string();
+    m_watchFd = inotify_add_watch(m_inotifyFd, dir.c_str(),
+                                   IN_MODIFY | IN_CREATE | IN_MOVED_TO);
+    if (m_watchFd < 0) {
+        logWarn("config: inotify_add_watch failed, hot reload disabled");
+        ::close(m_inotifyFd);
+        m_inotifyFd = -1;
+        return;
+    }
+
+    logDebug("config: watching {} for changes", dir);
 }
 
 void ConfigService::loadFromFile(const std::string& path) {

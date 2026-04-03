@@ -73,8 +73,19 @@ bool Bar::initialize(ConfigService* config, TimeService* timeService) {
         });
     }
 
+    m_config->setReloadCallback([this]() {
+        reload();
+    });
+
     syncInstances();
     return true;
+}
+
+void Bar::reload() {
+    logInfo("bar: reloading config");
+    m_widgetFactory = std::make_unique<WidgetFactory>(m_wayland, m_time, m_config->config());
+    m_instances.clear();
+    syncInstances();
 }
 
 bool Bar::isRunning() const noexcept {
