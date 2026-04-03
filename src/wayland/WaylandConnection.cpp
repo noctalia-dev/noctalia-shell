@@ -117,14 +117,20 @@ const ext_workspace_group_handle_v1_listener kWorkspaceGroupListener = {
     .removed = workspaceGroupRemoved,
 };
 
-void workspaceId(void* /*data*/, ext_workspace_handle_v1* /*workspace*/, const char* /*id*/) {}
+void workspaceId(void* data, ext_workspace_handle_v1* workspace, const char* id) {
+    auto* self = static_cast<WaylandConnection*>(data);
+    self->onWorkspaceIdChanged(workspace, id);
+}
 
 void workspaceName(void* data, ext_workspace_handle_v1* workspace, const char* name) {
     auto* self = static_cast<WaylandConnection*>(data);
     self->onWorkspaceNameChanged(workspace, name);
 }
 
-void workspaceCoordinates(void* /*data*/, ext_workspace_handle_v1* /*workspace*/, wl_array* /*coords*/) {}
+void workspaceCoordinates(void* data, ext_workspace_handle_v1* workspace, wl_array* coords) {
+    auto* self = static_cast<WaylandConnection*>(data);
+    self->onWorkspaceCoordinatesChanged(workspace, coords);
+}
 
 void workspaceState(void* data, ext_workspace_handle_v1* workspace, uint32_t state) {
     auto* self = static_cast<WaylandConnection*>(data);
@@ -431,12 +437,34 @@ void WaylandConnection::onWorkspaceCreated(ext_workspace_handle_v1* workspace) {
     ext_workspace_handle_v1_add_listener(workspace, &kWorkspaceListener, this);
 }
 
+void WaylandConnection::onWorkspaceIdChanged(ext_workspace_handle_v1* workspace, const char* id) {
+    const auto it = m_workspaces.find(workspace);
+    if (it == m_workspaces.end()) {
+        return;
+    }
+    it->second.id = id != nullptr ? id : "";
+}
+
 void WaylandConnection::onWorkspaceNameChanged(ext_workspace_handle_v1* workspace, const char* name) {
     const auto it = m_workspaces.find(workspace);
     if (it == m_workspaces.end()) {
         return;
     }
     it->second.name = name != nullptr ? name : "";
+}
+
+void WaylandConnection::onWorkspaceCoordinatesChanged(ext_workspace_handle_v1* workspace, wl_array* coordinates) {
+    const auto it = m_workspaces.find(workspace);
+    if (it == m_workspaces.end()) {
+        return;
+    }
+    
+    it->second.coordinates.clear();
+    if (coordinates != nullptr) {
+        const auto* coords = static_cast<std::uint32_t*>(coordinates->data);
+        const auto count = coordinates->size / sizeof(std::uint32_t);
+        it->second.coordinates.assign(coords, coords + count);
+    }
 }
 
 void WaylandConnection::onWorkspaceStateChanged(ext_workspace_handle_v1* workspace, std::uint32_t state) {
@@ -548,32 +576,45 @@ void WaylandConnection::cleanup() {
 
 std::vector<WaylandConnection::Workspace> WaylandConnection::workspaces() const {
     // Deduplicate by name -- ext-workspace reports per output group,
-    // so the same logical workspace appears multiple times.
+    // so the same logical workspace appears multiple times. Sort by coordinates.
     std::vector<Workspace> result;
-    for (const auto& [handle, ws] : m_workspaces) {
-        if (ws.name.empty()) {
-            continue;
-        }
-        bool found = false;
-        for (auto& existing : result) {
-            if (existing.name == ws.name) {
-                existing.active = existing.active || ws.active;
-                found = true;
-                break;
+    std::vector<ext_workspace_handle_v1*> seen;
+    
+    // Iterate through groups to collect all workspaces
+    for (const auto& group : m_workspaceGroups) {
+        for (auto* handle : group.workspaces) {
+            // Skip if we've already added this workspace
+            if (std::find(seen.begin(), seen.end(), handle) != seen.end()) {
+                continue;
+            }
+            
+            auto it = m_workspaces.find(handle);
+            if (it != m_workspaces.end() && !it->second.name.empty()) {
+                result.push_back(Workspace{.id = it->second.id, .name = it->second.name, .coordinates = it->second.coordinates, .active = it->second.active});
+                seen.push_back(handle);
             }
         }
-        if (!found) {
-            result.push_back(Workspace{.name = ws.name, .active = ws.active});
-        }
     }
+    
+    // Add workspaces that aren't in any group (shouldn't happen, but handle it)
+    for (const auto& [handle, ws] : m_workspaces) {
+        if (ws.name.empty() || std::find(seen.begin(), seen.end(), handle) != seen.end()) {
+            continue;
+        }
+        result.push_back(Workspace{.id = ws.id, .name = ws.name, .coordinates = ws.coordinates, .active = ws.active});
+    }
+    
+    // Sort by workspace coordinates (lexicographic multi-dimensional)
     std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) {
-        return a.name < b.name;
+        return a.coordinates < b.coordinates;
     });
+    
     return result;
 }
 
 std::vector<WaylandConnection::Workspace> WaylandConnection::workspaces(wl_output* output) const {
     // Collect workspace handles that belong to groups containing this output
+    // Sort by coordinates for proper ordering
     std::vector<ext_workspace_handle_v1*> handles;
     for (const auto& group : m_workspaceGroups) {
         bool hasOutput = std::find(group.outputs.begin(), group.outputs.end(), output) != group.outputs.end();
@@ -586,13 +627,15 @@ std::vector<WaylandConnection::Workspace> WaylandConnection::workspaces(wl_outpu
     for (auto* handle : handles) {
         auto it = m_workspaces.find(handle);
         if (it != m_workspaces.end() && !it->second.name.empty()) {
-            result.push_back(Workspace{.name = it->second.name, .active = it->second.active});
+            result.push_back(Workspace{.id = it->second.id, .name = it->second.name, .coordinates = it->second.coordinates, .active = it->second.active});
         }
     }
 
+    // Sort by workspace coordinates (lexicographic multi-dimensional)
     std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) {
-        return a.name < b.name;
+        return a.coordinates < b.coordinates;
     });
+
     return result;
 }
 
