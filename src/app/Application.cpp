@@ -3,6 +3,7 @@
 #include "core/Log.hpp"
 
 #include <csignal>
+#include <cstdlib>
 #include <stdexcept>
 
 std::atomic<bool> Application::s_shutdown_requested{false};
@@ -26,6 +27,12 @@ Application::Application()
         const char* origin = (n.origin == NotificationOrigin::Internal) ? "internal" : "external";
         logDebug("notification {} id={} origin={}", kind, n.id, origin);
     });
+}
+
+Application::~Application() {
+    // D-Bus cleanup can block on exit, so exit immediately without waiting
+    // for D-Bus to fully disconnect. The OS will clean up resources anyway.
+    std::exit(0);
 }
 
 void Application::run() {
