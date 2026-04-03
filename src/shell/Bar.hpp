@@ -2,7 +2,6 @@
 
 #include "shell/BarInstance.hpp"
 #include "ui/WidgetFactory.hpp"
-#include "wayland/WaylandConnection.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -10,19 +9,17 @@
 
 class ConfigService;
 class TimeService;
+class WaylandConnection;
 
 class Bar {
 public:
     Bar();
 
-    bool initialize(ConfigService* config, TimeService* timeService);
+    bool initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService);
     void reload();
+    void onOutputChange();
+    void onWorkspaceChange();
     [[nodiscard]] bool isRunning() const noexcept;
-    [[nodiscard]] int displayFd() const noexcept;
-    void dispatchPending();
-    void dispatchReadable();
-    void flush();
-    const WaylandConnection& wayland() const noexcept;
 
 private:
     void syncInstances();
@@ -32,7 +29,7 @@ private:
     void buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height);
     void updateWidgets(BarInstance& instance);
 
-    WaylandConnection m_wayland;
+    WaylandConnection* m_wayland = nullptr;
     ConfigService* m_config = nullptr;
     TimeService* m_time = nullptr;
     std::unique_ptr<WidgetFactory> m_widgetFactory;

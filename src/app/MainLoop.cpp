@@ -2,27 +2,38 @@
 
 #include "app/Application.hpp"
 #include "config/ConfigService.hpp"
+#include "config/StateService.hpp"
 #include "dbus/SessionBus.hpp"
 #include "dbus/notification/NotificationService.hpp"
 #include "shell/Bar.hpp"
 #include "time/TimeService.hpp"
+#include "wayland/WaylandConnection.hpp"
 
 #include <cerrno>
 #include <poll.h>
 #include <stdexcept>
 
-MainLoop::MainLoop(Bar& bar, SessionBus* bus, NotificationService* notifications,
-                   TimeService* time, ConfigService* config)
-    : m_bar(bar)
+#include <wayland-client-core.h>
+
+MainLoop::MainLoop(WaylandConnection& wayland, Bar& bar, SessionBus* bus,
+                   NotificationService* notifications, TimeService* time,
+                   ConfigService* config, StateService* state)
+    : m_wayland(wayland)
+    , m_bar(bar)
     , m_bus(bus)
     , m_notifications(notifications)
     , m_time(time)
-    , m_config(config) {}
+    , m_config(config)
+    , m_state(state) {}
 
 void MainLoop::run() {
     while (m_bar.isRunning() && !Application::s_shutdown_requested) {
-        m_bar.dispatchPending();
-        m_bar.flush();
+        if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
+            throw std::runtime_error("failed to dispatch pending Wayland events");
+        }
+        if (wl_display_flush(m_wayland.display()) < 0) {
+            throw std::runtime_error("failed to flush Wayland display");
+        }
 
         int pollTimeout = -1;
         if (m_time != nullptr) {
@@ -37,7 +48,7 @@ void MainLoop::run() {
 
         // Build poll fd list
         std::vector<pollfd> pollFds;
-        pollFds.push_back({.fd = m_bar.displayFd(), .events = POLLIN, .revents = 0});
+        pollFds.push_back({.fd = wl_display_get_fd(m_wayland.display()), .events = POLLIN, .revents = 0});
 
         if (m_bus != nullptr) {
             auto dbusPollData = m_bus->getPollData();
@@ -55,6 +66,12 @@ void MainLoop::run() {
             pollFds.push_back({.fd = m_config->watchFd(), .events = POLLIN, .revents = 0});
         }
 
+        int stateFdIdx = -1;
+        if (m_state != nullptr && m_state->watchFd() >= 0) {
+            stateFdIdx = static_cast<int>(pollFds.size());
+            pollFds.push_back({.fd = m_state->watchFd(), .events = POLLIN, .revents = 0});
+        }
+
         const int pollResult = ::poll(pollFds.data(), pollFds.size(), pollTimeout);
         if (pollResult < 0) {
             if (errno == EINTR) {
@@ -65,9 +82,13 @@ void MainLoop::run() {
 
         // Dispatch Wayland events
         if ((pollFds[0].revents & POLLIN) != 0) {
-            m_bar.dispatchReadable();
+            if (wl_display_dispatch(m_wayland.display()) < 0) {
+                throw std::runtime_error("failed to dispatch Wayland events");
+            }
         } else {
-            m_bar.dispatchPending();
+            if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
+                throw std::runtime_error("failed to dispatch pending Wayland events");
+            }
         }
 
         // Dispatch D-Bus events
@@ -78,6 +99,11 @@ void MainLoop::run() {
         // Check config file changes
         if (configFdIdx >= 0 && (pollFds[static_cast<std::size_t>(configFdIdx)].revents & POLLIN) != 0) {
             m_config->checkReload();
+        }
+
+        // Check state file changes
+        if (stateFdIdx >= 0 && (pollFds[static_cast<std::size_t>(stateFdIdx)].revents & POLLIN) != 0) {
+            m_state->checkReload();
         }
 
         if (m_time != nullptr) {

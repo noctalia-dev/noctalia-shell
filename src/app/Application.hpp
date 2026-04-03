@@ -1,16 +1,19 @@
 #pragma once
 
 #include "app/MainLoop.hpp"
+#include "config/ConfigService.hpp"
+#include "config/StateService.hpp"
 #include "debug/DebugService.hpp"
 #include "dbus/SessionBus.hpp"
 #include "dbus/mpris/MprisService.hpp"
 #include "dbus/notification/NotificationService.hpp"
 #include "notification/InternalNotificationService.hpp"
 #include "notification/NotificationManager.hpp"
-#include "config/ConfigService.hpp"
 #include "shell/Bar.hpp"
+#include "shell/Wallpaper.hpp"
 #include "system/SystemMonitorService.hpp"
 #include "time/TimeService.hpp"
+#include "wayland/WaylandConnection.hpp"
 
 #include <atomic>
 #include <memory>
@@ -25,9 +28,12 @@ public:
     static std::atomic<bool> s_shutdown_requested;
 
 private:
+    WaylandConnection m_wayland;
     ConfigService m_configService;
+    StateService m_stateService;
     TimeService m_timeService;
     Bar m_bar;
+    Wallpaper m_wallpaper;
     std::unique_ptr<SessionBus> m_bus;
     std::unique_ptr<SystemMonitorService> m_systemMonitor;
     std::unique_ptr<DebugService> m_debugService;

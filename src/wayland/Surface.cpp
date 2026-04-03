@@ -69,9 +69,13 @@ bool Surface::createWlSurface() {
         throw std::runtime_error("failed to create wl_surface");
     }
 
-    m_renderer = std::make_unique<GlRenderer>();
+    m_renderer = createRenderer();
     m_renderer->bind(m_connection.display(), m_surface);
     return true;
+}
+
+std::unique_ptr<Renderer> Surface::createRenderer() {
+    return std::make_unique<GlRenderer>();
 }
 
 void Surface::onConfigure(std::uint32_t width, std::uint32_t height) {
@@ -107,6 +111,10 @@ void Surface::setUpdateCallback(UpdateCallback callback) {
 
 void Surface::requestRedraw() {
     if (m_running && m_configured && m_frameCallback == nullptr) {
+        // Reset frame time so the first delta after idle is 0,
+        // preventing animations from completing instantly due to
+        // a stale timestamp from before the surface went idle.
+        m_lastFrameTime = 0;
         render();
         requestFrame();
     }

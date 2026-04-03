@@ -44,6 +44,7 @@ public:
 
 protected:
     bool createWlSurface();
+    virtual std::unique_ptr<Renderer> createRenderer();
     void onConfigure(std::uint32_t width, std::uint32_t height);
     void render();
     void requestFrame();

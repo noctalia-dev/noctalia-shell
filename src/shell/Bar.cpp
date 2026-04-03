@@ -7,9 +7,9 @@
 #include "time/TimeService.hpp"
 #include "ui/Widget.hpp"
 #include "ui/controls/Box.hpp"
+#include "wayland/WaylandConnection.hpp"
 
 #include <algorithm>
-#include <stdexcept>
 
 #include <wayland-client-core.h>
 
@@ -33,30 +33,12 @@ std::uint32_t positionToAnchor(const std::string& position) {
 
 Bar::Bar() = default;
 
-bool Bar::initialize(ConfigService* config, TimeService* timeService) {
+bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService) {
+    m_wayland = &wayland;
     m_config = config;
     m_time = timeService;
 
-    if (!m_wayland.connect()) {
-        return false;
-    }
-
-    m_widgetFactory = std::make_unique<WidgetFactory>(m_wayland, m_time, m_config->config());
-
-    m_wayland.setOutputChangeCallback([this]() {
-        syncInstances();
-    });
-
-    m_wayland.setWorkspaceChangeCallback([this]() {
-        for (auto& inst : m_instances) {
-            if (inst->surface == nullptr || inst->surface->renderer() == nullptr) {
-                continue;
-            }
-            inst->surface->renderer()->makeCurrent();
-            updateWidgets(*inst);
-            inst->surface->renderNow();
-        }
-    });
+    m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config());
 
     if (timeService != nullptr) {
         timeService->setTickCallback([this]() {
@@ -83,9 +65,24 @@ bool Bar::initialize(ConfigService* config, TimeService* timeService) {
 
 void Bar::reload() {
     logInfo("bar: reloading config");
-    m_widgetFactory = std::make_unique<WidgetFactory>(m_wayland, m_time, m_config->config());
+    m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config());
     m_instances.clear();
     syncInstances();
+}
+
+void Bar::onOutputChange() {
+    syncInstances();
+}
+
+void Bar::onWorkspaceChange() {
+    for (auto& inst : m_instances) {
+        if (inst->surface == nullptr || inst->surface->renderer() == nullptr) {
+            continue;
+        }
+        inst->surface->renderer()->makeCurrent();
+        updateWidgets(*inst);
+        inst->surface->renderNow();
+    }
 }
 
 bool Bar::isRunning() const noexcept {
@@ -93,46 +90,8 @@ bool Bar::isRunning() const noexcept {
         [](const auto& inst) { return inst->surface && inst->surface->isRunning(); });
 }
 
-int Bar::displayFd() const noexcept {
-    if (!m_wayland.isConnected()) {
-        return -1;
-    }
-    return wl_display_get_fd(m_wayland.display());
-}
-
-void Bar::dispatchPending() {
-    if (!m_wayland.isConnected()) {
-        return;
-    }
-    if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
-        throw std::runtime_error("failed to dispatch pending Wayland events");
-    }
-}
-
-void Bar::dispatchReadable() {
-    if (!m_wayland.isConnected()) {
-        return;
-    }
-    if (wl_display_dispatch(m_wayland.display()) < 0) {
-        throw std::runtime_error("failed to dispatch Wayland events");
-    }
-}
-
-void Bar::flush() {
-    if (!m_wayland.isConnected()) {
-        return;
-    }
-    if (wl_display_flush(m_wayland.display()) < 0) {
-        throw std::runtime_error("failed to flush Wayland display");
-    }
-}
-
-const WaylandConnection& Bar::wayland() const noexcept {
-    return m_wayland;
-}
-
 void Bar::syncInstances() {
-    const auto& outputs = m_wayland.outputs();
+    const auto& outputs = m_wayland->outputs();
     const auto& bars = m_config->config().bars;
 
     // Remove instances for outputs that no longer exist
@@ -188,7 +147,7 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
         .defaultHeight = vertical ? 0 : barConfig.height,
     };
 
-    instance->surface = std::make_unique<LayerSurface>(m_wayland, std::move(surfaceConfig));
+    instance->surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
 
     auto* inst = instance.get();
     instance->surface->setConfigureCallback(

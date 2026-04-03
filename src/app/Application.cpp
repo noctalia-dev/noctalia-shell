@@ -33,7 +33,26 @@ void Application::run() {
     std::signal(SIGTERM, signal_handler);
     std::signal(SIGINT, signal_handler);
 
-    m_bar.initialize(&m_configService, &m_timeService);
+    // Connect to Wayland
+    if (!m_wayland.connect()) {
+        throw std::runtime_error("failed to connect to Wayland display");
+    }
+
+    // Set up output/workspace change callbacks
+    m_wayland.setOutputChangeCallback([this]() {
+        m_wallpaper.onOutputChange();
+        m_bar.onOutputChange();
+    });
+
+    m_wayland.setWorkspaceChangeCallback([this]() {
+        m_bar.onWorkspaceChange();
+    });
+
+    // Initialize wallpaper first (background layer)
+    m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
+
+    // Initialize bar (top layer)
+    m_bar.initialize(m_wayland, &m_configService, &m_timeService);
 
     try {
         m_systemMonitor = std::make_unique<SystemMonitorService>();
@@ -81,7 +100,8 @@ void Application::run() {
         }
     }
 
-    m_mainLoop = std::make_unique<MainLoop>(m_bar, m_bus.get(), m_notificationService.get(), &m_timeService, &m_configService);
+    m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, m_bus.get(), m_notificationService.get(),
+                                             &m_timeService, &m_configService, &m_stateService);
     m_mainLoop->run();
 
     logInfo("shutdown");

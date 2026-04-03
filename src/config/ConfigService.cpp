@@ -216,6 +216,29 @@ void ConfigService::loadFromFile(const std::string& path) {
         }
     }
 
+    // Parse [wallpaper]
+    if (auto* wpTbl = tbl["wallpaper"].as_table()) {
+        auto& wp = m_config.wallpaper;
+        if (auto v = (*wpTbl)["enabled"].value<bool>()) wp.enabled = *v;
+        if (auto v = (*wpTbl)["fill_mode"].value<std::string>()) {
+            if (*v == "center") wp.fillMode = WallpaperFillMode::Center;
+            else if (*v == "crop") wp.fillMode = WallpaperFillMode::Crop;
+            else if (*v == "fit") wp.fillMode = WallpaperFillMode::Fit;
+            else if (*v == "stretch") wp.fillMode = WallpaperFillMode::Stretch;
+            else if (*v == "repeat") wp.fillMode = WallpaperFillMode::Repeat;
+        }
+        if (auto v = (*wpTbl)["transition"].value<std::string>()) {
+            if (*v == "fade") wp.transition = WallpaperTransition::Fade;
+            else if (*v == "wipe") wp.transition = WallpaperTransition::Wipe;
+            else if (*v == "disc") wp.transition = WallpaperTransition::Disc;
+            else if (*v == "stripes") wp.transition = WallpaperTransition::Stripes;
+            else if (*v == "pixelate") wp.transition = WallpaperTransition::Pixelate;
+            else if (*v == "honeycomb") wp.transition = WallpaperTransition::Honeycomb;
+        }
+        if (auto v = (*wpTbl)["transition_duration"].value<double>()) wp.transitionDurationMs = static_cast<float>(*v);
+        if (auto v = (*wpTbl)["edge_smoothness"].value<double>()) wp.edgeSmoothness = static_cast<float>(*v);
+    }
+
     if (m_config.bars.empty()) {
         logInfo("config: no [[bar]] defined, using defaults");
         m_config.bars.push_back(BarConfig{});

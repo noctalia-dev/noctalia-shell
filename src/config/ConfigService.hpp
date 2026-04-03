@@ -36,9 +36,35 @@ struct ClockConfig {
     std::string format = "{:%H:%M}";
 };
 
+enum class WallpaperFillMode : std::uint8_t {
+    Center = 0,
+    Crop = 1,
+    Fit = 2,
+    Stretch = 3,
+    Repeat = 4,
+};
+
+enum class WallpaperTransition : std::uint8_t {
+    Fade = 0,
+    Wipe = 1,
+    Disc = 2,
+    Stripes = 3,
+    Pixelate = 4,
+    Honeycomb = 5,
+};
+
+struct WallpaperConfig {
+    bool enabled = true;
+    WallpaperFillMode fillMode = WallpaperFillMode::Crop;
+    WallpaperTransition transition = WallpaperTransition::Fade;
+    float transitionDurationMs = 800.0f;
+    float edgeSmoothness = 0.5f;
+};
+
 struct Config {
     std::vector<BarConfig> bars;
     ClockConfig clock;
+    WallpaperConfig wallpaper;
 };
 
 class ConfigService {

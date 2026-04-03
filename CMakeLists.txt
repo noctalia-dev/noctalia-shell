@@ -161,6 +161,7 @@ add_executable(noctalia
     src/dbus/mpris/MprisService.cpp
     src/dbus/notification/NotificationService.cpp
     src/config/ConfigService.cpp
+    src/config/StateService.cpp
     src/core/Log.cpp
     src/font/FontService.cpp
     src/render/scene/Node.cpp
@@ -175,7 +176,11 @@ add_executable(noctalia
     src/render/MsdfTextProgram.cpp
     src/render/MsdfTextRenderer.cpp
     src/render/TextureManager.cpp
+    src/render/WallpaperProgram.cpp
+    src/render/WallpaperRenderer.cpp
     src/shell/Bar.cpp
+    src/shell/Wallpaper.cpp
+    src/shell/WallpaperSurface.cpp
     src/time/TimeService.cpp
     src/ui/Widget.cpp
     src/ui/WidgetFactory.cpp
