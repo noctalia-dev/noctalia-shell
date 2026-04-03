@@ -1,5 +1,7 @@
 #include "time/TimeService.hpp"
 
+#include <format>
+
 void TimeService::setTickCallback(TickCallback callback) {
     m_callback = std::move(callback);
 }
@@ -18,8 +20,15 @@ void TimeService::tick() {
 
     if (sec != m_lastSecond) {
         m_lastSecond = sec;
+        m_now = now;
         if (m_callback) {
             m_callback();
         }
     }
+}
+
+std::string TimeService::format(const char* fmt) const {
+    const auto truncated = std::chrono::floor<std::chrono::seconds>(m_now);
+    const auto local = std::chrono::current_zone()->to_local(truncated);
+    return std::vformat(fmt, std::make_format_args(local));
 }

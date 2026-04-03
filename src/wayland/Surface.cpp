@@ -112,6 +112,12 @@ void Surface::requestRedraw() {
     }
 }
 
+void Surface::renderNow() {
+    if (m_running && m_configured) {
+        render();
+    }
+}
+
 Renderer* Surface::renderer() const noexcept {
     return m_renderer.get();
 }

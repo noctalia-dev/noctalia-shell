@@ -446,6 +446,9 @@ void WaylandConnection::onWorkspaceStateChanged(ext_workspace_handle_v1* workspa
             const std::string label = it->second.name.empty() ? "(unnamed)" : it->second.name;
             logInfo("workspace active: {}", label);
         }
+        if (m_workspaceChangeCallback) {
+            m_workspaceChangeCallback();
+        }
     }
 }
 

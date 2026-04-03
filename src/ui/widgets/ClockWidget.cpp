@@ -2,10 +2,11 @@
 
 #include "render/Palette.hpp"
 #include "render/Renderer.hpp"
+#include "time/TimeService.hpp"
 #include "ui/controls/Label.hpp"
 
-#include <chrono>
-#include <format>
+ClockWidget::ClockWidget(const TimeService& timeService)
+    : m_time(timeService) {}
 
 void ClockWidget::create(Renderer& renderer) {
     auto label = std::make_unique<Label>();
@@ -21,9 +22,7 @@ void ClockWidget::layout(Renderer& renderer, float /*barWidth*/, float /*barHeig
 }
 
 void ClockWidget::update(Renderer& renderer) {
-    const auto now = std::chrono::system_clock::now();
-    const auto local = std::chrono::current_zone()->to_local(now);
-    auto text = std::format("{:%H:%M}", local);
+    auto text = m_time.format("{:%H:%M:%S}");
 
     if (text != m_lastText) {
         m_lastText = std::move(text);

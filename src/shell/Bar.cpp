@@ -26,6 +26,8 @@ constexpr float kBarPaddingX = 16.0f;
 Bar::Bar() = default;
 
 bool Bar::initialize(TimeService* timeService) {
+    m_time = timeService;
+
     if (!m_wayland.connect()) {
         return false;
     }
@@ -34,23 +36,30 @@ bool Bar::initialize(TimeService* timeService) {
         syncInstances();
     });
 
-    auto refreshAll = [this]() {
+    m_wayland.setWorkspaceChangeCallback([this]() {
         for (auto& inst : m_instances) {
             if (inst->surface == nullptr || inst->surface->renderer() == nullptr) {
                 continue;
             }
             inst->surface->renderer()->makeCurrent();
             updateWidgets(*inst);
-            if (inst->sceneRoot != nullptr && inst->sceneRoot->dirty()) {
-                inst->surface->requestRedraw();
-            }
+            inst->surface->renderNow();
         }
-    };
-
-    m_wayland.setWorkspaceChangeCallback(refreshAll);
+    });
 
     if (timeService != nullptr) {
-        timeService->setTickCallback(refreshAll);
+        timeService->setTickCallback([this]() {
+            for (auto& inst : m_instances) {
+                if (inst->surface == nullptr || inst->surface->renderer() == nullptr) {
+                    continue;
+                }
+                inst->surface->renderer()->makeCurrent();
+                updateWidgets(*inst);
+                if (inst->sceneRoot != nullptr && inst->sceneRoot->dirty()) {
+                    inst->surface->requestRedraw();
+                }
+            }
+        });
     }
 
     syncInstances();
@@ -164,11 +173,15 @@ void Bar::destroyInstance(std::uint32_t outputName) {
 }
 
 void Bar::populateWidgets(BarInstance& instance) {
-    instance.startWidgets.push_back(std::make_unique<ClockWidget>());
+    if (m_time != nullptr) {
+        instance.startWidgets.push_back(std::make_unique<ClockWidget>(*m_time));
+    }
 
     instance.centerWidgets.push_back(std::make_unique<WorkspacesWidget>(m_wayland, instance.output));
 
-    instance.endWidgets.push_back(std::make_unique<ClockWidget>());
+    if (m_time != nullptr) {
+        instance.endWidgets.push_back(std::make_unique<ClockWidget>(*m_time));
+    }
 }
 
 void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height) {

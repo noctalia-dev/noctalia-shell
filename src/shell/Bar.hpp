@@ -30,5 +30,6 @@ private:
     void updateWidgets(BarInstance& instance);
 
     WaylandConnection m_wayland;
+    TimeService* m_time = nullptr;
     std::vector<std::unique_ptr<BarInstance>> m_instances;
 };

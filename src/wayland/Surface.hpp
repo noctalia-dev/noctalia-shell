@@ -30,6 +30,7 @@ public:
     void setConfigureCallback(ConfigureCallback callback);
     void setUpdateCallback(UpdateCallback callback);
     void requestRedraw();
+    void renderNow();
     void setAnimationManager(AnimationManager* manager) noexcept { m_animationManager = manager; }
     void setSceneRoot(Node* root) noexcept { m_sceneRoot = root; }
     [[nodiscard]] Renderer* renderer() const noexcept;
