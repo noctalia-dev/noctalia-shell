@@ -223,7 +223,8 @@ std::vector<std::map<std::string, sdbus::Variant>> NotificationService::onGetNot
 
 void NotificationService::onCloseNotification(uint32_t id) {
     if (!m_manager.close(id, CloseReason::ClosedByCall)) {
-        return;
+        throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.NotFound"},
+                           "notification id was not found");
     }
     emitClose(id, CloseReason::ClosedByCall);
 }

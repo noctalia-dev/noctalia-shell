@@ -94,7 +94,7 @@ third_party/
   - [x] Graceful shutdown (SIGTERM/SIGINT)
   - [x] GetNotifications method (query all)
   - [ ] Display icon in UI layer (need Phase 1)
-  - [ ] Closing/removal API polish
+  - [x] Closing/removal API polish
 
 ### Phase 1 -- Renderer completion
 
