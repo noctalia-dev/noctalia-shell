@@ -175,6 +175,7 @@ add_executable(noctalia
     src/render/MsdfTextRenderer.cpp
     src/render/TextureManager.cpp
     src/shell/Bar.cpp
+    src/time/TimeService.cpp
     src/ui/Widget.cpp
     src/ui/controls/Box.cpp
     src/ui/controls/Label.cpp

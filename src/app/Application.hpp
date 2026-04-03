@@ -9,6 +9,7 @@
 #include "notification/NotificationManager.hpp"
 #include "shell/Bar.hpp"
 #include "system/SystemMonitorService.hpp"
+#include "time/TimeService.hpp"
 
 #include <atomic>
 #include <memory>
@@ -23,6 +24,7 @@ public:
     static std::atomic<bool> s_shutdown_requested;
 
 private:
+    TimeService m_timeService;
     Bar m_bar;
     std::unique_ptr<SessionBus> m_bus;
     std::unique_ptr<SystemMonitorService> m_systemMonitor;

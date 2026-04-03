@@ -4,15 +4,17 @@
 #include "dbus/SessionBus.hpp"
 #include "dbus/notification/NotificationService.hpp"
 #include "shell/Bar.hpp"
+#include "time/TimeService.hpp"
 
 #include <cerrno>
 #include <poll.h>
 #include <stdexcept>
 
-MainLoop::MainLoop(Bar& bar, SessionBus* bus, NotificationService* notifications)
+MainLoop::MainLoop(Bar& bar, SessionBus* bus, NotificationService* notifications, TimeService* time)
     : m_bar(bar)
     , m_bus(bus)
-    , m_notifications(notifications) {}
+    , m_notifications(notifications)
+    , m_time(time) {}
 
 void MainLoop::run() {
     while (m_bar.isRunning() && !Application::s_shutdown_requested) {
@@ -20,9 +22,12 @@ void MainLoop::run() {
         m_bar.flush();
 
         int pollTimeout = -1;
+        if (m_time != nullptr) {
+            pollTimeout = m_time->pollTimeoutMs();
+        }
         if (m_notifications != nullptr) {
             const int expiryTimeout = m_notifications->nextExpiryTimeoutMs();
-            if (expiryTimeout >= 0) {
+            if (expiryTimeout >= 0 && (pollTimeout < 0 || expiryTimeout < pollTimeout)) {
                 pollTimeout = expiryTimeout;
             }
         }
@@ -69,6 +74,10 @@ void MainLoop::run() {
             if ((pollFd.revents & POLLIN) != 0) {
                 m_bar.dispatchReadable();
             }
+        }
+
+        if (m_time != nullptr) {
+            m_time->tick();
         }
 
         if (m_notifications != nullptr) {

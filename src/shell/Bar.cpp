@@ -2,6 +2,7 @@
 
 #include "core/Log.hpp"
 #include "render/Palette.hpp"
+#include "time/TimeService.hpp"
 #include "render/scene/RectNode.hpp"
 #include "ui/Widget.hpp"
 #include "ui/controls/Box.hpp"
@@ -24,7 +25,7 @@ constexpr float kBarPaddingX = 16.0f;
 
 Bar::Bar() = default;
 
-bool Bar::initialize() {
+bool Bar::initialize(TimeService* timeService) {
     if (!m_wayland.connect()) {
         return false;
     }
@@ -33,16 +34,24 @@ bool Bar::initialize() {
         syncInstances();
     });
 
-    m_wayland.setWorkspaceChangeCallback([this]() {
+    auto refreshAll = [this]() {
         for (auto& inst : m_instances) {
             if (inst->surface == nullptr || inst->surface->renderer() == nullptr) {
                 continue;
             }
             inst->surface->renderer()->makeCurrent();
             updateWidgets(*inst);
-            inst->surface->requestRedraw();
+            if (inst->sceneRoot != nullptr && inst->sceneRoot->dirty()) {
+                inst->surface->requestRedraw();
+            }
         }
-    });
+    };
+
+    m_wayland.setWorkspaceChangeCallback(refreshAll);
+
+    if (timeService != nullptr) {
+        timeService->setTickCallback(refreshAll);
+    }
 
     syncInstances();
     return true;

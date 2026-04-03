@@ -7,11 +7,13 @@
 #include <memory>
 #include <vector>
 
+class TimeService;
+
 class Bar {
 public:
     Bar();
 
-    bool initialize();
+    bool initialize(TimeService* timeService);
     [[nodiscard]] bool isRunning() const noexcept;
     [[nodiscard]] int displayFd() const noexcept;
     void dispatchPending();

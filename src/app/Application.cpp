@@ -33,7 +33,7 @@ void Application::run() {
     std::signal(SIGTERM, signal_handler);
     std::signal(SIGINT, signal_handler);
 
-    m_bar.initialize();
+    m_bar.initialize(&m_timeService);
 
     try {
         m_systemMonitor = std::make_unique<SystemMonitorService>();
@@ -81,7 +81,7 @@ void Application::run() {
         }
     }
 
-    m_mainLoop = std::make_unique<MainLoop>(m_bar, m_bus.get(), m_notificationService.get());
+    m_mainLoop = std::make_unique<MainLoop>(m_bar, m_bus.get(), m_notificationService.get(), &m_timeService);
     m_mainLoop->run();
 
     logInfo("shutdown");
