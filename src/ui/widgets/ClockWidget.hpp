@@ -9,7 +9,7 @@ class TimeService;
 
 class ClockWidget : public Widget {
 public:
-    explicit ClockWidget(const TimeService& timeService);
+    ClockWidget(const TimeService& timeService, std::string format = "{:%H:%M}");
 
     void create(Renderer& renderer) override;
     void layout(Renderer& renderer, float barWidth, float barHeight) override;
@@ -17,6 +17,7 @@ public:
 
 private:
     const TimeService& m_time;
+    std::string m_format;
     Label* m_label = nullptr;
     std::string m_lastText;
 };

@@ -7,6 +7,7 @@
 #include "dbus/notification/NotificationService.hpp"
 #include "notification/InternalNotificationService.hpp"
 #include "notification/NotificationManager.hpp"
+#include "config/ConfigService.hpp"
 #include "shell/Bar.hpp"
 #include "system/SystemMonitorService.hpp"
 #include "time/TimeService.hpp"
@@ -24,6 +25,7 @@ public:
     static std::atomic<bool> s_shutdown_requested;
 
 private:
+    ConfigService m_configService;
     TimeService m_timeService;
     Bar m_bar;
     std::unique_ptr<SessionBus> m_bus;

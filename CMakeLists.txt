@@ -160,6 +160,7 @@ add_executable(noctalia
     src/dbus/SessionBus.cpp
     src/dbus/mpris/MprisService.cpp
     src/dbus/notification/NotificationService.cpp
+    src/config/ConfigService.cpp
     src/core/Log.cpp
     src/font/FontService.cpp
     src/render/scene/Node.cpp
@@ -177,6 +178,7 @@ add_executable(noctalia
     src/shell/Bar.cpp
     src/time/TimeService.cpp
     src/ui/Widget.cpp
+    src/ui/WidgetFactory.cpp
     src/ui/controls/Box.cpp
     src/ui/controls/Label.cpp
     src/ui/widgets/ClockWidget.cpp
@@ -198,6 +200,7 @@ target_include_directories(noctalia PRIVATE
     src
     third_party/stb
     third_party/nanosvg
+    third_party/tomlplusplus
     "${GENERATED_PROTOCOL_DIR}"
     ${WAYLAND_CLIENT_INCLUDE_DIRS}
     ${EGL_INCLUDE_DIRS}

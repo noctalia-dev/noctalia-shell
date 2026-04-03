@@ -33,7 +33,7 @@ void Application::run() {
     std::signal(SIGTERM, signal_handler);
     std::signal(SIGINT, signal_handler);
 
-    m_bar.initialize(&m_timeService);
+    m_bar.initialize(&m_configService, &m_timeService);
 
     try {
         m_systemMonitor = std::make_unique<SystemMonitorService>();

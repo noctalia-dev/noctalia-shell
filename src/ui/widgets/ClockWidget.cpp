@@ -5,8 +5,9 @@
 #include "time/TimeService.hpp"
 #include "ui/controls/Label.hpp"
 
-ClockWidget::ClockWidget(const TimeService& timeService)
-    : m_time(timeService) {}
+ClockWidget::ClockWidget(const TimeService& timeService, std::string format)
+    : m_time(timeService)
+    , m_format(std::move(format)) {}
 
 void ClockWidget::create(Renderer& renderer) {
     auto label = std::make_unique<Label>();
@@ -22,7 +23,7 @@ void ClockWidget::layout(Renderer& renderer, float /*barWidth*/, float /*barHeig
 }
 
 void ClockWidget::update(Renderer& renderer) {
-    auto text = m_time.format("{:%H:%M:%S}");
+    auto text = m_time.format(m_format.c_str());
 
     if (text != m_lastText) {
         m_lastText = std::move(text);

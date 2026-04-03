@@ -63,7 +63,12 @@ void outputScale(void* data, wl_output* wlOut, int32_t factor) {
     }
 }
 
-void outputName(void* /*data*/, wl_output* /*output*/, const char* /*name*/) {}
+void outputName(void* data, wl_output* wlOut, const char* name) {
+    auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
+    if (out != nullptr && name != nullptr) {
+        out->connectorName = name;
+    }
+}
 
 void outputDescription(void* data, wl_output* wlOut, const char* desc) {
     auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
@@ -346,6 +351,7 @@ void WaylandConnection::bindGlobal(wl_registry* registry,
         m_outputs.push_back(WaylandOutput{
             .name = name,
             .interfaceName = interfaceName,
+            .connectorName = {},
             .description = {},
             .version = version,
             .output = output,
@@ -600,8 +606,8 @@ void WaylandConnection::logStartupSummary() const {
         m_outputs.size());
 
     for (const auto& output : m_outputs) {
-        logInfo("output global={} version={} scale={} mode={}x{} desc=\"{}\"",
-            output.name, output.version, output.scale,
+        logInfo("output {} global={} scale={} mode={}x{} desc=\"{}\"",
+            output.connectorName, output.name, output.scale,
             output.width, output.height, output.description);
     }
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/ConfigService.hpp"
 #include "render/AnimationManager.hpp"
 #include "render/scene/Node.hpp"
 #include "ui/Widget.hpp"
@@ -15,6 +16,8 @@ struct BarInstance {
     std::uint32_t outputName = 0;
     wl_output* output = nullptr;
     std::int32_t scale = 1;
+    std::size_t barIndex = 0;
+    BarConfig barConfig;
     std::unique_ptr<LayerSurface> surface;
     std::unique_ptr<Node> sceneRoot;
     AnimationManager animations;

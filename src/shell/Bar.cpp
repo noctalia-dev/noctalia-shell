@@ -1,14 +1,12 @@
 #include "shell/Bar.hpp"
 
+#include "config/ConfigService.hpp"
 #include "core/Log.hpp"
 #include "render/Palette.hpp"
-#include "time/TimeService.hpp"
 #include "render/scene/RectNode.hpp"
+#include "time/TimeService.hpp"
 #include "ui/Widget.hpp"
 #include "ui/controls/Box.hpp"
-#include "ui/widgets/ClockWidget.hpp"
-#include "ui/widgets/SpacerWidget.hpp"
-#include "ui/widgets/WorkspacesWidget.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -17,20 +15,33 @@
 
 namespace {
 
-constexpr std::uint32_t kBarHeight = 42;
-constexpr float kSectionGap = 8.0f;
-constexpr float kBarPaddingX = 16.0f;
+std::uint32_t positionToAnchor(const std::string& position) {
+    if (position == "bottom") {
+        return LayerShellAnchor::Bottom | LayerShellAnchor::Left | LayerShellAnchor::Right;
+    }
+    if (position == "left") {
+        return LayerShellAnchor::Top | LayerShellAnchor::Bottom | LayerShellAnchor::Left;
+    }
+    if (position == "right") {
+        return LayerShellAnchor::Top | LayerShellAnchor::Bottom | LayerShellAnchor::Right;
+    }
+    // Default: top
+    return LayerShellAnchor::Top | LayerShellAnchor::Left | LayerShellAnchor::Right;
+}
 
 } // namespace
 
 Bar::Bar() = default;
 
-bool Bar::initialize(TimeService* timeService) {
+bool Bar::initialize(ConfigService* config, TimeService* timeService) {
+    m_config = config;
     m_time = timeService;
 
     if (!m_wayland.connect()) {
         return false;
     }
+
+    m_widgetFactory = std::make_unique<WidgetFactory>(m_wayland, m_time, m_config->config());
 
     m_wayland.setOutputChangeCallback([this]() {
         syncInstances();
@@ -105,13 +116,15 @@ void Bar::flush() {
     }
 }
 
-const WaylandConnection& Bar::connection() const noexcept {
+const WaylandConnection& Bar::wayland() const noexcept {
     return m_wayland;
 }
 
 void Bar::syncInstances() {
     const auto& outputs = m_wayland.outputs();
+    const auto& bars = m_config->config().bars;
 
+    // Remove instances for outputs that no longer exist
     std::erase_if(m_instances, [&outputs](const auto& inst) {
         bool found = std::any_of(outputs.begin(), outputs.end(),
             [&inst](const auto& out) { return out.name == inst->outputName; });
@@ -121,33 +134,47 @@ void Bar::syncInstances() {
         return !found;
     });
 
-    for (const auto& output : outputs) {
-        bool exists = std::any_of(m_instances.begin(), m_instances.end(),
-            [&output](const auto& inst) { return inst->outputName == output.name; });
-        if (!exists) {
-            createInstance(output);
+    // Create instances for each bar definition × each output
+    for (std::size_t barIdx = 0; barIdx < bars.size(); ++barIdx) {
+        for (const auto& output : outputs) {
+            bool exists = std::any_of(m_instances.begin(), m_instances.end(),
+                [&output, barIdx](const auto& inst) {
+                    return inst->outputName == output.name && inst->barIndex == barIdx;
+                });
+            if (!exists) {
+                auto resolved = ConfigService::resolveForOutput(bars[barIdx], output);
+                createInstance(output, resolved);
+                m_instances.back()->barIndex = barIdx;
+            }
         }
     }
 }
 
-void Bar::createInstance(const WaylandOutput& output) {
-    logInfo("bar: creating instance for output {} scale={}", output.name, output.scale);
+void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig) {
+    logInfo("bar: creating \"{}\" on {} ({}), height={} position={}",
+            barConfig.name, output.connectorName, output.description,
+            barConfig.height, barConfig.position);
 
     auto instance = std::make_unique<BarInstance>();
     instance->outputName = output.name;
     instance->output = output.output;
     instance->scale = output.scale;
+    instance->barConfig = barConfig;
 
-    auto config = LayerSurfaceConfig{
-        .nameSpace = "noctalia-bar",
+    const auto anchor = positionToAnchor(barConfig.position);
+    const bool vertical = (barConfig.position == "left" || barConfig.position == "right");
+
+    auto surfaceConfig = LayerSurfaceConfig{
+        .nameSpace = "noctalia-" + barConfig.name,
         .layer = LayerShellLayer::Top,
-        .anchor = LayerShellAnchor::Top | LayerShellAnchor::Left | LayerShellAnchor::Right,
-        .height = kBarHeight,
-        .exclusiveZone = static_cast<std::int32_t>(kBarHeight),
-        .defaultHeight = kBarHeight,
+        .anchor = anchor,
+        .width = vertical ? barConfig.height : 0,
+        .height = vertical ? 0 : barConfig.height,
+        .exclusiveZone = static_cast<std::int32_t>(barConfig.height),
+        .defaultHeight = vertical ? 0 : barConfig.height,
     };
 
-    instance->surface = std::make_unique<LayerSurface>(m_wayland, std::move(config));
+    instance->surface = std::make_unique<LayerSurface>(m_wayland, std::move(surfaceConfig));
 
     auto* inst = instance.get();
     instance->surface->setConfigureCallback(
@@ -173,15 +200,19 @@ void Bar::destroyInstance(std::uint32_t outputName) {
 }
 
 void Bar::populateWidgets(BarInstance& instance) {
-    if (m_time != nullptr) {
-        instance.startWidgets.push_back(std::make_unique<ClockWidget>(*m_time));
-    }
+    auto createWidgets = [&](const std::vector<std::string>& names,
+                             std::vector<std::unique_ptr<Widget>>& dest) {
+        for (const auto& name : names) {
+            auto widget = m_widgetFactory->create(name, instance.output);
+            if (widget != nullptr) {
+                dest.push_back(std::move(widget));
+            }
+        }
+    };
 
-    instance.centerWidgets.push_back(std::make_unique<WorkspacesWidget>(m_wayland, instance.output));
-
-    if (m_time != nullptr) {
-        instance.endWidgets.push_back(std::make_unique<ClockWidget>(*m_time));
-    }
+    createWidgets(instance.barConfig.startWidgets, instance.startWidgets);
+    createWidgets(instance.barConfig.centerWidgets, instance.centerWidgets);
+    createWidgets(instance.barConfig.endWidgets, instance.endWidgets);
 }
 
 void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height) {
@@ -192,6 +223,8 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
     const auto w = static_cast<float>(width);
     const auto h = static_cast<float>(height);
+    const float padding = instance.barConfig.padding;
+    const float gap = instance.barConfig.gap;
 
     if (instance.sceneRoot == nullptr) {
         instance.sceneRoot = std::make_unique<Node>();
@@ -215,7 +248,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
         instance.sceneRoot->addChild(std::move(bg));
 
         // Create section boxes
-        auto makeSection = [](float gap) {
+        auto makeSection = [gap]() {
             auto box = std::make_unique<Box>();
             box->setDirection(BoxDirection::Horizontal);
             box->setGap(gap);
@@ -223,13 +256,9 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
             return box;
         };
 
-        auto start = makeSection(kSectionGap);
-        auto center = makeSection(kSectionGap);
-        auto end = makeSection(kSectionGap);
-
-        instance.startSection = static_cast<Box*>(instance.sceneRoot->addChild(std::move(start)));
-        instance.centerSection = static_cast<Box*>(instance.sceneRoot->addChild(std::move(center)));
-        instance.endSection = static_cast<Box*>(instance.sceneRoot->addChild(std::move(end)));
+        instance.startSection = static_cast<Box*>(instance.sceneRoot->addChild(makeSection()));
+        instance.centerSection = static_cast<Box*>(instance.sceneRoot->addChild(makeSection()));
+        instance.endSection = static_cast<Box*>(instance.sceneRoot->addChild(makeSection()));
 
         // Create widgets and transfer their roots to section boxes
         auto initWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets, Box* section) {
@@ -277,18 +306,17 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.centerSection->layout(*renderer);
     instance.endSection->layout(*renderer);
 
-    // Position sections: left-aligned, centered, right-aligned
+    // Position sections
     const float contentY = (h - instance.startSection->height()) * 0.5f;
-
-    instance.startSection->setPosition(kBarPaddingX, contentY);
+    instance.startSection->setPosition(padding, contentY);
 
     const float centerX = (w - instance.centerSection->width()) * 0.5f;
     const float centerY = (h - instance.centerSection->height()) * 0.5f;
     instance.centerSection->setPosition(centerX, centerY);
 
-    const float rightX = w - instance.endSection->width() - kBarPaddingX;
-    const float rightY = (h - instance.endSection->height()) * 0.5f;
-    instance.endSection->setPosition(rightX, rightY);
+    const float endX = w - instance.endSection->width() - padding;
+    const float endY = (h - instance.endSection->height()) * 0.5f;
+    instance.endSection->setPosition(endX, endY);
 }
 
 void Bar::updateWidgets(BarInstance& instance) {
@@ -299,6 +327,7 @@ void Bar::updateWidgets(BarInstance& instance) {
 
     const auto w = static_cast<float>(instance.surface->width());
     const auto h = static_cast<float>(instance.surface->height());
+    const float padding = instance.barConfig.padding;
 
     auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets, Box* section) {
         bool changed = false;
@@ -321,14 +350,14 @@ void Bar::updateWidgets(BarInstance& instance) {
     // Reposition sections if sizes changed
     if (instance.startSection->dirty() || instance.centerSection->dirty() || instance.endSection->dirty()) {
         const float contentY = (h - instance.startSection->height()) * 0.5f;
-        instance.startSection->setPosition(kBarPaddingX, contentY);
+        instance.startSection->setPosition(padding, contentY);
 
         const float centerX = (w - instance.centerSection->width()) * 0.5f;
         const float centerY = (h - instance.centerSection->height()) * 0.5f;
         instance.centerSection->setPosition(centerX, centerY);
 
-        const float rightX = w - instance.endSection->width() - kBarPaddingX;
-        const float rightY = (h - instance.endSection->height()) * 0.5f;
-        instance.endSection->setPosition(rightX, rightY);
+        const float endX = w - instance.endSection->width() - padding;
+        const float endY = (h - instance.endSection->height()) * 0.5f;
+        instance.endSection->setPosition(endX, endY);
     }
 }

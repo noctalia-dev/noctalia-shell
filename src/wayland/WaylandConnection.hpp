@@ -21,6 +21,7 @@ struct ext_workspace_handle_v1;
 struct WaylandOutput {
     std::uint32_t name = 0;
     std::string interfaceName;
+    std::string connectorName;
     std::string description;
     std::uint32_t version = 0;
     wl_output* output = nullptr;
