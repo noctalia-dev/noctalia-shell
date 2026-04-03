@@ -1,13 +1,12 @@
 set positional-arguments
 
 build-dir := "build"
-build-type := "Debug"
 
 default:
     @just --list
 
-configure type=build-type:
-    cmake -S . -B {{build-dir}} -DCMAKE_BUILD_TYPE={{type}}
+configure mode="debug":
+    cmake -S . -B {{build-dir}} -DCMAKE_BUILD_TYPE={{ if mode == "release" { "Release" } else { "Debug" } }}
 
 build:
     cmake --build {{build-dir}} --parallel
@@ -18,7 +17,7 @@ run:
 clean:
     rm -rf {{build-dir}}
 
-rebuild type=build-type:
+rebuild mode="debug":
     just clean
-    just configure {{type}}
+    just configure {{mode}}
     just build

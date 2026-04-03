@@ -186,3 +186,16 @@ target_compile_options(noctalia PRIVATE
     -Wconversion
     -Wshadow
 )
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_options(noctalia PRIVATE
+        -O3
+        -march=native
+        -mtune=native
+        -flto=auto
+        -fomit-frame-pointer
+        -ffunction-sections
+        -fdata-sections
+    )
+    target_link_options(noctalia PRIVATE -flto=auto -Wl,--gc-sections -Wl,--as-needed)
+endif()
