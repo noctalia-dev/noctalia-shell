@@ -4,6 +4,7 @@
 #include "dbus/SessionBus.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <map>
 #include <unordered_set>
 #include <sdbus-c++/IObject.h>
@@ -122,6 +123,7 @@ std::map<std::string, sdbus::Variant> to_dbus_player(const MprisPlayerInfo& info
     player["artists"] = sdbus::Variant(info.artists);
     player["album"] = sdbus::Variant(info.album);
     player["art_url"] = sdbus::Variant(info.art_url);
+    player["volume"] = sdbus::Variant(info.volume);
     player["position_us"] = sdbus::Variant(info.position_us);
     player["length_us"] = sdbus::Variant(info.length_us);
     player["can_play"] = sdbus::Variant(info.can_play);
@@ -313,6 +315,37 @@ bool MprisService::setPositionActive(int64_t position_us) {
     return setPosition(*active, position_us);
 }
 
+bool MprisService::setVolume(const std::string& bus_name, double volume) {
+    const auto it = m_players.find(bus_name);
+    if (it == m_players.end()) {
+        return false;
+    }
+
+    const auto proxy_it = m_player_proxies.find(bus_name);
+    if (proxy_it == m_player_proxies.end()) {
+        return false;
+    }
+
+    try {
+        proxy_it->second->setProperty("Volume")
+            .onInterface(k_mpris_player_interface)
+            .toValue(volume);
+        addOrRefreshPlayer(bus_name);
+        return true;
+    } catch (const sdbus::Error& e) {
+        logWarn("mpris set-volume failed name={} err={}", bus_name, e.what());
+        return false;
+    }
+}
+
+bool MprisService::setVolumeActive(double volume) {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        return false;
+    }
+    return setVolume(*active, volume);
+}
+
 std::optional<int64_t> MprisService::position(const std::string& bus_name) const {
     const auto it = m_players.find(bus_name);
     if (it == m_players.end()) {
@@ -327,6 +360,22 @@ std::optional<int64_t> MprisService::positionActive() const {
         return std::nullopt;
     }
     return position(*active);
+}
+
+std::optional<double> MprisService::volume(const std::string& bus_name) const {
+    const auto it = m_players.find(bus_name);
+    if (it == m_players.end()) {
+        return std::nullopt;
+    }
+    return it->second.volume;
+}
+
+std::optional<double> MprisService::volumeActive() const {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        return std::nullopt;
+    }
+    return volume(*active);
 }
 
 bool MprisService::setPinnedPlayerPreference(const std::string& bus_name) {
@@ -444,6 +493,33 @@ void MprisService::registerControlApi() {
             .withOutputParamNames("position_us")
             .implementedAs([this]() {
                 return onGetPositionActive();
+            }),
+
+        sdbus::registerMethod("GetVolumePlayer")
+            .withInputParamNames("player_bus_name")
+            .withOutputParamNames("volume")
+            .implementedAs([this](const std::string& bus_name) {
+                return onGetVolumePlayer(bus_name);
+            }),
+
+        sdbus::registerMethod("GetVolumeActive")
+            .withOutputParamNames("volume")
+            .implementedAs([this]() {
+                return onGetVolumeActive();
+            }),
+
+        sdbus::registerMethod("SetVolumePlayer")
+            .withInputParamNames("player_bus_name", "volume")
+            .withOutputParamNames("success")
+            .implementedAs([this](const std::string& bus_name, double volume) {
+                return onSetVolumePlayer(bus_name, volume);
+            }),
+
+        sdbus::registerMethod("SetVolumeActive")
+            .withInputParamNames("volume")
+            .withOutputParamNames("success")
+            .implementedAs([this](double volume) {
+                return onSetVolumeActive(volume);
             }),
 
         sdbus::registerMethod("SeekPlayer")
@@ -922,6 +998,61 @@ int64_t MprisService::onGetPositionActive() const {
     return *pos;
 }
 
+double MprisService::onGetVolumePlayer(const std::string& bus_name) const {
+    if (bus_name.empty()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
+                           "player_bus_name must not be empty");
+    }
+
+    const auto current_volume = volume(bus_name);
+    if (!current_volume.has_value()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "player was not found");
+    }
+    return *current_volume;
+}
+
+double MprisService::onGetVolumeActive() const {
+    const auto current_volume = volumeActive();
+    if (!current_volume.has_value()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "no active player available");
+    }
+    return *current_volume;
+}
+
+bool MprisService::onSetVolumePlayer(const std::string& bus_name, double volume) {
+    if (bus_name.empty()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
+                           "player_bus_name must not be empty");
+    }
+
+    if (!std::isfinite(volume) || volume < 0.0) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
+                           "volume must be a finite non-negative number");
+    }
+
+    if (!m_players.contains(bus_name)) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "player was not found");
+    }
+
+    if (!setVolume(bus_name, volume)) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotSupported"},
+                           "player does not support Volume updates");
+    }
+    return true;
+}
+
+bool MprisService::onSetVolumeActive(double volume) {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.NotFound"},
+                           "no active player available");
+    }
+    return onSetVolumePlayer(*active, volume);
+}
+
 bool MprisService::onSetActivePlayerPreference(const std::string& bus_name) {
     if (bus_name.empty()) {
         throw sdbus::Error(sdbus::Error::Name{"dev.noctalia.Mpris.Error.InvalidArgs"},
@@ -965,6 +1096,7 @@ MprisPlayerInfo MprisService::readPlayerInfo(sdbus::IProxy& proxy, const std::st
         .artists = get_string_array_from_variant(metadata, "xesam:artist"),
         .album = get_string_from_variant(metadata, "xesam:album"),
         .art_url = get_string_from_variant(metadata, "mpris:artUrl"),
+        .volume = get_property_or(proxy, k_mpris_player_interface, "Volume", 1.0),
         .position_us = get_property_or(proxy, k_mpris_player_interface, "Position", int64_t{0}),
         .length_us = get_int64_from_variant(metadata, "mpris:length"),
         .can_play = get_property_or(proxy, k_mpris_player_interface, "CanPlay", false),

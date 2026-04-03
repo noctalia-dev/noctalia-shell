@@ -25,6 +25,7 @@ struct MprisPlayerInfo {
     std::vector<std::string> artists;
     std::string              album;
     std::string              art_url;
+    double                   volume{1.0};
     int64_t                  position_us{0};
     int64_t                  length_us{0};
     bool                     can_play{false};
@@ -54,8 +55,12 @@ public:
     bool seekActive(int64_t offset_us);
     bool setPosition(const std::string& bus_name, int64_t position_us);
     bool setPositionActive(int64_t position_us);
+    bool setVolume(const std::string& bus_name, double volume);
+    bool setVolumeActive(double volume);
     [[nodiscard]] std::optional<int64_t> position(const std::string& bus_name) const;
     [[nodiscard]] std::optional<int64_t> positionActive() const;
+    [[nodiscard]] std::optional<double> volume(const std::string& bus_name) const;
+    [[nodiscard]] std::optional<double> volumeActive() const;
 
     bool setPinnedPlayerPreference(const std::string& bus_name);
     void clearPinnedPlayerPreference();
@@ -88,8 +93,12 @@ private:
     bool onSeekActive(int64_t offset_us);
     bool onSetPositionPlayer(const std::string& bus_name, int64_t position_us);
     bool onSetPositionActive(int64_t position_us);
+    bool onSetVolumePlayer(const std::string& bus_name, double volume);
+    bool onSetVolumeActive(double volume);
     int64_t onGetPositionPlayer(const std::string& bus_name) const;
     int64_t onGetPositionActive() const;
+    double onGetVolumePlayer(const std::string& bus_name) const;
+    double onGetVolumeActive() const;
     bool onSetActivePlayerPreference(const std::string& bus_name);
     bool onClearActivePlayerPreference();
     bool onSetPreferredPlayers(const std::vector<std::string>& preferred_bus_names);
