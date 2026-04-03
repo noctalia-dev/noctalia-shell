@@ -131,6 +131,7 @@ add_executable(noctalia
     src/main.cpp
     src/app/Application.cpp
     src/app/MainLoop.cpp
+    src/compositor/niri/NiriCompositorService.cpp
     src/dbus/debug/DebugService.cpp
     src/notification/InternalNotificationService.cpp
     src/notification/NotificationManager.cpp
