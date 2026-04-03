@@ -29,10 +29,21 @@ public:
                           std::string body,
                           int32_t     timeout,
                           Urgency     urgency,
+                          NotificationOrigin origin = NotificationOrigin::External,
                           std::vector<std::string> actions = {},
                           std::optional<std::string> icon = std::nullopt,
                           std::optional<std::string> category = std::nullopt,
                           std::optional<std::string> desktop_entry = std::nullopt);
+
+    // Adds an internal notification to the same store as external notifications.
+    uint32_t addInternal(std::string app_name,
+                         std::string summary,
+                         std::string body,
+                         int32_t timeout,
+                         Urgency urgency = Urgency::Normal,
+                         std::optional<std::string> icon = std::nullopt,
+                         std::optional<std::string> category = std::nullopt,
+                         std::optional<std::string> desktop_entry = std::nullopt);
 
     // Closes a notification by ID. Returns false if not found.
     bool close(uint32_t id, CloseReason reason = CloseReason::ClosedByCall);

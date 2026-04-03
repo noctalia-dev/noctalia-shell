@@ -95,6 +95,8 @@ third_party/
 - [x] Actions implementation (D-Bus backend)
 - [x] Graceful shutdown (SIGTERM/SIGINT)
 - [x] GetNotifications method (query all)
+- [x] Unified internal + external notification pipeline (shared history model)
+- [x] Debug trigger for internal notifications (`dev.noctalia.Debug`)
 - [ ] Display icon in UI layer (need Phase 1)
 - [x] Closing/removal API polish
 

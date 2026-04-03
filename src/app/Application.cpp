@@ -17,12 +17,14 @@ void signal_handler(int signum) {
 
 }  // namespace
 
-Application::Application() {
+Application::Application()
+    : m_internalNotifications(m_manager) {
     logInfo("noctalia hello");
 
     m_manager.setEventCallback([](const Notification& n, NotificationEvent event) {
         const char* kind = (event == NotificationEvent::Added) ? "added" : "updated";
-        logDebug("notification {} id={}", kind, n.id);
+        const char* origin = (n.origin == NotificationOrigin::Internal) ? "internal" : "external";
+        logDebug("notification {} id={} origin={}", kind, n.id, origin);
     });
 }
 
@@ -38,15 +40,25 @@ void Application::run() {
         logInfo("connected to session bus");
     } catch (const std::exception& e) {
         logWarn("dbus disabled: {}", e.what());
+        m_internalNotifications.notify("Noctalia", "Session bus unavailable", e.what(), 8000, Urgency::Low);
     }
 
     if (m_bus != nullptr) {
+        try {
+            m_debugService = std::make_unique<DebugService>(*m_bus, m_internalNotifications);
+            logInfo("debug service active on dev.noctalia.Debug");
+        } catch (const std::exception& e) {
+            logWarn("debug service disabled: {}", e.what());
+            m_debugService.reset();
+        }
+
         try {
             m_mprisService = std::make_unique<MprisService>(*m_bus);
             logInfo("mpris discovery active");
         } catch (const std::exception& e) {
             logWarn("mpris disabled: {}", e.what());
             m_mprisService.reset();
+            m_internalNotifications.notify("Noctalia", "MPRIS disabled", e.what(), 7000, Urgency::Low);
         }
 
         try {
@@ -55,6 +67,7 @@ void Application::run() {
         } catch (const std::exception& e) {
             logWarn("notifications disabled: {}", e.what());
             m_notificationService.reset();
+            m_internalNotifications.notify("Noctalia", "DBus notifications disabled", e.what(), 7000, Urgency::Low);
         }
     }
 

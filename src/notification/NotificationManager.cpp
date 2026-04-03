@@ -15,6 +15,14 @@ constexpr std::string_view urgency_str(Urgency u) noexcept {
     return "unknown";
 }
 
+constexpr std::string_view origin_str(NotificationOrigin o) noexcept {
+    switch (o) {
+        case NotificationOrigin::External: return "external";
+        case NotificationOrigin::Internal: return "internal";
+    }
+    return "unknown";
+}
+
 std::optional<TimePoint> schedule_expiry(int32_t timeout_ms) noexcept {
     if (timeout_ms > 0) {
         return Clock::now() + std::chrono::milliseconds(timeout_ms);
@@ -34,13 +42,14 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
                                             std::string body,
                                             int32_t     timeout,
                                             Urgency     urgency,
+                                            NotificationOrigin origin,
                                             std::vector<std::string> actions,
                                             std::optional<std::string> icon,
                                             std::optional<std::string> category,
                                             std::optional<std::string> desktop_entry) {
     auto log_notification = [](const Notification& n, std::string_view action) {
-        logDebug("notification {} #{} from=\"{}\" urgency={} summary=\"{}\" body=\"{}\" timeout={}ms",
-            action, n.id, n.app_name, urgency_str(n.urgency), n.summary, n.body, n.timeout);
+        logDebug("notification {} #{} origin={} from=\"{}\" urgency={} summary=\"{}\" body=\"{}\" timeout={}ms",
+            action, n.id, origin_str(n.origin), n.app_name, urgency_str(n.urgency), n.summary, n.body, n.timeout);
     };
 
     if (replaces_id != 0) {
@@ -50,10 +59,12 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
             // Check if anything changed to avoid duplicate events
             const bool changed = (n.app_name != app_name || n.summary != summary ||
                                   n.body != body || n.timeout != timeout ||
-                                  n.urgency != urgency || n.actions != actions ||
+                                  n.urgency != urgency || n.origin != origin ||
+                                  n.actions != actions ||
                                   n.icon != icon || n.category != category ||
                                   n.desktop_entry != desktop_entry);
             
+            n.origin   = origin;
             n.app_name = std::move(app_name);
             n.summary  = std::move(summary);
             n.body     = std::move(body);
@@ -78,6 +89,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
     const uint32_t id = m_next_id++;
     m_notifications.push_back(Notification{
         .id            = id,
+        .origin        = origin,
         .app_name      = std::move(app_name),
         .summary       = std::move(summary),
         .body          = std::move(body),
@@ -99,6 +111,27 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
     }
 
     return n.id;
+}
+
+uint32_t NotificationManager::addInternal(std::string app_name,
+                                          std::string summary,
+                                          std::string body,
+                                          int32_t timeout,
+                                          Urgency urgency,
+                                          std::optional<std::string> icon,
+                                          std::optional<std::string> category,
+                                          std::optional<std::string> desktop_entry) {
+    return addOrReplace(0,
+                        std::move(app_name),
+                        std::move(summary),
+                        std::move(body),
+                        timeout,
+                        urgency,
+                        NotificationOrigin::Internal,
+                        {},
+                        std::move(icon),
+                        std::move(category),
+                        std::move(desktop_entry));
 }
 
 bool NotificationManager::close(uint32_t id, CloseReason reason) {

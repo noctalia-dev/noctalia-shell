@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 
 enum class Urgency : uint8_t {
     Low      = 0,
@@ -18,11 +19,17 @@ enum class CloseReason : uint32_t {
     ClosedByCall = 3,
 };
 
+enum class NotificationOrigin : uint8_t {
+    External = 0,
+    Internal = 1,
+};
+
 using Clock     = std::chrono::steady_clock;
 using TimePoint = Clock::time_point;
 
 struct Notification {
     uint32_t                       id;
+    NotificationOrigin             origin;
     std::string                    app_name;
     std::string                    summary;
     std::string                    body;

@@ -195,7 +195,13 @@ uint32_t NotificationService::onNotify(const std::string& app_name,
                                   clamp_str(app_name),
                                   clamp_str(summary),
                                   clamp_str(body),
-                                  timeout, urgency, sanitized_actions, icon, category, desktop_entry);
+                                  timeout,
+                                  urgency,
+                                  NotificationOrigin::External,
+                                  sanitized_actions,
+                                  icon,
+                                  category,
+                                  desktop_entry);
 }
 
 std::vector<std::string> NotificationService::onGetCapabilities() {
