@@ -62,8 +62,8 @@ private:
     msdfgen::FontHandle* m_fontHandle = nullptr;
     MsdfTextProgram m_program;
     GLuint m_atlasTexture = 0;
-    int m_atlasWidth = 2048;
-    int m_atlasHeight = 2048;
+    int m_atlasWidth = 512;
+    int m_atlasHeight = 512;
     int m_atlasCursorX = 1;
     int m_atlasCursorY = 1;
     int m_atlasRowHeight = 0;
