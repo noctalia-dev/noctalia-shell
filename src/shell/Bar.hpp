@@ -1,11 +1,16 @@
 #pragma once
 
+#include "render/scene/Node.hpp"
 #include "wayland/LayerSurface.hpp"
 #include "wayland/WaylandConnection.hpp"
 
-class BarShell {
+#include <memory>
+
+class TextNode;
+
+class Bar {
 public:
-    BarShell();
+    Bar();
 
     bool initialize();
     [[nodiscard]] bool isRunning() const noexcept;
@@ -17,6 +22,10 @@ public:
     const WaylandConnection& connection() const noexcept;
 
 private:
+    void buildScene(std::uint32_t width, std::uint32_t height);
+
     WaylandConnection m_connection;
     LayerSurface m_layerSurface;
+    std::unique_ptr<Node> m_sceneRoot;
+    TextNode* m_labelNode = nullptr;
 };

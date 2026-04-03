@@ -3,7 +3,7 @@
 #include "app/MainLoop.hpp"
 #include "dbus/notification/NotificationService.hpp"
 #include "notification/NotificationManager.hpp"
-#include "shell/BarShell.hpp"
+#include "shell/Bar.hpp"
 
 #include <memory>
 
@@ -14,7 +14,7 @@ public:
     void run();
 
 private:
-    BarShell m_shell;
+    Bar m_bar;
     NotificationManager m_manager;
     std::unique_ptr<NotificationService> m_notificationService;
     std::unique_ptr<MainLoop> m_mainLoop;

@@ -1,15 +1,15 @@
 #pragma once
 
-class BarShell;
+class Bar;
 class NotificationService;
 
 class MainLoop {
 public:
-    MainLoop(BarShell& shell, NotificationService* notifications);
+    MainLoop(Bar& bar, NotificationService* notifications);
 
     void run();
 
 private:
-    BarShell& m_shell;
+    Bar& m_bar;
     NotificationService* m_notifications = nullptr;
 };

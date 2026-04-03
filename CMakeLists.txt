@@ -135,13 +135,14 @@ add_executable(noctalia
     src/dbus/notification/NotificationService.cpp
     src/core/Log.cpp
     src/font/FontService.cpp
+    src/render/scene/Node.cpp
     src/render/GlRenderer.cpp
     src/render/LinearGradientProgram.cpp
     src/render/RoundedRectProgram.cpp
     src/render/ShaderProgram.cpp
     src/render/MsdfTextProgram.cpp
     src/render/MsdfTextRenderer.cpp
-    src/shell/BarShell.cpp
+    src/shell/Bar.cpp
     src/wayland/LayerSurface.cpp
     src/wayland/WaylandConnection.cpp
     "${WLR_LAYER_SHELL_PROTOCOL_C}"

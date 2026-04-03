@@ -1,24 +1,24 @@
 #include "app/MainLoop.hpp"
 
 #include "dbus/notification/NotificationService.hpp"
-#include "shell/BarShell.hpp"
+#include "shell/Bar.hpp"
 
 #include <poll.h>
 #include <stdexcept>
 
-MainLoop::MainLoop(BarShell& shell, NotificationService* notifications)
-    : m_shell(shell)
+MainLoop::MainLoop(Bar& bar, NotificationService* notifications)
+    : m_bar(bar)
     , m_notifications(notifications) {}
 
 void MainLoop::run() {
     if (m_notifications == nullptr) {
-        m_shell.run();
+        m_bar.run();
         return;
     }
 
-    while (m_shell.isRunning()) {
-        m_shell.dispatchPending();
-        m_shell.flush();
+    while (m_bar.isRunning()) {
+        m_bar.dispatchPending();
+        m_bar.flush();
 
         auto dbusPollData = m_notifications->getPollData();
         const int dbusTimeout = dbusPollData.getPollTimeout();
@@ -30,7 +30,7 @@ void MainLoop::run() {
         }
 
         struct pollfd pollFds[] = {
-            {.fd = m_shell.displayFd(), .events = POLLIN, .revents = 0},
+            {.fd = m_bar.displayFd(), .events = POLLIN, .revents = 0},
             {.fd = dbusPollData.fd, .events = dbusPollData.events, .revents = 0},
             {.fd = dbusPollData.eventFd, .events = POLLIN, .revents = 0},
         };
@@ -40,9 +40,9 @@ void MainLoop::run() {
         }
 
         if ((pollFds[0].revents & POLLIN) != 0) {
-            m_shell.dispatchReadable();
+            m_bar.dispatchReadable();
         } else {
-            m_shell.dispatchPending();
+            m_bar.dispatchPending();
         }
 
         m_notifications->processPendingEvents();

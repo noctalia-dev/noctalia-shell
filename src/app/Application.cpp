@@ -12,7 +12,7 @@ Application::Application() {
 }
 
 void Application::run() {
-    m_shell.initialize();
+    m_bar.initialize();
 
     try {
         m_notificationService = std::make_unique<NotificationService>(m_manager);
@@ -22,6 +22,6 @@ void Application::run() {
         m_notificationService.reset();
     }
 
-    m_mainLoop = std::make_unique<MainLoop>(m_shell, m_notificationService.get());
+    m_mainLoop = std::make_unique<MainLoop>(m_bar, m_notificationService.get());
     m_mainLoop->run();
 }

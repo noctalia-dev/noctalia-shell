@@ -81,6 +81,9 @@ void LayerSurface::handleConfigure(void* data,
     }
 
     self->m_renderer->resize(self->m_width, self->m_height);
+    if (self->m_configureCallback) {
+        self->m_configureCallback(self->m_width, self->m_height);
+    }
     self->render();
 }
 
@@ -147,6 +150,14 @@ bool LayerSurface::createSurface() {
     }
 
     return true;
+}
+
+void LayerSurface::setConfigureCallback(ConfigureCallback callback) {
+    m_configureCallback = std::move(callback);
+}
+
+Renderer* LayerSurface::renderer() const noexcept {
+    return m_renderer.get();
 }
 
 void LayerSurface::render() {

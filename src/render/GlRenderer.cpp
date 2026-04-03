@@ -1,5 +1,9 @@
 #include "render/GlRenderer.hpp"
 #include "render/Palette.hpp"
+#include "render/scene/Node.hpp"
+#include "render/scene/RectNode.hpp"
+#include "render/scene/TextNode.hpp"
+#include "render/scene/ImageNode.hpp"
 
 #include <cstdint>
 #include <stdexcept>
@@ -131,58 +135,64 @@ void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    constexpr auto kLabel = "Noctalia";
-    constexpr float kFontSize = 14.0f;
-    const auto labelMetrics = m_textRenderer.measure(kLabel, kFontSize);
-    const float labelX = (static_cast<float>(width) - labelMetrics.width) * 0.5f;
-    const float labelHeight = labelMetrics.bottom - labelMetrics.top;
-    const float labelBaseline =
-        (static_cast<float>(height) - labelHeight) * 0.5f - labelMetrics.top;
-
-    m_roundedRectProgram.draw(
-        static_cast<float>(m_surfaceWidth),
-        static_cast<float>(m_surfaceHeight),
-        10.0f,
-        6.0f,
-        static_cast<float>(width) - 20.0f,
-        static_cast<float>(height) - 12.0f,
-        RoundedRectStyle{
-            .fill = kRosePinePalette.overlay,
-            .fillEnd = kRosePinePalette.surface,
-            .border = rgba(
-                kRosePinePalette.text.r,
-                kRosePinePalette.text.g,
-                kRosePinePalette.text.b,
-                0.85f),
-            .fillMode = FillMode::LinearGradient,
-            .gradientDirection = GradientDirection::Vertical,
-            .radius = 10.0f,
-            .softness = 1.2f,
-            .borderWidth = 1.0f,
-        });
-    m_linearGradientProgram.draw(
-        static_cast<float>(m_surfaceWidth),
-        static_cast<float>(m_surfaceHeight),
-        18.0f,
-        12.0f,
-        116.0f,
-        4.0f,
-        LinearGradientStyle{
-            .start = kRosePinePalette.foam,
-            .end = kRosePinePalette.iris,
-            .horizontal = true,
-        });
-    m_textRenderer.draw(
-        static_cast<float>(m_surfaceWidth),
-        static_cast<float>(m_surfaceHeight),
-        labelX,
-        labelBaseline,
-        kLabel,
-        kFontSize,
-        kRosePinePalette.text);
+    if (m_sceneRoot != nullptr) {
+        renderNode(m_sceneRoot, 0.0f, 0.0f, 1.0f);
+    }
 
     if (eglSwapBuffers(m_eglDisplay, m_eglSurface) != EGL_TRUE) {
         throw std::runtime_error("eglSwapBuffers failed");
+    }
+}
+
+void GlRenderer::setScene(Node* root) {
+    m_sceneRoot = root;
+}
+
+TextMetrics GlRenderer::measureText(std::string_view text, float fontSize) {
+    auto m = m_textRenderer.measure(text, fontSize);
+    return TextMetrics{.width = m.width, .top = m.top, .bottom = m.bottom};
+}
+
+void GlRenderer::renderNode(const Node* node, float parentX, float parentY, float parentOpacity) {
+    if (!node->visible()) {
+        return;
+    }
+
+    const float absX = parentX + node->x();
+    const float absY = parentY + node->y();
+    const float effectiveOpacity = parentOpacity * node->opacity();
+
+    const auto sw = static_cast<float>(m_surfaceWidth);
+    const auto sh = static_cast<float>(m_surfaceHeight);
+
+    switch (node->type()) {
+    case NodeType::Rect: {
+        const auto* rect = static_cast<const RectNode*>(node);
+        auto style = rect->style();
+        style.fill.a *= effectiveOpacity;
+        style.fillEnd.a *= effectiveOpacity;
+        style.border.a *= effectiveOpacity;
+        m_roundedRectProgram.draw(sw, sh, absX, absY, node->width(), node->height(), style);
+        break;
+    }
+    case NodeType::Text: {
+        const auto* text = static_cast<const TextNode*>(node);
+        if (!text->text().empty()) {
+            auto color = text->color();
+            color.a *= effectiveOpacity;
+            m_textRenderer.draw(sw, sh, absX, absY, text->text(), text->fontSize(), color);
+        }
+        break;
+    }
+    case NodeType::Image:
+        // Placeholder -- image loading not yet implemented
+        break;
+    case NodeType::Base:
+        break;
+    }
+
+    for (const auto& child : node->children()) {
+        renderNode(child.get(), absX, absY, effectiveOpacity);
     }
 }
 
