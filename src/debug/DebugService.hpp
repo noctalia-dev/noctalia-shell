@@ -23,5 +23,5 @@ private:
 
     InternalNotificationService& m_internal_notifications;
     std::unique_ptr<sdbus::IObject> m_object;
-    bool m_verbose_logs{true};
+    bool m_verbose_logs{false};
 };
