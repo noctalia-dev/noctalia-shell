@@ -17,8 +17,9 @@ constexpr float kGap = 4.0f;
 
 } // namespace
 
-WorkspacesWidget::WorkspacesWidget(const WaylandConnection& connection)
-    : m_connection(connection) {}
+WorkspacesWidget::WorkspacesWidget(const WaylandConnection& connection, wl_output* output)
+    : m_connection(connection)
+    , m_output(output) {}
 
 void WorkspacesWidget::create(Renderer& renderer) {
     auto container = std::make_unique<Box>();
@@ -36,7 +37,7 @@ void WorkspacesWidget::layout(Renderer& renderer, float /*barWidth*/, float /*ba
 }
 
 void WorkspacesWidget::update(Renderer& renderer) {
-    auto current = m_connection.workspaces();
+    auto current = m_connection.workspaces(m_output);
     if (m_cachedState.empty() && current.empty()) {
         return;
     }
@@ -72,7 +73,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
         m_container->removeChild(m_container->children().back().get());
     }
 
-    auto workspaces = m_connection.workspaces();
+    auto workspaces = m_connection.workspaces(m_output);
 
     for (const auto& ws : workspaces) {
         if (ws.active) {

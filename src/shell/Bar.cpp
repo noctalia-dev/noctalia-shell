@@ -38,6 +38,7 @@ bool Bar::initialize() {
             if (inst->surface == nullptr || inst->surface->renderer() == nullptr) {
                 continue;
             }
+            inst->surface->renderer()->makeCurrent();
             updateWidgets(*inst);
             inst->surface->requestRedraw();
         }
@@ -156,7 +157,7 @@ void Bar::destroyInstance(std::uint32_t outputName) {
 void Bar::populateWidgets(BarInstance& instance) {
     instance.startWidgets.push_back(std::make_unique<ClockWidget>());
 
-    instance.centerWidgets.push_back(std::make_unique<WorkspacesWidget>(m_wayland));
+    instance.centerWidgets.push_back(std::make_unique<WorkspacesWidget>(m_wayland, instance.output));
 
     instance.endWidgets.push_back(std::make_unique<ClockWidget>());
 }

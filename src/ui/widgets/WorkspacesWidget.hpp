@@ -9,7 +9,7 @@ class Box;
 
 class WorkspacesWidget : public Widget {
 public:
-    explicit WorkspacesWidget(const WaylandConnection& connection);
+    WorkspacesWidget(const WaylandConnection& connection, wl_output* output);
 
     void create(Renderer& renderer) override;
     void layout(Renderer& renderer, float barWidth, float barHeight) override;
@@ -19,6 +19,7 @@ private:
     void rebuild(Renderer& renderer);
 
     const WaylandConnection& m_connection;
+    wl_output* m_output = nullptr;
     Box* m_container = nullptr;
     std::vector<WaylandConnection::Workspace> m_cachedState;
 };

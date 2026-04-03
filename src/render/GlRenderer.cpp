@@ -75,6 +75,12 @@ void GlRenderer::bind(wl_display* display, wl_surface* surface) {
     }
 }
 
+void GlRenderer::makeCurrent() {
+    if (m_eglDisplay != EGL_NO_DISPLAY && m_eglSurface != EGL_NO_SURFACE && m_eglContext != EGL_NO_CONTEXT) {
+        eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
+    }
+}
+
 void GlRenderer::resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight,
                         std::uint32_t logicalWidth, std::uint32_t logicalHeight) {
     if (bufferWidth == 0 || bufferHeight == 0) {

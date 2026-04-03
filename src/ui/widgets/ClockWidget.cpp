@@ -7,12 +7,13 @@
 #include <chrono>
 #include <format>
 
-void ClockWidget::create(Renderer& /*renderer*/) {
+void ClockWidget::create(Renderer& renderer) {
     auto label = std::make_unique<Label>();
     label->setFontSize(13.0f);
     label->setColor(kRosePinePalette.text);
     m_label = label.get();
     m_root = std::move(label);
+    update(renderer);
 }
 
 void ClockWidget::layout(Renderer& renderer, float /*barWidth*/, float /*barHeight*/) {

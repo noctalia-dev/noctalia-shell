@@ -82,10 +82,22 @@ const wl_output_listener kOutputListener = {
 };
 
 void workspaceGroupCapabilities(void* /*data*/, ext_workspace_group_handle_v1* /*group*/, uint32_t /*caps*/) {}
-void workspaceGroupOutputEnter(void* /*data*/, ext_workspace_group_handle_v1* /*group*/, wl_output* /*output*/) {}
-void workspaceGroupOutputLeave(void* /*data*/, ext_workspace_group_handle_v1* /*group*/, wl_output* /*output*/) {}
-void workspaceGroupWorkspaceEnter(void* /*data*/, ext_workspace_group_handle_v1* /*group*/, ext_workspace_handle_v1* /*workspace*/) {}
-void workspaceGroupWorkspaceLeave(void* /*data*/, ext_workspace_group_handle_v1* /*group*/, ext_workspace_handle_v1* /*workspace*/) {}
+
+void workspaceGroupOutputEnter(void* data, ext_workspace_group_handle_v1* group, wl_output* output) {
+    static_cast<WaylandConnection*>(data)->onWorkspaceGroupOutputEnter(group, output);
+}
+
+void workspaceGroupOutputLeave(void* data, ext_workspace_group_handle_v1* group, wl_output* output) {
+    static_cast<WaylandConnection*>(data)->onWorkspaceGroupOutputLeave(group, output);
+}
+
+void workspaceGroupWorkspaceEnter(void* data, ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace) {
+    static_cast<WaylandConnection*>(data)->onWorkspaceGroupWorkspaceEnter(group, workspace);
+}
+
+void workspaceGroupWorkspaceLeave(void* data, ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace) {
+    static_cast<WaylandConnection*>(data)->onWorkspaceGroupWorkspaceLeave(group, workspace);
+}
 void workspaceGroupRemoved(void* data, ext_workspace_group_handle_v1* group) {
     auto* self = static_cast<WaylandConnection*>(data);
     self->onWorkspaceGroupRemoved(group);
@@ -358,14 +370,50 @@ void WaylandConnection::onWorkspaceGroupCreated(ext_workspace_group_handle_v1* g
     if (group == nullptr) {
         return;
     }
-    m_workspaceGroups.push_back(group);
+    m_workspaceGroups.push_back(WorkspaceGroup{.handle = group, .outputs = {}, .workspaces = {}});
     ext_workspace_group_handle_v1_add_listener(group, &kWorkspaceGroupListener, this);
 }
 
 void WaylandConnection::onWorkspaceGroupRemoved(ext_workspace_group_handle_v1* group) {
-    std::erase(m_workspaceGroups, group);
+    std::erase_if(m_workspaceGroups, [group](const auto& g) { return g.handle == group; });
     if (group != nullptr) {
         ext_workspace_group_handle_v1_destroy(group);
+    }
+}
+
+void WaylandConnection::onWorkspaceGroupOutputEnter(ext_workspace_group_handle_v1* group, wl_output* output) {
+    for (auto& g : m_workspaceGroups) {
+        if (g.handle == group) {
+            g.outputs.push_back(output);
+            return;
+        }
+    }
+}
+
+void WaylandConnection::onWorkspaceGroupOutputLeave(ext_workspace_group_handle_v1* group, wl_output* output) {
+    for (auto& g : m_workspaceGroups) {
+        if (g.handle == group) {
+            std::erase(g.outputs, output);
+            return;
+        }
+    }
+}
+
+void WaylandConnection::onWorkspaceGroupWorkspaceEnter(ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace) {
+    for (auto& g : m_workspaceGroups) {
+        if (g.handle == group) {
+            g.workspaces.push_back(workspace);
+            return;
+        }
+    }
+}
+
+void WaylandConnection::onWorkspaceGroupWorkspaceLeave(ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace) {
+    for (auto& g : m_workspaceGroups) {
+        if (g.handle == group) {
+            std::erase(g.workspaces, workspace);
+            return;
+        }
     }
 }
 
@@ -428,9 +476,9 @@ void WaylandConnection::cleanup() {
     }
     m_workspaces.clear();
 
-    for (auto* group : m_workspaceGroups) {
-        if (group != nullptr) {
-            ext_workspace_group_handle_v1_destroy(group);
+    for (auto& group : m_workspaceGroups) {
+        if (group.handle != nullptr) {
+            ext_workspace_group_handle_v1_destroy(group.handle);
         }
     }
     m_workspaceGroups.clear();
@@ -509,6 +557,30 @@ std::vector<WaylandConnection::Workspace> WaylandConnection::workspaces() const 
             result.push_back(Workspace{.name = ws.name, .active = ws.active});
         }
     }
+    std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) {
+        return a.name < b.name;
+    });
+    return result;
+}
+
+std::vector<WaylandConnection::Workspace> WaylandConnection::workspaces(wl_output* output) const {
+    // Collect workspace handles that belong to groups containing this output
+    std::vector<ext_workspace_handle_v1*> handles;
+    for (const auto& group : m_workspaceGroups) {
+        bool hasOutput = std::find(group.outputs.begin(), group.outputs.end(), output) != group.outputs.end();
+        if (hasOutput) {
+            handles.insert(handles.end(), group.workspaces.begin(), group.workspaces.end());
+        }
+    }
+
+    std::vector<Workspace> result;
+    for (auto* handle : handles) {
+        auto it = m_workspaces.find(handle);
+        if (it != m_workspaces.end() && !it->second.name.empty()) {
+            result.push_back(Workspace{.name = it->second.name, .active = it->second.active});
+        }
+    }
+
     std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) {
         return a.name < b.name;
     });

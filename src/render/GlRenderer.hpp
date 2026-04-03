@@ -21,6 +21,7 @@ public:
     [[nodiscard]] const char* name() const noexcept override;
 
     void bind(wl_display* display, wl_surface* surface) override;
+    void makeCurrent() override;
     void resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight,
                 std::uint32_t logicalWidth, std::uint32_t logicalHeight) override;
     void render() override;

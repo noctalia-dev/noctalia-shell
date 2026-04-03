@@ -21,6 +21,7 @@ public:
     [[nodiscard]] virtual const char* name() const noexcept = 0;
 
     virtual void bind(wl_display* display, wl_surface* surface) = 0;
+    virtual void makeCurrent() = 0;
     virtual void resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight,
                         std::uint32_t logicalWidth, std::uint32_t logicalHeight) = 0;
     virtual void render() = 0;

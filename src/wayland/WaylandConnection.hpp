@@ -71,10 +71,15 @@ public:
     };
 
     [[nodiscard]] std::vector<Workspace> workspaces() const;
+    [[nodiscard]] std::vector<Workspace> workspaces(wl_output* output) const;
 
     // Internal callback entrypoints used by C listeners for ext-workspace.
     void onWorkspaceGroupCreated(ext_workspace_group_handle_v1* group);
     void onWorkspaceGroupRemoved(ext_workspace_group_handle_v1* group);
+    void onWorkspaceGroupOutputEnter(ext_workspace_group_handle_v1* group, wl_output* output);
+    void onWorkspaceGroupOutputLeave(ext_workspace_group_handle_v1* group, wl_output* output);
+    void onWorkspaceGroupWorkspaceEnter(ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace);
+    void onWorkspaceGroupWorkspaceLeave(ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace);
     void onWorkspaceCreated(ext_workspace_handle_v1* workspace);
     void onWorkspaceNameChanged(ext_workspace_handle_v1* workspace, const char* name);
     void onWorkspaceStateChanged(ext_workspace_handle_v1* workspace, std::uint32_t state);
@@ -102,7 +107,13 @@ private:
     bool m_hasLayerShellGlobal = false;
     bool m_hasExtWorkspaceGlobal = false;
     std::vector<WaylandOutput> m_outputs;
-    std::vector<ext_workspace_group_handle_v1*> m_workspaceGroups;
+    struct WorkspaceGroup {
+        ext_workspace_group_handle_v1* handle = nullptr;
+        std::vector<wl_output*> outputs;
+        std::vector<ext_workspace_handle_v1*> workspaces;
+    };
+
+    std::vector<WorkspaceGroup> m_workspaceGroups;
     std::unordered_map<ext_workspace_handle_v1*, Workspace> m_workspaces;
     ChangeCallback m_outputChangeCallback;
     ChangeCallback m_workspaceChangeCallback;
