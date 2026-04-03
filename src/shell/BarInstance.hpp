@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <memory>
 
-class TextNode;
+class Label;
 
 struct BarInstance {
     std::uint32_t outputName = 0;
@@ -16,5 +16,6 @@ struct BarInstance {
     std::unique_ptr<LayerSurface> surface;
     std::unique_ptr<Node> sceneRoot;
     AnimationManager animations;
-    TextNode* labelNode = nullptr;
+    Label* titleLabel = nullptr;
+    Label* truncLabel = nullptr;
 };

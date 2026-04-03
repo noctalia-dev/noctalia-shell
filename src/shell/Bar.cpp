@@ -5,7 +5,7 @@
 #include "render/TextureManager.hpp"
 #include "render/scene/ImageNode.hpp"
 #include "render/scene/RectNode.hpp"
-#include "render/scene/TextNode.hpp"
+#include "ui/controls/Label.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -180,20 +180,19 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
         });
         instance.sceneRoot->addChild(std::move(accent));
 
-        auto label = std::make_unique<TextNode>();
-        label->setText("Noctalia");
-        label->setFontSize(14.0f);
-        label->setColor(kRosePinePalette.text);
-        instance.labelNode = static_cast<TextNode*>(instance.sceneRoot->addChild(std::move(label)));
+        auto title = std::make_unique<Label>();
+        title->setText("Noctalia");
+        title->setFontSize(14.0f);
+        title->setColor(kRosePinePalette.text);
+        instance.titleLabel = static_cast<Label*>(instance.sceneRoot->addChild(std::move(title)));
 
         // Test: truncated text
-        auto truncLabel = std::make_unique<TextNode>();
-        truncLabel->setText("This is a long label that should be truncated with an ellipsis");
-        truncLabel->setFontSize(12.0f);
-        truncLabel->setMaxWidth(120.0f);
-        truncLabel->setColor(kRosePinePalette.foam);
-        truncLabel->setPosition(150.0f, 22.0f);
-        instance.sceneRoot->addChild(std::move(truncLabel));
+        auto trunc = std::make_unique<Label>();
+        trunc->setText("This is a long label that should be truncated with an ellipsis");
+        trunc->setFontSize(12.0f);
+        trunc->setMaxWidth(120.0f);
+        trunc->setColor(kRosePinePalette.foam);
+        instance.truncLabel = static_cast<Label*>(instance.sceneRoot->addChild(std::move(trunc)));
 
         // Test: image (try PNG first, fall back to SVG)
         auto& texMgr = renderer->textureManager();
@@ -224,10 +223,13 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     children[0]->setPosition(10.0f, 6.0f);
     children[0]->setSize(w - 20.0f, h - 12.0f);
 
-    // Center text label
-    const auto metrics = renderer->measureText(instance.labelNode->text(), instance.labelNode->fontSize());
-    const float labelX = (w - metrics.width) * 0.5f;
-    const float labelHeight = metrics.bottom - metrics.top;
-    const float labelBaseline = (h - labelHeight) * 0.5f - metrics.top;
-    instance.labelNode->setPosition(labelX, labelBaseline);
+    // Center title label
+    instance.titleLabel->measure(*renderer);
+    const float titleX = (w - instance.titleLabel->width()) * 0.5f;
+    const float titleY = (h - instance.titleLabel->height()) * 0.5f;
+    instance.titleLabel->setPosition(titleX, titleY);
+
+    // Truncated label
+    instance.truncLabel->measure(*renderer);
+    instance.truncLabel->setPosition(150.0f, (h - instance.truncLabel->height()) * 0.5f);
 }
