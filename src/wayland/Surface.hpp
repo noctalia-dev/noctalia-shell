@@ -34,6 +34,7 @@ public:
     void setAnimationManager(AnimationManager* manager) noexcept { m_animationManager = manager; }
     void setSceneRoot(Node* root) noexcept { m_sceneRoot = root; }
     [[nodiscard]] Renderer* renderer() const noexcept;
+    [[nodiscard]] wl_surface* wlSurface() const noexcept { return m_surface; }
     [[nodiscard]] std::uint32_t width() const noexcept { return m_width; }
     [[nodiscard]] std::uint32_t height() const noexcept { return m_height; }
     [[nodiscard]] std::int32_t scale() const noexcept { return m_scale; }

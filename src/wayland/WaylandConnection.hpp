@@ -9,15 +9,31 @@
 struct wl_compositor;
 struct wl_display;
 struct wl_output;
+struct wl_pointer;
 struct wl_registry;
 struct wl_seat;
 struct wl_shm;
+struct wl_surface;
 struct wl_array;
 struct zwlr_layer_shell_v1;
 struct zxdg_output_manager_v1;
 struct ext_workspace_manager_v1;
 struct ext_workspace_group_handle_v1;
 struct ext_workspace_handle_v1;
+struct wp_cursor_shape_manager_v1;
+struct wp_cursor_shape_device_v1;
+
+struct PointerEvent {
+    enum class Type : std::uint8_t { Enter, Leave, Motion, Button };
+    Type type;
+    std::uint32_t serial = 0;
+    wl_surface* surface = nullptr;
+    double sx = 0.0;
+    double sy = 0.0;
+    std::uint32_t time = 0;
+    std::uint32_t button = 0;
+    std::uint32_t state = 0;
+};
 
 struct WaylandOutput {
     std::uint32_t name = 0;
@@ -41,10 +57,14 @@ public:
     WaylandConnection& operator=(const WaylandConnection&) = delete;
 
     using ChangeCallback = std::function<void()>;
+    using PointerEventCallback = std::function<void(const PointerEvent&)>;
 
     bool connect();
     void setOutputChangeCallback(ChangeCallback callback);
     void setWorkspaceChangeCallback(ChangeCallback callback);
+    void setPointerEventCallback(PointerEventCallback callback);
+    void setCursorShape(std::uint32_t serial, std::uint32_t shape);
+    void activateWorkspace(const std::string& id);
 
     bool isConnected() const noexcept;
     bool hasRequiredGlobals() const noexcept;
@@ -76,6 +96,19 @@ public:
 
     [[nodiscard]] std::vector<Workspace> workspaces() const;
     [[nodiscard]] std::vector<Workspace> workspaces(wl_output* output) const;
+
+    // Seat + pointer listener entrypoints
+    static void handleSeatCapabilities(void* data, wl_seat* seat, std::uint32_t caps);
+    static void handleSeatName(void* data, wl_seat* seat, const char* name);
+    static void handlePointerEnter(void* data, wl_pointer* pointer, std::uint32_t serial,
+                                    wl_surface* surface, std::int32_t sx, std::int32_t sy);
+    static void handlePointerLeave(void* data, wl_pointer* pointer, std::uint32_t serial,
+                                    wl_surface* surface);
+    static void handlePointerMotion(void* data, wl_pointer* pointer, std::uint32_t time,
+                                     std::int32_t sx, std::int32_t sy);
+    static void handlePointerButton(void* data, wl_pointer* pointer, std::uint32_t serial,
+                                     std::uint32_t time, std::uint32_t button, std::uint32_t state);
+    static void handlePointerFrame(void* data, wl_pointer* pointer);
 
     // Internal callback entrypoints used by C listeners for ext-workspace.
     void onWorkspaceGroupCreated(ext_workspace_group_handle_v1* group);
@@ -121,6 +154,11 @@ private:
 
     std::vector<WorkspaceGroup> m_workspaceGroups;
     std::unordered_map<ext_workspace_handle_v1*, Workspace> m_workspaces;
+    wl_pointer* m_pointer = nullptr;
+    wp_cursor_shape_manager_v1* m_cursorShapeManager = nullptr;
+    wp_cursor_shape_device_v1* m_cursorShapeDevice = nullptr;
+    PointerEventCallback m_pointerEventCallback;
+    std::vector<PointerEvent> m_pendingPointerEvents;
     ChangeCallback m_outputChangeCallback;
     ChangeCallback m_workspaceChangeCallback;
 };

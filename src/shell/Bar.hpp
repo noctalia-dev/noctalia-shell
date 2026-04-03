@@ -3,13 +3,15 @@
 #include "shell/BarInstance.hpp"
 #include "ui/WidgetFactory.hpp"
 
-#include <cstdint>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 class ConfigService;
 class TimeService;
 class WaylandConnection;
+struct PointerEvent;
+struct wl_surface;
 
 class Bar {
 public:
@@ -20,6 +22,7 @@ public:
     void closeAllInstances();
     void onOutputChange();
     void onWorkspaceChange();
+    void onPointerEvent(const PointerEvent& event);
     [[nodiscard]] bool isRunning() const noexcept;
 
 private:
@@ -29,10 +32,17 @@ private:
     void populateWidgets(BarInstance& instance);
     void buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height);
     void updateWidgets(BarInstance& instance);
+    Widget* findWidgetAtPosition(BarInstance& instance, float x, float y);
 
     WaylandConnection* m_wayland = nullptr;
     ConfigService* m_config = nullptr;
     TimeService* m_time = nullptr;
     std::unique_ptr<WidgetFactory> m_widgetFactory;
     std::vector<std::unique_ptr<BarInstance>> m_instances;
+
+    // Pointer state
+    std::unordered_map<wl_surface*, BarInstance*> m_surfaceMap;
+    BarInstance* m_hoveredInstance = nullptr;
+    Widget* m_hoveredWidget = nullptr;
+    std::uint32_t m_lastPointerSerial = 0;
 };

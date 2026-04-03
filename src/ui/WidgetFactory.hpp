@@ -12,12 +12,12 @@ class WaylandConnection;
 
 class WidgetFactory {
 public:
-    WidgetFactory(const WaylandConnection& wayland, TimeService* time, const Config& config);
+    WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config);
 
     [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output) const;
 
 private:
-    const WaylandConnection& m_wayland;
+    WaylandConnection& m_wayland;
     TimeService* m_time;
     const Config& m_config;
 };

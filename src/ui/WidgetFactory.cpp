@@ -6,7 +6,7 @@
 #include "ui/widgets/SpacerWidget.hpp"
 #include "ui/widgets/WorkspacesWidget.hpp"
 
-WidgetFactory::WidgetFactory(const WaylandConnection& wayland, TimeService* time, const Config& config)
+WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config)
     : m_wayland(wayland)
     , m_time(time)
     , m_config(config) {}

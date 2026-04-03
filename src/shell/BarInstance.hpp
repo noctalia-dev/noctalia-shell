@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 class Box;
@@ -30,4 +31,7 @@ struct BarInstance {
     std::vector<std::unique_ptr<Widget>> startWidgets;
     std::vector<std::unique_ptr<Widget>> centerWidgets;
     std::vector<std::unique_ptr<Widget>> endWidgets;
+
+    // Maps widget root Node* → Widget* for input dispatch
+    std::unordered_map<Node*, Widget*> widgetNodeMap;
 };

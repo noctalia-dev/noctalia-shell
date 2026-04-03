@@ -3,23 +3,33 @@
 #include "ui/Widget.hpp"
 #include "wayland/WaylandConnection.hpp"
 
+#include <string>
 #include <vector>
 
 class Box;
 
 class WorkspacesWidget : public Widget {
 public:
-    WorkspacesWidget(const WaylandConnection& connection, wl_output* output);
+    WorkspacesWidget(WaylandConnection& connection, wl_output* output);
 
     void create(Renderer& renderer) override;
     void layout(Renderer& renderer, float barWidth, float barHeight) override;
     void update(Renderer& renderer) override;
 
+    void onPointerEnter(float localX, float localY) override;
+    void onPointerLeave() override;
+    void onPointerMotion(float localX, float localY) override;
+    bool onPointerButton(std::uint32_t button, bool pressed) override;
+    std::uint32_t cursorShape() const override;
+
 private:
     void rebuild(Renderer& renderer);
+    int pillIndexAt(float localX, float localY) const;
 
-    const WaylandConnection& m_connection;
+    WaylandConnection& m_connection;
     wl_output* m_output = nullptr;
     Box* m_container = nullptr;
     std::vector<WaylandConnection::Workspace> m_cachedState;
+    std::vector<std::string> m_workspaceIds;
+    int m_hoveredPill = -1;
 };

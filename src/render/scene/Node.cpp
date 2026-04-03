@@ -86,3 +86,40 @@ void Node::markDirty() {
 void Node::clearDirty() {
     m_dirty = false;
 }
+
+Node* Node::hitTest(Node* root, float x, float y) {
+    return hitTestImpl(root, x, y, 0.0f, 0.0f);
+}
+
+Node* Node::hitTestImpl(Node* node, float px, float py, float offsetX, float offsetY) {
+    if (node == nullptr || !node->m_visible) {
+        return nullptr;
+    }
+
+    const float nodeX = offsetX + node->m_x;
+    const float nodeY = offsetY + node->m_y;
+
+    if (px < nodeX || px >= nodeX + node->m_width ||
+        py < nodeY || py >= nodeY + node->m_height) {
+        return nullptr;
+    }
+
+    // Traverse children in reverse (topmost/last-added first)
+    for (auto it = node->m_children.rbegin(); it != node->m_children.rend(); ++it) {
+        auto* hit = hitTestImpl(it->get(), px, py, nodeX, nodeY);
+        if (hit != nullptr) {
+            return hit;
+        }
+    }
+
+    return node;
+}
+
+void Node::absolutePosition(const Node* node, float& outX, float& outY) {
+    outX = 0.0f;
+    outY = 0.0f;
+    for (const Node* n = node; n != nullptr; n = n->m_parent) {
+        outX += n->m_x;
+        outY += n->m_y;
+    }
+}
