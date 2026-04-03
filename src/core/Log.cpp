@@ -5,7 +5,8 @@
 
 namespace {
 
-LogLevel gMinLevel = LogLevel::Info;
+// Debug for now
+LogLevel gMinLevel = LogLevel::Debug;
 
 const char* levelTag(LogLevel level) {
     switch (level) {
