@@ -111,7 +111,8 @@ void GlRenderer::resize(std::uint32_t width, std::uint32_t height) {
     m_surfaceHeight = height;
     m_linearGradientProgram.ensureInitialized();
     m_roundedRectProgram.ensureInitialized();
-    m_textRenderer.initialize();
+    const auto fontPath = m_fontService.resolvePath("sans-serif");
+    m_textRenderer.initialize(fontPath.c_str());
 }
 
 void GlRenderer::render(std::uint32_t width, std::uint32_t height) {

@@ -14,7 +14,6 @@
 
 namespace {
 
-constexpr auto kDefaultFontPath = "/usr/share/fonts/google-roboto/Roboto-Medium.ttf";
 constexpr float kAtlasEmSize = 48.0f;
 constexpr double kDistanceRange = 4.0;
 constexpr int kGlyphPadding = 2;
@@ -27,7 +26,7 @@ MsdfTextRenderer::~MsdfTextRenderer() {
     cleanup();
 }
 
-void MsdfTextRenderer::initialize() {
+void MsdfTextRenderer::initialize(const char* fontPath) {
     if (m_face != nullptr) {
         return;
     }
@@ -36,8 +35,8 @@ void MsdfTextRenderer::initialize() {
         throw std::runtime_error("FT_Init_FreeType failed");
     }
 
-    if (FT_New_Face(m_library, kDefaultFontPath, 0, &m_face) != 0) {
-        throw std::runtime_error("FT_New_Face failed");
+    if (FT_New_Face(m_library, fontPath, 0, &m_face) != 0) {
+        throw std::runtime_error(std::string("FT_New_Face failed for: ") + fontPath);
     }
 
     if (FT_Set_Pixel_Sizes(m_face, 0, static_cast<FT_UInt>(kAtlasEmSize)) != 0) {

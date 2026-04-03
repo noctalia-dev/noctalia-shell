@@ -18,6 +18,7 @@ pkg_check_modules(GLES2 REQUIRED glesv2)
 pkg_check_modules(WAYLAND_EGL REQUIRED wayland-egl)
 pkg_check_modules(FREETYPE2 REQUIRED freetype2)
 pkg_check_modules(HARFBUZZ REQUIRED harfbuzz)
+pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
 
 # --- msdfgen (vendored) ---
 set(MSDFGEN_CORE_ONLY OFF CACHE BOOL "" FORCE)
@@ -132,6 +133,7 @@ add_executable(noctalia
     src/app/MainLoop.cpp
     src/notification/NotificationManager.cpp
     src/dbus/notification/NotificationService.cpp
+    src/font/FontService.cpp
     src/render/GlRenderer.cpp
     src/render/LinearGradientProgram.cpp
     src/render/RoundedRectProgram.cpp
@@ -158,6 +160,7 @@ target_include_directories(noctalia PRIVATE
     ${WAYLAND_EGL_INCLUDE_DIRS}
     ${FREETYPE2_INCLUDE_DIRS}
     ${HARFBUZZ_INCLUDE_DIRS}
+    ${FONTCONFIG_INCLUDE_DIRS}
 )
 target_link_libraries(noctalia PRIVATE
     SDBusCpp::sdbus-c++
@@ -169,6 +172,7 @@ target_link_libraries(noctalia PRIVATE
     ${WAYLAND_EGL_LIBRARIES}
     ${FREETYPE2_LIBRARIES}
     ${HARFBUZZ_LIBRARIES}
+    ${FONTCONFIG_LIBRARIES}
 )
 target_compile_options(noctalia PRIVATE
     ${WAYLAND_CLIENT_CFLAGS_OTHER}
@@ -177,6 +181,7 @@ target_compile_options(noctalia PRIVATE
     ${WAYLAND_EGL_CFLAGS_OTHER}
     ${FREETYPE2_CFLAGS_OTHER}
     ${HARFBUZZ_CFLAGS_OTHER}
+    ${FONTCONFIG_CFLAGS_OTHER}
 )
 
 target_compile_options(noctalia PRIVATE

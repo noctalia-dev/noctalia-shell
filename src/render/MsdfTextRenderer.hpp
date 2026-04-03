@@ -29,7 +29,7 @@ public:
     MsdfTextRenderer(const MsdfTextRenderer&) = delete;
     MsdfTextRenderer& operator=(const MsdfTextRenderer&) = delete;
 
-    void initialize();
+    void initialize(const char* fontPath);
     [[nodiscard]] TextMetrics measure(std::string_view text, float fontSize);
     void draw(float surfaceWidth,
               float surfaceHeight,
