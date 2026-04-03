@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 struct wl_compositor;
@@ -13,6 +14,9 @@ struct wl_seat;
 struct wl_shm;
 struct zwlr_layer_shell_v1;
 struct zxdg_output_manager_v1;
+struct ext_workspace_manager_v1;
+struct ext_workspace_group_handle_v1;
+struct ext_workspace_handle_v1;
 
 struct WaylandOutput {
     std::uint32_t name = 0;
@@ -43,6 +47,7 @@ public:
     bool hasRequiredGlobals() const noexcept;
     bool hasLayerShell() const noexcept;
     bool hasXdgOutputManager() const noexcept;
+    bool hasExtWorkspaceManager() const noexcept;
     wl_display* display() const noexcept;
     wl_compositor* compositor() const noexcept;
     wl_shm* shm() const noexcept;
@@ -59,6 +64,23 @@ public:
                                    std::uint32_t name);
 
 private:
+    struct TrackedWorkspace {
+        std::string name;
+        bool active = false;
+    };
+
+public:
+    // Internal callback entrypoints used by C listeners for ext-workspace.
+    void onWorkspaceGroupCreated(ext_workspace_group_handle_v1* group);
+    void onWorkspaceGroupRemoved(ext_workspace_group_handle_v1* group);
+    void onWorkspaceCreated(ext_workspace_handle_v1* workspace);
+    void onWorkspaceNameChanged(ext_workspace_handle_v1* workspace, const char* name);
+    void onWorkspaceStateChanged(ext_workspace_handle_v1* workspace, std::uint32_t state);
+    void onWorkspaceRemoved(ext_workspace_handle_v1* workspace);
+    void onWorkspaceManagerFinished();
+
+private:
+
     void bindGlobal(wl_registry* registry,
                     std::uint32_t name,
                     const char* interface,
@@ -73,7 +95,11 @@ private:
     wl_shm* m_shm = nullptr;
     zwlr_layer_shell_v1* m_layerShell = nullptr;
     zxdg_output_manager_v1* m_xdgOutputManager = nullptr;
+    ext_workspace_manager_v1* m_workspaceManager = nullptr;
     bool m_hasLayerShellGlobal = false;
+    bool m_hasExtWorkspaceGlobal = false;
     std::vector<WaylandOutput> m_outputs;
+    std::vector<ext_workspace_group_handle_v1*> m_workspaceGroups;
+    std::unordered_map<ext_workspace_handle_v1*, TrackedWorkspace> m_workspaces;
     OutputChangeCallback m_outputChangeCallback;
 };

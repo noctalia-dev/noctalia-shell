@@ -1,7 +1,6 @@
 #pragma once
 
 #include "app/MainLoop.hpp"
-#include "compositor/niri/NiriCompositorService.hpp"
 #include "debug/DebugService.hpp"
 #include "dbus/SessionBus.hpp"
 #include "dbus/mpris/MprisService.hpp"
@@ -27,7 +26,6 @@ private:
     Bar m_bar;
     std::unique_ptr<SessionBus> m_bus;
     std::unique_ptr<SystemMonitorService> m_systemMonitor;
-    std::unique_ptr<NiriService> m_niriCompositor;
     std::unique_ptr<DebugService> m_debugService;
     std::unique_ptr<MprisService> m_mprisService;
     NotificationManager m_manager;

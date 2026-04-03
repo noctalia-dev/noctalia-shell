@@ -106,7 +106,7 @@ Everything else depends on these.
 
 ### Phase 2 -- Minimum viable bar
 
-- [x] Compositor integration (Niri)
+- [x] Compositor integration (ext-workspace)
 - [ ] Compositor integration (Hyprland)
 - [ ] Workspaces widget
 - [ ] Clock widget

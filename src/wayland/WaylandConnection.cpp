@@ -10,6 +10,7 @@
 #if NOCTALIA_HAVE_WLR_LAYER_SHELL
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #endif
+#include "ext-workspace-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
 
 namespace {
@@ -21,6 +22,7 @@ constexpr std::uint32_t kShmVersion = 1;
 constexpr std::uint32_t kLayerShellVersion = 4;
 #endif
 constexpr std::uint32_t kXdgOutputManagerVersion = 3;
+constexpr std::uint32_t kExtWorkspaceManagerVersion = 1;
 constexpr std::uint32_t kOutputVersion = 4;
 
 const wl_registry_listener kRegistryListener = {
@@ -77,6 +79,83 @@ const wl_output_listener kOutputListener = {
     .scale = outputScale,
     .name = outputName,
     .description = outputDescription,
+};
+
+void workspaceGroupCapabilities(void* /*data*/, ext_workspace_group_handle_v1* /*group*/, uint32_t /*caps*/) {}
+void workspaceGroupOutputEnter(void* /*data*/, ext_workspace_group_handle_v1* /*group*/, wl_output* /*output*/) {}
+void workspaceGroupOutputLeave(void* /*data*/, ext_workspace_group_handle_v1* /*group*/, wl_output* /*output*/) {}
+void workspaceGroupWorkspaceEnter(void* /*data*/, ext_workspace_group_handle_v1* /*group*/, ext_workspace_handle_v1* /*workspace*/) {}
+void workspaceGroupWorkspaceLeave(void* /*data*/, ext_workspace_group_handle_v1* /*group*/, ext_workspace_handle_v1* /*workspace*/) {}
+void workspaceGroupRemoved(void* data, ext_workspace_group_handle_v1* group) {
+    auto* self = static_cast<WaylandConnection*>(data);
+    self->onWorkspaceGroupRemoved(group);
+}
+
+const ext_workspace_group_handle_v1_listener kWorkspaceGroupListener = {
+    .capabilities = workspaceGroupCapabilities,
+    .output_enter = workspaceGroupOutputEnter,
+    .output_leave = workspaceGroupOutputLeave,
+    .workspace_enter = workspaceGroupWorkspaceEnter,
+    .workspace_leave = workspaceGroupWorkspaceLeave,
+    .removed = workspaceGroupRemoved,
+};
+
+void workspaceId(void* /*data*/, ext_workspace_handle_v1* /*workspace*/, const char* /*id*/) {}
+
+void workspaceName(void* data, ext_workspace_handle_v1* workspace, const char* name) {
+    auto* self = static_cast<WaylandConnection*>(data);
+    self->onWorkspaceNameChanged(workspace, name);
+}
+
+void workspaceCoordinates(void* /*data*/, ext_workspace_handle_v1* /*workspace*/, wl_array* /*coords*/) {}
+
+void workspaceState(void* data, ext_workspace_handle_v1* workspace, uint32_t state) {
+    auto* self = static_cast<WaylandConnection*>(data);
+    self->onWorkspaceStateChanged(workspace, state);
+}
+
+void workspaceCapabilities(void* /*data*/, ext_workspace_handle_v1* /*workspace*/, uint32_t /*caps*/) {}
+
+void workspaceRemoved(void* data, ext_workspace_handle_v1* workspace) {
+    auto* self = static_cast<WaylandConnection*>(data);
+    self->onWorkspaceRemoved(workspace);
+}
+
+const ext_workspace_handle_v1_listener kWorkspaceListener = {
+    .id = workspaceId,
+    .name = workspaceName,
+    .coordinates = workspaceCoordinates,
+    .state = workspaceState,
+    .capabilities = workspaceCapabilities,
+    .removed = workspaceRemoved,
+};
+
+void workspaceManagerWorkspaceGroup(void* data,
+                                    ext_workspace_manager_v1* /*manager*/,
+                                    ext_workspace_group_handle_v1* group) {
+    auto* self = static_cast<WaylandConnection*>(data);
+    self->onWorkspaceGroupCreated(group);
+}
+
+void workspaceManagerWorkspace(void* data,
+                               ext_workspace_manager_v1* /*manager*/,
+                               ext_workspace_handle_v1* workspace) {
+    auto* self = static_cast<WaylandConnection*>(data);
+    self->onWorkspaceCreated(workspace);
+}
+
+void workspaceManagerDone(void* /*data*/, ext_workspace_manager_v1* /*manager*/) {}
+
+void workspaceManagerFinished(void* data, ext_workspace_manager_v1* /*manager*/) {
+    auto* self = static_cast<WaylandConnection*>(data);
+    self->onWorkspaceManagerFinished();
+}
+
+const ext_workspace_manager_v1_listener kWorkspaceManagerListener = {
+    .workspace_group = workspaceManagerWorkspaceGroup,
+    .workspace = workspaceManagerWorkspace,
+    .done = workspaceManagerDone,
+    .finished = workspaceManagerFinished,
 };
 
 } // namespace
@@ -140,6 +219,10 @@ bool WaylandConnection::hasLayerShell() const noexcept {
 
 bool WaylandConnection::hasXdgOutputManager() const noexcept {
     return m_xdgOutputManager != nullptr;
+}
+
+bool WaylandConnection::hasExtWorkspaceManager() const noexcept {
+    return m_workspaceManager != nullptr;
 }
 
 wl_display* WaylandConnection::display() const noexcept {
@@ -228,6 +311,15 @@ void WaylandConnection::bindGlobal(wl_registry* registry,
         return;
     }
 
+    if (interfaceName == ext_workspace_manager_v1_interface.name) {
+        m_hasExtWorkspaceGlobal = true;
+        const auto bindVersion = std::min(version, kExtWorkspaceManagerVersion);
+        m_workspaceManager = static_cast<ext_workspace_manager_v1*>(
+            wl_registry_bind(registry, name, &ext_workspace_manager_v1_interface, bindVersion));
+        ext_workspace_manager_v1_add_listener(m_workspaceManager, &kWorkspaceManagerListener, this);
+        return;
+    }
+
     if (interfaceName == wl_output_interface.name) {
         const auto bindVersion = std::min(version, kOutputVersion);
         auto* output = static_cast<wl_output*>(
@@ -255,7 +347,87 @@ WaylandOutput* WaylandConnection::findOutputByWl(wl_output* wlOutput) {
     return nullptr;
 }
 
+void WaylandConnection::onWorkspaceGroupCreated(ext_workspace_group_handle_v1* group) {
+    if (group == nullptr) {
+        return;
+    }
+    m_workspaceGroups.push_back(group);
+    ext_workspace_group_handle_v1_add_listener(group, &kWorkspaceGroupListener, this);
+}
+
+void WaylandConnection::onWorkspaceGroupRemoved(ext_workspace_group_handle_v1* group) {
+    std::erase(m_workspaceGroups, group);
+    if (group != nullptr) {
+        ext_workspace_group_handle_v1_destroy(group);
+    }
+}
+
+void WaylandConnection::onWorkspaceCreated(ext_workspace_handle_v1* workspace) {
+    if (workspace == nullptr) {
+        return;
+    }
+    m_workspaces.emplace(workspace, TrackedWorkspace{});
+    ext_workspace_handle_v1_add_listener(workspace, &kWorkspaceListener, this);
+}
+
+void WaylandConnection::onWorkspaceNameChanged(ext_workspace_handle_v1* workspace, const char* name) {
+    const auto it = m_workspaces.find(workspace);
+    if (it == m_workspaces.end()) {
+        return;
+    }
+    it->second.name = name != nullptr ? name : "";
+}
+
+void WaylandConnection::onWorkspaceStateChanged(ext_workspace_handle_v1* workspace, std::uint32_t state) {
+    const auto it = m_workspaces.find(workspace);
+    if (it == m_workspaces.end()) {
+        return;
+    }
+
+    const bool is_active = (state & EXT_WORKSPACE_HANDLE_V1_STATE_ACTIVE) != 0;
+    if (it->second.active != is_active) {
+        it->second.active = is_active;
+        if (is_active) {
+            const std::string label = it->second.name.empty() ? "(unnamed)" : it->second.name;
+            logInfo("workspace active: {}", label);
+        }
+    }
+}
+
+void WaylandConnection::onWorkspaceRemoved(ext_workspace_handle_v1* workspace) {
+    m_workspaces.erase(workspace);
+    if (workspace != nullptr) {
+        ext_workspace_handle_v1_destroy(workspace);
+    }
+}
+
+void WaylandConnection::onWorkspaceManagerFinished() {
+    m_workspaceManager = nullptr;
+    m_workspaces.clear();
+    m_workspaceGroups.clear();
+}
+
 void WaylandConnection::cleanup() {
+    for (auto& [workspace, _] : m_workspaces) {
+        if (workspace != nullptr) {
+            ext_workspace_handle_v1_destroy(workspace);
+        }
+    }
+    m_workspaces.clear();
+
+    for (auto* group : m_workspaceGroups) {
+        if (group != nullptr) {
+            ext_workspace_group_handle_v1_destroy(group);
+        }
+    }
+    m_workspaceGroups.clear();
+
+    if (m_workspaceManager != nullptr) {
+        ext_workspace_manager_v1_stop(m_workspaceManager);
+        ext_workspace_manager_v1_destroy(m_workspaceManager);
+        m_workspaceManager = nullptr;
+    }
+
     if (m_xdgOutputManager != nullptr) {
         zxdg_output_manager_v1_destroy(m_xdgOutputManager);
         m_xdgOutputManager = nullptr;
@@ -301,14 +473,16 @@ void WaylandConnection::cleanup() {
     }
 
     m_outputs.clear();
+    m_hasExtWorkspaceGlobal = false;
 }
 
 void WaylandConnection::logStartupSummary() const {
-    logInfo("wayland connected compositor={} shm={} layer-shell={} xdg-output={} outputs={}",
+    logInfo("wayland connected compositor={} shm={} layer-shell={} xdg-output={} ext-workspace={} outputs={}",
         m_compositor != nullptr ? "yes" : "no",
         m_shm != nullptr ? "yes" : "no",
         hasLayerShell() ? "yes" : "no",
         hasXdgOutputManager() ? "yes" : "no",
+        hasExtWorkspaceManager() ? "yes" : "no",
         m_outputs.size());
 
     for (const auto& output : m_outputs) {

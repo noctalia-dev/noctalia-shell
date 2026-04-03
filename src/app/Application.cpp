@@ -46,16 +46,6 @@ void Application::run() {
     }
 
     try {
-        m_niriCompositor = std::make_unique<NiriService>();
-        if (m_niriCompositor->isRunning()) {
-            logInfo("niri compositor integration active");
-        }
-    } catch (const std::exception& e) {
-        logWarn("niri compositor integration disabled: {}", e.what());
-        m_niriCompositor.reset();
-    }
-
-    try {
         m_bus = std::make_unique<SessionBus>();
         logInfo("connected to session bus");
     } catch (const std::exception& e) {

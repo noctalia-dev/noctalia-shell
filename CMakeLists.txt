@@ -47,6 +47,8 @@ set(XDG_OUTPUT_XML
     "${WAYLAND_PROTOCOLS_PKGDATADIR}/unstable/xdg-output/xdg-output-unstable-v1.xml")
 set(XDG_SHELL_XML
     "${WAYLAND_PROTOCOLS_PKGDATADIR}/stable/xdg-shell/xdg-shell.xml")
+set(EXT_WORKSPACE_XML
+    "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/ext-workspace/ext-workspace-v1.xml")
 
 set(XDG_OUTPUT_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/xdg-output-unstable-v1-client-protocol.c")
@@ -56,6 +58,10 @@ set(XDG_SHELL_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/xdg-shell-client-protocol.c")
 set(XDG_SHELL_PROTOCOL_H
     "${GENERATED_PROTOCOL_DIR}/xdg-shell-client-protocol.h")
+set(EXT_WORKSPACE_PROTOCOL_C
+    "${GENERATED_PROTOCOL_DIR}/ext-workspace-v1-client-protocol.c")
+set(EXT_WORKSPACE_PROTOCOL_H
+    "${GENERATED_PROTOCOL_DIR}/ext-workspace-v1-client-protocol.h")
 
 set(WLR_LAYER_SHELL_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/wlr-layer-shell-unstable-v1-client-protocol.c")
@@ -116,6 +122,20 @@ add_custom_command(
     VERBATIM
 )
 
+add_custom_command(
+    OUTPUT "${EXT_WORKSPACE_PROTOCOL_C}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" private-code "${EXT_WORKSPACE_XML}" "${EXT_WORKSPACE_PROTOCOL_C}"
+    DEPENDS "${EXT_WORKSPACE_XML}"
+    VERBATIM
+)
+
+add_custom_command(
+    OUTPUT "${EXT_WORKSPACE_PROTOCOL_H}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" client-header "${EXT_WORKSPACE_XML}" "${EXT_WORKSPACE_PROTOCOL_H}"
+    DEPENDS "${EXT_WORKSPACE_XML}"
+    VERBATIM
+)
+
 add_custom_target(noctalia_wayland_protocols
     DEPENDS
         "${WLR_LAYER_SHELL_PROTOCOL_C}"
@@ -124,6 +144,8 @@ add_custom_target(noctalia_wayland_protocols
         "${XDG_OUTPUT_PROTOCOL_H}"
         "${XDG_SHELL_PROTOCOL_C}"
         "${XDG_SHELL_PROTOCOL_H}"
+        "${EXT_WORKSPACE_PROTOCOL_C}"
+        "${EXT_WORKSPACE_PROTOCOL_H}"
 )
 
 # --- Target ---
@@ -131,7 +153,6 @@ add_executable(noctalia
     src/main.cpp
     src/app/Application.cpp
     src/app/MainLoop.cpp
-    src/compositor/niri/NiriCompositorService.cpp
     src/system/SystemMonitorService.cpp
     src/debug/DebugService.cpp
     src/notification/InternalNotificationService.cpp
@@ -161,6 +182,7 @@ add_executable(noctalia
     "${WLR_LAYER_SHELL_PROTOCOL_C}"
     "${XDG_OUTPUT_PROTOCOL_C}"
     "${XDG_SHELL_PROTOCOL_C}"
+    "${EXT_WORKSPACE_PROTOCOL_C}"
 )
 target_compile_definitions(noctalia PRIVATE NOCTALIA_HAVE_WLR_LAYER_SHELL=1)
 
