@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 
+class Box;
 class Label;
 
 struct BarInstance {
@@ -18,4 +19,5 @@ struct BarInstance {
     AnimationManager animations;
     Label* titleLabel = nullptr;
     Label* truncLabel = nullptr;
+    Box* wsBox = nullptr;
 };

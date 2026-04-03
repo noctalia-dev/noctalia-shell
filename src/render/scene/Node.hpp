@@ -37,6 +37,7 @@ public:
     void setVisible(bool visible);
 
     Node* addChild(std::unique_ptr<Node> child);
+    Node* insertChildAt(std::size_t index, std::unique_ptr<Node> child);
     std::unique_ptr<Node> removeChild(Node* child);
 
     void markDirty();
