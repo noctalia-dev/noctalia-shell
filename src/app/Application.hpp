@@ -2,6 +2,7 @@
 
 #include "app/MainLoop.hpp"
 #include "dbus/SessionBus.hpp"
+#include "dbus/mpris/MprisService.hpp"
 #include "dbus/notification/NotificationService.hpp"
 #include "notification/NotificationManager.hpp"
 #include "shell/Bar.hpp"
@@ -21,6 +22,7 @@ public:
 private:
     Bar m_bar;
     std::unique_ptr<SessionBus> m_bus;
+    std::unique_ptr<MprisService> m_mprisService;
     NotificationManager m_manager;
     std::unique_ptr<NotificationService> m_notificationService;
     std::unique_ptr<MainLoop> m_mainLoop;

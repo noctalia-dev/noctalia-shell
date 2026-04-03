@@ -133,6 +133,7 @@ add_executable(noctalia
     src/app/MainLoop.cpp
     src/notification/NotificationManager.cpp
     src/dbus/SessionBus.cpp
+    src/dbus/mpris/MprisService.cpp
     src/dbus/notification/NotificationService.cpp
     src/core/Log.cpp
     src/font/FontService.cpp

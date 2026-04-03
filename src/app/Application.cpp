@@ -42,6 +42,14 @@ void Application::run() {
 
     if (m_bus != nullptr) {
         try {
+            m_mprisService = std::make_unique<MprisService>(*m_bus);
+            logInfo("mpris discovery active");
+        } catch (const std::exception& e) {
+            logWarn("mpris disabled: {}", e.what());
+            m_mprisService.reset();
+        }
+
+        try {
             m_notificationService = std::make_unique<NotificationService>(*m_bus, m_manager);
             logInfo("listening on org.freedesktop.Notifications");
         } catch (const std::exception& e) {

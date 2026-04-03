@@ -88,13 +88,25 @@ third_party/
 
 ### In Progress
 
-- Notification daemon (DBus)
-  - [x] Prevent duplicate stacking when replacing
-  - [x] Actions implementation (D-Bus backend)
-  - [x] Graceful shutdown (SIGTERM/SIGINT)
-  - [x] GetNotifications method (query all)
-  - [ ] Display icon in UI layer (need Phase 1)
-  - [x] Closing/removal API polish
+<details>
+<summary>Notification daemon (DBus)</summary>
+
+- [x] Prevent duplicate stacking when replacing
+- [x] Actions implementation (D-Bus backend)
+- [x] Graceful shutdown (SIGTERM/SIGINT)
+- [x] GetNotifications method (query all)
+- [ ] Display icon in UI layer (need Phase 1)
+- [x] Closing/removal API polish
+
+</details>
+
+<details>
+<summary>MPRIS backend (DBus)</summary>
+
+- [x] Discovery + metadata/state tracking
+- [ ] Transport controls (PlayPause/Next/Previous)
+
+</details>
 
 ### Phase 1 -- Renderer completion
 
@@ -130,7 +142,8 @@ Status indicators and controls that make the bar complete.
 
 Surfaces and interactions beyond the bar.
 
-- [ ] MPRIS service (media player control)
+- [x] MPRIS service discovery + metadata/state tracking
+- [ ] MPRIS transport controls
 - [ ] Control center panel
 - [ ] Keyboard layout switching
 - [ ] PipeWire audio spectrum
