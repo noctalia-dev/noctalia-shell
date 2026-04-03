@@ -49,6 +49,10 @@ public:
 
 private:
     void registerControlApi();
+    void emitPlayersChanged();
+    void emitActivePlayerChanged();
+    void emitTrackChanged(const MprisPlayerInfo& player);
+    void syncSignals(const std::optional<MprisPlayerInfo>& previous_active);
     void registerBusSignals();
     void discoverPlayers();
     void addOrRefreshPlayer(const std::string& bus_name);
@@ -71,4 +75,5 @@ private:
     std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_player_proxies;
     std::unordered_map<std::string, MprisPlayerInfo>                m_players;
     std::string                                                      m_last_active_player;
+    std::string                                                      m_last_emitted_active_player;
 };

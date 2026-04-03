@@ -216,6 +216,15 @@ void MprisService::registerControlApi() {
     m_control_object = sdbus::createObject(m_bus.connection(), k_noctalia_mpris_object_path);
 
     m_control_object->addVTable(
+        sdbus::registerSignal("PlayersChanged")
+            .withParameters<std::vector<std::map<std::string, sdbus::Variant>>>("players"),
+
+        sdbus::registerSignal("ActivePlayerChanged")
+            .withParameters<bool, std::map<std::string, sdbus::Variant>>("found", "player"),
+
+        sdbus::registerSignal("TrackChanged")
+            .withParameters<std::string, std::map<std::string, sdbus::Variant>>("player_bus_name", "player"),
+
         sdbus::registerMethod("GetPlayers")
             .withOutputParamNames("players")
             .implementedAs([this]() {
@@ -277,6 +286,53 @@ void MprisService::registerControlApi() {
     ).forInterface(k_noctalia_mpris_interface);
 }
 
+void MprisService::emitPlayersChanged() {
+    std::vector<std::map<std::string, sdbus::Variant>> players;
+    for (const auto& player : listPlayers()) {
+        players.push_back(to_dbus_player(player));
+    }
+
+    m_control_object->emitSignal("PlayersChanged")
+        .onInterface(k_noctalia_mpris_interface)
+        .withArguments(players);
+}
+
+void MprisService::emitActivePlayerChanged() {
+    const auto active = activePlayer();
+    if (!active.has_value()) {
+        m_control_object->emitSignal("ActivePlayerChanged")
+            .onInterface(k_noctalia_mpris_interface)
+            .withArguments(false, std::map<std::string, sdbus::Variant>{});
+        return;
+    }
+
+    m_control_object->emitSignal("ActivePlayerChanged")
+        .onInterface(k_noctalia_mpris_interface)
+        .withArguments(true, to_dbus_player(*active));
+}
+
+void MprisService::emitTrackChanged(const MprisPlayerInfo& player) {
+    m_control_object->emitSignal("TrackChanged")
+        .onInterface(k_noctalia_mpris_interface)
+        .withArguments(player.bus_name, to_dbus_player(player));
+}
+
+void MprisService::syncSignals(const std::optional<MprisPlayerInfo>& previous_active) {
+    const auto current_active = activePlayer();
+    const std::string current_active_name = current_active.has_value() ? current_active->bus_name : std::string{};
+
+    if (current_active_name != m_last_emitted_active_player) {
+        emitActivePlayerChanged();
+        m_last_emitted_active_player = current_active_name;
+    }
+
+    if (previous_active.has_value() && current_active.has_value() &&
+        previous_active->bus_name == current_active->bus_name &&
+        previous_active->title != current_active->title) {
+        emitTrackChanged(*current_active);
+    }
+}
+
 void MprisService::registerBusSignals() {
     m_dbus_proxy->uponSignal("NameOwnerChanged")
         .onInterface(k_dbus_interface)
@@ -315,6 +371,8 @@ void MprisService::discoverPlayers() {
 }
 
 void MprisService::addOrRefreshPlayer(const std::string& bus_name) {
+    const auto previous_active = activePlayer();
+
     auto [proxy_it, inserted] = m_player_proxies.emplace(
         bus_name,
         sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{bus_name}, k_mpris_path));
@@ -343,13 +401,26 @@ void MprisService::addOrRefreshPlayer(const std::string& bus_name) {
             m_players.emplace(bus_name, info);
             logInfo("mpris added player name={} identity=\"{}\" status={} title=\"{}\" artist=\"{}\"",
                     info.bus_name, info.identity, info.playback_status, info.title, primary_artist(info.artists));
+            emitPlayersChanged();
+            syncSignals(previous_active);
             return;
         }
 
         if (existing->second != info) {
+            const MprisPlayerInfo previous_info = existing->second;
             existing->second = info;
             logDebug("mpris updated player name={} status={} title=\"{}\" artist=\"{}\"",
                      info.bus_name, info.playback_status, info.title, primary_artist(info.artists));
+
+            if (previous_info.title != info.title ||
+                previous_info.album != info.album ||
+                previous_info.artists != info.artists ||
+                previous_info.art_url != info.art_url ||
+                previous_info.length_us != info.length_us) {
+                emitTrackChanged(info);
+            }
+
+            syncSignals(previous_active);
         }
     } catch (const sdbus::Error& e) {
         logWarn("mpris player query failed name={} err={}", bus_name, e.what());
@@ -357,6 +428,8 @@ void MprisService::addOrRefreshPlayer(const std::string& bus_name) {
 }
 
 void MprisService::removePlayer(const std::string& bus_name) {
+    const auto previous_active = activePlayer();
+
     if (!m_players.contains(bus_name) && !m_player_proxies.contains(bus_name)) {
         return;
     }
@@ -367,6 +440,9 @@ void MprisService::removePlayer(const std::string& bus_name) {
         m_last_active_player.clear();
     }
     logInfo("mpris removed player name={}", bus_name);
+
+    emitPlayersChanged();
+    syncSignals(previous_active);
 }
 
 std::optional<std::string> MprisService::chooseActivePlayer() const {

@@ -106,6 +106,11 @@ third_party/
 - [x] Discovery + metadata/state tracking
 - [x] Transport controls (PlayPause/Next/Previous)
 - [x] Query API (GetPlayers/GetActivePlayer)
+- [x] Signals (PlayersChanged/ActivePlayerChanged/TrackChanged)
+- [ ] Active-player policy configuration (pin/prefer list)
+- [ ] Seek + position controls
+- [ ] Volume/shuffle/loop controls
+- [ ] Event debounce for noisy players
 
 </details>
 
