@@ -85,24 +85,10 @@ third_party/
 - MSDF text rendering (FreeType + HarfBuzz + msdfgen atlas)
 - Font discovery via fontconfig
 - Structured logger (`std::format`-based)
-
 - MPRIS backend complete (basic throttling for noisy player updates; proper coalescing should wait for the settled event-loop/timer model)
+- Notification backend complete
 
 ### In Progress
-
-<details>
-<summary>Notification daemon (DBus)</summary>
-
-- [x] Prevent duplicate stacking when replacing
-- [x] Actions implementation (D-Bus backend)
-- [x] Graceful shutdown (SIGTERM/SIGINT)
-- [x] GetNotifications method (query all)
-- [x] Unified internal + external notification pipeline (shared history model)
-- [x] Debug trigger for internal notifications (`dev.noctalia.Debug`)
-- [ ] Display icon in UI layer (need Phase 1)
-- [x] Closing/removal API polish
-
-</details>
 
 ### Phase 1 -- Renderer completion
 
