@@ -49,6 +49,18 @@ Node* Node::addChild(std::unique_ptr<Node> child) {
     return raw;
 }
 
+Node* Node::insertChildAt(std::size_t index, std::unique_ptr<Node> child) {
+    child->m_parent = this;
+    auto* raw = child.get();
+    if (index >= m_children.size()) {
+        m_children.push_back(std::move(child));
+    } else {
+        m_children.insert(m_children.begin() + static_cast<std::ptrdiff_t>(index), std::move(child));
+    }
+    markDirty();
+    return raw;
+}
+
 std::unique_ptr<Node> Node::removeChild(Node* child) {
     auto it = std::find_if(m_children.begin(), m_children.end(),
         [child](const auto& ptr) { return ptr.get() == child; });
