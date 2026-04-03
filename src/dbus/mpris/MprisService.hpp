@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <chrono>
 #include <memory>
 #include <optional>
 #include <string>
@@ -127,6 +128,7 @@ private:
     std::unique_ptr<sdbus::IProxy>                                  m_dbus_proxy;
     std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_player_proxies;
     std::unordered_map<std::string, MprisPlayerInfo>                m_players;
+    std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_last_properties_update;
     std::string                                                      m_last_active_player;
     std::string                                                      m_last_emitted_active_player;
     std::optional<std::string>                                       m_pinned_player_preference;

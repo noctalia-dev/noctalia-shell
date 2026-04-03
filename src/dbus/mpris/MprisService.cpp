@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <chrono>
 #include <map>
 #include <unordered_set>
 #include <sdbus-c++/IObject.h>
@@ -20,6 +21,7 @@ static constexpr auto k_properties_interface = "org.freedesktop.DBus.Properties"
 static constexpr auto k_mpris_root_interface = "org.mpris.MediaPlayer2";
 static constexpr auto k_mpris_player_interface = "org.mpris.MediaPlayer2.Player";
 static constexpr auto k_noctalia_mpris_interface = "dev.noctalia.Mpris";
+static constexpr auto k_properties_debounce_window = std::chrono::milliseconds{120};
 static const sdbus::ServiceName k_dbus_name{"org.freedesktop.DBus"};
 static const sdbus::ObjectPath k_dbus_path{"/org/freedesktop/DBus"};
 static const sdbus::ObjectPath k_mpris_path{"/org/mpris/MediaPlayer2"};
@@ -844,6 +846,13 @@ void MprisService::addOrRefreshPlayer(const std::string& bus_name) {
                                    const std::vector<std::string>&) {
                 if (interface_name == k_mpris_root_interface ||
                     interface_name == k_mpris_player_interface) {
+                    const auto now = std::chrono::steady_clock::now();
+                    const auto last_it = m_last_properties_update.find(bus_name);
+                    if (last_it != m_last_properties_update.end() &&
+                        now - last_it->second < k_properties_debounce_window) {
+                        return;
+                    }
+                    m_last_properties_update[bus_name] = now;
                     addOrRefreshPlayer(bus_name);
                 }
             });
@@ -915,6 +924,7 @@ void MprisService::removePlayer(const std::string& bus_name) {
 
     m_players.erase(bus_name);
     m_player_proxies.erase(bus_name);
+    m_last_properties_update.erase(bus_name);
     if (m_last_active_player == bus_name) {
         m_last_active_player.clear();
     }

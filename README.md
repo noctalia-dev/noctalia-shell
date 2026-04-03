@@ -86,22 +86,6 @@ third_party/
 - Font discovery via fontconfig
 - Structured logger (`std::format`-based)
 
-### In Progress
-
-<details>
-<summary>Notification daemon (DBus)</summary>
-
-- [x] Prevent duplicate stacking when replacing
-- [x] Actions implementation (D-Bus backend)
-- [x] Graceful shutdown (SIGTERM/SIGINT)
-- [x] GetNotifications method (query all)
-- [x] Unified internal + external notification pipeline (shared history model)
-- [x] Debug trigger for internal notifications (`dev.noctalia.Debug`)
-- [ ] Display icon in UI layer (need Phase 1)
-- [x] Closing/removal API polish
-
-</details>
-
 <details>
 <summary>MPRIS backend (DBus)</summary>
 
@@ -115,7 +99,25 @@ third_party/
 - [x] Volume controls
 - [x] Shuffle controls
 - [x] Loop status controls
-- [ ] Event debounce for noisy players
+- [x] Event debounce for noisy players
+
+Note: replace the current basic throttling with proper coalesced refreshes once the event-loop/timer model is settled, instead of bolting that design onto the current loop.
+
+</details>
+
+### In Progress
+
+<details>
+<summary>Notification daemon (DBus)</summary>
+
+- [x] Prevent duplicate stacking when replacing
+- [x] Actions implementation (D-Bus backend)
+- [x] Graceful shutdown (SIGTERM/SIGINT)
+- [x] GetNotifications method (query all)
+- [x] Unified internal + external notification pipeline (shared history model)
+- [x] Debug trigger for internal notifications (`dev.noctalia.Debug`)
+- [ ] Display icon in UI layer (need Phase 1)
+- [x] Closing/removal API polish
 
 </details>
 
