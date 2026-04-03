@@ -1,4 +1,4 @@
-#include "render/WallpaperProgram.hpp"
+#include "render/programs/WallpaperProgram.hpp"
 
 #include <stdexcept>
 

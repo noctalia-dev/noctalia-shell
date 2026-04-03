@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render/Animation.hpp"
+#include "render/animation/Animation.hpp"
 
 #include <cstdint>
 #include <functional>

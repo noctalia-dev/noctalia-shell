@@ -1,4 +1,4 @@
-#include "render/ImageProgram.hpp"
+#include "render/programs/MsdfTextProgram.hpp"
 
 #include <array>
 #include <stdexcept>
@@ -27,22 +27,29 @@ void main() {
 )";
 
 constexpr char kFragmentShaderSource[] = R"(
-precision mediump float;
+precision highp float;
 
 uniform sampler2D u_texture;
-uniform vec4 u_tint;
-uniform float u_opacity;
+uniform vec4 u_color;
+uniform float u_px_range;
 varying vec2 v_texcoord;
 
+float median(float r, float g, float b) {
+    return max(min(r, g), min(max(r, g), b));
+}
+
 void main() {
-    vec4 texel = texture2D(u_texture, v_texcoord);
-    gl_FragColor = texel * u_tint * vec4(1.0, 1.0, 1.0, u_opacity);
+    vec3 msd = texture2D(u_texture, v_texcoord).rgb;
+    float sd = median(msd.r, msd.g, msd.b);
+    float screenPxDist = u_px_range * (sd - 0.5);
+    float opacity = clamp(screenPxDist + 0.5, 0.0, 1.0);
+    gl_FragColor = vec4(u_color.rgb, u_color.a * opacity);
 }
 )";
 
 } // namespace
 
-void ImageProgram::ensureInitialized() {
+void MsdfTextProgram::ensureInitialized() {
     if (m_program.isValid()) {
         return;
     }
@@ -52,41 +59,45 @@ void ImageProgram::ensureInitialized() {
     m_texCoordLocation = glGetAttribLocation(m_program.id(), "a_texcoord");
     m_surfaceSizeLocation = glGetUniformLocation(m_program.id(), "u_surface_size");
     m_rectLocation = glGetUniformLocation(m_program.id(), "u_rect");
-    m_tintLocation = glGetUniformLocation(m_program.id(), "u_tint");
-    m_opacityLocation = glGetUniformLocation(m_program.id(), "u_opacity");
+    m_pxRangeLocation = glGetUniformLocation(m_program.id(), "u_px_range");
+    m_colorLocation = glGetUniformLocation(m_program.id(), "u_color");
     m_samplerLocation = glGetUniformLocation(m_program.id(), "u_texture");
 
     if (m_positionLocation < 0 ||
         m_texCoordLocation < 0 ||
         m_surfaceSizeLocation < 0 ||
         m_rectLocation < 0 ||
-        m_tintLocation < 0 ||
-        m_opacityLocation < 0 ||
+        m_pxRangeLocation < 0 ||
+        m_colorLocation < 0 ||
         m_samplerLocation < 0) {
-        throw std::runtime_error("failed to query image shader locations");
+        throw std::runtime_error("failed to query MSDF text shader locations");
     }
 }
 
-void ImageProgram::destroy() {
+void MsdfTextProgram::destroy() {
     m_program.destroy();
     m_positionLocation = -1;
     m_texCoordLocation = -1;
     m_surfaceSizeLocation = -1;
     m_rectLocation = -1;
-    m_tintLocation = -1;
-    m_opacityLocation = -1;
+    m_pxRangeLocation = -1;
+    m_colorLocation = -1;
     m_samplerLocation = -1;
 }
 
-void ImageProgram::draw(GLuint texture,
-                        float surfaceWidth,
-                        float surfaceHeight,
-                        float x,
-                        float y,
-                        float width,
-                        float height,
-                        const Color& tint,
-                        float opacity) const {
+void MsdfTextProgram::draw(GLuint texture,
+                           float surfaceWidth,
+                           float surfaceHeight,
+                           float x,
+                           float y,
+                           float width,
+                           float height,
+                           float u0,
+                           float v0,
+                           float u1,
+                           float v1,
+                           float pxRange,
+                           const Color& color) const {
     if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
         return;
     }
@@ -101,19 +112,19 @@ void ImageProgram::draw(GLuint texture,
     };
 
     const std::array<GLfloat, 12> texcoords = {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f,
+        u0, v0,
+        u1, v0,
+        u0, v1,
+        u0, v1,
+        u1, v0,
+        u1, v1,
     };
 
     glUseProgram(m_program.id());
     glUniform2f(m_surfaceSizeLocation, surfaceWidth, surfaceHeight);
     glUniform4f(m_rectLocation, x, y, width, height);
-    glUniform4f(m_tintLocation, tint.r, tint.g, tint.b, tint.a);
-    glUniform1f(m_opacityLocation, opacity);
+    glUniform1f(m_pxRangeLocation, pxRange);
+    glUniform4f(m_colorLocation, color.r, color.g, color.b, color.a);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     glUniform1i(m_samplerLocation, 0);

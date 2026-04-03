@@ -1,4 +1,4 @@
-#include "render/RoundedRectProgram.hpp"
+#include "render/programs/RoundedRectProgram.hpp"
 
 #include <array>
 #include <stdexcept>

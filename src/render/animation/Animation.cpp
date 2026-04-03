@@ -1,4 +1,4 @@
-#include "render/Animation.hpp"
+#include "render/animation/Animation.hpp"
 
 #include <algorithm>
 #include <cmath>

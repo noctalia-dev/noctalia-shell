@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render/Color.hpp"
+#include "render/core/Color.hpp"
 #include "render/scene/Node.hpp"
 
 #include <string>

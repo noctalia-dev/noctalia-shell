@@ -1,9 +1,9 @@
 #pragma once
 
 #include "config/ConfigService.hpp"
-#include "render/Renderer.hpp"
-#include "render/TextureManager.hpp"
-#include "render/WallpaperProgram.hpp"
+#include "render/core/Renderer.hpp"
+#include "render/core/TextureManager.hpp"
+#include "render/programs/WallpaperProgram.hpp"
 
 #include <EGL/egl.h>
 

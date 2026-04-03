@@ -1,4 +1,4 @@
-#include "render/AnimationManager.hpp"
+#include "render/animation/AnimationManager.hpp"
 
 #include <algorithm>
 

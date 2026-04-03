@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render/Renderer.hpp"
+#include "render/core/Renderer.hpp"
 
 #include <cstdint>
 #include <functional>

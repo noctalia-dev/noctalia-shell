@@ -2,7 +2,7 @@
 
 #include "config/ConfigService.hpp"
 #include "core/Log.hpp"
-#include "render/Palette.hpp"
+#include "render/core/Palette.hpp"
 #include "render/scene/RectNode.hpp"
 #include "time/TimeService.hpp"
 #include "ui/Widget.hpp"

@@ -1,4 +1,4 @@
-#include "render/LinearGradientProgram.hpp"
+#include "render/programs/LinearGradientProgram.hpp"
 
 #include <array>
 #include <stdexcept>

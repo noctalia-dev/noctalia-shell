@@ -1,7 +1,7 @@
 #pragma once
 
-#include "render/Color.hpp"
-#include "render/ShaderProgram.hpp"
+#include "render/core/Color.hpp"
+#include "render/core/ShaderProgram.hpp"
 
 #include <GLES2/gl2.h>
 

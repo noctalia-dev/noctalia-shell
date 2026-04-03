@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render/RoundedRectProgram.hpp"
+#include "render/programs/RoundedRectProgram.hpp"
 #include "render/scene/Node.hpp"
 
 class RectNode : public Node {

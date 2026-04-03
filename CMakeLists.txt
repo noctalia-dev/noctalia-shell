@@ -165,18 +165,18 @@ add_executable(noctalia
     src/core/Log.cpp
     src/font/FontService.cpp
     src/render/scene/Node.cpp
-    src/render/Animation.cpp
-    src/render/AnimationManager.cpp
+    src/render/animation/Animation.cpp
+    src/render/animation/AnimationManager.cpp
+    src/render/core/ShaderProgram.cpp
+    src/render/core/TextureManager.cpp
+    src/render/programs/ImageProgram.cpp
+    src/render/programs/LinearGradientProgram.cpp
+    src/render/programs/MsdfTextProgram.cpp
+    src/render/programs/RoundedRectProgram.cpp
+    src/render/programs/WallpaperProgram.cpp
+    src/render/text/MsdfTextRenderer.cpp
     src/render/GlRenderer.cpp
     src/render/ImageLoaders.cpp
-    src/render/ImageProgram.cpp
-    src/render/LinearGradientProgram.cpp
-    src/render/RoundedRectProgram.cpp
-    src/render/ShaderProgram.cpp
-    src/render/MsdfTextProgram.cpp
-    src/render/MsdfTextRenderer.cpp
-    src/render/TextureManager.cpp
-    src/render/WallpaperProgram.cpp
     src/render/WallpaperRenderer.cpp
     src/shell/Bar.cpp
     src/shell/Wallpaper.cpp

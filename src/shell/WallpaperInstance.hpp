@@ -1,8 +1,8 @@
 #pragma once
 
-#include "render/AnimationManager.hpp"
-#include "render/TextureManager.hpp"
-#include "render/WallpaperProgram.hpp"
+#include "render/animation/AnimationManager.hpp"
+#include "render/core/TextureManager.hpp"
+#include "render/programs/WallpaperProgram.hpp"
 #include "shell/WallpaperSurface.hpp"
 
 #include <cstdint>

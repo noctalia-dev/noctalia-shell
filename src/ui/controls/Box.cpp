@@ -1,6 +1,6 @@
 #include "ui/controls/Box.hpp"
 
-#include "render/Renderer.hpp"
+#include "render/core/Renderer.hpp"
 #include "render/scene/RectNode.hpp"
 #include "ui/controls/Label.hpp"
 

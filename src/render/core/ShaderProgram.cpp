@@ -1,4 +1,4 @@
-#include "render/ShaderProgram.hpp"
+#include "render/core/ShaderProgram.hpp"
 
 #include <stdexcept>
 #include <string>

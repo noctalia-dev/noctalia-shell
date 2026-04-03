@@ -1,7 +1,7 @@
 #include "ui/widgets/ClockWidget.hpp"
 
-#include "render/Palette.hpp"
-#include "render/Renderer.hpp"
+#include "render/core/Palette.hpp"
+#include "render/core/Renderer.hpp"
 #include "time/TimeService.hpp"
 #include "ui/controls/Label.hpp"
 

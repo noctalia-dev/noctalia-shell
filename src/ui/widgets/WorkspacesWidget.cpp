@@ -1,9 +1,9 @@
 #include "ui/widgets/WorkspacesWidget.hpp"
 
 #include "core/Log.hpp"
-#include "render/Color.hpp"
-#include "render/Palette.hpp"
-#include "render/Renderer.hpp"
+#include "render/core/Color.hpp"
+#include "render/core/Palette.hpp"
+#include "render/core/Renderer.hpp"
 #include "ui/controls/Box.hpp"
 #include "ui/controls/Label.hpp"
 

@@ -1,6 +1,6 @@
 #include "wayland/Surface.hpp"
 
-#include "render/AnimationManager.hpp"
+#include "render/animation/AnimationManager.hpp"
 #include "render/GlRenderer.hpp"
 #include "render/scene/Node.hpp"
 #include "wayland/WaylandConnection.hpp"

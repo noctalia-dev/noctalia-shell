@@ -1,5 +1,5 @@
 #include "render/GlRenderer.hpp"
-#include "render/Palette.hpp"
+#include "render/core/Palette.hpp"
 #include "render/scene/Node.hpp"
 #include "render/scene/RectNode.hpp"
 #include "render/scene/TextNode.hpp"

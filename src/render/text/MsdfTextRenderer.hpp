@@ -1,7 +1,7 @@
 #pragma once
 
-#include "render/Color.hpp"
-#include "render/MsdfTextProgram.hpp"
+#include "render/core/Color.hpp"
+#include "render/programs/MsdfTextProgram.hpp"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

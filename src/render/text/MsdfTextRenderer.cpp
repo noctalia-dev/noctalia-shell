@@ -1,4 +1,4 @@
-#include "render/MsdfTextRenderer.hpp"
+#include "render/text/MsdfTextRenderer.hpp"
 
 #include "core/Log.hpp"
 #include "font/FontService.hpp"

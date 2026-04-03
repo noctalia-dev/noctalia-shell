@@ -1,12 +1,12 @@
 #pragma once
 
 #include "font/FontService.hpp"
-#include "render/ImageProgram.hpp"
-#include "render/LinearGradientProgram.hpp"
-#include "render/RoundedRectProgram.hpp"
-#include "render/Renderer.hpp"
-#include "render/MsdfTextRenderer.hpp"
-#include "render/TextureManager.hpp"
+#include "render/programs/ImageProgram.hpp"
+#include "render/programs/LinearGradientProgram.hpp"
+#include "render/programs/RoundedRectProgram.hpp"
+#include "render/core/Renderer.hpp"
+#include "render/text/MsdfTextRenderer.hpp"
+#include "render/core/TextureManager.hpp"
 
 #include <EGL/egl.h>
 

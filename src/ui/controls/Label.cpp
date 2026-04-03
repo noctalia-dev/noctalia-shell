@@ -1,6 +1,6 @@
 #include "ui/controls/Label.hpp"
 
-#include "render/Renderer.hpp"
+#include "render/core/Renderer.hpp"
 #include "render/scene/TextNode.hpp"
 
 #include <memory>

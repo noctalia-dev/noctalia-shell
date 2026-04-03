@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render/Color.hpp"
+#include "render/core/Color.hpp"
 
 struct Palette {
     Color base;
