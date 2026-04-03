@@ -22,14 +22,15 @@ using Clock     = std::chrono::steady_clock;
 using TimePoint = Clock::time_point;
 
 struct Notification {
-    uint32_t                    id;
-    std::string                 app_name;
-    std::string                 summary;
-    std::string                 body;
-    int32_t                     timeout;
-    Urgency                     urgency;
-    std::optional<std::string>  icon;
-    std::optional<std::string>  category;
-    std::optional<std::string>  desktop_entry;
-    std::optional<TimePoint>    expiry_time;  // absent = never expires
+    uint32_t                       id;
+    std::string                    app_name;
+    std::string                    summary;
+    std::string                    body;
+    int32_t                        timeout;
+    Urgency                        urgency;
+    std::vector<std::string>       actions;  // pairs: [key, label, key, label, ...]
+    std::optional<std::string>     icon;
+    std::optional<std::string>     category;
+    std::optional<std::string>     desktop_entry;
+    std::optional<TimePoint>       expiry_time;  // absent = never expires
 };

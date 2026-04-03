@@ -34,6 +34,9 @@ private:
     void onCloseNotification(uint32_t id);
     void emitClose(uint32_t id, CloseReason reason);
 
+    void onInvokeAction(uint32_t id, const std::string& action_key);
+    void emitActionInvoked(uint32_t id, const std::string& action_key);
+
     std::vector<std::string> onGetCapabilities();
 
     std::tuple<std::string, std::string, std::string, std::string>

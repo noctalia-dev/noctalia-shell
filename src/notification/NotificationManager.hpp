@@ -29,6 +29,7 @@ public:
                           std::string body,
                           int32_t     timeout,
                           Urgency     urgency,
+                          std::vector<std::string> actions = {},
                           std::optional<std::string> icon = std::nullopt,
                           std::optional<std::string> category = std::nullopt,
                           std::optional<std::string> desktop_entry = std::nullopt);

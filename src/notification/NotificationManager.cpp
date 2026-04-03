@@ -34,6 +34,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
                                             std::string body,
                                             int32_t     timeout,
                                             Urgency     urgency,
+                                            std::vector<std::string> actions,
                                             std::optional<std::string> icon,
                                             std::optional<std::string> category,
                                             std::optional<std::string> desktop_entry) {
@@ -45,11 +46,20 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
     if (replaces_id != 0) {
         if (const auto it = m_id_to_index.find(replaces_id); it != m_id_to_index.end()) {
             auto& n = m_notifications[it->second];
+            
+            // Check if anything changed to avoid duplicate events
+            const bool changed = (n.app_name != app_name || n.summary != summary ||
+                                  n.body != body || n.timeout != timeout ||
+                                  n.urgency != urgency || n.actions != actions ||
+                                  n.icon != icon || n.category != category ||
+                                  n.desktop_entry != desktop_entry);
+            
             n.app_name = std::move(app_name);
             n.summary  = std::move(summary);
             n.body     = std::move(body);
             n.timeout  = timeout;
             n.urgency  = urgency;
+            n.actions  = std::move(actions);
             n.icon     = std::move(icon);
             n.category = std::move(category);
             n.desktop_entry = std::move(desktop_entry);
@@ -57,7 +67,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
 
             log_notification(n, "updated");
 
-            if (m_event_callback) {
+            if (changed && m_event_callback) {
                 m_event_callback(n, NotificationEvent::Updated);
             }
 
@@ -73,6 +83,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
         .body          = std::move(body),
         .timeout       = timeout,
         .urgency       = urgency,
+        .actions       = std::move(actions),
         .icon          = std::move(icon),
         .category      = std::move(category),
         .desktop_entry = std::move(desktop_entry),

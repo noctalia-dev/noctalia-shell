@@ -89,10 +89,10 @@ third_party/
 ### In Progress
 
 - Notification daemon (DBus)
-  - [ ] Prevent duplicate stacking when replacing
+  - [x] Prevent duplicate stacking when replacing
+  - [x] Actions implementation (D-Bus backend)
   - [ ] Display icon in UI layer (need Phase 1)
   - [ ] Closing/removal API polish
-  - [ ] Actions implementation (buttons + callbacks)
 
 ### Phase 1 -- Renderer completion
 

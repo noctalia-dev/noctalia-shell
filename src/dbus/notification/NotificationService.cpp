@@ -51,6 +51,12 @@ NotificationService::NotificationService(SessionBus& bus, NotificationManager& m
                 onCloseNotification(id);
             }),
 
+        sdbus::registerMethod("InvokeAction")
+            .withInputParamNames("id", "action_key")
+            .implementedAs([this](uint32_t id, const std::string& action_key) {
+                onInvokeAction(id, action_key);
+            }),
+
         sdbus::registerSignal("NotificationClosed")
             .withParameters<uint32_t, uint32_t>("id", "reason"),
 
@@ -108,7 +114,7 @@ uint32_t NotificationService::onNotify(const std::string& app_name,
                                         const std::string& app_icon,
                                         const std::string& summary,
                                         const std::string& body,
-                                        const std::vector<std::string>& /*actions*/,
+                                        const std::vector<std::string>& actions,
                                         const std::map<std::string, sdbus::Variant>& hints,
                                         int32_t expire_timeout) {
     // Sanitize scalar inputs
@@ -153,7 +159,7 @@ uint32_t NotificationService::onNotify(const std::string& app_name,
                                   clamp_str(app_name),
                                   clamp_str(summary),
                                   clamp_str(body),
-                                  timeout, urgency, icon, category, desktop_entry);
+                                  timeout, urgency, actions, icon, category, desktop_entry);
 }
 
 std::vector<std::string> NotificationService::onGetCapabilities() {
@@ -171,6 +177,24 @@ void NotificationService::emitClose(uint32_t id, CloseReason reason) {
     m_object->emitSignal("NotificationClosed")
         .onInterface(k_interface)
         .withArguments(id, static_cast<uint32_t>(reason));
+}
+
+void NotificationService::onInvokeAction(uint32_t id, const std::string& action_key) {
+    const auto& notifs = m_manager.all();
+    for (const auto& n : notifs) {
+        if (n.id == id) {
+            logDebug("notification action #{} key='{}'", id, action_key);
+            emitActionInvoked(id, action_key);
+            return;
+        }
+    }
+    logDebug("notification action: id #{} not found", id);
+}
+
+void NotificationService::emitActionInvoked(uint32_t id, const std::string& action_key) {
+    m_object->emitSignal("ActionInvoked")
+        .onInterface(k_interface)
+        .withArguments(id, action_key);
 }
 
 std::tuple<std::string, std::string, std::string, std::string>
