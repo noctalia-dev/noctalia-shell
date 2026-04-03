@@ -1,6 +1,7 @@
 #include "NotificationManager.hpp"
 
-#include <iostream>
+#include "core/Log.hpp"
+
 #include <string_view>
 
 namespace {
@@ -37,19 +38,8 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id,
                                             std::optional<std::string> category,
                                             std::optional<std::string> desktop_entry) {
     auto log_notification = [](const Notification& n, std::string_view action) {
-        std::cout << "[noctalia] " << action << " #" << n.id
-                  << " from=\"" << n.app_name << "\""
-                  << " urgency=" << urgency_str(n.urgency)
-                  << " summary=\"" << n.summary << "\""
-                  << " body=\"" << n.body << "\""
-                  << " timeout=" << n.timeout << "ms";
-        if (n.icon)
-            std::cout << " icon=\"" << *n.icon << "\"";
-        if (n.category)
-            std::cout << " category=\"" << *n.category << "\"";
-        if (n.desktop_entry)
-            std::cout << " desktop_entry=\"" << *n.desktop_entry << "\"";
-        std::cout << '\n';
+        logDebug("notification {} #{} from=\"{}\" urgency={} summary=\"{}\" body=\"{}\" timeout={}ms",
+            action, n.id, n.app_name, urgency_str(n.urgency), n.summary, n.body, n.timeout);
     };
 
     if (replaces_id != 0) {
@@ -109,7 +99,7 @@ bool NotificationManager::close(uint32_t id, CloseReason reason) {
     const size_t index = it->second;
     const char* reason_str = (reason == CloseReason::Expired) ? "expired" :
                              (reason == CloseReason::Dismissed) ? "dismissed" : "closed";
-    std::cout << "[noctalia] " << reason_str << " #" << id << '\n';
+    logDebug("notification {} #{}", reason_str, id);
 
     m_notifications.erase(m_notifications.begin() + static_cast<std::ptrdiff_t>(index));
     m_id_to_index.erase(it);

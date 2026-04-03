@@ -1,9 +1,9 @@
 #include "wayland/LayerSurface.hpp"
 
+#include "core/Log.hpp"
 #include "render/GlRenderer.hpp"
 #include "wayland/WaylandConnection.hpp"
 
-#include <iostream>
 #include <stdexcept>
 #include <wayland-client.h>
 
@@ -37,7 +37,7 @@ LayerSurface::~LayerSurface() {
 
 bool LayerSurface::initialize() {
     if (!m_connection.hasRequiredGlobals()) {
-        std::cout << "[noctalia] layer surface skipped: missing compositor/shm/layer-shell globals\n";
+        logWarn("layer surface skipped: missing compositor/shm/layer-shell globals");
         return false;
     }
 

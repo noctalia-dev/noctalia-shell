@@ -1,7 +1,8 @@
 #include "wayland/WaylandConnection.hpp"
 
+#include "core/Log.hpp"
+
 #include <algorithm>
-#include <iostream>
 #include <stdexcept>
 
 #include <wayland-client.h>
@@ -228,17 +229,14 @@ void WaylandConnection::cleanup() {
 }
 
 void WaylandConnection::logStartupSummary() const {
-    std::cout << "[noctalia] wayland connected"
-              << " compositor=" << (m_compositor != nullptr ? "yes" : "no")
-              << " shm=" << (m_shm != nullptr ? "yes" : "no")
-              << " layer-shell=" << (hasLayerShell() ? "yes" : "no")
-              << " xdg-output=" << (hasXdgOutputManager() ? "yes" : "no")
-              << " outputs=" << m_outputs.size()
-              << '\n';
+    logInfo("wayland connected compositor={} shm={} layer-shell={} xdg-output={} outputs={}",
+        m_compositor != nullptr ? "yes" : "no",
+        m_shm != nullptr ? "yes" : "no",
+        hasLayerShell() ? "yes" : "no",
+        hasXdgOutputManager() ? "yes" : "no",
+        m_outputs.size());
 
     for (const auto& output : m_outputs) {
-        std::cout << "[noctalia] output global=" << output.name
-                  << " version=" << output.version
-                  << '\n';
+        logInfo("output global={} version={}", output.name, output.version);
     }
 }

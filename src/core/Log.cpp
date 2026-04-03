@@ -1,0 +1,45 @@
+#include "core/Log.hpp"
+
+#include <cstdio>
+#include <ctime>
+
+namespace {
+
+LogLevel gMinLevel = LogLevel::Info;
+
+const char* levelTag(LogLevel level) {
+    switch (level) {
+        case LogLevel::Debug: return "DBG";
+        case LogLevel::Info:  return "INF";
+        case LogLevel::Warn:  return "WRN";
+        case LogLevel::Error: return "ERR";
+    }
+    return "???";
+}
+
+} // namespace
+
+namespace detail {
+
+void logMessage(LogLevel level, std::string_view msg) {
+    if (level < gMinLevel) {
+        return;
+    }
+
+    std::timespec ts{};
+    std::timespec_get(&ts, TIME_UTC);
+    std::tm tm{};
+    localtime_r(&ts.tv_sec, &tm);
+
+    std::fprintf(stderr, "%02d:%02d:%02d.%03ld [%s] %.*s\n",
+        tm.tm_hour, tm.tm_min, tm.tm_sec,
+        ts.tv_nsec / 1'000'000,
+        levelTag(level),
+        static_cast<int>(msg.size()), msg.data());
+}
+
+} // namespace detail
+
+void setLogLevel(LogLevel level) {
+    gMinLevel = level;
+}

@@ -1,14 +1,15 @@
 #include "app/Application.hpp"
+#include "core/Log.hpp"
 
-#include <iostream>
 #include <stdexcept>
 
 int main() {
     try {
+        logInfo("noctalia hello");
         Application app;
         app.run();
     } catch (const std::exception& e) {
-        std::cerr << "fatal: " << e.what() << '\n';
+        logError("fatal: {}", e.what());
         return 1;
     }
 }

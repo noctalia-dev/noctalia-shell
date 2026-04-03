@@ -1,12 +1,13 @@
 #include "Application.hpp"
 
-#include <iostream>
+#include "core/Log.hpp"
+
 #include <stdexcept>
 
 Application::Application() {
     m_manager.setEventCallback([](const Notification& n, NotificationEvent event) {
         const char* kind = (event == NotificationEvent::Added) ? "added" : "updated";
-        std::cout << "[noctalia] event " << kind << " id=" << n.id << '\n';
+        logDebug("notification {} id={}", kind, n.id);
     });
 }
 
@@ -15,9 +16,9 @@ void Application::run() {
 
     try {
         m_notificationService = std::make_unique<NotificationService>(m_manager);
-        std::cout << "noctalia: listening on org.freedesktop.Notifications\n";
+        logInfo("listening on org.freedesktop.Notifications");
     } catch (const std::exception& e) {
-        std::cout << "noctalia: notifications disabled: " << e.what() << '\n';
+        logWarn("notifications disabled: {}", e.what());
         m_notificationService.reset();
     }
 
