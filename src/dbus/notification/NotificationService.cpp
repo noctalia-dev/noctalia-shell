@@ -3,6 +3,7 @@
 #include "core/Log.hpp"
 #include "dbus/SessionBus.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 
 static const sdbus::ServiceName k_bus_name   {"org.freedesktop.Notifications"};
@@ -113,6 +114,34 @@ std::string clamp_str(std::string s) {
     return s;
 }
 
+std::vector<std::string> sanitize_actions(const std::vector<std::string>& actions) {
+    std::vector<std::string> sanitized;
+    sanitized.reserve(actions.size() - (actions.size() % 2));
+
+    for (size_t i = 0; i + 1 < actions.size(); i += 2) {
+        std::string action_key = clamp_str(actions[i]);
+        std::string label = clamp_str(actions[i + 1]);
+
+        if (action_key.empty()) {
+            continue;
+        }
+
+        sanitized.push_back(std::move(action_key));
+        sanitized.push_back(std::move(label));
+    }
+
+    return sanitized;
+}
+
+bool notification_has_action(const Notification& notification, const std::string& action_key) {
+    for (size_t i = 0; i + 1 < notification.actions.size(); i += 2) {
+        if (notification.actions[i] == action_key) {
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace
 
 uint32_t NotificationService::onNotify(const std::string& app_name,
@@ -125,6 +154,7 @@ uint32_t NotificationService::onNotify(const std::string& app_name,
                                         int32_t expire_timeout) {
     // Sanitize scalar inputs
     const int32_t timeout = std::max(expire_timeout, k_min_timeout);
+    const auto sanitized_actions = sanitize_actions(actions);
 
     // Urgency: default Normal, reject out-of-range byte values
     Urgency urgency = Urgency::Normal;
@@ -165,7 +195,7 @@ uint32_t NotificationService::onNotify(const std::string& app_name,
                                   clamp_str(app_name),
                                   clamp_str(summary),
                                   clamp_str(body),
-                                  timeout, urgency, actions, icon, category, desktop_entry);
+                                  timeout, urgency, sanitized_actions, icon, category, desktop_entry);
 }
 
 std::vector<std::string> NotificationService::onGetCapabilities() {
@@ -208,12 +238,25 @@ void NotificationService::onInvokeAction(uint32_t id, const std::string& action_
     const auto& notifs = m_manager.all();
     for (const auto& n : notifs) {
         if (n.id == id) {
+            const std::string sanitized_key = clamp_str(action_key);
+            if (sanitized_key.empty()) {
+                throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.InvalidAction"},
+                                   "action_key must not be empty");
+            }
+
+            if (!notification_has_action(n, sanitized_key)) {
+                throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.InvalidAction"},
+                                   "action_key is not available for this notification");
+            }
+
             logDebug("notification action #{} key='{}'", id, action_key);
-            emitActionInvoked(id, action_key);
+            emitActionInvoked(id, sanitized_key);
             return;
         }
     }
-    logDebug("notification action: id #{} not found", id);
+
+    throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.NotFound"},
+                       "notification id was not found");
 }
 
 void NotificationService::emitActionInvoked(uint32_t id, const std::string& action_key) {
