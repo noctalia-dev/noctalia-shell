@@ -5,8 +5,8 @@
 
 namespace {
 
-// Debug for now
-LogLevel gMinLevel = LogLevel::Debug;
+// Keep debug disabled by default; runtime debug service can enable it.
+LogLevel gMinLevel = LogLevel::Info;
 
 const char* levelTag(LogLevel level) {
     switch (level) {

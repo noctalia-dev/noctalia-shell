@@ -36,6 +36,16 @@ void Application::run() {
     m_bar.initialize();
 
     try {
+        m_systemMonitor = std::make_unique<SystemMonitorService>();
+        if (m_systemMonitor->isRunning()) {
+            logInfo("system monitor service active");
+        }
+    } catch (const std::exception& e) {
+        logWarn("system monitor service disabled: {}", e.what());
+        m_systemMonitor.reset();
+    }
+
+    try {
         m_niriCompositor = std::make_unique<NiriService>();
         if (m_niriCompositor->isRunning()) {
             logInfo("niri compositor integration active");
