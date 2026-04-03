@@ -107,12 +107,13 @@ Everything else depends on these.
 ### Phase 2 -- Minimum viable bar
 
 - [x] Compositor integration (ext-workspace)
-- [ ] Compositor integration (Hyprland)
-- [ ] Workspaces widget
-- [ ] Clock widget
+- [X] Workspaces widget
+- [X] Clock widget
+- [X] Wallpaper management
 - [ ] System tray (StatusNotifierItem via DBus)
 - [ ] Audio service (Pipewire) + volume OSD
 - [ ] Notification indicator + notification popup UI
+- [ ] Compositor integration (Hyprland)
 
 ### Phase 3 -- Hardware and networking
 
@@ -143,15 +144,13 @@ Surfaces and interactions beyond the bar.
 
 ### Phase 5 -- Theming and customization
 
-- [ ] Color scheme generation (port our python implementation to c++, need proper test suite so it's 100% similar)
+- [ ] Palette generation (port python implementation to c++, need proper test suite so it's 100% similar with test images)
 - [ ] Dark/light mode switching
-- [ ] Wallpaper management
 - [ ] Settings panel
 - [ ] I18n / translations
 - [ ] Blur and advanced visual effects
 - [ ] Night light (wlsunset)
 - [ ] Sound effects
-- [ ] Toast notifications (is it really needed? or should we just unify everything in notifications)
 
 ### Phase 6 -- Ecosystem
 
@@ -165,10 +164,10 @@ Surfaces and interactions beyond the bar.
 
 Low-level UI building blocks, built incrementally as widgets need them.
 
-- [ ] Label
-- [ ] Container / box layout
+- [X] Label
+- [X] Box
+- [X] Separator
 - [ ] Icon
-- [ ] Separator
 - [ ] Toggle
 - [ ] Button
 - [ ] Slider
@@ -187,11 +186,11 @@ Low-level UI building blocks, built incrementally as widgets need them.
 
 ### Bar Widgets
 
-- [ ] Workspace
-- [ ] Clock
+- [X] Workspace
+- [X] Clock
 - [ ] Tray
 - [ ] Volume
-- [ ] Notification history
+- [ ] Notification button
 - [ ] Battery
 - [ ] Network
 - [ ] Bluetooth
@@ -204,10 +203,9 @@ Low-level UI building blocks, built incrementally as widgets need them.
 - [ ] Taskbar
 - [ ] Keyboard layout
 - [ ] Lock keys (Caps/Num)
-- [ ] Dark mode toggle
+- [ ] Dark mode button
 - [ ] Night light
 - [ ] Keep awake (idle inhibitor)
-- [ ] VPN
 - [ ] Audio visualizer
 - [ ] Launcher button
 - [ ] Control center button
