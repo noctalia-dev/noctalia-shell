@@ -2,12 +2,16 @@
 
 #include "render/core/Renderer.hpp"
 #include "render/scene/TextNode.hpp"
+#include "ui/style/Palette.hpp"
+#include "ui/style/Style.hpp"
 
 #include <memory>
 
 Label::Label() {
     auto textNode = std::make_unique<TextNode>();
     m_textNode = static_cast<TextNode*>(addChild(std::move(textNode)));
+    m_textNode->setFontSize(Style::fontSizeSm);
+    m_textNode->setColor(kRosePinePalette.text);
 }
 
 void Label::setText(std::string_view text) {
@@ -40,6 +44,11 @@ const Color& Label::color() const noexcept {
 
 float Label::maxWidth() const noexcept {
     return m_textNode->maxWidth();
+}
+
+void Label::applyBarTextStyle() {
+    m_textNode->setFontSize(Style::fontSizeBar);
+    m_textNode->setColor(kRosePinePalette.text);
 }
 
 void Label::measure(Renderer& renderer) {

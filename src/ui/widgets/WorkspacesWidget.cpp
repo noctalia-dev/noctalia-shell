@@ -1,21 +1,9 @@
 #include "ui/widgets/WorkspacesWidget.hpp"
 
 #include "core/Log.hpp"
-#include "render/core/Color.hpp"
-#include "render/core/Palette.hpp"
 #include "render/core/Renderer.hpp"
 #include "ui/controls/Box.hpp"
-#include "ui/controls/Label.hpp"
-
-namespace {
-
-constexpr float kPillFontSize = 12.0f;
-constexpr float kPillPaddingV = 3.0f;
-constexpr float kPillPaddingH = 6.0f;
-constexpr float kPillRadius = 10.0f;
-constexpr float kGap = 4.0f;
-
-} // namespace
+#include "ui/controls/Chip.hpp"
 
 WorkspacesWidget::WorkspacesWidget(const WaylandConnection& connection, wl_output* output)
     : m_connection(connection)
@@ -23,9 +11,7 @@ WorkspacesWidget::WorkspacesWidget(const WaylandConnection& connection, wl_outpu
 
 void WorkspacesWidget::create(Renderer& renderer) {
     auto container = std::make_unique<Box>();
-    container->setDirection(BoxDirection::Horizontal);
-    container->setGap(kGap);
-    container->setAlign(BoxAlign::Center);
+    container->applyBarRowLayout();
     m_container = container.get();
     m_root = std::move(container);
 
@@ -42,7 +28,6 @@ void WorkspacesWidget::update(Renderer& renderer) {
         return;
     }
 
-    // Check if state changed
     bool changed = current.size() != m_cachedState.size();
     if (!changed) {
         for (std::size_t i = 0; i < current.size(); ++i) {
@@ -67,47 +52,17 @@ void WorkspacesWidget::update(Renderer& renderer) {
 }
 
 void WorkspacesWidget::rebuild(Renderer& renderer) {
-    // Remove all children except background (if any)
     while (!m_container->children().empty()) {
-        // removeChild returns ownership, which we discard
         m_container->removeChild(m_container->children().back().get());
     }
 
     auto workspaces = m_connection.workspaces(m_output);
 
     for (const auto& ws : workspaces) {
-        if (ws.active) {
-            // Active workspace: colored pill with label
-            auto pill = std::make_unique<Box>();
-            pill->setPadding(kPillPaddingV, kPillPaddingH, kPillPaddingV, kPillPaddingH);
-            pill->setBackground(kRosePinePalette.love);
-            pill->setRadius(kPillRadius);
-            pill->setAlign(BoxAlign::Center);
-
-            auto label = std::make_unique<Label>();
-            label->setText(ws.name);
-            label->setFontSize(kPillFontSize);
-            label->setColor(kRosePinePalette.base);
-            pill->addChild(std::move(label));
-            pill->layout(renderer);
-
-            m_container->addChild(std::move(pill));
-        } else {
-            // Inactive workspace: subtle pill with label
-            auto pill = std::make_unique<Box>();
-            pill->setPadding(kPillPaddingV, kPillPaddingH, kPillPaddingV, kPillPaddingH);
-            pill->setBackground(rgba(1.0f, 1.0f, 1.0f, 0.08f));
-            pill->setRadius(kPillRadius);
-            pill->setAlign(BoxAlign::Center);
-
-            auto label = std::make_unique<Label>();
-            label->setText(ws.name);
-            label->setFontSize(kPillFontSize);
-            label->setColor(kRosePinePalette.subtle);
-            pill->addChild(std::move(label));
-            pill->layout(renderer);
-
-            m_container->addChild(std::move(pill));
-        }
+        auto pill = std::make_unique<Chip>();
+        pill->setText(ws.name);
+        pill->setWorkspaceActive(ws.active);
+        pill->layout(renderer);
+        m_container->addChild(std::move(pill));
     }
 }

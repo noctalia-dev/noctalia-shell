@@ -1,6 +1,5 @@
 #include "ui/widgets/ClockWidget.hpp"
 
-#include "render/core/Palette.hpp"
 #include "render/core/Renderer.hpp"
 #include "time/TimeService.hpp"
 #include "ui/controls/Label.hpp"
@@ -11,8 +10,7 @@ ClockWidget::ClockWidget(const TimeService& timeService, std::string format)
 
 void ClockWidget::create(Renderer& renderer) {
     auto label = std::make_unique<Label>();
-    label->setFontSize(13.0f);
-    label->setColor(kRosePinePalette.text);
+    label->applyBarTextStyle();
     m_label = label.get();
     m_root = std::move(label);
     update(renderer);
