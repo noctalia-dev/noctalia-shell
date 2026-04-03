@@ -67,7 +67,7 @@ src/
   font/          Font discovery (fontconfig)
   notification/  Notification manager
   render/        EGL/OpenGL renderer, shader programs, MSDF text
-  shell/         Bar shell runtime
+  shell/         Shell runtime
   wayland/       Wayland connection, layer-shell surfaces
   ui/
     controls/   Low-level UI building blocks
@@ -98,7 +98,7 @@ third_party/
 
 Everything else depends on these.
 
-- [ ] Retained scene graph (`Node`, `RectNode`, `TextNode`, `ImageNode`)
+- [X] Retained scene graph (`Node`, `RectNode`, `TextNode`, `ImageNode`)
 - [ ] Per-surface invalidation and property animations
 - [ ] Image/texture loading
 - [ ] Multi-monitor bar instances (one per output, hot-plug)
