@@ -2,13 +2,14 @@
 
 #include "render/AnimationManager.hpp"
 #include "render/scene/Node.hpp"
+#include "ui/Widget.hpp"
 #include "wayland/LayerSurface.hpp"
 
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 class Box;
-class Label;
 
 struct BarInstance {
     std::uint32_t outputName = 0;
@@ -17,7 +18,13 @@ struct BarInstance {
     std::unique_ptr<LayerSurface> surface;
     std::unique_ptr<Node> sceneRoot;
     AnimationManager animations;
-    Label* titleLabel = nullptr;
-    Label* truncLabel = nullptr;
-    Box* wsBox = nullptr;
+
+    // Bar layout sections (start/center/end along main axis)
+    Box* startSection = nullptr;
+    Box* centerSection = nullptr;
+    Box* endSection = nullptr;
+
+    std::vector<std::unique_ptr<Widget>> startWidgets;
+    std::vector<std::unique_ptr<Widget>> centerWidgets;
+    std::vector<std::unique_ptr<Widget>> endWidgets;
 };

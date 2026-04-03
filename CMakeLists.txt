@@ -175,8 +175,11 @@ add_executable(noctalia
     src/render/MsdfTextRenderer.cpp
     src/render/TextureManager.cpp
     src/shell/Bar.cpp
+    src/ui/Widget.cpp
     src/ui/controls/Box.cpp
     src/ui/controls/Label.cpp
+    src/ui/widgets/ClockWidget.cpp
+    src/ui/widgets/SpacerWidget.cpp
     src/wayland/Surface.cpp
     src/wayland/LayerSurface.cpp
     src/wayland/WaylandConnection.cpp

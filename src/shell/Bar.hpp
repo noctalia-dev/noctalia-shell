@@ -23,6 +23,7 @@ private:
     void syncInstances();
     void createInstance(const WaylandOutput& output);
     void destroyInstance(std::uint32_t outputName);
+    void populateWidgets(BarInstance& instance);
     void buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height);
 
     WaylandConnection m_connection;

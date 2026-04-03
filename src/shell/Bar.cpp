@@ -2,11 +2,11 @@
 
 #include "core/Log.hpp"
 #include "render/Palette.hpp"
-#include "render/TextureManager.hpp"
-#include "render/scene/ImageNode.hpp"
 #include "render/scene/RectNode.hpp"
+#include "ui/Widget.hpp"
 #include "ui/controls/Box.hpp"
-#include "ui/controls/Label.hpp"
+#include "ui/widgets/ClockWidget.hpp"
+#include "ui/widgets/SpacerWidget.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -16,6 +16,8 @@
 namespace {
 
 constexpr std::uint32_t kBarHeight = 42;
+constexpr float kSectionGap = 8.0f;
+constexpr float kBarPaddingX = 16.0f;
 
 } // namespace
 
@@ -80,7 +82,6 @@ const WaylandConnection& Bar::connection() const noexcept {
 void Bar::syncInstances() {
     const auto& outputs = m_connection.outputs();
 
-    // Remove instances for outputs that no longer exist
     std::erase_if(m_instances, [&outputs](const auto& inst) {
         bool found = std::any_of(outputs.begin(), outputs.end(),
             [&inst](const auto& out) { return out.name == inst->outputName; });
@@ -90,7 +91,6 @@ void Bar::syncInstances() {
         return !found;
     });
 
-    // Create instances for new outputs
     for (const auto& output : outputs) {
         bool exists = std::any_of(m_instances.begin(), m_instances.end(),
             [&output](const auto& inst) { return inst->outputName == output.name; });
@@ -126,6 +126,7 @@ void Bar::createInstance(const WaylandOutput& output) {
         });
 
     instance->surface->setAnimationManager(&instance->animations);
+    populateWidgets(*instance);
 
     if (!instance->surface->initialize(output.output, output.scale)) {
         logWarn("bar: failed to initialize surface for output {}", output.name);
@@ -141,6 +142,16 @@ void Bar::destroyInstance(std::uint32_t outputName) {
     });
 }
 
+void Bar::populateWidgets(BarInstance& instance) {
+    // Left: clock
+    instance.startWidgets.push_back(std::make_unique<ClockWidget>());
+
+    // Center: (empty for now)
+
+    // Right: clock (demo -- shows both sides work)
+    instance.endWidgets.push_back(std::make_unique<ClockWidget>());
+}
+
 void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height) {
     auto* renderer = instance.surface->renderer();
     if (renderer == nullptr) {
@@ -153,6 +164,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     if (instance.sceneRoot == nullptr) {
         instance.sceneRoot = std::make_unique<Node>();
 
+        // Bar background
         auto bg = std::make_unique<RectNode>();
         bg->setStyle(RoundedRectStyle{
             .fill = kRosePinePalette.overlay,
@@ -170,92 +182,39 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
         });
         instance.sceneRoot->addChild(std::move(bg));
 
-        auto accent = std::make_unique<RectNode>();
-        accent->setPosition(18.0f, 12.0f);
-        accent->setSize(116.0f, 4.0f);
-        accent->setStyle(RoundedRectStyle{
-            .fill = kRosePinePalette.foam,
-            .fillEnd = kRosePinePalette.iris,
-            .fillMode = FillMode::LinearGradient,
-            .gradientDirection = GradientDirection::Horizontal,
-        });
-        instance.sceneRoot->addChild(std::move(accent));
+        // Create section boxes
+        auto makeSection = [](float gap) {
+            auto box = std::make_unique<Box>();
+            box->setDirection(BoxDirection::Horizontal);
+            box->setGap(gap);
+            box->setAlign(BoxAlign::Center);
+            return box;
+        };
 
-        auto title = std::make_unique<Label>();
-        title->setText("Noctalia");
-        title->setFontSize(14.0f);
-        title->setColor(kRosePinePalette.text);
-        instance.titleLabel = static_cast<Label*>(instance.sceneRoot->addChild(std::move(title)));
+        auto left = makeSection(kSectionGap);
+        auto center = makeSection(kSectionGap);
+        auto right = makeSection(kSectionGap);
 
-        // Test: truncated text
-        auto trunc = std::make_unique<Label>();
-        trunc->setText("This is a long label that should be truncated with an ellipsis");
-        trunc->setFontSize(12.0f);
-        trunc->setMaxWidth(120.0f);
-        trunc->setColor(kRosePinePalette.foam);
-        instance.truncLabel = static_cast<Label*>(instance.sceneRoot->addChild(std::move(trunc)));
+        instance.startSection = static_cast<Box*>(instance.sceneRoot->addChild(std::move(left)));
+        instance.centerSection = static_cast<Box*>(instance.sceneRoot->addChild(std::move(center)));
+        instance.endSection = static_cast<Box*>(instance.sceneRoot->addChild(std::move(right)));
 
-        // Test: image (try PNG first, fall back to SVG)
-        auto& texMgr = renderer->textureManager();
-        auto handle = texMgr.loadFromFile("/usr/share/icons/hicolor/48x48/apps/firefox.png", 24);
-        if (handle.id == 0) {
-            handle = texMgr.loadFromFile("/usr/share/icons/hicolor/scalable/apps/foot.svg", 24);
-        }
-        if (handle.id != 0) {
-            auto icon = std::make_unique<ImageNode>();
-            icon->setTextureId(handle.id);
-            icon->setPosition(300.0f, 6.0f);
-            icon->setSize(24.0f, 24.0f);
-            instance.sceneRoot->addChild(std::move(icon));
-        }
+        // Create widgets and transfer their roots to section boxes
+        auto initWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets, Box* section) {
+            for (auto& widget : widgets) {
+                widget->setAnimationManager(&instance.animations);
+                widget->create(*renderer);
+                if (widget->root() != nullptr) {
+                    section->addChild(widget->releaseRoot());
+                }
+            }
+        };
 
-        // Test: workspace-like pill with Box
-        auto wsBox = std::make_unique<Box>();
-        wsBox->setDirection(BoxDirection::Horizontal);
-        wsBox->setGap(6.0f);
-        wsBox->setAlign(BoxAlign::Center);
-        wsBox->setPadding(4.0f, 8.0f, 4.0f, 8.0f);
-        wsBox->setBackground(rgba(0.0f, 0.0f, 0.0f, 0.3f));
-        wsBox->setRadius(12.0f);
+        initWidgets(instance.startWidgets, instance.startSection);
+        initWidgets(instance.centerWidgets, instance.centerSection);
+        initWidgets(instance.endWidgets, instance.endSection);
 
-        // Active workspace pill
-        auto activePill = std::make_unique<Box>();
-        activePill->setPadding(3.0f, 10.0f, 3.0f, 10.0f);
-        activePill->setBackground(kRosePinePalette.love);
-        activePill->setRadius(10.0f);
-        auto activeLabel = std::make_unique<Label>();
-        activeLabel->setText("2");
-        activeLabel->setFontSize(12.0f);
-        activeLabel->setColor(kRosePinePalette.base);
-        activePill->addChild(std::move(activeLabel));
-        wsBox->addChild(std::move(activePill));
-
-        // Inactive workspace pill
-        auto inactivePill = std::make_unique<Box>();
-        inactivePill->setPadding(3.0f, 10.0f, 3.0f, 10.0f);
-        inactivePill->setBackground(rgba(1.0f, 1.0f, 1.0f, 0.1f));
-        inactivePill->setRadius(10.0f);
-        auto inactiveLabel = std::make_unique<Label>();
-        inactiveLabel->setText("1");
-        inactiveLabel->setFontSize(12.0f);
-        inactiveLabel->setColor(kRosePinePalette.text);
-        inactivePill->addChild(std::move(inactiveLabel));
-        wsBox->addChild(std::move(inactivePill));
-
-        // Empty workspace dots
-        for (int i = 0; i < 3; ++i) {
-            auto dot = std::make_unique<RectNode>();
-            dot->setSize(8.0f, 8.0f);
-            dot->setStyle(RoundedRectStyle{
-                .fill = rgba(1.0f, 1.0f, 1.0f, 0.25f),
-                .radius = 4.0f,
-            });
-            wsBox->addChild(std::move(dot));
-        }
-
-        instance.wsBox = static_cast<Box*>(instance.sceneRoot->addChild(std::move(wsBox)));
-
-        // Test: fade-in animation
+        // Fade-in animation
         instance.sceneRoot->setOpacity(0.0f);
         instance.animations.animate(0.0f, 1.0f, 400.0f, Easing::EaseOutCubic,
             [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); });
@@ -263,27 +222,42 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
         renderer->setScene(instance.sceneRoot.get());
     }
 
-    // Update size-dependent layout
+    // Layout
     auto& children = instance.sceneRoot->children();
 
     // Background rect
     children[0]->setPosition(10.0f, 6.0f);
     children[0]->setSize(w - 20.0f, h - 12.0f);
 
-    // Center title label
-    instance.titleLabel->measure(*renderer);
-    const float titleX = (w - instance.titleLabel->width()) * 0.5f;
-    const float titleY = (h - instance.titleLabel->height()) * 0.5f;
-    instance.titleLabel->setPosition(titleX, titleY);
-
-    // Truncated label
-    instance.truncLabel->measure(*renderer);
-    instance.truncLabel->setPosition(150.0f, (h - instance.truncLabel->height()) * 0.5f);
-
-    // Workspace box
-    if (instance.wsBox != nullptr) {
-        instance.wsBox->layout(*renderer);
-        instance.wsBox->setPosition(w - instance.wsBox->width() - 16.0f,
-                                    (h - instance.wsBox->height()) * 0.5f);
+    // Update widgets
+    for (auto& widget : instance.startWidgets) {
+        widget->update(*renderer);
+        widget->layout(*renderer, w, h);
     }
+    for (auto& widget : instance.centerWidgets) {
+        widget->update(*renderer);
+        widget->layout(*renderer, w, h);
+    }
+    for (auto& widget : instance.endWidgets) {
+        widget->update(*renderer);
+        widget->layout(*renderer, w, h);
+    }
+
+    // Layout section boxes
+    instance.startSection->layout(*renderer);
+    instance.centerSection->layout(*renderer);
+    instance.endSection->layout(*renderer);
+
+    // Position sections: left-aligned, centered, right-aligned
+    const float contentY = (h - instance.startSection->height()) * 0.5f;
+
+    instance.startSection->setPosition(kBarPaddingX, contentY);
+
+    const float centerX = (w - instance.centerSection->width()) * 0.5f;
+    const float centerY = (h - instance.centerSection->height()) * 0.5f;
+    instance.centerSection->setPosition(centerX, centerY);
+
+    const float rightX = w - instance.endSection->width() - kBarPaddingX;
+    const float rightY = (h - instance.endSection->height()) * 0.5f;
+    instance.endSection->setPosition(rightX, rightY);
 }
