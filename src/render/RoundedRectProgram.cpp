@@ -147,12 +147,12 @@ void RoundedRectProgram::draw(float surfaceWidth,
     glUniform2f(m_surfaceSizeLocation, surfaceWidth, surfaceHeight);
     glUniform4f(m_quadRectLocation, quadX, quadY, quadWidth, quadHeight);
     glUniform4f(m_rectLocation, x, y, width, height);
-    glUniform4f(m_colorLocation, style.red, style.green, style.blue, style.alpha);
+    glUniform4f(m_colorLocation, style.fill.r, style.fill.g, style.fill.b, style.fill.a);
     glUniform4f(m_borderColorLocation,
-                style.borderRed,
-                style.borderGreen,
-                style.borderBlue,
-                style.borderAlpha);
+                style.border.r,
+                style.border.g,
+                style.border.b,
+                style.border.a);
     glUniform1f(m_radiusLocation, style.radius);
     glUniform1f(m_softnessLocation, style.softness);
     glUniform1f(m_borderWidthLocation, style.borderWidth);

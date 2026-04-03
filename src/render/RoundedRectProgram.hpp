@@ -1,18 +1,13 @@
 #pragma once
 
+#include "render/Color.hpp"
 #include "render/ShaderProgram.hpp"
 
 #include <GLES2/gl2.h>
 
 struct RoundedRectStyle {
-    float red = 0.0f;
-    float green = 0.0f;
-    float blue = 0.0f;
-    float alpha = 1.0f;
-    float borderRed = 0.0f;
-    float borderGreen = 0.0f;
-    float borderBlue = 0.0f;
-    float borderAlpha = 0.0f;
+    Color fill{};
+    Color border{};
     float radius = 0.0f;
     float softness = 1.0f;
     float borderWidth = 0.0f;
