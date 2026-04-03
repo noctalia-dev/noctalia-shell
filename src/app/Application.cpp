@@ -5,6 +5,8 @@
 #include <stdexcept>
 
 Application::Application() {
+    logInfo("noctalia hello");
+
     m_manager.setEventCallback([](const Notification& n, NotificationEvent event) {
         const char* kind = (event == NotificationEvent::Added) ? "added" : "updated";
         logDebug("notification {} id={}", kind, n.id);

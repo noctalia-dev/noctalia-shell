@@ -10,10 +10,10 @@ LogLevel gMinLevel = LogLevel::Debug;
 
 const char* levelTag(LogLevel level) {
     switch (level) {
-        case LogLevel::Debug: return "DBG";
-        case LogLevel::Info:  return "INF";
-        case LogLevel::Warn:  return "WRN";
-        case LogLevel::Error: return "ERR";
+        case LogLevel::Debug: return "\033[36mDBG\033[0m";
+        case LogLevel::Info:  return "\033[32mINF\033[0m";
+        case LogLevel::Warn:  return "\033[33mWRN\033[0m";
+        case LogLevel::Error: return "\033[31mERR\033[0m";
     }
     return "???";
 }

@@ -5,7 +5,6 @@
 
 int main() {
     try {
-        logInfo("noctalia hello");
         Application app;
         app.run();
     } catch (const std::exception& e) {
