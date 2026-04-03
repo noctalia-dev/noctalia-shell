@@ -94,11 +94,11 @@ third_party/
 
 Everything else depends on these.
 
-- [X] Retained scene graph (`Node`, `RectNode`, `TextNode`, `ImageNode`)
-- [ ] Per-surface invalidation and property animations
-- [ ] Image/texture loading
-- [ ] Multi-monitor bar instances (one per output, hot-plug)
-- [ ] Font fallback, DPI-aware metrics, text truncation
+- [x] Retained scene graph (`Node`, `RectNode`, `TextNode`, `ImageNode`)
+- [x] Font fallback chain (fontconfig `FcFontSort`), DPI-aware buffer scaling, text truncation with ellipsis
+- [x] Image/texture loading (stb_image + nanosvg, ARGB pixmap support, `TextureManager`)
+- [x] Property animation system (easing functions, frame-callback driven `AnimationManager`)
+- [x] Multi-monitor bar instances (one `LayerSurface` per output, hot-plug add/remove)
 
 ### Phase 2 -- Minimum viable bar
 

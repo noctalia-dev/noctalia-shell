@@ -75,8 +75,9 @@ void GlRenderer::bind(wl_display* display, wl_surface* surface) {
     }
 }
 
-void GlRenderer::resize(std::uint32_t width, std::uint32_t height) {
-    if (width == 0 || height == 0) {
+void GlRenderer::resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight,
+                        std::uint32_t logicalWidth, std::uint32_t logicalHeight) {
+    if (bufferWidth == 0 || bufferHeight == 0) {
         return;
     }
 
@@ -87,13 +88,13 @@ void GlRenderer::resize(std::uint32_t width, std::uint32_t height) {
     if (m_window == nullptr) {
         m_window = wl_egl_window_create(
             m_surface,
-            static_cast<int>(width),
-            static_cast<int>(height));
+            static_cast<int>(bufferWidth),
+            static_cast<int>(bufferHeight));
         if (m_window == nullptr) {
             throw std::runtime_error("wl_egl_window_create failed");
         }
     } else {
-        wl_egl_window_resize(m_window, static_cast<int>(width), static_cast<int>(height), 0, 0);
+        wl_egl_window_resize(m_window, static_cast<int>(bufferWidth), static_cast<int>(bufferHeight), 0, 0);
     }
 
     if (m_eglSurface == EGL_NO_SURFACE) {
@@ -111,15 +112,18 @@ void GlRenderer::resize(std::uint32_t width, std::uint32_t height) {
         throw std::runtime_error("eglMakeCurrent failed during resize");
     }
 
-    m_surfaceWidth = width;
-    m_surfaceHeight = height;
+    m_bufferWidth = bufferWidth;
+    m_bufferHeight = bufferHeight;
+    m_logicalWidth = logicalWidth;
+    m_logicalHeight = logicalHeight;
+    m_imageProgram.ensureInitialized();
     m_linearGradientProgram.ensureInitialized();
     m_roundedRectProgram.ensureInitialized();
-    const auto fontPath = m_fontService.resolvePath("sans-serif");
-    m_textRenderer.initialize(fontPath.c_str());
+    const auto fonts = m_fontService.resolveFallbackChain("sans-serif");
+    m_textRenderer.initialize(fonts);
 }
 
-void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
+void GlRenderer::render() {
     if (m_eglDisplay == EGL_NO_DISPLAY || m_eglSurface == EGL_NO_SURFACE || m_eglContext == EGL_NO_CONTEXT) {
         throw std::runtime_error("OpenGL renderer is not ready");
     }
@@ -128,7 +132,7 @@ void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
         throw std::runtime_error("eglMakeCurrent failed");
     }
 
-    glViewport(0, 0, static_cast<GLint>(width), static_cast<GLint>(height));
+    glViewport(0, 0, static_cast<GLint>(m_bufferWidth), static_cast<GLint>(m_bufferHeight));
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -162,8 +166,8 @@ void GlRenderer::renderNode(const Node* node, float parentX, float parentY, floa
     const float absY = parentY + node->y();
     const float effectiveOpacity = parentOpacity * node->opacity();
 
-    const auto sw = static_cast<float>(m_surfaceWidth);
-    const auto sh = static_cast<float>(m_surfaceHeight);
+    const auto sw = static_cast<float>(m_logicalWidth);
+    const auto sh = static_cast<float>(m_logicalHeight);
 
     switch (node->type()) {
     case NodeType::Rect: {
@@ -180,13 +184,25 @@ void GlRenderer::renderNode(const Node* node, float parentX, float parentY, floa
         if (!text->text().empty()) {
             auto color = text->color();
             color.a *= effectiveOpacity;
-            m_textRenderer.draw(sw, sh, absX, absY, text->text(), text->fontSize(), color);
+            if (text->maxWidth() > 0.0f) {
+                auto truncated = m_textRenderer.truncate(text->text(), text->fontSize(), text->maxWidth());
+                m_textRenderer.draw(sw, sh, absX, absY, truncated.text, text->fontSize(), color);
+            } else {
+                m_textRenderer.draw(sw, sh, absX, absY, text->text(), text->fontSize(), color);
+            }
         }
         break;
     }
-    case NodeType::Image:
-        // Placeholder -- image loading not yet implemented
+    case NodeType::Image: {
+        const auto* img = static_cast<const ImageNode*>(node);
+        if (img->textureId() != 0) {
+            auto tint = img->tint();
+            tint.a *= effectiveOpacity;
+            m_imageProgram.draw(img->textureId(), sw, sh, absX, absY,
+                               node->width(), node->height(), tint, effectiveOpacity);
+        }
         break;
+    }
     case NodeType::Base:
         break;
     }
@@ -197,11 +213,15 @@ void GlRenderer::renderNode(const Node* node, float parentX, float parentY, floa
 }
 
 void GlRenderer::cleanup() {
+    m_textureManager.cleanup();
+    m_imageProgram.destroy();
     m_linearGradientProgram.destroy();
     m_roundedRectProgram.destroy();
     m_textRenderer.cleanup();
-    m_surfaceWidth = 0;
-    m_surfaceHeight = 0;
+    m_bufferWidth = 0;
+    m_bufferHeight = 0;
+    m_logicalWidth = 0;
+    m_logicalHeight = 0;
 
     if (m_eglDisplay != EGL_NO_DISPLAY) {
         eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);

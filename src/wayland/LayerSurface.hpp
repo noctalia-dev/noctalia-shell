@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 
+struct wl_output;
 struct zwlr_layer_surface_v1;
 
 enum class LayerShellLayer : std::uint32_t {
@@ -49,6 +50,7 @@ public:
     ~LayerSurface() override;
 
     bool initialize() override;
+    bool initialize(wl_output* output, std::int32_t scale);
 
     static void handleConfigure(void* data,
                                 zwlr_layer_surface_v1* layerSurface,

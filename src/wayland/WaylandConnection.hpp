@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -16,8 +17,13 @@ struct zxdg_output_manager_v1;
 struct WaylandOutput {
     std::uint32_t name = 0;
     std::string interfaceName;
+    std::string description;
     std::uint32_t version = 0;
     wl_output* output = nullptr;
+    std::int32_t scale = 1;
+    std::int32_t width = 0;
+    std::int32_t height = 0;
+    bool done = false;
 };
 
 class WaylandConnection {
@@ -28,7 +34,10 @@ public:
     WaylandConnection(const WaylandConnection&) = delete;
     WaylandConnection& operator=(const WaylandConnection&) = delete;
 
+    using OutputChangeCallback = std::function<void()>;
+
     bool connect();
+    void setOutputChangeCallback(OutputChangeCallback callback);
 
     bool isConnected() const noexcept;
     bool hasRequiredGlobals() const noexcept;
@@ -39,6 +48,7 @@ public:
     wl_shm* shm() const noexcept;
     zwlr_layer_shell_v1* layerShell() const noexcept;
     const std::vector<WaylandOutput>& outputs() const noexcept;
+    WaylandOutput* findOutputByWl(wl_output* wlOutput);
     static void handleGlobal(void* data,
                              wl_registry* registry,
                              std::uint32_t name,
@@ -65,4 +75,5 @@ private:
     zxdg_output_manager_v1* m_xdgOutputManager = nullptr;
     bool m_hasLayerShellGlobal = false;
     std::vector<WaylandOutput> m_outputs;
+    OutputChangeCallback m_outputChangeCallback;
 };

@@ -1,5 +1,6 @@
 #include "wayland/Surface.hpp"
 
+#include "render/AnimationManager.hpp"
 #include "render/GlRenderer.hpp"
 #include "wayland/WaylandConnection.hpp"
 
@@ -27,7 +28,7 @@ bool Surface::isRunning() const noexcept {
 
 void Surface::handleFrameDone(void* data,
                                wl_callback* callback,
-                               std::uint32_t /*callbackData*/) {
+                               std::uint32_t callbackData) {
     auto* self = static_cast<Surface*>(data);
 
     if (callback != nullptr) {
@@ -35,6 +36,21 @@ void Surface::handleFrameDone(void* data,
     }
 
     self->m_frameCallback = nullptr;
+
+    if (self->m_animationManager != nullptr) {
+        float deltaMs = 0.0f;
+        if (self->m_lastFrameTime != 0 && callbackData > self->m_lastFrameTime) {
+            deltaMs = static_cast<float>(callbackData - self->m_lastFrameTime);
+        }
+        self->m_lastFrameTime = callbackData;
+        self->m_animationManager->tick(deltaMs);
+
+        if (self->m_animationManager->hasActive() && self->m_running && self->m_configured) {
+            self->render();
+            self->requestFrame();
+            return;
+        }
+    }
 
     if (self->m_running && self->m_configured) {
         self->requestFrame();
@@ -62,7 +78,13 @@ void Surface::onConfigure(std::uint32_t width, std::uint32_t height) {
         return;
     }
 
-    m_renderer->resize(m_width, m_height);
+    if (m_scale > 1) {
+        wl_surface_set_buffer_scale(m_surface, m_scale);
+    }
+
+    const auto bufferWidth = m_width * static_cast<std::uint32_t>(m_scale);
+    const auto bufferHeight = m_height * static_cast<std::uint32_t>(m_scale);
+    m_renderer->resize(bufferWidth, bufferHeight, m_width, m_height);
     if (m_configureCallback) {
         m_configureCallback(m_width, m_height);
     }
@@ -83,7 +105,7 @@ void Surface::render() {
     }
 
     requestFrame();
-    m_renderer->render(m_width, m_height);
+    m_renderer->render();
 }
 
 void Surface::requestFrame() {

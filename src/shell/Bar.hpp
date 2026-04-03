@@ -1,12 +1,11 @@
 #pragma once
 
-#include "render/scene/Node.hpp"
-#include "wayland/LayerSurface.hpp"
+#include "shell/BarInstance.hpp"
 #include "wayland/WaylandConnection.hpp"
 
+#include <cstdint>
 #include <memory>
-
-class TextNode;
+#include <vector>
 
 class Bar {
 public:
@@ -21,10 +20,11 @@ public:
     const WaylandConnection& connection() const noexcept;
 
 private:
-    void buildScene(std::uint32_t width, std::uint32_t height);
+    void syncInstances();
+    void createInstance(const WaylandOutput& output);
+    void destroyInstance(std::uint32_t outputName);
+    void buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height);
 
     WaylandConnection m_connection;
-    LayerSurface m_layerSurface;
-    std::unique_ptr<Node> m_sceneRoot;
-    TextNode* m_labelNode = nullptr;
+    std::vector<std::unique_ptr<BarInstance>> m_instances;
 };

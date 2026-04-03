@@ -3,6 +3,12 @@
 #include <fontconfig/fontconfig.h>
 
 #include <string>
+#include <vector>
+
+struct ResolvedFont {
+    std::string path;
+    int faceIndex = 0;
+};
 
 class FontService {
 public:
@@ -13,6 +19,7 @@ public:
     FontService& operator=(const FontService&) = delete;
 
     [[nodiscard]] std::string resolvePath(const std::string& family) const;
+    [[nodiscard]] std::vector<ResolvedFont> resolveFallbackChain(const std::string& family, int limit = 8) const;
 
 private:
     FcConfig* m_config = nullptr;

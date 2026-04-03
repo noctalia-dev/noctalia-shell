@@ -1,10 +1,12 @@
 #pragma once
 
 #include "font/FontService.hpp"
+#include "render/ImageProgram.hpp"
 #include "render/LinearGradientProgram.hpp"
 #include "render/RoundedRectProgram.hpp"
 #include "render/Renderer.hpp"
 #include "render/MsdfTextRenderer.hpp"
+#include "render/TextureManager.hpp"
 
 #include <EGL/egl.h>
 
@@ -19,8 +21,9 @@ public:
     [[nodiscard]] const char* name() const noexcept override;
 
     void bind(wl_display* display, wl_surface* surface) override;
-    void resize(std::uint32_t width, std::uint32_t height) override;
-    void render(std::uint32_t width, std::uint32_t height) override;
+    void resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight,
+                std::uint32_t logicalWidth, std::uint32_t logicalHeight) override;
+    void render() override;
     void setScene(Node* root) override;
     [[nodiscard]] TextMetrics measureText(std::string_view text, float fontSize) override;
 
@@ -36,10 +39,14 @@ private:
     EGLContext m_eglContext = EGL_NO_CONTEXT;
     EGLSurface m_eglSurface = EGL_NO_SURFACE;
     FontService m_fontService;
+    ImageProgram m_imageProgram;
     LinearGradientProgram m_linearGradientProgram;
     RoundedRectProgram m_roundedRectProgram;
     MsdfTextRenderer m_textRenderer;
+    TextureManager m_textureManager;
     Node* m_sceneRoot = nullptr;
-    std::uint32_t m_surfaceWidth = 0;
-    std::uint32_t m_surfaceHeight = 0;
+    std::uint32_t m_bufferWidth = 0;
+    std::uint32_t m_bufferHeight = 0;
+    std::uint32_t m_logicalWidth = 0;
+    std::uint32_t m_logicalHeight = 0;
 };

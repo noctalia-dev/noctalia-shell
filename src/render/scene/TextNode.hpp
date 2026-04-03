@@ -13,6 +13,7 @@ public:
     [[nodiscard]] const std::string& text() const noexcept { return m_text; }
     [[nodiscard]] float fontSize() const noexcept { return m_fontSize; }
     [[nodiscard]] const Color& color() const noexcept { return m_color; }
+    [[nodiscard]] float maxWidth() const noexcept { return m_maxWidth; }
 
     void setText(std::string text) {
         if (m_text == text) {
@@ -35,8 +36,17 @@ public:
         markDirty();
     }
 
+    void setMaxWidth(float maxWidth) {
+        if (m_maxWidth == maxWidth) {
+            return;
+        }
+        m_maxWidth = maxWidth;
+        markDirty();
+    }
+
 private:
     std::string m_text;
     float m_fontSize = 14.0f;
+    float m_maxWidth = 0.0f;
     Color m_color;
 };

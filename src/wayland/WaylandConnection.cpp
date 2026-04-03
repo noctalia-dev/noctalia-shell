@@ -21,10 +21,62 @@ constexpr std::uint32_t kShmVersion = 1;
 constexpr std::uint32_t kLayerShellVersion = 4;
 #endif
 constexpr std::uint32_t kXdgOutputManagerVersion = 3;
+constexpr std::uint32_t kOutputVersion = 4;
 
 const wl_registry_listener kRegistryListener = {
     .global = &WaylandConnection::handleGlobal,
     .global_remove = &WaylandConnection::handleGlobalRemove,
+};
+
+void outputGeometry(void* /*data*/, wl_output* /*output*/,
+                    int32_t /*x*/, int32_t /*y*/,
+                    int32_t /*physW*/, int32_t /*physH*/,
+                    int32_t /*subpixel*/,
+                    const char* /*make*/, const char* /*model*/,
+                    int32_t /*transform*/) {}
+
+void outputMode(void* data, wl_output* wlOut,
+                uint32_t flags, int32_t w, int32_t h, int32_t /*refresh*/) {
+    if ((flags & WL_OUTPUT_MODE_CURRENT) == 0) {
+        return;
+    }
+    auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
+    if (out != nullptr) {
+        out->width = w;
+        out->height = h;
+    }
+}
+
+void outputDone(void* data, wl_output* wlOut) {
+    auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
+    if (out != nullptr) {
+        out->done = true;
+    }
+}
+
+void outputScale(void* data, wl_output* wlOut, int32_t factor) {
+    auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
+    if (out != nullptr) {
+        out->scale = factor;
+    }
+}
+
+void outputName(void* /*data*/, wl_output* /*output*/, const char* /*name*/) {}
+
+void outputDescription(void* data, wl_output* wlOut, const char* desc) {
+    auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
+    if (out != nullptr) {
+        out->description = desc;
+    }
+}
+
+const wl_output_listener kOutputListener = {
+    .geometry = outputGeometry,
+    .mode = outputMode,
+    .done = outputDone,
+    .scale = outputScale,
+    .name = outputName,
+    .description = outputDescription,
 };
 
 } // namespace
@@ -68,6 +120,10 @@ bool WaylandConnection::connect() {
 
     logStartupSummary();
     return true;
+}
+
+void WaylandConnection::setOutputChangeCallback(OutputChangeCallback callback) {
+    m_outputChangeCallback = std::move(callback);
 }
 
 bool WaylandConnection::isConnected() const noexcept {
@@ -119,9 +175,13 @@ void WaylandConnection::handleGlobalRemove(void* data,
                                            wl_registry* /*registry*/,
                                            std::uint32_t name) {
     auto* self = static_cast<WaylandConnection*>(data);
+    const auto sizeBefore = self->m_outputs.size();
     std::erase_if(self->m_outputs, [name](const WaylandOutput& output) {
         return output.name == name;
     });
+    if (self->m_outputs.size() != sizeBefore && self->m_outputChangeCallback) {
+        self->m_outputChangeCallback();
+    }
 }
 
 void WaylandConnection::bindGlobal(wl_registry* registry,
@@ -169,15 +229,30 @@ void WaylandConnection::bindGlobal(wl_registry* registry,
     }
 
     if (interfaceName == wl_output_interface.name) {
+        const auto bindVersion = std::min(version, kOutputVersion);
         auto* output = static_cast<wl_output*>(
-            wl_registry_bind(registry, name, &wl_output_interface, 1));
+            wl_registry_bind(registry, name, &wl_output_interface, bindVersion));
         m_outputs.push_back(WaylandOutput{
             .name = name,
             .interfaceName = interfaceName,
+            .description = {},
             .version = version,
             .output = output,
         });
+        wl_output_add_listener(output, &kOutputListener, this);
+        if (m_outputChangeCallback) {
+            m_outputChangeCallback();
+        }
     }
+}
+
+WaylandOutput* WaylandConnection::findOutputByWl(wl_output* wlOutput) {
+    for (auto& out : m_outputs) {
+        if (out.output == wlOutput) {
+            return &out;
+        }
+    }
+    return nullptr;
 }
 
 void WaylandConnection::cleanup() {
@@ -237,6 +312,8 @@ void WaylandConnection::logStartupSummary() const {
         m_outputs.size());
 
     for (const auto& output : m_outputs) {
-        logInfo("output global={} version={}", output.name, output.version);
+        logInfo("output global={} version={} scale={} mode={}x{} desc=\"{}\"",
+            output.name, output.version, output.scale,
+            output.width, output.height, output.description);
     }
 }

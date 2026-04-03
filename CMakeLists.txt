@@ -140,12 +140,17 @@ add_executable(noctalia
     src/core/Log.cpp
     src/font/FontService.cpp
     src/render/scene/Node.cpp
+    src/render/Animation.cpp
+    src/render/AnimationManager.cpp
     src/render/GlRenderer.cpp
+    src/render/ImageLoaders.cpp
+    src/render/ImageProgram.cpp
     src/render/LinearGradientProgram.cpp
     src/render/RoundedRectProgram.cpp
     src/render/ShaderProgram.cpp
     src/render/MsdfTextProgram.cpp
     src/render/MsdfTextRenderer.cpp
+    src/render/TextureManager.cpp
     src/shell/Bar.cpp
     src/wayland/Surface.cpp
     src/wayland/LayerSurface.cpp
@@ -160,6 +165,8 @@ add_dependencies(noctalia noctalia_wayland_protocols)
 
 target_include_directories(noctalia PRIVATE
     src
+    third_party/stb
+    third_party/nanosvg
     "${GENERATED_PROTOCOL_DIR}"
     ${WAYLAND_CLIENT_INCLUDE_DIRS}
     ${EGL_INCLUDE_DIRS}

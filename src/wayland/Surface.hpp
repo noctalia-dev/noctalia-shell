@@ -9,6 +9,7 @@
 struct wl_callback;
 struct wl_surface;
 
+class AnimationManager;
 class WaylandConnection;
 
 class Surface {
@@ -26,9 +27,11 @@ public:
     [[nodiscard]] bool isRunning() const noexcept;
 
     void setConfigureCallback(ConfigureCallback callback);
+    void setAnimationManager(AnimationManager* manager) noexcept { m_animationManager = manager; }
     [[nodiscard]] Renderer* renderer() const noexcept;
     [[nodiscard]] std::uint32_t width() const noexcept { return m_width; }
     [[nodiscard]] std::uint32_t height() const noexcept { return m_height; }
+    [[nodiscard]] std::int32_t scale() const noexcept { return m_scale; }
 
     static void handleFrameDone(void* data,
                                 wl_callback* callback,
@@ -42,16 +45,20 @@ protected:
     void destroySurface();
 
     void setRunning(bool running) noexcept { m_running = running; }
+    void setScale(std::int32_t scale) noexcept { m_scale = scale; }
 
     WaylandConnection& m_connection;
     wl_surface* m_surface = nullptr;
 
 private:
     std::unique_ptr<Renderer> m_renderer;
+    AnimationManager* m_animationManager = nullptr;
     ConfigureCallback m_configureCallback;
     wl_callback* m_frameCallback = nullptr;
+    std::uint32_t m_lastFrameTime = 0;
     bool m_running = false;
     bool m_configured = false;
     std::uint32_t m_width = 0;
     std::uint32_t m_height = 0;
+    std::int32_t m_scale = 1;
 };
