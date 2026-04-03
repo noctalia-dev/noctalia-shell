@@ -18,6 +18,16 @@ pkg_check_modules(GLES2 REQUIRED glesv2)
 pkg_check_modules(WAYLAND_EGL REQUIRED wayland-egl)
 pkg_check_modules(FREETYPE2 REQUIRED freetype2)
 pkg_check_modules(HARFBUZZ REQUIRED harfbuzz)
+
+# --- msdfgen (vendored) ---
+set(MSDFGEN_CORE_ONLY OFF CACHE BOOL "" FORCE)
+set(MSDFGEN_BUILD_STANDALONE OFF CACHE BOOL "" FORCE)
+set(MSDFGEN_USE_VCPKG OFF CACHE BOOL "" FORCE)
+set(MSDFGEN_USE_SKIA OFF CACHE BOOL "" FORCE)
+set(MSDFGEN_DISABLE_SVG ON CACHE BOOL "" FORCE)
+set(MSDFGEN_DISABLE_PNG ON CACHE BOOL "" FORCE)
+set(MSDFGEN_INSTALL OFF CACHE BOOL "" FORCE)
+add_subdirectory(third_party/msdfgen)
 pkg_get_variable(WAYLAND_PROTOCOLS_PKGDATADIR wayland-protocols pkgdatadir)
 file(REAL_PATH "${WAYLAND_PROTOCOLS_PKGDATADIR}" WAYLAND_PROTOCOLS_PKGDATADIR)
 
@@ -126,8 +136,8 @@ add_executable(noctalia
     src/render/LinearGradientProgram.cpp
     src/render/RoundedRectProgram.cpp
     src/render/ShaderProgram.cpp
-    src/render/TextProgram.cpp
-    src/render/TextRenderer.cpp
+    src/render/MsdfTextProgram.cpp
+    src/render/MsdfTextRenderer.cpp
     src/shell/BarShell.cpp
     src/wayland/LayerSurface.cpp
     src/wayland/WaylandConnection.cpp
@@ -151,6 +161,8 @@ target_include_directories(noctalia PRIVATE
 )
 target_link_libraries(noctalia PRIVATE
     SDBusCpp::sdbus-c++
+    msdfgen::msdfgen-core
+    msdfgen::msdfgen-ext
     ${WAYLAND_CLIENT_LIBRARIES}
     ${EGL_LIBRARIES}
     ${GLES2_LIBRARIES}

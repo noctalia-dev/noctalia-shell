@@ -131,7 +131,8 @@ void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     constexpr auto kLabel = "Noctalia";
-    const auto labelMetrics = m_textRenderer.measure(kLabel);
+    constexpr float kFontSize = 14.0f;
+    const auto labelMetrics = m_textRenderer.measure(kLabel, kFontSize);
     const float labelX = (static_cast<float>(width) - labelMetrics.width) * 0.5f;
     const float labelHeight = labelMetrics.bottom - labelMetrics.top;
     const float labelBaseline =
@@ -176,6 +177,7 @@ void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
         labelX,
         labelBaseline,
         kLabel,
+        kFontSize,
         kRosePinePalette.text);
 
     if (eglSwapBuffers(m_eglDisplay, m_eglSurface) != EGL_TRUE) {

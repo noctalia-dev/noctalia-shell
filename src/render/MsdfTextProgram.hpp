@@ -5,13 +5,13 @@
 
 #include <GLES2/gl2.h>
 
-class TextProgram {
+class MsdfTextProgram {
 public:
-    TextProgram() = default;
-    ~TextProgram() = default;
+    MsdfTextProgram() = default;
+    ~MsdfTextProgram() = default;
 
-    TextProgram(const TextProgram&) = delete;
-    TextProgram& operator=(const TextProgram&) = delete;
+    MsdfTextProgram(const MsdfTextProgram&) = delete;
+    MsdfTextProgram& operator=(const MsdfTextProgram&) = delete;
 
     void ensureInitialized();
     void destroy();
@@ -27,6 +27,7 @@ public:
               float v0,
               float u1,
               float v1,
+              float pxRange,
               const Color& color) const;
 
 private:
@@ -35,6 +36,7 @@ private:
     GLint m_texCoordLocation = -1;
     GLint m_surfaceSizeLocation = -1;
     GLint m_rectLocation = -1;
+    GLint m_pxRangeLocation = -1;
     GLint m_colorLocation = -1;
     GLint m_samplerLocation = -1;
 };
