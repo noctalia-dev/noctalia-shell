@@ -33,7 +33,7 @@ struct BarConfig {
 };
 
 struct ClockConfig {
-    std::string format = "%H:%M";
+    std::string format = "{:%H:%M}";
 };
 
 struct Config {
