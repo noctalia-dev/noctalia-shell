@@ -9,6 +9,7 @@ struct WaylandOutput;
 
 struct BarMonitorOverride {
     std::string match;
+    std::optional<bool> enabled;
     std::optional<std::uint32_t> height;
     std::optional<float> padding;
     std::optional<float> gap;
@@ -20,6 +21,7 @@ struct BarMonitorOverride {
 struct BarConfig {
     std::string name = "default";
     std::string position = "top";
+    bool enabled = true;
     std::uint32_t height = 42;
     float padding = 16.0f;
     float gap = 8.0f;

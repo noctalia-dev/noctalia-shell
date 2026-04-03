@@ -143,6 +143,9 @@ void Bar::syncInstances() {
                 });
             if (!exists) {
                 auto resolved = ConfigService::resolveForOutput(bars[barIdx], output);
+                if (!resolved.enabled) {
+                    continue;
+                }
                 createInstance(output, resolved);
                 m_instances.back()->barIndex = barIdx;
             }

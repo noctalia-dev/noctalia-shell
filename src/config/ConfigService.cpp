@@ -86,6 +86,7 @@ void ConfigService::loadFromFile(const std::string& path) {
             BarConfig bar;
             if (auto v = (*barTbl)["name"].value<std::string>()) bar.name = *v;
             if (auto v = (*barTbl)["position"].value<std::string>()) bar.position = *v;
+            if (auto v = (*barTbl)["enabled"].value<bool>()) bar.enabled = *v;
             if (auto v = (*barTbl)["height"].value<int64_t>()) bar.height = static_cast<std::uint32_t>(*v);
             if (auto v = (*barTbl)["padding"].value<double>()) bar.padding = static_cast<float>(*v);
             if (auto v = (*barTbl)["gap"].value<double>()) bar.gap = static_cast<float>(*v);
@@ -108,6 +109,7 @@ void ConfigService::loadFromFile(const std::string& path) {
                         continue;  // match is required
                     }
 
+                    if (auto v = (*monTbl)["enabled"].value<bool>()) ovr.enabled = *v;
                     if (auto v = (*monTbl)["height"].value<int64_t>()) ovr.height = static_cast<std::uint32_t>(*v);
                     if (auto v = (*monTbl)["padding"].value<double>()) ovr.padding = static_cast<float>(*v);
                     if (auto v = (*monTbl)["gap"].value<double>()) ovr.gap = static_cast<float>(*v);
@@ -149,6 +151,7 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
         logDebug("config: monitor override \"{}\" matched output {} ({})",
                  ovr.match, output.connectorName, output.description);
 
+        if (ovr.enabled) resolved.enabled = *ovr.enabled;
         if (ovr.height) resolved.height = *ovr.height;
         if (ovr.padding) resolved.padding = *ovr.padding;
         if (ovr.gap) resolved.gap = *ovr.gap;
