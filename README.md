@@ -86,24 +86,7 @@ third_party/
 - Font discovery via fontconfig
 - Structured logger (`std::format`-based)
 
-<details>
-<summary>MPRIS backend (DBus)</summary>
-
-- [x] Discovery + metadata/state tracking
-- [x] Transport controls (PlayPause/Next/Previous)
-- [x] Query API (GetPlayers/GetActivePlayer)
-- [x] Signals (PlayersChanged/ActivePlayerChanged/TrackChanged)
-- [x] Active-player policy configuration (pin/prefer list)
-- [x] Sticky art_url fallback for async metadata updates and track switches
-- [x] Seek + position controls
-- [x] Volume controls
-- [x] Shuffle controls
-- [x] Loop status controls
-- [x] Event debounce for noisy players
-
-Note: replace the current basic throttling with proper coalesced refreshes once the event-loop/timer model is settled, instead of bolting that design onto the current loop.
-
-</details>
+- MPRIS backend complete (basic throttling for noisy player updates; proper coalescing should wait for the settled event-loop/timer model)
 
 ### In Progress
 
