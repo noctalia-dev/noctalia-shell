@@ -102,7 +102,8 @@ Everything else depends on these.
 
 ### Phase 2 -- Minimum viable bar
 
-- [ ] Compositor integration (Niri, Hyprland)
+- [x] Compositor integration (Niri)
+- [ ] Compositor integration (Hyprland)
 - [ ] Workspaces widget
 - [ ] Clock widget
 - [ ] System tray (StatusNotifierItem via DBus)
