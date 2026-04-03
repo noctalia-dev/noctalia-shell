@@ -104,7 +104,7 @@ third_party/
 <summary>MPRIS backend (DBus)</summary>
 
 - [x] Discovery + metadata/state tracking
-- [ ] Transport controls (PlayPause/Next/Previous)
+- [x] Transport controls (PlayPause/Next/Previous)
 
 </details>
 
@@ -143,7 +143,7 @@ Status indicators and controls that make the bar complete.
 Surfaces and interactions beyond the bar.
 
 - [x] MPRIS service discovery + metadata/state tracking
-- [ ] MPRIS transport controls
+- [x] MPRIS transport controls
 - [ ] Control center panel
 - [ ] Keyboard layout switching
 - [ ] PipeWire audio spectrum
