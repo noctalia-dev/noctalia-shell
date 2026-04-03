@@ -9,6 +9,7 @@
 #include <sdbus-c++/IProxy.h>
 #include <sdbus-c++/Types.h>
 #include <string_view>
+#include <tuple>
 
 namespace {
 
@@ -95,6 +96,24 @@ std::string primary_artist(const std::vector<std::string>& artists) {
     return artists.front();
 }
 
+std::map<std::string, sdbus::Variant> to_dbus_player(const MprisPlayerInfo& info) {
+    std::map<std::string, sdbus::Variant> player;
+    player["bus_name"] = sdbus::Variant(info.bus_name);
+    player["identity"] = sdbus::Variant(info.identity);
+    player["desktop_entry"] = sdbus::Variant(info.desktop_entry);
+    player["playback_status"] = sdbus::Variant(info.playback_status);
+    player["title"] = sdbus::Variant(info.title);
+    player["artists"] = sdbus::Variant(info.artists);
+    player["album"] = sdbus::Variant(info.album);
+    player["art_url"] = sdbus::Variant(info.art_url);
+    player["length_us"] = sdbus::Variant(info.length_us);
+    player["can_play"] = sdbus::Variant(info.can_play);
+    player["can_pause"] = sdbus::Variant(info.can_pause);
+    player["can_go_next"] = sdbus::Variant(info.can_go_next);
+    player["can_go_previous"] = sdbus::Variant(info.can_go_previous);
+    return player;
+}
+
 } // namespace
 
 MprisService::MprisService(SessionBus& bus)
@@ -107,6 +126,32 @@ MprisService::MprisService(SessionBus& bus)
 
 const std::unordered_map<std::string, MprisPlayerInfo>& MprisService::players() const noexcept {
     return m_players;
+}
+
+std::vector<MprisPlayerInfo> MprisService::listPlayers() const {
+    std::vector<MprisPlayerInfo> result;
+    result.reserve(m_players.size());
+    for (const auto& [_, player] : m_players) {
+        result.push_back(player);
+    }
+
+    std::ranges::sort(result, [](const MprisPlayerInfo& a, const MprisPlayerInfo& b) {
+        return a.bus_name < b.bus_name;
+    });
+    return result;
+}
+
+std::optional<MprisPlayerInfo> MprisService::activePlayer() const {
+    const auto active = chooseActivePlayer();
+    if (!active.has_value()) {
+        return std::nullopt;
+    }
+
+    const auto it = m_players.find(*active);
+    if (it == m_players.end()) {
+        return std::nullopt;
+    }
+    return it->second;
 }
 
 bool MprisService::playPause(const std::string& bus_name) {
@@ -171,6 +216,26 @@ void MprisService::registerControlApi() {
     m_control_object = sdbus::createObject(m_bus.connection(), k_noctalia_mpris_object_path);
 
     m_control_object->addVTable(
+        sdbus::registerMethod("GetPlayers")
+            .withOutputParamNames("players")
+            .implementedAs([this]() {
+                std::vector<std::map<std::string, sdbus::Variant>> players;
+                for (const auto& player : listPlayers()) {
+                    players.push_back(to_dbus_player(player));
+                }
+                return players;
+            }),
+
+        sdbus::registerMethod("GetActivePlayer")
+            .withOutputParamNames("found", "player")
+            .implementedAs([this]() {
+                const auto active = activePlayer();
+                if (!active.has_value()) {
+                    return std::make_tuple(false, std::map<std::string, sdbus::Variant>{});
+                }
+                return std::make_tuple(true, to_dbus_player(*active));
+            }),
+
         sdbus::registerMethod("PlayPausePlayer")
             .withInputParamNames("player_bus_name")
             .withOutputParamNames("success")

@@ -105,6 +105,7 @@ third_party/
 
 - [x] Discovery + metadata/state tracking
 - [x] Transport controls (PlayPause/Next/Previous)
+- [x] Query API (GetPlayers/GetActivePlayer)
 
 </details>
 

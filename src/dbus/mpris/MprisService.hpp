@@ -37,6 +37,8 @@ public:
     explicit MprisService(SessionBus& bus);
 
     [[nodiscard]] const std::unordered_map<std::string, MprisPlayerInfo>& players() const noexcept;
+    [[nodiscard]] std::vector<MprisPlayerInfo> listPlayers() const;
+    [[nodiscard]] std::optional<MprisPlayerInfo> activePlayer() const;
 
     bool playPause(const std::string& bus_name);
     bool next(const std::string& bus_name);
