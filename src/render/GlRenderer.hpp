@@ -3,6 +3,7 @@
 #include "render/LinearGradientProgram.hpp"
 #include "render/RoundedRectProgram.hpp"
 #include "render/Renderer.hpp"
+#include "render/TextRenderer.hpp"
 
 #include <EGL/egl.h>
 
@@ -31,6 +32,7 @@ private:
     EGLSurface m_eglSurface = EGL_NO_SURFACE;
     LinearGradientProgram m_linearGradientProgram;
     RoundedRectProgram m_roundedRectProgram;
+    TextRenderer m_textRenderer;
     std::uint32_t m_surfaceWidth = 0;
     std::uint32_t m_surfaceHeight = 0;
 };

@@ -16,6 +16,8 @@ pkg_check_modules(WAYLAND_PROTOCOLS REQUIRED wayland-protocols)
 pkg_check_modules(EGL REQUIRED egl)
 pkg_check_modules(GLES2 REQUIRED glesv2)
 pkg_check_modules(WAYLAND_EGL REQUIRED wayland-egl)
+pkg_check_modules(FREETYPE2 REQUIRED freetype2)
+pkg_check_modules(HARFBUZZ REQUIRED harfbuzz)
 pkg_get_variable(WAYLAND_PROTOCOLS_PKGDATADIR wayland-protocols pkgdatadir)
 file(REAL_PATH "${WAYLAND_PROTOCOLS_PKGDATADIR}" WAYLAND_PROTOCOLS_PKGDATADIR)
 
@@ -124,6 +126,8 @@ add_executable(noctalia
     src/render/LinearGradientProgram.cpp
     src/render/RoundedRectProgram.cpp
     src/render/ShaderProgram.cpp
+    src/render/TextProgram.cpp
+    src/render/TextRenderer.cpp
     src/shell/BarShell.cpp
     src/wayland/LayerSurface.cpp
     src/wayland/WaylandConnection.cpp
@@ -142,6 +146,8 @@ target_include_directories(noctalia PRIVATE
     ${EGL_INCLUDE_DIRS}
     ${GLES2_INCLUDE_DIRS}
     ${WAYLAND_EGL_INCLUDE_DIRS}
+    ${FREETYPE2_INCLUDE_DIRS}
+    ${HARFBUZZ_INCLUDE_DIRS}
 )
 target_link_libraries(noctalia PRIVATE
     SDBusCpp::sdbus-c++
@@ -149,12 +155,16 @@ target_link_libraries(noctalia PRIVATE
     ${EGL_LIBRARIES}
     ${GLES2_LIBRARIES}
     ${WAYLAND_EGL_LIBRARIES}
+    ${FREETYPE2_LIBRARIES}
+    ${HARFBUZZ_LIBRARIES}
 )
 target_compile_options(noctalia PRIVATE
     ${WAYLAND_CLIENT_CFLAGS_OTHER}
     ${EGL_CFLAGS_OTHER}
     ${GLES2_CFLAGS_OTHER}
     ${WAYLAND_EGL_CFLAGS_OTHER}
+    ${FREETYPE2_CFLAGS_OTHER}
+    ${HARFBUZZ_CFLAGS_OTHER}
 )
 
 target_compile_options(noctalia PRIVATE

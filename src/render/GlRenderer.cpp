@@ -111,6 +111,7 @@ void GlRenderer::resize(std::uint32_t width, std::uint32_t height) {
     m_surfaceHeight = height;
     m_linearGradientProgram.ensureInitialized();
     m_roundedRectProgram.ensureInitialized();
+    m_textRenderer.initialize();
 }
 
 void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
@@ -128,6 +129,13 @@ void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    constexpr auto kLabel = "Noctalia";
+    const auto labelMetrics = m_textRenderer.measure(kLabel);
+    const float labelX = (static_cast<float>(width) - labelMetrics.width) * 0.5f;
+    const float labelHeight = labelMetrics.bottom - labelMetrics.top;
+    const float labelBaseline =
+        (static_cast<float>(height) - labelHeight) * 0.5f - labelMetrics.top;
 
     m_roundedRectProgram.draw(
         static_cast<float>(m_surfaceWidth),
@@ -162,6 +170,13 @@ void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
             .end = kRosePinePalette.iris,
             .horizontal = true,
         });
+    m_textRenderer.draw(
+        static_cast<float>(m_surfaceWidth),
+        static_cast<float>(m_surfaceHeight),
+        labelX,
+        labelBaseline,
+        kLabel,
+        kRosePinePalette.text);
 
     if (eglSwapBuffers(m_eglDisplay, m_eglSurface) != EGL_TRUE) {
         throw std::runtime_error("eglSwapBuffers failed");
@@ -171,6 +186,7 @@ void GlRenderer::render(std::uint32_t width, std::uint32_t height) {
 void GlRenderer::cleanup() {
     m_linearGradientProgram.destroy();
     m_roundedRectProgram.destroy();
+    m_textRenderer.cleanup();
     m_surfaceWidth = 0;
     m_surfaceHeight = 0;
 
