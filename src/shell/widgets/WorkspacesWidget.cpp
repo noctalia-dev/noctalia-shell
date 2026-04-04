@@ -23,7 +23,7 @@ void WorkspacesWidget::create(Renderer& renderer) {
     rebuild(renderer);
 }
 
-void WorkspacesWidget::layout(Renderer& renderer, float /*barWidth*/, float /*barHeight*/) {
+void WorkspacesWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
     m_container->layout(renderer);
 }
 

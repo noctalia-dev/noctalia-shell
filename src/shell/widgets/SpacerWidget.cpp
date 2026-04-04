@@ -11,6 +11,6 @@ void SpacerWidget::create(Renderer& /*renderer*/) {
     m_root = std::unique_ptr<Node>(box.release());
 }
 
-void SpacerWidget::layout(Renderer& /*renderer*/, float /*barWidth*/, float barHeight) {
-    m_root->setSize(m_fixedWidth, barHeight);
+void SpacerWidget::layout(Renderer& /*renderer*/, float /*containerWidth*/, float containerHeight) {
+    m_root->setSize(m_fixedWidth, containerHeight);
 }

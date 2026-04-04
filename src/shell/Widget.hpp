@@ -15,7 +15,7 @@ public:
     virtual ~Widget() = default;
 
     virtual void create(Renderer& renderer) = 0;
-    virtual void layout(Renderer& renderer, float barWidth, float barHeight) = 0;
+    virtual void layout(Renderer& renderer, float containerWidth, float containerHeight) = 0;
     virtual void update(Renderer& renderer);
 
     // Input events. Coordinates are widget-local (relative to widget root node).

@@ -12,7 +12,7 @@ public:
     ClockWidget(const TimeService& timeService, std::string format = "{:%H:%M}");
 
     void create(Renderer& renderer) override;
-    void layout(Renderer& renderer, float barWidth, float barHeight) override;
+    void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
     void update(Renderer& renderer) override;
 
 private:

@@ -16,7 +16,7 @@ void ClockWidget::create(Renderer& renderer) {
     update(renderer);
 }
 
-void ClockWidget::layout(Renderer& renderer, float /*barWidth*/, float /*barHeight*/) {
+void ClockWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
     m_label->measure(renderer);
 }
 

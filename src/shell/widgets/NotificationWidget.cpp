@@ -10,6 +10,6 @@ void NotificationWidget::create(Renderer& renderer) {
     m_icon->measure(renderer);
 }
 
-void NotificationWidget::layout(Renderer& renderer, float /*barWidth*/, float /*barHeight*/) {
+void NotificationWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
     m_icon->measure(renderer);
 }
