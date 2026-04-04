@@ -149,8 +149,8 @@ void Slider::applyVisualState() {
 
   Color trackColor = palette.outline;
   Color fillColor = palette.primary;
-  Color thumbColor = palette.surface;
-  Color thumbBorder = palette.primary;
+  Color thumbColor = palette.primary;
+  Color thumbBorder = palette.onPrimary;
 
   if (!m_enabled) {
     trackColor = rgba(palette.outline.r, palette.outline.g, palette.outline.b, 0.5f);
