@@ -5,8 +5,10 @@
 #include "render/scene/RectNode.h"
 #include "render/scene/TextNode.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <stdexcept>
+#include <vector>
 
 #include <GLES2/gl2.h>
 #include <wayland-egl.h>
@@ -223,8 +225,16 @@ void GlRenderer::renderNode(const Node* node, float parentX, float parentY, floa
     break;
   }
 
+  std::vector<const Node*> orderedChildren;
+  orderedChildren.reserve(node->children().size());
   for (const auto& child : node->children()) {
-    renderNode(child.get(), absX, absY, effectiveOpacity);
+    orderedChildren.push_back(child.get());
+  }
+  std::stable_sort(orderedChildren.begin(), orderedChildren.end(),
+                   [](const Node* a, const Node* b) { return a->zIndex() < b->zIndex(); });
+
+  for (const auto* child : orderedChildren) {
+    renderNode(child, absX, absY, effectiveOpacity);
   }
 }
 

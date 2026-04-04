@@ -1,6 +1,7 @@
 #include "render/scene/Node.h"
 
 #include <algorithm>
+#include <vector>
 
 Node::Node(NodeType type) : m_type(type) {}
 
@@ -37,6 +38,14 @@ void Node::setVisible(bool visible) {
     return;
   }
   m_visible = visible;
+  markDirty();
+}
+
+void Node::setZIndex(std::int32_t zIndex) {
+  if (m_zIndex == zIndex) {
+    return;
+  }
+  m_zIndex = zIndex;
   markDirty();
 }
 
@@ -99,20 +108,27 @@ Node* Node::hitTestImpl(Node* node, float px, float py, float offsetX, float off
 
   const float nodeX = offsetX + node->m_x;
   const float nodeY = offsetY + node->m_y;
+  const bool inside = (px >= nodeX && px < nodeX + node->m_width && py >= nodeY && py < nodeY + node->m_height);
 
-  if (px < nodeX || px >= nodeX + node->m_width || py < nodeY || py >= nodeY + node->m_height) {
-    return nullptr;
+  std::vector<Node*> orderedChildren;
+  orderedChildren.reserve(node->m_children.size());
+  for (auto& child : node->m_children) {
+    orderedChildren.push_back(child.get());
   }
 
-  // Traverse children in reverse (topmost/last-added first)
-  for (auto it = node->m_children.rbegin(); it != node->m_children.rend(); ++it) {
-    auto* hit = hitTestImpl(it->get(), px, py, nodeX, nodeY);
+  std::stable_sort(orderedChildren.begin(), orderedChildren.end(),
+                   [](const Node* a, const Node* b) { return a->zIndex() < b->zIndex(); });
+
+  // Traverse children in reverse (topmost first).
+  // Children are allowed to overflow parent bounds (needed for menus/popovers).
+  for (auto it = orderedChildren.rbegin(); it != orderedChildren.rend(); ++it) {
+    auto* hit = hitTestImpl(*it, px, py, nodeX, nodeY);
     if (hit != nullptr) {
       return hit;
     }
   }
 
-  return node;
+  return inside ? node : nullptr;
 }
 
 void Node::absolutePosition(const Node* node, float& outX, float& outY) {

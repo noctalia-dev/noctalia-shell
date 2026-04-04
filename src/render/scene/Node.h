@@ -29,6 +29,7 @@ public:
   [[nodiscard]] float opacity() const noexcept { return m_opacity; }
   [[nodiscard]] bool visible() const noexcept { return m_visible; }
   [[nodiscard]] bool dirty() const noexcept { return m_dirty; }
+  [[nodiscard]] std::int32_t zIndex() const noexcept { return m_zIndex; }
   [[nodiscard]] Node* parent() const noexcept { return m_parent; }
   [[nodiscard]] const std::vector<std::unique_ptr<Node>>& children() const noexcept { return m_children; }
 
@@ -36,6 +37,7 @@ public:
   void setSize(float width, float height);
   void setOpacity(float opacity);
   void setVisible(bool visible);
+  void setZIndex(std::int32_t zIndex);
 
   Node* addChild(std::unique_ptr<Node> child);
   Node* insertChildAt(std::size_t index, std::unique_ptr<Node> child);
@@ -60,6 +62,7 @@ private:
   float m_opacity = 1.0f;
   bool m_visible = true;
   bool m_dirty = true;
+  std::int32_t m_zIndex = 0;
   void* m_userData = nullptr;
   Node* m_parent = nullptr;
   std::vector<std::unique_ptr<Node>> m_children;

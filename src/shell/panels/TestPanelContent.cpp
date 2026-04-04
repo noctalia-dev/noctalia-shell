@@ -3,6 +3,7 @@
 #include "render/scene/InputArea.h"
 #include "ui/controls/Box.h"
 #include "ui/controls/Button.h"
+#include "ui/controls/Dropdown.h"
 #include "ui/controls/IconButton.h"
 #include "ui/controls/Label.h"
 #include "ui/controls/Slider.h"
@@ -38,11 +39,7 @@ void TestPanelContent::create(Renderer& renderer) {
   auto button = std::make_unique<Button>();
   button->setText("Button");
   button->setVariant(ButtonVariant::Default);
-  button->setOnClick([this]() {
-    if (m_toggle != nullptr) {
-      m_toggle->setChecked(!m_toggle->checked());
-    }
-  });
+  button->setOnClick([]() {});
   m_button = button.get();
   {
     auto row = makeRow();
@@ -58,11 +55,7 @@ void TestPanelContent::create(Renderer& renderer) {
   iconButton->setText("Settings");
   iconButton->setIcon("settings");
   iconButton->setVariant(ButtonVariant::Outline);
-  iconButton->setOnClick([this]() {
-    if (m_toggle != nullptr) {
-      m_toggle->setChecked(!m_toggle->checked());
-    }
-  });
+  iconButton->setOnClick([]() {});
   m_iconButton = iconButton.get();
   {
     auto row = makeRow();
@@ -71,6 +64,23 @@ void TestPanelContent::create(Renderer& renderer) {
     rowLabel->setCaptionStyle();
     row->addChild(std::move(rowLabel));
     row->addChild(std::move(iconButton));
+    container->addChild(std::move(row));
+  }
+
+  auto dropdown = std::make_unique<Dropdown>();
+  dropdown->setSize(220.0f, 0.0f);
+  dropdown->setOptions({"Balanced", "Performance", "Power Saver"});
+  dropdown->setSelectedIndex(0);
+  m_dropdown = dropdown.get();
+  {
+    auto row = makeRow();
+    row->setZIndex(10);
+    auto rowLabel = std::make_unique<Label>();
+    rowLabel->setText("Dropdown");
+    rowLabel->setCaptionStyle();
+    row->addChild(std::move(rowLabel));
+    row->addChild(std::move(dropdown));
+
     container->addChild(std::move(row));
   }
 
@@ -146,6 +156,9 @@ void TestPanelContent::layout(Renderer& renderer, float /*width*/, float /*heigh
   if (m_button != nullptr) {
     m_button->layout(renderer);
     m_button->updateInputArea();
+  }
+  if (m_dropdown != nullptr) {
+    m_dropdown->layout(renderer);
   }
   if (m_iconButton != nullptr) {
     m_iconButton->layout(renderer);
