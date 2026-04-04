@@ -7,6 +7,7 @@
 #include "shell/widgets/ClockWidget.h"
 #include "shell/widgets/NotificationWidget.h"
 #include "shell/widgets/SpacerWidget.h"
+#include "shell/widgets/TestWidget.h"
 #include "shell/widgets/TrayWidget.h"
 #include "shell/widgets/WorkspacesWidget.h"
 
@@ -33,6 +34,10 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (name == "tray") {
     return std::make_unique<TrayWidget>(m_tray);
+  }
+
+  if (name == "test") {
+    return std::make_unique<TestWidget>();
   }
 
   if (name == "spacer") {

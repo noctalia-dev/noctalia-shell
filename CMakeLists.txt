@@ -222,6 +222,7 @@ add_executable(noctalia
     src/shell/widgets/ClockWidget.cpp
     src/shell/widgets/NotificationWidget.cpp
     src/shell/widgets/SpacerWidget.cpp
+    src/shell/widgets/TestWidget.cpp
     src/shell/widgets/TrayWidget.cpp
     src/shell/widgets/WorkspacesWidget.cpp
     src/wayland/Surface.cpp
