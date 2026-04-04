@@ -14,6 +14,9 @@ build:
 run:
     ./{{build-dir}}/noctalia
 
+format:
+    clang-format -i src/**/*.cpp src/**/*.h
+
 clean:
     rm -rf {{build-dir}}
 

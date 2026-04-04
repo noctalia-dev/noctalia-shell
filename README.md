@@ -20,9 +20,10 @@ A lightweight Wayland shell and bar with no Qt or GTK dependency.
 | Cursor | `wp-cursor-shape-v1` |
 | Rendering | `EGL`, `OpenGL ES 3`, `wayland-egl` |
 | Text | `freetype`, `harfbuzz`, `msdfgen` (vendored), `fontconfig` |
+| Images | `stb_image` (vendored), `nanosvg` (vendored) |
 | IPC | `sdbus-c++` |
 | Audio | `libpipewire` |
-| Config | TBD |
+| Config | `tomlplusplus` (vendored) |
 
 ## Build
 
@@ -61,74 +62,56 @@ cmake --build build --parallel
 ```
 </details>
 
+## Code Style
+
+This project uses [clang-format](https://clang.llvm.org/docs/ClangFormat.html) for formatting. Run `just format` before committing.
+
 ## Project Layout
 
 ```
 src/
   app/           Application bootstrap, main loop
+  config/        Configuration and state persistence (TOML)
   core/          Logger, shared utilities
   dbus/          DBus service implementations
+  debug/         Debug service (runtime log toggling)
   font/          Font discovery (fontconfig)
   notification/  Notification manager
   render/        EGL/OpenGL renderer, shader programs, MSDF text
-  shell/         Shell runtime
-  wayland/       Wayland connection, layer-shell surfaces
+  shell/         Shell runtime, bar and wallpaper
+  system/        System monitor (CPU, RAM, temperature)
+  time/          Time service and polling
   ui/
-    controls/   Low-level UI building blocks
+    controls/    Low-level UI building blocks
+    icons/       Icon registry
+    style/       Palette and styling
+  wayland/       Wayland connection, layer-shell surfaces
 third_party/
   msdfgen/       MSDF glyph generation (git submodule)
+  tomlplusplus/  TOML parser (vendored)
+  stb/           Image loading (vendored)
+  nanosvg/       SVG rasterization (vendored)
 ```
 
 ## Roadmap
 
-### Completed
+### Bar completion
 
-- Wayland foundation, layer-shell surfaces, frame callbacks
-- EGL/OpenGL ES renderer with shader pipeline
-- GPU primitives: rounded rects (SDF), linear gradients, borders
-- MSDF text rendering (FreeType + HarfBuzz + msdfgen atlas)
-- Font discovery via fontconfig
-- Structured logger (`std::format`-based)
-- MPRIS backend complete (basic throttling for noisy player updates; proper coalescing should wait for the settled event-loop/timer model)
-- Notification backend complete
-
-### Phase 1 -- Renderer completion
-
-Everything else depends on these.
-
-- [x] Retained scene graph (`Node`, `RectNode`, `TextNode`, `ImageNode`)
-- [x] Font fallback chain (fontconfig `FcFontSort`), DPI-aware buffer scaling, text truncation with ellipsis
-- [x] Image/texture loading (stb_image + nanosvg, ARGB pixmap support, `TextureManager`)
-- [x] Property animation system (easing functions, frame-callback driven `AnimationManager`)
-- [x] Multi-monitor bar instances (one `LayerSurface` per output, hot-plug add/remove)
-
-### Phase 2 -- Minimum viable bar
-
-- [x] Compositor integration (ext-workspace)
-- [X] Workspaces widget
-- [X] Clock widget
-- [X] Wallpaper management
 - [ ] System tray (StatusNotifierItem via DBus)
 - [ ] Audio service (Pipewire) + volume OSD
 - [ ] Notification indicator + notification popup UI
 
-### Phase 3 -- Hardware and networking
-
-Status indicators and controls that make the bar complete.
+### Hardware and networking
 
 - [ ] Battery service (UPower via DBus)
 - [ ] Power profiles (power-profiles-daemon via DBus)
 - [ ] Brightness control + OSD
 - [ ] Network service (NetworkManager via DBus)
 - [ ] Bluetooth service (Bluez via DBus)
-- [ ] System stats (CPU, RAM, temperature) (backend logging started: cpu/ram/temp)
+- [ ] System stats (CPU, RAM, temperature)
 
-### Phase 4 -- Desktop shell
+### Desktop shell
 
-Surfaces and interactions beyond the bar.
-
-- [x] MPRIS service discovery + metadata/state tracking
-- [x] MPRIS transport controls
 - [ ] Control center panel
 - [ ] Keyboard layout switching
 - [ ] PipeWire audio spectrum
@@ -139,9 +122,9 @@ Surfaces and interactions beyond the bar.
 - [ ] Idle inhibitor (prevent sleep)
 - [ ] More compositors (Mango, Sway, Labwc)
 
-### Phase 5 -- Theming and customization
+### Theming and customization
 
-- [ ] Palette generation (port python implementation to c++, need proper test suite so it's 100% similar with test images)
+- [ ] Palette generation (port python implementation to c++)
 - [ ] Dark/light mode switching
 - [ ] Settings panel
 - [ ] I18n / translations
@@ -149,7 +132,7 @@ Surfaces and interactions beyond the bar.
 - [ ] Night light (wlsunset)
 - [ ] Sound effects
 
-### Phase 6 -- Ecosystem
+### Ecosystem
 
 - [ ] Compositor integration (Hyprland)
 - [ ] Plugin system
@@ -160,14 +143,9 @@ Surfaces and interactions beyond the bar.
 
 ### Controls (`src/ui/controls/`)
 
-Low-level UI building blocks, built incrementally as widgets need them.
-
-- [X] Label
-- [X] Box
-- [X] Separator
-- [X] Icon
 - [ ] Toggle
 - [ ] Button
+- [ ] IconButton
 - [ ] Slider
 - [ ] Tooltip
 - [ ] Progress bar
@@ -182,10 +160,8 @@ Low-level UI building blocks, built incrementally as widgets need them.
 - [ ] Context menu
 - [ ] Color picker
 
-### Bar Widgets
+### Widgets
 
-- [X] Workspace
-- [X] Clock
 - [ ] Tray
 - [ ] Volume
 - [ ] Notification button
@@ -211,7 +187,6 @@ Low-level UI building blocks, built incrementally as widgets need them.
 - [ ] Settings button
 - [ ] Wallpaper selector button
 - [ ] Custom button (user-defined IPC)
-- [ ] Spacer
 
 ### Desktop Widgets
 
