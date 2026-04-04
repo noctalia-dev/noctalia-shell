@@ -46,6 +46,7 @@ private:
   static PanelManager* s_instance;
 
   void buildScene(std::uint32_t width, std::uint32_t height);
+  void destroyPanel();
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
@@ -53,6 +54,7 @@ private:
 
   std::unique_ptr<LayerSurface> m_surface;
   std::unique_ptr<Node> m_sceneRoot;
+  Node* m_contentNode = nullptr;
   AnimationManager m_animations;
   InputDispatcher m_inputDispatcher;
 
@@ -63,5 +65,6 @@ private:
   wl_surface* m_wlSurface = nullptr;
   bool m_pointerInside = false;
   bool m_inTransition = false;
+  bool m_closing = false;
   bool m_justClosed = false;
 };

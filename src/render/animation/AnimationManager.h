@@ -15,6 +15,7 @@ public:
   Id animate(float from, float to, float durationMs, Easing easing, std::function<void(float)> setter,
              std::function<void()> onComplete = {});
   void cancel(Id id);
+  void cancelAll();
   void tick(float deltaMs);
   [[nodiscard]] bool hasActive() const;
 

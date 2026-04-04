@@ -15,12 +15,6 @@ enum class Easing : std::uint8_t {
 
 float applyEasing(Easing easing, float t);
 
-namespace AnimDuration {
-inline constexpr float Fast = 100.0f;
-inline constexpr float Normal = 200.0f;
-inline constexpr float Slow = 400.0f;
-} // namespace AnimDuration
-
 struct Animation {
   float startValue = 0.0f;
   float endValue = 0.0f;

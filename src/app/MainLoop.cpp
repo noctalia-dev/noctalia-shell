@@ -12,11 +12,29 @@
 
 #include <wayland-client-core.h>
 
+MainLoop* MainLoop::s_instance = nullptr;
+
 MainLoop::MainLoop(WaylandConnection& wayland, Bar& bar, std::vector<PollSource*> sources)
-    : m_wayland(wayland), m_bar(bar), m_sources(std::move(sources)) {}
+    : m_wayland(wayland), m_bar(bar), m_sources(std::move(sources)) {
+  s_instance = this;
+}
+
+void MainLoop::callLater(std::function<void()> fn) {
+  if (s_instance != nullptr) {
+    s_instance->m_deferred.push_back(std::move(fn));
+  }
+}
 
 void MainLoop::run() {
   while (m_bar.isRunning() && !Application::s_shutdownRequested) {
+    // Process deferred callbacks from the previous iteration
+    if (!m_deferred.empty()) {
+      auto pending = std::move(m_deferred);
+      for (auto& fn : pending) {
+        fn();
+      }
+    }
+
     if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
       throw std::runtime_error("failed to dispatch pending Wayland events");
     }

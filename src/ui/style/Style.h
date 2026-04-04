@@ -21,4 +21,8 @@ inline constexpr float fontSizeCaption = 11.0f;
 inline constexpr float fontSizeBody = 13.0f;
 inline constexpr float fontSizeTitle = 16.0f;
 
+inline constexpr float animFast = 100.0f;
+inline constexpr float animNormal = 200.0f;
+inline constexpr float animSlow = 400.0f;
+
 } // namespace Style

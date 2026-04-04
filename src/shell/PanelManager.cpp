@@ -1,5 +1,6 @@
 #include "shell/PanelManager.h"
 
+#include "app/MainLoop.h"
 #include "config/ConfigService.h"
 #include "core/Log.h"
 #include "render/RenderContext.h"
@@ -35,14 +36,18 @@ void PanelManager::registerPanel(const std::string& id, std::unique_ptr<PanelCon
 }
 
 void PanelManager::openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX) {
+
+  (void)anchorX; // might be used later for per-widget panel positioning, for now silence the warning...
+
   if (m_inTransition) {
     return;
   }
   m_justClosed = false;
 
-  // Close any currently open panel
-  if (isOpen()) {
-    closePanel();
+  // If a panel is open (or closing), destroy it immediately — no close animation when switching
+  if (isOpen() || m_closing) {
+    m_closing = false;
+    destroyPanel();
   }
 
   auto it = m_panels.find(panelId);
@@ -63,31 +68,23 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
     barHeight = m_config->config().bars[0].height;
   }
 
-  // Compute right margin to position panel near the anchor point
-  // Find the output width to calculate margin from right edge
-  std::int32_t outputWidth = 1920;
-  if (m_wayland != nullptr) {
-    const auto* wlOutput = m_wayland->findOutputByWl(output);
-    if (wlOutput != nullptr) {
-      outputWidth = wlOutput->width;
-    }
-  }
-
-  // Position: right edge of panel aligns near anchorX, clamped to screen
-  auto marginRight =
-      static_cast<std::int32_t>(static_cast<float>(outputWidth) - anchorX - static_cast<float>(panelWidth) * 0.5f);
-  marginRight = std::max(8, marginRight);
-  marginRight = std::min(marginRight, outputWidth - static_cast<std::int32_t>(panelWidth) - 8);
+  // Find the output width to calculate margins (if needed)
+  // std::int32_t outputWidth = 1920;
+  // if (m_wayland != nullptr) {
+  //   const auto* wlOutput = m_wayland->findOutputByWl(output);
+  //   if (wlOutput != nullptr) {
+  //     outputWidth = wlOutput->width;
+  //   }
+  // }
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-panel",
       .layer = LayerShellLayer::Top,
-      .anchor = LayerShellAnchor::Top | LayerShellAnchor::Right,
+      .anchor = LayerShellAnchor::Top,
       .width = panelWidth,
       .height = panelHeight,
       .exclusiveZone = 0,
       .marginTop = static_cast<std::int32_t>(barHeight) + 4,
-      .marginRight = marginRight,
       .keyboard = LayerShellKeyboard::None,
       .defaultWidth = panelWidth,
       .defaultHeight = panelHeight,
@@ -113,24 +110,46 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
   }
 
   m_wlSurface = m_surface->wlSurface();
-  logInfo("panel manager: opened \"{}\"", panelId);
+  logDebug("panel manager: opened \"{}\"", panelId);
 }
 
 void PanelManager::closePanel() {
-  if (!isOpen() || m_inTransition) {
+  if (!isOpen() || m_inTransition || m_closing) {
     return;
   }
 
-  logInfo("panel manager: closed \"{}\"", m_activePanelId);
+  logDebug("panel manager: closing \"{}\"", m_activePanelId);
 
+  // Disable input during close animation
   m_inputDispatcher.setSceneRoot(nullptr);
+  m_closing = true;
+
+  // Fade out the whole scene
+  if (m_sceneRoot != nullptr) {
+    const float startY = m_sceneRoot->y();
+    m_animations.animate(
+        1.0f, 0.0f, Style::animFast, Easing::EaseInOutQuad,
+        [this, startY](float v) {
+          m_sceneRoot->setOpacity(v);
+          m_sceneRoot->setPosition(m_sceneRoot->x(), startY + (1.0f - v) * 4.0f);
+        },
+        [this]() { MainLoop::callLater([this]() { destroyPanel(); }); });
+    m_surface->requestRedraw();
+  } else {
+    destroyPanel();
+  }
+}
+
+void PanelManager::destroyPanel() {
+  m_animations.cancelAll();
+  m_closing = false;
   m_pointerInside = false;
+  m_contentNode = nullptr;
   m_sceneRoot.reset();
   m_surface.reset();
   m_wlSurface = nullptr;
   m_activePanel = nullptr;
   m_activePanelId.clear();
-
   m_justClosed = true;
 }
 
@@ -230,16 +249,37 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     });
     m_sceneRoot->addChild(std::move(bg));
 
-    // Create panel content
+    // Create panel content inside a wrapper node for staggered fade-in
+    auto contentWrapper = std::make_unique<Node>();
+    m_contentNode = contentWrapper.get();
     m_activePanel->setAnimationManager(&m_animations);
     m_activePanel->create(*renderer);
     if (m_activePanel->root() != nullptr) {
-      m_sceneRoot->addChild(m_activePanel->releaseRoot());
+      contentWrapper->addChild(m_activePanel->releaseRoot());
     }
+    m_sceneRoot->addChild(std::move(contentWrapper));
 
     m_inputDispatcher.setSceneRoot(m_sceneRoot.get());
     m_inputDispatcher.setCursorShapeCallback(
         [this](std::uint32_t serial, std::uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
+
+    // Open animation: background fades in + slides up, then content fades in
+    m_sceneRoot->setOpacity(0.0f);
+    m_sceneRoot->setPosition(0.0f, 8.0f);
+    m_contentNode->setOpacity(0.0f);
+
+    // Phase 1: background appears with slide
+    m_animations.animate(
+        0.0f, 1.0f, Style::animFast, Easing::EaseOutCubic,
+        [this](float v) {
+          m_sceneRoot->setOpacity(v);
+          m_sceneRoot->setPosition(0.0f, -80.0f * (1.0f - v));
+        },
+        // Phase 2: content fades in after background settles
+        [this]() {
+          m_animations.animate(0.0f, 1.0f, Style::animNormal, Easing::EaseOutQuad,
+                               [this](float v) { m_contentNode->setOpacity(v); });
+        });
 
     m_surface->setSceneRoot(m_sceneRoot.get());
   }
@@ -254,7 +294,8 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
   // Layout panel content with padding
   constexpr float kPadding = 12.0f;
   m_activePanel->layout(*renderer, w - kPadding * 2.0f, h - kPadding * 2.0f);
-  if (m_activePanel->root() != nullptr) {
-    m_activePanel->root()->setPosition(kPadding, kPadding);
+  if (m_contentNode != nullptr) {
+    m_contentNode->setPosition(kPadding, kPadding);
+    m_contentNode->setSize(w - kPadding * 2.0f, h - kPadding * 2.0f);
   }
 }

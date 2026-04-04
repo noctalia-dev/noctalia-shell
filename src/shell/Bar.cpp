@@ -256,7 +256,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
     // Fade-in animation
     instance.sceneRoot->setOpacity(0.0f);
-    instance.animations.animate(0.0f, 1.0f, 400.0f, Easing::EaseOutCubic,
+    instance.animations.animate(0.0f, 1.0f, Style::animSlow, Easing::EaseOutCubic,
                                 [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); });
 
     instance.surface->setSceneRoot(instance.sceneRoot.get());

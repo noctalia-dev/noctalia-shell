@@ -24,7 +24,13 @@ void AnimationManager::cancel(Id id) {
   std::erase_if(m_animations, [id](const Entry& e) { return e.id == id; });
 }
 
+void AnimationManager::cancelAll() { m_animations.clear(); }
+
 void AnimationManager::tick(float deltaMs) {
+  // Collect completed callbacks separately — onComplete may call animate()
+  // which would push_back and invalidate iterators during iteration.
+  std::vector<std::function<void()>> completedCallbacks;
+
   for (auto& entry : m_animations) {
     auto& anim = entry.animation;
     if (anim.finished) {
@@ -47,11 +53,15 @@ void AnimationManager::tick(float deltaMs) {
     }
 
     if (anim.finished && anim.onComplete) {
-      anim.onComplete();
+      completedCallbacks.push_back(std::move(anim.onComplete));
     }
   }
 
   std::erase_if(m_animations, [](const Entry& e) { return e.animation.finished; });
+
+  for (auto& cb : completedCallbacks) {
+    cb();
+  }
 }
 
 bool AnimationManager::hasActive() const { return !m_animations.empty(); }
