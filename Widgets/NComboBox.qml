@@ -262,7 +262,6 @@ RowLayout {
         property var comboBox: combo
         model: combo.popup.visible ? root.model : null
         highlightMoveDuration: 0
-        //showGradientMasks: false
 
         delegate: Rectangle {
           id: delegateRect

@@ -32,8 +32,6 @@ ScrollView {
   property int smoothWheelAnimationDuration: Style.animationNormal
   property real _wheelTargetY: 0
 
-  property Item _maskSourceItem: null
-
   function clampScrollY(value) {
     if (!root._internalFlickable)
       return 0;
@@ -92,7 +90,6 @@ ScrollView {
       return;
 
     var mask = fadeMaskComponent.createObject(root);
-    root._maskSourceItem = mask;
     root.contentItem.layer.enabled = Qt.binding(() => root.showGradientMasks && root.verticalScrollable);
     mask.applyTo(root.contentItem);
   }

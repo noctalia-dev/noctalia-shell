@@ -21,6 +21,8 @@ Item {
   }
   readonly property bool contentOverflows: listView.contentHeight > listView.height
 
+  // Fade controls (fadeExtent: 0.0–0.5, fraction of height that fades)
+  property real fadeExtent: 0.03
   property bool showGradientMasks: true
   property bool reserveScrollbarSpace: true
 
@@ -190,7 +192,7 @@ Item {
     NFadeMask {
       anchors.fill: parent
       orientation: Gradient.Vertical
-      fadeExtent: 0.03
+      fadeExtent: root.fadeExtent
       animateColors: true
       animationDuration: Style.animationFast
       startColor: {

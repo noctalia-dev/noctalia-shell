@@ -24,7 +24,8 @@ Item {
   }
   readonly property bool contentOverflows: gridView.contentHeight > gridView.height
 
-  // Gradient properties
+  // Fade controls (fadeExtent: 0.0–0.5, fraction of height that fades)
+  property real fadeExtent: 0.03
   property bool showGradientMasks: true
   property bool reserveScrollbarSpace: true
 
@@ -263,7 +264,7 @@ Item {
     NFadeMask {
       anchors.fill: parent
       orientation: Gradient.Vertical
-      fadeExtent: 0.03
+      fadeExtent: root.fadeExtent
       animateColors: true
       animationDuration: Style.animationFast
       startColor: (gridView.contentY <= 1 || root.selectionOnFirstVisibleRow) ? "white" : "transparent"
