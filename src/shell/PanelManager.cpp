@@ -28,6 +28,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
   if (m_inTransition) {
     return;
   }
+  m_justClosed = false;
 
   // Close any currently open panel
   if (isOpen()) {
@@ -119,6 +120,8 @@ void PanelManager::closePanel() {
   m_activePanel = nullptr;
   m_activePanelId.clear();
 
+  m_justClosed = true;
+
   if (m_closeCallback) {
     m_closeCallback();
   }
@@ -127,12 +130,20 @@ void PanelManager::closePanel() {
 void PanelManager::togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX) {
   if (isOpen() && m_activePanelId == panelId) {
     closePanel();
+  } else if (m_justClosed) {
+    // Suppress reopen from the same click that triggered close-on-press
+    m_justClosed = false;
   } else {
     openPanel(panelId, output, scale, anchorX);
   }
 }
 
 void PanelManager::onPointerEvent(const PointerEvent& event) {
+  // Clear suppression flag on new press — it only applies within one press→release cycle
+  if (event.type == PointerEvent::Type::Button && event.state == 1) {
+    m_justClosed = false;
+  }
+
   if (!isOpen()) {
     return;
   }

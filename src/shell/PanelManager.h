@@ -58,4 +58,5 @@ private:
   wl_surface* m_wlSurface = nullptr;
   bool m_pointerInside = false;
   bool m_inTransition = false;
+  bool m_justClosed = false;
 };
