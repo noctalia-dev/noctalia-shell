@@ -227,7 +227,6 @@ add_executable(noctalia
     "${CURSOR_SHAPE_PROTOCOL_C}"
 )
 target_compile_definitions(noctalia PRIVATE
-    NOCTALIA_HAVE_WLR_LAYER_SHELL=1
     NOCTALIA_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
 )
 

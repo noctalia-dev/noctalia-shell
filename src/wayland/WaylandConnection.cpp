@@ -7,9 +7,7 @@
 
 #include <wayland-client.h>
 
-#if NOCTALIA_HAVE_WLR_LAYER_SHELL
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
-#endif
 #include "cursor-shape-v1-client-protocol.h"
 #include "ext-workspace-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
@@ -19,9 +17,7 @@ namespace {
 constexpr std::uint32_t kCompositorVersion = 4;
 constexpr std::uint32_t kSeatVersion = 5;
 constexpr std::uint32_t kShmVersion = 1;
-#if NOCTALIA_HAVE_WLR_LAYER_SHELL
 constexpr std::uint32_t kLayerShellVersion = 4;
-#endif
 constexpr std::uint32_t kXdgOutputManagerVersion = 3;
 constexpr std::uint32_t kExtWorkspaceManagerVersion = 1;
 constexpr std::uint32_t kCursorShapeManagerVersion = 1;
@@ -456,11 +452,9 @@ void WaylandConnection::bindGlobal(wl_registry* registry,
 
     if (interfaceName == "zwlr_layer_shell_v1") {
         m_hasLayerShellGlobal = true;
-#if NOCTALIA_HAVE_WLR_LAYER_SHELL
         const auto bindVersion = std::min(version, kLayerShellVersion);
         m_layerShell = static_cast<zwlr_layer_shell_v1*>(
             wl_registry_bind(registry, name, &zwlr_layer_shell_v1_interface, bindVersion));
-#endif
         return;
     }
 
@@ -669,9 +663,7 @@ void WaylandConnection::cleanup() {
     }
 
     if (m_layerShell != nullptr) {
-#if NOCTALIA_HAVE_WLR_LAYER_SHELL
         zwlr_layer_shell_v1_destroy(m_layerShell);
-#endif
         m_layerShell = nullptr;
     }
 
