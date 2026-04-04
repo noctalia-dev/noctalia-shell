@@ -81,7 +81,14 @@ void Node::markDirty() {
   }
 }
 
-void Node::clearDirty() { m_dirty = false; }
+void Node::clearDirty() {
+  m_dirty = false;
+  for (auto& child : m_children) {
+    if (child->m_dirty) {
+      child->clearDirty();
+    }
+  }
+}
 
 Node* Node::hitTest(Node* root, float x, float y) { return hitTestImpl(root, x, y, 0.0f, 0.0f); }
 
