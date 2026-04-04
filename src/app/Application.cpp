@@ -37,6 +37,12 @@ Application::Application() {
 }
 
 Application::~Application() {
+  if (m_systemBus != nullptr) {
+    m_systemBus->processPendingEvents();
+    m_powerProfilesService.reset();
+    m_systemBus->processPendingEvents();
+  }
+
   // Explicitly clean up D-Bus services before the bus connection is destroyed
   // This ensures clean disconnection and prevents blocking on shutdown
   if (m_bus != nullptr) {
@@ -85,6 +91,30 @@ void Application::run() {
   } catch (const std::exception& e) {
     logWarn("system monitor service disabled: {}", e.what());
     m_systemMonitor.reset();
+  }
+
+  try {
+    m_systemBus = std::make_unique<SystemBus>();
+    logInfo("connected to system bus");
+  } catch (const std::exception& e) {
+    logWarn("system dbus disabled: {}", e.what());
+    m_systemBus.reset();
+  }
+
+  if (m_systemBus != nullptr) {
+    try {
+      m_powerProfilesService = std::make_unique<PowerProfilesService>(*m_systemBus);
+      m_powerProfilesService->setChangeCallback(
+          [this](const PowerProfilesState& /*state*/) { m_bar.onWorkspaceChange(); });
+      if (!m_powerProfilesService->activeProfile().empty()) {
+        logInfo("power profiles active profile: {}", m_powerProfilesService->activeProfile());
+      } else {
+        logInfo("power profiles service active");
+      }
+    } catch (const std::exception& e) {
+      logWarn("power profiles disabled: {}", e.what());
+      m_powerProfilesService.reset();
+    }
   }
 
   try {
@@ -141,6 +171,10 @@ void Application::run() {
   if (m_bus != nullptr) {
     m_busPollSource = std::make_unique<SessionBusPollSource>(*m_bus);
     sources.push_back(m_busPollSource.get());
+  }
+  if (m_systemBus != nullptr) {
+    m_systemBusPollSource = std::make_unique<SystemBusPollSource>(*m_systemBus);
+    sources.push_back(m_systemBusPollSource.get());
   }
   sources.push_back(&m_notificationPollSource);
   sources.push_back(&m_timePollSource);
