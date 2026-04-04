@@ -2,6 +2,7 @@
 
 #include "config/ConfigService.h"
 #include "core/Log.h"
+#include "dbus/tray/TrayService.h"
 #include "render/scene/RectNode.h"
 #include "shell/Widget.h"
 #include "time/TimeService.h"
@@ -35,13 +36,14 @@ std::uint32_t positionToAnchor(const std::string& position) {
 Bar::Bar() = default;
 
 bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                     NotificationManager* notifications) {
+                     NotificationManager* notifications, TrayService* tray) {
   m_wayland = &wayland;
   m_config = config;
   m_time = timeService;
   m_notifications = notifications;
+  m_tray = tray;
 
-  m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications);
+  m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray);
 
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
@@ -68,7 +70,7 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
 
 void Bar::reload() {
   logInfo("bar: reloading config");
-  m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications);
+  m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray);
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;

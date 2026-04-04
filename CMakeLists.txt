@@ -183,6 +183,7 @@ add_executable(noctalia
     src/dbus/SessionBus.cpp
     src/dbus/mpris/MprisService.cpp
     src/dbus/notification/NotificationService.cpp
+    src/dbus/tray/TrayService.cpp
     src/config/ConfigService.cpp
     src/config/StateService.cpp
     src/core/Log.cpp
@@ -216,6 +217,7 @@ add_executable(noctalia
     src/shell/widgets/ClockWidget.cpp
     src/shell/widgets/NotificationWidget.cpp
     src/shell/widgets/SpacerWidget.cpp
+    src/shell/widgets/TrayWidget.cpp
     src/shell/widgets/WorkspacesWidget.cpp
     src/wayland/Surface.cpp
     src/wayland/LayerSurface.cpp

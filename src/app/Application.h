@@ -10,6 +10,7 @@
 #include "dbus/mpris/MprisService.h"
 #include "dbus/notification/NotificationPollSource.h"
 #include "dbus/notification/NotificationService.h"
+#include "dbus/tray/TrayService.h"
 #include "debug/DebugService.h"
 #include "notification/InternalNotificationService.h"
 #include "notification/NotificationManager.h"
@@ -44,6 +45,7 @@ private:
   std::unique_ptr<SystemMonitorService> m_systemMonitor;
   std::unique_ptr<DebugService> m_debugService;
   std::unique_ptr<MprisService> m_mprisService;
+  std::unique_ptr<TrayService> m_trayService;
   NotificationManager m_manager;
   InternalNotificationService m_internalNotifications;
   std::unique_ptr<NotificationService> m_notificationService;

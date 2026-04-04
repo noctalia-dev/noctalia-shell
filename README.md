@@ -97,7 +97,7 @@ third_party/
 
 ### Bar completion
 
-- [ ] System tray (StatusNotifierItem via DBus)
+- [~] System tray (StatusNotifierItem via DBus) - watcher + tray count MVP
 - [ ] Audio service (Pipewire) + volume OSD
 - [ ] Notification indicator + notification popup UI
 

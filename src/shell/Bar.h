@@ -9,6 +9,7 @@
 
 class ConfigService;
 class NotificationManager;
+class TrayService;
 class TimeService;
 class WaylandConnection;
 struct PointerEvent;
@@ -19,7 +20,7 @@ public:
   Bar();
 
   bool initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                  NotificationManager* notifications);
+                  NotificationManager* notifications, TrayService* tray);
   void reload();
   void closeAllInstances();
   void onOutputChange();
@@ -40,6 +41,7 @@ private:
   ConfigService* m_config = nullptr;
   TimeService* m_time = nullptr;
   NotificationManager* m_notifications = nullptr;
+  TrayService* m_tray = nullptr;
   std::unique_ptr<WidgetFactory> m_widgetFactory;
   std::vector<std::unique_ptr<BarInstance>> m_instances;
 

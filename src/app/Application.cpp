@@ -44,6 +44,7 @@ Application::~Application() {
     m_bus->processPendingEvents();
 
     // Destroy services in reverse order they were created
+    m_trayService.reset();
     m_notificationService.reset();
     m_mprisService.reset();
     m_debugService.reset();
@@ -75,9 +76,6 @@ void Application::run() {
 
   // Initialize wallpaper first (background layer)
   m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
-
-  // Initialize bar (top layer)
-  m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_manager);
 
   try {
     m_systemMonitor = std::make_unique<SystemMonitorService>();
@@ -123,7 +121,19 @@ void Application::run() {
       m_notificationService.reset();
       m_internalNotifications.notify("Noctalia", "DBus notifications disabled", e.what(), 7000, Urgency::Low);
     }
+
+    try {
+      m_trayService = std::make_unique<TrayService>(*m_bus);
+      m_trayService->setChangeCallback([this]() { m_bar.onWorkspaceChange(); });
+      logInfo("status notifier watcher active on org.kde.StatusNotifierWatcher");
+    } catch (const std::exception& e) {
+      logWarn("tray watcher disabled: {}", e.what());
+      m_trayService.reset();
+    }
   }
+
+  // Initialize bar (top layer)
+  m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_manager, m_trayService.get());
 
   // Build poll sources
   std::vector<PollSource*> sources;
