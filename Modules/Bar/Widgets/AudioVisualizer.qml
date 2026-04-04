@@ -45,21 +45,27 @@ Item {
 
   readonly property bool shouldShow: (currentVisualizerType !== "" && currentVisualizerType !== "none") && (!hideWhenIdle || MediaService.isPlaying)
 
+  readonly property bool needsSpectrum: root.shouldShow && MediaService.isPlaying
+
   // Register/unregister with SpectrumService based on visibility (use screenName — screen can be null after DPMS/output changes)
   readonly property string spectrumComponentId: "bar:audiovisualizer:" + screenName + ":" + root.section + ":" + root.sectionWidgetIndex
 
-  onShouldShowChanged: {
-    if (root.shouldShow) {
+  onNeedsSpectrumChanged: {
+    if (root.needsSpectrum) {
       SpectrumService.registerComponent(root.spectrumComponentId);
     } else {
       SpectrumService.unregisterComponent(root.spectrumComponentId);
     }
   }
 
-  Component.onDestruction: {
-    if (root.shouldShow) {
-      SpectrumService.unregisterComponent(root.spectrumComponentId);
+  Component.onCompleted: {
+    if (root.needsSpectrum) {
+      SpectrumService.registerComponent(root.spectrumComponentId);
     }
+  }
+
+  Component.onDestruction: {
+    SpectrumService.unregisterComponent(root.spectrumComponentId);
   }
 
   // Content dimensions for implicit sizing
@@ -104,7 +110,7 @@ Item {
       id: visualizerLoader
       anchors.fill: parent
       anchors.margins: Style.marginS
-      active: shouldShow
+      active: root.needsSpectrum
       asynchronous: true
 
       sourceComponent: {
