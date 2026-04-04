@@ -1,26 +1,27 @@
 set positional-arguments
 
-build-dir := "build"
+mode := "debug"
+build-dir := "build-" + mode
 
 default:
     @just --list
 
-configure mode="debug":
-    cmake -S . -B {{build-dir}} -DCMAKE_BUILD_TYPE={{ if mode == "release" { "Release" } else { "Debug" } }}
+configure m=mode:
+    cmake -S . -B build-{{m}} -DCMAKE_BUILD_TYPE={{ if m == "release" { "Release" } else { "Debug" } }}
 
-build:
-    cmake --build {{build-dir}} --parallel
+build m=mode:
+    cmake --build build-{{m}} --parallel
 
-run:
-    ./{{build-dir}}/noctalia
+run m=mode:
+    ./build-{{m}}/noctalia
 
 format:
     clang-format -i src/**/*.cpp src/**/*.h
 
-clean:
-    rm -rf {{build-dir}}
+clean m=mode:
+    rm -rf build-{{m}}
 
-rebuild mode="debug":
-    just clean
-    just configure {{mode}}
-    just build
+rebuild m=mode:
+    just clean {{m}}
+    just configure {{m}}
+    just build {{m}}
