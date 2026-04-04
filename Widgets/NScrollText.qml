@@ -40,6 +40,9 @@ Item {
   property real scrollCycleDuration: Math.max(4000, root.text.length * 120)
   property real resettingDuration: 300
 
+  // Stepped marquee: avoids NumberAnimation.Infinite (~every vsync). ~17ms ≈ 60 updates/s.
+  property int scrollTickIntervalMs: 16
+
   // Fade controls (fadeExtent: 0.0–0.5, fraction of width that fades)
   property real fadeExtent: 0.1
   property real fadeCornerRadius: 0
@@ -98,6 +101,22 @@ Item {
     onTriggered: {
       root.state = NScrollText.ScrollState.Scrolling;
       root.updateState();
+    }
+  }
+
+  Timer {
+    id: marqueeTimer
+    interval: root.scrollTickIntervalMs
+    repeat: true
+    running: root.state === NScrollText.ScrollState.Scrolling
+    onTriggered: {
+      const cw = titleText.width + scrollContainer.spacing;
+      if (cw <= 0 || root.scrollCycleDuration <= 0)
+        return;
+      const step = cw * (marqueeTimer.interval / root.scrollCycleDuration);
+      scrollContainer.x -= step;
+      if (scrollContainer.x <= -cw)
+        scrollContainer.x += cw;
     }
   }
 
@@ -172,14 +191,6 @@ Item {
         root.state = NScrollText.ScrollState.None;
         root.updateState();
       }
-    }
-
-    NumberAnimation on x {
-      running: root.state === NScrollText.ScrollState.Scrolling
-      to: -(titleText.width + scrollContainer.spacing)
-      duration: root.scrollCycleDuration
-      loops: Animation.Infinite
-      easing.type: Easing.Linear
     }
   }
 
