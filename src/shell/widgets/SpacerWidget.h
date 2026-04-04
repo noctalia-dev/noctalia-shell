@@ -4,11 +4,11 @@
 
 class SpacerWidget : public Widget {
 public:
-    explicit SpacerWidget(float width = 0.0f);
+  explicit SpacerWidget(float width = 0.0f);
 
-    void create(Renderer& renderer) override;
-    void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
+  void create(Renderer& renderer) override;
+  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
 
 private:
-    float m_fixedWidth;
+  float m_fixedWidth;
 };

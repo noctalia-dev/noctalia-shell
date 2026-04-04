@@ -6,21 +6,21 @@
 #include <vector>
 
 struct ResolvedFont {
-    std::string path;
-    int faceIndex = 0;
+  std::string path;
+  int faceIndex = 0;
 };
 
 class FontService {
 public:
-    FontService();
-    ~FontService();
+  FontService();
+  ~FontService();
 
-    FontService(const FontService&) = delete;
-    FontService& operator=(const FontService&) = delete;
+  FontService(const FontService&) = delete;
+  FontService& operator=(const FontService&) = delete;
 
-    [[nodiscard]] std::string resolvePath(const std::string& family) const;
-    [[nodiscard]] std::vector<ResolvedFont> resolveFallbackChain(const std::string& family, int limit = 8) const;
+  [[nodiscard]] std::string resolvePath(const std::string& family) const;
+  [[nodiscard]] std::vector<ResolvedFont> resolveFallbackChain(const std::string& family, int limit = 8) const;
 
 private:
-    FcConfig* m_config = nullptr;
+  FcConfig* m_config = nullptr;
 };

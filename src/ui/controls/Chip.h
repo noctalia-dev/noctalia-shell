@@ -10,13 +10,13 @@ class Label;
 // pointer/press semantics; chrome matches borderless shadcn-style chips.
 class Chip : public Box {
 public:
-    Chip();
+  Chip();
 
-    void setText(std::string_view text);
-    void setWorkspaceActive(bool active);
+  void setText(std::string_view text);
+  void setWorkspaceActive(bool active);
 
-    [[nodiscard]] Label* label() const noexcept { return m_label; }
+  [[nodiscard]] Label* label() const noexcept { return m_label; }
 
 private:
-    Label* m_label = nullptr;
+  Label* m_label = nullptr;
 };

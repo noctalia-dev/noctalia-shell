@@ -10,15 +10,15 @@ class Renderer;
 
 class Icon : public Node {
 public:
-    Icon();
+  Icon();
 
-    void setIcon(std::string_view name);
-    void setCodepoint(char32_t codepoint);
-    void setSize(float size);
-    void setColor(const Color& color);
+  void setIcon(std::string_view name);
+  void setCodepoint(char32_t codepoint);
+  void setSize(float size);
+  void setColor(const Color& color);
 
-    void measure(Renderer& renderer);
+  void measure(Renderer& renderer);
 
 private:
-    IconNode* m_iconNode = nullptr;
+  IconNode* m_iconNode = nullptr;
 };

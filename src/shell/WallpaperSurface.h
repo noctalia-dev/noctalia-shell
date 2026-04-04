@@ -8,8 +8,8 @@ class Renderer;
 
 class WallpaperSurface : public LayerSurface {
 public:
-    using LayerSurface::LayerSurface;
+  using LayerSurface::LayerSurface;
 
 protected:
-    std::unique_ptr<Renderer> createRenderer() override;
+  std::unique_ptr<Renderer> createRenderer() override;
 };

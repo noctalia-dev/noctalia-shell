@@ -25,35 +25,35 @@
 
 class Application {
 public:
-    Application();
-    ~Application();
+  Application();
+  ~Application();
 
-    void run();
+  void run();
 
-    // Public for signal handler
-    static std::atomic<bool> s_shutdownRequested;
+  // Public for signal handler
+  static std::atomic<bool> s_shutdownRequested;
 
 private:
-    WaylandConnection m_wayland;
-    ConfigService m_configService;
-    StateService m_stateService;
-    TimeService m_timeService;
-    Bar m_bar;
-    Wallpaper m_wallpaper;
-    std::unique_ptr<SessionBus> m_bus;
-    std::unique_ptr<SystemMonitorService> m_systemMonitor;
-    std::unique_ptr<DebugService> m_debugService;
-    std::unique_ptr<MprisService> m_mprisService;
-    NotificationManager m_manager;
-    InternalNotificationService m_internalNotifications;
-    std::unique_ptr<NotificationService> m_notificationService;
+  WaylandConnection m_wayland;
+  ConfigService m_configService;
+  StateService m_stateService;
+  TimeService m_timeService;
+  Bar m_bar;
+  Wallpaper m_wallpaper;
+  std::unique_ptr<SessionBus> m_bus;
+  std::unique_ptr<SystemMonitorService> m_systemMonitor;
+  std::unique_ptr<DebugService> m_debugService;
+  std::unique_ptr<MprisService> m_mprisService;
+  NotificationManager m_manager;
+  InternalNotificationService m_internalNotifications;
+  std::unique_ptr<NotificationService> m_notificationService;
 
-    // Poll sources (must outlive MainLoop)
-    std::unique_ptr<SessionBusPollSource> m_busPollSource;
-    std::unique_ptr<NotificationPollSource> m_notificationPollSource;
-    TimePollSource m_timePollSource{m_timeService};
-    ConfigPollSource m_configPollSource{m_configService};
-    StatePollSource m_statePollSource{m_stateService};
+  // Poll sources (must outlive MainLoop)
+  std::unique_ptr<SessionBusPollSource> m_busPollSource;
+  std::unique_ptr<NotificationPollSource> m_notificationPollSource;
+  TimePollSource m_timePollSource{m_timeService};
+  ConfigPollSource m_configPollSource{m_configService};
+  StatePollSource m_statePollSource{m_stateService};
 
-    std::unique_ptr<MainLoop> m_mainLoop;
+  std::unique_ptr<MainLoop> m_mainLoop;
 };

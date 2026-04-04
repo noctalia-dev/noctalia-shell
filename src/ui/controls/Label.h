@@ -11,22 +11,22 @@ class TextNode;
 
 class Label : public Node {
 public:
-    Label();
+  Label();
 
-    void setText(std::string_view text);
-    void setFontSize(float size);
-    void setColor(const Color& color);
-    void setMaxWidth(float maxWidth);
+  void setText(std::string_view text);
+  void setFontSize(float size);
+  void setColor(const Color& color);
+  void setMaxWidth(float maxWidth);
 
-    [[nodiscard]] const std::string& text() const noexcept;
-    [[nodiscard]] float fontSize() const noexcept;
-    [[nodiscard]] const Color& color() const noexcept;
-    [[nodiscard]] float maxWidth() const noexcept;
+  [[nodiscard]] const std::string& text() const noexcept;
+  [[nodiscard]] float fontSize() const noexcept;
+  [[nodiscard]] const Color& color() const noexcept;
+  [[nodiscard]] float maxWidth() const noexcept;
 
-    void measure(Renderer& renderer);
+  void measure(Renderer& renderer);
 
-    void setCaptionStyle();
+  void setCaptionStyle();
 
 private:
-    TextNode* m_textNode = nullptr;
+  TextNode* m_textNode = nullptr;
 };

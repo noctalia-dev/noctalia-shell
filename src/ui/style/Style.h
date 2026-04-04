@@ -21,4 +21,4 @@ inline constexpr float fontSizeXs = 12.0f;
 inline constexpr float fontSizeSm = 14.0f;
 inline constexpr float fontSizeCaption = 13.0f;
 
-}
+} // namespace Style

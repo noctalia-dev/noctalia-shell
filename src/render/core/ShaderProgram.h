@@ -4,21 +4,21 @@
 
 class ShaderProgram {
 public:
-    ShaderProgram() = default;
-    ~ShaderProgram();
+  ShaderProgram() = default;
+  ~ShaderProgram();
 
-    ShaderProgram(const ShaderProgram&) = delete;
-    ShaderProgram& operator=(const ShaderProgram&) = delete;
+  ShaderProgram(const ShaderProgram&) = delete;
+  ShaderProgram& operator=(const ShaderProgram&) = delete;
 
-    ShaderProgram(ShaderProgram&& other) noexcept;
-    ShaderProgram& operator=(ShaderProgram&& other) noexcept;
+  ShaderProgram(ShaderProgram&& other) noexcept;
+  ShaderProgram& operator=(ShaderProgram&& other) noexcept;
 
-    void create(const char* vertexSource, const char* fragmentSource);
-    void destroy();
+  void create(const char* vertexSource, const char* fragmentSource);
+  void destroy();
 
-    [[nodiscard]] bool isValid() const noexcept;
-    [[nodiscard]] GLuint id() const noexcept;
+  [[nodiscard]] bool isValid() const noexcept;
+  [[nodiscard]] GLuint id() const noexcept;
 
 private:
-    GLuint m_program = 0;
+  GLuint m_program = 0;
 };

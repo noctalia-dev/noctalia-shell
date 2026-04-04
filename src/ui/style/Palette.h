@@ -3,22 +3,22 @@
 #include "render/core/Color.h"
 
 struct Palette {
-    Color primary;
-    Color onPrimary;
-    Color secondary;
-    Color onSecondary;
-    Color tertiary;
-    Color onTertiary;
-    Color error;
-    Color onError;
-    Color surface;
-    Color onSurface;
-    Color surfaceVariant;
-    Color onSurfaceVariant;
-    Color outline;
-    Color shadow;
-    Color hover;
-    Color onHover;
+  Color primary;
+  Color onPrimary;
+  Color secondary;
+  Color onSecondary;
+  Color tertiary;
+  Color onTertiary;
+  Color error;
+  Color onError;
+  Color surface;
+  Color onSurface;
+  Color surfaceVariant;
+  Color onSurfaceVariant;
+  Color outline;
+  Color shadow;
+  Color hover;
+  Color onHover;
 };
 
 inline constexpr Palette palette{
@@ -34,8 +34,8 @@ inline constexpr Palette palette{
     .onSurface = hex("#f3edf7"),
     .surfaceVariant = hex("#11112d"),
     .onSurfaceVariant = hex("#7c80b4"),
-    .outline= hex("#21215F"),
-    .shadow= hex("#070722"),
-    .hover= hex("#9BFECE"),
-    .onHover= hex("#0e0e43"),
+    .outline = hex("#21215F"),
+    .shadow = hex("#070722"),
+    .hover = hex("#9BFECE"),
+    .onHover = hex("#0e0e43"),
 };

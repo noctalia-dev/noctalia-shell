@@ -6,9 +6,9 @@ class Icon;
 
 class NotificationWidget : public Widget {
 public:
-    void create(Renderer& renderer) override;
-    void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
+  void create(Renderer& renderer) override;
+  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
 
 private:
-    Icon* m_icon = nullptr;
+  Icon* m_icon = nullptr;
 };
