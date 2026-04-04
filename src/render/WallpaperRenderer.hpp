@@ -22,8 +22,6 @@ public:
                 std::uint32_t logicalWidth, std::uint32_t logicalHeight) override;
     void render() override;
     void setScene(Node* root) override;
-    [[nodiscard]] TextMetrics measureText(std::string_view text, float fontSize) override;
-    [[nodiscard]] TextMetrics measureIcon(std::string_view text, float fontSize) override;
     [[nodiscard]] TextureManager& textureManager() override;
 
     // Wallpaper-specific: set state before render() is called by Surface

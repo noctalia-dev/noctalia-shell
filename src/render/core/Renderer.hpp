@@ -26,7 +26,7 @@ public:
                         std::uint32_t logicalWidth, std::uint32_t logicalHeight) = 0;
     virtual void render() = 0;
     virtual void setScene(Node* root) = 0;
-    [[nodiscard]] virtual TextMetrics measureText(std::string_view text, float fontSize) = 0;
-    [[nodiscard]] virtual TextMetrics measureIcon(std::string_view text, float fontSize) = 0;
+    [[nodiscard]] virtual TextMetrics measureText(std::string_view /*text*/, float /*fontSize*/) { return {}; }
+    [[nodiscard]] virtual TextMetrics measureIcon(std::string_view /*text*/, float /*fontSize*/) { return {}; }
     [[nodiscard]] virtual TextureManager& textureManager() = 0;
 };
