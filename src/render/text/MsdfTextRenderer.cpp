@@ -225,6 +225,60 @@ void MsdfTextRenderer::draw(float surfaceWidth,
     }
 }
 
+MsdfTextRenderer::TextMetrics MsdfTextRenderer::measureGlyph(char32_t codepoint, float fontSize) {
+    if (m_fontSlots.empty()) {
+        return {};
+    }
+
+    const auto glyphIndex = FT_Get_Char_Index(m_fontSlots[0].face, codepoint);
+    if (glyphIndex == 0) {
+        return {};
+    }
+
+    Glyph& glyph = loadGlyph(0, glyphIndex);
+    const float scale = fontSize / kAtlasEmSize;
+
+    FT_Set_Pixel_Sizes(m_fontSlots[0].face, 0, static_cast<FT_UInt>(kAtlasEmSize));
+    FT_Load_Glyph(m_fontSlots[0].face, glyphIndex, FT_LOAD_NO_HINTING);
+    const float advance = static_cast<float>(m_fontSlots[0].face->glyph->advance.x) / 64.0f * scale;
+
+    const float top = -glyph.bearingY * scale;
+    const float bottom = top + glyph.atlasHeight * scale;
+    const float width = std::max(glyph.bearingX * scale + glyph.atlasWidth * scale, advance);
+
+    return TextMetrics{.width = width, .top = top, .bottom = bottom};
+}
+
+void MsdfTextRenderer::drawGlyph(float surfaceWidth, float surfaceHeight,
+                                  float x, float baselineY,
+                                  char32_t codepoint, float fontSize, const Color& color) {
+    if (m_fontSlots.empty()) {
+        return;
+    }
+
+    const auto glyphIndex = FT_Get_Char_Index(m_fontSlots[0].face, codepoint);
+    if (glyphIndex == 0) {
+        return;
+    }
+
+    Glyph& glyph = loadGlyph(0, glyphIndex);
+    const float scale = fontSize / kAtlasEmSize;
+    const float pxRange = std::max(static_cast<float>(kDistanceRange) * scale, 1.0f);
+
+    if (glyph.atlasWidth > 0.0f && glyph.atlasHeight > 0.0f) {
+        const float glyphX = x + glyph.bearingX * scale;
+        const float glyphY = std::round(baselineY) - glyph.bearingY * scale;
+        const float glyphW = glyph.atlasWidth * scale;
+        const float glyphH = glyph.atlasHeight * scale;
+
+        GLuint atlasTexture = m_atlasPages[glyph.atlasPage];
+        m_program.draw(atlasTexture, surfaceWidth, surfaceHeight,
+                       glyphX, glyphY, glyphW, glyphH,
+                       glyph.u0, glyph.v0, glyph.u1, glyph.v1,
+                       pxRange, color);
+    }
+}
+
 void MsdfTextRenderer::cleanup() {
     for (auto tex : m_atlasPages) {
         if (tex != 0) {

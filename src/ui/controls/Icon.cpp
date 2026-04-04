@@ -35,7 +35,7 @@ void Icon::setColor(const Color& color) {
 }
 
 void Icon::measure(Renderer& renderer) {
-    auto metrics = renderer.measureIcon(m_iconNode->text(), m_iconNode->fontSize());
+    auto metrics = renderer.measureGlyph(m_iconNode->codepoint(), m_iconNode->fontSize());
     Node::setSize(metrics.width, metrics.bottom - metrics.top);
     m_iconNode->setPosition(0.0f, -metrics.top);
 }

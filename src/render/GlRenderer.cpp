@@ -168,8 +168,8 @@ TextMetrics GlRenderer::measureText(std::string_view text, float fontSize) {
     return TextMetrics{.width = m.width, .top = m.top, .bottom = m.bottom};
 }
 
-TextMetrics GlRenderer::measureIcon(std::string_view text, float fontSize) {
-    auto m = m_iconTextRenderer.measure(text, fontSize);
+TextMetrics GlRenderer::measureGlyph(char32_t codepoint, float fontSize) {
+    auto m = m_iconTextRenderer.measureGlyph(codepoint, fontSize);
     return TextMetrics{.width = m.width, .top = m.top, .bottom = m.bottom};
 }
 
@@ -221,10 +221,11 @@ void GlRenderer::renderNode(const Node* node, float parentX, float parentY, floa
     }
     case NodeType::Icon: {
         const auto* icon = static_cast<const IconNode*>(node);
-        if (!icon->text().empty()) {
+        if (icon->codepoint() != 0) {
             auto color = icon->color();
             color.a *= effectiveOpacity;
-            m_iconTextRenderer.draw(sw, sh, absX, absY, icon->text(), icon->fontSize(), color);
+            m_iconTextRenderer.drawGlyph(sw, sh, absX, absY,
+                                         icon->codepoint(), icon->fontSize(), color);
         }
         break;
     }

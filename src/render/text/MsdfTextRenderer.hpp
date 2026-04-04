@@ -47,6 +47,14 @@ public:
               std::string_view text,
               float fontSize,
               const Color& color);
+
+    // Direct codepoint rendering — bypasses HarfBuzz shaping.
+    // Use for icon fonts where codepoints may collide with Unicode control ranges.
+    [[nodiscard]] TextMetrics measureGlyph(char32_t codepoint, float fontSize);
+    void drawGlyph(float surfaceWidth, float surfaceHeight,
+                   float x, float baselineY,
+                   char32_t codepoint, float fontSize, const Color& color);
+
     void cleanup();
 
 private:
