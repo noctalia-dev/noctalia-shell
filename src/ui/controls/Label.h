@@ -16,6 +16,7 @@ public:
   void setText(std::string_view text);
   void setFontSize(float size);
   void setColor(const Color& color);
+  void setMinWidth(float minWidth);
   void setMaxWidth(float maxWidth);
 
   [[nodiscard]] const std::string& text() const noexcept;
@@ -29,4 +30,5 @@ public:
 
 private:
   TextNode* m_textNode = nullptr;
+  float m_minWidth = 0.0f;
 };

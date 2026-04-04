@@ -1,5 +1,7 @@
 #pragma once
 
+// Values follow shadcn/ui proportions scaled to 85% for native desktop feel.
+// When porting a shadcn component, multiply its pixel values by 0.85.
 namespace Style {
 
 inline constexpr float radiusSm = 2.0f;

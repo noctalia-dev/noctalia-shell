@@ -63,19 +63,19 @@ void Toggle::setToggleSize(ToggleSize size) {
 void Toggle::applySize() {
   switch (m_size) {
   case ToggleSize::Small:
-    m_thumbSize = 10.0f;
-    m_inset = 2.0f;
-    m_travel = 8.0f;
-    break;
-  case ToggleSize::Medium:
     m_thumbSize = 12.0f;
     m_inset = 2.0f;
     m_travel = 10.0f;
     break;
+  case ToggleSize::Medium:
+    m_thumbSize = 16.0f;
+    m_inset = 2.0f;
+    m_travel = 14.0f;
+    break;
   case ToggleSize::Large:
-    m_thumbSize = 14.0f;
+    m_thumbSize = 18.0f;
     m_inset = 3.0f;
-    m_travel = 12.0f;
+    m_travel = 16.0f;
     break;
   }
 

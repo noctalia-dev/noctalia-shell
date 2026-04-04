@@ -27,12 +27,21 @@ void TestPanelContent::create(Renderer& renderer) {
   m_headerLabel = header.get();
   container->addChild(std::move(header));
 
+  constexpr float kRowLabelWidth = 100.0f;
+
   auto makeRow = []() {
     auto row = std::make_unique<Box>();
     row->setDirection(BoxDirection::Horizontal);
     row->setGap(Style::spaceMd);
     row->setAlign(BoxAlign::Center);
     return row;
+  };
+
+  auto makeRowLabel = [](const char* text, float minWidth) {
+    auto label = std::make_unique<Label>();
+    label->setText(text);
+    label->setMinWidth(minWidth);
+    return label;
   };
 
   auto button = std::make_unique<Button>();
@@ -42,10 +51,7 @@ void TestPanelContent::create(Renderer& renderer) {
   m_button = button.get();
   {
     auto row = makeRow();
-    auto rowLabel = std::make_unique<Label>();
-    rowLabel->setText("Button");
-
-    row->addChild(std::move(rowLabel));
+    row->addChild(makeRowLabel("Button", kRowLabelWidth));
     row->addChild(std::move(button));
     container->addChild(std::move(row));
   }
@@ -58,10 +64,7 @@ void TestPanelContent::create(Renderer& renderer) {
   m_iconButton = iconButton.get();
   {
     auto row = makeRow();
-    auto rowLabel = std::make_unique<Label>();
-    rowLabel->setText("Button w/ icon");
-
-    row->addChild(std::move(rowLabel));
+    row->addChild(makeRowLabel("Button w/ icon", kRowLabelWidth));
     row->addChild(std::move(iconButton));
     container->addChild(std::move(row));
   }
@@ -74,10 +77,7 @@ void TestPanelContent::create(Renderer& renderer) {
   {
     auto row = makeRow();
     row->setZIndex(10);
-    auto rowLabel = std::make_unique<Label>();
-    rowLabel->setText("Dropdown");
-
-    row->addChild(std::move(rowLabel));
+    row->addChild(makeRowLabel("Dropdown", kRowLabelWidth));
     row->addChild(std::move(dropdown));
 
     container->addChild(std::move(row));
@@ -97,10 +97,7 @@ void TestPanelContent::create(Renderer& renderer) {
   m_slider = slider.get();
   {
     auto row = makeRow();
-    auto rowLabel = std::make_unique<Label>();
-    rowLabel->setText("Slider");
-
-    row->addChild(std::move(rowLabel));
+    row->addChild(makeRowLabel("Slider", kRowLabelWidth));
     row->addChild(std::move(slider));
 
     auto valueLabel = std::make_unique<Label>();
@@ -127,10 +124,7 @@ void TestPanelContent::create(Renderer& renderer) {
   m_container = container.get();
   {
     auto row = makeRow();
-    auto rowLabel = std::make_unique<Label>();
-    rowLabel->setText("Toggle");
-
-    row->addChild(std::move(rowLabel));
+    row->addChild(makeRowLabel("Toggle", kRowLabelWidth));
     row->addChild(std::move(area));
     container->addChild(std::move(row));
   }

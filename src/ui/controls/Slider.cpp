@@ -15,8 +15,8 @@
 namespace {
 
 constexpr float kDefaultWidth = 180.0f;
-constexpr float kTrackHeight = 4.0f;
-constexpr float kThumbSize = 14.0f;
+constexpr float kTrackHeight = 6.0f;
+constexpr float kThumbSize = 16.0f;
 constexpr float kHorizontalPadding = 2.0f;
 
 RoundedRectStyle solidStyle(const Color& fill, float radius) {
@@ -109,7 +109,7 @@ void Slider::layout(Renderer& /*renderer*/) {
 
 void Slider::updateGeometry() {
   const float widthPx = width() > 0.0f ? width() : kDefaultWidth;
-  const float heightPx = std::max(kThumbSize, kTrackHeight) + Style::spaceXs;
+  const float heightPx = std::max({kThumbSize, kTrackHeight, Style::controlHeight});
   setSize(widthPx, heightPx);
 
   const float trackY = (heightPx - kTrackHeight) * 0.5f;

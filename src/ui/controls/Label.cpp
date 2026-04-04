@@ -5,6 +5,7 @@
 #include "ui/style/Palette.h"
 #include "ui/style/Style.h"
 
+#include <algorithm>
 #include <memory>
 
 Label::Label() {
@@ -19,6 +20,8 @@ void Label::setText(std::string_view text) { m_textNode->setText(std::string(tex
 void Label::setFontSize(float size) { m_textNode->setFontSize(size); }
 
 void Label::setColor(const Color& color) { m_textNode->setColor(color); }
+
+void Label::setMinWidth(float minWidth) { m_minWidth = minWidth; }
 
 void Label::setMaxWidth(float maxWidth) { m_textNode->setMaxWidth(maxWidth); }
 
@@ -37,7 +40,7 @@ void Label::setCaptionStyle() {
 
 void Label::measure(Renderer& renderer) {
   auto metrics = renderer.measureText(m_textNode->text(), m_textNode->fontSize());
-  setSize(metrics.width, metrics.bottom - metrics.top);
+  setSize(std::max(metrics.width, m_minWidth), metrics.bottom - metrics.top);
 
   // Position the TextNode at the baseline offset within this Label's bounds
   m_textNode->setPosition(0.0f, -metrics.top);
