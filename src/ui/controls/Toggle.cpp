@@ -26,7 +26,21 @@ void Toggle::setChecked(bool checked) {
     return;
   }
   m_checked = checked;
-  applyState();
+
+  if (m_animations != nullptr) {
+    if (m_animId != 0) {
+      m_animations->cancel(m_animId);
+    }
+    float from = m_checked ? 0.0f : 1.0f;
+    float to = m_checked ? 1.0f : 0.0f;
+    m_animId = m_animations->animate(from, to, AnimDuration::Fast, Easing::EaseOutCubic,
+                                     [this](float t) { applyAnimatedState(t); },
+                                     [this]() { m_animId = 0; });
+    // Mark dirty so the surface's frame loop restarts and ticks the animation
+    markDirty();
+  } else {
+    applyState();
+  }
 }
 
 void Toggle::setEnabled(bool enabled) {
@@ -70,24 +84,28 @@ void Toggle::applySize() {
 }
 
 void Toggle::applyState() {
+  applyAnimatedState(m_checked ? 1.0f : 0.0f);
+}
+
+void Toggle::applyAnimatedState(float t) {
+  const Color trackColor = lerpColor(palette.surfaceVariant, palette.primary, t);
+  const Color thumbColor = lerpColor(palette.onSurfaceVariant, palette.onPrimary, t);
+  const float thumbX = m_inset + m_travel * t;
+
+  setBackground(trackColor);
+  m_thumb->setPosition(thumbX, m_inset);
+
   auto thumbStyle = m_thumb->style();
   thumbStyle.fillMode = FillMode::Solid;
   thumbStyle.radius = m_thumbSize * 0.5f;
   thumbStyle.softness = 1.0f;
   thumbStyle.borderWidth = 0.0f;
-
-  if (m_checked) {
-    setPadding(m_inset, m_inset, m_inset, m_inset + m_travel);
-    setBackground(palette.primary);
-    thumbStyle.fill = palette.onPrimary;
-    m_thumb->setPosition(m_inset + m_travel, m_inset);
-  } else {
-    setPadding(m_inset, m_inset + m_travel, m_inset, m_inset);
-    setBackground(palette.surfaceVariant);
-    thumbStyle.fill = palette.onSurfaceVariant;
-    m_thumb->setPosition(m_inset, m_inset);
-  }
+  thumbStyle.fill = thumbColor;
   m_thumb->setStyle(thumbStyle);
+
+  // Padding keeps Box size consistent regardless of thumb position
+  const float rightPad = m_inset + m_travel - (thumbX - m_inset);
+  setPadding(m_inset, rightPad, m_inset, thumbX);
 
   if (m_enabled) {
     setOpacity(1.0f);

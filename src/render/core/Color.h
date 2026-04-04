@@ -91,3 +91,12 @@ constexpr Color hex(std::string_view value) {
 
   throw std::invalid_argument("unsupported hex color format");
 }
+
+constexpr Color lerpColor(const Color& a, const Color& b, float t) {
+  return Color{
+      .r = a.r + (b.r - a.r) * t,
+      .g = a.g + (b.g - a.g) * t,
+      .b = a.b + (b.b - a.b) * t,
+      .a = a.a + (b.a - a.a) * t,
+  };
+}
