@@ -37,14 +37,15 @@ private:
   ConfigService m_configService;
   StateService m_stateService;
   TimeService m_timeService;
-  Bar m_bar;
-  Wallpaper m_wallpaper;
+  NotificationsService m_notificationService;
   std::unique_ptr<SessionBus> m_bus;
   std::unique_ptr<SystemMonitorService> m_systemMonitor;
   std::unique_ptr<DebugService> m_debugService;
   std::unique_ptr<MprisService> m_mprisService;
   std::unique_ptr<TrayService> m_trayService;
-  NotificationsService m_notificationService;
+
+  Bar m_bar;
+  Wallpaper m_wallpaper;
 
   // Poll sources (must outlive MainLoop)
   std::unique_ptr<SessionBusPollSource> m_busPollSource;
