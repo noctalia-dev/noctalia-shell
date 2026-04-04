@@ -593,8 +593,34 @@ SmartPanel {
                               NetworkService.refreshActiveEthernetDetails();
                             }
                           }
-                        }
 
+                          // Disconnect button
+                          NButton {
+                            visible: modelData.connected && NetworkService.disconnectingEthernetIf !== modelData.ifname
+                            text: I18n.tr("common.disconnect")
+                            fontSize: Style.fontSizeS
+                            backgroundColor: Color.mSurfaceVariant
+                            textColor: Color.mOnSurface
+                            Layout.leftMargin: Style.marginS
+                            onClicked: {
+                                NetworkService.disconnectEthernet(modelData.ifname);
+                            }
+                          }
+
+                          // Reconnect button (shown when disconnected)
+                          NButton {
+                            visible: !modelData.connected && !NetworkService.disconnectingEthernetIf && !NetworkService.connectingEthernetIf
+                            text: I18n.tr("common.reconnect")
+                            fontSize: Style.fontSizeS
+                            backgroundColor: Color.mPrimary
+                            textColor: Color.mOnPrimary
+                            Layout.leftMargin: Style.marginS
+                            onClicked: {
+                                NetworkService.connectEthernet(modelData.ifname);
+                            }
+                          }
+                        }
+                        
                         // Click handling without anchors in a Layout-managed item
                         TapHandler {
                           target: ethHeaderRow

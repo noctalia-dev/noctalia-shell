@@ -67,6 +67,8 @@ Singleton {
   property string activeEthernetIf: ""
   property bool ethernetDetailsLoading: false
   property double activeEthernetDetailsTimestamp: 0
+  property string disconnectingEthernetIf: ""
+  property string connectingEthernetIf: ""
 
   // Wi-Fi properties
   readonly property bool wifiEnabled: Networking.wifiEnabled
@@ -273,6 +275,24 @@ Singleton {
     disconnectingFrom = ssid;
     disconnectProcess.ssid = ssid;
     disconnectProcess.running = true;
+  }
+
+  function disconnectEthernet(ifname) {
+    if (!ProgramCheckerService.nmcliAvailable) {
+      return;
+    }
+    disconnectingEthernetIf = ifname;
+    ethernetDisconnectProcess.ifname = ifname;
+    ethernetDisconnectProcess.running = true;
+  }
+
+  function connectEthernet(ifname) {
+    if (!ProgramCheckerService.nmcliAvailable) {
+      return;
+    }
+    connectingEthernetIf = ifname;
+    ethernetConnectProcess.ifname = ifname;
+    ethernetConnectProcess.running = true;
   }
 
   function forget(ssid) {
@@ -1051,6 +1071,65 @@ Singleton {
         // Still trigger a scan even on error
         delayedScanTimer.interval = 5000;
         delayedScanTimer.restart();
+      }
+    }
+  }
+
+  // Disconnect from Ethernet&
+  Process {
+    id: ethernetDisconnectProcess
+    property string ifname: ""
+    running: false
+    command: ["nmcli", "device", "disconnect", ifname]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        Logger.i("Network", "Disconnected Ethernet interface: '" + ethernetDisconnectProcess.ifname + "'");
+        root.ethernetConnected = false;
+        ToastService.showNotice(I18n.tr("common.ethernet"), I18n.tr("toast.wifi.disconnected", {
+                                                                          "ssid": ethernetDisconnectProcess.ifname
+                                                                        }), "ethernet-off");
+
+        root.refreshEthernetInterfaces();
+        root.disconnectingEthernetIf = "";
+      }
+    }
+
+    stderr: StdioCollector {
+        onStreamFinished: {
+            root.disconnectingEthernetIf = "";
+            if (text.trim()) {
+                Logger.w("Network", "Ethernet disconnect error: " + text);
+            }
+        }
+    }
+}
+
+  Process {
+    id: ethernetConnectProcess
+    property string ifname: ""
+    running: false
+    command: ["nmcli", "device", "connect", ifname]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        Logger.i("Network", "Connected Ethernet interface: '" + ethernetConnectProcess.ifname + "'");
+        root.ethernetConnected = true;
+        ToastService.showNotice(I18n.tr("common.ethernet"), I18n.tr("toast.wifi.connected", {
+                                                                          "ssid": ethernetConnectProcess.ifname
+                                                                        }), "ethernet");
+
+        root.refreshEthernetInterfaces();
+        root.connectingEthernetIf = "";
+      }
+    }
+
+    stderr: StdioCollector {
+      onStreamFinished: {
+        root.connectingEthernetIf = "";
+        if (text.trim()) {
+          Logger.w("Network", "Ethernet connect error: " + text);
+        }
       }
     }
   }
