@@ -35,6 +35,7 @@ private:
   struct OptionView {
     RectNode* background = nullptr;
     Label* label = nullptr;
+    Icon* checkIcon = nullptr;
     InputArea* area = nullptr;
   };
 

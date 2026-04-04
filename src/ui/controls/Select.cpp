@@ -166,7 +166,11 @@ void Select::layout(Renderer& renderer) {
   m_triggerArea->setPosition(0.0f, 0.0f);
   m_triggerArea->setSize(dropdownWidth, kTriggerHeight);
 
-  m_menuBackground->setPosition(0.0f, kTriggerHeight + kMenuTopGap);
+  // Position menu so the selected item overlaps the trigger
+  const float selectedRow = m_selectedIndex < m_optionViews.size() ? static_cast<float>(m_selectedIndex) : 0.0f;
+  const float menuY = -selectedRow * kOptionHeight;
+
+  m_menuBackground->setPosition(0.0f, menuY);
   m_menuBackground->setSize(dropdownWidth, menuHeight);
 
   for (std::size_t i = 0; i < m_optionViews.size(); ++i) {
@@ -174,15 +178,20 @@ void Select::layout(Renderer& renderer) {
     const bool showMenu = m_open && !m_optionViews.empty();
     option.background->setVisible(showMenu);
     option.label->setVisible(showMenu);
+    option.checkIcon->setVisible(showMenu && i == m_selectedIndex);
     option.area->setVisible(showMenu);
 
-    const float rowY = kTriggerHeight + kMenuTopGap + static_cast<float>(i) * kOptionHeight;
+    const float rowY = menuY + static_cast<float>(i) * kOptionHeight;
     option.background->setPosition(0.0f, rowY);
     option.background->setSize(dropdownWidth, kOptionHeight);
 
-    option.label->setMaxWidth(std::max(0.0f, dropdownWidth - kHorizontalPadding * 2.0f));
+    option.label->setMaxWidth(std::max(0.0f, dropdownWidth - kHorizontalPadding * 2.0f - kIconSize - Style::spaceXs));
     option.label->measure(renderer);
     option.label->setPosition(kHorizontalPadding, rowY + (kOptionHeight - option.label->height()) * 0.5f);
+
+    option.checkIcon->measure(renderer);
+    option.checkIcon->setPosition(dropdownWidth - kHorizontalPadding - option.checkIcon->width(),
+                                  rowY + (kOptionHeight - option.checkIcon->height()) * 0.5f);
 
     option.area->setPosition(0.0f, rowY);
     option.area->setSize(dropdownWidth, kOptionHeight);
@@ -195,6 +204,9 @@ void Select::clearOptionViews() {
   for (auto& option : m_optionViews) {
     if (option.area != nullptr) {
       (void)removeChild(option.area);
+    }
+    if (option.checkIcon != nullptr) {
+      (void)removeChild(option.checkIcon);
     }
     if (option.label != nullptr) {
       (void)removeChild(option.label);
@@ -216,6 +228,11 @@ void Select::rebuildOptionViews() {
     auto label = std::make_unique<Label>();
     label->setText(m_options[i]);
     auto* labelPtr = static_cast<Label*>(addChild(std::move(label)));
+
+    auto checkIcon = std::make_unique<Icon>();
+    checkIcon->setIcon("check");
+    checkIcon->setSize(kIconSize);
+    auto* checkIconPtr = static_cast<Icon*>(addChild(std::move(checkIcon)));
 
     auto area = std::make_unique<InputArea>();
     area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
@@ -246,6 +263,7 @@ void Select::rebuildOptionViews() {
     m_optionViews.push_back(OptionView{
         .background = bgPtr,
         .label = labelPtr,
+        .checkIcon = checkIconPtr,
         .area = areaPtr,
     });
   }
@@ -300,6 +318,7 @@ void Select::applyVisualState() {
     auto& option = m_optionViews[i];
     option.background->setVisible(showMenu);
     option.label->setVisible(showMenu);
+    option.checkIcon->setVisible(showMenu && i == m_selectedIndex);
     option.area->setVisible(showMenu);
 
     Color bg = rgba(0.0f, 0.0f, 0.0f, 0.0f);
@@ -313,6 +332,7 @@ void Select::applyVisualState() {
     }
 
     option.label->setColor(fg);
+    option.checkIcon->setColor(fg);
     option.background->setStyle(RoundedRectStyle{
         .fill = bg,
         .border = bg,
