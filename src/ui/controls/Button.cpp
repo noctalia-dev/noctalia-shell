@@ -5,21 +5,7 @@
 #include "ui/style/Palette.h"
 #include "ui/style/Style.h"
 
-#include <algorithm>
 #include <memory>
-
-namespace {
-
-Color brighten(const Color& color, float amount) {
-  return Color{
-      .r = std::clamp(color.r * amount, 0.0f, 1.0f),
-      .g = std::clamp(color.g * amount, 0.0f, 1.0f),
-      .b = std::clamp(color.b * amount, 0.0f, 1.0f),
-      .a = color.a,
-  };
-}
-
-} // namespace
 
 Button::Button() {
   setAlign(BoxAlign::Center);

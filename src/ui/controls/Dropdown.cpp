@@ -23,15 +23,6 @@ constexpr float kMenuTopGap = 4.0f;
 constexpr float kHorizontalPadding = 10.0f;
 constexpr float kIconSize = 14.0f;
 
-Color brighten(const Color& color, float amount) {
-  return Color{
-      .r = std::clamp(color.r * amount, 0.0f, 1.0f),
-      .g = std::clamp(color.g * amount, 0.0f, 1.0f),
-      .b = std::clamp(color.b * amount, 0.0f, 1.0f),
-      .a = color.a,
-  };
-}
-
 } // namespace
 
 Dropdown::Dropdown() {
