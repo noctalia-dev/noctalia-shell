@@ -25,6 +25,39 @@ A lightweight Wayland shell and bar with no Qt or GTK dependency.
 | Audio | `libpipewire` |
 | Config | `tomlplusplus` (vendored) |
 
+## Dependencies
+
+### Fedora
+
+```sh
+sudo dnf install cmake gcc-c++ just \
+  wayland-devel wayland-protocols-devel \
+  libEGL-devel mesa-libGLES-devel \
+  freetype-devel harfbuzz-devel fontconfig-devel \
+  sdbus-cpp-devel
+```
+
+### Arch
+
+```sh
+sudo pacman -S cmake gcc just \
+  wayland wayland-protocols \
+  libglvnd freetype2 harfbuzz fontconfig \
+  sdbus-cpp
+```
+
+### Debian / Ubuntu
+
+```sh
+sudo apt install cmake g++ just \
+  libwayland-dev wayland-protocols \
+  libegl-dev libgles-dev \
+  libfreetype-dev libharfbuzz-dev libfontconfig-dev \
+  libsdbus-c++-dev
+```
+
+Vendored (no system package needed): `msdfgen`, `stb`, `nanosvg`, `tomlplusplus`.
+
 ## Build
 
 Requires [just](https://github.com/casey/just).
@@ -161,8 +194,8 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [x] Button
 - [x] IconButton
 - [x] Slider
-- [ ] Tooltip
 - [ ] Progress bar
+- [ ] Busy Indicator
 - [ ] Scroll view
 - [ ] List view
 - [ ] Text input
