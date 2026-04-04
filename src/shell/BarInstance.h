@@ -2,13 +2,13 @@
 
 #include "config/ConfigService.h"
 #include "render/animation/AnimationManager.h"
+#include "render/scene/InputDispatcher.h"
 #include "render/scene/Node.h"
 #include "shell/Widget.h"
 #include "wayland/LayerSurface.h"
 
 #include <cstdint>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 class Box;
@@ -22,6 +22,7 @@ struct BarInstance {
   std::unique_ptr<LayerSurface> surface;
   std::unique_ptr<Node> sceneRoot;
   AnimationManager animations;
+  InputDispatcher inputDispatcher;
 
   // Bar layout sections (start/center/end along main axis)
   Box* startSection = nullptr;
@@ -31,7 +32,4 @@ struct BarInstance {
   std::vector<std::unique_ptr<Widget>> startWidgets;
   std::vector<std::unique_ptr<Widget>> centerWidgets;
   std::vector<std::unique_ptr<Widget>> endWidgets;
-
-  // Maps widget root Node* → Widget* for input dispatch
-  std::unordered_map<Node*, Widget*> widgetNodeMap;
 };

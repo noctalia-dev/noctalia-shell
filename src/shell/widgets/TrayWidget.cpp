@@ -1,19 +1,17 @@
 #include "shell/widgets/TrayWidget.h"
 
-#include "dbus/tray/TrayService.h"
 #include "core/Log.h"
+#include "dbus/tray/TrayService.h"
 #include "render/core/Renderer.h"
 #include "render/scene/ImageNode.h"
+#include "render/scene/InputArea.h"
 #include "render/scene/Node.h"
 #include "ui/controls/Box.h"
 #include "ui/controls/Icon.h"
 #include "ui/icons/IconRegistry.h"
 #include "ui/style/Palette.h"
 
-#include "cursor-shape-v1-client-protocol.h"
-
 #include <linux/input-event-codes.h>
-#include <algorithm>
 #include <array>
 #include <cstdlib>
 #include <filesystem>
@@ -123,34 +121,6 @@ void TrayWidget::update(Renderer& renderer) {
   Widget::update(renderer);
 }
 
-void TrayWidget::onPointerEnter(float localX, float localY) { m_hovered_index = iconIndexAt(localX, localY); }
-
-void TrayWidget::onPointerLeave() { m_hovered_index = -1; }
-
-void TrayWidget::onPointerMotion(float localX, float localY) { m_hovered_index = iconIndexAt(localX, localY); }
-
-bool TrayWidget::onPointerButton(std::uint32_t button, bool pressed) {
-  if (!pressed || m_hovered_index < 0) {
-    return false;
-  }
-
-  const std::size_t idx = static_cast<std::size_t>(m_hovered_index);
-  if (idx >= m_item_ids.size() || m_tray == nullptr) {
-    return false;
-  }
-
-  const std::string& item_id = m_item_ids[idx];
-  if (button == BTN_LEFT) {
-    return m_tray->activateItem(item_id);
-  }
-  if (button == BTN_RIGHT) {
-    return m_tray->openContextMenu(item_id);
-  }
-  return false;
-}
-
-std::uint32_t TrayWidget::cursorShape() const { return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER; }
-
 void TrayWidget::syncState(Renderer& renderer) {
   const auto next_items = (m_tray != nullptr) ? m_tray->items() : std::vector<TrayItemInfo>{};
   if (next_items == m_items) {
@@ -175,13 +145,14 @@ void TrayWidget::rebuild(Renderer& renderer) {
     m_container->removeChild(m_container->children().back().get());
   }
 
-  m_item_ids.clear();
-  m_item_ids.reserve(m_items.size());
-
   for (const auto& item : m_items) {
     const std::string preferred =
         item.needsAttention && !item.attentionIconName.empty() ? item.attentionIconName : item.iconName;
     const std::string iconPath = resolveThemeIconPath(preferred, item.iconThemePath);
+
+    std::unique_ptr<Node> iconNode;
+    float iconW = 16.0f;
+    float iconH = 16.0f;
 
     if (!iconPath.empty()) {
       auto texture = renderer.textureManager().loadFromFile(iconPath, 16);
@@ -190,83 +161,77 @@ void TrayWidget::rebuild(Renderer& renderer) {
         image->setTextureId(texture.id);
 
         const float maxDim = static_cast<float>(std::max(texture.width, texture.height));
-        const float width = maxDim > 0.0f ? 16.0f * (static_cast<float>(texture.width) / maxDim) : 16.0f;
-        const float height = maxDim > 0.0f ? 16.0f * (static_cast<float>(texture.height) / maxDim) : 16.0f;
-        image->setSize(width, height);
+        iconW = maxDim > 0.0f ? 16.0f * (static_cast<float>(texture.width) / maxDim) : 16.0f;
+        iconH = maxDim > 0.0f ? 16.0f * (static_cast<float>(texture.height) / maxDim) : 16.0f;
+        image->setSize(iconW, iconH);
 
-        m_container->addChild(std::move(image));
+        iconNode = std::move(image);
         m_loadedTextures.push_back(texture);
-        m_item_ids.push_back(item.id);
         logDebug("tray widget icon id={} source=file path={} size={}x{}", item.id, iconPath, texture.width,
                 texture.height);
-        continue;
+      } else {
+        logDebug("tray widget icon id={} source=file path={} failed-to-load", item.id, iconPath);
       }
-      logDebug("tray widget icon id={} source=file path={} failed-to-load", item.id, iconPath);
     }
 
-    const auto& pixmap = item.needsAttention && !item.attentionArgb32.empty() ? item.attentionArgb32 : item.iconArgb32;
-    const std::int32_t pixmapW =
-        item.needsAttention && !item.attentionArgb32.empty() ? item.attentionWidth : item.iconWidth;
-    const std::int32_t pixmapH =
-        item.needsAttention && !item.attentionArgb32.empty() ? item.attentionHeight : item.iconHeight;
+    if (iconNode == nullptr) {
+      const auto& pixmap =
+          item.needsAttention && !item.attentionArgb32.empty() ? item.attentionArgb32 : item.iconArgb32;
+      const std::int32_t pixmapW =
+          item.needsAttention && !item.attentionArgb32.empty() ? item.attentionWidth : item.iconWidth;
+      const std::int32_t pixmapH =
+          item.needsAttention && !item.attentionArgb32.empty() ? item.attentionHeight : item.iconHeight;
 
-    if (!pixmap.empty() && pixmapW > 0 && pixmapH > 0) {
-      auto texture = renderer.textureManager().loadFromArgbPixmap(pixmap.data(), pixmapW, pixmapH);
-      if (texture.id != 0) {
-        auto image = std::make_unique<ImageNode>();
-        image->setTextureId(texture.id);
+      if (!pixmap.empty() && pixmapW > 0 && pixmapH > 0) {
+        auto texture = renderer.textureManager().loadFromArgbPixmap(pixmap.data(), pixmapW, pixmapH);
+        if (texture.id != 0) {
+          auto image = std::make_unique<ImageNode>();
+          image->setTextureId(texture.id);
 
-        const float maxDim = static_cast<float>(std::max(texture.width, texture.height));
-        const float width = maxDim > 0.0f ? 16.0f * (static_cast<float>(texture.width) / maxDim) : 16.0f;
-        const float height = maxDim > 0.0f ? 16.0f * (static_cast<float>(texture.height) / maxDim) : 16.0f;
-        image->setSize(width, height);
+          const float maxDim = static_cast<float>(std::max(texture.width, texture.height));
+          iconW = maxDim > 0.0f ? 16.0f * (static_cast<float>(texture.width) / maxDim) : 16.0f;
+          iconH = maxDim > 0.0f ? 16.0f * (static_cast<float>(texture.height) / maxDim) : 16.0f;
+          image->setSize(iconW, iconH);
 
-        m_container->addChild(std::move(image));
-        m_loadedTextures.push_back(texture);
-        m_item_ids.push_back(item.id);
-        logDebug("tray widget icon id={} source=pixmap size={}x{} (bytes={})", item.id, pixmapW, pixmapH,
-                pixmap.size());
-        continue;
+          iconNode = std::move(image);
+          m_loadedTextures.push_back(texture);
+          logDebug("tray widget icon id={} source=pixmap size={}x{} (bytes={})", item.id, pixmapW, pixmapH,
+                  pixmap.size());
+        } else {
+          logDebug("tray widget icon id={} source=pixmap size={}x{} failed-to-load", item.id, pixmapW, pixmapH);
+        }
       }
-      logDebug("tray widget icon id={} source=pixmap size={}x{} failed-to-load", item.id, pixmapW, pixmapH);
     }
 
-    auto icon = std::make_unique<Icon>();
-    const std::string fallback = iconForItem(item);
-    icon->setIcon(fallback);
-    icon->setColor(item.needsAttention ? palette.error : palette.onSurface);
-    icon->measure(renderer);
-    m_container->addChild(std::move(icon));
-    m_item_ids.push_back(item.id);
-    logDebug("tray widget icon id={} source=glyph name={}", item.id, fallback);
-  }
-
-  m_hovered_index = -1;
-}
-
-int TrayWidget::iconIndexAt(float localX, float localY) const {
-  if (m_container == nullptr) {
-    return -1;
-  }
-
-  for (std::size_t i = 0; i < m_container->children().size(); ++i) {
-    const auto* child = m_container->children()[i].get();
-
-    float absX = 0.0f, absY = 0.0f;
-    Node::absolutePosition(child, absX, absY);
-
-    float containerAbsX = 0.0f, containerAbsY = 0.0f;
-    Node::absolutePosition(m_container, containerAbsX, containerAbsY);
-    const float childLocalX = absX - containerAbsX;
-    const float childLocalY = absY - containerAbsY;
-
-    if (localX >= childLocalX && localX < childLocalX + child->width() && localY >= childLocalY &&
-        localY < childLocalY + child->height()) {
-      return static_cast<int>(i);
+    if (iconNode == nullptr) {
+      auto icon = std::make_unique<Icon>();
+      const std::string fallback = iconForItem(item);
+      icon->setIcon(fallback);
+      icon->setColor(item.needsAttention ? palette.error : palette.onSurface);
+      icon->measure(renderer);
+      iconW = icon->width();
+      iconH = icon->height();
+      iconNode = std::move(icon);
+      logDebug("tray widget icon id={} source=glyph name={}", item.id, fallback);
     }
-  }
 
-  return -1;
+    // Wrap icon in InputArea for click handling
+    auto area = std::make_unique<InputArea>();
+    area->setSize(iconW, iconH);
+    auto itemId = item.id;
+    area->setOnClick([this, itemId](const InputArea::PointerData& data) {
+      if (m_tray == nullptr) {
+        return;
+      }
+      if (data.button == BTN_LEFT) {
+        (void)m_tray->activateItem(itemId);
+      } else if (data.button == BTN_RIGHT) {
+        (void)m_tray->openContextMenu(itemId);
+      }
+    });
+    area->addChild(std::move(iconNode));
+    m_container->addChild(std::move(area));
+  }
 }
 
 std::string TrayWidget::iconForItem(const TrayItemInfo& item) const {
