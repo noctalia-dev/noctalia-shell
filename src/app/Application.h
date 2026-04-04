@@ -46,7 +46,7 @@ private:
   std::unique_ptr<DebugService> m_debugService;
   std::unique_ptr<MprisService> m_mprisService;
   std::unique_ptr<TrayService> m_trayService;
-  NotificationManager m_manager;
+  NotificationManager m_notificationManager;
   InternalNotificationService m_internalNotifications;
   std::unique_ptr<NotificationService> m_notificationService;
 

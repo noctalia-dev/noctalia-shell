@@ -18,10 +18,10 @@ void signal_handler(int signum) {
 
 } // namespace
 
-Application::Application() : m_internalNotifications(m_manager) {
+Application::Application() : m_internalNotifications(m_notificationManager) {
   logInfo("noctalia hello");
 
-  m_manager.setEventCallback([this](const Notification& n, NotificationEvent event) {
+  m_notificationManager.setEventCallback([this](const Notification& n, NotificationEvent event) {
     const char* kind = "updated";
     if (event == NotificationEvent::Added) {
       kind = "added";
@@ -114,7 +114,7 @@ void Application::run() {
     }
 
     try {
-      m_notificationService = std::make_unique<NotificationService>(*m_bus, m_manager);
+      m_notificationService = std::make_unique<NotificationService>(*m_bus, m_notificationManager);
       logInfo("listening on org.freedesktop.Notifications");
     } catch (const std::exception& e) {
       logWarn("notifications disabled: {}", e.what());
@@ -133,7 +133,7 @@ void Application::run() {
   }
 
   // Initialize bar (top layer)
-  m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_manager, m_trayService.get());
+  m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get());
 
   // Build poll sources
   std::vector<PollSource*> sources;
