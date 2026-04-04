@@ -35,7 +35,8 @@ varying vec2 v_uv;
 
 void main() {
     float t = clamp(dot(v_uv, u_direction), 0.0, 1.0);
-    gl_FragColor = mix(u_start_color, u_end_color, t);
+    vec4 color = mix(u_start_color, u_end_color, t);
+    gl_FragColor = vec4(color.rgb * color.a, color.a);
 }
 )";
 

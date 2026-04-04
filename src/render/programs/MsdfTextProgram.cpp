@@ -43,7 +43,8 @@ void main() {
     float sd = median(msd.r, msd.g, msd.b);
     float screenPxDist = u_px_range * (sd - 0.5);
     float opacity = clamp(screenPxDist + 0.5, 0.0, 1.0);
-    gl_FragColor = vec4(u_color.rgb, u_color.a * opacity);
+    float a = u_color.a * opacity;
+    gl_FragColor = vec4(u_color.rgb * a, a);
 }
 )";
 

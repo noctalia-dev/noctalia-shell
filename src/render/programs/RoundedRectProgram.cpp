@@ -63,19 +63,28 @@ void main() {
 
     float gradient_t = clamp(dot(uv, u_gradient_direction), 0.0, 1.0);
     vec4 fill_base = (u_fill_mode == 0) ? u_color : mix(u_color, u_fill_end_color, gradient_t);
-    float fill_alpha = fill_base.a * inner_coverage;
-    float border_coverage = max(outer_coverage - inner_coverage, 0.0);
-    float border_alpha = u_border_color.a * border_coverage;
 
-    float out_alpha = fill_alpha + border_alpha * (1.0 - fill_alpha);
+    // Premultiplied-alpha compositing: border underneath, fill on top.
+    // All intermediate colors are premultiplied (rgb already scaled by alpha).
+    vec3 border_pm = u_border_color.rgb * u_border_color.a;
+    vec3 fill_pm = fill_base.rgb * fill_base.a;
+
+    // Blend fill over border (premultiplied "over" operator)
+    vec3 combined_rgb = fill_pm + border_pm * (1.0 - fill_base.a);
+    float combined_a = fill_base.a + u_border_color.a * (1.0 - fill_base.a);
+
+    // Lerp between border-only and fill-over-border using inner_coverage
+    vec3 interior_rgb = mix(border_pm, combined_rgb, inner_coverage);
+    float interior_a = mix(u_border_color.a, combined_a, inner_coverage);
+
+    // Apply outer shape mask
+    float out_alpha = interior_a * outer_coverage;
     if (out_alpha <= 0.0) {
         discard;
     }
 
-    vec3 composite_rgb =
-        (fill_base.rgb * fill_alpha + u_border_color.rgb * border_alpha * (1.0 - fill_alpha)) /
-        out_alpha;
-    gl_FragColor = vec4(composite_rgb, out_alpha);
+    // Output premultiplied alpha
+    gl_FragColor = vec4(interior_rgb * outer_coverage, out_alpha);
 }
 )";
 
