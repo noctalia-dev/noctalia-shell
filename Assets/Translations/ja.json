@@ -36,7 +36,9 @@
       "hide-mode-description": "アクティブウィンドウがない場合のウィジェットの動作を制御します。",
       "scrolling-mode-description": "長いウィンドウタイトルのスクロール動作を制御します。",
       "show-app-icon-description": "ウィンドウタイトルの横にアプリアイコンを表示します。",
-      "show-app-icon-label": "アプリアイコンを表示"
+      "show-app-icon-label": "アプリアイコンを表示",
+      "show-app-text-description": "アクティブなウィンドウのタイトルを表示します。",
+      "show-app-text-label": "ウィンドウタイトルを表示"
     },
     "audio-visualizer": {
       "color-name-description": "ビジュアライザーの色を選択します。",
@@ -548,6 +550,7 @@
     "wallpaper": "壁紙",
     "weather": "天気",
     "weather-loading": "天気を読み込み中...",
+    "weather-no-location": "天気を表示するには、設定で場所を設定してください",
     "week": "週",
     "widgets": "ウィジェット",
     "width": "幅",
@@ -1365,6 +1368,8 @@
       "title": "ランチャー"
     },
     "location": {
+      "auto-locate-description": "IPアドレスを使用して、定期的に現在地を自動検出します。",
+      "auto-locate-label": "自動検出",
       "calendar-cards-desc": "カレンダーパネルのカードを整理し、有効・無効を切り替えます。",
       "calendar-cards-title": "カレンダーカード",
       "calendar-header-label": "カレンダーヘッダー",
@@ -1382,6 +1387,7 @@
       "date-time-use-analog-label": "アナログ時計を使用",
       "date-time-week-numbers-description": "カレンダーに週番号（例：第38週）を表示します。",
       "date-time-week-numbers-label": "週番号を表示",
+      "geolocate-now-button": "今すぐ検索",
       "location-desc": "場所を設定して、正確な天気情報や夜間モードのスケジュールを取得します。",
       "location-search-description": "例：東京、日本",
       "location-search-label": "場所を検索",
@@ -1399,7 +1405,9 @@
       "weather-show-effects-description": "天気カードに視覚効果（雨、雪、雷など）を追加表示します。",
       "weather-show-effects-label": "天気エフェクトを表示",
       "weather-show-in-calendar-description": "カレンダービューに毎日の天気予報を直接表示します。",
-      "weather-show-in-calendar-label": "カレンダー"
+      "weather-show-in-calendar-label": "カレンダー",
+      "weather-talia-mascot-always-description": "tabler icons の代わりに常に Talia emojis を使用してください。",
+      "weather-talia-mascot-always-label": "Taliaの天気絵文字を常に表示する"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "fprintd（指紋認証）が有効な場合、このオプションを使用すると、指紋の代わりにパスワードでログインできます。",
@@ -2068,6 +2076,8 @@
       "color-extraction-enabled": "事前定義された配色スキームを使用する",
       "header-devices-apply-all-tooltip": "モニターごとに壁紙を選択",
       "header-devices-per-monitor-tooltip": "すべてのモニターに適用",
+      "header-link-light-dark-tooltip": "テーマ切り替え時に壁紙を維持",
+      "header-separate-light-dark-tooltip": "テーマに合わせて壁紙を自動切り替え",
       "header-sun-linked-tooltip": "ライトとダークの壁紙を分ける",
       "header-sun-separate-tooltip": "ライトとダークで同じ壁紙",
       "order-asc": "昇順",

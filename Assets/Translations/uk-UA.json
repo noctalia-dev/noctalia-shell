@@ -36,7 +36,9 @@
       "hide-mode-description": "Керує поведінкою віджета, коли немає активного вікна.",
       "scrolling-mode-description": "Керування, коли увімкнено прокрутку тексту для довгих заголовків вікон.",
       "show-app-icon-description": "Відображати значок застосунка біля заголовка вікна.",
-      "show-app-icon-label": "Показувати значок застосунка"
+      "show-app-icon-label": "Показувати значок застосунка",
+      "show-app-text-description": "Відобразити заголовок активного вікна.",
+      "show-app-text-label": "Показувати заголовок вікна"
     },
     "audio-visualizer": {
       "color-name-description": "Вибрати колір для візуалізатора.",
@@ -548,6 +550,7 @@
     "wallpaper": "Шпалери",
     "weather": "Погода",
     "weather-loading": "Завантаження погоди...",
+    "weather-no-location": "Встановіть місцезнаходження в Налаштуваннях, щоб бачити погоду",
     "week": "Тиждень",
     "widgets": "Віджети",
     "width": "Ширина",
@@ -1365,6 +1368,8 @@
       "title": "Лаунчер"
     },
     "location": {
+      "auto-locate-description": "Автоматично визначати ваше місцезнаходження періодично, використовуючи вашу IP-адресу.",
+      "auto-locate-label": "Автоматичне Визначення",
       "calendar-cards-desc": "Організуйте та вмикайте/вимикайте картки на панелі календаря.",
       "calendar-cards-title": "Календарні картки",
       "calendar-header-label": "Заголовок календаря",
@@ -1382,6 +1387,7 @@
       "date-time-use-analog-label": "Використовувати аналоговий годинник",
       "date-time-week-numbers-description": "Відображати номер тижня року (напр. тиждень 38) у календарі.",
       "date-time-week-numbers-label": "Показувати номери тижнів",
+      "geolocate-now-button": "Знайти зараз",
       "location-desc": "Отримуйте точну погоду та планування нічного світла, встановивши ваше розташування.",
       "location-search-description": "напр. Торонто, ОН",
       "location-search-label": "Шукати розташування",
@@ -1399,7 +1405,9 @@
       "weather-show-effects-description": "Показує додаткові візуальні ефекти (наприклад, дощ, сніг або блискавку) на картці погоди.",
       "weather-show-effects-label": "Відображати погодні ефекти",
       "weather-show-in-calendar-description": "Показувати щоденний прогноз погоди безпосередньо в календарі.",
-      "weather-show-in-calendar-label": "Відображати погоду в календарі"
+      "weather-show-in-calendar-label": "Відображати погоду в календарі",
+      "weather-talia-mascot-always-description": "Завжди використовуйте Talia emojis замість tabler icons.",
+      "weather-talia-mascot-always-label": "Завжди показувати погодні емодзі Talia"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Коли fprintd (автентифікація за відбитком пальця) активний, ця опція дозволяє входити в систему за допомогою пароля замість відбитка пальця.",
@@ -2068,6 +2076,8 @@
       "color-extraction-enabled": "Використовувати попередньо визначені кольорові схеми",
       "header-devices-apply-all-tooltip": "Вибрати шпалери для кожного монітора",
       "header-devices-per-monitor-tooltip": "Застосувати до всіх моніторів",
+      "header-link-light-dark-tooltip": "Зберігати шпалери при зміні теми",
+      "header-separate-light-dark-tooltip": "Автоматична зміна шпалер з темою",
       "header-sun-linked-tooltip": "Окремі світлі та темні шпалери",
       "header-sun-separate-tooltip": "Однакові шпалери для світлого та темного режимів",
       "order-asc": "За зростанням",

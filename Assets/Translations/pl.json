@@ -36,7 +36,9 @@
       "hide-mode-description": "Kontroluje zachowanie widżetu, gdy żadne okno nie jest aktywne.",
       "scrolling-mode-description": "Kontroluje, kiedy włączone jest przewijanie tekstu dla długich tytułów okien.",
       "show-app-icon-description": "Wyświetl ikonę aplikacji obok tytułu okna.",
-      "show-app-icon-label": "Pokaż ikonę aplikacji"
+      "show-app-icon-label": "Pokaż ikonę aplikacji",
+      "show-app-text-description": "Wyświetl tytuł aktywnego okna.",
+      "show-app-text-label": "Pokaż tytuł okna"
     },
     "audio-visualizer": {
       "color-name-description": "Wybierz kolor dla wizualizatora.",
@@ -548,6 +550,7 @@
     "wallpaper": "Tapeta",
     "weather": "Pogoda",
     "weather-loading": "Ładowanie pogody...",
+    "weather-no-location": "Ustaw lokalizację w Ustawieniach, aby zobaczyć pogodę",
     "week": "Tydzień",
     "widgets": "Widżety",
     "width": "Szerokość",
@@ -1365,6 +1368,8 @@
       "title": "Launcher"
     },
     "location": {
+      "auto-locate-description": "Automatycznie wykrywaj swoją lokalizację okresowo, używając adresu IP.",
+      "auto-locate-label": "Automatyczne Wykrywanie",
       "calendar-cards-desc": "Organizuj i włączaj/wyłączaj karty w panelu kalendarza.",
       "calendar-cards-title": "Karty kalendarza",
       "calendar-header-label": "Nagłówek kalendarza",
@@ -1382,6 +1387,7 @@
       "date-time-use-analog-label": "Użyj zegara analogowego",
       "date-time-week-numbers-description": "Wyświetlaj numer tygodnia w roku (np. tydzień 38) w kalendarzu.",
       "date-time-week-numbers-label": "Pokaż numery tygodni",
+      "geolocate-now-button": "Zlokalizuj teraz",
       "location-desc": "Ustaw lokalizację, aby otrzymywać dokładną pogodę i harmonogram podświetlenia nocnego.",
       "location-search-description": "np. Warszawa, PL",
       "location-search-label": "Szukaj lokalizacji",
@@ -1399,7 +1405,9 @@
       "weather-show-effects-description": "Pokaż dodatkowe efekty wizualne (deszcz, śnieg, błyskawice) na karcie pogody.",
       "weather-show-effects-label": "Wyświetlaj efekty pogodowe",
       "weather-show-in-calendar-description": "Pokaż dzienną prognozę pogody bezpośrednio w widoku kalendarza.",
-      "weather-show-in-calendar-label": "Wyświetlaj pogodę w kalendarzu"
+      "weather-show-in-calendar-label": "Wyświetlaj pogodę w kalendarzu",
+      "weather-talia-mascot-always-description": "Zawsze używaj Talia emojis zamiast tabler icons.",
+      "weather-talia-mascot-always-label": "Zawsze pokazuj emotikony pogody Talia"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Gdy fprintd (uwierzytelnianie odciskiem palca) jest aktywne, ta opcja pozwala nadal logować się za pomocą hasła zamiast odcisku palca.",
@@ -2068,6 +2076,8 @@
       "color-extraction-enabled": "Użyj predefiniowanych schematów kolorów",
       "header-devices-apply-all-tooltip": "Wybierz tapetę na monitor",
       "header-devices-per-monitor-tooltip": "Zastosuj do wszystkich monitorów",
+      "header-link-light-dark-tooltip": "Zachowaj tapetę przy zmianie motywu",
+      "header-separate-light-dark-tooltip": "Automatyczna zmiana tapety z motywem",
       "header-sun-linked-tooltip": "Oddzielne jasne i ciemne tapety",
       "header-sun-separate-tooltip": "Ta sama tapeta dla trybu jasnego i ciemnego",
       "order-asc": "Rosnąco",

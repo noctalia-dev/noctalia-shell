@@ -36,7 +36,9 @@
       "hide-mode-description": "활성 창이 없을 때 위젯의 동작 방식을 제어합니다.",
       "scrolling-mode-description": "창 제목이 길 때 텍스트 스크롤 활성화 시점을 제어합니다.",
       "show-app-icon-description": "창 제목 옆에 애플리케이션 아이콘을 표시합니다.",
-      "show-app-icon-label": "앱 아이콘 표시"
+      "show-app-icon-label": "앱 아이콘 표시",
+      "show-app-text-description": "활성 창의 제목을 표시합니다.",
+      "show-app-text-label": "창 제목 표시"
     },
     "audio-visualizer": {
       "color-name-description": "비주얼라이저의 색상을 선택합니다.",
@@ -548,6 +550,7 @@
     "wallpaper": "배경화면",
     "weather": "날씨",
     "weather-loading": "날씨 로딩 중...",
+    "weather-no-location": "날씨를 보려면 설정에서 위치를 설정하세요",
     "week": "주",
     "widgets": "위젯",
     "width": "너비",
@@ -1365,6 +1368,8 @@
       "title": "런처"
     },
     "location": {
+      "auto-locate-description": "IP 주소를 사용하여 주기적으로 위치를 자동으로 감지합니다.",
+      "auto-locate-label": "자동 찾기",
       "calendar-cards-desc": "달력 패널에서 카드를 정리하고 활성화/비활성화합니다.",
       "calendar-cards-title": "달력 카드",
       "calendar-header-label": "달력 헤더",
@@ -1382,6 +1387,7 @@
       "date-time-use-analog-label": "아날로그 스타일 시계 사용",
       "date-time-week-numbers-description": "달력에 해당 연도의 주차(예: 38주차)를 표시합니다.",
       "date-time-week-numbers-label": "주 번호 표시",
+      "geolocate-now-button": "지금 찾기",
       "location-desc": "위치를 설정하여 정확한 날씨 및 야간 조명 일정을 가져오세요.",
       "location-search-description": "예: 종로구, 해운대,  강릉",
       "location-search-label": "위치 검색",
@@ -1399,7 +1405,9 @@
       "weather-show-effects-description": "날씨 카드에 추가 시각 효과(비, 눈, 번개 등)를 표시합니다.",
       "weather-show-effects-label": "날씨 효과 표시",
       "weather-show-in-calendar-description": "달력 뷰에 일일 일기 예보를 직접 표시합니다.",
-      "weather-show-in-calendar-label": "달력에 날씨 표시"
+      "weather-show-in-calendar-label": "달력에 날씨 표시",
+      "weather-talia-mascot-always-description": "tabler icons 대신 항상 Talia emojis를 사용하세요.",
+      "weather-talia-mascot-always-label": "항상 Talia 날씨 이모티콘 표시"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "fprintd(지문 인증)가 활성화된 경우, 이 옵션을 사용하면 지문 대신 비밀번호로 로그인할 수 있습니다.",
@@ -2068,6 +2076,8 @@
       "color-extraction-enabled": "사전 정의된 색상 구성표 사용",
       "header-devices-apply-all-tooltip": "모니터별 배경화면 선택",
       "header-devices-per-monitor-tooltip": "모든 모니터에 적용",
+      "header-link-light-dark-tooltip": "테마 변경 시 배경화면 유지",
+      "header-separate-light-dark-tooltip": "테마에 따라 배경화면 자동 전환",
       "header-sun-linked-tooltip": "밝고 어두운 배경화면 분리",
       "header-sun-separate-tooltip": "밝고 어두운 모드에 동일한 배경화면",
       "order-asc": "오름차순",

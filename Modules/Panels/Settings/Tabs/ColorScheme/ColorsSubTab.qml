@@ -125,7 +125,7 @@ ColumnLayout {
     onToggled: checked => {
                  Settings.data.colorSchemes.syncGsettings = checked;
                  if (checked)
-                 ColorSchemeService.pushSystemColorScheme(true);
+                 ColorSchemeService.pushSystemColorScheme();
                }
   }
 

@@ -17,6 +17,7 @@ ColumnLayout {
 
   // Local state
   property bool valueShowIcon: widgetData.showIcon !== undefined ? widgetData.showIcon : widgetMetadata.showIcon
+  property bool valueShowText: widgetData.showText !== undefined ? widgetData.showText : widgetMetadata.showText
   property string valueHideMode: widgetData.hideMode !== undefined ? widgetData.hideMode : widgetMetadata.hideMode
   property string valueScrollingMode: widgetData.scrollingMode || widgetMetadata.scrollingMode
   property int valueMaxWidth: widgetData.maxWidth !== undefined ? widgetData.maxWidth : widgetMetadata.maxWidth
@@ -34,6 +35,7 @@ ColumnLayout {
     var settings = Object.assign({}, widgetData || {});
     settings.hideMode = valueHideMode;
     settings.showIcon = valueShowIcon;
+    settings.showText = valueShowText;
     settings.scrollingMode = valueScrollingMode;
     settings.maxWidth = parseInt(widthInput.text) || widgetMetadata.maxWidth;
     settings.useFixedWidth = valueUseFixedWidth;
@@ -76,6 +78,18 @@ ColumnLayout {
                   saveSettings();
                 }
     defaultValue: widgetMetadata.textColor
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("bar.active-window.show-app-text-label")
+    description: I18n.tr("bar.active-window.show-app-text-description")
+    checked: root.valueShowText
+    onToggled: checked => {
+                 root.valueShowText = checked;
+                 saveSettings();
+               }
+    defaultValue: widgetMetadata.showText
   }
 
   NToggle {

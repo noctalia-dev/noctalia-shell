@@ -36,7 +36,9 @@
       "hide-mode-description": "控制小工具在沒有活動視窗時的行為",
       "scrolling-mode-description": "控制視窗長標題時是否啟用文字捲動",
       "show-app-icon-description": "在視窗標題旁顯示程式圖示",
-      "show-app-icon-label": "顯示應用程式的圖示"
+      "show-app-icon-label": "顯示應用程式的圖示",
+      "show-app-text-description": "顯示活動視窗的標題。",
+      "show-app-text-label": "顯示視窗標題"
     },
     "audio-visualizer": {
       "color-name-description": "選取視覺效果的顏色",
@@ -548,6 +550,7 @@
     "wallpaper": "桌布",
     "weather": "天氣",
     "weather-loading": "正在載入天氣...",
+    "weather-no-location": "在設定中設定位置以查看天氣",
     "week": "週",
     "widgets": "小工具",
     "width": "寬度",
@@ -1365,6 +1368,8 @@
       "title": "啟動器"
     },
     "location": {
+      "auto-locate-description": "使用您的 IP 位址定期自動偵測您的位置。",
+      "auto-locate-label": "自動定位",
       "calendar-cards-desc": "整理及啟用/停用在行事曆面板使用的卡片",
       "calendar-cards-title": "行事曆卡片",
       "calendar-header-label": "行事曆抬頭",
@@ -1382,6 +1387,7 @@
       "date-time-use-analog-label": "使用類比時鐘",
       "date-time-week-numbers-description": "在行事曆顯示今年當週的週數 (例如: 第38週)",
       "date-time-week-numbers-label": "顯示週數",
+      "geolocate-now-button": "立即定位",
       "location-desc": "設定你的所在地以取得準確的天氣及夜光模式時間",
       "location-search-description": "例如: Taipei (英文)",
       "location-search-label": "搜尋位置",
@@ -1399,7 +1405,9 @@
       "weather-show-effects-description": "在氣象卡片顯示額外的視覺效果 (像是下雨, 下雪或閃電)",
       "weather-show-effects-label": "顯示天氣特效",
       "weather-show-in-calendar-description": "在檢視行事曆時一同顯示每日天氣",
-      "weather-show-in-calendar-label": "在行事曆中顯示天氣"
+      "weather-show-in-calendar-label": "在行事曆中顯示天氣",
+      "weather-talia-mascot-always-description": "始終使用 Talia emojis 而不是 tabler icons。",
+      "weather-talia-mascot-always-label": "始終顯示Talia天氣表情符號"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "當 fprintd（指紋認證）處於活動狀態時，此選項允許您使用密碼而非指紋登入。",
@@ -2068,6 +2076,8 @@
       "color-extraction-enabled": "使用預設配色方案",
       "header-devices-apply-all-tooltip": "為每個螢幕選擇桌布",
       "header-devices-per-monitor-tooltip": "套用到所有顯示器",
+      "header-link-light-dark-tooltip": "切換主題時保留桌布",
+      "header-separate-light-dark-tooltip": "隨主題自動切換桌布",
       "header-sun-linked-tooltip": "分離淺色和深色桌布",
       "header-sun-separate-tooltip": "明暗模式使用相同桌布",
       "order-asc": "升序",

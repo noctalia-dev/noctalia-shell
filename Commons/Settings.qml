@@ -32,7 +32,6 @@ Singleton {
   readonly property string cacheDir: ensureTrailingSlash(Quickshell.env("NOCTALIA_CACHE_DIR") || (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/" + shellName + "/")
 
   readonly property string settingsFile: Quickshell.env("NOCTALIA_SETTINGS_FILE") || (configDir + "settings.json")
-  readonly property string defaultLocation: "Tokyo"
   readonly property string defaultAvatar: Quickshell.env("HOME") + "/.face"
   readonly property string defaultVideosDirectory: Quickshell.env("HOME") + "/Videos"
   readonly property string defaultWallpapersDirectory: Quickshell.env("HOME") + "/Pictures/Wallpapers"
@@ -340,9 +339,10 @@ Singleton {
 
     // location
     property JsonObject location: JsonObject {
-      property string name: defaultLocation
+      property string name: ""
       property bool weatherEnabled: true
       property bool weatherShowEffects: true
+      property bool weatherTaliaMascotAlways: false
       property bool useFahrenheit: false
       property bool use12hourFormat: false
       property bool showWeekNumberInCalendar: false
@@ -352,6 +352,7 @@ Singleton {
       property int firstDayOfWeek: -1 // -1 = auto (use locale), 0 = Sunday, 1 = Monday, 6 = Saturday
       property bool hideWeatherTimezone: false
       property bool hideWeatherCityName: false
+      property bool autoLocate: false
     }
 
     // calendar
@@ -1067,9 +1068,7 @@ Singleton {
 
       var defaultPath = Quickshell.shellDir + "/Assets/settings-default.json";
 
-      // Encode transfer it has base64 to avoid any escaping issue
-      var base64Data = Qt.btoa(jsonData);
-      Quickshell.execDetached(["sh", "-c", `echo "${base64Data}" | base64 -d > "${defaultPath}"`]);
+      Quickshell.execDetached(["sh", "-c", `cat > "${defaultPath}" << 'NOCTALIA_EOF'\n${jsonData}\nNOCTALIA_EOF`]);
     } catch (error) {
       Logger.e("Settings", "Failed to generate default settings file: " + error);
     }
@@ -1090,8 +1089,7 @@ Singleton {
 
       var defaultPath = Quickshell.shellDir + "/Assets/settings-widgets-default.json";
 
-      var base64Data = Qt.btoa(jsonData);
-      Quickshell.execDetached(["sh", "-c", `echo "${base64Data}" | base64 -d > "${defaultPath}"`]);
+      Quickshell.execDetached(["sh", "-c", `cat > "${defaultPath}" << 'NOCTALIA_EOF'\n${jsonData}\nNOCTALIA_EOF`]);
     } catch (error) {
       Logger.e("Settings", "Failed to generate widget default settings file: " + error);
     }

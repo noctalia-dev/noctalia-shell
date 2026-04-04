@@ -99,8 +99,9 @@ async def apply_gtk4_colors(config_dir: Path):
 async def sync_system_appearance(mode: str, *, update_gtk_theme: bool = True) -> None:
     """
     Push light/dark to org.gnome.desktop.interface (gsettings or dconf fallback).
-    Used by the GTK template post-hook (also sets gtk-theme when update_gtk_theme)
-    and by Noctalia on dark-mode toggle (--appearance-only: color-scheme only).
+    Used by the GTK template post-hook and ColorSchemeService when "Sync system theme"
+    is on (both set color-scheme and gtk-theme when themes exist). --appearance-only
+    skips CSS and only updates color-scheme for narrow tooling use.
     """
     has_gsettings = shutil.which("gsettings")
     has_dconf = shutil.which("dconf")
@@ -177,6 +178,9 @@ async def main():
         await sync_system_appearance(mode, update_gtk_theme=True)
         print("GTK colors applied successfully")
     else:
+        # Still push light/dark preference so portal/GTK apps follow the shell even when
+        # gtk.css / noctalia.css setup failed.
+        await sync_system_appearance(mode, update_gtk_theme=False)
         sys.exit(1)
 
 

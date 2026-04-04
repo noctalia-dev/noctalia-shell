@@ -36,7 +36,9 @@
       "hide-mode-description": "Contrôle le comportement du widget lorsqu'aucune fenêtre n'est active.",
       "scrolling-mode-description": "Contrôler quand le défilement de texte est activé pour les titres de fenêtre longs.",
       "show-app-icon-description": "Afficher l'icône de l'application à côté du titre de la fenêtre.",
-      "show-app-icon-label": "Afficher l'icône de l'application"
+      "show-app-icon-label": "Afficher l'icône de l'application",
+      "show-app-text-description": "Afficher le titre de la fenêtre active.",
+      "show-app-text-label": "Afficher le titre de la fenêtre"
     },
     "audio-visualizer": {
       "color-name-description": "Sélectionnez la couleur du visualiseur.",
@@ -548,6 +550,7 @@
     "wallpaper": "Fond d’écran",
     "weather": "Météo",
     "weather-loading": "Chargement de la météo...",
+    "weather-no-location": "Définissez un emplacement dans les Paramètres pour voir la météo",
     "week": "Semaine",
     "widgets": "Widgets",
     "width": "Largeur",
@@ -1365,6 +1368,8 @@
       "title": "Lanceur"
     },
     "location": {
+      "auto-locate-description": "Détecte automatiquement votre position périodiquement en utilisant votre adresse IP.",
+      "auto-locate-label": "Localisation Automatique",
       "calendar-cards-desc": "Organiser et activer/désactiver les cartes dans le panneau de calendrier.",
       "calendar-cards-title": "Cartes de calendrier",
       "calendar-header-label": "En-tête du calendrier",
@@ -1382,6 +1387,7 @@
       "date-time-use-analog-label": "Utiliser une horloge de style analogique",
       "date-time-week-numbers-description": "Afficher la semaine de l'année (ex : Semaine 38) dans le calendrier.",
       "date-time-week-numbers-label": "Afficher les numéros de semaine",
+      "geolocate-now-button": "Localiser maintenant",
       "location-desc": "Obtenez une météo et une planification de l'éclairage nocturne précises en définissant votre emplacement.",
       "location-search-description": "ex : Toronto, ON",
       "location-search-label": "Rechercher un emplacement",
@@ -1399,7 +1405,9 @@
       "weather-show-effects-description": "Afficher des effets visuels supplémentaires (comme la pluie, la neige ou la foudre) sur la carte météo.",
       "weather-show-effects-label": "Afficher les effets météorologiques",
       "weather-show-in-calendar-description": "Afficher les prévisions météo quotidiennes directement dans votre vue calendrier.",
-      "weather-show-in-calendar-label": "Afficher la météo dans le calendrier"
+      "weather-show-in-calendar-label": "Afficher la météo dans le calendrier",
+      "weather-talia-mascot-always-description": "Toujours utiliser les Talia emojis au lieu des tabler icons.",
+      "weather-talia-mascot-always-label": "Toujours afficher les emojis météo de Talia"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Lorsque fprintd (authentification par empreinte digitale) est actif, cette option vous permet de vous connecter avec votre mot de passe au lieu d'une empreinte digitale.",
@@ -2068,6 +2076,8 @@
       "color-extraction-enabled": "Utiliser les schémas de couleurs prédéfinis",
       "header-devices-apply-all-tooltip": "Choisir le fond d'écran par moniteur",
       "header-devices-per-monitor-tooltip": "Appliquer à tous les moniteurs",
+      "header-link-light-dark-tooltip": "Garder le fond d'écran lors du changement de thème",
+      "header-separate-light-dark-tooltip": "Changer automatiquement le fond d'écran avec le thème",
       "header-sun-linked-tooltip": "Séparer les fonds d'écran clairs et sombres",
       "header-sun-separate-tooltip": "Même fond d'écran pour clair et sombre",
       "order-asc": "Croissant",

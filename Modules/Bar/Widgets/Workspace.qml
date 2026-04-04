@@ -731,14 +731,14 @@ Item {
 
       Behavior on width {
         NumberAnimation {
-          duration: Style.animationNormal
-          easing.type: Easing.OutBack
+          duration: Style.animationFast
+          easing.type: Easing.OutCubic
         }
       }
       Behavior on height {
         NumberAnimation {
-          duration: Style.animationNormal
-          easing.type: Easing.OutBack
+          duration: Style.animationFast
+          easing.type: Easing.OutCubic
         }
       }
 
@@ -779,6 +779,8 @@ Item {
           delegate: Item {
             id: groupedTaskbarItem
 
+            readonly property bool isFocused: modelData?.isFocused ?? false
+
             width: root.iconSize
             height: root.iconSize
 
@@ -794,22 +796,22 @@ Item {
 
               source: {
                 root.iconRevision; // Force re-evaluation when revision changes
-                return ThemeIcons.iconForAppId(modelData.appId?.toLowerCase());
+                return ThemeIcons.iconForAppId(modelData?.appId?.toLowerCase());
               }
               smooth: true
               asynchronous: true
-              opacity: modelData.isFocused ? Style.opacityFull : unfocusedIconsOpacity
-              layer.enabled: root.colorizeIcons && !modelData.isFocused
+              opacity: groupedTaskbarItem.isFocused ? Style.opacityFull : unfocusedIconsOpacity
+              layer.enabled: root.colorizeIcons && !groupedTaskbarItem.isFocused
 
               Rectangle {
                 id: groupedFocusIndicator
-                visible: modelData.isFocused || windowHoverHandler.hovered
+                visible: groupedTaskbarItem.isFocused || windowHoverHandler.hovered
                 anchors.bottomMargin: -2
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: Style.toOdd(root.iconSize * 0.25)
                 height: 4
-                color: modelData.isFocused ? Color.mPrimary : Color.mHover
+                color: groupedTaskbarItem.isFocused ? Color.mPrimary : Color.mHover
                 radius: Math.min(Style.radiusXXS, width / 2)
               }
 
@@ -828,13 +830,13 @@ Item {
               preventStealing: true
 
               onPressed: mouse => {
-                           if (mouse.button === Qt.LeftButton) {
+                           if (mouse.button === Qt.LeftButton && modelData) {
                              CompositorService.focusWindow(modelData);
                            }
                          }
 
               onReleased: mouse => {
-                            if (mouse.button === Qt.RightButton) {
+                            if (mouse.button === Qt.RightButton && modelData) {
                               mouse.accepted = true;
                               TooltipService.hide();
                               root.selectedWindowId = modelData.id || modelData.address || "";
@@ -843,6 +845,8 @@ Item {
                             }
                           }
               onEntered: {
+                if (!modelData)
+                  return;
                 TooltipService.show(groupedTaskbarItem, modelData.title || modelData.appId || "Unknown app.", BarService.getTooltipDirection(root.screenName));
               }
               onExited: {
@@ -979,7 +983,7 @@ Item {
     Behavior on scale {
       NumberAnimation {
         duration: Style.animationFast
-        easing.type: Easing.OutBack
+        easing.type: Easing.OutCubic
         easing.overshoot: 1.2
       }
     }

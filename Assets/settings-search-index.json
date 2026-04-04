@@ -2184,13 +2184,25 @@
     "subTabLabel": "common.location"
   },
   {
+    "labelKey": "panels.location.auto-locate-label",
+    "descriptionKey": "panels.location.auto-locate-description",
+    "widget": "NToggle",
+    "tab": 17,
+    "tabLabel": "panels.region.title",
+    "subTab": 0,
+    "subTabLabel": "common.location"
+  },
+  {
     "labelKey": "panels.location.location-search-label",
     "descriptionKey": "panels.location.location-search-description",
     "widget": "NTextInput",
     "tab": 17,
     "tabLabel": "panels.region.title",
     "subTab": 0,
-    "subTabLabel": "common.location"
+    "subTabLabel": "common.location",
+    "visibleWhen": [
+      "!Settings.data.location.autoLocate"
+    ]
   },
   {
     "labelKey": "panels.location.weather-enabled-label",
@@ -2213,6 +2225,15 @@
   {
     "labelKey": "panels.location.weather-show-effects-label",
     "descriptionKey": "panels.location.weather-show-effects-description",
+    "widget": "NToggle",
+    "tab": 17,
+    "tabLabel": "panels.region.title",
+    "subTab": 0,
+    "subTabLabel": "common.location"
+  },
+  {
+    "labelKey": "panels.location.weather-talia-mascot-always-label",
+    "descriptionKey": "panels.location.weather-talia-mascot-always-description",
     "widget": "NToggle",
     "tab": 17,
     "tabLabel": "panels.region.title",

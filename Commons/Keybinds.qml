@@ -93,6 +93,23 @@ QtObject {
       case Qt.Key_Down:
         keyName = "Down";
         break;
+      case Qt.Key_BracketLeft:
+        keyName = "[";
+        break;
+      case Qt.Key_BracketRight:
+        keyName = "]";
+        break;
+      case Qt.Key_Backslash:
+        keyName = "\\";
+        break;
+      case Qt.Key_Slash:
+        keyName = "/";
+        break;
+      case Qt.Key_QuoteLeft:
+      case Qt.Key_AsciiTilde:
+      case Qt.Key_Dead_Grave:
+        keyName = "`";
+        break;
       }
     }
 

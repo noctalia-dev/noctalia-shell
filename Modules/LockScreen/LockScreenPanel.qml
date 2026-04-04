@@ -264,7 +264,7 @@ Item {
           Loader {
             anchors.fill: parent
             anchors.margins: 4
-            active: Settings.data.audio.visualizerType === "linear"
+            active: Settings.data.audio.visualizerType === "linear" && MediaService.isPlaying
             z: 0
             sourceComponent: NLinearSpectrum {
               anchors.fill: parent
@@ -278,7 +278,7 @@ Item {
           Loader {
             anchors.fill: parent
             anchors.margins: 4
-            active: Settings.data.audio.visualizerType === "mirrored"
+            active: Settings.data.audio.visualizerType === "mirrored" && MediaService.isPlaying
             z: 0
             sourceComponent: NMirroredSpectrum {
               anchors.fill: parent
@@ -292,7 +292,7 @@ Item {
           Loader {
             anchors.fill: parent
             anchors.margins: 4
-            active: Settings.data.audio.visualizerType === "wave"
+            active: Settings.data.audio.visualizerType === "wave" && MediaService.isPlaying
             z: 0
             sourceComponent: NWaveSpectrum {
               anchors.fill: parent
@@ -488,11 +488,34 @@ Item {
           Layout.preferredWidth: 180
           spacing: Style.marginM
 
-          NIcon {
+          Item {
+            Layout.preferredWidth: lockMainWeatherIconSide
+            Layout.preferredHeight: lockMainWeatherIconSide
             Layout.alignment: Qt.AlignVCenter
-            icon: weatherReady ? LocationService.weatherSymbolFromCode(LocationService.data.weather.current_weather.weathercode, LocationService.data.weather.current_weather.is_day) : "weather-cloud-off"
-            pointSize: Style.fontSizeXXXL
-            color: Color.mPrimary
+            readonly property int lockMainWeatherIconSide: Math.round(Style.fontSizeXXXL * Style.uiScaleRatio * 1.6)
+
+            NIcon {
+              visible: !LocationService.taliaWeatherMascotActive || !weatherReady
+              anchors.centerIn: parent
+              icon: weatherReady ? LocationService.weatherSymbolFromCode(LocationService.data.weather.current_weather.weathercode) : "weather-cloud-off"
+              pointSize: Style.fontSizeXXXL
+              color: Color.mPrimary
+            }
+            Loader {
+              active: LocationService.taliaWeatherMascotActive && weatherReady
+              anchors.fill: parent
+              asynchronous: true
+              sourceComponent: Component {
+                Image {
+                  anchors.fill: parent
+                  fillMode: Image.PreserveAspectFit
+                  smooth: true
+                  mipmap: true
+                  asynchronous: true
+                  source: Qt.resolvedUrl(LocationService.taliaWeatherImageFromCode(LocationService.data.weather.current_weather.weathercode))
+                }
+              }
+            }
           }
 
           ColumnLayout {
@@ -579,11 +602,34 @@ Item {
                 Layout.fillWidth: true
               }
 
-              NIcon {
+              Item {
+                Layout.preferredWidth: lockForecastWeatherIconSide
+                Layout.preferredHeight: lockForecastWeatherIconSide
                 Layout.alignment: Qt.AlignHCenter
-                icon: LocationService.weatherSymbolFromCode(LocationService.data.weather.daily.weathercode[index])
-                pointSize: Style.fontSizeXL
-                color: Color.mOnSurfaceVariant
+                readonly property int lockForecastWeatherIconSide: Math.round(Style.fontSizeXL * Style.uiScaleRatio * 1.6)
+
+                NIcon {
+                  visible: !LocationService.taliaWeatherMascotActive
+                  anchors.centerIn: parent
+                  icon: LocationService.weatherSymbolFromCode(LocationService.data.weather.daily.weathercode[index])
+                  pointSize: Style.fontSizeXL
+                  color: Color.mOnSurfaceVariant
+                }
+                Loader {
+                  active: LocationService.taliaWeatherMascotActive
+                  anchors.fill: parent
+                  asynchronous: true
+                  sourceComponent: Component {
+                    Image {
+                      anchors.fill: parent
+                      fillMode: Image.PreserveAspectFit
+                      smooth: true
+                      mipmap: true
+                      asynchronous: true
+                      source: Qt.resolvedUrl(LocationService.taliaWeatherImageFromCode(LocationService.data.weather.daily.weathercode[index]))
+                    }
+                  }
+                }
               }
 
               NText {

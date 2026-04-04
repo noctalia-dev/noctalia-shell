@@ -138,10 +138,10 @@ class TemplateRenderer:
     COLOR_ARG_FILTERS = {"blend", "harmonize"}
 
     # Regex for block delimiters: <* ... *>
-    _BLOCK_RE = re.compile(r'<\*\s*(.*?)\s*\*>', re.DOTALL)
+    _BLOCK_RE = re.compile(r'<\*(.*?)\*>', re.DOTALL)
 
     # Regex for expression tags: {{ ... }}
-    _EXPR_RE = re.compile(r"\{\{\s*([^}\n]+?)\s*\}\}")
+    _EXPR_RE = re.compile(r"\{\{([^}\n]+?)\}\}")
 
     def __init__(self, theme_data: dict[str, dict[str, str]], verbose: bool = True, default_mode: str = "dark", image_path: Optional[str] = None, scheme_type: str = "content"):
         self.theme_data = theme_data
@@ -359,7 +359,7 @@ class TemplateRenderer:
             condition_part = condition_part[4:].strip()
 
         # Extract expression from {{ ... }} if present
-        expr_match = re.match(r'\{\{\s*(.+?)\s*\}\}', condition_part)
+        expr_match = re.match(r'\{\{(.+?)\}\}', condition_part)
         if expr_match:
             condition_expr = expr_match.group(1).strip()
         else:

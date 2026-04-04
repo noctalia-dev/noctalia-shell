@@ -36,7 +36,9 @@
       "hide-mode-description": "Điều khiển cách tiện ích hoạt động khi không có cửa sổ đang hoạt động.",
       "scrolling-mode-description": "Điều khiển khi nào bật cuộn văn bản cho các tiêu đề cửa sổ dài.",
       "show-app-icon-description": "Hiển thị biểu tượng ứng dụng bên cạnh tiêu đề cửa sổ.",
-      "show-app-icon-label": "Hiển thị biểu tượng ứng dụng"
+      "show-app-icon-label": "Hiển thị biểu tượng ứng dụng",
+      "show-app-text-description": "Hiển thị tiêu đề của cửa sổ đang hoạt động.",
+      "show-app-text-label": "Hiển thị tiêu đề cửa sổ"
     },
     "audio-visualizer": {
       "color-name-description": "Chọn màu cho bộ hiển thị trực quan.",
@@ -548,6 +550,7 @@
     "wallpaper": "Hình nền",
     "weather": "Thời tiết",
     "weather-loading": "Đang tải thời tiết...",
+    "weather-no-location": "Đặt vị trí trong Cài đặt để xem thời tiết",
     "week": "Tuần",
     "widgets": "Tiện ích",
     "width": "Chiều rộng",
@@ -1365,6 +1368,8 @@
       "title": "Trình khởi chạy"
     },
     "location": {
+      "auto-locate-description": "Tự động phát hiện vị trí của bạn định kỳ bằng địa chỉ IP của bạn.",
+      "auto-locate-label": "Tự Động Định Vị",
       "calendar-cards-desc": "Sắp xếp và bật/tắt các thẻ trong bảng điều khiển lịch.",
       "calendar-cards-title": "Thẻ lịch",
       "calendar-header-label": "Tiêu đề Lịch",
@@ -1382,6 +1387,7 @@
       "date-time-use-analog-label": "Sử dụng đồng hồ kiểu kim",
       "date-time-week-numbers-description": "Hiển thị tuần trong năm (ví dụ: tuần 38) trong lịch.",
       "date-time-week-numbers-label": "Hiển thị số tuần",
+      "geolocate-now-button": "Định vị ngay",
       "location-desc": "Nhận thông tin thời tiết chính xác và lên lịch Ánh sáng đêm bằng cách đặt vị trí của bạn.",
       "location-search-description": "ví dụ: Toronto, ON",
       "location-search-label": "Tìm kiếm một địa điểm",
@@ -1399,7 +1405,9 @@
       "weather-show-effects-description": "Hiển thị các hiệu ứng hình ảnh bổ sung (như mưa, tuyết, hoặc sấm sét) trên thẻ thời tiết.",
       "weather-show-effects-label": "Hiển thị hiệu ứng thời tiết",
       "weather-show-in-calendar-description": "Hiển thị dự báo thời tiết hàng ngày trực tiếp trong chế độ xem lịch của bạn.",
-      "weather-show-in-calendar-label": "Hiển thị thời tiết trong lịch"
+      "weather-show-in-calendar-label": "Hiển thị thời tiết trong lịch",
+      "weather-talia-mascot-always-description": "Luôn sử dụng Talia emojis thay vì tabler icons.",
+      "weather-talia-mascot-always-label": "Luôn hiển thị biểu tượng cảm xúc thời tiết Talia"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Khi fprintd (xác thực vân tay) đang hoạt động, tùy chọn này cho phép bạn vẫn đăng nhập bằng mật khẩu được thay vì vân tay",
@@ -2068,6 +2076,8 @@
       "color-extraction-enabled": "Sử dụng các bảng màu tích hợp sẵn",
       "header-devices-apply-all-tooltip": "Chọn hình nền cho từng màn hình",
       "header-devices-per-monitor-tooltip": "Áp dụng cho tất cả màn hình",
+      "header-link-light-dark-tooltip": "Giữ hình nền khi chuyển đổi chủ đề",
+      "header-separate-light-dark-tooltip": "Tự động chuyển đổi hình nền theo chủ đề",
       "header-sun-linked-tooltip": "Tách riêng hình nền sáng và tối",
       "header-sun-separate-tooltip": "Cùng hình nền cho chế độ sáng và tối",
       "order-asc": "Tăng dần",

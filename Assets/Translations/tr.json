@@ -36,7 +36,9 @@
       "hide-mode-description": "Pencere aktif değilken araç takımlarının nasıl davrandığını kontrol eder.",
       "scrolling-mode-description": "Uzun pencere başlıkları için metin kaydırmanın ne zaman etkinleştirileceğini kontrol et.",
       "show-app-icon-description": "Pencere başlığı yanında uygulama simgesini göster.",
-      "show-app-icon-label": "Uygulama simgesini göster"
+      "show-app-icon-label": "Uygulama simgesini göster",
+      "show-app-text-description": "Etkin pencerenin başlığını göster.",
+      "show-app-text-label": "Pencere başlığını göster"
     },
     "audio-visualizer": {
       "color-name-description": "Görselleştirici için renk seçin.",
@@ -548,6 +550,7 @@
     "wallpaper": "Duvar kağıdı",
     "weather": "Hava durumu",
     "weather-loading": "Hava durumu yükleniyor...",
+    "weather-no-location": "Hava durumunu görmek için Ayarlar'da bir konum belirleyin",
     "week": "Hafta",
     "widgets": "Araçlar",
     "width": "Genişlik",
@@ -1365,6 +1368,8 @@
       "title": "Başlatıcı"
     },
     "location": {
+      "auto-locate-description": "IP adresinizi kullanarak konumunuzu periyodik olarak otomatik olarak algılayın.",
+      "auto-locate-label": "Otomatik Konumlandırma",
       "calendar-cards-desc": "Takvim panelinde kartları düzenleyin ve etkinleştirin/devre dışı bırakın.",
       "calendar-cards-title": "Takvim kartları",
       "calendar-header-label": "Takvim başlığı",
@@ -1382,6 +1387,7 @@
       "date-time-use-analog-label": "Analog tarzı saat kullan",
       "date-time-week-numbers-description": "Takvimde yılın haftasını (örn. 38. Hafta) gösterir.",
       "date-time-week-numbers-label": "Hafta numaralarını göster",
+      "geolocate-now-button": "Şimdi konumlandır",
       "location-desc": "Konumunuzu ayarlayarak hassas hava durumu ve gece ışığı zamanlaması alın.",
       "location-search-description": "örn. İstanbul, TR",
       "location-search-label": "Konum ara",
@@ -1399,7 +1405,9 @@
       "weather-show-effects-description": "Hava durumu kartında ek görsel efektler (yağmur, kar veya şimşek gibi) gösterir.",
       "weather-show-effects-label": "Hava efektlerini göster",
       "weather-show-in-calendar-description": "Günlük hava durumu tahminini doğrudan takvim görünümünüzde gösterin.",
-      "weather-show-in-calendar-label": "Takvimde hava durumunu göster"
+      "weather-show-in-calendar-label": "Takvimde hava durumunu göster",
+      "weather-talia-mascot-always-description": "tabler icons yerine her zaman Talia emojis kullanın.",
+      "weather-talia-mascot-always-label": "Talia hava durumu emojilerini her zaman göster"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "fprintd (parmak izi kimlik doğrulaması) etkin olduğunda, bu seçenek parmak izi yerine parolanızı kullanarak oturum açmanızı sağlar.",
@@ -2068,6 +2076,8 @@
       "color-extraction-enabled": "Önceden tanımlanmış renk şemalarını kullan",
       "header-devices-apply-all-tooltip": "Monitör başına duvar kağıdı seç",
       "header-devices-per-monitor-tooltip": "Tüm monitörlere uygula",
+      "header-link-light-dark-tooltip": "Tema değiştirirken duvar kağıdını koru",
+      "header-separate-light-dark-tooltip": "Temayla birlikte duvar kağıdını otomatik değiştir",
       "header-sun-linked-tooltip": "Açık ve koyu duvar kağıtlarını ayır",
       "header-sun-separate-tooltip": "Açık ve koyu için aynı duvar kağıdı",
       "order-asc": "Artan",

@@ -36,7 +36,9 @@
       "hide-mode-description": "Bepaalt hoe de widget zich gedraagt wanneer er geen actief venster is.",
       "scrolling-mode-description": "Bepaalt wanneer tekstscrollen wordt ingeschakeld voor lange venstertitels.",
       "show-app-icon-description": "Toon het applicatiepictogram naast de venstertitel.",
-      "show-app-icon-label": "App-pictogram tonen"
+      "show-app-icon-label": "App-pictogram tonen",
+      "show-app-text-description": "Toon de titel van het actieve venster.",
+      "show-app-text-label": "Venstertitel weergeven"
     },
     "audio-visualizer": {
       "color-name-description": "Selecteer de kleur voor de visualizer.",
@@ -548,6 +550,7 @@
     "wallpaper": "Achtergrond",
     "weather": "Weer",
     "weather-loading": "Weer laden...",
+    "weather-no-location": "Stel een locatie in de Instellingen in om het weer te zien",
     "week": "Week",
     "widgets": "Widgets",
     "width": "Breedte",
@@ -1365,6 +1368,8 @@
       "title": "Launcher"
     },
     "location": {
+      "auto-locate-description": "Detecteert automatisch uw locatie periodiek met behulp van uw IP-adres.",
+      "auto-locate-label": "Automatische Lokalisatie",
       "calendar-cards-desc": "Kaarten organiseren en in-/uitschakelen in het kalenderpaneel.",
       "calendar-cards-title": "Kalenderkaarten",
       "calendar-header-label": "Kalenderkop",
@@ -1382,6 +1387,7 @@
       "date-time-use-analog-label": "Analoge klok gebruiken",
       "date-time-week-numbers-description": "Toon het weeknummer van het jaar (bijv. week 38) in de kalender.",
       "date-time-week-numbers-label": "Weeknummers tonen",
+      "geolocate-now-button": "Nu lokaliseren",
       "location-desc": "Krijg nauwkeurige weersinformatie en nachtlichtplanning door je locatie in te stellen.",
       "location-search-description": "bijv. Toronto, ON",
       "location-search-label": "Zoek een locatie",
@@ -1399,7 +1405,9 @@
       "weather-show-effects-description": "Toon extra visuele effecten (zoals regen, sneeuw of bliksem) op de weerkaart.",
       "weather-show-effects-label": "Weerseffecten weergeven",
       "weather-show-in-calendar-description": "Toon de dagelijkse weersverwachting direct in je kalenderview.",
-      "weather-show-in-calendar-label": "Weer in kalender weergeven"
+      "weather-show-in-calendar-label": "Weer in kalender weergeven",
+      "weather-talia-mascot-always-description": "Gebruik altijd Talia emojis in plaats van tabler icons.",
+      "weather-talia-mascot-always-label": "Altijd Talia weer-emoji's tonen"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Wanneer fprintd (vingerafdrukauthenticatie) actief is, kunt u met deze optie nog steeds inloggen met uw wachtwoord in plaats van een vingerafdruk.",
@@ -2068,6 +2076,8 @@
       "color-extraction-enabled": "Voorgedefinieerde kleurenschema's gebruiken",
       "header-devices-apply-all-tooltip": "Kies achtergrond per monitor",
       "header-devices-per-monitor-tooltip": "Op alle monitoren toepassen",
+      "header-link-light-dark-tooltip": "Achtergrond behouden bij het wisselen van thema",
+      "header-separate-light-dark-tooltip": "Achtergrond automatisch wisselen met thema",
       "header-sun-linked-tooltip": "Aparte lichte en donkere achtergronden",
       "header-sun-separate-tooltip": "Zelfde achtergrond voor licht en donker",
       "order-asc": "Oplopend",

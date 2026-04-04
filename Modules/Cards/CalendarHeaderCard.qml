@@ -90,6 +90,8 @@ Rectangle {
             text: {
               if (!Settings.data.location.weatherEnabled)
                 return "";
+              if (!LocationService.locationConfigured)
+                return I18n.tr("common.weather-no-location");
               if (!root.weatherReady)
                 return I18n.tr("common.weather-loading");
               if (Settings.data.location.hideWeatherCityName)

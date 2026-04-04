@@ -1,6 +1,7 @@
 {
   "bar": {
     "ActiveWindow": {
+      "showText": true,
       "showIcon": true,
       "hideMode": "hidden",
       "scrollingMode": "hover",

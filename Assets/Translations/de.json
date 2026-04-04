@@ -36,7 +36,9 @@
       "hide-mode-description": "Steuert das Verhalten des Widgets, wenn kein Fenster aktiv ist.",
       "scrolling-mode-description": "Steuern, wann Textscrolling für lange Fenstertitel aktiviert ist.",
       "show-app-icon-description": "Anwendungssymbol neben dem Fenstertitel anzeigen.",
-      "show-app-icon-label": "App-Symbol anzeigen"
+      "show-app-icon-label": "App-Symbol anzeigen",
+      "show-app-text-description": "Den Titel des aktiven Fensters anzeigen.",
+      "show-app-text-label": "Fenstertitel anzeigen"
     },
     "audio-visualizer": {
       "color-name-description": "Wählen Sie die Farbe für den Visualisierer aus.",
@@ -548,6 +550,7 @@
     "wallpaper": "Hintergrundbild",
     "weather": "Wetter",
     "weather-loading": "Wetter wird geladen...",
+    "weather-no-location": "Lege einen Standort in den Einstellungen fest, um das Wetter zu sehen",
     "week": "Woche",
     "widgets": "Widgets",
     "width": "Breite",
@@ -1365,6 +1368,8 @@
       "title": "Starter"
     },
     "location": {
+      "auto-locate-description": "Ermittelt Ihren Standort automatisch und regelmäßig anhand Ihrer IP-Adresse.",
+      "auto-locate-label": "Automatische Ortung",
       "calendar-cards-desc": "Karten im Kalender-Panel organisieren und aktivieren/deaktivieren.",
       "calendar-cards-title": "Kalenderkarten",
       "calendar-header-label": "Kalenderkopfzeile",
@@ -1382,6 +1387,7 @@
       "date-time-use-analog-label": "Analoge Uhr verwenden",
       "date-time-week-numbers-description": "Zeige die Woche des Jahres (z.B. Woche 38) im Kalender an.",
       "date-time-week-numbers-label": "Wochennummern anzeigen",
+      "geolocate-now-button": "Jetzt orten",
       "location-desc": "Genaues Wetter und Nachtlicht-Planung durch Festlegung Ihres Standorts erhalten.",
       "location-search-description": "z.B. Dortmund, Deutschland",
       "location-search-label": "Nach einem Standort suchen",
@@ -1399,7 +1405,9 @@
       "weather-show-effects-description": "Zeige zusätzliche visuelle Effekte (wie Regen, Schnee oder Blitze) auf der Wetterkarte an.",
       "weather-show-effects-label": "Wettereffekte anzeigen",
       "weather-show-in-calendar-description": "Zeige die tägliche Wettervorhersage direkt in deiner Kalenderansicht an.",
-      "weather-show-in-calendar-label": "Wetter im Kalender anzeigen"
+      "weather-show-in-calendar-label": "Wetter im Kalender anzeigen",
+      "weather-talia-mascot-always-description": "Verwenden Sie immer Talia emojis anstelle von tabler icons.",
+      "weather-talia-mascot-always-label": "Immer Talia Wetter-Emojis anzeigen"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "Wenn fprintd (Fingerabdruck-Authentifizierung) aktiv ist, können Sie mit dieser Option weiterhin Ihr Passwort anstelle eines Fingerabdrucks verwenden.",
@@ -2068,6 +2076,8 @@
       "color-extraction-enabled": "Vordefinierte Farbschemata nutzen",
       "header-devices-apply-all-tooltip": "Hintergrundbild pro Monitor wählen",
       "header-devices-per-monitor-tooltip": "Auf alle Monitore anwenden",
+      "header-link-light-dark-tooltip": "Hintergrundbild beim Themenwechsel beibehalten",
+      "header-separate-light-dark-tooltip": "Hintergrundbild automatisch mit dem Thema wechseln",
       "header-sun-linked-tooltip": "Helle und dunkle Hintergrundbilder trennen",
       "header-sun-separate-tooltip": "Gleiches Hintergrundbild für hell und dunkel",
       "order-asc": "Aufsteigend",

@@ -20,6 +20,8 @@ kitty)
     else
         kitty +runpy "from kitty.utils import *; reload_conf_in_all_kitties()"
     fi
+    # Trigger kitty's live config reload after the template has been regenerated.
+    pkill -USR1 kitty >/dev/null 2>&1 || true
     ;;
 
 ghostty)
