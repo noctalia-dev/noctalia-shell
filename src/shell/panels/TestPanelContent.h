@@ -1,0 +1,22 @@
+#pragma once
+
+#include "shell/PanelContent.h"
+
+class Box;
+class Label;
+class Toggle;
+
+class TestPanelContent : public PanelContent {
+public:
+  void create(Renderer& renderer) override;
+  void layout(Renderer& renderer, float width, float height) override;
+  void update(Renderer& renderer) override;
+
+  [[nodiscard]] float preferredWidth() const override { return 640.0f; }
+  [[nodiscard]] float preferredHeight() const override { return 480.0f; }
+
+private:
+  Box* m_container = nullptr;
+  Label* m_label = nullptr;
+  Toggle* m_toggle = nullptr;
+};

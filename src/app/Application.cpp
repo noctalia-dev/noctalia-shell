@@ -2,6 +2,7 @@
 
 #include "app/PollSource.h"
 #include "core/Log.h"
+#include "shell/panels/TestPanelContent.h"
 
 #include <csignal>
 #include <stdexcept>
@@ -163,8 +164,23 @@ void Application::run() {
     }
   }
 
+  // Initialize panel manager
+  m_panelManager.initialize(m_wayland, &m_configService);
+  m_panelManager.registerPanel("test", std::make_unique<TestPanelContent>());
+  m_panelManager.setCloseCallback([this]() { m_bar.redrawAll(); });
+
+  // Wire bar → panel communication
+  m_bar.setPanelRequestCallback([this](const std::string& panelId, wl_output* output, std::int32_t scale,
+                                       float anchorX) { m_panelManager.togglePanel(panelId, output, scale, anchorX); });
+
   // Initialize bar (top layer)
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get());
+
+  // Unified pointer event routing — both Bar and PanelManager check surface ownership
+  m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
+    m_bar.onPointerEvent(event);
+    m_panelManager.onPointerEvent(event);
+  });
 
   // Build poll sources
   std::vector<PollSource*> sources;

@@ -229,17 +229,27 @@ void GlRenderer::renderNode(const Node* node, float parentX, float parentY, floa
 }
 
 void GlRenderer::cleanup() {
+  m_bufferWidth = 0;
+  m_bufferHeight = 0;
+  m_logicalWidth = 0;
+  m_logicalHeight = 0;
+
+  // Make our context current before destroying GL resources.
+  // GL objects (programs, textures, etc.) belong to the context that created
+  // them. Destroying them while a different context is current would delete
+  // resources from that other context instead.
+  if (m_eglDisplay != EGL_NO_DISPLAY && m_eglSurface != EGL_NO_SURFACE && m_eglContext != EGL_NO_CONTEXT) {
+    eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
+  }
+
   m_textureManager.cleanup();
   m_imageProgram.destroy();
   m_linearGradientProgram.destroy();
   m_roundedRectProgram.destroy();
   m_textRenderer.cleanup();
   m_iconTextRenderer.cleanup();
-  m_bufferWidth = 0;
-  m_bufferHeight = 0;
-  m_logicalWidth = 0;
-  m_logicalHeight = 0;
 
+  // Unbind before destroying surface and context
   if (m_eglDisplay != EGL_NO_DISPLAY) {
     eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
   }
@@ -259,10 +269,10 @@ void GlRenderer::cleanup() {
     m_eglContext = EGL_NO_CONTEXT;
   }
 
-  if (m_eglDisplay != EGL_NO_DISPLAY) {
-    eglTerminate(m_eglDisplay);
-    m_eglDisplay = EGL_NO_DISPLAY;
-  }
+  // Do NOT call eglTerminate here — the EGLDisplay is shared across all
+  // renderers (bar, panel, wallpaper) via the same wl_display. Terminating
+  // it would invalidate every other renderer's context and surface.
+  m_eglDisplay = EGL_NO_DISPLAY;
 
   m_eglConfig = nullptr;
   m_display = nullptr;

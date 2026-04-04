@@ -17,6 +17,7 @@
 #include "debug/DebugService.h"
 #include "notification/NotificationManager.h"
 #include "shell/Bar.h"
+#include "shell/PanelManager.h"
 #include "shell/Wallpaper.h"
 #include "system/SystemMonitorService.h"
 #include "time/TimePollSource.h"
@@ -52,6 +53,7 @@ private:
   std::unique_ptr<NotificationService> m_notificationDbus;
 
   Bar m_bar;
+  PanelManager m_panelManager;
   Wallpaper m_wallpaper;
 
   // Poll sources (must outlive MainLoop)
