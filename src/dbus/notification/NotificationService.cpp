@@ -1,278 +1,240 @@
-#include "NotificationService.hpp"
+#include "NotificationService.h"
 
-#include "core/Log.hpp"
-#include "dbus/SessionBus.hpp"
+#include "core/Log.h"
+#include "dbus/SessionBus.h"
 
 #include <algorithm>
 #include <stdexcept>
 
-static const sdbus::ServiceName k_bus_name   {"org.freedesktop.Notifications"};
-static const sdbus::ObjectPath  k_object_path{"/org/freedesktop/Notifications"};
-static constexpr auto           k_interface  = "org.freedesktop.Notifications";
+static const sdbus::ServiceName k_bus_name{"org.freedesktop.Notifications"};
+static const sdbus::ObjectPath k_object_path{"/org/freedesktop/Notifications"};
+static constexpr auto k_interface = "org.freedesktop.Notifications";
 
-NotificationService::NotificationService(SessionBus& bus, NotificationManager& manager)
-    : m_manager(manager)
-{
-    bus.connection().requestName(k_bus_name);
-    m_object = sdbus::createObject(bus.connection(), k_object_path);
+NotificationService::NotificationService(SessionBus& bus, NotificationManager& manager) : m_manager(manager) {
+  bus.connection().requestName(k_bus_name);
+  m_object = sdbus::createObject(bus.connection(), k_object_path);
 
-    m_object->addVTable(
-        sdbus::registerMethod("Notify")
-            .withInputParamNames("app_name", "replaces_id", "app_icon",
-                                 "summary", "body", "actions", "hints",
-                                 "expire_timeout")
-            .withOutputParamNames("id")
-            .implementedAs([this](const std::string& app_name,
-                                  uint32_t           replaces_id,
-                                  const std::string& app_icon,
-                                  const std::string& summary,
-                                  const std::string& body,
-                                  const std::vector<std::string>& actions,
-                                  const std::map<std::string, sdbus::Variant>& hints,
-                                  int32_t expire_timeout) {
-                return onNotify(app_name, replaces_id, app_icon,
-                                summary, body, actions, hints, expire_timeout);
-            }),
+  m_object
+      ->addVTable(
+          sdbus::registerMethod("Notify")
+              .withInputParamNames("app_name", "replaces_id", "app_icon", "summary", "body", "actions", "hints",
+                                   "expire_timeout")
+              .withOutputParamNames("id")
+              .implementedAs([this](const std::string& app_name, uint32_t replaces_id, const std::string& app_icon,
+                                    const std::string& summary, const std::string& body,
+                                    const std::vector<std::string>& actions,
+                                    const std::map<std::string, sdbus::Variant>& hints, int32_t expire_timeout) {
+                return onNotify(app_name, replaces_id, app_icon, summary, body, actions, hints, expire_timeout);
+              }),
 
-        sdbus::registerMethod("GetCapabilities")
-            .withOutputParamNames("capabilities")
-            .implementedAs([this]() {
-                return onGetCapabilities();
-            }),
+          sdbus::registerMethod("GetCapabilities").withOutputParamNames("capabilities").implementedAs([this]() {
+            return onGetCapabilities();
+          }),
 
-        sdbus::registerMethod("GetNotifications")
-            .withOutputParamNames("notifications")
-            .implementedAs([this]() {
-                return onGetNotifications();
-            }),
+          sdbus::registerMethod("GetNotifications").withOutputParamNames("notifications").implementedAs([this]() {
+            return onGetNotifications();
+          }),
 
-        sdbus::registerMethod("GetServerInformation")
-            .withOutputParamNames("name", "vendor", "version", "spec_version")
-            .implementedAs([this]() {
-                return onGetServerInformation();
-            }),
+          sdbus::registerMethod("GetServerInformation")
+              .withOutputParamNames("name", "vendor", "version", "spec_version")
+              .implementedAs([this]() { return onGetServerInformation(); }),
 
-        sdbus::registerMethod("CloseNotification")
-            .withInputParamNames("id")
-            .implementedAs([this](uint32_t id) {
-                onCloseNotification(id);
-            }),
+          sdbus::registerMethod("CloseNotification").withInputParamNames("id").implementedAs([this](uint32_t id) {
+            onCloseNotification(id);
+          }),
 
-        sdbus::registerMethod("InvokeAction")
-            .withInputParamNames("id", "action_key")
-            .implementedAs([this](uint32_t id, const std::string& action_key) {
-                onInvokeAction(id, action_key);
-            }),
+          sdbus::registerMethod("InvokeAction")
+              .withInputParamNames("id", "action_key")
+              .implementedAs([this](uint32_t id, const std::string& action_key) { onInvokeAction(id, action_key); }),
 
-        sdbus::registerSignal("NotificationClosed")
-            .withParameters<uint32_t, uint32_t>("id", "reason"),
+          sdbus::registerSignal("NotificationClosed").withParameters<uint32_t, uint32_t>("id", "reason"),
 
-        sdbus::registerSignal("ActionInvoked")
-            .withParameters<uint32_t, std::string>("id", "action_key")
-    ).forInterface(k_interface);
+          sdbus::registerSignal("ActionInvoked").withParameters<uint32_t, std::string>("id", "action_key"))
+      .forInterface(k_interface);
 }
 
 namespace {
 
 int computeExpiryTimeoutMs(const NotificationManager& manager) {
-    int expiry_ms = -1;
-    const auto now = Clock::now();
-    for (const auto& n : manager.all()) {
-        if (n.expiry_time) {
-            const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                *n.expiry_time - now).count();
-            const int clamped = static_cast<int>(std::max<long long>(0, ms));
-            if (expiry_ms < 0 || clamped < expiry_ms) {
-                expiry_ms = clamped;
-            }
-        }
+  int expiry_ms = -1;
+  const auto now = Clock::now();
+  for (const auto& n : manager.all()) {
+    if (n.expiry_time) {
+      const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(*n.expiry_time - now).count();
+      const int clamped = static_cast<int>(std::max<long long>(0, ms));
+      if (expiry_ms < 0 || clamped < expiry_ms) {
+        expiry_ms = clamped;
+      }
     }
-    return expiry_ms;
+  }
+  return expiry_ms;
 }
 
 } // namespace
 
-int NotificationService::nextExpiryTimeoutMs() const {
-    return computeExpiryTimeoutMs(m_manager);
-}
+int NotificationService::nextExpiryTimeoutMs() const { return computeExpiryTimeoutMs(m_manager); }
 
 void NotificationService::processExpiredNotifications() {
-    for (const uint32_t id : m_manager.expiredIds()) {
-        emitClose(id, CloseReason::Expired);
-        m_manager.close(id, CloseReason::Expired);
-    }
+  for (const uint32_t id : m_manager.expiredIds()) {
+    emitClose(id, CloseReason::Expired);
+    m_manager.close(id, CloseReason::Expired);
+  }
 }
 
-static constexpr size_t  k_max_string_len = 1024;
-static constexpr int32_t k_min_timeout    = -1;
+static constexpr size_t k_max_string_len = 1024;
+static constexpr int32_t k_min_timeout = -1;
 
 namespace {
 
 std::string clamp_str(std::string s) {
-    if (s.size() > k_max_string_len)
-        s.resize(k_max_string_len);
-    return s;
+  if (s.size() > k_max_string_len)
+    s.resize(k_max_string_len);
+  return s;
 }
 
 std::vector<std::string> sanitize_actions(const std::vector<std::string>& actions) {
-    std::vector<std::string> sanitized;
-    sanitized.reserve(actions.size() - (actions.size() % 2));
+  std::vector<std::string> sanitized;
+  sanitized.reserve(actions.size() - (actions.size() % 2));
 
-    for (size_t i = 0; i + 1 < actions.size(); i += 2) {
-        std::string action_key = clamp_str(actions[i]);
-        std::string label = clamp_str(actions[i + 1]);
+  for (size_t i = 0; i + 1 < actions.size(); i += 2) {
+    std::string action_key = clamp_str(actions[i]);
+    std::string label = clamp_str(actions[i + 1]);
 
-        if (action_key.empty()) {
-            continue;
-        }
-
-        sanitized.push_back(std::move(action_key));
-        sanitized.push_back(std::move(label));
+    if (action_key.empty()) {
+      continue;
     }
 
-    return sanitized;
+    sanitized.push_back(std::move(action_key));
+    sanitized.push_back(std::move(label));
+  }
+
+  return sanitized;
 }
 
 bool notification_has_action(const Notification& notification, const std::string& action_key) {
-    for (size_t i = 0; i + 1 < notification.actions.size(); i += 2) {
-        if (notification.actions[i] == action_key) {
-            return true;
-        }
+  for (size_t i = 0; i + 1 < notification.actions.size(); i += 2) {
+    if (notification.actions[i] == action_key) {
+      return true;
     }
-    return false;
+  }
+  return false;
 }
 
 } // namespace
 
-uint32_t NotificationService::onNotify(const std::string& app_name,
-                                        uint32_t           replaces_id,
-                                        const std::string& app_icon,
-                                        const std::string& summary,
-                                        const std::string& body,
-                                        const std::vector<std::string>& actions,
-                                        const std::map<std::string, sdbus::Variant>& hints,
-                                        int32_t expire_timeout) {
-    // Sanitize scalar inputs
-    const int32_t timeout = std::max(expire_timeout, k_min_timeout);
-    const auto sanitized_actions = sanitize_actions(actions);
+uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t replaces_id, const std::string& app_icon,
+                                       const std::string& summary, const std::string& body,
+                                       const std::vector<std::string>& actions,
+                                       const std::map<std::string, sdbus::Variant>& hints, int32_t expire_timeout) {
+  // Sanitize scalar inputs
+  const int32_t timeout = std::max(expire_timeout, k_min_timeout);
+  const auto sanitized_actions = sanitize_actions(actions);
 
-    // Urgency: default Normal, reject out-of-range byte values
-    Urgency urgency = Urgency::Normal;
-    if (auto it = hints.find("urgency"); it != hints.end()) {
-        try {
-            const uint8_t raw = it->second.get<uint8_t>();
-            if (raw <= static_cast<uint8_t>(Urgency::Critical)) {
-                urgency = static_cast<Urgency>(raw);
-            }
-        } catch (...) {}
+  // Urgency: default Normal, reject out-of-range byte values
+  Urgency urgency = Urgency::Normal;
+  if (auto it = hints.find("urgency"); it != hints.end()) {
+    try {
+      const uint8_t raw = it->second.get<uint8_t>();
+      if (raw <= static_cast<uint8_t>(Urgency::Critical)) {
+        urgency = static_cast<Urgency>(raw);
+      }
+    } catch (...) {
     }
+  }
 
-    std::optional<std::string> icon;
-    if (!app_icon.empty()) {
-        icon = clamp_str(app_icon);
+  std::optional<std::string> icon;
+  if (!app_icon.empty()) {
+    icon = clamp_str(app_icon);
+  }
+  if (auto it = hints.find("image-path"); it != hints.end()) {
+    try {
+      icon = clamp_str(it->second.get<std::string>());
+    } catch (...) {
     }
-    if (auto it = hints.find("image-path"); it != hints.end()) {
-        try {
-            icon = clamp_str(it->second.get<std::string>());
-        } catch (...) {}
-    }
+  }
 
-    std::optional<std::string> category;
-    if (auto it = hints.find("category"); it != hints.end()) {
-        try {
-            category = clamp_str(it->second.get<std::string>());
-        } catch (...) {}
+  std::optional<std::string> category;
+  if (auto it = hints.find("category"); it != hints.end()) {
+    try {
+      category = clamp_str(it->second.get<std::string>());
+    } catch (...) {
     }
+  }
 
-    std::optional<std::string> desktop_entry;
-    if (auto it = hints.find("desktop-entry"); it != hints.end()) {
-        try {
-            desktop_entry = clamp_str(it->second.get<std::string>());
-        } catch (...) {}
+  std::optional<std::string> desktop_entry;
+  if (auto it = hints.find("desktop-entry"); it != hints.end()) {
+    try {
+      desktop_entry = clamp_str(it->second.get<std::string>());
+    } catch (...) {
     }
+  }
 
-    return m_manager.addOrReplace(replaces_id,
-                                  clamp_str(app_name),
-                                  clamp_str(summary),
-                                  clamp_str(body),
-                                  timeout,
-                                  urgency,
-                                  NotificationOrigin::External,
-                                  sanitized_actions,
-                                  icon,
-                                  category,
-                                  desktop_entry);
+  return m_manager.addOrReplace(replaces_id, clamp_str(app_name), clamp_str(summary), clamp_str(body), timeout, urgency,
+                                NotificationOrigin::External, sanitized_actions, icon, category, desktop_entry);
 }
 
-std::vector<std::string> NotificationService::onGetCapabilities() {
-    return {"body", "actions"};
-}
+std::vector<std::string> NotificationService::onGetCapabilities() { return {"body", "actions"}; }
 
 std::vector<std::map<std::string, sdbus::Variant>> NotificationService::onGetNotifications() {
-    std::vector<std::map<std::string, sdbus::Variant>> result;
-    for (const auto& n : m_manager.all()) {
-        std::map<std::string, sdbus::Variant> notif;
-        notif["id"] = sdbus::Variant(n.id);
-        notif["app_name"] = sdbus::Variant(n.app_name);
-        notif["summary"] = sdbus::Variant(n.summary);
-        notif["body"] = sdbus::Variant(n.body);
-        notif["timeout"] = sdbus::Variant(n.timeout);
-        notif["urgency"] = sdbus::Variant(static_cast<uint8_t>(n.urgency));
-        notif["actions"] = sdbus::Variant(n.actions);
-        notif["icon"] = sdbus::Variant(n.icon.value_or(""));
-        notif["category"] = sdbus::Variant(n.category.value_or(""));
-        notif["desktop_entry"] = sdbus::Variant(n.desktop_entry.value_or(""));
-        result.push_back(notif);
-    }
-    return result;
+  std::vector<std::map<std::string, sdbus::Variant>> result;
+  for (const auto& n : m_manager.all()) {
+    std::map<std::string, sdbus::Variant> notif;
+    notif["id"] = sdbus::Variant(n.id);
+    notif["app_name"] = sdbus::Variant(n.app_name);
+    notif["summary"] = sdbus::Variant(n.summary);
+    notif["body"] = sdbus::Variant(n.body);
+    notif["timeout"] = sdbus::Variant(n.timeout);
+    notif["urgency"] = sdbus::Variant(static_cast<uint8_t>(n.urgency));
+    notif["actions"] = sdbus::Variant(n.actions);
+    notif["icon"] = sdbus::Variant(n.icon.value_or(""));
+    notif["category"] = sdbus::Variant(n.category.value_or(""));
+    notif["desktop_entry"] = sdbus::Variant(n.desktop_entry.value_or(""));
+    result.push_back(notif);
+  }
+  return result;
 }
 
 void NotificationService::onCloseNotification(uint32_t id) {
-    if (!m_manager.close(id, CloseReason::ClosedByCall)) {
-        throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.NotFound"},
-                           "notification id was not found");
-    }
-    emitClose(id, CloseReason::ClosedByCall);
+  if (!m_manager.close(id, CloseReason::ClosedByCall)) {
+    throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.NotFound"},
+                       "notification id was not found");
+  }
+  emitClose(id, CloseReason::ClosedByCall);
 }
 
 void NotificationService::emitClose(uint32_t id, CloseReason reason) {
-    m_object->emitSignal("NotificationClosed")
-        .onInterface(k_interface)
-        .withArguments(id, static_cast<uint32_t>(reason));
+  m_object->emitSignal("NotificationClosed").onInterface(k_interface).withArguments(id, static_cast<uint32_t>(reason));
 }
 
 void NotificationService::onInvokeAction(uint32_t id, const std::string& action_key) {
-    const auto& notifs = m_manager.all();
-    for (const auto& n : notifs) {
-        if (n.id == id) {
-            const std::string sanitized_key = clamp_str(action_key);
-            if (sanitized_key.empty()) {
-                throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.InvalidAction"},
-                                   "action_key must not be empty");
-            }
+  const auto& notifs = m_manager.all();
+  for (const auto& n : notifs) {
+    if (n.id == id) {
+      const std::string sanitized_key = clamp_str(action_key);
+      if (sanitized_key.empty()) {
+        throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.InvalidAction"},
+                           "action_key must not be empty");
+      }
 
-            if (!notification_has_action(n, sanitized_key)) {
-                throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.InvalidAction"},
-                                   "action_key is not available for this notification");
-            }
+      if (!notification_has_action(n, sanitized_key)) {
+        throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.InvalidAction"},
+                           "action_key is not available for this notification");
+      }
 
-            logDebug("notification action #{} key='{}'", id, action_key);
-            emitActionInvoked(id, sanitized_key);
-            return;
-        }
+      logDebug("notification action #{} key='{}'", id, action_key);
+      emitActionInvoked(id, sanitized_key);
+      return;
     }
+  }
 
-    throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.NotFound"},
-                       "notification id was not found");
+  throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.NotFound"},
+                     "notification id was not found");
 }
 
 void NotificationService::emitActionInvoked(uint32_t id, const std::string& action_key) {
-    m_object->emitSignal("ActionInvoked")
-        .onInterface(k_interface)
-        .withArguments(id, action_key);
+  m_object->emitSignal("ActionInvoked").onInterface(k_interface).withArguments(id, action_key);
 }
 
-std::tuple<std::string, std::string, std::string, std::string>
-NotificationService::onGetServerInformation() {
-    return {"noctalia", "noctalia-dev", "0.1.0", "1.2"};
+std::tuple<std::string, std::string, std::string, std::string> NotificationService::onGetServerInformation() {
+  return {"noctalia", "noctalia-dev", "0.1.0", "1.2"};
 }

@@ -1,4 +1,4 @@
-#include "ui/icons/IconRegistry.hpp"
+#include "ui/icons/IconRegistry.h"
 
 #include <string>
 #include <unordered_map>
@@ -200,9 +200,9 @@ const std::unordered_map<std::string, char32_t> kIcons = {
 } // namespace
 
 char32_t IconRegistry::lookup(std::string_view name) {
-    auto it = kIcons.find(std::string(name));
-    if (it != kIcons.end()) {
-        return it->second;
-    }
-    return 0;
+  auto it = kIcons.find(std::string(name));
+  if (it != kIcons.end()) {
+    return it->second;
+  }
+  return 0;
 }

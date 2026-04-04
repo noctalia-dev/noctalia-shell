@@ -1,4 +1,4 @@
-#include "render/programs/RoundedRectProgram.hpp"
+#include "render/programs/RoundedRectProgram.h"
 
 #include <array>
 #include <stdexcept>
@@ -91,106 +91,78 @@ void main() {
 } // namespace
 
 void RoundedRectProgram::ensureInitialized() {
-    if (m_program.isValid()) {
-        return;
-    }
+  if (m_program.isValid()) {
+    return;
+  }
 
-    m_program.create(kVertexShaderSource, kFragmentShaderSource);
-    m_positionLocation = glGetAttribLocation(m_program.id(), "a_position");
-    m_surfaceSizeLocation = glGetUniformLocation(m_program.id(), "u_surface_size");
-    m_quadRectLocation = glGetUniformLocation(m_program.id(), "u_quad_rect");
-    m_rectLocation = glGetUniformLocation(m_program.id(), "u_rect");
-    m_colorLocation = glGetUniformLocation(m_program.id(), "u_color");
-    m_fillEndColorLocation = glGetUniformLocation(m_program.id(), "u_fill_end_color");
-    m_borderColorLocation = glGetUniformLocation(m_program.id(), "u_border_color");
-    m_fillModeLocation = glGetUniformLocation(m_program.id(), "u_fill_mode");
-    m_gradientDirectionLocation = glGetUniformLocation(m_program.id(), "u_gradient_direction");
-    m_radiusLocation = glGetUniformLocation(m_program.id(), "u_radius");
-    m_softnessLocation = glGetUniformLocation(m_program.id(), "u_softness");
-    m_borderWidthLocation = glGetUniformLocation(m_program.id(), "u_border_width");
+  m_program.create(kVertexShaderSource, kFragmentShaderSource);
+  m_positionLocation = glGetAttribLocation(m_program.id(), "a_position");
+  m_surfaceSizeLocation = glGetUniformLocation(m_program.id(), "u_surface_size");
+  m_quadRectLocation = glGetUniformLocation(m_program.id(), "u_quad_rect");
+  m_rectLocation = glGetUniformLocation(m_program.id(), "u_rect");
+  m_colorLocation = glGetUniformLocation(m_program.id(), "u_color");
+  m_fillEndColorLocation = glGetUniformLocation(m_program.id(), "u_fill_end_color");
+  m_borderColorLocation = glGetUniformLocation(m_program.id(), "u_border_color");
+  m_fillModeLocation = glGetUniformLocation(m_program.id(), "u_fill_mode");
+  m_gradientDirectionLocation = glGetUniformLocation(m_program.id(), "u_gradient_direction");
+  m_radiusLocation = glGetUniformLocation(m_program.id(), "u_radius");
+  m_softnessLocation = glGetUniformLocation(m_program.id(), "u_softness");
+  m_borderWidthLocation = glGetUniformLocation(m_program.id(), "u_border_width");
 
-    if (m_positionLocation < 0 ||
-        m_surfaceSizeLocation < 0 ||
-        m_quadRectLocation < 0 ||
-        m_rectLocation < 0 ||
-        m_colorLocation < 0 ||
-        m_fillEndColorLocation < 0 ||
-        m_borderColorLocation < 0 ||
-        m_fillModeLocation < 0 ||
-        m_gradientDirectionLocation < 0 ||
-        m_radiusLocation < 0 ||
-        m_softnessLocation < 0 ||
-        m_borderWidthLocation < 0) {
-        throw std::runtime_error("failed to query rounded-rect shader locations");
-    }
+  if (m_positionLocation < 0 || m_surfaceSizeLocation < 0 || m_quadRectLocation < 0 || m_rectLocation < 0 ||
+      m_colorLocation < 0 || m_fillEndColorLocation < 0 || m_borderColorLocation < 0 || m_fillModeLocation < 0 ||
+      m_gradientDirectionLocation < 0 || m_radiusLocation < 0 || m_softnessLocation < 0 || m_borderWidthLocation < 0) {
+    throw std::runtime_error("failed to query rounded-rect shader locations");
+  }
 }
 
 void RoundedRectProgram::destroy() {
-    m_program.destroy();
-    m_positionLocation = -1;
-    m_surfaceSizeLocation = -1;
-    m_quadRectLocation = -1;
-    m_rectLocation = -1;
-    m_colorLocation = -1;
-    m_fillEndColorLocation = -1;
-    m_borderColorLocation = -1;
-    m_fillModeLocation = -1;
-    m_gradientDirectionLocation = -1;
-    m_radiusLocation = -1;
-    m_softnessLocation = -1;
-    m_borderWidthLocation = -1;
+  m_program.destroy();
+  m_positionLocation = -1;
+  m_surfaceSizeLocation = -1;
+  m_quadRectLocation = -1;
+  m_rectLocation = -1;
+  m_colorLocation = -1;
+  m_fillEndColorLocation = -1;
+  m_borderColorLocation = -1;
+  m_fillModeLocation = -1;
+  m_gradientDirectionLocation = -1;
+  m_radiusLocation = -1;
+  m_softnessLocation = -1;
+  m_borderWidthLocation = -1;
 }
 
-void RoundedRectProgram::draw(float surfaceWidth,
-                              float surfaceHeight,
-                              float x,
-                              float y,
-                              float width,
-                              float height,
+void RoundedRectProgram::draw(float surfaceWidth, float surfaceHeight, float x, float y, float width, float height,
                               const RoundedRectStyle& style) const {
-    if (!m_program.isValid() || width <= 0.0f || height <= 0.0f) {
-        return;
-    }
+  if (!m_program.isValid() || width <= 0.0f || height <= 0.0f) {
+    return;
+  }
 
-    const std::array<GLfloat, 12> vertices = {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-    };
+  const std::array<GLfloat, 12> vertices = {
+      0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+  };
 
-    const float padding = std::max(style.borderWidth + style.softness + 2.0f, 2.0f);
-    const float quadX = x - padding;
-    const float quadY = y - padding;
-    const float quadWidth = width + padding * 2.0f;
-    const float quadHeight = height + padding * 2.0f;
+  const float padding = std::max(style.borderWidth + style.softness + 2.0f, 2.0f);
+  const float quadX = x - padding;
+  const float quadY = y - padding;
+  const float quadWidth = width + padding * 2.0f;
+  const float quadHeight = height + padding * 2.0f;
 
-    glUseProgram(m_program.id());
-    glUniform2f(m_surfaceSizeLocation, surfaceWidth, surfaceHeight);
-    glUniform4f(m_quadRectLocation, quadX, quadY, quadWidth, quadHeight);
-    glUniform4f(m_rectLocation, x, y, width, height);
-    glUniform4f(m_colorLocation, style.fill.r, style.fill.g, style.fill.b, style.fill.a);
-    glUniform4f(m_fillEndColorLocation,
-                style.fillEnd.r,
-                style.fillEnd.g,
-                style.fillEnd.b,
-                style.fillEnd.a);
-    glUniform4f(m_borderColorLocation,
-                style.border.r,
-                style.border.g,
-                style.border.b,
-                style.border.a);
-    glUniform1i(m_fillModeLocation, style.fillMode == FillMode::Solid ? 0 : 1);
-    glUniform2f(m_gradientDirectionLocation,
-                style.gradientDirection == GradientDirection::Horizontal ? 1.0f : 0.0f,
-                style.gradientDirection == GradientDirection::Vertical ? 1.0f : 0.0f);
-    glUniform1f(m_radiusLocation, style.radius);
-    glUniform1f(m_softnessLocation, style.softness);
-    glUniform1f(m_borderWidthLocation, style.borderWidth);
-    glVertexAttribPointer(m_positionLocation, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
-    glEnableVertexAttribArray(m_positionLocation);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDisableVertexAttribArray(m_positionLocation);
+  glUseProgram(m_program.id());
+  glUniform2f(m_surfaceSizeLocation, surfaceWidth, surfaceHeight);
+  glUniform4f(m_quadRectLocation, quadX, quadY, quadWidth, quadHeight);
+  glUniform4f(m_rectLocation, x, y, width, height);
+  glUniform4f(m_colorLocation, style.fill.r, style.fill.g, style.fill.b, style.fill.a);
+  glUniform4f(m_fillEndColorLocation, style.fillEnd.r, style.fillEnd.g, style.fillEnd.b, style.fillEnd.a);
+  glUniform4f(m_borderColorLocation, style.border.r, style.border.g, style.border.b, style.border.a);
+  glUniform1i(m_fillModeLocation, style.fillMode == FillMode::Solid ? 0 : 1);
+  glUniform2f(m_gradientDirectionLocation, style.gradientDirection == GradientDirection::Horizontal ? 1.0f : 0.0f,
+              style.gradientDirection == GradientDirection::Vertical ? 1.0f : 0.0f);
+  glUniform1f(m_radiusLocation, style.radius);
+  glUniform1f(m_softnessLocation, style.softness);
+  glUniform1f(m_borderWidthLocation, style.borderWidth);
+  glVertexAttribPointer(m_positionLocation, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
+  glEnableVertexAttribArray(m_positionLocation);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  glDisableVertexAttribArray(m_positionLocation);
 }

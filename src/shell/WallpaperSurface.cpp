@@ -1,7 +1,5 @@
-#include "shell/WallpaperSurface.hpp"
+#include "shell/WallpaperSurface.h"
 
-#include "render/WallpaperRenderer.hpp"
+#include "render/WallpaperRenderer.h"
 
-std::unique_ptr<Renderer> WallpaperSurface::createRenderer() {
-    return std::make_unique<WallpaperRenderer>();
-}
+std::unique_ptr<Renderer> WallpaperSurface::createRenderer() { return std::make_unique<WallpaperRenderer>(); }

@@ -1,4 +1,4 @@
-#include "render/programs/ImageProgram.hpp"
+#include "render/programs/ImageProgram.h"
 
 #include <array>
 #include <stdexcept>
@@ -44,87 +44,65 @@ void main() {
 } // namespace
 
 void ImageProgram::ensureInitialized() {
-    if (m_program.isValid()) {
-        return;
-    }
+  if (m_program.isValid()) {
+    return;
+  }
 
-    m_program.create(kVertexShaderSource, kFragmentShaderSource);
-    m_positionLocation = glGetAttribLocation(m_program.id(), "a_position");
-    m_texCoordLocation = glGetAttribLocation(m_program.id(), "a_texcoord");
-    m_surfaceSizeLocation = glGetUniformLocation(m_program.id(), "u_surface_size");
-    m_rectLocation = glGetUniformLocation(m_program.id(), "u_rect");
-    m_tintLocation = glGetUniformLocation(m_program.id(), "u_tint");
-    m_opacityLocation = glGetUniformLocation(m_program.id(), "u_opacity");
-    m_samplerLocation = glGetUniformLocation(m_program.id(), "u_texture");
+  m_program.create(kVertexShaderSource, kFragmentShaderSource);
+  m_positionLocation = glGetAttribLocation(m_program.id(), "a_position");
+  m_texCoordLocation = glGetAttribLocation(m_program.id(), "a_texcoord");
+  m_surfaceSizeLocation = glGetUniformLocation(m_program.id(), "u_surface_size");
+  m_rectLocation = glGetUniformLocation(m_program.id(), "u_rect");
+  m_tintLocation = glGetUniformLocation(m_program.id(), "u_tint");
+  m_opacityLocation = glGetUniformLocation(m_program.id(), "u_opacity");
+  m_samplerLocation = glGetUniformLocation(m_program.id(), "u_texture");
 
-    if (m_positionLocation < 0 ||
-        m_texCoordLocation < 0 ||
-        m_surfaceSizeLocation < 0 ||
-        m_rectLocation < 0 ||
-        m_tintLocation < 0 ||
-        m_opacityLocation < 0 ||
-        m_samplerLocation < 0) {
-        throw std::runtime_error("failed to query image shader locations");
-    }
+  if (m_positionLocation < 0 || m_texCoordLocation < 0 || m_surfaceSizeLocation < 0 || m_rectLocation < 0 ||
+      m_tintLocation < 0 || m_opacityLocation < 0 || m_samplerLocation < 0) {
+    throw std::runtime_error("failed to query image shader locations");
+  }
 }
 
 void ImageProgram::destroy() {
-    m_program.destroy();
-    m_positionLocation = -1;
-    m_texCoordLocation = -1;
-    m_surfaceSizeLocation = -1;
-    m_rectLocation = -1;
-    m_tintLocation = -1;
-    m_opacityLocation = -1;
-    m_samplerLocation = -1;
+  m_program.destroy();
+  m_positionLocation = -1;
+  m_texCoordLocation = -1;
+  m_surfaceSizeLocation = -1;
+  m_rectLocation = -1;
+  m_tintLocation = -1;
+  m_opacityLocation = -1;
+  m_samplerLocation = -1;
 }
 
-void ImageProgram::draw(GLuint texture,
-                        float surfaceWidth,
-                        float surfaceHeight,
-                        float x,
-                        float y,
-                        float width,
-                        float height,
-                        const Color& tint,
-                        float opacity) const {
-    if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
-        return;
-    }
+void ImageProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight, float x, float y, float width,
+                        float height, const Color& tint, float opacity) const {
+  if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
+    return;
+  }
 
-    const std::array<GLfloat, 12> positions = {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-    };
+  const std::array<GLfloat, 12> positions = {
+      0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+  };
 
-    const std::array<GLfloat, 12> texcoords = {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-    };
+  const std::array<GLfloat, 12> texcoords = {
+      0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+  };
 
-    glUseProgram(m_program.id());
-    glUniform2f(m_surfaceSizeLocation, surfaceWidth, surfaceHeight);
-    glUniform4f(m_rectLocation, x, y, width, height);
-    glUniform4f(m_tintLocation, tint.r, tint.g, tint.b, tint.a);
-    glUniform1f(m_opacityLocation, opacity);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glUniform1i(m_samplerLocation, 0);
-    const auto posAttr = static_cast<GLuint>(m_positionLocation);
-    const auto texAttr = static_cast<GLuint>(m_texCoordLocation);
-    glVertexAttribPointer(posAttr, 2, GL_FLOAT, GL_FALSE, 0, positions.data());
-    glVertexAttribPointer(texAttr, 2, GL_FLOAT, GL_FALSE, 0, texcoords.data());
-    glEnableVertexAttribArray(posAttr);
-    glEnableVertexAttribArray(texAttr);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDisableVertexAttribArray(posAttr);
-    glDisableVertexAttribArray(texAttr);
+  glUseProgram(m_program.id());
+  glUniform2f(m_surfaceSizeLocation, surfaceWidth, surfaceHeight);
+  glUniform4f(m_rectLocation, x, y, width, height);
+  glUniform4f(m_tintLocation, tint.r, tint.g, tint.b, tint.a);
+  glUniform1f(m_opacityLocation, opacity);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glUniform1i(m_samplerLocation, 0);
+  const auto posAttr = static_cast<GLuint>(m_positionLocation);
+  const auto texAttr = static_cast<GLuint>(m_texCoordLocation);
+  glVertexAttribPointer(posAttr, 2, GL_FLOAT, GL_FALSE, 0, positions.data());
+  glVertexAttribPointer(texAttr, 2, GL_FLOAT, GL_FALSE, 0, texcoords.data());
+  glEnableVertexAttribArray(posAttr);
+  glEnableVertexAttribArray(texAttr);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  glDisableVertexAttribArray(posAttr);
+  glDisableVertexAttribArray(texAttr);
 }

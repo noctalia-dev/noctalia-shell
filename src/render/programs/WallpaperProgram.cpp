@@ -1,4 +1,4 @@
-#include "render/programs/WallpaperProgram.hpp"
+#include "render/programs/WallpaperProgram.h"
 
 #include <stdexcept>
 
@@ -306,130 +306,133 @@ void main() {
 } // namespace
 
 void WallpaperProgram::ensureInitialized() {
-    if (m_programs[0].program.isValid()) {
-        return;
-    }
+  if (m_programs[0].program.isValid()) {
+    return;
+  }
 
-    initProgram(static_cast<std::size_t>(WallpaperTransition::Fade), kFadeFragment);
-    initProgram(static_cast<std::size_t>(WallpaperTransition::Wipe), kWipeFragment);
-    initProgram(static_cast<std::size_t>(WallpaperTransition::Disc), kDiscFragment);
-    initProgram(static_cast<std::size_t>(WallpaperTransition::Stripes), kStripesFragment);
-    initProgram(static_cast<std::size_t>(WallpaperTransition::Pixelate), kPixelateFragment);
-    initProgram(static_cast<std::size_t>(WallpaperTransition::Honeycomb), kHoneycombFragment);
+  initProgram(static_cast<std::size_t>(WallpaperTransition::Fade), kFadeFragment);
+  initProgram(static_cast<std::size_t>(WallpaperTransition::Wipe), kWipeFragment);
+  initProgram(static_cast<std::size_t>(WallpaperTransition::Disc), kDiscFragment);
+  initProgram(static_cast<std::size_t>(WallpaperTransition::Stripes), kStripesFragment);
+  initProgram(static_cast<std::size_t>(WallpaperTransition::Pixelate), kPixelateFragment);
+  initProgram(static_cast<std::size_t>(WallpaperTransition::Honeycomb), kHoneycombFragment);
 }
 
 void WallpaperProgram::destroy() {
-    for (auto& pd : m_programs) {
-        pd.program.destroy();
-    }
+  for (auto& pd : m_programs) {
+    pd.program.destroy();
+  }
 }
 
 void WallpaperProgram::initProgram(std::size_t index, const char* fragSource) {
-    std::string fullFrag = std::string(kCommonFunctions) + fragSource;
+  std::string fullFrag = std::string(kCommonFunctions) + fragSource;
 
-    auto& pd = m_programs[index];
-    pd.program.create(kVertexShader, fullFrag.c_str());
+  auto& pd = m_programs[index];
+  pd.program.create(kVertexShader, fullFrag.c_str());
 
-    auto id = pd.program.id();
-    pd.positionLoc = glGetAttribLocation(id, "a_position");
-    pd.texCoordLoc = -1; // texcoord derived from position in vertex shader
-    pd.source1Loc = glGetUniformLocation(id, "u_source1");
-    pd.source2Loc = glGetUniformLocation(id, "u_source2");
-    pd.progressLoc = glGetUniformLocation(id, "u_progress");
-    pd.fillModeLoc = glGetUniformLocation(id, "u_fillMode");
-    pd.imageWidth1Loc = glGetUniformLocation(id, "u_imageWidth1");
-    pd.imageHeight1Loc = glGetUniformLocation(id, "u_imageHeight1");
-    pd.imageWidth2Loc = glGetUniformLocation(id, "u_imageWidth2");
-    pd.imageHeight2Loc = glGetUniformLocation(id, "u_imageHeight2");
-    pd.screenWidthLoc = glGetUniformLocation(id, "u_screenWidth");
-    pd.screenHeightLoc = glGetUniformLocation(id, "u_screenHeight");
-    pd.fillColorLoc = glGetUniformLocation(id, "u_fillColor");
+  auto id = pd.program.id();
+  pd.positionLoc = glGetAttribLocation(id, "a_position");
+  pd.texCoordLoc = -1; // texcoord derived from position in vertex shader
+  pd.source1Loc = glGetUniformLocation(id, "u_source1");
+  pd.source2Loc = glGetUniformLocation(id, "u_source2");
+  pd.progressLoc = glGetUniformLocation(id, "u_progress");
+  pd.fillModeLoc = glGetUniformLocation(id, "u_fillMode");
+  pd.imageWidth1Loc = glGetUniformLocation(id, "u_imageWidth1");
+  pd.imageHeight1Loc = glGetUniformLocation(id, "u_imageHeight1");
+  pd.imageWidth2Loc = glGetUniformLocation(id, "u_imageWidth2");
+  pd.imageHeight2Loc = glGetUniformLocation(id, "u_imageHeight2");
+  pd.screenWidthLoc = glGetUniformLocation(id, "u_screenWidth");
+  pd.screenHeightLoc = glGetUniformLocation(id, "u_screenHeight");
+  pd.fillColorLoc = glGetUniformLocation(id, "u_fillColor");
 
-    // Per-transition (may be -1 if not used by this shader)
-    pd.directionLoc = glGetUniformLocation(id, "u_direction");
-    pd.smoothnessLoc = glGetUniformLocation(id, "u_smoothness");
-    pd.centerXLoc = glGetUniformLocation(id, "u_centerX");
-    pd.centerYLoc = glGetUniformLocation(id, "u_centerY");
-    pd.aspectRatioLoc = glGetUniformLocation(id, "u_aspectRatio");
-    pd.stripeCountLoc = glGetUniformLocation(id, "u_stripeCount");
-    pd.angleLoc = glGetUniformLocation(id, "u_angle");
-    pd.maxBlockSizeLoc = glGetUniformLocation(id, "u_maxBlockSize");
-    pd.cellSizeLoc = glGetUniformLocation(id, "u_cellSize");
+  // Per-transition (may be -1 if not used by this shader)
+  pd.directionLoc = glGetUniformLocation(id, "u_direction");
+  pd.smoothnessLoc = glGetUniformLocation(id, "u_smoothness");
+  pd.centerXLoc = glGetUniformLocation(id, "u_centerX");
+  pd.centerYLoc = glGetUniformLocation(id, "u_centerY");
+  pd.aspectRatioLoc = glGetUniformLocation(id, "u_aspectRatio");
+  pd.stripeCountLoc = glGetUniformLocation(id, "u_stripeCount");
+  pd.angleLoc = glGetUniformLocation(id, "u_angle");
+  pd.maxBlockSizeLoc = glGetUniformLocation(id, "u_maxBlockSize");
+  pd.cellSizeLoc = glGetUniformLocation(id, "u_cellSize");
 
-    if (pd.positionLoc < 0 || pd.source1Loc < 0 || pd.progressLoc < 0) {
-        throw std::runtime_error("failed to query wallpaper shader locations");
-    }
+  if (pd.positionLoc < 0 || pd.source1Loc < 0 || pd.progressLoc < 0) {
+    throw std::runtime_error("failed to query wallpaper shader locations");
+  }
 }
 
-void WallpaperProgram::draw(WallpaperTransition type,
-                            GLuint texture1,
-                            GLuint texture2,
-                            float surfaceWidth,
-                            float surfaceHeight,
-                            float imageWidth1,
-                            float imageHeight1,
-                            float imageWidth2,
-                            float imageHeight2,
-                            float progress,
-                            float fillMode,
-                            const TransitionParams& params) const {
-    auto idx = static_cast<std::size_t>(type);
-    if (idx >= kTransitionCount || !m_programs[idx].program.isValid()) {
-        return;
-    }
+void WallpaperProgram::draw(WallpaperTransition type, GLuint texture1, GLuint texture2, float surfaceWidth,
+                            float surfaceHeight, float imageWidth1, float imageHeight1, float imageWidth2,
+                            float imageHeight2, float progress, float fillMode, const TransitionParams& params) const {
+  auto idx = static_cast<std::size_t>(type);
+  if (idx >= kTransitionCount || !m_programs[idx].program.isValid()) {
+    return;
+  }
 
-    const auto& pd = m_programs[idx];
+  const auto& pd = m_programs[idx];
 
-    static constexpr float kQuad[] = {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-    };
+  static constexpr float kQuad[] = {
+      0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+  };
 
-    glUseProgram(pd.program.id());
+  glUseProgram(pd.program.id());
 
-    // Textures
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture1);
-    glUniform1i(pd.source1Loc, 0);
+  // Textures
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texture1);
+  glUniform1i(pd.source1Loc, 0);
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, texture2);
-    if (pd.source2Loc >= 0) {
-        glUniform1i(pd.source2Loc, 1);
-    }
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, texture2);
+  if (pd.source2Loc >= 0) {
+    glUniform1i(pd.source2Loc, 1);
+  }
 
-    // Common uniforms
-    glUniform1f(pd.progressLoc, progress);
-    if (pd.fillModeLoc >= 0) glUniform1f(pd.fillModeLoc, fillMode);
-    if (pd.imageWidth1Loc >= 0) glUniform1f(pd.imageWidth1Loc, imageWidth1);
-    if (pd.imageHeight1Loc >= 0) glUniform1f(pd.imageHeight1Loc, imageHeight1);
-    if (pd.imageWidth2Loc >= 0) glUniform1f(pd.imageWidth2Loc, imageWidth2);
-    if (pd.imageHeight2Loc >= 0) glUniform1f(pd.imageHeight2Loc, imageHeight2);
-    if (pd.screenWidthLoc >= 0) glUniform1f(pd.screenWidthLoc, surfaceWidth);
-    if (pd.screenHeightLoc >= 0) glUniform1f(pd.screenHeightLoc, surfaceHeight);
-    if (pd.fillColorLoc >= 0) glUniform4f(pd.fillColorLoc, 0.0f, 0.0f, 0.0f, 1.0f);
+  // Common uniforms
+  glUniform1f(pd.progressLoc, progress);
+  if (pd.fillModeLoc >= 0)
+    glUniform1f(pd.fillModeLoc, fillMode);
+  if (pd.imageWidth1Loc >= 0)
+    glUniform1f(pd.imageWidth1Loc, imageWidth1);
+  if (pd.imageHeight1Loc >= 0)
+    glUniform1f(pd.imageHeight1Loc, imageHeight1);
+  if (pd.imageWidth2Loc >= 0)
+    glUniform1f(pd.imageWidth2Loc, imageWidth2);
+  if (pd.imageHeight2Loc >= 0)
+    glUniform1f(pd.imageHeight2Loc, imageHeight2);
+  if (pd.screenWidthLoc >= 0)
+    glUniform1f(pd.screenWidthLoc, surfaceWidth);
+  if (pd.screenHeightLoc >= 0)
+    glUniform1f(pd.screenHeightLoc, surfaceHeight);
+  if (pd.fillColorLoc >= 0)
+    glUniform4f(pd.fillColorLoc, 0.0f, 0.0f, 0.0f, 1.0f);
 
-    // Per-transition uniforms
-    if (pd.directionLoc >= 0) glUniform1f(pd.directionLoc, params.direction);
-    if (pd.smoothnessLoc >= 0) glUniform1f(pd.smoothnessLoc, params.smoothness);
-    if (pd.centerXLoc >= 0) glUniform1f(pd.centerXLoc, params.centerX);
-    if (pd.centerYLoc >= 0) glUniform1f(pd.centerYLoc, params.centerY);
-    if (pd.aspectRatioLoc >= 0) glUniform1f(pd.aspectRatioLoc, params.aspectRatio);
-    if (pd.stripeCountLoc >= 0) glUniform1f(pd.stripeCountLoc, params.stripeCount);
-    if (pd.angleLoc >= 0) glUniform1f(pd.angleLoc, params.angle);
-    if (pd.maxBlockSizeLoc >= 0) glUniform1f(pd.maxBlockSizeLoc, params.maxBlockSize);
-    if (pd.cellSizeLoc >= 0) glUniform1f(pd.cellSizeLoc, params.cellSize);
+  // Per-transition uniforms
+  if (pd.directionLoc >= 0)
+    glUniform1f(pd.directionLoc, params.direction);
+  if (pd.smoothnessLoc >= 0)
+    glUniform1f(pd.smoothnessLoc, params.smoothness);
+  if (pd.centerXLoc >= 0)
+    glUniform1f(pd.centerXLoc, params.centerX);
+  if (pd.centerYLoc >= 0)
+    glUniform1f(pd.centerYLoc, params.centerY);
+  if (pd.aspectRatioLoc >= 0)
+    glUniform1f(pd.aspectRatioLoc, params.aspectRatio);
+  if (pd.stripeCountLoc >= 0)
+    glUniform1f(pd.stripeCountLoc, params.stripeCount);
+  if (pd.angleLoc >= 0)
+    glUniform1f(pd.angleLoc, params.angle);
+  if (pd.maxBlockSizeLoc >= 0)
+    glUniform1f(pd.maxBlockSizeLoc, params.maxBlockSize);
+  if (pd.cellSizeLoc >= 0)
+    glUniform1f(pd.cellSizeLoc, params.cellSize);
 
-    // Draw fullscreen quad
-    auto posAttr = static_cast<GLuint>(pd.positionLoc);
-    glVertexAttribPointer(posAttr, 2, GL_FLOAT, GL_FALSE, 0, kQuad);
-    glEnableVertexAttribArray(posAttr);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDisableVertexAttribArray(posAttr);
+  // Draw fullscreen quad
+  auto posAttr = static_cast<GLuint>(pd.positionLoc);
+  glVertexAttribPointer(posAttr, 2, GL_FLOAT, GL_FALSE, 0, kQuad);
+  glEnableVertexAttribArray(posAttr);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  glDisableVertexAttribArray(posAttr);
 
-    glActiveTexture(GL_TEXTURE0);
+  glActiveTexture(GL_TEXTURE0);
 }

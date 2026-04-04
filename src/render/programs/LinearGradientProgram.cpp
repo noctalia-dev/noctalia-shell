@@ -1,4 +1,4 @@
-#include "render/programs/LinearGradientProgram.hpp"
+#include "render/programs/LinearGradientProgram.h"
 
 #include <array>
 #include <stdexcept>
@@ -43,66 +43,52 @@ void main() {
 } // namespace
 
 void LinearGradientProgram::ensureInitialized() {
-    if (m_program.isValid()) {
-        return;
-    }
+  if (m_program.isValid()) {
+    return;
+  }
 
-    m_program.create(kVertexShaderSource, kFragmentShaderSource);
-    m_positionLocation = glGetAttribLocation(m_program.id(), "a_position");
-    m_surfaceSizeLocation = glGetUniformLocation(m_program.id(), "u_surface_size");
-    m_rectLocation = glGetUniformLocation(m_program.id(), "u_rect");
-    m_startColorLocation = glGetUniformLocation(m_program.id(), "u_start_color");
-    m_endColorLocation = glGetUniformLocation(m_program.id(), "u_end_color");
-    m_directionLocation = glGetUniformLocation(m_program.id(), "u_direction");
+  m_program.create(kVertexShaderSource, kFragmentShaderSource);
+  m_positionLocation = glGetAttribLocation(m_program.id(), "a_position");
+  m_surfaceSizeLocation = glGetUniformLocation(m_program.id(), "u_surface_size");
+  m_rectLocation = glGetUniformLocation(m_program.id(), "u_rect");
+  m_startColorLocation = glGetUniformLocation(m_program.id(), "u_start_color");
+  m_endColorLocation = glGetUniformLocation(m_program.id(), "u_end_color");
+  m_directionLocation = glGetUniformLocation(m_program.id(), "u_direction");
 
-    if (m_positionLocation < 0 ||
-        m_surfaceSizeLocation < 0 ||
-        m_rectLocation < 0 ||
-        m_startColorLocation < 0 ||
-        m_endColorLocation < 0 ||
-        m_directionLocation < 0) {
-        throw std::runtime_error("failed to query linear-gradient shader locations");
-    }
+  if (m_positionLocation < 0 || m_surfaceSizeLocation < 0 || m_rectLocation < 0 || m_startColorLocation < 0 ||
+      m_endColorLocation < 0 || m_directionLocation < 0) {
+    throw std::runtime_error("failed to query linear-gradient shader locations");
+  }
 }
 
 void LinearGradientProgram::destroy() {
-    m_program.destroy();
-    m_positionLocation = -1;
-    m_surfaceSizeLocation = -1;
-    m_rectLocation = -1;
-    m_startColorLocation = -1;
-    m_endColorLocation = -1;
-    m_directionLocation = -1;
+  m_program.destroy();
+  m_positionLocation = -1;
+  m_surfaceSizeLocation = -1;
+  m_rectLocation = -1;
+  m_startColorLocation = -1;
+  m_endColorLocation = -1;
+  m_directionLocation = -1;
 }
 
-void LinearGradientProgram::draw(float surfaceWidth,
-                                 float surfaceHeight,
-                                 float x,
-                                 float y,
-                                 float width,
-                                 float height,
+void LinearGradientProgram::draw(float surfaceWidth, float surfaceHeight, float x, float y, float width, float height,
                                  const LinearGradientStyle& style) const {
-    if (!m_program.isValid() || width <= 0.0f || height <= 0.0f) {
-        return;
-    }
+  if (!m_program.isValid() || width <= 0.0f || height <= 0.0f) {
+    return;
+  }
 
-    const std::array<GLfloat, 12> vertices = {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-    };
+  const std::array<GLfloat, 12> vertices = {
+      0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+  };
 
-    glUseProgram(m_program.id());
-    glUniform2f(m_surfaceSizeLocation, surfaceWidth, surfaceHeight);
-    glUniform4f(m_rectLocation, x, y, width, height);
-    glUniform4f(m_startColorLocation, style.start.r, style.start.g, style.start.b, style.start.a);
-    glUniform4f(m_endColorLocation, style.end.r, style.end.g, style.end.b, style.end.a);
-    glUniform2f(m_directionLocation, style.horizontal ? 1.0f : 0.0f, style.horizontal ? 0.0f : 1.0f);
-    glVertexAttribPointer(m_positionLocation, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
-    glEnableVertexAttribArray(m_positionLocation);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDisableVertexAttribArray(m_positionLocation);
+  glUseProgram(m_program.id());
+  glUniform2f(m_surfaceSizeLocation, surfaceWidth, surfaceHeight);
+  glUniform4f(m_rectLocation, x, y, width, height);
+  glUniform4f(m_startColorLocation, style.start.r, style.start.g, style.start.b, style.start.a);
+  glUniform4f(m_endColorLocation, style.end.r, style.end.g, style.end.b, style.end.a);
+  glUniform2f(m_directionLocation, style.horizontal ? 1.0f : 0.0f, style.horizontal ? 0.0f : 1.0f);
+  glVertexAttribPointer(m_positionLocation, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
+  glEnableVertexAttribArray(m_positionLocation);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  glDisableVertexAttribArray(m_positionLocation);
 }

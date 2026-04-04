@@ -1,31 +1,30 @@
-#include "shell/widgets/ClockWidget.hpp"
+#include "shell/widgets/ClockWidget.h"
 
-#include "render/core/Renderer.hpp"
-#include "time/TimeService.hpp"
-#include "ui/controls/Label.hpp"
+#include "render/core/Renderer.h"
+#include "time/TimeService.h"
+#include "ui/controls/Label.h"
 
 ClockWidget::ClockWidget(const TimeService& timeService, std::string format)
-    : m_time(timeService)
-    , m_format(std::move(format)) {}
+    : m_time(timeService), m_format(std::move(format)) {}
 
 void ClockWidget::create(Renderer& renderer) {
-    auto label = std::make_unique<Label>();
-    label->setCaptionStyle();
-    m_label = label.get();
-    m_root = std::move(label);
-    update(renderer);
+  auto label = std::make_unique<Label>();
+  label->setCaptionStyle();
+  m_label = label.get();
+  m_root = std::move(label);
+  update(renderer);
 }
 
 void ClockWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
-    m_label->measure(renderer);
+  m_label->measure(renderer);
 }
 
 void ClockWidget::update(Renderer& renderer) {
-    auto text = m_time.format(m_format.c_str());
+  auto text = m_time.format(m_format.c_str());
 
-    if (text != m_lastText) {
-        m_lastText = std::move(text);
-        m_label->setText(m_lastText);
-        m_label->measure(renderer);
-    }
+  if (text != m_lastText) {
+    m_lastText = std::move(text);
+    m_label->setText(m_lastText);
+    m_label->measure(renderer);
+  }
 }

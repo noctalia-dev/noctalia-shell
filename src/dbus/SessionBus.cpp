@@ -1,12 +1,10 @@
-#include "dbus/SessionBus.hpp"
+#include "dbus/SessionBus.h"
 
-SessionBus::SessionBus()
-    : m_connection(sdbus::createSessionBusConnection()) {}
+SessionBus::SessionBus() : m_connection(sdbus::createSessionBusConnection()) {}
 
-sdbus::IConnection::PollData SessionBus::getPollData() const {
-    return m_connection->getEventLoopPollData();
-}
+sdbus::IConnection::PollData SessionBus::getPollData() const { return m_connection->getEventLoopPollData(); }
 
 void SessionBus::processPendingEvents() {
-    while (m_connection->processPendingEvent()) {}
+  while (m_connection->processPendingEvent()) {
+  }
 }
