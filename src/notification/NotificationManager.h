@@ -11,6 +11,7 @@
 enum class NotificationEvent {
   Added,
   Updated,
+  Closed,
 };
 
 class NotificationManager {

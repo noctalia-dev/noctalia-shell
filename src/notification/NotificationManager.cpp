@@ -122,6 +122,7 @@ bool NotificationManager::close(uint32_t id, CloseReason reason) {
   }
 
   const size_t index = it->second;
+  const Notification closed = m_notifications[index];
   const char* reason_str = (reason == CloseReason::Expired)     ? "expired"
                            : (reason == CloseReason::Dismissed) ? "dismissed"
                                                                 : "closed";
@@ -132,6 +133,10 @@ bool NotificationManager::close(uint32_t id, CloseReason reason) {
 
   for (size_t i = index; i < m_notifications.size(); ++i) {
     m_id_to_index[m_notifications[i].id] = i;
+  }
+
+  if (m_event_callback) {
+    m_event_callback(closed, NotificationEvent::Closed);
   }
 
   return true;

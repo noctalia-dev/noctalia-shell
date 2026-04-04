@@ -8,6 +8,7 @@
 #include <vector>
 
 class ConfigService;
+class NotificationManager;
 class TimeService;
 class WaylandConnection;
 struct PointerEvent;
@@ -17,7 +18,8 @@ class Bar {
 public:
   Bar();
 
-  bool initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService);
+  bool initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
+                  NotificationManager* notifications);
   void reload();
   void closeAllInstances();
   void onOutputChange();
@@ -37,6 +39,7 @@ private:
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
   TimeService* m_time = nullptr;
+  NotificationManager* m_notifications = nullptr;
   std::unique_ptr<WidgetFactory> m_widgetFactory;
   std::vector<std::unique_ptr<BarInstance>> m_instances;
 

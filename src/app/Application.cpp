@@ -21,10 +21,18 @@ void signal_handler(int signum) {
 Application::Application() : m_internalNotifications(m_manager) {
   logInfo("noctalia hello");
 
-  m_manager.setEventCallback([](const Notification& n, NotificationEvent event) {
-    const char* kind = (event == NotificationEvent::Added) ? "added" : "updated";
+  m_manager.setEventCallback([this](const Notification& n, NotificationEvent event) {
+    const char* kind = "updated";
+    if (event == NotificationEvent::Added) {
+      kind = "added";
+    } else if (event == NotificationEvent::Closed) {
+      kind = "closed";
+    }
     const char* origin = (n.origin == NotificationOrigin::Internal) ? "internal" : "external";
     logDebug("notification {} id={} origin={}", kind, n.id, origin);
+
+    // Keep bar widgets in sync with notification state changes.
+    m_bar.onWorkspaceChange();
   });
 }
 
@@ -69,7 +77,7 @@ void Application::run() {
   m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
 
   // Initialize bar (top layer)
-  m_bar.initialize(m_wayland, &m_configService, &m_timeService);
+  m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_manager);
 
   try {
     m_systemMonitor = std::make_unique<SystemMonitorService>();

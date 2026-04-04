@@ -2,13 +2,15 @@
 
 #include "config/ConfigService.h"
 #include "core/Log.h"
+#include "notification/NotificationManager.h"
 #include "shell/widgets/ClockWidget.h"
 #include "shell/widgets/NotificationWidget.h"
 #include "shell/widgets/SpacerWidget.h"
 #include "shell/widgets/WorkspacesWidget.h"
 
-WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config)
-    : m_wayland(wayland), m_time(time), m_config(config) {}
+WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
+               NotificationManager* notifications)
+  : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output) const {
   if (name == "clock") {
@@ -24,7 +26,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (name == "notifications") {
-    return std::make_unique<NotificationWidget>();
+    return std::make_unique<NotificationWidget>(m_notifications);
   }
 
   if (name == "spacer") {
