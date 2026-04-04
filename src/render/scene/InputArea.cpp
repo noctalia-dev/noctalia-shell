@@ -51,19 +51,24 @@ void InputArea::dispatchMotion(float localX, float localY) {
 }
 
 void InputArea::dispatchPress(float localX, float localY, std::uint32_t button, bool isPressed) {
-  if (m_onPress) {
-    m_onPress({.localX = localX, .localY = localY, .button = button, .pressed = isPressed});
-  }
-
   if (isPressed) {
     m_pressed = true;
     m_pressedButton = button;
-  } else {
-    // Click: release at the same InputArea that received the press
-    if (m_pressed && m_pressedButton == button && m_onClick) {
-      m_onClick({.localX = localX, .localY = localY, .button = button, .pressed = false});
+    if (m_onPress) {
+      m_onPress({.localX = localX, .localY = localY, .button = button, .pressed = true});
     }
+  } else {
+    const bool shouldClick = m_pressed && m_pressedButton == button && m_onClick;
     m_pressed = false;
     m_pressedButton = 0;
+
+    if (m_onPress) {
+      m_onPress({.localX = localX, .localY = localY, .button = button, .pressed = false});
+    }
+
+    // Click: release at the same InputArea that received the press
+    if (shouldClick) {
+      m_onClick({.localX = localX, .localY = localY, .button = button, .pressed = false});
+    }
   }
 }

@@ -2,6 +2,7 @@
 
 #include "render/scene/InputArea.h"
 #include "ui/controls/Box.h"
+#include "ui/controls/Button.h"
 #include "ui/controls/Label.h"
 #include "ui/controls/Toggle.h"
 #include "ui/style/Palette.h"
@@ -16,11 +17,22 @@ void TestPanelContent::create(Renderer& renderer) {
   container->setAlign(BoxAlign::Center);
 
   auto label = std::make_unique<Label>();
-  label->setText("Test Toggle");
+  label->setText("Test Controls");
   label->setFontSize(Style::fontSizeSm);
   label->setColor(palette.onSurface);
   m_label = label.get();
   container->addChild(std::move(label));
+
+  auto button = std::make_unique<Button>();
+  button->setText("Button");
+  button->setVariant(ButtonVariant::Default);
+  button->setOnClick([this]() {
+    if (m_toggle != nullptr) {
+      m_toggle->setChecked(!m_toggle->checked());
+    }
+  });
+  m_button = button.get();
+  container->addChild(std::move(button));
 
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
@@ -48,6 +60,10 @@ void TestPanelContent::layout(Renderer& renderer, float /*width*/, float /*heigh
   }
   if (m_label != nullptr) {
     m_label->measure(renderer);
+  }
+  if (m_button != nullptr) {
+    m_button->layout(renderer);
+    m_button->updateInputArea();
   }
   if (m_toggle != nullptr) {
     m_toggle->layout(renderer);

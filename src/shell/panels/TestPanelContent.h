@@ -3,6 +3,7 @@
 #include "shell/PanelContent.h"
 
 class Box;
+class Button;
 class Label;
 class Toggle;
 
@@ -18,5 +19,6 @@ public:
 private:
   Box* m_container = nullptr;
   Label* m_label = nullptr;
+  Button* m_button = nullptr;
   Toggle* m_toggle = nullptr;
 };

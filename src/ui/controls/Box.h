@@ -41,7 +41,7 @@ public:
   [[nodiscard]] float gap() const noexcept { return m_gap; }
   [[nodiscard]] BoxAlign align() const noexcept { return m_align; }
 
-  void layout(Renderer& renderer);
+  virtual void layout(Renderer& renderer);
 
 private:
   void ensureBackground();

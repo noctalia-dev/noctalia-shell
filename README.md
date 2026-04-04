@@ -158,7 +158,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 ### Controls (`src/ui/controls/`)
 
 - [x] Toggle
-- [ ] Button
+- [x] Button
 - [ ] IconButton
 - [ ] Slider
 - [ ] Tooltip
