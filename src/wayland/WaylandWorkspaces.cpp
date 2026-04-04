@@ -117,6 +117,94 @@ void WaylandWorkspaces::activate(const std::string& id) {
   }
 }
 
+void WaylandWorkspaces::activateForOutput(wl_output* output, const std::string& id) {
+  if (m_manager == nullptr || output == nullptr) {
+    return;
+  }
+
+  for (const auto& group : m_groups) {
+    const bool hasOutput = std::find(group.outputs.begin(), group.outputs.end(), output) != group.outputs.end();
+    if (!hasOutput) {
+      continue;
+    }
+
+    for (auto* handle : group.workspaces) {
+      auto it = m_workspaces.find(handle);
+      if (it == m_workspaces.end()) {
+        continue;
+      }
+      if (it->second.id != id) {
+        continue;
+      }
+
+      ext_workspace_handle_v1_activate(handle);
+      ext_workspace_manager_v1_commit(m_manager);
+      logInfo("workspace: activating \"{}\"", it->second.name);
+      return;
+    }
+  }
+
+  // Fallback for compositors that do not expose output/group relationships reliably.
+  activate(id);
+}
+
+void WaylandWorkspaces::activateForOutput(wl_output* output, const Workspace& workspace) {
+  if (m_manager == nullptr || output == nullptr) {
+    return;
+  }
+
+  auto matchesExact = [&](const Workspace& candidate) {
+    return candidate.id == workspace.id && candidate.name == workspace.name &&
+           candidate.coordinates == workspace.coordinates;
+  };
+
+  auto matchesId = [&](const Workspace& candidate) { return !workspace.id.empty() && candidate.id == workspace.id; };
+
+  for (const auto& group : m_groups) {
+    const bool hasOutput = std::find(group.outputs.begin(), group.outputs.end(), output) != group.outputs.end();
+    if (!hasOutput) {
+      continue;
+    }
+
+    // First pass: exact match for the workspace row that was clicked.
+    for (auto* handle : group.workspaces) {
+      auto it = m_workspaces.find(handle);
+      if (it == m_workspaces.end()) {
+        continue;
+      }
+      if (!matchesExact(it->second)) {
+        continue;
+      }
+
+      ext_workspace_handle_v1_activate(handle);
+      ext_workspace_manager_v1_commit(m_manager);
+      logInfo("workspace: activating \"{}\"", it->second.name);
+      return;
+    }
+
+    // Second pass: id-only fallback for compositors with unstable metadata.
+    for (auto* handle : group.workspaces) {
+      auto it = m_workspaces.find(handle);
+      if (it == m_workspaces.end()) {
+        continue;
+      }
+      if (!matchesId(it->second)) {
+        continue;
+      }
+
+      ext_workspace_handle_v1_activate(handle);
+      ext_workspace_manager_v1_commit(m_manager);
+      logInfo("workspace: activating \"{}\"", it->second.name);
+      return;
+    }
+  }
+
+  // Last-resort fallback for compositors that do not expose output/group relationships reliably.
+  if (!workspace.id.empty()) {
+    activate(workspace.id);
+  }
+}
+
 void WaylandWorkspaces::cleanup() {
   for (auto& [workspace, _] : m_workspaces) {
     if (workspace != nullptr) {

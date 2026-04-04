@@ -26,6 +26,8 @@ public:
   void bind(ext_workspace_manager_v1* manager);
   void setChangeCallback(ChangeCallback callback);
   void activate(const std::string& id);
+  void activateForOutput(wl_output* output, const std::string& id);
+  void activateForOutput(wl_output* output, const Workspace& workspace);
   void cleanup();
 
   [[nodiscard]] std::vector<Workspace> all() const;

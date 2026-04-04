@@ -49,6 +49,8 @@ public:
   void setPointerEventCallback(WaylandSeat::PointerEventCallback callback);
   void setCursorShape(std::uint32_t serial, std::uint32_t shape);
   void activateWorkspace(const std::string& id);
+  void activateWorkspace(wl_output* output, const std::string& id);
+  void activateWorkspace(wl_output* output, const Workspace& workspace);
 
   // Queries
   [[nodiscard]] bool isConnected() const noexcept;

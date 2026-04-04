@@ -139,6 +139,14 @@ void WaylandConnection::setCursorShape(std::uint32_t serial, std::uint32_t shape
 
 void WaylandConnection::activateWorkspace(const std::string& id) { m_workspaces_handler.activate(id); }
 
+void WaylandConnection::activateWorkspace(wl_output* output, const std::string& id) {
+  m_workspaces_handler.activateForOutput(output, id);
+}
+
+void WaylandConnection::activateWorkspace(wl_output* output, const Workspace& workspace) {
+  m_workspaces_handler.activateForOutput(output, workspace);
+}
+
 std::vector<Workspace> WaylandConnection::workspaces() const { return m_workspaces_handler.all(); }
 
 std::vector<Workspace> WaylandConnection::workspaces(wl_output* output) const {
