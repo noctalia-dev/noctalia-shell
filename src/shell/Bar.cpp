@@ -81,16 +81,6 @@ void Bar::closeAllInstances() {
   m_instances.clear();
 }
 
-void Bar::redrawAll() {
-  for (auto& inst : m_instances) {
-    if (inst->surface == nullptr || inst->surface->renderer() == nullptr) {
-      continue;
-    }
-    inst->surface->renderer()->makeCurrent();
-    inst->surface->renderNow();
-  }
-}
-
 void Bar::onOutputChange() { syncInstances(); }
 
 void Bar::onWorkspaceChange() {

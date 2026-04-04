@@ -28,8 +28,6 @@ void PanelManager::initialize(WaylandConnection& wayland, ConfigService* config)
   m_config = config;
 }
 
-void PanelManager::setCloseCallback(CloseCallback callback) { m_closeCallback = std::move(callback); }
-
 void PanelManager::registerPanel(const std::string& id, std::unique_ptr<PanelContent> content) {
   m_panels[id] = std::move(content);
 }
@@ -131,10 +129,6 @@ void PanelManager::closePanel() {
   m_activePanelId.clear();
 
   m_justClosed = true;
-
-  if (m_closeCallback) {
-    m_closeCallback();
-  }
 }
 
 void PanelManager::togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX) {

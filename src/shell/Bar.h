@@ -26,7 +26,6 @@ public:
   void onOutputChange();
   void onWorkspaceChange();
   void onPointerEvent(const PointerEvent& event);
-  void redrawAll();
   [[nodiscard]] bool isRunning() const noexcept;
 
 private:

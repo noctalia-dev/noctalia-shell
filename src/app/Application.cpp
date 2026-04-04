@@ -167,7 +167,6 @@ void Application::run() {
   // Initialize panel manager (must be before bar so widgets can access PanelManager::instance())
   m_panelManager.initialize(m_wayland, &m_configService);
   m_panelManager.registerPanel("test", std::make_unique<TestPanelContent>());
-  m_panelManager.setCloseCallback([this]() { m_bar.redrawAll(); });
 
   // Initialize bar (top layer)
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get());

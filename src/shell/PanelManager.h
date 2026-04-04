@@ -6,7 +6,6 @@
 #include "shell/PanelContent.h"
 #include "wayland/LayerSurface.h"
 
-#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -19,8 +18,6 @@ struct wl_surface;
 
 class PanelManager {
 public:
-  using CloseCallback = std::function<void()>;
-
   PanelManager();
   ~PanelManager();
 
@@ -30,7 +27,6 @@ public:
   static PanelManager& instance();
 
   void initialize(WaylandConnection& wayland, ConfigService* config);
-  void setCloseCallback(CloseCallback callback);
 
   void registerPanel(const std::string& id, std::unique_ptr<PanelContent> content);
 
@@ -62,7 +58,6 @@ private:
   PanelContent* m_activePanel = nullptr;
   std::string m_activePanelId;
 
-  CloseCallback m_closeCallback;
   wl_surface* m_wlSurface = nullptr;
   bool m_pointerInside = false;
   bool m_inTransition = false;

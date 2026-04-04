@@ -238,8 +238,9 @@ void GlRenderer::cleanup() {
   // GL objects (programs, textures, etc.) belong to the context that created
   // them. Destroying them while a different context is current would delete
   // resources from that other context instead.
+  bool madeCurrent = false;
   if (m_eglDisplay != EGL_NO_DISPLAY && m_eglSurface != EGL_NO_SURFACE && m_eglContext != EGL_NO_CONTEXT) {
-    eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
+    madeCurrent = eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext) == EGL_TRUE;
   }
 
   m_textureManager.cleanup();
@@ -249,8 +250,8 @@ void GlRenderer::cleanup() {
   m_textRenderer.cleanup();
   m_iconTextRenderer.cleanup();
 
-  // Unbind before destroying surface and context
-  if (m_eglDisplay != EGL_NO_DISPLAY) {
+  // Only unbind if we successfully bound our context above
+  if (madeCurrent) {
     eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
   }
 
