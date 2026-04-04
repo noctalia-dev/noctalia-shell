@@ -11,8 +11,8 @@
 #include "shell/widgets/WorkspacesWidget.h"
 
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
-               NotificationManager* notifications, TrayService* tray)
-  : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray) {}
+                             NotificationManager* notifications, TrayService* tray)
+    : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output) const {
   if (name == "clock") {

@@ -6,8 +6,8 @@
 
 class Label;
 
-// Compact label + rounded fill for inline chips (e.g. workspace). Not a Button — no
-// pointer/press semantics; chrome matches borderless shadcn-style chips.
+// Compact label + rounded fill for inline chips (e.g. workspace).
+// Not a Button — no pointer/press semantics
 class Chip : public Box {
 public:
   Chip();

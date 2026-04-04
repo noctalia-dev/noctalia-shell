@@ -1,0 +1,4 @@
+pre-commit:
+  jobs:
+    - name: clang-format
+      run: cd "$(git rev-parse --show-toplevel)" && just format && git update-index --again

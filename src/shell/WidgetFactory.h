@@ -14,8 +14,8 @@ class WaylandConnection;
 
 class WidgetFactory {
 public:
-  WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
-                NotificationManager* notifications, TrayService* tray);
+  WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config, NotificationManager* notifications,
+                TrayService* tray);
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output) const;
 
