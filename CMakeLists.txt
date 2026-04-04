@@ -179,6 +179,7 @@ add_executable(noctalia
     src/system/SystemMonitorService.cpp
     src/debug/DebugService.cpp
     src/notification/InternalNotificationService.cpp
+    src/notification/NotificationsService.cpp
     src/notification/NotificationManager.cpp
     src/dbus/SessionBus.cpp
     src/dbus/mpris/MprisService.cpp

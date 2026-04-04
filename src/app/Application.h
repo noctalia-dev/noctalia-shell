@@ -9,11 +9,9 @@
 #include "dbus/SessionBusPollSource.h"
 #include "dbus/mpris/MprisService.h"
 #include "dbus/notification/NotificationPollSource.h"
-#include "dbus/notification/NotificationService.h"
 #include "dbus/tray/TrayService.h"
 #include "debug/DebugService.h"
-#include "notification/InternalNotificationService.h"
-#include "notification/NotificationManager.h"
+#include "notification/NotificationsService.h"
 #include "shell/Bar.h"
 #include "shell/Wallpaper.h"
 #include "system/SystemMonitorService.h"
@@ -46,9 +44,7 @@ private:
   std::unique_ptr<DebugService> m_debugService;
   std::unique_ptr<MprisService> m_mprisService;
   std::unique_ptr<TrayService> m_trayService;
-  NotificationManager m_notificationManager;
-  InternalNotificationService m_internalNotifications;
-  std::unique_ptr<NotificationService> m_notificationService;
+  NotificationsService m_notificationService;
 
   // Poll sources (must outlive MainLoop)
   std::unique_ptr<SessionBusPollSource> m_busPollSource;

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "app/PollSource.h"
-#include "dbus/notification/NotificationService.h"
+#include "notification/NotificationsService.h"
 
 class NotificationPollSource final : public PollSource {
 public:
-  explicit NotificationPollSource(NotificationService& notifications) : m_notifications(notifications) {}
+  explicit NotificationPollSource(NotificationsService& notifications) : m_notifications(notifications) {}
 
   [[nodiscard]] int pollTimeoutMs() const override { return m_notifications.nextExpiryTimeoutMs(); }
 
@@ -17,5 +17,5 @@ protected:
   void doAddPollFds(std::vector<pollfd>& /*fds*/) override {}
 
 private:
-  NotificationService& m_notifications;
+  NotificationsService& m_notifications;
 };
