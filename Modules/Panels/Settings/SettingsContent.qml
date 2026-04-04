@@ -947,7 +947,6 @@ Item {
               spacing: Style.marginXS
               visible: root.searchText.trim() !== ""
               verticalPolicy: ScrollBar.AsNeeded
-              gradientColor: "transparent"
               reserveScrollbarSpace: false
 
               HoverHandler {
@@ -1048,7 +1047,6 @@ Item {
               currentIndex: root.currentTabIndex
               horizontalPolicy: ScrollBar.AlwaysOff
               verticalPolicy: ScrollBar.AlwaysOff
-              gradientColor: "transparent"
               reserveScrollbarSpace: false
 
               delegate: Rectangle {

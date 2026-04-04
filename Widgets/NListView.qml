@@ -22,7 +22,6 @@ Item {
   readonly property bool contentOverflows: listView.contentHeight > listView.height
 
   property bool showGradientMasks: true
-  property color gradientColor: Color.mSurfaceVariant
   property int gradientHeight: 16
   property bool reserveScrollbarSpace: true
 
