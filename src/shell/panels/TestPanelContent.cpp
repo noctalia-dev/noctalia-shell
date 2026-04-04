@@ -42,6 +42,7 @@ void TestPanelContent::create(Renderer& renderer) {
   auto toggle = std::make_unique<Toggle>();
   toggle->setToggleSize(ToggleSize::Medium);
   toggle->setChecked(false);
+  toggle->setAnimationManager(m_animations);
   m_toggle = toggle.get();
   area->addChild(std::move(toggle));
 
