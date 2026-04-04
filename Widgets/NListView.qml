@@ -22,7 +22,6 @@ Item {
   readonly property bool contentOverflows: listView.contentHeight > listView.height
 
   property bool showGradientMasks: true
-  property int gradientHeight: 16
   property bool reserveScrollbarSpace: true
 
   // Keep scrollbars visible whenever overflow exists (without forcing visibility when not scrollable)
@@ -197,14 +196,10 @@ Item {
       startColor: {
         if (listView.contentY <= 1)
           return "white";
-        if (listView.currentItem && listView.currentItem.y - listView.contentY < root.gradientHeight)
-          return "white";
         return "transparent";
       }
       endColor: {
         if (listView.contentY + listView.height >= listView.contentHeight - 1)
-          return "white";
-        if (listView.currentItem && listView.currentItem.y + listView.currentItem.height > listView.contentY + listView.height - root.gradientHeight)
           return "white";
         return "transparent";
       }

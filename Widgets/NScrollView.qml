@@ -20,7 +20,6 @@ ScrollView {
   readonly property bool verticalScrollable: (contentItem.contentHeight > contentItem.height) || (verticalPolicy == ScrollBar.AlwaysOn)
   readonly property bool horizontalScrollable: (contentItem.contentWidth > contentItem.width) || (horizontalPolicy == ScrollBar.AlwaysOn)
   property bool showGradientMasks: true
-  property int gradientHeight: 16
   // Fade controls (fadeExtent: 0.0–0.5, fraction of height that fades)
   property real fadeExtent: 0.01
   property bool reserveScrollbarSpace: true

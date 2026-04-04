@@ -26,7 +26,6 @@ Item {
 
   // Gradient properties
   property bool showGradientMasks: true
-  property int gradientHeight: 16
   property bool reserveScrollbarSpace: true
 
   // Keep scrollbars visible whenever overflow exists (without forcing visibility when not scrollable)
