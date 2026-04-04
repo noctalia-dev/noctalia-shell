@@ -7,21 +7,14 @@
 #include "shell/WallpaperSurface.hpp"
 #include "wayland/WaylandConnection.hpp"
 
+#include "core/Random.hpp"
+
 #include <algorithm>
 #include <cmath>
-#include <random>
+
+using Random::randomFloat;
 
 namespace {
-
-std::mt19937& rng() {
-    static std::mt19937 gen{std::random_device{}()};
-    return gen;
-}
-
-float randomFloat(float min, float max) {
-    std::uniform_real_distribution<float> dist(min, max);
-    return dist(rng());
-}
 
 TransitionParams randomizeParams(WallpaperTransition type, float smoothness, float aspectRatio) {
     TransitionParams params;
