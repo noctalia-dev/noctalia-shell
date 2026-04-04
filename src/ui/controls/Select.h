@@ -14,9 +14,9 @@ class Label;
 class RectNode;
 class Renderer;
 
-class Dropdown : public Box {
+class Select : public Box {
 public:
-  Dropdown();
+  Select();
 
   void setOptions(std::vector<std::string> options);
   void setSelectedIndex(std::size_t index);

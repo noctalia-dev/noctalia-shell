@@ -1,4 +1,4 @@
-#include "ui/controls/Dropdown.h"
+#include "ui/controls/Select.h"
 
 #include "render/programs/RoundedRectProgram.h"
 #include "render/scene/InputArea.h"
@@ -25,7 +25,7 @@ constexpr float kIconSize = 14.0f;
 
 } // namespace
 
-Dropdown::Dropdown() {
+Select::Select() {
   auto triggerBackground = std::make_unique<RectNode>();
   m_triggerBackground = static_cast<RectNode*>(addChild(std::move(triggerBackground)));
 
@@ -65,7 +65,7 @@ Dropdown::Dropdown() {
   applyVisualState();
 }
 
-void Dropdown::setOptions(std::vector<std::string> options) {
+void Select::setOptions(std::vector<std::string> options) {
   m_options = std::move(options);
   if (m_options.empty()) {
     m_selectedIndex = npos;
@@ -80,7 +80,7 @@ void Dropdown::setOptions(std::vector<std::string> options) {
   markDirty();
 }
 
-void Dropdown::setSelectedIndex(std::size_t index) {
+void Select::setSelectedIndex(std::size_t index) {
   if (index >= m_options.size()) {
     return;
   }
@@ -96,7 +96,7 @@ void Dropdown::setSelectedIndex(std::size_t index) {
   }
 }
 
-void Dropdown::setEnabled(bool enabled) {
+void Select::setEnabled(bool enabled) {
   if (m_enabled == enabled) {
     return;
   }
@@ -109,25 +109,25 @@ void Dropdown::setEnabled(bool enabled) {
   markDirty();
 }
 
-void Dropdown::setPlaceholder(std::string_view placeholder) {
+void Select::setPlaceholder(std::string_view placeholder) {
   m_placeholder = std::string(placeholder);
   syncTriggerText();
   applyVisualState();
   markDirty();
 }
 
-void Dropdown::setOnSelectionChanged(std::function<void(std::size_t, std::string_view)> callback) {
+void Select::setOnSelectionChanged(std::function<void(std::size_t, std::string_view)> callback) {
   m_onSelectionChanged = std::move(callback);
 }
 
-std::string_view Dropdown::selectedText() const noexcept {
+std::string_view Select::selectedText() const noexcept {
   if (m_selectedIndex >= m_options.size()) {
     return {};
   }
   return m_options[m_selectedIndex];
 }
 
-void Dropdown::layout(Renderer& renderer) {
+void Select::layout(Renderer& renderer) {
   if (m_triggerBackground == nullptr || m_triggerLabel == nullptr || m_triggerIcon == nullptr || m_triggerArea == nullptr ||
       m_menuBackground == nullptr) {
     return;
@@ -191,7 +191,7 @@ void Dropdown::layout(Renderer& renderer) {
   applyVisualState();
 }
 
-void Dropdown::clearOptionViews() {
+void Select::clearOptionViews() {
   for (auto& option : m_optionViews) {
     if (option.area != nullptr) {
       (void)removeChild(option.area);
@@ -206,7 +206,7 @@ void Dropdown::clearOptionViews() {
   m_optionViews.clear();
 }
 
-void Dropdown::rebuildOptionViews() {
+void Select::rebuildOptionViews() {
   clearOptionViews();
 
   for (std::size_t i = 0; i < m_options.size(); ++i) {
@@ -251,7 +251,7 @@ void Dropdown::rebuildOptionViews() {
   }
 }
 
-void Dropdown::applyVisualState() {
+void Select::applyVisualState() {
   if (m_triggerLabel == nullptr || m_triggerIcon == nullptr || m_triggerBackground == nullptr || m_menuBackground == nullptr) {
     return;
   }
@@ -288,7 +288,7 @@ void Dropdown::applyVisualState() {
   const bool showMenu = m_open && !m_optionViews.empty();
   m_menuBackground->setVisible(showMenu);
   m_menuBackground->setStyle(RoundedRectStyle{
-      .fill = palette.surface,
+      .fill = palette.surfaceVariant,
       .border = palette.outline,
       .fillMode = FillMode::Solid,
       .radius = Style::radiusMd,
@@ -317,21 +317,21 @@ void Dropdown::applyVisualState() {
         .fill = bg,
         .border = bg,
         .fillMode = FillMode::Solid,
-        .radius = 0.0f,
+        .radius = Style::radiusSm,
         .softness = 1.0f,
         .borderWidth = 0.0f,
     });
   }
 }
 
-void Dropdown::syncTriggerText() {
+void Select::syncTriggerText() {
   if (m_triggerLabel == nullptr) {
     return;
   }
   m_triggerLabel->setText(selectedText().empty() ? m_placeholder : std::string(selectedText()));
 }
 
-void Dropdown::toggleOpen() {
+void Select::toggleOpen() {
   if (!m_enabled || m_options.empty()) {
     return;
   }
@@ -343,7 +343,7 @@ void Dropdown::toggleOpen() {
   markDirty();
 }
 
-void Dropdown::closeMenu() {
+void Select::closeMenu() {
   if (!m_open) {
     return;
   }

@@ -4,7 +4,7 @@
 
 class Box;
 class Button;
-class Dropdown;
+class Select;
 class Label;
 class Slider;
 class Toggle;
@@ -23,7 +23,7 @@ private:
   Label* m_headerLabel = nullptr;
   Label* m_sliderValueLabel = nullptr;
   Button* m_button = nullptr;
-  Dropdown* m_dropdown = nullptr;
+  Select* m_select = nullptr;
   Button* m_iconButton = nullptr;
   Slider* m_slider = nullptr;
   Toggle* m_toggle = nullptr;

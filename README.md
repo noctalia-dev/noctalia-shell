@@ -205,7 +205,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] Scroll view
 - [ ] List view
 - [ ] Text input
-- [ ] Dropdown
+- [ ] Select
 - [ ] Checkbox
 - [ ] Radio button
 - [ ] Tab bar

@@ -3,7 +3,7 @@
 #include "render/scene/InputArea.h"
 #include "ui/controls/Box.h"
 #include "ui/controls/Button.h"
-#include "ui/controls/Dropdown.h"
+#include "ui/controls/Select.h"
 #include "ui/controls/Label.h"
 #include "ui/controls/Slider.h"
 #include "ui/controls/Toggle.h"
@@ -69,16 +69,16 @@ void TestPanelContent::create(Renderer& renderer) {
     container->addChild(std::move(row));
   }
 
-  auto dropdown = std::make_unique<Dropdown>();
-  dropdown->setSize(220.0f, 0.0f);
-  dropdown->setOptions({"Balanced", "Performance", "Power Saver"});
-  dropdown->setSelectedIndex(0);
-  m_dropdown = dropdown.get();
+  auto select = std::make_unique<Select>();
+  select->setSize(220.0f, 0.0f);
+  select->setOptions({"Balanced", "Performance", "Power Saver"});
+  select->setSelectedIndex(0);
+  m_select = select.get();
   {
     auto row = makeRow();
     row->setZIndex(10);
-    row->addChild(makeRowLabel("Dropdown", kRowLabelWidth));
-    row->addChild(std::move(dropdown));
+    row->addChild(makeRowLabel("Select", kRowLabelWidth));
+    row->addChild(std::move(select));
 
     container->addChild(std::move(row));
   }
@@ -150,8 +150,8 @@ void TestPanelContent::layout(Renderer& renderer, float /*width*/, float /*heigh
     m_button->layout(renderer);
     m_button->updateInputArea();
   }
-  if (m_dropdown != nullptr) {
-    m_dropdown->layout(renderer);
+  if (m_select != nullptr) {
+    m_select->layout(renderer);
   }
   if (m_iconButton != nullptr) {
     m_iconButton->layout(renderer);
