@@ -263,23 +263,21 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     m_inputDispatcher.setCursorShapeCallback(
         [this](std::uint32_t serial, std::uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
 
-    // Open animation: background fades in + slides up, then content fades in
+    // Open animation: fast fade-in with the background growing from center
     m_sceneRoot->setOpacity(0.0f);
-    m_sceneRoot->setPosition(0.0f, 8.0f);
-    m_contentNode->setOpacity(0.0f);
 
-    // Phase 1: background appears with slide
-    m_animations.animate(
-        0.0f, 1.0f, Style::animFast, Easing::EaseOutCubic,
-        [this](float v) {
-          m_sceneRoot->setOpacity(v);
-          m_sceneRoot->setPosition(0.0f, -80.0f * (1.0f - v));
-        },
-        // Phase 2: content fades in after background settles
-        [this]() {
-          m_animations.animate(0.0f, 1.0f, Style::animNormal, Easing::EaseOutQuad,
-                               [this](float v) { m_contentNode->setOpacity(v); });
-        });
+    auto* bgNode = m_sceneRoot->children()[0].get();
+
+    m_animations.animate(0.0f, 1.0f, Style::animNormal, Easing::EaseOutCubic, [this, bgNode, w, h](float v) {
+      m_sceneRoot->setOpacity(v);
+
+      // Background grows from ~95% to 100%
+      const float s = 1.0f - 0.05f * (1.0f - v);
+      const float bw = w * s;
+      const float bh = h * s;
+      bgNode->setSize(bw, bh);
+      bgNode->setPosition((w - bw) * 0.5f, (h - bh) * 0.5f);
+    });
 
     m_surface->setSceneRoot(m_sceneRoot.get());
   }
