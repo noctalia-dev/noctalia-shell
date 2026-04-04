@@ -213,6 +213,7 @@ add_executable(noctalia
     src/ui/controls/Chip.cpp
     src/ui/controls/Icon.cpp
     src/ui/controls/Label.cpp
+    src/ui/controls/Toggle.cpp
     src/ui/icons/IconRegistry.cpp
     src/shell/widgets/ClockWidget.cpp
     src/shell/widgets/NotificationWidget.cpp

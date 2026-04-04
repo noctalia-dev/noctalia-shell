@@ -143,7 +143,7 @@ third_party/
 
 ### Controls (`src/ui/controls/`)
 
-- [ ] Toggle
+- [x] Toggle
 - [ ] Button
 - [ ] IconButton
 - [ ] Slider

@@ -86,10 +86,9 @@ static constexpr int32_t k_min_timeout = -1;
 
 namespace {
 
-std::string clamp_str(std::string s) {
-  if (s.size() > k_max_string_len)
-    s.resize(k_max_string_len);
-  return s;
+std::string clamp_str(std::string_view s) {
+  const auto len = std::min(s.size(), k_max_string_len);
+  return std::string{s.substr(0, len)};
 }
 
 std::vector<std::string> sanitize_actions(const std::vector<std::string>& actions) {
