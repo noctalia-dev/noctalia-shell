@@ -46,8 +46,6 @@ just rebuild release  # release
 
 # Run
 just run
-
-just run
 ```
 
 <details>
