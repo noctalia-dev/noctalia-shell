@@ -29,7 +29,7 @@ private:
     WaylandConnection& m_connection;
     wl_output* m_output = nullptr;
     Box* m_container = nullptr;
-    std::vector<WaylandConnection::Workspace> m_cachedState;
+    std::vector<Workspace> m_cachedState;
     std::vector<std::string> m_workspaceIds;
     int m_hoveredPill = -1;
 };

@@ -220,6 +220,8 @@ add_executable(noctalia
     src/wayland/Surface.cpp
     src/wayland/LayerSurface.cpp
     src/wayland/WaylandConnection.cpp
+    src/wayland/WaylandSeat.cpp
+    src/wayland/WaylandWorkspaces.cpp
     "${WLR_LAYER_SHELL_PROTOCOL_C}"
     "${XDG_OUTPUT_PROTOCOL_C}"
     "${XDG_SHELL_PROTOCOL_C}"
