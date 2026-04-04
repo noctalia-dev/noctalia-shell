@@ -18,10 +18,10 @@ void signal_handler(int signum) {
 
 } // namespace
 
-Application::Application() : m_internalNotifications(m_notificationManager) {
+Application::Application() {
   logInfo("noctalia hello");
 
-  m_notificationManager.setEventCallback([this](const Notification& n, NotificationEvent event) {
+  m_notificationService.manager().setEventCallback([this](const Notification& n, NotificationEvent event) {
     const char* kind = "updated";
     if (event == NotificationEvent::Added) {
       kind = "added";
@@ -45,7 +45,7 @@ Application::~Application() {
 
     // Destroy services in reverse order they were created
     m_trayService.reset();
-    m_notificationService.reset();
+    m_notificationService.stopDbus();
     m_mprisService.reset();
     m_debugService.reset();
 
@@ -92,12 +92,12 @@ void Application::run() {
     logInfo("connected to session bus");
   } catch (const std::exception& e) {
     logWarn("dbus disabled: {}", e.what());
-    m_internalNotifications.notify("Noctalia", "Session bus unavailable", e.what(), 8000, Urgency::Low);
+    m_notificationService.internal().notify("Noctalia", "Session bus unavailable", e.what(), 8000, Urgency::Low);
   }
 
   if (m_bus != nullptr) {
     try {
-      m_debugService = std::make_unique<DebugService>(*m_bus, m_internalNotifications);
+      m_debugService = std::make_unique<DebugService>(*m_bus, m_notificationService.internal());
       logInfo("debug service active on dev.noctalia.Debug");
     } catch (const std::exception& e) {
       logWarn("debug service disabled: {}", e.what());
@@ -110,16 +110,16 @@ void Application::run() {
     } catch (const std::exception& e) {
       logWarn("mpris disabled: {}", e.what());
       m_mprisService.reset();
-      m_internalNotifications.notify("Noctalia", "MPRIS disabled", e.what(), 7000, Urgency::Low);
+      m_notificationService.internal().notify("Noctalia", "MPRIS disabled", e.what(), 7000, Urgency::Low);
     }
 
     try {
-      m_notificationService = std::make_unique<NotificationService>(*m_bus, m_notificationManager);
+      m_notificationService.startDbus(*m_bus);
       logInfo("listening on org.freedesktop.Notifications");
     } catch (const std::exception& e) {
       logWarn("notifications disabled: {}", e.what());
-      m_notificationService.reset();
-      m_internalNotifications.notify("Noctalia", "DBus notifications disabled", e.what(), 7000, Urgency::Low);
+      m_notificationService.stopDbus();
+      m_notificationService.internal().notify("Noctalia", "DBus notifications disabled", e.what(), 7000, Urgency::Low);
     }
 
     try {
@@ -133,7 +133,7 @@ void Application::run() {
   }
 
   // Initialize bar (top layer)
-  m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get());
+  m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationService.manager(), m_trayService.get());
 
   // Build poll sources
   std::vector<PollSource*> sources;
@@ -141,10 +141,8 @@ void Application::run() {
     m_busPollSource = std::make_unique<SessionBusPollSource>(*m_bus);
     sources.push_back(m_busPollSource.get());
   }
-  if (m_notificationService != nullptr) {
-    m_notificationPollSource = std::make_unique<NotificationPollSource>(*m_notificationService);
-    sources.push_back(m_notificationPollSource.get());
-  }
+  m_notificationPollSource = std::make_unique<NotificationPollSource>(m_notificationService);
+  sources.push_back(m_notificationPollSource.get());
   sources.push_back(&m_timePollSource);
   sources.push_back(&m_configPollSource);
   sources.push_back(&m_statePollSource);
