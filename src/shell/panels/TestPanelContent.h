@@ -6,6 +6,7 @@ class Box;
 class Button;
 class IconButton;
 class Label;
+class Slider;
 class Toggle;
 
 class TestPanelContent : public PanelContent {
@@ -19,8 +20,10 @@ public:
 
 private:
   Box* m_container = nullptr;
-  Label* m_label = nullptr;
+  Label* m_headerLabel = nullptr;
+  Label* m_sliderValueLabel = nullptr;
   Button* m_button = nullptr;
   IconButton* m_iconButton = nullptr;
+  Slider* m_slider = nullptr;
   Toggle* m_toggle = nullptr;
 };

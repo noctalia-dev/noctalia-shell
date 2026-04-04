@@ -160,7 +160,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [x] Toggle
 - [x] Button
 - [x] IconButton
-- [ ] Slider
+- [x] Slider
 - [ ] Tooltip
 - [ ] Progress bar
 - [ ] Scroll view

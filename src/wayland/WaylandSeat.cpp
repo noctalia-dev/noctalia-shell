@@ -85,17 +85,23 @@ void WaylandSeat::handleSeatName(void* /*data*/, wl_seat* /*seat*/, const char* 
 void WaylandSeat::handlePointerEnter(void* data, wl_pointer* /*pointer*/, std::uint32_t serial, wl_surface* surface,
                                      std::int32_t sx, std::int32_t sy) {
   auto* self = static_cast<WaylandSeat*>(data);
+  self->m_lastPointerSurface = surface;
+  self->m_lastPointerX = wl_fixed_to_double(sx);
+  self->m_lastPointerY = wl_fixed_to_double(sy);
+  self->m_hasPointerPosition = true;
   self->m_pendingPointerEvents.push_back(PointerEvent{
       .type = PointerEvent::Type::Enter,
       .serial = serial,
       .surface = surface,
-      .sx = wl_fixed_to_double(sx),
-      .sy = wl_fixed_to_double(sy),
+      .sx = self->m_lastPointerX,
+      .sy = self->m_lastPointerY,
   });
 }
 
 void WaylandSeat::handlePointerLeave(void* data, wl_pointer* /*pointer*/, std::uint32_t serial, wl_surface* surface) {
   auto* self = static_cast<WaylandSeat*>(data);
+  self->m_lastPointerSurface = surface;
+  self->m_hasPointerPosition = false;
   self->m_pendingPointerEvents.push_back(PointerEvent{
       .type = PointerEvent::Type::Leave,
       .serial = serial,
@@ -106,10 +112,13 @@ void WaylandSeat::handlePointerLeave(void* data, wl_pointer* /*pointer*/, std::u
 void WaylandSeat::handlePointerMotion(void* data, wl_pointer* /*pointer*/, std::uint32_t time, std::int32_t sx,
                                       std::int32_t sy) {
   auto* self = static_cast<WaylandSeat*>(data);
+  self->m_lastPointerX = wl_fixed_to_double(sx);
+  self->m_lastPointerY = wl_fixed_to_double(sy);
+  self->m_hasPointerPosition = true;
   self->m_pendingPointerEvents.push_back(PointerEvent{
       .type = PointerEvent::Type::Motion,
-      .sx = wl_fixed_to_double(sx),
-      .sy = wl_fixed_to_double(sy),
+      .sx = self->m_lastPointerX,
+      .sy = self->m_lastPointerY,
       .time = time,
   });
 }
@@ -120,6 +129,9 @@ void WaylandSeat::handlePointerButton(void* data, wl_pointer* /*pointer*/, std::
   self->m_pendingPointerEvents.push_back(PointerEvent{
       .type = PointerEvent::Type::Button,
       .serial = serial,
+      .surface = self->m_lastPointerSurface,
+      .sx = self->m_hasPointerPosition ? self->m_lastPointerX : 0.0,
+      .sy = self->m_hasPointerPosition ? self->m_lastPointerY : 0.0,
       .time = time,
       .button = button,
       .state = state,

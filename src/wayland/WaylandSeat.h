@@ -50,4 +50,8 @@ private:
   wp_cursor_shape_device_v1* m_cursorShapeDevice = nullptr;
   PointerEventCallback m_pointerEventCallback;
   std::vector<PointerEvent> m_pendingPointerEvents;
+  wl_surface* m_lastPointerSurface = nullptr;
+  double m_lastPointerX = 0.0;
+  double m_lastPointerY = 0.0;
+  bool m_hasPointerPosition = false;
 };
