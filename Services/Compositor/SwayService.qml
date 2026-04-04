@@ -17,6 +17,223 @@ Item {
   property var windows: []
   property int focusedWindowIndex: -1
 
+  function _normalizeRefreshMilli(refresh) {
+    const r = Number(refresh);
+    if (!isFinite(r) || r <= 0)
+      return 60000;
+    // Sway reports refresh in mHz; tolerate Hz-style values defensively.
+    return r < 1000 ? Math.round(r * 1000) : Math.round(r);
+  }
+
+  function _transformFromSway(transform) {
+    const tMap = {
+      "normal": "Normal",
+      "90": "90",
+      "180": "180",
+      "270": "270",
+      "flipped": "Flipped",
+      "flipped-90": "Flipped90",
+      "flipped-180": "Flipped180",
+      "flipped-270": "Flipped270"
+    };
+    return tMap[String(transform || "normal")] || "Normal";
+  }
+
+  function _transformToSway(transform) {
+    const tMap = {
+      "normal": "normal",
+      "Normal": "normal",
+      "90": "90",
+      "180": "180",
+      "270": "270",
+      "flipped": "flipped",
+      "Flipped": "flipped",
+      "flipped-90": "flipped-90",
+      "Flipped90": "flipped-90",
+      "flipped-180": "flipped-180",
+      "Flipped180": "flipped-180",
+      "flipped-270": "flipped-270",
+      "Flipped270": "flipped-270"
+    };
+    return tMap[String(transform || "normal")] || "normal";
+  }
+
+  function _modeStrToSway(modeStr) {
+    const raw = String(modeStr || "").trim();
+    if (raw === "")
+      return "preferred";
+
+    const at = raw.split("@");
+    if (at.length !== 2)
+      return raw;
+
+    const hz = Number(at[1]);
+    if (!isFinite(hz) || hz <= 0)
+      return raw;
+    return at[0] + "@" + hz.toFixed(3) + "Hz";
+  }
+
+  function _isAdaptiveSyncEnabled(output) {
+    if (!output)
+      return false;
+
+    const status = output.adaptive_sync_status;
+    if (typeof status === "boolean")
+      return status;
+    if (status !== undefined && status !== null) {
+      const s = String(status).toLowerCase();
+      return s === "enabled" || s === "on" || s === "true";
+    }
+    return output.adaptive_sync === true;
+  }
+
+  property var displayBackend: ({
+    generateRevertCmds: function (snap, curSnap) {
+      let pending = [];
+      let onOffCmds = [];
+
+      for (const outputName in snap) {
+        const s = snap[outputName];
+        const cur = curSnap[outputName] || {};
+
+        if (s.enabled !== cur.enabled) {
+          onOffCmds.push([root.msgCommand, "output", outputName, s.enabled ? "enable" : "disable"]);
+        }
+
+        if (s.enabled === false)
+          continue;
+
+        if (s.modeStr && s.modeStr !== cur.modeStr) {
+          pending.push([root.msgCommand, "output", outputName, "mode", root._modeStrToSway(s.modeStr)]);
+        }
+        if (Math.abs((s.scale || 1.0) - (cur.scale || 1.0)) > 0.01) {
+          pending.push([root.msgCommand, "output", outputName, "scale", String(s.scale)]);
+        }
+        if (s.transform !== cur.transform) {
+          pending.push([root.msgCommand, "output", outputName, "transform", root._transformToSway(s.transform)]);
+        }
+        if (Math.round(s.x || 0) !== Math.round(cur.x || 0) || Math.round(s.y || 0) !== Math.round(cur.y || 0)) {
+          pending.push([root.msgCommand, "output", outputName, "position", String(Math.round(s.x || 0)), String(Math.round(s.y || 0))]);
+        }
+        if (s.vrr_enabled !== cur.vrr_enabled) {
+          pending.push([root.msgCommand, "output", outputName, "adaptive_sync", s.vrr_enabled ? "on" : "off"]);
+        }
+      }
+
+      return onOffCmds.concat(pending);
+    },
+
+    parseFetch: function (rawData) {
+      const data = {};
+      const outputs = Array.isArray(rawData) ? rawData : [];
+
+      for (let i = 0; i < outputs.length; i++) {
+        const mon = outputs[i];
+        if (!mon || !mon.name)
+          continue;
+
+        const isEnabled = mon.active === true || mon.enabled === true;
+        const currentMode = mon.current_mode || {};
+        const modes = [];
+        let currentModeIdx = 0;
+
+        for (let j = 0; j < (mon.modes || []).length; j++) {
+          const m = mon.modes[j];
+          if (!m)
+            continue;
+
+          const modeEntry = {
+            width: Number(m.width) || 0,
+            height: Number(m.height) || 0,
+            refresh_rate: root._normalizeRefreshMilli(m.refresh),
+            is_preferred: m.preferred === true
+          };
+          modes.push(modeEntry);
+
+          const sameAsCurrent = modeEntry.width === (Number(currentMode.width) || 0)
+                                && modeEntry.height === (Number(currentMode.height) || 0)
+                                && Math.abs(modeEntry.refresh_rate - root._normalizeRefreshMilli(currentMode.refresh)) < 2;
+          if (m.current === true || sameAsCurrent) {
+            currentModeIdx = modes.length - 1;
+          }
+        }
+
+        if (modes.length === 0 && Number(currentMode.width) > 0 && Number(currentMode.height) > 0) {
+          modes.push({
+                       width: Number(currentMode.width),
+                       height: Number(currentMode.height),
+                       refresh_rate: root._normalizeRefreshMilli(currentMode.refresh)
+                     });
+          currentModeIdx = 0;
+        }
+
+        const scale = Number(mon.scale) > 0 ? Number(mon.scale) : 1.0;
+        const transform = root._transformFromSway(mon.transform);
+        const applyRot = ["90", "270", "Flipped90", "Flipped270"].includes(transform);
+
+        const modeW = modes[currentModeIdx] ? modes[currentModeIdx].width : 1920;
+        const modeH = modes[currentModeIdx] ? modes[currentModeIdx].height : 1080;
+        const rotatedW = applyRot ? modeH : modeW;
+        const rotatedH = applyRot ? modeW : modeH;
+
+        const rect = mon.rect || {};
+        const logicalWidth = Number(rect.width) > 0 ? Number(rect.width) : Math.floor(rotatedW / scale);
+        const logicalHeight = Number(rect.height) > 0 ? Number(rect.height) : Math.floor(rotatedH / scale);
+
+        data[mon.name] = {
+          name: mon.name,
+          enabled: isEnabled,
+          make: mon.make || "",
+          model: mon.model || "",
+          vrr_enabled: root._isAdaptiveSyncEnabled(mon),
+          current_mode: currentModeIdx,
+          modes: modes,
+          logical: {
+            x: Number(rect.x) || 0,
+            y: Number(rect.y) || 0,
+            width: logicalWidth,
+            height: logicalHeight,
+            scale: scale,
+            transform: transform
+          }
+        };
+      }
+
+      return data;
+    },
+
+    buildSetModeCmd: function (outputName, cfg) {
+      return [[root.msgCommand, "output", outputName, "mode", root._modeStrToSway(cfg.modeStr)]];
+    },
+
+    buildSetScaleCmd: function (outputName, cfg) {
+      return [[root.msgCommand, "output", outputName, "scale", String(cfg.scale)]];
+    },
+
+    buildSetTransformCmd: function (outputName, cfg) {
+      return [[root.msgCommand, "output", outputName, "transform", root._transformToSway(cfg.transform)]];
+    },
+
+    buildSetVrrCmd: function (outputName, cfg) {
+      return [[root.msgCommand, "output", outputName, "adaptive_sync", cfg.vrr_enabled ? "on" : "off"]];
+    },
+
+    buildToggleOutputCmd: function (outputName, enabled) {
+      return [[root.msgCommand, "output", outputName, enabled ? "enable" : "disable"]];
+    },
+
+    buildPositionsCmds: function (targetConfig) {
+      let pending = [];
+      for (const outputName in targetConfig) {
+        const cfg = targetConfig[outputName];
+        if (!cfg || cfg.enabled === false)
+          continue;
+        pending.push([root.msgCommand, "output", outputName, "position", String(Math.round(cfg.x || 0)), String(Math.round(cfg.y || 0))]);
+      }
+      return pending;
+    }
+  })
+
   // Signals that match the facade interface
   signal workspaceChanged
   signal activeWindowChanged

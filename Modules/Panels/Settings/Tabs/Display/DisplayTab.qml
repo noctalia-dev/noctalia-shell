@@ -63,7 +63,7 @@ ColumnLayout {
     currentIndex: tabView.currentIndex
 
     NTabButton {
-      text: I18n.tr("common.brightness")
+      text: I18n.tr("common.monitor")
       tabIndex: 0
       checked: subTabBar.currentIndex === 0
     }
@@ -83,7 +83,7 @@ ColumnLayout {
     id: tabView
     currentIndex: subTabBar.currentIndex
 
-    BrightnessSubTab {}
+    MonitorSubTab {}
     NightLightSubTab {
       timeOptions: timeOptions
       onCheckWlsunset: wlsunsetCheck.running = true

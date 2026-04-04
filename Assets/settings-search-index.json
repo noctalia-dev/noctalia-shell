@@ -880,7 +880,7 @@
     "tab": 15,
     "tabLabel": "panels.display.title",
     "subTab": 0,
-    "subTabLabel": "common.brightness"
+    "subTabLabel": "common.monitor"
   },
   {
     "labelKey": "panels.display.monitors-brightness-step-label",
@@ -889,7 +889,7 @@
     "tab": 15,
     "tabLabel": "panels.display.title",
     "subTab": 0,
-    "subTabLabel": "common.brightness"
+    "subTabLabel": "common.monitor"
   },
   {
     "labelKey": "panels.display.monitors-enforce-minimum-label",
@@ -898,7 +898,7 @@
     "tab": 15,
     "tabLabel": "panels.display.title",
     "subTab": 0,
-    "subTabLabel": "common.brightness"
+    "subTabLabel": "common.monitor"
   },
   {
     "labelKey": "panels.display.monitors-external-brightness-label",
@@ -907,7 +907,7 @@
     "tab": 15,
     "tabLabel": "panels.display.title",
     "subTab": 0,
-    "subTabLabel": "common.brightness"
+    "subTabLabel": "common.monitor"
   },
   {
     "labelKey": "panels.display.night-light-enable-label",
