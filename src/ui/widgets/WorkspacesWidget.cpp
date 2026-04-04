@@ -1,26 +1,14 @@
 #include "ui/widgets/WorkspacesWidget.hpp"
 
 #include "core/Log.hpp"
-#include "render/core/Color.hpp"
-#include "render/core/Palette.hpp"
 #include "render/core/Renderer.hpp"
 #include "render/scene/Node.hpp"
 #include "ui/controls/Box.hpp"
-#include "ui/controls/Label.hpp"
+#include "ui/controls/Chip.hpp"
 
 #include "cursor-shape-v1-client-protocol.h"
 
 #include <linux/input-event-codes.h>
-
-namespace {
-
-constexpr float kPillFontSize = 12.0f;
-constexpr float kPillPaddingV = 3.0f;
-constexpr float kPillPaddingH = 6.0f;
-constexpr float kPillRadius = 10.0f;
-constexpr float kGap = 4.0f;
-
-} // namespace
 
 WorkspacesWidget::WorkspacesWidget(WaylandConnection& connection, wl_output* output)
     : m_connection(connection)
@@ -28,9 +16,7 @@ WorkspacesWidget::WorkspacesWidget(WaylandConnection& connection, wl_output* out
 
 void WorkspacesWidget::create(Renderer& renderer) {
     auto container = std::make_unique<Box>();
-    container->setDirection(BoxDirection::Horizontal);
-    container->setGap(kGap);
-    container->setAlign(BoxAlign::Center);
+    container->applyBarRowLayout();
     m_container = container.get();
     m_root = std::move(container);
 
@@ -47,7 +33,6 @@ void WorkspacesWidget::update(Renderer& renderer) {
         return;
     }
 
-    // Check if state changed
     bool changed = current.size() != m_cachedState.size();
     if (!changed) {
         for (std::size_t i = 0; i < current.size(); ++i) {
@@ -99,8 +84,6 @@ std::uint32_t WorkspacesWidget::cursorShape() const {
 int WorkspacesWidget::pillIndexAt(float localX, float localY) const {
     const auto& kids = m_container->children();
     // Skip background rect (child 0 if Box has one)
-    // Box children: [bg_rect, pill0, pill1, ...]
-    // The first child is the background rect added by Box::setBackground
     std::size_t start = 0;
     if (!kids.empty() && kids[0]->type() == NodeType::Rect) {
         start = 1;
@@ -111,7 +94,6 @@ int WorkspacesWidget::pillIndexAt(float localX, float localY) const {
         float absX = 0.0f, absY = 0.0f;
         Node::absolutePosition(child, absX, absY);
 
-        // Convert to widget-local: our localX/localY is relative to widget root (m_container)
         float containerAbsX = 0.0f, containerAbsY = 0.0f;
         Node::absolutePosition(m_container, containerAbsX, containerAbsY);
         float childLocalX = absX - containerAbsX;
@@ -127,7 +109,6 @@ int WorkspacesWidget::pillIndexAt(float localX, float localY) const {
 }
 
 void WorkspacesWidget::rebuild(Renderer& renderer) {
-    // Remove all children
     while (!m_container->children().empty()) {
         m_container->removeChild(m_container->children().back().get());
     }
@@ -140,36 +121,10 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     for (const auto& ws : workspaces) {
         m_workspaceIds.push_back(ws.id);
 
-        if (ws.active) {
-            auto pill = std::make_unique<Box>();
-            pill->setPadding(kPillPaddingV, kPillPaddingH, kPillPaddingV, kPillPaddingH);
-            pill->setBackground(kRosePinePalette.love);
-            pill->setRadius(kPillRadius);
-            pill->setAlign(BoxAlign::Center);
-
-            auto label = std::make_unique<Label>();
-            label->setText(ws.name);
-            label->setFontSize(kPillFontSize);
-            label->setColor(kRosePinePalette.base);
-            pill->addChild(std::move(label));
-            pill->layout(renderer);
-
-            m_container->addChild(std::move(pill));
-        } else {
-            auto pill = std::make_unique<Box>();
-            pill->setPadding(kPillPaddingV, kPillPaddingH, kPillPaddingV, kPillPaddingH);
-            pill->setBackground(rgba(1.0f, 1.0f, 1.0f, 0.08f));
-            pill->setRadius(kPillRadius);
-            pill->setAlign(BoxAlign::Center);
-
-            auto label = std::make_unique<Label>();
-            label->setText(ws.name);
-            label->setFontSize(kPillFontSize);
-            label->setColor(kRosePinePalette.subtle);
-            pill->addChild(std::move(label));
-            pill->layout(renderer);
-
-            m_container->addChild(std::move(pill));
-        }
+        auto pill = std::make_unique<Chip>();
+        pill->setText(ws.name);
+        pill->setWorkspaceActive(ws.active);
+        pill->layout(renderer);
+        m_container->addChild(std::move(pill));
     }
 }

@@ -3,6 +3,8 @@
 #include "render/core/Renderer.hpp"
 #include "render/scene/RectNode.hpp"
 #include "ui/controls/Label.hpp"
+#include "ui/style/Palette.hpp"
+#include "ui/style/Style.hpp"
 
 #include <algorithm>
 #include <memory>
@@ -71,6 +73,19 @@ void Box::setBorderWidth(float bw) {
     auto style = m_background->style();
     style.borderWidth = bw;
     m_background->setStyle(style);
+}
+
+void Box::applyCardChrome() {
+    setRadius(Style::radiusMd);
+    setBorderColor(kRosePinePalette.overlay);
+    setBorderWidth(Style::borderWidth);
+    setBackground(kRosePinePalette.surface);
+}
+
+void Box::applyBarRowLayout() {
+    setDirection(BoxDirection::Horizontal);
+    setGap(Style::spaceXs);
+    setAlign(BoxAlign::Center);
 }
 
 void Box::ensureBackground() {

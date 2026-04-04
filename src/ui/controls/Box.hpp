@@ -32,6 +32,10 @@ public:
     void setBorderColor(const Color& color);
     void setBorderWidth(float width);
 
+    void applyCardChrome();
+
+    void applyBarRowLayout();
+
     [[nodiscard]] BoxDirection direction() const noexcept { return m_direction; }
     [[nodiscard]] float gap() const noexcept { return m_gap; }
     [[nodiscard]] BoxAlign align() const noexcept { return m_align; }

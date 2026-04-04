@@ -208,6 +208,8 @@ add_executable(noctalia
     src/ui/Widget.cpp
     src/ui/WidgetFactory.cpp
     src/ui/controls/Box.cpp
+    src/ui/controls/Button.cpp
+    src/ui/controls/Chip.cpp
     src/ui/controls/Label.cpp
     src/ui/widgets/ClockWidget.cpp
     src/ui/widgets/SpacerWidget.cpp

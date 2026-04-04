@@ -2,7 +2,8 @@
 
 #include "config/ConfigService.hpp"
 #include "core/Log.hpp"
-#include "render/core/Palette.hpp"
+#include "ui/style/Palette.hpp"
+#include "ui/style/Style.hpp"
 #include "render/scene/RectNode.hpp"
 #include "time/TimeService.hpp"
 #include "ui/Widget.hpp"
@@ -230,9 +231,9 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
                 0.85f),
             .fillMode = FillMode::LinearGradient,
             .gradientDirection = GradientDirection::Vertical,
-            .radius = 10.0f,
+            .radius = Style::radiusMd,
             .softness = 1.2f,
-            .borderWidth = 1.0f,
+            .borderWidth = Style::borderWidth,
         });
         instance.sceneRoot->addChild(std::move(bg));
 
