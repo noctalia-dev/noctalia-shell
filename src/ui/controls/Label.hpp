@@ -25,7 +25,7 @@ public:
 
     void measure(Renderer& renderer);
 
-    void applyBarTextStyle();
+    void setCaptionStyle();
 
 private:
     TextNode* m_textNode = nullptr;

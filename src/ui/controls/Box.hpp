@@ -31,10 +31,11 @@ public:
     void setRadius(float radius);
     void setBorderColor(const Color& color);
     void setBorderWidth(float width);
+    void setSoftness(float softness);
 
-    void applyCardChrome();
+    void setCardSurface();
 
-    void applyBarRowLayout();
+    void setHorizontalRow();
 
     [[nodiscard]] BoxDirection direction() const noexcept { return m_direction; }
     [[nodiscard]] float gap() const noexcept { return m_gap; }

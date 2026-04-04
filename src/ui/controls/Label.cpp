@@ -46,8 +46,8 @@ float Label::maxWidth() const noexcept {
     return m_textNode->maxWidth();
 }
 
-void Label::applyBarTextStyle() {
-    m_textNode->setFontSize(Style::fontSizeBar);
+void Label::setCaptionStyle() {
+    m_textNode->setFontSize(Style::fontSizeCaption);
     m_textNode->setColor(kRosePinePalette.text);
 }
 

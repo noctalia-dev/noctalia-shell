@@ -48,7 +48,7 @@ float rounded_rect_distance(vec2 point, vec2 size, float radius) {
 }
 
 void main() {
-    float aa = max(u_softness, 1.25);
+    float aa = max(u_softness, 0.85);
     vec2 local_point = v_pixel - u_rect.xy;
     vec2 uv = clamp(local_point / u_rect.zw, vec2(0.0), vec2(1.0));
 

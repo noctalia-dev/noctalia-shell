@@ -10,6 +10,7 @@ Chip::Chip() {
     setAlign(BoxAlign::Center);
     setPadding(Style::paddingV, Style::paddingH, Style::paddingV, Style::paddingH);
     setRadius(Style::radiusMd);
+    setSoftness(0.75f);
 
     auto label = std::make_unique<Label>();
     m_label = static_cast<Label*>(addChild(std::move(label)));
@@ -25,9 +26,11 @@ void Chip::setWorkspaceActive(bool active) {
     if (active) {
         setBackground(kRosePinePalette.love);
         m_label->setColor(kRosePinePalette.base);
+        setBorderWidth(0.0f);
     } else {
         setBackground(kRosePinePalette.overlay);
         m_label->setColor(kRosePinePalette.subtle);
+        setBorderColor(kRosePinePalette.muted);
+        setBorderWidth(Style::borderWidth);
     }
-    setBorderWidth(0.0f);
 }

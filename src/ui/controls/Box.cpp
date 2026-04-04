@@ -1,6 +1,7 @@
 #include "ui/controls/Box.hpp"
 
 #include "render/core/Renderer.hpp"
+#include "render/programs/RoundedRectProgram.hpp"
 #include "render/scene/RectNode.hpp"
 #include "ui/controls/Label.hpp"
 #include "ui/style/Palette.hpp"
@@ -51,6 +52,7 @@ void Box::setBackground(const Color& color) {
     ensureBackground();
     auto style = m_background->style();
     style.fill = color;
+    style.fillMode = FillMode::Solid;
     m_background->setStyle(style);
 }
 
@@ -75,14 +77,21 @@ void Box::setBorderWidth(float bw) {
     m_background->setStyle(style);
 }
 
-void Box::applyCardChrome() {
+void Box::setSoftness(float softness) {
+    ensureBackground();
+    auto style = m_background->style();
+    style.softness = softness;
+    m_background->setStyle(style);
+}
+
+void Box::setCardSurface() {
     setRadius(Style::radiusMd);
     setBorderColor(kRosePinePalette.overlay);
     setBorderWidth(Style::borderWidth);
     setBackground(kRosePinePalette.surface);
 }
 
-void Box::applyBarRowLayout() {
+void Box::setHorizontalRow() {
     setDirection(BoxDirection::Horizontal);
     setGap(Style::spaceXs);
     setAlign(BoxAlign::Center);
