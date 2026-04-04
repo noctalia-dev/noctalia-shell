@@ -2,8 +2,8 @@
 
 #include <format>
 
-void TimeService::setTickCallback(TickCallback callback) {
-    m_callback = std::move(callback);
+void TimeService::setTickSecondCallback(TickCallback callback) {
+    m_secondCallback = std::move(callback);
 }
 
 int TimeService::pollTimeoutMs() const {
@@ -13,22 +13,19 @@ int TimeService::pollTimeoutMs() const {
     return static_cast<int>(1000 - ms);
 }
 
-void TimeService::tick() {
+void TimeService::tickSecond() {
     using namespace std::chrono;
-    const auto now = system_clock::now();
-    const auto sec = duration_cast<seconds>(now.time_since_epoch()).count();
+    const auto floored = floor<seconds>(system_clock::now());
 
-    if (sec != m_lastSecond) {
-        m_lastSecond = sec;
-        m_now = now;
-        if (m_callback) {
-            m_callback();
+    if (floored != m_nowSeconds) {
+        m_nowSeconds = floored;
+        if (m_secondCallback) {
+            m_secondCallback();
         }
     }
 }
 
 std::string TimeService::format(const char* fmt) const {
-    const auto truncated = std::chrono::floor<std::chrono::seconds>(m_now);
-    const auto local = std::chrono::current_zone()->to_local(truncated);
+    const auto local = std::chrono::current_zone()->to_local(m_nowSeconds);
     return std::vformat(fmt, std::make_format_args(local));
 }

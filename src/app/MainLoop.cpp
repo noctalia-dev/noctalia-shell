@@ -113,7 +113,7 @@ void MainLoop::run() {
         }
 
         if (m_time != nullptr) {
-            m_time->tick();
+            m_time->tickSecond();
         }
 
         if (m_notifications != nullptr) {

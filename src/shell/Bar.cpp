@@ -42,7 +42,7 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
     m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config());
 
     if (timeService != nullptr) {
-        timeService->setTickCallback([this]() {
+        timeService->setTickSecondCallback([this]() {
             for (auto& inst : m_instances) {
                 if (inst->surface == nullptr || inst->surface->renderer() == nullptr) {
                     continue;
