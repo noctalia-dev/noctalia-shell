@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui/Widget.hpp"
+#include "shell/Widget.hpp"
 #include "wayland/WaylandConnection.hpp"
 
 #include <string>

@@ -1,4 +1,4 @@
-#include "ui/Widget.hpp"
+#include "shell/Widget.hpp"
 
 void Widget::update(Renderer& /*renderer*/) {}
 

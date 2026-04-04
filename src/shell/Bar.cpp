@@ -6,7 +6,7 @@
 #include "ui/style/Style.hpp"
 #include "render/scene/RectNode.hpp"
 #include "time/TimeService.hpp"
-#include "ui/Widget.hpp"
+#include "shell/Widget.hpp"
 #include "ui/controls/Box.hpp"
 #include "wayland/WaylandConnection.hpp"
 

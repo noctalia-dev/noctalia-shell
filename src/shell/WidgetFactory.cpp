@@ -1,11 +1,11 @@
-#include "ui/WidgetFactory.hpp"
+#include "shell/WidgetFactory.hpp"
 
 #include "config/ConfigService.hpp"
 #include "core/Log.hpp"
-#include "ui/widgets/ClockWidget.hpp"
-#include "ui/widgets/NotificationWidget.hpp"
-#include "ui/widgets/SpacerWidget.hpp"
-#include "ui/widgets/WorkspacesWidget.hpp"
+#include "shell/widgets/ClockWidget.hpp"
+#include "shell/widgets/NotificationWidget.hpp"
+#include "shell/widgets/SpacerWidget.hpp"
+#include "shell/widgets/WorkspacesWidget.hpp"
 
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config)
     : m_wayland(wayland)

@@ -205,18 +205,18 @@ add_executable(noctalia
     src/shell/Wallpaper.cpp
     src/shell/WallpaperSurface.cpp
     src/time/TimeService.cpp
-    src/ui/Widget.cpp
-    src/ui/WidgetFactory.cpp
+    src/shell/Widget.cpp
+    src/shell/WidgetFactory.cpp
     src/ui/controls/Box.cpp
     src/ui/controls/Button.cpp
     src/ui/controls/Chip.cpp
     src/ui/controls/Icon.cpp
     src/ui/controls/Label.cpp
     src/ui/icons/IconRegistry.cpp
-    src/ui/widgets/ClockWidget.cpp
-    src/ui/widgets/NotificationWidget.cpp
-    src/ui/widgets/SpacerWidget.cpp
-    src/ui/widgets/WorkspacesWidget.cpp
+    src/shell/widgets/ClockWidget.cpp
+    src/shell/widgets/NotificationWidget.cpp
+    src/shell/widgets/SpacerWidget.cpp
+    src/shell/widgets/WorkspacesWidget.cpp
     src/wayland/Surface.cpp
     src/wayland/LayerSurface.cpp
     src/wayland/WaylandConnection.cpp

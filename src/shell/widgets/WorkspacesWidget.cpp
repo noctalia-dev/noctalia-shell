@@ -1,4 +1,4 @@
-#include "ui/widgets/WorkspacesWidget.hpp"
+#include "shell/widgets/WorkspacesWidget.hpp"
 
 #include "core/Log.hpp"
 #include "render/core/Renderer.hpp"

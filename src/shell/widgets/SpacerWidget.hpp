@@ -1,14 +1,14 @@
 #pragma once
 
-#include "ui/Widget.hpp"
+#include "shell/Widget.hpp"
 
-class Icon;
-
-class NotificationWidget : public Widget {
+class SpacerWidget : public Widget {
 public:
+    explicit SpacerWidget(float width = 0.0f);
+
     void create(Renderer& renderer) override;
     void layout(Renderer& renderer, float barWidth, float barHeight) override;
 
 private:
-    Icon* m_icon = nullptr;
+    float m_fixedWidth;
 };

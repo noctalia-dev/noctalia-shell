@@ -92,8 +92,6 @@ third_party/
 - MPRIS backend complete (basic throttling for noisy player updates; proper coalescing should wait for the settled event-loop/timer model)
 - Notification backend complete
 
-### In Progress
-
 ### Phase 1 -- Renderer completion
 
 Everything else depends on these.
@@ -113,7 +111,6 @@ Everything else depends on these.
 - [ ] System tray (StatusNotifierItem via DBus)
 - [ ] Audio service (Pipewire) + volume OSD
 - [ ] Notification indicator + notification popup UI
-- [ ] Compositor integration (Hyprland)
 
 ### Phase 3 -- Hardware and networking
 
@@ -154,6 +151,7 @@ Surfaces and interactions beyond the bar.
 
 ### Phase 6 -- Ecosystem
 
+- [ ] Compositor integration (Hyprland)
 - [ ] Plugin system
 - [ ] Desktop widgets
 - [ ] Update checker
@@ -167,7 +165,7 @@ Low-level UI building blocks, built incrementally as widgets need them.
 - [X] Label
 - [X] Box
 - [X] Separator
-- [ ] Icon
+- [X] Icon
 - [ ] Toggle
 - [ ] Button
 - [ ] Slider

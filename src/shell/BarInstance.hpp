@@ -3,7 +3,7 @@
 #include "config/ConfigService.hpp"
 #include "render/animation/AnimationManager.hpp"
 #include "render/scene/Node.hpp"
-#include "ui/Widget.hpp"
+#include "shell/Widget.hpp"
 #include "wayland/LayerSurface.hpp"
 
 #include <cstdint>

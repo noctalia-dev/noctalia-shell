@@ -1,4 +1,4 @@
-#include "ui/widgets/NotificationWidget.hpp"
+#include "shell/widgets/NotificationWidget.hpp"
 
 #include "ui/controls/Icon.hpp"
 

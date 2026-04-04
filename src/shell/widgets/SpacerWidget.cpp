@@ -1,4 +1,4 @@
-#include "ui/widgets/SpacerWidget.hpp"
+#include "shell/widgets/SpacerWidget.hpp"
 
 #include "ui/controls/Box.hpp"
 

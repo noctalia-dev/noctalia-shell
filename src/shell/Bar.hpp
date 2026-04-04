@@ -1,7 +1,7 @@
 #pragma once
 
 #include "shell/BarInstance.hpp"
-#include "ui/WidgetFactory.hpp"
+#include "shell/WidgetFactory.hpp"
 
 #include <memory>
 #include <unordered_map>

@@ -1,4 +1,4 @@
-#include "ui/widgets/ClockWidget.hpp"
+#include "shell/widgets/ClockWidget.hpp"
 
 #include "render/core/Renderer.hpp"
 #include "time/TimeService.hpp"
