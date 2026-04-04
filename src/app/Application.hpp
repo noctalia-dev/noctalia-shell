@@ -31,7 +31,7 @@ public:
     void run();
 
     // Public for signal handler
-    static std::atomic<bool> s_shutdown_requested;
+    static std::atomic<bool> s_shutdownRequested;
 
 private:
     WaylandConnection m_wayland;

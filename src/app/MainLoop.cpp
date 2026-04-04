@@ -18,16 +18,12 @@ MainLoop::MainLoop(WaylandConnection& wayland, Bar& bar, std::vector<PollSource*
     , m_sources(std::move(sources)) {}
 
 void MainLoop::run() {
-    while (m_bar.isRunning() && !Application::s_shutdown_requested) {
+    while (m_bar.isRunning() && !Application::s_shutdownRequested) {
         if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
             throw std::runtime_error("failed to dispatch pending Wayland events");
         }
         if (wl_display_flush(m_wayland.display()) < 0) {
             throw std::runtime_error("failed to flush Wayland display");
-        }
-
-        if (Application::s_shutdown_requested) {
-            break;
         }
 
         // Collect poll fds and compute timeout from all sources

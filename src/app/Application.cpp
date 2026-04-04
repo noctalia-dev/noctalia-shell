@@ -6,13 +6,13 @@
 #include <csignal>
 #include <stdexcept>
 
-std::atomic<bool> Application::s_shutdown_requested{false};
+std::atomic<bool> Application::s_shutdownRequested{false};
 
 namespace {
 
 void signal_handler(int signum) {
     if (signum == SIGTERM || signum == SIGINT) {
-        Application::s_shutdown_requested = true;
+        Application::s_shutdownRequested = true;
     }
 }
 
