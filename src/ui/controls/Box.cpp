@@ -91,7 +91,7 @@ void Box::setCardSurface() {
     setBackground(kRosePinePalette.surface);
 }
 
-void Box::setHorizontalRow() {
+void Box::setRowLayout() {
     setDirection(BoxDirection::Horizontal);
     setGap(Style::spaceXs);
     setAlign(BoxAlign::Center);

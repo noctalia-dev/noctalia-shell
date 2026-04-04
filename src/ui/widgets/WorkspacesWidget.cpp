@@ -16,7 +16,7 @@ WorkspacesWidget::WorkspacesWidget(WaylandConnection& connection, wl_output* out
 
 void WorkspacesWidget::create(Renderer& renderer) {
     auto container = std::make_unique<Box>();
-    container->setHorizontalRow();
+    container->setRowLayout();
     m_container = container.get();
     m_root = std::move(container);
 

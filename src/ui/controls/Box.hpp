@@ -35,7 +35,7 @@ public:
 
     void setCardSurface();
 
-    void setHorizontalRow();
+    void setRowLayout();
 
     [[nodiscard]] BoxDirection direction() const noexcept { return m_direction; }
     [[nodiscard]] float gap() const noexcept { return m_gap; }
