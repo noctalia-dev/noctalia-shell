@@ -7,7 +7,7 @@ A lightweight Wayland shell and bar with no Qt or GTK dependency.
 
 - Direct Wayland + OpenGL ES only -- no toolkit overhead
 - Minimal scene graph, domain-specific to shell UI
-- Packaging should work across all major Linux distros: Arch, NixOS, Fedora, Debian, Void, OpenSuse
+- Packaging should work across all major Linux distros: Arch, NixOS, Fedora, Gentoo, Debian, Void, OpenSuse
 
 ## Stack
 
