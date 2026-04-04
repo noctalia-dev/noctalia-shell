@@ -4,6 +4,7 @@
 
 class Box;
 class Button;
+class IconButton;
 class Label;
 class Toggle;
 
@@ -20,5 +21,6 @@ private:
   Box* m_container = nullptr;
   Label* m_label = nullptr;
   Button* m_button = nullptr;
+  IconButton* m_iconButton = nullptr;
   Toggle* m_toggle = nullptr;
 };

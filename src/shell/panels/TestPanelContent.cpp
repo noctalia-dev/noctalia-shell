@@ -3,6 +3,7 @@
 #include "render/scene/InputArea.h"
 #include "ui/controls/Box.h"
 #include "ui/controls/Button.h"
+#include "ui/controls/IconButton.h"
 #include "ui/controls/Label.h"
 #include "ui/controls/Toggle.h"
 #include "ui/style/Palette.h"
@@ -33,6 +34,18 @@ void TestPanelContent::create(Renderer& renderer) {
   });
   m_button = button.get();
   container->addChild(std::move(button));
+
+  auto iconButton = std::make_unique<IconButton>();
+  iconButton->setText("Settings");
+  iconButton->setIcon("settings");
+  iconButton->setVariant(ButtonVariant::Outline);
+  iconButton->setOnClick([this]() {
+    if (m_toggle != nullptr) {
+      m_toggle->setChecked(!m_toggle->checked());
+    }
+  });
+  m_iconButton = iconButton.get();
+  container->addChild(std::move(iconButton));
 
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
@@ -65,6 +78,9 @@ void TestPanelContent::layout(Renderer& renderer, float /*width*/, float /*heigh
   if (m_button != nullptr) {
     m_button->layout(renderer);
     m_button->updateInputArea();
+  }
+  if (m_iconButton != nullptr) {
+    m_iconButton->layout(renderer);
   }
   if (m_toggle != nullptr) {
     m_toggle->layout(renderer);
