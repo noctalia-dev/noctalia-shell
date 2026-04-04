@@ -10,7 +10,6 @@ Chip::Chip() {
     setAlign(BoxAlign::Center);
     setPadding(Style::paddingV, Style::paddingH, Style::paddingV, Style::paddingH);
     setRadius(Style::radiusMd);
-    setSoftness(1.0f);
 
     auto label = std::make_unique<Label>();
     m_label = static_cast<Label*>(addChild(std::move(label)));
