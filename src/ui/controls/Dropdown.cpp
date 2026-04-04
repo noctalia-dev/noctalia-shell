@@ -17,10 +17,10 @@ namespace {
 
 constexpr float kDefaultWidth = 220.0f;
 constexpr float kMinWidth = 160.0f;
-constexpr float kTriggerHeight = 30.0f;
-constexpr float kOptionHeight = 28.0f;
+constexpr float kTriggerHeight = Style::controlHeight;
+constexpr float kOptionHeight = Style::controlHeightSm;
 constexpr float kMenuTopGap = 4.0f;
-constexpr float kHorizontalPadding = 10.0f;
+constexpr float kHorizontalPadding = Style::paddingH;
 constexpr float kIconSize = 14.0f;
 
 } // namespace

@@ -33,6 +33,9 @@ public:
   void setBorderWidth(float width);
   void setSoftness(float softness);
 
+  void setMinWidth(float minWidth);
+  void setMinHeight(float minHeight);
+
   void setCardSurface();
 
   void setRowLayout();
@@ -54,4 +57,6 @@ private:
   float m_paddingRight = 0.0f;
   float m_paddingBottom = 0.0f;
   float m_paddingLeft = 0.0f;
+  float m_minWidth = 0.0f;
+  float m_minHeight = 0.0f;
 };

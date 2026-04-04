@@ -82,6 +82,22 @@ void Box::setSoftness(float softness) {
   m_background->setStyle(style);
 }
 
+void Box::setMinWidth(float minWidth) {
+  if (m_minWidth == minWidth) {
+    return;
+  }
+  m_minWidth = minWidth;
+  markDirty();
+}
+
+void Box::setMinHeight(float minHeight) {
+  if (m_minHeight == minHeight) {
+    return;
+  }
+  m_minHeight = minHeight;
+  markDirty();
+}
+
 void Box::setCardSurface() {
   setRadius(Style::radiusMd);
   setBorderColor(palette.outline);
@@ -147,9 +163,9 @@ void Box::layout(Renderer& renderer) {
 
   // Set own size
   if (m_direction == BoxDirection::Horizontal) {
-    setSize(cursor + m_paddingRight, crossMax + m_paddingTop + m_paddingBottom);
+    setSize(std::max(cursor + m_paddingRight, m_minWidth), std::max(crossMax + m_paddingTop + m_paddingBottom, m_minHeight));
   } else {
-    setSize(crossMax + m_paddingLeft + m_paddingRight, cursor + m_paddingBottom);
+    setSize(std::max(crossMax + m_paddingLeft + m_paddingRight, m_minWidth), std::max(cursor + m_paddingBottom, m_minHeight));
   }
 
   // Third pass: cross-axis alignment

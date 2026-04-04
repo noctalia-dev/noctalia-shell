@@ -10,6 +10,7 @@
 
 Button::Button() {
   setAlign(BoxAlign::Center);
+  setMinHeight(Style::controlHeight);
   setPadding(Style::paddingV, Style::paddingH, Style::paddingV, Style::paddingH);
   setRadius(Style::radiusMd);
 

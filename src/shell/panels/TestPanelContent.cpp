@@ -44,7 +44,7 @@ void TestPanelContent::create(Renderer& renderer) {
     auto row = makeRow();
     auto rowLabel = std::make_unique<Label>();
     rowLabel->setText("Button");
-    rowLabel->setCaptionStyle();
+
     row->addChild(std::move(rowLabel));
     row->addChild(std::move(button));
     container->addChild(std::move(row));
@@ -59,8 +59,8 @@ void TestPanelContent::create(Renderer& renderer) {
   {
     auto row = makeRow();
     auto rowLabel = std::make_unique<Label>();
-    rowLabel->setText("Button w/ Icon");
-    rowLabel->setCaptionStyle();
+    rowLabel->setText("Button w/ icon");
+
     row->addChild(std::move(rowLabel));
     row->addChild(std::move(iconButton));
     container->addChild(std::move(row));
@@ -76,7 +76,7 @@ void TestPanelContent::create(Renderer& renderer) {
     row->setZIndex(10);
     auto rowLabel = std::make_unique<Label>();
     rowLabel->setText("Dropdown");
-    rowLabel->setCaptionStyle();
+
     row->addChild(std::move(rowLabel));
     row->addChild(std::move(dropdown));
 
@@ -99,7 +99,7 @@ void TestPanelContent::create(Renderer& renderer) {
     auto row = makeRow();
     auto rowLabel = std::make_unique<Label>();
     rowLabel->setText("Slider");
-    rowLabel->setCaptionStyle();
+
     row->addChild(std::move(rowLabel));
     row->addChild(std::move(slider));
 
@@ -129,7 +129,7 @@ void TestPanelContent::create(Renderer& renderer) {
     auto row = makeRow();
     auto rowLabel = std::make_unique<Label>();
     rowLabel->setText("Toggle");
-    rowLabel->setCaptionStyle();
+
     row->addChild(std::move(rowLabel));
     row->addChild(std::move(area));
     container->addChild(std::move(row));
