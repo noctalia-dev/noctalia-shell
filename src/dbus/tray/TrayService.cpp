@@ -322,7 +322,7 @@ void TrayService::registerOrRefreshItem(const std::string& bus_name, const std::
         .onInterface(k_item_interface)
         .call([this, item_id](const std::string& /*title*/) { refreshItemMetadata(item_id); });
 
-    logInfo("tray item registered: {}", item_id);
+    logDebug("tray item registered: {}", item_id);
     m_watcher_object->emitSignal("StatusNotifierItemRegistered").onInterface(k_watcher_interface).withArguments(item_id);
     m_watcher_object->emitPropertiesChangedSignal(
       k_watcher_interface,
@@ -353,7 +353,7 @@ void TrayService::refreshItemMetadata(const std::string& item_id) {
   const auto attentionPixmaps = get_icon_pixmaps_or(*proxy_it->second, "AttentionIconPixmap", {});
   pickBestPixmap(attentionPixmaps, next.attentionArgb32, next.attentionWidth, next.attentionHeight);
 
-    logInfo(
+    logDebug(
       "tray item metadata id={} status={} iconName='{}' attentionIconName='{}' iconThemePath='{}' iconPixmap={}x{} "
       "(bytes={}) attentionPixmap={}x{} (bytes={})",
       item_id, next.status, next.iconName, next.attentionIconName, next.iconThemePath, next.iconWidth,
@@ -382,7 +382,7 @@ void TrayService::removeItemsForBusName(const std::string& bus_name) {
   for (const auto& item_id : removed_ids) {
     m_items.erase(item_id);
     m_item_proxies.erase(item_id);
-    logInfo("tray item unregistered: {}", item_id);
+    logDebug("tray item unregistered: {}", item_id);
     m_watcher_object->emitSignal("StatusNotifierItemUnregistered").onInterface(k_watcher_interface).withArguments(
         item_id);
   }

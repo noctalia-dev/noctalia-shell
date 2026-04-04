@@ -197,11 +197,11 @@ void TrayWidget::rebuild(Renderer& renderer) {
         m_container->addChild(std::move(image));
         m_loadedTextures.push_back(texture);
         m_item_ids.push_back(item.id);
-        logInfo("tray widget icon id={} source=file path={} size={}x{}", item.id, iconPath, texture.width,
+        logDebug("tray widget icon id={} source=file path={} size={}x{}", item.id, iconPath, texture.width,
                 texture.height);
         continue;
       }
-      logInfo("tray widget icon id={} source=file path={} failed-to-load", item.id, iconPath);
+      logDebug("tray widget icon id={} source=file path={} failed-to-load", item.id, iconPath);
     }
 
     const auto& pixmap = item.needsAttention && !item.attentionArgb32.empty() ? item.attentionArgb32 : item.iconArgb32;
@@ -224,11 +224,11 @@ void TrayWidget::rebuild(Renderer& renderer) {
         m_container->addChild(std::move(image));
         m_loadedTextures.push_back(texture);
         m_item_ids.push_back(item.id);
-        logInfo("tray widget icon id={} source=pixmap size={}x{} (bytes={})", item.id, pixmapW, pixmapH,
+        logDebug("tray widget icon id={} source=pixmap size={}x{} (bytes={})", item.id, pixmapW, pixmapH,
                 pixmap.size());
         continue;
       }
-      logInfo("tray widget icon id={} source=pixmap size={}x{} failed-to-load", item.id, pixmapW, pixmapH);
+      logDebug("tray widget icon id={} source=pixmap size={}x{} failed-to-load", item.id, pixmapW, pixmapH);
     }
 
     auto icon = std::make_unique<Icon>();
@@ -238,7 +238,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
     icon->measure(renderer);
     m_container->addChild(std::move(icon));
     m_item_ids.push_back(item.id);
-    logInfo("tray widget icon id={} source=glyph name={}", item.id, fallback);
+    logDebug("tray widget icon id={} source=glyph name={}", item.id, fallback);
   }
 
   m_hovered_index = -1;
