@@ -294,7 +294,8 @@ GLuint MsdfTextRenderer::ensureAtlasPage(std::uint32_t page) {
     GLuint tex = 0;
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_atlasWidth, m_atlasHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    std::vector<std::uint8_t> zeros(static_cast<size_t>(m_atlasWidth) * static_cast<size_t>(m_atlasHeight) * 3, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_atlasWidth, m_atlasHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, zeros.data());
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -459,6 +460,7 @@ MsdfTextRenderer::Glyph& MsdfTextRenderer::loadGlyph(std::uint32_t slotIndex, st
   }
 
   shape.normalize();
+  shape.orientContours();
   msdfgen::Shape::Bounds bounds = shape.getBounds();
 
   const auto emSize = static_cast<double>(kAtlasEmSize);
