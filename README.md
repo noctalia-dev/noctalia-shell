@@ -80,8 +80,11 @@ just build
 just rebuild          # debug
 just rebuild release  # release
 
-# Run
+# Run debug
 just run
+
+# Run release
+just run release
 ```
 
 <details>

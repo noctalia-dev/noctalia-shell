@@ -4,7 +4,6 @@
 #include "ui/controls/Box.h"
 #include "ui/controls/Button.h"
 #include "ui/controls/Dropdown.h"
-#include "ui/controls/IconButton.h"
 #include "ui/controls/Label.h"
 #include "ui/controls/Slider.h"
 #include "ui/controls/Toggle.h"
@@ -51,16 +50,16 @@ void TestPanelContent::create(Renderer& renderer) {
     container->addChild(std::move(row));
   }
 
-  auto iconButton = std::make_unique<IconButton>();
+  auto iconButton = std::make_unique<Button>();
   iconButton->setText("Settings");
   iconButton->setIcon("settings");
-  iconButton->setVariant(ButtonVariant::Outline);
+  iconButton->setVariant(ButtonVariant::Default);
   iconButton->setOnClick([]() {});
   m_iconButton = iconButton.get();
   {
     auto row = makeRow();
     auto rowLabel = std::make_unique<Label>();
-    rowLabel->setText("IconButton");
+    rowLabel->setText("Button w/ Icon");
     rowLabel->setCaptionStyle();
     row->addChild(std::move(rowLabel));
     row->addChild(std::move(iconButton));

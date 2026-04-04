@@ -7,6 +7,7 @@
 #include <functional>
 #include <string_view>
 
+class Icon;
 class InputArea;
 class Label;
 
@@ -23,7 +24,9 @@ public:
   Button();
 
   void setText(std::string_view text);
+  void setIcon(std::string_view name);
   void setFontSize(float size);
+  void setIconSize(float size);
   void setVariant(ButtonVariant variant);
   void setOnClick(std::function<void()> callback);
   void setCursorShape(std::uint32_t shape);
@@ -33,13 +36,16 @@ public:
   void updateInputArea();
 
   [[nodiscard]] Label* label() const noexcept { return m_label; }
+  [[nodiscard]] Icon* icon() const noexcept { return m_icon; }
   [[nodiscard]] bool hovered() const noexcept;
   [[nodiscard]] bool pressed() const noexcept;
 
 private:
+  void ensureIcon();
   void applyVariant();
   void applyVisualState();
 
+  Icon* m_icon = nullptr;
   Label* m_label = nullptr;
   InputArea* m_inputArea = nullptr;
   std::function<void()> m_onClick;
