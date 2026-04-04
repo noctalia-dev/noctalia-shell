@@ -1292,6 +1292,8 @@
       "fade-duration-label": "Fade duration",
       "lock-description": "Seconds of inactivity before the lock screen activates.",
       "lock-label": "Lock screen",
+      "lock-screen-off-description": "Seconds of inactivity before monitors are turned off while the lock screen is active. Set to 0 to disable.",
+      "lock-screen-off-label": "Turn off screen while locked",
       "resume-command-label": "Resume command",
       "screen-off-description": "Seconds of inactivity before monitors are turned off.",
       "screen-off-label": "Turn off screen",

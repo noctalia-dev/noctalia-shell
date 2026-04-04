@@ -128,6 +128,15 @@ ColumnLayout {
     }
 
     DefaultActionRow {
+      actionName: I18n.tr("panels.idle.lock-screen-off-label")
+      actionDescription: I18n.tr("panels.idle.lock-screen-off-description")
+      timeoutValue: Settings.data.idle.lockScreenOffTimeout
+      defaultValue: Settings.getDefaultValue("idle.lockScreenOffTimeout")
+      showSettings: false
+      onActionTimeoutChanged: val => Settings.data.idle.lockScreenOffTimeout = val
+    }
+
+    DefaultActionRow {
       actionName: I18n.tr("common.suspend")
       actionDescription: I18n.tr("panels.idle.suspend-description")
       timeoutValue: Settings.data.idle.suspendTimeout
@@ -172,6 +181,7 @@ ColumnLayout {
     property int defaultValue
     property string command
     property string resumeCommand
+    property bool showSettings: true
 
     signal actionTimeoutChanged(int newValue)
     signal actionCommandChanged(string newCmd)
@@ -189,11 +199,18 @@ ColumnLayout {
       onValueChanged: rowRoot.actionTimeoutChanged(value)
     }
 
-    NIconButton {
+    Item {
       Layout.alignment: Qt.AlignVCenter
-      icon: "settings"
-      tooltipText: I18n.tr("common.edit")
-      onClicked: root.openEdit(rowRoot.actionName, rowRoot.command, rowRoot.resumeCommand, rowRoot.actionCommandChanged, rowRoot.actionResumeCommandChanged)
+      implicitWidth: Style.toOdd(Style.baseWidgetSize * Style.uiScaleRatio)
+      implicitHeight: Style.toOdd(Style.baseWidgetSize * Style.uiScaleRatio)
+
+      NIconButton {
+        visible: rowRoot.showSettings
+        anchors.centerIn: parent
+        icon: "settings"
+        tooltipText: I18n.tr("common.edit")
+        onClicked: root.openEdit(rowRoot.actionName, rowRoot.command, rowRoot.resumeCommand, rowRoot.actionCommandChanged, rowRoot.actionResumeCommandChanged)
+      }
     }
   }
 }
