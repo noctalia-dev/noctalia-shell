@@ -35,8 +35,6 @@ WallpaperRenderer::WallpaperRenderer() = default;
 
 WallpaperRenderer::~WallpaperRenderer() { cleanup(); }
 
-const char* WallpaperRenderer::name() const noexcept { return "wallpaper"; }
-
 void WallpaperRenderer::bind(wl_display* display, wl_surface* surface) {
   if (display == nullptr || surface == nullptr) {
     throw std::runtime_error("wallpaper renderer requires a valid Wayland display and surface");
@@ -138,10 +136,6 @@ void WallpaperRenderer::render() {
                  static_cast<float>(m_fillMode), m_params);
 
   eglSwapBuffers(m_eglDisplay, m_eglSurface);
-}
-
-void WallpaperRenderer::setScene(Node* /*root*/) {
-  // Not used by wallpaper renderer
 }
 
 TextureManager& WallpaperRenderer::textureManager() { return m_textureManager; }

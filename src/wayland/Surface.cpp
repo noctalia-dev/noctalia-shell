@@ -1,11 +1,10 @@
 #include "wayland/Surface.h"
 
-#include "render/GlRenderer.h"
+#include "render/RenderContext.h"
 #include "render/animation/AnimationManager.h"
 #include "render/scene/Node.h"
 #include "wayland/WaylandConnection.h"
 
-#include <stdexcept>
 #include <wayland-client.h>
 
 namespace {
@@ -59,33 +58,31 @@ void Surface::handleFrameDone(void* data, wl_callback* callback, std::uint32_t c
 bool Surface::createWlSurface() {
   m_surface = wl_compositor_create_surface(m_connection.compositor());
   if (m_surface == nullptr) {
-    throw std::runtime_error("failed to create wl_surface");
+    return false;
   }
 
-  m_renderer = createRenderer();
-  m_renderer->bind(m_connection.display(), m_surface);
+  if (m_renderContext != nullptr) {
+    m_renderTarget.create(m_surface, *m_renderContext);
+  }
   return true;
 }
-
-std::unique_ptr<Renderer> Surface::createRenderer() { return std::make_unique<GlRenderer>(); }
 
 void Surface::onConfigure(std::uint32_t width, std::uint32_t height) {
   m_width = width;
   m_height = height;
   m_configured = true;
 
-  if (m_renderer == nullptr) {
-    m_running = false;
-    return;
-  }
-
   if (m_scale > 1) {
     wl_surface_set_buffer_scale(m_surface, m_scale);
   }
 
-  const auto bufferWidth = m_width * static_cast<std::uint32_t>(m_scale);
-  const auto bufferHeight = m_height * static_cast<std::uint32_t>(m_scale);
-  m_renderer->resize(bufferWidth, bufferHeight, m_width, m_height);
+  if (m_renderContext != nullptr) {
+    const auto bufferWidth = m_width * static_cast<std::uint32_t>(m_scale);
+    const auto bufferHeight = m_height * static_cast<std::uint32_t>(m_scale);
+    m_renderTarget.setLogicalSize(m_width, m_height);
+    m_renderTarget.resize(bufferWidth, bufferHeight);
+  }
+
   if (m_configureCallback) {
     m_configureCallback(m_width, m_height);
   }
@@ -98,9 +95,6 @@ void Surface::setUpdateCallback(UpdateCallback callback) { m_updateCallback = st
 
 void Surface::requestRedraw() {
   if (m_running && m_configured && m_frameCallback == nullptr) {
-    // Reset frame time so the first delta after idle is 0,
-    // preventing animations from completing instantly due to
-    // a stale timestamp from before the surface went idle.
     m_lastFrameTime = 0;
     render();
     requestFrame();
@@ -113,15 +107,13 @@ void Surface::renderNow() {
   }
 }
 
-Renderer* Surface::renderer() const noexcept { return m_renderer.get(); }
-
 void Surface::render() {
-  if (m_surface == nullptr || m_renderer == nullptr) {
+  if (m_surface == nullptr || m_renderContext == nullptr || !m_renderTarget.isReady()) {
     return;
   }
 
   requestFrame();
-  m_renderer->render();
+  m_renderContext->renderScene(m_renderTarget, m_sceneRoot);
 
   if (m_sceneRoot != nullptr) {
     m_sceneRoot->clearDirty();
@@ -145,7 +137,7 @@ void Surface::destroySurface() {
     m_frameCallback = nullptr;
   }
 
-  m_renderer.reset();
+  m_renderTarget.destroy();
 
   if (m_surface != nullptr) {
     wl_surface_destroy(m_surface);

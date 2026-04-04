@@ -2,6 +2,7 @@
 
 #include "config/ConfigService.h"
 #include "core/Log.h"
+#include "render/RenderContext.h"
 #include "render/programs/RoundedRectProgram.h"
 #include "render/scene/RectNode.h"
 #include "ui/style/Palette.h"
@@ -23,9 +24,10 @@ PanelManager::~PanelManager() {
 
 PanelManager& PanelManager::instance() { return *s_instance; }
 
-void PanelManager::initialize(WaylandConnection& wayland, ConfigService* config) {
+void PanelManager::initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext) {
   m_wayland = &wayland;
   m_config = config;
+  m_renderContext = renderContext;
 }
 
 void PanelManager::registerPanel(const std::string& id, std::unique_ptr<PanelContent> content) {
@@ -94,6 +96,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
   m_surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
   m_surface->setConfigureCallback([this](std::uint32_t width, std::uint32_t height) { buildScene(width, height); });
   m_surface->setAnimationManager(&m_animations);
+  m_surface->setRenderContext(m_renderContext);
 
   // Guard against re-entrancy: initialize() calls wl_display_roundtrip()
   // which can process queued pointer events, re-entering our event handler
@@ -204,10 +207,10 @@ const std::string& PanelManager::activePanelId() const noexcept { return m_activ
 void PanelManager::close() { closePanel(); }
 
 void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
-  auto* renderer = m_surface->renderer();
-  if (renderer == nullptr || m_activePanel == nullptr) {
+  if (m_renderContext == nullptr || m_activePanel == nullptr) {
     return;
   }
+  auto* renderer = m_renderContext;
 
   const auto w = static_cast<float>(width);
   const auto h = static_cast<float>(height);
@@ -238,7 +241,6 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     m_inputDispatcher.setCursorShapeCallback(
         [this](std::uint32_t serial, std::uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
 
-    renderer->setScene(m_sceneRoot.get());
     m_surface->setSceneRoot(m_sceneRoot.get());
   }
 

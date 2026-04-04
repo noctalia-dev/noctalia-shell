@@ -16,6 +16,7 @@
 #include "dbus/tray/TrayService.h"
 #include "debug/DebugService.h"
 #include "notification/NotificationManager.h"
+#include "render/RenderContext.h"
 #include "shell/Bar.h"
 #include "shell/PanelManager.h"
 #include "shell/Wallpaper.h"
@@ -52,6 +53,7 @@ private:
   std::unique_ptr<TrayService> m_trayService;
   std::unique_ptr<NotificationService> m_notificationDbus;
 
+  RenderContext m_renderContext;
   Bar m_bar;
   PanelManager m_panelManager;
   Wallpaper m_wallpaper;

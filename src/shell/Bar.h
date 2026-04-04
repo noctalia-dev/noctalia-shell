@@ -9,6 +9,7 @@
 
 class ConfigService;
 class NotificationManager;
+class RenderContext;
 class TrayService;
 class TimeService;
 class WaylandConnection;
@@ -20,7 +21,7 @@ public:
   Bar();
 
   bool initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                  NotificationManager* notifications, TrayService* tray);
+                  NotificationManager* notifications, TrayService* tray, RenderContext* renderContext);
   void reload();
   void closeAllInstances();
   void onOutputChange();
@@ -41,6 +42,7 @@ private:
   TimeService* m_time = nullptr;
   NotificationManager* m_notifications = nullptr;
   TrayService* m_tray = nullptr;
+  RenderContext* m_renderContext = nullptr;
   std::unique_ptr<WidgetFactory> m_widgetFactory;
   std::vector<std::unique_ptr<BarInstance>> m_instances;
 

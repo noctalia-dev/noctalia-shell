@@ -1,15 +1,19 @@
 #pragma once
 
+#include "render/WallpaperRenderer.h"
 #include "wayland/LayerSurface.h"
-
-#include <memory>
-
-class Renderer;
 
 class WallpaperSurface : public LayerSurface {
 public:
   using LayerSurface::LayerSurface;
 
+  [[nodiscard]] WallpaperRenderer* wallpaperRenderer() noexcept { return &m_wallpaperRenderer; }
+
 protected:
-  std::unique_ptr<Renderer> createRenderer() override;
+  bool createWlSurface() override;
+  void onConfigure(std::uint32_t width, std::uint32_t height) override;
+  void render() override;
+
+private:
+  WallpaperRenderer m_wallpaperRenderer;
 };

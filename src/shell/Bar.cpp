@@ -3,6 +3,7 @@
 #include "config/ConfigService.h"
 #include "core/Log.h"
 #include "dbus/tray/TrayService.h"
+#include "render/RenderContext.h"
 #include "render/scene/RectNode.h"
 #include "shell/Widget.h"
 #include "time/TimeService.h"
@@ -36,22 +37,23 @@ std::uint32_t positionToAnchor(const std::string& position) {
 Bar::Bar() = default;
 
 bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                     NotificationManager* notifications, TrayService* tray) {
+                     NotificationManager* notifications, TrayService* tray, RenderContext* renderContext) {
   m_wayland = &wayland;
   m_config = config;
   m_time = timeService;
   m_notifications = notifications;
   m_tray = tray;
+  m_renderContext = renderContext;
 
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray);
 
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
       for (auto& inst : m_instances) {
-        if (inst->surface == nullptr || inst->surface->renderer() == nullptr) {
+        if (inst->surface == nullptr || m_renderContext == nullptr) {
           continue;
         }
-        inst->surface->renderer()->makeCurrent();
+        m_renderContext->makeCurrent(inst->surface->renderTarget());
         updateWidgets(*inst);
         if (inst->sceneRoot != nullptr && inst->sceneRoot->dirty()) {
           inst->surface->requestRedraw();
@@ -85,10 +87,10 @@ void Bar::onOutputChange() { syncInstances(); }
 
 void Bar::onWorkspaceChange() {
   for (auto& inst : m_instances) {
-    if (inst->surface == nullptr || inst->surface->renderer() == nullptr) {
+    if (inst->surface == nullptr || m_renderContext == nullptr) {
       continue;
     }
-    inst->surface->renderer()->makeCurrent();
+    m_renderContext->makeCurrent(inst->surface->renderTarget());
     updateWidgets(*inst);
     inst->surface->renderNow();
   }
@@ -155,6 +157,7 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
   };
 
   instance->surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
+  instance->surface->setRenderContext(m_renderContext);
 
   auto* inst = instance.get();
   instance->surface->setConfigureCallback(
@@ -192,10 +195,10 @@ void Bar::populateWidgets(BarInstance& instance) {
 }
 
 void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height) {
-  auto* renderer = instance.surface->renderer();
-  if (renderer == nullptr) {
+  if (m_renderContext == nullptr) {
     return;
   }
+  auto* renderer = m_renderContext;
 
   const auto w = static_cast<float>(width);
   const auto h = static_cast<float>(height);
@@ -256,7 +259,6 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.animations.animate(0.0f, 1.0f, 400.0f, Easing::EaseOutCubic,
                                 [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); });
 
-    renderer->setScene(instance.sceneRoot.get());
     instance.surface->setSceneRoot(instance.sceneRoot.get());
   }
 
@@ -299,10 +301,10 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 }
 
 void Bar::updateWidgets(BarInstance& instance) {
-  auto* renderer = instance.surface->renderer();
-  if (renderer == nullptr) {
+  if (m_renderContext == nullptr) {
     return;
   }
+  auto* renderer = m_renderContext;
 
   const auto w = static_cast<float>(instance.surface->width());
   const auto h = static_cast<float>(instance.surface->height());

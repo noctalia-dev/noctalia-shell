@@ -201,7 +201,8 @@ add_executable(noctalia
     src/render/programs/RoundedRectProgram.cpp
     src/render/programs/WallpaperProgram.cpp
     src/render/text/MsdfTextRenderer.cpp
-    src/render/GlRenderer.cpp
+    src/render/RenderContext.cpp
+    src/render/RenderTarget.cpp
     src/render/ImageLoaders.cpp
     src/render/WallpaperRenderer.cpp
     src/shell/Bar.cpp

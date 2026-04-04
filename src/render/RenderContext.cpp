@@ -1,17 +1,18 @@
-#include "render/GlRenderer.h"
+#include "render/RenderContext.h"
+#include "render/RenderTarget.h"
 #include "render/scene/IconNode.h"
 #include "render/scene/ImageNode.h"
 #include "render/scene/Node.h"
 #include "render/scene/RectNode.h"
 #include "render/scene/TextNode.h"
 
+#include "ui/style/Style.h"
+
 #include <algorithm>
-#include <cstdint>
 #include <stdexcept>
 #include <vector>
 
 #include <GLES2/gl2.h>
-#include <wayland-egl.h>
 
 namespace {
 
@@ -39,19 +40,14 @@ constexpr EGLint kContextAttributes[] = {
 
 } // namespace
 
-GlRenderer::GlRenderer() = default;
+RenderContext::RenderContext() = default;
 
-GlRenderer::~GlRenderer() { cleanup(); }
+RenderContext::~RenderContext() { cleanup(); }
 
-const char* GlRenderer::name() const noexcept { return "gl"; }
-
-void GlRenderer::bind(wl_display* display, wl_surface* surface) {
-  if (display == nullptr || surface == nullptr) {
-    throw std::runtime_error("OpenGL renderer requires a valid Wayland display and surface");
+void RenderContext::initialize(wl_display* display) {
+  if (display == nullptr) {
+    throw std::runtime_error("RenderContext requires a valid Wayland display");
   }
-
-  m_display = display;
-  m_surface = surface;
 
   m_eglDisplay = eglGetDisplay(reinterpret_cast<EGLNativeDisplayType>(display));
   if (m_eglDisplay == EGL_NO_DISPLAY) {
@@ -77,97 +73,75 @@ void GlRenderer::bind(wl_display* display, wl_surface* surface) {
   if (m_eglContext == EGL_NO_CONTEXT) {
     throw std::runtime_error("eglCreateContext failed");
   }
-}
 
-void GlRenderer::makeCurrent() {
-  if (m_eglDisplay != EGL_NO_DISPLAY && m_eglSurface != EGL_NO_SURFACE && m_eglContext != EGL_NO_CONTEXT) {
-    eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
-  }
-}
+  // Make context current (surfaceless) so we can create GL resources eagerly.
+  // This allows measureText/measureGlyph to work before any surface exists.
+  eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext);
 
-void GlRenderer::resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight, std::uint32_t logicalWidth,
-                        std::uint32_t logicalHeight) {
-  if (bufferWidth == 0 || bufferHeight == 0) {
-    return;
-  }
-
-  if (m_surface == nullptr || m_eglDisplay == EGL_NO_DISPLAY || m_eglContext == EGL_NO_CONTEXT) {
-    throw std::runtime_error("OpenGL renderer is not bound");
-  }
-
-  if (m_window == nullptr) {
-    m_window = wl_egl_window_create(m_surface, static_cast<int>(bufferWidth), static_cast<int>(bufferHeight));
-    if (m_window == nullptr) {
-      throw std::runtime_error("wl_egl_window_create failed");
-    }
-  } else {
-    wl_egl_window_resize(m_window, static_cast<int>(bufferWidth), static_cast<int>(bufferHeight), 0, 0);
-  }
-
-  if (m_eglSurface == EGL_NO_SURFACE) {
-    m_eglSurface =
-        eglCreateWindowSurface(m_eglDisplay, m_eglConfig, reinterpret_cast<EGLNativeWindowType>(m_window), nullptr);
-    if (m_eglSurface == EGL_NO_SURFACE) {
-      throw std::runtime_error("eglCreateWindowSurface failed");
-    }
-  }
-
-  if (eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext) != EGL_TRUE) {
-    throw std::runtime_error("eglMakeCurrent failed during resize");
-  }
-
-  m_bufferWidth = bufferWidth;
-  m_bufferHeight = bufferHeight;
-  m_logicalWidth = logicalWidth;
-  m_logicalHeight = logicalHeight;
-  m_imageProgram.ensureInitialized();
-  m_linearGradientProgram.ensureInitialized();
-  m_roundedRectProgram.ensureInitialized();
   const auto fonts = m_fontService.resolveFallbackChain("sans-serif");
   m_textRenderer.initialize(fonts);
   m_iconTextRenderer.initialize({{NOCTALIA_ASSETS_DIR "/fonts/tabler-icons.ttf", 0}});
+  ensureGlPrograms();
+
+  // Pre-warm the glyph atlas so first use doesn't stall.
+  // Printable ASCII covers most UI text; common icons cover bar/panel widgets.
+  (void)m_textRenderer.measure(
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 !@#$%^&*()-_=+[]{}|;:',.<>?/\"",
+      Style::fontSizeBody);
 }
 
-void GlRenderer::render() {
-  if (m_eglDisplay == EGL_NO_DISPLAY || m_eglSurface == EGL_NO_SURFACE || m_eglContext == EGL_NO_CONTEXT) {
-    throw std::runtime_error("OpenGL renderer is not ready");
+void RenderContext::ensureGlPrograms() {
+  if (m_glReady) {
+    return;
   }
+  m_imageProgram.ensureInitialized();
+  m_linearGradientProgram.ensureInitialized();
+  m_roundedRectProgram.ensureInitialized();
+  m_glReady = true;
+}
 
-  if (eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext) != EGL_TRUE) {
+void RenderContext::makeCurrent(RenderTarget& target) {
+  if (eglMakeCurrent(m_eglDisplay, target.eglSurface(), target.eglSurface(), m_eglContext) != EGL_TRUE) {
     throw std::runtime_error("eglMakeCurrent failed");
   }
+}
 
-  glViewport(0, 0, static_cast<GLint>(m_bufferWidth), static_cast<GLint>(m_bufferHeight));
+void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
+  makeCurrent(target);
+  ensureGlPrograms();
+
+  glViewport(0, 0, static_cast<GLint>(target.bufferWidth()), static_cast<GLint>(target.bufferHeight()));
   glEnable(GL_BLEND);
   glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 
-  if (m_sceneRoot != nullptr) {
-    renderNode(m_sceneRoot, 0.0f, 0.0f, 1.0f);
+  if (sceneRoot != nullptr) {
+    const auto sw = static_cast<float>(target.logicalWidth());
+    const auto sh = static_cast<float>(target.logicalHeight());
+    renderNode(sceneRoot, 0.0f, 0.0f, 1.0f, sw, sh);
   }
 
-  if (eglSwapBuffers(m_eglDisplay, m_eglSurface) != EGL_TRUE) {
+  if (eglSwapBuffers(m_eglDisplay, target.eglSurface()) != EGL_TRUE) {
     throw std::runtime_error("eglSwapBuffers failed");
   }
 }
 
-void GlRenderer::setScene(Node* root) { m_sceneRoot = root; }
-
-TextureManager& GlRenderer::textureManager() { return m_textureManager; }
-
-TextMetrics GlRenderer::measureText(std::string_view text, float fontSize) {
+TextMetrics RenderContext::measureText(std::string_view text, float fontSize) {
   auto m = m_textRenderer.measure(text, fontSize);
   return TextMetrics{.width = m.width, .top = m.top, .bottom = m.bottom};
 }
 
-TextMetrics GlRenderer::measureGlyph(char32_t codepoint, float fontSize) {
+TextMetrics RenderContext::measureGlyph(char32_t codepoint, float fontSize) {
   auto m = m_iconTextRenderer.measureGlyph(codepoint, fontSize);
   return TextMetrics{.width = m.width, .top = m.top, .bottom = m.bottom};
 }
 
-void GlRenderer::renderNode(const Node* node, float parentX, float parentY, float parentOpacity) {
+TextureManager& RenderContext::textureManager() { return m_textureManager; }
+
+void RenderContext::renderNode(const Node* node, float parentX, float parentY, float parentOpacity, float sw,
+                               float sh) {
   if (!node->visible()) {
     return;
   }
@@ -175,9 +149,6 @@ void GlRenderer::renderNode(const Node* node, float parentX, float parentY, floa
   const float absX = parentX + node->x();
   const float absY = parentY + node->y();
   const float effectiveOpacity = parentOpacity * node->opacity();
-
-  const auto sw = static_cast<float>(m_logicalWidth);
-  const auto sh = static_cast<float>(m_logicalHeight);
 
   switch (node->type()) {
   case NodeType::Rect: {
@@ -234,23 +205,15 @@ void GlRenderer::renderNode(const Node* node, float parentX, float parentY, floa
                    [](const Node* a, const Node* b) { return a->zIndex() < b->zIndex(); });
 
   for (const auto* child : orderedChildren) {
-    renderNode(child, absX, absY, effectiveOpacity);
+    renderNode(child, absX, absY, effectiveOpacity, sw, sh);
   }
 }
 
-void GlRenderer::cleanup() {
-  m_bufferWidth = 0;
-  m_bufferHeight = 0;
-  m_logicalWidth = 0;
-  m_logicalHeight = 0;
-
-  // Make our context current before destroying GL resources.
-  // GL objects (programs, textures, etc.) belong to the context that created
-  // them. Destroying them while a different context is current would delete
-  // resources from that other context instead.
-  bool madeCurrent = false;
-  if (m_eglDisplay != EGL_NO_DISPLAY && m_eglSurface != EGL_NO_SURFACE && m_eglContext != EGL_NO_CONTEXT) {
-    madeCurrent = eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext) == EGL_TRUE;
+void RenderContext::cleanup() {
+  if (m_eglDisplay != EGL_NO_DISPLAY && m_eglContext != EGL_NO_CONTEXT) {
+    // Need a current context to destroy GL resources, but we may not have a surface.
+    // Use EGL_NO_SURFACE — this is valid for destroying resources when no surface exists.
+    eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext);
   }
 
   m_textureManager.cleanup();
@@ -259,33 +222,19 @@ void GlRenderer::cleanup() {
   m_roundedRectProgram.destroy();
   m_textRenderer.cleanup();
   m_iconTextRenderer.cleanup();
+  m_glReady = false;
 
-  // Only unbind if we successfully bound our context above
-  if (madeCurrent) {
-    eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-  }
-
-  if (m_eglSurface != EGL_NO_SURFACE) {
-    eglDestroySurface(m_eglDisplay, m_eglSurface);
-    m_eglSurface = EGL_NO_SURFACE;
-  }
-
-  if (m_window != nullptr) {
-    wl_egl_window_destroy(m_window);
-    m_window = nullptr;
-  }
+  eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 
   if (m_eglContext != EGL_NO_CONTEXT) {
     eglDestroyContext(m_eglDisplay, m_eglContext);
     m_eglContext = EGL_NO_CONTEXT;
   }
 
-  // Do NOT call eglTerminate here — the EGLDisplay is shared across all
-  // renderers (bar, panel, wallpaper) via the same wl_display. Terminating
-  // it would invalidate every other renderer's context and surface.
-  m_eglDisplay = EGL_NO_DISPLAY;
+  if (m_eglDisplay != EGL_NO_DISPLAY) {
+    eglTerminate(m_eglDisplay);
+    m_eglDisplay = EGL_NO_DISPLAY;
+  }
 
   m_eglConfig = nullptr;
-  m_display = nullptr;
-  m_surface = nullptr;
 }

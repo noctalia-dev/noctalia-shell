@@ -11,6 +11,7 @@
 #include <unordered_map>
 
 class ConfigService;
+class RenderContext;
 class WaylandConnection;
 struct PointerEvent;
 struct wl_output;
@@ -26,7 +27,7 @@ public:
 
   static PanelManager& instance();
 
-  void initialize(WaylandConnection& wayland, ConfigService* config);
+  void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext);
 
   void registerPanel(const std::string& id, std::unique_ptr<PanelContent> content);
 
@@ -48,6 +49,7 @@ private:
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
+  RenderContext* m_renderContext = nullptr;
 
   std::unique_ptr<LayerSurface> m_surface;
   std::unique_ptr<Node> m_sceneRoot;

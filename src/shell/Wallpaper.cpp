@@ -88,11 +88,11 @@ void Wallpaper::onStateChange() {
     logInfo("wallpaper: changing {} → {}", inst->connectorName, newPath);
     inst->pendingPath = newPath;
 
-    if (inst->surface == nullptr || inst->surface->renderer() == nullptr) {
+    if (inst->surface == nullptr || inst->surface->wallpaperRenderer() == nullptr) {
       continue;
     }
 
-    inst->surface->renderer()->makeCurrent();
+    inst->surface->wallpaperRenderer()->makeCurrent();
     loadWallpaper(*inst, newPath);
   }
 }
@@ -147,7 +147,7 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
   instance->surface->setConfigureCallback(
       [this, inst, wallpaperPath](std::uint32_t /*width*/, std::uint32_t /*height*/) {
         if (inst->currentPath.empty() && !wallpaperPath.empty()) {
-          inst->surface->renderer()->makeCurrent();
+          inst->surface->wallpaperRenderer()->makeCurrent();
           loadWallpaper(*inst, wallpaperPath);
         }
       });
@@ -166,7 +166,7 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
 }
 
 void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& path) {
-  auto* renderer = dynamic_cast<WallpaperRenderer*>(instance.surface->renderer());
+  auto* renderer = instance.surface->wallpaperRenderer();
   if (renderer == nullptr) {
     return;
   }
@@ -200,7 +200,7 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
   if (instance.transitioning) {
     instance.animations.cancel(0);
     // Commit the pending state
-    auto* renderer = dynamic_cast<WallpaperRenderer*>(instance.surface->renderer());
+    auto* renderer = instance.surface->wallpaperRenderer();
     if (renderer != nullptr && instance.nextTexture.id != 0) {
       if (instance.currentTexture.id != 0) {
         renderer->textureManager().unload(instance.currentTexture);
@@ -215,7 +215,7 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
 
   // Re-load pending into nextTexture if we just committed it above
   if (instance.nextTexture.id == 0 && !instance.pendingPath.empty()) {
-    auto* renderer = dynamic_cast<WallpaperRenderer*>(instance.surface->renderer());
+    auto* renderer = instance.surface->wallpaperRenderer();
     if (renderer == nullptr)
       return;
     auto tex = renderer->textureManager().loadFromFile(instance.pendingPath);
@@ -239,7 +239,7 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
       [inst](float v) { inst->transitionProgress = v; },
       [this, inst]() {
         // Transition complete — swap textures
-        auto* renderer = dynamic_cast<WallpaperRenderer*>(inst->surface->renderer());
+        auto* renderer = inst->surface->wallpaperRenderer();
         if (renderer != nullptr && inst->currentTexture.id != 0) {
           renderer->textureManager().unload(inst->currentTexture);
         }
@@ -257,7 +257,7 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
 }
 
 void Wallpaper::updateRendererState(WallpaperInstance& instance) {
-  auto* renderer = dynamic_cast<WallpaperRenderer*>(instance.surface->renderer());
+  auto* renderer = instance.surface->wallpaperRenderer();
   if (renderer == nullptr) {
     return;
   }

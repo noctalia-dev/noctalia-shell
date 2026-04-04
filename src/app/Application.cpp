@@ -164,12 +164,16 @@ void Application::run() {
     }
   }
 
+  // Initialize the shared render context (EGL, shaders, fonts — created once)
+  m_renderContext.initialize(m_wayland.display());
+
   // Initialize panel manager (must be before bar so widgets can access PanelManager::instance())
-  m_panelManager.initialize(m_wayland, &m_configService);
+  m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
   m_panelManager.registerPanel("test", std::make_unique<TestPanelContent>());
 
   // Initialize bar (top layer)
-  m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get());
+  m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
+                   &m_renderContext);
 
   // Unified pointer event routing — both Bar and PanelManager check surface ownership
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {

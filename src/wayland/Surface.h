@@ -1,15 +1,16 @@
 #pragma once
 
-#include "render/core/Renderer.h"
+#include "render/RenderTarget.h"
 
 #include <cstdint>
 #include <functional>
-#include <memory>
 
 struct wl_callback;
 struct wl_surface;
 
 class AnimationManager;
+class Node;
+class RenderContext;
 class WaylandConnection;
 
 class Surface {
@@ -33,7 +34,9 @@ public:
   void renderNow();
   void setAnimationManager(AnimationManager* manager) noexcept { m_animationManager = manager; }
   void setSceneRoot(Node* root) noexcept { m_sceneRoot = root; }
-  [[nodiscard]] Renderer* renderer() const noexcept;
+  void setRenderContext(RenderContext* ctx) noexcept { m_renderContext = ctx; }
+  [[nodiscard]] RenderContext* renderContext() const noexcept { return m_renderContext; }
+  [[nodiscard]] RenderTarget& renderTarget() noexcept { return m_renderTarget; }
   [[nodiscard]] wl_surface* wlSurface() const noexcept { return m_surface; }
   [[nodiscard]] std::uint32_t width() const noexcept { return m_width; }
   [[nodiscard]] std::uint32_t height() const noexcept { return m_height; }
@@ -42,10 +45,9 @@ public:
   static void handleFrameDone(void* data, wl_callback* callback, std::uint32_t callbackData);
 
 protected:
-  bool createWlSurface();
-  virtual std::unique_ptr<Renderer> createRenderer();
-  void onConfigure(std::uint32_t width, std::uint32_t height);
-  void render();
+  virtual bool createWlSurface();
+  virtual void onConfigure(std::uint32_t width, std::uint32_t height);
+  virtual void render();
   void requestFrame();
   void destroySurface();
 
@@ -56,7 +58,8 @@ protected:
   wl_surface* m_surface = nullptr;
 
 private:
-  std::unique_ptr<Renderer> m_renderer;
+  RenderContext* m_renderContext = nullptr;
+  RenderTarget m_renderTarget;
   AnimationManager* m_animationManager = nullptr;
   Node* m_sceneRoot = nullptr;
   ConfigureCallback m_configureCallback;

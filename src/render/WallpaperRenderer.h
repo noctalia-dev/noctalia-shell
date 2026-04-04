@@ -1,30 +1,30 @@
 #pragma once
 
 #include "config/ConfigService.h"
-#include "render/core/Renderer.h"
 #include "render/core/TextureManager.h"
 #include "render/programs/WallpaperProgram.h"
 
 #include <EGL/egl.h>
 
+struct wl_display;
+struct wl_surface;
 struct wl_egl_window;
 
-class WallpaperRenderer final : public Renderer {
+class WallpaperRenderer {
 public:
   WallpaperRenderer();
-  ~WallpaperRenderer() override;
+  ~WallpaperRenderer();
 
-  [[nodiscard]] const char* name() const noexcept override;
+  WallpaperRenderer(const WallpaperRenderer&) = delete;
+  WallpaperRenderer& operator=(const WallpaperRenderer&) = delete;
 
-  void bind(wl_display* display, wl_surface* surface) override;
-  void makeCurrent() override;
+  void bind(wl_display* display, wl_surface* surface);
+  void makeCurrent();
   void resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight, std::uint32_t logicalWidth,
-              std::uint32_t logicalHeight) override;
-  void render() override;
-  void setScene(Node* root) override;
-  [[nodiscard]] TextureManager& textureManager() override;
+              std::uint32_t logicalHeight);
+  void render();
+  [[nodiscard]] TextureManager& textureManager();
 
-  // Wallpaper-specific: set state before render() is called by Surface
   void setTransitionState(GLuint tex1, GLuint tex2, float imgW1, float imgH1, float imgW2, float imgH2, float progress,
                           WallpaperTransition transition, WallpaperFillMode fillMode, const TransitionParams& params);
 
@@ -47,7 +47,6 @@ private:
   std::uint32_t m_logicalWidth = 0;
   std::uint32_t m_logicalHeight = 0;
 
-  // Cached transition state for render()
   GLuint m_tex1 = 0;
   GLuint m_tex2 = 0;
   float m_imgW1 = 0.0f;
