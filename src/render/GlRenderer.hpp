@@ -27,6 +27,7 @@ public:
     void render() override;
     void setScene(Node* root) override;
     [[nodiscard]] TextMetrics measureText(std::string_view text, float fontSize) override;
+    [[nodiscard]] TextMetrics measureIcon(std::string_view text, float fontSize) override;
     [[nodiscard]] TextureManager& textureManager() override;
 
 private:
@@ -45,6 +46,7 @@ private:
     LinearGradientProgram m_linearGradientProgram;
     RoundedRectProgram m_roundedRectProgram;
     MsdfTextRenderer m_textRenderer;
+    MsdfTextRenderer m_iconTextRenderer;
     TextureManager m_textureManager;
     Node* m_sceneRoot = nullptr;
     std::uint32_t m_bufferWidth = 0;

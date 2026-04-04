@@ -158,6 +158,10 @@ TextMetrics WallpaperRenderer::measureText(std::string_view /*text*/, float /*fo
     return {};
 }
 
+TextMetrics WallpaperRenderer::measureIcon(std::string_view /*text*/, float /*fontSize*/) {
+    return {};
+}
+
 TextureManager& WallpaperRenderer::textureManager() {
     return m_textureManager;
 }

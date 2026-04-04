@@ -210,8 +210,11 @@ add_executable(noctalia
     src/ui/controls/Box.cpp
     src/ui/controls/Button.cpp
     src/ui/controls/Chip.cpp
+    src/ui/controls/Icon.cpp
     src/ui/controls/Label.cpp
+    src/ui/icons/IconRegistry.cpp
     src/ui/widgets/ClockWidget.cpp
+    src/ui/widgets/NotificationWidget.cpp
     src/ui/widgets/SpacerWidget.cpp
     src/ui/widgets/WorkspacesWidget.cpp
     src/wayland/Surface.cpp
@@ -223,7 +226,10 @@ add_executable(noctalia
     "${EXT_WORKSPACE_PROTOCOL_C}"
     "${CURSOR_SHAPE_PROTOCOL_C}"
 )
-target_compile_definitions(noctalia PRIVATE NOCTALIA_HAVE_WLR_LAYER_SHELL=1)
+target_compile_definitions(noctalia PRIVATE
+    NOCTALIA_HAVE_WLR_LAYER_SHELL=1
+    NOCTALIA_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
+)
 
 add_dependencies(noctalia noctalia_wayland_protocols)
 

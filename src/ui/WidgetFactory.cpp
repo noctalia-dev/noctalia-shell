@@ -3,6 +3,7 @@
 #include "config/ConfigService.hpp"
 #include "core/Log.hpp"
 #include "ui/widgets/ClockWidget.hpp"
+#include "ui/widgets/NotificationWidget.hpp"
 #include "ui/widgets/SpacerWidget.hpp"
 #include "ui/widgets/WorkspacesWidget.hpp"
 
@@ -22,6 +23,10 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
     if (name == "workspaces") {
         return std::make_unique<WorkspacesWidget>(m_wayland, output);
+    }
+
+    if (name == "notifications") {
+        return std::make_unique<NotificationWidget>();
     }
 
     if (name == "spacer") {

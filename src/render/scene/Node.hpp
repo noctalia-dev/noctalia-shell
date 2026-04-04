@@ -9,6 +9,7 @@ enum class NodeType : std::uint8_t {
     Rect,
     Text,
     Image,
+    Icon,
 };
 
 class Node {

@@ -28,7 +28,7 @@ struct BarConfig {
     float gap = 8.0f;
     std::vector<std::string> startWidgets = {};
     std::vector<std::string> centerWidgets = {"workspaces"};
-    std::vector<std::string> endWidgets = {"clock"};
+    std::vector<std::string> endWidgets = {"notifications", "clock"};
     std::vector<BarMonitorOverride> monitorOverrides;
 };
 

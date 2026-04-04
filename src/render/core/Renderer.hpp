@@ -27,5 +27,6 @@ public:
     virtual void render() = 0;
     virtual void setScene(Node* root) = 0;
     [[nodiscard]] virtual TextMetrics measureText(std::string_view text, float fontSize) = 0;
+    [[nodiscard]] virtual TextMetrics measureIcon(std::string_view text, float fontSize) = 0;
     [[nodiscard]] virtual TextureManager& textureManager() = 0;
 };

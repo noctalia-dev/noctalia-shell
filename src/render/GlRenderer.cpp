@@ -1,4 +1,5 @@
 #include "render/GlRenderer.hpp"
+#include "render/scene/IconNode.hpp"
 #include "render/scene/Node.hpp"
 #include "render/scene/RectNode.hpp"
 #include "render/scene/TextNode.hpp"
@@ -126,6 +127,7 @@ void GlRenderer::resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight,
     m_roundedRectProgram.ensureInitialized();
     const auto fonts = m_fontService.resolveFallbackChain("sans-serif");
     m_textRenderer.initialize(fonts);
+    m_iconTextRenderer.initialize({{NOCTALIA_ASSETS_DIR "/fonts/tabler-icons.ttf", 0}});
 }
 
 void GlRenderer::render() {
@@ -163,6 +165,11 @@ TextureManager& GlRenderer::textureManager() {
 
 TextMetrics GlRenderer::measureText(std::string_view text, float fontSize) {
     auto m = m_textRenderer.measure(text, fontSize);
+    return TextMetrics{.width = m.width, .top = m.top, .bottom = m.bottom};
+}
+
+TextMetrics GlRenderer::measureIcon(std::string_view text, float fontSize) {
+    auto m = m_iconTextRenderer.measure(text, fontSize);
     return TextMetrics{.width = m.width, .top = m.top, .bottom = m.bottom};
 }
 
@@ -212,6 +219,15 @@ void GlRenderer::renderNode(const Node* node, float parentX, float parentY, floa
         }
         break;
     }
+    case NodeType::Icon: {
+        const auto* icon = static_cast<const IconNode*>(node);
+        if (!icon->text().empty()) {
+            auto color = icon->color();
+            color.a *= effectiveOpacity;
+            m_iconTextRenderer.draw(sw, sh, absX, absY, icon->text(), icon->fontSize(), color);
+        }
+        break;
+    }
     case NodeType::Base:
         break;
     }
@@ -227,6 +243,7 @@ void GlRenderer::cleanup() {
     m_linearGradientProgram.destroy();
     m_roundedRectProgram.destroy();
     m_textRenderer.cleanup();
+    m_iconTextRenderer.cleanup();
     m_bufferWidth = 0;
     m_bufferHeight = 0;
     m_logicalWidth = 0;
