@@ -76,12 +76,15 @@ ScrollView {
   }
 
   Component {
-    id: maskEffectComponent
-    MultiEffect {
-      maskEnabled: true
-      maskThresholdMin: 0.5
-      maskSpreadAtMin: 1.0
-      maskSource: root._maskSourceItem
+    id: fadeMaskComponent
+    NFadeMask {
+      anchors.fill: parent
+      orientation: Gradient.Vertical
+      fadeExtent: root.fadeExtent
+      animateColors: true
+      animationDuration: Style.animationFast
+      startColor: root.contentItem.contentY >= 1 ? "transparent" : "white"
+      endColor: (root.contentItem.contentY + root.contentItem.height <= root.contentItem.contentHeight - 1) ? "transparent" : "white"
     }
   }
 
@@ -90,53 +93,10 @@ ScrollView {
     if (!showGradientMasks)
       return;
 
-    var item = Qt.createQmlObject(`
-      import QtQuick
-      import QtQuick.Effects
-      import qs.Commons
-      Item {
-        anchors.fill: root
-        opacity: 0
-
-        layer.enabled: true
-        layer.smooth: true
-
-        Rectangle {
-          anchors.centerIn: root
-          height: root.height
-          width: root.width
-          gradient: Gradient {
-            orientation: Gradient.Vertical
-            GradientStop {
-              position: 0.0
-              color: root.contentItem.contentY >= 1 ? "transparent" : "white"
-              Behavior on color {
-                ColorAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
-              }
-            }
-            GradientStop {
-              position: fadeExtent
-              color: "white"
-            }
-            GradientStop {
-              position: 1.0 - fadeExtent
-              color: "white"
-            }
-            GradientStop {
-              position: 1.0
-              color: (root.contentItem.contentY + root.contentItem.height <= root.contentItem.contentHeight - 1) ? "transparent" : "white"
-              Behavior on color {
-                ColorAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
-              }
-            }
-          }
-        }
-      }
-    `, root, "scrollFadeMask");
-
-    root._maskSourceItem = item;
+    var mask = fadeMaskComponent.createObject(root);
+    root._maskSourceItem = mask;
     root.contentItem.layer.enabled = Qt.binding(() => root.showGradientMasks && root.verticalScrollable);
-    root.contentItem.layer.effect = maskEffectComponent;
+    mask.applyTo(root.contentItem);
   }
 
   // Reference to the internal Flickable for wheel handling
