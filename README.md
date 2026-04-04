@@ -104,11 +104,11 @@ third_party/
 ### Hardware and networking
 
 - [ ] Battery service (UPower via DBus)
-- [ ] Power profiles (power-profiles-daemon via DBus)
+- [x] Power profiles (power-profiles-daemon via DBus)
 - [ ] Brightness control + OSD
 - [ ] Network service (NetworkManager via DBus)
 - [ ] Bluetooth service (Bluez via DBus)
-- [ ] System stats (CPU, RAM, temperature)
+- [x] System stats (CPU, RAM, temperature)
 
 ### Desktop shell
 

@@ -182,8 +182,10 @@ add_executable(noctalia
     src/notification/NotificationsService.cpp
     src/notification/NotificationManager.cpp
     src/dbus/SessionBus.cpp
+    src/dbus/SystemBus.cpp
     src/dbus/mpris/MprisService.cpp
     src/dbus/notification/NotificationService.cpp
+    src/dbus/power/PowerProfilesService.cpp
     src/dbus/tray/TrayService.cpp
     src/config/ConfigService.cpp
     src/config/StateService.cpp
