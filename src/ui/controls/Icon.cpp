@@ -11,7 +11,7 @@
 Icon::Icon() {
   auto iconNode = std::make_unique<IconNode>();
   m_iconNode = static_cast<IconNode*>(addChild(std::move(iconNode)));
-  m_iconNode->setFontSize(Style::fontSizeSm);
+  m_iconNode->setFontSize(Style::fontSizeBody);
   m_iconNode->setColor(palette.onSurface);
 }
 

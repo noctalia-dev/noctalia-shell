@@ -23,8 +23,8 @@ void TestPanelContent::create(Renderer& renderer) {
 
   auto header = std::make_unique<Label>();
   header->setText("Test Controls");
-  header->setFontSize(Style::fontSizeSm);
-  header->setColor(palette.onSurface);
+  header->setFontSize(Style::fontSizeTitle);
+  header->setColor(palette.primary);
   m_headerLabel = header.get();
   container->addChild(std::move(header));
 

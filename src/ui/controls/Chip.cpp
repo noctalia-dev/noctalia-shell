@@ -13,7 +13,7 @@ Chip::Chip() {
 
   auto label = std::make_unique<Label>();
   m_label = static_cast<Label*>(addChild(std::move(label)));
-  m_label->setFontSize(Style::fontSizeXs);
+  m_label->setFontSize(Style::fontSizeCaption);
   setWorkspaceActive(false);
 }
 

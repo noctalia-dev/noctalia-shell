@@ -10,7 +10,7 @@
 Label::Label() {
   auto textNode = std::make_unique<TextNode>();
   m_textNode = static_cast<TextNode*>(addChild(std::move(textNode)));
-  m_textNode->setFontSize(Style::fontSizeSm);
+  m_textNode->setFontSize(Style::fontSizeBody);
   m_textNode->setColor(palette.onSurface);
 }
 
