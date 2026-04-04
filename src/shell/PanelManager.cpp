@@ -11,7 +11,17 @@
 
 #include <algorithm>
 
-PanelManager::PanelManager() = default;
+PanelManager* PanelManager::s_instance = nullptr;
+
+PanelManager::PanelManager() { s_instance = this; }
+
+PanelManager::~PanelManager() {
+  if (s_instance == this) {
+    s_instance = nullptr;
+  }
+}
+
+PanelManager& PanelManager::instance() { return *s_instance; }
 
 void PanelManager::initialize(WaylandConnection& wayland, ConfigService* config) {
   m_wayland = &wayland;

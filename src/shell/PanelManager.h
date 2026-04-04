@@ -22,6 +22,12 @@ public:
   using CloseCallback = std::function<void()>;
 
   PanelManager();
+  ~PanelManager();
+
+  PanelManager(const PanelManager&) = delete;
+  PanelManager& operator=(const PanelManager&) = delete;
+
+  static PanelManager& instance();
 
   void initialize(WaylandConnection& wayland, ConfigService* config);
   void setCloseCallback(CloseCallback callback);
@@ -40,6 +46,8 @@ public:
   void close();
 
 private:
+  static PanelManager* s_instance;
+
   void buildScene(std::uint32_t width, std::uint32_t height);
 
   WaylandConnection* m_wayland = nullptr;

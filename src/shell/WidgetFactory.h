@@ -2,8 +2,6 @@
 
 #include "shell/Widget.h"
 
-#include <cstdint>
-#include <functional>
 #include <memory>
 #include <string>
 
@@ -16,11 +14,8 @@ class WaylandConnection;
 
 class WidgetFactory {
 public:
-  using PanelRequestCallback =
-      std::function<void(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX)>;
-
   WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config, NotificationManager* notifications,
-                TrayService* tray, PanelRequestCallback panelCallback = {});
+                TrayService* tray);
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output) const;
 
@@ -30,5 +25,4 @@ private:
   const Config& m_config;
   NotificationManager* m_notifications;
   TrayService* m_tray;
-  PanelRequestCallback m_panelCallback;
 };

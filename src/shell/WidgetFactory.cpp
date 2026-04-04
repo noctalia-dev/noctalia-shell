@@ -13,9 +13,8 @@
 #include "wayland/WaylandConnection.h"
 
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
-                             NotificationManager* notifications, TrayService* tray, PanelRequestCallback panelCallback)
-    : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray),
-      m_panelCallback(std::move(panelCallback)) {}
+                             NotificationManager* notifications, TrayService* tray)
+    : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output) const {
   if (name == "clock") {
@@ -39,13 +38,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (name == "test") {
-    // Find the output's scale
     std::int32_t scale = 1;
     const auto* wlOutput = m_wayland.findOutputByWl(output);
     if (wlOutput != nullptr) {
       scale = wlOutput->scale;
     }
-    return std::make_unique<TestWidget>(output, scale, m_panelCallback);
+    return std::make_unique<TestWidget>(output, scale);
   }
 
   if (name == "spacer") {

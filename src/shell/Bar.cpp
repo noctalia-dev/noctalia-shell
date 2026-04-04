@@ -43,8 +43,7 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
   m_notifications = notifications;
   m_tray = tray;
 
-  m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
-                                                    m_panelRequestCallback);
+  m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray);
 
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
@@ -67,12 +66,9 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
   return true;
 }
 
-void Bar::setPanelRequestCallback(PanelRequestCallback callback) { m_panelRequestCallback = std::move(callback); }
-
 void Bar::reload() {
   logInfo("bar: reloading config");
-  m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
-                                                    m_panelRequestCallback);
+  m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray);
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;
