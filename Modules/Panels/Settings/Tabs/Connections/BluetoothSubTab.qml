@@ -375,6 +375,30 @@ Item {
       readonly property bool canPair: BluetoothService.canPair(modelData)
       readonly property bool isBusy: BluetoothService.isDeviceBusy(modelData)
       readonly property bool isExpanded: root.expandedDeviceKey === BluetoothService.deviceKey(modelData)
+      readonly property var codecSelectorModel: BluetoothService.codecOptions(modelData)
+      readonly property string selectedCodecKey: BluetoothService.getSelectedCodecKey(modelData)
+      readonly property bool showCodecSelector: modelData.connected && BluetoothService.isAudioDevice(modelData) && device.codecSelectorModel.length > 0
+
+      function refreshCodecOptions() {
+        if (modelData.connected && BluetoothService.isAudioDevice(modelData)) {
+          BluetoothService.ensureCodecOptions(modelData);
+        }
+      }
+
+      onIsExpandedChanged: {
+        if (isExpanded) {
+          refreshCodecOptions();
+        }
+      }
+
+      Connections {
+        target: modelData
+        function onConnectedChanged() {
+          if (modelData.connected) {
+            device.refreshCodecOptions();
+          }
+        }
+      }
 
       function getContentColors(defaultColors = [Color.mSurface, Color.mOnSurface]) {
         if (modelData.pairing || modelData.state === BluetoothDeviceState.Connecting) {
@@ -687,6 +711,39 @@ Item {
                 baseSize: Style.baseWidgetSize * 0.5
                 checked: BluetoothService.getDeviceAutoConnect(modelData)
                 onToggled: checked => BluetoothService.setDeviceAutoConnect(modelData, checked)
+              }
+            }
+
+            // --- Item 7: Codec selector ---
+            RowLayout {
+              visible: device.showCodecSelector
+              Layout.fillWidth: true
+              Layout.preferredWidth: 1
+              spacing: Style.marginXS
+              NIcon {
+                icon: "music"
+                pointSize: Style.fontSizeXS
+                color: Color.mOnSurface
+              }
+              NText {
+                text: I18n.tr("bluetooth.panel.codec-selector")
+                pointSize: Style.fontSizeXS
+                color: Color.mOnSurface
+              }
+              Item {
+                Layout.fillWidth: true
+              }
+              NComboBox {
+                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                minimumWidth: 170
+                popupHeight: 220
+                baseSize: 0.7
+                label: ""
+                enabled: !BluetoothService.isCodecSwitchBusy(modelData)
+                model: device.codecSelectorModel
+                currentKey: device.selectedCodecKey
+                placeholder: I18n.tr("common.select")
+                onSelected: key => BluetoothService.setCodecForDevice(modelData, key)
               }
             }
           }
