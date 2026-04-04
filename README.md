@@ -34,7 +34,8 @@ sudo dnf install cmake gcc-c++ just \
   wayland-devel wayland-protocols-devel \
   libEGL-devel mesa-libGLES-devel \
   freetype-devel harfbuzz-devel fontconfig-devel \
-  sdbus-cpp-devel
+  sdbus-cpp-devel \
+  libasan libubsan
 ```
 
 ### Arch
@@ -43,7 +44,8 @@ sudo dnf install cmake gcc-c++ just \
 sudo pacman -S cmake gcc just \
   wayland wayland-protocols \
   libglvnd freetype2 harfbuzz fontconfig \
-  sdbus-cpp
+  sdbus-cpp \
+  gcc-libs
 ```
 
 ### Debian / Ubuntu
@@ -53,7 +55,8 @@ sudo apt install cmake g++ just \
   libwayland-dev wayland-protocols \
   libegl-dev libgles-dev \
   libfreetype-dev libharfbuzz-dev libfontconfig-dev \
-  libsdbus-c++-dev
+  libsdbus-c++-dev \
+  libasan8 libubsan1
 ```
 
 Vendored (no system package needed): `msdfgen`, `stb`, `nanosvg`, `tomlplusplus`.

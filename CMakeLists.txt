@@ -8,6 +8,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Export compile_commands.json for tooling
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# --- Sanitizers (on by default for Debug builds) ---
+option(SANITIZE "Enable AddressSanitizer + UndefinedBehaviorSanitizer" OFF)
+if(SANITIZE OR (CMAKE_BUILD_TYPE STREQUAL "Debug"))
+  add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+  add_link_options(-fsanitize=address,undefined)
+endif()
+
 # --- Dependencies ---
 find_package(PkgConfig REQUIRED)
 find_package(sdbus-c++ REQUIRED)
