@@ -1,5 +1,6 @@
 #include "Application.hpp"
 
+#include "app/PollSource.hpp"
 #include "core/Log.hpp"
 
 #include <csignal>
@@ -119,8 +120,21 @@ void Application::run() {
         }
     }
 
-    m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, m_bus.get(), m_notificationService.get(),
-                                             &m_timeService, &m_configService, &m_stateService);
+    // Build poll sources
+    std::vector<PollSource*> sources;
+    if (m_bus != nullptr) {
+        m_busPollSource = std::make_unique<SessionBusPollSource>(*m_bus);
+        sources.push_back(m_busPollSource.get());
+    }
+    if (m_notificationService != nullptr) {
+        m_notificationPollSource = std::make_unique<NotificationPollSource>(*m_notificationService);
+        sources.push_back(m_notificationPollSource.get());
+    }
+    sources.push_back(&m_timePollSource);
+    sources.push_back(&m_configPollSource);
+    sources.push_back(&m_statePollSource);
+
+    m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, std::move(sources));
     m_mainLoop->run();
 
     logInfo("shutdown");
