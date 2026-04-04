@@ -1,7 +1,7 @@
 #include "shell/PanelManager.h"
 
-#include "app/MainLoop.h"
 #include "config/ConfigService.h"
+#include "core/DeferredCall.h"
 #include "core/Log.h"
 #include "render/RenderContext.h"
 #include "render/programs/RoundedRectProgram.h"
@@ -133,7 +133,7 @@ void PanelManager::closePanel() {
           m_sceneRoot->setOpacity(v);
           m_sceneRoot->setPosition(m_sceneRoot->x(), startY + (1.0f - v) * 4.0f);
         },
-        [this]() { MainLoop::callLater([this]() { destroyPanel(); }); });
+        [this]() { DeferredCall::callLater([this]() { destroyPanel(); }); });
     m_surface->requestRedraw();
   } else {
     destroyPanel();

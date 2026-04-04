@@ -195,6 +195,7 @@ add_executable(noctalia
     src/dbus/tray/TrayService.cpp
     src/config/ConfigService.cpp
     src/config/StateService.cpp
+    src/core/DeferredCall.cpp
     src/core/Log.cpp
     src/font/FontService.cpp
     src/render/scene/Node.cpp
