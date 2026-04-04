@@ -24,13 +24,13 @@ void Chip::setText(std::string_view text) {
 
 void Chip::setWorkspaceActive(bool active) {
     if (active) {
-        setBackground(kRosePinePalette.love);
-        m_label->setColor(kRosePinePalette.base);
+        setBackground(palette.primary);
+        m_label->setColor(palette.onPrimary);
         setBorderWidth(0.0f);
     } else {
-        setBackground(kRosePinePalette.overlay);
-        m_label->setColor(kRosePinePalette.subtle);
-        setBorderColor(kRosePinePalette.muted);
+        setBackground(palette.surfaceVariant);
+        m_label->setColor(palette.onSurfaceVariant);
+        setBorderColor(palette.outline);
         setBorderWidth(Style::borderWidth);
     }
 }

@@ -3,31 +3,39 @@
 #include "render/core/Color.hpp"
 
 struct Palette {
-    Color base;
+    Color primary;
+    Color onPrimary;
+    Color secondary;
+    Color onSecondary;
+    Color tertiary;
+    Color onTertiary;
+    Color error;
+    Color onError;
     Color surface;
-    Color overlay;
-    Color muted;
-    Color subtle;
-    Color text;
-    Color love;
-    Color gold;
-    Color rose;
-    Color pine;
-    Color foam;
-    Color iris;
+    Color onSurface;
+    Color surfaceVariant;
+    Color onSurfaceVariant;
+    Color outline;
+    Color shadow;
+    Color hover;
+    Color onHover;
 };
 
-inline constexpr Palette kRosePinePalette{
-    .base = hex("#191724"),
-    .surface = hex("#1f1d2e"),
-    .overlay = hex("#26233a"),
-    .muted = hex("#6e6a86"),
-    .subtle = hex("#908caa"),
-    .text = hex("#e0def4"),
-    .love = hex("#eb6f92"),
-    .gold = hex("#f6c177"),
-    .rose = hex("#ebbcba"),
-    .pine = hex("#31748f"),
-    .foam = hex("#9ccfd8"),
-    .iris = hex("#c4a7e7"),
+inline constexpr Palette palette{
+    .primary = hex("#fff59b"),
+    .onPrimary = hex("#0e0e43"),
+    .secondary = hex("#a9aefe"),
+    .onSecondary = hex("#0e0e43"),
+    .tertiary = hex("#9BFECE"),
+    .onTertiary = hex("#0e0e43"),
+    .error = hex("#FD4663"),
+    .onError = hex("#0e0e43"),
+    .surface = hex("#070722"),
+    .onSurface = hex("#f3edf7"),
+    .surfaceVariant = hex("#11112d"),
+    .onSurfaceVariant = hex("#7c80b4"),
+    .outline= hex("#21215F"),
+    .shadow= hex("#070722"),
+    .hover= hex("#9BFECE"),
+    .onHover= hex("#0e0e43"),
 };

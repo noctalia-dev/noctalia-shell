@@ -11,7 +11,7 @@ Label::Label() {
     auto textNode = std::make_unique<TextNode>();
     m_textNode = static_cast<TextNode*>(addChild(std::move(textNode)));
     m_textNode->setFontSize(Style::fontSizeSm);
-    m_textNode->setColor(kRosePinePalette.text);
+    m_textNode->setColor(palette.onSurface);
 }
 
 void Label::setText(std::string_view text) {
@@ -48,7 +48,7 @@ float Label::maxWidth() const noexcept {
 
 void Label::setCaptionStyle() {
     m_textNode->setFontSize(Style::fontSizeCaption);
-    m_textNode->setColor(kRosePinePalette.text);
+    m_textNode->setColor(palette.onSurface);
 }
 
 void Label::measure(Renderer& renderer) {

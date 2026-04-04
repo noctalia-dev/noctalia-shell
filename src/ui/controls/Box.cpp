@@ -86,9 +86,9 @@ void Box::setSoftness(float softness) {
 
 void Box::setCardSurface() {
     setRadius(Style::radiusMd);
-    setBorderColor(kRosePinePalette.overlay);
+    setBorderColor(palette.outline);
     setBorderWidth(Style::borderWidth);
-    setBackground(kRosePinePalette.surface);
+    setBackground(palette.surface);
 }
 
 void Box::setRowLayout() {

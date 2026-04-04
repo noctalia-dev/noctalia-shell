@@ -222,15 +222,9 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
         // Bar background
         auto bg = std::make_unique<RectNode>();
         bg->setStyle(RoundedRectStyle{
-            .fill = kRosePinePalette.overlay,
-            .fillEnd = kRosePinePalette.surface,
-            .border = rgba(
-                kRosePinePalette.text.r,
-                kRosePinePalette.text.g,
-                kRosePinePalette.text.b,
-                0.85f),
-            .fillMode = FillMode::LinearGradient,
-            .gradientDirection = GradientDirection::Vertical,
+            .fill = palette.surface,
+            .border = palette.outline,
+            .fillMode = FillMode::Solid,
             .radius = Style::radiusMd,
             .softness = 1.2f,
             .borderWidth = Style::borderWidth,
