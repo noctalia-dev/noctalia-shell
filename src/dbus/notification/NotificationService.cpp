@@ -4,7 +4,6 @@
 #include "dbus/SessionBus.h"
 
 #include <algorithm>
-#include <stdexcept>
 
 static const sdbus::ServiceName k_bus_name{"org.freedesktop.Notifications"};
 static const sdbus::ObjectPath k_object_path{"/org/freedesktop/Notifications"};
@@ -53,28 +52,7 @@ NotificationService::NotificationService(SessionBus& bus, NotificationManager& m
       .forInterface(k_interface);
 }
 
-namespace {
-
-int computeExpiryTimeoutMs(const NotificationManager& manager) {
-  int expiry_ms = -1;
-  const auto now = Clock::now();
-  for (const auto& n : manager.all()) {
-    if (n.expiry_time) {
-      const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(*n.expiry_time - now).count();
-      const int clamped = static_cast<int>(std::max<long long>(0, ms));
-      if (expiry_ms < 0 || clamped < expiry_ms) {
-        expiry_ms = clamped;
-      }
-    }
-  }
-  return expiry_ms;
-}
-
-} // namespace
-
-int NotificationService::nextExpiryTimeoutMs() const { return computeExpiryTimeoutMs(m_manager); }
-
-void NotificationService::processExpiredNotifications() {
+void NotificationService::processExpired() {
   for (const uint32_t id : m_manager.expiredIds()) {
     emitClose(id, CloseReason::Expired);
     m_manager.close(id, CloseReason::Expired);

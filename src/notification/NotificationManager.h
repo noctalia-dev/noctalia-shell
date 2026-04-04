@@ -42,6 +42,12 @@ public:
   // Returns IDs of all notifications whose expiry_time has passed.
   [[nodiscard]] std::vector<uint32_t> expiredIds() const;
 
+  // Returns ms until the next expiry, or -1 if none are scheduled.
+  [[nodiscard]] int nextExpiryTimeoutMs() const;
+
+  // Closes all expired notifications.
+  void processExpired();
+
   // All stored notifications.
   [[nodiscard]] const std::deque<Notification>& all() const noexcept;
 

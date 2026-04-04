@@ -47,9 +47,7 @@ just rebuild release  # release
 # Run
 just run
 
-# Toggle verbose debug logs at runtime
-gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug --method dev.noctalia.Debug.SetVerboseLogs false
-gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug --method dev.noctalia.Debug.SetVerboseLogs true
+just run
 ```
 
 <details>
@@ -91,6 +89,24 @@ third_party/
   tomlplusplus/  TOML parser (vendored)
   stb/           Image loading (vendored)
   nanosvg/       SVG rasterization (vendored)
+```
+
+## Debugging
+
+All debug commands use the `dev.noctalia.Debug` D-Bus service, available at runtime.
+
+```sh
+# Enable verbose debug logs
+gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug --method dev.noctalia.Debug.SetVerboseLogs true
+
+# Disable verbose debug logs
+gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug --method dev.noctalia.Debug.SetVerboseLogs false
+
+# Check current verbose log state
+gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug --method dev.noctalia.Debug.GetVerboseLogs
+
+# Emit an internal notification (app_name, summary, body, timeout_ms, urgency 0-2)
+gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug --method dev.noctalia.Debug.EmitInternalNotification "Noctalia" "Test" "Hello from debug" 5000 1
 ```
 
 ## Roadmap

@@ -178,11 +178,10 @@ add_executable(noctalia
     src/app/MainLoop.cpp
     src/system/SystemMonitorService.cpp
     src/debug/DebugService.cpp
-    src/notification/InternalNotificationService.cpp
-    src/notification/NotificationsService.cpp
     src/notification/NotificationManager.cpp
     src/dbus/SessionBus.cpp
     src/dbus/mpris/MprisService.cpp
+    src/dbus/notification/NotificationPollSource.cpp
     src/dbus/notification/NotificationService.cpp
     src/dbus/tray/TrayService.cpp
     src/config/ConfigService.cpp

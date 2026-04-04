@@ -2,7 +2,6 @@
 
 #include "notification/NotificationManager.h"
 
-#include <chrono>
 #include <map>
 #include <memory>
 #include <sdbus-c++/sdbus-c++.h>
@@ -16,8 +15,8 @@ class NotificationService {
 public:
   NotificationService(SessionBus& bus, NotificationManager& manager);
 
-  [[nodiscard]] int nextExpiryTimeoutMs() const;
-  void processExpiredNotifications();
+  // Close expired notifications and emit D-Bus signals for them.
+  void processExpired();
 
 private:
   NotificationManager& m_manager;

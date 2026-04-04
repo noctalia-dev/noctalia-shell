@@ -1,21 +1,25 @@
 #pragma once
 
 #include "app/PollSource.h"
-#include "notification/NotificationsService.h"
+#include "notification/NotificationManager.h"
+
+class NotificationService;
 
 class NotificationPollSource final : public PollSource {
 public:
-  explicit NotificationPollSource(NotificationsService& notifications) : m_notifications(notifications) {}
+  explicit NotificationPollSource(NotificationManager& manager) : m_manager(manager) {}
 
-  [[nodiscard]] int pollTimeoutMs() const override { return m_notifications.nextExpiryTimeoutMs(); }
+  // Optional: set the D-Bus service for emitting close signals on expiry
+  void setDbusService(NotificationService* dbus) { m_dbus = dbus; }
 
-  void dispatch(const std::vector<pollfd>& /*fds*/, std::size_t /*startIdx*/) override {
-    m_notifications.processExpiredNotifications();
-  }
+  [[nodiscard]] int pollTimeoutMs() const override { return m_manager.nextExpiryTimeoutMs(); }
+
+  void dispatch(const std::vector<pollfd>& /*fds*/, std::size_t /*startIdx*/) override;
 
 protected:
   void doAddPollFds(std::vector<pollfd>& /*fds*/) override {}
 
 private:
-  NotificationsService& m_notifications;
+  NotificationManager& m_manager;
+  NotificationService* m_dbus = nullptr;
 };
