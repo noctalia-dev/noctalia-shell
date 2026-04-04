@@ -13,9 +13,10 @@ int TimeService::pollTimeoutMs() const {
     return static_cast<int>(1000 - ms);
 }
 
-void TimeService::tickSecond() {
+void TimeService::tick() {
     using namespace std::chrono;
-    const auto floored = floor<seconds>(system_clock::now());
+    m_now = system_clock::now();
+    const auto floored = floor<seconds>(m_now);
 
     if (floored != m_nowSeconds) {
         m_nowSeconds = floored;
