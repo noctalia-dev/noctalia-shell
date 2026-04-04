@@ -218,6 +218,8 @@ add_executable(noctalia
     src/ui/controls/Label.cpp
     src/ui/controls/Toggle.cpp
     src/ui/icons/IconRegistry.cpp
+    src/render/scene/InputArea.cpp
+    src/render/scene/InputDispatcher.cpp
     src/shell/widgets/ClockWidget.cpp
     src/shell/widgets/NotificationWidget.cpp
     src/shell/widgets/SpacerWidget.cpp

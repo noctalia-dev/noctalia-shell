@@ -74,14 +74,12 @@ void Bar::reload() {
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;
-  m_hoveredWidget = nullptr;
   syncInstances();
 }
 
 void Bar::closeAllInstances() {
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;
-  m_hoveredWidget = nullptr;
   m_instances.clear();
 }
 
@@ -250,17 +248,10 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     initWidgets(instance.centerWidgets, instance.centerSection);
     initWidgets(instance.endWidgets, instance.endSection);
 
-    // Build widget node map for input dispatch
-    auto mapWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
-      for (auto& widget : widgets) {
-        if (widget->root() != nullptr) {
-          instance.widgetNodeMap[widget->root()] = widget.get();
-        }
-      }
-    };
-    mapWidgets(instance.startWidgets);
-    mapWidgets(instance.centerWidgets);
-    mapWidgets(instance.endWidgets);
+    // Wire up InputDispatcher for this instance
+    instance.inputDispatcher.setSceneRoot(instance.sceneRoot.get());
+    instance.inputDispatcher.setCursorShapeCallback(
+        [this](std::uint32_t serial, std::uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
 
     // Fade-in animation
     instance.sceneRoot->setOpacity(0.0f);
@@ -352,27 +343,6 @@ void Bar::updateWidgets(BarInstance& instance) {
   }
 }
 
-Widget* Bar::findWidgetAtPosition(BarInstance& instance, float x, float y) {
-  if (instance.sceneRoot == nullptr) {
-    return nullptr;
-  }
-
-  auto* hitNode = Node::hitTest(instance.sceneRoot.get(), x, y);
-  if (hitNode == nullptr) {
-    return nullptr;
-  }
-
-  // Walk up from hit node to find a widget root
-  for (auto* node = hitNode; node != nullptr; node = node->parent()) {
-    auto it = instance.widgetNodeMap.find(node);
-    if (it != instance.widgetNodeMap.end()) {
-      return it->second;
-    }
-  }
-
-  return nullptr;
-}
-
 void Bar::onPointerEvent(const PointerEvent& event) {
   switch (event.type) {
   case PointerEvent::Type::Enter: {
@@ -381,63 +351,29 @@ void Bar::onPointerEvent(const PointerEvent& event) {
       break;
     }
     m_hoveredInstance = it->second;
-    m_lastPointerSerial = event.serial;
-
-    auto* widget = findWidgetAtPosition(*m_hoveredInstance, static_cast<float>(event.sx), static_cast<float>(event.sy));
-    if (widget != m_hoveredWidget) {
-      if (m_hoveredWidget != nullptr)
-        m_hoveredWidget->onPointerLeave();
-      m_hoveredWidget = widget;
-      if (m_hoveredWidget != nullptr) {
-        float absX = 0.0f, absY = 0.0f;
-        Node::absolutePosition(m_hoveredWidget->root(), absX, absY);
-        m_hoveredWidget->onPointerEnter(static_cast<float>(event.sx) - absX, static_cast<float>(event.sy) - absY);
-        auto shape = m_hoveredWidget->cursorShape();
-        m_wayland->setCursorShape(event.serial, shape != 0 ? shape : 1);
-      } else {
-        m_wayland->setCursorShape(event.serial, 1);
-      }
-    }
+    m_hoveredInstance->inputDispatcher.pointerEnter(static_cast<float>(event.sx), static_cast<float>(event.sy),
+                                                    event.serial);
     break;
   }
   case PointerEvent::Type::Leave: {
-    if (m_hoveredWidget != nullptr) {
-      m_hoveredWidget->onPointerLeave();
-      m_hoveredWidget = nullptr;
+    if (m_hoveredInstance != nullptr) {
+      m_hoveredInstance->inputDispatcher.pointerLeave();
+      m_hoveredInstance = nullptr;
     }
-    m_hoveredInstance = nullptr;
     break;
   }
   case PointerEvent::Type::Motion: {
     if (m_hoveredInstance == nullptr)
       break;
-
-    auto* widget = findWidgetAtPosition(*m_hoveredInstance, static_cast<float>(event.sx), static_cast<float>(event.sy));
-    if (widget != m_hoveredWidget) {
-      if (m_hoveredWidget != nullptr)
-        m_hoveredWidget->onPointerLeave();
-      m_hoveredWidget = widget;
-      if (m_hoveredWidget != nullptr) {
-        float absX = 0.0f, absY = 0.0f;
-        Node::absolutePosition(m_hoveredWidget->root(), absX, absY);
-        m_hoveredWidget->onPointerEnter(static_cast<float>(event.sx) - absX, static_cast<float>(event.sy) - absY);
-        auto shape = m_hoveredWidget->cursorShape();
-        m_wayland->setCursorShape(m_lastPointerSerial, shape != 0 ? shape : 1);
-      } else {
-        m_wayland->setCursorShape(m_lastPointerSerial, 1);
-      }
-    } else if (m_hoveredWidget != nullptr) {
-      float absX = 0.0f, absY = 0.0f;
-      Node::absolutePosition(m_hoveredWidget->root(), absX, absY);
-      m_hoveredWidget->onPointerMotion(static_cast<float>(event.sx) - absX, static_cast<float>(event.sy) - absY);
-    }
+    m_hoveredInstance->inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), 0);
     break;
   }
   case PointerEvent::Type::Button: {
-    if (m_hoveredWidget != nullptr) {
-      bool pressed = (event.state == 1); // WL_POINTER_BUTTON_STATE_PRESSED
-      m_hoveredWidget->onPointerButton(event.button, pressed);
-    }
+    if (m_hoveredInstance == nullptr)
+      break;
+    bool pressed = (event.state == 1); // WL_POINTER_BUTTON_STATE_PRESSED
+    m_hoveredInstance->inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy),
+                                                     event.button, pressed);
     break;
   }
   }
