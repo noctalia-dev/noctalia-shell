@@ -1369,7 +1369,7 @@
     },
     "location": {
       "auto-locate-description": "Detecteert automatisch uw locatie periodiek met behulp van uw IP-adres.",
-      "auto-locate-label": "Automatische Lokalisatie",
+      "auto-locate-label": "Automatische locatie",
       "calendar-cards-desc": "Kaarten organiseren en in-/uitschakelen in het kalenderpaneel.",
       "calendar-cards-title": "Kalenderkaarten",
       "calendar-header-label": "Kalenderkop",
