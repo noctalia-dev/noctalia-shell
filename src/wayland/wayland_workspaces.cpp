@@ -153,12 +153,29 @@ void WaylandWorkspaces::activateForOutput(wl_output* output, const Workspace& wo
     return;
   }
 
+  auto normalizeCoordinates = [](const std::vector<std::uint32_t>& coords) {
+    auto normalized = coords;
+    while (!normalized.empty() && normalized.back() == 0) {
+      normalized.pop_back();
+    }
+    return normalized;
+  };
+
   auto matchesExact = [&](const Workspace& candidate) {
     return candidate.id == workspace.id && candidate.name == workspace.name &&
-           candidate.coordinates == workspace.coordinates;
+           normalizeCoordinates(candidate.coordinates) == normalizeCoordinates(workspace.coordinates);
   };
 
   auto matchesId = [&](const Workspace& candidate) { return !workspace.id.empty() && candidate.id == workspace.id; };
+  auto matchesCoordinatesPrimary = [&](const Workspace& candidate) {
+    const auto wanted = normalizeCoordinates(workspace.coordinates);
+    const auto have = normalizeCoordinates(candidate.coordinates);
+    if (wanted.empty() || have.empty()) {
+      return false;
+    }
+    // Coordinate[0] is the horizontal workspace axis for common compositors.
+    return wanted[0] == have[0];
+  };
 
   for (const auto& group : m_groups) {
     const bool hasOutput = std::find(group.outputs.begin(), group.outputs.end(), output) != group.outputs.end();
@@ -195,6 +212,22 @@ void WaylandWorkspaces::activateForOutput(wl_output* output, const Workspace& wo
       ext_workspace_handle_v1_activate(handle);
       ext_workspace_manager_v1_commit(m_manager);
       logDebug("workspace: activating \"{}\"", it->second.name);
+      return;
+    }
+
+    // Third pass: coordinate primary-axis fallback. This helps when stack dimensions are omitted.
+    for (auto* handle : group.workspaces) {
+      auto it = m_workspaces.find(handle);
+      if (it == m_workspaces.end()) {
+        continue;
+      }
+      if (!matchesCoordinatesPrimary(it->second)) {
+        continue;
+      }
+
+      ext_workspace_handle_v1_activate(handle);
+      ext_workspace_manager_v1_commit(m_manager);
+      logDebug("workspace: activating \"{}\" (coordinate fallback)", it->second.name);
       return;
     }
   }

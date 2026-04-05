@@ -64,6 +64,7 @@ private:
       AnimationManager::Id countdownAnimId = 0;
       AnimationManager::Id entryAnimId = 0;
       AnimationManager::Id slideAnimId = 0;
+      AnimationManager::Id exitAnimId = 0;
     };
     std::vector<CardState> cards;
   };
@@ -72,7 +73,7 @@ private:
   void addPopup(const Notification& n);
   void dismissPopup(std::size_t index);
   void removePopup(uint32_t notificationId);
-  void finishRemoval(std::size_t index);
+  void finishRemoval(uint32_t notificationId);
   void layoutCards(PopupInstance& inst);
 
   void ensureSurfaces();
