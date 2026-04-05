@@ -22,6 +22,8 @@ Singleton {
   function pushSystemColorScheme() {
     if (!Settings.data.colorSchemes.syncGsettings)
       return;
+    if (TemplateProcessor.isTemplateEnabled("gtk"))
+      return;
     const mode = Settings.data.colorSchemes.darkMode ? "dark" : "light";
     Quickshell.execDetached(["python3", gtkRefreshScript, "--appearance-only", mode]);
   }
