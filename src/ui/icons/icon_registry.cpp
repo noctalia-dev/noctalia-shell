@@ -204,5 +204,7 @@ char32_t IconRegistry::lookup(std::string_view name) {
   if (it != kIcons.end()) {
     return it->second;
   }
-  return 0;
+
+  // Fallback to skull
+  return 0xF292;
 }
