@@ -129,15 +129,15 @@ void Input::layout(Renderer& renderer) {
   const float h = Style::controlHeight;
   setSize(w, h);
 
-  // Measure display text for vertical centering
+  // Measure display text for width; use a stable reference for vertical centering
+  // so the baseline doesn't jump when characters with descenders are typed.
   const std::string& display = m_value.empty() ? m_placeholder : m_value;
-  const auto metrics = renderer.measureText(display, Style::fontSizeBody);
-  const float textH = metrics.bottom - metrics.top;
-
-  // TextNode renders with baseline at y=0, so offset by -metrics.top
-  const float textNodeY = (h - textH) * 0.5f - metrics.top;
+  const auto metrics     = renderer.measureText(display, Style::fontSizeBody);
+  const auto fontMetrics = renderer.measureText("Ay", Style::fontSizeBody);
+  const float fontH      = fontMetrics.bottom - fontMetrics.top;
+  const float textNodeY  = (h - fontH) * 0.5f - fontMetrics.top;
   m_textNode->setPosition(Style::paddingH, textNodeY);
-  m_textNode->setSize(metrics.width, textH);
+  m_textNode->setSize(metrics.width, fontH);
 
   // Build stop arrays for click-to-position and selection rect
   m_stopByte.clear();
