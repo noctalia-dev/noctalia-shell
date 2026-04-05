@@ -60,6 +60,10 @@ Application::~Application() {
     m_bus->processPendingEvents();
   }
 
+  // PipeWire cleanup
+  m_pipewirePollSource.reset();
+  m_pipewireService.reset();
+
   // MainLoop will be destroyed next, then SessionBus
 }
 
@@ -116,6 +120,18 @@ void Application::run() {
       logWarn("power profiles disabled: {}", e.what());
       m_powerProfilesService.reset();
     }
+  }
+
+  try {
+    m_pipewireService = std::make_unique<PipeWireService>();
+    m_pipewireService->setChangeCallback([this]() { m_bar.onWorkspaceChange(); });
+    const auto* sink = m_pipewireService->defaultSink();
+    if (sink != nullptr) {
+      logInfo("pipewire: default sink \"{}\" vol={:.0f}%", sink->description, sink->volume * 100.0f);
+    }
+  } catch (const std::exception& e) {
+    logWarn("pipewire disabled: {}", e.what());
+    m_pipewireService.reset();
   }
 
   try {
@@ -183,7 +199,7 @@ void Application::run() {
 
   // Initialize bar (top layer)
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
-                   &m_renderContext);
+                   m_pipewireService.get(), &m_renderContext);
 
   // Unified pointer event routing — both Bar and PanelManager check surface ownership
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
@@ -214,6 +230,10 @@ void Application::run() {
   sources.push_back(&m_configPollSource);
   sources.push_back(&m_statePollSource);
   sources.push_back(&m_keyRepeatPollSource);
+  if (m_pipewireService != nullptr) {
+    m_pipewirePollSource = std::make_unique<PipeWirePollSource>(*m_pipewireService);
+    sources.push_back(m_pipewirePollSource.get());
+  }
 
   m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, std::move(sources));
   m_mainLoop->run();

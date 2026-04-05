@@ -16,6 +16,8 @@
 #include "dbus/tray/tray_service.h"
 #include "debug/debug_service.h"
 #include "notification/notification_manager.h"
+#include "pipewire/pipewire_poll_source.h"
+#include "pipewire/pipewire_service.h"
 #include "render/render_context.h"
 #include "shell/bar/bar.h"
 #include "shell/notification/notification_popup.h"
@@ -55,6 +57,7 @@ private:
   std::unique_ptr<PowerProfilesService> m_powerProfilesService;
   std::unique_ptr<TrayService> m_trayService;
   std::unique_ptr<NotificationService> m_notificationDbus;
+  std::unique_ptr<PipeWireService> m_pipewireService;
 
   RenderContext m_renderContext;
   Bar m_bar;
@@ -71,6 +74,7 @@ private:
   ConfigPollSource m_configPollSource{m_configService};
   StatePollSource m_statePollSource{m_stateService};
   KeyRepeatPollSource m_keyRepeatPollSource{m_wayland};
+  std::unique_ptr<PipeWirePollSource> m_pipewirePollSource;
 
   std::unique_ptr<MainLoop> m_mainLoop;
 };

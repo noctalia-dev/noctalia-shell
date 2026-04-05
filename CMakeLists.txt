@@ -27,6 +27,7 @@ pkg_check_modules(FREETYPE2 REQUIRED freetype2)
 pkg_check_modules(HARFBUZZ REQUIRED harfbuzz)
 pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
 pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
+pkg_check_modules(LIBPIPEWIRE REQUIRED libpipewire-0.3)
 
 # --- msdfgen (vendored) ---
 set(MSDFGEN_CORE_ONLY OFF CACHE BOOL "" FORCE)
@@ -245,7 +246,9 @@ add_executable(noctalia
     src/shell/widgets/spacer_widget.cpp
     src/shell/widgets/test_widget.cpp
     src/shell/widgets/tray_widget.cpp
+    src/shell/widgets/volume_widget.cpp
     src/shell/widgets/workspaces_widget.cpp
+    src/pipewire/pipewire_service.cpp
     src/wayland/surface.cpp
     src/wayland/layer_surface.cpp
     src/wayland/wayland_connection.cpp
@@ -277,6 +280,7 @@ target_include_directories(noctalia PRIVATE
     ${HARFBUZZ_INCLUDE_DIRS}
     ${FONTCONFIG_INCLUDE_DIRS}
     ${XKBCOMMON_INCLUDE_DIRS}
+    ${LIBPIPEWIRE_INCLUDE_DIRS}
 )
 target_link_libraries(noctalia PRIVATE
     SDBusCpp::sdbus-c++
@@ -290,6 +294,7 @@ target_link_libraries(noctalia PRIVATE
     ${HARFBUZZ_LIBRARIES}
     ${FONTCONFIG_LIBRARIES}
     ${XKBCOMMON_LIBRARIES}
+    ${LIBPIPEWIRE_LIBRARIES}
 )
 target_compile_options(noctalia PRIVATE
     ${WAYLAND_CLIENT_CFLAGS_OTHER}
@@ -299,6 +304,7 @@ target_compile_options(noctalia PRIVATE
     ${FREETYPE2_CFLAGS_OTHER}
     ${HARFBUZZ_CFLAGS_OTHER}
     ${FONTCONFIG_CFLAGS_OTHER}
+    ${LIBPIPEWIRE_CFLAGS_OTHER}
 )
 
 target_compile_options(noctalia PRIVATE
