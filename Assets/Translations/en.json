@@ -124,6 +124,8 @@
       "icon-position-label": "Icon position",
       "icon-position-left": "Left",
       "icon-position-right": "Right",
+      "icon-position-top": "Top",
+      "icon-position-bottom": "Bottom",
       "ipc-identifier-description": "Unique identifier for IPC commands. Use this identifier with 'qs -c noctalia-shell ipc call cb [action] [identifier]' to control this button via IPC.",
       "ipc-identifier-label": "IPC Identifier",
       "left-click-description": "Command to execute when the button is left-clicked.",

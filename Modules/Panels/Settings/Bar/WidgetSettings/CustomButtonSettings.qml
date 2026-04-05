@@ -17,6 +17,9 @@ ColumnLayout {
 
   signal settingsChanged(var settings)
 
+  // Bar orientation (per-screen) - passed from parent
+  property bool barIsVertical: false
+
   property string valueIcon: widgetData.icon !== undefined ? widgetData.icon : widgetMetadata.icon
   property string valueIconPosition: widgetData.iconPosition !== undefined ? widgetData.iconPosition : widgetMetadata.iconPosition
   property bool valueTextStream: widgetData.textStream !== undefined ? widgetData.textStream : widgetMetadata.textStream
@@ -101,9 +104,19 @@ ColumnLayout {
 
   NComboBox {
     id: iconPositionComboBox
+    visible: valueShowIcon
     label: I18n.tr("bar.custom-button.icon-position-label")
     description: I18n.tr("bar.custom-button.icon-position-description")
-    model: [
+    model: barIsVertical ? [
+      {
+        name: I18n.tr("bar.custom-button.icon-position-top"),
+        key: "left"
+      },
+      {
+        name: I18n.tr("bar.custom-button.icon-position-bottom"),
+        key: "right"
+      }
+    ] : [
       {
         name: I18n.tr("bar.custom-button.icon-position-left"),
         key: "left"

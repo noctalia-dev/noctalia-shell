@@ -50,8 +50,9 @@ Item {
   readonly property int maxPillHeight: rotateText ? Math.max(1, Math.round(textItem.implicitWidth + Style.margin2M + Math.round(iconCircle.height / 4))) : Math.max(1, Math.round(textItem.implicitHeight + Style.margin2M))
 
   // Determine pill direction based on icon position (fallback to oppositeDirection if not set)
-  readonly property bool openDownward: iconPosition === "right" || (iconPosition === "" && oppositeDirection)
-  readonly property bool openUpward: iconPosition === "left" || (iconPosition === "" && !oppositeDirection)
+  // For vertical bar: iconPosition="left" (top) means icon at top, text expands downward
+  readonly property bool openDownward: (iconPosition === "left" || iconPosition === "right") ? (iconPosition === "left") : oppositeDirection
+  readonly property bool openUpward: (iconPosition === "left" || iconPosition === "right") ? (iconPosition === "right") : !oppositeDirection
 
   // Effective shown state (true if animated open or forced, but not if force closed)
   readonly property bool revealed: !forceClose && (forceOpen || showPill)
