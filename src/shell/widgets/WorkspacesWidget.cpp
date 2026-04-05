@@ -1,4 +1,5 @@
 #include "shell/widgets/WorkspacesWidget.h"
+#include "ui/style/Style.h"
 
 #include "core/Log.h"
 #include "render/core/Renderer.h"
@@ -65,6 +66,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     auto chip = std::make_unique<Chip>();
     chip->setText(ws.name);
     chip->setActive(ws.active);
+    chip->setPadding(Style::paddingV * 0.5, Style::paddingH * 0.5, Style::paddingV * 0.5, Style::paddingH * 0.5);
     chip->layout(renderer);
 
     // Wrap chip in an InputArea for click handling
