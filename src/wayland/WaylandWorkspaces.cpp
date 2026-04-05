@@ -111,7 +111,7 @@ void WaylandWorkspaces::activate(const std::string& id) {
     if (ws.id == id) {
       ext_workspace_handle_v1_activate(handle);
       ext_workspace_manager_v1_commit(m_manager);
-      logInfo("workspace: activating \"{}\"", ws.name);
+      logDebug("workspace: activating \"{}\"", ws.name);
       return;
     }
   }
@@ -139,7 +139,7 @@ void WaylandWorkspaces::activateForOutput(wl_output* output, const std::string& 
 
       ext_workspace_handle_v1_activate(handle);
       ext_workspace_manager_v1_commit(m_manager);
-      logInfo("workspace: activating \"{}\"", it->second.name);
+      logDebug("workspace: activating \"{}\"", it->second.name);
       return;
     }
   }
@@ -178,7 +178,7 @@ void WaylandWorkspaces::activateForOutput(wl_output* output, const Workspace& wo
 
       ext_workspace_handle_v1_activate(handle);
       ext_workspace_manager_v1_commit(m_manager);
-      logInfo("workspace: activating \"{}\"", it->second.name);
+      logDebug("workspace: activating \"{}\"", it->second.name);
       return;
     }
 
@@ -194,7 +194,7 @@ void WaylandWorkspaces::activateForOutput(wl_output* output, const Workspace& wo
 
       ext_workspace_handle_v1_activate(handle);
       ext_workspace_manager_v1_commit(m_manager);
-      logInfo("workspace: activating \"{}\"", it->second.name);
+      logDebug("workspace: activating \"{}\"", it->second.name);
       return;
     }
   }
@@ -380,7 +380,7 @@ void WaylandWorkspaces::onWorkspaceStateChanged(ext_workspace_handle_v1* workspa
     it->second.active = is_active;
     if (is_active) {
       const std::string label = it->second.name.empty() ? "(unnamed)" : it->second.name;
-      logInfo("workspace active: {}", label);
+      logDebug("workspace active: {}", label);
     }
     if (m_changeCallback) {
       m_changeCallback();
