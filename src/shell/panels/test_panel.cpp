@@ -50,6 +50,7 @@ void TestPanel::create(Renderer& renderer) {
   button->setText("Hello");
   button->setVariant(ButtonVariant::Default);
   button->setOnClick([]() {});
+  button->setAnimationManager(m_animations);
   m_button = button.get();
   {
     auto row = makeRow();
@@ -63,6 +64,7 @@ void TestPanel::create(Renderer& renderer) {
   iconButton->setIcon("settings");
   iconButton->setVariant(ButtonVariant::Default);
   iconButton->setOnClick([]() {});
+  iconButton->setAnimationManager(m_animations);
   m_iconButton = iconButton.get();
   {
     auto row = makeRow();

@@ -149,6 +149,10 @@ void Button::applyVariant() {
     break;
   }
 
+  // Seed animation state so the first transition has valid starting colors.
+  m_targetBg = m_bgColorNormal;
+  m_targetBorder = m_borderColorNormal;
+  m_targetLabel = m_labelColorNormal;
   applyVisualState();
 }
 
@@ -171,29 +175,61 @@ void Button::ensureIcon() {
   setGap(Style::spaceXs);
 }
 
+void Button::applyColors(const Color& bg, const Color& border, const Color& label) {
+  setBackground(bg);
+  setBorderColor(border);
+  m_label->setColor(label);
+  if (m_icon != nullptr) {
+    m_icon->setColor(label);
+  }
+}
+
 void Button::applyVisualState() {
   bool isHovered = hovered();
   bool isPressed = pressed();
 
-  Color labelColor;
+  Color targetBg;
+  Color targetBorder;
+  Color targetLabel;
   if (isPressed) {
-    setBackground(m_bgColorPressed);
-    setBorderColor(m_borderColorPressed);
-    labelColor = m_labelColorPressed;
+    targetBg = m_bgColorPressed;
+    targetBorder = m_borderColorPressed;
+    targetLabel = m_labelColorPressed;
   } else if (isHovered) {
-    setBackground(m_bgColorHover);
-    setBorderColor(m_borderColorHover);
-    labelColor = m_labelColorHover;
+    targetBg = m_bgColorHover;
+    targetBorder = m_borderColorHover;
+    targetLabel = m_labelColorHover;
   } else {
-    setBackground(m_bgColorNormal);
-    setBorderColor(m_borderColorNormal);
-    labelColor = m_labelColorNormal;
+    targetBg = m_bgColorNormal;
+    targetBorder = m_borderColorNormal;
+    targetLabel = m_labelColorNormal;
   }
 
-  m_label->setColor(labelColor);
-  if (m_icon != nullptr) {
-    m_icon->setColor(labelColor);
+  if (m_animations == nullptr) {
+    applyColors(targetBg, targetBorder, targetLabel);
+    return;
   }
+
+  // Snapshot current display colors as the animation start point
+  m_fromBg = m_targetBg;
+  m_fromBorder = m_targetBorder;
+  m_fromLabel = m_targetLabel;
+  m_targetBg = targetBg;
+  m_targetBorder = targetBorder;
+  m_targetLabel = targetLabel;
+
+  if (m_animId != 0) {
+    m_animations->cancel(m_animId);
+  }
+
+  m_animId = m_animations->animate(
+      0.0f, 1.0f, Style::animFast, Easing::EaseOutCubic,
+      [this](float t) {
+        applyColors(lerpColor(m_fromBg, m_targetBg, t), lerpColor(m_fromBorder, m_targetBorder, t),
+                    lerpColor(m_fromLabel, m_targetLabel, t));
+      },
+      [this]() { m_animId = 0; });
+  markDirty();
 }
 
 void Button::layout(Renderer& renderer) {
@@ -235,5 +271,10 @@ void Button::layout(Renderer& renderer) {
     m_inputArea->setSize(width(), height());
   }
 
-  applyVisualState();
+  // Only apply visual state if no animation is in progress — a running
+  // animation already owns the color transition and re-calling here would
+  // reset its from/to snapshot, collapsing the animation to a no-op.
+  if (m_animId == 0) {
+    applyVisualState();
+  }
 }
