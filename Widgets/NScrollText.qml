@@ -199,5 +199,9 @@ Item {
     bottomLeftRadius: root.fadeRoundLeftCorners ? root.fadeCornerRadius : 0
     topRightRadius: root.fadeCornerRadius
     bottomRightRadius: root.fadeCornerRadius
+    animateColors: true
+    animationDuration: Style.animationFast
+    startColor: scrollContainer.x < -1 ? "transparent" : "white"
+    endColor: root.contentWidth > root.maxWidth ? "transparent" : "white"
   }
 }
