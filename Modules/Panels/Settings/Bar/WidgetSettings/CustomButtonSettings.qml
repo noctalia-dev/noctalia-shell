@@ -18,6 +18,7 @@ ColumnLayout {
   signal settingsChanged(var settings)
 
   property string valueIcon: widgetData.icon !== undefined ? widgetData.icon : widgetMetadata.icon
+  property string valueIconPosition: widgetData.iconPosition !== undefined ? widgetData.iconPosition : widgetMetadata.iconPosition
   property bool valueTextStream: widgetData.textStream !== undefined ? widgetData.textStream : widgetMetadata.textStream
   property bool valueParseJson: widgetData.parseJson !== undefined ? widgetData.parseJson : widgetMetadata.parseJson
   property int valueMaxTextLengthHorizontal: widgetData?.maxTextLength?.horizontal ?? widgetMetadata?.maxTextLength?.horizontal
@@ -34,6 +35,7 @@ ColumnLayout {
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.icon = valueIcon;
+    settings.iconPosition = valueIconPosition;
     settings.leftClickExec = leftClickExecInput.text;
     settings.leftClickUpdateText = leftClickUpdateText.checked;
     settings.rightClickExec = rightClickExecInput.text;
@@ -95,6 +97,28 @@ ColumnLayout {
       valueIcon = iconName;
       saveSettings();
     }
+  }
+
+  NComboBox {
+    id: iconPositionComboBox
+    label: I18n.tr("bar.custom-button.icon-position-label")
+    description: I18n.tr("bar.custom-button.icon-position-description")
+    model: [
+      {
+        name: I18n.tr("bar.custom-button.icon-position-left"),
+        key: "left"
+      },
+      {
+        name: I18n.tr("bar.custom-button.icon-position-right"),
+        key: "right"
+      }
+    ]
+    currentKey: valueIconPosition
+    onSelected: key => {
+      valueIconPosition = key;
+      saveSettings();
+    }
+    defaultValue: widgetMetadata.iconPosition
   }
 
   NToggle {

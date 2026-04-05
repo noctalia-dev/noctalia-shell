@@ -37,6 +37,7 @@ Item {
   readonly property bool isVerticalBar: barPosition === "left" || barPosition === "right"
 
   readonly property string customIcon: widgetSettings.icon || widgetMetadata.icon
+  readonly property string iconPosition: widgetSettings.iconPosition || widgetMetadata.iconPosition
   readonly property string leftClickExec: widgetSettings.leftClickExec || widgetMetadata.leftClickExec
   readonly property bool leftClickUpdateText: widgetSettings.leftClickUpdateText ?? widgetMetadata.leftClickUpdateText
   readonly property string rightClickExec: widgetSettings.rightClickExec || widgetMetadata.rightClickExec
@@ -200,6 +201,7 @@ Item {
     opacity: _pillOpacity
     screen: root.screen
     oppositeDirection: BarService.getPillDirection(root)
+    iconPosition: root.iconPosition
     icon: _pillIcon
     text: _pillText
     rotateText: isVerticalBar && currentMaxTextLength > 0

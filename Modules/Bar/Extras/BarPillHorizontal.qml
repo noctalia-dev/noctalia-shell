@@ -18,6 +18,7 @@ Item {
   property bool forceOpen: false
   property bool forceClose: false
   property bool oppositeDirection: false
+  property string iconPosition: "left"
   property bool hovered: false
   property color customBackgroundColor: "transparent"
   property color customTextIconColor: "transparent"
@@ -111,16 +112,18 @@ Item {
     x: {
       if (!hasIcon)
         return 0;
-      return oppositeDirection ? (iconCircle.x + iconCircle.width / 2) : (iconCircle.x + iconCircle.width / 2) - width;
+      return iconPosition === "right"
+        ? (iconCircle.x + iconCircle.width / 2) - width
+        : (iconCircle.x + iconCircle.width / 2);
     }
 
     opacity: revealed ? Style.opacityFull : Style.opacityNone
     color: "transparent" // Make pill background transparent to avoid double opacity
 
-    topLeftRadius: oppositeDirection ? 0 : Style.radiusM
-    bottomLeftRadius: oppositeDirection ? 0 : Style.radiusM
-    topRightRadius: oppositeDirection ? Style.radiusM : 0
-    bottomRightRadius: oppositeDirection ? Style.radiusM : 0
+    topLeftRadius: iconPosition === "right" ? Style.radiusM : 0
+    bottomLeftRadius: iconPosition === "right" ? Style.radiusM : 0
+    topRightRadius: iconPosition === "right" ? 0 : Style.radiusM
+    bottomRightRadius: iconPosition === "right" ? 0 : Style.radiusM
     anchors.verticalCenter: parent.verticalCenter
 
     NText {
@@ -132,10 +135,10 @@ Item {
 
         // Better text horizontal centering
         var centerX = (parent.width - width) / 2;
-        var offset = oppositeDirection ? Style.marginXS : -Style.marginXS;
+        var offset = iconPosition === "right" ? -Style.marginXS : Style.marginXS;
         if (forceOpen) {
           // If its force open, the icon disc background is the same color as the bg pill move text slightly
-          offset += oppositeDirection ? -Style.marginXXS : Style.marginXXS;
+          offset += iconPosition === "right" ? Style.marginXXS : -Style.marginXXS;
         }
         return centerX + offset;
       }
@@ -171,7 +174,7 @@ Item {
     color: "transparent" // Make icon background transparent to avoid double opacity
     anchors.verticalCenter: parent.verticalCenter
 
-    x: oppositeDirection ? 0 : (parent.width - width)
+    x: iconPosition === "right" ? (parent.width - width) : 0
 
     NIcon {
       icon: root.icon

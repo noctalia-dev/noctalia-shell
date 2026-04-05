@@ -131,6 +131,7 @@ Singleton {
                                   "CustomButton": {
                                     "icon": "heart",
                                     "showIcon": true,
+                                    "iconPosition": "left",
                                     "showExecTooltip": true,
                                     "showTextTooltip": true,
                                     "generalTooltipText": "",
