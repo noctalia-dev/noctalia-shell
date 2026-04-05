@@ -23,6 +23,7 @@ void InputDispatcher::pointerEnter(float x, float y, std::uint32_t serial) {
 }
 
 void InputDispatcher::pointerLeave() {
+  m_capturedArea = nullptr;
   if (m_hoveredArea != nullptr) {
     m_hoveredArea->dispatchLeave();
     m_hoveredArea = nullptr;
@@ -37,12 +38,19 @@ void InputDispatcher::pointerMotion(float x, float y, std::uint32_t serial) {
 }
 
 bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool pressed) {
-  if (m_hoveredArea != nullptr) {
+  InputArea* target = m_capturedArea != nullptr ? m_capturedArea : m_hoveredArea;
+  if (target != nullptr) {
     float absX = 0.0f, absY = 0.0f;
-    Node::absolutePosition(m_hoveredArea, absX, absY);
-    m_hoveredArea->dispatchPress(x - absX, y - absY, button, pressed);
-    if (pressed && m_hoveredArea->focusable()) {
-      setFocus(m_hoveredArea);
+    Node::absolutePosition(target, absX, absY);
+    target->dispatchPress(x - absX, y - absY, button, pressed);
+    if (pressed) {
+      m_capturedArea = target;
+      if (target->focusable()) {
+        setFocus(target);
+      }
+    } else {
+      m_capturedArea = nullptr;
+      updateHover(x, y, m_lastSerial);
     }
     return true;
   }
@@ -94,6 +102,15 @@ InputArea* InputDispatcher::findInputAreaAt(float x, float y) {
 }
 
 void InputDispatcher::updateHover(float x, float y, std::uint32_t serial) {
+  // While a button is held, all motion goes to the captured area; hover stays frozen.
+  if (m_capturedArea != nullptr) {
+    float absX = 0.0f, absY = 0.0f;
+    Node::absolutePosition(m_capturedArea, absX, absY);
+    m_capturedArea->dispatchMotion(x - absX, y - absY);
+    updateCursor(serial);
+    return;
+  }
+
   auto* area = findInputAreaAt(x, y);
 
   if (area != m_hoveredArea) {
@@ -123,6 +140,9 @@ void InputDispatcher::trackArea(InputArea* area) {
     }
     if (m_focusedArea == a) {
       m_focusedArea = nullptr;
+    }
+    if (m_capturedArea == a) {
+      m_capturedArea = nullptr;
     }
   });
 }

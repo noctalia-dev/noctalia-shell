@@ -40,5 +40,6 @@ private:
   CursorShapeCallback m_cursorShapeCallback;
   InputArea* m_hoveredArea = nullptr;
   InputArea* m_focusedArea = nullptr;
+  InputArea* m_capturedArea = nullptr; // held while any button is pressed
   std::uint32_t m_lastSerial = 0;
 };
