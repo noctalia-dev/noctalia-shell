@@ -24,6 +24,7 @@
 #include "system/system_monitor_service.h"
 #include "time/time_poll_source.h"
 #include "time/time_service.h"
+#include "wayland/key_repeat_poll_source.h"
 #include "wayland/wayland_connection.h"
 
 #include <atomic>
@@ -67,6 +68,7 @@ private:
   TimePollSource m_timePollSource{m_timeService};
   ConfigPollSource m_configPollSource{m_configService};
   StatePollSource m_statePollSource{m_stateService};
+  KeyRepeatPollSource m_keyRepeatPollSource{m_wayland};
 
   std::unique_ptr<MainLoop> m_mainLoop;
 };

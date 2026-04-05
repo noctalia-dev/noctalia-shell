@@ -137,6 +137,10 @@ void WaylandConnection::setKeyboardEventCallback(WaylandSeat::KeyboardEventCallb
   m_seatHandler.setKeyboardEventCallback(std::move(callback));
 }
 
+int WaylandConnection::repeatPollTimeoutMs() const { return m_seatHandler.repeatPollTimeoutMs(); }
+
+void WaylandConnection::repeatTick() { m_seatHandler.repeatTick(); }
+
 void WaylandConnection::setCursorShape(std::uint32_t serial, std::uint32_t shape) {
   m_seatHandler.setCursorShape(serial, shape);
 }

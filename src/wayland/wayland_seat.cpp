@@ -86,6 +86,7 @@ void WaylandSeat::cleanup() {
     wl_keyboard_destroy(m_keyboard);
     m_keyboard = nullptr;
   }
+  m_repeatActive = false;
 }
 
 void WaylandSeat::handleSeatCapabilities(void* data, wl_seat* seat, std::uint32_t caps) {
@@ -266,13 +267,24 @@ void WaylandSeat::handleKeyboardKey(void* data, wl_keyboard* /*keyboard*/, std::
   if (xkb_state_mod_name_is_active(self->m_xkbState, XKB_MOD_NAME_LOGO, XKB_STATE_MODS_EFFECTIVE) > 0)
     mods |= KeyMod::Super;
 
+  const bool pressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
+
   self->m_keyboardEventCallback(KeyboardEvent{
       .sym = sym,
       .utf32 = utf32,
       .key = key,
       .modifiers = mods,
-      .pressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED),
+      .pressed = pressed,
   });
+
+  if (pressed && self->m_repeatRate > 0) {
+    self->m_repeatKey = KeyboardEvent{.sym = sym, .utf32 = utf32, .key = key, .modifiers = mods, .pressed = true};
+    self->m_repeatActive = true;
+    self->m_repeatInDelay = true;
+    self->m_repeatNextFire = SteadyClock::now() + std::chrono::milliseconds(self->m_repeatDelayMs);
+  } else if (!pressed && self->m_repeatKey.key == key) {
+    self->m_repeatActive = false;
+  }
 }
 
 void WaylandSeat::handleKeyboardModifiers(void* data, wl_keyboard* /*keyboard*/, std::uint32_t /*serial*/,
@@ -284,5 +296,35 @@ void WaylandSeat::handleKeyboardModifiers(void* data, wl_keyboard* /*keyboard*/,
   }
 }
 
-void WaylandSeat::handleKeyboardRepeatInfo(void* /*data*/, wl_keyboard* /*keyboard*/, std::int32_t /*rate*/,
-                                           std::int32_t /*delay*/) {}
+void WaylandSeat::handleKeyboardRepeatInfo(void* data, wl_keyboard* /*keyboard*/, std::int32_t rate,
+                                           std::int32_t delay) {
+  auto* self = static_cast<WaylandSeat*>(data);
+  self->m_repeatRate = rate;
+  self->m_repeatDelayMs = delay;
+}
+
+int WaylandSeat::repeatPollTimeoutMs() const {
+  if (!m_repeatActive || m_repeatRate <= 0) {
+    return -1;
+  }
+  const auto now = SteadyClock::now();
+  if (now >= m_repeatNextFire) {
+    return 0;
+  }
+  const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(m_repeatNextFire - now).count();
+  return static_cast<int>(std::min<long long>(ms, std::numeric_limits<int>::max()));
+}
+
+void WaylandSeat::repeatTick() {
+  if (!m_repeatActive || m_repeatRate <= 0 || !m_keyboardEventCallback) {
+    return;
+  }
+  const auto now = SteadyClock::now();
+  if (now < m_repeatNextFire) {
+    return;
+  }
+  m_keyboardEventCallback(m_repeatKey);
+  m_repeatInDelay = false;
+  const auto intervalMs = std::chrono::milliseconds(1000 / m_repeatRate);
+  m_repeatNextFire = now + intervalMs;
+}

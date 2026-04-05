@@ -1,7 +1,9 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <vector>
 
 struct wl_array;
@@ -54,6 +56,10 @@ public:
   void setCursorShape(std::uint32_t serial, std::uint32_t shape);
   void cleanup();
 
+  // Key repeat — driven by KeyRepeatPollSource
+  [[nodiscard]] int repeatPollTimeoutMs() const;
+  void repeatTick();
+
   // Pointer listener entrypoints
   static void handleSeatCapabilities(void* data, wl_seat* seat, std::uint32_t caps);
   static void handleSeatName(void* data, wl_seat* seat, const char* name);
@@ -97,4 +103,13 @@ private:
   xkb_keymap* m_xkbKeymap = nullptr;
   xkb_state* m_xkbState = nullptr;
   KeyboardEventCallback m_keyboardEventCallback;
+
+  // Key repeat
+  using SteadyClock = std::chrono::steady_clock;
+  std::int32_t m_repeatRate = 0;     // chars/sec; 0 = no repeat
+  std::int32_t m_repeatDelayMs = 0;  // initial delay in ms
+  KeyboardEvent m_repeatKey;
+  bool m_repeatActive = false;
+  bool m_repeatInDelay = false;
+  SteadyClock::time_point m_repeatNextFire;
 };

@@ -231,6 +231,9 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
   }
   m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed);
   if (m_surface != nullptr && m_sceneRoot != nullptr && m_sceneRoot->dirty()) {
+    if (m_renderContext != nullptr && m_activePanel != nullptr) {
+      m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
+    }
     m_surface->requestRedraw();
   }
 }
@@ -301,7 +304,9 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
 
   // Layout panel content with padding
   constexpr float kPadding = 12.0f;
-  m_activePanel->layout(*renderer, w - kPadding * 2.0f, h - kPadding * 2.0f);
+  m_contentWidth = w - kPadding * 2.0f;
+  m_contentHeight = h - kPadding * 2.0f;
+  m_activePanel->layout(*renderer, m_contentWidth, m_contentHeight);
   if (m_contentNode != nullptr) {
     m_contentNode->setPosition(kPadding, kPadding);
     m_contentNode->setSize(w - kPadding * 2.0f, h - kPadding * 2.0f);

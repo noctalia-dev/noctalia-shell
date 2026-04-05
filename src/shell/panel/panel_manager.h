@@ -65,6 +65,8 @@ private:
   std::string m_activePanelId;
 
   wl_surface* m_wlSurface = nullptr;
+  float m_contentWidth = 0.0f;
+  float m_contentHeight = 0.0f;
   bool m_pointerInside = false;
   bool m_inTransition = false;
   bool m_closing = false;

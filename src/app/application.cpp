@@ -204,6 +204,7 @@ void Application::run() {
   sources.push_back(&m_timePollSource);
   sources.push_back(&m_configPollSource);
   sources.push_back(&m_statePollSource);
+  sources.push_back(&m_keyRepeatPollSource);
 
   m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, std::move(sources));
   m_mainLoop->run();

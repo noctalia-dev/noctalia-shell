@@ -49,6 +49,9 @@ public:
   void setPointerEventCallback(WaylandSeat::PointerEventCallback callback);
   void setKeyboardEventCallback(WaylandSeat::KeyboardEventCallback callback);
   void setCursorShape(std::uint32_t serial, std::uint32_t shape);
+
+  [[nodiscard]] int repeatPollTimeoutMs() const;
+  void repeatTick();
   void activateWorkspace(const std::string& id);
   void activateWorkspace(wl_output* output, const std::string& id);
   void activateWorkspace(wl_output* output, const Workspace& workspace);
