@@ -24,7 +24,7 @@ void TestWidget::create(Renderer& renderer) {
   });
 
   auto icon = std::make_unique<Icon>();
-  icon->setIcon("settings");
+  icon->setIcon("flask");
   icon->setColor(palette.onSurface);
   m_icon = icon.get();
   area->addChild(std::move(icon));

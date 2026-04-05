@@ -108,6 +108,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"caret-down", 0xFB2A},        // caret-down-filled
     {"caret-left", 0xFB2B},        // caret-left-filled
     {"caret-right", 0xFB2C},       // caret-right-filled
+    {"square-filled", 0xFC40},     // square-filled
 
     // Wallpaper / color
     {"camera-video", 0xED22},      // video
@@ -194,6 +195,8 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     // Branding
     {"noctalia", 0xEC33},          // noctalia
     {"hyprland", 0xEC6A},          // hyprland
+
+    {"flask", 0xEBD2}             // flask
 };
 // clang-format on
 
