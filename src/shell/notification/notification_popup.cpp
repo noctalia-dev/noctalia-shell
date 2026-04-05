@@ -25,9 +25,10 @@ constexpr int kMaxVisible = 5;
 constexpr float kProgressHeight = 3.0f;
 constexpr float kCardInnerPad = 10.0f;
 
-constexpr float kMetaFontSize = 12.0f;
-constexpr float kSummaryFontSize = 14.0f;
-constexpr float kBodyFontSize = 12.0f;
+constexpr float kMetaFontSize = Style::fontSizeCaption;
+constexpr float kSummaryFontSize = Style::fontSizeTitle;
+constexpr float kBodyFontSize = Style::fontSizeBody;
+
 constexpr float kMetaAscent = 10.0f;
 constexpr float kSummaryAscent = 12.0f;
 constexpr float kBodyAscent = 10.0f;
