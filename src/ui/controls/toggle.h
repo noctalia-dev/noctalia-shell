@@ -1,6 +1,5 @@
 #pragma once
 
-#include "render/animation/animation_manager.h"
 #include "ui/controls/flex.h"
 
 enum class ToggleSize : std::uint8_t {
@@ -16,8 +15,6 @@ public:
   void setChecked(bool checked);
   void setEnabled(bool enabled);
   void setToggleSize(ToggleSize size);
-  void setAnimationManager(AnimationManager* mgr) noexcept { m_animations = mgr; }
-
   [[nodiscard]] bool checked() const noexcept { return m_checked; }
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
   [[nodiscard]] ToggleSize toggleSize() const noexcept { return m_size; }
@@ -28,8 +25,7 @@ private:
   void applyAnimatedState(float t);
 
   class RectNode* m_thumb = nullptr;
-  AnimationManager* m_animations = nullptr;
-  AnimationManager::Id m_animId = 0;
+  std::uint32_t m_animId = 0;
   ToggleSize m_size = ToggleSize::Medium;
   bool m_checked = false;
   bool m_enabled = true;

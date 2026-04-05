@@ -211,6 +211,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
   if (instance.sceneRoot == nullptr) {
     instance.sceneRoot = std::make_unique<Node>();
+    instance.sceneRoot->setAnimationManager(&instance.animations);
     instance.sceneRoot->setSize(w, h);
 
     // Bar background

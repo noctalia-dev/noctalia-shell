@@ -1,5 +1,6 @@
 #include "ui/controls/button.h"
 
+#include "render/animation/animation_manager.h"
 #include "render/scene/input_area.h"
 #include "ui/controls/icon.h"
 #include "ui/controls/label.h"
@@ -205,7 +206,7 @@ void Button::applyVisualState() {
     targetLabel = m_labelColorNormal;
   }
 
-  if (m_animations == nullptr) {
+  if (animationManager() == nullptr) {
     applyColors(targetBg, targetBorder, targetLabel);
     return;
   }
@@ -219,10 +220,10 @@ void Button::applyVisualState() {
   m_targetLabel = targetLabel;
 
   if (m_animId != 0) {
-    m_animations->cancel(m_animId);
+    animationManager()->cancel(m_animId);
   }
 
-  m_animId = m_animations->animate(
+  m_animId = animationManager()->animate(
       0.0f, 1.0f, Style::animFast, Easing::EaseOutCubic,
       [this](float t) {
         applyColors(lerpColor(m_fromBg, m_targetBg, t), lerpColor(m_fromBorder, m_targetBorder, t),

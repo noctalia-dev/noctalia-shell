@@ -1,5 +1,6 @@
 #include "ui/controls/toggle.h"
 
+#include "render/animation/animation_manager.h"
 #include "render/core/color.h"
 #include "render/programs/rounded_rect_program.h"
 #include "render/scene/rect_node.h"
@@ -27,13 +28,13 @@ void Toggle::setChecked(bool checked) {
   }
   m_checked = checked;
 
-  if (m_animations != nullptr) {
+  if (animationManager() != nullptr) {
     if (m_animId != 0) {
-      m_animations->cancel(m_animId);
+      animationManager()->cancel(m_animId);
     }
     float from = m_checked ? 0.0f : 1.0f;
     float to = m_checked ? 1.0f : 0.0f;
-    m_animId = m_animations->animate(from, to, Style::animFast, Easing::EaseOutCubic,
+    m_animId = animationManager()->animate(from, to, Style::animFast, Easing::EaseOutCubic,
                                      [this](float t) { applyAnimatedState(t); },
                                      [this]() { m_animId = 0; });
     // Mark dirty so the surface's frame loop restarts and ticks the animation

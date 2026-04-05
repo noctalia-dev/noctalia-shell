@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+class AnimationManager;
+
 enum class NodeType : std::uint8_t {
   Base,
   Rect,
@@ -48,6 +50,9 @@ public:
   Node* insertChildAt(std::size_t index, std::unique_ptr<Node> child);
   std::unique_ptr<Node> removeChild(Node* child);
 
+  void setAnimationManager(AnimationManager* mgr);
+  [[nodiscard]] AnimationManager* animationManager() const noexcept { return m_animationManager; }
+
   void setUserData(void* data) noexcept { m_userData = data; }
   [[nodiscard]] void* userData() const noexcept { return m_userData; }
 
@@ -71,6 +76,7 @@ private:
   bool m_dirty = true;
   std::int32_t m_zIndex = 0;
   void* m_userData = nullptr;
+  AnimationManager* m_animationManager = nullptr;
   Node* m_parent = nullptr;
   std::vector<std::unique_ptr<Node>> m_children;
 };

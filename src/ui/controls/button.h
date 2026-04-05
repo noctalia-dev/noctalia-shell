@@ -2,11 +2,12 @@
 
 #include "ui/controls/flex.h"
 
-#include "render/animation/animation_manager.h"
 #include "render/core/color.h"
 
 #include <functional>
 #include <string_view>
+
+class AnimationManager;
 
 class Icon;
 class InputArea;
@@ -31,7 +32,6 @@ public:
   void setVariant(ButtonVariant variant);
   void setOnClick(std::function<void()> callback);
   void setCursorShape(std::uint32_t shape);
-  void setAnimationManager(AnimationManager* mgr) noexcept { m_animations = mgr; }
   void layout(Renderer& renderer) override;
 
   // Call after layout() to sync InputArea bounds
@@ -52,8 +52,7 @@ private:
   Icon* m_icon = nullptr;
   Label* m_label = nullptr;
   InputArea* m_inputArea = nullptr;
-  AnimationManager* m_animations = nullptr;
-  AnimationManager::Id m_animId = 0;
+  std::uint32_t m_animId = 0;
   std::function<void()> m_onClick;
   ButtonVariant m_variant = ButtonVariant::Default;
   Color m_bgColorNormal{};

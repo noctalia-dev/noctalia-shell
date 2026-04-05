@@ -50,7 +50,6 @@ void TestPanel::create(Renderer& renderer) {
   button->setText("Hello");
   button->setVariant(ButtonVariant::Default);
   button->setOnClick([]() {});
-  button->setAnimationManager(m_animations);
   m_button = button.get();
   {
     auto row = makeRow();
@@ -64,7 +63,6 @@ void TestPanel::create(Renderer& renderer) {
   iconButton->setIcon("settings");
   iconButton->setVariant(ButtonVariant::Default);
   iconButton->setOnClick([]() {});
-  iconButton->setAnimationManager(m_animations);
   m_iconButton = iconButton.get();
   {
     auto row = makeRow();
@@ -121,7 +119,6 @@ void TestPanel::create(Renderer& renderer) {
   auto toggle = std::make_unique<Toggle>();
   toggle->setToggleSize(ToggleSize::Medium);
   toggle->setChecked(false);
-  toggle->setAnimationManager(m_animations);
   m_toggle = toggle.get();
   area->addChild(std::move(toggle));
 
@@ -135,8 +132,6 @@ void TestPanel::create(Renderer& renderer) {
 
   {
     auto spinner = std::make_unique<Spinner>();
-    spinner->setAnimationManager(m_animations);
-    spinner->start();
     m_spinner = spinner.get();
     auto row = makeRow();
     row->addChild(makeRowLabel("Spinner", kRowLabelWidth));
@@ -168,6 +163,16 @@ void TestPanel::create(Renderer& renderer) {
   }
 
   m_root = std::move(container);
+
+  // Propagate animation manager to all controls in the tree
+  if (m_animations != nullptr) {
+    m_root->setAnimationManager(m_animations);
+  }
+
+  // Start spinner after animation manager is propagated
+  if (m_spinner != nullptr) {
+    m_spinner->start();
+  }
 
   if (m_headerLabel != nullptr) {
     m_headerLabel->measure(renderer);

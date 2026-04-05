@@ -252,6 +252,7 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
 
   if (m_sceneRoot == nullptr) {
     m_sceneRoot = std::make_unique<Node>();
+    m_sceneRoot->setAnimationManager(&m_animations);
 
     // Panel background
     auto bg = std::make_unique<Box>();

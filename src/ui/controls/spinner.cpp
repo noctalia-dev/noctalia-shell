@@ -1,5 +1,6 @@
 #include "ui/controls/spinner.h"
 
+#include "render/animation/animation_manager.h"
 #include "render/scene/spinner_node.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -45,18 +46,18 @@ void Spinner::start() {
 
 void Spinner::stop() {
   m_spinning = false;
-  if (m_animations != nullptr && m_animId != 0) {
-    m_animations->cancel(m_animId);
+  if (animationManager() != nullptr && m_animId != 0) {
+    animationManager()->cancel(m_animId);
     m_animId = 0;
   }
 }
 
 void Spinner::startLoop() {
-  if (m_animations == nullptr || !m_spinning) {
+  if (animationManager() == nullptr || !m_spinning) {
     return;
   }
 
-  m_animId = m_animations->animate(
+  m_animId = animationManager()->animate(
       0.0f, kTwoPi, kRevolutionMs, Easing::Linear,
       [this](float angle) {
         m_spinnerNode->setRotation(angle);

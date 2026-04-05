@@ -65,8 +65,18 @@ void Node::setZIndex(std::int32_t zIndex) {
   markDirty();
 }
 
+void Node::setAnimationManager(AnimationManager* mgr) {
+  m_animationManager = mgr;
+  for (auto& child : m_children) {
+    child->setAnimationManager(mgr);
+  }
+}
+
 Node* Node::addChild(std::unique_ptr<Node> child) {
   child->m_parent = this;
+  if (m_animationManager != nullptr && child->m_animationManager == nullptr) {
+    child->setAnimationManager(m_animationManager);
+  }
   auto* raw = child.get();
   m_children.push_back(std::move(child));
   markDirty();
@@ -75,6 +85,9 @@ Node* Node::addChild(std::unique_ptr<Node> child) {
 
 Node* Node::insertChildAt(std::size_t index, std::unique_ptr<Node> child) {
   child->m_parent = this;
+  if (m_animationManager != nullptr && child->m_animationManager == nullptr) {
+    child->setAnimationManager(m_animationManager);
+  }
   auto* raw = child.get();
   if (index >= m_children.size()) {
     m_children.push_back(std::move(child));
