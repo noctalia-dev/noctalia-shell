@@ -138,7 +138,6 @@ src/
   ui/
     controls/    Low-level UI building blocks
     icons/       Icon registry
-    style/       Palette and styling
   wayland/       Wayland connection, layer-shell surfaces
 third_party/
   msdfgen/       MSDF glyph generation (git submodule)
@@ -167,9 +166,10 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ## Roadmap
 
-### Bar completion
+### Bar completion and foundation
 
 - [~] System tray (StatusNotifierItem via DBus) - watcher + tray count MVP
+- [~] Keyboard Input
 - [ ] Audio service (Pipewire) + volume OSD
 - [ ] Notification indicator + notification popup UI
 
@@ -184,12 +184,12 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Desktop shell
 
-- [ ] Control center panel
+- [ ] Application launcher / search
+- [ ] Control center panel (Weather, Media, Audio vol., )
 - [ ] Keyboard layout switching
 - [ ] PipeWire audio spectrum
 - [ ] Clipboard manager
 - [ ] Host/distro detection
-- [ ] Application launcher / search
 - [ ] Lock screen (ext-session-lock-v1)
 - [ ] Idle inhibitor (prevent sleep)
 - [ ] More compositors (Mango, Sway, Labwc)
@@ -206,12 +206,12 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Ecosystem
 
+- [ ] Geolocation (weather)
 - [ ] Compositor integration (Hyprland)
-- [ ] Plugin system
 - [ ] Desktop widgets
 - [ ] Update checker
 - [ ] Calendar integration
-- [ ] Geolocation (weather)
+- [ ] Plugin system
 
 ### Controls (`src/ui/controls/`)
 
@@ -221,10 +221,10 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [x] Slider
 - [X] Select
 - [x] Spinner
+- [~] Input
 - [ ] Progress bar
 - [ ] Scroll view
 - [ ] List view
-- [ ] Text input
 - [ ] Checkbox
 - [ ] Radio button
 - [ ] Tab bar
