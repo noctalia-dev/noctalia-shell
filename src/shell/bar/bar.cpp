@@ -92,7 +92,11 @@ void Bar::onWorkspaceChange() {
     }
     m_renderContext->makeCurrent(inst->surface->renderTarget());
     updateWidgets(*inst);
-    inst->surface->renderNow();
+    if (inst->sceneRoot != nullptr && (inst->sceneRoot->dirty() || inst->animations.hasActive())) {
+      inst->surface->requestRedraw();
+    } else {
+      inst->surface->renderNow();
+    }
   }
 }
 
@@ -238,6 +242,11 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     auto initWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets, Box* section) {
       for (auto& widget : widgets) {
         widget->setAnimationManager(&instance.animations);
+        widget->setRedrawCallback([surface = instance.surface.get()]() {
+          if (surface != nullptr) {
+            surface->requestRedraw();
+          }
+        });
         widget->create(*renderer);
         if (widget->root() != nullptr) {
           section->addChild(widget->releaseRoot());

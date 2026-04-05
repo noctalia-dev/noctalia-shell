@@ -247,8 +247,17 @@ void NotificationPopup::addPopup(const Notification& n) {
     }
   }
 
-  while (static_cast<int>(m_entries.size()) >= kMaxVisible) {
-    dismissPopup(0);
+  int visibleCount = static_cast<int>(std::count_if(m_entries.begin(), m_entries.end(),
+                                                    [](const PopupEntry& entry) { return !entry.exiting; }));
+  while (visibleCount >= kMaxVisible) {
+    const auto it = std::find_if(m_entries.begin(), m_entries.end(),
+                                 [](const PopupEntry& entry) { return !entry.exiting; });
+    if (it == m_entries.end()) {
+      break;
+    }
+
+    dismissPopup(static_cast<std::size_t>(std::distance(m_entries.begin(), it)));
+    --visibleCount;
   }
 
   ensureSurfaces();
@@ -297,15 +306,36 @@ void NotificationPopup::dismissPopup(std::size_t index) {
   }
 }
 
-void NotificationPopup::finishRemoval(std::size_t index) {
-  if (index >= m_entries.size()) {
+void NotificationPopup::finishRemoval(uint32_t notificationId) {
+  const auto it = std::find_if(m_entries.begin(), m_entries.end(),
+                               [notificationId](const PopupEntry& entry) { return entry.notificationId == notificationId; });
+  if (it == m_entries.end()) {
     return;
   }
+  const std::size_t index = static_cast<std::size_t>(std::distance(m_entries.begin(), it));
 
   // Remove card nodes from all instances
   for (auto& inst : m_instances) {
     if (index < inst->cards.size()) {
-      Node* card = inst->cards[index].cardNode;
+      auto& cs = inst->cards[index];
+      if (cs.countdownAnimId != 0) {
+        inst->animations.cancel(cs.countdownAnimId);
+        cs.countdownAnimId = 0;
+      }
+      if (cs.entryAnimId != 0) {
+        inst->animations.cancel(cs.entryAnimId);
+        cs.entryAnimId = 0;
+      }
+      if (cs.slideAnimId != 0) {
+        inst->animations.cancel(cs.slideAnimId);
+        cs.slideAnimId = 0;
+      }
+      if (cs.exitAnimId != 0) {
+        inst->animations.cancel(cs.exitAnimId);
+        cs.exitAnimId = 0;
+      }
+
+      Node* card = cs.cardNode;
       if (inst->sceneRoot != nullptr && card != nullptr) {
         inst->sceneRoot->removeChild(card);
       }
@@ -383,21 +413,33 @@ void NotificationPopup::dismissCardFromInstance(PopupInstance& inst, std::size_t
     inst.animations.cancel(cs.entryAnimId);
     cs.entryAnimId = 0;
   }
+  if (cs.slideAnimId != 0) {
+    inst.animations.cancel(cs.slideAnimId);
+    cs.slideAnimId = 0;
+  }
+  if (cs.exitAnimId != 0) {
+    inst.animations.cancel(cs.exitAnimId);
+    cs.exitAnimId = 0;
+  }
 
   Node* card = cs.cardNode;
   float startX = card->x();
+  const uint32_t removingId = (entryIndex < m_entries.size()) ? m_entries[entryIndex].notificationId : 0;
 
   // Only the first instance drives finishRemoval
   bool isDriver = (m_instances.size() > 0 && m_instances[0].get() == &inst);
-  inst.animations.animate(
+  cs.exitAnimId = inst.animations.animate(
       1.0f, 0.0f, Style::animNormal, Easing::EaseInOutQuad,
       [card, startX](float v) {
         card->setOpacity(v);
         card->setPosition(startX + 20.0f * (1.0f - v), card->y());
       },
-      [this, entryIndex, isDriver]() {
-        if (isDriver) {
-          DeferredCall::callLater([this, entryIndex]() { finishRemoval(entryIndex); });
+      [this, &inst, entryIndex, isDriver, removingId]() {
+        if (entryIndex < inst.cards.size()) {
+          inst.cards[entryIndex].exitAnimId = 0;
+        }
+        if (isDriver && removingId != 0) {
+          DeferredCall::callLater([this, removingId]() { finishRemoval(removingId); });
         }
       });
 

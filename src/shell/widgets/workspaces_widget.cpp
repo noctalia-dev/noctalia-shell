@@ -2,6 +2,7 @@
 #include "ui/style.h"
 
 #include "core/log.h"
+#include "render/animation/animation.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
@@ -32,10 +33,14 @@ void WorkspacesWidget::update(Renderer& renderer) {
     return;
   }
 
+  const auto previousActiveX = activeCoordinateX(m_cachedState);
+  const auto currentActiveX = activeCoordinateX(current);
+
   bool changed = current.size() != m_cachedState.size();
   if (!changed) {
     for (std::size_t i = 0; i < current.size(); ++i) {
-      if (current[i].name != m_cachedState[i].name || current[i].active != m_cachedState[i].active) {
+      if (current[i].name != m_cachedState[i].name || current[i].active != m_cachedState[i].active ||
+          current[i].coordinates != m_cachedState[i].coordinates) {
         changed = true;
         break;
       }
@@ -52,6 +57,16 @@ void WorkspacesWidget::update(Renderer& renderer) {
     }
 
     rebuild(renderer);
+
+    int direction = 0;
+    if (previousActiveX.has_value() && currentActiveX.has_value()) {
+      if (*currentActiveX > *previousActiveX) {
+        direction = 1;
+      } else if (*currentActiveX < *previousActiveX) {
+        direction = -1;
+      }
+    }
+    playSwitchAnimation(direction);
   }
 }
 
@@ -81,4 +96,56 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     area->addChild(std::move(chip));
     m_container->addChild(std::move(area));
   }
+}
+
+void WorkspacesWidget::playSwitchAnimation(int direction) {
+  if (m_container == nullptr || m_animations == nullptr) {
+    return;
+  }
+
+  if (m_slideAnimId != 0) {
+    m_animations->cancel(m_slideAnimId);
+    m_slideAnimId = 0;
+  }
+  if (m_fadeAnimId != 0) {
+    m_animations->cancel(m_fadeAnimId);
+    m_fadeAnimId = 0;
+  }
+
+  const float startX = static_cast<float>(direction) * 14.0f;
+  const float targetY = m_container->y();
+  m_container->setPosition(startX, targetY);
+  m_container->setOpacity(0.78f);
+
+  m_slideAnimId = m_animations->animate(
+      startX, 0.0f, Style::animNormal, Easing::EaseOutCubic,
+      [this, targetY](float x) {
+        if (m_container != nullptr) {
+          m_container->setPosition(x, targetY);
+        }
+      },
+      [this]() { m_slideAnimId = 0; });
+
+  m_fadeAnimId = m_animations->animate(
+      0.78f, 1.0f, Style::animNormal, Easing::EaseOutCubic,
+      [this](float a) {
+        if (m_container != nullptr) {
+          m_container->setOpacity(a);
+        }
+      },
+      [this]() { m_fadeAnimId = 0; });
+
+  requestRedraw();
+}
+
+std::optional<int> WorkspacesWidget::activeCoordinateX(const std::vector<Workspace>& workspaces) {
+  for (const auto& ws : workspaces) {
+    if (!ws.active) {
+      continue;
+    }
+    if (!ws.coordinates.empty()) {
+      return static_cast<int>(ws.coordinates[0]);
+    }
+  }
+  return std::nullopt;
 }
