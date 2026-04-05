@@ -172,15 +172,15 @@ void ConfigService::loadFromFile(const std::string& path) {
       if (auto v = (*barTbl)["enabled"].value<bool>())
         bar.enabled = *v;
       if (auto v = (*barTbl)["height"].value<int64_t>())
-        bar.height = static_cast<std::uint32_t>(*v);
+        bar.height = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["margin_h"].value<int64_t>())
         bar.marginH = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["margin_v"].value<int64_t>())
         bar.marginV = static_cast<std::int32_t>(*v);
-      if (auto v = (*barTbl)["padding"].value<double>())
-        bar.padding = static_cast<float>(*v);
-      if (auto v = (*barTbl)["gap"].value<double>())
-        bar.gap = static_cast<float>(*v);
+      if (auto v = (*barTbl)["padding_h"].value<int64_t>())
+        bar.paddingH = static_cast<std::int32_t>(*v);
+      if (auto v = (*barTbl)["widget_spacing"].value<int64_t>())
+        bar.widgetSpacing = static_cast<std::int32_t>(*v);
       if (auto* n = (*barTbl)["start"].as_array())
         bar.startWidgets = readStringArray(*n);
       if (auto* n = (*barTbl)["center"].as_array())
@@ -206,11 +206,11 @@ void ConfigService::loadFromFile(const std::string& path) {
           if (auto v = (*monTbl)["enabled"].value<bool>())
             ovr.enabled = *v;
           if (auto v = (*monTbl)["height"].value<int64_t>())
-            ovr.height = static_cast<std::uint32_t>(*v);
-          if (auto v = (*monTbl)["padding"].value<double>())
-            ovr.padding = static_cast<float>(*v);
-          if (auto v = (*monTbl)["gap"].value<double>())
-            ovr.gap = static_cast<float>(*v);
+            ovr.height = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["padding_h"].value<int64_t>())
+            ovr.paddingH = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["widget_spacing"].value<int64_t>())
+            ovr.widgetSpacing = static_cast<std::int32_t>(*v);
           if (auto* n = (*monTbl)["start"].as_array())
             ovr.startWidgets = readStringArray(*n);
           if (auto* n = (*monTbl)["center"].as_array())
@@ -293,10 +293,10 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.enabled = *ovr.enabled;
     if (ovr.height)
       resolved.height = *ovr.height;
-    if (ovr.padding)
-      resolved.padding = *ovr.padding;
-    if (ovr.gap)
-      resolved.gap = *ovr.gap;
+    if (ovr.paddingH)
+      resolved.paddingH = *ovr.paddingH;
+    if (ovr.widgetSpacing)
+      resolved.widgetSpacing = *ovr.widgetSpacing;
     if (ovr.startWidgets)
       resolved.startWidgets = *ovr.startWidgets;
     if (ovr.centerWidgets)

@@ -13,9 +13,9 @@ struct WaylandOutput;
 struct BarMonitorOverride {
   std::string match;
   std::optional<bool> enabled;
-  std::optional<std::uint32_t> height;
-  std::optional<float> padding;
-  std::optional<float> gap;
+  std::optional<std::int32_t> height;
+  std::optional<std::int32_t> paddingH;      // horizontal padding from bar edges to start/end sections
+  std::optional<std::int32_t> widgetSpacing; // gap between widgets within a section
   std::optional<std::vector<std::string>> startWidgets;
   std::optional<std::vector<std::string>> centerWidgets;
   std::optional<std::vector<std::string>> endWidgets;
@@ -25,11 +25,11 @@ struct BarConfig {
   std::string name = "default";
   std::string position = "top";
   bool enabled = true;
-  std::uint32_t height = Style::barHeightDefault;
-  std::int32_t marginH = 0; // horizontal compositor margin (left = right = marginH)
-  std::int32_t marginV = 0; // vertical compositor margin (gap between bar and screen edge)
-  float padding = 16.0f;
-  float gap = 8.0f;
+  std::int32_t height = Style::barHeightDefault;
+  std::int32_t marginH = 0;       // horizontal compositor margin (left = right = marginH)
+  std::int32_t marginV = 0;       // vertical compositor margin (gap between bar and screen edge)
+  std::int32_t paddingH = 16;     // horizontal padding from bar edges to start/end sections
+  std::int32_t widgetSpacing = 8; // gap between widgets within a section
   std::vector<std::string> startWidgets = {};
   std::vector<std::string> centerWidgets = {"workspaces"};
   std::vector<std::string> endWidgets = {"test", "tray", "volume", "notifications", "clock"};
@@ -61,7 +61,7 @@ struct WallpaperConfig {
   bool enabled = true;
   WallpaperFillMode fillMode = WallpaperFillMode::Crop;
   WallpaperTransition transition = WallpaperTransition::Fade;
-  float transitionDurationMs = 800.0f;
+  float transitionDurationMs = 1500.0f;
   float edgeSmoothness = 0.5f;
 };
 

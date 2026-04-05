@@ -158,20 +158,21 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
   // The exclusive zone includes the margin so other windows are pushed far enough.
   const std::int32_t mH = barConfig.marginH;
   const std::int32_t mV = barConfig.marginV;
-  const std::int32_t totalExclusive = static_cast<std::int32_t>(barConfig.height) + mV;
+  const std::int32_t totalExclusive = barConfig.height + mV;
+  const auto uHeight = static_cast<std::uint32_t>(barConfig.height);
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-" + barConfig.name,
       .layer = LayerShellLayer::Top,
       .anchor = anchor,
-      .width = vertical ? barConfig.height : 0,
-      .height = vertical ? 0 : barConfig.height,
+      .width = vertical ? uHeight : 0,
+      .height = vertical ? 0u : uHeight,
       .exclusiveZone = totalExclusive,
       .marginTop = (barConfig.position == "top") ? mV : 0,
       .marginRight = mH,
       .marginBottom = (barConfig.position == "bottom") ? mV : 0,
       .marginLeft = mH,
-      .defaultHeight = vertical ? 0 : barConfig.height,
+      .defaultHeight = vertical ? 0u : uHeight,
   };
 
   instance->surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
@@ -220,8 +221,8 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
   const auto w = static_cast<float>(width);
   const auto h = static_cast<float>(height);
-  const float padding = instance.barConfig.padding;
-  const float gap = instance.barConfig.gap;
+  const float paddingH = static_cast<float>(instance.barConfig.paddingH);
+  const float widgetSpacing = static_cast<float>(instance.barConfig.widgetSpacing);
 
   if (instance.sceneRoot == nullptr) {
     instance.sceneRoot = std::make_unique<Node>();
@@ -234,10 +235,10 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.bg = instance.sceneRoot->addChild(std::move(bg));
 
     // Create section boxes
-    auto makeSection = [gap]() {
+    auto makeSection = [widgetSpacing]() {
       auto box = std::make_unique<Flex>();
       box->setDirection(FlexDirection::Horizontal);
-      box->setGap(gap);
+      box->setGap(widgetSpacing);
       box->setAlign(FlexAlign::Center);
       return box;
     };
@@ -305,13 +306,13 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
   // Position sections
   const float contentY = (h - instance.startSection->height()) * 0.5f;
-  instance.startSection->setPosition(padding, contentY);
+  instance.startSection->setPosition(paddingH, contentY);
 
   const float centerX = (w - instance.centerSection->width()) * 0.5f;
   const float centerY = (h - instance.centerSection->height()) * 0.5f;
   instance.centerSection->setPosition(centerX, centerY);
 
-  const float endX = w - instance.endSection->width() - padding;
+  const float endX = w - instance.endSection->width() - paddingH;
   const float endY = (h - instance.endSection->height()) * 0.5f;
   instance.endSection->setPosition(endX, endY);
 }
@@ -324,7 +325,7 @@ void Bar::updateWidgets(BarInstance& instance) {
 
   const auto w = static_cast<float>(instance.surface->width());
   const auto h = static_cast<float>(instance.surface->height());
-  const float padding = instance.barConfig.padding;
+  const float paddingH = static_cast<float>(instance.barConfig.paddingH);
 
   auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets, Flex* section) {
     bool changed = false;
@@ -347,13 +348,13 @@ void Bar::updateWidgets(BarInstance& instance) {
   // Reposition sections if sizes changed
   if (instance.startSection->dirty() || instance.centerSection->dirty() || instance.endSection->dirty()) {
     const float contentY = (h - instance.startSection->height()) * 0.5f;
-    instance.startSection->setPosition(padding, contentY);
+    instance.startSection->setPosition(paddingH, contentY);
 
     const float centerX = (w - instance.centerSection->width()) * 0.5f;
     const float centerY = (h - instance.centerSection->height()) * 0.5f;
     instance.centerSection->setPosition(centerX, centerY);
 
-    const float endX = w - instance.endSection->width() - padding;
+    const float endX = w - instance.endSection->width() - paddingH;
     const float endY = (h - instance.endSection->height()) * 0.5f;
     instance.endSection->setPosition(endX, endY);
   }
