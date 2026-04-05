@@ -121,8 +121,8 @@ bool pickBestPixmap(const std::vector<IconPixmapTuple>& pixmaps, std::vector<std
 TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
   m_bus.connection().requestName(k_watcher_bus_name);
 
-  m_watcher_object = sdbus::createObject(m_bus.connection(), k_watcher_object_path);
-  m_watcher_object
+  m_watcherObject = sdbus::createObject(m_bus.connection(), k_watcher_object_path);
+  m_watcherObject
       ->addVTable(
           sdbus::registerMethod("RegisterStatusNotifierItem")
               .withInputParamNames("service")
@@ -139,7 +139,7 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
           }),
 
           sdbus::registerProperty("RegisteredStatusNotifierItems").withGetter([this]() { return registeredItems(); }),
-          sdbus::registerProperty("IsStatusNotifierHostRegistered").withGetter([this]() { return m_host_registered; }),
+          sdbus::registerProperty("IsStatusNotifierHostRegistered").withGetter([this]() { return m_hostRegistered; }),
           sdbus::registerProperty("ProtocolVersion").withGetter([]() { return static_cast<std::int32_t>(0); }),
 
           sdbus::registerSignal("StatusNotifierItemRegistered").withParameters<std::string>("service"),
@@ -147,8 +147,8 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
           sdbus::registerSignal("StatusNotifierHostRegistered").withParameters<>())
       .forInterface(k_watcher_interface);
 
-  m_dbus_proxy = sdbus::createProxy(m_bus.connection(), k_dbus_name, k_dbus_path);
-  m_dbus_proxy->uponSignal("NameOwnerChanged")
+  m_dbusProxy = sdbus::createProxy(m_bus.connection(), k_dbus_name, k_dbus_path);
+  m_dbusProxy->uponSignal("NameOwnerChanged")
       .onInterface(k_dbus_interface)
       .call([this](const std::string& name, const std::string& old_owner, const std::string& new_owner) {
         if (!old_owner.empty() && new_owner.empty()) {
@@ -159,7 +159,7 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
   logInfo("tray watcher active on {}", std::string(k_watcher_bus_name));
 }
 
-void TrayService::setChangeCallback(ChangeCallback callback) { m_change_callback = std::move(callback); }
+void TrayService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
 
 std::size_t TrayService::itemCount() const noexcept { return m_items.size(); }
 
@@ -184,8 +184,8 @@ std::vector<std::string> TrayService::registeredItems() const {
 }
 
 bool TrayService::activateItem(const std::string& itemId, std::int32_t x, std::int32_t y) const {
-  const auto it = m_item_proxies.find(itemId);
-  if (it == m_item_proxies.end()) {
+  const auto it = m_itemProxies.find(itemId);
+  if (it == m_itemProxies.end()) {
     return false;
   }
 
@@ -199,8 +199,8 @@ bool TrayService::activateItem(const std::string& itemId, std::int32_t x, std::i
 }
 
 bool TrayService::openContextMenu(const std::string& itemId, std::int32_t x, std::int32_t y) const {
-  const auto it = m_item_proxies.find(itemId);
-  if (it == m_item_proxies.end()) {
+  const auto it = m_itemProxies.find(itemId);
+  if (it == m_itemProxies.end()) {
     return false;
   }
 
@@ -245,14 +245,14 @@ void TrayService::onRegisterStatusNotifierItem(const std::string& service_or_pat
 }
 
 void TrayService::onRegisterStatusNotifierHost(const std::string& host) {
-  if (m_host_registered) {
+  if (m_hostRegistered) {
     return;
   }
-  m_host_registered = true;
+  m_hostRegistered = true;
 
   logInfo("tray host registered: {}", host);
-  m_watcher_object->emitSignal("StatusNotifierHostRegistered").onInterface(k_watcher_interface);
-  m_watcher_object->emitPropertiesChangedSignal(
+  m_watcherObject->emitSignal("StatusNotifierHostRegistered").onInterface(k_watcher_interface);
+  m_watcherObject->emitPropertiesChangedSignal(
       k_watcher_interface, std::vector<sdbus::PropertyName>{sdbus::PropertyName{"IsStatusNotifierHostRegistered"}});
   emitChanged();
 }
@@ -306,7 +306,7 @@ void TrayService::registerOrRefreshItem(const std::string& bus_name, const std::
         .needsAttention = false,
     });
 
-    auto [proxy_it, _] = m_item_proxies.emplace(
+    auto [proxy_it, _] = m_itemProxies.emplace(
         item_id, sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{bus_name}, sdbus::ObjectPath{object_path}));
 
     proxy_it->second->uponSignal("NewIcon").onInterface(k_item_interface).call([this, item_id]() {
@@ -323,8 +323,8 @@ void TrayService::registerOrRefreshItem(const std::string& bus_name, const std::
         .call([this, item_id](const std::string& /*title*/) { refreshItemMetadata(item_id); });
 
     logDebug("tray item registered: {}", item_id);
-    m_watcher_object->emitSignal("StatusNotifierItemRegistered").onInterface(k_watcher_interface).withArguments(item_id);
-    m_watcher_object->emitPropertiesChangedSignal(
+    m_watcherObject->emitSignal("StatusNotifierItemRegistered").onInterface(k_watcher_interface).withArguments(item_id);
+    m_watcherObject->emitPropertiesChangedSignal(
       k_watcher_interface,
       std::vector<sdbus::PropertyName>{sdbus::PropertyName{"RegisteredStatusNotifierItems"}});
   }
@@ -334,8 +334,8 @@ void TrayService::registerOrRefreshItem(const std::string& bus_name, const std::
 
 void TrayService::refreshItemMetadata(const std::string& item_id) {
   const auto item_it = m_items.find(item_id);
-  const auto proxy_it = m_item_proxies.find(item_id);
-  if (item_it == m_items.end() || proxy_it == m_item_proxies.end()) {
+  const auto proxy_it = m_itemProxies.find(item_id);
+  if (item_it == m_items.end() || proxy_it == m_itemProxies.end()) {
     return;
   }
 
@@ -381,18 +381,18 @@ void TrayService::removeItemsForBusName(const std::string& bus_name) {
 
   for (const auto& item_id : removed_ids) {
     m_items.erase(item_id);
-    m_item_proxies.erase(item_id);
+    m_itemProxies.erase(item_id);
     logDebug("tray item unregistered: {}", item_id);
-    m_watcher_object->emitSignal("StatusNotifierItemUnregistered").onInterface(k_watcher_interface).withArguments(
+    m_watcherObject->emitSignal("StatusNotifierItemUnregistered").onInterface(k_watcher_interface).withArguments(
         item_id);
   }
-  m_watcher_object->emitPropertiesChangedSignal(
+  m_watcherObject->emitPropertiesChangedSignal(
       k_watcher_interface, std::vector<sdbus::PropertyName>{sdbus::PropertyName{"RegisteredStatusNotifierItems"}});
   emitChanged();
 }
 
 void TrayService::emitChanged() {
-  if (m_change_callback) {
-    m_change_callback();
+  if (m_changeCallback) {
+    m_changeCallback();
   }
 }

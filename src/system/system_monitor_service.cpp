@@ -88,7 +88,7 @@ SystemMonitorService::~SystemMonitorService() { stop(); }
 bool SystemMonitorService::isRunning() const noexcept { return m_running.load(); }
 
 SystemStats SystemMonitorService::latest() const {
-  std::lock_guard lock{m_stats_mutex};
+  std::lock_guard lock{m_statsMutex};
   return m_latest;
 }
 
@@ -119,7 +119,7 @@ void SystemMonitorService::samplingLoop() {
       const std::uint64_t total_delta = current_cpu->total - prev_cpu->total;
       const std::uint64_t idle_delta = current_cpu->idle - prev_cpu->idle;
       if (total_delta > 0) {
-        next.cpu_usage_percent = 100.0 * (1.0 - static_cast<double>(idle_delta) / static_cast<double>(total_delta));
+        next.cpuUsagePercent = 100.0 * (1.0 - static_cast<double>(idle_delta) / static_cast<double>(total_delta));
       }
     }
     if (current_cpu.has_value()) {
@@ -130,26 +130,26 @@ void SystemMonitorService::samplingLoop() {
     if (ram_kb.has_value()) {
       const std::uint64_t total_kb = ram_kb->first;
       const std::uint64_t used_kb = ram_kb->second;
-      next.ram_total_mb = total_kb / 1024;
-      next.ram_used_mb = used_kb / 1024;
+      next.ramTotalMb = total_kb / 1024;
+      next.ramUsedMb = used_kb / 1024;
       if (total_kb > 0) {
-        next.ram_usage_percent = 100.0 * static_cast<double>(used_kb) / static_cast<double>(total_kb);
+        next.ramUsagePercent = 100.0 * static_cast<double>(used_kb) / static_cast<double>(total_kb);
       }
     }
 
-    next.cpu_temp_c = readCpuTempCelsius();
+    next.cpuTempC = readCpuTempCelsius();
 
     {
-      std::lock_guard lock{m_stats_mutex};
+      std::lock_guard lock{m_statsMutex};
       m_latest = next;
     }
 
-    if (next.cpu_temp_c.has_value()) {
-      logDebug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) temp={:.1f}C", next.cpu_usage_percent,
-               next.ram_usage_percent, next.ram_used_mb, next.ram_total_mb, *next.cpu_temp_c);
+    if (next.cpuTempC.has_value()) {
+      logDebug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) temp={:.1f}C", next.cpuUsagePercent,
+               next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, *next.cpuTempC);
     } else {
-      logDebug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) temp=n/a", next.cpu_usage_percent,
-               next.ram_usage_percent, next.ram_used_mb, next.ram_total_mb);
+      logDebug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) temp=n/a", next.cpuUsagePercent,
+               next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb);
     }
 
     std::this_thread::sleep_for(std::chrono::seconds(2));

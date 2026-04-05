@@ -7,11 +7,11 @@
 #include <thread>
 
 struct SystemStats {
-  double cpu_usage_percent{0.0};
-  double ram_usage_percent{0.0};
-  std::uint64_t ram_used_mb{0};
-  std::uint64_t ram_total_mb{0};
-  std::optional<double> cpu_temp_c;
+  double cpuUsagePercent{0.0};
+  double ramUsagePercent{0.0};
+  std::uint64_t ramUsedMb{0};
+  std::uint64_t ramTotalMb{0};
+  std::optional<double> cpuTempC;
 };
 
 class SystemMonitorService {
@@ -42,6 +42,6 @@ private:
   std::atomic<bool> m_running{false};
   std::thread m_thread;
 
-  mutable std::mutex m_stats_mutex;
+  mutable std::mutex m_statsMutex;
   SystemStats m_latest;
 };

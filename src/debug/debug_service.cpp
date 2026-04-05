@@ -50,10 +50,10 @@ uint32_t DebugService::onEmitInternalNotification(const std::string& app_name, c
 }
 
 bool DebugService::onSetVerboseLogs(bool enabled) {
-  m_verbose_logs = enabled;
+  m_verboseLogs = enabled;
   setLogLevel(enabled ? LogLevel::Debug : LogLevel::Info);
   logInfo("debug verbose logs {}", enabled ? "enabled" : "disabled");
   return true;
 }
 
-bool DebugService::onGetVerboseLogs() const { return m_verbose_logs; }
+bool DebugService::onGetVerboseLogs() const { return m_verboseLogs; }

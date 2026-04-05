@@ -126,31 +126,31 @@ void WaylandConnection::setOutputChangeCallback(ChangeCallback callback) {
 }
 
 void WaylandConnection::setWorkspaceChangeCallback(ChangeCallback callback) {
-  m_workspaces_handler.setChangeCallback(std::move(callback));
+  m_workspacesHandler.setChangeCallback(std::move(callback));
 }
 
 void WaylandConnection::setPointerEventCallback(WaylandSeat::PointerEventCallback callback) {
-  m_seat_handler.setPointerEventCallback(std::move(callback));
+  m_seatHandler.setPointerEventCallback(std::move(callback));
 }
 
 void WaylandConnection::setCursorShape(std::uint32_t serial, std::uint32_t shape) {
-  m_seat_handler.setCursorShape(serial, shape);
+  m_seatHandler.setCursorShape(serial, shape);
 }
 
-void WaylandConnection::activateWorkspace(const std::string& id) { m_workspaces_handler.activate(id); }
+void WaylandConnection::activateWorkspace(const std::string& id) { m_workspacesHandler.activate(id); }
 
 void WaylandConnection::activateWorkspace(wl_output* output, const std::string& id) {
-  m_workspaces_handler.activateForOutput(output, id);
+  m_workspacesHandler.activateForOutput(output, id);
 }
 
 void WaylandConnection::activateWorkspace(wl_output* output, const Workspace& workspace) {
-  m_workspaces_handler.activateForOutput(output, workspace);
+  m_workspacesHandler.activateForOutput(output, workspace);
 }
 
-std::vector<Workspace> WaylandConnection::workspaces() const { return m_workspaces_handler.all(); }
+std::vector<Workspace> WaylandConnection::workspaces() const { return m_workspacesHandler.all(); }
 
 std::vector<Workspace> WaylandConnection::workspaces(wl_output* output) const {
-  return m_workspaces_handler.forOutput(output);
+  return m_workspacesHandler.forOutput(output);
 }
 
 bool WaylandConnection::isConnected() const noexcept { return m_display != nullptr; }
@@ -212,7 +212,7 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
   if (interfaceName == wl_seat_interface.name) {
     const auto bindVersion = std::min(version, kSeatVersion);
     m_seat = static_cast<wl_seat*>(wl_registry_bind(registry, name, &wl_seat_interface, bindVersion));
-    m_seat_handler.bind(m_seat);
+    m_seatHandler.bind(m_seat);
     return;
   }
 
@@ -242,7 +242,7 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     const auto bindVersion = std::min(version, kExtWorkspaceManagerVersion);
     auto* manager = static_cast<ext_workspace_manager_v1*>(
         wl_registry_bind(registry, name, &ext_workspace_manager_v1_interface, bindVersion));
-    m_workspaces_handler.bind(manager);
+    m_workspacesHandler.bind(manager);
     return;
   }
 
@@ -250,7 +250,7 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     const auto bindVersion = std::min(version, kCursorShapeManagerVersion);
     m_cursorShapeManager = static_cast<wp_cursor_shape_manager_v1*>(
         wl_registry_bind(registry, name, &wp_cursor_shape_manager_v1_interface, bindVersion));
-    m_seat_handler.setCursorShapeManager(m_cursorShapeManager);
+    m_seatHandler.setCursorShapeManager(m_cursorShapeManager);
     return;
   }
 
@@ -273,7 +273,7 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
 }
 
 void WaylandConnection::cleanup() {
-  m_workspaces_handler.cleanup();
+  m_workspacesHandler.cleanup();
 
   if (m_xdgOutputManager != nullptr) {
     zxdg_output_manager_v1_destroy(m_xdgOutputManager);
@@ -285,7 +285,7 @@ void WaylandConnection::cleanup() {
     m_layerShell = nullptr;
   }
 
-  m_seat_handler.cleanup();
+  m_seatHandler.cleanup();
 
   if (m_cursorShapeManager != nullptr) {
     wp_cursor_shape_manager_v1_destroy(m_cursorShapeManager);

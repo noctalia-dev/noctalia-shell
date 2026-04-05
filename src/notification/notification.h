@@ -30,7 +30,7 @@ using TimePoint = Clock::time_point;
 struct Notification {
   uint32_t id;
   NotificationOrigin origin;
-  std::string app_name;
+  std::string appName;
   std::string summary;
   std::string body;
   int32_t timeout;
@@ -38,6 +38,6 @@ struct Notification {
   std::vector<std::string> actions; // pairs: [key, label, key, label, ...]
   std::optional<std::string> icon;
   std::optional<std::string> category;
-  std::optional<std::string> desktop_entry;
-  std::optional<TimePoint> expiry_time; // absent = never expires
+  std::optional<std::string> desktopEntry;
+  std::optional<TimePoint> expiryTime; // absent = never expires
 };

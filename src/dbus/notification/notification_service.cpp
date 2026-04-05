@@ -157,7 +157,7 @@ std::vector<std::map<std::string, sdbus::Variant>> NotificationService::onGetNot
   for (const auto& n : m_manager.all()) {
     std::map<std::string, sdbus::Variant> notif;
     notif["id"] = sdbus::Variant(n.id);
-    notif["app_name"] = sdbus::Variant(n.app_name);
+    notif["app_name"] = sdbus::Variant(n.appName);
     notif["summary"] = sdbus::Variant(n.summary);
     notif["body"] = sdbus::Variant(n.body);
     notif["timeout"] = sdbus::Variant(n.timeout);
@@ -165,7 +165,7 @@ std::vector<std::map<std::string, sdbus::Variant>> NotificationService::onGetNot
     notif["actions"] = sdbus::Variant(n.actions);
     notif["icon"] = sdbus::Variant(n.icon.value_or(""));
     notif["category"] = sdbus::Variant(n.category.value_or(""));
-    notif["desktop_entry"] = sdbus::Variant(n.desktop_entry.value_or(""));
+    notif["desktop_entry"] = sdbus::Variant(n.desktopEntry.value_or(""));
     result.push_back(notif);
   }
   return result;

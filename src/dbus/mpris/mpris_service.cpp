@@ -110,32 +110,32 @@ std::string primary_artist(const std::vector<std::string>& artists) {
 
 std::map<std::string, sdbus::Variant> to_dbus_player(const MprisPlayerInfo& info) {
   std::map<std::string, sdbus::Variant> player;
-  player["bus_name"] = sdbus::Variant(info.bus_name);
+  player["bus_name"] = sdbus::Variant(info.busName);
   player["identity"] = sdbus::Variant(info.identity);
-  player["desktop_entry"] = sdbus::Variant(info.desktop_entry);
-  player["playback_status"] = sdbus::Variant(info.playback_status);
-  player["track_id"] = sdbus::Variant(info.track_id);
+  player["desktop_entry"] = sdbus::Variant(info.desktopEntry);
+  player["playback_status"] = sdbus::Variant(info.playbackStatus);
+  player["track_id"] = sdbus::Variant(info.trackId);
   player["title"] = sdbus::Variant(info.title);
   player["artists"] = sdbus::Variant(info.artists);
   player["album"] = sdbus::Variant(info.album);
-  player["art_url"] = sdbus::Variant(info.art_url);
-  player["loop_status"] = sdbus::Variant(info.loop_status);
+  player["art_url"] = sdbus::Variant(info.artUrl);
+  player["loop_status"] = sdbus::Variant(info.loopStatus);
   player["shuffle"] = sdbus::Variant(info.shuffle);
   player["volume"] = sdbus::Variant(info.volume);
-  player["position_us"] = sdbus::Variant(info.position_us);
-  player["length_us"] = sdbus::Variant(info.length_us);
-  player["can_play"] = sdbus::Variant(info.can_play);
-  player["can_pause"] = sdbus::Variant(info.can_pause);
-  player["can_go_next"] = sdbus::Variant(info.can_go_next);
-  player["can_go_previous"] = sdbus::Variant(info.can_go_previous);
-  player["can_seek"] = sdbus::Variant(info.can_seek);
+  player["position_us"] = sdbus::Variant(info.positionUs);
+  player["length_us"] = sdbus::Variant(info.lengthUs);
+  player["can_play"] = sdbus::Variant(info.canPlay);
+  player["can_pause"] = sdbus::Variant(info.canPause);
+  player["can_go_next"] = sdbus::Variant(info.canGoNext);
+  player["can_go_previous"] = sdbus::Variant(info.canGoPrevious);
+  player["can_seek"] = sdbus::Variant(info.canSeek);
   return player;
 }
 
 } // namespace
 
 MprisService::MprisService(SessionBus& bus)
-    : m_bus(bus), m_dbus_proxy(sdbus::createProxy(bus.connection(), k_dbus_name, k_dbus_path)) {
+    : m_bus(bus), m_dbusProxy(sdbus::createProxy(bus.connection(), k_dbus_name, k_dbus_path)) {
   registerControlApi();
   registerBusSignals();
   discoverPlayers();
@@ -150,7 +150,7 @@ std::vector<MprisPlayerInfo> MprisService::listPlayers() const {
     result.push_back(player);
   }
 
-  std::ranges::sort(result, [](const MprisPlayerInfo& a, const MprisPlayerInfo& b) { return a.bus_name < b.bus_name; });
+  std::ranges::sort(result, [](const MprisPlayerInfo& a, const MprisPlayerInfo& b) { return a.busName < b.busName; });
   return result;
 }
 
@@ -226,12 +226,12 @@ bool MprisService::previousActive() {
 
 bool MprisService::seek(const std::string& bus_name, int64_t offset_us) {
   const auto it = m_players.find(bus_name);
-  if (it == m_players.end() || !it->second.can_seek) {
+  if (it == m_players.end() || !it->second.canSeek) {
     return false;
   }
 
-  const auto proxy_it = m_player_proxies.find(bus_name);
-  if (proxy_it == m_player_proxies.end()) {
+  const auto proxy_it = m_playerProxies.find(bus_name);
+  if (proxy_it == m_playerProxies.end()) {
     return false;
   }
 
@@ -255,17 +255,17 @@ bool MprisService::seekActive(int64_t offset_us) {
 
 bool MprisService::setPosition(const std::string& bus_name, int64_t position_us) {
   const auto it = m_players.find(bus_name);
-  if (it == m_players.end() || !it->second.can_seek) {
+  if (it == m_players.end() || !it->second.canSeek) {
     return false;
   }
 
-  const auto proxy_it = m_player_proxies.find(bus_name);
-  if (proxy_it == m_player_proxies.end()) {
+  const auto proxy_it = m_playerProxies.find(bus_name);
+  if (proxy_it == m_playerProxies.end()) {
     return false;
   }
 
   auto fallback_seek = [&]() {
-    int64_t current_position_us = it->second.position_us;
+    int64_t current_position_us = it->second.positionUs;
     try {
       const sdbus::Variant position_value =
           proxy_it->second->getProperty("Position").onInterface(k_mpris_player_interface);
@@ -281,7 +281,7 @@ bool MprisService::setPosition(const std::string& bus_name, int64_t position_us)
     return seek(bus_name, offset_us);
   };
 
-  if (it->second.track_id.empty()) {
+  if (it->second.trackId.empty()) {
     // Some players don't expose track_id consistently; emulate absolute position with Seek.
     return fallback_seek();
   }
@@ -289,7 +289,7 @@ bool MprisService::setPosition(const std::string& bus_name, int64_t position_us)
   try {
     proxy_it->second->callMethod("SetPosition")
         .onInterface(k_mpris_player_interface)
-        .withArguments(sdbus::ObjectPath{it->second.track_id}, position_us);
+        .withArguments(sdbus::ObjectPath{it->second.trackId}, position_us);
     addOrRefreshPlayer(bus_name);
     return true;
   } catch (const sdbus::Error& e) {
@@ -312,8 +312,8 @@ bool MprisService::setVolume(const std::string& bus_name, double volume) {
     return false;
   }
 
-  const auto proxy_it = m_player_proxies.find(bus_name);
-  if (proxy_it == m_player_proxies.end()) {
+  const auto proxy_it = m_playerProxies.find(bus_name);
+  if (proxy_it == m_playerProxies.end()) {
     return false;
   }
 
@@ -341,8 +341,8 @@ bool MprisService::setShuffle(const std::string& bus_name, bool shuffle) {
     return false;
   }
 
-  const auto proxy_it = m_player_proxies.find(bus_name);
-  if (proxy_it == m_player_proxies.end()) {
+  const auto proxy_it = m_playerProxies.find(bus_name);
+  if (proxy_it == m_playerProxies.end()) {
     return false;
   }
 
@@ -370,8 +370,8 @@ bool MprisService::setLoopStatus(const std::string& bus_name, std::string loop_s
     return false;
   }
 
-  const auto proxy_it = m_player_proxies.find(bus_name);
-  if (proxy_it == m_player_proxies.end()) {
+  const auto proxy_it = m_playerProxies.find(bus_name);
+  if (proxy_it == m_playerProxies.end()) {
     return false;
   }
 
@@ -398,7 +398,7 @@ std::optional<int64_t> MprisService::position(const std::string& bus_name) const
   if (it == m_players.end()) {
     return std::nullopt;
   }
-  return it->second.position_us;
+  return it->second.positionUs;
 }
 
 std::optional<int64_t> MprisService::positionActive() const {
@@ -446,7 +446,7 @@ std::optional<std::string> MprisService::loopStatus(const std::string& bus_name)
   if (it == m_players.end()) {
     return std::nullopt;
   }
-  return it->second.loop_status;
+  return it->second.loopStatus;
 }
 
 std::optional<std::string> MprisService::loopStatusActive() const {
@@ -463,14 +463,14 @@ bool MprisService::setPinnedPlayerPreference(const std::string& bus_name) {
   }
 
   const auto previous_active = activePlayer();
-  m_pinned_player_preference = bus_name;
+  m_pinnedPlayerPreference = bus_name;
   syncSignals(previous_active);
   return true;
 }
 
 void MprisService::clearPinnedPlayerPreference() {
   const auto previous_active = activePlayer();
-  m_pinned_player_preference.reset();
+  m_pinnedPlayerPreference.reset();
   syncSignals(previous_active);
 }
 
@@ -489,19 +489,19 @@ void MprisService::setPreferredPlayers(std::vector<std::string> preferred_bus_na
   }
 
   const auto previous_active = activePlayer();
-  m_preferred_players = std::move(normalized);
+  m_preferredPlayers = std::move(normalized);
   syncSignals(previous_active);
 }
 
-std::optional<std::string> MprisService::pinnedPlayerPreference() const { return m_pinned_player_preference; }
+std::optional<std::string> MprisService::pinnedPlayerPreference() const { return m_pinnedPlayerPreference; }
 
-const std::vector<std::string>& MprisService::preferredPlayers() const noexcept { return m_preferred_players; }
+const std::vector<std::string>& MprisService::preferredPlayers() const noexcept { return m_preferredPlayers; }
 
 void MprisService::registerControlApi() {
   m_bus.connection().requestName(k_noctalia_mpris_bus_name);
-  m_control_object = sdbus::createObject(m_bus.connection(), k_noctalia_mpris_object_path);
+  m_controlObject = sdbus::createObject(m_bus.connection(), k_noctalia_mpris_object_path);
 
-  m_control_object
+  m_controlObject
       ->addVTable(
           sdbus::registerSignal("PlayersChanged")
               .withParameters<std::vector<std::map<std::string, sdbus::Variant>>>("players"),
@@ -676,46 +676,46 @@ void MprisService::emitPlayersChanged() {
     players.push_back(to_dbus_player(player));
   }
 
-  m_control_object->emitSignal("PlayersChanged").onInterface(k_noctalia_mpris_interface).withArguments(players);
+  m_controlObject->emitSignal("PlayersChanged").onInterface(k_noctalia_mpris_interface).withArguments(players);
 }
 
 void MprisService::emitActivePlayerChanged() {
   const auto active = activePlayer();
   if (!active.has_value()) {
-    m_control_object->emitSignal("ActivePlayerChanged")
+    m_controlObject->emitSignal("ActivePlayerChanged")
         .onInterface(k_noctalia_mpris_interface)
         .withArguments(false, std::map<std::string, sdbus::Variant>{});
     return;
   }
 
-  m_control_object->emitSignal("ActivePlayerChanged")
+  m_controlObject->emitSignal("ActivePlayerChanged")
       .onInterface(k_noctalia_mpris_interface)
       .withArguments(true, to_dbus_player(*active));
 }
 
 void MprisService::emitTrackChanged(const MprisPlayerInfo& player) {
-  m_control_object->emitSignal("TrackChanged")
+  m_controlObject->emitSignal("TrackChanged")
       .onInterface(k_noctalia_mpris_interface)
-      .withArguments(player.bus_name, to_dbus_player(player));
+      .withArguments(player.busName, to_dbus_player(player));
 }
 
 void MprisService::syncSignals(const std::optional<MprisPlayerInfo>& previous_active) {
   const auto current_active = activePlayer();
-  const std::string current_active_name = current_active.has_value() ? current_active->bus_name : std::string{};
+  const std::string current_active_name = current_active.has_value() ? current_active->busName : std::string{};
 
-  if (current_active_name != m_last_emitted_active_player) {
+  if (current_active_name != m_lastEmittedActivePlayer) {
     emitActivePlayerChanged();
-    m_last_emitted_active_player = current_active_name;
+    m_lastEmittedActivePlayer = current_active_name;
   }
 
   if (previous_active.has_value() && current_active.has_value() &&
-      previous_active->bus_name == current_active->bus_name && previous_active->title != current_active->title) {
+      previous_active->busName == current_active->busName && previous_active->title != current_active->title) {
     emitTrackChanged(*current_active);
   }
 }
 
 void MprisService::registerBusSignals() {
-  m_dbus_proxy->uponSignal("NameOwnerChanged")
+  m_dbusProxy->uponSignal("NameOwnerChanged")
       .onInterface(k_dbus_interface)
       .call([this](const std::string& name, const std::string& old_owner, const std::string& new_owner) {
         if (!is_mpris_bus_name(name)) {
@@ -738,7 +738,7 @@ void MprisService::registerBusSignals() {
 
 void MprisService::discoverPlayers() {
   std::vector<std::string> names;
-  m_dbus_proxy->callMethod("ListNames").onInterface(k_dbus_interface).storeResultsTo(names);
+  m_dbusProxy->callMethod("ListNames").onInterface(k_dbus_interface).storeResultsTo(names);
 
   for (const auto& name : names) {
     if (is_mpris_bus_name(name)) {
@@ -750,7 +750,7 @@ void MprisService::discoverPlayers() {
 void MprisService::addOrRefreshPlayer(const std::string& bus_name) {
   const auto previous_active = activePlayer();
 
-  auto [proxy_it, inserted] = m_player_proxies.emplace(
+  auto [proxy_it, inserted] = m_playerProxies.emplace(
       bus_name, sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{bus_name}, k_mpris_path));
 
   if (inserted) {
@@ -760,11 +760,11 @@ void MprisService::addOrRefreshPlayer(const std::string& bus_name) {
                                const std::vector<std::string>&) {
           if (interface_name == k_mpris_root_interface || interface_name == k_mpris_player_interface) {
             const auto now = std::chrono::steady_clock::now();
-            const auto last_it = m_last_properties_update.find(bus_name);
-            if (last_it != m_last_properties_update.end() && now - last_it->second < k_properties_debounce_window) {
+            const auto last_it = m_lastPropertiesUpdate.find(bus_name);
+            if (last_it != m_lastPropertiesUpdate.end() && now - last_it->second < k_properties_debounce_window) {
               return;
             }
-            m_last_properties_update[bus_name] = now;
+            m_lastPropertiesUpdate[bus_name] = now;
             addOrRefreshPlayer(bus_name);
           }
         });
@@ -772,16 +772,16 @@ void MprisService::addOrRefreshPlayer(const std::string& bus_name) {
 
   try {
     const MprisPlayerInfo info = readPlayerInfo(*proxy_it->second, bus_name);
-    if (info.playback_status == "Playing" || info.playback_status == "Paused") {
-      m_last_active_player = bus_name;
+    if (info.playbackStatus == "Playing" || info.playbackStatus == "Paused") {
+      m_lastActivePlayer = bus_name;
     }
 
     const auto existing = m_players.find(bus_name);
     if (existing == m_players.end()) {
       m_players.emplace(bus_name, info);
       logInfo("mpris added player name={} identity=\"{}\" status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"",
-              info.bus_name, info.identity, info.playback_status, info.title, primary_artist(info.artists),
-              info.art_url);
+              info.busName, info.identity, info.playbackStatus, info.title, primary_artist(info.artists),
+              info.artUrl);
       emitPlayersChanged();
       syncSignals(previous_active);
       return;
@@ -794,18 +794,18 @@ void MprisService::addOrRefreshPlayer(const std::string& bus_name) {
       // Keep last non-empty art_url until a new non-empty value arrives
       // to avoid transient empty artwork bursts during track switches.
       MprisPlayerInfo merged = info;
-      if (merged.art_url.empty() && !previous_info.art_url.empty()) {
-        merged.art_url = previous_info.art_url;
+      if (merged.artUrl.empty() && !previous_info.artUrl.empty()) {
+        merged.artUrl = previous_info.artUrl;
       }
 
       existing->second = merged;
-      logDebug("mpris updated player name={} status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"", merged.bus_name,
-               merged.playback_status, merged.title, primary_artist(merged.artists), merged.art_url);
+      logDebug("mpris updated player name={} status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"", merged.busName,
+               merged.playbackStatus, merged.title, primary_artist(merged.artists), merged.artUrl);
 
       if (previous_info.title != merged.title || previous_info.album != merged.album ||
-          previous_info.artists != merged.artists || previous_info.art_url != merged.art_url ||
-          previous_info.track_id != merged.track_id || previous_info.position_us != merged.position_us ||
-          previous_info.length_us != merged.length_us) {
+          previous_info.artists != merged.artists || previous_info.artUrl != merged.artUrl ||
+          previous_info.trackId != merged.trackId || previous_info.positionUs != merged.positionUs ||
+          previous_info.lengthUs != merged.lengthUs) {
         emitTrackChanged(merged);
       }
 
@@ -819,15 +819,15 @@ void MprisService::addOrRefreshPlayer(const std::string& bus_name) {
 void MprisService::removePlayer(const std::string& bus_name) {
   const auto previous_active = activePlayer();
 
-  if (!m_players.contains(bus_name) && !m_player_proxies.contains(bus_name)) {
+  if (!m_players.contains(bus_name) && !m_playerProxies.contains(bus_name)) {
     return;
   }
 
   m_players.erase(bus_name);
-  m_player_proxies.erase(bus_name);
-  m_last_properties_update.erase(bus_name);
-  if (m_last_active_player == bus_name) {
-    m_last_active_player.clear();
+  m_playerProxies.erase(bus_name);
+  m_lastPropertiesUpdate.erase(bus_name);
+  if (m_lastActivePlayer == bus_name) {
+    m_lastActivePlayer.clear();
   }
   logInfo("mpris removed player name={}", bus_name);
 
@@ -836,31 +836,31 @@ void MprisService::removePlayer(const std::string& bus_name) {
 }
 
 std::optional<std::string> MprisService::chooseActivePlayer() const {
-  if (m_pinned_player_preference.has_value() && m_players.contains(*m_pinned_player_preference)) {
-    return *m_pinned_player_preference;
+  if (m_pinnedPlayerPreference.has_value() && m_players.contains(*m_pinnedPlayerPreference)) {
+    return *m_pinnedPlayerPreference;
   }
 
-  for (const auto& bus_name : m_preferred_players) {
+  for (const auto& bus_name : m_preferredPlayers) {
     const auto it = m_players.find(bus_name);
-    if (it != m_players.end() && it->second.playback_status == "Playing") {
+    if (it != m_players.end() && it->second.playbackStatus == "Playing") {
       return bus_name;
     }
   }
 
   for (const auto& [bus_name, player] : m_players) {
-    if (player.playback_status == "Playing") {
+    if (player.playbackStatus == "Playing") {
       return bus_name;
     }
   }
 
-  for (const auto& bus_name : m_preferred_players) {
+  for (const auto& bus_name : m_preferredPlayers) {
     if (m_players.contains(bus_name)) {
       return bus_name;
     }
   }
 
-  if (!m_last_active_player.empty() && m_players.contains(m_last_active_player)) {
-    return m_last_active_player;
+  if (!m_lastActivePlayer.empty() && m_players.contains(m_lastActivePlayer)) {
+    return m_lastActivePlayer;
   }
 
   if (!m_players.empty()) {
@@ -871,8 +871,8 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
 }
 
 bool MprisService::callPlayerMethod(const std::string& bus_name, const char* method_name) {
-  const auto it = m_player_proxies.find(bus_name);
-  if (it == m_player_proxies.end()) {
+  const auto it = m_playerProxies.find(bus_name);
+  if (it == m_playerProxies.end()) {
     return false;
   }
 
@@ -890,13 +890,13 @@ bool MprisService::callPlayerMethod(const std::string& bus_name, const char* met
 bool MprisService::canInvoke(const MprisPlayerInfo& player, const char* method_name) const {
   const std::string_view method{method_name};
   if (method == "PlayPause") {
-    return player.can_play || player.can_pause;
+    return player.canPlay || player.canPause;
   }
   if (method == "Next") {
-    return player.can_go_next;
+    return player.canGoNext;
   }
   if (method == "Previous") {
-    return player.can_go_previous;
+    return player.canGoPrevious;
   }
   return false;
 }
@@ -1205,34 +1205,34 @@ bool MprisService::onSetPreferredPlayers(const std::vector<std::string>& preferr
 }
 
 std::tuple<bool, std::string, std::vector<std::string>> MprisService::onGetPlayerPreferences() const {
-  if (!m_pinned_player_preference.has_value()) {
-    return {false, "", m_preferred_players};
+  if (!m_pinnedPlayerPreference.has_value()) {
+    return {false, "", m_preferredPlayers};
   }
-  return {true, *m_pinned_player_preference, m_preferred_players};
+  return {true, *m_pinnedPlayerPreference, m_preferredPlayers};
 }
 
 MprisPlayerInfo MprisService::readPlayerInfo(sdbus::IProxy& proxy, const std::string& bus_name) const {
   const auto metadata = get_metadata_or(proxy);
 
   return MprisPlayerInfo{
-      .bus_name = bus_name,
+      .busName = bus_name,
       .identity = get_property_or(proxy, k_mpris_root_interface, "Identity", std::string{}),
-      .desktop_entry = get_property_or(proxy, k_mpris_root_interface, "DesktopEntry", std::string{}),
-      .playback_status = get_property_or(proxy, k_mpris_player_interface, "PlaybackStatus", std::string{}),
-      .track_id = get_object_path_from_variant(metadata, "mpris:trackid"),
+      .desktopEntry = get_property_or(proxy, k_mpris_root_interface, "DesktopEntry", std::string{}),
+      .playbackStatus = get_property_or(proxy, k_mpris_player_interface, "PlaybackStatus", std::string{}),
+      .trackId = get_object_path_from_variant(metadata, "mpris:trackid"),
       .title = get_string_from_variant(metadata, "xesam:title"),
       .artists = get_string_array_from_variant(metadata, "xesam:artist"),
       .album = get_string_from_variant(metadata, "xesam:album"),
-      .art_url = get_string_from_variant(metadata, "mpris:artUrl"),
-      .loop_status = get_property_or(proxy, k_mpris_player_interface, "LoopStatus", std::string{"None"}),
+      .artUrl = get_string_from_variant(metadata, "mpris:artUrl"),
+      .loopStatus = get_property_or(proxy, k_mpris_player_interface, "LoopStatus", std::string{"None"}),
       .shuffle = get_property_or(proxy, k_mpris_player_interface, "Shuffle", false),
       .volume = get_property_or(proxy, k_mpris_player_interface, "Volume", 1.0),
-      .position_us = get_property_or(proxy, k_mpris_player_interface, "Position", int64_t{0}),
-      .length_us = get_int64_from_variant(metadata, "mpris:length"),
-      .can_play = get_property_or(proxy, k_mpris_player_interface, "CanPlay", false),
-      .can_pause = get_property_or(proxy, k_mpris_player_interface, "CanPause", false),
-      .can_go_next = get_property_or(proxy, k_mpris_player_interface, "CanGoNext", false),
-      .can_go_previous = get_property_or(proxy, k_mpris_player_interface, "CanGoPrevious", false),
-      .can_seek = get_property_or(proxy, k_mpris_player_interface, "CanSeek", false),
+      .positionUs = get_property_or(proxy, k_mpris_player_interface, "Position", int64_t{0}),
+      .lengthUs = get_int64_from_variant(metadata, "mpris:length"),
+      .canPlay = get_property_or(proxy, k_mpris_player_interface, "CanPlay", false),
+      .canPause = get_property_or(proxy, k_mpris_player_interface, "CanPause", false),
+      .canGoNext = get_property_or(proxy, k_mpris_player_interface, "CanGoNext", false),
+      .canGoPrevious = get_property_or(proxy, k_mpris_player_interface, "CanGoPrevious", false),
+      .canSeek = get_property_or(proxy, k_mpris_player_interface, "CanSeek", false),
   };
 }

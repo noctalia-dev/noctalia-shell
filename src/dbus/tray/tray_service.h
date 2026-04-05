@@ -56,10 +56,10 @@ private:
   [[nodiscard]] static std::string canonicalItemId(const std::string& bus_name, const std::string& object_path);
 
   SessionBus& m_bus;
-  std::unique_ptr<sdbus::IObject> m_watcher_object;
-  std::unique_ptr<sdbus::IProxy> m_dbus_proxy;
+  std::unique_ptr<sdbus::IObject> m_watcherObject;
+  std::unique_ptr<sdbus::IProxy> m_dbusProxy;
   std::unordered_map<std::string, TrayItemInfo> m_items;
-  std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_item_proxies;
-  bool m_host_registered = true;
-  ChangeCallback m_change_callback;
+  std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_itemProxies;
+  bool m_hostRegistered = true;
+  ChangeCallback m_changeCallback;
 };

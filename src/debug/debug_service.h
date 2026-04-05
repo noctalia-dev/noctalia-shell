@@ -20,5 +20,5 @@ private:
 
   NotificationManager& m_notifications;
   std::unique_ptr<sdbus::IObject> m_object;
-  bool m_verbose_logs{false};
+  bool m_verboseLogs{false};
 };

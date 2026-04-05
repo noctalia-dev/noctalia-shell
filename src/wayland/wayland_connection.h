@@ -91,6 +91,6 @@ private:
   std::vector<WaylandOutput> m_outputs;
   ChangeCallback m_outputChangeCallback;
 
-  WaylandSeat m_seat_handler;
-  WaylandWorkspaces m_workspaces_handler;
+  WaylandSeat m_seatHandler;
+  WaylandWorkspaces m_workspacesHandler;
 };

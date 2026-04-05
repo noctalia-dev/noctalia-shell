@@ -60,7 +60,7 @@ void NotificationPopup::onNotificationEvent(const Notification& n, NotificationE
   case NotificationEvent::Updated: {
     for (std::size_t i = 0; i < m_entries.size(); ++i) {
       if (m_entries[i].notificationId == n.id && !m_entries[i].exiting) {
-        m_entries[i].appName = n.app_name;
+        m_entries[i].appName = n.appName;
         m_entries[i].summary = n.summary;
         m_entries[i].body = n.body;
 
@@ -75,7 +75,7 @@ void NotificationPopup::onNotificationEvent(const Notification& n, NotificationE
           }
 
           auto& children = cs.cardNode->children();
-          static_cast<TextNode*>(children[1].get())->setText(n.app_name);
+          static_cast<TextNode*>(children[1].get())->setText(n.appName);
           static_cast<TextNode*>(children[2].get())->setText(n.summary);
           static_cast<TextNode*>(children[3].get())->setText(n.body);
 
@@ -122,7 +122,7 @@ void NotificationPopup::addPopup(const Notification& n) {
 
   PopupEntry entry;
   entry.notificationId = n.id;
-  entry.appName = n.app_name;
+  entry.appName = n.appName;
   entry.summary = n.summary;
   entry.body = n.body;
   entry.urgency = n.urgency;

@@ -54,8 +54,8 @@ public:
 
 private:
   std::deque<Notification> m_notifications;
-  std::unordered_map<uint32_t, size_t> m_id_to_index;
+  std::unordered_map<uint32_t, size_t> m_idToIndex;
   std::vector<std::pair<int, EventCallback>> m_eventCallbacks;
   int m_nextCallbackToken{0};
-  uint32_t m_next_id{1};
+  uint32_t m_nextId{1};
 };

@@ -54,20 +54,20 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
                                            std::optional<std::string> desktop_entry) {
   auto log_notification = [](const Notification& n, std::string_view action) {
     logDebug("notification {} #{} origin={} from=\"{}\" urgency={} summary=\"{}\" body=\"{}\" timeout={}ms", action,
-             n.id, origin_str(n.origin), n.app_name, urgency_str(n.urgency), n.summary, n.body, n.timeout);
+             n.id, origin_str(n.origin), n.appName, urgency_str(n.urgency), n.summary, n.body, n.timeout);
   };
 
   if (replaces_id != 0) {
-    if (const auto it = m_id_to_index.find(replaces_id); it != m_id_to_index.end()) {
+    if (const auto it = m_idToIndex.find(replaces_id); it != m_idToIndex.end()) {
       auto& n = m_notifications[it->second];
 
       // Check if anything changed to avoid duplicate events
-      const bool changed = (n.app_name != app_name || n.summary != summary || n.body != body || n.timeout != timeout ||
+      const bool changed = (n.appName != app_name || n.summary != summary || n.body != body || n.timeout != timeout ||
                             n.urgency != urgency || n.origin != origin || n.actions != actions || n.icon != icon ||
-                            n.category != category || n.desktop_entry != desktop_entry);
+                            n.category != category || n.desktopEntry != desktop_entry);
 
       n.origin = origin;
-      n.app_name = std::move(app_name);
+      n.appName = std::move(app_name);
       n.summary = std::move(summary);
       n.body = std::move(body);
       n.timeout = timeout;
@@ -75,8 +75,8 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
       n.actions = std::move(actions);
       n.icon = std::move(icon);
       n.category = std::move(category);
-      n.desktop_entry = std::move(desktop_entry);
-      n.expiry_time = schedule_expiry(timeout);
+      n.desktopEntry = std::move(desktop_entry);
+      n.expiryTime = schedule_expiry(timeout);
 
       log_notification(n, "updated");
 
@@ -90,11 +90,11 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
     }
   }
 
-  const uint32_t id = m_next_id++;
+  const uint32_t id = m_nextId++;
   m_notifications.push_back(Notification{
       .id = id,
       .origin = origin,
-      .app_name = std::move(app_name),
+      .appName = std::move(app_name),
       .summary = std::move(summary),
       .body = std::move(body),
       .timeout = timeout,
@@ -102,10 +102,10 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
       .actions = std::move(actions),
       .icon = std::move(icon),
       .category = std::move(category),
-      .desktop_entry = std::move(desktop_entry),
-      .expiry_time = schedule_expiry(timeout),
+      .desktopEntry = std::move(desktop_entry),
+      .expiryTime = schedule_expiry(timeout),
   });
-  m_id_to_index.emplace(id, m_notifications.size() - 1);
+  m_idToIndex.emplace(id, m_notifications.size() - 1);
 
   const auto& n = m_notifications.back();
   log_notification(n, "added");
@@ -126,8 +126,8 @@ uint32_t NotificationManager::addInternal(std::string app_name, std::string summ
 }
 
 bool NotificationManager::close(uint32_t id, CloseReason reason) {
-  const auto it = m_id_to_index.find(id);
-  if (it == m_id_to_index.end()) {
+  const auto it = m_idToIndex.find(id);
+  if (it == m_idToIndex.end()) {
     return false;
   }
 
@@ -139,10 +139,10 @@ bool NotificationManager::close(uint32_t id, CloseReason reason) {
   logDebug("notification {} #{}", reason_str, id);
 
   m_notifications.erase(m_notifications.begin() + static_cast<std::ptrdiff_t>(index));
-  m_id_to_index.erase(it);
+  m_idToIndex.erase(it);
 
   for (size_t i = index; i < m_notifications.size(); ++i) {
-    m_id_to_index[m_notifications[i].id] = i;
+    m_idToIndex[m_notifications[i].id] = i;
   }
 
   for (auto& [token, cb] : m_eventCallbacks) {
@@ -158,7 +158,7 @@ std::vector<uint32_t> NotificationManager::expiredIds() const {
   const auto now = Clock::now();
   std::vector<uint32_t> ids;
   for (const auto& n : m_notifications) {
-    if (n.expiry_time && now >= *n.expiry_time) {
+    if (n.expiryTime && now >= *n.expiryTime) {
       ids.push_back(n.id);
     }
   }
@@ -169,8 +169,8 @@ int NotificationManager::nextExpiryTimeoutMs() const {
   int expiry_ms = -1;
   const auto now = Clock::now();
   for (const auto& n : m_notifications) {
-    if (n.expiry_time) {
-      const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(*n.expiry_time - now).count();
+    if (n.expiryTime) {
+      const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(*n.expiryTime - now).count();
       const int clamped = static_cast<int>(std::max<long long>(0, ms));
       if (expiry_ms < 0 || clamped < expiry_ms) {
         expiry_ms = clamped;
