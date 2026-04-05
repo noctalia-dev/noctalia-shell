@@ -29,8 +29,8 @@ constexpr int kCardInnerPad = Style::spaceMd;
 constexpr int kPopupDurationMs = 8000;
 constexpr int kProgressHeight = 3;
 constexpr int kSlideOffset = 20;                     // horizontal slide distance for entry/exit animation
-constexpr int kProgressBottomMargin = Style::paddingV; // space below progress bar to card edge
-constexpr int kProgressTopGap = Style::spaceMd;       // gap from text content to progress bar
+constexpr int kProgressBottomMargin = Style::spaceMd; // space below progress bar to card edge
+constexpr int kProgressTopGap = Style::spaceLg;       // gap from text content to progress bar
 
 constexpr int kMetaFontSize = Style::fontSizeCaption;
 constexpr int kSummaryFontSize = Style::fontSizeTitle;
