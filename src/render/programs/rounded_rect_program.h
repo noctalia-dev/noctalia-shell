@@ -26,7 +26,7 @@ struct Radii {
 
   Radii() = default;
   /* implicit */ Radii(float r) : tl(r), tr(r), br(r), bl(r) {} // NOLINT(google-explicit-constructor)
-  Radii(float tl, float tr, float br, float bl) : tl(tl), tr(tr), br(br), bl(bl) {}
+  Radii(float tlv, float trv, float brv, float blv) : tl(tlv), tr(trv), br(brv), bl(blv) {}
 };
 
 struct RoundedRectStyle {
