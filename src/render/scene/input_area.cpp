@@ -78,8 +78,9 @@ void InputArea::dispatchPress(float localX, float localY, std::uint32_t button, 
   }
 }
 
-void InputArea::dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed) {
-  const KeyData data{.sym = sym, .utf32 = utf32, .modifiers = modifiers, .pressed = pressed};
+void InputArea::dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed,
+                            bool preedit) {
+  const KeyData data{.sym = sym, .utf32 = utf32, .modifiers = modifiers, .pressed = pressed, .preedit = preedit};
   if (pressed) {
     if (m_onKeyDown) {
       m_onKeyDown(data);

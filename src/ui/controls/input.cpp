@@ -86,7 +86,7 @@ Input::Input() {
       markDirty();
     }
   });
-  area->setOnKeyDown([this](const InputArea::KeyData& k) { handleKey(k.sym, k.utf32, k.modifiers); });
+  area->setOnKeyDown([this](const InputArea::KeyData& k) { handleKey(k.sym, k.utf32, k.modifiers, k.preedit); });
   m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
 
   applyVisualState();
@@ -170,10 +170,25 @@ void Input::layout(Renderer& renderer) {
   applyVisualState();
 }
 
-void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers) {
+void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool preedit) {
+  // Ignore keys that produce no text and aren't action keys we handle below
+  if (utf32 == 0 && !preedit && sym != XKB_KEY_BackSpace && sym != XKB_KEY_Delete && sym != XKB_KEY_Left &&
+      sym != XKB_KEY_Right && sym != XKB_KEY_Home && sym != XKB_KEY_End && sym != XKB_KEY_Return) {
+    return;
+  }
+
   bool changed = false;
   const bool shift = (modifiers & kModShift) != 0;
   const bool ctrl  = (modifiers & kModCtrl)  != 0;
+
+  // Remove previous preedit text before processing
+  if (m_preeditLen > 0) {
+    m_value.erase(m_preeditStart, m_preeditLen);
+    m_cursorPos = m_preeditStart;
+    m_selectionAnchor = m_cursorPos;
+    m_preeditLen = 0;
+    changed = true;
+  }
 
   if (ctrl && sym == 'a') {
     // Select all
@@ -243,6 +258,10 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     }
     const auto bytes = utf32ToUtf8(utf32);
     m_value.insert(m_cursorPos, bytes);
+    if (preedit) {
+      m_preeditStart = m_cursorPos;
+      m_preeditLen = bytes.size();
+    }
     m_cursorPos += bytes.size();
     m_selectionAnchor = m_cursorPos;
     changed = true;
@@ -251,7 +270,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
   updateDisplayText();
   markDirty();
 
-  if (changed && m_onChange) {
+  if (changed && !preedit && m_onChange) {
     m_onChange(m_value);
   }
 }

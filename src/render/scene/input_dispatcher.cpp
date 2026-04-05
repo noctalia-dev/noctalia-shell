@@ -52,9 +52,10 @@ bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool
   return false;
 }
 
-void InputDispatcher::keyEvent(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed) {
+void InputDispatcher::keyEvent(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed,
+                               bool preedit) {
   if (m_focusedArea != nullptr) {
-    m_focusedArea->dispatchKey(sym, utf32, modifiers, pressed);
+    m_focusedArea->dispatchKey(sym, utf32, modifiers, pressed, preedit);
   }
 }
 

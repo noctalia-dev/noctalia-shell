@@ -232,7 +232,7 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed);
+  m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed, event.preedit);
   if (m_surface != nullptr && m_sceneRoot != nullptr && m_sceneRoot->dirty()) {
     if (m_renderContext != nullptr && m_activePanel != nullptr) {
       m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);

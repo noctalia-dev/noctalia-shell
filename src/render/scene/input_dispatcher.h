@@ -23,7 +23,8 @@ public:
   bool pointerButton(float x, float y, std::uint32_t button, bool pressed);
 
   // Dispatch keyboard events to the focused area
-  void keyEvent(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed);
+  void keyEvent(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed,
+                bool preedit = false);
 
   // Focus management
   void setFocus(InputArea* area);

@@ -27,7 +27,7 @@ public:
   void layout(Renderer& renderer);
 
 private:
-  void handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers);
+  void handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool preedit = false);
   void applyVisualState();
   void updateDisplayText();
   [[nodiscard]] float measureCursorX(Renderer& renderer) const;
@@ -52,6 +52,8 @@ private:
   std::string m_placeholder;
   std::size_t m_cursorPos = 0;
   std::size_t m_selectionAnchor = 0;
+  std::size_t m_preeditStart = 0;
+  std::size_t m_preeditLen = 0;
 
   std::vector<float> m_stopX;
   std::vector<std::size_t> m_stopByte;

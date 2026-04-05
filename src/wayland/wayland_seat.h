@@ -13,6 +13,8 @@ struct wl_seat;
 struct wl_surface;
 struct wp_cursor_shape_manager_v1;
 struct wp_cursor_shape_device_v1;
+struct xkb_compose_state;
+struct xkb_compose_table;
 struct xkb_context;
 struct xkb_keymap;
 struct xkb_state;
@@ -42,6 +44,7 @@ struct KeyboardEvent {
   std::uint32_t key = 0;       // raw Linux keycode
   std::uint32_t modifiers = 0; // KeyMod bitmask
   bool pressed = false;
+  bool preedit = false;        // dead key preview (composing in progress)
 };
 
 class WaylandSeat {
@@ -103,6 +106,8 @@ private:
   xkb_context* m_xkbContext = nullptr;
   xkb_keymap* m_xkbKeymap = nullptr;
   xkb_state* m_xkbState = nullptr;
+  xkb_compose_table* m_composeTable = nullptr;
+  xkb_compose_state* m_composeState = nullptr;
   KeyboardEventCallback m_keyboardEventCallback;
 
   // Key repeat

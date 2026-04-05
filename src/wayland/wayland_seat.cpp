@@ -5,7 +5,10 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <wayland-client.h>
+#include <clocale>
+#include <cstring>
 #include <xkbcommon/xkbcommon.h>
+#include <xkbcommon/xkbcommon-compose.h>
 
 #include "cursor-shape-v1-client-protocol.h"
 
@@ -70,6 +73,14 @@ void WaylandSeat::cleanup() {
   }
   m_cursorShapeManager = nullptr;
 
+  if (m_composeState != nullptr) {
+    xkb_compose_state_unref(m_composeState);
+    m_composeState = nullptr;
+  }
+  if (m_composeTable != nullptr) {
+    xkb_compose_table_unref(m_composeTable);
+    m_composeTable = nullptr;
+  }
   if (m_xkbState != nullptr) {
     xkb_state_unref(m_xkbState);
     m_xkbState = nullptr;
@@ -237,6 +248,22 @@ void WaylandSeat::handleKeyboardKeymap(void* data, wl_keyboard* /*keyboard*/, st
   }
   self->m_xkbKeymap = keymap;
   self->m_xkbState = state;
+
+  // (Re)create compose state for dead key / intl layout support
+  if (self->m_composeState != nullptr) {
+    xkb_compose_state_unref(self->m_composeState);
+    self->m_composeState = nullptr;
+  }
+  if (self->m_composeTable != nullptr) {
+    xkb_compose_table_unref(self->m_composeTable);
+    self->m_composeTable = nullptr;
+  }
+  self->m_composeTable =
+      xkb_compose_table_new_from_locale(self->m_xkbContext, setlocale(LC_CTYPE, nullptr), XKB_COMPOSE_COMPILE_NO_FLAGS);
+  if (self->m_composeTable != nullptr) {
+    self->m_composeState = xkb_compose_state_new(self->m_composeTable, XKB_COMPOSE_STATE_NO_FLAGS);
+  }
+
   logInfo("keyboard: keymap loaded");
 }
 
@@ -257,8 +284,8 @@ void WaylandSeat::handleKeyboardKey(void* data, wl_keyboard* /*keyboard*/, std::
   }
 
   const std::uint32_t xkbKeycode = key + 8; // evdev → XKB
-  const auto sym = static_cast<std::uint32_t>(xkb_state_key_get_one_sym(self->m_xkbState, xkbKeycode));
-  const auto utf32 = static_cast<std::uint32_t>(xkb_keysym_to_utf32(sym));
+  auto sym = static_cast<std::uint32_t>(xkb_state_key_get_one_sym(self->m_xkbState, xkbKeycode));
+  auto utf32 = static_cast<std::uint32_t>(xkb_state_key_get_utf32(self->m_xkbState, xkbKeycode));
 
   std::uint32_t mods = 0;
   if (xkb_state_mod_name_is_active(self->m_xkbState, XKB_MOD_NAME_SHIFT, XKB_STATE_MODS_EFFECTIVE) > 0)
@@ -271,6 +298,48 @@ void WaylandSeat::handleKeyboardKey(void* data, wl_keyboard* /*keyboard*/, std::
     mods |= KeyMod::Super;
 
   const bool pressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
+
+  // Feed through compose state for dead key / intl layout support
+  if (pressed && self->m_composeState != nullptr) {
+    xkb_compose_state_feed(self->m_composeState, static_cast<xkb_keysym_t>(sym));
+    const auto status = xkb_compose_state_get_status(self->m_composeState);
+    if (status == XKB_COMPOSE_COMPOSED) {
+      sym = static_cast<std::uint32_t>(xkb_compose_state_get_one_sym(self->m_composeState));
+      utf32 = static_cast<std::uint32_t>(xkb_keysym_to_utf32(static_cast<xkb_keysym_t>(sym)));
+      xkb_compose_state_reset(self->m_composeState);
+    } else if (status == XKB_COMPOSE_COMPOSING) {
+      // Send dead key visual as preedit preview.
+      // xkb_keysym_to_utf32 returns 0 for dead key syms, so get the keysym name,
+      // strip the "dead_" prefix, and look up the base (spacing) keysym instead.
+      utf32 = static_cast<std::uint32_t>(xkb_keysym_to_utf32(static_cast<xkb_keysym_t>(sym)));
+      if (utf32 == 0) {
+        char symName[64];
+        if (xkb_keysym_get_name(static_cast<xkb_keysym_t>(sym), symName, sizeof(symName)) > 0) {
+          constexpr const char kDeadPrefix[] = "dead_";
+          if (std::strncmp(symName, kDeadPrefix, 5) == 0) {
+            const xkb_keysym_t baseSym = xkb_keysym_from_name(symName + 5, XKB_KEYSYM_NO_FLAGS);
+            if (baseSym != XKB_KEY_NoSymbol) {
+              utf32 = static_cast<std::uint32_t>(xkb_keysym_to_utf32(baseSym));
+            }
+          }
+        }
+      }
+      if (utf32 != 0) {
+        self->m_keyboardEventCallback(KeyboardEvent{
+            .sym = sym,
+            .utf32 = utf32,
+            .key = key,
+            .modifiers = mods,
+            .pressed = true,
+            .preedit = true,
+        });
+      }
+      return;
+    } else if (status == XKB_COMPOSE_CANCELLED) {
+      xkb_compose_state_reset(self->m_composeState);
+    }
+    // XKB_COMPOSE_NOTHING → pass through normally
+  }
 
   self->m_keyboardEventCallback(KeyboardEvent{
       .sym = sym,

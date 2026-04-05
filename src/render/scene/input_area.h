@@ -19,6 +19,7 @@ public:
     std::uint32_t utf32 = 0;     // Unicode codepoint (0 for non-printable keys)
     std::uint32_t modifiers = 0; // KeyMod bitmask
     bool pressed = false;
+    bool preedit = false;        // dead key preview (composing in progress)
   };
 
   using PointerCallback = std::function<void(const PointerData&)>;
@@ -70,7 +71,8 @@ public:
   void dispatchLeave();
   void dispatchMotion(float localX, float localY);
   void dispatchPress(float localX, float localY, std::uint32_t button, bool isPressed);
-  void dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed);
+  void dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed,
+                   bool preedit = false);
   void dispatchFocusGain();
   void dispatchFocusLoss();
 
