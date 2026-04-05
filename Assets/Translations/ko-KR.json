@@ -1369,7 +1369,7 @@
     },
     "location": {
       "auto-locate-description": "IP 주소를 사용하여 주기적으로 위치를 자동으로 감지합니다.",
-      "auto-locate-label": "자동 찾기",
+      "auto-locate-label": "자동 위치",
       "calendar-cards-desc": "달력 패널에서 카드를 정리하고 활성화/비활성화합니다.",
       "calendar-cards-title": "달력 카드",
       "calendar-header-label": "달력 헤더",
