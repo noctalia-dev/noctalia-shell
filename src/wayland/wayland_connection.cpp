@@ -133,6 +133,10 @@ void WaylandConnection::setPointerEventCallback(WaylandSeat::PointerEventCallbac
   m_seatHandler.setPointerEventCallback(std::move(callback));
 }
 
+void WaylandConnection::setKeyboardEventCallback(WaylandSeat::KeyboardEventCallback callback) {
+  m_seatHandler.setKeyboardEventCallback(std::move(callback));
+}
+
 void WaylandConnection::setCursorShape(std::uint32_t serial, std::uint32_t shape) {
   m_seatHandler.setCursorShape(serial, shape);
 }

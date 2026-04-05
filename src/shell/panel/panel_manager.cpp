@@ -85,7 +85,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
       .height = panelHeight,
       .exclusiveZone = 0,
       .marginTop = static_cast<std::int32_t>(barHeight) + 4,
-      .keyboard = LayerShellKeyboard::None,
+      .keyboard = LayerShellKeyboard::OnDemand,
       .defaultWidth = panelWidth,
       .defaultHeight = panelHeight,
   };
@@ -224,6 +224,16 @@ bool PanelManager::isOpen() const noexcept { return m_surface != nullptr && m_ac
 const std::string& PanelManager::activePanelId() const noexcept { return m_activePanelId; }
 
 void PanelManager::close() { closePanel(); }
+
+void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
+  if (!isOpen()) {
+    return;
+  }
+  m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed);
+  if (m_surface != nullptr && m_sceneRoot != nullptr && m_sceneRoot->dirty()) {
+    m_surface->requestRedraw();
+  }
+}
 
 void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
   if (m_renderContext == nullptr || m_activePanel == nullptr) {

@@ -4,11 +4,16 @@
 #include <functional>
 #include <vector>
 
+struct wl_array;
+struct wl_keyboard;
 struct wl_pointer;
 struct wl_seat;
 struct wl_surface;
 struct wp_cursor_shape_manager_v1;
 struct wp_cursor_shape_device_v1;
+struct xkb_context;
+struct xkb_keymap;
+struct xkb_state;
 
 struct PointerEvent {
   enum class Type : std::uint8_t { Enter, Leave, Motion, Button };
@@ -22,17 +27,34 @@ struct PointerEvent {
   std::uint32_t state = 0;
 };
 
+namespace KeyMod {
+inline constexpr std::uint32_t Shift = 1u << 0;
+inline constexpr std::uint32_t Ctrl  = 1u << 1;
+inline constexpr std::uint32_t Alt   = 1u << 2;
+inline constexpr std::uint32_t Super = 1u << 3;
+} // namespace KeyMod
+
+struct KeyboardEvent {
+  std::uint32_t sym = 0;       // XKB keysym
+  std::uint32_t utf32 = 0;     // Unicode codepoint (0 for non-printable keys)
+  std::uint32_t key = 0;       // raw Linux keycode
+  std::uint32_t modifiers = 0; // KeyMod bitmask
+  bool pressed = false;
+};
+
 class WaylandSeat {
 public:
   using PointerEventCallback = std::function<void(const PointerEvent&)>;
+  using KeyboardEventCallback = std::function<void(const KeyboardEvent&)>;
 
   void bind(wl_seat* seat);
   void setCursorShapeManager(wp_cursor_shape_manager_v1* manager);
   void setPointerEventCallback(PointerEventCallback callback);
+  void setKeyboardEventCallback(KeyboardEventCallback callback);
   void setCursorShape(std::uint32_t serial, std::uint32_t shape);
   void cleanup();
 
-  // Static listener entrypoints
+  // Pointer listener entrypoints
   static void handleSeatCapabilities(void* data, wl_seat* seat, std::uint32_t caps);
   static void handleSeatName(void* data, wl_seat* seat, const char* name);
   static void handlePointerEnter(void* data, wl_pointer* pointer, std::uint32_t serial, wl_surface* surface,
@@ -44,7 +66,21 @@ public:
                                   std::uint32_t button, std::uint32_t state);
   static void handlePointerFrame(void* data, wl_pointer* pointer);
 
+  // Keyboard listener entrypoints
+  static void handleKeyboardKeymap(void* data, wl_keyboard* keyboard, std::uint32_t format, int fd,
+                                   std::uint32_t size);
+  static void handleKeyboardEnter(void* data, wl_keyboard* keyboard, std::uint32_t serial, wl_surface* surface,
+                                  wl_array* keys);
+  static void handleKeyboardLeave(void* data, wl_keyboard* keyboard, std::uint32_t serial, wl_surface* surface);
+  static void handleKeyboardKey(void* data, wl_keyboard* keyboard, std::uint32_t serial, std::uint32_t time,
+                                std::uint32_t key, std::uint32_t state);
+  static void handleKeyboardModifiers(void* data, wl_keyboard* keyboard, std::uint32_t serial,
+                                      std::uint32_t modsDepressed, std::uint32_t modsLatched,
+                                      std::uint32_t modsLocked, std::uint32_t group);
+  static void handleKeyboardRepeatInfo(void* data, wl_keyboard* keyboard, std::int32_t rate, std::int32_t delay);
+
 private:
+  // Pointer
   wl_pointer* m_pointer = nullptr;
   wp_cursor_shape_manager_v1* m_cursorShapeManager = nullptr;
   wp_cursor_shape_device_v1* m_cursorShapeDevice = nullptr;
@@ -54,4 +90,11 @@ private:
   double m_lastPointerX = 0.0;
   double m_lastPointerY = 0.0;
   bool m_hasPointerPosition = false;
+
+  // Keyboard
+  wl_keyboard* m_keyboard = nullptr;
+  xkb_context* m_xkbContext = nullptr;
+  xkb_keymap* m_xkbKeymap = nullptr;
+  xkb_state* m_xkbState = nullptr;
+  KeyboardEventCallback m_keyboardEventCallback;
 };

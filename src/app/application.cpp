@@ -185,6 +185,11 @@ void Application::run() {
     m_notificationPopup.onPointerEvent(event);
   });
 
+  // Keyboard events are routed only to the panel (the only surface with keyboard interactivity)
+  m_wayland.setKeyboardEventCallback([this](const KeyboardEvent& event) {
+    m_panelManager.onKeyboardEvent(event);
+  });
+
   // Build poll sources
   std::vector<PollSource*> sources;
   if (m_bus != nullptr) {

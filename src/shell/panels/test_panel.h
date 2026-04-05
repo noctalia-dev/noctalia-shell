@@ -4,6 +4,7 @@
 
 class Box;
 class Button;
+class Input;
 class Select;
 class Label;
 class Slider;
@@ -29,4 +30,6 @@ private:
   Slider* m_slider = nullptr;
   Toggle* m_toggle = nullptr;
   Spinner* m_spinner = nullptr;
+  Input* m_input = nullptr;
+  Label* m_inputValueLabel = nullptr;
 };

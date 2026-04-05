@@ -26,6 +26,7 @@ pkg_check_modules(WAYLAND_EGL REQUIRED wayland-egl)
 pkg_check_modules(FREETYPE2 REQUIRED freetype2)
 pkg_check_modules(HARFBUZZ REQUIRED harfbuzz)
 pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
+pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
 
 # --- msdfgen (vendored) ---
 set(MSDFGEN_CORE_ONLY OFF CACHE BOOL "" FORCE)
@@ -222,6 +223,7 @@ add_executable(noctalia
     src/shell/widget/widget_factory.cpp
     src/ui/controls/box.cpp
     src/ui/controls/button.cpp
+    src/ui/controls/input.cpp
     src/ui/controls/chip.cpp
     src/ui/controls/select.cpp
     src/ui/controls/icon.cpp
@@ -271,6 +273,7 @@ target_include_directories(noctalia PRIVATE
     ${FREETYPE2_INCLUDE_DIRS}
     ${HARFBUZZ_INCLUDE_DIRS}
     ${FONTCONFIG_INCLUDE_DIRS}
+    ${XKBCOMMON_INCLUDE_DIRS}
 )
 target_link_libraries(noctalia PRIVATE
     SDBusCpp::sdbus-c++
@@ -283,6 +286,7 @@ target_link_libraries(noctalia PRIVATE
     ${FREETYPE2_LIBRARIES}
     ${HARFBUZZ_LIBRARIES}
     ${FONTCONFIG_LIBRARIES}
+    ${XKBCOMMON_LIBRARIES}
 )
 target_compile_options(noctalia PRIVATE
     ${WAYLAND_CLIENT_CFLAGS_OTHER}

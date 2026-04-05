@@ -3,7 +3,15 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 
-void InputDispatcher::setSceneRoot(Node* root) { m_sceneRoot = root; }
+void InputDispatcher::setSceneRoot(Node* root) {
+  if (root == nullptr) {
+    if (m_focusedArea != nullptr) {
+      m_focusedArea->dispatchFocusLoss();
+      m_focusedArea = nullptr;
+    }
+  }
+  m_sceneRoot = root;
+}
 
 void InputDispatcher::setCursorShapeCallback(CursorShapeCallback callback) {
   m_cursorShapeCallback = std::move(callback);
@@ -33,6 +41,31 @@ void InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool
     float absX = 0.0f, absY = 0.0f;
     Node::absolutePosition(m_hoveredArea, absX, absY);
     m_hoveredArea->dispatchPress(x - absX, y - absY, button, pressed);
+    if (pressed && m_hoveredArea->focusable()) {
+      setFocus(m_hoveredArea);
+    }
+  } else if (pressed) {
+    setFocus(nullptr);
+  }
+}
+
+void InputDispatcher::keyEvent(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed) {
+  if (m_focusedArea != nullptr) {
+    m_focusedArea->dispatchKey(sym, utf32, modifiers, pressed);
+  }
+}
+
+void InputDispatcher::setFocus(InputArea* area) {
+  if (area == m_focusedArea) {
+    return;
+  }
+  if (m_focusedArea != nullptr) {
+    m_focusedArea->dispatchFocusLoss();
+  }
+  m_focusedArea = area;
+  if (m_focusedArea != nullptr) {
+    trackArea(m_focusedArea);
+    m_focusedArea->dispatchFocusGain();
   }
 }
 
@@ -65,11 +98,7 @@ void InputDispatcher::updateHover(float x, float y, std::uint32_t serial) {
     }
     m_hoveredArea = area;
     if (m_hoveredArea != nullptr) {
-      m_hoveredArea->setDestroyCallback([this](InputArea* a) {
-        if (m_hoveredArea == a) {
-          m_hoveredArea = nullptr;
-        }
-      });
+      trackArea(m_hoveredArea);
       float absX = 0.0f, absY = 0.0f;
       Node::absolutePosition(m_hoveredArea, absX, absY);
       m_hoveredArea->dispatchEnter(x - absX, y - absY);
@@ -81,6 +110,17 @@ void InputDispatcher::updateHover(float x, float y, std::uint32_t serial) {
   }
 
   updateCursor(serial);
+}
+
+void InputDispatcher::trackArea(InputArea* area) {
+  area->setDestroyCallback([this](InputArea* a) {
+    if (m_hoveredArea == a) {
+      m_hoveredArea = nullptr;
+    }
+    if (m_focusedArea == a) {
+      m_focusedArea = nullptr;
+    }
+  });
 }
 
 void InputDispatcher::updateCursor(std::uint32_t serial) {

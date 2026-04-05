@@ -27,6 +27,11 @@ void InputArea::setCursorShape(std::uint32_t shape) { m_cursorShape = shape; }
 void InputArea::setAcceptedButtons(std::uint32_t mask) { m_acceptedButtons = mask; }
 void InputArea::setPropagateEvents(bool propagate) { m_propagateEvents = propagate; }
 void InputArea::setEnabled(bool enabled) { m_enabled = enabled; }
+void InputArea::setFocusable(bool focusable) { m_focusable = focusable; }
+void InputArea::setOnKeyDown(KeyCallback callback) { m_onKeyDown = std::move(callback); }
+void InputArea::setOnKeyUp(KeyCallback callback) { m_onKeyUp = std::move(callback); }
+void InputArea::setOnFocusGain(VoidCallback callback) { m_onFocusGain = std::move(callback); }
+void InputArea::setOnFocusLoss(VoidCallback callback) { m_onFocusLoss = std::move(callback); }
 
 void InputArea::dispatchEnter(float localX, float localY) {
   m_hovered = true;
@@ -70,5 +75,32 @@ void InputArea::dispatchPress(float localX, float localY, std::uint32_t button, 
     if (shouldClick) {
       m_onClick({.localX = localX, .localY = localY, .button = button, .pressed = false});
     }
+  }
+}
+
+void InputArea::dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed) {
+  const KeyData data{.sym = sym, .utf32 = utf32, .modifiers = modifiers, .pressed = pressed};
+  if (pressed) {
+    if (m_onKeyDown) {
+      m_onKeyDown(data);
+    }
+  } else {
+    if (m_onKeyUp) {
+      m_onKeyUp(data);
+    }
+  }
+}
+
+void InputArea::dispatchFocusGain() {
+  m_focused = true;
+  if (m_onFocusGain) {
+    m_onFocusGain();
+  }
+}
+
+void InputArea::dispatchFocusLoss() {
+  m_focused = false;
+  if (m_onFocusLoss) {
+    m_onFocusLoss();
   }
 }

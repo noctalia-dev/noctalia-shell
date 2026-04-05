@@ -6,6 +6,7 @@
 #include "ui/controls/select.h"
 #include "ui/controls/label.h"
 #include "ui/controls/slider.h"
+#include "ui/controls/input.h"
 #include "ui/controls/spinner.h"
 #include "ui/controls/toggle.h"
 #include "ui/palette.h"
@@ -141,6 +142,29 @@ void TestPanel::create(Renderer& renderer) {
     container->addChild(std::move(row));
   }
 
+  {
+    auto input = std::make_unique<Input>();
+    input->setPlaceholder("Type something...");
+    input->setSize(220.0f, 0.0f);
+    m_input = input.get();
+
+    auto valueLabel = std::make_unique<Label>();
+    valueLabel->setCaptionStyle();
+    m_inputValueLabel = valueLabel.get();
+
+    input->setOnChange([this](const std::string& val) {
+      if (m_inputValueLabel != nullptr) {
+        m_inputValueLabel->setText(val.empty() ? "" : val);
+      }
+    });
+
+    auto row = makeRow();
+    row->addChild(makeRowLabel("Input", kRowLabelWidth));
+    row->addChild(std::move(input));
+    row->addChild(std::move(valueLabel));
+    container->addChild(std::move(row));
+  }
+
   m_root = std::move(container);
 
   if (m_headerLabel != nullptr) {
@@ -177,6 +201,12 @@ void TestPanel::layout(Renderer& renderer, float /*width*/, float /*height*/) {
   // Size the InputArea to match the toggle
   if (m_toggle != nullptr && m_toggle->parent() != nullptr) {
     m_toggle->parent()->setSize(m_toggle->width(), m_toggle->height());
+  }
+  if (m_input != nullptr) {
+    m_input->layout(renderer);
+  }
+  if (m_inputValueLabel != nullptr) {
+    m_inputValueLabel->measure(renderer);
   }
   m_container->layout(renderer);
 }

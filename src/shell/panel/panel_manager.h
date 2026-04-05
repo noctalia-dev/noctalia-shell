@@ -5,6 +5,7 @@
 #include "render/scene/node.h"
 #include "shell/panel/panel.h"
 #include "wayland/layer_surface.h"
+#include "wayland/wayland_seat.h"
 
 #include <memory>
 #include <string>
@@ -36,6 +37,7 @@ public:
   void togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX);
 
   void onPointerEvent(const PointerEvent& event);
+  void onKeyboardEvent(const KeyboardEvent& event);
 
   [[nodiscard]] bool isOpen() const noexcept;
   [[nodiscard]] const std::string& activePanelId() const noexcept;
