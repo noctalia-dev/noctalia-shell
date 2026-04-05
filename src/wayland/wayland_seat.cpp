@@ -2,13 +2,13 @@
 
 #include "core/log.h"
 
+#include <clocale>
+#include <cstring>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <wayland-client.h>
-#include <clocale>
-#include <cstring>
-#include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-compose.h>
+#include <xkbcommon/xkbcommon.h>
 
 #include "cursor-shape-v1-client-protocol.h"
 
@@ -225,7 +225,7 @@ void WaylandSeat::handleKeyboardKeymap(void* data, wl_keyboard* /*keyboard*/, st
   }
 
   auto* keymap = xkb_keymap_new_from_string(self->m_xkbContext, static_cast<const char*>(buf),
-                                             XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
+                                            XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
   munmap(buf, size);
 
   if (keymap == nullptr) {

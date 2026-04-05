@@ -87,47 +87,79 @@ MsdfTextRenderer::TextMetrics MsdfTextRenderer::measure(std::string_view text, f
     return {};
   }
 
-  auto shaped = shapeWithFallback(text, fontSize);
+  const auto measureSingleLine = [this, fontSize](std::string_view line) {
+    auto shaped = shapeWithFallback(line, fontSize);
 
-  const float scale = fontSize / kAtlasEmSize;
-  float width = 0.0f;
-  float penX = 0.0f;
-  float minTop = 0.0f;
-  float maxBottom = 0.0f;
-  bool hasBounds = false;
+    const float scale = fontSize / kAtlasEmSize;
+    float width = 0.0f;
+    float penX = 0.0f;
+    float minTop = 0.0f;
+    float maxBottom = 0.0f;
+    bool hasBounds = false;
 
-  for (const auto& sg : shaped) {
-    Glyph& glyph = loadGlyph(sg.slotIndex, sg.glyphIndex);
-    const float xOffset = static_cast<float>(sg.position.x_offset) / 64.0f;
-    const float yOffset = static_cast<float>(sg.position.y_offset) / 64.0f;
-    const float glyphLeft = penX + xOffset + glyph.bearingX * scale;
-    const float glyphTop = -yOffset - glyph.bearingY * scale;
-    const float glyphBottom = glyphTop + glyph.atlasHeight * scale;
-    const float glyphRight = glyphLeft + glyph.atlasWidth * scale;
+    for (const auto& sg : shaped) {
+      Glyph& glyph = loadGlyph(sg.slotIndex, sg.glyphIndex);
+      const float xOffset = static_cast<float>(sg.position.x_offset) / 64.0f;
+      const float yOffset = static_cast<float>(sg.position.y_offset) / 64.0f;
+      const float glyphLeft = penX + xOffset + glyph.bearingX * scale;
+      const float glyphTop = -yOffset - glyph.bearingY * scale;
+      const float glyphBottom = glyphTop + glyph.atlasHeight * scale;
+      const float glyphRight = glyphLeft + glyph.atlasWidth * scale;
 
-    if (glyph.atlasWidth > 0.0f && glyph.atlasHeight > 0.0f) {
-      if (!hasBounds) {
-        minTop = glyphTop;
-        maxBottom = glyphBottom;
-        width = glyphRight;
-        hasBounds = true;
-      } else {
-        minTop = std::min(minTop, glyphTop);
-        maxBottom = std::max(maxBottom, glyphBottom);
-        width = std::max(width, glyphRight);
+      if (glyph.atlasWidth > 0.0f && glyph.atlasHeight > 0.0f) {
+        if (!hasBounds) {
+          minTop = glyphTop;
+          maxBottom = glyphBottom;
+          width = glyphRight;
+          hasBounds = true;
+        } else {
+          minTop = std::min(minTop, glyphTop);
+          maxBottom = std::max(maxBottom, glyphBottom);
+          width = std::max(width, glyphRight);
+        }
       }
+
+      penX += static_cast<float>(sg.position.x_advance) / 64.0f;
     }
 
-    penX += static_cast<float>(sg.position.x_advance) / 64.0f;
+    width = std::max(width, penX);
+    return TextMetrics{.width = width, .top = minTop, .bottom = maxBottom};
+  };
+
+  const float lineAdvance = [&]() {
+    const auto metrics = measureSingleLine("Ay");
+    return std::max(metrics.bottom - metrics.top, fontSize) + 2.0f;
+  }();
+
+  float maxWidth = 0.0f;
+  float top = 0.0f;
+  float bottom = 0.0f;
+  bool hasBounds = false;
+  float baselineY = 0.0f;
+  std::size_t start = 0;
+  while (start <= text.size()) {
+    const std::size_t end = text.find('\n', start);
+    const std::string_view line = (end == std::string_view::npos) ? text.substr(start) : text.substr(start, end - start);
+    auto metrics = measureSingleLine(line);
+    maxWidth = std::max(maxWidth, metrics.width);
+
+    if (!hasBounds) {
+      top = baselineY + metrics.top;
+      bottom = baselineY + metrics.bottom;
+      hasBounds = true;
+    } else {
+      top = std::min(top, baselineY + metrics.top);
+      bottom = std::max(bottom, baselineY + metrics.bottom);
+    }
+
+    if (end == std::string_view::npos) {
+      break;
+    }
+    baselineY += lineAdvance;
+    start = end + 1;
   }
 
-  width = std::max(width, penX);
-
-  return TextMetrics{
-      .width = width,
-      .top = minTop,
-      .bottom = maxBottom,
-  };
+  return TextMetrics{.width = maxWidth, .top = top, .bottom = bottom};
 }
 
 MsdfTextRenderer::TruncatedText MsdfTextRenderer::truncate(std::string_view text, float fontSize, float maxWidth) {
@@ -177,31 +209,56 @@ void MsdfTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, fl
     return;
   }
 
-  auto shaped = shapeWithFallback(text, fontSize);
-
-  const float scale = fontSize / kAtlasEmSize;
-  const float pxRange = std::max(static_cast<float>(kDistanceRange) * scale, 1.0f);
-  float penX = x;
-  float penY = std::round(baselineY);
-
-  for (const auto& sg : shaped) {
-    Glyph& glyph = loadGlyph(sg.slotIndex, sg.glyphIndex);
-
-    if (glyph.atlasWidth > 0.0f && glyph.atlasHeight > 0.0f) {
-      const float xOffset = static_cast<float>(sg.position.x_offset) / 64.0f;
-      const float yOffset = static_cast<float>(sg.position.y_offset) / 64.0f;
-      const float glyphX = penX + xOffset + glyph.bearingX * scale;
-      const float glyphY = penY - yOffset - glyph.bearingY * scale;
-      const float glyphW = glyph.atlasWidth * scale;
-      const float glyphH = glyph.atlasHeight * scale;
-
-      GLuint atlasTexture = m_atlasPages[glyph.atlasPage];
-      m_program.draw(atlasTexture, surfaceWidth, surfaceHeight, glyphX, glyphY, glyphW, glyphH, glyph.u0, glyph.v0,
-                     glyph.u1, glyph.v1, pxRange, color, rotation, renderScale);
+  const auto drawSingleLine = [this, surfaceWidth, surfaceHeight, x, fontSize, &color, rotation,
+                               renderScale](float lineBaselineY, std::string_view line) {
+    if (line.empty()) {
+      return;
     }
 
-    penX += static_cast<float>(sg.position.x_advance) / 64.0f;
-    penY -= static_cast<float>(sg.position.y_advance) / 64.0f;
+    auto shaped = shapeWithFallback(line, fontSize);
+    const float scale = fontSize / kAtlasEmSize;
+    const float pxRange = std::max(static_cast<float>(kDistanceRange) * scale, 1.0f);
+    float penX = x;
+    float penY = std::round(lineBaselineY);
+
+    for (const auto& sg : shaped) {
+      Glyph& glyph = loadGlyph(sg.slotIndex, sg.glyphIndex);
+
+      if (glyph.atlasWidth > 0.0f && glyph.atlasHeight > 0.0f) {
+        const float xOffset = static_cast<float>(sg.position.x_offset) / 64.0f;
+        const float yOffset = static_cast<float>(sg.position.y_offset) / 64.0f;
+        const float glyphX = penX + xOffset + glyph.bearingX * scale;
+        const float glyphY = penY - yOffset - glyph.bearingY * scale;
+        const float glyphW = glyph.atlasWidth * scale;
+        const float glyphH = glyph.atlasHeight * scale;
+
+        GLuint atlasTexture = m_atlasPages[glyph.atlasPage];
+        m_program.draw(atlasTexture, surfaceWidth, surfaceHeight, glyphX, glyphY, glyphW, glyphH, glyph.u0, glyph.v0,
+                       glyph.u1, glyph.v1, pxRange, color, rotation, renderScale);
+      }
+
+      penX += static_cast<float>(sg.position.x_advance) / 64.0f;
+      penY -= static_cast<float>(sg.position.y_advance) / 64.0f;
+    }
+  };
+
+  const float lineAdvance = [&]() {
+    const auto metrics = measure("Ay", fontSize);
+    return std::max(metrics.bottom - metrics.top, fontSize) + 2.0f;
+  }();
+
+  std::size_t start = 0;
+  float lineBaselineY = baselineY;
+
+  while (start <= text.size()) {
+    const std::size_t end = text.find('\n', start);
+    const std::string_view line = (end == std::string_view::npos) ? text.substr(start) : text.substr(start, end - start);
+    drawSingleLine(lineBaselineY, line);
+    if (end == std::string_view::npos) {
+      break;
+    }
+    lineBaselineY += lineAdvance;
+    start = end + 1;
   }
 }
 

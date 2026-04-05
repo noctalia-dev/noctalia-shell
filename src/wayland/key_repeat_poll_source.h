@@ -9,9 +9,7 @@ public:
 
   [[nodiscard]] int pollTimeoutMs() const override { return m_wayland.repeatPollTimeoutMs(); }
 
-  void dispatch(const std::vector<pollfd>& /*fds*/, std::size_t /*startIdx*/) override {
-    m_wayland.repeatTick();
-  }
+  void dispatch(const std::vector<pollfd>& /*fds*/, std::size_t /*startIdx*/) override { m_wayland.repeatTick(); }
 
 protected:
   void doAddPollFds(std::vector<pollfd>& /*fds*/) override {}

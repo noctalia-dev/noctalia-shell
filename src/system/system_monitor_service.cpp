@@ -148,8 +148,8 @@ void SystemMonitorService::samplingLoop() {
       logDebug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) temp={:.1f}C", next.cpuUsagePercent,
                next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, *next.cpuTempC);
     } else {
-      logDebug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) temp=n/a", next.cpuUsagePercent,
-               next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb);
+      logDebug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) temp=n/a", next.cpuUsagePercent, next.ramUsagePercent,
+               next.ramUsedMb, next.ramTotalMb);
     }
 
     std::this_thread::sleep_for(std::chrono::seconds(2));

@@ -36,6 +36,11 @@ private:
     std::string appName;
     std::string summary;
     std::string body;
+    std::string wrappedSummary;
+    std::string wrappedBody;
+    std::size_t summaryLines = 1;
+    std::size_t bodyLines = 1;
+    float cardHeight = 0.0f;
     Urgency urgency = Urgency::Normal;
     bool exiting = false;
   };
@@ -78,6 +83,7 @@ private:
   void dismissCardFromInstance(PopupInstance& inst, std::size_t entryIndex);
 
   float cardTargetY(std::size_t index) const;
+  void updateEntryLayout(PopupEntry& entry) const;
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;

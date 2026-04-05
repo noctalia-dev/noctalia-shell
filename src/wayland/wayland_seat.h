@@ -33,8 +33,8 @@ struct PointerEvent {
 
 namespace KeyMod {
 inline constexpr std::uint32_t Shift = 1u << 0;
-inline constexpr std::uint32_t Ctrl  = 1u << 1;
-inline constexpr std::uint32_t Alt   = 1u << 2;
+inline constexpr std::uint32_t Ctrl = 1u << 1;
+inline constexpr std::uint32_t Alt = 1u << 2;
 inline constexpr std::uint32_t Super = 1u << 3;
 } // namespace KeyMod
 
@@ -44,7 +44,7 @@ struct KeyboardEvent {
   std::uint32_t key = 0;       // raw Linux keycode
   std::uint32_t modifiers = 0; // KeyMod bitmask
   bool pressed = false;
-  bool preedit = false;        // dead key preview (composing in progress)
+  bool preedit = false; // dead key preview (composing in progress)
 };
 
 class WaylandSeat {
@@ -77,16 +77,15 @@ public:
   static void handlePointerFrame(void* data, wl_pointer* pointer);
 
   // Keyboard listener entrypoints
-  static void handleKeyboardKeymap(void* data, wl_keyboard* keyboard, std::uint32_t format, int fd,
-                                   std::uint32_t size);
+  static void handleKeyboardKeymap(void* data, wl_keyboard* keyboard, std::uint32_t format, int fd, std::uint32_t size);
   static void handleKeyboardEnter(void* data, wl_keyboard* keyboard, std::uint32_t serial, wl_surface* surface,
                                   wl_array* keys);
   static void handleKeyboardLeave(void* data, wl_keyboard* keyboard, std::uint32_t serial, wl_surface* surface);
   static void handleKeyboardKey(void* data, wl_keyboard* keyboard, std::uint32_t serial, std::uint32_t time,
                                 std::uint32_t key, std::uint32_t state);
   static void handleKeyboardModifiers(void* data, wl_keyboard* keyboard, std::uint32_t serial,
-                                      std::uint32_t modsDepressed, std::uint32_t modsLatched,
-                                      std::uint32_t modsLocked, std::uint32_t group);
+                                      std::uint32_t modsDepressed, std::uint32_t modsLatched, std::uint32_t modsLocked,
+                                      std::uint32_t group);
   static void handleKeyboardRepeatInfo(void* data, wl_keyboard* keyboard, std::int32_t rate, std::int32_t delay);
 
 private:
@@ -112,8 +111,8 @@ private:
 
   // Key repeat
   using SteadyClock = std::chrono::steady_clock;
-  std::int32_t m_repeatRate = 0;     // chars/sec; 0 = no repeat
-  std::int32_t m_repeatDelayMs = 0;  // initial delay in ms
+  std::int32_t m_repeatRate = 0;    // chars/sec; 0 = no repeat
+  std::int32_t m_repeatDelayMs = 0; // initial delay in ms
   KeyboardEvent m_repeatKey;
   bool m_repeatActive = false;
   bool m_repeatInDelay = false;

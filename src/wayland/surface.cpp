@@ -1,7 +1,7 @@
 #include "wayland/surface.h"
 
-#include "render/render_context.h"
 #include "render/animation/animation_manager.h"
+#include "render/render_context.h"
 #include "render/scene/node.h"
 #include "wayland/wayland_connection.h"
 
