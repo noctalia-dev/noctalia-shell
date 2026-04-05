@@ -218,7 +218,7 @@ void MsdfTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, fl
     auto shaped = shapeWithFallback(line, fontSize);
     const float scale = fontSize / kAtlasEmSize;
     const float pxRange = std::max(static_cast<float>(kDistanceRange) * scale, 1.0f);
-    float penX = x;
+    float penX = std::round(x);
     float penY = std::round(lineBaselineY);
 
     for (const auto& sg : shaped) {
@@ -227,8 +227,8 @@ void MsdfTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, fl
       if (glyph.atlasWidth > 0.0f && glyph.atlasHeight > 0.0f) {
         const float xOffset = static_cast<float>(sg.position.x_offset) / 64.0f;
         const float yOffset = static_cast<float>(sg.position.y_offset) / 64.0f;
-        const float glyphX = std::round(penX + xOffset + glyph.bearingX * scale);
-        const float glyphY = std::round(penY - yOffset - glyph.bearingY * scale);
+        const float glyphX = penX + xOffset + glyph.bearingX * scale;
+        const float glyphY = penY - yOffset - glyph.bearingY * scale;
         const float glyphW = glyph.atlasWidth * scale;
         const float glyphH = glyph.atlasHeight * scale;
 
@@ -302,8 +302,8 @@ void MsdfTextRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, float 
   const float pxRange = std::max(static_cast<float>(kDistanceRange) * scale, 1.0f);
 
   if (glyph.atlasWidth > 0.0f && glyph.atlasHeight > 0.0f) {
-    const float glyphX = std::round(x + glyph.bearingX * scale);
-    const float glyphY = std::round(baselineY - glyph.bearingY * scale);
+    const float glyphX = std::round(x) + glyph.bearingX * scale;
+    const float glyphY = std::round(baselineY) - glyph.bearingY * scale;
     const float glyphW = glyph.atlasWidth * scale;
     const float glyphH = glyph.atlasHeight * scale;
 
