@@ -6,6 +6,7 @@
 #include "ui/style.h"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 
 Label::Label() {
@@ -44,8 +45,8 @@ void Label::setCaptionStyle() {
 
 void Label::measure(Renderer& renderer) {
   auto metrics = renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold());
-  setSize(std::max(metrics.width, m_minWidth), metrics.bottom - metrics.top);
+  setSize(std::round(std::max(metrics.width, m_minWidth)), std::round(metrics.bottom - metrics.top));
 
-  // Position the TextNode at the baseline offset within this Label's bounds
-  m_textNode->setPosition(0.0f, -metrics.top);
+  m_baselineOffset = -metrics.top;
+  m_textNode->setPosition(0.0f, m_baselineOffset);
 }

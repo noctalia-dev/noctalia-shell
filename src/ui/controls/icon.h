@@ -19,6 +19,9 @@ public:
 
   void measure(Renderer& renderer);
 
+  [[nodiscard]] float baselineOffset() const noexcept { return m_baselineOffset; }
+
 private:
   IconNode* m_iconNode = nullptr;
+  float m_baselineOffset = 0.0f;
 };

@@ -47,7 +47,7 @@ void TestPanel::create(Renderer& renderer) {
   };
 
   auto button = std::make_unique<Button>();
-  button->setText("Button");
+  button->setText("Hello");
   button->setVariant(ButtonVariant::Default);
   button->setOnClick([]() {});
   m_button = button.get();
@@ -73,7 +73,7 @@ void TestPanel::create(Renderer& renderer) {
 
   auto select = std::make_unique<Select>();
   select->setSize(220.0f, 0.0f);
-  select->setOptions({"Balanced", "Performance", "Power Saver"});
+  select->setOptions({"Something", "Yop", "Anything"});
   select->setSelectedIndex(0);
   m_select = select.get();
   {

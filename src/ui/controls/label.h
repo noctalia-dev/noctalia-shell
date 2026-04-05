@@ -25,6 +25,7 @@ public:
   [[nodiscard]] const Color& color() const noexcept;
   [[nodiscard]] float maxWidth() const noexcept;
   [[nodiscard]] bool bold() const noexcept;
+  [[nodiscard]] float baselineOffset() const noexcept { return m_baselineOffset; }
 
   void measure(Renderer& renderer);
 
@@ -33,4 +34,5 @@ public:
 private:
   TextNode* m_textNode = nullptr;
   float m_minWidth = 0.0f;
+  float m_baselineOffset = 0.0f;
 };

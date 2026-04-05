@@ -11,6 +11,7 @@
 #include "ui/style.h"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
@@ -127,7 +128,7 @@ void Input::layout(Renderer& renderer) {
   const auto metrics     = renderer.measureText(display, Style::fontSizeBody);
   const auto fontMetrics = renderer.measureText("Ay", Style::fontSizeBody);
   const float fontH      = fontMetrics.bottom - fontMetrics.top;
-  const float textNodeY  = (h - fontH) * 0.5f - fontMetrics.top;
+  const float textNodeY  = std::round((h - fontH) * 0.5f + fontMetrics.bottom * 0.25f) - fontMetrics.top;
   m_textNode->setPosition(Style::paddingH, textNodeY);
   m_textNode->setSize(metrics.width, fontH);
 

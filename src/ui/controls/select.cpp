@@ -11,6 +11,7 @@
 #include "cursor-shape-v1-client-protocol.h"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 
 namespace {
@@ -18,7 +19,7 @@ namespace {
 constexpr float kDefaultWidth = 220.0f;
 constexpr float kMinWidth = 160.0f;
 constexpr float kTriggerHeight = Style::controlHeight;
-constexpr float kOptionHeight = Style::controlHeightSm;
+constexpr float kOptionHeight = Style::controlHeight;
 constexpr float kMenuTopGap = 4.0f;
 constexpr float kHorizontalPadding = Style::paddingH;
 constexpr float kIconSize = 14.0f;
@@ -159,10 +160,13 @@ void Select::layout(Renderer& renderer) {
   const float triggerLabelMax = std::max(0.0f, dropdownWidth - (kHorizontalPadding * 2.0f + kIconSize + Style::spaceXs));
   m_triggerLabel->setMaxWidth(triggerLabelMax);
   m_triggerLabel->measure(renderer);
-  m_triggerLabel->setPosition(kHorizontalPadding, (kTriggerHeight - m_triggerLabel->height()) * 0.5f);
+  float triggerDescender = m_triggerLabel->height() - m_triggerLabel->baselineOffset();
+  float triggerLabelY = std::round((kTriggerHeight - m_triggerLabel->height()) * 0.5f + triggerDescender * 0.25f);
+  m_triggerLabel->setPosition(kHorizontalPadding, triggerLabelY);
 
+  float triggerLabelCenterY = triggerLabelY + m_triggerLabel->height() * 0.5f;
   m_triggerIcon->setPosition(dropdownWidth - kHorizontalPadding - m_triggerIcon->width(),
-                             (kTriggerHeight - m_triggerIcon->height()) * 0.5f);
+                             std::round(triggerLabelCenterY - m_triggerIcon->height() * 0.5f));
   m_triggerArea->setPosition(0.0f, 0.0f);
   m_triggerArea->setSize(dropdownWidth, kTriggerHeight);
 
@@ -187,11 +191,14 @@ void Select::layout(Renderer& renderer) {
 
     option.label->setMaxWidth(std::max(0.0f, dropdownWidth - kHorizontalPadding * 2.0f - kIconSize - Style::spaceXs));
     option.label->measure(renderer);
-    option.label->setPosition(kHorizontalPadding, rowY + (kOptionHeight - option.label->height()) * 0.5f);
+    float optDescender = option.label->height() - option.label->baselineOffset();
+    float optLabelY = std::round((kOptionHeight - option.label->height()) * 0.5f + optDescender * 0.25f);
+    option.label->setPosition(kHorizontalPadding, rowY + optLabelY);
 
     option.checkIcon->measure(renderer);
+    float optLabelCenterY = optLabelY + option.label->height() * 0.5f;
     option.checkIcon->setPosition(dropdownWidth - kHorizontalPadding - option.checkIcon->width(),
-                                  rowY + (kOptionHeight - option.checkIcon->height()) * 0.5f);
+                                  rowY + std::round(optLabelCenterY - option.checkIcon->height() * 0.5f));
 
     option.area->setPosition(0.0f, rowY);
     option.area->setSize(dropdownWidth, kOptionHeight);

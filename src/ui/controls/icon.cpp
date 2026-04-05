@@ -6,6 +6,7 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
+#include <cmath>
 #include <memory>
 
 Icon::Icon() {
@@ -30,6 +31,7 @@ void Icon::setColor(const Color& color) { m_iconNode->setColor(color); }
 
 void Icon::measure(Renderer& renderer) {
   auto metrics = renderer.measureGlyph(m_iconNode->codepoint(), m_iconNode->fontSize());
-  Node::setSize(metrics.width, metrics.bottom - metrics.top);
-  m_iconNode->setPosition(0.0f, -metrics.top);
+  Node::setSize(std::round(metrics.width), std::round(metrics.bottom - metrics.top));
+  m_baselineOffset = -metrics.top;
+  m_iconNode->setPosition(0.0f, m_baselineOffset);
 }
