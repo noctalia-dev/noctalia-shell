@@ -13,6 +13,7 @@
 
 class Flex;
 class Node;
+class RectNode;
 
 struct BarInstance {
   std::uint32_t outputName = 0;
@@ -25,8 +26,9 @@ struct BarInstance {
   AnimationManager animations;
   InputDispatcher inputDispatcher;
 
-  // Bar background and layout sections (start/center/end along main axis)
+  // Bar background, shadow, and layout sections (start/center/end along main axis)
   Node* bg = nullptr;
+  RectNode* shadow = nullptr;
   Flex* startSection = nullptr;
   Flex* centerSection = nullptr;
   Flex* endSection = nullptr;

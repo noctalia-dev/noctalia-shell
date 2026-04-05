@@ -170,8 +170,11 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 - [x] System tray
 - [~] Keyboard Input
-- [ ] Audio service (Pipewire) + volume OSD
-- [ ] Notification: indicator + popup + history panel
+- [x] Audio service (Pipewire)
+- [ ] Volume OSD
+- [x] Notification: indicator
+- [x] Notification: popup
+- [] Notification: history panel
 
 ### Hardware and networking
 

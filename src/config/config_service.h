@@ -26,13 +26,15 @@ struct BarConfig {
   std::string position = "top";
   bool enabled = true;
   std::int32_t height = Style::barHeightDefault;
-  std::int32_t marginH = 0;       // horizontal compositor margin (left = right = marginH)
-  std::int32_t marginV = 0;       // vertical compositor margin (gap between bar and screen edge)
+  std::int32_t radius = Style::radiusXl;
+  std::int32_t marginH = 12;      // horizontal compositor margin (left = right = marginH)
+  std::int32_t marginV = 6;       // vertical compositor margin (gap between bar and screen edge)
   std::int32_t paddingH = 16;     // horizontal padding from bar edges to start/end sections
   std::int32_t widgetSpacing = 8; // gap between widgets within a section
+  std::int32_t shadowSize = 16;   // shadow depth in pixels (0 = no shadow)
   std::vector<std::string> startWidgets = {};
   std::vector<std::string> centerWidgets = {"workspaces"};
-  std::vector<std::string> endWidgets = {"test", "tray", "volume", "notifications", "clock"};
+  std::vector<std::string> endWidgets = {"test", "tray", "notifications", "volume", "clock"};
   std::vector<BarMonitorOverride> monitorOverrides;
 };
 

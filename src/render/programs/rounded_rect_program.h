@@ -15,13 +15,27 @@ enum class GradientDirection {
   Vertical,
 };
 
+// Per-corner radii: top-left, top-right, bottom-right, bottom-left.
+// Implicit construction from a single float sets all four corners uniformly,
+// so existing `.radius = value` assignments continue to compile unchanged.
+struct Radii {
+  float tl = 0.0f;
+  float tr = 0.0f;
+  float br = 0.0f;
+  float bl = 0.0f;
+
+  Radii() = default;
+  /* implicit */ Radii(float r) : tl(r), tr(r), br(r), bl(r) {} // NOLINT(google-explicit-constructor)
+  Radii(float tl, float tr, float br, float bl) : tl(tl), tr(tr), br(br), bl(bl) {}
+};
+
 struct RoundedRectStyle {
   Color fill{};
   Color fillEnd{};
   Color border{};
   FillMode fillMode = FillMode::Solid;
   GradientDirection gradientDirection = GradientDirection::Horizontal;
-  float radius = 0.0f;
+  Radii radius{};
   float softness = 1.0f;
   float borderWidth = 0.0f;
 };
@@ -51,7 +65,7 @@ private:
   GLint m_borderColorLocation = -1;
   GLint m_fillModeLocation = -1;
   GLint m_gradientDirectionLocation = -1;
-  GLint m_radiusLocation = -1;
+  GLint m_radiiLocation = -1;
   GLint m_softnessLocation = -1;
   GLint m_borderWidthLocation = -1;
   GLint m_rotationLocation = -1;

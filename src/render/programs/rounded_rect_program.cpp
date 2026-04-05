@@ -44,16 +44,20 @@ uniform vec4 u_fill_end_color;
 uniform vec4 u_border_color;
 uniform int u_fill_mode;
 uniform vec2 u_gradient_direction;
-uniform float u_radius;
+uniform vec4 u_radii;  // tl, tr, br, bl
 uniform float u_softness;
 uniform float u_border_width;
 varying vec2 v_pixel;
 
-float rounded_rect_distance(vec2 point, vec2 size, float radius) {
+float rounded_rect_distance(vec2 point, vec2 size, vec4 radii) {
     vec2 half_size = size * 0.5;
     vec2 centered = point - half_size;
-    vec2 q = abs(centered) - (half_size - vec2(radius));
-    return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
+    // Select per-corner radius based on quadrant
+    float r = centered.x < 0.0
+        ? (centered.y < 0.0 ? radii.x : radii.w)
+        : (centered.y < 0.0 ? radii.y : radii.z);
+    vec2 q = abs(centered) - (half_size - vec2(r));
+    return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
 }
 
 void main() {
@@ -61,13 +65,13 @@ void main() {
     vec2 local_point = v_pixel - u_rect.xy;
     vec2 uv = clamp(local_point / u_rect.zw, vec2(0.0), vec2(1.0));
 
-    float outer_distance = rounded_rect_distance(local_point, u_rect.zw, u_radius);
+    float outer_distance = rounded_rect_distance(local_point, u_rect.zw, u_radii);
     float outer_coverage = 1.0 - smoothstep(-aa, aa, outer_distance);
 
-    float inner_radius = max(u_radius - u_border_width, 0.0);
+    vec4 inner_radii = max(u_radii - vec4(u_border_width), vec4(0.0));
     vec2 inner_size = max(u_rect.zw - vec2(u_border_width * 2.0), vec2(0.0));
     vec2 inner_point = local_point - vec2(u_border_width);
-    float inner_distance = rounded_rect_distance(inner_point, inner_size, inner_radius);
+    float inner_distance = rounded_rect_distance(inner_point, inner_size, inner_radii);
     float inner_coverage = 1.0 - smoothstep(-aa, aa, inner_distance);
 
     float gradient_t = clamp(dot(uv, u_gradient_direction), 0.0, 1.0);
@@ -114,7 +118,7 @@ void RoundedRectProgram::ensureInitialized() {
   m_borderColorLocation = glGetUniformLocation(m_program.id(), "u_border_color");
   m_fillModeLocation = glGetUniformLocation(m_program.id(), "u_fill_mode");
   m_gradientDirectionLocation = glGetUniformLocation(m_program.id(), "u_gradient_direction");
-  m_radiusLocation = glGetUniformLocation(m_program.id(), "u_radius");
+  m_radiiLocation = glGetUniformLocation(m_program.id(), "u_radii");
   m_softnessLocation = glGetUniformLocation(m_program.id(), "u_softness");
   m_borderWidthLocation = glGetUniformLocation(m_program.id(), "u_border_width");
 
@@ -123,7 +127,7 @@ void RoundedRectProgram::ensureInitialized() {
 
   if (m_positionLocation < 0 || m_surfaceSizeLocation < 0 || m_quadRectLocation < 0 || m_rectLocation < 0 ||
       m_colorLocation < 0 || m_fillEndColorLocation < 0 || m_borderColorLocation < 0 || m_fillModeLocation < 0 ||
-      m_gradientDirectionLocation < 0 || m_radiusLocation < 0 || m_softnessLocation < 0 ||
+      m_gradientDirectionLocation < 0 || m_radiiLocation < 0 || m_softnessLocation < 0 ||
       m_borderWidthLocation < 0 || m_rotationLocation < 0 || m_scaleLocation < 0) {
     throw std::runtime_error("failed to query rounded-rect shader locations");
   }
@@ -140,7 +144,7 @@ void RoundedRectProgram::destroy() {
   m_borderColorLocation = -1;
   m_fillModeLocation = -1;
   m_gradientDirectionLocation = -1;
-  m_radiusLocation = -1;
+  m_radiiLocation = -1;
   m_softnessLocation = -1;
   m_borderWidthLocation = -1;
   m_rotationLocation = -1;
@@ -173,7 +177,7 @@ void RoundedRectProgram::draw(float surfaceWidth, float surfaceHeight, float x, 
   glUniform1i(m_fillModeLocation, style.fillMode == FillMode::Solid ? 0 : 1);
   glUniform2f(m_gradientDirectionLocation, style.gradientDirection == GradientDirection::Horizontal ? 1.0f : 0.0f,
               style.gradientDirection == GradientDirection::Vertical ? 1.0f : 0.0f);
-  glUniform1f(m_radiusLocation, style.radius);
+  glUniform4f(m_radiiLocation, style.radius.tl, style.radius.tr, style.radius.br, style.radius.bl);
   glUniform1f(m_softnessLocation, style.softness);
   glUniform1f(m_borderWidthLocation, style.borderWidth);
   glUniform1f(m_rotationLocation, rotation);

@@ -9,6 +9,7 @@ inline constexpr int barHeightDefault = 34;
 inline constexpr int radiusSm = 2;
 inline constexpr int radiusMd = 5;
 inline constexpr int radiusLg = 8;
+inline constexpr int radiusXl = 12;
 inline constexpr int radiusFull = 9999;
 
 inline constexpr int borderWidth = 1;

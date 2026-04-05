@@ -181,6 +181,8 @@ void ConfigService::loadFromFile(const std::string& path) {
         bar.paddingH = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["widget_spacing"].value<int64_t>())
         bar.widgetSpacing = static_cast<std::int32_t>(*v);
+      if (auto v = (*barTbl)["shadow_size"].value<int64_t>())
+        bar.shadowSize = static_cast<std::int32_t>(*v);
       if (auto* n = (*barTbl)["start"].as_array())
         bar.startWidgets = readStringArray(*n);
       if (auto* n = (*barTbl)["center"].as_array())
