@@ -9,7 +9,7 @@
 
 struct pw_context;
 struct pw_core;
-struct pw_main_loop;
+struct pw_loop;
 struct pw_registry;
 struct spa_hook;
 
@@ -89,7 +89,7 @@ private:
   void setNodeVolume(std::uint32_t id, float volume);
   void setNodeMuted(std::uint32_t id, bool muted);
 
-  pw_main_loop* m_loop = nullptr;
+  pw_loop* m_loop = nullptr;
   pw_context* m_context = nullptr;
   pw_core* m_core = nullptr;
   pw_registry* m_registry = nullptr;

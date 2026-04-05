@@ -106,21 +106,21 @@ std::string dictGet(const spa_dict* dict, const char* key) {
 PipeWireService::PipeWireService() {
   pw_init(nullptr, nullptr);
 
-  m_loop = pw_main_loop_new(nullptr);
+  m_loop = pw_loop_new(nullptr);
   if (m_loop == nullptr) {
-    throw std::runtime_error("pipewire: failed to create main loop");
+    throw std::runtime_error("pipewire: failed to create loop");
   }
 
-  m_context = pw_context_new(pw_main_loop_get_loop(m_loop), nullptr, 0);
+  m_context = pw_context_new(m_loop, nullptr, 0);
   if (m_context == nullptr) {
-    pw_main_loop_destroy(m_loop);
+    pw_loop_destroy(m_loop);
     throw std::runtime_error("pipewire: failed to create context");
   }
 
   m_core = pw_context_connect(m_context, nullptr, 0);
   if (m_core == nullptr) {
     pw_context_destroy(m_context);
-    pw_main_loop_destroy(m_loop);
+    pw_loop_destroy(m_loop);
     throw std::runtime_error("pipewire: failed to connect to daemon");
   }
 
@@ -128,7 +128,7 @@ PipeWireService::PipeWireService() {
   if (m_registry == nullptr) {
     pw_core_disconnect(m_core);
     pw_context_destroy(m_context);
-    pw_main_loop_destroy(m_loop);
+    pw_loop_destroy(m_loop);
     throw std::runtime_error("pipewire: failed to get registry");
   }
 
@@ -137,7 +137,7 @@ PipeWireService::PipeWireService() {
   pw_registry_add_listener(m_registry, m_registryListener, &kRegistryEvents, this);
 
   // Do initial roundtrip to discover existing objects
-  auto* loop = pw_main_loop_get_loop(m_loop);
+  auto* loop = m_loop;
   pw_core_sync(m_core, PW_ID_CORE, 0);
   while (pw_loop_iterate(loop, 0) > 0) {
   }
@@ -178,7 +178,7 @@ PipeWireService::~PipeWireService() {
     pw_context_destroy(m_context);
   }
   if (m_loop != nullptr) {
-    pw_main_loop_destroy(m_loop);
+    pw_loop_destroy(m_loop);
   }
 
   pw_deinit();
@@ -188,7 +188,7 @@ int PipeWireService::fd() const noexcept {
   if (m_loop == nullptr) {
     return -1;
   }
-  auto* loop = pw_main_loop_get_loop(m_loop);
+  auto* loop = m_loop;
   return pw_loop_get_fd(loop);
 }
 
@@ -196,7 +196,7 @@ void PipeWireService::dispatch() {
   if (m_loop == nullptr) {
     return;
   }
-  auto* loop = pw_main_loop_get_loop(m_loop);
+  auto* loop = m_loop;
   // Process all pending events without blocking
   while (pw_loop_iterate(loop, 0) > 0) {
   }
