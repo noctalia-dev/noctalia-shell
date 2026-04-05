@@ -1369,7 +1369,7 @@
     },
     "location": {
       "auto-locate-description": "IP adresinizi kullanarak konumunuzu periyodik olarak otomatik olarak algılayın.",
-      "auto-locate-label": "Otomatik Konumlandırma",
+      "auto-locate-label": "Otomatik konum",
       "calendar-cards-desc": "Takvim panelinde kartları düzenleyin ve etkinleştirin/devre dışı bırakın.",
       "calendar-cards-title": "Takvim kartları",
       "calendar-header-label": "Takvim başlığı",

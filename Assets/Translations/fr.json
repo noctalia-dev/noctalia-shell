@@ -1369,7 +1369,7 @@
     },
     "location": {
       "auto-locate-description": "Détecte automatiquement votre position périodiquement en utilisant votre adresse IP.",
-      "auto-locate-label": "Localisation Automatique",
+      "auto-locate-label": "Localisation automatique",
       "calendar-cards-desc": "Organiser et activer/désactiver les cartes dans le panneau de calendrier.",
       "calendar-cards-title": "Cartes de calendrier",
       "calendar-header-label": "En-tête du calendrier",

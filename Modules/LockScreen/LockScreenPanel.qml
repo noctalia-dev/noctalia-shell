@@ -264,7 +264,7 @@ Item {
           Loader {
             anchors.fill: parent
             anchors.margins: 4
-            active: Settings.data.audio.visualizerType === "linear"
+            active: Settings.data.audio.visualizerType === "linear" && MediaService.isPlaying
             z: 0
             sourceComponent: NLinearSpectrum {
               anchors.fill: parent
@@ -278,7 +278,7 @@ Item {
           Loader {
             anchors.fill: parent
             anchors.margins: 4
-            active: Settings.data.audio.visualizerType === "mirrored"
+            active: Settings.data.audio.visualizerType === "mirrored" && MediaService.isPlaying
             z: 0
             sourceComponent: NMirroredSpectrum {
               anchors.fill: parent
@@ -292,7 +292,7 @@ Item {
           Loader {
             anchors.fill: parent
             anchors.margins: 4
-            active: Settings.data.audio.visualizerType === "wave"
+            active: Settings.data.audio.visualizerType === "wave" && MediaService.isPlaying
             z: 0
             sourceComponent: NWaveSpectrum {
               anchors.fill: parent

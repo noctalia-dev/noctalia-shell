@@ -1369,7 +1369,7 @@
     },
     "location": {
       "auto-locate-description": "Automaticky detekovat vaši polohu pravidelně pomocí vaší IP adresy.",
-      "auto-locate-label": "Automatické Zjištění",
+      "auto-locate-label": "Automatická poloha",
       "calendar-cards-desc": "Organizovat a povolit/zakázat karty v panelu kalendáře.",
       "calendar-cards-title": "Karty kalendáře",
       "calendar-header-label": "Záhlaví kalendáře",

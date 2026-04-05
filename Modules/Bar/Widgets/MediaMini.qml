@@ -75,7 +75,7 @@ Item {
 
   // SpectrumService registration for visualizer
   readonly property string spectrumComponentId: "bar:mediamini:" + root.screen?.name + ":" + root.section + ":" + root.sectionWidgetIndex
-  readonly property bool needsSpectrum: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none" && !root.isHidden
+  readonly property bool needsSpectrum: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none" && !root.isHidden && MediaService.isPlaying
 
   Layout.preferredHeight: isVertical ? -1 : Style.getBarHeightForScreen(screenName)
   Layout.preferredWidth: isVertical ? Style.getBarHeightForScreen(screenName) : -1
@@ -265,10 +265,10 @@ Item {
         y: Style.pixelAlignCenter(parent.height, height)
         width: Style.toOdd(parent.width)
         height: Style.toOdd(parent.height)
-        active: showVisualizer
+        active: root.needsSpectrum
         z: 0
         sourceComponent: {
-          if (!showVisualizer)
+          if (!root.needsSpectrum)
             return null;
           if (visualizerType === "linear")
             return linearSpectrum;

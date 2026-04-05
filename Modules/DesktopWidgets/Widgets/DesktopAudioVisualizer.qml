@@ -25,7 +25,7 @@ DraggableDesktopWidget {
 
   readonly property bool shouldShow: visualizerType !== "" && visualizerType !== "none" && (!hideWhenIdle || MediaService.isPlaying)
   readonly property bool isHidden: !shouldShow
-  readonly property bool shouldRegisterSpectrum: shouldShow
+  readonly property bool shouldRegisterSpectrum: shouldShow && MediaService.isPlaying
 
   // Keep widget visible in edit mode so users can move/configure it
   visible: !root.isHidden || DesktopWidgetRegistry.editMode
@@ -66,7 +66,7 @@ DraggableDesktopWidget {
       id: visualizerLoader
       anchors.fill: parent
       anchors.margins: root.showBackground ? Math.round(Style.marginXS * root.widgetScale) : 0
-      active: root.shouldShow
+      active: root.shouldRegisterSpectrum
       asynchronous: true
 
       sourceComponent: {
