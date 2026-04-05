@@ -99,6 +99,7 @@ private:
   spa_hook* m_registryListener = nullptr;
 
   std::unordered_map<std::uint32_t, std::unique_ptr<NodeData>> m_nodes;
+  std::vector<std::function<void()>> m_metadataCleanups;
   std::string m_defaultSinkName;
   std::string m_defaultSourceName;
   AudioState m_state;

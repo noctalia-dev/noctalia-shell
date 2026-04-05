@@ -13,6 +13,7 @@ option(SANITIZE "Enable AddressSanitizer + UndefinedBehaviorSanitizer" OFF)
 if(SANITIZE OR (CMAKE_BUILD_TYPE STREQUAL "Debug"))
   add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
   add_link_options(-fsanitize=address,undefined)
+  set(SANITIZE_ACTIVE TRUE)
 endif()
 
 # --- Dependencies ---
@@ -249,6 +250,7 @@ add_executable(noctalia
     src/shell/widgets/volume_widget.cpp
     src/shell/widgets/workspaces_widget.cpp
     src/pipewire/pipewire_service.cpp
+    $<$<BOOL:${SANITIZE_ACTIVE}>:src/pipewire/pipewire_lsan.cpp>
     src/wayland/surface.cpp
     src/wayland/layer_surface.cpp
     src/wayland/wayland_connection.cpp
@@ -280,6 +282,11 @@ target_include_directories(noctalia PRIVATE
     ${HARFBUZZ_INCLUDE_DIRS}
     ${FONTCONFIG_INCLUDE_DIRS}
     ${XKBCOMMON_INCLUDE_DIRS}
+)
+# PipeWire/SPA headers use GCC extensions (compound-literals, statement-
+# expressions) that trigger -Wpedantic/-Wconversion. Mark them as system
+# headers so the compiler suppresses those warnings.
+target_include_directories(noctalia SYSTEM PRIVATE
     ${LIBPIPEWIRE_INCLUDE_DIRS}
 )
 target_link_libraries(noctalia PRIVATE

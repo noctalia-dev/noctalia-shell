@@ -158,6 +158,11 @@ PipeWireService::~PipeWireService() {
   }
   m_nodes.clear();
 
+  for (auto& cleanup : m_metadataCleanups) {
+    cleanup();
+  }
+  m_metadataCleanups.clear();
+
   if (m_registryListener != nullptr) {
     spa_hook_remove(m_registryListener);
     delete m_registryListener;
@@ -264,6 +269,16 @@ void PipeWireService::onRegistryGlobal(std::uint32_t id, const char* type, std::
         auto* md = new MetadataData{this, proxy, new spa_hook{}};
         spa_zero(*md->listener);
         pw_metadata_add_listener(proxy, md->listener, &kMetadataEvents, md);
+        m_metadataCleanups.push_back([md]() {
+          if (md->listener != nullptr) {
+            spa_hook_remove(md->listener);
+            delete md->listener;
+          }
+          if (md->proxy != nullptr) {
+            pw_proxy_destroy(reinterpret_cast<pw_proxy*>(md->proxy));
+          }
+          delete md;
+        });
       }
     }
   }
