@@ -7,6 +7,7 @@ class Button;
 class Select;
 class Label;
 class Slider;
+class Spinner;
 class Toggle;
 
 class TestPanelContent : public PanelContent {
@@ -27,4 +28,5 @@ private:
   Button* m_iconButton = nullptr;
   Slider* m_slider = nullptr;
   Toggle* m_toggle = nullptr;
+  Spinner* m_spinner = nullptr;
 };

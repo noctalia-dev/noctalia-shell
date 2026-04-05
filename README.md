@@ -200,12 +200,12 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [x] Button
 - [x] IconButton
 - [x] Slider
+- [X] Select
+- [x] Spinner
 - [ ] Progress bar
-- [ ] Busy Indicator
 - [ ] Scroll view
 - [ ] List view
 - [ ] Text input
-- [ ] Select
 - [ ] Checkbox
 - [ ] Radio button
 - [ ] Tab bar

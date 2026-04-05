@@ -4,6 +4,7 @@
 #include "render/scene/ImageNode.h"
 #include "render/scene/Node.h"
 #include "render/scene/RectNode.h"
+#include "render/scene/SpinnerNode.h"
 #include "render/scene/TextNode.h"
 
 #include "ui/style/Style.h"
@@ -97,6 +98,7 @@ void RenderContext::ensureGlPrograms() {
   m_imageProgram.ensureInitialized();
   m_linearGradientProgram.ensureInitialized();
   m_roundedRectProgram.ensureInitialized();
+  m_spinnerProgram.ensureInitialized();
   m_glReady = true;
 }
 
@@ -192,6 +194,13 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
     }
     break;
   }
+  case NodeType::Spinner: {
+    const auto* spinner = static_cast<const SpinnerNode*>(node);
+    auto style = spinner->style();
+    style.color.a *= effectiveOpacity;
+    m_spinnerProgram.draw(sw, sh, absX, absY, node->width(), node->height(), style);
+    break;
+  }
   case NodeType::Base:
     break;
   }
@@ -220,6 +229,7 @@ void RenderContext::cleanup() {
   m_imageProgram.destroy();
   m_linearGradientProgram.destroy();
   m_roundedRectProgram.destroy();
+  m_spinnerProgram.destroy();
   m_textRenderer.cleanup();
   m_iconTextRenderer.cleanup();
   m_glReady = false;

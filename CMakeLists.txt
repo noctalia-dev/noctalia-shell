@@ -207,6 +207,7 @@ add_executable(noctalia
     src/render/programs/LinearGradientProgram.cpp
     src/render/programs/MsdfTextProgram.cpp
     src/render/programs/RoundedRectProgram.cpp
+    src/render/programs/SpinnerProgram.cpp
     src/render/programs/WallpaperProgram.cpp
     src/render/text/MsdfTextRenderer.cpp
     src/render/RenderContext.cpp
@@ -226,6 +227,7 @@ add_executable(noctalia
     src/ui/controls/Icon.cpp
     src/ui/controls/Label.cpp
     src/ui/controls/Slider.cpp
+    src/ui/controls/Spinner.cpp
     src/ui/controls/Toggle.cpp
     src/ui/icons/IconRegistry.cpp
     src/render/scene/InputArea.cpp

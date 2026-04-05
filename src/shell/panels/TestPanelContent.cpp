@@ -6,6 +6,7 @@
 #include "ui/controls/Select.h"
 #include "ui/controls/Label.h"
 #include "ui/controls/Slider.h"
+#include "ui/controls/Spinner.h"
 #include "ui/controls/Toggle.h"
 #include "ui/style/Palette.h"
 #include "ui/style/Style.h"
@@ -126,6 +127,17 @@ void TestPanelContent::create(Renderer& renderer) {
     auto row = makeRow();
     row->addChild(makeRowLabel("Toggle", kRowLabelWidth));
     row->addChild(std::move(area));
+    container->addChild(std::move(row));
+  }
+
+  {
+    auto spinner = std::make_unique<Spinner>();
+    spinner->setAnimationManager(m_animations);
+    spinner->start();
+    m_spinner = spinner.get();
+    auto row = makeRow();
+    row->addChild(makeRowLabel("Spinner", kRowLabelWidth));
+    row->addChild(std::move(spinner));
     container->addChild(std::move(row));
   }
 

@@ -10,6 +10,7 @@ enum class NodeType : std::uint8_t {
   Text,
   Image,
   Icon,
+  Spinner,
 };
 
 class Node {

@@ -6,6 +6,7 @@
 #include "render/programs/ImageProgram.h"
 #include "render/programs/LinearGradientProgram.h"
 #include "render/programs/RoundedRectProgram.h"
+#include "render/programs/SpinnerProgram.h"
 #include "render/text/MsdfTextRenderer.h"
 
 #include <EGL/egl.h>
@@ -50,6 +51,7 @@ private:
   ImageProgram m_imageProgram;
   LinearGradientProgram m_linearGradientProgram;
   RoundedRectProgram m_roundedRectProgram;
+  SpinnerProgram m_spinnerProgram;
   MsdfTextRenderer m_textRenderer;
   MsdfTextRenderer m_iconTextRenderer;
   TextureManager m_textureManager;
