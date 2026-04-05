@@ -109,31 +109,31 @@ void SystemMonitorService::stop() {
 }
 
 void SystemMonitorService::samplingLoop() {
-  auto prev_cpu = readCpuTotals();
+  auto prevCpu = readCpuTotals();
 
   while (m_running.load()) {
     SystemStats next{};
 
-    const auto current_cpu = readCpuTotals();
-    if (prev_cpu.has_value() && current_cpu.has_value()) {
-      const std::uint64_t total_delta = current_cpu->total - prev_cpu->total;
-      const std::uint64_t idle_delta = current_cpu->idle - prev_cpu->idle;
-      if (total_delta > 0) {
-        next.cpuUsagePercent = 100.0 * (1.0 - static_cast<double>(idle_delta) / static_cast<double>(total_delta));
+    const auto currentCpu = readCpuTotals();
+    if (prevCpu.has_value() && currentCpu.has_value()) {
+      const std::uint64_t totalDelta = currentCpu->total - prevCpu->total;
+      const std::uint64_t idleDelta = currentCpu->idle - prevCpu->idle;
+      if (totalDelta > 0) {
+        next.cpuUsagePercent = 100.0 * (1.0 - static_cast<double>(idleDelta) / static_cast<double>(totalDelta));
       }
     }
-    if (current_cpu.has_value()) {
-      prev_cpu = current_cpu;
+    if (currentCpu.has_value()) {
+      prevCpu = currentCpu;
     }
 
-    const auto ram_kb = readRamKb();
-    if (ram_kb.has_value()) {
-      const std::uint64_t total_kb = ram_kb->first;
-      const std::uint64_t used_kb = ram_kb->second;
-      next.ramTotalMb = total_kb / 1024;
-      next.ramUsedMb = used_kb / 1024;
-      if (total_kb > 0) {
-        next.ramUsagePercent = 100.0 * static_cast<double>(used_kb) / static_cast<double>(total_kb);
+    const auto ramKb = readRamKb();
+    if (ramKb.has_value()) {
+      const std::uint64_t totalKb = ramKb->first;
+      const std::uint64_t usedKb = ramKb->second;
+      next.ramTotalMb = totalKb / 1024;
+      next.ramUsedMb = usedKb / 1024;
+      if (totalKb > 0) {
+        next.ramUsagePercent = 100.0 * static_cast<double>(usedKb) / static_cast<double>(totalKb);
       }
     }
 
@@ -168,7 +168,7 @@ std::optional<SystemMonitorService::CpuTotals> SystemMonitorService::readCpuTota
   }
 
   std::istringstream iss{line};
-  std::string cpu_label;
+  std::string cpuLabel;
   std::uint64_t user = 0;
   std::uint64_t nice = 0;
   std::uint64_t system = 0;
@@ -178,8 +178,8 @@ std::optional<SystemMonitorService::CpuTotals> SystemMonitorService::readCpuTota
   std::uint64_t softirq = 0;
   std::uint64_t steal = 0;
 
-  iss >> cpu_label >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal;
-  if (cpu_label != "cpu") {
+  iss >> cpuLabel >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal;
+  if (cpuLabel != "cpu") {
     return std::nullopt;
   }
 
@@ -199,27 +199,27 @@ std::optional<std::pair<std::uint64_t, std::uint64_t>> SystemMonitorService::rea
   std::uint64_t value_kb = 0;
   std::string unit;
 
-  std::uint64_t total_kb = 0;
-  std::uint64_t available_kb = 0;
+  std::uint64_t totalKb = 0;
+  std::uint64_t availableKb = 0;
 
   while (file >> key >> value_kb >> unit) {
     if (key == "MemTotal:") {
-      total_kb = value_kb;
+      totalKb = value_kb;
     } else if (key == "MemAvailable:") {
-      available_kb = value_kb;
+      availableKb = value_kb;
     }
 
-    if (total_kb > 0 && available_kb > 0) {
+    if (totalKb > 0 && availableKb > 0) {
       break;
     }
   }
 
-  if (total_kb == 0 || available_kb == 0 || available_kb > total_kb) {
+  if (totalKb == 0 || availableKb == 0 || availableKb > totalKb) {
     return std::nullopt;
   }
 
-  const std::uint64_t used_kb = total_kb - available_kb;
-  return std::make_pair(total_kb, used_kb);
+  const std::uint64_t usedKb = totalKb - availableKb;
+  return std::make_pair(totalKb, usedKb);
 }
 
 std::optional<double> SystemMonitorService::readCpuTempCelsius() {
@@ -227,7 +227,7 @@ std::optional<double> SystemMonitorService::readCpuTempCelsius() {
 
   const fs::path hwmon_root{"/sys/class/hwmon"};
   if (fs::exists(hwmon_root) && fs::is_directory(hwmon_root)) {
-    int best_score = -1;
+    int bestScore = -1;
     std::optional<double> best_temp;
 
     for (const auto& hwmon_entry : fs::directory_iterator{hwmon_root}) {
@@ -235,28 +235,28 @@ std::optional<double> SystemMonitorService::readCpuTempCelsius() {
         continue;
       }
 
-      const std::string hwmon_name = readSmallTextFile(hwmon_entry.path() / "name").value_or("");
+      const std::string hwmonName = readSmallTextFile(hwmon_entry.path() / "name").value_or("");
       for (const auto& file_entry : fs::directory_iterator{hwmon_entry.path()}) {
         if (!file_entry.is_regular_file()) {
           continue;
         }
 
-        const std::string file_name = file_entry.path().filename().string();
-        if (!file_name.starts_with("temp") || !file_name.ends_with("_input")) {
+        const std::string fileName = file_entry.path().filename().string();
+        if (!fileName.starts_with("temp") || !fileName.ends_with("_input")) {
           continue;
         }
 
-        const std::string base = file_name.substr(0, file_name.size() - 6);
+        const std::string base = fileName.substr(0, fileName.size() - 6);
         const std::string label = readSmallTextFile(hwmon_entry.path() / (base + "_label")).value_or("");
-        const auto temp_c = readTempInputCelsius(file_entry.path());
-        if (!temp_c.has_value()) {
+        const auto tempC = readTempInputCelsius(file_entry.path());
+        if (!tempC.has_value()) {
           continue;
         }
 
-        const int score = scoreHwmonSensor(hwmon_name, label);
-        if (score > best_score) {
-          best_score = score;
-          best_temp = *temp_c;
+        const int score = scoreHwmonSensor(hwmonName, label);
+        if (score > bestScore) {
+          bestScore = score;
+          best_temp = *tempC;
         }
       }
     }
@@ -277,24 +277,24 @@ std::optional<double> SystemMonitorService::readCpuTempCelsius() {
       continue;
     }
 
-    const auto zone_name = entry.path().filename().string();
-    if (!zone_name.starts_with("thermal_zone")) {
+    const auto zoneName = entry.path().filename().string();
+    if (!zoneName.starts_with("thermal_zone")) {
       continue;
     }
 
-    const std::string zone_type = readSmallTextFile(entry.path() / "type").value_or("");
+    const std::string zoneType = readSmallTextFile(entry.path() / "type").value_or("");
     const fs::path temp_path = entry.path() / "temp";
-    const auto temp_c = readTempInputCelsius(temp_path);
-    if (!temp_c.has_value()) {
+    const auto tempC = readTempInputCelsius(temp_path);
+    if (!tempC.has_value()) {
       continue;
     }
 
-    if (isCpuThermalZoneType(zone_type)) {
-      return temp_c;
+    if (isCpuThermalZoneType(zoneType)) {
+      return tempC;
     }
 
     if (!fallback_temp.has_value()) {
-      fallback_temp = temp_c;
+      fallback_temp = tempC;
     }
   }
 

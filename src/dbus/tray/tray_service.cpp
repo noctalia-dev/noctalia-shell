@@ -126,8 +126,8 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
       ->addVTable(
           sdbus::registerMethod("RegisterStatusNotifierItem")
               .withInputParamNames("service")
-              .implementedAs([this](const std::string& service_or_path) {
-                onRegisterStatusNotifierItem(service_or_path);
+              .implementedAs([this](const std::string& serviceOrPath) {
+                onRegisterStatusNotifierItem(serviceOrPath);
               }),
 
           sdbus::registerMethod("RegisterStatusNotifierHost")
@@ -213,35 +213,35 @@ bool TrayService::openContextMenu(const std::string& itemId, std::int32_t x, std
   }
 }
 
-void TrayService::onRegisterStatusNotifierItem(const std::string& service_or_path) {
-  if (service_or_path.empty()) {
+void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath) {
+  if (serviceOrPath.empty()) {
     logWarn("tray register item ignored: empty service/path");
     return;
   }
 
-  std::string bus_name;
-  std::string object_path;
+  std::string busName;
+  std::string objectPath;
 
-  if (starts_with_slash(service_or_path)) {
+  if (starts_with_slash(serviceOrPath)) {
     // Fallback for implementations that register with object path only.
     // Without sender info in this sdbus callback API, track as a synthetic item.
-    bus_name = "__path_only__";
-    object_path = service_or_path;
+    busName = "__path_only__";
+    objectPath = serviceOrPath;
   } else {
-    bus_name = service_or_path;
-    object_path = k_default_item_path;
-    if (const auto slash = service_or_path.find('/'); slash != std::string::npos && slash > 0) {
-      bus_name = service_or_path.substr(0, slash);
-      object_path = service_or_path.substr(slash);
+    busName = serviceOrPath;
+    objectPath = k_default_item_path;
+    if (const auto slash = serviceOrPath.find('/'); slash != std::string::npos && slash > 0) {
+      busName = serviceOrPath.substr(0, slash);
+      objectPath = serviceOrPath.substr(slash);
     }
   }
 
-  if (bus_name.empty() || object_path.empty()) {
-    logWarn("tray register item ignored: invalid id ({})", service_or_path);
+  if (busName.empty() || objectPath.empty()) {
+    logWarn("tray register item ignored: invalid id ({})", serviceOrPath);
     return;
   }
 
-  registerOrRefreshItem(bus_name, object_path);
+  registerOrRefreshItem(busName, objectPath);
 }
 
 void TrayService::onRegisterStatusNotifierHost(const std::string& host) {
@@ -257,41 +257,41 @@ void TrayService::onRegisterStatusNotifierHost(const std::string& host) {
   emitChanged();
 }
 
-std::string TrayService::busNameFromItemId(const std::string& item_id) {
-  if (item_id.empty()) {
+std::string TrayService::busNameFromItemId(const std::string& itemId) {
+  if (itemId.empty()) {
     return {};
   }
 
-  if (starts_with_slash(item_id)) {
+  if (starts_with_slash(itemId)) {
     return {};
   }
 
-  const auto slash = item_id.find('/');
+  const auto slash = itemId.find('/');
   if (slash == std::string::npos) {
-    return item_id;
+    return itemId;
   }
   if (slash == 0) {
     return {};
   }
-  return item_id.substr(0, slash);
+  return itemId.substr(0, slash);
 }
 
-std::string TrayService::canonicalItemId(const std::string& bus_name, const std::string& object_path) {
-  return bus_name + object_path;
+std::string TrayService::canonicalItemId(const std::string& busName, const std::string& objectPath) {
+  return busName + objectPath;
 }
 
-void TrayService::registerOrRefreshItem(const std::string& bus_name, const std::string& object_path) {
-  const std::string item_id = canonicalItemId(bus_name, object_path);
-  if (item_id.empty()) {
+void TrayService::registerOrRefreshItem(const std::string& busName, const std::string& objectPath) {
+  const std::string itemId = canonicalItemId(busName, objectPath);
+  if (itemId.empty()) {
     return;
   }
 
-  const bool inserted = !m_items.contains(item_id);
+  const bool inserted = !m_items.contains(itemId);
   if (inserted) {
-    m_items.emplace(item_id, TrayItemInfo{
-        .id = item_id,
-        .busName = bus_name,
-        .objectPath = object_path,
+    m_items.emplace(itemId, TrayItemInfo{
+        .id = itemId,
+        .busName = busName,
+        .objectPath = objectPath,
         .iconName = {},
       .iconThemePath = {},
         .attentionIconName = {},
@@ -306,85 +306,85 @@ void TrayService::registerOrRefreshItem(const std::string& bus_name, const std::
         .needsAttention = false,
     });
 
-    auto [proxy_it, _] = m_itemProxies.emplace(
-        item_id, sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{bus_name}, sdbus::ObjectPath{object_path}));
+    auto [proxyIt, _] = m_itemProxies.emplace(
+        itemId, sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{busName}, sdbus::ObjectPath{objectPath}));
 
-    proxy_it->second->uponSignal("NewIcon").onInterface(k_item_interface).call([this, item_id]() {
-      refreshItemMetadata(item_id);
+    proxyIt->second->uponSignal("NewIcon").onInterface(k_item_interface).call([this, itemId]() {
+      refreshItemMetadata(itemId);
     });
-    proxy_it->second->uponSignal("NewAttentionIcon").onInterface(k_item_interface).call([this, item_id]() {
-      refreshItemMetadata(item_id);
+    proxyIt->second->uponSignal("NewAttentionIcon").onInterface(k_item_interface).call([this, itemId]() {
+      refreshItemMetadata(itemId);
     });
-    proxy_it->second->uponSignal("NewStatus")
+    proxyIt->second->uponSignal("NewStatus")
         .onInterface(k_item_interface)
-        .call([this, item_id](const std::string& /*status*/) { refreshItemMetadata(item_id); });
-    proxy_it->second->uponSignal("NewTitle")
+        .call([this, itemId](const std::string& /*status*/) { refreshItemMetadata(itemId); });
+    proxyIt->second->uponSignal("NewTitle")
         .onInterface(k_item_interface)
-        .call([this, item_id](const std::string& /*title*/) { refreshItemMetadata(item_id); });
+        .call([this, itemId](const std::string& /*title*/) { refreshItemMetadata(itemId); });
 
-    logDebug("tray item registered: {}", item_id);
-    m_watcherObject->emitSignal("StatusNotifierItemRegistered").onInterface(k_watcher_interface).withArguments(item_id);
+    logDebug("tray item registered: {}", itemId);
+    m_watcherObject->emitSignal("StatusNotifierItemRegistered").onInterface(k_watcher_interface).withArguments(itemId);
     m_watcherObject->emitPropertiesChangedSignal(
       k_watcher_interface,
       std::vector<sdbus::PropertyName>{sdbus::PropertyName{"RegisteredStatusNotifierItems"}});
   }
 
-  refreshItemMetadata(item_id);
+  refreshItemMetadata(itemId);
 }
 
-void TrayService::refreshItemMetadata(const std::string& item_id) {
-  const auto item_it = m_items.find(item_id);
-  const auto proxy_it = m_itemProxies.find(item_id);
-  if (item_it == m_items.end() || proxy_it == m_itemProxies.end()) {
+void TrayService::refreshItemMetadata(const std::string& itemId) {
+  const auto itemIt = m_items.find(itemId);
+  const auto proxyIt = m_itemProxies.find(itemId);
+  if (itemIt == m_items.end() || proxyIt == m_itemProxies.end()) {
     return;
   }
 
-  auto next = item_it->second;
-  next.iconName = get_property_or<std::string>(*proxy_it->second, "IconName", "");
-  next.iconThemePath = get_property_or<std::string>(*proxy_it->second, "IconThemePath", "");
-  next.attentionIconName = get_property_or<std::string>(*proxy_it->second, "AttentionIconName", "");
-  next.title = get_property_or<std::string>(*proxy_it->second, "Title", "");
-  next.status = get_property_or<std::string>(*proxy_it->second, "Status", "");
+  auto next = itemIt->second;
+  next.iconName = get_property_or<std::string>(*proxyIt->second, "IconName", "");
+  next.iconThemePath = get_property_or<std::string>(*proxyIt->second, "IconThemePath", "");
+  next.attentionIconName = get_property_or<std::string>(*proxyIt->second, "AttentionIconName", "");
+  next.title = get_property_or<std::string>(*proxyIt->second, "Title", "");
+  next.status = get_property_or<std::string>(*proxyIt->second, "Status", "");
   next.needsAttention = (next.status == "NeedsAttention");
 
-  const auto iconPixmaps = get_icon_pixmaps_or(*proxy_it->second, "IconPixmap", {});
+  const auto iconPixmaps = get_icon_pixmaps_or(*proxyIt->second, "IconPixmap", {});
   pickBestPixmap(iconPixmaps, next.iconArgb32, next.iconWidth, next.iconHeight);
 
-  const auto attentionPixmaps = get_icon_pixmaps_or(*proxy_it->second, "AttentionIconPixmap", {});
+  const auto attentionPixmaps = get_icon_pixmaps_or(*proxyIt->second, "AttentionIconPixmap", {});
   pickBestPixmap(attentionPixmaps, next.attentionArgb32, next.attentionWidth, next.attentionHeight);
 
     logDebug(
       "tray item metadata id={} status={} iconName='{}' attentionIconName='{}' iconThemePath='{}' iconPixmap={}x{} "
       "(bytes={}) attentionPixmap={}x{} (bytes={})",
-      item_id, next.status, next.iconName, next.attentionIconName, next.iconThemePath, next.iconWidth,
+      itemId, next.status, next.iconName, next.attentionIconName, next.iconThemePath, next.iconWidth,
       next.iconHeight, next.iconArgb32.size(), next.attentionWidth, next.attentionHeight, next.attentionArgb32.size());
 
-  if (next == item_it->second) {
+  if (next == itemIt->second) {
     return;
   }
 
-  item_it->second = std::move(next);
+  itemIt->second = std::move(next);
   emitChanged();
 }
 
-void TrayService::removeItemsForBusName(const std::string& bus_name) {
-  std::vector<std::string> removed_ids;
+void TrayService::removeItemsForBusName(const std::string& busName) {
+  std::vector<std::string> removedIds;
   for (const auto& [id, item] : m_items) {
-    if (item.busName == bus_name || busNameFromItemId(id) == bus_name) {
-      removed_ids.push_back(id);
+    if (item.busName == busName || busNameFromItemId(id) == busName) {
+      removedIds.push_back(id);
     }
   }
 
-  if (removed_ids.empty()) {
+  if (removedIds.empty()) {
     return;
   }
 
-  for (const auto& item_id : removed_ids) {
-    m_items.erase(item_id);
-    m_itemProxies.erase(item_id);
-    logDebug("tray item unregistered: {}", item_id);
+  for (const auto& itemId : removedIds) {
+    m_items.erase(itemId);
+    m_itemProxies.erase(itemId);
+    logDebug("tray item unregistered: {}", itemId);
     m_watcherObject->emitSignal("StatusNotifierItemUnregistered").onInterface(k_watcher_interface).withArguments(
-        item_id);
+        itemId);
   }
   m_watcherObject->emitPropertiesChangedSignal(
       k_watcher_interface, std::vector<sdbus::PropertyName>{sdbus::PropertyName{"RegisteredStatusNotifierItems"}});

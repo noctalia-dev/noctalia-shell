@@ -30,8 +30,8 @@ private:
   void onCloseNotification(uint32_t id);
   void emitClose(uint32_t id, CloseReason reason);
 
-  void onInvokeAction(uint32_t id, const std::string& action_key);
-  void emitActionInvoked(uint32_t id, const std::string& action_key);
+  void onInvokeAction(uint32_t id, const std::string& actionKey);
+  void emitActionInvoked(uint32_t id, const std::string& actionKey);
 
   std::vector<std::map<std::string, sdbus::Variant>> onGetNotifications();
 

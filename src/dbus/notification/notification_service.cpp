@@ -44,7 +44,7 @@ NotificationService::NotificationService(SessionBus& bus, NotificationManager& m
 
           sdbus::registerMethod("InvokeAction")
               .withInputParamNames("id", "action_key")
-              .implementedAs([this](uint32_t id, const std::string& action_key) { onInvokeAction(id, action_key); }),
+              .implementedAs([this](uint32_t id, const std::string& actionKey) { onInvokeAction(id, actionKey); }),
 
           sdbus::registerSignal("NotificationClosed").withParameters<uint32_t, uint32_t>("id", "reason"),
 
@@ -74,14 +74,14 @@ std::vector<std::string> sanitize_actions(const std::vector<std::string>& action
   sanitized.reserve(actions.size() - (actions.size() % 2));
 
   for (size_t i = 0; i + 1 < actions.size(); i += 2) {
-    std::string action_key = clamp_str(actions[i]);
+    std::string actionKey = clamp_str(actions[i]);
     std::string label = clamp_str(actions[i + 1]);
 
-    if (action_key.empty()) {
+    if (actionKey.empty()) {
       continue;
     }
 
-    sanitized.push_back(std::move(action_key));
+    sanitized.push_back(std::move(actionKey));
     sanitized.push_back(std::move(label));
   }
 
@@ -105,7 +105,7 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
                                        const std::map<std::string, sdbus::Variant>& hints, int32_t expire_timeout) {
   // Sanitize scalar inputs
   const int32_t timeout = std::max(expire_timeout, k_min_timeout);
-  const auto sanitized_actions = sanitize_actions(actions);
+  const auto sanitizedActions = sanitize_actions(actions);
 
   // Urgency: default Normal, reject out-of-range byte values
   Urgency urgency = Urgency::Normal;
@@ -147,7 +147,7 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
   }
 
   return m_manager.addOrReplace(replaces_id, clamp_str(app_name), clamp_str(summary), clamp_str(body), timeout, urgency,
-                                NotificationOrigin::External, sanitized_actions, icon, category, desktop_entry);
+                                NotificationOrigin::External, sanitizedActions, icon, category, desktop_entry);
 }
 
 std::vector<std::string> NotificationService::onGetCapabilities() { return {"body", "actions"}; }
@@ -183,23 +183,23 @@ void NotificationService::emitClose(uint32_t id, CloseReason reason) {
   m_object->emitSignal("NotificationClosed").onInterface(k_interface).withArguments(id, static_cast<uint32_t>(reason));
 }
 
-void NotificationService::onInvokeAction(uint32_t id, const std::string& action_key) {
+void NotificationService::onInvokeAction(uint32_t id, const std::string& actionKey) {
   const auto& notifs = m_manager.all();
   for (const auto& n : notifs) {
     if (n.id == id) {
-      const std::string sanitized_key = clamp_str(action_key);
-      if (sanitized_key.empty()) {
+      const std::string sanitizedKey = clamp_str(actionKey);
+      if (sanitizedKey.empty()) {
         throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.InvalidAction"},
                            "action_key must not be empty");
       }
 
-      if (!notification_has_action(n, sanitized_key)) {
+      if (!notification_has_action(n, sanitizedKey)) {
         throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.InvalidAction"},
                            "action_key is not available for this notification");
       }
 
-      logDebug("notification action #{} key='{}'", id, action_key);
-      emitActionInvoked(id, sanitized_key);
+      logDebug("notification action #{} key='{}'", id, actionKey);
+      emitActionInvoked(id, sanitizedKey);
       return;
     }
   }
@@ -208,8 +208,8 @@ void NotificationService::onInvokeAction(uint32_t id, const std::string& action_
                      "notification id was not found");
 }
 
-void NotificationService::emitActionInvoked(uint32_t id, const std::string& action_key) {
-  m_object->emitSignal("ActionInvoked").onInterface(k_interface).withArguments(id, action_key);
+void NotificationService::emitActionInvoked(uint32_t id, const std::string& actionKey) {
+  m_object->emitSignal("ActionInvoked").onInterface(k_interface).withArguments(id, actionKey);
 }
 
 std::tuple<std::string, std::string, std::string, std::string> NotificationService::onGetServerInformation() {

@@ -45,15 +45,15 @@ public:
   [[nodiscard]] bool openContextMenu(const std::string& itemId, std::int32_t x = 0, std::int32_t y = 0) const;
 
 private:
-  void onRegisterStatusNotifierItem(const std::string& service_or_path);
+  void onRegisterStatusNotifierItem(const std::string& serviceOrPath);
   void onRegisterStatusNotifierHost(const std::string& host);
-  void registerOrRefreshItem(const std::string& bus_name, const std::string& object_path);
-  void refreshItemMetadata(const std::string& item_id);
-  void removeItemsForBusName(const std::string& bus_name);
+  void registerOrRefreshItem(const std::string& busName, const std::string& objectPath);
+  void refreshItemMetadata(const std::string& itemId);
+  void removeItemsForBusName(const std::string& busName);
   void emitChanged();
 
-  [[nodiscard]] static std::string busNameFromItemId(const std::string& item_id);
-  [[nodiscard]] static std::string canonicalItemId(const std::string& bus_name, const std::string& object_path);
+  [[nodiscard]] static std::string busNameFromItemId(const std::string& itemId);
+  [[nodiscard]] static std::string canonicalItemId(const std::string& busName, const std::string& objectPath);
 
   SessionBus& m_bus;
   std::unique_ptr<sdbus::IObject> m_watcherObject;

@@ -166,18 +166,18 @@ std::vector<uint32_t> NotificationManager::expiredIds() const {
 }
 
 int NotificationManager::nextExpiryTimeoutMs() const {
-  int expiry_ms = -1;
+  int expiryMs = -1;
   const auto now = Clock::now();
   for (const auto& n : m_notifications) {
     if (n.expiryTime) {
       const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(*n.expiryTime - now).count();
       const int clamped = static_cast<int>(std::max<long long>(0, ms));
-      if (expiry_ms < 0 || clamped < expiry_ms) {
-        expiry_ms = clamped;
+      if (expiryMs < 0 || clamped < expiryMs) {
+        expiryMs = clamped;
       }
     }
   }
-  return expiry_ms;
+  return expiryMs;
 }
 
 void NotificationManager::processExpired() {
