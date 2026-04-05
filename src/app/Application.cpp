@@ -22,7 +22,7 @@ void signal_handler(int signum) {
 Application::Application() {
   logInfo("noctalia hello");
 
-  m_notificationManager.setEventCallback([this](const Notification& n, NotificationEvent event) {
+  m_notificationManager.addEventCallback([this](const Notification& n, NotificationEvent event) {
     const char* kind = "updated";
     if (event == NotificationEvent::Added) {
       kind = "added";
@@ -171,6 +171,9 @@ void Application::run() {
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
   m_panelManager.registerPanel("test", std::make_unique<TestPanelContent>());
 
+  // Initialize notification popup (top layer, dynamic surface)
+  m_notificationPopup.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);
+
   // Initialize bar (top layer)
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
                    &m_renderContext);
@@ -179,6 +182,7 @@ void Application::run() {
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
     m_bar.onPointerEvent(event);
     m_panelManager.onPointerEvent(event);
+    m_notificationPopup.onPointerEvent(event);
   });
 
   // Build poll sources

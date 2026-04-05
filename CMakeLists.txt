@@ -232,6 +232,7 @@ add_executable(noctalia
     src/ui/icons/IconRegistry.cpp
     src/render/scene/InputArea.cpp
     src/render/scene/InputDispatcher.cpp
+    src/shell/NotificationPopup.cpp
     src/shell/PanelManager.cpp
     src/shell/panels/TestPanelContent.cpp
     src/shell/widgets/ClockWidget.cpp

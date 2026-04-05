@@ -18,6 +18,7 @@
 #include "notification/NotificationManager.h"
 #include "render/RenderContext.h"
 #include "shell/Bar.h"
+#include "shell/NotificationPopup.h"
 #include "shell/PanelManager.h"
 #include "shell/Wallpaper.h"
 #include "system/SystemMonitorService.h"
@@ -56,6 +57,7 @@ private:
   RenderContext m_renderContext;
   Bar m_bar;
   PanelManager m_panelManager;
+  NotificationPopup m_notificationPopup;
   Wallpaper m_wallpaper;
 
   // Poll sources (must outlive MainLoop)

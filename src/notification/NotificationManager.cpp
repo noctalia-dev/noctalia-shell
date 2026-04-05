@@ -37,7 +37,15 @@ std::optional<TimePoint> schedule_expiry(int32_t timeout_ms) noexcept {
 
 } // namespace
 
-void NotificationManager::setEventCallback(EventCallback callback) { m_event_callback = std::move(callback); }
+int NotificationManager::addEventCallback(EventCallback callback) {
+  int token = m_nextCallbackToken++;
+  m_eventCallbacks.emplace_back(token, std::move(callback));
+  return token;
+}
+
+void NotificationManager::removeEventCallback(int token) {
+  std::erase_if(m_eventCallbacks, [token](const auto& pair) { return pair.first == token; });
+}
 
 uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app_name, std::string summary,
                                            std::string body, int32_t timeout, Urgency urgency,
@@ -72,8 +80,10 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
 
       log_notification(n, "updated");
 
-      if (changed && m_event_callback) {
-        m_event_callback(n, NotificationEvent::Updated);
+      if (changed) {
+        for (auto& [token, cb] : m_eventCallbacks) {
+          cb(n, NotificationEvent::Updated);
+        }
       }
 
       return n.id;
@@ -100,8 +110,8 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
   const auto& n = m_notifications.back();
   log_notification(n, "added");
 
-  if (m_event_callback) {
-    m_event_callback(n, NotificationEvent::Added);
+  for (auto& [token, cb] : m_eventCallbacks) {
+    cb(n, NotificationEvent::Added);
   }
 
   return n.id;
@@ -135,8 +145,8 @@ bool NotificationManager::close(uint32_t id, CloseReason reason) {
     m_id_to_index[m_notifications[i].id] = i;
   }
 
-  if (m_event_callback) {
-    m_event_callback(closed, NotificationEvent::Closed);
+  for (auto& [token, cb] : m_eventCallbacks) {
+    cb(closed, NotificationEvent::Closed);
   }
 
   return true;

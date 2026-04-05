@@ -20,8 +20,9 @@ public:
 
   using EventCallback = std::function<void(const Notification&, NotificationEvent)>;
 
-  // Sets a callback for add or update events.
-  void setEventCallback(EventCallback callback);
+  // Register a callback for notification events. Returns a token for removal.
+  int addEventCallback(EventCallback callback);
+  void removeEventCallback(int token);
 
   // Adds a new notification or updates an existing one.
   uint32_t addOrReplace(uint32_t replaces_id, std::string app_name, std::string summary, std::string body,
@@ -54,6 +55,7 @@ public:
 private:
   std::deque<Notification> m_notifications;
   std::unordered_map<uint32_t, size_t> m_id_to_index;
-  EventCallback m_event_callback;
+  std::vector<std::pair<int, EventCallback>> m_eventCallbacks;
+  int m_nextCallbackToken{0};
   uint32_t m_next_id{1};
 };
