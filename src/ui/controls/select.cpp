@@ -160,13 +160,9 @@ void Select::layout(Renderer& renderer) {
   const float triggerLabelMax = std::max(0.0f, dropdownWidth - (kHorizontalPadding * 2.0f + kIconSize + Style::spaceXs));
   m_triggerLabel->setMaxWidth(triggerLabelMax);
   m_triggerLabel->measure(renderer);
-  float triggerDescender = m_triggerLabel->height() - m_triggerLabel->baselineOffset();
-  float triggerLabelY = std::round((kTriggerHeight - m_triggerLabel->height()) * 0.5f + triggerDescender * 0.25f);
+  float triggerLabelY = std::round((kTriggerHeight - m_triggerLabel->height()) * 0.5f);
   m_triggerLabel->setPosition(kHorizontalPadding, triggerLabelY);
-
-  float triggerLabelCenterY = triggerLabelY + m_triggerLabel->height() * 0.5f;
-  m_triggerIcon->setPosition(dropdownWidth - kHorizontalPadding - m_triggerIcon->width(),
-                             std::round(triggerLabelCenterY - m_triggerIcon->height() * 0.5f));
+  m_triggerIcon->setPosition(dropdownWidth - kHorizontalPadding - m_triggerIcon->width(), triggerLabelY);
   m_triggerArea->setPosition(0.0f, 0.0f);
   m_triggerArea->setSize(dropdownWidth, kTriggerHeight);
 
@@ -191,14 +187,12 @@ void Select::layout(Renderer& renderer) {
 
     option.label->setMaxWidth(std::max(0.0f, dropdownWidth - kHorizontalPadding * 2.0f - kIconSize - Style::spaceXs));
     option.label->measure(renderer);
-    float optDescender = option.label->height() - option.label->baselineOffset();
-    float optLabelY = std::round((kOptionHeight - option.label->height()) * 0.5f + optDescender * 0.25f);
+    float optLabelY = std::round((kOptionHeight - option.label->height()) * 0.5f);
     option.label->setPosition(kHorizontalPadding, rowY + optLabelY);
 
     option.checkIcon->measure(renderer);
-    float optLabelCenterY = optLabelY + option.label->height() * 0.5f;
     option.checkIcon->setPosition(dropdownWidth - kHorizontalPadding - option.checkIcon->width(),
-                                  rowY + std::round(optLabelCenterY - option.checkIcon->height() * 0.5f));
+                                  rowY + optLabelY);
 
     option.area->setPosition(0.0f, rowY);
     option.area->setSize(dropdownWidth, kOptionHeight);

@@ -154,13 +154,23 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
   const auto anchor = positionToAnchor(barConfig.position);
   const bool vertical = (barConfig.position == "left" || barConfig.position == "right");
 
+  // Compositor margins create the floating-bar gap at the protocol level.
+  // The exclusive zone includes the margin so other windows are pushed far enough.
+  const std::int32_t mH = barConfig.marginH;
+  const std::int32_t mV = barConfig.marginV;
+  const std::int32_t totalExclusive = static_cast<std::int32_t>(barConfig.height) + mV;
+
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-" + barConfig.name,
       .layer = LayerShellLayer::Top,
       .anchor = anchor,
       .width = vertical ? barConfig.height : 0,
       .height = vertical ? 0 : barConfig.height,
-      .exclusiveZone = static_cast<std::int32_t>(barConfig.height),
+      .exclusiveZone = totalExclusive,
+      .marginTop = (barConfig.position == "top") ? mV : 0,
+      .marginRight = mH,
+      .marginBottom = (barConfig.position == "bottom") ? mV : 0,
+      .marginLeft = mH,
       .defaultHeight = vertical ? 0 : barConfig.height,
   };
 
@@ -220,8 +230,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
     // Bar background
     auto bg = std::make_unique<Box>();
-    bg->setCardStyle();
-    bg->setSoftness(1.2f);
+    bg->setFlatStyle();
     instance.bg = instance.sceneRoot->addChild(std::move(bg));
 
     // Create section boxes
@@ -273,9 +282,11 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   // Update root size on reconfigure
   instance.sceneRoot->setSize(w, h);
 
-  // Background
-  instance.bg->setPosition(10.0f, 6.0f);
-  instance.bg->setSize(w - 20.0f, h - 12.0f);
+  // Background fills the full surface — floating gap is handled by compositor margins.
+  // Expand 1px beyond the surface on each side so SDF edge pixels land well inside
+  // the rect (distance ≈ -1 < -aa=0.85), giving full coverage with no fringe.
+  instance.bg->setPosition(-1.0f, -1.0f);
+  instance.bg->setSize(w + 2.0f, h + 2.0f);
 
   // Layout widgets
   auto layoutWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets) {

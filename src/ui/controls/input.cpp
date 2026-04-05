@@ -128,7 +128,10 @@ void Input::layout(Renderer& renderer) {
   const auto metrics     = renderer.measureText(display, Style::fontSizeBody);
   const auto fontMetrics = renderer.measureText("Ay", Style::fontSizeBody);
   const float fontH      = fontMetrics.bottom - fontMetrics.top;
-  const float textNodeY  = std::round((h - fontH) * 0.5f + fontMetrics.bottom * 0.25f) - fontMetrics.top;
+  // TextNode y is interpreted as baseline by the renderer. Place it so the
+  // reference line box is geometrically centered: top = (h - fontH) / 2,
+  // then add baselineOffset (= -top) to get baseline position.
+  const float textNodeY  = std::round((h - fontH) * 0.5f) - fontMetrics.top;
   m_textNode->setPosition(Style::paddingH, textNodeY);
   m_textNode->setSize(metrics.width, fontH);
 

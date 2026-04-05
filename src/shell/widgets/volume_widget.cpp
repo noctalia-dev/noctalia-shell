@@ -2,12 +2,12 @@
 
 #include "pipewire/pipewire_service.h"
 #include "render/core/renderer.h"
-#include "ui/controls/flex.h"
 #include "ui/controls/icon.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
+#include <algorithm>
 #include <cmath>
 #include <string>
 
@@ -28,10 +28,7 @@ const char* volumeIconName(float volume, bool muted) {
 VolumeWidget::VolumeWidget(PipeWireService* audio) : m_audio(audio) {}
 
 void VolumeWidget::create(Renderer& renderer) {
-  auto container = std::make_unique<Flex>();
-  container->setDirection(FlexDirection::Horizontal);
-  container->setGap(Style::spaceXs);
-  container->setAlign(FlexAlign::Center);
+  auto container = std::make_unique<Node>();
 
   auto icon = std::make_unique<Icon>();
   icon->setIcon("volume-high");
@@ -49,12 +46,19 @@ void VolumeWidget::create(Renderer& renderer) {
 }
 
 void VolumeWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
-  if (m_icon != nullptr) {
-    m_icon->measure(renderer);
+  auto* rootNode = root();
+  if (m_icon == nullptr || m_label == nullptr || rootNode == nullptr) {
+    return;
   }
-  if (m_label != nullptr) {
-    m_label->measure(renderer);
-  }
+
+  m_icon->measure(renderer);
+  m_label->measure(renderer);
+
+  // Icon and label share the same reference line height, so y=0 aligns both.
+  m_icon->setPosition(0.0f, 0.0f);
+  m_label->setPosition(m_icon->width() + Style::spaceXs, 0.0f);
+
+  rootNode->setSize(m_label->x() + m_label->width(), m_icon->height());
 }
 
 void VolumeWidget::update(Renderer& renderer) {

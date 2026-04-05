@@ -38,14 +38,30 @@ void Box::setSoftness(float softness) {
   m_rect->setStyle(style);
 }
 
+void Box::setSize(float w, float h) {
+  Node::setSize(w, h);
+  m_rect->setSize(w, h);
+}
+
+void Box::setFlatStyle() {
+  auto style = m_rect->style();
+  style.fill = palette.surface;
+  style.border = palette.outline;
+  style.borderWidth = 0;
+  style.fillMode = FillMode::Solid;
+  style.radius = 0;
+  style.softness = 0;
+  m_rect->setStyle(style);
+}
+
 void Box::setCardStyle() {
   auto style = m_rect->style();
   style.fill = palette.surface;
   style.border = palette.outline;
+  style.borderWidth = Style::borderWidth;
   style.fillMode = FillMode::Solid;
   style.radius = Style::radiusMd;
-  style.softness = 1.0f;
-  style.borderWidth = Style::borderWidth;
+  style.softness = 1.2f;
   m_rect->setStyle(style);
 }
 
@@ -53,14 +69,10 @@ void Box::setPanelStyle() {
   auto style = m_rect->style();
   style.fill = palette.surface;
   style.border = palette.outline;
+  style.borderWidth = Style::borderWidth;
   style.fillMode = FillMode::Solid;
   style.radius = Style::radiusLg;
   style.softness = 1.2f;
-  style.borderWidth = Style::borderWidth;
   m_rect->setStyle(style);
 }
 
-void Box::setSize(float w, float h) {
-  Node::setSize(w, h);
-  m_rect->setSize(w, h);
-}

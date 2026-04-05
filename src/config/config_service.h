@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ui/style.h"
+
 #include <cstdint>
 #include <functional>
 #include <optional>
@@ -23,7 +25,9 @@ struct BarConfig {
   std::string name = "default";
   std::string position = "top";
   bool enabled = true;
-  std::uint32_t height = 42;
+  std::uint32_t height = Style::barHeightDefault;
+  std::int32_t marginH = 0; // horizontal compositor margin (left = right = marginH)
+  std::int32_t marginV = 0; // vertical compositor margin (gap between bar and screen edge)
   float padding = 16.0f;
   float gap = 8.0f;
   std::vector<std::string> startWidgets = {};

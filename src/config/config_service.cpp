@@ -173,6 +173,10 @@ void ConfigService::loadFromFile(const std::string& path) {
         bar.enabled = *v;
       if (auto v = (*barTbl)["height"].value<int64_t>())
         bar.height = static_cast<std::uint32_t>(*v);
+      if (auto v = (*barTbl)["margin_h"].value<int64_t>())
+        bar.marginH = static_cast<std::int32_t>(*v);
+      if (auto v = (*barTbl)["margin_v"].value<int64_t>())
+        bar.marginV = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["padding"].value<double>())
         bar.padding = static_cast<float>(*v);
       if (auto v = (*barTbl)["gap"].value<double>())

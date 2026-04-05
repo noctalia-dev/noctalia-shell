@@ -4,7 +4,7 @@
 // When porting a shadcn component, multiply its pixel values by 0.85.
 namespace Style {
 
-inline constexpr int barHeightDefault = 42;
+inline constexpr int barHeightDefault = 34;
 
 inline constexpr int radiusSm = 2;
 inline constexpr int radiusMd = 5;

@@ -249,21 +249,11 @@ void Button::layout(Renderer& renderer) {
 
   Flex::layout(renderer);
 
-  // Geometric centering of the full label bbox (including descender space)
-  // makes cap letters appear too high. Pure cap-height centering over-corrects.
-  // Nudge down by 1/4 of the descender depth as a compromise.
-  float descender = m_label->height() - m_label->baselineOffset();
-  float labelY = std::round((height() - m_label->height()) * 0.5f + descender * 0.25f);
-
+  // Label and icon have identical reference heights, so Flex's geometric
+  // centering already aligns their baselines. Only need to horizontally
+  // center the label when the button is wider than its content.
   if (m_icon == nullptr) {
-    m_label->setPosition(std::round((width() - m_label->width()) * 0.5f), labelY);
-  } else {
-    // Keep Flex's x positions; only adjust y for optical centering.
-    // Center the icon to the cap-height center (midpoint of ascender range),
-    // not the full label bbox which includes descender space.
-    m_label->setPosition(m_label->x(), labelY);
-    float capCenterY = labelY + m_label->baselineOffset() * 0.5f;
-    m_icon->setPosition(m_icon->x(), std::round(capCenterY - m_icon->height() * 0.5f));
+    m_label->setPosition(std::round((width() - m_label->width()) * 0.5f), m_label->y());
   }
 
   if (m_inputArea != nullptr) {

@@ -18,8 +18,9 @@ public:
   void setSoftness(float softness);
 
   // Presets
-  void setCardStyle();  // surface bg, outline border, radiusMd, borderWidth 1, softness 1.0
-  void setPanelStyle(); // surface bg, outline border, radiusLg, borderWidth 1, softness 1.2
+  void setFlatStyle();
+  void setCardStyle();
+  void setPanelStyle();
 
   void setSize(float width, float height) override;
 
