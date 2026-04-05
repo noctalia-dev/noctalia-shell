@@ -18,7 +18,7 @@ Item {
   property bool forceOpen: false
   property bool forceClose: false
   property bool oppositeDirection: false
-  property string iconPosition: "left"
+  property string iconPosition: ""
   property bool hovered: false
   property bool rotateText: false
   property color customBackgroundColor: "transparent"
@@ -49,9 +49,9 @@ Item {
   readonly property int maxPillWidth: rotateText ? Math.max(buttonSize, Math.round(textItem.implicitHeight + Style.margin2M)) : buttonSize
   readonly property int maxPillHeight: rotateText ? Math.max(1, Math.round(textItem.implicitWidth + Style.margin2M + Math.round(iconCircle.height / 4))) : Math.max(1, Math.round(textItem.implicitHeight + Style.margin2M))
 
-  // Determine pill direction based on icon position
-  readonly property bool openDownward: iconPosition === "right"
-  readonly property bool openUpward: iconPosition === "left"
+  // Determine pill direction based on icon position (fallback to oppositeDirection if not set)
+  readonly property bool openDownward: iconPosition === "right" || (iconPosition === "" && oppositeDirection)
+  readonly property bool openUpward: iconPosition === "left" || (iconPosition === "" && !oppositeDirection)
 
   // Effective shown state (true if animated open or forced, but not if force closed)
   readonly property bool revealed: !forceClose && (forceOpen || showPill)
