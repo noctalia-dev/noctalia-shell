@@ -4,7 +4,7 @@
 #include "render/scene/Node.h"
 #include "shell/PanelManager.h"
 #include "ui/controls/Icon.h"
-#include "ui/style/Palette.h"
+#include "ui/Palette.h"
 
 #include <memory>
 

@@ -3,8 +3,8 @@
 #include "render/programs/RoundedRectProgram.h"
 #include "render/scene/InputArea.h"
 #include "render/scene/RectNode.h"
-#include "ui/style/Palette.h"
-#include "ui/style/Style.h"
+#include "ui/Palette.h"
+#include "ui/Style.h"
 
 #include "cursor-shape-v1-client-protocol.h"
 

@@ -8,8 +8,8 @@
 #include "ui/controls/Slider.h"
 #include "ui/controls/Spinner.h"
 #include "ui/controls/Toggle.h"
-#include "ui/style/Palette.h"
-#include "ui/style/Style.h"
+#include "ui/Palette.h"
+#include "ui/Style.h"
 
 #include <cmath>
 #include <memory>

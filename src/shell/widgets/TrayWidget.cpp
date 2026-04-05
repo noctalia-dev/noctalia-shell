@@ -9,7 +9,7 @@
 #include "ui/controls/Box.h"
 #include "ui/controls/Icon.h"
 #include "ui/icons/IconRegistry.h"
-#include "ui/style/Palette.h"
+#include "ui/Palette.h"
 
 #include <linux/input-event-codes.h>
 #include <array>

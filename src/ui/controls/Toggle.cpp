@@ -3,8 +3,8 @@
 #include "render/core/Color.h"
 #include "render/programs/RoundedRectProgram.h"
 #include "render/scene/RectNode.h"
-#include "ui/style/Palette.h"
-#include "ui/style/Style.h"
+#include "ui/Palette.h"
+#include "ui/Style.h"
 
 #include <memory>
 

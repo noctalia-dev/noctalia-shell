@@ -3,8 +3,8 @@
 #include "render/scene/InputArea.h"
 #include "ui/controls/Icon.h"
 #include "ui/controls/Label.h"
-#include "ui/style/Palette.h"
-#include "ui/style/Style.h"
+#include "ui/Palette.h"
+#include "ui/Style.h"
 
 #include <memory>
 

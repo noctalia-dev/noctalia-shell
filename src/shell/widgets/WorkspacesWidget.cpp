@@ -1,5 +1,5 @@
 #include "shell/widgets/WorkspacesWidget.h"
-#include "ui/style/Style.h"
+#include "ui/Style.h"
 
 #include "core/Log.h"
 #include "render/core/Renderer.h"

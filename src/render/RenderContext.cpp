@@ -7,7 +7,7 @@
 #include "render/scene/SpinnerNode.h"
 #include "render/scene/TextNode.h"
 
-#include "ui/style/Style.h"
+#include "ui/Style.h"
 
 #include <algorithm>
 #include <stdexcept>

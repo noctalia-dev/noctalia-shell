@@ -8,8 +8,8 @@
 #include "shell/Widget.h"
 #include "time/TimeService.h"
 #include "ui/controls/Box.h"
-#include "ui/style/Palette.h"
-#include "ui/style/Style.h"
+#include "ui/Palette.h"
+#include "ui/Style.h"
 #include "wayland/WaylandConnection.h"
 
 #include <algorithm>

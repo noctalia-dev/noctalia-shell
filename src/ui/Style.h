@@ -16,7 +16,7 @@ inline constexpr float spaceSm = 8.0f;
 inline constexpr float spaceMd = 12.0f;
 inline constexpr float spaceLg = 16.0f;
 
-inline constexpr float paddingV = 6.0f;
+inline constexpr float paddingV = spaceMd * 0.5;
 inline constexpr float paddingH = spaceMd;
 
 inline constexpr float controlHeightSm = 28.0f;

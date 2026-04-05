@@ -7,8 +7,8 @@
 #include "render/scene/InputArea.h"
 #include "render/scene/RectNode.h"
 #include "render/scene/TextNode.h"
-#include "ui/style/Palette.h"
-#include "ui/style/Style.h"
+#include "ui/Palette.h"
+#include "ui/Style.h"
 #include "wayland/WaylandConnection.h"
 #include "wayland/WaylandSeat.h"
 
