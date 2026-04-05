@@ -59,7 +59,7 @@ void Spinner::startLoop() {
   m_animId = m_animations->animate(
       0.0f, kTwoPi, kRevolutionMs, Easing::Linear,
       [this](float angle) {
-        m_spinnerNode->setAngle(angle);
+        m_spinnerNode->setRotation(angle);
         markDirty();
       },
       [this]() {

@@ -25,6 +25,22 @@ void Node::setSize(float width, float height) {
   markDirty();
 }
 
+void Node::setRotation(float radians) {
+  if (m_rotation == radians) {
+    return;
+  }
+  m_rotation = radians;
+  markDirty();
+}
+
+void Node::setScale(float scale) {
+  if (m_scale == scale) {
+    return;
+  }
+  m_scale = scale;
+  markDirty();
+}
+
 void Node::setOpacity(float opacity) {
   if (m_opacity == opacity) {
     return;

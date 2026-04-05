@@ -38,7 +38,7 @@ public:
   void destroy();
 
   void draw(float surfaceWidth, float surfaceHeight, float x, float y, float width, float height,
-            const RoundedRectStyle& style) const;
+            const RoundedRectStyle& style, float rotation = 0.0f, float scale = 1.0f) const;
 
 private:
   ShaderProgram m_program;
@@ -54,4 +54,6 @@ private:
   GLint m_radiusLocation = -1;
   GLint m_softnessLocation = -1;
   GLint m_borderWidthLocation = -1;
+  GLint m_rotationLocation = -1;
+  GLint m_scaleLocation = -1;
 };

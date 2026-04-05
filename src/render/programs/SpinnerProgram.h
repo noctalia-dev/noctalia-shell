@@ -8,7 +8,6 @@
 struct SpinnerStyle {
   Color color{};
   float thickness = 2.0f;
-  float angle = 0.0f;
 };
 
 class SpinnerProgram {
@@ -23,7 +22,7 @@ public:
   void destroy();
 
   void draw(float surfaceWidth, float surfaceHeight, float x, float y, float width, float height,
-            const SpinnerStyle& style) const;
+            const SpinnerStyle& style, float rotation = 0.0f, float scale = 1.0f) const;
 
 private:
   ShaderProgram m_program;
@@ -33,5 +32,6 @@ private:
   GLint m_rectLocation = -1;
   GLint m_colorLocation = -1;
   GLint m_thicknessLocation = -1;
-  GLint m_angleLocation = -1;
+  GLint m_rotationLocation = -1;
+  GLint m_scaleLocation = -1;
 };

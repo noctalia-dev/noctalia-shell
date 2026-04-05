@@ -27,6 +27,8 @@ public:
   [[nodiscard]] float y() const noexcept { return m_y; }
   [[nodiscard]] float width() const noexcept { return m_width; }
   [[nodiscard]] float height() const noexcept { return m_height; }
+  [[nodiscard]] float rotation() const noexcept { return m_rotation; }
+  [[nodiscard]] float scale() const noexcept { return m_scale; }
   [[nodiscard]] float opacity() const noexcept { return m_opacity; }
   [[nodiscard]] bool visible() const noexcept { return m_visible; }
   [[nodiscard]] bool dirty() const noexcept { return m_dirty; }
@@ -36,6 +38,8 @@ public:
 
   void setPosition(float x, float y);
   void setSize(float width, float height);
+  void setRotation(float radians);
+  void setScale(float scale);
   void setOpacity(float opacity);
   void setVisible(bool visible);
   void setZIndex(std::int32_t zIndex);
@@ -60,6 +64,8 @@ private:
   float m_y = 0.0f;
   float m_width = 0.0f;
   float m_height = 0.0f;
+  float m_rotation = 0.0f;
+  float m_scale = 1.0f;
   float m_opacity = 1.0f;
   bool m_visible = true;
   bool m_dirty = true;

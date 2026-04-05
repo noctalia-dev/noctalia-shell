@@ -12,6 +12,8 @@ attribute vec2 a_position;
 uniform vec2 u_surface_size;
 uniform vec4 u_quad_rect;
 uniform vec4 u_rect;
+uniform float u_rotation;
+uniform float u_scale;
 varying vec2 v_pixel;
 
 vec2 to_ndc(vec2 pixel_pos) {
@@ -20,8 +22,15 @@ vec2 to_ndc(vec2 pixel_pos) {
 }
 
 void main() {
-    vec2 pixel_pos = u_quad_rect.xy + (a_position * u_quad_rect.zw);
-    v_pixel = pixel_pos;
+    vec2 local = a_position * u_quad_rect.zw;
+    vec2 center = u_quad_rect.zw * 0.5;
+    vec2 offset = (local - center) * u_scale;
+    float cs = cos(u_rotation);
+    float sn = sin(u_rotation);
+    vec2 rotated = vec2(offset.x * cs - offset.y * sn,
+                        offset.x * sn + offset.y * cs);
+    vec2 pixel_pos = u_quad_rect.xy + center + rotated;
+    v_pixel = u_quad_rect.xy + local;
     gl_Position = vec4(to_ndc(pixel_pos), 0.0, 1.0);
 }
 )";
@@ -109,9 +118,13 @@ void RoundedRectProgram::ensureInitialized() {
   m_softnessLocation = glGetUniformLocation(m_program.id(), "u_softness");
   m_borderWidthLocation = glGetUniformLocation(m_program.id(), "u_border_width");
 
+  m_rotationLocation = glGetUniformLocation(m_program.id(), "u_rotation");
+  m_scaleLocation = glGetUniformLocation(m_program.id(), "u_scale");
+
   if (m_positionLocation < 0 || m_surfaceSizeLocation < 0 || m_quadRectLocation < 0 || m_rectLocation < 0 ||
       m_colorLocation < 0 || m_fillEndColorLocation < 0 || m_borderColorLocation < 0 || m_fillModeLocation < 0 ||
-      m_gradientDirectionLocation < 0 || m_radiusLocation < 0 || m_softnessLocation < 0 || m_borderWidthLocation < 0) {
+      m_gradientDirectionLocation < 0 || m_radiusLocation < 0 || m_softnessLocation < 0 ||
+      m_borderWidthLocation < 0 || m_rotationLocation < 0 || m_scaleLocation < 0) {
     throw std::runtime_error("failed to query rounded-rect shader locations");
   }
 }
@@ -130,10 +143,12 @@ void RoundedRectProgram::destroy() {
   m_radiusLocation = -1;
   m_softnessLocation = -1;
   m_borderWidthLocation = -1;
+  m_rotationLocation = -1;
+  m_scaleLocation = -1;
 }
 
 void RoundedRectProgram::draw(float surfaceWidth, float surfaceHeight, float x, float y, float width, float height,
-                              const RoundedRectStyle& style) const {
+                              const RoundedRectStyle& style, float rotation, float scale) const {
   if (!m_program.isValid() || width <= 0.0f || height <= 0.0f) {
     return;
   }
@@ -161,6 +176,8 @@ void RoundedRectProgram::draw(float surfaceWidth, float surfaceHeight, float x, 
   glUniform1f(m_radiusLocation, style.radius);
   glUniform1f(m_softnessLocation, style.softness);
   glUniform1f(m_borderWidthLocation, style.borderWidth);
+  glUniform1f(m_rotationLocation, rotation);
+  glUniform1f(m_scaleLocation, scale);
   glVertexAttribPointer(m_positionLocation, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
   glEnableVertexAttribArray(m_positionLocation);
   glDrawArrays(GL_TRIANGLES, 0, 6);

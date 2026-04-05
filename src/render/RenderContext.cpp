@@ -151,6 +151,8 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
   const float absX = parentX + node->x();
   const float absY = parentY + node->y();
   const float effectiveOpacity = parentOpacity * node->opacity();
+  const float rot = node->rotation();
+  const float scl = node->scale();
 
   switch (node->type()) {
   case NodeType::Rect: {
@@ -159,7 +161,7 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
     style.fill.a *= effectiveOpacity;
     style.fillEnd.a *= effectiveOpacity;
     style.border.a *= effectiveOpacity;
-    m_roundedRectProgram.draw(sw, sh, absX, absY, node->width(), node->height(), style);
+    m_roundedRectProgram.draw(sw, sh, absX, absY, node->width(), node->height(), style, rot, scl);
     break;
   }
   case NodeType::Text: {
@@ -169,9 +171,9 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
       color.a *= effectiveOpacity;
       if (text->maxWidth() > 0.0f) {
         auto truncated = m_textRenderer.truncate(text->text(), text->fontSize(), text->maxWidth());
-        m_textRenderer.draw(sw, sh, absX, absY, truncated.text, text->fontSize(), color);
+        m_textRenderer.draw(sw, sh, absX, absY, truncated.text, text->fontSize(), color, rot, scl);
       } else {
-        m_textRenderer.draw(sw, sh, absX, absY, text->text(), text->fontSize(), color);
+        m_textRenderer.draw(sw, sh, absX, absY, text->text(), text->fontSize(), color, rot, scl);
       }
     }
     break;
@@ -181,7 +183,8 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
     if (img->textureId() != 0) {
       auto tint = img->tint();
       tint.a *= effectiveOpacity;
-      m_imageProgram.draw(img->textureId(), sw, sh, absX, absY, node->width(), node->height(), tint, effectiveOpacity);
+      m_imageProgram.draw(img->textureId(), sw, sh, absX, absY, node->width(), node->height(), tint, effectiveOpacity,
+                          rot, scl);
     }
     break;
   }
@@ -190,7 +193,7 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
     if (icon->codepoint() != 0) {
       auto color = icon->color();
       color.a *= effectiveOpacity;
-      m_iconTextRenderer.drawGlyph(sw, sh, absX, absY, icon->codepoint(), icon->fontSize(), color);
+      m_iconTextRenderer.drawGlyph(sw, sh, absX, absY, icon->codepoint(), icon->fontSize(), color, rot, scl);
     }
     break;
   }
@@ -198,7 +201,7 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
     const auto* spinner = static_cast<const SpinnerNode*>(node);
     auto style = spinner->style();
     style.color.a *= effectiveOpacity;
-    m_spinnerProgram.draw(sw, sh, absX, absY, node->width(), node->height(), style);
+    m_spinnerProgram.draw(sw, sh, absX, absY, node->width(), node->height(), style, rot, scl);
     break;
   }
   case NodeType::Base:
