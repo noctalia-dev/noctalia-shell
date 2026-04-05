@@ -1,0 +1,21 @@
+#pragma once
+
+#include "shell/widget/widget.h"
+
+#include <cstdint>
+
+class Icon;
+struct wl_output;
+
+class TestWidget : public Widget {
+public:
+  TestWidget(wl_output* output, std::int32_t scale);
+
+  void create(Renderer& renderer) override;
+  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
+
+private:
+  wl_output* m_output;
+  std::int32_t m_scale;
+  Icon* m_icon = nullptr;
+};
