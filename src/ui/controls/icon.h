@@ -14,7 +14,7 @@ public:
 
   void setIcon(std::string_view name);
   void setCodepoint(char32_t codepoint);
-  void setSize(float size);
+  void setIconSize(float size);
   void setColor(const Color& color);
 
   void measure(Renderer& renderer);

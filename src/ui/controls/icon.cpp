@@ -24,7 +24,7 @@ void Icon::setIcon(std::string_view name) {
 
 void Icon::setCodepoint(char32_t codepoint) { m_iconNode->setCodepoint(codepoint); }
 
-void Icon::setSize(float size) { m_iconNode->setFontSize(size); }
+void Icon::setIconSize(float size) { m_iconNode->setFontSize(size); }
 
 void Icon::setColor(const Color& color) { m_iconNode->setColor(color); }
 

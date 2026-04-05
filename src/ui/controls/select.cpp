@@ -35,7 +35,7 @@ Select::Select() {
   auto triggerIcon = std::make_unique<Icon>();
   m_triggerIcon = static_cast<Icon*>(addChild(std::move(triggerIcon)));
   m_triggerIcon->setIcon("chevron-down");
-  m_triggerIcon->setSize(kIconSize);
+  m_triggerIcon->setIconSize(kIconSize);
 
   auto triggerArea = std::make_unique<InputArea>();
   triggerArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
@@ -231,7 +231,7 @@ void Select::rebuildOptionViews() {
 
     auto checkIcon = std::make_unique<Icon>();
     checkIcon->setIcon("check");
-    checkIcon->setSize(kIconSize);
+    checkIcon->setIconSize(kIconSize);
     auto* checkIconPtr = static_cast<Icon*>(addChild(std::move(checkIcon)));
 
     auto area = std::make_unique<InputArea>();

@@ -29,13 +29,13 @@ void Button::setIcon(std::string_view name) {
 void Button::setFontSize(float size) {
   m_label->setFontSize(size);
   if (m_icon != nullptr) {
-    m_icon->setSize(size);
+    m_icon->setIconSize(size);
   }
 }
 
 void Button::setIconSize(float size) {
   ensureIcon();
-  m_icon->setSize(size);
+  m_icon->setIconSize(size);
 }
 
 void Button::setOnClick(std::function<void()> callback) {
