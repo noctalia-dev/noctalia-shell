@@ -72,8 +72,22 @@ ColumnLayout {
     settingsChanged(settings);
   }
 
+  NToggle {
+    id: showIconToggle
+    label: I18n.tr("bar.custom-button.show-icon-label")
+    description: I18n.tr("bar.custom-button.show-icon-description")
+    checked: valueShowIcon
+    onToggled: checked => {
+                 valueShowIcon = checked;
+                 saveSettings();
+               }
+    visible: textCommandInput.text !== ""
+    defaultValue: widgetMetadata.showIcon
+  }
+
   RowLayout {
     spacing: Style.marginM
+    visible: valueShowIcon
 
     NLabel {
       label: I18n.tr("common.icon")
@@ -135,19 +149,6 @@ ColumnLayout {
   }
 
   NToggle {
-    id: showIconToggle
-    label: I18n.tr("bar.custom-button.show-icon-label")
-    description: I18n.tr("bar.custom-button.show-icon-description")
-    checked: valueShowIcon
-    onToggled: checked => {
-                 valueShowIcon = checked;
-                 saveSettings();
-               }
-    visible: textCommandInput.text !== ""
-    defaultValue: widgetMetadata.showIcon
-  }
-
-  NToggle {
     label: I18n.tr("bar.custom-button.enable-colorization-label")
     description: I18n.tr("bar.custom-button.enable-colorization-description")
     checked: valueEnableColorization
@@ -155,11 +156,12 @@ ColumnLayout {
                  valueEnableColorization = checked;
                  saveSettings();
                }
+    visible: valueShowIcon
     defaultValue: widgetMetadata.enableColorization
   }
 
   NColorChoice {
-    visible: valueEnableColorization
+    visible: valueShowIcon && valueEnableColorization
     label: I18n.tr("common.select-icon-color")
     description: I18n.tr("bar.custom-button.color-selection-description")
     currentKey: valueColorizeSystemIcon
