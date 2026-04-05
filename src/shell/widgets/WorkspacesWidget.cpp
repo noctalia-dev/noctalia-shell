@@ -62,10 +62,10 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
   auto workspaces = m_connection.workspaces(m_output);
 
   for (const auto& ws : workspaces) {
-    auto pill = std::make_unique<Chip>();
-    pill->setText(ws.name);
-    pill->setWorkspaceActive(ws.active);
-    pill->layout(renderer);
+    auto chip = std::make_unique<Chip>();
+    chip->setText(ws.name);
+    chip->setActive(ws.active);
+    chip->layout(renderer);
 
     // Wrap chip in an InputArea for click handling
     auto area = std::make_unique<InputArea>();

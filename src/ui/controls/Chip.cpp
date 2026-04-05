@@ -14,12 +14,12 @@ Chip::Chip() {
   auto label = std::make_unique<Label>();
   m_label = static_cast<Label*>(addChild(std::move(label)));
   m_label->setFontSize(Style::fontSizeCaption);
-  setWorkspaceActive(false);
+  setActive(false);
 }
 
 void Chip::setText(std::string_view text) { m_label->setText(text); }
 
-void Chip::setWorkspaceActive(bool active) {
+void Chip::setActive(bool active) {
   if (active) {
     setBackground(palette.primary);
     m_label->setColor(palette.onPrimary);

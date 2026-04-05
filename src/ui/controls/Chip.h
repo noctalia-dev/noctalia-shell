@@ -13,7 +13,7 @@ public:
   Chip();
 
   void setText(std::string_view text);
-  void setWorkspaceActive(bool active);
+  void setActive(bool active);
 
   [[nodiscard]] Label* label() const noexcept { return m_label; }
 
