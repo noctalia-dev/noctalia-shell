@@ -87,7 +87,7 @@ class VariableScope:
 # --- Known color format types ---
 
 KNOWN_FORMATS = frozenset({
-    "hex", "hex_stripped", "rgb", "rgba", "hsl", "hsla",
+    "hex", "hex_stripped", "rgb", "rgb_csv", "rgba", "hsl", "hsla",
     "red", "green", "blue", "alpha", "hue", "saturation", "lightness",
 })
 
@@ -661,6 +661,8 @@ class TemplateRenderer:
             return color.to_hex().lstrip('#')
         elif format_type == "rgb":
             return f"rgb({color.r}, {color.g}, {color.b})"
+        elif format_type == "rgb_csv":
+            return f"{color.r},{color.g},{color.b}"
         elif format_type == "rgba":
             alpha = getattr(color, 'alpha', 1.0)
             return f"rgba({color.r}, {color.g}, {color.b}, {alpha})"
