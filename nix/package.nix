@@ -10,7 +10,9 @@
     wlr-randr
     imagemagick
     wget
-    (python3.withPackages (pp: lib.optional calendarSupport pp.pygobject3))
+    (python3.withPackages (
+      pp: lib.optionals calendarSupport [ pp.pygobject3 pp.python-dateutil ]
+    ))
   ],
 
   lib,
