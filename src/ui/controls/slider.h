@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui/controls/box.h"
+#include "ui/controls/flex.h"
 
 #include <functional>
 
@@ -8,7 +8,7 @@ class InputArea;
 class RectNode;
 class Renderer;
 
-class Slider : public Box {
+class Slider : public Flex {
 public:
   Slider();
 

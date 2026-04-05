@@ -5,8 +5,9 @@
 #include "core/log.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
-#include "render/scene/rect_node.h"
-#include "render/scene/text_node.h"
+#include "ui/controls/progress_bar.h"
+#include "ui/controls/box.h"
+#include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/wayland_connection.h"
@@ -17,30 +18,33 @@
 
 namespace {
 
-constexpr float kCardWidth = 340.0f;
-constexpr float kGap = 8.0f;
-constexpr float kPadding = 12.0f;
-constexpr float kPopupDurationMs = 8000.0f;
-constexpr int kMaxVisible = 5;
-constexpr float kProgressHeight = 3.0f;
-constexpr float kCardInnerPad = 10.0f;
+constexpr int kCardWidth = 340;
+constexpr int kCardMinHeight = 78;
+constexpr int kCardMaxHeight = 130;
 
-constexpr float kMetaFontSize = Style::fontSizeCaption;
-constexpr float kSummaryFontSize = Style::fontSizeTitle;
-constexpr float kBodyFontSize = Style::fontSizeBody;
+constexpr std::size_t kMaxVisible = 5;
+constexpr int kGap = Style::spaceSm;
+constexpr int kPadding = Style::spaceMd;
+constexpr int kCardInnerPad = Style::spaceMd;
+constexpr int kPopupDurationMs = 8000;
+constexpr int kProgressHeight = 3;
+constexpr int kSlideOffset = 20;                     // horizontal slide distance for entry/exit animation
+constexpr int kProgressBottomMargin = Style::paddingV; // space below progress bar to card edge
+constexpr int kProgressTopGap = Style::spaceMd;       // gap from text content to progress bar
 
-constexpr float kMetaAscent = 10.0f;
-constexpr float kSummaryAscent = 12.0f;
-constexpr float kBodyAscent = 10.0f;
-constexpr float kSummaryLineHeight = 16.0f;
-constexpr float kBodyLineHeight = 14.0f;
+constexpr int kMetaFontSize = Style::fontSizeCaption;
+constexpr int kSummaryFontSize = Style::fontSizeTitle;
+constexpr int kBodyFontSize = Style::fontSizeBody;
+
+constexpr int kSummaryLineHeight = Style::spaceLg;
+constexpr int kMetaGap = Style::spaceXs;        // vertical gap between app name and summary
+constexpr int kSummaryBodyGap = Style::spaceXs; // vertical gap between summary and body
+
 constexpr std::size_t kMaxSummaryLines = 2;
 constexpr std::size_t kMaxBodyLines = 4;
-constexpr float kMinCardHeight = 78.0f;
-constexpr float kMaxCardHeight = 130.0f;
 
-constexpr float kSurfaceWidth = kCardWidth + kPadding * 2;
-constexpr float kSurfaceHeight = kMaxCardHeight * kMaxVisible + kGap * (kMaxVisible - 1) + kPadding * 2;
+constexpr int kSurfaceWidth = kCardWidth + kPadding * 2;
+constexpr int kSurfaceHeight = kCardMaxHeight * kMaxVisible + kGap * (kMaxVisible - 1) + kPadding * 2;
 
 std::string collapseWhitespace(std::string_view text) {
   std::string out;
@@ -196,30 +200,28 @@ void NotificationPopup::onNotificationEvent(const Notification& n, NotificationE
             continue;
           }
 
-          auto& children = cs.cardNode->children();
-          cs.cardNode->setSize(kCardWidth, m_entries[i].cardHeight);
-          static_cast<RectNode*>(children[0].get())->setSize(kCardWidth, m_entries[i].cardHeight);
-          static_cast<TextNode*>(children[1].get())->setText(n.appName);
-          static_cast<TextNode*>(children[2].get())->setText(m_entries[i].wrappedSummary);
-          static_cast<TextNode*>(children[2].get())
-              ->setPosition(kCardInnerPad, kCardInnerPad + kMetaFontSize + 3.0f + kSummaryAscent);
-          static_cast<TextNode*>(children[3].get())->setText(m_entries[i].wrappedBody);
-          static_cast<TextNode*>(children[3].get())
-              ->setPosition(kCardInnerPad, kCardInnerPad + kMetaFontSize + 3.0f +
-                                              static_cast<float>(m_entries[i].summaryLines) * kSummaryLineHeight + 2.0f +
-                                              kBodyAscent);
-          const float progressY = m_entries[i].cardHeight - kProgressHeight - 6.0f;
-          static_cast<RectNode*>(children[4].get())->setPosition(kCardInnerPad, progressY);
-          static_cast<RectNode*>(children[5].get())->setPosition(kCardInnerPad, progressY);
+          const float newHeight = m_entries[i].cardHeight;
+          cs.cardNode->setSize(kCardWidth, newHeight);
+          cs.cardBg->setSize(kCardWidth, newHeight); // Surface::setSize auto-syncs internal rect
+
+          cs.appNameLabel->setText(n.appName);
+          cs.summaryLabel->setText(m_entries[i].wrappedSummary);
+          cs.bodyLabel->setText(m_entries[i].wrappedBody);
+          cs.bodyLabel->setPosition(kCardInnerPad, kCardInnerPad + kMetaFontSize + kMetaGap +
+                                        static_cast<float>(m_entries[i].summaryLines) * kSummaryLineHeight +
+                                        kSummaryBodyGap);
+
+          const float progressY = newHeight - kProgressHeight - kProgressBottomMargin;
+          cs.progressBar->setPosition(kCardInnerPad, progressY);
 
           // Reset countdown
           if (cs.countdownAnimId != 0) {
             inst->animations.cancel(cs.countdownAnimId);
           }
-          cs.progressFill->setSize(kCardWidth - kCardInnerPad * 2, kProgressHeight);
+          cs.progressBar->setProgress(1.0f);
           cs.countdownAnimId = inst->animations.animate(
-              kCardWidth - kCardInnerPad * 2, 0.0f, kPopupDurationMs, Easing::Linear,
-              [fill = cs.progressFill](float w) { fill->setSize(w, kProgressHeight); },
+              1.0f, 0.0f, kPopupDurationMs, Easing::Linear,
+              [pb = cs.progressBar](float v) { pb->setProgress(v); },
               [this, id = n.id]() { DeferredCall::callLater([this, id]() { removePopup(id); }); });
 
           // Flash
@@ -247,8 +249,8 @@ void NotificationPopup::addPopup(const Notification& n) {
     }
   }
 
-  int visibleCount = static_cast<int>(std::count_if(m_entries.begin(), m_entries.end(),
-                                                    [](const PopupEntry& entry) { return !entry.exiting; }));
+  std::size_t visibleCount = std::count_if(m_entries.begin(), m_entries.end(),
+                                                    [](const PopupEntry& entry) { return !entry.exiting; });
   while (visibleCount >= kMaxVisible) {
     const auto it = std::find_if(m_entries.begin(), m_entries.end(),
                                  [](const PopupEntry& entry) { return !entry.exiting; });
@@ -358,24 +360,23 @@ void NotificationPopup::finishRemoval(uint32_t notificationId) {
 
 void NotificationPopup::addCardToInstance(PopupInstance& inst, std::size_t entryIndex) {
   auto& entry = m_entries[entryIndex];
-  Node* card = buildCard(entry);
+
+  PopupInstance::CardState cs;
+  Node* card = buildCard(entry, &cs.appNameLabel, &cs.summaryLabel, &cs.bodyLabel, &cs.cardBg, &cs.progressBar);
+  cs.cardNode = card;
 
   float targetY = cardTargetY(entryIndex);
-  card->setPosition(kPadding + 20.0f, targetY);
+  card->setPosition(kPadding + kSlideOffset, targetY);
   card->setOpacity(0.0f);
 
   inst.sceneRoot->addChild(std::unique_ptr<Node>(card));
-
-  PopupInstance::CardState cs;
-  cs.cardNode = card;
-  cs.progressFill = static_cast<RectNode*>(card->children()[5].get());
 
   // Entry animation
   cs.entryAnimId = inst.animations.animate(
       0.0f, 1.0f, Style::animNormal, Easing::EaseOutCubic,
       [card, targetY](float v) {
         card->setOpacity(v);
-        card->setPosition(kPadding + 20.0f * (1.0f - v), targetY);
+        card->setPosition(kPadding + kSlideOffset * (1.0f - v), targetY);
       },
       [&inst, entryIndex]() {
         if (entryIndex < inst.cards.size()) {
@@ -384,11 +385,10 @@ void NotificationPopup::addCardToInstance(PopupInstance& inst, std::size_t entry
       });
 
   // Countdown (only the first instance drives the timeout to avoid duplicate removals)
-  float progressWidth = kCardWidth - kCardInnerPad * 2;
   bool isDriver = (m_instances.size() > 0 && m_instances[0].get() == &inst);
   cs.countdownAnimId = inst.animations.animate(
-      progressWidth, 0.0f, kPopupDurationMs, Easing::Linear,
-      [fill = cs.progressFill](float w) { fill->setSize(w, kProgressHeight); },
+      1.0f, 0.0f, kPopupDurationMs, Easing::Linear,
+      [pb = cs.progressBar](float v) { pb->setProgress(v); },
       [this, id = entry.notificationId, isDriver]() {
         if (isDriver) {
           DeferredCall::callLater([this, id]() { removePopup(id); });
@@ -432,7 +432,7 @@ void NotificationPopup::dismissCardFromInstance(PopupInstance& inst, std::size_t
       1.0f, 0.0f, Style::animNormal, Easing::EaseInOutQuad,
       [card, startX](float v) {
         card->setOpacity(v);
-        card->setPosition(startX + 20.0f * (1.0f - v), card->y());
+        card->setPosition(startX + kSlideOffset * (1.0f - v), card->y());
       },
       [this, &inst, entryIndex, isDriver, removingId]() {
         if (entryIndex < inst.cards.size()) {
@@ -499,9 +499,11 @@ void NotificationPopup::updateEntryLayout(PopupEntry& entry) const {
   entry.summaryLines = summaryLines;
   entry.bodyLines = bodyLines;
 
-  const float contentHeight = kCardInnerPad + kMetaFontSize + 3.0f + static_cast<float>(summaryLines) * kSummaryLineHeight +
-                              2.0f + static_cast<float>(bodyLines) * kBodyLineHeight;
-  entry.cardHeight = std::max(kMinCardHeight, contentHeight + 12.0f + kProgressHeight + 6.0f);
+  const float contentHeight = kCardInnerPad + kMetaFontSize + kMetaGap +
+                              static_cast<float>(summaryLines) * kSummaryLineHeight +
+                              kSummaryBodyGap + static_cast<float>(bodyLines) * kBodyFontSize;
+  entry.cardHeight = std::max(static_cast<float>(kCardMinHeight),
+                              contentHeight + kProgressTopGap + kProgressHeight + kProgressBottomMargin);
 }
 
 // --- Surface lifecycle ---
@@ -596,7 +598,11 @@ void NotificationPopup::buildScene(PopupInstance& inst, uint32_t width, uint32_t
   }
 }
 
-Node* NotificationPopup::buildCard(const PopupEntry& entry) {
+Node* NotificationPopup::buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary, Label** outBody,
+                                   Node** outBg, ProgressBar** outProgress) {
+  const float innerWidth = kCardWidth - kCardInnerPad * 2;
+  const float progressY = entry.cardHeight - kProgressHeight - kProgressBottomMargin;
+
   auto area = std::make_unique<InputArea>();
   area->setSize(kCardWidth, entry.cardHeight);
   area->setOnClick([this, id = entry.notificationId](const InputArea::PointerData& data) {
@@ -605,71 +611,52 @@ Node* NotificationPopup::buildCard(const PopupEntry& entry) {
     }
   });
 
-  // [0] Background
-  auto bg = std::make_unique<RectNode>();
+  // Background
+  auto bg = std::make_unique<Box>();
+  bg->setCardStyle();
   bg->setSize(kCardWidth, entry.cardHeight);
-  bg->setStyle(RoundedRectStyle{
-      .fill = palette.surface,
-      .border = palette.outline,
-      .fillMode = FillMode::Solid,
-      .radius = Style::radiusMd,
-      .softness = 1.0f,
-      .borderWidth = Style::borderWidth,
-  });
-  area->addChild(std::move(bg));
+  *outBg = area->addChild(std::move(bg));
 
-  // [1] App name
-  auto appName = std::make_unique<TextNode>();
+  // App name (caption style, muted)
+  auto appName = std::make_unique<Label>();
   appName->setText(entry.appName);
   appName->setFontSize(kMetaFontSize);
   appName->setColor(palette.onSurfaceVariant);
-  appName->setPosition(kCardInnerPad, kCardInnerPad + kMetaAscent);
-  appName->setMaxWidth(kCardWidth - kCardInnerPad * 2);
+  appName->setMaxWidth(innerWidth);
+  appName->measure(*m_renderContext);
+  appName->setPosition(kCardInnerPad, kCardInnerPad);
+  *outAppName = appName.get();
   area->addChild(std::move(appName));
 
-  // [2] Summary
-  auto summary = std::make_unique<TextNode>();
+  // Summary (bold title)
+  auto summary = std::make_unique<Label>();
   summary->setText(entry.wrappedSummary);
   summary->setFontSize(kSummaryFontSize);
   summary->setColor(palette.onSurface);
-  summary->setPosition(kCardInnerPad, kCardInnerPad + kMetaFontSize + 3.0f + kSummaryAscent);
+  summary->setBold(true);
+  summary->setMaxWidth(innerWidth);
+  summary->measure(*m_renderContext);
+  summary->setPosition(kCardInnerPad, kCardInnerPad + kMetaFontSize + kMetaGap);
+  *outSummary = summary.get();
   area->addChild(std::move(summary));
 
-  // [3] Body
-  auto body = std::make_unique<TextNode>();
+  // Body text
+  auto body = std::make_unique<Label>();
   body->setText(entry.wrappedBody);
   body->setFontSize(kBodyFontSize);
   body->setColor(palette.onSurfaceVariant);
-  body->setPosition(kCardInnerPad, kCardInnerPad + kMetaFontSize + 3.0f +
-                                    static_cast<float>(entry.summaryLines) * kSummaryLineHeight + 2.0f + kBodyAscent);
+  body->setMaxWidth(innerWidth);
+  body->measure(*m_renderContext);
+  body->setPosition(kCardInnerPad, kCardInnerPad + kMetaFontSize + kMetaGap +
+                                    static_cast<float>(entry.summaryLines) * kSummaryLineHeight + kSummaryBodyGap);
+  *outBody = body.get();
   area->addChild(std::move(body));
 
-  // [4] Progress bar background
-  float progressWidth = kCardWidth - kCardInnerPad * 2;
-  float progressY = entry.cardHeight - kProgressHeight - 6.0f;
-
-  auto progressBg = std::make_unique<RectNode>();
-  progressBg->setSize(progressWidth, kProgressHeight);
-  progressBg->setPosition(kCardInnerPad, progressY);
-  progressBg->setStyle(RoundedRectStyle{
-      .fill = palette.surfaceVariant,
-      .fillMode = FillMode::Solid,
-      .radius = Style::radiusSm,
-      .softness = 0.5f,
-  });
-  area->addChild(std::move(progressBg));
-
-  // [5] Progress bar fill (countdown)
-  auto progressFill = std::make_unique<RectNode>();
-  progressFill->setSize(progressWidth, kProgressHeight);
-  progressFill->setPosition(kCardInnerPad, progressY);
-  progressFill->setStyle(RoundedRectStyle{
-      .fill = palette.primary,
-      .fillMode = FillMode::Solid,
-      .radius = Style::radiusSm,
-      .softness = 0.5f,
-  });
-  area->addChild(std::move(progressFill));
+  // Progress bar (countdown)
+  auto progressBar = std::make_unique<ProgressBar>();
+  progressBar->setSize(innerWidth, kProgressHeight);
+  progressBar->setPosition(kCardInnerPad, progressY);
+  *outProgress = static_cast<ProgressBar*>(area->addChild(std::move(progressBar)));
 
   return area.release();
 }

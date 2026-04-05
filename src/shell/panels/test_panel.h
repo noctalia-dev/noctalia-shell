@@ -2,7 +2,7 @@
 
 #include "shell/panel/panel.h"
 
-class Box;
+class Flex;
 class Button;
 class Input;
 class Select;
@@ -21,7 +21,7 @@ public:
   [[nodiscard]] float preferredHeight() const override { return 480.0f; }
 
 private:
-  Box* m_container = nullptr;
+  Flex* m_container = nullptr;
   Label* m_headerLabel = nullptr;
   Label* m_sliderValueLabel = nullptr;
   Button* m_button = nullptr;

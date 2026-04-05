@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui/controls/box.h"
+#include "ui/controls/flex.h"
 
 #include <cstddef>
 #include <functional>
@@ -14,7 +14,7 @@ class Label;
 class RectNode;
 class Renderer;
 
-class Select : public Box {
+class Select : public Flex {
 public:
   Select();
 

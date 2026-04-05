@@ -56,6 +56,7 @@ private:
 
   std::unique_ptr<LayerSurface> m_surface;
   std::unique_ptr<Node> m_sceneRoot;
+  Node* m_bgNode = nullptr;
   Node* m_contentNode = nullptr;
   AnimationManager m_animations;
   InputDispatcher m_inputDispatcher;

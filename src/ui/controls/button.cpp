@@ -9,7 +9,7 @@
 #include <memory>
 
 Button::Button() {
-  setAlign(BoxAlign::Center);
+  setAlign(FlexAlign::Center);
   setMinHeight(Style::controlHeight);
   setPadding(Style::paddingV, Style::paddingH, Style::paddingV, Style::paddingH);
   setRadius(Style::radiusMd);
@@ -166,7 +166,7 @@ void Button::ensureIcon() {
   }
   auto icon = std::make_unique<Icon>();
   m_icon = static_cast<Icon*>(insertChildAt(labelIndex, std::move(icon)));
-  setDirection(BoxDirection::Horizontal);
+  setDirection(FlexDirection::Horizontal);
   setGap(Style::spaceXs);
 }
 
@@ -209,7 +209,7 @@ void Button::layout(Renderer& renderer) {
     m_inputArea->setVisible(false);
   }
 
-  Box::layout(renderer);
+  Flex::layout(renderer);
 
   // Center label when there's no icon
   if (m_icon == nullptr) {

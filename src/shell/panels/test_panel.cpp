@@ -1,7 +1,7 @@
 #include "shell/panels/test_panel.h"
 
 #include "render/scene/input_area.h"
-#include "ui/controls/box.h"
+#include "ui/controls/flex.h"
 #include "ui/controls/button.h"
 #include "ui/controls/select.h"
 #include "ui/controls/label.h"
@@ -17,10 +17,10 @@
 #include <string>
 
 void TestPanel::create(Renderer& renderer) {
-  auto container = std::make_unique<Box>();
-  container->setDirection(BoxDirection::Vertical);
+  auto container = std::make_unique<Flex>();
+  container->setDirection(FlexDirection::Vertical);
   container->setGap(Style::spaceMd);
-  container->setAlign(BoxAlign::Start);
+  container->setAlign(FlexAlign::Start);
 
   auto header = std::make_unique<Label>();
   header->setText("Test Controls");
@@ -32,10 +32,10 @@ void TestPanel::create(Renderer& renderer) {
   constexpr float kRowLabelWidth = 100.0f;
 
   auto makeRow = []() {
-    auto row = std::make_unique<Box>();
-    row->setDirection(BoxDirection::Horizontal);
+    auto row = std::make_unique<Flex>();
+    row->setDirection(FlexDirection::Horizontal);
     row->setGap(Style::spaceMd);
-    row->setAlign(BoxAlign::Center);
+    row->setAlign(FlexAlign::Center);
     return row;
   };
 

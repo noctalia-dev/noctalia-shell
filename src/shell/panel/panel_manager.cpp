@@ -4,8 +4,7 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "render/render_context.h"
-#include "render/programs/rounded_rect_program.h"
-#include "render/scene/rect_node.h"
+#include "ui/controls/box.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/wayland_connection.h"
@@ -144,6 +143,7 @@ void PanelManager::destroyPanel() {
   m_animations.cancelAll();
   m_closing = false;
   m_pointerInside = false;
+  m_bgNode = nullptr;
   m_contentNode = nullptr;
   m_sceneRoot.reset();
   m_surface.reset();
@@ -254,16 +254,9 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     m_sceneRoot = std::make_unique<Node>();
 
     // Panel background
-    auto bg = std::make_unique<RectNode>();
-    bg->setStyle(RoundedRectStyle{
-        .fill = palette.surface,
-        .border = palette.outline,
-        .fillMode = FillMode::Solid,
-        .radius = Style::radiusLg,
-        .softness = 1.2f,
-        .borderWidth = Style::borderWidth,
-    });
-    m_sceneRoot->addChild(std::move(bg));
+    auto bg = std::make_unique<Box>();
+    bg->setPanelStyle();
+    m_bgNode = m_sceneRoot->addChild(std::move(bg));
 
     // Create panel content inside a wrapper node for staggered fade-in
     auto contentWrapper = std::make_unique<Node>();
@@ -282,17 +275,15 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     // Open animation: fast fade-in with the background growing from center
     m_sceneRoot->setOpacity(0.0f);
 
-    auto* bgNode = m_sceneRoot->children()[0].get();
-
-    m_animations.animate(0.0f, 1.0f, Style::animNormal, Easing::EaseOutCubic, [this, bgNode, w, h](float v) {
+    m_animations.animate(0.0f, 1.0f, Style::animNormal, Easing::EaseOutCubic, [this, w, h](float v) {
       m_sceneRoot->setOpacity(v);
 
       // Background grows from ~95% to 100%
       const float s = 1.0f - 0.05f * (1.0f - v);
       const float bw = w * s;
       const float bh = h * s;
-      bgNode->setSize(bw, bh);
-      bgNode->setPosition((w - bw) * 0.5f, (h - bh) * 0.5f);
+      m_bgNode->setSize(bw, bh); // Surface::setSize auto-syncs internal rect
+      m_bgNode->setPosition((w - bw) * 0.5f, (h - bh) * 0.5f);
     });
 
     m_surface->setSceneRoot(m_sceneRoot.get());
@@ -300,10 +291,8 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
 
   m_sceneRoot->setSize(w, h);
 
-  // Background rect with padding
-  auto& children = m_sceneRoot->children();
-  children[0]->setPosition(0.0f, 0.0f);
-  children[0]->setSize(w, h);
+  m_bgNode->setPosition(0.0f, 0.0f);
+  m_bgNode->setSize(w, h);
 
   // Layout panel content with padding
   constexpr float kPadding = 12.0f;

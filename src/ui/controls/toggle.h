@@ -1,7 +1,7 @@
 #pragma once
 
 #include "render/animation/animation_manager.h"
-#include "ui/controls/box.h"
+#include "ui/controls/flex.h"
 
 enum class ToggleSize : std::uint8_t {
   Small,
@@ -9,7 +9,7 @@ enum class ToggleSize : std::uint8_t {
   Large,
 };
 
-class Toggle : public Box {
+class Toggle : public Flex {
 public:
   Toggle();
 

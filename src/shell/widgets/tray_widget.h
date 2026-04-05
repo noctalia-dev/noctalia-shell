@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-class Box;
+class Flex;
 class TrayService;
 
 class TrayWidget : public Widget {
@@ -24,7 +24,7 @@ private:
   [[nodiscard]] std::string iconForItem(const TrayItemInfo& item) const;
 
   TrayService* m_tray = nullptr;
-  Box* m_container = nullptr;
+  Flex* m_container = nullptr;
   std::vector<TrayItemInfo> m_items;
   std::vector<TextureHandle> m_loadedTextures;
 };

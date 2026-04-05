@@ -7,7 +7,7 @@
 #include <memory>
 
 Chip::Chip() {
-  setAlign(BoxAlign::Center);
+  setAlign(FlexAlign::Center);
   setPadding(Style::paddingV, Style::paddingH, Style::paddingV, Style::paddingH);
   setRadius(Style::radiusMd);
 

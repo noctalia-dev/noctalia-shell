@@ -37,7 +37,7 @@ public:
   [[nodiscard]] const std::vector<std::unique_ptr<Node>>& children() const noexcept { return m_children; }
 
   void setPosition(float x, float y);
-  void setSize(float width, float height);
+  virtual void setSize(float width, float height);
   void setRotation(float radians);
   void setScale(float scale);
   void setOpacity(float opacity);

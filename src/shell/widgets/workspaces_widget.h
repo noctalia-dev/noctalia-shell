@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-class Box;
+class Flex;
 
 class WorkspacesWidget : public Widget {
 public:
@@ -25,7 +25,7 @@ private:
 
   WaylandConnection& m_connection;
   wl_output* m_output = nullptr;
-  Box* m_container = nullptr;
+  Flex* m_container = nullptr;
   std::vector<Workspace> m_cachedState;
   AnimationManager::Id m_slideAnimId = 0;
   AnimationManager::Id m_fadeAnimId = 0;

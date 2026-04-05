@@ -3,8 +3,8 @@
 #include "shell/widget/widget.h"
 
 class Icon;
+class Node;
 class NotificationManager;
-class RectNode;
 
 class NotificationWidget : public Widget {
 public:
@@ -19,6 +19,6 @@ private:
 
   NotificationManager* m_manager = nullptr;
   Icon* m_icon = nullptr;
-  RectNode* m_dot = nullptr;
+  Node* m_dot = nullptr;
   bool m_hasNotifications = false;
 };

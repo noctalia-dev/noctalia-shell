@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui/controls/box.h"
+#include "ui/controls/flex.h"
 
 #include "render/core/color.h"
 
@@ -19,7 +19,7 @@ enum class ButtonVariant : std::uint8_t {
   Ghost,
 };
 
-class Button : public Box {
+class Button : public Flex {
 public:
   Button();
 

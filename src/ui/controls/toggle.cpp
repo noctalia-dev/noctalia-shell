@@ -9,8 +9,8 @@
 #include <memory>
 
 Toggle::Toggle() {
-  setAlign(BoxAlign::Center);
-  setDirection(BoxDirection::Horizontal);
+  setAlign(FlexAlign::Center);
+  setDirection(FlexDirection::Horizontal);
   setBorderColor(palette.outline);
   setBorderWidth(Style::borderWidth);
 
@@ -103,7 +103,7 @@ void Toggle::applyAnimatedState(float t) {
   thumbStyle.fill = thumbColor;
   m_thumb->setStyle(thumbStyle);
 
-  // Padding keeps Box size consistent regardless of thumb position
+  // Padding keeps Flex size consistent regardless of thumb position
   const float rightPad = m_inset + m_travel - (thumbX - m_inset);
   setPadding(m_inset, rightPad, m_inset, thumbX);
 

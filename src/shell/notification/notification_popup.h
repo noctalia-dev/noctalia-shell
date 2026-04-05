@@ -4,13 +4,14 @@
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
+#include "ui/controls/label.h"
+#include "ui/controls/progress_bar.h"
 #include "wayland/layer_surface.h"
 
 #include <memory>
 #include <vector>
 
 class ConfigService;
-class RectNode;
 class RenderContext;
 class WaylandConnection;
 struct PointerEvent;
@@ -60,7 +61,11 @@ private:
     // Per-entry visual nodes for this instance
     struct CardState {
       Node* cardNode = nullptr;
-      RectNode* progressFill = nullptr;
+      Node* cardBg = nullptr;
+      Label* appNameLabel = nullptr;
+      Label* summaryLabel = nullptr;
+      Label* bodyLabel = nullptr;
+      ProgressBar* progressBar = nullptr;
       AnimationManager::Id countdownAnimId = 0;
       AnimationManager::Id entryAnimId = 0;
       AnimationManager::Id slideAnimId = 0;
@@ -79,7 +84,8 @@ private:
   void ensureSurfaces();
   void destroySurfaces();
   void buildScene(PopupInstance& inst, uint32_t width, uint32_t height);
-  Node* buildCard(const PopupEntry& entry);
+  Node* buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary, Label** outBody,
+                  Node** outBg, ProgressBar** outProgress);
   void addCardToInstance(PopupInstance& inst, std::size_t entryIndex);
   void dismissCardFromInstance(PopupInstance& inst, std::size_t entryIndex);
 

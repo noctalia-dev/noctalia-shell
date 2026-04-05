@@ -6,7 +6,7 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "ui/controls/box.h"
+#include "ui/controls/flex.h"
 #include "ui/controls/chip.h"
 
 #include <linux/input-event-codes.h>
@@ -15,7 +15,7 @@ WorkspacesWidget::WorkspacesWidget(WaylandConnection& connection, wl_output* out
     : m_connection(connection), m_output(output) {}
 
 void WorkspacesWidget::create(Renderer& renderer) {
-  auto container = std::make_unique<Box>();
+  auto container = std::make_unique<Flex>();
   container->setRowLayout();
   m_container = container.get();
   m_root = std::move(container);

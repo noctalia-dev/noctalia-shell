@@ -1,11 +1,11 @@
 #include "shell/widgets/spacer_widget.h"
 
-#include "ui/controls/box.h"
+#include "ui/controls/flex.h"
 
 SpacerWidget::SpacerWidget(float width) : m_fixedWidth(width) {}
 
 void SpacerWidget::create(Renderer& /*renderer*/) {
-  auto box = std::make_unique<Box>();
+  auto box = std::make_unique<Flex>();
   box->setSize(m_fixedWidth, 0.0f);
   m_root = std::unique_ptr<Node>(box.release());
 }

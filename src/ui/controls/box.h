@@ -3,60 +3,26 @@
 #include "render/core/color.h"
 #include "render/scene/node.h"
 
-class Renderer;
 class RectNode;
 
-enum class BoxDirection : std::uint8_t {
-  Horizontal,
-  Vertical,
-};
-
-enum class BoxAlign : std::uint8_t {
-  Start,
-  Center,
-  End,
-};
-
+// A styled rectangle that keeps its internal RectNode sized to match itself.
+// Use this anywhere you need a background, separator, or decorative shape in
+// shell/widget code — not RectNode directly.
 class Box : public Node {
 public:
   Box();
 
-  void setDirection(BoxDirection direction);
-  void setGap(float gap);
-  void setAlign(BoxAlign align);
-  void setPadding(float top, float right, float bottom, float left);
-  void setPadding(float all);
-
-  void setBackground(const Color& color);
+  void setFill(const Color& color);
+  void setBorder(const Color& color, float width);
   void setRadius(float radius);
-  void setBorderColor(const Color& color);
-  void setBorderWidth(float width);
   void setSoftness(float softness);
 
-  void setMinWidth(float minWidth);
-  void setMinHeight(float minHeight);
+  // Presets
+  void setCardStyle();  // surface bg, outline border, radiusMd, borderWidth 1, softness 1.0
+  void setPanelStyle(); // surface bg, outline border, radiusLg, borderWidth 1, softness 1.2
 
-  void setCardSurface();
-
-  void setRowLayout();
-
-  [[nodiscard]] BoxDirection direction() const noexcept { return m_direction; }
-  [[nodiscard]] float gap() const noexcept { return m_gap; }
-  [[nodiscard]] BoxAlign align() const noexcept { return m_align; }
-
-  virtual void layout(Renderer& renderer);
+  void setSize(float width, float height) override;
 
 private:
-  void ensureBackground();
-
-  RectNode* m_background = nullptr;
-  BoxDirection m_direction = BoxDirection::Horizontal;
-  BoxAlign m_align = BoxAlign::Center;
-  float m_gap = 0.0f;
-  float m_paddingTop = 0.0f;
-  float m_paddingRight = 0.0f;
-  float m_paddingBottom = 0.0f;
-  float m_paddingLeft = 0.0f;
-  float m_minWidth = 0.0f;
-  float m_minHeight = 0.0f;
+  RectNode* m_rect = nullptr;
 };

@@ -6,7 +6,7 @@
 #include "render/scene/image_node.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "ui/controls/box.h"
+#include "ui/controls/flex.h"
 #include "ui/controls/icon.h"
 #include "ui/icons/icon_registry.h"
 #include "ui/palette.h"
@@ -92,7 +92,7 @@ std::string resolveThemeIconPath(const std::string& iconName, const std::string&
 TrayWidget::TrayWidget(TrayService* tray) : m_tray(tray) {}
 
 void TrayWidget::create(Renderer& renderer) {
-  auto container = std::make_unique<Box>();
+  auto container = std::make_unique<Flex>();
   container->setRowLayout();
   container->setGap(4.0f);
   m_container = container.get();

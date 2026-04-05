@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui/controls/box.h"
+#include "ui/controls/flex.h"
 
 #include <functional>
 
@@ -8,12 +8,12 @@ class InputArea;
 class RectNode;
 class Renderer;
 
-class ScrollView : public Box {
+class ScrollView : public Flex {
 public:
   ScrollView();
 
-  [[nodiscard]] Box* content() noexcept { return m_content; }
-  [[nodiscard]] const Box* content() const noexcept { return m_content; }
+  [[nodiscard]] Flex* content() noexcept { return m_content; }
+  [[nodiscard]] const Flex* content() const noexcept { return m_content; }
 
   void setScrollOffset(float offset);
   void scrollBy(float delta);
@@ -34,7 +34,7 @@ private:
 
   RectNode* m_background = nullptr;
   InputArea* m_viewportArea = nullptr;
-  Box* m_content = nullptr;
+  Flex* m_content = nullptr;
   RectNode* m_scrollbarTrack = nullptr;
   RectNode* m_scrollbarThumb = nullptr;
   InputArea* m_scrollbarThumbArea = nullptr;

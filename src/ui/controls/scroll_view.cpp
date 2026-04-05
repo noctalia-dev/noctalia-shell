@@ -79,10 +79,10 @@ ScrollView::ScrollView() {
   });
   m_viewportArea = static_cast<InputArea*>(addChild(std::move(viewportArea)));
 
-  auto content = std::make_unique<Box>();
-  content->setDirection(BoxDirection::Vertical);
-  content->setAlign(BoxAlign::Start);
-  m_content = static_cast<Box*>(addChild(std::move(content)));
+  auto content = std::make_unique<Flex>();
+  content->setDirection(FlexDirection::Vertical);
+  content->setAlign(FlexAlign::Start);
+  m_content = static_cast<Flex*>(addChild(std::move(content)));
 
   auto scrollbarTrack = std::make_unique<RectNode>();
   m_scrollbarTrack = static_cast<RectNode*>(addChild(std::move(scrollbarTrack)));

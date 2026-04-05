@@ -222,7 +222,9 @@ add_executable(noctalia
     src/shell/widget/widget.cpp
     src/shell/widget/widget_factory.cpp
     src/ui/controls/box.cpp
+    src/ui/controls/flex.cpp
     src/ui/controls/button.cpp
+    src/ui/controls/progress_bar.cpp
     src/ui/controls/input.cpp
     src/ui/controls/chip.cpp
     src/ui/controls/select.cpp

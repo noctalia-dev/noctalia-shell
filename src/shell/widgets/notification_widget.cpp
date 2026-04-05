@@ -1,8 +1,7 @@
 #include "shell/widgets/notification_widget.h"
 
 #include "notification/notification_manager.h"
-#include "render/programs/rounded_rect_program.h"
-#include "render/scene/rect_node.h"
+#include "ui/controls/box.h"
 #include "ui/controls/icon.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -21,17 +20,11 @@ void NotificationWidget::create(Renderer& renderer) {
   m_icon = icon.get();
   root->addChild(std::move(icon));
 
-  auto dot = std::make_unique<RectNode>();
-  auto dotStyle = dot->style();
-  dotStyle.fill = palette.primary;
-  dotStyle.border = palette.primary;
-  dotStyle.fillMode = FillMode::Solid;
-  dotStyle.radius = 3.0f;
-  dotStyle.softness = 1.0f;
-  dotStyle.borderWidth = 0.0f;
-  dot->setStyle(dotStyle);
+  auto dot = std::make_unique<Box>();
+  dot->setFill(palette.primary);
+  dot->setRadius(Style::radiusFull);
   dot->setVisible(false);
-  m_dot = static_cast<RectNode*>(root->addChild(std::move(dot)));
+  m_dot = root->addChild(std::move(dot));
 
   m_root = std::move(root);
   refreshIndicatorState();

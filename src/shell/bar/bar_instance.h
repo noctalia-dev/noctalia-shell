@@ -11,7 +11,8 @@
 #include <memory>
 #include <vector>
 
-class Box;
+class Flex;
+class Node;
 
 struct BarInstance {
   std::uint32_t outputName = 0;
@@ -24,10 +25,11 @@ struct BarInstance {
   AnimationManager animations;
   InputDispatcher inputDispatcher;
 
-  // Bar layout sections (start/center/end along main axis)
-  Box* startSection = nullptr;
-  Box* centerSection = nullptr;
-  Box* endSection = nullptr;
+  // Bar background and layout sections (start/center/end along main axis)
+  Node* bg = nullptr;
+  Flex* startSection = nullptr;
+  Flex* centerSection = nullptr;
+  Flex* endSection = nullptr;
 
   std::vector<std::unique_ptr<Widget>> startWidgets;
   std::vector<std::unique_ptr<Widget>> centerWidgets;

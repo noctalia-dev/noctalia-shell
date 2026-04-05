@@ -4,10 +4,10 @@
 #include "core/log.h"
 #include "dbus/tray/tray_service.h"
 #include "render/render_context.h"
-#include "render/scene/rect_node.h"
+#include "ui/controls/box.h"
 #include "shell/widget/widget.h"
 #include "time/time_service.h"
-#include "ui/controls/box.h"
+#include "ui/controls/flex.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/wayland_connection.h"
@@ -214,32 +214,26 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.sceneRoot->setSize(w, h);
 
     // Bar background
-    auto bg = std::make_unique<RectNode>();
-    bg->setStyle(RoundedRectStyle{
-        .fill = palette.surface,
-        .border = palette.outline,
-        .fillMode = FillMode::Solid,
-        .radius = Style::radiusMd,
-        .softness = 1.2f,
-        .borderWidth = Style::borderWidth,
-    });
-    instance.sceneRoot->addChild(std::move(bg));
+    auto bg = std::make_unique<Box>();
+    bg->setCardStyle();
+    bg->setSoftness(1.2f);
+    instance.bg = instance.sceneRoot->addChild(std::move(bg));
 
     // Create section boxes
     auto makeSection = [gap]() {
-      auto box = std::make_unique<Box>();
-      box->setDirection(BoxDirection::Horizontal);
+      auto box = std::make_unique<Flex>();
+      box->setDirection(FlexDirection::Horizontal);
       box->setGap(gap);
-      box->setAlign(BoxAlign::Center);
+      box->setAlign(FlexAlign::Center);
       return box;
     };
 
-    instance.startSection = static_cast<Box*>(instance.sceneRoot->addChild(makeSection()));
-    instance.centerSection = static_cast<Box*>(instance.sceneRoot->addChild(makeSection()));
-    instance.endSection = static_cast<Box*>(instance.sceneRoot->addChild(makeSection()));
+    instance.startSection = static_cast<Flex*>(instance.sceneRoot->addChild(makeSection()));
+    instance.centerSection = static_cast<Flex*>(instance.sceneRoot->addChild(makeSection()));
+    instance.endSection = static_cast<Flex*>(instance.sceneRoot->addChild(makeSection()));
 
     // Create widgets and transfer their roots to section boxes
-    auto initWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets, Box* section) {
+    auto initWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets, Flex* section) {
       for (auto& widget : widgets) {
         widget->setAnimationManager(&instance.animations);
         widget->setRedrawCallback([surface = instance.surface.get()]() {
@@ -274,12 +268,9 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   // Update root size on reconfigure
   instance.sceneRoot->setSize(w, h);
 
-  // Layout
-  auto& children = instance.sceneRoot->children();
-
-  // Background rect
-  children[0]->setPosition(10.0f, 6.0f);
-  children[0]->setSize(w - 20.0f, h - 12.0f);
+  // Background
+  instance.bg->setPosition(10.0f, 6.0f);
+  instance.bg->setSize(w - 20.0f, h - 12.0f);
 
   // Layout widgets
   auto layoutWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
@@ -319,7 +310,7 @@ void Bar::updateWidgets(BarInstance& instance) {
   const auto h = static_cast<float>(instance.surface->height());
   const float padding = instance.barConfig.padding;
 
-  auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets, Box* section) {
+  auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets, Flex* section) {
     bool changed = false;
     for (auto& widget : widgets) {
       widget->update(*renderer);

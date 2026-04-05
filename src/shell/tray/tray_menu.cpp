@@ -3,9 +3,10 @@
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
+#include "render/render_context.h"
 #include "render/scene/input_area.h"
-#include "render/scene/rect_node.h"
-#include "render/scene/text_node.h"
+#include "ui/controls/box.h"
+#include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/wayland_connection.h"
@@ -24,7 +25,6 @@ constexpr float kItemGap = 4.0f;
 constexpr std::size_t kMaxVisible = 14;
 
 constexpr float kSurfaceWidth = kMenuWidth;
-constexpr float kBodyAscent = 11.0f;
 
 } // namespace
 
@@ -253,16 +253,9 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
   inst.sceneRoot = std::make_unique<Node>();
   inst.sceneRoot->setSize(w, h);
 
-  auto bg = std::make_unique<RectNode>();
+  auto bg = std::make_unique<Box>();
+  bg->setCardStyle();
   bg->setSize(w, h);
-  bg->setStyle(RoundedRectStyle{
-      .fill = palette.surface,
-      .border = palette.outline,
-      .fillMode = FillMode::Solid,
-      .radius = Style::radiusMd,
-      .softness = 1.0f,
-      .borderWidth = Style::borderWidth,
-  });
   inst.sceneRoot->addChild(std::move(bg));
 
   const std::size_t visibleItems = std::min(m_entries.size(), kMaxVisible);
@@ -290,35 +283,29 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
     });
 
     if (!entry.separator) {
-      auto rowBg = std::make_unique<RectNode>();
+      auto rowBg = std::make_unique<Box>();
+      rowBg->setFill(palette.surfaceVariant);
+      rowBg->setRadius(Style::radiusSm);
       rowBg->setSize(rowWidth, kItemHeight);
-      rowBg->setStyle(RoundedRectStyle{
-          .fill = palette.surfaceVariant,
-          .fillMode = FillMode::Solid,
-          .radius = Style::radiusSm,
-          .softness = 1.0f,
-      });
       row->addChild(std::move(rowBg));
 
-      auto label = std::make_unique<TextNode>();
       std::string labelText = entry.label;
       if (entry.hasSubmenu) {
         labelText += "  >";
       }
+      auto label = std::make_unique<Label>();
       label->setText(labelText);
       label->setFontSize(Style::fontSizeBody);
       label->setColor(entry.enabled ? palette.onSurface : palette.onSurfaceVariant);
-      label->setPosition(10.0f, 8.0f + kBodyAscent);
       label->setMaxWidth(rowWidth - 20.0f);
+      label->measure(*m_renderContext);
+      label->setPosition(10.0f, (kItemHeight - label->height()) * 0.5f);
       row->addChild(std::move(label));
     } else {
-      auto separator = std::make_unique<RectNode>();
+      auto separator = std::make_unique<Box>();
+      separator->setFill(palette.outline);
       separator->setSize(rowWidth - 12.0f, 1.0f);
       separator->setPosition(6.0f, (kItemHeight - 1.0f) * 0.5f);
-      separator->setStyle(RoundedRectStyle{
-          .fill = palette.outline,
-          .fillMode = FillMode::Solid,
-      });
       row->addChild(std::move(separator));
     }
 
