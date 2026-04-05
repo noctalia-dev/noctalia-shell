@@ -1,4 +1,4 @@
-#include "shell/panels/test_panel_content.h"
+#include "shell/panels/test_panel.h"
 
 #include "render/scene/input_area.h"
 #include "ui/controls/box.h"
@@ -15,7 +15,7 @@
 #include <memory>
 #include <string>
 
-void TestPanelContent::create(Renderer& renderer) {
+void TestPanel::create(Renderer& renderer) {
   auto container = std::make_unique<Box>();
   container->setDirection(BoxDirection::Vertical);
   container->setGap(Style::spaceMd);
@@ -148,7 +148,7 @@ void TestPanelContent::create(Renderer& renderer) {
   }
 }
 
-void TestPanelContent::layout(Renderer& renderer, float /*width*/, float /*height*/) {
+void TestPanel::layout(Renderer& renderer, float /*width*/, float /*height*/) {
   if (m_container == nullptr) {
     return;
   }
@@ -181,4 +181,4 @@ void TestPanelContent::layout(Renderer& renderer, float /*width*/, float /*heigh
   m_container->layout(renderer);
 }
 
-void TestPanelContent::update(Renderer& /*renderer*/) {}
+void TestPanel::update(Renderer& /*renderer*/) {}

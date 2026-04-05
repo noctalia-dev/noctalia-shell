@@ -31,7 +31,7 @@ void PanelManager::initialize(WaylandConnection& wayland, ConfigService* config,
   m_renderContext = renderContext;
 }
 
-void PanelManager::registerPanel(const std::string& id, std::unique_ptr<PanelContent> content) {
+void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> content) {
   m_panels[id] = std::move(content);
 }
 

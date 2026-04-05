@@ -101,6 +101,18 @@ cmake --build build --parallel
 
 This project uses [clang-format](https://clang.llvm.org/docs/ClangFormat.html) for formatting. Run `just format` before committing.
 
+### Naming Conventions
+
+| | Convention | Example |
+|---|---|---|
+| Files | snake_case | `widget_factory.cpp` |
+| Directories | snake_case | `shell/widgets/` |
+| Types / Classes | PascalCase | `WidgetFactory` |
+| Functions / Methods | camelCase | `createWidget()` |
+| Variables / Parameters | camelCase | `busName` |
+| Private members | m_camelCase | `m_changeCallback` |
+| Macros / Enum values | SCREAMING_SNAKE_CASE | `MAX_SIZE` |
+
 ## Project Layout
 
 ```
@@ -113,7 +125,14 @@ src/
   font/          Font discovery (fontconfig)
   notification/  Notification manager
   render/        EGL/OpenGL renderer, shader programs, MSDF text
-  shell/         Shell runtime, bar and wallpaper
+  shell/
+    bar/         Bar surface and instance
+    notification/ Notification popup
+    panel/       Panel base and manager
+    panels/      Panel implementations
+    wallpaper/   Wallpaper surface and instance
+    widget/      Widget base and factory
+    widgets/     Widget implementations
   system/        System monitor (CPU, RAM, temperature)
   time/          Time service and polling
   ui/

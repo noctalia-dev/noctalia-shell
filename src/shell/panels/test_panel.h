@@ -1,6 +1,6 @@
 #pragma once
 
-#include "shell/panel/panel_content.h"
+#include "shell/panel/panel.h"
 
 class Box;
 class Button;
@@ -10,7 +10,7 @@ class Slider;
 class Spinner;
 class Toggle;
 
-class TestPanelContent : public PanelContent {
+class TestPanel : public Panel {
 public:
   void create(Renderer& renderer) override;
   void layout(Renderer& renderer, float width, float height) override;

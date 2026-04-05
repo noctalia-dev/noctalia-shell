@@ -2,7 +2,7 @@
 
 #include "app/poll_source.h"
 #include "core/log.h"
-#include "shell/panels/test_panel_content.h"
+#include "shell/panels/test_panel.h"
 
 #include <csignal>
 #include <stdexcept>
@@ -169,7 +169,7 @@ void Application::run() {
 
   // Initialize panel manager (must be before bar so widgets can access PanelManager::instance())
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
-  m_panelManager.registerPanel("test", std::make_unique<TestPanelContent>());
+  m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
 
   // Initialize notification popup (top layer, dynamic surface)
   m_notificationPopup.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);

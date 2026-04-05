@@ -3,7 +3,7 @@
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
-#include "shell/panel/panel_content.h"
+#include "shell/panel/panel.h"
 #include "wayland/layer_surface.h"
 
 #include <memory>
@@ -29,7 +29,7 @@ public:
 
   void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext);
 
-  void registerPanel(const std::string& id, std::unique_ptr<PanelContent> content);
+  void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 
   void openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX);
   void closePanel();
@@ -58,8 +58,8 @@ private:
   AnimationManager m_animations;
   InputDispatcher m_inputDispatcher;
 
-  std::unordered_map<std::string, std::unique_ptr<PanelContent>> m_panels;
-  PanelContent* m_activePanel = nullptr;
+  std::unordered_map<std::string, std::unique_ptr<Panel>> m_panels;
+  Panel* m_activePanel = nullptr;
   std::string m_activePanelId;
 
   wl_surface* m_wlSurface = nullptr;

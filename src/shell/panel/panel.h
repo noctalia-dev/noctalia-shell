@@ -7,9 +7,9 @@
 class AnimationManager;
 class Renderer;
 
-class PanelContent {
+class Panel {
 public:
-  virtual ~PanelContent() = default;
+  virtual ~Panel() = default;
 
   virtual void create(Renderer& renderer) = 0;
   virtual void layout(Renderer& renderer, float width, float height) = 0;

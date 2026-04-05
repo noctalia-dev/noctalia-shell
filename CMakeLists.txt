@@ -234,7 +234,7 @@ add_executable(noctalia
     src/render/scene/input_dispatcher.cpp
     src/shell/notification/notification_popup.cpp
     src/shell/panel/panel_manager.cpp
-    src/shell/panels/test_panel_content.cpp
+    src/shell/panels/test_panel.cpp
     src/shell/widgets/clock_widget.cpp
     src/shell/widgets/notification_widget.cpp
     src/shell/widgets/spacer_widget.cpp
