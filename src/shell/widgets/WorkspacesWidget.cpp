@@ -69,14 +69,14 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
 
     // Wrap chip in an InputArea for click handling
     auto area = std::make_unique<InputArea>();
-    area->setSize(pill->width(), pill->height());
+    area->setSize(chip->width(), chip->height());
     auto wsCopy = ws;
     area->setOnClick([this, wsCopy](const InputArea::PointerData& data) {
       if (data.button == BTN_LEFT) {
         m_connection.activateWorkspace(m_output, wsCopy);
       }
     });
-    area->addChild(std::move(pill));
+    area->addChild(std::move(chip));
     m_container->addChild(std::move(area));
   }
 }
