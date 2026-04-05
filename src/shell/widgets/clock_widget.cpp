@@ -9,7 +9,7 @@ ClockWidget::ClockWidget(const TimeService& timeService, std::string format)
 
 void ClockWidget::create(Renderer& renderer) {
   auto label = std::make_unique<Label>();
-  label->setCaptionStyle();
+  label->setBold(true);
   m_label = label.get();
   m_root = std::move(label);
   update(renderer);

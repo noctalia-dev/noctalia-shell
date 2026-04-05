@@ -23,10 +23,12 @@ void Chip::setActive(bool active) {
   if (active) {
     setBackground(palette.primary);
     m_label->setColor(palette.onPrimary);
+    m_label->setBold(true);
     setBorderWidth(0.0f);
   } else {
     setBackground(palette.surfaceVariant);
     m_label->setColor(palette.onSurfaceVariant);
+    m_label->setBold(false);
     setBorderColor(palette.outline);
     setBorderWidth(Style::borderWidth);
   }
