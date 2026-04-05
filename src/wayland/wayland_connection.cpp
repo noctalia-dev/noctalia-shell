@@ -141,6 +141,8 @@ int WaylandConnection::repeatPollTimeoutMs() const { return m_seatHandler.repeat
 
 void WaylandConnection::repeatTick() { m_seatHandler.repeatTick(); }
 
+void WaylandConnection::stopKeyRepeat() { m_seatHandler.stopKeyRepeat(); }
+
 void WaylandConnection::setCursorShape(std::uint32_t serial, std::uint32_t shape) {
   m_seatHandler.setCursorShape(serial, shape);
 }

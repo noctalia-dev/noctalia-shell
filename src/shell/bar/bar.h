@@ -26,7 +26,7 @@ public:
   void closeAllInstances();
   void onOutputChange();
   void onWorkspaceChange();
-  void onPointerEvent(const PointerEvent& event);
+  bool onPointerEvent(const PointerEvent& event);
   [[nodiscard]] bool isRunning() const noexcept;
 
 private:

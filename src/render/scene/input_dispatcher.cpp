@@ -36,7 +36,7 @@ void InputDispatcher::pointerMotion(float x, float y, std::uint32_t serial) {
   updateHover(x, y, m_lastSerial);
 }
 
-void InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool pressed) {
+bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool pressed) {
   if (m_hoveredArea != nullptr) {
     float absX = 0.0f, absY = 0.0f;
     Node::absolutePosition(m_hoveredArea, absX, absY);
@@ -44,9 +44,12 @@ void InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool
     if (pressed && m_hoveredArea->focusable()) {
       setFocus(m_hoveredArea);
     }
-  } else if (pressed) {
+    return true;
+  }
+  if (pressed) {
     setFocus(nullptr);
   }
+  return false;
 }
 
 void InputDispatcher::keyEvent(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed) {

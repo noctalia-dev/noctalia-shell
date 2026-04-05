@@ -36,7 +36,7 @@ public:
   void closePanel();
   void togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX);
 
-  void onPointerEvent(const PointerEvent& event);
+  bool onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);
 
   [[nodiscard]] bool isOpen() const noexcept;
@@ -70,5 +70,4 @@ private:
   bool m_pointerInside = false;
   bool m_inTransition = false;
   bool m_closing = false;
-  bool m_justClosed = false;
 };

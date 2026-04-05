@@ -59,6 +59,7 @@ public:
   // Key repeat — driven by KeyRepeatPollSource
   [[nodiscard]] int repeatPollTimeoutMs() const;
   void repeatTick();
+  void stopKeyRepeat();
 
   // Pointer listener entrypoints
   static void handleSeatCapabilities(void* data, wl_seat* seat, std::uint32_t caps);

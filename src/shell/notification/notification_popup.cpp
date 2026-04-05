@@ -488,7 +488,9 @@ Node* NotificationPopup::buildCard(const PopupEntry& entry) {
 
 // --- Pointer events ---
 
-void NotificationPopup::onPointerEvent(const PointerEvent& event) {
+bool NotificationPopup::onPointerEvent(const PointerEvent& event) {
+  bool consumed = false;
+
   for (auto& inst : m_instances) {
     switch (event.type) {
     case PointerEvent::Type::Enter:
@@ -513,6 +515,7 @@ void NotificationPopup::onPointerEvent(const PointerEvent& event) {
         bool pressed = (event.state == 1);
         inst->inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy), event.button,
                                             pressed);
+        consumed = true;
       }
       break;
     }
@@ -521,4 +524,6 @@ void NotificationPopup::onPointerEvent(const PointerEvent& event) {
       inst->surface->requestRedraw();
     }
   }
+
+  return consumed;
 }

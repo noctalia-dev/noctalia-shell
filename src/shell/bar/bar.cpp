@@ -343,7 +343,9 @@ void Bar::updateWidgets(BarInstance& instance) {
   }
 }
 
-void Bar::onPointerEvent(const PointerEvent& event) {
+bool Bar::onPointerEvent(const PointerEvent& event) {
+  bool consumed = false;
+
   switch (event.type) {
   case PointerEvent::Type::Enter: {
     auto it = m_surfaceMap.find(event.surface);
@@ -372,8 +374,8 @@ void Bar::onPointerEvent(const PointerEvent& event) {
     if (m_hoveredInstance == nullptr)
       break;
     bool pressed = (event.state == 1); // WL_POINTER_BUTTON_STATE_PRESSED
-    m_hoveredInstance->inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy),
-                                                     event.button, pressed);
+    consumed = m_hoveredInstance->inputDispatcher.pointerButton(static_cast<float>(event.sx),
+                                                                static_cast<float>(event.sy), event.button, pressed);
     break;
   }
   }
@@ -383,4 +385,6 @@ void Bar::onPointerEvent(const PointerEvent& event) {
       m_hoveredInstance->sceneRoot->dirty()) {
     m_hoveredInstance->surface->requestRedraw();
   }
+
+  return consumed;
 }

@@ -52,6 +52,7 @@ public:
 
   [[nodiscard]] int repeatPollTimeoutMs() const;
   void repeatTick();
+  void stopKeyRepeat();
   void activateWorkspace(const std::string& id);
   void activateWorkspace(wl_output* output, const std::string& id);
   void activateWorkspace(wl_output* output, const Workspace& workspace);

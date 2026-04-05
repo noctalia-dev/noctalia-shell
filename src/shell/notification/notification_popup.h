@@ -27,7 +27,7 @@ public:
   void initialize(WaylandConnection& wayland, ConfigService* config, NotificationManager* notifications,
                   RenderContext* renderContext);
 
-  void onPointerEvent(const PointerEvent& event);
+  bool onPointerEvent(const PointerEvent& event);
 
 private:
   // Per-notification visual state (shared across all instances)

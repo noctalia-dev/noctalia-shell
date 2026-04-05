@@ -12,6 +12,7 @@
 #include "wayland/wayland_seat.h"
 
 #include <algorithm>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 PanelManager* PanelManager::s_instance = nullptr;
 
@@ -42,7 +43,6 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
   if (m_inTransition) {
     return;
   }
-  m_justClosed = false;
 
   // If a panel is open (or closing), destroy it immediately — no close animation when switching
   if (isOpen() || m_closing) {
@@ -150,28 +150,20 @@ void PanelManager::destroyPanel() {
   m_wlSurface = nullptr;
   m_activePanel = nullptr;
   m_activePanelId.clear();
-  m_justClosed = true;
+  m_wayland->stopKeyRepeat();
 }
 
 void PanelManager::togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX) {
   if (isOpen() && m_activePanelId == panelId) {
     closePanel();
-  } else if (m_justClosed) {
-    // Suppress reopen from the same click that triggered close-on-press
-    m_justClosed = false;
   } else {
     openPanel(panelId, output, scale, anchorX);
   }
 }
 
-void PanelManager::onPointerEvent(const PointerEvent& event) {
-  // Clear suppression flag on new press — it only applies within one press→release cycle
-  if (event.type == PointerEvent::Type::Button && event.state == 1) {
-    m_justClosed = false;
-  }
-
+bool PanelManager::onPointerEvent(const PointerEvent& event) {
   if (!isOpen()) {
-    return;
+    return false;
   }
 
   switch (event.type) {
@@ -191,7 +183,7 @@ void PanelManager::onPointerEvent(const PointerEvent& event) {
   }
   case PointerEvent::Type::Motion: {
     if (!m_pointerInside) {
-      return;
+      return false;
     }
     m_inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), 0);
     break;
@@ -202,7 +194,7 @@ void PanelManager::onPointerEvent(const PointerEvent& event) {
     // Click outside panel → close
     if (pressed && !m_pointerInside) {
       closePanel();
-      return;
+      return false;
     }
 
     if (m_pointerInside) {
@@ -220,6 +212,8 @@ void PanelManager::onPointerEvent(const PointerEvent& event) {
     }
     m_surface->requestRedraw();
   }
+
+  return m_pointerInside;
 }
 
 bool PanelManager::isOpen() const noexcept { return m_surface != nullptr && m_activePanel != nullptr; }
@@ -232,6 +226,12 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
   if (!isOpen()) {
     return;
   }
+
+  if (event.pressed && event.sym == XKB_KEY_Escape) {
+    closePanel();
+    return;
+  }
+
   m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed);
   if (m_surface != nullptr && m_sceneRoot != nullptr && m_sceneRoot->dirty()) {
     if (m_renderContext != nullptr && m_activePanel != nullptr) {

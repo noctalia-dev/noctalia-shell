@@ -12,17 +12,9 @@
 
 #include <algorithm>
 #include <memory>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
-
-// XKB keysyms (from xkbcommon/xkbcommon-keysyms.h)
-constexpr std::uint32_t kKeyBackspace = 0xFF08;
-constexpr std::uint32_t kKeyDelete    = 0xFFFF;
-constexpr std::uint32_t kKeyLeft      = 0xFF51;
-constexpr std::uint32_t kKeyRight     = 0xFF53;
-constexpr std::uint32_t kKeyHome      = 0xFF50;
-constexpr std::uint32_t kKeyEnd       = 0xFF57;
-constexpr std::uint32_t kKeyReturn    = 0xFF0D;
 
 // Modifier bitmask — must match KeyMod constants in wayland/wayland_seat.h
 constexpr std::uint32_t kModShift = 1u << 0;
@@ -187,7 +179,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     // Select all
     m_selectionAnchor = 0;
     m_cursorPos = m_value.size();
-  } else if (sym == kKeyBackspace) {
+  } else if (sym == XKB_KEY_BackSpace) {
     if (hasSelection()) {
       deleteSelection();
       changed = true;
@@ -198,7 +190,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
       m_selectionAnchor = prev;
       changed = true;
     }
-  } else if (sym == kKeyDelete) {
+  } else if (sym == XKB_KEY_Delete) {
     if (hasSelection()) {
       deleteSelection();
       changed = true;
@@ -207,7 +199,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
       m_value.erase(m_cursorPos, next - m_cursorPos);
       changed = true;
     }
-  } else if (sym == kKeyLeft) {
+  } else if (sym == XKB_KEY_Left) {
     if (!shift && hasSelection()) {
       // Collapse to start of selection
       m_cursorPos = selectionStart();
@@ -218,7 +210,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
         m_selectionAnchor = m_cursorPos;
       }
     }
-  } else if (sym == kKeyRight) {
+  } else if (sym == XKB_KEY_Right) {
     if (!shift && hasSelection()) {
       // Collapse to end of selection
       m_cursorPos = selectionEnd();
@@ -229,17 +221,17 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
         m_selectionAnchor = m_cursorPos;
       }
     }
-  } else if (sym == kKeyHome) {
+  } else if (sym == XKB_KEY_Home) {
     m_cursorPos = 0;
     if (!shift) {
       m_selectionAnchor = 0;
     }
-  } else if (sym == kKeyEnd) {
+  } else if (sym == XKB_KEY_End) {
     m_cursorPos = m_value.size();
     if (!shift) {
       m_selectionAnchor = m_cursorPos;
     }
-  } else if (sym == kKeyReturn) {
+  } else if (sym == XKB_KEY_Return) {
     if (m_onSubmit) {
       m_onSubmit(m_value);
     }

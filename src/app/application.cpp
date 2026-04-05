@@ -180,8 +180,8 @@ void Application::run() {
 
   // Unified pointer event routing — both Bar and PanelManager check surface ownership
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
-    m_bar.onPointerEvent(event);
-    m_panelManager.onPointerEvent(event);
+    if (m_bar.onPointerEvent(event)) return;
+    if (m_panelManager.onPointerEvent(event)) return;
     m_notificationPopup.onPointerEvent(event);
   });
 

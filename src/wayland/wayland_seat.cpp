@@ -243,8 +243,11 @@ void WaylandSeat::handleKeyboardKeymap(void* data, wl_keyboard* /*keyboard*/, st
 void WaylandSeat::handleKeyboardEnter(void* /*data*/, wl_keyboard* /*keyboard*/, std::uint32_t /*serial*/,
                                       wl_surface* /*surface*/, wl_array* /*keys*/) {}
 
-void WaylandSeat::handleKeyboardLeave(void* /*data*/, wl_keyboard* /*keyboard*/, std::uint32_t /*serial*/,
-                                      wl_surface* /*surface*/) {}
+void WaylandSeat::handleKeyboardLeave(void* data, wl_keyboard* /*keyboard*/, std::uint32_t /*serial*/,
+                                      wl_surface* /*surface*/) {
+  auto* self = static_cast<WaylandSeat*>(data);
+  self->m_repeatActive = false;
+}
 
 void WaylandSeat::handleKeyboardKey(void* data, wl_keyboard* /*keyboard*/, std::uint32_t /*serial*/,
                                     std::uint32_t /*time*/, std::uint32_t key, std::uint32_t state) {
@@ -314,6 +317,8 @@ int WaylandSeat::repeatPollTimeoutMs() const {
   const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(m_repeatNextFire - now).count();
   return static_cast<int>(std::min<long long>(ms, std::numeric_limits<int>::max()));
 }
+
+void WaylandSeat::stopKeyRepeat() { m_repeatActive = false; }
 
 void WaylandSeat::repeatTick() {
   if (!m_repeatActive || m_repeatRate <= 0 || !m_keyboardEventCallback) {

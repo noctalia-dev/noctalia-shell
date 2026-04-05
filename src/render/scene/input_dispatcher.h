@@ -19,7 +19,8 @@ public:
   void pointerEnter(float x, float y, std::uint32_t serial);
   void pointerLeave();
   void pointerMotion(float x, float y, std::uint32_t serial);
-  void pointerButton(float x, float y, std::uint32_t button, bool pressed);
+  // Returns true if the event was consumed by a scene widget
+  bool pointerButton(float x, float y, std::uint32_t button, bool pressed);
 
   // Dispatch keyboard events to the focused area
   void keyEvent(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed);
