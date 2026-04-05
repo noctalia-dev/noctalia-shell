@@ -339,7 +339,7 @@ void NotificationHistoryPopup::ensureSurfaces() {
     return;
   }
 
-  uint32_t barHeight = 42;
+  std::uint32_t barHeight = Style::barHeightDefault;
   if (m_config != nullptr && !m_config->config().bars.empty()) {
     barHeight = m_config->config().bars[0].height;
   }
@@ -359,7 +359,7 @@ void NotificationHistoryPopup::ensureSurfaces() {
         .width = surfaceWidth,
         .height = surfaceHeight,
         .exclusiveZone = 0,
-        .marginTop = static_cast<std::int32_t>(barHeight) + 4,
+        .marginTop = barHeight + 4,
         .marginRight = 8,
         .keyboard = LayerShellKeyboard::None,
         .defaultWidth = surfaceWidth,

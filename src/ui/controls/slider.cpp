@@ -109,7 +109,7 @@ void Slider::layout(Renderer& /*renderer*/) {
 
 void Slider::updateGeometry() {
   const float widthPx = width() > 0.0f ? width() : kDefaultWidth;
-  const float heightPx = std::max({kThumbSize, kTrackHeight, Style::controlHeight});
+  const float heightPx = std::max({kThumbSize, kTrackHeight, static_cast<float>(Style::controlHeight)});
   setSize(widthPx, heightPx);
 
   const float trackY = (heightPx - kTrackHeight) * 0.5f;

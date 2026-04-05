@@ -183,7 +183,7 @@ void TrayMenu::ensureSurfaces() {
     return;
   }
 
-  uint32_t barHeight = 42;
+  std::uint32_t barHeight = Style::barHeightDefault;
   if (m_config != nullptr && !m_config->config().bars.empty()) {
     barHeight = m_config->config().bars[0].height;
   }

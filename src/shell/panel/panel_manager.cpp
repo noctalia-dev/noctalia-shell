@@ -63,7 +63,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
   const auto panelHeight = static_cast<std::uint32_t>(m_activePanel->preferredHeight());
 
   // Get bar height from config for margin calculation
-  std::uint32_t barHeight = 42;
+  std::uint32_t barHeight = Style::barHeightDefault;
   if (m_config != nullptr && !m_config->config().bars.empty()) {
     barHeight = m_config->config().bars[0].height;
   }
