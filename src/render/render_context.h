@@ -34,7 +34,7 @@ public:
   [[nodiscard]] EGLContext eglContext() const noexcept { return m_eglContext; }
 
   // Renderer interface — used by widgets for measurement and textures
-  [[nodiscard]] TextMetrics measureText(std::string_view text, float fontSize) override;
+  [[nodiscard]] TextMetrics measureText(std::string_view text, float fontSize, bool bold = false) override;
   [[nodiscard]] TextMetrics measureGlyph(char32_t codepoint, float fontSize) override;
   [[nodiscard]] TextureManager& textureManager() override;
 
@@ -53,6 +53,7 @@ private:
   RoundedRectProgram m_roundedRectProgram;
   SpinnerProgram m_spinnerProgram;
   MsdfTextRenderer m_textRenderer;
+  MsdfTextRenderer m_boldTextRenderer;
   MsdfTextRenderer m_iconTextRenderer;
   TextureManager m_textureManager;
 };

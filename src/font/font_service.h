@@ -19,7 +19,8 @@ public:
   FontService& operator=(const FontService&) = delete;
 
   [[nodiscard]] std::string resolvePath(const std::string& family) const;
-  [[nodiscard]] std::vector<ResolvedFont> resolveFallbackChain(const std::string& family, int limit = 8) const;
+  [[nodiscard]] std::vector<ResolvedFont> resolveFallbackChain(const std::string& family, int limit = 8,
+                                                               int weight = FC_WEIGHT_REGULAR) const;
 
 private:
   FcConfig* m_config = nullptr;

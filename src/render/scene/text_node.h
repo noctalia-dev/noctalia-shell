@@ -13,6 +13,7 @@ public:
   [[nodiscard]] float fontSize() const noexcept { return m_fontSize; }
   [[nodiscard]] const Color& color() const noexcept { return m_color; }
   [[nodiscard]] float maxWidth() const noexcept { return m_maxWidth; }
+  [[nodiscard]] bool bold() const noexcept { return m_bold; }
 
   void setText(std::string text) {
     if (m_text == text) {
@@ -43,9 +44,18 @@ public:
     markDirty();
   }
 
+  void setBold(bool bold) {
+    if (m_bold == bold) {
+      return;
+    }
+    m_bold = bold;
+    markDirty();
+  }
+
 private:
   std::string m_text;
   float m_fontSize = 14.0f;
   float m_maxWidth = 0.0f;
   Color m_color;
+  bool m_bold = false;
 };

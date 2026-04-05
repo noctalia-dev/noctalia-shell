@@ -25,6 +25,8 @@ void Label::setMinWidth(float minWidth) { m_minWidth = minWidth; }
 
 void Label::setMaxWidth(float maxWidth) { m_textNode->setMaxWidth(maxWidth); }
 
+void Label::setBold(bool bold) { m_textNode->setBold(bold); }
+
 const std::string& Label::text() const noexcept { return m_textNode->text(); }
 
 float Label::fontSize() const noexcept { return m_textNode->fontSize(); }
@@ -33,13 +35,15 @@ const Color& Label::color() const noexcept { return m_textNode->color(); }
 
 float Label::maxWidth() const noexcept { return m_textNode->maxWidth(); }
 
+bool Label::bold() const noexcept { return m_textNode->bold(); }
+
 void Label::setCaptionStyle() {
   m_textNode->setFontSize(Style::fontSizeCaption);
   m_textNode->setColor(palette.onSurface);
 }
 
 void Label::measure(Renderer& renderer) {
-  auto metrics = renderer.measureText(m_textNode->text(), m_textNode->fontSize());
+  auto metrics = renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold());
   setSize(std::max(metrics.width, m_minWidth), metrics.bottom - metrics.top);
 
   // Position the TextNode at the baseline offset within this Label's bounds

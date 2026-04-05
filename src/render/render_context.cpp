@@ -81,6 +81,8 @@ void RenderContext::initialize(wl_display* display) {
 
   const auto fonts = m_fontService.resolveFallbackChain("sans-serif");
   m_textRenderer.initialize(fonts);
+  const auto boldFonts = m_fontService.resolveFallbackChain("sans-serif", 8, FC_WEIGHT_BOLD);
+  m_boldTextRenderer.initialize(boldFonts);
   m_iconTextRenderer.initialize({{NOCTALIA_ASSETS_DIR "/fonts/tabler-icons.ttf", 0}});
   ensureGlPrograms();
 
@@ -130,8 +132,8 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
   }
 }
 
-TextMetrics RenderContext::measureText(std::string_view text, float fontSize) {
-  auto m = m_textRenderer.measure(text, fontSize);
+TextMetrics RenderContext::measureText(std::string_view text, float fontSize, bool bold) {
+  auto m = bold ? m_boldTextRenderer.measure(text, fontSize) : m_textRenderer.measure(text, fontSize);
   return TextMetrics{.width = m.width, .top = m.top, .bottom = m.bottom};
 }
 
@@ -169,11 +171,12 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
     if (!text->text().empty()) {
       auto color = text->color();
       color.a *= effectiveOpacity;
+      auto& renderer = text->bold() ? m_boldTextRenderer : m_textRenderer;
       if (text->maxWidth() > 0.0f) {
-        auto truncated = m_textRenderer.truncate(text->text(), text->fontSize(), text->maxWidth());
-        m_textRenderer.draw(sw, sh, absX, absY, truncated.text, text->fontSize(), color, rot, scl);
+        auto truncated = renderer.truncate(text->text(), text->fontSize(), text->maxWidth());
+        renderer.draw(sw, sh, absX, absY, truncated.text, text->fontSize(), color, rot, scl);
       } else {
-        m_textRenderer.draw(sw, sh, absX, absY, text->text(), text->fontSize(), color, rot, scl);
+        renderer.draw(sw, sh, absX, absY, text->text(), text->fontSize(), color, rot, scl);
       }
     }
     break;
@@ -234,6 +237,7 @@ void RenderContext::cleanup() {
   m_roundedRectProgram.destroy();
   m_spinnerProgram.destroy();
   m_textRenderer.cleanup();
+  m_boldTextRenderer.cleanup();
   m_iconTextRenderer.cleanup();
   m_glReady = false;
 

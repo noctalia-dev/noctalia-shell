@@ -46,10 +46,14 @@ std::string FontService::resolvePath(const std::string& family) const {
   return path;
 }
 
-std::vector<ResolvedFont> FontService::resolveFallbackChain(const std::string& family, int limit) const {
+std::vector<ResolvedFont> FontService::resolveFallbackChain(const std::string& family, int limit, int weight) const {
   FcPattern* pattern = FcNameParse(reinterpret_cast<const FcChar8*>(family.c_str()));
   if (pattern == nullptr) {
     throw std::runtime_error("FcNameParse failed for: " + family);
+  }
+
+  if (weight != FC_WEIGHT_REGULAR) {
+    FcPatternAddInteger(pattern, FC_WEIGHT, weight);
   }
 
   FcConfigSubstitute(m_config, pattern, FcMatchPattern);

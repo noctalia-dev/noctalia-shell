@@ -18,11 +18,13 @@ public:
   void setColor(const Color& color);
   void setMinWidth(float minWidth);
   void setMaxWidth(float maxWidth);
+  void setBold(bool bold);
 
   [[nodiscard]] const std::string& text() const noexcept;
   [[nodiscard]] float fontSize() const noexcept;
   [[nodiscard]] const Color& color() const noexcept;
   [[nodiscard]] float maxWidth() const noexcept;
+  [[nodiscard]] bool bold() const noexcept;
 
   void measure(Renderer& renderer);
 
