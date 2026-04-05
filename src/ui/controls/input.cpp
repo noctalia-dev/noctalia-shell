@@ -1,5 +1,6 @@
 #include "ui/controls/input.h"
 
+#include "cursor-shape-v1-client-protocol.h"
 #include "render/core/color.h"
 #include "render/core/renderer.h"
 #include "render/programs/rounded_rect_program.h"
@@ -23,6 +24,10 @@ constexpr std::uint32_t kKeyHome      = 0xFF50;
 constexpr std::uint32_t kKeyEnd       = 0xFF57;
 constexpr std::uint32_t kKeyReturn    = 0xFF0D;
 
+// Modifier bitmask — must match KeyMod constants in wayland/wayland_seat.h
+constexpr std::uint32_t kModShift = 1u << 0;
+constexpr std::uint32_t kModCtrl  = 1u << 1;
+
 constexpr float kDefaultWidth = 200.0f;
 constexpr float kCursorWidth  = 1.5f;
 constexpr float kCursorPadV   = 3.0f;
@@ -30,14 +35,28 @@ constexpr float kCursorPadV   = 3.0f;
 } // namespace
 
 Input::Input() {
+  // 0: background
   auto bg = std::make_unique<RectNode>();
   m_background = static_cast<RectNode*>(addChild(std::move(bg)));
 
+  // 1: selection highlight (rendered behind text)
+  auto sel = std::make_unique<RectNode>();
+  sel->setStyle(RoundedRectStyle{
+      .fill = palette.primary,
+      .fillMode = FillMode::Solid,
+      .radius = 2.0f,
+  });
+  sel->setOpacity(0.3f);
+  sel->setVisible(false);
+  m_selectionRect = static_cast<RectNode*>(addChild(std::move(sel)));
+
+  // 2: text
   auto text = std::make_unique<TextNode>();
   text->setFontSize(Style::fontSizeBody);
   text->setColor(palette.onSurface);
   m_textNode = static_cast<TextNode*>(addChild(std::move(text)));
 
+  // 3: cursor
   auto cursor = std::make_unique<RectNode>();
   cursor->setStyle(RoundedRectStyle{
       .fill = palette.primary,
@@ -47,8 +66,10 @@ Input::Input() {
   cursor->setVisible(false);
   m_cursor = static_cast<RectNode*>(addChild(std::move(cursor)));
 
+  // 4: input area
   auto area = std::make_unique<InputArea>();
   area->setFocusable(true);
+  area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_TEXT);
   area->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
   area->setOnLeave([this]() { applyVisualState(); });
   area->setOnFocusGain([this]() {
@@ -59,6 +80,20 @@ Input::Input() {
     m_cursor->setVisible(false);
     applyVisualState();
   });
+  area->setOnPress([this](const InputArea::PointerData& data) {
+    if (data.pressed) {
+      const std::size_t offset = xToByteOffset(data.localX - Style::paddingH);
+      m_cursorPos = offset;
+      m_selectionAnchor = offset;
+      markDirty();
+    }
+  });
+  area->setOnMotion([this](const InputArea::PointerData& data) {
+    if (m_inputArea != nullptr && m_inputArea->pressed()) {
+      m_cursorPos = xToByteOffset(data.localX - Style::paddingH);
+      markDirty();
+    }
+  });
   area->setOnKeyDown([this](const InputArea::KeyData& k) { handleKey(k.sym, k.utf32, k.modifiers); });
   m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
 
@@ -68,6 +103,7 @@ Input::Input() {
 void Input::setValue(std::string_view value) {
   m_value = std::string(value);
   m_cursorPos = m_value.size();
+  m_selectionAnchor = m_cursorPos;
   updateDisplayText();
   markDirty();
 }
@@ -98,17 +134,40 @@ void Input::layout(Renderer& renderer) {
   const auto metrics = renderer.measureText(display, Style::fontSizeBody);
   const float textH = metrics.bottom - metrics.top;
 
-  // textNodeY positions the TextNode so its glyphs are vertically centered in the control.
-  // TextNode renders with baseline at y=0, so we offset by -metrics.top (which is positive
-  // when metrics.top is negative, i.e. text ascends above the baseline).
+  // TextNode renders with baseline at y=0, so offset by -metrics.top
   const float textNodeY = (h - textH) * 0.5f - metrics.top;
   m_textNode->setPosition(Style::paddingH, textNodeY);
   m_textNode->setSize(metrics.width, textH);
 
-  // Cursor: measure text up to cursor byte position to find X
-  const float cursorX = Style::paddingH + measureCursorX(renderer);
+  // Build stop arrays for click-to-position and selection rect
+  m_stopByte.clear();
+  m_stopX.clear();
+  m_stopByte.push_back(0);
+  m_stopX.push_back(0.0f);
+  if (!m_value.empty()) {
+    std::size_t pos = 0;
+    while (pos < m_value.size()) {
+      pos = nextCharPos(m_value, pos);
+      m_stopByte.push_back(pos);
+      m_stopX.push_back(renderer.measureText(m_value.substr(0, pos), Style::fontSizeBody).width);
+    }
+  }
+
+  // Cursor
+  const float cursorX = Style::paddingH + stopXForByte(m_cursorPos);
   m_cursor->setPosition(cursorX, kCursorPadV);
   m_cursor->setSize(kCursorWidth, h - kCursorPadV * 2.0f);
+
+  // Selection highlight
+  if (hasSelection()) {
+    const float selX0 = Style::paddingH + stopXForByte(selectionStart());
+    const float selX1 = Style::paddingH + stopXForByte(selectionEnd());
+    m_selectionRect->setPosition(selX0, kCursorPadV);
+    m_selectionRect->setSize(selX1 - selX0, h - kCursorPadV * 2.0f);
+    m_selectionRect->setVisible(true);
+  } else {
+    m_selectionRect->setVisible(false);
+  }
 
   m_background->setPosition(0.0f, 0.0f);
   m_background->setSize(w, h);
@@ -119,39 +178,81 @@ void Input::layout(Renderer& renderer) {
   applyVisualState();
 }
 
-void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t /*modifiers*/) {
+void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers) {
   bool changed = false;
+  const bool shift = (modifiers & kModShift) != 0;
+  const bool ctrl  = (modifiers & kModCtrl)  != 0;
 
-  if (sym == kKeyBackspace) {
-    if (m_cursorPos > 0) {
+  if (ctrl && sym == 'a') {
+    // Select all
+    m_selectionAnchor = 0;
+    m_cursorPos = m_value.size();
+  } else if (sym == kKeyBackspace) {
+    if (hasSelection()) {
+      deleteSelection();
+      changed = true;
+    } else if (m_cursorPos > 0) {
       const std::size_t prev = prevCharPos(m_value, m_cursorPos);
       m_value.erase(prev, m_cursorPos - prev);
       m_cursorPos = prev;
+      m_selectionAnchor = prev;
       changed = true;
     }
   } else if (sym == kKeyDelete) {
-    if (m_cursorPos < m_value.size()) {
+    if (hasSelection()) {
+      deleteSelection();
+      changed = true;
+    } else if (m_cursorPos < m_value.size()) {
       const std::size_t next = nextCharPos(m_value, m_cursorPos);
       m_value.erase(m_cursorPos, next - m_cursorPos);
       changed = true;
     }
   } else if (sym == kKeyLeft) {
-    m_cursorPos = prevCharPos(m_value, m_cursorPos);
+    if (!shift && hasSelection()) {
+      // Collapse to start of selection
+      m_cursorPos = selectionStart();
+      m_selectionAnchor = m_cursorPos;
+    } else {
+      m_cursorPos = prevCharPos(m_value, m_cursorPos);
+      if (!shift) {
+        m_selectionAnchor = m_cursorPos;
+      }
+    }
   } else if (sym == kKeyRight) {
-    m_cursorPos = nextCharPos(m_value, m_cursorPos);
+    if (!shift && hasSelection()) {
+      // Collapse to end of selection
+      m_cursorPos = selectionEnd();
+      m_selectionAnchor = m_cursorPos;
+    } else {
+      m_cursorPos = nextCharPos(m_value, m_cursorPos);
+      if (!shift) {
+        m_selectionAnchor = m_cursorPos;
+      }
+    }
   } else if (sym == kKeyHome) {
     m_cursorPos = 0;
+    if (!shift) {
+      m_selectionAnchor = 0;
+    }
   } else if (sym == kKeyEnd) {
     m_cursorPos = m_value.size();
+    if (!shift) {
+      m_selectionAnchor = m_cursorPos;
+    }
   } else if (sym == kKeyReturn) {
     if (m_onSubmit) {
       m_onSubmit(m_value);
     }
   } else if (utf32 >= 0x20U && utf32 != 0x7FU) {
     // Printable character (skip DEL = 0x7F)
+    if (hasSelection()) {
+      deleteSelection();
+      changed = true;
+    }
     const auto bytes = utf32ToUtf8(utf32);
     m_value.insert(m_cursorPos, bytes);
     m_cursorPos += bytes.size();
+    m_selectionAnchor = m_cursorPos;
     changed = true;
   }
 
@@ -196,6 +297,45 @@ float Input::measureCursorX(Renderer& renderer) const {
     return 0.0f;
   }
   return renderer.measureText(m_value.substr(0, m_cursorPos), Style::fontSizeBody).width;
+}
+
+bool Input::hasSelection() const noexcept { return m_selectionAnchor != m_cursorPos; }
+
+std::size_t Input::selectionStart() const noexcept { return std::min(m_selectionAnchor, m_cursorPos); }
+
+std::size_t Input::selectionEnd() const noexcept { return std::max(m_selectionAnchor, m_cursorPos); }
+
+void Input::deleteSelection() {
+  const std::size_t start = selectionStart();
+  const std::size_t end   = selectionEnd();
+  m_value.erase(start, end - start);
+  m_cursorPos = start;
+  m_selectionAnchor = start;
+}
+
+std::size_t Input::xToByteOffset(float localX) const {
+  if (m_stopX.empty() || localX <= 0.0f) {
+    return 0;
+  }
+  if (localX >= m_stopX.back()) {
+    return m_stopByte.back();
+  }
+  for (std::size_t i = 1; i < m_stopX.size(); ++i) {
+    const float mid = (m_stopX[i - 1] + m_stopX[i]) * 0.5f;
+    if (localX < mid) {
+      return m_stopByte[i - 1];
+    }
+  }
+  return m_stopByte.back();
+}
+
+float Input::stopXForByte(std::size_t bytePos) const {
+  for (std::size_t i = 0; i < m_stopByte.size(); ++i) {
+    if (m_stopByte[i] == bytePos) {
+      return m_stopX[i];
+    }
+  }
+  return m_stopX.empty() ? 0.0f : m_stopX.back();
 }
 
 std::size_t Input::nextCharPos(const std::string& s, std::size_t pos) {

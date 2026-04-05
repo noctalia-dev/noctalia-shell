@@ -215,6 +215,9 @@ void PanelManager::onPointerEvent(const PointerEvent& event) {
 
   // Trigger redraw if scene changed
   if (m_surface != nullptr && m_sceneRoot != nullptr && m_sceneRoot->dirty()) {
+    if (m_renderContext != nullptr && m_activePanel != nullptr) {
+      m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
+    }
     m_surface->requestRedraw();
   }
 }
