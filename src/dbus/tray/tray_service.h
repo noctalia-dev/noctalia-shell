@@ -18,6 +18,8 @@ struct TrayItemInfo {
   std::string iconName;
   std::string iconThemePath;
   std::string attentionIconName;
+  std::string menuObjectPath;
+  std::string itemName;
   std::string title;
   std::string status;
   std::vector<std::uint8_t> iconArgb32;
@@ -31,15 +33,31 @@ struct TrayItemInfo {
   bool operator==(const TrayItemInfo&) const = default;
 };
 
+struct TrayMenuEntry {
+  std::int32_t id = 0;
+  std::string label;
+  bool enabled = true;
+  bool visible = true;
+  bool separator = false;
+  bool hasSubmenu = false;
+
+  bool operator==(const TrayMenuEntry&) const = default;
+};
+
 class TrayService {
 public:
   using ChangeCallback = std::function<void()>;
+  using MenuToggleCallback = std::function<void(const std::string&)>;
 
   explicit TrayService(SessionBus& bus);
 
   void setChangeCallback(ChangeCallback callback);
+  void setMenuToggleCallback(MenuToggleCallback callback);
+  void requestMenuToggle(const std::string& itemId) const;
   [[nodiscard]] std::size_t itemCount() const noexcept;
   [[nodiscard]] std::vector<TrayItemInfo> items() const;
+  [[nodiscard]] std::vector<TrayMenuEntry> menuEntries(const std::string& itemId) const;
+  [[nodiscard]] bool activateMenuEntry(const std::string& itemId, std::int32_t entryId) const;
   [[nodiscard]] std::vector<std::string> registeredItems() const;
   [[nodiscard]] bool activateItem(const std::string& itemId, std::int32_t x = 0, std::int32_t y = 0) const;
   [[nodiscard]] bool openContextMenu(const std::string& itemId, std::int32_t x = 0, std::int32_t y = 0) const;
@@ -62,4 +80,5 @@ private:
   std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_itemProxies;
   bool m_hostRegistered = true;
   ChangeCallback m_changeCallback;
+  MenuToggleCallback m_menuToggleCallback;
 };

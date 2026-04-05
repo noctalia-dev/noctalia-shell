@@ -17,9 +17,26 @@ static const sdbus::ServiceName k_dbus_name{"org.freedesktop.DBus"};
 static const sdbus::ObjectPath k_dbus_path{"/org/freedesktop/DBus"};
 static constexpr auto k_dbus_interface = "org.freedesktop.DBus";
 static constexpr auto k_item_interface = "org.kde.StatusNotifierItem";
+static constexpr auto k_menu_interface = "com.canonical.dbusmenu";
 static constexpr auto k_default_item_path = "/StatusNotifierItem";
 
 bool starts_with_slash(std::string_view value) { return !value.empty() && value.front() == '/'; }
+
+std::string stripMnemonicUnderscores(std::string label) {
+  std::string out;
+  out.reserve(label.size());
+  for (std::size_t i = 0; i < label.size(); ++i) {
+    if (label[i] == '_') {
+      if (i + 1 < label.size() && label[i + 1] == '_') {
+        out.push_back('_');
+        ++i;
+      }
+      continue;
+    }
+    out.push_back(label[i]);
+  }
+  return out;
+}
 
 template <typename T>
 T get_property_or(sdbus::IProxy& proxy, std::string_view property_name, T fallback) {
@@ -31,8 +48,64 @@ T get_property_or(sdbus::IProxy& proxy, std::string_view property_name, T fallba
   }
 }
 
+std::string get_item_property_string_or(sdbus::IProxy& proxy, std::string_view propertyName, std::string fallback) {
+  try {
+    const sdbus::Variant value = proxy.getProperty(propertyName).onInterface(k_item_interface);
+    try {
+      return value.get<std::string>();
+    } catch (const sdbus::Error&) {
+    }
+    try {
+      return value.get<sdbus::ObjectPath>();
+    } catch (const sdbus::Error&) {
+    }
+  } catch (const sdbus::Error&) {
+  }
+  return fallback;
+}
+
 using IconPixmapTuple = std::tuple<std::int32_t, std::int32_t, std::vector<std::uint8_t>>;
 using IconPixmapStruct = sdbus::Struct<std::int32_t, std::int32_t, std::vector<std::uint8_t>>;
+using DbusMenuLayout = sdbus::Struct<std::int32_t, std::map<std::string, sdbus::Variant>, std::vector<sdbus::Variant>>;
+
+TrayMenuEntry decodeMenuEntry(const DbusMenuLayout& entryLayout) {
+  TrayMenuEntry out;
+  out.id = std::get<0>(entryLayout);
+  const auto& props = std::get<1>(entryLayout);
+
+  if (const auto it = props.find("label"); it != props.end()) {
+    try {
+      out.label = stripMnemonicUnderscores(it->second.get<std::string>());
+    } catch (const sdbus::Error&) {
+    }
+  }
+  if (const auto it = props.find("enabled"); it != props.end()) {
+    try {
+      out.enabled = it->second.get<bool>();
+    } catch (const sdbus::Error&) {
+    }
+  }
+  if (const auto it = props.find("visible"); it != props.end()) {
+    try {
+      out.visible = it->second.get<bool>();
+    } catch (const sdbus::Error&) {
+    }
+  }
+  if (const auto it = props.find("type"); it != props.end()) {
+    try {
+      out.separator = (it->second.get<std::string>() == "separator");
+    } catch (const sdbus::Error&) {
+    }
+  }
+  if (const auto it = props.find("children-display"); it != props.end()) {
+    try {
+      out.hasSubmenu = (it->second.get<std::string>() == "submenu");
+    } catch (const sdbus::Error&) {
+    }
+  }
+
+  return out;
+}
 
 std::vector<IconPixmapTuple> iconPixmapsFromVariant(const sdbus::Variant& value) {
   try {
@@ -161,6 +234,14 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
 
 void TrayService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
 
+void TrayService::setMenuToggleCallback(MenuToggleCallback callback) { m_menuToggleCallback = std::move(callback); }
+
+void TrayService::requestMenuToggle(const std::string& itemId) const {
+  if (m_menuToggleCallback) {
+    m_menuToggleCallback(itemId);
+  }
+}
+
 std::size_t TrayService::itemCount() const noexcept { return m_items.size(); }
 
 std::vector<TrayItemInfo> TrayService::items() const {
@@ -171,6 +252,77 @@ std::vector<TrayItemInfo> TrayService::items() const {
   }
   std::ranges::sort(out, [](const TrayItemInfo& a, const TrayItemInfo& b) { return a.id < b.id; });
   return out;
+}
+
+std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) const {
+  const auto itemIt = m_items.find(itemId);
+  if (itemIt == m_items.end()) {
+    return {};
+  }
+  if (itemIt->second.busName.empty() || itemIt->second.menuObjectPath.empty()) {
+    return {};
+  }
+
+  try {
+    auto menuProxy = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{itemIt->second.busName},
+                                        sdbus::ObjectPath{itemIt->second.menuObjectPath});
+    bool needsUpdate = false;
+    menuProxy->callMethod("AboutToShow").onInterface(k_menu_interface).withArguments(static_cast<std::int32_t>(0)).storeResultsTo(
+        needsUpdate);
+
+    std::uint32_t revision = 0;
+    DbusMenuLayout root{};
+    menuProxy->callMethod("GetLayout")
+        .onInterface(k_menu_interface)
+        .withArguments(static_cast<std::int32_t>(0), static_cast<std::int32_t>(1), std::vector<std::string>{})
+        .storeResultsTo(revision, root);
+    (void)needsUpdate;
+    (void)revision;
+
+    std::vector<TrayMenuEntry> out;
+    const auto& children = std::get<2>(root);
+    out.reserve(children.size());
+    for (const auto& childValue : children) {
+      try {
+        const auto child = childValue.get<DbusMenuLayout>();
+        auto entry = decodeMenuEntry(child);
+        if (entry.id <= 0 || !entry.visible) {
+          continue;
+        }
+        if (entry.label.empty() && !entry.separator) {
+          continue;
+        }
+        out.push_back(std::move(entry));
+      } catch (const sdbus::Error&) {
+      }
+    }
+    return out;
+  } catch (const sdbus::Error& e) {
+    logDebug("tray dbusmenu load failed id={} menu={} err={}", itemId, itemIt->second.menuObjectPath, e.what());
+    return {};
+  }
+}
+
+bool TrayService::activateMenuEntry(const std::string& itemId, std::int32_t entryId) const {
+  const auto itemIt = m_items.find(itemId);
+  if (itemIt == m_items.end()) {
+    return false;
+  }
+  if (itemIt->second.busName.empty() || itemIt->second.menuObjectPath.empty()) {
+    return false;
+  }
+
+  try {
+    auto menuProxy = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{itemIt->second.busName},
+                                        sdbus::ObjectPath{itemIt->second.menuObjectPath});
+    menuProxy->callMethod("Event")
+        .onInterface(k_menu_interface)
+        .withArguments(entryId, std::string("clicked"), sdbus::Variant{std::int32_t{0}}, static_cast<std::uint32_t>(0));
+    return true;
+  } catch (const sdbus::Error& e) {
+    logDebug("tray dbusmenu event failed id={} entryId={} err={}", itemId, entryId, e.what());
+    return false;
+  }
 }
 
 std::vector<std::string> TrayService::registeredItems() const {
@@ -293,16 +445,18 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
         .busName = busName,
         .objectPath = objectPath,
         .iconName = {},
-      .iconThemePath = {},
+        .iconThemePath = {},
         .attentionIconName = {},
+        .menuObjectPath = {},
+        .itemName = {},
         .title = {},
         .status = {},
-      .iconArgb32 = {},
-      .iconWidth = 0,
-      .iconHeight = 0,
-      .attentionArgb32 = {},
-      .attentionWidth = 0,
-      .attentionHeight = 0,
+        .iconArgb32 = {},
+        .iconWidth = 0,
+        .iconHeight = 0,
+        .attentionArgb32 = {},
+        .attentionWidth = 0,
+        .attentionHeight = 0,
         .needsAttention = false,
     });
 
@@ -340,11 +494,13 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
   }
 
   auto next = itemIt->second;
-  next.iconName = get_property_or<std::string>(*proxyIt->second, "IconName", "");
-  next.iconThemePath = get_property_or<std::string>(*proxyIt->second, "IconThemePath", "");
-  next.attentionIconName = get_property_or<std::string>(*proxyIt->second, "AttentionIconName", "");
-  next.title = get_property_or<std::string>(*proxyIt->second, "Title", "");
-  next.status = get_property_or<std::string>(*proxyIt->second, "Status", "");
+  next.iconName = get_item_property_string_or(*proxyIt->second, "IconName", "");
+  next.iconThemePath = get_item_property_string_or(*proxyIt->second, "IconThemePath", "");
+  next.attentionIconName = get_item_property_string_or(*proxyIt->second, "AttentionIconName", "");
+  next.menuObjectPath = get_item_property_string_or(*proxyIt->second, "Menu", "");
+  next.itemName = get_item_property_string_or(*proxyIt->second, "Id", "");
+  next.title = get_item_property_string_or(*proxyIt->second, "Title", "");
+  next.status = get_item_property_string_or(*proxyIt->second, "Status", "");
   next.needsAttention = (next.status == "NeedsAttention");
 
   const auto iconPixmaps = get_icon_pixmaps_or(*proxyIt->second, "IconPixmap", {});
@@ -353,11 +509,12 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
   const auto attentionPixmaps = get_icon_pixmaps_or(*proxyIt->second, "AttentionIconPixmap", {});
   pickBestPixmap(attentionPixmaps, next.attentionArgb32, next.attentionWidth, next.attentionHeight);
 
-    logDebug(
-      "tray item metadata id={} status={} iconName='{}' attentionIconName='{}' iconThemePath='{}' iconPixmap={}x{} "
-      "(bytes={}) attentionPixmap={}x{} (bytes={})",
-      itemId, next.status, next.iconName, next.attentionIconName, next.iconThemePath, next.iconWidth,
-      next.iconHeight, next.iconArgb32.size(), next.attentionWidth, next.attentionHeight, next.attentionArgb32.size());
+  logDebug(
+      "tray item metadata id={} itemName='{}' status={} iconName='{}' attentionIconName='{}' menu='{}' "
+      "iconThemePath='{}' iconPixmap={}x{} (bytes={}) attentionPixmap={}x{} (bytes={})",
+      itemId, next.itemName, next.status, next.iconName, next.attentionIconName, next.menuObjectPath,
+      next.iconThemePath, next.iconWidth, next.iconHeight, next.iconArgb32.size(), next.attentionWidth,
+      next.attentionHeight, next.attentionArgb32.size());
 
   if (next == itemIt->second) {
     return;

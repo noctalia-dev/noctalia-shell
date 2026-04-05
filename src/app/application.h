@@ -5,14 +5,14 @@
 #include "config/config_service.h"
 #include "config/state_poll_source.h"
 #include "config/state_service.h"
-#include "dbus/session_bus.h"
-#include "dbus/session_bus_poll_source.h"
-#include "dbus/system_bus.h"
-#include "dbus/system_bus_poll_source.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/notification/notification_poll_source.h"
 #include "dbus/notification/notification_service.h"
 #include "dbus/power/power_profiles_service.h"
+#include "dbus/session_bus.h"
+#include "dbus/session_bus_poll_source.h"
+#include "dbus/system_bus.h"
+#include "dbus/system_bus_poll_source.h"
 #include "dbus/tray/tray_service.h"
 #include "debug/debug_service.h"
 #include "notification/notification_manager.h"
@@ -20,6 +20,7 @@
 #include "shell/bar/bar.h"
 #include "shell/notification/notification_popup.h"
 #include "shell/panel/panel_manager.h"
+#include "shell/tray/tray_menu.h"
 #include "shell/wallpaper/wallpaper.h"
 #include "system/system_monitor_service.h"
 #include "time/time_poll_source.h"
@@ -59,6 +60,7 @@ private:
   Bar m_bar;
   PanelManager m_panelManager;
   NotificationPopup m_notificationPopup;
+  TrayMenu m_trayMenu;
   Wallpaper m_wallpaper;
 
   // Poll sources (must outlive MainLoop)

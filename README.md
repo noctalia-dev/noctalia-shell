@@ -168,7 +168,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Bar completion and foundation
 
-- [~] System tray (StatusNotifierItem via DBus) - watcher + tray count MVP
+- [x] System tray
 - [~] Keyboard Input
 - [ ] Audio service (Pipewire) + volume OSD
 - [ ] Notification indicator + notification popup UI

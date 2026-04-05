@@ -156,7 +156,11 @@ void Application::run() {
 
     try {
       m_trayService = std::make_unique<TrayService>(*m_bus);
-      m_trayService->setChangeCallback([this]() { m_bar.onWorkspaceChange(); });
+      m_trayService->setChangeCallback([this]() {
+        m_bar.onWorkspaceChange();
+        m_trayMenu.onTrayChanged();
+      });
+      m_trayService->setMenuToggleCallback([this](const std::string& itemId) { m_trayMenu.toggleForItem(itemId); });
       logInfo("status notifier watcher active on org.kde.StatusNotifierWatcher");
     } catch (const std::exception& e) {
       logWarn("tray watcher disabled: {}", e.what());
@@ -174,21 +178,26 @@ void Application::run() {
   // Initialize notification popup (top layer, dynamic surface)
   m_notificationPopup.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);
 
+  // Initialize tray menu (top layer, dynamic surface)
+  m_trayMenu.initialize(m_wayland, &m_configService, m_trayService.get(), &m_renderContext);
+
   // Initialize bar (top layer)
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
                    &m_renderContext);
 
   // Unified pointer event routing — both Bar and PanelManager check surface ownership
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
-    if (m_bar.onPointerEvent(event)) return;
-    if (m_panelManager.onPointerEvent(event)) return;
+    if (m_trayMenu.onPointerEvent(event))
+      return;
+    if (m_bar.onPointerEvent(event))
+      return;
+    if (m_panelManager.onPointerEvent(event))
+      return;
     m_notificationPopup.onPointerEvent(event);
   });
 
   // Keyboard events are routed only to the panel (the only surface with keyboard interactivity)
-  m_wayland.setKeyboardEventCallback([this](const KeyboardEvent& event) {
-    m_panelManager.onKeyboardEvent(event);
-  });
+  m_wayland.setKeyboardEventCallback([this](const KeyboardEvent& event) { m_panelManager.onKeyboardEvent(event); });
 
   // Build poll sources
   std::vector<PollSource*> sources;

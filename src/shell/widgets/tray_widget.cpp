@@ -226,6 +226,8 @@ void TrayWidget::rebuild(Renderer& renderer) {
       if (data.button == BTN_LEFT) {
         (void)m_tray->activateItem(itemId);
       } else if (data.button == BTN_RIGHT) {
+        m_tray->requestMenuToggle(itemId);
+      } else if (data.button == BTN_MIDDLE) {
         (void)m_tray->openContextMenu(itemId);
       }
     });
