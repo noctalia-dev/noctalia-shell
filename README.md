@@ -171,7 +171,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [x] System tray
 - [~] Keyboard Input
 - [ ] Audio service (Pipewire) + volume OSD
-- [ ] Notification indicator + notification popup UI
+- [ ] Notification: indicator + popup + history panel
 
 ### Hardware and networking
 
@@ -221,8 +221,8 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [x] Slider
 - [X] Select
 - [x] Spinner
-- [~] Input
-- [ ] Progress bar
+- [x] Input
+- [x] Progress bar
 - [ ] Scroll view
 - [ ] List view
 - [ ] Checkbox
@@ -234,9 +234,9 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Widgets
 
-- [ ] Tray
+- [~] Tray
 - [ ] Volume
-- [ ] Notification button
+- [x] Notification button
 - [ ] Battery
 - [ ] Network
 - [ ] Bluetooth
@@ -246,11 +246,11 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] Power profile
 - [ ] System monitor
 - [ ] Active window
-- [ ] Taskbar
+- [ ] Dock
 - [ ] Keyboard layout
 - [ ] Lock keys (Caps/Num)
 - [ ] Dark mode button
-- [ ] Night light
+- [ ] Night light button
 - [ ] Keep awake (idle inhibitor)
 - [ ] Audio visualizer
 - [ ] Launcher button
