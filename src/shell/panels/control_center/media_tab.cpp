@@ -174,6 +174,11 @@ std::vector<AudioNode> sortedAudioDevices(const std::vector<AudioNode>& devices)
   return sorted;
 }
 
+const AudioNode* findAudioNodeById(const std::vector<AudioNode>& devices, std::uint32_t id) {
+  const auto it = std::ranges::find(devices, id, &AudioNode::id);
+  return it != devices.end() ? &(*it) : nullptr;
+}
+
 } // namespace
 
 void ControlCenterPanel::buildMediaTab() {
@@ -396,7 +401,13 @@ void ControlCenterPanel::buildMediaTab() {
       return;
     }
     if (m_audio != nullptr) {
-      m_audio->setVolume(value / 100.0f);
+      std::uint32_t sinkId = m_audio->state().defaultSinkId;
+      if (m_outputDeviceSelect != nullptr && m_outputDeviceSelect->selectedIndex() < m_outputDeviceIds.size()) {
+        sinkId = m_outputDeviceIds[m_outputDeviceSelect->selectedIndex()];
+      }
+      if (sinkId != 0) {
+        m_audio->setSinkVolume(sinkId, value / 100.0f);
+      }
     }
     if (m_outputValue != nullptr) {
       m_outputValue->setText(std::to_string(static_cast<int>(std::round(value))) + "%");
@@ -448,7 +459,13 @@ void ControlCenterPanel::buildMediaTab() {
       return;
     }
     if (m_audio != nullptr) {
-      m_audio->setMicVolume(value / 100.0f);
+      std::uint32_t sourceId = m_audio->state().defaultSourceId;
+      if (m_inputDeviceSelect != nullptr && m_inputDeviceSelect->selectedIndex() < m_inputDeviceIds.size()) {
+        sourceId = m_inputDeviceIds[m_inputDeviceSelect->selectedIndex()];
+      }
+      if (sourceId != 0) {
+        m_audio->setSourceVolume(sourceId, value / 100.0f);
+      }
     }
     if (m_inputValue != nullptr) {
       m_inputValue->setText(std::to_string(static_cast<int>(std::round(value))) + "%");
@@ -666,8 +683,23 @@ void ControlCenterPanel::refreshMediaState(Renderer& renderer) {
     return;
   }
 
-  const auto* sink = m_audio->defaultSink();
-  const auto* source = m_audio->defaultSource();
+  constexpr std::size_t kInvalidIndex = static_cast<std::size_t>(-1);
+  const auto outputIndex =
+      (m_outputDeviceSelect != nullptr && m_outputDeviceSelect->selectedIndex() < m_outputDeviceIds.size())
+          ? m_outputDeviceSelect->selectedIndex()
+          : kInvalidIndex;
+  const auto inputIndex =
+      (m_inputDeviceSelect != nullptr && m_inputDeviceSelect->selectedIndex() < m_inputDeviceIds.size())
+          ? m_inputDeviceSelect->selectedIndex()
+          : kInvalidIndex;
+
+  const std::uint32_t sinkId =
+      outputIndex != kInvalidIndex ? m_outputDeviceIds[outputIndex] : m_audio->state().defaultSinkId;
+  const std::uint32_t sourceId =
+      inputIndex != kInvalidIndex ? m_inputDeviceIds[inputIndex] : m_audio->state().defaultSourceId;
+
+  const auto* sink = findAudioNodeById(m_audio->state().sinks, sinkId);
+  const auto* source = findAudioNodeById(m_audio->state().sources, sourceId);
   const float sinkVolume = sink != nullptr ? sink->volume * 100.0f : 0.0f;
   const float sourceVolume = source != nullptr ? source->volume * 100.0f : 0.0f;
 
