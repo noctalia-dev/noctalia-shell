@@ -1,6 +1,9 @@
 #include "shell/widgets/notification_widget.h"
 
 #include "notification/notification_manager.h"
+#include "render/scene/input_area.h"
+#include "render/scene/node.h"
+#include "shell/panel/panel_manager.h"
 #include "ui/controls/box.h"
 #include "ui/controls/icon.h"
 #include "ui/palette.h"
@@ -9,25 +12,36 @@
 #include <algorithm>
 #include <memory>
 
-NotificationWidget::NotificationWidget(NotificationManager* manager) : m_manager(manager) {}
+NotificationWidget::NotificationWidget(NotificationManager* manager, wl_output* output, std::int32_t scale)
+    : m_manager(manager), m_output(output), m_scale(scale) {}
 
 void NotificationWidget::create(Renderer& renderer) {
-  auto root = std::make_unique<Node>();
+  auto area = std::make_unique<InputArea>();
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
+    float absX = 0.0f;
+    float absY = 0.0f;
+    auto* node = root();
+    if (node != nullptr) {
+      Node::absolutePosition(node, absX, absY);
+      absX += node->width() * 0.5f;
+    }
+    PanelManager::instance().togglePanel("notification-history", m_output, m_scale, absX);
+  });
 
   auto icon = std::make_unique<Icon>();
   icon->setIcon("bell");
   icon->setIconSize(Style::fontSizeBody * m_contentScale);
   icon->setColor(palette.onSurface);
   m_icon = icon.get();
-  root->addChild(std::move(icon));
+  area->addChild(std::move(icon));
 
   auto dot = std::make_unique<Box>();
   dot->setFill(palette.primary);
   dot->setRadius(Style::radiusFull);
   dot->setVisible(false);
-  m_dot = root->addChild(std::move(dot));
+  m_dot = area->addChild(std::move(dot));
 
-  m_root = std::move(root);
+  m_root = std::move(area);
   refreshIndicatorState();
   layout(renderer, 0.0f, 0.0f);
 }

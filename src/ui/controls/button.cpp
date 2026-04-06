@@ -21,7 +21,17 @@ Button::Button() {
   applyVariant();
 }
 
-void Button::setText(std::string_view text) { m_label->setText(text); }
+Button::~Button() {
+  if (m_animId != 0 && animationManager() != nullptr) {
+    animationManager()->cancel(m_animId);
+    m_animId = 0;
+  }
+}
+
+void Button::setText(std::string_view text) {
+  m_label->setText(text);
+  m_label->setVisible(!text.empty());
+}
 
 void Button::setIcon(std::string_view name) {
   ensureIcon();
@@ -53,7 +63,6 @@ void Button::setOnClick(std::function<void()> callback) {
       if (m_onClick) {
         m_onClick();
       }
-      applyVisualState();
     });
     m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
     m_inputArea->setPosition(0.0f, 0.0f);

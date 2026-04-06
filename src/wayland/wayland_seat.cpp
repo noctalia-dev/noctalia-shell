@@ -33,11 +33,11 @@ const wl_pointer_listener kPointerListener = {
     .leave = &WaylandSeat::handlePointerLeave,
     .motion = &WaylandSeat::handlePointerMotion,
     .button = &WaylandSeat::handlePointerButton,
-    .axis = [](void*, wl_pointer*, std::uint32_t, std::uint32_t, std::int32_t) {},
+    .axis = &WaylandSeat::handlePointerAxis,
     .frame = &WaylandSeat::handlePointerFrame,
     .axis_source = [](void*, wl_pointer*, std::uint32_t) {},
     .axis_stop = [](void*, wl_pointer*, std::uint32_t, std::uint32_t) {},
-    .axis_discrete = [](void*, wl_pointer*, std::uint32_t, std::int32_t) {},
+    .axis_discrete = &WaylandSeat::handlePointerAxisDiscrete,
     .axis_value120 = [](void*, wl_pointer*, std::uint32_t, std::int32_t) {},
     .axis_relative_direction = [](void*, wl_pointer*, std::uint32_t, std::uint32_t) {},
 };
@@ -196,6 +196,31 @@ void WaylandSeat::handlePointerButton(void* data, wl_pointer* /*pointer*/, std::
       .button = button,
       .state = state,
   });
+}
+
+void WaylandSeat::handlePointerAxis(void* data, wl_pointer* /*pointer*/, std::uint32_t time, std::uint32_t axis,
+                                    std::int32_t value) {
+  auto* self = static_cast<WaylandSeat*>(data);
+  self->m_pendingPointerEvents.push_back(PointerEvent{
+      .type = PointerEvent::Type::Axis,
+      .surface = self->m_lastPointerSurface,
+      .sx = self->m_hasPointerPosition ? self->m_lastPointerX : 0.0,
+      .sy = self->m_hasPointerPosition ? self->m_lastPointerY : 0.0,
+      .time = time,
+      .axis = axis,
+      .axisValue = wl_fixed_to_double(value),
+  });
+}
+
+void WaylandSeat::handlePointerAxisDiscrete(void* data, wl_pointer* /*pointer*/, std::uint32_t axis,
+                                            std::int32_t discrete) {
+  auto* self = static_cast<WaylandSeat*>(data);
+  for (auto it = self->m_pendingPointerEvents.rbegin(); it != self->m_pendingPointerEvents.rend(); ++it) {
+    if (it->type == PointerEvent::Type::Axis && it->axis == axis) {
+      it->axisDiscrete = discrete;
+      return;
+    }
+  }
 }
 
 void WaylandSeat::handlePointerFrame(void* data, wl_pointer* /*pointer*/) {

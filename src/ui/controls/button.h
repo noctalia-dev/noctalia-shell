@@ -24,6 +24,7 @@ enum class ButtonVariant : std::uint8_t {
 class Button : public Flex {
 public:
   Button();
+  ~Button() override;
 
   void setText(std::string_view text);
   void setIcon(std::string_view name);

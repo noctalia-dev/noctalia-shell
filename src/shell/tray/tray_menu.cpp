@@ -28,7 +28,8 @@ constexpr float kSurfaceWidth = kMenuWidth;
 
 } // namespace
 
-void TrayMenu::initialize(WaylandConnection& wayland, ConfigService* config, TrayService* tray, RenderContext* renderContext) {
+void TrayMenu::initialize(WaylandConnection& wayland, ConfigService* config, TrayService* tray,
+                          RenderContext* renderContext) {
   m_wayland = &wayland;
   m_config = config;
   m_tray = tray;
@@ -121,6 +122,8 @@ bool TrayMenu::onPointerEvent(const PointerEvent& event) {
         }
       }
       break;
+    case PointerEvent::Type::Axis:
+      break;
     }
 
     if (event.type == PointerEvent::Type::Button) {
@@ -212,7 +215,8 @@ void TrayMenu::ensureSurfaces() {
 
     inst->surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
     auto* instPtr = inst.get();
-    inst->surface->setConfigureCallback([this, instPtr](uint32_t width, uint32_t height) { buildScene(*instPtr, width, height); });
+    inst->surface->setConfigureCallback(
+        [this, instPtr](uint32_t width, uint32_t height) { buildScene(*instPtr, width, height); });
     inst->surface->setRenderContext(m_renderContext);
 
     bool ok = inst->surface->initialize(output.output, output.scale);

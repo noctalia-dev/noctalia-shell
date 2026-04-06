@@ -18,7 +18,10 @@ namespace {
 constexpr float kDefaultWidth = 260.0f;
 constexpr float kDefaultHeight = 180.0f;
 constexpr float kScrollbarWidth = 6.0f;
-constexpr float kScrollbarPadding = 6.0f;
+constexpr float kScrollbarPadding = static_cast<float>(Style::borderWidth);
+constexpr float kViewportPaddingH = static_cast<float>(Style::spaceXs);
+constexpr float kViewportPaddingV = static_cast<float>(Style::spaceSm);
+constexpr float kScrollbarGap = kScrollbarPadding;
 constexpr float kMinThumbHeight = 24.0f;
 
 RoundedRectStyle makeSolid(const Color& fill, float radius) {
@@ -73,8 +76,8 @@ ScrollView::ScrollView() {
       return;
     }
 
-    const float delta =
-        data.axisDiscrete != 0 ? static_cast<float>(data.axisDiscrete) * m_scrollStep : static_cast<float>(data.axisValue);
+    const float delta = data.axisDiscrete != 0 ? static_cast<float>(data.axisDiscrete) * m_scrollStep
+                                               : static_cast<float>(data.axisValue);
     scrollBy(delta);
   });
   m_viewportArea = static_cast<InputArea*>(addChild(std::move(viewportArea)));
@@ -82,12 +85,12 @@ ScrollView::ScrollView() {
   auto content = std::make_unique<Flex>();
   content->setDirection(FlexDirection::Vertical);
   content->setAlign(FlexAlign::Start);
-  m_content = static_cast<Flex*>(addChild(std::move(content)));
+  m_content = static_cast<Flex*>(m_viewportArea->addChild(std::move(content)));
 
   auto scrollbarTrack = std::make_unique<RectNode>();
   m_scrollbarTrack = static_cast<RectNode*>(addChild(std::move(scrollbarTrack)));
-  m_scrollbarTrack->setStyle(makeSolid(rgba(palette.outline.r, palette.outline.g, palette.outline.b, 0.45f),
-                                       kScrollbarWidth * 0.5f));
+  m_scrollbarTrack->setStyle(
+      makeSolid(rgba(palette.outline.r, palette.outline.g, palette.outline.b, 0.45f), kScrollbarWidth * 0.5f));
 
   auto scrollbarThumb = std::make_unique<RectNode>();
   m_scrollbarThumb = static_cast<RectNode*>(addChild(std::move(scrollbarThumb)));
@@ -141,6 +144,11 @@ void ScrollView::setScrollbarVisible(bool visible) {
 
 void ScrollView::setOnScrollChanged(std::function<void(float)> callback) { m_onScrollChanged = std::move(callback); }
 
+float ScrollView::contentViewportWidth() const noexcept {
+  const float gutter = m_scrollbarShown ? (kScrollbarWidth + kScrollbarGap) : 0.0f;
+  return std::max(0.0f, width() - kViewportPaddingH * 2.0f - gutter);
+}
+
 void ScrollView::layout(Renderer& renderer) {
   if (m_background == nullptr || m_viewportArea == nullptr || m_content == nullptr || m_scrollbarTrack == nullptr ||
       m_scrollbarThumb == nullptr || m_scrollbarThumbArea == nullptr) {
@@ -149,31 +157,55 @@ void ScrollView::layout(Renderer& renderer) {
 
   const float w = width() > 0.0f ? width() : kDefaultWidth;
   const float h = height() > 0.0f ? height() : kDefaultHeight;
+  const float viewportX = kViewportPaddingH;
+  const float viewportY = kViewportPaddingV;
+  const float viewportW = std::max(0.0f, w - kViewportPaddingH * 2.0f);
+  const float viewportH = std::max(0.0f, h - kViewportPaddingV * 2.0f);
+  m_viewportHeight = viewportH;
+  m_viewportWidth = viewportW;
   setSize(w, h);
 
   m_background->setPosition(0.0f, 0.0f);
   m_background->setSize(w, h);
-  m_viewportArea->setPosition(0.0f, 0.0f);
-  m_viewportArea->setSize(w, h);
+  m_viewportArea->setPosition(viewportX, viewportY);
+  m_viewportArea->setSize(viewportW, viewportH);
+
+  for (const auto& child : m_content->children()) {
+    if (!child->visible()) {
+      child->setVisible(true);
+    }
+  }
+
+  m_scrollbarShown = m_showScrollbar && m_content->height() > viewportH + 0.5f;
+  const float gutter = m_scrollbarShown ? (kScrollbarWidth + kScrollbarGap) : 0.0f;
+  const float contentWidth = std::max(0.0f, viewportW - gutter);
 
   m_content->setPosition(0.0f, 0.0f);
-  m_content->setSize(w, m_content->height());
+  m_content->setSize(contentWidth, m_content->height());
   m_content->layout(renderer);
 
   const float contentHeight = m_content->height();
-  m_maxScrollOffset = std::max(0.0f, contentHeight - h);
+  m_maxScrollOffset = std::max(0.0f, contentHeight - viewportH);
   m_scrollOffset = clampOffset(m_scrollOffset);
 
-  updateScrollbarGeometry(h, contentHeight);
+  updateScrollbarGeometry(viewportH, contentHeight);
   applyScrollOffset();
 }
 
 void ScrollView::applyScrollOffset() {
   if (m_content != nullptr) {
     m_content->setPosition(0.0f, -m_scrollOffset);
+
+    for (const auto& child : m_content->children()) {
+      const float childTop = child->y() - m_scrollOffset;
+      const float childBottom = childTop + child->height();
+      const bool visible = childBottom >= 0.0f && childTop <= m_viewportHeight;
+      child->setVisible(visible);
+    }
   }
 
-  if (m_scrollbarThumb == nullptr || m_scrollbarTrack == nullptr || m_scrollbarThumbArea == nullptr || m_maxScrollOffset <= 0.0f) {
+  if (m_scrollbarThumb == nullptr || m_scrollbarTrack == nullptr || m_scrollbarThumbArea == nullptr ||
+      m_maxScrollOffset <= 0.0f) {
     return;
   }
 
@@ -189,6 +221,7 @@ void ScrollView::applyScrollOffset() {
 
 void ScrollView::updateScrollbarGeometry(float viewportHeight, float contentHeight) {
   const bool show = m_showScrollbar && contentHeight > viewportHeight + 0.5f;
+  m_scrollbarShown = show;
   m_scrollbarTrack->setVisible(show);
   m_scrollbarThumb->setVisible(show);
   m_scrollbarThumbArea->setVisible(show);
@@ -197,14 +230,14 @@ void ScrollView::updateScrollbarGeometry(float viewportHeight, float contentHeig
     return;
   }
 
-  const float trackX = width() - kScrollbarPadding - kScrollbarWidth;
-  const float trackY = kScrollbarPadding;
-  const float trackH = std::max(0.0f, viewportHeight - kScrollbarPadding * 2.0f);
+  const float trackX = kViewportPaddingH + m_viewportWidth - kScrollbarWidth;
+  const float trackY = kViewportPaddingV;
+  const float trackH = std::max(0.0f, viewportHeight);
   m_scrollbarTrack->setPosition(trackX, trackY);
   m_scrollbarTrack->setSize(kScrollbarWidth, trackH);
 
-  const float thumbH = std::clamp((viewportHeight * viewportHeight) / std::max(viewportHeight, contentHeight),
-                                  kMinThumbHeight, trackH);
+  const float thumbH =
+      std::clamp((viewportHeight * viewportHeight) / std::max(viewportHeight, contentHeight), kMinThumbHeight, trackH);
   m_thumbTravel = std::max(0.0f, trackH - thumbH);
   m_scrollbarThumb->setSize(kScrollbarWidth, thumbH);
 }

@@ -40,7 +40,8 @@ public:
 
 private:
   void ensureGlPrograms();
-  void renderNode(const Node* node, float parentX, float parentY, float parentOpacity, float sw, float sh);
+  void renderNode(const Node* node, float parentX, float parentY, float parentOpacity, float sw, float sh, float bw,
+                  float bh, float clipLeft, float clipTop, float clipRight, float clipBottom, bool hasClip);
 
   EGLDisplay m_eglDisplay = EGL_NO_DISPLAY;
   EGLConfig m_eglConfig = nullptr;

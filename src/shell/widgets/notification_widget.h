@@ -2,13 +2,14 @@
 
 #include "shell/widget/widget.h"
 
+struct wl_output;
 class Icon;
 class Node;
 class NotificationManager;
 
 class NotificationWidget : public Widget {
 public:
-  explicit NotificationWidget(NotificationManager* manager);
+  NotificationWidget(NotificationManager* manager, wl_output* output, std::int32_t scale);
 
   void create(Renderer& renderer) override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
@@ -18,6 +19,8 @@ private:
   void refreshIndicatorState();
 
   NotificationManager* m_manager = nullptr;
+  wl_output* m_output = nullptr;
+  std::int32_t m_scale = 1;
   Icon* m_icon = nullptr;
   Node* m_dot = nullptr;
   bool m_hasNotifications = false;

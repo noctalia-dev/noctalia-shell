@@ -4,12 +4,12 @@
 #include "core/log.h"
 #include "dbus/tray/tray_service.h"
 #include "dbus/upower/upower_service.h"
-#include "system/system_monitor_service.h"
 #include "render/render_context.h"
 #include "render/scene/rect_node.h"
-#include "ui/controls/box.h"
 #include "shell/widget/widget.h"
+#include "system/system_monitor_service.h"
 #include "time/time_service.h"
+#include "ui/controls/box.h"
 #include "ui/controls/flex.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -178,14 +178,13 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
 
   // Shadow expansion toward content (the "inward" side of the bar).
   const auto shadowExpand = [&]() -> std::uint32_t {
-    if (barConfig.shadowBlur <= 0) return 0u;
+    if (barConfig.shadowBlur <= 0)
+      return 0u;
     if (vertical) {
-      const std::int32_t inward =
-          barConfig.position == "right" ? -barConfig.shadowOffsetX : barConfig.shadowOffsetX;
+      const std::int32_t inward = barConfig.position == "right" ? -barConfig.shadowOffsetX : barConfig.shadowOffsetX;
       return static_cast<std::uint32_t>(barConfig.shadowBlur + std::max(0, inward));
     }
-    const std::int32_t inward =
-        barConfig.position == "bottom" ? -barConfig.shadowOffsetY : barConfig.shadowOffsetY;
+    const std::int32_t inward = barConfig.position == "bottom" ? -barConfig.shadowOffsetY : barConfig.shadowOffsetY;
     return static_cast<std::uint32_t>(barConfig.shadowBlur + std::max(0, inward));
   }();
 
@@ -266,7 +265,8 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
   // Compute the surface expansion (must match createInstance).
   const float shadowExpand = [&]() -> float {
-    if (shadowSize <= 0.0f) return 0.0f;
+    if (shadowSize <= 0.0f)
+      return 0.0f;
     if (isVertical) {
       const float inward = isRight ? -shadowOffsetX : shadowOffsetX;
       return shadowSize + std::max(0.0f, inward);
@@ -422,7 +422,8 @@ void Bar::updateWidgets(BarInstance& instance) {
   const bool isRight = instance.barConfig.position == "right";
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
   const float shadowExpand = [&]() -> float {
-    if (shadowSize <= 0.0f) return 0.0f;
+    if (shadowSize <= 0.0f)
+      return 0.0f;
     if (isVertical) {
       const float inward = isRight ? -shadowOffsetX : shadowOffsetX;
       return shadowSize + std::max(0.0f, inward);
@@ -503,6 +504,8 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
                                                                 static_cast<float>(event.sy), event.button, pressed);
     break;
   }
+  case PointerEvent::Type::Axis:
+    break;
   }
 
   // Trigger redraw if any widget changed visual state

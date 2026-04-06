@@ -42,6 +42,7 @@ public:
   [[nodiscard]] bool isOpen() const noexcept;
   [[nodiscard]] const std::string& activePanelId() const noexcept;
 
+  void refresh();
   void close();
 
 private:

@@ -24,6 +24,7 @@ public:
   [[nodiscard]] float scrollOffset() const noexcept { return m_scrollOffset; }
   [[nodiscard]] float maxScrollOffset() const noexcept { return m_maxScrollOffset; }
   [[nodiscard]] bool scrollable() const noexcept { return m_maxScrollOffset > 0.0f; }
+  [[nodiscard]] float contentViewportWidth() const noexcept;
 
   void layout(Renderer& renderer) override;
 
@@ -47,5 +48,8 @@ private:
   float m_dragStartLocalY = 0.0f;
   float m_dragStartOffset = 0.0f;
   float m_thumbTravel = 0.0f;
+  float m_viewportHeight = 0.0f;
+  float m_viewportWidth = 0.0f;
+  bool m_scrollbarShown = false;
   bool m_showScrollbar = true;
 };

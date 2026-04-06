@@ -200,6 +200,14 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
     }
     break;
   }
+  case PointerEvent::Type::Axis: {
+    if (!m_pointerInside) {
+      return false;
+    }
+    m_inputDispatcher.pointerAxis(static_cast<float>(event.sx), static_cast<float>(event.sy), event.axis,
+                                  event.axisValue, event.axisDiscrete);
+    break;
+  }
   }
 
   // Trigger redraw if scene changed
@@ -216,6 +224,16 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
 bool PanelManager::isOpen() const noexcept { return m_surface != nullptr && m_activePanel != nullptr; }
 
 const std::string& PanelManager::activePanelId() const noexcept { return m_activePanelId; }
+
+void PanelManager::refresh() {
+  if (!isOpen() || m_renderContext == nullptr || m_activePanel == nullptr || m_surface == nullptr) {
+    return;
+  }
+
+  m_activePanel->update(*m_renderContext);
+  m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
+  m_surface->requestRedraw();
+}
 
 void PanelManager::close() { closePanel(); }
 

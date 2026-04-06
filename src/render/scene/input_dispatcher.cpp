@@ -60,6 +60,19 @@ bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool
   return false;
 }
 
+bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, double value, std::int32_t discrete) {
+  InputArea* target = m_capturedArea != nullptr ? m_capturedArea : m_hoveredArea;
+  if (target == nullptr) {
+    return false;
+  }
+
+  float absX = 0.0f;
+  float absY = 0.0f;
+  Node::absolutePosition(target, absX, absY);
+  target->dispatchAxis(x - absX, y - absY, axis, value, discrete);
+  return true;
+}
+
 void InputDispatcher::keyEvent(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed,
                                bool preedit) {
   if (m_focusedArea != nullptr) {

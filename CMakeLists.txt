@@ -229,6 +229,7 @@ add_executable(noctalia
     src/ui/controls/button.cpp
     src/ui/controls/progress_bar.cpp
     src/ui/controls/input.cpp
+    src/ui/controls/scroll_view.cpp
     src/ui/controls/chip.cpp
     src/ui/controls/select.cpp
     src/ui/controls/icon.cpp
@@ -242,6 +243,7 @@ add_executable(noctalia
     src/shell/notification/notification_popup.cpp
     src/shell/tray/tray_menu.cpp
     src/shell/panel/panel_manager.cpp
+    src/shell/panels/notification_history_panel.cpp
     src/shell/panels/test_panel.cpp
     src/shell/widgets/clock_widget.cpp
     src/shell/widgets/notification_widget.cpp

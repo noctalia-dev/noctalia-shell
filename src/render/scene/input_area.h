@@ -11,7 +11,10 @@ public:
     float localX = 0.0f;
     float localY = 0.0f;
     std::uint32_t button = 0;
+    std::uint32_t axis = 0;
     bool pressed = false;
+    double axisValue = 0.0;
+    std::int32_t axisDiscrete = 0;
   };
 
   struct KeyData {
@@ -19,7 +22,7 @@ public:
     std::uint32_t utf32 = 0;     // Unicode codepoint (0 for non-printable keys)
     std::uint32_t modifiers = 0; // KeyMod bitmask
     bool pressed = false;
-    bool preedit = false;        // dead key preview (composing in progress)
+    bool preedit = false; // dead key preview (composing in progress)
   };
 
   using PointerCallback = std::function<void(const PointerData&)>;
@@ -36,6 +39,7 @@ public:
   void setOnMotion(PointerCallback callback);
   void setOnPress(PointerCallback callback);
   void setOnClick(PointerCallback callback);
+  void setOnAxis(PointerCallback callback);
 
   // Keyboard / focus
   void setFocusable(bool focusable);
@@ -71,8 +75,8 @@ public:
   void dispatchLeave();
   void dispatchMotion(float localX, float localY);
   void dispatchPress(float localX, float localY, std::uint32_t button, bool isPressed);
-  void dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed,
-                   bool preedit = false);
+  void dispatchAxis(float localX, float localY, std::uint32_t axis, double axisValue, std::int32_t axisDiscrete);
+  void dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed, bool preedit = false);
   void dispatchFocusGain();
   void dispatchFocusLoss();
 
@@ -83,6 +87,7 @@ private:
   PointerCallback m_onMotion;
   PointerCallback m_onPress;
   PointerCallback m_onClick;
+  PointerCallback m_onAxis;
   KeyCallback m_onKeyDown;
   KeyCallback m_onKeyUp;
   VoidCallback m_onFocusGain;

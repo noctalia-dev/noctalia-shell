@@ -20,7 +20,7 @@ struct xkb_keymap;
 struct xkb_state;
 
 struct PointerEvent {
-  enum class Type : std::uint8_t { Enter, Leave, Motion, Button };
+  enum class Type : std::uint8_t { Enter, Leave, Motion, Button, Axis };
   Type type;
   std::uint32_t serial = 0;
   wl_surface* surface = nullptr;
@@ -29,6 +29,9 @@ struct PointerEvent {
   std::uint32_t time = 0;
   std::uint32_t button = 0;
   std::uint32_t state = 0;
+  std::uint32_t axis = 0;
+  double axisValue = 0.0;
+  std::int32_t axisDiscrete = 0;
 };
 
 namespace KeyMod {
@@ -74,6 +77,9 @@ public:
                                   std::int32_t sy);
   static void handlePointerButton(void* data, wl_pointer* pointer, std::uint32_t serial, std::uint32_t time,
                                   std::uint32_t button, std::uint32_t state);
+  static void handlePointerAxis(void* data, wl_pointer* pointer, std::uint32_t time, std::uint32_t axis,
+                                std::int32_t value);
+  static void handlePointerAxisDiscrete(void* data, wl_pointer* pointer, std::uint32_t axis, std::int32_t discrete);
   static void handlePointerFrame(void* data, wl_pointer* pointer);
 
   // Keyboard listener entrypoints

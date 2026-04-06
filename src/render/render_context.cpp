@@ -10,6 +10,7 @@
 #include "ui/style.h"
 
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 #include <vector>
 
@@ -38,6 +39,21 @@ constexpr EGLint kContextAttributes[] = {
     2,
     EGL_NONE,
 };
+
+} // namespace
+
+namespace {
+
+void applyScissor(float sw, float sh, float bw, float bh, float left, float top, float right, float bottom) {
+  const float scaleX = sw > 0.0f ? bw / sw : 1.0f;
+  const float scaleY = sh > 0.0f ? bh / sh : 1.0f;
+
+  const GLint scissorX = static_cast<GLint>(std::floor(left * scaleX));
+  const GLint scissorY = static_cast<GLint>(std::floor((sh - bottom) * scaleY));
+  const GLsizei scissorW = static_cast<GLsizei>(std::ceil(std::max(0.0f, right - left) * scaleX));
+  const GLsizei scissorH = static_cast<GLsizei>(std::ceil(std::max(0.0f, bottom - top) * scaleY));
+  glScissor(scissorX, scissorY, scissorW, scissorH);
+}
 
 } // namespace
 
@@ -124,7 +140,10 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
   if (sceneRoot != nullptr) {
     const auto sw = static_cast<float>(target.logicalWidth());
     const auto sh = static_cast<float>(target.logicalHeight());
-    renderNode(sceneRoot, 0.0f, 0.0f, 1.0f, sw, sh);
+    const auto bw = static_cast<float>(target.bufferWidth());
+    const auto bh = static_cast<float>(target.bufferHeight());
+    glDisable(GL_SCISSOR_TEST);
+    renderNode(sceneRoot, 0.0f, 0.0f, 1.0f, sw, sh, bw, bh, 0.0f, 0.0f, sw, sh, false);
   }
 
   if (eglSwapBuffers(m_eglDisplay, target.eglSurface()) != EGL_TRUE) {
@@ -144,17 +163,27 @@ TextMetrics RenderContext::measureGlyph(char32_t codepoint, float fontSize) {
 
 TextureManager& RenderContext::textureManager() { return m_textureManager; }
 
-void RenderContext::renderNode(const Node* node, float parentX, float parentY, float parentOpacity, float sw,
-                               float sh) {
+void RenderContext::renderNode(const Node* node, float parentX, float parentY, float parentOpacity, float sw, float sh,
+                               float bw, float bh, float clipLeft, float clipTop, float clipRight, float clipBottom,
+                               bool hasClip) {
   if (!node->visible()) {
     return;
   }
 
   const float absX = parentX + node->x();
   const float absY = parentY + node->y();
+  const float absRight = absX + node->width();
+  const float absBottom = absY + node->height();
   const float effectiveOpacity = parentOpacity * node->opacity();
   const float rot = node->rotation();
   const float scl = node->scale();
+
+  if (hasClip) {
+    glEnable(GL_SCISSOR_TEST);
+    applyScissor(sw, sh, bw, bh, clipLeft, clipTop, clipRight, clipBottom);
+  } else {
+    glDisable(GL_SCISSOR_TEST);
+  }
 
   switch (node->type()) {
   case NodeType::Rect: {
@@ -219,8 +248,27 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
   std::stable_sort(orderedChildren.begin(), orderedChildren.end(),
                    [](const Node* a, const Node* b) { return a->zIndex() < b->zIndex(); });
 
+  float childClipLeft = clipLeft;
+  float childClipTop = clipTop;
+  float childClipRight = clipRight;
+  float childClipBottom = clipBottom;
+  bool childHasClip = hasClip;
+
+  if (node->clipChildren()) {
+    childClipLeft = hasClip ? std::max(childClipLeft, absX) : absX;
+    childClipTop = hasClip ? std::max(childClipTop, absY) : absY;
+    childClipRight = hasClip ? std::min(childClipRight, absRight) : absRight;
+    childClipBottom = hasClip ? std::min(childClipBottom, absBottom) : absBottom;
+    childHasClip = true;
+  }
+
+  if (childHasClip && (childClipRight <= childClipLeft || childClipBottom <= childClipTop)) {
+    return;
+  }
+
   for (const auto* child : orderedChildren) {
-    renderNode(child, absX, absY, effectiveOpacity, sw, sh);
+    renderNode(child, absX, absY, effectiveOpacity, sw, sh, bw, bh, childClipLeft, childClipTop, childClipRight,
+               childClipBottom, childHasClip);
   }
 }
 

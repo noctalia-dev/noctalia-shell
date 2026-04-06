@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
@@ -12,6 +13,13 @@ enum class NotificationEvent {
   Added,
   Updated,
   Closed,
+};
+
+struct NotificationHistoryEntry {
+  Notification notification;
+  bool active = true;
+  std::optional<CloseReason> closeReason;
+  std::uint64_t eventSerial = 0;
 };
 
 class NotificationManager {
@@ -52,10 +60,22 @@ public:
   // All stored notifications.
   [[nodiscard]] const std::deque<Notification>& all() const noexcept;
 
+  // Recent notification history including closed notifications.
+  [[nodiscard]] const std::deque<NotificationHistoryEntry>& history() const noexcept;
+  [[nodiscard]] std::uint64_t changeSerial() const noexcept;
+  void removeHistoryEntry(uint32_t id);
+  void clearHistory();
+
 private:
+  void upsertHistory(const Notification& notification, bool active, std::optional<CloseReason> closeReason);
+  void rebuildHistoryIndex();
+
   std::deque<Notification> m_notifications;
   std::unordered_map<uint32_t, size_t> m_idToIndex;
+  std::deque<NotificationHistoryEntry> m_history;
+  std::unordered_map<uint32_t, size_t> m_historyIndex;
   std::vector<std::pair<int, EventCallback>> m_eventCallbacks;
   int m_nextCallbackToken{0};
   uint32_t m_nextId{1};
+  std::uint64_t m_changeSerial{0};
 };

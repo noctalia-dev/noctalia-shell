@@ -57,6 +57,14 @@ void Node::setVisible(bool visible) {
   markDirty();
 }
 
+void Node::setClipChildren(bool clipChildren) {
+  if (m_clipChildren == clipChildren) {
+    return;
+  }
+  m_clipChildren = clipChildren;
+  markDirty();
+}
+
 void Node::setZIndex(std::int32_t zIndex) {
   if (m_zIndex == zIndex) {
     return;
@@ -138,6 +146,10 @@ Node* Node::hitTestImpl(Node* node, float px, float py, float offsetX, float off
   const float nodeX = offsetX + node->m_x;
   const float nodeY = offsetY + node->m_y;
   const bool inside = (px >= nodeX && px < nodeX + node->m_width && py >= nodeY && py < nodeY + node->m_height);
+
+  if (node->m_clipChildren && !inside) {
+    return nullptr;
+  }
 
   std::vector<Node*> orderedChildren;
   orderedChildren.reserve(node->m_children.size());

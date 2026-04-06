@@ -2,6 +2,7 @@
 
 #include "app/poll_source.h"
 #include "core/log.h"
+#include "shell/panels/notification_history_panel.h"
 #include "shell/panels/test_panel.h"
 
 #include <csignal>
@@ -34,6 +35,7 @@ Application::Application() {
 
     // Keep bar widgets in sync with notification state changes.
     m_bar.onWorkspaceChange();
+    m_panelManager.refresh();
   });
 }
 
@@ -206,6 +208,8 @@ void Application::run() {
   // Initialize panel manager (must be before bar so widgets can access PanelManager::instance())
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
+  m_panelManager.registerPanel("notification-history",
+                               std::make_unique<NotificationHistoryPanel>(&m_notificationManager));
 
   // Initialize notification popup (top layer, dynamic surface)
   m_notificationPopup.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);

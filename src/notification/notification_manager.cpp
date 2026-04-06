@@ -37,6 +37,34 @@ std::optional<TimePoint> schedule_expiry(int32_t timeout_ms) noexcept {
 
 } // namespace
 
+void NotificationManager::rebuildHistoryIndex() {
+  m_historyIndex.clear();
+  for (size_t i = 0; i < m_history.size(); ++i) {
+    m_historyIndex[m_history[i].notification.id] = i;
+  }
+}
+
+void NotificationManager::upsertHistory(const Notification& notification, bool active,
+                                        std::optional<CloseReason> closeReason) {
+  if (const auto it = m_historyIndex.find(notification.id); it != m_historyIndex.end()) {
+    m_history.erase(m_history.begin() + static_cast<std::ptrdiff_t>(it->second));
+  }
+
+  m_history.push_back(NotificationHistoryEntry{
+      .notification = notification,
+      .active = active,
+      .closeReason = closeReason,
+      .eventSerial = ++m_changeSerial,
+  });
+
+  constexpr std::size_t kMaxHistoryEntries = 100;
+  while (m_history.size() > kMaxHistoryEntries) {
+    m_history.pop_front();
+  }
+
+  rebuildHistoryIndex();
+}
+
 int NotificationManager::addEventCallback(EventCallback callback) {
   int token = m_nextCallbackToken++;
   m_eventCallbacks.emplace_back(token, std::move(callback));
@@ -79,6 +107,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
       n.expiryTime = schedule_expiry(timeout);
 
       log_notification(n, "updated");
+      upsertHistory(n, true, std::nullopt);
 
       if (changed) {
         for (auto& [token, cb] : m_eventCallbacks) {
@@ -109,6 +138,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
 
   const auto& n = m_notifications.back();
   log_notification(n, "added");
+  upsertHistory(n, true, std::nullopt);
 
   for (auto& [token, cb] : m_eventCallbacks) {
     cb(n, NotificationEvent::Added);
@@ -137,6 +167,7 @@ bool NotificationManager::close(uint32_t id, CloseReason reason) {
                            : (reason == CloseReason::Dismissed) ? "dismissed"
                                                                 : "closed";
   logDebug("notification {} #{}", reason_str, id);
+  upsertHistory(closed, false, reason);
 
   m_notifications.erase(m_notifications.begin() + static_cast<std::ptrdiff_t>(index));
   m_idToIndex.erase(it);
@@ -153,6 +184,31 @@ bool NotificationManager::close(uint32_t id, CloseReason reason) {
 }
 
 const std::deque<Notification>& NotificationManager::all() const noexcept { return m_notifications; }
+
+const std::deque<NotificationHistoryEntry>& NotificationManager::history() const noexcept { return m_history; }
+
+std::uint64_t NotificationManager::changeSerial() const noexcept { return m_changeSerial; }
+
+void NotificationManager::removeHistoryEntry(uint32_t id) {
+  const auto it = m_historyIndex.find(id);
+  if (it == m_historyIndex.end()) {
+    return;
+  }
+
+  m_history.erase(m_history.begin() + static_cast<std::ptrdiff_t>(it->second));
+  ++m_changeSerial;
+  rebuildHistoryIndex();
+}
+
+void NotificationManager::clearHistory() {
+  if (m_history.empty()) {
+    return;
+  }
+
+  m_history.clear();
+  m_historyIndex.clear();
+  ++m_changeSerial;
+}
 
 std::vector<uint32_t> NotificationManager::expiredIds() const {
   const auto now = Clock::now();

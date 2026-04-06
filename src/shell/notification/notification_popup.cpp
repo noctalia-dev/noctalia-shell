@@ -5,9 +5,9 @@
 #include "core/log.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
-#include "ui/controls/progress_bar.h"
 #include "ui/controls/box.h"
 #include "ui/controls/label.h"
+#include "ui/controls/progress_bar.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/wayland_connection.h"
@@ -28,7 +28,7 @@ constexpr int kPadding = Style::spaceMd;
 constexpr int kCardInnerPad = Style::spaceMd;
 constexpr int kPopupDurationMs = 8000;
 constexpr int kProgressHeight = 3;
-constexpr int kSlideOffset = 20;                     // horizontal slide distance for entry/exit animation
+constexpr int kSlideOffset = 20;                      // horizontal slide distance for entry/exit animation
 constexpr int kProgressBottomMargin = Style::spaceMd; // space below progress bar to card edge
 constexpr int kProgressTopGap = Style::spaceLg;       // gap from text content to progress bar
 
@@ -87,8 +87,8 @@ std::string truncateToWidth(RenderContext& renderer, std::string text, float fon
   return std::string(kEllipsis);
 }
 
-std::pair<std::string, std::size_t> wrapText(RenderContext* renderer, std::string_view text, float fontSize, float maxWidth,
-                                             std::size_t maxLines) {
+std::pair<std::string, std::size_t> wrapText(RenderContext* renderer, std::string_view text, float fontSize,
+                                             float maxWidth, std::size_t maxLines) {
   const std::string normalized = collapseWhitespace(text);
   if (renderer == nullptr || normalized.empty()) {
     return {normalized, normalized.empty() ? 0u : 1u};
@@ -207,9 +207,9 @@ void NotificationPopup::onNotificationEvent(const Notification& n, NotificationE
           cs.appNameLabel->setText(n.appName);
           cs.summaryLabel->setText(m_entries[i].wrappedSummary);
           cs.bodyLabel->setText(m_entries[i].wrappedBody);
-          cs.bodyLabel->setPosition(kCardInnerPad, kCardInnerPad + kMetaFontSize + kMetaGap +
-                                        static_cast<float>(m_entries[i].summaryLines) * kSummaryLineHeight +
-                                        kSummaryBodyGap);
+          cs.bodyLabel->setPosition(
+              kCardInnerPad, kCardInnerPad + kMetaFontSize + kMetaGap +
+                                 static_cast<float>(m_entries[i].summaryLines) * kSummaryLineHeight + kSummaryBodyGap);
 
           const float progressY = newHeight - kProgressHeight - kProgressBottomMargin;
           cs.progressBar->setPosition(kCardInnerPad, progressY);
@@ -220,8 +220,7 @@ void NotificationPopup::onNotificationEvent(const Notification& n, NotificationE
           }
           cs.progressBar->setProgress(1.0f);
           cs.countdownAnimId = inst->animations.animate(
-              1.0f, 0.0f, kPopupDurationMs, Easing::Linear,
-              [pb = cs.progressBar](float v) { pb->setProgress(v); },
+              1.0f, 0.0f, kPopupDurationMs, Easing::Linear, [pb = cs.progressBar](float v) { pb->setProgress(v); },
               [this, id = n.id]() { DeferredCall::callLater([this, id]() { removePopup(id); }); });
 
           // Flash
@@ -249,11 +248,11 @@ void NotificationPopup::addPopup(const Notification& n) {
     }
   }
 
-  std::size_t visibleCount = std::count_if(m_entries.begin(), m_entries.end(),
-                                                    [](const PopupEntry& entry) { return !entry.exiting; });
+  std::size_t visibleCount =
+      std::count_if(m_entries.begin(), m_entries.end(), [](const PopupEntry& entry) { return !entry.exiting; });
   while (visibleCount >= kMaxVisible) {
-    const auto it = std::find_if(m_entries.begin(), m_entries.end(),
-                                 [](const PopupEntry& entry) { return !entry.exiting; });
+    const auto it =
+        std::find_if(m_entries.begin(), m_entries.end(), [](const PopupEntry& entry) { return !entry.exiting; });
     if (it == m_entries.end()) {
       break;
     }
@@ -309,8 +308,9 @@ void NotificationPopup::dismissPopup(std::size_t index) {
 }
 
 void NotificationPopup::finishRemoval(uint32_t notificationId) {
-  const auto it = std::find_if(m_entries.begin(), m_entries.end(),
-                               [notificationId](const PopupEntry& entry) { return entry.notificationId == notificationId; });
+  const auto it = std::find_if(m_entries.begin(), m_entries.end(), [notificationId](const PopupEntry& entry) {
+    return entry.notificationId == notificationId;
+  });
   if (it == m_entries.end()) {
     return;
   }
@@ -387,8 +387,7 @@ void NotificationPopup::addCardToInstance(PopupInstance& inst, std::size_t entry
   // Countdown (only the first instance drives the timeout to avoid duplicate removals)
   bool isDriver = (m_instances.size() > 0 && m_instances[0].get() == &inst);
   cs.countdownAnimId = inst.animations.animate(
-      1.0f, 0.0f, kPopupDurationMs, Easing::Linear,
-      [pb = cs.progressBar](float v) { pb->setProgress(v); },
+      1.0f, 0.0f, kPopupDurationMs, Easing::Linear, [pb = cs.progressBar](float v) { pb->setProgress(v); },
       [this, id = entry.notificationId, isDriver]() {
         if (isDriver) {
           DeferredCall::callLater([this, id]() { removePopup(id); });
@@ -500,8 +499,8 @@ void NotificationPopup::updateEntryLayout(PopupEntry& entry) const {
   entry.bodyLines = bodyLines;
 
   const float contentHeight = kCardInnerPad + kMetaFontSize + kMetaGap +
-                              static_cast<float>(summaryLines) * kSummaryLineHeight +
-                              kSummaryBodyGap + static_cast<float>(bodyLines) * kBodyFontSize;
+                              static_cast<float>(summaryLines) * kSummaryLineHeight + kSummaryBodyGap +
+                              static_cast<float>(bodyLines) * kBodyFontSize;
   entry.cardHeight = std::max(static_cast<float>(kCardMinHeight),
                               contentHeight + kProgressTopGap + kProgressHeight + kProgressBottomMargin);
 }
@@ -648,7 +647,7 @@ Node* NotificationPopup::buildCard(const PopupEntry& entry, Label** outAppName, 
   body->setMaxWidth(innerWidth);
   body->measure(*m_renderContext);
   body->setPosition(kCardInnerPad, kCardInnerPad + kMetaFontSize + kMetaGap +
-                                    static_cast<float>(entry.summaryLines) * kSummaryLineHeight + kSummaryBodyGap);
+                                       static_cast<float>(entry.summaryLines) * kSummaryLineHeight + kSummaryBodyGap);
   *outBody = body.get();
   area->addChild(std::move(body));
 
@@ -692,6 +691,8 @@ bool NotificationPopup::onPointerEvent(const PointerEvent& event) {
                                             pressed);
         consumed = true;
       }
+      break;
+    case PointerEvent::Type::Axis:
       break;
     }
 

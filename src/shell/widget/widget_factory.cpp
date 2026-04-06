@@ -4,13 +4,13 @@
 #include "core/log.h"
 #include "dbus/tray/tray_service.h"
 #include "notification/notification_manager.h"
+#include "shell/widgets/battery_widget.h"
 #include "shell/widgets/clock_widget.h"
 #include "shell/widgets/notification_widget.h"
 #include "shell/widgets/spacer_widget.h"
+#include "shell/widgets/sysmon_widget.h"
 #include "shell/widgets/test_widget.h"
 #include "shell/widgets/tray_widget.h"
-#include "shell/widgets/battery_widget.h"
-#include "shell/widgets/sysmon_widget.h"
 #include "shell/widgets/volume_widget.h"
 #include "shell/widgets/workspaces_widget.h"
 #include "system/system_monitor_service.h"
@@ -19,8 +19,8 @@
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
                              NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                              UPowerService* upower, SystemMonitorService* sysmon)
-    : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray),
-      m_audio(audio), m_upower(upower), m_sysmon(sysmon) {}
+    : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
+      m_upower(upower), m_sysmon(sysmon) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
@@ -48,7 +48,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "notifications") {
-    return std::make_unique<NotificationWidget>(m_notifications);
+    std::int32_t scale = 1;
+    const auto* wlOutput = m_wayland.findOutputByWl(output);
+    if (wlOutput != nullptr) {
+      scale = wlOutput->scale;
+    }
+    return std::make_unique<NotificationWidget>(m_notifications, output, scale);
   }
 
   if (type == "tray") {
