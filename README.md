@@ -168,7 +168,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Bar completion and foundation
 
-- [ ] Volume OSD
+- [x] Volume OSD
 - [x] Notification: history panel
 
 ### Hardware and networking
@@ -184,7 +184,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] Keyboard layout switching
 - [ ] PipeWire audio spectrum
 - [ ] Clipboard manager
-- [ ] Host/distro detection
+- [x] Host/distro detection
 - [ ] Lock screen (ext-session-lock-v1)
 - [ ] Idle inhibitor (prevent sleep)
 - [ ] More compositors (Mango, Sway, Labwc)
@@ -210,7 +210,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Controls (`src/ui/controls/`)
 
-- [ ] Scroll view
+- [x] Scroll view
 - [ ] List view
 - [ ] Checkbox
 - [ ] Radio button

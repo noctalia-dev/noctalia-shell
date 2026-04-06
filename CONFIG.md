@@ -12,6 +12,7 @@ Changes are detected automatically via inotify — no restart required.
 - [Per-monitor overrides](#per-monitor-overrides)
 - [Widget definitions](#widget-definitions)
 - [Built-in widgets](#built-in-widgets)
+- [OSD](#osd)
 - [Wallpaper](#wallpaper)
 - [Full example](#full-example)
 
@@ -220,6 +221,17 @@ edge_smoothness     = 0.5       # 0.0 – 1.0
 
 ---
 
+## OSD
+
+```toml
+[osd]
+position = "top_right"   # top_right | top_left | top_center | bottom_right | bottom_left | bottom_center
+```
+
+The OSD currently powers the volume HUD and defaults to `top_right`.
+
+---
+
 ## Full example
 
 ```toml
@@ -257,6 +269,9 @@ end    = ["tray", "notifications", "volume", "battery", "clock"]
 match  = "DP-1"        # main 4K display — taller bar, show seconds
 height = 44
 end    = ["tray", "notifications", "volume", "battery", "clock-seconds"]
+
+[osd]
+position = "top_right"
 
 [bar.main.monitor.hdmi]
 match    = "HDMI-A-1"  # secondary 1080p — smaller, minimal widgets

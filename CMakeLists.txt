@@ -186,6 +186,7 @@ add_executable(noctalia
     src/main.cpp
     src/app/application.cpp
     src/app/main_loop.cpp
+    src/system/distro_info.cpp
     src/system/system_monitor_service.cpp
     src/debug/debug_service.cpp
     src/notification/notification_manager.cpp
@@ -241,6 +242,8 @@ add_executable(noctalia
     src/render/scene/input_area.cpp
     src/render/scene/input_dispatcher.cpp
     src/shell/notification/notification_popup.cpp
+    src/shell/osd/audio_osd.cpp
+    src/shell/osd/osd_overlay.cpp
     src/shell/tray/tray_menu.cpp
     src/shell/panel/panel_manager.cpp
     src/shell/panels/notification_history_panel.cpp
