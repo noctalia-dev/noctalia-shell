@@ -114,7 +114,7 @@ Singleton {
 
   Component.onCompleted: {
     Logger.i("Network", "Service started");
-    wifiInitTimer.running = true;
+    wifiInitTimer.restart();
 
     // Ensure initial detection if nmcli is already available at startup
     if (ProgramCheckerService.nmcliAvailable) {
