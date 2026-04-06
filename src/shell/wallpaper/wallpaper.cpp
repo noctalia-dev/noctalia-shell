@@ -335,7 +335,11 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
     aspectRatio = static_cast<float>(instance.surface->width()) / static_cast<float>(instance.surface->height());
   }
 
-  instance.transitionParams = randomizeParams(wpConfig.transition, wpConfig.edgeSmoothness, aspectRatio);
+  const auto& transitions = wpConfig.transitions;
+  const auto picked = transitions[static_cast<std::size_t>(
+      std::floor(randomFloat(0.0f, static_cast<float>(transitions.size()))))];
+  instance.activeTransition = picked;
+  instance.transitionParams = randomizeParams(picked, wpConfig.edgeSmoothness, aspectRatio);
   instance.transitioning = true;
   instance.transitionProgress = 0.0f;
 
@@ -370,6 +374,6 @@ void Wallpaper::updateRendererState(WallpaperInstance& instance) {
   renderer->setTransitionState(
       instance.currentTexture.id, instance.nextTexture.id, static_cast<float>(instance.currentTexture.width),
       static_cast<float>(instance.currentTexture.height), static_cast<float>(instance.nextTexture.width),
-      static_cast<float>(instance.nextTexture.height), instance.transitionProgress, wpConfig.transition,
+      static_cast<float>(instance.nextTexture.height), instance.transitionProgress, instance.activeTransition,
       wpConfig.fillMode, instance.transitionParams);
 }

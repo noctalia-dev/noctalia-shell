@@ -359,19 +359,31 @@ void ConfigService::loadFromFile(const std::string& path) {
       else if (*v == "repeat")
         wp.fillMode = WallpaperFillMode::Repeat;
     }
-    if (auto v = (*wpTbl)["transition"].value<std::string>()) {
-      if (*v == "fade")
-        wp.transition = WallpaperTransition::Fade;
-      else if (*v == "wipe")
-        wp.transition = WallpaperTransition::Wipe;
-      else if (*v == "disc")
-        wp.transition = WallpaperTransition::Disc;
-      else if (*v == "stripes")
-        wp.transition = WallpaperTransition::Stripes;
-      else if (*v == "pixelate")
-        wp.transition = WallpaperTransition::Pixelate;
-      else if (*v == "honeycomb")
-        wp.transition = WallpaperTransition::Honeycomb;
+    auto parseTransition = [](const std::string& s) -> std::optional<WallpaperTransition> {
+      if (s == "fade")
+        return WallpaperTransition::Fade;
+      if (s == "wipe")
+        return WallpaperTransition::Wipe;
+      if (s == "disc")
+        return WallpaperTransition::Disc;
+      if (s == "stripes")
+        return WallpaperTransition::Stripes;
+      if (s == "pixelate")
+        return WallpaperTransition::Pixelate;
+      if (s == "honeycomb")
+        return WallpaperTransition::Honeycomb;
+      return std::nullopt;
+    };
+    if (auto* arr = (*wpTbl)["transition"].as_array()) {
+      wp.transitions.clear();
+      for (const auto& item : *arr) {
+        if (auto s = item.value<std::string>()) {
+          if (auto t = parseTransition(*s))
+            wp.transitions.push_back(*t);
+        }
+      }
+      if (wp.transitions.empty())
+        wp.transitions.push_back(WallpaperTransition::Fade);
     }
     if (auto v = (*wpTbl)["transition_duration"].value<double>())
       wp.transitionDurationMs = static_cast<float>(*v);

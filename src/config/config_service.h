@@ -82,7 +82,9 @@ struct WallpaperMonitorOverride {
 struct WallpaperConfig {
   bool enabled = true;
   WallpaperFillMode fillMode = WallpaperFillMode::Crop;
-  WallpaperTransition transition = WallpaperTransition::Fade;
+  std::vector<WallpaperTransition> transitions = {WallpaperTransition::Fade,     WallpaperTransition::Wipe,
+                                                  WallpaperTransition::Disc,     WallpaperTransition::Stripes,
+                                                  WallpaperTransition::Pixelate, WallpaperTransition::Honeycomb};
   float transitionDurationMs = 1500.0f;
   float edgeSmoothness = 0.5f;
   std::vector<WallpaperMonitorOverride> monitorOverrides;
