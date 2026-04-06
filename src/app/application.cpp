@@ -266,41 +266,64 @@ void Application::initIpc() {
     kLog.warn("IPC disabled: could not bind socket");
   }
 
-  m_ipcService.registerHandler("reload-config", [this](const std::string&) -> std::string {
-    m_configService.forceReload();
-    return "ok\n";
-  });
-  m_ipcService.registerHandler("toggle-bar", [this](const std::string&) -> std::string {
-    m_bar.isVisible() ? m_bar.hide() : m_bar.show();
-    return "ok\n";
-  });
-  m_ipcService.registerHandler("show-bar", [this](const std::string&) -> std::string {
-    m_bar.show();
-    return "ok\n";
-  });
-  m_ipcService.registerHandler("hide-bar", [this](const std::string&) -> std::string {
-    m_bar.hide();
-    return "ok\n";
-  });
-  m_ipcService.registerHandler("toggle-panel", [this](const std::string& args) -> std::string {
-    if (args.empty()) {
-      return "error: toggle-panel requires a panel id\n";
-    }
-    m_panelManager.togglePanel(args);
-    return "ok\n";
-  });
-  m_ipcService.registerHandler("status", [this](const std::string&) -> std::string {
-    const bool panelOpen = m_panelManager.isOpen();
-    std::string json = "{\n";
-    json += "  \"barVisible\": ";
-    json += m_bar.isVisible() ? "true" : "false";
-    json += ",\n  \"panelOpen\": ";
-    json += panelOpen ? "true" : "false";
-    json += ",\n  \"activePanelId\": ";
-    json += panelOpen ? ("\"" + m_panelManager.activePanelId() + "\"") : "null";
-    json += "\n}\n";
-    return json;
-  });
+  m_ipcService.registerHandler(
+      "status",
+      [this](const std::string&) -> std::string {
+        const bool panelOpen = m_panelManager.isOpen();
+        std::string json = "{\n";
+        json += "  \"barVisible\": ";
+        json += m_bar.isVisible() ? "true" : "false";
+        json += ",\n  \"panelOpen\": ";
+        json += panelOpen ? "true" : "false";
+        json += ",\n  \"activePanelId\": ";
+        json += panelOpen ? ("\"" + m_panelManager.activePanelId() + "\"") : "null";
+        json += "\n}\n";
+        return json;
+      },
+      "status", "Print current state as JSON");
+
+  m_ipcService.registerHandler(
+      "reload-config",
+      [this](const std::string&) -> std::string {
+        m_configService.forceReload();
+        return "ok\n";
+      },
+      "reload-config", "Reload the config file");
+
+  m_ipcService.registerHandler(
+      "show-bar",
+      [this](const std::string&) -> std::string {
+        m_bar.show();
+        return "ok\n";
+      },
+      "show-bar", "Show the bar");
+
+  m_ipcService.registerHandler(
+      "hide-bar",
+      [this](const std::string&) -> std::string {
+        m_bar.hide();
+        return "ok\n";
+      },
+      "hide-bar", "Hide the bar");
+
+  m_ipcService.registerHandler(
+      "toggle-bar",
+      [this](const std::string&) -> std::string {
+        m_bar.isVisible() ? m_bar.hide() : m_bar.show();
+        return "ok\n";
+      },
+      "toggle-bar", "Toggle bar visibility");
+
+  m_ipcService.registerHandler(
+      "toggle-panel",
+      [this](const std::string& args) -> std::string {
+        if (args.empty()) {
+          return "error: toggle-panel requires a panel id\n";
+        }
+        m_panelManager.togglePanel(args);
+        return "ok\n";
+      },
+      "toggle-panel <id>", "Toggle a panel by id (e.g. control-center)");
 }
 
 std::vector<PollSource*> Application::buildPollSources() {

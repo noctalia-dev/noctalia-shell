@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 
@@ -69,8 +70,13 @@ bool IpcService::start() {
   return true;
 }
 
-void IpcService::registerHandler(const std::string& command, Handler handler) {
-  m_handlers[command] = std::move(handler);
+void IpcService::registerHandler(const std::string& command, Handler handler, std::string usage,
+                                 std::string description) {
+  // Remove existing entry for this command if re-registering
+  m_handlers.erase(
+      std::remove_if(m_handlers.begin(), m_handlers.end(), [&command](const auto& e) { return e.first == command; }),
+      m_handlers.end());
+  m_handlers.push_back({command, {std::move(handler), std::move(usage), std::move(description)}});
 }
 
 void IpcService::dispatch() {
@@ -128,15 +134,45 @@ void IpcService::handleConnection(int connFd) {
     args = line.substr(spacePos + 1);
   }
 
-  const auto it = m_handlers.find(command);
+  // Built-in --help
+  if (command == "--help" || command == "-h") {
+    const std::string response = buildHelp();
+    ::send(connFd, response.data(), response.size(), MSG_NOSIGNAL);
+    return;
+  }
+
+  const auto it =
+      std::find_if(m_handlers.begin(), m_handlers.end(), [&command](const auto& e) { return e.first == command; });
   std::string response;
   if (it == m_handlers.end()) {
-    response = "error: unknown command\n";
+    response = "error: unknown command (try: noctalia msg --help)\n";
   } else {
-    response = it->second(args);
+    response = it->second.fn(args);
   }
 
   ::send(connFd, response.data(), response.size(), MSG_NOSIGNAL);
+}
+
+std::string IpcService::buildHelp() const {
+  // Find the longest usage string for alignment
+  std::size_t maxUsage = 0;
+  for (const auto& [cmd, entry] : m_handlers) {
+    const auto& u = entry.usage.empty() ? cmd : entry.usage;
+    maxUsage = std::max(maxUsage, u.size());
+  }
+
+  std::string out = "Usage: noctalia msg <command> [args]\n\nCommands:\n";
+  for (const auto& [cmd, entry] : m_handlers) {
+    const auto& u = entry.usage.empty() ? cmd : entry.usage;
+    out += "  ";
+    out += u;
+    if (!entry.description.empty()) {
+      out += std::string(maxUsage - u.size() + 2, ' ');
+      out += entry.description;
+    }
+    out += '\n';
+  }
+  return out;
 }
 
 std::string IpcService::resolveSocketPath() {

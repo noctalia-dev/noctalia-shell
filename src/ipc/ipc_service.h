@@ -2,7 +2,7 @@
 
 #include <functional>
 #include <string>
-#include <unordered_map>
+#include <vector>
 
 class IpcService {
 public:
@@ -28,13 +28,24 @@ public:
 
   // Register a handler for a command name. The handler receives everything after
   // the first space as `args`. Must return a string ending with '\n'.
-  void registerHandler(const std::string& command, Handler handler);
+  // `usage` describes the command signature, e.g. "toggle-panel <id>".
+  // `description` is a short human-readable explanation shown in --help.
+  void registerHandler(const std::string& command, Handler handler, std::string usage = {},
+                       std::string description = {});
 
 private:
+  struct HandlerEntry {
+    Handler fn;
+    std::string usage;
+    std::string description;
+  };
+
   void handleConnection(int connFd);
+  std::string buildHelp() const;
   [[nodiscard]] static std::string resolveSocketPath();
 
   int m_listenFd = -1;
   std::string m_socketPath;
-  std::unordered_map<std::string, Handler> m_handlers;
+  // Ordered so --help output is stable
+  std::vector<std::pair<std::string, HandlerEntry>> m_handlers;
 };

@@ -12,27 +12,6 @@
 
 int main(int argc, char* argv[]) {
   if (argc >= 2 && std::strcmp(argv[1], "msg") == 0) {
-    // noctalia msg --help
-    if (argc == 3 && (std::strcmp(argv[2], "--help") == 0 || std::strcmp(argv[2], "-h") == 0)) {
-      std::puts("Usage: noctalia msg <command> [args]\n"
-                "\n"
-                "Send a command to the running noctalia instance.\n"
-                "\n"
-                "Commands:\n"
-                "  status                  Print current state as JSON\n"
-                "  reload-config           Reload the config file\n"
-                "  show-bar                Show the bar\n"
-                "  hide-bar                Hide the bar\n"
-                "  toggle-bar              Toggle bar visibility\n"
-                "  toggle-panel <id>       Toggle a panel by id (e.g. control-center)\n"
-                "\n"
-                "Examples:\n"
-                "  noctalia msg status\n"
-                "  noctalia msg toggle-panel control-center\n"
-                "  noctalia msg hide-bar");
-      return 0;
-    }
-
     // noctalia msg <command> [args...]
     if (argc < 3) {
       std::fputs("error: msg requires a command (try: noctalia msg --help)\n", stderr);
