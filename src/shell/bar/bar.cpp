@@ -81,6 +81,12 @@ void Bar::reload() {
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;
+
+  // Drain any pending Wayland events for the just-destroyed surfaces before
+  // creating new ones. Without this, the roundtrip inside LayerSurface::initialize
+  // reads stale closures for dead proxies, which libwayland drops without freeing.
+  wl_display_roundtrip(m_wayland->display());
+
   syncInstances();
 }
 

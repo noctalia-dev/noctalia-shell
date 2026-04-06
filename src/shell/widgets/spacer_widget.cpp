@@ -11,5 +11,7 @@ void SpacerWidget::create(Renderer& /*renderer*/) {
 }
 
 void SpacerWidget::layout(Renderer& /*renderer*/, float /*containerWidth*/, float containerHeight) {
-  m_root->setSize(m_fixedWidth, containerHeight);
+  if (root() != nullptr) {
+    root()->setSize(m_fixedWidth, containerHeight);
+  }
 }

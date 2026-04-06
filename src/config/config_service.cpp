@@ -156,17 +156,16 @@ void ConfigService::loadFromFile(const std::string& path) {
     return;
   }
 
-  // Parse [[bar]] array
-  if (auto* barArray = tbl["bar"].as_array()) {
-    for (const auto& barNode : *barArray) {
+  // Parse [bar.*] named subtables
+  if (auto* barTblMap = tbl["bar"].as_table()) {
+    for (const auto& [barName, barNode] : *barTblMap) {
       auto* barTbl = barNode.as_table();
       if (barTbl == nullptr) {
         continue;
       }
 
       BarConfig bar;
-      if (auto v = (*barTbl)["name"].value<std::string>())
-        bar.name = *v;
+      bar.name = std::string(barName.str());
       if (auto v = (*barTbl)["position"].value<std::string>())
         bar.position = *v;
       if (auto v = (*barTbl)["enabled"].value<bool>())
@@ -194,9 +193,9 @@ void ConfigService::loadFromFile(const std::string& path) {
       if (auto* n = (*barTbl)["end"].as_array())
         bar.endWidgets = readStringArray(*n);
 
-      // Parse [[bar.monitor]] overrides
-      if (auto* monArray = (*barTbl)["monitor"].as_array()) {
-        for (const auto& monNode : *monArray) {
+      // Parse [bar.<name>.monitor.*] overrides — insertion order preserved by toml++
+      if (auto* monTblMap = (*barTbl)["monitor"].as_table()) {
+        for (const auto& [monName, monNode] : *monTblMap) {
           auto* monTbl = monNode.as_table();
           if (monTbl == nullptr) {
             continue;
@@ -206,7 +205,7 @@ void ConfigService::loadFromFile(const std::string& path) {
           if (auto v = (*monTbl)["match"].value<std::string>()) {
             ovr.match = *v;
           } else {
-            continue; // match is required
+            ovr.match = std::string(monName.str()); // key is the match if not explicit
           }
 
           if (auto v = (*monTbl)["enabled"].value<bool>())
@@ -232,10 +231,37 @@ void ConfigService::loadFromFile(const std::string& path) {
     }
   }
 
-  // Parse [clock]
-  if (auto* clockTbl = tbl["clock"].as_table()) {
-    if (auto v = (*clockTbl)["format"].value<std::string>()) {
-      m_config.clock.format = *v;
+  // Parse [widget.*] — named widget instances with per-widget settings
+  if (auto* widgetTbl = tbl["widget"].as_table()) {
+    for (const auto& [name, node] : *widgetTbl) {
+      auto* entryTbl = node.as_table();
+      if (entryTbl == nullptr) {
+        continue;
+      }
+
+      WidgetConfig wc;
+      if (auto v = (*entryTbl)["type"].value<std::string>()) {
+        wc.type = *v;
+      } else {
+        wc.type = std::string(name.str());
+      }
+
+      for (const auto& [key, val] : *entryTbl) {
+        if (key == "type") {
+          continue;
+        }
+        if (auto* s = val.as_string()) {
+          wc.settings[std::string(key.str())] = s->get();
+        } else if (auto* i = val.as_integer()) {
+          wc.settings[std::string(key.str())] = i->get();
+        } else if (auto* f = val.as_floating_point()) {
+          wc.settings[std::string(key.str())] = f->get();
+        } else if (auto* b = val.as_boolean()) {
+          wc.settings[std::string(key.str())] = b->get();
+        }
+      }
+
+      m_config.widgets[std::string(name.str())] = std::move(wc);
     }
   }
 
@@ -313,4 +339,52 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
   }
 
   return resolved;
+}
+
+std::string WidgetConfig::getString(const std::string& key, const std::string& fallback) const {
+  auto it = settings.find(key);
+  if (it == settings.end()) {
+    return fallback;
+  }
+  if (const auto* v = std::get_if<std::string>(&it->second)) {
+    return *v;
+  }
+  return fallback;
+}
+
+std::int64_t WidgetConfig::getInt(const std::string& key, std::int64_t fallback) const {
+  auto it = settings.find(key);
+  if (it == settings.end()) {
+    return fallback;
+  }
+  if (const auto* v = std::get_if<std::int64_t>(&it->second)) {
+    return *v;
+  }
+  return fallback;
+}
+
+double WidgetConfig::getDouble(const std::string& key, double fallback) const {
+  auto it = settings.find(key);
+  if (it == settings.end()) {
+    return fallback;
+  }
+  if (const auto* v = std::get_if<double>(&it->second)) {
+    return *v;
+  }
+  // Allow int → double promotion
+  if (const auto* v = std::get_if<std::int64_t>(&it->second)) {
+    return static_cast<double>(*v);
+  }
+  return fallback;
+}
+
+bool WidgetConfig::getBool(const std::string& key, bool fallback) const {
+  auto it = settings.find(key);
+  if (it == settings.end()) {
+    return fallback;
+  }
+  if (const auto* v = std::get_if<bool>(&it->second)) {
+    return *v;
+  }
+  return fallback;
 }

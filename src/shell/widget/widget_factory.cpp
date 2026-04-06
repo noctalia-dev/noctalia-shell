@@ -21,35 +21,47 @@ WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, cons
       m_audio(audio), m_upower(upower) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output) const {
-  if (name == "clock") {
+  // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
+  // Otherwise treat the name itself as the widget type with default settings.
+  const WidgetConfig* wc = nullptr;
+  std::string type = name;
+
+  auto it = m_config.widgets.find(name);
+  if (it != m_config.widgets.end()) {
+    wc = &it->second;
+    type = it->second.type;
+  }
+
+  if (type == "clock") {
     if (m_time == nullptr) {
       logWarn("widget factory: clock requires TimeService");
       return nullptr;
     }
-    return std::make_unique<ClockWidget>(*m_time, m_config.clock.format);
+    std::string format = wc != nullptr ? wc->getString("format", "{:%H:%M}") : std::string("{:%H:%M}");
+    return std::make_unique<ClockWidget>(*m_time, std::move(format));
   }
 
-  if (name == "workspaces") {
+  if (type == "workspaces") {
     return std::make_unique<WorkspacesWidget>(m_wayland, output);
   }
 
-  if (name == "notifications") {
+  if (type == "notifications") {
     return std::make_unique<NotificationWidget>(m_notifications);
   }
 
-  if (name == "tray") {
+  if (type == "tray") {
     return std::make_unique<TrayWidget>(m_tray);
   }
 
-  if (name == "volume") {
+  if (type == "volume") {
     return std::make_unique<VolumeWidget>(m_audio);
   }
 
-  if (name == "battery") {
+  if (type == "battery") {
     return std::make_unique<BatteryWidget>(m_upower);
   }
 
-  if (name == "test") {
+  if (type == "test") {
     std::int32_t scale = 1;
     const auto* wlOutput = m_wayland.findOutputByWl(output);
     if (wlOutput != nullptr) {
@@ -58,8 +70,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     return std::make_unique<TestWidget>(output, scale);
   }
 
-  if (name == "spacer") {
-    return std::make_unique<SpacerWidget>(8.0f);
+  if (type == "spacer") {
+    auto width = static_cast<float>(wc != nullptr ? wc->getDouble("width", 8.0) : 8.0);
+    return std::make_unique<SpacerWidget>(width);
   }
 
   logWarn("widget factory: unknown widget \"{}\"", name);

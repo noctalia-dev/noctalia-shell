@@ -6,6 +6,8 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <unordered_map>
+#include <variant>
 #include <vector>
 
 struct WaylandOutput;
@@ -40,8 +42,16 @@ struct BarConfig {
   std::vector<BarMonitorOverride> monitorOverrides;
 };
 
-struct ClockConfig {
-  std::string format = "{:%H:%M}";
+using WidgetSettingValue = std::variant<bool, std::int64_t, double, std::string>;
+
+struct WidgetConfig {
+  std::string type; // widget type (e.g. "clock", "spacer"); defaults to the entry name
+  std::unordered_map<std::string, WidgetSettingValue> settings;
+
+  [[nodiscard]] std::string getString(const std::string& key, const std::string& fallback = {}) const;
+  [[nodiscard]] std::int64_t getInt(const std::string& key, std::int64_t fallback = 0) const;
+  [[nodiscard]] double getDouble(const std::string& key, double fallback = 0.0) const;
+  [[nodiscard]] bool getBool(const std::string& key, bool fallback = false) const;
 };
 
 enum class WallpaperFillMode : std::uint8_t {
@@ -71,7 +81,7 @@ struct WallpaperConfig {
 
 struct Config {
   std::vector<BarConfig> bars;
-  ClockConfig clock;
+  std::unordered_map<std::string, WidgetConfig> widgets;
   WallpaperConfig wallpaper;
 };
 
