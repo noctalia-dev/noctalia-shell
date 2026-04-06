@@ -203,7 +203,19 @@ void WaylandConnection::handleGlobal(void* data, wl_registry* registry, std::uin
 void WaylandConnection::handleGlobalRemove(void* data, wl_registry* /*registry*/, std::uint32_t name) {
   auto* self = static_cast<WaylandConnection*>(data);
   const auto sizeBefore = self->m_outputs.size();
-  std::erase_if(self->m_outputs, [name](const WaylandOutput& output) { return output.name == name; });
+  std::erase_if(self->m_outputs, [name](const WaylandOutput& output) {
+    if (output.name != name) {
+      return false;
+    }
+    if (output.output != nullptr) {
+      if (wl_output_get_version(output.output) >= WL_OUTPUT_RELEASE_SINCE_VERSION) {
+        wl_output_release(output.output);
+      } else {
+        wl_output_destroy(output.output);
+      }
+    }
+    return true;
+  });
   if (self->m_outputs.size() != sizeBefore && self->m_outputChangeCallback) {
     self->m_outputChangeCallback();
   }

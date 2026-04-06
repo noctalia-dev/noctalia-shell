@@ -10,7 +10,7 @@ bool WallpaperSurface::createWlSurface() {
     return false;
   }
 
-  m_wallpaperRenderer.bind(m_connection.display(), m_surface);
+  m_wallpaperRenderer.bind(m_connection.display(), m_surface, m_shareContext);
   return true;
 }
 

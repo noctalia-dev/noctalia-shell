@@ -53,6 +53,17 @@ TransitionParams randomizeParams(WallpaperTransition type, float smoothness, flo
 
 Wallpaper::Wallpaper() = default;
 
+Wallpaper::~Wallpaper() {
+  // Release all instance textures while contexts are still alive, then clean
+  // up the shared TextureManager (also needs a current context).
+  for (auto& inst : m_instances) {
+    releaseInstanceTextures(*inst);
+  }
+  makeAnyContextCurrent();
+  m_sharedTexManager.cleanup();
+  // m_instances and EGL contexts destroyed after this point
+}
+
 bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, StateService* state) {
   m_wayland = &wayland;
   m_config = config;
@@ -64,9 +75,27 @@ bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, St
   }
 
   m_state->setWallpaperChangeCallback([this]() { onStateChange(); });
+  m_config->addReloadCallback([this]() { reload(); });
 
   syncInstances();
   return true;
+}
+
+void Wallpaper::reload() {
+  logInfo("wallpaper: reloading config");
+
+  for (auto& inst : m_instances) {
+    releaseInstanceTextures(*inst);
+  }
+  makeAnyContextCurrent();
+  m_sharedTexManager.cleanup();
+  m_textureCache.clear();
+  m_instances.clear();
+  m_shareContext = EGL_NO_CONTEXT;
+
+  if (m_config->config().wallpaper.enabled) {
+    syncInstances();
+  }
 }
 
 void Wallpaper::onOutputChange() {
@@ -103,11 +132,12 @@ void Wallpaper::syncInstances() {
   const auto& outputs = m_wayland->outputs();
 
   // Remove instances for outputs that no longer exist
-  std::erase_if(m_instances, [&outputs](const auto& inst) {
+  std::erase_if(m_instances, [&](const auto& inst) {
     bool found =
         std::any_of(outputs.begin(), outputs.end(), [&inst](const auto& out) { return out.name == inst->outputName; });
     if (!found) {
       logInfo("wallpaper: removing instance for output {}", inst->outputName);
+      releaseInstanceTextures(*inst);
     }
     return !found;
   });
@@ -116,9 +146,26 @@ void Wallpaper::syncInstances() {
   for (const auto& output : outputs) {
     bool exists = std::any_of(m_instances.begin(), m_instances.end(),
                               [&output](const auto& inst) { return inst->outputName == output.name; });
-    if (!exists) {
-      createInstance(output);
+    if (exists) {
+      continue;
     }
+
+    bool enabled = true;
+    for (const auto& ovr : m_config->config().wallpaper.monitorOverrides) {
+      const auto& match = ovr.match;
+      bool hit = (!output.connectorName.empty() && match == output.connectorName) ||
+                 (!output.description.empty() && output.description.find(match) != std::string::npos);
+      if (hit && ovr.enabled) {
+        enabled = *ovr.enabled;
+        break;
+      }
+    }
+    if (!enabled) {
+      logInfo("wallpaper: skipping {} ({}) — disabled by monitor override", output.connectorName, output.description);
+      continue;
+    }
+
+    createInstance(output);
   }
 }
 
@@ -142,6 +189,7 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
   };
 
   instance->surface = std::make_unique<WallpaperSurface>(*m_wayland, std::move(surfaceConfig));
+  instance->surface->setShareContext(m_shareContext);
 
   auto* inst = instance.get();
   instance->surface->setConfigureCallback(
@@ -154,7 +202,6 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
 
   instance->surface->setAnimationManager(&instance->animations);
 
-  // Set an update callback so renderer state is refreshed each frame
   instance->surface->setUpdateCallback([this, inst]() { updateRendererState(*inst); });
 
   if (!instance->surface->initialize(output.output, output.scale)) {
@@ -162,17 +209,81 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
     return;
   }
 
+  // After the first successful init, capture the EGL context as the share root
+  // for all subsequent renderers.
+  if (m_shareContext == EGL_NO_CONTEXT) {
+    m_shareContext = instance->surface->wallpaperRenderer()->eglContext();
+  }
+
   m_instances.push_back(std::move(instance));
 }
 
-void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& path) {
-  auto* renderer = instance.surface->wallpaperRenderer();
-  if (renderer == nullptr) {
+// ── Shared texture cache ──────────────────────────────────────────────────────
+
+void Wallpaper::makeAnyContextCurrent() {
+  for (const auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      auto* renderer = inst->surface->wallpaperRenderer();
+      if (renderer != nullptr) {
+        renderer->makeCurrent();
+        return;
+      }
+    }
+  }
+}
+
+TextureHandle Wallpaper::acquireTexture(const std::string& path) {
+  auto it = m_textureCache.find(path);
+  if (it != m_textureCache.end()) {
+    ++it->second.refCount;
+    logInfo("wallpaper: texture cache hit for {} (refCount={})", path, it->second.refCount);
+    return it->second.handle;
+  }
+
+  // Upload into the shared context — caller is responsible for making a
+  // context current before calling acquireTexture.
+  auto handle = m_sharedTexManager.loadFromFile(path);
+  if (handle.id == 0) {
+    return handle;
+  }
+
+  m_textureCache[path] = CachedTexture{.handle = handle, .refCount = 1};
+  logInfo("wallpaper: texture uploaded and cached for {}", path);
+  return handle;
+}
+
+void Wallpaper::releaseTexture(TextureHandle& handle, const std::string& path) {
+  if (handle.id == 0 || path.empty()) {
+    handle = {};
     return;
   }
 
-  auto& texMgr = renderer->textureManager();
-  auto newTex = texMgr.loadFromFile(path);
+  auto it = m_textureCache.find(path);
+  if (it == m_textureCache.end()) {
+    handle = {};
+    return;
+  }
+
+  --it->second.refCount;
+  if (it->second.refCount <= 0) {
+    makeAnyContextCurrent();
+    m_sharedTexManager.unload(it->second.handle);
+    m_textureCache.erase(it);
+    logInfo("wallpaper: texture evicted from cache for {}", path);
+  }
+
+  handle = {};
+}
+
+void Wallpaper::releaseInstanceTextures(WallpaperInstance& inst) {
+  releaseTexture(inst.currentTexture, inst.currentPath);
+  releaseTexture(inst.nextTexture, inst.pendingPath);
+}
+
+// ── Wallpaper loading & transitions ──────────────────────────────────────────
+
+void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& path) {
+  auto newTex = acquireTexture(path);
   if (newTex.id == 0) {
     logWarn("wallpaper: failed to load {}", path);
     return;
@@ -199,12 +310,9 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
   // Cancel any in-progress transition
   if (instance.transitioning) {
     instance.animations.cancel(0);
-    // Commit the pending state
-    auto* renderer = instance.surface->wallpaperRenderer();
-    if (renderer != nullptr && instance.nextTexture.id != 0) {
-      if (instance.currentTexture.id != 0) {
-        renderer->textureManager().unload(instance.currentTexture);
-      }
+    // Commit the pending state — release old current, promote next to current
+    if (instance.nextTexture.id != 0) {
+      releaseTexture(instance.currentTexture, instance.currentPath);
       instance.currentTexture = instance.nextTexture;
       instance.nextTexture = {};
       instance.currentPath = instance.pendingPath;
@@ -215,10 +323,8 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
 
   // Re-load pending into nextTexture if we just committed it above
   if (instance.nextTexture.id == 0 && !instance.pendingPath.empty()) {
-    auto* renderer = instance.surface->wallpaperRenderer();
-    if (renderer == nullptr)
-      return;
-    auto tex = renderer->textureManager().loadFromFile(instance.pendingPath);
+    makeAnyContextCurrent();
+    auto tex = acquireTexture(instance.pendingPath);
     if (tex.id == 0)
       return;
     instance.nextTexture = tex;
@@ -238,11 +344,8 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
       0.0f, 1.0f, wpConfig.transitionDurationMs, Easing::EaseInOutCubic,
       [inst](float v) { inst->transitionProgress = v; },
       [this, inst]() {
-        // Transition complete — swap textures
-        auto* renderer = inst->surface->wallpaperRenderer();
-        if (renderer != nullptr && inst->currentTexture.id != 0) {
-          renderer->textureManager().unload(inst->currentTexture);
-        }
+        // Transition complete — release old current, promote next to current
+        releaseTexture(inst->currentTexture, inst->currentPath);
         inst->currentTexture = inst->nextTexture;
         inst->nextTexture = {};
         inst->currentPath = inst->pendingPath;

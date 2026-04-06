@@ -80,7 +80,7 @@ ConfigService::~ConfigService() {
 
 // ── Public interface ─────────────────────────────────────────────────────────
 
-void ConfigService::setReloadCallback(ReloadCallback callback) { m_reloadCallback = std::move(callback); }
+void ConfigService::addReloadCallback(ReloadCallback callback) { m_reloadCallbacks.push_back(std::move(callback)); }
 
 void ConfigService::checkReload() {
   if (m_inotifyFd < 0) {
@@ -121,8 +121,8 @@ void ConfigService::checkReload() {
     m_config.bars.push_back(BarConfig{});
   }
 
-  if (m_reloadCallback) {
-    m_reloadCallback();
+  for (const auto& cb : m_reloadCallbacks) {
+    cb();
   }
 }
 
@@ -377,6 +377,23 @@ void ConfigService::loadFromFile(const std::string& path) {
       wp.transitionDurationMs = static_cast<float>(*v);
     if (auto v = (*wpTbl)["edge_smoothness"].value<double>())
       wp.edgeSmoothness = static_cast<float>(*v);
+
+    if (auto* monTblMap = (*wpTbl)["monitor"].as_table()) {
+      for (const auto& [monName, monNode] : *monTblMap) {
+        auto* monTbl = monNode.as_table();
+        if (monTbl == nullptr) {
+          continue;
+        }
+        WallpaperMonitorOverride ovr;
+        if (auto v = (*monTbl)["match"].value<std::string>())
+          ovr.match = *v;
+        else
+          ovr.match = std::string(monName.str());
+        if (auto v = (*monTbl)["enabled"].value<bool>())
+          ovr.enabled = *v;
+        wp.monitorOverrides.push_back(std::move(ovr));
+      }
+    }
   }
 
   if (m_config.bars.empty()) {
