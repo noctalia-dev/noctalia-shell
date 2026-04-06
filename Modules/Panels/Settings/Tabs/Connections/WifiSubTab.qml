@@ -336,11 +336,11 @@ Item {
         spacing: Style.marginM
 
         NToggle {
+          visible: NetworkService.wifiAvailable && BluetoothService.bluetoothAvailable
           label: I18n.tr("toast.airplane-mode.title")
           description: I18n.tr("toast.airplane-mode.description")
           icon: NetworkService.airplaneModeEnabled ? "plane" : "plane-off"
           checked: NetworkService.airplaneModeEnabled
-          enabled: NetworkService.wifiAvailable && BluetoothService.bluetoothAvailable
           onToggled: checked => NetworkService.setAirplaneMode(checked)
         }
       }
