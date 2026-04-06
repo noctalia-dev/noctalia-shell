@@ -61,6 +61,7 @@ Singleton {
     "0x2786": "GeForce RTX 4070",
     "0x2803": "GeForce RTX 4060 Ti",
     "0x2882": "GeForce RTX 4060",
+    "0x28a1": "GeForce RTX 4050 Laptop GPU",
     // RTX 30 series (Ampere)
     "0x2204": "GeForce RTX 3090",
     "0x2206": "GeForce RTX 3080",
