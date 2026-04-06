@@ -168,22 +168,14 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Bar completion and foundation
 
-- [x] System tray
-- [~] Keyboard Input
-- [x] Audio service (Pipewire)
 - [ ] Volume OSD
-- [x] Notification: indicator
-- [x] Notification: popup
-- [] Notification: history panel
+- [ ] Notification: history panel
 
 ### Hardware and networking
 
-- [ ] Battery service (UPower via DBus)
-- [x] Power profiles (power-profiles-daemon via DBus)
 - [ ] Brightness control + OSD
 - [ ] Network service (NetworkManager via DBus)
 - [ ] Bluetooth service (Bluez via DBus)
-- [x] System stats (CPU, RAM, temperature)
 
 ### Desktop shell
 
@@ -218,14 +210,6 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Controls (`src/ui/controls/`)
 
-- [x] Toggle
-- [x] Button
-- [x] IconButton
-- [x] Slider
-- [X] Select
-- [x] Spinner
-- [x] Input
-- [x] Progress bar
 - [ ] Scroll view
 - [ ] List view
 - [ ] Checkbox
@@ -238,9 +222,6 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 ### Widgets
 
 - [~] Tray
-- [ ] Volume
-- [x] Notification button
-- [ ] Battery
 - [ ] Network
 - [ ] Bluetooth
 - [ ] Brightness
