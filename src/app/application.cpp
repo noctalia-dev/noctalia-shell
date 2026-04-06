@@ -4,6 +4,7 @@
 #include "core/log.h"
 #include "shell/panels/notification_history_panel.h"
 #include "shell/panels/test_panel.h"
+#include "system/distro_info.h"
 
 #include <chrono>
 #include <cmath>
@@ -92,6 +93,15 @@ void Application::run() {
 
   // Initialize wallpaper first (background layer)
   m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
+
+  if (const auto distro = DistroDetector::detect(); distro.has_value()) {
+    const auto& label = !distro->prettyName.empty() ? distro->prettyName
+                        : !distro->name.empty()     ? distro->name
+                                                    : distro->id;
+    logInfo("distro: {}", label);
+  } else {
+    logInfo("distro: unknown");
+  }
 
   try {
     m_systemMonitor = std::make_unique<SystemMonitorService>();

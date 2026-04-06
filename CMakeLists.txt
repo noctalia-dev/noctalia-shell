@@ -186,6 +186,7 @@ add_executable(noctalia
     src/main.cpp
     src/app/application.cpp
     src/app/main_loop.cpp
+    src/system/distro_info.cpp
     src/system/system_monitor_service.cpp
     src/debug/debug_service.cpp
     src/notification/notification_manager.cpp
