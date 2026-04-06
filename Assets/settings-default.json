@@ -70,7 +70,6 @@
       ]
     },
     "mouseWheelAction": "none",
-    "reverseScroll": false,
     "mouseWheelWrap": true,
     "middleClickAction": "none",
     "middleClickFollowMouse": false,

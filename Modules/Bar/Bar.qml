@@ -460,7 +460,7 @@ Item {
             var step = 120;
 
             if (bar.barWheelAction === "volume") {
-              if (Settings.data.bar.reverseScroll)
+              if (Settings.data.general.reverseScroll)
                 delta *= -1;
 
               bar.barWheelAccumulatedDelta += delta;
@@ -482,7 +482,7 @@ Item {
             bar.barWheelAccumulatedDelta += delta;
             if (Math.abs(bar.barWheelAccumulatedDelta) >= step) {
               var direction = bar.barWheelAccumulatedDelta > 0 ? -1 : 1;
-              if (Settings.data.bar.reverseScroll)
+              if (Settings.data.general.reverseScroll)
                 direction *= -1;
               if (bar.barWheelAction === "workspace") {
                 bar.switchWorkspaceByOffset(direction);

@@ -257,7 +257,6 @@ Singleton {
         ]
       }
       property string mouseWheelAction: "none"
-      property bool reverseScroll: false
       property bool mouseWheelWrap: true
       property string middleClickAction: "none"
       property bool middleClickFollowMouse: false

@@ -48,16 +48,6 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("panels.general.reverse-scrolling-label")
-    description: I18n.tr("panels.general.reverse-scrolling-description")
-    checked: Settings.data.bar.reverseScroll
-    defaultValue: Settings.getDefaultValue("bar.reverseScroll")
-    onToggled: checked => Settings.data.bar.reverseScroll = checked
-    visible: Settings.data.bar.mouseWheelAction !== "none"
-  }
-
-  NToggle {
-    Layout.fillWidth: true
     label: I18n.tr("panels.bar.behavior-wheel-wrap-label")
     description: I18n.tr("panels.bar.behavior-wheel-wrap-description")
     checked: Settings.data.bar.mouseWheelWrap
