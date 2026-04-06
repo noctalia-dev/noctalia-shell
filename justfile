@@ -17,7 +17,7 @@ run m=mode:
 
 format:
     clang-format -i src/**/*.cpp src/**/*.h
-    find src -name '*.cpp' -o -name '*.h' | xargs sed -i 's/[[:space:]]*$//'
+    find src \( -name '*.cpp' -o -name '*.h' \) | xargs grep -rlP '\s+$' | xargs -r sed -i 's/[[:space:]]*$//'
 
 clean m=mode:
     rm -rf build-{{m}}
