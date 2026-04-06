@@ -74,7 +74,7 @@ just build
 
 # Optimized release (-O3, LTO, native)
 just configure release
-just build
+just build release
 
 # Clean rebuild
 just rebuild          # debug
@@ -169,7 +169,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 ### Bar completion and foundation
 
 - [ ] Volume OSD
-- [ ] Notification: history panel
+- [x] Notification: history panel
 
 ### Hardware and networking
 
