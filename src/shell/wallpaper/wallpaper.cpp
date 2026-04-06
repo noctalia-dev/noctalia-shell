@@ -48,6 +48,8 @@ TransitionParams randomizeParams(WallpaperTransition type, float smoothness, flo
   return params;
 }
 
+constexpr Logger kLog("wallpaper");
+
 } // namespace
 
 Wallpaper::Wallpaper() = default;
@@ -69,7 +71,7 @@ bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, St
   m_state = state;
 
   if (!m_config->config().wallpaper.enabled) {
-    logInfo("wallpaper: disabled in config");
+    kLog.info("disabled in config");
     return true;
   }
 
@@ -81,7 +83,7 @@ bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, St
 }
 
 void Wallpaper::reload() {
-  logInfo("wallpaper: reloading config");
+  kLog.info("reloading config");
 
   const bool nowEnabled = m_config->config().wallpaper.enabled;
 
@@ -119,7 +121,7 @@ void Wallpaper::onOutputChange() {
 }
 
 void Wallpaper::onStateChange() {
-  logInfo("wallpaper: state file changed, checking for updates");
+  kLog.info("state file changed, checking for updates");
 
   for (auto& inst : m_instances) {
     auto newPath = m_state->getWallpaperPath(inst->connectorName);
@@ -127,7 +129,7 @@ void Wallpaper::onStateChange() {
       continue;
     }
 
-    logInfo("wallpaper: changing {} → {}", inst->connectorName, newPath);
+    kLog.info("changing {} → {}", inst->connectorName, newPath);
     inst->pendingPath = newPath;
 
     if (inst->surface == nullptr || inst->surface->wallpaperRenderer() == nullptr) {
@@ -149,7 +151,7 @@ void Wallpaper::syncInstances() {
     bool found =
         std::any_of(outputs.begin(), outputs.end(), [&inst](const auto& out) { return out.name == inst->outputName; });
     if (!found) {
-      logInfo("wallpaper: removing instance for output {}", inst->outputName);
+      kLog.info("removing instance for output {}", inst->outputName);
       releaseInstanceTextures(*inst);
     }
     return !found;
@@ -174,7 +176,7 @@ void Wallpaper::syncInstances() {
       }
     }
     if (!enabled) {
-      logInfo("wallpaper: skipping {} ({}) — disabled by monitor override", output.connectorName, output.description);
+      kLog.info("skipping {} ({}) — disabled by monitor override", output.connectorName, output.description);
       continue;
     }
 
@@ -184,7 +186,7 @@ void Wallpaper::syncInstances() {
 
 void Wallpaper::createInstance(const WaylandOutput& output) {
   auto wallpaperPath = m_state->getWallpaperPath(output.connectorName);
-  logInfo("wallpaper: creating on {} ({}), path={}", output.connectorName, output.description, wallpaperPath);
+  kLog.info("creating on {} ({}), path={}", output.connectorName, output.description, wallpaperPath);
 
   auto instance = std::make_unique<WallpaperInstance>();
   instance->outputName = output.name;
@@ -218,7 +220,7 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
   instance->surface->setUpdateCallback([this, inst]() { updateRendererState(*inst); });
 
   if (!instance->surface->initialize(output.output, output.scale)) {
-    logWarn("wallpaper: failed to initialize surface for output {}", output.name);
+    kLog.warn("failed to initialize surface for output {}", output.name);
     return;
   }
 
@@ -249,7 +251,7 @@ TextureHandle Wallpaper::acquireTexture(const std::string& path) {
   auto it = m_textureCache.find(path);
   if (it != m_textureCache.end()) {
     ++it->second.refCount;
-    logInfo("wallpaper: texture cache hit for {} (refCount={})", path, it->second.refCount);
+    kLog.info("texture cache hit for {} (refCount={})", path, it->second.refCount);
     return it->second.handle;
   }
 
@@ -261,7 +263,7 @@ TextureHandle Wallpaper::acquireTexture(const std::string& path) {
   }
 
   m_textureCache[path] = CachedTexture{.handle = handle, .refCount = 1};
-  logInfo("wallpaper: texture uploaded and cached for {}", path);
+  kLog.info("texture uploaded and cached for {}", path);
   return handle;
 }
 
@@ -282,7 +284,7 @@ void Wallpaper::releaseTexture(TextureHandle& handle, const std::string& path) {
     makeAnyContextCurrent();
     m_sharedTexManager.unload(it->second.handle);
     m_textureCache.erase(it);
-    logInfo("wallpaper: texture evicted from cache for {}", path);
+    kLog.info("texture evicted from cache for {}", path);
   }
 
   handle = {};
@@ -298,7 +300,7 @@ void Wallpaper::releaseInstanceTextures(WallpaperInstance& inst) {
 void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& path) {
   auto newTex = acquireTexture(path);
   if (newTex.id == 0) {
-    logWarn("wallpaper: failed to load {}", path);
+    kLog.warn("failed to load {}", path);
     return;
   }
 

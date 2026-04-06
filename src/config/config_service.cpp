@@ -53,6 +53,8 @@ bool matchesOutput(const std::string& match, const WaylandOutput& output) {
   return false;
 }
 
+constexpr Logger kLog("config");
+
 } // namespace
 
 // ── Lifecycle ────────────────────────────────────────────────────────────────
@@ -62,7 +64,7 @@ ConfigService::ConfigService() {
   if (!m_configPath.empty() && std::filesystem::exists(m_configPath)) {
     loadFromFile(m_configPath);
   } else {
-    logInfo("config: no config file found, using defaults");
+    kLog.info("no config file found, using defaults");
     seedBuiltinWidgets(m_config);
     m_config.bars.push_back(BarConfig{});
   }
@@ -134,8 +136,7 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       continue;
     }
 
-    logDebug("config: monitor override \"{}\" matched output {} ({})", ovr.match, output.connectorName,
-             output.description);
+    kLog.debug("monitor override \"{}\" matched output {} ({})", ovr.match, output.connectorName, output.description);
 
     if (ovr.enabled)
       resolved.enabled = *ovr.enabled;
@@ -168,7 +169,7 @@ void ConfigService::setupWatch() {
 
   m_inotifyFd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
   if (m_inotifyFd < 0) {
-    logWarn("config: inotify_init1 failed, hot reload disabled");
+    kLog.warn("inotify_init1 failed, hot reload disabled");
     return;
   }
 
@@ -176,13 +177,13 @@ void ConfigService::setupWatch() {
   auto dir = std::filesystem::path(m_configPath).parent_path().string();
   m_watchFd = inotify_add_watch(m_inotifyFd, dir.c_str(), IN_MODIFY | IN_CREATE | IN_MOVED_TO);
   if (m_watchFd < 0) {
-    logWarn("config: inotify_add_watch failed, hot reload disabled");
+    kLog.warn("inotify_add_watch failed, hot reload disabled");
     ::close(m_inotifyFd);
     m_inotifyFd = -1;
     return;
   }
 
-  logDebug("config: watching {} for changes", dir);
+  kLog.debug("watching {} for changes", dir);
 }
 
 void ConfigService::seedBuiltinWidgets(Config& config) {
@@ -215,7 +216,7 @@ void ConfigService::seedBuiltinWidgets(Config& config) {
 }
 
 void ConfigService::loadFromFile(const std::string& path) {
-  logInfo("config: loading {}", path);
+  kLog.info("loading {}", path);
 
   // Seed built-in named widget instances before parsing so [widget.*] entries override them.
   seedBuiltinWidgets(m_config);
@@ -224,7 +225,7 @@ void ConfigService::loadFromFile(const std::string& path) {
   try {
     tbl = toml::parse_file(path);
   } catch (const toml::parse_error& e) {
-    logWarn("config: parse error: {}", e.what());
+    kLog.warn("parse error: {}", e.what());
     m_config.bars.push_back(BarConfig{});
     return;
   }
@@ -416,11 +417,11 @@ void ConfigService::loadFromFile(const std::string& path) {
   }
 
   if (m_config.bars.empty()) {
-    logInfo("config: no [bar.*] defined, using defaults");
+    kLog.info("no [bar.*] defined, using defaults");
     m_config.bars.push_back(BarConfig{});
   }
 
-  logInfo("config: {} bar(s) defined", m_config.bars.size());
+  kLog.info("{} bar(s) defined", m_config.bars.size());
 }
 
 // ── WidgetConfig accessors ───────────────────────────────────────────────────

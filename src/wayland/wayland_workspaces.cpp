@@ -93,6 +93,8 @@ const ext_workspace_manager_v1_listener kManagerListener = {
     .finished = managerFinished,
 };
 
+constexpr Logger kLog("workspace");
+
 } // namespace
 
 void WaylandWorkspaces::bind(ext_workspace_manager_v1* manager) {
@@ -111,7 +113,7 @@ void WaylandWorkspaces::activate(const std::string& id) {
     if (ws.id == id) {
       ext_workspace_handle_v1_activate(handle);
       ext_workspace_manager_v1_commit(m_manager);
-      logDebug("workspace: activating \"{}\"", ws.name);
+      kLog.debug("activating \"{}\"", ws.name);
       return;
     }
   }
@@ -139,7 +141,7 @@ void WaylandWorkspaces::activateForOutput(wl_output* output, const std::string& 
 
       ext_workspace_handle_v1_activate(handle);
       ext_workspace_manager_v1_commit(m_manager);
-      logDebug("workspace: activating \"{}\"", it->second.name);
+      kLog.debug("activating \"{}\"", it->second.name);
       return;
     }
   }
@@ -195,7 +197,7 @@ void WaylandWorkspaces::activateForOutput(wl_output* output, const Workspace& wo
 
       ext_workspace_handle_v1_activate(handle);
       ext_workspace_manager_v1_commit(m_manager);
-      logDebug("workspace: activating \"{}\"", it->second.name);
+      kLog.debug("activating \"{}\"", it->second.name);
       return;
     }
 
@@ -211,7 +213,7 @@ void WaylandWorkspaces::activateForOutput(wl_output* output, const Workspace& wo
 
       ext_workspace_handle_v1_activate(handle);
       ext_workspace_manager_v1_commit(m_manager);
-      logDebug("workspace: activating \"{}\"", it->second.name);
+      kLog.debug("activating \"{}\"", it->second.name);
       return;
     }
 
@@ -227,7 +229,7 @@ void WaylandWorkspaces::activateForOutput(wl_output* output, const Workspace& wo
 
       ext_workspace_handle_v1_activate(handle);
       ext_workspace_manager_v1_commit(m_manager);
-      logDebug("workspace: activating \"{}\" (coordinate fallback)", it->second.name);
+      kLog.debug("activating \"{}\" (coordinate fallback)", it->second.name);
       return;
     }
   }
@@ -413,7 +415,7 @@ void WaylandWorkspaces::onWorkspaceStateChanged(ext_workspace_handle_v1* workspa
     it->second.active = is_active;
     if (is_active) {
       const std::string label = it->second.name.empty() ? "(unnamed)" : it->second.name;
-      logDebug("workspace active: {}", label);
+      kLog.debug("active: {}", label);
     }
     if (m_changeCallback) {
       m_changeCallback();

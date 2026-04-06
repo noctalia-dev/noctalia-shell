@@ -42,6 +42,8 @@ const wl_pointer_listener kPointerListener = {
     .axis_relative_direction = [](void*, wl_pointer*, std::uint32_t, std::uint32_t) {},
 };
 
+constexpr Logger kLog("seat");
+
 } // namespace
 
 void WaylandSeat::bind(wl_seat* seat) { wl_seat_add_listener(seat, &kSeatListener, this); }
@@ -111,11 +113,11 @@ void WaylandSeat::handleSeatCapabilities(void* data, wl_seat* seat, std::uint32_
     }
     self->m_keyboard = wl_seat_get_keyboard(seat);
     wl_keyboard_add_listener(self->m_keyboard, &kKeyboardListener, self);
-    logInfo("keyboard: bound");
+    kLog.info("keyboard: bound");
   } else if (!hasKeyboard && self->m_keyboard != nullptr) {
     wl_keyboard_destroy(self->m_keyboard);
     self->m_keyboard = nullptr;
-    logInfo("keyboard: released");
+    kLog.info("keyboard: released");
   }
 
   const bool hasPointer = (caps & WL_SEAT_CAPABILITY_POINTER) != 0;
@@ -123,11 +125,11 @@ void WaylandSeat::handleSeatCapabilities(void* data, wl_seat* seat, std::uint32_
   if (hasPointer && self->m_pointer == nullptr) {
     self->m_pointer = wl_seat_get_pointer(seat);
     wl_pointer_add_listener(self->m_pointer, &kPointerListener, self);
-    logInfo("pointer: bound");
+    kLog.info("pointer: bound");
 
     if (self->m_cursorShapeManager != nullptr) {
       self->m_cursorShapeDevice = wp_cursor_shape_manager_v1_get_pointer(self->m_cursorShapeManager, self->m_pointer);
-      logInfo("pointer: cursor-shape-v1 available");
+      kLog.info("pointer: cursor-shape-v1 available");
     }
   } else if (!hasPointer && self->m_pointer != nullptr) {
     if (self->m_cursorShapeDevice != nullptr) {
@@ -136,7 +138,7 @@ void WaylandSeat::handleSeatCapabilities(void* data, wl_seat* seat, std::uint32_
     }
     wl_pointer_destroy(self->m_pointer);
     self->m_pointer = nullptr;
-    logInfo("pointer: released");
+    kLog.info("pointer: released");
   }
 }
 
@@ -245,7 +247,7 @@ void WaylandSeat::handleKeyboardKeymap(void* data, wl_keyboard* /*keyboard*/, st
   void* buf = mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
   close(fd);
   if (buf == MAP_FAILED) {
-    logWarn("keyboard: failed to mmap keymap");
+    kLog.warn("keyboard: failed to mmap keymap");
     return;
   }
 
@@ -254,14 +256,14 @@ void WaylandSeat::handleKeyboardKeymap(void* data, wl_keyboard* /*keyboard*/, st
   munmap(buf, size);
 
   if (keymap == nullptr) {
-    logWarn("keyboard: failed to compile keymap");
+    kLog.warn("keyboard: failed to compile keymap");
     return;
   }
 
   auto* state = xkb_state_new(keymap);
   if (state == nullptr) {
     xkb_keymap_unref(keymap);
-    logWarn("keyboard: failed to create xkb state");
+    kLog.warn("keyboard: failed to create xkb state");
     return;
   }
 
@@ -289,7 +291,7 @@ void WaylandSeat::handleKeyboardKeymap(void* data, wl_keyboard* /*keyboard*/, st
     self->m_composeState = xkb_compose_state_new(self->m_composeTable, XKB_COMPOSE_STATE_NO_FLAGS);
   }
 
-  logInfo("keyboard: keymap loaded");
+  kLog.info("keyboard: keymap loaded");
 }
 
 void WaylandSeat::handleKeyboardEnter(void* /*data*/, wl_keyboard* /*keyboard*/, std::uint32_t /*serial*/,

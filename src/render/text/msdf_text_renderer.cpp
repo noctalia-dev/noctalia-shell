@@ -21,6 +21,8 @@ constexpr float kAtlasEmSize = 64.0f;
 constexpr double kDistanceRange = 5.0;
 constexpr int kGlyphPadding = 2;
 
+constexpr Logger kLog("font");
+
 } // namespace
 
 MsdfTextRenderer::MsdfTextRenderer() = default;
@@ -43,20 +45,20 @@ void MsdfTextRenderer::initialize(const std::vector<ResolvedFont>& fonts) {
   for (const auto& font : fonts) {
     FontSlot slot;
     if (FT_New_Face(m_library, font.path.c_str(), font.faceIndex, &slot.face) != 0) {
-      logWarn("failed to load fallback font: {}", font.path);
+      kLog.warn("failed to load fallback font: {}", font.path);
       continue;
     }
 
     if (FT_Set_Pixel_Sizes(slot.face, 0, static_cast<FT_UInt>(kAtlasEmSize)) != 0) {
       FT_Done_Face(slot.face);
-      logWarn("failed to set pixel size for: {}", font.path);
+      kLog.warn("failed to set pixel size for: {}", font.path);
       continue;
     }
 
     slot.hbFont = hb_ft_font_create_referenced(slot.face);
     if (slot.hbFont == nullptr) {
       FT_Done_Face(slot.face);
-      logWarn("hb_ft_font_create_referenced failed for: {}", font.path);
+      kLog.warn("hb_ft_font_create_referenced failed for: {}", font.path);
       continue;
     }
 
@@ -64,7 +66,7 @@ void MsdfTextRenderer::initialize(const std::vector<ResolvedFont>& fonts) {
     if (slot.fontHandle == nullptr) {
       hb_font_destroy(slot.hbFont);
       FT_Done_Face(slot.face);
-      logWarn("msdfgen::adoptFreetypeFont failed for: {}", font.path);
+      kLog.warn("msdfgen::adoptFreetypeFont failed for: {}", font.path);
       continue;
     }
 
@@ -569,7 +571,7 @@ MsdfTextRenderer::Glyph& MsdfTextRenderer::loadGlyph(std::uint32_t slotIndex, st
     m_atlasCursorX = 1;
     m_atlasCursorY = 1;
     m_atlasRowHeight = 0;
-    logDebug("allocated atlas page {}", currentPage);
+    kLog.debug("allocated atlas page {}", currentPage);
   }
 
   const int destX = m_atlasCursorX + kGlyphPadding;

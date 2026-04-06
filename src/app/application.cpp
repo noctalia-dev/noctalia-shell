@@ -22,10 +22,12 @@ void signal_handler(int signum) {
   }
 }
 
+constexpr Logger kLog("app");
+
 } // namespace
 
 Application::Application() {
-  logInfo("noctalia hello");
+  kLog.info("noctalia hello");
 
   m_notificationManager.addEventCallback([this](const Notification& n, NotificationEvent event) {
     const char* kind = "updated";
@@ -35,7 +37,7 @@ Application::Application() {
       kind = "closed";
     }
     const char* origin = (n.origin == NotificationOrigin::Internal) ? "internal" : "external";
-    logDebug("notification {} id={} origin={}", kind, n.id, origin);
+    kLog.debug("notification {} id={} origin={}", kind, n.id, origin);
 
     // Keep bar widgets in sync with notification state changes.
     m_bar.onWorkspaceChange();
@@ -99,26 +101,26 @@ void Application::run() {
     const auto& label = !distro->prettyName.empty() ? distro->prettyName
                         : !distro->name.empty()     ? distro->name
                                                     : distro->id;
-    logInfo("distro: {}", label);
+    kLog.info("distro: {}", label);
   } else {
-    logInfo("distro: unknown");
+    kLog.info("distro: unknown");
   }
 
   try {
     m_systemMonitor = std::make_unique<SystemMonitorService>();
     if (m_systemMonitor->isRunning()) {
-      logInfo("system monitor service active");
+      kLog.info("system monitor service active");
     }
   } catch (const std::exception& e) {
-    logWarn("system monitor service disabled: {}", e.what());
+    kLog.warn("system monitor service disabled: {}", e.what());
     m_systemMonitor.reset();
   }
 
   try {
     m_systemBus = std::make_unique<SystemBus>();
-    logInfo("connected to system bus");
+    kLog.info("connected to system bus");
   } catch (const std::exception& e) {
-    logWarn("system dbus disabled: {}", e.what());
+    kLog.warn("system dbus disabled: {}", e.what());
     m_systemBus.reset();
   }
 
@@ -128,64 +130,53 @@ void Application::run() {
       m_powerProfilesService->setChangeCallback(
           [this](const PowerProfilesState& /*state*/) { m_bar.onWorkspaceChange(); });
       if (!m_powerProfilesService->activeProfile().empty()) {
-        logInfo("power profiles active profile: {}", m_powerProfilesService->activeProfile());
+        kLog.info("power profiles active profile: {}", m_powerProfilesService->activeProfile());
       } else {
-        logInfo("power profiles service active");
+        kLog.info("power profiles service active");
       }
     } catch (const std::exception& e) {
-      logWarn("power profiles disabled: {}", e.what());
+      kLog.warn("power profiles disabled: {}", e.what());
       m_powerProfilesService.reset();
     }
 
     try {
       m_upowerService = std::make_unique<UPowerService>(*m_systemBus);
       m_upowerService->setChangeCallback([this]() { m_bar.onWorkspaceChange(); });
-      const auto& us = m_upowerService->state();
-      if (us.isPresent) {
-        logInfo("upower: battery {:.0f}% state={} ({})", us.percentage, static_cast<int>(us.state),
-                us.onBattery ? "on battery" : "on AC");
-      } else {
-        logInfo("upower: connected (no battery present)");
-      }
     } catch (const std::exception& e) {
-      logWarn("upower disabled: {}", e.what());
+      kLog.warn("upower disabled: {}", e.what());
       m_upowerService.reset();
     }
   }
 
   try {
     m_pipewireService = std::make_unique<PipeWireService>();
-    const auto* sink = m_pipewireService->defaultSink();
-    if (sink != nullptr) {
-      logInfo("pipewire: default sink \"{}\" vol={:.0f}%", sink->description, sink->volume * 100.0f);
-    }
   } catch (const std::exception& e) {
-    logWarn("pipewire disabled: {}", e.what());
+    kLog.warn("pipewire disabled: {}", e.what());
     m_pipewireService.reset();
   }
 
   try {
     m_bus = std::make_unique<SessionBus>();
-    logInfo("connected to session bus");
+    kLog.info("connected to session bus");
   } catch (const std::exception& e) {
-    logWarn("dbus disabled: {}", e.what());
+    kLog.warn("dbus disabled: {}", e.what());
     m_notificationManager.addInternal("Noctalia", "Session bus unavailable", e.what(), 8000, Urgency::Low);
   }
 
   if (m_bus != nullptr) {
     try {
       m_debugService = std::make_unique<DebugService>(*m_bus, m_notificationManager);
-      logInfo("debug service active on dev.noctalia.Debug");
+      kLog.info("debug service active on dev.noctalia.Debug");
     } catch (const std::exception& e) {
-      logWarn("debug service disabled: {}", e.what());
+      kLog.warn("debug service disabled: {}", e.what());
       m_debugService.reset();
     }
 
     try {
       m_mprisService = std::make_unique<MprisService>(*m_bus);
-      logInfo("mpris discovery active");
+      kLog.info("mpris discovery active");
     } catch (const std::exception& e) {
-      logWarn("mpris disabled: {}", e.what());
+      kLog.warn("mpris disabled: {}", e.what());
       m_mprisService.reset();
       m_notificationManager.addInternal("Noctalia", "MPRIS disabled", e.what(), 7000, Urgency::Low);
     }
@@ -193,9 +184,9 @@ void Application::run() {
     try {
       m_notificationDbus = std::make_unique<NotificationService>(*m_bus, m_notificationManager);
       m_notificationPollSource.setDbusService(m_notificationDbus.get());
-      logInfo("listening on org.freedesktop.Notifications");
+      kLog.info("listening on org.freedesktop.Notifications");
     } catch (const std::exception& e) {
-      logWarn("notifications disabled: {}", e.what());
+      kLog.warn("notifications disabled: {}", e.what());
       m_notificationDbus.reset();
       m_notificationManager.addInternal("Noctalia", "DBus notifications disabled", e.what(), 7000, Urgency::Low);
     }
@@ -207,9 +198,9 @@ void Application::run() {
         m_trayMenu.onTrayChanged();
       });
       m_trayService->setMenuToggleCallback([this](const std::string& itemId) { m_trayMenu.toggleForItem(itemId); });
-      logInfo("status notifier watcher active on org.kde.StatusNotifierWatcher");
+      kLog.info("status notifier watcher active on org.kde.StatusNotifierWatcher");
     } catch (const std::exception& e) {
-      logWarn("tray watcher disabled: {}", e.what());
+      kLog.warn("tray watcher disabled: {}", e.what());
       m_trayService.reset();
     }
   }
@@ -289,5 +280,5 @@ void Application::run() {
   m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, std::move(sources));
   m_mainLoop->run();
 
-  logInfo("shutdown");
+  kLog.info("shutdown");
 }
