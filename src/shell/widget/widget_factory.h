@@ -9,6 +9,7 @@ struct Config;
 class NotificationManager;
 class PipeWireService;
 class TrayService;
+class UPowerService;
 struct wl_output;
 class TimeService;
 class WaylandConnection;
@@ -16,7 +17,7 @@ class WaylandConnection;
 class WidgetFactory {
 public:
   WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config, NotificationManager* notifications,
-                TrayService* tray, PipeWireService* audio);
+                TrayService* tray, PipeWireService* audio, UPowerService* upower);
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output) const;
 
@@ -27,4 +28,5 @@ private:
   NotificationManager* m_notifications;
   TrayService* m_tray;
   PipeWireService* m_audio;
+  UPowerService* m_upower;
 };

@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/log.h"
 #include "dbus/tray/tray_service.h"
+#include "dbus/upower/upower_service.h"
 #include "render/render_context.h"
 #include "render/scene/rect_node.h"
 #include "ui/controls/box.h"
@@ -39,17 +40,18 @@ Bar::Bar() = default;
 
 bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                      NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
-                     RenderContext* renderContext) {
+                     UPowerService* upower, RenderContext* renderContext) {
   m_wayland = &wayland;
   m_config = config;
   m_time = timeService;
   m_notifications = notifications;
   m_tray = tray;
   m_audio = audio;
+  m_upower = upower;
   m_renderContext = renderContext;
 
-  m_widgetFactory =
-      std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray, m_audio);
+  m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
+                                                    m_audio, m_upower);
 
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
@@ -74,8 +76,8 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
 
 void Bar::reload() {
   logInfo("bar: reloading config");
-  m_widgetFactory =
-      std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray, m_audio);
+  m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
+                                                    m_audio, m_upower);
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;
@@ -168,15 +170,15 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
 
   // Shadow expansion toward content (the "inward" side of the bar).
   const auto shadowExpand = [&]() -> std::uint32_t {
-    if (barConfig.shadowSize <= 0) return 0u;
+    if (barConfig.shadowBlur <= 0) return 0u;
     if (vertical) {
       const std::int32_t inward =
           barConfig.position == "right" ? -barConfig.shadowOffsetX : barConfig.shadowOffsetX;
-      return static_cast<std::uint32_t>(barConfig.shadowSize + std::max(0, inward));
+      return static_cast<std::uint32_t>(barConfig.shadowBlur + std::max(0, inward));
     }
     const std::int32_t inward =
         barConfig.position == "bottom" ? -barConfig.shadowOffsetY : barConfig.shadowOffsetY;
-    return static_cast<std::uint32_t>(barConfig.shadowSize + std::max(0, inward));
+    return static_cast<std::uint32_t>(barConfig.shadowBlur + std::max(0, inward));
   }();
 
   // Surface spans the full axis (no perpendicular compositor margins) plus the edge gap so
@@ -243,7 +245,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   const auto h = static_cast<float>(height);
   const float paddingH = static_cast<float>(instance.barConfig.paddingH);
   const float widgetSpacing = static_cast<float>(instance.barConfig.widgetSpacing);
-  const float shadowSize = static_cast<float>(std::max(0, instance.barConfig.shadowSize));
+  const float shadowSize = static_cast<float>(std::max(0, instance.barConfig.shadowBlur));
   const float shadowOffsetX = static_cast<float>(instance.barConfig.shadowOffsetX);
   const float shadowOffsetY = static_cast<float>(instance.barConfig.shadowOffsetY);
   const float barH = static_cast<float>(instance.barConfig.height);
@@ -401,7 +403,7 @@ void Bar::updateWidgets(BarInstance& instance) {
   const auto w = static_cast<float>(instance.surface->width());
   const auto h = static_cast<float>(instance.surface->height());
   const float paddingH = static_cast<float>(instance.barConfig.paddingH);
-  const float shadowSize = static_cast<float>(std::max(0, instance.barConfig.shadowSize));
+  const float shadowSize = static_cast<float>(std::max(0, instance.barConfig.shadowBlur));
   const float shadowOffsetX = static_cast<float>(instance.barConfig.shadowOffsetX);
   const float shadowOffsetY = static_cast<float>(instance.barConfig.shadowOffsetY);
   const float barH = static_cast<float>(instance.barConfig.height);

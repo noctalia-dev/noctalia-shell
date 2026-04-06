@@ -116,13 +116,13 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"color-picker", 0xEBE6},      // color-picker
 
     // Battery
-    {"battery", 0xEA34},           // battery
+    {"battery-0", 0xEA34},         // battery
     {"battery-1", 0xEA2F},         // battery-1
     {"battery-2", 0xEA30},         // battery-2
     {"battery-3", 0xEA31},         // battery-3
     {"battery-4", 0xEA32},         // battery-4
     {"battery-charging", 0xEA33},  // battery-charging
-    {"battery-charging-2", 0xEF3B}, // battery-charging-2
+    {"battery-plugged", 0xEF3B},    // battery-charging-2
     {"battery-exclamation", 0xFF1D}, // battery-exclamation
     {"battery-off", 0xED1C},       // battery-off
 

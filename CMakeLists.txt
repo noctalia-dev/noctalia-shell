@@ -196,6 +196,7 @@ add_executable(noctalia
     src/dbus/notification/notification_service.cpp
     src/dbus/power/power_profiles_service.cpp
     src/dbus/tray/tray_service.cpp
+    src/dbus/upower/upower_service.cpp
     src/config/config_service.cpp
     src/config/state_service.cpp
     src/core/deferred_call.cpp
@@ -247,6 +248,7 @@ add_executable(noctalia
     src/shell/widgets/spacer_widget.cpp
     src/shell/widgets/test_widget.cpp
     src/shell/widgets/tray_widget.cpp
+    src/shell/widgets/battery_widget.cpp
     src/shell/widgets/volume_widget.cpp
     src/shell/widgets/workspaces_widget.cpp
     src/pipewire/pipewire_service.cpp

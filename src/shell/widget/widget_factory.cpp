@@ -9,14 +9,16 @@
 #include "shell/widgets/spacer_widget.h"
 #include "shell/widgets/test_widget.h"
 #include "shell/widgets/tray_widget.h"
+#include "shell/widgets/battery_widget.h"
 #include "shell/widgets/volume_widget.h"
 #include "shell/widgets/workspaces_widget.h"
 #include "wayland/wayland_connection.h"
 
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
-                             NotificationManager* notifications, TrayService* tray, PipeWireService* audio)
+                             NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
+                             UPowerService* upower)
     : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray),
-      m_audio(audio) {}
+      m_audio(audio), m_upower(upower) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output) const {
   if (name == "clock") {
@@ -41,6 +43,10 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (name == "volume") {
     return std::make_unique<VolumeWidget>(m_audio);
+  }
+
+  if (name == "battery") {
+    return std::make_unique<BatteryWidget>(m_upower);
   }
 
   if (name == "test") {

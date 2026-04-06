@@ -31,12 +31,12 @@ struct BarConfig {
   std::int32_t marginV = 6;       // vertical compositor margin (gap between bar and screen edge)
   std::int32_t paddingH = 16;     // horizontal padding from bar edges to start/end sections
   std::int32_t widgetSpacing = 8; // gap between widgets within a section
-  std::int32_t shadowSize = 16;   // shadow blur radius in pixels (0 = no shadow)
+  std::int32_t shadowBlur = 16;   // shadow blur radius in pixels (0 = no shadow)
   std::int32_t shadowOffsetX = 8; // horizontal shadow offset in pixels
   std::int32_t shadowOffsetY = 8; // vertical shadow offset in pixels (positive = down)
-  std::vector<std::string> startWidgets = {};
+  std::vector<std::string> startWidgets = {"test"};
   std::vector<std::string> centerWidgets = {"workspaces"};
-  std::vector<std::string> endWidgets = {"test", "tray", "notifications", "volume", "clock"};
+  std::vector<std::string> endWidgets = {"tray", "notifications", "volume", "battery", "clock"};
   std::vector<BarMonitorOverride> monitorOverrides;
 };
 

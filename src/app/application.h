@@ -14,6 +14,7 @@
 #include "dbus/system_bus.h"
 #include "dbus/system_bus_poll_source.h"
 #include "dbus/tray/tray_service.h"
+#include "dbus/upower/upower_service.h"
 #include "debug/debug_service.h"
 #include "notification/notification_manager.h"
 #include "pipewire/pipewire_poll_source.h"
@@ -55,6 +56,7 @@ private:
   std::unique_ptr<DebugService> m_debugService;
   std::unique_ptr<MprisService> m_mprisService;
   std::unique_ptr<PowerProfilesService> m_powerProfilesService;
+  std::unique_ptr<UPowerService> m_upowerService;
   std::unique_ptr<TrayService> m_trayService;
   std::unique_ptr<NotificationService> m_notificationDbus;
   std::unique_ptr<PipeWireService> m_pipewireService;

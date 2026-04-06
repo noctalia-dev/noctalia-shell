@@ -11,6 +11,7 @@ class ConfigService;
 class NotificationManager;
 class PipeWireService;
 class RenderContext;
+class UPowerService;
 class TrayService;
 class TimeService;
 class WaylandConnection;
@@ -23,7 +24,7 @@ public:
 
   bool initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                   NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
-                  RenderContext* renderContext);
+                  UPowerService* upower, RenderContext* renderContext);
   void reload();
   void closeAllInstances();
   void onOutputChange();
@@ -45,6 +46,7 @@ private:
   NotificationManager* m_notifications = nullptr;
   TrayService* m_tray = nullptr;
   PipeWireService* m_audio = nullptr;
+  UPowerService* m_upower = nullptr;
   RenderContext* m_renderContext = nullptr;
   std::unique_ptr<WidgetFactory> m_widgetFactory;
   std::vector<std::unique_ptr<BarInstance>> m_instances;

@@ -40,6 +40,7 @@ Application::Application() {
 Application::~Application() {
   if (m_systemBus != nullptr) {
     m_systemBus->processPendingEvents();
+    m_upowerService.reset();
     m_powerProfilesService.reset();
     m_systemBus->processPendingEvents();
   }
@@ -120,6 +121,21 @@ void Application::run() {
       logWarn("power profiles disabled: {}", e.what());
       m_powerProfilesService.reset();
     }
+
+    try {
+      m_upowerService = std::make_unique<UPowerService>(*m_systemBus);
+      m_upowerService->setChangeCallback([this]() { m_bar.onWorkspaceChange(); });
+      const auto& us = m_upowerService->state();
+      if (us.isPresent) {
+        logInfo("upower: battery {:.0f}% state={} ({})", us.percentage, static_cast<int>(us.state),
+                us.onBattery ? "on battery" : "on AC");
+      } else {
+        logInfo("upower: connected (no battery present)");
+      }
+    } catch (const std::exception& e) {
+      logWarn("upower disabled: {}", e.what());
+      m_upowerService.reset();
+    }
   }
 
   try {
@@ -199,7 +215,7 @@ void Application::run() {
 
   // Initialize bar (top layer)
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
-                   m_pipewireService.get(), &m_renderContext);
+                   m_pipewireService.get(), m_upowerService.get(), &m_renderContext);
 
   // Unified pointer event routing — both Bar and PanelManager check surface ownership
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {

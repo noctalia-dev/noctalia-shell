@@ -181,8 +181,8 @@ void ConfigService::loadFromFile(const std::string& path) {
         bar.paddingH = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["widget_spacing"].value<int64_t>())
         bar.widgetSpacing = static_cast<std::int32_t>(*v);
-      if (auto v = (*barTbl)["shadow_size"].value<int64_t>())
-        bar.shadowSize = static_cast<std::int32_t>(*v);
+      if (auto v = (*barTbl)["shadow_blur"].value<int64_t>())
+        bar.shadowBlur = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["shadow_offset_x"].value<int64_t>())
         bar.shadowOffsetX = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["shadow_offset_y"].value<int64_t>())
