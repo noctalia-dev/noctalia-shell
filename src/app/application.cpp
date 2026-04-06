@@ -79,25 +79,28 @@ Application::~Application() {
 
 void Application::run() {
   kLog.info("noctalia v{}", NOCTALIA_VERSION);
+  initServices();
+  initUi();
+  initIpc();
+  m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, buildPollSources());
+  m_mainLoop->run();
+  kLog.info("shutdown");
+}
 
-  // Install signal handlers for graceful shutdown
+void Application::initServices() {
   std::signal(SIGTERM, signal_handler);
   std::signal(SIGINT, signal_handler);
 
-  // Connect to Wayland
   if (!m_wayland.connect()) {
     throw std::runtime_error("failed to connect to Wayland display");
   }
 
-  // Set up output/workspace change callbacks
   m_wayland.setOutputChangeCallback([this]() {
     m_wallpaper.onOutputChange();
     m_bar.onOutputChange();
   });
-
   m_wayland.setWorkspaceChangeCallback([this]() { m_bar.onWorkspaceChange(); });
 
-  // Initialize wallpaper first (background layer)
   m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
 
   if (const auto distro = DistroDetector::detect(); distro.has_value()) {
@@ -207,31 +210,28 @@ void Application::run() {
       m_trayService.reset();
     }
   }
+}
 
-  // Initialize the shared render context (EGL, shaders, fonts — created once)
+void Application::initUi() {
   m_renderContext.initialize(m_wayland.display());
 
-  // Initialize panel manager (must be before bar so widgets can access PanelManager::instance())
+  // Panel manager must be before bar so widgets can access PanelManager::instance()
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
   m_panelManager.registerPanel(
       "control-center",
       std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(), m_mprisService.get()));
 
-  // Initialize notification popup (top layer, dynamic surface)
   m_notificationPopup.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);
 
-  // Initialize the shared OSD overlay (overlay layer, transient surface)
   m_osdOverlay.initialize(m_wayland, &m_configService, &m_renderContext);
   m_audioOsd.bindOverlay(m_osdOverlay);
   if (m_pipewireService != nullptr) {
     m_audioOsd.primeFromService(*m_pipewireService);
   }
 
-  // Initialize tray menu (top layer, dynamic surface)
   m_trayMenu.initialize(m_wayland, &m_configService, m_trayService.get(), &m_renderContext);
 
-  // Initialize bar (top layer)
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
                    m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), &m_renderContext);
 
@@ -246,7 +246,6 @@ void Application::run() {
     });
   }
 
-  // Unified pointer event routing — both Bar and PanelManager check surface ownership
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
     if (m_trayMenu.onPointerEvent(event))
       return;
@@ -257,10 +256,10 @@ void Application::run() {
     m_notificationPopup.onPointerEvent(event);
   });
 
-  // Keyboard events are routed only to the panel (the only surface with keyboard interactivity)
   m_wayland.setKeyboardEventCallback([this](const KeyboardEvent& event) { m_panelManager.onKeyboardEvent(event); });
+}
 
-  // IPC
+void Application::initIpc() {
   if (m_ipcService.start()) {
     kLog.info("IPC socket at {}", m_ipcService.socketPath());
   } else {
@@ -272,11 +271,7 @@ void Application::run() {
     return "ok\n";
   });
   m_ipcService.registerHandler("toggle-bar", [this](const std::string&) -> std::string {
-    if (m_bar.isVisible()) {
-      m_bar.hide();
-    } else {
-      m_bar.show();
-    }
+    m_bar.isVisible() ? m_bar.hide() : m_bar.show();
     return "ok\n";
   });
   m_ipcService.registerHandler("show-bar", [this](const std::string&) -> std::string {
@@ -295,21 +290,20 @@ void Application::run() {
     return "ok\n";
   });
   m_ipcService.registerHandler("status", [this](const std::string&) -> std::string {
-    const bool barVisible = m_bar.isVisible();
     const bool panelOpen = m_panelManager.isOpen();
-    const auto& panelId = m_panelManager.activePanelId();
     std::string json = "{\n";
     json += "  \"barVisible\": ";
-    json += barVisible ? "true" : "false";
+    json += m_bar.isVisible() ? "true" : "false";
     json += ",\n  \"panelOpen\": ";
     json += panelOpen ? "true" : "false";
     json += ",\n  \"activePanelId\": ";
-    json += panelOpen ? ("\"" + panelId + "\"") : "null";
+    json += panelOpen ? ("\"" + m_panelManager.activePanelId() + "\"") : "null";
     json += "\n}\n";
     return json;
   });
+}
 
-  // Build poll sources
+std::vector<PollSource*> Application::buildPollSources() {
   std::vector<PollSource*> sources;
   if (m_bus != nullptr) {
     m_busPollSource = std::make_unique<SessionBusPollSource>(*m_bus);
@@ -329,9 +323,5 @@ void Application::run() {
     sources.push_back(m_pipewirePollSource.get());
   }
   sources.push_back(&m_ipcPollSource);
-
-  m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, std::move(sources));
-  m_mainLoop->run();
-
-  kLog.info("shutdown");
+  return sources;
 }

@@ -37,6 +37,7 @@
 
 #include <atomic>
 #include <memory>
+#include <vector>
 
 class Application {
 public:
@@ -49,6 +50,11 @@ public:
   static std::atomic<bool> s_shutdownRequested;
 
 private:
+  void initServices();
+  void initUi();
+  void initIpc();
+  [[nodiscard]] std::vector<PollSource*> buildPollSources();
+
   WaylandConnection m_wayland;
   ConfigService m_configService;
   StateService m_stateService;

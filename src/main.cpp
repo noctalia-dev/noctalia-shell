@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
 
   for (int i = 1; i < argc; ++i) {
     if (std::strcmp(argv[i], "--version") == 0) {
-      std::puts("noctalia " NOCTALIA_VERSION);
+      std::puts("noctalia v" NOCTALIA_VERSION);
       return 0;
     }
     if (std::strcmp(argv[i], "--help") == 0) {
