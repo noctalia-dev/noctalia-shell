@@ -20,6 +20,28 @@ Singleton {
 
   property bool reloadColors: false
 
+  // Debounce external reload requests (file watcher + directory watcher)
+  // so atomic replacements only trigger one reload.
+  Timer {
+    id: externalColorReloadTimer
+    running: false
+    interval: 200
+    onTriggered: {
+      if (customColorsFile.path !== undefined) {
+        Logger.d("Color", "Reloading colors from disk");
+        reloadColors = true;
+        customColorsFile.reload();
+      }
+    }
+  }
+
+  function scheduleExternalColorReload() {
+    if (!Settings.directoriesCreated || customColorsFile.path === undefined) {
+      return;
+    }
+    externalColorReloadTimer.restart();
+  }
+
   // Suppress transition animations until the first colors.json load completes
   property bool skipTransition: true
 
@@ -400,11 +422,7 @@ Singleton {
     path: Settings.directoriesCreated ? (Settings.configDir + "colors.json") : undefined
     printErrors: false
     watchChanges: true
-    onFileChanged: {
-      Logger.d("Color", "Reloading colors from disk");
-      reloadColors = true;
-      reload();
-    }
+    onFileChanged: scheduleExternalColorReload()
     onAdapterUpdated: {
       Logger.d("Color", "Writing colors to disk");
       writeAdapter();
@@ -469,5 +487,15 @@ Singleton {
       property color mHover: defaultColors.mHover
       property color mOnHover: defaultColors.mOnHover
     }
+  }
+
+  // Watch parent config directory as a fallback for declarative setups where
+  // colors.json may be replaced atomically (e.g., symlink/store-path swap).
+  FileView {
+    id: colorsDirWatcher
+    path: Settings.directoriesCreated ? Settings.configDir : undefined
+    printErrors: false
+    watchChanges: true
+    onFileChanged: scheduleExternalColorReload()
   }
 }
