@@ -32,6 +32,7 @@ ColumnLayout {
   property bool valueShowTextTooltip: widgetData.showTextTooltip !== undefined ? widgetData.showTextTooltip : widgetMetadata.showTextTooltip
   property bool valueEnableColorization: widgetData.enableColorization !== undefined ? widgetData.enableColorization : widgetMetadata.enableColorization
   property string valueColorizeSystemIcon: widgetData.colorizeSystemIcon !== undefined ? widgetData.colorizeSystemIcon : widgetMetadata.colorizeSystemIcon
+  property string valueColorizeSystemText: widgetData.colorizeSystemText !== undefined ? widgetData.colorizeSystemText : widgetMetadata.colorizeSystemText
   property string valueIpcIdentifier: widgetData.ipcIdentifier !== undefined ? widgetData.ipcIdentifier : widgetMetadata.ipcIdentifier
   property string valueGeneralTooltipText: widgetData.generalTooltipText !== undefined ? widgetData.generalTooltipText : widgetMetadata.generalTooltipText
 
@@ -67,6 +68,7 @@ ColumnLayout {
     settings.textIntervalMs = parseInt(textIntervalInput.text || textIntervalInput.placeholderText, 10);
     settings.enableColorization = valueEnableColorization;
     settings.colorizeSystemIcon = valueColorizeSystemIcon;
+    settings.colorizeSystemText = valueColorizeSystemText;
     settings.ipcIdentifier = valueIpcIdentifier;
     settings.generalTooltipText = valueGeneralTooltipText;
     settingsChanged(settings);
@@ -156,20 +158,31 @@ ColumnLayout {
                  valueEnableColorization = checked;
                  saveSettings();
                }
-    visible: valueShowIcon
     defaultValue: widgetMetadata.enableColorization
   }
 
   NColorChoice {
-    visible: valueShowIcon && valueEnableColorization
+    visible: valueEnableColorization
     label: I18n.tr("common.select-icon-color")
-    description: I18n.tr("bar.custom-button.color-selection-description")
+    description: I18n.tr("bar.custom-button.icon-color-selection-description")
     currentKey: valueColorizeSystemIcon
     onSelected: key => {
                   valueColorizeSystemIcon = key;
                   saveSettings();
                 }
     defaultValue: widgetMetadata.colorizeSystemIcon
+  }
+
+  NColorChoice {
+    visible: valueEnableColorization
+    label: I18n.tr("common.select-text-color")
+    description: I18n.tr("bar.custom-button.text-color-selection-description")
+    currentKey: valueColorizeSystemText
+    onSelected: key => {
+                  valueColorizeSystemText = key;
+                  saveSettings();
+                }
+    defaultValue: widgetMetadata.colorizeSystemText
   }
 
   NTextInput {

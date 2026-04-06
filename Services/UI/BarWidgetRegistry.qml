@@ -126,6 +126,7 @@ Singleton {
                                     "customIconPath": "",
                                     "colorizeDistroLogo": false,
                                     "colorizeSystemIcon": "none",
+                                     "colorizeSystemText": "none",
                                     "enableColorization": false
                                   },
                                   "CustomButton": {
@@ -160,6 +161,7 @@ Singleton {
                                     },
                                     "enableColorization": false,
                                     "colorizeSystemIcon": "none",
+                                     "colorizeSystemText": "none",
                                     "ipcIdentifier": ""
                                   },
                                   "DarkMode": {
@@ -189,6 +191,7 @@ Singleton {
                                     "icon": "rocket",
                                     "customIconPath": "",
                                     "colorizeSystemIcon": "none",
+                                     "colorizeSystemText": "none",
                                     "enableColorization": false,
                                     "iconColor": "none"
                                   },
