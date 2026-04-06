@@ -163,7 +163,10 @@
       "wheel-up": "Scroll up",
       "wheel-up-description": "Command to execute when the scroll wheel is scrolled up.",
       "wheel-up-label": "Wheel up command",
-      "wheel-update-text": "Update displayed text on scroll"
+      "wheel-update-text": "Update displayed text on scroll",
+      "tab-actions": "Actions",
+      "tab-icon": "Icon",
+      "tab-text": "Text Command"
     },
     "keyboard-layout": {
       "show-icon-description": "Display the keyboard layout icon."
