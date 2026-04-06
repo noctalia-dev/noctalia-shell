@@ -112,8 +112,6 @@
       "display-command-output-label": "Display command output",
       "display-command-output-stream-description": "Enter a command to run continuously.",
       "dynamic-text": "Dynamic text",
-      "enable-colorization-description": "Enable colorization for the custom button icon and text, applying theme colors.",
-      "enable-colorization-label": "Enable colorization",
       "general-tooltip-text-description": "Custom text to display in the button's tooltip.",
       "general-tooltip-text-label": "Custom tooltip text",
       "hide-mode-always-expanded": "Always expanded",

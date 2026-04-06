@@ -140,7 +140,6 @@ Item {
     return " ".repeat(currentMaxTextLength);
   }
 
-  readonly property bool enableColorization: widgetSettings.enableColorization || false
   readonly property string colorizeSystemIcon: {
     if (widgetSettings.colorizeSystemIcon !== undefined)
       return widgetSettings.colorizeSystemIcon;
@@ -152,7 +151,8 @@ Item {
     return widgetMetadata.colorizeSystemText !== undefined ? widgetMetadata.colorizeSystemText : "none";
   }
 
-  readonly property bool isColorizing: enableColorization && (colorizeSystemIcon !== "none" || colorizeSystemText !== "none")
+  // Colorization is active if either icon or text has a color set
+  readonly property bool isColorizing: colorizeSystemIcon !== "none" || colorizeSystemText !== "none"
 
   // Get color value from color name (returns null for invalid names)
   function _getColorValue(colorName, forHover) {

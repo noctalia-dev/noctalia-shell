@@ -159,9 +159,8 @@ Singleton {
                                       "horizontal": 10,
                                       "vertical": 10
                                     },
-                                    "enableColorization": false,
                                     "colorizeSystemIcon": "none",
-                                     "colorizeSystemText": "none",
+                                    "colorizeSystemText": "none",
                                     "ipcIdentifier": ""
                                   },
                                   "DarkMode": {

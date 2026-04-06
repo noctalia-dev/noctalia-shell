@@ -30,7 +30,6 @@ ColumnLayout {
   property bool valueShowIcon: (widgetData.showIcon !== undefined) ? widgetData.showIcon : widgetMetadata.showIcon
   property bool valueShowExecTooltip: widgetData.showExecTooltip !== undefined ? widgetData.showExecTooltip : widgetMetadata.showExecTooltip
   property bool valueShowTextTooltip: widgetData.showTextTooltip !== undefined ? widgetData.showTextTooltip : widgetMetadata.showTextTooltip
-  property bool valueEnableColorization: widgetData.enableColorization !== undefined ? widgetData.enableColorization : widgetMetadata.enableColorization
   property string valueColorizeSystemIcon: widgetData.colorizeSystemIcon !== undefined ? widgetData.colorizeSystemIcon : widgetMetadata.colorizeSystemIcon
   property string valueColorizeSystemText: widgetData.colorizeSystemText !== undefined ? widgetData.colorizeSystemText : widgetMetadata.colorizeSystemText
   property string valueIpcIdentifier: widgetData.ipcIdentifier !== undefined ? widgetData.ipcIdentifier : widgetMetadata.ipcIdentifier
@@ -66,7 +65,6 @@ ColumnLayout {
       "vertical": valueMaxTextLengthVertical
     };
     settings.textIntervalMs = parseInt(textIntervalInput.text || textIntervalInput.placeholderText, 10);
-    settings.enableColorization = valueEnableColorization;
     settings.colorizeSystemIcon = valueColorizeSystemIcon;
     settings.colorizeSystemText = valueColorizeSystemText;
     settings.ipcIdentifier = valueIpcIdentifier;
@@ -150,19 +148,7 @@ ColumnLayout {
     defaultValue: widgetMetadata.iconPosition
   }
 
-  NToggle {
-    label: I18n.tr("bar.custom-button.enable-colorization-label")
-    description: I18n.tr("bar.custom-button.enable-colorization-description")
-    checked: valueEnableColorization
-    onToggled: checked => {
-                 valueEnableColorization = checked;
-                 saveSettings();
-               }
-    defaultValue: widgetMetadata.enableColorization
-  }
-
   NColorChoice {
-    visible: valueEnableColorization
     label: I18n.tr("common.select-icon-color")
     description: I18n.tr("bar.custom-button.icon-color-selection-description")
     currentKey: valueColorizeSystemIcon
@@ -174,7 +160,6 @@ ColumnLayout {
   }
 
   NColorChoice {
-    visible: valueEnableColorization
     label: I18n.tr("common.select-text-color")
     description: I18n.tr("bar.custom-button.text-color-selection-description")
     currentKey: valueColorizeSystemText
