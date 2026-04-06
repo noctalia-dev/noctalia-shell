@@ -155,29 +155,44 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
   const auto anchor = positionToAnchor(barConfig.position);
   const bool vertical = (barConfig.position == "left" || barConfig.position == "right");
 
-  // Compositor margins create the floating-bar gap at the protocol level.
-  // The exclusive zone includes the margin so other windows are pushed far enough.
+  // All compositor margins are zero — the visual gaps (mH, mV) and shadow space are all
+  // rendered within the surface itself. This lets the shadow bleed toward the screen edge
+  // without being clipped by a surface boundary; only the physical screen edge clips it.
   const std::int32_t mH = barConfig.marginH;
   const std::int32_t mV = barConfig.marginV;
-  const std::int32_t totalExclusive = barConfig.height + mV;
+  // Exclusive zone reserves barH + edge-gap from the anchor edge so windows stay clear.
+  const std::int32_t totalExclusive = barConfig.height + (vertical ? mH : mV);
   const auto uHeight = static_cast<std::uint32_t>(barConfig.height);
-  const auto uShadow = static_cast<std::uint32_t>(std::max(0, barConfig.shadowSize));
+  const auto uMH = static_cast<std::uint32_t>(std::max(0, mH));
+  const auto uMV = static_cast<std::uint32_t>(std::max(0, mV));
 
-  // Surface is expanded by shadowSize in the away-from-edge direction so the
-  // shadow can bleed into the window area.  The exclusive zone is NOT expanded,
-  // so windows keep the same reserved gap.
+  // Shadow expansion toward content (the "inward" side of the bar).
+  const auto shadowExpand = [&]() -> std::uint32_t {
+    if (barConfig.shadowSize <= 0) return 0u;
+    if (vertical) {
+      const std::int32_t inward =
+          barConfig.position == "right" ? -barConfig.shadowOffsetX : barConfig.shadowOffsetX;
+      return static_cast<std::uint32_t>(barConfig.shadowSize + std::max(0, inward));
+    }
+    const std::int32_t inward =
+        barConfig.position == "bottom" ? -barConfig.shadowOffsetY : barConfig.shadowOffsetY;
+    return static_cast<std::uint32_t>(barConfig.shadowSize + std::max(0, inward));
+  }();
+
+  // Surface spans the full axis (no perpendicular compositor margins) plus the edge gap so
+  // the shadow can bleed all the way to the screen edge without hitting a surface boundary.
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-" + barConfig.name,
       .layer = LayerShellLayer::Top,
       .anchor = anchor,
-      .width = vertical ? uHeight + uShadow : 0,
-      .height = vertical ? 0u : uHeight + uShadow,
+      .width = vertical ? uMH + uHeight + shadowExpand : 0,
+      .height = vertical ? 0u : uMV + uHeight + shadowExpand,
       .exclusiveZone = totalExclusive,
-      .marginTop = (barConfig.position == "top") ? mV : 0,
-      .marginRight = mH,
-      .marginBottom = (barConfig.position == "bottom") ? mV : 0,
-      .marginLeft = mH,
-      .defaultHeight = vertical ? 0u : uHeight + uShadow,
+      .marginTop = 0,
+      .marginRight = 0,
+      .marginBottom = 0,
+      .marginLeft = 0,
+      .defaultHeight = vertical ? 0u : uMV + uHeight + shadowExpand,
   };
 
   instance->surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
@@ -229,17 +244,35 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   const float paddingH = static_cast<float>(instance.barConfig.paddingH);
   const float widgetSpacing = static_cast<float>(instance.barConfig.widgetSpacing);
   const float shadowSize = static_cast<float>(std::max(0, instance.barConfig.shadowSize));
+  const float shadowOffsetX = static_cast<float>(instance.barConfig.shadowOffsetX);
+  const float shadowOffsetY = static_cast<float>(instance.barConfig.shadowOffsetY);
   const float barH = static_cast<float>(instance.barConfig.height);
+  const float marginH = static_cast<float>(instance.barConfig.marginH);
+  const float marginV = static_cast<float>(instance.barConfig.marginV);
   const float radius = static_cast<float>(instance.barConfig.radius);
   const bool isBottom = instance.barConfig.position == "bottom";
   const bool isRight = instance.barConfig.position == "right";
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
 
-  // Coordinates of the bar's visual area within the (possibly taller/wider) surface
-  const float barAreaX = isRight ? shadowSize : 0.0f;
-  const float barAreaY = isBottom ? shadowSize : 0.0f;
-  const float barAreaW = isVertical ? barH : w;
-  const float barAreaH = isVertical ? h : barH;
+  // Compute the surface expansion (must match createInstance).
+  const float shadowExpand = [&]() -> float {
+    if (shadowSize <= 0.0f) return 0.0f;
+    if (isVertical) {
+      const float inward = isRight ? -shadowOffsetX : shadowOffsetX;
+      return shadowSize + std::max(0.0f, inward);
+    }
+    const float inward = isBottom ? -shadowOffsetY : shadowOffsetY;
+    return shadowSize + std::max(0.0f, inward);
+  }();
+
+  // The bar's visual area within the surface.
+  // All compositor margins are zero; mH and mV are embedded here as the visual gap.
+  // For the anchor-edge side: the gap (mV for horizontal, mH for vertical) sits between
+  // the surface/screen edge and the bar, so barAreaY/X offsets by that amount.
+  const float barAreaX = isVertical ? (isRight ? shadowExpand : marginH) : marginH;
+  const float barAreaY = isVertical ? marginV : (isBottom ? shadowExpand : marginV);
+  const float barAreaW = isVertical ? barH : (w - 2.0f * marginH);
+  const float barAreaH = isVertical ? (h - 2.0f * marginV) : barH;
 
   if (instance.sceneRoot == nullptr) {
     instance.sceneRoot = std::make_unique<Node>();
@@ -252,11 +285,12 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     bg->setRadius(radius);
     instance.bg = instance.sceneRoot->addChild(std::move(bg));
 
-    // Shadow — gradient rect that bleeds into the window area
+    // Shadow — bar shape copy rendered with large SDF softness to simulate a blurred drop shadow.
     if (shadowSize > 0.0f) {
       auto shadow = std::make_unique<RectNode>();
       instance.shadow = static_cast<RectNode*>(instance.sceneRoot->addChild(std::move(shadow)));
     }
+    // Note: shadow is inserted before bar sections so it renders below them (z=-1 is set below).
 
     // Create section boxes
     auto makeSection = [widgetSpacing]() {
@@ -312,60 +346,22 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   instance.bg->setPosition(barAreaX - 1.0f, barAreaY - 1.0f);
   instance.bg->setSize(barAreaW + 2.0f, barAreaH + 2.0f);
 
-  // Shadow — positioned flush against the bar's outer edge, with the two adjacent
-  // corners matching the bar's radius so the shadow silhouette follows the bar shape.
-  // Rendered behind the bar (z=-1) so the bar covers the rounded-corner junction.
+  // Shadow — same shape as the bar, offset by (shadowOffsetX, shadowOffsetY), rendered with large
+  // SDF softness to produce a Gaussian-like blurred drop shadow. Rendered at z=-1 so the bar sits
+  // on top and hides the shadow's opaque interior.
   if (instance.shadow != nullptr) {
-    const Color dark = rgba(0.0f, 0.0f, 0.0f, 0.35f);
-    const Color clear = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-
-    // Corner radii: the two corners adjacent to the bar carry the bar's radius;
-    // the far corners are 0 so the shadow tapers cleanly to a straight edge.
-    Radii shadowRadii{};
-    if (!isVertical) {
-      if (isBottom) {
-        // Shadow above bottom bar — bottom corners match bar's top corners
-        shadowRadii = Radii{0, 0, radius, radius};
-      } else {
-        // Shadow below top bar — top corners match bar's bottom corners
-        shadowRadii = Radii{radius, radius, 0, 0};
-      }
-    } else {
-      if (isRight) {
-        // Shadow left of right bar — right corners match bar's left corners
-        shadowRadii = Radii{0, radius, radius, 0};
-      } else {
-        // Shadow right of left bar — left corners match bar's right corners
-        shadowRadii = Radii{radius, 0, 0, radius};
-      }
-    }
-
-    RoundedRectStyle shadowStyle{
-        .fillMode = FillMode::LinearGradient,
-        .gradientDirection = isVertical ? GradientDirection::Horizontal : GradientDirection::Vertical,
-        .radius = shadowRadii,
-        .softness = 0.0f,
+    const RoundedRectStyle shadowStyle{
+        .fill = rgba(0.0f, 0.0f, 0.0f, 0.55f),
+        .fillEnd = {},
+        .border = rgba(0.0f, 0.0f, 0.0f, 0.0f),
+        .fillMode = FillMode::Solid,
+        .radius = radius,
+        .softness = shadowSize,
     };
-    shadowStyle.border = clear; // default border is opaque — zero it out
-    if (isBottom || isRight) {
-      shadowStyle.fill = clear;
-      shadowStyle.fillEnd = dark;
-    } else {
-      shadowStyle.fill = dark;
-      shadowStyle.fillEnd = clear;
-    }
     instance.shadow->setStyle(shadowStyle);
     instance.shadow->setZIndex(-1);
-
-    if (isVertical) {
-      const float shadowX = isRight ? 0.0f : barH;
-      instance.shadow->setPosition(shadowX, 0.0f);
-      instance.shadow->setSize(shadowSize, h);
-    } else {
-      const float shadowY = isBottom ? 0.0f : barH;
-      instance.shadow->setPosition(0.0f, shadowY);
-      instance.shadow->setSize(w, shadowSize);
-    }
+    instance.shadow->setPosition(barAreaX + shadowOffsetX, barAreaY + shadowOffsetY);
+    instance.shadow->setSize(barAreaW, barAreaH);
   }
 
   // Layout widgets
@@ -385,7 +381,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
   // Position sections — centre within the bar visual area, not the full surface
   const float contentY = barAreaY + (barAreaH - instance.startSection->height()) * 0.5f;
-  instance.startSection->setPosition(paddingH, contentY);
+  instance.startSection->setPosition(barAreaX + paddingH, contentY);
 
   const float centerX = barAreaX + (barAreaW - instance.centerSection->width()) * 0.5f;
   const float centerY = barAreaY + (barAreaH - instance.centerSection->height()) * 0.5f;
@@ -406,14 +402,27 @@ void Bar::updateWidgets(BarInstance& instance) {
   const auto h = static_cast<float>(instance.surface->height());
   const float paddingH = static_cast<float>(instance.barConfig.paddingH);
   const float shadowSize = static_cast<float>(std::max(0, instance.barConfig.shadowSize));
+  const float shadowOffsetX = static_cast<float>(instance.barConfig.shadowOffsetX);
+  const float shadowOffsetY = static_cast<float>(instance.barConfig.shadowOffsetY);
   const float barH = static_cast<float>(instance.barConfig.height);
+  const float marginH = static_cast<float>(instance.barConfig.marginH);
+  const float marginV = static_cast<float>(instance.barConfig.marginV);
   const bool isBottom = instance.barConfig.position == "bottom";
   const bool isRight = instance.barConfig.position == "right";
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
-  const float barAreaX = isRight ? shadowSize : 0.0f;
-  const float barAreaY = isBottom ? shadowSize : 0.0f;
-  const float barAreaW = isVertical ? barH : w;
-  const float barAreaH = isVertical ? h : barH;
+  const float shadowExpand = [&]() -> float {
+    if (shadowSize <= 0.0f) return 0.0f;
+    if (isVertical) {
+      const float inward = isRight ? -shadowOffsetX : shadowOffsetX;
+      return shadowSize + std::max(0.0f, inward);
+    }
+    const float inward = isBottom ? -shadowOffsetY : shadowOffsetY;
+    return shadowSize + std::max(0.0f, inward);
+  }();
+  const float barAreaX = isVertical ? (isRight ? shadowExpand : marginH) : marginH;
+  const float barAreaY = isVertical ? marginV : (isBottom ? shadowExpand : marginV);
+  const float barAreaW = isVertical ? barH : (w - 2.0f * marginH);
+  const float barAreaH = isVertical ? (h - 2.0f * marginV) : barH;
 
   auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets, Flex* section) {
     bool changed = false;
@@ -436,7 +445,7 @@ void Bar::updateWidgets(BarInstance& instance) {
   // Reposition sections if sizes changed
   if (instance.startSection->dirty() || instance.centerSection->dirty() || instance.endSection->dirty()) {
     const float contentY = barAreaY + (barAreaH - instance.startSection->height()) * 0.5f;
-    instance.startSection->setPosition(paddingH, contentY);
+    instance.startSection->setPosition(barAreaX + paddingH, contentY);
 
     const float centerX = barAreaX + (barAreaW - instance.centerSection->width()) * 0.5f;
     const float centerY = barAreaY + (barAreaH - instance.centerSection->height()) * 0.5f;
