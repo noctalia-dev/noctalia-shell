@@ -378,7 +378,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   // Layout widgets
   auto layoutWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
     for (auto& widget : widgets) {
-      widget->layout(*renderer, w, h);
+      widget->layout(*renderer, barAreaW, barAreaH);
     }
   };
   layoutWidgets(instance.startWidgets);
@@ -441,7 +441,7 @@ void Bar::updateWidgets(BarInstance& instance) {
       widget->update(*renderer);
       if (widget->root() != nullptr && widget->root()->dirty()) {
         changed = true;
-        widget->layout(*renderer, w, h);
+        widget->layout(*renderer, barAreaW, barAreaH);
       }
     }
     if (changed) {

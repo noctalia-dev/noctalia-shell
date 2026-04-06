@@ -80,7 +80,7 @@ void SysmonWidget::create(Renderer& renderer) {
   update(renderer);
 }
 
-void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float containerHeight) {
+void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
   if (m_icon == nullptr || rootNode == nullptr) {
     return;
