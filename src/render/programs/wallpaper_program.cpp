@@ -161,7 +161,7 @@ void main() {
     maxDist = max(maxDist, distance(aspectCenter, vec2(u_aspectRatio, 1.0)));
 
     float radius = u_progress * (maxDist + 2.0 * mappedSmoothness) - mappedSmoothness;
-    float factor = smoothstep(radius + mappedSmoothness, radius - mappedSmoothness, dist);
+    float factor = smoothstep(radius - mappedSmoothness, radius + mappedSmoothness, dist);
     gl_FragColor = mix(color2, color1, factor);
 }
 )";
@@ -202,38 +202,38 @@ void main() {
     float localProgress = clamp((u_progress - delay) / (1.0 - delay), 0.0, 1.0);
 
     float edge;
+    float localFrac = fract(stripePos);
+    float factor;
     if (isOdd > 0.5) {
-        edge = mix(1.0, 0.0, localProgress);
-        float localFrac = fract(stripePos);
-        float factor = smoothstep(edge - mappedSmoothness, edge + mappedSmoothness, localFrac);
+        edge = mix(1.0 + mappedSmoothness, -mappedSmoothness, localProgress);
+        factor = smoothstep(edge - mappedSmoothness, edge + mappedSmoothness, localFrac);
         gl_FragColor = mix(color1, color2, factor);
     } else {
-        edge = mix(0.0, 1.0, localProgress);
-        float localFrac = fract(stripePos);
-        float factor = smoothstep(edge - mappedSmoothness, edge + mappedSmoothness, localFrac);
+        edge = mix(-mappedSmoothness, 1.0 + mappedSmoothness, localProgress);
+        factor = smoothstep(edge - mappedSmoothness, edge + mappedSmoothness, localFrac);
         gl_FragColor = mix(color2, color1, factor);
     }
 }
 )";
 
-constexpr char kPixelateFragment[] = R"(
-uniform float u_maxBlockSize;
-
+constexpr char kZoomFragment[] = R"(
 void main() {
     vec2 uv = v_texcoord;
 
-    float pixelIntensity = 1.0 - abs(2.0 * u_progress - 1.0);
-    float blockSize = max(1.0, u_maxBlockSize * pixelIntensity);
+    float zoom = 0.15;
 
-    vec2 pixelCoord = uv * vec2(u_screenWidth, u_screenHeight);
-    vec2 snappedPixel = floor(pixelCoord / blockSize) * blockSize + blockSize * 0.5;
-    vec2 snappedUV = snappedPixel / vec2(u_screenWidth, u_screenHeight);
+    // Old image zooms in (grows toward viewer) while fading out
+    float scale1 = 1.0 + zoom * u_progress;
+    vec2 uv1 = (uv - 0.5) / scale1 + 0.5;
 
-    vec4 color1 = sampleWithFillMode(u_source1, snappedUV, u_imageWidth1, u_imageHeight1);
-    vec4 color2 = sampleWithFillMode(u_source2, snappedUV, u_imageWidth2, u_imageHeight2);
+    // New image arrives slightly zoomed in, returns to normal scale while fading in
+    float scale2 = 1.0 + zoom * (1.0 - u_progress);
+    vec2 uv2 = (uv - 0.5) / scale2 + 0.5;
 
-    float crossfade = smoothstep(0.4, 0.6, u_progress);
-    gl_FragColor = mix(color1, color2, crossfade);
+    vec4 color1 = sampleWithFillMode(u_source1, uv1, u_imageWidth1, u_imageHeight1);
+    vec4 color2 = sampleWithFillMode(u_source2, uv2, u_imageWidth2, u_imageHeight2);
+
+    gl_FragColor = mix(color1, color2, u_progress);
 }
 )";
 
@@ -298,7 +298,7 @@ void main() {
     maxDist = max(maxDist, distance(waveOrigin, vec2(u_aspectRatio, 1.0)));
 
     float radius = u_progress * (maxDist + 2.0 * mappedSmoothness) - mappedSmoothness;
-    float factor = smoothstep(radius + mappedSmoothness, radius - mappedSmoothness, dist);
+    float factor = smoothstep(radius - mappedSmoothness, radius + mappedSmoothness, dist);
     gl_FragColor = mix(color2, color1, factor);
 }
 )";
@@ -314,7 +314,7 @@ void WallpaperProgram::ensureInitialized() {
   initProgram(static_cast<std::size_t>(WallpaperTransition::Wipe), kWipeFragment);
   initProgram(static_cast<std::size_t>(WallpaperTransition::Disc), kDiscFragment);
   initProgram(static_cast<std::size_t>(WallpaperTransition::Stripes), kStripesFragment);
-  initProgram(static_cast<std::size_t>(WallpaperTransition::Pixelate), kPixelateFragment);
+  initProgram(static_cast<std::size_t>(WallpaperTransition::Zoom), kZoomFragment);
   initProgram(static_cast<std::size_t>(WallpaperTransition::Honeycomb), kHoneycombFragment);
 }
 

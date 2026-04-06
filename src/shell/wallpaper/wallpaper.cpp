@@ -33,8 +33,7 @@ TransitionParams randomizeParams(WallpaperTransition type, float smoothness, flo
     params.stripeCount = std::round(randomFloat(4.0f, 24.0f));
     params.angle = randomFloat(0.0f, 360.0f);
     break;
-  case WallpaperTransition::Pixelate:
-    params.maxBlockSize = std::round(randomFloat(32.0f, 112.0f));
+  case WallpaperTransition::Zoom:
     break;
   case WallpaperTransition::Honeycomb:
     params.cellSize = randomFloat(0.02f, 0.06f);

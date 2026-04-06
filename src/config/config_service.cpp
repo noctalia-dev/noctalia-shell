@@ -368,8 +368,8 @@ void ConfigService::loadFromFile(const std::string& path) {
         return WallpaperTransition::Disc;
       if (s == "stripes")
         return WallpaperTransition::Stripes;
-      if (s == "pixelate")
-        return WallpaperTransition::Pixelate;
+      if (s == "zoom")
+        return WallpaperTransition::Zoom;
       if (s == "honeycomb")
         return WallpaperTransition::Honeycomb;
       return std::nullopt;
