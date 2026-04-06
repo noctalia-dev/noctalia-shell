@@ -61,7 +61,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "volume") {
-    return std::make_unique<VolumeWidget>(m_audio);
+    std::int32_t scale = 1;
+    const auto* wlOutput = m_wayland.findOutputByWl(output);
+    if (wlOutput != nullptr) {
+      scale = wlOutput->scale;
+    }
+    return std::make_unique<VolumeWidget>(m_audio, output, scale);
   }
 
   if (type == "battery") {

@@ -66,11 +66,24 @@ bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, double v
     return false;
   }
 
-  float absX = 0.0f;
-  float absY = 0.0f;
-  Node::absolutePosition(target, absX, absY);
-  target->dispatchAxis(x - absX, y - absY, axis, value, discrete);
-  return true;
+  bool dispatched = false;
+  for (Node* node = target; node != nullptr; node = node->parent()) {
+    auto* area = dynamic_cast<InputArea*>(node);
+    if (area == nullptr || !area->enabled()) {
+      continue;
+    }
+
+    float absX = 0.0f;
+    float absY = 0.0f;
+    Node::absolutePosition(area, absX, absY);
+    area->dispatchAxis(x - absX, y - absY, axis, value, discrete);
+    dispatched = true;
+
+    if (!area->propagateEvents()) {
+      break;
+    }
+  }
+  return dispatched;
 }
 
 void InputDispatcher::keyEvent(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed,

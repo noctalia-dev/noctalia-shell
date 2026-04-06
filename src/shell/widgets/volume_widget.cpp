@@ -2,6 +2,9 @@
 
 #include "pipewire/pipewire_service.h"
 #include "render/core/renderer.h"
+#include "render/scene/input_area.h"
+#include "render/scene/node.h"
+#include "shell/panel/panel_manager.h"
 #include "ui/controls/icon.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -25,25 +28,37 @@ const char* volumeIconName(float volume, bool muted) {
 
 } // namespace
 
-VolumeWidget::VolumeWidget(PipeWireService* audio) : m_audio(audio) {}
+VolumeWidget::VolumeWidget(PipeWireService* audio, wl_output* output, std::int32_t scale)
+    : m_audio(audio), m_output(output), m_scale(scale) {}
 
 void VolumeWidget::create(Renderer& renderer) {
-  auto container = std::make_unique<Node>();
+  auto area = std::make_unique<InputArea>();
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
+    float absX = 0.0f;
+    float absY = 0.0f;
+    auto* node = root();
+    if (node != nullptr) {
+      Node::absolutePosition(node, absX, absY);
+      absX += node->width() * 0.5f;
+      absY += node->height() * 0.5f;
+    }
+    PanelManager::instance().togglePanel("audio-devices", m_output, m_scale, absX, absY);
+  });
 
   auto icon = std::make_unique<Icon>();
   icon->setIcon("volume-high");
   icon->setIconSize(Style::fontSizeBody * m_contentScale);
   icon->setColor(palette.onSurface);
   m_icon = icon.get();
-  container->addChild(std::move(icon));
+  area->addChild(std::move(icon));
 
   auto label = std::make_unique<Label>();
   label->setBold(true);
   label->setFontSize(Style::fontSizeBody * m_contentScale);
   m_label = label.get();
-  container->addChild(std::move(label));
+  area->addChild(std::move(label));
 
-  m_root = std::move(container);
+  m_root = std::move(area);
   syncState(renderer);
 }
 

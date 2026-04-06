@@ -2,6 +2,7 @@
 
 #include "app/poll_source.h"
 #include "core/log.h"
+#include "shell/panels/audio_devices_panel.h"
 #include "shell/panels/notification_history_panel.h"
 #include "shell/panels/test_panel.h"
 #include "system/distro_info.h"
@@ -219,6 +220,7 @@ void Application::run() {
   // Initialize panel manager (must be before bar so widgets can access PanelManager::instance())
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
+  m_panelManager.registerPanel("audio-devices", std::make_unique<AudioDevicesPanel>(m_pipewireService.get()));
   m_panelManager.registerPanel("notification-history",
                                std::make_unique<NotificationHistoryPanel>(&m_notificationManager));
 
@@ -243,6 +245,7 @@ void Application::run() {
     m_audioOsd.suppressFor(std::chrono::milliseconds(2000));
     m_pipewireService->setChangeCallback([this]() {
       m_bar.onWorkspaceChange();
+      m_panelManager.refresh();
       if (m_pipewireService != nullptr) {
         m_audioOsd.onAudioStateChanged(*m_pipewireService);
       }
