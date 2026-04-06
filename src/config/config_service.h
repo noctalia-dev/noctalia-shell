@@ -74,12 +74,18 @@ enum class WallpaperTransition : std::uint8_t {
   Honeycomb = 5,
 };
 
+struct WallpaperMonitorOverride {
+  std::string match;
+  std::optional<bool> enabled;
+};
+
 struct WallpaperConfig {
   bool enabled = true;
   WallpaperFillMode fillMode = WallpaperFillMode::Crop;
   WallpaperTransition transition = WallpaperTransition::Fade;
   float transitionDurationMs = 1500.0f;
   float edgeSmoothness = 0.5f;
+  std::vector<WallpaperMonitorOverride> monitorOverrides;
 };
 
 struct OsdConfig {
@@ -106,7 +112,7 @@ public:
   [[nodiscard]] const Config& config() const noexcept { return m_config; }
   [[nodiscard]] int watchFd() const noexcept { return m_inotifyFd; }
 
-  void setReloadCallback(ReloadCallback callback);
+  void addReloadCallback(ReloadCallback callback);
   void checkReload();
 
   [[nodiscard]] static BarConfig resolveForOutput(const BarConfig& base, const WaylandOutput& output);
@@ -121,5 +127,5 @@ private:
   int m_inotifyFd = -1;
   int m_watchFd = -1;
   bool m_pendingReload = false;
-  ReloadCallback m_reloadCallback;
+  std::vector<ReloadCallback> m_reloadCallbacks;
 };

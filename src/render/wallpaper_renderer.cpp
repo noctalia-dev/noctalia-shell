@@ -35,7 +35,7 @@ WallpaperRenderer::WallpaperRenderer() = default;
 
 WallpaperRenderer::~WallpaperRenderer() { cleanup(); }
 
-void WallpaperRenderer::bind(wl_display* display, wl_surface* surface) {
+void WallpaperRenderer::bind(wl_display* display, wl_surface* surface, EGLContext shareContext) {
   if (display == nullptr || surface == nullptr) {
     throw std::runtime_error("wallpaper renderer requires a valid Wayland display and surface");
   }
@@ -63,7 +63,7 @@ void WallpaperRenderer::bind(wl_display* display, wl_surface* surface) {
     throw std::runtime_error("eglChooseConfig failed");
   }
 
-  m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, EGL_NO_CONTEXT, kContextAttributes);
+  m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, shareContext, kContextAttributes);
   if (m_eglContext == EGL_NO_CONTEXT) {
     throw std::runtime_error("eglCreateContext failed");
   }
@@ -167,7 +167,9 @@ void WallpaperRenderer::cleanup() {
     if (m_eglContext != EGL_NO_CONTEXT) {
       eglDestroyContext(m_eglDisplay, m_eglContext);
     }
-    eglTerminate(m_eglDisplay);
+    // Do NOT call eglTerminate — the EGLDisplay is the application-wide Wayland
+    // display handle shared with the bar's RenderContext. Terminating it here
+    // would invalidate all other contexts (bar, other wallpaper renderers).
   }
 
   if (m_window != nullptr) {

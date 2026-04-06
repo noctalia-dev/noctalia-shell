@@ -8,6 +8,7 @@ public:
   using LayerSurface::LayerSurface;
 
   [[nodiscard]] WallpaperRenderer* wallpaperRenderer() noexcept { return &m_wallpaperRenderer; }
+  void setShareContext(EGLContext ctx) noexcept { m_shareContext = ctx; }
 
 protected:
   bool createWlSurface() override;
@@ -16,4 +17,5 @@ protected:
 
 private:
   WallpaperRenderer m_wallpaperRenderer;
+  EGLContext m_shareContext = EGL_NO_CONTEXT;
 };

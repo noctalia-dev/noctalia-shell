@@ -70,7 +70,7 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
     });
   }
 
-  m_config->setReloadCallback([this]() { reload(); });
+  m_config->addReloadCallback([this]() { reload(); });
 
   syncInstances();
   return true;

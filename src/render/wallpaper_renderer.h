@@ -18,8 +18,9 @@ public:
   WallpaperRenderer(const WallpaperRenderer&) = delete;
   WallpaperRenderer& operator=(const WallpaperRenderer&) = delete;
 
-  void bind(wl_display* display, wl_surface* surface);
+  void bind(wl_display* display, wl_surface* surface, EGLContext shareContext = EGL_NO_CONTEXT);
   void makeCurrent();
+  [[nodiscard]] EGLContext eglContext() const noexcept { return m_eglContext; }
   void resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight, std::uint32_t logicalWidth,
               std::uint32_t logicalHeight);
   void render();
