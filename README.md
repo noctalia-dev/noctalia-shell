@@ -213,7 +213,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [x] Scroll view
 - [ ] List view
 - [ ] Checkbox
-- [ ] Radio button
+- [x] Radio button
 - [ ] Tab bar
 - [ ] Grid view
 - [ ] Context menu

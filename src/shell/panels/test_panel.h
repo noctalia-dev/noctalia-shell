@@ -5,6 +5,7 @@
 class Flex;
 class Button;
 class Input;
+class RadioButton;
 class Select;
 class Label;
 class Slider;
@@ -29,6 +30,8 @@ private:
   Button* m_iconButton = nullptr;
   Slider* m_slider = nullptr;
   Toggle* m_toggle = nullptr;
+  RadioButton* m_radioA = nullptr;
+  RadioButton* m_radioB = nullptr;
   Spinner* m_spinner = nullptr;
   Input* m_input = nullptr;
   Label* m_inputValueLabel = nullptr;

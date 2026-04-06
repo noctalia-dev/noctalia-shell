@@ -5,6 +5,7 @@
 #include "ui/controls/button.h"
 #include "ui/controls/select.h"
 #include "ui/controls/label.h"
+#include "ui/controls/radio_button.h"
 #include "ui/controls/slider.h"
 #include "ui/controls/input.h"
 #include "ui/controls/spinner.h"
@@ -131,6 +132,69 @@ void TestPanel::create(Renderer& renderer) {
   }
 
   {
+    auto options = std::make_unique<Flex>();
+    options->setDirection(FlexDirection::Horizontal);
+    options->setAlign(FlexAlign::Center);
+    options->setGap(static_cast<float>(Style::spaceMd));
+
+    auto optionA = std::make_unique<Flex>();
+    optionA->setDirection(FlexDirection::Horizontal);
+    optionA->setAlign(FlexAlign::Center);
+    optionA->setGap(static_cast<float>(Style::spaceXs));
+
+    auto radioA = std::make_unique<RadioButton>();
+    radioA->setChecked(true);
+    m_radioA = radioA.get();
+
+    auto labelA = std::make_unique<Label>();
+    labelA->setText("Option A");
+
+    optionA->addChild(std::move(radioA));
+    optionA->addChild(std::move(labelA));
+
+    auto optionB = std::make_unique<Flex>();
+    optionB->setDirection(FlexDirection::Horizontal);
+    optionB->setAlign(FlexAlign::Center);
+    optionB->setGap(static_cast<float>(Style::spaceXs));
+
+    auto radioB = std::make_unique<RadioButton>();
+    m_radioB = radioB.get();
+
+    auto labelB = std::make_unique<Label>();
+    labelB->setText("Option B");
+
+    optionB->addChild(std::move(radioB));
+    optionB->addChild(std::move(labelB));
+
+    if (m_radioA != nullptr) {
+      m_radioA->setOnChange([this](bool checked) {
+        if (!checked || m_radioB == nullptr) {
+          return;
+        }
+        m_radioA->setChecked(true);
+        m_radioB->setChecked(false);
+      });
+    }
+    if (m_radioB != nullptr) {
+      m_radioB->setOnChange([this](bool checked) {
+        if (!checked || m_radioA == nullptr) {
+          return;
+        }
+        m_radioA->setChecked(false);
+        m_radioB->setChecked(true);
+      });
+    }
+
+    options->addChild(std::move(optionA));
+    options->addChild(std::move(optionB));
+
+    auto row = makeRow();
+    row->addChild(makeRowLabel("Radio", kRowLabelWidth));
+    row->addChild(std::move(options));
+    container->addChild(std::move(row));
+  }
+
+  {
     auto spinner = std::make_unique<Spinner>();
     m_spinner = spinner.get();
     auto row = makeRow();
@@ -204,6 +268,12 @@ void TestPanel::layout(Renderer& renderer, float /*width*/, float /*height*/) {
   }
   if (m_toggle != nullptr) {
     m_toggle->layout(renderer);
+  }
+  if (m_radioA != nullptr) {
+    m_radioA->layout(renderer);
+  }
+  if (m_radioB != nullptr) {
+    m_radioB->layout(renderer);
   }
   // Size the InputArea to match the toggle
   if (m_toggle != nullptr && m_toggle->parent() != nullptr) {

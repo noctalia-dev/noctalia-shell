@@ -55,14 +55,18 @@ public:
   // Control
   void setSinkVolume(std::uint32_t id, float volume);
   void setSinkMuted(std::uint32_t id, bool muted);
+  void setDefaultSink(std::uint32_t id);
   void setSourceVolume(std::uint32_t id, float volume);
   void setSourceMuted(std::uint32_t id, bool muted);
+  void setDefaultSource(std::uint32_t id);
 
   // Convenience (operates on default sink/source)
   void setVolume(float volume);
   void setMuted(bool muted);
   void setMicVolume(float volume);
   void setMicMuted(bool muted);
+
+  [[nodiscard]] std::uint64_t changeSerial() const noexcept { return m_changeSerial; }
 
   // Called from C callbacks in the .cpp — must be public
   struct NodeData {
@@ -88,11 +92,13 @@ private:
   void rebuildState();
   void setNodeVolume(std::uint32_t id, float volume);
   void setNodeMuted(std::uint32_t id, bool muted);
+  void setDefaultNode(std::uint32_t id, const char* key);
 
   pw_loop* m_loop = nullptr;
   pw_context* m_context = nullptr;
   pw_core* m_core = nullptr;
   pw_registry* m_registry = nullptr;
+  struct pw_metadata* m_defaultMetadata = nullptr;
 
   // Listener hooks (must outlive the objects they listen to)
   spa_hook* m_coreListener = nullptr;
@@ -104,6 +110,7 @@ private:
   std::string m_defaultSourceName;
   AudioState m_state;
   ChangeCallback m_changeCallback;
+  std::uint64_t m_changeSerial = 0;
 
   void emitChanged();
 };

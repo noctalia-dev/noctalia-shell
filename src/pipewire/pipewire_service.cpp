@@ -14,6 +14,8 @@
 #include <cmath>
 #include <cstring>
 #include <memory>
+#include <string>
+#include <string_view>
 
 namespace {
 
@@ -99,6 +101,20 @@ std::string dictGet(const spa_dict* dict, const char* key) {
   }
   const char* val = spa_dict_lookup(dict, key);
   return val != nullptr ? std::string(val) : std::string{};
+}
+
+std::string escapeJsonString(std::string_view text) {
+  std::string escaped;
+  escaped.reserve(text.size());
+
+  for (const char ch : text) {
+    if (ch == '\\' || ch == '"') {
+      escaped.push_back('\\');
+    }
+    escaped.push_back(ch);
+  }
+
+  return escaped;
 }
 
 } // namespace
@@ -266,6 +282,7 @@ void PipeWireService::onRegistryGlobal(std::uint32_t id, const char* type, std::
       auto* proxy =
           static_cast<pw_metadata*>(pw_registry_bind(m_registry, id, type, PW_VERSION_METADATA, sizeof(void*)));
       if (proxy != nullptr) {
+        m_defaultMetadata = proxy;
         auto* md = new MetadataData{this, proxy, new spa_hook{}};
         spa_zero(*md->listener);
         pw_metadata_add_listener(proxy, md->listener, &kMetadataEvents, md);
@@ -276,6 +293,9 @@ void PipeWireService::onRegistryGlobal(std::uint32_t id, const char* type, std::
           }
           if (md->proxy != nullptr) {
             pw_proxy_destroy(reinterpret_cast<pw_proxy*>(md->proxy));
+          }
+          if (md->service != nullptr && md->service->m_defaultMetadata == md->proxy) {
+            md->service->m_defaultMetadata = nullptr;
           }
           delete md;
         });
@@ -433,6 +453,7 @@ void PipeWireService::rebuildState() {
   std::ranges::sort(next.sources, [](const auto& a, const auto& b) { return a.id < b.id; });
 
   m_state = std::move(next);
+  ++m_changeSerial;
   emitChanged();
 }
 
@@ -493,8 +514,36 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
 
 void PipeWireService::setSinkVolume(std::uint32_t id, float volume) { setNodeVolume(id, volume); }
 void PipeWireService::setSinkMuted(std::uint32_t id, bool muted) { setNodeMuted(id, muted); }
+void PipeWireService::setDefaultSink(std::uint32_t id) { setDefaultNode(id, "default.audio.sink"); }
 void PipeWireService::setSourceVolume(std::uint32_t id, float volume) { setNodeVolume(id, volume); }
 void PipeWireService::setSourceMuted(std::uint32_t id, bool muted) { setNodeMuted(id, muted); }
+void PipeWireService::setDefaultSource(std::uint32_t id) { setDefaultNode(id, "default.audio.source"); }
+
+void PipeWireService::setDefaultNode(std::uint32_t id, const char* key) {
+  if (m_defaultMetadata == nullptr) {
+    logWarn("pipewire: unable to set {} - default metadata unavailable", key != nullptr ? key : "default node");
+    return;
+  }
+
+  const auto it = m_nodes.find(id);
+  if (it == m_nodes.end() || key == nullptr) {
+    return;
+  }
+
+  const std::string payload = "{\"name\":\"" + escapeJsonString(it->second->name) + "\"}";
+  const int rc = pw_metadata_set_property(m_defaultMetadata, PW_ID_CORE, key, "Spa:String:JSON", payload.c_str());
+  if (rc < 0) {
+    logWarn("pipewire: failed to set {} to \"{}\" ({})", key, it->second->name, spa_strerror(rc));
+    return;
+  }
+
+  if (std::strcmp(key, "default.audio.sink") == 0) {
+    m_defaultSinkName = it->second->name;
+  } else if (std::strcmp(key, "default.audio.source") == 0) {
+    m_defaultSourceName = it->second->name;
+  }
+  rebuildState();
+}
 
 void PipeWireService::setVolume(float volume) {
   const auto* sink = defaultSink();
