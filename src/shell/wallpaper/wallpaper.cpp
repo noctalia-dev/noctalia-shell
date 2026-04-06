@@ -83,17 +83,31 @@ bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, St
 void Wallpaper::reload() {
   logInfo("wallpaper: reloading config");
 
-  for (auto& inst : m_instances) {
-    releaseInstanceTextures(*inst);
-  }
-  makeAnyContextCurrent();
-  m_sharedTexManager.cleanup();
-  m_textureCache.clear();
-  m_instances.clear();
-  m_shareContext = EGL_NO_CONTEXT;
+  const bool nowEnabled = m_config->config().wallpaper.enabled;
 
-  if (m_config->config().wallpaper.enabled) {
-    syncInstances();
+  if (!nowEnabled) {
+    // Wallpaper disabled — full teardown
+    for (auto& inst : m_instances) {
+      releaseInstanceTextures(*inst);
+    }
+    makeAnyContextCurrent();
+    m_sharedTexManager.cleanup();
+    m_textureCache.clear();
+    m_instances.clear();
+    m_shareContext = EGL_NO_CONTEXT;
+    return;
+  }
+
+  // Wallpaper remains (or becomes) enabled — sync instances without teardown
+  // to avoid flickering. syncInstances handles monitor override changes
+  // (adds/removes instances) without disturbing existing surfaces.
+  syncInstances();
+
+  // Refresh renderer state on all instances to pick up fill mode / smoothness
+  // changes that take effect immediately without a texture reload.
+  for (auto& inst : m_instances) {
+    updateRendererState(*inst);
+    inst->surface->requestRedraw();
   }
 }
 
