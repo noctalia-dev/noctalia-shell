@@ -40,7 +40,8 @@ struct BarConfig {
   float scale = 1.0f;             // content scale multiplier for icons and text
   std::vector<std::string> startWidgets = {"cpu", "temp", "ram"};
   std::vector<std::string> centerWidgets = {"workspaces"};
-  std::vector<std::string> endWidgets = {"test", "tray", "notifications", "volume", "battery", "spacer", "date", "clock"};
+  std::vector<std::string> endWidgets = {"test",    "tray",   "notifications", "volume",
+                                         "battery", "spacer", "date",          "clock"};
   std::vector<BarMonitorOverride> monitorOverrides;
 };
 

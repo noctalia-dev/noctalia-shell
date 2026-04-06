@@ -35,7 +35,7 @@ void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> c
   m_panels[id] = std::move(content);
 }
 
-void PanelManager::openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float /*anchorX*/) {
+void PanelManager::openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX) {
   if (m_inTransition) {
     return;
   }
@@ -64,23 +64,30 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
     barHeight = m_config->config().bars[0].height;
   }
 
-  // Find the output width to calculate margins (if needed)
-  // std::int32_t outputWidth = 1920;
-  // if (m_wayland != nullptr) {
-  //   const auto* wlOutput = m_wayland->findOutputByWl(output);
-  //   if (wlOutput != nullptr) {
-  //     outputWidth = wlOutput->width;
-  //   }
-  // }
+  std::int32_t outputWidth = static_cast<std::int32_t>(panelWidth);
+  if (m_wayland != nullptr) {
+    const auto* wlOutput = m_wayland->findOutputByWl(output);
+    if (wlOutput != nullptr && wlOutput->width > 0) {
+      outputWidth = wlOutput->width;
+    }
+  }
+
+  const float desiredLeft = anchorX - static_cast<float>(panelWidth) * 0.5f;
+  const std::int32_t horizontalPadding = Style::spaceSm;
+  const std::int32_t maxLeft = std::max(horizontalPadding, outputWidth - static_cast<std::int32_t>(panelWidth) -
+                                                               horizontalPadding);
+  const auto marginLeft =
+      static_cast<std::int32_t>(std::clamp(desiredLeft, static_cast<float>(horizontalPadding), static_cast<float>(maxLeft)));
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-panel",
       .layer = LayerShellLayer::Top,
-      .anchor = LayerShellAnchor::Top,
+      .anchor = LayerShellAnchor::Top | LayerShellAnchor::Left,
       .width = panelWidth,
       .height = panelHeight,
       .exclusiveZone = 0,
       .marginTop = static_cast<std::int32_t>(barHeight) + 4,
+      .marginLeft = marginLeft,
       .keyboard = LayerShellKeyboard::OnDemand,
       .defaultWidth = panelWidth,
       .defaultHeight = panelHeight,
