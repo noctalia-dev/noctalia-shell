@@ -40,6 +40,28 @@ Singleton {
   signal settingsSaved
   signal settingsReloaded
 
+  // Debounce external reload requests (file watcher + parent directory watcher)
+  // so atomic symlink swaps only trigger one reload.
+  Timer {
+    id: externalReloadTimer
+    running: false
+    interval: 200
+    onTriggered: {
+      if (settingsFileView.path !== undefined) {
+        Logger.d("Settings", "Reloading settings after external change detection");
+        reloadSettings = true;
+        settingsFileView.reload();
+      }
+    }
+  }
+
+  function scheduleExternalReload() {
+    if (!directoriesCreated || settingsFileView.path === undefined) {
+      return;
+    }
+    externalReloadTimer.restart();
+  }
+
   // -----------------------------------------------------
   // -----------------------------------------------------
   // Ensure directories exist before FileView tries to read files
@@ -87,10 +109,7 @@ Singleton {
     watchChanges: true
     onAdapterUpdated: saveTimer.start()
 
-    onFileChanged: {
-      reloadSettings = true;
-      reload();
-    }
+    onFileChanged: scheduleExternalReload()
 
     // Trigger initial load when path changes from empty to actual path
     onPathChanged: {
@@ -140,6 +159,17 @@ Singleton {
         root.shouldOpenSetupWizard = true;
       }
     }
+  }
+
+  // Watch parent config directory as a fallback for declarative setups where
+  // settings.json may be replaced atomically (e.g., new symlink target on nix rebuild).
+  FileView {
+    id: settingsDirWatcher
+    path: directoriesCreated ? configDir : undefined
+    printErrors: false
+    watchChanges: true
+
+    onFileChanged: scheduleExternalReload()
   }
 
   // FileView to load default settings for comparison
