@@ -55,12 +55,42 @@ bool matchesOutput(const std::string& match, const WaylandOutput& output) {
 
 } // namespace
 
+void ConfigService::seedBuiltinWidgets(Config& config) {
+  // Built-in named widget instances — act as defaults that [widget.*] entries override.
+  auto seed = [&](const char* name, WidgetConfig wc) { config.widgets.emplace(name, std::move(wc)); };
+
+  WidgetConfig cpu;
+  cpu.type = "sysmon";
+  cpu.settings["stat"] = std::string("cpu_usage");
+  seed("cpu", std::move(cpu));
+
+  WidgetConfig temp;
+  temp.type = "sysmon";
+  temp.settings["stat"] = std::string("cpu_temp");
+  seed("temp", std::move(temp));
+
+  WidgetConfig ram;
+  ram.type = "sysmon";
+  ram.settings["stat"] = std::string("ram_used");
+  seed("ram", std::move(ram));
+
+  WidgetConfig date;
+  date.type = "clock";
+  date.settings["format"] = std::string("{:%a %d %b}");
+  seed("date", std::move(date));
+
+  WidgetConfig spacer;
+  spacer.type = "spacer";
+  seed("spacer", std::move(spacer));
+}
+
 ConfigService::ConfigService() {
   m_configPath = configPath();
   if (!m_configPath.empty() && std::filesystem::exists(m_configPath)) {
     loadFromFile(m_configPath);
   } else {
     logInfo("config: no config file found, using defaults");
+    seedBuiltinWidgets(m_config);
     m_config.bars.push_back(BarConfig{});
   }
   setupWatch();
@@ -112,6 +142,7 @@ void ConfigService::checkReload() {
   if (!m_configPath.empty() && std::filesystem::exists(m_configPath)) {
     loadFromFile(m_configPath);
   } else {
+    seedBuiltinWidgets(m_config);
     m_config.bars.push_back(BarConfig{});
   }
 
@@ -146,6 +177,9 @@ void ConfigService::setupWatch() {
 
 void ConfigService::loadFromFile(const std::string& path) {
   logInfo("config: loading {}", path);
+
+  // Seed built-in named widget instances before parsing so [widget.*] entries override them.
+  seedBuiltinWidgets(m_config);
 
   toml::table tbl;
   try {

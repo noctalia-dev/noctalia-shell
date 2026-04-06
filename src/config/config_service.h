@@ -38,9 +38,9 @@ struct BarConfig {
   std::int32_t shadowOffsetX = 0; // horizontal shadow offset in pixels
   std::int32_t shadowOffsetY = 6; // vertical shadow offset in pixels (positive = down)
   float scale = 1.0f;             // content scale multiplier for icons and text
-  std::vector<std::string> startWidgets = {"sysmon"};
+  std::vector<std::string> startWidgets = {"cpu", "temp", "ram"};
   std::vector<std::string> centerWidgets = {"workspaces"};
-  std::vector<std::string> endWidgets = {"tray", "notifications", "volume", "battery", "spacer", "clock"};
+  std::vector<std::string> endWidgets = {"tray", "notifications", "volume", "battery", "spacer", "date", "clock"};
   std::vector<BarMonitorOverride> monitorOverrides;
 };
 
@@ -106,6 +106,7 @@ public:
   [[nodiscard]] static BarConfig resolveForOutput(const BarConfig& base, const WaylandOutput& output);
 
 private:
+  static void seedBuiltinWidgets(Config& config);
   void loadFromFile(const std::string& path);
   void setupWatch();
 
