@@ -35,10 +35,7 @@ void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> c
   m_panels[id] = std::move(content);
 }
 
-void PanelManager::openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX) {
-
-  (void)anchorX; // might be used later for per-widget panel positioning, for now silence the warning...
-
+void PanelManager::openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float /*anchorX*/) {
   if (m_inTransition) {
     return;
   }
