@@ -186,7 +186,6 @@ Popup {
       }
       settingsLoader.setSource(source, {
                                  "screen": screen,
-                                 "barIsVertical": barIsVertical,
                                  "widgetData": currentWidgetData,
                                  "widgetMetadata": BarWidgetRegistry.widgetMetadata[widgetId]
                                });

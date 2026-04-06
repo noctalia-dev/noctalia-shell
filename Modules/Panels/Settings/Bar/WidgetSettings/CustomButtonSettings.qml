@@ -17,8 +17,8 @@ ColumnLayout {
 
   signal settingsChanged(var settings)
 
-  // Bar orientation (per-screen) - passed from parent
-  property bool barIsVertical: false
+  // Bar orientation (per-screen)
+  property bool barIsVertical: (Settings.getBarPositionForScreen(screen?.name) === "left" || Settings.getBarPositionForScreen(screen?.name) === "right")
 
   property string valueIcon: widgetData.icon !== undefined ? widgetData.icon : widgetMetadata.icon
   property string valueIconPosition: widgetData.iconPosition !== undefined ? widgetData.iconPosition : widgetMetadata.iconPosition
