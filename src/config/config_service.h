@@ -116,6 +116,7 @@ public:
 
   void addReloadCallback(ReloadCallback callback);
   void checkReload();
+  void forceReload();
 
   [[nodiscard]] static BarConfig resolveForOutput(const BarConfig& base, const WaylandOutput& output);
 

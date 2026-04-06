@@ -16,6 +16,8 @@
 #include "dbus/tray/tray_service.h"
 #include "dbus/upower/upower_service.h"
 #include "debug/debug_service.h"
+#include "ipc/ipc_poll_source.h"
+#include "ipc/ipc_service.h"
 #include "notification/notification_manager.h"
 #include "pipewire/pipewire_poll_source.h"
 #include "pipewire/pipewire_service.h"
@@ -81,6 +83,8 @@ private:
   StatePollSource m_statePollSource{m_stateService};
   KeyRepeatPollSource m_keyRepeatPollSource{m_wayland};
   std::unique_ptr<PipeWirePollSource> m_pipewirePollSource;
+  IpcService m_ipcService;
+  IpcPollSource m_ipcPollSource{m_ipcService};
 
   std::unique_ptr<MainLoop> m_mainLoop;
 };

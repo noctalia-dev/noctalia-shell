@@ -226,6 +226,18 @@ void PanelManager::togglePanel(const std::string& panelId, wl_output* output, st
   }
 }
 
+void PanelManager::togglePanel(const std::string& panelId) {
+  if (isOpen() && m_activePanelId == panelId) {
+    closePanel();
+    return;
+  }
+  wl_output* output = nullptr;
+  if (m_wayland != nullptr && !m_wayland->outputs().empty()) {
+    output = m_wayland->outputs().front().output;
+  }
+  openPanel(panelId, output, /*scale=*/1, /*anchorX=*/1.0f, /*anchorY=*/0.0f);
+}
+
 bool PanelManager::onPointerEvent(const PointerEvent& event) {
   if (!isOpen()) {
     return false;

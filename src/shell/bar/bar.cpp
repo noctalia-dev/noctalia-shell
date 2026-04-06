@@ -118,11 +118,33 @@ void Bar::onWorkspaceChange() {
 }
 
 bool Bar::isRunning() const noexcept {
+  if (m_forceHidden) {
+    return true; // hidden but still alive — do not exit the main loop
+  }
   return std::any_of(m_instances.begin(), m_instances.end(),
                      [](const auto& inst) { return inst->surface && inst->surface->isRunning(); });
 }
 
+void Bar::show() {
+  if (!m_forceHidden) {
+    return;
+  }
+  m_forceHidden = false;
+  syncInstances();
+}
+
+void Bar::hide() {
+  if (m_forceHidden) {
+    return;
+  }
+  m_forceHidden = true;
+  closeAllInstances();
+}
+
 void Bar::syncInstances() {
+  if (m_forceHidden) {
+    return;
+  }
   const auto& outputs = m_wayland->outputs();
   const auto& bars = m_config->config().bars;
 

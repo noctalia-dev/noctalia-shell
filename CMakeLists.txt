@@ -201,6 +201,8 @@ add_executable(noctalia
     src/config/config_service.cpp
     src/config/state_service.cpp
     src/core/deferred_call.cpp
+    src/ipc/ipc_client.cpp
+    src/ipc/ipc_service.cpp
     src/core/log.cpp
     src/font/font_service.cpp
     src/render/scene/node.cpp

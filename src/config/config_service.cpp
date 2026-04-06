@@ -84,6 +84,19 @@ ConfigService::~ConfigService() {
 
 void ConfigService::addReloadCallback(ReloadCallback callback) { m_reloadCallbacks.push_back(std::move(callback)); }
 
+void ConfigService::forceReload() {
+  m_config = Config{};
+  if (!m_configPath.empty() && std::filesystem::exists(m_configPath)) {
+    loadFromFile(m_configPath);
+  } else {
+    seedBuiltinWidgets(m_config);
+    m_config.bars.push_back(BarConfig{});
+  }
+  for (const auto& cb : m_reloadCallbacks) {
+    cb();
+  }
+}
+
 void ConfigService::checkReload() {
   if (m_inotifyFd < 0) {
     return;

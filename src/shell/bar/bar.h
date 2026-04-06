@@ -28,6 +28,9 @@ public:
                   UPowerService* upower, SystemMonitorService* sysmon, RenderContext* renderContext);
   void reload();
   void closeAllInstances();
+  void show();
+  void hide();
+  [[nodiscard]] bool isVisible() const noexcept { return !m_forceHidden; }
   void onOutputChange();
   void onWorkspaceChange();
   bool onPointerEvent(const PointerEvent& event);
@@ -41,6 +44,7 @@ private:
   void buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height);
   void updateWidgets(BarInstance& instance);
 
+  bool m_forceHidden = false;
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
   TimeService* m_time = nullptr;

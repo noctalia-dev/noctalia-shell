@@ -260,6 +260,55 @@ void Application::run() {
   // Keyboard events are routed only to the panel (the only surface with keyboard interactivity)
   m_wayland.setKeyboardEventCallback([this](const KeyboardEvent& event) { m_panelManager.onKeyboardEvent(event); });
 
+  // IPC
+  if (m_ipcService.start()) {
+    kLog.info("IPC socket at {}", m_ipcService.socketPath());
+  } else {
+    kLog.warn("IPC disabled: could not bind socket");
+  }
+
+  m_ipcService.registerHandler("reload-config", [this](const std::string&) -> std::string {
+    m_configService.forceReload();
+    return "ok\n";
+  });
+  m_ipcService.registerHandler("toggle-bar", [this](const std::string&) -> std::string {
+    if (m_bar.isVisible()) {
+      m_bar.hide();
+    } else {
+      m_bar.show();
+    }
+    return "ok\n";
+  });
+  m_ipcService.registerHandler("show-bar", [this](const std::string&) -> std::string {
+    m_bar.show();
+    return "ok\n";
+  });
+  m_ipcService.registerHandler("hide-bar", [this](const std::string&) -> std::string {
+    m_bar.hide();
+    return "ok\n";
+  });
+  m_ipcService.registerHandler("toggle-panel", [this](const std::string& args) -> std::string {
+    if (args.empty()) {
+      return "error: toggle-panel requires a panel id\n";
+    }
+    m_panelManager.togglePanel(args);
+    return "ok\n";
+  });
+  m_ipcService.registerHandler("status", [this](const std::string&) -> std::string {
+    const bool barVisible = m_bar.isVisible();
+    const bool panelOpen = m_panelManager.isOpen();
+    const auto& panelId = m_panelManager.activePanelId();
+    std::string json = "{\n";
+    json += "  \"barVisible\": ";
+    json += barVisible ? "true" : "false";
+    json += ",\n  \"panelOpen\": ";
+    json += panelOpen ? "true" : "false";
+    json += ",\n  \"activePanelId\": ";
+    json += panelOpen ? ("\"" + panelId + "\"") : "null";
+    json += "\n}\n";
+    return json;
+  });
+
   // Build poll sources
   std::vector<PollSource*> sources;
   if (m_bus != nullptr) {
@@ -279,6 +328,7 @@ void Application::run() {
     m_pipewirePollSource = std::make_unique<PipeWirePollSource>(*m_pipewireService);
     sources.push_back(m_pipewirePollSource.get());
   }
+  sources.push_back(&m_ipcPollSource);
 
   m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, std::move(sources));
   m_mainLoop->run();
