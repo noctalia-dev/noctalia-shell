@@ -92,7 +92,13 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     } else if (statStr == "disk_pct") {
       stat = SysmonStat::DiskPct;
     }
-    return std::make_unique<SysmonWidget>(m_sysmon, stat, std::move(path));
+    const std::string display = wc != nullptr ? wc->getString("display", "gauge") : std::string("gauge");
+    SysmonDisplayMode displayMode = SysmonDisplayMode::Gauge;
+    if (display == "text")
+      displayMode = SysmonDisplayMode::Text;
+    else if (display == "graph")
+      displayMode = SysmonDisplayMode::Graph;
+    return std::make_unique<SysmonWidget>(m_sysmon, stat, std::move(path), displayMode);
   }
 
   logWarn("widget factory: unknown widget \"{}\"", name);

@@ -92,6 +92,10 @@ SystemStats SystemMonitorService::latest() const {
   return m_latest;
 }
 
+void SystemMonitorService::retainCpuTemp() { m_cpuTempRefs.fetch_add(1, std::memory_order_relaxed); }
+
+void SystemMonitorService::releaseCpuTemp() { m_cpuTempRefs.fetch_sub(1, std::memory_order_relaxed); }
+
 void SystemMonitorService::start() {
   if (m_running.load()) {
     return;
@@ -137,7 +141,9 @@ void SystemMonitorService::samplingLoop() {
       next.swapUsedMb = memKb->swapUsedKb / 1024;
     }
 
-    next.cpuTempC = readCpuTempCelsius();
+    if (m_cpuTempRefs.load(std::memory_order_relaxed) > 0) {
+      next.cpuTempC = readCpuTempCelsius();
+    }
 
     {
       std::lock_guard lock{m_statsMutex};

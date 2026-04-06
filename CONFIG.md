@@ -169,10 +169,11 @@ System tray (StatusNotifierItem). No configurable settings.
 
 System resource monitor. Shows an icon and value for one configurable stat. Multiple instances with different stats can coexist on the same bar.
 
-| Setting | Type   | Default       | Description                                   |
-|---------|--------|---------------|-----------------------------------------------|
-| `stat`  | string | `"cpu_usage"` | Which stat to display (see table below)       |
-| `path`  | string | `"/"`         | Mount path for `disk_pct` (ignored otherwise) |
+| Setting   | Type   | Default       | Description                                                                   |
+|-----------|--------|---------------|-------------------------------------------------------------------------------|
+| `stat`    | string | `"cpu_usage"` | Which stat to display (see table below)                                       |
+| `path`    | string | `"/"`         | Mount path for `disk_pct` (ignored otherwise)                                 |
+| `display` | string | `"gauge"`     | `"gauge"` = icon + vertical fill bar; `"graph"` = icon + sparkline (1-min history) + value; `"text"` = icon + value |
 
 **`stat` values:**
 

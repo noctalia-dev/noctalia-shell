@@ -27,6 +27,9 @@ public:
   [[nodiscard]] bool isRunning() const noexcept;
   [[nodiscard]] SystemStats latest() const;
 
+  void retainCpuTemp();
+  void releaseCpuTemp();
+
 private:
   struct CpuTotals {
     std::uint64_t total{0};
@@ -48,6 +51,7 @@ private:
   [[nodiscard]] static std::optional<double> readCpuTempCelsius();
 
   std::atomic<bool> m_running{false};
+  std::atomic<int> m_cpuTempRefs{0};
   std::thread m_thread;
 
   mutable std::mutex m_statsMutex;

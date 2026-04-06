@@ -2,17 +2,23 @@
 
 #include "shell/widget/widget.h"
 
+#include <array>
 #include <string>
 
 class Icon;
 class Label;
+class ProgressBar;
+class RectNode;
 class SystemMonitorService;
 
 enum class SysmonStat { CpuUsage, CpuTemp, RamUsed, RamPct, SwapPct, DiskPct };
+enum class SysmonDisplayMode { Text, Graph, Gauge };
 
 class SysmonWidget : public Widget {
 public:
-  SysmonWidget(SystemMonitorService* monitor, SysmonStat stat, std::string diskPath);
+  SysmonWidget(SystemMonitorService* monitor, SysmonStat stat, std::string diskPath,
+               SysmonDisplayMode displayMode);
+  ~SysmonWidget() override;
 
   void create(Renderer& renderer) override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
@@ -20,13 +26,30 @@ public:
 
 private:
   [[nodiscard]] std::string formatValue() const;
+  [[nodiscard]] double currentNormalized() const;
   [[nodiscard]] static const char* iconName(SysmonStat stat);
+  void pushHistory(double normalized);
+  void updateBars();
 
   SystemMonitorService* m_monitor;
   SysmonStat m_stat;
+  SysmonDisplayMode m_displayMode;
   std::string m_diskPath;
   std::string m_lastText;
 
   Icon* m_icon = nullptr;
   Label* m_label = nullptr;
+
+  // Graph mode
+  static constexpr int kHistorySamples = 30;
+  std::array<double, kHistorySamples> m_history{};
+  int m_historyHead = 0;
+  double m_tempMin = 30.0;
+  double m_tempMax = 80.0;
+  // Graph mode
+  RectNode* m_chartBg = nullptr;
+  std::array<ProgressBar*, kHistorySamples> m_bars{};
+
+  // Gauge mode
+  ProgressBar* m_gauge = nullptr;
 };

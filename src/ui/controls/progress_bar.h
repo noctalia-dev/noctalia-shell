@@ -5,6 +5,8 @@
 
 class RectNode;
 
+enum class ProgressBarOrientation { Horizontal, Vertical };
+
 class ProgressBar : public Node {
 public:
   ProgressBar();
@@ -13,6 +15,7 @@ public:
   void setTrackColor(const Color& color);
   void setRadius(float radius);
   void setSoftness(float softness);
+  void setOrientation(ProgressBarOrientation orientation);
 
   void setProgress(float progress); // 0.0–1.0
   [[nodiscard]] float progress() const noexcept { return m_progress; }
@@ -25,4 +28,5 @@ private:
   RectNode* m_track = nullptr;
   RectNode* m_fill = nullptr;
   float m_progress = 1.0f;
+  ProgressBarOrientation m_orientation = ProgressBarOrientation::Horizontal;
 };
