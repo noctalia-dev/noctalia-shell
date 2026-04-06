@@ -55,34 +55,7 @@ bool matchesOutput(const std::string& match, const WaylandOutput& output) {
 
 } // namespace
 
-void ConfigService::seedBuiltinWidgets(Config& config) {
-  // Built-in named widget instances — act as defaults that [widget.*] entries override.
-  auto seed = [&](const char* name, WidgetConfig wc) { config.widgets.emplace(name, std::move(wc)); };
-
-  WidgetConfig cpu;
-  cpu.type = "sysmon";
-  cpu.settings["stat"] = std::string("cpu_usage");
-  seed("cpu", std::move(cpu));
-
-  WidgetConfig temp;
-  temp.type = "sysmon";
-  temp.settings["stat"] = std::string("cpu_temp");
-  seed("temp", std::move(temp));
-
-  WidgetConfig ram;
-  ram.type = "sysmon";
-  ram.settings["stat"] = std::string("ram_used");
-  seed("ram", std::move(ram));
-
-  WidgetConfig date;
-  date.type = "clock";
-  date.settings["format"] = std::string("{:%a %d %b}");
-  seed("date", std::move(date));
-
-  WidgetConfig spacer;
-  spacer.type = "spacer";
-  seed("spacer", std::move(spacer));
-}
+// ── Lifecycle ────────────────────────────────────────────────────────────────
 
 ConfigService::ConfigService() {
   m_configPath = configPath();
@@ -104,6 +77,8 @@ ConfigService::~ConfigService() {
     ::close(m_inotifyFd);
   }
 }
+
+// ── Public interface ─────────────────────────────────────────────────────────
 
 void ConfigService::setReloadCallback(ReloadCallback callback) { m_reloadCallback = std::move(callback); }
 
@@ -151,6 +126,41 @@ void ConfigService::checkReload() {
   }
 }
 
+BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOutput& output) {
+  BarConfig resolved = base;
+
+  for (const auto& ovr : base.monitorOverrides) {
+    if (!matchesOutput(ovr.match, output)) {
+      continue;
+    }
+
+    logDebug("config: monitor override \"{}\" matched output {} ({})", ovr.match, output.connectorName,
+             output.description);
+
+    if (ovr.enabled)
+      resolved.enabled = *ovr.enabled;
+    if (ovr.height)
+      resolved.height = *ovr.height;
+    if (ovr.paddingH)
+      resolved.paddingH = *ovr.paddingH;
+    if (ovr.widgetSpacing)
+      resolved.widgetSpacing = *ovr.widgetSpacing;
+    if (ovr.startWidgets)
+      resolved.startWidgets = *ovr.startWidgets;
+    if (ovr.centerWidgets)
+      resolved.centerWidgets = *ovr.centerWidgets;
+    if (ovr.endWidgets)
+      resolved.endWidgets = *ovr.endWidgets;
+    if (ovr.scale)
+      resolved.scale = *ovr.scale;
+    break; // first match wins
+  }
+
+  return resolved;
+}
+
+// ── Private helpers ──────────────────────────────────────────────────────────
+
 void ConfigService::setupWatch() {
   if (m_configPath.empty()) {
     return;
@@ -173,6 +183,35 @@ void ConfigService::setupWatch() {
   }
 
   logDebug("config: watching {} for changes", dir);
+}
+
+void ConfigService::seedBuiltinWidgets(Config& config) {
+  // Built-in named widget instances — act as defaults that [widget.*] entries override.
+  auto seed = [&](const char* name, WidgetConfig wc) { config.widgets.emplace(name, std::move(wc)); };
+
+  WidgetConfig cpu;
+  cpu.type = "sysmon";
+  cpu.settings["stat"] = std::string("cpu_usage");
+  seed("cpu", std::move(cpu));
+
+  WidgetConfig temp;
+  temp.type = "sysmon";
+  temp.settings["stat"] = std::string("cpu_temp");
+  seed("temp", std::move(temp));
+
+  WidgetConfig ram;
+  ram.type = "sysmon";
+  ram.settings["stat"] = std::string("ram_used");
+  seed("ram", std::move(ram));
+
+  WidgetConfig date;
+  date.type = "clock";
+  date.settings["format"] = std::string("{:%a %d %b}");
+  seed("date", std::move(date));
+
+  WidgetConfig spacer;
+  spacer.type = "spacer";
+  seed("spacer", std::move(spacer));
 }
 
 void ConfigService::loadFromFile(const std::string& path) {
@@ -341,45 +380,14 @@ void ConfigService::loadFromFile(const std::string& path) {
   }
 
   if (m_config.bars.empty()) {
-    logInfo("config: no [[bar]] defined, using defaults");
+    logInfo("config: no [bar.*] defined, using defaults");
     m_config.bars.push_back(BarConfig{});
   }
 
   logInfo("config: {} bar(s) defined", m_config.bars.size());
 }
 
-BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOutput& output) {
-  BarConfig resolved = base;
-
-  for (const auto& ovr : base.monitorOverrides) {
-    if (!matchesOutput(ovr.match, output)) {
-      continue;
-    }
-
-    logDebug("config: monitor override \"{}\" matched output {} ({})", ovr.match, output.connectorName,
-             output.description);
-
-    if (ovr.enabled)
-      resolved.enabled = *ovr.enabled;
-    if (ovr.height)
-      resolved.height = *ovr.height;
-    if (ovr.paddingH)
-      resolved.paddingH = *ovr.paddingH;
-    if (ovr.widgetSpacing)
-      resolved.widgetSpacing = *ovr.widgetSpacing;
-    if (ovr.startWidgets)
-      resolved.startWidgets = *ovr.startWidgets;
-    if (ovr.centerWidgets)
-      resolved.centerWidgets = *ovr.centerWidgets;
-    if (ovr.endWidgets)
-      resolved.endWidgets = *ovr.endWidgets;
-    if (ovr.scale)
-      resolved.scale = *ovr.scale;
-    break; // first match wins
-  }
-
-  return resolved;
-}
+// ── WidgetConfig accessors ───────────────────────────────────────────────────
 
 std::string WidgetConfig::getString(const std::string& key, const std::string& fallback) const {
   auto it = settings.find(key);
