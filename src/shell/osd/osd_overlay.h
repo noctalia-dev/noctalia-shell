@@ -1,0 +1,69 @@
+#pragma once
+
+#include "render/animation/animation_manager.h"
+#include "ui/controls/progress_bar.h"
+#include "wayland/layer_surface.h"
+
+#include <memory>
+#include <string>
+#include <vector>
+
+class ConfigService;
+class Box;
+class Icon;
+class Label;
+class Node;
+class RenderContext;
+class WaylandConnection;
+struct wl_surface;
+
+struct OsdContent {
+  std::string icon;
+  std::string value;
+  float progress = 0.0f;
+};
+
+class OsdOverlay {
+public:
+  OsdOverlay() = default;
+  ~OsdOverlay() = default;
+
+  OsdOverlay(const OsdOverlay&) = delete;
+  OsdOverlay& operator=(const OsdOverlay&) = delete;
+
+  void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext);
+
+  void show(const OsdContent& content);
+
+private:
+  struct Instance {
+    wl_output* output = nullptr;
+    std::int32_t scale = 1;
+    std::unique_ptr<LayerSurface> surface;
+    std::unique_ptr<Node> sceneRoot;
+    AnimationManager animations;
+    wl_surface* wlSurface = nullptr;
+
+    Node* card = nullptr;
+    Box* background = nullptr;
+    Icon* icon = nullptr;
+    Label* value = nullptr;
+    ProgressBar* progress = nullptr;
+    AnimationManager::Id showAnimId = 0;
+    AnimationManager::Id hideAnimId = 0;
+    bool visible = false;
+  };
+
+  void ensureSurfaces();
+  void destroySurfaces();
+  void buildScene(Instance& inst, std::uint32_t width, std::uint32_t height);
+  void updateInstanceContent(Instance& inst);
+  void animateInstance(Instance& inst);
+
+  WaylandConnection* m_wayland = nullptr;
+  ConfigService* m_config = nullptr;
+  RenderContext* m_renderContext = nullptr;
+  OsdContent m_content;
+  std::string m_lastPosition;
+  std::vector<std::unique_ptr<Instance>> m_instances;
+};

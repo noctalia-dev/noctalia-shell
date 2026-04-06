@@ -210,7 +210,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Controls (`src/ui/controls/`)
 
-- [ ] Scroll view
+- [x] Scroll view
 - [ ] List view
 - [ ] Checkbox
 - [ ] Radio button

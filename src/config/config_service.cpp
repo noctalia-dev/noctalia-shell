@@ -379,6 +379,13 @@ void ConfigService::loadFromFile(const std::string& path) {
       wp.edgeSmoothness = static_cast<float>(*v);
   }
 
+  // Parse [osd]
+  if (auto* osdTbl = tbl["osd"].as_table()) {
+    auto& osd = m_config.osd;
+    if (auto v = (*osdTbl)["position"].value<std::string>())
+      osd.position = *v;
+  }
+
   if (m_config.bars.empty()) {
     logInfo("config: no [bar.*] defined, using defaults");
     m_config.bars.push_back(BarConfig{});

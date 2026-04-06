@@ -82,10 +82,15 @@ struct WallpaperConfig {
   float edgeSmoothness = 0.5f;
 };
 
+struct OsdConfig {
+  std::string position = "top_right";
+};
+
 struct Config {
   std::vector<BarConfig> bars;
   std::unordered_map<std::string, WidgetConfig> widgets;
   WallpaperConfig wallpaper;
+  OsdConfig osd;
 };
 
 class ConfigService {

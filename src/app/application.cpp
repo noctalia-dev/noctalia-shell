@@ -5,6 +5,8 @@
 #include "shell/panels/notification_history_panel.h"
 #include "shell/panels/test_panel.h"
 
+#include <chrono>
+#include <cmath>
 #include <csignal>
 #include <stdexcept>
 
@@ -142,7 +144,6 @@ void Application::run() {
 
   try {
     m_pipewireService = std::make_unique<PipeWireService>();
-    m_pipewireService->setChangeCallback([this]() { m_bar.onWorkspaceChange(); });
     const auto* sink = m_pipewireService->defaultSink();
     if (sink != nullptr) {
       logInfo("pipewire: default sink \"{}\" vol={:.0f}%", sink->description, sink->volume * 100.0f);
@@ -214,12 +215,29 @@ void Application::run() {
   // Initialize notification popup (top layer, dynamic surface)
   m_notificationPopup.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);
 
+  // Initialize the shared OSD overlay (overlay layer, transient surface)
+  m_osdOverlay.initialize(m_wayland, &m_configService, &m_renderContext);
+  m_audioOsd.bindOverlay(m_osdOverlay);
+  if (m_pipewireService != nullptr) {
+    m_audioOsd.primeFromService(*m_pipewireService);
+  }
+
   // Initialize tray menu (top layer, dynamic surface)
   m_trayMenu.initialize(m_wayland, &m_configService, m_trayService.get(), &m_renderContext);
 
   // Initialize bar (top layer)
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
                    m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), &m_renderContext);
+
+  if (m_pipewireService != nullptr) {
+    m_audioOsd.suppressFor(std::chrono::milliseconds(2000));
+    m_pipewireService->setChangeCallback([this]() {
+      m_bar.onWorkspaceChange();
+      if (m_pipewireService != nullptr) {
+        m_audioOsd.onAudioStateChanged(*m_pipewireService);
+      }
+    });
+  }
 
   // Unified pointer event routing — both Bar and PanelManager check surface ownership
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
