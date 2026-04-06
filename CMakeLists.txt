@@ -267,6 +267,7 @@ add_executable(noctalia
 )
 target_compile_definitions(noctalia PRIVATE
     NOCTALIA_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
+    NOCTALIA_VERSION="${PROJECT_VERSION}"
 )
 
 add_dependencies(noctalia noctalia_wayland_protocols)
