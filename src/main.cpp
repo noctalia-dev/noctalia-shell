@@ -19,7 +19,10 @@ int main(int argc, char* argv[]) {
                 "\n"
                 "Options:\n"
                 "  --help     Show this help message\n"
-                "  --version  Show version information");
+                "  --version  Show version information\n"
+                "\n"
+                "For more information and documentation, visit:\n"
+                "  https://noctalia.dev");
       return 0;
     }
   }
