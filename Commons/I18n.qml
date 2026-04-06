@@ -38,7 +38,7 @@ Singleton {
                                         "ro": "dddd, d MMMM",
                                         "ru": "dddd, d MMMM",
                                         "sv": "dddd d MMMM",
-                                        "tr": "d MMMM dddd",
+                                        "tr": "dddd, d MMMM",
                                         "uk": "dddd, d MMMM",
                                         "vi": "dddd, d 'tháng' M",
                                         "zh": "yyyy年M月d日 dddd"
