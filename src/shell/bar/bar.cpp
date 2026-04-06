@@ -4,6 +4,7 @@
 #include "core/log.h"
 #include "dbus/tray/tray_service.h"
 #include "dbus/upower/upower_service.h"
+#include "system/system_monitor_service.h"
 #include "render/render_context.h"
 #include "render/scene/rect_node.h"
 #include "ui/controls/box.h"
@@ -40,7 +41,7 @@ Bar::Bar() = default;
 
 bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                      NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
-                     UPowerService* upower, RenderContext* renderContext) {
+                     UPowerService* upower, SystemMonitorService* sysmon, RenderContext* renderContext) {
   m_wayland = &wayland;
   m_config = config;
   m_time = timeService;
@@ -48,10 +49,11 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
   m_tray = tray;
   m_audio = audio;
   m_upower = upower;
+  m_sysmon = sysmon;
   m_renderContext = renderContext;
 
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
-                                                    m_audio, m_upower);
+                                                    m_audio, m_upower, m_sysmon);
 
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
@@ -77,7 +79,7 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
 void Bar::reload() {
   logInfo("bar: reloading config");
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
-                                                    m_audio, m_upower);
+                                                    m_audio, m_upower, m_sysmon);
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;

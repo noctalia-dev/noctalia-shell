@@ -126,15 +126,15 @@ void SystemMonitorService::samplingLoop() {
       prevCpu = currentCpu;
     }
 
-    const auto ramKb = readRamKb();
-    if (ramKb.has_value()) {
-      const std::uint64_t totalKb = ramKb->first;
-      const std::uint64_t usedKb = ramKb->second;
-      next.ramTotalMb = totalKb / 1024;
-      next.ramUsedMb = usedKb / 1024;
-      if (totalKb > 0) {
-        next.ramUsagePercent = 100.0 * static_cast<double>(usedKb) / static_cast<double>(totalKb);
+    const auto memKb = readMemoryKb();
+    if (memKb.has_value()) {
+      next.ramTotalMb = memKb->totalKb / 1024;
+      next.ramUsedMb = memKb->usedKb / 1024;
+      if (memKb->totalKb > 0) {
+        next.ramUsagePercent = 100.0 * static_cast<double>(memKb->usedKb) / static_cast<double>(memKb->totalKb);
       }
+      next.swapTotalMb = memKb->swapTotalKb / 1024;
+      next.swapUsedMb = memKb->swapUsedKb / 1024;
     }
 
     next.cpuTempC = readCpuTempCelsius();
@@ -145,11 +145,12 @@ void SystemMonitorService::samplingLoop() {
     }
 
     if (next.cpuTempC.has_value()) {
-      logDebug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) temp={:.1f}C", next.cpuUsagePercent,
-               next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, *next.cpuTempC);
+      logDebug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) swap={}/{} MB temp={:.1f}C", next.cpuUsagePercent,
+               next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb,
+               *next.cpuTempC);
     } else {
-      logDebug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) temp=n/a", next.cpuUsagePercent, next.ramUsagePercent,
-               next.ramUsedMb, next.ramTotalMb);
+      logDebug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) swap={}/{} MB temp=n/a", next.cpuUsagePercent,
+               next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb);
     }
 
     std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -189,7 +190,7 @@ std::optional<SystemMonitorService::CpuTotals> SystemMonitorService::readCpuTota
   return totals;
 }
 
-std::optional<std::pair<std::uint64_t, std::uint64_t>> SystemMonitorService::readRamKb() {
+std::optional<SystemMonitorService::MemData> SystemMonitorService::readMemoryKb() {
   std::ifstream file{"/proc/meminfo"};
   if (!file.is_open()) {
     return std::nullopt;
@@ -201,15 +202,22 @@ std::optional<std::pair<std::uint64_t, std::uint64_t>> SystemMonitorService::rea
 
   std::uint64_t totalKb = 0;
   std::uint64_t availableKb = 0;
+  std::uint64_t swapTotalKb = 0;
+  std::uint64_t swapFreeKb = 0;
 
   while (file >> key >> value_kb >> unit) {
     if (key == "MemTotal:") {
       totalKb = value_kb;
     } else if (key == "MemAvailable:") {
       availableKb = value_kb;
+    } else if (key == "SwapTotal:") {
+      swapTotalKb = value_kb;
+    } else if (key == "SwapFree:") {
+      swapFreeKb = value_kb;
     }
 
-    if (totalKb > 0 && availableKb > 0) {
+    // SwapFree appears last, after that there's nothing we need
+    if (key == "SwapFree:") {
       break;
     }
   }
@@ -218,8 +226,12 @@ std::optional<std::pair<std::uint64_t, std::uint64_t>> SystemMonitorService::rea
     return std::nullopt;
   }
 
-  const std::uint64_t usedKb = totalKb - availableKb;
-  return std::make_pair(totalKb, usedKb);
+  MemData data;
+  data.totalKb = totalKb;
+  data.usedKb = totalKb - availableKb;
+  data.swapTotalKb = swapTotalKb;
+  data.swapUsedKb = swapTotalKb > swapFreeKb ? swapTotalKb - swapFreeKb : 0;
+  return data;
 }
 
 std::optional<double> SystemMonitorService::readCpuTempCelsius() {

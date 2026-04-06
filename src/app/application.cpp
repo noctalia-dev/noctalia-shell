@@ -215,7 +215,7 @@ void Application::run() {
 
   // Initialize bar (top layer)
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
-                   m_pipewireService.get(), m_upowerService.get(), &m_renderContext);
+                   m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), &m_renderContext);
 
   // Unified pointer event routing — both Bar and PanelManager check surface ownership
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {

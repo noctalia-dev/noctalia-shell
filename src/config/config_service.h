@@ -30,17 +30,17 @@ struct BarConfig {
   bool enabled = true;
   std::int32_t height = Style::barHeightDefault;
   std::int32_t radius = Style::radiusXl;
-  std::int32_t marginH = 12;      // horizontal compositor margin (left = right = marginH)
-  std::int32_t marginV = 6;       // vertical compositor margin (gap between bar and screen edge)
-  std::int32_t paddingH = 16;     // horizontal padding from bar edges to start/end sections
-  std::int32_t widgetSpacing = 8; // gap between widgets within a section
-  std::int32_t shadowBlur = 16;   // shadow blur radius in pixels (0 = no shadow)
-  std::int32_t shadowOffsetX = 8; // horizontal shadow offset in pixels
-  std::int32_t shadowOffsetY = 8; // vertical shadow offset in pixels (positive = down)
+  std::int32_t marginH = 180;     // horizontal compositor margin (left = right = marginH)
+  std::int32_t marginV = 10;      // vertical compositor margin (gap between bar and screen edge)
+  std::int32_t paddingH = 14;     // horizontal padding from bar edges to start/end sections
+  std::int32_t widgetSpacing = 6; // gap between widgets within a section
+  std::int32_t shadowBlur = 12;   // shadow blur radius in pixels (0 = no shadow)
+  std::int32_t shadowOffsetX = 0; // horizontal shadow offset in pixels
+  std::int32_t shadowOffsetY = 6; // vertical shadow offset in pixels (positive = down)
   float scale = 1.0f;             // content scale multiplier for icons and text
-  std::vector<std::string> startWidgets = {"test"};
+  std::vector<std::string> startWidgets = {"sysmon"};
   std::vector<std::string> centerWidgets = {"workspaces"};
-  std::vector<std::string> endWidgets = {"tray", "notifications", "volume", "battery", "clock"};
+  std::vector<std::string> endWidgets = {"tray", "notifications", "volume", "battery", "spacer", "clock"};
   std::vector<BarMonitorOverride> monitorOverrides;
 };
 

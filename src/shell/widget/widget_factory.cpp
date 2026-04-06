@@ -10,15 +10,17 @@
 #include "shell/widgets/test_widget.h"
 #include "shell/widgets/tray_widget.h"
 #include "shell/widgets/battery_widget.h"
+#include "shell/widgets/sysmon_widget.h"
 #include "shell/widgets/volume_widget.h"
 #include "shell/widgets/workspaces_widget.h"
+#include "system/system_monitor_service.h"
 #include "wayland/wayland_connection.h"
 
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
                              NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
-                             UPowerService* upower)
+                             UPowerService* upower, SystemMonitorService* sysmon)
     : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray),
-      m_audio(audio), m_upower(upower) {}
+      m_audio(audio), m_upower(upower), m_sysmon(sysmon) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
@@ -73,6 +75,24 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   if (type == "spacer") {
     auto width = static_cast<float>(wc != nullptr ? wc->getDouble("width", 8.0) : 8.0);
     return std::make_unique<SpacerWidget>(width);
+  }
+
+  if (type == "sysmon") {
+    std::string statStr = wc != nullptr ? wc->getString("stat", "cpu_usage") : std::string("cpu_usage");
+    std::string path = wc != nullptr ? wc->getString("path", "/") : std::string("/");
+    SysmonStat stat = SysmonStat::CpuUsage;
+    if (statStr == "cpu_temp") {
+      stat = SysmonStat::CpuTemp;
+    } else if (statStr == "ram_used") {
+      stat = SysmonStat::RamUsed;
+    } else if (statStr == "ram_pct") {
+      stat = SysmonStat::RamPct;
+    } else if (statStr == "swap_pct") {
+      stat = SysmonStat::SwapPct;
+    } else if (statStr == "disk_pct") {
+      stat = SysmonStat::DiskPct;
+    }
+    return std::make_unique<SysmonWidget>(m_sysmon, stat, std::move(path));
   }
 
   logWarn("widget factory: unknown widget \"{}\"", name);

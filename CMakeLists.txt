@@ -249,6 +249,7 @@ add_executable(noctalia
     src/shell/widgets/test_widget.cpp
     src/shell/widgets/tray_widget.cpp
     src/shell/widgets/battery_widget.cpp
+    src/shell/widgets/sysmon_widget.cpp
     src/shell/widgets/volume_widget.cpp
     src/shell/widgets/workspaces_widget.cpp
     src/pipewire/pipewire_service.cpp

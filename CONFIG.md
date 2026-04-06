@@ -26,20 +26,21 @@ Bars are defined as named subtables under `[bar.*]`. Each bar is spawned on ever
 position        = "top"       # top | bottom | left | right
 enabled         = true
 
-height          = 40          # bar thickness in pixels
-margin_h        = 12          # horizontal gap between bar and screen edge
-margin_v        = 6           # vertical gap between bar and screen edge
-padding_h       = 16          # padding from bar edge to the start/end widget sections
-widget_spacing  = 8           # gap between widgets within a section
-
-shadow_blur     = 16          # blur radius in pixels (0 = no shadow)
-shadow_offset_x = 6           # horizontal shadow offset (positive = right)
-shadow_offset_y = 6           # vertical shadow offset (positive = down)
+height          = 34          # bar thickness in pixels
+margin_h        = 180         # horizontal gap between bar and screen edge
+margin_v        = 10          # vertical gap between bar and screen edge
+padding_h       = 14          # padding from bar edge to the start/end widget sections
+widget_spacing  = 6           # gap between widgets within a section
 scale           = 1.0         # content scale multiplier for icons and text (default: 1.0)
 
-start  = []                   # widget names in the left/top section
+shadow_blur     = 12          # blur radius in pixels (0 = no shadow)
+shadow_offset_x = 0           # horizontal shadow offset (positive = right)
+shadow_offset_y = 6           # vertical shadow offset (positive = down)
+
+
+start  = ["sysmon"]           # widget names in the left/top section
 center = ["workspaces"]       # widget names in the center section
-end    = ["tray", "notifications", "volume", "battery", "clock"]
+end    = ["tray", "notifications", "volume", "battery", "spacer", "clock"]
 ```
 
 All fields are optional and fall back to the defaults shown above. Multiple `[bar.*]` entries are supported — each is independently configured and rendered on all outputs (subject to monitor overrides).
@@ -164,6 +165,47 @@ System tray (StatusNotifierItem). No configurable settings.
 
 ---
 
+### `sysmon`
+
+System resource monitor. Shows an icon and value for one configurable stat. Multiple instances with different stats can coexist on the same bar.
+
+| Setting | Type   | Default       | Description                                   |
+|---------|--------|---------------|-----------------------------------------------|
+| `stat`  | string | `"cpu_usage"` | Which stat to display (see table below)       |
+| `path`  | string | `"/"`         | Mount path for `disk_pct` (ignored otherwise) |
+
+**`stat` values:**
+
+| Value       | Display  | Description                 |
+|-------------|----------|-----------------------------|
+| `cpu_usage` | `75%`    | CPU utilisation (all cores) |
+| `cpu_temp`  | `65°C`   | CPU package temperature     |
+| `ram_used`  | `4.2G`   | RAM used (human-readable)   |
+| `ram_pct`   | `26%`    | RAM used %                  |
+| `swap_pct`  | `12%`    | Swap used %                 |
+| `disk_pct`  | `45%`    | Disk used % for `path`      |
+
+```toml
+[widget.cpu]
+type = "sysmon"
+stat = "cpu_usage"
+
+[widget.temp]
+type = "sysmon"
+stat = "cpu_temp"
+
+[widget.ram]
+type = "sysmon"
+stat = "ram_used"
+
+[widget.disk]
+type = "sysmon"
+stat = "disk_pct"
+path = "/"
+```
+
+---
+
 ## Wallpaper
 
 ```toml
@@ -217,7 +259,7 @@ end    = ["tray", "notifications", "volume", "battery", "clock-seconds"]
 
 [bar.main.monitor.hdmi]
 match    = "HDMI-A-1"  # secondary 1080p — smaller, minimal widgets
-height   = 36
+height   = 34
 margin_h = 8
 end      = ["volume", "clock"]
 

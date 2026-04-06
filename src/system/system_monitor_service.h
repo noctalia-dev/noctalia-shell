@@ -11,6 +11,8 @@ struct SystemStats {
   double ramUsagePercent{0.0};
   std::uint64_t ramUsedMb{0};
   std::uint64_t ramTotalMb{0};
+  std::uint64_t swapUsedMb{0};
+  std::uint64_t swapTotalMb{0};
   std::optional<double> cpuTempC;
 };
 
@@ -36,7 +38,13 @@ private:
   void samplingLoop();
 
   [[nodiscard]] static std::optional<CpuTotals> readCpuTotals();
-  [[nodiscard]] static std::optional<std::pair<std::uint64_t, std::uint64_t>> readRamKb();
+  struct MemData {
+    std::uint64_t totalKb{0};
+    std::uint64_t usedKb{0};
+    std::uint64_t swapTotalKb{0};
+    std::uint64_t swapUsedKb{0};
+  };
+  [[nodiscard]] static std::optional<MemData> readMemoryKb();
   [[nodiscard]] static std::optional<double> readCpuTempCelsius();
 
   std::atomic<bool> m_running{false};
