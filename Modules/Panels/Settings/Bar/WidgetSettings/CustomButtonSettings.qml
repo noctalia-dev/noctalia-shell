@@ -122,29 +122,29 @@ ColumnLayout {
     label: I18n.tr("bar.custom-button.icon-position-label")
     description: I18n.tr("bar.custom-button.icon-position-description")
     model: barIsVertical ? [
-      {
-        name: I18n.tr("bar.custom-button.icon-position-top"),
-        key: "left"
-      },
-      {
-        name: I18n.tr("bar.custom-button.icon-position-bottom"),
-        key: "right"
-      }
-    ] : [
-      {
-        name: I18n.tr("bar.custom-button.icon-position-left"),
-        key: "left"
-      },
-      {
-        name: I18n.tr("bar.custom-button.icon-position-right"),
-        key: "right"
-      }
-    ]
+                             {
+                               name: I18n.tr("bar.custom-button.icon-position-top"),
+                               key: "left"
+                             },
+                             {
+                               name: I18n.tr("bar.custom-button.icon-position-bottom"),
+                               key: "right"
+                             }
+                           ] : [
+                             {
+                               name: I18n.tr("bar.custom-button.icon-position-left"),
+                               key: "left"
+                             },
+                             {
+                               name: I18n.tr("bar.custom-button.icon-position-right"),
+                               key: "right"
+                             }
+                           ]
     currentKey: valueIconPosition
     onSelected: key => {
-      valueIconPosition = key;
-      saveSettings();
-    }
+                  valueIconPosition = key;
+                  saveSettings();
+                }
     defaultValue: widgetMetadata.iconPosition
   }
 

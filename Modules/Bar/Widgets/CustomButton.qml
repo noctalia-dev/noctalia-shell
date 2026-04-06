@@ -12,6 +12,27 @@ import qs.Widgets
 Item {
   id: root
 
+  NPopupContextMenu {
+    id: contextMenu
+
+    model: [
+      {
+        "label": I18n.tr("actions.widget-settings"),
+        "action": "widget-settings",
+        "icon": "settings"
+      },
+    ]
+
+    onTriggered: action => {
+                   contextMenu.close();
+                   PanelService.closeContextMenu(screen);
+
+                   if (action === "widget-settings") {
+                     BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
+                   }
+                 }
+  }
+
   property ShellScreen screen
 
   // Widget properties passed from Bar.qml for per-instance settings
@@ -425,21 +446,23 @@ Item {
         const text = parsed.text || "";
         const icon = parsed.icon || "";
         let tooltip = parsed.tooltip || "";
-        
+
         // Support both "color" (legacy) and "iconColor"/"textColor" (new)
         const legacyColor = parsed.color || "";
         const iconColorKey = parsed.iconColor || "";
         const textColorKey = parsed.textColor || "";
-        
+
         const validColors = ["primary", "secondary", "tertiary", "error", "none"];
-        
+
         // Helper to resolve color: legacy > specific > none
         function resolveColor(legacy, specific) {
-          if (legacy && validColors.includes(legacy)) return legacy;
-          if (specific && validColors.includes(specific)) return specific;
+          if (legacy && validColors.includes(legacy))
+            return legacy;
+          if (specific && validColors.includes(specific))
+            return specific;
           return "";
         }
-        
+
         const resolvedIconColor = resolveColor(legacyColor, iconColorKey);
         const resolvedTextColor = resolveColor(legacyColor, textColorKey);
 
@@ -553,8 +576,8 @@ Item {
     if (rightClickExec) {
       Quickshell.execDetached(["sh", "-lc", rightClickExec]);
       Logger.i("CustomButton", `Executing command: ${rightClickExec}`);
-    } else if (!rightClickUpdateText) {
-      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
+    } else {
+      PanelService.showContextMenu(contextMenu, pill, screen);
     }
     if (!textStream && rightClickUpdateText) {
       runTextCommand();

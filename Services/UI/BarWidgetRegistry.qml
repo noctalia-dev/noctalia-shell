@@ -126,7 +126,7 @@ Singleton {
                                     "customIconPath": "",
                                     "colorizeDistroLogo": false,
                                     "colorizeSystemIcon": "none",
-                                     "colorizeSystemText": "none",
+                                    "colorizeSystemText": "none",
                                     "enableColorization": false
                                   },
                                   "CustomButton": {
@@ -190,7 +190,7 @@ Singleton {
                                     "icon": "rocket",
                                     "customIconPath": "",
                                     "colorizeSystemIcon": "none",
-                                     "colorizeSystemText": "none",
+                                    "colorizeSystemText": "none",
                                     "enableColorization": false,
                                     "iconColor": "none"
                                   },
