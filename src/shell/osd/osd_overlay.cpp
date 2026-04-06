@@ -16,21 +16,21 @@
 
 namespace {
 
-constexpr int kSurfaceWidth = 360;
-constexpr int kSurfaceHeight = 76;
-constexpr int kCardWidth = 348;
-constexpr int kCardHeight = 52;
-constexpr int kHideDelayMs = 1400;
+constexpr int kCardWidth = Style::controlHeightLg * 9 + Style::spaceMd + Style::spaceSm;
+constexpr int kSurfaceWidth = kCardWidth + Style::spaceSm;
+constexpr int kCardHeight = Style::controlHeightLg + Style::spaceXs;
+constexpr int kSurfaceHeight = kCardHeight + Style::spaceLg;
+constexpr int kHideDelayMs = Style::animSlow * 3 + Style::animFast * 2;
 
 constexpr float kCardOpacity = 0.98f;
-constexpr float kIconSize = 20.0f;
-constexpr float kValueFontSize = static_cast<float>(Style::fontSizeTitle);
+constexpr float kIconSize = static_cast<float>(Style::fontSizeTitle + Style::borderWidth * 4);
+constexpr float kValueFontSize = static_cast<float>(Style::fontSizeBody);
 
-constexpr float kProgressHeight = 8.0f;
+constexpr float kProgressHeight = static_cast<float>(Style::spaceXs + Style::borderWidth * 2);
 constexpr float kCardPadding = static_cast<float>(Style::spaceMd);
-constexpr float kInnerGap = static_cast<float>(Style::spaceMd);
+constexpr float kInnerGap = static_cast<float>(Style::spaceSm + Style::spaceXs);
 constexpr int kScreenMargin = Style::spaceLg;
-constexpr int kBarGap = 4;
+constexpr int kBarGap = Style::spaceXs;
 
 } // namespace
 
@@ -240,8 +240,8 @@ void OsdOverlay::updateInstanceContent(Instance& inst) {
   const float cardWidth = inst.card->width();
   inst.icon->setIcon(m_content.icon);
   inst.icon->measure(*m_renderContext);
-  inst.icon->setPosition(kCardPadding,
-                         std::round((inst.card->height() - inst.icon->height()) * 0.5f) - 1.0f);
+  inst.icon->setPosition(kCardPadding, std::round((inst.card->height() - inst.icon->height()) * 0.5f) -
+                                           static_cast<float>(Style::borderWidth));
 
   inst.value->setText(m_content.value);
   inst.value->setMaxWidth(cardWidth);
