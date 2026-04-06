@@ -18,7 +18,6 @@ Singleton {
   property bool directoriesCreated: false
   property bool shouldOpenSetupWizard: false
   property bool isFreshInstall: false
-  property string lastLoadedSettingsText: ""
 
   /*
   Shell directories.
@@ -81,20 +80,6 @@ Singleton {
     }
   }
 
-  // Fallback polling for environments where watcher events are missed
-  // (e.g. atomic symlink/store-path swaps in declarative setups).
-  Timer {
-    id: settingsWatchdogTimer
-    running: false
-    repeat: true
-    interval: 5000
-    onTriggered: {
-      if (root.isLoaded && settingsFileView.path !== undefined) {
-        settingsFileView.reload();
-      }
-    }
-  }
-
   FileView {
     id: settingsFileView
     path: directoriesCreated ? settingsFile : undefined
@@ -110,14 +95,10 @@ Singleton {
     // Trigger initial load when path changes from empty to actual path
     onPathChanged: {
       if (path !== undefined) {
-        settingsWatchdogTimer.start();
         reload();
-      } else {
-        settingsWatchdogTimer.stop();
       }
     }
     onLoaded: function () {
-      var currentText = settingsFileView.text();
       if (!isLoaded) {
         Logger.i("Settings", "Settings loaded");
 
@@ -134,7 +115,6 @@ Singleton {
 
         // Finally, update our local settings version
         adapter.settingsVersion = settingsVersion;
-        root.lastLoadedSettingsText = currentText;
 
         // Emit the signal
         root.isLoaded = true;
@@ -142,10 +122,6 @@ Singleton {
 
         upgradeSettings();
       } else {
-        if (currentText === root.lastLoadedSettingsText) {
-          return;
-        }
-        root.lastLoadedSettingsText = currentText;
         Logger.d("Settings", "Settings reloaded from external file change");
         root.settingsReloaded();
       }
