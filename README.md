@@ -168,7 +168,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Bar completion and foundation
 
-- [ ] Volume OSD
+- [x] Volume OSD
 - [x] Notification: history panel
 
 ### Hardware and networking
