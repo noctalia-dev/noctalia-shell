@@ -28,6 +28,8 @@ std::string statePath() {
   return {};
 }
 
+constexpr Logger kLog("state");
+
 } // namespace
 
 StateService::StateService() {
@@ -41,7 +43,7 @@ StateService::StateService() {
     if (std::filesystem::exists(m_statePath)) {
       loadFromFile(m_statePath);
     } else {
-      logInfo("state: no state file found at {}", m_statePath);
+      kLog.info("no state file found at {}", m_statePath);
     }
   }
   setupWatch();
@@ -99,7 +101,7 @@ void StateService::checkReload() {
     return;
   }
 
-  logInfo("state: reloading {}", m_statePath);
+  kLog.info("reloading {}", m_statePath);
 
   auto oldDefault = m_defaultWallpaperPath;
   auto oldMonitors = m_monitorWallpaperPaths;
@@ -125,30 +127,30 @@ void StateService::setupWatch() {
 
   m_inotifyFd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
   if (m_inotifyFd < 0) {
-    logWarn("state: inotify_init1 failed, state file watch disabled");
+    kLog.warn("inotify_init1 failed, state file watch disabled");
     return;
   }
 
   auto dir = std::filesystem::path(m_statePath).parent_path().string();
   m_watchDescriptor = inotify_add_watch(m_inotifyFd, dir.c_str(), IN_MODIFY | IN_CREATE | IN_MOVED_TO);
   if (m_watchDescriptor < 0) {
-    logWarn("state: inotify_add_watch failed, state file watch disabled");
+    kLog.warn("inotify_add_watch failed, state file watch disabled");
     ::close(m_inotifyFd);
     m_inotifyFd = -1;
     return;
   }
 
-  logDebug("state: watching {} for changes", dir);
+  kLog.debug("watching {} for changes", dir);
 }
 
 void StateService::loadFromFile(const std::string& path) {
-  logInfo("state: loading {}", path);
+  kLog.info("loading {}", path);
 
   toml::table tbl;
   try {
     tbl = toml::parse_file(path);
   } catch (const toml::parse_error& e) {
-    logWarn("state: parse error: {}", e.what());
+    kLog.warn("parse error: {}", e.what());
     return;
   }
 
@@ -170,5 +172,5 @@ void StateService::loadFromFile(const std::string& path) {
     }
   }
 
-  logInfo("state: wallpaper default=\"{}\" monitors={}", m_defaultWallpaperPath, m_monitorWallpaperPaths.size());
+  kLog.info("wallpaper default=\"{}\" monitors={}", m_defaultWallpaperPath, m_monitorWallpaperPaths.size());
 }

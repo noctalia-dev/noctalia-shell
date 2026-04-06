@@ -117,6 +117,8 @@ std::string escapeJsonString(std::string_view text) {
   return escaped;
 }
 
+constexpr Logger kLog("pipewire");
+
 } // namespace
 
 PipeWireService::PipeWireService() {
@@ -158,7 +160,11 @@ PipeWireService::PipeWireService() {
   while (pw_loop_iterate(loop, 0) > 0) {
   }
 
-  logInfo("pipewire: connected (version {})", pw_get_library_version());
+  kLog.info("connected (version {})", pw_get_library_version());
+  const auto* sink = defaultSink();
+  if (sink != nullptr) {
+    kLog.info("default sink \"{}\" vol={:.0f}%", sink->description, sink->volume * 100.0f);
+  }
 }
 
 PipeWireService::~PipeWireService() {
@@ -521,7 +527,7 @@ void PipeWireService::setDefaultSource(std::uint32_t id) { setDefaultNode(id, "d
 
 void PipeWireService::setDefaultNode(std::uint32_t id, const char* key) {
   if (m_defaultMetadata == nullptr) {
-    logWarn("pipewire: unable to set {} - default metadata unavailable", key != nullptr ? key : "default node");
+    kLog.warn("unable to set {} - default metadata unavailable", key != nullptr ? key : "default node");
     return;
   }
 
@@ -533,7 +539,7 @@ void PipeWireService::setDefaultNode(std::uint32_t id, const char* key) {
   const std::string payload = "{\"name\":\"" + escapeJsonString(it->second->name) + "\"}";
   const int rc = pw_metadata_set_property(m_defaultMetadata, PW_ID_CORE, key, "Spa:String:JSON", payload.c_str());
   if (rc < 0) {
-    logWarn("pipewire: failed to set {} to \"{}\" ({})", key, it->second->name, spa_strerror(rc));
+    kLog.warn("failed to set {} to \"{}\" ({})", key, it->second->name, spa_strerror(rc));
     return;
   }
 

@@ -57,6 +57,8 @@ BatteryState decodeBatteryState(std::uint32_t raw) {
   }
 }
 
+constexpr Logger kLog("upower");
+
 } // namespace
 
 UPowerService::UPowerService(SystemBus& bus) : m_bus(bus) {
@@ -87,7 +89,12 @@ UPowerService::UPowerService(SystemBus& bus) : m_bus(bus) {
   scanDevices();
   refresh();
 
-  logDebug("upower: service initialized");
+  if (m_state.isPresent) {
+    kLog.info("battery {:.0f}% state={} ({})", m_state.percentage, static_cast<int>(m_state.state),
+              m_state.onBattery ? "on battery" : "on AC");
+  } else {
+    kLog.info("connected (no battery present)");
+  }
 }
 
 void UPowerService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
@@ -103,7 +110,7 @@ void UPowerService::scanDevices() {
   try {
     m_upowerProxy->callMethod("EnumerateDevices").onInterface(k_upowerInterface).storeResultsTo(paths);
   } catch (const sdbus::Error& e) {
-    logWarn("upower: EnumerateDevices failed: {}", e.what());
+    kLog.warn("EnumerateDevices failed: {}", e.what());
     return;
   }
 
@@ -134,7 +141,7 @@ void UPowerService::bindBatteryDevice(const sdbus::ObjectPath& path) {
         }
       });
 
-  logDebug("upower: bound battery device {}", std::string(path));
+  kLog.debug("bound battery device {}", std::string(path));
 }
 
 UPowerState UPowerService::readState() const {

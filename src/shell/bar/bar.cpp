@@ -35,6 +35,8 @@ std::uint32_t positionToAnchor(const std::string& position) {
   return LayerShellAnchor::Top | LayerShellAnchor::Left | LayerShellAnchor::Right;
 }
 
+constexpr Logger kLog("bar");
+
 } // namespace
 
 Bar::Bar() = default;
@@ -77,7 +79,7 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
 }
 
 void Bar::reload() {
-  logInfo("bar: reloading config");
+  kLog.info("reloading config");
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
                                                     m_audio, m_upower, m_sysmon);
   m_instances.clear();
@@ -129,7 +131,7 @@ void Bar::syncInstances() {
     bool found =
         std::any_of(outputs.begin(), outputs.end(), [&inst](const auto& out) { return out.name == inst->outputName; });
     if (!found) {
-      logInfo("bar: removing instance for output {}", inst->outputName);
+      kLog.info("removing instance for output {}", inst->outputName);
     }
     return !found;
   });
@@ -153,8 +155,8 @@ void Bar::syncInstances() {
 }
 
 void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig) {
-  logInfo("bar: creating \"{}\" on {} ({}), height={} position={}", barConfig.name, output.connectorName,
-          output.description, barConfig.height, barConfig.position);
+  kLog.info("creating \"{}\" on {} ({}), height={} position={}", barConfig.name, output.connectorName,
+            output.description, barConfig.height, barConfig.position);
 
   auto instance = std::make_unique<BarInstance>();
   instance->outputName = output.name;
@@ -215,7 +217,7 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
   populateWidgets(*instance);
 
   if (!instance->surface->initialize(output.output, output.scale)) {
-    logWarn("bar: failed to initialize surface for output {}", output.name);
+    kLog.warn("failed to initialize surface for output {}", output.name);
     return;
   }
 

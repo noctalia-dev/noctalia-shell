@@ -80,6 +80,8 @@ const wl_output_listener kOutputListener = {
     .description = outputDescription,
 };
 
+constexpr Logger kLog("wayland");
+
 } // namespace
 
 WaylandConnection::WaylandConnection() = default;
@@ -352,12 +354,12 @@ void WaylandConnection::cleanup() {
 }
 
 void WaylandConnection::logStartupSummary() const {
-  logInfo("wayland connected compositor={} shm={} layer-shell={} xdg-output={} ext-workspace={} outputs={}",
-          m_compositor != nullptr ? "yes" : "no", m_shm != nullptr ? "yes" : "no", hasLayerShell() ? "yes" : "no",
-          hasXdgOutputManager() ? "yes" : "no", hasExtWorkspaceManager() ? "yes" : "no", m_outputs.size());
+  kLog.info("connected compositor={} shm={} layer-shell={} xdg-output={} ext-workspace={} outputs={}",
+            m_compositor != nullptr ? "yes" : "no", m_shm != nullptr ? "yes" : "no", hasLayerShell() ? "yes" : "no",
+            hasXdgOutputManager() ? "yes" : "no", hasExtWorkspaceManager() ? "yes" : "no", m_outputs.size());
 
   for (const auto& output : m_outputs) {
-    logInfo("output {} global={} scale={} mode={}x{} desc=\"{}\"", output.connectorName, output.name, output.scale,
-            output.width, output.height, output.description);
+    kLog.info("output {} global={} scale={} mode={}x{} desc=\"{}\"", output.connectorName, output.name, output.scale,
+              output.width, output.height, output.description);
   }
 }

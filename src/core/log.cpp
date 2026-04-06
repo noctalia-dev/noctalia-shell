@@ -26,7 +26,7 @@ const char* levelTag(LogLevel level) {
 
 namespace detail {
 
-void logMessage(LogLevel level, std::string_view msg) {
+void logMessage(LogLevel level, const char* section, std::string_view msg) {
   if (level < gMinLevel) {
     return;
   }
@@ -36,8 +36,13 @@ void logMessage(LogLevel level, std::string_view msg) {
   std::tm tm{};
   localtime_r(&ts.tv_sec, &tm);
 
-  std::fprintf(stderr, "%02d:%02d:%02d.%03ld [%s] %.*s\n", tm.tm_hour, tm.tm_min, tm.tm_sec, ts.tv_nsec / 1'000'000,
-               levelTag(level), static_cast<int>(msg.size()), msg.data());
+  if (section != nullptr && section[0] != '\0') {
+    std::fprintf(stderr, "%02d:%02d:%02d.%03ld [%s] [%s] %.*s\n", tm.tm_hour, tm.tm_min, tm.tm_sec,
+                 ts.tv_nsec / 1'000'000, levelTag(level), section, static_cast<int>(msg.size()), msg.data());
+  } else {
+    std::fprintf(stderr, "%02d:%02d:%02d.%03ld [%s] %.*s\n", tm.tm_hour, tm.tm_min, tm.tm_sec, ts.tv_nsec / 1'000'000,
+                 levelTag(level), static_cast<int>(msg.size()), msg.data());
+  }
 }
 
 } // namespace detail

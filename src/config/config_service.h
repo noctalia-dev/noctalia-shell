@@ -70,7 +70,7 @@ enum class WallpaperTransition : std::uint8_t {
   Wipe = 1,
   Disc = 2,
   Stripes = 3,
-  Pixelate = 4,
+  Zoom = 4,
   Honeycomb = 5,
 };
 
@@ -82,9 +82,11 @@ struct WallpaperMonitorOverride {
 struct WallpaperConfig {
   bool enabled = true;
   WallpaperFillMode fillMode = WallpaperFillMode::Crop;
-  WallpaperTransition transition = WallpaperTransition::Fade;
+  std::vector<WallpaperTransition> transitions = {WallpaperTransition::Fade, WallpaperTransition::Wipe,
+                                                  WallpaperTransition::Disc, WallpaperTransition::Stripes,
+                                                  WallpaperTransition::Zoom, WallpaperTransition::Honeycomb};
   float transitionDurationMs = 1500.0f;
-  float edgeSmoothness = 0.5f;
+  float edgeSmoothness = 0.3f;
   std::vector<WallpaperMonitorOverride> monitorOverrides;
 };
 

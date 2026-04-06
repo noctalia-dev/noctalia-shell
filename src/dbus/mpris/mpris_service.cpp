@@ -151,6 +151,8 @@ std::map<std::string, sdbus::Variant> to_dbus_player(const MprisPlayerInfo& info
   return player;
 }
 
+constexpr Logger kLog("mpris");
+
 } // namespace
 
 MprisService::MprisService(SessionBus& bus)
@@ -259,7 +261,7 @@ bool MprisService::seek(const std::string& busName, int64_t offsetUs) {
     addOrRefreshPlayer(busName);
     return true;
   } catch (const sdbus::Error& e) {
-    logWarn("mpris seek failed name={} err={}", busName, e.what());
+    kLog.warn("seek failed name={} err={}", busName, e.what());
     return false;
   }
 }
@@ -290,7 +292,7 @@ bool MprisService::setPosition(const std::string& busName, int64_t positionUs) {
           proxyIt->second->getProperty("Position").onInterface(k_mpris_player_interface);
       currentPositionUs = positionValue.get<int64_t>();
     } catch (const sdbus::Error& e) {
-      logWarn("mpris position refresh failed name={} err={}, using cached value", busName, e.what());
+      kLog.warn("position refresh failed name={} err={}, using cached value", busName, e.what());
     }
 
     const int64_t offsetUs = positionUs - currentPositionUs;
@@ -314,7 +316,7 @@ bool MprisService::setPosition(const std::string& busName, int64_t positionUs) {
     addOrRefreshPlayer(busName);
     return true;
   } catch (const sdbus::Error& e) {
-    logWarn("mpris set-position failed name={} err={}, falling back to Seek", busName, e.what());
+    kLog.warn("set-position failed name={} err={}, falling back to Seek", busName, e.what());
     return fallback_seek();
   }
 }
@@ -343,7 +345,7 @@ bool MprisService::setVolume(const std::string& busName, double volume) {
     addOrRefreshPlayer(busName);
     return true;
   } catch (const sdbus::Error& e) {
-    logWarn("mpris set-volume failed name={} err={}", busName, e.what());
+    kLog.warn("set-volume failed name={} err={}", busName, e.what());
     return false;
   }
 }
@@ -372,7 +374,7 @@ bool MprisService::setShuffle(const std::string& busName, bool shuffle) {
     addOrRefreshPlayer(busName);
     return true;
   } catch (const sdbus::Error& e) {
-    logWarn("mpris set-shuffle failed name={} err={}", busName, e.what());
+    kLog.warn("set-shuffle failed name={} err={}", busName, e.what());
     return false;
   }
 }
@@ -401,7 +403,7 @@ bool MprisService::setLoopStatus(const std::string& busName, std::string loopSta
     addOrRefreshPlayer(busName);
     return true;
   } catch (const sdbus::Error& e) {
-    logWarn("mpris set-loop-status failed name={} err={}", busName, e.what());
+    kLog.warn("set-loop-status failed name={} err={}", busName, e.what());
     return false;
   }
 }
@@ -812,7 +814,7 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
     const auto existing = m_players.find(busName);
     if (existing == m_players.end()) {
       m_players.emplace(busName, info);
-      logInfo("mpris added player name={} identity=\"{}\" status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"",
+      kLog.info("added player name={} identity=\"{}\" status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"",
               info.busName, info.identity, info.playbackStatus, info.title, primary_artist(info.artists),
               info.artUrl);
       emitPlayersChanged();
@@ -835,7 +837,7 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
       }
 
       existing->second = merged;
-      logDebug("mpris updated player name={} status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"", merged.busName,
+      kLog.debug("updated player name={} status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"", merged.busName,
                merged.playbackStatus, merged.title, primary_artist(merged.artists), merged.artUrl);
 
       if (previous_info.title != merged.title || previous_info.album != merged.album ||
@@ -851,7 +853,7 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
       }
     }
   } catch (const sdbus::Error& e) {
-    logWarn("mpris player query failed name={} err={}", busName, e.what());
+    kLog.warn("player query failed name={} err={}", busName, e.what());
   }
 }
 
@@ -869,7 +871,7 @@ void MprisService::removePlayer(const std::string& busName) {
   if (m_lastActivePlayer == busName) {
     m_lastActivePlayer.clear();
   }
-  logInfo("mpris removed player name={}", busName);
+  kLog.info("removed player name={}", busName);
 
   emitPlayersChanged();
   syncSignals(previousActive);
@@ -934,10 +936,10 @@ bool MprisService::callPlayerMethod(const std::string& busName, const char* meth
   try {
     it->second->callMethod(methodName).onInterface(k_mpris_player_interface);
     addOrRefreshPlayer(busName);
-    logDebug("mpris control name={} method={}", busName, methodName);
+    kLog.debug("control name={} method={}", busName, methodName);
     return true;
   } catch (const sdbus::Error& e) {
-    logWarn("mpris control failed name={} method={} err={}", busName, methodName, e.what());
+    kLog.warn("control failed name={} method={} err={}", busName, methodName, e.what());
     return false;
   }
 }

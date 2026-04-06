@@ -90,7 +90,7 @@ void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
   const float iconH = m_icon->height();
 
   if (m_displayMode == SysmonDisplayMode::Gauge && m_gauge != nullptr) {
-    const float gaugeW = std::max(3.0f, roundf(iconH * 0.25f));
+    const float gaugeW = std::max(3.0f, roundf(iconH * 0.4f));
     m_gauge->setRadius(gaugeW / 2.0f);
 
     m_icon->setPosition(0.0f, 0.0f);

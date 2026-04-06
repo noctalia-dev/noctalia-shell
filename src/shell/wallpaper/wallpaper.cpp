@@ -33,8 +33,7 @@ TransitionParams randomizeParams(WallpaperTransition type, float smoothness, flo
     params.stripeCount = std::round(randomFloat(4.0f, 24.0f));
     params.angle = randomFloat(0.0f, 360.0f);
     break;
-  case WallpaperTransition::Pixelate:
-    params.maxBlockSize = std::round(randomFloat(32.0f, 112.0f));
+  case WallpaperTransition::Zoom:
     break;
   case WallpaperTransition::Honeycomb:
     params.cellSize = randomFloat(0.02f, 0.06f);
@@ -48,6 +47,8 @@ TransitionParams randomizeParams(WallpaperTransition type, float smoothness, flo
 
   return params;
 }
+
+constexpr Logger kLog("wallpaper");
 
 } // namespace
 
@@ -70,7 +71,7 @@ bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, St
   m_state = state;
 
   if (!m_config->config().wallpaper.enabled) {
-    logInfo("wallpaper: disabled in config");
+    kLog.info("disabled in config");
     return true;
   }
 
@@ -82,19 +83,33 @@ bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, St
 }
 
 void Wallpaper::reload() {
-  logInfo("wallpaper: reloading config");
+  kLog.info("reloading config");
 
-  for (auto& inst : m_instances) {
-    releaseInstanceTextures(*inst);
+  const bool nowEnabled = m_config->config().wallpaper.enabled;
+
+  if (!nowEnabled) {
+    // Wallpaper disabled — full teardown
+    for (auto& inst : m_instances) {
+      releaseInstanceTextures(*inst);
+    }
+    makeAnyContextCurrent();
+    m_sharedTexManager.cleanup();
+    m_textureCache.clear();
+    m_instances.clear();
+    m_shareContext = EGL_NO_CONTEXT;
+    return;
   }
-  makeAnyContextCurrent();
-  m_sharedTexManager.cleanup();
-  m_textureCache.clear();
-  m_instances.clear();
-  m_shareContext = EGL_NO_CONTEXT;
 
-  if (m_config->config().wallpaper.enabled) {
-    syncInstances();
+  // Wallpaper remains (or becomes) enabled — sync instances without teardown
+  // to avoid flickering. syncInstances handles monitor override changes
+  // (adds/removes instances) without disturbing existing surfaces.
+  syncInstances();
+
+  // Refresh renderer state on all instances to pick up fill mode / smoothness
+  // changes that take effect immediately without a texture reload.
+  for (auto& inst : m_instances) {
+    updateRendererState(*inst);
+    inst->surface->requestRedraw();
   }
 }
 
@@ -106,7 +121,7 @@ void Wallpaper::onOutputChange() {
 }
 
 void Wallpaper::onStateChange() {
-  logInfo("wallpaper: state file changed, checking for updates");
+  kLog.info("state file changed, checking for updates");
 
   for (auto& inst : m_instances) {
     auto newPath = m_state->getWallpaperPath(inst->connectorName);
@@ -114,7 +129,7 @@ void Wallpaper::onStateChange() {
       continue;
     }
 
-    logInfo("wallpaper: changing {} → {}", inst->connectorName, newPath);
+    kLog.info("changing {} → {}", inst->connectorName, newPath);
     inst->pendingPath = newPath;
 
     if (inst->surface == nullptr || inst->surface->wallpaperRenderer() == nullptr) {
@@ -136,7 +151,7 @@ void Wallpaper::syncInstances() {
     bool found =
         std::any_of(outputs.begin(), outputs.end(), [&inst](const auto& out) { return out.name == inst->outputName; });
     if (!found) {
-      logInfo("wallpaper: removing instance for output {}", inst->outputName);
+      kLog.info("removing instance for output {}", inst->outputName);
       releaseInstanceTextures(*inst);
     }
     return !found;
@@ -161,7 +176,7 @@ void Wallpaper::syncInstances() {
       }
     }
     if (!enabled) {
-      logInfo("wallpaper: skipping {} ({}) — disabled by monitor override", output.connectorName, output.description);
+      kLog.info("skipping {} ({}) — disabled by monitor override", output.connectorName, output.description);
       continue;
     }
 
@@ -171,7 +186,7 @@ void Wallpaper::syncInstances() {
 
 void Wallpaper::createInstance(const WaylandOutput& output) {
   auto wallpaperPath = m_state->getWallpaperPath(output.connectorName);
-  logInfo("wallpaper: creating on {} ({}), path={}", output.connectorName, output.description, wallpaperPath);
+  kLog.info("creating on {} ({}), path={}", output.connectorName, output.description, wallpaperPath);
 
   auto instance = std::make_unique<WallpaperInstance>();
   instance->outputName = output.name;
@@ -205,7 +220,7 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
   instance->surface->setUpdateCallback([this, inst]() { updateRendererState(*inst); });
 
   if (!instance->surface->initialize(output.output, output.scale)) {
-    logWarn("wallpaper: failed to initialize surface for output {}", output.name);
+    kLog.warn("failed to initialize surface for output {}", output.name);
     return;
   }
 
@@ -236,7 +251,7 @@ TextureHandle Wallpaper::acquireTexture(const std::string& path) {
   auto it = m_textureCache.find(path);
   if (it != m_textureCache.end()) {
     ++it->second.refCount;
-    logInfo("wallpaper: texture cache hit for {} (refCount={})", path, it->second.refCount);
+    kLog.info("texture cache hit for {} (refCount={})", path, it->second.refCount);
     return it->second.handle;
   }
 
@@ -248,7 +263,7 @@ TextureHandle Wallpaper::acquireTexture(const std::string& path) {
   }
 
   m_textureCache[path] = CachedTexture{.handle = handle, .refCount = 1};
-  logInfo("wallpaper: texture uploaded and cached for {}", path);
+  kLog.info("texture uploaded and cached for {}", path);
   return handle;
 }
 
@@ -269,7 +284,7 @@ void Wallpaper::releaseTexture(TextureHandle& handle, const std::string& path) {
     makeAnyContextCurrent();
     m_sharedTexManager.unload(it->second.handle);
     m_textureCache.erase(it);
-    logInfo("wallpaper: texture evicted from cache for {}", path);
+    kLog.info("texture evicted from cache for {}", path);
   }
 
   handle = {};
@@ -285,7 +300,7 @@ void Wallpaper::releaseInstanceTextures(WallpaperInstance& inst) {
 void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& path) {
   auto newTex = acquireTexture(path);
   if (newTex.id == 0) {
-    logWarn("wallpaper: failed to load {}", path);
+    kLog.warn("failed to load {}", path);
     return;
   }
 
@@ -335,7 +350,11 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
     aspectRatio = static_cast<float>(instance.surface->width()) / static_cast<float>(instance.surface->height());
   }
 
-  instance.transitionParams = randomizeParams(wpConfig.transition, wpConfig.edgeSmoothness, aspectRatio);
+  const auto& transitions = wpConfig.transitions;
+  const auto picked = transitions[static_cast<std::size_t>(
+      std::floor(randomFloat(0.0f, static_cast<float>(transitions.size()))))];
+  instance.activeTransition = picked;
+  instance.transitionParams = randomizeParams(picked, wpConfig.edgeSmoothness, aspectRatio);
   instance.transitioning = true;
   instance.transitionProgress = 0.0f;
 
@@ -370,6 +389,6 @@ void Wallpaper::updateRendererState(WallpaperInstance& instance) {
   renderer->setTransitionState(
       instance.currentTexture.id, instance.nextTexture.id, static_cast<float>(instance.currentTexture.width),
       static_cast<float>(instance.currentTexture.height), static_cast<float>(instance.nextTexture.width),
-      static_cast<float>(instance.nextTexture.height), instance.transitionProgress, wpConfig.transition,
+      static_cast<float>(instance.nextTexture.height), instance.transitionProgress, instance.activeTransition,
       wpConfig.fillMode, instance.transitionParams);
 }
