@@ -74,7 +74,7 @@ SmartPanel {
     id: playerContent
     anchors.fill: parent
 
-    property real contentPreferredHeight: mainLayout.implicitHeight + Style.margin2L
+    property real contentPreferredHeight: mainLayout.implicitHeight + Style.margin2L;
 
     property Component visualizerSource: {
       switch (root.visualizerType) {
