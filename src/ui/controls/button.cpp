@@ -60,7 +60,7 @@ void Button::setOnClick(std::function<void()> callback) {
     area->setOnLeave([this]() { applyVisualState(); });
     area->setOnPress([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
     area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-      if (m_onClick) {
+      if (m_enabled && m_onClick) {
         m_onClick();
       }
     });
@@ -87,6 +87,14 @@ bool Button::hovered() const noexcept { return m_inputArea != nullptr && m_input
 
 bool Button::pressed() const noexcept { return m_inputArea != nullptr && m_inputArea->pressed(); }
 
+void Button::setEnabled(bool enabled) {
+  if (m_enabled == enabled) {
+    return;
+  }
+  m_enabled = enabled;
+  applyVisualState();
+}
+
 void Button::setVariant(ButtonVariant variant) {
   if (m_variant == variant) {
     return;
@@ -95,10 +103,18 @@ void Button::setVariant(ButtonVariant variant) {
   applyVariant();
 }
 
+void Button::setMinimalChrome(bool minimalChrome) {
+  if (m_minimalChrome == minimalChrome) {
+    return;
+  }
+  m_minimalChrome = minimalChrome;
+  applyVariant();
+}
+
 void Button::applyVariant() {
   setPadding(Style::paddingV, Style::paddingH, Style::paddingV, Style::paddingH);
   setRadius(Style::radiusMd);
-  setBorderWidth(Style::borderWidth);
+  setBorderWidth(m_minimalChrome ? 0.0f : static_cast<float>(Style::borderWidth));
 
   switch (m_variant) {
   case ButtonVariant::Default:
@@ -147,15 +163,49 @@ void Button::applyVariant() {
     m_borderColorPressed = palette.primary;
     break;
   case ButtonVariant::Ghost:
-    m_bgColorNormal = palette.surface;
+    m_bgColorNormal = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.surface;
+    m_bgColorHover = m_minimalChrome ? palette.surfaceVariant : palette.primary;
+    m_bgColorPressed = m_minimalChrome ? palette.surfaceVariant : palette.primary;
+    m_labelColorNormal = palette.onSurface;
+    m_labelColorHover = m_minimalChrome ? palette.onSurface : palette.onPrimary;
+    m_labelColorPressed = m_minimalChrome ? palette.onSurface : palette.onPrimary;
+    m_borderColorNormal = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.outline;
+    m_borderColorHover = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.primary;
+    m_borderColorPressed = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.primary;
+    break;
+  case ButtonVariant::Accent:
+    m_bgColorNormal = palette.primary;
+    m_bgColorHover = palette.primary;
+    m_bgColorPressed = palette.primary;
+    m_labelColorNormal = palette.onPrimary;
+    m_labelColorHover = palette.onPrimary;
+    m_labelColorPressed = palette.onPrimary;
+    m_borderColorNormal = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.primary;
+    m_borderColorHover = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.primary;
+    m_borderColorPressed = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.primary;
+    break;
+  case ButtonVariant::Tab:
+    m_bgColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
     m_bgColorHover = palette.primary;
     m_bgColorPressed = palette.primary;
     m_labelColorNormal = palette.onSurface;
     m_labelColorHover = palette.onPrimary;
     m_labelColorPressed = palette.onPrimary;
-    m_borderColorNormal = palette.outline;
-    m_borderColorHover = palette.primary;
-    m_borderColorPressed = palette.primary;
+    m_borderColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
+    m_borderColorHover = rgba(0.0f, 0.0f, 0.0f, 0.0f);
+    m_borderColorPressed = rgba(0.0f, 0.0f, 0.0f, 0.0f);
+    break;
+  case ButtonVariant::TabActive:
+    // Active tab is emphasized via primary text/icon, not a filled chip.
+    m_bgColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
+    m_bgColorHover = palette.primary;
+    m_bgColorPressed = palette.primary;
+    m_labelColorNormal = palette.primary;
+    m_labelColorHover = palette.onPrimary;
+    m_labelColorPressed = palette.onPrimary;
+    m_borderColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
+    m_borderColorHover = rgba(0.0f, 0.0f, 0.0f, 0.0f);
+    m_borderColorPressed = rgba(0.0f, 0.0f, 0.0f, 0.0f);
     break;
   }
 
@@ -195,13 +245,17 @@ void Button::applyColors(const Color& bg, const Color& border, const Color& labe
 }
 
 void Button::applyVisualState() {
-  bool isHovered = hovered();
-  bool isPressed = pressed();
+  bool isHovered = m_enabled && hovered();
+  bool isPressed = m_enabled && pressed();
 
   Color targetBg;
   Color targetBorder;
   Color targetLabel;
-  if (isPressed) {
+  if (!m_enabled) {
+    targetBg = lerpColor(m_bgColorNormal, palette.surface, 0.35f);
+    targetBorder = lerpColor(m_borderColorNormal, palette.outline, 0.35f);
+    targetLabel = rgba(m_labelColorNormal.r, m_labelColorNormal.g, m_labelColorNormal.b, 0.45f);
+  } else if (isPressed) {
     targetBg = m_bgColorPressed;
     targetBorder = m_borderColorPressed;
     targetLabel = m_labelColorPressed;

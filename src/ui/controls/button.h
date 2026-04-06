@@ -19,6 +19,9 @@ enum class ButtonVariant : std::uint8_t {
   Destructive,
   Outline,
   Ghost,
+  Accent,
+  Tab,
+  TabActive,
 };
 
 class Button : public Flex {
@@ -30,7 +33,9 @@ public:
   void setIcon(std::string_view name);
   void setFontSize(float size);
   void setIconSize(float size);
+  void setEnabled(bool enabled);
   void setVariant(ButtonVariant variant);
+  void setMinimalChrome(bool minimalChrome);
   void setOnClick(std::function<void()> callback);
   void setCursorShape(std::uint32_t shape);
   void layout(Renderer& renderer) override;
@@ -42,6 +47,7 @@ public:
   [[nodiscard]] Icon* icon() const noexcept { return m_icon; }
   [[nodiscard]] bool hovered() const noexcept;
   [[nodiscard]] bool pressed() const noexcept;
+  [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
 
 private:
   void ensureIcon();
@@ -72,4 +78,6 @@ private:
   Color m_targetBg{};
   Color m_targetBorder{};
   Color m_targetLabel{};
+  bool m_minimalChrome = false;
+  bool m_enabled = true;
 };

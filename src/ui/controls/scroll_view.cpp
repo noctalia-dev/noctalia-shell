@@ -21,7 +21,7 @@ constexpr float kScrollbarWidth = 6.0f;
 constexpr float kScrollbarPadding = static_cast<float>(Style::borderWidth);
 constexpr float kViewportPaddingH = static_cast<float>(Style::spaceXs);
 constexpr float kViewportPaddingV = static_cast<float>(Style::spaceSm);
-constexpr float kScrollbarGap = kScrollbarPadding;
+constexpr float kScrollbarGap = static_cast<float>(Style::spaceXs) * 0.5f;
 constexpr float kMinThumbHeight = 24.0f;
 
 RoundedRectStyle makeSolid(const Color& fill, float radius) {
@@ -140,6 +140,20 @@ void ScrollView::setScrollbarVisible(bool visible) {
   }
   m_showScrollbar = visible;
   markDirty();
+}
+
+void ScrollView::setBackgroundStyle(const Color& fill, const Color& border, float borderWidth) {
+  if (m_background == nullptr) {
+    return;
+  }
+  m_background->setStyle(RoundedRectStyle{
+      .fill = fill,
+      .border = border,
+      .fillMode = FillMode::Solid,
+      .radius = Style::radiusMd,
+      .softness = 1.0f,
+      .borderWidth = borderWidth,
+  });
 }
 
 void ScrollView::setOnScrollChanged(std::function<void(float)> callback) { m_onScrollChanged = std::move(callback); }

@@ -3,6 +3,7 @@
 #include "render/scene/node.h"
 
 #include <memory>
+#include <string_view>
 
 class AnimationManager;
 class Renderer;
@@ -14,6 +15,8 @@ public:
   virtual void create(Renderer& renderer) = 0;
   virtual void layout(Renderer& renderer, float width, float height) = 0;
   virtual void update(Renderer& renderer) = 0;
+  virtual void onOpen(std::string_view context) { (void)context; }
+  virtual void onClose() {}
 
   [[nodiscard]] virtual float preferredWidth() const = 0;
   [[nodiscard]] virtual float preferredHeight() const = 0;

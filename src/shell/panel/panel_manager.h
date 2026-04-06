@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 class ConfigService;
@@ -32,9 +33,11 @@ public:
 
   void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 
-  void openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX, float anchorY);
+  void openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX, float anchorY,
+                 std::string_view context = {});
   void closePanel();
-  void togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX, float anchorY);
+  void togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX, float anchorY,
+                   std::string_view context = {});
 
   bool onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);

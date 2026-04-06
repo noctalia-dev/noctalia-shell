@@ -22,6 +22,7 @@ public:
   [[nodiscard]] float minValue() const noexcept { return m_min; }
   [[nodiscard]] float maxValue() const noexcept { return m_max; }
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
+  [[nodiscard]] bool dragging() const noexcept;
 
   void layout(Renderer& renderer) override;
 

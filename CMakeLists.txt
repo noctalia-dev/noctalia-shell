@@ -228,6 +228,7 @@ add_executable(noctalia
     src/ui/controls/box.cpp
     src/ui/controls/flex.cpp
     src/ui/controls/button.cpp
+    src/ui/controls/image.cpp
     src/ui/controls/progress_bar.cpp
     src/ui/controls/input.cpp
     src/ui/controls/radio_button.cpp
@@ -248,6 +249,13 @@ add_executable(noctalia
     src/shell/tray/tray_menu.cpp
     src/shell/panel/panel_manager.cpp
     src/shell/panels/audio_devices_panel.cpp
+    src/shell/panels/control_center/common.cpp
+    src/shell/panels/control_center/panel.cpp
+    src/shell/panels/control_center/overview_tab.cpp
+    src/shell/panels/control_center/media_tab.cpp
+    src/shell/panels/control_center/calendar_tab.cpp
+    src/shell/panels/control_center/notifications_tab.cpp
+    src/shell/panels/control_center/network_tab.cpp
     src/shell/panels/notification_history_panel.cpp
     src/shell/panels/test_panel.cpp
     src/shell/widgets/clock_widget.cpp

@@ -44,6 +44,9 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"media-play", 0xF691},        // player-play-filled
     {"media-prev", 0xF693},        // player-skip-back-filled
     {"media-next", 0xF694},        // player-skip-forward-filled
+    {"shuffle", 0xF000},           // arrows-shuffle
+    {"repeat", 0xEB72},            // repeat
+    {"repeat-once", 0xEB71},       // repeat-once
     {"stop", 0xF695},              // player-stop-filled
     {"disc", 0x1003E},             // disc-filled
     {"microphone", 0xEAF0},        // microphone

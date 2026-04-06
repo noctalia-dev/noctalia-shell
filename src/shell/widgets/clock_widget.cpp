@@ -1,24 +1,47 @@
 #include "shell/widgets/clock_widget.h"
 
 #include "render/core/renderer.h"
+#include "render/scene/input_area.h"
+#include "render/scene/node.h"
+#include "shell/panel/panel_manager.h"
 #include "time/time_service.h"
 #include "ui/controls/label.h"
 #include "ui/style.h"
 
-ClockWidget::ClockWidget(const TimeService& timeService, std::string format)
-    : m_time(timeService), m_format(std::move(format)) {}
+ClockWidget::ClockWidget(const TimeService& timeService, wl_output* output, std::int32_t scale, std::string format)
+    : m_time(timeService), m_output(output), m_scale(scale), m_format(std::move(format)) {}
 
 void ClockWidget::create(Renderer& renderer) {
+  auto area = std::make_unique<InputArea>();
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
+    float absX = 0.0f;
+    float absY = 0.0f;
+    auto* node = root();
+    if (node != nullptr) {
+      Node::absolutePosition(node, absX, absY);
+      absX += node->width() * 0.5f;
+      absY += node->height() * 0.5f;
+    }
+    PanelManager::instance().togglePanel("control-center", m_output, m_scale, absX, absY, "calendar");
+  });
+
   auto label = std::make_unique<Label>();
   label->setBold(true);
   label->setFontSize(Style::fontSizeBody * m_contentScale);
   m_label = label.get();
-  m_root = std::move(label);
+  area->addChild(std::move(label));
+  m_root = std::move(area);
   update(renderer);
 }
 
 void ClockWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+  auto* rootNode = root();
+  if (m_label == nullptr || rootNode == nullptr) {
+    return;
+  }
   m_label->measure(renderer);
+  m_label->setPosition(0.0f, 0.0f);
+  rootNode->setSize(m_label->width(), m_label->height());
 }
 
 void ClockWidget::update(Renderer& renderer) {

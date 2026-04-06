@@ -29,6 +29,7 @@ public:
   // Focus management
   void setFocus(InputArea* area);
   [[nodiscard]] InputArea* focusedArea() const noexcept { return m_focusedArea; }
+  [[nodiscard]] InputArea* hoveredArea() const noexcept { return m_hoveredArea; }
 
 private:
   InputArea* findInputAreaAt(float x, float y);

@@ -40,7 +40,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       return nullptr;
     }
     std::string format = wc != nullptr ? wc->getString("format", "{:%H:%M}") : std::string("{:%H:%M}");
-    return std::make_unique<ClockWidget>(*m_time, std::move(format));
+    std::int32_t scale = 1;
+    const auto* wlOutput = m_wayland.findOutputByWl(output);
+    if (wlOutput != nullptr) {
+      scale = wlOutput->scale;
+    }
+    return std::make_unique<ClockWidget>(*m_time, output, scale, std::move(format));
   }
 
   if (type == "workspaces") {

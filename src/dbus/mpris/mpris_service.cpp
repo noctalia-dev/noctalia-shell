@@ -70,7 +70,11 @@ std::string get_object_path_from_variant(const std::map<std::string, sdbus::Vari
   try {
     return it->second.get<sdbus::ObjectPath>();
   } catch (const sdbus::Error&) {
-    return {};
+    try {
+      return it->second.get<std::string>();
+    } catch (const sdbus::Error&) {
+      return {};
+    }
   }
 }
 
@@ -97,7 +101,22 @@ int64_t get_int64_from_variant(const std::map<std::string, sdbus::Variant>& valu
   try {
     return it->second.get<int64_t>();
   } catch (const sdbus::Error&) {
-    return 0;
+    try {
+      const auto value = it->second.get<uint64_t>();
+      return value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())
+                 ? std::numeric_limits<int64_t>::max()
+                 : static_cast<int64_t>(value);
+    } catch (const sdbus::Error&) {
+      try {
+        return static_cast<int64_t>(it->second.get<int32_t>());
+      } catch (const sdbus::Error&) {
+        try {
+          return static_cast<int64_t>(it->second.get<uint32_t>());
+        } catch (const sdbus::Error&) {
+          return 0;
+        }
+      }
+    }
   }
 }
 
@@ -281,8 +300,10 @@ bool MprisService::setPosition(const std::string& busName, int64_t positionUs) {
     return seek(busName, offsetUs);
   };
 
-  if (it->second.trackId.empty()) {
+  const bool preferRelativeSeek = it->second.trackId.empty() || busName.find("spotify") != std::string::npos;
+  if (preferRelativeSeek) {
     // Some players don't expose track_id consistently; emulate absolute position with Seek.
+    logDebug("mpris set-position using relative Seek fallback for {}", busName);
     return fallback_seek();
   }
 
@@ -465,6 +486,9 @@ bool MprisService::setPinnedPlayerPreference(const std::string& busName) {
   const auto previousActive = activePlayer();
   m_pinnedPlayerPreference = busName;
   syncSignals(previousActive);
+  if (m_changeCallback) {
+    m_changeCallback();
+  }
   return true;
 }
 
@@ -472,6 +496,9 @@ void MprisService::clearPinnedPlayerPreference() {
   const auto previousActive = activePlayer();
   m_pinnedPlayerPreference.reset();
   syncSignals(previousActive);
+  if (m_changeCallback) {
+    m_changeCallback();
+  }
 }
 
 void MprisService::setPreferredPlayers(std::vector<std::string> preferredBusNames) {
@@ -491,7 +518,12 @@ void MprisService::setPreferredPlayers(std::vector<std::string> preferredBusName
   const auto previousActive = activePlayer();
   m_preferredPlayers = std::move(normalized);
   syncSignals(previousActive);
+  if (m_changeCallback) {
+    m_changeCallback();
+  }
 }
+
+void MprisService::setChangeCallback(std::function<void()> callback) { m_changeCallback = std::move(callback); }
 
 std::optional<std::string> MprisService::pinnedPlayerPreference() const { return m_pinnedPlayerPreference; }
 
@@ -772,8 +804,9 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
 
   try {
     const MprisPlayerInfo info = readPlayerInfo(*proxyIt->second, busName);
-    if (info.playbackStatus == "Playing" || info.playbackStatus == "Paused") {
+    if (info.playbackStatus == "Playing") {
       m_lastActivePlayer = busName;
+      m_lastPlayingUpdate[busName] = std::chrono::steady_clock::now();
     }
 
     const auto existing = m_players.find(busName);
@@ -784,6 +817,9 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
               info.artUrl);
       emitPlayersChanged();
       syncSignals(previousActive);
+      if (m_changeCallback) {
+        m_changeCallback();
+      }
       return;
     }
 
@@ -810,6 +846,9 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
       }
 
       syncSignals(previousActive);
+      if (m_changeCallback) {
+        m_changeCallback();
+      }
     }
   } catch (const sdbus::Error& e) {
     logWarn("mpris player query failed name={} err={}", busName, e.what());
@@ -826,6 +865,7 @@ void MprisService::removePlayer(const std::string& busName) {
   m_players.erase(busName);
   m_playerProxies.erase(busName);
   m_lastPropertiesUpdate.erase(busName);
+  m_lastPlayingUpdate.erase(busName);
   if (m_lastActivePlayer == busName) {
     m_lastActivePlayer.clear();
   }
@@ -833,6 +873,9 @@ void MprisService::removePlayer(const std::string& busName) {
 
   emitPlayersChanged();
   syncSignals(previousActive);
+  if (m_changeCallback) {
+    m_changeCallback();
+  }
 }
 
 std::optional<std::string> MprisService::chooseActivePlayer() const {
@@ -840,15 +883,27 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
     return *m_pinnedPlayerPreference;
   }
 
+  std::optional<std::string> mostRecentPlaying;
+  std::chrono::steady_clock::time_point mostRecentPlayingAt{};
+  for (const auto& [busName, player] : m_players) {
+    if (player.playbackStatus != "Playing") {
+      continue;
+    }
+    const auto playingIt = m_lastPlayingUpdate.find(busName);
+    const auto seenAt =
+        playingIt != m_lastPlayingUpdate.end() ? playingIt->second : std::chrono::steady_clock::time_point{};
+    if (!mostRecentPlaying.has_value() || seenAt > mostRecentPlayingAt) {
+      mostRecentPlaying = busName;
+      mostRecentPlayingAt = seenAt;
+    }
+  }
+  if (mostRecentPlaying.has_value()) {
+    return mostRecentPlaying;
+  }
+
   for (const auto& busName : m_preferredPlayers) {
     const auto it = m_players.find(busName);
     if (it != m_players.end() && it->second.playbackStatus == "Playing") {
-      return busName;
-    }
-  }
-
-  for (const auto& [busName, player] : m_players) {
-    if (player.playbackStatus == "Playing") {
       return busName;
     }
   }

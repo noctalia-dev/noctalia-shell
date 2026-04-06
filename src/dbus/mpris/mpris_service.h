@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -76,6 +77,7 @@ public:
   bool setPinnedPlayerPreference(const std::string& busName);
   void clearPinnedPlayerPreference();
   void setPreferredPlayers(std::vector<std::string> preferredBusNames);
+  void setChangeCallback(std::function<void()> callback);
   [[nodiscard]] std::optional<std::string> pinnedPlayerPreference() const;
   [[nodiscard]] const std::vector<std::string>& preferredPlayers() const noexcept;
 
@@ -129,8 +131,10 @@ private:
   std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_playerProxies;
   std::unordered_map<std::string, MprisPlayerInfo> m_players;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastPropertiesUpdate;
+  std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastPlayingUpdate;
   std::string m_lastActivePlayer;
   std::string m_lastEmittedActivePlayer;
   std::optional<std::string> m_pinnedPlayerPreference;
   std::vector<std::string> m_preferredPlayers;
+  std::function<void()> m_changeCallback;
 };

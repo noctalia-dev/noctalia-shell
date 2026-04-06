@@ -19,6 +19,7 @@ public:
   void scrollBy(float delta);
   void setScrollStep(float step);
   void setScrollbarVisible(bool visible);
+  void setBackgroundStyle(const Color& fill, const Color& border, float borderWidth);
   void setOnScrollChanged(std::function<void(float)> callback);
 
   [[nodiscard]] float scrollOffset() const noexcept { return m_scrollOffset; }

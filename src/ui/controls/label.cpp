@@ -46,6 +46,9 @@ void Label::setCaptionStyle() {
 void Label::measure(Renderer& renderer) {
   auto metrics    = renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold());
   auto refMetrics = renderer.measureText("A", m_textNode->fontSize(), m_textNode->bold());
+  const float maxWidth = m_textNode->maxWidth();
+  const float measuredWidth =
+      maxWidth > 0.0f ? std::min(metrics.width, maxWidth) : metrics.width;
 
   // Use "A" (cap-height + SDF top/bottom padding, no descender) as the reference
   // bounding box. This keeps all labels at the same font size at a consistent
@@ -53,6 +56,6 @@ void Label::measure(Renderer& renderer) {
   // the bounding box — so geometric centering in a container (bar, control)
   // yields optical centering for typical bar content (digits, short labels).
   m_baselineOffset = -refMetrics.top;
-  setSize(std::round(std::max(metrics.width, m_minWidth)), std::round(refMetrics.bottom - refMetrics.top));
+  setSize(std::round(std::max(measuredWidth, m_minWidth)), std::round(refMetrics.bottom - refMetrics.top));
   m_textNode->setPosition(0.0f, m_baselineOffset);
 }

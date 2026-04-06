@@ -2,8 +2,7 @@
 
 #include "app/poll_source.h"
 #include "core/log.h"
-#include "shell/panels/audio_devices_panel.h"
-#include "shell/panels/notification_history_panel.h"
+#include "shell/panels/control_center/panel.h"
 #include "shell/panels/test_panel.h"
 #include "system/distro_info.h"
 
@@ -183,6 +182,7 @@ void Application::run() {
 
     try {
       m_mprisService = std::make_unique<MprisService>(*m_bus);
+      m_mprisService->setChangeCallback([this]() { m_panelManager.refresh(); });
       logInfo("mpris discovery active");
     } catch (const std::exception& e) {
       logWarn("mpris disabled: {}", e.what());
@@ -220,9 +220,9 @@ void Application::run() {
   // Initialize panel manager (must be before bar so widgets can access PanelManager::instance())
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
-  m_panelManager.registerPanel("audio-devices", std::make_unique<AudioDevicesPanel>(m_pipewireService.get()));
-  m_panelManager.registerPanel("notification-history",
-                               std::make_unique<NotificationHistoryPanel>(&m_notificationManager));
+  m_panelManager.registerPanel(
+      "control-center",
+      std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(), m_mprisService.get()));
 
   // Initialize notification popup (top layer, dynamic surface)
   m_notificationPopup.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);

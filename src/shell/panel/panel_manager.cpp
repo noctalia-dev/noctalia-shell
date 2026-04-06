@@ -5,6 +5,7 @@
 #include "core/log.h"
 #include "render/render_context.h"
 #include "ui/controls/box.h"
+#include "ui/controls/select.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/wayland_connection.h"
@@ -58,7 +59,7 @@ void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> c
 }
 
 void PanelManager::openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX,
-                             float anchorY) {
+                             float anchorY, std::string_view context) {
   if (m_inTransition) {
     return;
   }
@@ -77,6 +78,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
 
   m_activePanel = it->second.get();
   m_activePanelId = panelId;
+  m_activePanel->onOpen(context);
 
   const auto panelWidth = static_cast<std::uint32_t>(m_activePanel->preferredWidth());
   const auto panelHeight = static_cast<std::uint32_t>(m_activePanel->preferredHeight());
@@ -107,15 +109,20 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
         std::clamp(desired, static_cast<float>(padding), static_cast<float>(maxValue)));
   };
 
-  const std::uint32_t anchor = isBottom    ? LayerShellAnchor::Bottom | LayerShellAnchor::Left
-                               : isLeft    ? LayerShellAnchor::Left | LayerShellAnchor::Top
-                               : isRight   ? LayerShellAnchor::Right | LayerShellAnchor::Top
-                                           : LayerShellAnchor::Top | LayerShellAnchor::Left;
+  bool centeredControlCenter = (panelId == "control-center");
+  const std::uint32_t anchor = centeredControlCenter
+                                   ? (isBottom ? LayerShellAnchor::Bottom : LayerShellAnchor::Top)
+                               : isBottom      ? LayerShellAnchor::Bottom | LayerShellAnchor::Left
+                               : isLeft        ? LayerShellAnchor::Left | LayerShellAnchor::Top
+                               : isRight       ? LayerShellAnchor::Right | LayerShellAnchor::Top
+                                               : LayerShellAnchor::Top | LayerShellAnchor::Left;
   const std::int32_t barOffset =
       barConfig.height + (isVertical ? std::max(0, barConfig.marginH) : std::max(0, barConfig.marginV)) + panelGap;
 
-  const auto marginLeft = clampMargin(anchorX - static_cast<float>(panelWidth) * 0.5f,
-                                      static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
+  const auto marginLeft = centeredControlCenter
+                              ? 0
+                              : clampMargin(anchorX - static_cast<float>(panelWidth) * 0.5f,
+                                            static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
   const auto marginTop = clampMargin(anchorY - static_cast<float>(panelHeight) * 0.5f,
                                      static_cast<std::int32_t>(panelHeight), outputHeight, screenPadding);
 
@@ -126,10 +133,13 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
       .width = panelWidth,
       .height = panelHeight,
       .exclusiveZone = 0,
-      .marginTop = (isLeft || isRight) ? marginTop : (isBottom ? 0 : barOffset),
+      .marginTop = centeredControlCenter
+                       ? (isBottom ? 0 : barOffset)
+                   : (isLeft || isRight) ? marginTop
+                                         : (isBottom ? 0 : barOffset),
       .marginRight = isRight ? barOffset : 0,
       .marginBottom = isBottom ? barOffset : 0,
-      .marginLeft = isLeft ? barOffset : marginLeft,
+      .marginLeft = centeredControlCenter ? 0 : (isLeft ? barOffset : marginLeft),
       .keyboard = LayerShellKeyboard::OnDemand,
       .defaultWidth = panelWidth,
       .defaultHeight = panelHeight,
@@ -189,6 +199,9 @@ void PanelManager::destroyPanel() {
   m_animations.cancelAll();
   m_closing = false;
   m_pointerInside = false;
+  if (m_activePanel != nullptr) {
+    m_activePanel->onClose();
+  }
   m_bgNode = nullptr;
   m_contentNode = nullptr;
   m_sceneRoot.reset();
@@ -200,11 +213,16 @@ void PanelManager::destroyPanel() {
 }
 
 void PanelManager::togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX,
-                               float anchorY) {
+                               float anchorY, std::string_view context) {
   if (isOpen() && m_activePanelId == panelId) {
+    if (!context.empty() && m_activePanel != nullptr) {
+      m_activePanel->onOpen(context);
+      refresh();
+      return;
+    }
     closePanel();
   } else {
-    openPanel(panelId, output, scale, anchorX, anchorY);
+    openPanel(panelId, output, scale, anchorX, anchorY, context);
   }
 }
 
@@ -245,6 +263,9 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
     }
 
     if (m_pointerInside) {
+      if (pressed) {
+        Select::handleGlobalPointerPress(m_inputDispatcher.hoveredArea());
+      }
       m_inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy), event.button,
                                       pressed);
     }

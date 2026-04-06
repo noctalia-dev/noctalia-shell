@@ -102,6 +102,8 @@ void Slider::setEnabled(bool enabled) {
 
 void Slider::setOnValueChanged(std::function<void(float)> callback) { m_onValueChanged = std::move(callback); }
 
+bool Slider::dragging() const noexcept { return m_inputArea != nullptr && m_inputArea->pressed(); }
+
 void Slider::layout(Renderer& /*renderer*/) {
   updateGeometry();
   applyVisualState();

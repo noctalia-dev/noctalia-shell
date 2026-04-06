@@ -42,7 +42,7 @@ void VolumeWidget::create(Renderer& renderer) {
       absX += node->width() * 0.5f;
       absY += node->height() * 0.5f;
     }
-    PanelManager::instance().togglePanel("audio-devices", m_output, m_scale, absX, absY);
+    PanelManager::instance().togglePanel("control-center", m_output, m_scale, absX, absY, "media");
   });
 
   auto icon = std::make_unique<Icon>();

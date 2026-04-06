@@ -26,7 +26,7 @@ void NotificationWidget::create(Renderer& renderer) {
       absX += node->width() * 0.5f;
       absY += node->height() * 0.5f;
     }
-    PanelManager::instance().togglePanel("notification-history", m_output, m_scale, absX, absY);
+    PanelManager::instance().togglePanel("control-center", m_output, m_scale, absX, absY, "notifications");
   });
 
   auto icon = std::make_unique<Icon>();

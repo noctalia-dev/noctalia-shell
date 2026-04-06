@@ -2,6 +2,7 @@
 
 #include "render/programs/rounded_rect_program.h"
 #include "render/scene/input_area.h"
+#include "render/scene/node.h"
 #include "render/scene/rect_node.h"
 #include "ui/controls/icon.h"
 #include "ui/controls/label.h"
@@ -20,11 +21,15 @@ constexpr float kDefaultWidth = 220.0f;
 constexpr float kMinWidth = 160.0f;
 constexpr float kTriggerHeight = Style::controlHeight;
 constexpr float kOptionHeight = Style::controlHeight;
-constexpr float kMenuTopGap = 4.0f;
+constexpr float kMenuTopGap = static_cast<float>(Style::spaceXs);
 constexpr float kHorizontalPadding = Style::paddingH;
 constexpr float kIconSize = 14.0f;
+constexpr std::int32_t kOpenSelectZIndex = 100;
+constexpr std::size_t kMaxVisibleOptions = 6;
 
 } // namespace
+
+Select* Select::s_openSelect = nullptr;
 
 Select::Select() {
   auto triggerBackground = std::make_unique<RectNode>();
@@ -60,10 +65,34 @@ Select::Select() {
   });
   m_triggerArea = static_cast<InputArea*>(addChild(std::move(triggerArea)));
 
+  auto menuViewport = std::make_unique<Node>();
+  menuViewport->setClipChildren(true);
+  menuViewport->setZIndex(1);
+  m_menuViewport = addChild(std::move(menuViewport));
+
   auto menuBackground = std::make_unique<RectNode>();
-  m_menuBackground = static_cast<RectNode*>(addChild(std::move(menuBackground)));
+  m_menuBackground = static_cast<RectNode*>(m_menuViewport->addChild(std::move(menuBackground)));
+
+  auto menuArea = std::make_unique<InputArea>();
+  menuArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
+  menuArea->setOnAxis([this](const InputArea::PointerData& data) {
+    if (!m_open) {
+      return;
+    }
+    const float delta = data.axisValue != 0.0 ? static_cast<float>(data.axisValue)
+                                              : static_cast<float>(data.axisDiscrete) * kOptionHeight;
+    scrollBy(delta);
+  });
+  m_menuArea = static_cast<InputArea*>(m_menuViewport->addChild(std::move(menuArea)));
 
   applyVisualState();
+}
+
+Select::~Select() {
+  restoreAncestorChain();
+  if (s_openSelect == this) {
+    s_openSelect = nullptr;
+  }
 }
 
 void Select::setOptions(std::vector<std::string> options) {
@@ -72,6 +101,7 @@ void Select::setOptions(std::vector<std::string> options) {
     m_selectedIndex = npos;
     m_hoveredOptionIndex = npos;
     m_open = false;
+    m_scrollOffset = 0.0f;
   } else if (m_selectedIndex == npos || m_selectedIndex >= m_options.size()) {
     m_selectedIndex = 0;
   }
@@ -105,6 +135,11 @@ void Select::setEnabled(bool enabled) {
   if (!m_enabled) {
     m_open = false;
     m_hoveredOptionIndex = npos;
+    if (s_openSelect == this) {
+      s_openSelect = nullptr;
+    }
+    restoreAncestorChain();
+    setZIndex(0);
   }
   applyVisualState();
   markDirty();
@@ -134,7 +169,7 @@ void Select::layout(Renderer& renderer) {
     return;
   }
 
-  if (m_fixedWidth <= 0.0f && width() > 0.0f) {
+  if (width() > 0.0f) {
     m_fixedWidth = width();
   }
 
@@ -151,7 +186,7 @@ void Select::layout(Renderer& renderer) {
   float contentWidth = widestLabel + kHorizontalPadding * 2.0f + kIconSize + Style::spaceXs;
   float dropdownWidth = m_fixedWidth > 0.0f ? m_fixedWidth : std::max({kDefaultWidth, kMinWidth, contentWidth});
 
-  const float menuHeight = static_cast<float>(m_optionViews.size()) * kOptionHeight;
+  const float viewportHeight = menuViewportHeight();
   setSize(dropdownWidth, kTriggerHeight);
 
   m_triggerBackground->setPosition(0.0f, 0.0f);
@@ -166,12 +201,34 @@ void Select::layout(Renderer& renderer) {
   m_triggerArea->setPosition(0.0f, 0.0f);
   m_triggerArea->setSize(dropdownWidth, kTriggerHeight);
 
-  // Position menu so the selected item overlaps the trigger
-  const float selectedRow = m_selectedIndex < m_optionViews.size() ? static_cast<float>(m_selectedIndex) : 0.0f;
-  const float menuY = -selectedRow * kOptionHeight;
+  float absX = 0.0f;
+  float absY = 0.0f;
+  Node::absolutePosition(this, absX, absY);
+  Node* root = this;
+  while (root->parent() != nullptr) {
+    root = root->parent();
+  }
+  const float rootHeight = root->height();
+  const float belowSpace = std::max(0.0f, rootHeight - (absY + kTriggerHeight));
+  const float aboveSpace = std::max(0.0f, absY);
+  const float neededSpace = viewportHeight + kMenuTopGap;
+  m_openUpward = neededSpace > belowSpace && aboveSpace > belowSpace;
+  const float menuY = m_openUpward ? -(viewportHeight + kMenuTopGap) : (kTriggerHeight + kMenuTopGap);
+  clampScrollOffset();
 
-  m_menuBackground->setPosition(0.0f, menuY);
-  m_menuBackground->setSize(dropdownWidth, menuHeight);
+  m_menuViewport->setVisible(m_open && !m_optionViews.empty());
+  m_menuViewport->setPosition(0.0f, menuY);
+  m_menuViewport->setSize(dropdownWidth, viewportHeight);
+  m_menuViewport->setZIndex(1);
+
+  m_menuBackground->setPosition(0.0f, 0.0f);
+  m_menuBackground->setSize(dropdownWidth, viewportHeight);
+  m_menuBackground->setZIndex(1);
+
+  m_menuArea->setVisible(m_open && !m_optionViews.empty());
+  m_menuArea->setPosition(0.0f, 0.0f);
+  m_menuArea->setSize(dropdownWidth, viewportHeight);
+  m_menuArea->setZIndex(2);
 
   for (std::size_t i = 0; i < m_optionViews.size(); ++i) {
     auto& option = m_optionViews[i];
@@ -181,21 +238,25 @@ void Select::layout(Renderer& renderer) {
     option.checkIcon->setVisible(showMenu && i == m_selectedIndex);
     option.area->setVisible(showMenu);
 
-    const float rowY = menuY + static_cast<float>(i) * kOptionHeight;
+    const float rowY = static_cast<float>(i) * kOptionHeight - m_scrollOffset;
     option.background->setPosition(0.0f, rowY);
     option.background->setSize(dropdownWidth, kOptionHeight);
+    option.background->setZIndex(3);
 
     option.label->setMaxWidth(std::max(0.0f, dropdownWidth - kHorizontalPadding * 2.0f - kIconSize - Style::spaceXs));
     option.label->measure(renderer);
     float optLabelY = std::round((kOptionHeight - option.label->height()) * 0.5f);
     option.label->setPosition(kHorizontalPadding, rowY + optLabelY);
+    option.label->setZIndex(4);
 
     option.checkIcon->measure(renderer);
     option.checkIcon->setPosition(dropdownWidth - kHorizontalPadding - option.checkIcon->width(),
                                   rowY + optLabelY);
+    option.checkIcon->setZIndex(4);
 
     option.area->setPosition(0.0f, rowY);
     option.area->setSize(dropdownWidth, kOptionHeight);
+    option.area->setZIndex(5);
   }
 
   applyVisualState();
@@ -204,16 +265,16 @@ void Select::layout(Renderer& renderer) {
 void Select::clearOptionViews() {
   for (auto& option : m_optionViews) {
     if (option.area != nullptr) {
-      (void)removeChild(option.area);
+      (void)m_menuViewport->removeChild(option.area);
     }
     if (option.checkIcon != nullptr) {
-      (void)removeChild(option.checkIcon);
+      (void)m_menuViewport->removeChild(option.checkIcon);
     }
     if (option.label != nullptr) {
-      (void)removeChild(option.label);
+      (void)m_menuViewport->removeChild(option.label);
     }
     if (option.background != nullptr) {
-      (void)removeChild(option.background);
+      (void)m_menuViewport->removeChild(option.background);
     }
   }
   m_optionViews.clear();
@@ -224,16 +285,16 @@ void Select::rebuildOptionViews() {
 
   for (std::size_t i = 0; i < m_options.size(); ++i) {
     auto background = std::make_unique<RectNode>();
-    auto* bgPtr = static_cast<RectNode*>(addChild(std::move(background)));
+    auto* bgPtr = static_cast<RectNode*>(m_menuViewport->addChild(std::move(background)));
 
     auto label = std::make_unique<Label>();
     label->setText(m_options[i]);
-    auto* labelPtr = static_cast<Label*>(addChild(std::move(label)));
+    auto* labelPtr = static_cast<Label*>(m_menuViewport->addChild(std::move(label)));
 
     auto checkIcon = std::make_unique<Icon>();
     checkIcon->setIcon("check");
     checkIcon->setIconSize(kIconSize);
-    auto* checkIconPtr = static_cast<Icon*>(addChild(std::move(checkIcon)));
+    auto* checkIconPtr = static_cast<Icon*>(m_menuViewport->addChild(std::move(checkIcon)));
 
     auto area = std::make_unique<InputArea>();
     area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
@@ -259,7 +320,15 @@ void Select::rebuildOptionViews() {
       setSelectedIndex(i);
       closeMenu();
     });
-    auto* areaPtr = static_cast<InputArea*>(addChild(std::move(area)));
+    area->setOnAxis([this](const InputArea::PointerData& data) {
+      if (!m_open) {
+        return;
+      }
+      const float delta = data.axisValue != 0.0 ? static_cast<float>(data.axisValue)
+                                                : static_cast<float>(data.axisDiscrete) * kOptionHeight;
+      scrollBy(delta);
+    });
+    auto* areaPtr = static_cast<InputArea*>(m_menuViewport->addChild(std::move(area)));
 
     m_optionViews.push_back(OptionView{
         .background = bgPtr,
@@ -293,7 +362,7 @@ void Select::applyVisualState() {
 
   m_triggerLabel->setColor(triggerText);
   m_triggerIcon->setColor(triggerText);
-  m_triggerIcon->setIcon(m_open ? "chevron-up" : "chevron-down");
+  m_triggerIcon->setIcon(m_openUpward ? "chevron-up" : "chevron-down");
 
   m_triggerBackground->setStyle(RoundedRectStyle{
       .fill = triggerBg,
@@ -356,9 +425,31 @@ void Select::toggleOpen() {
   if (!m_enabled || m_options.empty()) {
     return;
   }
-  m_open = !m_open;
-  if (!m_open) {
+  const bool opening = !m_open;
+  if (opening && s_openSelect != nullptr && s_openSelect != this) {
+    s_openSelect->closeMenu();
+  }
+  m_open = opening;
+  if (m_open) {
+    const float selectedTop = m_selectedIndex < m_optionViews.size() ? static_cast<float>(m_selectedIndex) * kOptionHeight : 0.0f;
+    const float selectedBottom = selectedTop + kOptionHeight;
+    const float viewportHeight = menuViewportHeight();
+    if (selectedTop < m_scrollOffset) {
+      m_scrollOffset = selectedTop;
+    } else if (selectedBottom > m_scrollOffset + viewportHeight) {
+      m_scrollOffset = selectedBottom - viewportHeight;
+    }
+    clampScrollOffset();
+    s_openSelect = this;
+    liftAncestorChain();
+    setZIndex(kOpenSelectZIndex);
+  } else {
     m_hoveredOptionIndex = npos;
+    if (s_openSelect == this) {
+      s_openSelect = nullptr;
+    }
+    restoreAncestorChain();
+    setZIndex(0);
   }
   applyVisualState();
   markDirty();
@@ -370,6 +461,77 @@ void Select::closeMenu() {
   }
   m_open = false;
   m_hoveredOptionIndex = npos;
+  if (s_openSelect == this) {
+    s_openSelect = nullptr;
+  }
+  restoreAncestorChain();
+  setZIndex(0);
   applyVisualState();
   markDirty();
+}
+
+bool Select::containsNode(const Node* node) const noexcept {
+  for (auto* current = node; current != nullptr; current = current->parent()) {
+    if (current == this) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void Select::scrollBy(float delta) {
+  if (!m_open || m_optionViews.empty()) {
+    return;
+  }
+  m_scrollOffset += delta;
+  clampScrollOffset();
+  markDirty();
+}
+
+void Select::clampScrollOffset() {
+  const float totalHeight = static_cast<float>(m_optionViews.size()) * kOptionHeight;
+  const float maxScroll = std::max(0.0f, totalHeight - menuViewportHeight());
+  m_scrollOffset = std::clamp(m_scrollOffset, 0.0f, maxScroll);
+}
+
+float Select::menuViewportHeight() const noexcept {
+  const float totalHeight = static_cast<float>(m_optionViews.size()) * kOptionHeight;
+  const float maxHeight = static_cast<float>(kMaxVisibleOptions) * kOptionHeight;
+  return std::min(totalHeight, maxHeight);
+}
+
+void Select::liftAncestorChain() {
+  restoreAncestorChain();
+
+  std::int32_t z = kOpenSelectZIndex;
+  for (Node* current = this; current != nullptr; current = current->parent()) {
+    m_liftedNodes.emplace_back(current, current->zIndex());
+    current->setZIndex(z);
+    ++z;
+  }
+}
+
+void Select::restoreAncestorChain() {
+  for (auto it = m_liftedNodes.rbegin(); it != m_liftedNodes.rend(); ++it) {
+    if (it->first != nullptr) {
+      it->first->setZIndex(it->second);
+    }
+  }
+  m_liftedNodes.clear();
+}
+
+void Select::handleGlobalPointerPress(InputArea* target) {
+  if (s_openSelect == nullptr) {
+    return;
+  }
+  if (target != nullptr && s_openSelect->containsNode(target)) {
+    return;
+  }
+  s_openSelect->closeMenu();
+}
+
+void Select::closeAnyOpen() {
+  if (s_openSelect != nullptr) {
+    s_openSelect->closeMenu();
+  }
 }
