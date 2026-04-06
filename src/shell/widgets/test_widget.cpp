@@ -19,8 +19,9 @@ void TestWidget::create(Renderer& renderer) {
     if (node != nullptr) {
       Node::absolutePosition(node, absX, absY);
       absX += node->width() * 0.5f;
+      absY += node->height() * 0.5f;
     }
-    PanelManager::instance().togglePanel("test", m_output, m_scale, absX);
+    PanelManager::instance().togglePanel("test", m_output, m_scale, absX, absY);
   });
 
   auto icon = std::make_unique<Icon>();

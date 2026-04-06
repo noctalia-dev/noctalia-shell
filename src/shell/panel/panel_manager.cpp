@@ -15,6 +15,28 @@
 
 PanelManager* PanelManager::s_instance = nullptr;
 
+namespace {
+
+BarConfig resolvePanelBarConfig(ConfigService* configService, WaylandConnection* wayland, wl_output* output) {
+  BarConfig barConfig;
+  if (configService == nullptr || configService->config().bars.empty()) {
+    return barConfig;
+  }
+
+  barConfig = configService->config().bars.front();
+  if (wayland == nullptr || output == nullptr) {
+    return barConfig;
+  }
+
+  if (const auto* wlOutput = wayland->findOutputByWl(output); wlOutput != nullptr) {
+    return ConfigService::resolveForOutput(barConfig, *wlOutput);
+  }
+
+  return barConfig;
+}
+
+} // namespace
+
 PanelManager::PanelManager() { s_instance = this; }
 
 PanelManager::~PanelManager() {
@@ -35,7 +57,8 @@ void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> c
   m_panels[id] = std::move(content);
 }
 
-void PanelManager::openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX) {
+void PanelManager::openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX,
+                             float anchorY) {
   if (m_inTransition) {
     return;
   }
@@ -57,37 +80,56 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
 
   const auto panelWidth = static_cast<std::uint32_t>(m_activePanel->preferredWidth());
   const auto panelHeight = static_cast<std::uint32_t>(m_activePanel->preferredHeight());
-
-  // Get bar height from config for margin calculation
-  std::uint32_t barHeight = Style::barHeightDefault;
-  if (m_config != nullptr && !m_config->config().bars.empty()) {
-    barHeight = m_config->config().bars[0].height;
-  }
+  const auto barConfig = resolvePanelBarConfig(m_config, m_wayland, output);
+  const bool isBottom = barConfig.position == "bottom";
+  const bool isLeft = barConfig.position == "left";
+  const bool isRight = barConfig.position == "right";
+  const bool isVertical = isLeft || isRight;
+  const std::int32_t panelGap = Style::spaceXs;
+  const std::int32_t screenPadding = Style::spaceSm;
 
   std::int32_t outputWidth = static_cast<std::int32_t>(panelWidth);
+  std::int32_t outputHeight = static_cast<std::int32_t>(panelHeight);
   if (m_wayland != nullptr) {
     const auto* wlOutput = m_wayland->findOutputByWl(output);
     if (wlOutput != nullptr && wlOutput->width > 0) {
       outputWidth = wlOutput->width;
     }
+    if (wlOutput != nullptr && wlOutput->height > 0) {
+      outputHeight = wlOutput->height;
+    }
   }
 
-  const float desiredLeft = anchorX - static_cast<float>(panelWidth) * 0.5f;
-  const std::int32_t horizontalPadding = Style::spaceSm;
-  const std::int32_t maxLeft = std::max(horizontalPadding, outputWidth - static_cast<std::int32_t>(panelWidth) -
-                                                               horizontalPadding);
-  const auto marginLeft =
-      static_cast<std::int32_t>(std::clamp(desiredLeft, static_cast<float>(horizontalPadding), static_cast<float>(maxLeft)));
+  const auto clampMargin = [](float desired, std::int32_t panelSize, std::int32_t outputSize,
+                              std::int32_t padding) -> std::int32_t {
+    const std::int32_t maxValue = std::max(padding, outputSize - panelSize - padding);
+    return static_cast<std::int32_t>(
+        std::clamp(desired, static_cast<float>(padding), static_cast<float>(maxValue)));
+  };
+
+  const std::uint32_t anchor = isBottom    ? LayerShellAnchor::Bottom | LayerShellAnchor::Left
+                               : isLeft    ? LayerShellAnchor::Left | LayerShellAnchor::Top
+                               : isRight   ? LayerShellAnchor::Right | LayerShellAnchor::Top
+                                           : LayerShellAnchor::Top | LayerShellAnchor::Left;
+  const std::int32_t barOffset =
+      barConfig.height + (isVertical ? std::max(0, barConfig.marginH) : std::max(0, barConfig.marginV)) + panelGap;
+
+  const auto marginLeft = clampMargin(anchorX - static_cast<float>(panelWidth) * 0.5f,
+                                      static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
+  const auto marginTop = clampMargin(anchorY - static_cast<float>(panelHeight) * 0.5f,
+                                     static_cast<std::int32_t>(panelHeight), outputHeight, screenPadding);
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-panel",
       .layer = LayerShellLayer::Top,
-      .anchor = LayerShellAnchor::Top | LayerShellAnchor::Left,
+      .anchor = anchor,
       .width = panelWidth,
       .height = panelHeight,
       .exclusiveZone = 0,
-      .marginTop = static_cast<std::int32_t>(barHeight) + 4,
-      .marginLeft = marginLeft,
+      .marginTop = (isLeft || isRight) ? marginTop : (isBottom ? 0 : barOffset),
+      .marginRight = isRight ? barOffset : 0,
+      .marginBottom = isBottom ? barOffset : 0,
+      .marginLeft = isLeft ? barOffset : marginLeft,
       .keyboard = LayerShellKeyboard::OnDemand,
       .defaultWidth = panelWidth,
       .defaultHeight = panelHeight,
@@ -157,11 +199,12 @@ void PanelManager::destroyPanel() {
   m_wayland->stopKeyRepeat();
 }
 
-void PanelManager::togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX) {
+void PanelManager::togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX,
+                               float anchorY) {
   if (isOpen() && m_activePanelId == panelId) {
     closePanel();
   } else {
-    openPanel(panelId, output, scale, anchorX);
+    openPanel(panelId, output, scale, anchorX, anchorY);
   }
 }
 

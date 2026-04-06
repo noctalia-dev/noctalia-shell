@@ -32,9 +32,9 @@ public:
 
   void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 
-  void openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX);
+  void openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX, float anchorY);
   void closePanel();
-  void togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX);
+  void togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX, float anchorY);
 
   bool onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);
