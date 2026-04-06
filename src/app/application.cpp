@@ -7,6 +7,10 @@
 #include "shell/panels/test_panel.h"
 #include "system/distro_info.h"
 
+#ifndef NOCTALIA_VERSION
+#define NOCTALIA_VERSION "unknown"
+#endif
+
 #include <chrono>
 #include <cmath>
 #include <csignal>
@@ -27,8 +31,6 @@ constexpr Logger kLog("app");
 } // namespace
 
 Application::Application() {
-  kLog.info("noctalia hello");
-
   m_notificationManager.addEventCallback([this](const Notification& n, NotificationEvent event) {
     const char* kind = "updated";
     if (event == NotificationEvent::Added) {
@@ -77,6 +79,8 @@ Application::~Application() {
 }
 
 void Application::run() {
+  kLog.info("noctalia v{}", NOCTALIA_VERSION);
+
   // Install signal handlers for graceful shutdown
   std::signal(SIGTERM, signal_handler);
   std::signal(SIGINT, signal_handler);
@@ -101,9 +105,9 @@ void Application::run() {
     const auto& label = !distro->prettyName.empty() ? distro->prettyName
                         : !distro->name.empty()     ? distro->name
                                                     : distro->id;
-    kLog.info("distro: {}", label);
+    kLog.info("distro is {}", label);
   } else {
-    kLog.info("distro: unknown");
+    kLog.info("distro is unknown");
   }
 
   try {
@@ -198,7 +202,6 @@ void Application::run() {
         m_trayMenu.onTrayChanged();
       });
       m_trayService->setMenuToggleCallback([this](const std::string& itemId) { m_trayMenu.toggleForItem(itemId); });
-      kLog.info("status notifier watcher active on org.kde.StatusNotifierWatcher");
     } catch (const std::exception& e) {
       kLog.warn("tray watcher disabled: {}", e.what());
       m_trayService.reset();

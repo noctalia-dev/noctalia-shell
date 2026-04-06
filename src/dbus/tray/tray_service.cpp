@@ -189,6 +189,8 @@ bool pickBestPixmap(const std::vector<IconPixmapTuple>& pixmaps, std::vector<std
   return true;
 }
 
+constexpr Logger kLog("tray");
+
 } // namespace
 
 TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
@@ -229,7 +231,7 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
         }
       });
 
-  logInfo("tray watcher active on {}", std::string(k_watcher_bus_name));
+  kLog.info("watcher active on {}", std::string(k_watcher_bus_name));
 }
 
 void TrayService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
@@ -298,7 +300,7 @@ std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) c
     }
     return out;
   } catch (const sdbus::Error& e) {
-    logDebug("tray dbusmenu load failed id={} menu={} err={}", itemId, itemIt->second.menuObjectPath, e.what());
+    kLog.debug("dbusmenu load failed id={} menu={} err={}", itemId, itemIt->second.menuObjectPath, e.what());
     return {};
   }
 }
@@ -320,7 +322,7 @@ bool TrayService::activateMenuEntry(const std::string& itemId, std::int32_t entr
         .withArguments(entryId, std::string("clicked"), sdbus::Variant{std::int32_t{0}}, static_cast<std::uint32_t>(0));
     return true;
   } catch (const sdbus::Error& e) {
-    logDebug("tray dbusmenu event failed id={} entryId={} err={}", itemId, entryId, e.what());
+    kLog.debug("dbusmenu event failed id={} entryId={} err={}", itemId, entryId, e.what());
     return false;
   }
 }
@@ -345,7 +347,7 @@ bool TrayService::activateItem(const std::string& itemId, std::int32_t x, std::i
     it->second->callMethod("Activate").onInterface(k_item_interface).withArguments(x, y);
     return true;
   } catch (const sdbus::Error& e) {
-    logInfo("tray activate failed id={} err={}", itemId, e.what());
+    kLog.info("activate failed id={} err={}", itemId, e.what());
     return false;
   }
 }
@@ -360,14 +362,14 @@ bool TrayService::openContextMenu(const std::string& itemId, std::int32_t x, std
     it->second->callMethod("ContextMenu").onInterface(k_item_interface).withArguments(x, y);
     return true;
   } catch (const sdbus::Error& e) {
-    logInfo("tray context menu failed id={} err={}", itemId, e.what());
+    kLog.info("context menu failed id={} err={}", itemId, e.what());
     return false;
   }
 }
 
 void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath) {
   if (serviceOrPath.empty()) {
-    logWarn("tray register item ignored: empty service/path");
+    kLog.warn("register item ignored: empty service/path");
     return;
   }
 
@@ -389,7 +391,7 @@ void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath)
   }
 
   if (busName.empty() || objectPath.empty()) {
-    logWarn("tray register item ignored: invalid id ({})", serviceOrPath);
+    kLog.warn("register item ignored: invalid id ({})", serviceOrPath);
     return;
   }
 
@@ -402,7 +404,7 @@ void TrayService::onRegisterStatusNotifierHost(const std::string& host) {
   }
   m_hostRegistered = true;
 
-  logInfo("tray host registered: {}", host);
+  kLog.info("host registered: {}", host);
   m_watcherObject->emitSignal("StatusNotifierHostRegistered").onInterface(k_watcher_interface);
   m_watcherObject->emitPropertiesChangedSignal(
       k_watcher_interface, std::vector<sdbus::PropertyName>{sdbus::PropertyName{"IsStatusNotifierHostRegistered"}});
@@ -476,7 +478,7 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
         .onInterface(k_item_interface)
         .call([this, itemId](const std::string& /*title*/) { refreshItemMetadata(itemId); });
 
-    logDebug("tray item registered: {}", itemId);
+    kLog.debug("item registered: {}", itemId);
     m_watcherObject->emitSignal("StatusNotifierItemRegistered").onInterface(k_watcher_interface).withArguments(itemId);
     m_watcherObject->emitPropertiesChangedSignal(
       k_watcher_interface,
@@ -509,8 +511,8 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
   const auto attentionPixmaps = get_icon_pixmaps_or(*proxyIt->second, "AttentionIconPixmap", {});
   pickBestPixmap(attentionPixmaps, next.attentionArgb32, next.attentionWidth, next.attentionHeight);
 
-  logDebug(
-      "tray item metadata id={} itemName='{}' status={} iconName='{}' attentionIconName='{}' menu='{}' "
+  kLog.debug(
+      "item metadata id={} itemName='{}' status={} iconName='{}' attentionIconName='{}' menu='{}' "
       "iconThemePath='{}' iconPixmap={}x{} (bytes={}) attentionPixmap={}x{} (bytes={})",
       itemId, next.itemName, next.status, next.iconName, next.attentionIconName, next.menuObjectPath,
       next.iconThemePath, next.iconWidth, next.iconHeight, next.iconArgb32.size(), next.attentionWidth,
@@ -539,7 +541,7 @@ void TrayService::removeItemsForBusName(const std::string& busName) {
   for (const auto& itemId : removedIds) {
     m_items.erase(itemId);
     m_itemProxies.erase(itemId);
-    logDebug("tray item unregistered: {}", itemId);
+    kLog.debug("item unregistered: {}", itemId);
     m_watcherObject->emitSignal("StatusNotifierItemUnregistered").onInterface(k_watcher_interface).withArguments(
         itemId);
   }
