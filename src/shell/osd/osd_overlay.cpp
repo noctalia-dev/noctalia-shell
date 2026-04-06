@@ -16,7 +16,7 @@
 
 namespace {
 
-constexpr int kCardWidth = Style::controlHeightLg * 9 + Style::spaceMd + Style::spaceSm;
+constexpr int kCardWidth = Style::controlHeightLg * 7 + Style::spaceMd + Style::spaceSm;
 constexpr int kSurfaceWidth = kCardWidth + Style::spaceSm;
 constexpr int kCardHeight = Style::controlHeightLg + Style::spaceXs;
 constexpr int kSurfaceHeight = kCardHeight + Style::spaceLg;
@@ -273,13 +273,17 @@ void OsdOverlay::animateInstance(Instance& inst) {
 
   const float baseY = (inst.sceneRoot->height() - static_cast<float>(kCardHeight)) * 0.5f;
   if (!inst.visible) {
-    inst.sceneRoot->setOpacity(0.0f);
-    inst.card->setPosition(inst.card->x(), baseY + 8.0f);
-    if (inst.background != nullptr) {
-      inst.background->setPosition(inst.background->x(), baseY + 8.0f);
+    // Animate from current opacity to avoid a flash-to-zero glitch when a new
+    // event arrives while the show animation is already in progress.
+    const float startOpacity = inst.sceneRoot->opacity();
+    if (startOpacity == 0.0f) {
+      inst.card->setPosition(inst.card->x(), baseY + 8.0f);
+      if (inst.background != nullptr) {
+        inst.background->setPosition(inst.background->x(), baseY + 8.0f);
+      }
     }
     inst.showAnimId = inst.animations.animate(
-        0.0f, 1.0f, Style::animNormal, Easing::EaseOutCubic,
+        startOpacity, 1.0f, Style::animNormal, Easing::EaseOutCubic,
         [&inst, baseY](float v) {
           inst.sceneRoot->setOpacity(v);
           inst.card->setPosition(inst.card->x(), baseY + (1.0f - v) * 8.0f);
