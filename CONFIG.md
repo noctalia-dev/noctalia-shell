@@ -35,6 +35,7 @@ widget_spacing  = 8           # gap between widgets within a section
 shadow_blur     = 16          # blur radius in pixels (0 = no shadow)
 shadow_offset_x = 6           # horizontal shadow offset (positive = right)
 shadow_offset_y = 6           # vertical shadow offset (positive = down)
+scale           = 1.0         # content scale multiplier for icons and text (default: 1.0)
 
 start  = []                   # widget names in the left/top section
 center = ["workspaces"]       # widget names in the center section
@@ -67,7 +68,7 @@ end            = ["volume", "clock"]
 
 `match` defaults to the subtable key name when omitted, so `[bar.main.monitor."DP-1"]` without a `match` field works too.
 
-Only the fields you specify are overridden; everything else falls through to the `[bar.*]` defaults.
+Only the fields you specify are overridden; everything else falls through to the `[bar.*]` defaults. `scale` is also supported in monitor overrides.
 
 ---
 

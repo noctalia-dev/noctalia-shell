@@ -16,6 +16,7 @@ void NotificationWidget::create(Renderer& renderer) {
 
   auto icon = std::make_unique<Icon>();
   icon->setIcon("bell");
+  icon->setIconSize(Style::fontSizeBody * m_contentScale);
   icon->setColor(palette.onSurface);
   m_icon = icon.get();
   root->addChild(std::move(icon));
@@ -42,7 +43,7 @@ void NotificationWidget::layout(Renderer& renderer, float /*containerWidth*/, fl
   rootNode->setSize(m_icon->width(), m_icon->height());
 
   if (m_dot != nullptr && m_dot->visible()) {
-    constexpr float kDotSize = 5.0f;
+    const float kDotSize = 5.0f * m_contentScale;
     const float dotX = std::max(0.0f, m_icon->width() - kDotSize + 1.0f);
     const float dotY = -1.0f;
     m_dot->setPosition(dotX, dotY);

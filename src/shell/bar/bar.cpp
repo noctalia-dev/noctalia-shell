@@ -322,6 +322,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
             surface->requestRedraw();
           }
         });
+        widget->setContentScale(instance.barConfig.scale);
         widget->create(*renderer);
         if (widget->root() != nullptr) {
           section->addChild(widget->releaseRoot());

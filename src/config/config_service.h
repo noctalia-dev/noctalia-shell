@@ -18,6 +18,7 @@ struct BarMonitorOverride {
   std::optional<std::int32_t> height;
   std::optional<std::int32_t> paddingH;      // horizontal padding from bar edges to start/end sections
   std::optional<std::int32_t> widgetSpacing; // gap between widgets within a section
+  std::optional<float> scale;
   std::optional<std::vector<std::string>> startWidgets;
   std::optional<std::vector<std::string>> centerWidgets;
   std::optional<std::vector<std::string>> endWidgets;
@@ -36,6 +37,7 @@ struct BarConfig {
   std::int32_t shadowBlur = 16;   // shadow blur radius in pixels (0 = no shadow)
   std::int32_t shadowOffsetX = 8; // horizontal shadow offset in pixels
   std::int32_t shadowOffsetY = 8; // vertical shadow offset in pixels (positive = down)
+  float scale = 1.0f;             // content scale multiplier for icons and text
   std::vector<std::string> startWidgets = {"test"};
   std::vector<std::string> centerWidgets = {"workspaces"};
   std::vector<std::string> endWidgets = {"tray", "notifications", "volume", "battery", "clock"};

@@ -3,6 +3,7 @@
 #include "render/core/renderer.h"
 #include "time/time_service.h"
 #include "ui/controls/label.h"
+#include "ui/style.h"
 
 ClockWidget::ClockWidget(const TimeService& timeService, std::string format)
     : m_time(timeService), m_format(std::move(format)) {}
@@ -10,6 +11,7 @@ ClockWidget::ClockWidget(const TimeService& timeService, std::string format)
 void ClockWidget::create(Renderer& renderer) {
   auto label = std::make_unique<Label>();
   label->setBold(true);
+  label->setFontSize(Style::fontSizeBody * m_contentScale);
   m_label = label.get();
   m_root = std::move(label);
   update(renderer);

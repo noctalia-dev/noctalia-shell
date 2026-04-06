@@ -33,10 +33,12 @@ public:
 
   void setAnimationManager(AnimationManager* mgr) noexcept;
   void setRedrawCallback(RedrawCallback callback);
+  void setContentScale(float scale) noexcept { m_contentScale = scale; }
 
 protected:
   void requestRedraw();
 
+  float m_contentScale = 1.0f;
   std::unique_ptr<Node> m_root;
   Node* m_rootPtr = nullptr;
   AnimationManager* m_animations = nullptr;

@@ -45,12 +45,14 @@ void BatteryWidget::create(Renderer& renderer) {
 
   auto icon = std::make_unique<Icon>();
   icon->setIcon("battery-full");
+  icon->setIconSize(Style::fontSizeBody * m_contentScale);
   icon->setColor(palette.onSurface);
   m_icon = icon.get();
   container->addChild(std::move(icon));
 
   auto label = std::make_unique<Label>();
   label->setBold(true);
+  label->setFontSize(Style::fontSizeBody * m_contentScale);
   m_label = label.get();
   container->addChild(std::move(label));
 
@@ -102,6 +104,7 @@ void BatteryWidget::syncState(Renderer& renderer) {
   }
 
   m_icon->setIcon(batteryIconName(s.percentage, s.state));
+  m_icon->setIconSize(Style::fontSizeBody * m_contentScale);
   m_icon->setColor(palette.onSurface);
   m_icon->measure(renderer);
 

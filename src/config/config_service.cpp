@@ -186,6 +186,8 @@ void ConfigService::loadFromFile(const std::string& path) {
         bar.shadowOffsetX = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["shadow_offset_y"].value<int64_t>())
         bar.shadowOffsetY = static_cast<std::int32_t>(*v);
+      if (auto v = (*barTbl)["scale"].value<double>())
+        bar.scale = static_cast<float>(*v);
       if (auto* n = (*barTbl)["start"].as_array())
         bar.startWidgets = readStringArray(*n);
       if (auto* n = (*barTbl)["center"].as_array())
@@ -216,6 +218,8 @@ void ConfigService::loadFromFile(const std::string& path) {
             ovr.paddingH = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["widget_spacing"].value<int64_t>())
             ovr.widgetSpacing = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["scale"].value<double>())
+            ovr.scale = static_cast<float>(*v);
           if (auto* n = (*monTbl)["start"].as_array())
             ovr.startWidgets = readStringArray(*n);
           if (auto* n = (*monTbl)["center"].as_array())
@@ -335,6 +339,8 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.centerWidgets = *ovr.centerWidgets;
     if (ovr.endWidgets)
       resolved.endWidgets = *ovr.endWidgets;
+    if (ovr.scale)
+      resolved.scale = *ovr.scale;
     break; // first match wins
   }
 
