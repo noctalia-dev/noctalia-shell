@@ -102,59 +102,59 @@ void Button::applyVariant() {
 
   switch (m_variant) {
   case ButtonVariant::Default:
-    // Resting state is neutral; pressed state uses active (workspace-like) color.
+    // Resting state is neutral; hover/pressed use the primary accent.
     m_bgColorNormal = palette.surfaceVariant;
-    m_bgColorHover = brighten(m_bgColorNormal, 1.14f);
+    m_bgColorHover = palette.primary;
     m_bgColorPressed = palette.primary;
     m_labelColorNormal = palette.onSurface;
-    m_labelColorHover = palette.onSurface;
+    m_labelColorHover = palette.onPrimary;
     m_labelColorPressed = palette.onPrimary;
     m_borderColorNormal = palette.outline;
-    m_borderColorHover = brighten(m_borderColorNormal, 1.14f);
+    m_borderColorHover = palette.primary;
     m_borderColorPressed = palette.primary;
     break;
   case ButtonVariant::Secondary:
     m_bgColorNormal = palette.secondary;
-    m_bgColorHover = brighten(m_bgColorNormal, 1.12f);
+    m_bgColorHover = palette.primary;
     m_bgColorPressed = palette.primary;
     m_labelColorNormal = palette.onSecondary;
-    m_labelColorHover = palette.onSecondary;
+    m_labelColorHover = palette.onPrimary;
     m_labelColorPressed = palette.onPrimary;
     m_borderColorNormal = palette.outline;
-    m_borderColorHover = brighten(m_borderColorNormal, 1.14f);
+    m_borderColorHover = palette.primary;
     m_borderColorPressed = palette.primary;
     break;
   case ButtonVariant::Destructive:
     m_bgColorNormal = palette.error;
-    m_bgColorHover = brighten(m_bgColorNormal, 1.1f);
+    m_bgColorHover = palette.primary;
     m_bgColorPressed = palette.error;
     m_labelColorNormal = palette.onError;
-    m_labelColorHover = palette.onError;
+    m_labelColorHover = palette.onPrimary;
     m_labelColorPressed = palette.onError;
     m_borderColorNormal = palette.outline;
-    m_borderColorHover = brighten(m_borderColorNormal, 1.14f);
+    m_borderColorHover = palette.primary;
     m_borderColorPressed = palette.error;
     break;
   case ButtonVariant::Outline:
     m_bgColorNormal = palette.surface;
-    m_bgColorHover = brighten(m_bgColorNormal, 1.12f);
+    m_bgColorHover = palette.primary;
     m_bgColorPressed = palette.primary;
     m_labelColorNormal = palette.onSurface;
-    m_labelColorHover = palette.onSurface;
+    m_labelColorHover = palette.onPrimary;
     m_labelColorPressed = palette.onPrimary;
     m_borderColorNormal = palette.outline;
-    m_borderColorHover = brighten(m_borderColorNormal, 1.14f);
+    m_borderColorHover = palette.primary;
     m_borderColorPressed = palette.primary;
     break;
   case ButtonVariant::Ghost:
     m_bgColorNormal = palette.surface;
-    m_bgColorHover = brighten(m_bgColorNormal, 1.12f);
+    m_bgColorHover = palette.primary;
     m_bgColorPressed = palette.primary;
     m_labelColorNormal = palette.onSurface;
-    m_labelColorHover = palette.onSurface;
+    m_labelColorHover = palette.onPrimary;
     m_labelColorPressed = palette.onPrimary;
     m_borderColorNormal = palette.outline;
-    m_borderColorHover = brighten(m_borderColorNormal, 1.14f);
+    m_borderColorHover = palette.primary;
     m_borderColorPressed = palette.primary;
     break;
   }
