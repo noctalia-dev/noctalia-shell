@@ -179,7 +179,7 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
     if (result.iconPath.empty()) {
       result.iconPath = m_iconResolver.resolve("application-x-executable");
     }
-    result.iconName = result.iconPath.empty() ? "app-window" : "";
+    result.glyphName = result.iconPath.empty() ? "app-window" : "";
     result.score = s;
     return result;
   };

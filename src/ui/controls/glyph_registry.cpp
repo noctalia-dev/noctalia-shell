@@ -33,6 +33,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"plugin", 0xF00A},            // plug-connected
     {"official-plugin", 0xF69F},   // shield-filled
     {"calendar", 0xEA53},          // calendar
+    {"calculator", 0xEB80},        // calculator
 
     // Toast / warnings
     {"toast-notice", 0xEA67},      // circle-check

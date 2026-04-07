@@ -9,7 +9,7 @@ struct LauncherResult {
   std::string providerName; // Set by LauncherPanel after query; used for usage tracking
   std::string title;
   std::string subtitle;
-  std::string iconName;
+  std::string glyphName;
   std::string iconPath;
   std::string actionText;
   int score = 0;

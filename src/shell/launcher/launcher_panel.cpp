@@ -259,9 +259,9 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
       row->addChild(std::move(image));
     } else {
       auto glyph = std::make_unique<Glyph>();
-      glyph->setGlyph(result.iconName.empty() ? "app-window" : result.iconName);
+      glyph->setGlyph(result.glyphName.empty() ? "app-window" : result.glyphName);
       glyph->setGlyphSize(kIconSize);
-      glyph->setColor(palette.onSurfaceVariant);
+      glyph->setColor(palette.onSurface);
       glyph->measure(renderer);
       row->addChild(std::move(glyph));
     }
