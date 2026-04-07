@@ -37,7 +37,7 @@ void logMessage(LogLevel level, const char* section, std::string_view msg) {
   localtime_r(&ts.tv_sec, &tm);
 
   if (section != nullptr && section[0] != '\0') {
-    std::fprintf(stderr, "%02d:%02d:%02d.%03ld [%s] [%s] %.*s\n", tm.tm_hour, tm.tm_min, tm.tm_sec,
+    std::fprintf(stderr, "%02d:%02d:%02d.%03ld [%s] [\033[34m%s\033[0m] %.*s\n", tm.tm_hour, tm.tm_min, tm.tm_sec,
                  ts.tv_nsec / 1'000'000, levelTag(level), section, static_cast<int>(msg.size()), msg.data());
   } else {
     std::fprintf(stderr, "%02d:%02d:%02d.%03ld [%s] %.*s\n", tm.tm_hour, tm.tm_min, tm.tm_sec, ts.tv_nsec / 1'000'000,

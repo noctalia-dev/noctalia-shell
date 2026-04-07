@@ -111,9 +111,9 @@ void Application::initServices() {
     const auto& label = !distro->prettyName.empty() ? distro->prettyName
                         : !distro->name.empty()     ? distro->name
                                                     : distro->id;
-    kLog.info("distro is {}", label);
+    kLog.info("distro: {}", label);
   } else {
-    kLog.info("distro is unknown");
+    kLog.info("distro: unknown");
   }
 
   try {
