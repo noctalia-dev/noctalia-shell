@@ -252,110 +252,110 @@ add_custom_target(noctalia_wayland_protocols
 
 # --- Target ---
 add_executable(noctalia
-    src/main.cpp
     src/app/application.cpp
     src/app/main_loop.cpp
     src/auth/pam_authenticator.cpp
-    src/system/distro_info.cpp
-    src/system/system_monitor_service.cpp
-    src/debug/debug_service.cpp
-    src/notification/notification_manager.cpp
-    src/dbus/session_bus.cpp
-    src/dbus/system_bus.cpp
+    src/config/config_service.cpp
+    src/config/state_service.cpp
+    src/core/deferred_call.cpp
+    src/core/log.cpp
     src/dbus/mpris/mpris_service.cpp
     src/dbus/notification/notification_poll_source.cpp
     src/dbus/notification/notification_service.cpp
     src/dbus/power/power_profiles_service.cpp
+    src/dbus/session_bus.cpp
+    src/dbus/system_bus.cpp
     src/dbus/tray/tray_service.cpp
     src/dbus/upower/upower_service.cpp
-    src/config/config_service.cpp
-    src/config/state_service.cpp
-    src/core/deferred_call.cpp
+    src/debug/debug_service.cpp
+    src/font/font_service.cpp
     src/ipc/ipc_client.cpp
     src/ipc/ipc_service.cpp
+    src/launcher/app_provider.cpp
+    src/launcher/emoji_provider.cpp
+    src/launcher/math_provider.cpp
+    src/launcher/usage_tracker.cpp
+    src/main.cpp
     src/net/http_client.cpp
-    src/core/log.cpp
-    src/font/font_service.cpp
-    src/render/scene/node.cpp
+    src/notification/notification_manager.cpp
+    $<$<BOOL:${SANITIZE_ACTIVE}>:src/pipewire/pipewire_lsan.cpp>
+    src/pipewire/pipewire_service.cpp
     src/render/animation/animation.cpp
     src/render/animation/animation_manager.cpp
     src/render/core/shader_program.cpp
     src/render/core/texture_manager.cpp
+    src/render/image_loaders.cpp
     src/render/programs/image_program.cpp
     src/render/programs/linear_gradient_program.cpp
     src/render/programs/msdf_text_program.cpp
     src/render/programs/rounded_rect_program.cpp
     src/render/programs/spinner_program.cpp
     src/render/programs/wallpaper_program.cpp
-    src/render/text/msdf_text_renderer.cpp
     src/render/render_context.cpp
     src/render/render_target.cpp
-    src/render/image_loaders.cpp
-    src/render/wallpaper_renderer.cpp
-    src/shell/bar/bar.cpp
-    src/shell/lockscreen/lock_screen.cpp
-    src/shell/lockscreen/lock_surface.cpp
-    src/shell/wallpaper/wallpaper.cpp
-    src/shell/wallpaper/wallpaper_surface.cpp
-    src/time/time_service.cpp
-    src/shell/widget/widget.cpp
-    src/shell/widget/widget_factory.cpp
-    src/ui/controls/box.cpp
-    src/ui/controls/flex.cpp
-    src/ui/controls/button.cpp
-    src/ui/controls/image.cpp
-    src/ui/controls/progress_bar.cpp
-    src/ui/controls/input.cpp
-    src/ui/controls/radio_button.cpp
-    src/ui/controls/scroll_view.cpp
-    src/ui/controls/chip.cpp
-    src/ui/controls/select.cpp
-    src/ui/controls/glyph.cpp
-    src/ui/controls/label.cpp
-    src/ui/controls/slider.cpp
-    src/ui/controls/spinner.cpp
-    src/ui/controls/toggle.cpp
-    src/ui/controls/glyph_registry.cpp
     src/render/scene/input_area.cpp
     src/render/scene/input_dispatcher.cpp
+    src/render/scene/node.cpp
+    src/render/text/msdf_text_renderer.cpp
+    src/render/wallpaper_renderer.cpp
+    src/shell/bar/bar.cpp
+    src/shell/control_center/calendar_tab.cpp
+    src/shell/control_center/control_center_panel.cpp
+    src/shell/control_center/media_tab.cpp
+    src/shell/control_center/network_tab.cpp
+    src/shell/control_center/notifications_tab.cpp
+    src/shell/control_center/overview_tab.cpp
+    src/shell/control_center/tab.cpp
+    src/shell/launcher/launcher_panel.cpp
+    src/shell/lockscreen/lock_screen.cpp
+    src/shell/lockscreen/lock_surface.cpp
     src/shell/notification/notification_popup.cpp
     src/shell/osd/audio_osd.cpp
     src/shell/osd/osd_overlay.cpp
-    src/shell/tray/tray_menu.cpp
     src/shell/panel/panel_manager.cpp
     src/shell/panels/audio_devices_panel.cpp
-    src/shell/control_center/tab.cpp
-    src/shell/control_center/control_center_panel.cpp
-    src/shell/control_center/overview_tab.cpp
-    src/shell/control_center/media_tab.cpp
-    src/shell/control_center/calendar_tab.cpp
-    src/shell/control_center/notifications_tab.cpp
-    src/shell/control_center/network_tab.cpp
     src/shell/panels/notification_history_panel.cpp
-    src/launcher/app_provider.cpp
-    src/system/desktop_entry.cpp
-    src/launcher/emoji_provider.cpp
-    src/util/fuzzy_match.cpp
-    src/system/icon_resolver.cpp
-    src/launcher/math_provider.cpp
-    src/launcher/usage_tracker.cpp
-    src/shell/launcher/launcher_panel.cpp
     src/shell/panels/test_panel.cpp
-    src/shell/widgets/launcher_widget.cpp
+    src/shell/tray/tray_menu.cpp
+    src/shell/wallpaper/wallpaper.cpp
+    src/shell/wallpaper/wallpaper_surface.cpp
+    src/shell/widget/widget.cpp
+    src/shell/widget/widget_factory.cpp
     src/shell/widgets/active_window_widget.cpp
+    src/shell/widgets/battery_widget.cpp
     src/shell/widgets/clock_widget.cpp
+    src/shell/widgets/launcher_widget.cpp
     src/shell/widgets/notification_widget.cpp
     src/shell/widgets/spacer_widget.cpp
+    src/shell/widgets/sysmon_widget.cpp
     src/shell/widgets/test_widget.cpp
     src/shell/widgets/tray_widget.cpp
-    src/shell/widgets/battery_widget.cpp
-    src/shell/widgets/sysmon_widget.cpp
     src/shell/widgets/volume_widget.cpp
     src/shell/widgets/workspaces_widget.cpp
-    src/pipewire/pipewire_service.cpp
-    $<$<BOOL:${SANITIZE_ACTIVE}>:src/pipewire/pipewire_lsan.cpp>
-    src/wayland/surface.cpp
+    src/system/desktop_entry.cpp
+    src/system/distro_info.cpp
+    src/system/icon_resolver.cpp
+    src/system/system_monitor_service.cpp
+    src/time/time_service.cpp
+    src/ui/controls/box.cpp
+    src/ui/controls/button.cpp
+    src/ui/controls/chip.cpp
+    src/ui/controls/flex.cpp
+    src/ui/controls/glyph.cpp
+    src/ui/controls/glyph_registry.cpp
+    src/ui/controls/image.cpp
+    src/ui/controls/input.cpp
+    src/ui/controls/label.cpp
+    src/ui/controls/progress_bar.cpp
+    src/ui/controls/radio_button.cpp
+    src/ui/controls/scroll_view.cpp
+    src/ui/controls/select.cpp
+    src/ui/controls/slider.cpp
+    src/ui/controls/spinner.cpp
+    src/ui/controls/toggle.cpp
+    src/util/fuzzy_match.cpp
     src/wayland/layer_surface.cpp
+    src/wayland/surface.cpp
     src/wayland/wayland_connection.cpp
     src/wayland/wayland_seat.cpp
     src/wayland/wayland_toplevels.cpp
