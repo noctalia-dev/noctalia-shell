@@ -7,6 +7,7 @@
 #include "ui/style.h"
 
 #include "cursor-shape-v1-client-protocol.h"
+#include <linux/input-event-codes.h>
 #include <wayland-client-protocol.h>
 
 #include <algorithm>
@@ -53,7 +54,7 @@ ScrollView::ScrollView() {
 
   auto viewportArea = std::make_unique<InputArea>();
   viewportArea->setOnPress([this](const InputArea::PointerData& data) {
-    if (data.button != 0x110 || !data.pressed || !scrollable()) {
+    if (data.button != BTN_LEFT || !data.pressed || !scrollable()) {
       return;
     }
     // Background drag can be useful when content itself has no interactive children.
@@ -99,7 +100,7 @@ ScrollView::ScrollView() {
   auto scrollbarThumbArea = std::make_unique<InputArea>();
   scrollbarThumbArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
   scrollbarThumbArea->setOnPress([this](const InputArea::PointerData& data) {
-    if (data.button != 0x110 || !data.pressed || !scrollable()) {
+    if (data.button != BTN_LEFT || !data.pressed || !scrollable()) {
       return;
     }
     m_dragStartLocalY = data.localY + (m_scrollbarThumbArea != nullptr ? m_scrollbarThumbArea->y() : 0.0f);

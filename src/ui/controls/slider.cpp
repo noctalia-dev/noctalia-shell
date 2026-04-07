@@ -7,6 +7,7 @@
 #include "ui/style.h"
 
 #include "cursor-shape-v1-client-protocol.h"
+#include <linux/input-event-codes.h>
 
 #include <algorithm>
 #include <cmath>
@@ -44,7 +45,7 @@ Slider::Slider() {
 
   auto area = std::make_unique<InputArea>();
   area->setOnPress([this](const InputArea::PointerData& data) {
-    if (!m_enabled || data.button != 0x110 || !data.pressed) {
+    if (!m_enabled || data.button != BTN_LEFT || !data.pressed) {
       return;
     }
     updateFromLocalX(data.localX);

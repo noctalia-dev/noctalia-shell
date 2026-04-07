@@ -10,6 +10,7 @@
 #include "ui/style.h"
 
 #include "cursor-shape-v1-client-protocol.h"
+#include <linux/input-event-codes.h>
 
 #include <algorithm>
 #include <cmath>
@@ -58,7 +59,7 @@ Select::Select() {
     markDirty();
   });
   triggerArea->setOnClick([this](const InputArea::PointerData& data) {
-    if (!m_enabled || data.button != 0x110) {
+    if (!m_enabled || data.button != BTN_LEFT) {
       return;
     }
     toggleOpen();
@@ -314,7 +315,7 @@ void Select::rebuildOptionViews() {
       }
     });
     area->setOnClick([this, i](const InputArea::PointerData& data) {
-      if (!m_enabled || data.button != 0x110) {
+      if (!m_enabled || data.button != BTN_LEFT) {
         return;
       }
       setSelectedIndex(i);

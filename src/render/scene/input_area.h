@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <linux/input-event-codes.h>
 
 class InputArea : public Node {
 public:
@@ -94,7 +95,7 @@ private:
   VoidCallback m_onFocusLoss;
 
   std::uint32_t m_cursorShape = 0;
-  std::uint32_t m_acceptedButtons = 0x110; // BTN_LEFT | BTN_RIGHT
+  std::uint32_t m_acceptedButtons = BTN_LEFT;
   bool m_propagateEvents = false;
   bool m_enabled = true;
   bool m_hovered = false;
