@@ -1,12 +1,12 @@
 #include "launcher/emoji_provider.h"
 
+#include "wayland/clipboard_service.h"
+
 #include <algorithm>
-#include <cstdlib>
 #include <fstream>
 #include <json.hpp>
 #include <sstream>
 #include <string_view>
-#include <unistd.h>
 
 namespace {
 
@@ -139,12 +139,5 @@ bool EmojiProvider::activate(const LauncherResult& result) {
   }
 
   std::string emoji = result.id.substr(6);
-
-  pid_t pid = fork();
-  if (pid == 0) {
-    execlp("wl-copy", "wl-copy", emoji.c_str(), nullptr);
-    _exit(1);
-  }
-
-  return true;
+  return m_clipboard != nullptr && m_clipboard->copyText(std::move(emoji));
 }

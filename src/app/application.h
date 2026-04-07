@@ -36,6 +36,8 @@
 #include "system/system_monitor_service.h"
 #include "time/time_poll_source.h"
 #include "time/time_service.h"
+#include "wayland/clipboard_poll_source.h"
+#include "wayland/clipboard_service.h"
 #include "wayland/key_repeat_poll_source.h"
 #include "wayland/wayland_connection.h"
 
@@ -60,6 +62,7 @@ private:
   [[nodiscard]] std::vector<PollSource*> buildPollSources();
 
   WaylandConnection m_wayland;
+  ClipboardService m_clipboardService;
   ConfigService m_configService;
   StateService m_stateService;
   TimeService m_timeService;
@@ -93,6 +96,7 @@ private:
   ConfigPollSource m_configPollSource{m_configService};
   StatePollSource m_statePollSource{m_stateService};
   DesktopEntryPollSource m_desktopEntryPollSource;
+  ClipboardPollSource m_clipboardPollSource{m_clipboardService};
   KeyRepeatPollSource m_keyRepeatPollSource{m_wayland};
   std::unique_ptr<PipeWirePollSource> m_pipewirePollSource;
   IpcService m_ipcService;

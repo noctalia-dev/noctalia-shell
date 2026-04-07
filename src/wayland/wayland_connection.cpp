@@ -1,6 +1,7 @@
 #include "wayland/wayland_connection.h"
 
 #include "core/log.h"
+#include "wayland/clipboard_service.h"
 
 #include <algorithm>
 #include <stdexcept>
@@ -8,8 +9,10 @@
 #include <wayland-client.h>
 
 #include "cursor-shape-v1-client-protocol.h"
+#include "ext-data-control-v1-client-protocol.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "ext-workspace-v1-client-protocol.h"
+#include "wlr-data-control-unstable-v1-client-protocol.h"
 #include "wlr-foreign-toplevel-management-unstable-v1-client-protocol.h"
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-activation-v1-client-protocol.h"
@@ -202,6 +205,11 @@ void WaylandConnection::setKeyboardEventCallback(WaylandSeat::KeyboardEventCallb
   m_seatHandler.setKeyboardEventCallback(std::move(callback));
 }
 
+void WaylandConnection::setClipboardService(ClipboardService* clipboardService) {
+  m_clipboardService = clipboardService;
+  bindClipboardService();
+}
+
 int WaylandConnection::repeatPollTimeoutMs() const { return m_seatHandler.repeatPollTimeoutMs(); }
 
 void WaylandConnection::repeatTick() { m_seatHandler.repeatTick(); }
@@ -348,6 +356,7 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     const auto bindVersion = std::min(version, kSeatVersion);
     m_seat = static_cast<wl_seat*>(wl_registry_bind(registry, name, &wl_seat_interface, bindVersion));
     m_seatHandler.bind(m_seat);
+    bindClipboardService();
     return;
   }
 
@@ -412,6 +421,28 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     return;
   }
 
+  if (interfaceName == ext_data_control_manager_v1_interface.name) {
+    if (m_dataControlManager != nullptr && m_dataControlOps != extDataControlOps()) {
+      m_dataControlOps->destroyManager(m_dataControlManager);
+      m_dataControlManager = nullptr;
+    }
+    if (m_dataControlManager == nullptr) {
+      m_dataControlManager = extDataControlOps()->bindManager(registry, name, version);
+      m_dataControlOps = extDataControlOps();
+      bindClipboardService();
+    }
+    return;
+  }
+
+  if (interfaceName == zwlr_data_control_manager_v1_interface.name) {
+    if (m_dataControlManager == nullptr) {
+      m_dataControlManager = wlrDataControlOps()->bindManager(registry, name, version);
+      m_dataControlOps = wlrDataControlOps();
+      bindClipboardService();
+    }
+    return;
+  }
+
   if (interfaceName == wl_output_interface.name) {
     const auto bindVersion = std::min(version, kOutputVersion);
     auto* output = static_cast<wl_output*>(wl_registry_bind(registry, name, &wl_output_interface, bindVersion));
@@ -435,7 +466,20 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
   }
 }
 
+void WaylandConnection::bindClipboardService() {
+  if (m_clipboardService == nullptr) {
+    return;
+  }
+  if (m_dataControlManager == nullptr || m_dataControlOps == nullptr || m_seat == nullptr) {
+    return;
+  }
+  m_clipboardService->bind(m_dataControlManager, m_dataControlOps, m_seat);
+}
+
 void WaylandConnection::cleanup() {
+  if (m_clipboardService != nullptr) {
+    m_clipboardService->cleanup();
+  }
   m_toplevelsHandler.cleanup();
   m_workspacesHandler.cleanup();
 
@@ -466,6 +510,12 @@ void WaylandConnection::cleanup() {
   if (m_sessionLockManager != nullptr) {
     ext_session_lock_manager_v1_destroy(m_sessionLockManager);
     m_sessionLockManager = nullptr;
+  }
+
+  if (m_dataControlManager != nullptr && m_dataControlOps != nullptr) {
+    m_dataControlOps->destroyManager(m_dataControlManager);
+    m_dataControlManager = nullptr;
+    m_dataControlOps = nullptr;
   }
 
   if (m_cursorShapeManager != nullptr) {
@@ -508,6 +558,7 @@ void WaylandConnection::cleanup() {
   m_outputs.clear();
   m_hasLayerShellGlobal = false;
   m_hasExtWorkspaceGlobal = false;
+  m_hasForeignToplevelManagerGlobal = false;
 }
 
 void WaylandConnection::logStartupSummary() const {

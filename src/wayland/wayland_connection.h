@@ -24,6 +24,8 @@ struct wp_cursor_shape_manager_v1;
 struct xdg_activation_v1;
 struct ext_session_lock_manager_v1;
 struct zwlr_foreign_toplevel_manager_v1;
+class ClipboardService;
+struct DataControlOps;
 
 struct WaylandOutput {
   std::uint32_t name = 0;
@@ -59,6 +61,7 @@ public:
   void setToplevelChangeCallback(ChangeCallback callback);
   void setPointerEventCallback(WaylandSeat::PointerEventCallback callback);
   void setKeyboardEventCallback(WaylandSeat::KeyboardEventCallback callback);
+  void setClipboardService(ClipboardService* clipboardService);
   void setCursorShape(std::uint32_t serial, std::uint32_t shape);
 
   [[nodiscard]] int repeatPollTimeoutMs() const;
@@ -104,6 +107,7 @@ public:
 
 private:
   void bindGlobal(wl_registry* registry, std::uint32_t name, const char* interface, std::uint32_t version);
+  void bindClipboardService();
   void cleanup();
   void logStartupSummary() const;
 
@@ -117,6 +121,9 @@ private:
   wp_cursor_shape_manager_v1* m_cursorShapeManager = nullptr;
   xdg_activation_v1* m_xdgActivation = nullptr;
   ext_session_lock_manager_v1* m_sessionLockManager = nullptr;
+  void* m_dataControlManager = nullptr;
+  const DataControlOps* m_dataControlOps = nullptr;
+  ClipboardService* m_clipboardService = nullptr;
   bool m_hasLayerShellGlobal = false;
   bool m_hasExtWorkspaceGlobal = false;
   bool m_hasForeignToplevelManagerGlobal = false;

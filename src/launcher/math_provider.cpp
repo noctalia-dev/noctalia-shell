@@ -1,15 +1,13 @@
 #include "launcher/math_provider.h"
 
 #include "tinyexpr.h"
+#include "wayland/clipboard_service.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cmath>
-#include <cstdlib>
-#include <cstring>
 #include <sstream>
 #include <string>
-#include <unistd.h>
 
 namespace {
 
@@ -108,14 +106,6 @@ bool MathProvider::activate(const LauncherResult& result) {
     return false;
   }
 
-  // Copy the result (without "= " prefix) to clipboard via wl-copy
   std::string value = result.title.substr(2);
-
-  pid_t pid = fork();
-  if (pid == 0) {
-    execlp("wl-copy", "wl-copy", value.c_str(), nullptr);
-    _exit(1);
-  }
-
-  return true;
+  return m_clipboard != nullptr && m_clipboard->copyText(std::move(value));
 }

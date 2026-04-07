@@ -63,12 +63,16 @@ set(EXT_WORKSPACE_XML
     "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/ext-workspace/ext-workspace-v1.xml")
 set(CURSOR_SHAPE_XML
     "${CMAKE_CURRENT_SOURCE_DIR}/protocols/cursor-shape-v1.xml")
+set(EXT_DATA_CONTROL_XML
+    "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/ext-data-control/ext-data-control-v1.xml")
 set(XDG_ACTIVATION_XML
     "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/xdg-activation/xdg-activation-v1.xml")
 set(EXT_SESSION_LOCK_XML
     "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/ext-session-lock/ext-session-lock-v1.xml")
 set(WLR_FOREIGN_TOPLEVEL_XML
     "${CMAKE_CURRENT_SOURCE_DIR}/protocols/wlr-foreign-toplevel-management-unstable-v1.xml")
+set(WLR_DATA_CONTROL_XML
+    "${CMAKE_CURRENT_SOURCE_DIR}/protocols/wlr-data-control-unstable-v1.xml")
 
 set(XDG_OUTPUT_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/xdg-output-unstable-v1-client-protocol.c")
@@ -87,6 +91,10 @@ set(CURSOR_SHAPE_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/cursor-shape-v1-client-protocol.c")
 set(CURSOR_SHAPE_PROTOCOL_H
     "${GENERATED_PROTOCOL_DIR}/cursor-shape-v1-client-protocol.h")
+set(EXT_DATA_CONTROL_PROTOCOL_C
+    "${GENERATED_PROTOCOL_DIR}/ext-data-control-v1-client-protocol.c")
+set(EXT_DATA_CONTROL_PROTOCOL_H
+    "${GENERATED_PROTOCOL_DIR}/ext-data-control-v1-client-protocol.h")
 
 set(XDG_ACTIVATION_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/xdg-activation-v1-client-protocol.c")
@@ -100,6 +108,10 @@ set(WLR_FOREIGN_TOPLEVEL_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/wlr-foreign-toplevel-management-unstable-v1-client-protocol.c")
 set(WLR_FOREIGN_TOPLEVEL_PROTOCOL_H
     "${GENERATED_PROTOCOL_DIR}/wlr-foreign-toplevel-management-unstable-v1-client-protocol.h")
+set(WLR_DATA_CONTROL_PROTOCOL_C
+    "${GENERATED_PROTOCOL_DIR}/wlr-data-control-unstable-v1-client-protocol.c")
+set(WLR_DATA_CONTROL_PROTOCOL_H
+    "${GENERATED_PROTOCOL_DIR}/wlr-data-control-unstable-v1-client-protocol.h")
 
 set(WLR_LAYER_SHELL_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/wlr-layer-shell-unstable-v1-client-protocol.c")
@@ -189,6 +201,20 @@ add_custom_command(
 )
 
 add_custom_command(
+    OUTPUT "${EXT_DATA_CONTROL_PROTOCOL_C}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" private-code "${EXT_DATA_CONTROL_XML}" "${EXT_DATA_CONTROL_PROTOCOL_C}"
+    DEPENDS "${EXT_DATA_CONTROL_XML}"
+    VERBATIM
+)
+
+add_custom_command(
+    OUTPUT "${EXT_DATA_CONTROL_PROTOCOL_H}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" client-header "${EXT_DATA_CONTROL_XML}" "${EXT_DATA_CONTROL_PROTOCOL_H}"
+    DEPENDS "${EXT_DATA_CONTROL_XML}"
+    VERBATIM
+)
+
+add_custom_command(
     OUTPUT "${XDG_ACTIVATION_PROTOCOL_C}"
     COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" private-code "${XDG_ACTIVATION_XML}" "${XDG_ACTIVATION_PROTOCOL_C}"
     DEPENDS "${XDG_ACTIVATION_XML}"
@@ -230,6 +256,20 @@ add_custom_command(
     VERBATIM
 )
 
+add_custom_command(
+    OUTPUT "${WLR_DATA_CONTROL_PROTOCOL_C}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" private-code "${WLR_DATA_CONTROL_XML}" "${WLR_DATA_CONTROL_PROTOCOL_C}"
+    DEPENDS "${WLR_DATA_CONTROL_XML}"
+    VERBATIM
+)
+
+add_custom_command(
+    OUTPUT "${WLR_DATA_CONTROL_PROTOCOL_H}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" client-header "${WLR_DATA_CONTROL_XML}" "${WLR_DATA_CONTROL_PROTOCOL_H}"
+    DEPENDS "${WLR_DATA_CONTROL_XML}"
+    VERBATIM
+)
+
 add_custom_target(noctalia_wayland_protocols
     DEPENDS
         "${WLR_LAYER_SHELL_PROTOCOL_C}"
@@ -242,12 +282,16 @@ add_custom_target(noctalia_wayland_protocols
         "${EXT_WORKSPACE_PROTOCOL_H}"
         "${CURSOR_SHAPE_PROTOCOL_C}"
         "${CURSOR_SHAPE_PROTOCOL_H}"
+        "${EXT_DATA_CONTROL_PROTOCOL_C}"
+        "${EXT_DATA_CONTROL_PROTOCOL_H}"
         "${XDG_ACTIVATION_PROTOCOL_C}"
         "${XDG_ACTIVATION_PROTOCOL_H}"
         "${EXT_SESSION_LOCK_PROTOCOL_C}"
         "${EXT_SESSION_LOCK_PROTOCOL_H}"
         "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_C}"
         "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_H}"
+        "${WLR_DATA_CONTROL_PROTOCOL_C}"
+        "${WLR_DATA_CONTROL_PROTOCOL_H}"
 )
 
 # --- Target ---
@@ -354,6 +398,7 @@ add_executable(noctalia
     src/ui/controls/spinner.cpp
     src/ui/controls/toggle.cpp
     src/util/fuzzy_match.cpp
+    src/wayland/clipboard_service.cpp
     src/wayland/layer_surface.cpp
     src/wayland/surface.cpp
     src/wayland/wayland_connection.cpp
@@ -366,9 +411,11 @@ add_executable(noctalia
     "${XDG_SHELL_PROTOCOL_C}"
     "${EXT_WORKSPACE_PROTOCOL_C}"
     "${CURSOR_SHAPE_PROTOCOL_C}"
+    "${EXT_DATA_CONTROL_PROTOCOL_C}"
     "${XDG_ACTIVATION_PROTOCOL_C}"
     "${EXT_SESSION_LOCK_PROTOCOL_C}"
     "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_C}"
+    "${WLR_DATA_CONTROL_PROTOCOL_C}"
 )
 target_compile_definitions(noctalia PRIVATE
     NOCTALIA_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"

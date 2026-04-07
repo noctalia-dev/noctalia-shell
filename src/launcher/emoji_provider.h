@@ -5,8 +5,12 @@
 #include <string>
 #include <vector>
 
+class ClipboardService;
+
 class EmojiProvider : public LauncherProvider {
 public:
+  explicit EmojiProvider(ClipboardService* clipboard) : m_clipboard(clipboard) {}
+
   [[nodiscard]] std::string_view prefix() const override { return "/emo"; }
   [[nodiscard]] std::string_view name() const override { return "Emoji"; }
 
@@ -26,4 +30,5 @@ private:
   };
 
   std::vector<EmojiEntry> m_entries;
+  ClipboardService* m_clipboard = nullptr;
 };

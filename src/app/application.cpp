@@ -98,6 +98,7 @@ void Application::initServices() {
   if (!m_wayland.connect()) {
     throw std::runtime_error("failed to connect to Wayland display");
   }
+  m_wayland.setClipboardService(&m_clipboardService);
 
   m_wayland.setOutputChangeCallback([this]() {
     m_wallpaper.onOutputChange();
@@ -231,8 +232,8 @@ void Application::initUi() {
   {
     auto launcherPanel = std::make_unique<LauncherPanel>();
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
-    launcherPanel->addProvider(std::make_unique<MathProvider>());
-    launcherPanel->addProvider(std::make_unique<EmojiProvider>());
+    launcherPanel->addProvider(std::make_unique<MathProvider>(&m_clipboardService));
+    launcherPanel->addProvider(std::make_unique<EmojiProvider>(&m_clipboardService));
     m_panelManager.registerPanel("launcher", std::move(launcherPanel));
   }
 
@@ -383,6 +384,7 @@ std::vector<PollSource*> Application::buildPollSources() {
   sources.push_back(&m_configPollSource);
   sources.push_back(&m_statePollSource);
   sources.push_back(&m_desktopEntryPollSource);
+  sources.push_back(&m_clipboardPollSource);
   sources.push_back(&m_keyRepeatPollSource);
   if (m_pipewireService != nullptr) {
     m_pipewirePollSource = std::make_unique<PipeWirePollSource>(*m_pipewireService);
