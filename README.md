@@ -164,11 +164,6 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ## Roadmap
 
-### Bar completion and foundation
-
-- [x] Volume OSD
-- [x] Notification: history panel
-
 ### Hardware and networking
 
 - [ ] Brightness control + OSD
@@ -177,15 +172,14 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Desktop shell
 
-- [ ] Application launcher / search
-- [ ] Control center panel (Weather, Media, Audio vol., )
+- [~] Control center panel (Weather, Media, Audio vol., )
 - [ ] Keyboard layout switching
 - [ ] PipeWire audio spectrum
-- [ ] Clipboard manager
-- [x] Host/distro detection
+- [~] Clipboard manager
 - [~] Lock screen (ext-session-lock-v1) <- still needs polish 
 - [ ] Idle inhibitor (prevent sleep)
 - [ ] More compositors (Mango, Sway, Labwc)
+- [ ] Application file search provider
 
 ### Theming and customization
 
@@ -208,11 +202,9 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Controls (`src/ui/controls/`)
 
-- [x] Scroll view
-- [ ] List view
 - [ ] Checkbox
-- [x] Radio button
 - [ ] Tab bar
+- [ ] List view
 - [ ] Grid view
 - [ ] Context menu
 - [ ] Color picker
@@ -227,7 +219,6 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] Microphone
 - [ ] Power profile
 - [ ] System monitor
-- [x] Active window
 - [ ] Dock
 - [ ] Keyboard layout
 - [ ] Lock keys (Caps/Num)
