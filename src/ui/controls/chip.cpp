@@ -8,7 +8,7 @@
 
 Chip::Chip() {
   setAlign(FlexAlign::Center);
-  setPadding(Style::paddingV, Style::paddingH, Style::paddingV, Style::paddingH);
+  setPadding(Style::spaceSm, Style::spaceMd, Style::spaceSm, Style::spaceMd);
   setRadius(Style::radiusMd);
 
   auto label = std::make_unique<Label>();

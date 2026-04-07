@@ -13,7 +13,7 @@
 Button::Button() {
   setAlign(FlexAlign::Center);
   setMinHeight(Style::controlHeight);
-  setPadding(Style::paddingV, Style::paddingH, Style::paddingV, Style::paddingH);
+  setPadding(Style::spaceSm, Style::spaceMd, Style::spaceSm, Style::spaceMd);
   setRadius(Style::radiusMd);
 
   auto label = std::make_unique<Label>();
@@ -112,7 +112,7 @@ void Button::setMinimalChrome(bool minimalChrome) {
 }
 
 void Button::applyVariant() {
-  setPadding(Style::paddingV, Style::paddingH, Style::paddingV, Style::paddingH);
+  setPadding(Style::spaceSm, Style::spaceMd, Style::spaceSm, Style::spaceMd);
   setRadius(Style::radiusMd);
   setBorderWidth(m_minimalChrome ? 0.0f : Style::borderWidth);
 

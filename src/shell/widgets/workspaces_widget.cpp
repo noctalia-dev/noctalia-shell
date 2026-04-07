@@ -81,7 +81,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     auto chip = std::make_unique<Chip>();
     chip->setText(ws.name);
     chip->setActive(ws.active);
-    chip->setPadding(Style::paddingV * 0.5, Style::paddingH * 0.5, Style::paddingV * 0.5, Style::paddingH * 0.5);
+    chip->setPadding(Style::spaceMd * 0.25f, Style::spaceMd * 0.5f, Style::spaceMd * 0.25f, Style::spaceMd * 0.5f);
     chip->layout(renderer);
 
     // Wrap chip in an InputArea for click handling
@@ -115,7 +115,7 @@ void WorkspacesWidget::playSwitchAnimation(int direction) {
   const float startX = static_cast<float>(direction) * 14.0f;
   const float targetY = m_container->y();
   m_container->setPosition(startX, targetY);
-  m_container->setOpacity(0.78f);
+  m_container->setOpacity(0.75f);
 
   m_slideAnimId = m_animations->animate(
       startX, 0.0f, Style::animNormal, Easing::EaseOutCubic,

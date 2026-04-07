@@ -75,7 +75,7 @@ Input::Input() {
   });
   area->setOnPress([this](const InputArea::PointerData& data) {
     if (data.pressed) {
-      const std::size_t offset = xToByteOffset(data.localX - Style::paddingH);
+      const std::size_t offset = xToByteOffset(data.localX - Style::spaceMd);
       m_cursorPos = offset;
       m_selectionAnchor = offset;
       markDirty();
@@ -83,7 +83,7 @@ Input::Input() {
   });
   area->setOnMotion([this](const InputArea::PointerData& data) {
     if (m_inputArea != nullptr && m_inputArea->pressed()) {
-      m_cursorPos = xToByteOffset(data.localX - Style::paddingH);
+      m_cursorPos = xToByteOffset(data.localX - Style::spaceMd);
       markDirty();
     }
   });
@@ -136,7 +136,7 @@ void Input::layout(Renderer& renderer) {
   // reference line box is geometrically centered: top = (h - fontH) / 2,
   // then add baselineOffset (= -top) to get baseline position.
   const float textNodeY  = std::round((h - fontH) * 0.5f) - fontMetrics.top;
-  m_textNode->setPosition(Style::paddingH, textNodeY);
+  m_textNode->setPosition(Style::spaceMd, textNodeY);
   m_textNode->setSize(metrics.width, fontH);
 
   // Build stop arrays for click-to-position and selection rect
@@ -154,14 +154,14 @@ void Input::layout(Renderer& renderer) {
   }
 
   // Cursor
-  const float cursorX = Style::paddingH + stopXForByte(m_cursorPos);
+  const float cursorX = Style::spaceMd + stopXForByte(m_cursorPos);
   m_cursor->setPosition(cursorX, kCursorPadV);
   m_cursor->setSize(kCursorWidth, h - kCursorPadV * 2.0f);
 
   // Selection highlight
   if (hasSelection()) {
-    const float selX0 = Style::paddingH + stopXForByte(selectionStart());
-    const float selX1 = Style::paddingH + stopXForByte(selectionEnd());
+    const float selX0 = Style::spaceMd + stopXForByte(selectionStart());
+    const float selX1 = Style::spaceMd + stopXForByte(selectionEnd());
     m_selectionRect->setPosition(selX0, kCursorPadV);
     m_selectionRect->setSize(selX1 - selX0, h - kCursorPadV * 2.0f);
     m_selectionRect->setVisible(true);
