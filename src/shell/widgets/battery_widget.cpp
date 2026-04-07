@@ -98,9 +98,14 @@ void BatteryWidget::syncState(Renderer& renderer) {
   auto* rootNode = root();
   if (!s.isPresent) {
     if (rootNode != nullptr) {
+      rootNode->setVisible(false);
       rootNode->setSize(0.0f, 0.0f);
     }
     return;
+  }
+
+  if (rootNode != nullptr) {
+    rootNode->setVisible(true);
   }
 
   m_glyph->setGlyph(batteryGlyphName(s.percentage, s.state));
