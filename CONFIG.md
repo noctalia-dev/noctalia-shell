@@ -146,6 +146,24 @@ Shows the default audio sink volume and mute state via PipeWire. No configurable
 
 ---
 
+### `media`
+
+Shows the current media artwork and track title from MPRIS.
+
+| Setting     | Type   | Default | Description                         |
+|-------------|--------|---------|-------------------------------------|
+| `max_width` | number | `220`   | Maximum width for the title text    |
+| `art_size`  | number | `24`    | Artwork size in pixels before scale |
+
+```toml
+[widget.media]
+type = "media"
+max_width = 220
+art_size = 24
+```
+
+---
+
 ### `battery`
 
 Shows battery charge level and state via UPower. Hides itself automatically when no battery is present (safe to include on desktops).

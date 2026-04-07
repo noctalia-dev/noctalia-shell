@@ -43,7 +43,8 @@ Bar::Bar() = default;
 
 bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                      NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
-                     UPowerService* upower, SystemMonitorService* sysmon, RenderContext* renderContext) {
+                     UPowerService* upower, SystemMonitorService* sysmon, MprisService* mpris,
+                     HttpClient* httpClient, RenderContext* renderContext) {
   m_wayland = &wayland;
   m_config = config;
   m_time = timeService;
@@ -52,10 +53,12 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
   m_audio = audio;
   m_upower = upower;
   m_sysmon = sysmon;
+  m_mpris = mpris;
+  m_httpClient = httpClient;
   m_renderContext = renderContext;
 
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
-                                                    m_audio, m_upower, m_sysmon);
+                                                    m_audio, m_upower, m_sysmon, m_mpris, m_httpClient);
 
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
@@ -81,7 +84,7 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
 void Bar::reload() {
   kLog.info("reloading config");
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
-                                                    m_audio, m_upower, m_sysmon);
+                                                    m_audio, m_upower, m_sysmon, m_mpris, m_httpClient);
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;

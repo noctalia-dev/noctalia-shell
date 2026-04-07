@@ -193,7 +193,10 @@ void Application::initServices() {
 
     try {
       m_mprisService = std::make_unique<MprisService>(*m_bus);
-      m_mprisService->setChangeCallback([this]() { m_panelManager.refresh(); });
+      m_mprisService->setChangeCallback([this]() {
+        m_bar.onWorkspaceChange();
+        m_panelManager.refresh();
+      });
       kLog.info("mpris discovery active");
     } catch (const std::exception& e) {
       kLog.warn("mpris disabled: {}", e.what());
@@ -255,7 +258,8 @@ void Application::initUi() {
   m_trayMenu.initialize(m_wayland, &m_configService, m_trayService.get(), &m_renderContext);
 
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
-                   m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), &m_renderContext);
+                   m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_mprisService.get(),
+                   &m_httpClient, &m_renderContext);
 
   if (m_pipewireService != nullptr) {
     m_audioOsd.suppressFor(std::chrono::milliseconds(2000));

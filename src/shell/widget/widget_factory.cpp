@@ -2,12 +2,15 @@
 
 #include "config/config_service.h"
 #include "core/log.h"
+#include "dbus/mpris/mpris_service.h"
 #include "dbus/tray/tray_service.h"
+#include "net/http_client.h"
 #include "notification/notification_manager.h"
-#include "shell/widgets/battery_widget.h"
 #include "shell/widgets/active_window_widget.h"
-#include "shell/widgets/launcher_widget.h"
+#include "shell/widgets/battery_widget.h"
 #include "shell/widgets/clock_widget.h"
+#include "shell/widgets/launcher_widget.h"
+#include "shell/widgets/media_mini_widget.h"
 #include "shell/widgets/notification_widget.h"
 #include "shell/widgets/spacer_widget.h"
 #include "shell/widgets/sysmon_widget.h"
@@ -20,9 +23,10 @@
 
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
                              NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
-                             UPowerService* upower, SystemMonitorService* sysmon)
+                             UPowerService* upower, SystemMonitorService* sysmon, MprisService* mpris,
+                             HttpClient* httpClient)
     : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
-      m_upower(upower), m_sysmon(sysmon) {}
+      m_upower(upower), m_sysmon(sysmon), m_mpris(mpris), m_httpClient(httpClient) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
@@ -80,6 +84,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       scale = wlOutput->scale;
     }
     return std::make_unique<VolumeWidget>(m_audio, output, scale);
+  }
+
+  if (type == "media") {
+    const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_width", 220.0) : 220.0);
+    const float artSize = static_cast<float>(wc != nullptr ? wc->getDouble("art_size", 24.0) : 24.0);
+    return std::make_unique<MediaMiniWidget>(m_mpris, m_httpClient, maxWidth, artSize);
   }
 
   if (type == "battery") {

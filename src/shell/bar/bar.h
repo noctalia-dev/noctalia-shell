@@ -8,6 +8,8 @@
 #include <vector>
 
 class ConfigService;
+class HttpClient;
+class MprisService;
 class NotificationManager;
 class PipeWireService;
 class RenderContext;
@@ -25,7 +27,8 @@ public:
 
   bool initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                   NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
-                  UPowerService* upower, SystemMonitorService* sysmon, RenderContext* renderContext);
+                  UPowerService* upower, SystemMonitorService* sysmon, MprisService* mpris, HttpClient* httpClient,
+                  RenderContext* renderContext);
   void reload();
   void closeAllInstances();
   void show();
@@ -53,6 +56,8 @@ private:
   PipeWireService* m_audio = nullptr;
   UPowerService* m_upower = nullptr;
   SystemMonitorService* m_sysmon = nullptr;
+  MprisService* m_mpris = nullptr;
+  HttpClient* m_httpClient = nullptr;
   RenderContext* m_renderContext = nullptr;
   std::unique_ptr<WidgetFactory> m_widgetFactory;
   std::vector<std::unique_ptr<BarInstance>> m_instances;

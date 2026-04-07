@@ -223,6 +223,12 @@ void ConfigService::seedBuiltinWidgets(Config& config) {
   date.settings["format"] = std::string("{:%a %d %b}");
   seed("date", std::move(date));
 
+  WidgetConfig media;
+  media.type = "media";
+  media.settings["max_width"] = 220.0;
+  media.settings["art_size"] = 24.0;
+  seed("media", std::move(media));
+
   WidgetConfig spacer;
   spacer.type = "spacer";
   seed("spacer", std::move(spacer));

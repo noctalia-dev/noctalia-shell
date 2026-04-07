@@ -29,7 +29,7 @@ private:
   MprisService* m_mpris = nullptr;
   HttpClient* m_httpClient = nullptr;
   float m_maxWidth = 220.0f;
-  float m_artSize = 18.0f;
+  float m_artSize = 24.0f;
   InputArea* m_area = nullptr;
   Image* m_art = nullptr;
   Label* m_label = nullptr;
