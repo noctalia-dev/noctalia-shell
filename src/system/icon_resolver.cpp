@@ -25,7 +25,8 @@ std::vector<std::string> readGtkThemeCandidates() {
       // Output is like: 'Copycat-noctalia'\n — strip quotes and whitespace
       while (!value.empty() && (value.front() == '\'' || value.front() == '"' || value.front() == ' '))
         value = value.substr(1);
-      while (!value.empty() && (value.back() == '\'' || value.back() == '"' || value.back() == ' ' || value.back() == '\n'))
+      while (!value.empty() &&
+             (value.back() == '\'' || value.back() == '"' || value.back() == ' ' || value.back() == '\n'))
         value = value.substr(0, value.size() - 1);
       if (!value.empty()) {
         candidates.emplace_back(value);
@@ -52,8 +53,10 @@ std::vector<std::string> readGtkThemeCandidates() {
           continue;
         }
         std::string_view value(line.data() + eq + 1, line.size() - eq - 1);
-        while (!value.empty() && value.front() == ' ') value = value.substr(1);
-        while (!value.empty() && value.back() == ' ')  value = value.substr(0, value.size() - 1);
+        while (!value.empty() && value.front() == ' ')
+          value = value.substr(1);
+        while (!value.empty() && value.back() == ' ')
+          value = value.substr(0, value.size() - 1);
         if (!value.empty()) {
           candidates.emplace_back(value);
         }
@@ -66,8 +69,7 @@ std::vector<std::string> readGtkThemeCandidates() {
 
 // Parse index.theme and return (subdir paths sorted by preference, parent theme names).
 // Preference: scalable/large dirs first so we get crisp icons at any size.
-std::pair<std::vector<std::string>, std::vector<std::string>>
-parseIndexTheme(const std::string& themeRoot) {
+std::pair<std::vector<std::string>, std::vector<std::string>> parseIndexTheme(const std::string& themeRoot) {
   std::ifstream file(themeRoot + "/index.theme");
   if (!file.is_open()) {
     return {};
@@ -114,7 +116,8 @@ parseIndexTheme(const std::string& themeRoot) {
             dirNames.emplace_back(name);
             dirMap[std::string(name)].path = std::string(name);
           }
-          if (comma == std::string_view::npos) break;
+          if (comma == std::string_view::npos)
+            break;
           start = comma + 1;
         }
       } else if (key == "Inherits") {
@@ -125,21 +128,29 @@ parseIndexTheme(const std::string& themeRoot) {
           if (!name.empty()) {
             inherits.emplace_back(name);
           }
-          if (comma == std::string_view::npos) break;
+          if (comma == std::string_view::npos)
+            break;
           start = comma + 1;
         }
       }
     } else if (!currentSection.empty() && dirMap.count(currentSection)) {
       auto& entry = dirMap[currentSection];
       if (key == "Size") {
-        try { entry.size = std::stoi(std::string(value)); } catch (...) {}
+        try {
+          entry.size = std::stoi(std::string(value));
+        } catch (...) {
+        }
       } else if (key == "Type") {
         entry.scalable = (value == "Scalable" || value == "Threshold");
       } else if (key == "MaxSize") {
         // For threshold/scalable dirs, MaxSize gives a better sense of actual size
         int maxSize = 0;
-        try { maxSize = std::stoi(std::string(value)); } catch (...) {}
-        if (maxSize > entry.size) entry.size = maxSize;
+        try {
+          maxSize = std::stoi(std::string(value));
+        } catch (...) {
+        }
+        if (maxSize > entry.size)
+          entry.size = maxSize;
       }
     }
   }
@@ -148,7 +159,8 @@ parseIndexTheme(const std::string& themeRoot) {
   std::stable_sort(dirNames.begin(), dirNames.end(), [&](const std::string& a, const std::string& b) {
     const auto& da = dirMap[a];
     const auto& db = dirMap[b];
-    if (da.scalable != db.scalable) return da.scalable > db.scalable;
+    if (da.scalable != db.scalable)
+      return da.scalable > db.scalable;
     return da.size > db.size;
   });
 
@@ -163,9 +175,7 @@ parseIndexTheme(const std::string& themeRoot) {
 
 } // namespace
 
-IconResolver::IconResolver() {
-  detectTheme();
-}
+IconResolver::IconResolver() { detectTheme(); }
 
 void IconResolver::detectTheme() {
   const char* home = std::getenv("HOME");
@@ -214,8 +224,8 @@ void IconResolver::buildThemeSearchPaths(const std::string& themeName, std::set<
 
     if (dirs.empty()) {
       // No index.theme — fall back to common paths so the theme isn't silently skipped
-      for (const char* p : {"/scalable/apps/", "/48x48/apps/", "/64x64/apps/",
-                             "/128x128/apps/", "/256x256/apps/", "/32x32/apps/"}) {
+      for (const char* p :
+           {"/scalable/apps/", "/48x48/apps/", "/64x64/apps/", "/128x128/apps/", "/256x256/apps/", "/32x32/apps/"}) {
         m_searchDirs.push_back(themeRoot + p);
       }
     } else {

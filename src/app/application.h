@@ -23,6 +23,7 @@
 #include "pipewire/pipewire_service.h"
 #include "render/render_context.h"
 #include "shell/bar/bar.h"
+#include "shell/lockscreen/lock_screen.h"
 #include "shell/notification/notification_popup.h"
 #include "shell/osd/audio_osd.h"
 #include "shell/osd/osd_overlay.h"
@@ -73,6 +74,7 @@ private:
 
   RenderContext m_renderContext;
   Bar m_bar;
+  LockScreen m_lockScreen;
   PanelManager m_panelManager;
   NotificationPopup m_notificationPopup;
   AudioOsd m_audioOsd;

@@ -23,7 +23,6 @@ inline constexpr float spaceSm = 8.0f;
 inline constexpr float spaceMd = 12.0f;
 inline constexpr float spaceLg = 16.0f;
 
-
 inline constexpr float fontSizeCaption = 12.0f;
 inline constexpr float fontSizeBody = 14.0f;
 inline constexpr float fontSizeTitle = 16.0f;
@@ -31,7 +30,5 @@ inline constexpr float fontSizeTitle = 16.0f;
 inline constexpr float controlHeightSm = 28.0f;
 inline constexpr float controlHeight = 32.0f;
 inline constexpr float controlHeightLg = 36.0f;
-
-
 
 } // namespace Style

@@ -29,6 +29,7 @@ pkg_check_modules(HARFBUZZ REQUIRED harfbuzz)
 pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
 pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
 pkg_check_modules(LIBPIPEWIRE REQUIRED libpipewire-0.3)
+find_library(PAM_LIBRARY NAMES pam REQUIRED)
 
 # --- msdfgen (vendored) ---
 set(MSDFGEN_CORE_ONLY OFF CACHE BOOL "" FORCE)
@@ -63,6 +64,8 @@ set(CURSOR_SHAPE_XML
     "${CMAKE_CURRENT_SOURCE_DIR}/protocols/cursor-shape-v1.xml")
 set(XDG_ACTIVATION_XML
     "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/xdg-activation/xdg-activation-v1.xml")
+set(EXT_SESSION_LOCK_XML
+    "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/ext-session-lock/ext-session-lock-v1.xml")
 
 set(XDG_OUTPUT_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/xdg-output-unstable-v1-client-protocol.c")
@@ -86,6 +89,10 @@ set(XDG_ACTIVATION_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/xdg-activation-v1-client-protocol.c")
 set(XDG_ACTIVATION_PROTOCOL_H
     "${GENERATED_PROTOCOL_DIR}/xdg-activation-v1-client-protocol.h")
+set(EXT_SESSION_LOCK_PROTOCOL_C
+    "${GENERATED_PROTOCOL_DIR}/ext-session-lock-v1-client-protocol.c")
+set(EXT_SESSION_LOCK_PROTOCOL_H
+    "${GENERATED_PROTOCOL_DIR}/ext-session-lock-v1-client-protocol.h")
 
 set(WLR_LAYER_SHELL_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/wlr-layer-shell-unstable-v1-client-protocol.c")
@@ -188,6 +195,20 @@ add_custom_command(
     VERBATIM
 )
 
+add_custom_command(
+    OUTPUT "${EXT_SESSION_LOCK_PROTOCOL_C}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" private-code "${EXT_SESSION_LOCK_XML}" "${EXT_SESSION_LOCK_PROTOCOL_C}"
+    DEPENDS "${EXT_SESSION_LOCK_XML}"
+    VERBATIM
+)
+
+add_custom_command(
+    OUTPUT "${EXT_SESSION_LOCK_PROTOCOL_H}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" client-header "${EXT_SESSION_LOCK_XML}" "${EXT_SESSION_LOCK_PROTOCOL_H}"
+    DEPENDS "${EXT_SESSION_LOCK_XML}"
+    VERBATIM
+)
+
 add_custom_target(noctalia_wayland_protocols
     DEPENDS
         "${WLR_LAYER_SHELL_PROTOCOL_C}"
@@ -202,6 +223,8 @@ add_custom_target(noctalia_wayland_protocols
         "${CURSOR_SHAPE_PROTOCOL_H}"
         "${XDG_ACTIVATION_PROTOCOL_C}"
         "${XDG_ACTIVATION_PROTOCOL_H}"
+        "${EXT_SESSION_LOCK_PROTOCOL_C}"
+        "${EXT_SESSION_LOCK_PROTOCOL_H}"
 )
 
 # --- Target ---
@@ -209,6 +232,7 @@ add_executable(noctalia
     src/main.cpp
     src/app/application.cpp
     src/app/main_loop.cpp
+    src/auth/pam_authenticator.cpp
     src/system/distro_info.cpp
     src/system/system_monitor_service.cpp
     src/debug/debug_service.cpp
@@ -245,6 +269,8 @@ add_executable(noctalia
     src/render/image_loaders.cpp
     src/render/wallpaper_renderer.cpp
     src/shell/bar/bar.cpp
+    src/shell/lockscreen/lock_screen.cpp
+    src/shell/lockscreen/lock_surface.cpp
     src/shell/wallpaper/wallpaper.cpp
     src/shell/wallpaper/wallpaper_surface.cpp
     src/time/time_service.cpp
@@ -315,6 +341,7 @@ add_executable(noctalia
     "${EXT_WORKSPACE_PROTOCOL_C}"
     "${CURSOR_SHAPE_PROTOCOL_C}"
     "${XDG_ACTIVATION_PROTOCOL_C}"
+    "${EXT_SESSION_LOCK_PROTOCOL_C}"
 )
 target_compile_definitions(noctalia PRIVATE
     NOCTALIA_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
@@ -362,6 +389,7 @@ target_link_libraries(noctalia PRIVATE
     ${FONTCONFIG_LIBRARIES}
     ${XKBCOMMON_LIBRARIES}
     ${LIBPIPEWIRE_LIBRARIES}
+    ${PAM_LIBRARY}
 )
 target_compile_options(noctalia PRIVATE
     ${WAYLAND_CLIENT_CFLAGS_OTHER}

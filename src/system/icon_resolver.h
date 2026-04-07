@@ -17,7 +17,7 @@ private:
   std::string findIcon(const std::string& name) const;
 
   std::unordered_map<std::string, std::string> m_cache;
-  std::vector<std::string> m_baseDirs;  // ~/.local/share/icons, /usr/share/icons, etc.
+  std::vector<std::string> m_baseDirs;   // ~/.local/share/icons, /usr/share/icons, etc.
   std::vector<std::string> m_searchDirs; // Ordered list of concrete dirs to search
   std::string m_empty;
 };

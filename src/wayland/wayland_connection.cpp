@@ -8,6 +8,7 @@
 #include <wayland-client.h>
 
 #include "cursor-shape-v1-client-protocol.h"
+#include "ext-session-lock-v1-client-protocol.h"
 #include "ext-workspace-v1-client-protocol.h"
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-activation-v1-client-protocol.h"
@@ -23,6 +24,7 @@ constexpr std::uint32_t kXdgOutputManagerVersion = 3;
 constexpr std::uint32_t kExtWorkspaceManagerVersion = 1;
 constexpr std::uint32_t kCursorShapeManagerVersion = 1;
 constexpr std::uint32_t kXdgActivationVersion = 1;
+constexpr std::uint32_t kExtSessionLockManagerVersion = 1;
 constexpr std::uint32_t kOutputVersion = 4;
 
 const wl_registry_listener kRegistryListener = {
@@ -202,6 +204,7 @@ bool WaylandConnection::hasLayerShell() const noexcept { return m_hasLayerShellG
 bool WaylandConnection::hasXdgOutputManager() const noexcept { return m_xdgOutputManager != nullptr; }
 
 bool WaylandConnection::hasExtWorkspaceManager() const noexcept { return m_hasExtWorkspaceGlobal; }
+bool WaylandConnection::hasSessionLockManager() const noexcept { return m_sessionLockManager != nullptr; }
 bool WaylandConnection::hasXdgActivation() const noexcept { return m_xdgActivation != nullptr; }
 
 std::string WaylandConnection::requestActivationToken(wl_surface* surface) const {
@@ -242,6 +245,8 @@ wl_compositor* WaylandConnection::compositor() const noexcept { return m_composi
 wl_shm* WaylandConnection::shm() const noexcept { return m_shm; }
 
 zwlr_layer_shell_v1* WaylandConnection::layerShell() const noexcept { return m_layerShell; }
+
+ext_session_lock_manager_v1* WaylandConnection::sessionLockManager() const noexcept { return m_sessionLockManager; }
 
 const std::vector<WaylandOutput>& WaylandConnection::outputs() const noexcept { return m_outputs; }
 
@@ -352,6 +357,13 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     return;
   }
 
+  if (interfaceName == ext_session_lock_manager_v1_interface.name) {
+    const auto bindVersion = std::min(version, kExtSessionLockManagerVersion);
+    m_sessionLockManager = static_cast<ext_session_lock_manager_v1*>(
+        wl_registry_bind(registry, name, &ext_session_lock_manager_v1_interface, bindVersion));
+    return;
+  }
+
   if (interfaceName == wl_output_interface.name) {
     const auto bindVersion = std::min(version, kOutputVersion);
     auto* output = static_cast<wl_output*>(wl_registry_bind(registry, name, &wl_output_interface, bindVersion));
@@ -402,6 +414,11 @@ void WaylandConnection::cleanup() {
     m_xdgActivation = nullptr;
   }
 
+  if (m_sessionLockManager != nullptr) {
+    ext_session_lock_manager_v1_destroy(m_sessionLockManager);
+    m_sessionLockManager = nullptr;
+  }
+
   if (m_cursorShapeManager != nullptr) {
     wp_cursor_shape_manager_v1_destroy(m_cursorShapeManager);
     m_cursorShapeManager = nullptr;
@@ -445,9 +462,10 @@ void WaylandConnection::cleanup() {
 }
 
 void WaylandConnection::logStartupSummary() const {
-  kLog.info("connected compositor={} shm={} layer-shell={} xdg-output={} ext-workspace={} outputs={}",
+  kLog.info("connected compositor={} shm={} layer-shell={} xdg-output={} ext-workspace={} session-lock={} outputs={}",
             m_compositor != nullptr ? "yes" : "no", m_shm != nullptr ? "yes" : "no", hasLayerShell() ? "yes" : "no",
-            hasXdgOutputManager() ? "yes" : "no", hasExtWorkspaceManager() ? "yes" : "no", m_outputs.size());
+            hasXdgOutputManager() ? "yes" : "no", hasExtWorkspaceManager() ? "yes" : "no",
+            hasSessionLockManager() ? "yes" : "no", m_outputs.size());
 
   for (const auto& output : m_outputs) {
     kLog.info("output {} global={} scale={} mode={}x{} desc=\"{}\"", output.connectorName, output.name, output.scale,

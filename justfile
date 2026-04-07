@@ -13,7 +13,15 @@ build m=mode:
     cmake --build build-{{m}} --parallel
 
 run m=mode:
-    ./build-{{m}}/noctalia
+    @if [ "{{m}}" = "debug" ]; then \
+      cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/noctalia"; \
+      mkdir -p "$cache_dir"; \
+      logfile="$cache_dir/noctalia-$(date +%Y%m%d-%H%M%S).log"; \
+      echo "Writing logs to $logfile"; \
+      ./build-{{m}}/noctalia 2>&1 | tee -a "$logfile"; \
+    else \
+      ./build-{{m}}/noctalia; \
+    fi
 
 format:
     clang-format -i src/**/*.cpp src/**/*.h

@@ -102,6 +102,7 @@ void Application::initServices() {
   m_wayland.setOutputChangeCallback([this]() {
     m_wallpaper.onOutputChange();
     m_bar.onOutputChange();
+    m_lockScreen.onOutputChange();
   });
   m_wayland.setWorkspaceChangeCallback([this]() { m_bar.onWorkspaceChange(); });
 
@@ -218,6 +219,7 @@ void Application::initServices() {
 
 void Application::initUi() {
   m_renderContext.initialize(m_wayland.display());
+  m_lockScreen.initialize(m_wayland, &m_renderContext, &m_stateService);
 
   // Panel manager must be before bar so widgets can access PanelManager::instance()
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
@@ -258,6 +260,10 @@ void Application::initUi() {
   }
 
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
+    if (m_lockScreen.isActive()) {
+      m_lockScreen.onPointerEvent(event);
+      return;
+    }
     if (m_trayMenu.onPointerEvent(event))
       return;
     if (m_bar.onPointerEvent(event))
@@ -267,7 +273,13 @@ void Application::initUi() {
     m_notificationPopup.onPointerEvent(event);
   });
 
-  m_wayland.setKeyboardEventCallback([this](const KeyboardEvent& event) { m_panelManager.onKeyboardEvent(event); });
+  m_wayland.setKeyboardEventCallback([this](const KeyboardEvent& event) {
+    if (m_lockScreen.isActive()) {
+      m_lockScreen.onKeyboardEvent(event);
+      return;
+    }
+    m_panelManager.onKeyboardEvent(event);
+  });
 }
 
 void Application::initIpc() {
@@ -324,6 +336,16 @@ void Application::initIpc() {
         return "ok\n";
       },
       "toggle-bar", "Toggle bar visibility");
+
+  m_ipcService.registerHandler(
+      "lock",
+      [this](const std::string&) -> std::string {
+        if (m_lockScreen.lock()) {
+          return "ok\n";
+        }
+        return "error: lock screen unavailable\n";
+      },
+      "lock", "Lock the session using the development lock screen (press Escape to unlock)");
 
   m_ipcService.registerHandler(
       "toggle-panel",

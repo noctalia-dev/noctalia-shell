@@ -19,6 +19,7 @@ struct zxdg_output_manager_v1;
 struct zxdg_output_v1;
 struct wp_cursor_shape_manager_v1;
 struct xdg_activation_v1;
+struct ext_session_lock_manager_v1;
 
 struct WaylandOutput {
   std::uint32_t name = 0;
@@ -68,10 +69,12 @@ public:
   [[nodiscard]] bool hasLayerShell() const noexcept;
   [[nodiscard]] bool hasXdgOutputManager() const noexcept;
   [[nodiscard]] bool hasExtWorkspaceManager() const noexcept;
+  [[nodiscard]] bool hasSessionLockManager() const noexcept;
   [[nodiscard]] wl_display* display() const noexcept;
   [[nodiscard]] wl_compositor* compositor() const noexcept;
   [[nodiscard]] wl_shm* shm() const noexcept;
   [[nodiscard]] zwlr_layer_shell_v1* layerShell() const noexcept;
+  [[nodiscard]] ext_session_lock_manager_v1* sessionLockManager() const noexcept;
   [[nodiscard]] const std::vector<WaylandOutput>& outputs() const noexcept;
   [[nodiscard]] WaylandOutput* findOutputByWl(wl_output* wlOutput);
   [[nodiscard]] WaylandOutput* findOutputByXdg(zxdg_output_v1* xdgOutput);
@@ -101,6 +104,7 @@ private:
   zxdg_output_manager_v1* m_xdgOutputManager = nullptr;
   wp_cursor_shape_manager_v1* m_cursorShapeManager = nullptr;
   xdg_activation_v1* m_xdgActivation = nullptr;
+  ext_session_lock_manager_v1* m_sessionLockManager = nullptr;
   bool m_hasLayerShellGlobal = false;
   bool m_hasExtWorkspaceGlobal = false;
   std::vector<WaylandOutput> m_outputs;
