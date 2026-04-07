@@ -5,7 +5,7 @@
 #include "render/scene/node.h"
 #include "shell/panel/panel_manager.h"
 #include "ui/controls/box.h"
-#include "ui/controls/icon.h"
+#include "ui/controls/glyph.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -29,12 +29,12 @@ void NotificationWidget::create(Renderer& renderer) {
     PanelManager::instance().togglePanel("control-center", m_output, m_scale, absX, absY, "notifications");
   });
 
-  auto icon = std::make_unique<Icon>();
-  icon->setIcon("bell");
-  icon->setIconSize(Style::fontSizeBody * m_contentScale);
-  icon->setColor(palette.onSurface);
-  m_icon = icon.get();
-  area->addChild(std::move(icon));
+  auto glyph = std::make_unique<Glyph>();
+  glyph->setGlyph("bell");
+  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setColor(palette.onSurface);
+  m_glyph = glyph.get();
+  area->addChild(std::move(glyph));
 
   auto dot = std::make_unique<Box>();
   dot->setFill(palette.primary);
@@ -49,17 +49,17 @@ void NotificationWidget::create(Renderer& renderer) {
 
 void NotificationWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
-  if (m_icon == nullptr || rootNode == nullptr) {
+  if (m_glyph == nullptr || rootNode == nullptr) {
     return;
   }
 
-  m_icon->measure(renderer);
-  m_icon->setPosition(0.0f, 0.0f);
-  rootNode->setSize(m_icon->width(), m_icon->height());
+  m_glyph->measure(renderer);
+  m_glyph->setPosition(0.0f, 0.0f);
+  rootNode->setSize(m_glyph->width(), m_glyph->height());
 
   if (m_dot != nullptr && m_dot->visible()) {
     const float kDotSize = 5.0f * m_contentScale;
-    const float dotX = std::max(0.0f, m_icon->width() - kDotSize + 1.0f);
+    const float dotX = std::max(0.0f, m_glyph->width() - kDotSize + 1.0f);
     const float dotY = -1.0f;
     m_dot->setPosition(dotX, dotY);
     m_dot->setSize(kDotSize, kDotSize);

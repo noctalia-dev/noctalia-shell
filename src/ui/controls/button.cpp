@@ -2,7 +2,7 @@
 
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_area.h"
-#include "ui/controls/icon.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -33,21 +33,21 @@ void Button::setText(std::string_view text) {
   m_label->setVisible(!text.empty());
 }
 
-void Button::setIcon(std::string_view name) {
-  ensureIcon();
-  m_icon->setIcon(name);
+void Button::setGlyph(std::string_view name) {
+  ensureGlyph();
+  m_glyph->setGlyph(name);
 }
 
 void Button::setFontSize(float size) {
   m_label->setFontSize(size);
-  if (m_icon != nullptr) {
-    m_icon->setIconSize(size);
+  if (m_glyph != nullptr) {
+    m_glyph->setGlyphSize(size);
   }
 }
 
-void Button::setIconSize(float size) {
-  ensureIcon();
-  m_icon->setIconSize(size);
+void Button::setGlyphSize(float size) {
+  ensureGlyph();
+  m_glyph->setGlyphSize(size);
 }
 
 void Button::setOnClick(std::function<void()> callback) {
@@ -216,11 +216,11 @@ void Button::applyVariant() {
   applyVisualState();
 }
 
-void Button::ensureIcon() {
-  if (m_icon != nullptr) {
+void Button::ensureGlyph() {
+  if (m_glyph != nullptr) {
     return;
   }
-  // insertChildAt so the icon lands before the label in the children vector,
+  // insertChildAt so the glyph lands before the label in the children vector,
   // which is what Flex iterates to assign layout positions
   auto& kids = children();
   std::size_t labelIndex = 0;
@@ -230,8 +230,8 @@ void Button::ensureIcon() {
       break;
     }
   }
-  auto icon = std::make_unique<Icon>();
-  m_icon = static_cast<Icon*>(insertChildAt(labelIndex, std::move(icon)));
+  auto glyph = std::make_unique<Glyph>();
+  m_glyph = static_cast<Glyph*>(insertChildAt(labelIndex, std::move(glyph)));
   setDirection(FlexDirection::Horizontal);
   setGap(Style::spaceXs);
 }
@@ -240,8 +240,8 @@ void Button::applyColors(const Color& bg, const Color& border, const Color& labe
   setBackground(bg);
   setBorderColor(border);
   m_label->setColor(label);
-  if (m_icon != nullptr) {
-    m_icon->setColor(label);
+  if (m_glyph != nullptr) {
+    m_glyph->setColor(label);
   }
 }
 
@@ -303,8 +303,8 @@ void Button::layout(Renderer& renderer) {
   }
 
   m_label->measure(renderer);
-  if (m_icon != nullptr) {
-    m_icon->measure(renderer);
+  if (m_glyph != nullptr) {
+    m_glyph->measure(renderer);
   }
 
   if (m_inputArea != nullptr) {
@@ -313,10 +313,10 @@ void Button::layout(Renderer& renderer) {
 
   Flex::layout(renderer);
 
-  // Label and icon have identical reference heights, so Flex's geometric
+  // Label and glyph have identical reference heights, so Flex's geometric
   // centering already aligns their baselines. Only need to horizontally
   // center the label when the button is wider than its content.
-  if (m_icon == nullptr) {
+  if (m_glyph == nullptr) {
     m_label->setPosition(std::round((width() - m_label->width()) * 0.5f), m_label->y());
   }
 

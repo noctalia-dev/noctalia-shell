@@ -9,7 +9,7 @@
 
 class AnimationManager;
 
-class Icon;
+class Glyph;
 class InputArea;
 class Label;
 
@@ -30,9 +30,9 @@ public:
   ~Button() override;
 
   void setText(std::string_view text);
-  void setIcon(std::string_view name);
+  void setGlyph(std::string_view name);
   void setFontSize(float size);
-  void setIconSize(float size);
+  void setGlyphSize(float size);
   void setEnabled(bool enabled);
   void setVariant(ButtonVariant variant);
   void setMinimalChrome(bool minimalChrome);
@@ -44,19 +44,19 @@ public:
   void updateInputArea();
 
   [[nodiscard]] Label* label() const noexcept { return m_label; }
-  [[nodiscard]] Icon* icon() const noexcept { return m_icon; }
+  [[nodiscard]] Glyph* glyph() const noexcept { return m_glyph; }
   [[nodiscard]] bool hovered() const noexcept;
   [[nodiscard]] bool pressed() const noexcept;
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
 
 private:
-  void ensureIcon();
+  void ensureGlyph();
   void applyVariant();
   void applyVisualState();
 
   void applyColors(const Color& bg, const Color& border, const Color& label);
 
-  Icon* m_icon = nullptr;
+  Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
   InputArea* m_inputArea = nullptr;
   std::uint32_t m_animId = 0;

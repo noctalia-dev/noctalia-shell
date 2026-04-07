@@ -40,7 +40,7 @@ void ControlCenterPanel::buildCalendarTab() {
   header->setMinHeight(kCalendarHeaderHeight);
 
   auto previous = std::make_unique<Button>();
-  previous->setIcon("chevron-left");
+  previous->setGlyph("chevron-left");
   previous->setVariant(ButtonVariant::Ghost);
   previous->setMinimalChrome(true);
   previous->setMinWidth(kCalendarNavButtonSize);
@@ -66,7 +66,7 @@ void ControlCenterPanel::buildCalendarTab() {
   header->addChild(std::move(monthWrap));
 
   auto next = std::make_unique<Button>();
-  next->setIcon("chevron-right");
+  next->setGlyph("chevron-right");
   next->setVariant(ButtonVariant::Ghost);
   next->setMinimalChrome(true);
   next->setMinWidth(kCalendarNavButtonSize);

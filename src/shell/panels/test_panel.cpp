@@ -61,7 +61,7 @@ void TestPanel::create(Renderer& renderer) {
 
   auto iconButton = std::make_unique<Button>();
   iconButton->setText("Settings");
-  iconButton->setIcon("settings");
+  iconButton->setGlyph("settings");
   iconButton->setVariant(ButtonVariant::Default);
   iconButton->setOnClick([]() {});
   m_iconButton = iconButton.get();

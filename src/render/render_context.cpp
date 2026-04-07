@@ -1,6 +1,6 @@
 #include "render/render_context.h"
 #include "render/render_target.h"
-#include "render/scene/icon_node.h"
+#include "render/scene/glyph_node.h"
 #include "render/scene/image_node.h"
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
@@ -220,8 +220,8 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
     }
     break;
   }
-  case NodeType::Icon: {
-    const auto* icon = static_cast<const IconNode*>(node);
+  case NodeType::Glyph: {
+    const auto* icon = static_cast<const GlyphNode*>(node);
     if (icon->codepoint() != 0) {
       auto color = icon->color();
       color.a *= effectiveOpacity;

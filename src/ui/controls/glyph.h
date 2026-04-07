@@ -5,16 +5,16 @@
 
 #include <string_view>
 
-class IconNode;
+class GlyphNode;
 class Renderer;
 
-class Icon : public Node {
+class Glyph : public Node {
 public:
-  Icon();
+  Glyph();
 
-  void setIcon(std::string_view name);
+  void setGlyph(std::string_view name);
   void setCodepoint(char32_t codepoint);
-  void setIconSize(float size);
+  void setGlyphSize(float size);
   void setColor(const Color& color);
 
   void measure(Renderer& renderer);
@@ -22,6 +22,6 @@ public:
   [[nodiscard]] float baselineOffset() const noexcept { return m_baselineOffset; }
 
 private:
-  IconNode* m_iconNode = nullptr;
+  GlyphNode* m_glyphNode = nullptr;
   float m_baselineOffset = 0.0f;
 };

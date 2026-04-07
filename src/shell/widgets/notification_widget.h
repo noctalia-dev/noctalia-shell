@@ -3,7 +3,7 @@
 #include "shell/widget/widget.h"
 
 struct wl_output;
-class Icon;
+class Glyph;
 class Node;
 class NotificationManager;
 
@@ -21,7 +21,7 @@ private:
   NotificationManager* m_manager = nullptr;
   wl_output* m_output = nullptr;
   std::int32_t m_scale = 1;
-  Icon* m_icon = nullptr;
+  Glyph* m_glyph = nullptr;
   Node* m_dot = nullptr;
   bool m_hasNotifications = false;
 };

@@ -261,7 +261,7 @@ void ControlCenterPanel::buildMediaTab() {
   controls->setGap(Style::spaceSm);
 
   auto repeat = std::make_unique<Button>();
-  repeat->setIcon("repeat");
+  repeat->setGlyph("repeat");
   repeat->setVariant(ButtonVariant::Ghost);
   repeat->setMinimalChrome(true);
   repeat->setMinWidth(kMediaControlsHeight);
@@ -279,7 +279,7 @@ void ControlCenterPanel::buildMediaTab() {
   controls->addChild(std::move(repeat));
 
   auto previous = std::make_unique<Button>();
-  previous->setIcon("media-prev");
+  previous->setGlyph("media-prev");
   previous->setVariant(ButtonVariant::Ghost);
   previous->setMinimalChrome(true);
   previous->setMinWidth(kMediaControlsHeight);
@@ -294,7 +294,7 @@ void ControlCenterPanel::buildMediaTab() {
   controls->addChild(std::move(previous));
 
   auto playPause = std::make_unique<Button>();
-  playPause->setIcon("media-play");
+  playPause->setGlyph("media-play");
   playPause->setVariant(ButtonVariant::Accent);
   playPause->setMinimalChrome(true);
   playPause->setMinWidth(kMediaPlayPauseHeight);
@@ -309,7 +309,7 @@ void ControlCenterPanel::buildMediaTab() {
   controls->addChild(std::move(playPause));
 
   auto next = std::make_unique<Button>();
-  next->setIcon("media-next");
+  next->setGlyph("media-next");
   next->setVariant(ButtonVariant::Ghost);
   next->setMinimalChrome(true);
   next->setMinWidth(kMediaControlsHeight);
@@ -324,7 +324,7 @@ void ControlCenterPanel::buildMediaTab() {
   controls->addChild(std::move(next));
 
   auto shuffle = std::make_unique<Button>();
-  shuffle->setIcon("shuffle");
+  shuffle->setGlyph("shuffle");
   shuffle->setVariant(ButtonVariant::Ghost);
   shuffle->setMinimalChrome(true);
   shuffle->setMinWidth(kMediaControlsHeight);
@@ -572,11 +572,11 @@ void ControlCenterPanel::refreshMediaState(Renderer& renderer) {
       m_mediaProgressSlider->setValue(static_cast<float>(displayPositionUs) / 1000000.0f);
       m_syncingMediaProgress = false;
 
-      m_mediaPlayPauseButton->setIcon(playPauseIcon(player.playbackStatus));
+      m_mediaPlayPauseButton->setGlyph(playPauseIcon(player.playbackStatus));
       m_mediaPlayPauseButton->setVariant(ButtonVariant::Accent);
       m_mediaPrevButton->setEnabled(player.canGoPrevious);
       m_mediaNextButton->setEnabled(player.canGoNext);
-      m_mediaRepeatButton->setIcon(repeatIcon(player.loopStatus));
+      m_mediaRepeatButton->setGlyph(repeatIcon(player.loopStatus));
       m_mediaRepeatButton->setVariant(toggleVariant(player.loopStatus != "None"));
       m_mediaShuffleButton->setVariant(toggleVariant(player.shuffle));
 
@@ -602,10 +602,10 @@ void ControlCenterPanel::refreshMediaState(Renderer& renderer) {
       m_mediaProgressSlider->setRange(0.0f, 100.0f);
       m_mediaProgressSlider->setValue(0.0f);
       m_syncingMediaProgress = false;
-      m_mediaPlayPauseButton->setIcon("media-play");
+      m_mediaPlayPauseButton->setGlyph("media-play");
       m_mediaPrevButton->setEnabled(false);
       m_mediaNextButton->setEnabled(false);
-      m_mediaRepeatButton->setIcon("repeat");
+      m_mediaRepeatButton->setGlyph("repeat");
       m_mediaRepeatButton->setVariant(ButtonVariant::Ghost);
       m_mediaShuffleButton->setVariant(ButtonVariant::Ghost);
       m_lastMediaBusName.clear();

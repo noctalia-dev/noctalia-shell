@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-class Icon;
+class Glyph;
 struct wl_output;
 
 class TestWidget : public Widget {
@@ -17,5 +17,5 @@ public:
 private:
   wl_output* m_output;
   std::int32_t m_scale;
-  Icon* m_icon = nullptr;
+  Glyph* m_glyph = nullptr;
 };

@@ -1,4 +1,4 @@
-#include "ui/icons/icon_registry.h"
+#include "ui/icons/glyph_registry.h"
 
 #include <string>
 #include <unordered_map>
@@ -32,6 +32,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"star-off", 0xED62},          // star-off
     {"plugin", 0xF00A},            // plug-connected
     {"official-plugin", 0xF69F},   // shield-filled
+    {"calendar", 0xEA53},          // calendar
 
     // Toast / warnings
     {"toast-notice", 0xEA67},      // circle-check
@@ -205,7 +206,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
 
 } // namespace
 
-char32_t IconRegistry::lookup(std::string_view name) {
+char32_t GlyphRegistry::lookup(std::string_view name) {
   auto it = kIcons.find(std::string(name));
   if (it != kIcons.end()) {
     return it->second;

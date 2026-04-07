@@ -5,7 +5,7 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "shell/panel/panel_manager.h"
-#include "ui/controls/icon.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -45,12 +45,12 @@ void VolumeWidget::create(Renderer& renderer) {
     PanelManager::instance().togglePanel("control-center", m_output, m_scale, absX, absY, "media");
   });
 
-  auto icon = std::make_unique<Icon>();
-  icon->setIcon("volume-high");
-  icon->setIconSize(Style::fontSizeBody * m_contentScale);
-  icon->setColor(palette.onSurface);
-  m_icon = icon.get();
-  area->addChild(std::move(icon));
+  auto glyph = std::make_unique<Glyph>();
+  glyph->setGlyph("volume-high");
+  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setColor(palette.onSurface);
+  m_glyph = glyph.get();
+  area->addChild(std::move(glyph));
 
   auto label = std::make_unique<Label>();
   label->setBold(true);
@@ -64,18 +64,18 @@ void VolumeWidget::create(Renderer& renderer) {
 
 void VolumeWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
-  if (m_icon == nullptr || m_label == nullptr || rootNode == nullptr) {
+  if (m_glyph == nullptr || m_label == nullptr || rootNode == nullptr) {
     return;
   }
 
-  m_icon->measure(renderer);
+  m_glyph->measure(renderer);
   m_label->measure(renderer);
 
-  // Icon and label share the same reference line height, so y=0 aligns both.
-  m_icon->setPosition(0.0f, 0.0f);
-  m_label->setPosition(m_icon->width() + Style::spaceXs, 0.0f);
+  // Glyph and label share the same reference line height, so y=0 aligns both.
+  m_glyph->setPosition(0.0f, 0.0f);
+  m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
 
-  rootNode->setSize(m_label->x() + m_label->width(), m_icon->height());
+  rootNode->setSize(m_label->x() + m_label->width(), m_glyph->height());
 }
 
 void VolumeWidget::update(Renderer& renderer) {
@@ -84,7 +84,7 @@ void VolumeWidget::update(Renderer& renderer) {
 }
 
 void VolumeWidget::syncState(Renderer& renderer) {
-  if (m_audio == nullptr || m_icon == nullptr || m_label == nullptr) {
+  if (m_audio == nullptr || m_glyph == nullptr || m_label == nullptr) {
     return;
   }
 
@@ -99,10 +99,10 @@ void VolumeWidget::syncState(Renderer& renderer) {
   m_lastVolume = volume;
   m_lastMuted = muted;
 
-  m_icon->setIcon(volumeIconName(volume, muted));
-  m_icon->setIconSize(Style::fontSizeBody * m_contentScale);
-  m_icon->setColor(muted ? palette.onSurfaceVariant : palette.onSurface);
-  m_icon->measure(renderer);
+  m_glyph->setGlyph(volumeIconName(volume, muted));
+  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setColor(muted ? palette.onSurfaceVariant : palette.onSurface);
+  m_glyph->measure(renderer);
 
   int pct = static_cast<int>(std::round(volume * 100.0f));
   m_label->setText(std::to_string(pct) + "%");

@@ -3,9 +3,9 @@
 #include "render/core/color.h"
 #include "render/scene/node.h"
 
-class IconNode : public Node {
+class GlyphNode : public Node {
 public:
-  IconNode() : Node(NodeType::Icon) {}
+  GlyphNode() : Node(NodeType::Glyph) {}
 
   [[nodiscard]] char32_t codepoint() const noexcept { return m_codepoint; }
   [[nodiscard]] float fontSize() const noexcept { return m_fontSize; }

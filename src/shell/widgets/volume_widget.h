@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-class Icon;
+class Glyph;
 class Label;
 class PipeWireService;
 struct wl_output;
@@ -23,7 +23,7 @@ private:
   PipeWireService* m_audio = nullptr;
   wl_output* m_output = nullptr;
   std::int32_t m_scale = 1;
-  Icon* m_icon = nullptr;
+  Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
   float m_lastVolume = -1.0f;
   bool m_lastMuted = false;

@@ -10,7 +10,7 @@
 #include <vector>
 
 class InputArea;
-class Icon;
+class Glyph;
 class Label;
 class Node;
 class RectNode;
@@ -40,7 +40,7 @@ private:
   struct OptionView {
     RectNode* background = nullptr;
     Label* label = nullptr;
-    Icon* checkIcon = nullptr;
+    Glyph* checkGlyph = nullptr;
     InputArea* area = nullptr;
   };
 
@@ -63,7 +63,7 @@ private:
 
   RectNode* m_triggerBackground = nullptr;
   Label* m_triggerLabel = nullptr;
-  Icon* m_triggerIcon = nullptr;
+  Glyph* m_triggerGlyph = nullptr;
   InputArea* m_triggerArea = nullptr;
   Node* m_menuViewport = nullptr;
   RectNode* m_menuBackground = nullptr;

@@ -362,8 +362,8 @@ void NotificationHistoryPanel::rebuildList(Renderer& renderer, float width) {
 
     auto dismissButton = std::make_unique<Button>();
     dismissButton->setText("");
-    dismissButton->setIcon("trash");
-    dismissButton->setIconSize(Style::fontSizeCaption);
+    dismissButton->setGlyph("trash");
+    dismissButton->setGlyphSize(Style::fontSizeCaption);
     dismissButton->setVariant(ButtonVariant::Ghost);
     dismissButton->setMinHeight(Style::controlHeightSm);
     dismissButton->setPadding(Style::spaceXs);

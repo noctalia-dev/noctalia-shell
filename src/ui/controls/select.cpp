@@ -4,7 +4,7 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
-#include "ui/controls/icon.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -39,10 +39,10 @@ Select::Select() {
   auto triggerLabel = std::make_unique<Label>();
   m_triggerLabel = static_cast<Label*>(addChild(std::move(triggerLabel)));
 
-  auto triggerIcon = std::make_unique<Icon>();
-  m_triggerIcon = static_cast<Icon*>(addChild(std::move(triggerIcon)));
-  m_triggerIcon->setIcon("chevron-down");
-  m_triggerIcon->setIconSize(kIconSize);
+  auto triggerGlyph = std::make_unique<Glyph>();
+  m_triggerGlyph = static_cast<Glyph*>(addChild(std::move(triggerGlyph)));
+  m_triggerGlyph->setGlyph("chevron-down");
+  m_triggerGlyph->setGlyphSize(kIconSize);
 
   auto triggerArea = std::make_unique<InputArea>();
   triggerArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
@@ -165,7 +165,7 @@ std::string_view Select::selectedText() const noexcept {
 }
 
 void Select::layout(Renderer& renderer) {
-  if (m_triggerBackground == nullptr || m_triggerLabel == nullptr || m_triggerIcon == nullptr || m_triggerArea == nullptr ||
+  if (m_triggerBackground == nullptr || m_triggerLabel == nullptr || m_triggerGlyph == nullptr || m_triggerArea == nullptr ||
       m_menuBackground == nullptr) {
     return;
   }
@@ -176,7 +176,7 @@ void Select::layout(Renderer& renderer) {
 
   syncTriggerText();
   m_triggerLabel->measure(renderer);
-  m_triggerIcon->measure(renderer);
+  m_triggerGlyph->measure(renderer);
 
   float widestLabel = m_triggerLabel->width();
   for (auto& option : m_optionViews) {
@@ -198,7 +198,7 @@ void Select::layout(Renderer& renderer) {
   m_triggerLabel->measure(renderer);
   float triggerLabelY = std::round((kTriggerHeight - m_triggerLabel->height()) * 0.5f);
   m_triggerLabel->setPosition(kHorizontalPadding, triggerLabelY);
-  m_triggerIcon->setPosition(dropdownWidth - kHorizontalPadding - m_triggerIcon->width(), triggerLabelY);
+  m_triggerGlyph->setPosition(dropdownWidth - kHorizontalPadding - m_triggerGlyph->width(), triggerLabelY);
   m_triggerArea->setPosition(0.0f, 0.0f);
   m_triggerArea->setSize(dropdownWidth, kTriggerHeight);
 
@@ -236,7 +236,7 @@ void Select::layout(Renderer& renderer) {
     const bool showMenu = m_open && !m_optionViews.empty();
     option.background->setVisible(showMenu);
     option.label->setVisible(showMenu);
-    option.checkIcon->setVisible(showMenu && i == m_selectedIndex);
+    option.checkGlyph->setVisible(showMenu && i == m_selectedIndex);
     option.area->setVisible(showMenu);
 
     const float rowY = static_cast<float>(i) * kOptionHeight - m_scrollOffset;
@@ -250,10 +250,10 @@ void Select::layout(Renderer& renderer) {
     option.label->setPosition(kHorizontalPadding, rowY + optLabelY);
     option.label->setZIndex(4);
 
-    option.checkIcon->measure(renderer);
-    option.checkIcon->setPosition(dropdownWidth - kHorizontalPadding - option.checkIcon->width(),
-                                  rowY + optLabelY);
-    option.checkIcon->setZIndex(4);
+    option.checkGlyph->measure(renderer);
+    option.checkGlyph->setPosition(dropdownWidth - kHorizontalPadding - option.checkGlyph->width(),
+                                   rowY + optLabelY);
+    option.checkGlyph->setZIndex(4);
 
     option.area->setPosition(0.0f, rowY);
     option.area->setSize(dropdownWidth, kOptionHeight);
@@ -268,8 +268,8 @@ void Select::clearOptionViews() {
     if (option.area != nullptr) {
       (void)m_menuViewport->removeChild(option.area);
     }
-    if (option.checkIcon != nullptr) {
-      (void)m_menuViewport->removeChild(option.checkIcon);
+    if (option.checkGlyph != nullptr) {
+      (void)m_menuViewport->removeChild(option.checkGlyph);
     }
     if (option.label != nullptr) {
       (void)m_menuViewport->removeChild(option.label);
@@ -292,10 +292,10 @@ void Select::rebuildOptionViews() {
     label->setText(m_options[i]);
     auto* labelPtr = static_cast<Label*>(m_menuViewport->addChild(std::move(label)));
 
-    auto checkIcon = std::make_unique<Icon>();
-    checkIcon->setIcon("check");
-    checkIcon->setIconSize(kIconSize);
-    auto* checkIconPtr = static_cast<Icon*>(m_menuViewport->addChild(std::move(checkIcon)));
+    auto checkGlyph = std::make_unique<Glyph>();
+    checkGlyph->setGlyph("check");
+    checkGlyph->setGlyphSize(kIconSize);
+    auto* checkIconPtr = static_cast<Glyph*>(m_menuViewport->addChild(std::move(checkGlyph)));
 
     auto area = std::make_unique<InputArea>();
     area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
@@ -334,14 +334,14 @@ void Select::rebuildOptionViews() {
     m_optionViews.push_back(OptionView{
         .background = bgPtr,
         .label = labelPtr,
-        .checkIcon = checkIconPtr,
+        .checkGlyph = checkIconPtr,
         .area = areaPtr,
     });
   }
 }
 
 void Select::applyVisualState() {
-  if (m_triggerLabel == nullptr || m_triggerIcon == nullptr || m_triggerBackground == nullptr || m_menuBackground == nullptr) {
+  if (m_triggerLabel == nullptr || m_triggerGlyph == nullptr || m_triggerBackground == nullptr || m_menuBackground == nullptr) {
     return;
   }
 
@@ -362,8 +362,8 @@ void Select::applyVisualState() {
   }
 
   m_triggerLabel->setColor(triggerText);
-  m_triggerIcon->setColor(triggerText);
-  m_triggerIcon->setIcon(m_openUpward ? "chevron-up" : "chevron-down");
+  m_triggerGlyph->setColor(triggerText);
+  m_triggerGlyph->setGlyph(m_openUpward ? "chevron-up" : "chevron-down");
 
   m_triggerBackground->setStyle(RoundedRectStyle{
       .fill = triggerBg,
@@ -389,7 +389,7 @@ void Select::applyVisualState() {
     auto& option = m_optionViews[i];
     option.background->setVisible(showMenu);
     option.label->setVisible(showMenu);
-    option.checkIcon->setVisible(showMenu && i == m_selectedIndex);
+    option.checkGlyph->setVisible(showMenu && i == m_selectedIndex);
     option.area->setVisible(showMenu);
 
     Color bg = rgba(0.0f, 0.0f, 0.0f, 0.0f);
@@ -403,7 +403,7 @@ void Select::applyVisualState() {
     }
 
     option.label->setColor(fg);
-    option.checkIcon->setColor(fg);
+    option.checkGlyph->setColor(fg);
     option.background->setStyle(RoundedRectStyle{
         .fill = bg,
         .border = bg,

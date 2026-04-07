@@ -7,8 +7,8 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "ui/controls/flex.h"
-#include "ui/controls/icon.h"
-#include "ui/icons/icon_registry.h"
+#include "ui/controls/glyph.h"
+#include "ui/icons/glyph_registry.h"
 #include "ui/palette.h"
 
 #include <linux/input-event-codes.h>
@@ -108,8 +108,8 @@ void TrayWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*co
   }
 
   for (const auto& child : m_container->children()) {
-    if (auto* icon = dynamic_cast<Icon*>(child.get())) {
-      icon->measure(renderer);
+    if (auto* glyph = dynamic_cast<Glyph*>(child.get())) {
+      glyph->measure(renderer);
     }
   }
 
@@ -204,14 +204,14 @@ void TrayWidget::rebuild(Renderer& renderer) {
     }
 
     if (iconNode == nullptr) {
-      auto icon = std::make_unique<Icon>();
+      auto glyph = std::make_unique<Glyph>();
       const std::string fallback = iconForItem(item);
-      icon->setIcon(fallback);
-      icon->setColor(item.needsAttention ? palette.error : palette.onSurface);
-      icon->measure(renderer);
-      iconW = icon->width();
-      iconH = icon->height();
-      iconNode = std::move(icon);
+      glyph->setGlyph(fallback);
+      glyph->setColor(item.needsAttention ? palette.error : palette.onSurface);
+      glyph->measure(renderer);
+      iconW = glyph->width();
+      iconH = glyph->height();
+      iconNode = std::move(glyph);
       logDebug("tray widget icon id={} source=glyph name={}", item.id, fallback);
     }
 
@@ -239,7 +239,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
 std::string TrayWidget::iconForItem(const TrayItemInfo& item) const {
   const std::string preferred = item.needsAttention && !item.attentionIconName.empty() ? item.attentionIconName
                                                                                          : item.iconName;
-  if (!preferred.empty() && IconRegistry::lookup(preferred) != 0) {
+  if (!preferred.empty() && GlyphRegistry::lookup(preferred) != 0) {
     return preferred;
   }
   if (item.needsAttention) {

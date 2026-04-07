@@ -3,7 +3,7 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "shell/panel/panel_manager.h"
-#include "ui/controls/icon.h"
+#include "ui/controls/glyph.h"
 #include "ui/palette.h"
 
 #include <memory>
@@ -16,25 +16,25 @@ void LauncherWidget::create(Renderer& renderer) {
     PanelManager::instance().togglePanel("launcher");
   });
 
-  auto icon = std::make_unique<Icon>();
-  icon->setIcon("search");
-  icon->setColor(palette.onSurface);
-  m_icon = icon.get();
-  area->addChild(std::move(icon));
+  auto glyph = std::make_unique<Glyph>();
+  glyph->setGlyph("search");
+  glyph->setColor(palette.onSurface);
+  m_glyph = glyph.get();
+  area->addChild(std::move(glyph));
 
-  m_icon->measure(renderer);
-  area->setSize(m_icon->width(), m_icon->height());
+  m_glyph->measure(renderer);
+  area->setSize(m_glyph->width(), m_glyph->height());
 
   m_root = std::move(area);
 }
 
 void LauncherWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
-  if (m_icon == nullptr) {
+  if (m_glyph == nullptr) {
     return;
   }
-  m_icon->measure(renderer);
+  m_glyph->measure(renderer);
   auto* node = root();
   if (node != nullptr) {
-    node->setSize(m_icon->width(), m_icon->height());
+    node->setSize(m_glyph->width(), m_glyph->height());
   }
 }

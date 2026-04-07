@@ -4,7 +4,7 @@
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
 #include "system/system_monitor_service.h"
-#include "ui/controls/icon.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/controls/progress_bar.h"
 #include "ui/palette.h"
@@ -32,12 +32,12 @@ SysmonWidget::~SysmonWidget() {
 void SysmonWidget::create(Renderer& renderer) {
   auto container = std::make_unique<Node>();
 
-  auto icon = std::make_unique<Icon>();
-  icon->setIcon(iconName(m_stat));
-  icon->setIconSize(Style::fontSizeBody * m_contentScale);
-  icon->setColor(palette.onSurface);
-  m_icon = icon.get();
-  container->addChild(std::move(icon));
+  auto glyph = std::make_unique<Glyph>();
+  glyph->setGlyph(glyphName(m_stat));
+  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setColor(palette.onSurface);
+  m_glyph = glyph.get();
+  container->addChild(std::move(glyph));
 
   if (m_displayMode == SysmonDisplayMode::Graph) {
     auto chartBg = std::make_unique<RectNode>();
@@ -82,19 +82,19 @@ void SysmonWidget::create(Renderer& renderer) {
 
 void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
-  if (m_icon == nullptr || rootNode == nullptr) {
+  if (m_glyph == nullptr || rootNode == nullptr) {
     return;
   }
 
-  m_icon->measure(renderer);
-  const float iconH = m_icon->height();
+  m_glyph->measure(renderer);
+  const float iconH = m_glyph->height();
 
   if (m_displayMode == SysmonDisplayMode::Gauge && m_gauge != nullptr) {
     const float gaugeW = std::max(3.0f, roundf(iconH * 0.4f));
     m_gauge->setRadius(gaugeW / 2.0f);
 
-    m_icon->setPosition(0.0f, 0.0f);
-    m_gauge->setPosition(m_icon->width() + Style::spaceXs, 0.0f);
+    m_glyph->setPosition(0.0f, 0.0f);
+    m_gauge->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
     m_gauge->setSize(gaugeW, iconH);
 
     rootNode->setSize(m_gauge->x() + gaugeW, iconH);
@@ -109,8 +109,8 @@ void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
   if (m_displayMode == SysmonDisplayMode::Graph && m_chartBg != nullptr) {
     const float chartW = 50.0f * m_contentScale;
 
-    m_icon->setPosition(0.0f, 0.0f);
-    m_chartBg->setPosition(m_icon->width() + Style::spaceXs, 0.0f);
+    m_glyph->setPosition(0.0f, 0.0f);
+    m_chartBg->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
     m_chartBg->setSize(chartW, iconH);
 
     const float barW = chartW / static_cast<float>(kHistorySamples);
@@ -122,14 +122,14 @@ void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
     m_label->setPosition(m_chartBg->x() + chartW + Style::spaceXs, 0.0f);
     rootNode->setSize(m_label->x() + m_label->width(), iconH);
   } else {
-    m_icon->setPosition(0.0f, 0.0f);
-    m_label->setPosition(m_icon->width() + Style::spaceXs, 0.0f);
+    m_glyph->setPosition(0.0f, 0.0f);
+    m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
     rootNode->setSize(m_label->x() + m_label->width(), iconH);
   }
 }
 
 void SysmonWidget::update(Renderer& renderer) {
-  if (m_icon == nullptr) {
+  if (m_glyph == nullptr) {
     return;
   }
 
@@ -287,7 +287,7 @@ std::string SysmonWidget::formatValue() const {
   return "--";
 }
 
-const char* SysmonWidget::iconName(SysmonStat stat) {
+const char* SysmonWidget::glyphName(SysmonStat stat) {
   switch (stat) {
   case SysmonStat::CpuUsage:
     return "cpu-usage";

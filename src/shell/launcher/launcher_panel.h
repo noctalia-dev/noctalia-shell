@@ -10,7 +10,7 @@
 #include <vector>
 
 class Flex;
-class Icon;
+class Glyph;
 class Image;
 class Input;
 class InputArea;

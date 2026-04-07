@@ -10,7 +10,7 @@
 
 class ConfigService;
 class Box;
-class Icon;
+class Glyph;
 class Label;
 class Node;
 class RenderContext;
@@ -46,7 +46,7 @@ private:
 
     Node* card = nullptr;
     Box* background = nullptr;
-    Icon* icon = nullptr;
+    Glyph* glyph = nullptr;
     Label* value = nullptr;
     ProgressBar* progress = nullptr;
     AnimationManager::Id showAnimId = 0;

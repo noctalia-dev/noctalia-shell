@@ -1,6 +1,6 @@
 #include "launcher/app_provider.h"
 
-#include "launcher/fuzzy_match.h"
+#include "util/fuzzy_match.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
@@ -12,6 +12,35 @@
 #include <unistd.h>
 
 namespace {
+
+int scoreEntry(std::string_view pattern, const DesktopEntry& entry) {
+  if (pattern.empty()) {
+    return 1;
+  }
+
+  int nameScore = FuzzyMatch::score(pattern, entry.nameLower) * 3;
+  int genericScore = FuzzyMatch::score(pattern, entry.genericNameLower) * 2;
+
+  auto scoreList = [&](std::string_view list) {
+    int best = 0;
+    std::size_t start = 0;
+    while (start < list.size()) {
+      auto semi = list.find(';', start);
+      auto word = (semi == std::string_view::npos) ? list.substr(start) : list.substr(start, semi - start);
+      if (!word.empty()) {
+        best = std::max(best, FuzzyMatch::score(pattern, word));
+      }
+      if (semi == std::string_view::npos) break;
+      start = semi + 1;
+    }
+    return best;
+  };
+
+  int keywordScore = scoreList(entry.keywordsLower);
+  int catScore = scoreList(entry.categoriesLower);
+
+  return std::max({nameScore, genericScore, keywordScore, catScore});
+}
 
 std::string stripFieldCodes(const std::string& exec) {
   std::string result;
@@ -166,7 +195,7 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
 
   std::vector<std::pair<int, const DesktopEntry*>> scored;
   for (const auto& entry : m_entries) {
-    int s = FuzzyMatch::scoreEntry(text, entry);
+    int s = scoreEntry(text, entry);
     if (s > 0) {
       scored.emplace_back(s, &entry);
     }

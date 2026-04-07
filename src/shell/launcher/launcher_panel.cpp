@@ -5,7 +5,7 @@
 #include "render/scene/node.h"
 #include "shell/panel/panel_manager.h"
 #include "ui/controls/flex.h"
-#include "ui/controls/icon.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/image.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
@@ -257,12 +257,12 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
       image->setSourceFile(renderer, result.iconPath, static_cast<int>(kIconSize));
       row->addChild(std::move(image));
     } else {
-      auto icon = std::make_unique<Icon>();
-      icon->setIcon(result.iconName.empty() ? "app-window" : result.iconName);
-      icon->setIconSize(kIconSize);
-      icon->setColor(palette.onSurfaceVariant);
-      icon->measure(renderer);
-      row->addChild(std::move(icon));
+      auto glyph = std::make_unique<Glyph>();
+      glyph->setGlyph(result.iconName.empty() ? "app-window" : result.iconName);
+      glyph->setGlyphSize(kIconSize);
+      glyph->setColor(palette.onSurfaceVariant);
+      glyph->measure(renderer);
+      row->addChild(std::move(glyph));
     }
 
     // Text column

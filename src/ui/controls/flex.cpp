@@ -3,7 +3,7 @@
 #include "render/core/renderer.h"
 #include "render/programs/rounded_rect_program.h"
 #include "render/scene/rect_node.h"
-#include "ui/controls/icon.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -131,8 +131,8 @@ void Flex::layout(Renderer& renderer) {
     }
     if (auto* label = dynamic_cast<Label*>(child.get())) {
       label->measure(renderer);
-    } else if (auto* icon = dynamic_cast<Icon*>(child.get())) {
-      icon->measure(renderer);
+    } else if (auto* glyph = dynamic_cast<Glyph*>(child.get())) {
+      glyph->measure(renderer);
     }
     if (auto* flex = dynamic_cast<Flex*>(child.get())) {
       flex->layout(renderer);

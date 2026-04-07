@@ -3,7 +3,7 @@
 #include "dbus/upower/upower_service.h"
 #include "shell/widget/widget.h"
 
-class Icon;
+class Glyph;
 class Label;
 
 class BatteryWidget : public Widget {
@@ -18,7 +18,7 @@ private:
   void syncState(Renderer& renderer);
 
   UPowerService* m_upower = nullptr;
-  Icon* m_icon = nullptr;
+  Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
   double m_lastPct = -1.0;
   BatteryState m_lastState = BatteryState::Unknown;

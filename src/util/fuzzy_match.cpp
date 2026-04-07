@@ -1,9 +1,8 @@
-#include "launcher/fuzzy_match.h"
-
-#include "launcher/desktop_entry.h"
+#include "util/fuzzy_match.h"
 
 #include <algorithm>
 #include <cctype>
+#include <string>
 
 namespace FuzzyMatch {
 
@@ -111,53 +110,6 @@ int score(std::string_view pattern, std::string_view text) {
   }
 
   return totalScore;
-}
-
-int scoreEntry(std::string_view pattern, const DesktopEntry& entry) {
-  if (pattern.empty()) {
-    return 1;
-  }
-
-  int nameScore = score(pattern, entry.nameLower) * 3;
-  int genericScore = score(pattern, entry.genericNameLower) * 2;
-
-  // Search keywords (semicolon-separated)
-  int keywordScore = 0;
-  if (!entry.keywordsLower.empty()) {
-    std::string_view kw = entry.keywordsLower;
-    std::size_t start = 0;
-    while (start < kw.size()) {
-      auto semi = kw.find(';', start);
-      auto word = (semi == std::string_view::npos) ? kw.substr(start) : kw.substr(start, semi - start);
-      if (!word.empty()) {
-        keywordScore = std::max(keywordScore, score(pattern, word));
-      }
-      if (semi == std::string_view::npos) {
-        break;
-      }
-      start = semi + 1;
-    }
-  }
-
-  int catScore = 0;
-  if (!entry.categoriesLower.empty()) {
-    std::string_view cat = entry.categoriesLower;
-    std::size_t start = 0;
-    while (start < cat.size()) {
-      auto semi = cat.find(';', start);
-      auto word = (semi == std::string_view::npos) ? cat.substr(start) : cat.substr(start, semi - start);
-      if (!word.empty()) {
-        int s = score(pattern, word);
-        catScore = std::max(catScore, s);
-      }
-      if (semi == std::string_view::npos) {
-        break;
-      }
-      start = semi + 1;
-    }
-  }
-
-  return std::max({nameScore, genericScore, keywordScore, catScore});
 }
 
 } // namespace FuzzyMatch

@@ -260,12 +260,12 @@ add_executable(noctalia
     src/ui/controls/scroll_view.cpp
     src/ui/controls/chip.cpp
     src/ui/controls/select.cpp
-    src/ui/controls/icon.cpp
+    src/ui/controls/glyph.cpp
     src/ui/controls/label.cpp
     src/ui/controls/slider.cpp
     src/ui/controls/spinner.cpp
     src/ui/controls/toggle.cpp
-    src/ui/icons/icon_registry.cpp
+    src/ui/icons/glyph_registry.cpp
     src/render/scene/input_area.cpp
     src/render/scene/input_dispatcher.cpp
     src/shell/notification/notification_popup.cpp
@@ -285,8 +285,8 @@ add_executable(noctalia
     src/launcher/app_provider.cpp
     src/launcher/desktop_entry.cpp
     src/launcher/emoji_provider.cpp
-    src/launcher/fuzzy_match.cpp
-    src/launcher/icon_resolver.cpp
+    src/util/fuzzy_match.cpp
+    src/ui/icons/icon_resolver.cpp
     src/launcher/math_provider.cpp
     src/launcher/usage_tracker.cpp
     src/shell/launcher/launcher_panel.cpp

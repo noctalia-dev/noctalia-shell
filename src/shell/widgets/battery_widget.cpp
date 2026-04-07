@@ -1,7 +1,7 @@
 #include "shell/widgets/battery_widget.h"
 
 #include "render/core/renderer.h"
-#include "ui/controls/icon.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -43,12 +43,12 @@ BatteryWidget::BatteryWidget(UPowerService* upower) : m_upower(upower) {}
 void BatteryWidget::create(Renderer& renderer) {
   auto container = std::make_unique<Node>();
 
-  auto icon = std::make_unique<Icon>();
-  icon->setIcon("battery-full");
-  icon->setIconSize(Style::fontSizeBody * m_contentScale);
-  icon->setColor(palette.onSurface);
-  m_icon = icon.get();
-  container->addChild(std::move(icon));
+  auto glyph = std::make_unique<Glyph>();
+  glyph->setGlyph("battery-full");
+  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setColor(palette.onSurface);
+  m_glyph = glyph.get();
+  container->addChild(std::move(glyph));
 
   auto label = std::make_unique<Label>();
   label->setBold(true);
@@ -62,17 +62,17 @@ void BatteryWidget::create(Renderer& renderer) {
 
 void BatteryWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
-  if (m_icon == nullptr || m_label == nullptr || rootNode == nullptr) {
+  if (m_glyph == nullptr || m_label == nullptr || rootNode == nullptr) {
     return;
   }
 
-  m_icon->measure(renderer);
+  m_glyph->measure(renderer);
   m_label->measure(renderer);
 
-  m_icon->setPosition(0.0f, 0.0f);
-  m_label->setPosition(m_icon->width() + Style::spaceXs, 0.0f);
+  m_glyph->setPosition(0.0f, 0.0f);
+  m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
 
-  rootNode->setSize(m_label->x() + m_label->width(), m_icon->height());
+  rootNode->setSize(m_label->x() + m_label->width(), m_glyph->height());
 }
 
 void BatteryWidget::update(Renderer& renderer) {
@@ -81,7 +81,7 @@ void BatteryWidget::update(Renderer& renderer) {
 }
 
 void BatteryWidget::syncState(Renderer& renderer) {
-  if (m_upower == nullptr || m_icon == nullptr || m_label == nullptr) {
+  if (m_upower == nullptr || m_glyph == nullptr || m_label == nullptr) {
     return;
   }
 
@@ -103,10 +103,10 @@ void BatteryWidget::syncState(Renderer& renderer) {
     return;
   }
 
-  m_icon->setIcon(batteryIconName(s.percentage, s.state));
-  m_icon->setIconSize(Style::fontSizeBody * m_contentScale);
-  m_icon->setColor(palette.onSurface);
-  m_icon->measure(renderer);
+  m_glyph->setGlyph(batteryIconName(s.percentage, s.state));
+  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setColor(palette.onSurface);
+  m_glyph->measure(renderer);
 
   const int pct = static_cast<int>(std::round(s.percentage));
   m_label->setText(std::to_string(pct) + "%");

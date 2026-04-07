@@ -5,7 +5,7 @@
 #include <array>
 #include <string>
 
-class Icon;
+class Glyph;
 class Label;
 class ProgressBar;
 class RectNode;
@@ -27,7 +27,7 @@ public:
 private:
   [[nodiscard]] std::string formatValue() const;
   [[nodiscard]] double currentNormalized() const;
-  [[nodiscard]] static const char* iconName(SysmonStat stat);
+  [[nodiscard]] static const char* glyphName(SysmonStat stat);
   void pushHistory(double normalized);
   void updateBars();
 
@@ -37,7 +37,7 @@ private:
   std::string m_diskPath;
   std::string m_lastText;
 
-  Icon* m_icon = nullptr;
+  Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
 
   // Graph mode

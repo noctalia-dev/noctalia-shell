@@ -44,7 +44,7 @@ void ControlCenterPanel::create(Renderer& renderer) {
   for (const auto& tab : kTabs) {
     auto button = std::make_unique<Button>();
     button->setText(tab.title);
-    button->setIcon(tab.icon);
+    button->setGlyph(tab.icon);
     button->setVariant(ButtonVariant::Tab);
     button->setMinimalChrome(true);
     button->setMinHeight(Style::controlHeightLg);
@@ -227,7 +227,7 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
         if (button != nullptr) {
           button->setMinWidth(sideButtonSize);
           button->setMinHeight(sideButtonSize);
-          button->setIconSize(sideIconSize);
+          button->setGlyphSize(sideIconSize);
           button->layout(renderer);
           button->updateInputArea();
         }
@@ -235,7 +235,7 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
       if (m_mediaPlayPauseButton != nullptr) {
         m_mediaPlayPauseButton->setMinWidth(playPauseButtonSize);
         m_mediaPlayPauseButton->setMinHeight(playPauseButtonSize);
-        m_mediaPlayPauseButton->setIconSize(playPauseIconSize);
+        m_mediaPlayPauseButton->setGlyphSize(playPauseIconSize);
         m_mediaPlayPauseButton->layout(renderer);
         m_mediaPlayPauseButton->updateInputArea();
       }

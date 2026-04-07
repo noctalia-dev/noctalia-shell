@@ -5,7 +5,7 @@
 #include "render/render_context.h"
 #include "render/scene/node.h"
 #include "ui/controls/box.h"
-#include "ui/controls/icon.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -204,12 +204,12 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   card->setZIndex(1);
   inst.card = card.get();
 
-  auto icon = std::make_unique<Icon>();
-  icon->setIconSize(kIconSize);
-  icon->setColor(palette.primary);
-  inst.icon = icon.get();
-  inst.icon->setZIndex(1);
-  inst.card->addChild(std::move(icon));
+  auto glyph = std::make_unique<Glyph>();
+  glyph->setGlyphSize(kIconSize);
+  glyph->setColor(palette.primary);
+  inst.glyph = glyph.get();
+  inst.glyph->setZIndex(1);
+  inst.card->addChild(std::move(glyph));
 
   auto value = std::make_unique<Label>();
   value->setBold(true);
@@ -232,16 +232,16 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
 }
 
 void OsdOverlay::updateInstanceContent(Instance& inst) {
-  if (m_renderContext == nullptr || inst.card == nullptr || inst.icon == nullptr || inst.value == nullptr ||
+  if (m_renderContext == nullptr || inst.card == nullptr || inst.glyph == nullptr || inst.value == nullptr ||
       inst.progress == nullptr) {
     return;
   }
 
   const float cardWidth = inst.card->width();
-  inst.icon->setIcon(m_content.icon);
-  inst.icon->measure(*m_renderContext);
-  inst.icon->setPosition(kCardPadding, std::round((inst.card->height() - inst.icon->height()) * 0.5f) -
-                                           Style::borderWidth);
+  inst.glyph->setGlyph(m_content.icon);
+  inst.glyph->measure(*m_renderContext);
+  inst.glyph->setPosition(kCardPadding, std::round((inst.card->height() - inst.glyph->height()) * 0.5f) -
+                                            Style::borderWidth);
 
   inst.value->setText(m_content.value);
   inst.value->setMaxWidth(cardWidth);
@@ -249,7 +249,7 @@ void OsdOverlay::updateInstanceContent(Instance& inst) {
   inst.value->setPosition(cardWidth - kCardPadding - inst.value->width(),
                           std::round((inst.card->height() - inst.value->height()) * 0.5f));
 
-  const float progressX = inst.icon->x() + inst.icon->width() + kInnerGap;
+  const float progressX = inst.glyph->x() + inst.glyph->width() + kInnerGap;
   const float progressWidth = std::max(0.0f, inst.value->x() - progressX - kInnerGap);
   inst.progress->setSize(progressWidth, kProgressHeight);
   inst.progress->setRadius(kProgressHeight * 0.5f);
