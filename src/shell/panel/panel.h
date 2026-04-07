@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/scene/node.h"
+#include "wayland/layer_surface.h"
 
 #include <memory>
 #include <string_view>
@@ -22,6 +23,8 @@ public:
   [[nodiscard]] virtual float preferredWidth() const = 0;
   [[nodiscard]] virtual float preferredHeight() const = 0;
   [[nodiscard]] virtual bool centered() const { return false; }
+  [[nodiscard]] virtual bool centeredVertically() const { return false; }
+  [[nodiscard]] virtual LayerShellKeyboard keyboardMode() const { return LayerShellKeyboard::OnDemand; }
   [[nodiscard]] virtual InputArea* initialFocusArea() const { return nullptr; }
 
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }

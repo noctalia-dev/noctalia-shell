@@ -16,6 +16,7 @@ struct wl_seat;
 struct wl_shm;
 struct zwlr_layer_shell_v1;
 struct zxdg_output_manager_v1;
+struct zxdg_output_v1;
 struct wp_cursor_shape_manager_v1;
 struct xdg_activation_v1;
 
@@ -29,6 +30,9 @@ struct WaylandOutput {
   std::int32_t scale = 1;
   std::int32_t width = 0;
   std::int32_t height = 0;
+  std::int32_t logicalWidth = 0;
+  std::int32_t logicalHeight = 0;
+  zxdg_output_v1* xdgOutput = nullptr;
   bool done = false;
 };
 
@@ -70,6 +74,7 @@ public:
   [[nodiscard]] zwlr_layer_shell_v1* layerShell() const noexcept;
   [[nodiscard]] const std::vector<WaylandOutput>& outputs() const noexcept;
   [[nodiscard]] WaylandOutput* findOutputByWl(wl_output* wlOutput);
+  [[nodiscard]] WaylandOutput* findOutputByXdg(zxdg_output_v1* xdgOutput);
 
   [[nodiscard]] bool hasXdgActivation() const noexcept;
   [[nodiscard]] std::string requestActivationToken(wl_surface* surface) const;

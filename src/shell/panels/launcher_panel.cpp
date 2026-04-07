@@ -20,7 +20,7 @@
 namespace {
 
 constexpr std::size_t kMaxResults = 50;
-constexpr float kIconSize = 24.0f;
+constexpr float kIconSize = 32.0f;
 
 } // namespace
 
@@ -210,10 +210,9 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     row->setPadding(Style::spaceXs, Style::spaceSm,
                     Style::spaceXs, Style::spaceSm);
     row->setMinWidth(width);
-    row->setRadius(Style::radiusMd);
-
     if (i == m_selectedIndex) {
       row->setBackground(palette.surfaceVariant);
+      row->setRadius(Style::radiusMd);
     }
 
     // Icon/action text
@@ -228,7 +227,6 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     } else if (!result.iconPath.empty()) {
       auto image = std::make_unique<Image>();
       image->setSize(kIconSize, kIconSize);
-      image->setCornerRadius(Style::radiusSm);
       image->setSourceFile(renderer, result.iconPath, static_cast<int>(kIconSize));
       row->addChild(std::move(image));
     } else {
@@ -244,9 +242,9 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     auto textCol = std::make_unique<Flex>();
     textCol->setDirection(FlexDirection::Vertical);
     textCol->setAlign(FlexAlign::Start);
-    textCol->setGap(1.0f);
+    textCol->setGap(2.0f);
 
-    const float textWidth = std::max(0.0f, width - kIconSize - Style::spaceSm * 3.0f);
+    const float textWidth = std::max(0.0f, width - kIconSize - Style::spaceSm * 2.0f - Style::spaceMd);
 
     auto title = std::make_unique<Label>();
     title->setText(result.title);

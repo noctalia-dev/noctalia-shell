@@ -82,6 +82,30 @@ const wl_output_listener kOutputListener = {
     .description = outputDescription,
 };
 
+void xdgOutputLogicalPosition(void* /*data*/, zxdg_output_v1* /*xdgOutput*/, int32_t /*x*/, int32_t /*y*/) {}
+
+void xdgOutputLogicalSize(void* data, zxdg_output_v1* xdgOutput, int32_t w, int32_t h) {
+  auto* out = static_cast<WaylandConnection*>(data)->findOutputByXdg(xdgOutput);
+  if (out != nullptr) {
+    out->logicalWidth = w;
+    out->logicalHeight = h;
+  }
+}
+
+void xdgOutputDone(void* /*data*/, zxdg_output_v1* /*xdgOutput*/) {}
+
+void xdgOutputName(void* /*data*/, zxdg_output_v1* /*xdgOutput*/, const char* /*name*/) {}
+
+void xdgOutputDescription(void* /*data*/, zxdg_output_v1* /*xdgOutput*/, const char* /*desc*/) {}
+
+const zxdg_output_v1_listener kXdgOutputListener = {
+    .logical_position = xdgOutputLogicalPosition,
+    .logical_size = xdgOutputLogicalSize,
+    .done = xdgOutputDone,
+    .name = xdgOutputName,
+    .description = xdgOutputDescription,
+};
+
 constexpr Logger kLog("wayland");
 
 } // namespace
@@ -230,6 +254,15 @@ WaylandOutput* WaylandConnection::findOutputByWl(wl_output* wlOutput) {
   return nullptr;
 }
 
+WaylandOutput* WaylandConnection::findOutputByXdg(zxdg_output_v1* xdgOutput) {
+  for (auto& out : m_outputs) {
+    if (out.xdgOutput == xdgOutput) {
+      return &out;
+    }
+  }
+  return nullptr;
+}
+
 void WaylandConnection::handleGlobal(void* data, wl_registry* registry, std::uint32_t name, const char* interface,
                                      std::uint32_t version) {
   auto* self = static_cast<WaylandConnection*>(data);
@@ -331,6 +364,11 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
         .output = output,
     });
     wl_output_add_listener(output, &kOutputListener, this);
+    if (m_xdgOutputManager != nullptr) {
+      auto* xdgOut = zxdg_output_manager_v1_get_xdg_output(m_xdgOutputManager, output);
+      m_outputs.back().xdgOutput = xdgOut;
+      zxdg_output_v1_add_listener(xdgOut, &kXdgOutputListener, this);
+    }
     if (m_outputChangeCallback) {
       m_outputChangeCallback();
     }
@@ -339,6 +377,13 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
 
 void WaylandConnection::cleanup() {
   m_workspacesHandler.cleanup();
+
+  for (auto& out : m_outputs) {
+    if (out.xdgOutput != nullptr) {
+      zxdg_output_v1_destroy(out.xdgOutput);
+      out.xdgOutput = nullptr;
+    }
+  }
 
   if (m_xdgOutputManager != nullptr) {
     zxdg_output_manager_v1_destroy(m_xdgOutputManager);

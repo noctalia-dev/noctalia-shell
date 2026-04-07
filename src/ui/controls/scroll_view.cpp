@@ -160,7 +160,7 @@ void ScrollView::setBackgroundStyle(const Color& fill, const Color& border, floa
 void ScrollView::setOnScrollChanged(std::function<void(float)> callback) { m_onScrollChanged = std::move(callback); }
 
 float ScrollView::contentViewportWidth() const noexcept {
-  const float gutter = m_scrollbarShown ? (kScrollbarWidth + kScrollbarGap) : 0.0f;
+  const float gutter = m_showScrollbar ? (kScrollbarWidth + kScrollbarGap) : 0.0f;
   return std::max(0.0f, width() - kViewportPaddingH * 2.0f - gutter);
 }
 
@@ -192,7 +192,7 @@ void ScrollView::layout(Renderer& renderer) {
   }
 
   m_scrollbarShown = m_showScrollbar && m_content->height() > viewportH + 0.5f;
-  const float gutter = m_scrollbarShown ? (kScrollbarWidth + kScrollbarGap) : 0.0f;
+  const float gutter = m_showScrollbar ? (kScrollbarWidth + kScrollbarGap) : 0.0f;
   const float contentWidth = std::max(0.0f, viewportW - gutter);
 
   m_content->setPosition(0.0f, 0.0f);

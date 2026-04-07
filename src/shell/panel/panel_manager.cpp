@@ -95,10 +95,10 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
   if (m_wayland != nullptr) {
     const auto* wlOutput = m_wayland->findOutputByWl(output);
     if (wlOutput != nullptr && wlOutput->width > 0) {
-      outputWidth = wlOutput->width;
+      outputWidth = wlOutput->logicalWidth > 0 ? wlOutput->logicalWidth : wlOutput->width / std::max(1, wlOutput->scale);
     }
     if (wlOutput != nullptr && wlOutput->height > 0) {
-      outputHeight = wlOutput->height;
+      outputHeight = wlOutput->logicalHeight > 0 ? wlOutput->logicalHeight : wlOutput->height / std::max(1, wlOutput->scale);
     }
   }
 
@@ -109,7 +109,8 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
         std::clamp(desired, static_cast<float>(padding), static_cast<float>(maxValue)));
   };
 
-  bool centeredControlCenter = m_activePanel->centered();
+  const bool centeredControlCenter = m_activePanel->centered();
+  const bool centeredV = m_activePanel->centeredVertically();
   const std::uint32_t anchor = centeredControlCenter
                                    ? (isBottom ? LayerShellAnchor::Bottom : LayerShellAnchor::Top)
                                : isBottom      ? LayerShellAnchor::Bottom | LayerShellAnchor::Left
@@ -133,14 +134,16 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
       .width = panelWidth,
       .height = panelHeight,
       .exclusiveZone = 0,
-      .marginTop = centeredControlCenter
+      .marginTop = centeredV
+                       ? static_cast<std::int32_t>((outputHeight - static_cast<std::int32_t>(panelHeight)) / 2)
+                   : centeredControlCenter
                        ? (isBottom ? 0 : barOffset)
                    : (isLeft || isRight) ? marginTop
                                          : (isBottom ? 0 : barOffset),
       .marginRight = isRight ? barOffset : 0,
       .marginBottom = isBottom ? barOffset : 0,
       .marginLeft = centeredControlCenter ? 0 : (isLeft ? barOffset : marginLeft),
-      .keyboard = LayerShellKeyboard::OnDemand,
+      .keyboard = m_activePanel->keyboardMode(),
       .defaultWidth = panelWidth,
       .defaultHeight = panelHeight,
   };
