@@ -85,6 +85,7 @@ private:
 
   Glyph& loadGlyph(std::uint32_t slotIndex, std::uint32_t glyphIndex);
   GLuint ensureAtlasPage(std::uint32_t page);
+  void prepareAtlasUploadState() const;
   void setShapingSize(float fontSize);
   std::vector<ShapedGlyph> shapeWithFallback(std::string_view text, float fontSize);
 

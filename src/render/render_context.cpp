@@ -120,6 +120,16 @@ void RenderContext::ensureGlPrograms() {
   m_glReady = true;
 }
 
+void RenderContext::makeCurrentNoSurface() {
+  if (m_eglDisplay == EGL_NO_DISPLAY || m_eglContext == EGL_NO_CONTEXT) {
+    return;
+  }
+
+  if (eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext) != EGL_TRUE) {
+    throw std::runtime_error("eglMakeCurrent(EGL_NO_SURFACE) failed");
+  }
+}
+
 void RenderContext::makeCurrent(RenderTarget& target) {
   if (eglMakeCurrent(m_eglDisplay, target.eglSurface(), target.eglSurface(), m_eglContext) != EGL_TRUE) {
     throw std::runtime_error("eglMakeCurrent failed");
@@ -152,16 +162,21 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
 }
 
 TextMetrics RenderContext::measureText(std::string_view text, float fontSize, bool bold) {
+  makeCurrentNoSurface();
   auto m = bold ? m_boldTextRenderer.measure(text, fontSize) : m_textRenderer.measure(text, fontSize);
   return TextMetrics{.width = m.width, .top = m.top, .bottom = m.bottom};
 }
 
 TextMetrics RenderContext::measureGlyph(char32_t codepoint, float fontSize) {
+  makeCurrentNoSurface();
   auto m = m_iconTextRenderer.measureGlyph(codepoint, fontSize);
   return TextMetrics{.width = m.width, .top = m.top, .bottom = m.bottom};
 }
 
-TextureManager& RenderContext::textureManager() { return m_textureManager; }
+TextureManager& RenderContext::textureManager() {
+  makeCurrentNoSurface();
+  return m_textureManager;
+}
 
 void RenderContext::renderNode(const Node* node, float parentX, float parentY, float parentOpacity, float sw, float sh,
                                float bw, float bh, float clipLeft, float clipTop, float clipRight, float clipBottom,

@@ -84,6 +84,11 @@ void MsdfTextRenderer::initialize(const std::vector<ResolvedFont>& fonts) {
   m_program.ensureInitialized();
 }
 
+void MsdfTextRenderer::prepareAtlasUploadState() const {
+  glActiveTexture(GL_TEXTURE0);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+}
+
 MsdfTextRenderer::TextMetrics MsdfTextRenderer::measure(std::string_view text, float fontSize) {
   if (text.empty()) {
     return {};
@@ -352,6 +357,7 @@ GLuint MsdfTextRenderer::ensureAtlasPage(std::uint32_t page) {
   while (m_atlasPages.size() <= page) {
     GLuint tex = 0;
     glGenTextures(1, &tex);
+    prepareAtlasUploadState();
     glBindTexture(GL_TEXTURE_2D, tex);
     std::vector<std::uint8_t> zeros(static_cast<size_t>(m_atlasWidth) * static_cast<size_t>(m_atlasHeight) * 3, 0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_atlasWidth, m_atlasHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, zeros.data());
@@ -577,6 +583,7 @@ MsdfTextRenderer::Glyph& MsdfTextRenderer::loadGlyph(std::uint32_t slotIndex, st
   const int destX = m_atlasCursorX + kGlyphPadding;
   const int destY = m_atlasCursorY + kGlyphPadding;
 
+  prepareAtlasUploadState();
   glBindTexture(GL_TEXTURE_2D, m_atlasPages[currentPage]);
   glTexSubImage2D(GL_TEXTURE_2D, 0, destX, destY, glyphW, glyphH, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
 
