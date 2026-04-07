@@ -71,7 +71,7 @@ void Box::setPanelStyle() {
   style.border = palette.outline;
   style.borderWidth = Style::borderWidth;
   style.fillMode = FillMode::Solid;
-  style.radius = Style::radiusLg;
+  style.radius = Style::radiusXl;
   style.softness = 1.2f;
   m_rect->setStyle(style);
 }
