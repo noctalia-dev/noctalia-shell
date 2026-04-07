@@ -12,6 +12,7 @@
 #include "ui/controls/scroll_view.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "time/time_service.h"
 #include "wayland/clipboard_service.h"
 
 #include <algorithm>
@@ -26,8 +27,8 @@
 namespace {
 
 constexpr float kSidebarWidth = 272.0f;
-constexpr float kRowHeight = 58.0f;
-constexpr float kPreviewImageHeight = 260.0f;
+constexpr float kRowHeight = 46.0f;
+constexpr float kPreviewImageHeight = 280.0f;
 constexpr float kListGlyphSize = 24.0f;
 
 std::string collapseWhitespace(std::string_view text) {
@@ -127,20 +128,6 @@ std::vector<std::string> wrapLines(Renderer& renderer, std::string_view text, fl
   return lines;
 }
 
-std::string formatTimestamp(const ClipboardEntry& entry) {
-  const std::time_t rawTime = std::chrono::system_clock::to_time_t(entry.capturedAt);
-  std::tm localTime{};
-  localtime_r(&rawTime, &localTime);
-
-  std::time_t nowRaw = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  std::tm nowLocal{};
-  localtime_r(&nowRaw, &nowLocal);
-
-  char buffer[64];
-  const bool sameDay = localTime.tm_year == nowLocal.tm_year && localTime.tm_yday == nowLocal.tm_yday;
-  std::strftime(buffer, sizeof(buffer), sameDay ? "%H:%M" : "%b %e %H:%M", &localTime);
-  return buffer;
-}
 
 std::string formatBytes(std::size_t bytes) {
   const char* units[] = {"B", "KB", "MB", "GB"};
@@ -170,15 +157,6 @@ std::string entryTitle(const ClipboardEntry& entry) {
   return entry.dataMimeType.empty() ? "Clipboard entry" : entry.dataMimeType;
 }
 
-std::string entrySubtitle(const ClipboardEntry& entry) {
-  if (entry.isImage()) {
-    return formatBytes(entry.byteSize);
-  }
-  if (!entry.dataMimeType.empty()) {
-    return entry.dataMimeType;
-  }
-  return formatBytes(entry.byteSize);
-}
 
 std::string previewTitle(const ClipboardEntry& entry) {
   if (entry.isImage()) {
@@ -195,7 +173,7 @@ void ClipboardPanel::create(Renderer& renderer) {
   auto root = std::make_unique<Flex>();
   root->setDirection(FlexDirection::Horizontal);
   root->setAlign(FlexAlign::Start);
-  root->setGap(Style::spaceLg);
+  root->setGap(Style::spaceSm);
   m_rootLayout = root.get();
 
   auto focusArea = std::make_unique<InputArea>();
@@ -211,12 +189,8 @@ void ClipboardPanel::create(Renderer& renderer) {
   auto sidebar = std::make_unique<Flex>();
   sidebar->setDirection(FlexDirection::Vertical);
   sidebar->setAlign(FlexAlign::Start);
+  sidebar->setPadding(Style::spaceSm);
   sidebar->setGap(Style::spaceSm);
-  sidebar->setPadding(Style::spaceMd);
-  sidebar->setRadius(Style::radiusXl);
-  sidebar->setBackground(control_center::alphaSurfaceVariant(0.9f));
-  sidebar->setBorderWidth(0.0f);
-  sidebar->setSoftness(1.0f);
   m_sidebar = sidebar.get();
 
   auto title = std::make_unique<Label>();
@@ -227,15 +201,9 @@ void ClipboardPanel::create(Renderer& renderer) {
   m_sidebarTitle = title.get();
   sidebar->addChild(std::move(title));
 
-  auto subtitle = std::make_unique<Label>();
-  subtitle->setText("Newest first");
-  subtitle->setCaptionStyle();
-  subtitle->setColor(palette.onSurfaceVariant);
-  m_sidebarSubtitle = subtitle.get();
-  sidebar->addChild(std::move(subtitle));
-
   auto listScroll = std::make_unique<ScrollView>();
   listScroll->setScrollbarVisible(true);
+  listScroll->setViewportPaddingH(0.0f);
   m_listScrollView = listScroll.get();
   m_list = listScroll->content();
   m_list->setDirection(FlexDirection::Vertical);
@@ -248,12 +216,8 @@ void ClipboardPanel::create(Renderer& renderer) {
   auto preview = std::make_unique<Flex>();
   preview->setDirection(FlexDirection::Vertical);
   preview->setAlign(FlexAlign::Start);
-  preview->setGap(Style::spaceMd);
-  preview->setPadding(Style::spaceLg);
-  preview->setRadius(Style::radiusXl);
-  preview->setBackground(control_center::alphaSurfaceVariant(0.9f));
-  preview->setBorderWidth(0.0f);
-  preview->setSoftness(1.0f);
+  preview->setGap(Style::spaceSm);
+  preview->setPadding(Style::spaceSm);
   m_previewCard = preview.get();
 
   auto previewTitleLabel = std::make_unique<Label>();
@@ -280,6 +244,7 @@ void ClipboardPanel::create(Renderer& renderer) {
 
   auto previewScroll = std::make_unique<ScrollView>();
   previewScroll->setScrollbarVisible(true);
+  previewScroll->setBackgroundStyle(palette.surfaceVariant, palette.outline, Style::borderWidth);
   m_previewScrollView = previewScroll.get();
   m_previewContent = previewScroll->content();
   m_previewContent->setDirection(FlexDirection::Vertical);
@@ -294,8 +259,8 @@ void ClipboardPanel::create(Renderer& renderer) {
     m_root->setAnimationManager(m_animations);
   }
 
-  rebuildList(renderer, kSidebarWidth - Style::spaceMd * 2.0f);
-  rebuildPreview(renderer, preferredWidth() - kSidebarWidth - Style::spaceLg - Style::spaceLg * 2.0f,
+  rebuildList(renderer, kSidebarWidth - Style::spaceSm * 2.0f);
+  rebuildPreview(renderer, preferredWidth() - kSidebarWidth - Style::spaceSm - Style::spaceSm * 2.0f,
                  preferredHeight());
 }
 
@@ -309,9 +274,9 @@ void ClipboardPanel::layout(Renderer& renderer, float width, float height) {
   m_lastHeight = height;
 
   const float sidebarWidth = std::min(kSidebarWidth, std::max(220.0f, width * 0.34f));
-  const float previewWidth = std::max(0.0f, width - sidebarWidth - Style::spaceLg);
-  const float sidebarInnerWidth = std::max(0.0f, sidebarWidth - Style::spaceMd * 2.0f);
-  const float previewInnerWidth = std::max(0.0f, previewWidth - Style::spaceLg * 2.0f);
+  const float previewWidth = std::max(0.0f, width - sidebarWidth - Style::spaceSm);
+  const float sidebarInnerWidth = std::max(0.0f, sidebarWidth - Style::spaceSm * 2.0f);
+  const float previewInnerWidth = std::max(0.0f, previewWidth - Style::spaceSm * 2.0f);
 
   m_focusArea->setPosition(0.0f, 0.0f);
   m_focusArea->setSize(1.0f, 1.0f);
@@ -328,7 +293,7 @@ void ClipboardPanel::layout(Renderer& renderer, float width, float height) {
   const float sidebarHeaderHeight = (m_sidebarTitle != nullptr ? m_sidebarTitle->height() : 0.0f) +
                                     (m_sidebarSubtitle != nullptr ? m_sidebarSubtitle->height() : 0.0f) +
                                     Style::spaceSm;
-  const float listHeight = std::max(0.0f, height - Style::spaceMd * 2.0f - sidebarHeaderHeight);
+  const float listHeight = std::max(0.0f, height - Style::spaceSm * 2.0f - sidebarHeaderHeight);
   m_listScrollView->setSize(sidebarInnerWidth, listHeight);
   m_listScrollView->layout(renderer);
 
@@ -353,11 +318,14 @@ void ClipboardPanel::layout(Renderer& renderer, float width, float height) {
 
   const float previewHeaderHeight = (m_previewTitle != nullptr ? m_previewTitle->height() : 0.0f) +
                                     (m_previewMeta != nullptr ? m_previewMeta->height() : 0.0f) +
-                                    (m_copyButton != nullptr ? m_copyButton->height() : 0.0f) + Style::spaceMd * 2.0f;
-  const float previewScrollHeight = std::max(0.0f, height - Style::spaceLg * 2.0f - previewHeaderHeight);
+                                    (m_copyButton != nullptr ? m_copyButton->height() : 0.0f) + Style::spaceSm * 3.0f;
+  const float previewScrollHeight = std::max(0.0f, height - Style::spaceSm * 2.0f - previewHeaderHeight);
   m_previewScrollView->setSize(previewInnerWidth, previewScrollHeight);
-  rebuildPreview(renderer, m_previewScrollView->contentViewportWidth(), previewScrollHeight);
-  m_previewScrollView->layout(renderer);
+  if (m_lastPreviewWidth != m_previewScrollView->contentViewportWidth() ||
+      m_lastPreviewHeight != previewScrollHeight) {
+    rebuildPreview(renderer, m_previewScrollView->contentViewportWidth(), previewScrollHeight);
+    m_previewScrollView->layout(renderer);
+  }
 
   m_sidebar->setMinWidth(sidebarWidth);
   m_sidebar->setSize(sidebarWidth, height);
@@ -446,7 +414,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     return;
   }
 
-  const float textWidth = std::max(0.0f, width - kListGlyphSize - Style::spaceSm * 4.0f - 48.0f);
+  const float textWidth = std::max(0.0f, width - kListGlyphSize - Style::spaceMd - Style::spaceSm * 2.0f);
   for (std::size_t i = 0; i < history.size(); ++i) {
     const auto& entry = history[i];
     auto area = std::make_unique<InputArea>();
@@ -462,14 +430,15 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
-    row->setGap(Style::spaceSm);
-    row->setPadding(Style::spaceSm);
+    row->setGap(Style::spaceMd);
+    row->setPadding(Style::spaceXs, Style::spaceSm,
+                    Style::spaceXs, Style::spaceSm);
     row->setMinWidth(width);
     row->setMinHeight(kRowHeight);
-    row->setRadius(Style::radiusLg);
-    row->setBackground(i == m_selectedIndex ? palette.surface : control_center::alphaSurfaceVariant(0.55f));
-    row->setBorderWidth(0.0f);
-    row->setSoftness(1.0f);
+    if (i == m_selectedIndex) {
+      row->setBackground(palette.surfaceVariant);
+      row->setRadius(Style::radiusMd);
+    }
 
     auto glyph = std::make_unique<Glyph>();
     glyph->setGlyph(entry.isImage() ? "photo" : "file-text");
@@ -483,8 +452,10 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     textColumn->setAlign(FlexAlign::Start);
     textColumn->setGap(Style::spaceXs);
 
+    const std::string rawTitle = entryTitle(entry);
+    const std::string cleanTitle = entry.isImage() ? rawTitle : collapseWhitespace(rawTitle);
     auto title = std::make_unique<Label>();
-    title->setText(truncateToWidth(renderer, entryTitle(entry), Style::fontSizeBody, textWidth, true));
+    title->setText(truncateToWidth(renderer, cleanTitle, Style::fontSizeBody, textWidth, true));
     title->setFontSize(Style::fontSizeBody);
     title->setBold(true);
     title->setColor(palette.onSurface);
@@ -492,22 +463,15 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     title->measure(renderer);
     textColumn->addChild(std::move(title));
 
-    auto subtitle = std::make_unique<Label>();
-    subtitle->setText(entrySubtitle(entry));
-    subtitle->setCaptionStyle();
-    subtitle->setColor(palette.onSurfaceVariant);
-    subtitle->setMaxWidth(textWidth);
-    subtitle->measure(renderer);
-    textColumn->addChild(std::move(subtitle));
+    auto timeLabel = std::make_unique<Label>();
+    timeLabel->setText(formatTimeAgo(entry.capturedAt) + "  •  " + formatBytes(entry.byteSize));
+    timeLabel->setCaptionStyle();
+    timeLabel->setColor(palette.onSurfaceVariant);
+    timeLabel->setMaxWidth(textWidth);
+    timeLabel->measure(renderer);
+    textColumn->addChild(std::move(timeLabel));
 
     row->addChild(std::move(textColumn));
-
-    auto time = std::make_unique<Label>();
-    time->setText(formatTimestamp(entry));
-    time->setCaptionStyle();
-    time->setColor(palette.onSurfaceVariant);
-    time->measure(renderer);
-    row->addChild(std::move(time));
 
     row->layout(renderer);
     area->setSize(row->width(), row->height());
@@ -554,8 +518,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
   m_previewTitle->setText(previewTitle(loadedEntry));
   m_previewTitle->setMaxWidth(width);
   m_previewTitle->measure(renderer);
-  m_previewMeta->setText(formatTimestamp(loadedEntry) + "  •  " + loadedEntry.dataMimeType + "  •  " +
-                         formatBytes(loadedEntry.byteSize));
+  m_previewMeta->setText(formatTimeAgo(loadedEntry.capturedAt) + "  •  " + formatBytes(loadedEntry.byteSize));
   m_previewMeta->setMaxWidth(width);
   m_previewMeta->measure(renderer);
 
@@ -578,37 +541,85 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
     hint->measure(renderer);
     m_previewContent->addChild(std::move(hint));
   } else {
-    auto card = std::make_unique<Flex>();
-    card->setDirection(FlexDirection::Vertical);
-    card->setAlign(FlexAlign::Start);
-    card->setGap(Style::spaceXs);
-    card->setPadding(Style::spaceMd);
-    card->setRadius(Style::radiusLg);
-    card->setBackground(control_center::alphaSurfaceVariant(0.7f));
-    card->setBorderWidth(0.0f);
-    card->setSoftness(1.0f);
-    card->setMinWidth(width);
+    constexpr std::size_t kMaxPreviewChars = 8000;
+    constexpr std::size_t kMaxPreviewLines = 200;
 
     std::string text(loadedEntry.data.begin(), loadedEntry.data.end());
-    const auto lines = wrapLines(renderer, text, Style::fontSizeBody, std::max(0.0f, width - Style::spaceMd * 2.0f));
-    if (lines.empty()) {
+    bool truncated = text.size() > kMaxPreviewChars;
+    if (truncated) {
+      text.resize(kMaxPreviewChars);
+    }
+
+    // Split on newlines first to preserve line structure, then word-wrap each segment.
+    std::vector<std::string> outputLines;
+    std::size_t pos = 0;
+    while (pos <= text.size() && outputLines.size() < kMaxPreviewLines) {
+      const std::size_t nlPos = text.find('\n', pos);
+      const std::string_view segment = (nlPos == std::string::npos)
+                                           ? std::string_view(text).substr(pos)
+                                           : std::string_view(text).substr(pos, nlPos - pos);
+      if (segment.empty()) {
+        outputLines.emplace_back(" ");
+      } else {
+        // Preserve leading whitespace (tabs → 4 spaces).
+        std::string indent;
+        std::size_t contentStart = 0;
+        for (; contentStart < segment.size(); ++contentStart) {
+          if (segment[contentStart] == '\t') {
+            indent += "    ";
+          } else if (segment[contentStart] == ' ') {
+            indent += ' ';
+          } else {
+            break;
+          }
+        }
+        const float indentWidth =
+            indent.empty() ? 0.0f : renderer.measureText(indent, Style::fontSizeBody, false).width;
+        const std::string_view content = segment.substr(contentStart);
+        if (content.empty()) {
+          outputLines.push_back(indent.empty() ? std::string(" ") : indent);
+        } else {
+          auto wrapped = wrapLines(renderer, content, Style::fontSizeBody,
+                                   std::max(0.0f, width - indentWidth), kMaxPreviewLines - outputLines.size());
+          bool first = true;
+          for (auto& l : wrapped) {
+            outputLines.push_back(first ? indent + l : std::move(l));
+            first = false;
+          }
+        }
+      }
+      if (nlPos == std::string::npos) {
+        break;
+      }
+      pos = nlPos + 1;
+    }
+    truncated = truncated || outputLines.size() >= kMaxPreviewLines;
+
+    if (outputLines.empty()) {
       auto empty = std::make_unique<Label>();
       empty->setText("(empty text payload)");
       empty->setColor(palette.onSurfaceVariant);
       empty->measure(renderer);
-      card->addChild(std::move(empty));
+      m_previewContent->addChild(std::move(empty));
     } else {
-      for (const auto& line : lines) {
+      for (const auto& line : outputLines) {
         auto label = std::make_unique<Label>();
         label->setText(line);
         label->setFontSize(Style::fontSizeBody);
         label->setColor(palette.onSurface);
-        label->setMaxWidth(width - Style::spaceMd * 2.0f);
+        label->setMaxWidth(width);
         label->measure(renderer);
-        card->addChild(std::move(label));
+        m_previewContent->addChild(std::move(label));
+      }
+      if (truncated) {
+        auto hint = std::make_unique<Label>();
+        hint->setText("… truncated");
+        hint->setCaptionStyle();
+        hint->setColor(palette.onSurfaceVariant);
+        hint->measure(renderer);
+        m_previewContent->addChild(std::move(hint));
       }
     }
-    m_previewContent->addChild(std::move(card));
   }
 
   m_previewContent->layout(renderer);

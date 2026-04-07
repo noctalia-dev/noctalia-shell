@@ -1,6 +1,34 @@
 #include "time/time_service.h"
 
+#include <ctime>
 #include <format>
+
+std::string formatTimeAgo(std::chrono::system_clock::time_point tp) {
+  using namespace std::chrono;
+  const auto secs = duration_cast<seconds>(system_clock::now() - tp).count();
+
+  if (secs < 60) {
+    return "just now";
+  }
+  if (secs < 3600) {
+    const long mins = secs / 60;
+    return std::to_string(mins) + " min ago";
+  }
+  if (secs < 86400) {
+    const long hrs = secs / 3600;
+    return std::to_string(hrs) + " hr ago";
+  }
+  if (secs < 7 * 86400) {
+    const long days = secs / 86400;
+    return std::to_string(days) + (days == 1 ? " day ago" : " days ago");
+  }
+  const std::time_t rawTime = system_clock::to_time_t(tp);
+  std::tm localTime{};
+  localtime_r(&rawTime, &localTime);
+  char buffer[32];
+  std::strftime(buffer, sizeof(buffer), "%b %e", &localTime);
+  return buffer;
+}
 
 void TimeService::setTickSecondCallback(TickCallback callback) { m_secondCallback = std::move(callback); }
 

@@ -125,6 +125,7 @@ private:
   [[nodiscard]] static std::string generateStorageId();
   [[nodiscard]] std::string chooseMimeType(const OfferState& offer) const;
   [[nodiscard]] static bool isTextMimeType(std::string_view mimeType);
+  [[nodiscard]] static bool isEmptyTextPayload(const std::vector<std::uint8_t>& data);
   [[nodiscard]] static std::string buildTextPreview(const std::vector<std::uint8_t>& data);
   bool copyData(std::vector<std::string> mimeTypes, std::vector<std::uint8_t> data);
   void notifyChanged() const;

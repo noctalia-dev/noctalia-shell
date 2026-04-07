@@ -4,6 +4,8 @@
 #include <functional>
 #include <string>
 
+std::string formatTimeAgo(std::chrono::system_clock::time_point tp);
+
 // Called every poll iteration. Tracks both full-precision and seconds-precision
 // time. The second callback fires once per second boundary.
 class TimeService {

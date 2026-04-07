@@ -44,8 +44,8 @@ ScrollView::ScrollView() {
   auto background = std::make_unique<RectNode>();
   m_background = static_cast<RectNode*>(addChild(std::move(background)));
   m_background->setStyle(RoundedRectStyle{
-      .fill = palette.surface,
-      .border = palette.outline,
+      .fill = rgba(0, 0, 0, 0),
+      .border = rgba(0, 0, 0, 0),
       .fillMode = FillMode::Solid,
       .radius = Style::radiusMd,
       .softness = 1.0f,
@@ -155,9 +155,14 @@ void ScrollView::setBackgroundStyle(const Color& fill, const Color& border, floa
 
 void ScrollView::setOnScrollChanged(std::function<void(float)> callback) { m_onScrollChanged = std::move(callback); }
 
+void ScrollView::setViewportPaddingH(float padding) {
+  m_viewportPaddingH = padding;
+  markDirty();
+}
+
 float ScrollView::contentViewportWidth() const noexcept {
   const float gutter = m_showScrollbar ? (kScrollbarWidth + kScrollbarGap) : 0.0f;
-  return std::max(0.0f, width() - kViewportPaddingH * 2.0f - gutter);
+  return std::max(0.0f, width() - m_viewportPaddingH * 2.0f - gutter);
 }
 
 void ScrollView::layout(Renderer& renderer) {
@@ -168,9 +173,9 @@ void ScrollView::layout(Renderer& renderer) {
 
   const float w = width() > 0.0f ? width() : kDefaultWidth;
   const float h = height() > 0.0f ? height() : kDefaultHeight;
-  const float viewportX = kViewportPaddingH;
+  const float viewportX = m_viewportPaddingH;
   const float viewportY = kViewportPaddingV;
-  const float viewportW = std::max(0.0f, w - kViewportPaddingH * 2.0f);
+  const float viewportW = std::max(0.0f, w - m_viewportPaddingH * 2.0f);
   const float viewportH = std::max(0.0f, h - kViewportPaddingV * 2.0f);
   m_viewportHeight = viewportH;
   m_viewportWidth = viewportW;
@@ -241,7 +246,7 @@ void ScrollView::updateScrollbarGeometry(float viewportHeight, float contentHeig
     return;
   }
 
-  const float trackX = kViewportPaddingH + m_viewportWidth - kScrollbarWidth;
+  const float trackX = m_viewportPaddingH + m_viewportWidth - kScrollbarWidth;
   const float trackY = kViewportPaddingV;
   const float trackH = std::max(0.0f, viewportHeight);
   m_scrollbarTrack->setPosition(trackX, trackY);
