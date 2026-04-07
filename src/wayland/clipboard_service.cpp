@@ -5,11 +5,19 @@
 #include <algorithm>
 #include <array>
 #include <cerrno>
+#include <chrono>
+#include <cstdlib>
 #include <fcntl.h>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <json.hpp>
 #include <poll.h>
 #include <ranges>
+#include <sstream>
 #include <string_view>
 #include <unistd.h>
+#include <unordered_set>
 
 #include <wayland-client-core.h>
 #include <wayland-client.h>
@@ -36,27 +44,12 @@ constexpr std::array kImageMimeTypes = {
 };
 
 constexpr Logger kLog("clipboard");
+std::uint64_t gStorageCounter = 0;
 
 void closeFd(int& fd) {
   if (fd >= 0) {
     close(fd);
     fd = -1;
-  }
-}
-
-void writeAll(int fd, std::string_view text) {
-  const char* data = text.data();
-  std::size_t remaining = text.size();
-  while (remaining > 0) {
-    const ssize_t written = write(fd, data, remaining);
-    if (written < 0) {
-      if (errno == EINTR) {
-        continue;
-      }
-      break;
-    }
-    data += written;
-    remaining -= static_cast<std::size_t>(written);
   }
 }
 
@@ -316,8 +309,7 @@ const void* sourceListenerFor(const DataControlOps& ops) {
 
 } // namespace
 
-ClipboardService::ClipboardService() = default;
-
+ClipboardService::ClipboardService() { loadPersistedHistory(); }
 ClipboardService::~ClipboardService() { cleanup(); }
 
 const DataControlOps* extDataControlOps() { return &kExtDataControlOps; }
@@ -389,8 +381,62 @@ int ClipboardService::activeReadFd() const noexcept { return m_activeRead.fd; }
 
 const std::deque<ClipboardEntry>& ClipboardService::history() const noexcept { return m_history; }
 
+std::uint64_t ClipboardService::changeSerial() const noexcept { return m_changeSerial; }
+
+bool ClipboardService::ensureEntryLoaded(std::size_t index) {
+  if (index >= m_history.size()) {
+    return false;
+  }
+  return loadEntryPayload(m_history[index]);
+}
+
 bool ClipboardService::copyText(std::string text) {
+  std::vector<std::uint8_t> data(text.begin(), text.end());
+  return copyData({"text/plain;charset=utf-8", "text/plain"}, std::move(data));
+}
+
+bool ClipboardService::copyEntry(const ClipboardEntry& entry) {
+  if (entry.data.empty() || entry.dataMimeType.empty()) {
+    return false;
+  }
+
+  std::vector<std::string> mimeTypes;
+  mimeTypes.push_back(entry.dataMimeType);
+  if (isTextMimeType(entry.dataMimeType)) {
+    if (std::ranges::find(mimeTypes, std::string("text/plain;charset=utf-8")) == mimeTypes.end()) {
+      mimeTypes.push_back("text/plain;charset=utf-8");
+    }
+    if (std::ranges::find(mimeTypes, std::string("text/plain")) == mimeTypes.end()) {
+      mimeTypes.push_back("text/plain");
+    }
+  }
+  return copyData(std::move(mimeTypes), entry.data);
+}
+
+bool ClipboardService::promoteEntry(std::size_t index) {
+  if (index >= m_history.size()) {
+    return false;
+  }
+  if (index == 0) {
+    return true;
+  }
+
+  ClipboardEntry entry = std::move(m_history[index]);
+  m_history.erase(m_history.begin() + static_cast<std::ptrdiff_t>(index));
+  entry.capturedAt = std::chrono::system_clock::now();
+  entry.timestamp = std::chrono::steady_clock::now();
+  m_history.push_front(std::move(entry));
+  ++m_changeSerial;
+  persistHistory();
+  notifyChanged();
+  return true;
+}
+
+bool ClipboardService::copyData(std::vector<std::string> mimeTypes, std::vector<std::uint8_t> data) {
   if (m_device == nullptr || m_ops == nullptr) {
+    return false;
+  }
+  if (mimeTypes.empty() || data.empty()) {
     return false;
   }
 
@@ -404,11 +450,13 @@ bool ClipboardService::copyText(std::string text) {
     return false;
   }
 
-  m_ops->sourceOffer(source, "text/plain;charset=utf-8");
-  m_ops->sourceOffer(source, "text/plain");
+  for (const auto& mimeType : mimeTypes) {
+    m_ops->sourceOffer(source, mimeType.c_str());
+  }
   m_outgoingSources.push_back(OutgoingSource{
       .source = source,
-      .text = std::move(text),
+      .mimeTypes = std::move(mimeTypes),
+      .data = std::move(data),
   });
   m_ops->deviceSetSelection(m_device, source);
   return true;
@@ -503,8 +551,23 @@ void ClipboardService::handleDeviceFinished() { cleanup(); }
 
 void ClipboardService::handleSourceSend(void* source, const char* mimeType, int fd) {
   const auto it = std::ranges::find(m_outgoingSources, source, &OutgoingSource::source);
-  if (it != m_outgoingSources.end() && mimeType != nullptr && isTextMimeType(mimeType)) {
-    writeAll(fd, it->text);
+  if (it != m_outgoingSources.end() && mimeType != nullptr) {
+    const auto mimeIt = std::ranges::find(it->mimeTypes, std::string_view(mimeType));
+    if (mimeIt != it->mimeTypes.end()) {
+      const auto* bytes = reinterpret_cast<const char*>(it->data.data());
+      std::size_t remaining = it->data.size();
+      while (remaining > 0) {
+        const ssize_t written = write(fd, bytes, remaining);
+        if (written < 0) {
+          if (errno == EINTR) {
+            continue;
+          }
+          break;
+        }
+        bytes += written;
+        remaining -= static_cast<std::size_t>(written);
+      }
+    }
   }
   close(fd);
 }
@@ -614,11 +677,17 @@ void ClipboardService::finishRead(bool discard) {
   }
 
   ClipboardEntry entry;
+  entry.storageId = generateStorageId();
   entry.mimeTypes = std::move(mimeTypes);
   if (std::ranges::find(entry.mimeTypes, mimeType) == entry.mimeTypes.end()) {
     entry.mimeTypes.push_back(mimeType);
   }
+  entry.dataMimeType = mimeType;
   entry.data = std::move(data);
+  entry.byteSize = entry.data.size();
+  entry.payloadLoaded = true;
+  entry.payloadPath = payloadPathForId(entry.storageId);
+  entry.capturedAt = std::chrono::system_clock::now();
   entry.timestamp = std::chrono::steady_clock::now();
   if (isTextMimeType(mimeType)) {
     entry.textPreview = buildTextPreview(entry.data);
@@ -628,33 +697,230 @@ void ClipboardService::finishRead(bool discard) {
 }
 
 void ClipboardService::addToHistory(ClipboardEntry entry) {
-  if (entry.data.empty()) {
+  if (entry.byteSize == 0) {
+    entry.byteSize = entry.data.size();
+  }
+
+  if (entry.byteSize == 0) {
     return;
   }
 
-  if (!m_history.empty()) {
+  if (entry.storageId.empty()) {
+    entry.storageId = generateStorageId();
+  }
+  if (entry.payloadPath.empty()) {
+    entry.payloadPath = payloadPathForId(entry.storageId);
+  }
+
+  if (entry.textPreview.empty() && !entry.data.empty() && isTextMimeType(entry.dataMimeType)) {
+    entry.textPreview = buildTextPreview(entry.data);
+  }
+
+  if (!m_history.empty() && !entry.data.empty()) {
     const ClipboardEntry& current = m_history.front();
-    if (current.mimeTypes == entry.mimeTypes && current.data == entry.data) {
+    const bool samePayload = current.data == entry.data;
+    const bool sameMime = current.dataMimeType == entry.dataMimeType;
+    const bool equivalentText = isTextMimeType(current.dataMimeType) && isTextMimeType(entry.dataMimeType);
+    if (samePayload && (sameMime || equivalentText)) {
       return;
     }
   }
 
-  const std::size_t entryBytes = entry.data.size();
+  const std::size_t entryBytes = entry.byteSize;
   if (entryBytes > kMaxEntryBytes) {
     return;
   }
 
   m_history.push_front(std::move(entry));
   m_historyBytes += entryBytes;
+  trimHistoryToBudget();
 
-  while (m_history.size() > kMaxHistoryEntries || m_historyBytes > kMaxHistoryBytes) {
-    m_historyBytes -= m_history.back().data.size();
-    m_history.pop_back();
-  }
-
+  ++m_changeSerial;
+  persistHistory();
   const std::string latestMime = m_history.front().mimeTypes.empty() ? "" : m_history.front().mimeTypes.front();
   kLog.debug("clipboard history size={} entries={} latest_mime={}", m_historyBytes, m_history.size(), latestMime);
   notifyChanged();
+}
+
+void ClipboardService::loadPersistedHistory() {
+  namespace fs = std::filesystem;
+
+  m_history.clear();
+  m_historyBytes = 0;
+
+  const fs::path path(manifestPath());
+  if (!fs::exists(path)) {
+    return;
+  }
+
+  std::ifstream file(path);
+  if (!file.is_open()) {
+    return;
+  }
+
+  try {
+    nlohmann::json json;
+    file >> json;
+    if (!json.is_object() || !json["entries"].is_array()) {
+      return;
+    }
+
+    for (const auto& item : json["entries"]) {
+      ClipboardEntry entry;
+      entry.storageId = item.value("id", "");
+      entry.payloadPath = item.value("payload_path", payloadPathForId(entry.storageId));
+      entry.mimeTypes = item.value("mime_types", std::vector<std::string>{});
+      entry.dataMimeType = item.value("data_mime_type", "");
+      entry.textPreview = item.value("text_preview", "");
+      entry.byteSize = item.value("byte_size", static_cast<std::size_t>(0));
+      entry.payloadLoaded = false;
+
+      const auto capturedAtMs = item.value("captured_at_ms", std::int64_t{0});
+      entry.capturedAt = std::chrono::system_clock::time_point(std::chrono::milliseconds(capturedAtMs));
+
+      if (entry.storageId.empty() || entry.dataMimeType.empty() || entry.byteSize == 0) {
+        continue;
+      }
+
+      m_history.push_back(std::move(entry));
+      m_historyBytes += m_history.back().byteSize;
+    }
+
+    trimHistoryToBudget();
+    kLog.info("loaded {} persisted clipboard entries", m_history.size());
+  } catch (const std::exception& e) {
+    kLog.warn("failed to load clipboard history: {}", e.what());
+    m_history.clear();
+    m_historyBytes = 0;
+  }
+}
+
+void ClipboardService::persistHistory() {
+  namespace fs = std::filesystem;
+
+  try {
+    fs::create_directories(entriesDirectory());
+
+    nlohmann::json entries = nlohmann::json::array();
+    std::unordered_set<std::string> activePayloadPaths;
+    activePayloadPaths.reserve(m_history.size());
+
+    for (auto& entry : m_history) {
+      if (entry.storageId.empty()) {
+        entry.storageId = generateStorageId();
+      }
+      if (entry.payloadPath.empty()) {
+        entry.payloadPath = payloadPathForId(entry.storageId);
+      }
+
+      activePayloadPaths.insert(entry.payloadPath);
+      if (entry.payloadLoaded && !entry.data.empty()) {
+        std::ofstream payload(entry.payloadPath, std::ios::binary | std::ios::trunc);
+        payload.write(reinterpret_cast<const char*>(entry.data.data()),
+                      static_cast<std::streamsize>(entry.data.size()));
+      }
+
+      const auto capturedAtMs =
+          std::chrono::duration_cast<std::chrono::milliseconds>(entry.capturedAt.time_since_epoch()).count();
+      entries.push_back({
+          {"id", entry.storageId},
+          {"payload_path", entry.payloadPath},
+          {"mime_types", entry.mimeTypes},
+          {"data_mime_type", entry.dataMimeType},
+          {"text_preview", entry.textPreview},
+          {"byte_size", entry.byteSize},
+          {"captured_at_ms", capturedAtMs},
+      });
+    }
+
+    const fs::path manifest(manifestPath());
+    fs::create_directories(manifest.parent_path());
+    const fs::path tmp = manifest;
+    const fs::path tmpPath = tmp.string() + ".tmp";
+    {
+      std::ofstream out(tmpPath);
+      out << nlohmann::json{{"entries", entries}}.dump(2);
+      out.flush();
+    }
+    fs::rename(tmpPath, manifest);
+
+    const fs::path entriesDir(entriesDirectory());
+    if (fs::exists(entriesDir)) {
+      for (const auto& dirEntry : fs::directory_iterator(entriesDir)) {
+        const auto filePath = dirEntry.path().string();
+        if (!activePayloadPaths.contains(filePath)) {
+          fs::remove(dirEntry.path());
+        }
+      }
+    }
+  } catch (const std::exception& e) {
+    kLog.warn("failed to persist clipboard history: {}", e.what());
+  }
+}
+
+void ClipboardService::trimHistoryToBudget() {
+  while (m_history.size() > kMaxHistoryEntries || m_historyBytes > kMaxHistoryBytes) {
+    m_historyBytes -= m_history.back().byteSize;
+    m_history.pop_back();
+  }
+}
+
+bool ClipboardService::loadEntryPayload(ClipboardEntry& entry) {
+  if (entry.payloadLoaded) {
+    return !entry.data.empty();
+  }
+  if (entry.payloadPath.empty()) {
+    entry.payloadPath = payloadPathForId(entry.storageId);
+  }
+
+  std::ifstream file(entry.payloadPath, std::ios::binary | std::ios::ate);
+  if (!file.is_open()) {
+    return false;
+  }
+
+  const auto size = file.tellg();
+  if (size <= 0) {
+    return false;
+  }
+
+  entry.data.resize(static_cast<std::size_t>(size));
+  file.seekg(0);
+  file.read(reinterpret_cast<char*>(entry.data.data()), size);
+  entry.payloadLoaded = true;
+  if (entry.byteSize == 0) {
+    entry.byteSize = entry.data.size();
+  }
+  if (entry.textPreview.empty() && isTextMimeType(entry.dataMimeType)) {
+    entry.textPreview = buildTextPreview(entry.data);
+  }
+  return true;
+}
+
+std::string ClipboardService::stateDirectory() {
+  const char* stateHome = std::getenv("XDG_STATE_HOME");
+  if (stateHome != nullptr && stateHome[0] != '\0') {
+    return std::string(stateHome) + "/noctalia/clipboard";
+  }
+  const char* home = std::getenv("HOME");
+  if (home != nullptr && home[0] != '\0') {
+    return std::string(home) + "/.local/state/noctalia/clipboard";
+  }
+  return "/tmp/noctalia-clipboard";
+}
+
+std::string ClipboardService::manifestPath() { return stateDirectory() + "/index.json"; }
+
+std::string ClipboardService::entriesDirectory() { return stateDirectory() + "/entries"; }
+
+std::string ClipboardService::payloadPathForId(std::string_view storageId) {
+  return entriesDirectory() + "/" + std::string(storageId) + ".bin";
+}
+
+std::string ClipboardService::generateStorageId() {
+  const auto now =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+          .count();
+  return std::to_string(now) + "-" + std::to_string(++gStorageCounter);
 }
 
 std::string ClipboardService::chooseMimeType(const OfferState& offer) const {

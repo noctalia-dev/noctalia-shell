@@ -96,6 +96,30 @@ bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targe
   return true;
 }
 
+bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::size_t size) {
+  clear(renderer);
+
+  if (data == nullptr || size == 0) {
+    return false;
+  }
+
+  m_texture = renderer.textureManager().loadFromEncodedBytes(data, size);
+  if (m_texture.id == 0) {
+    m_sourcePath.clear();
+    if (m_image != nullptr) {
+      m_image->setTextureId(0);
+    }
+    return false;
+  }
+
+  m_sourcePath.clear();
+  if (m_image != nullptr) {
+    m_image->setTextureId(m_texture.id);
+  }
+  updateLayout();
+  return true;
+}
+
 void Image::clear(Renderer& renderer) {
   if (m_texture.id != 0) {
     renderer.textureManager().unload(m_texture);

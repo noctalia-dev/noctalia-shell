@@ -28,6 +28,7 @@ public:
   void setPadding(float padding);
 
   bool setSourceFile(Renderer& renderer, const std::string& path, int targetSize = 0);
+  bool setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::size_t size);
   void clear(Renderer& renderer);
 
   [[nodiscard]] const std::string& sourcePath() const noexcept { return m_sourcePath; }

@@ -109,6 +109,24 @@ TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSi
   return handle;
 }
 
+TextureHandle TextureManager::loadFromEncodedBytes(const std::uint8_t* data, std::size_t size) {
+  if (data == nullptr || size == 0) {
+    return {};
+  }
+
+  int w = 0;
+  int h = 0;
+  int channels = 0;
+  auto* pixels = stbi_load_from_memory(data, static_cast<int>(size), &w, &h, &channels, 4);
+  if (pixels == nullptr) {
+    return {};
+  }
+
+  auto handle = uploadRgba(pixels, w, h);
+  stbi_image_free(pixels);
+  return handle;
+}
+
 TextureHandle TextureManager::loadFromArgbPixmap(const std::uint8_t* data, int width, int height) {
   if (data == nullptr || width <= 0 || height <= 0) {
     return {};

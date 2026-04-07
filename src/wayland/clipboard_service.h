@@ -13,9 +13,15 @@ struct wl_registry;
 struct wl_seat;
 
 struct ClipboardEntry {
+  std::string storageId;
+  std::string payloadPath;
   std::vector<std::string> mimeTypes;
+  std::string dataMimeType;
   std::vector<std::uint8_t> data;
+  std::size_t byteSize = 0;
+  bool payloadLoaded = true;
   std::string textPreview;
+  std::chrono::system_clock::time_point capturedAt;
   std::chrono::steady_clock::time_point timestamp;
 
   [[nodiscard]] bool isImage() const;
@@ -62,8 +68,12 @@ public:
   [[nodiscard]] bool isAvailable() const noexcept;
   [[nodiscard]] int activeReadFd() const noexcept;
   [[nodiscard]] const std::deque<ClipboardEntry>& history() const noexcept;
+  [[nodiscard]] std::uint64_t changeSerial() const noexcept;
 
+  bool ensureEntryLoaded(std::size_t index);
   bool copyText(std::string text);
+  bool copyEntry(const ClipboardEntry& entry);
+  bool promoteEntry(std::size_t index);
   void setChangeCallback(ChangeCallback callback);
   void dispatchReadEvents(short revents);
 
@@ -92,7 +102,8 @@ private:
 
   struct OutgoingSource {
     void* source = nullptr;
-    std::string text;
+    std::vector<std::string> mimeTypes;
+    std::vector<std::uint8_t> data;
   };
 
   [[nodiscard]] const OfferState* findOffer(void* offer) const;
@@ -103,9 +114,19 @@ private:
   bool startReceive(void* offer);
   void finishRead(bool discard);
   void addToHistory(ClipboardEntry entry);
+  void loadPersistedHistory();
+  void persistHistory();
+  void trimHistoryToBudget();
+  [[nodiscard]] bool loadEntryPayload(ClipboardEntry& entry);
+  [[nodiscard]] static std::string stateDirectory();
+  [[nodiscard]] static std::string manifestPath();
+  [[nodiscard]] static std::string entriesDirectory();
+  [[nodiscard]] static std::string payloadPathForId(std::string_view storageId);
+  [[nodiscard]] static std::string generateStorageId();
   [[nodiscard]] std::string chooseMimeType(const OfferState& offer) const;
   [[nodiscard]] static bool isTextMimeType(std::string_view mimeType);
   [[nodiscard]] static std::string buildTextPreview(const std::vector<std::uint8_t>& data);
+  bool copyData(std::vector<std::string> mimeTypes, std::vector<std::uint8_t> data);
   void notifyChanged() const;
 
   void* m_manager = nullptr;
@@ -120,5 +141,6 @@ private:
 
   std::deque<ClipboardEntry> m_history;
   std::size_t m_historyBytes = 0;
+  std::uint64_t m_changeSerial = 0;
   ChangeCallback m_changeCallback;
 };

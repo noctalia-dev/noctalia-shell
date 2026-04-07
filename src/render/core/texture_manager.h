@@ -21,6 +21,7 @@ public:
   TextureManager& operator=(const TextureManager&) = delete;
 
   [[nodiscard]] TextureHandle loadFromFile(const std::string& path, int targetSize = 0);
+  [[nodiscard]] TextureHandle loadFromEncodedBytes(const std::uint8_t* data, std::size_t size);
   [[nodiscard]] TextureHandle loadFromArgbPixmap(const std::uint8_t* data, int width, int height);
   void unload(TextureHandle& handle);
   void cleanup();

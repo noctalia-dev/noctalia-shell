@@ -1,9 +1,12 @@
+#include "core/log.h"
 #include "ui/controls/glyph_registry.h"
 
 #include <string>
 #include <unordered_map>
 
 namespace {
+
+constexpr Logger kLog("glyph");
 
 // Hand-curated alias → codepoint map.
 // To add a new icon, find its codepoint in assets/fonts/tabler-icons.json.
@@ -34,6 +37,9 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"official-plugin", 0xF69F},   // shield-filled
     {"calendar", 0xEA53},          // calendar
     {"calculator", 0xEB80},        // calculator
+    {"copy", 0xEA7A},              // copy
+    {"photo", 0xEB0A},             // photo
+    {"file-text", 0xEAA2},         // file-text
 
     // Toast / warnings
     {"toast-notice", 0xEA67},      // circle-check
@@ -212,6 +218,8 @@ char32_t GlyphRegistry::lookup(std::string_view name) {
   if (it != kIcons.end()) {
     return it->second;
   }
+
+  kLog.warn("missing glyph: {}", name);
 
   // Fallback to skull
   return 0xF292;

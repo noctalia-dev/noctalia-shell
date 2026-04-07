@@ -7,6 +7,7 @@
 #include "launcher/math_provider.h"
 #include "shell/control_center/control_center_panel.h"
 #include "shell/launcher/launcher_panel.h"
+#include "shell/panels/clipboard_panel.h"
 #include "shell/panels/test_panel.h"
 #include "system/distro_info.h"
 
@@ -104,6 +105,11 @@ void Application::initServices() {
     m_wallpaper.onOutputChange();
     m_bar.onOutputChange();
     m_lockScreen.onOutputChange();
+  });
+  m_clipboardService.setChangeCallback([this]() {
+    if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "clipboard") {
+      m_panelManager.refresh();
+    }
   });
   m_wayland.setWorkspaceChangeCallback([this]() { m_bar.onWorkspaceChange(); });
   m_wayland.setToplevelChangeCallback([this]() { m_bar.onWorkspaceChange(); });
@@ -225,6 +231,7 @@ void Application::initUi() {
 
   // Panel manager must be before bar so widgets can access PanelManager::instance()
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
+  m_panelManager.registerPanel("clipboard", std::make_unique<ClipboardPanel>(&m_clipboardService));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
   m_panelManager.registerPanel("control-center",
                                std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(),
@@ -367,6 +374,14 @@ void Application::initIpc() {
         return "ok\n";
       },
       "toggle-launcher", "Toggle the application launcher");
+
+  m_ipcService.registerHandler(
+      "toggle-clipboard",
+      [this](const std::string&) -> std::string {
+        m_panelManager.togglePanel("clipboard");
+        return "ok\n";
+      },
+      "toggle-clipboard", "Toggle the clipboard history panel");
 }
 
 std::vector<PollSource*> Application::buildPollSources() {

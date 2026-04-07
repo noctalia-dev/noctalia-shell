@@ -44,7 +44,7 @@ void BatteryWidget::create(Renderer& renderer) {
   auto container = std::make_unique<Node>();
 
   auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyph("battery-full");
+  glyph->setGlyph("battery-4");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   glyph->setColor(palette.onSurface);
   m_glyph = glyph.get();
