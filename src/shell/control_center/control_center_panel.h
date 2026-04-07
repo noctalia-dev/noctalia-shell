@@ -31,6 +31,8 @@ public:
 
   [[nodiscard]] float preferredWidth() const override { return control_center::kPreferredPanelWidth; }
   [[nodiscard]] float preferredHeight() const override { return control_center::kPreferredPanelHeight; }
+  [[nodiscard]] bool centeredHorizontally() const override { return true; }
+  [[nodiscard]] bool centeredVertically() const override { return true; }
 
 private:
   enum class TabId : std::uint8_t {
