@@ -21,7 +21,7 @@ constexpr float kScrollbarWidth = 6.0f;
 constexpr float kScrollbarPadding = static_cast<float>(Style::borderWidth);
 constexpr float kViewportPaddingH = static_cast<float>(Style::spaceXs);
 constexpr float kViewportPaddingV = static_cast<float>(Style::spaceSm);
-constexpr float kScrollbarGap = static_cast<float>(Style::spaceXs) * 0.5f;
+constexpr float kScrollbarGap = static_cast<float>(Style::spaceSm);
 constexpr float kMinThumbHeight = 24.0f;
 
 RoundedRectStyle makeSolid(const Color& fill, float radius) {
@@ -48,7 +48,7 @@ ScrollView::ScrollView() {
       .fillMode = FillMode::Solid,
       .radius = Style::radiusMd,
       .softness = 1.0f,
-      .borderWidth = Style::borderWidth,
+      .borderWidth = 0,
   });
 
   auto viewportArea = std::make_unique<InputArea>();
