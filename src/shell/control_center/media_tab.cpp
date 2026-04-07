@@ -1,6 +1,7 @@
 #include "shell/control_center/media_tab.h"
 
 #include "dbus/mpris/mpris_service.h"
+#include "core/log.h"
 #include "net/http_client.h"
 #include "pipewire/pipewire_service.h"
 #include "render/core/renderer.h"
@@ -13,8 +14,10 @@
 #include "ui/controls/slider.h"
 
 #include <algorithm>
-#include <filesystem>
+#include <cctype>
 #include <cmath>
+#include <filesystem>
+#include <format>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -23,6 +26,8 @@
 using namespace control_center;
 
 namespace {
+
+const Logger kLog{"media_tab"};
 
 constexpr float kArtworkSize            = Style::controlHeightLg * 6;
 constexpr float kMediaColumnWidth       = Style::controlHeightLg * 11;
@@ -40,6 +45,95 @@ bool isRemoteArtUrl(std::string_view artUrl) {
   return artUrl.starts_with("https://") || artUrl.starts_with("http://");
 }
 
+std::string extractQueryParam(std::string_view url, std::string_view key) {
+  const auto queryPos = url.find('?');
+  if (queryPos == std::string_view::npos) {
+    return {};
+  }
+
+  std::string_view query = url.substr(queryPos + 1);
+  while (!query.empty()) {
+    const auto ampPos = query.find('&');
+    const std::string_view pair = query.substr(0, ampPos);
+    const auto eqPos = pair.find('=');
+    const std::string_view pairKey = pair.substr(0, eqPos);
+    if (pairKey == key) {
+      return eqPos == std::string_view::npos ? std::string{} : std::string(pair.substr(eqPos + 1));
+    }
+    if (ampPos == std::string_view::npos) {
+      break;
+    }
+    query.remove_prefix(ampPos + 1);
+  }
+
+  return {};
+}
+
+std::string deriveYouTubeThumbnailUrl(std::string_view sourceUrl) {
+  if (sourceUrl.empty()) {
+    return {};
+  }
+
+  std::string videoId;
+  if (sourceUrl.find("youtube.com/watch") != std::string_view::npos) {
+    videoId = extractQueryParam(sourceUrl, "v");
+  } else if (sourceUrl.find("youtu.be/") != std::string_view::npos) {
+    const auto marker = sourceUrl.find("youtu.be/");
+    const auto start = marker + std::string_view("youtu.be/").size();
+    const auto end = sourceUrl.find_first_of("?#&/", start);
+    videoId = std::string(sourceUrl.substr(start, end == std::string_view::npos ? sourceUrl.size() - start : end - start));
+  } else if (sourceUrl.find("youtube.com/shorts/") != std::string_view::npos) {
+    const auto marker = sourceUrl.find("youtube.com/shorts/");
+    const auto start = marker + std::string_view("youtube.com/shorts/").size();
+    const auto end = sourceUrl.find_first_of("?#&/", start);
+    videoId = std::string(sourceUrl.substr(start, end == std::string_view::npos ? sourceUrl.size() - start : end - start));
+  }
+
+  if (videoId.empty()) {
+    return {};
+  }
+
+  return std::format("https://i.ytimg.com/vi/{}/hqdefault.jpg", videoId);
+}
+
+std::string effectiveArtUrl(const MprisPlayerInfo& player) {
+  if (!player.artUrl.empty()) {
+    return player.artUrl;
+  }
+  return deriveYouTubeThumbnailUrl(player.sourceUrl);
+}
+
+int hexValue(char ch) {
+  if (ch >= '0' && ch <= '9') {
+    return ch - '0';
+  }
+  ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+  if (ch >= 'a' && ch <= 'f') {
+    return 10 + (ch - 'a');
+  }
+  return -1;
+}
+
+std::string decodeUriComponent(std::string_view text) {
+  std::string decoded;
+  decoded.reserve(text.size());
+
+  for (std::size_t i = 0; i < text.size(); ++i) {
+    if (text[i] == '%' && i + 2 < text.size()) {
+      const int hi = hexValue(text[i + 1]);
+      const int lo = hexValue(text[i + 2]);
+      if (hi >= 0 && lo >= 0) {
+        decoded.push_back(static_cast<char>((hi << 4) | lo));
+        i += 2;
+        continue;
+      }
+    }
+    decoded.push_back(text[i]);
+  }
+
+  return decoded;
+}
+
 std::string normalizeArtPath(std::string_view artUrl) {
   if (artUrl.empty()) {
     return {};
@@ -51,8 +145,14 @@ std::string normalizeArtPath(std::string_view artUrl) {
   constexpr std::string_view prefix = "file://";
   if (path.starts_with(prefix)) {
     path.erase(0, prefix.size());
+    if (path.starts_with("localhost/")) {
+      path.erase(0, std::string_view("localhost").size());
+    } else if (!path.empty() && path.front() != '/') {
+      const auto firstSlash = path.find('/');
+      path = firstSlash == std::string::npos ? std::string{} : path.substr(firstSlash);
+    }
   }
-  return path;
+  return decodeUriComponent(path);
 }
 
 std::filesystem::path artCachePath(std::string_view artUrl) {
@@ -580,17 +680,38 @@ void MediaTab::clearArt(Renderer& renderer) {
 }
 
 void MediaTab::refresh(Renderer& renderer) {
-  if (m_mpris != nullptr && m_playerSelect != nullptr) {
-    const auto players = m_mpris->listPlayers();
+  std::vector<MprisPlayerInfo> players;
+  std::optional<MprisPlayerInfo> active;
+  if (m_mpris != nullptr) {
+    players = m_mpris->listPlayers();
+    active = m_mpris->activePlayer();
+    kLog.debug("media tab refresh initial players={} active={} active_bus=\"{}\"", players.size(), active.has_value(),
+               active.has_value() ? active->busName : std::string{});
+
+    const auto now = std::chrono::steady_clock::now();
+    const bool shouldRetryMpris = (!active.has_value() || players.empty()) &&
+                                  (m_lastMprisRefreshAttempt.time_since_epoch().count() == 0 ||
+                                   now - m_lastMprisRefreshAttempt >= std::chrono::milliseconds(750));
+    if (shouldRetryMpris) {
+      m_lastMprisRefreshAttempt = now;
+      kLog.debug("media tab retrying mpris discovery players={} active={}", players.size(), active.has_value());
+      m_mpris->refreshPlayers();
+      players = m_mpris->listPlayers();
+      active = m_mpris->activePlayer();
+      kLog.debug("media tab refresh after retry players={} active={} active_bus=\"{}\"", players.size(),
+                 active.has_value(), active.has_value() ? active->busName : std::string{});
+    }
+  }
+
+  if (m_playerSelect != nullptr) {
     std::vector<std::string> playerLabels;
     std::vector<std::string> playerBusNames;
     playerLabels.reserve(players.size() + 1);
     playerBusNames.reserve(players.size());
     std::size_t selectedPlayerIndex = 0;
 
-    const auto active = m_mpris->activePlayer();
     const std::string activeBusName = active.has_value() ? active->busName : std::string{};
-    const auto pinnedBusName = m_mpris->pinnedPlayerPreference();
+    const auto pinnedBusName = m_mpris != nullptr ? m_mpris->pinnedPlayerPreference() : std::nullopt;
 
     playerLabels.push_back("Active player");
 
@@ -615,7 +736,6 @@ void MediaTab::refresh(Renderer& renderer) {
 
   if (m_trackTitle != nullptr && m_trackArtist != nullptr && m_progressSlider != nullptr &&
       m_playPauseButton != nullptr && m_repeatButton != nullptr && m_shuffleButton != nullptr) {
-    const auto active = m_mpris != nullptr ? m_mpris->activePlayer() : std::nullopt;
     if (active.has_value()) {
       const auto& player = *active;
       const auto now = std::chrono::steady_clock::now();
@@ -639,18 +759,19 @@ void MediaTab::refresh(Renderer& renderer) {
         m_trackAlbum->measure(renderer);
       }
 
-      std::string artPath = normalizeArtPath(player.artUrl);
-      if (artPath.empty() && isRemoteArtUrl(player.artUrl)) {
-        const auto cached = artCachePath(player.artUrl);
+      const std::string resolvedArtUrl = effectiveArtUrl(player);
+      std::string artPath = normalizeArtPath(resolvedArtUrl);
+      if (artPath.empty() && isRemoteArtUrl(resolvedArtUrl)) {
+        const auto cached = artCachePath(resolvedArtUrl);
         std::error_code ec;
         if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0) {
           artPath = cached.string();
         } else if (m_httpClient != nullptr &&
-                   m_pendingArtDownloads.find(player.artUrl) == m_pendingArtDownloads.end()) {
+                   m_pendingArtDownloads.find(resolvedArtUrl) == m_pendingArtDownloads.end()) {
           std::filesystem::create_directories(cached.parent_path(), ec);
-          m_pendingArtDownloads.insert(player.artUrl);
-          m_httpClient->download(player.artUrl, cached,
-              [this, url = player.artUrl](bool success) {
+          m_pendingArtDownloads.insert(resolvedArtUrl);
+          m_httpClient->download(resolvedArtUrl, cached,
+              [this, url = resolvedArtUrl](bool success) {
                 m_pendingArtDownloads.erase(url);
                 if (success) {
                   m_lastArtPath.clear();
@@ -660,13 +781,19 @@ void MediaTab::refresh(Renderer& renderer) {
         }
       }
 
-      if (m_artwork != nullptr && player.artUrl != m_lastArtPath) {
+      if (m_artwork != nullptr && resolvedArtUrl != m_lastArtPath) {
         if (artPath.empty()) {
+          if (!resolvedArtUrl.empty()) {
+            kLog.debug("artwork unresolved url=\"{}\"", resolvedArtUrl);
+          }
           clearArt(renderer);
         } else if (!m_artwork->setSourceFile(renderer, artPath, static_cast<int>(kArtworkSize))) {
+          kLog.warn("artwork load failed url=\"{}\" path=\"{}\"", resolvedArtUrl, artPath);
           clearArt(renderer);
+        } else {
+          kLog.debug("artwork loaded url=\"{}\" path=\"{}\"", resolvedArtUrl, artPath);
         }
-        m_lastArtPath = player.artUrl;
+        m_lastArtPath = resolvedArtUrl;
       }
 
       m_syncingProgress = true;

@@ -11,6 +11,7 @@
 #include <nanosvg.h>
 #include <nanosvgrast.h>
 #include <stb_image.h>
+#include <webp/decode.h>
 #pragma GCC diagnostic pop
 
 #include <algorithm>
@@ -45,6 +46,43 @@ std::vector<std::uint8_t> readFile(const std::string& path) {
 }
 
 } // namespace
+
+TextureHandle TextureManager::decodeEncodedRaster(const std::uint8_t* data, std::size_t size,
+                                                  const std::string* debugPath) {
+  if (data == nullptr || size == 0) {
+    return {};
+  }
+
+  int w = 0;
+  int h = 0;
+  int channels = 0;
+  if (auto* pixels = stbi_load_from_memory(data, static_cast<int>(size), &w, &h, &channels, 4)) {
+    auto handle = uploadRgba(pixels, w, h);
+    stbi_image_free(pixels);
+    return handle;
+  }
+
+  int webpWidth = 0;
+  int webpHeight = 0;
+  if (WebPGetInfo(data, size, &webpWidth, &webpHeight) == 0) {
+    if (debugPath != nullptr) {
+      logWarn("failed to decode image: {}", *debugPath);
+    }
+    return {};
+  }
+
+  std::uint8_t* pixels = WebPDecodeRGBA(data, size, &webpWidth, &webpHeight);
+  if (pixels == nullptr) {
+    if (debugPath != nullptr) {
+      logWarn("failed to decode WebP image: {}", *debugPath);
+    }
+    return {};
+  }
+
+  auto handle = uploadRgba(pixels, webpWidth, webpHeight);
+  WebPFree(pixels);
+  return handle;
+}
 
 TextureManager::~TextureManager() { cleanup(); }
 
@@ -97,34 +135,11 @@ TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSi
     return {};
   }
 
-  int w = 0, h = 0, channels = 0;
-  auto* pixels = stbi_load_from_memory(fileData.data(), static_cast<int>(fileData.size()), &w, &h, &channels, 4);
-  if (pixels == nullptr) {
-    logWarn("failed to decode image: {}", path);
-    return {};
-  }
-
-  auto handle = uploadRgba(pixels, w, h);
-  stbi_image_free(pixels);
-  return handle;
+  return decodeEncodedRaster(fileData.data(), fileData.size(), &path);
 }
 
 TextureHandle TextureManager::loadFromEncodedBytes(const std::uint8_t* data, std::size_t size) {
-  if (data == nullptr || size == 0) {
-    return {};
-  }
-
-  int w = 0;
-  int h = 0;
-  int channels = 0;
-  auto* pixels = stbi_load_from_memory(data, static_cast<int>(size), &w, &h, &channels, 4);
-  if (pixels == nullptr) {
-    return {};
-  }
-
-  auto handle = uploadRgba(pixels, w, h);
-  stbi_image_free(pixels);
-  return handle;
+  return decodeEncodedRaster(data, size);
 }
 
 TextureHandle TextureManager::loadFromArgbPixmap(const std::uint8_t* data, int width, int height) {

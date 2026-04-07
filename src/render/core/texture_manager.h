@@ -27,6 +27,8 @@ public:
   void cleanup();
 
 private:
+  TextureHandle decodeEncodedRaster(const std::uint8_t* data, std::size_t size,
+                                    const std::string* debugPath = nullptr);
   TextureHandle uploadRgba(const std::uint8_t* data, int width, int height);
   std::vector<GLuint> m_textures;
 };
