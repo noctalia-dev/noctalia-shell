@@ -14,6 +14,7 @@ public:
 
   [[nodiscard]] std::string_view prefix() const override { return ""; }
   [[nodiscard]] std::string_view name() const override { return "Applications"; }
+  [[nodiscard]] bool trackUsage() const override { return true; }
 
   void initialize() override;
 

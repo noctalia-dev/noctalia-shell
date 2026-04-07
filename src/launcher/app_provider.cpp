@@ -140,32 +140,42 @@ AppProvider::AppProvider(WaylandConnection* wayland) : m_wayland(wayland) {}
 void AppProvider::initialize() { m_entries = scanDesktopEntries(); }
 
 std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
-  std::vector<std::pair<int, const DesktopEntry*>> scored;
+  auto buildResult = [&](const DesktopEntry& entry, int s) {
+    LauncherResult result;
+    result.id = entry.path;
+    result.title = entry.name;
+    result.subtitle = entry.genericName.empty() ? entry.comment : entry.genericName;
+    result.iconPath = m_iconResolver.resolve(entry.icon);
+    result.iconName = result.iconPath.empty() ? "app-window" : "";
+    result.score = s;
+    return result;
+  };
 
+  // Empty query: return all entries in alphabetical order (as stored)
+  if (text.empty()) {
+    std::vector<LauncherResult> results;
+    results.reserve(std::min(m_entries.size(), std::size_t(50)));
+    for (std::size_t i = 0; i < m_entries.size() && i < 50; ++i) {
+      results.push_back(buildResult(m_entries[i], 0));
+    }
+    return results;
+  }
+
+  std::vector<std::pair<int, const DesktopEntry*>> scored;
   for (const auto& entry : m_entries) {
     int s = FuzzyMatch::scoreEntry(text, entry);
     if (s > 0) {
       scored.emplace_back(s, &entry);
     }
   }
-
   std::sort(scored.begin(), scored.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
 
   std::vector<LauncherResult> results;
   results.reserve(std::min(scored.size(), std::size_t(50)));
-
   for (std::size_t i = 0; i < scored.size() && i < 50; ++i) {
     const auto& [s, entry] = scored[i];
-    LauncherResult result;
-    result.id = entry->path;
-    result.title = entry->name;
-    result.subtitle = entry->genericName.empty() ? entry->comment : entry->genericName;
-    result.iconPath = m_iconResolver.resolve(entry->icon);
-    result.iconName = result.iconPath.empty() ? "app-window" : "";
-    result.score = s;
-    results.push_back(std::move(result));
+    results.push_back(buildResult(*entry, s));
   }
-
   return results;
 }
 

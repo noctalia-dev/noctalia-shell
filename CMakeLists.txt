@@ -288,6 +288,7 @@ add_executable(noctalia
     src/launcher/fuzzy_match.cpp
     src/launcher/icon_resolver.cpp
     src/launcher/math_provider.cpp
+    src/launcher/usage_tracker.cpp
     src/shell/launcher/launcher_panel.cpp
     src/shell/panels/test_panel.cpp
     src/shell/widgets/launcher_widget.cpp

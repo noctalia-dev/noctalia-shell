@@ -6,6 +6,7 @@
 
 struct LauncherResult {
   std::string id;
+  std::string providerName; // Set by LauncherPanel after query; used for usage tracking
   std::string title;
   std::string subtitle;
   std::string iconName;
@@ -20,6 +21,10 @@ public:
 
   [[nodiscard]] virtual std::string_view prefix() const = 0;
   [[nodiscard]] virtual std::string_view name() const = 0;
+
+  // Return true to opt in to usage-based score boosting. The panel will
+  // record each activation and surface frequently used entries higher.
+  [[nodiscard]] virtual bool trackUsage() const { return false; }
 
   virtual void initialize() {}
 

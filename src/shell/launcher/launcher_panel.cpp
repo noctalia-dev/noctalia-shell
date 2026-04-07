@@ -156,20 +156,39 @@ void LauncherPanel::onInputChanged(const std::string& text) {
     }
   }
 
+  constexpr int kUsageScorePerCount = 20;
+
+  auto applyUsageBoost = [&](std::vector<LauncherResult>& results, const LauncherProvider& provider) {
+    if (!provider.trackUsage()) {
+      return;
+    }
+    for (auto& result : results) {
+      result.score += m_usageTracker.getCount(provider.name(), result.id) * kUsageScorePerCount;
+    }
+  };
+
   if (activeProvider != nullptr) {
     m_results = activeProvider->query(queryText);
+    applyUsageBoost(m_results, *activeProvider);
+    for (auto& result : m_results) {
+      result.providerName = activeProvider->name();
+    }
   } else {
     // Query default providers (empty prefix)
     for (auto& provider : m_providers) {
       if (provider->prefix().empty()) {
         auto results = provider->query(queryText);
+        applyUsageBoost(results, *provider);
+        for (auto& result : results) {
+          result.providerName = provider->name();
+        }
         m_results.insert(m_results.end(), std::make_move_iterator(results.begin()),
                          std::make_move_iterator(results.end()));
       }
     }
-    // Sort by score descending
-    std::sort(m_results.begin(), m_results.end(),
-              [](const LauncherResult& a, const LauncherResult& b) { return a.score > b.score; });
+    // Stable sort by score descending — preserves provider order (e.g. alphabetical) for ties
+    std::stable_sort(m_results.begin(), m_results.end(),
+                     [](const LauncherResult& a, const LauncherResult& b) { return a.score > b.score; });
   }
 
   if (m_results.size() > kMaxResults) {
@@ -292,6 +311,9 @@ void LauncherPanel::activateSelected() {
   // Find the provider that owns this result
   for (auto& provider : m_providers) {
     if (provider->activate(result)) {
+      if (provider->trackUsage()) {
+        m_usageTracker.record(provider->name(), result.id);
+      }
       PanelManager::instance().closePanel();
       return;
     }

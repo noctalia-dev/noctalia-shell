@@ -1,6 +1,7 @@
 #pragma once
 
 #include "launcher/launcher_provider.h"
+#include "launcher/usage_tracker.h"
 #include "shell/panel/panel.h"
 
 #include <cstddef>
@@ -46,6 +47,7 @@ private:
 
   std::vector<std::unique_ptr<LauncherProvider>> m_providers;
   std::vector<LauncherResult> m_results;
+  UsageTracker m_usageTracker;
 
   Flex* m_container = nullptr;
   Input* m_input = nullptr;
