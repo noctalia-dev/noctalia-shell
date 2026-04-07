@@ -238,7 +238,8 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
 
   const float contentLeft = panelX + Style::spaceLg;
   const float contentTop = panelY + 22.0f;
-  const float contentWidth = panelWidth - (Style::spaceLg * 2.0f);
+  const float rightInset = Style::spaceLg + Style::spaceSm;
+  const float contentWidth = panelWidth - Style::spaceLg - rightInset;
   const float buttonWidth = Style::controlHeight;
   const float gap = Style::spaceSm;
   const float inputWidth = std::max(120.0f, contentWidth - buttonWidth - gap);
