@@ -11,7 +11,7 @@
 
 namespace {
 
-const char* batteryIconName(double percentage, BatteryState state) {
+const char* batteryGlyphName(double percentage, BatteryState state) {
   if (state == BatteryState::Charging || state == BatteryState::PendingCharge) {
     return "battery-charging";
   }
@@ -103,7 +103,7 @@ void BatteryWidget::syncState(Renderer& renderer) {
     return;
   }
 
-  m_glyph->setGlyph(batteryIconName(s.percentage, s.state));
+  m_glyph->setGlyph(batteryGlyphName(s.percentage, s.state));
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   m_glyph->setColor(palette.onSurface);
   m_glyph->measure(renderer);

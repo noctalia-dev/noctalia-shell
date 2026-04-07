@@ -27,7 +27,7 @@ private:
   Label* m_sliderValueLabel = nullptr;
   Button* m_button = nullptr;
   Select* m_select = nullptr;
-  Button* m_iconButton = nullptr;
+  Button* m_glyphButton = nullptr;
   Slider* m_slider = nullptr;
   Toggle* m_toggle = nullptr;
   RadioButton* m_radioA = nullptr;

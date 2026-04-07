@@ -44,7 +44,7 @@ void ControlCenterPanel::create(Renderer& renderer) {
   for (const auto& tab : kTabs) {
     auto button = std::make_unique<Button>();
     button->setText(tab.title);
-    button->setGlyph(tab.icon);
+    button->setGlyph(tab.glyph);
     button->setVariant(ButtonVariant::Tab);
     button->setMinimalChrome(true);
     button->setMinHeight(Style::controlHeightLg);

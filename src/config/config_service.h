@@ -37,7 +37,7 @@ struct BarConfig {
   std::int32_t shadowBlur = 12;   // shadow blur radius in pixels (0 = no shadow)
   std::int32_t shadowOffsetX = 0; // horizontal shadow offset in pixels
   std::int32_t shadowOffsetY = 6; // vertical shadow offset in pixels (positive = down)
-  float scale = 1.0f;             // content scale multiplier for icons and text
+  float scale = 1.0f;             // content scale multiplier for glyphs and text
   std::vector<std::string> startWidgets = {"cpu", "temp", "ram"};
   std::vector<std::string> centerWidgets = {"workspaces"};
   std::vector<std::string> endWidgets = {"test",    "tray",   "notifications", "volume",

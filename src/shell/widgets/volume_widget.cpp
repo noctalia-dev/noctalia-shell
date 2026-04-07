@@ -16,7 +16,7 @@
 
 namespace {
 
-const char* volumeIconName(float volume, bool muted) {
+const char* volumeGlyphName(float volume, bool muted) {
   if (muted || volume <= 0.0f) {
     return "volume-mute";
   }
@@ -99,7 +99,7 @@ void VolumeWidget::syncState(Renderer& renderer) {
   m_lastVolume = volume;
   m_lastMuted = muted;
 
-  m_glyph->setGlyph(volumeIconName(volume, muted));
+  m_glyph->setGlyph(volumeGlyphName(volume, muted));
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   m_glyph->setColor(muted ? palette.onSurfaceVariant : palette.onSurface);
   m_glyph->measure(renderer);

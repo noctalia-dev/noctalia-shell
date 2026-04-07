@@ -151,11 +151,11 @@ std::string joinArtists(const std::vector<std::string>& artists) {
   return joined;
 }
 
-std::string playPauseIcon(const std::string& playbackStatus) {
+std::string playPauseGlyph(const std::string& playbackStatus) {
   return playbackStatus == "Playing" ? "media-pause" : "media-play";
 }
 
-std::string repeatIcon(const std::string& loopStatus) {
+std::string repeatGlyph(const std::string& loopStatus) {
   return loopStatus == "Track" ? "repeat-once" : "repeat";
 }
 
@@ -572,11 +572,11 @@ void ControlCenterPanel::refreshMediaState(Renderer& renderer) {
       m_mediaProgressSlider->setValue(static_cast<float>(displayPositionUs) / 1000000.0f);
       m_syncingMediaProgress = false;
 
-      m_mediaPlayPauseButton->setGlyph(playPauseIcon(player.playbackStatus));
+      m_mediaPlayPauseButton->setGlyph(playPauseGlyph(player.playbackStatus));
       m_mediaPlayPauseButton->setVariant(ButtonVariant::Accent);
       m_mediaPrevButton->setEnabled(player.canGoPrevious);
       m_mediaNextButton->setEnabled(player.canGoNext);
-      m_mediaRepeatButton->setGlyph(repeatIcon(player.loopStatus));
+      m_mediaRepeatButton->setGlyph(repeatGlyph(player.loopStatus));
       m_mediaRepeatButton->setVariant(toggleVariant(player.loopStatus != "None"));
       m_mediaShuffleButton->setVariant(toggleVariant(player.shuffle));
 

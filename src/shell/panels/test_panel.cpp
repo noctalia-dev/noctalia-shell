@@ -59,16 +59,16 @@ void TestPanel::create(Renderer& renderer) {
     container->addChild(std::move(row));
   }
 
-  auto iconButton = std::make_unique<Button>();
-  iconButton->setText("Settings");
-  iconButton->setGlyph("settings");
-  iconButton->setVariant(ButtonVariant::Default);
-  iconButton->setOnClick([]() {});
-  m_iconButton = iconButton.get();
+  auto glyphButton = std::make_unique<Button>();
+  glyphButton->setText("Settings");
+  glyphButton->setGlyph("settings");
+  glyphButton->setVariant(ButtonVariant::Default);
+  glyphButton->setOnClick([]() {});
+  m_glyphButton = glyphButton.get();
   {
     auto row = makeRow();
     row->addChild(makeRowLabel("Button w/ icon", kRowLabelWidth));
-    row->addChild(std::move(iconButton));
+    row->addChild(std::move(glyphButton));
     container->addChild(std::move(row));
   }
 
@@ -260,8 +260,8 @@ void TestPanel::layout(Renderer& renderer, float /*width*/, float /*height*/) {
   if (m_select != nullptr) {
     m_select->layout(renderer);
   }
-  if (m_iconButton != nullptr) {
-    m_iconButton->layout(renderer);
+  if (m_glyphButton != nullptr) {
+    m_glyphButton->layout(renderer);
   }
   if (m_slider != nullptr) {
     m_slider->layout(renderer);

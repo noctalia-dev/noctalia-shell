@@ -48,7 +48,7 @@ private:
     TabId id;
     const char* key;
     const char* title;
-    const char* icon;
+    const char* glyph;
   };
 
   static constexpr std::size_t kTabCount = static_cast<std::size_t>(TabId::Count);

@@ -87,17 +87,17 @@ void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
   }
 
   m_glyph->measure(renderer);
-  const float iconH = m_glyph->height();
+  const float glyphH = m_glyph->height();
 
   if (m_displayMode == SysmonDisplayMode::Gauge && m_gauge != nullptr) {
-    const float gaugeW = std::max(3.0f, roundf(iconH * 0.4f));
+    const float gaugeW = std::max(3.0f, roundf(glyphH * 0.4f));
     m_gauge->setRadius(gaugeW / 2.0f);
 
     m_glyph->setPosition(0.0f, 0.0f);
     m_gauge->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
-    m_gauge->setSize(gaugeW, iconH);
+    m_gauge->setSize(gaugeW, glyphH);
 
-    rootNode->setSize(m_gauge->x() + gaugeW, iconH);
+    rootNode->setSize(m_gauge->x() + gaugeW, glyphH);
     return;
   }
 
@@ -111,20 +111,20 @@ void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
 
     m_glyph->setPosition(0.0f, 0.0f);
     m_chartBg->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
-    m_chartBg->setSize(chartW, iconH);
+    m_chartBg->setSize(chartW, glyphH);
 
     const float barW = chartW / static_cast<float>(kHistorySamples);
     for (int i = 0; i < kHistorySamples; i++) {
       m_bars[i]->setPosition(static_cast<float>(i) * barW, 0.0f);
-      m_bars[i]->setSize(barW, iconH);
+      m_bars[i]->setSize(barW, glyphH);
     }
 
     m_label->setPosition(m_chartBg->x() + chartW + Style::spaceXs, 0.0f);
-    rootNode->setSize(m_label->x() + m_label->width(), iconH);
+    rootNode->setSize(m_label->x() + m_label->width(), glyphH);
   } else {
     m_glyph->setPosition(0.0f, 0.0f);
     m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
-    rootNode->setSize(m_label->x() + m_label->width(), iconH);
+    rootNode->setSize(m_label->x() + m_label->width(), glyphH);
   }
 }
 
