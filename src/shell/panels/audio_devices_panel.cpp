@@ -25,11 +25,11 @@ public:
   explicit AudioDeviceRow(std::function<void()> onSelect) : m_onSelect(std::move(onSelect)) {
     setDirection(FlexDirection::Horizontal);
     setAlign(FlexAlign::Center);
-    setGap(static_cast<float>(Style::spaceSm));
-    setPadding(static_cast<float>(Style::spaceSm), static_cast<float>(Style::spaceMd),
-               static_cast<float>(Style::spaceSm), static_cast<float>(Style::spaceMd));
-    setMinHeight(static_cast<float>(Style::controlHeightLg));
-    setRadius(static_cast<float>(Style::radiusMd));
+    setGap(Style::spaceSm);
+    setPadding(Style::spaceSm, Style::spaceMd,
+               Style::spaceSm, Style::spaceMd);
+    setMinHeight(Style::controlHeightLg);
+    setRadius(Style::radiusMd);
     setBackground(palette.surfaceVariant);
     setBorderWidth(0.0f);
     setSoftness(1.0f);
@@ -100,7 +100,7 @@ public:
     m_radio->layout(renderer);
 
     const float textMaxWidth = std::max(
-        0.0f, m_rowWidth - static_cast<float>(Style::spaceMd * 2 + Style::spaceSm) - m_radio->width());
+        0.0f, m_rowWidth - Style::spaceMd * 2 + Style::spaceSm - m_radio->width());
     m_title->setMaxWidth(textMaxWidth);
     m_title->measure(renderer);
 
@@ -123,7 +123,7 @@ private:
     if (pressed()) {
       setBackground(palette.primary);
       setBorderColor(palette.primary);
-      setBorderWidth(static_cast<float>(Style::borderWidth));
+      setBorderWidth(Style::borderWidth);
       if (m_title != nullptr) {
         m_title->setColor(palette.onPrimary);
       }
@@ -135,7 +135,7 @@ private:
 
     setBackground(palette.surfaceVariant);
     setBorderColor(hovered() ? palette.primary : palette.surfaceVariant);
-    setBorderWidth(hovered() ? static_cast<float>(Style::borderWidth) : 0.0f);
+    setBorderWidth(hovered() ? Style::borderWidth : 0.0f);
     if (m_title != nullptr) {
       m_title->setColor(palette.onSurface);
     }
@@ -195,9 +195,9 @@ void addEmptyState(Flex& parent, Renderer& renderer, float width, const char* ti
   auto card = std::make_unique<Flex>();
   card->setDirection(FlexDirection::Vertical);
   card->setAlign(FlexAlign::Start);
-  card->setGap(static_cast<float>(Style::spaceXs));
-  card->setPadding(static_cast<float>(Style::spaceMd));
-  card->setRadius(static_cast<float>(Style::radiusMd));
+  card->setGap(Style::spaceXs);
+  card->setPadding(Style::spaceMd);
+  card->setRadius(Style::radiusMd);
   card->setBackground(palette.surfaceVariant);
   card->setBorderWidth(0.0f);
   card->setMinWidth(width);
@@ -205,7 +205,7 @@ void addEmptyState(Flex& parent, Renderer& renderer, float width, const char* ti
   auto titleLabel = std::make_unique<Label>();
   titleLabel->setText(title);
   titleLabel->setBold(true);
-  titleLabel->setMaxWidth(width - static_cast<float>(Style::spaceMd * 2));
+  titleLabel->setMaxWidth(width - Style::spaceMd * 2);
   titleLabel->measure(renderer);
   card->addChild(std::move(titleLabel));
 
@@ -213,7 +213,7 @@ void addEmptyState(Flex& parent, Renderer& renderer, float width, const char* ti
   bodyLabel->setText(body);
   bodyLabel->setCaptionStyle();
   bodyLabel->setColor(palette.onSurfaceVariant);
-  bodyLabel->setMaxWidth(width - static_cast<float>(Style::spaceMd * 2));
+  bodyLabel->setMaxWidth(width - Style::spaceMd * 2);
   bodyLabel->measure(renderer);
   card->addChild(std::move(bodyLabel));
 
@@ -228,14 +228,14 @@ void AudioDevicesPanel::create(Renderer& renderer) {
   auto container = std::make_unique<Flex>();
   container->setDirection(FlexDirection::Vertical);
   container->setAlign(FlexAlign::Start);
-  container->setGap(static_cast<float>(Style::spaceMd));
+  container->setGap(Style::spaceMd);
 
   auto header = std::make_unique<Flex>();
   header->setDirection(FlexDirection::Vertical);
   header->setAlign(FlexAlign::Start);
-  header->setGap(static_cast<float>(Style::spaceXs));
+  header->setGap(Style::spaceXs);
   header->setBackground(palette.surface);
-  header->setPadding(0.0f, 0.0f, static_cast<float>(Style::spaceXs), 0.0f);
+  header->setPadding(0.0f, 0.0f, Style::spaceXs, 0.0f);
   header->setZIndex(2);
   m_header = header.get();
 
@@ -258,13 +258,13 @@ void AudioDevicesPanel::create(Renderer& renderer) {
 
   auto scrollView = std::make_unique<ScrollView>();
   scrollView->setScrollbarVisible(true);
-  scrollView->setScrollStep(static_cast<float>(Style::controlHeightLg + Style::spaceSm));
+  scrollView->setScrollWheelStep(Style::controlHeightLg + Style::spaceSm);
   scrollView->setZIndex(1);
   m_scrollView = scrollView.get();
   m_list = scrollView->content();
   m_list->setDirection(FlexDirection::Vertical);
   m_list->setAlign(FlexAlign::Start);
-  m_list->setGap(static_cast<float>(Style::spaceLg));
+  m_list->setGap(Style::spaceLg);
   container->addChild(std::move(scrollView));
 
   m_container = container.get();
@@ -297,7 +297,7 @@ void AudioDevicesPanel::layout(Renderer& renderer, float width, float height) {
   m_header->setMinWidth(width);
   m_header->layout(renderer);
 
-  const float scrollHeight = std::max(0.0f, height - m_header->height() - static_cast<float>(Style::spaceMd));
+  const float scrollHeight = std::max(0.0f, height - m_header->height() - Style::spaceMd);
   m_scrollView->setSize(width, scrollHeight);
   m_scrollView->layout(renderer);
   rebuildList(renderer, m_scrollView->contentViewportWidth());
@@ -348,7 +348,7 @@ void AudioDevicesPanel::rebuildList(Renderer& renderer, float width) {
     auto outputSection = std::make_unique<Flex>();
     outputSection->setDirection(FlexDirection::Vertical);
     outputSection->setAlign(FlexAlign::Start);
-    outputSection->setGap(static_cast<float>(Style::spaceSm));
+    outputSection->setGap(Style::spaceSm);
 
     for (const auto& sink : sortedDevices(state.sinks)) {
       auto row = std::make_unique<AudioDeviceRow>([this, id = sink.id]() {
@@ -374,7 +374,7 @@ void AudioDevicesPanel::rebuildList(Renderer& renderer, float width) {
     auto inputSection = std::make_unique<Flex>();
     inputSection->setDirection(FlexDirection::Vertical);
     inputSection->setAlign(FlexAlign::Start);
-    inputSection->setGap(static_cast<float>(Style::spaceSm));
+    inputSection->setGap(Style::spaceSm);
 
     for (const auto& source : sortedDevices(state.sources)) {
       auto row = std::make_unique<AudioDeviceRow>([this, id = source.id]() {

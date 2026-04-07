@@ -16,21 +16,21 @@
 
 namespace {
 
-constexpr int kCardWidth = Style::controlHeightLg * 7 + Style::spaceMd + Style::spaceSm;
-constexpr int kSurfaceWidth = kCardWidth + Style::spaceSm;
-constexpr int kCardHeight = Style::controlHeightLg + Style::spaceXs;
-constexpr int kSurfaceHeight = kCardHeight + Style::spaceLg;
+constexpr float kCardWidth = Style::controlHeightLg * 7 + Style::spaceMd + Style::spaceSm;
+constexpr float kCardHeight = Style::controlHeightLg + Style::spaceXs;
+constexpr int kSurfaceWidth = static_cast<int>(kCardWidth + Style::spaceSm);
+constexpr int kSurfaceHeight = static_cast<int>(kCardHeight + Style::spaceLg);
 constexpr int kHideDelayMs = Style::animSlow * 3 + Style::animFast * 2;
 
 constexpr float kCardOpacity = 0.98f;
-constexpr float kIconSize = static_cast<float>(Style::fontSizeTitle + Style::borderWidth * 4);
-constexpr float kValueFontSize = static_cast<float>(Style::fontSizeBody);
+constexpr float kIconSize = Style::fontSizeTitle + Style::borderWidth * 4;
+constexpr float kValueFontSize = Style::fontSizeBody;
 
-constexpr float kProgressHeight = static_cast<float>(Style::spaceXs + Style::borderWidth * 2);
-constexpr float kCardPadding = static_cast<float>(Style::spaceMd);
-constexpr float kInnerGap = static_cast<float>(Style::spaceSm + Style::spaceXs);
-constexpr int kScreenMargin = Style::spaceLg;
-constexpr int kBarGap = Style::spaceXs;
+constexpr float kProgressHeight = Style::spaceXs + Style::borderWidth * 2;
+constexpr float kCardPadding = Style::spaceMd;
+constexpr float kInnerGap = Style::spaceSm + Style::spaceXs;
+constexpr int kScreenMargin = static_cast<int>(Style::spaceLg);
+constexpr int kBarGap = static_cast<int>(Style::spaceXs);
 
 } // namespace
 
@@ -183,23 +183,23 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   inst.sceneRoot->setOpacity(0.0f);
   inst.surface->setSceneRoot(inst.sceneRoot.get());
 
-  const float cardX = (w - static_cast<float>(kCardWidth)) * 0.5f;
-  const float cardY = (h - static_cast<float>(kCardHeight)) * 0.5f;
+  const float cardX = (w - kCardWidth) * 0.5f;
+  const float cardY = (h - kCardHeight) * 0.5f;
 
   auto background = std::make_unique<Box>();
   background->setCardStyle();
   background->setFill(palette.surface);
-  background->setBorder(palette.outline, static_cast<float>(Style::borderWidth));
-  background->setRadius(static_cast<float>(kCardHeight) * 0.5f);
+  background->setBorder(palette.outline, Style::borderWidth);
+  background->setRadius(kCardHeight * 0.5f);
   background->setSoftness(1.2f);
-  background->setSize(static_cast<float>(kCardWidth), static_cast<float>(kCardHeight));
+  background->setSize(kCardWidth, kCardHeight);
   background->setPosition(cardX, cardY);
   background->setZIndex(0);
   inst.background = background.get();
   inst.sceneRoot->addChild(std::move(background));
 
   auto card = std::make_unique<Node>();
-  card->setSize(static_cast<float>(kCardWidth), static_cast<float>(kCardHeight));
+  card->setSize(kCardWidth, kCardHeight);
   card->setPosition(cardX, cardY);
   card->setZIndex(1);
   inst.card = card.get();
@@ -220,7 +220,7 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   inst.card->addChild(std::move(value));
 
   auto progress = std::make_unique<ProgressBar>();
-  progress->setRadius(static_cast<float>(Style::radiusFull));
+  progress->setRadius(Style::radiusFull);
   progress->setTrackColor(palette.surface);
   progress->setFillColor(palette.primary);
   inst.progress = progress.get();
@@ -241,7 +241,7 @@ void OsdOverlay::updateInstanceContent(Instance& inst) {
   inst.icon->setIcon(m_content.icon);
   inst.icon->measure(*m_renderContext);
   inst.icon->setPosition(kCardPadding, std::round((inst.card->height() - inst.icon->height()) * 0.5f) -
-                                           static_cast<float>(Style::borderWidth));
+                                           Style::borderWidth);
 
   inst.value->setText(m_content.value);
   inst.value->setMaxWidth(cardWidth);
@@ -271,7 +271,7 @@ void OsdOverlay::animateInstance(Instance& inst) {
     inst.hideAnimId = 0;
   }
 
-  const float baseY = (inst.sceneRoot->height() - static_cast<float>(kCardHeight)) * 0.5f;
+  const float baseY = (inst.sceneRoot->height() - kCardHeight) * 0.5f;
   if (!inst.visible) {
     // Animate from current opacity to avoid a flash-to-zero glitch when a new
     // event arrives while the show animation is already in progress.

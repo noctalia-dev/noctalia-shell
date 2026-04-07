@@ -135,12 +135,12 @@ void TestPanel::create(Renderer& renderer) {
     auto options = std::make_unique<Flex>();
     options->setDirection(FlexDirection::Horizontal);
     options->setAlign(FlexAlign::Center);
-    options->setGap(static_cast<float>(Style::spaceMd));
+    options->setGap(Style::spaceMd);
 
     auto optionA = std::make_unique<Flex>();
     optionA->setDirection(FlexDirection::Horizontal);
     optionA->setAlign(FlexAlign::Center);
-    optionA->setGap(static_cast<float>(Style::spaceXs));
+    optionA->setGap(Style::spaceXs);
 
     auto radioA = std::make_unique<RadioButton>();
     radioA->setChecked(true);
@@ -155,7 +155,7 @@ void TestPanel::create(Renderer& renderer) {
     auto optionB = std::make_unique<Flex>();
     optionB->setDirection(FlexDirection::Horizontal);
     optionB->setAlign(FlexAlign::Center);
-    optionB->setGap(static_cast<float>(Style::spaceXs));
+    optionB->setGap(Style::spaceXs);
 
     auto radioB = std::make_unique<RadioButton>();
     m_radioB = radioB.get();

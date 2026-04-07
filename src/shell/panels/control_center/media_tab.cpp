@@ -30,9 +30,9 @@ using namespace control_center;
 
 namespace {
 
-constexpr float kArtworkSize = static_cast<float>(Style::controlHeightLg * 6);
-constexpr float kMediaColumnWidth = static_cast<float>(Style::controlHeightLg * 11);
-constexpr float kAudioColumnWidth = static_cast<float>(Style::controlHeightLg * 11);
+constexpr float kArtworkSize = Style::controlHeightLg * 6;
+constexpr float kMediaColumnWidth = Style::controlHeightLg * 11;
+constexpr float kAudioColumnWidth = Style::controlHeightLg * 11;
 
 bool isRemoteArtUrl(std::string_view artUrl) {
   return artUrl.starts_with("https://") || artUrl.starts_with("http://");
@@ -185,7 +185,7 @@ void ControlCenterPanel::buildMediaTab() {
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Horizontal);
   tab->setAlign(FlexAlign::Start);
-  tab->setGap(static_cast<float>(Style::spaceMd));
+  tab->setGap(Style::spaceMd);
   m_tabContainers[tabIndex(TabId::Media)] = tab.get();
 
   auto mediaColumn = std::make_unique<Flex>();
@@ -198,13 +198,13 @@ void ControlCenterPanel::buildMediaTab() {
   auto nowCard = std::make_unique<Flex>();
   applyCard(*nowCard);
   nowCard->setAlign(FlexAlign::Center);
-  nowCard->setGap(static_cast<float>(Style::spaceMd));
+  nowCard->setGap(Style::spaceMd);
   nowCard->setMinWidth(kMediaColumnWidth);
   nowCard->setMinHeight(kMediaNowCardMinHeight);
   m_mediaNowCard = nowCard.get();
 
   auto artwork = std::make_unique<Image>();
-  artwork->setCornerRadius(static_cast<float>(Style::radiusLg));
+  artwork->setCornerRadius(Style::radiusLg);
   artwork->setBackground(alphaSurfaceVariant(0.95f));
   artwork->setFit(ImageFit::Contain);
   artwork->setSize(kArtworkSize, kArtworkSize);
@@ -216,14 +216,14 @@ void ControlCenterPanel::buildMediaTab() {
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle);
   title->setColor(palette.onSurface);
-  title->setMaxWidth(kMediaColumnWidth - static_cast<float>(Style::spaceMd * 2));
+  title->setMaxWidth(kMediaColumnWidth - Style::spaceMd * 2);
   m_mediaTrackTitle = title.get();
   nowCard->addChild(std::move(title));
 
   auto artist = std::make_unique<Label>();
   artist->setText("Start playback in an MPRIS app");
   artist->setColor(palette.onSurfaceVariant);
-  artist->setMaxWidth(kMediaColumnWidth - static_cast<float>(Style::spaceMd * 2));
+  artist->setMaxWidth(kMediaColumnWidth - Style::spaceMd * 2);
   m_mediaTrackArtist = artist.get();
   nowCard->addChild(std::move(artist));
 
@@ -231,14 +231,14 @@ void ControlCenterPanel::buildMediaTab() {
   album->setText(" ");
   album->setCaptionStyle();
   album->setColor(palette.onSurfaceVariant);
-  album->setMaxWidth(kMediaColumnWidth - static_cast<float>(Style::spaceMd * 2));
+  album->setMaxWidth(kMediaColumnWidth - Style::spaceMd * 2);
   m_mediaTrackAlbum = album.get();
   nowCard->addChild(std::move(album));
 
   auto progress = std::make_unique<Slider>();
   progress->setRange(0.0f, 100.0f);
   progress->setStep(1.0f);
-  progress->setSize(kMediaColumnWidth - static_cast<float>(Style::spaceMd * 2), 0.0f);
+  progress->setSize(kMediaColumnWidth - Style::spaceMd * 2, 0.0f);
   progress->setOnValueChanged([this](float value) {
     if (m_syncingMediaProgress || m_mpris == nullptr) {
       return;
@@ -258,7 +258,7 @@ void ControlCenterPanel::buildMediaTab() {
   auto controls = std::make_unique<Flex>();
   controls->setDirection(FlexDirection::Horizontal);
   controls->setAlign(FlexAlign::Center);
-  controls->setGap(static_cast<float>(Style::spaceSm));
+  controls->setGap(Style::spaceSm);
 
   auto repeat = std::make_unique<Button>();
   repeat->setIcon("repeat");
@@ -343,7 +343,7 @@ void ControlCenterPanel::buildMediaTab() {
 
   auto playerSelect = std::make_unique<Select>();
   playerSelect->setPlaceholder("Active player");
-  playerSelect->setSize(kMediaColumnWidth - static_cast<float>(Style::spaceMd * 2), 0.0f);
+  playerSelect->setSize(kMediaColumnWidth - Style::spaceMd * 2, 0.0f);
   playerSelect->setOnSelectionChanged([this](std::size_t index, std::string_view /*text*/) {
     if (m_syncingPlayerSelect || m_mpris == nullptr) {
       return;
@@ -363,7 +363,7 @@ void ControlCenterPanel::buildMediaTab() {
   auto audioColumn = std::make_unique<Flex>();
   audioColumn->setDirection(FlexDirection::Vertical);
   audioColumn->setAlign(FlexAlign::Start);
-  audioColumn->setGap(static_cast<float>(Style::spaceSm));
+  audioColumn->setGap(Style::spaceSm);
   audioColumn->setMinWidth(kAudioColumnWidth);
   m_mediaAudioColumn = audioColumn.get();
 
@@ -376,7 +376,7 @@ void ControlCenterPanel::buildMediaTab() {
 
   auto outputDeviceSelect = std::make_unique<Select>();
   outputDeviceSelect->setPlaceholder("Select output device");
-  outputDeviceSelect->setSize(kAudioColumnWidth - static_cast<float>(Style::spaceMd * 2), 0.0f);
+  outputDeviceSelect->setSize(kAudioColumnWidth - Style::spaceMd * 2, 0.0f);
   outputDeviceSelect->setOnSelectionChanged([this](std::size_t index, std::string_view /*text*/) {
     if (m_syncingOutputSelect || m_audio == nullptr || index >= m_outputDeviceIds.size()) {
       return;
@@ -390,7 +390,7 @@ void ControlCenterPanel::buildMediaTab() {
   auto outputRow = std::make_unique<Flex>();
   outputRow->setDirection(FlexDirection::Horizontal);
   outputRow->setAlign(FlexAlign::Center);
-  outputRow->setGap(static_cast<float>(Style::spaceSm));
+  outputRow->setGap(Style::spaceSm);
 
   auto outputSlider = std::make_unique<Slider>();
   outputSlider->setRange(0.0f, 150.0f);
@@ -434,7 +434,7 @@ void ControlCenterPanel::buildMediaTab() {
 
   auto inputDeviceSelect = std::make_unique<Select>();
   inputDeviceSelect->setPlaceholder("Select input device");
-  inputDeviceSelect->setSize(kAudioColumnWidth - static_cast<float>(Style::spaceMd * 2), 0.0f);
+  inputDeviceSelect->setSize(kAudioColumnWidth - Style::spaceMd * 2, 0.0f);
   inputDeviceSelect->setOnSelectionChanged([this](std::size_t index, std::string_view /*text*/) {
     if (m_syncingInputSelect || m_audio == nullptr || index >= m_inputDeviceIds.size()) {
       return;
@@ -448,7 +448,7 @@ void ControlCenterPanel::buildMediaTab() {
   auto inputRow = std::make_unique<Flex>();
   inputRow->setDirection(FlexDirection::Horizontal);
   inputRow->setAlign(FlexAlign::Center);
-  inputRow->setGap(static_cast<float>(Style::spaceSm));
+  inputRow->setGap(Style::spaceSm);
 
   auto inputSlider = std::make_unique<Slider>();
   inputSlider->setRange(0.0f, 150.0f);

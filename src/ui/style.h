@@ -6,32 +6,34 @@ namespace Style {
 
 inline constexpr int barHeightDefault = 34;
 
-inline constexpr int radiusSm = 2;
-inline constexpr int radiusMd = 5;
-inline constexpr int radiusLg = 8;
-inline constexpr int radiusXl = 12;
-inline constexpr int radiusFull = 9999;
-
-inline constexpr int borderWidth = 1;
-
-inline constexpr int spaceXs = 4;
-inline constexpr int spaceSm = 8;
-inline constexpr int spaceMd = 12;
-inline constexpr int spaceLg = 16;
-
-inline constexpr int paddingV = spaceMd / 2;
-inline constexpr int paddingH = spaceMd;
-
-inline constexpr int controlHeightSm = 28;
-inline constexpr int controlHeight = 32;
-inline constexpr int controlHeightLg = 36;
-
-inline constexpr int fontSizeCaption = 12;
-inline constexpr int fontSizeBody = 14;
-inline constexpr int fontSizeTitle = 16;
-
 inline constexpr int animFast = 100;
 inline constexpr int animNormal = 200;
 inline constexpr int animSlow = 400;
+
+inline constexpr float radiusSm = 2.0f;
+inline constexpr float radiusMd = 5.0f;
+inline constexpr float radiusLg = 8.0f;
+inline constexpr float radiusXl = 12.0f;
+inline constexpr float radiusFull = 9999.0f;
+
+inline constexpr float borderWidth = 1.0f;
+
+inline constexpr float spaceXs = 4.0f;
+inline constexpr float spaceSm = 8.0f;
+inline constexpr float spaceMd = 12.0f;
+inline constexpr float spaceLg = 16.0f;
+
+inline constexpr float paddingV = spaceMd / 2.0f;
+inline constexpr float paddingH = spaceMd;
+
+inline constexpr float fontSizeCaption = 12.0f;
+inline constexpr float fontSizeBody = 14.0f;
+inline constexpr float fontSizeTitle = 16.0f;
+
+inline constexpr float controlHeightSm = 28.0f;
+inline constexpr float controlHeight = 32.0f;
+inline constexpr float controlHeightLg = 36.0f;
+
+
 
 } // namespace Style

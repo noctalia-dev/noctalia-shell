@@ -12,10 +12,10 @@ namespace control_center {
 void applyCard(Flex& card) {
   card.setDirection(FlexDirection::Vertical);
   card.setAlign(FlexAlign::Start);
-  card.setGap(static_cast<float>(Style::spaceXs));
-  card.setPadding(static_cast<float>(Style::spaceSm), static_cast<float>(Style::spaceMd),
-                  static_cast<float>(Style::spaceSm), static_cast<float>(Style::spaceMd));
-  card.setRadius(static_cast<float>(Style::radiusLg));
+  card.setGap(Style::spaceXs);
+  card.setPadding(Style::spaceSm, Style::spaceMd,
+                  Style::spaceSm, Style::spaceMd);
+  card.setRadius(Style::radiusLg);
   card.setBackground(alphaSurfaceVariant(0.75f));
   card.setBorderWidth(0.0f);
   card.setSoftness(1.0f);

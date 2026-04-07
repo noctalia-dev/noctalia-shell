@@ -12,7 +12,7 @@ void ControlCenterPanel::buildOverviewTab() {
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);
   tab->setAlign(FlexAlign::Start);
-  tab->setGap(static_cast<float>(Style::spaceSm));
+  tab->setGap(Style::spaceSm);
   m_tabContainers[tabIndex(TabId::Overview)] = tab.get();
 
   auto userCard = std::make_unique<Flex>();

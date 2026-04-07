@@ -19,10 +19,10 @@ namespace {
 constexpr float kDefaultWidth = 260.0f;
 constexpr float kDefaultHeight = 180.0f;
 constexpr float kScrollbarWidth = 6.0f;
-constexpr float kScrollbarPadding = static_cast<float>(Style::borderWidth);
-constexpr float kViewportPaddingH = static_cast<float>(Style::spaceXs);
-constexpr float kViewportPaddingV = static_cast<float>(Style::spaceSm);
-constexpr float kScrollbarGap = static_cast<float>(Style::spaceSm);
+constexpr float kScrollbarPadding = Style::borderWidth;
+constexpr float kViewportPaddingH = Style::spaceXs;
+constexpr float kViewportPaddingV = Style::spaceSm;
+constexpr float kScrollbarGap = Style::spaceSm;
 constexpr float kMinThumbHeight = 24.0f;
 
 RoundedRectStyle makeSolid(const Color& fill, float radius) {
@@ -77,7 +77,7 @@ ScrollView::ScrollView() {
       return;
     }
 
-    const float delta = data.axisDiscrete != 0 ? static_cast<float>(data.axisDiscrete) * m_scrollStep
+    const float delta = data.axisDiscrete != 0 ? static_cast<float>(data.axisDiscrete) * m_scrollWheelStep
                                                : static_cast<float>(data.axisValue);
     scrollBy(delta);
   });
@@ -133,7 +133,7 @@ void ScrollView::setScrollOffset(float offset) {
 
 void ScrollView::scrollBy(float delta) { setScrollOffset(m_scrollOffset + delta); }
 
-void ScrollView::setScrollStep(float step) { m_scrollStep = std::max(0.0f, step); }
+void ScrollView::setScrollWheelStep(float step) { m_scrollWheelStep = std::max(0.0f, step); }
 
 void ScrollView::setScrollbarVisible(bool visible) {
   if (m_showScrollbar == visible) {

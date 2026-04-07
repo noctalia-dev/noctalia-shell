@@ -16,18 +16,18 @@ void ControlCenterPanel::buildNotificationsTab() {
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);
   tab->setAlign(FlexAlign::Start);
-  tab->setGap(static_cast<float>(Style::spaceSm));
+  tab->setGap(Style::spaceSm);
   m_tabContainers[tabIndex(TabId::Notifications)] = tab.get();
 
   auto scroll = std::make_unique<ScrollView>();
   scroll->setScrollbarVisible(true);
-  scroll->setScrollStep(static_cast<float>(Style::controlHeightLg + Style::spaceSm));
+  scroll->setScrollWheelStep(Style::controlHeightLg + Style::spaceSm);
   scroll->setBackgroundStyle(rgba(0.0f, 0.0f, 0.0f, 0.0f), rgba(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
   m_notificationScroll = scroll.get();
   m_notificationList = scroll->content();
   m_notificationList->setDirection(FlexDirection::Vertical);
   m_notificationList->setAlign(FlexAlign::Start);
-  m_notificationList->setGap(static_cast<float>(Style::spaceSm));
+  m_notificationList->setGap(Style::spaceSm);
   m_notificationList->setPadding(0.0f, kNotificationListRightPadding, 0.0f, 0.0f);
   tab->addChild(std::move(scroll));
 
@@ -70,14 +70,14 @@ void ControlCenterPanel::rebuildNotifications(Renderer& renderer, float width) {
     meta->setText(it->notification.appName + " • " + statusText(*it));
     meta->setCaptionStyle();
     meta->setColor(statusColor(*it));
-    meta->setMaxWidth(cardWidth - static_cast<float>(Style::spaceMd * 2));
+    meta->setMaxWidth(cardWidth - Style::spaceMd * 2);
     meta->measure(renderer);
     card->addChild(std::move(meta));
 
     auto summary = std::make_unique<Label>();
     summary->setText(it->notification.summary.empty() ? "Untitled notification" : it->notification.summary);
     summary->setBold(true);
-    summary->setMaxWidth(cardWidth - static_cast<float>(Style::spaceMd * 2));
+    summary->setMaxWidth(cardWidth - Style::spaceMd * 2);
     summary->measure(renderer);
     card->addChild(std::move(summary));
 
@@ -85,7 +85,7 @@ void ControlCenterPanel::rebuildNotifications(Renderer& renderer, float width) {
       auto body = std::make_unique<Label>();
       body->setText(it->notification.body);
       body->setColor(palette.onSurfaceVariant);
-      body->setMaxWidth(cardWidth - static_cast<float>(Style::spaceMd * 2));
+      body->setMaxWidth(cardWidth - Style::spaceMd * 2);
       body->measure(renderer);
       card->addChild(std::move(body));
     }

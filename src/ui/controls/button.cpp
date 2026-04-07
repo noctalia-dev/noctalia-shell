@@ -114,7 +114,7 @@ void Button::setMinimalChrome(bool minimalChrome) {
 void Button::applyVariant() {
   setPadding(Style::paddingV, Style::paddingH, Style::paddingV, Style::paddingH);
   setRadius(Style::radiusMd);
-  setBorderWidth(m_minimalChrome ? 0.0f : static_cast<float>(Style::borderWidth));
+  setBorderWidth(m_minimalChrome ? 0.0f : Style::borderWidth);
 
   switch (m_variant) {
   case ButtonVariant::Default:

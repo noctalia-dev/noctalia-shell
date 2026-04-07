@@ -87,8 +87,8 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
   const bool isLeft = barConfig.position == "left";
   const bool isRight = barConfig.position == "right";
   const bool isVertical = isLeft || isRight;
-  const std::int32_t panelGap = Style::spaceXs;
-  const std::int32_t screenPadding = Style::spaceSm;
+  const std::int32_t panelGap = static_cast<std::int32_t>(Style::spaceXs);
+  const std::int32_t screenPadding = static_cast<std::int32_t>(Style::spaceSm);
 
   std::int32_t outputWidth = static_cast<std::int32_t>(panelWidth);
   std::int32_t outputHeight = static_cast<std::int32_t>(panelHeight);

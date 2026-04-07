@@ -20,8 +20,7 @@
 namespace {
 
 constexpr std::size_t kMaxResults = 50;
-constexpr float kRowHeight = 36.0f;
-constexpr float kIconSize = 20.0f;
+constexpr float kIconSize = 24.0f;
 
 } // namespace
 
@@ -36,7 +35,7 @@ void LauncherPanel::create(Renderer& renderer) {
   auto container = std::make_unique<Flex>();
   container->setDirection(FlexDirection::Vertical);
   container->setAlign(FlexAlign::Start);
-  container->setGap(static_cast<float>(Style::spaceSm));
+  container->setGap(Style::spaceSm);
 
   auto input = std::make_unique<Input>();
   input->setPlaceholder("Search applications...");
@@ -50,7 +49,6 @@ void LauncherPanel::create(Renderer& renderer) {
 
   auto scrollView = std::make_unique<ScrollView>();
   scrollView->setScrollbarVisible(true);
-  scrollView->setScrollStep(kRowHeight);
   m_scrollView = scrollView.get();
   m_list = scrollView->content();
   m_list->setDirection(FlexDirection::Vertical);
@@ -77,7 +75,7 @@ void LauncherPanel::layout(Renderer& renderer, float width, float height) {
   m_input->setSize(width, 0.0f);
   m_input->layout(renderer);
 
-  const float scrollHeight = std::max(0.0f, height - m_input->height() - static_cast<float>(Style::spaceSm));
+  const float scrollHeight = std::max(0.0f, height - m_input->height() - Style::spaceSm);
   m_scrollView->setSize(width, scrollHeight);
   m_scrollView->layout(renderer);
 
@@ -208,11 +206,11 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
-    row->setGap(static_cast<float>(Style::spaceSm));
-    row->setPadding(static_cast<float>(Style::spaceXs), static_cast<float>(Style::spaceSm),
-                    static_cast<float>(Style::spaceXs), static_cast<float>(Style::spaceSm));
+    row->setGap(Style::spaceMd);
+    row->setPadding(Style::spaceXs, Style::spaceSm,
+                    Style::spaceXs, Style::spaceSm);
     row->setMinWidth(width);
-    row->setRadius(static_cast<float>(Style::radiusMd));
+    row->setRadius(Style::radiusMd);
 
     if (i == m_selectedIndex) {
       row->setBackground(palette.surfaceVariant);
@@ -222,7 +220,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     if (!result.actionText.empty()) {
       auto actionLabel = std::make_unique<Label>();
       actionLabel->setText(result.actionText);
-      actionLabel->setFontSize(static_cast<float>(Style::fontSizeTitle));
+      actionLabel->setFontSize(Style::fontSizeTitle);
       actionLabel->setColor(palette.onSurface);
       actionLabel->measure(renderer);
       actionLabel->setSize(kIconSize, kIconSize);
@@ -230,7 +228,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     } else if (!result.iconPath.empty()) {
       auto image = std::make_unique<Image>();
       image->setSize(kIconSize, kIconSize);
-      image->setCornerRadius(static_cast<float>(Style::radiusSm));
+      image->setCornerRadius(Style::radiusSm);
       image->setSourceFile(renderer, result.iconPath, static_cast<int>(kIconSize));
       row->addChild(std::move(image));
     } else {
@@ -248,11 +246,11 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     textCol->setAlign(FlexAlign::Start);
     textCol->setGap(1.0f);
 
-    const float textWidth = std::max(0.0f, width - kIconSize - static_cast<float>(Style::spaceSm) * 3.0f);
+    const float textWidth = std::max(0.0f, width - kIconSize - Style::spaceSm * 3.0f);
 
     auto title = std::make_unique<Label>();
     title->setText(result.title);
-    title->setFontSize(static_cast<float>(Style::fontSizeBody));
+    title->setFontSize(Style::fontSizeBody);
     title->setBold(true);
     title->setColor(palette.onSurface);
     title->setMaxWidth(textWidth);
@@ -356,7 +354,7 @@ void LauncherPanel::scrollToSelected() {
   const float itemTop = item->y();
   const float itemBottom = itemTop + item->height();
   // The ScrollView viewport is smaller than the outer widget by vertical padding
-  constexpr float kScrollViewPaddingV = static_cast<float>(Style::spaceSm);
+  constexpr float kScrollViewPaddingV = Style::spaceSm;
   const float viewportH = m_scrollView->height() - kScrollViewPaddingV * 2.0f;
   const float scrollOffset = m_scrollView->scrollOffset();
 

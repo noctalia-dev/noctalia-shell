@@ -190,7 +190,7 @@ void NotificationHistoryPanel::create(Renderer& renderer) {
   header->setAlign(FlexAlign::Start);
   header->setGap(Style::spaceXs);
   header->setBackground(palette.surface);
-  header->setPadding(0.0f, 0.0f, static_cast<float>(Style::spaceXs), 0.0f);
+  header->setPadding(0.0f, 0.0f, Style::spaceXs, 0.0f);
   header->setZIndex(2);
   m_header = header.get();
 
@@ -228,7 +228,7 @@ void NotificationHistoryPanel::create(Renderer& renderer) {
 
   auto scrollView = std::make_unique<ScrollView>();
   scrollView->setScrollbarVisible(true);
-  scrollView->setScrollStep(56.0f);
+  scrollView->setScrollWheelStep(56.0f);
   scrollView->setZIndex(1);
   m_scrollView = scrollView.get();
   m_list = scrollView->content();
@@ -365,8 +365,8 @@ void NotificationHistoryPanel::rebuildList(Renderer& renderer, float width) {
     dismissButton->setIcon("trash");
     dismissButton->setIconSize(Style::fontSizeCaption);
     dismissButton->setVariant(ButtonVariant::Ghost);
-    dismissButton->setMinHeight(static_cast<float>(Style::controlHeightSm));
-    dismissButton->setPadding(static_cast<float>(Style::spaceXs));
+    dismissButton->setMinHeight(Style::controlHeightSm);
+    dismissButton->setPadding(Style::spaceXs);
     dismissButton->setGap(0.0f);
     dismissButton->setOnClick(
         [this, id = entry.notification.id, wasActive = entry.active]() { dismissEntry(id, wasActive); });

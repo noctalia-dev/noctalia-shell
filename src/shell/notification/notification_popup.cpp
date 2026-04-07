@@ -23,28 +23,28 @@ constexpr int kCardMinHeight = 78;
 constexpr int kCardMaxHeight = 130;
 
 constexpr std::size_t kMaxVisible = 5;
-constexpr int kGap = Style::spaceSm;
-constexpr int kPadding = Style::spaceMd;
-constexpr int kCardInnerPad = Style::spaceMd;
+constexpr float kGap = Style::spaceSm;
+constexpr float kPadding = Style::spaceMd;
+constexpr float kCardInnerPad = Style::spaceMd;
 constexpr int kPopupDurationMs = 8000;
 constexpr int kProgressHeight = 3;
-constexpr int kSlideOffset = 20;                      // horizontal slide distance for entry/exit animation
-constexpr int kProgressBottomMargin = Style::spaceMd; // space below progress bar to card edge
-constexpr int kProgressTopGap = Style::spaceLg;       // gap from text content to progress bar
+constexpr int kSlideOffset = 20;                            // horizontal slide distance for entry/exit animation
+constexpr float kProgressBottomMargin = Style::spaceMd;    // space below progress bar to card edge
+constexpr float kProgressTopGap = Style::spaceLg;          // gap from text content to progress bar
 
-constexpr int kMetaFontSize = Style::fontSizeCaption;
-constexpr int kSummaryFontSize = Style::fontSizeTitle;
-constexpr int kBodyFontSize = Style::fontSizeBody;
+constexpr float kMetaFontSize = Style::fontSizeCaption;
+constexpr float kSummaryFontSize = Style::fontSizeTitle;
+constexpr float kBodyFontSize = Style::fontSizeBody;
 
-constexpr int kSummaryLineHeight = Style::spaceLg;
-constexpr int kMetaGap = Style::spaceXs;        // vertical gap between app name and summary
-constexpr int kSummaryBodyGap = Style::spaceXs; // vertical gap between summary and body
+constexpr float kSummaryLineHeight = Style::spaceLg;
+constexpr float kMetaGap = Style::spaceXs;        // vertical gap between app name and summary
+constexpr float kSummaryBodyGap = Style::spaceXs; // vertical gap between summary and body
 
 constexpr std::size_t kMaxSummaryLines = 2;
 constexpr std::size_t kMaxBodyLines = 4;
 
-constexpr int kSurfaceWidth = kCardWidth + kPadding * 2;
-constexpr int kSurfaceHeight = kCardMaxHeight * kMaxVisible + kGap * (kMaxVisible - 1) + kPadding * 2;
+constexpr int kSurfaceWidth = static_cast<int>(kCardWidth + kPadding * 2);
+constexpr int kSurfaceHeight = static_cast<int>(kCardMaxHeight * kMaxVisible + kGap * (kMaxVisible - 1) + kPadding * 2);
 
 std::string collapseWhitespace(std::string_view text) {
   std::string out;

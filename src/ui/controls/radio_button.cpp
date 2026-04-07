@@ -61,10 +61,10 @@ bool RadioButton::hovered() const noexcept { return m_inputArea != nullptr && m_
 bool RadioButton::pressed() const noexcept { return m_inputArea != nullptr && m_inputArea->pressed(); }
 
 void RadioButton::layout(Renderer& /*renderer*/) {
-  const float touchSize = static_cast<float>(Style::controlHeightSm);
-  const float indicatorSize = static_cast<float>(Style::fontSizeTitle + Style::spaceXs);
+  const float touchSize = Style::controlHeightSm;
+  const float indicatorSize = Style::fontSizeTitle + Style::spaceXs;
   const float indicatorInset = (touchSize - indicatorSize) * 0.5f;
-  const float innerInset = static_cast<float>(Style::spaceXs + Style::borderWidth);
+  const float innerInset = Style::spaceXs + Style::borderWidth;
   const float innerSize = indicatorSize - innerInset * 2.0f;
 
   setSize(touchSize, touchSize);
@@ -104,7 +104,7 @@ void RadioButton::applyState() {
   }
 
   m_outer->setFill(fill);
-  m_outer->setBorder(border, static_cast<float>(Style::borderWidth));
+  m_outer->setBorder(border, Style::borderWidth);
 
   m_inner->setFill(m_checked ? palette.onPrimary : palette.surface);
   m_inner->setBorder(m_checked ? palette.onPrimary : palette.surface, 0.0f);

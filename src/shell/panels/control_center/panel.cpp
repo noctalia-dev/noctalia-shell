@@ -29,15 +29,15 @@ void ControlCenterPanel::create(Renderer& renderer) {
   auto root = std::make_unique<Flex>();
   root->setDirection(FlexDirection::Horizontal);
   root->setAlign(FlexAlign::Start);
-  root->setGap(static_cast<float>(Style::spaceLg));
+  root->setGap(Style::spaceLg);
   root->setPadding(0.0f);
   m_rootLayout = root.get();
 
   auto sidebar = std::make_unique<Flex>();
   sidebar->setDirection(FlexDirection::Vertical);
   sidebar->setAlign(FlexAlign::Start);
-  sidebar->setGap(static_cast<float>(Style::spaceXs));
-  sidebar->setPadding(static_cast<float>(Style::spaceMd));
+  sidebar->setGap(Style::spaceXs);
+  sidebar->setPadding(Style::spaceMd);
   sidebar->setMinWidth(kSidebarWidth);
   m_sidebar = sidebar.get();
 
@@ -47,10 +47,10 @@ void ControlCenterPanel::create(Renderer& renderer) {
     button->setIcon(tab.icon);
     button->setVariant(ButtonVariant::Tab);
     button->setMinimalChrome(true);
-    button->setMinHeight(static_cast<float>(Style::controlHeightLg));
-    button->setPadding(static_cast<float>(Style::spaceSm), static_cast<float>(Style::spaceMd),
-                       static_cast<float>(Style::spaceSm), static_cast<float>(Style::spaceMd));
-    button->setRadius(static_cast<float>(Style::radiusLg));
+    button->setMinHeight(Style::controlHeightLg);
+    button->setPadding(Style::spaceSm, Style::spaceMd,
+                       Style::spaceSm, Style::spaceMd);
+    button->setRadius(Style::radiusLg);
     button->setOnClick([this, id = tab.id]() {
       selectTab(id);
       PanelManager::instance().refresh();
@@ -65,9 +65,9 @@ void ControlCenterPanel::create(Renderer& renderer) {
   auto content = std::make_unique<Flex>();
   content->setDirection(FlexDirection::Vertical);
   content->setAlign(FlexAlign::Start);
-  content->setGap(static_cast<float>(Style::spaceMd));
-  content->setPadding(static_cast<float>(Style::spaceLg));
-  content->setRadius(static_cast<float>(Style::radiusXl));
+  content->setGap(Style::spaceMd);
+  content->setPadding(Style::spaceLg);
+  content->setRadius(Style::radiusXl);
   content->setBackground(alphaSurfaceVariant(0.9f));
   content->setBorderWidth(0.0f);
   content->setSoftness(1.0f);
@@ -114,7 +114,7 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
   }
 
   const float sidebarWidth = std::round(std::max(0.0f, width * kSidebarWidthRatio));
-  const float sidebarButtonWidth = std::max(0.0f, sidebarWidth - static_cast<float>(Style::spaceMd * 2));
+  const float sidebarButtonWidth = std::max(0.0f, sidebarWidth - Style::spaceMd * 2);
 
   for (auto* button : m_tabButtons) {
     if (button != nullptr) {
@@ -124,11 +124,11 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
     }
   }
 
-  const float rightSurfaceGutter = static_cast<float>(Style::spaceXs);
+  const float rightSurfaceGutter = Style::spaceXs;
   const float contentOuterWidth =
-      std::max(0.0f, width - sidebarWidth - static_cast<float>(Style::spaceLg) - rightSurfaceGutter);
-  const float contentInnerWidth = std::max(0.0f, contentOuterWidth - static_cast<float>(Style::spaceLg * 2));
-  const float contentInnerHeight = std::max(0.0f, height - static_cast<float>(Style::spaceLg * 2));
+      std::max(0.0f, width - sidebarWidth - Style::spaceLg - rightSurfaceGutter);
+  const float contentInnerWidth = std::max(0.0f, contentOuterWidth - Style::spaceLg * 2);
+  const float contentInnerHeight = std::max(0.0f, height - Style::spaceLg * 2);
   const float bodyHeight = std::max(0.0f, contentInnerHeight - kHeaderReserveHeight);
 
   if (m_sidebar != nullptr) {
@@ -154,14 +154,14 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
   }
 
   if (m_tabContainers[tabIndex(TabId::Media)] != nullptr) {
-    const float mediaGap = static_cast<float>(Style::spaceMd);
+    const float mediaGap = Style::spaceMd;
     const float mediaContentWidth = std::max(0.0f, contentInnerWidth);
     const float leftPreferred = std::clamp(mediaContentWidth * 0.48f, 260.0f, 360.0f);
     const float rightWidth = std::max(220.0f, mediaContentWidth - leftPreferred - mediaGap);
     const float leftWidth = std::max(220.0f, mediaContentWidth - rightWidth - mediaGap);
-    const float leftInnerWidth = std::max(0.0f, leftWidth - static_cast<float>(Style::spaceMd * 2));
-    const float rightInnerWidth = std::max(0.0f, rightWidth - static_cast<float>(Style::spaceMd * 2));
-    const float mediaArtworkSize = std::min(leftInnerWidth, static_cast<float>(Style::controlHeightLg * 6));
+    const float leftInnerWidth = std::max(0.0f, leftWidth - Style::spaceMd * 2);
+    const float rightInnerWidth = std::max(0.0f, rightWidth - Style::spaceMd * 2);
+    const float mediaArtworkSize = std::min(leftInnerWidth, Style::controlHeightLg * 6);
 
     if (m_mediaColumn != nullptr) {
       m_mediaColumn->setMinWidth(leftWidth);
@@ -193,13 +193,13 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
       m_inputDeviceSelect->setSize(rightInnerWidth, 0.0f);
     }
     if (m_mediaArtwork != nullptr) {
-      const float mediaMetaHeight = static_cast<float>(Style::fontSizeTitle + Style::fontSizeBody +
-                                                       Style::fontSizeCaption + Style::spaceMd * 2);
+      const float mediaMetaHeight = Style::fontSizeTitle + Style::fontSizeBody +
+                                   Style::fontSizeCaption + Style::spaceMd * 2;
       const float aspectRatio = m_mediaArtwork->hasImage() ? m_mediaArtwork->aspectRatio() : 1.0f;
       const bool wideArtwork = aspectRatio > 1.15f;
       const float mediaReservedHeight =
-          kMediaPlayerSelectHeight + kMediaPlayPauseHeight + static_cast<float>(Style::controlHeight) +
-          mediaMetaHeight + static_cast<float>(Style::spaceMd * 5);
+          kMediaPlayerSelectHeight + kMediaPlayPauseHeight + Style::controlHeight +
+          mediaMetaHeight + Style::spaceMd * 5;
       const float artworkMaxHeight = std::max(kMediaArtworkMinHeight, bodyHeight - mediaReservedHeight);
 
       float artworkWidth = mediaArtworkSize;
@@ -220,8 +220,8 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
 
       const float sideButtonSize = kMediaControlsHeight;
       const float playPauseButtonSize = kMediaPlayPauseHeight;
-      const float sideIconSize = static_cast<float>(Style::fontSizeTitle);
-      const float playPauseIconSize = static_cast<float>(Style::fontSizeTitle + Style::spaceXs);
+      const float sideIconSize = Style::fontSizeTitle;
+      const float playPauseIconSize = Style::fontSizeTitle + Style::spaceXs;
 
       for (auto* button : {m_mediaRepeatButton, m_mediaPrevButton, m_mediaNextButton, m_mediaShuffleButton}) {
         if (button != nullptr) {
@@ -257,11 +257,11 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
       m_mediaProgressSlider->layout(renderer);
     }
     if (m_outputSlider != nullptr) {
-      m_outputSlider->setSize(std::max(120.0f, rightInnerWidth - kValueLabelWidth - static_cast<float>(Style::spaceSm)), 0.0f);
+      m_outputSlider->setSize(std::max(120.0f, rightInnerWidth - kValueLabelWidth - Style::spaceSm), 0.0f);
       m_outputSlider->layout(renderer);
     }
     if (m_inputSlider != nullptr) {
-      m_inputSlider->setSize(std::max(120.0f, rightInnerWidth - kValueLabelWidth - static_cast<float>(Style::spaceSm)), 0.0f);
+      m_inputSlider->setSize(std::max(120.0f, rightInnerWidth - kValueLabelWidth - Style::spaceSm), 0.0f);
       m_inputSlider->layout(renderer);
     }
   }

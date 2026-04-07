@@ -94,7 +94,7 @@ void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
     m_gauge->setRadius(gaugeW / 2.0f);
 
     m_icon->setPosition(0.0f, 0.0f);
-    m_gauge->setPosition(m_icon->width() + static_cast<float>(Style::spaceXs), 0.0f);
+    m_gauge->setPosition(m_icon->width() + Style::spaceXs, 0.0f);
     m_gauge->setSize(gaugeW, iconH);
 
     rootNode->setSize(m_gauge->x() + gaugeW, iconH);
@@ -110,7 +110,7 @@ void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
     const float chartW = 50.0f * m_contentScale;
 
     m_icon->setPosition(0.0f, 0.0f);
-    m_chartBg->setPosition(m_icon->width() + static_cast<float>(Style::spaceXs), 0.0f);
+    m_chartBg->setPosition(m_icon->width() + Style::spaceXs, 0.0f);
     m_chartBg->setSize(chartW, iconH);
 
     const float barW = chartW / static_cast<float>(kHistorySamples);
@@ -119,11 +119,11 @@ void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
       m_bars[i]->setSize(barW, iconH);
     }
 
-    m_label->setPosition(m_chartBg->x() + chartW + static_cast<float>(Style::spaceXs), 0.0f);
+    m_label->setPosition(m_chartBg->x() + chartW + Style::spaceXs, 0.0f);
     rootNode->setSize(m_label->x() + m_label->width(), iconH);
   } else {
     m_icon->setPosition(0.0f, 0.0f);
-    m_label->setPosition(m_icon->width() + static_cast<float>(Style::spaceXs), 0.0f);
+    m_label->setPosition(m_icon->width() + Style::spaceXs, 0.0f);
     rootNode->setSize(m_label->x() + m_label->width(), iconH);
   }
 }
