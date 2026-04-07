@@ -24,6 +24,7 @@ public:
   [[nodiscard]] virtual float preferredHeight() const = 0;
   [[nodiscard]] virtual bool centered() const { return false; }
   [[nodiscard]] virtual bool centeredVertically() const { return false; }
+  [[nodiscard]] virtual LayerShellLayer layer() const { return LayerShellLayer::Top; }
   [[nodiscard]] virtual LayerShellKeyboard keyboardMode() const { return LayerShellKeyboard::OnDemand; }
   [[nodiscard]] virtual InputArea* initialFocusArea() const { return nullptr; }
 

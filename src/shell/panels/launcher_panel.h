@@ -33,6 +33,7 @@ public:
   [[nodiscard]] float preferredHeight() const override { return 460.0f; }
   [[nodiscard]] bool centered() const override { return true; }
   [[nodiscard]] bool centeredVertically() const override { return true; }
+  [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
   [[nodiscard]] InputArea* initialFocusArea() const override;
 
