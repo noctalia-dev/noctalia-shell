@@ -18,6 +18,8 @@
 #include "debug/debug_service.h"
 #include "ipc/ipc_poll_source.h"
 #include "ipc/ipc_service.h"
+#include "net/http_client.h"
+#include "net/http_client_poll_source.h"
 #include "notification/notification_manager.h"
 #include "pipewire/pipewire_poll_source.h"
 #include "pipewire/pipewire_service.h"
@@ -93,6 +95,8 @@ private:
   std::unique_ptr<PipeWirePollSource> m_pipewirePollSource;
   IpcService m_ipcService;
   IpcPollSource m_ipcPollSource{m_ipcService};
+  HttpClient m_httpClient;
+  HttpClientPollSource m_httpClientPollSource{m_httpClient};
 
   std::unique_ptr<MainLoop> m_mainLoop;
 };

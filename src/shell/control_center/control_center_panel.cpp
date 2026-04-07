@@ -19,8 +19,9 @@
 
 using namespace control_center;
 
-ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris)
-    : m_notifications(notifications), m_audio(audio), m_mpris(mpris) {
+ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris,
+                                       HttpClient* httpClient)
+    : m_notifications(notifications), m_audio(audio), m_mpris(mpris), m_httpClient(httpClient) {
   m_tabButtons.fill(nullptr);
   m_tabContainers.fill(nullptr);
 }

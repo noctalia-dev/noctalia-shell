@@ -29,6 +29,7 @@ pkg_check_modules(HARFBUZZ REQUIRED harfbuzz)
 pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
 pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
 pkg_check_modules(LIBPIPEWIRE REQUIRED libpipewire-0.3)
+find_package(CURL REQUIRED)
 find_library(PAM_LIBRARY NAMES pam REQUIRED)
 
 # --- msdfgen (vendored) ---
@@ -272,6 +273,7 @@ add_executable(noctalia
     src/core/deferred_call.cpp
     src/ipc/ipc_client.cpp
     src/ipc/ipc_service.cpp
+    src/net/http_client.cpp
     src/core/log.cpp
     src/font/font_service.cpp
     src/render/scene/node.cpp
@@ -414,6 +416,7 @@ target_link_libraries(noctalia PRIVATE
     ${FONTCONFIG_LIBRARIES}
     ${XKBCOMMON_LIBRARIES}
     ${LIBPIPEWIRE_LIBRARIES}
+    CURL::libcurl
     ${PAM_LIBRARY}
 )
 target_compile_options(noctalia PRIVATE

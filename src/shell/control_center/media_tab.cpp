@@ -1,6 +1,7 @@
 #include "shell/control_center/control_center_panel.h"
 
 #include "dbus/mpris/mpris_service.h"
+#include "net/http_client.h"
 #include "pipewire/pipewire_service.h"
 #include "render/core/renderer.h"
 #include "shell/panel/panel_manager.h"
@@ -13,18 +14,12 @@
 #include "ui/controls/slider.h"
 
 #include <algorithm>
-#include <cstdio>
 #include <filesystem>
 #include <cmath>
 #include <memory>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
-
-#include <fcntl.h>
-#include <sys/wait.h>
-#include <unistd.h>
 
 using namespace control_center;
 
@@ -53,90 +48,10 @@ std::string normalizeArtPath(std::string_view artUrl) {
   return path;
 }
 
-bool runDownloader(const std::vector<std::string>& args) {
-  if (args.empty()) {
-    return false;
-  }
-
-  const pid_t pid = fork();
-  if (pid < 0) {
-    return false;
-  }
-
-  if (pid == 0) {
-    const int devNull = open("/dev/null", O_WRONLY);
-    if (devNull >= 0) {
-      dup2(devNull, STDOUT_FILENO);
-      dup2(devNull, STDERR_FILENO);
-      close(devNull);
-    }
-
-    std::vector<char*> argv;
-    argv.reserve(args.size() + 1);
-    for (const auto& arg : args) {
-      argv.push_back(const_cast<char*>(arg.c_str()));
-    }
-    argv.push_back(nullptr);
-
-    execvp(argv[0], argv.data());
-    _exit(127);
-  }
-
-  int status = 0;
-  if (waitpid(pid, &status, 0) < 0) {
-    return false;
-  }
-
-  return WIFEXITED(status) && WEXITSTATUS(status) == 0;
-}
-
-std::optional<std::string> fetchRemoteArt(std::string_view artUrl) {
-  if (!isRemoteArtUrl(artUrl)) {
-    return std::nullopt;
-  }
-
-  namespace fs = std::filesystem;
-  const fs::path cacheDir = fs::path("/tmp") / "noctalia-media-art";
-  std::error_code ec;
-  fs::create_directories(cacheDir, ec);
-
+std::filesystem::path artCachePath(std::string_view artUrl) {
+  const std::filesystem::path cacheDir = std::filesystem::path("/tmp") / "noctalia-media-art";
   const std::size_t hash = std::hash<std::string_view>{}(artUrl);
-  const fs::path finalPath = cacheDir / (std::to_string(hash) + ".img");
-  const fs::path tempPath = cacheDir / (std::to_string(hash) + ".part");
-
-  if (fs::exists(finalPath, ec) && fs::file_size(finalPath, ec) > 0) {
-    return finalPath.string();
-  }
-
-  const std::string url(artUrl);
-  const std::string temp = tempPath.string();
-
-  const bool curlOk = runDownloader({"curl", "-LfsS", "--output", temp, url});
-  const bool wgetOk = !curlOk && runDownloader({"wget", "-q", "-O", temp, url});
-  if (!curlOk && !wgetOk) {
-    std::error_code removeEc;
-    fs::remove(tempPath, removeEc);
-    return std::nullopt;
-  }
-
-  if (!fs::exists(tempPath, ec) || fs::file_size(tempPath, ec) == 0) {
-    std::error_code removeEc;
-    fs::remove(tempPath, removeEc);
-    return std::nullopt;
-  }
-
-  fs::rename(tempPath, finalPath, ec);
-  if (ec) {
-    std::error_code copyEc;
-    fs::copy_file(tempPath, finalPath, fs::copy_options::overwrite_existing, copyEc);
-    std::error_code removeEc;
-    fs::remove(tempPath, removeEc);
-    if (copyEc) {
-      return std::nullopt;
-    }
-  }
-
-  return finalPath.string();
+  return cacheDir / (std::to_string(hash) + ".img");
 }
 
 std::string joinArtists(const std::vector<std::string>& artists) {
@@ -551,9 +466,22 @@ void ControlCenterPanel::refreshMediaState(Renderer& renderer) {
 
       std::string artPath = normalizeArtPath(player.artUrl);
       if (artPath.empty() && isRemoteArtUrl(player.artUrl)) {
-        const auto cachedArt = fetchRemoteArt(player.artUrl);
-        if (cachedArt.has_value()) {
-          artPath = *cachedArt;
+        const auto cached = artCachePath(player.artUrl);
+        std::error_code ec;
+        if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0) {
+          artPath = cached.string();
+        } else if (m_httpClient != nullptr &&
+                   m_pendingArtDownloads.find(player.artUrl) == m_pendingArtDownloads.end()) {
+          std::filesystem::create_directories(cached.parent_path(), ec);
+          m_pendingArtDownloads.insert(player.artUrl);
+          m_httpClient->download(player.artUrl, cached,
+              [this, url = player.artUrl](bool success) {
+                m_pendingArtDownloads.erase(url);
+                if (success) {
+                  m_lastMediaArtPath.clear();
+                  PanelManager::instance().refresh();
+                }
+              });
         }
       }
 

@@ -225,9 +225,9 @@ void Application::initUi() {
   // Panel manager must be before bar so widgets can access PanelManager::instance()
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
-  m_panelManager.registerPanel(
-      "control-center",
-      std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(), m_mprisService.get()));
+  m_panelManager.registerPanel("control-center",
+                               std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(),
+                                                                    m_mprisService.get(), &m_httpClient));
   {
     auto launcherPanel = std::make_unique<LauncherPanel>();
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
@@ -388,5 +388,6 @@ std::vector<PollSource*> Application::buildPollSources() {
     sources.push_back(m_pipewirePollSource.get());
   }
   sources.push_back(&m_ipcPollSource);
+  sources.push_back(&m_httpClientPollSource);
   return sources;
 }

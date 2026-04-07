@@ -6,10 +6,13 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <string>
 #include <string_view>
+#include <unordered_set>
 
 class Button;
 class Flex;
+class HttpClient;
 class Image;
 class Label;
 class MprisService;
@@ -21,7 +24,8 @@ class Slider;
 
 class ControlCenterPanel : public Panel {
 public:
-  ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris);
+  ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris,
+                     HttpClient* httpClient = nullptr);
 
   void create(Renderer& renderer) override;
   void layout(Renderer& renderer, float width, float height) override;
@@ -77,6 +81,8 @@ private:
   NotificationManager* m_notifications = nullptr;
   PipeWireService* m_audio = nullptr;
   MprisService* m_mpris = nullptr;
+  HttpClient* m_httpClient = nullptr;
+  std::unordered_set<std::string> m_pendingArtDownloads;
 
   Flex* m_rootLayout = nullptr;
   Flex* m_sidebar = nullptr;
