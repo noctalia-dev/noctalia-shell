@@ -1,27 +1,25 @@
 #include "shell/control_center/control_center_panel.h"
 
 #include "render/core/renderer.h"
-#include "dbus/mpris/mpris_service.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/control_center/common.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
-#include "ui/controls/image.h"
 #include "ui/controls/label.h"
-#include "ui/controls/scroll_view.h"
-#include "ui/controls/select.h"
-#include "ui/controls/slider.h"
 
 #include <algorithm>
 #include <cmath>
-#include <cstdlib>
 #include <memory>
 
 using namespace control_center;
 
-ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris,
-                                       HttpClient* httpClient)
-    : m_notifications(notifications), m_audio(audio), m_mpris(mpris), m_httpClient(httpClient) {
+ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio,
+                                       MprisService* mpris, HttpClient* httpClient) {
+  m_tabs[tabIndex(TabId::Overview)]      = std::make_unique<OverviewTab>();
+  m_tabs[tabIndex(TabId::Media)]         = std::make_unique<MediaTab>(mpris, audio, httpClient);
+  m_tabs[tabIndex(TabId::Calendar)]      = std::make_unique<CalendarTab>();
+  m_tabs[tabIndex(TabId::Notifications)] = std::make_unique<NotificationsTab>(notifications);
+  m_tabs[tabIndex(TabId::Network)]       = std::make_unique<NetworkTab>();
   m_tabButtons.fill(nullptr);
   m_tabContainers.fill(nullptr);
 }
@@ -49,16 +47,14 @@ void ControlCenterPanel::create(Renderer& renderer) {
     button->setVariant(ButtonVariant::Tab);
     button->setMinimalChrome(true);
     button->setMinHeight(Style::controlHeightLg);
-    button->setPadding(Style::spaceSm, Style::spaceMd,
-                       Style::spaceSm, Style::spaceMd);
+    button->setPadding(Style::spaceSm, Style::spaceMd, Style::spaceSm, Style::spaceMd);
     button->setRadius(Style::radiusLg);
     button->setOnClick([this, id = tab.id]() {
       selectTab(id);
       PanelManager::instance().refresh();
     });
     button->setMinWidth(kSidebarButtonWidth);
-    auto* ptr = button.get();
-    m_tabButtons[tabIndex(tab.id)] = ptr;
+    m_tabButtons[tabIndex(tab.id)] = button.get();
     sidebar->addChild(std::move(button));
   }
   root->addChild(std::move(sidebar));
@@ -89,11 +85,11 @@ void ControlCenterPanel::create(Renderer& renderer) {
   bodies->setGap(0.0f);
   m_tabBodies = bodies.get();
 
-  buildOverviewTab();
-  buildMediaTab();
-  buildCalendarTab();
-  buildNotificationsTab();
-  buildNetworkTab();
+  for (std::size_t i = 0; i < kTabCount; ++i) {
+    auto container = m_tabs[i]->build(renderer);
+    m_tabContainers[i] = container.get();
+    m_tabBodies->addChild(std::move(container));
+  }
 
   content->addChild(std::move(bodies));
   root->addChild(std::move(content));
@@ -103,14 +99,14 @@ void ControlCenterPanel::create(Renderer& renderer) {
     m_root->setAnimationManager(m_animations);
   }
 
-  rebuildCalendar(renderer);
+  for (auto& tab : m_tabs) {
+    tab->update(renderer);
+  }
   selectTab(m_activeTab);
-  refreshMediaState(renderer);
-  rebuildNotifications(renderer, kContentMinWidth);
 }
 
 void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
-  if (m_rootLayout == nullptr || m_content == nullptr || m_tabBodies == nullptr) {
+  if (m_rootLayout == nullptr || m_content == nullptr) {
     return;
   }
 
@@ -125,166 +121,31 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
     }
   }
 
-  const float rightSurfaceGutter = Style::spaceXs;
-  const float contentOuterWidth =
-      std::max(0.0f, width - sidebarWidth - Style::spaceLg - rightSurfaceGutter);
-  const float contentInnerWidth = std::max(0.0f, contentOuterWidth - Style::spaceLg * 2);
-  const float contentInnerHeight = std::max(0.0f, height - Style::spaceLg * 2);
-  const float bodyHeight = std::max(0.0f, contentInnerHeight - kHeaderReserveHeight);
-
   if (m_sidebar != nullptr) {
     m_sidebar->setMinWidth(sidebarWidth);
     m_sidebar->layout(renderer);
   }
+
+  const float rightSurfaceGutter = Style::spaceXs;
+  const float contentOuterWidth = std::max(0.0f, width - sidebarWidth - Style::spaceLg - rightSurfaceGutter);
+  const float contentInnerWidth = std::max(0.0f, contentOuterWidth - Style::spaceLg * 2);
+  const float contentInnerHeight = std::max(0.0f, height - Style::spaceLg * 2);
+  const float bodyHeight = std::max(0.0f, contentInnerHeight - kHeaderReserveHeight);
 
   if (m_contentTitle != nullptr) {
     m_contentTitle->setMaxWidth(contentInnerWidth);
     m_contentTitle->measure(renderer);
   }
 
-  for (auto* tab : m_tabContainers) {
-    if (tab == nullptr) {
-      continue;
-    }
-    tab->setMinWidth(contentInnerWidth);
-    tab->setSize(contentInnerWidth, bodyHeight);
-  }
-
-  if (m_tabContainers[tabIndex(TabId::Calendar)] != nullptr) {
-    rebuildCalendar(renderer);
-  }
-
-  if (m_tabContainers[tabIndex(TabId::Media)] != nullptr) {
-    const float mediaGap = Style::spaceMd;
-    const float mediaContentWidth = std::max(0.0f, contentInnerWidth);
-    const float leftPreferred = std::clamp(mediaContentWidth * 0.48f, 260.0f, 360.0f);
-    const float rightWidth = std::max(220.0f, mediaContentWidth - leftPreferred - mediaGap);
-    const float leftWidth = std::max(220.0f, mediaContentWidth - rightWidth - mediaGap);
-    const float leftInnerWidth = std::max(0.0f, leftWidth - Style::spaceMd * 2);
-    const float rightInnerWidth = std::max(0.0f, rightWidth - Style::spaceMd * 2);
-    const float mediaArtworkSize = std::min(leftInnerWidth, Style::controlHeightLg * 6);
-
-    if (m_mediaColumn != nullptr) {
-      m_mediaColumn->setMinWidth(leftWidth);
-      m_mediaColumn->setSize(leftWidth, bodyHeight);
-    }
-    if (m_mediaNowCard != nullptr) {
-      m_mediaNowCard->setMinWidth(leftWidth);
-      m_mediaNowCard->setMinHeight(std::max(kMediaNowCardMinHeight, bodyHeight));
-    }
-    if (m_mediaAudioColumn != nullptr) {
-      m_mediaAudioColumn->setMinWidth(rightWidth);
-      m_mediaAudioColumn->setSize(rightWidth, bodyHeight);
-    }
-    if (m_mediaOutputCard != nullptr) {
-      m_mediaOutputCard->setMinWidth(rightWidth);
-      m_mediaOutputCard->setMinHeight(kMediaAudioCardMinHeight);
-    }
-    if (m_mediaInputCard != nullptr) {
-      m_mediaInputCard->setMinWidth(rightWidth);
-      m_mediaInputCard->setMinHeight(kMediaAudioCardMinHeight);
-    }
-    if (m_mediaPlayerSelect != nullptr) {
-      m_mediaPlayerSelect->setSize(leftInnerWidth, 0.0f);
-    }
-    if (m_outputDeviceSelect != nullptr) {
-      m_outputDeviceSelect->setSize(rightInnerWidth, 0.0f);
-    }
-    if (m_inputDeviceSelect != nullptr) {
-      m_inputDeviceSelect->setSize(rightInnerWidth, 0.0f);
-    }
-    if (m_mediaArtwork != nullptr) {
-      const float mediaMetaHeight = Style::fontSizeTitle + Style::fontSizeBody +
-                                   Style::fontSizeCaption + Style::spaceMd * 2;
-      const float aspectRatio = m_mediaArtwork->hasImage() ? m_mediaArtwork->aspectRatio() : 1.0f;
-      const bool wideArtwork = aspectRatio > 1.15f;
-      const float mediaReservedHeight =
-          kMediaPlayerSelectHeight + kMediaPlayPauseHeight + Style::controlHeight +
-          mediaMetaHeight + Style::spaceMd * 5;
-      const float artworkMaxHeight = std::max(kMediaArtworkMinHeight, bodyHeight - mediaReservedHeight);
-
-      float artworkWidth = mediaArtworkSize;
-      float artworkHeight = mediaArtworkSize;
-      if (wideArtwork) {
-        artworkWidth = leftInnerWidth;
-        artworkHeight = std::min(artworkMaxHeight, artworkWidth / aspectRatio);
-      } else if (aspectRatio < 0.9f) {
-        artworkHeight = std::min(artworkMaxHeight, leftInnerWidth);
-        artworkWidth = std::min(leftInnerWidth, artworkHeight * aspectRatio);
-      } else {
-        const float squareSize = std::min(leftInnerWidth, artworkMaxHeight);
-        artworkWidth = squareSize;
-        artworkHeight = squareSize;
-      }
-
-      m_mediaArtwork->setSize(std::max(0.0f, artworkWidth), std::max(0.0f, artworkHeight));
-
-      const float sideButtonSize = kMediaControlsHeight;
-      const float playPauseButtonSize = kMediaPlayPauseHeight;
-      const float sideGlyphSize = Style::fontSizeTitle;
-      const float playPauseGlyphSize = Style::fontSizeTitle + Style::spaceXs;
-
-      for (auto* button : {m_mediaRepeatButton, m_mediaPrevButton, m_mediaNextButton, m_mediaShuffleButton}) {
-        if (button != nullptr) {
-          button->setMinWidth(sideButtonSize);
-          button->setMinHeight(sideButtonSize);
-          button->setGlyphSize(sideGlyphSize);
-          button->layout(renderer);
-          button->updateInputArea();
-        }
-      }
-      if (m_mediaPlayPauseButton != nullptr) {
-        m_mediaPlayPauseButton->setMinWidth(playPauseButtonSize);
-        m_mediaPlayPauseButton->setMinHeight(playPauseButtonSize);
-        m_mediaPlayPauseButton->setGlyphSize(playPauseGlyphSize);
-        m_mediaPlayPauseButton->layout(renderer);
-        m_mediaPlayPauseButton->updateInputArea();
-      }
-    }
-    if (m_mediaTrackTitle != nullptr) {
-      m_mediaTrackTitle->setMaxWidth(leftInnerWidth);
-      m_mediaTrackTitle->measure(renderer);
-    }
-    if (m_mediaTrackArtist != nullptr) {
-      m_mediaTrackArtist->setMaxWidth(leftInnerWidth);
-      m_mediaTrackArtist->measure(renderer);
-    }
-    if (m_mediaTrackAlbum != nullptr) {
-      m_mediaTrackAlbum->setMaxWidth(leftInnerWidth);
-      m_mediaTrackAlbum->measure(renderer);
-    }
-    if (m_mediaProgressSlider != nullptr) {
-      m_mediaProgressSlider->setSize(leftInnerWidth, 0.0f);
-      m_mediaProgressSlider->layout(renderer);
-    }
-    if (m_outputSlider != nullptr) {
-      m_outputSlider->setSize(std::max(120.0f, rightInnerWidth - kValueLabelWidth - Style::spaceSm), 0.0f);
-      m_outputSlider->layout(renderer);
-    }
-    if (m_inputSlider != nullptr) {
-      m_inputSlider->setSize(std::max(120.0f, rightInnerWidth - kValueLabelWidth - Style::spaceSm), 0.0f);
-      m_inputSlider->layout(renderer);
+  for (auto* container : m_tabContainers) {
+    if (container != nullptr) {
+      container->setMinWidth(contentInnerWidth);
+      container->setSize(contentInnerWidth, bodyHeight);
     }
   }
 
-  if (m_notificationScroll != nullptr) {
-    m_notificationScroll->setSize(contentInnerWidth, bodyHeight);
-    m_notificationScroll->layout(renderer);
-    rebuildNotifications(renderer, m_notificationScroll->contentViewportWidth());
-    m_notificationScroll->layout(renderer);
-  }
-
-  if (m_outputSlider != nullptr) {
-    m_outputSlider->layout(renderer);
-  }
-  if (m_inputSlider != nullptr) {
-    m_inputSlider->layout(renderer);
-  }
-  if (m_outputValue != nullptr) {
-    m_outputValue->measure(renderer);
-  }
-  if (m_inputValue != nullptr) {
-    m_inputValue->measure(renderer);
+  for (auto& tab : m_tabs) {
+    tab->layout(renderer, contentInnerWidth, bodyHeight);
   }
 
   m_content->setMinWidth(contentOuterWidth);
@@ -297,15 +158,17 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
 }
 
 void ControlCenterPanel::update(Renderer& renderer) {
-  refreshMediaState(renderer);
-
-  const float listWidth = m_notificationScroll != nullptr ? m_notificationScroll->contentViewportWidth() : 0.0f;
-  rebuildNotifications(renderer, listWidth);
+  for (auto& tab : m_tabs) {
+    tab->update(renderer);
+  }
 }
 
 void ControlCenterPanel::onOpen(std::string_view context) { selectTab(tabFromContext(context)); }
 
 void ControlCenterPanel::onClose() {
+  for (auto& tab : m_tabs) {
+    tab->onClose();
+  }
   m_rootLayout = nullptr;
   m_sidebar = nullptr;
   m_content = nullptr;
@@ -313,40 +176,6 @@ void ControlCenterPanel::onClose() {
   m_tabBodies = nullptr;
   m_tabButtons.fill(nullptr);
   m_tabContainers.fill(nullptr);
-  m_notificationScroll = nullptr;
-  m_notificationList = nullptr;
-  m_outputSlider = nullptr;
-  m_outputValue = nullptr;
-  m_inputSlider = nullptr;
-  m_inputValue = nullptr;
-  m_mediaArtwork = nullptr;
-  m_mediaColumn = nullptr;
-  m_mediaNowCard = nullptr;
-  m_mediaAudioColumn = nullptr;
-  m_mediaOutputCard = nullptr;
-  m_mediaInputCard = nullptr;
-  m_mediaTrackTitle = nullptr;
-  m_mediaTrackArtist = nullptr;
-  m_mediaTrackAlbum = nullptr;
-  m_mediaProgressSlider = nullptr;
-  m_mediaPlayerSelect = nullptr;
-  m_outputDeviceSelect = nullptr;
-  m_inputDeviceSelect = nullptr;
-  m_mediaPrevButton = nullptr;
-  m_mediaPlayPauseButton = nullptr;
-  m_mediaNextButton = nullptr;
-  m_mediaRepeatButton = nullptr;
-  m_mediaShuffleButton = nullptr;
-  m_lastMediaArtPath.clear();
-  m_lastMediaBusName.clear();
-  m_lastMediaPlaybackStatus.clear();
-  m_lastMediaLoopStatus.clear();
-  m_mediaPlayerBusNames.clear();
-  m_outputDeviceIds.clear();
-  m_inputDeviceIds.clear();
-  m_calendarCard = nullptr;
-  m_calendarMonthLabel = nullptr;
-  m_calendarGrid = nullptr;
   m_rootPtr = nullptr;
 }
 

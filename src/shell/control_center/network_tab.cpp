@@ -1,4 +1,4 @@
-#include "shell/control_center/control_center_panel.h"
+#include "shell/control_center/network_tab.h"
 
 #include "shell/control_center/common.h"
 #include "ui/controls/flex.h"
@@ -7,12 +7,11 @@
 
 using namespace control_center;
 
-void ControlCenterPanel::buildNetworkTab() {
+std::unique_ptr<Flex> NetworkTab::build(Renderer& /*renderer*/) {
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);
   tab->setAlign(FlexAlign::Start);
   tab->setGap(Style::spaceSm);
-  m_tabContainers[tabIndex(TabId::Network)] = tab.get();
 
   auto card = std::make_unique<Flex>();
   applyCard(*card);
@@ -20,5 +19,5 @@ void ControlCenterPanel::buildNetworkTab() {
   addBody(*card, "Not implemented yet");
   tab->addChild(std::move(card));
 
-  m_tabBodies->addChild(std::move(tab));
+  return tab;
 }
