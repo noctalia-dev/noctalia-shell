@@ -1,4 +1,4 @@
-#include "shell/panels/control_center/common.h"
+#include "shell/control_center/common.h"
 
 #include "ui/controls/flex.h"
 #include "ui/controls/label.h"

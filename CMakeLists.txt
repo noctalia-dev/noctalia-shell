@@ -274,13 +274,13 @@ add_executable(noctalia
     src/shell/tray/tray_menu.cpp
     src/shell/panel/panel_manager.cpp
     src/shell/panels/audio_devices_panel.cpp
-    src/shell/panels/control_center/common.cpp
-    src/shell/panels/control_center/panel.cpp
-    src/shell/panels/control_center/overview_tab.cpp
-    src/shell/panels/control_center/media_tab.cpp
-    src/shell/panels/control_center/calendar_tab.cpp
-    src/shell/panels/control_center/notifications_tab.cpp
-    src/shell/panels/control_center/network_tab.cpp
+    src/shell/control_center/common.cpp
+    src/shell/control_center/control_center_panel.cpp
+    src/shell/control_center/overview_tab.cpp
+    src/shell/control_center/media_tab.cpp
+    src/shell/control_center/calendar_tab.cpp
+    src/shell/control_center/notifications_tab.cpp
+    src/shell/control_center/network_tab.cpp
     src/shell/panels/notification_history_panel.cpp
     src/launcher/app_provider.cpp
     src/launcher/desktop_entry.cpp
@@ -288,7 +288,7 @@ add_executable(noctalia
     src/launcher/fuzzy_match.cpp
     src/launcher/icon_resolver.cpp
     src/launcher/math_provider.cpp
-    src/shell/panels/launcher_panel.cpp
+    src/shell/launcher/launcher_panel.cpp
     src/shell/panels/test_panel.cpp
     src/shell/widgets/launcher_widget.cpp
     src/shell/widgets/clock_widget.cpp

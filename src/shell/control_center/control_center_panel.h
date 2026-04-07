@@ -1,7 +1,7 @@
 #pragma once
 
 #include "shell/panel/panel.h"
-#include "shell/panels/control_center/common.h"
+#include "shell/control_center/common.h"
 
 #include <array>
 #include <chrono>

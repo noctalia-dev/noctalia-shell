@@ -1,8 +1,8 @@
-#include "shell/panels/control_center/panel.h"
+#include "shell/control_center/control_center_panel.h"
 
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
-#include "shell/panels/control_center/common.h"
+#include "shell/control_center/common.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"

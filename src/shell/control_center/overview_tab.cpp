@@ -1,6 +1,6 @@
-#include "shell/panels/control_center/panel.h"
+#include "shell/control_center/control_center_panel.h"
 
-#include "shell/panels/control_center/common.h"
+#include "shell/control_center/common.h"
 #include "ui/controls/flex.h"
 
 #include <cstdlib>

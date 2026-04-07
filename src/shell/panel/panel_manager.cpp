@@ -109,9 +109,9 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
         std::clamp(desired, static_cast<float>(padding), static_cast<float>(maxValue)));
   };
 
-  const bool centeredControlCenter = m_activePanel->centered();
+  const bool centeredH = m_activePanel->centeredHorizontally();
   const bool centeredV = m_activePanel->centeredVertically();
-  const std::uint32_t anchor = centeredControlCenter
+  const std::uint32_t anchor = centeredH
                                    ? (isBottom ? LayerShellAnchor::Bottom : LayerShellAnchor::Top)
                                : isBottom      ? LayerShellAnchor::Bottom | LayerShellAnchor::Left
                                : isLeft        ? LayerShellAnchor::Left | LayerShellAnchor::Top
@@ -120,7 +120,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
   const std::int32_t barOffset =
       barConfig.height + (isVertical ? std::max(0, barConfig.marginH) : std::max(0, barConfig.marginV)) + panelGap;
 
-  const auto marginLeft = centeredControlCenter
+  const auto marginLeft = centeredH
                               ? 0
                               : clampMargin(anchorX - static_cast<float>(panelWidth) * 0.5f,
                                             static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
@@ -136,13 +136,13 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
       .exclusiveZone = 0,
       .marginTop = centeredV
                        ? static_cast<std::int32_t>((outputHeight - static_cast<std::int32_t>(panelHeight)) / 2)
-                   : centeredControlCenter
+                   : centeredH
                        ? (isBottom ? 0 : barOffset)
                    : (isLeft || isRight) ? marginTop
                                          : (isBottom ? 0 : barOffset),
       .marginRight = isRight ? barOffset : 0,
       .marginBottom = isBottom ? barOffset : 0,
-      .marginLeft = centeredControlCenter ? 0 : (isLeft ? barOffset : marginLeft),
+      .marginLeft = centeredH ? 0 : (isLeft ? barOffset : marginLeft),
       .keyboard = m_activePanel->keyboardMode(),
       .defaultWidth = panelWidth,
       .defaultHeight = panelHeight,
