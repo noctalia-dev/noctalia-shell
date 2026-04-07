@@ -74,7 +74,17 @@ int IpcClient::send(const std::string& command) {
 
   // Send the command with a trailing newline
   const std::string line = command + "\n";
-  ::write(fd, line.data(), line.size());
+  const auto written = ::write(fd, line.data(), line.size());
+  if (written < 0) {
+    std::fprintf(stderr, "error: write() failed: %s\n", std::strerror(errno));
+    ::close(fd);
+    return 1;
+  }
+  if (static_cast<std::size_t>(written) != line.size()) {
+    std::fprintf(stderr, "error: short write to IPC socket\n");
+    ::close(fd);
+    return 1;
+  }
 
   // Read response until EOF (server closes connection after writing)
   char buf[4096];
