@@ -134,6 +134,7 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
   glEnable(GL_BLEND);
   glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
+  glDisable(GL_SCISSOR_TEST);
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 
@@ -142,7 +143,6 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
     const auto sh = static_cast<float>(target.logicalHeight());
     const auto bw = static_cast<float>(target.bufferWidth());
     const auto bh = static_cast<float>(target.bufferHeight());
-    glDisable(GL_SCISSOR_TEST);
     renderNode(sceneRoot, 0.0f, 0.0f, 1.0f, sw, sh, bw, bh, 0.0f, 0.0f, sw, sh, false);
   }
 
