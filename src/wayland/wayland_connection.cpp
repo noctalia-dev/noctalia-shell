@@ -166,8 +166,37 @@ void WaylandConnection::setToplevelChangeCallback(ChangeCallback callback) {
 }
 
 void WaylandConnection::setPointerEventCallback(WaylandSeat::PointerEventCallback callback) {
-  m_seatHandler.setPointerEventCallback(std::move(callback));
+  m_pointerEventCallback = std::move(callback);
+  m_seatHandler.setPointerEventCallback([this](const PointerEvent& event) {
+    if (event.type == PointerEvent::Type::Enter) {
+      const auto it = m_surfaceOutputMap.find(event.surface);
+      if (it != m_surfaceOutputMap.end()) {
+        m_lastPointerOutput = it->second;
+      }
+    }
+    if (m_pointerEventCallback) {
+      m_pointerEventCallback(event);
+    }
+  });
 }
+
+void WaylandConnection::registerSurfaceOutput(wl_surface* surface, wl_output* output) {
+  if (surface != nullptr) {
+    m_surfaceOutputMap[surface] = output;
+  }
+}
+
+void WaylandConnection::unregisterSurface(wl_surface* surface) {
+  if (surface != nullptr) {
+    m_surfaceOutputMap.erase(surface);
+    if (m_lastPointerOutput != nullptr) {
+      // Clear last pointer output only if it was from this surface
+      // (we don't track which surface set it, so just leave it — it's a hint anyway)
+    }
+  }
+}
+
+wl_output* WaylandConnection::lastPointerOutput() const noexcept { return m_lastPointerOutput; }
 
 void WaylandConnection::setKeyboardEventCallback(WaylandSeat::KeyboardEventCallback callback) {
   m_seatHandler.setKeyboardEventCallback(std::move(callback));

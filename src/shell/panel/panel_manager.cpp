@@ -237,7 +237,10 @@ void PanelManager::togglePanel(const std::string& panelId) {
   wl_output* output = nullptr;
   std::int32_t scale = 1;
   if (m_wayland != nullptr) {
-    output = m_wayland->activeToplevelOutput();
+    output = m_wayland->lastPointerOutput();
+    if (output == nullptr) {
+      output = m_wayland->activeToplevelOutput();
+    }
     if (output == nullptr && !m_wayland->outputs().empty()) {
       output = m_wayland->outputs().front().output;
     }

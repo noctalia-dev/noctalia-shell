@@ -21,6 +21,7 @@ LayerSurface::LayerSurface(WaylandConnection& connection, LayerSurfaceConfig con
     : Surface(connection), m_config(std::move(config)) {}
 
 LayerSurface::~LayerSurface() {
+  m_connection.unregisterSurface(m_surface);
   if (m_layerSurface != nullptr) {
     zwlr_layer_surface_v1_destroy(m_layerSurface);
     m_layerSurface = nullptr;
@@ -47,6 +48,7 @@ bool LayerSurface::initialize(wl_output* output, std::int32_t scale) {
     return false;
   }
 
+  m_connection.registerSurfaceOutput(m_surface, output);
   setScale(scale);
 
   m_layerSurface =

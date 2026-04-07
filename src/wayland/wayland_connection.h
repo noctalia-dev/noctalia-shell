@@ -8,6 +8,7 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 struct wl_compositor;
@@ -91,6 +92,10 @@ public:
   [[nodiscard]] std::vector<Workspace> workspaces(wl_output* output) const;
   [[nodiscard]] std::optional<ActiveToplevel> activeToplevel() const;
   [[nodiscard]] wl_output* activeToplevelOutput() const;
+  [[nodiscard]] wl_output* lastPointerOutput() const noexcept;
+
+  void registerSurfaceOutput(wl_surface* surface, wl_output* output);
+  void unregisterSurface(wl_surface* surface);
 
   // Registry listener entrypoints
   static void handleGlobal(void* data, wl_registry* registry, std::uint32_t name, const char* interface,
@@ -117,6 +122,9 @@ private:
   bool m_hasForeignToplevelManagerGlobal = false;
   std::vector<WaylandOutput> m_outputs;
   ChangeCallback m_outputChangeCallback;
+  std::unordered_map<wl_surface*, wl_output*> m_surfaceOutputMap;
+  wl_output* m_lastPointerOutput = nullptr;
+  WaylandSeat::PointerEventCallback m_pointerEventCallback;
 
   WaylandSeat m_seatHandler;
   WaylandWorkspaces m_workspacesHandler;
