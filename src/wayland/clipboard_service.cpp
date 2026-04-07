@@ -705,6 +705,10 @@ void ClipboardService::addToHistory(ClipboardEntry entry) {
     return;
   }
 
+  if (!entry.data.empty() && isTextMimeType(entry.dataMimeType) && isEmptyTextPayload(entry.data)) {
+    return;
+  }
+
   if (entry.storageId.empty()) {
     entry.storageId = generateStorageId();
   }
@@ -942,6 +946,21 @@ std::string ClipboardService::chooseMimeType(const OfferState& offer) const {
 
 bool ClipboardService::isTextMimeType(std::string_view mimeType) {
   return std::ranges::find(kTextMimeTypes, mimeType) != kTextMimeTypes.end();
+}
+
+bool ClipboardService::isEmptyTextPayload(const std::vector<std::uint8_t>& data) {
+  bool sawContent = false;
+  for (std::uint8_t byte : data) {
+    if (byte == 0) {
+      continue;
+    }
+    if (byte == ' ' || byte == '\n' || byte == '\r' || byte == '\t' || byte == '\f' || byte == '\v') {
+      continue;
+    }
+    sawContent = true;
+    break;
+  }
+  return !sawContent;
 }
 
 std::string ClipboardService::buildTextPreview(const std::vector<std::uint8_t>& data) {
