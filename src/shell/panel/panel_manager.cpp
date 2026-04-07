@@ -235,10 +235,17 @@ void PanelManager::togglePanel(const std::string& panelId) {
     return;
   }
   wl_output* output = nullptr;
-  if (m_wayland != nullptr && !m_wayland->outputs().empty()) {
-    output = m_wayland->outputs().front().output;
+  std::int32_t scale = 1;
+  if (m_wayland != nullptr) {
+    output = m_wayland->activeToplevelOutput();
+    if (output == nullptr && !m_wayland->outputs().empty()) {
+      output = m_wayland->outputs().front().output;
+    }
+    if (const auto* wlOutput = m_wayland->findOutputByWl(output); wlOutput != nullptr) {
+      scale = wlOutput->scale;
+    }
   }
-  openPanel(panelId, output, /*scale=*/1, /*anchorX=*/1.0f, /*anchorY=*/0.0f);
+  openPanel(panelId, output, scale, /*anchorX=*/1.0f, /*anchorY=*/0.0f);
 }
 
 bool PanelManager::onPointerEvent(const PointerEvent& event) {

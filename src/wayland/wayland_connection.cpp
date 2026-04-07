@@ -200,6 +200,7 @@ std::vector<Workspace> WaylandConnection::workspaces(wl_output* output) const {
 }
 
 std::optional<ActiveToplevel> WaylandConnection::activeToplevel() const { return m_toplevelsHandler.current(); }
+wl_output* WaylandConnection::activeToplevelOutput() const { return m_toplevelsHandler.currentOutput(); }
 
 bool WaylandConnection::isConnected() const noexcept { return m_display != nullptr; }
 

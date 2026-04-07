@@ -42,8 +42,12 @@ void handleState(void* data, zwlr_foreign_toplevel_handle_v1* handle, wl_array* 
   static_cast<WaylandToplevels*>(data)->onHandleState(handle, state);
 }
 
-void handleOutputEnter(void* /*data*/, zwlr_foreign_toplevel_handle_v1* /*handle*/, wl_output* /*output*/) {}
-void handleOutputLeave(void* /*data*/, zwlr_foreign_toplevel_handle_v1* /*handle*/, wl_output* /*output*/) {}
+void handleOutputEnter(void* data, zwlr_foreign_toplevel_handle_v1* handle, wl_output* output) {
+  static_cast<WaylandToplevels*>(data)->onHandleOutputEnter(handle, output);
+}
+void handleOutputLeave(void* data, zwlr_foreign_toplevel_handle_v1* handle, wl_output* output) {
+  static_cast<WaylandToplevels*>(data)->onHandleOutputLeave(handle, output);
+}
 void handleParent(void* /*data*/, zwlr_foreign_toplevel_handle_v1* /*handle*/,
                   zwlr_foreign_toplevel_handle_v1* /*parent*/) {}
 
@@ -185,6 +189,31 @@ void WaylandToplevels::onHandleState(zwlr_foreign_toplevel_handle_v1* handle, wl
   it->second.activated = activated;
   it->second.dirty = true;
   it->second.generation = ++m_generation;
+}
+
+wl_output* WaylandToplevels::currentOutput() const {
+  if (m_currentHandle == nullptr) {
+    return nullptr;
+  }
+  const auto it = m_handles.find(m_currentHandle);
+  if (it == m_handles.end()) {
+    return nullptr;
+  }
+  return it->second.output;
+}
+
+void WaylandToplevels::onHandleOutputEnter(zwlr_foreign_toplevel_handle_v1* handle, wl_output* output) {
+  auto it = m_handles.find(handle);
+  if (it != m_handles.end()) {
+    it->second.output = output;
+  }
+}
+
+void WaylandToplevels::onHandleOutputLeave(zwlr_foreign_toplevel_handle_v1* handle, wl_output* output) {
+  auto it = m_handles.find(handle);
+  if (it != m_handles.end() && it->second.output == output) {
+    it->second.output = nullptr;
+  }
 }
 
 void WaylandToplevels::notifyIfChanged(const std::optional<ActiveToplevel>& before) {

@@ -9,6 +9,7 @@
 struct zwlr_foreign_toplevel_handle_v1;
 struct zwlr_foreign_toplevel_manager_v1;
 struct wl_array;
+struct wl_output;
 
 struct ActiveToplevel {
   std::string title;
@@ -25,6 +26,7 @@ public:
   void cleanup();
 
   [[nodiscard]] std::optional<ActiveToplevel> current() const;
+  [[nodiscard]] wl_output* currentOutput() const;
 
   // Listener entrypoints called by C callbacks
   void onToplevelCreated(zwlr_foreign_toplevel_handle_v1* handle);
@@ -34,11 +36,14 @@ public:
   void onHandleTitle(zwlr_foreign_toplevel_handle_v1* handle, const char* title);
   void onHandleAppId(zwlr_foreign_toplevel_handle_v1* handle, const char* appId);
   void onHandleState(zwlr_foreign_toplevel_handle_v1* handle, wl_array* state);
+  void onHandleOutputEnter(zwlr_foreign_toplevel_handle_v1* handle, wl_output* output);
+  void onHandleOutputLeave(zwlr_foreign_toplevel_handle_v1* handle, wl_output* output);
 
 private:
   struct ToplevelState {
     std::string title;
     std::string appId;
+    wl_output* output = nullptr;
     bool activated = false;
     bool dirty = false;
     std::uint64_t generation = 0;

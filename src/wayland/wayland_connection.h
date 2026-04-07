@@ -90,6 +90,7 @@ public:
   [[nodiscard]] std::vector<Workspace> workspaces() const;
   [[nodiscard]] std::vector<Workspace> workspaces(wl_output* output) const;
   [[nodiscard]] std::optional<ActiveToplevel> activeToplevel() const;
+  [[nodiscard]] wl_output* activeToplevelOutput() const;
 
   // Registry listener entrypoints
   static void handleGlobal(void* data, wl_registry* registry, std::uint32_t name, const char* interface,
