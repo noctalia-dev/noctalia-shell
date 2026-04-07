@@ -20,6 +20,7 @@ public:
   void scrollBy(float delta);
   void setScrollbarVisible(bool visible);
   void setViewportPaddingH(float padding);
+  void setViewportPaddingV(float padding);
   void setBackgroundStyle(const Color& fill, const Color& border, float borderWidth);
   void setOnScrollChanged(std::function<void(float)> callback);
 
@@ -45,6 +46,7 @@ private:
   std::function<void(float)> m_onScrollChanged;
 
   float m_viewportPaddingH = Style::spaceXs;
+  float m_viewportPaddingV = Style::spaceSm;
   float m_scrollOffset = 0.0f;
   float m_maxScrollOffset = 0.0f;
   float m_scrollWheelStep = Style::scrollWheelStep;

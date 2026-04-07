@@ -21,7 +21,6 @@ constexpr float kDefaultHeight = 180.0f;
 constexpr float kScrollbarWidth = 6.0f;
 constexpr float kScrollbarPadding = Style::borderWidth;
 constexpr float kViewportPaddingH = Style::spaceXs;
-constexpr float kViewportPaddingV = Style::spaceSm;
 constexpr float kScrollbarGap = Style::spaceSm;
 constexpr float kMinThumbHeight = 24.0f;
 
@@ -160,6 +159,11 @@ void ScrollView::setViewportPaddingH(float padding) {
   markDirty();
 }
 
+void ScrollView::setViewportPaddingV(float padding) {
+  m_viewportPaddingV = padding;
+  markDirty();
+}
+
 float ScrollView::contentViewportWidth() const noexcept {
   const float gutter = m_showScrollbar ? (kScrollbarWidth + kScrollbarGap) : 0.0f;
   return std::max(0.0f, width() - m_viewportPaddingH * 2.0f - gutter);
@@ -174,9 +178,9 @@ void ScrollView::layout(Renderer& renderer) {
   const float w = width() > 0.0f ? width() : kDefaultWidth;
   const float h = height() > 0.0f ? height() : kDefaultHeight;
   const float viewportX = m_viewportPaddingH;
-  const float viewportY = kViewportPaddingV;
+  const float viewportY = m_viewportPaddingV;
   const float viewportW = std::max(0.0f, w - m_viewportPaddingH * 2.0f);
-  const float viewportH = std::max(0.0f, h - kViewportPaddingV * 2.0f);
+  const float viewportH = std::max(0.0f, h - m_viewportPaddingV * 2.0f);
   m_viewportHeight = viewportH;
   m_viewportWidth = viewportW;
   setSize(w, h);
@@ -247,7 +251,7 @@ void ScrollView::updateScrollbarGeometry(float viewportHeight, float contentHeig
   }
 
   const float trackX = m_viewportPaddingH + m_viewportWidth - kScrollbarWidth;
-  const float trackY = kViewportPaddingV;
+  const float trackY = m_viewportPaddingV;
   const float trackH = std::max(0.0f, viewportHeight);
   m_scrollbarTrack->setPosition(trackX, trackY);
   m_scrollbarTrack->setSize(kScrollbarWidth, trackH);

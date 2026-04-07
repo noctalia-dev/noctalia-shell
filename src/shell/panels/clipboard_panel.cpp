@@ -204,12 +204,14 @@ void ClipboardPanel::create(Renderer& renderer) {
   auto listScroll = std::make_unique<ScrollView>();
   listScroll->setScrollbarVisible(true);
   listScroll->setViewportPaddingH(0.0f);
+  listScroll->setViewportPaddingV(0.0f);
   listScroll->setFlexGrow(1.0f);
   m_listScrollView = listScroll.get();
   m_list = listScroll->content();
   m_list->setDirection(FlexDirection::Vertical);
   m_list->setAlign(FlexAlign::Start);
   m_list->setGap(Style::spaceXs);
+  m_list->setPadding(Style::spaceXs, 0.0f, 0.0f, 0.0f);
   sidebar->addChild(std::move(listScroll));
 
   root->addChild(std::move(sidebar));
