@@ -1,9 +1,9 @@
 #pragma once
 
 #include "dbus/tray/tray_service.h"
-#include "launcher/desktop_entry.h"
 #include "render/core/texture_manager.h"
 #include "shell/widget/widget.h"
+#include "system/desktop_entry.h"
 #include "system/icon_resolver.h"
 
 #include <string>

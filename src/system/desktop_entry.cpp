@@ -1,4 +1,4 @@
-#include "launcher/desktop_entry.h"
+#include "system/desktop_entry.h"
 
 #include <algorithm>
 #include <cstdlib>

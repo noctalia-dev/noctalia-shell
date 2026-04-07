@@ -333,7 +333,7 @@ add_executable(noctalia
     src/shell/control_center/network_tab.cpp
     src/shell/panels/notification_history_panel.cpp
     src/launcher/app_provider.cpp
-    src/launcher/desktop_entry.cpp
+    src/system/desktop_entry.cpp
     src/launcher/emoji_provider.cpp
     src/util/fuzzy_match.cpp
     src/system/icon_resolver.cpp

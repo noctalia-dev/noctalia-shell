@@ -1,7 +1,7 @@
 #pragma once
 
-#include "launcher/desktop_entry.h"
 #include "launcher/launcher_provider.h"
+#include "system/desktop_entry.h"
 #include "system/icon_resolver.h"
 
 #include <vector>

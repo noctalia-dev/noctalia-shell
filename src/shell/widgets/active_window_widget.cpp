@@ -1,6 +1,6 @@
 #include "shell/widgets/active_window_widget.h"
 
-#include "launcher/desktop_entry.h"
+#include "system/desktop_entry.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
 #include "ui/controls/image.h"
