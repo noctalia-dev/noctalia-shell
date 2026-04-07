@@ -8,10 +8,6 @@
 #include <string_view>
 #include <unistd.h>
 
-#ifndef NOCTALIA_ASSETS_DIR
-#define NOCTALIA_ASSETS_DIR "assets"
-#endif
-
 namespace {
 
 std::string toLower(std::string_view s) {

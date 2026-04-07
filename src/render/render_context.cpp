@@ -99,7 +99,7 @@ void RenderContext::initialize(wl_display* display) {
   m_textRenderer.initialize(fonts);
   const auto boldFonts = m_fontService.resolveFallbackChain("sans-serif", 8, FC_WEIGHT_BOLD);
   m_boldTextRenderer.initialize(boldFonts);
-  m_iconTextRenderer.initialize({{NOCTALIA_ASSETS_DIR "/fonts/tabler-icons.ttf", 0}});
+  m_iconTextRenderer.initialize({{NOCTALIA_ASSETS_DIR "/fonts/tabler.ttf", 0}});
   ensureGlPrograms();
 
   // Pre-warm the glyph atlas so first use doesn't stall.
