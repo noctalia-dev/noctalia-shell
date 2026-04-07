@@ -8,9 +8,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Export compile_commands.json for tooling
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# --- Sanitizers (on by default for Debug builds) ---
+# --- Sanitizers (opt-in via -DSANITIZE=ON) ---
 option(SANITIZE "Enable AddressSanitizer + UndefinedBehaviorSanitizer" OFF)
-if(SANITIZE OR (CMAKE_BUILD_TYPE STREQUAL "Debug"))
+if(SANITIZE)
   add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
   add_link_options(-fsanitize=address,undefined)
   set(SANITIZE_ACTIVE TRUE)

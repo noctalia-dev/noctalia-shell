@@ -7,13 +7,15 @@ default:
     @just --list
 
 configure m=mode:
-    cmake -S . -B build-{{m}} -DCMAKE_BUILD_TYPE={{ if m == "release" { "Release" } else { "Debug" } }}
+    cmake -S . -B build-{{m}} \
+      -DCMAKE_BUILD_TYPE={{ if m == "release" { "Release" } else { "Debug" } }} \
+      -DSANITIZE={{ if m == "asan" { "ON" } else { "OFF" } }}
 
 build m=mode:
     cmake --build build-{{m}} --parallel
 
 run m=mode:
-    @if [ "{{m}}" = "debug" ]; then \
+    @if [ "{{m}}" = "debug" ] || [ "{{m}}" = "asan" ]; then \
       cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/noctalia"; \
       mkdir -p "$cache_dir"; \
       logfile="$cache_dir/noctalia-$(date +%Y%m%d-%H%M%S).log"; \
