@@ -11,85 +11,115 @@
 #include "ui/controls/glyph_registry.h"
 #include "ui/palette.h"
 
+#include <algorithm>
+#include <cctype>
 #include <linux/input-event-codes.h>
-#include <array>
-#include <cstdlib>
-#include <filesystem>
 #include <memory>
 #include <string>
 
 namespace {
 
-namespace fs = std::filesystem;
-
-bool hasImageExt(const std::string& value) {
-  return value.ends_with(".png") || value.ends_with(".svg") || value.ends_with(".PNG") || value.ends_with(".SVG");
+std::string toLower(std::string_view value) {
+  std::string out(value);
+  std::transform(out.begin(), out.end(), out.begin(),
+                 [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+  return out;
 }
 
-std::string resolveThemeIconPath(const std::string& iconName, const std::string& iconThemePath) {
-  if (iconName.empty()) {
+std::vector<std::string> identifierVariants(std::string_view value) {
+  std::vector<std::string> out;
+  if (value.empty()) {
+    return out;
+  }
+
+  auto pushUnique = [&out](std::string candidate) {
+    if (candidate.empty()) {
+      return;
+    }
+    if (std::ranges::find(out, candidate) == out.end()) {
+      out.push_back(std::move(candidate));
+    }
+  };
+
+  std::string base(value);
+  pushUnique(base);
+  pushUnique(toLower(base));
+
+  if (const auto slash = base.find_last_of('/'); slash != std::string::npos && slash + 1 < base.size()) {
+    base = base.substr(slash + 1);
+    pushUnique(base);
+    pushUnique(toLower(base));
+  }
+
+  std::string dashed = base;
+  std::replace(dashed.begin(), dashed.end(), '_', '-');
+  pushUnique(dashed);
+  pushUnique(toLower(dashed));
+
+  std::string underscored = base;
+  std::replace(underscored.begin(), underscored.end(), '-', '_');
+  pushUnique(underscored);
+  pushUnique(toLower(underscored));
+
+  for (const auto& candidate : std::vector<std::string>{base, dashed, underscored}) {
+    for (const auto& suffix : {"_client", "-client", ".desktop"}) {
+      if (candidate.size() > std::char_traits<char>::length(suffix) &&
+          candidate.ends_with(suffix)) {
+        const auto trimmed = candidate.substr(0, candidate.size() - std::char_traits<char>::length(suffix));
+        pushUnique(trimmed);
+        pushUnique(toLower(trimmed));
+      }
+    }
+  }
+
+  return out;
+}
+
+void addIconAlias(std::unordered_map<std::string, std::string>& index, std::string_view key, std::string_view icon) {
+  if (key.empty() || icon.empty()) {
+    return;
+  }
+
+  for (const auto& variant : identifierVariants(key)) {
+    index.try_emplace(variant, std::string(icon));
+  }
+}
+
+std::string execBasename(std::string_view exec) {
+  if (exec.empty()) {
     return {};
   }
 
-  if (iconName.find('/') != std::string::npos) {
-    return fs::exists(iconName) ? iconName : std::string{};
-  }
-
-  const std::string stem = hasImageExt(iconName) ? iconName.substr(0, iconName.find_last_of('.')) : iconName;
-  const std::array<std::string, 2> exts = {".png", ".svg"};
-  const std::array<std::string, 6> themes = {"hicolor", "Adwaita", "Papirus", "Papirus-Dark", "breeze",
-                                             "Yaru"};
-  const std::array<std::string, 7> sizes = {"16x16", "18x18", "20x20", "22x22", "24x24", "32x32",
-                                             "scalable"};
-  const std::array<std::string, 5> categories = {"status", "apps", "devices", "actions", "places"};
-
-  std::vector<fs::path> themedRoots;
-  if (!iconThemePath.empty()) {
-    themedRoots.emplace_back(iconThemePath);
-  }
-  const char* xdgDataHome = std::getenv("XDG_DATA_HOME");
-  if (xdgDataHome != nullptr && xdgDataHome[0] != '\0') {
-    themedRoots.emplace_back(fs::path(xdgDataHome) / "icons");
-  }
-  const char* home = std::getenv("HOME");
-  if (home != nullptr && home[0] != '\0') {
-    themedRoots.emplace_back(fs::path(home) / ".icons");
-    themedRoots.emplace_back(fs::path(home) / ".local/share/icons");
-  }
-  themedRoots.emplace_back("/usr/share/icons");
-  themedRoots.emplace_back("/usr/local/share/icons");
-
-  for (const auto& root : themedRoots) {
-    for (const auto& theme : themes) {
-      for (const auto& size : sizes) {
-        for (const auto& category : categories) {
-          for (const auto& ext : exts) {
-            const fs::path candidate = root / theme / size / category / (stem + ext);
-            if (fs::exists(candidate)) {
-              return candidate.string();
-            }
-          }
-        }
-      }
+  std::string token;
+  bool inSingle = false;
+  bool inDouble = false;
+  for (char c : exec) {
+    if (c == '\'' && !inDouble) {
+      inSingle = !inSingle;
+      continue;
     }
-  }
-
-  const std::array<fs::path, 2> pixmaps = {fs::path("/usr/share/pixmaps"), fs::path("/usr/local/share/pixmaps")};
-  for (const auto& root : pixmaps) {
-    for (const auto& ext : exts) {
-      const fs::path candidate = root / (stem + ext);
-      if (fs::exists(candidate)) {
-        return candidate.string();
-      }
+    if (c == '"' && !inSingle) {
+      inDouble = !inDouble;
+      continue;
     }
+    if (c == ' ' && !inSingle && !inDouble) {
+      break;
+    }
+    token.push_back(c);
   }
 
-  return {};
+  if (token.empty()) {
+    return {};
+  }
+  if (const auto slash = token.find_last_of('/'); slash != std::string::npos && slash + 1 < token.size()) {
+    token = token.substr(slash + 1);
+  }
+  return token;
 }
 
 } // namespace
 
-TrayWidget::TrayWidget(TrayService* tray) : m_tray(tray) {}
+TrayWidget::TrayWidget(TrayService* tray) : m_tray(tray) { buildDesktopIconIndex(); }
 
 void TrayWidget::create(Renderer& renderer) {
   auto container = std::make_unique<Flex>();
@@ -146,9 +176,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
   }
 
   for (const auto& item : m_items) {
-    const std::string preferred =
-        item.needsAttention && !item.attentionIconName.empty() ? item.attentionIconName : item.iconName;
-    const std::string iconPath = resolveThemeIconPath(preferred, item.iconThemePath);
+    const std::string iconPath = resolveIconPath(item);
 
     std::unique_ptr<Node> iconNode;
     float iconW = 16.0f;
@@ -234,6 +262,85 @@ void TrayWidget::rebuild(Renderer& renderer) {
     area->addChild(std::move(iconNode));
     m_container->addChild(std::move(area));
   }
+}
+
+void TrayWidget::buildDesktopIconIndex() {
+  const auto entries = scanDesktopEntries();
+  for (const auto& entry : entries) {
+    if (entry.id.empty() || entry.icon.empty()) {
+      continue;
+    }
+
+    addIconAlias(m_appIcons, entry.id, entry.icon);
+    addIconAlias(m_appIcons, entry.name, entry.icon);
+    addIconAlias(m_appIcons, entry.nameLower, entry.icon);
+    addIconAlias(m_appIcons, entry.icon, entry.icon);
+    addIconAlias(m_appIcons, execBasename(entry.exec), entry.icon);
+  }
+}
+
+std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
+  const std::string preferred =
+      item.needsAttention && !item.attentionIconName.empty() ? item.attentionIconName : item.iconName;
+
+  auto resolveByName = [this](const std::string& name) -> std::string {
+    if (name.empty()) {
+      return {};
+    }
+
+    if (const auto direct = m_iconResolver.resolve(name); !direct.empty()) {
+      return direct;
+    }
+
+    if (const auto it = m_appIcons.find(name); it != m_appIcons.end()) {
+      if (const auto mapped = m_iconResolver.resolve(it->second); !mapped.empty()) {
+        return mapped;
+      }
+    }
+
+    const std::string lower = toLower(name);
+    if (const auto it = m_appIcons.find(lower); it != m_appIcons.end()) {
+      if (const auto mapped = m_iconResolver.resolve(it->second); !mapped.empty()) {
+        return mapped;
+      }
+    }
+
+    if (const auto dot = name.rfind('.'); dot != std::string::npos && dot + 1 < name.size()) {
+      const auto tail = name.substr(dot + 1);
+      if (const auto tailDirect = m_iconResolver.resolve(tail); !tailDirect.empty()) {
+        return tailDirect;
+      }
+      if (const auto it = m_appIcons.find(tail); it != m_appIcons.end()) {
+        if (const auto mapped = m_iconResolver.resolve(it->second); !mapped.empty()) {
+          return mapped;
+        }
+      }
+      const std::string tailLower = toLower(tail);
+      if (const auto it = m_appIcons.find(tailLower); it != m_appIcons.end()) {
+        if (const auto mapped = m_iconResolver.resolve(it->second); !mapped.empty()) {
+          return mapped;
+        }
+      }
+    }
+
+    return {};
+  };
+
+  for (const auto& [label, candidate] : std::array<std::pair<const char*, const std::string*>, 6>{
+           {{"preferred", &preferred},
+            {"itemName", &item.itemName},
+            {"title", &item.title},
+            {"busName", &item.busName},
+            {"objectPath", &item.objectPath},
+            {"id", &item.id}}}) {
+    (void)label;
+    for (const auto& variant : identifierVariants(*candidate)) {
+      if (const auto path = resolveByName(variant); !path.empty()) {
+        return path;
+      }
+    }
+  }
+  return {};
 }
 
 std::string TrayWidget::iconForItem(const TrayItemInfo& item) const {
