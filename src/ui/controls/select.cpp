@@ -24,7 +24,7 @@ constexpr float kTriggerHeight = Style::controlHeight;
 constexpr float kOptionHeight = Style::controlHeight;
 constexpr float kMenuTopGap = Style::spaceXs;
 constexpr float kHorizontalPadding = Style::spaceMd;
-constexpr float kIconSize = 14.0f;
+constexpr float kGlyphSize = 14.0f;
 constexpr std::int32_t kOpenSelectZIndex = 100;
 constexpr std::size_t kMaxVisibleOptions = 6;
 
@@ -42,7 +42,7 @@ Select::Select() {
   auto triggerGlyph = std::make_unique<Glyph>();
   m_triggerGlyph = static_cast<Glyph*>(addChild(std::move(triggerGlyph)));
   m_triggerGlyph->setGlyph("chevron-down");
-  m_triggerGlyph->setGlyphSize(kIconSize);
+  m_triggerGlyph->setGlyphSize(kGlyphSize);
 
   auto triggerArea = std::make_unique<InputArea>();
   triggerArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
@@ -184,7 +184,7 @@ void Select::layout(Renderer& renderer) {
     widestLabel = std::max(widestLabel, option.label->width());
   }
 
-  float contentWidth = widestLabel + kHorizontalPadding * 2.0f + kIconSize + Style::spaceXs;
+  float contentWidth = widestLabel + kHorizontalPadding * 2.0f + kGlyphSize + Style::spaceXs;
   float dropdownWidth = m_fixedWidth > 0.0f ? m_fixedWidth : std::max({kDefaultWidth, kMinWidth, contentWidth});
 
   const float viewportHeight = menuViewportHeight();
@@ -193,7 +193,7 @@ void Select::layout(Renderer& renderer) {
   m_triggerBackground->setPosition(0.0f, 0.0f);
   m_triggerBackground->setSize(dropdownWidth, kTriggerHeight);
 
-  const float triggerLabelMax = std::max(0.0f, dropdownWidth - (kHorizontalPadding * 2.0f + kIconSize + Style::spaceXs));
+  const float triggerLabelMax = std::max(0.0f, dropdownWidth - (kHorizontalPadding * 2.0f + kGlyphSize + Style::spaceXs));
   m_triggerLabel->setMaxWidth(triggerLabelMax);
   m_triggerLabel->measure(renderer);
   float triggerLabelY = std::round((kTriggerHeight - m_triggerLabel->height()) * 0.5f);
@@ -244,7 +244,7 @@ void Select::layout(Renderer& renderer) {
     option.background->setSize(dropdownWidth, kOptionHeight);
     option.background->setZIndex(3);
 
-    option.label->setMaxWidth(std::max(0.0f, dropdownWidth - kHorizontalPadding * 2.0f - kIconSize - Style::spaceXs));
+    option.label->setMaxWidth(std::max(0.0f, dropdownWidth - kHorizontalPadding * 2.0f - kGlyphSize - Style::spaceXs));
     option.label->measure(renderer);
     float optLabelY = std::round((kOptionHeight - option.label->height()) * 0.5f);
     option.label->setPosition(kHorizontalPadding, rowY + optLabelY);
@@ -294,7 +294,7 @@ void Select::rebuildOptionViews() {
 
     auto checkGlyph = std::make_unique<Glyph>();
     checkGlyph->setGlyph("check");
-    checkGlyph->setGlyphSize(kIconSize);
+    checkGlyph->setGlyphSize(kGlyphSize);
     auto* checkIconPtr = static_cast<Glyph*>(m_menuViewport->addChild(std::move(checkGlyph)));
 
     auto area = std::make_unique<InputArea>();

@@ -1,4 +1,4 @@
-#include "ui/icons/icon_resolver.h"
+#include "system/icon_resolver.h"
 
 #include <algorithm>
 #include <cstdlib>

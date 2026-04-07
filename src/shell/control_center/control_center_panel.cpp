@@ -220,14 +220,14 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
 
       const float sideButtonSize = kMediaControlsHeight;
       const float playPauseButtonSize = kMediaPlayPauseHeight;
-      const float sideIconSize = Style::fontSizeTitle;
-      const float playPauseIconSize = Style::fontSizeTitle + Style::spaceXs;
+      const float sideGlyphSize = Style::fontSizeTitle;
+      const float playPauseGlyphSize = Style::fontSizeTitle + Style::spaceXs;
 
       for (auto* button : {m_mediaRepeatButton, m_mediaPrevButton, m_mediaNextButton, m_mediaShuffleButton}) {
         if (button != nullptr) {
           button->setMinWidth(sideButtonSize);
           button->setMinHeight(sideButtonSize);
-          button->setGlyphSize(sideIconSize);
+          button->setGlyphSize(sideGlyphSize);
           button->layout(renderer);
           button->updateInputArea();
         }
@@ -235,7 +235,7 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
       if (m_mediaPlayPauseButton != nullptr) {
         m_mediaPlayPauseButton->setMinWidth(playPauseButtonSize);
         m_mediaPlayPauseButton->setMinHeight(playPauseButtonSize);
-        m_mediaPlayPauseButton->setGlyphSize(playPauseIconSize);
+        m_mediaPlayPauseButton->setGlyphSize(playPauseGlyphSize);
         m_mediaPlayPauseButton->layout(renderer);
         m_mediaPlayPauseButton->updateInputArea();
       }

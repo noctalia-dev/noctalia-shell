@@ -8,7 +8,7 @@
 #include "render/scene/node.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
-#include "ui/icons/glyph_registry.h"
+#include "ui/controls/glyph_registry.h"
 #include "ui/palette.h"
 
 #include <linux/input-event-codes.h>

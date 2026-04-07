@@ -1,4 +1,4 @@
-#include "ui/icons/glyph_registry.h"
+#include "ui/controls/glyph_registry.h"
 
 #include <string>
 #include <unordered_map>

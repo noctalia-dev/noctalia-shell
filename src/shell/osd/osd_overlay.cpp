@@ -23,7 +23,7 @@ constexpr int kSurfaceHeight = static_cast<int>(kCardHeight + Style::spaceLg);
 constexpr int kHideDelayMs = Style::animSlow * 3 + Style::animFast * 2;
 
 constexpr float kCardOpacity = 0.98f;
-constexpr float kIconSize = Style::fontSizeTitle + Style::borderWidth * 4;
+constexpr float kGlyphSize = Style::fontSizeTitle + Style::borderWidth * 4;
 constexpr float kValueFontSize = Style::fontSizeBody;
 
 constexpr float kProgressHeight = Style::spaceXs + Style::borderWidth * 2;
@@ -205,7 +205,7 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   inst.card = card.get();
 
   auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyphSize(kIconSize);
+  glyph->setGlyphSize(kGlyphSize);
   glyph->setColor(palette.primary);
   inst.glyph = glyph.get();
   inst.glyph->setZIndex(1);
