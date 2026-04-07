@@ -1,4 +1,4 @@
-#include "shell/control_center/control_center_panel.h"
+#include "shell/control_center/notifications_tab.h"
 
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
@@ -12,40 +12,64 @@
 
 using namespace control_center;
 
-void ControlCenterPanel::buildNotificationsTab() {
+NotificationsTab::NotificationsTab(NotificationManager* notifications)
+    : m_notifications(notifications) {}
+
+std::unique_ptr<Flex> NotificationsTab::build(Renderer& /*renderer*/) {
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);
   tab->setAlign(FlexAlign::Start);
   tab->setGap(Style::spaceSm);
-  m_tabContainers[tabIndex(TabId::Notifications)] = tab.get();
 
   auto scroll = std::make_unique<ScrollView>();
   scroll->setScrollbarVisible(true);
   scroll->setScrollWheelStep(Style::controlHeightLg + Style::spaceSm);
   scroll->setBackgroundStyle(rgba(0.0f, 0.0f, 0.0f, 0.0f), rgba(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
-  m_notificationScroll = scroll.get();
-  m_notificationList = scroll->content();
-  m_notificationList->setDirection(FlexDirection::Vertical);
-  m_notificationList->setAlign(FlexAlign::Start);
-  m_notificationList->setGap(Style::spaceSm);
-  m_notificationList->setPadding(0.0f, kNotificationListRightPadding, 0.0f, 0.0f);
+  m_scroll = scroll.get();
+  m_list = scroll->content();
+  m_list->setDirection(FlexDirection::Vertical);
+  m_list->setAlign(FlexAlign::Start);
+  m_list->setGap(Style::spaceSm);
+  m_list->setPadding(0.0f, kNotificationListRightPadding, 0.0f, 0.0f);
   tab->addChild(std::move(scroll));
 
-  m_tabBodies->addChild(std::move(tab));
+  return tab;
 }
 
-void ControlCenterPanel::rebuildNotifications(Renderer& renderer, float width) {
-  if (m_notificationList == nullptr) {
+void NotificationsTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) {
+  if (m_scroll == nullptr) {
+    return;
+  }
+  m_scroll->setSize(contentWidth, bodyHeight);
+  m_scroll->layout(renderer);
+  rebuild(renderer, m_scroll->contentViewportWidth());
+  m_scroll->layout(renderer);
+}
+
+void NotificationsTab::update(Renderer& renderer) {
+  const float width = m_scroll != nullptr ? m_scroll->contentViewportWidth() : 0.0f;
+  rebuild(renderer, width);
+}
+
+void NotificationsTab::onClose() {
+  m_scroll = nullptr;
+  m_list = nullptr;
+  m_lastSerial = 0;
+  m_lastWidth = -1.0f;
+}
+
+void NotificationsTab::rebuild(Renderer& renderer, float width) {
+  if (m_list == nullptr) {
     return;
   }
 
   const std::uint64_t serial = m_notifications != nullptr ? m_notifications->changeSerial() : 0;
-  if (serial == m_lastNotificationSerial && std::abs(width - m_lastNotificationWidth) < 0.5f) {
+  if (serial == m_lastSerial && std::abs(width - m_lastWidth) < 0.5f) {
     return;
   }
 
-  while (!m_notificationList->children().empty()) {
-    m_notificationList->removeChild(m_notificationList->children().front().get());
+  while (!m_list->children().empty()) {
+    m_list->removeChild(m_list->children().front().get());
   }
 
   const float cardWidth = std::max(0.0f, width - kNotificationListRightPadding);
@@ -55,9 +79,9 @@ void ControlCenterPanel::rebuildNotifications(Renderer& renderer, float width) {
     empty->setMinWidth(cardWidth);
     addTitle(*empty, "No notifications");
     addBody(*empty, "Recent notifications will show here.");
-    m_notificationList->addChild(std::move(empty));
-    m_lastNotificationSerial = serial;
-    m_lastNotificationWidth = width;
+    m_list->addChild(std::move(empty));
+    m_lastSerial = serial;
+    m_lastWidth = width;
     return;
   }
 
@@ -90,9 +114,9 @@ void ControlCenterPanel::rebuildNotifications(Renderer& renderer, float width) {
       card->addChild(std::move(body));
     }
 
-    m_notificationList->addChild(std::move(card));
+    m_list->addChild(std::move(card));
   }
 
-  m_lastNotificationSerial = serial;
-  m_lastNotificationWidth = width;
+  m_lastSerial = serial;
+  m_lastWidth = width;
 }

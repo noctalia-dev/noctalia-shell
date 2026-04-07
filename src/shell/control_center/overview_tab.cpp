@@ -1,4 +1,4 @@
-#include "shell/control_center/control_center_panel.h"
+#include "shell/control_center/overview_tab.h"
 
 #include "shell/control_center/common.h"
 #include "ui/controls/flex.h"
@@ -8,12 +8,11 @@
 
 using namespace control_center;
 
-void ControlCenterPanel::buildOverviewTab() {
+std::unique_ptr<Flex> OverviewTab::build(Renderer& /*renderer*/) {
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);
   tab->setAlign(FlexAlign::Start);
   tab->setGap(Style::spaceSm);
-  m_tabContainers[tabIndex(TabId::Overview)] = tab.get();
 
   auto userCard = std::make_unique<Flex>();
   applyCard(*userCard);
@@ -40,5 +39,5 @@ void ControlCenterPanel::buildOverviewTab() {
   addBody(*systemCard, "CPU / RAM overview coming soon");
   tab->addChild(std::move(systemCard));
 
-  m_tabBodies->addChild(std::move(tab));
+  return tab;
 }

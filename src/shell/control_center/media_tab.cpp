@@ -1,4 +1,4 @@
-#include "shell/control_center/control_center_panel.h"
+#include "shell/control_center/media_tab.h"
 
 #include "dbus/mpris/mpris_service.h"
 #include "net/http_client.h"
@@ -96,19 +96,21 @@ const AudioNode* findAudioNodeById(const std::vector<AudioNode>& devices, std::u
 
 } // namespace
 
-void ControlCenterPanel::buildMediaTab() {
+MediaTab::MediaTab(MprisService* mpris, PipeWireService* audio, HttpClient* httpClient)
+    : m_mpris(mpris), m_audio(audio), m_httpClient(httpClient) {}
+
+std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Horizontal);
   tab->setAlign(FlexAlign::Start);
   tab->setGap(Style::spaceMd);
-  m_tabContainers[tabIndex(TabId::Media)] = tab.get();
 
   auto mediaColumn = std::make_unique<Flex>();
   mediaColumn->setDirection(FlexDirection::Vertical);
   mediaColumn->setAlign(FlexAlign::Start);
   mediaColumn->setGap(0.0f);
   mediaColumn->setMinWidth(kMediaColumnWidth);
-  m_mediaColumn = mediaColumn.get();
+  m_column = mediaColumn.get();
 
   auto nowCard = std::make_unique<Flex>();
   applyCard(*nowCard);
@@ -116,14 +118,14 @@ void ControlCenterPanel::buildMediaTab() {
   nowCard->setGap(Style::spaceMd);
   nowCard->setMinWidth(kMediaColumnWidth);
   nowCard->setMinHeight(kMediaNowCardMinHeight);
-  m_mediaNowCard = nowCard.get();
+  m_nowCard = nowCard.get();
 
   auto artwork = std::make_unique<Image>();
   artwork->setCornerRadius(Style::radiusLg);
   artwork->setBackground(alphaSurfaceVariant(0.95f));
   artwork->setFit(ImageFit::Contain);
   artwork->setSize(kArtworkSize, kArtworkSize);
-  m_mediaArtwork = artwork.get();
+  m_artwork = artwork.get();
   nowCard->addChild(std::move(artwork));
 
   auto title = std::make_unique<Label>();
@@ -132,14 +134,14 @@ void ControlCenterPanel::buildMediaTab() {
   title->setFontSize(Style::fontSizeTitle);
   title->setColor(palette.onSurface);
   title->setMaxWidth(kMediaColumnWidth - Style::spaceMd * 2);
-  m_mediaTrackTitle = title.get();
+  m_trackTitle = title.get();
   nowCard->addChild(std::move(title));
 
   auto artist = std::make_unique<Label>();
   artist->setText("Start playback in an MPRIS app");
   artist->setColor(palette.onSurfaceVariant);
   artist->setMaxWidth(kMediaColumnWidth - Style::spaceMd * 2);
-  m_mediaTrackArtist = artist.get();
+  m_trackArtist = artist.get();
   nowCard->addChild(std::move(artist));
 
   auto album = std::make_unique<Label>();
@@ -147,7 +149,7 @@ void ControlCenterPanel::buildMediaTab() {
   album->setCaptionStyle();
   album->setColor(palette.onSurfaceVariant);
   album->setMaxWidth(kMediaColumnWidth - Style::spaceMd * 2);
-  m_mediaTrackAlbum = album.get();
+  m_trackAlbum = album.get();
   nowCard->addChild(std::move(album));
 
   auto progress = std::make_unique<Slider>();
@@ -155,19 +157,19 @@ void ControlCenterPanel::buildMediaTab() {
   progress->setStep(1.0f);
   progress->setSize(kMediaColumnWidth - Style::spaceMd * 2, 0.0f);
   progress->setOnValueChanged([this](float value) {
-    if (m_syncingMediaProgress || m_mpris == nullptr) {
+    if (m_syncingProgress || m_mpris == nullptr) {
       return;
     }
     const auto active = m_mpris->activePlayer();
     const std::int64_t targetUs = static_cast<std::int64_t>(std::llround(value * 1000000.0f));
     if (active.has_value()) {
-      m_pendingMediaSeekBusName = active->busName;
-      m_pendingMediaSeekUs = targetUs;
-      m_pendingMediaSeekUntil = std::chrono::steady_clock::now() + std::chrono::milliseconds(1500);
+      m_pendingSeekBusName = active->busName;
+      m_pendingSeekUs = targetUs;
+      m_pendingSeekUntil = std::chrono::steady_clock::now() + std::chrono::milliseconds(1500);
     }
     m_mpris->setPositionActive(targetUs);
   });
-  m_mediaProgressSlider = progress.get();
+  m_progressSlider = progress.get();
   nowCard->addChild(std::move(progress));
 
   auto controls = std::make_unique<Flex>();
@@ -190,7 +192,7 @@ void ControlCenterPanel::buildMediaTab() {
     m_mpris->setLoopStatusActive(next);
     PanelManager::instance().refresh();
   });
-  m_mediaRepeatButton = repeat.get();
+  m_repeatButton = repeat.get();
   controls->addChild(std::move(repeat));
 
   auto previous = std::make_unique<Button>();
@@ -205,7 +207,7 @@ void ControlCenterPanel::buildMediaTab() {
       PanelManager::instance().refresh();
     }
   });
-  m_mediaPrevButton = previous.get();
+  m_prevButton = previous.get();
   controls->addChild(std::move(previous));
 
   auto playPause = std::make_unique<Button>();
@@ -220,7 +222,7 @@ void ControlCenterPanel::buildMediaTab() {
       PanelManager::instance().refresh();
     }
   });
-  m_mediaPlayPauseButton = playPause.get();
+  m_playPauseButton = playPause.get();
   controls->addChild(std::move(playPause));
 
   auto next = std::make_unique<Button>();
@@ -235,7 +237,7 @@ void ControlCenterPanel::buildMediaTab() {
       PanelManager::instance().refresh();
     }
   });
-  m_mediaNextButton = next.get();
+  m_nextButton = next.get();
   controls->addChild(std::move(next));
 
   auto shuffle = std::make_unique<Button>();
@@ -251,7 +253,7 @@ void ControlCenterPanel::buildMediaTab() {
       PanelManager::instance().refresh();
     }
   });
-  m_mediaShuffleButton = shuffle.get();
+  m_shuffleButton = shuffle.get();
   controls->addChild(std::move(shuffle));
 
   nowCard->addChild(std::move(controls));
@@ -265,12 +267,12 @@ void ControlCenterPanel::buildMediaTab() {
     }
     if (index == 0) {
       m_mpris->clearPinnedPlayerPreference();
-    } else if (index - 1 < m_mediaPlayerBusNames.size()) {
-      m_mpris->setPinnedPlayerPreference(m_mediaPlayerBusNames[index - 1]);
+    } else if (index - 1 < m_playerBusNames.size()) {
+      m_mpris->setPinnedPlayerPreference(m_playerBusNames[index - 1]);
     }
     PanelManager::instance().refresh();
   });
-  m_mediaPlayerSelect = playerSelect.get();
+  m_playerSelect = playerSelect.get();
   nowCard->addChild(std::move(playerSelect));
 
   mediaColumn->addChild(std::move(nowCard));
@@ -280,13 +282,13 @@ void ControlCenterPanel::buildMediaTab() {
   audioColumn->setAlign(FlexAlign::Start);
   audioColumn->setGap(Style::spaceSm);
   audioColumn->setMinWidth(kAudioColumnWidth);
-  m_mediaAudioColumn = audioColumn.get();
+  m_audioColumn = audioColumn.get();
 
   auto outputCard = std::make_unique<Flex>();
   applyCard(*outputCard);
   outputCard->setMinWidth(kAudioColumnWidth);
   outputCard->setMinHeight(kMediaAudioCardMinHeight);
-  m_mediaOutputCard = outputCard.get();
+  m_outputCard = outputCard.get();
   addTitle(*outputCard, "Output");
 
   auto outputDeviceSelect = std::make_unique<Select>();
@@ -344,7 +346,7 @@ void ControlCenterPanel::buildMediaTab() {
   applyCard(*inputCard);
   inputCard->setMinWidth(kAudioColumnWidth);
   inputCard->setMinHeight(kMediaAudioCardMinHeight);
-  m_mediaInputCard = inputCard.get();
+  m_inputCard = inputCard.get();
   addTitle(*inputCard, "Input");
 
   auto inputDeviceSelect = std::make_unique<Select>();
@@ -401,11 +403,177 @@ void ControlCenterPanel::buildMediaTab() {
   tab->addChild(std::move(mediaColumn));
   tab->addChild(std::move(audioColumn));
 
-  m_tabBodies->addChild(std::move(tab));
+  return tab;
 }
 
-void ControlCenterPanel::refreshMediaState(Renderer& renderer) {
-  if (m_mpris != nullptr && m_mediaPlayerSelect != nullptr) {
+void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) {
+  const float mediaGap = Style::spaceMd;
+  const float leftPreferred = std::clamp(contentWidth * 0.48f, 260.0f, 360.0f);
+  const float rightWidth = std::max(220.0f, contentWidth - leftPreferred - mediaGap);
+  const float leftWidth = std::max(220.0f, contentWidth - rightWidth - mediaGap);
+  const float leftInnerWidth = std::max(0.0f, leftWidth - Style::spaceMd * 2);
+  const float rightInnerWidth = std::max(0.0f, rightWidth - Style::spaceMd * 2);
+
+  if (m_column != nullptr) {
+    m_column->setMinWidth(leftWidth);
+    m_column->setSize(leftWidth, bodyHeight);
+  }
+  if (m_nowCard != nullptr) {
+    m_nowCard->setMinWidth(leftWidth);
+    m_nowCard->setMinHeight(std::max(kMediaNowCardMinHeight, bodyHeight));
+  }
+  if (m_audioColumn != nullptr) {
+    m_audioColumn->setMinWidth(rightWidth);
+    m_audioColumn->setSize(rightWidth, bodyHeight);
+  }
+  if (m_outputCard != nullptr) {
+    m_outputCard->setMinWidth(rightWidth);
+    m_outputCard->setMinHeight(kMediaAudioCardMinHeight);
+  }
+  if (m_inputCard != nullptr) {
+    m_inputCard->setMinWidth(rightWidth);
+    m_inputCard->setMinHeight(kMediaAudioCardMinHeight);
+  }
+  if (m_playerSelect != nullptr) {
+    m_playerSelect->setSize(leftInnerWidth, 0.0f);
+  }
+  if (m_outputDeviceSelect != nullptr) {
+    m_outputDeviceSelect->setSize(rightInnerWidth, 0.0f);
+  }
+  if (m_inputDeviceSelect != nullptr) {
+    m_inputDeviceSelect->setSize(rightInnerWidth, 0.0f);
+  }
+
+  if (m_artwork != nullptr) {
+    const float mediaArtworkSize = std::min(leftInnerWidth, Style::controlHeightLg * 6);
+    const float mediaMetaHeight = Style::fontSizeTitle + Style::fontSizeBody +
+                                 Style::fontSizeCaption + Style::spaceMd * 2;
+    const float aspectRatio = m_artwork->hasImage() ? m_artwork->aspectRatio() : 1.0f;
+    const bool wideArtwork = aspectRatio > 1.15f;
+    const float mediaReservedHeight =
+        kMediaPlayerSelectHeight + kMediaPlayPauseHeight + Style::controlHeight +
+        mediaMetaHeight + Style::spaceMd * 5;
+    const float artworkMaxHeight = std::max(kMediaArtworkMinHeight, bodyHeight - mediaReservedHeight);
+
+    float artworkWidth = mediaArtworkSize;
+    float artworkHeight = mediaArtworkSize;
+    if (wideArtwork) {
+      artworkWidth = leftInnerWidth;
+      artworkHeight = std::min(artworkMaxHeight, artworkWidth / aspectRatio);
+    } else if (aspectRatio < 0.9f) {
+      artworkHeight = std::min(artworkMaxHeight, leftInnerWidth);
+      artworkWidth = std::min(leftInnerWidth, artworkHeight * aspectRatio);
+    } else {
+      const float squareSize = std::min(leftInnerWidth, artworkMaxHeight);
+      artworkWidth = squareSize;
+      artworkHeight = squareSize;
+    }
+
+    m_artwork->setSize(std::max(0.0f, artworkWidth), std::max(0.0f, artworkHeight));
+
+    const float sideButtonSize = kMediaControlsHeight;
+    const float playPauseButtonSize = kMediaPlayPauseHeight;
+    const float sideGlyphSize = Style::fontSizeTitle;
+    const float playPauseGlyphSize = Style::fontSizeTitle + Style::spaceXs;
+
+    for (auto* button : {m_repeatButton, m_prevButton, m_nextButton, m_shuffleButton}) {
+      if (button != nullptr) {
+        button->setMinWidth(sideButtonSize);
+        button->setMinHeight(sideButtonSize);
+        button->setGlyphSize(sideGlyphSize);
+        button->layout(renderer);
+        button->updateInputArea();
+      }
+    }
+    if (m_playPauseButton != nullptr) {
+      m_playPauseButton->setMinWidth(playPauseButtonSize);
+      m_playPauseButton->setMinHeight(playPauseButtonSize);
+      m_playPauseButton->setGlyphSize(playPauseGlyphSize);
+      m_playPauseButton->layout(renderer);
+      m_playPauseButton->updateInputArea();
+    }
+  }
+
+  if (m_trackTitle != nullptr) {
+    m_trackTitle->setMaxWidth(leftInnerWidth);
+    m_trackTitle->measure(renderer);
+  }
+  if (m_trackArtist != nullptr) {
+    m_trackArtist->setMaxWidth(leftInnerWidth);
+    m_trackArtist->measure(renderer);
+  }
+  if (m_trackAlbum != nullptr) {
+    m_trackAlbum->setMaxWidth(leftInnerWidth);
+    m_trackAlbum->measure(renderer);
+  }
+  if (m_progressSlider != nullptr) {
+    m_progressSlider->setSize(leftInnerWidth, 0.0f);
+    m_progressSlider->layout(renderer);
+  }
+  if (m_outputSlider != nullptr) {
+    m_outputSlider->setSize(std::max(120.0f, rightInnerWidth - kValueLabelWidth - Style::spaceSm), 0.0f);
+    m_outputSlider->layout(renderer);
+  }
+  if (m_inputSlider != nullptr) {
+    m_inputSlider->setSize(std::max(120.0f, rightInnerWidth - kValueLabelWidth - Style::spaceSm), 0.0f);
+    m_inputSlider->layout(renderer);
+  }
+  if (m_outputValue != nullptr) {
+    m_outputValue->measure(renderer);
+  }
+  if (m_inputValue != nullptr) {
+    m_inputValue->measure(renderer);
+  }
+}
+
+void MediaTab::update(Renderer& renderer) {
+  refresh(renderer);
+}
+
+void MediaTab::onClose() {
+  m_artwork = nullptr;
+  m_column = nullptr;
+  m_nowCard = nullptr;
+  m_audioColumn = nullptr;
+  m_outputCard = nullptr;
+  m_inputCard = nullptr;
+  m_trackTitle = nullptr;
+  m_trackArtist = nullptr;
+  m_trackAlbum = nullptr;
+  m_progressSlider = nullptr;
+  m_playerSelect = nullptr;
+  m_outputDeviceSelect = nullptr;
+  m_inputDeviceSelect = nullptr;
+  m_prevButton = nullptr;
+  m_playPauseButton = nullptr;
+  m_nextButton = nullptr;
+  m_repeatButton = nullptr;
+  m_shuffleButton = nullptr;
+  m_outputSlider = nullptr;
+  m_outputValue = nullptr;
+  m_inputSlider = nullptr;
+  m_inputValue = nullptr;
+  m_lastArtPath.clear();
+  m_lastBusName.clear();
+  m_lastPlaybackStatus.clear();
+  m_lastLoopStatus.clear();
+  m_playerBusNames.clear();
+  m_outputDeviceIds.clear();
+  m_inputDeviceIds.clear();
+  m_pendingSeekBusName.clear();
+  m_pendingSeekUs = -1;
+  m_lastSinkVolume = -1.0f;
+  m_lastSourceVolume = -1.0f;
+}
+
+void MediaTab::clearArt(Renderer& renderer) {
+  if (m_artwork != nullptr) {
+    m_artwork->clear(renderer);
+  }
+}
+
+void MediaTab::refresh(Renderer& renderer) {
+  if (m_mpris != nullptr && m_playerSelect != nullptr) {
     const auto players = m_mpris->listPlayers();
     std::vector<std::string> playerLabels;
     std::vector<std::string> playerBusNames;
@@ -417,7 +585,7 @@ void ControlCenterPanel::refreshMediaState(Renderer& renderer) {
     const std::string activeBusName = active.has_value() ? active->busName : std::string{};
     const auto pinnedBusName = m_mpris->pinnedPlayerPreference();
 
-    playerLabels.push_back(active.has_value() ? "Active player" : "Active player");
+    playerLabels.push_back("Active player");
 
     for (std::size_t i = 0; i < players.size(); ++i) {
       const auto& player = players[i];
@@ -428,40 +596,40 @@ void ControlCenterPanel::refreshMediaState(Renderer& renderer) {
       }
     }
 
-    m_mediaPlayerBusNames = std::move(playerBusNames);
+    m_playerBusNames = std::move(playerBusNames);
     m_syncingPlayerSelect = true;
-    m_mediaPlayerSelect->setOptions(std::move(playerLabels));
-    m_mediaPlayerSelect->setEnabled(!m_mediaPlayerBusNames.empty());
-    if (!m_mediaPlayerBusNames.empty()) {
-      m_mediaPlayerSelect->setSelectedIndex(selectedPlayerIndex);
+    m_playerSelect->setOptions(std::move(playerLabels));
+    m_playerSelect->setEnabled(!m_playerBusNames.empty());
+    if (!m_playerBusNames.empty()) {
+      m_playerSelect->setSelectedIndex(selectedPlayerIndex);
     }
     m_syncingPlayerSelect = false;
   }
 
-  if (m_mediaTrackTitle != nullptr && m_mediaTrackArtist != nullptr && m_mediaProgressSlider != nullptr &&
-      m_mediaPlayPauseButton != nullptr && m_mediaRepeatButton != nullptr && m_mediaShuffleButton != nullptr) {
+  if (m_trackTitle != nullptr && m_trackArtist != nullptr && m_progressSlider != nullptr &&
+      m_playPauseButton != nullptr && m_repeatButton != nullptr && m_shuffleButton != nullptr) {
     const auto active = m_mpris != nullptr ? m_mpris->activePlayer() : std::nullopt;
     if (active.has_value()) {
       const auto& player = *active;
       const auto now = std::chrono::steady_clock::now();
       const bool seekPending =
-          !m_pendingMediaSeekBusName.empty() && m_pendingMediaSeekBusName == player.busName &&
-          now < m_pendingMediaSeekUntil && m_pendingMediaSeekUs >= 0;
+          !m_pendingSeekBusName.empty() && m_pendingSeekBusName == player.busName &&
+          now < m_pendingSeekUntil && m_pendingSeekUs >= 0;
       const bool seekReached =
-          seekPending && std::llabs(player.positionUs - m_pendingMediaSeekUs) <= 1500000;
-      const std::int64_t displayPositionUs = seekPending && !seekReached ? m_pendingMediaSeekUs : player.positionUs;
+          seekPending && std::llabs(player.positionUs - m_pendingSeekUs) <= 1500000;
+      const std::int64_t displayPositionUs = seekPending && !seekReached ? m_pendingSeekUs : player.positionUs;
       if (!seekPending || seekReached) {
-        m_pendingMediaSeekBusName.clear();
-        m_pendingMediaSeekUs = -1;
+        m_pendingSeekBusName.clear();
+        m_pendingSeekUs = -1;
       }
 
-      m_mediaTrackTitle->setText(player.title.empty() ? player.identity : player.title);
-      m_mediaTrackTitle->measure(renderer);
-      m_mediaTrackArtist->setText(joinArtists(player.artists).empty() ? player.identity : joinArtists(player.artists));
-      m_mediaTrackArtist->measure(renderer);
-      if (m_mediaTrackAlbum != nullptr) {
-        m_mediaTrackAlbum->setText(player.album.empty() ? " " : player.album);
-        m_mediaTrackAlbum->measure(renderer);
+      m_trackTitle->setText(player.title.empty() ? player.identity : player.title);
+      m_trackTitle->measure(renderer);
+      m_trackArtist->setText(joinArtists(player.artists).empty() ? player.identity : joinArtists(player.artists));
+      m_trackArtist->measure(renderer);
+      if (m_trackAlbum != nullptr) {
+        m_trackAlbum->setText(player.album.empty() ? " " : player.album);
+        m_trackAlbum->measure(renderer);
       }
 
       std::string artPath = normalizeArtPath(player.artUrl);
@@ -478,75 +646,73 @@ void ControlCenterPanel::refreshMediaState(Renderer& renderer) {
               [this, url = player.artUrl](bool success) {
                 m_pendingArtDownloads.erase(url);
                 if (success) {
-                  m_lastMediaArtPath.clear();
+                  m_lastArtPath.clear();
                   PanelManager::instance().refresh();
                 }
               });
         }
       }
 
-      if (m_mediaArtwork != nullptr && player.artUrl != m_lastMediaArtPath) {
+      if (m_artwork != nullptr && player.artUrl != m_lastArtPath) {
         if (artPath.empty()) {
-          clearMediaArt(renderer);
-        } else if (!m_mediaArtwork->setSourceFile(renderer, artPath, static_cast<int>(kArtworkSize))) {
-          clearMediaArt(renderer);
+          clearArt(renderer);
+        } else if (!m_artwork->setSourceFile(renderer, artPath, static_cast<int>(kArtworkSize))) {
+          clearArt(renderer);
         }
-        m_lastMediaArtPath = player.artUrl;
+        m_lastArtPath = player.artUrl;
       }
 
-      m_syncingMediaProgress = true;
-      m_mediaProgressSlider->setEnabled(player.canSeek && player.lengthUs > 0);
-      m_mediaProgressSlider->setRange(0.0f, std::max(1.0f, static_cast<float>(player.lengthUs) / 1000000.0f));
-      m_mediaProgressSlider->setValue(static_cast<float>(displayPositionUs) / 1000000.0f);
-      m_syncingMediaProgress = false;
+      m_syncingProgress = true;
+      m_progressSlider->setEnabled(player.canSeek && player.lengthUs > 0);
+      m_progressSlider->setRange(0.0f, std::max(1.0f, static_cast<float>(player.lengthUs) / 1000000.0f));
+      m_progressSlider->setValue(static_cast<float>(displayPositionUs) / 1000000.0f);
+      m_syncingProgress = false;
 
-      m_mediaPlayPauseButton->setGlyph(playPauseGlyph(player.playbackStatus));
-      m_mediaPlayPauseButton->setVariant(ButtonVariant::Accent);
-      m_mediaPrevButton->setEnabled(player.canGoPrevious);
-      m_mediaNextButton->setEnabled(player.canGoNext);
-      m_mediaRepeatButton->setGlyph(repeatGlyph(player.loopStatus));
-      m_mediaRepeatButton->setVariant(toggleVariant(player.loopStatus != "None"));
-      m_mediaShuffleButton->setVariant(toggleVariant(player.shuffle));
+      m_playPauseButton->setGlyph(playPauseGlyph(player.playbackStatus));
+      m_playPauseButton->setVariant(ButtonVariant::Accent);
+      if (m_prevButton != nullptr) { m_prevButton->setEnabled(player.canGoPrevious); }
+      if (m_nextButton != nullptr) { m_nextButton->setEnabled(player.canGoNext); }
+      m_repeatButton->setGlyph(repeatGlyph(player.loopStatus));
+      m_repeatButton->setVariant(toggleVariant(player.loopStatus != "None"));
+      m_shuffleButton->setVariant(toggleVariant(player.shuffle));
 
-      m_lastMediaBusName = player.busName;
-      m_lastMediaPlaybackStatus = player.playbackStatus;
-      m_lastMediaLoopStatus = player.loopStatus;
-      m_lastMediaShuffle = player.shuffle;
+      m_lastBusName = player.busName;
+      m_lastPlaybackStatus = player.playbackStatus;
+      m_lastLoopStatus = player.loopStatus;
+      m_lastShuffle = player.shuffle;
     } else {
-      m_pendingMediaSeekBusName.clear();
-      m_pendingMediaSeekUs = -1;
-      m_mediaTrackTitle->setText("Nothing playing");
-      m_mediaTrackTitle->measure(renderer);
-      m_mediaTrackArtist->setText("Start playback in an MPRIS app");
-      m_mediaTrackArtist->measure(renderer);
-      if (m_mediaTrackAlbum != nullptr) {
-        m_mediaTrackAlbum->setText(" ");
-        m_mediaTrackAlbum->measure(renderer);
+      m_pendingSeekBusName.clear();
+      m_pendingSeekUs = -1;
+      m_trackTitle->setText("Nothing playing");
+      m_trackTitle->measure(renderer);
+      m_trackArtist->setText("Start playback in an MPRIS app");
+      m_trackArtist->measure(renderer);
+      if (m_trackAlbum != nullptr) {
+        m_trackAlbum->setText(" ");
+        m_trackAlbum->measure(renderer);
       }
-      clearMediaArt(renderer);
-      m_lastMediaArtPath.clear();
-      m_mediaProgressSlider->setEnabled(false);
-      m_syncingMediaProgress = true;
-      m_mediaProgressSlider->setRange(0.0f, 100.0f);
-      m_mediaProgressSlider->setValue(0.0f);
-      m_syncingMediaProgress = false;
-      m_mediaPlayPauseButton->setGlyph("media-play");
-      m_mediaPrevButton->setEnabled(false);
-      m_mediaNextButton->setEnabled(false);
-      m_mediaRepeatButton->setGlyph("repeat");
-      m_mediaRepeatButton->setVariant(ButtonVariant::Ghost);
-      m_mediaShuffleButton->setVariant(ButtonVariant::Ghost);
-      m_lastMediaBusName.clear();
-      m_lastMediaPlaybackStatus.clear();
-      m_lastMediaLoopStatus.clear();
-      m_lastMediaShuffle = false;
+      clearArt(renderer);
+      m_lastArtPath.clear();
+      m_syncingProgress = true;
+      m_progressSlider->setEnabled(false);
+      m_progressSlider->setRange(0.0f, 100.0f);
+      m_progressSlider->setValue(0.0f);
+      m_syncingProgress = false;
+      m_playPauseButton->setGlyph("media-play");
+      if (m_prevButton != nullptr) { m_prevButton->setEnabled(false); }
+      if (m_nextButton != nullptr) { m_nextButton->setEnabled(false); }
+      m_repeatButton->setGlyph("repeat");
+      m_repeatButton->setVariant(ButtonVariant::Ghost);
+      m_shuffleButton->setVariant(ButtonVariant::Ghost);
+      m_lastBusName.clear();
+      m_lastPlaybackStatus.clear();
+      m_lastLoopStatus.clear();
+      m_lastShuffle = false;
     }
   }
 
   if (m_audio != nullptr) {
-    const auto sink = m_audio->defaultSink();
-    const auto source = m_audio->defaultSource();
-
+    // Output devices
     if (m_outputDeviceSelect != nullptr) {
       const auto sortedSinks = sortedAudioDevices(m_audio->state().sinks);
       std::vector<std::string> outputLabels;
@@ -572,6 +738,7 @@ void ControlCenterPanel::refreshMediaState(Renderer& renderer) {
       m_syncingOutputSelect = false;
     }
 
+    // Input devices
     if (m_inputDeviceSelect != nullptr) {
       const auto sortedSources = sortedAudioDevices(m_audio->state().sources);
       std::vector<std::string> inputLabels;
@@ -597,71 +764,60 @@ void ControlCenterPanel::refreshMediaState(Renderer& renderer) {
       m_syncingInputSelect = false;
     }
 
-    (void)sink;
-    (void)source;
-  }
+    // Volume sliders
+    constexpr std::size_t kInvalidIndex = static_cast<std::size_t>(-1);
+    const auto outputIndex =
+        (m_outputDeviceSelect != nullptr && m_outputDeviceSelect->selectedIndex() < m_outputDeviceIds.size())
+            ? m_outputDeviceSelect->selectedIndex()
+            : kInvalidIndex;
+    const auto inputIndex =
+        (m_inputDeviceSelect != nullptr && m_inputDeviceSelect->selectedIndex() < m_inputDeviceIds.size())
+            ? m_inputDeviceSelect->selectedIndex()
+            : kInvalidIndex;
 
-  if (m_audio == nullptr) {
+    const std::uint32_t sinkId =
+        outputIndex != kInvalidIndex ? m_outputDeviceIds[outputIndex] : m_audio->state().defaultSinkId;
+    const std::uint32_t sourceId =
+        inputIndex != kInvalidIndex ? m_inputDeviceIds[inputIndex] : m_audio->state().defaultSourceId;
+
+    const auto* sink = findAudioNodeById(m_audio->state().sinks, sinkId);
+    const auto* source = findAudioNodeById(m_audio->state().sources, sourceId);
+    const float sinkVolume = sink != nullptr ? sink->volume * 100.0f : 0.0f;
+    const float sourceVolume = source != nullptr ? source->volume * 100.0f : 0.0f;
+
+    if (m_outputSlider != nullptr) {
+      m_outputSlider->setEnabled(sink != nullptr);
+      if (!m_outputSlider->dragging() && std::abs(sinkVolume - m_lastSinkVolume) >= 0.5f) {
+        m_syncingOutputSlider = true;
+        m_outputSlider->setValue(sinkVolume);
+        m_syncingOutputSlider = false;
+        if (m_outputValue != nullptr) {
+          m_outputValue->setText(std::to_string(static_cast<int>(std::round(sinkVolume))) + "%");
+          m_outputValue->measure(renderer);
+        }
+        m_lastSinkVolume = sinkVolume;
+      }
+    }
+
+    if (m_inputSlider != nullptr) {
+      m_inputSlider->setEnabled(source != nullptr);
+      if (!m_inputSlider->dragging() && std::abs(sourceVolume - m_lastSourceVolume) >= 0.5f) {
+        m_syncingInputSlider = true;
+        m_inputSlider->setValue(sourceVolume);
+        m_syncingInputSlider = false;
+        if (m_inputValue != nullptr) {
+          m_inputValue->setText(std::to_string(static_cast<int>(std::round(sourceVolume))) + "%");
+          m_inputValue->measure(renderer);
+        }
+        m_lastSourceVolume = sourceVolume;
+      }
+    }
+  } else {
     if (m_outputSlider != nullptr) {
       m_outputSlider->setEnabled(false);
     }
     if (m_inputSlider != nullptr) {
       m_inputSlider->setEnabled(false);
     }
-    return;
-  }
-
-  constexpr std::size_t kInvalidIndex = static_cast<std::size_t>(-1);
-  const auto outputIndex =
-      (m_outputDeviceSelect != nullptr && m_outputDeviceSelect->selectedIndex() < m_outputDeviceIds.size())
-          ? m_outputDeviceSelect->selectedIndex()
-          : kInvalidIndex;
-  const auto inputIndex =
-      (m_inputDeviceSelect != nullptr && m_inputDeviceSelect->selectedIndex() < m_inputDeviceIds.size())
-          ? m_inputDeviceSelect->selectedIndex()
-          : kInvalidIndex;
-
-  const std::uint32_t sinkId =
-      outputIndex != kInvalidIndex ? m_outputDeviceIds[outputIndex] : m_audio->state().defaultSinkId;
-  const std::uint32_t sourceId =
-      inputIndex != kInvalidIndex ? m_inputDeviceIds[inputIndex] : m_audio->state().defaultSourceId;
-
-  const auto* sink = findAudioNodeById(m_audio->state().sinks, sinkId);
-  const auto* source = findAudioNodeById(m_audio->state().sources, sourceId);
-  const float sinkVolume = sink != nullptr ? sink->volume * 100.0f : 0.0f;
-  const float sourceVolume = source != nullptr ? source->volume * 100.0f : 0.0f;
-
-  if (m_outputSlider != nullptr) {
-    m_outputSlider->setEnabled(sink != nullptr);
-    if (!m_outputSlider->dragging() && std::abs(sinkVolume - m_lastSinkVolume) >= 0.5f) {
-      m_syncingOutputSlider = true;
-      m_outputSlider->setValue(sinkVolume);
-      m_syncingOutputSlider = false;
-      if (m_outputValue != nullptr) {
-        m_outputValue->setText(std::to_string(static_cast<int>(std::round(sinkVolume))) + "%");
-        m_outputValue->measure(renderer);
-      }
-      m_lastSinkVolume = sinkVolume;
-    }
-  }
-
-  if (m_inputSlider != nullptr) {
-    m_inputSlider->setEnabled(source != nullptr);
-    if (!m_inputSlider->dragging() && std::abs(sourceVolume - m_lastSourceVolume) >= 0.5f) {
-      m_syncingInputSlider = true;
-      m_inputSlider->setValue(sourceVolume);
-      m_syncingInputSlider = false;
-      if (m_inputValue != nullptr) {
-        m_inputValue->setText(std::to_string(static_cast<int>(std::round(sourceVolume))) + "%");
-        m_inputValue->measure(renderer);
-      }
-      m_lastSourceVolume = sourceVolume;
-    }
-  }
-}
-
-void ControlCenterPanel::clearMediaArt(Renderer& renderer) {
-  if (m_mediaArtwork != nullptr) {
-    m_mediaArtwork->clear(renderer);
   }
 }
