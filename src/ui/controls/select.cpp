@@ -80,9 +80,7 @@ Select::Select() {
     if (!m_open) {
       return;
     }
-    const float delta = data.axisValue != 0.0 ? static_cast<float>(data.axisValue)
-                                              : static_cast<float>(data.axisDiscrete) * kOptionHeight;
-    scrollBy(delta);
+    scrollBy(data.scrollDelta(kOptionHeight));
   });
   m_menuArea = static_cast<InputArea*>(m_menuViewport->addChild(std::move(menuArea)));
 
@@ -325,9 +323,7 @@ void Select::rebuildOptionViews() {
       if (!m_open) {
         return;
       }
-      const float delta = data.axisValue != 0.0 ? static_cast<float>(data.axisValue)
-                                                : static_cast<float>(data.axisDiscrete) * kOptionHeight;
-      scrollBy(delta);
+      scrollBy(data.scrollDelta(kOptionHeight));
     });
     auto* areaPtr = static_cast<InputArea*>(m_menuViewport->addChild(std::move(area)));
 

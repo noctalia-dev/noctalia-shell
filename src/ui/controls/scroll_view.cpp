@@ -77,9 +77,7 @@ ScrollView::ScrollView() {
       return;
     }
 
-    const float delta = data.axisDiscrete != 0 ? static_cast<float>(data.axisDiscrete) * m_scrollWheelStep
-                                               : static_cast<float>(data.axisValue);
-    scrollBy(delta);
+    scrollBy(data.scrollDelta(m_scrollWheelStep));
   });
   m_viewportArea = static_cast<InputArea*>(addChild(std::move(viewportArea)));
 
@@ -132,8 +130,6 @@ void ScrollView::setScrollOffset(float offset) {
 }
 
 void ScrollView::scrollBy(float delta) { setScrollOffset(m_scrollOffset + delta); }
-
-void ScrollView::setScrollWheelStep(float step) { m_scrollWheelStep = std::max(0.0f, step); }
 
 void ScrollView::setScrollbarVisible(bool visible) {
   if (m_showScrollbar == visible) {

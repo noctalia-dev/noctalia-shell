@@ -30,5 +30,6 @@ inline constexpr float fontSizeTitle = 16.0f;
 inline constexpr float controlHeightSm = 28.0f;
 inline constexpr float controlHeight = 32.0f;
 inline constexpr float controlHeightLg = 36.0f;
+inline constexpr float scrollWheelStep = 56.0f;
 
 } // namespace Style

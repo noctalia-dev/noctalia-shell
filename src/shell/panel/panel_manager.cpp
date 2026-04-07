@@ -301,7 +301,8 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
       return false;
     }
     m_inputDispatcher.pointerAxis(static_cast<float>(event.sx), static_cast<float>(event.sy), event.axis,
-                                  event.axisValue, event.axisDiscrete);
+                                  event.axisSource, event.axisValue, event.axisDiscrete, event.axisValue120,
+                                  event.axisLines);
     break;
   }
   }

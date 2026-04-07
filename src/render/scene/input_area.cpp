@@ -79,15 +79,18 @@ void InputArea::dispatchPress(float localX, float localY, std::uint32_t button, 
   }
 }
 
-void InputArea::dispatchAxis(float localX, float localY, std::uint32_t axis, double axisValue,
-                             std::int32_t axisDiscrete) {
+void InputArea::dispatchAxis(float localX, float localY, std::uint32_t axis, std::uint32_t axisSource, double axisValue,
+                             std::int32_t axisDiscrete, std::int32_t axisValue120, float axisLines) {
   if (m_onAxis) {
     m_onAxis({.localX = localX,
               .localY = localY,
               .axis = axis,
+              .axisSource = axisSource,
               .pressed = false,
               .axisValue = axisValue,
-              .axisDiscrete = axisDiscrete});
+              .axisDiscrete = axisDiscrete,
+              .axisValue120 = axisValue120,
+              .axisLines = axisLines});
   }
 }
 

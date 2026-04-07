@@ -21,7 +21,8 @@ public:
   void pointerMotion(float x, float y, std::uint32_t serial);
   // Returns true if the event was consumed by a scene widget
   bool pointerButton(float x, float y, std::uint32_t button, bool pressed);
-  bool pointerAxis(float x, float y, std::uint32_t axis, double value, std::int32_t discrete);
+  bool pointerAxis(float x, float y, std::uint32_t axis, std::uint32_t axisSource, double value,
+                   std::int32_t discrete, std::int32_t value120, float lines);
 
   // Dispatch keyboard events to the focused area
   void keyEvent(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed, bool preedit = false);

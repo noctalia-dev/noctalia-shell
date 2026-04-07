@@ -55,7 +55,6 @@ std::unique_ptr<Flex> NotificationsTab::build(Renderer& /*renderer*/) {
 
   auto scroll = std::make_unique<ScrollView>();
   scroll->setScrollbarVisible(true);
-  scroll->setScrollWheelStep(Style::controlHeightLg + Style::spaceSm);
   scroll->setBackgroundStyle(rgba(0.0f, 0.0f, 0.0f, 0.0f), rgba(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
   m_scroll = scroll.get();
   m_list = scroll->content();

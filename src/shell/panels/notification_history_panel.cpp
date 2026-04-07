@@ -228,7 +228,6 @@ void NotificationHistoryPanel::create(Renderer& renderer) {
 
   auto scrollView = std::make_unique<ScrollView>();
   scrollView->setScrollbarVisible(true);
-  scrollView->setScrollWheelStep(56.0f);
   scrollView->setZIndex(1);
   m_scrollView = scrollView.get();
   m_list = scrollView->content();

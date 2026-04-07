@@ -30,8 +30,11 @@ struct PointerEvent {
   std::uint32_t button = 0;
   std::uint32_t state = 0;
   std::uint32_t axis = 0;
+  std::uint32_t axisSource = 0;
   double axisValue = 0.0;
   std::int32_t axisDiscrete = 0;
+  std::int32_t axisValue120 = 0;
+  float axisLines = 0.0f;
 };
 
 namespace KeyMod {
@@ -82,7 +85,9 @@ public:
                                   std::uint32_t button, std::uint32_t state);
   static void handlePointerAxis(void* data, wl_pointer* pointer, std::uint32_t time, std::uint32_t axis,
                                 std::int32_t value);
+  static void handlePointerAxisSource(void* data, wl_pointer* pointer, std::uint32_t axisSource);
   static void handlePointerAxisDiscrete(void* data, wl_pointer* pointer, std::uint32_t axis, std::int32_t discrete);
+  static void handlePointerAxisValue120(void* data, wl_pointer* pointer, std::uint32_t axis, std::int32_t value120);
   static void handlePointerFrame(void* data, wl_pointer* pointer);
 
   // Keyboard listener entrypoints
@@ -104,6 +109,7 @@ private:
   wp_cursor_shape_device_v1* m_cursorShapeDevice = nullptr;
   PointerEventCallback m_pointerEventCallback;
   std::vector<PointerEvent> m_pendingPointerEvents;
+  std::uint32_t m_pendingAxisSource = 0;
   wl_surface* m_lastPointerSurface = nullptr;
   double m_lastPointerX = 0.0;
   double m_lastPointerY = 0.0;

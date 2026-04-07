@@ -13,9 +13,19 @@ public:
     float localY = 0.0f;
     std::uint32_t button = 0;
     std::uint32_t axis = 0;
+    std::uint32_t axisSource = 0;
     bool pressed = false;
     double axisValue = 0.0;
     std::int32_t axisDiscrete = 0;
+    std::int32_t axisValue120 = 0;
+    float axisLines = 0.0f;
+
+    [[nodiscard]] float scrollDelta(float wheelStep) const noexcept {
+      if (axisLines != 0.0f) {
+        return axisLines * wheelStep;
+      }
+      return static_cast<float>(axisValue);
+    }
   };
 
   struct KeyData {
@@ -76,7 +86,8 @@ public:
   void dispatchLeave();
   void dispatchMotion(float localX, float localY);
   void dispatchPress(float localX, float localY, std::uint32_t button, bool isPressed);
-  void dispatchAxis(float localX, float localY, std::uint32_t axis, double axisValue, std::int32_t axisDiscrete);
+  void dispatchAxis(float localX, float localY, std::uint32_t axis, std::uint32_t axisSource, double axisValue,
+                    std::int32_t axisDiscrete, std::int32_t axisValue120, float axisLines);
   void dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed, bool preedit = false);
   void dispatchFocusGain();
   void dispatchFocusLoss();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/controls/flex.h"
+#include "ui/style.h"
 
 #include <functional>
 
@@ -17,7 +18,6 @@ public:
 
   void setScrollOffset(float offset);
   void scrollBy(float delta);
-  void setScrollWheelStep(float step);
   void setScrollbarVisible(bool visible);
   void setBackgroundStyle(const Color& fill, const Color& border, float borderWidth);
   void setOnScrollChanged(std::function<void(float)> callback);
@@ -45,7 +45,7 @@ private:
 
   float m_scrollOffset = 0.0f;
   float m_maxScrollOffset = 0.0f;
-  float m_scrollWheelStep = 42.0f;
+  float m_scrollWheelStep = Style::scrollWheelStep;
   float m_dragStartLocalY = 0.0f;
   float m_dragStartOffset = 0.0f;
   float m_thumbTravel = 0.0f;

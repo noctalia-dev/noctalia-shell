@@ -165,8 +165,9 @@ void LockSurface::onPointerEvent(const PointerEvent& event) {
                                     event.state == WL_POINTER_BUTTON_STATE_PRESSED);
     break;
   case PointerEvent::Type::Axis:
-    m_inputDispatcher.pointerAxis(static_cast<float>(event.sx), static_cast<float>(event.sy), event.axis, event.axisValue,
-                                  event.axisDiscrete);
+    m_inputDispatcher.pointerAxis(static_cast<float>(event.sx), static_cast<float>(event.sy), event.axis,
+                                  event.axisSource, event.axisValue, event.axisDiscrete, event.axisValue120,
+                                  event.axisLines);
     break;
   }
 }

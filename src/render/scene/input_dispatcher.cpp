@@ -60,7 +60,8 @@ bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool
   return false;
 }
 
-bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, double value, std::int32_t discrete) {
+bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, std::uint32_t axisSource, double value,
+                                  std::int32_t discrete, std::int32_t value120, float lines) {
   InputArea* target = m_capturedArea != nullptr ? m_capturedArea : m_hoveredArea;
   if (target == nullptr) {
     return false;
@@ -76,7 +77,7 @@ bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, double v
     float absX = 0.0f;
     float absY = 0.0f;
     Node::absolutePosition(area, absX, absY);
-    area->dispatchAxis(x - absX, y - absY, axis, value, discrete);
+    area->dispatchAxis(x - absX, y - absY, axis, axisSource, value, discrete, value120, lines);
     dispatched = true;
 
     if (!area->propagateEvents()) {

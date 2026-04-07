@@ -35,14 +35,16 @@ const wl_pointer_listener kPointerListener = {
     .button = &WaylandSeat::handlePointerButton,
     .axis = &WaylandSeat::handlePointerAxis,
     .frame = &WaylandSeat::handlePointerFrame,
-    .axis_source = [](void*, wl_pointer*, std::uint32_t) {},
+    .axis_source = &WaylandSeat::handlePointerAxisSource,
     .axis_stop = [](void*, wl_pointer*, std::uint32_t, std::uint32_t) {},
     .axis_discrete = &WaylandSeat::handlePointerAxisDiscrete,
-    .axis_value120 = [](void*, wl_pointer*, std::uint32_t, std::int32_t) {},
+    .axis_value120 = &WaylandSeat::handlePointerAxisValue120,
     .axis_relative_direction = [](void*, wl_pointer*, std::uint32_t, std::uint32_t) {},
 };
 
 constexpr Logger kLog("seat");
+constexpr float kAxisValue120PerStep = 120.0f;
+constexpr float kLegacyWheelAxisUnitsPerStep = 10.0f;
 
 } // namespace
 
@@ -213,8 +215,14 @@ void WaylandSeat::handlePointerAxis(void* data, wl_pointer* /*pointer*/, std::ui
       .sy = self->m_hasPointerPosition ? self->m_lastPointerY : 0.0,
       .time = time,
       .axis = axis,
+      .axisSource = self->m_pendingAxisSource,
       .axisValue = wl_fixed_to_double(value),
   });
+}
+
+void WaylandSeat::handlePointerAxisSource(void* data, wl_pointer* /*pointer*/, std::uint32_t axisSource) {
+  auto* self = static_cast<WaylandSeat*>(data);
+  self->m_pendingAxisSource = axisSource;
 }
 
 void WaylandSeat::handlePointerAxisDiscrete(void* data, wl_pointer* /*pointer*/, std::uint32_t axis,
@@ -223,6 +231,21 @@ void WaylandSeat::handlePointerAxisDiscrete(void* data, wl_pointer* /*pointer*/,
   for (auto it = self->m_pendingPointerEvents.rbegin(); it != self->m_pendingPointerEvents.rend(); ++it) {
     if (it->type == PointerEvent::Type::Axis && it->axis == axis) {
       it->axisDiscrete = discrete;
+      if (it->axisLines == 0.0f) {
+        it->axisLines = static_cast<float>(discrete);
+      }
+      return;
+    }
+  }
+}
+
+void WaylandSeat::handlePointerAxisValue120(void* data, wl_pointer* /*pointer*/, std::uint32_t axis,
+                                            std::int32_t value120) {
+  auto* self = static_cast<WaylandSeat*>(data);
+  for (auto it = self->m_pendingPointerEvents.rbegin(); it != self->m_pendingPointerEvents.rend(); ++it) {
+    if (it->type == PointerEvent::Type::Axis && it->axis == axis) {
+      it->axisValue120 = value120;
+      it->axisLines = static_cast<float>(value120) / kAxisValue120PerStep;
       return;
     }
   }
@@ -231,11 +254,20 @@ void WaylandSeat::handlePointerAxisDiscrete(void* data, wl_pointer* /*pointer*/,
 void WaylandSeat::handlePointerFrame(void* data, wl_pointer* /*pointer*/) {
   auto* self = static_cast<WaylandSeat*>(data);
   if (self->m_pointerEventCallback) {
-    for (const auto& event : self->m_pendingPointerEvents) {
+    for (auto& event : self->m_pendingPointerEvents) {
+      if (event.type == PointerEvent::Type::Axis && event.axisLines == 0.0f &&
+          (event.axisSource == WL_POINTER_AXIS_SOURCE_WHEEL || event.axisSource == WL_POINTER_AXIS_SOURCE_WHEEL_TILT) &&
+          event.axisValue != 0.0) {
+        // Some compositors send wheel-source axis events without discrete/value120.
+        // Normalize those legacy wheel deltas into logical wheel steps centrally.
+        event.axisLines = static_cast<float>(event.axisValue / kLegacyWheelAxisUnitsPerStep);
+      }
+
       self->m_pointerEventCallback(event);
     }
   }
   self->m_pendingPointerEvents.clear();
+  self->m_pendingAxisSource = 0;
 }
 
 void WaylandSeat::handleKeyboardKeymap(void* data, wl_keyboard* /*keyboard*/, std::uint32_t format, int fd,
