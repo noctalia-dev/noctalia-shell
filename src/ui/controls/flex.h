@@ -15,6 +15,7 @@ enum class FlexAlign : std::uint8_t {
   Start,
   Center,
   End,
+  Stretch,
 };
 
 class Flex : public Node {

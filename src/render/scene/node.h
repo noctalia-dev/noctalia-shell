@@ -32,6 +32,7 @@ public:
   [[nodiscard]] float rotation() const noexcept { return m_rotation; }
   [[nodiscard]] float scale() const noexcept { return m_scale; }
   [[nodiscard]] float opacity() const noexcept { return m_opacity; }
+  [[nodiscard]] float flexGrow() const noexcept { return m_flexGrow; }
   [[nodiscard]] bool visible() const noexcept { return m_visible; }
   [[nodiscard]] bool dirty() const noexcept { return m_dirty; }
   [[nodiscard]] bool clipChildren() const noexcept { return m_clipChildren; }
@@ -44,6 +45,7 @@ public:
   void setRotation(float radians);
   void setScale(float scale);
   void setOpacity(float opacity);
+  void setFlexGrow(float grow);
   void setVisible(bool visible);
   void setClipChildren(bool clipChildren);
   void setZIndex(std::int32_t zIndex);
@@ -75,6 +77,7 @@ private:
   float m_rotation = 0.0f;
   float m_scale = 1.0f;
   float m_opacity = 1.0f;
+  float m_flexGrow = 0.0f;
   bool m_visible = true;
   bool m_dirty = true;
   bool m_clipChildren = false;

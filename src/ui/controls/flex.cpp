@@ -123,10 +123,34 @@ void Flex::ensureBackground() {
 
 void Flex::layout(Renderer& renderer) {
   auto& kids = children();
+  const bool horizontal = m_direction == FlexDirection::Horizontal;
+  const float containerMain = horizontal ? width() : height();
+  const float containerCross = horizontal ? height() : width();
 
-  // First pass: measure all children (skip background)
+  // Pass 0: Stretch — pre-set cross-axis size on children before measurement.
+  if (m_align == FlexAlign::Stretch && containerCross > 0.0f) {
+    const float availCross = horizontal ? (containerCross - m_paddingTop - m_paddingBottom)
+                                        : (containerCross - m_paddingLeft - m_paddingRight);
+    for (auto& child : kids) {
+      if (!child->visible() || child.get() == m_background) {
+        continue;
+      }
+      if (horizontal) {
+        child->setSize(child->width(), availCross);
+      } else {
+        child->setSize(availCross, child->height());
+      }
+    }
+  }
+
+  // Pass 1: Measure non-grow children (skip grow children — they need sizing first).
+  float totalGrow = 0.0f;
   for (auto& child : kids) {
     if (!child->visible() || child.get() == m_background) {
+      continue;
+    }
+    if (child->flexGrow() > 0.0f) {
+      totalGrow += child->flexGrow();
       continue;
     }
     if (auto* label = dynamic_cast<Label*>(child.get())) {
@@ -139,8 +163,49 @@ void Flex::layout(Renderer& renderer) {
     }
   }
 
-  // Second pass: position children along main axis
-  float cursor = (m_direction == FlexDirection::Horizontal) ? m_paddingLeft : m_paddingTop;
+  // Pass 2: Distribute remaining main-axis space to grow children.
+  if (totalGrow > 0.0f && containerMain > 0.0f) {
+    float fixedTotal = horizontal ? (m_paddingLeft + m_paddingRight) : (m_paddingTop + m_paddingBottom);
+    int visibleCount = 0;
+    for (auto& child : kids) {
+      if (!child->visible() || child.get() == m_background) {
+        continue;
+      }
+      ++visibleCount;
+      if (child->flexGrow() > 0.0f) {
+        continue;
+      }
+      fixedTotal += horizontal ? child->width() : child->height();
+    }
+    if (visibleCount > 1) {
+      fixedTotal += m_gap * static_cast<float>(visibleCount - 1);
+    }
+
+    const float remaining = std::max(0.0f, containerMain - fixedTotal);
+    for (auto& child : kids) {
+      if (!child->visible() || child.get() == m_background || child->flexGrow() <= 0.0f) {
+        continue;
+      }
+      const float share = remaining * (child->flexGrow() / totalGrow);
+      if (horizontal) {
+        child->setSize(share, child->height());
+      } else {
+        child->setSize(child->width(), share);
+      }
+
+      if (auto* label = dynamic_cast<Label*>(child.get())) {
+        label->measure(renderer);
+      } else if (auto* glyph = dynamic_cast<Glyph*>(child.get())) {
+        glyph->measure(renderer);
+      }
+      if (auto* flex = dynamic_cast<Flex*>(child.get())) {
+        flex->layout(renderer);
+      }
+    }
+  }
+
+  // Pass 3: Position children along main axis.
+  float cursor = horizontal ? m_paddingLeft : m_paddingTop;
   float crossMax = 0.0f;
   bool first = true;
 
@@ -154,7 +219,7 @@ void Flex::layout(Renderer& renderer) {
     }
     first = false;
 
-    if (m_direction == FlexDirection::Horizontal) {
+    if (horizontal) {
       child->setPosition(cursor, child->y());
       cursor += child->width();
       crossMax = std::max(crossMax, child->height());
@@ -165,41 +230,57 @@ void Flex::layout(Renderer& renderer) {
     }
   }
 
-  // Set own size
-  if (m_direction == FlexDirection::Horizontal) {
-    setSize(std::max(cursor + m_paddingRight, m_minWidth), std::max(crossMax + m_paddingTop + m_paddingBottom, m_minHeight));
+  // Compute own size. Preserve pre-set size when grow/stretch constrain it.
+  const bool preserveMain = totalGrow > 0.0f && containerMain > 0.0f;
+  const bool preserveCross = m_align == FlexAlign::Stretch && containerCross > 0.0f;
+  if (horizontal) {
+    const float w = preserveMain ? std::max(containerMain, m_minWidth) : std::max(cursor + m_paddingRight, m_minWidth);
+    const float h = preserveCross ? std::max(containerCross, m_minHeight)
+                                  : std::max(crossMax + m_paddingTop + m_paddingBottom, m_minHeight);
+    setSize(w, h);
   } else {
-    setSize(std::max(crossMax + m_paddingLeft + m_paddingRight, m_minWidth), std::max(cursor + m_paddingBottom, m_minHeight));
+    const float w = preserveCross ? std::max(containerCross, m_minWidth)
+                                  : std::max(crossMax + m_paddingLeft + m_paddingRight, m_minWidth);
+    const float h = preserveMain ? std::max(containerMain, m_minHeight) : std::max(cursor + m_paddingBottom, m_minHeight);
+    setSize(w, h);
   }
 
-  // Third pass: cross-axis alignment
+  // Pass 4: Cross-axis alignment.
   for (auto& child : kids) {
     if (!child->visible() || child.get() == m_background) {
       continue;
     }
 
-    if (m_direction == FlexDirection::Horizontal) {
-      float space = height() - m_paddingTop - m_paddingBottom - child->height();
-      float offset = m_paddingTop;
-      if (m_align == FlexAlign::Center) {
-        offset += space * 0.5f;
-      } else if (m_align == FlexAlign::End) {
-        offset += space;
+    if (horizontal) {
+      if (m_align == FlexAlign::Stretch) {
+        child->setPosition(child->x(), m_paddingTop);
+      } else {
+        float space = height() - m_paddingTop - m_paddingBottom - child->height();
+        float offset = m_paddingTop;
+        if (m_align == FlexAlign::Center) {
+          offset += space * 0.5f;
+        } else if (m_align == FlexAlign::End) {
+          offset += space;
+        }
+        child->setPosition(child->x(), offset);
       }
-      child->setPosition(child->x(), offset);
     } else {
-      float space = width() - m_paddingLeft - m_paddingRight - child->width();
-      float offset = m_paddingLeft;
-      if (m_align == FlexAlign::Center) {
-        offset += space * 0.5f;
-      } else if (m_align == FlexAlign::End) {
-        offset += space;
+      if (m_align == FlexAlign::Stretch) {
+        child->setPosition(m_paddingLeft, child->y());
+      } else {
+        float space = width() - m_paddingLeft - m_paddingRight - child->width();
+        float offset = m_paddingLeft;
+        if (m_align == FlexAlign::Center) {
+          offset += space * 0.5f;
+        } else if (m_align == FlexAlign::End) {
+          offset += space;
+        }
+        child->setPosition(offset, child->y());
       }
-      child->setPosition(offset, child->y());
     }
   }
 
-  // Size background to match flex container
+  // Size background to match flex container.
   if (m_background != nullptr) {
     m_background->setPosition(0.0f, 0.0f);
     m_background->setSize(width(), height());

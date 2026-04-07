@@ -172,7 +172,7 @@ ClipboardPanel::ClipboardPanel(ClipboardService* clipboard) : m_clipboard(clipbo
 void ClipboardPanel::create(Renderer& renderer) {
   auto root = std::make_unique<Flex>();
   root->setDirection(FlexDirection::Horizontal);
-  root->setAlign(FlexAlign::Start);
+  root->setAlign(FlexAlign::Stretch);
   root->setGap(Style::spaceSm);
   m_rootLayout = root.get();
 
@@ -188,7 +188,7 @@ void ClipboardPanel::create(Renderer& renderer) {
 
   auto sidebar = std::make_unique<Flex>();
   sidebar->setDirection(FlexDirection::Vertical);
-  sidebar->setAlign(FlexAlign::Start);
+  sidebar->setAlign(FlexAlign::Stretch);
   sidebar->setPadding(Style::spaceSm);
   sidebar->setGap(Style::spaceSm);
   m_sidebar = sidebar.get();
@@ -204,6 +204,7 @@ void ClipboardPanel::create(Renderer& renderer) {
   auto listScroll = std::make_unique<ScrollView>();
   listScroll->setScrollbarVisible(true);
   listScroll->setViewportPaddingH(0.0f);
+  listScroll->setFlexGrow(1.0f);
   m_listScrollView = listScroll.get();
   m_list = listScroll->content();
   m_list->setDirection(FlexDirection::Vertical);
@@ -215,9 +216,10 @@ void ClipboardPanel::create(Renderer& renderer) {
 
   auto preview = std::make_unique<Flex>();
   preview->setDirection(FlexDirection::Vertical);
-  preview->setAlign(FlexAlign::Start);
+  preview->setAlign(FlexAlign::Stretch);
   preview->setGap(Style::spaceSm);
   preview->setPadding(Style::spaceSm);
+  preview->setFlexGrow(1.0f);
   m_previewCard = preview.get();
 
   auto previewTitleLabel = std::make_unique<Label>();
@@ -245,6 +247,7 @@ void ClipboardPanel::create(Renderer& renderer) {
   auto previewScroll = std::make_unique<ScrollView>();
   previewScroll->setScrollbarVisible(true);
   previewScroll->setBackgroundStyle(palette.surfaceVariant, palette.outline, Style::borderWidth);
+  previewScroll->setFlexGrow(1.0f);
   m_previewScrollView = previewScroll.get();
   m_previewContent = previewScroll->content();
   m_previewContent->setDirection(FlexDirection::Vertical);
@@ -274,69 +277,35 @@ void ClipboardPanel::layout(Renderer& renderer, float width, float height) {
   m_lastHeight = height;
 
   const float sidebarWidth = std::min(kSidebarWidth, std::max(220.0f, width * 0.34f));
-  const float previewWidth = std::max(0.0f, width - sidebarWidth - Style::spaceSm);
-  const float sidebarInnerWidth = std::max(0.0f, sidebarWidth - Style::spaceSm * 2.0f);
-  const float previewInnerWidth = std::max(0.0f, previewWidth - Style::spaceSm * 2.0f);
+  m_sidebar->setSize(sidebarWidth, 0.0f);
 
   m_focusArea->setPosition(0.0f, 0.0f);
   m_focusArea->setSize(1.0f, 1.0f);
 
-  if (m_sidebarTitle != nullptr) {
-    m_sidebarTitle->setMaxWidth(sidebarInnerWidth);
-    m_sidebarTitle->measure(renderer);
-  }
-  if (m_sidebarSubtitle != nullptr) {
-    m_sidebarSubtitle->setMaxWidth(sidebarInnerWidth);
-    m_sidebarSubtitle->measure(renderer);
+  // Flex layout handles all sizing: sidebar title is measured automatically,
+  // listScroll fills remaining sidebar height (flexGrow), preview fills
+  // remaining root width (flexGrow), previewScroll fills remaining preview
+  // height (flexGrow). Stretch alignment propagates cross-axis sizes.
+  m_rootLayout->setSize(width, height);
+  m_rootLayout->layout(renderer);
+
+  if (m_copyButton != nullptr) {
+    m_copyButton->updateInputArea();
   }
 
-  const float sidebarHeaderHeight = (m_sidebarTitle != nullptr ? m_sidebarTitle->height() : 0.0f) +
-                                    (m_sidebarSubtitle != nullptr ? m_sidebarSubtitle->height() : 0.0f) +
-                                    Style::spaceSm;
-  const float listHeight = std::max(0.0f, height - Style::spaceSm * 2.0f - sidebarHeaderHeight);
-  m_listScrollView->setSize(sidebarInnerWidth, listHeight);
-  m_listScrollView->layout(renderer);
-
+  // Rebuild content if viewport dimensions changed.
   if (m_lastListWidth != m_listScrollView->contentViewportWidth() ||
       (m_clipboard != nullptr && m_lastChangeSerial != m_clipboard->changeSerial())) {
     rebuildList(renderer, m_listScrollView->contentViewportWidth());
     m_listScrollView->layout(renderer);
   }
 
-  if (m_previewTitle != nullptr) {
-    m_previewTitle->setMaxWidth(previewInnerWidth);
-    m_previewTitle->measure(renderer);
-  }
-  if (m_previewMeta != nullptr) {
-    m_previewMeta->setMaxWidth(previewInnerWidth);
-    m_previewMeta->measure(renderer);
-  }
-  if (m_copyButton != nullptr) {
-    m_copyButton->layout(renderer);
-    m_copyButton->updateInputArea();
-  }
-
-  const float previewHeaderHeight = (m_previewTitle != nullptr ? m_previewTitle->height() : 0.0f) +
-                                    (m_previewMeta != nullptr ? m_previewMeta->height() : 0.0f) +
-                                    (m_copyButton != nullptr ? m_copyButton->height() : 0.0f) + Style::spaceSm * 3.0f;
-  const float previewScrollHeight = std::max(0.0f, height - Style::spaceSm * 2.0f - previewHeaderHeight);
-  m_previewScrollView->setSize(previewInnerWidth, previewScrollHeight);
+  const float previewScrollH = m_previewScrollView->height();
   if (m_lastPreviewWidth != m_previewScrollView->contentViewportWidth() ||
-      m_lastPreviewHeight != previewScrollHeight) {
-    rebuildPreview(renderer, m_previewScrollView->contentViewportWidth(), previewScrollHeight);
+      m_lastPreviewHeight != previewScrollH) {
+    rebuildPreview(renderer, m_previewScrollView->contentViewportWidth(), previewScrollH);
     m_previewScrollView->layout(renderer);
   }
-
-  m_sidebar->setMinWidth(sidebarWidth);
-  m_sidebar->setSize(sidebarWidth, height);
-  m_sidebar->layout(renderer);
-
-  m_previewCard->setMinWidth(previewWidth);
-  m_previewCard->setSize(previewWidth, height);
-  m_previewCard->layout(renderer);
-
-  m_rootLayout->setSize(width, height);
-  m_rootLayout->layout(renderer);
 }
 
 void ClipboardPanel::update(Renderer& renderer) {
@@ -374,7 +343,6 @@ void ClipboardPanel::onClose() {
   m_focusArea = nullptr;
   m_sidebar = nullptr;
   m_sidebarTitle = nullptr;
-  m_sidebarSubtitle = nullptr;
   m_listScrollView = nullptr;
   m_list = nullptr;
   m_previewCard = nullptr;

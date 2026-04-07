@@ -49,6 +49,14 @@ void Node::setOpacity(float opacity) {
   markDirty();
 }
 
+void Node::setFlexGrow(float grow) {
+  if (m_flexGrow == grow) {
+    return;
+  }
+  m_flexGrow = grow;
+  markDirty();
+}
+
 void Node::setVisible(bool visible) {
   if (m_visible == visible) {
     return;

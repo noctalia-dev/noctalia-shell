@@ -46,7 +46,6 @@ private:
   Flex* m_rootLayout = nullptr;
   Flex* m_sidebar = nullptr;
   Label* m_sidebarTitle = nullptr;
-  Label* m_sidebarSubtitle = nullptr;
   ScrollView* m_listScrollView = nullptr;
   Flex* m_list = nullptr;
 
