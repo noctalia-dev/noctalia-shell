@@ -39,7 +39,7 @@ shadow_offset_x = 0           # horizontal shadow offset (positive = right)
 shadow_offset_y = 6           # vertical shadow offset (positive = down)
 
 
-start  = ["sysmon"]           # widget names in the left/top section
+start  = ["cpu", "temp", "ram", "active_window"]  # widget names in the left/top section
 center = ["workspaces"]       # widget names in the center section
 end    = ["tray", "notifications", "volume", "battery", "spacer", "clock"]
 ```
