@@ -67,7 +67,7 @@ private:
   static constexpr std::array<TabMeta, kTabCount> kTabs{{
       {TabId::Overview, "overview", "Overview", "person"},
       {TabId::Media, "media", "Media", "disc"},
-      {TabId::Calendar, "calendar", "Calendar", "settings-about"},
+      {TabId::Calendar, "calendar", "Calendar", "calendar"},
       {TabId::Notifications, "notifications", "Notifications", "bell"},
       {TabId::Network, "network", "Network", "wifi"},
   }};
