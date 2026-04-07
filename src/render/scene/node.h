@@ -49,6 +49,7 @@ public:
   void setZIndex(std::int32_t zIndex);
 
   Node* addChild(std::unique_ptr<Node> child);
+  // Insert at a specific vector position to control Flex layout order (not rendering order — use zIndex for that).
   Node* insertChildAt(std::size_t index, std::unique_ptr<Node> child);
   std::unique_ptr<Node> removeChild(Node* child);
 

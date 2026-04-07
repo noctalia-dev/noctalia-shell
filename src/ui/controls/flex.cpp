@@ -117,7 +117,8 @@ void Flex::ensureBackground() {
     return;
   }
   auto rect = std::make_unique<RectNode>();
-  m_background = static_cast<RectNode*>(insertChildAt(0, std::move(rect)));
+  m_background = static_cast<RectNode*>(addChild(std::move(rect)));
+  m_background->setZIndex(-1);
 }
 
 void Flex::layout(Renderer& renderer) {

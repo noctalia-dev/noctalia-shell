@@ -20,7 +20,8 @@ void Image::ensureBackground() {
     return;
   }
   auto background = std::make_unique<Box>();
-  m_background = static_cast<Box*>(insertChildAt(0, std::move(background)));
+  m_background = static_cast<Box*>(addChild(std::move(background)));
+  m_background->setZIndex(-1);
   m_background->setFlatStyle();
   m_background->setSize(width(), height());
   if (m_cornerRadius != 0.0f) {

@@ -220,7 +220,8 @@ void Button::ensureIcon() {
   if (m_icon != nullptr) {
     return;
   }
-  // Insert icon before the label so it appears on the left
+  // insertChildAt so the icon lands before the label in the children vector,
+  // which is what Flex iterates to assign layout positions
   auto& kids = children();
   std::size_t labelIndex = 0;
   for (std::size_t i = 0; i < kids.size(); ++i) {
