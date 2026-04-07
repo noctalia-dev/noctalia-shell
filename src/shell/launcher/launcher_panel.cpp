@@ -203,6 +203,14 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
   for (std::size_t i = 0; i < m_results.size(); ++i) {
     const auto& result = m_results[i];
 
+    // InputArea is the root so it naturally covers the row for click handling,
+    // and the parent content Flex won't re-layout the inner row (not a Flex).
+    auto area = std::make_unique<InputArea>();
+    area->setOnClick([this, idx = i](const InputArea::PointerData& /*data*/) {
+      m_selectedIndex = idx;
+      activateSelected();
+    });
+
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
@@ -242,7 +250,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     auto textCol = std::make_unique<Flex>();
     textCol->setDirection(FlexDirection::Vertical);
     textCol->setAlign(FlexAlign::Start);
-    textCol->setGap(2.0f);
+    textCol->setGap(Style::spaceXs);
 
     const float textWidth = std::max(0.0f, width - kIconSize - Style::spaceSm * 2.0f - Style::spaceMd);
 
@@ -266,26 +274,11 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     }
 
     row->addChild(std::move(textCol));
-
-    // Click handler
-    auto area = std::make_unique<InputArea>();
-    area->setOnClick([this, idx = i](const InputArea::PointerData& /*data*/) {
-      m_selectedIndex = idx;
-      activateSelected();
-    });
-    row->addChild(std::move(area));
-
     row->layout(renderer);
 
-    // Size the InputArea to cover the whole row
-    auto& rowChildren = row->children();
-    if (!rowChildren.empty()) {
-      auto* inputArea = rowChildren.back().get();
-      inputArea->setPosition(0.0f, 0.0f);
-      inputArea->setSize(row->width(), row->height());
-    }
-
-    m_list->addChild(std::move(row));
+    area->setSize(row->width(), row->height());
+    area->addChild(std::move(row));
+    m_list->addChild(std::move(area));
   }
 }
 
