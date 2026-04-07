@@ -185,7 +185,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] PipeWire audio spectrum
 - [ ] Clipboard manager
 - [x] Host/distro detection
-- [ ] Lock screen (ext-session-lock-v1)
+- [~] Lock screen (ext-session-lock-v1) <- still needs polish 
 - [ ] Idle inhibitor (prevent sleep)
 - [ ] More compositors (Mango, Sway, Labwc)
 
