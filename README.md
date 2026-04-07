@@ -215,7 +215,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] Network
 - [ ] Bluetooth
 - [ ] Brightness
-- [ ] Media mini
+- [x] Media mini
 - [ ] Microphone
 - [ ] Power profile
 - [ ] System monitor
