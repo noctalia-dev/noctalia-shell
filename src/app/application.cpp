@@ -105,6 +105,7 @@ void Application::initServices() {
     m_lockScreen.onOutputChange();
   });
   m_wayland.setWorkspaceChangeCallback([this]() { m_bar.onWorkspaceChange(); });
+  m_wayland.setToplevelChangeCallback([this]() { m_bar.onWorkspaceChange(); });
 
   m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
 

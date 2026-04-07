@@ -66,6 +66,8 @@ set(XDG_ACTIVATION_XML
     "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/xdg-activation/xdg-activation-v1.xml")
 set(EXT_SESSION_LOCK_XML
     "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/ext-session-lock/ext-session-lock-v1.xml")
+set(WLR_FOREIGN_TOPLEVEL_XML
+    "${CMAKE_CURRENT_SOURCE_DIR}/protocols/wlr-foreign-toplevel-management-unstable-v1.xml")
 
 set(XDG_OUTPUT_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/xdg-output-unstable-v1-client-protocol.c")
@@ -93,6 +95,10 @@ set(EXT_SESSION_LOCK_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/ext-session-lock-v1-client-protocol.c")
 set(EXT_SESSION_LOCK_PROTOCOL_H
     "${GENERATED_PROTOCOL_DIR}/ext-session-lock-v1-client-protocol.h")
+set(WLR_FOREIGN_TOPLEVEL_PROTOCOL_C
+    "${GENERATED_PROTOCOL_DIR}/wlr-foreign-toplevel-management-unstable-v1-client-protocol.c")
+set(WLR_FOREIGN_TOPLEVEL_PROTOCOL_H
+    "${GENERATED_PROTOCOL_DIR}/wlr-foreign-toplevel-management-unstable-v1-client-protocol.h")
 
 set(WLR_LAYER_SHELL_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/wlr-layer-shell-unstable-v1-client-protocol.c")
@@ -209,6 +215,20 @@ add_custom_command(
     VERBATIM
 )
 
+add_custom_command(
+    OUTPUT "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_C}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" private-code "${WLR_FOREIGN_TOPLEVEL_XML}" "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_C}"
+    DEPENDS "${WLR_FOREIGN_TOPLEVEL_XML}"
+    VERBATIM
+)
+
+add_custom_command(
+    OUTPUT "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_H}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" client-header "${WLR_FOREIGN_TOPLEVEL_XML}" "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_H}"
+    DEPENDS "${WLR_FOREIGN_TOPLEVEL_XML}"
+    VERBATIM
+)
+
 add_custom_target(noctalia_wayland_protocols
     DEPENDS
         "${WLR_LAYER_SHELL_PROTOCOL_C}"
@@ -225,6 +245,8 @@ add_custom_target(noctalia_wayland_protocols
         "${XDG_ACTIVATION_PROTOCOL_H}"
         "${EXT_SESSION_LOCK_PROTOCOL_C}"
         "${EXT_SESSION_LOCK_PROTOCOL_H}"
+        "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_C}"
+        "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_H}"
 )
 
 # --- Target ---
@@ -318,6 +340,7 @@ add_executable(noctalia
     src/shell/launcher/launcher_panel.cpp
     src/shell/panels/test_panel.cpp
     src/shell/widgets/launcher_widget.cpp
+    src/shell/widgets/active_window_widget.cpp
     src/shell/widgets/clock_widget.cpp
     src/shell/widgets/notification_widget.cpp
     src/shell/widgets/spacer_widget.cpp
@@ -333,6 +356,7 @@ add_executable(noctalia
     src/wayland/layer_surface.cpp
     src/wayland/wayland_connection.cpp
     src/wayland/wayland_seat.cpp
+    src/wayland/wayland_toplevels.cpp
     src/wayland/wayland_workspaces.cpp
     third_party/tinyexpr/tinyexpr.c
     "${WLR_LAYER_SHELL_PROTOCOL_C}"
@@ -342,6 +366,7 @@ add_executable(noctalia
     "${CURSOR_SHAPE_PROTOCOL_C}"
     "${XDG_ACTIVATION_PROTOCOL_C}"
     "${EXT_SESSION_LOCK_PROTOCOL_C}"
+    "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_C}"
 )
 target_compile_definitions(noctalia PRIVATE
     NOCTALIA_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"

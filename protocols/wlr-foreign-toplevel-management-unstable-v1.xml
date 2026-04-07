@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="wlr_foreign_toplevel_management_unstable_v1">
+  <copyright>
+    Copyright © 2018 Ilia Bozhinov
+
+    Permission to use, copy, modify, distribute, and sell this
+    software and its documentation for any purpose is hereby granted
+    without fee, provided that the above copyright notice appear in
+    all copies and that both that copyright notice and this permission
+    notice appear in supporting documentation, and that the name of
+    the copyright holders not be used in advertising or publicity
+    pertaining to distribution of the software without specific,
+    written prior permission.  The copyright holders make no
+    representations about the suitability of this software for any
+    purpose.  It is provided "as is" without express or implied
+    warranty.
+
+    THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS
+    SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+    FITNESS, IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
+    AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+    ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+    THIS SOFTWARE.
+  </copyright>
+
+  <interface name="zwlr_foreign_toplevel_manager_v1" version="3">
+    <description summary="list and control opened apps">
+      The purpose of this protocol is to enable the creation of taskbars
+      and docks by providing them with a list of opened applications and
+      letting them request certain actions on them, like maximizing.
+    </description>
+
+    <event name="toplevel">
+      <arg name="toplevel" type="new_id" interface="zwlr_foreign_toplevel_handle_v1"/>
+    </event>
+
+    <request name="stop"/>
+
+    <event name="finished"/>
+  </interface>
+
+  <interface name="zwlr_foreign_toplevel_handle_v1" version="3">
+    <description summary="an opened toplevel"/>
+
+    <event name="title">
+      <arg name="title" type="string"/>
+    </event>
+
+    <event name="app_id">
+      <arg name="app_id" type="string"/>
+    </event>
+
+    <event name="output_enter">
+      <arg name="output" type="object" interface="wl_output"/>
+    </event>
+
+    <event name="output_leave">
+      <arg name="output" type="object" interface="wl_output"/>
+    </event>
+
+    <request name="set_maximized"/>
+    <request name="unset_maximized"/>
+    <request name="set_minimized"/>
+    <request name="unset_minimized"/>
+
+    <request name="activate">
+      <arg name="seat" type="object" interface="wl_seat"/>
+    </request>
+
+    <enum name="state">
+      <entry name="maximized" value="0"/>
+      <entry name="minimized" value="1"/>
+      <entry name="activated" value="2"/>
+      <entry name="fullscreen" value="3" since="2"/>
+    </enum>
+
+    <event name="state">
+      <arg name="state" type="array"/>
+    </event>
+
+    <event name="done"/>
+
+    <request name="close"/>
+
+    <request name="set_rectangle">
+      <arg name="surface" type="object" interface="wl_surface"/>
+      <arg name="x" type="int"/>
+      <arg name="y" type="int"/>
+      <arg name="width" type="int"/>
+      <arg name="height" type="int"/>
+    </request>
+
+    <event name="closed"/>
+
+    <request name="destroy" type="destructor"/>
+
+    <request name="set_fullscreen" since="2">
+      <arg name="output" type="object" interface="wl_output" allow-null="true"/>
+    </request>
+
+    <request name="unset_fullscreen" since="2"/>
+
+    <event name="parent" since="3">
+      <arg name="parent" type="object" interface="zwlr_foreign_toplevel_handle_v1" allow-null="true"/>
+    </event>
+  </interface>
+</protocol>
+

@@ -5,6 +5,7 @@
 #include "dbus/tray/tray_service.h"
 #include "notification/notification_manager.h"
 #include "shell/widgets/battery_widget.h"
+#include "shell/widgets/active_window_widget.h"
 #include "shell/widgets/launcher_widget.h"
 #include "shell/widgets/clock_widget.h"
 #include "shell/widgets/notification_widget.h"
@@ -51,6 +52,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "workspaces") {
     return std::make_unique<WorkspacesWidget>(m_wayland, output);
+  }
+
+  if (type == "active_window") {
+    const float maxTitleWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_width", 260.0) : 260.0);
+    const float iconSize = static_cast<float>(wc != nullptr ? wc->getDouble("icon_size", 16.0) : 16.0);
+    return std::make_unique<ActiveWindowWidget>(m_wayland, maxTitleWidth, iconSize);
   }
 
   if (type == "notifications") {

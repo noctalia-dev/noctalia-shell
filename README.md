@@ -16,6 +16,7 @@ A lightweight Wayland shell and bar with no Qt or GTK dependency.
 | Wayland core | `libwayland-client`, `wayland-scanner`, `wayland-protocols` |
 | Surfaces | `zwlr-layer-shell-v1` |
 | Multi-monitor | `zxdg-output-unstable-v1` |
+| Active window metadata | `zwlr-foreign-toplevel-management-unstable-v1` |
 | Lockscreen | `ext-session-lock-v1` |
 | Cursor | `wp-cursor-shape-v1` |
 | Rendering | `EGL`, `OpenGL ES 3`, `wayland-egl` |
@@ -229,7 +230,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] Microphone
 - [ ] Power profile
 - [ ] System monitor
-- [ ] Active window
+- [x] Active window
 - [ ] Dock
 - [ ] Keyboard layout
 - [ ] Lock keys (Caps/Num)

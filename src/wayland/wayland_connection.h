@@ -1,10 +1,12 @@
 #pragma once
 
 #include "wayland/wayland_seat.h"
+#include "wayland/wayland_toplevels.h"
 #include "wayland/wayland_workspaces.h"
 
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -20,6 +22,7 @@ struct zxdg_output_v1;
 struct wp_cursor_shape_manager_v1;
 struct xdg_activation_v1;
 struct ext_session_lock_manager_v1;
+struct zwlr_foreign_toplevel_manager_v1;
 
 struct WaylandOutput {
   std::uint32_t name = 0;
@@ -52,6 +55,7 @@ public:
   // Delegate setters
   void setOutputChangeCallback(ChangeCallback callback);
   void setWorkspaceChangeCallback(ChangeCallback callback);
+  void setToplevelChangeCallback(ChangeCallback callback);
   void setPointerEventCallback(WaylandSeat::PointerEventCallback callback);
   void setKeyboardEventCallback(WaylandSeat::KeyboardEventCallback callback);
   void setCursorShape(std::uint32_t serial, std::uint32_t shape);
@@ -69,6 +73,7 @@ public:
   [[nodiscard]] bool hasLayerShell() const noexcept;
   [[nodiscard]] bool hasXdgOutputManager() const noexcept;
   [[nodiscard]] bool hasExtWorkspaceManager() const noexcept;
+  [[nodiscard]] bool hasForeignToplevelManager() const noexcept;
   [[nodiscard]] bool hasSessionLockManager() const noexcept;
   [[nodiscard]] wl_display* display() const noexcept;
   [[nodiscard]] wl_compositor* compositor() const noexcept;
@@ -84,6 +89,7 @@ public:
 
   [[nodiscard]] std::vector<Workspace> workspaces() const;
   [[nodiscard]] std::vector<Workspace> workspaces(wl_output* output) const;
+  [[nodiscard]] std::optional<ActiveToplevel> activeToplevel() const;
 
   // Registry listener entrypoints
   static void handleGlobal(void* data, wl_registry* registry, std::uint32_t name, const char* interface,
@@ -107,9 +113,11 @@ private:
   ext_session_lock_manager_v1* m_sessionLockManager = nullptr;
   bool m_hasLayerShellGlobal = false;
   bool m_hasExtWorkspaceGlobal = false;
+  bool m_hasForeignToplevelManagerGlobal = false;
   std::vector<WaylandOutput> m_outputs;
   ChangeCallback m_outputChangeCallback;
 
   WaylandSeat m_seatHandler;
   WaylandWorkspaces m_workspacesHandler;
+  WaylandToplevels m_toplevelsHandler;
 };

@@ -10,6 +10,7 @@
 #include "cursor-shape-v1-client-protocol.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "ext-workspace-v1-client-protocol.h"
+#include "wlr-foreign-toplevel-management-unstable-v1-client-protocol.h"
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-activation-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
@@ -22,6 +23,7 @@ constexpr std::uint32_t kShmVersion = 1;
 constexpr std::uint32_t kLayerShellVersion = 4;
 constexpr std::uint32_t kXdgOutputManagerVersion = 3;
 constexpr std::uint32_t kExtWorkspaceManagerVersion = 1;
+constexpr std::uint32_t kWlrForeignToplevelManagerVersion = 3;
 constexpr std::uint32_t kCursorShapeManagerVersion = 1;
 constexpr std::uint32_t kXdgActivationVersion = 1;
 constexpr std::uint32_t kExtSessionLockManagerVersion = 1;
@@ -159,6 +161,10 @@ void WaylandConnection::setWorkspaceChangeCallback(ChangeCallback callback) {
   m_workspacesHandler.setChangeCallback(std::move(callback));
 }
 
+void WaylandConnection::setToplevelChangeCallback(ChangeCallback callback) {
+  m_toplevelsHandler.setChangeCallback(std::move(callback));
+}
+
 void WaylandConnection::setPointerEventCallback(WaylandSeat::PointerEventCallback callback) {
   m_seatHandler.setPointerEventCallback(std::move(callback));
 }
@@ -193,6 +199,8 @@ std::vector<Workspace> WaylandConnection::workspaces(wl_output* output) const {
   return m_workspacesHandler.forOutput(output);
 }
 
+std::optional<ActiveToplevel> WaylandConnection::activeToplevel() const { return m_toplevelsHandler.current(); }
+
 bool WaylandConnection::isConnected() const noexcept { return m_display != nullptr; }
 
 bool WaylandConnection::hasRequiredGlobals() const noexcept {
@@ -204,6 +212,7 @@ bool WaylandConnection::hasLayerShell() const noexcept { return m_hasLayerShellG
 bool WaylandConnection::hasXdgOutputManager() const noexcept { return m_xdgOutputManager != nullptr; }
 
 bool WaylandConnection::hasExtWorkspaceManager() const noexcept { return m_hasExtWorkspaceGlobal; }
+bool WaylandConnection::hasForeignToplevelManager() const noexcept { return m_hasForeignToplevelManagerGlobal; }
 bool WaylandConnection::hasSessionLockManager() const noexcept { return m_sessionLockManager != nullptr; }
 bool WaylandConnection::hasXdgActivation() const noexcept { return m_xdgActivation != nullptr; }
 
@@ -342,6 +351,15 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     return;
   }
 
+  if (interfaceName == zwlr_foreign_toplevel_manager_v1_interface.name) {
+    m_hasForeignToplevelManagerGlobal = true;
+    const auto bindVersion = std::min(version, kWlrForeignToplevelManagerVersion);
+    auto* manager = static_cast<zwlr_foreign_toplevel_manager_v1*>(
+        wl_registry_bind(registry, name, &zwlr_foreign_toplevel_manager_v1_interface, bindVersion));
+    m_toplevelsHandler.bind(manager);
+    return;
+  }
+
   if (interfaceName == wp_cursor_shape_manager_v1_interface.name) {
     const auto bindVersion = std::min(version, kCursorShapeManagerVersion);
     m_cursorShapeManager = static_cast<wp_cursor_shape_manager_v1*>(
@@ -388,6 +406,7 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
 }
 
 void WaylandConnection::cleanup() {
+  m_toplevelsHandler.cleanup();
   m_workspacesHandler.cleanup();
 
   for (auto& out : m_outputs) {
