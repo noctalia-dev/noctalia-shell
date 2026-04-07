@@ -225,6 +225,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     // InputArea is the root so it naturally covers the row for click handling,
     // and the parent content Flex won't re-layout the inner row (not a Flex).
     auto area = std::make_unique<InputArea>();
+    area->setPropagateEvents(true);
     area->setOnClick([this, idx = i](const InputArea::PointerData& /*data*/) {
       m_selectedIndex = idx;
       activateSelected();
