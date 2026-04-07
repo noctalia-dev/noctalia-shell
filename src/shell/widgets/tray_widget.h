@@ -32,6 +32,7 @@ private:
   Flex* m_container = nullptr;
   IconResolver m_iconResolver;
   std::unordered_map<std::string, std::string> m_appIcons;
+  std::unordered_map<std::string, std::string> m_preferredIconPaths;
   std::vector<TrayItemInfo> m_items;
   std::vector<TextureHandle> m_loadedTextures;
 };

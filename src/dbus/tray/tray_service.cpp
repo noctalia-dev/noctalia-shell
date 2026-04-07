@@ -22,6 +22,58 @@ static constexpr auto k_default_item_path = "/StatusNotifierItem";
 
 bool starts_with_slash(std::string_view value) { return !value.empty() && value.front() == '/'; }
 
+bool looks_like_dbus_name(std::string_view value) {
+  return !value.empty() && value != "__path_only__";
+}
+
+std::string lower_copy(std::string_view value) {
+  std::string out(value);
+  std::ranges::transform(out, out.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+  return out;
+}
+
+std::vector<std::string> path_name_hints(std::string_view objectPath) {
+  std::vector<std::string> hints;
+  if (objectPath.empty()) {
+    return hints;
+  }
+
+  auto push = [&hints](std::string value) {
+    if (value.empty()) {
+      return;
+    }
+    value = lower_copy(value);
+    if (std::ranges::find(hints, value) == hints.end()) {
+      hints.push_back(std::move(value));
+    }
+  };
+
+  std::string tail(objectPath);
+  if (const auto slash = tail.find_last_of('/'); slash != std::string::npos && slash + 1 < tail.size()) {
+    tail = tail.substr(slash + 1);
+  }
+
+  push(tail);
+
+  std::string dashed = tail;
+  std::replace(dashed.begin(), dashed.end(), '_', '-');
+  push(dashed);
+
+  std::string underscored = tail;
+  std::replace(underscored.begin(), underscored.end(), '-', '_');
+  push(underscored);
+
+  for (const auto& suffix : {"_client", "-client", ".desktop"}) {
+    for (const auto& candidate : std::vector<std::string>{tail, dashed, underscored}) {
+      if (candidate.size() > std::char_traits<char>::length(suffix) && candidate.ends_with(suffix)) {
+        push(candidate.substr(0, candidate.size() - std::char_traits<char>::length(suffix)));
+      }
+    }
+  }
+
+  return hints;
+}
+
 std::string stripMnemonicUnderscores(std::string label) {
   std::string out;
   out.reserve(label.size());
@@ -256,7 +308,10 @@ std::vector<TrayItemInfo> TrayService::items() const {
   return out;
 }
 
-std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) const {
+std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) {
+  if (!ensureItemProxy(itemId)) {
+    return {};
+  }
   const auto itemIt = m_items.find(itemId);
   if (itemIt == m_items.end()) {
     return {};
@@ -305,7 +360,10 @@ std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) c
   }
 }
 
-bool TrayService::activateMenuEntry(const std::string& itemId, std::int32_t entryId) const {
+bool TrayService::activateMenuEntry(const std::string& itemId, std::int32_t entryId) {
+  if (!ensureItemProxy(itemId)) {
+    return false;
+  }
   const auto itemIt = m_items.find(itemId);
   if (itemIt == m_items.end()) {
     return false;
@@ -337,7 +395,10 @@ std::vector<std::string> TrayService::registeredItems() const {
   return items;
 }
 
-bool TrayService::activateItem(const std::string& itemId, std::int32_t x, std::int32_t y) const {
+bool TrayService::activateItem(const std::string& itemId, std::int32_t x, std::int32_t y) {
+  if (!ensureItemProxy(itemId)) {
+    return false;
+  }
   const auto it = m_itemProxies.find(itemId);
   if (it == m_itemProxies.end()) {
     return false;
@@ -352,7 +413,10 @@ bool TrayService::activateItem(const std::string& itemId, std::int32_t x, std::i
   }
 }
 
-bool TrayService::openContextMenu(const std::string& itemId, std::int32_t x, std::int32_t y) const {
+bool TrayService::openContextMenu(const std::string& itemId, std::int32_t x, std::int32_t y) {
+  if (!ensureItemProxy(itemId)) {
+    return false;
+  }
   const auto it = m_itemProxies.find(itemId);
   if (it == m_itemProxies.end()) {
     return false;
@@ -377,10 +441,8 @@ void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath)
   std::string objectPath;
 
   if (starts_with_slash(serviceOrPath)) {
-    // Fallback for implementations that register with object path only.
-    // Without sender info in this sdbus callback API, track as a synthetic item.
-    busName = "__path_only__";
     objectPath = serviceOrPath;
+    busName = "__path_only__";
   } else {
     busName = serviceOrPath;
     objectPath = k_default_item_path;
@@ -462,21 +524,23 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
         .needsAttention = false,
     });
 
-    auto [proxyIt, _] = m_itemProxies.emplace(
-        itemId, sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{busName}, sdbus::ObjectPath{objectPath}));
+    if (looks_like_dbus_name(busName)) {
+      auto [proxyIt, _] = m_itemProxies.emplace(
+          itemId, sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{busName}, sdbus::ObjectPath{objectPath}));
 
-    proxyIt->second->uponSignal("NewIcon").onInterface(k_item_interface).call([this, itemId]() {
-      refreshItemMetadata(itemId);
-    });
-    proxyIt->second->uponSignal("NewAttentionIcon").onInterface(k_item_interface).call([this, itemId]() {
-      refreshItemMetadata(itemId);
-    });
-    proxyIt->second->uponSignal("NewStatus")
-        .onInterface(k_item_interface)
-        .call([this, itemId](const std::string& /*status*/) { refreshItemMetadata(itemId); });
-    proxyIt->second->uponSignal("NewTitle")
-        .onInterface(k_item_interface)
-        .call([this, itemId](const std::string& /*title*/) { refreshItemMetadata(itemId); });
+      proxyIt->second->uponSignal("NewIcon").onInterface(k_item_interface).call([this, itemId]() {
+        refreshItemMetadata(itemId);
+      });
+      proxyIt->second->uponSignal("NewAttentionIcon").onInterface(k_item_interface).call([this, itemId]() {
+        refreshItemMetadata(itemId);
+      });
+      proxyIt->second->uponSignal("NewStatus")
+          .onInterface(k_item_interface)
+          .call([this, itemId](const std::string& /*status*/) { refreshItemMetadata(itemId); });
+      proxyIt->second->uponSignal("NewTitle")
+          .onInterface(k_item_interface)
+          .call([this, itemId](const std::string& /*title*/) { refreshItemMetadata(itemId); });
+    }
 
     kLog.debug("item registered: {}", itemId);
     m_watcherObject->emitSignal("StatusNotifierItemRegistered").onInterface(k_watcher_interface).withArguments(itemId);
@@ -485,7 +549,87 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
       std::vector<sdbus::PropertyName>{sdbus::PropertyName{"RegisteredStatusNotifierItems"}});
   }
 
-  refreshItemMetadata(itemId);
+  if (looks_like_dbus_name(busName)) {
+    refreshItemMetadata(itemId);
+  }
+}
+
+bool TrayService::ensureItemProxy(const std::string& itemId) {
+  const auto itemIt = m_items.find(itemId);
+  if (itemIt == m_items.end()) {
+    return false;
+  }
+
+  if (itemIt->second.busName != "__path_only__") {
+    return m_itemProxies.contains(itemId);
+  }
+
+  std::vector<std::string> names;
+  try {
+    m_dbusProxy->callMethod("ListNames").onInterface(k_dbus_interface).storeResultsTo(names);
+  } catch (const sdbus::Error& e) {
+    kLog.warn("lazy path-only resolve failed to list dbus names path={} err={}", itemIt->second.objectPath, e.what());
+    return false;
+  }
+
+  const auto hints = path_name_hints(itemIt->second.objectPath);
+
+  auto tryCandidate = [&](const std::string& candidate) -> bool {
+    if (!looks_like_dbus_name(candidate)) {
+      return false;
+    }
+    try {
+      auto probe = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{candidate},
+                                      sdbus::ObjectPath{itemIt->second.objectPath});
+      std::map<std::string, sdbus::Variant> props;
+      probe->callMethod("GetAll")
+          .onInterface("org.freedesktop.DBus.Properties")
+          .withArguments(k_item_interface)
+          .storeResultsTo(props);
+
+      auto& item = m_items[itemId];
+      item.busName = candidate;
+      auto [proxyIt, _] = m_itemProxies.emplace(
+          itemId, sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{candidate},
+                                     sdbus::ObjectPath{item.objectPath}));
+
+      proxyIt->second->uponSignal("NewIcon").onInterface(k_item_interface).call([this, itemId]() {
+        refreshItemMetadata(itemId);
+      });
+      proxyIt->second->uponSignal("NewAttentionIcon").onInterface(k_item_interface).call([this, itemId]() {
+        refreshItemMetadata(itemId);
+      });
+      proxyIt->second->uponSignal("NewStatus")
+          .onInterface(k_item_interface)
+          .call([this, itemId](const std::string& /*status*/) { refreshItemMetadata(itemId); });
+      proxyIt->second->uponSignal("NewTitle")
+          .onInterface(k_item_interface)
+          .call([this, itemId](const std::string& /*title*/) { refreshItemMetadata(itemId); });
+
+      kLog.info("resolved path-only tray item lazily path={} bus={}", item.objectPath, candidate);
+      refreshItemMetadata(itemId);
+      return true;
+    } catch (const sdbus::Error&) {
+      return false;
+    }
+  };
+
+  for (const auto& hint : hints) {
+    for (const auto& candidate : names) {
+      if (lower_copy(candidate).find(hint) != std::string::npos && tryCandidate(candidate)) {
+        return true;
+      }
+    }
+  }
+
+  for (const auto& candidate : names) {
+    if (tryCandidate(candidate)) {
+      return true;
+    }
+  }
+
+  kLog.warn("could not resolve bus name for path-only tray item path={}", itemIt->second.objectPath);
+  return false;
 }
 
 void TrayService::refreshItemMetadata(const std::string& itemId) {

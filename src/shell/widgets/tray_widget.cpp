@@ -117,6 +117,14 @@ std::string execBasename(std::string_view exec) {
   return token;
 }
 
+bool isSymbolicIconName(std::string_view name) {
+  return name.find("symbolic") != std::string_view::npos || name.ends_with("-panel") || name.ends_with("_panel");
+}
+
+bool isSymbolicIconPath(std::string_view path) {
+  return path.find("symbolic") != std::string_view::npos || path.find("/status/") != std::string_view::npos;
+}
+
 } // namespace
 
 TrayWidget::TrayWidget(TrayService* tray) : m_tray(tray) { buildDesktopIconIndex(); }
@@ -155,6 +163,19 @@ void TrayWidget::syncState(Renderer& renderer) {
   const auto next_items = (m_tray != nullptr) ? m_tray->items() : std::vector<TrayItemInfo>{};
   if (next_items == m_items) {
     return;
+  }
+
+  std::unordered_map<std::string, bool> stillPresent;
+  stillPresent.reserve(next_items.size());
+  for (const auto& item : next_items) {
+    stillPresent[item.id] = true;
+  }
+  for (auto it = m_preferredIconPaths.begin(); it != m_preferredIconPaths.end();) {
+    if (!stillPresent.contains(it->first)) {
+      it = m_preferredIconPaths.erase(it);
+    } else {
+      ++it;
+    }
   }
 
   m_items = next_items;
@@ -280,16 +301,17 @@ void TrayWidget::buildDesktopIconIndex() {
 }
 
 std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
+  if (const auto it = m_preferredIconPaths.find(item.id);
+      it != m_preferredIconPaths.end() && !it->second.empty()) {
+    return it->second;
+  }
+
   const std::string preferred =
       item.needsAttention && !item.attentionIconName.empty() ? item.attentionIconName : item.iconName;
 
-  auto resolveByName = [this](const std::string& name) -> std::string {
+  auto resolveMapped = [this](const std::string& name) -> std::string {
     if (name.empty()) {
       return {};
-    }
-
-    if (const auto direct = m_iconResolver.resolve(name); !direct.empty()) {
-      return direct;
     }
 
     if (const auto it = m_appIcons.find(name); it != m_appIcons.end()) {
@@ -307,9 +329,6 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
 
     if (const auto dot = name.rfind('.'); dot != std::string::npos && dot + 1 < name.size()) {
       const auto tail = name.substr(dot + 1);
-      if (const auto tailDirect = m_iconResolver.resolve(tail); !tailDirect.empty()) {
-        return tailDirect;
-      }
       if (const auto it = m_appIcons.find(tail); it != m_appIcons.end()) {
         if (const auto mapped = m_iconResolver.resolve(it->second); !mapped.empty()) {
           return mapped;
@@ -326,6 +345,15 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
     return {};
   };
 
+  auto resolveDirect = [this](const std::string& name) -> std::string {
+    if (name.empty()) {
+      return {};
+    }
+    return m_iconResolver.resolve(name);
+  };
+
+  std::string symbolicFallback;
+
   for (const auto& [label, candidate] : std::array<std::pair<const char*, const std::string*>, 6>{
            {{"preferred", &preferred},
             {"itemName", &item.itemName},
@@ -335,12 +363,29 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
             {"id", &item.id}}}) {
     (void)label;
     for (const auto& variant : identifierVariants(*candidate)) {
-      if (const auto path = resolveByName(variant); !path.empty()) {
-        return path;
+      if (const auto mapped = resolveMapped(variant); !mapped.empty()) {
+        if (!isSymbolicIconPath(mapped)) {
+          m_preferredIconPaths[item.id] = mapped;
+          return mapped;
+        }
+        if (symbolicFallback.empty()) {
+          symbolicFallback = mapped;
+        }
+      }
+
+      if (const auto direct = resolveDirect(variant); !direct.empty()) {
+        if (!isSymbolicIconName(variant) && !isSymbolicIconPath(direct)) {
+          m_preferredIconPaths[item.id] = direct;
+          return direct;
+        }
+        if (symbolicFallback.empty()) {
+          symbolicFallback = direct;
+        }
       }
     }
   }
-  return {};
+
+  return symbolicFallback;
 }
 
 std::string TrayWidget::iconForItem(const TrayItemInfo& item) const {

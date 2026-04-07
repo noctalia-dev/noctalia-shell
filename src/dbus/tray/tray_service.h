@@ -56,17 +56,18 @@ public:
   void requestMenuToggle(const std::string& itemId) const;
   [[nodiscard]] std::size_t itemCount() const noexcept;
   [[nodiscard]] std::vector<TrayItemInfo> items() const;
-  [[nodiscard]] std::vector<TrayMenuEntry> menuEntries(const std::string& itemId) const;
-  [[nodiscard]] bool activateMenuEntry(const std::string& itemId, std::int32_t entryId) const;
+  [[nodiscard]] std::vector<TrayMenuEntry> menuEntries(const std::string& itemId);
+  [[nodiscard]] bool activateMenuEntry(const std::string& itemId, std::int32_t entryId);
   [[nodiscard]] std::vector<std::string> registeredItems() const;
-  [[nodiscard]] bool activateItem(const std::string& itemId, std::int32_t x = 0, std::int32_t y = 0) const;
-  [[nodiscard]] bool openContextMenu(const std::string& itemId, std::int32_t x = 0, std::int32_t y = 0) const;
+  [[nodiscard]] bool activateItem(const std::string& itemId, std::int32_t x = 0, std::int32_t y = 0);
+  [[nodiscard]] bool openContextMenu(const std::string& itemId, std::int32_t x = 0, std::int32_t y = 0);
 
 private:
   void onRegisterStatusNotifierItem(const std::string& serviceOrPath);
   void onRegisterStatusNotifierHost(const std::string& host);
   void registerOrRefreshItem(const std::string& busName, const std::string& objectPath);
   void refreshItemMetadata(const std::string& itemId);
+  [[nodiscard]] bool ensureItemProxy(const std::string& itemId);
   void removeItemsForBusName(const std::string& busName);
   void emitChanged();
 
