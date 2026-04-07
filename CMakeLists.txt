@@ -324,7 +324,7 @@ add_executable(noctalia
     src/shell/tray/tray_menu.cpp
     src/shell/panel/panel_manager.cpp
     src/shell/panels/audio_devices_panel.cpp
-    src/shell/control_center/common.cpp
+    src/shell/control_center/tab.cpp
     src/shell/control_center/control_center_panel.cpp
     src/shell/control_center/overview_tab.cpp
     src/shell/control_center/media_tab.cpp

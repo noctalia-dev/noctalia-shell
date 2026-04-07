@@ -2,18 +2,43 @@
 
 #include "render/core/renderer.h"
 #include "shell/panel/panel_manager.h"
-#include "shell/control_center/common.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/label.h"
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <ctime>
 #include <memory>
 #include <string>
 
-using namespace control_center;
+namespace {
+
+constexpr float kCalendarCellSizeMin      = Style::controlHeightSm + Style::spaceXs;
+constexpr float kCalendarCellSizeMax      = Style::controlHeightLg + Style::spaceLg;
+constexpr float kCalendarCellSize         = kCalendarCellSizeMax;
+constexpr float kCalendarWeekdayWidth     = kCalendarCellSize;
+constexpr float kCalendarGridGap          = Style::spaceSm;
+constexpr float kCalendarCardPadding      = Style::spaceMd;
+constexpr float kCalendarNavButtonSize    = Style::controlHeight;
+constexpr float kCalendarWeekdayRowHeight = Style::controlHeight;
+constexpr float kCalendarHeaderHeight     = Style::controlHeightLg + Style::spaceSm;
+constexpr float kCalendarCardMinWidth     = kCalendarCellSize * 7.0f + kCalendarGridGap * 6.0f + kCalendarCardPadding * 2.0f;
+constexpr float kCalendarCardMinHeight    = kCalendarHeaderHeight + kCalendarWeekdayRowHeight + kCalendarCellSize * 6.0f +
+                                            kCalendarGridGap * 7.0f + kCalendarCardPadding * 2.0f;
+
+std::string monthName(int month) {
+  static constexpr std::array<const char*, 12> kMonths = {"January",   "February", "March",    "April",
+                                                           "May",       "June",     "July",     "August",
+                                                           "September", "October",  "November", "December"};
+  if (month < 0 || month >= static_cast<int>(kMonths.size())) {
+    return "Calendar";
+  }
+  return kMonths[static_cast<std::size_t>(month)];
+}
+
+} // namespace
 
 std::unique_ptr<Flex> CalendarTab::build(Renderer& renderer) {
   auto tab = std::make_unique<Flex>();

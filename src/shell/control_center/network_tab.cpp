@@ -1,6 +1,5 @@
 #include "shell/control_center/network_tab.h"
 
-#include "shell/control_center/common.h"
 #include "ui/controls/flex.h"
 
 #include <memory>

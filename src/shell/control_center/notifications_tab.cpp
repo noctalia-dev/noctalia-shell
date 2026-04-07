@@ -1,16 +1,48 @@
 #include "shell/control_center/notifications_tab.h"
 
 #include "notification/notification_manager.h"
+#include "render/core/color.h"
 #include "render/core/renderer.h"
-#include "shell/control_center/common.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
+#include "ui/palette.h"
 
 #include <cmath>
 #include <memory>
 
 using namespace control_center;
+
+namespace {
+
+constexpr float kNotificationListRightPadding = Style::spaceXs;
+
+std::string statusText(const NotificationHistoryEntry& entry) {
+  if (entry.active) {
+    return "Active";
+  }
+  if (!entry.closeReason.has_value()) {
+    return "Closed";
+  }
+  switch (*entry.closeReason) {
+  case CloseReason::Expired:    return "Expired";
+  case CloseReason::Dismissed:  return "Dismissed";
+  case CloseReason::ClosedByCall: return "Closed";
+  }
+  return "Closed";
+}
+
+Color statusColor(const NotificationHistoryEntry& entry) {
+  if (entry.active) {
+    return palette.primary;
+  }
+  if (entry.closeReason == CloseReason::Dismissed) {
+    return palette.secondary;
+  }
+  return palette.onSurfaceVariant;
+}
+
+} // namespace
 
 NotificationsTab::NotificationsTab(NotificationManager* notifications)
     : m_notifications(notifications) {}

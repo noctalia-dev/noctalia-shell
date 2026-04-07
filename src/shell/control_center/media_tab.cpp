@@ -5,7 +5,6 @@
 #include "pipewire/pipewire_service.h"
 #include "render/core/renderer.h"
 #include "shell/panel/panel_manager.h"
-#include "shell/control_center/common.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/image.h"
@@ -25,9 +24,17 @@ using namespace control_center;
 
 namespace {
 
-constexpr float kArtworkSize = Style::controlHeightLg * 6;
-constexpr float kMediaColumnWidth = Style::controlHeightLg * 11;
-constexpr float kAudioColumnWidth = Style::controlHeightLg * 11;
+constexpr float kArtworkSize            = Style::controlHeightLg * 6;
+constexpr float kMediaColumnWidth       = Style::controlHeightLg * 11;
+constexpr float kAudioColumnWidth       = Style::controlHeightLg * 11;
+constexpr float kMediaSliderWidth       = Style::controlHeightLg * 9;
+constexpr float kValueLabelWidth        = Style::controlHeightLg + Style::spaceLg;
+constexpr float kMediaNowCardMinHeight  = Style::controlHeightLg * 11 + Style::spaceSm * 2;
+constexpr float kMediaAudioCardMinHeight = Style::controlHeightLg * 3 + Style::spaceMd * 2;
+constexpr float kMediaPlayerSelectHeight = Style::controlHeight;
+constexpr float kMediaControlsHeight    = Style::controlHeightLg + Style::spaceXs;
+constexpr float kMediaPlayPauseHeight   = Style::controlHeightLg + Style::spaceSm;
+constexpr float kMediaArtworkMinHeight  = Style::controlHeightLg * 4;
 
 bool isRemoteArtUrl(std::string_view artUrl) {
   return artUrl.starts_with("https://") || artUrl.starts_with("http://");

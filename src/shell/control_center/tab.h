@@ -1,9 +1,27 @@
 #pragma once
 
+#include "render/core/color.h"
+#include "ui/palette.h"
+#include "ui/style.h"
+
 #include <memory>
+#include <string>
 
 class Flex;
+class Label;
 class Renderer;
+
+namespace control_center {
+
+constexpr Color alphaSurfaceVariant(float alpha) {
+  return rgba(palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, alpha);
+}
+
+void applyCard(Flex& card);
+Label* addTitle(Flex& parent, const std::string& text);
+void addBody(Flex& parent, const std::string& text);
+
+} // namespace control_center
 
 class Tab {
 public:
