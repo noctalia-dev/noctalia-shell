@@ -43,6 +43,7 @@ public:
   void setSize(float width, float height) override;
 
 private:
+  void ensureBackground();
   void updateLayout();
 
   Box* m_background = nullptr;

@@ -11,12 +11,21 @@
 Image::Image() {
   setClipChildren(true);
 
-  auto background = std::make_unique<Box>();
-  m_background = static_cast<Box*>(addChild(std::move(background)));
-  m_background->setFlatStyle();
-
   auto image = std::make_unique<ImageNode>();
   m_image = static_cast<ImageNode*>(addChild(std::move(image)));
+}
+
+void Image::ensureBackground() {
+  if (m_background != nullptr) {
+    return;
+  }
+  auto background = std::make_unique<Box>();
+  m_background = static_cast<Box*>(insertChildAt(0, std::move(background)));
+  m_background->setFlatStyle();
+  m_background->setSize(width(), height());
+  if (m_cornerRadius != 0.0f) {
+    m_background->setRadius(m_cornerRadius);
+  }
 }
 
 void Image::setCornerRadius(float radius) {
@@ -31,10 +40,9 @@ void Image::setCornerRadius(float radius) {
 }
 
 void Image::setBackground(const Color& color) {
-  if (m_background != nullptr) {
-    m_background->setFill(color);
-    m_background->setBorder(color, 0.0f);
-  }
+  ensureBackground();
+  m_background->setFill(color);
+  m_background->setBorder(color, 0.0f);
 }
 
 void Image::setTint(const Color& tint) {
