@@ -1,11 +1,13 @@
 #include "dbus/mpris/mpris_service.h"
 
+#include "core/deferred_call.h"
 #include "core/log.h"
 #include "dbus/session_bus.h"
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <format>
 #include <map>
 #include <sdbus-c++/IObject.h>
 #include <sdbus-c++/IProxy.h>
@@ -127,6 +129,32 @@ std::string primary_artist(const std::vector<std::string>& artists) {
   return artists.front();
 }
 
+std::string joinKeys(const std::map<std::string, sdbus::Variant>& values) {
+  std::string out;
+  bool first = true;
+  for (const auto& [key, _] : values) {
+    if (!first) {
+      out += ", ";
+    }
+    first = false;
+    out += key;
+  }
+  return out;
+}
+
+std::string joinStrings(const std::vector<std::string>& values) {
+  std::string out;
+  bool first = true;
+  for (const auto& value : values) {
+    if (!first) {
+      out += ", ";
+    }
+    first = false;
+    out += value;
+  }
+  return out;
+}
+
 std::map<std::string, sdbus::Variant> to_dbus_player(const MprisPlayerInfo& info) {
   std::map<std::string, sdbus::Variant> player;
   player["bus_name"] = sdbus::Variant(info.busName);
@@ -137,6 +165,7 @@ std::map<std::string, sdbus::Variant> to_dbus_player(const MprisPlayerInfo& info
   player["title"] = sdbus::Variant(info.title);
   player["artists"] = sdbus::Variant(info.artists);
   player["album"] = sdbus::Variant(info.album);
+  player["source_url"] = sdbus::Variant(info.sourceUrl);
   player["art_url"] = sdbus::Variant(info.artUrl);
   player["loop_status"] = sdbus::Variant(info.loopStatus);
   player["shuffle"] = sdbus::Variant(info.shuffle);
@@ -160,6 +189,7 @@ MprisService::MprisService(SessionBus& bus)
   registerControlApi();
   registerBusSignals();
   discoverPlayers();
+  scheduleStartupRediscovery();
 }
 
 const std::unordered_map<std::string, MprisPlayerInfo>& MprisService::players() const noexcept { return m_players; }
@@ -186,6 +216,11 @@ std::optional<MprisPlayerInfo> MprisService::activePlayer() const {
     return std::nullopt;
   }
   return it->second;
+}
+
+void MprisService::refreshPlayers() {
+  kLog.debug("manual player refresh requested players_cached={}", m_players.size());
+  discoverPlayers();
 }
 
 bool MprisService::playPause(const std::string& busName) {
@@ -525,7 +560,12 @@ void MprisService::setPreferredPlayers(std::vector<std::string> preferredBusName
   }
 }
 
-void MprisService::setChangeCallback(std::function<void()> callback) { m_changeCallback = std::move(callback); }
+void MprisService::setChangeCallback(std::function<void()> callback) {
+  m_changeCallback = std::move(callback);
+  if (m_changeCallback && !m_players.empty()) {
+    m_changeCallback();
+  }
+}
 
 std::optional<std::string> MprisService::pinnedPlayerPreference() const { return m_pinnedPlayerPreference; }
 
@@ -756,6 +796,8 @@ void MprisService::registerBusSignals() {
           return;
         }
 
+        kLog.info("name owner changed name={} old_owner=\"{}\" new_owner=\"{}\"", name, old_owner, new_owner);
+
         if (new_owner.empty()) {
           removePlayer(name);
           return;
@@ -772,13 +814,38 @@ void MprisService::registerBusSignals() {
 
 void MprisService::discoverPlayers() {
   std::vector<std::string> names;
-  m_dbusProxy->callMethod("ListNames").onInterface(k_dbus_interface).storeResultsTo(names);
+  try {
+    m_dbusProxy->callMethod("ListNames").onInterface(k_dbus_interface).storeResultsTo(names);
+  } catch (const sdbus::Error& e) {
+    kLog.warn("discover players failed err={}", e.what());
+    return;
+  }
+
+  std::size_t matched = 0;
 
   for (const auto& name : names) {
     if (is_mpris_bus_name(name)) {
+      ++matched;
+      kLog.info("discover found mpris bus={}", name);
       addOrRefreshPlayer(name);
     }
   }
+
+  kLog.info("discover players listed={} matched_mpris={} cached_after={}", names.size(), matched, m_players.size());
+}
+
+void MprisService::scheduleStartupRediscovery() {
+  if (m_startupRediscoveryPassesRemaining <= 0) {
+    return;
+  }
+
+  DeferredCall::callLater([this]() {
+    discoverPlayers();
+    --m_startupRediscoveryPassesRemaining;
+    if (m_startupRediscoveryPassesRemaining > 0) {
+      scheduleStartupRediscovery();
+    }
+  });
 }
 
 void MprisService::addOrRefreshPlayer(const std::string& busName) {
@@ -790,9 +857,24 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
   if (inserted) {
     proxyIt->second->uponSignal("PropertiesChanged")
         .onInterface(k_properties_interface)
-        .call([this, busName](const std::string& interface_name, const std::map<std::string, sdbus::Variant>&,
-                               const std::vector<std::string>&) {
+        .call([this, busName](const std::string& interface_name,
+                              const std::map<std::string, sdbus::Variant>& changed_properties,
+                              const std::vector<std::string>& invalidated_properties) {
           if (interface_name == k_mpris_root_interface || interface_name == k_mpris_player_interface) {
+            const bool metadataChanged = changed_properties.contains("Metadata");
+            kLog.info("properties changed name={} interface={} changed=[{}] invalidated=[{}] metadata_changed={}",
+                      busName, interface_name, joinKeys(changed_properties), joinStrings(invalidated_properties),
+                      metadataChanged);
+            if (metadataChanged) {
+              try {
+                const auto metadata = changed_properties.at("Metadata").get<std::map<std::string, sdbus::Variant>>();
+                kLog.info("metadata payload name={} keys=[{}] art_url_present={} title_present={} artist_present={}",
+                          busName, joinKeys(metadata), metadata.contains("mpris:artUrl"),
+                          metadata.contains("xesam:title"), metadata.contains("xesam:artist"));
+              } catch (const sdbus::Error& e) {
+                kLog.warn("metadata payload decode failed name={} err={}", busName, e.what());
+              }
+            }
             const auto now = std::chrono::steady_clock::now();
             const auto last_it = m_lastPropertiesUpdate.find(busName);
             if (last_it != m_lastPropertiesUpdate.end() && now - last_it->second < k_properties_debounce_window) {
@@ -806,6 +888,14 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
 
   try {
     const MprisPlayerInfo info = readPlayerInfo(*proxyIt->second, busName);
+    kLog.info(
+        "queried player name={} identity=\"{}\" status=\"{}\" title=\"{}\" artist=\"{}\" track_id=\"{}\" art_url=\"{}\"",
+        info.busName, info.identity, info.playbackStatus, info.title, primary_artist(info.artists), info.trackId,
+        info.artUrl);
+    if (info.artUrl.empty()) {
+      const auto metadata = get_metadata_or(*proxyIt->second);
+      kLog.info("queried player missing art url name={} metadata_keys=[{}]", info.busName, joinKeys(metadata));
+    }
     if (info.playbackStatus == "Playing") {
       m_lastActivePlayer = busName;
       m_lastPlayingUpdate[busName] = std::chrono::steady_clock::now();
@@ -882,6 +972,7 @@ void MprisService::removePlayer(const std::string& busName) {
 
 std::optional<std::string> MprisService::chooseActivePlayer() const {
   if (m_pinnedPlayerPreference.has_value() && m_players.contains(*m_pinnedPlayerPreference)) {
+    kLog.debug("choose active player source=pinned name={}", *m_pinnedPlayerPreference);
     return *m_pinnedPlayerPreference;
   }
 
@@ -900,30 +991,36 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
     }
   }
   if (mostRecentPlaying.has_value()) {
+    kLog.debug("choose active player source=recent_playing name={}", *mostRecentPlaying);
     return mostRecentPlaying;
   }
 
   for (const auto& busName : m_preferredPlayers) {
     const auto it = m_players.find(busName);
     if (it != m_players.end() && it->second.playbackStatus == "Playing") {
+      kLog.debug("choose active player source=preferred_playing name={}", busName);
       return busName;
     }
   }
 
   for (const auto& busName : m_preferredPlayers) {
     if (m_players.contains(busName)) {
+      kLog.debug("choose active player source=preferred_any name={}", busName);
       return busName;
     }
   }
 
   if (!m_lastActivePlayer.empty() && m_players.contains(m_lastActivePlayer)) {
+    kLog.debug("choose active player source=last_active name={}", m_lastActivePlayer);
     return m_lastActivePlayer;
   }
 
   if (!m_players.empty()) {
+    kLog.debug("choose active player source=first_cached name={}", m_players.begin()->first);
     return m_players.begin()->first;
   }
 
+  kLog.debug("choose active player source=none");
   return std::nullopt;
 }
 
@@ -1280,6 +1377,7 @@ MprisPlayerInfo MprisService::readPlayerInfo(sdbus::IProxy& proxy, const std::st
       .title = get_string_from_variant(metadata, "xesam:title"),
       .artists = get_string_array_from_variant(metadata, "xesam:artist"),
       .album = get_string_from_variant(metadata, "xesam:album"),
+      .sourceUrl = get_string_from_variant(metadata, "xesam:url"),
       .artUrl = get_string_from_variant(metadata, "mpris:artUrl"),
       .loopStatus = get_property_or(proxy, k_mpris_player_interface, "LoopStatus", std::string{"None"}),
       .shuffle = get_property_or(proxy, k_mpris_player_interface, "Shuffle", false),

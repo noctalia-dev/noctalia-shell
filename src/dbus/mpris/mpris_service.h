@@ -26,6 +26,7 @@ struct MprisPlayerInfo {
   std::string title;
   std::vector<std::string> artists;
   std::string album;
+  std::string sourceUrl;
   std::string artUrl;
   std::string loopStatus{"None"};
   bool shuffle{false};
@@ -48,6 +49,7 @@ public:
   [[nodiscard]] const std::unordered_map<std::string, MprisPlayerInfo>& players() const noexcept;
   [[nodiscard]] std::vector<MprisPlayerInfo> listPlayers() const;
   [[nodiscard]] std::optional<MprisPlayerInfo> activePlayer() const;
+  void refreshPlayers();
 
   bool playPause(const std::string& busName);
   bool next(const std::string& busName);
@@ -89,6 +91,7 @@ private:
   void syncSignals(const std::optional<MprisPlayerInfo>& previousActive);
   void registerBusSignals();
   void discoverPlayers();
+  void scheduleStartupRediscovery();
   void addOrRefreshPlayer(const std::string& busName);
   void removePlayer(const std::string& busName);
   [[nodiscard]] MprisPlayerInfo readPlayerInfo(sdbus::IProxy& proxy, const std::string& busName) const;
@@ -137,4 +140,5 @@ private:
   std::optional<std::string> m_pinnedPlayerPreference;
   std::vector<std::string> m_preferredPlayers;
   std::function<void()> m_changeCallback;
+  int m_startupRediscoveryPassesRemaining = 4;
 };

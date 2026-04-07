@@ -74,6 +74,7 @@ private:
   std::vector<std::string> m_playerBusNames;
   std::vector<std::uint32_t> m_outputDeviceIds;
   std::vector<std::uint32_t> m_inputDeviceIds;
+  std::chrono::steady_clock::time_point m_lastMprisRefreshAttempt{};
   float m_lastSinkVolume = -1.0f;
   float m_lastSourceVolume = -1.0f;
   std::unordered_set<std::string> m_pendingArtDownloads;

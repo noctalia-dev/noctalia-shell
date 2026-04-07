@@ -29,6 +29,7 @@ pkg_check_modules(HARFBUZZ REQUIRED harfbuzz)
 pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
 pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
 pkg_check_modules(LIBPIPEWIRE REQUIRED libpipewire-0.3)
+pkg_check_modules(LIBWEBP REQUIRED libwebp)
 find_package(CURL REQUIRED)
 find_library(PAM_LIBRARY NAMES pam REQUIRED)
 
@@ -439,6 +440,7 @@ target_include_directories(noctalia PRIVATE
     ${HARFBUZZ_INCLUDE_DIRS}
     ${FONTCONFIG_INCLUDE_DIRS}
     ${XKBCOMMON_INCLUDE_DIRS}
+    ${LIBWEBP_INCLUDE_DIRS}
 )
 # PipeWire/SPA headers use GCC extensions (compound-literals, statement-
 # expressions) that trigger -Wpedantic/-Wconversion. Mark them as system
@@ -464,6 +466,7 @@ target_link_libraries(noctalia PRIVATE
     ${FONTCONFIG_LIBRARIES}
     ${XKBCOMMON_LIBRARIES}
     ${LIBPIPEWIRE_LIBRARIES}
+    ${LIBWEBP_LIBRARIES}
     CURL::libcurl
     ${PAM_LIBRARY}
 )
@@ -476,6 +479,7 @@ target_compile_options(noctalia PRIVATE
     ${HARFBUZZ_CFLAGS_OTHER}
     ${FONTCONFIG_CFLAGS_OTHER}
     ${LIBPIPEWIRE_CFLAGS_OTHER}
+    ${LIBWEBP_CFLAGS_OTHER}
 )
 
 target_compile_options(noctalia PRIVATE
