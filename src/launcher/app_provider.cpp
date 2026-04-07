@@ -146,6 +146,9 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
     result.title = entry.name;
     result.subtitle = entry.genericName.empty() ? entry.comment : entry.genericName;
     result.iconPath = m_iconResolver.resolve(entry.icon);
+    if (result.iconPath.empty()) {
+      result.iconPath = m_iconResolver.resolve("application-x-executable");
+    }
     result.iconName = result.iconPath.empty() ? "app-window" : "";
     result.score = s;
     return result;
