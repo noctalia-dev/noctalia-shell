@@ -2,7 +2,11 @@
 
 #include "app/poll_source.h"
 #include "core/log.h"
+#include "launcher/app_provider.h"
+#include "launcher/emoji_provider.h"
+#include "launcher/math_provider.h"
 #include "shell/panels/control_center/panel.h"
+#include "shell/panels/launcher_panel.h"
 #include "shell/panels/test_panel.h"
 #include "system/distro_info.h"
 
@@ -221,6 +225,13 @@ void Application::initUi() {
   m_panelManager.registerPanel(
       "control-center",
       std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(), m_mprisService.get()));
+  {
+    auto launcherPanel = std::make_unique<LauncherPanel>();
+    launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
+    launcherPanel->addProvider(std::make_unique<MathProvider>());
+    launcherPanel->addProvider(std::make_unique<EmojiProvider>());
+    m_panelManager.registerPanel("launcher", std::move(launcherPanel));
+  }
 
   m_notificationPopup.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);
 
@@ -324,6 +335,14 @@ void Application::initIpc() {
         return "ok\n";
       },
       "toggle-panel <id>", "Toggle a panel by id (e.g. control-center)");
+
+  m_ipcService.registerHandler(
+      "toggle-launcher",
+      [this](const std::string&) -> std::string {
+        m_panelManager.togglePanel("launcher");
+        return "ok\n";
+      },
+      "toggle-launcher", "Toggle the application launcher");
 }
 
 std::vector<PollSource*> Application::buildPollSources() {

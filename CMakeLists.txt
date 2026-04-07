@@ -61,6 +61,8 @@ set(EXT_WORKSPACE_XML
     "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/ext-workspace/ext-workspace-v1.xml")
 set(CURSOR_SHAPE_XML
     "${CMAKE_CURRENT_SOURCE_DIR}/protocols/cursor-shape-v1.xml")
+set(XDG_ACTIVATION_XML
+    "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/xdg-activation/xdg-activation-v1.xml")
 
 set(XDG_OUTPUT_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/xdg-output-unstable-v1-client-protocol.c")
@@ -79,6 +81,11 @@ set(CURSOR_SHAPE_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/cursor-shape-v1-client-protocol.c")
 set(CURSOR_SHAPE_PROTOCOL_H
     "${GENERATED_PROTOCOL_DIR}/cursor-shape-v1-client-protocol.h")
+
+set(XDG_ACTIVATION_PROTOCOL_C
+    "${GENERATED_PROTOCOL_DIR}/xdg-activation-v1-client-protocol.c")
+set(XDG_ACTIVATION_PROTOCOL_H
+    "${GENERATED_PROTOCOL_DIR}/xdg-activation-v1-client-protocol.h")
 
 set(WLR_LAYER_SHELL_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/wlr-layer-shell-unstable-v1-client-protocol.c")
@@ -167,6 +174,20 @@ add_custom_command(
     VERBATIM
 )
 
+add_custom_command(
+    OUTPUT "${XDG_ACTIVATION_PROTOCOL_C}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" private-code "${XDG_ACTIVATION_XML}" "${XDG_ACTIVATION_PROTOCOL_C}"
+    DEPENDS "${XDG_ACTIVATION_XML}"
+    VERBATIM
+)
+
+add_custom_command(
+    OUTPUT "${XDG_ACTIVATION_PROTOCOL_H}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" client-header "${XDG_ACTIVATION_XML}" "${XDG_ACTIVATION_PROTOCOL_H}"
+    DEPENDS "${XDG_ACTIVATION_XML}"
+    VERBATIM
+)
+
 add_custom_target(noctalia_wayland_protocols
     DEPENDS
         "${WLR_LAYER_SHELL_PROTOCOL_C}"
@@ -179,6 +200,8 @@ add_custom_target(noctalia_wayland_protocols
         "${EXT_WORKSPACE_PROTOCOL_H}"
         "${CURSOR_SHAPE_PROTOCOL_C}"
         "${CURSOR_SHAPE_PROTOCOL_H}"
+        "${XDG_ACTIVATION_PROTOCOL_C}"
+        "${XDG_ACTIVATION_PROTOCOL_H}"
 )
 
 # --- Target ---
@@ -259,7 +282,15 @@ add_executable(noctalia
     src/shell/panels/control_center/notifications_tab.cpp
     src/shell/panels/control_center/network_tab.cpp
     src/shell/panels/notification_history_panel.cpp
+    src/launcher/app_provider.cpp
+    src/launcher/desktop_entry.cpp
+    src/launcher/emoji_provider.cpp
+    src/launcher/fuzzy_match.cpp
+    src/launcher/icon_resolver.cpp
+    src/launcher/math_provider.cpp
+    src/shell/panels/launcher_panel.cpp
     src/shell/panels/test_panel.cpp
+    src/shell/widgets/launcher_widget.cpp
     src/shell/widgets/clock_widget.cpp
     src/shell/widgets/notification_widget.cpp
     src/shell/widgets/spacer_widget.cpp
@@ -276,11 +307,13 @@ add_executable(noctalia
     src/wayland/wayland_connection.cpp
     src/wayland/wayland_seat.cpp
     src/wayland/wayland_workspaces.cpp
+    third_party/tinyexpr/tinyexpr.c
     "${WLR_LAYER_SHELL_PROTOCOL_C}"
     "${XDG_OUTPUT_PROTOCOL_C}"
     "${XDG_SHELL_PROTOCOL_C}"
     "${EXT_WORKSPACE_PROTOCOL_C}"
     "${CURSOR_SHAPE_PROTOCOL_C}"
+    "${XDG_ACTIVATION_PROTOCOL_C}"
 )
 target_compile_definitions(noctalia PRIVATE
     NOCTALIA_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
@@ -309,6 +342,11 @@ target_include_directories(noctalia PRIVATE
 # headers so the compiler suppresses those warnings.
 target_include_directories(noctalia SYSTEM PRIVATE
     ${LIBPIPEWIRE_INCLUDE_DIRS}
+    third_party/nlohmann
+    third_party/tinyexpr
+)
+set_source_files_properties(third_party/tinyexpr/tinyexpr.c PROPERTIES
+    COMPILE_OPTIONS "-Wno-pedantic;-Wno-conversion"
 )
 target_link_libraries(noctalia PRIVATE
     SDBusCpp::sdbus-c++

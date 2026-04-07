@@ -5,6 +5,7 @@
 #include "dbus/tray/tray_service.h"
 #include "notification/notification_manager.h"
 #include "shell/widgets/battery_widget.h"
+#include "shell/widgets/launcher_widget.h"
 #include "shell/widgets/clock_widget.h"
 #include "shell/widgets/notification_widget.h"
 #include "shell/widgets/spacer_widget.h"
@@ -76,6 +77,15 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "battery") {
     return std::make_unique<BatteryWidget>(m_upower);
+  }
+
+  if (type == "launcher") {
+    std::int32_t scale = 1;
+    const auto* wlOutput = m_wayland.findOutputByWl(output);
+    if (wlOutput != nullptr) {
+      scale = wlOutput->scale;
+    }
+    return std::make_unique<LauncherWidget>(output, scale);
   }
 
   if (type == "test") {

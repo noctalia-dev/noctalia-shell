@@ -17,6 +17,7 @@ struct wl_shm;
 struct zwlr_layer_shell_v1;
 struct zxdg_output_manager_v1;
 struct wp_cursor_shape_manager_v1;
+struct xdg_activation_v1;
 
 struct WaylandOutput {
   std::uint32_t name = 0;
@@ -70,6 +71,9 @@ public:
   [[nodiscard]] const std::vector<WaylandOutput>& outputs() const noexcept;
   [[nodiscard]] WaylandOutput* findOutputByWl(wl_output* wlOutput);
 
+  [[nodiscard]] bool hasXdgActivation() const noexcept;
+  [[nodiscard]] std::string requestActivationToken(wl_surface* surface) const;
+
   [[nodiscard]] std::vector<Workspace> workspaces() const;
   [[nodiscard]] std::vector<Workspace> workspaces(wl_output* output) const;
 
@@ -91,6 +95,7 @@ private:
   zwlr_layer_shell_v1* m_layerShell = nullptr;
   zxdg_output_manager_v1* m_xdgOutputManager = nullptr;
   wp_cursor_shape_manager_v1* m_cursorShapeManager = nullptr;
+  xdg_activation_v1* m_xdgActivation = nullptr;
   bool m_hasLayerShellGlobal = false;
   bool m_hasExtWorkspaceGlobal = false;
   std::vector<WaylandOutput> m_outputs;

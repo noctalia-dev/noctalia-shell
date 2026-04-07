@@ -62,6 +62,9 @@ public:
   void setCursorShape(std::uint32_t serial, std::uint32_t shape);
   void cleanup();
 
+  [[nodiscard]] std::uint32_t lastSerial() const noexcept { return m_lastSerial; }
+  [[nodiscard]] wl_seat* seat() const noexcept { return m_seat; }
+
   // Key repeat — driven by KeyRepeatPollSource
   [[nodiscard]] int repeatPollTimeoutMs() const;
   void repeatTick();
@@ -105,6 +108,9 @@ private:
   double m_lastPointerX = 0.0;
   double m_lastPointerY = 0.0;
   bool m_hasPointerPosition = false;
+
+  wl_seat* m_seat = nullptr;
+  std::uint32_t m_lastSerial = 0;
 
   // Keyboard
   wl_keyboard* m_keyboard = nullptr;

@@ -21,8 +21,10 @@ public:
   void setPlaceholder(std::string_view placeholder);
   void setOnChange(std::function<void(const std::string&)> callback);
   void setOnSubmit(std::function<void(const std::string&)> callback);
+  void setOnKeyEvent(std::function<bool(std::uint32_t sym, std::uint32_t modifiers)> callback);
 
   [[nodiscard]] const std::string& value() const noexcept { return m_value; }
+  [[nodiscard]] InputArea* inputArea() const noexcept { return m_inputArea; }
 
   void layout(Renderer& renderer);
 
@@ -60,4 +62,5 @@ private:
 
   std::function<void(const std::string&)> m_onChange;
   std::function<void(const std::string&)> m_onSubmit;
+  std::function<bool(std::uint32_t, std::uint32_t)> m_onKeyEvent;
 };

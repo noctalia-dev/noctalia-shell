@@ -117,6 +117,10 @@ void Input::setOnSubmit(std::function<void(const std::string&)> callback) {
   m_onSubmit = std::move(callback);
 }
 
+void Input::setOnKeyEvent(std::function<bool(std::uint32_t, std::uint32_t)> callback) {
+  m_onKeyEvent = std::move(callback);
+}
+
 void Input::layout(Renderer& renderer) {
   const float w = width() > 0.0f ? width() : kDefaultWidth;
   const float h = Style::controlHeight;
@@ -175,6 +179,10 @@ void Input::layout(Renderer& renderer) {
 }
 
 void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool preedit) {
+  if (m_onKeyEvent && m_onKeyEvent(sym, modifiers)) {
+    return;
+  }
+
   // Ignore keys that produce no text and aren't action keys we handle below
   if (utf32 == 0 && !preedit && sym != XKB_KEY_BackSpace && sym != XKB_KEY_Delete && sym != XKB_KEY_Left &&
       sym != XKB_KEY_Right && sym != XKB_KEY_Home && sym != XKB_KEY_End && sym != XKB_KEY_Return) {

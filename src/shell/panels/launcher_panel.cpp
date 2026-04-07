@@ -1,0 +1,368 @@
+#include "shell/panels/launcher_panel.h"
+
+#include "render/core/renderer.h"
+#include "render/scene/input_area.h"
+#include "render/scene/node.h"
+#include "shell/panel/panel_manager.h"
+#include "ui/controls/flex.h"
+#include "ui/controls/icon.h"
+#include "ui/controls/image.h"
+#include "ui/controls/input.h"
+#include "ui/controls/label.h"
+#include "ui/controls/scroll_view.h"
+#include "ui/palette.h"
+#include "ui/style.h"
+
+#include <algorithm>
+#include <memory>
+#include <xkbcommon/xkbcommon-keysyms.h>
+
+namespace {
+
+constexpr std::size_t kMaxResults = 50;
+constexpr float kRowHeight = 36.0f;
+constexpr float kIconSize = 20.0f;
+
+} // namespace
+
+LauncherPanel::LauncherPanel() = default;
+
+void LauncherPanel::addProvider(std::unique_ptr<LauncherProvider> provider) {
+  provider->initialize();
+  m_providers.push_back(std::move(provider));
+}
+
+void LauncherPanel::create(Renderer& renderer) {
+  auto container = std::make_unique<Flex>();
+  container->setDirection(FlexDirection::Vertical);
+  container->setAlign(FlexAlign::Start);
+  container->setGap(static_cast<float>(Style::spaceSm));
+
+  auto input = std::make_unique<Input>();
+  input->setPlaceholder("Search applications...");
+  input->setOnChange([this](const std::string& text) { onInputChanged(text); });
+  input->setOnSubmit([this](const std::string& /*text*/) { activateSelected(); });
+  input->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t modifiers) {
+    return handleKeyEvent(sym, modifiers);
+  });
+  m_input = input.get();
+  container->addChild(std::move(input));
+
+  auto scrollView = std::make_unique<ScrollView>();
+  scrollView->setScrollbarVisible(true);
+  scrollView->setScrollStep(kRowHeight);
+  m_scrollView = scrollView.get();
+  m_list = scrollView->content();
+  m_list->setDirection(FlexDirection::Vertical);
+  m_list->setAlign(FlexAlign::Start);
+  container->addChild(std::move(scrollView));
+
+  m_container = container.get();
+  m_root = std::move(container);
+
+  if (m_animations != nullptr) {
+    m_root->setAnimationManager(m_animations);
+  }
+
+  // Run initial query to populate list
+  onInputChanged("");
+  rebuildResults(renderer, preferredWidth());
+}
+
+void LauncherPanel::layout(Renderer& renderer, float width, float height) {
+  if (m_container == nullptr || m_input == nullptr || m_scrollView == nullptr) {
+    return;
+  }
+
+  m_input->setSize(width, 0.0f);
+  m_input->layout(renderer);
+
+  const float scrollHeight = std::max(0.0f, height - m_input->height() - static_cast<float>(Style::spaceSm));
+  m_scrollView->setSize(width, scrollHeight);
+  m_scrollView->layout(renderer);
+
+  if (m_dirty) {
+    rebuildResults(renderer, m_scrollView->contentViewportWidth());
+    m_scrollView->layout(renderer);
+    m_dirty = false;
+  }
+
+  m_container->setMinWidth(width);
+  m_container->setSize(width, height);
+  m_container->layout(renderer);
+
+  m_lastWidth = width;
+}
+
+void LauncherPanel::update(Renderer& renderer) {
+  if (m_dirty && m_lastWidth > 0.0f) {
+    const float listWidth = m_scrollView != nullptr ? m_scrollView->contentViewportWidth() : m_lastWidth;
+    rebuildResults(renderer, listWidth);
+    m_dirty = false;
+  }
+}
+
+void LauncherPanel::onOpen(std::string_view /*context*/) {
+  m_query.clear();
+  m_selectedIndex = 0;
+  m_dirty = true;
+  if (m_input != nullptr) {
+    m_input->setValue("");
+  }
+  if (m_scrollView != nullptr) {
+    m_scrollView->setScrollOffset(0.0f);
+  }
+}
+
+void LauncherPanel::onClose() {
+  m_query.clear();
+  m_results.clear();
+  m_selectedIndex = 0;
+  m_lastWidth = 0.0f;
+  m_dirty = false;
+
+  // The scene tree (and all nodes) is destroyed by PanelManager after onClose(),
+  // so null out all raw pointers to avoid dangling references on re-open.
+  m_container = nullptr;
+  m_input = nullptr;
+  m_scrollView = nullptr;
+  m_list = nullptr;
+}
+
+InputArea* LauncherPanel::initialFocusArea() const {
+  return m_input != nullptr ? m_input->inputArea() : nullptr;
+}
+
+void LauncherPanel::onInputChanged(const std::string& text) {
+  m_query = text;
+  m_results.clear();
+
+  // Route query to providers
+  LauncherProvider* activeProvider = nullptr;
+  std::string_view queryText = text;
+
+  // Check for prefix match (longest first)
+  for (auto& provider : m_providers) {
+    auto prefix = provider->prefix();
+    if (prefix.empty()) {
+      continue;
+    }
+    if (text.size() >= prefix.size() && std::string_view(text).substr(0, prefix.size()) == prefix) {
+      activeProvider = provider.get();
+      queryText = std::string_view(text).substr(prefix.size());
+      // Trim leading space after prefix
+      if (!queryText.empty() && queryText.front() == ' ') {
+        queryText = queryText.substr(1);
+      }
+      break;
+    }
+  }
+
+  if (activeProvider != nullptr) {
+    m_results = activeProvider->query(queryText);
+  } else {
+    // Query default providers (empty prefix)
+    for (auto& provider : m_providers) {
+      if (provider->prefix().empty()) {
+        auto results = provider->query(queryText);
+        m_results.insert(m_results.end(), std::make_move_iterator(results.begin()),
+                         std::make_move_iterator(results.end()));
+      }
+    }
+    // Sort by score descending
+    std::sort(m_results.begin(), m_results.end(),
+              [](const LauncherResult& a, const LauncherResult& b) { return a.score > b.score; });
+  }
+
+  if (m_results.size() > kMaxResults) {
+    m_results.resize(kMaxResults);
+  }
+
+  m_selectedIndex = 0;
+  m_dirty = true;
+}
+
+void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
+  if (m_list == nullptr) {
+    return;
+  }
+
+  while (!m_list->children().empty()) {
+    m_list->removeChild(m_list->children().front().get());
+  }
+
+  if (m_results.empty()) {
+    auto emptyLabel = std::make_unique<Label>();
+    emptyLabel->setText(m_query.empty() ? "Type to search..." : "No results found");
+    emptyLabel->setCaptionStyle();
+    emptyLabel->setColor(palette.onSurfaceVariant);
+    emptyLabel->setMaxWidth(width);
+    emptyLabel->measure(renderer);
+    m_list->addChild(std::move(emptyLabel));
+    return;
+  }
+
+  for (std::size_t i = 0; i < m_results.size(); ++i) {
+    const auto& result = m_results[i];
+
+    auto row = std::make_unique<Flex>();
+    row->setDirection(FlexDirection::Horizontal);
+    row->setAlign(FlexAlign::Center);
+    row->setGap(static_cast<float>(Style::spaceSm));
+    row->setPadding(static_cast<float>(Style::spaceXs), static_cast<float>(Style::spaceSm),
+                    static_cast<float>(Style::spaceXs), static_cast<float>(Style::spaceSm));
+    row->setMinWidth(width);
+    row->setRadius(static_cast<float>(Style::radiusMd));
+
+    if (i == m_selectedIndex) {
+      row->setBackground(palette.surfaceVariant);
+    }
+
+    // Icon/action text
+    if (!result.actionText.empty()) {
+      auto actionLabel = std::make_unique<Label>();
+      actionLabel->setText(result.actionText);
+      actionLabel->setFontSize(static_cast<float>(Style::fontSizeTitle));
+      actionLabel->setColor(palette.onSurface);
+      actionLabel->measure(renderer);
+      actionLabel->setSize(kIconSize, kIconSize);
+      row->addChild(std::move(actionLabel));
+    } else if (!result.iconPath.empty()) {
+      auto image = std::make_unique<Image>();
+      image->setSize(kIconSize, kIconSize);
+      image->setCornerRadius(static_cast<float>(Style::radiusSm));
+      image->setSourceFile(renderer, result.iconPath, static_cast<int>(kIconSize));
+      row->addChild(std::move(image));
+    } else {
+      auto icon = std::make_unique<Icon>();
+      icon->setIcon(result.iconName.empty() ? "app-window" : result.iconName);
+      icon->setIconSize(kIconSize);
+      icon->setColor(palette.onSurfaceVariant);
+      icon->measure(renderer);
+      row->addChild(std::move(icon));
+    }
+
+    // Text column
+    auto textCol = std::make_unique<Flex>();
+    textCol->setDirection(FlexDirection::Vertical);
+    textCol->setAlign(FlexAlign::Start);
+    textCol->setGap(1.0f);
+
+    const float textWidth = std::max(0.0f, width - kIconSize - static_cast<float>(Style::spaceSm) * 3.0f);
+
+    auto title = std::make_unique<Label>();
+    title->setText(result.title);
+    title->setFontSize(static_cast<float>(Style::fontSizeBody));
+    title->setBold(true);
+    title->setColor(palette.onSurface);
+    title->setMaxWidth(textWidth);
+    title->measure(renderer);
+    textCol->addChild(std::move(title));
+
+    if (!result.subtitle.empty()) {
+      auto subtitle = std::make_unique<Label>();
+      subtitle->setText(result.subtitle);
+      subtitle->setCaptionStyle();
+      subtitle->setColor(palette.onSurfaceVariant);
+      subtitle->setMaxWidth(textWidth);
+      subtitle->measure(renderer);
+      textCol->addChild(std::move(subtitle));
+    }
+
+    row->addChild(std::move(textCol));
+
+    // Click handler
+    auto area = std::make_unique<InputArea>();
+    area->setOnClick([this, idx = i](const InputArea::PointerData& /*data*/) {
+      m_selectedIndex = idx;
+      activateSelected();
+    });
+    row->addChild(std::move(area));
+
+    row->layout(renderer);
+
+    // Size the InputArea to cover the whole row
+    auto& rowChildren = row->children();
+    if (!rowChildren.empty()) {
+      auto* inputArea = rowChildren.back().get();
+      inputArea->setPosition(0.0f, 0.0f);
+      inputArea->setSize(row->width(), row->height());
+    }
+
+    m_list->addChild(std::move(row));
+  }
+}
+
+void LauncherPanel::activateSelected() {
+  if (m_selectedIndex >= m_results.size()) {
+    return;
+  }
+
+  const auto& result = m_results[m_selectedIndex];
+
+  // Find the provider that owns this result
+  for (auto& provider : m_providers) {
+    if (provider->activate(result)) {
+      PanelManager::instance().closePanel();
+      return;
+    }
+  }
+}
+
+bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*/) {
+  if (sym == XKB_KEY_Up) {
+    if (m_selectedIndex > 0) {
+      --m_selectedIndex;
+      m_dirty = true;
+      scrollToSelected();
+      if (root() != nullptr) {
+        root()->markDirty();
+      }
+    }
+    return true;
+  }
+
+  if (sym == XKB_KEY_Down) {
+    if (!m_results.empty() && m_selectedIndex < m_results.size() - 1) {
+      ++m_selectedIndex;
+      m_dirty = true;
+      scrollToSelected();
+      if (root() != nullptr) {
+        root()->markDirty();
+      }
+    }
+    return true;
+  }
+
+  if (sym == XKB_KEY_Return) {
+    activateSelected();
+    return true;
+  }
+
+  return false;
+}
+
+void LauncherPanel::scrollToSelected() {
+  if (m_scrollView == nullptr || m_list == nullptr) {
+    return;
+  }
+
+  const auto& children = m_list->children();
+  if (m_selectedIndex >= children.size()) {
+    return;
+  }
+
+  const auto* item = children[m_selectedIndex].get();
+  const float itemTop = item->y();
+  const float itemBottom = itemTop + item->height();
+  // The ScrollView viewport is smaller than the outer widget by vertical padding
+  constexpr float kScrollViewPaddingV = static_cast<float>(Style::spaceSm);
+  const float viewportH = m_scrollView->height() - kScrollViewPaddingV * 2.0f;
+  const float scrollOffset = m_scrollView->scrollOffset();
+
+  if (itemTop < scrollOffset) {
+    m_scrollView->setScrollOffset(itemTop);
+  } else if (itemBottom > scrollOffset + viewportH) {
+    m_scrollView->setScrollOffset(itemBottom - viewportH);
+  }
+}

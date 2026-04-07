@@ -10,6 +10,7 @@
 #include "cursor-shape-v1-client-protocol.h"
 #include "ext-workspace-v1-client-protocol.h"
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
+#include "xdg-activation-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
 
 namespace {
@@ -21,6 +22,7 @@ constexpr std::uint32_t kLayerShellVersion = 4;
 constexpr std::uint32_t kXdgOutputManagerVersion = 3;
 constexpr std::uint32_t kExtWorkspaceManagerVersion = 1;
 constexpr std::uint32_t kCursorShapeManagerVersion = 1;
+constexpr std::uint32_t kXdgActivationVersion = 1;
 constexpr std::uint32_t kOutputVersion = 4;
 
 const wl_registry_listener kRegistryListener = {
@@ -176,6 +178,38 @@ bool WaylandConnection::hasLayerShell() const noexcept { return m_hasLayerShellG
 bool WaylandConnection::hasXdgOutputManager() const noexcept { return m_xdgOutputManager != nullptr; }
 
 bool WaylandConnection::hasExtWorkspaceManager() const noexcept { return m_hasExtWorkspaceGlobal; }
+bool WaylandConnection::hasXdgActivation() const noexcept { return m_xdgActivation != nullptr; }
+
+std::string WaylandConnection::requestActivationToken(wl_surface* surface) const {
+  if (m_xdgActivation == nullptr || m_display == nullptr) {
+    return {};
+  }
+
+  struct TokenData {
+    std::string token;
+  } tokenData;
+
+  auto* token = xdg_activation_v1_get_activation_token(m_xdgActivation);
+
+  static const xdg_activation_token_v1_listener tokenListener = {
+      .done =
+          [](void* data, xdg_activation_token_v1* /*token*/, const char* tokenStr) {
+            auto* td = static_cast<TokenData*>(data);
+            td->token = tokenStr;
+          },
+  };
+
+  xdg_activation_token_v1_add_listener(token, &tokenListener, &tokenData);
+  xdg_activation_token_v1_set_serial(token, m_seatHandler.lastSerial(), m_seatHandler.seat());
+  if (surface != nullptr) {
+    xdg_activation_token_v1_set_surface(token, surface);
+  }
+  xdg_activation_token_v1_commit(token);
+  wl_display_roundtrip(m_display);
+  xdg_activation_token_v1_destroy(token);
+
+  return tokenData.token;
+}
 
 wl_display* WaylandConnection::display() const noexcept { return m_display; }
 
@@ -278,6 +312,13 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     return;
   }
 
+  if (interfaceName == xdg_activation_v1_interface.name) {
+    const auto bindVersion = std::min(version, kXdgActivationVersion);
+    m_xdgActivation =
+        static_cast<xdg_activation_v1*>(wl_registry_bind(registry, name, &xdg_activation_v1_interface, bindVersion));
+    return;
+  }
+
   if (interfaceName == wl_output_interface.name) {
     const auto bindVersion = std::min(version, kOutputVersion);
     auto* output = static_cast<wl_output*>(wl_registry_bind(registry, name, &wl_output_interface, bindVersion));
@@ -310,6 +351,11 @@ void WaylandConnection::cleanup() {
   }
 
   m_seatHandler.cleanup();
+
+  if (m_xdgActivation != nullptr) {
+    xdg_activation_v1_destroy(m_xdgActivation);
+    m_xdgActivation = nullptr;
+  }
 
   if (m_cursorShapeManager != nullptr) {
     wp_cursor_shape_manager_v1_destroy(m_cursorShapeManager);

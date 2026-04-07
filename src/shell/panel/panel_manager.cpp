@@ -109,7 +109,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
         std::clamp(desired, static_cast<float>(padding), static_cast<float>(maxValue)));
   };
 
-  bool centeredControlCenter = (panelId == "control-center");
+  bool centeredControlCenter = m_activePanel->centered();
   const std::uint32_t anchor = centeredControlCenter
                                    ? (isBottom ? LayerShellAnchor::Bottom : LayerShellAnchor::Top)
                                : isBottom      ? LayerShellAnchor::Bottom | LayerShellAnchor::Left
@@ -386,6 +386,13 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     });
 
     m_surface->setSceneRoot(m_sceneRoot.get());
+
+    // Set initial keyboard focus if the panel requests it
+    if (m_activePanel != nullptr) {
+      if (auto* focusArea = m_activePanel->initialFocusArea(); focusArea != nullptr) {
+        m_inputDispatcher.setFocus(focusArea);
+      }
+    }
   }
 
   m_sceneRoot->setSize(w, h);

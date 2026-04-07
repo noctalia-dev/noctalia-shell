@@ -46,7 +46,10 @@ constexpr Logger kLog("seat");
 
 } // namespace
 
-void WaylandSeat::bind(wl_seat* seat) { wl_seat_add_listener(seat, &kSeatListener, this); }
+void WaylandSeat::bind(wl_seat* seat) {
+  m_seat = seat;
+  wl_seat_add_listener(seat, &kSeatListener, this);
+}
 
 void WaylandSeat::setCursorShapeManager(wp_cursor_shape_manager_v1* manager) { m_cursorShapeManager = manager; }
 
@@ -303,9 +306,10 @@ void WaylandSeat::handleKeyboardLeave(void* data, wl_keyboard* /*keyboard*/, std
   self->m_repeatActive = false;
 }
 
-void WaylandSeat::handleKeyboardKey(void* data, wl_keyboard* /*keyboard*/, std::uint32_t /*serial*/,
-                                    std::uint32_t /*time*/, std::uint32_t key, std::uint32_t state) {
+void WaylandSeat::handleKeyboardKey(void* data, wl_keyboard* /*keyboard*/, std::uint32_t serial, std::uint32_t /*time*/,
+                                    std::uint32_t key, std::uint32_t state) {
   auto* self = static_cast<WaylandSeat*>(data);
+  self->m_lastSerial = serial;
   if (self->m_xkbState == nullptr || !self->m_keyboardEventCallback) {
     return;
   }

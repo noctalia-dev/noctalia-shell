@@ -6,6 +6,7 @@
 #include <string_view>
 
 class AnimationManager;
+class InputArea;
 class Renderer;
 
 class Panel {
@@ -20,6 +21,8 @@ public:
 
   [[nodiscard]] virtual float preferredWidth() const = 0;
   [[nodiscard]] virtual float preferredHeight() const = 0;
+  [[nodiscard]] virtual bool centered() const { return false; }
+  [[nodiscard]] virtual InputArea* initialFocusArea() const { return nullptr; }
 
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
 
