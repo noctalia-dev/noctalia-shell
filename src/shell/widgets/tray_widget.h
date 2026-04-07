@@ -6,6 +6,7 @@
 #include "system/desktop_entry.h"
 #include "system/icon_resolver.h"
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -33,6 +34,7 @@ private:
   IconResolver m_iconResolver;
   std::unordered_map<std::string, std::string> m_appIcons;
   std::unordered_map<std::string, std::string> m_preferredIconPaths;
+  std::uint64_t m_desktopEntriesVersion = 0;
   std::vector<TrayItemInfo> m_items;
   std::vector<TextureHandle> m_loadedTextures;
 };

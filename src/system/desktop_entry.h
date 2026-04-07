@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -25,3 +26,8 @@ struct DesktopEntry {
 };
 
 std::vector<DesktopEntry> scanDesktopEntries();
+
+const std::vector<DesktopEntry>& desktopEntries();
+std::uint64_t desktopEntriesVersion();
+int desktopEntryWatchFd() noexcept;
+void checkDesktopEntryReload();

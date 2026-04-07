@@ -382,6 +382,7 @@ std::vector<PollSource*> Application::buildPollSources() {
   sources.push_back(&m_timePollSource);
   sources.push_back(&m_configPollSource);
   sources.push_back(&m_statePollSource);
+  sources.push_back(&m_desktopEntryPollSource);
   sources.push_back(&m_keyRepeatPollSource);
   if (m_pipewireService != nullptr) {
     m_pipewirePollSource = std::make_unique<PipeWirePollSource>(*m_pipewireService);

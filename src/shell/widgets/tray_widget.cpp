@@ -160,8 +160,15 @@ void TrayWidget::update(Renderer& renderer) {
 }
 
 void TrayWidget::syncState(Renderer& renderer) {
+  const auto desktopVersion = desktopEntriesVersion();
+  const bool desktopEntriesChanged = desktopVersion != m_desktopEntriesVersion;
+  if (desktopEntriesChanged) {
+    buildDesktopIconIndex();
+    m_preferredIconPaths.clear();
+  }
+
   const auto next_items = (m_tray != nullptr) ? m_tray->items() : std::vector<TrayItemInfo>{};
-  if (next_items == m_items) {
+  if (!desktopEntriesChanged && next_items == m_items) {
     return;
   }
 
@@ -286,7 +293,8 @@ void TrayWidget::rebuild(Renderer& renderer) {
 }
 
 void TrayWidget::buildDesktopIconIndex() {
-  const auto entries = scanDesktopEntries();
+  m_appIcons.clear();
+  const auto& entries = desktopEntries();
   for (const auto& entry : entries) {
     if (entry.id.empty() || entry.icon.empty()) {
       continue;
@@ -298,6 +306,7 @@ void TrayWidget::buildDesktopIconIndex() {
     addIconAlias(m_appIcons, entry.icon, entry.icon);
     addIconAlias(m_appIcons, execBasename(entry.exec), entry.icon);
   }
+  m_desktopEntriesVersion = desktopEntriesVersion();
 }
 
 std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {

@@ -3,6 +3,7 @@
 #include "shell/widget/widget.h"
 #include "system/icon_resolver.h"
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 
@@ -32,6 +33,7 @@ private:
 
   IconResolver m_iconResolver;
   std::unordered_map<std::string, std::string> m_appIcons;
+  std::uint64_t m_desktopEntriesVersion = 0;
 
   std::string m_lastIdentifier;
   std::string m_lastTitle;

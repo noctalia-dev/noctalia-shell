@@ -4,6 +4,7 @@
 #include "system/desktop_entry.h"
 #include "system/icon_resolver.h"
 
+#include <cstdint>
 #include <vector>
 
 class WaylandConnection;
@@ -23,7 +24,10 @@ public:
   bool activate(const LauncherResult& result) override;
 
 private:
+  void refreshEntriesIfNeeded() const;
+
   WaylandConnection* m_wayland = nullptr;
-  std::vector<DesktopEntry> m_entries;
+  mutable std::vector<DesktopEntry> m_entries;
+  mutable std::uint64_t m_entriesVersion = 0;
   mutable IconResolver m_iconResolver;
 };

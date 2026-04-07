@@ -32,6 +32,7 @@
 #include "shell/panel/panel_manager.h"
 #include "shell/tray/tray_menu.h"
 #include "shell/wallpaper/wallpaper.h"
+#include "system/desktop_entry_poll_source.h"
 #include "system/system_monitor_service.h"
 #include "time/time_poll_source.h"
 #include "time/time_service.h"
@@ -91,6 +92,7 @@ private:
   TimePollSource m_timePollSource{m_timeService};
   ConfigPollSource m_configPollSource{m_configService};
   StatePollSource m_statePollSource{m_stateService};
+  DesktopEntryPollSource m_desktopEntryPollSource;
   KeyRepeatPollSource m_keyRepeatPollSource{m_wayland};
   std::unique_ptr<PipeWirePollSource> m_pipewirePollSource;
   IpcService m_ipcService;

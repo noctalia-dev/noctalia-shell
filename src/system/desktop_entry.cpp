@@ -1,15 +1,22 @@
 #include "system/desktop_entry.h"
 
+#include "core/log.h"
+
 #include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <string_view>
+#include <sys/inotify.h>
+#include <unistd.h>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace fs = std::filesystem;
 
 namespace {
+
+constexpr Logger kLog("desktop_entry");
 
 std::string toLower(std::string_view s) {
   std::string result(s);
@@ -227,6 +234,148 @@ std::vector<std::string> xdgDataDirs() {
   return dirs;
 }
 
+class DesktopEntryCache {
+public:
+  DesktopEntryCache() { setupWatchFd(); }
+
+  ~DesktopEntryCache() {
+    clearWatches();
+    if (m_inotifyFd >= 0) {
+      ::close(m_inotifyFd);
+    }
+  }
+
+  const std::vector<DesktopEntry>& entries() {
+    refreshIfNeeded();
+    return m_entries;
+  }
+
+  std::uint64_t version() {
+    refreshIfNeeded();
+    return m_version;
+  }
+
+  int watchFd() const noexcept { return m_inotifyFd; }
+
+  void checkReload() {
+    if (m_inotifyFd < 0) {
+      return;
+    }
+
+    alignas(inotify_event) char buf[4096];
+    bool changed = false;
+    while (true) {
+      const auto n = ::read(m_inotifyFd, buf, sizeof(buf));
+      if (n <= 0) {
+        break;
+      }
+
+      std::size_t offset = 0;
+      while (offset < static_cast<std::size_t>(n)) {
+        auto* event = reinterpret_cast<inotify_event*>(buf + offset);
+        if ((event->mask & IN_IGNORED) != 0) {
+          m_watches.erase(event->wd);
+        } else {
+          changed = true;
+        }
+        offset += sizeof(inotify_event) + event->len;
+      }
+    }
+
+    if (changed) {
+      m_dirty = true;
+    }
+  }
+
+private:
+  void setupWatchFd() {
+    m_inotifyFd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+    if (m_inotifyFd < 0) {
+      kLog.warn("inotify_init1 failed, desktop entry hot reload disabled");
+    }
+  }
+
+  void refreshIfNeeded() {
+    if (!m_dirty) {
+      return;
+    }
+
+    m_entries = scanDesktopEntries();
+    rebuildWatches();
+    m_dirty = false;
+    ++m_version;
+  }
+
+  void clearWatches() {
+    if (m_inotifyFd < 0) {
+      m_watches.clear();
+      m_watchedPaths.clear();
+      return;
+    }
+
+    for (const auto& [wd, path] : m_watches) {
+      (void)path;
+      inotify_rm_watch(m_inotifyFd, wd);
+    }
+    m_watches.clear();
+    m_watchedPaths.clear();
+  }
+
+  void rebuildWatches() {
+    clearWatches();
+
+    if (m_inotifyFd < 0) {
+      return;
+    }
+
+    for (const auto& dataDir : xdgDataDirs()) {
+      const fs::path appDir = fs::path(dataDir) / "applications";
+      std::error_code ec;
+      if (!fs::is_directory(appDir, ec)) {
+        continue;
+      }
+
+      addWatch(appDir);
+      for (fs::recursive_directory_iterator it(appDir, ec), end; it != end; it.increment(ec)) {
+        if (ec) {
+          ec.clear();
+          continue;
+        }
+        if (it->is_directory(ec) && !ec) {
+          addWatch(it->path());
+        }
+      }
+    }
+  }
+
+  void addWatch(const fs::path& path) {
+    const auto key = path.string();
+    if (!m_watchedPaths.insert(key).second) {
+      return;
+    }
+
+    constexpr std::uint32_t kMask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CLOSE_WRITE |
+                                    IN_DELETE_SELF | IN_MOVE_SELF | IN_ATTRIB;
+    const int wd = inotify_add_watch(m_inotifyFd, key.c_str(), kMask);
+    if (wd < 0) {
+      return;
+    }
+    m_watches[wd] = key;
+  }
+
+  std::vector<DesktopEntry> m_entries;
+  std::uint64_t m_version = 0;
+  int m_inotifyFd = -1;
+  bool m_dirty = true;
+  std::unordered_map<int, std::string> m_watches;
+  std::unordered_set<std::string> m_watchedPaths;
+};
+
+DesktopEntryCache& cache() {
+  static DesktopEntryCache instance;
+  return instance;
+}
+
 } // namespace
 
 std::vector<DesktopEntry> scanDesktopEntries() {
@@ -269,3 +418,11 @@ std::vector<DesktopEntry> scanDesktopEntries() {
 
   return entries;
 }
+
+const std::vector<DesktopEntry>& desktopEntries() { return cache().entries(); }
+
+std::uint64_t desktopEntriesVersion() { return cache().version(); }
+
+int desktopEntryWatchFd() noexcept { return cache().watchFd(); }
+
+void checkDesktopEntryReload() { cache().checkReload(); }

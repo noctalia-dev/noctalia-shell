@@ -167,9 +167,21 @@ void launchCommand(const std::string& exec, bool terminal, const std::string& ac
 
 AppProvider::AppProvider(WaylandConnection* wayland) : m_wayland(wayland) {}
 
-void AppProvider::initialize() { m_entries = scanDesktopEntries(); }
+void AppProvider::initialize() { refreshEntriesIfNeeded(); }
+
+void AppProvider::refreshEntriesIfNeeded() const {
+  const auto version = desktopEntriesVersion();
+  if (version == m_entriesVersion) {
+    return;
+  }
+
+  m_entries = desktopEntries();
+  m_entriesVersion = version;
+}
 
 std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
+  refreshEntriesIfNeeded();
+
   auto buildResult = [&](const DesktopEntry& entry, int s) {
     LauncherResult result;
     result.id = entry.path;
@@ -213,6 +225,8 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
 }
 
 bool AppProvider::activate(const LauncherResult& result) {
+  refreshEntriesIfNeeded();
+
   for (const auto& entry : m_entries) {
     if (entry.path == result.id) {
       std::string token;

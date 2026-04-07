@@ -117,6 +117,12 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
     return;
   }
 
+  const auto desktopVersion = desktopEntriesVersion();
+  const bool desktopEntriesChanged = desktopVersion != m_desktopEntriesVersion;
+  if (desktopEntriesChanged) {
+    buildDesktopIconIndex();
+  }
+
   const auto current = m_connection.activeToplevel();
 
   std::string identifier;
@@ -133,7 +139,7 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
     title = !appId.empty() ? appId : "Desktop";
   }
 
-  if (identifier == m_lastIdentifier && title == m_lastTitle && appId == m_lastAppId) {
+  if (!desktopEntriesChanged && identifier == m_lastIdentifier && title == m_lastTitle && appId == m_lastAppId) {
     return;
   }
 
@@ -203,7 +209,8 @@ std::string ActiveWindowWidget::resolveIconPath(const std::string& appId) {
 }
 
 void ActiveWindowWidget::buildDesktopIconIndex() {
-  const auto entries = scanDesktopEntries();
+  m_appIcons.clear();
+  const auto& entries = desktopEntries();
   for (const auto& entry : entries) {
     if (entry.id.empty() || entry.icon.empty()) {
       continue;
@@ -215,4 +222,5 @@ void ActiveWindowWidget::buildDesktopIconIndex() {
       m_appIcons.try_emplace(toLower(entry.id.substr(dot + 1)), entry.icon);
     }
   }
+  m_desktopEntriesVersion = desktopEntriesVersion();
 }
