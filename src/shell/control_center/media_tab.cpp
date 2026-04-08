@@ -32,6 +32,7 @@ const Logger kLog{"media_tab"};
 
 constexpr float kArtworkSize = Style::controlHeightLg * 6;
 constexpr float kMediaColumnMinWidth = Style::controlHeightLg * 9;
+constexpr float kVisualizerColumnMinWidth = Style::controlHeightLg * 8;
 constexpr float kMediaNowCardMinHeight = Style::controlHeightLg * 11 + Style::spaceSm * 2;
 constexpr float kMediaControlsHeight = Style::controlHeightLg + Style::spaceXs;
 constexpr float kMediaPlayPauseHeight = Style::controlHeightLg + Style::spaceSm;
@@ -187,10 +188,18 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   const float scale = contentScale();
 
   auto tab = std::make_unique<Flex>();
-  tab->setDirection(FlexDirection::Vertical);
+  tab->setDirection(FlexDirection::Horizontal);
   tab->setAlign(FlexAlign::Stretch);
   tab->setGap(Style::spaceMd * scale);
   m_rootLayout = tab.get();
+
+  auto mediaColumn = std::make_unique<Flex>();
+  mediaColumn->setDirection(FlexDirection::Vertical);
+  mediaColumn->setAlign(FlexAlign::Stretch);
+  mediaColumn->setGap(Style::spaceSm * scale);
+  mediaColumn->setFlexGrow(3.0f);
+  mediaColumn->setMinWidth(kMediaColumnMinWidth * scale);
+  m_mediaColumn = mediaColumn.get();
 
   auto nowCard = std::make_unique<Flex>();
   applyCard(*nowCard, scale);
@@ -386,7 +395,39 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   mediaStack->addChild(std::move(playerSelect));
 
   nowCard->addChild(std::move(mediaStack));
-  tab->addChild(std::move(nowCard));
+  mediaColumn->addChild(std::move(nowCard));
+
+  auto visualizerColumn = std::make_unique<Flex>();
+  visualizerColumn->setDirection(FlexDirection::Vertical);
+  visualizerColumn->setAlign(FlexAlign::Stretch);
+  visualizerColumn->setGap(Style::spaceSm * scale);
+  visualizerColumn->setFlexGrow(2.0f);
+  visualizerColumn->setMinWidth(kVisualizerColumnMinWidth * scale);
+  m_visualizerColumn = visualizerColumn.get();
+
+  auto visualizerCard = std::make_unique<Flex>();
+  applyCard(*visualizerCard, scale);
+  visualizerCard->setAlign(FlexAlign::Stretch);
+  visualizerCard->setJustify(FlexJustify::Center);
+  visualizerCard->setFlexGrow(1.0f);
+  m_visualizerCard = visualizerCard.get();
+
+  auto visualizerTitle = std::make_unique<Label>();
+  visualizerTitle->setText("Audio Visualizer");
+  visualizerTitle->setBold(true);
+  visualizerTitle->setFontSize(Style::fontSizeTitle * scale);
+  visualizerTitle->setColor(palette.onSurface);
+  visualizerCard->addChild(std::move(visualizerTitle));
+
+  auto visualizerBody = std::make_unique<Label>();
+  visualizerBody->setText("Reserved space for the future visualizer.");
+  visualizerBody->setFontSize(Style::fontSizeBody * scale);
+  visualizerBody->setColor(palette.onSurfaceVariant);
+  visualizerCard->addChild(std::move(visualizerBody));
+
+  visualizerColumn->addChild(std::move(visualizerCard));
+  tab->addChild(std::move(mediaColumn));
+  tab->addChild(std::move(visualizerColumn));
   return tab;
 }
 
@@ -477,9 +518,12 @@ void MediaTab::update(Renderer& renderer) { refresh(renderer); }
 
 void MediaTab::onClose() {
   m_rootLayout = nullptr;
+  m_mediaColumn = nullptr;
+  m_visualizerColumn = nullptr;
   m_artwork = nullptr;
   m_nowCard = nullptr;
   m_mediaStack = nullptr;
+  m_visualizerCard = nullptr;
   m_trackTitle = nullptr;
   m_trackArtist = nullptr;
   m_trackAlbum = nullptr;
