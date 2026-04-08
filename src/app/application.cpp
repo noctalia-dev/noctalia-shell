@@ -283,6 +283,13 @@ void Application::initUi() {
         m_audioOsd.onAudioStateChanged(*m_pipewireService);
       }
     });
+    m_pipewireService->setVolumePreviewCallback([this](bool isInput, std::uint32_t id, float volume, bool muted) {
+      if (isInput) {
+        m_audioOsd.showInput(id, volume, muted);
+      } else {
+        m_audioOsd.showOutput(id, volume, muted);
+      }
+    });
   }
 
   if (m_pipewireSpectrum != nullptr) {

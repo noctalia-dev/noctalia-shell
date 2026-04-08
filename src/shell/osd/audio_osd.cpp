@@ -59,6 +59,30 @@ void AudioOsd::suppressFor(std::chrono::milliseconds duration) {
   m_suppressUntil = std::chrono::steady_clock::now() + duration;
 }
 
+void AudioOsd::showOutput(std::uint32_t sinkId, float volume, bool muted) {
+  if (std::chrono::steady_clock::now() < m_suppressUntil) {
+    return;
+  }
+  if (m_overlay != nullptr) {
+    m_overlay->show(makeOutputContent(volume, muted));
+  }
+  m_lastSinkId = sinkId;
+  m_lastSinkPercent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
+  m_lastSinkMuted = muted;
+}
+
+void AudioOsd::showInput(std::uint32_t sourceId, float volume, bool muted) {
+  if (std::chrono::steady_clock::now() < m_suppressUntil) {
+    return;
+  }
+  if (m_overlay != nullptr) {
+    m_overlay->show(makeInputContent(volume, muted));
+  }
+  m_lastSourceId = sourceId;
+  m_lastSourcePercent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
+  m_lastSourceMuted = muted;
+}
+
 void AudioOsd::onAudioStateChanged(const PipeWireService& service) {
   const auto* sink = service.defaultSink();
   const auto* source = service.defaultSource();

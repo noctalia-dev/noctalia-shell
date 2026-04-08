@@ -27,7 +27,7 @@ constexpr float kDevicesColumnGrow = 3.0f;
 constexpr float kVolumeColumnGrow = 2.0f;
 constexpr float kColumnMinWidth = Style::controlHeightLg * 8;
 constexpr float kValueLabelWidth = Style::controlHeightLg + Style::spaceLg;
-constexpr auto kVolumeDebounceInterval = std::chrono::milliseconds(75);
+constexpr auto kVolumeDebounceInterval = std::chrono::milliseconds(35);
 
 class AudioDeviceRow : public Flex {
 public:
@@ -309,6 +309,7 @@ std::unique_ptr<Flex> AudioTab::build(Renderer& /*renderer*/) {
       return;
     }
     queueSinkVolume(value / 100.0f);
+    flushPendingVolumes();
     if (m_outputValue != nullptr) {
       m_outputValue->setText(std::to_string(static_cast<int>(std::round(value))) + "%");
     }
@@ -359,6 +360,7 @@ std::unique_ptr<Flex> AudioTab::build(Renderer& /*renderer*/) {
       return;
     }
     queueSourceVolume(value / 100.0f);
+    flushPendingVolumes();
     if (m_inputValue != nullptr) {
       m_inputValue->setText(std::to_string(static_cast<int>(std::round(value))) + "%");
     }
@@ -433,10 +435,13 @@ void AudioTab::update(Renderer& renderer) {
 
   const float sinkVolume = sink != nullptr ? sink->volume * 100.0f : 0.0f;
   const float sourceVolume = source != nullptr ? source->volume * 100.0f : 0.0f;
+  const bool showPendingSink = state != nullptr && m_pendingSinkVolume >= 0.0f && m_pendingSinkId == state->defaultSinkId;
+  const bool showPendingSource =
+      state != nullptr && m_pendingSourceVolume >= 0.0f && m_pendingSourceId == state->defaultSourceId;
   const float displayedSinkVolume =
-      std::clamp(m_pendingSinkVolume >= 0.0f ? m_pendingSinkVolume * 100.0f : sinkVolume, 0.0f, sliderMax);
+      std::clamp(showPendingSink ? m_pendingSinkVolume * 100.0f : sinkVolume, 0.0f, sliderMax);
   const float displayedSourceVolume =
-      std::clamp(m_pendingSourceVolume >= 0.0f ? m_pendingSourceVolume * 100.0f : sourceVolume, 0.0f, sliderMax);
+      std::clamp(showPendingSource ? m_pendingSourceVolume * 100.0f : sourceVolume, 0.0f, sliderMax);
 
   if (m_outputSlider != nullptr) {
     m_outputSlider->setEnabled(sink != nullptr);
@@ -487,6 +492,8 @@ void AudioTab::onClose() {
   m_lastOutputWidth = -1.0f;
   m_lastInputWidth = -1.0f;
   m_lastChangeSerial = 0;
+  m_pendingSinkId = 0;
+  m_pendingSourceId = 0;
   m_lastSinkVolume = -1.0f;
   m_lastSourceVolume = -1.0f;
   m_pendingSinkVolume = -1.0f;
@@ -574,15 +581,19 @@ float AudioTab::sliderMaxPercent() const {
 }
 
 void AudioTab::queueSinkVolume(float value) {
+  m_pendingSinkId = m_audio != nullptr ? m_audio->state().defaultSinkId : 0;
   m_pendingSinkVolume = std::clamp(value, 0.0f, sliderMaxPercent() / 100.0f);
 }
 
 void AudioTab::queueSourceVolume(float value) {
+  m_pendingSourceId = m_audio != nullptr ? m_audio->state().defaultSourceId : 0;
   m_pendingSourceVolume = std::clamp(value, 0.0f, sliderMaxPercent() / 100.0f);
 }
 
 void AudioTab::flushPendingVolumes(bool force) {
   if (m_audio == nullptr) {
+    m_pendingSinkId = 0;
+    m_pendingSourceId = 0;
     m_pendingSinkVolume = -1.0f;
     m_pendingSourceVolume = -1.0f;
     return;
@@ -603,13 +614,15 @@ void AudioTab::flushPendingVolumes(bool force) {
   if (m_pendingSinkVolume >= 0.0f) {
     const bool debounceReady = now - m_lastSinkSendAt >= kVolumeDebounceInterval;
     if (force || !outputDragging || debounceReady) {
-      const std::uint32_t sinkId = m_audio->state().defaultSinkId;
+      const std::uint32_t sinkId = m_pendingSinkId;
       if (sinkId != 0 && (force || std::abs(m_pendingSinkVolume - m_lastSentSinkVolume) >= 0.0001f)) {
         m_audio->setSinkVolume(sinkId, m_pendingSinkVolume);
+        m_audio->emitVolumePreview(false, sinkId, m_pendingSinkVolume);
         m_lastSentSinkVolume = m_pendingSinkVolume;
         m_lastSinkSendAt = now;
       }
       if (force || !outputDragging) {
+        m_pendingSinkId = 0;
         m_pendingSinkVolume = -1.0f;
       }
     }
@@ -618,13 +631,15 @@ void AudioTab::flushPendingVolumes(bool force) {
   if (m_pendingSourceVolume >= 0.0f) {
     const bool debounceReady = now - m_lastSourceSendAt >= kVolumeDebounceInterval;
     if (force || !inputDragging || debounceReady) {
-      const std::uint32_t sourceId = m_audio->state().defaultSourceId;
+      const std::uint32_t sourceId = m_pendingSourceId;
       if (sourceId != 0 && (force || std::abs(m_pendingSourceVolume - m_lastSentSourceVolume) >= 0.0001f)) {
         m_audio->setSourceVolume(sourceId, m_pendingSourceVolume);
+        m_audio->emitVolumePreview(true, sourceId, m_pendingSourceVolume);
         m_lastSentSourceVolume = m_pendingSourceVolume;
         m_lastSourceSendAt = now;
       }
       if (force || !inputDragging) {
+        m_pendingSourceId = 0;
         m_pendingSourceVolume = -1.0f;
       }
     }
