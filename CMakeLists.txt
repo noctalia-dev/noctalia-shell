@@ -361,7 +361,6 @@ add_executable(noctalia
     src/shell/panel/panel_manager.cpp
     src/shell/panels/audio_devices_panel.cpp
     src/shell/panels/clipboard_panel.cpp
-    src/shell/panels/notification_history_panel.cpp
     src/shell/panels/test_panel.cpp
     src/shell/tray/tray_menu.cpp
     src/shell/wallpaper/wallpaper.cpp
