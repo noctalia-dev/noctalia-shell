@@ -58,6 +58,8 @@ private:
   Image* m_previewImage = nullptr;
 
   std::size_t m_selectedIndex = 0;
+  std::size_t m_hoverIndex = static_cast<std::size_t>(-1);
+  bool m_mouseActive = false;
   std::uint64_t m_lastChangeSerial = 0;
   float m_lastWidth = 0.0f;
   float m_lastHeight = 0.0f;

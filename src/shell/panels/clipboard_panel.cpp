@@ -335,6 +335,8 @@ void ClipboardPanel::update(Renderer& renderer) {
 
 void ClipboardPanel::onOpen(std::string_view /*context*/) {
   m_selectedIndex = 0;
+  m_hoverIndex = static_cast<std::size_t>(-1);
+  m_mouseActive = false;
   m_lastListWidth = -1.0f;
   m_lastPreviewWidth = -1.0f;
   m_lastPreviewHeight = -1.0f;
@@ -387,6 +389,20 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
   const float textWidth = std::max(0.0f, width - kListGlyphSize - Style::spaceMd - Style::spaceSm * 2.0f);
   for (std::size_t i = 0; i < history.size(); ++i) {
     const auto& entry = history[i];
+    auto row = std::make_unique<Flex>();
+    row->setDirection(FlexDirection::Horizontal);
+    row->setAlign(FlexAlign::Center);
+    row->setGap(Style::spaceMd);
+    row->setPadding(Style::spaceXs, Style::spaceSm,
+                    Style::spaceXs, Style::spaceSm);
+    row->setMinWidth(width);
+    row->setMinHeight(kRowHeight);
+    row->setRadius(Style::radiusMd);
+    if (i == m_selectedIndex) {
+      row->setBackground(palette.surfaceVariant);
+    }
+
+    auto* rowPtr = row.get();
     auto area = std::make_unique<InputArea>();
     area->setPropagateEvents(true);
     area->setOnClick([this, idx = i](const InputArea::PointerData& /*data*/) {
@@ -396,19 +412,34 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
       }
       selectIndex(idx);
     });
-
-    auto row = std::make_unique<Flex>();
-    row->setDirection(FlexDirection::Horizontal);
-    row->setAlign(FlexAlign::Center);
-    row->setGap(Style::spaceMd);
-    row->setPadding(Style::spaceXs, Style::spaceSm,
-                    Style::spaceXs, Style::spaceSm);
-    row->setMinWidth(width);
-    row->setMinHeight(kRowHeight);
-    if (i == m_selectedIndex) {
-      row->setBackground(palette.surfaceVariant);
-      row->setRadius(Style::radiusMd);
-    }
+    area->setOnMotion([this, idx = i, rowPtr](const InputArea::PointerData& /*data*/) {
+      if (!m_mouseActive) {
+        m_mouseActive = true;
+        if (idx != m_selectedIndex && m_hoverIndex != idx) {
+          m_hoverIndex = idx;
+          rowPtr->setBackground(
+              rgba(palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.45f));
+          PanelManager::instance().refresh();
+        }
+      }
+    });
+    area->setOnEnter([this, idx = i, rowPtr](const InputArea::PointerData& /*data*/) {
+      if (!m_mouseActive || idx == m_selectedIndex) {
+        return;
+      }
+      m_hoverIndex = idx;
+      rowPtr->setBackground(
+          rgba(palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.45f));
+      PanelManager::instance().refresh();
+    });
+    area->setOnLeave([this, idx = i, rowPtr]() {
+      if (m_hoverIndex != idx || idx == m_selectedIndex) {
+        return;
+      }
+      m_hoverIndex = static_cast<std::size_t>(-1);
+      rowPtr->setBackground(rgba(0, 0, 0, 0));
+      PanelManager::instance().refresh();
+    });
 
     auto glyph = std::make_unique<Glyph>();
     glyph->setGlyph(entry.isImage() ? "photo" : "file-text");
