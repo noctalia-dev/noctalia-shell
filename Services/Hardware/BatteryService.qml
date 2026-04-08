@@ -336,7 +336,7 @@ Singleton {
                        });
     var icon = level === "critical" ? "battery-exclamation" : "battery-charging-2";
 
-    if (device == _bluetoothBattery && name) {
+    if (isBluetoothDevice(device) && name) {
       title = title + " " + name;
     }
 
