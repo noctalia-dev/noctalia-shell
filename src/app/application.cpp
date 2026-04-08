@@ -11,10 +11,6 @@
 #include "shell/panels/test_panel.h"
 #include "system/distro_info.h"
 
-#ifndef NOCTALIA_VERSION
-#define NOCTALIA_VERSION "unknown"
-#endif
-
 #include <chrono>
 #include <cmath>
 #include <csignal>
@@ -46,7 +42,7 @@ Application::Application() : m_weatherService(m_configService, m_httpClient) {
     kLog.debug("notification {} id={} origin={}", kind, n.id, origin);
 
     // Keep bar widgets in sync with notification state changes.
-    m_bar.onWorkspaceChange();
+    m_bar.refresh();
     m_panelManager.refresh();
   });
 }
@@ -111,8 +107,8 @@ void Application::initServices() {
       m_panelManager.refresh();
     }
   });
-  m_wayland.setWorkspaceChangeCallback([this]() { m_bar.onWorkspaceChange(); });
-  m_wayland.setToplevelChangeCallback([this]() { m_bar.onWorkspaceChange(); });
+  m_wayland.setWorkspaceChangeCallback([this]() { m_bar.refresh(); });
+  m_wayland.setToplevelChangeCallback([this]() { m_bar.refresh(); });
 
   m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
 
@@ -146,8 +142,7 @@ void Application::initServices() {
   if (m_systemBus != nullptr) {
     try {
       m_powerProfilesService = std::make_unique<PowerProfilesService>(*m_systemBus);
-      m_powerProfilesService->setChangeCallback(
-          [this](const PowerProfilesState& /*state*/) { m_bar.onWorkspaceChange(); });
+      m_powerProfilesService->setChangeCallback([this](const PowerProfilesState& /*state*/) { m_bar.refresh(); });
       if (!m_powerProfilesService->activeProfile().empty()) {
         kLog.info("power profiles active profile: {}", m_powerProfilesService->activeProfile());
       } else {
@@ -160,7 +155,7 @@ void Application::initServices() {
 
     try {
       m_upowerService = std::make_unique<UPowerService>(*m_systemBus);
-      m_upowerService->setChangeCallback([this]() { m_bar.onWorkspaceChange(); });
+      m_upowerService->setChangeCallback([this]() { m_bar.refresh(); });
     } catch (const std::exception& e) {
       kLog.warn("upower disabled: {}", e.what());
       m_upowerService.reset();
@@ -194,7 +189,7 @@ void Application::initServices() {
     try {
       m_mprisService = std::make_unique<MprisService>(*m_bus);
       m_mprisService->setChangeCallback([this]() {
-        m_bar.onWorkspaceChange();
+        m_bar.refresh();
         m_panelManager.refresh();
       });
       kLog.info("mpris discovery active");
@@ -217,7 +212,7 @@ void Application::initServices() {
     try {
       m_trayService = std::make_unique<TrayService>(*m_bus);
       m_trayService->setChangeCallback([this]() {
-        m_bar.onWorkspaceChange();
+        m_bar.refresh();
         m_trayMenu.onTrayChanged();
       });
       m_trayService->setMenuToggleCallback([this](const std::string& itemId) { m_trayMenu.toggleForItem(itemId); });
@@ -229,7 +224,7 @@ void Application::initServices() {
 
   m_weatherService.initialize();
   m_weatherService.addChangeCallback([this]() {
-    m_bar.onWorkspaceChange();
+    m_bar.refresh();
     m_panelManager.refresh();
   });
 }
@@ -270,7 +265,7 @@ void Application::initUi() {
   if (m_pipewireService != nullptr) {
     m_audioOsd.suppressFor(std::chrono::milliseconds(2000));
     m_pipewireService->setChangeCallback([this]() {
-      m_bar.onWorkspaceChange();
+      m_bar.refresh();
       m_panelManager.refresh();
       if (m_pipewireService != nullptr) {
         m_audioOsd.onAudioStateChanged(*m_pipewireService);

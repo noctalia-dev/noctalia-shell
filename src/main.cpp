@@ -6,10 +6,6 @@
 #include <stdexcept>
 #include <string>
 
-#ifndef NOCTALIA_VERSION
-#define NOCTALIA_VERSION "unknown"
-#endif
-
 int main(int argc, char* argv[]) {
   if (argc >= 2 && std::strcmp(argv[1], "msg") == 0) {
     // noctalia msg <command> [args...]

@@ -109,7 +109,7 @@ void Bar::closeAllInstances() {
 
 void Bar::onOutputChange() { syncInstances(); }
 
-void Bar::onWorkspaceChange() {
+void Bar::refresh() {
   for (auto& inst : m_instances) {
     if (inst->surface == nullptr || m_renderContext == nullptr) {
       continue;

@@ -36,7 +36,7 @@ public:
   void hide();
   [[nodiscard]] bool isVisible() const noexcept { return !m_forceHidden; }
   void onOutputChange();
-  void onWorkspaceChange();
+  void refresh();
   bool onPointerEvent(const PointerEvent& event);
   [[nodiscard]] bool isRunning() const noexcept;
 
