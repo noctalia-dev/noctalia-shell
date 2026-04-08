@@ -12,6 +12,7 @@
 #include "shell/widgets/launcher_widget.h"
 #include "shell/widgets/media_mini_widget.h"
 #include "shell/widgets/notification_widget.h"
+#include "shell/widgets/session_widget.h"
 #include "shell/widgets/spacer_widget.h"
 #include "shell/widgets/sysmon_widget.h"
 #include "shell/widgets/test_widget.h"
@@ -79,6 +80,17 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       scale = wlOutput->scale;
     }
     auto widget = std::make_unique<NotificationWidget>(m_notifications, output, scale);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "session") {
+    std::int32_t scale = 1;
+    const auto* wlOutput = m_wayland.findOutputByWl(output);
+    if (wlOutput != nullptr) {
+      scale = wlOutput->scale;
+    }
+    auto widget = std::make_unique<SessionWidget>(output, scale);
     widget->setContentScale(contentScale);
     return widget;
   }
