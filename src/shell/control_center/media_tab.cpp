@@ -7,6 +7,7 @@
 #include "render/core/renderer.h"
 #include "shell/control_center/tab.h"
 #include "shell/panel/panel_manager.h"
+#include "ui/controls/audio_spectrum.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/image.h"
@@ -34,6 +35,7 @@ const Logger kLog{"media_tab"};
 constexpr float kArtworkSize = Style::controlHeightLg * 6;
 constexpr float kMediaColumnMinWidth = Style::controlHeightLg * 9;
 constexpr float kVisualizerColumnMinWidth = Style::controlHeightLg * 8;
+constexpr float kVisualizerMinHeight = Style::controlHeightLg * 6;
 constexpr float kMediaNowCardMinHeight = Style::controlHeightLg * 11 + Style::spaceSm * 2;
 constexpr float kMediaControlsHeight = Style::controlHeightLg + Style::spaceXs;
 constexpr float kMediaPlayPauseHeight = Style::controlHeightLg + Style::spaceSm;
@@ -184,7 +186,11 @@ ButtonVariant toggleVariant(bool active) { return active ? ButtonVariant::Accent
 } // namespace
 
 MediaTab::MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum)
-    : m_mpris(mpris), m_httpClient(httpClient), m_spectrum(spectrum) {}
+    : m_mpris(mpris), m_httpClient(httpClient), m_spectrum(spectrum) {
+  if (m_spectrum != nullptr) {
+    m_spectrum->setBandCount(32);
+  }
+}
 
 std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   const float scale = contentScale();
@@ -410,21 +416,31 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto visualizerCard = std::make_unique<Flex>();
   applyCard(*visualizerCard, scale);
   visualizerCard->setAlign(FlexAlign::Stretch);
-  visualizerCard->setJustify(FlexJustify::Center);
+  visualizerCard->setJustify(FlexJustify::Start);
+  visualizerCard->setGap(Style::spaceMd * scale);
   visualizerCard->setFlexGrow(1.0f);
   m_visualizerCard = visualizerCard.get();
 
-  auto visualizerTitle = std::make_unique<Label>();
-  visualizerTitle->setText("Audio Visualizer");
-  visualizerTitle->setBold(true);
-  visualizerTitle->setFontSize(Style::fontSizeTitle * scale);
-  visualizerTitle->setColor(palette.onSurface);
-  visualizerCard->addChild(std::move(visualizerTitle));
+  auto visualizerBody = std::make_unique<Flex>();
+  visualizerBody->setDirection(FlexDirection::Vertical);
+  visualizerBody->setAlign(FlexAlign::Stretch);
+  visualizerBody->setFlexGrow(1.0f);
+  visualizerBody->setMinHeight(kVisualizerMinHeight * scale);
+  visualizerBody->setPadding(Style::spaceSm * scale);
+  visualizerBody->setBackground(palette.surfaceVariant);
+  visualizerBody->setRadius(Style::radiusLg * scale);
+  visualizerBody->setBorderWidth(0.0f);
+  visualizerBody->setSoftness(1.0f);
+  visualizerBody->setClipChildren(true);
+  m_visualizerBody = visualizerBody.get();
 
-  auto visualizerBody = std::make_unique<Label>();
-  visualizerBody->setText("Reserved space for the future visualizer.");
-  visualizerBody->setFontSize(Style::fontSizeBody * scale);
-  visualizerBody->setColor(palette.onSurfaceVariant);
+  auto visualizerSpectrum = std::make_unique<AudioSpectrum>();
+  visualizerSpectrum->setGradient(palette.secondary, palette.tertiary);
+  visualizerSpectrum->setSpacingRatio(0.5f);
+  visualizerSpectrum->setRotation(-std::numbers::pi_v<float> * 0.5f);
+  m_visualizerSpectrum = visualizerSpectrum.get();
+  visualizerBody->addChild(std::move(visualizerSpectrum));
+
   visualizerCard->addChild(std::move(visualizerBody));
 
   visualizerColumn->addChild(std::move(visualizerCard));
@@ -512,6 +528,15 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
   if (m_progressSlider != nullptr) {
     m_progressSlider->setSize(mediaWidth, 0.0f);
   }
+  if (m_visualizerBody != nullptr && m_visualizerSpectrum != nullptr) {
+    const float innerWidth =
+        std::max(0.0f, m_visualizerBody->width() - (m_visualizerBody->paddingLeft() + m_visualizerBody->paddingRight()));
+    const float innerHeight =
+        std::max(0.0f, m_visualizerBody->height() - (m_visualizerBody->paddingTop() + m_visualizerBody->paddingBottom()));
+    m_visualizerSpectrum->setPosition((innerWidth - innerHeight) * 0.5f, (innerHeight - innerWidth) * 0.5f);
+    m_visualizerSpectrum->setSize(innerHeight, innerWidth);
+    m_visualizerSpectrum->layout(renderer);
+  }
 
   m_rootLayout->layout(renderer);
 }
@@ -519,6 +544,9 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
 void MediaTab::update(Renderer& renderer) {
   if (!m_active) {
     return;
+  }
+  if (m_visualizerSpectrum != nullptr && m_spectrum != nullptr) {
+    m_visualizerSpectrum->setValues(m_spectrum->values());
   }
   refresh(renderer);
 }
@@ -538,6 +566,8 @@ void MediaTab::onClose() {
   m_rootLayout = nullptr;
   m_mediaColumn = nullptr;
   m_visualizerColumn = nullptr;
+  m_visualizerBody = nullptr;
+  m_visualizerSpectrum = nullptr;
   m_artwork = nullptr;
   m_nowCard = nullptr;
   m_mediaStack = nullptr;

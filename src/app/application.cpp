@@ -48,6 +48,8 @@ Application::Application() : m_weatherService(m_configService, m_httpClient) {
 }
 
 Application::~Application() {
+  m_wayland.setClipboardService(nullptr);
+
   if (m_systemBus != nullptr) {
     m_systemBus->processPendingEvents();
     m_upowerService.reset();

@@ -16,6 +16,7 @@ class MprisService;
 class PipeWireSpectrum;
 class Select;
 class Slider;
+class AudioSpectrum;
 
 class MediaTab : public Tab {
 public:
@@ -39,6 +40,8 @@ private:
   Flex* m_rootLayout = nullptr;
   Flex* m_mediaColumn = nullptr;
   Flex* m_visualizerColumn = nullptr;
+  Flex* m_visualizerBody = nullptr;
+  AudioSpectrum* m_visualizerSpectrum = nullptr;
   Image* m_artwork = nullptr;
   Flex* m_nowCard = nullptr;
   Flex* m_mediaStack = nullptr;
