@@ -33,9 +33,6 @@ namespace {
 const Logger kLog{"media_tab"};
 
 constexpr float kArtworkSize = Style::controlHeightLg * 6;
-constexpr float kMediaColumnMinWidth = Style::controlHeightLg * 9;
-constexpr float kVisualizerColumnMinWidth = Style::controlHeightLg * 8;
-constexpr float kVisualizerMinHeight = Style::controlHeightLg * 6;
 constexpr float kMediaNowCardMinHeight = Style::controlHeightLg * 11 + Style::spaceSm * 2;
 constexpr float kMediaControlsHeight = Style::controlHeightLg + Style::spaceXs;
 constexpr float kMediaPlayPauseHeight = Style::controlHeightLg + Style::spaceSm;
@@ -206,7 +203,6 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   mediaColumn->setAlign(FlexAlign::Stretch);
   mediaColumn->setGap(Style::spaceSm * scale);
   mediaColumn->setFlexGrow(3.0f);
-  mediaColumn->setMinWidth(kMediaColumnMinWidth * scale);
   m_mediaColumn = mediaColumn.get();
 
   auto nowCard = std::make_unique<Flex>();
@@ -215,7 +211,6 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   nowCard->setGap(Style::spaceMd * scale);
   nowCard->setFlexGrow(1.0f);
   nowCard->setMinHeight(kMediaNowCardMinHeight * scale);
-  nowCard->setMinWidth(kMediaColumnMinWidth * scale);
   m_nowCard = nowCard.get();
 
   auto mediaStack = std::make_unique<Flex>();
@@ -408,42 +403,25 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto visualizerColumn = std::make_unique<Flex>();
   visualizerColumn->setDirection(FlexDirection::Vertical);
   visualizerColumn->setAlign(FlexAlign::Stretch);
-  visualizerColumn->setGap(Style::spaceSm * scale);
+  visualizerColumn->setGap(0.0f);
   visualizerColumn->setFlexGrow(2.0f);
-  visualizerColumn->setMinWidth(kVisualizerColumnMinWidth * scale);
+  visualizerColumn->setPadding(Style::spaceSm * scale);
+  visualizerColumn->setBackground(palette.surfaceVariant);
+  visualizerColumn->setRadius(Style::radiusLg * scale);
+  visualizerColumn->setBorderWidth(0.0f);
+  visualizerColumn->setSoftness(1.0f);
+  visualizerColumn->setClipChildren(true);
   m_visualizerColumn = visualizerColumn.get();
-
-  auto visualizerCard = std::make_unique<Flex>();
-  applyCard(*visualizerCard, scale);
-  visualizerCard->setAlign(FlexAlign::Stretch);
-  visualizerCard->setJustify(FlexJustify::Start);
-  visualizerCard->setGap(Style::spaceMd * scale);
-  visualizerCard->setFlexGrow(1.0f);
-  m_visualizerCard = visualizerCard.get();
-
-  auto visualizerBody = std::make_unique<Flex>();
-  visualizerBody->setDirection(FlexDirection::Vertical);
-  visualizerBody->setAlign(FlexAlign::Stretch);
-  visualizerBody->setFlexGrow(1.0f);
-  visualizerBody->setMinHeight(kVisualizerMinHeight * scale);
-  visualizerBody->setPadding(Style::spaceSm * scale);
-  visualizerBody->setBackground(palette.surfaceVariant);
-  visualizerBody->setRadius(Style::radiusLg * scale);
-  visualizerBody->setBorderWidth(0.0f);
-  visualizerBody->setSoftness(1.0f);
-  visualizerBody->setClipChildren(true);
-  m_visualizerBody = visualizerBody.get();
 
   auto visualizerSpectrum = std::make_unique<AudioSpectrum>();
   visualizerSpectrum->setGradient(palette.secondary, palette.tertiary);
   visualizerSpectrum->setSpacingRatio(0.5f);
-  visualizerSpectrum->setRotation(-std::numbers::pi_v<float> * 0.5f);
+  visualizerSpectrum->setOrientation(AudioSpectrumOrientation::Vertical);
+  visualizerSpectrum->setMirrored(true);
+  visualizerSpectrum->setCentered(true);
+  visualizerSpectrum->setFlexGrow(1.0f);
   m_visualizerSpectrum = visualizerSpectrum.get();
-  visualizerBody->addChild(std::move(visualizerSpectrum));
-
-  visualizerCard->addChild(std::move(visualizerBody));
-
-  visualizerColumn->addChild(std::move(visualizerCard));
+  visualizerColumn->addChild(std::move(visualizerSpectrum));
   tab->addChild(std::move(mediaColumn));
   tab->addChild(std::move(visualizerColumn));
   return tab;
@@ -460,7 +438,7 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
 
   const float cardInnerWidth =
       std::max(0.0f, m_nowCard->width() - (m_nowCard->paddingLeft() + m_nowCard->paddingRight()));
-  const float mediaWidth = std::clamp(cardInnerWidth, kMediaColumnMinWidth * scale, Style::controlHeightLg * 11.0f * scale);
+  const float mediaWidth = std::clamp(cardInnerWidth, 1.0f, Style::controlHeightLg * 11.0f * scale);
   m_mediaStack->setSize(mediaWidth, 0.0f);
 
   if (m_playerSelect != nullptr) {
@@ -528,13 +506,13 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
   if (m_progressSlider != nullptr) {
     m_progressSlider->setSize(mediaWidth, 0.0f);
   }
-  if (m_visualizerBody != nullptr && m_visualizerSpectrum != nullptr) {
+  if (m_visualizerColumn != nullptr && m_visualizerSpectrum != nullptr) {
     const float innerWidth =
-        std::max(0.0f, m_visualizerBody->width() - (m_visualizerBody->paddingLeft() + m_visualizerBody->paddingRight()));
+        std::max(0.0f, m_visualizerColumn->width() - (m_visualizerColumn->paddingLeft() + m_visualizerColumn->paddingRight()));
     const float innerHeight =
-        std::max(0.0f, m_visualizerBody->height() - (m_visualizerBody->paddingTop() + m_visualizerBody->paddingBottom()));
-    m_visualizerSpectrum->setPosition((innerWidth - innerHeight) * 0.5f, (innerHeight - innerWidth) * 0.5f);
-    m_visualizerSpectrum->setSize(innerHeight, innerWidth);
+        std::max(0.0f, m_visualizerColumn->height() - (m_visualizerColumn->paddingTop() + m_visualizerColumn->paddingBottom()));
+    m_visualizerSpectrum->setPosition(0.0f, 0.0f);
+    m_visualizerSpectrum->setSize(innerWidth, innerHeight);
     m_visualizerSpectrum->layout(renderer);
   }
 
@@ -566,12 +544,10 @@ void MediaTab::onClose() {
   m_rootLayout = nullptr;
   m_mediaColumn = nullptr;
   m_visualizerColumn = nullptr;
-  m_visualizerBody = nullptr;
   m_visualizerSpectrum = nullptr;
   m_artwork = nullptr;
   m_nowCard = nullptr;
   m_mediaStack = nullptr;
-  m_visualizerCard = nullptr;
   m_trackTitle = nullptr;
   m_trackArtist = nullptr;
   m_trackAlbum = nullptr;

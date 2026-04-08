@@ -40,12 +40,10 @@ private:
   Flex* m_rootLayout = nullptr;
   Flex* m_mediaColumn = nullptr;
   Flex* m_visualizerColumn = nullptr;
-  Flex* m_visualizerBody = nullptr;
   AudioSpectrum* m_visualizerSpectrum = nullptr;
   Image* m_artwork = nullptr;
   Flex* m_nowCard = nullptr;
   Flex* m_mediaStack = nullptr;
-  Flex* m_visualizerCard = nullptr;
   Label* m_trackTitle = nullptr;
   Label* m_trackArtist = nullptr;
   Label* m_trackAlbum = nullptr;
