@@ -42,7 +42,6 @@ public:
   void setEnabled(bool enabled);
   void setContentAlign(ButtonContentAlign align);
   void setVariant(ButtonVariant variant);
-  void setMinimalChrome(bool minimalChrome);
   void setOnClick(std::function<void()> callback);
   void setCursorShape(std::uint32_t shape);
   void layout(Renderer& renderer) override;
@@ -86,6 +85,5 @@ private:
   Color m_targetBorder{};
   Color m_targetLabel{};
   ButtonContentAlign m_contentAlign = ButtonContentAlign::Center;
-  bool m_minimalChrome = false;
   bool m_enabled = true;
 };

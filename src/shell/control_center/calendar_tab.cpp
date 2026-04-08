@@ -71,7 +71,6 @@ std::unique_ptr<Flex> CalendarTab::build(Renderer& /*renderer*/) {
   auto previous = std::make_unique<Button>();
   previous->setGlyph("chevron-left");
   previous->setVariant(ButtonVariant::Ghost);
-  previous->setMinimalChrome(true);
   previous->setMinWidth(kCalendarNavButtonSize * scale);
   previous->setMinHeight(kCalendarNavButtonSize * scale);
   previous->setOnClick([this]() {
@@ -98,7 +97,6 @@ std::unique_ptr<Flex> CalendarTab::build(Renderer& /*renderer*/) {
   auto next = std::make_unique<Button>();
   next->setGlyph("chevron-right");
   next->setVariant(ButtonVariant::Ghost);
-  next->setMinimalChrome(true);
   next->setMinWidth(kCalendarNavButtonSize * scale);
   next->setMinHeight(kCalendarNavButtonSize * scale);
   next->setOnClick([this]() {
@@ -211,7 +209,6 @@ void CalendarTab::rebuild() {
     auto dayLabel = std::make_unique<Button>();
     dayLabel->setText(kWeekdays[i]);
     dayLabel->setVariant(ButtonVariant::Tab);
-    dayLabel->setMinimalChrome(true);
     dayLabel->setFontSize((Style::fontSizeCaption + 1.0f) * scale);
     dayLabel->setContentAlign(ButtonContentAlign::Center);
     dayLabel->setFlexGrow(1.0f);
@@ -239,7 +236,6 @@ void CalendarTab::rebuild() {
     for (int wd = 0; wd < 7; ++wd) {
       auto cell = std::make_unique<Button>();
       cell->setVariant(ButtonVariant::Default);
-      cell->setMinimalChrome(false);
       cell->setContentAlign(ButtonContentAlign::Center);
       cell->setFlexGrow(1.0f);
       cell->setMinHeight(dayCellHeight);

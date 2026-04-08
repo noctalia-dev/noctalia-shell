@@ -308,7 +308,6 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto repeat = std::make_unique<Button>();
   repeat->setGlyph("repeat");
   repeat->setVariant(ButtonVariant::Ghost);
-  repeat->setMinimalChrome(true);
   repeat->setMinWidth(kMediaControlsHeight * scale);
   repeat->setMinHeight(kMediaControlsHeight * scale);
   repeat->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
@@ -328,7 +327,6 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto previous = std::make_unique<Button>();
   previous->setGlyph("media-prev");
   previous->setVariant(ButtonVariant::Ghost);
-  previous->setMinimalChrome(true);
   previous->setMinWidth(kMediaControlsHeight * scale);
   previous->setMinHeight(kMediaControlsHeight * scale);
   previous->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
@@ -345,7 +343,6 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto playPause = std::make_unique<Button>();
   playPause->setGlyph("media-play");
   playPause->setVariant(ButtonVariant::Accent);
-  playPause->setMinimalChrome(true);
   playPause->setMinWidth(kMediaPlayPauseHeight * scale);
   playPause->setMinHeight(kMediaPlayPauseHeight * scale);
   playPause->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
@@ -362,7 +359,6 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto next = std::make_unique<Button>();
   next->setGlyph("media-next");
   next->setVariant(ButtonVariant::Ghost);
-  next->setMinimalChrome(true);
   next->setMinWidth(kMediaControlsHeight * scale);
   next->setMinHeight(kMediaControlsHeight * scale);
   next->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
@@ -379,7 +375,6 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto shuffle = std::make_unique<Button>();
   shuffle->setGlyph("shuffle");
   shuffle->setVariant(ButtonVariant::Ghost);
-  shuffle->setMinimalChrome(true);
   shuffle->setMinWidth(kMediaControlsHeight * scale);
   shuffle->setMinHeight(kMediaControlsHeight * scale);
   shuffle->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);

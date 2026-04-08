@@ -50,7 +50,6 @@ void ControlCenterPanel::create(Renderer& renderer) {
     button->label()->setFontSize(Style::fontSizeBody * scale);
     button->setVariant(ButtonVariant::Tab);
     button->setContentAlign(ButtonContentAlign::Start);
-    button->setMinimalChrome(true);
     button->setMinHeight(Style::controlHeightLg * scale);
     button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
     button->setRadius(Style::radiusLg * scale);
@@ -173,7 +172,6 @@ void ControlCenterPanel::selectTab(TabId tab) {
     }
     if (m_tabButtons[idx] != nullptr) {
       m_tabButtons[idx]->setVariant(meta.id == tab ? ButtonVariant::TabActive : ButtonVariant::Tab);
-      m_tabButtons[idx]->setMinimalChrome(true);
     }
     if (meta.id == tab && m_contentTitle != nullptr) {
       m_contentTitle->setText(meta.title);

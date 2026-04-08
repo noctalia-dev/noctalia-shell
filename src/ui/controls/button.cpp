@@ -107,21 +107,13 @@ void Button::setVariant(ButtonVariant variant) {
   applyVariant();
 }
 
-void Button::setMinimalChrome(bool minimalChrome) {
-  if (m_minimalChrome == minimalChrome) {
-    return;
-  }
-  m_minimalChrome = minimalChrome;
-  applyVariant();
-}
-
 void Button::applyVariant() {
   setPadding(Style::spaceSm, Style::spaceMd);
   setRadius(Style::radiusMd);
-  setBorderWidth(m_minimalChrome ? 0.0f : Style::borderWidth);
 
   switch (m_variant) {
   case ButtonVariant::Default:
+    setBorderWidth(Style::borderWidth);
     // Resting state is neutral; hover/pressed use the primary accent.
     m_bgColorNormal = palette.surfaceVariant;
     m_bgColorHover = palette.primary;
@@ -134,6 +126,7 @@ void Button::applyVariant() {
     m_borderColorPressed = palette.primary;
     break;
   case ButtonVariant::Secondary:
+    setBorderWidth(Style::borderWidth);
     m_bgColorNormal = palette.secondary;
     m_bgColorHover = palette.primary;
     m_bgColorPressed = palette.primary;
@@ -145,6 +138,7 @@ void Button::applyVariant() {
     m_borderColorPressed = palette.primary;
     break;
   case ButtonVariant::Destructive:
+    setBorderWidth(Style::borderWidth);
     m_bgColorNormal = palette.error;
     m_bgColorHover = palette.primary;
     m_bgColorPressed = palette.error;
@@ -156,6 +150,7 @@ void Button::applyVariant() {
     m_borderColorPressed = palette.error;
     break;
   case ButtonVariant::Outline:
+    setBorderWidth(Style::borderWidth);
     m_bgColorNormal = palette.surface;
     m_bgColorHover = palette.primary;
     m_bgColorPressed = palette.primary;
@@ -167,28 +162,31 @@ void Button::applyVariant() {
     m_borderColorPressed = palette.primary;
     break;
   case ButtonVariant::Ghost:
-    m_bgColorNormal = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.surface;
-    m_bgColorHover = m_minimalChrome ? palette.surfaceVariant : palette.primary;
-    m_bgColorPressed = m_minimalChrome ? palette.surfaceVariant : palette.primary;
+    setBorderWidth(0.0f);
+    m_bgColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
+    m_bgColorHover = palette.surfaceVariant;
+    m_bgColorPressed = palette.surfaceVariant;
     m_labelColorNormal = palette.onSurface;
-    m_labelColorHover = m_minimalChrome ? palette.onSurface : palette.onPrimary;
-    m_labelColorPressed = m_minimalChrome ? palette.onSurface : palette.onPrimary;
-    m_borderColorNormal = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.outline;
-    m_borderColorHover = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.primary;
-    m_borderColorPressed = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.primary;
+    m_labelColorHover = palette.onSurface;
+    m_labelColorPressed = palette.onSurface;
+    m_borderColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
+    m_borderColorHover = rgba(0.0f, 0.0f, 0.0f, 0.0f);
+    m_borderColorPressed = rgba(0.0f, 0.0f, 0.0f, 0.0f);
     break;
   case ButtonVariant::Accent:
+    setBorderWidth(0.0f);
     m_bgColorNormal = palette.primary;
     m_bgColorHover = palette.primary;
     m_bgColorPressed = palette.primary;
     m_labelColorNormal = palette.onPrimary;
     m_labelColorHover = palette.onPrimary;
     m_labelColorPressed = palette.onPrimary;
-    m_borderColorNormal = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.primary;
-    m_borderColorHover = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.primary;
-    m_borderColorPressed = m_minimalChrome ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : palette.primary;
+    m_borderColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
+    m_borderColorHover = rgba(0.0f, 0.0f, 0.0f, 0.0f);
+    m_borderColorPressed = rgba(0.0f, 0.0f, 0.0f, 0.0f);
     break;
   case ButtonVariant::Tab:
+    setBorderWidth(0.0f);
     m_bgColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
     m_bgColorHover = palette.primary;
     m_bgColorPressed = palette.primary;
@@ -200,6 +198,7 @@ void Button::applyVariant() {
     m_borderColorPressed = rgba(0.0f, 0.0f, 0.0f, 0.0f);
     break;
   case ButtonVariant::TabActive:
+    setBorderWidth(0.0f);
     // Active tab is emphasized via primary text/icon, not a filled chip.
     m_bgColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
     m_bgColorHover = palette.primary;
