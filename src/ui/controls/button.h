@@ -40,6 +40,7 @@ public:
   void setFontSize(float size);
   void setGlyphSize(float size);
   void setEnabled(bool enabled);
+  void setSelected(bool selected);
   void setContentAlign(ButtonContentAlign align);
   void setVariant(ButtonVariant variant);
   void setOnClick(std::function<void()> callback);
@@ -86,4 +87,5 @@ private:
   Color m_targetLabel{};
   ButtonContentAlign m_contentAlign = ButtonContentAlign::Center;
   bool m_enabled = true;
+  bool m_selected = false;
 };

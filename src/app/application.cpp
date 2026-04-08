@@ -8,17 +8,72 @@
 #include "shell/clipboard/clipboard_panel.h"
 #include "shell/control_center/control_center_panel.h"
 #include "shell/launcher/launcher_panel.h"
+#include "shell/session_menu/session_panel.h"
 #include "shell/test/test_panel.h"
 #include "system/distro_info.h"
 
 #include <chrono>
 #include <cmath>
 #include <csignal>
+#include <cstdlib>
+#include <fcntl.h>
 #include <stdexcept>
+#include <unistd.h>
 
 std::atomic<bool> Application::s_shutdownRequested{false};
 
 namespace {
+
+  bool launchDetachedCommand(std::initializer_list<const char*> args) {
+    if (args.size() == 0 || *args.begin() == nullptr) {
+      return false;
+    }
+
+    pid_t pid = fork();
+    if (pid < 0) {
+      return false;
+    }
+
+    if (pid == 0) {
+      setsid();
+
+      int devnull = open("/dev/null", O_RDWR);
+      if (devnull >= 0) {
+        dup2(devnull, STDIN_FILENO);
+        dup2(devnull, STDOUT_FILENO);
+        dup2(devnull, STDERR_FILENO);
+        if (devnull > STDERR_FILENO) {
+          close(devnull);
+        }
+      }
+
+      std::vector<char*> argv;
+      argv.reserve(args.size() + 1);
+      for (const char* arg : args) {
+        argv.push_back(const_cast<char*>(arg));
+      }
+      argv.push_back(nullptr);
+
+      execvp(argv[0], argv.data());
+      _exit(1);
+    }
+
+    return true;
+  }
+
+  bool launchLogoutCommand() {
+    const char* sessionId = std::getenv("XDG_SESSION_ID");
+    if (sessionId != nullptr && sessionId[0] != '\0') {
+      return launchDetachedCommand({"loginctl", "terminate-session", sessionId});
+    }
+
+    const char* user = std::getenv("USER");
+    if (user != nullptr && user[0] != '\0') {
+      return launchDetachedCommand({"loginctl", "terminate-user", user});
+    }
+
+    return false;
+  }
 
   void signal_handler(int signum) {
     if (signum == SIGTERM || signum == SIGINT) {
@@ -244,6 +299,40 @@ void Application::initUi() {
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
   m_configService.addReloadCallback([this]() { m_panelManager.close(); });
   m_panelManager.registerPanel("clipboard", std::make_unique<ClipboardPanel>(&m_clipboardService));
+  m_panelManager.registerPanel(
+      "session-menu",
+      std::make_unique<SessionPanel>(SessionPanel::Actions{
+          .logout =
+              [this]() {
+                if (!launchLogoutCommand()) {
+                  m_notificationManager.addInternal("Noctalia", "Logout unavailable",
+                                                    "Could not determine how to terminate this session.", 5000,
+                                                    Urgency::Normal);
+                }
+              },
+          .reboot =
+              [this]() {
+                if (!launchDetachedCommand({"systemctl", "reboot"})) {
+                  m_notificationManager.addInternal("Noctalia", "Reboot failed", "Could not launch systemctl reboot.",
+                                                    5000, Urgency::Normal);
+                }
+              },
+          .shutdown =
+              [this]() {
+                if (!launchDetachedCommand({"systemctl", "poweroff"})) {
+                  m_notificationManager.addInternal("Noctalia", "Shutdown failed",
+                                                    "Could not launch systemctl poweroff.", 5000, Urgency::Normal);
+                }
+              },
+          .lock =
+              [this]() {
+                if (!m_lockScreen.lock()) {
+                  m_notificationManager.addInternal("Noctalia", "Lock unavailable",
+                                                    "The session lock protocol is not available.", 5000,
+                                                    Urgency::Normal);
+                }
+              },
+      }));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
   m_panelManager.registerPanel(
       "control-center", std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(),
@@ -391,6 +480,14 @@ void Application::initIpc() {
         return "ok\n";
       },
       "toggle-panel <id>", "Toggle a panel by id (e.g. control-center)");
+
+  m_ipcService.registerHandler(
+      "toggle-session-menu",
+      [this](const std::string&) -> std::string {
+        m_panelManager.togglePanel("session-menu");
+        return "ok\n";
+      },
+      "toggle-session-menu", "Toggle the session actions panel");
 
   m_ipcService.registerHandler(
       "toggle-launcher",

@@ -384,6 +384,7 @@ add_executable(noctalia
     src/shell/osd/audio_osd.cpp
     src/shell/osd/osd_overlay.cpp
     src/shell/panel/panel_manager.cpp
+    src/shell/session_menu/session_panel.cpp
     src/shell/test/test_panel.cpp
     src/shell/tray/tray_menu.cpp
     src/shell/wallpaper/wallpaper.cpp

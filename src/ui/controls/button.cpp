@@ -95,6 +95,14 @@ void Button::setEnabled(bool enabled) {
   applyVisualState();
 }
 
+void Button::setSelected(bool selected) {
+  if (m_selected == selected) {
+    return;
+  }
+  m_selected = selected;
+  applyVisualState();
+}
+
 void Button::setContentAlign(ButtonContentAlign align) {
   m_contentAlign = align;
 }
@@ -249,7 +257,7 @@ void Button::applyColors(const Color& bg, const Color& border, const Color& labe
 }
 
 void Button::applyVisualState() {
-  bool isHovered = m_enabled && hovered();
+  bool isHovered = m_enabled && (hovered() || m_selected);
   bool isPressed = m_enabled && pressed();
 
   Color targetBg;
