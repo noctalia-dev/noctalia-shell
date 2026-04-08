@@ -826,12 +826,12 @@ void MprisService::discoverPlayers() {
   for (const auto& name : names) {
     if (is_mpris_bus_name(name)) {
       ++matched;
-      kLog.info("discover found mpris bus={}", name);
+      kLog.debug("discover found mpris bus={}", name);
       addOrRefreshPlayer(name);
     }
   }
 
-  kLog.info("discover players listed={} matched_mpris={} cached_after={}", names.size(), matched, m_players.size());
+  kLog.debug("discover players listed={} matched_mpris={} cached_after={}", names.size(), matched, m_players.size());
 }
 
 void MprisService::scheduleStartupRediscovery() {
@@ -888,13 +888,13 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
 
   try {
     const MprisPlayerInfo info = readPlayerInfo(*proxyIt->second, busName);
-    kLog.info(
+    kLog.debug(
         "queried player name={} identity=\"{}\" status=\"{}\" title=\"{}\" artist=\"{}\" track_id=\"{}\" art_url=\"{}\"",
         info.busName, info.identity, info.playbackStatus, info.title, primary_artist(info.artists), info.trackId,
         info.artUrl);
     if (info.artUrl.empty()) {
       const auto metadata = get_metadata_or(*proxyIt->second);
-      kLog.info("queried player missing art url name={} metadata_keys=[{}]", info.busName, joinKeys(metadata));
+      kLog.debug("queried player missing art url name={} metadata_keys=[{}]", info.busName, joinKeys(metadata));
     }
     if (info.playbackStatus == "Playing") {
       m_lastActivePlayer = busName;
@@ -904,7 +904,7 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
     const auto existing = m_players.find(busName);
     if (existing == m_players.end()) {
       m_players.emplace(busName, info);
-      kLog.info("added player name={} identity=\"{}\" status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"",
+      kLog.debug("added player name={} identity=\"{}\" status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"",
               info.busName, info.identity, info.playbackStatus, info.title, primary_artist(info.artists),
               info.artUrl);
       emitPlayersChanged();
