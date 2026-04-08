@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/main_loop.h"
+#include "app/timer_poll_source.h"
 #include "config/config_poll_source.h"
 #include "config/config_service.h"
 #include "config/state_poll_source.h"
@@ -103,6 +104,7 @@ private:
   StatePollSource m_statePollSource{m_stateService};
   DesktopEntryPollSource m_desktopEntryPollSource;
   ClipboardPollSource m_clipboardPollSource{m_clipboardService};
+  TimerPollSource m_timerPollSource;
   KeyRepeatPollSource m_keyRepeatPollSource{m_wayland};
   WorkspacePollSource m_workspacePollSource{m_wayland};
   std::unique_ptr<PipeWirePollSource> m_pipewirePollSource;

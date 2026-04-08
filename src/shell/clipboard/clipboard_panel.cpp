@@ -30,6 +30,7 @@ constexpr float kSidebarWidth = 272.0f;
 constexpr float kRowHeight = 46.0f;
 constexpr float kPreviewImageHeight = 280.0f;
 constexpr float kListGlyphSize = 24.0f;
+constexpr auto kPreviewPayloadDebounceInterval = std::chrono::milliseconds(75);
 
 std::string collapseWhitespace(std::string_view text) {
   std::string out;
@@ -299,6 +300,7 @@ void ClipboardPanel::create(Renderer& renderer) {
     m_root->setAnimationManager(m_animations);
   }
 
+  schedulePreviewPayloadRefresh(false);
   rebuildList(renderer, scaled(kSidebarWidth) - Style::spaceSm * scale * 2.0f);
   rebuildPreview(renderer, preferredWidth() - scaled(kSidebarWidth) - Style::spaceSm * scale - Style::spaceSm * scale * 2.0f,
                  preferredHeight());
@@ -356,6 +358,7 @@ void ClipboardPanel::update(Renderer& renderer) {
     m_selectedIndex = itemCount - 1;
   }
 
+  schedulePreviewPayloadRefresh(false);
   const float listWidth = m_listScrollView != nullptr ? m_listScrollView->contentViewportWidth() : kSidebarWidth;
   const float previewWidth = m_previewScrollView != nullptr ? m_previewScrollView->contentViewportWidth() : m_lastWidth;
   const float previewHeight = m_previewScrollView != nullptr ? m_previewScrollView->height() : m_lastHeight;
@@ -365,6 +368,9 @@ void ClipboardPanel::update(Renderer& renderer) {
 
 void ClipboardPanel::onOpen(std::string_view /*context*/) {
   m_selectedIndex = 0;
+  m_previewPayloadIndex = static_cast<std::size_t>(-1);
+  m_pendingPreviewPayloadIndex = static_cast<std::size_t>(-1);
+  m_previewPayloadDebounceTimer.stop();
   m_hoverIndex = static_cast<std::size_t>(-1);
   m_mouseActive = false;
   m_lastListWidth = -1.0f;
@@ -389,12 +395,47 @@ void ClipboardPanel::onClose() {
   m_previewScrollView = nullptr;
   m_previewContent = nullptr;
   m_previewImage = nullptr;
+  m_previewPayloadDebounceTimer.stop();
   m_rootPtr = nullptr;
   m_lastWidth = 0.0f;
   m_lastHeight = 0.0f;
 }
 
 InputArea* ClipboardPanel::initialFocusArea() const { return m_focusArea; }
+
+void ClipboardPanel::schedulePreviewPayloadRefresh(bool debounced) {
+  if (m_clipboard == nullptr || m_clipboard->history().empty() || m_selectedIndex >= m_clipboard->history().size()) {
+    m_previewPayloadDebounceTimer.stop();
+    m_previewPayloadIndex = static_cast<std::size_t>(-1);
+    m_pendingPreviewPayloadIndex = static_cast<std::size_t>(-1);
+    m_lastPreviewWidth = -1.0f;
+    m_lastPreviewHeight = -1.0f;
+    return;
+  }
+
+  if (!debounced || m_selectedIndex == m_previewPayloadIndex) {
+    m_previewPayloadDebounceTimer.stop();
+    m_previewPayloadIndex = m_selectedIndex;
+    m_pendingPreviewPayloadIndex = static_cast<std::size_t>(-1);
+    m_lastPreviewWidth = -1.0f;
+    m_lastPreviewHeight = -1.0f;
+    return;
+  }
+
+  m_pendingPreviewPayloadIndex = m_selectedIndex;
+  m_lastPreviewWidth = -1.0f;
+  m_lastPreviewHeight = -1.0f;
+  m_previewPayloadDebounceTimer.start(kPreviewPayloadDebounceInterval, [this]() {
+    if (m_pendingPreviewPayloadIndex == static_cast<std::size_t>(-1)) {
+      return;
+    }
+    m_previewPayloadIndex = m_pendingPreviewPayloadIndex;
+    m_pendingPreviewPayloadIndex = static_cast<std::size_t>(-1);
+    m_lastPreviewWidth = -1.0f;
+    m_lastPreviewHeight = -1.0f;
+    PanelManager::instance().refresh();
+  });
+}
 
 void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
   if (m_list == nullptr) {
@@ -539,14 +580,26 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
   }
 
   const auto& entry = history[m_selectedIndex];
+  m_previewTitle->setText(previewTitle(entry));
+  m_previewTitle->setMaxWidth(width);
+  m_previewMeta->setText(formatTimeAgo(entry.capturedAt) + "  •  " + formatBytes(entry.byteSize));
+  m_previewMeta->setMaxWidth(width);
+
+  if (m_previewPayloadIndex != m_selectedIndex) {
+    auto pending = std::make_unique<Label>();
+    pending->setText("Loading preview...");
+    pending->setColor(palette.onSurfaceVariant);
+    pending->setMaxWidth(width);
+    m_previewContent->addChild(std::move(pending));
+    m_lastPreviewWidth = width;
+    m_lastPreviewHeight = height;
+    return;
+  }
+
   if (m_clipboard != nullptr) {
     (void)m_clipboard->ensureEntryLoaded(m_selectedIndex);
   }
   const auto& loadedEntry = m_clipboard != nullptr ? m_clipboard->history()[m_selectedIndex] : entry;
-  m_previewTitle->setText(previewTitle(loadedEntry));
-  m_previewTitle->setMaxWidth(width);
-  m_previewMeta->setText(formatTimeAgo(loadedEntry.capturedAt) + "  •  " + formatBytes(loadedEntry.byteSize));
-  m_previewMeta->setMaxWidth(width);
 
   if (loadedEntry.isImage()) {
     auto image = std::make_unique<Image>();
@@ -654,8 +707,8 @@ void ClipboardPanel::selectIndex(std::size_t index) {
     return;
   }
   m_selectedIndex = index;
+  schedulePreviewPayloadRefresh(true);
   m_lastListWidth = -1.0f;
-  m_lastPreviewWidth = -1.0f;
   PanelManager::instance().refresh();
   scrollToSelected();
 }
@@ -672,8 +725,8 @@ void ClipboardPanel::activateSelected() {
   const bool copied = m_clipboard->copyEntry(entry);
   if (copied || promoted) {
     m_selectedIndex = 0;
+    schedulePreviewPayloadRefresh(false);
     m_lastListWidth = -1.0f;
-    m_lastPreviewWidth = -1.0f;
     PanelManager::instance().refresh();
   }
 }
@@ -686,8 +739,8 @@ bool ClipboardPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers
   if (sym == XKB_KEY_Up) {
     if (m_selectedIndex > 0) {
       --m_selectedIndex;
+      schedulePreviewPayloadRefresh(true);
       m_lastListWidth = -1.0f;
-      m_lastPreviewWidth = -1.0f;
       PanelManager::instance().refresh();
       scrollToSelected();
     }
@@ -697,8 +750,8 @@ bool ClipboardPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers
   if (sym == XKB_KEY_Down) {
     if (m_selectedIndex + 1 < m_clipboard->history().size()) {
       ++m_selectedIndex;
+      schedulePreviewPayloadRefresh(true);
       m_lastListWidth = -1.0f;
-      m_lastPreviewWidth = -1.0f;
       PanelManager::instance().refresh();
       scrollToSelected();
     }

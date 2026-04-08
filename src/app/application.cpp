@@ -529,6 +529,7 @@ std::vector<PollSource*> Application::buildPollSources() {
   sources.push_back(&m_statePollSource);
   sources.push_back(&m_desktopEntryPollSource);
   sources.push_back(&m_clipboardPollSource);
+  sources.push_back(&m_timerPollSource);
   sources.push_back(&m_keyRepeatPollSource);
   sources.push_back(&m_workspacePollSource);
   if (m_pipewireService != nullptr) {

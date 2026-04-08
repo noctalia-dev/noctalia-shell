@@ -325,6 +325,7 @@ add_executable(noctalia
     src/config/state_service.cpp
     src/core/deferred_call.cpp
     src/core/log.cpp
+    src/core/timer_manager.cpp
     src/dbus/mpris/mpris_service.cpp
     src/dbus/notification/notification_poll_source.cpp
     src/dbus/notification/notification_service.cpp

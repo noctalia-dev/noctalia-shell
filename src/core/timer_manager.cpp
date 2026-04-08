@@ -1,0 +1,152 @@
+#include "core/timer_manager.h"
+
+#include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+namespace {
+
+  struct TimerEntry {
+    TimerManager::TimerId id = 0;
+    std::chrono::steady_clock::time_point dueAt{};
+    std::chrono::milliseconds interval{0};
+    std::function<void()> callback;
+    bool repeating = false;
+  };
+
+  std::unordered_map<TimerManager::TimerId, TimerEntry>& timerEntries() {
+    static std::unordered_map<TimerManager::TimerId, TimerEntry> entries;
+    return entries;
+  }
+
+  TimerManager::TimerId& nextTimerId() {
+    static TimerManager::TimerId nextId = 1;
+    return nextId;
+  }
+
+  std::unordered_set<TimerManager::TimerId>& canceledTimerIds() {
+    static std::unordered_set<TimerManager::TimerId> ids;
+    return ids;
+  }
+
+} // namespace
+
+TimerManager& TimerManager::instance() {
+  static TimerManager manager;
+  return manager;
+}
+
+TimerManager::TimerId TimerManager::start(TimerId existingId, std::chrono::milliseconds delay,
+                                          std::function<void()> callback, bool repeating) {
+  if (existingId != 0) {
+    cancel(existingId);
+  }
+
+  if (!callback) {
+    return 0;
+  }
+
+  const TimerId id = nextTimerId()++;
+  timerEntries()[id] = TimerEntry{
+      .id = id,
+      .dueAt = std::chrono::steady_clock::now() + std::max(delay, std::chrono::milliseconds(0)),
+      .interval = std::max(delay, std::chrono::milliseconds(0)),
+      .callback = std::move(callback),
+      .repeating = repeating,
+  };
+  return id;
+}
+
+bool TimerManager::cancel(TimerId id) {
+  if (id == 0) {
+    return false;
+  }
+  canceledTimerIds().insert(id);
+  return timerEntries().erase(id) > 0;
+}
+
+int TimerManager::pollTimeoutMs() const {
+  if (timerEntries().empty()) {
+    return -1;
+  }
+
+  const auto now = std::chrono::steady_clock::now();
+  auto nextDue = std::chrono::steady_clock::time_point::max();
+  for (const auto& [id, entry] : timerEntries()) {
+    (void)id;
+    nextDue = std::min(nextDue, entry.dueAt);
+  }
+
+  if (nextDue <= now) {
+    return 0;
+  }
+
+  return static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(nextDue - now).count());
+}
+
+void TimerManager::tick() {
+  if (timerEntries().empty()) {
+    return;
+  }
+
+  const auto now = std::chrono::steady_clock::now();
+  std::vector<TimerEntry> dueEntries;
+  dueEntries.reserve(timerEntries().size());
+
+  for (auto it = timerEntries().begin(); it != timerEntries().end();) {
+    if (it->second.dueAt > now) {
+      ++it;
+      continue;
+    }
+
+    dueEntries.push_back(std::move(it->second));
+    it = timerEntries().erase(it);
+  }
+
+  for (auto& entry : dueEntries) {
+    canceledTimerIds().erase(entry.id);
+    if (entry.callback) {
+      entry.callback();
+    }
+
+    if (entry.repeating && entry.id != 0 && !canceledTimerIds().contains(entry.id)) {
+      auto next = entry;
+      next.dueAt = std::chrono::steady_clock::now() + next.interval;
+      timerEntries()[entry.id] = std::move(next);
+    }
+
+    canceledTimerIds().erase(entry.id);
+  }
+}
+
+Timer::~Timer() { stop(); }
+
+Timer::Timer(Timer&& other) noexcept : m_id(other.m_id) { other.m_id = 0; }
+
+Timer& Timer::operator=(Timer&& other) noexcept {
+  if (this == &other) {
+    return *this;
+  }
+
+  stop();
+  m_id = other.m_id;
+  other.m_id = 0;
+  return *this;
+}
+
+void Timer::start(std::chrono::milliseconds delay, std::function<void()> callback) {
+  m_id = TimerManager::instance().start(m_id, delay, std::move(callback), false);
+}
+
+void Timer::startRepeating(std::chrono::milliseconds interval, std::function<void()> callback) {
+  m_id = TimerManager::instance().start(m_id, interval, std::move(callback), true);
+}
+
+void Timer::stop() {
+  if (m_id == 0) {
+    return;
+  }
+  TimerManager::instance().cancel(m_id);
+  m_id = 0;
+}

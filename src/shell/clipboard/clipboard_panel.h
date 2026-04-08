@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shell/panel/panel.h"
+#include "core/timer_manager.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -33,6 +34,7 @@ public:
   [[nodiscard]] InputArea* initialFocusArea() const override;
 
 private:
+  void schedulePreviewPayloadRefresh(bool debounced);
   void rebuildList(Renderer& renderer, float width);
   void rebuildPreview(Renderer& renderer, float width, float height);
   void selectIndex(std::size_t index);
@@ -61,7 +63,10 @@ private:
   Image* m_previewImage = nullptr;
 
   std::size_t m_selectedIndex = 0;
+  std::size_t m_previewPayloadIndex = static_cast<std::size_t>(-1);
+  std::size_t m_pendingPreviewPayloadIndex = static_cast<std::size_t>(-1);
   std::size_t m_hoverIndex = static_cast<std::size_t>(-1);
+  Timer m_previewPayloadDebounceTimer;
   bool m_mouseActive = false;
   std::uint64_t m_lastChangeSerial = 0;
   float m_lastWidth = 0.0f;
