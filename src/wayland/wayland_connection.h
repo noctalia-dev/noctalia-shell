@@ -24,6 +24,7 @@ struct wp_cursor_shape_manager_v1;
 struct xdg_activation_v1;
 struct ext_session_lock_manager_v1;
 struct zwlr_foreign_toplevel_manager_v1;
+struct zdwl_ipc_manager_v2;
 class ClipboardService;
 struct DataControlOps;
 
@@ -70,6 +71,10 @@ public:
   void activateWorkspace(const std::string& id);
   void activateWorkspace(wl_output* output, const std::string& id);
   void activateWorkspace(wl_output* output, const Workspace& workspace);
+  [[nodiscard]] int workspacePollFd() const noexcept;
+  [[nodiscard]] short workspacePollEvents() const noexcept;
+  [[nodiscard]] int workspacePollTimeoutMs() const noexcept;
+  void dispatchWorkspacePoll(short revents);
 
   // Queries
   [[nodiscard]] bool isConnected() const noexcept;
@@ -77,6 +82,7 @@ public:
   [[nodiscard]] bool hasLayerShell() const noexcept;
   [[nodiscard]] bool hasXdgOutputManager() const noexcept;
   [[nodiscard]] bool hasExtWorkspaceManager() const noexcept;
+  [[nodiscard]] bool hasMangoWorkspaceManager() const noexcept;
   [[nodiscard]] bool hasForeignToplevelManager() const noexcept;
   [[nodiscard]] bool hasSessionLockManager() const noexcept;
   [[nodiscard]] wl_display* display() const noexcept;
@@ -126,6 +132,7 @@ private:
   ClipboardService* m_clipboardService = nullptr;
   bool m_hasLayerShellGlobal = false;
   bool m_hasExtWorkspaceGlobal = false;
+  bool m_hasMangoWorkspaceGlobal = false;
   bool m_hasForeignToplevelManagerGlobal = false;
   std::vector<WaylandOutput> m_outputs;
   ChangeCallback m_outputChangeCallback;

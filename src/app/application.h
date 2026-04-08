@@ -44,6 +44,7 @@
 #include "wayland/clipboard_service.h"
 #include "wayland/key_repeat_poll_source.h"
 #include "wayland/wayland_connection.h"
+#include "wayland/workspace_poll_source.h"
 
 #include <atomic>
 #include <memory>
@@ -103,6 +104,7 @@ private:
   DesktopEntryPollSource m_desktopEntryPollSource;
   ClipboardPollSource m_clipboardPollSource{m_clipboardService};
   KeyRepeatPollSource m_keyRepeatPollSource{m_wayland};
+  WorkspacePollSource m_workspacePollSource{m_wayland};
   std::unique_ptr<PipeWirePollSource> m_pipewirePollSource;
   std::unique_ptr<PipeWireSpectrumPollSource> m_pipewireSpectrumPollSource;
   IpcService m_ipcService;

@@ -4,11 +4,13 @@
 #include "wayland/clipboard_service.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <stdexcept>
 
 #include <wayland-client.h>
 
 #include "cursor-shape-v1-client-protocol.h"
+#include "dwl-ipc-unstable-v2-client-protocol.h"
 #include "ext-data-control-v1-client-protocol.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "ext-workspace-v1-client-protocol.h"
@@ -115,6 +117,22 @@ namespace {
 
   constexpr Logger kLog("wayland");
 
+  [[nodiscard]] std::string compositorHintFromEnv() {
+    constexpr const char* vars[] = {"XDG_CURRENT_DESKTOP", "XDG_SESSION_DESKTOP", "DESKTOP_SESSION"};
+    std::string hint;
+    for (const char* var : vars) {
+      const char* value = std::getenv(var);
+      if (value == nullptr || value[0] == '\0') {
+        continue;
+      }
+      if (!hint.empty()) {
+        hint += ':';
+      }
+      hint += value;
+    }
+    return hint;
+  }
+
 } // namespace
 
 WaylandConnection::WaylandConnection() = default;
@@ -152,6 +170,7 @@ bool WaylandConnection::connect() {
     throw std::runtime_error("failed during Wayland output discovery roundtrip");
   }
 
+  m_workspacesHandler.initialize(compositorHintFromEnv());
   logStartupSummary();
   return true;
 }
@@ -161,6 +180,10 @@ void WaylandConnection::setOutputChangeCallback(ChangeCallback callback) {
 }
 
 void WaylandConnection::setWorkspaceChangeCallback(ChangeCallback callback) {
+  m_workspacesHandler.setSwayOutputNameResolver([this](wl_output* output) {
+    const auto* found = const_cast<WaylandConnection*>(this)->findOutputByWl(output);
+    return found != nullptr ? found->connectorName : std::string{};
+  });
   m_workspacesHandler.setChangeCallback(std::move(callback));
 }
 
@@ -230,6 +253,14 @@ void WaylandConnection::activateWorkspace(wl_output* output, const Workspace& wo
   m_workspacesHandler.activateForOutput(output, workspace);
 }
 
+int WaylandConnection::workspacePollFd() const noexcept { return m_workspacesHandler.pollFd(); }
+
+short WaylandConnection::workspacePollEvents() const noexcept { return m_workspacesHandler.pollEvents(); }
+
+int WaylandConnection::workspacePollTimeoutMs() const noexcept { return m_workspacesHandler.pollTimeoutMs(); }
+
+void WaylandConnection::dispatchWorkspacePoll(short revents) { m_workspacesHandler.dispatchPoll(revents); }
+
 std::vector<Workspace> WaylandConnection::workspaces() const { return m_workspacesHandler.all(); }
 
 std::vector<Workspace> WaylandConnection::workspaces(wl_output* output) const {
@@ -250,6 +281,7 @@ bool WaylandConnection::hasLayerShell() const noexcept { return m_hasLayerShellG
 bool WaylandConnection::hasXdgOutputManager() const noexcept { return m_xdgOutputManager != nullptr; }
 
 bool WaylandConnection::hasExtWorkspaceManager() const noexcept { return m_hasExtWorkspaceGlobal; }
+bool WaylandConnection::hasMangoWorkspaceManager() const noexcept { return m_hasMangoWorkspaceGlobal; }
 bool WaylandConnection::hasForeignToplevelManager() const noexcept { return m_hasForeignToplevelManagerGlobal; }
 bool WaylandConnection::hasSessionLockManager() const noexcept { return m_sessionLockManager != nullptr; }
 bool WaylandConnection::hasXdgActivation() const noexcept { return m_xdgActivation != nullptr; }
@@ -324,10 +356,11 @@ void WaylandConnection::handleGlobal(void* data, wl_registry* registry, std::uin
 void WaylandConnection::handleGlobalRemove(void* data, wl_registry* /*registry*/, std::uint32_t name) {
   auto* self = static_cast<WaylandConnection*>(data);
   const auto sizeBefore = self->m_outputs.size();
-  std::erase_if(self->m_outputs, [name](const WaylandOutput& output) {
+  std::erase_if(self->m_outputs, [self, name](const WaylandOutput& output) {
     if (output.name != name) {
       return false;
     }
+    self->m_workspacesHandler.onOutputRemoved(output.output);
     if (output.output != nullptr) {
       if (wl_output_get_version(output.output) >= WL_OUTPUT_RELEASE_SINCE_VERSION) {
         wl_output_release(output.output);
@@ -386,7 +419,15 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     const auto bindVersion = std::min(version, kExtWorkspaceManagerVersion);
     auto* manager = static_cast<ext_workspace_manager_v1*>(
         wl_registry_bind(registry, name, &ext_workspace_manager_v1_interface, bindVersion));
-    m_workspacesHandler.bind(manager);
+    m_workspacesHandler.bindExtWorkspace(manager);
+    return;
+  }
+
+  if (interfaceName == zdwl_ipc_manager_v2_interface.name) {
+    m_hasMangoWorkspaceGlobal = true;
+    auto* manager =
+        static_cast<zdwl_ipc_manager_v2*>(wl_registry_bind(registry, name, &zdwl_ipc_manager_v2_interface, 2));
+    m_workspacesHandler.bindMangoWorkspace(manager);
     return;
   }
 
@@ -455,6 +496,7 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
         .output = output,
     });
     wl_output_add_listener(output, &kOutputListener, this);
+    m_workspacesHandler.onOutputAdded(output);
     if (m_xdgOutputManager != nullptr) {
       auto* xdgOut = zxdg_output_manager_v1_get_xdg_output(m_xdgOutputManager, output);
       m_outputs.back().xdgOutput = xdgOut;
@@ -540,6 +582,7 @@ void WaylandConnection::cleanup() {
 
   for (auto& output : m_outputs) {
     if (output.output != nullptr) {
+      m_workspacesHandler.onOutputRemoved(output.output);
       wl_output_destroy(output.output);
       output.output = nullptr;
     }
@@ -558,14 +601,17 @@ void WaylandConnection::cleanup() {
   m_outputs.clear();
   m_hasLayerShellGlobal = false;
   m_hasExtWorkspaceGlobal = false;
+  m_hasMangoWorkspaceGlobal = false;
   m_hasForeignToplevelManagerGlobal = false;
 }
 
 void WaylandConnection::logStartupSummary() const {
-  kLog.info("connected compositor={} shm={} layer-shell={} xdg-output={} ext-workspace={} session-lock={} outputs={}",
+  kLog.info("connected compositor={} shm={} layer-shell={} xdg-output={} ext-workspace={} mango-workspace={} "
+            "session-lock={} outputs={} workspace-backend={}",
             m_compositor != nullptr ? "yes" : "no", m_shm != nullptr ? "yes" : "no", hasLayerShell() ? "yes" : "no",
             hasXdgOutputManager() ? "yes" : "no", hasExtWorkspaceManager() ? "yes" : "no",
-            hasSessionLockManager() ? "yes" : "no", m_outputs.size());
+            hasMangoWorkspaceManager() ? "yes" : "no", hasSessionLockManager() ? "yes" : "no", m_outputs.size(),
+            m_workspacesHandler.backendName());
 
   for (const auto& output : m_outputs) {
     kLog.info("output {} global={} scale={} mode={}x{} desc=\"{}\"", output.connectorName, output.name, output.scale,

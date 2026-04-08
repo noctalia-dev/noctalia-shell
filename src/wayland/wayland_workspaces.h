@@ -1,63 +1,48 @@
 #pragma once
 
-#include <cstdint>
-#include <functional>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include "wayland/workspace_backend.h"
 
-struct wl_array;
+#include <memory>
+#include <string_view>
+
 struct wl_output;
 struct ext_workspace_manager_v1;
-struct ext_workspace_group_handle_v1;
-struct ext_workspace_handle_v1;
-
-struct Workspace {
-  std::string id;
-  std::string name;
-  std::vector<std::uint32_t> coordinates;
-  bool active = false;
-};
+struct zdwl_ipc_manager_v2;
 
 class WaylandWorkspaces {
 public:
   using ChangeCallback = std::function<void()>;
 
-  void bind(ext_workspace_manager_v1* manager);
+  WaylandWorkspaces();
+  ~WaylandWorkspaces();
+
+  void bindExtWorkspace(ext_workspace_manager_v1* manager);
+  void bindMangoWorkspace(zdwl_ipc_manager_v2* manager);
+  void setSwayOutputNameResolver(std::function<std::string(wl_output*)> resolver);
+  void initialize(std::string_view compositorHint);
+  void onOutputAdded(wl_output* output);
+  void onOutputRemoved(wl_output* output);
   void setChangeCallback(ChangeCallback callback);
   void activate(const std::string& id);
   void activateForOutput(wl_output* output, const std::string& id);
   void activateForOutput(wl_output* output, const Workspace& workspace);
   void cleanup();
+  [[nodiscard]] int pollFd() const noexcept;
+  [[nodiscard]] short pollEvents() const noexcept;
+  [[nodiscard]] int pollTimeoutMs() const noexcept;
+  void dispatchPoll(short revents);
+  [[nodiscard]] const char* backendName() const noexcept;
 
   [[nodiscard]] std::vector<Workspace> all() const;
   [[nodiscard]] std::vector<Workspace> forOutput(wl_output* output) const;
 
-  // Listener entrypoints called by C callbacks
-  void onGroupCreated(ext_workspace_group_handle_v1* group);
-  void onGroupRemoved(ext_workspace_group_handle_v1* group);
-  void onGroupOutputEnter(ext_workspace_group_handle_v1* group, wl_output* output);
-  void onGroupOutputLeave(ext_workspace_group_handle_v1* group, wl_output* output);
-  void onGroupWorkspaceEnter(ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace);
-  void onGroupWorkspaceLeave(ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace);
-  void onWorkspaceCreated(ext_workspace_handle_v1* workspace);
-  void onWorkspaceIdChanged(ext_workspace_handle_v1* workspace, const char* id);
-  void onWorkspaceNameChanged(ext_workspace_handle_v1* workspace, const char* name);
-  void onWorkspaceCoordinatesChanged(ext_workspace_handle_v1* workspace, wl_array* coordinates);
-  void onWorkspaceStateChanged(ext_workspace_handle_v1* workspace, std::uint32_t state);
-  void onWorkspaceRemoved(ext_workspace_handle_v1* workspace);
-  void onManagerDone();
-  void onManagerFinished();
-
 private:
-  struct WorkspaceGroup {
-    ext_workspace_group_handle_v1* handle = nullptr;
-    std::vector<wl_output*> outputs;
-    std::vector<ext_workspace_handle_v1*> workspaces;
-  };
+  void setActiveBackend(WorkspaceBackend* backend);
+  void notifyChanged() const;
 
-  ext_workspace_manager_v1* m_manager = nullptr;
-  std::vector<WorkspaceGroup> m_groups;
-  std::unordered_map<ext_workspace_handle_v1*, Workspace> m_workspaces;
+  std::unique_ptr<class ExtWorkspaceBackend> m_extBackend;
+  std::unique_ptr<class MangoWorkspaceBackend> m_mangoBackend;
+  std::unique_ptr<class SwayWorkspaceBackend> m_swayBackend;
+  WorkspaceBackend* m_activeBackend = nullptr;
   ChangeCallback m_changeCallback;
 };

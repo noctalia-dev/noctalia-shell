@@ -178,7 +178,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [~] Clipboard manager
 - [~] Lock screen (ext-session-lock-v1) <- still needs polish 
 - [ ] Idle inhibitor (prevent sleep)
-- [ ] More compositors (Mango, Sway, Labwc)
+- [~] More compositors (Labwc pending)
 - [ ] Application file search provider
 
 ### Theming and customization
@@ -193,8 +193,8 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Ecosystem
 
-- [X] Geolocation (weather)
-- [ ] Compositor integration (Hyprland)
+- [x] Geolocation (weather)
+- [x] Compositor integration (Hyprland)
 - [ ] Desktop widgets
 - [ ] Shell update checker
 - [ ] Calendar integration

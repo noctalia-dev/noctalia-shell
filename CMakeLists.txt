@@ -61,6 +61,8 @@ set(XDG_SHELL_XML
     "${WAYLAND_PROTOCOLS_PKGDATADIR}/stable/xdg-shell/xdg-shell.xml")
 set(EXT_WORKSPACE_XML
     "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/ext-workspace/ext-workspace-v1.xml")
+set(DWL_IPC_XML
+    "${CMAKE_CURRENT_SOURCE_DIR}/protocols/dwl-ipc-unstable-v2.xml")
 set(CURSOR_SHAPE_XML
     "${CMAKE_CURRENT_SOURCE_DIR}/protocols/cursor-shape-v1.xml")
 set(EXT_DATA_CONTROL_XML
@@ -86,6 +88,10 @@ set(EXT_WORKSPACE_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/ext-workspace-v1-client-protocol.c")
 set(EXT_WORKSPACE_PROTOCOL_H
     "${GENERATED_PROTOCOL_DIR}/ext-workspace-v1-client-protocol.h")
+set(DWL_IPC_PROTOCOL_C
+    "${GENERATED_PROTOCOL_DIR}/dwl-ipc-unstable-v2-client-protocol.c")
+set(DWL_IPC_PROTOCOL_H
+    "${GENERATED_PROTOCOL_DIR}/dwl-ipc-unstable-v2-client-protocol.h")
 
 set(CURSOR_SHAPE_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/cursor-shape-v1-client-protocol.c")
@@ -187,6 +193,20 @@ add_custom_command(
 )
 
 add_custom_command(
+    OUTPUT "${DWL_IPC_PROTOCOL_C}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" private-code "${DWL_IPC_XML}" "${DWL_IPC_PROTOCOL_C}"
+    DEPENDS "${DWL_IPC_XML}"
+    VERBATIM
+)
+
+add_custom_command(
+    OUTPUT "${DWL_IPC_PROTOCOL_H}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" client-header "${DWL_IPC_XML}" "${DWL_IPC_PROTOCOL_H}"
+    DEPENDS "${DWL_IPC_XML}"
+    VERBATIM
+)
+
+add_custom_command(
     OUTPUT "${CURSOR_SHAPE_PROTOCOL_C}"
     COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" private-code "${CURSOR_SHAPE_XML}" "${CURSOR_SHAPE_PROTOCOL_C}"
     DEPENDS "${CURSOR_SHAPE_XML}"
@@ -280,6 +300,8 @@ add_custom_target(noctalia_wayland_protocols
         "${XDG_SHELL_PROTOCOL_H}"
         "${EXT_WORKSPACE_PROTOCOL_C}"
         "${EXT_WORKSPACE_PROTOCOL_H}"
+        "${DWL_IPC_PROTOCOL_C}"
+        "${DWL_IPC_PROTOCOL_H}"
         "${CURSOR_SHAPE_PROTOCOL_C}"
         "${CURSOR_SHAPE_PROTOCOL_H}"
         "${EXT_DATA_CONTROL_PROTOCOL_C}"
@@ -405,8 +427,11 @@ add_executable(noctalia
     src/ui/controls/toggle.cpp
     src/util/fuzzy_match.cpp
     src/wayland/clipboard_service.cpp
+    src/wayland/ext_workspace_backend.cpp
     src/wayland/layer_surface.cpp
+    src/wayland/mango_workspace_backend.cpp
     src/wayland/surface.cpp
+    src/wayland/sway_workspace_backend.cpp
     src/wayland/wayland_connection.cpp
     src/wayland/wayland_seat.cpp
     src/wayland/wayland_toplevels.cpp
@@ -416,6 +441,7 @@ add_executable(noctalia
     "${XDG_OUTPUT_PROTOCOL_C}"
     "${XDG_SHELL_PROTOCOL_C}"
     "${EXT_WORKSPACE_PROTOCOL_C}"
+    "${DWL_IPC_PROTOCOL_C}"
     "${CURSOR_SHAPE_PROTOCOL_C}"
     "${EXT_DATA_CONTROL_PROTOCOL_C}"
     "${XDG_ACTIVATION_PROTOCOL_C}"
