@@ -298,8 +298,8 @@ SmartPanel {
 
             NIconButton {
               visible: Settings.data.wallpaper.enabled
-              icon: "sun"
-              tooltipText: Settings.data.wallpaper.linkLightAndDarkWallpapers ? I18n.tr("wallpaper.panel.header-sun-linked-tooltip") : I18n.tr("wallpaper.panel.header-sun-separate-tooltip")
+              icon: "dark-mode"
+              tooltipText: Settings.data.wallpaper.linkLightAndDarkWallpapers ? I18n.tr("wallpaper.panel.header-separate-light-dark-tooltip") : I18n.tr("wallpaper.panel.header-link-light-dark-tooltip")
               baseSize: Style.baseWidgetSize * 0.8
               colorBg: !Settings.data.wallpaper.linkLightAndDarkWallpapers ? Color.mPrimary : Color.smartAlpha(Color.mSurfaceVariant)
               colorFg: !Settings.data.wallpaper.linkLightAndDarkWallpapers ? Color.mOnPrimary : Color.mPrimary
