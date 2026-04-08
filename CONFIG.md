@@ -28,6 +28,7 @@ position        = "top"       # top | bottom | left | right
 enabled         = true
 
 height          = 34          # bar thickness in pixels
+radius          = 16          # corner radius in pixels (0 = square corners)
 margin_h        = 180         # horizontal gap between bar and screen edge
 margin_v        = 10          # vertical gap between bar and screen edge
 padding_h       = 14          # padding from bar edge to the start/end widget sections
@@ -35,13 +36,13 @@ widget_spacing  = 6           # gap between widgets within a section
 scale           = 1.0         # content scale multiplier for icons and text (default: 1.0)
 
 shadow_blur     = 12          # blur radius in pixels (0 = no shadow)
-shadow_offset_x = 0           # horizontal shadow offset (positive = right)
+shadow_offset_x = 3           # horizontal shadow offset (positive = right)
 shadow_offset_y = 6           # vertical shadow offset (positive = down)
 
 
 start  = ["cpu", "temp", "ram", "active_window"]  # widget names in the left/top section
 center = ["workspaces"]       # widget names in the center section
-end    = ["tray", "notifications", "volume", "battery", "spacer", "clock"]
+end    = ["tray", "notifications", "volume", "battery", "clock"]
 ```
 
 All fields are optional and fall back to the defaults shown above. Multiple `[bar.*]` entries are supported — each is independently configured and rendered on all outputs (subject to monitor overrides).
@@ -57,6 +58,7 @@ Inside a bar you can add named monitor subtables under `[bar.<name>.monitor.*]`.
 match          = "DP-1"    # connector name or description substring
 enabled        = true
 height         = 44
+radius         = 0
 padding_h      = 20
 widget_spacing = 6
 start          = []
@@ -299,7 +301,7 @@ position = "top_right"
 
 [bar.main.monitor.hdmi]
 match    = "HDMI-A-1"  # secondary 1080p — smaller, minimal widgets
-height   = 34
+height   = 36
 margin_h = 8
 end      = ["volume", "clock"]
 
@@ -308,7 +310,7 @@ end      = ["volume", "clock"]
 [wallpaper]
 enabled             = true
 fill_mode           = "crop"
-transition          = ["fade", "wipe", "zoom"]
+transition          = ["fade", "wipe", "zoom", "disc", "honeycomb", "stripes"]
 transition_duration = 1500.0
 edge_smoothness     = 0.5
 ```

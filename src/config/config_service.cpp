@@ -155,6 +155,8 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.enabled = *ovr.enabled;
     if (ovr.height)
       resolved.height = *ovr.height;
+    if (ovr.radius)
+      resolved.radius = *ovr.radius;
     if (ovr.paddingH)
       resolved.paddingH = *ovr.paddingH;
     if (ovr.widgetSpacing)
@@ -225,7 +227,7 @@ void ConfigService::seedBuiltinWidgets(Config& config) {
 
   WidgetConfig media;
   media.type = "media";
-  media.settings["max_width"] = 220.0;
+  media.settings["max_width"] = 200.0;
   media.settings["art_size"] = 24.0;
   seed("media", std::move(media));
 
@@ -265,6 +267,8 @@ void ConfigService::loadFromFile(const std::string& path) {
         bar.enabled = *v;
       if (auto v = (*barTbl)["height"].value<int64_t>())
         bar.height = static_cast<std::int32_t>(*v);
+      if (auto v = (*barTbl)["radius"].value<int64_t>())
+        bar.radius = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["margin_h"].value<int64_t>())
         bar.marginH = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["margin_v"].value<int64_t>())
@@ -307,6 +311,8 @@ void ConfigService::loadFromFile(const std::string& path) {
             ovr.enabled = *v;
           if (auto v = (*monTbl)["height"].value<int64_t>())
             ovr.height = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["radius"].value<int64_t>())
+            ovr.radius = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["padding_h"].value<int64_t>())
             ovr.paddingH = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["widget_spacing"].value<int64_t>())

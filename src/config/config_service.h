@@ -16,6 +16,7 @@ struct BarMonitorOverride {
   std::string match;
   std::optional<bool> enabled;
   std::optional<std::int32_t> height;
+  std::optional<std::int32_t> radius;
   std::optional<std::int32_t> paddingH;      // horizontal padding from bar edges to start/end sections
   std::optional<std::int32_t> widgetSpacing; // gap between widgets within a section
   std::optional<float> scale;
