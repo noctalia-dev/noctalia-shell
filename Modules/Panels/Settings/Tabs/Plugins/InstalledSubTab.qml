@@ -11,6 +11,9 @@ ColumnLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
 
+  property string selectedPluginId: ""
+  signal pluginSelected(string pluginId)
+
   // Track which plugins are currently updating
   property var updatingPlugins: ({})
   property int installedPluginsRefreshCounter: 0
@@ -29,6 +32,112 @@ ColumnLayout {
   onVisibleChanged: {
     if (visible && PluginService.pluginsFullyLoaded) {
       PluginService.checkForUpdates();
+    }
+  }
+
+  // Uninstall confirmation dialog
+  Popup {
+    id: uninstallDialog
+    parent: Overlay.overlay
+    modal: true
+    dim: false
+    anchors.centerIn: parent
+    width: 400 * Style.uiScaleRatio
+    padding: Style.marginL
+
+    property var pluginToUninstall: null
+
+    background: Rectangle {
+      color: Color.mSurface
+      radius: Style.radiusS
+      border.color: Color.mPrimary
+      border.width: Style.borderM
+    }
+
+    contentItem: ColumnLayout {
+      width: parent.width
+      spacing: Style.marginL
+
+      NHeader {
+        label: I18n.tr("panels.plugins.uninstall-dialog-title")
+        description: I18n.tr("panels.plugins.uninstall-dialog-description", {
+                               "plugin": uninstallDialog.pluginToUninstall?.name || ""
+                             })
+      }
+
+      RowLayout {
+        spacing: Style.marginM
+        Layout.fillWidth: true
+
+        Item {
+          Layout.fillWidth: true
+        }
+
+        NButton {
+          text: I18n.tr("common.cancel")
+          onClicked: uninstallDialog.close()
+        }
+
+        NButton {
+          text: I18n.tr("common.uninstall")
+          backgroundColor: Color.mPrimary
+          textColor: Color.mOnPrimary
+          onClicked: {
+            if (uninstallDialog.pluginToUninstall) {
+              root.uninstallPlugin(uninstallDialog.pluginToUninstall.compositeKey);
+              uninstallDialog.close();
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Plugin settings popup
+  NPluginSettingsPopup {
+    id: pluginSettingsDialog
+    parent: Overlay.overlay
+    showToastOnSave: true
+  }
+
+  function uninstallPlugin(pluginId) {
+    var manifest = PluginRegistry.getPluginManifest(pluginId);
+    var pluginName = manifest?.name || pluginId;
+
+    BarService.widgetsRevision++;
+
+    ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstalling", {
+                                                                       "plugin": pluginName
+                                                                     }));
+
+    PluginService.uninstallPlugin(pluginId, function (success, error) {
+      if (success) {
+        ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstall-success", {
+                                                                           "plugin": pluginName
+                                                                         }));
+      } else {
+        ToastService.showError(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstall-error", {
+                                                                          "error": error || "Unknown error"
+                                                                        }));
+      }
+    });
+  }
+
+  // Listen to plugin registry changes
+  Connections {
+    target: PluginRegistry
+
+    function onPluginsChanged() {
+      root.installedPluginsRefreshCounter++;
+    }
+  }
+
+  // Listen to plugin service signals
+  Connections {
+    target: PluginService
+
+    function onPluginUpdatesChanged() {
+      root.installedPluginsRefreshCounter++;
     }
   }
 
@@ -156,7 +265,17 @@ ColumnLayout {
         Layout.leftMargin: Style.borderS
         Layout.rightMargin: Style.borderS
         implicitHeight: Math.round(contentColumn.implicitHeight + Style.margin2L)
-        color: Color.mSurface
+        color: modelData.compositeKey === root.selectedPluginId ? Color.mHover : Color.mSurface
+
+        MouseArea {
+          anchors.fill: parent
+          propagateComposedEvents: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: mouse => {
+            root.pluginSelected(modelData.compositeKey)
+            mouse.accepted = false
+          }
+        }
 
         ColumnLayout {
           id: contentColumn
@@ -164,7 +283,7 @@ ColumnLayout {
           anchors.margins: Style.marginL
           spacing: Style.marginS
 
-          // Top row: icon, name, badge, spacer, action buttons
+          // Row 1: icon, name, badge
           RowLayout {
             spacing: Style.marginM
             Layout.fillWidth: true
@@ -179,6 +298,7 @@ ColumnLayout {
               text: modelData.name
               color: Color.mPrimary
               elide: Text.ElideRight
+              Layout.fillWidth: true
             }
 
             // Official badge (Noctalia Team maintained)
@@ -208,11 +328,12 @@ ColumnLayout {
                 }
               }
             }
+          }
 
-            // Spacer
-            Item {
-              Layout.fillWidth: true
-            }
+          // Row 2: action buttons left, toggle right
+          RowLayout {
+            spacing: Style.marginXS
+            Layout.fillWidth: true
 
             NIconButtonHot {
               icon: "bug"
@@ -238,7 +359,6 @@ ColumnLayout {
               icon: "external-link"
               tooltipText: I18n.tr("panels.plugins.open-plugin-page")
               baseSize: Style.baseWidgetSize * 0.7
-              visible: true
               onClicked: {
                 var sourceUrl = PluginRegistry.getPluginSourceUrl(modelData.compositeKey) || "";
                 Qt.openUrlExternally(sourceUrl && !PluginRegistry.isMainSource(sourceUrl) ? sourceUrl : "https://noctalia.dev/plugins/" + modelData.id);
@@ -297,6 +417,8 @@ ColumnLayout {
               }
             }
 
+            Item { Layout.fillWidth: true }
+
             NToggle {
               checked: modelData.enabled
               baseSize: Style.baseWidgetSize * 0.7
@@ -317,8 +439,7 @@ ColumnLayout {
             font.pointSize: Style.fontSizeXS
             color: Color.mOnSurface
             wrapMode: Text.WordWrap
-            maximumLineCount: 2
-            elide: Text.ElideRight
+            elide: Text.ElideNone
             Layout.fillWidth: true
           }
 
@@ -425,112 +546,6 @@ ColumnLayout {
       label: I18n.tr("panels.plugins.installed-no-plugins-label")
       description: I18n.tr("panels.plugins.installed-no-plugins-description")
       Layout.fillWidth: true
-    }
-  }
-
-  // Uninstall confirmation dialog
-  Popup {
-    id: uninstallDialog
-    parent: Overlay.overlay
-    modal: true
-    dim: false
-    anchors.centerIn: parent
-    width: 400 * Style.uiScaleRatio
-    padding: Style.marginL
-
-    property var pluginToUninstall: null
-
-    background: Rectangle {
-      color: Color.mSurface
-      radius: Style.radiusS
-      border.color: Color.mPrimary
-      border.width: Style.borderM
-    }
-
-    contentItem: ColumnLayout {
-      width: parent.width
-      spacing: Style.marginL
-
-      NHeader {
-        label: I18n.tr("panels.plugins.uninstall-dialog-title")
-        description: I18n.tr("panels.plugins.uninstall-dialog-description", {
-                               "plugin": uninstallDialog.pluginToUninstall?.name || ""
-                             })
-      }
-
-      RowLayout {
-        spacing: Style.marginM
-        Layout.fillWidth: true
-
-        Item {
-          Layout.fillWidth: true
-        }
-
-        NButton {
-          text: I18n.tr("common.cancel")
-          onClicked: uninstallDialog.close()
-        }
-
-        NButton {
-          text: I18n.tr("common.uninstall")
-          backgroundColor: Color.mPrimary
-          textColor: Color.mOnPrimary
-          onClicked: {
-            if (uninstallDialog.pluginToUninstall) {
-              root.uninstallPlugin(uninstallDialog.pluginToUninstall.compositeKey);
-              uninstallDialog.close();
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // Plugin settings popup
-  NPluginSettingsPopup {
-    id: pluginSettingsDialog
-    parent: Overlay.overlay
-    showToastOnSave: true
-  }
-
-  function uninstallPlugin(pluginId) {
-    var manifest = PluginRegistry.getPluginManifest(pluginId);
-    var pluginName = manifest?.name || pluginId;
-
-    BarService.widgetsRevision++;
-
-    ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstalling", {
-                                                                       "plugin": pluginName
-                                                                     }));
-
-    PluginService.uninstallPlugin(pluginId, function (success, error) {
-      if (success) {
-        ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstall-success", {
-                                                                           "plugin": pluginName
-                                                                         }));
-      } else {
-        ToastService.showError(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstall-error", {
-                                                                          "error": error || "Unknown error"
-                                                                        }));
-      }
-    });
-  }
-
-  // Listen to plugin registry changes
-  Connections {
-    target: PluginRegistry
-
-    function onPluginsChanged() {
-      root.installedPluginsRefreshCounter++;
-    }
-  }
-
-  // Listen to plugin service signals
-  Connections {
-    target: PluginService
-
-    function onPluginUpdatesChanged() {
-      root.installedPluginsRefreshCounter++;
     }
   }
 }

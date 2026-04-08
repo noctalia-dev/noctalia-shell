@@ -1491,7 +1491,9 @@
       "update-pending": "v{current} → v{new} (krev Noctalia v{required})",
       "update-success": "Oppdaterte {plugin} til v{version}",
       "update-version": "v{current} → v{new}",
-      "updating": "Oppdaterer..."
+      "updating": "Oppdaterer...",
+      "readme-select-plugin": "Select a plugin to view its README",
+      "readme-not-available": "README not available"
     },
     "region": {
       "title": "Region"

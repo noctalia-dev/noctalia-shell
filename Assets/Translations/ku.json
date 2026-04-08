@@ -1332,7 +1332,9 @@
       "update-pending": "v{current} → v{new} (hewce dike Noctalia v{required})",
       "update-success": "{plugin} hate nûkirin bo v{version}",
       "update-version": "v{current} → v{new}",
-      "updating": "Tê rojanekirin..."
+      "updating": "Tê rojanekirin...",
+      "readme-select-plugin": "Select a plugin to view its README",
+      "readme-not-available": "README not available"
     },
     "region": {
       "title": "Herêm"

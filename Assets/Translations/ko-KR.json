@@ -1617,7 +1617,9 @@
       "update-pending": "v{current} → v{new} (Noctalia v{required} 필요)",
       "update-success": "{plugin}을(를) v{version}으로 업데이트함",
       "update-version": "v{current} → v{new}",
-      "updating": "업데이트 중..."
+      "updating": "업데이트 중...",
+      "readme-select-plugin": "Select a plugin to view its README",
+      "readme-not-available": "README not available"
     },
     "region": {
       "title": "지역"

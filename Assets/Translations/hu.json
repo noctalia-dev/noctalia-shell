@@ -1617,7 +1617,9 @@
       "update-pending": "v{current} → v{new} (szükséges Noctalia v{required})",
       "update-success": "A(z) {plugin} frissítve lett a v{version} verzióra",
       "update-version": "v{current} → v{new}",
-      "updating": "Frissítés..."
+      "updating": "Frissítés...",
+      "readme-select-plugin": "Select a plugin to view its README",
+      "readme-not-available": "README not available"
     },
     "region": {
       "title": "Régió"

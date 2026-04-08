@@ -10,8 +10,24 @@ import qs.Widgets
 SmartPanel {
   id: root
 
-  preferredWidth: Math.round(840 * Style.uiScaleRatio)
-  preferredHeight: Math.round(910 * Style.uiScaleRatio)
+  readonly property bool _isPluginsTab: {
+    var idx = currentTabIndex
+    var model = tabsModel
+    return idx >= 0 && idx < model.length && model[idx]?.id === SettingsPanel.Tab.Plugins
+  }
+
+  preferredWidth: {
+    if (_isPluginsTab) {
+      var h = screen ? Math.round(screen.height * 0.9) : Math.round(910 * Style.uiScaleRatio)
+      return Math.round(h * 16 / 9)
+    }
+    return Math.round(840 * Style.uiScaleRatio)
+  }
+  preferredHeight: {
+    if (_isPluginsTab)
+      return screen ? Math.round(screen.height * 0.9) : Math.round(910 * Style.uiScaleRatio)
+    return Math.round(910 * Style.uiScaleRatio)
+  }
 
   // Settings panel mode: "centered", "attached", "window"
   readonly property string settingsPanelMode: Settings.data.ui.settingsPanelMode
@@ -31,6 +47,12 @@ SmartPanel {
   panelAnchorBottom: !root.useButtonPosition && attachToBar && barPosition === "bottom"
   panelAnchorLeft: !root.useButtonPosition && attachToBar && barPosition === "left"
   panelAnchorRight: !root.useButtonPosition && attachToBar && barPosition === "right"
+
+  onCurrentTabIndexChanged: {
+    if (isPanelOpen) {
+      Qt.callLater(root.setPosition)
+    }
+  }
 
   onAttachToBarChanged: {
     if (isPanelOpen) {

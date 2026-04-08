@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
 import qs.Services.Noctalia
@@ -9,10 +10,14 @@ ColumnLayout {
   id: root
   spacing: Style.marginL
   Layout.fillWidth: true
+  implicitWidth: 0
 
   property string pluginSearchText: ""
   property string selectedTag: ""
   property int tagsRefreshCounter: 0
+
+  property string selectedPluginId: ""
+  signal pluginSelected(string pluginId, string sourceUrl)
   property int availablePluginsRefreshCounter: 0
 
   // Pseudo tags for filtering
@@ -42,25 +47,83 @@ ColumnLayout {
     return author;
   }
 
-  // Tag filter chips in collapsible
-  NTagFilter {
-    tags: root.pseudoTags.concat(root.availableTags)
-    selectedTag: root.selectedTag
-    onSelectedTagChanged: root.selectedTag = selectedTag
-    label: I18n.tr("panels.plugins.filter-tags-label")
-    description: I18n.tr("panels.plugins.filter-tags-description")
-    expanded: true
+  // Timer to check for updates after refresh starts
+  Timer {
+    id: checkUpdatesTimer
+    interval: 100
+    onTriggered: {
+      PluginService.checkForUpdates();
+    }
+  }
 
-    formatTag: function (tag) {
-      if (tag === "")
-        return I18n.tr("launcher.categories.all");
-      if (tag === "official")
-        return I18n.tr("common.official");
-      if (tag === "downloaded")
-        return I18n.tr("panels.plugins.filter-downloaded");
-      if (tag === "notDownloaded")
-        return I18n.tr("panels.plugins.filter-not-downloaded");
-      return tag;
+  Component.onDestruction: {
+    checkUpdatesTimer.stop();
+  }
+
+  function installPlugin(pluginMetadata) {
+    ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.installing", {
+                                                                       "plugin": pluginMetadata.name
+                                                                     }));
+
+    PluginService.installPlugin(pluginMetadata, false, function (success, error, registeredKey) {
+      if (success) {
+        ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.install-success", {
+                                                                           "plugin": pluginMetadata.name
+                                                                         }));
+        // Auto-enable the plugin after installation (use registered key which may be composite)
+        PluginService.enablePlugin(registeredKey);
+      } else {
+        ToastService.showError(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.install-error", {
+                                                                          "error": error || "Unknown error"
+                                                                        }));
+      }
+    });
+  }
+
+  // Listen to plugin service signals
+  Connections {
+    target: PluginService
+
+    function onAvailablePluginsUpdated() {
+      // Force tags and plugins model to re-evaluate
+      root.tagsRefreshCounter++;
+      root.availablePluginsRefreshCounter++;
+
+      // Manually trigger update check after a small delay to ensure all registries are loaded
+      Qt.callLater(function () {
+        PluginService.checkForUpdates();
+      });
+    }
+  }
+
+  // Tag filter chips in collapsible — wrapped in Item to prevent Flow's
+  // large implicitWidth from inflating the parent ColumnLayout width
+  Item {
+    Layout.fillWidth: true
+    implicitHeight: tagFilter.implicitHeight
+    clip: true
+
+    NTagFilter {
+      id: tagFilter
+      width: parent.width
+      tags: root.pseudoTags.concat(root.availableTags)
+      selectedTag: root.selectedTag
+      onSelectedTagChanged: root.selectedTag = selectedTag
+      label: I18n.tr("panels.plugins.filter-tags-label")
+      description: I18n.tr("panels.plugins.filter-tags-description")
+      expanded: true
+
+      formatTag: function (tag) {
+        if (tag === "")
+          return I18n.tr("launcher.categories.all");
+        if (tag === "official")
+          return I18n.tr("common.official");
+        if (tag === "downloaded")
+          return I18n.tr("panels.plugins.filter-downloaded");
+        if (tag === "notDownloaded")
+          return I18n.tr("panels.plugins.filter-not-downloaded");
+        return tag;
+      }
     }
   }
 
@@ -176,7 +239,17 @@ ColumnLayout {
         Layout.leftMargin: Style.borderS
         Layout.rightMargin: Style.borderS
         implicitHeight: Math.round(contentColumn.implicitHeight + Style.margin2L)
-        color: Color.mSurface
+        color: modelData.id === root.selectedPluginId ? Color.mHover : Color.mSurface
+
+        MouseArea {
+          anchors.fill: parent
+          propagateComposedEvents: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: mouse => {
+            root.pluginSelected(modelData.id, modelData.source?.url || "")
+            mouse.accepted = false
+          }
+        }
 
         ColumnLayout {
           id: contentColumn
@@ -184,6 +257,7 @@ ColumnLayout {
           anchors.margins: Style.marginL
           spacing: Style.marginS
 
+          // Row 1: icon, name, badge
           RowLayout {
             spacing: Style.marginM
             Layout.fillWidth: true
@@ -198,6 +272,7 @@ ColumnLayout {
               text: modelData.name
               color: Color.mPrimary
               elide: Text.ElideRight
+              Layout.fillWidth: true
             }
 
             // Official badge (Noctalia Team maintained)
@@ -227,11 +302,12 @@ ColumnLayout {
                 }
               }
             }
+          }
 
-            // Spacer
-            Item {
-              Layout.fillWidth: true
-            }
+          // Row 2: action buttons (left-aligned)
+          RowLayout {
+            spacing: Style.marginXS
+            Layout.fillWidth: true
 
             // Open plugin page button
             NIconButton {
@@ -276,12 +352,11 @@ ColumnLayout {
             font.pointSize: Style.fontSizeXS
             color: Color.mOnSurface
             wrapMode: Text.WordWrap
-            maximumLineCount: 2
-            elide: Text.ElideRight
+            elide: Text.ElideNone
             Layout.fillWidth: true
           }
 
-          // Details row
+          // Details: version • author
           RowLayout {
             spacing: Style.marginS
             Layout.fillWidth: true
@@ -304,35 +379,25 @@ ColumnLayout {
               color: Color.mOnSurfaceVariant
             }
 
-            NText {
-              text: "•"
-              font.pointSize: Style.fontSizeXS
-              color: Color.mOnSurfaceVariant
-            }
-
-            NText {
-              text: modelData.source ? modelData.source.name : ""
-              font.pointSize: Style.fontSizeXS
-              color: Color.mOnSurfaceVariant
-            }
-
-            NText {
-              visible: !!modelData.lastUpdated
-              text: "•"
-              font.pointSize: Style.fontSizeXS
-              color: Color.mOnSurfaceVariant
-            }
-
-            NText {
-              visible: !!modelData.lastUpdated
-              text: modelData.lastUpdated ? Time.formatRelativeTime(new Date(modelData.lastUpdated)) : ""
-              font.pointSize: Style.fontSizeXS
-              color: Color.mOnSurfaceVariant
-            }
-
             Item {
               Layout.fillWidth: true
             }
+          }
+
+          // Details: source
+          NText {
+            visible: modelData.source ? true : false
+            text: modelData.source ? modelData.source.name : ""
+            font.pointSize: Style.fontSizeXS
+            color: Color.mOnSurfaceVariant
+          }
+
+          // Details: last updated
+          NText {
+            visible: !!modelData.lastUpdated
+            text: modelData.lastUpdated ? Time.formatRelativeTime(new Date(modelData.lastUpdated)) : ""
+            font.pointSize: Style.fontSizeXS
+            color: Color.mOnSurfaceVariant
           }
         }
       }
@@ -343,51 +408,6 @@ ColumnLayout {
       label: I18n.tr("panels.plugins.available-no-plugins-label")
       description: I18n.tr("panels.plugins.available-no-plugins-description")
       Layout.fillWidth: true
-    }
-  }
-
-  // Timer to check for updates after refresh starts
-  Timer {
-    id: checkUpdatesTimer
-    interval: 100
-    onTriggered: {
-      PluginService.checkForUpdates();
-    }
-  }
-
-  function installPlugin(pluginMetadata) {
-    ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.installing", {
-                                                                       "plugin": pluginMetadata.name
-                                                                     }));
-
-    PluginService.installPlugin(pluginMetadata, false, function (success, error, registeredKey) {
-      if (success) {
-        ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.install-success", {
-                                                                           "plugin": pluginMetadata.name
-                                                                         }));
-        // Auto-enable the plugin after installation (use registered key which may be composite)
-        PluginService.enablePlugin(registeredKey);
-      } else {
-        ToastService.showError(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.install-error", {
-                                                                          "error": error || "Unknown error"
-                                                                        }));
-      }
-    });
-  }
-
-  // Listen to plugin service signals
-  Connections {
-    target: PluginService
-
-    function onAvailablePluginsUpdated() {
-      // Force tags and plugins model to re-evaluate
-      root.tagsRefreshCounter++;
-      root.availablePluginsRefreshCounter++;
-
-      // Manually trigger update check after a small delay to ensure all registries are loaded
-      Qt.callLater(function () {
-        PluginService.checkForUpdates();
-      });
     }
   }
 }

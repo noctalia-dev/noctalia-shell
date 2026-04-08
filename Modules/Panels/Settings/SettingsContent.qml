@@ -1176,8 +1176,13 @@ Item {
 
         ColumnLayout {
           id: contentLayout
-          anchors.fill: parent
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          anchors.horizontalCenter: parent.horizontalCenter
           anchors.margins: Style.marginL
+          width: root.tabsModel[root.currentTabIndex]?.id === SettingsPanel.Tab.Plugins
+            ? parent.width - Style.marginL * 2
+            : Math.min(parent.width - Style.marginL * 2, Math.round(780 * Style.uiScaleRatio))
           spacing: Style.marginS
 
           // Header row
@@ -1226,6 +1231,8 @@ Item {
                 active: index === root.currentTabIndex
                 opacity: 0
 
+                readonly property bool _isPluginsTab: root.tabsModel[index]?.id === SettingsPanel.Tab.Plugins
+
                 NumberAnimation on opacity {
                   id: fadeInAnim
                   from: 0
@@ -1245,39 +1252,65 @@ Item {
                   }
                 }
 
-                sourceComponent: NScrollView {
-                  id: scrollView
-                  anchors.fill: parent
-                  horizontalPolicy: ScrollBar.AlwaysOff
-                  verticalPolicy: ScrollBar.AsNeeded
-                  leftPadding: Style.marginL
-                  topPadding: Style.marginL
-                  bottomPadding: Style.marginL
-                  userRightPadding: Style.marginL
-                  reserveScrollbarSpace: false
+                // Plugins tab manages its own scroll — load directly without NScrollView wrapper
+                sourceComponent: _isPluginsTab ? pluginsDirectComponent : scrollWrappedComponent
 
-                  Component.onCompleted: {
-                    root.activeScrollView = scrollView;
+                Component {
+                  id: pluginsDirectComponent
+                  Item {
+                    anchors.fill: parent
+
+                    Loader {
+                      anchors.fill: parent
+                      anchors.margins: Style.marginL
+                      active: true
+                      sourceComponent: root.tabsModel[index]?.source
+                      onLoaded: {
+                        if (item && item.hasOwnProperty("screen")) {
+                          item.screen = root.screen;
+                        }
+                        root.activeTabContent = item;
+                      }
+                    }
                   }
+                }
 
-                  Loader {
-                    active: true
-                    sourceComponent: root.tabsModel[index]?.source
-                    width: scrollView.availableWidth
-                    onLoaded: {
-                      if (item && item.hasOwnProperty("screen")) {
-                        item.screen = root.screen;
-                      }
-                      root.activeTabContent = item;
-                      if (root._pendingSubTab >= 0) {
-                        root.navigatingFromSearch = true;
-                        if (root.setSubTabIndex(root._pendingSubTab))
-                          root._pendingSubTab = -1;
-                        root.navigatingFromSearch = false;
-                      }
-                      if (root.highlightLabelKey) {
-                        highlightScrollTimer.targetKey = root.highlightLabelKey;
-                        highlightScrollTimer.restart();
+                Component {
+                  id: scrollWrappedComponent
+                  NScrollView {
+                    id: scrollView
+                    anchors.fill: parent
+                    horizontalPolicy: ScrollBar.AlwaysOff
+                    verticalPolicy: ScrollBar.AsNeeded
+                    leftPadding: Style.marginL
+                    topPadding: Style.marginL
+                    bottomPadding: Style.marginL
+                    userRightPadding: Style.marginL
+                    reserveScrollbarSpace: false
+
+                    Component.onCompleted: {
+                      root.activeScrollView = scrollView;
+                    }
+
+                    Loader {
+                      active: true
+                      sourceComponent: root.tabsModel[index]?.source
+                      width: scrollView.availableWidth
+                      onLoaded: {
+                        if (item && item.hasOwnProperty("screen")) {
+                          item.screen = root.screen;
+                        }
+                        root.activeTabContent = item;
+                        if (root._pendingSubTab >= 0) {
+                          root.navigatingFromSearch = true;
+                          if (root.setSubTabIndex(root._pendingSubTab))
+                            root._pendingSubTab = -1;
+                          root.navigatingFromSearch = false;
+                        }
+                        if (root.highlightLabelKey) {
+                          highlightScrollTimer.targetKey = root.highlightLabelKey;
+                          highlightScrollTimer.restart();
+                        }
                       }
                     }
                   }

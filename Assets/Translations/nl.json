@@ -1617,7 +1617,9 @@
       "update-pending": "v{current} → v{new} (vereist Noctalia v{required})",
       "update-success": "{plugin} is bijgewerkt naar v{version}",
       "update-version": "v{current} → v{new}",
-      "updating": "Bezig met updaten..."
+      "updating": "Bezig met updaten...",
+      "readme-select-plugin": "Select a plugin to view its README",
+      "readme-not-available": "README not available"
     },
     "region": {
       "title": "Regio"
