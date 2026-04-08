@@ -13,6 +13,7 @@ Changes are detected automatically via inotify — no restart required.
 - [Widget definitions](#widget-definitions)
 - [Built-in widgets](#built-in-widgets)
 - [Weather](#weather)
+- [Audio](#audio)
 - [Shell](#shell)
 - [OSD](#osd)
 - [Wallpaper](#wallpaper)
@@ -276,6 +277,18 @@ The OSD currently powers the volume HUD and defaults to `top_right`.
 
 ---
 
+## Audio
+
+```toml
+[audio]
+enable_overdrive = false   # allow the audio volume sliders to go above 100%
+```
+
+When `enable_overdrive` is `false`, the Control Center output and microphone sliders clamp to `100%`.
+When it is `true`, those sliders allow values up to `150%`.
+
+---
+
 ## Shell
 
 Shell-wide UI settings for non-bar surfaces.
@@ -349,6 +362,9 @@ end    = ["tray", "notifications", "volume", "battery", "clock-seconds"]
 
 [osd]
 position = "top_right"
+
+[audio]
+enable_overdrive = false
 
 [bar.main.monitor.hdmi]
 match    = "HDMI-A-1"  # secondary 1080p — smaller, minimal widgets

@@ -107,6 +107,10 @@ struct WeatherConfig {
   std::string unit = "celsius";
 };
 
+struct AudioConfig {
+  bool enableOverdrive = false;
+};
+
 struct Config {
   std::vector<BarConfig> bars;
   std::unordered_map<std::string, WidgetConfig> widgets;
@@ -114,6 +118,7 @@ struct Config {
   ShellConfig shell;
   OsdConfig osd;
   WeatherConfig weather;
+  AudioConfig audio;
 };
 
 class ConfigService {

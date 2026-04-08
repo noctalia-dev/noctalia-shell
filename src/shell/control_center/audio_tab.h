@@ -2,9 +2,11 @@
 
 #include "shell/control_center/tab.h"
 
+#include <chrono>
 #include <cstdint>
 #include <vector>
 
+class ConfigService;
 class Flex;
 class Label;
 class PipeWireService;
@@ -14,7 +16,7 @@ class Slider;
 
 class AudioTab : public Tab {
 public:
-  explicit AudioTab(PipeWireService* audio);
+  AudioTab(PipeWireService* audio, ConfigService* config);
 
   std::unique_ptr<Flex> build(Renderer& renderer) override;
   void layout(Renderer& renderer, float contentWidth, float bodyHeight) override;
@@ -23,8 +25,13 @@ public:
 
 private:
   void rebuildLists(Renderer& renderer);
+  [[nodiscard]] float sliderMaxPercent() const;
+  void queueSinkVolume(float value);
+  void queueSourceVolume(float value);
+  void flushPendingVolumes(bool force = false);
 
   PipeWireService* m_audio = nullptr;
+  ConfigService* m_config = nullptr;
 
   Flex* m_rootLayout = nullptr;
   Flex* m_deviceColumn = nullptr;
@@ -49,6 +56,12 @@ private:
   std::uint64_t m_lastChangeSerial = 0;
   float m_lastSinkVolume = -1.0f;
   float m_lastSourceVolume = -1.0f;
+  float m_pendingSinkVolume = -1.0f;
+  float m_pendingSourceVolume = -1.0f;
+  float m_lastSentSinkVolume = -1.0f;
+  float m_lastSentSourceVolume = -1.0f;
+  std::chrono::steady_clock::time_point m_lastSinkSendAt{};
+  std::chrono::steady_clock::time_point m_lastSourceSendAt{};
   bool m_syncingOutputSlider = false;
   bool m_syncingInputSlider = false;
 };

@@ -244,10 +244,10 @@ void Application::initUi() {
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
   m_panelManager.registerPanel("clipboard", std::make_unique<ClipboardPanel>(&m_clipboardService));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
-  m_panelManager.registerPanel("control-center",
-                               std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(),
-                                                                    m_mprisService.get(), &m_httpClient,
-                                                                    &m_weatherService, m_pipewireSpectrum.get()));
+  m_panelManager.registerPanel(
+      "control-center", std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(),
+                                                             m_mprisService.get(), &m_configService, &m_httpClient,
+                                                             &m_weatherService, m_pipewireSpectrum.get()));
   {
     auto launcherPanel = std::make_unique<LauncherPanel>();
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
