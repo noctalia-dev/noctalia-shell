@@ -185,18 +185,18 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 - [ ] Palette generation (port python implementation to c++)
 - [ ] Dark/light mode switching
-- [ ] Settings panel
 - [ ] I18n / translations
 - [ ] Blur and advanced visual effects
 - [ ] Night light (wlsunset)
+- [ ] Settings panel
 - [ ] Sound effects
 
 ### Ecosystem
 
-- [ ] Geolocation (weather)
+- [X] Geolocation (weather)
 - [ ] Compositor integration (Hyprland)
 - [ ] Desktop widgets
-- [ ] Update checker
+- [ ] Shell update checker
 - [ ] Calendar integration
 - [ ] Plugin system
 
@@ -212,10 +212,11 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 ### Widgets
 
 - [~] Tray
+- [x] Media mini
+- [x] Weather
 - [ ] Network
 - [ ] Bluetooth
 - [ ] Brightness
-- [x] Media mini
 - [ ] Microphone
 - [ ] Power profile
 - [ ] System monitor
