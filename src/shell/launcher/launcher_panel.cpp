@@ -77,17 +77,12 @@ void LauncherPanel::layout(Renderer& renderer, float width, float height) {
     return;
   }
 
-  // Input extends Node (not Flex), so Flex::layout() can't measure it.
-  // Layout it manually so the container knows its height for grow distribution.
-  m_input->setSize(width, 0.0f);
-  m_input->layout(renderer);
-
   m_container->setSize(width, height);
   m_container->layout(renderer);
 
   if (m_dirty) {
     rebuildResults(renderer, m_scrollView->contentViewportWidth());
-    m_scrollView->layout(renderer);
+    m_container->layout(renderer);
     m_dirty = false;
   }
 
@@ -221,7 +216,6 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     emptyLabel->setCaptionStyle();
     emptyLabel->setColor(palette.onSurfaceVariant);
     emptyLabel->setMaxWidth(width);
-    emptyLabel->measure(renderer);
     m_list->addChild(std::move(emptyLabel));
     return;
   }
@@ -282,7 +276,6 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
       actionLabel->setText(result.actionText);
       actionLabel->setFontSize(Style::fontSizeTitle * scale);
       actionLabel->setColor(palette.onSurface);
-      actionLabel->measure(renderer);
       actionLabel->setSize(iconSize, iconSize);
       row->addChild(std::move(actionLabel));
     } else if (!result.iconPath.empty()) {
@@ -295,7 +288,6 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
       glyph->setGlyph(result.glyphName.empty() ? "app-window" : result.glyphName);
       glyph->setGlyphSize(iconSize);
       glyph->setColor(palette.onSurface);
-      glyph->measure(renderer);
       row->addChild(std::move(glyph));
     }
 
@@ -313,7 +305,6 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     title->setBold(true);
     title->setColor(palette.onSurface);
     title->setMaxWidth(textWidth);
-    title->measure(renderer);
     textCol->addChild(std::move(title));
 
     if (!result.subtitle.empty()) {
@@ -323,7 +314,6 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
       subtitle->setFontSize(Style::fontSizeCaption * scale);
       subtitle->setColor(palette.onSurfaceVariant);
       subtitle->setMaxWidth(textWidth);
-      subtitle->measure(renderer);
       textCol->addChild(std::move(subtitle));
     }
 
