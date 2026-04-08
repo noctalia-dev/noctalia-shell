@@ -1,9 +1,9 @@
 #include "wayland/wayland_workspaces.h"
 
 #include "core/log.h"
-#include "wayland/ext_workspace_backend.h"
-#include "wayland/mango_workspace_backend.h"
-#include "wayland/sway_workspace_backend.h"
+#include "wayland/compositors/ext_workspace_backend.h"
+#include "wayland/compositors/mango_workspace_backend.h"
+#include "wayland/compositors/sway_workspace_backend.h"
 
 #include <algorithm>
 #include <cctype>

@@ -428,11 +428,11 @@ add_executable(noctalia
     src/ui/controls/toggle.cpp
     src/util/fuzzy_match.cpp
     src/wayland/clipboard_service.cpp
-    src/wayland/ext_workspace_backend.cpp
+    src/wayland/compositors/ext_workspace_backend.cpp
     src/wayland/layer_surface.cpp
-    src/wayland/mango_workspace_backend.cpp
+    src/wayland/compositors/mango_workspace_backend.cpp
     src/wayland/surface.cpp
-    src/wayland/sway_workspace_backend.cpp
+    src/wayland/compositors/sway_workspace_backend.cpp
     src/wayland/wayland_connection.cpp
     src/wayland/wayland_seat.cpp
     src/wayland/wayland_toplevels.cpp

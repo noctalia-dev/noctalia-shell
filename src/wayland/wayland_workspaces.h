@@ -1,6 +1,6 @@
 #pragma once
 
-#include "wayland/workspace_backend.h"
+#include "wayland/compositors/workspace_backend.h"
 
 #include <memory>
 #include <string_view>
