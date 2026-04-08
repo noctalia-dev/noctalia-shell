@@ -204,7 +204,6 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 - [ ] Checkbox
 - [ ] Tab bar
-- [ ] List view
 - [ ] Grid view
 - [ ] Context menu
 - [ ] Color picker
