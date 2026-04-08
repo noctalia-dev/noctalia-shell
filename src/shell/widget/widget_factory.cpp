@@ -66,7 +66,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "active_window") {
-    const float maxTitleWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_width", 260.0) : 260.0);
+    const float maxTitleWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_length", 260.0) : 260.0);
     const float iconSize = static_cast<float>(wc != nullptr ? wc->getDouble("icon_size", 16.0) : 16.0);
     auto widget = std::make_unique<ActiveWindowWidget>(m_wayland, maxTitleWidth, iconSize);
     widget->setContentScale(contentScale);
@@ -113,7 +113,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "media") {
-    const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_width", 220.0) : 220.0);
+    const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_length", 220.0) : 220.0);
     const float artSize = static_cast<float>(wc != nullptr ? wc->getDouble("art_size", 24.0) : 24.0);
     auto widget = std::make_unique<MediaMiniWidget>(m_mpris, m_httpClient, maxWidth, artSize);
     widget->setContentScale(contentScale);
@@ -126,7 +126,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     if (wlOutput != nullptr) {
       scale = wlOutput->scale;
     }
-    const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_width", 160.0) : 160.0);
+    const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_length", 160.0) : 160.0);
     const bool showCondition = wc != nullptr ? wc->getBool("show_condition", true) : true;
     auto widget = std::make_unique<WeatherWidget>(m_weather, output, scale, maxWidth, showCondition);
     widget->setContentScale(contentScale);
@@ -162,8 +162,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "spacer") {
-    auto width = static_cast<float>(wc != nullptr ? wc->getDouble("width", 8.0) : 8.0);
-    auto widget = std::make_unique<SpacerWidget>(width);
+    const auto length = static_cast<float>(wc != nullptr ? wc->getDouble("length", wc->getDouble("width", 8.0))
+                                                         : 8.0);
+    auto widget = std::make_unique<SpacerWidget>(length);
     widget->setContentScale(contentScale);
     return widget;
   }

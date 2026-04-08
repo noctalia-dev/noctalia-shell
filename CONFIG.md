@@ -127,14 +127,14 @@ format = "{:%H:%M:%S}"
 
 Empty space between widgets.
 
-| Setting | Type   | Default | Description     |
-|---------|--------|---------|-----------------|
-| `width` | number | `8`     | Width in pixels |
+| Setting  | Type   | Default | Description                              |
+|----------|--------|---------|------------------------------------------|
+| `length` | number | `8`     | Spacer length in screen pixels           |
 
 ```toml
 [widget.gap]
-type  = "spacer"
-width = 24
+type   = "spacer"
+length = 24
 ```
 
 ---
@@ -155,15 +155,15 @@ Shows the default audio sink volume and mute state via PipeWire. No configurable
 
 Shows the current media artwork and track title from MPRIS.
 
-| Setting     | Type   | Default | Description                         |
-|-------------|--------|---------|-------------------------------------|
-| `max_width` | number | `220`   | Maximum width for the title text    |
-| `art_size`  | number | `24`    | Artwork size in pixels before scale |
+| Setting      | Type   | Default | Description                         |
+|--------------|--------|---------|-------------------------------------|
+| `max_length` | number | `220`   | Maximum length for the title text   |
+| `art_size`   | number | `24`    | Artwork size in pixels before scale |
 
 ```toml
 [widget.media]
 type = "media"
-max_width = 220
+max_length = 220
 art_size = 24
 ```
 
@@ -181,15 +181,15 @@ No configurable settings.
 
 Shows the current weather in the bar and opens the Weather control-center tab on click.
 
-| Setting     | Type   | Default | Description                         |
-|-------------|--------|---------|-------------------------------------|
-| `max_width` | number | `160`   | Maximum width for the weather text  |
-| `show_condition` | bool | `true` | Show condition text like `Overcast` next to temperature |
+| Setting          | Type   | Default | Description                                            |
+|------------------|--------|---------|--------------------------------------------------------|
+| `max_length`     | number | `160`   | Maximum length for the weather text                    |
+| `show_condition` | bool   | `true`  | Show condition text like `Overcast` next to temperature |
 
 ```toml
 [widget.weather]
 type = "weather"
-max_width = 180
+max_length = 180
 show_condition = false
 ```
 
