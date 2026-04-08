@@ -37,12 +37,17 @@ SmartPanel {
     }
   }
 
-  // If Ethernet adapter disappears while on Ethernet tab, switch to WiFi
+  // If an adapter disappears while its tab is active, switch to the best available
   Connections {
     target: NetworkService
     function onEthernetAvailableChanged() {
       if (!NetworkService.ethernetAvailable && root.panelViewMode === "ethernet") {
-        root.panelViewMode = "wifi";
+        root.panelViewMode = NetworkService.wifiAvailable ? "wifi" : root.vpnAvailable ? "vpn" : "wifi";
+      }
+    }
+    function onWifiAvailableChanged() {
+      if (!NetworkService.wifiAvailable && root.panelViewMode === "wifi") {
+        root.panelViewMode = NetworkService.ethernetAvailable ? "ethernet" : root.vpnAvailable ? "vpn" : "ethernet";
       }
     }
   }
@@ -171,10 +176,14 @@ SmartPanel {
   }
 
   onOpened: {
-    if (NetworkService.ethernetAvailable && !NetworkService.wifiEnabled) {
-      panelViewMode = "ethernet";
-    } else {
+    if (NetworkService.wifiAvailable && NetworkService.wifiEnabled) {
       panelViewMode = "wifi";
+    } else if (NetworkService.ethernetAvailable) {
+      panelViewMode = "ethernet";
+    } else if (vpnAvailable) {
+      panelViewMode = "vpn";
+    } else {
+      panelViewMode = "wifi"; // fallback (shows empty/disabled state)
     }
     panelViewPersistEnabled = true;
   }
@@ -307,6 +316,7 @@ SmartPanel {
               text: I18n.tr("common.wifi")
               tabIndex: 0
               checked: modeTabBar.currentIndex === 0
+              visible: NetworkService.wifiAvailable
             }
 
             NTabButton {
