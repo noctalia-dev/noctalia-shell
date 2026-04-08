@@ -14,8 +14,9 @@
 #include <format>
 #include <memory>
 
-WeatherWidget::WeatherWidget(WeatherService* weather, wl_output* output, std::int32_t scale, float maxWidth)
-    : m_weather(weather), m_output(output), m_scale(scale), m_maxWidth(maxWidth) {}
+WeatherWidget::WeatherWidget(WeatherService* weather, wl_output* output, std::int32_t scale, float maxWidth,
+                             bool showCondition)
+    : m_weather(weather), m_output(output), m_scale(scale), m_maxWidth(maxWidth), m_showCondition(showCondition) {}
 
 void WeatherWidget::create(Renderer& renderer) {
   auto area = std::make_unique<InputArea>();
@@ -84,8 +85,10 @@ void WeatherWidget::sync(Renderer& renderer) {
     text = std::format("{}{}",
                        static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.current.temperatureC))),
                        m_weather->displayTemperatureUnit());
-    text += " ";
-    text += WeatherService::shortDescriptionForCode(snapshot.current.weatherCode);
+    if (m_showCondition) {
+      text += " ";
+      text += WeatherService::shortDescriptionForCode(snapshot.current.weatherCode);
+    }
   } else if (m_weather->loading()) {
     text = "Weather...";
   } else if (!m_weather->error().empty()) {

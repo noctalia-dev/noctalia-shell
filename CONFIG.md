@@ -184,11 +184,13 @@ Shows the current weather in the bar and opens the Weather control-center tab on
 | Setting     | Type   | Default | Description                         |
 |-------------|--------|---------|-------------------------------------|
 | `max_width` | number | `160`   | Maximum width for the weather text  |
+| `show_condition` | bool | `true` | Show condition text like `Overcast` next to temperature |
 
 ```toml
 [widget.weather]
 type = "weather"
 max_width = 180
+show_condition = false
 ```
 
 ---

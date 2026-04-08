@@ -14,7 +14,7 @@ struct wl_output;
 
 class WeatherWidget : public Widget {
 public:
-  WeatherWidget(WeatherService* weather, wl_output* output, std::int32_t scale, float maxWidth);
+  WeatherWidget(WeatherService* weather, wl_output* output, std::int32_t scale, float maxWidth, bool showCondition);
 
   void create(Renderer& renderer) override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
@@ -27,6 +27,7 @@ private:
   wl_output* m_output = nullptr;
   std::int32_t m_scale = 1;
   float m_maxWidth = 160.0f;
+  bool m_showCondition = true;
   InputArea* m_area = nullptr;
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
