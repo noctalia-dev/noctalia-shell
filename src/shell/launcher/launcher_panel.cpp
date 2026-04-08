@@ -34,7 +34,7 @@ void LauncherPanel::addProvider(std::unique_ptr<LauncherProvider> provider) {
 void LauncherPanel::create(Renderer& renderer) {
   auto container = std::make_unique<Flex>();
   container->setDirection(FlexDirection::Vertical);
-  container->setAlign(FlexAlign::Start);
+  container->setAlign(FlexAlign::Stretch);
   container->setGap(Style::spaceSm);
 
   auto input = std::make_unique<Input>();
@@ -49,6 +49,7 @@ void LauncherPanel::create(Renderer& renderer) {
 
   auto scrollView = std::make_unique<ScrollView>();
   scrollView->setScrollbarVisible(true);
+  scrollView->setFlexGrow(1.0f);
   m_scrollView = scrollView.get();
   m_list = scrollView->content();
   m_list->setDirection(FlexDirection::Vertical);
@@ -72,22 +73,19 @@ void LauncherPanel::layout(Renderer& renderer, float width, float height) {
     return;
   }
 
+  // Input extends Node (not Flex), so Flex::layout() can't measure it.
+  // Layout it manually so the container knows its height for grow distribution.
   m_input->setSize(width, 0.0f);
   m_input->layout(renderer);
 
-  const float scrollHeight = std::max(0.0f, height - m_input->height() - Style::spaceSm);
-  m_scrollView->setSize(width, scrollHeight);
-  m_scrollView->layout(renderer);
+  m_container->setSize(width, height);
+  m_container->layout(renderer);
 
   if (m_dirty) {
     rebuildResults(renderer, m_scrollView->contentViewportWidth());
     m_scrollView->layout(renderer);
     m_dirty = false;
   }
-
-  m_container->setMinWidth(width);
-  m_container->setSize(width, height);
-  m_container->layout(renderer);
 
   m_lastWidth = width;
 }
@@ -103,6 +101,8 @@ void LauncherPanel::update(Renderer& renderer) {
 void LauncherPanel::onOpen(std::string_view /*context*/) {
   m_query.clear();
   m_selectedIndex = 0;
+  m_hoverIndex = static_cast<std::size_t>(-1);
+  m_mouseActive = false;
   m_dirty = true;
   if (m_input != nullptr) {
     m_input->setValue("");
@@ -222,15 +222,6 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
   for (std::size_t i = 0; i < m_results.size(); ++i) {
     const auto& result = m_results[i];
 
-    // InputArea is the root so it naturally covers the row for click handling,
-    // and the parent content Flex won't re-layout the inner row (not a Flex).
-    auto area = std::make_unique<InputArea>();
-    area->setPropagateEvents(true);
-    area->setOnClick([this, idx = i](const InputArea::PointerData& /*data*/) {
-      m_selectedIndex = idx;
-      activateSelected();
-    });
-
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
@@ -238,10 +229,46 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     row->setPadding(Style::spaceXs, Style::spaceSm,
                     Style::spaceXs, Style::spaceSm);
     row->setMinWidth(width);
+    row->setRadius(Style::radiusMd);
     if (i == m_selectedIndex) {
       row->setBackground(palette.surfaceVariant);
-      row->setRadius(Style::radiusMd);
     }
+
+    auto* rowPtr = row.get();
+    auto area = std::make_unique<InputArea>();
+    area->setPropagateEvents(true);
+    area->setOnClick([this, idx = i](const InputArea::PointerData& /*data*/) {
+      m_selectedIndex = idx;
+      activateSelected();
+    });
+    area->setOnMotion([this, idx = i, rowPtr](const InputArea::PointerData& /*data*/) {
+      if (!m_mouseActive) {
+        m_mouseActive = true;
+        if (idx != m_selectedIndex && m_hoverIndex != idx) {
+          m_hoverIndex = idx;
+          rowPtr->setBackground(
+              rgba(palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.45f));
+          PanelManager::instance().refresh();
+        }
+      }
+    });
+    area->setOnEnter([this, idx = i, rowPtr](const InputArea::PointerData& /*data*/) {
+      if (!m_mouseActive || idx == m_selectedIndex) {
+        return;
+      }
+      m_hoverIndex = idx;
+      rowPtr->setBackground(
+          rgba(palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.45f));
+      PanelManager::instance().refresh();
+    });
+    area->setOnLeave([this, idx = i, rowPtr]() {
+      if (m_hoverIndex != idx || idx == m_selectedIndex) {
+        return;
+      }
+      m_hoverIndex = static_cast<std::size_t>(-1);
+      rowPtr->setBackground(rgba(0, 0, 0, 0));
+      PanelManager::instance().refresh();
+    });
 
     // Icon/action text
     if (!result.actionText.empty()) {

@@ -112,13 +112,23 @@ void Flex::setRowLayout() {
   setAlign(FlexAlign::Center);
 }
 
+
 void Flex::ensureBackground() {
   if (m_background != nullptr) {
     return;
   }
   auto rect = std::make_unique<RectNode>();
+  rect->setStyle(RoundedRectStyle{
+      .fill = rgba(0, 0, 0, 0),
+      .border = rgba(0, 0, 0, 0),
+      .fillMode = FillMode::Solid,
+      .radius = 0.0f,
+      .softness = 0.0f,
+      .borderWidth = 0.0f,
+  });
   m_background = static_cast<RectNode*>(addChild(std::move(rect)));
   m_background->setZIndex(-1);
+  m_background->setSize(width(), height());
 }
 
 void Flex::layout(Renderer& renderer) {

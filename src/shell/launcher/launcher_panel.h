@@ -56,6 +56,8 @@ private:
 
   std::string m_query;
   std::size_t m_selectedIndex = 0;
+  std::size_t m_hoverIndex = static_cast<std::size_t>(-1);
   float m_lastWidth = 0.0f;
   bool m_dirty = false;
+  bool m_mouseActive = false;
 };
