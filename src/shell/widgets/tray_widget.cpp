@@ -10,14 +10,19 @@
 #include "ui/controls/glyph.h"
 #include "ui/controls/glyph_registry.h"
 #include "ui/palette.h"
+#include "ui/style.h"
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <linux/input-event-codes.h>
 #include <memory>
 #include <string>
 
 namespace {
+
+constexpr float kTrayGap = 4.0f;
+constexpr float kTrayIconSize = 16.0f;
 
 std::string toLower(std::string_view value) {
   std::string out(value);
@@ -132,7 +137,7 @@ TrayWidget::TrayWidget(TrayService* tray) : m_tray(tray) { buildDesktopIconIndex
 void TrayWidget::create(Renderer& renderer) {
   auto container = std::make_unique<Flex>();
   container->setRowLayout();
-  container->setGap(4.0f);
+  container->setGap(kTrayGap * m_contentScale);
   m_container = container.get();
 
   m_root = std::move(container);
@@ -145,8 +150,11 @@ void TrayWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*co
     return;
   }
 
+  m_container->setGap(kTrayGap * m_contentScale);
+
   for (const auto& child : m_container->children()) {
     if (auto* glyph = dynamic_cast<Glyph*>(child.get())) {
+      glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
       glyph->measure(renderer);
     }
   }
@@ -205,20 +213,22 @@ void TrayWidget::rebuild(Renderer& renderer) {
 
   for (const auto& item : m_items) {
     const std::string iconPath = resolveIconPath(item);
+    const float iconSize = kTrayIconSize * m_contentScale;
+    const int iconRequestSize = static_cast<int>(std::round(kTrayIconSize * m_contentScale));
 
     std::unique_ptr<Node> iconNode;
-    float iconW = 16.0f;
-    float iconH = 16.0f;
+    float iconW = iconSize;
+    float iconH = iconSize;
 
     if (!iconPath.empty()) {
-      auto texture = renderer.textureManager().loadFromFile(iconPath, 16);
+      auto texture = renderer.textureManager().loadFromFile(iconPath, iconRequestSize);
       if (texture.id != 0) {
         auto image = std::make_unique<ImageNode>();
         image->setTextureId(texture.id);
 
         const float maxDim = static_cast<float>(std::max(texture.width, texture.height));
-        iconW = maxDim > 0.0f ? 16.0f * (static_cast<float>(texture.width) / maxDim) : 16.0f;
-        iconH = maxDim > 0.0f ? 16.0f * (static_cast<float>(texture.height) / maxDim) : 16.0f;
+        iconW = maxDim > 0.0f ? iconSize * (static_cast<float>(texture.width) / maxDim) : iconSize;
+        iconH = maxDim > 0.0f ? iconSize * (static_cast<float>(texture.height) / maxDim) : iconSize;
         image->setSize(iconW, iconH);
 
         iconNode = std::move(image);
@@ -245,8 +255,8 @@ void TrayWidget::rebuild(Renderer& renderer) {
           image->setTextureId(texture.id);
 
           const float maxDim = static_cast<float>(std::max(texture.width, texture.height));
-          iconW = maxDim > 0.0f ? 16.0f * (static_cast<float>(texture.width) / maxDim) : 16.0f;
-          iconH = maxDim > 0.0f ? 16.0f * (static_cast<float>(texture.height) / maxDim) : 16.0f;
+          iconW = maxDim > 0.0f ? iconSize * (static_cast<float>(texture.width) / maxDim) : iconSize;
+          iconH = maxDim > 0.0f ? iconSize * (static_cast<float>(texture.height) / maxDim) : iconSize;
           image->setSize(iconW, iconH);
 
           iconNode = std::move(image);
@@ -263,6 +273,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
       auto glyph = std::make_unique<Glyph>();
       const std::string fallback = iconForItem(item);
       glyph->setGlyph(fallback);
+      glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
       glyph->setColor(item.needsAttention ? palette.error : palette.onSurface);
       glyph->measure(renderer);
       iconW = glyph->width();

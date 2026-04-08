@@ -5,6 +5,7 @@
 #include "shell/panel/panel_manager.h"
 #include "ui/controls/glyph.h"
 #include "ui/palette.h"
+#include "ui/style.h"
 
 #include <memory>
 
@@ -26,6 +27,7 @@ void TestWidget::create(Renderer& renderer) {
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("flask");
+  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   glyph->setColor(palette.onSurface);
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
@@ -40,6 +42,7 @@ void TestWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*co
   if (m_glyph == nullptr) {
     return;
   }
+  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   m_glyph->measure(renderer);
   auto* node = root();
   if (node != nullptr) {

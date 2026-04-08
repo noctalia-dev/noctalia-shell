@@ -6,12 +6,12 @@ SpacerWidget::SpacerWidget(float width) : m_fixedWidth(width) {}
 
 void SpacerWidget::create(Renderer& /*renderer*/) {
   auto box = std::make_unique<Flex>();
-  box->setSize(m_fixedWidth, 0.0f);
+  box->setSize(m_fixedWidth * m_contentScale, 0.0f);
   m_root = std::unique_ptr<Node>(box.release());
 }
 
 void SpacerWidget::layout(Renderer& /*renderer*/, float /*containerWidth*/, float containerHeight) {
   if (root() != nullptr) {
-    root()->setSize(m_fixedWidth, containerHeight);
+    root()->setSize(m_fixedWidth * m_contentScale, containerHeight);
   }
 }

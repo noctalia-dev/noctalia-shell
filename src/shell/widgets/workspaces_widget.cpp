@@ -8,6 +8,7 @@
 #include "render/scene/node.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/chip.h"
+#include "ui/controls/label.h"
 
 #include <linux/input-event-codes.h>
 
@@ -81,7 +82,13 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     auto chip = std::make_unique<Chip>();
     chip->setText(ws.name);
     chip->setActive(ws.active);
-    chip->setPadding(Style::spaceMd * 0.25f, Style::spaceMd * 0.5f, Style::spaceMd * 0.25f, Style::spaceMd * 0.5f);
+    chip->setPadding(Style::spaceMd * 0.25f * m_contentScale, Style::spaceMd * 0.5f * m_contentScale,
+                     Style::spaceMd * 0.25f * m_contentScale, Style::spaceMd * 0.5f * m_contentScale);
+    chip->setRadius(Style::radiusMd * m_contentScale);
+    chip->setBorderWidth(Style::borderWidth * m_contentScale);
+    if (auto* label = chip->label(); label != nullptr) {
+      label->setFontSize(Style::fontSizeCaption * m_contentScale);
+    }
     chip->layout(renderer);
 
     // Wrap chip in an InputArea for click handling
@@ -112,7 +119,7 @@ void WorkspacesWidget::playSwitchAnimation(int direction) {
     m_fadeAnimId = 0;
   }
 
-  const float startX = static_cast<float>(direction) * 14.0f;
+  const float startX = static_cast<float>(direction) * 14.0f * m_contentScale;
   const float targetY = m_container->y();
   m_container->setPosition(startX, targetY);
   m_container->setOpacity(0.75f);
