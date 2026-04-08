@@ -150,6 +150,15 @@ ColumnLayout {
     onToggled: checked => Settings.data.general.reverseScroll = checked
   }
 
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.general.smooth-scrolling-label")
+    description: I18n.tr("panels.general.smooth-scrolling-description")
+    checked: Settings.data.general.smoothScrollEnabled
+    defaultValue: Settings.getDefaultValue("general.smoothScrollEnabled")
+    onToggled: checked => Settings.data.general.smoothScrollEnabled = checked
+  }
+
   NDivider {
     Layout.fillWidth: true
     Layout.topMargin: Style.marginM

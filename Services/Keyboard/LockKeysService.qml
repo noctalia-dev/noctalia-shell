@@ -35,9 +35,6 @@ Singleton {
   signal numLockChanged(bool active)
   signal scrollLockChanged(bool active)
 
-  // Flag to track if this is the initial check to avoid OSD triggers
-  property bool initialCheckDone: false
-
   Instantiator {
     model: FolderListModel {
       id: folderModel
@@ -49,32 +46,68 @@ Singleton {
       FileView {
         id: fileView
         path: filePath + "/brightness"
-        onTextChanged: () => {
-          if (!this.isWanted)
+        // sysfs brightness can fail transiently (e.g. resume); omit console spam like other sysfs FileViews.
+        printErrors: false
+        watchChanges: false
+
+        function parseBrightnessLedOn(raw) {
+          var t = raw.trim();
+          if (t === "" || !/^[0-9]+$/.test(t))
+            return null;
+          return parseInt(t, 10) !== 0;
+        }
+
+        function applyLockState(kind, state, emitIfChanged) {
+          switch (kind) {
+          case "numlock":
+            if (emitIfChanged && root.numLockOn !== state) {
+              root.numLockOn = state;
+              root.numLockChanged(state);
+              Logger.i("LockKeysService", "Num Lock:", state, fileView.path);
+            } else if (!emitIfChanged) {
+              root.numLockOn = state;
+            }
+            break;
+          case "capslock":
+            if (emitIfChanged && root.capsLockOn !== state) {
+              root.capsLockOn = state;
+              root.capsLockChanged(state);
+              Logger.i("LockKeysService", "Caps Lock:", state, fileView.path);
+            } else if (!emitIfChanged) {
+              root.capsLockOn = state;
+            }
+            break;
+          case "scrolllock":
+            if (emitIfChanged && root.scrollLockOn !== state) {
+              root.scrollLockOn = state;
+              root.scrollLockChanged(state);
+              Logger.i("LockKeysService", "Scroll Lock:", state, fileView.path);
+            } else if (!emitIfChanged) {
+              root.scrollLockOn = state;
+            }
+            break;
+          }
+        }
+
+        // Only apply after a successful read — failed reloads must not update UI (empty text is not "off").
+        onLoaded: {
+          if (!fileView.isWanted)
           return;
-          if (!this.initialCheckDone) {
-            this.initialCheckDone = true;
+          var state = fileView.parseBrightnessLedOn(fileView.text());
+          if (state === null)
+          return;
+
+          var kind = fileName.split("::")[1];
+
+          // First read after polling starts: sync bar/UI from sysfs without firing
+          // *Changed signals (OSD listens to those and would flash on startup).
+          if (!fileView.initialCheckDone) {
+            fileView.initialCheckDone = true;
+            fileView.applyLockState(kind, state, false);
             return;
           }
 
-          var state = !this.text().startsWith("0");
-          switch (fileName.split("::")[1]) {
-            case "numlock":
-            root.numLockOn = state;
-            root.numLockChanged(state);
-            Logger.i("LockKeysService", "Num Lock:", state, this.path);
-            break;
-            case "capslock":
-            root.capsLockOn = state;
-            root.capsLockChanged(state);
-            Logger.i("LockKeysService", "Caps Lock:", state, this.path);
-            break;
-            case "scrolllock":
-            root.scrollLockOn = state;
-            root.scrollLockChanged(state);
-            Logger.i("LockKeysService", "Scroll Lock:", state, this.path);
-            break;
-          }
+          fileView.applyLockState(kind, state, true);
         }
 
         // FolderListModel only provides filters for file names, not folders
@@ -87,17 +120,16 @@ Singleton {
               return true;
             }
           }
-          Logger.i("LockKeysService", "ignoring:", this.path);
           return false;
         }
 
-        // Skip first OSD event if one fires immediately after enabling
+        // After shouldRun becomes true, first brightness read updates properties only (no *Changed signals).
         property bool initialCheckDone: false
         property variant connections: Connections {
           target: root
           function onShouldRunChanged() {
             if (root.shouldRun) {
-              this.initialCheckDone = false;
+              fileView.initialCheckDone = false;
             }
           }
         }

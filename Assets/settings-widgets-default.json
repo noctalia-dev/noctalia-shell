@@ -1,6 +1,7 @@
 {
   "bar": {
     "ActiveWindow": {
+      "showText": true,
       "showIcon": true,
       "hideMode": "hidden",
       "scrollingMode": "hover",
@@ -52,6 +53,7 @@
     "CustomButton": {
       "icon": "heart",
       "showIcon": true,
+      "iconPosition": "left",
       "showExecTooltip": true,
       "showTextTooltip": true,
       "generalTooltipText": "",
@@ -78,8 +80,8 @@
         "horizontal": 10,
         "vertical": 10
       },
-      "enableColorization": false,
       "colorizeSystemIcon": "none",
+      "colorizeSystemText": "none",
       "ipcIdentifier": ""
     },
     "DarkMode": {

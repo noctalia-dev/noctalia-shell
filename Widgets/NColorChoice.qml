@@ -34,6 +34,8 @@ RowLayout {
 
   RowLayout {
     id: colourRow
+
+    opacity: enabled ? 1.0 : 0.6
     Layout.minimumWidth: root.diameter * Color.colorKeyModel.length
 
     Repeater {

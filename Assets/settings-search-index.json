@@ -525,6 +525,15 @@
     "subTabLabel": "common.colors"
   },
   {
+    "labelKey": "panels.color-scheme.sync-gsettings-label",
+    "descriptionKey": "panels.color-scheme.sync-gsettings-description",
+    "widget": "NToggle",
+    "tab": 2,
+    "tabLabel": "panels.color-scheme.title",
+    "subTab": 0,
+    "subTabLabel": "common.colors"
+  },
+  {
     "labelKey": "panels.color-scheme.dark-mode-mode-label",
     "descriptionKey": "panels.color-scheme.dark-mode-mode-description",
     "widget": "NComboBox",
@@ -1266,6 +1275,14 @@
     "labelKey": "panels.general.fonts-monospace-scale-label",
     "descriptionKey": "panels.general.fonts-monospace-scale-description",
     "widget": "NValueSlider",
+    "tab": 0,
+    "tabLabel": "common.general",
+    "subTab": null
+  },
+  {
+    "labelKey": "panels.general.smooth-scrolling-label",
+    "descriptionKey": "panels.general.smooth-scrolling-description",
+    "widget": "NToggle",
     "tab": 0,
     "tabLabel": "common.general",
     "subTab": null
@@ -2167,13 +2184,25 @@
     "subTabLabel": "common.location"
   },
   {
+    "labelKey": "panels.location.auto-locate-label",
+    "descriptionKey": "panels.location.auto-locate-description",
+    "widget": "NToggle",
+    "tab": 17,
+    "tabLabel": "panels.region.title",
+    "subTab": 0,
+    "subTabLabel": "common.location"
+  },
+  {
     "labelKey": "panels.location.location-search-label",
     "descriptionKey": "panels.location.location-search-description",
     "widget": "NTextInput",
     "tab": 17,
     "tabLabel": "panels.region.title",
     "subTab": 0,
-    "subTabLabel": "common.location"
+    "subTabLabel": "common.location",
+    "visibleWhen": [
+      "!Settings.data.location.autoLocate"
+    ]
   },
   {
     "labelKey": "panels.location.weather-enabled-label",
@@ -2196,6 +2225,15 @@
   {
     "labelKey": "panels.location.weather-show-effects-label",
     "descriptionKey": "panels.location.weather-show-effects-description",
+    "widget": "NToggle",
+    "tab": 17,
+    "tabLabel": "panels.region.title",
+    "subTab": 0,
+    "subTabLabel": "common.location"
+  },
+  {
+    "labelKey": "panels.location.weather-talia-mascot-always-label",
+    "descriptionKey": "panels.location.weather-talia-mascot-always-description",
     "widget": "NToggle",
     "tab": 17,
     "tabLabel": "panels.region.title",
@@ -2578,6 +2616,24 @@
     "subTabLabel": "common.general"
   },
   {
+    "labelKey": "panels.wallpaper.settings-use-original-images-label",
+    "descriptionKey": "panels.wallpaper.settings-use-original-images-description",
+    "widget": "NToggle",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
+    "labelKey": "panels.wallpaper.settings-clear-cache-label",
+    "descriptionKey": "panels.wallpaper.settings-clear-cache-description",
+    "widget": "NLabel",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
     "labelKey": "panels.wallpaper.settings-enable-overview-label",
     "descriptionKey": "panels.wallpaper.settings-enable-overview-description",
     "widget": "NToggle",
@@ -2598,7 +2654,8 @@
     "subTab": 0,
     "subTabLabel": "common.general",
     "visibleWhen": [
-      "CompositorService.isNiri"
+      "CompositorService.isNiri",
+      "Settings.data.wallpaper.overviewEnabled"
     ]
   },
   {
@@ -2610,7 +2667,8 @@
     "subTab": 0,
     "subTabLabel": "common.general",
     "visibleWhen": [
-      "CompositorService.isNiri"
+      "CompositorService.isNiri",
+      "Settings.data.wallpaper.overviewEnabled"
     ]
   },
   {

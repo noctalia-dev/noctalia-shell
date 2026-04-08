@@ -4,7 +4,7 @@ import QtQuick.Layouts
 import qs.Commons
 import qs.Services.UI
 
-Rectangle {
+Item {
   id: root
 
   // Public properties
@@ -44,132 +44,140 @@ Rectangle {
     return root.textColor;
   }
 
-  // Dimensions
-  implicitWidth: contentRow.implicitWidth + (fontSize * 2)
-  implicitHeight: contentRow.implicitHeight + (fontSize)
-
-  // Appearance
-  radius: root.buttonRadius
-  color: {
-    if (!root.enabled)
-      return outlined ? "transparent" : Qt.lighter(Color.mSurfaceVariant, 1.2);
-    if (root.hovered)
-      return hoverColor;
-    return root.outlined ? "transparent" : root.backgroundColor;
-  }
-
-  border.width: outlined ? Style.borderS : 0
-  border.color: {
-    if (!root.enabled)
-      return Color.mOutline;
-    if (root.hovered)
-      return hoverColor;
-    return root.outlined ? root.backgroundColor : "transparent";
-  }
+  // Dimensions - include margin so border renders cleanly at fractional scales
+  implicitWidth: bg.implicitWidth + 2 * Style.borderS
+  implicitHeight: bg.implicitHeight + 2 * Style.borderS
 
   opacity: enabled ? 1.0 : 0.6
 
-  Behavior on color {
-    enabled: !Color.isTransitioning
-    ColorAnimation {
-      duration: Style.animationFast
-      easing.type: Easing.OutCubic
-    }
-  }
-
-  Behavior on border.color {
-    enabled: !Color.isTransitioning
-    ColorAnimation {
-      duration: Style.animationFast
-      easing.type: Easing.OutCubic
-    }
-  }
-
-  // Content
-  RowLayout {
-    id: contentRow
-    anchors.verticalCenter: parent.verticalCenter
-    anchors.left: root.horizontalAlignment === Qt.AlignLeft ? parent.left : undefined
-    anchors.horizontalCenter: root.horizontalAlignment === Qt.AlignHCenter ? parent.horizontalCenter : undefined
-    anchors.leftMargin: root.horizontalAlignment === Qt.AlignLeft ? Style.marginL : 0
-    spacing: Style.marginXS
-
-    // Icon (optional)
-    NIcon {
-      Layout.alignment: Qt.AlignVCenter
-      visible: root.icon !== ""
-      icon: root.icon
-      pointSize: root.iconSize
-      color: contentColor
-
-      Behavior on color {
-        enabled: !Color.isTransitioning
-        ColorAnimation {
-          duration: Style.animationFast
-          easing.type: Easing.OutCubic
-        }
-      }
-    }
-
-    // Text
-    NText {
-      Layout.alignment: Qt.AlignVCenter
-      visible: root.text !== ""
-      text: root.text
-      pointSize: root.fontSize
-      font.weight: root.fontWeight
-      color: contentColor
-
-      Behavior on color {
-        enabled: !Color.isTransitioning
-        ColorAnimation {
-          duration: Style.animationFast
-          easing.type: Easing.OutCubic
-        }
-      }
-    }
-  }
-
-  // Mouse interaction
-  MouseArea {
-    id: mouseArea
+  Rectangle {
+    id: bg
     anchors.fill: parent
-    enabled: root.enabled
-    hoverEnabled: true
-    acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-    cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+    anchors.margins: Style.borderS
 
-    onEntered: {
-      root.hovered = true;
-      root.entered();
-      if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
-        TooltipService.show(root, root.tooltipText);
+    implicitWidth: contentRow.implicitWidth + (root.fontSize * 2)
+    implicitHeight: contentRow.implicitHeight + (root.fontSize)
+
+    radius: root.buttonRadius
+    color: {
+      if (!root.enabled)
+        return root.outlined ? "transparent" : Qt.lighter(Color.mSurfaceVariant, 1.2);
+      if (root.hovered)
+        return root.hoverColor;
+      return root.outlined ? "transparent" : root.backgroundColor;
+    }
+
+    border.width: root.outlined ? Style.borderS : 0
+    border.color: {
+      if (!root.enabled)
+        return Color.mOutline;
+      if (root.hovered)
+        return root.hoverColor;
+      return root.outlined ? root.backgroundColor : "transparent";
+    }
+
+    Behavior on color {
+      enabled: !Color.isTransitioning
+      ColorAnimation {
+        duration: Style.animationFast
+        easing.type: Easing.OutCubic
       }
     }
-    onExited: {
-      root.hovered = false;
-      root.exited();
-      if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
-        TooltipService.hide();
+
+    Behavior on border.color {
+      enabled: !Color.isTransitioning
+      ColorAnimation {
+        duration: Style.animationFast
+        easing.type: Easing.OutCubic
       }
     }
-    onPressed: mouse => {
-                 if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
-                   TooltipService.hide();
-                 }
-                 if (mouse.button === Qt.LeftButton) {
-                   root.clicked();
-                 } else if (mouse.button == Qt.RightButton) {
-                   root.rightClicked();
-                 } else if (mouse.button == Qt.MiddleButton) {
-                   root.middleClicked();
-                 }
-               }
 
-    onCanceled: {
-      root.hovered = false;
-      if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
-        TooltipService.hide();
+    // Content
+    RowLayout {
+      id: contentRow
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.left: root.horizontalAlignment === Qt.AlignLeft ? parent.left : undefined
+      anchors.horizontalCenter: root.horizontalAlignment === Qt.AlignHCenter ? parent.horizontalCenter : undefined
+      anchors.leftMargin: root.horizontalAlignment === Qt.AlignLeft ? Style.marginL : 0
+      spacing: Style.marginXS
+
+      // Icon (optional)
+      NIcon {
+        Layout.alignment: Qt.AlignVCenter
+        visible: root.icon !== ""
+        icon: root.icon
+        pointSize: root.iconSize
+        color: root.contentColor
+
+        Behavior on color {
+          enabled: !Color.isTransitioning
+          ColorAnimation {
+            duration: Style.animationFast
+            easing.type: Easing.OutCubic
+          }
+        }
+      }
+
+      // Text
+      NText {
+        Layout.alignment: Qt.AlignVCenter
+        visible: root.text !== ""
+        text: root.text
+        pointSize: root.fontSize
+        font.weight: root.fontWeight
+        color: root.contentColor
+
+        Behavior on color {
+          enabled: !Color.isTransitioning
+          ColorAnimation {
+            duration: Style.animationFast
+            easing.type: Easing.OutCubic
+          }
+        }
+      }
+    }
+
+    // Mouse interaction
+    MouseArea {
+      id: mouseArea
+      anchors.fill: parent
+      enabled: root.enabled
+      hoverEnabled: true
+      acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+      cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+
+      onEntered: {
+        root.hovered = root.enabled ? true : false;
+        root.entered();
+        if (root.hovered && root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
+          TooltipService.show(root, root.tooltipText);
+        }
+      }
+      onExited: {
+        root.hovered = false;
+        root.exited();
+        if (root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
+          TooltipService.hide();
+        }
+      }
+      onPressed: mouse => {
+                   if (root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
+                     TooltipService.hide();
+                   }
+                   if (mouse.button === Qt.LeftButton) {
+                     root.clicked();
+                   } else if (mouse.button == Qt.RightButton) {
+                     root.rightClicked();
+                   } else if (mouse.button == Qt.MiddleButton) {
+                     root.middleClicked();
+                   }
+                 }
+
+      onCanceled: {
+        root.hovered = false;
+        if (root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
+          TooltipService.hide();
+        }
       }
     }
   }

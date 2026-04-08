@@ -57,10 +57,19 @@ Variants {
       id: window
       color: "transparent"
       screen: screenLoader.modelData
-      mask: DesktopWidgetRegistry.editMode ? null : emptyRegion
+      mask: DesktopWidgetRegistry.editMode ? null : widgetsMask
+
+      // Dynamic mask: combine clickable regions for each loaded widget
+      property var _maskRegions: []
+
+      Component {
+        id: maskRegionComponent
+        Region {}
+      }
 
       Region {
-        id: emptyRegion
+        id: widgetsMask
+        regions: window._maskRegions
       }
 
       WlrLayershell.layer: WlrLayer.Bottom
@@ -278,29 +287,69 @@ Variants {
 
             required property var modelData
             required property int index
+            property var _maskRegion: null
+            readonly property bool _isPlugin: DesktopWidgetRegistry.isPluginWidget(modelData.id)
 
-            sourceComponent: {
-              // Access registeredWidgets and pluginReloadCounter to create reactive binding
-              var _ = root.pluginReloadCounter;
-              var widgets = root.registeredWidgets;
-              return widgets[modelData.id] || null;
+            // All widgets use setSource() so that screen, widgetData, and
+            // widgetIndex are set as initial properties, available during
+            // Component.onCompleted. This prevents registration-key
+            // mismatches in widgets that build IDs from screen.name.
+            Component.onCompleted: _loadWidget()
+
+            onActiveChanged: {
+              if (active)
+                _loadWidget();
+            }
+
+            function _loadWidget() {
+              var widgetId = modelData.id;
+              var comp = root.registeredWidgets[widgetId];
+              if (!comp)
+                return;
+
+              var props = {
+                "screen": window.screen,
+                "widgetData": modelData,
+                "widgetIndex": index
+              };
+
+              if (_isPlugin) {
+                var pluginId = widgetId.replace("plugin:", "");
+                var api = PluginService.getPluginAPI(pluginId);
+                if (api)
+                  props.pluginApi = api;
+                setSource(comp.url, props);
+              } else {
+                // Core widgets: use explicit URL (inline Component.url
+                // returns the registry file, not the widget file)
+                var url = DesktopWidgetRegistry.widgetUrls[widgetId];
+                if (url)
+                  setSource(url, props);
+              }
             }
 
             onLoaded: {
               if (item) {
-                item.screen = window.screen;
                 item.parent = widgetsContainer;
-                item.widgetData = modelData;
-                item.widgetIndex = index;
 
-                // Inject plugin API for plugin widgets
-                if (DesktopWidgetRegistry.isPluginWidget(modelData.id)) {
-                  var pluginId = modelData.id.replace("plugin:", "");
-                  var api = PluginService.getPluginAPI(pluginId);
-                  if (api && item.hasOwnProperty("pluginApi")) {
-                    item.pluginApi = api;
-                  }
-                }
+                // Create mask region so this widget receives mouse input
+                _maskRegion = maskRegionComponent.createObject(window);
+                _maskRegion.item = item;
+                var newRegions = window._maskRegions.slice();
+                newRegions.push(_maskRegion);
+                window._maskRegions = newRegions;
+              }
+            }
+
+            // Clean up mask region when widget unloads
+            onItemChanged: {
+              if (!item && _maskRegion) {
+                var region = _maskRegion;
+                _maskRegion = null;
+                window._maskRegions = window._maskRegions.filter(function (r) {
+                  return r !== region;
+                });
+                region.destroy();
               }
             }
           }

@@ -19,7 +19,7 @@ Item {
   property int sectionWidgetsCount: 0
 
   // Settings
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   // Explicit screenName property ensures reactive binding when screen changes
   readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
@@ -75,7 +75,7 @@ Item {
 
   // SpectrumService registration for visualizer
   readonly property string spectrumComponentId: "bar:mediamini:" + root.screen?.name + ":" + root.section + ":" + root.sectionWidgetIndex
-  readonly property bool needsSpectrum: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none" && !root.isHidden
+  readonly property bool needsSpectrum: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none" && !root.isHidden && MediaService.isPlaying
 
   Layout.preferredHeight: isVertical ? -1 : Style.getBarHeightForScreen(screenName)
   Layout.preferredWidth: isVertical ? Style.getBarHeightForScreen(screenName) : -1
@@ -265,10 +265,10 @@ Item {
         y: Style.pixelAlignCenter(parent.height, height)
         width: Style.toOdd(parent.width)
         height: Style.toOdd(parent.height)
-        active: showVisualizer
+        active: root.needsSpectrum
         z: 0
         sourceComponent: {
-          if (!showVisualizer)
+          if (!root.needsSpectrum)
             return null;
           if (visualizerType === "linear")
             return linearSpectrum;
@@ -320,6 +320,7 @@ Item {
           Layout.fillWidth: true
           Layout.alignment: Qt.AlignVCenter
           Layout.preferredHeight: capsuleHeight
+          fadeRoundLeftCorners: !(showAlbumArt || showProgressRing)
 
           text: title
 
@@ -333,9 +334,8 @@ Item {
           cursorShape: hasPlayer ? Qt.PointingHandCursor : Qt.ArrowCursor
           maxWidth: root.maxWidth - root.mainContentWidth
           forcedHover: mainMouseArea.containsMouse
-          gradientColor: Style.capsuleColor
-          gradientWidth: Math.round(8 * Style.uiScaleRatio)
-          cornerRadius: Style.radiusM
+          fadeExtent: 0.1
+          fadeCornerRadius: Style.radiusM
 
           NText {
             color: hasPlayer ? root.textColor : Color.mOnSurfaceVariant
@@ -408,8 +408,15 @@ Item {
                }
 
     onEntered: {
-      if (screen && (isVertical || scrollingMode === "never") && !PanelService.getPanel("mediaPlayerPanel", screen)?.isPanelOpen) {
-        TooltipService.show(root, title, BarService.getTooltipDirection(root.screen?.name));
+      if (!root || !screen) {
+        return;
+      }
+      var scrollMode = scrollingMode;
+      if ((isVertical || scrollMode === "never")) {
+        var panel = PanelService.getPanel("mediaPlayerPanel", screen);
+        if (panel && !panel.isPanelOpen) {
+          TooltipService.show(root, title, BarService.getTooltipDirection(root.screen?.name));
+        }
       }
     }
     onExited: TooltipService.hide()
@@ -458,13 +465,18 @@ Item {
     property real progress: 0
     property real lineWidth: 2
 
-    onProgressChanged: requestPaint()
-    Component.onCompleted: requestPaint()
+    function repaint() {
+      if (this.visible && this.opacity > 0)
+        requestPaint();
+    }
+
+    onProgressChanged: repaint()
+    Component.onCompleted: repaint()
 
     Connections {
       target: Color
       function onMPrimaryChanged() {
-        requestPaint();
+        repaint();
       }
     }
 

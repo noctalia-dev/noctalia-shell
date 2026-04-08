@@ -1,0 +1,26 @@
+name: cachix
+
+on:
+  push:
+    branches:
+      - main
+  workflow_run:
+    workflows: ["update flake"]
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  cache:
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'noctalia-dev/noctalia-shell' }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+      - uses: cachix/cachix-action@v17
+        with:
+          name: "${{ secrets.CACHIX_CACHE_NAME }}"
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - run: nix build .

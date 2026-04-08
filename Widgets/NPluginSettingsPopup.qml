@@ -121,7 +121,7 @@ Popup {
     currentPluginApi = null;
   }
 
-  function openPluginSettings(pluginManifest) {
+  function openPluginSettings(pluginManifest, settingsEntryPoint) {
     currentPlugin = pluginManifest;
 
     // Use composite key if available (for custom plugins), otherwise use manifest ID (for official plugins)
@@ -138,7 +138,8 @@ Popup {
 
     // Get plugin directory
     var pluginDir = PluginRegistry.getPluginDir(pluginId);
-    var settingsPath = pluginDir + "/" + pluginManifest.entryPoints.settings;
+    var settingsEntry = settingsEntryPoint ? pluginManifest.entryPoints[settingsEntryPoint] : pluginManifest.entryPoints.settings;
+    var settingsPath = pluginDir + "/" + settingsEntry;
 
     settingsLoader.setSource("file://" + settingsPath, {
                                "pluginApi": currentPluginApi

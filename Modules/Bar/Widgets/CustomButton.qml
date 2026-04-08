@@ -12,6 +12,27 @@ import qs.Widgets
 Item {
   id: root
 
+  NPopupContextMenu {
+    id: contextMenu
+
+    model: [
+      {
+        "label": I18n.tr("actions.widget-settings"),
+        "action": "widget-settings",
+        "icon": "settings"
+      },
+    ]
+
+    onTriggered: action => {
+                   contextMenu.close();
+                   PanelService.closeContextMenu(screen);
+
+                   if (action === "widget-settings") {
+                     BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
+                   }
+                 }
+  }
+
   property ShellScreen screen
 
   // Widget properties passed from Bar.qml for per-instance settings
@@ -20,7 +41,7 @@ Item {
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
 
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   // Explicit screenName property ensures reactive binding when screen changes
   readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
@@ -37,6 +58,7 @@ Item {
   readonly property bool isVerticalBar: barPosition === "left" || barPosition === "right"
 
   readonly property string customIcon: widgetSettings.icon || widgetMetadata.icon
+  readonly property string iconPosition: widgetSettings.iconPosition || widgetMetadata.iconPosition
   readonly property string leftClickExec: widgetSettings.leftClickExec || widgetMetadata.leftClickExec
   readonly property bool leftClickUpdateText: widgetSettings.leftClickUpdateText ?? widgetMetadata.leftClickUpdateText
   readonly property string rightClickExec: widgetSettings.rightClickExec || widgetMetadata.rightClickExec
@@ -139,14 +161,19 @@ Item {
     return " ".repeat(currentMaxTextLength);
   }
 
-  readonly property bool enableColorization: widgetSettings.enableColorization || false
   readonly property string colorizeSystemIcon: {
     if (widgetSettings.colorizeSystemIcon !== undefined)
       return widgetSettings.colorizeSystemIcon;
     return widgetMetadata.colorizeSystemIcon !== undefined ? widgetMetadata.colorizeSystemIcon : "none";
   }
+  readonly property string colorizeSystemText: {
+    if (widgetSettings.colorizeSystemText !== undefined)
+      return widgetSettings.colorizeSystemText;
+    return widgetMetadata.colorizeSystemText !== undefined ? widgetMetadata.colorizeSystemText : "none";
+  }
 
-  readonly property bool isColorizing: enableColorization && colorizeSystemIcon !== "none"
+  // Colorization is active if either icon or text has a color set
+  readonly property bool isColorizing: colorizeSystemIcon !== "none" || colorizeSystemText !== "none"
 
   // Get color value from color name (returns null for invalid names)
   function _getColorValue(colorName, forHover) {
@@ -187,8 +214,10 @@ Item {
     return isHover ? Color.mOnHover : Color.mOnSurface;
   }
 
-  readonly property color iconColor: _resolveIconColor(_dynamicColor, colorizeSystemIcon, false)
-  readonly property color iconHoverColor: _resolveIconColor(_dynamicColor, colorizeSystemIcon, true)
+  readonly property color iconColor: _resolveIconColor(_dynamicIconColor || _dynamicColor, colorizeSystemIcon, false)
+  readonly property color iconHoverColor: _resolveIconColor(_dynamicIconColor || _dynamicColor, colorizeSystemIcon, true)
+  readonly property color textColor: _resolveIconColor(_dynamicTextColor || _dynamicColor, colorizeSystemText, false)
+  readonly property color textHoverColor: _resolveIconColor(_dynamicTextColor || _dynamicColor, colorizeSystemText, true)
 
   implicitWidth: pill.width
   implicitHeight: pill.height
@@ -200,13 +229,15 @@ Item {
     opacity: _pillOpacity
     screen: root.screen
     oppositeDirection: BarService.getPillDirection(root)
+    iconPosition: root.iconPosition
     icon: _pillIcon
     text: _pillText
     rotateText: isVerticalBar && currentMaxTextLength > 0
     autoHide: false
     forceOpen: _pillForceOpen
     forceClose: !_pillForceOpen
-    customTextIconColor: iconColor
+    customIconColor: iconColor
+    customTextColor: textColor
 
     // Helper function to build tooltip content
     function _buildTooltipContent() {
@@ -285,6 +316,8 @@ Item {
   property string _dynamicIcon: ""
   property string _dynamicTooltip: ""
   property string _dynamicColor: ""
+  property string _dynamicIconColor: ""
+  property string _dynamicTextColor: ""
 
   // Maximum length for text display before scrolling (different values for horizontal and vertical)
   readonly property var maxTextLength: {
@@ -413,11 +446,25 @@ Item {
         const text = parsed.text || "";
         const icon = parsed.icon || "";
         let tooltip = parsed.tooltip || "";
-        const color = parsed.color || "";
 
-        // Validate color value
+        // Support both "color" (legacy) and "iconColor"/"textColor" (new)
+        const legacyColor = parsed.color || "";
+        const iconColorKey = parsed.iconColor || "";
+        const textColorKey = parsed.textColor || "";
+
         const validColors = ["primary", "secondary", "tertiary", "error", "none"];
-        const validColor = (color && validColors.includes(color)) ? color : "";
+
+        // Helper to resolve color: legacy > specific > none
+        function resolveColor(legacy, specific) {
+          if (legacy && validColors.includes(legacy))
+            return legacy;
+          if (specific && validColors.includes(specific))
+            return specific;
+          return "";
+        }
+
+        const resolvedIconColor = resolveColor(legacyColor, iconColorKey);
+        const resolvedTextColor = resolveColor(legacyColor, textColorKey);
 
         if (checkCollapse(text)) {
           _scrollState.originalText = "";
@@ -425,6 +472,8 @@ Item {
           _dynamicIcon = "";
           _dynamicTooltip = "";
           _dynamicColor = "";
+          _dynamicIconColor = "";
+          _dynamicTextColor = "";
           _scrollState.needsScrolling = false;
           _scrollState.phase = 0;
           _scrollState.phaseCounter = 0;
@@ -444,7 +493,9 @@ Item {
           scrollTimer.stop();
         }
         _dynamicIcon = icon;
-        _dynamicColor = validColor;
+        _dynamicColor = legacyColor;  // Keep legacy color for fallback
+        _dynamicIconColor = resolvedIconColor;
+        _dynamicTextColor = resolvedTextColor;
 
         _dynamicTooltip = toHtml(tooltip);
         _scrollState.offset = 0;
@@ -460,6 +511,8 @@ Item {
       _dynamicIcon = "";
       _dynamicTooltip = "";
       _dynamicColor = "";
+      _dynamicIconColor = "";
+      _dynamicTextColor = "";
       _scrollState.needsScrolling = false;
       _scrollState.phase = 0;
       _scrollState.phaseCounter = 0;
@@ -480,6 +533,8 @@ Item {
     }
     _dynamicIcon = "";
     _dynamicColor = "";
+    _dynamicIconColor = "";
+    _dynamicTextColor = "";
     _dynamicTooltip = toHtml(contentStr);
     _scrollState.offset = 0;
   }
@@ -521,8 +576,8 @@ Item {
     if (rightClickExec) {
       Quickshell.execDetached(["sh", "-lc", rightClickExec]);
       Logger.i("CustomButton", `Executing command: ${rightClickExec}`);
-    } else if (!rightClickUpdateText) {
-      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
+    } else {
+      PanelService.showContextMenu(contextMenu, pill, screen);
     }
     if (!textStream && rightClickUpdateText) {
       runTextCommand();

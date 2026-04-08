@@ -86,8 +86,9 @@ Singleton {
     return state ? state.hovered : false;
   }
 
-  // Toggle bar visibility. In auto-hide mode, toggles the auto-hide state
-  // on screens with auto-hide enabled. For other screens, toggles global isVisible flag.
+  // Toggle bar visibility. In auto-hide mode, toggles the per-screen hidden
+  // state without touching isVisible (so hover-to-show still works).
+  // For non-auto-hide screens, toggles the global isVisible flag.
   function toggleVisibility() {
     // Check if any auto-hide screen is currently visible
     var anyAutoHideVisible = false;
@@ -102,7 +103,7 @@ Singleton {
       }
     }
 
-    // Toggle auto-hide screens
+    // Toggle auto-hide screens (per-screen hidden state only)
     if (hasAutoHideScreens) {
       for (var screenName in screenAutoHideState) {
         if (Settings.getBarDisplayModeForScreen(screenName) === "auto_hide") {
@@ -111,11 +112,15 @@ Singleton {
       }
     }
 
-    // Toggle global visibility (affects non-auto-hide screens)
-    isVisible = !isVisible;
+    // Only toggle global visibility when no auto-hide screens exist,
+    // otherwise it would permanently disable hover-to-show
+    if (!hasAutoHideScreens) {
+      isVisible = !isVisible;
+    }
   }
 
   // Show bar. In auto-hide mode, un-hides on screens with auto-hide enabled.
+  // The bar stays visible until the user hovers and moves away.
   function show() {
     // Show auto-hide screens
     for (var screenName in screenAutoHideState) {
@@ -127,16 +132,36 @@ Singleton {
     isVisible = true;
   }
 
-  // Hide bar. In auto-hide mode, hides on screens with auto-hide enabled.
+  // Hide bar. In auto-hide mode, sets per-screen hidden state without touching
+  // isVisible so hover-to-show still works. For non-auto-hide screens, sets
+  // global visibility to false.
   function hide() {
-    // Hide auto-hide screens
+    var hasAutoHideScreens = false;
     for (var screenName in screenAutoHideState) {
       if (Settings.getBarDisplayModeForScreen(screenName) === "auto_hide") {
         setScreenHidden(screenName, true);
+        hasAutoHideScreens = true;
       }
     }
-    // Set global visibility (affects non-auto-hide screens)
-    isVisible = false;
+    // Only set global visibility off when no auto-hide screens exist,
+    // otherwise it would permanently disable hover-to-show
+    if (!hasAutoHideScreens) {
+      isVisible = false;
+    }
+  }
+
+  // Temporarily show the bar, then auto-hide after the configured delay.
+  // Uses the same pattern as workspace switch: show, then emit unhover
+  // to start the hide timer.
+  function peek() {
+    for (var screenName in screenAutoHideState) {
+      if (Settings.getBarDisplayModeForScreen(screenName) === "auto_hide") {
+        setScreenHidden(screenName, false);
+        if (!isBarHovered(screenName)) {
+          barHoverStateChanged(screenName, false);
+        }
+      }
+    }
   }
 
   Component.onCompleted: {

@@ -149,6 +149,8 @@ Singleton {
       return "MangoWC";
     if (CompositorService.isLabwc)
       return "LabWC";
+    if (CompositorService.isExtWorkspace)
+      return "ExtWorkspace";
     return "Unknown";
   }
 }

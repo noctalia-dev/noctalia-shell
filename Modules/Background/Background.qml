@@ -231,7 +231,7 @@ Variants {
           anchors.fill: parent
 
           property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source2: nextWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper
           property real progress: root.transitionProgress
 
           // Fill mode properties
@@ -261,7 +261,7 @@ Variants {
           anchors.fill: parent
 
           property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source2: nextWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper
           property real progress: root.transitionProgress
           property real smoothness: root.edgeSmoothness
           property real direction: root.wipeDirection
@@ -293,7 +293,7 @@ Variants {
           anchors.fill: parent
 
           property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source2: nextWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper
           property real progress: root.transitionProgress
           property real smoothness: root.edgeSmoothness
           property real aspectRatio: root.width / root.height
@@ -327,7 +327,7 @@ Variants {
           anchors.fill: parent
 
           property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source2: nextWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper
           property real progress: root.transitionProgress
           property real smoothness: root.edgeSmoothness
           property real aspectRatio: root.width / root.height
@@ -361,7 +361,7 @@ Variants {
           anchors.fill: parent
 
           property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source2: nextWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper
           property real progress: root.transitionProgress
           property real maxBlockSize: root.pixelateMaxBlockSize
 
@@ -392,7 +392,7 @@ Variants {
           anchors.fill: parent
 
           property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source2: nextWallpaper.status === Image.Ready ? nextWallpaper : currentWallpaper
           property real progress: root.transitionProgress
           property real cellSize: root.honeycombCellSize
           property real centerX: root.honeycombCenterX
@@ -429,6 +429,12 @@ Variants {
         duration: Settings.data.wallpaper.transitionDuration
         easing.type: Easing.InOutCubic
         onFinished: {
+          // Mark startup complete now that the animation has finished,
+          // so displayScalesChanged doesn't trigger a duplicate transition.
+          if (isStartupTransition) {
+            isStartupTransition = false;
+          }
+
           // Clear the tracking of what we're transitioning to
           transitioningToOriginalPath = "";
 
@@ -783,11 +789,12 @@ Variants {
       function _executeStartupTransition() {
         if (transitionType === "none") {
           setWallpaperImmediate(futureWallpaper);
+          isStartupTransition = false;
         } else {
+          // isStartupTransition stays true until transitionAnimation.onFinished
+          // to prevent displayScalesChanged from triggering a duplicate transition.
           setWallpaperWithTransition(futureWallpaper);
         }
-        // Mark startup transition complete
-        isStartupTransition = false;
       }
     }
   }

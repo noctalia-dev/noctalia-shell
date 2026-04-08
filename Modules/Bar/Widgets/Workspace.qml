@@ -23,7 +23,7 @@ Item {
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
 
-  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] ?? {}
   // Explicit screenName property ensures reactive binding when screen changes
   readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
@@ -59,7 +59,10 @@ Item {
   }
   readonly property bool hideUnoccupied: (widgetSettings.hideUnoccupied !== undefined) ? widgetSettings.hideUnoccupied : widgetMetadata.hideUnoccupied
   readonly property bool followFocusedScreen: (widgetSettings.followFocusedScreen !== undefined) ? widgetSettings.followFocusedScreen : widgetMetadata.followFocusedScreen
-  readonly property int characterCount: isVertical ? 2 : ((widgetSettings.characterCount !== undefined) ? widgetSettings.characterCount : widgetMetadata.characterCount)
+  readonly property int characterCount: {
+    const count = (widgetSettings.characterCount !== undefined) ? widgetSettings.characterCount : widgetMetadata.characterCount;
+    return isVertical ? Math.min(count, 2) : count;
+  }
 
   // Pill size setting (0.5-1.0 range)
   readonly property real pillSize: (widgetSettings.pillSize !== undefined) ? widgetSettings.pillSize : widgetMetadata.pillSize
@@ -728,14 +731,14 @@ Item {
 
       Behavior on width {
         NumberAnimation {
-          duration: Style.animationNormal
-          easing.type: Easing.OutBack
+          duration: Style.animationFast
+          easing.type: Easing.OutCubic
         }
       }
       Behavior on height {
         NumberAnimation {
-          duration: Style.animationNormal
-          easing.type: Easing.OutBack
+          duration: Style.animationFast
+          easing.type: Easing.OutCubic
         }
       }
 
@@ -776,6 +779,8 @@ Item {
           delegate: Item {
             id: groupedTaskbarItem
 
+            readonly property bool isFocused: modelData?.isFocused ?? false
+
             width: root.iconSize
             height: root.iconSize
 
@@ -791,22 +796,22 @@ Item {
 
               source: {
                 root.iconRevision; // Force re-evaluation when revision changes
-                return ThemeIcons.iconForAppId(modelData.appId?.toLowerCase());
+                return ThemeIcons.iconForAppId(modelData?.appId?.toLowerCase());
               }
               smooth: true
               asynchronous: true
-              opacity: modelData.isFocused ? Style.opacityFull : unfocusedIconsOpacity
-              layer.enabled: root.colorizeIcons && !modelData.isFocused
+              opacity: groupedTaskbarItem.isFocused ? Style.opacityFull : unfocusedIconsOpacity
+              layer.enabled: root.colorizeIcons && !groupedTaskbarItem.isFocused
 
               Rectangle {
                 id: groupedFocusIndicator
-                visible: modelData.isFocused || windowHoverHandler.hovered
+                visible: groupedTaskbarItem.isFocused || windowHoverHandler.hovered
                 anchors.bottomMargin: -2
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: Style.toOdd(root.iconSize * 0.25)
                 height: 4
-                color: modelData.isFocused ? Color.mPrimary : Color.mHover
+                color: groupedTaskbarItem.isFocused ? Color.mPrimary : Color.mHover
                 radius: Math.min(Style.radiusXXS, width / 2)
               }
 
@@ -825,13 +830,13 @@ Item {
               preventStealing: true
 
               onPressed: mouse => {
-                           if (mouse.button === Qt.LeftButton) {
+                           if (mouse.button === Qt.LeftButton && modelData) {
                              CompositorService.focusWindow(modelData);
                            }
                          }
 
               onReleased: mouse => {
-                            if (mouse.button === Qt.RightButton) {
+                            if (mouse.button === Qt.RightButton && modelData) {
                               mouse.accepted = true;
                               TooltipService.hide();
                               root.selectedWindowId = modelData.id || modelData.address || "";
@@ -840,6 +845,8 @@ Item {
                             }
                           }
               onEntered: {
+                if (!modelData)
+                  return;
                 TooltipService.show(groupedTaskbarItem, modelData.title || modelData.appId || "Unknown app.", BarService.getTooltipDirection(root.screenName));
               }
               onExited: {
@@ -976,7 +983,7 @@ Item {
     Behavior on scale {
       NumberAnimation {
         duration: Style.animationFast
-        easing.type: Easing.OutBack
+        easing.type: Easing.OutCubic
         easing.overshoot: 1.2
       }
     }

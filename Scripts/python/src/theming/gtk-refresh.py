@@ -53,21 +53,28 @@ def ensure_gtk_css_import(gtk_css: Path, colors_file: Path, label: str) -> bool:
         print(f"Error: {label} noctalia.css not found at {colors_file}", file=sys.stderr)
         return False
 
-    # If gtk.css is a symlink, replace it with a regular file
-    if gtk_css.is_symlink():
-        gtk_css.unlink()
-
-    if gtk_css.exists():
+    if gtk_css.exists() or gtk_css.is_symlink():
         content = gtk_css.read_text()
         # Already has the import (flexible: allow optional whitespace / different quoting)
         if "noctalia.css" in content and "@import" in content:
             return True
+        # Need to modify — handle symlinks carefully
+        target = gtk_css
+        if gtk_css.is_symlink():
+            resolved = gtk_css.resolve()
+            if os.access(resolved, os.W_OK):
+                # Writable symlink (e.g. dotfiles): edit the target directly
+                target = resolved
+            else:
+                # Read-only symlink (e.g. NixOS): convert to local file
+                gtk_css.unlink()
+                gtk_css.write_text(resolved.read_text())
         # Append import to the end
         new_content = content.rstrip()
         if new_content and not new_content.endswith("\n"):
             new_content += "\n"
         new_content += "\n" + GTK_IMPORT + "\n"
-        gtk_css.write_text(new_content)
+        target.write_text(new_content)
         print(f"Appended {label} noctalia.css import to gtk.css")
     else:
         gtk_css.write_text(GTK_IMPORT + "\n")
@@ -92,8 +99,9 @@ async def apply_gtk4_colors(config_dir: Path):
 async def sync_system_appearance(mode: str, *, update_gtk_theme: bool = True) -> None:
     """
     Push light/dark to org.gnome.desktop.interface (gsettings or dconf fallback).
-    Used by the GTK template post-hook (also sets gtk-theme when update_gtk_theme)
-    and by Noctalia on dark-mode toggle (--appearance-only: color-scheme only).
+    Used by the GTK template post-hook and ColorSchemeService when "Sync system theme"
+    is on (both set color-scheme and gtk-theme when themes exist). --appearance-only
+    skips CSS and only updates color-scheme for narrow tooling use.
     """
     has_gsettings = shutil.which("gsettings")
     has_dconf = shutil.which("dconf")
@@ -170,6 +178,9 @@ async def main():
         await sync_system_appearance(mode, update_gtk_theme=True)
         print("GTK colors applied successfully")
     else:
+        # Still push light/dark preference so portal/GTK apps follow the shell even when
+        # gtk.css / noctalia.css setup failed.
+        await sync_system_appearance(mode, update_gtk_theme=False)
         sys.exit(1)
 
 

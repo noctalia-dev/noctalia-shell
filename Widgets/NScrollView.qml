@@ -28,6 +28,36 @@ ScrollView {
 
   // Scroll speed multiplier for mouse wheel (1.0 = default, higher = faster)
   property real wheelScrollMultiplier: 2.0
+  property int smoothWheelAnimationDuration: Style.animationNormal
+  property real _wheelTargetY: 0
+
+  function clampScrollY(value) {
+    if (!root._internalFlickable)
+      return 0;
+    const flickable = root._internalFlickable;
+    return Math.max(0, Math.min(value, flickable.contentHeight - flickable.height));
+  }
+
+  function applyWheelScroll(delta) {
+    if (!root._internalFlickable)
+      return;
+
+    const flickable = root._internalFlickable;
+    const step = delta * root.wheelScrollMultiplier;
+
+    if (!Settings.data.general.smoothScrollEnabled || Settings.data.general.animationDisabled) {
+      flickable.contentY = root.clampScrollY(flickable.contentY - step);
+      root._wheelTargetY = flickable.contentY;
+      return;
+    }
+
+    if (!wheelScrollAnimation.running)
+      root._wheelTargetY = flickable.contentY;
+
+    root._wheelTargetY = root.clampScrollY(root._wheelTargetY - step);
+    wheelScrollAnimation.to = root._wheelTargetY;
+    wheelScrollAnimation.restart();
+  }
 
   rightPadding: userRightPadding + (reserveScrollbarSpace && verticalScrollable ? handleWidth + Style.marginXS : 0)
 
@@ -91,6 +121,40 @@ ScrollView {
   // Reference to the internal Flickable for wheel handling
   property Flickable _internalFlickable: null
 
+  NumberAnimation {
+    id: wheelScrollAnimation
+    target: root._internalFlickable
+    property: "contentY"
+    duration: root.smoothWheelAnimationDuration
+    easing.type: Easing.OutCubic
+  }
+
+  Connections {
+    target: root._internalFlickable
+
+    function onDraggingChanged() {
+      if (!root._internalFlickable || !root._internalFlickable.dragging)
+        return;
+      wheelScrollAnimation.stop();
+      root._wheelTargetY = root._internalFlickable.contentY;
+    }
+
+    function onFlickingChanged() {
+      if (!root._internalFlickable || !root._internalFlickable.flicking)
+        return;
+      wheelScrollAnimation.stop();
+      root._wheelTargetY = root._internalFlickable.contentY;
+    }
+
+    function onContentHeightChanged() {
+      root._wheelTargetY = root.clampScrollY(root._wheelTargetY);
+    }
+
+    function onHeightChanged() {
+      root._wheelTargetY = root.clampScrollY(root._wheelTargetY);
+    }
+  }
+
   // Function to configure the underlying Flickable
   function configureFlickable() {
     // Find the internal Flickable (it's usually the first child)
@@ -105,6 +169,8 @@ ScrollView {
           child.flickableDirection = Flickable.VerticalFlick;
           child.contentWidth = Qt.binding(() => child.width);
         }
+
+        root._wheelTargetY = child.contentY;
         break;
       }
     }
@@ -114,12 +180,8 @@ ScrollView {
     enabled: root.wheelScrollMultiplier !== 1.0 && root._internalFlickable !== null
     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
     onWheel: event => {
-               if (!root._internalFlickable)
-               return;
-               const flickable = root._internalFlickable;
                const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 2;
-               const newY = flickable.contentY - (delta * root.wheelScrollMultiplier);
-               flickable.contentY = Math.max(0, Math.min(newY, flickable.contentHeight - flickable.height));
+               root.applyWheelScroll(delta);
                event.accepted = true;
              }
   }

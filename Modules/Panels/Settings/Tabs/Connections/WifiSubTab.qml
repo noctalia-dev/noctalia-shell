@@ -49,43 +49,38 @@ Item {
   readonly property var activeNetworks: (passwordSsid && passwordSsid.length > 0) ? Object.values(cachedNetworks) : Object.values(NetworkService.networks)
 
   readonly property var connectedNetworks: {
-    if (!Settings.data.network.wifiEnabled) {
+    if (!NetworkService.wifiEnabled) {
       return [];
     }
     return activeNetworks.filter(n => n.connected).sort((a, b) => b.signal - a.signal);
   }
 
   readonly property var savedNetworks: {
-    if (!Settings.data.network.wifiEnabled) {
+    if (!NetworkService.wifiEnabled) {
       return [];
     }
-    return activeNetworks.filter(n => !n.connected && (n.existing || n.cached)).sort((a, b) => b.signal - a.signal);
+    return activeNetworks.filter(n => !n.connected && n.existing).sort((a, b) => b.signal - a.signal);
   }
 
   readonly property var availableNetworks: {
-    if (!Settings.data.network.wifiEnabled) {
+    if (!NetworkService.wifiEnabled) {
       return [];
     }
-    return activeNetworks.filter(n => !n.connected && !n.existing && !n.cached).sort((a, b) => b.signal - a.signal);
+    return activeNetworks.filter(n => !n.connected && !n.existing).sort((a, b) => b.signal - a.signal);
   }
 
   // Combined visibility check: tab must be visible AND the window must be visible
   readonly property bool effectivelyVisible: root.visible && Window.window && Window.window.visible
 
   onEffectivelyVisibleChanged: {
-    if (effectivelyVisible && Settings.data.network.wifiEnabled && !showOnlyLists) {
-      NetworkService.scan();
-    }
     if (effectivelyVisible) {
       SystemStatService.registerComponent("wifi-subtab");
+      if (NetworkService.wifiEnabled && !NetworkService.scanningActive && !showOnlyLists) {
+        NetworkService.scan();
+        NetworkService.refreshActiveWifiDetails();
+      }
     } else {
       SystemStatService.unregisterComponent("wifi-subtab");
-    }
-  }
-
-  Component.onCompleted: {
-    if (effectivelyVisible) {
-      SystemStatService.registerComponent("wifi-subtab");
     }
   }
 
@@ -130,7 +125,7 @@ Item {
     id: mainLayout
     anchors.left: parent.left
     anchors.right: parent.right
-    spacing: Style.marginL
+    spacing: root.showOnlyLists ? Style.marginM : Style.marginL
 
     // Master Control Section
     NBox {
@@ -151,21 +146,21 @@ Item {
 
           NToggle {
             label: I18n.tr("common.wifi")
-            icon: NetworkService.getIcon(false)
-            checked: Settings.data.network.wifiEnabled
+            icon: NetworkService.wifiEnabled ? "wifi" : "wifi-off"
+            checked: NetworkService.wifiEnabled
             onToggled: checked => NetworkService.setWifiEnabled(checked)
-            enabled: ProgramCheckerService.nmcliAvailable && !Settings.data.network.airplaneModeEnabled && NetworkService.wifiAvailable
+            enabled: !NetworkService.airplaneModeEnabled && NetworkService.wifiAvailable
             Layout.alignment: Qt.AlignVCenter
           }
         }
 
         NDivider {
           Layout.fillWidth: true
-          visible: Settings.data.network.wifiEnabled && root.connectedNetworks.length > 0
+          visible: NetworkService.wifiEnabled
         }
 
         NText {
-          visible: !root.showOnlyLists && Settings.data.network.wifiEnabled
+          visible: !root.showOnlyLists && NetworkService.wifiEnabled
           Layout.fillWidth: true
           text: I18n.tr("panels.connections.wifi-header-text")
           color: Color.mOnSurfaceVariant
@@ -184,7 +179,7 @@ Item {
     // Network List [1] (Connected)
     NBox {
       id: connectedBox
-      visible: root.connectedNetworks.length > 0 && Settings.data.network.wifiEnabled
+      visible: root.connectedNetworks.length > 0 && NetworkService.wifiEnabled
       Layout.fillWidth: true
       Layout.preferredHeight: connectedCol.implicitHeight + Style.margin2M
       border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
@@ -215,7 +210,7 @@ Item {
     // Network List [2] (Saved)
     NBox {
       id: savedBox
-      visible: root.savedNetworks.length > 0 && Settings.data.network.wifiEnabled
+      visible: root.savedNetworks.length > 0 && NetworkService.wifiEnabled
       Layout.fillWidth: true
       Layout.preferredHeight: savedCol.implicitHeight + Style.margin2M
       border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
@@ -246,7 +241,7 @@ Item {
     // Network List [3] (Available)
     NBox {
       id: availableBox
-      visible: root.availableNetworks.length > 0 && Settings.data.network.wifiEnabled
+      visible: root.availableNetworks.length > 0 && NetworkService.wifiEnabled
       Layout.fillWidth: true
       Layout.preferredHeight: availableCol.implicitHeight + Style.margin2M
       border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
@@ -270,15 +265,6 @@ Item {
             label: I18n.tr("wifi.panel.available-networks")
             Layout.fillWidth: true
           }
-        }
-
-        // Auto-scan timer when panel is visible
-        Timer {
-          id: autoScanTimer
-          interval: 5000
-          running: root.effectivelyVisible && Settings.data.network.wifiEnabled
-          repeat: true
-          onTriggered: NetworkService.scan()
         }
 
         Repeater {
@@ -331,14 +317,14 @@ Item {
     }
 
     Item {
-      visible: !showOnlyLists && Settings.data.network.wifiEnabled
+      visible: !showOnlyLists && NetworkService.wifiEnabled
       Layout.fillWidth: true
     }
 
     // Airplane Mode
     NBox {
       id: miscSettingsBox
-      visible: !root.showOnlyLists
+      visible: !root.showOnlyLists && miscSettingsCol.visibleChildren.length > 0
       Layout.fillWidth: true
       Layout.preferredHeight: miscSettingsCol.implicitHeight + Style.margin2XL
       color: Color.mSurface
@@ -350,11 +336,12 @@ Item {
         spacing: Style.marginM
 
         NToggle {
+          visible: NetworkService.wifiAvailable && BluetoothService.bluetoothAvailable
           label: I18n.tr("toast.airplane-mode.title")
           description: I18n.tr("toast.airplane-mode.description")
-          icon: Settings.data.network.airplaneModeEnabled ? "plane" : "plane-off"
-          checked: Settings.data.network.airplaneModeEnabled
-          onToggled: checked => BluetoothService.setAirplaneMode(checked)
+          icon: NetworkService.airplaneModeEnabled ? "plane" : "plane-off"
+          checked: NetworkService.airplaneModeEnabled
+          onToggled: checked => NetworkService.setAirplaneMode(checked)
         }
       }
     }
@@ -450,12 +437,12 @@ Item {
         onTextChanged: addNetworkPopup.customSsid = text
         onEditingFinished: {
           if (addNetworkPopup.customSsid.length > 0 && (addNetworkPopup.customSecurityKey === "open" || addNetworkPopup.customPassword.length > 0)) {
-            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
-                                           eap: addNetworkPopup.customEnterpriseEap,
-                                           phase2: addNetworkPopup.customEnterprisePhase2,
-                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
-                                           caCert: addNetworkPopup.customEnterpriseCaCert
-                                         }, addNetworkPopup.customIsHidden);
+            NetworkService.connect(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customIsHidden, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
+                                     eap: addNetworkPopup.customEnterpriseEap,
+                                     phase2: addNetworkPopup.customEnterprisePhase2,
+                                     anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
+                                     caCert: addNetworkPopup.customEnterpriseCaCert
+                                   });
             addNetworkPopup.close();
           }
         }
@@ -574,12 +561,12 @@ Item {
         inputItem.echoMode: addNetworkPopup.customShowPassword ? TextInput.Normal : TextInput.Password
         onEditingFinished: {
           if (addNetworkPopup.customSsid.length > 0 && addNetworkPopup.customPassword.length > 0) {
-            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
-                                           eap: addNetworkPopup.customEnterpriseEap,
-                                           phase2: addNetworkPopup.customEnterprisePhase2,
-                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
-                                           caCert: addNetworkPopup.customEnterpriseCaCert
-                                         }, addNetworkPopup.customIsHidden);
+            NetworkService.connect(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customIsHidden, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
+                                     eap: addNetworkPopup.customEnterpriseEap,
+                                     phase2: addNetworkPopup.customEnterprisePhase2,
+                                     anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
+                                     caCert: addNetworkPopup.customEnterpriseCaCert
+                                   });
             addNetworkPopup.close();
           }
         }
@@ -629,12 +616,12 @@ Item {
           textColor: Color.mOnPrimary
           enabled: addNetworkPopup.customSsid.length > 0 && (addNetworkPopup.customSecurityKey === "open" || addNetworkPopup.customPassword.length > 0) && (addNetworkPopup.customSecurityKey.indexOf("-eap") === -1 || addNetworkPopup.customIdentity.length > 0)
           onClicked: {
-            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
-                                           eap: addNetworkPopup.customEnterpriseEap,
-                                           phase2: addNetworkPopup.customEnterprisePhase2,
-                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
-                                           caCert: addNetworkPopup.customEnterpriseCaCert
-                                         }, addNetworkPopup.customIsHidden);
+            NetworkService.connect(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customIsHidden, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
+                                     eap: addNetworkPopup.customEnterpriseEap,
+                                     phase2: addNetworkPopup.customEnterprisePhase2,
+                                     anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
+                                     caCert: addNetworkPopup.customEnterpriseCaCert
+                                   });
             addNetworkPopup.close();
           }
         }
@@ -745,9 +732,6 @@ Item {
                       return NetworkService.networkConnectivity;
                     }
                   }
-                  if (modelData.cached && !modelData.existing) {
-                    return I18n.tr("wifi.panel.saved");
-                  }
                   return NetworkService.isSecured(modelData.security) ? modelData.security : I18n.tr("wifi.panel.security-open");
                 }
                 pointSize: Style.fontSizeXXS
@@ -834,7 +818,7 @@ Item {
             }
 
             NIconButton {
-              visible: !root.showOnlyLists && (modelData.existing || modelData.cached) && !modelData.connected && !networkItem.isBusy
+              visible: !root.showOnlyLists && modelData.existing && !modelData.connected && !networkItem.isBusy
               icon: "trash"
               tooltipText: I18n.tr("tooltips.forget-network")
               baseSize: Style.baseWidgetSize * 0.75
@@ -854,7 +838,7 @@ Item {
               textColor: Color.mOnPrimary
               text: I18n.tr("common.connect")
               onClicked: {
-                if (modelData.existing || modelData.cached || !NetworkService.isSecured(modelData.security)) {
+                if (modelData.existing || !NetworkService.isSecured(modelData.security)) {
                   NetworkService.connect(modelData.ssid);
                 } else {
                   root.requestPassword(modelData.ssid);

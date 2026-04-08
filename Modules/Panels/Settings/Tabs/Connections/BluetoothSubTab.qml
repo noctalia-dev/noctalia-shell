@@ -138,7 +138,7 @@ Item {
     id: mainLayout
     anchors.left: parent.left
     anchors.right: parent.right
-    spacing: Style.marginL
+    spacing: root.showOnlyLists ? Style.marginM : Style.marginL
 
     // Master Control Section
     NBox {
@@ -161,7 +161,7 @@ Item {
             label: I18n.tr("common.bluetooth")
             icon: BluetoothService.enabled ? "bluetooth" : "bluetooth-off"
             checked: BluetoothService.enabled
-            enabled: !Settings.data.network.airplaneModeEnabled && BluetoothService.bluetoothAvailable
+            enabled: !NetworkService.airplaneModeEnabled && BluetoothService.bluetoothAvailable
             onToggled: checked => BluetoothService.setBluetoothEnabled(checked)
             Layout.alignment: Qt.AlignVCenter
           }

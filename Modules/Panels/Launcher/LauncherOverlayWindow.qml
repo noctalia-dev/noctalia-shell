@@ -255,7 +255,7 @@ Variants {
 
           ShapePath {
             strokeWidth: -1
-            fillColor: Qt.alpha(Color.mSurface, Color.panelBackgroundOpacity)
+            fillColor: Qt.alpha(Color.mSurface, Color.adaptiveOpacity(Settings.data.ui.panelBackgroundOpacity))
 
             // Offset by radius to account for Shape's extended bounds
             startX: panelShape.radius + panelShape.radius * panelShape.tlMultX
@@ -364,7 +364,7 @@ Variants {
           if (!view)
             return launcherPanel.y + Style.marginL;
           var row = launcherCore.isGridView ? Math.floor(launcherCore.selectedIndex / launcherCore.gridColumns) : launcherCore.selectedIndex;
-          var gridCellSize = Math.floor((launcherWindow.listPanelWidth - (2 * Style.marginXS) - ((launcherCore.targetGridColumns - 1) * Style.marginS)) / launcherCore.targetGridColumns);
+          var gridCellSize = Math.floor((launcherWindow.listPanelWidth - Style.margin2XS - ((launcherCore.targetGridColumns - 1) * Style.marginS)) / launcherCore.targetGridColumns);
           var itemHeight = launcherCore.isGridView ? (gridCellSize + Style.marginXXS) : (launcherCore.entryHeight + (view.spacing || 0));
           var yPos = row * itemHeight - (view.contentY || 0);
           var mapped = view.mapToItem(launcherWindow.contentItem, 0, yPos);

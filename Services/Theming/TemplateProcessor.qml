@@ -102,9 +102,7 @@ Singleton {
       Logger.d("TemplateProcessor", "executeWallpaperColors: no config content and no user theming, aborting");
       return;
     }
-    const wp = wallpaperPath.replace(/'/g, "'\\''");
-
-    const script = buildGenerationScript(content, wp, mode);
+    const script = buildGenerationScript(content, wallpaperPath, mode);
 
     generateProcess.command = ["sh", "-c", script];
     generateProcess.running = true;

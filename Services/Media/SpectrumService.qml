@@ -10,27 +10,23 @@ Singleton {
   id: root
 
   // TODO Remove in may 2026
-  property bool _initialized: false
+  Component.onCompleted: {
+    _setBandsCount();
+  }
 
   // Register a component that needs audio data, call this when a visualizer becomes active.
   // Pass a unique identifier (e.g., "lockscreen", "controlcenter:screen1", "plugin:fancy-audiovisualizer")
   function registerComponent(componentId) {
     root._registeredComponents[componentId] = true;
     root._registeredComponents = Object.assign({}, root._registeredComponents);
-    Logger.d("Spectrum", "Component registered:", componentId, "- total:", root.registeredCount);
-
-    // TODO Remove in may 2026
-    if (!_initialized) {
-      _initialized = true;
-      _setBandsCount();
-    }
+    Logger.d("Spectrum", "Component registered:", componentId, "- total:", root._registeredCount);
   }
 
   // Unregister a component when it no longer needs audio data.
   function unregisterComponent(componentId) {
     delete root._registeredComponents[componentId];
     root._registeredComponents = Object.assign({}, root._registeredComponents);
-    Logger.d("Spectrum", "Component unregistered:", componentId, "- total:", root.registeredCount);
+    Logger.d("Spectrum", "Component unregistered:", componentId, "- total:", root._registeredCount);
   }
 
   // Check if a component is registered
@@ -75,10 +71,11 @@ Singleton {
     }
   }
   function _setBandsCount() {
+    const bandCount = Settings.data.audio.spectrumMirrored ? 32 : 64;
     if (spectrum.bandCount !== undefined) {
-      spectrum.bandCount = Settings.data.audio.spectrumMirrored ? 32 : 64;
+      spectrum.bandCount = bandCount;
     } else if (spectrum.barCount !== undefined) {
-      spectrum.barCount = Settings.data.audio.spectrumMirrored ? 32 : 64;
+      spectrum.barCount = bandCount;
     }
   }
 }

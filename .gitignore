@@ -8,3 +8,5 @@ __pycache__
 result
 build
 /debian/
+.direnv/
+.envrc

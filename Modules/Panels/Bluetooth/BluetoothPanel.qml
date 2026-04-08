@@ -54,7 +54,7 @@ SmartPanel {
           NToggle {
             id: bluetoothSwitch
             checked: BluetoothService.enabled
-            enabled: !Settings.data.network.airplaneModeEnabled && BluetoothService.bluetoothAvailable
+            enabled: !NetworkService.airplaneModeEnabled && BluetoothService.bluetoothAvailable
             onToggled: checked => BluetoothService.setBluetoothEnabled(checked)
             baseSize: Style.baseWidgetSize * 0.65
           }

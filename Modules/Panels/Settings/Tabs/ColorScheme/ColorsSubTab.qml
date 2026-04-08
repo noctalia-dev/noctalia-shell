@@ -118,6 +118,17 @@ ColumnLayout {
                }
   }
 
+  NToggle {
+    label: I18n.tr("panels.color-scheme.sync-gsettings-label")
+    description: I18n.tr("panels.color-scheme.sync-gsettings-description")
+    checked: Settings.data.colorSchemes.syncGsettings
+    onToggled: checked => {
+                 Settings.data.colorSchemes.syncGsettings = checked;
+                 if (checked)
+                 ColorSchemeService.pushSystemColorScheme();
+               }
+  }
+
   NComboBox {
     label: I18n.tr("panels.color-scheme.dark-mode-mode-label")
     description: I18n.tr("panels.color-scheme.dark-mode-mode-description")

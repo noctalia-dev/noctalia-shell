@@ -27,7 +27,6 @@ RowLayout {
   signal selected(string key)
 
   spacing: Style.marginL
-  opacity: enabled ? 1.0 : 0.6
 
   // Less strict comparison with != (instead of !==) so it can properly compare int vs string (ex for FPS: 30 and "30")
   readonly property bool isValueChanged: (defaultValue !== undefined) && (currentKey != defaultValue)
@@ -136,6 +135,7 @@ RowLayout {
   ComboBox {
     id: combo
 
+    opacity: enabled ? 1.0 : 0.6
     Layout.margins: Style.borderS
     Layout.minimumWidth: Math.round(root.minimumWidth * Style.uiScaleRatio)
     Layout.preferredHeight: Math.round(root.preferredHeight * Style.uiScaleRatio)
@@ -274,12 +274,6 @@ RowLayout {
           radius: Style.iRadiusS
           color: isHighlighted ? Color.mHover : "transparent"
 
-          Behavior on color {
-            ColorAnimation {
-              duration: Style.animationFast
-            }
-          }
-
           NText {
             id: delegateText
             anchors.fill: parent
@@ -292,12 +286,6 @@ RowLayout {
             text: {
               var item = root.getItem(delegateRect.index);
               return item && item.name ? item.name : "";
-            }
-
-            Behavior on color {
-              ColorAnimation {
-                duration: Style.animationFast
-              }
             }
           }
 

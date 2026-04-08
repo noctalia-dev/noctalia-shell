@@ -521,8 +521,9 @@ Popup {
       var localDir = localPath.substring(0, localPath.lastIndexOf('/'));
 
       downloadScript += "mkdir -p '" + localDir + "'\n";
-      var downloadUrl = file.url || file.download_url;
-      if (downloadUrl) {
+      var rawUrl = file.url || file.download_url;
+      if (rawUrl) {
+        var downloadUrl = encodeURI(rawUrl);
         downloadScript += "curl -L -s -o '" + localPath + "' '" + downloadUrl + "' || wget -q -O '" + localPath + "' '" + downloadUrl + "'\n";
       }
     }

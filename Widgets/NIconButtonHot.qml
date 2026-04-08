@@ -45,7 +45,7 @@ Rectangle {
   implicitHeight: applyUiScale ? Math.round(baseSize * Style.uiScaleRatio) : Math.round(baseSize)
 
   // Appearance
-  opacity: root.enabled ? Style.opacityFull : Style.opacityMedium
+  opacity: enabled ? 1.0 : 0.6
   color: {
     if (root.enabled && root.hovering || pressed) {
       return colorBgHover;
@@ -106,7 +106,7 @@ Rectangle {
 
     onEntered: {
       hovering = root.enabled ? true : false;
-      if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
+      if (hovering && tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
         TooltipService.show(parent, tooltipText, tooltipDirection);
       }
       root.entered();

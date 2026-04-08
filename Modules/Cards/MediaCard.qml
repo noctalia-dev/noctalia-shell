@@ -16,7 +16,7 @@ NBox {
   readonly property bool hasActivePlayer: MediaService.currentPlayer && MediaService.canPlay
 
   // SpectrumService registration for visualizer
-  readonly property bool needsSpectrum: Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none"
+  readonly property bool needsSpectrum: Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none" && MediaService.isPlaying
 
   onNeedsSpectrumChanged: {
     if (root.needsSpectrum) {
@@ -138,7 +138,7 @@ NBox {
     // Background visualizer on top of the artwork
     Loader {
       anchors.fill: parent
-      active: Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none"
+      active: root.needsSpectrum
 
       sourceComponent: {
         switch (Settings.data.audio.visualizerType) {

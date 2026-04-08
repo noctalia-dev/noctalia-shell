@@ -20,6 +20,8 @@ kitty)
     else
         kitty +runpy "from kitty.utils import *; reload_conf_in_all_kitties()"
     fi
+    # Trigger kitty's live config reload after the template has been regenerated.
+    pkill -USR1 kitty >/dev/null 2>&1 || true
     ;;
 
 ghostty)
@@ -335,16 +337,16 @@ hyprland)
         echo -e "\n$INCLUDE_LINE\n" >"$CONFIG_FILE"
         echo "Created new config file with noctalia theme."
     else
-        if [ -L "$CONFIG_FILE" ] && [ ! -w "$CONFIG_FILE" ]; then
-            echo "Detected read-only symlink, converting to local file..."
-            cp --remove-destination "$(readlink -f "$CONFIG_FILE")" "$CONFIG_FILE"
-            chmod +w "$CONFIG_FILE"
-        fi
-
         # Check if noctalia theme source already exists (flexible matching)
         if grep -qE 'source\s*=\s*.*noctalia.*\.conf' "$CONFIG_FILE"; then
             echo "Theme already included, skipping modification."
         else
+            # Only convert symlink when we actually need to write (NixOS read-only symlinks)
+            if [ -L "$CONFIG_FILE" ] && [ ! -w "$CONFIG_FILE" ]; then
+                echo "Detected read-only symlink, converting to local file..."
+                cp --remove-destination "$(readlink -f "$CONFIG_FILE")" "$CONFIG_FILE"
+                chmod +w "$CONFIG_FILE"
+            fi
             # Add the include line to the end of the file
             echo -e "\n$INCLUDE_LINE\n" >>"$CONFIG_FILE"
             echo "✅ Added noctalia theme include to config."
@@ -372,6 +374,12 @@ sway)
         if grep -qE 'include\s+.*noctalia' "$CONFIG_FILE"; then
             echo "Theme already included, skipping modification."
         else
+            # Only convert symlink when we actually need to write (NixOS read-only symlinks)
+            if [ -L "$CONFIG_FILE" ] && [ ! -w "$CONFIG_FILE" ]; then
+                echo "Detected read-only symlink, converting to local file..."
+                cp --remove-destination "$(readlink -f "$CONFIG_FILE")" "$CONFIG_FILE"
+                chmod +w "$CONFIG_FILE"
+            fi
             # Add the include line to the end of the file
             echo -e "\n$INCLUDE_LINE\n" >>"$CONFIG_FILE"
             echo "✅ Added noctalia theme include to config."
@@ -399,6 +407,12 @@ scroll)
         if grep -qE 'include\s+.*noctalia' "$CONFIG_FILE"; then
             echo "Theme already included, skipping modification."
         else
+            # Only convert symlink when we actually need to write
+            if [ -L "$CONFIG_FILE" ] && [ ! -w "$CONFIG_FILE" ]; then
+                echo "Detected read-only symlink, converting to local file..."
+                cp --remove-destination "$(readlink -f "$CONFIG_FILE")" "$CONFIG_FILE"
+                chmod +w "$CONFIG_FILE"
+            fi
             # Add the include line to the end of the file
             echo -e "\n$INCLUDE_LINE\n" >>"$CONFIG_FILE"
             echo "Added noctalia theme include to config."
@@ -441,9 +455,24 @@ mango)
                 grep -E "^($COLOR_VARS)\s*=" "$conf_file" >>"$BACKUP_FILE"
 
                 # Remove color definitions from original file
-                sed -i -E "/^($COLOR_VARS)\s*=/d" "$conf_file"
+                if [ -L "$conf_file" ] && [ ! -w "$conf_file" ]; then
+                    # Read-only symlink (e.g. NixOS): convert to local file
+                    cp --remove-destination "$(readlink -f "$conf_file")" "$conf_file"
+                    chmod +w "$conf_file"
+                    sed -i -E "/^($COLOR_VARS)\s*=/d" "$conf_file"
+                else
+                    # Edit the real file, preserving any writable symlink
+                    sed -i -E "/^($COLOR_VARS)\s*=/d" "$(readlink -f "$conf_file")"
+                fi
             fi
         done
+
+        # Only convert symlink when we actually need to write
+        if [ -L "$MAIN_CONFIG" ] && [ ! -w "$MAIN_CONFIG" ]; then
+            echo "Detected read-only symlink, converting to local file..."
+            cp --remove-destination "$(readlink -f "$MAIN_CONFIG")" "$MAIN_CONFIG"
+            chmod +w "$MAIN_CONFIG"
+        fi
 
         # Add source line to main config
         if [ -f "$MAIN_CONFIG" ]; then

@@ -19,8 +19,8 @@ Singleton {
   property PwNode _lastFeedbackSink: null
 
   // Devices
-  readonly property PwNode sink: Pipewire.ready ? Pipewire.defaultAudioSink : null
-  readonly property PwNode source: validatedSource
+  readonly property var sink: Pipewire.ready ? Pipewire.defaultAudioSink : null
+  readonly property var source: validatedSource
   readonly property bool hasInput: !!source
   readonly property list<PwNode> sinks: deviceNodes.sinks
   readonly property list<PwNode> sources: deviceNodes.sources
@@ -32,6 +32,9 @@ Singleton {
   property bool wpctlStateValid: false
   property real wpctlOutputVolume: 0
   property bool wpctlOutputMuted: true
+  property bool wpctlInputStateValid: false
+  property real wpctlInputVolume: 0
+  property bool wpctlInputMuted: true
 
   signal volumeAtMaximum
   signal volumeAtMinimum
@@ -51,6 +54,14 @@ Singleton {
     wpctlStateProcess.running = true;
   }
 
+  function refreshWpctlInputState(): void {
+    if (!wpctlAvailable || wpctlInputStateProcess.running) {
+      return;
+    }
+    wpctlInputStateProcess.command = ["wpctl", "get-volume", "@DEFAULT_AUDIO_SOURCE@"];
+    wpctlInputStateProcess.running = true;
+  }
+
   function applyWpctlOutputState(raw: string): bool {
     const text = String(raw || "").trim();
     const match = text.match(/Volume:\s*([0-9]*\.?[0-9]+)/i);
@@ -66,6 +77,24 @@ Singleton {
     wpctlOutputVolume = clampOutputVolume(parsedVolume);
     wpctlOutputMuted = /\[MUTED\]/i.test(text);
     wpctlStateValid = true;
+    return true;
+  }
+
+  function applyWpctlInputState(raw: string): bool {
+    const text = String(raw || "").trim();
+    const match = text.match(/Volume:\s*([0-9]*\.?[0-9]+)/i);
+    if (!match || match.length < 2) {
+      return false;
+    }
+
+    const parsedVolume = Number(match[1]);
+    if (isNaN(parsedVolume)) {
+      return false;
+    }
+
+    wpctlInputVolume = Math.max(0, Math.min(root.maxVolume, parsedVolume));
+    wpctlInputMuted = /\[MUTED\]/i.test(text);
+    wpctlInputStateValid = true;
     return true;
   }
 
@@ -87,8 +116,11 @@ Singleton {
     return sink?.audio?.muted ?? true;
   }
 
-  // Input Volume - read directly from device
+  // Input volume (prefer wpctl state when available — matches set-volume % round-trip)
   readonly property real inputVolume: {
+    if (wpctlAvailable && wpctlInputStateValid) {
+      return Math.max(0, Math.min(root.maxVolume, wpctlInputVolume));
+    }
     if (!source?.audio) {
       return 0;
     }
@@ -98,7 +130,12 @@ Singleton {
     }
     return Math.max(0, Math.min(root.maxVolume, vol));
   }
-  readonly property bool inputMuted: source?.audio?.muted ?? true
+  readonly property bool inputMuted: {
+    if (wpctlAvailable && wpctlInputStateValid) {
+      return wpctlInputMuted;
+    }
+    return source?.audio?.muted ?? true;
+  }
 
   // Allow callers to skip the next OSD notification when they are already
   // presenting volume state (e.g. the Audio Panel UI). We track this as a short
@@ -153,7 +190,7 @@ Singleton {
                                                       }
 
   // Validated source (ensures it's a proper audio source, not a sink)
-  readonly property PwNode validatedSource: {
+  readonly property var validatedSource: {
     if (!Pipewire.ready) {
       return null;
     }
@@ -186,8 +223,16 @@ Singleton {
   // Track links to the default sink to find active streams
   PwNodeLinkTracker {
     id: sinkLinkTracker
-    node: root.sink
   }
+
+  onSinkChanged: {
+    if (root.sink) {
+      sinkLinkTracker.node = root.sink;
+    }
+  }
+
+  // Track all streams globally to prevent binding loops for filtered out streams
+  readonly property var streamNodes: Pipewire.ready ? Pipewire.nodes.values.filter(n => n && n.isStream) : []
 
   // Find application streams that are connected to the default sink
   readonly property var appStreams: {
@@ -240,8 +285,10 @@ Singleton {
         continue;
       }
 
-      // If it's a stream node, add it directly
-      if (sourceNode.isStream && sourceNode.audio) {
+      // Filter out filter (intermediate) streams
+      const isVirtual = (sourceNode.properties && sourceNode.properties["node.virtual"]) || "";
+      // If it's an application stream node, add it directly
+      if (sourceNode.isStream && sourceNode.audio && !isVirtual) {
         if (!connectedStreamIds[sourceNode.id]) {
           connectedStreamIds[sourceNode.id] = true;
           connectedStreams.push(sourceNode);
@@ -272,6 +319,12 @@ Singleton {
             continue;
           }
 
+          // Filter out filter streams
+          const nodeIsVirtual = (node.properties && node.properties["node.virtual"]) || "";
+          if (nodeIsVirtual) {
+            continue;
+          }
+
           var streamId = node.id;
           if (connectedStreamIds[streamId]) {
             continue;
@@ -296,13 +349,108 @@ Singleton {
     objects: [...root.sinks, ...root.sources]
   }
 
-  // Per-app volume persistence (survives stream recreation on track change/seek)
+  // Per-stream volume overrides (app + media identity) so concurrent streams do not share one entry.
   property var appVolumeOverrides: ({})
+  // Panel sticky: single stream per process base → store by base (survives track / node churn).
+  // Multiple streams same base → store by full stream key; base-only locks migrate when n grows.
+  property var panelAppVolumeByBase: ({})
+  property var panelAppMutedByBase: ({})
+  property var panelAppVolumeByStreamKey: ({})
+  property var panelAppMutedByStreamKey: ({})
   property var _knownAppStreamIds: ({})
   property bool _isApplyingAppOverride: false
 
   PwObjectTracker {
-    objects: root.appStreams
+    objects: root.streamNodes
+  }
+
+  // PipeWire → override sync (skipped while we are applying our own overrides).
+  Item {
+    width: 0
+    height: 0
+    visible: false
+
+    Repeater {
+      model: root.appStreams
+
+      delegate: Item {
+        required property var modelData
+
+        Connections {
+          target: modelData?.audio ?? null
+
+          function onVolumeChanged() {
+            if (root._isApplyingAppOverride || !modelData?.audio) {
+              return;
+            }
+            if (root._skipPipewireVolumeSyncForNode(modelData)) {
+              return;
+            }
+            var key = root.getAppKey(modelData);
+            if (key) {
+              root.setAppStreamVolume(key, modelData.audio.volume);
+            }
+          }
+
+          function onMutedChanged() {
+            if (root._isApplyingAppOverride || !modelData?.audio) {
+              return;
+            }
+            if (root._skipPipewireMuteSyncForNode(modelData)) {
+              return;
+            }
+            var key = root.getAppKey(modelData);
+            if (key) {
+              root.setAppStreamMuted(key, modelData.audio.muted);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  function getAppBaseKey(node): string {
+    if (!node || !node.properties) {
+      return "";
+    }
+    var props = node.properties;
+    var base = "";
+    var binary = props["application.process.binary"] || "";
+    if (binary) {
+      var parts = binary.split("/");
+      base = parts[parts.length - 1].toLowerCase();
+    }
+    if (!base) {
+      var appName = props["application.name"] || "";
+      if (appName) {
+        base = appName.toLowerCase();
+      }
+    }
+    if (!base) {
+      var appId = props["application.id"] || "";
+      if (appId) {
+        base = appId.toLowerCase();
+      }
+    }
+    return base;
+  }
+
+  function _concurrentStreamsForSameBase(base: string): int {
+    if (!base) {
+      return 0;
+    }
+    var streams = root.appStreams;
+    if (!streams) {
+      return 0;
+    }
+    var n = 0;
+    for (var i = 0; i < streams.length; i++) {
+      var s = streams[i];
+      if (s && getAppBaseKey(s) === base) {
+        n++;
+      }
+    }
+    return n;
   }
 
   function getAppKey(node): string {
@@ -310,21 +458,40 @@ Singleton {
       return "";
     }
     var props = node.properties;
-    var binary = props["application.process.binary"] || "";
-    if (binary) {
-      var parts = binary.split("/");
-      return parts[parts.length - 1].toLowerCase();
-    }
-    var appName = props["application.name"] || "";
-    if (appName) {
-      return appName.toLowerCase();
-    }
-    var appId = props["application.id"] || "";
-    if (appId) {
-      return appId.toLowerCase();
+    var base = root.getAppBaseKey(node);
+    if (!base) {
+      return "";
     }
 
-    return "";
+    var mediaName = (props["media.name"] || "").trim().toLowerCase();
+    var mediaRole = (props["media.role"] || "").trim().toLowerCase();
+    var tagParts = [];
+    if (mediaName) {
+      tagParts.push(mediaName);
+    }
+    if (mediaRole) {
+      tagParts.push(mediaRole);
+    }
+    if (tagParts.length > 0) {
+      return base + "\u001f" + tagParts.join("\u001e");
+    }
+    return base + "\u001f" + String(node.id);
+  }
+
+  function setPanelAppStreamVolume(node, volume: real): void {
+    _writePanelStickyVolume(node, volume);
+    var key = getAppKey(node);
+    if (key) {
+      setAppStreamVolume(key, volume);
+    }
+  }
+
+  function setPanelAppStreamMuted(node, muted: bool): void {
+    _writePanelStickyMute(node, muted);
+    var key = getAppKey(node);
+    if (key) {
+      setAppStreamMuted(key, muted);
+    }
   }
 
   function setAppStreamVolume(appKey: string, volume: real): void {
@@ -356,12 +523,200 @@ Singleton {
     return appKey ? (appVolumeOverrides[appKey] || null) : null;
   }
 
+  function _cloneStrMap(m) {
+    var d = {};
+    for (var k in m) {
+      if (Object.prototype.hasOwnProperty.call(m, k)) {
+        d[k] = m[k];
+      }
+    }
+    return d;
+  }
+
+  function _cloneOverrideMap(ovSrc) {
+    var out = {};
+    for (var ok in ovSrc) {
+      if (!Object.prototype.hasOwnProperty.call(ovSrc, ok)) {
+        continue;
+      }
+      var inner = ovSrc[ok];
+      out[ok] = inner ? {
+                          "volume": inner.volume,
+                          "muted": inner.muted
+                        } : {};
+    }
+    return out;
+  }
+
+  function _ensureOverrideSlot(o, key) {
+    if (!o[key]) {
+      o[key] = {};
+    }
+    return o[key];
+  }
+
+  function _panelStickyVolume(key, base) {
+    if (key && panelAppVolumeByStreamKey[key] !== undefined) {
+      return panelAppVolumeByStreamKey[key];
+    }
+    if (base && panelAppVolumeByBase[base] !== undefined) {
+      return panelAppVolumeByBase[base];
+    }
+    return undefined;
+  }
+
+  function _panelStickyMute(key, base) {
+    if (key && panelAppMutedByStreamKey[key] !== undefined) {
+      return panelAppMutedByStreamKey[key];
+    }
+    if (base && panelAppMutedByBase[base] !== undefined) {
+      return panelAppMutedByBase[base];
+    }
+    return undefined;
+  }
+
+  function _writePanelStickyVolume(node, volume: real): void {
+    var base = getAppBaseKey(node);
+    var key = getAppKey(node);
+    if (_concurrentStreamsForSameBase(base) > 1 && key) {
+      var psk = panelAppVolumeByStreamKey;
+      psk[key] = volume;
+      panelAppVolumeByStreamKey = psk;
+    } else if (base) {
+      var pvb = panelAppVolumeByBase;
+      pvb[base] = volume;
+      panelAppVolumeByBase = pvb;
+    }
+  }
+
+  function _writePanelStickyMute(node, muted: bool): void {
+    var base = getAppBaseKey(node);
+    var key = getAppKey(node);
+    if (_concurrentStreamsForSameBase(base) > 1 && key) {
+      var msk = panelAppMutedByStreamKey;
+      msk[key] = muted;
+      panelAppMutedByStreamKey = msk;
+    } else if (base) {
+      var pmb = panelAppMutedByBase;
+      pmb[base] = muted;
+      panelAppMutedByBase = pmb;
+    }
+  }
+
+  function _skipPipewireVolumeSyncForNode(node): bool {
+    var base = getAppBaseKey(node);
+    var key = getAppKey(node);
+    if (key && panelAppVolumeByStreamKey[key] !== undefined) {
+      return true;
+    }
+    return !!(base && panelAppVolumeByBase[base] !== undefined && _concurrentStreamsForSameBase(base) <= 1);
+  }
+
+  function _skipPipewireMuteSyncForNode(node): bool {
+    var base = getAppBaseKey(node);
+    var key = getAppKey(node);
+    if (key && panelAppMutedByStreamKey[key] !== undefined) {
+      return true;
+    }
+    return !!(base && panelAppMutedByBase[base] !== undefined && _concurrentStreamsForSameBase(base) <= 1);
+  }
+
+  function _migrateBasePanelLocksToPerStreamIfNeeded(): void {
+    var streams = root.appStreams;
+    if (!streams || streams.length === 0) {
+      return;
+    }
+
+    var bases = {};
+    for (var i = 0; i < streams.length; i++) {
+      var b = getAppBaseKey(streams[i]);
+      if (b) {
+        bases[b] = true;
+      }
+    }
+
+    var psk = _cloneStrMap(panelAppVolumeByStreamKey);
+    var msk = _cloneStrMap(panelAppMutedByStreamKey);
+    var pvb = _cloneStrMap(panelAppVolumeByBase);
+    var pmb = _cloneStrMap(panelAppMutedByBase);
+    var oNew = _cloneOverrideMap(appVolumeOverrides);
+    var changed = false;
+
+    for (var base in bases) {
+      if (!Object.prototype.hasOwnProperty.call(bases, base)) {
+        continue;
+      }
+      if (_concurrentStreamsForSameBase(base) <= 1) {
+        continue;
+      }
+      var volB = pvb[base];
+      var muteB = pmb[base];
+      if (volB === undefined && muteB === undefined) {
+        continue;
+      }
+
+      for (var j = 0; j < streams.length; j++) {
+        var s = streams[j];
+        if (!s || getAppBaseKey(s) !== base) {
+          continue;
+        }
+        var key = getAppKey(s);
+        if (!key) {
+          continue;
+        }
+        if (volB !== undefined && psk[key] === undefined) {
+          psk[key] = volB;
+          _ensureOverrideSlot(oNew, key).volume = volB;
+          changed = true;
+        }
+        if (muteB !== undefined && msk[key] === undefined) {
+          msk[key] = muteB;
+          _ensureOverrideSlot(oNew, key).muted = muteB;
+          changed = true;
+        }
+      }
+      if (volB !== undefined) {
+        delete pvb[base];
+        changed = true;
+      }
+      if (muteB !== undefined) {
+        delete pmb[base];
+        changed = true;
+      }
+    }
+
+    if (!changed) {
+      return;
+    }
+    panelAppVolumeByStreamKey = psk;
+    panelAppMutedByStreamKey = msk;
+    panelAppVolumeByBase = pvb;
+    panelAppMutedByBase = pmb;
+    appVolumeOverrides = oNew;
+  }
+
+  function _seedNewStreamOverride(key, base, audio) {
+    var seeded = appVolumeOverrides;
+    if (!seeded[key]) {
+      seeded[key] = {};
+    }
+    var pv = _panelStickyVolume(key, base);
+    var pm = _panelStickyMute(key, base);
+    seeded[key].volume = (pv !== undefined) ? pv : audio.volume;
+    seeded[key].muted = (pm !== undefined) ? pm : audio.muted;
+    appVolumeOverrides = seeded;
+    return seeded[key];
+  }
+
   function _applyAppOverrides(): void {
     var streams = root.appStreams;
     if (!streams) {
       return;
     }
 
+    root._migrateBasePanelLocksToPerStreamIfNeeded();
+
+    var prevKnown = root._knownAppStreamIds;
     var currentIds = {};
     _isApplyingAppOverride = true;
     for (var i = 0; i < streams.length; i++) {
@@ -372,15 +727,26 @@ Singleton {
 
       currentIds[s.id] = true;
       var key = getAppKey(s);
+      var base = getAppBaseKey(s);
       var ov = key ? appVolumeOverrides[key] : null;
-      if (!ov || !s.audio) {
+
+      if (key && s.audio && !prevKnown[s.id]) {
+        ov = _seedNewStreamOverride(key, base, s.audio);
+      }
+
+      if (!s.audio) {
         continue;
       }
-      if (ov.volume !== undefined && Math.abs(s.audio.volume - ov.volume) > root.epsilon) {
-        s.audio.volume = ov.volume;
+
+      var panelVol = _panelStickyVolume(key, base);
+      var panelMute = _panelStickyMute(key, base);
+      var targetVol = (panelVol !== undefined) ? panelVol : (ov && ov.volume !== undefined ? ov.volume : undefined);
+      var targetMuted = (panelMute !== undefined) ? panelMute : (ov && ov.muted !== undefined ? ov.muted : undefined);
+      if (targetVol !== undefined && Math.abs(s.audio.volume - targetVol) > root.epsilon) {
+        s.audio.volume = targetVol;
       }
-      if (ov.muted !== undefined && s.audio.muted !== ov.muted) {
-        s.audio.muted = ov.muted;
+      if (targetMuted !== undefined && s.audio.muted !== targetMuted) {
+        s.audio.muted = targetMuted;
       }
     }
     _knownAppStreamIds = currentIds;
@@ -419,6 +785,12 @@ Singleton {
         root.refreshWpctlOutputState();
       }
     }
+
+    function onSourceChanged() {
+      if (root.wpctlAvailable) {
+        root.refreshWpctlInputState();
+      }
+    }
   }
 
   Timer {
@@ -427,7 +799,10 @@ Singleton {
     interval: 20000
     running: root.wpctlAvailable
     repeat: true
-    onTriggered: root.refreshWpctlOutputState()
+    onTriggered: {
+      root.refreshWpctlOutputState();
+      root.refreshWpctlInputState();
+    }
   }
 
   Process {
@@ -438,8 +813,10 @@ Singleton {
     onExited: function (code) {
       root.wpctlAvailable = (code === 0);
       root.wpctlStateValid = false;
+      root.wpctlInputStateValid = false;
       if (root.wpctlAvailable) {
         root.refreshWpctlOutputState();
+        root.refreshWpctlInputState();
       }
     }
   }
@@ -480,6 +857,45 @@ Singleton {
 
     onExited: function (_code) {
       root.refreshWpctlOutputState();
+    }
+  }
+
+  Process {
+    id: wpctlInputStateProcess
+    running: false
+
+    onExited: function (code) {
+      if (code !== 0 || !root.applyWpctlInputState(stdout.text)) {
+        root.wpctlInputStateValid = false;
+      }
+    }
+
+    stdout: StdioCollector {}
+  }
+
+  Process {
+    id: wpctlSetInputVolumeProcess
+    running: false
+
+    onExited: function (code) {
+      root.isSettingInputVolume = false;
+      if (code !== 0) {
+        Logger.w("AudioService", "wpctl set-volume failed for default source, falling back to PipeWire node audio");
+        if (root.source?.audio) {
+          root.source.audio.muted = false;
+          root.source.audio.volume = Math.max(0, Math.min(root.maxVolume, root.wpctlInputVolume));
+        }
+      }
+      root.refreshWpctlInputState();
+    }
+  }
+
+  Process {
+    id: wpctlSetInputMuteProcess
+    running: false
+
+    onExited: function (_code) {
+      root.refreshWpctlInputState();
     }
   }
 
@@ -536,6 +952,10 @@ Singleton {
     target: source?.audio ?? null
 
     function onVolumeChanged() {
+      if (root.wpctlAvailable) {
+        root.refreshWpctlInputState();
+      }
+
       // Ignore volume changes if we're the one setting it (to prevent feedback loop)
       if (root.isSettingInputVolume) {
         return;
@@ -559,6 +979,12 @@ Singleton {
                        }
                        root.isSettingInputVolume = false;
                      });
+      }
+    }
+
+    function onMutedChanged() {
+      if (root.wpctlAvailable) {
+        root.refreshWpctlInputState();
       }
     }
   }
@@ -674,7 +1100,7 @@ Singleton {
 
   // Input Control
   function increaseInputVolume() {
-    if (!Pipewire.ready || !source?.audio) {
+    if (!Pipewire.ready || (!source?.audio && !wpctlAvailable)) {
       return;
     }
     if (inputVolume >= root.maxVolume) {
@@ -684,30 +1110,54 @@ Singleton {
   }
 
   function decreaseInputVolume() {
-    if (!Pipewire.ready || !source?.audio) {
+    if (!Pipewire.ready || (!source?.audio && !wpctlAvailable)) {
       return;
     }
     setInputVolume(Math.max(0, inputVolume - stepVolume));
   }
 
   function setInputVolume(newVolume: real) {
-    if (!Pipewire.ready || !source?.ready || !source?.audio) {
-      Logger.w("AudioService", "No source available or not ready");
+    if (!Pipewire.ready) {
       return;
     }
 
     const clampedVolume = Math.max(0, Math.min(root.maxVolume, newVolume));
-    const delta = Math.abs(clampedVolume - source.audio.volume);
+    var currentVol = 0;
+    if (wpctlAvailable && wpctlInputStateValid) {
+      currentVol = wpctlInputVolume;
+    } else if (source?.audio && source.audio.volume !== undefined && !isNaN(source.audio.volume)) {
+      currentVol = source.audio.volume;
+    }
+    const delta = Math.abs(clampedVolume - currentVol);
     if (delta < root.epsilon) {
       return;
     }
 
-    // Set flag to prevent feedback loop, then set the actual volume
+    if (wpctlAvailable) {
+      if (wpctlSetInputVolumeProcess.running) {
+        return;
+      }
+
+      isSettingInputVolume = true;
+      wpctlInputMuted = false;
+      wpctlInputVolume = clampedVolume;
+      wpctlInputStateValid = true;
+
+      const volumePct = Math.round(clampedVolume * 10000) / 100;
+      wpctlSetInputVolumeProcess.command = ["sh", "-c", "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 0 && wpctl set-volume @DEFAULT_AUDIO_SOURCE@ " + volumePct + "%"];
+      wpctlSetInputVolumeProcess.running = true;
+      return;
+    }
+
+    if (!source?.ready || !source?.audio) {
+      Logger.w("AudioService", "No source available or not ready");
+      return;
+    }
+
     isSettingInputVolume = true;
     source.audio.muted = false;
     source.audio.volume = clampedVolume;
 
-    // Clear flag after a short delay to allow external changes to be detected
     Qt.callLater(() => {
                    isSettingInputVolume = false;
                  });
@@ -740,8 +1190,25 @@ Singleton {
   }
 
   function setInputMuted(muted: bool) {
-    if (!Pipewire.ready || !source?.audio) {
-      Logger.w("AudioService", "No source available or Pipewire not ready");
+    if (!Pipewire.ready) {
+      Logger.w("AudioService", "Pipewire not ready");
+      return;
+    }
+
+    if (wpctlAvailable) {
+      if (wpctlSetInputMuteProcess.running) {
+        return;
+      }
+
+      wpctlInputMuted = muted;
+      wpctlInputStateValid = true;
+      wpctlSetInputMuteProcess.command = ["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", muted ? "1" : "0"];
+      wpctlSetInputMuteProcess.running = true;
+      return;
+    }
+
+    if (!source?.audio) {
+      Logger.w("AudioService", "No source available");
       return;
     }
 

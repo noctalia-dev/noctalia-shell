@@ -17,6 +17,9 @@ NBox {
   property bool localInputVolumeChanging: false
   property int lastSourceId: -1
 
+  readonly property bool outputVolumeGuard: outputVolumeSlider.sliderActive || localOutputVolumeChanging
+  readonly property bool inputVolumeGuard: inputVolumeSlider.sliderActive || localInputVolumeChanging
+
   Component.onCompleted: {
     var vol = AudioService.volume;
     localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
@@ -89,21 +92,10 @@ NBox {
     }
   }
 
-  // Connections to update local volumes when AudioService changes
   Connections {
     target: AudioService
     function onVolumeChanged() {
-      if (!localOutputVolumeChanging && AudioService.sink && AudioService.sink.id === lastSinkId) {
-        var vol = AudioService.volume;
-        localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
-      }
-    }
-  }
-
-  Connections {
-    target: AudioService.sink?.audio ? AudioService.sink?.audio : null
-    function onVolumeChanged() {
-      if (!localOutputVolumeChanging && AudioService.sink && AudioService.sink.id === lastSinkId) {
+      if (!outputVolumeGuard && !AudioService.isSettingOutputVolume && AudioService.sink && AudioService.sink.id === lastSinkId) {
         var vol = AudioService.volume;
         localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
       }
@@ -113,7 +105,7 @@ NBox {
   Connections {
     target: AudioService
     function onInputVolumeChanged() {
-      if (!localInputVolumeChanging && AudioService.source && AudioService.source.id === lastSourceId) {
+      if (!inputVolumeGuard && !AudioService.isSettingInputVolume && AudioService.source && AudioService.source.id === lastSourceId) {
         var vol = AudioService.inputVolume;
         localInputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
       }
@@ -121,9 +113,19 @@ NBox {
   }
 
   Connections {
-    target: AudioService.source?.audio ? AudioService.source?.audio : null
-    function onVolumeChanged() {
-      if (!localInputVolumeChanging && AudioService.source && AudioService.source.id === lastSourceId) {
+    target: outputVolumeSlider
+    function onSliderActiveChanged() {
+      if (!outputVolumeSlider.sliderActive && AudioService.sink && AudioService.sink.id === lastSinkId) {
+        var vol = AudioService.volume;
+        localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
+      }
+    }
+  }
+
+  Connections {
+    target: inputVolumeSlider
+    function onSliderActiveChanged() {
+      if (!inputVolumeSlider.sliderActive && AudioService.source && AudioService.source.id === lastSourceId) {
         var vol = AudioService.inputVolume;
         localInputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
       }
@@ -179,7 +181,7 @@ NBox {
         heightRatio: 0.5
         onMoved: localOutputVolume = value
         onPressedChanged: localOutputVolumeChanging = pressed
-        tooltipText: `${Math.round(localOutputVolume * 100)}%`
+        tooltipText: `${Math.round((outputVolumeGuard ? localOutputVolume : AudioService.volume) * 100)}%`
         tooltipDirection: "bottom"
 
         // MouseArea to handle wheel events when hovering over the slider
@@ -247,7 +249,7 @@ NBox {
         heightRatio: 0.5
         onMoved: localInputVolume = value
         onPressedChanged: localInputVolumeChanging = pressed
-        tooltipText: `${Math.round(localInputVolume * 100)}%`
+        tooltipText: `${Math.round((inputVolumeGuard ? localInputVolume : AudioService.inputVolume) * 100)}%`
         tooltipDirection: "bottom"
 
         // MouseArea to handle wheel events when hovering over the slider

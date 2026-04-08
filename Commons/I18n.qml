@@ -17,15 +17,16 @@ Singleton {
   property var fallbackTranslations: ({})
 
   // Static list of available translations — update when adding/removing translation files
-  property var availableLanguages: ["en", "de", "es", "fr", "hu", "it", "ja", "ko-KR", "ku", "nl", "nn-HN", "nn-NO", "pl", "pt", "ru", "sv", "tr", "uk-UA", "vi", "zh-CN", "zh-TW"]
+  property var availableLanguages: ["en", "en-GB", "cs", "de", "es", "fr", "hu", "it", "ja", "ko-KR", "ku", "nl", "nn-HN", "nn-NO", "pl", "pt", "ru", "sv", "tr", "uk-UA", "vi", "zh-CN", "zh-TW"]
 
   // Default date format per language (used by lock screen, etc.)
   readonly property var dateFormats: ({
+                                        "cs": "dddd d. MMMM",
                                         "de": "dddd, d. MMMM",
                                         "en": "dddd, MMMM d",
                                         "es": "dddd, d 'de' MMMM",
                                         "fr": "dddd d MMMM",
-                                        "hu": "dddd, MMMM d.",
+                                        "hu": "MMMM d., dddd",
                                         "it": "dddd d MMMM",
                                         "ja": "yyyy年M月d日 dddd",
                                         "ko": "yyyy년 M월 d일 dddd",
@@ -34,11 +35,12 @@ Singleton {
                                         "nn": "dddd d. MMMM",
                                         "pl": "dddd, d MMMM",
                                         "pt": "dddd, d 'de' MMMM",
+                                        "ro": "dddd, d MMMM",
                                         "ru": "dddd, d MMMM",
                                         "sv": "dddd d MMMM",
                                         "tr": "dddd, d MMMM",
                                         "uk": "dddd, d MMMM",
-                                        "vi": "dddd, d MMMM",
+                                        "vi": "dddd, d 'tháng' M",
                                         "zh": "yyyy年M月d日 dddd"
                                       })
 

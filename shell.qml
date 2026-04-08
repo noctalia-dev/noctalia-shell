@@ -107,7 +107,6 @@ ShellRoot {
         Qt.callLater(function () {
           LocationService.init();
           NightLightService.apply();
-          BluetoothService.init();
           IdleInhibitorService.init();
           IdleService.init();
           PowerProfileService.init();
@@ -171,9 +170,7 @@ ShellRoot {
     }
   }
 
-  // ---------------------------------------------
   // Delayed initialization and wizard/changelog
-  // ---------------------------------------------
   Timer {
     id: delayedInitTimer
     running: false

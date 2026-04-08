@@ -32,7 +32,6 @@ Singleton {
   readonly property string cacheDir: ensureTrailingSlash(Quickshell.env("NOCTALIA_CACHE_DIR") || (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/" + shellName + "/")
 
   readonly property string settingsFile: Quickshell.env("NOCTALIA_SETTINGS_FILE") || (configDir + "settings.json")
-  readonly property string defaultLocation: "Tokyo"
   readonly property string defaultAvatar: Quickshell.env("HOME") + "/.face"
   readonly property string defaultVideosDirectory: Quickshell.env("HOME") + "/Videos"
   readonly property string defaultWallpapersDirectory: Quickshell.env("HOME") + "/Pictures/Wallpapers"
@@ -40,6 +39,28 @@ Singleton {
   signal settingsLoaded
   signal settingsSaved
   signal settingsReloaded
+
+  // Debounce external reload requests (file watcher + directory watcher)
+  // so atomic replacements only trigger one reload.
+  Timer {
+    id: externalReloadTimer
+    running: false
+    interval: 200
+    onTriggered: {
+      if (settingsFileView.path !== undefined) {
+        Logger.d("Settings", "Reloading settings after external change detection");
+        reloadSettings = true;
+        settingsFileView.reload();
+      }
+    }
+  }
+
+  function scheduleExternalReload() {
+    if (!directoriesCreated || settingsFileView.path === undefined) {
+      return;
+    }
+    externalReloadTimer.restart();
+  }
 
   // -----------------------------------------------------
   // -----------------------------------------------------
@@ -88,10 +109,7 @@ Singleton {
     watchChanges: true
     onAdapterUpdated: saveTimer.start()
 
-    onFileChanged: {
-      reloadSettings = true;
-      reload();
-    }
+    onFileChanged: scheduleExternalReload()
 
     // Trigger initial load when path changes from empty to actual path
     onPathChanged: {
@@ -141,6 +159,16 @@ Singleton {
         root.shouldOpenSetupWizard = true;
       }
     }
+  }
+
+  // Watch parent config directory as a fallback for declarative setups where
+  // settings.json may be replaced atomically (e.g., symlink/store-path swap).
+  FileView {
+    id: settingsDirWatcher
+    path: directoriesCreated ? configDir : undefined
+    printErrors: false
+    watchChanges: true
+    onFileChanged: scheduleExternalReload()
   }
 
   // FileView to load default settings for comparison
@@ -319,6 +347,7 @@ Singleton {
         property list<string> keyRemove: ["Del"]
       }
       property bool reverseScroll: false
+      property bool smoothScrollEnabled: true
     }
 
     // ui
@@ -339,9 +368,10 @@ Singleton {
 
     // location
     property JsonObject location: JsonObject {
-      property string name: defaultLocation
+      property string name: ""
       property bool weatherEnabled: true
       property bool weatherShowEffects: true
+      property bool weatherTaliaMascotAlways: false
       property bool useFahrenheit: false
       property bool use12hourFormat: false
       property bool showWeekNumberInCalendar: false
@@ -351,6 +381,7 @@ Singleton {
       property int firstDayOfWeek: -1 // -1 = auto (use locale), 0 = Sunday, 1 = Monday, 6 = Saturday
       property bool hideWeatherTimezone: false
       property bool hideWeatherCityName: false
+      property bool autoLocate: false
     }
 
     // calendar
@@ -381,6 +412,7 @@ Singleton {
       property bool showHiddenFiles: false
       property string viewMode: "single" // "single" | "recursive" | "browse"
       property bool setWallpaperOnAllMonitors: true
+      property bool linkLightAndDarkWallpapers: true
       property string fillMode: "crop"
       property color fillColor: "#000000"
       property bool useSolidColor: false
@@ -394,6 +426,7 @@ Singleton {
       property real transitionEdgeSmoothness: 0.05
       property string panelPosition: "follow_bar"
       property bool hideWallpaperFilenames: false
+      property bool useOriginalImages: false
       property real overviewBlur: 0.4
       property real overviewTint: 0.6
       // Wallhaven settings
@@ -411,7 +444,8 @@ Singleton {
       property string wallhavenResolutionHeight: ""
       property string sortOrder: "name" // "name", "name_desc", "date", "date_desc", "random"
       property list<var> favorites: []
-      // Format: [{ "path": "/path/to/wallpaper.jpg", "colorScheme": "...", "darkMode": true, "useWallpaperColors": true, "generationMethod": "tonal-spot" }]
+      // Format: [{ "path": "...", "appearance": "light"|"dark", "colorScheme": "...", "darkMode": bool, "useWallpaperColors": bool, "generationMethod": "...", "paletteColors": [...] }]
+      // Legacy entries omit "appearance" and use darkMode to infer light vs dark slot.
     }
 
     // applauncher
@@ -575,8 +609,6 @@ Singleton {
 
     // network
     property JsonObject network: JsonObject {
-      property bool wifiEnabled: true
-      property bool airplaneModeEnabled: false
       property bool bluetoothRssiPollingEnabled: false  // Opt-in Bluetooth RSSI polling (uses bluetoothctl)
       property int bluetoothRssiPollIntervalMs: 60000 // Polling interval in milliseconds for RSSI queries
       property string networkPanelView: "wifi"
@@ -710,6 +742,7 @@ Singleton {
       property string manualSunset: "18:30"
       property string generationMethod: "tonal-spot"
       property string monitorForColors: ""
+      property bool syncGsettings: true
     }
 
     // templates toggles
@@ -1064,9 +1097,7 @@ Singleton {
 
       var defaultPath = Quickshell.shellDir + "/Assets/settings-default.json";
 
-      // Encode transfer it has base64 to avoid any escaping issue
-      var base64Data = Qt.btoa(jsonData);
-      Quickshell.execDetached(["sh", "-c", `echo "${base64Data}" | base64 -d > "${defaultPath}"`]);
+      Quickshell.execDetached(["sh", "-c", `cat > "${defaultPath}" << 'NOCTALIA_EOF'\n${jsonData}\nNOCTALIA_EOF`]);
     } catch (error) {
       Logger.e("Settings", "Failed to generate default settings file: " + error);
     }
@@ -1087,8 +1118,7 @@ Singleton {
 
       var defaultPath = Quickshell.shellDir + "/Assets/settings-widgets-default.json";
 
-      var base64Data = Qt.btoa(jsonData);
-      Quickshell.execDetached(["sh", "-c", `echo "${base64Data}" | base64 -d > "${defaultPath}"`]);
+      Quickshell.execDetached(["sh", "-c", `cat > "${defaultPath}" << 'NOCTALIA_EOF'\n${jsonData}\nNOCTALIA_EOF`]);
     } catch (error) {
       Logger.e("Settings", "Failed to generate widget default settings file: " + error);
     }
