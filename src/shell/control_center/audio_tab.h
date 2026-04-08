@@ -1,8 +1,8 @@
 #pragma once
 
+#include "core/timer_manager.h"
 #include "shell/control_center/tab.h"
 
-#include <chrono>
 #include <cstdint>
 #include <vector>
 
@@ -62,8 +62,8 @@ private:
   float m_pendingSourceVolume = -1.0f;
   float m_lastSentSinkVolume = -1.0f;
   float m_lastSentSourceVolume = -1.0f;
-  std::chrono::steady_clock::time_point m_lastSinkSendAt{};
-  std::chrono::steady_clock::time_point m_lastSourceSendAt{};
+  Timer m_sinkVolumeDebounceTimer;
+  Timer m_sourceVolumeDebounceTimer;
   bool m_syncingOutputSlider = false;
   bool m_syncingInputSlider = false;
 };

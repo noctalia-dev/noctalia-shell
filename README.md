@@ -136,7 +136,8 @@ src/
   ui/
     controls/    Low-level UI building blocks
     icons/       Icon registry
-  wayland/       Wayland connection, layer-shell surfaces
+  wayland/
+    compositors/ Compositor-specific workspace backends //(ext-workspace, sway, mango etc)
 third_party/
   msdfgen/       MSDF glyph generation (git submodule)
   tomlplusplus/  TOML parser (vendored)
@@ -216,7 +217,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] Network
 - [ ] Bluetooth
 - [ ] Brightness
-- [ ] Power profile
+- [x] Power profile
 - [~] System monitor <- need graph fix
 - [ ] Dock
 - [ ] Keyboard layout
