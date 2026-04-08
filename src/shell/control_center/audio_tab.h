@@ -56,6 +56,8 @@ private:
   std::uint64_t m_lastChangeSerial = 0;
   float m_lastSinkVolume = -1.0f;
   float m_lastSourceVolume = -1.0f;
+  std::uint32_t m_pendingSinkId = 0;
+  std::uint32_t m_pendingSourceId = 0;
   float m_pendingSinkVolume = -1.0f;
   float m_pendingSourceVolume = -1.0f;
   float m_lastSentSinkVolume = -1.0f;

@@ -1,4 +1,4 @@
-#include "wayland/ext_workspace_backend.h"
+#include "wayland/compositors/ext_workspace_backend.h"
 
 #include "core/log.h"
 

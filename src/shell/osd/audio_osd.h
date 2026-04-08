@@ -11,6 +11,8 @@ public:
   void bindOverlay(OsdOverlay& overlay);
   void primeFromService(const PipeWireService& service);
   void suppressFor(std::chrono::milliseconds duration);
+  void showOutput(std::uint32_t sinkId, float volume, bool muted);
+  void showInput(std::uint32_t sourceId, float volume, bool muted);
   void onAudioStateChanged(const PipeWireService& service);
 
 private:

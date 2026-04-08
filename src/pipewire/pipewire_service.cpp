@@ -492,6 +492,13 @@ void PipeWireService::setNodeVolume(std::uint32_t id, float volume) {
   auto* pod = static_cast<spa_pod*>(spa_pod_builder_pop(&builder, &frame));
 
   pw_node_set_param(nd.proxy, SPA_PARAM_Props, 0, pod);
+
+  // Apply optimistic local state so UI/OSD reacts immediately while waiting for
+  // PipeWire to publish the updated node props.
+  if (std::abs(nd.volume - volume) >= 0.0001f) {
+    nd.volume = volume;
+    rebuildState();
+  }
 }
 
 void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
@@ -516,6 +523,13 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
   auto* pod = static_cast<spa_pod*>(spa_pod_builder_pop(&builder, &frame));
 
   pw_node_set_param(nd.proxy, SPA_PARAM_Props, 0, pod);
+
+  // Apply optimistic local state so UI/OSD reacts immediately while waiting for
+  // PipeWire to publish the updated node props.
+  if (nd.muted != muted) {
+    nd.muted = muted;
+    rebuildState();
+  }
 }
 
 void PipeWireService::setSinkVolume(std::uint32_t id, float volume) { setNodeVolume(id, volume); }
@@ -577,6 +591,15 @@ void PipeWireService::setMicMuted(bool muted) {
   if (source != nullptr) {
     setNodeMuted(source->id, muted);
   }
+}
+
+void PipeWireService::emitVolumePreview(bool isInput, std::uint32_t id, float volume) const {
+  if (!m_volumePreviewCallback) {
+    return;
+  }
+  const auto it = m_nodes.find(id);
+  const bool muted = (it != m_nodes.end()) ? it->second->muted : false;
+  m_volumePreviewCallback(isInput, id, std::clamp(volume, 0.0f, 1.5f), muted);
 }
 
 void PipeWireService::emitChanged() {

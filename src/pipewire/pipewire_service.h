@@ -34,6 +34,7 @@ struct AudioState {
 class PipeWireService {
 public:
   using ChangeCallback = std::function<void()>;
+  using VolumePreviewCallback = std::function<void(bool isInput, std::uint32_t id, float volume, bool muted)>;
 
   PipeWireService();
   ~PipeWireService();
@@ -42,6 +43,7 @@ public:
   PipeWireService& operator=(const PipeWireService&) = delete;
 
   void setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
+  void setVolumePreviewCallback(VolumePreviewCallback callback) { m_volumePreviewCallback = std::move(callback); }
 
   // Poll integration
   [[nodiscard]] int fd() const noexcept;
@@ -66,6 +68,7 @@ public:
   void setMuted(bool muted);
   void setMicVolume(float volume);
   void setMicMuted(bool muted);
+  void emitVolumePreview(bool isInput, std::uint32_t id, float volume) const;
 
   [[nodiscard]] std::uint64_t changeSerial() const noexcept { return m_changeSerial; }
 
@@ -111,6 +114,7 @@ private:
   std::string m_defaultSourceName;
   AudioState m_state;
   ChangeCallback m_changeCallback;
+  VolumePreviewCallback m_volumePreviewCallback;
   std::uint64_t m_changeSerial = 0;
 
   void emitChanged();

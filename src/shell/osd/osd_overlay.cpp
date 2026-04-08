@@ -262,10 +262,6 @@ void OsdOverlay::animateInstance(Instance& inst) {
     return;
   }
 
-  if (inst.showAnimId != 0) {
-    inst.animations.cancel(inst.showAnimId);
-    inst.showAnimId = 0;
-  }
   if (inst.hideAnimId != 0) {
     inst.animations.cancel(inst.hideAnimId);
     inst.hideAnimId = 0;
@@ -273,28 +269,30 @@ void OsdOverlay::animateInstance(Instance& inst) {
 
   const float baseY = (inst.sceneRoot->height() - kCardHeight) * 0.5f;
   if (!inst.visible) {
-    // Animate from current opacity to avoid a flash-to-zero glitch when a new
-    // event arrives while the show animation is already in progress.
-    const float startOpacity = inst.sceneRoot->opacity();
-    if (startOpacity == 0.0f) {
-      inst.card->setPosition(inst.card->x(), baseY + 8.0f);
-      if (inst.background != nullptr) {
-        inst.background->setPosition(inst.background->x(), baseY + 8.0f);
+    // During fast updates (e.g. slider drag), don't restart the show animation
+    // every tick; keep the current show motion and only extend hide timing.
+    if (inst.showAnimId == 0) {
+      const float startOpacity = inst.sceneRoot->opacity();
+      if (startOpacity == 0.0f) {
+        inst.card->setPosition(inst.card->x(), baseY + 8.0f);
+        if (inst.background != nullptr) {
+          inst.background->setPosition(inst.background->x(), baseY + 8.0f);
+        }
       }
+      inst.showAnimId = inst.animations.animate(
+          startOpacity, 1.0f, Style::animNormal, Easing::EaseOutCubic,
+          [&inst, baseY](float v) {
+            inst.sceneRoot->setOpacity(v);
+            inst.card->setPosition(inst.card->x(), baseY + (1.0f - v) * 8.0f);
+            if (inst.background != nullptr) {
+              inst.background->setPosition(inst.background->x(), baseY + (1.0f - v) * 8.0f);
+            }
+          },
+          [&inst]() {
+            inst.showAnimId = 0;
+            inst.visible = true;
+          });
     }
-    inst.showAnimId = inst.animations.animate(
-        startOpacity, 1.0f, Style::animNormal, Easing::EaseOutCubic,
-        [&inst, baseY](float v) {
-          inst.sceneRoot->setOpacity(v);
-          inst.card->setPosition(inst.card->x(), baseY + (1.0f - v) * 8.0f);
-          if (inst.background != nullptr) {
-            inst.background->setPosition(inst.background->x(), baseY + (1.0f - v) * 8.0f);
-          }
-        },
-        [&inst]() {
-          inst.showAnimId = 0;
-          inst.visible = true;
-        });
   } else {
     inst.sceneRoot->setOpacity(1.0f);
     inst.card->setPosition(inst.card->x(), baseY);
