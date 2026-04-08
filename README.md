@@ -216,9 +216,9 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] Network
 - [ ] Bluetooth
 - [ ] Brightness
-- [ ] Microphone
+- [ ] Microphone <- unsure we need it
 - [ ] Power profile
-- [ ] System monitor
+- [~] System monitor <- need graph fix
 - [ ] Dock
 - [ ] Keyboard layout
 - [ ] Lock keys (Caps/Num)
@@ -226,12 +226,11 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] Night light button
 - [ ] Keep awake (idle inhibitor)
 - [ ] Audio visualizer
-- [ ] Launcher button
-- [ ] Control center button
+- [x] Launcher button
 - [ ] Session menu button
-- [ ] Settings button
 - [ ] Wallpaper selector button
-- [ ] Custom button (user-defined IPC)
+- [ ] Custom button (with user-defined IPC)
+- [ ] Settings button
 
 ### Desktop Widgets
 
