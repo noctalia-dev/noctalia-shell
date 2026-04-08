@@ -30,7 +30,7 @@ public:
   [[nodiscard]] const std::string& value() const noexcept { return m_value; }
   [[nodiscard]] InputArea* inputArea() const noexcept { return m_inputArea; }
 
-  void layout(Renderer& renderer);
+  void layout(Renderer& renderer) override;
 
 private:
   void handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool preedit = false);

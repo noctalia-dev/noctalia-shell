@@ -17,6 +17,7 @@ public:
   void setGlyphSize(float size);
   void setColor(const Color& color);
 
+  void layout(Renderer& renderer) override;
   void measure(Renderer& renderer);
 
   [[nodiscard]] float baselineOffset() const noexcept { return m_baselineOffset; }

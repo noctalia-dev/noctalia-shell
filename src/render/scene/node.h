@@ -5,6 +5,7 @@
 #include <vector>
 
 class AnimationManager;
+class Renderer;
 
 enum class NodeType : std::uint8_t {
   Base,
@@ -57,6 +58,7 @@ public:
 
   void setAnimationManager(AnimationManager* mgr);
   [[nodiscard]] AnimationManager* animationManager() const noexcept { return m_animationManager; }
+  virtual void layout(Renderer& renderer);
 
   void setUserData(void* data) noexcept { m_userData = data; }
   [[nodiscard]] void* userData() const noexcept { return m_userData; }

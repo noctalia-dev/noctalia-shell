@@ -38,6 +38,8 @@ float Label::maxWidth() const noexcept { return m_textNode->maxWidth(); }
 
 bool Label::bold() const noexcept { return m_textNode->bold(); }
 
+void Label::layout(Renderer& renderer) { measure(renderer); }
+
 void Label::setCaptionStyle() {
   m_textNode->setFontSize(Style::fontSizeCaption);
   m_textNode->setColor(palette.onSurface);

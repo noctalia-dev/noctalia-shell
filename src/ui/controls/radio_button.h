@@ -23,7 +23,7 @@ public:
   [[nodiscard]] bool hovered() const noexcept;
   [[nodiscard]] bool pressed() const noexcept;
 
-  void layout(Renderer& renderer);
+  void layout(Renderer& renderer) override;
 
 private:
   void applyState();

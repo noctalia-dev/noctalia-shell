@@ -7,6 +7,8 @@ Node::Node(NodeType type) : m_type(type) {}
 
 Node::~Node() = default;
 
+void Node::layout(Renderer& /*renderer*/) {}
+
 void Node::setPosition(float x, float y) {
   if (m_x == x && m_y == y) {
     return;

@@ -29,6 +29,8 @@ void Glyph::setGlyphSize(float size) { m_glyphNode->setFontSize(size); }
 
 void Glyph::setColor(const Color& color) { m_glyphNode->setColor(color); }
 
+void Glyph::layout(Renderer& renderer) { measure(renderer); }
+
 void Glyph::measure(Renderer& renderer) {
   auto metrics    = renderer.measureGlyph(m_glyphNode->codepoint(), m_glyphNode->fontSize());
   auto refMetrics = renderer.measureText("A", m_glyphNode->fontSize());

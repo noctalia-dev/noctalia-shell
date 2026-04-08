@@ -179,14 +179,7 @@ void Flex::layout(Renderer& renderer) {
       totalGrow += child->flexGrow();
       continue;
     }
-    if (auto* label = dynamic_cast<Label*>(child.get())) {
-      label->measure(renderer);
-    } else if (auto* glyph = dynamic_cast<Glyph*>(child.get())) {
-      glyph->measure(renderer);
-    }
-    if (auto* flex = dynamic_cast<Flex*>(child.get())) {
-      flex->layout(renderer);
-    }
+    child->layout(renderer);
   }
 
   // Pass 2: Distribute remaining main-axis space to grow children.
@@ -218,15 +211,7 @@ void Flex::layout(Renderer& renderer) {
       } else {
         child->setSize(child->width(), share);
       }
-
-      if (auto* label = dynamic_cast<Label*>(child.get())) {
-        label->measure(renderer);
-      } else if (auto* glyph = dynamic_cast<Glyph*>(child.get())) {
-        glyph->measure(renderer);
-      }
-      if (auto* flex = dynamic_cast<Flex*>(child.get())) {
-        flex->layout(renderer);
-      }
+      child->layout(renderer);
     }
   }
 

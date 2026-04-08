@@ -22,16 +22,15 @@ Spinner::Spinner() {
   node->setColor(palette.primary);
   node->setThickness(kDefaultThickness);
   m_spinnerNode = static_cast<SpinnerNode*>(addChild(std::move(node)));
-  setSize(kDefaultSize, Style::controlHeight);
-  m_spinnerNode->setSize(kDefaultSize, kDefaultSize);
-  m_spinnerNode->setPosition(0.0f, (Style::controlHeight - kDefaultSize) * 0.5f);
+  m_spinnerSize = kDefaultSize;
+  updateGeometry();
 }
 
 void Spinner::setColor(const Color& color) { m_spinnerNode->setColor(color); }
 
 void Spinner::setSpinnerSize(float size) {
-  setSize(size, size);
-  m_spinnerNode->setSize(size, size);
+  m_spinnerSize = size;
+  updateGeometry();
 }
 
 void Spinner::setThickness(float thickness) { m_spinnerNode->setThickness(thickness); }
@@ -70,4 +69,11 @@ void Spinner::startLoop() {
         }
       });
   markDirty();
+}
+
+void Spinner::updateGeometry() {
+  const float boxHeight = std::max(m_spinnerSize, Style::controlHeight);
+  setSize(m_spinnerSize, boxHeight);
+  m_spinnerNode->setSize(m_spinnerSize, m_spinnerSize);
+  m_spinnerNode->setPosition(0.0f, std::round((boxHeight - m_spinnerSize) * 0.5f));
 }

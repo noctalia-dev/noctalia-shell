@@ -332,54 +332,12 @@ void TestPanel::layout(Renderer& renderer, float /*width*/, float /*height*/) {
   if (m_container == nullptr) {
     return;
   }
-  if (m_headerLabel != nullptr) {
-    m_headerLabel->measure(renderer);
-  }
-  if (m_sliderValueLabel != nullptr) {
-    m_sliderValueLabel->measure(renderer);
-  }
-  if (m_toggleValueLabel != nullptr) {
-    m_toggleValueLabel->measure(renderer);
-  }
-  if (m_button != nullptr) {
-    m_button->layout(renderer);
-    m_button->updateInputArea();
-  }
-  if (m_select != nullptr) {
-    m_select->layout(renderer);
-  }
-  if (m_glyphTextButton != nullptr) {
-    m_glyphTextButton->layout(renderer);
-    m_glyphTextButton->updateInputArea();
-  }
-  if (m_glyphButton != nullptr) {
-    m_glyphButton->layout(renderer);
-    m_glyphButton->updateInputArea();
-  }
+  m_container->layout(renderer);
   if (m_glyph != nullptr && m_glyphBox != nullptr) {
     m_glyph->measure(renderer);
     m_glyph->setPosition(std::round((m_glyphBox->width() - m_glyph->width()) * 0.5f),
-                             std::round((m_glyphBox->height() - m_glyph->height()) * 0.5f));
+                        std::round((m_glyphBox->height() - m_glyph->height()) * 0.5f));
   }
-  if (m_slider != nullptr) {
-    m_slider->layout(renderer);
-  }
-  if (m_toggle != nullptr) {
-    m_toggle->layout(renderer);
-  }
-  if (m_radioA != nullptr) {
-    m_radioA->layout(renderer);
-  }
-  if (m_radioB != nullptr) {
-    m_radioB->layout(renderer);
-  }
-  if (m_input != nullptr) {
-    m_input->layout(renderer);
-  }
-  if (m_inputValueLabel != nullptr) {
-    m_inputValueLabel->measure(renderer);
-  }
-  m_container->layout(renderer);
 }
 
 void TestPanel::update(Renderer& /*renderer*/) {}
