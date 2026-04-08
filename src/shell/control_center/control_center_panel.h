@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shell/control_center/audio_tab.h"
 #include "shell/control_center/calendar_tab.h"
 #include "shell/control_center/media_tab.h"
 #include "shell/control_center/network_tab.h"
@@ -46,11 +47,12 @@ private:
   enum class TabId : std::uint8_t {
     Overview = 0,
     Media = 1,
-    Weather = 2,
-    Calendar = 3,
-    Notifications = 4,
-    Network = 5,
-    Count = 6,
+    Audio = 2,
+    Weather = 3,
+    Calendar = 4,
+    Notifications = 5,
+    Network = 6,
+    Count = 7,
   };
 
   struct TabMeta {
@@ -64,6 +66,7 @@ private:
   static constexpr std::array<TabMeta, kTabCount> kTabs{{
       {TabId::Overview, "overview", "Overview", "person"},
       {TabId::Media, "media", "Media", "disc"},
+      {TabId::Audio, "audio", "Audio", "volume-high"},
       {TabId::Weather, "weather", "Weather", "weather-cloud-sun"},
       {TabId::Calendar, "calendar", "Calendar", "calendar"},
       {TabId::Notifications, "notifications", "Notifications", "bell"},
