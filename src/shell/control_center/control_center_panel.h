@@ -16,6 +16,7 @@
 #include <string_view>
 
 class Button;
+class ConfigService;
 class Flex;
 class HttpClient;
 class Label;
@@ -28,7 +29,7 @@ class WeatherService;
 class ControlCenterPanel : public Panel {
 public:
   ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris,
-                     HttpClient* httpClient = nullptr, WeatherService* weather = nullptr,
+                     ConfigService* config = nullptr, HttpClient* httpClient = nullptr, WeatherService* weather = nullptr,
                      PipeWireSpectrum* spectrum = nullptr);
 
   void create(Renderer& renderer) override;

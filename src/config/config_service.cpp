@@ -464,6 +464,14 @@ void ConfigService::loadFromFile(const std::string& path) {
       weather.unit = *v;
   }
 
+  // Parse [audio]
+  if (auto* audioTbl = tbl["audio"].as_table()) {
+    auto& audio = m_config.audio;
+    if (auto v = (*audioTbl)["enable_overdrive"].value<bool>()) {
+      audio.enableOverdrive = *v;
+    }
+  }
+
   if (m_config.bars.empty()) {
     kLog.info("no [bar.*] defined, using defaults");
     m_config.bars.push_back(BarConfig{});
