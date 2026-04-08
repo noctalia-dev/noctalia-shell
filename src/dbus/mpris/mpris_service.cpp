@@ -122,14 +122,14 @@ int64_t get_int64_from_variant(const std::map<std::string, sdbus::Variant>& valu
   }
 }
 
-std::string primary_artist(const std::vector<std::string>& artists) {
+[[maybe_unused]] std::string primary_artist(const std::vector<std::string>& artists) {
   if (artists.empty()) {
     return {};
   }
   return artists.front();
 }
 
-std::string joinKeys(const std::map<std::string, sdbus::Variant>& values) {
+[[maybe_unused]] std::string joinKeys(const std::map<std::string, sdbus::Variant>& values) {
   std::string out;
   bool first = true;
   for (const auto& [key, _] : values) {
@@ -142,7 +142,7 @@ std::string joinKeys(const std::map<std::string, sdbus::Variant>& values) {
   return out;
 }
 
-std::string joinStrings(const std::vector<std::string>& values) {
+[[maybe_unused]] std::string joinStrings(const std::vector<std::string>& values) {
   std::string out;
   bool first = true;
   for (const auto& value : values) {
@@ -826,12 +826,12 @@ void MprisService::discoverPlayers() {
   for (const auto& name : names) {
     if (is_mpris_bus_name(name)) {
       ++matched;
-      kLog.debug("discover found mpris bus={}", name);
+      // kLog.debug("discover found mpris bus={}", name);
       addOrRefreshPlayer(name);
     }
   }
 
-  kLog.debug("discover players listed={} matched_mpris={} cached_after={}", names.size(), matched, m_players.size());
+  // kLog.debug("discover players listed={} matched_mpris={} cached_after={}", names.size(), matched, m_players.size());
 }
 
 void MprisService::scheduleStartupRediscovery() {
@@ -860,17 +860,18 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
         .call([this, busName](const std::string& interface_name,
                               const std::map<std::string, sdbus::Variant>& changed_properties,
                               const std::vector<std::string>& invalidated_properties) {
+          (void)invalidated_properties;
           if (interface_name == k_mpris_root_interface || interface_name == k_mpris_player_interface) {
             const bool metadataChanged = changed_properties.contains("Metadata");
-            kLog.info("properties changed name={} interface={} changed=[{}] invalidated=[{}] metadata_changed={}",
-                      busName, interface_name, joinKeys(changed_properties), joinStrings(invalidated_properties),
-                      metadataChanged);
+            // kLog.info("properties changed name={} interface={} changed=[{}] invalidated=[{}] metadata_changed={}",
+            //           busName, interface_name, joinKeys(changed_properties), joinStrings(invalidated_properties),
+            //           metadataChanged);
             if (metadataChanged) {
               try {
                 const auto metadata = changed_properties.at("Metadata").get<std::map<std::string, sdbus::Variant>>();
-                kLog.info("metadata payload name={} keys=[{}] art_url_present={} title_present={} artist_present={}",
-                          busName, joinKeys(metadata), metadata.contains("mpris:artUrl"),
-                          metadata.contains("xesam:title"), metadata.contains("xesam:artist"));
+                // kLog.info("metadata payload name={} keys=[{}] art_url_present={} title_present={} artist_present={}",
+                //           busName, joinKeys(metadata), metadata.contains("mpris:artUrl"),
+                //           metadata.contains("xesam:title"), metadata.contains("xesam:artist"));
               } catch (const sdbus::Error& e) {
                 kLog.warn("metadata payload decode failed name={} err={}", busName, e.what());
               }
@@ -888,13 +889,13 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
 
   try {
     const MprisPlayerInfo info = readPlayerInfo(*proxyIt->second, busName);
-    kLog.debug(
-        "queried player name={} identity=\"{}\" status=\"{}\" title=\"{}\" artist=\"{}\" track_id=\"{}\" art_url=\"{}\"",
-        info.busName, info.identity, info.playbackStatus, info.title, primary_artist(info.artists), info.trackId,
-        info.artUrl);
+    // kLog.debug(
+    //     "queried player name={} identity=\"{}\" status=\"{}\" title=\"{}\" artist=\"{}\" track_id=\"{}\" art_url=\"{}\"",
+    //     info.busName, info.identity, info.playbackStatus, info.title, primary_artist(info.artists), info.trackId,
+    //     info.artUrl);
     if (info.artUrl.empty()) {
       const auto metadata = get_metadata_or(*proxyIt->second);
-      kLog.debug("queried player missing art url name={} metadata_keys=[{}]", info.busName, joinKeys(metadata));
+      // kLog.debug("queried player missing art url name={} metadata_keys=[{}]", info.busName, joinKeys(metadata));
     }
     if (info.playbackStatus == "Playing") {
       m_lastActivePlayer = busName;
@@ -904,9 +905,9 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
     const auto existing = m_players.find(busName);
     if (existing == m_players.end()) {
       m_players.emplace(busName, info);
-      kLog.debug("added player name={} identity=\"{}\" status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"",
-              info.busName, info.identity, info.playbackStatus, info.title, primary_artist(info.artists),
-              info.artUrl);
+      // kLog.debug("added player name={} identity=\"{}\" status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"",
+      //            info.busName, info.identity, info.playbackStatus, info.title, primary_artist(info.artists),
+      //            info.artUrl);
       emitPlayersChanged();
       syncSignals(previousActive);
       if (m_changeCallback) {
@@ -927,8 +928,8 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
       }
 
       existing->second = merged;
-      kLog.debug("updated player name={} status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"", merged.busName,
-               merged.playbackStatus, merged.title, primary_artist(merged.artists), merged.artUrl);
+      // kLog.debug("updated player name={} status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"", merged.busName,
+      //            merged.playbackStatus, merged.title, primary_artist(merged.artists), merged.artUrl);
 
       if (previous_info.title != merged.title || previous_info.album != merged.album ||
           previous_info.artists != merged.artists || previous_info.artUrl != merged.artUrl ||
@@ -972,7 +973,7 @@ void MprisService::removePlayer(const std::string& busName) {
 
 std::optional<std::string> MprisService::chooseActivePlayer() const {
   if (m_pinnedPlayerPreference.has_value() && m_players.contains(*m_pinnedPlayerPreference)) {
-    kLog.debug("choose active player source=pinned name={}", *m_pinnedPlayerPreference);
+    // kLog.debug("choose active player source=pinned name={}", *m_pinnedPlayerPreference);
     return *m_pinnedPlayerPreference;
   }
 
@@ -998,29 +999,29 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
   for (const auto& busName : m_preferredPlayers) {
     const auto it = m_players.find(busName);
     if (it != m_players.end() && it->second.playbackStatus == "Playing") {
-      kLog.debug("choose active player source=preferred_playing name={}", busName);
+      // kLog.debug("choose active player source=preferred_playing name={}", busName);
       return busName;
     }
   }
 
   for (const auto& busName : m_preferredPlayers) {
     if (m_players.contains(busName)) {
-      kLog.debug("choose active player source=preferred_any name={}", busName);
+      // kLog.debug("choose active player source=preferred_any name={}", busName);
       return busName;
     }
   }
 
   if (!m_lastActivePlayer.empty() && m_players.contains(m_lastActivePlayer)) {
-    kLog.debug("choose active player source=last_active name={}", m_lastActivePlayer);
+    // kLog.debug("choose active player source=last_active name={}", m_lastActivePlayer);
     return m_lastActivePlayer;
   }
 
   if (!m_players.empty()) {
-    kLog.debug("choose active player source=first_cached name={}", m_players.begin()->first);
+    // kLog.debug("choose active player source=first_cached name={}", m_players.begin()->first);
     return m_players.begin()->first;
   }
 
-  kLog.debug("choose active player source=none");
+  // kLog.debug("choose active player source=none");
   return std::nullopt;
 }
 
