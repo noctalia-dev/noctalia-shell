@@ -45,7 +45,7 @@ int daysInMonth(int yearValue, int monthValue) {
 
 } // namespace
 
-std::unique_ptr<Flex> CalendarTab::build(Renderer& renderer) {
+std::unique_ptr<Flex> CalendarTab::build(Renderer& /*renderer*/) {
   const float scale = contentScale();
 
   auto tab = std::make_unique<Flex>();
@@ -133,7 +133,7 @@ std::unique_ptr<Flex> CalendarTab::build(Renderer& renderer) {
   tab->addChild(std::move(calendarCard));
   tab->addChild(std::move(eventsCard));
 
-  rebuild(renderer);
+  rebuild();
   return tab;
 }
 
@@ -144,7 +144,7 @@ void CalendarTab::layout(Renderer& renderer, float contentWidth, float bodyHeigh
 
   m_rootLayout->setSize(contentWidth, bodyHeight);
   m_rootLayout->layout(renderer);
-  rebuild(renderer);
+  rebuild();
   m_rootLayout->layout(renderer);
 }
 
@@ -157,7 +157,7 @@ void CalendarTab::onClose() {
   m_grid = nullptr;
 }
 
-void CalendarTab::rebuild(Renderer& renderer) {
+void CalendarTab::rebuild() {
   if (m_grid == nullptr || m_monthLabel == nullptr || m_card == nullptr) {
     return;
   }

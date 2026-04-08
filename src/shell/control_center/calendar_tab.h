@@ -11,7 +11,7 @@ public:
   void onClose() override;
 
 private:
-  void rebuild(Renderer& renderer);
+  void rebuild();
 
   Flex* m_rootLayout = nullptr;
   Flex* m_card = nullptr;
