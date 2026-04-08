@@ -34,7 +34,7 @@ constexpr Logger kLog("app");
 
 } // namespace
 
-Application::Application() {
+Application::Application() : m_weatherService(m_configService, m_httpClient) {
   m_notificationManager.addEventCallback([this](const Notification& n, NotificationEvent event) {
     const char* kind = "updated";
     if (event == NotificationEvent::Added) {
@@ -226,6 +226,12 @@ void Application::initServices() {
       m_trayService.reset();
     }
   }
+
+  m_weatherService.initialize();
+  m_weatherService.addChangeCallback([this]() {
+    m_bar.onWorkspaceChange();
+    m_panelManager.refresh();
+  });
 }
 
 void Application::initUi() {
@@ -236,9 +242,9 @@ void Application::initUi() {
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
   m_panelManager.registerPanel("clipboard", std::make_unique<ClipboardPanel>(&m_clipboardService));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
-  m_panelManager.registerPanel("control-center",
-                               std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(),
-                                                                    m_mprisService.get(), &m_httpClient));
+  m_panelManager.registerPanel(
+      "control-center", std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(),
+                                                             m_mprisService.get(), &m_httpClient, &m_weatherService));
   {
     auto launcherPanel = std::make_unique<LauncherPanel>();
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
@@ -259,7 +265,7 @@ void Application::initUi() {
 
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
                    m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_mprisService.get(),
-                   &m_httpClient, &m_renderContext);
+                   &m_httpClient, &m_weatherService, &m_renderContext);
 
   if (m_pipewireService != nullptr) {
     m_audioOsd.suppressFor(std::chrono::milliseconds(2000));
@@ -411,5 +417,6 @@ std::vector<PollSource*> Application::buildPollSources() {
   }
   sources.push_back(&m_ipcPollSource);
   sources.push_back(&m_httpClientPollSource);
+  sources.push_back(&m_weatherPollSource);
   return sources;
 }

@@ -13,9 +13,10 @@
 using namespace control_center;
 
 ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio,
-                                       MprisService* mpris, HttpClient* httpClient) {
+                                       MprisService* mpris, HttpClient* httpClient, WeatherService* weather) {
   m_tabs[tabIndex(TabId::Overview)]      = std::make_unique<OverviewTab>();
   m_tabs[tabIndex(TabId::Media)]         = std::make_unique<MediaTab>(mpris, audio, httpClient);
+  m_tabs[tabIndex(TabId::Weather)]       = std::make_unique<WeatherTab>(weather);
   m_tabs[tabIndex(TabId::Calendar)]      = std::make_unique<CalendarTab>();
   m_tabs[tabIndex(TabId::Notifications)] = std::make_unique<NotificationsTab>(notifications);
   m_tabs[tabIndex(TabId::Network)]       = std::make_unique<NetworkTab>();

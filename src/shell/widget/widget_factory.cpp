@@ -17,16 +17,18 @@
 #include "shell/widgets/test_widget.h"
 #include "shell/widgets/tray_widget.h"
 #include "shell/widgets/volume_widget.h"
+#include "shell/widgets/weather_widget.h"
 #include "shell/widgets/workspaces_widget.h"
 #include "system/system_monitor_service.h"
+#include "system/weather_service.h"
 #include "wayland/wayland_connection.h"
 
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
                              NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                              UPowerService* upower, SystemMonitorService* sysmon, MprisService* mpris,
-                             HttpClient* httpClient)
+                             HttpClient* httpClient, WeatherService* weather)
     : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
-      m_upower(upower), m_sysmon(sysmon), m_mpris(mpris), m_httpClient(httpClient) {}
+      m_upower(upower), m_sysmon(sysmon), m_mpris(mpris), m_httpClient(httpClient), m_weather(weather) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
@@ -90,6 +92,16 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_width", 220.0) : 220.0);
     const float artSize = static_cast<float>(wc != nullptr ? wc->getDouble("art_size", 24.0) : 24.0);
     return std::make_unique<MediaMiniWidget>(m_mpris, m_httpClient, maxWidth, artSize);
+  }
+
+  if (type == "weather") {
+    std::int32_t scale = 1;
+    const auto* wlOutput = m_wayland.findOutputByWl(output);
+    if (wlOutput != nullptr) {
+      scale = wlOutput->scale;
+    }
+    const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_width", 160.0) : 160.0);
+    return std::make_unique<WeatherWidget>(m_weather, output, scale, maxWidth);
   }
 
   if (type == "battery") {

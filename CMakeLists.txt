@@ -351,6 +351,7 @@ add_executable(noctalia
     src/shell/control_center/notifications_tab.cpp
     src/shell/control_center/overview_tab.cpp
     src/shell/control_center/tab.cpp
+    src/shell/control_center/weather_tab.cpp
     src/shell/launcher/launcher_panel.cpp
     src/shell/lockscreen/lock_screen.cpp
     src/shell/lockscreen/lock_surface.cpp
@@ -378,11 +379,13 @@ add_executable(noctalia
     src/shell/widgets/test_widget.cpp
     src/shell/widgets/tray_widget.cpp
     src/shell/widgets/volume_widget.cpp
+    src/shell/widgets/weather_widget.cpp
     src/shell/widgets/workspaces_widget.cpp
     src/system/desktop_entry.cpp
     src/system/distro_info.cpp
     src/system/icon_resolver.cpp
     src/system/system_monitor_service.cpp
+    src/system/weather_service.cpp
     src/time/time_service.cpp
     src/ui/controls/box.cpp
     src/ui/controls/button.cpp

@@ -8,6 +8,7 @@
 #include "render/scene/rect_node.h"
 #include "shell/widget/widget.h"
 #include "system/system_monitor_service.h"
+#include "system/weather_service.h"
 #include "time/time_service.h"
 #include "ui/controls/box.h"
 #include "ui/controls/flex.h"
@@ -44,7 +45,7 @@ Bar::Bar() = default;
 bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                      NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                      UPowerService* upower, SystemMonitorService* sysmon, MprisService* mpris,
-                     HttpClient* httpClient, RenderContext* renderContext) {
+                     HttpClient* httpClient, WeatherService* weatherService, RenderContext* renderContext) {
   m_wayland = &wayland;
   m_config = config;
   m_time = timeService;
@@ -55,10 +56,12 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
   m_sysmon = sysmon;
   m_mpris = mpris;
   m_httpClient = httpClient;
+  m_weatherService = weatherService;
   m_renderContext = renderContext;
 
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
-                                                    m_audio, m_upower, m_sysmon, m_mpris, m_httpClient);
+                                                    m_audio, m_upower, m_sysmon, m_mpris, m_httpClient,
+                                                    m_weatherService);
 
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
@@ -84,7 +87,8 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
 void Bar::reload() {
   kLog.info("reloading config");
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
-                                                    m_audio, m_upower, m_sysmon, m_mpris, m_httpClient);
+                                                    m_audio, m_upower, m_sysmon, m_mpris, m_httpClient,
+                                                    m_weatherService);
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;

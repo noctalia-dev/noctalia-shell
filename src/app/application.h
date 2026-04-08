@@ -34,6 +34,8 @@
 #include "shell/wallpaper/wallpaper.h"
 #include "system/desktop_entry_poll_source.h"
 #include "system/system_monitor_service.h"
+#include "system/weather_poll_source.h"
+#include "system/weather_service.h"
 #include "time/time_poll_source.h"
 #include "time/time_service.h"
 #include "wayland/clipboard_poll_source.h"
@@ -102,7 +104,9 @@ private:
   IpcService m_ipcService;
   IpcPollSource m_ipcPollSource{m_ipcService};
   HttpClient m_httpClient;
+  WeatherService m_weatherService;
   HttpClientPollSource m_httpClientPollSource{m_httpClient};
+  WeatherPollSource m_weatherPollSource{m_weatherService};
 
   std::unique_ptr<MainLoop> m_mainLoop;
 };

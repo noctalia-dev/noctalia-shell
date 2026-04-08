@@ -95,11 +95,20 @@ struct OsdConfig {
   std::string position = "top_right";
 };
 
+struct WeatherConfig {
+  bool enabled = true;
+  bool autoLocate = false;
+  std::string address;
+  std::int32_t refreshMinutes = 30;
+  std::string unit = "celsius";
+};
+
 struct Config {
   std::vector<BarConfig> bars;
   std::unordered_map<std::string, WidgetConfig> widgets;
   WallpaperConfig wallpaper;
   OsdConfig osd;
+  WeatherConfig weather;
 };
 
 class ConfigService {

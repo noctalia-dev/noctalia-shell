@@ -18,6 +18,7 @@ class UPowerService;
 class TrayService;
 class TimeService;
 class WaylandConnection;
+class WeatherService;
 struct PointerEvent;
 struct wl_surface;
 
@@ -28,7 +29,7 @@ public:
   bool initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                   NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                   UPowerService* upower, SystemMonitorService* sysmon, MprisService* mpris, HttpClient* httpClient,
-                  RenderContext* renderContext);
+                  WeatherService* weatherService, RenderContext* renderContext);
   void reload();
   void closeAllInstances();
   void show();
@@ -58,6 +59,7 @@ private:
   SystemMonitorService* m_sysmon = nullptr;
   MprisService* m_mpris = nullptr;
   HttpClient* m_httpClient = nullptr;
+  WeatherService* m_weatherService = nullptr;
   RenderContext* m_renderContext = nullptr;
   std::unique_ptr<WidgetFactory> m_widgetFactory;
   std::vector<std::unique_ptr<BarInstance>> m_instances;

@@ -6,6 +6,7 @@
 #include "shell/control_center/calendar_tab.h"
 #include "shell/control_center/notifications_tab.h"
 #include "shell/control_center/network_tab.h"
+#include "shell/control_center/weather_tab.h"
 #include "shell/panel/panel.h"
 
 #include <array>
@@ -20,11 +21,12 @@ class Label;
 class MprisService;
 class NotificationManager;
 class PipeWireService;
+class WeatherService;
 
 class ControlCenterPanel : public Panel {
 public:
   ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris,
-                     HttpClient* httpClient = nullptr);
+                     HttpClient* httpClient = nullptr, WeatherService* weather = nullptr);
 
   void create(Renderer& renderer) override;
   void layout(Renderer& renderer, float width, float height) override;
@@ -50,10 +52,11 @@ private:
   enum class TabId : std::uint8_t {
     Overview = 0,
     Media = 1,
-    Calendar = 2,
-    Notifications = 3,
-    Network = 4,
-    Count = 5,
+    Weather = 2,
+    Calendar = 3,
+    Notifications = 4,
+    Network = 5,
+    Count = 6,
   };
 
   struct TabMeta {
@@ -67,6 +70,7 @@ private:
   static constexpr std::array<TabMeta, kTabCount> kTabs{{
       {TabId::Overview, "overview", "Overview", "person"},
       {TabId::Media, "media", "Media", "disc"},
+      {TabId::Weather, "weather", "Weather", "weather-cloud-sun"},
       {TabId::Calendar, "calendar", "Calendar", "calendar"},
       {TabId::Notifications, "notifications", "Notifications", "bell"},
       {TabId::Network, "network", "Network", "wifi"},

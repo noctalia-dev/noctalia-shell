@@ -12,6 +12,7 @@ Changes are detected automatically via inotify — no restart required.
 - [Per-monitor overrides](#per-monitor-overrides)
 - [Widget definitions](#widget-definitions)
 - [Built-in widgets](#built-in-widgets)
+- [Weather](#weather)
 - [OSD](#osd)
 - [Wallpaper](#wallpaper)
 - [Full example](#full-example)
@@ -174,6 +175,22 @@ No configurable settings.
 
 ---
 
+### `weather`
+
+Shows the current weather in the bar and opens the Weather control-center tab on click.
+
+| Setting     | Type   | Default | Description                         |
+|-------------|--------|---------|-------------------------------------|
+| `max_width` | number | `160`   | Maximum width for the weather text  |
+
+```toml
+[widget.weather]
+type = "weather"
+max_width = 180
+```
+
+---
+
 ### `notifications`
 
 Shows the pending notification count. No configurable settings.
@@ -255,6 +272,23 @@ position = "top_right"   # top_right | top_left | top_center | bottom_right | bo
 ```
 
 The OSD currently powers the volume HUD and defaults to `top_right`.
+
+---
+
+## Weather
+
+```toml
+[weather]
+enabled         = true
+auto_locate     = false        # when true, resolve coordinates from your IP address
+address         = "Toronto, ON" # used when auto_locate = false
+refresh_minutes = 30
+unit            = "celsius"   # celsius | fahrenheit
+```
+
+`auto_locate` is off by default. When it is disabled, Noctalia geocodes `address` to latitude/longitude and then fetches current weather plus a 6-day forecast. When `auto_locate` is enabled, the configured address is ignored and the shell resolves your location via IP before fetching the forecast.
+
+The bar widget type is `weather`, and the control center gains a `Weather` tab automatically.
 
 ---
 

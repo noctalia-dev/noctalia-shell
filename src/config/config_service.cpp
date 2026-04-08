@@ -441,6 +441,21 @@ void ConfigService::loadFromFile(const std::string& path) {
       osd.position = *v;
   }
 
+  // Parse [weather]
+  if (auto* weatherTbl = tbl["weather"].as_table()) {
+    auto& weather = m_config.weather;
+    if (auto v = (*weatherTbl)["enabled"].value<bool>())
+      weather.enabled = *v;
+    if (auto v = (*weatherTbl)["auto_locate"].value<bool>())
+      weather.autoLocate = *v;
+    if (auto v = (*weatherTbl)["address"].value<std::string>())
+      weather.address = *v;
+    if (auto v = (*weatherTbl)["refresh_minutes"].value<int64_t>())
+      weather.refreshMinutes = static_cast<std::int32_t>(*v);
+    if (auto v = (*weatherTbl)["unit"].value<std::string>())
+      weather.unit = *v;
+  }
+
   if (m_config.bars.empty()) {
     kLog.info("no [bar.*] defined, using defaults");
     m_config.bars.push_back(BarConfig{});
