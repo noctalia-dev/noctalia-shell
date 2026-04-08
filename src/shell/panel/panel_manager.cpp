@@ -366,6 +366,7 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     return;
   }
   auto* renderer = m_renderContext;
+  const bool hasDecoration = m_activePanel->hasDecoration();
 
   const auto w = static_cast<float>(width);
   const auto h = static_cast<float>(height);
@@ -374,10 +375,11 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     m_sceneRoot = std::make_unique<Node>();
     m_sceneRoot->setAnimationManager(&m_animations);
 
-    // Panel background
-    auto bg = std::make_unique<Box>();
-    bg->setPanelStyle();
-    m_bgNode = m_sceneRoot->addChild(std::move(bg));
+    if (hasDecoration) {
+      auto bg = std::make_unique<Box>();
+      bg->setPanelStyle();
+      m_bgNode = m_sceneRoot->addChild(std::move(bg));
+    }
 
     // Create panel content inside a wrapper node for staggered fade-in
     auto contentWrapper = std::make_unique<Node>();
@@ -399,12 +401,14 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     m_animations.animate(0.0f, 1.0f, Style::animNormal, Easing::EaseOutCubic, [this, w, h](float v) {
       m_sceneRoot->setOpacity(v);
 
-      // Background grows from ~95% to 100%
-      const float s = 1.0f - 0.05f * (1.0f - v);
-      const float bw = w * s;
-      const float bh = h * s;
-      m_bgNode->setSize(bw, bh); // Surface::setSize auto-syncs internal rect
-      m_bgNode->setPosition((w - bw) * 0.5f, (h - bh) * 0.5f);
+      if (m_bgNode != nullptr) {
+        // Background grows from ~95% to 100%
+        const float s = 1.0f - 0.05f * (1.0f - v);
+        const float bw = w * s;
+        const float bh = h * s;
+        m_bgNode->setSize(bw, bh); // Surface::setSize auto-syncs internal rect
+        m_bgNode->setPosition((w - bw) * 0.5f, (h - bh) * 0.5f);
+      }
     });
 
     m_surface->setSceneRoot(m_sceneRoot.get());
@@ -419,11 +423,12 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
 
   m_sceneRoot->setSize(w, h);
 
-  m_bgNode->setPosition(0.0f, 0.0f);
-  m_bgNode->setSize(w, h);
+  if (m_bgNode != nullptr) {
+    m_bgNode->setPosition(0.0f, 0.0f);
+    m_bgNode->setSize(w, h);
+  }
 
-  // Layout panel content with padding
-  const float kPadding = m_activePanel != nullptr ? m_activePanel->contentScale() * 12.0f : 12.0f;
+  const float kPadding = hasDecoration ? m_activePanel->contentScale() * 12.0f : 0.0f;
   m_contentWidth = w - kPadding * 2.0f;
   m_contentHeight = h - kPadding * 2.0f;
   m_activePanel->layout(*renderer, m_contentWidth, m_contentHeight);

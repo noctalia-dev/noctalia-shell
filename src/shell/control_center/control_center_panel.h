@@ -83,7 +83,7 @@ private:
   // Tab instances (long-lived, survive panel open/close cycles)
   std::array<std::unique_ptr<Tab>, kTabCount> m_tabs;
 
-  // Panel chrome (rebuilt each create(), nulled in onClose())
+  // Panel UI structure (rebuilt each create(), nulled in onClose())
   Flex* m_rootLayout = nullptr;
   Flex* m_sidebar = nullptr;
   Flex* m_content = nullptr;
