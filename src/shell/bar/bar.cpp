@@ -39,6 +39,69 @@ std::uint32_t positionToAnchor(const std::string& position) {
 
 constexpr Logger kLog("bar");
 
+void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW, float barAreaH, float paddingH,
+                       bool isVertical) {
+  auto layoutWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
+    for (auto& widget : widgets) {
+      widget->layout(renderer, barAreaW, barAreaH);
+    }
+  };
+  layoutWidgets(instance.startWidgets);
+  layoutWidgets(instance.centerWidgets);
+  layoutWidgets(instance.endWidgets);
+
+  const float slotCross = isVertical ? barAreaW : barAreaH;
+  const float contentMainStart = paddingH;
+  const float contentMainEnd = std::max(contentMainStart, (isVertical ? barAreaH : barAreaW) - paddingH);
+  const float contentMainSpan = std::max(0.0f, contentMainEnd - contentMainStart);
+
+  auto configureSlot = [&](Node* slot, float mainOffset, float mainSize) {
+    slot->setClipChildren(true);
+    if (isVertical) {
+      slot->setPosition(0.0f, mainOffset);
+      slot->setSize(slotCross, mainSize);
+    } else {
+      slot->setPosition(mainOffset, 0.0f);
+      slot->setSize(mainSize, slotCross);
+    }
+  };
+
+  auto configureSection = [&](Flex* section, FlexJustify justify) {
+    section->setJustify(justify);
+    section->layout(renderer);
+  };
+
+  configureSection(instance.startSection, FlexJustify::Start);
+  configureSection(instance.centerSection, FlexJustify::Center);
+  configureSection(instance.endSection, FlexJustify::End);
+
+  const float centerNaturalMain = isVertical ? instance.centerSection->height() : instance.centerSection->width();
+  const float centerSlotMain = std::min(contentMainSpan, centerNaturalMain);
+  const float centerSlotStart = contentMainStart + std::max(0.0f, (contentMainSpan - centerSlotMain) * 0.5f);
+  const float centerSlotEnd = centerSlotStart + centerSlotMain;
+  const float startSlotMain = std::max(0.0f, centerSlotStart - contentMainStart);
+  const float endSlotMain = std::max(0.0f, contentMainEnd - centerSlotEnd);
+
+  configureSlot(instance.startSlot, contentMainStart, startSlotMain);
+  configureSlot(instance.centerSlot, centerSlotStart, centerSlotMain);
+  configureSlot(instance.endSlot, centerSlotEnd, endSlotMain);
+
+  if (isVertical) {
+    instance.startSection->setPosition((slotCross - instance.startSection->width()) * 0.5f,
+                                       (startSlotMain - instance.startSection->height()) * 0.5f);
+    instance.centerSection->setPosition((slotCross - instance.centerSection->width()) * 0.5f,
+                                        (centerSlotMain - instance.centerSection->height()) * 0.5f);
+    instance.endSection->setPosition((slotCross - instance.endSection->width()) * 0.5f,
+                                     (endSlotMain - instance.endSection->height()) * 0.5f);
+  } else {
+    instance.startSection->setPosition(0.0f, (slotCross - instance.startSection->height()) * 0.5f);
+    instance.centerSection->setPosition((centerSlotMain - instance.centerSection->width()) * 0.5f,
+                                        (slotCross - instance.centerSection->height()) * 0.5f);
+    instance.endSection->setPosition(endSlotMain - instance.endSection->width(),
+                                     (slotCross - instance.endSection->height()) * 0.5f);
+  }
+}
+
 } // namespace
 
 Bar::Bar() = default;
@@ -336,6 +399,19 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     }
     // Note: shadow is inserted before bar sections so it renders below them (z=-1 is set below).
 
+    auto contentClip = std::make_unique<Node>();
+    contentClip->setClipChildren(true);
+    instance.contentClip = instance.sceneRoot->addChild(std::move(contentClip));
+
+    auto makeSlot = [&instance]() {
+      auto slot = std::make_unique<Node>();
+      slot->setClipChildren(true);
+      return instance.contentClip->addChild(std::move(slot));
+    };
+    instance.startSlot = makeSlot();
+    instance.centerSlot = makeSlot();
+    instance.endSlot = makeSlot();
+
     // Create section boxes
     auto makeSection = [widgetSpacing]() {
       auto box = std::make_unique<Flex>();
@@ -345,9 +421,9 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
       return box;
     };
 
-    instance.startSection = static_cast<Flex*>(instance.sceneRoot->addChild(makeSection()));
-    instance.centerSection = static_cast<Flex*>(instance.sceneRoot->addChild(makeSection()));
-    instance.endSection = static_cast<Flex*>(instance.sceneRoot->addChild(makeSection()));
+    instance.startSection = static_cast<Flex*>(instance.startSlot->addChild(makeSection()));
+    instance.centerSection = static_cast<Flex*>(instance.centerSlot->addChild(makeSection()));
+    instance.endSection = static_cast<Flex*>(instance.endSlot->addChild(makeSection()));
 
     // Create widgets and transfer their roots to section boxes
     auto initWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets, Flex* section) {
@@ -389,6 +465,10 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   // Expand 1px beyond its edges so SDF fringe lands inside the rect.
   instance.bg->setPosition(barAreaX - 1.0f, barAreaY - 1.0f);
   instance.bg->setSize(barAreaW + 2.0f, barAreaH + 2.0f);
+  if (instance.contentClip != nullptr) {
+    instance.contentClip->setPosition(barAreaX, barAreaY);
+    instance.contentClip->setSize(barAreaW, barAreaH);
+  }
 
   // Shadow — same shape as the bar, offset by (shadowOffsetX, shadowOffsetY), rendered with large
   // SDF softness to produce a Gaussian-like blurred drop shadow. Rendered at z=-1 so the bar sits
@@ -408,32 +488,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.shadow->setSize(barAreaW, barAreaH);
   }
 
-  // Layout widgets
-  auto layoutWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
-    for (auto& widget : widgets) {
-      widget->layout(*renderer, barAreaW, barAreaH);
-    }
-  };
-  layoutWidgets(instance.startWidgets);
-  layoutWidgets(instance.centerWidgets);
-  layoutWidgets(instance.endWidgets);
-
-  // Layout section boxes
-  instance.startSection->layout(*renderer);
-  instance.centerSection->layout(*renderer);
-  instance.endSection->layout(*renderer);
-
-  // Position sections — centre within the bar visual area, not the full surface
-  const float contentY = barAreaY + (barAreaH - instance.startSection->height()) * 0.5f;
-  instance.startSection->setPosition(barAreaX + paddingH, contentY);
-
-  const float centerX = barAreaX + (barAreaW - instance.centerSection->width()) * 0.5f;
-  const float centerY = barAreaY + (barAreaH - instance.centerSection->height()) * 0.5f;
-  instance.centerSection->setPosition(centerX, centerY);
-
-  const float endX = barAreaX + barAreaW - instance.endSection->width() - paddingH;
-  const float endY = barAreaY + (barAreaH - instance.endSection->height()) * 0.5f;
-  instance.endSection->setPosition(endX, endY);
+  layoutBarSections(instance, *renderer, barAreaW, barAreaH, paddingH, isVertical);
 }
 
 void Bar::updateWidgets(BarInstance& instance) {
@@ -445,31 +500,14 @@ void Bar::updateWidgets(BarInstance& instance) {
   const auto w = static_cast<float>(instance.surface->width());
   const auto h = static_cast<float>(instance.surface->height());
   const float paddingH = static_cast<float>(instance.barConfig.paddingH);
-  const float shadowSize = static_cast<float>(std::max(0, instance.barConfig.shadowBlur));
-  const float shadowOffsetX = static_cast<float>(instance.barConfig.shadowOffsetX);
-  const float shadowOffsetY = static_cast<float>(instance.barConfig.shadowOffsetY);
   const float barH = static_cast<float>(instance.barConfig.height);
   const float marginH = static_cast<float>(instance.barConfig.marginH);
   const float marginV = static_cast<float>(instance.barConfig.marginV);
-  const bool isBottom = instance.barConfig.position == "bottom";
-  const bool isRight = instance.barConfig.position == "right";
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
-  const float shadowExpand = [&]() -> float {
-    if (shadowSize <= 0.0f)
-      return 0.0f;
-    if (isVertical) {
-      const float inward = isRight ? -shadowOffsetX : shadowOffsetX;
-      return shadowSize + std::max(0.0f, inward);
-    }
-    const float inward = isBottom ? -shadowOffsetY : shadowOffsetY;
-    return shadowSize + std::max(0.0f, inward);
-  }();
-  const float barAreaX = isVertical ? (isRight ? shadowExpand : marginH) : marginH;
-  const float barAreaY = isVertical ? marginV : (isBottom ? shadowExpand : marginV);
   const float barAreaW = isVertical ? barH : (w - 2.0f * marginH);
   const float barAreaH = isVertical ? (h - 2.0f * marginV) : barH;
 
-  auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets, Flex* section) {
+  auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
     bool changed = false;
     for (auto& widget : widgets) {
       widget->update(*renderer);
@@ -478,27 +516,16 @@ void Bar::updateWidgets(BarInstance& instance) {
         widget->layout(*renderer, barAreaW, barAreaH);
       }
     }
-    if (changed) {
-      section->layout(*renderer);
-    }
+    return changed;
   };
 
-  updateSection(instance.startWidgets, instance.startSection);
-  updateSection(instance.centerWidgets, instance.centerSection);
-  updateSection(instance.endWidgets, instance.endSection);
+  const bool startChanged = updateSection(instance.startWidgets);
+  const bool centerChanged = updateSection(instance.centerWidgets);
+  const bool endChanged = updateSection(instance.endWidgets);
 
-  // Reposition sections if sizes changed
-  if (instance.startSection->dirty() || instance.centerSection->dirty() || instance.endSection->dirty()) {
-    const float contentY = barAreaY + (barAreaH - instance.startSection->height()) * 0.5f;
-    instance.startSection->setPosition(barAreaX + paddingH, contentY);
-
-    const float centerX = barAreaX + (barAreaW - instance.centerSection->width()) * 0.5f;
-    const float centerY = barAreaY + (barAreaH - instance.centerSection->height()) * 0.5f;
-    instance.centerSection->setPosition(centerX, centerY);
-
-    const float endX = barAreaX + barAreaW - instance.endSection->width() - paddingH;
-    const float endY = barAreaY + (barAreaH - instance.endSection->height()) * 0.5f;
-    instance.endSection->setPosition(endX, endY);
+  if (startChanged || centerChanged || endChanged || instance.startSection->dirty() || instance.centerSection->dirty() ||
+      instance.endSection->dirty()) {
+    layoutBarSections(instance, *renderer, barAreaW, barAreaH, paddingH, isVertical);
   }
 }
 
