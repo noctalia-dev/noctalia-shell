@@ -13,6 +13,14 @@
 
 Flex::Flex() = default;
 
+void Flex::setSize(float width, float height) {
+  Node::setSize(width, height);
+  if (m_background != nullptr) {
+    m_background->setPosition(0.0f, 0.0f);
+    m_background->setSize(width, height);
+  }
+}
+
 void Flex::setDirection(FlexDirection direction) {
   if (m_direction == direction) {
     return;

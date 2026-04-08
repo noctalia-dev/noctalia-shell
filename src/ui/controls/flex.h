@@ -58,6 +58,7 @@ public:
   [[nodiscard]] float paddingBottom() const noexcept { return m_paddingBottom; }
   [[nodiscard]] float paddingLeft() const noexcept { return m_paddingLeft; }
 
+  void setSize(float width, float height) override;
   virtual void layout(Renderer& renderer);
 
 private:

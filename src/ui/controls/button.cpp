@@ -306,6 +306,9 @@ void Button::layout(Renderer& renderer) {
     return;
   }
 
+  const float assignedWidth = width();
+  const float assignedHeight = height();
+
   m_label->measure(renderer);
   if (m_glyph != nullptr) {
     m_glyph->measure(renderer);
@@ -316,6 +319,12 @@ void Button::layout(Renderer& renderer) {
   }
 
   Flex::layout(renderer);
+
+  // Buttons are often sized by a parent stretch pass. Preserve that assigned
+  // box instead of collapsing back to intrinsic content width.
+  if (assignedWidth > 0.0f || assignedHeight > 0.0f) {
+    setSize(std::max(width(), assignedWidth), std::max(height(), assignedHeight));
+  }
 
   // After Flex layout the content row is left-anchored inside the padding.
   // Shift the whole group to honour m_contentAlign (Start leaves it as-is).
