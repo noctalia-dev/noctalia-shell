@@ -174,8 +174,8 @@ std::unique_ptr<Flex> WeatherTab::build(Renderer& /*renderer*/) {
   addDetailRow("wind", "Wind", m_windLabel);
   addDetailRow("weather-sunrise", "Sunrise", m_sunriseLabel);
   addDetailRow("weather-sunset", "Sunset", m_sunsetLabel);
-  addDetailRow("world-pin", "Lat", m_timezoneLabel);
-  addDetailRow("map-pin", "Lon", m_longitudeLabel);
+  addDetailRow("world-pin", "Latitude", m_timezoneLabel);
+  addDetailRow("map-pin", "Longitude", m_longitudeLabel);
   addDetailRow("clock", "Timezone", m_elevationLabel);
 
   leftColumn->addChild(std::move(detailsCard));

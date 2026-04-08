@@ -394,12 +394,12 @@ void WeatherService::startWeatherFetch() {
   std::error_code ec;
   std::filesystem::create_directories(transportCacheDir(), ec);
   const auto path = transportCacheDir() / "forecast.json";
-  const std::string url = std::format(
-      "https://api.open-meteo.com/v1/forecast?latitude={}&longitude={}"
-      "&current_weather=true"
-      "&daily=temperature_2m_max,temperature_2m_min,weathercode,sunrise,sunset"
-      "&forecast_days={}&timezone=auto",
-      formatCoordinate(m_resolvedLatitude), formatCoordinate(m_resolvedLongitude), kForecastDays);
+  const std::string url =
+      std::format("https://api.open-meteo.com/v1/forecast?latitude={}&longitude={}"
+                  "&current_weather=true"
+                  "&daily=temperature_2m_max,temperature_2m_min,weathercode,sunrise,sunset"
+                  "&forecast_days={}&timezone=auto",
+                  formatCoordinate(m_resolvedLatitude), formatCoordinate(m_resolvedLongitude), kForecastDays);
   const std::uint64_t serial = ++m_requestSerial;
   m_loading = true;
   m_error.clear();
@@ -510,9 +510,8 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
     next.current.weatherCode = readInt(current, "weathercode");
     next.fetchedAt = Clock::now();
 
-    const std::size_t count =
-        std::min({dates.size(), tempsMax.size(), tempsMin.size(), codes.size(), sunrises.size(), sunsets.size(),
-                  kForecastDays});
+    const std::size_t count = std::min(
+        {dates.size(), tempsMax.size(), tempsMin.size(), codes.size(), sunrises.size(), sunsets.size(), kForecastDays});
     next.forecastDays.reserve(count);
     for (std::size_t i = 0; i < count; ++i) {
       if (!dates[i].is_string() || !tempsMax[i].is_number() || !tempsMin[i].is_number() || !codes[i].is_number()) {
