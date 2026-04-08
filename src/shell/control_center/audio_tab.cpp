@@ -62,12 +62,7 @@ public:
     m_title = title.get();
     m_textColumn->addChild(std::move(title));
 
-    auto detail = std::make_unique<Label>();
-    detail->setCaptionStyle();
-    detail->setColor(palette.onSurfaceVariant);
-    detail->setVisible(false);
-    m_detail = detail.get();
-    m_textColumn->addChild(std::move(detail));
+    m_detail = nullptr; // Remove detail label (subtext)
 
     auto area = std::make_unique<InputArea>();
     area->setPropagateEvents(true);
@@ -88,15 +83,12 @@ public:
     m_radio->setChecked(node.isDefault);
 
     const std::string title = !node.description.empty() ? node.description : node.name;
-    const bool showDetail = !node.description.empty() && !node.name.empty() && node.description != node.name;
+    // Removed unused variable 'showDetail'
 
     if (m_title != nullptr) {
       m_title->setText(title);
     }
-    if (m_detail != nullptr) {
-      m_detail->setText(showDetail ? node.name : "");
-      m_detail->setVisible(showDetail);
-    }
+    // Removed subtext (detail) handling
   }
 
   void layout(Renderer& renderer) override {
@@ -109,9 +101,7 @@ public:
     const float textMaxWidth =
         std::max(0.0f, width() - paddingLeft() - paddingRight() - gap() - m_radio->width());
     m_title->setMaxWidth(textMaxWidth);
-    if (m_detail != nullptr) {
-      m_detail->setMaxWidth(textMaxWidth);
-    }
+    // Removed subtext (detail) max width
 
     m_inputArea->setVisible(false);
     Flex::layout(renderer);
@@ -131,9 +121,6 @@ private:
       if (m_title != nullptr) {
         m_title->setColor(palette.onPrimary);
       }
-      if (m_detail != nullptr) {
-        m_detail->setColor(palette.onPrimary);
-      }
       return;
     }
 
@@ -143,9 +130,7 @@ private:
     if (m_title != nullptr) {
       m_title->setColor(palette.onSurface);
     }
-    if (m_detail != nullptr) {
-      m_detail->setColor(palette.onSurfaceVariant);
-    }
+    // Removed subtext (detail) color handling
   }
 
   [[nodiscard]] bool hovered() const noexcept { return m_inputArea != nullptr && m_inputArea->hovered(); }
