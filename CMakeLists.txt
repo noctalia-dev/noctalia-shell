@@ -344,6 +344,7 @@ add_executable(noctalia
     src/render/text/msdf_text_renderer.cpp
     src/render/wallpaper_renderer.cpp
     src/shell/bar/bar.cpp
+    src/shell/clipboard/clipboard_panel.cpp
     src/shell/control_center/calendar_tab.cpp
     src/shell/control_center/audio_tab.cpp
     src/shell/control_center/control_center_panel.cpp
@@ -360,8 +361,7 @@ add_executable(noctalia
     src/shell/osd/audio_osd.cpp
     src/shell/osd/osd_overlay.cpp
     src/shell/panel/panel_manager.cpp
-    src/shell/panels/clipboard_panel.cpp
-    src/shell/panels/test_panel.cpp
+    src/shell/test/test_panel.cpp
     src/shell/tray/tray_menu.cpp
     src/shell/wallpaper/wallpaper.cpp
     src/shell/wallpaper/wallpaper_surface.cpp

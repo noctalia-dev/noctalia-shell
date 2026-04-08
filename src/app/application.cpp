@@ -5,10 +5,10 @@
 #include "launcher/app_provider.h"
 #include "launcher/emoji_provider.h"
 #include "launcher/math_provider.h"
+#include "shell/clipboard/clipboard_panel.h"
 #include "shell/control_center/control_center_panel.h"
 #include "shell/launcher/launcher_panel.h"
-#include "shell/panels/clipboard_panel.h"
-#include "shell/panels/test_panel.h"
+#include "shell/test/test_panel.h"
 #include "system/distro_info.h"
 
 #include <chrono>

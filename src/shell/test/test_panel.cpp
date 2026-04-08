@@ -1,4 +1,4 @@
-#include "shell/panels/test_panel.h"
+#include "shell/test/test_panel.h"
 
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"

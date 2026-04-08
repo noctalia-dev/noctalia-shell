@@ -1,4 +1,4 @@
-#include "shell/panels/clipboard_panel.h"
+#include "shell/clipboard/clipboard_panel.h"
 
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
