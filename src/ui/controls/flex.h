@@ -44,6 +44,10 @@ public:
   [[nodiscard]] FlexDirection direction() const noexcept { return m_direction; }
   [[nodiscard]] float gap() const noexcept { return m_gap; }
   [[nodiscard]] FlexAlign align() const noexcept { return m_align; }
+  [[nodiscard]] float paddingTop() const noexcept { return m_paddingTop; }
+  [[nodiscard]] float paddingRight() const noexcept { return m_paddingRight; }
+  [[nodiscard]] float paddingBottom() const noexcept { return m_paddingBottom; }
+  [[nodiscard]] float paddingLeft() const noexcept { return m_paddingLeft; }
 
   virtual void layout(Renderer& renderer);
 

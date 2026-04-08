@@ -13,6 +13,12 @@ class Glyph;
 class InputArea;
 class Label;
 
+enum class ButtonContentAlign : std::uint8_t {
+  Center,
+  Start,
+  End,
+};
+
 enum class ButtonVariant : std::uint8_t {
   Default,
   Secondary,
@@ -34,6 +40,7 @@ public:
   void setFontSize(float size);
   void setGlyphSize(float size);
   void setEnabled(bool enabled);
+  void setContentAlign(ButtonContentAlign align);
   void setVariant(ButtonVariant variant);
   void setMinimalChrome(bool minimalChrome);
   void setOnClick(std::function<void()> callback);
@@ -78,6 +85,7 @@ private:
   Color m_targetBg{};
   Color m_targetBorder{};
   Color m_targetLabel{};
+  ButtonContentAlign m_contentAlign = ButtonContentAlign::Center;
   bool m_minimalChrome = false;
   bool m_enabled = true;
 };

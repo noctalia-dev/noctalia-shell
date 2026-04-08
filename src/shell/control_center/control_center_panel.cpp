@@ -51,6 +51,7 @@ void ControlCenterPanel::create(Renderer& renderer) {
     button->label()->setBold(true);
     button->label()->setFontSize(Style::fontSizeBody * scale);
     button->setVariant(ButtonVariant::Tab);
+    button->setContentAlign(ButtonContentAlign::Start);
     button->setMinimalChrome(true);
     button->setMinHeight(Style::controlHeightLg * scale);
     button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale, Style::spaceMd * scale);
