@@ -443,6 +443,17 @@ void ConfigService::loadFromFile(const std::string& path) {
     }
   }
 
+  // Parse [overview]
+  if (auto* ovTbl = tbl["overview"].as_table()) {
+    auto& ov = m_config.overview;
+    if (auto v = (*ovTbl)["enabled"].value<bool>())
+      ov.enabled = *v;
+    if (auto v = (*ovTbl)["blur_intensity"].value<double>())
+      ov.blurIntensity = static_cast<float>(*v);
+    if (auto v = (*ovTbl)["tint_intensity"].value<double>())
+      ov.tintIntensity = static_cast<float>(*v);
+  }
+
   // Parse [osd]
   if (auto* osdTbl = tbl["osd"].as_table()) {
     auto& osd = m_config.osd;

@@ -17,6 +17,7 @@ Changes are detected automatically via inotify — no restart required.
 - [Shell](#shell)
 - [OSD](#osd)
 - [Wallpaper](#wallpaper)
+- [Overview](#overview)
 - [Full example](#full-example)
 
 ---
@@ -292,6 +293,30 @@ enabled = false
 
 ---
 
+## Overview
+
+Renders a blurred and tinted copy of the current wallpaper as a layer-shell backdrop for compositor overview modes (e.g. niri's overview). Disabled by default.
+
+To make the surface visible during niri overview, add a layer-rule in your niri config:
+
+```kdl
+layer-rule {
+    match namespace="^noctalia-overview"
+    place-within-backdrop true
+}
+```
+
+```toml
+[overview]
+enabled          = false
+blur_intensity   = 0.5   # 0.0 = no blur, 1.0 = maximum blur
+tint_intensity   = 0.3   # 0.0 = no tint, 1.0 = fully opaque tint
+```
+
+The tint color is `palette.surface` and cannot currently be configured.
+
+---
+
 ## OSD
 
 ```toml
@@ -406,4 +431,11 @@ fill_mode           = "crop"
 transition          = ["fade", "wipe", "zoom", "disc", "honeycomb", "stripes"]
 transition_duration = 1500.0
 edge_smoothness     = 0.5
+
+# ─── Overview ──────────────────────────────────────────────────────────────────
+
+[overview]
+enabled        = true
+blur_intensity = 0.6
+tint_intensity = 0.35
 ```

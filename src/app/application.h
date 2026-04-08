@@ -32,6 +32,7 @@
 #include "shell/notification/notification_popup.h"
 #include "shell/osd/audio_osd.h"
 #include "shell/osd/osd_overlay.h"
+#include "shell/overview/overview.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/tray/tray_menu.h"
 #include "shell/wallpaper/wallpaper.h"
@@ -94,6 +95,7 @@ private:
   OsdOverlay m_osdOverlay;
   TrayMenu m_trayMenu;
   Wallpaper m_wallpaper;
+  Overview m_overview;
 
   // Poll sources (must outlive MainLoop)
   std::unique_ptr<SessionBusPollSource> m_busPollSource;

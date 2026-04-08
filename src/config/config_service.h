@@ -91,6 +91,12 @@ struct WallpaperConfig {
   std::vector<WallpaperMonitorOverride> monitorOverrides;
 };
 
+struct OverviewConfig {
+  bool enabled = false;
+  float blurIntensity = 0.5f;
+  float tintIntensity = 0.3f;
+};
+
 struct OsdConfig {
   std::string position = "top_right";
 };
@@ -115,6 +121,7 @@ struct Config {
   std::vector<BarConfig> bars;
   std::unordered_map<std::string, WidgetConfig> widgets;
   WallpaperConfig wallpaper;
+  OverviewConfig overview;
   ShellConfig shell;
   OsdConfig osd;
   WeatherConfig weather;

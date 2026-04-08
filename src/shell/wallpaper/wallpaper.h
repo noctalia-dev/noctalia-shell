@@ -24,6 +24,13 @@ public:
   void onStateChange();
   [[nodiscard]] bool hasInstances() const noexcept;
 
+  // Shared texture cache — public so Overview can share textures without
+  // duplicating VRAM. Caller must ensure a context is current or let
+  // acquireTexture handle it internally.
+  [[nodiscard]] EGLContext shareContext() const noexcept { return m_shareContext; }
+  TextureHandle acquireTexture(const std::string& path);
+  void releaseTexture(TextureHandle& handle, const std::string& path);
+
 private:
   void reload();
   void syncInstances();
@@ -32,10 +39,6 @@ private:
   void startTransition(WallpaperInstance& instance);
   void updateRendererState(WallpaperInstance& instance);
 
-  // Shared texture cache — textures are uploaded once and reused across all
-  // instances that share the same wallpaper path (via EGL context sharing).
-  TextureHandle acquireTexture(const std::string& path);
-  void releaseTexture(TextureHandle& handle, const std::string& path);
   void releaseInstanceTextures(WallpaperInstance& inst);
   void makeAnyContextCurrent();
 

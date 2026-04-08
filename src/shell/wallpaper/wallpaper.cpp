@@ -146,15 +146,34 @@ bool Wallpaper::hasInstances() const noexcept { return !m_instances.empty(); }
 void Wallpaper::syncInstances() {
   const auto& outputs = m_wayland->outputs();
 
-  // Remove instances for outputs that no longer exist
+  // Remove instances for outputs that no longer exist or are now disabled by monitor override
   std::erase_if(m_instances, [&](const auto& inst) {
-    bool found =
-        std::any_of(outputs.begin(), outputs.end(), [&inst](const auto& out) { return out.name == inst->outputName; });
-    if (!found) {
-      kLog.info("removing instance for output {}", inst->outputName);
+    const auto* output = [&]() -> const WaylandOutput* {
+      for (const auto& out : outputs) {
+        if (out.name == inst->outputName) return &out;
+      }
+      return nullptr;
+    }();
+
+    if (output == nullptr) {
+      kLog.info("removing instance for output {} (disconnected)", inst->outputName);
       releaseInstanceTextures(*inst);
+      return true;
     }
-    return !found;
+
+    // Check if a monitor override now disables this output
+    for (const auto& ovr : m_config->config().wallpaper.monitorOverrides) {
+      const auto& match = ovr.match;
+      bool hit = (!output->connectorName.empty() && match == output->connectorName) ||
+                 (!output->description.empty() && output->description.find(match) != std::string::npos);
+      if (hit && ovr.enabled && !*ovr.enabled) {
+        kLog.info("removing instance for {} — disabled by monitor override", output->connectorName);
+        releaseInstanceTextures(*inst);
+        return true;
+      }
+    }
+
+    return false;
   });
 
   // Create instances for new outputs
@@ -248,6 +267,7 @@ void Wallpaper::makeAnyContextCurrent() {
 }
 
 TextureHandle Wallpaper::acquireTexture(const std::string& path) {
+  makeAnyContextCurrent();
   auto it = m_textureCache.find(path);
   if (it != m_textureCache.end()) {
     ++it->second.refCount;

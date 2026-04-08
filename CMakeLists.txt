@@ -359,6 +359,7 @@ add_executable(noctalia
     src/render/programs/msdf_text_program.cpp
     src/render/programs/rounded_rect_program.cpp
     src/render/programs/spinner_program.cpp
+    src/render/programs/blur_program.cpp
     src/render/programs/wallpaper_program.cpp
     src/render/render_context.cpp
     src/render/render_target.cpp
@@ -388,6 +389,8 @@ add_executable(noctalia
     src/shell/session_menu/session_panel.cpp
     src/shell/test/test_panel.cpp
     src/shell/tray/tray_menu.cpp
+    src/shell/overview/overview.cpp
+    src/shell/overview/overview_surface.cpp
     src/shell/wallpaper/wallpaper.cpp
     src/shell/wallpaper/wallpaper_surface.cpp
     src/shell/widget/widget.cpp

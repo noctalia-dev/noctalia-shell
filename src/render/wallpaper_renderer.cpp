@@ -138,6 +138,33 @@ void WallpaperRenderer::render() {
   eglSwapBuffers(m_eglDisplay, m_eglSurface);
 }
 
+void WallpaperRenderer::renderToFbo(GLuint targetFbo) {
+  if (m_eglSurface == EGL_NO_SURFACE || m_tex1 == 0) {
+    return;
+  }
+
+  eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
+  glBindFramebuffer(GL_FRAMEBUFFER, targetFbo);
+  glViewport(0, 0, static_cast<GLsizei>(m_bufferWidth), static_cast<GLsizei>(m_bufferHeight));
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  auto sw = static_cast<float>(m_logicalWidth);
+  auto sh = static_cast<float>(m_logicalHeight);
+
+  GLuint tex2 = (m_tex2 != 0) ? m_tex2 : m_tex1;
+  float progress = (m_tex2 != 0) ? m_progress : 0.0f;
+
+  m_program.draw(m_transition, m_tex1, tex2, sw, sh, m_imgW1, m_imgH1, m_imgW2, m_imgH2, progress,
+                 static_cast<float>(m_fillMode), m_params);
+  // No eglSwapBuffers — caller is responsible for presentation
+}
+
+void WallpaperRenderer::swapBuffers() { eglSwapBuffers(m_eglDisplay, m_eglSurface); }
+
 TextureManager& WallpaperRenderer::textureManager() { return m_textureManager; }
 
 void WallpaperRenderer::setTransitionState(GLuint tex1, GLuint tex2, float imgW1, float imgH1, float imgW2, float imgH2,

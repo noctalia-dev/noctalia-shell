@@ -24,6 +24,8 @@ public:
   void resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight, std::uint32_t logicalWidth,
               std::uint32_t logicalHeight);
   void render();
+  void renderToFbo(GLuint targetFbo);
+  void swapBuffers();
   [[nodiscard]] TextureManager& textureManager();
 
   void setTransitionState(GLuint tex1, GLuint tex2, float imgW1, float imgH1, float imgW2, float imgH2, float progress,

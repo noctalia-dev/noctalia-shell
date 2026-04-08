@@ -209,6 +209,7 @@ void Application::initServices() {
 
   m_wayland.setOutputChangeCallback([this]() {
     m_wallpaper.onOutputChange();
+    m_overview.onOutputChange();
     m_bar.onOutputChange();
     m_lockScreen.onOutputChange();
   });
@@ -221,6 +222,14 @@ void Application::initServices() {
   m_wayland.setToplevelChangeCallback([this]() { m_bar.refresh(); });
 
   m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
+  m_overview.initialize(m_wayland, &m_configService, &m_stateService, &m_wallpaper);
+
+  // Override the single-callback slot set by Wallpaper::initialize() so both
+  // wallpaper and overview are notified of wallpaper path changes.
+  m_stateService.setWallpaperChangeCallback([this]() {
+    m_wallpaper.onStateChange();
+    m_overview.onStateChange();
+  });
 
   if (const auto distro = DistroDetector::detect(); distro.has_value()) {
     const auto& label = !distro->prettyName.empty() ? distro->prettyName
