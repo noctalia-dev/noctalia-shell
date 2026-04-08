@@ -79,6 +79,8 @@ bool isCpuThermalZoneType(const std::string& type) {
          t.find("soc") != std::string::npos || t.find("package") != std::string::npos;
 }
 
+constexpr Logger kLog("sysmon");
+
 } // namespace
 
 SystemMonitorService::SystemMonitorService() { start(); }
@@ -151,12 +153,12 @@ void SystemMonitorService::samplingLoop() {
     }
 
     if (next.cpuTempC.has_value()) {
-      logDebug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) swap={}/{} MB temp={:.1f}C", next.cpuUsagePercent,
-               next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb,
-               *next.cpuTempC);
+      kLog.debug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) swap={}/{} MB temp={:.1f}C", next.cpuUsagePercent,
+                 next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb,
+                 *next.cpuTempC);
     } else {
-      logDebug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) swap={}/{} MB temp=n/a", next.cpuUsagePercent,
-               next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb);
+      kLog.debug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) swap={}/{} MB temp=n/a", next.cpuUsagePercent,
+                 next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb);
     }
 
     std::this_thread::sleep_for(std::chrono::seconds(2));

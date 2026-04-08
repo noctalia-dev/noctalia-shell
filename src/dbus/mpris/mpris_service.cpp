@@ -991,7 +991,7 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
     }
   }
   if (mostRecentPlaying.has_value()) {
-    kLog.debug("choose active player source=recent_playing name={}", *mostRecentPlaying);
+    //kLog.debug("choose active player source=recent_playing name={}", *mostRecentPlaying);
     return mostRecentPlaying;
   }
 

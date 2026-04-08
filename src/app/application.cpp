@@ -79,6 +79,7 @@ Application::~Application() {
 }
 
 void Application::run() {
+  initLogFile();
   kLog.info("noctalia v{}", NOCTALIA_VERSION);
   initServices();
   initUi();

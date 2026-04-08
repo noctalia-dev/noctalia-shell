@@ -55,3 +55,4 @@ private:
 };
 
 void setLogLevel(LogLevel level);
+void initLogFile();
