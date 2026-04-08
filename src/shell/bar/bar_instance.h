@@ -29,6 +29,10 @@ struct BarInstance {
   // Bar background, shadow, and layout sections (start/center/end along main axis)
   Node* bg = nullptr;
   RectNode* shadow = nullptr;
+  Node* contentClip = nullptr;
+  Node* startSlot = nullptr;
+  Node* centerSlot = nullptr;
+  Node* endSlot = nullptr;
   Flex* startSection = nullptr;
   Flex* centerSection = nullptr;
   Flex* endSection = nullptr;
