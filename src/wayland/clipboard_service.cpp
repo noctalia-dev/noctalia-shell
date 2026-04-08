@@ -436,6 +436,17 @@ bool ClipboardService::promoteEntry(std::size_t index) {
   return true;
 }
 
+void ClipboardService::clearHistory() {
+  if (m_history.empty()) {
+    return;
+  }
+  m_history.clear();
+  m_historyBytes = 0;
+  ++m_changeSerial;
+  persistHistory();
+  notifyChanged();
+}
+
 bool ClipboardService::copyData(std::vector<std::string> mimeTypes, std::vector<std::uint8_t> data) {
   if (m_device == nullptr || m_ops == nullptr) {
     return false;

@@ -45,11 +45,14 @@ private:
   InputArea* m_focusArea = nullptr;
   Flex* m_rootLayout = nullptr;
   Flex* m_sidebar = nullptr;
+  Flex* m_sidebarHeaderRow = nullptr;
   Label* m_sidebarTitle = nullptr;
+  Button* m_clearHistoryButton = nullptr;
   ScrollView* m_listScrollView = nullptr;
   Flex* m_list = nullptr;
 
   Flex* m_previewCard = nullptr;
+  Flex* m_previewHeaderRow = nullptr;
   Label* m_previewTitle = nullptr;
   Label* m_previewMeta = nullptr;
   Button* m_copyButton = nullptr;

@@ -194,13 +194,37 @@ void ClipboardPanel::create(Renderer& renderer) {
   sidebar->setGap(Style::spaceSm * scale);
   m_sidebar = sidebar.get();
 
+  auto sidebarHeader = std::make_unique<Flex>();
+  sidebarHeader->setDirection(FlexDirection::Horizontal);
+  sidebarHeader->setAlign(FlexAlign::Center);
+  sidebarHeader->setJustify(FlexJustify::SpaceBetween);
+  sidebarHeader->setGap(Style::spaceSm * scale);
+  m_sidebarHeaderRow = sidebarHeader.get();
+
   auto title = std::make_unique<Label>();
   title->setText("Clipboard");
   title->setFontSize(Style::fontSizeTitle * scale);
   title->setBold(true);
   title->setColor(palette.primary);
   m_sidebarTitle = title.get();
-  sidebar->addChild(std::move(title));
+  sidebarHeader->addChild(std::move(title));
+
+  auto clearHistoryButton = std::make_unique<Button>();
+  clearHistoryButton->setGlyph("trash");
+  clearHistoryButton->setVariant(ButtonVariant::Destructive);
+  clearHistoryButton->setGlyphSize(Style::fontSizeTitle * scale);
+  clearHistoryButton->setMinWidth(Style::controlHeight * scale);
+  clearHistoryButton->setMinHeight(Style::controlHeight * scale);
+  clearHistoryButton->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
+  clearHistoryButton->setRadius(Style::radiusMd * scale);
+  clearHistoryButton->setOnClick([this]() {
+    if (m_clipboard != nullptr) {
+      m_clipboard->clearHistory();
+    }
+  });
+  m_clearHistoryButton = clearHistoryButton.get();
+  sidebarHeader->addChild(std::move(clearHistoryButton));
+  sidebar->addChild(std::move(sidebarHeader));
 
   auto listScroll = std::make_unique<ScrollView>();
   listScroll->setScrollbarVisible(true);
@@ -225,20 +249,21 @@ void ClipboardPanel::create(Renderer& renderer) {
   preview->setFlexGrow(1.0f);
   m_previewCard = preview.get();
 
+  auto previewHeader = std::make_unique<Flex>();
+  previewHeader->setDirection(FlexDirection::Horizontal);
+  previewHeader->setAlign(FlexAlign::Center);
+  previewHeader->setJustify(FlexJustify::SpaceBetween);
+  previewHeader->setGap(Style::spaceSm * scale);
+  m_previewHeaderRow = previewHeader.get();
+
   auto previewTitleLabel = std::make_unique<Label>();
   previewTitleLabel->setText("Clipboard entry");
   previewTitleLabel->setFontSize(Style::fontSizeTitle * scale);
   previewTitleLabel->setBold(true);
   previewTitleLabel->setColor(palette.primary);
   m_previewTitle = previewTitleLabel.get();
-  preview->addChild(std::move(previewTitleLabel));
-
-  auto previewMetaLabel = std::make_unique<Label>();
-  previewMetaLabel->setCaptionStyle();
-  previewMetaLabel->setFontSize(Style::fontSizeCaption * scale);
-  previewMetaLabel->setColor(palette.onSurfaceVariant);
-  m_previewMeta = previewMetaLabel.get();
-  preview->addChild(std::move(previewMetaLabel));
+  previewTitleLabel->setFlexGrow(1.0f);
+  previewHeader->addChild(std::move(previewTitleLabel));
 
   auto copyButton = std::make_unique<Button>();
   copyButton->setText("Copy Selected");
@@ -246,7 +271,15 @@ void ClipboardPanel::create(Renderer& renderer) {
   copyButton->setVariant(ButtonVariant::Secondary);
   copyButton->setOnClick([this]() { activateSelected(); });
   m_copyButton = copyButton.get();
-  preview->addChild(std::move(copyButton));
+  previewHeader->addChild(std::move(copyButton));
+  preview->addChild(std::move(previewHeader));
+
+  auto previewMetaLabel = std::make_unique<Label>();
+  previewMetaLabel->setCaptionStyle();
+  previewMetaLabel->setFontSize(Style::fontSizeCaption * scale);
+  previewMetaLabel->setColor(palette.onSurfaceVariant);
+  m_previewMeta = previewMetaLabel.get();
+  preview->addChild(std::move(previewMetaLabel));
 
   auto previewScroll = std::make_unique<ScrollView>();
   previewScroll->setScrollbarVisible(true);
@@ -293,22 +326,17 @@ void ClipboardPanel::layout(Renderer& renderer, float width, float height) {
   m_rootLayout->setSize(width, height);
   m_rootLayout->layout(renderer);
 
-  if (m_copyButton != nullptr) {
-    m_copyButton->updateInputArea();
-  }
-
   // Rebuild content if viewport dimensions changed.
   if (m_lastListWidth != m_listScrollView->contentViewportWidth() ||
       (m_clipboard != nullptr && m_lastChangeSerial != m_clipboard->changeSerial())) {
     rebuildList(renderer, m_listScrollView->contentViewportWidth());
-    m_listScrollView->layout(renderer);
   }
 
   const float previewScrollH = m_previewScrollView->height();
   if (m_lastPreviewWidth != m_previewScrollView->contentViewportWidth() ||
       m_lastPreviewHeight != previewScrollH) {
     rebuildPreview(renderer, m_previewScrollView->contentViewportWidth(), previewScrollH);
-    m_previewScrollView->layout(renderer);
+    m_rootLayout->layout(renderer);
   }
 }
 
@@ -348,10 +376,13 @@ void ClipboardPanel::onClose() {
   m_rootLayout = nullptr;
   m_focusArea = nullptr;
   m_sidebar = nullptr;
+  m_sidebarHeaderRow = nullptr;
   m_sidebarTitle = nullptr;
+  m_clearHistoryButton = nullptr;
   m_listScrollView = nullptr;
   m_list = nullptr;
   m_previewCard = nullptr;
+  m_previewHeaderRow = nullptr;
   m_previewTitle = nullptr;
   m_previewMeta = nullptr;
   m_copyButton = nullptr;
@@ -381,7 +412,6 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     empty->setCaptionStyle();
     empty->setColor(palette.onSurfaceVariant);
     empty->setMaxWidth(width);
-    empty->measure(renderer);
     m_list->addChild(std::move(empty));
     m_lastChangeSerial = m_clipboard != nullptr ? m_clipboard->changeSerial() : 0;
     m_lastListWidth = width;
@@ -447,7 +477,6 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     glyph->setGlyph(entry.isImage() ? "photo" : "file-text");
     glyph->setGlyphSize(kListGlyphSize);
     glyph->setColor(entry.isImage() ? palette.secondary : palette.primary);
-    glyph->measure(renderer);
     row->addChild(std::move(glyph));
 
     auto textColumn = std::make_unique<Flex>();
@@ -463,7 +492,6 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     title->setBold(true);
     title->setColor(palette.onSurface);
     title->setMaxWidth(textWidth);
-    title->measure(renderer);
     textColumn->addChild(std::move(title));
 
     auto timeLabel = std::make_unique<Label>();
@@ -471,7 +499,6 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     timeLabel->setCaptionStyle();
     timeLabel->setColor(palette.onSurfaceVariant);
     timeLabel->setMaxWidth(textWidth);
-    timeLabel->measure(renderer);
     textColumn->addChild(std::move(timeLabel));
 
     row->addChild(std::move(textColumn));
@@ -500,13 +527,11 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
   if (history.empty() || m_selectedIndex >= history.size()) {
     m_previewTitle->setText("Clipboard entry");
     m_previewMeta->setText("Select an item from the left");
-    m_previewMeta->measure(renderer);
 
     auto empty = std::make_unique<Label>();
     empty->setText("Clipboard history is empty.");
     empty->setColor(palette.onSurfaceVariant);
     empty->setMaxWidth(width);
-    empty->measure(renderer);
     m_previewContent->addChild(std::move(empty));
     m_lastPreviewWidth = width;
     m_lastPreviewHeight = height;
@@ -520,10 +545,8 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
   const auto& loadedEntry = m_clipboard != nullptr ? m_clipboard->history()[m_selectedIndex] : entry;
   m_previewTitle->setText(previewTitle(loadedEntry));
   m_previewTitle->setMaxWidth(width);
-  m_previewTitle->measure(renderer);
   m_previewMeta->setText(formatTimeAgo(loadedEntry.capturedAt) + "  •  " + formatBytes(loadedEntry.byteSize));
   m_previewMeta->setMaxWidth(width);
-  m_previewMeta->measure(renderer);
 
   if (loadedEntry.isImage()) {
     auto image = std::make_unique<Image>();
@@ -538,7 +561,6 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
     hint->setCaptionStyle();
     hint->setColor(palette.onSurfaceVariant);
     hint->setMaxWidth(width);
-    hint->measure(renderer);
     m_previewContent->addChild(std::move(hint));
   } else {
     constexpr std::size_t kMaxPreviewChars = 8000;
@@ -599,7 +621,6 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
       auto empty = std::make_unique<Label>();
       empty->setText("(empty text payload)");
       empty->setColor(palette.onSurfaceVariant);
-      empty->measure(renderer);
       m_previewContent->addChild(std::move(empty));
     } else {
       for (const auto& line : outputLines) {
@@ -608,7 +629,6 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
         label->setFontSize(Style::fontSizeBody);
         label->setColor(palette.onSurface);
         label->setMaxWidth(width);
-        label->measure(renderer);
         m_previewContent->addChild(std::move(label));
       }
       if (truncated) {
@@ -616,7 +636,6 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
         hint->setText("… truncated");
         hint->setCaptionStyle();
         hint->setColor(palette.onSurfaceVariant);
-        hint->measure(renderer);
         m_previewContent->addChild(std::move(hint));
       }
     }
