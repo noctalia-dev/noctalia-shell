@@ -397,6 +397,7 @@ add_executable(noctalia
     src/shell/widgets/launcher_widget.cpp
     src/shell/widgets/media_mini_widget.cpp
     src/shell/widgets/notification_widget.cpp
+    src/shell/widgets/power_profiles_widget.cpp
     src/shell/widgets/session_widget.cpp
     src/shell/widgets/spacer_widget.cpp
     src/shell/widgets/sysmon_widget.cpp

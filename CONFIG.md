@@ -45,7 +45,7 @@ shadow_offset_y = 6           # vertical shadow offset (positive = down)
 
 start  = ["cpu", "temp", "ram", "active_window"]  # widget names in the left/top section
 center = ["workspaces"]       # widget names in the center section
-end    = ["tray", "notifications", "volume", "battery", "session", "clock"]
+end    = ["tray", "notifications", "volume", "power_profiles", "battery", "session", "clock"]
 ```
 
 All fields are optional and fall back to the defaults shown above. Multiple `[bar.*]` entries are supported — each is independently configured and rendered on all outputs (subject to monitor overrides).
@@ -210,6 +210,14 @@ Shows a power glyph and opens the session menu panel on click. No configurable s
 ### `tray`
 
 System tray (StatusNotifierItem). No configurable settings.
+
+---
+
+### `power_profiles`
+
+Shows the current power profile using a glyph and cycles to the next available profile on click.
+
+No configurable settings.
 
 ---
 

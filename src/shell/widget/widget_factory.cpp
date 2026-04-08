@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/log.h"
+#include "dbus/power/power_profiles_service.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/tray/tray_service.h"
 #include "net/http_client.h"
@@ -12,6 +13,7 @@
 #include "shell/widgets/launcher_widget.h"
 #include "shell/widgets/media_mini_widget.h"
 #include "shell/widgets/notification_widget.h"
+#include "shell/widgets/power_profiles_widget.h"
 #include "shell/widgets/session_widget.h"
 #include "shell/widgets/spacer_widget.h"
 #include "shell/widgets/sysmon_widget.h"
@@ -26,10 +28,11 @@
 
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
                              NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
-                             UPowerService* upower, SystemMonitorService* sysmon, MprisService* mpris,
-                             HttpClient* httpClient, WeatherService* weather)
+                             UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
+                             MprisService* mpris, HttpClient* httpClient, WeatherService* weather)
     : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
-      m_upower(upower), m_sysmon(sysmon), m_mpris(mpris), m_httpClient(httpClient), m_weather(weather) {}
+      m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_mpris(mpris), m_httpClient(httpClient),
+      m_weather(weather) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
@@ -97,6 +100,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "tray") {
     auto widget = std::make_unique<TrayWidget>(m_tray);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "power_profiles") {
+    auto widget = std::make_unique<PowerProfilesWidget>(m_powerProfiles);
     widget->setContentScale(contentScale);
     return widget;
   }

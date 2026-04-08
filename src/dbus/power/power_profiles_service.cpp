@@ -94,7 +94,6 @@ bool PowerProfilesService::setActiveProfile(std::string_view profile) {
   try {
     m_proxy->setProperty("ActiveProfile").onInterface(k_powerProfilesInterface).toValue(std::string(profile));
     refresh();
-    logInfo("power profile changed to {}", std::string(profile));
     return true;
   } catch (const sdbus::Error& e) {
     logWarn("power profile change failed profile={} err={}", std::string(profile), e.what());

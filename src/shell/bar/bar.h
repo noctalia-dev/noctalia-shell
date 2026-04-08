@@ -12,6 +12,7 @@ class HttpClient;
 class MprisService;
 class NotificationManager;
 class PipeWireService;
+class PowerProfilesService;
 class RenderContext;
 class SystemMonitorService;
 class UPowerService;
@@ -28,8 +29,9 @@ public:
 
   bool initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                   NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
-                  UPowerService* upower, SystemMonitorService* sysmon, MprisService* mpris, HttpClient* httpClient,
-                  WeatherService* weatherService, RenderContext* renderContext);
+                  UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
+                  MprisService* mpris, HttpClient* httpClient, WeatherService* weatherService,
+                  RenderContext* renderContext);
   void reload();
   void closeAllInstances();
   void show();
@@ -57,6 +59,7 @@ private:
   PipeWireService* m_audio = nullptr;
   UPowerService* m_upower = nullptr;
   SystemMonitorService* m_sysmon = nullptr;
+  PowerProfilesService* m_powerProfiles = nullptr;
   MprisService* m_mpris = nullptr;
   HttpClient* m_httpClient = nullptr;
   WeatherService* m_weatherService = nullptr;
