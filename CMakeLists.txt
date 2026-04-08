@@ -415,6 +415,7 @@ add_executable(noctalia
     src/ui/controls/audio_spectrum.cpp
     src/ui/controls/button.cpp
     src/ui/controls/chip.cpp
+    src/ui/controls/checkbox.cpp
     src/ui/controls/flex.cpp
     src/ui/controls/glyph.cpp
     src/ui/controls/glyph_registry.cpp

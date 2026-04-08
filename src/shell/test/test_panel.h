@@ -5,6 +5,7 @@
 class Flex;
 class Button;
 class Box;
+class Checkbox;
 class Glyph;
 class Input;
 class RadioButton;
@@ -20,8 +21,8 @@ public:
   void layout(Renderer& renderer, float width, float height) override;
   void update(Renderer& renderer) override;
 
-  [[nodiscard]] float preferredWidth() const override { return scaled(640.0f); }
-  [[nodiscard]] float preferredHeight() const override { return scaled(480.0f); }
+  [[nodiscard]] float preferredWidth() const override { return scaled(860.0f); }
+  [[nodiscard]] float preferredHeight() const override { return scaled(620.0f); }
   // [[nodiscard]] bool centeredHorizontally() const override { return true; }
   // [[nodiscard]] bool centeredVertically() const override { return true; }
 private:
@@ -29,6 +30,7 @@ private:
   Label* m_headerLabel = nullptr;
   Label* m_sliderValueLabel = nullptr;
   Label* m_toggleValueLabel = nullptr;
+  Label* m_checkboxValueLabel = nullptr;
   Button* m_button = nullptr;
   Select* m_select = nullptr;
   Button* m_glyphTextButton = nullptr;
@@ -37,6 +39,7 @@ private:
   Glyph* m_glyph = nullptr;
   Slider* m_slider = nullptr;
   Toggle* m_toggle = nullptr;
+  Checkbox* m_checkbox = nullptr;
   RadioButton* m_radioA = nullptr;
   RadioButton* m_radioB = nullptr;
   Spinner* m_spinner = nullptr;

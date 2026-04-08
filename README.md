@@ -202,7 +202,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ### Controls (`src/ui/controls/`)
 
-- [ ] Checkbox
+- [x] Checkbox
 - [ ] Tab bar
 - [ ] Grid view
 - [ ] Context menu
@@ -216,7 +216,6 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] Network
 - [ ] Bluetooth
 - [ ] Brightness
-- [ ] Microphone <- unsure we need it
 - [ ] Power profile
 - [~] System monitor <- need graph fix
 - [ ] Dock
@@ -227,7 +226,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] Keep awake (idle inhibitor)
 - [ ] Audio visualizer
 - [x] Launcher button
-- [ ] Session menu button
+- [x] Session menu button
 - [ ] Wallpaper selector button
 - [ ] Custom button (with user-defined IPC)
 - [ ] Settings button

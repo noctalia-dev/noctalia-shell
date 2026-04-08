@@ -2,6 +2,7 @@
 
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
+#include "ui/controls/checkbox.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/input.h"
@@ -200,6 +201,31 @@ void TestPanel::create(Renderer& renderer) {
     row->addChild(makeRowLabel("Toggle", kRowLabelWidth));
     row->addChild(std::move(toggle));
     row->addChild(std::move(toggleValueLabel));
+    container->addChild(std::move(row));
+  }
+
+  // Checkbox
+  auto checkbox = std::make_unique<Checkbox>();
+  checkbox->setScale(scale);
+  checkbox->setChecked(true);
+  checkbox->setOnChange([this](bool checked) {
+    if (m_checkboxValueLabel != nullptr) {
+      m_checkboxValueLabel->setText(checked ? "true" : "false");
+    }
+  });
+  m_checkbox = checkbox.get();
+
+  auto checkboxValueLabel = std::make_unique<Label>();
+  checkboxValueLabel->setText("true");
+  checkboxValueLabel->setCaptionStyle();
+  checkboxValueLabel->setFontSize(Style::fontSizeCaption * scale);
+  m_checkboxValueLabel = checkboxValueLabel.get();
+
+  {
+    auto row = makeRow();
+    row->addChild(makeRowLabel("Checkbox", kRowLabelWidth));
+    row->addChild(std::move(checkbox));
+    row->addChild(std::move(checkboxValueLabel));
     container->addChild(std::move(row));
   }
 
