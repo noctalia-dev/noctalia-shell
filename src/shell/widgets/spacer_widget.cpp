@@ -1,17 +1,17 @@
 #include "shell/widgets/spacer_widget.h"
 
-#include "ui/controls/flex.h"
+#include "render/scene/node.h"
 
-SpacerWidget::SpacerWidget(float width) : m_fixedWidth(width) {}
+SpacerWidget::SpacerWidget(float length) : m_fixedLength(length) {}
 
 void SpacerWidget::create(Renderer& /*renderer*/) {
-  auto box = std::make_unique<Flex>();
-  box->setSize(m_fixedWidth * m_contentScale, 0.0f);
-  m_root = std::unique_ptr<Node>(box.release());
+  auto spacer = std::make_unique<Node>();
+  spacer->setSize(m_fixedLength * m_contentScale, 0.0f);
+  m_root = std::move(spacer);
 }
 
 void SpacerWidget::layout(Renderer& /*renderer*/, float /*containerWidth*/, float containerHeight) {
   if (root() != nullptr) {
-    root()->setSize(m_fixedWidth * m_contentScale, containerHeight);
+    root()->setSize(m_fixedLength * m_contentScale, containerHeight);
   }
 }
