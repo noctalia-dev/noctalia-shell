@@ -13,13 +13,9 @@ class Renderer;
 
 namespace control_center {
 
-constexpr Color alphaSurfaceVariant(float alpha) {
-  return rgba(palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, alpha);
-}
-
-void applyCard(Flex& card);
-Label* addTitle(Flex& parent, const std::string& text);
-void addBody(Flex& parent, const std::string& text);
+  void applyCard(Flex& card, float scale = 1.0f);
+  Label* addTitle(Flex& parent, const std::string& text, float scale = 1.0f);
+  void addBody(Flex& parent, const std::string& text, float scale = 1.0f);
 
 } // namespace control_center
 
@@ -44,4 +40,13 @@ public:
 
   // Called when the panel closes. Null out all raw pointers to freed nodes.
   virtual void onClose() {}
+
+  void setContentScale(float scale) noexcept { m_contentScale = scale; }
+
+protected:
+  [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
+  [[nodiscard]] float scaled(float value) const noexcept { return value * m_contentScale; }
+
+private:
+  float m_contentScale = 1.0f;
 };

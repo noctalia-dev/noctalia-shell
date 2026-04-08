@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/scene/node.h"
+#include "ui/style.h"
 
 #include <cstddef>
 #include <functional>
@@ -19,6 +20,9 @@ public:
 
   void setValue(std::string_view value);
   void setPlaceholder(std::string_view placeholder);
+  void setFontSize(float size);
+  void setControlHeight(float height);
+  void setHorizontalPadding(float padding);
   void setOnChange(std::function<void(const std::string&)> callback);
   void setOnSubmit(std::function<void(const std::string&)> callback);
   void setOnKeyEvent(std::function<bool(std::uint32_t sym, std::uint32_t modifiers)> callback);
@@ -63,4 +67,7 @@ private:
   std::function<void(const std::string&)> m_onChange;
   std::function<void(const std::string&)> m_onSubmit;
   std::function<bool(std::uint32_t, std::uint32_t)> m_onKeyEvent;
+  float m_fontSize = Style::fontSizeBody;
+  float m_controlHeight = Style::controlHeight;
+  float m_horizontalPadding = Style::spaceMd;
 };

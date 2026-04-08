@@ -30,7 +30,7 @@ WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, cons
     : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
       m_upower(upower), m_sysmon(sysmon), m_mpris(mpris), m_httpClient(httpClient), m_weather(weather) {}
 
-std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output) const {
+std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
   // Otherwise treat the name itself as the widget type with default settings.
   const WidgetConfig* wc = nullptr;
@@ -53,17 +53,23 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     if (wlOutput != nullptr) {
       scale = wlOutput->scale;
     }
-    return std::make_unique<ClockWidget>(*m_time, output, scale, std::move(format));
+    auto widget = std::make_unique<ClockWidget>(*m_time, output, scale, std::move(format));
+    widget->setContentScale(contentScale);
+    return widget;
   }
 
   if (type == "workspaces") {
-    return std::make_unique<WorkspacesWidget>(m_wayland, output);
+    auto widget = std::make_unique<WorkspacesWidget>(m_wayland, output);
+    widget->setContentScale(contentScale);
+    return widget;
   }
 
   if (type == "active_window") {
     const float maxTitleWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_width", 260.0) : 260.0);
     const float iconSize = static_cast<float>(wc != nullptr ? wc->getDouble("icon_size", 16.0) : 16.0);
-    return std::make_unique<ActiveWindowWidget>(m_wayland, maxTitleWidth, iconSize);
+    auto widget = std::make_unique<ActiveWindowWidget>(m_wayland, maxTitleWidth, iconSize);
+    widget->setContentScale(contentScale);
+    return widget;
   }
 
   if (type == "notifications") {
@@ -72,11 +78,15 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     if (wlOutput != nullptr) {
       scale = wlOutput->scale;
     }
-    return std::make_unique<NotificationWidget>(m_notifications, output, scale);
+    auto widget = std::make_unique<NotificationWidget>(m_notifications, output, scale);
+    widget->setContentScale(contentScale);
+    return widget;
   }
 
   if (type == "tray") {
-    return std::make_unique<TrayWidget>(m_tray);
+    auto widget = std::make_unique<TrayWidget>(m_tray);
+    widget->setContentScale(contentScale);
+    return widget;
   }
 
   if (type == "volume") {
@@ -85,13 +95,17 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     if (wlOutput != nullptr) {
       scale = wlOutput->scale;
     }
-    return std::make_unique<VolumeWidget>(m_audio, output, scale);
+    auto widget = std::make_unique<VolumeWidget>(m_audio, output, scale);
+    widget->setContentScale(contentScale);
+    return widget;
   }
 
   if (type == "media") {
     const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_width", 220.0) : 220.0);
     const float artSize = static_cast<float>(wc != nullptr ? wc->getDouble("art_size", 24.0) : 24.0);
-    return std::make_unique<MediaMiniWidget>(m_mpris, m_httpClient, maxWidth, artSize);
+    auto widget = std::make_unique<MediaMiniWidget>(m_mpris, m_httpClient, maxWidth, artSize);
+    widget->setContentScale(contentScale);
+    return widget;
   }
 
   if (type == "weather") {
@@ -101,11 +115,15 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       scale = wlOutput->scale;
     }
     const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_width", 160.0) : 160.0);
-    return std::make_unique<WeatherWidget>(m_weather, output, scale, maxWidth);
+    auto widget = std::make_unique<WeatherWidget>(m_weather, output, scale, maxWidth);
+    widget->setContentScale(contentScale);
+    return widget;
   }
 
   if (type == "battery") {
-    return std::make_unique<BatteryWidget>(m_upower);
+    auto widget = std::make_unique<BatteryWidget>(m_upower);
+    widget->setContentScale(contentScale);
+    return widget;
   }
 
   if (type == "launcher") {
@@ -114,7 +132,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     if (wlOutput != nullptr) {
       scale = wlOutput->scale;
     }
-    return std::make_unique<LauncherWidget>(output, scale);
+    auto widget = std::make_unique<LauncherWidget>(output, scale);
+    widget->setContentScale(contentScale);
+    return widget;
   }
 
   if (type == "test") {
@@ -123,12 +143,16 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     if (wlOutput != nullptr) {
       scale = wlOutput->scale;
     }
-    return std::make_unique<TestWidget>(output, scale);
+    auto widget = std::make_unique<TestWidget>(output, scale);
+    widget->setContentScale(contentScale);
+    return widget;
   }
 
   if (type == "spacer") {
     auto width = static_cast<float>(wc != nullptr ? wc->getDouble("width", 8.0) : 8.0);
-    return std::make_unique<SpacerWidget>(width);
+    auto widget = std::make_unique<SpacerWidget>(width);
+    widget->setContentScale(contentScale);
+    return widget;
   }
 
   if (type == "sysmon") {
@@ -152,7 +176,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       displayMode = SysmonDisplayMode::Text;
     else if (display == "graph")
       displayMode = SysmonDisplayMode::Graph;
-    return std::make_unique<SysmonWidget>(m_sysmon, stat, std::move(path), displayMode);
+    auto widget = std::make_unique<SysmonWidget>(m_sysmon, stat, std::move(path), displayMode);
+    widget->setContentScale(contentScale);
+    return widget;
   }
 
   logWarn("widget factory: unknown widget \"{}\"", name);

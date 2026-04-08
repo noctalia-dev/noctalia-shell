@@ -207,62 +207,67 @@ MediaTab::MediaTab(MprisService* mpris, PipeWireService* audio, HttpClient* http
     : m_mpris(mpris), m_audio(audio), m_httpClient(httpClient) {}
 
 std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
+  const float scale = contentScale();
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Horizontal);
   tab->setAlign(FlexAlign::Start);
-  tab->setGap(Style::spaceMd);
+  tab->setGap(Style::spaceMd * scale);
 
   auto mediaColumn = std::make_unique<Flex>();
   mediaColumn->setDirection(FlexDirection::Vertical);
   mediaColumn->setAlign(FlexAlign::Start);
   mediaColumn->setGap(0.0f);
-  mediaColumn->setMinWidth(kMediaColumnWidth);
+  mediaColumn->setMinWidth(kMediaColumnWidth * scale);
   m_column = mediaColumn.get();
 
   auto nowCard = std::make_unique<Flex>();
-  applyCard(*nowCard);
+  applyCard(*nowCard, scale);
   nowCard->setAlign(FlexAlign::Center);
-  nowCard->setGap(Style::spaceMd);
-  nowCard->setMinWidth(kMediaColumnWidth);
-  nowCard->setMinHeight(kMediaNowCardMinHeight);
+  nowCard->setGap(Style::spaceMd * scale);
+  nowCard->setMinWidth(kMediaColumnWidth * scale);
+  nowCard->setMinHeight(kMediaNowCardMinHeight * scale);
   m_nowCard = nowCard.get();
 
   auto artwork = std::make_unique<Image>();
-  artwork->setCornerRadius(Style::radiusLg);
-  artwork->setBackground(alphaSurfaceVariant(0.95f));
+  artwork->setCornerRadius(Style::radiusLg * scale);
   artwork->setFit(ImageFit::Contain);
-  artwork->setSize(kArtworkSize, kArtworkSize);
+  artwork->setSize(kArtworkSize * scale, kArtworkSize * scale);
   m_artwork = artwork.get();
   nowCard->addChild(std::move(artwork));
 
   auto title = std::make_unique<Label>();
   title->setText("Nothing playing");
   title->setBold(true);
-  title->setFontSize(Style::fontSizeTitle);
+  title->setFontSize(Style::fontSizeTitle * scale);
   title->setColor(palette.onSurface);
-  title->setMaxWidth(kMediaColumnWidth - Style::spaceMd * 2);
+  title->setMaxWidth((kMediaColumnWidth - Style::spaceMd * 2) * scale);
   m_trackTitle = title.get();
   nowCard->addChild(std::move(title));
 
   auto artist = std::make_unique<Label>();
   artist->setText("Start playback in an MPRIS app");
+  artist->setFontSize(Style::fontSizeBody * scale);
   artist->setColor(palette.onSurfaceVariant);
-  artist->setMaxWidth(kMediaColumnWidth - Style::spaceMd * 2);
+  artist->setMaxWidth((kMediaColumnWidth - Style::spaceMd * 2) * scale);
   m_trackArtist = artist.get();
   nowCard->addChild(std::move(artist));
 
   auto album = std::make_unique<Label>();
   album->setText(" ");
   album->setCaptionStyle();
+  album->setFontSize(Style::fontSizeCaption * scale);
   album->setColor(palette.onSurfaceVariant);
-  album->setMaxWidth(kMediaColumnWidth - Style::spaceMd * 2);
+  album->setMaxWidth((kMediaColumnWidth - Style::spaceMd * 2) * scale);
   m_trackAlbum = album.get();
   nowCard->addChild(std::move(album));
 
   auto progress = std::make_unique<Slider>();
   progress->setRange(0.0f, 100.0f);
   progress->setStep(1.0f);
-  progress->setSize(kMediaColumnWidth - Style::spaceMd * 2, 0.0f);
+  progress->setSize((kMediaColumnWidth - Style::spaceMd * 2) * scale, 0.0f);
+  progress->setControlHeight(Style::controlHeight * scale);
+  progress->setTrackHeight(6.0f * scale);
+  progress->setThumbSize(16.0f * scale);
   progress->setOnValueChanged([this](float value) {
     if (m_syncingProgress || m_mpris == nullptr) {
       return;
@@ -282,14 +287,16 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto controls = std::make_unique<Flex>();
   controls->setDirection(FlexDirection::Horizontal);
   controls->setAlign(FlexAlign::Center);
-  controls->setGap(Style::spaceSm);
+  controls->setGap(Style::spaceSm * scale);
 
   auto repeat = std::make_unique<Button>();
   repeat->setGlyph("repeat");
   repeat->setVariant(ButtonVariant::Ghost);
   repeat->setMinimalChrome(true);
-  repeat->setMinWidth(kMediaControlsHeight);
-  repeat->setMinHeight(kMediaControlsHeight);
+  repeat->setMinWidth(kMediaControlsHeight * scale);
+  repeat->setMinHeight(kMediaControlsHeight * scale);
+  repeat->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale);
+  repeat->setRadius(Style::radiusLg * scale);
   repeat->setOnClick([this]() {
     if (m_mpris == nullptr) {
       return;
@@ -306,8 +313,10 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   previous->setGlyph("media-prev");
   previous->setVariant(ButtonVariant::Ghost);
   previous->setMinimalChrome(true);
-  previous->setMinWidth(kMediaControlsHeight);
-  previous->setMinHeight(kMediaControlsHeight);
+  previous->setMinWidth(kMediaControlsHeight * scale);
+  previous->setMinHeight(kMediaControlsHeight * scale);
+  previous->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale);
+  previous->setRadius(Style::radiusLg * scale);
   previous->setOnClick([this]() {
     if (m_mpris != nullptr) {
       m_mpris->previousActive();
@@ -321,8 +330,10 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   playPause->setGlyph("media-play");
   playPause->setVariant(ButtonVariant::Accent);
   playPause->setMinimalChrome(true);
-  playPause->setMinWidth(kMediaPlayPauseHeight);
-  playPause->setMinHeight(kMediaPlayPauseHeight);
+  playPause->setMinWidth(kMediaPlayPauseHeight * scale);
+  playPause->setMinHeight(kMediaPlayPauseHeight * scale);
+  playPause->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale);
+  playPause->setRadius(Style::radiusLg * scale);
   playPause->setOnClick([this]() {
     if (m_mpris != nullptr) {
       m_mpris->playPauseActive();
@@ -336,8 +347,10 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   next->setGlyph("media-next");
   next->setVariant(ButtonVariant::Ghost);
   next->setMinimalChrome(true);
-  next->setMinWidth(kMediaControlsHeight);
-  next->setMinHeight(kMediaControlsHeight);
+  next->setMinWidth(kMediaControlsHeight * scale);
+  next->setMinHeight(kMediaControlsHeight * scale);
+  next->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale);
+  next->setRadius(Style::radiusLg * scale);
   next->setOnClick([this]() {
     if (m_mpris != nullptr) {
       m_mpris->nextActive();
@@ -351,8 +364,10 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   shuffle->setGlyph("shuffle");
   shuffle->setVariant(ButtonVariant::Ghost);
   shuffle->setMinimalChrome(true);
-  shuffle->setMinWidth(kMediaControlsHeight);
-  shuffle->setMinHeight(kMediaControlsHeight);
+  shuffle->setMinWidth(kMediaControlsHeight * scale);
+  shuffle->setMinHeight(kMediaControlsHeight * scale);
+  shuffle->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale);
+  shuffle->setRadius(Style::radiusLg * scale);
   shuffle->setOnClick([this]() {
     if (m_mpris != nullptr) {
       const bool enabled = m_mpris->shuffleActive().value_or(false);
@@ -367,7 +382,11 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
 
   auto playerSelect = std::make_unique<Select>();
   playerSelect->setPlaceholder("Active player");
-  playerSelect->setSize(kMediaColumnWidth - Style::spaceMd * 2, 0.0f);
+  playerSelect->setSize((kMediaColumnWidth - Style::spaceMd * 2) * scale, 0.0f);
+  playerSelect->setFontSize(Style::fontSizeBody * scale);
+  playerSelect->setControlHeight(Style::controlHeight * scale);
+  playerSelect->setHorizontalPadding(Style::spaceMd * scale);
+  playerSelect->setGlyphSize(14.0f * scale);
   playerSelect->setOnSelectionChanged([this](std::size_t index, std::string_view /*text*/) {
     if (m_syncingPlayerSelect || m_mpris == nullptr) {
       return;
@@ -387,20 +406,24 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto audioColumn = std::make_unique<Flex>();
   audioColumn->setDirection(FlexDirection::Vertical);
   audioColumn->setAlign(FlexAlign::Start);
-  audioColumn->setGap(Style::spaceSm);
-  audioColumn->setMinWidth(kAudioColumnWidth);
+  audioColumn->setGap(Style::spaceSm * scale);
+  audioColumn->setMinWidth(kAudioColumnWidth * scale);
   m_audioColumn = audioColumn.get();
 
   auto outputCard = std::make_unique<Flex>();
-  applyCard(*outputCard);
-  outputCard->setMinWidth(kAudioColumnWidth);
-  outputCard->setMinHeight(kMediaAudioCardMinHeight);
+  applyCard(*outputCard, scale);
+  outputCard->setMinWidth(kAudioColumnWidth * scale);
+  outputCard->setMinHeight(kMediaAudioCardMinHeight * scale);
   m_outputCard = outputCard.get();
-  addTitle(*outputCard, "Output");
+  addTitle(*outputCard, "Output", scale);
 
   auto outputDeviceSelect = std::make_unique<Select>();
   outputDeviceSelect->setPlaceholder("Select output device");
-  outputDeviceSelect->setSize(kAudioColumnWidth - Style::spaceMd * 2, 0.0f);
+  outputDeviceSelect->setSize((kAudioColumnWidth - Style::spaceMd * 2) * scale, 0.0f);
+  outputDeviceSelect->setFontSize(Style::fontSizeBody * scale);
+  outputDeviceSelect->setControlHeight(Style::controlHeight * scale);
+  outputDeviceSelect->setHorizontalPadding(Style::spaceMd * scale);
+  outputDeviceSelect->setGlyphSize(14.0f * scale);
   outputDeviceSelect->setOnSelectionChanged([this](std::size_t index, std::string_view /*text*/) {
     if (m_syncingOutputSelect || m_audio == nullptr || index >= m_outputDeviceIds.size()) {
       return;
@@ -414,12 +437,15 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto outputRow = std::make_unique<Flex>();
   outputRow->setDirection(FlexDirection::Horizontal);
   outputRow->setAlign(FlexAlign::Center);
-  outputRow->setGap(Style::spaceSm);
+  outputRow->setGap(Style::spaceSm * scale);
 
   auto outputSlider = std::make_unique<Slider>();
   outputSlider->setRange(0.0f, 150.0f);
   outputSlider->setStep(1.0f);
-  outputSlider->setSize(kMediaSliderWidth, 0.0f);
+  outputSlider->setSize(kMediaSliderWidth * scale, 0.0f);
+  outputSlider->setControlHeight(Style::controlHeight * scale);
+  outputSlider->setTrackHeight(6.0f * scale);
+  outputSlider->setThumbSize(16.0f * scale);
   outputSlider->setOnValueChanged([this](float value) {
     if (m_syncingOutputSlider) {
       return;
@@ -443,22 +469,27 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto outputLabel = std::make_unique<Label>();
   outputLabel->setText("0%");
   outputLabel->setBold(true);
-  outputLabel->setMinWidth(kValueLabelWidth);
+  outputLabel->setFontSize(Style::fontSizeBody * scale);
+  outputLabel->setMinWidth(kValueLabelWidth * scale);
   m_outputValue = outputLabel.get();
   outputRow->addChild(std::move(outputLabel));
   outputCard->addChild(std::move(outputRow));
   audioColumn->addChild(std::move(outputCard));
 
   auto inputCard = std::make_unique<Flex>();
-  applyCard(*inputCard);
-  inputCard->setMinWidth(kAudioColumnWidth);
-  inputCard->setMinHeight(kMediaAudioCardMinHeight);
+  applyCard(*inputCard, scale);
+  inputCard->setMinWidth(kAudioColumnWidth * scale);
+  inputCard->setMinHeight(kMediaAudioCardMinHeight * scale);
   m_inputCard = inputCard.get();
-  addTitle(*inputCard, "Input");
+  addTitle(*inputCard, "Input", scale);
 
   auto inputDeviceSelect = std::make_unique<Select>();
   inputDeviceSelect->setPlaceholder("Select input device");
-  inputDeviceSelect->setSize(kAudioColumnWidth - Style::spaceMd * 2, 0.0f);
+  inputDeviceSelect->setSize((kAudioColumnWidth - Style::spaceMd * 2) * scale, 0.0f);
+  inputDeviceSelect->setFontSize(Style::fontSizeBody * scale);
+  inputDeviceSelect->setControlHeight(Style::controlHeight * scale);
+  inputDeviceSelect->setHorizontalPadding(Style::spaceMd * scale);
+  inputDeviceSelect->setGlyphSize(14.0f * scale);
   inputDeviceSelect->setOnSelectionChanged([this](std::size_t index, std::string_view /*text*/) {
     if (m_syncingInputSelect || m_audio == nullptr || index >= m_inputDeviceIds.size()) {
       return;
@@ -472,12 +503,15 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto inputRow = std::make_unique<Flex>();
   inputRow->setDirection(FlexDirection::Horizontal);
   inputRow->setAlign(FlexAlign::Center);
-  inputRow->setGap(Style::spaceSm);
+  inputRow->setGap(Style::spaceSm * scale);
 
   auto inputSlider = std::make_unique<Slider>();
   inputSlider->setRange(0.0f, 150.0f);
   inputSlider->setStep(1.0f);
-  inputSlider->setSize(kMediaSliderWidth, 0.0f);
+  inputSlider->setSize(kMediaSliderWidth * scale, 0.0f);
+  inputSlider->setControlHeight(Style::controlHeight * scale);
+  inputSlider->setTrackHeight(6.0f * scale);
+  inputSlider->setThumbSize(16.0f * scale);
   inputSlider->setOnValueChanged([this](float value) {
     if (m_syncingInputSlider) {
       return;
@@ -501,7 +535,8 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto inputLabel = std::make_unique<Label>();
   inputLabel->setText("0%");
   inputLabel->setBold(true);
-  inputLabel->setMinWidth(kValueLabelWidth);
+  inputLabel->setFontSize(Style::fontSizeBody * scale);
+  inputLabel->setMinWidth(kValueLabelWidth * scale);
   m_inputValue = inputLabel.get();
   inputRow->addChild(std::move(inputLabel));
   inputCard->addChild(std::move(inputRow));
@@ -514,12 +549,13 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
 }
 
 void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) {
-  const float mediaGap = Style::spaceMd;
-  const float leftPreferred = std::clamp(contentWidth * 0.48f, 260.0f, 360.0f);
-  const float rightWidth = std::max(220.0f, contentWidth - leftPreferred - mediaGap);
-  const float leftWidth = std::max(220.0f, contentWidth - rightWidth - mediaGap);
-  const float leftInnerWidth = std::max(0.0f, leftWidth - Style::spaceMd * 2);
-  const float rightInnerWidth = std::max(0.0f, rightWidth - Style::spaceMd * 2);
+  const float scale = contentScale();
+  const float mediaGap = Style::spaceMd * scale;
+  const float leftPreferred = std::clamp(contentWidth * 0.48f, 260.0f * scale, 360.0f * scale);
+  const float rightWidth = std::max(220.0f * scale, contentWidth - leftPreferred - mediaGap);
+  const float leftWidth = std::max(220.0f * scale, contentWidth - rightWidth - mediaGap);
+  const float leftInnerWidth = std::max(0.0f, leftWidth - Style::spaceMd * scale * 2.0f);
+  const float rightInnerWidth = std::max(0.0f, rightWidth - Style::spaceMd * scale * 2.0f);
 
   if (m_column != nullptr) {
     m_column->setMinWidth(leftWidth);
@@ -527,7 +563,7 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
   }
   if (m_nowCard != nullptr) {
     m_nowCard->setMinWidth(leftWidth);
-    m_nowCard->setMinHeight(std::max(kMediaNowCardMinHeight, bodyHeight));
+    m_nowCard->setMinHeight(std::max(kMediaNowCardMinHeight * scale, bodyHeight));
   }
   if (m_audioColumn != nullptr) {
     m_audioColumn->setMinWidth(rightWidth);
@@ -535,11 +571,11 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
   }
   if (m_outputCard != nullptr) {
     m_outputCard->setMinWidth(rightWidth);
-    m_outputCard->setMinHeight(kMediaAudioCardMinHeight);
+    m_outputCard->setMinHeight(kMediaAudioCardMinHeight * scale);
   }
   if (m_inputCard != nullptr) {
     m_inputCard->setMinWidth(rightWidth);
-    m_inputCard->setMinHeight(kMediaAudioCardMinHeight);
+    m_inputCard->setMinHeight(kMediaAudioCardMinHeight * scale);
   }
   if (m_playerSelect != nullptr) {
     m_playerSelect->setSize(leftInnerWidth, 0.0f);
@@ -552,15 +588,14 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
   }
 
   if (m_artwork != nullptr) {
-    const float mediaArtworkSize = std::min(leftInnerWidth, Style::controlHeightLg * 6);
-    const float mediaMetaHeight = Style::fontSizeTitle + Style::fontSizeBody +
-                                 Style::fontSizeCaption + Style::spaceMd * 2;
+    const float mediaArtworkSize = std::min(leftInnerWidth, Style::controlHeightLg * 6 * scale);
+    const float mediaMetaHeight =
+        (Style::fontSizeTitle + Style::fontSizeBody + Style::fontSizeCaption + Style::spaceMd * 2) * scale;
     const float aspectRatio = m_artwork->hasImage() ? m_artwork->aspectRatio() : 1.0f;
     const bool wideArtwork = aspectRatio > 1.15f;
-    const float mediaReservedHeight =
-        kMediaPlayerSelectHeight + kMediaPlayPauseHeight + Style::controlHeight +
-        mediaMetaHeight + Style::spaceMd * 5;
-    const float artworkMaxHeight = std::max(kMediaArtworkMinHeight, bodyHeight - mediaReservedHeight);
+    const float mediaReservedHeight = (kMediaPlayerSelectHeight + kMediaPlayPauseHeight + Style::controlHeight) * scale +
+                                      mediaMetaHeight + Style::spaceMd * scale * 5.0f;
+    const float artworkMaxHeight = std::max(kMediaArtworkMinHeight * scale, bodyHeight - mediaReservedHeight);
 
     float artworkWidth = mediaArtworkSize;
     float artworkHeight = mediaArtworkSize;
@@ -578,16 +613,19 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
 
     m_artwork->setSize(std::max(0.0f, artworkWidth), std::max(0.0f, artworkHeight));
 
-    const float sideButtonSize = kMediaControlsHeight;
-    const float playPauseButtonSize = kMediaPlayPauseHeight;
-    const float sideGlyphSize = Style::fontSizeTitle;
-    const float playPauseGlyphSize = Style::fontSizeTitle + Style::spaceXs;
+    const float sideButtonSize = kMediaControlsHeight * scale;
+    const float playPauseButtonSize = kMediaPlayPauseHeight * scale;
+    const float sideGlyphSize = Style::fontSizeTitle * scale;
+    const float playPauseGlyphSize = (Style::fontSizeTitle + Style::spaceXs) * scale;
 
     for (auto* button : {m_repeatButton, m_prevButton, m_nextButton, m_shuffleButton}) {
       if (button != nullptr) {
         button->setMinWidth(sideButtonSize);
         button->setMinHeight(sideButtonSize);
         button->setGlyphSize(sideGlyphSize);
+        button->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale,
+                           Style::spaceSm * scale);
+        button->setRadius(Style::radiusLg * scale);
         button->layout(renderer);
         button->updateInputArea();
       }
@@ -596,6 +634,9 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
       m_playPauseButton->setMinWidth(playPauseButtonSize);
       m_playPauseButton->setMinHeight(playPauseButtonSize);
       m_playPauseButton->setGlyphSize(playPauseGlyphSize);
+      m_playPauseButton->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale,
+                                    Style::spaceSm * scale);
+      m_playPauseButton->setRadius(Style::radiusLg * scale);
       m_playPauseButton->layout(renderer);
       m_playPauseButton->updateInputArea();
     }
@@ -618,11 +659,13 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
     m_progressSlider->layout(renderer);
   }
   if (m_outputSlider != nullptr) {
-    m_outputSlider->setSize(std::max(120.0f, rightInnerWidth - kValueLabelWidth - Style::spaceSm), 0.0f);
+    m_outputSlider->setSize(
+        std::max(120.0f * scale, rightInnerWidth - kValueLabelWidth * scale - Style::spaceSm * scale), 0.0f);
     m_outputSlider->layout(renderer);
   }
   if (m_inputSlider != nullptr) {
-    m_inputSlider->setSize(std::max(120.0f, rightInnerWidth - kValueLabelWidth - Style::spaceSm), 0.0f);
+    m_inputSlider->setSize(
+        std::max(120.0f * scale, rightInnerWidth - kValueLabelWidth * scale - Style::spaceSm * scale), 0.0f);
     m_inputSlider->layout(renderer);
   }
   if (m_outputValue != nullptr) {

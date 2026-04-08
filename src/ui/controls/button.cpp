@@ -313,11 +313,47 @@ void Button::layout(Renderer& renderer) {
 
   Flex::layout(renderer);
 
-  // Label and glyph have identical reference heights, so Flex's geometric
-  // centering already aligns their baselines. Only need to horizontally
-  // center the label when the button is wider than its content.
-  if (m_glyph == nullptr) {
-    m_label->setPosition(std::round((width() - m_label->width()) * 0.5f), m_label->y());
+  // Flex centers children vertically, but when the button is wider than its
+  // content it still leaves the row anchored at the left padding. Re-center
+  // the whole visible content group horizontally inside the button.
+  auto includeContent = [this](Node* node) {
+    return node != nullptr && node->visible() && (node == m_label || node == m_glyph);
+  };
+
+  float contentLeft = 0.0f;
+  float contentRight = 0.0f;
+  bool haveContent = false;
+
+  if (includeContent(m_label)) {
+    contentLeft = m_label->x();
+    contentRight = m_label->x() + m_label->width();
+    haveContent = true;
+  }
+  if (includeContent(m_glyph)) {
+    const float left = m_glyph->x();
+    const float right = m_glyph->x() + m_glyph->width();
+    if (!haveContent) {
+      contentLeft = left;
+      contentRight = right;
+      haveContent = true;
+    } else {
+      contentLeft = std::min(contentLeft, left);
+      contentRight = std::max(contentRight, right);
+    }
+  }
+
+  if (haveContent) {
+    const float contentWidth = contentRight - contentLeft;
+    const float targetLeft = std::round((width() - contentWidth) * 0.5f);
+    const float shiftX = targetLeft - contentLeft;
+    if (std::abs(shiftX) > 0.01f) {
+      if (includeContent(m_label)) {
+        m_label->setPosition(m_label->x() + shiftX, m_label->y());
+      }
+      if (includeContent(m_glyph)) {
+        m_glyph->setPosition(m_glyph->x() + shiftX, m_glyph->y());
+      }
+    }
   }
 
   if (m_inputArea != nullptr) {

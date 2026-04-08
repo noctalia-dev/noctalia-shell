@@ -18,38 +18,44 @@
 #include <string>
 
 void TestPanel::create(Renderer& renderer) {
+  const float scale = contentScale();
   auto container = std::make_unique<Flex>();
   container->setDirection(FlexDirection::Vertical);
-  container->setGap(Style::spaceMd);
+  container->setGap(Style::spaceMd * scale);
   container->setAlign(FlexAlign::Start);
 
   auto header = std::make_unique<Label>();
   header->setText("Test Controls");
-  header->setFontSize(Style::fontSizeTitle);
+  header->setFontSize(Style::fontSizeTitle * scale);
   header->setColor(palette.primary);
   m_headerLabel = header.get();
   container->addChild(std::move(header));
 
-  constexpr float kRowLabelWidth = 100.0f;
+  const float kRowLabelWidth = 100.0f * scale;
 
-  auto makeRow = []() {
+  auto makeRow = [scale]() {
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
-    row->setGap(Style::spaceMd);
+    row->setGap(Style::spaceMd * scale);
     row->setAlign(FlexAlign::Center);
     return row;
   };
 
-  auto makeRowLabel = [](const char* text, float minWidth) {
+  auto makeRowLabel = [scale](const char* text, float minWidth) {
     auto label = std::make_unique<Label>();
     label->setText(text);
+    label->setFontSize(Style::fontSizeBody * scale);
     label->setMinWidth(minWidth);
     return label;
   };
 
   auto button = std::make_unique<Button>();
   button->setText("Hello");
+  button->setFontSize(Style::fontSizeBody * scale);
   button->setVariant(ButtonVariant::Default);
+  button->setMinHeight(Style::controlHeight * scale);
+  button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale, Style::spaceMd * scale);
+  button->setRadius(Style::radiusMd * scale);
   button->setOnClick([]() {});
   m_button = button.get();
   {
@@ -62,7 +68,12 @@ void TestPanel::create(Renderer& renderer) {
   auto glyphButton = std::make_unique<Button>();
   glyphButton->setText("Settings");
   glyphButton->setGlyph("settings");
+  glyphButton->setFontSize(Style::fontSizeBody * scale);
+  glyphButton->setGlyphSize(Style::fontSizeBody * scale);
   glyphButton->setVariant(ButtonVariant::Default);
+  glyphButton->setMinHeight(Style::controlHeight * scale);
+  glyphButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale, Style::spaceMd * scale);
+  glyphButton->setRadius(Style::radiusMd * scale);
   glyphButton->setOnClick([]() {});
   m_glyphButton = glyphButton.get();
   {
@@ -73,7 +84,11 @@ void TestPanel::create(Renderer& renderer) {
   }
 
   auto select = std::make_unique<Select>();
-  select->setSize(220.0f, 0.0f);
+  select->setSize(220.0f * scale, 0.0f);
+  select->setFontSize(Style::fontSizeBody * scale);
+  select->setControlHeight(Style::controlHeight * scale);
+  select->setHorizontalPadding(Style::spaceMd * scale);
+  select->setGlyphSize(14.0f * scale);
   select->setOptions({"Something", "Yop", "Anything"});
   select->setSelectedIndex(0);
   m_select = select.get();
@@ -90,7 +105,10 @@ void TestPanel::create(Renderer& renderer) {
   slider->setRange(0.0f, 100.0f);
   slider->setStep(1.0f);
   slider->setValue(50.0f);
-  slider->setSize(180.0f, 0.0f);
+  slider->setSize(180.0f * scale, 0.0f);
+  slider->setControlHeight(Style::controlHeight * scale);
+  slider->setTrackHeight(6.0f * scale);
+  slider->setThumbSize(16.0f * scale);
   slider->setOnValueChanged([this](float value) {
     if (m_sliderValueLabel != nullptr) {
       const int percent = static_cast<int>(std::round(value));
@@ -106,6 +124,7 @@ void TestPanel::create(Renderer& renderer) {
     auto valueLabel = std::make_unique<Label>();
     valueLabel->setText("50%");
     valueLabel->setCaptionStyle();
+    valueLabel->setFontSize(Style::fontSizeCaption * scale);
     m_sliderValueLabel = valueLabel.get();
     row->addChild(std::move(valueLabel));
 
@@ -119,6 +138,7 @@ void TestPanel::create(Renderer& renderer) {
 
   auto toggle = std::make_unique<Toggle>();
   toggle->setToggleSize(ToggleSize::Medium);
+  toggle->setScale(scale);
   toggle->setChecked(false);
   m_toggle = toggle.get();
   area->addChild(std::move(toggle));
@@ -135,19 +155,21 @@ void TestPanel::create(Renderer& renderer) {
     auto options = std::make_unique<Flex>();
     options->setDirection(FlexDirection::Horizontal);
     options->setAlign(FlexAlign::Center);
-    options->setGap(Style::spaceMd);
+    options->setGap(Style::spaceMd * scale);
 
     auto optionA = std::make_unique<Flex>();
     optionA->setDirection(FlexDirection::Horizontal);
     optionA->setAlign(FlexAlign::Center);
-    optionA->setGap(Style::spaceXs);
+    optionA->setGap(Style::spaceXs * scale);
 
     auto radioA = std::make_unique<RadioButton>();
+    radioA->setScale(scale);
     radioA->setChecked(true);
     m_radioA = radioA.get();
 
     auto labelA = std::make_unique<Label>();
     labelA->setText("Option A");
+    labelA->setFontSize(Style::fontSizeBody * scale);
 
     optionA->addChild(std::move(radioA));
     optionA->addChild(std::move(labelA));
@@ -155,13 +177,15 @@ void TestPanel::create(Renderer& renderer) {
     auto optionB = std::make_unique<Flex>();
     optionB->setDirection(FlexDirection::Horizontal);
     optionB->setAlign(FlexAlign::Center);
-    optionB->setGap(Style::spaceXs);
+    optionB->setGap(Style::spaceXs * scale);
 
     auto radioB = std::make_unique<RadioButton>();
+    radioB->setScale(scale);
     m_radioB = radioB.get();
 
     auto labelB = std::make_unique<Label>();
     labelB->setText("Option B");
+    labelB->setFontSize(Style::fontSizeBody * scale);
 
     optionB->addChild(std::move(radioB));
     optionB->addChild(std::move(labelB));
@@ -196,6 +220,8 @@ void TestPanel::create(Renderer& renderer) {
 
   {
     auto spinner = std::make_unique<Spinner>();
+    spinner->setSpinnerSize(20.0f * scale);
+    spinner->setThickness(2.0f * scale);
     m_spinner = spinner.get();
     auto row = makeRow();
     row->addChild(makeRowLabel("Spinner", kRowLabelWidth));
@@ -206,11 +232,15 @@ void TestPanel::create(Renderer& renderer) {
   {
     auto input = std::make_unique<Input>();
     input->setPlaceholder("Type something...");
-    input->setSize(220.0f, 0.0f);
+    input->setSize(220.0f * scale, 0.0f);
+    input->setFontSize(Style::fontSizeBody * scale);
+    input->setControlHeight(Style::controlHeight * scale);
+    input->setHorizontalPadding(Style::spaceMd * scale);
     m_input = input.get();
 
     auto valueLabel = std::make_unique<Label>();
     valueLabel->setCaptionStyle();
+    valueLabel->setFontSize(Style::fontSizeCaption * scale);
     m_inputValueLabel = valueLabel.get();
 
     input->setOnChange([this](const std::string& val) {

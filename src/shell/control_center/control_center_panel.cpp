@@ -25,38 +25,41 @@ ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeW
 }
 
 void ControlCenterPanel::create(Renderer& renderer) {
+  const float scale = contentScale();
+
   auto root = std::make_unique<Flex>();
   root->setDirection(FlexDirection::Horizontal);
   root->setAlign(FlexAlign::Start);
-  root->setGap(Style::spaceLg);
+  root->setGap(Style::spaceLg * scale);
   root->setPadding(0.0f);
   m_rootLayout = root.get();
 
   auto sidebar = std::make_unique<Flex>();
   sidebar->setDirection(FlexDirection::Vertical);
   sidebar->setAlign(FlexAlign::Start);
-  sidebar->setGap(Style::spaceXs);
-  sidebar->setPadding(Style::spaceMd);
-  sidebar->setMinWidth(kSidebarWidth);
+  sidebar->setGap(Style::spaceXs * scale);
+  sidebar->setPadding(Style::spaceMd * scale);
+  sidebar->setMinWidth(scaled(kSidebarWidth));
   m_sidebar = sidebar.get();
 
   for (const auto& tab : kTabs) {
     auto button = std::make_unique<Button>();
     button->setText(tab.title);
     button->setGlyph(tab.glyph);
-    button->setGlyphSize(21.0f);
-    button->setGap(Style::spaceSm);
+    button->setGlyphSize(21.0f * scale);
+    button->setGap(Style::spaceSm * scale);
     button->label()->setBold(true);
+    button->label()->setFontSize(Style::fontSizeBody * scale);
     button->setVariant(ButtonVariant::Tab);
     button->setMinimalChrome(true);
-    button->setMinHeight(Style::controlHeightLg);
-    button->setPadding(Style::spaceSm, Style::spaceMd, Style::spaceSm, Style::spaceMd);
-    button->setRadius(Style::radiusLg);
+    button->setMinHeight(Style::controlHeightLg * scale);
+    button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale, Style::spaceMd * scale);
+    button->setRadius(Style::radiusLg * scale);
     button->setOnClick([this, id = tab.id]() {
       selectTab(id);
       PanelManager::instance().refresh();
     });
-    button->setMinWidth(kSidebarButtonWidth);
+    button->setMinWidth(scaled(kSidebarWidth - Style::spaceMd * 2));
     m_tabButtons[tabIndex(tab.id)] = button.get();
     sidebar->addChild(std::move(button));
   }
@@ -65,19 +68,19 @@ void ControlCenterPanel::create(Renderer& renderer) {
   auto content = std::make_unique<Flex>();
   content->setDirection(FlexDirection::Vertical);
   content->setAlign(FlexAlign::Start);
-  content->setGap(Style::spaceMd);
-  content->setPadding(Style::spaceLg);
-  content->setRadius(Style::radiusXl);
-  content->setBackground(alphaSurfaceVariant(0.9f));
+  content->setGap(Style::spaceMd * scale);
+  content->setPadding(Style::spaceLg * scale);
+  content->setRadius(Style::radiusXl * scale);
+  content->setBackground(palette.surfaceVariant);
   content->setBorderWidth(0.0f);
   content->setSoftness(1.0f);
-  content->setMinWidth(kContentMinWidth);
+  content->setMinWidth(scaled(kContentMinWidth));
   m_content = content.get();
 
   auto title = std::make_unique<Label>();
   title->setText("Overview");
   title->setBold(true);
-  title->setFontSize(Style::fontSizeTitle);
+  title->setFontSize(Style::fontSizeTitle * scale);
   title->setColor(palette.primary);
   m_contentTitle = title.get();
   content->addChild(std::move(title));
@@ -89,6 +92,7 @@ void ControlCenterPanel::create(Renderer& renderer) {
   m_tabBodies = bodies.get();
 
   for (std::size_t i = 0; i < kTabCount; ++i) {
+    m_tabs[i]->setContentScale(scale);
     auto container = m_tabs[i]->build(renderer);
     m_tabContainers[i] = container.get();
     m_tabBodies->addChild(std::move(container));
@@ -113,8 +117,9 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
     return;
   }
 
+  const float scale = contentScale();
   const float sidebarWidth = std::round(std::max(0.0f, width * kSidebarWidthRatio));
-  const float sidebarButtonWidth = std::max(0.0f, sidebarWidth - Style::spaceMd * 2);
+  const float sidebarButtonWidth = std::max(0.0f, sidebarWidth - Style::spaceMd * scale * 2.0f);
 
   for (auto* button : m_tabButtons) {
     if (button != nullptr) {
@@ -129,11 +134,11 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
     m_sidebar->layout(renderer);
   }
 
-  const float rightSurfaceGutter = Style::spaceXs;
-  const float contentOuterWidth = std::max(0.0f, width - sidebarWidth - Style::spaceLg - rightSurfaceGutter);
-  const float contentInnerWidth = std::max(0.0f, contentOuterWidth - Style::spaceLg * 2);
-  const float contentInnerHeight = std::max(0.0f, height - Style::spaceLg * 2);
-  const float bodyHeight = std::max(0.0f, contentInnerHeight - kHeaderReserveHeight);
+  const float rightSurfaceGutter = Style::spaceXs * scale;
+  const float contentOuterWidth = std::max(0.0f, width - sidebarWidth - Style::spaceLg * scale - rightSurfaceGutter);
+  const float contentInnerWidth = std::max(0.0f, contentOuterWidth - Style::spaceLg * scale * 2.0f);
+  const float contentInnerHeight = std::max(0.0f, height - Style::spaceLg * scale * 2.0f);
+  const float bodyHeight = std::max(0.0f, contentInnerHeight - scaled(kHeaderReserveHeight));
 
   if (m_contentTitle != nullptr) {
     m_contentTitle->setMaxWidth(contentInnerWidth);

@@ -368,6 +368,14 @@ void ConfigService::loadFromFile(const std::string& path) {
     }
   }
 
+  // Parse [shell]
+  if (auto* shellTbl = tbl["shell"].as_table()) {
+    auto& shell = m_config.shell;
+    if (auto v = (*shellTbl)["ui_scale"].value<double>()) {
+      shell.uiScale = static_cast<float>(*v);
+    }
+  }
+
   // Parse [wallpaper]
   if (auto* wpTbl = tbl["wallpaper"].as_table()) {
     auto& wp = m_config.wallpaper;

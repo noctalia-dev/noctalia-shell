@@ -48,10 +48,11 @@ NotificationsTab::NotificationsTab(NotificationManager* notifications)
     : m_notifications(notifications) {}
 
 std::unique_ptr<Flex> NotificationsTab::build(Renderer& /*renderer*/) {
+  const float scale = contentScale();
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);
   tab->setAlign(FlexAlign::Start);
-  tab->setGap(Style::spaceSm);
+  tab->setGap(Style::spaceSm * scale);
 
   auto scroll = std::make_unique<ScrollView>();
   scroll->setScrollbarVisible(true);
@@ -60,8 +61,8 @@ std::unique_ptr<Flex> NotificationsTab::build(Renderer& /*renderer*/) {
   m_list = scroll->content();
   m_list->setDirection(FlexDirection::Vertical);
   m_list->setAlign(FlexAlign::Start);
-  m_list->setGap(Style::spaceSm);
-  m_list->setPadding(0.0f, kNotificationListRightPadding, 0.0f, 0.0f);
+  m_list->setGap(Style::spaceSm * scale);
+  m_list->setPadding(0.0f, kNotificationListRightPadding * scale, 0.0f, 0.0f);
   tab->addChild(std::move(scroll));
 
   return tab;
@@ -103,13 +104,14 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     m_list->removeChild(m_list->children().front().get());
   }
 
-  const float cardWidth = std::max(0.0f, width - kNotificationListRightPadding);
+  const float scale = contentScale();
+  const float cardWidth = std::max(0.0f, width - kNotificationListRightPadding * scale);
   if (m_notifications == nullptr || m_notifications->history().empty()) {
     auto empty = std::make_unique<Flex>();
-    applyCard(*empty);
+    applyCard(*empty, scale);
     empty->setMinWidth(cardWidth);
-    addTitle(*empty, "No notifications");
-    addBody(*empty, "Recent notifications will show here.");
+    addTitle(*empty, "No notifications", scale);
+    addBody(*empty, "Recent notifications will show here.", scale);
     m_list->addChild(std::move(empty));
     m_lastSerial = serial;
     m_lastWidth = width;
@@ -118,29 +120,32 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
 
   for (auto it = m_notifications->history().rbegin(); it != m_notifications->history().rend(); ++it) {
     auto card = std::make_unique<Flex>();
-    applyCard(*card);
+    applyCard(*card, scale);
     card->setMinWidth(cardWidth);
 
     auto meta = std::make_unique<Label>();
     meta->setText(it->notification.appName + " • " + statusText(*it));
     meta->setCaptionStyle();
+    meta->setFontSize(Style::fontSizeCaption * scale);
     meta->setColor(statusColor(*it));
-    meta->setMaxWidth(cardWidth - Style::spaceMd * 2);
+    meta->setMaxWidth(cardWidth - Style::spaceMd * scale * 2.0f);
     meta->measure(renderer);
     card->addChild(std::move(meta));
 
     auto summary = std::make_unique<Label>();
     summary->setText(it->notification.summary.empty() ? "Untitled notification" : it->notification.summary);
     summary->setBold(true);
-    summary->setMaxWidth(cardWidth - Style::spaceMd * 2);
+    summary->setFontSize(Style::fontSizeBody * scale);
+    summary->setMaxWidth(cardWidth - Style::spaceMd * scale * 2.0f);
     summary->measure(renderer);
     card->addChild(std::move(summary));
 
     if (!it->notification.body.empty()) {
       auto body = std::make_unique<Label>();
       body->setText(it->notification.body);
+      body->setFontSize(Style::fontSizeBody * scale);
       body->setColor(palette.onSurfaceVariant);
-      body->setMaxWidth(cardWidth - Style::spaceMd * 2);
+      body->setMaxWidth(cardWidth - Style::spaceMd * scale * 2.0f);
       body->measure(renderer);
       card->addChild(std::move(body));
     }

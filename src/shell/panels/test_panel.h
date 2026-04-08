@@ -18,8 +18,8 @@ public:
   void layout(Renderer& renderer, float width, float height) override;
   void update(Renderer& renderer) override;
 
-  [[nodiscard]] float preferredWidth() const override { return 640.0f; }
-  [[nodiscard]] float preferredHeight() const override { return 480.0f; }
+  [[nodiscard]] float preferredWidth() const override { return scaled(640.0f); }
+  [[nodiscard]] float preferredHeight() const override { return scaled(480.0f); }
 
 private:
   Flex* m_container = nullptr;

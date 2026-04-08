@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/controls/flex.h"
+#include "ui/style.h"
 
 #include <functional>
 
@@ -16,6 +17,9 @@ public:
   void setStep(float step);
   void setValue(float value);
   void setEnabled(bool enabled);
+  void setTrackHeight(float height);
+  void setThumbSize(float size);
+  void setControlHeight(float height);
   void setOnValueChanged(std::function<void(float)> callback);
 
   [[nodiscard]] float value() const noexcept { return m_value; }
@@ -45,4 +49,7 @@ private:
   float m_step = 1.0f;
   float m_value = 50.0f;
   bool m_enabled = true;
+  float m_trackHeight = 6.0f;
+  float m_thumbSizePx = 16.0f;
+  float m_controlHeightPx = Style::controlHeight;
 };

@@ -24,7 +24,8 @@ public:
                 TrayService* tray, PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon,
                 MprisService* mpris, HttpClient* httpClient, WeatherService* weather);
 
-  [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output) const;
+  [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output,
+                                               float contentScale = 1.0f) const;
 
 private:
   WaylandConnection& m_wayland;

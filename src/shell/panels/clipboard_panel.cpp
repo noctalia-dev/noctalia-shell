@@ -170,10 +170,11 @@ std::string previewTitle(const ClipboardEntry& entry) {
 ClipboardPanel::ClipboardPanel(ClipboardService* clipboard) : m_clipboard(clipboard) {}
 
 void ClipboardPanel::create(Renderer& renderer) {
+  const float scale = contentScale();
   auto root = std::make_unique<Flex>();
   root->setDirection(FlexDirection::Horizontal);
   root->setAlign(FlexAlign::Stretch);
-  root->setGap(Style::spaceSm);
+  root->setGap(Style::spaceSm * scale);
   m_rootLayout = root.get();
 
   auto focusArea = std::make_unique<InputArea>();
@@ -189,13 +190,13 @@ void ClipboardPanel::create(Renderer& renderer) {
   auto sidebar = std::make_unique<Flex>();
   sidebar->setDirection(FlexDirection::Vertical);
   sidebar->setAlign(FlexAlign::Stretch);
-  sidebar->setPadding(Style::spaceSm);
-  sidebar->setGap(Style::spaceSm);
+  sidebar->setPadding(Style::spaceSm * scale);
+  sidebar->setGap(Style::spaceSm * scale);
   m_sidebar = sidebar.get();
 
   auto title = std::make_unique<Label>();
   title->setText("Clipboard");
-  title->setFontSize(Style::fontSizeTitle);
+  title->setFontSize(Style::fontSizeTitle * scale);
   title->setBold(true);
   title->setColor(palette.primary);
   m_sidebarTitle = title.get();
@@ -210,8 +211,8 @@ void ClipboardPanel::create(Renderer& renderer) {
   m_list = listScroll->content();
   m_list->setDirection(FlexDirection::Vertical);
   m_list->setAlign(FlexAlign::Start);
-  m_list->setGap(Style::spaceXs);
-  m_list->setPadding(Style::spaceXs, 0.0f, 0.0f, 0.0f);
+  m_list->setGap(Style::spaceXs * scale);
+  m_list->setPadding(Style::spaceXs * scale, 0.0f, 0.0f, 0.0f);
   sidebar->addChild(std::move(listScroll));
 
   root->addChild(std::move(sidebar));
@@ -219,14 +220,14 @@ void ClipboardPanel::create(Renderer& renderer) {
   auto preview = std::make_unique<Flex>();
   preview->setDirection(FlexDirection::Vertical);
   preview->setAlign(FlexAlign::Stretch);
-  preview->setGap(Style::spaceSm);
-  preview->setPadding(Style::spaceSm);
+  preview->setGap(Style::spaceSm * scale);
+  preview->setPadding(Style::spaceSm * scale);
   preview->setFlexGrow(1.0f);
   m_previewCard = preview.get();
 
   auto previewTitleLabel = std::make_unique<Label>();
   previewTitleLabel->setText("Clipboard entry");
-  previewTitleLabel->setFontSize(Style::fontSizeTitle);
+  previewTitleLabel->setFontSize(Style::fontSizeTitle * scale);
   previewTitleLabel->setBold(true);
   previewTitleLabel->setColor(palette.primary);
   m_previewTitle = previewTitleLabel.get();
@@ -234,6 +235,7 @@ void ClipboardPanel::create(Renderer& renderer) {
 
   auto previewMetaLabel = std::make_unique<Label>();
   previewMetaLabel->setCaptionStyle();
+  previewMetaLabel->setFontSize(Style::fontSizeCaption * scale);
   previewMetaLabel->setColor(palette.onSurfaceVariant);
   m_previewMeta = previewMetaLabel.get();
   preview->addChild(std::move(previewMetaLabel));
@@ -254,7 +256,7 @@ void ClipboardPanel::create(Renderer& renderer) {
   m_previewContent = previewScroll->content();
   m_previewContent->setDirection(FlexDirection::Vertical);
   m_previewContent->setAlign(FlexAlign::Start);
-  m_previewContent->setGap(Style::spaceSm);
+  m_previewContent->setGap(Style::spaceSm * scale);
   preview->addChild(std::move(previewScroll));
 
   root->addChild(std::move(preview));
@@ -264,8 +266,8 @@ void ClipboardPanel::create(Renderer& renderer) {
     m_root->setAnimationManager(m_animations);
   }
 
-  rebuildList(renderer, kSidebarWidth - Style::spaceSm * 2.0f);
-  rebuildPreview(renderer, preferredWidth() - kSidebarWidth - Style::spaceSm - Style::spaceSm * 2.0f,
+  rebuildList(renderer, scaled(kSidebarWidth) - Style::spaceSm * scale * 2.0f);
+  rebuildPreview(renderer, preferredWidth() - scaled(kSidebarWidth) - Style::spaceSm * scale - Style::spaceSm * scale * 2.0f,
                  preferredHeight());
 }
 
@@ -526,9 +528,6 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
   if (loadedEntry.isImage()) {
     auto image = std::make_unique<Image>();
     image->setSize(width, std::min(kPreviewImageHeight, std::max(180.0f, height - Style::spaceMd)));
-    image->setCornerRadius(Style::radiusLg);
-    image->setBackground(control_center::alphaSurfaceVariant(0.7f));
-    image->setPadding(Style::spaceSm);
     image->setFit(ImageFit::Contain);
     image->setSourceBytes(renderer, loadedEntry.data.data(), loadedEntry.data.size());
     m_previewImage = image.get();

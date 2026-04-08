@@ -92,6 +92,11 @@ constexpr Color hex(std::string_view value) {
   throw std::invalid_argument("unsupported hex color format");
 }
 
+constexpr Color withAlpha(const Color& color, float alpha) {
+  auto clamp = [](float v) constexpr { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); };
+  return rgba(color.r, color.g, color.b, clamp(alpha));
+}
+
 constexpr Color brighten(const Color& color, float amount) {
   auto clamp = [](float v) constexpr { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); };
   return Color{
@@ -110,3 +115,5 @@ constexpr Color lerpColor(const Color& a, const Color& b, float t) {
       .a = a.a + (b.a - a.a) * t,
   };
 }
+
+

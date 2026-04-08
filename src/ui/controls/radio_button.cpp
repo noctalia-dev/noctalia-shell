@@ -5,6 +5,7 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
+#include <algorithm>
 #include <memory>
 
 RadioButton::RadioButton() {
@@ -56,15 +57,21 @@ void RadioButton::setOnChange(std::function<void(bool)> callback) {
   m_onChange = std::move(callback);
 }
 
+void RadioButton::setScale(float scale) {
+  m_scale = std::max(0.1f, scale);
+  applyState();
+  markDirty();
+}
+
 bool RadioButton::hovered() const noexcept { return m_inputArea != nullptr && m_inputArea->hovered(); }
 
 bool RadioButton::pressed() const noexcept { return m_inputArea != nullptr && m_inputArea->pressed(); }
 
 void RadioButton::layout(Renderer& /*renderer*/) {
-  const float touchSize = Style::controlHeightSm;
-  const float indicatorSize = Style::fontSizeTitle + Style::spaceXs;
+  const float touchSize = Style::controlHeightSm * m_scale;
+  const float indicatorSize = (Style::fontSizeTitle + Style::spaceXs) * m_scale;
   const float indicatorInset = (touchSize - indicatorSize) * 0.5f;
-  const float innerInset = Style::spaceXs + Style::borderWidth;
+  const float innerInset = (Style::spaceXs + Style::borderWidth) * m_scale;
   const float innerSize = indicatorSize - innerInset * 2.0f;
 
   setSize(touchSize, touchSize);
@@ -104,7 +111,7 @@ void RadioButton::applyState() {
   }
 
   m_outer->setFill(fill);
-  m_outer->setBorder(border, Style::borderWidth);
+  m_outer->setBorder(border, Style::borderWidth * m_scale);
 
   m_inner->setFill(m_checked ? palette.onPrimary : palette.surface);
   m_inner->setBorder(m_checked ? palette.onPrimary : palette.surface, 0.0f);

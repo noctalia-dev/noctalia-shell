@@ -7,6 +7,7 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
+#include <algorithm>
 #include <memory>
 
 Toggle::Toggle() {
@@ -61,22 +62,28 @@ void Toggle::setToggleSize(ToggleSize size) {
   applyState();
 }
 
+void Toggle::setScale(float scale) {
+  m_scale = std::max(0.1f, scale);
+  applySize();
+  applyState();
+}
+
 void Toggle::applySize() {
   switch (m_size) {
   case ToggleSize::Small:
-    m_thumbSize = 12.0f;
-    m_inset = 2.0f;
-    m_travel = 10.0f;
+    m_thumbSize = 12.0f * m_scale;
+    m_inset = 2.0f * m_scale;
+    m_travel = 10.0f * m_scale;
     break;
   case ToggleSize::Medium:
-    m_thumbSize = 16.0f;
-    m_inset = 2.0f;
-    m_travel = 14.0f;
+    m_thumbSize = 16.0f * m_scale;
+    m_inset = 2.0f * m_scale;
+    m_travel = 14.0f * m_scale;
     break;
   case ToggleSize::Large:
-    m_thumbSize = 18.0f;
-    m_inset = 3.0f;
-    m_travel = 16.0f;
+    m_thumbSize = 18.0f * m_scale;
+    m_inset = 3.0f * m_scale;
+    m_travel = 16.0f * m_scale;
     break;
   }
 

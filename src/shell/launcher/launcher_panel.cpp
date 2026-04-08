@@ -32,13 +32,17 @@ void LauncherPanel::addProvider(std::unique_ptr<LauncherProvider> provider) {
 }
 
 void LauncherPanel::create(Renderer& renderer) {
+  const float scale = contentScale();
   auto container = std::make_unique<Flex>();
   container->setDirection(FlexDirection::Vertical);
   container->setAlign(FlexAlign::Stretch);
-  container->setGap(Style::spaceSm);
+  container->setGap(Style::spaceSm * scale);
 
   auto input = std::make_unique<Input>();
   input->setPlaceholder("Search applications...");
+  input->setFontSize(Style::fontSizeBody * scale);
+  input->setControlHeight(Style::controlHeight * scale);
+  input->setHorizontalPadding(Style::spaceMd * scale);
   input->setOnChange([this](const std::string& text) { onInputChanged(text); });
   input->setOnSubmit([this](const std::string& /*text*/) { activateSelected(); });
   input->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t modifiers) {
@@ -204,6 +208,9 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     return;
   }
 
+  const float scale = contentScale();
+  const float iconSize = kIconSize * scale;
+
   while (!m_list->children().empty()) {
     m_list->removeChild(m_list->children().front().get());
   }
@@ -225,11 +232,10 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
-    row->setGap(Style::spaceMd);
-    row->setPadding(Style::spaceXs, Style::spaceSm,
-                    Style::spaceXs, Style::spaceSm);
+    row->setGap(Style::spaceMd * scale);
+    row->setPadding(Style::spaceXs * scale, Style::spaceSm * scale, Style::spaceXs * scale, Style::spaceSm * scale);
     row->setMinWidth(width);
-    row->setRadius(Style::radiusMd);
+    row->setRadius(Style::radiusMd * scale);
     if (i == m_selectedIndex) {
       row->setBackground(palette.surfaceVariant);
     }
@@ -274,20 +280,20 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     if (!result.actionText.empty()) {
       auto actionLabel = std::make_unique<Label>();
       actionLabel->setText(result.actionText);
-      actionLabel->setFontSize(Style::fontSizeTitle);
+      actionLabel->setFontSize(Style::fontSizeTitle * scale);
       actionLabel->setColor(palette.onSurface);
       actionLabel->measure(renderer);
-      actionLabel->setSize(kIconSize, kIconSize);
+      actionLabel->setSize(iconSize, iconSize);
       row->addChild(std::move(actionLabel));
     } else if (!result.iconPath.empty()) {
       auto image = std::make_unique<Image>();
-      image->setSize(kIconSize, kIconSize);
-      image->setSourceFile(renderer, result.iconPath, static_cast<int>(kIconSize));
+      image->setSize(iconSize, iconSize);
+      image->setSourceFile(renderer, result.iconPath, static_cast<int>(iconSize));
       row->addChild(std::move(image));
     } else {
       auto glyph = std::make_unique<Glyph>();
       glyph->setGlyph(result.glyphName.empty() ? "app-window" : result.glyphName);
-      glyph->setGlyphSize(kIconSize);
+      glyph->setGlyphSize(iconSize);
       glyph->setColor(palette.onSurface);
       glyph->measure(renderer);
       row->addChild(std::move(glyph));
@@ -297,13 +303,13 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     auto textCol = std::make_unique<Flex>();
     textCol->setDirection(FlexDirection::Vertical);
     textCol->setAlign(FlexAlign::Start);
-    textCol->setGap(Style::spaceXs);
+    textCol->setGap(Style::spaceXs * scale);
 
-    const float textWidth = std::max(0.0f, width - kIconSize - Style::spaceSm * 2.0f - Style::spaceMd);
+    const float textWidth = std::max(0.0f, width - iconSize - Style::spaceSm * scale * 2.0f - Style::spaceMd * scale);
 
     auto title = std::make_unique<Label>();
     title->setText(result.title);
-    title->setFontSize(Style::fontSizeBody);
+    title->setFontSize(Style::fontSizeBody * scale);
     title->setBold(true);
     title->setColor(palette.onSurface);
     title->setMaxWidth(textWidth);
@@ -314,6 +320,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
       auto subtitle = std::make_unique<Label>();
       subtitle->setText(result.subtitle);
       subtitle->setCaptionStyle();
+      subtitle->setFontSize(Style::fontSizeCaption * scale);
       subtitle->setColor(palette.onSurfaceVariant);
       subtitle->setMaxWidth(textWidth);
       subtitle->measure(renderer);

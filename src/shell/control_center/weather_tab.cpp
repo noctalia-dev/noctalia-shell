@@ -30,21 +30,22 @@ WeatherTab::WeatherTab(WeatherService* weather) : m_weather(weather) {
 }
 
 std::unique_ptr<Flex> WeatherTab::build(Renderer& /*renderer*/) {
+  const float scale = contentScale();
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);
   tab->setAlign(FlexAlign::Start);
-  tab->setGap(Style::spaceMd);
+  tab->setGap(Style::spaceMd * scale);
   m_rootLayout = tab.get();
 
   auto currentCard = std::make_unique<Flex>();
-  applyCard(*currentCard);
+  applyCard(*currentCard, scale);
   currentCard->setDirection(FlexDirection::Horizontal);
   currentCard->setAlign(FlexAlign::Center);
-  currentCard->setGap(Style::spaceLg);
+  currentCard->setGap(Style::spaceLg * scale);
 
   auto currentGlyph = std::make_unique<Glyph>();
   currentGlyph->setGlyph("weather-cloud");
-  currentGlyph->setGlyphSize(kCurrentGlyphSize);
+  currentGlyph->setGlyphSize(kCurrentGlyphSize * scale);
   currentGlyph->setColor(palette.primary);
   m_currentGlyph = currentGlyph.get();
   currentCard->addChild(std::move(currentGlyph));
@@ -52,24 +53,25 @@ std::unique_ptr<Flex> WeatherTab::build(Renderer& /*renderer*/) {
   auto currentText = std::make_unique<Flex>();
   currentText->setDirection(FlexDirection::Vertical);
   currentText->setAlign(FlexAlign::Start);
-  currentText->setGap(Style::spaceXs);
+  currentText->setGap(Style::spaceXs * scale);
 
   auto location = std::make_unique<Label>();
   location->setText("Weather");
   location->setBold(true);
-  location->setFontSize(Style::fontSizeTitle);
+  location->setFontSize(Style::fontSizeTitle * scale);
   m_locationLabel = location.get();
   currentText->addChild(std::move(location));
 
   auto temp = std::make_unique<Label>();
   temp->setText("--°C");
   temp->setBold(true);
-  temp->setFontSize(Style::fontSizeTitle * 2.0f);
+  temp->setFontSize(Style::fontSizeTitle * 2.0f * scale);
   m_currentTempLabel = temp.get();
   currentText->addChild(std::move(temp));
 
   auto currentDesc = std::make_unique<Label>();
   currentDesc->setText("Waiting for weather data");
+  currentDesc->setFontSize(Style::fontSizeBody * scale);
   currentDesc->setColor(palette.onSurfaceVariant);
   m_currentDescLabel = currentDesc.get();
   currentText->addChild(std::move(currentDesc));
@@ -77,6 +79,7 @@ std::unique_ptr<Flex> WeatherTab::build(Renderer& /*renderer*/) {
   auto updated = std::make_unique<Label>();
   updated->setText(" ");
   updated->setCaptionStyle();
+  updated->setFontSize(Style::fontSizeCaption * scale);
   updated->setColor(palette.onSurfaceVariant);
   m_updatedLabel = updated.get();
   currentText->addChild(std::move(updated));
@@ -86,6 +89,7 @@ std::unique_ptr<Flex> WeatherTab::build(Renderer& /*renderer*/) {
 
   auto status = std::make_unique<Label>();
   status->setText(" ");
+  status->setFontSize(Style::fontSizeBody * scale);
   status->setColor(palette.onSurfaceVariant);
   m_statusLabel = status.get();
   tab->addChild(std::move(status));
@@ -93,40 +97,43 @@ std::unique_ptr<Flex> WeatherTab::build(Renderer& /*renderer*/) {
   auto forecastRow = std::make_unique<Flex>();
   forecastRow->setDirection(FlexDirection::Horizontal);
   forecastRow->setAlign(FlexAlign::Start);
-  forecastRow->setGap(Style::spaceSm);
+  forecastRow->setGap(Style::spaceSm * scale);
   m_forecastRow = forecastRow.get();
 
   for (std::size_t i = 0; i < kDayCount; ++i) {
     auto card = std::make_unique<Flex>();
-    applyCard(*card);
+    applyCard(*card, scale);
     card->setAlign(FlexAlign::Center);
-    card->setGap(Style::spaceXs);
-    card->setMinWidth(kForecastCardMinWidth);
+    card->setGap(Style::spaceXs * scale);
+    card->setMinWidth(kForecastCardMinWidth * scale);
     m_dayCards[i] = card.get();
 
     auto name = std::make_unique<Label>();
     name->setText("Day");
     name->setBold(true);
+    name->setFontSize(Style::fontSizeBody * scale);
     m_dayNames[i] = name.get();
     card->addChild(std::move(name));
 
     auto glyph = std::make_unique<Glyph>();
     glyph->setGlyph("weather-cloud");
-    glyph->setGlyphSize(Style::fontSizeTitle * 2.25f);
+    glyph->setGlyphSize(Style::fontSizeTitle * 2.25f * scale);
     glyph->setColor(palette.primary);
     m_dayGlyphs[i] = glyph.get();
     card->addChild(std::move(glyph));
 
     auto desc = std::make_unique<Label>();
     desc->setText("Weather");
+    desc->setFontSize(Style::fontSizeBody * scale);
     desc->setColor(palette.onSurfaceVariant);
-    desc->setMaxWidth(kForecastCardMinWidth - Style::spaceMd * 2);
+    desc->setMaxWidth((kForecastCardMinWidth - Style::spaceMd * 2) * scale);
     m_dayDescs[i] = desc.get();
     card->addChild(std::move(desc));
 
     auto temps = std::make_unique<Label>();
     temps->setText("-- / --");
     temps->setBold(true);
+    temps->setFontSize(Style::fontSizeBody * scale);
     m_dayTemps[i] = temps.get();
     card->addChild(std::move(temps));
 
@@ -142,9 +149,11 @@ void WeatherTab::layout(Renderer& renderer, float contentWidth, float /*bodyHeig
     return;
   }
 
-  const float gap = Style::spaceSm;
+  const float scale = contentScale();
+  const float gap = Style::spaceSm * scale;
   const float totalGap = gap * static_cast<float>(kDayCount - 1);
-  const float cardWidth = std::max(kForecastCardMinWidth, (contentWidth - totalGap) / static_cast<float>(kDayCount));
+  const float cardWidth =
+      std::max(kForecastCardMinWidth * scale, (contentWidth - totalGap) / static_cast<float>(kDayCount));
   for (auto* card : m_dayCards) {
     if (card != nullptr) {
       card->setMinWidth(cardWidth);

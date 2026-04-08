@@ -101,6 +101,24 @@ void Slider::setEnabled(bool enabled) {
   markDirty();
 }
 
+void Slider::setTrackHeight(float height) {
+  m_trackHeight = std::max(1.0f, height);
+  updateGeometry();
+  markDirty();
+}
+
+void Slider::setThumbSize(float size) {
+  m_thumbSizePx = std::max(1.0f, size);
+  updateGeometry();
+  markDirty();
+}
+
+void Slider::setControlHeight(float height) {
+  m_controlHeightPx = std::max(1.0f, height);
+  updateGeometry();
+  markDirty();
+}
+
 void Slider::setOnValueChanged(std::function<void(float)> callback) { m_onValueChanged = std::move(callback); }
 
 bool Slider::dragging() const noexcept { return m_inputArea != nullptr && m_inputArea->pressed(); }
@@ -112,24 +130,24 @@ void Slider::layout(Renderer& /*renderer*/) {
 
 void Slider::updateGeometry() {
   const float widthPx = width() > 0.0f ? width() : kDefaultWidth;
-  const float heightPx = std::max({kThumbSize, kTrackHeight, Style::controlHeight});
+  const float heightPx = std::max({m_thumbSizePx, m_trackHeight, m_controlHeightPx});
   setSize(widthPx, heightPx);
 
-  const float trackY = (heightPx - kTrackHeight) * 0.5f;
+  const float trackY = (heightPx - m_trackHeight) * 0.5f;
   const float trackX = kHorizontalPadding;
   const float trackW = std::max(0.0f, widthPx - kHorizontalPadding * 2.0f);
   const float t = normalizedValue();
   const float thumbX = trackX + t * trackW;
-  const float thumbY = (heightPx - kThumbSize) * 0.5f;
+  const float thumbY = (heightPx - m_thumbSizePx) * 0.5f;
 
   m_track->setPosition(trackX, trackY);
-  m_track->setSize(trackW, kTrackHeight);
+  m_track->setSize(trackW, m_trackHeight);
 
   m_fill->setPosition(trackX, trackY);
-  m_fill->setSize(std::max(0.0f, thumbX - trackX), kTrackHeight);
+  m_fill->setSize(std::max(0.0f, thumbX - trackX), m_trackHeight);
 
-  m_thumb->setPosition(std::clamp(thumbX - kThumbSize * 0.5f, trackX, trackX + trackW - kThumbSize), thumbY);
-  m_thumb->setSize(kThumbSize, kThumbSize);
+  m_thumb->setPosition(std::clamp(thumbX - m_thumbSizePx * 0.5f, trackX, trackX + trackW - m_thumbSizePx), thumbY);
+  m_thumb->setSize(m_thumbSizePx, m_thumbSizePx);
 
   m_inputArea->setPosition(0.0f, 0.0f);
   m_inputArea->setSize(widthPx, heightPx);
@@ -167,13 +185,13 @@ void Slider::applyVisualState() {
     thumbBorder = palette.secondary;
   }
 
-  auto trackStyle = solidStyle(trackColor, kTrackHeight * 0.5f);
+  auto trackStyle = solidStyle(trackColor, m_trackHeight * 0.5f);
   m_track->setStyle(trackStyle);
 
-  auto fillStyle = solidStyle(fillColor, kTrackHeight * 0.5f);
+  auto fillStyle = solidStyle(fillColor, m_trackHeight * 0.5f);
   m_fill->setStyle(fillStyle);
 
-  auto thumbStyle = solidStyle(thumbColor, kThumbSize * 0.5f);
+  auto thumbStyle = solidStyle(thumbColor, m_thumbSizePx * 0.5f);
   thumbStyle.border = thumbBorder;
   thumbStyle.borderWidth = Style::borderWidth;
   m_thumb->setStyle(thumbStyle);

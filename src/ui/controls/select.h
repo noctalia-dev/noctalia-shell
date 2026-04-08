@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/controls/flex.h"
+#include "ui/style.h"
 
 #include <cstddef>
 #include <functional>
@@ -25,6 +26,10 @@ public:
   void setSelectedIndex(std::size_t index);
   void setEnabled(bool enabled);
   void setPlaceholder(std::string_view placeholder);
+  void setFontSize(float size);
+  void setControlHeight(float height);
+  void setHorizontalPadding(float padding);
+  void setGlyphSize(float size);
   void setOnSelectionChanged(std::function<void(std::size_t, std::string_view)> callback);
   static void handleGlobalPointerPress(InputArea* target);
   static void closeAnyOpen();
@@ -80,6 +85,10 @@ private:
   float m_fixedWidth = 0.0f;
   float m_scrollOffset = 0.0f;
   std::vector<std::pair<Node*, std::int32_t>> m_liftedNodes;
+  float m_fontSize = Style::fontSizeBody;
+  float m_controlHeight = Style::controlHeight;
+  float m_horizontalPadding = Style::spaceMd;
+  float m_glyphSize = 14.0f;
 
   std::function<void(std::size_t, std::string_view)> m_onSelectionChanged;
 };

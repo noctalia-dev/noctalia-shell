@@ -261,7 +261,7 @@ void Bar::destroyInstance(std::uint32_t outputName) {
 void Bar::populateWidgets(BarInstance& instance) {
   auto createWidgets = [&](const std::vector<std::string>& names, std::vector<std::unique_ptr<Widget>>& dest) {
     for (const auto& name : names) {
-      auto widget = m_widgetFactory->create(name, instance.output);
+      auto widget = m_widgetFactory->create(name, instance.output, instance.barConfig.scale);
       if (widget != nullptr) {
         dest.push_back(std::move(widget));
       }
@@ -355,7 +355,6 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
             surface->requestRedraw();
           }
         });
-        widget->setContentScale(instance.barConfig.scale);
         widget->create(*renderer);
         if (widget->root() != nullptr) {
           section->addChild(widget->releaseRoot());

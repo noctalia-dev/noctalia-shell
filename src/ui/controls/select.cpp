@@ -42,7 +42,7 @@ Select::Select() {
   auto triggerGlyph = std::make_unique<Glyph>();
   m_triggerGlyph = static_cast<Glyph*>(addChild(std::move(triggerGlyph)));
   m_triggerGlyph->setGlyph("chevron-down");
-  m_triggerGlyph->setGlyphSize(kGlyphSize);
+  m_triggerGlyph->setGlyphSize(m_glyphSize);
 
   auto triggerArea = std::make_unique<InputArea>();
   triggerArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
@@ -151,6 +151,36 @@ void Select::setPlaceholder(std::string_view placeholder) {
   markDirty();
 }
 
+void Select::setFontSize(float size) {
+  m_fontSize = std::max(1.0f, size);
+  syncTriggerText();
+  rebuildOptionViews();
+  markDirty();
+}
+
+void Select::setControlHeight(float height) {
+  m_controlHeight = std::max(1.0f, height);
+  markDirty();
+}
+
+void Select::setHorizontalPadding(float padding) {
+  m_horizontalPadding = std::max(0.0f, padding);
+  markDirty();
+}
+
+void Select::setGlyphSize(float size) {
+  m_glyphSize = std::max(1.0f, size);
+  if (m_triggerGlyph != nullptr) {
+    m_triggerGlyph->setGlyphSize(m_glyphSize);
+  }
+  for (auto& option : m_optionViews) {
+    if (option.checkGlyph != nullptr) {
+      option.checkGlyph->setGlyphSize(m_glyphSize);
+    }
+  }
+  markDirty();
+}
+
 void Select::setOnSelectionChanged(std::function<void(std::size_t, std::string_view)> callback) {
   m_onSelectionChanged = std::move(callback);
 }
@@ -182,23 +212,24 @@ void Select::layout(Renderer& renderer) {
     widestLabel = std::max(widestLabel, option.label->width());
   }
 
-  float contentWidth = widestLabel + kHorizontalPadding * 2.0f + kGlyphSize + Style::spaceXs;
+  float contentWidth = widestLabel + m_horizontalPadding * 2.0f + m_glyphSize + Style::spaceXs;
   float dropdownWidth = m_fixedWidth > 0.0f ? m_fixedWidth : std::max({kDefaultWidth, kMinWidth, contentWidth});
 
   const float viewportHeight = menuViewportHeight();
-  setSize(dropdownWidth, kTriggerHeight);
+  setSize(dropdownWidth, m_controlHeight);
 
   m_triggerBackground->setPosition(0.0f, 0.0f);
-  m_triggerBackground->setSize(dropdownWidth, kTriggerHeight);
+  m_triggerBackground->setSize(dropdownWidth, m_controlHeight);
 
-  const float triggerLabelMax = std::max(0.0f, dropdownWidth - (kHorizontalPadding * 2.0f + kGlyphSize + Style::spaceXs));
+  const float triggerLabelMax =
+      std::max(0.0f, dropdownWidth - (m_horizontalPadding * 2.0f + m_glyphSize + Style::spaceXs));
   m_triggerLabel->setMaxWidth(triggerLabelMax);
   m_triggerLabel->measure(renderer);
-  float triggerLabelY = std::round((kTriggerHeight - m_triggerLabel->height()) * 0.5f);
-  m_triggerLabel->setPosition(kHorizontalPadding, triggerLabelY);
-  m_triggerGlyph->setPosition(dropdownWidth - kHorizontalPadding - m_triggerGlyph->width(), triggerLabelY);
+  float triggerLabelY = std::round((m_controlHeight - m_triggerLabel->height()) * 0.5f);
+  m_triggerLabel->setPosition(m_horizontalPadding, triggerLabelY);
+  m_triggerGlyph->setPosition(dropdownWidth - m_horizontalPadding - m_triggerGlyph->width(), triggerLabelY);
   m_triggerArea->setPosition(0.0f, 0.0f);
-  m_triggerArea->setSize(dropdownWidth, kTriggerHeight);
+  m_triggerArea->setSize(dropdownWidth, m_controlHeight);
 
   float absX = 0.0f;
   float absY = 0.0f;
@@ -208,11 +239,11 @@ void Select::layout(Renderer& renderer) {
     root = root->parent();
   }
   const float rootHeight = root->height();
-  const float belowSpace = std::max(0.0f, rootHeight - (absY + kTriggerHeight));
+  const float belowSpace = std::max(0.0f, rootHeight - (absY + m_controlHeight));
   const float aboveSpace = std::max(0.0f, absY);
   const float neededSpace = viewportHeight + kMenuTopGap;
   m_openUpward = neededSpace > belowSpace && aboveSpace > belowSpace;
-  const float menuY = m_openUpward ? -(viewportHeight + kMenuTopGap) : (kTriggerHeight + kMenuTopGap);
+  const float menuY = m_openUpward ? -(viewportHeight + kMenuTopGap) : (m_controlHeight + kMenuTopGap);
   clampScrollOffset();
 
   m_menuViewport->setVisible(m_open && !m_optionViews.empty());
@@ -237,24 +268,25 @@ void Select::layout(Renderer& renderer) {
     option.checkGlyph->setVisible(showMenu && i == m_selectedIndex);
     option.area->setVisible(showMenu);
 
-    const float rowY = static_cast<float>(i) * kOptionHeight - m_scrollOffset;
+    const float rowY = static_cast<float>(i) * m_controlHeight - m_scrollOffset;
     option.background->setPosition(0.0f, rowY);
-    option.background->setSize(dropdownWidth, kOptionHeight);
+    option.background->setSize(dropdownWidth, m_controlHeight);
     option.background->setZIndex(3);
 
-    option.label->setMaxWidth(std::max(0.0f, dropdownWidth - kHorizontalPadding * 2.0f - kGlyphSize - Style::spaceXs));
+    option.label->setMaxWidth(
+        std::max(0.0f, dropdownWidth - m_horizontalPadding * 2.0f - m_glyphSize - Style::spaceXs));
     option.label->measure(renderer);
-    float optLabelY = std::round((kOptionHeight - option.label->height()) * 0.5f);
-    option.label->setPosition(kHorizontalPadding, rowY + optLabelY);
+    float optLabelY = std::round((m_controlHeight - option.label->height()) * 0.5f);
+    option.label->setPosition(m_horizontalPadding, rowY + optLabelY);
     option.label->setZIndex(4);
 
     option.checkGlyph->measure(renderer);
-    option.checkGlyph->setPosition(dropdownWidth - kHorizontalPadding - option.checkGlyph->width(),
+    option.checkGlyph->setPosition(dropdownWidth - m_horizontalPadding - option.checkGlyph->width(),
                                    rowY + optLabelY);
     option.checkGlyph->setZIndex(4);
 
     option.area->setPosition(0.0f, rowY);
-    option.area->setSize(dropdownWidth, kOptionHeight);
+    option.area->setSize(dropdownWidth, m_controlHeight);
     option.area->setZIndex(5);
   }
 
@@ -288,11 +320,12 @@ void Select::rebuildOptionViews() {
 
     auto label = std::make_unique<Label>();
     label->setText(m_options[i]);
+    label->setFontSize(m_fontSize);
     auto* labelPtr = static_cast<Label*>(m_menuViewport->addChild(std::move(label)));
 
     auto checkGlyph = std::make_unique<Glyph>();
     checkGlyph->setGlyph("check");
-    checkGlyph->setGlyphSize(kGlyphSize);
+    checkGlyph->setGlyphSize(m_glyphSize);
     auto* checkIconPtr = static_cast<Glyph*>(m_menuViewport->addChild(std::move(checkGlyph)));
 
     auto area = std::make_unique<InputArea>();
@@ -319,12 +352,12 @@ void Select::rebuildOptionViews() {
       setSelectedIndex(i);
       closeMenu();
     });
-    area->setOnAxis([this](const InputArea::PointerData& data) {
-      if (!m_open) {
-        return;
-      }
-      scrollBy(data.scrollDelta(kOptionHeight));
-    });
+  area->setOnAxis([this](const InputArea::PointerData& data) {
+    if (!m_open) {
+      return;
+    }
+    scrollBy(data.scrollDelta(m_controlHeight));
+  });
     auto* areaPtr = static_cast<InputArea*>(m_menuViewport->addChild(std::move(area)));
 
     m_optionViews.push_back(OptionView{
@@ -416,6 +449,7 @@ void Select::syncTriggerText() {
     return;
   }
   m_triggerLabel->setText(selectedText().empty() ? m_placeholder : std::string(selectedText()));
+  m_triggerLabel->setFontSize(m_fontSize);
 }
 
 void Select::toggleOpen() {
@@ -428,8 +462,9 @@ void Select::toggleOpen() {
   }
   m_open = opening;
   if (m_open) {
-    const float selectedTop = m_selectedIndex < m_optionViews.size() ? static_cast<float>(m_selectedIndex) * kOptionHeight : 0.0f;
-    const float selectedBottom = selectedTop + kOptionHeight;
+    const float selectedTop =
+        m_selectedIndex < m_optionViews.size() ? static_cast<float>(m_selectedIndex) * m_controlHeight : 0.0f;
+    const float selectedBottom = selectedTop + m_controlHeight;
     const float viewportHeight = menuViewportHeight();
     if (selectedTop < m_scrollOffset) {
       m_scrollOffset = selectedTop;
@@ -486,14 +521,14 @@ void Select::scrollBy(float delta) {
 }
 
 void Select::clampScrollOffset() {
-  const float totalHeight = static_cast<float>(m_optionViews.size()) * kOptionHeight;
+  const float totalHeight = static_cast<float>(m_optionViews.size()) * m_controlHeight;
   const float maxScroll = std::max(0.0f, totalHeight - menuViewportHeight());
   m_scrollOffset = std::clamp(m_scrollOffset, 0.0f, maxScroll);
 }
 
 float Select::menuViewportHeight() const noexcept {
-  const float totalHeight = static_cast<float>(m_optionViews.size()) * kOptionHeight;
-  const float maxHeight = static_cast<float>(kMaxVisibleOptions) * kOptionHeight;
+  const float totalHeight = static_cast<float>(m_optionViews.size()) * m_controlHeight;
+  const float maxHeight = static_cast<float>(kMaxVisibleOptions) * m_controlHeight;
   return std::min(totalHeight, maxHeight);
 }
 

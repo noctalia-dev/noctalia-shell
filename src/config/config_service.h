@@ -95,6 +95,10 @@ struct OsdConfig {
   std::string position = "top_right";
 };
 
+struct ShellConfig {
+  float uiScale = 1.0f;
+};
+
 struct WeatherConfig {
   bool enabled = true;
   bool autoLocate = false;
@@ -107,6 +111,7 @@ struct Config {
   std::vector<BarConfig> bars;
   std::unordered_map<std::string, WidgetConfig> widgets;
   WallpaperConfig wallpaper;
+  ShellConfig shell;
   OsdConfig osd;
   WeatherConfig weather;
 };

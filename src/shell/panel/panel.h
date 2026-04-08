@@ -29,6 +29,9 @@ public:
   [[nodiscard]] virtual InputArea* initialFocusArea() const { return nullptr; }
 
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
+  [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
+
+  void setContentScale(float scale) noexcept { m_contentScale = scale; }
 
   std::unique_ptr<Node> releaseRoot() {
     m_rootPtr = m_root.get();
@@ -38,6 +41,9 @@ public:
   void setAnimationManager(AnimationManager* mgr) noexcept { m_animations = mgr; }
 
 protected:
+  [[nodiscard]] float scaled(float value) const noexcept { return value * m_contentScale; }
+
+  float m_contentScale = 1.0f;
   std::unique_ptr<Node> m_root;
   Node* m_rootPtr = nullptr;
   AnimationManager* m_animations = nullptr;

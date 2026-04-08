@@ -30,8 +30,8 @@ public:
   void onOpen(std::string_view context) override;
   void onClose() override;
 
-  [[nodiscard]] float preferredWidth() const override { return 560.0f; }
-  [[nodiscard]] float preferredHeight() const override { return 460.0f; }
+  [[nodiscard]] float preferredWidth() const override { return scaled(560.0f); }
+  [[nodiscard]] float preferredHeight() const override { return scaled(460.0f); }
   [[nodiscard]] bool centeredHorizontally() const override { return true; }
   [[nodiscard]] bool centeredVertically() const override { return true; }
   [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }

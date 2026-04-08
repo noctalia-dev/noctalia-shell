@@ -13,6 +13,7 @@ Changes are detected automatically via inotify — no restart required.
 - [Widget definitions](#widget-definitions)
 - [Built-in widgets](#built-in-widgets)
 - [Weather](#weather)
+- [Shell](#shell)
 - [OSD](#osd)
 - [Wallpaper](#wallpaper)
 - [Full example](#full-example)
@@ -272,6 +273,22 @@ position = "top_right"   # top_right | top_left | top_center | bottom_right | bo
 ```
 
 The OSD currently powers the volume HUD and defaults to `top_right`.
+
+---
+
+## Shell
+
+Shell-wide UI settings for non-bar surfaces.
+
+```toml
+[shell]
+ui_scale = 1.0   # content scale multiplier for panels and other non-bar shell UI
+```
+
+`ui_scale` is completely separate from `bar.scale`:
+- `bar.scale` only affects bar widget content
+- `shell.ui_scale` is for control center, launcher, clipboard, and other non-bar shell UI
+- neither setting changes Wayland output scale / HiDPI buffer scale
 
 ---
 

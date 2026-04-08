@@ -36,6 +36,13 @@ BarConfig resolvePanelBarConfig(ConfigService* configService, WaylandConnection*
   return barConfig;
 }
 
+float resolvePanelContentScale(ConfigService* configService) {
+  if (configService == nullptr) {
+    return 1.0f;
+  }
+  return std::max(0.1f, configService->config().shell.uiScale);
+}
+
 } // namespace
 
 PanelManager::PanelManager() { s_instance = this; }
@@ -78,6 +85,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
 
   m_activePanel = it->second.get();
   m_activePanelId = panelId;
+  m_activePanel->setContentScale(resolvePanelContentScale(m_config));
   m_activePanel->onOpen(context);
 
   const auto panelWidth = static_cast<std::uint32_t>(m_activePanel->preferredWidth());
@@ -415,7 +423,7 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
   m_bgNode->setSize(w, h);
 
   // Layout panel content with padding
-  constexpr float kPadding = 12.0f;
+  const float kPadding = m_activePanel != nullptr ? m_activePanel->contentScale() * 12.0f : 12.0f;
   m_contentWidth = w - kPadding * 2.0f;
   m_contentHeight = h - kPadding * 2.0f;
   m_activePanel->layout(*renderer, m_contentWidth, m_contentHeight);

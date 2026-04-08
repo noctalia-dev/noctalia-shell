@@ -15,6 +15,7 @@ public:
   void setChecked(bool checked);
   void setEnabled(bool enabled);
   void setToggleSize(ToggleSize size);
+  void setScale(float scale);
   [[nodiscard]] bool checked() const noexcept { return m_checked; }
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
   [[nodiscard]] ToggleSize toggleSize() const noexcept { return m_size; }
@@ -32,4 +33,5 @@ private:
   float m_inset = 0.0f;
   float m_travel = 0.0f;
   float m_thumbSize = 0.0f;
+  float m_scale = 1.0f;
 };

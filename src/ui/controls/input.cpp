@@ -45,7 +45,7 @@ Input::Input() {
 
   // 2: text
   auto text = std::make_unique<TextNode>();
-  text->setFontSize(Style::fontSizeBody);
+  text->setFontSize(m_fontSize);
   text->setColor(palette.onSurface);
   m_textNode = static_cast<TextNode*>(addChild(std::move(text)));
 
@@ -75,7 +75,7 @@ Input::Input() {
   });
   area->setOnPress([this](const InputArea::PointerData& data) {
     if (data.pressed) {
-      const std::size_t offset = xToByteOffset(data.localX - Style::spaceMd);
+      const std::size_t offset = xToByteOffset(data.localX - m_horizontalPadding);
       m_cursorPos = offset;
       m_selectionAnchor = offset;
       markDirty();
@@ -83,7 +83,7 @@ Input::Input() {
   });
   area->setOnMotion([this](const InputArea::PointerData& data) {
     if (m_inputArea != nullptr && m_inputArea->pressed()) {
-      m_cursorPos = xToByteOffset(data.localX - Style::spaceMd);
+      m_cursorPos = xToByteOffset(data.localX - m_horizontalPadding);
       markDirty();
     }
   });
@@ -109,6 +109,24 @@ void Input::setPlaceholder(std::string_view placeholder) {
   }
 }
 
+void Input::setFontSize(float size) {
+  m_fontSize = std::max(1.0f, size);
+  if (m_textNode != nullptr) {
+    m_textNode->setFontSize(m_fontSize);
+  }
+  markDirty();
+}
+
+void Input::setControlHeight(float height) {
+  m_controlHeight = std::max(1.0f, height);
+  markDirty();
+}
+
+void Input::setHorizontalPadding(float padding) {
+  m_horizontalPadding = std::max(0.0f, padding);
+  markDirty();
+}
+
 void Input::setOnChange(std::function<void(const std::string&)> callback) {
   m_onChange = std::move(callback);
 }
@@ -123,20 +141,20 @@ void Input::setOnKeyEvent(std::function<bool(std::uint32_t, std::uint32_t)> call
 
 void Input::layout(Renderer& renderer) {
   const float w = width() > 0.0f ? width() : kDefaultWidth;
-  const float h = Style::controlHeight;
+  const float h = m_controlHeight;
   setSize(w, h);
 
   // Measure display text for width; use a stable reference for vertical centering
   // so the baseline doesn't jump when characters with descenders are typed.
   const std::string& display = m_value.empty() ? m_placeholder : m_value;
-  const auto metrics     = renderer.measureText(display, Style::fontSizeBody);
-  const auto fontMetrics = renderer.measureText("Ay", Style::fontSizeBody);
+  const auto metrics     = renderer.measureText(display, m_fontSize);
+  const auto fontMetrics = renderer.measureText("Ay", m_fontSize);
   const float fontH      = fontMetrics.bottom - fontMetrics.top;
   // TextNode y is interpreted as baseline by the renderer. Place it so the
   // reference line box is geometrically centered: top = (h - fontH) / 2,
   // then add baselineOffset (= -top) to get baseline position.
   const float textNodeY  = std::round((h - fontH) * 0.5f) - fontMetrics.top;
-  m_textNode->setPosition(Style::spaceMd, textNodeY);
+  m_textNode->setPosition(m_horizontalPadding, textNodeY);
   m_textNode->setSize(metrics.width, fontH);
 
   // Build stop arrays for click-to-position and selection rect
@@ -149,19 +167,19 @@ void Input::layout(Renderer& renderer) {
     while (pos < m_value.size()) {
       pos = nextCharPos(m_value, pos);
       m_stopByte.push_back(pos);
-      m_stopX.push_back(renderer.measureText(m_value.substr(0, pos), Style::fontSizeBody).width);
+      m_stopX.push_back(renderer.measureText(m_value.substr(0, pos), m_fontSize).width);
     }
   }
 
   // Cursor
-  const float cursorX = Style::spaceMd + stopXForByte(m_cursorPos);
+  const float cursorX = m_horizontalPadding + stopXForByte(m_cursorPos);
   m_cursor->setPosition(cursorX, kCursorPadV);
   m_cursor->setSize(kCursorWidth, h - kCursorPadV * 2.0f);
 
   // Selection highlight
   if (hasSelection()) {
-    const float selX0 = Style::spaceMd + stopXForByte(selectionStart());
-    const float selX1 = Style::spaceMd + stopXForByte(selectionEnd());
+    const float selX0 = m_horizontalPadding + stopXForByte(selectionStart());
+    const float selX1 = m_horizontalPadding + stopXForByte(selectionEnd());
     m_selectionRect->setPosition(selX0, kCursorPadV);
     m_selectionRect->setSize(selX1 - selX0, h - kCursorPadV * 2.0f);
     m_selectionRect->setVisible(true);
@@ -319,7 +337,7 @@ float Input::measureCursorX(Renderer& renderer) const {
   if (m_cursorPos == 0 || m_value.empty()) {
     return 0.0f;
   }
-  return renderer.measureText(m_value.substr(0, m_cursorPos), Style::fontSizeBody).width;
+  return renderer.measureText(m_value.substr(0, m_cursorPos), m_fontSize).width;
 }
 
 bool Input::hasSelection() const noexcept { return m_selectionAnchor != m_cursorPos; }

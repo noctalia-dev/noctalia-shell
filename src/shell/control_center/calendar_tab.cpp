@@ -41,35 +41,36 @@ std::string monthName(int month) {
 } // namespace
 
 std::unique_ptr<Flex> CalendarTab::build(Renderer& renderer) {
+  const float scale = contentScale();
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);
   tab->setAlign(FlexAlign::Center);
-  tab->setGap(Style::spaceLg);
-  tab->setPadding(Style::spaceSm);
+  tab->setGap(Style::spaceLg * scale);
+  tab->setPadding(Style::spaceSm * scale);
   m_container = tab.get();
 
   auto card = std::make_unique<Flex>();
   card->setDirection(FlexDirection::Vertical);
   card->setAlign(FlexAlign::Start);
-  card->setGap(kCalendarGridGap);
-  card->setPadding(kCalendarCardPadding);
-  card->setMinWidth(kCalendarCardMinWidth);
-  card->setMinHeight(kCalendarCardMinHeight);
+  card->setGap(kCalendarGridGap * scale);
+  card->setPadding(kCalendarCardPadding * scale);
+  card->setMinWidth(kCalendarCardMinWidth * scale);
+  card->setMinHeight(kCalendarCardMinHeight * scale);
   m_card = card.get();
 
   auto header = std::make_unique<Flex>();
   header->setDirection(FlexDirection::Horizontal);
   header->setAlign(FlexAlign::Center);
-  header->setGap(Style::spaceSm);
-  header->setMinWidth(kCalendarCardMinWidth - kCalendarCardPadding * 2.0f);
-  header->setMinHeight(kCalendarHeaderHeight);
+  header->setGap(Style::spaceSm * scale);
+  header->setMinWidth((kCalendarCardMinWidth - kCalendarCardPadding * 2.0f) * scale);
+  header->setMinHeight(kCalendarHeaderHeight * scale);
 
   auto previous = std::make_unique<Button>();
   previous->setGlyph("chevron-left");
   previous->setVariant(ButtonVariant::Ghost);
   previous->setMinimalChrome(true);
-  previous->setMinWidth(kCalendarNavButtonSize);
-  previous->setMinHeight(kCalendarNavButtonSize);
+  previous->setMinWidth(kCalendarNavButtonSize * scale);
+  previous->setMinHeight(kCalendarNavButtonSize * scale);
   previous->setOnClick([this]() {
     --m_monthOffset;
     PanelManager::instance().refresh();
@@ -79,12 +80,13 @@ std::unique_ptr<Flex> CalendarTab::build(Renderer& renderer) {
   auto monthWrap = std::make_unique<Flex>();
   monthWrap->setDirection(FlexDirection::Vertical);
   monthWrap->setAlign(FlexAlign::Center);
-  monthWrap->setMinWidth(kCalendarCardMinWidth - kCalendarCardPadding * 2.0f -
-                         kCalendarNavButtonSize * 2.0f - Style::spaceSm * 2);
+  monthWrap->setMinWidth((kCalendarCardMinWidth - kCalendarCardPadding * 2.0f -
+                          kCalendarNavButtonSize * 2.0f - Style::spaceSm * 2) *
+                         scale);
 
   auto month = std::make_unique<Label>();
   month->setBold(true);
-  month->setFontSize(Style::fontSizeTitle + Style::spaceXs);
+  month->setFontSize((Style::fontSizeTitle + Style::spaceXs) * scale);
   month->setColor(palette.primary);
   m_monthLabel = month.get();
   monthWrap->addChild(std::move(month));
@@ -94,8 +96,8 @@ std::unique_ptr<Flex> CalendarTab::build(Renderer& renderer) {
   next->setGlyph("chevron-right");
   next->setVariant(ButtonVariant::Ghost);
   next->setMinimalChrome(true);
-  next->setMinWidth(kCalendarNavButtonSize);
-  next->setMinHeight(kCalendarNavButtonSize);
+  next->setMinWidth(kCalendarNavButtonSize * scale);
+  next->setMinHeight(kCalendarNavButtonSize * scale);
   next->setOnClick([this]() {
     ++m_monthOffset;
     PanelManager::instance().refresh();
@@ -134,6 +136,8 @@ void CalendarTab::rebuild(Renderer& renderer) {
     return;
   }
 
+  const float scale = contentScale();
+
   auto& cardChildren = m_card->children();
   auto* header = !cardChildren.empty() ? dynamic_cast<Flex*>(cardChildren.front().get()) : nullptr;
   Flex* monthWrap = nullptr;
@@ -145,30 +149,34 @@ void CalendarTab::rebuild(Renderer& renderer) {
   }
 
   const float availableWidth =
-      m_container != nullptr ? std::max(0.0f, m_container->width() - Style::spaceSm * 2) : kCalendarCardMinWidth;
+      m_container != nullptr ? std::max(0.0f, m_container->width() - Style::spaceSm * scale * 2.0f)
+                             : kCalendarCardMinWidth * scale;
   const float availableHeight =
-      m_container != nullptr ? std::max(0.0f, m_container->height() - Style::spaceSm * 2) : kCalendarCardMinHeight;
+      m_container != nullptr ? std::max(0.0f, m_container->height() - Style::spaceSm * scale * 2.0f)
+                             : kCalendarCardMinHeight * scale;
   const float gridWidthAvailable =
-      std::max(0.0f, availableWidth - kCalendarCardPadding * 2.0f - kCalendarGridGap * 6.0f);
+      std::max(0.0f, availableWidth - (kCalendarCardPadding * 2.0f + kCalendarGridGap * 6.0f) * scale);
   const float gridHeightAvailable = std::max(
-      0.0f, availableHeight - kCalendarCardPadding * 2.0f - kCalendarHeaderHeight -
-                kCalendarWeekdayRowHeight - kCalendarGridGap * 7.0f);
+      0.0f, availableHeight - (kCalendarCardPadding * 2.0f + kCalendarHeaderHeight +
+                               kCalendarWeekdayRowHeight + kCalendarGridGap * 7.0f) *
+                                  scale);
   const float widthDrivenCellSize = gridWidthAvailable / 7.0f;
   const float heightDrivenCellSize = gridHeightAvailable / 6.0f;
   const float cellSize =
-      std::clamp(std::min(widthDrivenCellSize, heightDrivenCellSize), kCalendarCellSizeMin, kCalendarCellSizeMax);
-  const float cardWidth = cellSize * 7.0f + kCalendarGridGap * 6.0f + kCalendarCardPadding * 2.0f;
-  const float cardHeight = kCalendarHeaderHeight + kCalendarWeekdayRowHeight + cellSize * 6.0f +
-                           kCalendarGridGap * 7.0f + kCalendarCardPadding * 2.0f;
-  const float headerWidth = std::max(0.0f, cardWidth - kCalendarCardPadding * 2.0f);
+      std::clamp(std::min(widthDrivenCellSize, heightDrivenCellSize), kCalendarCellSizeMin * scale,
+                 kCalendarCellSizeMax * scale);
+  const float cardWidth = cellSize * 7.0f + kCalendarGridGap * scale * 6.0f + kCalendarCardPadding * scale * 2.0f;
+  const float cardHeight = kCalendarHeaderHeight * scale + kCalendarWeekdayRowHeight * scale + cellSize * 6.0f +
+                           kCalendarGridGap * scale * 7.0f + kCalendarCardPadding * scale * 2.0f;
+  const float headerWidth = std::max(0.0f, cardWidth - kCalendarCardPadding * scale * 2.0f);
   const float monthWrapWidth =
-      std::max(0.0f, headerWidth - kCalendarNavButtonSize * 2.0f - Style::spaceSm * 2);
+      std::max(0.0f, headerWidth - kCalendarNavButtonSize * scale * 2.0f - Style::spaceSm * scale * 2.0f);
 
   m_card->setMinWidth(cardWidth);
   m_card->setMinHeight(cardHeight);
   if (header != nullptr) {
     header->setMinWidth(headerWidth);
-    header->setMinHeight(kCalendarHeaderHeight);
+    header->setMinHeight(kCalendarHeaderHeight * scale);
   }
   if (monthWrap != nullptr) {
     monthWrap->setMinWidth(monthWrapWidth);
@@ -199,15 +207,15 @@ void CalendarTab::rebuild(Renderer& renderer) {
   auto weekdayRow = std::make_unique<Flex>();
   weekdayRow->setDirection(FlexDirection::Horizontal);
   weekdayRow->setAlign(FlexAlign::Center);
-  weekdayRow->setGap(kCalendarGridGap);
+  weekdayRow->setGap(kCalendarGridGap * scale);
   for (std::size_t i = 0; i < kWeekdays.size(); ++i) {
     auto dayLabel = std::make_unique<Button>();
     dayLabel->setText(kWeekdays[i]);
     dayLabel->setVariant(ButtonVariant::Tab);
     dayLabel->setMinimalChrome(true);
-    dayLabel->setFontSize(Style::fontSizeCaption + 1.0f);
+    dayLabel->setFontSize((Style::fontSizeCaption + 1.0f) * scale);
     dayLabel->setMinWidth(cellSize);
-    dayLabel->setMinHeight(kCalendarWeekdayRowHeight);
+    dayLabel->setMinHeight(kCalendarWeekdayRowHeight * scale);
     dayLabel->label()->setColor(i >= 5 ? palette.primary : palette.onSurfaceVariant);
     weekdayRow->addChild(std::move(dayLabel));
   }
@@ -242,7 +250,7 @@ void CalendarTab::rebuild(Renderer& renderer) {
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
-    row->setGap(kCalendarGridGap);
+    row->setGap(kCalendarGridGap * scale);
 
     for (int wd = 0; wd < 7; ++wd) {
       auto cell = std::make_unique<Button>();
@@ -250,9 +258,9 @@ void CalendarTab::rebuild(Renderer& renderer) {
       cell->setMinimalChrome(false);
       cell->setMinWidth(cellSize);
       cell->setMinHeight(cellSize);
-      cell->setRadius(Style::radiusLg);
-      cell->setFontSize(cellSize > Style::controlHeightLg + Style::spaceXs ? Style::fontSizeTitle
-                                                                              : Style::fontSizeBody);
+      cell->setRadius(Style::radiusLg * scale);
+      cell->setFontSize(cellSize > (Style::controlHeightLg + Style::spaceXs) * scale ? Style::fontSizeTitle * scale
+                                                                                       : Style::fontSizeBody * scale);
       cell->setText("");
 
       const int index = week * 7 + wd;
