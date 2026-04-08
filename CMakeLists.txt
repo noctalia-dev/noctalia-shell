@@ -29,7 +29,6 @@ pkg_check_modules(HARFBUZZ REQUIRED harfbuzz)
 pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
 pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
 pkg_check_modules(LIBPIPEWIRE REQUIRED libpipewire-0.3)
-pkg_check_modules(LIBWEBP REQUIRED libwebp)
 find_package(CURL REQUIRED)
 find_library(PAM_LIBRARY NAMES pam REQUIRED)
 
@@ -329,6 +328,7 @@ add_executable(noctalia
     src/render/animation/animation_manager.cpp
     src/render/core/shader_program.cpp
     src/render/core/texture_manager.cpp
+    src/render/core/wuffs_image_decoder.cpp
     src/render/image_loaders.cpp
     src/render/programs/image_program.cpp
     src/render/programs/linear_gradient_program.cpp
@@ -431,9 +431,9 @@ add_dependencies(noctalia noctalia_wayland_protocols)
 
 target_include_directories(noctalia PRIVATE
     src
-    third_party/stb
     third_party/nanosvg
     third_party/tomlplusplus
+    third_party/wuffs
     "${GENERATED_PROTOCOL_DIR}"
     ${WAYLAND_CLIENT_INCLUDE_DIRS}
     ${EGL_INCLUDE_DIRS}
@@ -443,7 +443,6 @@ target_include_directories(noctalia PRIVATE
     ${HARFBUZZ_INCLUDE_DIRS}
     ${FONTCONFIG_INCLUDE_DIRS}
     ${XKBCOMMON_INCLUDE_DIRS}
-    ${LIBWEBP_INCLUDE_DIRS}
 )
 # PipeWire/SPA headers use GCC extensions (compound-literals, statement-
 # expressions) that trigger -Wpedantic/-Wconversion. Mark them as system
@@ -469,7 +468,6 @@ target_link_libraries(noctalia PRIVATE
     ${FONTCONFIG_LIBRARIES}
     ${XKBCOMMON_LIBRARIES}
     ${LIBPIPEWIRE_LIBRARIES}
-    ${LIBWEBP_LIBRARIES}
     CURL::libcurl
     ${PAM_LIBRARY}
 )
@@ -482,7 +480,6 @@ target_compile_options(noctalia PRIVATE
     ${HARFBUZZ_CFLAGS_OTHER}
     ${FONTCONFIG_CFLAGS_OTHER}
     ${LIBPIPEWIRE_CFLAGS_OTHER}
-    ${LIBWEBP_CFLAGS_OTHER}
 )
 
 target_compile_options(noctalia PRIVATE

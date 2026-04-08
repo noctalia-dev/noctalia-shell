@@ -21,7 +21,7 @@ A lightweight Wayland shell and bar with no Qt or GTK dependency.
 | Cursor | `wp-cursor-shape-v1` |
 | Rendering | `EGL`, `OpenGL ES 3`, `wayland-egl` |
 | Text | `freetype`, `harfbuzz`, `msdfgen` (vendored), `fontconfig` |
-| Images | `stb_image` (vendored), `nanosvg` (vendored) |
+| Images | `Wuffs` (vendored), `nanosvg` (vendored) |
 | IPC | `sdbus-c++` |
 | Audio | `libpipewire` |
 | Config | `tomlplusplus` (vendored) |
@@ -57,7 +57,7 @@ sudo apt install cmake g++ just \
   libsdbus-c++-dev libasan8 libubsan1 libcurl4-openssl-dev
 ```
 
-Vendored (no system package needed): `msdfgen`, `stb`, `nanosvg`, `tomlplusplus`.
+Vendored (no system package needed): `msdfgen`, `Wuffs`, `nanosvg`, `tomlplusplus`.
 
 ## Build
 
@@ -140,7 +140,7 @@ src/
 third_party/
   msdfgen/       MSDF glyph generation (git submodule)
   tomlplusplus/  TOML parser (vendored)
-  stb/           Image loading (vendored)
+  wuffs/         Raster image decoding (vendored)
   nanosvg/       SVG rasterization (vendored)
 ```
 

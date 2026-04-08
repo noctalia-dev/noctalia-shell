@@ -10,12 +10,11 @@
 #pragma GCC diagnostic ignored "-Wshadow"
 #include <nanosvg.h>
 #include <nanosvgrast.h>
-#include <stb_image.h>
-#include <webp/decode.h>
 #pragma GCC diagnostic pop
 
+#include "render/core/wuffs_image_decoder.h"
+
 #include <algorithm>
-#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <stdexcept>
@@ -53,35 +52,15 @@ TextureHandle TextureManager::decodeEncodedRaster(const std::uint8_t* data, std:
     return {};
   }
 
-  int w = 0;
-  int h = 0;
-  int channels = 0;
-  if (auto* pixels = stbi_load_from_memory(data, static_cast<int>(size), &w, &h, &channels, 4)) {
-    auto handle = uploadRgba(pixels, w, h);
-    stbi_image_free(pixels);
-    return handle;
+  std::string errorMessage;
+  if (auto decoded = decodeRasterImage(data, size, &errorMessage)) {
+    return uploadRgba(decoded->pixels.data(), decoded->width, decoded->height);
   }
 
-  int webpWidth = 0;
-  int webpHeight = 0;
-  if (WebPGetInfo(data, size, &webpWidth, &webpHeight) == 0) {
-    if (debugPath != nullptr) {
-      logWarn("failed to decode image: {}", *debugPath);
-    }
-    return {};
+  if (debugPath != nullptr) {
+    logWarn("failed to decode image: {} ({})", *debugPath, errorMessage);
   }
-
-  std::uint8_t* pixels = WebPDecodeRGBA(data, size, &webpWidth, &webpHeight);
-  if (pixels == nullptr) {
-    if (debugPath != nullptr) {
-      logWarn("failed to decode WebP image: {}", *debugPath);
-    }
-    return {};
-  }
-
-  auto handle = uploadRgba(pixels, webpWidth, webpHeight);
-  WebPFree(pixels);
-  return handle;
+  return {};
 }
 
 TextureManager::~TextureManager() { cleanup(); }
@@ -128,7 +107,7 @@ TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSi
     return uploadRgba(pixels.data(), w, h);
   }
 
-  // PNG/JPEG via stb_image
+  // Raster images via Wuffs' stb-compatible decoder.
   auto fileData = readFile(path);
   if (fileData.empty()) {
     logWarn("failed to read image: {}", path);
