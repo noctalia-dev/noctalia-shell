@@ -17,7 +17,7 @@
 namespace {
 
   constexpr Logger kLog("weather");
-  constexpr std::size_t kForecastDays = 6;
+  constexpr std::size_t kForecastDays = 7;
 
   using Clock = std::chrono::system_clock;
 
@@ -120,6 +120,8 @@ namespace {
         {"temperature_max", units.temperatureMax},
         {"temperature_min", units.temperatureMin},
         {"weather_code", units.weatherCode},
+        {"sunrise", units.sunrise},
+        {"sunset", units.sunset},
     };
   }
 
@@ -141,6 +143,8 @@ namespace {
     units.temperatureMax = readString(json, "temperature_max");
     units.temperatureMin = readString(json, "temperature_min");
     units.weatherCode = readString(json, "weather_code");
+    units.sunrise = readString(json, "sunrise");
+    units.sunset = readString(json, "sunset");
     return units;
   }
 
@@ -392,7 +396,9 @@ void WeatherService::startWeatherFetch() {
   const auto path = transportCacheDir() / "forecast.json";
   const std::string url = std::format(
       "https://api.open-meteo.com/v1/forecast?latitude={}&longitude={}"
-      "&current_weather=true&daily=temperature_2m_max,temperature_2m_min,weathercode&forecast_days={}&timezone=auto",
+      "&current_weather=true"
+      "&daily=temperature_2m_max,temperature_2m_min,weathercode,sunrise,sunset"
+      "&forecast_days={}&timezone=auto",
       formatCoordinate(m_resolvedLatitude), formatCoordinate(m_resolvedLongitude), kForecastDays);
   const std::uint64_t serial = ++m_requestSerial;
   m_loading = true;
@@ -464,6 +470,8 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
     const auto& tempsMax = daily.at("temperature_2m_max");
     const auto& tempsMin = daily.at("temperature_2m_min");
     const auto& codes = daily.at("weathercode");
+    const auto& sunrises = daily.at("sunrise");
+    const auto& sunsets = daily.at("sunset");
 
     WeatherSnapshot next;
     next.valid = true;
@@ -490,6 +498,8 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
       next.dailyUnits.temperatureMax = readString(*it, "temperature_2m_max");
       next.dailyUnits.temperatureMin = readString(*it, "temperature_2m_min");
       next.dailyUnits.weatherCode = readString(*it, "weathercode");
+      next.dailyUnits.sunrise = readString(*it, "sunrise");
+      next.dailyUnits.sunset = readString(*it, "sunset");
     }
     next.current.timeIso = readString(current, "time");
     next.current.intervalSeconds = readOptionalInt(current, "interval");
@@ -500,7 +510,9 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
     next.current.weatherCode = readInt(current, "weathercode");
     next.fetchedAt = Clock::now();
 
-    const std::size_t count = std::min({dates.size(), tempsMax.size(), tempsMin.size(), codes.size(), kForecastDays});
+    const std::size_t count =
+        std::min({dates.size(), tempsMax.size(), tempsMin.size(), codes.size(), sunrises.size(), sunsets.size(),
+                  kForecastDays});
     next.forecastDays.reserve(count);
     for (std::size_t i = 0; i < count; ++i) {
       if (!dates[i].is_string() || !tempsMax[i].is_number() || !tempsMin[i].is_number() || !codes[i].is_number()) {
@@ -511,6 +523,8 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
           .weatherCode = codes[i].get<std::int32_t>(),
           .temperatureMaxC = tempsMax[i].get<double>(),
           .temperatureMinC = tempsMin[i].get<double>(),
+          .sunriseIso = sunrises[i].is_string() ? sunrises[i].get<std::string>() : std::string{},
+          .sunsetIso = sunsets[i].is_string() ? sunsets[i].get<std::string>() : std::string{},
       });
     }
 
@@ -611,6 +625,8 @@ void WeatherService::loadCache() {
             .weatherCode = readOptionalInt(item, "weather_code"),
             .temperatureMaxC = readOptionalNumber(item, "temperature_max_c"),
             .temperatureMinC = readOptionalNumber(item, "temperature_min_c"),
+            .sunriseIso = readString(item, "sunrise_iso"),
+            .sunsetIso = readString(item, "sunset_iso"),
         });
       }
     }
@@ -674,6 +690,8 @@ void WeatherService::saveCache() const {
         {"weather_code", day.weatherCode},
         {"temperature_max_c", day.temperatureMaxC},
         {"temperature_min_c", day.temperatureMinC},
+        {"sunrise_iso", day.sunriseIso},
+        {"sunset_iso", day.sunsetIso},
     });
   }
 

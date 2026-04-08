@@ -178,6 +178,15 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"weather-cloud-rain", 0xEA72}, // cloud-rain
     {"weather-cloud-snow", 0xEA73}, // cloud-snow
     {"weather-cloud-sun", 0xEC6D}, // cloud-sun
+    {"weather-sunrise", 0xEF1C},   // sunrise
+    {"weather-sunset", 0xEC31},    // sunset
+    {"wind", 0xEC34},              // wind
+    {"compass", 0xEA79},           // compass
+    {"clock", 0xEA70},             // clock
+    {"world", 0xEB54},             // world
+    {"world-pin", 0xF9E4},         // world-pin
+    {"map-pin", 0xEAE8},           // map-pin
+    {"mountain", 0xEF97},          // mountain
 
     // Settings tabs
     {"settings-general", 0xEC38},  // adjustments-horizontal

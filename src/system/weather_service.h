@@ -26,6 +26,8 @@ struct WeatherDailyUnits {
   std::string temperatureMax;
   std::string temperatureMin;
   std::string weatherCode;
+  std::string sunrise;
+  std::string sunset;
 };
 
 struct WeatherCurrentConditions {
@@ -43,6 +45,8 @@ struct WeatherForecastDay {
   std::int32_t weatherCode = 0;
   double temperatureMaxC = 0.0;
   double temperatureMinC = 0.0;
+  std::string sunriseIso;
+  std::string sunsetIso;
 };
 
 struct WeatherSnapshot {

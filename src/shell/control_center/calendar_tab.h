@@ -13,8 +13,10 @@ public:
 private:
   void rebuild(Renderer& renderer);
 
-  Flex* m_container = nullptr;
+  Flex* m_rootLayout = nullptr;
   Flex* m_card = nullptr;
+  Flex* m_header = nullptr;
+  Flex* m_monthWrap = nullptr;
   Label* m_monthLabel = nullptr;
   Flex* m_grid = nullptr;
   int m_monthOffset = 0;

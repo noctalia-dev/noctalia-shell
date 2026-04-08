@@ -216,7 +216,7 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   mediaColumn->setDirection(FlexDirection::Vertical);
   mediaColumn->setAlign(FlexAlign::Stretch);
   mediaColumn->setGap(Style::spaceSm * scale);
-  mediaColumn->setFlexGrow(1.0f);
+  mediaColumn->setFlexGrow(3.0f);
   mediaColumn->setMinWidth(kMediaColumnMinWidth * scale);
   m_column = mediaColumn.get();
 
@@ -424,7 +424,7 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   audioColumn->setDirection(FlexDirection::Vertical);
   audioColumn->setAlign(FlexAlign::Stretch);
   audioColumn->setGap(Style::spaceSm * scale);
-  audioColumn->setFlexGrow(1.0f);
+  audioColumn->setFlexGrow(2.0f);
   audioColumn->setMinWidth(kAudioColumnMinWidth * scale);
   m_audioColumn = audioColumn.get();
 
