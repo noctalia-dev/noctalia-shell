@@ -478,7 +478,7 @@ Singleton {
     }
 
     function setBrightness(value: real): void {
-      value = Math.min(1, value);
+      value = Math.max(0, Math.min(1, value));
       var rounded = Math.round(value * 100);
 
       // Always update internal value and trigger UI feedback immediately
