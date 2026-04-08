@@ -11,9 +11,9 @@
 using namespace control_center;
 
 ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris,
-                                       HttpClient* httpClient, WeatherService* weather) {
+                                       HttpClient* httpClient, WeatherService* weather, PipeWireSpectrum* spectrum) {
   m_tabs[tabIndex(TabId::Overview)] = std::make_unique<OverviewTab>();
-  m_tabs[tabIndex(TabId::Media)] = std::make_unique<MediaTab>(mpris, httpClient);
+  m_tabs[tabIndex(TabId::Media)] = std::make_unique<MediaTab>(mpris, httpClient, spectrum);
   m_tabs[tabIndex(TabId::Audio)] = std::make_unique<AudioTab>(audio);
   m_tabs[tabIndex(TabId::Weather)] = std::make_unique<WeatherTab>(weather);
   m_tabs[tabIndex(TabId::Calendar)] = std::make_unique<CalendarTab>();
@@ -152,6 +152,7 @@ void ControlCenterPanel::onOpen(std::string_view context) { selectTab(tabFromCon
 
 void ControlCenterPanel::onClose() {
   for (auto& tab : m_tabs) {
+    tab->setActive(false);
     tab->onClose();
   }
   m_rootLayout = nullptr;
@@ -170,6 +171,9 @@ void ControlCenterPanel::selectTab(TabId tab) {
     const std::size_t idx = tabIndex(meta.id);
     if (m_tabContainers[idx] != nullptr) {
       m_tabContainers[idx]->setVisible(meta.id == tab);
+    }
+    if (m_tabs[idx] != nullptr) {
+      m_tabs[idx]->setActive(meta.id == tab);
     }
     if (m_tabButtons[idx] != nullptr) {
       m_tabButtons[idx]->setVariant(meta.id == tab ? ButtonVariant::TabActive : ButtonVariant::Tab);

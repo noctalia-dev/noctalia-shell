@@ -46,6 +46,7 @@ public:
   // Poll integration
   [[nodiscard]] int fd() const noexcept;
   void dispatch();
+  [[nodiscard]] pw_core* coreHandle() const noexcept { return m_core; }
 
   // State
   [[nodiscard]] const AudioState& state() const noexcept { return m_state; }

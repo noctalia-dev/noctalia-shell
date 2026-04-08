@@ -324,6 +324,7 @@ add_executable(noctalia
     src/notification/notification_manager.cpp
     $<$<BOOL:${SANITIZE_ACTIVE}>:src/pipewire/pipewire_lsan.cpp>
     src/pipewire/pipewire_service.cpp
+    src/pipewire/pipewire_spectrum.cpp
     src/render/animation/animation.cpp
     src/render/animation/animation_manager.cpp
     src/render/core/shader_program.cpp

@@ -38,6 +38,9 @@ public:
   // Called by ControlCenterPanel::update() every frame.
   virtual void update(Renderer& renderer) { (void)renderer; }
 
+  // Called when the tab becomes visible or hidden.
+  virtual void setActive(bool active) { (void)active; }
+
   // Called when the panel closes. Null out all raw pointers to freed nodes.
   virtual void onClose() {}
 

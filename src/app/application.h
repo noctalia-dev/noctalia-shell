@@ -23,6 +23,8 @@
 #include "notification/notification_manager.h"
 #include "pipewire/pipewire_poll_source.h"
 #include "pipewire/pipewire_service.h"
+#include "pipewire/pipewire_spectrum.h"
+#include "pipewire/pipewire_spectrum_poll_source.h"
 #include "render/render_context.h"
 #include "shell/bar/bar.h"
 #include "shell/lockscreen/lock_screen.h"
@@ -79,6 +81,7 @@ private:
   std::unique_ptr<TrayService> m_trayService;
   std::unique_ptr<NotificationService> m_notificationDbus;
   std::unique_ptr<PipeWireService> m_pipewireService;
+  std::unique_ptr<PipeWireSpectrum> m_pipewireSpectrum;
 
   RenderContext m_renderContext;
   Bar m_bar;
@@ -101,6 +104,7 @@ private:
   ClipboardPollSource m_clipboardPollSource{m_clipboardService};
   KeyRepeatPollSource m_keyRepeatPollSource{m_wayland};
   std::unique_ptr<PipeWirePollSource> m_pipewirePollSource;
+  std::unique_ptr<PipeWireSpectrumPollSource> m_pipewireSpectrumPollSource;
   IpcService m_ipcService;
   IpcPollSource m_ipcPollSource{m_ipcService};
   HttpClient m_httpClient;

@@ -13,16 +13,18 @@ class HttpClient;
 class Image;
 class Label;
 class MprisService;
+class PipeWireSpectrum;
 class Select;
 class Slider;
 
 class MediaTab : public Tab {
 public:
-  MediaTab(MprisService* mpris, HttpClient* httpClient);
+  MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum);
 
   std::unique_ptr<Flex> build(Renderer& renderer) override;
   void layout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void update(Renderer& renderer) override;
+  void setActive(bool active) override;
   void onClose() override;
 
 private:
@@ -31,6 +33,8 @@ private:
 
   MprisService* m_mpris = nullptr;
   HttpClient* m_httpClient = nullptr;
+  PipeWireSpectrum* m_spectrum = nullptr;
+  bool m_active = false;
 
   Flex* m_rootLayout = nullptr;
   Flex* m_mediaColumn = nullptr;

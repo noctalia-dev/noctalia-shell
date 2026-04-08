@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "dbus/mpris/mpris_service.h"
 #include "net/http_client.h"
+#include "pipewire/pipewire_spectrum.h"
 #include "render/core/renderer.h"
 #include "shell/control_center/tab.h"
 #include "shell/panel/panel_manager.h"
@@ -182,7 +183,8 @@ ButtonVariant toggleVariant(bool active) { return active ? ButtonVariant::Accent
 
 } // namespace
 
-MediaTab::MediaTab(MprisService* mpris, HttpClient* httpClient) : m_mpris(mpris), m_httpClient(httpClient) {}
+MediaTab::MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum)
+    : m_mpris(mpris), m_httpClient(httpClient), m_spectrum(spectrum) {}
 
 std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   const float scale = contentScale();
@@ -514,9 +516,25 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
   m_rootLayout->layout(renderer);
 }
 
-void MediaTab::update(Renderer& renderer) { refresh(renderer); }
+void MediaTab::update(Renderer& renderer) {
+  if (!m_active) {
+    return;
+  }
+  refresh(renderer);
+}
+
+void MediaTab::setActive(bool active) {
+  m_active = active;
+  if (m_spectrum != nullptr) {
+    m_spectrum->setEnabled(active);
+  }
+}
 
 void MediaTab::onClose() {
+  if (m_spectrum != nullptr) {
+    m_spectrum->setEnabled(false);
+  }
+  m_active = false;
   m_rootLayout = nullptr;
   m_mediaColumn = nullptr;
   m_visualizerColumn = nullptr;

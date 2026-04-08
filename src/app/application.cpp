@@ -72,6 +72,8 @@ Application::~Application() {
   }
 
   // PipeWire cleanup
+  m_pipewireSpectrumPollSource.reset();
+  m_pipewireSpectrum.reset();
   m_pipewirePollSource.reset();
   m_pipewireService.reset();
 
@@ -165,8 +167,10 @@ void Application::initServices() {
 
   try {
     m_pipewireService = std::make_unique<PipeWireService>();
+    m_pipewireSpectrum = std::make_unique<PipeWireSpectrum>(*m_pipewireService);
   } catch (const std::exception& e) {
     kLog.warn("pipewire disabled: {}", e.what());
+    m_pipewireSpectrum.reset();
     m_pipewireService.reset();
   }
 
@@ -238,9 +242,10 @@ void Application::initUi() {
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
   m_panelManager.registerPanel("clipboard", std::make_unique<ClipboardPanel>(&m_clipboardService));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
-  m_panelManager.registerPanel(
-      "control-center", std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(),
-                                                             m_mprisService.get(), &m_httpClient, &m_weatherService));
+  m_panelManager.registerPanel("control-center",
+                               std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(),
+                                                                    m_mprisService.get(), &m_httpClient,
+                                                                    &m_weatherService, m_pipewireSpectrum.get()));
   {
     auto launcherPanel = std::make_unique<LauncherPanel>();
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
@@ -266,10 +271,21 @@ void Application::initUi() {
   if (m_pipewireService != nullptr) {
     m_audioOsd.suppressFor(std::chrono::milliseconds(2000));
     m_pipewireService->setChangeCallback([this]() {
+      if (m_pipewireSpectrum != nullptr) {
+        m_pipewireSpectrum->handleAudioStateChanged();
+      }
       m_bar.refresh();
       m_panelManager.refresh();
       if (m_pipewireService != nullptr) {
         m_audioOsd.onAudioStateChanged(*m_pipewireService);
+      }
+    });
+  }
+
+  if (m_pipewireSpectrum != nullptr) {
+    m_pipewireSpectrum->setChangeCallback([this]() {
+      if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
+        m_panelManager.refresh();
       }
     });
   }
@@ -410,6 +426,10 @@ std::vector<PollSource*> Application::buildPollSources() {
   if (m_pipewireService != nullptr) {
     m_pipewirePollSource = std::make_unique<PipeWirePollSource>(*m_pipewireService);
     sources.push_back(m_pipewirePollSource.get());
+  }
+  if (m_pipewireSpectrum != nullptr) {
+    m_pipewireSpectrumPollSource = std::make_unique<PipeWireSpectrumPollSource>(*m_pipewireSpectrum);
+    sources.push_back(m_pipewireSpectrumPollSource.get());
   }
   sources.push_back(&m_ipcPollSource);
   sources.push_back(&m_httpClientPollSource);

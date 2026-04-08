@@ -22,12 +22,14 @@ class Label;
 class MprisService;
 class NotificationManager;
 class PipeWireService;
+class PipeWireSpectrum;
 class WeatherService;
 
 class ControlCenterPanel : public Panel {
 public:
   ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris,
-                     HttpClient* httpClient = nullptr, WeatherService* weather = nullptr);
+                     HttpClient* httpClient = nullptr, WeatherService* weather = nullptr,
+                     PipeWireSpectrum* spectrum = nullptr);
 
   void create(Renderer& renderer) override;
   void layout(Renderer& renderer, float width, float height) override;
