@@ -216,7 +216,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] Network
 - [ ] Bluetooth
 - [ ] Brightness
-- [ ] Power profile
+- [x] Power profile
 - [~] System monitor <- need graph fix
 - [ ] Dock
 - [ ] Keyboard layout
