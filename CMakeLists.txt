@@ -410,6 +410,7 @@ add_executable(noctalia
     src/system/weather_service.cpp
     src/time/time_service.cpp
     src/ui/controls/box.cpp
+    src/ui/controls/audio_spectrum.cpp
     src/ui/controls/button.cpp
     src/ui/controls/chip.cpp
     src/ui/controls/flex.cpp
