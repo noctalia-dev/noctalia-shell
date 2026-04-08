@@ -57,7 +57,7 @@ void TestPanel::create(Renderer& renderer) {
   button->setFontSize(Style::fontSizeBody * scale);
   button->setVariant(ButtonVariant::Default);
   button->setMinHeight(Style::controlHeight * scale);
-  button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale, Style::spaceMd * scale);
+  button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
   button->setRadius(Style::radiusMd * scale);
   button->setOnClick([]() {});
   m_button = button.get();
@@ -76,7 +76,7 @@ void TestPanel::create(Renderer& renderer) {
   glyphTextButton->setGlyphSize(Style::fontSizeBody * scale);
   glyphTextButton->setVariant(ButtonVariant::Default);
   glyphTextButton->setMinHeight(Style::controlHeight * scale);
-  glyphTextButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale, Style::spaceMd * scale);
+  glyphTextButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
   glyphTextButton->setRadius(Style::radiusMd * scale);
   glyphTextButton->setOnClick([]() {});
   m_glyphTextButton = glyphTextButton.get();

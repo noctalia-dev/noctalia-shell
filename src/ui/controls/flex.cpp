@@ -63,6 +63,8 @@ void Flex::setPadding(float top, float right, float bottom, float left) {
 
 void Flex::setPadding(float all) { setPadding(all, all, all, all); }
 
+void Flex::setPadding(float vertical, float horizontal) { setPadding(vertical, horizontal, vertical, horizontal); }
+
 void Flex::setBackground(const Color& color) {
   ensureBackground();
   auto style = m_background->style();

@@ -311,7 +311,7 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   repeat->setMinimalChrome(true);
   repeat->setMinWidth(kMediaControlsHeight * scale);
   repeat->setMinHeight(kMediaControlsHeight * scale);
-  repeat->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale);
+  repeat->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
   repeat->setRadius(Style::radiusLg * scale);
   repeat->setOnClick([this]() {
     if (m_mpris == nullptr) {
@@ -331,7 +331,7 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   previous->setMinimalChrome(true);
   previous->setMinWidth(kMediaControlsHeight * scale);
   previous->setMinHeight(kMediaControlsHeight * scale);
-  previous->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale);
+  previous->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
   previous->setRadius(Style::radiusLg * scale);
   previous->setOnClick([this]() {
     if (m_mpris != nullptr) {
@@ -348,7 +348,7 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   playPause->setMinimalChrome(true);
   playPause->setMinWidth(kMediaPlayPauseHeight * scale);
   playPause->setMinHeight(kMediaPlayPauseHeight * scale);
-  playPause->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale);
+  playPause->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
   playPause->setRadius(Style::radiusLg * scale);
   playPause->setOnClick([this]() {
     if (m_mpris != nullptr) {
@@ -365,7 +365,7 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   next->setMinimalChrome(true);
   next->setMinWidth(kMediaControlsHeight * scale);
   next->setMinHeight(kMediaControlsHeight * scale);
-  next->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale);
+  next->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
   next->setRadius(Style::radiusLg * scale);
   next->setOnClick([this]() {
     if (m_mpris != nullptr) {
@@ -382,7 +382,7 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   shuffle->setMinimalChrome(true);
   shuffle->setMinWidth(kMediaControlsHeight * scale);
   shuffle->setMinHeight(kMediaControlsHeight * scale);
-  shuffle->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale);
+  shuffle->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
   shuffle->setRadius(Style::radiusLg * scale);
   shuffle->setOnClick([this]() {
     if (m_mpris != nullptr) {

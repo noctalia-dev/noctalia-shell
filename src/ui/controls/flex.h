@@ -35,6 +35,7 @@ public:
   void setJustify(FlexJustify justify);
   void setPadding(float top, float right, float bottom, float left);
   void setPadding(float all);
+  void setPadding(float vertical, float horizontal);
 
   void setBackground(const Color& color);
   void setRadius(float radius);

@@ -227,7 +227,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
     row->setGap(Style::spaceMd * scale);
-    row->setPadding(Style::spaceXs * scale, Style::spaceSm * scale, Style::spaceXs * scale, Style::spaceSm * scale);
+    row->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
     row->setMinWidth(width);
     row->setRadius(Style::radiusMd * scale);
     if (i == m_selectedIndex) {

@@ -11,7 +11,7 @@ void applyCard(Flex& card, float scale) {
   card.setDirection(FlexDirection::Vertical);
   card.setAlign(FlexAlign::Start);
   card.setGap(Style::spaceXs * scale);
-  card.setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale, Style::spaceMd * scale);
+  card.setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
   card.setRadius(Style::radiusLg * scale);
   card.setBackground(palette.surfaceVariant);
   card.setBorderWidth(0.0f);

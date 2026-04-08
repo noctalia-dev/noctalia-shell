@@ -52,7 +52,7 @@ void ControlCenterPanel::create(Renderer& renderer) {
     button->setContentAlign(ButtonContentAlign::Start);
     button->setMinimalChrome(true);
     button->setMinHeight(Style::controlHeightLg * scale);
-    button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale, Style::spaceMd * scale);
+    button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
     button->setRadius(Style::radiusLg * scale);
     button->setOnClick([this, id = tab.id]() {
       selectTab(id);
