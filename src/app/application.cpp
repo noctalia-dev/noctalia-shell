@@ -17,12 +17,46 @@
 #include <csignal>
 #include <cstdlib>
 #include <fcntl.h>
+#include <filesystem>
 #include <stdexcept>
 #include <unistd.h>
 
 std::atomic<bool> Application::s_shutdownRequested{false};
 
 namespace {
+
+  bool commandExists(const char* name) {
+    if (name == nullptr || name[0] == '\0') {
+      return false;
+    }
+
+    if (std::strchr(name, '/') != nullptr) {
+      return ::access(name, X_OK) == 0;
+    }
+
+    const char* pathEnv = std::getenv("PATH");
+    if (pathEnv == nullptr || pathEnv[0] == '\0') {
+      pathEnv = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
+    }
+
+    std::string_view path(pathEnv);
+    std::size_t start = 0;
+    while (start <= path.size()) {
+      const std::size_t end = path.find(':', start);
+      const std::string_view dir = end == std::string_view::npos ? path.substr(start) : path.substr(start, end - start);
+      const std::filesystem::path candidate =
+          dir.empty() ? std::filesystem::path(name) : (std::filesystem::path(dir) / name);
+      if (::access(candidate.c_str(), X_OK) == 0) {
+        return true;
+      }
+      if (end == std::string_view::npos) {
+        break;
+      }
+      start = end + 1;
+    }
+
+    return false;
+  }
 
   bool launchDetachedCommand(std::initializer_list<const char*> args) {
     if (args.size() == 0 || *args.begin() == nullptr) {
@@ -59,6 +93,22 @@ namespace {
     }
 
     return true;
+  }
+
+  bool launchFirstAvailableCommand(std::initializer_list<std::initializer_list<const char*>> commandVariants) {
+    for (const auto& variant : commandVariants) {
+      if (variant.size() == 0) {
+        continue;
+      }
+      const char* executable = *variant.begin();
+      if (!commandExists(executable)) {
+        continue;
+      }
+      if (launchDetachedCommand(variant)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   bool launchLogoutCommand() {
@@ -312,16 +362,16 @@ void Application::initUi() {
               },
           .reboot =
               [this]() {
-                if (!launchDetachedCommand({"systemctl", "reboot"})) {
+                if (!launchFirstAvailableCommand({{"loginctl", "reboot"}, {"systemctl", "reboot"}})) {
                   m_notificationManager.addInternal("Noctalia", "Reboot failed", "Could not launch systemctl reboot.",
                                                     5000, Urgency::Normal);
                 }
               },
           .shutdown =
               [this]() {
-                if (!launchDetachedCommand({"systemctl", "poweroff"})) {
+                if (!launchFirstAvailableCommand({{"loginctl", "poweroff"}, {"systemctl", "poweroff"}})) {
                   m_notificationManager.addInternal("Noctalia", "Shutdown failed",
-                                                    "Could not launch systemctl poweroff.", 5000, Urgency::Normal);
+                                                    "Could not launch a shutdown command.", 5000, Urgency::Normal);
                 }
               },
           .lock =
