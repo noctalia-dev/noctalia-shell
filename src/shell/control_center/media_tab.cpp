@@ -604,7 +604,6 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
   const float leftInnerWidth =
       std::clamp(cardInnerWidth, kMediaColumnMinWidth * scale, Style::controlHeightLg * 11.0f * scale);
   m_mediaStack->setSize(leftInnerWidth, 0.0f);
-  m_mediaStack->layout(renderer);
 
   const float outputInnerWidth =
       std::max(0.0f, m_outputCard->width() - (m_outputCard->paddingLeft() + m_outputCard->paddingRight()));
@@ -659,8 +658,6 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
         button->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale,
                            Style::spaceSm * scale);
         button->setRadius(Style::radiusLg * scale);
-        button->layout(renderer);
-        button->updateInputArea();
       }
     }
     if (m_playPauseButton != nullptr) {
@@ -670,37 +667,21 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
       m_playPauseButton->setPadding(Style::spaceSm * scale, Style::spaceSm * scale, Style::spaceSm * scale,
                                     Style::spaceSm * scale);
       m_playPauseButton->setRadius(Style::radiusLg * scale);
-      m_playPauseButton->layout(renderer);
-      m_playPauseButton->updateInputArea();
     }
   }
 
   if (m_trackTitle != nullptr) {
     m_trackTitle->setMaxWidth(leftInnerWidth);
-    m_trackTitle->measure(renderer);
   }
   if (m_trackArtist != nullptr) {
     m_trackArtist->setMaxWidth(leftInnerWidth);
-    m_trackArtist->measure(renderer);
   }
   if (m_trackAlbum != nullptr) {
     m_trackAlbum->setMaxWidth(leftInnerWidth);
-    m_trackAlbum->measure(renderer);
   }
   if (m_progressSlider != nullptr) {
     m_progressSlider->setSize(leftInnerWidth, 0.0f);
-    m_progressSlider->layout(renderer);
   }
-  if (m_outputValue != nullptr) {
-    m_outputValue->measure(renderer);
-  }
-  if (m_inputValue != nullptr) {
-    m_inputValue->measure(renderer);
-  }
-
-  m_nowCard->layout(renderer);
-  m_outputCard->layout(renderer);
-  m_inputCard->layout(renderer);
   m_rootLayout->layout(renderer);
 }
 

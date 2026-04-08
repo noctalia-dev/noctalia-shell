@@ -274,15 +274,12 @@ void WeatherTab::layout(Renderer& renderer, float contentWidth, float bodyHeight
   const float currentTextWidth = m_currentText->width();
   if (m_locationLabel != nullptr) {
     m_locationLabel->setMaxWidth(currentTextWidth);
-    m_locationLabel->measure(renderer);
   }
   if (m_currentDescLabel != nullptr) {
     m_currentDescLabel->setMaxWidth(currentTextWidth);
-    m_currentDescLabel->measure(renderer);
   }
   if (m_updatedLabel != nullptr) {
     m_updatedLabel->setMaxWidth(currentTextWidth);
-    m_updatedLabel->measure(renderer);
   }
   const float leftColumnWidth =
       m_leftColumn != nullptr
@@ -290,12 +287,10 @@ void WeatherTab::layout(Renderer& renderer, float contentWidth, float bodyHeight
           : contentWidth;
   if (m_statusLabel != nullptr) {
     m_statusLabel->setMaxWidth(leftColumnWidth);
-    m_statusLabel->measure(renderer);
   }
   for (auto* label : {m_windLabel, m_sunriseLabel, m_sunsetLabel, m_timezoneLabel, m_longitudeLabel, m_elevationLabel}) {
     if (label != nullptr) {
       label->setMaxWidth(leftColumnWidth);
-      label->measure(renderer);
     }
   }
 
@@ -326,11 +321,9 @@ void WeatherTab::layout(Renderer& renderer, float contentWidth, float bodyHeight
     }
     if (m_dayNameSlots[i] != nullptr) {
       m_dayNameSlots[i]->setSize(dayNameWidth, 0.0f);
-      m_dayNameSlots[i]->layout(renderer);
     }
     if (m_dayGlyphSlots[i] != nullptr) {
       m_dayGlyphSlots[i]->setSize(glyphSlotWidth, 0.0f);
-      m_dayGlyphSlots[i]->layout(renderer);
     }
   }
 
@@ -341,7 +334,6 @@ void WeatherTab::layout(Renderer& renderer, float contentWidth, float bodyHeight
     const float innerWidth =
         std::max(0.0f, m_dayCards[i]->width() - (m_dayCards[i]->paddingLeft() + m_dayCards[i]->paddingRight()));
     m_dayDescs[i]->setMaxWidth(innerWidth);
-    m_dayDescs[i]->measure(renderer);
   }
 
   m_rootLayout->layout(renderer);

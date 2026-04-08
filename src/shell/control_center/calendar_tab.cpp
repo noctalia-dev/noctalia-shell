@@ -200,7 +200,6 @@ void CalendarTab::rebuild(Renderer& renderer) {
 
   m_monthLabel->setText(monthName(month) + " " + std::to_string(year));
   m_monthLabel->setMaxWidth(monthWidth);
-  m_monthLabel->measure(renderer);
 
   static constexpr std::array<const char*, 7> kWeekdays = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
   auto weekdayRow = std::make_unique<Flex>();

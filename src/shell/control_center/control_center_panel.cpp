@@ -127,7 +127,6 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
 
   if (m_contentTitle != nullptr) {
     m_contentTitle->setMaxWidth(contentInnerWidth);
-    m_contentTitle->measure(renderer);
   }
 
   for (auto* container : m_tabContainers) {
@@ -141,13 +140,6 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
   }
 
   m_rootLayout->layout(renderer);
-
-  for (auto* button : m_tabButtons) {
-    if (button != nullptr) {
-      button->layout(renderer);
-      button->updateInputArea();
-    }
-  }
 }
 
 void ControlCenterPanel::update(Renderer& renderer) {
