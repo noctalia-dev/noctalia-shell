@@ -18,34 +18,35 @@ SmartPanel {
   preferredHeight: Math.round(500 * Style.uiScaleRatio)
 
   // Info panel collapsed by default, view mode persisted in settings
-  // Ethernet details UI state (mirrors Wi‑Fi info behavior)
+  // Ethernet details UI state (mirrors Wi-Fi info behavior)
   property bool ethernetInfoExpanded: false
   property bool ethernetDetailsGrid: (Settings.data.network.wifiDetailsViewMode === "grid")
   property int ipVersion: 4
 
-  // Unified panel view mode: "wifi" | "ethernet" (persisted)
+  // Unified panel view mode: "wifi" | "ethernet" | "vpn" (persisted)
   property string panelViewMode: "wifi"
   property bool panelViewPersistEnabled: false
 
   onPanelViewModeChanged: {
-    // Persist last view (only after restored the initial value)
     if (panelViewPersistEnabled) {
       Settings.data.network.networkPanelView = panelViewMode;
     }
+
     if (panelViewMode === "wifi") {
       ethernetInfoExpanded = false;
       if (NetworkService.wifiEnabled && !NetworkService.scanningActive) {
         NetworkService.scan();
         NetworkService.refreshActiveWifiDetails();
       }
-    } else {
+    } else if (panelViewMode === "ethernet") {
       if (NetworkService.ethernetConnected) {
         NetworkService.refreshActiveEthernetDetails();
       }
+    } else if (panelViewMode === "vpn") {
+      VPNService.refresh();
     }
   }
 
-  // Effectively visible tracking
   readonly property bool effectivelyVisible: root.visible && Window.window && Window.window.visible
 
   onEffectivelyVisibleChanged: {
@@ -58,27 +59,23 @@ SmartPanel {
       if (NetworkService.ethernetConnected) {
         NetworkService.refreshActiveEthernetDetails();
       }
+      VPNService.refresh();
     } else {
       SystemStatService.unregisterComponent("network-panel");
     }
   }
 
   onOpened: {
-    // Restore last view if valid, otherwise choose what's available (prefer Wi‑Fi when both exist)
-    if (Settings.data.network.networkPanelView) {
-      const last = Settings.data.network.networkPanelView;
-      if (last === "ethernet" && NetworkService.ethernetAvailable) {
-        panelViewMode = "ethernet";
-      } else {
-        panelViewMode = "wifi";
-      }
+    // Default opening logic:
+    // - If Wi-Fi is actively connected, open Wi-Fi first
+    // - Otherwise always open Ethernet first
+    // VPN is manual-only and should not be auto-selected
+    if (NetworkService.wifiConnected) {
+      panelViewMode = "wifi";
     } else {
-      if (!NetworkService.wifiEnabled && NetworkService.ethernetAvailable) {
-        panelViewMode = "ethernet";
-      } else {
-        panelViewMode = "wifi";
-      }
+      panelViewMode = "ethernet";
     }
+
     panelViewPersistEnabled = true;
   }
 
@@ -93,7 +90,6 @@ SmartPanel {
       anchors.margins: Style.marginL
       spacing: Style.marginM
 
-      // Header
       NBox {
         Layout.fillWidth: true
         Layout.preferredHeight: header.implicitHeight + Style.margin2M
@@ -107,36 +103,54 @@ SmartPanel {
           RowLayout {
             NIcon {
               id: modeIcon
-              icon: panelViewMode === "wifi" ? (NetworkService.wifiEnabled ? "wifi" : "wifi-off") : (NetworkService.ethernetAvailable ? (NetworkService.ethernetConnected ? "ethernet" : "ethernet") : "ethernet-off")
+              icon: panelViewMode === "wifi"
+                    ? (NetworkService.wifiEnabled ? "wifi" : "wifi-off")
+                    : panelViewMode === "ethernet"
+                      ? (NetworkService.ethernetAvailable ? "ethernet" : "ethernet-off")
+                      : (VPNService.hasActiveConnection ? "shield-lock" : "shield")
               pointSize: Style.fontSizeXXL
               color: {
                 if (panelViewMode === "wifi") {
                   return NetworkService.wifiEnabled ? Color.mPrimary : Color.mOnSurfaceVariant;
-                } else {
+                } else if (panelViewMode === "ethernet") {
                   return NetworkService.ethernetConnected ? Color.mPrimary : Color.mOnSurfaceVariant;
+                } else {
+                  return VPNService.hasActiveConnection ? Color.mPrimary : Color.mOnSurfaceVariant;
                 }
               }
+
               MouseArea {
                 anchors.fill: parent
                 hoverEnabled: true
+
                 onClicked: {
                   if (panelViewMode === "wifi") {
-                    if (NetworkService.ethernetAvailable) {
-                      panelViewMode = "ethernet";
-                    } else {
-                      TooltipService.show(parent, I18n.tr("wifi.panel.no-ethernet-devices"));
-                    }
+                    panelViewMode = "ethernet";
+                  } else if (panelViewMode === "ethernet") {
+                    panelViewMode = "vpn";
                   } else {
-                    panelViewMode = "wifi";
+                    panelViewMode = NetworkService.wifiAvailable ? "wifi" : "ethernet";
                   }
                 }
-                onEntered: TooltipService.show(parent, panelViewMode === "wifi" ? I18n.tr("common.wifi") : I18n.tr("common.ethernet"))
+
+                onEntered: TooltipService.show(
+                             parent,
+                             panelViewMode === "wifi"
+                             ? I18n.tr("common.wifi")
+                             : panelViewMode === "ethernet"
+                               ? I18n.tr("common.ethernet")
+                               : "VPN"
+                           )
                 onExited: TooltipService.hide()
               }
             }
 
             NLabel {
-              label: panelViewMode === "wifi" ? I18n.tr("common.wifi") : I18n.tr("common.ethernet")
+              label: panelViewMode === "wifi"
+                     ? I18n.tr("common.wifi")
+                     : panelViewMode === "ethernet"
+                       ? I18n.tr("common.ethernet")
+                       : "VPN"
               Layout.fillWidth: true
             }
 
@@ -146,7 +160,7 @@ SmartPanel {
               checked: NetworkService.wifiEnabled
               enabled: !NetworkService.airplaneModeEnabled && NetworkService.wifiAvailable
               onToggled: checked => NetworkService.setWifiEnabled(checked)
-              baseSize: Style.baseWidgetSize * 0.7 // Slightly smaller
+              baseSize: Style.baseWidgetSize * 0.7
             }
 
             NIconButton {
@@ -164,17 +178,17 @@ SmartPanel {
             }
           }
 
-          // Mode switch (Wi‑Fi / Ethernet)
           NTabBar {
             id: modeTabBar
-            visible: NetworkService.ethernetAvailable && NetworkService.wifiAvailable
+            visible: true
             margins: Style.marginS
             Layout.fillWidth: true
             spacing: Style.marginM
             distributeEvenly: true
-            currentIndex: root.panelViewMode === "wifi" ? 0 : 1
+            currentIndex: root.panelViewMode === "wifi" ? 0 : root.panelViewMode === "ethernet" ? 1 : 2
+
             onCurrentIndexChanged: {
-              root.panelViewMode = (currentIndex === 0) ? "wifi" : "ethernet";
+              root.panelViewMode = currentIndex === 0 ? "wifi" : currentIndex === 1 ? "ethernet" : "vpn";
             }
 
             NTabButton {
@@ -188,18 +202,22 @@ SmartPanel {
               tabIndex: 1
               checked: modeTabBar.currentIndex === 1
             }
+
+            NTabButton {
+              text: "VPN"
+              tabIndex: 2
+              checked: modeTabBar.currentIndex === 2
+            }
           }
         }
       }
 
-      // Unified scrollable content (Wi‑Fi or Ethernet view)
       ColumnLayout {
         id: wifiSectionContainer
         visible: true
         Layout.fillWidth: true
         spacing: Style.marginM
 
-        // Error message
         Rectangle {
           visible: panelViewMode === "wifi" && NetworkService.lastError.length > 0
           Layout.fillWidth: true
@@ -237,7 +255,43 @@ SmartPanel {
           }
         }
 
-        // Unified scrollable content
+        Rectangle {
+          visible: panelViewMode === "vpn" && VPNService.lastError.length > 0
+          Layout.fillWidth: true
+          Layout.preferredHeight: vpnErrorRow.implicitHeight + Style.margin2M
+          color: Qt.alpha(Color.mError, 0.1)
+          radius: Style.radiusS
+          border.width: Style.borderS
+          border.color: Color.mError
+
+          RowLayout {
+            id: vpnErrorRow
+            anchors.fill: parent
+            anchors.margins: Style.marginM
+            spacing: Style.marginS
+
+            NIcon {
+              icon: "warning"
+              pointSize: Style.fontSizeL
+              color: Color.mError
+            }
+
+            NText {
+              text: VPNService.lastError
+              color: Color.mError
+              pointSize: Style.fontSizeS
+              wrapMode: Text.Wrap
+              Layout.fillWidth: true
+            }
+
+            NIconButton {
+              icon: "close"
+              baseSize: Style.baseWidgetSize * 0.6
+              onClicked: VPNService.lastError = ""
+            }
+          }
+        }
+
         NScrollView {
           id: contentScroll
           Layout.fillWidth: true
@@ -252,7 +306,6 @@ SmartPanel {
             width: contentScroll.availableWidth
             spacing: Style.marginM
 
-            // Wi‑Fi disabled state
             NBox {
               id: disabledBox
               visible: panelViewMode === "wifi" && !NetworkService.wifiEnabled
@@ -265,9 +318,7 @@ SmartPanel {
                 anchors.margins: Style.marginM
                 spacing: Style.marginL
 
-                Item {
-                  Layout.fillHeight: true
-                }
+                Item { Layout.fillHeight: true }
 
                 NIcon {
                   icon: "wifi-off"
@@ -292,13 +343,10 @@ SmartPanel {
                   wrapMode: Text.WordWrap
                 }
 
-                Item {
-                  Layout.fillHeight: true
-                }
+                Item { Layout.fillHeight: true }
               }
             }
 
-            // Scanning state (show when no networks and we haven't had any yet)
             NBox {
               id: scanningBox
               visible: panelViewMode === "wifi" && NetworkService.wifiEnabled && Object.keys(NetworkService.networks).length === 0 && NetworkService.scanningActive
@@ -311,9 +359,7 @@ SmartPanel {
                 anchors.margins: Style.marginM
                 spacing: Style.marginL
 
-                Item {
-                  Layout.fillHeight: true
-                }
+                Item { Layout.fillHeight: true }
 
                 NBusyIndicator {
                   running: visible && root.effectivelyVisible
@@ -329,13 +375,10 @@ SmartPanel {
                   Layout.alignment: Qt.AlignHCenter
                 }
 
-                Item {
-                  Layout.fillHeight: true
-                }
+                Item { Layout.fillHeight: true }
               }
             }
 
-            // Empty state when no networks (only show after we've had networks before, meaning a real empty result)
             NBox {
               id: emptyBox
               visible: panelViewMode === "wifi" && NetworkService.wifiEnabled && Object.keys(NetworkService.networks).length === 0 && !NetworkService.scanningActive
@@ -348,9 +391,7 @@ SmartPanel {
                 anchors.margins: Style.marginM
                 spacing: Style.marginL
 
-                Item {
-                  Layout.fillHeight: true
-                }
+                Item { Layout.fillHeight: true }
 
                 NIcon {
                   icon: "wifi-question"
@@ -366,13 +407,10 @@ SmartPanel {
                   Layout.alignment: Qt.AlignHCenter
                 }
 
-                Item {
-                  Layout.fillHeight: true
-                }
+                Item { Layout.fillHeight: true }
               }
             }
 
-            // Networks list container (Wi‑Fi)
             ColumnLayout {
               id: networksList
               visible: panelViewMode === "wifi" && NetworkService.wifiEnabled && Object.keys(NetworkService.networks).length > 0
@@ -384,7 +422,6 @@ SmartPanel {
               }
             }
 
-            // Ethernet view
             NBox {
               id: ethernetSection
               visible: panelViewMode === "ethernet"
@@ -397,25 +434,20 @@ SmartPanel {
                 anchors.margins: Style.marginM
                 spacing: Style.marginM
 
-                // Section label
                 NLabel {
                   label: I18n.tr("wifi.panel.available-interfaces")
                   visible: (NetworkService.ethernetInterfaces && NetworkService.ethernetInterfaces.length > 0)
                 }
 
-                // Empty state when no Ethernet devices
                 ColumnLayout {
                   id: emptyEthColumn
-
                   Layout.fillWidth: true
                   Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
                   Layout.preferredHeight: emptyEthColumn.implicitHeight + Style.margin2M
                   visible: !(NetworkService.ethernetInterfaces && NetworkService.ethernetInterfaces.length > 0)
                   spacing: Style.marginL
 
-                  Item {
-                    Layout.fillHeight: true
-                  }
+                  Item { Layout.fillHeight: true }
 
                   NIcon {
                     icon: "ethernet-off"
@@ -431,12 +463,9 @@ SmartPanel {
                     Layout.alignment: Qt.AlignHCenter
                   }
 
-                  Item {
-                    Layout.fillHeight: true
-                  }
+                  Item { Layout.fillHeight: true }
                 }
 
-                // Interfaces list
                 ColumnLayout {
                   id: ethIfacesList
                   visible: NetworkService.ethernetInterfaces && NetworkService.ethernetInterfaces.length > 0
@@ -445,6 +474,7 @@ SmartPanel {
 
                   Repeater {
                     model: NetworkService.ethernetInterfaces || []
+
                     delegate: NBox {
                       id: ethItem
 
@@ -470,9 +500,6 @@ SmartPanel {
                         y: Style.marginM
                         spacing: Style.marginS
 
-                        // Main row matching Wi‑Fi card style
-                        // Click handling for the whole header row is provided by a sibling MouseArea
-                        // anchored to this row (defined right after this RowLayout).
                         RowLayout {
                           id: ethHeaderRow
                           Layout.fillWidth: true
@@ -523,7 +550,6 @@ SmartPanel {
                                 color: Qt.alpha(ethItem.getContentColors()[1], Style.opacityHeavy)
                               }
 
-                              // Network speed indicators (visible when connected and speed > 0)
                               RowLayout {
                                 visible: (modelData.connected && NetworkService.networkConnectivity === "full") && (SystemStatService.rxSpeed > 0 || SystemStatService.txSpeed > 0)
                                 spacing: 2
@@ -569,7 +595,6 @@ SmartPanel {
                             }
                           }
 
-                          // Info button on the right
                           NIconButton {
                             icon: "info"
                             tooltipText: I18n.tr("common.info")
@@ -580,6 +605,7 @@ SmartPanel {
                             colorBorderHover: "transparent"
                             enabled: true
                             visible: NetworkService.ethernetConnected
+
                             onClicked: {
                               if (NetworkService.activeEthernetIf === modelData.ifname && ethernetInfoExpanded) {
                                 ethernetInfoExpanded = false;
@@ -595,7 +621,6 @@ SmartPanel {
                           }
                         }
 
-                        // Click handling without anchors in a Layout-managed item
                         TapHandler {
                           target: ethHeaderRow
                           onTapped: {
@@ -612,7 +637,6 @@ SmartPanel {
                           }
                         }
 
-                        // Inline Ethernet details
                         Rectangle {
                           id: ethInfoInline
                           visible: ethernetInfoExpanded && NetworkService.activeEthernetIf === modelData.ifname
@@ -625,7 +649,6 @@ SmartPanel {
                           clip: true
                           Layout.topMargin: Style.marginXS
 
-                          // Grid/List toggle
                           NIconButton {
                             anchors.top: parent.top
                             anchors.right: parent.right
@@ -650,6 +673,7 @@ SmartPanel {
                             columns: ethernetDetailsGrid ? 2 : 1
                             columnSpacing: Style.marginM
                             rowSpacing: Style.marginXS
+
                             onColumnsChanged: {
                               if (ethInfoGrid.forceLayout) {
                                 Qt.callLater(function () {
@@ -658,7 +682,6 @@ SmartPanel {
                               }
                             }
 
-                            // --- Item 1: Interface ---
                             RowLayout {
                               Layout.fillWidth: true
                               Layout.preferredWidth: 1
@@ -685,11 +708,8 @@ SmartPanel {
                                 elide: ethernetDetailsGrid ? Text.ElideRight : Text.ElideNone
                                 maximumLineCount: ethernetDetailsGrid ? 1 : 6
                                 clip: true
-
-                                // Click-to-copy Ethernet interface name
                                 MouseArea {
                                   anchors.fill: parent
-                                  // Guard against undefined by normalizing to empty strings
                                   enabled: ((NetworkService.activeEthernetDetails.ifname || "").length > 0) || ((NetworkService.activeEthernetIf || "").length > 0)
                                   hoverEnabled: true
                                   cursorShape: Qt.PointingHandCursor
@@ -706,7 +726,6 @@ SmartPanel {
                               }
                             }
 
-                            // --- Item 2: Hardware Address ---
                             RowLayout {
                               Layout.fillWidth: true
                               Layout.preferredWidth: 1
@@ -733,7 +752,6 @@ SmartPanel {
                                 elide: ethernetDetailsGrid ? Text.ElideRight : Text.ElideNone
                                 maximumLineCount: ethernetDetailsGrid ? 1 : 6
                                 clip: true
-
                                 MouseArea {
                                   anchors.fill: parent
                                   enabled: (NetworkService.activeEthernetDetails.hwAddr || "").length > 0
@@ -752,7 +770,6 @@ SmartPanel {
                               }
                             }
 
-                            // --- Item 3: Link speed ---
                             RowLayout {
                               Layout.fillWidth: true
                               Layout.preferredWidth: 1
@@ -782,7 +799,6 @@ SmartPanel {
                               }
                             }
 
-                            // --- Item 4: IPv4 || IPv6 ---
                             RowLayout {
                               Layout.fillWidth: true
                               Layout.preferredWidth: 1
@@ -813,8 +829,6 @@ SmartPanel {
                                 elide: ethernetDetailsGrid ? Text.ElideRight : Text.ElideNone
                                 maximumLineCount: ethernetDetailsGrid ? 1 : 6
                                 clip: true
-
-                                // Click-to-copy Ethernet IP address
                                 MouseArea {
                                   anchors.fill: parent
                                   enabled: root.ipVersion === 4 ? (NetworkService.activeEthernetDetails.ipv4 || "").length > 0 : (NetworkService.activeEthernetDetails.ipv6 || []).length > 0
@@ -833,7 +847,6 @@ SmartPanel {
                               }
                             }
 
-                            // --- Item 5: DNS ---
                             RowLayout {
                               Layout.fillWidth: true
                               Layout.preferredWidth: 1
@@ -864,8 +877,6 @@ SmartPanel {
                                 elide: ethernetDetailsGrid ? Text.ElideRight : Text.ElideNone
                                 maximumLineCount: ethernetDetailsGrid ? 1 : 6
                                 clip: true
-
-                                // Click-to-copy Ethernet DNS
                                 MouseArea {
                                   anchors.fill: parent
                                   enabled: root.ipVersion === 4 ? (NetworkService.activeEthernetDetails.dns4 || []).length > 0 : (NetworkService.activeEthernetDetails.dns6 || []).length > 0
@@ -884,7 +895,6 @@ SmartPanel {
                               }
                             }
 
-                            // --- Item 6: Gateway ---
                             RowLayout {
                               Layout.fillWidth: true
                               Layout.preferredWidth: 1
@@ -915,8 +925,6 @@ SmartPanel {
                                 elide: ethernetDetailsGrid ? Text.ElideRight : Text.ElideNone
                                 maximumLineCount: ethernetDetailsGrid ? 1 : 6
                                 clip: true
-
-                                // Click-to-copy Ethernet Gateway
                                 MouseArea {
                                   anchors.fill: parent
                                   enabled: root.ipVersion === 4 ? (NetworkService.activeEthernetDetails.gateway4 || "").length > 0 : (NetworkService.activeEthernetDetails.gateway6 || []).length > 0
@@ -933,6 +941,255 @@ SmartPanel {
                                   }
                                 }
                               }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            NBox {
+              id: vpnSection
+              visible: panelViewMode === "vpn"
+              Layout.fillWidth: true
+              Layout.preferredHeight: vpnColumn.implicitHeight + Style.margin2M
+
+              ColumnLayout {
+                id: vpnColumn
+                anchors.fill: parent
+                anchors.margins: Style.marginM
+                spacing: Style.marginM
+
+                ColumnLayout {
+                  visible: Object.keys(VPNService.connections).length === 0
+                  Layout.fillWidth: true
+                  spacing: Style.marginL
+
+                  NIcon {
+                    icon: "shield"
+                    pointSize: 48
+                    color: Color.mOnSurfaceVariant
+                    Layout.alignment: Qt.AlignHCenter
+                  }
+
+                  NText {
+                    text: "No VPN connections"
+                    pointSize: Style.fontSizeL
+                    color: Color.mOnSurfaceVariant
+                    Layout.alignment: Qt.AlignHCenter
+                  }
+                }
+
+                ColumnLayout {
+                  visible: VPNService.activeConnections.length > 0
+                  Layout.fillWidth: true
+                  spacing: Style.marginS
+
+                  NLabel {
+                    label: I18n.tr("common.connected")
+                  }
+
+                  Repeater {
+                    model: VPNService.activeConnections
+
+                    delegate: NBox {
+                      id: activeVpnItem
+                      Layout.fillWidth: true
+                      implicitHeight: activeVpnRow.implicitHeight + Style.margin2M
+                      radius: Style.radiusL
+                      forceOpaque: true
+                      color: Qt.alpha(Color.mPrimary, 0.18)
+
+                      RowLayout {
+                        id: activeVpnRow
+                        anchors.fill: parent
+                        anchors.margins: Style.marginM
+                        spacing: Style.marginM
+
+                        NIcon {
+                          icon: "shield-lock"
+                          pointSize: Style.fontSizeXXL
+                          color: Color.mPrimary
+                          Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        ColumnLayout {
+                          Layout.fillWidth: true
+                          spacing: 2
+
+                          NText {
+                            text: modelData.name
+                            pointSize: Style.fontSizeL
+                            font.weight: Style.fontWeightBold
+                            color: Color.mOnSurface
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                          }
+
+                          RowLayout {
+                            spacing: Style.marginS
+
+                            NText {
+                              text: "VPN"
+                              pointSize: Style.fontSizeS
+                              color: Color.mOnSurfaceVariant
+                            }
+
+                            Rectangle {
+                              radius: 999
+                              color: Color.mPrimary
+                              implicitHeight: connectedBadgeText.implicitHeight + Style.marginS
+                              implicitWidth: connectedBadgeText.implicitWidth + Style.marginM
+
+                              NText {
+                                id: connectedBadgeText
+                                anchors.centerIn: parent
+                                text: I18n.tr("common.connected")
+                                pointSize: Style.fontSizeS
+                                color: Color.mOnPrimary
+                              }
+                            }
+                          }
+                        }
+
+                        RowLayout {
+                          spacing: Style.marginS
+                          Layout.alignment: Qt.AlignVCenter
+
+                          NBusyIndicator {
+                            visible: VPNService.disconnectingUuid === modelData.uuid
+                            running: visible
+                            color: Color.mPrimary
+                            size: Math.round(Style.baseWidgetSize * 0.55)
+                          }
+
+                          Rectangle {
+                            id: disconnectButton
+                            radius: 999
+                            implicitHeight: disconnectLabel.implicitHeight + Style.marginM
+                            implicitWidth: disconnectLabel.implicitWidth + Style.marginL
+                            color: "transparent"
+                            border.width: Style.borderM
+                            border.color: Color.mError
+                            opacity: (!VPNService.connecting && !VPNService.disconnecting) ? 1.0 : 0.5
+
+                            NText {
+                              id: disconnectLabel
+                              anchors.centerIn: parent
+                              text: VPNService.disconnectingUuid === modelData.uuid
+                                    ? I18n.tr("common.disconnecting")
+                                    : I18n.tr("common.disconnect")
+                              pointSize: Style.fontSizeM
+                              color: Color.mError
+                              font.weight: Style.fontWeightBold
+                            }
+
+                            MouseArea {
+                              anchors.fill: parent
+                              enabled: !VPNService.connecting && !VPNService.disconnecting
+                              cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                              onClicked: VPNService.disconnect(modelData.uuid)
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+
+                ColumnLayout {
+                  visible: VPNService.inactiveConnections.length > 0
+                  Layout.fillWidth: true
+                  spacing: Style.marginS
+
+                  NLabel {
+                    label: I18n.tr("common.disconnected")
+                  }
+
+                  Repeater {
+                    model: VPNService.inactiveConnections
+
+                    delegate: NBox {
+                      id: inactiveVpnItem
+                      Layout.fillWidth: true
+                      implicitHeight: inactiveVpnRow.implicitHeight + Style.margin2M
+                      radius: Style.radiusL
+                      forceOpaque: true
+                      color: Color.mSurface
+
+                      RowLayout {
+                        id: inactiveVpnRow
+                        anchors.fill: parent
+                        anchors.margins: Style.marginM
+                        spacing: Style.marginM
+
+                        NIcon {
+                          icon: "shield"
+                          pointSize: Style.fontSizeXXL
+                          color: Color.mOnSurface
+                          Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        ColumnLayout {
+                          Layout.fillWidth: true
+                          spacing: 2
+
+                          NText {
+                            text: modelData.name
+                            pointSize: Style.fontSizeL
+                            font.weight: Style.fontWeightBold
+                            color: Color.mOnSurface
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                          }
+
+                          NText {
+                            text: "VPN"
+                            pointSize: Style.fontSizeS
+                            color: Color.mOnSurfaceVariant
+                          }
+                        }
+
+                        RowLayout {
+                          spacing: Style.marginS
+                          Layout.alignment: Qt.AlignVCenter
+
+                          NBusyIndicator {
+                            visible: VPNService.connectingUuid === modelData.uuid
+                            running: visible
+                            color: Color.mPrimary
+                            size: Math.round(Style.baseWidgetSize * 0.55)
+                          }
+
+                          Rectangle {
+                            id: connectButton
+                            radius: 999
+                            implicitHeight: connectLabel.implicitHeight + Style.marginM
+                            implicitWidth: connectLabel.implicitWidth + Style.marginL
+                            color: "transparent"
+                            border.width: Style.borderM
+                            border.color: Color.mPrimary
+                            opacity: (!VPNService.connecting && !VPNService.disconnecting) ? 1.0 : 0.5
+
+                            NText {
+                              id: connectLabel
+                              anchors.centerIn: parent
+                              text: VPNService.connectingUuid === modelData.uuid
+                                    ? I18n.tr("common.connecting")
+                                    : I18n.tr("common.connect")
+                              pointSize: Style.fontSizeM
+                              color: Color.mPrimary
+                              font.weight: Style.fontWeightBold
+                            }
+
+                            MouseArea {
+                              anchors.fill: parent
+                              enabled: !VPNService.connecting && !VPNService.disconnecting
+                              cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                              onClicked: VPNService.connect(modelData.uuid)
                             }
                           }
                         }
