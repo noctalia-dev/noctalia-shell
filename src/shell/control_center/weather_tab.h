@@ -26,6 +26,7 @@ private:
 
   WeatherService* m_weather = nullptr;
   Flex* m_rootLayout = nullptr;
+  Flex* m_currentText = nullptr;
   Flex* m_forecastRow = nullptr;
   Label* m_statusLabel = nullptr;
   Glyph* m_currentGlyph = nullptr;

@@ -18,6 +18,13 @@ enum class FlexAlign : std::uint8_t {
   Stretch,
 };
 
+enum class FlexJustify : std::uint8_t {
+  Start,
+  Center,
+  End,
+  SpaceBetween,
+};
+
 class Flex : public Node {
 public:
   Flex();
@@ -25,6 +32,7 @@ public:
   void setDirection(FlexDirection direction);
   void setGap(float gap);
   void setAlign(FlexAlign align);
+  void setJustify(FlexJustify justify);
   void setPadding(float top, float right, float bottom, float left);
   void setPadding(float all);
 
@@ -44,6 +52,7 @@ public:
   [[nodiscard]] FlexDirection direction() const noexcept { return m_direction; }
   [[nodiscard]] float gap() const noexcept { return m_gap; }
   [[nodiscard]] FlexAlign align() const noexcept { return m_align; }
+  [[nodiscard]] FlexJustify justify() const noexcept { return m_justify; }
   [[nodiscard]] float paddingTop() const noexcept { return m_paddingTop; }
   [[nodiscard]] float paddingRight() const noexcept { return m_paddingRight; }
   [[nodiscard]] float paddingBottom() const noexcept { return m_paddingBottom; }
@@ -57,6 +66,7 @@ private:
   RectNode* m_background = nullptr;
   FlexDirection m_direction = FlexDirection::Horizontal;
   FlexAlign m_align = FlexAlign::Center;
+  FlexJustify m_justify = FlexJustify::Start;
   float m_gap = 0.0f;
   float m_paddingTop = 0.0f;
   float m_paddingRight = 0.0f;

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "shell/control_center/tab.h"
-#include "shell/control_center/overview_tab.h"
-#include "shell/control_center/media_tab.h"
 #include "shell/control_center/calendar_tab.h"
-#include "shell/control_center/notifications_tab.h"
+#include "shell/control_center/media_tab.h"
 #include "shell/control_center/network_tab.h"
+#include "shell/control_center/notifications_tab.h"
+#include "shell/control_center/overview_tab.h"
+#include "shell/control_center/tab.h"
 #include "shell/control_center/weather_tab.h"
 #include "shell/panel/panel.h"
 
@@ -40,13 +40,8 @@ public:
   [[nodiscard]] bool centeredVertically() const override { return true; }
 
 private:
-  static constexpr float kPreferredPanelWidth  = 932.0f;
+  static constexpr float kPreferredPanelWidth = 932.0f;
   static constexpr float kPreferredPanelHeight = Style::controlHeightLg * 15 + Style::spaceLg + Style::spaceSm;
-  static constexpr float kSidebarWidthRatio    = 162.0f / 932.0f;
-  static constexpr float kSidebarWidth         = kPreferredPanelWidth * kSidebarWidthRatio;
-  static constexpr float kContentMinWidth      = Style::controlHeightLg * 14;
-  static constexpr float kHeaderReserveHeight  = Style::controlHeightSm;
-
 
   enum class TabId : std::uint8_t {
     Overview = 0,

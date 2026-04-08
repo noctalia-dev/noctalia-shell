@@ -37,6 +37,14 @@ void Flex::setAlign(FlexAlign align) {
   markDirty();
 }
 
+void Flex::setJustify(FlexJustify justify) {
+  if (m_justify == justify) {
+    return;
+  }
+  m_justify = justify;
+  markDirty();
+}
+
 void Flex::setPadding(float top, float right, float bottom, float left) {
   m_paddingTop = top;
   m_paddingRight = right;
@@ -110,8 +118,8 @@ void Flex::setRowLayout() {
   setDirection(FlexDirection::Horizontal);
   setGap(Style::spaceXs);
   setAlign(FlexAlign::Center);
+  setJustify(FlexJustify::Start);
 }
-
 
 void Flex::ensureBackground() {
   if (m_background != nullptr) {
@@ -215,7 +223,33 @@ void Flex::layout(Renderer& renderer) {
   }
 
   // Pass 3: Position children along main axis.
+  const float innerMain = horizontal ? std::max(0.0f, width() - m_paddingLeft - m_paddingRight)
+                                     : std::max(0.0f, height() - m_paddingTop - m_paddingBottom);
+  float contentMain = 0.0f;
+  int visibleCount = 0;
+  for (auto& child : kids) {
+    if (!child->visible() || child.get() == m_background) {
+      continue;
+    }
+    ++visibleCount;
+    contentMain += horizontal ? child->width() : child->height();
+  }
+
+  float effectiveGap = m_gap;
+  if (m_justify == FlexJustify::SpaceBetween && visibleCount > 1) {
+    const float totalChildMain = contentMain;
+    effectiveGap = std::max(m_gap, (innerMain - totalChildMain) / static_cast<float>(visibleCount - 1));
+  }
+  if (visibleCount > 1) {
+    contentMain += effectiveGap * static_cast<float>(visibleCount - 1);
+  }
+
   float cursor = horizontal ? m_paddingLeft : m_paddingTop;
+  if (m_justify == FlexJustify::Center) {
+    cursor += std::max(0.0f, (innerMain - contentMain) * 0.5f);
+  } else if (m_justify == FlexJustify::End) {
+    cursor += std::max(0.0f, innerMain - contentMain);
+  }
   float crossMax = 0.0f;
   bool first = true;
 
@@ -225,7 +259,7 @@ void Flex::layout(Renderer& renderer) {
     }
 
     if (!first) {
-      cursor += m_gap;
+      cursor += effectiveGap;
     }
     first = false;
 
@@ -251,7 +285,8 @@ void Flex::layout(Renderer& renderer) {
   } else {
     const float w = preserveCross ? std::max(containerCross, m_minWidth)
                                   : std::max(crossMax + m_paddingLeft + m_paddingRight, m_minWidth);
-    const float h = preserveMain ? std::max(containerMain, m_minHeight) : std::max(cursor + m_paddingBottom, m_minHeight);
+    const float h =
+        preserveMain ? std::max(containerMain, m_minHeight) : std::max(cursor + m_paddingBottom, m_minHeight);
     setSize(w, h);
   }
 

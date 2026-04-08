@@ -34,9 +34,11 @@ private:
   PipeWireService* m_audio = nullptr;
   HttpClient* m_httpClient = nullptr;
 
+  Flex* m_rootLayout = nullptr;
   Image* m_artwork = nullptr;
   Flex* m_column = nullptr;
   Flex* m_nowCard = nullptr;
+  Flex* m_mediaStack = nullptr;
   Flex* m_audioColumn = nullptr;
   Flex* m_outputCard = nullptr;
   Flex* m_inputCard = nullptr;
