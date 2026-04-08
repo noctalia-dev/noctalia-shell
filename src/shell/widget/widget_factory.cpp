@@ -63,7 +63,16 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "workspaces") {
-    auto widget = std::make_unique<WorkspacesWidget>(m_wayland, output);
+    const std::string display = wc != nullptr ? wc->getString("display", "id") : std::string("id");
+    WorkspacesWidget::DisplayMode displayMode = WorkspacesWidget::DisplayMode::Id;
+    if (display == "id") {
+      displayMode = WorkspacesWidget::DisplayMode::Id;
+    } else if (display == "name") {
+      displayMode = WorkspacesWidget::DisplayMode::Name;
+    } else if (display == "none") {
+      displayMode = WorkspacesWidget::DisplayMode::None;
+    }
+    auto widget = std::make_unique<WorkspacesWidget>(m_wayland, output, displayMode);
     widget->setContentScale(contentScale);
     return widget;
   }

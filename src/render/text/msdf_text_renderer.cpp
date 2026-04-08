@@ -100,6 +100,8 @@ MsdfTextRenderer::TextMetrics MsdfTextRenderer::measure(std::string_view text, f
     const float scale = fontSize / kAtlasEmSize;
     float width = 0.0f;
     float penX = 0.0f;
+    float minLeft = 0.0f;
+    float maxRight = 0.0f;
     float minTop = 0.0f;
     float maxBottom = 0.0f;
     bool hasBounds = false;
@@ -115,11 +117,15 @@ MsdfTextRenderer::TextMetrics MsdfTextRenderer::measure(std::string_view text, f
 
       if (glyph.atlasWidth > 0.0f && glyph.atlasHeight > 0.0f) {
         if (!hasBounds) {
+          minLeft = glyphLeft;
+          maxRight = glyphRight;
           minTop = glyphTop;
           maxBottom = glyphBottom;
           width = glyphRight;
           hasBounds = true;
         } else {
+          minLeft = std::min(minLeft, glyphLeft);
+          maxRight = std::max(maxRight, glyphRight);
           minTop = std::min(minTop, glyphTop);
           maxBottom = std::max(maxBottom, glyphBottom);
           width = std::max(width, glyphRight);
@@ -130,7 +136,13 @@ MsdfTextRenderer::TextMetrics MsdfTextRenderer::measure(std::string_view text, f
     }
 
     width = std::max(width, penX);
-    return TextMetrics{.width = width, .top = minTop, .bottom = maxBottom};
+    return TextMetrics{
+        .width = width,
+        .left = hasBounds ? minLeft : 0.0f,
+        .right = hasBounds ? maxRight : width,
+        .top = minTop,
+        .bottom = maxBottom,
+    };
   };
 
   const float lineAdvance = [&]() {
@@ -139,6 +151,8 @@ MsdfTextRenderer::TextMetrics MsdfTextRenderer::measure(std::string_view text, f
   }();
 
   float maxWidth = 0.0f;
+  float left = 0.0f;
+  float right = 0.0f;
   float top = 0.0f;
   float bottom = 0.0f;
   bool hasBounds = false;
@@ -151,10 +165,14 @@ MsdfTextRenderer::TextMetrics MsdfTextRenderer::measure(std::string_view text, f
     maxWidth = std::max(maxWidth, metrics.width);
 
     if (!hasBounds) {
+      left = metrics.left;
+      right = metrics.right;
       top = baselineY + metrics.top;
       bottom = baselineY + metrics.bottom;
       hasBounds = true;
     } else {
+      left = std::min(left, metrics.left);
+      right = std::max(right, metrics.right);
       top = std::min(top, baselineY + metrics.top);
       bottom = std::max(bottom, baselineY + metrics.bottom);
     }
@@ -166,7 +184,7 @@ MsdfTextRenderer::TextMetrics MsdfTextRenderer::measure(std::string_view text, f
     start = end + 1;
   }
 
-  return TextMetrics{.width = maxWidth, .top = top, .bottom = bottom};
+  return TextMetrics{.width = maxWidth, .left = left, .right = right, .top = top, .bottom = bottom};
 }
 
 MsdfTextRenderer::TruncatedText MsdfTextRenderer::truncate(std::string_view text, float fontSize, float maxWidth) {
@@ -288,9 +306,11 @@ MsdfTextRenderer::TextMetrics MsdfTextRenderer::measureGlyph(char32_t codepoint,
 
   const float top = -glyph.bearingY * scale;
   const float bottom = top + glyph.atlasHeight * scale;
+  const float left = glyph.bearingX * scale;
+  const float right = left + glyph.atlasWidth * scale;
   const float width = std::max(glyph.bearingX * scale + glyph.atlasWidth * scale, advance);
 
-  return TextMetrics{.width = width, .top = top, .bottom = bottom};
+  return TextMetrics{.width = width, .left = left, .right = right, .top = top, .bottom = bottom};
 }
 
 void MsdfTextRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, float x, float baselineY, char32_t codepoint,

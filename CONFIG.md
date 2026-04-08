@@ -141,7 +141,17 @@ length = 24
 
 ### `workspaces`
 
-Workspace switcher dots. No configurable settings.
+Workspace switcher with solid dots/pills and optional labels.
+
+| Setting   | Type   | Default  | Description                                      |
+|-----------|--------|----------|--------------------------------------------------|
+| `display` | string | `"id"`   | Label mode: `"none"`, `"id"`, or `"name"`       |
+
+```toml
+[widget.workspaces]
+type = "workspaces"
+display = "id" # none | id | name
+```
 
 ---
 

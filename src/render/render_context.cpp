@@ -164,13 +164,13 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
 TextMetrics RenderContext::measureText(std::string_view text, float fontSize, bool bold) {
   makeCurrentNoSurface();
   auto m = bold ? m_boldTextRenderer.measure(text, fontSize) : m_textRenderer.measure(text, fontSize);
-  return TextMetrics{.width = m.width, .top = m.top, .bottom = m.bottom};
+  return TextMetrics{.width = m.width, .left = m.left, .right = m.right, .top = m.top, .bottom = m.bottom};
 }
 
 TextMetrics RenderContext::measureGlyph(char32_t codepoint, float fontSize) {
   makeCurrentNoSurface();
   auto m = m_iconTextRenderer.measureGlyph(codepoint, fontSize);
-  return TextMetrics{.width = m.width, .top = m.top, .bottom = m.bottom};
+  return TextMetrics{.width = m.width, .left = m.left, .right = m.right, .top = m.top, .bottom = m.bottom};
 }
 
 TextureManager& RenderContext::textureManager() {

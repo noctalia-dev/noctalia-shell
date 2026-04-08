@@ -1,4 +1,5 @@
 #include "shell/widgets/workspaces_widget.h"
+#include "ui/palette.h"
 #include "ui/style.h"
 
 #include "core/log.h"
@@ -6,18 +7,29 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
+#include "render/scene/text_node.h"
+#include "ui/controls/box.h"
 #include "ui/controls/flex.h"
-#include "ui/controls/chip.h"
-#include "ui/controls/label.h"
 
+#include <algorithm>
+#include <cmath>
 #include <linux/input-event-codes.h>
 
-WorkspacesWidget::WorkspacesWidget(WaylandConnection& connection, wl_output* output)
-    : m_connection(connection), m_output(output) {}
+namespace {
+constexpr float kWorkspaceGap = Style::spaceSm;
+constexpr float kWorkspaceDotSize = Style::controlHeightSm * 0.62f;
+constexpr float kWorkspacePillMinWidth = Style::controlHeightLg + Style::spaceXs;
+constexpr float kWorkspaceIndicatorHeight = Style::controlHeightSm * 0.62f;
+constexpr float kWorkspaceLabelPadH = Style::spaceSm;
+} // namespace
+
+WorkspacesWidget::WorkspacesWidget(WaylandConnection& connection, wl_output* output, DisplayMode displayMode)
+    : m_connection(connection), m_output(output), m_displayMode(displayMode) {}
 
 void WorkspacesWidget::create(Renderer& renderer) {
   auto container = std::make_unique<Flex>();
   container->setRowLayout();
+  container->setGap(kWorkspaceGap * m_contentScale);
   m_container = container.get();
   m_root = std::move(container);
 
@@ -33,9 +45,6 @@ void WorkspacesWidget::update(Renderer& renderer) {
   if (m_cachedState.empty() && current.empty()) {
     return;
   }
-
-  const auto previousActiveX = activeCoordinateX(m_cachedState);
-  const auto currentActiveX = activeCoordinateX(current);
 
   bool changed = current.size() != m_cachedState.size();
   if (!changed) {
@@ -58,16 +67,6 @@ void WorkspacesWidget::update(Renderer& renderer) {
     }
 
     rebuild(renderer);
-
-    int direction = 0;
-    if (previousActiveX.has_value() && currentActiveX.has_value()) {
-      if (*currentActiveX > *previousActiveX) {
-        direction = 1;
-      } else if (*currentActiveX < *previousActiveX) {
-        direction = -1;
-      }
-    }
-    playSwitchAnimation(direction);
   }
 }
 
@@ -78,81 +77,71 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
 
   auto workspaces = m_connection.workspaces(m_output);
 
-  for (const auto& ws : workspaces) {
-    auto chip = std::make_unique<Chip>();
-    chip->setText(ws.name);
-    chip->setActive(ws.active);
-    chip->setPadding(Style::spaceMd * 0.25f * m_contentScale, Style::spaceMd * 0.5f * m_contentScale,
-                     Style::spaceMd * 0.25f * m_contentScale, Style::spaceMd * 0.5f * m_contentScale);
-    chip->setRadius(Style::radiusMd * m_contentScale);
-    chip->setBorderWidth(Style::borderWidth * m_contentScale);
-    if (auto* label = chip->label(); label != nullptr) {
-      label->setFontSize(Style::fontSizeCaption * m_contentScale);
-    }
-    chip->layout(renderer);
+  for (std::size_t i = 0; i < workspaces.size(); ++i) {
+    const auto& ws = workspaces[i];
+    const std::string labelText = workspaceLabel(ws, i);
+    const bool showLabel = (m_displayMode != DisplayMode::None) && !labelText.empty();
+    const bool singleCharLabel = showLabel && labelText.size() == 1;
 
-    // Wrap chip in an InputArea for click handling
+    const float indicatorHeight = kWorkspaceIndicatorHeight * m_contentScale;
+    float indicatorWidth = (ws.active ? kWorkspacePillMinWidth : kWorkspaceDotSize) * m_contentScale;
+    if (singleCharLabel && !ws.active) {
+      indicatorWidth = indicatorHeight;
+    } else if (showLabel) {
+      const float labelFontSize = Style::fontSizeCaption * m_contentScale;
+      const TextMetrics labelMetrics = renderer.measureText(labelText, labelFontSize, true);
+      const float inkWidth = labelMetrics.right - labelMetrics.left;
+      const float paddedWidth = inkWidth + (kWorkspaceLabelPadH * m_contentScale * 2.0f);
+      indicatorWidth = std::max(kWorkspacePillMinWidth * m_contentScale, paddedWidth);
+    }
+
+    // Single clickable badge with optional centered text.
     auto area = std::make_unique<InputArea>();
-    area->setSize(chip->width(), chip->height());
+    area->setSize(indicatorWidth, indicatorHeight);
+
+    auto indicator = std::make_unique<Box>();
+    indicator->setFill(ws.active ? palette.primary : withAlpha(palette.onSurfaceVariant, 0.7f));
+    indicator->setBorder(rgba(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
+    indicator->setRadius(indicatorHeight * 0.5f);
+    indicator->setSize(indicatorWidth, indicatorHeight);
+    area->addChild(std::move(indicator));
+
+    if (showLabel) {
+      const float labelFontSize = Style::fontSizeCaption * m_contentScale;
+      const TextMetrics textMetrics = renderer.measureText(labelText, labelFontSize, true);
+      const float labelX =
+          std::round(indicatorWidth * 0.5f - (textMetrics.left + textMetrics.right) * 0.5f);
+      const float labelBaselineY = std::round(indicatorHeight * 0.5f - (textMetrics.top + textMetrics.bottom) * 0.5f);
+
+      auto text = std::make_unique<TextNode>();
+      text->setText(labelText);
+      text->setFontSize(labelFontSize);
+      text->setBold(true);
+      text->setColor(ws.active ? palette.onPrimary : palette.onSurface);
+      text->setPosition(labelX, labelBaselineY);
+      text->setSize(textMetrics.width, textMetrics.bottom - textMetrics.top);
+      area->addChild(std::move(text));
+    }
+
     auto wsCopy = ws;
     area->setOnClick([this, wsCopy](const InputArea::PointerData& data) {
       if (data.button == BTN_LEFT) {
         m_connection.activateWorkspace(m_output, wsCopy);
       }
     });
-    area->addChild(std::move(chip));
     m_container->addChild(std::move(area));
   }
 }
 
-void WorkspacesWidget::playSwitchAnimation(int direction) {
-  if (m_container == nullptr || m_animations == nullptr) {
-    return;
+std::string WorkspacesWidget::workspaceLabel(const Workspace& workspace, std::size_t displayIndex) const {
+  if (m_displayMode == DisplayMode::Id) {
+    return std::to_string(displayIndex + 1);
   }
-
-  if (m_slideAnimId != 0) {
-    m_animations->cancel(m_slideAnimId);
-    m_slideAnimId = 0;
-  }
-  if (m_fadeAnimId != 0) {
-    m_animations->cancel(m_fadeAnimId);
-    m_fadeAnimId = 0;
-  }
-
-  const float startX = static_cast<float>(direction) * 14.0f * m_contentScale;
-  const float targetY = m_container->y();
-  m_container->setPosition(startX, targetY);
-  m_container->setOpacity(0.75f);
-
-  m_slideAnimId = m_animations->animate(
-      startX, 0.0f, Style::animNormal, Easing::EaseOutCubic,
-      [this, targetY](float x) {
-        if (m_container != nullptr) {
-          m_container->setPosition(x, targetY);
-        }
-      },
-      [this]() { m_slideAnimId = 0; });
-
-  m_fadeAnimId = m_animations->animate(
-      0.78f, 1.0f, Style::animNormal, Easing::EaseOutCubic,
-      [this](float a) {
-        if (m_container != nullptr) {
-          m_container->setOpacity(a);
-        }
-      },
-      [this]() { m_fadeAnimId = 0; });
-
-  requestRedraw();
-}
-
-std::optional<int> WorkspacesWidget::activeCoordinateX(const std::vector<Workspace>& workspaces) {
-  for (const auto& ws : workspaces) {
-    if (!ws.active) {
-      continue;
+  if (m_displayMode == DisplayMode::Name) {
+    if (!workspace.id.empty()) {
+      return !workspace.name.empty() ? workspace.name : workspace.id;
     }
-    if (!ws.coordinates.empty()) {
-      return static_cast<int>(ws.coordinates[0]);
-    }
+    return workspace.name;
   }
-  return std::nullopt;
+  return {};
 }
