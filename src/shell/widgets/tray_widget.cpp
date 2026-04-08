@@ -21,8 +21,7 @@
 
 namespace {
 
-constexpr float kTrayGap = 4.0f;
-constexpr float kTrayIconSize = 16.0f;
+constexpr float kTrayIconScale = 0.96f;
 
 std::string toLower(std::string_view value) {
   std::string out(value);
@@ -137,7 +136,8 @@ TrayWidget::TrayWidget(TrayService* tray) : m_tray(tray) { buildDesktopIconIndex
 void TrayWidget::create(Renderer& renderer) {
   auto container = std::make_unique<Flex>();
   container->setRowLayout();
-  container->setGap(kTrayGap * m_contentScale);
+  container->setAlign(FlexAlign::Center);
+  container->setGap(Style::spaceXs * m_contentScale);
   m_container = container.get();
 
   m_root = std::move(container);
@@ -150,7 +150,7 @@ void TrayWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*co
     return;
   }
 
-  m_container->setGap(kTrayGap * m_contentScale);
+  m_container->setGap(Style::spaceXs * m_contentScale);
 
   for (const auto& child : m_container->children()) {
     if (auto* glyph = dynamic_cast<Glyph*>(child.get())) {
@@ -213,8 +213,9 @@ void TrayWidget::rebuild(Renderer& renderer) {
 
   for (const auto& item : m_items) {
     const std::string iconPath = resolveIconPath(item);
-    const float iconSize = kTrayIconSize * m_contentScale;
-    const int iconRequestSize = static_cast<int>(std::round(kTrayIconSize * m_contentScale));
+    const float slotSize = Style::fontSizeBody * m_contentScale;
+    const float iconSize = slotSize * kTrayIconScale;
+    const int iconRequestSize = static_cast<int>(std::round(iconSize));
 
     std::unique_ptr<Node> iconNode;
     float iconW = iconSize;
@@ -273,7 +274,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
       auto glyph = std::make_unique<Glyph>();
       const std::string fallback = iconForItem(item);
       glyph->setGlyph(fallback);
-      glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+      glyph->setGlyphSize(iconSize);
       glyph->setColor(item.needsAttention ? palette.error : palette.onSurface);
       glyph->measure(renderer);
       iconW = glyph->width();
@@ -284,7 +285,9 @@ void TrayWidget::rebuild(Renderer& renderer) {
 
     // Wrap icon in InputArea for click handling
     auto area = std::make_unique<InputArea>();
-    area->setSize(iconW, iconH);
+    area->setSize(slotSize, slotSize);
+    iconNode->setPosition(std::round((slotSize - iconW) * 0.5f),
+                          std::round((slotSize - iconH) * 0.5f + Style::borderWidth * m_contentScale));
     auto itemId = item.id;
     area->setOnClick([this, itemId](const InputArea::PointerData& data) {
       if (m_tray == nullptr) {
