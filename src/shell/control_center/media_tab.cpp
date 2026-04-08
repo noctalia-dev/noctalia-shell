@@ -428,12 +428,36 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   audioColumn->setMinWidth(kAudioColumnMinWidth * scale);
   m_audioColumn = audioColumn.get();
 
+  auto outputVisualizerPlaceholder = std::make_unique<Flex>();
+  outputVisualizerPlaceholder->setDirection(FlexDirection::Vertical);
+  outputVisualizerPlaceholder->setAlign(FlexAlign::Stretch);
+  outputVisualizerPlaceholder->setJustify(FlexJustify::Center);
+  outputVisualizerPlaceholder->setMinHeight(Style::controlHeightLg * 5.0f * scale);
+  outputVisualizerPlaceholder->setPadding(Style::spaceMd * scale);
+  outputVisualizerPlaceholder->setRadius(Style::radiusLg * scale);
+  outputVisualizerPlaceholder->setBorderWidth(Style::borderWidth);
+  outputVisualizerPlaceholder->setBorderColor(palette.outline);
+  outputVisualizerPlaceholder->setBackground(palette.surface);
+
+  auto outputVisualizerLabel = std::make_unique<Label>();
+  outputVisualizerLabel->setText("audio visualizer");
+  outputVisualizerLabel->setBold(true);
+  outputVisualizerLabel->setFontSize(Style::fontSizeBody * scale);
+  outputVisualizerLabel->setColor(palette.onSurfaceVariant);
+  outputVisualizerPlaceholder->addChild(std::move(outputVisualizerLabel));
+
+  audioColumn->addChild(std::move(outputVisualizerPlaceholder));
+
+  auto outputSpacer = std::make_unique<Flex>();
+  outputSpacer->setFlexGrow(1.0f);
+  audioColumn->addChild(std::move(outputSpacer));
+
   auto outputCard = std::make_unique<Flex>();
   applyCard(*outputCard, scale);
   outputCard->setAlign(FlexAlign::Stretch);
-  outputCard->setFlexGrow(1.0f);
   outputCard->setMinHeight(kMediaAudioCardMinHeight * scale);
   m_outputCard = outputCard.get();
+
   addTitle(*outputCard, "Output", scale);
 
   auto outputDeviceSelect = std::make_unique<Select>();
@@ -497,7 +521,6 @@ std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
   auto inputCard = std::make_unique<Flex>();
   applyCard(*inputCard, scale);
   inputCard->setAlign(FlexAlign::Stretch);
-  inputCard->setFlexGrow(1.0f);
   inputCard->setMinHeight(kMediaAudioCardMinHeight * scale);
   m_inputCard = inputCard.get();
   addTitle(*inputCard, "Input", scale);
