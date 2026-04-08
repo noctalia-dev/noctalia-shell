@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cctype>
 #include <linux/input-event-codes.h>
 
 namespace {
@@ -135,6 +136,9 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
 
 std::string WorkspacesWidget::workspaceLabel(const Workspace& workspace, std::size_t displayIndex) const {
   if (m_displayMode == DisplayMode::Id) {
+    if (const auto numericId = numericWorkspaceId(workspace); numericId.has_value()) {
+      return std::to_string(*numericId);
+    }
     return std::to_string(displayIndex + 1);
   }
   if (m_displayMode == DisplayMode::Name) {
@@ -144,4 +148,28 @@ std::string WorkspacesWidget::workspaceLabel(const Workspace& workspace, std::si
     return workspace.name;
   }
   return {};
+}
+
+std::optional<std::size_t> WorkspacesWidget::numericWorkspaceId(const Workspace& workspace) {
+  const auto parseLeadingNumber = [](const std::string& value) -> std::optional<std::size_t> {
+    if (value.empty() || !std::isdigit(static_cast<unsigned char>(value.front()))) {
+      return std::nullopt;
+    }
+
+    std::size_t parsed = 0;
+    std::size_t index = 0;
+    while (index < value.size() && std::isdigit(static_cast<unsigned char>(value[index]))) {
+      parsed = (parsed * 10) + static_cast<std::size_t>(value[index] - '0');
+      ++index;
+    }
+    return parsed > 0 ? std::optional<std::size_t>(parsed) : std::nullopt;
+  };
+
+  if (const auto id = parseLeadingNumber(workspace.id); id.has_value()) {
+    return id;
+  }
+  if (const auto name = parseLeadingNumber(workspace.name); name.has_value()) {
+    return name;
+  }
+  return std::nullopt;
 }

@@ -27,6 +27,7 @@ public:
 
 private:
   void rebuild(Renderer& renderer);
+  [[nodiscard]] static std::optional<std::size_t> numericWorkspaceId(const Workspace& workspace);
   [[nodiscard]] std::string workspaceLabel(const Workspace& workspace, std::size_t displayIndex) const;
 
   WaylandConnection& m_connection;
