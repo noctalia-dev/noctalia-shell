@@ -68,14 +68,23 @@ void main() {
     float outer_distance = rounded_rect_distance(local_point, u_rect.zw, u_radii);
     float outer_coverage = 1.0 - smoothstep(-aa, aa, outer_distance);
 
+    float gradient_t = clamp(dot(uv, u_gradient_direction), 0.0, 1.0);
+    vec4 fill_base = (u_fill_mode == 0) ? u_color : mix(u_color, u_fill_end_color, gradient_t);
+
+    if (u_border_width <= 0.0 || u_border_color.a <= 0.0) {
+        float out_alpha = fill_base.a * outer_coverage;
+        if (out_alpha <= 0.0) {
+            discard;
+        }
+        gl_FragColor = vec4(fill_base.rgb * out_alpha, out_alpha);
+        return;
+    }
+
     vec4 inner_radii = max(u_radii - vec4(u_border_width), vec4(0.0));
     vec2 inner_size = max(u_rect.zw - vec2(u_border_width * 2.0), vec2(0.0));
     vec2 inner_point = local_point - vec2(u_border_width);
     float inner_distance = rounded_rect_distance(inner_point, inner_size, inner_radii);
     float inner_coverage = 1.0 - smoothstep(-aa, aa, inner_distance);
-
-    float gradient_t = clamp(dot(uv, u_gradient_direction), 0.0, 1.0);
-    vec4 fill_base = (u_fill_mode == 0) ? u_color : mix(u_color, u_fill_end_color, gradient_t);
 
     // Premultiplied-alpha compositing: border underneath, fill on top.
     // All intermediate colors are premultiplied (rgb already scaled by alpha).

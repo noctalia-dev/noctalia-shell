@@ -15,7 +15,6 @@ void applyCard(Flex& card, float scale) {
   card.setRadius(Style::radiusLg * scale);
   card.setBackground(palette.surfaceVariant);
   card.setBorderWidth(0.0f);
-  card.setBorderColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
   card.setSoftness(1.0f);
 }
 
