@@ -246,7 +246,8 @@ void ConfigService::loadFromFile(const std::string& path) {
   try {
     tbl = toml::parse_file(path);
   } catch (const toml::parse_error& e) {
-    kLog.warn("parse error: {}", e.what());
+    const auto& src = e.source();
+    kLog.warn("parse error at line {}, column {}: {}", src.begin.line, src.begin.column, e.description());
     m_config.bars.push_back(BarConfig{});
     return;
   }
