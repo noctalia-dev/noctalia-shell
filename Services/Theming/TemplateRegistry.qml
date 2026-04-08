@@ -64,6 +64,14 @@ Singleton {
       "predefinedTemplatePath": "terminal/wezterm-predefined.toml",
       "outputPath": "~/.config/wezterm/colors/Noctalia.toml",
       "postHook": `${templateApplyScript} wezterm`
+    },
+    {
+      "id": "starship",
+      "name": "Starship",
+      "templatePath": "terminal/starship.toml",
+      "predefinedTemplatePath": "terminal/starship-predefined.toml",
+      "outputPath": "~/.cache/noctalia/starship-palette.toml",
+      "postHook": `${templateApplyScript} starship`
     }
   ]
 
