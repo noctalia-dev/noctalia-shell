@@ -2,11 +2,16 @@
 
 #include "ui/controls/flex.h"
 
+#include <functional>
+
 enum class ToggleSize : std::uint8_t {
   Small,
   Medium,
   Large,
 };
+
+class InputArea;
+class Renderer;
 
 class Toggle : public Flex {
 public:
@@ -16,9 +21,13 @@ public:
   void setEnabled(bool enabled);
   void setToggleSize(ToggleSize size);
   void setScale(float scale);
+  void setOnChange(std::function<void(bool)> callback);
+  [[nodiscard]] bool hovered() const noexcept;
+  [[nodiscard]] bool pressed() const noexcept;
   [[nodiscard]] bool checked() const noexcept { return m_checked; }
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
   [[nodiscard]] ToggleSize toggleSize() const noexcept { return m_size; }
+  void layout(Renderer& renderer) override;
 
 private:
   void applySize();
@@ -26,7 +35,9 @@ private:
   void applyAnimatedState(float t);
 
   class RectNode* m_thumb = nullptr;
+  InputArea* m_inputArea = nullptr;
   std::uint32_t m_animId = 0;
+  std::function<void(bool)> m_onChange;
   ToggleSize m_size = ToggleSize::Medium;
   bool m_checked = false;
   bool m_enabled = true;

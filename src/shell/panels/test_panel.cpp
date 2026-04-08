@@ -1,13 +1,14 @@
 #include "shell/panels/test_panel.h"
 
-#include "render/scene/input_area.h"
-#include "ui/controls/flex.h"
+#include "ui/controls/box.h"
 #include "ui/controls/button.h"
-#include "ui/controls/select.h"
+#include "ui/controls/flex.h"
+#include "ui/controls/glyph.h"
+#include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/radio_button.h"
+#include "ui/controls/select.h"
 #include "ui/controls/slider.h"
-#include "ui/controls/input.h"
 #include "ui/controls/spinner.h"
 #include "ui/controls/toggle.h"
 #include "ui/palette.h"
@@ -31,7 +32,7 @@ void TestPanel::create(Renderer& renderer) {
   m_headerLabel = header.get();
   container->addChild(std::move(header));
 
-  const float kRowLabelWidth = 100.0f * scale;
+  const float kRowLabelWidth = 150.0f * scale;
 
   auto makeRow = [scale]() {
     auto row = std::make_unique<Flex>();
@@ -49,6 +50,8 @@ void TestPanel::create(Renderer& renderer) {
     return label;
   };
 
+
+  // Button
   auto button = std::make_unique<Button>();
   button->setText("Hello");
   button->setFontSize(Style::fontSizeBody * scale);
@@ -65,24 +68,65 @@ void TestPanel::create(Renderer& renderer) {
     container->addChild(std::move(row));
   }
 
+  // Button w/ glyph
+  auto glyphTextButton = std::make_unique<Button>();
+  glyphTextButton->setText("Settings");
+  glyphTextButton->setGlyph("settings");
+  glyphTextButton->setFontSize(Style::fontSizeBody * scale);
+  glyphTextButton->setGlyphSize(Style::fontSizeBody * scale);
+  glyphTextButton->setVariant(ButtonVariant::Default);
+  glyphTextButton->setMinHeight(Style::controlHeight * scale);
+  glyphTextButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale, Style::spaceMd * scale);
+  glyphTextButton->setRadius(Style::radiusMd * scale);
+  glyphTextButton->setOnClick([]() {});
+  m_glyphTextButton = glyphTextButton.get();
+  {
+    auto row = makeRow();
+    row->addChild(makeRowLabel("Button w/ glyph", kRowLabelWidth));
+    row->addChild(std::move(glyphTextButton));
+    container->addChild(std::move(row));
+  }
+
+  // Button glyph only
   auto glyphButton = std::make_unique<Button>();
-  glyphButton->setText("Settings");
-  glyphButton->setGlyph("settings");
-  glyphButton->setFontSize(Style::fontSizeBody * scale);
+  glyphButton->setGlyph("media-play");
   glyphButton->setGlyphSize(Style::fontSizeBody * scale);
   glyphButton->setVariant(ButtonVariant::Default);
   glyphButton->setMinHeight(Style::controlHeight * scale);
-  glyphButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale, Style::spaceMd * scale);
+  glyphButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale,
+                              Style::spaceMd * scale);
   glyphButton->setRadius(Style::radiusMd * scale);
   glyphButton->setOnClick([]() {});
   m_glyphButton = glyphButton.get();
   {
     auto row = makeRow();
-    row->addChild(makeRowLabel("Button w/ icon", kRowLabelWidth));
+    row->addChild(makeRowLabel("Button glyph", kRowLabelWidth));
     row->addChild(std::move(glyphButton));
     container->addChild(std::move(row));
   }
 
+  // Glyph in a box
+  auto glyphBox = std::make_unique<Box>();
+  glyphBox->setSize(Style::controlHeight * scale, Style::controlHeight * scale);
+  glyphBox->setFill(palette.surfaceVariant);
+  glyphBox->setBorder(palette.outline, Style::borderWidth);
+  glyphBox->setRadius(Style::radiusMd * scale);
+  m_glyphBox = glyphBox.get();
+
+  auto glyph = std::make_unique<Glyph>();
+  glyph->setGlyph("media-play");
+  glyph->setGlyphSize(Style::fontSizeBody * scale);
+  glyph->setColor(palette.onSurface);
+  m_glyph = glyph.get();
+  m_glyphBox->addChild(std::move(glyph));
+  {
+    auto row = makeRow();
+    row->addChild(makeRowLabel("Glyph box", kRowLabelWidth));
+    row->addChild(std::move(glyphBox));
+    container->addChild(std::move(row));
+  }
+
+  // Select
   auto select = std::make_unique<Select>();
   select->setSize(220.0f * scale, 0.0f);
   select->setFontSize(Style::fontSizeBody * scale);
@@ -101,6 +145,7 @@ void TestPanel::create(Renderer& renderer) {
     container->addChild(std::move(row));
   }
 
+  // Slider
   auto slider = std::make_unique<Slider>();
   slider->setRange(0.0f, 100.0f);
   slider->setStep(1.0f);
@@ -131,26 +176,34 @@ void TestPanel::create(Renderer& renderer) {
     container->addChild(std::move(row));
   }
 
-  auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    m_toggle->setChecked(!m_toggle->checked());
-  });
-
+  // Toggle
   auto toggle = std::make_unique<Toggle>();
   toggle->setToggleSize(ToggleSize::Medium);
   toggle->setScale(scale);
   toggle->setChecked(false);
+  toggle->setOnChange([this](bool checked) {
+    if (m_toggleValueLabel != nullptr) {
+      m_toggleValueLabel->setText(checked ? "true" : "false");
+    }
+  });
   m_toggle = toggle.get();
-  area->addChild(std::move(toggle));
+
+  auto toggleValueLabel = std::make_unique<Label>();
+  toggleValueLabel->setText("false");
+  toggleValueLabel->setCaptionStyle();
+  toggleValueLabel->setFontSize(Style::fontSizeCaption * scale);
+  m_toggleValueLabel = toggleValueLabel.get();
 
   m_container = container.get();
   {
     auto row = makeRow();
     row->addChild(makeRowLabel("Toggle", kRowLabelWidth));
-    row->addChild(std::move(area));
+    row->addChild(std::move(toggle));
+    row->addChild(std::move(toggleValueLabel));
     container->addChild(std::move(row));
   }
 
+  // Radio
   {
     auto options = std::make_unique<Flex>();
     options->setDirection(FlexDirection::Horizontal);
@@ -218,6 +271,7 @@ void TestPanel::create(Renderer& renderer) {
     container->addChild(std::move(row));
   }
 
+  // Spinner
   {
     auto spinner = std::make_unique<Spinner>();
     spinner->setSpinnerSize(20.0f * scale);
@@ -229,6 +283,7 @@ void TestPanel::create(Renderer& renderer) {
     container->addChild(std::move(row));
   }
 
+  // Input
   {
     auto input = std::make_unique<Input>();
     input->setPlaceholder("Type something...");
@@ -283,6 +338,9 @@ void TestPanel::layout(Renderer& renderer, float /*width*/, float /*height*/) {
   if (m_sliderValueLabel != nullptr) {
     m_sliderValueLabel->measure(renderer);
   }
+  if (m_toggleValueLabel != nullptr) {
+    m_toggleValueLabel->measure(renderer);
+  }
   if (m_button != nullptr) {
     m_button->layout(renderer);
     m_button->updateInputArea();
@@ -290,8 +348,18 @@ void TestPanel::layout(Renderer& renderer, float /*width*/, float /*height*/) {
   if (m_select != nullptr) {
     m_select->layout(renderer);
   }
+  if (m_glyphTextButton != nullptr) {
+    m_glyphTextButton->layout(renderer);
+    m_glyphTextButton->updateInputArea();
+  }
   if (m_glyphButton != nullptr) {
     m_glyphButton->layout(renderer);
+    m_glyphButton->updateInputArea();
+  }
+  if (m_glyph != nullptr && m_glyphBox != nullptr) {
+    m_glyph->measure(renderer);
+    m_glyph->setPosition(std::round((m_glyphBox->width() - m_glyph->width()) * 0.5f),
+                             std::round((m_glyphBox->height() - m_glyph->height()) * 0.5f));
   }
   if (m_slider != nullptr) {
     m_slider->layout(renderer);
@@ -304,10 +372,6 @@ void TestPanel::layout(Renderer& renderer, float /*width*/, float /*height*/) {
   }
   if (m_radioB != nullptr) {
     m_radioB->layout(renderer);
-  }
-  // Size the InputArea to match the toggle
-  if (m_toggle != nullptr && m_toggle->parent() != nullptr) {
-    m_toggle->parent()->setSize(m_toggle->width(), m_toggle->height());
   }
   if (m_input != nullptr) {
     m_input->layout(renderer);

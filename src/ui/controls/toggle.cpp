@@ -2,6 +2,7 @@
 
 #include "render/animation/animation_manager.h"
 #include "render/core/color.h"
+#include "render/scene/input_area.h"
 #include "render/programs/rounded_rect_program.h"
 #include "render/scene/rect_node.h"
 #include "ui/palette.h"
@@ -18,6 +19,22 @@ Toggle::Toggle() {
 
   auto thumb = std::make_unique<RectNode>();
   m_thumb = static_cast<RectNode*>(addChild(std::move(thumb)));
+
+  auto area = std::make_unique<InputArea>();
+  area->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyState(); });
+  area->setOnLeave([this]() { applyState(); });
+  area->setOnPress([this](const InputArea::PointerData& /*data*/) { applyState(); });
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
+    if (!m_enabled) {
+      return;
+    }
+    const bool next = !m_checked;
+    setChecked(next);
+    if (m_onChange) {
+      m_onChange(next);
+    }
+  });
+  m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
 
   applySize();
   applyState();
@@ -50,6 +67,9 @@ void Toggle::setEnabled(bool enabled) {
     return;
   }
   m_enabled = enabled;
+  if (m_inputArea != nullptr) {
+    m_inputArea->setEnabled(enabled);
+  }
   applyState();
 }
 
@@ -66,6 +86,28 @@ void Toggle::setScale(float scale) {
   m_scale = std::max(0.1f, scale);
   applySize();
   applyState();
+}
+
+void Toggle::setOnChange(std::function<void(bool)> callback) {
+  m_onChange = std::move(callback);
+}
+
+bool Toggle::hovered() const noexcept { return m_inputArea != nullptr && m_inputArea->hovered(); }
+
+bool Toggle::pressed() const noexcept { return m_inputArea != nullptr && m_inputArea->pressed(); }
+
+void Toggle::layout(Renderer& renderer) {
+  if (m_inputArea != nullptr) {
+    m_inputArea->setVisible(false);
+  }
+
+  Flex::layout(renderer);
+
+  if (m_inputArea != nullptr) {
+    m_inputArea->setVisible(true);
+    m_inputArea->setPosition(0.0f, 0.0f);
+    m_inputArea->setSize(width(), height());
+  }
 }
 
 void Toggle::applySize() {
@@ -99,8 +141,13 @@ void Toggle::applyAnimatedState(float t) {
   const Color trackColor = lerpColor(palette.surfaceVariant, palette.primary, t);
   const Color thumbColor = lerpColor(palette.onSurfaceVariant, palette.onPrimary, t);
   const float thumbX = m_inset + m_travel * t;
+  Color borderColor = palette.outline;
+  if (m_enabled && (pressed() || hovered())) {
+    borderColor = palette.primary;
+  }
 
   setBackground(trackColor);
+  setBorderColor(borderColor);
   m_thumb->setPosition(thumbX, m_inset);
 
   auto thumbStyle = m_thumb->style();
