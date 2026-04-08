@@ -13,155 +13,155 @@
 
 namespace {
 
-int scoreEntry(std::string_view pattern, const DesktopEntry& entry) {
-  if (pattern.empty()) {
-    return 1;
+  int scoreEntry(std::string_view pattern, const DesktopEntry& entry) {
+    if (pattern.empty()) {
+      return 1;
+    }
+
+    int nameScore = FuzzyMatch::score(pattern, entry.nameLower) * 3;
+    int genericScore = FuzzyMatch::score(pattern, entry.genericNameLower) * 2;
+
+    auto scoreList = [&](std::string_view list) {
+      int best = 0;
+      std::size_t start = 0;
+      while (start < list.size()) {
+        auto semi = list.find(';', start);
+        auto word = (semi == std::string_view::npos) ? list.substr(start) : list.substr(start, semi - start);
+        if (!word.empty()) {
+          best = std::max(best, FuzzyMatch::score(pattern, word));
+        }
+        if (semi == std::string_view::npos)
+          break;
+        start = semi + 1;
+      }
+      return best;
+    };
+
+    int keywordScore = scoreList(entry.keywordsLower);
+    int catScore = scoreList(entry.categoriesLower);
+
+    return std::max({nameScore, genericScore, keywordScore, catScore});
   }
 
-  int nameScore = FuzzyMatch::score(pattern, entry.nameLower) * 3;
-  int genericScore = FuzzyMatch::score(pattern, entry.genericNameLower) * 2;
-
-  auto scoreList = [&](std::string_view list) {
-    int best = 0;
-    std::size_t start = 0;
-    while (start < list.size()) {
-      auto semi = list.find(';', start);
-      auto word = (semi == std::string_view::npos) ? list.substr(start) : list.substr(start, semi - start);
-      if (!word.empty()) {
-        best = std::max(best, FuzzyMatch::score(pattern, word));
-      }
-      if (semi == std::string_view::npos)
-        break;
-      start = semi + 1;
-    }
-    return best;
-  };
-
-  int keywordScore = scoreList(entry.keywordsLower);
-  int catScore = scoreList(entry.categoriesLower);
-
-  return std::max({nameScore, genericScore, keywordScore, catScore});
-}
-
-std::string stripFieldCodes(const std::string& exec) {
-  std::string result;
-  result.reserve(exec.size());
-  for (std::size_t i = 0; i < exec.size(); ++i) {
-    if (exec[i] == '%' && i + 1 < exec.size()) {
-      char next = exec[i + 1];
-      if (next == 'f' || next == 'F' || next == 'u' || next == 'U' || next == 'd' || next == 'D' || next == 'n' ||
-          next == 'N' || next == 'i' || next == 'c' || next == 'k') {
-        ++i; // Skip the field code
-        // Also skip trailing space
-        if (i + 1 < exec.size() && exec[i + 1] == ' ') {
+  std::string stripFieldCodes(const std::string& exec) {
+    std::string result;
+    result.reserve(exec.size());
+    for (std::size_t i = 0; i < exec.size(); ++i) {
+      if (exec[i] == '%' && i + 1 < exec.size()) {
+        char next = exec[i + 1];
+        if (next == 'f' || next == 'F' || next == 'u' || next == 'U' || next == 'd' || next == 'D' || next == 'n' ||
+            next == 'N' || next == 'i' || next == 'c' || next == 'k') {
+          ++i; // Skip the field code
+          // Also skip trailing space
+          if (i + 1 < exec.size() && exec[i + 1] == ' ') {
+            ++i;
+          }
+          continue;
+        }
+        if (next == '%') {
+          result += '%';
           ++i;
+          continue;
+        }
+      }
+      result += exec[i];
+    }
+
+    // Trim trailing whitespace
+    while (!result.empty() && result.back() == ' ') {
+      result.pop_back();
+    }
+    return result;
+  }
+
+  std::vector<std::string> tokenize(const std::string& cmd) {
+    std::vector<std::string> args;
+    std::string current;
+    bool inSingle = false;
+    bool inDouble = false;
+
+    for (std::size_t i = 0; i < cmd.size(); ++i) {
+      char c = cmd[i];
+
+      if (c == '\'' && !inDouble) {
+        inSingle = !inSingle;
+        continue;
+      }
+      if (c == '"' && !inSingle) {
+        inDouble = !inDouble;
+        continue;
+      }
+      if (c == ' ' && !inSingle && !inDouble) {
+        if (!current.empty()) {
+          args.push_back(std::move(current));
+          current.clear();
         }
         continue;
       }
-      if (next == '%') {
-        result += '%';
-        ++i;
-        continue;
+      current += c;
+    }
+    if (!current.empty()) {
+      args.push_back(std::move(current));
+    }
+    return args;
+  }
+
+  void launchCommand(const std::string& exec, bool terminal, const std::string& activationToken) {
+    std::string cleanExec = stripFieldCodes(exec);
+
+    if (terminal) {
+      const char* term = std::getenv("TERMINAL");
+      if (term == nullptr) {
+        term = "xterm";
       }
+      cleanExec = std::string(term) + " -e " + cleanExec;
     }
-    result += exec[i];
-  }
 
-  // Trim trailing whitespace
-  while (!result.empty() && result.back() == ' ') {
-    result.pop_back();
-  }
-  return result;
-}
-
-std::vector<std::string> tokenize(const std::string& cmd) {
-  std::vector<std::string> args;
-  std::string current;
-  bool inSingle = false;
-  bool inDouble = false;
-
-  for (std::size_t i = 0; i < cmd.size(); ++i) {
-    char c = cmd[i];
-
-    if (c == '\'' && !inDouble) {
-      inSingle = !inSingle;
-      continue;
+    pid_t pid = fork();
+    if (pid < 0) {
+      return;
     }
-    if (c == '"' && !inSingle) {
-      inDouble = !inDouble;
-      continue;
-    }
-    if (c == ' ' && !inSingle && !inDouble) {
-      if (!current.empty()) {
-        args.push_back(std::move(current));
-        current.clear();
+
+    if (pid == 0) {
+      // Child process
+      setsid();
+
+      // Set activation token so the compositor can focus the app's window
+      if (!activationToken.empty()) {
+        setenv("XDG_ACTIVATION_TOKEN", activationToken.c_str(), 1);
+        setenv("DESKTOP_STARTUP_ID", activationToken.c_str(), 1);
       }
-      continue;
-    }
-    current += c;
-  }
-  if (!current.empty()) {
-    args.push_back(std::move(current));
-  }
-  return args;
-}
 
-void launchCommand(const std::string& exec, bool terminal, const std::string& activationToken) {
-  std::string cleanExec = stripFieldCodes(exec);
-
-  if (terminal) {
-    const char* term = std::getenv("TERMINAL");
-    if (term == nullptr) {
-      term = "xterm";
-    }
-    cleanExec = std::string(term) + " -e " + cleanExec;
-  }
-
-  pid_t pid = fork();
-  if (pid < 0) {
-    return;
-  }
-
-  if (pid == 0) {
-    // Child process
-    setsid();
-
-    // Set activation token so the compositor can focus the app's window
-    if (!activationToken.empty()) {
-      setenv("XDG_ACTIVATION_TOKEN", activationToken.c_str(), 1);
-      setenv("DESKTOP_STARTUP_ID", activationToken.c_str(), 1);
-    }
-
-    // Close stdin/stdout/stderr
-    int devnull = open("/dev/null", O_RDWR);
-    if (devnull >= 0) {
-      dup2(devnull, STDIN_FILENO);
-      dup2(devnull, STDOUT_FILENO);
-      dup2(devnull, STDERR_FILENO);
-      if (devnull > STDERR_FILENO) {
-        close(devnull);
+      // Close stdin/stdout/stderr
+      int devnull = open("/dev/null", O_RDWR);
+      if (devnull >= 0) {
+        dup2(devnull, STDIN_FILENO);
+        dup2(devnull, STDOUT_FILENO);
+        dup2(devnull, STDERR_FILENO);
+        if (devnull > STDERR_FILENO) {
+          close(devnull);
+        }
       }
-    }
 
-    auto args = tokenize(cleanExec);
-    if (args.empty()) {
+      auto args = tokenize(cleanExec);
+      if (args.empty()) {
+        _exit(1);
+      }
+
+      std::vector<char*> argv;
+      argv.reserve(args.size() + 1);
+      for (auto& arg : args) {
+        argv.push_back(arg.data());
+      }
+      argv.push_back(nullptr);
+
+      execvp(argv[0], argv.data());
       _exit(1);
     }
 
-    std::vector<char*> argv;
-    argv.reserve(args.size() + 1);
-    for (auto& arg : args) {
-      argv.push_back(arg.data());
-    }
-    argv.push_back(nullptr);
-
-    execvp(argv[0], argv.data());
-    _exit(1);
+    // Parent: fire and forget. Child is session leader.
+    // We intentionally do not waitpid — the child is its own session.
   }
-
-  // Parent: fire and forget. Child is session leader.
-  // We intentionally do not waitpid — the child is its own session.
-}
 
 } // namespace
 

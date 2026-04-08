@@ -5,16 +5,16 @@
 
 namespace {
 
-static const sdbus::ServiceName k_debug_bus_name{"dev.noctalia.Debug"};
-static const sdbus::ObjectPath k_debug_object_path{"/dev/noctalia/Debug"};
-static constexpr auto k_debug_interface = "dev.noctalia.Debug";
+  static const sdbus::ServiceName k_debug_bus_name{"dev.noctalia.Debug"};
+  static const sdbus::ObjectPath k_debug_object_path{"/dev/noctalia/Debug"};
+  static constexpr auto k_debug_interface = "dev.noctalia.Debug";
 
-Urgency clamp_urgency(uint8_t urgency) {
-  if (urgency > static_cast<uint8_t>(Urgency::Critical)) {
-    return Urgency::Normal;
+  Urgency clamp_urgency(uint8_t urgency) {
+    if (urgency > static_cast<uint8_t>(Urgency::Critical)) {
+      return Urgency::Normal;
+    }
+    return static_cast<Urgency>(urgency);
   }
-  return static_cast<Urgency>(urgency);
-}
 
 } // namespace
 

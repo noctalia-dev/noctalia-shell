@@ -14,37 +14,37 @@
 
 namespace {
 
-const wl_keyboard_listener kKeyboardListener = {
-    .keymap = &WaylandSeat::handleKeyboardKeymap,
-    .enter = &WaylandSeat::handleKeyboardEnter,
-    .leave = &WaylandSeat::handleKeyboardLeave,
-    .key = &WaylandSeat::handleKeyboardKey,
-    .modifiers = &WaylandSeat::handleKeyboardModifiers,
-    .repeat_info = &WaylandSeat::handleKeyboardRepeatInfo,
-};
+  const wl_keyboard_listener kKeyboardListener = {
+      .keymap = &WaylandSeat::handleKeyboardKeymap,
+      .enter = &WaylandSeat::handleKeyboardEnter,
+      .leave = &WaylandSeat::handleKeyboardLeave,
+      .key = &WaylandSeat::handleKeyboardKey,
+      .modifiers = &WaylandSeat::handleKeyboardModifiers,
+      .repeat_info = &WaylandSeat::handleKeyboardRepeatInfo,
+  };
 
-const wl_seat_listener kSeatListener = {
-    .capabilities = &WaylandSeat::handleSeatCapabilities,
-    .name = &WaylandSeat::handleSeatName,
-};
+  const wl_seat_listener kSeatListener = {
+      .capabilities = &WaylandSeat::handleSeatCapabilities,
+      .name = &WaylandSeat::handleSeatName,
+  };
 
-const wl_pointer_listener kPointerListener = {
-    .enter = &WaylandSeat::handlePointerEnter,
-    .leave = &WaylandSeat::handlePointerLeave,
-    .motion = &WaylandSeat::handlePointerMotion,
-    .button = &WaylandSeat::handlePointerButton,
-    .axis = &WaylandSeat::handlePointerAxis,
-    .frame = &WaylandSeat::handlePointerFrame,
-    .axis_source = &WaylandSeat::handlePointerAxisSource,
-    .axis_stop = [](void*, wl_pointer*, std::uint32_t, std::uint32_t) {},
-    .axis_discrete = &WaylandSeat::handlePointerAxisDiscrete,
-    .axis_value120 = &WaylandSeat::handlePointerAxisValue120,
-    .axis_relative_direction = [](void*, wl_pointer*, std::uint32_t, std::uint32_t) {},
-};
+  const wl_pointer_listener kPointerListener = {
+      .enter = &WaylandSeat::handlePointerEnter,
+      .leave = &WaylandSeat::handlePointerLeave,
+      .motion = &WaylandSeat::handlePointerMotion,
+      .button = &WaylandSeat::handlePointerButton,
+      .axis = &WaylandSeat::handlePointerAxis,
+      .frame = &WaylandSeat::handlePointerFrame,
+      .axis_source = &WaylandSeat::handlePointerAxisSource,
+      .axis_stop = [](void*, wl_pointer*, std::uint32_t, std::uint32_t) {},
+      .axis_discrete = &WaylandSeat::handlePointerAxisDiscrete,
+      .axis_value120 = &WaylandSeat::handlePointerAxisValue120,
+      .axis_relative_direction = [](void*, wl_pointer*, std::uint32_t, std::uint32_t) {},
+  };
 
-constexpr Logger kLog("seat");
-constexpr float kAxisValue120PerStep = 120.0f;
-constexpr float kLegacyWheelAxisUnitsPerStep = 10.0f;
+  constexpr Logger kLog("seat");
+  constexpr float kAxisValue120PerStep = 120.0f;
+  constexpr float kLegacyWheelAxisUnitsPerStep = 10.0f;
 
 } // namespace
 

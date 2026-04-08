@@ -17,43 +17,43 @@
 
 namespace {
 
-std::string configPath() {
-  const char* xdg = std::getenv("XDG_CONFIG_HOME");
-  if (xdg != nullptr && xdg[0] != '\0') {
-    return std::string(xdg) + "/noctalia/config.toml";
+  std::string configPath() {
+    const char* xdg = std::getenv("XDG_CONFIG_HOME");
+    if (xdg != nullptr && xdg[0] != '\0') {
+      return std::string(xdg) + "/noctalia/config.toml";
+    }
+    const char* home = std::getenv("HOME");
+    if (home != nullptr && home[0] != '\0') {
+      return std::string(home) + "/.config/noctalia/config.toml";
+    }
+    return {};
   }
-  const char* home = std::getenv("HOME");
-  if (home != nullptr && home[0] != '\0') {
-    return std::string(home) + "/.config/noctalia/config.toml";
-  }
-  return {};
-}
 
-std::vector<std::string> readStringArray(const toml::node& node) {
-  std::vector<std::string> result;
-  if (auto* arr = node.as_array()) {
-    for (const auto& item : *arr) {
-      if (auto* str = item.as_string()) {
-        result.push_back(str->get());
+  std::vector<std::string> readStringArray(const toml::node& node) {
+    std::vector<std::string> result;
+    if (auto* arr = node.as_array()) {
+      for (const auto& item : *arr) {
+        if (auto* str = item.as_string()) {
+          result.push_back(str->get());
+        }
       }
     }
+    return result;
   }
-  return result;
-}
 
-bool matchesOutput(const std::string& match, const WaylandOutput& output) {
-  // Exact connector name match
-  if (!output.connectorName.empty() && match == output.connectorName) {
-    return true;
+  bool matchesOutput(const std::string& match, const WaylandOutput& output) {
+    // Exact connector name match
+    if (!output.connectorName.empty() && match == output.connectorName) {
+      return true;
+    }
+    // Substring match on description
+    if (!output.description.empty() && output.description.find(match) != std::string::npos) {
+      return true;
+    }
+    return false;
   }
-  // Substring match on description
-  if (!output.description.empty() && output.description.find(match) != std::string::npos) {
-    return true;
-  }
-  return false;
-}
 
-constexpr Logger kLog("config");
+  constexpr Logger kLog("config");
 
 } // namespace
 

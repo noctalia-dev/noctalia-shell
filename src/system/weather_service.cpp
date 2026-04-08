@@ -16,133 +16,133 @@
 
 namespace {
 
-constexpr Logger kLog("weather");
-constexpr std::size_t kForecastDays = 6;
+  constexpr Logger kLog("weather");
+  constexpr std::size_t kForecastDays = 6;
 
-using Clock = std::chrono::system_clock;
+  using Clock = std::chrono::system_clock;
 
-std::chrono::system_clock::time_point fromUnixSeconds(std::int64_t value) {
-  return Clock::time_point{std::chrono::seconds{value}};
-}
-
-std::int64_t toUnixSeconds(std::chrono::system_clock::time_point tp) {
-  return std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
-}
-
-double readNumber(const nlohmann::json& json, const char* key) {
-  const auto it = json.find(key);
-  if (it == json.end() || !it->is_number()) {
-    throw std::runtime_error(std::string("missing numeric key: ") + key);
+  std::chrono::system_clock::time_point fromUnixSeconds(std::int64_t value) {
+    return Clock::time_point{std::chrono::seconds{value}};
   }
-  return it->get<double>();
-}
 
-double readOptionalNumber(const nlohmann::json& json, const char* key, double fallback = 0.0) {
-  const auto it = json.find(key);
-  if (it == json.end() || !it->is_number()) {
-    return fallback;
+  std::int64_t toUnixSeconds(std::chrono::system_clock::time_point tp) {
+    return std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
   }
-  return it->get<double>();
-}
 
-std::int32_t readInt(const nlohmann::json& json, const char* key) {
-  const auto it = json.find(key);
-  if (it == json.end() || !it->is_number_integer()) {
-    throw std::runtime_error(std::string("missing integer key: ") + key);
-  }
-  return it->get<std::int32_t>();
-}
-
-std::int32_t readOptionalInt(const nlohmann::json& json, const char* key, std::int32_t fallback = 0) {
-  const auto it = json.find(key);
-  if (it == json.end() || !it->is_number_integer()) {
-    return fallback;
-  }
-  return it->get<std::int32_t>();
-}
-
-std::string readString(const nlohmann::json& json, const char* key) {
-  const auto it = json.find(key);
-  if (it == json.end() || !it->is_string()) {
-    return {};
-  }
-  return it->get<std::string>();
-}
-
-bool readBool(const nlohmann::json& json, const char* key, bool fallback = false) {
-  const auto it = json.find(key);
-  if (it == json.end()) {
-    return fallback;
-  }
-  if (it->is_boolean()) {
-    return it->get<bool>();
-  }
-  if (it->is_number_integer()) {
-    return it->get<int>() != 0;
-  }
-  return fallback;
-}
-
-std::string urlEncode(std::string_view text) {
-  std::string encoded;
-  encoded.reserve(text.size() * 3);
-
-  auto isUnreserved = [](unsigned char ch) {
-    return std::isalnum(ch) != 0 || ch == '-' || ch == '_' || ch == '.' || ch == '~';
-  };
-
-  for (unsigned char ch : text) {
-    if (isUnreserved(ch)) {
-      encoded.push_back(static_cast<char>(ch));
-    } else {
-      encoded += std::format("%{:02X}", static_cast<unsigned int>(ch));
+  double readNumber(const nlohmann::json& json, const char* key) {
+    const auto it = json.find(key);
+    if (it == json.end() || !it->is_number()) {
+      throw std::runtime_error(std::string("missing numeric key: ") + key);
     }
+    return it->get<double>();
   }
 
-  return encoded;
-}
+  double readOptionalNumber(const nlohmann::json& json, const char* key, double fallback = 0.0) {
+    const auto it = json.find(key);
+    if (it == json.end() || !it->is_number()) {
+      return fallback;
+    }
+    return it->get<double>();
+  }
 
-nlohmann::json currentUnitsToJson(const WeatherCurrentUnits& units) {
-  return nlohmann::json{
-      {"time", units.time},
-      {"interval", units.interval},
-      {"temperature", units.temperature},
-      {"wind_speed", units.windSpeed},
-      {"wind_direction", units.windDirection},
-      {"is_day", units.isDay},
-      {"weather_code", units.weatherCode},
-  };
-}
+  std::int32_t readInt(const nlohmann::json& json, const char* key) {
+    const auto it = json.find(key);
+    if (it == json.end() || !it->is_number_integer()) {
+      throw std::runtime_error(std::string("missing integer key: ") + key);
+    }
+    return it->get<std::int32_t>();
+  }
 
-nlohmann::json dailyUnitsToJson(const WeatherDailyUnits& units) {
-  return nlohmann::json{
-      {"time", units.time},
-      {"temperature_max", units.temperatureMax},
-      {"temperature_min", units.temperatureMin},
-      {"weather_code", units.weatherCode},
-  };
-}
+  std::int32_t readOptionalInt(const nlohmann::json& json, const char* key, std::int32_t fallback = 0) {
+    const auto it = json.find(key);
+    if (it == json.end() || !it->is_number_integer()) {
+      return fallback;
+    }
+    return it->get<std::int32_t>();
+  }
 
-WeatherCurrentUnits currentUnitsFromJson(const nlohmann::json& json) {
-  WeatherCurrentUnits units;
-  units.time = readString(json, "time");
-  units.interval = readString(json, "interval");
-  units.temperature = readString(json, "temperature");
-  units.windSpeed = readString(json, "wind_speed");
-  units.windDirection = readString(json, "wind_direction");
-  units.isDay = readString(json, "is_day");
-  units.weatherCode = readString(json, "weather_code");
-  return units;
-}
+  std::string readString(const nlohmann::json& json, const char* key) {
+    const auto it = json.find(key);
+    if (it == json.end() || !it->is_string()) {
+      return {};
+    }
+    return it->get<std::string>();
+  }
 
-WeatherDailyUnits dailyUnitsFromJson(const nlohmann::json& json) {
-  WeatherDailyUnits units;
-  units.time = readString(json, "time");
-  units.temperatureMax = readString(json, "temperature_max");
-  units.temperatureMin = readString(json, "temperature_min");
-  units.weatherCode = readString(json, "weather_code");
-  return units;
-}
+  bool readBool(const nlohmann::json& json, const char* key, bool fallback = false) {
+    const auto it = json.find(key);
+    if (it == json.end()) {
+      return fallback;
+    }
+    if (it->is_boolean()) {
+      return it->get<bool>();
+    }
+    if (it->is_number_integer()) {
+      return it->get<int>() != 0;
+    }
+    return fallback;
+  }
+
+  std::string urlEncode(std::string_view text) {
+    std::string encoded;
+    encoded.reserve(text.size() * 3);
+
+    auto isUnreserved = [](unsigned char ch) {
+      return std::isalnum(ch) != 0 || ch == '-' || ch == '_' || ch == '.' || ch == '~';
+    };
+
+    for (unsigned char ch : text) {
+      if (isUnreserved(ch)) {
+        encoded.push_back(static_cast<char>(ch));
+      } else {
+        encoded += std::format("%{:02X}", static_cast<unsigned int>(ch));
+      }
+    }
+
+    return encoded;
+  }
+
+  nlohmann::json currentUnitsToJson(const WeatherCurrentUnits& units) {
+    return nlohmann::json{
+        {"time", units.time},
+        {"interval", units.interval},
+        {"temperature", units.temperature},
+        {"wind_speed", units.windSpeed},
+        {"wind_direction", units.windDirection},
+        {"is_day", units.isDay},
+        {"weather_code", units.weatherCode},
+    };
+  }
+
+  nlohmann::json dailyUnitsToJson(const WeatherDailyUnits& units) {
+    return nlohmann::json{
+        {"time", units.time},
+        {"temperature_max", units.temperatureMax},
+        {"temperature_min", units.temperatureMin},
+        {"weather_code", units.weatherCode},
+    };
+  }
+
+  WeatherCurrentUnits currentUnitsFromJson(const nlohmann::json& json) {
+    WeatherCurrentUnits units;
+    units.time = readString(json, "time");
+    units.interval = readString(json, "interval");
+    units.temperature = readString(json, "temperature");
+    units.windSpeed = readString(json, "wind_speed");
+    units.windDirection = readString(json, "wind_direction");
+    units.isDay = readString(json, "is_day");
+    units.weatherCode = readString(json, "weather_code");
+    return units;
+  }
+
+  WeatherDailyUnits dailyUnitsFromJson(const nlohmann::json& json) {
+    WeatherDailyUnits units;
+    units.time = readString(json, "time");
+    units.temperatureMax = readString(json, "temperature_max");
+    units.temperatureMin = readString(json, "temperature_min");
+    units.weatherCode = readString(json, "weather_code");
+    return units;
+  }
 
 } // namespace
 

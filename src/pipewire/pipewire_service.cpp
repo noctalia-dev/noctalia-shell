@@ -19,105 +19,105 @@
 
 namespace {
 
-// Registry event callbacks (C-style, forwarded to service)
-void onRegistryGlobal(void* data, std::uint32_t id, std::uint32_t /*permissions*/, const char* type,
-                      std::uint32_t version, const spa_dict* props) {
-  auto* svc = static_cast<PipeWireService*>(data);
-  svc->onRegistryGlobal(id, type, version, props);
-}
-
-void onRegistryGlobalRemove(void* data, std::uint32_t id) {
-  auto* svc = static_cast<PipeWireService*>(data);
-  svc->onRegistryGlobalRemove(id);
-}
-
-const pw_registry_events kRegistryEvents = {
-    .version = PW_VERSION_REGISTRY_EVENTS,
-    .global = onRegistryGlobal,
-    .global_remove = onRegistryGlobalRemove,
-};
-
-// Node event callbacks
-void onNodeInfo(void* data, const pw_node_info* info) {
-  auto* nd = static_cast<PipeWireService::NodeData*>(data);
-  nd->service->onNodeInfo(nd->id, info);
-}
-
-void onNodeParam(void* data, int /*seq*/, std::uint32_t id, std::uint32_t index, std::uint32_t next,
-                 const spa_pod* param) {
-  auto* nd = static_cast<PipeWireService::NodeData*>(data);
-  nd->service->onNodeParam(nd->id, id, index, next, param);
-}
-
-const pw_node_events kNodeEvents = {
-    .version = PW_VERSION_NODE_EVENTS,
-    .info = onNodeInfo,
-    .param = onNodeParam,
-};
-
-// Metadata events for tracking default sink/source
-struct MetadataData {
-  PipeWireService* service = nullptr;
-  struct pw_metadata* proxy = nullptr;
-  spa_hook* listener = nullptr;
-};
-
-int onMetadataProperty(void* data, std::uint32_t /*subject*/, const char* key, const char* /*type*/,
-                       const char* value) {
-  if (key == nullptr || value == nullptr) {
-    return 0;
+  // Registry event callbacks (C-style, forwarded to service)
+  void onRegistryGlobal(void* data, std::uint32_t id, std::uint32_t /*permissions*/, const char* type,
+                        std::uint32_t version, const spa_dict* props) {
+    auto* svc = static_cast<PipeWireService*>(data);
+    svc->onRegistryGlobal(id, type, version, props);
   }
-  auto* md = static_cast<MetadataData*>(data);
-  // Parse the JSON value to extract the name - format is {"name":"sink_name"}
-  std::string val(value);
-  if (std::strcmp(key, "default.audio.sink") == 0 || std::strcmp(key, "default.audio.source") == 0) {
-    auto namePos = val.find("\"name\"");
-    if (namePos != std::string::npos) {
-      auto colonPos = val.find(':', namePos);
-      if (colonPos != std::string::npos) {
-        auto firstQuote = val.find('"', colonPos + 1);
-        auto secondQuote = val.find('"', firstQuote + 1);
-        if (firstQuote != std::string::npos && secondQuote != std::string::npos) {
-          std::string name = val.substr(firstQuote + 1, secondQuote - firstQuote - 1);
-          spa_dict_item items[1];
-          items[0] = SPA_DICT_ITEM_INIT(key, name.c_str());
-          spa_dict dict = SPA_DICT_INIT(items, 1);
-          md->service->parseDefaultNodes(&dict);
+
+  void onRegistryGlobalRemove(void* data, std::uint32_t id) {
+    auto* svc = static_cast<PipeWireService*>(data);
+    svc->onRegistryGlobalRemove(id);
+  }
+
+  const pw_registry_events kRegistryEvents = {
+      .version = PW_VERSION_REGISTRY_EVENTS,
+      .global = onRegistryGlobal,
+      .global_remove = onRegistryGlobalRemove,
+  };
+
+  // Node event callbacks
+  void onNodeInfo(void* data, const pw_node_info* info) {
+    auto* nd = static_cast<PipeWireService::NodeData*>(data);
+    nd->service->onNodeInfo(nd->id, info);
+  }
+
+  void onNodeParam(void* data, int /*seq*/, std::uint32_t id, std::uint32_t index, std::uint32_t next,
+                   const spa_pod* param) {
+    auto* nd = static_cast<PipeWireService::NodeData*>(data);
+    nd->service->onNodeParam(nd->id, id, index, next, param);
+  }
+
+  const pw_node_events kNodeEvents = {
+      .version = PW_VERSION_NODE_EVENTS,
+      .info = onNodeInfo,
+      .param = onNodeParam,
+  };
+
+  // Metadata events for tracking default sink/source
+  struct MetadataData {
+    PipeWireService* service = nullptr;
+    struct pw_metadata* proxy = nullptr;
+    spa_hook* listener = nullptr;
+  };
+
+  int onMetadataProperty(void* data, std::uint32_t /*subject*/, const char* key, const char* /*type*/,
+                         const char* value) {
+    if (key == nullptr || value == nullptr) {
+      return 0;
+    }
+    auto* md = static_cast<MetadataData*>(data);
+    // Parse the JSON value to extract the name - format is {"name":"sink_name"}
+    std::string val(value);
+    if (std::strcmp(key, "default.audio.sink") == 0 || std::strcmp(key, "default.audio.source") == 0) {
+      auto namePos = val.find("\"name\"");
+      if (namePos != std::string::npos) {
+        auto colonPos = val.find(':', namePos);
+        if (colonPos != std::string::npos) {
+          auto firstQuote = val.find('"', colonPos + 1);
+          auto secondQuote = val.find('"', firstQuote + 1);
+          if (firstQuote != std::string::npos && secondQuote != std::string::npos) {
+            std::string name = val.substr(firstQuote + 1, secondQuote - firstQuote - 1);
+            spa_dict_item items[1];
+            items[0] = SPA_DICT_ITEM_INIT(key, name.c_str());
+            spa_dict dict = SPA_DICT_INIT(items, 1);
+            md->service->parseDefaultNodes(&dict);
+          }
         }
       }
     }
+    return 0;
   }
-  return 0;
-}
 
-const pw_metadata_events kMetadataEvents = {
-    .version = PW_VERSION_METADATA_EVENTS,
-    .property = onMetadataProperty,
-};
+  const pw_metadata_events kMetadataEvents = {
+      .version = PW_VERSION_METADATA_EVENTS,
+      .property = onMetadataProperty,
+  };
 
-std::string dictGet(const spa_dict* dict, const char* key) {
-  if (dict == nullptr) {
-    return {};
-  }
-  const char* val = spa_dict_lookup(dict, key);
-  return val != nullptr ? std::string(val) : std::string{};
-}
-
-std::string escapeJsonString(std::string_view text) {
-  std::string escaped;
-  escaped.reserve(text.size());
-
-  for (const char ch : text) {
-    if (ch == '\\' || ch == '"') {
-      escaped.push_back('\\');
+  std::string dictGet(const spa_dict* dict, const char* key) {
+    if (dict == nullptr) {
+      return {};
     }
-    escaped.push_back(ch);
+    const char* val = spa_dict_lookup(dict, key);
+    return val != nullptr ? std::string(val) : std::string{};
   }
 
-  return escaped;
-}
+  std::string escapeJsonString(std::string_view text) {
+    std::string escaped;
+    escaped.reserve(text.size());
 
-constexpr Logger kLog("pipewire");
+    for (const char ch : text) {
+      if (ch == '\\' || ch == '"') {
+        escaped.push_back('\\');
+      }
+      escaped.push_back(ch);
+    }
+
+    return escaped;
+  }
+
+  constexpr Logger kLog("pipewire");
 
 } // namespace
 

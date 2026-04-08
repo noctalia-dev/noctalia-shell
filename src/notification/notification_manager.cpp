@@ -6,34 +6,34 @@
 
 namespace {
 
-constexpr std::string_view urgency_str(Urgency u) noexcept {
-  switch (u) {
-  case Urgency::Low:
-    return "low";
-  case Urgency::Normal:
-    return "normal";
-  case Urgency::Critical:
-    return "critical";
+  constexpr std::string_view urgency_str(Urgency u) noexcept {
+    switch (u) {
+    case Urgency::Low:
+      return "low";
+    case Urgency::Normal:
+      return "normal";
+    case Urgency::Critical:
+      return "critical";
+    }
+    return "unknown";
   }
-  return "unknown";
-}
 
-constexpr std::string_view origin_str(NotificationOrigin o) noexcept {
-  switch (o) {
-  case NotificationOrigin::External:
-    return "external";
-  case NotificationOrigin::Internal:
-    return "internal";
+  constexpr std::string_view origin_str(NotificationOrigin o) noexcept {
+    switch (o) {
+    case NotificationOrigin::External:
+      return "external";
+    case NotificationOrigin::Internal:
+      return "internal";
+    }
+    return "unknown";
   }
-  return "unknown";
-}
 
-std::optional<TimePoint> schedule_expiry(int32_t timeout_ms) noexcept {
-  if (timeout_ms > 0) {
-    return Clock::now() + std::chrono::milliseconds(timeout_ms);
+  std::optional<TimePoint> schedule_expiry(int32_t timeout_ms) noexcept {
+    if (timeout_ms > 0) {
+      return Clock::now() + std::chrono::milliseconds(timeout_ms);
+    }
+    return std::nullopt; // 0 = persistent, -1 = server default (treat as persistent for now)
   }
-  return std::nullopt; // 0 = persistent, -1 = server default (treat as persistent for now)
-}
 
 } // namespace
 

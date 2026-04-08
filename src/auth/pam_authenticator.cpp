@@ -12,71 +12,71 @@
 
 namespace {
 
-void secureClear(std::string& value) {
-  volatile char* ptr = value.empty() ? nullptr : &value[0];
-  for (std::size_t i = 0; i < value.size(); ++i) {
-    ptr[i] = '\0';
-  }
-  value.clear();
-}
-
-struct PamConversationData {
-  const char* password = nullptr;
-};
-
-int pamConversation(int numMsg, const pam_message** msg, pam_response** response, void* appdataPtr) {
-  if (numMsg <= 0 || msg == nullptr || response == nullptr || appdataPtr == nullptr) {
-    return PAM_CONV_ERR;
+  void secureClear(std::string& value) {
+    volatile char* ptr = value.empty() ? nullptr : &value[0];
+    for (std::size_t i = 0; i < value.size(); ++i) {
+      ptr[i] = '\0';
+    }
+    value.clear();
   }
 
-  auto* data = static_cast<PamConversationData*>(appdataPtr);
-  auto* replies = static_cast<pam_response*>(std::calloc(static_cast<std::size_t>(numMsg), sizeof(pam_response)));
-  if (replies == nullptr) {
-    return PAM_BUF_ERR;
-  }
+  struct PamConversationData {
+    const char* password = nullptr;
+  };
 
-  for (int i = 0; i < numMsg; ++i) {
-    if (msg[i] == nullptr) {
-      std::free(replies);
+  int pamConversation(int numMsg, const pam_message** msg, pam_response** response, void* appdataPtr) {
+    if (numMsg <= 0 || msg == nullptr || response == nullptr || appdataPtr == nullptr) {
       return PAM_CONV_ERR;
     }
 
-    switch (msg[i]->msg_style) {
-    case PAM_PROMPT_ECHO_OFF:
-      replies[i].resp = ::strdup(data->password != nullptr ? data->password : "");
-      break;
-    case PAM_PROMPT_ECHO_ON:
-      replies[i].resp = ::strdup("");
-      break;
-    case PAM_ERROR_MSG:
-    case PAM_TEXT_INFO:
-      replies[i].resp = nullptr;
-      break;
-    default:
-      for (int j = 0; j <= i; ++j) {
-        if (replies[j].resp != nullptr) {
-          std::free(replies[j].resp);
-        }
-      }
-      std::free(replies);
-      return PAM_CONV_ERR;
-    }
-
-    if ((msg[i]->msg_style == PAM_PROMPT_ECHO_OFF || msg[i]->msg_style == PAM_PROMPT_ECHO_ON) &&
-        replies[i].resp == nullptr) {
-      for (int j = 0; j <= i; ++j) {
-        if (replies[j].resp != nullptr) {
-          std::free(replies[j].resp);
-        }
-      }
-      std::free(replies);
+    auto* data = static_cast<PamConversationData*>(appdataPtr);
+    auto* replies = static_cast<pam_response*>(std::calloc(static_cast<std::size_t>(numMsg), sizeof(pam_response)));
+    if (replies == nullptr) {
       return PAM_BUF_ERR;
     }
-  }
 
-  *response = replies;
-  return PAM_SUCCESS;
-}
+    for (int i = 0; i < numMsg; ++i) {
+      if (msg[i] == nullptr) {
+        std::free(replies);
+        return PAM_CONV_ERR;
+      }
+
+      switch (msg[i]->msg_style) {
+      case PAM_PROMPT_ECHO_OFF:
+        replies[i].resp = ::strdup(data->password != nullptr ? data->password : "");
+        break;
+      case PAM_PROMPT_ECHO_ON:
+        replies[i].resp = ::strdup("");
+        break;
+      case PAM_ERROR_MSG:
+      case PAM_TEXT_INFO:
+        replies[i].resp = nullptr;
+        break;
+      default:
+        for (int j = 0; j <= i; ++j) {
+          if (replies[j].resp != nullptr) {
+            std::free(replies[j].resp);
+          }
+        }
+        std::free(replies);
+        return PAM_CONV_ERR;
+      }
+
+      if ((msg[i]->msg_style == PAM_PROMPT_ECHO_OFF || msg[i]->msg_style == PAM_PROMPT_ECHO_ON) &&
+          replies[i].resp == nullptr) {
+        for (int j = 0; j <= i; ++j) {
+          if (replies[j].resp != nullptr) {
+            std::free(replies[j].resp);
+          }
+        }
+        std::free(replies);
+        return PAM_BUF_ERR;
+      }
+    }
+
+    *response = replies;
+    return PAM_SUCCESS;
+  }
 
 } // namespace
 

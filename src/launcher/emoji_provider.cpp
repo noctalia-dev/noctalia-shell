@@ -10,12 +10,12 @@
 
 namespace {
 
-std::string toLower(std::string_view s) {
-  std::string result(s);
-  std::transform(result.begin(), result.end(), result.begin(),
-                 [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-  return result;
-}
+  std::string toLower(std::string_view s) {
+    std::string result(s);
+    std::transform(result.begin(), result.end(), result.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return result;
+  }
 
 } // namespace
 

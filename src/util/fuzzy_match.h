@@ -4,6 +4,6 @@
 
 namespace FuzzyMatch {
 
-int score(std::string_view pattern, std::string_view text);
+  int score(std::string_view pattern, std::string_view text);
 
 } // namespace FuzzyMatch

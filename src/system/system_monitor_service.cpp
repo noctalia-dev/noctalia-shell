@@ -12,74 +12,74 @@
 
 namespace {
 
-std::optional<std::string> readSmallTextFile(const std::filesystem::path& path) {
-  std::ifstream file{path};
-  if (!file.is_open()) {
-    return std::nullopt;
+  std::optional<std::string> readSmallTextFile(const std::filesystem::path& path) {
+    std::ifstream file{path};
+    if (!file.is_open()) {
+      return std::nullopt;
+    }
+
+    std::string text;
+    std::getline(file, text);
+    if (text.empty()) {
+      return std::nullopt;
+    }
+
+    while (!text.empty() && (text.back() == '\n' || text.back() == '\r' || text.back() == ' ' || text.back() == '\t')) {
+      text.pop_back();
+    }
+    return text;
   }
 
-  std::string text;
-  std::getline(file, text);
-  if (text.empty()) {
-    return std::nullopt;
+  std::optional<double> readTempInputCelsius(const std::filesystem::path& path) {
+    std::ifstream file{path};
+    if (!file.is_open()) {
+      return std::nullopt;
+    }
+
+    long long raw = 0;
+    file >> raw;
+    if (file.fail() || raw <= 0) {
+      return std::nullopt;
+    }
+
+    // Most Linux temp files are millidegrees Celsius.
+    if (raw >= 1000) {
+      return static_cast<double>(raw) / 1000.0;
+    }
+    return static_cast<double>(raw);
   }
 
-  while (!text.empty() && (text.back() == '\n' || text.back() == '\r' || text.back() == ' ' || text.back() == '\t')) {
-    text.pop_back();
-  }
-  return text;
-}
-
-std::optional<double> readTempInputCelsius(const std::filesystem::path& path) {
-  std::ifstream file{path};
-  if (!file.is_open()) {
-    return std::nullopt;
+  std::string toLower(std::string value) {
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return value;
   }
 
-  long long raw = 0;
-  file >> raw;
-  if (file.fail() || raw <= 0) {
-    return std::nullopt;
+  int scoreHwmonSensor(const std::string& hwmon_name, const std::string& label) {
+    int score = 0;
+    const std::string name = toLower(hwmon_name);
+    const std::string lbl = toLower(label);
+
+    if (name.find("coretemp") != std::string::npos || name.find("k10temp") != std::string::npos ||
+        name.find("zenpower") != std::string::npos || name.find("cpu") != std::string::npos) {
+      score += 20;
+    }
+
+    if (lbl.find("package") != std::string::npos || lbl.find("tctl") != std::string::npos ||
+        lbl.find("tdie") != std::string::npos || lbl.find("cpu") != std::string::npos) {
+      score += 30;
+    }
+
+    return score;
   }
 
-  // Most Linux temp files are millidegrees Celsius.
-  if (raw >= 1000) {
-    return static_cast<double>(raw) / 1000.0;
-  }
-  return static_cast<double>(raw);
-}
-
-std::string toLower(std::string value) {
-  std::transform(value.begin(), value.end(), value.begin(),
-                 [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-  return value;
-}
-
-int scoreHwmonSensor(const std::string& hwmon_name, const std::string& label) {
-  int score = 0;
-  const std::string name = toLower(hwmon_name);
-  const std::string lbl = toLower(label);
-
-  if (name.find("coretemp") != std::string::npos || name.find("k10temp") != std::string::npos ||
-      name.find("zenpower") != std::string::npos || name.find("cpu") != std::string::npos) {
-    score += 20;
+  bool isCpuThermalZoneType(const std::string& type) {
+    const std::string t = toLower(type);
+    return t.find("x86_pkg_temp") != std::string::npos || t.find("cpu") != std::string::npos ||
+           t.find("soc") != std::string::npos || t.find("package") != std::string::npos;
   }
 
-  if (lbl.find("package") != std::string::npos || lbl.find("tctl") != std::string::npos ||
-      lbl.find("tdie") != std::string::npos || lbl.find("cpu") != std::string::npos) {
-    score += 30;
-  }
-
-  return score;
-}
-
-bool isCpuThermalZoneType(const std::string& type) {
-  const std::string t = toLower(type);
-  return t.find("x86_pkg_temp") != std::string::npos || t.find("cpu") != std::string::npos ||
-         t.find("soc") != std::string::npos || t.find("package") != std::string::npos;
-}
-
-constexpr Logger kLog("sysmon");
+  constexpr Logger kLog("sysmon");
 
 } // namespace
 

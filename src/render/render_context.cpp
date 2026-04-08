@@ -18,42 +18,42 @@
 
 namespace {
 
-constexpr EGLint kConfigAttributes[] = {
-    EGL_SURFACE_TYPE,
-    EGL_WINDOW_BIT,
-    EGL_RENDERABLE_TYPE,
-    EGL_OPENGL_ES2_BIT,
-    EGL_RED_SIZE,
-    8,
-    EGL_GREEN_SIZE,
-    8,
-    EGL_BLUE_SIZE,
-    8,
-    EGL_ALPHA_SIZE,
-    8,
-    EGL_NONE,
-};
+  constexpr EGLint kConfigAttributes[] = {
+      EGL_SURFACE_TYPE,
+      EGL_WINDOW_BIT,
+      EGL_RENDERABLE_TYPE,
+      EGL_OPENGL_ES2_BIT,
+      EGL_RED_SIZE,
+      8,
+      EGL_GREEN_SIZE,
+      8,
+      EGL_BLUE_SIZE,
+      8,
+      EGL_ALPHA_SIZE,
+      8,
+      EGL_NONE,
+  };
 
-constexpr EGLint kContextAttributes[] = {
-    EGL_CONTEXT_CLIENT_VERSION,
-    2,
-    EGL_NONE,
-};
+  constexpr EGLint kContextAttributes[] = {
+      EGL_CONTEXT_CLIENT_VERSION,
+      2,
+      EGL_NONE,
+  };
 
 } // namespace
 
 namespace {
 
-void applyScissor(float sw, float sh, float bw, float bh, float left, float top, float right, float bottom) {
-  const float scaleX = sw > 0.0f ? bw / sw : 1.0f;
-  const float scaleY = sh > 0.0f ? bh / sh : 1.0f;
+  void applyScissor(float sw, float sh, float bw, float bh, float left, float top, float right, float bottom) {
+    const float scaleX = sw > 0.0f ? bw / sw : 1.0f;
+    const float scaleY = sh > 0.0f ? bh / sh : 1.0f;
 
-  const GLint scissorX = static_cast<GLint>(std::floor(left * scaleX));
-  const GLint scissorY = static_cast<GLint>(std::floor((sh - bottom) * scaleY));
-  const GLsizei scissorW = static_cast<GLsizei>(std::ceil(std::max(0.0f, right - left) * scaleX));
-  const GLsizei scissorH = static_cast<GLsizei>(std::ceil(std::max(0.0f, bottom - top) * scaleY));
-  glScissor(scissorX, scissorY, scissorW, scissorH);
-}
+    const GLint scissorX = static_cast<GLint>(std::floor(left * scaleX));
+    const GLint scissorY = static_cast<GLint>(std::floor((sh - bottom) * scaleY));
+    const GLsizei scissorW = static_cast<GLsizei>(std::ceil(std::max(0.0f, right - left) * scaleX));
+    const GLsizei scissorH = static_cast<GLsizei>(std::ceil(std::max(0.0f, bottom - top) * scaleY));
+    glScissor(scissorX, scissorY, scissorW, scissorH);
+  }
 
 } // namespace
 

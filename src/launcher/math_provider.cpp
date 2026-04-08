@@ -11,65 +11,65 @@
 
 namespace {
 
-bool looksLikeMath(std::string_view text) {
-  if (text.empty()) {
-    return false;
-  }
-
-  bool hasOperator = false;
-  bool hasDigit = false;
-
-  for (char c : text) {
-    if (c >= '0' && c <= '9') {
-      hasDigit = true;
-    } else if (c == '+' || c == '*' || c == '/' || c == '^' || c == '%') {
-      hasOperator = true;
-    } else if (c == '-') {
-      // Could be unary minus or subtraction
-      hasOperator = true;
-    } else if (c == '(' || c == ')' || c == '.' || c == ' ' || c == ',') {
-      // Allowed in math expressions
-    } else if (std::isalpha(static_cast<unsigned char>(c))) {
-      // Allow function names like sin, cos, sqrt, pi, e
-    } else {
+  bool looksLikeMath(std::string_view text) {
+    if (text.empty()) {
       return false;
     }
+
+    bool hasOperator = false;
+    bool hasDigit = false;
+
+    for (char c : text) {
+      if (c >= '0' && c <= '9') {
+        hasDigit = true;
+      } else if (c == '+' || c == '*' || c == '/' || c == '^' || c == '%') {
+        hasOperator = true;
+      } else if (c == '-') {
+        // Could be unary minus or subtraction
+        hasOperator = true;
+      } else if (c == '(' || c == ')' || c == '.' || c == ' ' || c == ',') {
+        // Allowed in math expressions
+      } else if (std::isalpha(static_cast<unsigned char>(c))) {
+        // Allow function names like sin, cos, sqrt, pi, e
+      } else {
+        return false;
+      }
+    }
+
+    return hasDigit && hasOperator;
   }
 
-  return hasDigit && hasOperator;
-}
+  std::string formatResult(double value) {
+    if (std::isnan(value) || std::isinf(value)) {
+      return {};
+    }
 
-std::string formatResult(double value) {
-  if (std::isnan(value) || std::isinf(value)) {
-    return {};
-  }
+    // If it's an integer, show without decimals
+    if (value == std::floor(value) && std::abs(value) < 1e15) {
+      std::ostringstream oss;
+      oss.precision(0);
+      oss << std::fixed << value;
+      return oss.str();
+    }
 
-  // If it's an integer, show without decimals
-  if (value == std::floor(value) && std::abs(value) < 1e15) {
+    // Otherwise show with reasonable precision
     std::ostringstream oss;
-    oss.precision(0);
-    oss << std::fixed << value;
-    return oss.str();
-  }
+    oss.precision(10);
+    oss << value;
+    std::string s = oss.str();
 
-  // Otherwise show with reasonable precision
-  std::ostringstream oss;
-  oss.precision(10);
-  oss << value;
-  std::string s = oss.str();
-
-  // Trim trailing zeros after decimal point
-  if (s.find('.') != std::string::npos) {
-    while (s.back() == '0') {
-      s.pop_back();
+    // Trim trailing zeros after decimal point
+    if (s.find('.') != std::string::npos) {
+      while (s.back() == '0') {
+        s.pop_back();
+      }
+      if (s.back() == '.') {
+        s.pop_back();
+      }
     }
-    if (s.back() == '.') {
-      s.pop_back();
-    }
-  }
 
-  return s;
-}
+    return s;
+  }
 
 } // namespace
 

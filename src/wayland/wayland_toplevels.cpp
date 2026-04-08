@@ -8,59 +8,59 @@
 
 namespace {
 
-void managerToplevel(void* data, zwlr_foreign_toplevel_manager_v1* /*manager*/,
-                     zwlr_foreign_toplevel_handle_v1* handle) {
-  static_cast<WaylandToplevels*>(data)->onToplevelCreated(handle);
-}
+  void managerToplevel(void* data, zwlr_foreign_toplevel_manager_v1* /*manager*/,
+                       zwlr_foreign_toplevel_handle_v1* handle) {
+    static_cast<WaylandToplevels*>(data)->onToplevelCreated(handle);
+  }
 
-void managerFinished(void* data, zwlr_foreign_toplevel_manager_v1* /*manager*/) {
-  static_cast<WaylandToplevels*>(data)->onManagerFinished();
-}
+  void managerFinished(void* data, zwlr_foreign_toplevel_manager_v1* /*manager*/) {
+    static_cast<WaylandToplevels*>(data)->onManagerFinished();
+  }
 
-const zwlr_foreign_toplevel_manager_v1_listener kManagerListener = {
-    .toplevel = managerToplevel,
-    .finished = managerFinished,
-};
+  const zwlr_foreign_toplevel_manager_v1_listener kManagerListener = {
+      .toplevel = managerToplevel,
+      .finished = managerFinished,
+  };
 
-void handleClosed(void* data, zwlr_foreign_toplevel_handle_v1* handle) {
-  static_cast<WaylandToplevels*>(data)->onHandleClosed(handle);
-}
+  void handleClosed(void* data, zwlr_foreign_toplevel_handle_v1* handle) {
+    static_cast<WaylandToplevels*>(data)->onHandleClosed(handle);
+  }
 
-void handleDone(void* data, zwlr_foreign_toplevel_handle_v1* handle) {
-  static_cast<WaylandToplevels*>(data)->onHandleDone(handle);
-}
+  void handleDone(void* data, zwlr_foreign_toplevel_handle_v1* handle) {
+    static_cast<WaylandToplevels*>(data)->onHandleDone(handle);
+  }
 
-void handleTitle(void* data, zwlr_foreign_toplevel_handle_v1* handle, const char* title) {
-  static_cast<WaylandToplevels*>(data)->onHandleTitle(handle, title);
-}
+  void handleTitle(void* data, zwlr_foreign_toplevel_handle_v1* handle, const char* title) {
+    static_cast<WaylandToplevels*>(data)->onHandleTitle(handle, title);
+  }
 
-void handleAppId(void* data, zwlr_foreign_toplevel_handle_v1* handle, const char* appId) {
-  static_cast<WaylandToplevels*>(data)->onHandleAppId(handle, appId);
-}
+  void handleAppId(void* data, zwlr_foreign_toplevel_handle_v1* handle, const char* appId) {
+    static_cast<WaylandToplevels*>(data)->onHandleAppId(handle, appId);
+  }
 
-void handleState(void* data, zwlr_foreign_toplevel_handle_v1* handle, wl_array* state) {
-  static_cast<WaylandToplevels*>(data)->onHandleState(handle, state);
-}
+  void handleState(void* data, zwlr_foreign_toplevel_handle_v1* handle, wl_array* state) {
+    static_cast<WaylandToplevels*>(data)->onHandleState(handle, state);
+  }
 
-void handleOutputEnter(void* data, zwlr_foreign_toplevel_handle_v1* handle, wl_output* output) {
-  static_cast<WaylandToplevels*>(data)->onHandleOutputEnter(handle, output);
-}
-void handleOutputLeave(void* data, zwlr_foreign_toplevel_handle_v1* handle, wl_output* output) {
-  static_cast<WaylandToplevels*>(data)->onHandleOutputLeave(handle, output);
-}
-void handleParent(void* /*data*/, zwlr_foreign_toplevel_handle_v1* /*handle*/,
-                  zwlr_foreign_toplevel_handle_v1* /*parent*/) {}
+  void handleOutputEnter(void* data, zwlr_foreign_toplevel_handle_v1* handle, wl_output* output) {
+    static_cast<WaylandToplevels*>(data)->onHandleOutputEnter(handle, output);
+  }
+  void handleOutputLeave(void* data, zwlr_foreign_toplevel_handle_v1* handle, wl_output* output) {
+    static_cast<WaylandToplevels*>(data)->onHandleOutputLeave(handle, output);
+  }
+  void handleParent(void* /*data*/, zwlr_foreign_toplevel_handle_v1* /*handle*/,
+                    zwlr_foreign_toplevel_handle_v1* /*parent*/) {}
 
-const zwlr_foreign_toplevel_handle_v1_listener kHandleListener = {
-    .title = handleTitle,
-    .app_id = handleAppId,
-    .output_enter = handleOutputEnter,
-    .output_leave = handleOutputLeave,
-    .state = handleState,
-    .done = handleDone,
-    .closed = handleClosed,
-    .parent = handleParent,
-};
+  const zwlr_foreign_toplevel_handle_v1_listener kHandleListener = {
+      .title = handleTitle,
+      .app_id = handleAppId,
+      .output_enter = handleOutputEnter,
+      .output_leave = handleOutputLeave,
+      .state = handleState,
+      .done = handleDone,
+      .closed = handleClosed,
+      .parent = handleParent,
+  };
 
 } // namespace
 

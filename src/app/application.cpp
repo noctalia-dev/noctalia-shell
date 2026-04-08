@@ -20,13 +20,13 @@ std::atomic<bool> Application::s_shutdownRequested{false};
 
 namespace {
 
-void signal_handler(int signum) {
-  if (signum == SIGTERM || signum == SIGINT) {
-    Application::s_shutdownRequested = true;
+  void signal_handler(int signum) {
+    if (signum == SIGTERM || signum == SIGINT) {
+      Application::s_shutdownRequested = true;
+    }
   }
-}
 
-constexpr Logger kLog("app");
+  constexpr Logger kLog("app");
 
 } // namespace
 

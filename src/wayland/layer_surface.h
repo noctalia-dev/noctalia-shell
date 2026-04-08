@@ -22,10 +22,10 @@ enum class LayerShellKeyboard : std::uint32_t {
 };
 
 namespace LayerShellAnchor {
-inline constexpr std::uint32_t Top = 1;
-inline constexpr std::uint32_t Bottom = 2;
-inline constexpr std::uint32_t Left = 4;
-inline constexpr std::uint32_t Right = 8;
+  inline constexpr std::uint32_t Top = 1;
+  inline constexpr std::uint32_t Bottom = 2;
+  inline constexpr std::uint32_t Left = 4;
+  inline constexpr std::uint32_t Right = 8;
 } // namespace LayerShellAnchor
 
 struct LayerSurfaceConfig {

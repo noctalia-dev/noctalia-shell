@@ -27,285 +27,289 @@
 
 namespace {
 
-constexpr std::size_t kMaxHistoryEntries = 50;
-constexpr std::size_t kMaxHistoryBytes = 64u * 1024u * 1024u;
-constexpr std::size_t kMaxEntryBytes = 10u * 1024u * 1024u;
-constexpr std::size_t kPreviewBytes = 200;
+  constexpr std::size_t kMaxHistoryEntries = 50;
+  constexpr std::size_t kMaxHistoryBytes = 64u * 1024u * 1024u;
+  constexpr std::size_t kMaxEntryBytes = 10u * 1024u * 1024u;
+  constexpr std::size_t kPreviewBytes = 200;
 
-constexpr std::array kTextMimeTypes = {
-    std::string_view{"text/plain;charset=utf-8"},
-    std::string_view{"text/plain"},
-    std::string_view{"UTF8_STRING"},
-};
+  constexpr std::array kTextMimeTypes = {
+      std::string_view{"text/plain;charset=utf-8"},
+      std::string_view{"text/plain"},
+      std::string_view{"UTF8_STRING"},
+  };
 
-constexpr std::array kImageMimeTypes = {
-    std::string_view{"image/png"},
-    std::string_view{"image/jpeg"},
-};
+  constexpr std::array kImageMimeTypes = {
+      std::string_view{"image/png"},
+      std::string_view{"image/jpeg"},
+  };
 
-constexpr Logger kLog("clipboard");
-std::uint64_t gStorageCounter = 0;
+  constexpr Logger kLog("clipboard");
+  std::uint64_t gStorageCounter = 0;
 
-void closeFd(int& fd) {
-  if (fd >= 0) {
-    close(fd);
-    fd = -1;
+  void closeFd(int& fd) {
+    if (fd >= 0) {
+      close(fd);
+      fd = -1;
+    }
   }
-}
 
-void* bindExtManager(wl_registry* registry, std::uint32_t name, std::uint32_t version) {
-  const auto bindVersion = std::min(version, 1u);
-  return wl_registry_bind(registry, name, &ext_data_control_manager_v1_interface, bindVersion);
-}
+  void* bindExtManager(wl_registry* registry, std::uint32_t name, std::uint32_t version) {
+    const auto bindVersion = std::min(version, 1u);
+    return wl_registry_bind(registry, name, &ext_data_control_manager_v1_interface, bindVersion);
+  }
 
-void destroyExtManager(void* manager) {
-  ext_data_control_manager_v1_destroy(static_cast<ext_data_control_manager_v1*>(manager));
-}
+  void destroyExtManager(void* manager) {
+    ext_data_control_manager_v1_destroy(static_cast<ext_data_control_manager_v1*>(manager));
+  }
 
-void* getExtDataDevice(void* manager, wl_seat* seat) {
-  return ext_data_control_manager_v1_get_data_device(static_cast<ext_data_control_manager_v1*>(manager), seat);
-}
+  void* getExtDataDevice(void* manager, wl_seat* seat) {
+    return ext_data_control_manager_v1_get_data_device(static_cast<ext_data_control_manager_v1*>(manager), seat);
+  }
 
-void destroyExtDevice(void* device) {
-  ext_data_control_device_v1_destroy(static_cast<ext_data_control_device_v1*>(device));
-}
+  void destroyExtDevice(void* device) {
+    ext_data_control_device_v1_destroy(static_cast<ext_data_control_device_v1*>(device));
+  }
 
-int addExtDeviceListener(void* device, const void* listener, void* data) {
-  return ext_data_control_device_v1_add_listener(static_cast<ext_data_control_device_v1*>(device),
-                                                 static_cast<const ext_data_control_device_v1_listener*>(listener),
-                                                 data);
-}
+  int addExtDeviceListener(void* device, const void* listener, void* data) {
+    return ext_data_control_device_v1_add_listener(static_cast<ext_data_control_device_v1*>(device),
+                                                   static_cast<const ext_data_control_device_v1_listener*>(listener),
+                                                   data);
+  }
 
-void* createExtDataSource(void* manager) {
-  return ext_data_control_manager_v1_create_data_source(static_cast<ext_data_control_manager_v1*>(manager));
-}
+  void* createExtDataSource(void* manager) {
+    return ext_data_control_manager_v1_create_data_source(static_cast<ext_data_control_manager_v1*>(manager));
+  }
 
-void destroyExtSource(void* source) {
-  ext_data_control_source_v1_destroy(static_cast<ext_data_control_source_v1*>(source));
-}
+  void destroyExtSource(void* source) {
+    ext_data_control_source_v1_destroy(static_cast<ext_data_control_source_v1*>(source));
+  }
 
-int addExtSourceListener(void* source, const void* listener, void* data) {
-  return ext_data_control_source_v1_add_listener(static_cast<ext_data_control_source_v1*>(source),
-                                                 static_cast<const ext_data_control_source_v1_listener*>(listener),
-                                                 data);
-}
+  int addExtSourceListener(void* source, const void* listener, void* data) {
+    return ext_data_control_source_v1_add_listener(static_cast<ext_data_control_source_v1*>(source),
+                                                   static_cast<const ext_data_control_source_v1_listener*>(listener),
+                                                   data);
+  }
 
-void extSourceOffer(void* source, const char* mimeType) {
-  ext_data_control_source_v1_offer(static_cast<ext_data_control_source_v1*>(source), mimeType);
-}
+  void extSourceOffer(void* source, const char* mimeType) {
+    ext_data_control_source_v1_offer(static_cast<ext_data_control_source_v1*>(source), mimeType);
+  }
 
-void extDeviceSetSelection(void* device, void* source) {
-  ext_data_control_device_v1_set_selection(static_cast<ext_data_control_device_v1*>(device),
-                                           static_cast<ext_data_control_source_v1*>(source));
-}
+  void extDeviceSetSelection(void* device, void* source) {
+    ext_data_control_device_v1_set_selection(static_cast<ext_data_control_device_v1*>(device),
+                                             static_cast<ext_data_control_source_v1*>(source));
+  }
 
-void destroyExtOffer(void* offer) { ext_data_control_offer_v1_destroy(static_cast<ext_data_control_offer_v1*>(offer)); }
+  void destroyExtOffer(void* offer) {
+    ext_data_control_offer_v1_destroy(static_cast<ext_data_control_offer_v1*>(offer));
+  }
 
-int addExtOfferListener(void* offer, const void* listener, void* data) {
-  return ext_data_control_offer_v1_add_listener(static_cast<ext_data_control_offer_v1*>(offer),
-                                                static_cast<const ext_data_control_offer_v1_listener*>(listener), data);
-}
-
-void extOfferReceive(void* offer, const char* mimeType, int fd) {
-  ext_data_control_offer_v1_receive(static_cast<ext_data_control_offer_v1*>(offer), mimeType, fd);
-}
-
-void* bindWlrManager(wl_registry* registry, std::uint32_t name, std::uint32_t version) {
-  const auto bindVersion = std::min(version, 2u);
-  return wl_registry_bind(registry, name, &zwlr_data_control_manager_v1_interface, bindVersion);
-}
-
-void destroyWlrManager(void* manager) {
-  zwlr_data_control_manager_v1_destroy(static_cast<zwlr_data_control_manager_v1*>(manager));
-}
-
-void* getWlrDataDevice(void* manager, wl_seat* seat) {
-  return zwlr_data_control_manager_v1_get_data_device(static_cast<zwlr_data_control_manager_v1*>(manager), seat);
-}
-
-void destroyWlrDevice(void* device) {
-  zwlr_data_control_device_v1_destroy(static_cast<zwlr_data_control_device_v1*>(device));
-}
-
-int addWlrDeviceListener(void* device, const void* listener, void* data) {
-  return zwlr_data_control_device_v1_add_listener(static_cast<zwlr_data_control_device_v1*>(device),
-                                                  static_cast<const zwlr_data_control_device_v1_listener*>(listener),
+  int addExtOfferListener(void* offer, const void* listener, void* data) {
+    return ext_data_control_offer_v1_add_listener(static_cast<ext_data_control_offer_v1*>(offer),
+                                                  static_cast<const ext_data_control_offer_v1_listener*>(listener),
                                                   data);
-}
+  }
 
-void* createWlrDataSource(void* manager) {
-  return zwlr_data_control_manager_v1_create_data_source(static_cast<zwlr_data_control_manager_v1*>(manager));
-}
+  void extOfferReceive(void* offer, const char* mimeType, int fd) {
+    ext_data_control_offer_v1_receive(static_cast<ext_data_control_offer_v1*>(offer), mimeType, fd);
+  }
 
-void destroyWlrSource(void* source) {
-  zwlr_data_control_source_v1_destroy(static_cast<zwlr_data_control_source_v1*>(source));
-}
+  void* bindWlrManager(wl_registry* registry, std::uint32_t name, std::uint32_t version) {
+    const auto bindVersion = std::min(version, 2u);
+    return wl_registry_bind(registry, name, &zwlr_data_control_manager_v1_interface, bindVersion);
+  }
 
-int addWlrSourceListener(void* source, const void* listener, void* data) {
-  return zwlr_data_control_source_v1_add_listener(static_cast<zwlr_data_control_source_v1*>(source),
-                                                  static_cast<const zwlr_data_control_source_v1_listener*>(listener),
-                                                  data);
-}
+  void destroyWlrManager(void* manager) {
+    zwlr_data_control_manager_v1_destroy(static_cast<zwlr_data_control_manager_v1*>(manager));
+  }
 
-void wlrSourceOffer(void* source, const char* mimeType) {
-  zwlr_data_control_source_v1_offer(static_cast<zwlr_data_control_source_v1*>(source), mimeType);
-}
+  void* getWlrDataDevice(void* manager, wl_seat* seat) {
+    return zwlr_data_control_manager_v1_get_data_device(static_cast<zwlr_data_control_manager_v1*>(manager), seat);
+  }
 
-void wlrDeviceSetSelection(void* device, void* source) {
-  zwlr_data_control_device_v1_set_selection(static_cast<zwlr_data_control_device_v1*>(device),
-                                            static_cast<zwlr_data_control_source_v1*>(source));
-}
+  void destroyWlrDevice(void* device) {
+    zwlr_data_control_device_v1_destroy(static_cast<zwlr_data_control_device_v1*>(device));
+  }
 
-void destroyWlrOffer(void* offer) {
-  zwlr_data_control_offer_v1_destroy(static_cast<zwlr_data_control_offer_v1*>(offer));
-}
+  int addWlrDeviceListener(void* device, const void* listener, void* data) {
+    return zwlr_data_control_device_v1_add_listener(static_cast<zwlr_data_control_device_v1*>(device),
+                                                    static_cast<const zwlr_data_control_device_v1_listener*>(listener),
+                                                    data);
+  }
 
-int addWlrOfferListener(void* offer, const void* listener, void* data) {
-  return zwlr_data_control_offer_v1_add_listener(static_cast<zwlr_data_control_offer_v1*>(offer),
-                                                 static_cast<const zwlr_data_control_offer_v1_listener*>(listener),
-                                                 data);
-}
+  void* createWlrDataSource(void* manager) {
+    return zwlr_data_control_manager_v1_create_data_source(static_cast<zwlr_data_control_manager_v1*>(manager));
+  }
 
-void wlrOfferReceive(void* offer, const char* mimeType, int fd) {
-  zwlr_data_control_offer_v1_receive(static_cast<zwlr_data_control_offer_v1*>(offer), mimeType, fd);
-}
+  void destroyWlrSource(void* source) {
+    zwlr_data_control_source_v1_destroy(static_cast<zwlr_data_control_source_v1*>(source));
+  }
 
-const DataControlOps kExtDataControlOps = {
-    .managerInterfaceName = ext_data_control_manager_v1_interface.name,
-    .bindManager = &bindExtManager,
-    .destroyManager = &destroyExtManager,
-    .getDataDevice = &getExtDataDevice,
-    .destroyDevice = &destroyExtDevice,
-    .addDeviceListener = &addExtDeviceListener,
-    .createDataSource = &createExtDataSource,
-    .destroySource = &destroyExtSource,
-    .addSourceListener = &addExtSourceListener,
-    .sourceOffer = &extSourceOffer,
-    .deviceSetSelection = &extDeviceSetSelection,
-    .destroyOffer = &destroyExtOffer,
-    .addOfferListener = &addExtOfferListener,
-    .offerReceive = &extOfferReceive,
-};
+  int addWlrSourceListener(void* source, const void* listener, void* data) {
+    return zwlr_data_control_source_v1_add_listener(static_cast<zwlr_data_control_source_v1*>(source),
+                                                    static_cast<const zwlr_data_control_source_v1_listener*>(listener),
+                                                    data);
+  }
 
-const DataControlOps kWlrDataControlOps = {
-    .managerInterfaceName = zwlr_data_control_manager_v1_interface.name,
-    .bindManager = &bindWlrManager,
-    .destroyManager = &destroyWlrManager,
-    .getDataDevice = &getWlrDataDevice,
-    .destroyDevice = &destroyWlrDevice,
-    .addDeviceListener = &addWlrDeviceListener,
-    .createDataSource = &createWlrDataSource,
-    .destroySource = &destroyWlrSource,
-    .addSourceListener = &addWlrSourceListener,
-    .sourceOffer = &wlrSourceOffer,
-    .deviceSetSelection = &wlrDeviceSetSelection,
-    .destroyOffer = &destroyWlrOffer,
-    .addOfferListener = &addWlrOfferListener,
-    .offerReceive = &wlrOfferReceive,
-};
+  void wlrSourceOffer(void* source, const char* mimeType) {
+    zwlr_data_control_source_v1_offer(static_cast<zwlr_data_control_source_v1*>(source), mimeType);
+  }
 
-void handleExtDataOffer(void* data, ext_data_control_device_v1* /*device*/, ext_data_control_offer_v1* offer) {
-  static_cast<ClipboardService*>(data)->handleDataOffer(offer);
-}
+  void wlrDeviceSetSelection(void* device, void* source) {
+    zwlr_data_control_device_v1_set_selection(static_cast<zwlr_data_control_device_v1*>(device),
+                                              static_cast<zwlr_data_control_source_v1*>(source));
+  }
 
-void handleExtSelection(void* data, ext_data_control_device_v1* /*device*/, ext_data_control_offer_v1* offer) {
-  static_cast<ClipboardService*>(data)->handleSelection(offer);
-}
+  void destroyWlrOffer(void* offer) {
+    zwlr_data_control_offer_v1_destroy(static_cast<zwlr_data_control_offer_v1*>(offer));
+  }
 
-void handleExtFinished(void* data, ext_data_control_device_v1* /*device*/) {
-  static_cast<ClipboardService*>(data)->handleDeviceFinished();
-}
+  int addWlrOfferListener(void* offer, const void* listener, void* data) {
+    return zwlr_data_control_offer_v1_add_listener(static_cast<zwlr_data_control_offer_v1*>(offer),
+                                                   static_cast<const zwlr_data_control_offer_v1_listener*>(listener),
+                                                   data);
+  }
 
-void handleExtPrimarySelection(void* data, ext_data_control_device_v1* /*device*/, ext_data_control_offer_v1* offer) {
-  static_cast<ClipboardService*>(data)->handlePrimarySelection(offer);
-}
+  void wlrOfferReceive(void* offer, const char* mimeType, int fd) {
+    zwlr_data_control_offer_v1_receive(static_cast<zwlr_data_control_offer_v1*>(offer), mimeType, fd);
+  }
 
-const ext_data_control_device_v1_listener kExtDeviceListener = {
-    .data_offer = &handleExtDataOffer,
-    .selection = &handleExtSelection,
-    .finished = &handleExtFinished,
-    .primary_selection = &handleExtPrimarySelection,
-};
+  const DataControlOps kExtDataControlOps = {
+      .managerInterfaceName = ext_data_control_manager_v1_interface.name,
+      .bindManager = &bindExtManager,
+      .destroyManager = &destroyExtManager,
+      .getDataDevice = &getExtDataDevice,
+      .destroyDevice = &destroyExtDevice,
+      .addDeviceListener = &addExtDeviceListener,
+      .createDataSource = &createExtDataSource,
+      .destroySource = &destroyExtSource,
+      .addSourceListener = &addExtSourceListener,
+      .sourceOffer = &extSourceOffer,
+      .deviceSetSelection = &extDeviceSetSelection,
+      .destroyOffer = &destroyExtOffer,
+      .addOfferListener = &addExtOfferListener,
+      .offerReceive = &extOfferReceive,
+  };
 
-void handleExtOfferMimeType(void* data, ext_data_control_offer_v1* offer, const char* mimeType) {
-  static_cast<ClipboardService*>(data)->handleOfferMimeType(offer, mimeType);
-}
+  const DataControlOps kWlrDataControlOps = {
+      .managerInterfaceName = zwlr_data_control_manager_v1_interface.name,
+      .bindManager = &bindWlrManager,
+      .destroyManager = &destroyWlrManager,
+      .getDataDevice = &getWlrDataDevice,
+      .destroyDevice = &destroyWlrDevice,
+      .addDeviceListener = &addWlrDeviceListener,
+      .createDataSource = &createWlrDataSource,
+      .destroySource = &destroyWlrSource,
+      .addSourceListener = &addWlrSourceListener,
+      .sourceOffer = &wlrSourceOffer,
+      .deviceSetSelection = &wlrDeviceSetSelection,
+      .destroyOffer = &destroyWlrOffer,
+      .addOfferListener = &addWlrOfferListener,
+      .offerReceive = &wlrOfferReceive,
+  };
 
-const ext_data_control_offer_v1_listener kExtOfferListener = {
-    .offer = &handleExtOfferMimeType,
-};
+  void handleExtDataOffer(void* data, ext_data_control_device_v1* /*device*/, ext_data_control_offer_v1* offer) {
+    static_cast<ClipboardService*>(data)->handleDataOffer(offer);
+  }
 
-void handleExtSourceSend(void* data, ext_data_control_source_v1* source, const char* mimeType, int fd) {
-  static_cast<ClipboardService*>(data)->handleSourceSend(source, mimeType, fd);
-}
+  void handleExtSelection(void* data, ext_data_control_device_v1* /*device*/, ext_data_control_offer_v1* offer) {
+    static_cast<ClipboardService*>(data)->handleSelection(offer);
+  }
 
-void handleExtSourceCancelled(void* data, ext_data_control_source_v1* source) {
-  static_cast<ClipboardService*>(data)->handleSourceCancelled(source);
-}
+  void handleExtFinished(void* data, ext_data_control_device_v1* /*device*/) {
+    static_cast<ClipboardService*>(data)->handleDeviceFinished();
+  }
 
-const ext_data_control_source_v1_listener kExtSourceListener = {
-    .send = &handleExtSourceSend,
-    .cancelled = &handleExtSourceCancelled,
-};
+  void handleExtPrimarySelection(void* data, ext_data_control_device_v1* /*device*/, ext_data_control_offer_v1* offer) {
+    static_cast<ClipboardService*>(data)->handlePrimarySelection(offer);
+  }
 
-void handleWlrDataOffer(void* data, zwlr_data_control_device_v1* /*device*/, zwlr_data_control_offer_v1* offer) {
-  static_cast<ClipboardService*>(data)->handleDataOffer(offer);
-}
+  const ext_data_control_device_v1_listener kExtDeviceListener = {
+      .data_offer = &handleExtDataOffer,
+      .selection = &handleExtSelection,
+      .finished = &handleExtFinished,
+      .primary_selection = &handleExtPrimarySelection,
+  };
 
-void handleWlrSelection(void* data, zwlr_data_control_device_v1* /*device*/, zwlr_data_control_offer_v1* offer) {
-  static_cast<ClipboardService*>(data)->handleSelection(offer);
-}
+  void handleExtOfferMimeType(void* data, ext_data_control_offer_v1* offer, const char* mimeType) {
+    static_cast<ClipboardService*>(data)->handleOfferMimeType(offer, mimeType);
+  }
 
-void handleWlrFinished(void* data, zwlr_data_control_device_v1* /*device*/) {
-  static_cast<ClipboardService*>(data)->handleDeviceFinished();
-}
+  const ext_data_control_offer_v1_listener kExtOfferListener = {
+      .offer = &handleExtOfferMimeType,
+  };
 
-void handleWlrPrimarySelection(void* data, zwlr_data_control_device_v1* /*device*/, zwlr_data_control_offer_v1* offer) {
-  static_cast<ClipboardService*>(data)->handlePrimarySelection(offer);
-}
+  void handleExtSourceSend(void* data, ext_data_control_source_v1* source, const char* mimeType, int fd) {
+    static_cast<ClipboardService*>(data)->handleSourceSend(source, mimeType, fd);
+  }
 
-const zwlr_data_control_device_v1_listener kWlrDeviceListener = {
-    .data_offer = &handleWlrDataOffer,
-    .selection = &handleWlrSelection,
-    .finished = &handleWlrFinished,
-    .primary_selection = &handleWlrPrimarySelection,
-};
+  void handleExtSourceCancelled(void* data, ext_data_control_source_v1* source) {
+    static_cast<ClipboardService*>(data)->handleSourceCancelled(source);
+  }
 
-void handleWlrOfferMimeType(void* data, zwlr_data_control_offer_v1* offer, const char* mimeType) {
-  static_cast<ClipboardService*>(data)->handleOfferMimeType(offer, mimeType);
-}
+  const ext_data_control_source_v1_listener kExtSourceListener = {
+      .send = &handleExtSourceSend,
+      .cancelled = &handleExtSourceCancelled,
+  };
 
-const zwlr_data_control_offer_v1_listener kWlrOfferListener = {
-    .offer = &handleWlrOfferMimeType,
-};
+  void handleWlrDataOffer(void* data, zwlr_data_control_device_v1* /*device*/, zwlr_data_control_offer_v1* offer) {
+    static_cast<ClipboardService*>(data)->handleDataOffer(offer);
+  }
 
-void handleWlrSourceSend(void* data, zwlr_data_control_source_v1* source, const char* mimeType, int fd) {
-  static_cast<ClipboardService*>(data)->handleSourceSend(source, mimeType, fd);
-}
+  void handleWlrSelection(void* data, zwlr_data_control_device_v1* /*device*/, zwlr_data_control_offer_v1* offer) {
+    static_cast<ClipboardService*>(data)->handleSelection(offer);
+  }
 
-void handleWlrSourceCancelled(void* data, zwlr_data_control_source_v1* source) {
-  static_cast<ClipboardService*>(data)->handleSourceCancelled(source);
-}
+  void handleWlrFinished(void* data, zwlr_data_control_device_v1* /*device*/) {
+    static_cast<ClipboardService*>(data)->handleDeviceFinished();
+  }
 
-const zwlr_data_control_source_v1_listener kWlrSourceListener = {
-    .send = &handleWlrSourceSend,
-    .cancelled = &handleWlrSourceCancelled,
-};
+  void handleWlrPrimarySelection(void* data, zwlr_data_control_device_v1* /*device*/,
+                                 zwlr_data_control_offer_v1* offer) {
+    static_cast<ClipboardService*>(data)->handlePrimarySelection(offer);
+  }
 
-const void* deviceListenerFor(const DataControlOps& ops) {
-  return &ops == &kExtDataControlOps ? static_cast<const void*>(&kExtDeviceListener)
-                                     : static_cast<const void*>(&kWlrDeviceListener);
-}
+  const zwlr_data_control_device_v1_listener kWlrDeviceListener = {
+      .data_offer = &handleWlrDataOffer,
+      .selection = &handleWlrSelection,
+      .finished = &handleWlrFinished,
+      .primary_selection = &handleWlrPrimarySelection,
+  };
 
-const void* offerListenerFor(const DataControlOps& ops) {
-  return &ops == &kExtDataControlOps ? static_cast<const void*>(&kExtOfferListener)
-                                     : static_cast<const void*>(&kWlrOfferListener);
-}
+  void handleWlrOfferMimeType(void* data, zwlr_data_control_offer_v1* offer, const char* mimeType) {
+    static_cast<ClipboardService*>(data)->handleOfferMimeType(offer, mimeType);
+  }
 
-const void* sourceListenerFor(const DataControlOps& ops) {
-  return &ops == &kExtDataControlOps ? static_cast<const void*>(&kExtSourceListener)
-                                     : static_cast<const void*>(&kWlrSourceListener);
-}
+  const zwlr_data_control_offer_v1_listener kWlrOfferListener = {
+      .offer = &handleWlrOfferMimeType,
+  };
+
+  void handleWlrSourceSend(void* data, zwlr_data_control_source_v1* source, const char* mimeType, int fd) {
+    static_cast<ClipboardService*>(data)->handleSourceSend(source, mimeType, fd);
+  }
+
+  void handleWlrSourceCancelled(void* data, zwlr_data_control_source_v1* source) {
+    static_cast<ClipboardService*>(data)->handleSourceCancelled(source);
+  }
+
+  const zwlr_data_control_source_v1_listener kWlrSourceListener = {
+      .send = &handleWlrSourceSend,
+      .cancelled = &handleWlrSourceCancelled,
+  };
+
+  const void* deviceListenerFor(const DataControlOps& ops) {
+    return &ops == &kExtDataControlOps ? static_cast<const void*>(&kExtDeviceListener)
+                                       : static_cast<const void*>(&kWlrDeviceListener);
+  }
+
+  const void* offerListenerFor(const DataControlOps& ops) {
+    return &ops == &kExtDataControlOps ? static_cast<const void*>(&kExtOfferListener)
+                                       : static_cast<const void*>(&kWlrOfferListener);
+  }
+
+  const void* sourceListenerFor(const DataControlOps& ops) {
+    return &ops == &kExtDataControlOps ? static_cast<const void*>(&kExtSourceListener)
+                                       : static_cast<const void*>(&kWlrSourceListener);
+  }
 
 } // namespace
 

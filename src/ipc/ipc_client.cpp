@@ -10,17 +10,17 @@
 
 namespace {
 
-std::string resolveSocketPath() {
-  const char* runtime = std::getenv("XDG_RUNTIME_DIR");
-  if (runtime == nullptr || runtime[0] == '\0') {
-    runtime = "/tmp";
+  std::string resolveSocketPath() {
+    const char* runtime = std::getenv("XDG_RUNTIME_DIR");
+    if (runtime == nullptr || runtime[0] == '\0') {
+      runtime = "/tmp";
+    }
+    const char* display = std::getenv("WAYLAND_DISPLAY");
+    if (display == nullptr || display[0] == '\0') {
+      display = "wayland-0";
+    }
+    return std::string(runtime) + "/noctalia-" + display + ".sock";
   }
-  const char* display = std::getenv("WAYLAND_DISPLAY");
-  if (display == nullptr || display[0] == '\0') {
-    display = "wayland-0";
-  }
-  return std::string(runtime) + "/noctalia-" + display + ".sock";
-}
 
 } // namespace
 

@@ -10,10 +10,10 @@
 
 namespace {
 
-const zwlr_layer_surface_v1_listener kLayerSurfaceListener = {
-    .configure = &LayerSurface::handleConfigure,
-    .closed = &LayerSurface::handleClosed,
-};
+  const zwlr_layer_surface_v1_listener kLayerSurfaceListener = {
+      .configure = &LayerSurface::handleConfigure,
+      .closed = &LayerSurface::handleClosed,
+  };
 
 } // namespace
 

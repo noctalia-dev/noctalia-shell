@@ -16,19 +16,19 @@
 
 namespace {
 
-std::string statePath() {
-  const char* xdg = std::getenv("XDG_STATE_HOME");
-  if (xdg != nullptr && xdg[0] != '\0') {
-    return std::string(xdg) + "/noctalia/state.toml";
+  std::string statePath() {
+    const char* xdg = std::getenv("XDG_STATE_HOME");
+    if (xdg != nullptr && xdg[0] != '\0') {
+      return std::string(xdg) + "/noctalia/state.toml";
+    }
+    const char* home = std::getenv("HOME");
+    if (home != nullptr && home[0] != '\0') {
+      return std::string(home) + "/.local/state/noctalia/state.toml";
+    }
+    return {};
   }
-  const char* home = std::getenv("HOME");
-  if (home != nullptr && home[0] != '\0') {
-    return std::string(home) + "/.local/state/noctalia/state.toml";
-  }
-  return {};
-}
 
-constexpr Logger kLog("state");
+  constexpr Logger kLog("state");
 
 } // namespace
 

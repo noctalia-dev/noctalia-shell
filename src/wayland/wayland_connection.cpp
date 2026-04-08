@@ -20,100 +20,100 @@
 
 namespace {
 
-constexpr std::uint32_t kCompositorVersion = 4;
-constexpr std::uint32_t kSeatVersion = 5;
-constexpr std::uint32_t kShmVersion = 1;
-constexpr std::uint32_t kLayerShellVersion = 4;
-constexpr std::uint32_t kXdgOutputManagerVersion = 3;
-constexpr std::uint32_t kExtWorkspaceManagerVersion = 1;
-constexpr std::uint32_t kWlrForeignToplevelManagerVersion = 3;
-constexpr std::uint32_t kCursorShapeManagerVersion = 1;
-constexpr std::uint32_t kXdgActivationVersion = 1;
-constexpr std::uint32_t kExtSessionLockManagerVersion = 1;
-constexpr std::uint32_t kOutputVersion = 4;
+  constexpr std::uint32_t kCompositorVersion = 4;
+  constexpr std::uint32_t kSeatVersion = 5;
+  constexpr std::uint32_t kShmVersion = 1;
+  constexpr std::uint32_t kLayerShellVersion = 4;
+  constexpr std::uint32_t kXdgOutputManagerVersion = 3;
+  constexpr std::uint32_t kExtWorkspaceManagerVersion = 1;
+  constexpr std::uint32_t kWlrForeignToplevelManagerVersion = 3;
+  constexpr std::uint32_t kCursorShapeManagerVersion = 1;
+  constexpr std::uint32_t kXdgActivationVersion = 1;
+  constexpr std::uint32_t kExtSessionLockManagerVersion = 1;
+  constexpr std::uint32_t kOutputVersion = 4;
 
-const wl_registry_listener kRegistryListener = {
-    .global = &WaylandConnection::handleGlobal,
-    .global_remove = &WaylandConnection::handleGlobalRemove,
-};
+  const wl_registry_listener kRegistryListener = {
+      .global = &WaylandConnection::handleGlobal,
+      .global_remove = &WaylandConnection::handleGlobalRemove,
+  };
 
-void outputGeometry(void* /*data*/, wl_output* /*output*/, int32_t /*x*/, int32_t /*y*/, int32_t /*physW*/,
-                    int32_t /*physH*/, int32_t /*subpixel*/, const char* /*make*/, const char* /*model*/,
-                    int32_t /*transform*/) {}
+  void outputGeometry(void* /*data*/, wl_output* /*output*/, int32_t /*x*/, int32_t /*y*/, int32_t /*physW*/,
+                      int32_t /*physH*/, int32_t /*subpixel*/, const char* /*make*/, const char* /*model*/,
+                      int32_t /*transform*/) {}
 
-void outputMode(void* data, wl_output* wlOut, uint32_t flags, int32_t w, int32_t h, int32_t /*refresh*/) {
-  if ((flags & WL_OUTPUT_MODE_CURRENT) == 0) {
-    return;
+  void outputMode(void* data, wl_output* wlOut, uint32_t flags, int32_t w, int32_t h, int32_t /*refresh*/) {
+    if ((flags & WL_OUTPUT_MODE_CURRENT) == 0) {
+      return;
+    }
+    auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
+    if (out != nullptr) {
+      out->width = w;
+      out->height = h;
+    }
   }
-  auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
-  if (out != nullptr) {
-    out->width = w;
-    out->height = h;
+
+  void outputDone(void* data, wl_output* wlOut) {
+    auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
+    if (out != nullptr) {
+      out->done = true;
+    }
   }
-}
 
-void outputDone(void* data, wl_output* wlOut) {
-  auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
-  if (out != nullptr) {
-    out->done = true;
+  void outputScale(void* data, wl_output* wlOut, int32_t factor) {
+    auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
+    if (out != nullptr) {
+      out->scale = factor;
+    }
   }
-}
 
-void outputScale(void* data, wl_output* wlOut, int32_t factor) {
-  auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
-  if (out != nullptr) {
-    out->scale = factor;
+  void outputName(void* data, wl_output* wlOut, const char* name) {
+    auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
+    if (out != nullptr && name != nullptr) {
+      out->connectorName = name;
+    }
   }
-}
 
-void outputName(void* data, wl_output* wlOut, const char* name) {
-  auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
-  if (out != nullptr && name != nullptr) {
-    out->connectorName = name;
+  void outputDescription(void* data, wl_output* wlOut, const char* desc) {
+    auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
+    if (out != nullptr) {
+      out->description = desc;
+    }
   }
-}
 
-void outputDescription(void* data, wl_output* wlOut, const char* desc) {
-  auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
-  if (out != nullptr) {
-    out->description = desc;
+  const wl_output_listener kOutputListener = {
+      .geometry = outputGeometry,
+      .mode = outputMode,
+      .done = outputDone,
+      .scale = outputScale,
+      .name = outputName,
+      .description = outputDescription,
+  };
+
+  void xdgOutputLogicalPosition(void* /*data*/, zxdg_output_v1* /*xdgOutput*/, int32_t /*x*/, int32_t /*y*/) {}
+
+  void xdgOutputLogicalSize(void* data, zxdg_output_v1* xdgOutput, int32_t w, int32_t h) {
+    auto* out = static_cast<WaylandConnection*>(data)->findOutputByXdg(xdgOutput);
+    if (out != nullptr) {
+      out->logicalWidth = w;
+      out->logicalHeight = h;
+    }
   }
-}
 
-const wl_output_listener kOutputListener = {
-    .geometry = outputGeometry,
-    .mode = outputMode,
-    .done = outputDone,
-    .scale = outputScale,
-    .name = outputName,
-    .description = outputDescription,
-};
+  void xdgOutputDone(void* /*data*/, zxdg_output_v1* /*xdgOutput*/) {}
 
-void xdgOutputLogicalPosition(void* /*data*/, zxdg_output_v1* /*xdgOutput*/, int32_t /*x*/, int32_t /*y*/) {}
+  void xdgOutputName(void* /*data*/, zxdg_output_v1* /*xdgOutput*/, const char* /*name*/) {}
 
-void xdgOutputLogicalSize(void* data, zxdg_output_v1* xdgOutput, int32_t w, int32_t h) {
-  auto* out = static_cast<WaylandConnection*>(data)->findOutputByXdg(xdgOutput);
-  if (out != nullptr) {
-    out->logicalWidth = w;
-    out->logicalHeight = h;
-  }
-}
+  void xdgOutputDescription(void* /*data*/, zxdg_output_v1* /*xdgOutput*/, const char* /*desc*/) {}
 
-void xdgOutputDone(void* /*data*/, zxdg_output_v1* /*xdgOutput*/) {}
+  const zxdg_output_v1_listener kXdgOutputListener = {
+      .logical_position = xdgOutputLogicalPosition,
+      .logical_size = xdgOutputLogicalSize,
+      .done = xdgOutputDone,
+      .name = xdgOutputName,
+      .description = xdgOutputDescription,
+  };
 
-void xdgOutputName(void* /*data*/, zxdg_output_v1* /*xdgOutput*/, const char* /*name*/) {}
-
-void xdgOutputDescription(void* /*data*/, zxdg_output_v1* /*xdgOutput*/, const char* /*desc*/) {}
-
-const zxdg_output_v1_listener kXdgOutputListener = {
-    .logical_position = xdgOutputLogicalPosition,
-    .logical_size = xdgOutputLogicalSize,
-    .done = xdgOutputDone,
-    .name = xdgOutputName,
-    .description = xdgOutputDescription,
-};
-
-constexpr Logger kLog("wayland");
+  constexpr Logger kLog("wayland");
 
 } // namespace
 

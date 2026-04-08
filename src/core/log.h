@@ -7,7 +7,7 @@
 enum class LogLevel { Debug, Info, Warn, Error };
 
 namespace detail {
-void logMessage(LogLevel level, const char* section, std::string_view msg);
+  void logMessage(LogLevel level, const char* section, std::string_view msg);
 } // namespace detail
 
 // ── Global free functions (no section tag) ────────────────────────────────────

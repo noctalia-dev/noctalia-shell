@@ -8,92 +8,92 @@
 
 namespace {
 
-void groupCapabilities(void* /*data*/, ext_workspace_group_handle_v1* /*group*/, uint32_t /*caps*/) {}
+  void groupCapabilities(void* /*data*/, ext_workspace_group_handle_v1* /*group*/, uint32_t /*caps*/) {}
 
-void groupOutputEnter(void* data, ext_workspace_group_handle_v1* group, wl_output* output) {
-  static_cast<WaylandWorkspaces*>(data)->onGroupOutputEnter(group, output);
-}
+  void groupOutputEnter(void* data, ext_workspace_group_handle_v1* group, wl_output* output) {
+    static_cast<WaylandWorkspaces*>(data)->onGroupOutputEnter(group, output);
+  }
 
-void groupOutputLeave(void* data, ext_workspace_group_handle_v1* group, wl_output* output) {
-  static_cast<WaylandWorkspaces*>(data)->onGroupOutputLeave(group, output);
-}
+  void groupOutputLeave(void* data, ext_workspace_group_handle_v1* group, wl_output* output) {
+    static_cast<WaylandWorkspaces*>(data)->onGroupOutputLeave(group, output);
+  }
 
-void groupWorkspaceEnter(void* data, ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace) {
-  static_cast<WaylandWorkspaces*>(data)->onGroupWorkspaceEnter(group, workspace);
-}
+  void groupWorkspaceEnter(void* data, ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace) {
+    static_cast<WaylandWorkspaces*>(data)->onGroupWorkspaceEnter(group, workspace);
+  }
 
-void groupWorkspaceLeave(void* data, ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace) {
-  static_cast<WaylandWorkspaces*>(data)->onGroupWorkspaceLeave(group, workspace);
-}
+  void groupWorkspaceLeave(void* data, ext_workspace_group_handle_v1* group, ext_workspace_handle_v1* workspace) {
+    static_cast<WaylandWorkspaces*>(data)->onGroupWorkspaceLeave(group, workspace);
+  }
 
-void groupRemoved(void* data, ext_workspace_group_handle_v1* group) {
-  static_cast<WaylandWorkspaces*>(data)->onGroupRemoved(group);
-}
+  void groupRemoved(void* data, ext_workspace_group_handle_v1* group) {
+    static_cast<WaylandWorkspaces*>(data)->onGroupRemoved(group);
+  }
 
-const ext_workspace_group_handle_v1_listener kGroupListener = {
-    .capabilities = groupCapabilities,
-    .output_enter = groupOutputEnter,
-    .output_leave = groupOutputLeave,
-    .workspace_enter = groupWorkspaceEnter,
-    .workspace_leave = groupWorkspaceLeave,
-    .removed = groupRemoved,
-};
+  const ext_workspace_group_handle_v1_listener kGroupListener = {
+      .capabilities = groupCapabilities,
+      .output_enter = groupOutputEnter,
+      .output_leave = groupOutputLeave,
+      .workspace_enter = groupWorkspaceEnter,
+      .workspace_leave = groupWorkspaceLeave,
+      .removed = groupRemoved,
+  };
 
-void workspaceId(void* data, ext_workspace_handle_v1* workspace, const char* id) {
-  static_cast<WaylandWorkspaces*>(data)->onWorkspaceIdChanged(workspace, id);
-}
+  void workspaceId(void* data, ext_workspace_handle_v1* workspace, const char* id) {
+    static_cast<WaylandWorkspaces*>(data)->onWorkspaceIdChanged(workspace, id);
+  }
 
-void workspaceName(void* data, ext_workspace_handle_v1* workspace, const char* name) {
-  static_cast<WaylandWorkspaces*>(data)->onWorkspaceNameChanged(workspace, name);
-}
+  void workspaceName(void* data, ext_workspace_handle_v1* workspace, const char* name) {
+    static_cast<WaylandWorkspaces*>(data)->onWorkspaceNameChanged(workspace, name);
+  }
 
-void workspaceCoordinates(void* data, ext_workspace_handle_v1* workspace, wl_array* coords) {
-  static_cast<WaylandWorkspaces*>(data)->onWorkspaceCoordinatesChanged(workspace, coords);
-}
+  void workspaceCoordinates(void* data, ext_workspace_handle_v1* workspace, wl_array* coords) {
+    static_cast<WaylandWorkspaces*>(data)->onWorkspaceCoordinatesChanged(workspace, coords);
+  }
 
-void workspaceState(void* data, ext_workspace_handle_v1* workspace, uint32_t state) {
-  static_cast<WaylandWorkspaces*>(data)->onWorkspaceStateChanged(workspace, state);
-}
+  void workspaceState(void* data, ext_workspace_handle_v1* workspace, uint32_t state) {
+    static_cast<WaylandWorkspaces*>(data)->onWorkspaceStateChanged(workspace, state);
+  }
 
-void workspaceCapabilities(void* /*data*/, ext_workspace_handle_v1* /*workspace*/, uint32_t /*caps*/) {}
+  void workspaceCapabilities(void* /*data*/, ext_workspace_handle_v1* /*workspace*/, uint32_t /*caps*/) {}
 
-void workspaceRemoved(void* data, ext_workspace_handle_v1* workspace) {
-  static_cast<WaylandWorkspaces*>(data)->onWorkspaceRemoved(workspace);
-}
+  void workspaceRemoved(void* data, ext_workspace_handle_v1* workspace) {
+    static_cast<WaylandWorkspaces*>(data)->onWorkspaceRemoved(workspace);
+  }
 
-const ext_workspace_handle_v1_listener kWorkspaceListener = {
-    .id = workspaceId,
-    .name = workspaceName,
-    .coordinates = workspaceCoordinates,
-    .state = workspaceState,
-    .capabilities = workspaceCapabilities,
-    .removed = workspaceRemoved,
-};
+  const ext_workspace_handle_v1_listener kWorkspaceListener = {
+      .id = workspaceId,
+      .name = workspaceName,
+      .coordinates = workspaceCoordinates,
+      .state = workspaceState,
+      .capabilities = workspaceCapabilities,
+      .removed = workspaceRemoved,
+  };
 
-void managerWorkspaceGroup(void* data, ext_workspace_manager_v1* /*manager*/, ext_workspace_group_handle_v1* group) {
-  static_cast<WaylandWorkspaces*>(data)->onGroupCreated(group);
-}
+  void managerWorkspaceGroup(void* data, ext_workspace_manager_v1* /*manager*/, ext_workspace_group_handle_v1* group) {
+    static_cast<WaylandWorkspaces*>(data)->onGroupCreated(group);
+  }
 
-void managerWorkspace(void* data, ext_workspace_manager_v1* /*manager*/, ext_workspace_handle_v1* workspace) {
-  static_cast<WaylandWorkspaces*>(data)->onWorkspaceCreated(workspace);
-}
+  void managerWorkspace(void* data, ext_workspace_manager_v1* /*manager*/, ext_workspace_handle_v1* workspace) {
+    static_cast<WaylandWorkspaces*>(data)->onWorkspaceCreated(workspace);
+  }
 
-void managerDone(void* data, ext_workspace_manager_v1* /*manager*/) {
-  static_cast<WaylandWorkspaces*>(data)->onManagerDone();
-}
+  void managerDone(void* data, ext_workspace_manager_v1* /*manager*/) {
+    static_cast<WaylandWorkspaces*>(data)->onManagerDone();
+  }
 
-void managerFinished(void* data, ext_workspace_manager_v1* /*manager*/) {
-  static_cast<WaylandWorkspaces*>(data)->onManagerFinished();
-}
+  void managerFinished(void* data, ext_workspace_manager_v1* /*manager*/) {
+    static_cast<WaylandWorkspaces*>(data)->onManagerFinished();
+  }
 
-const ext_workspace_manager_v1_listener kManagerListener = {
-    .workspace_group = managerWorkspaceGroup,
-    .workspace = managerWorkspace,
-    .done = managerDone,
-    .finished = managerFinished,
-};
+  const ext_workspace_manager_v1_listener kManagerListener = {
+      .workspace_group = managerWorkspaceGroup,
+      .workspace = managerWorkspace,
+      .done = managerDone,
+      .finished = managerFinished,
+  };
 
-constexpr Logger kLog("workspace");
+  constexpr Logger kLog("workspace");
 
 } // namespace
 

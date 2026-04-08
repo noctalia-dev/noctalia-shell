@@ -12,9 +12,9 @@
 
 namespace {
 
-constexpr Logger kLog("ipc");
-constexpr int kMaxLineBytes = 512;
-constexpr int kRecvTimeoutMs = 100;
+  constexpr Logger kLog("ipc");
+  constexpr int kMaxLineBytes = 512;
+  constexpr int kRecvTimeoutMs = 100;
 
 } // namespace
 

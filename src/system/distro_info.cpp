@@ -9,70 +9,70 @@
 
 namespace {
 
-std::string trim(std::string_view value) {
-  std::size_t start = 0;
-  while (start < value.size() && std::isspace(static_cast<unsigned char>(value[start])) != 0) {
-    ++start;
+  std::string trim(std::string_view value) {
+    std::size_t start = 0;
+    while (start < value.size() && std::isspace(static_cast<unsigned char>(value[start])) != 0) {
+      ++start;
+    }
+
+    std::size_t end = value.size();
+    while (end > start && std::isspace(static_cast<unsigned char>(value[end - 1])) != 0) {
+      --end;
+    }
+
+    return std::string(value.substr(start, end - start));
   }
 
-  std::size_t end = value.size();
-  while (end > start && std::isspace(static_cast<unsigned char>(value[end - 1])) != 0) {
-    --end;
-  }
+  std::string unquote(std::string value) {
+    if (value.size() >= 2 &&
+        ((value.front() == '"' && value.back() == '"') || (value.front() == '\'' && value.back() == '\''))) {
+      value = value.substr(1, value.size() - 2);
+    }
 
-  return std::string(value.substr(start, end - start));
-}
-
-std::string unquote(std::string value) {
-  if (value.size() >= 2 &&
-      ((value.front() == '"' && value.back() == '"') || (value.front() == '\'' && value.back() == '\''))) {
-    value = value.substr(1, value.size() - 2);
-  }
-
-  std::string out;
-  out.reserve(value.size());
-  bool escaping = false;
-  for (char ch : value) {
-    if (escaping) {
+    std::string out;
+    out.reserve(value.size());
+    bool escaping = false;
+    for (char ch : value) {
+      if (escaping) {
+        out.push_back(ch);
+        escaping = false;
+        continue;
+      }
+      if (ch == '\\') {
+        escaping = true;
+        continue;
+      }
       out.push_back(ch);
-      escaping = false;
-      continue;
     }
-    if (ch == '\\') {
-      escaping = true;
-      continue;
-    }
-    out.push_back(ch);
-  }
-  return out;
-}
-
-std::optional<std::unordered_map<std::string, std::string>> parseOsRelease(const std::filesystem::path& path) {
-  std::ifstream file(path);
-  if (!file.is_open()) {
-    return std::nullopt;
+    return out;
   }
 
-  std::unordered_map<std::string, std::string> values;
-  std::string line;
-  while (std::getline(file, line)) {
-    const auto trimmed = trim(line);
-    if (trimmed.empty() || trimmed.front() == '#') {
-      continue;
+  std::optional<std::unordered_map<std::string, std::string>> parseOsRelease(const std::filesystem::path& path) {
+    std::ifstream file(path);
+    if (!file.is_open()) {
+      return std::nullopt;
     }
 
-    const auto eq = trimmed.find('=');
-    if (eq == std::string::npos || eq == 0) {
-      continue;
+    std::unordered_map<std::string, std::string> values;
+    std::string line;
+    while (std::getline(file, line)) {
+      const auto trimmed = trim(line);
+      if (trimmed.empty() || trimmed.front() == '#') {
+        continue;
+      }
+
+      const auto eq = trimmed.find('=');
+      if (eq == std::string::npos || eq == 0) {
+        continue;
+      }
+
+      auto key = std::string(trimmed.substr(0, eq));
+      auto value = unquote(trim(std::string_view(trimmed).substr(eq + 1)));
+      values[std::move(key)] = std::move(value);
     }
 
-    auto key = std::string(trimmed.substr(0, eq));
-    auto value = unquote(trim(std::string_view(trimmed).substr(eq + 1)));
-    values[std::move(key)] = std::move(value);
+    return values;
   }
-
-  return values;
-}
 
 } // namespace
 

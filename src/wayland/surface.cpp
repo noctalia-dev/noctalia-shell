@@ -9,9 +9,9 @@
 
 namespace {
 
-const wl_callback_listener kFrameListener = {
-    .done = &Surface::handleFrameDone,
-};
+  const wl_callback_listener kFrameListener = {
+      .done = &Surface::handleFrameDone,
+  };
 
 } // namespace
 
