@@ -231,16 +231,18 @@ void Select::layout(Renderer& renderer) {
   m_triggerArea->setPosition(0.0f, 0.0f);
   m_triggerArea->setSize(dropdownWidth, m_controlHeight);
 
-  float absX = 0.0f;
-  float absY = 0.0f;
-  Node::absolutePosition(this, absX, absY);
+  float absLeft = 0.0f;
+  float absTop = 0.0f;
+  float absRight = 0.0f;
+  float absBottom = 0.0f;
+  Node::transformedBounds(this, absLeft, absTop, absRight, absBottom);
   Node* root = this;
   while (root->parent() != nullptr) {
     root = root->parent();
   }
   const float rootHeight = root->height();
-  const float belowSpace = std::max(0.0f, rootHeight - (absY + m_controlHeight));
-  const float aboveSpace = std::max(0.0f, absY);
+  const float belowSpace = std::max(0.0f, rootHeight - absBottom);
+  const float aboveSpace = std::max(0.0f, absTop);
   const float neededSpace = viewportHeight + kMenuTopGap;
   m_openUpward = neededSpace > belowSpace && aboveSpace > belowSpace;
   const float menuY = m_openUpward ? -(viewportHeight + kMenuTopGap) : (m_controlHeight + kMenuTopGap);

@@ -40,9 +40,10 @@ void InputDispatcher::pointerMotion(float x, float y, std::uint32_t serial) {
 bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool pressed) {
   InputArea* target = m_capturedArea != nullptr ? m_capturedArea : m_hoveredArea;
   if (target != nullptr) {
-    float absX = 0.0f, absY = 0.0f;
-    Node::absolutePosition(target, absX, absY);
-    target->dispatchPress(x - absX, y - absY, button, pressed);
+    float localX = 0.0f;
+    float localY = 0.0f;
+    (void)Node::mapFromScene(target, x, y, localX, localY);
+    target->dispatchPress(localX, localY, button, pressed);
     if (pressed) {
       m_capturedArea = target;
       if (target->focusable()) {
@@ -74,10 +75,10 @@ bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, std::uin
       continue;
     }
 
-    float absX = 0.0f;
-    float absY = 0.0f;
-    Node::absolutePosition(area, absX, absY);
-    area->dispatchAxis(x - absX, y - absY, axis, axisSource, value, discrete, value120, lines);
+    float localX = 0.0f;
+    float localY = 0.0f;
+    (void)Node::mapFromScene(area, x, y, localX, localY);
+    area->dispatchAxis(localX, localY, axis, axisSource, value, discrete, value120, lines);
     dispatched = true;
 
     if (!area->propagateEvents()) {
@@ -131,9 +132,10 @@ InputArea* InputDispatcher::findInputAreaAt(float x, float y) {
 void InputDispatcher::updateHover(float x, float y, std::uint32_t serial) {
   // While a button is held, all motion goes to the captured area; hover stays frozen.
   if (m_capturedArea != nullptr) {
-    float absX = 0.0f, absY = 0.0f;
-    Node::absolutePosition(m_capturedArea, absX, absY);
-    m_capturedArea->dispatchMotion(x - absX, y - absY);
+    float localX = 0.0f;
+    float localY = 0.0f;
+    (void)Node::mapFromScene(m_capturedArea, x, y, localX, localY);
+    m_capturedArea->dispatchMotion(localX, localY);
     updateCursor(serial);
     return;
   }
@@ -147,14 +149,16 @@ void InputDispatcher::updateHover(float x, float y, std::uint32_t serial) {
     m_hoveredArea = area;
     if (m_hoveredArea != nullptr) {
       trackArea(m_hoveredArea);
-      float absX = 0.0f, absY = 0.0f;
-      Node::absolutePosition(m_hoveredArea, absX, absY);
-      m_hoveredArea->dispatchEnter(x - absX, y - absY);
+      float localX = 0.0f;
+      float localY = 0.0f;
+      (void)Node::mapFromScene(m_hoveredArea, x, y, localX, localY);
+      m_hoveredArea->dispatchEnter(localX, localY);
     }
   } else if (m_hoveredArea != nullptr) {
-    float absX = 0.0f, absY = 0.0f;
-    Node::absolutePosition(m_hoveredArea, absX, absY);
-    m_hoveredArea->dispatchMotion(x - absX, y - absY);
+    float localX = 0.0f;
+    float localY = 0.0f;
+    (void)Node::mapFromScene(m_hoveredArea, x, y, localX, localY);
+    m_hoveredArea->dispatchMotion(localX, localY);
   }
 
   updateCursor(serial);

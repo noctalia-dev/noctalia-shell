@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+struct Mat3;
+
 class AnimationManager;
 class Renderer;
 
@@ -65,12 +67,14 @@ public:
 
   static Node* hitTest(Node* root, float x, float y);
   static void absolutePosition(const Node* node, float& outX, float& outY);
+  static bool mapFromScene(const Node* node, float sceneX, float sceneY, float& outLocalX, float& outLocalY);
+  static void transformedBounds(const Node* node, float& outLeft, float& outTop, float& outRight, float& outBottom);
 
   void markDirty();
   void clearDirty();
 
 private:
-  static Node* hitTestImpl(Node* node, float px, float py, float offsetX, float offsetY);
+  static Node* hitTestImpl(Node* node, float px, float py);
   NodeType m_type;
   float m_x = 0.0f;
   float m_y = 0.0f;

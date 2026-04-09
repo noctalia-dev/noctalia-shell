@@ -1,7 +1,50 @@
 #include "render/scene/node.h"
 
+#include "render/core/mat3.h"
+
 #include <algorithm>
+#include <cmath>
 #include <vector>
+
+namespace {
+
+Mat3 localTransform(const Node* node) {
+  const float cx = node->width() * 0.5f;
+  const float cy = node->height() * 0.5f;
+  return Mat3::translation(node->x(), node->y()) * Mat3::translation(cx, cy) * Mat3::rotation(node->rotation()) *
+         Mat3::scale(node->scale(), node->scale()) * Mat3::translation(-cx, -cy);
+}
+
+Mat3 computeWorldTransform(const Node* node) {
+  if (node == nullptr) {
+    return Mat3::identity();
+  }
+
+  std::vector<const Node*> chain;
+  for (const Node* current = node; current != nullptr; current = current->parent()) {
+    chain.push_back(current);
+  }
+
+  Mat3 world = Mat3::identity();
+  for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
+    world = world * localTransform(*it);
+  }
+  return world;
+}
+
+bool pointInsideNode(const Node* node, float sceneX, float sceneY, float& localX, float& localY) {
+  if (node == nullptr) {
+    return false;
+  }
+
+  const Mat3 inverse = computeWorldTransform(node).inverse();
+  const Vec2 local = inverse.transformPoint(sceneX, sceneY);
+  localX = local.x;
+  localY = local.y;
+  return localX >= 0.0f && localX < node->width() && localY >= 0.0f && localY < node->height();
+}
+
+} // namespace
 
 Node::Node(NodeType type) : m_type(type) {}
 
@@ -146,16 +189,16 @@ void Node::clearDirty() {
   }
 }
 
-Node* Node::hitTest(Node* root, float x, float y) { return hitTestImpl(root, x, y, 0.0f, 0.0f); }
+Node* Node::hitTest(Node* root, float x, float y) { return hitTestImpl(root, x, y); }
 
-Node* Node::hitTestImpl(Node* node, float px, float py, float offsetX, float offsetY) {
+Node* Node::hitTestImpl(Node* node, float px, float py) {
   if (node == nullptr || !node->m_visible) {
     return nullptr;
   }
 
-  const float nodeX = offsetX + node->m_x;
-  const float nodeY = offsetY + node->m_y;
-  const bool inside = (px >= nodeX && px < nodeX + node->m_width && py >= nodeY && py < nodeY + node->m_height);
+  float localX = 0.0f;
+  float localY = 0.0f;
+  const bool inside = pointInsideNode(node, px, py, localX, localY);
 
   if (node->m_clipChildren && !inside) {
     return nullptr;
@@ -173,7 +216,7 @@ Node* Node::hitTestImpl(Node* node, float px, float py, float offsetX, float off
   // Traverse children in reverse (topmost first).
   // Children are allowed to overflow parent bounds (needed for menus/popovers).
   for (auto it = orderedChildren.rbegin(); it != orderedChildren.rend(); ++it) {
-    auto* hit = hitTestImpl(*it, px, py, nodeX, nodeY);
+    auto* hit = hitTestImpl(*it, px, py);
     if (hit != nullptr) {
       return hit;
     }
@@ -183,10 +226,39 @@ Node* Node::hitTestImpl(Node* node, float px, float py, float offsetX, float off
 }
 
 void Node::absolutePosition(const Node* node, float& outX, float& outY) {
-  outX = 0.0f;
-  outY = 0.0f;
-  for (const Node* n = node; n != nullptr; n = n->m_parent) {
-    outX += n->m_x;
-    outY += n->m_y;
+  const Vec2 topLeft = computeWorldTransform(node).transformPoint(0.0f, 0.0f);
+  outX = topLeft.x;
+  outY = topLeft.y;
+}
+
+bool Node::mapFromScene(const Node* node, float sceneX, float sceneY, float& outLocalX, float& outLocalY) {
+  if (node == nullptr) {
+    outLocalX = 0.0f;
+    outLocalY = 0.0f;
+    return false;
+  }
+
+  return pointInsideNode(node, sceneX, sceneY, outLocalX, outLocalY);
+}
+
+void Node::transformedBounds(const Node* node, float& outLeft, float& outTop, float& outRight, float& outBottom) {
+  const Mat3 world = computeWorldTransform(node);
+  const Vec2 corners[] = {
+      world.transformPoint(0.0f, 0.0f),
+      world.transformPoint(node->width(), 0.0f),
+      world.transformPoint(node->width(), node->height()),
+      world.transformPoint(0.0f, node->height()),
+  };
+
+  outLeft = corners[0].x;
+  outTop = corners[0].y;
+  outRight = outLeft;
+  outBottom = outTop;
+
+  for (const Vec2 corner : corners) {
+    outLeft = std::min(outLeft, corner.x);
+    outTop = std::min(outTop, corner.y);
+    outRight = std::max(outRight, corner.x);
+    outBottom = std::max(outBottom, corner.y);
   }
 }

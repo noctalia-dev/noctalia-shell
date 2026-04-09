@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/core/color.h"
+#include "render/core/mat3.h"
 #include "render/programs/msdf_text_program.h"
 
 #include <ft2build.h>
@@ -43,13 +44,13 @@ public:
   [[nodiscard]] TextMetrics measure(std::string_view text, float fontSize);
   [[nodiscard]] TruncatedText truncate(std::string_view text, float fontSize, float maxWidth);
   void draw(float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text, float fontSize,
-            const Color& color, float rotation = 0.0f, float renderScale = 1.0f);
+            const Color& color, const Mat3& transform = Mat3::identity());
 
   // Direct codepoint rendering — bypasses HarfBuzz shaping.
   // Use for icon fonts where codepoints may collide with Unicode control ranges.
   [[nodiscard]] TextMetrics measureGlyph(char32_t codepoint, float fontSize);
   void drawGlyph(float surfaceWidth, float surfaceHeight, float x, float baselineY, char32_t codepoint, float fontSize,
-                 const Color& color, float rotation = 0.0f, float renderScale = 1.0f);
+                 const Color& color, const Mat3& transform = Mat3::identity());
 
   void cleanup();
 

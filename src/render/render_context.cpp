@@ -55,6 +55,13 @@ namespace {
     glScissor(scissorX, scissorY, scissorW, scissorH);
   }
 
+  Mat3 nodeLocalTransform(const Node* node) {
+    const float cx = node->width() * 0.5f;
+    const float cy = node->height() * 0.5f;
+    return Mat3::translation(node->x(), node->y()) * Mat3::translation(cx, cy) * Mat3::rotation(node->rotation()) *
+           Mat3::scale(node->scale(), node->scale()) * Mat3::translation(-cx, -cy);
+  }
+
 } // namespace
 
 RenderContext::RenderContext() = default;
@@ -155,7 +162,7 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
     const auto sh = static_cast<float>(target.logicalHeight());
     const auto bw = static_cast<float>(target.bufferWidth());
     const auto bh = static_cast<float>(target.bufferHeight());
-    renderNode(sceneRoot, 0.0f, 0.0f, 1.0f, sw, sh, bw, bh, 0.0f, 0.0f, sw, sh, false);
+    renderNode(sceneRoot, Mat3::identity(), 1.0f, sw, sh, bw, bh, 0.0f, 0.0f, sw, sh, false);
   }
 
   if (eglSwapBuffers(m_eglDisplay, target.eglSurface()) != EGL_TRUE) {
@@ -194,20 +201,20 @@ void RenderContext::layoutDirtySubtree(Node* node) {
   }
 }
 
-void RenderContext::renderNode(const Node* node, float parentX, float parentY, float parentOpacity, float sw, float sh,
+void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, float parentOpacity, float sw, float sh,
                                float bw, float bh, float clipLeft, float clipTop, float clipRight, float clipBottom,
                                bool hasClip) {
   if (!node->visible()) {
     return;
   }
 
-  const float absX = parentX + node->x();
-  const float absY = parentY + node->y();
-  const float absRight = absX + node->width();
-  const float absBottom = absY + node->height();
+  const Mat3 worldTransform = parentTransform * nodeLocalTransform(node);
   const float effectiveOpacity = parentOpacity * node->opacity();
-  const float rot = node->rotation();
-  const float scl = node->scale();
+  float boundsLeft = 0.0f;
+  float boundsTop = 0.0f;
+  float boundsRight = 0.0f;
+  float boundsBottom = 0.0f;
+  Node::transformedBounds(node, boundsLeft, boundsTop, boundsRight, boundsBottom);
 
   if (hasClip) {
     glEnable(GL_SCISSOR_TEST);
@@ -223,7 +230,7 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
     style.fill.a *= effectiveOpacity;
     style.fillEnd.a *= effectiveOpacity;
     style.border.a *= effectiveOpacity;
-    m_roundedRectProgram.draw(sw, sh, absX, absY, node->width(), node->height(), style, rot, scl);
+    m_roundedRectProgram.draw(sw, sh, node->width(), node->height(), style, worldTransform);
     break;
   }
   case NodeType::Text: {
@@ -234,9 +241,9 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
       auto& renderer = text->bold() ? m_boldTextRenderer : m_textRenderer;
       if (text->maxWidth() > 0.0f) {
         auto truncated = renderer.truncate(text->text(), text->fontSize(), text->maxWidth());
-        renderer.draw(sw, sh, absX, absY, truncated.text, text->fontSize(), color, rot, scl);
+        renderer.draw(sw, sh, 0.0f, 0.0f, truncated.text, text->fontSize(), color, worldTransform);
       } else {
-        renderer.draw(sw, sh, absX, absY, text->text(), text->fontSize(), color, rot, scl);
+        renderer.draw(sw, sh, 0.0f, 0.0f, text->text(), text->fontSize(), color, worldTransform);
       }
     }
     break;
@@ -246,8 +253,8 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
     if (img->textureId() != 0) {
       auto tint = img->tint();
       tint.a *= effectiveOpacity;
-      m_imageProgram.draw(img->textureId(), sw, sh, absX, absY, node->width(), node->height(), tint, effectiveOpacity,
-                          rot, scl);
+      m_imageProgram.draw(img->textureId(), sw, sh, node->width(), node->height(), tint, effectiveOpacity,
+                          worldTransform);
     }
     break;
   }
@@ -256,7 +263,7 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
     if (icon->codepoint() != 0) {
       auto color = icon->color();
       color.a *= effectiveOpacity;
-      m_iconTextRenderer.drawGlyph(sw, sh, absX, absY, icon->codepoint(), icon->fontSize(), color, rot, scl);
+      m_iconTextRenderer.drawGlyph(sw, sh, 0.0f, 0.0f, icon->codepoint(), icon->fontSize(), color, worldTransform);
     }
     break;
   }
@@ -264,7 +271,7 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
     const auto* spinner = static_cast<const SpinnerNode*>(node);
     auto style = spinner->style();
     style.color.a *= effectiveOpacity;
-    m_spinnerProgram.draw(sw, sh, absX, absY, node->width(), node->height(), style, rot, scl);
+    m_spinnerProgram.draw(sw, sh, node->width(), node->height(), style, worldTransform);
     break;
   }
   case NodeType::Base:
@@ -286,10 +293,10 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
   bool childHasClip = hasClip;
 
   if (node->clipChildren()) {
-    childClipLeft = hasClip ? std::max(childClipLeft, absX) : absX;
-    childClipTop = hasClip ? std::max(childClipTop, absY) : absY;
-    childClipRight = hasClip ? std::min(childClipRight, absRight) : absRight;
-    childClipBottom = hasClip ? std::min(childClipBottom, absBottom) : absBottom;
+    childClipLeft = hasClip ? std::max(childClipLeft, boundsLeft) : boundsLeft;
+    childClipTop = hasClip ? std::max(childClipTop, boundsTop) : boundsTop;
+    childClipRight = hasClip ? std::min(childClipRight, boundsRight) : boundsRight;
+    childClipBottom = hasClip ? std::min(childClipBottom, boundsBottom) : boundsBottom;
     childHasClip = true;
   }
 
@@ -298,7 +305,7 @@ void RenderContext::renderNode(const Node* node, float parentX, float parentY, f
   }
 
   for (const auto* child : orderedChildren) {
-    renderNode(child, absX, absY, effectiveOpacity, sw, sh, bw, bh, childClipLeft, childClipTop, childClipRight,
+    renderNode(child, worldTransform, effectiveOpacity, sw, sh, bw, bh, childClipLeft, childClipTop, childClipRight,
                childClipBottom, childHasClip);
   }
 }

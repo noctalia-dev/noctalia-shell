@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/core/color.h"
+#include "render/core/mat3.h"
 #include "render/core/shader_program.h"
 
 #include <GLES2/gl2.h>
@@ -16,9 +17,8 @@ public:
   void ensureInitialized();
   void destroy();
 
-  void draw(GLuint texture, float surfaceWidth, float surfaceHeight, float x, float y, float width, float height,
-            float u0, float v0, float u1, float v1, float pxRange, const Color& color, float rotation = 0.0f,
-            float scale = 1.0f) const;
+  void draw(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height, float u0, float v0,
+            float u1, float v1, float pxRange, const Color& color, const Mat3& transform = Mat3::identity()) const;
 
 private:
   ShaderProgram m_program;
@@ -29,6 +29,5 @@ private:
   GLint m_pxRangeLocation = -1;
   GLint m_colorLocation = -1;
   GLint m_samplerLocation = -1;
-  GLint m_rotationLocation = -1;
-  GLint m_scaleLocation = -1;
+  GLint m_transformLocation = -1;
 };

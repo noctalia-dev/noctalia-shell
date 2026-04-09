@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/core/color.h"
+#include "render/core/mat3.h"
 #include "render/core/shader_program.h"
 
 #include <GLES2/gl2.h>
@@ -51,15 +52,16 @@ public:
   void ensureInitialized();
   void destroy();
 
-  void draw(float surfaceWidth, float surfaceHeight, float x, float y, float width, float height,
-            const RoundedRectStyle& style, float rotation = 0.0f, float scale = 1.0f) const;
+  void draw(float surfaceWidth, float surfaceHeight, float width, float height, const RoundedRectStyle& style,
+            const Mat3& transform = Mat3::identity()) const;
 
 private:
   ShaderProgram m_program;
   GLint m_positionLocation = -1;
   GLint m_surfaceSizeLocation = -1;
-  GLint m_quadRectLocation = -1;
-  GLint m_rectLocation = -1;
+  GLint m_quadSizeLocation = -1;
+  GLint m_rectOriginLocation = -1;
+  GLint m_rectSizeLocation = -1;
   GLint m_colorLocation = -1;
   GLint m_fillEndColorLocation = -1;
   GLint m_borderColorLocation = -1;
@@ -68,6 +70,5 @@ private:
   GLint m_radiiLocation = -1;
   GLint m_softnessLocation = -1;
   GLint m_borderWidthLocation = -1;
-  GLint m_rotationLocation = -1;
-  GLint m_scaleLocation = -1;
+  GLint m_transformLocation = -1;
 };

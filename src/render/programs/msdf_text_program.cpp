@@ -11,9 +11,8 @@ precision highp float;
 attribute vec2 a_position;
 attribute vec2 a_texcoord;
 uniform vec2 u_surface_size;
-uniform vec4 u_rect;
-uniform float u_rotation;
-uniform float u_scale;
+uniform vec2 u_size;
+uniform mat3 u_transform;
 varying vec2 v_texcoord;
 
 vec2 to_ndc(vec2 pixel_pos) {
@@ -22,16 +21,10 @@ vec2 to_ndc(vec2 pixel_pos) {
 }
 
 void main() {
-    vec2 local = a_position * u_rect.zw;
-    vec2 center = u_rect.zw * 0.5;
-    vec2 offset = (local - center) * u_scale;
-    float cs = cos(u_rotation);
-    float sn = sin(u_rotation);
-    vec2 rotated = vec2(offset.x * cs - offset.y * sn,
-                        offset.x * sn + offset.y * cs);
-    vec2 pixel_pos = u_rect.xy + center + rotated;
+    vec2 local = a_position * u_size;
+    vec3 pixel = u_transform * vec3(local, 1.0);
     v_texcoord = a_texcoord;
-    gl_Position = vec4(to_ndc(pixel_pos), 0.0, 1.0);
+    gl_Position = vec4(to_ndc(pixel.xy), 0.0, 1.0);
 }
 )";
 
@@ -68,16 +61,14 @@ void MsdfTextProgram::ensureInitialized() {
   m_positionLocation = glGetAttribLocation(m_program.id(), "a_position");
   m_texCoordLocation = glGetAttribLocation(m_program.id(), "a_texcoord");
   m_surfaceSizeLocation = glGetUniformLocation(m_program.id(), "u_surface_size");
-  m_rectLocation = glGetUniformLocation(m_program.id(), "u_rect");
+  m_rectLocation = glGetUniformLocation(m_program.id(), "u_size");
   m_pxRangeLocation = glGetUniformLocation(m_program.id(), "u_px_range");
   m_colorLocation = glGetUniformLocation(m_program.id(), "u_color");
   m_samplerLocation = glGetUniformLocation(m_program.id(), "u_texture");
-  m_rotationLocation = glGetUniformLocation(m_program.id(), "u_rotation");
-  m_scaleLocation = glGetUniformLocation(m_program.id(), "u_scale");
+  m_transformLocation = glGetUniformLocation(m_program.id(), "u_transform");
 
   if (m_positionLocation < 0 || m_texCoordLocation < 0 || m_surfaceSizeLocation < 0 || m_rectLocation < 0 ||
-      m_pxRangeLocation < 0 || m_colorLocation < 0 || m_samplerLocation < 0 ||
-      m_rotationLocation < 0 || m_scaleLocation < 0) {
+      m_pxRangeLocation < 0 || m_colorLocation < 0 || m_samplerLocation < 0 || m_transformLocation < 0) {
     throw std::runtime_error("failed to query MSDF text shader locations");
   }
 }
@@ -91,13 +82,12 @@ void MsdfTextProgram::destroy() {
   m_pxRangeLocation = -1;
   m_colorLocation = -1;
   m_samplerLocation = -1;
-  m_rotationLocation = -1;
-  m_scaleLocation = -1;
+  m_transformLocation = -1;
 }
 
-void MsdfTextProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight, float x, float y, float width,
-                           float height, float u0, float v0, float u1, float v1, float pxRange,
-                           const Color& color, float rotation, float scale) const {
+void MsdfTextProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
+                           float u0, float v0, float u1, float v1, float pxRange, const Color& color,
+                           const Mat3& transform) const {
   if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
     return;
   }
@@ -112,11 +102,10 @@ void MsdfTextProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeig
 
   glUseProgram(m_program.id());
   glUniform2f(m_surfaceSizeLocation, surfaceWidth, surfaceHeight);
-  glUniform4f(m_rectLocation, x, y, width, height);
+  glUniform2f(m_rectLocation, width, height);
   glUniform1f(m_pxRangeLocation, pxRange);
   glUniform4f(m_colorLocation, color.r, color.g, color.b, color.a);
-  glUniform1f(m_rotationLocation, rotation);
-  glUniform1f(m_scaleLocation, scale);
+  glUniformMatrix3fv(m_transformLocation, 1, GL_FALSE, transform.m.data());
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
   glUniform1i(m_samplerLocation, 0);

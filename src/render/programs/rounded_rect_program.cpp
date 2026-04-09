@@ -10,10 +10,10 @@ precision highp float;
 
 attribute vec2 a_position;
 uniform vec2 u_surface_size;
-uniform vec4 u_quad_rect;
-uniform vec4 u_rect;
-uniform float u_rotation;
-uniform float u_scale;
+uniform vec2 u_quad_size;
+uniform vec2 u_rect_origin;
+uniform vec2 u_rect_size;
+uniform mat3 u_transform;
 varying vec2 v_pixel;
 
 vec2 to_ndc(vec2 pixel_pos) {
@@ -22,23 +22,17 @@ vec2 to_ndc(vec2 pixel_pos) {
 }
 
 void main() {
-    vec2 local = a_position * u_quad_rect.zw;
-    vec2 center = u_quad_rect.zw * 0.5;
-    vec2 offset = (local - center) * u_scale;
-    float cs = cos(u_rotation);
-    float sn = sin(u_rotation);
-    vec2 rotated = vec2(offset.x * cs - offset.y * sn,
-                        offset.x * sn + offset.y * cs);
-    vec2 pixel_pos = u_quad_rect.xy + center + rotated;
-    v_pixel = u_quad_rect.xy + local;
-    gl_Position = vec4(to_ndc(pixel_pos), 0.0, 1.0);
+    vec2 local = a_position * u_quad_size;
+    vec3 pixel = u_transform * vec3(local, 1.0);
+    v_pixel = local - u_rect_origin;
+    gl_Position = vec4(to_ndc(pixel.xy), 0.0, 1.0);
 }
 )";
 
 constexpr char kFragmentShaderSource[] = R"(
 precision highp float;
 
-uniform vec4 u_rect;
+uniform vec2 u_rect_size;
 uniform vec4 u_color;
 uniform vec4 u_fill_end_color;
 uniform vec4 u_border_color;
@@ -62,10 +56,10 @@ float rounded_rect_distance(vec2 point, vec2 size, vec4 radii) {
 
 void main() {
     float aa = max(u_softness, 0.85);
-    vec2 local_point = v_pixel - u_rect.xy;
-    vec2 uv = clamp(local_point / u_rect.zw, vec2(0.0), vec2(1.0));
+    vec2 local_point = v_pixel;
+    vec2 uv = clamp(local_point / u_rect_size, vec2(0.0), vec2(1.0));
 
-    float outer_distance = rounded_rect_distance(local_point, u_rect.zw, u_radii);
+    float outer_distance = rounded_rect_distance(local_point, u_rect_size, u_radii);
     float outer_coverage = 1.0 - smoothstep(-aa, aa, outer_distance);
 
     float gradient_t = clamp(dot(uv, u_gradient_direction), 0.0, 1.0);
@@ -81,7 +75,7 @@ void main() {
     }
 
     vec4 inner_radii = max(u_radii - vec4(u_border_width), vec4(0.0));
-    vec2 inner_size = max(u_rect.zw - vec2(u_border_width * 2.0), vec2(0.0));
+    vec2 inner_size = max(u_rect_size - vec2(u_border_width * 2.0), vec2(0.0));
     vec2 inner_point = local_point - vec2(u_border_width);
     float inner_distance = rounded_rect_distance(inner_point, inner_size, inner_radii);
     float inner_coverage = 1.0 - smoothstep(-aa, aa, inner_distance);
@@ -120,8 +114,9 @@ void RoundedRectProgram::ensureInitialized() {
   m_program.create(kVertexShaderSource, kFragmentShaderSource);
   m_positionLocation = glGetAttribLocation(m_program.id(), "a_position");
   m_surfaceSizeLocation = glGetUniformLocation(m_program.id(), "u_surface_size");
-  m_quadRectLocation = glGetUniformLocation(m_program.id(), "u_quad_rect");
-  m_rectLocation = glGetUniformLocation(m_program.id(), "u_rect");
+  m_quadSizeLocation = glGetUniformLocation(m_program.id(), "u_quad_size");
+  m_rectOriginLocation = glGetUniformLocation(m_program.id(), "u_rect_origin");
+  m_rectSizeLocation = glGetUniformLocation(m_program.id(), "u_rect_size");
   m_colorLocation = glGetUniformLocation(m_program.id(), "u_color");
   m_fillEndColorLocation = glGetUniformLocation(m_program.id(), "u_fill_end_color");
   m_borderColorLocation = glGetUniformLocation(m_program.id(), "u_border_color");
@@ -130,14 +125,12 @@ void RoundedRectProgram::ensureInitialized() {
   m_radiiLocation = glGetUniformLocation(m_program.id(), "u_radii");
   m_softnessLocation = glGetUniformLocation(m_program.id(), "u_softness");
   m_borderWidthLocation = glGetUniformLocation(m_program.id(), "u_border_width");
+  m_transformLocation = glGetUniformLocation(m_program.id(), "u_transform");
 
-  m_rotationLocation = glGetUniformLocation(m_program.id(), "u_rotation");
-  m_scaleLocation = glGetUniformLocation(m_program.id(), "u_scale");
-
-  if (m_positionLocation < 0 || m_surfaceSizeLocation < 0 || m_quadRectLocation < 0 || m_rectLocation < 0 ||
-      m_colorLocation < 0 || m_fillEndColorLocation < 0 || m_borderColorLocation < 0 || m_fillModeLocation < 0 ||
-      m_gradientDirectionLocation < 0 || m_radiiLocation < 0 || m_softnessLocation < 0 ||
-      m_borderWidthLocation < 0 || m_rotationLocation < 0 || m_scaleLocation < 0) {
+  if (m_positionLocation < 0 || m_surfaceSizeLocation < 0 || m_quadSizeLocation < 0 || m_rectOriginLocation < 0 ||
+      m_rectSizeLocation < 0 || m_colorLocation < 0 || m_fillEndColorLocation < 0 || m_borderColorLocation < 0 ||
+      m_fillModeLocation < 0 || m_gradientDirectionLocation < 0 || m_radiiLocation < 0 || m_softnessLocation < 0 ||
+      m_borderWidthLocation < 0 || m_transformLocation < 0) {
     throw std::runtime_error("failed to query rounded-rect shader locations");
   }
 }
@@ -146,8 +139,9 @@ void RoundedRectProgram::destroy() {
   m_program.destroy();
   m_positionLocation = -1;
   m_surfaceSizeLocation = -1;
-  m_quadRectLocation = -1;
-  m_rectLocation = -1;
+  m_quadSizeLocation = -1;
+  m_rectOriginLocation = -1;
+  m_rectSizeLocation = -1;
   m_colorLocation = -1;
   m_fillEndColorLocation = -1;
   m_borderColorLocation = -1;
@@ -156,12 +150,11 @@ void RoundedRectProgram::destroy() {
   m_radiiLocation = -1;
   m_softnessLocation = -1;
   m_borderWidthLocation = -1;
-  m_rotationLocation = -1;
-  m_scaleLocation = -1;
+  m_transformLocation = -1;
 }
 
-void RoundedRectProgram::draw(float surfaceWidth, float surfaceHeight, float x, float y, float width, float height,
-                              const RoundedRectStyle& style, float rotation, float scale) const {
+void RoundedRectProgram::draw(float surfaceWidth, float surfaceHeight, float width, float height,
+                              const RoundedRectStyle& style, const Mat3& transform) const {
   if (!m_program.isValid() || width <= 0.0f || height <= 0.0f) {
     return;
   }
@@ -171,15 +164,16 @@ void RoundedRectProgram::draw(float surfaceWidth, float surfaceHeight, float x, 
   };
 
   const float padding = std::max(style.borderWidth + style.softness + 2.0f, 2.0f);
-  const float quadX = x - padding;
-  const float quadY = y - padding;
   const float quadWidth = width + padding * 2.0f;
   const float quadHeight = height + padding * 2.0f;
+  const float rectOrigin = padding;
+  const Mat3 quadTransform = transform * Mat3::translation(-padding, -padding);
 
   glUseProgram(m_program.id());
   glUniform2f(m_surfaceSizeLocation, surfaceWidth, surfaceHeight);
-  glUniform4f(m_quadRectLocation, quadX, quadY, quadWidth, quadHeight);
-  glUniform4f(m_rectLocation, x, y, width, height);
+  glUniform2f(m_quadSizeLocation, quadWidth, quadHeight);
+  glUniform2f(m_rectOriginLocation, rectOrigin, rectOrigin);
+  glUniform2f(m_rectSizeLocation, width, height);
   glUniform4f(m_colorLocation, style.fill.r, style.fill.g, style.fill.b, style.fill.a);
   glUniform4f(m_fillEndColorLocation, style.fillEnd.r, style.fillEnd.g, style.fillEnd.b, style.fillEnd.a);
   glUniform4f(m_borderColorLocation, style.border.r, style.border.g, style.border.b, style.border.a);
@@ -189,8 +183,7 @@ void RoundedRectProgram::draw(float surfaceWidth, float surfaceHeight, float x, 
   glUniform4f(m_radiiLocation, style.radius.tl, style.radius.tr, style.radius.br, style.radius.bl);
   glUniform1f(m_softnessLocation, style.softness);
   glUniform1f(m_borderWidthLocation, style.borderWidth);
-  glUniform1f(m_rotationLocation, rotation);
-  glUniform1f(m_scaleLocation, scale);
+  glUniformMatrix3fv(m_transformLocation, 1, GL_FALSE, quadTransform.m.data());
   glVertexAttribPointer(m_positionLocation, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
   glEnableVertexAttribArray(m_positionLocation);
   glDrawArrays(GL_TRIANGLES, 0, 6);

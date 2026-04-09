@@ -1,6 +1,7 @@
 #pragma once
 
 #include "font/font_service.h"
+#include "render/core/mat3.h"
 #include "render/core/renderer.h"
 #include "render/core/texture_manager.h"
 #include "render/programs/image_program.h"
@@ -42,7 +43,7 @@ private:
   void ensureGlPrograms();
   void makeCurrentNoSurface();
   void layoutDirtySubtree(Node* node);
-  void renderNode(const Node* node, float parentX, float parentY, float parentOpacity, float sw, float sh, float bw,
+  void renderNode(const Node* node, const Mat3& parentTransform, float parentOpacity, float sw, float sh, float bw,
                   float bh, float clipLeft, float clipTop, float clipRight, float clipBottom, bool hasClip);
 
   EGLDisplay m_eglDisplay = EGL_NO_DISPLAY;

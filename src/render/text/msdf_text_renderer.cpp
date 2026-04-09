@@ -229,13 +229,13 @@ MsdfTextRenderer::TruncatedText MsdfTextRenderer::truncate(std::string_view text
 }
 
 void MsdfTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text,
-                            float fontSize, const Color& color, float rotation, float renderScale) {
+                            float fontSize, const Color& color, const Mat3& transform) {
   if (text.empty()) {
     return;
   }
 
-  const auto drawSingleLine = [this, surfaceWidth, surfaceHeight, x, fontSize, &color, rotation,
-                               renderScale](float lineBaselineY, std::string_view line) {
+  const auto drawSingleLine = [this, surfaceWidth, surfaceHeight, x, fontSize, &color,
+                               &transform](float lineBaselineY, std::string_view line) {
     if (line.empty()) {
       return;
     }
@@ -258,8 +258,8 @@ void MsdfTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, fl
         const float glyphH = glyph.atlasHeight * scale;
 
         GLuint atlasTexture = m_atlasPages[glyph.atlasPage];
-        m_program.draw(atlasTexture, surfaceWidth, surfaceHeight, glyphX, glyphY, glyphW, glyphH, glyph.u0, glyph.v0,
-                       glyph.u1, glyph.v1, pxRange, color, rotation, renderScale);
+        m_program.draw(atlasTexture, surfaceWidth, surfaceHeight, glyphW, glyphH, glyph.u0, glyph.v0, glyph.u1,
+                       glyph.v1, pxRange, color, transform * Mat3::translation(glyphX, glyphY));
       }
 
       penX += static_cast<float>(sg.position.x_advance) / 64.0f;
@@ -314,7 +314,7 @@ MsdfTextRenderer::TextMetrics MsdfTextRenderer::measureGlyph(char32_t codepoint,
 }
 
 void MsdfTextRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, float x, float baselineY, char32_t codepoint,
-                                 float fontSize, const Color& color, float rotation, float renderScale) {
+                                 float fontSize, const Color& color, const Mat3& transform) {
   if (m_fontSlots.empty()) {
     return;
   }
@@ -335,8 +335,8 @@ void MsdfTextRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, float 
     const float glyphH = glyph.atlasHeight * scale;
 
     GLuint atlasTexture = m_atlasPages[glyph.atlasPage];
-    m_program.draw(atlasTexture, surfaceWidth, surfaceHeight, glyphX, glyphY, glyphW, glyphH, glyph.u0, glyph.v0,
-                   glyph.u1, glyph.v1, pxRange, color, rotation, renderScale);
+    m_program.draw(atlasTexture, surfaceWidth, surfaceHeight, glyphW, glyphH, glyph.u0, glyph.v0, glyph.u1, glyph.v1,
+                   pxRange, color, transform * Mat3::translation(glyphX, glyphY));
   }
 }
 
