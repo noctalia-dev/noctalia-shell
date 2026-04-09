@@ -1,0 +1,3 @@
+# All options are Meson built-ins:
+#   -Db_sanitize=address,undefined  enable ASan + UBSan
+#   -Db_lto=true                    enable LTO (used for release builds)

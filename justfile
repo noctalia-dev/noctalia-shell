@@ -7,12 +7,19 @@ default:
     @just --list
 
 configure m=mode:
-    cmake -S . -B build-{{m}} \
-      -DCMAKE_BUILD_TYPE={{ if m == "release" { "Release" } else { "Debug" } }} \
-      -DSANITIZE={{ if m == "asan" { "ON" } else { "OFF" } }}
+    #!/usr/bin/env bash
+    set -euo pipefail
+    args=(--buildtype={{ if m == "release" { "release" } else { "debug" } }})
+    [[ "{{m}}" == "release" ]] && args+=(-Db_lto=true)
+    [[ "{{m}}" == "asan"    ]] && args+=(-Db_sanitize=address,undefined)
+    if [[ -d "build-{{m}}" ]]; then
+        meson setup "build-{{m}}" "${args[@]}" --reconfigure
+    else
+        meson setup "build-{{m}}" "${args[@]}"
+    fi
 
 build m=mode:
-    cmake --build build-{{m}} --parallel
+    meson compile -C build-{{m}}
 
 run m=mode:
     ./build-{{m}}/noctalia
