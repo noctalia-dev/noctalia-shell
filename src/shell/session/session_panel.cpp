@@ -1,4 +1,4 @@
-#include "shell/session_menu/session_panel.h"
+#include "shell/session/session_panel.h"
 
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
