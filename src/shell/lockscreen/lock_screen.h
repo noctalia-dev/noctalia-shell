@@ -28,6 +28,7 @@ public:
   bool lock();
   void unlock();
   void onOutputChange();
+  void onSecondTick();
   void onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);
   [[nodiscard]] bool isActive() const noexcept;
@@ -47,6 +48,7 @@ private:
   void resetLockState();
   void clearInstances();
   void updatePromptOnSurfaces();
+  void setPasswordSelectedAll(bool selected);
   void tryAuthenticate();
   static void clearSensitiveString(std::string& value);
 
@@ -61,6 +63,7 @@ private:
   std::string m_status;
   wl_surface* m_pointerSurface = nullptr;
   bool m_statusIsError = false;
+  bool m_passwordSelectedAll = false;
   bool m_lockPending = false;
   bool m_locked = false;
 };

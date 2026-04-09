@@ -141,6 +141,17 @@ void Input::setOnKeyEvent(std::function<bool(std::uint32_t, std::uint32_t)> call
   m_onKeyEvent = std::move(callback);
 }
 
+void Input::selectAll() {
+  m_selectionAnchor = 0;
+  m_cursorPos = m_value.size();
+  markDirty();
+}
+
+void Input::clearSelection() {
+  m_selectionAnchor = m_cursorPos;
+  markDirty();
+}
+
 void Input::layout(Renderer& renderer) {
   const float w = width() > 0.0f ? width() : kDefaultWidth;
   const float h = m_controlHeight;

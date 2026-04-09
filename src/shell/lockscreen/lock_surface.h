@@ -34,6 +34,9 @@ public:
   void setPromptState(std::string user, std::string maskedPassword, std::string status, bool error);
   void setWallpaperPath(std::string wallpaperPath);
   void setOnLogin(std::function<void()> onLogin);
+  void selectAllPassword();
+  void clearPasswordSelection();
+  void onSecondTick();
   void onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);
   [[nodiscard]] wl_output* output() const noexcept { return m_output; }

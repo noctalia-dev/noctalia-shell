@@ -151,6 +151,19 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
   return true;
 }
 
+void Bar::onSecondTick() {
+  for (auto& inst : m_instances) {
+    if (inst->surface == nullptr || m_renderContext == nullptr) {
+      continue;
+    }
+    m_renderContext->makeCurrent(inst->surface->renderTarget());
+    updateWidgets(*inst);
+    if (inst->sceneRoot != nullptr && inst->sceneRoot->dirty()) {
+      inst->surface->requestRedraw();
+    }
+  }
+}
+
 void Bar::reload() {
   kLog.info("reloading config");
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,

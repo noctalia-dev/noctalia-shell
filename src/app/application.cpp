@@ -434,6 +434,16 @@ void Application::initUi() {
                    m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_powerProfilesService.get(),
                    &m_idleInhibitor, m_mprisService.get(), &m_httpClient, &m_weatherService, &m_renderContext);
 
+  m_timeService.setTickSecondCallback([this]() {
+    if (m_lockScreen.isActive()) {
+      if (m_timeService.format("{:%S}") == "00") {
+        m_lockScreen.onSecondTick();
+      }
+    } else {
+      m_bar.onSecondTick();
+    }
+  });
+
   if (m_pipewireService != nullptr) {
     m_audioOsd.suppressFor(std::chrono::milliseconds(2000));
     m_pipewireService->setChangeCallback([this]() {

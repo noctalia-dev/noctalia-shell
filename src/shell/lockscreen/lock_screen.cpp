@@ -131,6 +131,7 @@ bool LockScreen::lock() {
   m_lockPending = true;
   m_locked = false;
   clearSensitiveString(m_password);
+  m_passwordSelectedAll = false;
   m_status = "Waiting for lock confirmation...";
   m_statusIsError = false;
   syncInstances();
@@ -163,6 +164,7 @@ void LockScreen::unlock() {
   m_lockPending = false;
   m_locked = false;
   clearSensitiveString(m_password);
+  m_passwordSelectedAll = false;
   m_status.clear();
   m_statusIsError = false;
   clearInstances();
@@ -175,6 +177,17 @@ void LockScreen::onOutputChange() {
     return;
   }
   syncInstances();
+}
+
+void LockScreen::onSecondTick() {
+  if (!isActive()) {
+    return;
+  }
+  for (auto& instance : m_instances) {
+    if (instance.surface != nullptr) {
+      instance.surface->onSecondTick();
+    }
+  }
 }
 
 void LockScreen::onPointerEvent(const PointerEvent& event) {
@@ -217,11 +230,23 @@ void LockScreen::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
+  if ((event.modifiers & KeyMod::Ctrl) != 0 && event.sym == XKB_KEY_a) {
+    setPasswordSelectedAll(!m_password.empty());
+    return;
+  }
+
   if (event.sym == XKB_KEY_BackSpace) {
-    if (!m_password.empty()) {
+    if (m_passwordSelectedAll) {
+      clearSensitiveString(m_password);
+      m_status.clear();
+      m_statusIsError = false;
+      setPasswordSelectedAll(false);
+      updatePromptOnSurfaces();
+    } else if (!m_password.empty()) {
       m_password.erase(prevUtf8Pos(m_password, m_password.size()));
       m_status.clear();
       m_statusIsError = false;
+      setPasswordSelectedAll(false);
       updatePromptOnSurfaces();
     }
     return;
@@ -231,14 +256,19 @@ void LockScreen::onKeyboardEvent(const KeyboardEvent& event) {
     clearSensitiveString(m_password);
     m_status = "Password cleared";
     m_statusIsError = false;
+    setPasswordSelectedAll(false);
     updatePromptOnSurfaces();
     return;
   }
 
   if (!event.preedit && event.utf32 >= 0x20U && event.utf32 != 0x7FU && !hasTextInputModifiers(event.modifiers)) {
+    if (m_passwordSelectedAll) {
+      clearSensitiveString(m_password);
+    }
     m_password += utf32ToUtf8(event.utf32);
     m_status.clear();
     m_statusIsError = false;
+    setPasswordSelectedAll(false);
     updatePromptOnSurfaces();
   }
 }
@@ -274,6 +304,7 @@ void LockScreen::handleFinished(void* data, ext_session_lock_v1* /*lock*/) {
   self->m_lockPending = false;
   self->m_locked = false;
   clearSensitiveString(self->m_password);
+  self->m_passwordSelectedAll = false;
   self->m_status.clear();
   self->m_statusIsError = false;
   self->clearInstances();
@@ -350,6 +381,17 @@ void LockScreen::updatePromptOnSurfaces() {
   }
 }
 
+void LockScreen::setPasswordSelectedAll(bool selected) {
+  m_passwordSelectedAll = selected;
+  for (auto& instance : m_instances) {
+    if (selected) {
+      instance.surface->selectAllPassword();
+    } else {
+      instance.surface->clearPasswordSelection();
+    }
+  }
+}
+
 void LockScreen::tryAuthenticate() {
   if (m_password.empty()) {
     m_status = "Password required";
@@ -364,6 +406,7 @@ void LockScreen::tryAuthenticate() {
 
   const auto result = m_authenticator.authenticateCurrentUser(m_password);
   clearSensitiveString(m_password);
+  m_passwordSelectedAll = false;
 
   if (result.success) {
     m_status = "Unlocked";

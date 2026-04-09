@@ -115,6 +115,11 @@ void LockSurface::setLockedState(bool locked) {
   }
   m_locked = locked;
   updateCopy();
+  if (m_locked && m_passwordField != nullptr) {
+    m_inputDispatcher.setFocus(m_passwordField->inputArea());
+  } else {
+    m_inputDispatcher.setFocus(nullptr);
+  }
   if (width() > 0 && height() > 0) {
     layoutScene(width(), height());
     requestRedraw();
@@ -149,6 +154,22 @@ void LockSurface::setWallpaperPath(std::string wallpaperPath) {
 
 void LockSurface::setOnLogin(std::function<void()> onLogin) { m_onLogin = std::move(onLogin); }
 
+void LockSurface::selectAllPassword() {
+  if (m_passwordField == nullptr) {
+    return;
+  }
+  m_passwordField->selectAll();
+  requestRedraw();
+}
+
+void LockSurface::clearPasswordSelection() {
+  if (m_passwordField == nullptr) {
+    return;
+  }
+  m_passwordField->clearSelection();
+  requestRedraw();
+}
+
 void LockSurface::onPointerEvent(const PointerEvent& event) {
   switch (event.type) {
   case PointerEvent::Type::Enter:
@@ -169,6 +190,15 @@ void LockSurface::onPointerEvent(const PointerEvent& event) {
                                   event.axisSource, event.axisValue, event.axisDiscrete, event.axisValue120,
                                   event.axisLines);
     break;
+  }
+}
+
+void LockSurface::onSecondTick() {
+  const std::string previous = m_clock != nullptr ? m_clock->text() : std::string{};
+  updateClockText();
+  if (m_clock != nullptr && m_clock->text() != previous && width() > 0 && height() > 0) {
+    layoutScene(width(), height());
+    requestRedraw();
   }
 }
 
