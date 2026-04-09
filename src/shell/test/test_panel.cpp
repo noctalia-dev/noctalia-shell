@@ -47,6 +47,14 @@ void TestPanel::create() {
 
   const float kRowLabelWidth = 150.0f * scale;
 
+  auto makeCol = [scale]() {
+    auto row = std::make_unique<Flex>();
+    row->setDirection(FlexDirection::Vertical);
+    row->setGap(Style::spaceMd * scale);
+    row->setAlign(FlexAlign::Center);
+    return row;
+  };
+
   auto makeRow = [scale]() {
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
@@ -338,14 +346,18 @@ void TestPanel::create() {
 
     input->setOnChange([this](const std::string& val) {
       if (m_inputValueLabel != nullptr) {
-        m_inputValueLabel->setText(val.empty() ? "" : val);
+        m_inputValueLabel->setText(val.empty() ? "..." : val.substr(0,16));
       }
     });
 
+    auto col = makeCol();
+    col->addChild(std::move(input));
+    col->addChild(std::move(valueLabel));
+
     auto row = makeRow();
     row->addChild(makeRowLabel("Input", kRowLabelWidth));
-    row->addChild(std::move(input));
-    row->addChild(std::move(valueLabel));
+    row->addChild(std::move(col));
+
     container->addChild(std::move(row));
   }
 
