@@ -137,6 +137,7 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
           continue;
         }
         m_renderContext->makeCurrent(inst->surface->renderTarget());
+        m_renderContext->syncContentScale(inst->surface->renderTarget());
         updateWidgets(*inst);
         if (inst->sceneRoot != nullptr && inst->sceneRoot->dirty()) {
           inst->surface->requestRedraw();
@@ -157,6 +158,7 @@ void Bar::onSecondTick() {
       continue;
     }
     m_renderContext->makeCurrent(inst->surface->renderTarget());
+    m_renderContext->syncContentScale(inst->surface->renderTarget());
     updateWidgets(*inst);
     if (inst->sceneRoot != nullptr && inst->sceneRoot->dirty()) {
       inst->surface->requestRedraw();
@@ -195,6 +197,7 @@ void Bar::refresh() {
       continue;
     }
     m_renderContext->makeCurrent(inst->surface->renderTarget());
+    m_renderContext->syncContentScale(inst->surface->renderTarget());
     updateWidgets(*inst);
     if (inst->sceneRoot != nullptr && (inst->sceneRoot->dirty() || inst->animations.hasActive())) {
       inst->surface->requestRedraw();

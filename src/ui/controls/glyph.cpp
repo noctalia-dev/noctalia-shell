@@ -47,5 +47,6 @@ void Glyph::measure(Renderer& renderer) {
   const float refCenter = (refMetrics.bottom - refMetrics.top) * 0.5f;
   const float glyphInkCenter = (metrics.top + metrics.bottom) * 0.5f; // relative to baseline
   const float glyphCenterX = (metrics.left + metrics.right) * 0.5f;
-  m_glyphNode->setPosition(std::round(width() * 0.5f - glyphCenterX), refCenter - glyphInkCenter);
+  const float glyphNodeY = refCenter - glyphInkCenter;
+  m_glyphNode->setPosition(std::round(width() * 0.5f - glyphCenterX), glyphNodeY);
 }

@@ -1,14 +1,15 @@
 #pragma once
 
-#include "font/font_service.h"
 #include "render/core/mat3.h"
 #include "render/core/renderer.h"
 #include "render/core/texture_manager.h"
+#include "render/programs/color_glyph_program.h"
 #include "render/programs/image_program.h"
 #include "render/programs/linear_gradient_program.h"
 #include "render/programs/rounded_rect_program.h"
 #include "render/programs/spinner_program.h"
-#include "render/text/msdf_text_renderer.h"
+#include "render/text/cairo_glyph_renderer.h"
+#include "render/text/cairo_text_renderer.h"
 
 #include <EGL/egl.h>
 
@@ -29,6 +30,12 @@ public:
 
   void renderScene(RenderTarget& target, Node* sceneRoot);
   void makeCurrent(RenderTarget& target);
+  // Sync text/glyph renderer content scale to the given target's
+  // buffer-to-logical ratio. Must be called before any measureText /
+  // measureGlyph performed on behalf of this target, because those
+  // results depend on the rasterization scale and get baked into node
+  // positions during layout.
+  void syncContentScale(RenderTarget& target);
 
   [[nodiscard]] EGLDisplay eglDisplay() const noexcept { return m_eglDisplay; }
   [[nodiscard]] EGLConfig eglConfig() const noexcept { return m_eglConfig; }
@@ -51,13 +58,12 @@ private:
   EGLContext m_eglContext = EGL_NO_CONTEXT;
   bool m_glReady = false;
 
-  FontService m_fontService;
   ImageProgram m_imageProgram;
   LinearGradientProgram m_linearGradientProgram;
   RoundedRectProgram m_roundedRectProgram;
   SpinnerProgram m_spinnerProgram;
-  MsdfTextRenderer m_textRenderer;
-  MsdfTextRenderer m_boldTextRenderer;
-  MsdfTextRenderer m_iconTextRenderer;
+  ColorGlyphProgram m_colorGlyphProgram;
+  CairoTextRenderer m_textRenderer;
+  CairoGlyphRenderer m_glyphRenderer;
   TextureManager m_textureManager;
 };

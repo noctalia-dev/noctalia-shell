@@ -5,9 +5,8 @@
 
 #include <GLES2/gl2.h>
 
-// Renders a pre-rasterized RGBA glyph quad (color emoji).
-// Same quad / UV layout as MsdfTextProgram; fragment shader is a plain texture
-// sample with opacity, no MSDF decoding.
+// Renders a pre-rasterized premultiplied-RGBA glyph quad.
+// Used for all text and icons rendered via Pango/Cairo or direct FT/Cairo.
 class ColorGlyphProgram {
 public:
   ColorGlyphProgram() = default;

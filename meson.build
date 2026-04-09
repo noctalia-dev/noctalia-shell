@@ -36,86 +36,17 @@ egl_dep             = dependency('egl')
 glesv2_dep          = dependency('glesv2')
 wayland_egl_dep     = dependency('wayland-egl')
 freetype2_dep       = dependency('freetype2')
-harfbuzz_dep        = dependency('harfbuzz')
 fontconfig_dep      = dependency('fontconfig')
 cairo_dep           = dependency('cairo')
 cairo_ft_dep        = dependency('cairo-ft')
+pango_dep           = dependency('pango')
+pangocairo_dep      = dependency('pangocairo')
 xkbcommon_dep       = dependency('xkbcommon')
 # PipeWire/SPA headers use GCC extensions that trigger -Wpedantic/-Wconversion;
 # mark as system so the compiler suppresses those warnings.
 pipewire_dep        = dependency('libpipewire-0.3', include_type: 'system')
 curl_dep            = dependency('libcurl')
 pam_dep             = cc.find_library('pam')
-
-# ── Vendored: msdfgen ─────────────────────────────────────────────────────────
-# Built inline (not via subdir) so no meson.build is needed inside the submodule.
-_msdfgen_inc = include_directories('third_party/msdfgen')
-
-_msdfgen_core_lib = static_library('msdfgen-core',
-  files(
-    'third_party/msdfgen/core/contour-combiners.cpp',
-    'third_party/msdfgen/core/Contour.cpp',
-    'third_party/msdfgen/core/DistanceMapping.cpp',
-    'third_party/msdfgen/core/edge-coloring.cpp',
-    'third_party/msdfgen/core/EdgeHolder.cpp',
-    'third_party/msdfgen/core/edge-segments.cpp',
-    'third_party/msdfgen/core/edge-selectors.cpp',
-    'third_party/msdfgen/core/equation-solver.cpp',
-    'third_party/msdfgen/core/export-svg.cpp',
-    'third_party/msdfgen/core/MSDFErrorCorrection.cpp',
-    'third_party/msdfgen/core/msdf-error-correction.cpp',
-    'third_party/msdfgen/core/msdfgen.cpp',
-    'third_party/msdfgen/core/Projection.cpp',
-    'third_party/msdfgen/core/rasterization.cpp',
-    'third_party/msdfgen/core/render-sdf.cpp',
-    'third_party/msdfgen/core/save-bmp.cpp',
-    'third_party/msdfgen/core/save-fl32.cpp',
-    'third_party/msdfgen/core/save-rgba.cpp',
-    'third_party/msdfgen/core/save-tiff.cpp',
-    'third_party/msdfgen/core/Scanline.cpp',
-    'third_party/msdfgen/core/sdf-error-estimation.cpp',
-    'third_party/msdfgen/core/Shape.cpp',
-    'third_party/msdfgen/core/shape-description.cpp',
-  ),
-  include_directories: _msdfgen_inc,
-  cpp_args: ['-DMSDFGEN_PUBLIC=', '-DMSDFGEN_USE_CPP11'],
-  override_options: ['warning_level=0'],
-)
-
-msdfgen_core_dep = declare_dependency(
-  link_with: _msdfgen_core_lib,
-  include_directories: _msdfgen_inc,
-  compile_args: ['-DMSDFGEN_PUBLIC=', '-DMSDFGEN_USE_CPP11'],
-)
-
-_msdfgen_ext_lib = static_library('msdfgen-ext',
-  files(
-    'third_party/msdfgen/ext/import-font.cpp',
-    'third_party/msdfgen/ext/import-svg.cpp',
-    'third_party/msdfgen/ext/resolve-shape-geometry.cpp',
-    'third_party/msdfgen/ext/save-png.cpp',
-  ),
-  include_directories: _msdfgen_inc,
-  dependencies: [msdfgen_core_dep, freetype2_dep],
-  cpp_args: [
-    '-DMSDFGEN_EXT_PUBLIC=',
-    '-DMSDFGEN_DISABLE_SVG',
-    '-DMSDFGEN_DISABLE_PNG',
-  ],
-  override_options: ['warning_level=0'],
-)
-
-msdfgen_ext_dep = declare_dependency(
-  link_with: _msdfgen_ext_lib,
-  dependencies: msdfgen_core_dep,
-  include_directories: _msdfgen_inc,
-  compile_args: [
-    '-DMSDFGEN_EXT_PUBLIC=',
-    '-DMSDFGEN_EXTENSIONS',
-    '-DMSDFGEN_DISABLE_SVG',
-    '-DMSDFGEN_DISABLE_PNG',
-  ],
-)
 
 # ── Vendored: tinyexpr (C, needs suppressed warnings) ─────────────────────────
 _tinyexpr_lib = static_library('tinyexpr',
@@ -229,7 +160,6 @@ _noctalia_sources = files(
   'src/dbus/tray/tray_service.cpp',
   'src/dbus/upower/upower_service.cpp',
   'src/debug/debug_service.cpp',
-  'src/font/font_service.cpp',
   'src/idle/idle_inhibitor.cpp',
   'src/idle/idle_manager.cpp',
   'src/ipc/ipc_client.cpp',
@@ -252,7 +182,6 @@ _noctalia_sources = files(
   'src/render/programs/color_glyph_program.cpp',
   'src/render/programs/image_program.cpp',
   'src/render/programs/linear_gradient_program.cpp',
-  'src/render/programs/msdf_text_program.cpp',
   'src/render/programs/rounded_rect_program.cpp',
   'src/render/programs/spinner_program.cpp',
   'src/render/programs/blur_program.cpp',
@@ -262,7 +191,8 @@ _noctalia_sources = files(
   'src/render/scene/input_area.cpp',
   'src/render/scene/input_dispatcher.cpp',
   'src/render/scene/node.cpp',
-  'src/render/text/msdf_text_renderer.cpp',
+  'src/render/text/cairo_text_renderer.cpp',
+  'src/render/text/cairo_glyph_renderer.cpp',
   'src/render/wallpaper_renderer.cpp',
   'src/shell/bar/bar.cpp',
   'src/shell/clipboard/clipboard_panel.cpp',
@@ -366,17 +296,16 @@ executable('noctalia',
   sources: _noctalia_sources + _protocol_sources,
   dependencies: [
     sdbus_cpp_dep,
-    msdfgen_core_dep,
-    msdfgen_ext_dep,
     wayland_client_dep,
     egl_dep,
     glesv2_dep,
     wayland_egl_dep,
     freetype2_dep,
-    harfbuzz_dep,
     fontconfig_dep,
     cairo_dep,
     cairo_ft_dep,
+    pango_dep,
+    pangocairo_dep,
     xkbcommon_dep,
     pipewire_dep,
     curl_dep,

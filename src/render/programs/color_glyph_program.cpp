@@ -5,8 +5,7 @@
 
 namespace {
 
-// Vertex shader identical to MsdfTextProgram: positions a unit quad, applies
-// a pixel-space transform, converts to NDC.
+// Positions a unit quad, applies a pixel-space transform, converts to NDC.
 constexpr char kVertexShaderSource[] = R"(
 precision highp float;
 

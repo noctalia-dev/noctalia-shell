@@ -1,6 +1,5 @@
 #include "render/render_context.h"
 #include "core/log.h"
-#include "font/font_service.h"
 #include "render/render_target.h"
 #include "render/scene/glyph_node.h"
 #include "render/scene/image_node.h"
@@ -107,49 +106,10 @@ void RenderContext::initialize(wl_display* display) {
   // This allows measureText/measureGlyph to work before any surface exists.
   eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext);
 
-  // Build fallback chain: 8 general fonts + explicit CJK (appended) + color emoji (inserted early).
-  // The color emoji font is inserted at position 1 (right after the primary sans-serif font)
-  // so it takes priority over monochrome emoji fonts that fontconfig places later in the chain.
-  const auto appendSpecialFonts = [&](std::vector<ResolvedFont> chain) {
-    const auto isAlreadyInChain = [&](const ResolvedFont& candidate) {
-      for (const auto& existing : chain) {
-        if (existing.path == candidate.path && existing.faceIndex == candidate.faceIndex) {
-          return true;
-        }
-      }
-      return false;
-    };
-
-    // CJK: append at end — it's a large font and only needed for CJK codepoints.
-    auto cjk = m_fontService.resolveBestForChar(0x4E00);
-    if (cjk && !isAlreadyInChain(*cjk)) {
-      kLog.debug("  +appended {} [{}]", cjk->path, cjk->faceIndex);
-      chain.push_back(std::move(*cjk));
-    }
-
-    // Color emoji: append at end. Emoji codepoints are routed to this slot explicitly
-    // by the emoji segmenter in shapeWithFallback — slot order doesn't matter for emoji.
-    auto emoji = m_fontService.resolveFont("emoji");
-    if (emoji && !isAlreadyInChain(*emoji)) {
-      kLog.debug("  +appended {} [{}]", emoji->path, emoji->faceIndex);
-      chain.push_back(std::move(*emoji));
-    }
-
-    return chain;
-  };
-
-  auto fonts = appendSpecialFonts(m_fontService.resolveFallbackChain("sans-serif"));
-  m_textRenderer.initialize(fonts);
-  auto boldFonts = appendSpecialFonts(m_fontService.resolveFallbackChain("sans-serif", 8, FC_WEIGHT_BOLD));
-  m_boldTextRenderer.initialize(boldFonts);
-  m_iconTextRenderer.initialize({{NOCTALIA_ASSETS_DIR "/fonts/tabler.ttf", 0}});
+  // Pango handles font fallback via Fontconfig automatically — no explicit chain.
   ensureGlPrograms();
-
-  // Pre-warm the glyph atlas so first use doesn't stall.
-  // Printable ASCII covers most UI text; common icons cover bar/panel widgets.
-  (void)m_textRenderer.measure(
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 !@#$%^&*()-_=+[]{}|;:',.<>?/\"",
-      Style::fontSizeBody);
+  m_textRenderer.initialize(&m_colorGlyphProgram);
+  m_glyphRenderer.initialize(NOCTALIA_ASSETS_DIR "/fonts/tabler.ttf", &m_colorGlyphProgram);
 }
 
 void RenderContext::ensureGlPrograms() {
@@ -160,6 +120,7 @@ void RenderContext::ensureGlPrograms() {
   m_linearGradientProgram.ensureInitialized();
   m_roundedRectProgram.ensureInitialized();
   m_spinnerProgram.ensureInitialized();
+  m_colorGlyphProgram.ensureInitialized();
   m_glReady = true;
 }
 
@@ -179,9 +140,18 @@ void RenderContext::makeCurrent(RenderTarget& target) {
   }
 }
 
+void RenderContext::syncContentScale(RenderTarget& target) {
+  const auto sw = static_cast<float>(target.logicalWidth());
+  const auto bw = static_cast<float>(target.bufferWidth());
+  const float contentScale = sw > 0.0f ? bw / sw : 1.0f;
+  m_textRenderer.setContentScale(contentScale);
+  m_glyphRenderer.setContentScale(contentScale);
+}
+
 void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
   makeCurrent(target);
   ensureGlPrograms();
+  syncContentScale(target);
 
   glViewport(0, 0, static_cast<GLint>(target.bufferWidth()), static_cast<GLint>(target.bufferHeight()));
   glEnable(GL_BLEND);
@@ -207,14 +177,12 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
 }
 
 TextMetrics RenderContext::measureText(std::string_view text, float fontSize, bool bold) {
-  makeCurrentNoSurface();
-  auto m = bold ? m_boldTextRenderer.measure(text, fontSize) : m_textRenderer.measure(text, fontSize);
+  auto m = m_textRenderer.measure(text, fontSize, bold);
   return TextMetrics{.width = m.width, .left = m.left, .right = m.right, .top = m.top, .bottom = m.bottom};
 }
 
 TextMetrics RenderContext::measureGlyph(char32_t codepoint, float fontSize) {
-  makeCurrentNoSurface();
-  auto m = m_iconTextRenderer.measureGlyph(codepoint, fontSize);
+  auto m = m_glyphRenderer.measureGlyph(codepoint, fontSize);
   return TextMetrics{.width = m.width, .left = m.left, .right = m.right, .top = m.top, .bottom = m.bottom};
 }
 
@@ -274,13 +242,8 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     if (!text->text().empty()) {
       auto color = text->color();
       color.a *= effectiveOpacity;
-      auto& renderer = text->bold() ? m_boldTextRenderer : m_textRenderer;
-      if (text->maxWidth() > 0.0f) {
-        auto truncated = renderer.truncate(text->text(), text->fontSize(), text->maxWidth());
-        renderer.draw(sw, sh, 0.0f, 0.0f, truncated.text, text->fontSize(), color, worldTransform);
-      } else {
-        renderer.draw(sw, sh, 0.0f, 0.0f, text->text(), text->fontSize(), color, worldTransform);
-      }
+      m_textRenderer.draw(sw, sh, 0.0f, 0.0f, text->text(), text->fontSize(), color, worldTransform, text->bold(),
+                          text->maxWidth());
     }
     break;
   }
@@ -299,7 +262,7 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     if (icon->codepoint() != 0) {
       auto color = icon->color();
       color.a *= effectiveOpacity;
-      m_iconTextRenderer.drawGlyph(sw, sh, 0.0f, 0.0f, icon->codepoint(), icon->fontSize(), color, worldTransform);
+      m_glyphRenderer.drawGlyph(sw, sh, 0.0f, 0.0f, icon->codepoint(), icon->fontSize(), color, worldTransform);
     }
     break;
   }
@@ -353,14 +316,15 @@ void RenderContext::cleanup() {
     eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext);
   }
 
+  // Text renderers first — they destroy GL textures and need a current context.
+  m_textRenderer.cleanup();
+  m_glyphRenderer.cleanup();
   m_textureManager.cleanup();
   m_imageProgram.destroy();
   m_linearGradientProgram.destroy();
   m_roundedRectProgram.destroy();
   m_spinnerProgram.destroy();
-  m_textRenderer.cleanup();
-  m_boldTextRenderer.cleanup();
-  m_iconTextRenderer.cleanup();
+  m_colorGlyphProgram.destroy();
   m_glReady = false;
 
   eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);

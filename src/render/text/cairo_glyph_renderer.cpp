@@ -1,0 +1,330 @@
+#include "render/text/cairo_glyph_renderer.h"
+
+#include "core/log.h"
+#include "render/programs/color_glyph_program.h"
+
+#include <cairo.h>
+#include <cairo-ft.h>
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include <stdexcept>
+#include <vector>
+
+namespace {
+
+constexpr Logger kLog("text");
+
+constexpr std::uint32_t kSizeQuant = 64;
+constexpr std::uint32_t kScaleQuant = 64;
+
+inline std::uint32_t quantizeSize(float v) {
+  return static_cast<std::uint32_t>(std::max(0.0f, v) * static_cast<float>(kSizeQuant) + 0.5f);
+}
+
+inline std::uint16_t quantizeScale(float v) {
+  return static_cast<std::uint16_t>(std::max(0.0f, v) * static_cast<float>(kScaleQuant) + 0.5f);
+}
+
+void hashCombine(std::size_t& seed, std::size_t v) {
+  seed ^= v + 0x9E3779B97F4A7C15ULL + (seed << 12) + (seed >> 4);
+}
+
+void swizzleBgraToRgba(unsigned char* data, int width, int height, int stride) {
+  for (int y = 0; y < height; ++y) {
+    unsigned char* row = data + y * stride;
+    for (int x = 0; x < width; ++x) {
+      unsigned char* p = row + x * 4;
+      std::swap(p[0], p[2]);
+    }
+  }
+}
+
+} // namespace
+
+bool CairoGlyphRenderer::CacheKey::operator==(const CacheKey& other) const noexcept {
+  return codepoint == other.codepoint && sizeQ == other.sizeQ && colorRgba == other.colorRgba && scaleQ == other.scaleQ;
+}
+
+std::size_t CairoGlyphRenderer::CacheKeyHash::operator()(const CacheKey& k) const noexcept {
+  std::size_t seed = std::hash<char32_t>{}(k.codepoint);
+  hashCombine(seed, std::hash<std::uint32_t>{}(k.sizeQ));
+  hashCombine(seed, std::hash<std::uint32_t>{}(k.colorRgba));
+  hashCombine(seed, std::hash<std::uint16_t>{}(k.scaleQ));
+  return seed;
+}
+
+CairoGlyphRenderer::CairoGlyphRenderer() = default;
+CairoGlyphRenderer::~CairoGlyphRenderer() { cleanup(); }
+
+void CairoGlyphRenderer::initialize(const std::string& fontPath, ColorGlyphProgram* program) {
+  m_program = program;
+
+  if (FT_Init_FreeType(&m_ftLibrary) != 0) {
+    throw std::runtime_error("CairoGlyphRenderer: FT_Init_FreeType failed");
+  }
+  if (FT_New_Face(m_ftLibrary, fontPath.c_str(), 0, &m_face) != 0) {
+    throw std::runtime_error("CairoGlyphRenderer: failed to load icon font: " + fontPath);
+  }
+
+  m_cairoFace = cairo_ft_font_face_create_for_ft_face(m_face, 0);
+  if (m_cairoFace == nullptr || cairo_font_face_status(m_cairoFace) != CAIRO_STATUS_SUCCESS) {
+    throw std::runtime_error("CairoGlyphRenderer: cairo_ft_font_face_create_for_ft_face failed");
+  }
+
+  m_cache.max_load_factor(1.0f);
+  m_cache.reserve(kMaxCacheEntries + 16);
+}
+
+void CairoGlyphRenderer::cleanup() {
+  for (auto& [key, entry] : m_cache) {
+    if (entry.texture != 0) {
+      glDeleteTextures(1, &entry.texture);
+    }
+  }
+  m_cache.clear();
+  m_lru.clear();
+  m_cacheBytes = 0;
+
+  if (m_cairoFace != nullptr) {
+    cairo_font_face_destroy(m_cairoFace);
+    m_cairoFace = nullptr;
+  }
+  if (m_face != nullptr) {
+    FT_Done_Face(m_face);
+    m_face = nullptr;
+  }
+  if (m_ftLibrary != nullptr) {
+    FT_Done_FreeType(m_ftLibrary);
+    m_ftLibrary = nullptr;
+  }
+  m_program = nullptr;
+}
+
+void CairoGlyphRenderer::setContentScale(float scale) {
+  if (scale > 0.0f) {
+    m_contentScale = scale;
+  }
+}
+
+std::uint32_t CairoGlyphRenderer::packColor(const Color& c) {
+  const auto clamp8 = [](float v) -> std::uint32_t {
+    const float s = std::clamp(v, 0.0f, 1.0f);
+    return static_cast<std::uint32_t>(s * 255.0f + 0.5f);
+  };
+  return (clamp8(c.r) << 24) | (clamp8(c.g) << 16) | (clamp8(c.b) << 8) | clamp8(c.a);
+}
+
+void CairoGlyphRenderer::touch(CacheMap::iterator it) {
+  m_lru.splice(m_lru.begin(), m_lru, it->second.lruIt);
+}
+
+void CairoGlyphRenderer::evict(CacheMap::iterator it) {
+  if (it->second.texture != 0) {
+    glDeleteTextures(1, &it->second.texture);
+  }
+  m_cacheBytes -= it->second.bytes;
+  m_lru.erase(it->second.lruIt);
+  m_cache.erase(it);
+}
+
+void CairoGlyphRenderer::evictIfNeeded() {
+  while (!m_lru.empty() && (m_cache.size() > kMaxCacheEntries || m_cacheBytes > kMaxCacheBytes)) {
+    auto& backKey = m_lru.back();
+    auto mapIt = m_cache.find(backKey);
+    if (mapIt == m_cache.end()) {
+      m_lru.pop_back();
+      continue;
+    }
+    evict(mapIt);
+  }
+}
+
+CairoGlyphRenderer::TextMetrics CairoGlyphRenderer::measureGlyph(char32_t codepoint, float fontSize) {
+  if (m_face == nullptr || codepoint == 0 || fontSize <= 0.0f) {
+    return {};
+  }
+
+  const float rasterSize = std::max(1.0f, fontSize * m_contentScale);
+  const float invScale = 1.0f / m_contentScale;
+
+  FT_Set_Pixel_Sizes(m_face, 0, static_cast<FT_UInt>(std::round(rasterSize)));
+  const FT_UInt glyphIndex = FT_Get_Char_Index(m_face, codepoint);
+  if (glyphIndex == 0) {
+    return {};
+  }
+  if (FT_Load_Glyph(m_face, glyphIndex, FT_LOAD_DEFAULT) != 0) {
+    return {};
+  }
+
+  const auto& m = m_face->glyph->metrics;
+  // metrics are in 26.6 fixed point.
+  const float w = static_cast<float>(m.width) / 64.0f * invScale;
+  const float bearingY = static_cast<float>(m.horiBearingY) / 64.0f * invScale;
+  const float height = static_cast<float>(m.height) / 64.0f * invScale;
+
+  TextMetrics out;
+  out.width = static_cast<float>(m.horiAdvance) / 64.0f * invScale;
+  out.left = 0.0f;
+  out.right = w;
+  out.top = -bearingY;           // top of ink = -bearingY relative to baseline
+  out.bottom = height - bearingY;
+  return out;
+}
+
+CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t codepoint, float fontSize,
+                                                                      const Color& color) {
+  CacheKey key;
+  key.codepoint = codepoint;
+  key.sizeQ = quantizeSize(fontSize);
+  key.colorRgba = packColor(color);
+  key.scaleQ = quantizeScale(m_contentScale);
+
+  auto it = m_cache.find(key);
+  if (it != m_cache.end()) {
+    touch(it);
+    return &it->second;
+  }
+
+  const float rasterSize = std::max(1.0f, fontSize * m_contentScale);
+  FT_Set_Pixel_Sizes(m_face, 0, static_cast<FT_UInt>(std::round(rasterSize)));
+
+  const FT_UInt glyphIndex = FT_Get_Char_Index(m_face, codepoint);
+  if (glyphIndex == 0) {
+    return nullptr;
+  }
+
+  // Build a Cairo scaled font for this size.
+  cairo_matrix_t fontMatrix;
+  cairo_matrix_init_scale(&fontMatrix, rasterSize, rasterSize);
+  cairo_matrix_t ctm;
+  cairo_matrix_init_identity(&ctm);
+  // Disable hinting for icons: tabler glyphs are monoline strokes with
+  // fractional widths by design. Autohinter snaps each stroke to the nearest
+  // integer pixel, which visibly thins the icons vs. the old MSDF output.
+  // Grayscale AA without hinting preserves the intended stroke thickness.
+  cairo_font_options_t* fontOptions = cairo_font_options_create();
+  cairo_font_options_set_antialias(fontOptions, CAIRO_ANTIALIAS_GRAY);
+  cairo_font_options_set_hint_style(fontOptions, CAIRO_HINT_STYLE_NONE);
+  cairo_font_options_set_hint_metrics(fontOptions, CAIRO_HINT_METRICS_OFF);
+  cairo_scaled_font_t* scaledFont = cairo_scaled_font_create(m_cairoFace, &fontMatrix, &ctm, fontOptions);
+  cairo_font_options_destroy(fontOptions);
+
+  if (cairo_scaled_font_status(scaledFont) != CAIRO_STATUS_SUCCESS) {
+    cairo_scaled_font_destroy(scaledFont);
+    return nullptr;
+  }
+
+  cairo_glyph_t glyph;
+  glyph.index = glyphIndex;
+  glyph.x = 0.0;
+  glyph.y = 0.0;
+
+  cairo_text_extents_t extents;
+  cairo_scaled_font_glyph_extents(scaledFont, &glyph, 1, &extents);
+
+  // Surface size: ceil the ink rect and add a 1px margin to protect antialiased
+  // edges from clipping.
+  const int pad = 1;
+  const int pxWidth = std::max(1, static_cast<int>(std::ceil(extents.width)) + pad * 2);
+  const int pxHeight = std::max(1, static_cast<int>(std::ceil(extents.height)) + pad * 2);
+
+  // Position the glyph so its ink rect lands within the surface with `pad` inset.
+  glyph.x = -extents.x_bearing + pad;
+  glyph.y = -extents.y_bearing + pad;
+
+  CacheEntry entry{};
+  entry.pixelWidth = pxWidth;
+  entry.pixelHeight = pxHeight;
+  // Baseline from top of surface = glyph.y (since cairo baseline = y offset
+  // of origin, and we placed origin so that ink-top = pad).
+  entry.baselinePx = static_cast<float>(glyph.y);
+
+  cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, pxWidth, pxHeight);
+  cairo_t* cr = cairo_create(surface);
+  cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
+  cairo_paint(cr);
+  cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+  cairo_set_scaled_font(cr, scaledFont);
+  cairo_set_source_rgba(cr, color.r, color.g, color.b, color.a);
+  cairo_show_glyphs(cr, &glyph, 1);
+  cairo_destroy(cr);
+  cairo_surface_flush(surface);
+
+  const int stride = cairo_image_surface_get_stride(surface);
+  unsigned char* data = cairo_image_surface_get_data(surface);
+  swizzleBgraToRgba(data, pxWidth, pxHeight, stride);
+
+  const int tightRowBytes = pxWidth * 4;
+  std::vector<unsigned char> tight(static_cast<std::size_t>(tightRowBytes) * static_cast<std::size_t>(pxHeight));
+  for (int y = 0; y < pxHeight; ++y) {
+    std::memcpy(tight.data() + y * tightRowBytes, data + y * stride, static_cast<std::size_t>(tightRowBytes));
+  }
+  cairo_surface_destroy(surface);
+  cairo_scaled_font_destroy(scaledFont);
+
+  GLuint tex = 0;
+  glGenTextures(1, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pxWidth, pxHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, tight.data());
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  entry.texture = tex;
+  entry.bytes = static_cast<std::size_t>(tightRowBytes) * static_cast<std::size_t>(pxHeight);
+
+  // Logical metrics (unscaled).
+  const float invScale = 1.0f / m_contentScale;
+  TextMetrics metrics;
+  metrics.width = static_cast<float>(m_face->glyph->metrics.horiAdvance) / 64.0f * invScale;
+  const float w = static_cast<float>(m_face->glyph->metrics.width) / 64.0f * invScale;
+  const float bearingY = static_cast<float>(m_face->glyph->metrics.horiBearingY) / 64.0f * invScale;
+  const float height = static_cast<float>(m_face->glyph->metrics.height) / 64.0f * invScale;
+  metrics.left = 0.0f;
+  metrics.right = w;
+  metrics.top = -bearingY;
+  metrics.bottom = height - bearingY;
+  entry.metrics = metrics;
+
+  auto [ins, inserted] = m_cache.emplace(std::move(key), std::move(entry));
+  m_lru.push_front(ins->first);
+  ins->second.lruIt = m_lru.begin();
+  m_cacheBytes += ins->second.bytes;
+
+  evictIfNeeded();
+  return &ins->second;
+}
+
+void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, float x, float baselineY, char32_t codepoint,
+                                   float fontSize, const Color& color, const Mat3& transform) {
+  if (m_face == nullptr || m_program == nullptr || codepoint == 0) {
+    return;
+  }
+
+  CacheEntry* entry = lookupOrRasterize(codepoint, fontSize, color);
+  if (entry == nullptr || entry->texture == 0) {
+    return;
+  }
+
+  const float invScale = 1.0f / m_contentScale;
+  const float quadW = static_cast<float>(entry->pixelWidth) * invScale;
+  const float quadH = static_cast<float>(entry->pixelHeight) * invScale;
+  const float baselineLocal = entry->baselinePx * invScale;
+
+  const Mat3 localTranslation = Mat3::translation(x, baselineY - baselineLocal);
+  Mat3 world = transform * localTranslation;
+
+  // Snap the quad origin to the nearest buffer pixel so GL_LINEAR samples
+  // land on texel centers (see cairo_text_renderer.cpp for the full story).
+  world.m[6] = std::round(world.m[6] * m_contentScale) / m_contentScale;
+  world.m[7] = std::round(world.m[7] * m_contentScale) / m_contentScale;
+
+  m_program->draw(entry->texture, surfaceWidth, surfaceHeight, quadW, quadH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, world);
+}
