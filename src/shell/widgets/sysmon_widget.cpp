@@ -90,7 +90,10 @@ void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
   const float glyphH = m_glyph->height();
 
   if (m_displayMode == SysmonDisplayMode::Gauge && m_gauge != nullptr) {
-    const float gaugeW = std::max(3.0f, roundf(glyphH * 0.4f));
+    // Peg gauge width to font size, not glyphH — glyphH is the full text
+    // line-box (ascent+descent) from Pango, not the tight ink height the
+    // old MSDF path returned.
+    const float gaugeW = std::max(3.0f, roundf(Style::fontSizeBody * m_contentScale * 0.3f));
     m_gauge->setRadius(gaugeW / 2.0f);
 
     m_glyph->setPosition(0.0f, 0.0f);
