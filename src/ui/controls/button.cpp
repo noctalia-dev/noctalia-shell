@@ -16,8 +16,6 @@ Button::Button() {
   setPadding(Style::spaceSm, Style::spaceMd);
   setRadius(Style::radiusMd);
 
-  auto label = std::make_unique<Label>();
-  m_label = static_cast<Label*>(addChild(std::move(label)));
   applyVariant();
 }
 
@@ -29,6 +27,7 @@ Button::~Button() {
 }
 
 void Button::setText(std::string_view text) {
+  ensureLabel();
   m_label->setText(text);
   m_label->setVisible(!text.empty());
 }
@@ -39,6 +38,7 @@ void Button::setGlyph(std::string_view name) {
 }
 
 void Button::setFontSize(float size) {
+  ensureLabel();
   m_label->setFontSize(size);
   if (m_glyph != nullptr) {
     m_glyph->setGlyphSize(size);
@@ -227,30 +227,51 @@ void Button::applyVariant() {
   applyVisualState();
 }
 
+void Button::ensureLabel() {
+  if (m_label != nullptr) {
+    return;
+  }
+  auto label = std::make_unique<Label>();
+  m_label = static_cast<Label*>(addChild(std::move(label)));
+  if (m_glyph != nullptr) {
+    setDirection(FlexDirection::Horizontal);
+    setGap(Style::spaceXs);
+  }
+}
+
 void Button::ensureGlyph() {
   if (m_glyph != nullptr) {
     return;
   }
   // insertChildAt so the glyph lands before the label in the children vector,
   // which is what Flex iterates to assign layout positions
-  auto& kids = children();
-  std::size_t labelIndex = 0;
-  for (std::size_t i = 0; i < kids.size(); ++i) {
-    if (kids[i].get() == m_label) {
-      labelIndex = i;
-      break;
+  if (m_label != nullptr) {
+    auto& kids = children();
+    std::size_t labelIndex = 0;
+    for (std::size_t i = 0; i < kids.size(); ++i) {
+      if (kids[i].get() == m_label) {
+        labelIndex = i;
+        break;
+      }
     }
+    auto glyph = std::make_unique<Glyph>();
+    m_glyph = static_cast<Glyph*>(insertChildAt(labelIndex, std::move(glyph)));
+  } else {
+    auto glyph = std::make_unique<Glyph>();
+    m_glyph = static_cast<Glyph*>(addChild(std::move(glyph)));
   }
-  auto glyph = std::make_unique<Glyph>();
-  m_glyph = static_cast<Glyph*>(insertChildAt(labelIndex, std::move(glyph)));
-  setDirection(FlexDirection::Horizontal);
-  setGap(Style::spaceXs);
+  if (m_label != nullptr) {
+    setDirection(FlexDirection::Horizontal);
+    setGap(Style::spaceXs);
+  }
 }
 
 void Button::applyColors(const Color& bg, const Color& border, const Color& label) {
   setBackground(bg);
   setBorderColor(border);
-  m_label->setColor(label);
+  if (m_label != nullptr) {
+    m_label->setColor(label);
+  }
   if (m_glyph != nullptr) {
     m_glyph->setColor(label);
   }
@@ -309,14 +330,12 @@ void Button::applyVisualState() {
 }
 
 void Button::layout(Renderer& renderer) {
-  if (m_label == nullptr) {
-    return;
-  }
-
   const float assignedWidth = width();
   const float assignedHeight = height();
 
-  m_label->measure(renderer);
+  if (m_label != nullptr) {
+    m_label->measure(renderer);
+  }
   if (m_glyph != nullptr) {
     m_glyph->measure(renderer);
   }

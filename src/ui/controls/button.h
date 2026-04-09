@@ -57,6 +57,7 @@ public:
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
 
 private:
+  void ensureLabel();
   void ensureGlyph();
   void applyVariant();
   void applyVisualState();
