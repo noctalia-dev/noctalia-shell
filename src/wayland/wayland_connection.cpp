@@ -12,6 +12,7 @@
 #include "cursor-shape-v1-client-protocol.h"
 #include "dwl-ipc-unstable-v2-client-protocol.h"
 #include "ext-data-control-v1-client-protocol.h"
+#include "ext-idle-notify-v1-client-protocol.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "ext-workspace-v1-client-protocol.h"
 #include "idle-inhibit-unstable-v1-client-protocol.h"
@@ -33,6 +34,7 @@ namespace {
   constexpr std::uint32_t kCursorShapeManagerVersion = 1;
   constexpr std::uint32_t kXdgActivationVersion = 1;
   constexpr std::uint32_t kExtSessionLockManagerVersion = 1;
+  constexpr std::uint32_t kExtIdleNotifierVersion = 1;
   constexpr std::uint32_t kIdleInhibitManagerVersion = 1;
   constexpr std::uint32_t kOutputVersion = 4;
 
@@ -298,6 +300,7 @@ bool WaylandConnection::hasExtWorkspaceManager() const noexcept { return m_hasEx
 bool WaylandConnection::hasMangoWorkspaceManager() const noexcept { return m_hasMangoWorkspaceGlobal; }
 bool WaylandConnection::hasForeignToplevelManager() const noexcept { return m_hasForeignToplevelManagerGlobal; }
 bool WaylandConnection::hasSessionLockManager() const noexcept { return m_sessionLockManager != nullptr; }
+bool WaylandConnection::hasIdleNotifier() const noexcept { return m_idleNotifier != nullptr; }
 bool WaylandConnection::hasIdleInhibitManager() const noexcept { return m_idleInhibitManager != nullptr; }
 bool WaylandConnection::hasXdgActivation() const noexcept { return m_xdgActivation != nullptr; }
 
@@ -336,11 +339,14 @@ wl_display* WaylandConnection::display() const noexcept { return m_display; }
 
 wl_compositor* WaylandConnection::compositor() const noexcept { return m_compositor; }
 
+wl_seat* WaylandConnection::seat() const noexcept { return m_seatHandler.seat(); }
+
 wl_shm* WaylandConnection::shm() const noexcept { return m_shm; }
 
 zwlr_layer_shell_v1* WaylandConnection::layerShell() const noexcept { return m_layerShell; }
 
 ext_session_lock_manager_v1* WaylandConnection::sessionLockManager() const noexcept { return m_sessionLockManager; }
+ext_idle_notifier_v1* WaylandConnection::idleNotifier() const noexcept { return m_idleNotifier; }
 zwp_idle_inhibit_manager_v1* WaylandConnection::idleInhibitManager() const noexcept { return m_idleInhibitManager; }
 
 const std::vector<WaylandOutput>& WaylandConnection::outputs() const noexcept { return m_outputs; }
@@ -478,6 +484,13 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     return;
   }
 
+  if (interfaceName == ext_idle_notifier_v1_interface.name) {
+    const auto bindVersion = std::min(version, kExtIdleNotifierVersion);
+    m_idleNotifier = static_cast<ext_idle_notifier_v1*>(
+        wl_registry_bind(registry, name, &ext_idle_notifier_v1_interface, bindVersion));
+    return;
+  }
+
   if (interfaceName == zwp_idle_inhibit_manager_v1_interface.name) {
     const auto bindVersion = std::min(version, kIdleInhibitManagerVersion);
     m_idleInhibitManager = static_cast<zwp_idle_inhibit_manager_v1*>(
@@ -572,6 +585,10 @@ void WaylandConnection::cleanup() {
   if (m_sessionLockManager != nullptr) {
     ext_session_lock_manager_v1_destroy(m_sessionLockManager);
     m_sessionLockManager = nullptr;
+  }
+  if (m_idleNotifier != nullptr) {
+    ext_idle_notifier_v1_destroy(m_idleNotifier);
+    m_idleNotifier = nullptr;
   }
   if (m_idleInhibitManager != nullptr) {
     zwp_idle_inhibit_manager_v1_destroy(m_idleInhibitManager);

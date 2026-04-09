@@ -67,6 +67,12 @@ ConfigService::ConfigService() {
   } else {
     kLog.info("no config file found, using defaults");
     seedBuiltinWidgets(m_config);
+    m_config.idle.behaviors.push_back(IdleBehaviorConfig{
+        .name = "lock",
+        .enabled = false,
+        .timeoutSeconds = 660,
+        .command = "noctalia:lock",
+    });
     m_config.bars.push_back(BarConfig{});
   }
   setupWatch();
@@ -100,6 +106,12 @@ void ConfigService::forceReload() {
     loadFromFile(m_configPath);
   } else {
     seedBuiltinWidgets(m_config);
+    m_config.idle.behaviors.push_back(IdleBehaviorConfig{
+        .name = "lock",
+        .enabled = false,
+        .timeoutSeconds = 660,
+        .command = "noctalia:lock",
+    });
     m_config.bars.push_back(BarConfig{});
   }
   for (const auto& cb : m_reloadCallbacks) {
@@ -143,6 +155,12 @@ void ConfigService::checkReload() {
     loadFromFile(m_configPath);
   } else {
     seedBuiltinWidgets(m_config);
+    m_config.idle.behaviors.push_back(IdleBehaviorConfig{
+        .name = "lock",
+        .enabled = false,
+        .timeoutSeconds = 660,
+        .command = "noctalia:lock",
+    });
     m_config.bars.push_back(BarConfig{});
   }
 
@@ -527,12 +545,40 @@ void ConfigService::loadFromFile(const std::string& path) {
     }
   }
 
+  // Parse [idle.behavior.*]
+  if (auto* idleTbl = tbl["idle"].as_table()) {
+    if (auto* behaviorTbl = (*idleTbl)["behavior"].as_table()) {
+      for (const auto& [name, node] : *behaviorTbl) {
+        auto* entryTbl = node.as_table();
+        if (entryTbl == nullptr) {
+          continue;
+        }
+
+        IdleBehaviorConfig behavior;
+        behavior.name = std::string(name.str());
+
+        if (auto v = (*entryTbl)["enabled"].value<bool>()) {
+          behavior.enabled = *v;
+        }
+        if (auto v = (*entryTbl)["timeout"].value<int64_t>()) {
+          behavior.timeoutSeconds = static_cast<std::int32_t>(*v);
+        }
+        if (auto v = (*entryTbl)["command"].value<std::string>()) {
+          behavior.command = *v;
+        }
+
+        m_config.idle.behaviors.push_back(std::move(behavior));
+      }
+    }
+  }
+
   if (m_config.bars.empty()) {
     kLog.info("no [bar.*] defined, using defaults");
     m_config.bars.push_back(BarConfig{});
   }
 
   kLog.info("{} bar(s) defined", m_config.bars.size());
+  kLog.info("idle behaviors={}", m_config.idle.behaviors.size());
 }
 
 // ── WidgetConfig accessors ───────────────────────────────────────────────────

@@ -95,6 +95,13 @@ namespace {
     return true;
   }
 
+  bool launchShellCommand(const std::string& command) {
+    if (command.empty()) {
+      return false;
+    }
+    return launchDetachedCommand({"/bin/sh", "-lc", command.c_str()});
+  }
+
   bool launchFirstAvailableCommand(std::initializer_list<std::initializer_list<const char*>> commandVariants) {
     for (const auto& variant : commandVariants) {
       if (variant.size() == 0) {
@@ -223,6 +230,10 @@ void Application::initServices() {
 
   m_idleInhibitor.initialize(m_wayland, &m_renderContext);
   m_idleInhibitor.setChangeCallback([this]() { m_bar.refresh(); });
+  m_idleManager.initialize(m_wayland);
+  m_idleManager.setCommandRunner([this](const std::string& command) { return runIdleCommand(command); });
+  m_idleManager.reload(m_configService.config().idle);
+  m_configService.addReloadCallback([this]() { m_idleManager.reload(m_configService.config().idle); });
 
   m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
   m_overview.initialize(m_wayland, &m_configService, &m_stateService, &m_wallpaper);
@@ -607,6 +618,25 @@ void Application::initIpc() {
         return "ok\n";
       },
       "toggle-idle-inhibitor", "Toggle the compositor idle inhibitor");
+}
+
+bool Application::runIdleCommand(const std::string& command) {
+  constexpr std::string_view prefix = "noctalia:";
+
+  if (command.rfind(prefix, 0) == 0) {
+    const std::string response = m_ipcService.execute(command.substr(prefix.size()));
+    if (response.rfind("error:", 0) == 0) {
+      kLog.warn("idle IPC command '{}' failed: {}", command, response.substr(0, response.find('\n')));
+      return false;
+    }
+    return true;
+  }
+
+  if (!launchShellCommand(command)) {
+    kLog.warn("idle command failed to launch: {}", command);
+    return false;
+  }
+  return true;
 }
 
 std::vector<PollSource*> Application::buildPollSources() {

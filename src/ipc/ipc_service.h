@@ -26,6 +26,9 @@ public:
   // Called by IpcPollSource when POLLIN fires on the listening fd.
   void dispatch();
 
+  // Execute a command line using the same handler registry as socket IPC.
+  [[nodiscard]] std::string execute(const std::string& line) const;
+
   // Register a handler for a command name. The handler receives everything after
   // the first space as `args`. Must return a string ending with '\n'.
   // `usage` describes the command signature, e.g. "toggle-panel <id>".
@@ -42,6 +45,7 @@ private:
 
   void handleConnection(int connFd);
   std::string buildHelp() const;
+  [[nodiscard]] std::string executeParsed(const std::string& command, const std::string& args) const;
   [[nodiscard]] static std::string resolveSocketPath();
 
   int m_listenFd = -1;

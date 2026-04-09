@@ -14,6 +14,7 @@ Changes are detected automatically via inotify — no restart required.
 - [Built-in widgets](#built-in-widgets)
 - [Weather](#weather)
 - [Audio](#audio)
+- [Idle](#idle)
 - [Shell](#shell)
 - [OSD](#osd)
 - [Wallpaper](#wallpaper)
@@ -355,6 +356,77 @@ enable_overdrive = false   # allow the audio volume sliders to go above 100%
 
 When `enable_overdrive` is `false`, the Control Center output and microphone sliders clamp to `100%`.
 When it is `true`, those sliders allow values up to `150%`.
+
+---
+
+## Idle
+
+Idle behavior is defined as named entries under `[idle.behavior.*]`.
+
+When no `config.toml` exists, Noctalia uses this built-in default:
+
+```toml
+[idle.behavior.lock]
+timeout = 660
+command = "noctalia:lock"
+enabled = false
+```
+
+```toml
+[idle.behavior.lock]
+timeout = 16
+command = "noctalia:lock"
+
+[idle.behavior.screen-off]
+timeout = 32
+command = "noctalia:dpms-off"
+
+[idle.behavior.custom]
+timeout = 48
+command = "noctalia-msg lock"
+```
+
+Available fields:
+
+| Setting         | Type   | Default | Description |
+|----------------|--------|---------|-------------|
+| `enabled`      | bool   | `true`  | Enable or disable this behavior entry |
+| `timeout`      | int    | `0`     | Timeout in seconds before the behavior triggers |
+| `command`      | string | `""`    | Command to execute when the idle timeout is reached |
+
+`command` can be either:
+
+- a regular shell command such as `notify-send 'Idle' 'Locking soon'`
+- a Noctalia IPC command using the `noctalia:` prefix
+
+When you use the `noctalia:` prefix, the rest of the string is executed through the same IPC command registry as `noctalia-ipc`.
+That means all existing Noctalia IPC commands are available inside idle behaviors, not just a special idle-only subset.
+
+Examples:
+
+- `noctalia:lock`
+- `noctalia:dpms-off`
+- `noctalia:dpms-on`
+- `noctalia:enable-idle-inhibitor`
+- `noctalia:disable-idle-inhibitor`
+- `noctalia:toggle-idle-inhibitor`
+- `noctalia:toggle-launcher`
+- `noctalia:toggle-session-menu`
+
+Idle behavior uses the Wayland `ext_idle_notifier_v1` protocol, so it reacts to compositor idle notifications instead of polling. The standard idle notification path respects active idle inhibitors.
+
+Examples:
+
+```toml
+[idle.behavior.notify]
+timeout = 300
+command = "notify-send 'Noctalia' 'You have been idle for 5 minutes'"
+
+[idle.behavior.lock]
+timeout = 660
+command = "noctalia:lock"
+enabled = false
+```
 
 ---
 

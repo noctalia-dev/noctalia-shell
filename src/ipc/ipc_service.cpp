@@ -90,6 +90,24 @@ void IpcService::dispatch() {
   }
 }
 
+std::string IpcService::execute(const std::string& line) const {
+  std::string command;
+  std::string args;
+  const auto spacePos = line.find(' ');
+  if (spacePos == std::string::npos) {
+    command = line;
+  } else {
+    command = line.substr(0, spacePos);
+    args = line.substr(spacePos + 1);
+  }
+
+  if (command == "--help" || command == "-h") {
+    return buildHelp();
+  }
+
+  return executeParsed(command, args);
+}
+
 void IpcService::handleConnection(int connFd) {
   // Set receive timeout so a slow client doesn't stall the main loop
   timeval tv{};
@@ -122,34 +140,7 @@ void IpcService::handleConnection(int connFd) {
     return;
   }
 
-  // Split on first space: command + optional args
-  const std::string line(buf, static_cast<std::size_t>(total));
-  std::string command;
-  std::string args;
-  const auto spacePos = line.find(' ');
-  if (spacePos == std::string::npos) {
-    command = line;
-  } else {
-    command = line.substr(0, spacePos);
-    args = line.substr(spacePos + 1);
-  }
-
-  // Built-in --help
-  if (command == "--help" || command == "-h") {
-    const std::string response = buildHelp();
-    ::send(connFd, response.data(), response.size(), MSG_NOSIGNAL);
-    return;
-  }
-
-  const auto it =
-      std::find_if(m_handlers.begin(), m_handlers.end(), [&command](const auto& e) { return e.first == command; });
-  std::string response;
-  if (it == m_handlers.end()) {
-    response = "error: unknown command (try: noctalia msg --help)\n";
-  } else {
-    response = it->second.fn(args);
-  }
-
+  const std::string response = execute(std::string(buf, static_cast<std::size_t>(total)));
   ::send(connFd, response.data(), response.size(), MSG_NOSIGNAL);
 }
 
@@ -173,6 +164,15 @@ std::string IpcService::buildHelp() const {
     out += '\n';
   }
   return out;
+}
+
+std::string IpcService::executeParsed(const std::string& command, const std::string& args) const {
+  const auto it =
+      std::find_if(m_handlers.begin(), m_handlers.end(), [&command](const auto& e) { return e.first == command; });
+  if (it == m_handlers.end()) {
+    return "error: unknown command (try: noctalia msg --help)\n";
+  }
+  return it->second.fn(args);
 }
 
 std::string IpcService::resolveSocketPath() {

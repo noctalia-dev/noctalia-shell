@@ -18,6 +18,7 @@
 #include "dbus/upower/upower_service.h"
 #include "debug/debug_service.h"
 #include "idle/idle_inhibitor.h"
+#include "idle/idle_manager.h"
 #include "ipc/ipc_poll_source.h"
 #include "ipc/ipc_service.h"
 #include "net/http_client.h"
@@ -67,6 +68,7 @@ private:
   void initServices();
   void initUi();
   void initIpc();
+  bool runIdleCommand(const std::string& command);
   [[nodiscard]] std::vector<PollSource*> buildPollSources();
 
   WaylandConnection m_wayland;
@@ -80,6 +82,7 @@ private:
   std::unique_ptr<SystemMonitorService> m_systemMonitor;
   std::unique_ptr<DebugService> m_debugService;
   IdleInhibitor m_idleInhibitor;
+  IdleManager m_idleManager;
   std::unique_ptr<MprisService> m_mprisService;
   std::unique_ptr<PowerProfilesService> m_powerProfilesService;
   std::unique_ptr<UPowerService> m_upowerService;

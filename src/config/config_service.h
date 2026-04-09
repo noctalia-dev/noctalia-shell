@@ -123,6 +123,17 @@ struct AudioConfig {
   bool enableOverdrive = false;
 };
 
+struct IdleBehaviorConfig {
+  std::string name;
+  bool enabled = true;
+  std::int32_t timeoutSeconds = 0;
+  std::string command;
+};
+
+struct IdleConfig {
+  std::vector<IdleBehaviorConfig> behaviors;
+};
+
 struct Config {
   std::vector<BarConfig> bars;
   std::unordered_map<std::string, WidgetConfig> widgets;
@@ -132,6 +143,7 @@ struct Config {
   OsdConfig osd;
   WeatherConfig weather;
   AudioConfig audio;
+  IdleConfig idle;
 };
 
 class ConfigService {

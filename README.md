@@ -18,6 +18,7 @@ A lightweight Wayland shell and bar with no Qt or GTK dependency.
 | Multi-monitor | `zxdg-output-unstable-v1` |
 | Active window metadata | `zwlr-foreign-toplevel-management-unstable-v1` |
 | Lockscreen | `ext-session-lock-v1` |
+| Idle detection | `ext-idle-notify-v1` |
 | Cursor | `wp-cursor-shape-v1` |
 | Rendering | `EGL`, `OpenGL ES 3`, `wayland-egl` |
 | Text | `freetype`, `harfbuzz`, `msdfgen` (vendored), `fontconfig` |
@@ -163,6 +164,22 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug --method dev.noctalia.Debug.EmitInternalNotification "Noctalia" "Test" "Hello from debug" 5000 1
 ```
 
+## Configuration
+
+Noctalia reads `$XDG_CONFIG_HOME/noctalia/config.toml` or `~/.config/noctalia/config.toml`.
+If no config file exists, it falls back to built-in defaults in code, including this disabled idle behavior:
+
+```toml
+[idle.behavior.lock]
+timeout = 660
+command = "noctalia:lock"
+enabled = false
+```
+
+Idle behaviors use a single `command` field.
+That can be either a normal shell command such as `notify-send 'Idle' 'Locking soon'`, or a Noctalia IPC command prefixed with `noctalia:` such as `noctalia:lock` or `noctalia:toggle-launcher`.
+See [CONFIG.md](/mnt/storage/GitHub/noctalia-dev/Nextalia/CONFIG.md) for the full configuration reference.
+
 ## Roadmap
 
 ### Hardware and networking
@@ -224,7 +241,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] Lock keys (Caps/Num)
 - [ ] Dark mode button
 - [ ] Night light button
-- [ ] Keep awake (idle inhibitor)
+- [x] Keep awake (idle inhibitor)
 - [ ] Audio visualizer
 - [x] Launcher button
 - [x] Session menu button
