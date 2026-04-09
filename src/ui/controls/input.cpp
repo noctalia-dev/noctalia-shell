@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <optional>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
@@ -141,6 +142,10 @@ void Input::setOnKeyEvent(std::function<bool(std::uint32_t, std::uint32_t)> call
   m_onKeyEvent = std::move(callback);
 }
 
+void Input::setPasteCallback(std::function<std::optional<std::string>()> callback) {
+  m_pasteCallback = std::move(callback);
+}
+
 void Input::layout(Renderer& renderer) {
   const float w = width() > 0.0f ? width() : kDefaultWidth;
   const float h = m_controlHeight;
@@ -226,6 +231,19 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     // Select all
     m_selectionAnchor = 0;
     m_cursorPos = m_value.size();
+  } else if (ctrl && sym == 'v') {
+    if (m_pasteCallback) {
+      if (auto text = m_pasteCallback()) {
+        if (hasSelection()) {
+          deleteSelection();
+          changed = true;
+        }
+        m_value.insert(m_cursorPos, *text);
+        m_cursorPos += text->size();
+        m_selectionAnchor = m_cursorPos;
+        changed = true;
+      }
+    }
   } else if (sym == XKB_KEY_BackSpace) {
     if (hasSelection()) {
       deleteSelection();

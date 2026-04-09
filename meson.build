@@ -38,6 +38,8 @@ wayland_egl_dep     = dependency('wayland-egl')
 freetype2_dep       = dependency('freetype2')
 harfbuzz_dep        = dependency('harfbuzz')
 fontconfig_dep      = dependency('fontconfig')
+cairo_dep           = dependency('cairo')
+cairo_ft_dep        = dependency('cairo-ft')
 xkbcommon_dep       = dependency('xkbcommon')
 # PipeWire/SPA headers use GCC extensions that trigger -Wpedantic/-Wconversion;
 # mark as system so the compiler suppresses those warnings.
@@ -247,6 +249,7 @@ _noctalia_sources = files(
   'src/render/core/texture_manager.cpp',
   'src/render/core/wuffs_image_decoder.cpp',
   'src/render/image_loaders.cpp',
+  'src/render/programs/color_glyph_program.cpp',
   'src/render/programs/image_program.cpp',
   'src/render/programs/linear_gradient_program.cpp',
   'src/render/programs/msdf_text_program.cpp',
@@ -372,6 +375,8 @@ executable('noctalia',
     freetype2_dep,
     harfbuzz_dep,
     fontconfig_dep,
+    cairo_dep,
+    cairo_ft_dep,
     xkbcommon_dep,
     pipewire_dep,
     curl_dep,

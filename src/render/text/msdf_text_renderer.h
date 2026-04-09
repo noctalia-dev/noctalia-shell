@@ -2,10 +2,15 @@
 
 #include "render/core/color.h"
 #include "render/core/mat3.h"
+#include "render/programs/color_glyph_program.h"
 #include "render/programs/msdf_text_program.h"
+
+#include <cairo.h>
+#include <cairo-ft.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_COLOR_H
 #include <hb-ft.h>
 
 #include <cstdint>
@@ -59,6 +64,7 @@ private:
     FT_Face face = nullptr;
     hb_font_t* hbFont = nullptr;
     msdfgen::FontHandle* fontHandle = nullptr;
+    cairo_font_face_t* cairoFace = nullptr; // non-null for COLR v1 fonts
   };
 
   struct Glyph {
@@ -71,6 +77,7 @@ private:
     float u1 = 1.0f;
     float v1 = 1.0f;
     std::uint32_t atlasPage = 0;
+    bool isColor = false; // true → atlasPage indexes m_colorAtlasPages (RGBA)
   };
 
   // Cache key: (slotIndex << 24) | glyphIndex
@@ -88,19 +95,28 @@ private:
 
   Glyph& loadGlyph(std::uint32_t slotIndex, std::uint32_t glyphIndex);
   GLuint ensureAtlasPage(std::uint32_t page);
+  GLuint ensureColorAtlasPage(std::uint32_t page);
   void prepareAtlasUploadState() const;
   void setShapingSize(float fontSize);
   std::vector<ShapedGlyph> shapeWithFallback(std::string_view text, float fontSize);
+  void shapeRunWithSlot(std::string_view run, std::uint32_t slotIndex, std::vector<ShapedGlyph>& out);
+  void shapeRunWithFallback(std::string_view run, std::vector<ShapedGlyph>& out);
 
   FT_Library m_library = nullptr;
   std::vector<FontSlot> m_fontSlots;
   MsdfTextProgram m_program;
+  ColorGlyphProgram m_colorProgram;
   std::vector<GLuint> m_atlasPages;
+  std::vector<GLuint> m_colorAtlasPages;
   int m_atlasWidth = 512;
   int m_atlasHeight = 512;
   int m_atlasCursorX = 1;
   int m_atlasCursorY = 1;
   int m_atlasRowHeight = 0;
+  int m_colorAtlasCursorX = 1;
+  int m_colorAtlasCursorY = 1;
+  int m_colorAtlasRowHeight = 0;
   float m_currentShapingSize = 0.0f;
+  std::uint32_t m_emojiSlotIndex = UINT32_MAX; // slot index of the color emoji font, UINT32_MAX if none
   std::unordered_map<GlyphKey, Glyph> m_glyphs;
 };

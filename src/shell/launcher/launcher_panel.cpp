@@ -1,6 +1,7 @@
 #include "shell/launcher/launcher_panel.h"
 
 #include "render/core/renderer.h"
+#include "wayland/clipboard_service.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "shell/panel/panel_manager.h"
@@ -15,6 +16,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
@@ -25,6 +27,10 @@ constexpr float kIconSize = 32.0f;
 } // namespace
 
 LauncherPanel::LauncherPanel() = default;
+
+void LauncherPanel::setClipboard(ClipboardService* clipboard) {
+  m_clipboard = clipboard;
+}
 
 void LauncherPanel::addProvider(std::unique_ptr<LauncherProvider> provider) {
   provider->initialize();
@@ -49,6 +55,22 @@ void LauncherPanel::create() {
     return handleKeyEvent(sym, modifiers);
   });
   m_input = input.get();
+
+  if (m_clipboard != nullptr) {
+    ClipboardService* clipboard = m_clipboard;
+    m_input->setPasteCallback([clipboard]() -> std::optional<std::string> {
+      const auto& hist = clipboard->history();
+      if (hist.empty()) {
+        return std::nullopt;
+      }
+      const auto& entry = hist.front();
+      if (entry.data.empty()) {
+        return std::nullopt;
+      }
+      return std::string(entry.data.begin(), entry.data.end());
+    });
+  }
+
   container->addChild(std::move(input));
 
   auto scrollView = std::make_unique<ScrollView>();

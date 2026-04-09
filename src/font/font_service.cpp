@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 
+#include <optional>
 #include <stdexcept>
 
 FontService::FontService() {
@@ -105,4 +106,73 @@ std::vector<ResolvedFont> FontService::resolveFallbackChain(const std::string& f
   }
 
   return chain;
+}
+
+std::optional<ResolvedFont> FontService::resolveFont(const std::string& family) const {
+  FcPattern* pattern = FcNameParse(reinterpret_cast<const FcChar8*>(family.c_str()));
+  if (pattern == nullptr) {
+    return std::nullopt;
+  }
+
+  FcConfigSubstitute(m_config, pattern, FcMatchPattern);
+  FcDefaultSubstitute(pattern);
+
+  FcResult result = FcResultNoMatch;
+  FcPattern* match = FcFontMatch(m_config, pattern, &result);
+  FcPatternDestroy(pattern);
+
+  if (match == nullptr || result != FcResultMatch) {
+    return std::nullopt;
+  }
+
+  FcChar8* filePath = nullptr;
+  int faceIndex = 0;
+  if (FcPatternGetString(match, FC_FILE, 0, &filePath) != FcResultMatch || filePath == nullptr) {
+    FcPatternDestroy(match);
+    return std::nullopt;
+  }
+  FcPatternGetInteger(match, FC_INDEX, 0, &faceIndex);
+
+  ResolvedFont font{.path = std::string(reinterpret_cast<const char*>(filePath)), .faceIndex = faceIndex};
+  FcPatternDestroy(match);
+  return font;
+}
+
+std::optional<ResolvedFont> FontService::resolveBestForChar(char32_t codepoint) const {
+  FcCharSet* cs = FcCharSetCreate();
+  if (cs == nullptr) {
+    return std::nullopt;
+  }
+  FcCharSetAddChar(cs, static_cast<FcChar32>(codepoint));
+
+  FcPattern* pattern = FcPatternCreate();
+  if (pattern == nullptr) {
+    FcCharSetDestroy(cs);
+    return std::nullopt;
+  }
+  FcPatternAddCharSet(pattern, FC_CHARSET, cs);
+  FcCharSetDestroy(cs);
+
+  FcConfigSubstitute(m_config, pattern, FcMatchPattern);
+  FcDefaultSubstitute(pattern);
+
+  FcResult result = FcResultNoMatch;
+  FcPattern* match = FcFontMatch(m_config, pattern, &result);
+  FcPatternDestroy(pattern);
+
+  if (match == nullptr || result != FcResultMatch) {
+    return std::nullopt;
+  }
+
+  FcChar8* filePath = nullptr;
+  int faceIndex = 0;
+  if (FcPatternGetString(match, FC_FILE, 0, &filePath) != FcResultMatch || filePath == nullptr) {
+    FcPatternDestroy(match);
+    return std::nullopt;
+  }
+  FcPatternGetInteger(match, FC_INDEX, 0, &faceIndex);
+
+  ResolvedFont font{.path = std::string(reinterpret_cast<const char*>(filePath)), .faceIndex = faceIndex};
+  FcPatternDestroy(match);
+  return font;
 }

@@ -1,4 +1,6 @@
 #include "render/render_context.h"
+#include "core/log.h"
+#include "font/font_service.h"
 #include "render/render_target.h"
 #include "render/scene/glyph_node.h"
 #include "render/scene/image_node.h"
@@ -11,6 +13,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -102,9 +105,40 @@ void RenderContext::initialize(wl_display* display) {
   // This allows measureText/measureGlyph to work before any surface exists.
   eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext);
 
-  const auto fonts = m_fontService.resolveFallbackChain("sans-serif");
+  // Build fallback chain: 8 general fonts + explicit CJK (appended) + color emoji (inserted early).
+  // The color emoji font is inserted at position 1 (right after the primary sans-serif font)
+  // so it takes priority over monochrome emoji fonts that fontconfig places later in the chain.
+  const auto appendSpecialFonts = [&](std::vector<ResolvedFont> chain) {
+    const auto isAlreadyInChain = [&](const ResolvedFont& candidate) {
+      for (const auto& existing : chain) {
+        if (existing.path == candidate.path && existing.faceIndex == candidate.faceIndex) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // CJK: append at end — it's a large font and only needed for CJK codepoints.
+    auto cjk = m_fontService.resolveBestForChar(0x4E00);
+    if (cjk && !isAlreadyInChain(*cjk)) {
+      logDebug("  +appended {} [{}]", cjk->path, cjk->faceIndex);
+      chain.push_back(std::move(*cjk));
+    }
+
+    // Color emoji: append at end. Emoji codepoints are routed to this slot explicitly
+    // by the emoji segmenter in shapeWithFallback — slot order doesn't matter for emoji.
+    auto emoji = m_fontService.resolveFont("emoji");
+    if (emoji && !isAlreadyInChain(*emoji)) {
+      logDebug("  +appended {} [{}]", emoji->path, emoji->faceIndex);
+      chain.push_back(std::move(*emoji));
+    }
+
+    return chain;
+  };
+
+  auto fonts = appendSpecialFonts(m_fontService.resolveFallbackChain("sans-serif"));
   m_textRenderer.initialize(fonts);
-  const auto boldFonts = m_fontService.resolveFallbackChain("sans-serif", 8, FC_WEIGHT_BOLD);
+  auto boldFonts = appendSpecialFonts(m_fontService.resolveFallbackChain("sans-serif", 8, FC_WEIGHT_BOLD));
   m_boldTextRenderer.initialize(boldFonts);
   m_iconTextRenderer.initialize({{NOCTALIA_ASSETS_DIR "/fonts/tabler.ttf", 0}});
   ensureGlPrograms();

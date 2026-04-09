@@ -4,6 +4,8 @@
 #include "launcher/usage_tracker.h"
 #include "shell/panel/panel.h"
 
+class ClipboardService;
+
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -23,6 +25,7 @@ public:
   LauncherPanel();
 
   void addProvider(std::unique_ptr<LauncherProvider> provider);
+  void setClipboard(ClipboardService* clipboard);
 
   void create() override;
   void layout(Renderer& renderer, float width, float height) override;
@@ -48,6 +51,7 @@ private:
   std::vector<std::unique_ptr<LauncherProvider>> m_providers;
   std::vector<LauncherResult> m_results;
   UsageTracker m_usageTracker;
+  ClipboardService* m_clipboard = nullptr;
 
   Flex* m_container = nullptr;
   Input* m_input = nullptr;
