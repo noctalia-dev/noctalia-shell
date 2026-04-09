@@ -76,14 +76,15 @@ void SpinnerProgram::ensureInitialized() {
   m_program.create(kVertexShaderSource, kFragmentShaderSource);
   m_positionLocation = glGetAttribLocation(m_program.id(), "a_position");
   m_surfaceSizeLocation = glGetUniformLocation(m_program.id(), "u_surface_size");
-  m_quadRectLocation = glGetUniformLocation(m_program.id(), "u_quad_size");
-  m_rectLocation = glGetUniformLocation(m_program.id(), "u_rect_size");
+  m_quadSizeLocation = glGetUniformLocation(m_program.id(), "u_quad_size");
+  m_rectOriginLocation = glGetUniformLocation(m_program.id(), "u_rect_origin");
+  m_rectSizeLocation = glGetUniformLocation(m_program.id(), "u_rect_size");
   m_colorLocation = glGetUniformLocation(m_program.id(), "u_color");
   m_thicknessLocation = glGetUniformLocation(m_program.id(), "u_thickness");
   m_transformLocation = glGetUniformLocation(m_program.id(), "u_transform");
 
-  if (m_positionLocation < 0 || m_surfaceSizeLocation < 0 || m_quadRectLocation < 0 || m_rectLocation < 0 ||
-      m_colorLocation < 0 || m_thicknessLocation < 0 || m_transformLocation < 0) {
+  if (m_positionLocation < 0 || m_surfaceSizeLocation < 0 || m_quadSizeLocation < 0 || m_rectOriginLocation < 0 ||
+      m_rectSizeLocation < 0 || m_colorLocation < 0 || m_thicknessLocation < 0 || m_transformLocation < 0) {
     throw std::runtime_error("failed to query spinner shader locations");
   }
 }
@@ -92,8 +93,9 @@ void SpinnerProgram::destroy() {
   m_program.destroy();
   m_positionLocation = -1;
   m_surfaceSizeLocation = -1;
-  m_quadRectLocation = -1;
-  m_rectLocation = -1;
+  m_quadSizeLocation = -1;
+  m_rectOriginLocation = -1;
+  m_rectSizeLocation = -1;
   m_colorLocation = -1;
   m_thicknessLocation = -1;
   m_transformLocation = -1;
@@ -116,8 +118,9 @@ void SpinnerProgram::draw(float surfaceWidth, float surfaceHeight, float width, 
 
   glUseProgram(m_program.id());
   glUniform2f(m_surfaceSizeLocation, surfaceWidth, surfaceHeight);
-  glUniform2f(m_quadRectLocation, quadWidth, quadHeight);
-  glUniform2f(m_rectLocation, width, height);
+  glUniform2f(m_quadSizeLocation, quadWidth, quadHeight);
+  glUniform2f(m_rectOriginLocation, padding, padding);
+  glUniform2f(m_rectSizeLocation, width, height);
   glUniform4f(m_colorLocation, style.color.r, style.color.g, style.color.b, style.color.a);
   glUniform1f(m_thicknessLocation, style.thickness);
   glUniformMatrix3fv(m_transformLocation, 1, GL_FALSE, quadTransform.m.data());

@@ -29,8 +29,9 @@ private:
   ShaderProgram m_program;
   GLint m_positionLocation = -1;
   GLint m_surfaceSizeLocation = -1;
-  GLint m_quadRectLocation = -1;
-  GLint m_rectLocation = -1;
+  GLint m_quadSizeLocation = -1;
+  GLint m_rectOriginLocation = -1;
+  GLint m_rectSizeLocation = -1;
   GLint m_colorLocation = -1;
   GLint m_thicknessLocation = -1;
   GLint m_transformLocation = -1;
