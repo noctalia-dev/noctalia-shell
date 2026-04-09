@@ -2,40 +2,26 @@
 
 echo "Sending test notifications..."
 
-# Send a bunch of notifications with numbers
-for i in {1..4}; do
-    notify-send "Notification $i" "This is test notification number $i with a very long text that will probably break the layout or maybe not? Who knows? Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-    sleep 1
-done
+notify-send "Notification #1" "A 'low' urgency notification" -u low
+sleep 2
 
-echo "All notifications sent!"
+notify-send "Notification #2" "A 'normal' urgency notification" -u normal
+sleep 2
 
-# Additional tests for icon/image handling
-if command -v notify-send >/dev/null 2>&1; then
-    echo "Sending icon/image tests..."
+notify-send "Notification #3" "A 'critical' urgency notification with a long timeout" -u critical -t 12000
+sleep 2
 
-    # 1) Themed icon name
-    notify-send -i dialog-information "Icon name test" "Should resolve from theme (dialog-information)"
+notify-send "Notification #4" "This is test notification with a very long text that will probably break the layout or maybe not? Who knows? Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+sleep 2
 
-    sleep 1
+notify-send "Notification #5" "A notification with a named icon, should resolve from theme (dialog-information)" -i dialog-information 
+sleep 2
 
-    # 2) Absolute path if a sample image exists
-    SAMPLE_IMG="/usr/share/pixmaps/steam.png"
-    if [ -f "$SAMPLE_IMG" ]; then
-        notify-send -i "$SAMPLE_IMG" "Absolute path test" "Should show the provided image path"
-    fi
+notify-send "Notification #6" "A notification with an absolute path icon" -i "/usr/share/pixmaps/steam.png" 
+sleep 2
 
-    sleep 1
-
-    # 3) file:// URL form
-    if [ -f "$SAMPLE_IMG" ]; then
-        notify-send -i "file://$SAMPLE_IMG" "file:// URL test" "Should display after stripping scheme"
-    fi
-
-    sleep 1
-
-    echo "Icon/image tests sent!"
-fi
+notify-send "Notification #7" "A notification with an absolute file://path icon" -i "file://usr/share/pixmaps/steam.png" 
+sleep 2
 
 # A test notification with actions
 gdbus call --session \
@@ -46,7 +32,7 @@ gdbus call --session \
           0 \
           "dialog-question" \
           "Confirmation Required" \
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Do you want to proceed with the action? " \
+          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Do you want to proceed with the action? " \
           "['default', 'OK', 'cancel', 'Cancel', 'maybe', 'Maybe', 'undecided', 'Undecided']" \
           "{}" \
           5000
