@@ -6,7 +6,7 @@ class SpacerWidget : public Widget {
 public:
   explicit SpacerWidget(float length = 0.0f);
 
-  void create(Renderer& renderer) override;
+  void create() override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
 
 private:

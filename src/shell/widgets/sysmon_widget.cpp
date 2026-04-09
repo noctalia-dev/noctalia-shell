@@ -29,7 +29,7 @@ SysmonWidget::~SysmonWidget() {
   }
 }
 
-void SysmonWidget::create(Renderer& renderer) {
+void SysmonWidget::create() {
   auto container = std::make_unique<Node>();
 
   auto glyph = std::make_unique<Glyph>();
@@ -77,7 +77,6 @@ void SysmonWidget::create(Renderer& renderer) {
   }
 
   m_root = std::move(container);
-  update(renderer);
 }
 
 void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
@@ -85,6 +84,7 @@ void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
   if (m_glyph == nullptr || rootNode == nullptr) {
     return;
   }
+  update(renderer);
 
   m_glyph->measure(renderer);
   const float glyphH = m_glyph->height();

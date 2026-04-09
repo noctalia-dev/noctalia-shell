@@ -133,7 +133,7 @@ bool isSymbolicIconPath(std::string_view path) {
 
 TrayWidget::TrayWidget(TrayService* tray) : m_tray(tray) { buildDesktopIconIndex(); }
 
-void TrayWidget::create(Renderer& renderer) {
+void TrayWidget::create() {
   auto container = std::make_unique<Flex>();
   container->setRowLayout();
   container->setAlign(FlexAlign::Center);
@@ -141,13 +141,13 @@ void TrayWidget::create(Renderer& renderer) {
   m_container = container.get();
 
   m_root = std::move(container);
-  syncState(renderer);
 }
 
 void TrayWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   if (m_container == nullptr) {
     return;
   }
+  syncState(renderer);
 
   m_container->setGap(Style::spaceXs * m_contentScale);
 

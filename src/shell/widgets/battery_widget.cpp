@@ -40,7 +40,7 @@ const char* batteryGlyphName(double percentage, BatteryState state) {
 
 BatteryWidget::BatteryWidget(UPowerService* upower) : m_upower(upower) {}
 
-void BatteryWidget::create(Renderer& renderer) {
+void BatteryWidget::create() {
   auto container = std::make_unique<Node>();
 
   auto glyph = std::make_unique<Glyph>();
@@ -57,7 +57,6 @@ void BatteryWidget::create(Renderer& renderer) {
   container->addChild(std::move(label));
 
   m_root = std::move(container);
-  syncState(renderer);
 }
 
 void BatteryWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
@@ -65,6 +64,7 @@ void BatteryWidget::layout(Renderer& renderer, float /*containerWidth*/, float /
   if (m_glyph == nullptr || m_label == nullptr || rootNode == nullptr) {
     return;
   }
+  syncState(renderer);
 
   m_glyph->measure(renderer);
   m_label->measure(renderer);

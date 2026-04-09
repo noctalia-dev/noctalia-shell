@@ -16,7 +16,7 @@ class WeatherWidget : public Widget {
 public:
   WeatherWidget(WeatherService* weather, wl_output* output, std::int32_t scale, float maxWidth, bool showCondition);
 
-  void create(Renderer& renderer) override;
+  void create() override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void update(Renderer& renderer) override;
 

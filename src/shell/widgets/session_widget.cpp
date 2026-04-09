@@ -11,7 +11,7 @@
 
 SessionWidget::SessionWidget(wl_output* output, std::int32_t scale) : m_output(output), m_scale(scale) {}
 
-void SessionWidget::create(Renderer& renderer) {
+void SessionWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
     float absX = 0.0f;
@@ -25,9 +25,6 @@ void SessionWidget::create(Renderer& renderer) {
   glyph->setColor(palette.onSurface);
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
-
-  m_glyph->measure(renderer);
-  area->setSize(m_glyph->width(), m_glyph->height());
 
   m_root = std::move(area);
 }
@@ -43,4 +40,3 @@ void SessionWidget::layout(Renderer& renderer, float /*containerWidth*/, float /
     node->setSize(m_glyph->width(), m_glyph->height());
   }
 }
-

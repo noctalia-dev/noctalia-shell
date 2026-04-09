@@ -11,7 +11,7 @@
 ClockWidget::ClockWidget(const TimeService& timeService, wl_output* output, std::int32_t scale, std::string format)
     : m_time(timeService), m_output(output), m_scale(scale), m_format(std::move(format)) {}
 
-void ClockWidget::create(Renderer& renderer) {
+void ClockWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
     float absX = 0.0f;
@@ -31,7 +31,6 @@ void ClockWidget::create(Renderer& renderer) {
   m_label = label.get();
   area->addChild(std::move(label));
   m_root = std::move(area);
-  update(renderer);
 }
 
 void ClockWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
@@ -39,6 +38,7 @@ void ClockWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*c
   if (m_label == nullptr || rootNode == nullptr) {
     return;
   }
+  update(renderer);
   m_label->measure(renderer);
   m_label->setPosition(0.0f, 0.0f);
   rootNode->setSize(m_label->width(), m_label->height());

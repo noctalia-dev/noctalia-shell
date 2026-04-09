@@ -15,7 +15,7 @@
 NotificationWidget::NotificationWidget(NotificationManager* manager, wl_output* output, std::int32_t scale)
     : m_manager(manager), m_output(output), m_scale(scale) {}
 
-void NotificationWidget::create(Renderer& /*renderer*/) {
+void NotificationWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
     float absX = 0.0f;

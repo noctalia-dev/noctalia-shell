@@ -21,7 +21,7 @@ public:
 
   WorkspacesWidget(WaylandConnection& connection, wl_output* output, DisplayMode displayMode);
 
-  void create(Renderer& renderer) override;
+  void create() override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void update(Renderer& renderer) override;
 

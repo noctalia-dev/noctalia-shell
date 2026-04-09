@@ -434,7 +434,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
             surface->requestRedraw();
           }
         });
-        widget->create(*renderer);
+        widget->create();
         if (widget->root() != nullptr) {
           section->addChild(widget->releaseRoot());
         }

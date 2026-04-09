@@ -14,7 +14,7 @@ public:
   ClockWidget(const TimeService& timeService, wl_output* output, std::int32_t scale,
               std::string format = "{:%H:%M}");
 
-  void create(Renderer& renderer) override;
+  void create() override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void update(Renderer& renderer) override;
 

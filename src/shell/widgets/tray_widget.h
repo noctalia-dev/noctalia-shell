@@ -18,7 +18,7 @@ class TrayWidget : public Widget {
 public:
   explicit TrayWidget(TrayService* tray);
 
-  void create(Renderer& renderer) override;
+  void create() override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void update(Renderer& renderer) override;
 

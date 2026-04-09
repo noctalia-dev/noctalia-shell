@@ -11,7 +11,7 @@
 
 TestWidget::TestWidget(wl_output* output, std::int32_t scale) : m_output(output), m_scale(scale) {}
 
-void TestWidget::create(Renderer& renderer) {
+void TestWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
     float absX = 0.0f;
@@ -31,9 +31,6 @@ void TestWidget::create(Renderer& renderer) {
   glyph->setColor(palette.onSurface);
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
-
-  m_glyph->measure(renderer);
-  area->setSize(m_glyph->width(), m_glyph->height());
 
   m_root = std::move(area);
 }

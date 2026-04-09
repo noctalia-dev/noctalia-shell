@@ -65,7 +65,7 @@ ActiveWindowWidget::ActiveWindowWidget(WaylandConnection& connection, float maxT
   buildDesktopIconIndex();
 }
 
-void ActiveWindowWidget::create(Renderer& renderer) {
+void ActiveWindowWidget::create() {
   auto rootNode = std::make_unique<Node>();
 
   auto icon = std::make_unique<Image>();
@@ -83,7 +83,6 @@ void ActiveWindowWidget::create(Renderer& renderer) {
   m_title = static_cast<Label*>(rootNode->addChild(std::move(title)));
 
   m_root = std::move(rootNode);
-  syncState(renderer);
 }
 
 void ActiveWindowWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
@@ -91,6 +90,7 @@ void ActiveWindowWidget::layout(Renderer& renderer, float /*containerWidth*/, fl
   if (rootNode == nullptr || m_icon == nullptr || m_title == nullptr) {
     return;
   }
+  syncState(renderer);
 
   const float iconSize = m_iconSize * m_contentScale;
   m_icon->setSize(iconSize, iconSize);

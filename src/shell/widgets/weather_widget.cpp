@@ -18,7 +18,7 @@ WeatherWidget::WeatherWidget(WeatherService* weather, wl_output* output, std::in
                              bool showCondition)
     : m_weather(weather), m_output(output), m_scale(scale), m_maxWidth(maxWidth), m_showCondition(showCondition) {}
 
-void WeatherWidget::create(Renderer& renderer) {
+void WeatherWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
     PanelManager::instance().togglePanel("control-center", m_output, m_scale, 0.0f, 0.0f, "weather");
@@ -40,13 +40,13 @@ void WeatherWidget::create(Renderer& renderer) {
   area->addChild(std::move(label));
 
   m_root = std::move(area);
-  sync(renderer);
 }
 
 void WeatherWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   if (m_glyph == nullptr || m_label == nullptr || root() == nullptr) {
     return;
   }
+  sync(renderer);
 
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   m_glyph->measure(renderer);

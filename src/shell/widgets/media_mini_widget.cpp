@@ -195,7 +195,7 @@ std::filesystem::path artCachePath(std::string_view artUrl) {
 MediaMiniWidget::MediaMiniWidget(MprisService* mpris, HttpClient* httpClient, float maxWidth, float artSize)
     : m_mpris(mpris), m_httpClient(httpClient), m_maxWidth(maxWidth), m_artSize(artSize) {}
 
-void MediaMiniWidget::create(Renderer& renderer) {
+void MediaMiniWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
     if (m_mpris != nullptr) {
@@ -221,7 +221,6 @@ void MediaMiniWidget::create(Renderer& renderer) {
   area->addChild(std::move(label));
 
   m_root = std::move(area);
-  syncState(renderer);
 }
 
 void MediaMiniWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
@@ -229,6 +228,7 @@ void MediaMiniWidget::layout(Renderer& renderer, float /*containerWidth*/, float
   if (rootNode == nullptr || m_art == nullptr || m_label == nullptr) {
     return;
   }
+  syncState(renderer);
 
   const float artSize = m_artSize * m_contentScale;
   m_art->setSize(artSize, artSize);

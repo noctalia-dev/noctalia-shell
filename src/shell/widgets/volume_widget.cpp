@@ -31,7 +31,7 @@ const char* volumeGlyphName(float volume, bool muted) {
 VolumeWidget::VolumeWidget(PipeWireService* audio, wl_output* output, std::int32_t scale)
     : m_audio(audio), m_output(output), m_scale(scale) {}
 
-void VolumeWidget::create(Renderer& renderer) {
+void VolumeWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
     float absX = 0.0f;
@@ -59,7 +59,6 @@ void VolumeWidget::create(Renderer& renderer) {
   area->addChild(std::move(label));
 
   m_root = std::move(area);
-  syncState(renderer);
 }
 
 void VolumeWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
@@ -67,6 +66,7 @@ void VolumeWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
   if (m_glyph == nullptr || m_label == nullptr || rootNode == nullptr) {
     return;
   }
+  syncState(renderer);
 
   m_glyph->measure(renderer);
   m_label->measure(renderer);

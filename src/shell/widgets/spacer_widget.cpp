@@ -4,7 +4,7 @@
 
 SpacerWidget::SpacerWidget(float length) : m_fixedLength(length) {}
 
-void SpacerWidget::create(Renderer& /*renderer*/) {
+void SpacerWidget::create() {
   auto spacer = std::make_unique<Node>();
   spacer->setSize(m_fixedLength * m_contentScale, 0.0f);
   m_root = std::move(spacer);

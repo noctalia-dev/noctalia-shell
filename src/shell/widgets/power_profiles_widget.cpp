@@ -13,7 +13,7 @@
 
 PowerProfilesWidget::PowerProfilesWidget(PowerProfilesService* powerProfiles) : m_powerProfiles(powerProfiles) {}
 
-void PowerProfilesWidget::create(Renderer& renderer) {
+void PowerProfilesWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) { cycleProfile(); });
   m_area = area.get();
@@ -26,7 +26,6 @@ void PowerProfilesWidget::create(Renderer& renderer) {
   area->addChild(std::move(glyph));
 
   m_root = std::move(area);
-  syncState(renderer);
 }
 
 void PowerProfilesWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
@@ -34,6 +33,7 @@ void PowerProfilesWidget::layout(Renderer& renderer, float /*containerWidth*/, f
   if (m_glyph == nullptr || rootNode == nullptr) {
     return;
   }
+  syncState(renderer);
 
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   m_glyph->measure(renderer);

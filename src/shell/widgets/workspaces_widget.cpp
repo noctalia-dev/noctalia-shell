@@ -27,17 +27,16 @@ constexpr float kWorkspaceLabelPadH = Style::spaceSm;
 WorkspacesWidget::WorkspacesWidget(WaylandConnection& connection, wl_output* output, DisplayMode displayMode)
     : m_connection(connection), m_output(output), m_displayMode(displayMode) {}
 
-void WorkspacesWidget::create(Renderer& renderer) {
+void WorkspacesWidget::create() {
   auto container = std::make_unique<Flex>();
   container->setRowLayout();
   container->setGap(kWorkspaceGap * m_contentScale);
   m_container = container.get();
   m_root = std::move(container);
-
-  rebuild(renderer);
 }
 
 void WorkspacesWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+  update(renderer);
   m_container->layout(renderer);
 }
 

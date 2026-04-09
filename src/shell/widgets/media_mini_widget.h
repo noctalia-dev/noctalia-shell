@@ -17,7 +17,7 @@ class MediaMiniWidget : public Widget {
 public:
   MediaMiniWidget(MprisService* mpris, HttpClient* httpClient, float maxWidth, float artSize);
 
-  void create(Renderer& renderer) override;
+  void create() override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void update(Renderer& renderer) override;
 

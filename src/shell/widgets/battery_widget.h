@@ -10,7 +10,7 @@ class BatteryWidget : public Widget {
 public:
   explicit BatteryWidget(UPowerService* upower);
 
-  void create(Renderer& renderer) override;
+  void create() override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void update(Renderer& renderer) override;
 

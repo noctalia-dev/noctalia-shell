@@ -11,7 +11,7 @@ class LauncherWidget : public Widget {
 public:
   LauncherWidget(wl_output* output, std::int32_t scale);
 
-  void create(Renderer& renderer) override;
+  void create() override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
 
 private:

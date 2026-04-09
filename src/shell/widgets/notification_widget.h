@@ -11,7 +11,7 @@ class NotificationWidget : public Widget {
 public:
   NotificationWidget(NotificationManager* manager, wl_output* output, std::int32_t scale);
 
-  void create(Renderer& renderer) override;
+  void create() override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void update(Renderer& renderer) override;
 

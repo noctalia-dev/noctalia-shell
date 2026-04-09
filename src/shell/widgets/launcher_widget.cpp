@@ -11,7 +11,7 @@
 
 LauncherWidget::LauncherWidget(wl_output* output, std::int32_t scale) : m_output(output), m_scale(scale) {}
 
-void LauncherWidget::create(Renderer& renderer) {
+void LauncherWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
     PanelManager::instance().togglePanel("launcher");
@@ -23,9 +23,6 @@ void LauncherWidget::create(Renderer& renderer) {
   glyph->setColor(palette.onSurface);
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
-
-  m_glyph->measure(renderer);
-  area->setSize(m_glyph->width(), m_glyph->height());
 
   m_root = std::move(area);
 }
