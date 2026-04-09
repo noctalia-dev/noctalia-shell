@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 class Button;
 class ClipboardService;
@@ -37,6 +38,7 @@ private:
   void schedulePreviewPayloadRefresh(bool debounced);
   void rebuildList(Renderer& renderer, float width);
   void rebuildPreview(Renderer& renderer, float width, float height);
+  void updateRowSelection(std::size_t previousIndex);
   void selectIndex(std::size_t index);
   void activateSelected();
   bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
@@ -52,6 +54,7 @@ private:
   Button* m_clearHistoryButton = nullptr;
   ScrollView* m_listScrollView = nullptr;
   Flex* m_list = nullptr;
+  std::vector<Flex*> m_rowFlexes;
 
   Flex* m_previewCard = nullptr;
   Flex* m_previewHeaderRow = nullptr;

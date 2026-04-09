@@ -396,6 +396,7 @@ void ClipboardPanel::onClose() {
   m_clearHistoryButton = nullptr;
   m_listScrollView = nullptr;
   m_list = nullptr;
+  m_rowFlexes.clear();
   m_previewCard = nullptr;
   m_previewHeaderRow = nullptr;
   m_previewTitle = nullptr;
@@ -456,6 +457,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
   while (!m_list->children().empty()) {
     m_list->removeChild(m_list->children().front().get());
   }
+  m_rowFlexes.clear();
 
   if (history.empty()) {
     auto empty = std::make_unique<Label>();
@@ -556,6 +558,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
 
     row->layout(renderer);
     area->setSize(row->width(), row->height());
+    m_rowFlexes.push_back(rowPtr);
     area->addChild(std::move(row));
     m_list->addChild(std::move(area));
   }
@@ -709,6 +712,21 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
   m_lastPreviewHeight = height;
 }
 
+void ClipboardPanel::updateRowSelection(std::size_t previousIndex) {
+  if (previousIndex < m_rowFlexes.size() && m_rowFlexes[previousIndex] != nullptr) {
+    Flex* prev = m_rowFlexes[previousIndex];
+    if (m_hoverIndex == previousIndex) {
+      prev->setBackground(
+          rgba(palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.45f));
+    } else {
+      prev->setBackground(rgba(0, 0, 0, 0));
+    }
+  }
+  if (m_selectedIndex < m_rowFlexes.size() && m_rowFlexes[m_selectedIndex] != nullptr) {
+    m_rowFlexes[m_selectedIndex]->setBackground(palette.surfaceVariant);
+  }
+}
+
 void ClipboardPanel::selectIndex(std::size_t index) {
   if (m_clipboard == nullptr || index >= m_clipboard->history().size()) {
     return;
@@ -716,9 +734,10 @@ void ClipboardPanel::selectIndex(std::size_t index) {
   if (m_selectedIndex == index) {
     return;
   }
+  const std::size_t previous = m_selectedIndex;
   m_selectedIndex = index;
+  updateRowSelection(previous);
   schedulePreviewPayloadRefresh(true);
-  m_lastListWidth = -1.0f;
   m_pendingScrollToSelected = true;
   PanelManager::instance().refresh();
 }
@@ -748,9 +767,10 @@ bool ClipboardPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers
 
   if (sym == XKB_KEY_Up) {
     if (m_selectedIndex > 0) {
+      const std::size_t previous = m_selectedIndex;
       --m_selectedIndex;
+      updateRowSelection(previous);
       schedulePreviewPayloadRefresh(true);
-      m_lastListWidth = -1.0f;
       m_pendingScrollToSelected = true;
       PanelManager::instance().refresh();
     }
@@ -759,9 +779,10 @@ bool ClipboardPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers
 
   if (sym == XKB_KEY_Down) {
     if (m_selectedIndex + 1 < m_clipboard->history().size()) {
+      const std::size_t previous = m_selectedIndex;
       ++m_selectedIndex;
+      updateRowSelection(previous);
       schedulePreviewPayloadRefresh(true);
-      m_lastListWidth = -1.0f;
       m_pendingScrollToSelected = true;
       PanelManager::instance().refresh();
     }
