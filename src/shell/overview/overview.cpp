@@ -103,6 +103,10 @@ void Overview::syncInstances() {
 
   // Create instances for new outputs
   for (const auto& output : outputs) {
+    if (!output.done || output.connectorName.empty()) {
+      continue;
+    }
+
     bool exists = std::any_of(m_instances.begin(), m_instances.end(),
                               [&output](const auto& inst) { return inst->outputName == output.name; });
     if (!exists) {

@@ -55,9 +55,14 @@ namespace {
   }
 
   void outputDone(void* data, wl_output* wlOut) {
-    auto* out = static_cast<WaylandConnection*>(data)->findOutputByWl(wlOut);
+    auto* self = static_cast<WaylandConnection*>(data);
+    auto* out = self->findOutputByWl(wlOut);
     if (out != nullptr) {
+      const bool wasDone = out->done;
       out->done = true;
+      if (!wasDone) {
+        self->notifyOutputReady(wlOut);
+      }
     }
   }
 
@@ -220,6 +225,13 @@ void WaylandConnection::unregisterSurface(wl_surface* surface) {
       // (we don't track which surface set it, so just leave it — it's a hint anyway)
     }
   }
+}
+
+void WaylandConnection::notifyOutputReady(wl_output* output) {
+  if (output == nullptr || m_outputChangeCallback == nullptr) {
+    return;
+  }
+  m_outputChangeCallback();
 }
 
 wl_output* WaylandConnection::lastPointerOutput() const noexcept { return m_lastPointerOutput; }
@@ -501,9 +513,6 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
       auto* xdgOut = zxdg_output_manager_v1_get_xdg_output(m_xdgOutputManager, output);
       m_outputs.back().xdgOutput = xdgOut;
       zxdg_output_v1_add_listener(xdgOut, &kXdgOutputListener, this);
-    }
-    if (m_outputChangeCallback) {
-      m_outputChangeCallback();
     }
   }
 }

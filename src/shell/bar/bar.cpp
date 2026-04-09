@@ -234,6 +234,10 @@ void Bar::syncInstances() {
   // Create instances for each bar definition × each output
   for (std::size_t barIdx = 0; barIdx < bars.size(); ++barIdx) {
     for (const auto& output : outputs) {
+      if (!output.done) {
+        continue;
+      }
+
       bool exists = std::any_of(m_instances.begin(), m_instances.end(), [&output, barIdx](const auto& inst) {
         return inst->outputName == output.name && inst->barIndex == barIdx;
       });

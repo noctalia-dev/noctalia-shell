@@ -105,6 +105,7 @@ public:
 
   void registerSurfaceOutput(wl_surface* surface, wl_output* output);
   void unregisterSurface(wl_surface* surface);
+  void notifyOutputReady(wl_output* output);
 
   // Registry listener entrypoints
   static void handleGlobal(void* data, wl_registry* registry, std::uint32_t name, const char* interface,

@@ -176,8 +176,14 @@ void Wallpaper::syncInstances() {
     return false;
   });
 
+  refreshShareContext();
+
   // Create instances for new outputs
   for (const auto& output : outputs) {
+    if (!output.done || output.connectorName.empty()) {
+      continue;
+    }
+
     bool exists = std::any_of(m_instances.begin(), m_instances.end(),
                               [&output](const auto& inst) { return inst->outputName == output.name; });
     if (exists) {
@@ -200,6 +206,21 @@ void Wallpaper::syncInstances() {
     }
 
     createInstance(output);
+  }
+}
+
+void Wallpaper::refreshShareContext() {
+  m_shareContext = EGL_NO_CONTEXT;
+  for (const auto& inst : m_instances) {
+    if (inst->surface == nullptr || inst->surface->wallpaperRenderer() == nullptr) {
+      continue;
+    }
+
+    const EGLContext context = inst->surface->wallpaperRenderer()->eglContext();
+    if (context != EGL_NO_CONTEXT) {
+      m_shareContext = context;
+      return;
+    }
   }
 }
 

@@ -41,6 +41,7 @@ private:
 
   void releaseInstanceTextures(WallpaperInstance& inst);
   void makeAnyContextCurrent();
+  void refreshShareContext();
 
   struct CachedTexture {
     TextureHandle handle;
