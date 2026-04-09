@@ -17,6 +17,7 @@
 #include "dbus/tray/tray_service.h"
 #include "dbus/upower/upower_service.h"
 #include "debug/debug_service.h"
+#include "idle/idle_inhibitor.h"
 #include "ipc/ipc_poll_source.h"
 #include "ipc/ipc_service.h"
 #include "net/http_client.h"
@@ -78,6 +79,7 @@ private:
   std::unique_ptr<SystemBus> m_systemBus;
   std::unique_ptr<SystemMonitorService> m_systemMonitor;
   std::unique_ptr<DebugService> m_debugService;
+  IdleInhibitor m_idleInhibitor;
   std::unique_ptr<MprisService> m_mprisService;
   std::unique_ptr<PowerProfilesService> m_powerProfilesService;
   std::unique_ptr<UPowerService> m_upowerService;

@@ -109,7 +109,7 @@ Bar::Bar() = default;
 bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                      NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                      UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
-                     MprisService* mpris,
+                     IdleInhibitor* idleInhibitor, MprisService* mpris,
                      HttpClient* httpClient, WeatherService* weatherService, RenderContext* renderContext) {
   m_wayland = &wayland;
   m_config = config;
@@ -120,13 +120,14 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
   m_upower = upower;
   m_sysmon = sysmon;
   m_powerProfiles = powerProfiles;
+  m_idleInhibitor = idleInhibitor;
   m_mpris = mpris;
   m_httpClient = httpClient;
   m_weatherService = weatherService;
   m_renderContext = renderContext;
 
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
-                                                    m_audio, m_upower, m_sysmon, m_powerProfiles, m_mpris, m_httpClient,
+                                                    m_audio, m_upower, m_sysmon, m_powerProfiles, m_idleInhibitor, m_mpris, m_httpClient,
                                                     m_weatherService);
 
   if (timeService != nullptr) {
@@ -153,7 +154,7 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
 void Bar::reload() {
   kLog.info("reloading config");
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
-                                                    m_audio, m_upower, m_sysmon, m_powerProfiles, m_mpris, m_httpClient,
+                                                    m_audio, m_upower, m_sysmon, m_powerProfiles, m_idleInhibitor, m_mpris, m_httpClient,
                                                     m_weatherService);
   m_instances.clear();
   m_surfaceMap.clear();

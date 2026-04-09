@@ -5,11 +5,13 @@
 #include "dbus/power/power_profiles_service.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/tray/tray_service.h"
+#include "idle/idle_inhibitor.h"
 #include "net/http_client.h"
 #include "notification/notification_manager.h"
 #include "shell/widgets/active_window_widget.h"
 #include "shell/widgets/battery_widget.h"
 #include "shell/widgets/clock_widget.h"
+#include "shell/widgets/idle_inhibitor_widget.h"
 #include "shell/widgets/launcher_widget.h"
 #include "shell/widgets/media_mini_widget.h"
 #include "shell/widgets/notification_widget.h"
@@ -29,9 +31,9 @@
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
                              NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                              UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
-                             MprisService* mpris, HttpClient* httpClient, WeatherService* weather)
+                             IdleInhibitor* idleInhibitor, MprisService* mpris, HttpClient* httpClient, WeatherService* weather)
     : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
-      m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_mpris(mpris), m_httpClient(httpClient),
+      m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_httpClient(httpClient),
       m_weather(weather) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale) const {
@@ -115,6 +117,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "power_profiles") {
     auto widget = std::make_unique<PowerProfilesWidget>(m_powerProfiles);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "idle_inhibitor") {
+    auto widget = std::make_unique<IdleInhibitorWidget>(m_idleInhibitor);
     widget->setContentScale(contentScale);
     return widget;
   }

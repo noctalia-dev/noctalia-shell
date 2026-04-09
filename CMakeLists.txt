@@ -71,6 +71,8 @@ set(XDG_ACTIVATION_XML
     "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/xdg-activation/xdg-activation-v1.xml")
 set(EXT_SESSION_LOCK_XML
     "${WAYLAND_PROTOCOLS_PKGDATADIR}/staging/ext-session-lock/ext-session-lock-v1.xml")
+set(IDLE_INHIBIT_XML
+    "${WAYLAND_PROTOCOLS_PKGDATADIR}/unstable/idle-inhibit/idle-inhibit-unstable-v1.xml")
 set(WLR_FOREIGN_TOPLEVEL_XML
     "${CMAKE_CURRENT_SOURCE_DIR}/protocols/wlr-foreign-toplevel-management-unstable-v1.xml")
 set(WLR_DATA_CONTROL_XML
@@ -110,6 +112,10 @@ set(EXT_SESSION_LOCK_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/ext-session-lock-v1-client-protocol.c")
 set(EXT_SESSION_LOCK_PROTOCOL_H
     "${GENERATED_PROTOCOL_DIR}/ext-session-lock-v1-client-protocol.h")
+set(IDLE_INHIBIT_PROTOCOL_C
+    "${GENERATED_PROTOCOL_DIR}/idle-inhibit-unstable-v1-client-protocol.c")
+set(IDLE_INHIBIT_PROTOCOL_H
+    "${GENERATED_PROTOCOL_DIR}/idle-inhibit-unstable-v1-client-protocol.h")
 set(WLR_FOREIGN_TOPLEVEL_PROTOCOL_C
     "${GENERATED_PROTOCOL_DIR}/wlr-foreign-toplevel-management-unstable-v1-client-protocol.c")
 set(WLR_FOREIGN_TOPLEVEL_PROTOCOL_H
@@ -263,6 +269,20 @@ add_custom_command(
 )
 
 add_custom_command(
+    OUTPUT "${IDLE_INHIBIT_PROTOCOL_C}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" private-code "${IDLE_INHIBIT_XML}" "${IDLE_INHIBIT_PROTOCOL_C}"
+    DEPENDS "${IDLE_INHIBIT_XML}"
+    VERBATIM
+)
+
+add_custom_command(
+    OUTPUT "${IDLE_INHIBIT_PROTOCOL_H}"
+    COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" client-header "${IDLE_INHIBIT_XML}" "${IDLE_INHIBIT_PROTOCOL_H}"
+    DEPENDS "${IDLE_INHIBIT_XML}"
+    VERBATIM
+)
+
+add_custom_command(
     OUTPUT "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_C}"
     COMMAND "${WAYLAND_SCANNER_EXECUTABLE}" private-code "${WLR_FOREIGN_TOPLEVEL_XML}" "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_C}"
     DEPENDS "${WLR_FOREIGN_TOPLEVEL_XML}"
@@ -310,6 +330,8 @@ add_custom_target(noctalia_wayland_protocols
         "${XDG_ACTIVATION_PROTOCOL_H}"
         "${EXT_SESSION_LOCK_PROTOCOL_C}"
         "${EXT_SESSION_LOCK_PROTOCOL_H}"
+        "${IDLE_INHIBIT_PROTOCOL_C}"
+        "${IDLE_INHIBIT_PROTOCOL_H}"
         "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_C}"
         "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_H}"
         "${WLR_DATA_CONTROL_PROTOCOL_C}"
@@ -336,6 +358,7 @@ add_executable(noctalia
     src/dbus/upower/upower_service.cpp
     src/debug/debug_service.cpp
     src/font/font_service.cpp
+    src/idle/idle_inhibitor.cpp
     src/ipc/ipc_client.cpp
     src/ipc/ipc_service.cpp
     src/launcher/app_provider.cpp
@@ -398,6 +421,7 @@ add_executable(noctalia
     src/shell/widgets/active_window_widget.cpp
     src/shell/widgets/battery_widget.cpp
     src/shell/widgets/clock_widget.cpp
+    src/shell/widgets/idle_inhibitor_widget.cpp
     src/shell/widgets/launcher_widget.cpp
     src/shell/widgets/media_mini_widget.cpp
     src/shell/widgets/notification_widget.cpp
@@ -455,6 +479,7 @@ add_executable(noctalia
     "${EXT_DATA_CONTROL_PROTOCOL_C}"
     "${XDG_ACTIVATION_PROTOCOL_C}"
     "${EXT_SESSION_LOCK_PROTOCOL_C}"
+    "${IDLE_INHIBIT_PROTOCOL_C}"
     "${WLR_FOREIGN_TOPLEVEL_PROTOCOL_C}"
     "${WLR_DATA_CONTROL_PROTOCOL_C}"
 )

@@ -221,6 +221,9 @@ void Application::initServices() {
   m_wayland.setWorkspaceChangeCallback([this]() { m_bar.refresh(); });
   m_wayland.setToplevelChangeCallback([this]() { m_bar.refresh(); });
 
+  m_idleInhibitor.initialize(m_wayland, &m_renderContext);
+  m_idleInhibitor.setChangeCallback([this]() { m_bar.refresh(); });
+
   m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
   m_overview.initialize(m_wayland, &m_configService, &m_stateService, &m_wallpaper);
 
@@ -418,7 +421,7 @@ void Application::initUi() {
 
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
                    m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_powerProfilesService.get(),
-                   m_mprisService.get(), &m_httpClient, &m_weatherService, &m_renderContext);
+                   &m_idleInhibitor, m_mprisService.get(), &m_httpClient, &m_weatherService, &m_renderContext);
 
   if (m_pipewireService != nullptr) {
     m_audioOsd.suppressFor(std::chrono::milliseconds(2000));
@@ -571,6 +574,39 @@ void Application::initIpc() {
         return "ok\n";
       },
       "toggle-clipboard", "Toggle the clipboard history panel");
+
+  m_ipcService.registerHandler(
+      "enable-idle-inhibitor",
+      [this](const std::string&) -> std::string {
+        if (!m_idleInhibitor.available()) {
+          return "error: idle inhibitor protocol unavailable\n";
+        }
+        m_idleInhibitor.setEnabled(true);
+        return "ok\n";
+      },
+      "enable-idle-inhibitor", "Enable the compositor idle inhibitor");
+
+  m_ipcService.registerHandler(
+      "disable-idle-inhibitor",
+      [this](const std::string&) -> std::string {
+        if (!m_idleInhibitor.available()) {
+          return "error: idle inhibitor protocol unavailable\n";
+        }
+        m_idleInhibitor.setEnabled(false);
+        return "ok\n";
+      },
+      "disable-idle-inhibitor", "Disable the compositor idle inhibitor");
+
+  m_ipcService.registerHandler(
+      "toggle-idle-inhibitor",
+      [this](const std::string&) -> std::string {
+        if (!m_idleInhibitor.available()) {
+          return "error: idle inhibitor protocol unavailable\n";
+        }
+        m_idleInhibitor.toggle();
+        return "ok\n";
+      },
+      "toggle-idle-inhibitor", "Toggle the compositor idle inhibitor");
 }
 
 std::vector<PollSource*> Application::buildPollSources() {

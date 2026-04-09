@@ -232,6 +232,24 @@ No configurable settings.
 
 ---
 
+### `idle_inhibitor`
+
+Shows a keep-awake glyph and toggles the compositor idle inhibitor on click.
+
+This uses the standard Wayland `zwp_idle_inhibit_manager_v1` protocol when available.
+
+No configurable settings.
+
+You can also control it over Noctalia IPC:
+
+```sh
+noctalia-ipc enable-idle-inhibitor
+noctalia-ipc disable-idle-inhibitor
+noctalia-ipc toggle-idle-inhibitor
+```
+
+---
+
 ### `sysmon`
 
 System resource monitor. Shows an icon and value for one configurable stat. Multiple instances with different stats can coexist on the same bar.

@@ -1,0 +1,84 @@
+#include "shell/widgets/idle_inhibitor_widget.h"
+
+#include "idle/idle_inhibitor.h"
+#include "render/core/renderer.h"
+#include "render/scene/input_area.h"
+#include "ui/controls/glyph.h"
+#include "ui/palette.h"
+#include "ui/style.h"
+
+#include <memory>
+
+namespace {
+
+const char* glyphForState(bool enabled) {
+  return enabled ? "keep-awake-on" : "keep-awake-off";
+}
+
+} // namespace
+
+IdleInhibitorWidget::IdleInhibitorWidget(IdleInhibitor* inhibitor) : m_inhibitor(inhibitor) {}
+
+void IdleInhibitorWidget::create() {
+  auto area = std::make_unique<InputArea>();
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
+    if (m_inhibitor != nullptr && m_inhibitor->available()) {
+      m_inhibitor->toggle();
+    }
+  });
+  m_area = area.get();
+
+  auto glyph = std::make_unique<Glyph>();
+  glyph->setGlyph(glyphForState(false));
+  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setColor(palette.onSurfaceVariant);
+  m_glyph = glyph.get();
+  area->addChild(std::move(glyph));
+
+  setRoot(std::move(area));
+}
+
+void IdleInhibitorWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+  if (m_glyph == nullptr) {
+    return;
+  }
+
+  syncState(renderer);
+  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->measure(renderer);
+
+  if (auto* node = root(); node != nullptr) {
+    node->setSize(m_glyph->width(), m_glyph->height());
+  }
+}
+
+void IdleInhibitorWidget::update(Renderer& renderer) {
+  syncState(renderer);
+  Widget::update(renderer);
+}
+
+void IdleInhibitorWidget::syncState(Renderer& renderer) {
+  if (m_glyph == nullptr || m_area == nullptr) {
+    return;
+  }
+
+  const bool available = m_inhibitor != nullptr && m_inhibitor->available();
+  const bool enabled = available && m_inhibitor->enabled();
+
+  if (available == m_lastAvailable && enabled == m_lastEnabled) {
+    return;
+  }
+
+  m_lastAvailable = available;
+  m_lastEnabled = enabled;
+
+  m_glyph->setGlyph(glyphForState(enabled));
+  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setColor(!available ? palette.onSurfaceVariant : (enabled ? palette.primary : palette.onSurface));
+  m_glyph->measure(renderer);
+  m_area->setEnabled(available);
+  if (auto* node = root(); node != nullptr) {
+    node->setOpacity(available ? 1.0f : 0.55f);
+  }
+  requestRedraw();
+}

@@ -178,7 +178,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [ ] PipeWire audio spectrum
 - [~] Clipboard manager <- missing auto-paste /
 - [~] Lock screen (ext-session-lock-v1) <- still needs polish 
-- [ ] Idle inhibitor (prevent sleep)
+- [x] Idle inhibitor (prevent sleep)
 - [~] More compositors (Labwc pending)
 - [ ] Application file search provider
 
