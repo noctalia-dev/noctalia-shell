@@ -128,10 +128,14 @@ SmartPanel {
   onPanelViewModeChanged: {
     // Sync tab bar (imperative – avoids declarative binding being broken by NTabButton clicks)
     let _tabIdx = 0;
-    if (panelViewMode === "ethernet") _tabIdx = 1;
-    else if (panelViewMode === "vpn") _tabIdx = 2;
-    if (modeTabBar.currentIndex !== _tabIdx)
+    if (panelViewMode === "ethernet") {
+      _tabIdx = 1;
+    } else if (panelViewMode === "vpn") {
+      _tabIdx = 2;
+    }
+    if (modeTabBar.currentIndex !== _tabIdx) {
       modeTabBar.currentIndex = _tabIdx;
+    }
 
     // Persist last view (only after restored the initial value)
     if (panelViewPersistEnabled) {
@@ -264,10 +268,8 @@ SmartPanel {
               checked: NetworkService.wifiEnabled
               enabled: !NetworkService.airplaneModeEnabled && NetworkService.wifiAvailable
               onToggled: checked => NetworkService.setWifiEnabled(checked)
-              baseSize: Style.baseWidgetSize * 0.7
+              baseSize: Style.baseWidgetSize * 0.7 // Slightly smaller
             }
-
-
 
             NIconButton {
               icon: "refresh"
@@ -307,9 +309,9 @@ SmartPanel {
             Layout.fillWidth: true
             spacing: Style.marginM
             distributeEvenly: true
-            currentIndex: root.panelViewMode === "wifi" ? 0 : root.panelViewMode === "ethernet" ? 1 : 2
+            currentIndex: (root.panelViewMode === "wifi") ? 0 : (root.panelViewMode === "ethernet") ? 1 : 2
             onCurrentIndexChanged: {
-              root.panelViewMode = currentIndex === 0 ? "wifi" : currentIndex === 1 ? "ethernet" : "vpn";
+              root.panelViewMode = (currentIndex === 0) ? "wifi" : (currentIndex === 1) ? "ethernet" : "vpn";
             }
 
             NTabButton {
