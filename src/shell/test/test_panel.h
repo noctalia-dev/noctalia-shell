@@ -37,6 +37,12 @@ private:
   Button* m_glyphButton = nullptr;
   Box* m_glyphBox = nullptr;
   Glyph* m_glyph = nullptr;
+  Box* m_transformStage = nullptr;
+  Box* m_transformDemoBox = nullptr;
+  Glyph* m_transformDemoGlyph = nullptr;
+  Button* m_transformDemoButton = nullptr;
+  Box* m_transformBadgeBox = nullptr;
+  Label* m_transformBadgeLabel = nullptr;
   Slider* m_slider = nullptr;
   Toggle* m_toggle = nullptr;
   Checkbox* m_checkbox = nullptr;
@@ -45,4 +51,5 @@ private:
   Spinner* m_spinner = nullptr;
   Input* m_input = nullptr;
   Label* m_inputValueLabel = nullptr;
+  Label* m_transformHelp = nullptr;
 };

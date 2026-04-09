@@ -1,5 +1,8 @@
 #include "shell/test/test_panel.h"
 
+#include "core/log.h"
+#include "render/animation/animation_manager.h"
+
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/checkbox.h"
@@ -19,19 +22,34 @@
 #include <memory>
 #include <string>
 
+namespace {
+  constexpr Logger kLog("testpanel");
+} // namespace
+
+
 void TestPanel::create(Renderer& renderer) {
   const float scale = contentScale();
-  auto container = std::make_unique<Flex>();
-  container->setDirection(FlexDirection::Vertical);
-  container->setGap(Style::spaceMd * scale);
-  container->setAlign(FlexAlign::Start);
+  auto root = std::make_unique<Flex>();
+  root->setDirection(FlexDirection::Vertical);
+  root->setGap(Style::spaceMd * scale);
+  root->setAlign(FlexAlign::Start);
 
   auto header = std::make_unique<Label>();
   header->setText("Test Controls");
   header->setFontSize(Style::fontSizeTitle * scale);
   header->setColor(palette.primary);
   m_headerLabel = header.get();
-  container->addChild(std::move(header));
+  root->addChild(std::move(header));
+
+  auto content = std::make_unique<Flex>();
+  content->setDirection(FlexDirection::Horizontal);
+  content->setGap(Style::spaceLg * scale);
+  content->setAlign(FlexAlign::Start);
+
+  auto container = std::make_unique<Flex>();
+  container->setDirection(FlexDirection::Vertical);
+  container->setGap(Style::spaceMd * scale);
+  container->setAlign(FlexAlign::Start);
 
   const float kRowLabelWidth = 150.0f * scale;
 
@@ -90,7 +108,7 @@ void TestPanel::create(Renderer& renderer) {
 
   // Button glyph only
   auto glyphButton = std::make_unique<Button>();
-  glyphButton->setGlyph("media-play");
+  glyphButton->setGlyph("home");
   glyphButton->setGlyphSize(Style::fontSizeBody * scale);
   glyphButton->setVariant(ButtonVariant::Default);
   glyphButton->setMinHeight(Style::controlHeight * scale);
@@ -115,7 +133,7 @@ void TestPanel::create(Renderer& renderer) {
   m_glyphBox = glyphBox.get();
 
   auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyph("media-play");
+  glyph->setGlyph("home");
   glyph->setGlyphSize(Style::fontSizeBody * scale);
   glyph->setColor(palette.onSurface);
   m_glyph = glyph.get();
@@ -337,7 +355,93 @@ void TestPanel::create(Renderer& renderer) {
     container->addChild(std::move(row));
   }
 
-  m_root = std::move(container);
+  auto transformColumn = std::make_unique<Flex>();
+  transformColumn->setDirection(FlexDirection::Vertical);
+  transformColumn->setGap(Style::spaceMd * scale);
+  transformColumn->setAlign(FlexAlign::Start);
+
+  auto transformHeader = std::make_unique<Label>();
+  transformHeader->setText("Transforms");
+  transformHeader->setFontSize(Style::fontSizeBody * scale);
+  transformHeader->setColor(palette.primary);
+  transformColumn->addChild(std::move(transformHeader));
+
+  auto transformHelp = std::make_unique<Label>();
+  transformHelp->setText("Rotated node with children.");
+  transformHelp->setFontSize(Style::fontSizeCaption * scale);
+  transformHelp->setColor(palette.onSurfaceVariant);
+  m_transformHelp = transformHelp.get();
+  transformColumn->addChild(std::move(transformHelp));
+
+
+  auto transformStage = std::make_unique<Box>();
+  transformStage->setSize(360.0f * scale, 360.0f * scale);
+  transformStage->setFill(palette.surface);
+  transformStage->setBorder(palette.outline, Style::borderWidth * scale);
+  transformStage->setRadius(Style::radiusLg * scale);
+  m_transformStage = transformStage.get();
+
+  auto demoBox = std::make_unique<Box>();
+  demoBox->setPosition(60.f, 80.f);
+  demoBox->setSize(240.0f * scale, 130.0f * scale);
+  demoBox->setFill(palette.surfaceVariant);
+  demoBox->setBorder(palette.primary, Style::borderWidth * scale);
+  demoBox->setRadius(Style::radiusLg * scale);
+  demoBox->setRotation(0.0f);
+  m_transformDemoBox = demoBox.get();
+
+  auto demoButton = std::make_unique<Button>();
+  demoButton->setText("Click me...");
+  demoButton->setGlyph("cpu-temperature");
+  demoButton->setFontSize(Style::fontSizeBody * scale);
+  demoButton->setGlyphSize(Style::fontSizeBody * scale);
+  demoButton->setVariant(ButtonVariant::Accent);
+  demoButton->setPosition(20.0f, 20.f);
+  demoButton->setPadding(Style::spaceSm * scale, Style::spaceLg * scale);
+  demoButton->setRadius(Style::radiusMd * scale);
+  demoButton->setOnClick([this]() {
+    if (m_transformHelp != nullptr) {
+      m_transformHelp->setText("Transform button clicked!!!");
+      m_transformHelp->setColor(palette.secondary);
+    }
+  });
+  m_transformDemoButton = demoButton.get();
+  m_transformDemoBox->addChild(std::move(demoButton));
+
+  auto demoGlyph = std::make_unique<Glyph>();
+  demoGlyph->setGlyph("noctalia");
+  demoGlyph->setPosition(200.0f, 80.0f);
+  demoGlyph->setGlyphSize(28.0f * scale);
+  demoGlyph->setColor(palette.primary);
+  demoGlyph->setRotation(static_cast<float>(M_PI) * 0.5f);
+  m_transformDemoGlyph = demoGlyph.get();
+  m_transformDemoBox->addChild(std::move(demoGlyph));
+
+  auto badgeBox = std::make_unique<Box>();
+  badgeBox->setPosition(80.0f, 80.0f);
+  badgeBox->setSize(30.0f * scale, 30.0f * scale);
+  badgeBox->setFill(palette.primary);
+  badgeBox->setBorder(palette.outline, Style::borderWidth * scale);
+  badgeBox->setRadius(15.0f * scale);
+  m_transformBadgeBox = badgeBox.get();
+
+  auto badgeLabel = std::make_unique<Label>();
+  badgeLabel->setText("3");
+  badgeLabel->setPosition(10.0f, 10.0f);
+  badgeLabel->setFontSize(Style::fontSizeCaption * scale);
+  badgeLabel->setColor(palette.onPrimary);
+  m_transformBadgeLabel = badgeLabel.get();
+  m_transformBadgeBox->addChild(std::move(badgeLabel));
+  m_transformDemoBox->addChild(std::move(badgeBox));
+  m_transformStage->addChild(std::move(demoBox));
+  transformColumn->addChild(std::move(transformStage));
+
+  m_container = container.get();
+  content->addChild(std::move(container));
+  content->addChild(std::move(transformColumn));
+  root->addChild(std::move(content));
+
+  m_root = std::move(root);
 
   // Propagate animation manager to all controls in the tree
   if (m_animations != nullptr) {
@@ -352,17 +456,51 @@ void TestPanel::create(Renderer& renderer) {
   if (m_headerLabel != nullptr) {
     m_headerLabel->measure(renderer);
   }
+
+  if (m_animations != nullptr && m_transformDemoBox != nullptr) {
+    m_animations->animate(0.0f, 2.0f * static_cast<float>(M_PI), 8000.0f, Easing::Linear,
+                          [this](float phase) {
+                            if (m_transformDemoBox != nullptr) {
+                              m_transformDemoBox->setRotation(phase);
+                              m_transformDemoBox->setScale(1.0f + 0.16f * std::sin(phase));
+                            }
+                          });
+  }
 }
 
 void TestPanel::layout(Renderer& renderer, float /*width*/, float /*height*/) {
-  if (m_container == nullptr) {
+  if (root() == nullptr) {
     return;
   }
-  m_container->layout(renderer);
+  root()->layout(renderer);
   if (m_glyph != nullptr && m_glyphBox != nullptr) {
     m_glyph->measure(renderer);
     m_glyph->setPosition(std::round((m_glyphBox->width() - m_glyph->width()) * 0.5f),
-                        std::round((m_glyphBox->height() - m_glyph->height()) * 0.5f));
+                         std::round((m_glyphBox->height() - m_glyph->height()) * 0.5f));
+  }
+  if (m_transformStage != nullptr && m_transformDemoBox != nullptr) {
+    m_transformDemoBox->setPosition(std::round((m_transformStage->width() - m_transformDemoBox->width()) * 0.5f),
+                                    std::round((m_transformStage->height() - m_transformDemoBox->height()) * 0.5f));
+  }
+  if (m_transformDemoBox != nullptr && m_transformDemoButton != nullptr) {
+    m_transformDemoButton->layout(renderer);
+    m_transformDemoButton->setPosition(std::round((m_transformDemoBox->width() - m_transformDemoButton->width()) * 0.5f),
+                                       std::round((m_transformDemoBox->height() - m_transformDemoButton->height()) * 0.5f));
+  }
+  if (m_transformDemoBox != nullptr && m_transformDemoGlyph != nullptr) {
+    m_transformDemoGlyph->measure(renderer);
+    m_transformDemoGlyph->setPosition(18.0f * contentScale(),
+                                      std::round((m_transformDemoBox->height() - m_transformDemoGlyph->height()) * 0.5f));
+  }
+  if (m_transformDemoBox != nullptr && m_transformBadgeBox != nullptr) {
+    m_transformBadgeBox->setPosition(m_transformDemoBox->width() - m_transformBadgeBox->width() - 12.0f * contentScale(),
+                                     12.0f * contentScale());
+  }
+  if (m_transformBadgeBox != nullptr && m_transformBadgeLabel != nullptr) {
+    m_transformBadgeLabel->measure(renderer);
+    m_transformBadgeLabel->setPosition(
+        std::round((m_transformBadgeBox->width() - m_transformBadgeLabel->width()) * 0.5f),
+        std::round((m_transformBadgeBox->height() - m_transformBadgeLabel->height()) * 0.5f) - 1.0f * contentScale());
   }
 }
 

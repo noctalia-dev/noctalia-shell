@@ -40,6 +40,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"copy", 0xEA7A},              // copy
     {"photo", 0xEB0A},             // photo
     {"file-text", 0xEAA2},         // file-text
+    {"home", 0xEAC1},              // home
 
     // Toast / warnings
     {"toast-notice", 0xEA67},      // circle-check
