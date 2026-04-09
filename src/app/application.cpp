@@ -418,7 +418,6 @@ void Application::initUi() {
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
     launcherPanel->addProvider(std::make_unique<MathProvider>(&m_clipboardService));
     launcherPanel->addProvider(std::make_unique<EmojiProvider>(&m_clipboardService));
-    launcherPanel->setClipboard(&m_clipboardService);
     m_panelManager.registerPanel("launcher", std::move(launcherPanel));
   }
 

@@ -28,10 +28,6 @@ constexpr float kIconSize = 32.0f;
 
 LauncherPanel::LauncherPanel() = default;
 
-void LauncherPanel::setClipboard(ClipboardService* clipboard) {
-  m_clipboard = clipboard;
-}
-
 void LauncherPanel::addProvider(std::unique_ptr<LauncherProvider> provider) {
   provider->initialize();
   m_providers.push_back(std::move(provider));

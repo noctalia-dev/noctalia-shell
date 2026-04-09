@@ -216,7 +216,7 @@ See [CONFIG.md](/mnt/storage/GitHub/noctalia-dev/Nextalia/CONFIG.md) for the ful
 - [ ] Desktop widgets
 - [ ] Shell update checker
 - [ ] Calendar integration
-- [ ] Plugin system
+- [ ] Plugin system (Luau)
 
 ### Controls (`src/ui/controls/`)
 
@@ -225,6 +225,7 @@ See [CONFIG.md](/mnt/storage/GitHub/noctalia-dev/Nextalia/CONFIG.md) for the ful
 - [ ] Grid view
 - [ ] Context menu
 - [ ] Color picker
+- [ ] File and folder picker <- or use system dialog ?
 
 ### Widgets
 
