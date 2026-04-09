@@ -18,8 +18,13 @@ struct BarMonitorOverride {
   std::optional<bool> enabled;
   std::optional<std::int32_t> height;
   std::optional<std::int32_t> radius;
+  std::optional<std::int32_t> marginH;       // horizontal compositor margin (left = right = marginH)
+  std::optional<std::int32_t> marginV;       // vertical compositor margin (gap between bar and screen edge)
   std::optional<std::int32_t> paddingH;      // horizontal padding from bar edges to start/end sections
   std::optional<std::int32_t> widgetSpacing; // gap between widgets within a section
+  std::optional<std::int32_t> shadowBlur;    // shadow blur radius in pixels (0 = no shadow)
+  std::optional<std::int32_t> shadowOffsetX; // horizontal shadow offset in pixels
+  std::optional<std::int32_t> shadowOffsetY; // vertical shadow offset in pixels (positive = down)
   std::optional<float> scale;
   std::optional<std::vector<std::string>> startWidgets;
   std::optional<std::vector<std::string>> centerWidgets;

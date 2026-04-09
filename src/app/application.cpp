@@ -406,6 +406,7 @@ void Application::initUi() {
   }
 
   m_notificationPopup.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);
+  m_configService.setNotificationManager(&m_notificationManager);
 
   m_osdOverlay.initialize(m_wayland, &m_configService, &m_renderContext);
   m_audioOsd.bindOverlay(m_osdOverlay);

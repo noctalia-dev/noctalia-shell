@@ -167,10 +167,20 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.height = *ovr.height;
     if (ovr.radius)
       resolved.radius = *ovr.radius;
+    if (ovr.marginH)
+      resolved.marginH = *ovr.marginH;
+    if (ovr.marginV)
+      resolved.marginV = *ovr.marginV;
     if (ovr.paddingH)
       resolved.paddingH = *ovr.paddingH;
     if (ovr.widgetSpacing)
       resolved.widgetSpacing = *ovr.widgetSpacing;
+    if (ovr.shadowBlur)
+      resolved.shadowBlur = *ovr.shadowBlur;
+    if (ovr.shadowOffsetX)
+      resolved.shadowOffsetX = *ovr.shadowOffsetX;
+    if (ovr.shadowOffsetY)
+      resolved.shadowOffsetY = *ovr.shadowOffsetY;
     if (ovr.startWidgets)
       resolved.startWidgets = *ovr.startWidgets;
     if (ovr.centerWidgets)
@@ -337,12 +347,22 @@ void ConfigService::loadFromFile(const std::string& path) {
             ovr.height = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["radius"].value<int64_t>())
             ovr.radius = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["margin_h"].value<int64_t>())
+            ovr.marginH = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["margin_v"].value<int64_t>())
+            ovr.marginV = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["padding_h"].value<int64_t>())
             ovr.paddingH = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["widget_spacing"].value<int64_t>())
             ovr.widgetSpacing = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["scale"].value<double>())
             ovr.scale = static_cast<float>(*v);
+          if (auto v = (*monTbl)["shadow_blur"].value<int64_t>())
+            ovr.shadowBlur = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["shadow_offset_x"].value<int64_t>())
+            ovr.shadowOffsetX = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["shadow_offset_y"].value<int64_t>())
+            ovr.shadowOffsetY = static_cast<std::int32_t>(*v);
           if (auto* n = (*monTbl)["start"].as_array())
             ovr.startWidgets = readStringArray(*n);
           if (auto* n = (*monTbl)["center"].as_array())
