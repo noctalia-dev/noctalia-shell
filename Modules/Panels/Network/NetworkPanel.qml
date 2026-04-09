@@ -27,13 +27,13 @@ SmartPanel {
   property string panelViewMode: "wifi"
   property bool panelViewPersistEnabled: false
 
-  // Whether VPN configurations exist (tab only shown when true)
-  readonly property bool vpnAvailable: Object.keys(VPNService.connections).length > 0
-
   // If VPN configs vanish while on VPN tab, switch away
-  onVpnAvailableChanged: {
-    if (!vpnAvailable && panelViewMode === "vpn") {
-      panelViewMode = NetworkService.wifiAvailable ? "wifi" : "ethernet";
+  Connections {
+    target: VPNService
+    function onHasConnectionsChanged() {
+      if (!VPNService.hasConnections && root.panelViewMode === "vpn") {
+        root.panelViewMode = NetworkService.wifiAvailable ? "wifi" : "ethernet";
+      }
     }
   }
 
@@ -42,12 +42,12 @@ SmartPanel {
     target: NetworkService
     function onEthernetAvailableChanged() {
       if (!NetworkService.ethernetAvailable && root.panelViewMode === "ethernet") {
-        root.panelViewMode = NetworkService.wifiAvailable ? "wifi" : root.vpnAvailable ? "vpn" : "wifi";
+        root.panelViewMode = NetworkService.wifiAvailable ? "wifi" : VPNService.hasConnections ? "vpn" : "wifi";
       }
     }
     function onWifiAvailableChanged() {
       if (!NetworkService.wifiAvailable && root.panelViewMode === "wifi") {
-        root.panelViewMode = NetworkService.ethernetAvailable ? "ethernet" : root.vpnAvailable ? "vpn" : "ethernet";
+        root.panelViewMode = NetworkService.ethernetAvailable ? "ethernet" : VPNService.hasConnections ? "vpn" : "ethernet";
       }
     }
   }
@@ -171,7 +171,7 @@ SmartPanel {
       if (NetworkService.ethernetConnected) {
         NetworkService.refreshActiveEthernetDetails();
       }
-      if (vpnAvailable) {
+      if (VPNService.hasConnections) {
         VPNService.refresh();
       }
     } else {
@@ -184,10 +184,10 @@ SmartPanel {
       panelViewMode = "wifi";
     } else if (NetworkService.ethernetAvailable) {
       panelViewMode = "ethernet";
-    } else if (vpnAvailable) {
+    } else if (VPNService.hasConnections) {
       panelViewMode = "vpn";
     } else {
-      panelViewMode = "wifi"; // fallback (shows empty/disabled state)
+      panelViewMode = "ethernet"; // fallback
     }
     panelViewPersistEnabled = true;
   }
@@ -302,7 +302,7 @@ SmartPanel {
               let count = 0;
               if (NetworkService.wifiAvailable) count++;
               if (NetworkService.ethernetAvailable) count++;
-              if (root.vpnAvailable) count++;
+              if (VPNService.hasConnections) count++;
               return count > 1;
             }
             margins: Style.marginS
@@ -332,7 +332,7 @@ SmartPanel {
               text: "VPN"
               tabIndex: 2
               checked: modeTabBar.currentIndex === 2
-              visible: root.vpnAvailable
+              visible: VPNService.hasConnections
             }
           }
         }
@@ -1308,42 +1308,6 @@ SmartPanel {
                       }
                     }
                   }
-                }
-              }
-            }
-
-            // VPN empty state
-            NBox {
-              visible: panelViewMode === "vpn" && Object.keys(VPNService.connections).length === 0
-              Layout.fillWidth: true
-              Layout.preferredHeight: emptyVpnColumn.implicitHeight + Style.margin2M
-
-              ColumnLayout {
-                id: emptyVpnColumn
-                anchors.fill: parent
-                anchors.margins: Style.marginM
-                spacing: Style.marginL
-
-                Item {
-                  Layout.fillHeight: true
-                }
-
-                NIcon {
-                  icon: "shield-off"
-                  pointSize: 48
-                  color: Color.mOnSurfaceVariant
-                  Layout.alignment: Qt.AlignHCenter
-                }
-
-                NText {
-                  text: I18n.tr("tooltips.manage-vpn")
-                  pointSize: Style.fontSizeL
-                  color: Color.mOnSurfaceVariant
-                  Layout.alignment: Qt.AlignHCenter
-                }
-
-                Item {
-                  Layout.fillHeight: true
                 }
               }
             }

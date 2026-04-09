@@ -43,6 +43,7 @@ Singleton {
   }
 
   readonly property bool hasActiveConnection: activeConnections.length > 0
+  readonly property bool hasConnections: Object.keys(connections).length > 0
 
   Timer {
     id: refreshTimer
