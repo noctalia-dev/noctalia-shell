@@ -139,8 +139,6 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
   for (auto& tab : m_tabs) {
     tab->layout(renderer, bodyWidth, bodyHeight);
   }
-
-  m_rootLayout->layout(renderer);
 }
 
 void ControlCenterPanel::update(Renderer& renderer) {

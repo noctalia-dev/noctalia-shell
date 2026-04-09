@@ -82,7 +82,6 @@ void LauncherPanel::layout(Renderer& renderer, float width, float height) {
 
   if (m_dirty) {
     rebuildResults(renderer, m_scrollView->contentViewportWidth());
-    m_container->layout(renderer);
     m_dirty = false;
   }
 

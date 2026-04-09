@@ -338,7 +338,6 @@ void ClipboardPanel::layout(Renderer& renderer, float width, float height) {
   if (m_lastPreviewWidth != m_previewScrollView->contentViewportWidth() ||
       m_lastPreviewHeight != previewScrollH) {
     rebuildPreview(renderer, m_previewScrollView->contentViewportWidth(), previewScrollH);
-    m_rootLayout->layout(renderer);
   }
 }
 

@@ -690,7 +690,6 @@ Node* NotificationPopup::buildCard(const PopupEntry& entry, Label** outAppName, 
     closeGlyphPtr->setColor(closeColorNormal);
   });
   headerRow->addChild(std::move(closeArea));
-  headerRow->layout(*m_renderContext);
 
   area->addChild(std::move(headerRow));
 

@@ -335,8 +335,6 @@ void WeatherTab::layout(Renderer& renderer, float contentWidth, float bodyHeight
         std::max(0.0f, m_dayCards[i]->width() - (m_dayCards[i]->paddingLeft() + m_dayCards[i]->paddingRight()));
     m_dayDescs[i]->setMaxWidth(innerWidth);
   }
-
-  m_rootLayout->layout(renderer);
 }
 
 void WeatherTab::update(Renderer& renderer) { sync(renderer); }

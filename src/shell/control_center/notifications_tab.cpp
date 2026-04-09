@@ -75,7 +75,6 @@ void NotificationsTab::layout(Renderer& renderer, float contentWidth, float body
   m_scroll->setSize(contentWidth, bodyHeight);
   m_scroll->layout(renderer);
   rebuild(renderer, m_scroll->contentViewportWidth());
-  m_scroll->layout(renderer);
 }
 
 void NotificationsTab::update(Renderer& renderer) {

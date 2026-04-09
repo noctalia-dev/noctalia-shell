@@ -246,11 +246,9 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   const float inputWidth = std::max(120.0f, contentWidth - buttonWidth - gap);
 
   m_passwordField->setSize(inputWidth, 0.0f);
-  m_passwordField->layout(*renderer);
   m_passwordField->setPosition(contentLeft, contentTop);
 
   m_loginButton->setSize(buttonWidth, Style::controlHeight);
-  m_loginButton->layout(*renderer);
   m_loginButton->setPosition(contentLeft + inputWidth + gap, contentTop);
   m_loginButton->updateInputArea();
 

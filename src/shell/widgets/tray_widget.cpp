@@ -142,7 +142,6 @@ void TrayWidget::create(Renderer& renderer) {
 
   m_root = std::move(container);
   syncState(renderer);
-  layout(renderer, 0.0f, 0.0f);
 }
 
 void TrayWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {

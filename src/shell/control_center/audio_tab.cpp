@@ -414,7 +414,6 @@ void AudioTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
   }
 
   rebuildLists(renderer);
-  m_rootLayout->layout(renderer);
 }
 
 void AudioTab::update(Renderer& renderer) {

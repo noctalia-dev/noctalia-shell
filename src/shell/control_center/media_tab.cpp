@@ -515,8 +515,6 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
     m_visualizerSpectrum->setSize(innerWidth, innerHeight);
     m_visualizerSpectrum->layout(renderer);
   }
-
-  m_rootLayout->layout(renderer);
 }
 
 void MediaTab::update(Renderer& renderer) {
