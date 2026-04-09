@@ -176,7 +176,7 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 - [~] Control center panel (Weather, Media, Audio vol., )
 - [ ] Keyboard layout switching
 - [ ] PipeWire audio spectrum
-- [~] Clipboard manager
+- [~] Clipboard manager <- missing auto-paste /
 - [~] Lock screen (ext-session-lock-v1) <- still needs polish 
 - [ ] Idle inhibitor (prevent sleep)
 - [~] More compositors (Labwc pending)

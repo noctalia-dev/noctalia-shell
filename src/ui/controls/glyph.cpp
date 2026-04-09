@@ -44,7 +44,8 @@ void Glyph::measure(Renderer& renderer) {
   // the glyph at the text baseline leaves its ink center above the label ink center.
   // Instead, compute the Y that puts the glyph ink center at the reference center,
   // matching where label ink sits regardless of per-glyph metrics.
-  const float refCenter      = (refMetrics.bottom - refMetrics.top) * 0.5f;
+  const float refCenter = (refMetrics.bottom - refMetrics.top) * 0.5f;
   const float glyphInkCenter = (metrics.top + metrics.bottom) * 0.5f; // relative to baseline
-  m_glyphNode->setPosition(0.0f, refCenter - glyphInkCenter);
+  const float glyphCenterX = (metrics.left + metrics.right) * 0.5f;
+  m_glyphNode->setPosition(std::round(width() * 0.5f - glyphCenterX), refCenter - glyphInkCenter);
 }

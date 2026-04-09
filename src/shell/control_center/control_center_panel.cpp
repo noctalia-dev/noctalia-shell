@@ -71,7 +71,8 @@ void ControlCenterPanel::create() {
   content->setPadding(Style::spaceLg * scale);
   content->setRadius(Style::radiusXl * scale);
   content->setBackground(palette.surfaceVariant);
-  content->setBorderWidth(0.0f);
+  content->setBorderWidth(Style::borderWidth);
+  content->setBorderColor(palette.outline);
   content->setSoftness(1.0f);
   content->setFlexGrow(4.0f);
   m_content = content.get();
