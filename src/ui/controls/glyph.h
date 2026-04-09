@@ -25,4 +25,5 @@ public:
 private:
   GlyphNode* m_glyphNode = nullptr;
   float m_baselineOffset = 0.0f;
+  float m_logicalFontSize = 0.0f;
 };

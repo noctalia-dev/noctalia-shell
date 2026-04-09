@@ -12,7 +12,8 @@
 Glyph::Glyph() {
   auto glyph = std::make_unique<GlyphNode>();
   m_glyphNode = static_cast<GlyphNode*>(addChild(std::move(glyph)));
-  m_glyphNode->setFontSize(Style::fontSizeBody);
+  m_logicalFontSize = Style::fontSizeBody;
+  m_glyphNode->setFontSize(m_logicalFontSize * Style::glyphSizeRatio);
   m_glyphNode->setColor(palette.onSurface);
 }
 
@@ -25,7 +26,10 @@ void Glyph::setGlyph(std::string_view name) {
 
 void Glyph::setCodepoint(char32_t codepoint) { m_glyphNode->setCodepoint(codepoint); }
 
-void Glyph::setGlyphSize(float size) { m_glyphNode->setFontSize(size); }
+void Glyph::setGlyphSize(float size) {
+  m_logicalFontSize = size;
+  m_glyphNode->setFontSize(size * Style::glyphSizeRatio);
+}
 
 void Glyph::setColor(const Color& color) { m_glyphNode->setColor(color); }
 
@@ -33,7 +37,7 @@ void Glyph::layout(Renderer& renderer) { measure(renderer); }
 
 void Glyph::measure(Renderer& renderer) {
   auto metrics    = renderer.measureGlyph(m_glyphNode->codepoint(), m_glyphNode->fontSize());
-  auto refMetrics = renderer.measureText("A", m_glyphNode->fontSize());
+  auto refMetrics = renderer.measureText("A", m_logicalFontSize);
 
   // Bounding box uses the "A" text reference — same height as Label — so glyphs
   // and labels at the same font size are treated identically by Flex layout.
