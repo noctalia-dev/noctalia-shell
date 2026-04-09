@@ -14,64 +14,82 @@ A lightweight Wayland shell and bar with no Qt or GTK dependency.
 | Layer | Library |
 |-------|---------|
 | Wayland core | `libwayland-client`, `wayland-scanner`, `wayland-protocols` |
-| Surfaces | `zwlr-layer-shell-v1` |
+| Surfaces | `xdg-shell`, `zwlr-layer-shell-v1` |
 | Multi-monitor | `zxdg-output-unstable-v1` |
 | Active window metadata | `zwlr-foreign-toplevel-management-unstable-v1` |
+| Workspaces | `ext-workspace-v1`, `dwl-ipc-unstable-v2` |
+| Clipboard | `ext-data-control-v1`, `wlr-data-control-unstable-v1` |
+| Activation | `xdg-activation-v1` |
 | Lockscreen | `ext-session-lock-v1` |
-| Idle detection | `ext-idle-notify-v1` |
+| Idle | `ext-idle-notify-v1`, `idle-inhibit-unstable-v1` |
 | Cursor | `wp-cursor-shape-v1` |
+| Keyboard | `xkbcommon` |
 | Rendering | `EGL`, `OpenGL ES 3`, `wayland-egl` |
-| Text | `freetype`, `harfbuzz`, `msdfgen` (vendored), `fontconfig` |
+| Text | `cairo`, `pango`, `pangocairo`, `freetype`, `harfbuzz`, `fontconfig` |
 | Images | `Wuffs` (vendored), `nanosvg` (vendored) |
 | IPC | `sdbus-c++` |
 | Audio | `libpipewire` |
+| Authentication | `PAM` |
+| HTTP | `libcurl` |
 | Config | `tomlplusplus` (vendored) |
+| JSON | `nlohmann/json` (vendored) |
+| Math expressions | `tinyexpr` (vendored) |
 
 ## Dependencies
 
 ### Fedora
 
 ```sh
-sudo dnf install cmake gcc-c++ just \
+sudo dnf install meson gcc-c++ just \
   wayland-devel wayland-protocols-devel \
   libEGL-devel mesa-libGLES-devel \
   freetype-devel harfbuzz-devel fontconfig-devel \
-  sdbus-cpp-devel libasan libubsan libcurl-devel
+  cairo-devel pango-devel \
+  libxkbcommon-devel \
+  sdbus-cpp-devel pipewire-devel \
+  pam-devel libcurl-devel \
+  libasan libubsan
 ```
 
 ### Arch
 
 ```sh
-sudo pacman -S cmake gcc just \
+sudo pacman -S meson gcc just \
   wayland wayland-protocols \
   libglvnd freetype2 harfbuzz fontconfig \
-  sdbus-cpp gcc-libs curl
+  cairo pango \
+  libxkbcommon \
+  sdbus-cpp libpipewire \
+  pam curl \
+  gcc-libs
 ```
 
 ### Debian / Ubuntu
 
 ```sh
-sudo apt install cmake g++ just \
+sudo apt install meson g++ just \
   libwayland-dev wayland-protocols \
   libegl-dev libgles-dev \
   libfreetype-dev libharfbuzz-dev libfontconfig-dev \
-  libsdbus-c++-dev libasan8 libubsan1 libcurl4-openssl-dev
+  libcairo2-dev libpango1.0-dev \
+  libxkbcommon-dev \
+  libsdbus-c++-dev libpipewire-0.3-dev \
+  libpam0g-dev libcurl4-openssl-dev \
+  libasan8 libubsan1
 ```
 
-Vendored (no system package needed): `msdfgen`, `Wuffs`, `nanosvg`, `tomlplusplus`.
+Vendored (no system package needed): `Wuffs`, `nanosvg`, `tomlplusplus`, `tinyexpr`, `nlohmann/json`.
 
 ## Build
 
-Requires [just](https://github.com/casey/just).
+Requires [just](https://github.com/casey/just) and [meson](https://mesonbuild.com/).
 
 ```sh
-git submodule update --init --recursive
-
-# Debug (default)
+# Debug (default) — builds in build-debug/
 just configure
 just build
 
-# Optimized release (-O3, LTO, native)
+# Optimized release (-march=native, LTO, gc-sections) — builds in build-release/
 just configure release
 just build release
 
@@ -87,12 +105,12 @@ just run release
 ```
 
 <details>
-<summary>Manual CMake</summary>
+<summary>Manual Meson</summary>
 
 ```sh
-cmake -B build -DCMAKE_BUILD_TYPE=Debug   # or Release
-cmake --build build --parallel
-./build/noctalia
+meson setup build-debug                           # or: --buildtype=release -Db_lto=true
+meson compile -C build-debug
+./build-debug/noctalia
 ```
 </details>
 
@@ -116,34 +134,53 @@ This project uses [clang-format](https://clang.llvm.org/docs/ClangFormat.html) f
 
 ```
 src/
-  app/           Application bootstrap, main loop
-  config/        Configuration and state persistence (TOML)
-  core/          Logger, shared utilities
-  dbus/          DBus service implementations
-  debug/         Debug service (runtime log toggling)
-  font/          Font discovery (fontconfig)
-  notification/  Notification manager
-  render/        EGL/OpenGL renderer, shader programs, MSDF text
+  main.cpp        Entry point
+  app/            Application bootstrap, main loop
+  auth/           PAM authentication (lockscreen)
+  config/         Configuration and state persistence (TOML)
+  core/           Logger, timer manager, shared utilities
+  dbus/           DBus service implementations
+  debug/          Debug service (runtime log toggling)
+  idle/           Idle manager and inhibitor
+  ipc/            IPC client/service (dev.noctalia.* commands)
+  launcher/       Launcher providers (apps, emoji, math, usage)
+  net/            HTTP client (libcurl)
+  notification/   Notification manager
+  pipewire/       PipeWire audio service and spectrum analyzer
+  render/
+    animation/    Animation manager and easing
+    core/         EGL/GLES renderer, image decoders
+    programs/     Shader programs per NodeType
+    scene/        Scene graph nodes (Rect, Text, Image, Icon, InputArea, ...)
+    text/         Cairo/Pango text rendering
   shell/
-    bar/         Bar surface and instance
+    bar/          Bar surface and instance
+    clipboard/    Clipboard history panel
+    control_center/ Control center panel and tabs
+    launcher/     Application launcher panel
+    lockscreen/   Session lockscreen surface
     notification/ Notification popup
-    panel/       Panel base and manager
-    panels/      Panel implementations
-    wallpaper/   Wallpaper surface and instance
-    widget/      Widget base and factory
-    widgets/     Widget implementations
-  system/        System monitor (CPU, RAM, temperature)
-  time/          Time service and polling
+    osd/          On-screen display (volume, brightness, ...)
+    overview/     Workspace overview
+    panel/        Panel base and manager
+    session/      Session menu (logout, reboot, ...)
+    tray/         System tray (StatusNotifierItem)
+    wallpaper/    Wallpaper surface and instance
+    widget/       Widget base and factory
+    widgets/      Widget implementations
+  system/         System monitor (CPU, RAM, temperature)
+  time/           Time service and polling
   ui/
-    controls/    Low-level UI building blocks
-    icons/       Icon registry
-  wayland/
-    compositors/ Compositor-specific workspace backends //(ext-workspace, sway, mango etc)
+    controls/     Low-level UI building blocks (Button, Input, Label, Flex, ...)
+  util/           Generic helpers (fuzzy matching, ...)
+  wayland/        Wayland connection, seat, toplevels, clipboard, ...
+    compositors/  Compositor-specific workspace backends (ext-workspace, sway, mango, dwl, ...)
 third_party/
-  msdfgen/       MSDF glyph generation (git submodule)
-  tomlplusplus/  TOML parser (vendored)
-  wuffs/         Raster image decoding (vendored)
-  nanosvg/       SVG rasterization (vendored)
+  tomlplusplus/   TOML parser (vendored)
+  wuffs/          Raster image decoding (vendored)
+  nanosvg/        SVG rasterization (vendored)
+  tinyexpr/       Math expression evaluator (vendored)
+  nlohmann/       JSON parser (vendored, header-only)
 ```
 
 ## Debugging
@@ -169,4 +206,4 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 Noctalia reads `$XDG_CONFIG_HOME/noctalia/config.toml` or `~/.config/noctalia/config.toml`.
 If no config file exists, it falls back to built-in defaults in code.
 
-See [CONFIG.md](/mnt/storage/GitHub/noctalia-dev/Nextalia/CONFIG.md) for the full configuration reference.
+See [CONFIG.md](CONFIG.md) for the full configuration reference.
