@@ -8,6 +8,7 @@
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/image.h"
+#include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/palette.h"
@@ -31,6 +32,7 @@ constexpr float kRowHeight = 46.0f;
 constexpr float kPreviewImageHeight = 280.0f;
 constexpr float kListGlyphSize = 24.0f;
 constexpr auto kPreviewPayloadDebounceInterval = std::chrono::milliseconds(75);
+constexpr auto kFilterDebounceInterval = std::chrono::milliseconds(120);
 
 std::string collapseWhitespace(std::string_view text) {
   std::string out;
@@ -227,6 +229,19 @@ void ClipboardPanel::create() {
   sidebarHeader->addChild(std::move(clearHistoryButton));
   sidebar->addChild(std::move(sidebarHeader));
 
+  auto filterInput = std::make_unique<Input>();
+  filterInput->setPlaceholder("Filter clipboard...");
+  filterInput->setFontSize(Style::fontSizeBody * scale);
+  filterInput->setControlHeight(Style::controlHeight * scale);
+  filterInput->setHorizontalPadding(Style::spaceMd * scale);
+  filterInput->setOnChange([this](const std::string& text) { onFilterChanged(text); });
+  filterInput->setOnSubmit([this](const std::string& /*text*/) { activateSelected(); });
+  filterInput->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t modifiers) {
+    return handleKeyEvent(sym, modifiers);
+  });
+  m_filterInput = filterInput.get();
+  sidebar->addChild(std::move(filterInput));
+
   auto listScroll = std::make_unique<ScrollView>();
   listScroll->setScrollbarVisible(true);
   listScroll->setViewportPaddingH(0.0f);
@@ -359,11 +374,11 @@ void ClipboardPanel::update(Renderer& renderer) {
     return;
   }
 
-  const std::size_t itemCount = m_clipboard->history().size();
-  if (itemCount == 0) {
+  applyFilter();
+  if (m_filteredIndices.empty()) {
     m_selectedIndex = 0;
-  } else if (m_selectedIndex >= itemCount) {
-    m_selectedIndex = itemCount - 1;
+  } else if (m_selectedIndex >= m_filteredIndices.size()) {
+    m_selectedIndex = m_filteredIndices.size() - 1;
   }
 
   schedulePreviewPayloadRefresh(false);
@@ -385,6 +400,13 @@ void ClipboardPanel::onOpen(std::string_view /*context*/) {
   m_lastPreviewWidth = -1.0f;
   m_lastPreviewHeight = -1.0f;
   m_pendingScrollToSelected = false;
+  m_filterQuery.clear();
+  m_pendingFilterQuery.clear();
+  m_filterDebounceTimer.stop();
+  if (m_filterInput != nullptr) {
+    m_filterInput->setValue("");
+  }
+  applyFilter();
 }
 
 void ClipboardPanel::onClose() {
@@ -394,9 +416,11 @@ void ClipboardPanel::onClose() {
   m_sidebarHeaderRow = nullptr;
   m_sidebarTitle = nullptr;
   m_clearHistoryButton = nullptr;
+  m_filterInput = nullptr;
   m_listScrollView = nullptr;
   m_list = nullptr;
   m_rowFlexes.clear();
+  m_filteredIndices.clear();
   m_previewCard = nullptr;
   m_previewHeaderRow = nullptr;
   m_previewTitle = nullptr;
@@ -406,16 +430,22 @@ void ClipboardPanel::onClose() {
   m_previewContent = nullptr;
   m_previewImage = nullptr;
   m_previewPayloadDebounceTimer.stop();
+  m_filterDebounceTimer.stop();
+  m_pendingFilterQuery.clear();
+  m_filterQuery.clear();
   clearReleasedRoot();
   m_lastWidth = 0.0f;
   m_lastHeight = 0.0f;
   m_pendingScrollToSelected = false;
 }
 
-InputArea* ClipboardPanel::initialFocusArea() const { return m_focusArea; }
+InputArea* ClipboardPanel::initialFocusArea() const {
+  return m_filterInput != nullptr ? m_filterInput->inputArea() : m_focusArea;
+}
 
 void ClipboardPanel::schedulePreviewPayloadRefresh(bool debounced) {
-  if (m_clipboard == nullptr || m_clipboard->history().empty() || m_selectedIndex >= m_clipboard->history().size()) {
+  const std::size_t historyIndex = selectedHistoryIndex();
+  if (m_clipboard == nullptr || historyIndex == static_cast<std::size_t>(-1)) {
     m_previewPayloadDebounceTimer.stop();
     m_previewPayloadIndex = static_cast<std::size_t>(-1);
     m_pendingPreviewPayloadIndex = static_cast<std::size_t>(-1);
@@ -424,16 +454,16 @@ void ClipboardPanel::schedulePreviewPayloadRefresh(bool debounced) {
     return;
   }
 
-  if (!debounced || m_selectedIndex == m_previewPayloadIndex) {
+  if (!debounced || historyIndex == m_previewPayloadIndex) {
     m_previewPayloadDebounceTimer.stop();
-    m_previewPayloadIndex = m_selectedIndex;
+    m_previewPayloadIndex = historyIndex;
     m_pendingPreviewPayloadIndex = static_cast<std::size_t>(-1);
     m_lastPreviewWidth = -1.0f;
     m_lastPreviewHeight = -1.0f;
     return;
   }
 
-  m_pendingPreviewPayloadIndex = m_selectedIndex;
+  m_pendingPreviewPayloadIndex = historyIndex;
   m_lastPreviewWidth = -1.0f;
   m_lastPreviewHeight = -1.0f;
   m_previewPayloadDebounceTimer.start(kPreviewPayloadDebounceInterval, [this]() {
@@ -459,9 +489,11 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
   }
   m_rowFlexes.clear();
 
-  if (history.empty()) {
+  if (history.empty() || m_filteredIndices.empty()) {
     auto empty = std::make_unique<Label>();
-    empty->setText("Clipboard history is empty");
+    empty->setText(history.empty()         ? "Clipboard history is empty"
+                   : m_filterQuery.empty() ? "Clipboard history is empty"
+                                           : "No matching entries");
     empty->setCaptionStyle();
     empty->setColor(palette.onSurfaceVariant);
     empty->setMaxWidth(width);
@@ -472,8 +504,9 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
   }
 
   const float textWidth = std::max(0.0f, width - kListGlyphSize - Style::spaceMd - Style::spaceSm * 2.0f);
-  for (std::size_t i = 0; i < history.size(); ++i) {
-    const auto& entry = history[i];
+  for (std::size_t i = 0; i < m_filteredIndices.size(); ++i) {
+    const std::size_t historyIdx = m_filteredIndices[i];
+    const auto& entry = history[historyIdx];
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
@@ -578,12 +611,13 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
   m_previewImage = nullptr;
 
   const auto& history = m_clipboard != nullptr ? m_clipboard->history() : std::deque<ClipboardEntry>{};
-  if (history.empty() || m_selectedIndex >= history.size()) {
+  const std::size_t historyIndex = selectedHistoryIndex();
+  if (history.empty() || historyIndex == static_cast<std::size_t>(-1)) {
     m_previewTitle->setText("Clipboard entry");
-    m_previewMeta->setText("Select an item from the left");
+    m_previewMeta->setText(history.empty() ? "Clipboard history is empty." : "No matching entries");
 
     auto empty = std::make_unique<Label>();
-    empty->setText("Clipboard history is empty.");
+    empty->setText(history.empty() ? "Clipboard history is empty." : "No entries match the current filter.");
     empty->setColor(palette.onSurfaceVariant);
     empty->setMaxWidth(width);
     m_previewContent->addChild(std::move(empty));
@@ -592,13 +626,13 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
     return;
   }
 
-  const auto& entry = history[m_selectedIndex];
+  const auto& entry = history[historyIndex];
   m_previewTitle->setText(previewTitle(entry));
   m_previewTitle->setMaxWidth(width);
   m_previewMeta->setText(formatTimeAgo(entry.capturedAt) + "  •  " + formatBytes(entry.byteSize));
   m_previewMeta->setMaxWidth(width);
 
-  if (m_previewPayloadIndex != m_selectedIndex) {
+  if (m_previewPayloadIndex != historyIndex) {
     auto pending = std::make_unique<Label>();
     pending->setText("Loading preview...");
     pending->setColor(palette.onSurfaceVariant);
@@ -610,9 +644,9 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
   }
 
   if (m_clipboard != nullptr) {
-    (void)m_clipboard->ensureEntryLoaded(m_selectedIndex);
+    (void)m_clipboard->ensureEntryLoaded(historyIndex);
   }
-  const auto& loadedEntry = m_clipboard != nullptr ? m_clipboard->history()[m_selectedIndex] : entry;
+  const auto& loadedEntry = m_clipboard != nullptr ? m_clipboard->history()[historyIndex] : entry;
 
   if (loadedEntry.isImage()) {
     auto image = std::make_unique<Image>();
@@ -712,6 +746,67 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
   m_lastPreviewHeight = height;
 }
 
+std::size_t ClipboardPanel::selectedHistoryIndex() const {
+  if (m_selectedIndex >= m_filteredIndices.size()) {
+    return static_cast<std::size_t>(-1);
+  }
+  return m_filteredIndices[m_selectedIndex];
+}
+
+void ClipboardPanel::applyFilter() {
+  m_filteredIndices.clear();
+  if (m_clipboard == nullptr) {
+    return;
+  }
+  const auto& history = m_clipboard->history();
+
+  // Case-insensitive substring match on the entry title.
+  std::string needle;
+  needle.reserve(m_filterQuery.size());
+  for (char ch : m_filterQuery) {
+    needle.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
+  }
+
+  m_filteredIndices.reserve(history.size());
+  for (std::size_t i = 0; i < history.size(); ++i) {
+    if (needle.empty()) {
+      m_filteredIndices.push_back(i);
+      continue;
+    }
+    std::string haystack = entryTitle(history[i]);
+    for (char& ch : haystack) {
+      ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    }
+    if (haystack.find(needle) != std::string::npos) {
+      m_filteredIndices.push_back(i);
+    }
+  }
+}
+
+void ClipboardPanel::onFilterChanged(const std::string& text) {
+  if (text == m_pendingFilterQuery && text == m_filterQuery) {
+    return;
+  }
+  m_pendingFilterQuery = text;
+
+  auto commit = [this]() {
+    if (m_pendingFilterQuery == m_filterQuery) {
+      return;
+    }
+    m_filterQuery = m_pendingFilterQuery;
+    applyFilter();
+    m_selectedIndex = 0;
+    m_hoverIndex = static_cast<std::size_t>(-1);
+    m_mouseActive = false;
+    schedulePreviewPayloadRefresh(true);
+    m_lastListWidth = -1.0f;
+    m_pendingScrollToSelected = true;
+    PanelManager::instance().refresh();
+  };
+
+  m_filterDebounceTimer.start(kFilterDebounceInterval, commit);
+}
+
 void ClipboardPanel::updateRowSelection(std::size_t previousIndex) {
   if (previousIndex < m_rowFlexes.size() && m_rowFlexes[previousIndex] != nullptr) {
     Flex* prev = m_rowFlexes[previousIndex];
@@ -743,17 +838,22 @@ void ClipboardPanel::selectIndex(std::size_t index) {
 }
 
 void ClipboardPanel::activateSelected() {
-  if (m_clipboard == nullptr || m_selectedIndex >= m_clipboard->history().size()) {
+  if (m_clipboard == nullptr) {
     return;
   }
-  if (!m_clipboard->ensureEntryLoaded(m_selectedIndex)) {
+  const std::size_t historyIndex = selectedHistoryIndex();
+  if (historyIndex == static_cast<std::size_t>(-1)) {
     return;
   }
-  const ClipboardEntry entry = m_clipboard->history()[m_selectedIndex];
-  const bool promoted = m_clipboard->promoteEntry(m_selectedIndex);
+  if (!m_clipboard->ensureEntryLoaded(historyIndex)) {
+    return;
+  }
+  const ClipboardEntry entry = m_clipboard->history()[historyIndex];
+  const bool promoted = m_clipboard->promoteEntry(historyIndex);
   const bool copied = m_clipboard->copyEntry(entry);
   if (copied || promoted) {
     m_selectedIndex = 0;
+    applyFilter();
     schedulePreviewPayloadRefresh(false);
     m_lastListWidth = -1.0f;
     PanelManager::instance().refresh();
@@ -761,7 +861,7 @@ void ClipboardPanel::activateSelected() {
 }
 
 bool ClipboardPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*/) {
-  if (m_clipboard == nullptr || m_clipboard->history().empty()) {
+  if (m_clipboard == nullptr || m_filteredIndices.empty()) {
     return false;
   }
 
@@ -778,7 +878,7 @@ bool ClipboardPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers
   }
 
   if (sym == XKB_KEY_Down) {
-    if (m_selectedIndex + 1 < m_clipboard->history().size()) {
+    if (m_selectedIndex + 1 < m_filteredIndices.size()) {
       const std::size_t previous = m_selectedIndex;
       ++m_selectedIndex;
       updateRowSelection(previous);
