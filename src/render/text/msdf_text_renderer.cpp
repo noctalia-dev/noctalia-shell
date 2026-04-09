@@ -19,6 +19,10 @@
 namespace {
 
 constexpr float kAtlasEmSize = 64.0f;
+// Color emoji (COLR v1 / CBDT / sbix) are rasterized at a higher resolution so
+// that GL_LINEAR_MIPMAP_LINEAR filtering produces crisp results when displayed
+// at typical UI sizes (14-32 px).  Must be a power-of-two multiple of kAtlasEmSize.
+constexpr float kColorAtlasEmSize = 256.0f;
 
 // --- Emoji run segmentation helpers ---
 
@@ -544,8 +548,9 @@ GLuint MsdfTextRenderer::ensureColorAtlasPage(std::uint32_t page) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_atlasWidth, m_atlasHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, zeros.data());
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D); // initial mipmaps for empty atlas (avoids "incomplete texture")
     m_colorAtlasPages.push_back(tex);
   }
   return m_colorAtlasPages[page];
@@ -744,7 +749,7 @@ MsdfTextRenderer::Glyph& MsdfTextRenderer::loadGlyph(std::uint32_t slotIndex, st
   // This must come BEFORE msdfgen because COLR v0/v1 fonts have real vector
   // outlines — msdfgen would "succeed" and produce monochrome results for them.
   if (FT_HAS_COLOR(slot.face)) {
-    FT_Set_Pixel_Sizes(slot.face, 0, static_cast<FT_UInt>(kAtlasEmSize));
+    FT_Set_Pixel_Sizes(slot.face, 0, static_cast<FT_UInt>(kColorAtlasEmSize));
     if (FT_Load_Glyph(slot.face, glyphIndex, FT_LOAD_COLOR | FT_LOAD_RENDER) == 0) {
       const FT_Bitmap& bm = slot.face->glyph->bitmap;
       if (bm.pixel_mode == FT_PIXEL_MODE_BGRA && bm.width > 0 && bm.rows > 0) {
@@ -793,15 +798,19 @@ MsdfTextRenderer::Glyph& MsdfTextRenderer::loadGlyph(std::uint32_t slotIndex, st
         prepareAtlasUploadState();
         glBindTexture(GL_TEXTURE_2D, m_colorAtlasPages[colorPage]);
         glTexSubImage2D(GL_TEXTURE_2D, 0, destX, destY, bw, bh, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+        glGenerateMipmap(GL_TEXTURE_2D);
 
         const auto atlasW = static_cast<float>(m_atlasWidth);
         const auto atlasH = static_cast<float>(m_atlasHeight);
+        // Normalize dimensions to kAtlasEmSize units so the existing scale = fontSize / kAtlasEmSize
+        // formula in draw/measure produces the correct display size.
+        constexpr float kColorNorm = kAtlasEmSize / kColorAtlasEmSize;
 
         Glyph colorGlyph{
-            .atlasWidth  = static_cast<float>(bw),
-            .atlasHeight = static_cast<float>(bh),
-            .bearingX    = static_cast<float>(slot.face->glyph->bitmap_left),
-            .bearingY    = static_cast<float>(slot.face->glyph->bitmap_top),
+            .atlasWidth  = static_cast<float>(bw)  * kColorNorm,
+            .atlasHeight = static_cast<float>(bh)  * kColorNorm,
+            .bearingX    = static_cast<float>(slot.face->glyph->bitmap_left)  * kColorNorm,
+            .bearingY    = static_cast<float>(slot.face->glyph->bitmap_top)   * kColorNorm,
             .u0 = static_cast<float>(destX) / atlasW,
             .v0 = static_cast<float>(destY) / atlasH,
             .u1 = static_cast<float>(destX + bw) / atlasW,
@@ -831,7 +840,7 @@ MsdfTextRenderer::Glyph& MsdfTextRenderer::loadGlyph(std::uint32_t slotIndex, st
       }
 
       cairo_matrix_t fontMatrix;
-      cairo_matrix_init_scale(&fontMatrix, kAtlasEmSize, kAtlasEmSize);
+      cairo_matrix_init_scale(&fontMatrix, kColorAtlasEmSize, kColorAtlasEmSize);
       cairo_matrix_t ctm;
       cairo_matrix_init_identity(&ctm);
       cairo_font_options_t* cairoOpts = cairo_font_options_create();
@@ -904,15 +913,18 @@ MsdfTextRenderer::Glyph& MsdfTextRenderer::loadGlyph(std::uint32_t slotIndex, st
         prepareAtlasUploadState();
         glBindTexture(GL_TEXTURE_2D, m_colorAtlasPages[colorPage]);
         glTexSubImage2D(GL_TEXTURE_2D, 0, destX, destY, cairoW, cairoH, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+        glGenerateMipmap(GL_TEXTURE_2D);
 
         const auto atlasW = static_cast<float>(m_atlasWidth);
         const auto atlasH = static_cast<float>(m_atlasHeight);
+        // Normalize to kAtlasEmSize units so draw/measure scale = fontSize / kAtlasEmSize still works.
+        constexpr float kColorNorm = kAtlasEmSize / kColorAtlasEmSize;
 
         Glyph colorGlyph{
-            .atlasWidth  = static_cast<float>(cairoW),
-            .atlasHeight = static_cast<float>(cairoH),
-            .bearingX    = static_cast<float>(ext.x_bearing),
-            .bearingY    = static_cast<float>(-ext.y_bearing), // Cairo y_bearing < 0 for above-baseline
+            .atlasWidth  = static_cast<float>(cairoW) * kColorNorm,
+            .atlasHeight = static_cast<float>(cairoH) * kColorNorm,
+            .bearingX    = static_cast<float>(ext.x_bearing) * kColorNorm,
+            .bearingY    = static_cast<float>(-ext.y_bearing) * kColorNorm, // Cairo y_bearing < 0 for above-baseline
             .u0 = static_cast<float>(destX) / atlasW,
             .v0 = static_cast<float>(destY) / atlasH,
             .u1 = static_cast<float>(destX + cairoW) / atlasW,

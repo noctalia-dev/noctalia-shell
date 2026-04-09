@@ -307,7 +307,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     if (!result.actionText.empty()) {
       auto actionLabel = std::make_unique<Label>();
       actionLabel->setText(result.actionText);
-      actionLabel->setFontSize(Style::fontSizeTitle * scale);
+      actionLabel->setFontSize(iconSize);
       actionLabel->setColor(palette.onSurface);
       actionLabel->setSize(iconSize, iconSize);
       row->addChild(std::move(actionLabel));
