@@ -13,6 +13,10 @@
 
 #include <wayland-client-core.h>
 
+namespace {
+  constexpr Logger kLog("main");
+} // namespace
+
 MainLoop::MainLoop(WaylandConnection& wayland, Bar& bar, std::vector<PollSource*> sources)
     : m_wayland(wayland), m_bar(bar), m_sources(std::move(sources)) {}
 
@@ -78,13 +82,13 @@ void MainLoop::run() {
   }
 
   // Close all UI surfaces immediately and flush Wayland to make them disappear
-  logDebug("closing bar surfaces for clean shutdown");
+  kLog.debug("closing bar surfaces for clean shutdown");
   m_bar.closeAllInstances();
 
   if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
-    logWarn("failed to dispatch pending Wayland events during shutdown");
+    kLog.warn("failed to dispatch pending Wayland events during shutdown");
   }
   if (wl_display_flush(m_wayland.display()) < 0) {
-    logWarn("failed to flush Wayland display during shutdown");
+    kLog.warn("failed to flush Wayland display during shutdown");
   }
 }

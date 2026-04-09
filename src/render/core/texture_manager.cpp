@@ -22,6 +22,8 @@
 
 namespace {
 
+constexpr Logger kLog("texture");
+
 bool endsWith(const std::string& str, const std::string& suffix) {
   if (suffix.size() > str.size()) {
     return false;
@@ -58,7 +60,7 @@ TextureHandle TextureManager::decodeEncodedRaster(const std::uint8_t* data, std:
   }
 
   if (debugPath != nullptr) {
-    logWarn("failed to decode image: {} ({})", *debugPath, errorMessage);
+    kLog.warn("failed to decode image: {} ({})", *debugPath, errorMessage);
   }
   return {};
 }
@@ -70,7 +72,7 @@ TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSi
     // SVG rasterization via nanosvg
     auto fileData = readFile(path);
     if (fileData.empty()) {
-      logWarn("failed to read SVG: {}", path);
+      kLog.warn("failed to read SVG: {}", path);
       return {};
     }
 
@@ -78,7 +80,7 @@ TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSi
     fileData.push_back(0);
     auto* image = nsvgParse(reinterpret_cast<char*>(fileData.data()), "px", 96.0f);
     if (image == nullptr) {
-      logWarn("failed to parse SVG: {}", path);
+      kLog.warn("failed to parse SVG: {}", path);
       return {};
     }
 
@@ -110,7 +112,7 @@ TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSi
   // Raster images via Wuffs' stb-compatible decoder.
   auto fileData = readFile(path);
   if (fileData.empty()) {
-    logWarn("failed to read image: {}", path);
+    kLog.warn("failed to read image: {}", path);
     return {};
   }
 

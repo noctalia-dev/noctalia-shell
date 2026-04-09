@@ -16,6 +16,8 @@
 
 namespace {
 
+constexpr Logger kLog("osd");
+
 constexpr float kCardWidth = Style::controlHeightLg * 7 + Style::spaceMd + Style::spaceSm;
 constexpr float kCardHeight = Style::controlHeightLg + Style::spaceXs;
 constexpr int kSurfaceWidth = static_cast<int>(kCardWidth + Style::spaceSm);
@@ -154,7 +156,7 @@ void OsdOverlay::ensureSurfaces() {
     inst->surface->setRenderContext(m_renderContext);
 
     if (!inst->surface->initialize(output.output, output.scale)) {
-      logWarn("osd overlay: failed to initialize surface on {}", output.connectorName);
+      kLog.warn("osd overlay: failed to initialize surface on {}", output.connectorName);
       continue;
     }
 

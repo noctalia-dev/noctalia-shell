@@ -28,6 +28,10 @@
 #include "system/weather_service.h"
 #include "wayland/wayland_connection.h"
 
+namespace {
+  constexpr Logger kLog("shell");
+} // namespace
+
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
                              NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                              UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
@@ -50,7 +54,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "clock") {
     if (m_time == nullptr) {
-      logWarn("widget factory: clock requires TimeService");
+      kLog.warn("widget factory: clock requires TimeService");
       return nullptr;
     }
     std::string format = wc != nullptr ? wc->getString("format", "{:%H:%M}") : std::string("{:%H:%M}");
@@ -221,6 +225,6 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     return widget;
   }
 
-  logWarn("widget factory: unknown widget \"{}\"", name);
+  kLog.warn("widget factory: unknown widget \"{}\"", name);
   return nullptr;
 }

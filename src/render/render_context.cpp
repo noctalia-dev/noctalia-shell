@@ -21,6 +21,8 @@
 
 namespace {
 
+  constexpr Logger kLog("render");
+
   constexpr EGLint kConfigAttributes[] = {
       EGL_SURFACE_TYPE,
       EGL_WINDOW_BIT,
@@ -121,7 +123,7 @@ void RenderContext::initialize(wl_display* display) {
     // CJK: append at end — it's a large font and only needed for CJK codepoints.
     auto cjk = m_fontService.resolveBestForChar(0x4E00);
     if (cjk && !isAlreadyInChain(*cjk)) {
-      logDebug("  +appended {} [{}]", cjk->path, cjk->faceIndex);
+      kLog.debug("  +appended {} [{}]", cjk->path, cjk->faceIndex);
       chain.push_back(std::move(*cjk));
     }
 
@@ -129,7 +131,7 @@ void RenderContext::initialize(wl_display* display) {
     // by the emoji segmenter in shapeWithFallback — slot order doesn't matter for emoji.
     auto emoji = m_fontService.resolveFont("emoji");
     if (emoji && !isAlreadyInChain(*emoji)) {
-      logDebug("  +appended {} [{}]", emoji->path, emoji->faceIndex);
+      kLog.debug("  +appended {} [{}]", emoji->path, emoji->faceIndex);
       chain.push_back(std::move(*emoji));
     }
 

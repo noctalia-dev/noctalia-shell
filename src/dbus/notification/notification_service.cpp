@@ -5,6 +5,10 @@
 
 #include <algorithm>
 
+namespace {
+  constexpr Logger kLog("notification");
+} // namespace
+
 static const sdbus::ServiceName k_bus_name{"org.freedesktop.Notifications"};
 static const sdbus::ObjectPath k_object_path{"/org/freedesktop/Notifications"};
 static constexpr auto k_interface = "org.freedesktop.Notifications";
@@ -198,7 +202,7 @@ void NotificationService::onInvokeAction(uint32_t id, const std::string& actionK
                            "action_key is not available for this notification");
       }
 
-      logDebug("notification action #{} key='{}'", id, actionKey);
+      kLog.debug("notification action #{} key='{}'", id, actionKey);
       emitActionInvoked(id, sanitizedKey);
       return;
     }

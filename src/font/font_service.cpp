@@ -5,6 +5,10 @@
 #include <optional>
 #include <stdexcept>
 
+namespace {
+  constexpr Logger kLog("font");
+} // namespace
+
 FontService::FontService() {
   m_config = FcInitLoadConfigAndFonts();
   if (m_config == nullptr) {
@@ -100,9 +104,9 @@ std::vector<ResolvedFont> FontService::resolveFallbackChain(const std::string& f
     throw std::runtime_error("no fonts resolved for: " + family);
   }
 
-  logDebug("font fallback chain for \"{}\" ({} fonts):", family, chain.size());
+  kLog.debug("font fallback chain for \"{}\" ({} fonts):", family, chain.size());
   for (const auto& font : chain) {
-    logDebug("  {} [{}]", font.path, font.faceIndex);
+    kLog.debug("  {} [{}]", font.path, font.faceIndex);
   }
 
   return chain;

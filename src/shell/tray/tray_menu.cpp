@@ -18,6 +18,8 @@
 
 namespace {
 
+constexpr Logger kLog("tray");
+
 constexpr float kMenuWidth = 320.0f;
 constexpr float kMenuPadding = 10.0f;
 constexpr float kItemHeight = 30.0f;
@@ -221,7 +223,7 @@ void TrayMenu::ensureSurfaces() {
 
     bool ok = inst->surface->initialize(output.output, output.scale);
     if (!ok) {
-      logWarn("tray menu: failed to initialize surface on {}", output.connectorName);
+      kLog.warn("tray menu: failed to initialize surface on {}", output.connectorName);
       continue;
     }
 

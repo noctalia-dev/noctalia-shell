@@ -17,6 +17,7 @@
 #include <linux/input-event-codes.h>
 
 namespace {
+constexpr Logger kLog("workspace");
 constexpr float kWorkspaceGap = Style::spaceSm;
 constexpr float kWorkspaceDotSize = Style::controlHeightSm * 0.62f;
 constexpr float kWorkspacePillMinWidth = Style::controlHeightLg + Style::spaceXs;
@@ -58,7 +59,7 @@ void WorkspacesWidget::update(Renderer& renderer) {
   }
 
   if (changed) {
-    logDebug("workspaces widget: state changed, rebuilding ({} workspaces)", current.size());
+    kLog.debug("workspaces widget: state changed, rebuilding ({} workspaces)", current.size());
     m_cachedState.clear();
     m_cachedState.reserve(current.size());
     for (const auto& ws : current) {

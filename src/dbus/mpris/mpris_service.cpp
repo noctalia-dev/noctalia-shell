@@ -340,7 +340,7 @@ bool MprisService::setPosition(const std::string& busName, int64_t positionUs) {
   const bool preferRelativeSeek = it->second.trackId.empty() || busName.find("spotify") != std::string::npos;
   if (preferRelativeSeek) {
     // Some players don't expose track_id consistently; emulate absolute position with Seek.
-    logDebug("mpris set-position using relative Seek fallback for {}", busName);
+    kLog.debug("mpris set-position using relative Seek fallback for {}", busName);
     return fallback_seek();
   }
 

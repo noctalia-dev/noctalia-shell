@@ -10,6 +10,8 @@
 
 namespace {
 
+constexpr Logger kLog("power");
+
 static const sdbus::ServiceName k_powerProfilesBusName{"org.freedesktop.UPower.PowerProfiles"};
 static const sdbus::ObjectPath k_powerProfilesObjectPath{"/org/freedesktop/UPower/PowerProfiles"};
 static constexpr auto k_powerProfilesInterface = "org.freedesktop.UPower.PowerProfiles";
@@ -96,7 +98,7 @@ bool PowerProfilesService::setActiveProfile(std::string_view profile) {
     refresh();
     return true;
   } catch (const sdbus::Error& e) {
-    logWarn("power profile change failed profile={} err={}", std::string(profile), e.what());
+    kLog.warn("power profile change failed profile={} err={}", std::string(profile), e.what());
     return false;
   }
 }

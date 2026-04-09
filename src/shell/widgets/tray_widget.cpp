@@ -21,6 +21,8 @@
 
 namespace {
 
+constexpr Logger kLog("tray");
+
 constexpr float kTrayIconScale = 0.96f;
 
 std::string toLower(std::string_view value) {
@@ -233,10 +235,10 @@ void TrayWidget::rebuild(Renderer& renderer) {
 
         iconNode = std::move(image);
         m_loadedTextures.push_back(texture);
-        logDebug("tray widget icon id={} source=file path={} size={}x{}", item.id, iconPath, texture.width,
+        kLog.debug("tray widget icon id={} source=file path={} size={}x{}", item.id, iconPath, texture.width,
                 texture.height);
       } else {
-        logDebug("tray widget icon id={} source=file path={} failed-to-load", item.id, iconPath);
+        kLog.debug("tray widget icon id={} source=file path={} failed-to-load", item.id, iconPath);
       }
     }
 
@@ -261,10 +263,10 @@ void TrayWidget::rebuild(Renderer& renderer) {
 
           iconNode = std::move(image);
           m_loadedTextures.push_back(texture);
-          logDebug("tray widget icon id={} source=pixmap size={}x{} (bytes={})", item.id, pixmapW, pixmapH,
+          kLog.debug("tray widget icon id={} source=pixmap size={}x{} (bytes={})", item.id, pixmapW, pixmapH,
                   pixmap.size());
         } else {
-          logDebug("tray widget icon id={} source=pixmap size={}x{} failed-to-load", item.id, pixmapW, pixmapH);
+          kLog.debug("tray widget icon id={} source=pixmap size={}x{} failed-to-load", item.id, pixmapW, pixmapH);
         }
       }
     }
@@ -279,7 +281,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
       iconW = glyph->width();
       iconH = glyph->height();
       iconNode = std::move(glyph);
-      logDebug("tray widget icon id={} source=glyph name={}", item.id, fallback);
+      kLog.debug("tray widget icon id={} source=glyph name={}", item.id, fallback);
     }
 
     // Wrap icon in InputArea for click handling

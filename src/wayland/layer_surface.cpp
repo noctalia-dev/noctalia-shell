@@ -10,6 +10,8 @@
 
 namespace {
 
+  constexpr Logger kLog("wayland");
+
   const zwlr_layer_surface_v1_listener kLayerSurfaceListener = {
       .configure = &LayerSurface::handleConfigure,
       .closed = &LayerSurface::handleClosed,
@@ -40,7 +42,7 @@ bool LayerSurface::initialize() {
 
 bool LayerSurface::initialize(wl_output* output, std::int32_t scale) {
   if (!m_connection.hasRequiredGlobals()) {
-    logWarn("layer surface skipped: missing compositor/shm/layer-shell globals");
+    kLog.warn("layer surface skipped: missing compositor/shm/layer-shell globals");
     return false;
   }
 

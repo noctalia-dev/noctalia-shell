@@ -20,6 +20,8 @@
 
 namespace {
 
+constexpr Logger kLog("notification");
+
 constexpr int kCardWidth = 340;
 constexpr int kCardMinHeight = 78;
 constexpr int kCardMaxHeight = 130;
@@ -301,7 +303,7 @@ void NotificationPopup::addPopup(const Notification& n) {
     addCardToInstance(*inst, index);
   }
 
-  logDebug("notification popup: showing #{} \"{}\"", n.id, n.summary);
+  kLog.debug("notification popup: showing #{} \"{}\"", n.id, n.summary);
 }
 
 void NotificationPopup::removePopup(uint32_t notificationId) {
@@ -578,12 +580,12 @@ void NotificationPopup::ensureSurfaces() {
 
     bool ok = inst->surface->initialize(output.output, output.scale);
     if (!ok) {
-      logWarn("notification popup: failed to initialize surface on {}", output.connectorName);
+      kLog.warn("notification popup: failed to initialize surface on {}", output.connectorName);
       continue;
     }
 
     inst->wlSurface = inst->surface->wlSurface();
-    logDebug("notification popup: surface created on {}", output.connectorName);
+    kLog.debug("notification popup: surface created on {}", output.connectorName);
     m_instances.push_back(std::move(inst));
   }
 }
@@ -595,7 +597,7 @@ void NotificationPopup::destroySurfaces() {
   }
   m_instances.clear();
   m_entries.clear();
-  logDebug("notification popup: all surfaces destroyed");
+  kLog.debug("notification popup: all surfaces destroyed");
 }
 
 void NotificationPopup::buildScene(PopupInstance& inst, uint32_t width, uint32_t height) {

@@ -18,6 +18,8 @@ PanelManager* PanelManager::s_instance = nullptr;
 
 namespace {
 
+constexpr Logger kLog("panel");
+
 BarConfig resolvePanelBarConfig(ConfigService* configService, WaylandConnection* wayland, wl_output* output) {
   BarConfig barConfig;
   if (configService == nullptr || configService->config().bars.empty()) {
@@ -79,7 +81,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
 
   auto it = m_panels.find(panelId);
   if (it == m_panels.end()) {
-    logWarn("panel manager: unknown panel \"{}\"", panelId);
+    kLog.warn("panel manager: unknown panel \"{}\"", panelId);
     return;
   }
 
@@ -168,7 +170,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
   m_inTransition = false;
 
   if (!ok) {
-    logWarn("panel manager: failed to initialize surface for panel \"{}\"", panelId);
+    kLog.warn("panel manager: failed to initialize surface for panel \"{}\"", panelId);
     m_surface.reset();
     m_activePanel = nullptr;
     m_activePanelId.clear();
@@ -176,7 +178,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
   }
 
   m_wlSurface = m_surface->wlSurface();
-  logDebug("panel manager: opened \"{}\"", panelId);
+  kLog.debug("panel manager: opened \"{}\"", panelId);
 }
 
 void PanelManager::closePanel() {
@@ -184,7 +186,7 @@ void PanelManager::closePanel() {
     return;
   }
 
-  logDebug("panel manager: closing \"{}\"", m_activePanelId);
+  kLog.debug("panel manager: closing \"{}\"", m_activePanelId);
 
   // Disable input during close animation
   m_inputDispatcher.setSceneRoot(nullptr);

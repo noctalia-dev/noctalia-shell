@@ -6,6 +6,8 @@
 
 namespace {
 
+  constexpr Logger kLog("notification");
+
   constexpr std::string_view urgency_str(Urgency u) noexcept {
     switch (u) {
     case Urgency::Low:
@@ -81,8 +83,8 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
                                            std::optional<std::string> icon, std::optional<std::string> category,
                                            std::optional<std::string> desktop_entry) {
   auto log_notification = [](const Notification& n, std::string_view action) {
-    logDebug("notification {} #{} origin={} from=\"{}\" urgency={} summary=\"{}\" body=\"{}\" timeout={}ms", action,
-             n.id, origin_str(n.origin), n.appName, urgency_str(n.urgency), n.summary, n.body, n.timeout);
+    kLog.debug("notification {} #{} origin={} from=\"{}\" urgency={} summary=\"{}\" body=\"{}\" timeout={}ms", action,
+               n.id, origin_str(n.origin), n.appName, urgency_str(n.urgency), n.summary, n.body, n.timeout);
   };
 
   if (replaces_id != 0) {
@@ -166,7 +168,7 @@ bool NotificationManager::close(uint32_t id, CloseReason reason) {
   const char* reason_str = (reason == CloseReason::Expired)     ? "expired"
                            : (reason == CloseReason::Dismissed) ? "dismissed"
                                                                 : "closed";
-  logDebug("notification {} #{}", reason_str, id);
+  kLog.debug("notification {} #{}", reason_str, id);
   upsertHistory(closed, false, reason);
 
   m_notifications.erase(m_notifications.begin() + static_cast<std::ptrdiff_t>(index));

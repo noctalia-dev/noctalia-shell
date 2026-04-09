@@ -5,6 +5,8 @@
 
 namespace {
 
+  constexpr Logger kLog("debug");
+
   static const sdbus::ServiceName k_debug_bus_name{"dev.noctalia.Debug"};
   static const sdbus::ObjectPath k_debug_object_path{"/dev/noctalia/Debug"};
   static constexpr auto k_debug_interface = "dev.noctalia.Debug";
@@ -45,14 +47,14 @@ DebugService::DebugService(SessionBus& bus, NotificationManager& notifications) 
 uint32_t DebugService::onEmitInternalNotification(const std::string& app_name, const std::string& summary,
                                                   const std::string& body, int32_t timeout, uint8_t urgency) {
   const uint32_t id = m_notifications.addInternal(app_name, summary, body, timeout, clamp_urgency(urgency));
-  logInfo("debug internal notification emitted id={} app=\"{}\"", id, app_name);
+  kLog.info("debug internal notification emitted id={} app=\"{}\"", id, app_name);
   return id;
 }
 
 bool DebugService::onSetVerboseLogs(bool enabled) {
   m_verboseLogs = enabled;
   setLogLevel(enabled ? LogLevel::Debug : LogLevel::Info);
-  logInfo("debug verbose logs {}", enabled ? "enabled" : "disabled");
+  kLog.info("debug verbose logs {}", enabled ? "enabled" : "disabled");
   return true;
 }
 
