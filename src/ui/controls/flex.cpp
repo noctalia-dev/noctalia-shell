@@ -117,13 +117,6 @@ void Flex::setMinHeight(float minHeight) {
   markDirty();
 }
 
-void Flex::setCardSurface() {
-  setRadius(Style::radiusMd);
-  setBorderColor(palette.outline);
-  setBorderWidth(Style::borderWidth);
-  setBackground(palette.surface);
-}
-
 void Flex::setRowLayout() {
   setDirection(FlexDirection::Horizontal);
   setGap(Style::spaceXs);

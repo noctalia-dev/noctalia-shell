@@ -46,8 +46,6 @@ public:
   void setMinWidth(float minWidth);
   void setMinHeight(float minHeight);
 
-  void setCardSurface();
-
   void setRowLayout();
 
   [[nodiscard]] FlexDirection direction() const noexcept { return m_direction; }
