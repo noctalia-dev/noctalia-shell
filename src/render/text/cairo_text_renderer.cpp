@@ -335,12 +335,18 @@ void CairoTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, f
   Mat3 world = transform * localTranslation;
 
   // Snap the glyph quad's origin to the nearest buffer pixel. Without this,
-  // parent transforms (centered rotations, fractional layout positions)
-  // place the quad at sub-pixel offsets and GL_LINEAR samples across texel
-  // boundaries → noticeable blur even at 1x. Snap in buffer-pixel space so
-  // HiDPI outputs still benefit.
-  world.m[6] = std::round(world.m[6] * m_contentScale) / m_contentScale;
-  world.m[7] = std::round(world.m[7] * m_contentScale) / m_contentScale;
+  // fractional layout positions place the quad at sub-pixel offsets and
+  // GL_LINEAR samples across texel boundaries → noticeable blur even at 1x.
+  // Snap in buffer-pixel space so HiDPI outputs still benefit.
+  //
+  // Only snap when the transform is axis-aligned (no rotation/skew). During
+  // a rotation animation, snapping causes the translation to jump by whole
+  // buffer pixels between frames, which looks jittery on 1x outputs.
+  const bool axisAligned = world.m[1] == 0.0f && world.m[3] == 0.0f;
+  if (axisAligned) {
+    world.m[6] = std::round(world.m[6] * m_contentScale) / m_contentScale;
+    world.m[7] = std::round(world.m[7] * m_contentScale) / m_contentScale;
+  }
 
   m_program->draw(entry->texture, surfaceWidth, surfaceHeight, quadW, quadH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, world);
 }

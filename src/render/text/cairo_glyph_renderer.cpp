@@ -323,8 +323,13 @@ void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, floa
 
   // Snap the quad origin to the nearest buffer pixel so GL_LINEAR samples
   // land on texel centers (see cairo_text_renderer.cpp for the full story).
-  world.m[6] = std::round(world.m[6] * m_contentScale) / m_contentScale;
-  world.m[7] = std::round(world.m[7] * m_contentScale) / m_contentScale;
+  // Skip when the transform has rotation/skew — snapping then introduces
+  // whole-pixel jumps per frame and makes animations look jittery on 1x.
+  const bool axisAligned = world.m[1] == 0.0f && world.m[3] == 0.0f;
+  if (axisAligned) {
+    world.m[6] = std::round(world.m[6] * m_contentScale) / m_contentScale;
+    world.m[7] = std::round(world.m[7] * m_contentScale) / m_contentScale;
+  }
 
   m_program->draw(entry->texture, surfaceWidth, surfaceHeight, quadW, quadH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, world);
 }
