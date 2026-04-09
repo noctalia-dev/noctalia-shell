@@ -63,7 +63,7 @@ void SysmonWidget::create() {
     auto gauge = std::make_unique<ProgressBar>();
     gauge->setOrientation(ProgressBarOrientation::Vertical);
     gauge->setFillColor(palette.primary);
-    gauge->setTrackColor(palette.surfaceVariant);
+    gauge->setTrackColor(withAlpha(palette.onSurface, 0.25));
     gauge->setProgress(0.0f);
     m_gauge = static_cast<ProgressBar*>(container->addChild(std::move(gauge)));
   }
