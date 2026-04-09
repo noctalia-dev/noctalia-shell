@@ -215,13 +215,6 @@ void ScrollView::layout(Renderer& renderer) {
 void ScrollView::applyScrollOffset() {
   if (m_content != nullptr) {
     m_content->setPosition(0.0f, -m_scrollOffset);
-
-    for (const auto& child : m_content->children()) {
-      const float childTop = child->y() - m_scrollOffset;
-      const float childBottom = childTop + child->height();
-      const bool visible = childBottom >= 0.0f && childTop <= m_viewportHeight;
-      child->setVisible(visible);
-    }
   }
 
   if (m_scrollbarThumb == nullptr || m_scrollbarTrack == nullptr || m_scrollbarThumbArea == nullptr ||

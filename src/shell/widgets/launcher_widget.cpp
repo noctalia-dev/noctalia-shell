@@ -24,7 +24,7 @@ void LauncherWidget::create() {
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
-  m_root = std::move(area);
+  setRoot(std::move(area));
 }
 
 void LauncherWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {

@@ -4,5 +4,5 @@
 
 class NetworkTab : public Tab {
 public:
-  std::unique_ptr<Flex> build(Renderer& renderer) override;
+  std::unique_ptr<Flex> create() override;
 };

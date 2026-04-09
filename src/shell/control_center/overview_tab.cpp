@@ -7,7 +7,7 @@
 
 using namespace control_center;
 
-std::unique_ptr<Flex> OverviewTab::build(Renderer& /*renderer*/) {
+std::unique_ptr<Flex> OverviewTab::create() {
   const float scale = contentScale();
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);

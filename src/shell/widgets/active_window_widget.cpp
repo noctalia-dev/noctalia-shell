@@ -82,7 +82,7 @@ void ActiveWindowWidget::create() {
   title->setMaxWidth(m_maxTitleWidth * m_contentScale);
   m_title = static_cast<Label*>(rootNode->addChild(std::move(title)));
 
-  m_root = std::move(rootNode);
+  setRoot(std::move(rootNode));
 }
 
 void ActiveWindowWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {

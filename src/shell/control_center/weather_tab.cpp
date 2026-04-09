@@ -54,7 +54,7 @@ WeatherTab::WeatherTab(WeatherService* weather) : m_weather(weather) {
   m_dayTemps.fill(nullptr);
 }
 
-std::unique_ptr<Flex> WeatherTab::build(Renderer& /*renderer*/) {
+std::unique_ptr<Flex> WeatherTab::create() {
   const float scale = contentScale();
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Horizontal);

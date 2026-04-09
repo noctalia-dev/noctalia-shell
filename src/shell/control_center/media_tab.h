@@ -22,7 +22,7 @@ class MediaTab : public Tab {
 public:
   MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum);
 
-  std::unique_ptr<Flex> build(Renderer& renderer) override;
+  std::unique_ptr<Flex> create() override;
   void layout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void update(Renderer& renderer) override;
   void setActive(bool active) override;

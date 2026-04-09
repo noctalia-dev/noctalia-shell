@@ -32,7 +32,7 @@ void WorkspacesWidget::create() {
   container->setRowLayout();
   container->setGap(kWorkspaceGap * m_contentScale);
   m_container = container.get();
-  m_root = std::move(container);
+  setRoot(std::move(container));
 }
 
 void WorkspacesWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {

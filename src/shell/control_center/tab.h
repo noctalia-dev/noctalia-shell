@@ -26,7 +26,7 @@ public:
   // Creates and returns the tab's root Flex container.
   // The returned node is owned by the caller (added to m_tabBodies).
   // Implementations may cache a raw pointer to it for later use.
-  virtual std::unique_ptr<Flex> build(Renderer& renderer) = 0;
+  virtual std::unique_ptr<Flex> create() = 0;
 
   // Called by ControlCenterPanel::layout() with the available content dimensions.
   virtual void layout(Renderer& renderer, float contentWidth, float bodyHeight) {

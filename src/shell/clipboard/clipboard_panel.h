@@ -19,7 +19,7 @@ class ClipboardPanel : public Panel {
 public:
   explicit ClipboardPanel(ClipboardService* clipboard);
 
-  void create(Renderer& renderer) override;
+  void create() override;
   void layout(Renderer& renderer, float width, float height) override;
   void update(Renderer& renderer) override;
   void onOpen(std::string_view context) override;
@@ -74,4 +74,5 @@ private:
   float m_lastListWidth = -1.0f;
   float m_lastPreviewWidth = -1.0f;
   float m_lastPreviewHeight = -1.0f;
+  bool m_pendingScrollToSelected = false;
 };

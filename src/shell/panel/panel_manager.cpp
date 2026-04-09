@@ -385,7 +385,7 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     auto contentWrapper = std::make_unique<Node>();
     m_contentNode = contentWrapper.get();
     m_activePanel->setAnimationManager(&m_animations);
-    m_activePanel->create(*renderer);
+    m_activePanel->create();
     if (m_activePanel->root() != nullptr) {
       contentWrapper->addChild(m_activePanel->releaseRoot());
     }

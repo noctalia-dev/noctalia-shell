@@ -24,7 +24,7 @@ public:
 
   void addProvider(std::unique_ptr<LauncherProvider> provider);
 
-  void create(Renderer& renderer) override;
+  void create() override;
   void layout(Renderer& renderer, float width, float height) override;
   void update(Renderer& renderer) override;
   void onOpen(std::string_view context) override;
@@ -60,4 +60,5 @@ private:
   float m_lastWidth = 0.0f;
   bool m_dirty = false;
   bool m_mouseActive = false;
+  bool m_pendingScrollToSelected = false;
 };

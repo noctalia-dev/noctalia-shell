@@ -31,7 +31,7 @@ void LauncherPanel::addProvider(std::unique_ptr<LauncherProvider> provider) {
   m_providers.push_back(std::move(provider));
 }
 
-void LauncherPanel::create(Renderer& renderer) {
+void LauncherPanel::create() {
   const float scale = contentScale();
   auto container = std::make_unique<Flex>();
   container->setDirection(FlexDirection::Vertical);
@@ -61,15 +61,14 @@ void LauncherPanel::create(Renderer& renderer) {
   container->addChild(std::move(scrollView));
 
   m_container = container.get();
-  m_root = std::move(container);
+  setRoot(std::move(container));
 
   if (m_animations != nullptr) {
-    m_root->setAnimationManager(m_animations);
+    root()->setAnimationManager(m_animations);
   }
 
   // Run initial query to populate list
   onInputChanged("");
-  rebuildResults(renderer, preferredWidth());
 }
 
 void LauncherPanel::layout(Renderer& renderer, float width, float height) {
@@ -80,9 +79,20 @@ void LauncherPanel::layout(Renderer& renderer, float width, float height) {
   m_container->setSize(width, height);
   m_container->layout(renderer);
 
+  bool relayoutNeeded = false;
   if (m_dirty) {
     rebuildResults(renderer, m_scrollView->contentViewportWidth());
     m_dirty = false;
+    relayoutNeeded = true;
+  }
+
+  if (relayoutNeeded) {
+    m_container->layout(renderer);
+  }
+
+  if (m_pendingScrollToSelected) {
+    scrollToSelected();
+    m_pendingScrollToSelected = false;
   }
 
   m_lastWidth = width;
@@ -102,6 +112,7 @@ void LauncherPanel::onOpen(std::string_view /*context*/) {
   m_hoverIndex = static_cast<std::size_t>(-1);
   m_mouseActive = false;
   m_dirty = true;
+  m_pendingScrollToSelected = false;
   if (m_input != nullptr) {
     m_input->setValue("");
   }
@@ -116,6 +127,7 @@ void LauncherPanel::onClose() {
   m_selectedIndex = 0;
   m_lastWidth = 0.0f;
   m_dirty = false;
+  m_pendingScrollToSelected = false;
 
   // The scene tree (and all nodes) is destroyed by PanelManager after onClose(),
   // so null out all raw pointers to avoid dangling references on re-open.
@@ -349,7 +361,7 @@ bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*
     if (m_selectedIndex > 0) {
       --m_selectedIndex;
       m_dirty = true;
-      scrollToSelected();
+      m_pendingScrollToSelected = true;
       if (root() != nullptr) {
         root()->markDirty();
       }
@@ -361,7 +373,7 @@ bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*
     if (!m_results.empty() && m_selectedIndex < m_results.size() - 1) {
       ++m_selectedIndex;
       m_dirty = true;
-      scrollToSelected();
+      m_pendingScrollToSelected = true;
       if (root() != nullptr) {
         root()->markDirty();
       }

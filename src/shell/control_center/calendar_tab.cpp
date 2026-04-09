@@ -45,7 +45,7 @@ int daysInMonth(int yearValue, int monthValue) {
 
 } // namespace
 
-std::unique_ptr<Flex> CalendarTab::build(Renderer& /*renderer*/) {
+std::unique_ptr<Flex> CalendarTab::create() {
   const float scale = contentScale();
 
   auto tab = std::make_unique<Flex>();

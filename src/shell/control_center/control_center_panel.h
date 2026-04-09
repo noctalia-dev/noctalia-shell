@@ -32,7 +32,7 @@ public:
                      ConfigService* config = nullptr, HttpClient* httpClient = nullptr, WeatherService* weather = nullptr,
                      PipeWireSpectrum* spectrum = nullptr);
 
-  void create(Renderer& renderer) override;
+  void create() override;
   void layout(Renderer& renderer, float width, float height) override;
   void update(Renderer& renderer) override;
   void onOpen(std::string_view context) override;

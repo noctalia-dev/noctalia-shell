@@ -47,7 +47,7 @@ Color statusColor(const NotificationHistoryEntry& entry) {
 NotificationsTab::NotificationsTab(NotificationManager* notifications)
     : m_notifications(notifications) {}
 
-std::unique_ptr<Flex> NotificationsTab::build(Renderer& /*renderer*/) {
+std::unique_ptr<Flex> NotificationsTab::create() {
   const float scale = contentScale();
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);

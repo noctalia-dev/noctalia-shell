@@ -140,7 +140,7 @@ void TrayWidget::create() {
   container->setGap(Style::spaceXs * m_contentScale);
   m_container = container.get();
 
-  m_root = std::move(container);
+  setRoot(std::move(container));
 }
 
 void TrayWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {

@@ -42,7 +42,7 @@ void NotificationWidget::create() {
   dot->setVisible(false);
   m_dot = area->addChild(std::move(dot));
 
-  m_root = std::move(area);
+  setRoot(std::move(area));
   refreshIndicatorState();
 }
 

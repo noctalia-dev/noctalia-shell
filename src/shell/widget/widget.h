@@ -37,10 +37,14 @@ public:
 
 protected:
   void requestRedraw();
+  void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
+  void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
 
   float m_contentScale = 1.0f;
-  std::unique_ptr<Node> m_root;
-  Node* m_rootPtr = nullptr;
   AnimationManager* m_animations = nullptr;
   RedrawCallback m_redrawCallback;
+
+private:
+  std::unique_ptr<Node> m_root;
+  Node* m_rootPtr = nullptr;
 };

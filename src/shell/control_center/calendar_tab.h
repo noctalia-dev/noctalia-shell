@@ -6,7 +6,7 @@ class Label;
 
 class CalendarTab : public Tab {
 public:
-  std::unique_ptr<Flex> build(Renderer& renderer) override;
+  std::unique_ptr<Flex> create() override;
   void layout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void onClose() override;
 

@@ -18,7 +18,7 @@ class AudioTab : public Tab {
 public:
   AudioTab(PipeWireService* audio, ConfigService* config);
 
-  std::unique_ptr<Flex> build(Renderer& renderer) override;
+  std::unique_ptr<Flex> create() override;
   void layout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void update(Renderer& renderer) override;
   void onClose() override;

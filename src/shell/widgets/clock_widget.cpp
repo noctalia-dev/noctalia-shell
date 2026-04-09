@@ -30,7 +30,7 @@ void ClockWidget::create() {
   label->setFontSize(Style::fontSizeBody * m_contentScale);
   m_label = label.get();
   area->addChild(std::move(label));
-  m_root = std::move(area);
+  setRoot(std::move(area));
 }
 
 void ClockWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {

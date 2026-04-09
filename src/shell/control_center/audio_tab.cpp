@@ -205,7 +205,7 @@ const AudioNode* findAudioNodeById(const std::vector<AudioNode>& devices, std::u
 
 AudioTab::AudioTab(PipeWireService* audio, ConfigService* config) : m_audio(audio), m_config(config) {}
 
-std::unique_ptr<Flex> AudioTab::build(Renderer& /*renderer*/) {
+std::unique_ptr<Flex> AudioTab::create() {
   const float scale = contentScale();
   const float sliderMax = sliderMaxPercent();
 

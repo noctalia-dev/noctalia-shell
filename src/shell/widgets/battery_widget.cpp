@@ -56,7 +56,7 @@ void BatteryWidget::create() {
   m_label = label.get();
   container->addChild(std::move(label));
 
-  m_root = std::move(container);
+  setRoot(std::move(container));
 }
 
 void BatteryWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {

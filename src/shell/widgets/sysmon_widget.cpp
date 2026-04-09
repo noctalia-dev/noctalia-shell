@@ -76,7 +76,7 @@ void SysmonWidget::create() {
     container->addChild(std::move(label));
   }
 
-  m_root = std::move(container);
+  setRoot(std::move(container));
 }
 
 void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {

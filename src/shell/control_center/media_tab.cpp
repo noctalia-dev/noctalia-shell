@@ -189,7 +189,7 @@ MediaTab::MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum
   }
 }
 
-std::unique_ptr<Flex> MediaTab::build(Renderer& /*renderer*/) {
+std::unique_ptr<Flex> MediaTab::create() {
   const float scale = contentScale();
 
   auto tab = std::make_unique<Flex>();

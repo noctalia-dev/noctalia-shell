@@ -220,7 +220,7 @@ void MediaMiniWidget::create() {
   m_label = label.get();
   area->addChild(std::move(label));
 
-  m_root = std::move(area);
+  setRoot(std::move(area));
 }
 
 void MediaMiniWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {

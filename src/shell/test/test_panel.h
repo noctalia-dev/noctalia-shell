@@ -17,7 +17,7 @@ class Toggle;
 
 class TestPanel : public Panel {
 public:
-  void create(Renderer& renderer) override;
+  void create() override;
   void layout(Renderer& renderer, float width, float height) override;
   void update(Renderer& renderer) override;
 

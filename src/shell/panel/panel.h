@@ -14,7 +14,7 @@ class Panel {
 public:
   virtual ~Panel() = default;
 
-  virtual void create(Renderer& renderer) = 0;
+  virtual void create() = 0;
   virtual void layout(Renderer& renderer, float width, float height) = 0;
   virtual void update(Renderer& renderer) = 0;
   virtual void onOpen(std::string_view context) { (void)context; }
@@ -43,9 +43,13 @@ public:
 
 protected:
   [[nodiscard]] float scaled(float value) const noexcept { return value * m_contentScale; }
+  void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
+  void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
 
   float m_contentScale = 1.0f;
+  AnimationManager* m_animations = nullptr;
+
+private:
   std::unique_ptr<Node> m_root;
   Node* m_rootPtr = nullptr;
-  AnimationManager* m_animations = nullptr;
 };

@@ -24,15 +24,15 @@ ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeW
   m_tabContainers.fill(nullptr);
 }
 
-void ControlCenterPanel::create(Renderer& renderer) {
+void ControlCenterPanel::create() {
   const float scale = contentScale();
 
-  auto root = std::make_unique<Flex>();
-  root->setDirection(FlexDirection::Horizontal);
-  root->setAlign(FlexAlign::Stretch);
-  root->setGap(Style::spaceLg * scale);
-  root->setPadding(0.0f);
-  m_rootLayout = root.get();
+  auto rootLayout = std::make_unique<Flex>();
+  rootLayout->setDirection(FlexDirection::Horizontal);
+  rootLayout->setAlign(FlexAlign::Stretch);
+  rootLayout->setGap(Style::spaceLg * scale);
+  rootLayout->setPadding(0.0f);
+  m_rootLayout = rootLayout.get();
 
   auto sidebar = std::make_unique<Flex>();
   sidebar->setDirection(FlexDirection::Vertical);
@@ -62,7 +62,7 @@ void ControlCenterPanel::create(Renderer& renderer) {
     m_tabButtons[tabIndex(tab.id)] = button.get();
     sidebar->addChild(std::move(button));
   }
-  root->addChild(std::move(sidebar));
+  rootLayout->addChild(std::move(sidebar));
 
   auto content = std::make_unique<Flex>();
   content->setDirection(FlexDirection::Vertical);
@@ -93,23 +93,20 @@ void ControlCenterPanel::create(Renderer& renderer) {
 
   for (std::size_t i = 0; i < kTabCount; ++i) {
     m_tabs[i]->setContentScale(scale);
-    auto container = m_tabs[i]->build(renderer);
+    auto container = m_tabs[i]->create();
     container->setFlexGrow(1.0f);
     m_tabContainers[i] = container.get();
     m_tabBodies->addChild(std::move(container));
   }
 
   content->addChild(std::move(bodies));
-  root->addChild(std::move(content));
-  m_root = std::move(root);
+  rootLayout->addChild(std::move(content));
+  setRoot(std::move(rootLayout));
 
   if (m_animations != nullptr) {
-    m_root->setAnimationManager(m_animations);
+    root()->setAnimationManager(m_animations);
   }
 
-  for (auto& tab : m_tabs) {
-    tab->update(renderer);
-  }
   selectTab(m_activeTab);
 }
 
@@ -161,7 +158,7 @@ void ControlCenterPanel::onClose() {
   m_tabBodies = nullptr;
   m_tabButtons.fill(nullptr);
   m_tabContainers.fill(nullptr);
-  m_rootPtr = nullptr;
+  clearReleasedRoot();
 }
 
 void ControlCenterPanel::selectTab(TabId tab) {

@@ -33,15 +33,15 @@ constexpr std::array<ActionSpec, 4> kActionSpecs{{
 
 SessionPanel::SessionPanel(Actions actions) : m_actions(std::move(actions)) {}
 
-void SessionPanel::create(Renderer& /*renderer*/) {
+void SessionPanel::create() {
   const float scale = contentScale();
 
-  auto root = std::make_unique<Flex>();
-  root->setDirection(FlexDirection::Horizontal);
-  root->setAlign(FlexAlign::Stretch);
-  root->setGap(Style::spaceSm * scale);
-  root->setJustify(FlexJustify::Start);
-  m_rootLayout = root.get();
+  auto rootLayout = std::make_unique<Flex>();
+  rootLayout->setDirection(FlexDirection::Horizontal);
+  rootLayout->setAlign(FlexAlign::Stretch);
+  rootLayout->setGap(Style::spaceSm * scale);
+  rootLayout->setJustify(FlexJustify::Start);
+  m_rootLayout = rootLayout.get();
 
   auto focusArea = std::make_unique<InputArea>();
   focusArea->setFocusable(true);
@@ -51,19 +51,19 @@ void SessionPanel::create(Renderer& /*renderer*/) {
       handleKeyEvent(key.sym, key.modifiers);
     }
   });
-  m_focusArea = static_cast<InputArea*>(root->addChild(std::move(focusArea)));
+  m_focusArea = static_cast<InputArea*>(rootLayout->addChild(std::move(focusArea)));
 
   for (const auto& spec : kActionSpecs) {
-    const std::size_t visualIndex = root->children().size() - (m_focusArea != nullptr ? 1U : 0U);
+    const std::size_t visualIndex = rootLayout->children().size() - (m_focusArea != nullptr ? 1U : 0U);
     if (auto* button = createActionButton(spec.id, scale); button != nullptr) {
       m_actionOrder[visualIndex] = spec.id;
-      root->addChild(std::unique_ptr<Button>(button));
+      rootLayout->addChild(std::unique_ptr<Button>(button));
     }
   }
-  m_root = std::move(root);
+  setRoot(std::move(rootLayout));
 
   if (m_animations != nullptr) {
-    m_root->setAnimationManager(m_animations);
+    root()->setAnimationManager(m_animations);
   }
 
   updateSelectionVisuals();

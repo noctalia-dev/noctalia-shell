@@ -1,6 +1,5 @@
 #include "shell/test/test_panel.h"
 
-#include "core/log.h"
 #include "render/animation/animation_manager.h"
 
 #include "ui/controls/box.h"
@@ -22,24 +21,19 @@
 #include <memory>
 #include <string>
 
-namespace {
-  constexpr Logger kLog("testpanel");
-} // namespace
-
-
-void TestPanel::create(Renderer& renderer) {
+void TestPanel::create() {
   const float scale = contentScale();
-  auto root = std::make_unique<Flex>();
-  root->setDirection(FlexDirection::Vertical);
-  root->setGap(Style::spaceMd * scale);
-  root->setAlign(FlexAlign::Start);
+  auto rootLayout = std::make_unique<Flex>();
+  rootLayout->setDirection(FlexDirection::Vertical);
+  rootLayout->setGap(Style::spaceMd * scale);
+  rootLayout->setAlign(FlexAlign::Start);
 
   auto header = std::make_unique<Label>();
   header->setText("Test Controls");
   header->setFontSize(Style::fontSizeTitle * scale);
   header->setColor(palette.primary);
   m_headerLabel = header.get();
-  root->addChild(std::move(header));
+  rootLayout->addChild(std::move(header));
 
   auto content = std::make_unique<Flex>();
   content->setDirection(FlexDirection::Horizontal);
@@ -439,22 +433,18 @@ void TestPanel::create(Renderer& renderer) {
   m_container = container.get();
   content->addChild(std::move(container));
   content->addChild(std::move(transformColumn));
-  root->addChild(std::move(content));
+  rootLayout->addChild(std::move(content));
 
-  m_root = std::move(root);
+  setRoot(std::move(rootLayout));
 
   // Propagate animation manager to all controls in the tree
   if (m_animations != nullptr) {
-    m_root->setAnimationManager(m_animations);
+    root()->setAnimationManager(m_animations);
   }
 
   // Start spinner after animation manager is propagated
   if (m_spinner != nullptr) {
     m_spinner->start();
-  }
-
-  if (m_headerLabel != nullptr) {
-    m_headerLabel->measure(renderer);
   }
 
   if (m_animations != nullptr && m_transformDemoBox != nullptr) {
@@ -473,6 +463,7 @@ void TestPanel::layout(Renderer& renderer, float /*width*/, float /*height*/) {
     return;
   }
   root()->layout(renderer);
+
   if (m_glyph != nullptr && m_glyphBox != nullptr) {
     m_glyph->measure(renderer);
     m_glyph->setPosition(std::round((m_glyphBox->width() - m_glyph->width()) * 0.5f),
@@ -490,7 +481,7 @@ void TestPanel::layout(Renderer& renderer, float /*width*/, float /*height*/) {
   if (m_transformDemoBox != nullptr && m_transformDemoGlyph != nullptr) {
     m_transformDemoGlyph->measure(renderer);
     m_transformDemoGlyph->setPosition(18.0f * contentScale(),
-                                      std::round((m_transformDemoBox->height() - m_transformDemoGlyph->height()) * 0.5f));
+                                      std::round((m_transformDemoBox->height() - m_transformDemoGlyph->height()) * 0.85f));
   }
   if (m_transformDemoBox != nullptr && m_transformBadgeBox != nullptr) {
     m_transformBadgeBox->setPosition(m_transformDemoBox->width() - m_transformBadgeBox->width() - 12.0f * contentScale(),

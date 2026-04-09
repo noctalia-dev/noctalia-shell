@@ -6,7 +6,7 @@
 
 using namespace control_center;
 
-std::unique_ptr<Flex> NetworkTab::build(Renderer& /*renderer*/) {
+std::unique_ptr<Flex> NetworkTab::create() {
   const float scale = contentScale();
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);
