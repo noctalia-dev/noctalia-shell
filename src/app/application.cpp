@@ -11,6 +11,7 @@
 #include "shell/session/session_panel.h"
 #include "shell/test/test_panel.h"
 #include "system/distro_info.h"
+#include "ui/controls/input.h"
 
 #include <chrono>
 #include <cmath>
@@ -213,6 +214,7 @@ void Application::initServices() {
     throw std::runtime_error("failed to connect to Wayland display");
   }
   m_wayland.setClipboardService(&m_clipboardService);
+  Input::setClipboardService(&m_clipboardService);
 
   m_wayland.setOutputChangeCallback([this]() {
     m_wallpaper.onOutputChange();

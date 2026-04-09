@@ -56,21 +56,6 @@ void LauncherPanel::create() {
   });
   m_input = input.get();
 
-  if (m_clipboard != nullptr) {
-    ClipboardService* clipboard = m_clipboard;
-    m_input->setPasteCallback([clipboard]() -> std::optional<std::string> {
-      const auto& hist = clipboard->history();
-      if (hist.empty()) {
-        return std::nullopt;
-      }
-      const auto& entry = hist.front();
-      if (entry.data.empty()) {
-        return std::nullopt;
-      }
-      return std::string(entry.data.begin(), entry.data.end());
-    });
-  }
-
   container->addChild(std::move(input));
 
   auto scrollView = std::make_unique<ScrollView>();

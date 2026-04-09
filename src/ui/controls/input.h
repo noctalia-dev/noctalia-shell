@@ -5,11 +5,11 @@
 
 #include <cstddef>
 #include <functional>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 
+class ClipboardService;
 class InputArea;
 class RectNode;
 class Renderer;
@@ -27,8 +27,10 @@ public:
   void setOnChange(std::function<void(const std::string&)> callback);
   void setOnSubmit(std::function<void(const std::string&)> callback);
   void setOnKeyEvent(std::function<bool(std::uint32_t sym, std::uint32_t modifiers)> callback);
-  void setPasteCallback(std::function<std::optional<std::string>()> callback);
   void selectAll();
+
+  // Set once at application startup; all Input instances use this for Ctrl+C/X/V.
+  static void setClipboardService(ClipboardService* clipboard) noexcept;
   void clearSelection();
 
   [[nodiscard]] const std::string& value() const noexcept { return m_value; }
@@ -71,7 +73,6 @@ private:
   std::function<void(const std::string&)> m_onChange;
   std::function<void(const std::string&)> m_onSubmit;
   std::function<bool(std::uint32_t, std::uint32_t)> m_onKeyEvent;
-  std::function<std::optional<std::string>()> m_pasteCallback;
   float m_fontSize = Style::fontSizeBody;
   float m_controlHeight = Style::controlHeight;
   float m_horizontalPadding = Style::spaceMd;

@@ -9,14 +9,39 @@
 #include "render/scene/text_node.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "wayland/clipboard_service.h"
 
 #include <algorithm>
 #include <cmath>
 #include <memory>
 #include <optional>
+#include <string>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
+
+ClipboardService* g_clipboard = nullptr;
+
+std::optional<std::string> readClipboardText() {
+  if (g_clipboard == nullptr) {
+    return std::nullopt;
+  }
+  const auto& hist = g_clipboard->history();
+  for (std::size_t i = 0; i < hist.size(); ++i) {
+    if (hist[i].isImage()) {
+      continue;
+    }
+    if (!g_clipboard->ensureEntryLoaded(i)) {
+      continue;
+    }
+    const auto& entry = g_clipboard->history()[i];
+    if (entry.data.empty()) {
+      continue;
+    }
+    return std::string(entry.data.begin(), entry.data.end());
+  }
+  return std::nullopt;
+}
 
 // Modifier bitmask — must match KeyMod constants in wayland/wayland_seat.h
 constexpr std::uint32_t kModShift = 1u << 0;
@@ -142,9 +167,7 @@ void Input::setOnKeyEvent(std::function<bool(std::uint32_t, std::uint32_t)> call
   m_onKeyEvent = std::move(callback);
 }
 
-void Input::setPasteCallback(std::function<std::optional<std::string>()> callback) {
-  m_pasteCallback = std::move(callback);
-}
+void Input::setClipboardService(ClipboardService* clipboard) noexcept { g_clipboard = clipboard; }
 
 void Input::selectAll() {
   m_selectionAnchor = 0;
@@ -238,16 +261,25 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     changed = true;
   }
 
-  if (ctrl && sym == 'a') {
+  if (ctrl && (sym == 'a' || sym == 'A')) {
     // Select all
     m_selectionAnchor = 0;
     m_cursorPos = m_value.size();
-  } else if (ctrl && sym == 'v') {
-    if (m_pasteCallback) {
-      if (auto text = m_pasteCallback()) {
+  } else if (ctrl && (sym == 'c' || sym == 'C')) {
+    if (g_clipboard != nullptr && hasSelection()) {
+      g_clipboard->copyText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
+    }
+  } else if (ctrl && (sym == 'x' || sym == 'X')) {
+    if (g_clipboard != nullptr && hasSelection()) {
+      g_clipboard->copyText(m_value.substr(selectionStart(), selectionEnd() - selectionStart()));
+      deleteSelection();
+      changed = true;
+    }
+  } else if (ctrl && (sym == 'v' || sym == 'V')) {
+    if (g_clipboard != nullptr) {
+      if (auto text = readClipboardText(); text.has_value()) {
         if (hasSelection()) {
           deleteSelection();
-          changed = true;
         }
         m_value.insert(m_cursorPos, *text);
         m_cursorPos += text->size();
