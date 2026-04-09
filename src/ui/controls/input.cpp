@@ -28,6 +28,8 @@ constexpr float kCursorPadV   = 3.0f;
 } // namespace
 
 Input::Input() {
+  setClipChildren(true);
+
   // 0: background
   auto bg = std::make_unique<RectNode>();
   m_background = static_cast<RectNode*>(addChild(std::move(bg)));
