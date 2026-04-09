@@ -90,15 +90,18 @@ void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
   const float glyphH = m_glyph->height();
 
   if (m_displayMode == SysmonDisplayMode::Gauge && m_gauge != nullptr) {
-    // Peg gauge width to font size, not glyphH — glyphH is the full text
-    // line-box (ascent+descent) from Pango, not the tight ink height the
-    // old MSDF path returned.
+    // Size the gauge to the visible icon, not glyphH — glyphH is the full
+    // text line-box (ascent+descent) from Pango, which is noticeably taller
+    // than a tabler icon's ink. Tabler glyphs fill ~85% of the em square.
+    const float iconFontSize = Style::fontSizeBody * m_contentScale * Style::glyphSizeRatio;
+    const float gaugeH = std::round(iconFontSize * 0.85f);
     const float gaugeW = std::max(3.0f, roundf(Style::fontSizeBody * m_contentScale * 0.3f));
     m_gauge->setRadius(gaugeW / 2.0f);
 
+    const float gaugeY = std::round((glyphH - gaugeH) * 0.5f);
     m_glyph->setPosition(0.0f, 0.0f);
-    m_gauge->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
-    m_gauge->setSize(gaugeW, glyphH);
+    m_gauge->setPosition(m_glyph->width() + Style::spaceXs, gaugeY);
+    m_gauge->setSize(gaugeW, gaugeH);
 
     rootNode->setSize(m_gauge->x() + gaugeW, glyphH);
     return;
