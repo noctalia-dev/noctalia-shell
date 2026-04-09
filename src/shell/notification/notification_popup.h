@@ -43,6 +43,7 @@ private:
     std::size_t bodyLines = 1;
     float cardHeight = 0.0f;
     Urgency urgency = Urgency::Normal;
+    int displayDurationMs = 8000; // -1 = persistent (no auto-dismiss)
     bool exiting = false;
   };
 

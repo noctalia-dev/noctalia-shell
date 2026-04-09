@@ -1,6 +1,7 @@
 #include "config/config_service.h"
 
 #include "core/log.h"
+#include "notification/notification_manager.h"
 #include "wayland/wayland_connection.h"
 
 #pragma GCC diagnostic push
@@ -83,6 +84,15 @@ ConfigService::~ConfigService() {
 // ── Public interface ─────────────────────────────────────────────────────────
 
 void ConfigService::addReloadCallback(ReloadCallback callback) { m_reloadCallbacks.push_back(std::move(callback)); }
+
+void ConfigService::setNotificationManager(NotificationManager* manager) {
+  m_notificationManager = manager;
+  if (m_notificationManager != nullptr && !m_pendingError.empty()) {
+    m_errorNotificationId =
+        m_notificationManager->addInternal("Noctalia", "Config parse error", m_pendingError, 0, Urgency::Critical);
+    m_pendingError.clear();
+  }
+}
 
 void ConfigService::forceReload() {
   m_config = Config{};
@@ -245,9 +255,22 @@ void ConfigService::loadFromFile(const std::string& path) {
   toml::table tbl;
   try {
     tbl = toml::parse_file(path);
+    // Parse succeeded — dismiss any previous config-error notification.
+    if (m_notificationManager != nullptr && m_errorNotificationId != 0) {
+      m_notificationManager->close(m_errorNotificationId);
+      m_errorNotificationId = 0;
+    }
+    m_pendingError.clear();
   } catch (const toml::parse_error& e) {
     const auto& src = e.source();
     kLog.warn("parse error at line {}, column {}: {}", src.begin.line, src.begin.column, e.description());
+    const auto body = std::format("Line {}, column {}: {}", src.begin.line, src.begin.column, e.description());
+    if (m_notificationManager != nullptr) {
+      m_errorNotificationId =
+          m_notificationManager->addInternal("Noctalia", "Config parse error", body, 0, Urgency::Critical);
+    } else {
+      m_pendingError = body;
+    }
     m_config.bars.push_back(BarConfig{});
     return;
   }

@@ -6,6 +6,8 @@
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
 #include "ui/controls/box.h"
+#include "ui/controls/flex.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/controls/progress_bar.h"
 #include "ui/palette.h"
@@ -26,7 +28,17 @@ constexpr std::size_t kMaxVisible = 5;
 constexpr float kGap = Style::spaceSm;
 constexpr float kPadding = Style::spaceMd;
 constexpr float kCardInnerPad = Style::spaceMd;
-constexpr int kPopupDurationMs = 8000;
+constexpr int kDefaultPopupDurationMs = 6000; // fallback when timeout == -1 (server default)
+constexpr float kCloseButtonSize = 20.0f;
+constexpr float kCloseGlyphSize = 12.0f;
+
+// Maps the raw DBus timeout value to a popup display duration.
+// Returns -1 to mean "persistent — never auto-dismiss".
+int resolveDisplayDuration(int32_t timeout) {
+  if (timeout == 0)  return -1;
+  if (timeout == -1) return kDefaultPopupDurationMs;
+  return std::max(1000, static_cast<int>(timeout));
+}
 constexpr int kProgressHeight = 3;
 constexpr int kSlideOffset = 20;                            // horizontal slide distance for entry/exit animation
 constexpr float kProgressBottomMargin = Style::spaceMd;    // space below progress bar to card edge
@@ -208,7 +220,7 @@ void NotificationPopup::onNotificationEvent(const Notification& n, NotificationE
           cs.summaryLabel->setText(m_entries[i].wrappedSummary);
           cs.bodyLabel->setText(m_entries[i].wrappedBody);
           cs.bodyLabel->setPosition(
-              kCardInnerPad, kCardInnerPad + kMetaFontSize + kMetaGap +
+              kCardInnerPad, kCardInnerPad + kCloseButtonSize + kMetaGap +
                                  static_cast<float>(m_entries[i].summaryLines) * kSummaryLineHeight + kSummaryBodyGap);
 
           const float progressY = newHeight - kProgressHeight - kProgressBottomMargin;
@@ -218,10 +230,18 @@ void NotificationPopup::onNotificationEvent(const Notification& n, NotificationE
           if (cs.countdownAnimId != 0) {
             inst->animations.cancel(cs.countdownAnimId);
           }
-          cs.progressBar->setProgress(1.0f);
-          cs.countdownAnimId = inst->animations.animate(
-              1.0f, 0.0f, kPopupDurationMs, Easing::Linear, [pb = cs.progressBar](float v) { pb->setProgress(v); },
-              [this, id = n.id]() { DeferredCall::callLater([this, id]() { removePopup(id); }); });
+          const int newDuration = resolveDisplayDuration(n.timeout);
+          m_entries[i].displayDurationMs = newDuration;
+          if (newDuration < 0) {
+            cs.progressBar->setOpacity(0.0f);
+            cs.countdownAnimId = 0;
+          } else {
+            cs.progressBar->setOpacity(1.0f);
+            cs.progressBar->setProgress(1.0f);
+            cs.countdownAnimId = inst->animations.animate(
+                1.0f, 0.0f, static_cast<float>(newDuration), Easing::Linear, [pb = cs.progressBar](float v) { pb->setProgress(v); },
+                [this, id = n.id]() { DeferredCall::callLater([this, id]() { removePopup(id); }); });
+          }
 
           // Flash
           cs.cardNode->setOpacity(0.7f);
@@ -269,6 +289,7 @@ void NotificationPopup::addPopup(const Notification& n) {
   entry.summary = n.summary;
   entry.body = n.body;
   entry.urgency = n.urgency;
+  entry.displayDurationMs = resolveDisplayDuration(n.timeout);
   updateEntryLayout(entry);
   m_entries.push_back(std::move(entry));
   std::size_t index = m_entries.size() - 1;
@@ -386,13 +407,19 @@ void NotificationPopup::addCardToInstance(PopupInstance& inst, std::size_t entry
 
   // Countdown (only the first instance drives the timeout to avoid duplicate removals)
   bool isDriver = (m_instances.size() > 0 && m_instances[0].get() == &inst);
-  cs.countdownAnimId = inst.animations.animate(
-      1.0f, 0.0f, kPopupDurationMs, Easing::Linear, [pb = cs.progressBar](float v) { pb->setProgress(v); },
-      [this, id = entry.notificationId, isDriver]() {
-        if (isDriver) {
-          DeferredCall::callLater([this, id]() { removePopup(id); });
-        }
-      });
+  if (entry.displayDurationMs < 0) {
+    // Persistent — no countdown, no auto-dismiss
+    cs.progressBar->setOpacity(0.0f);
+    cs.countdownAnimId = 0;
+  } else {
+    cs.countdownAnimId = inst.animations.animate(
+        1.0f, 0.0f, static_cast<float>(entry.displayDurationMs), Easing::Linear, [pb = cs.progressBar](float v) { pb->setProgress(v); },
+        [this, id = entry.notificationId, isDriver]() {
+          if (isDriver) {
+            DeferredCall::callLater([this, id]() { removePopup(id); });
+          }
+        });
+  }
 
   inst.cards.push_back(cs);
   inst.surface->requestRedraw();
@@ -498,7 +525,7 @@ void NotificationPopup::updateEntryLayout(PopupEntry& entry) const {
   entry.summaryLines = summaryLines;
   entry.bodyLines = bodyLines;
 
-  const float contentHeight = kCardInnerPad + kMetaFontSize + kMetaGap +
+  const float contentHeight = kCardInnerPad + kCloseButtonSize + kMetaGap +
                               static_cast<float>(summaryLines) * kSummaryLineHeight + kSummaryBodyGap +
                               static_cast<float>(bodyLines) * kBodyFontSize;
   entry.cardHeight = std::max(static_cast<float>(kCardMinHeight),
@@ -610,32 +637,72 @@ Node* NotificationPopup::buildCard(const PopupEntry& entry, Label** outAppName, 
     }
   });
 
+  const bool isCritical = (entry.urgency == Urgency::Critical);
+
   // Background
   auto bg = std::make_unique<Box>();
   bg->setCardStyle();
+  if (isCritical) {
+    bg->setFill(palette.error);
+  }
   bg->setSize(kCardWidth, entry.cardHeight);
   *outBg = area->addChild(std::move(bg));
 
-  // App name (caption style, muted)
+  const Color metaColor    = isCritical ? palette.onError : palette.onSurfaceVariant;
+  const Color contentColor = isCritical ? palette.onError : palette.onSurface;
+
+  const Color closeColorNormal = isCritical ? withAlpha(palette.onError, 0.6f) : withAlpha(palette.onSurfaceVariant, 0.6f);
+  const Color closeColorHover  = isCritical ? palette.onError : palette.onSurface;
+
+  // Header row: app name (left) + close button (right), vertically centred via Flex
+  auto headerRow = std::make_unique<Flex>();
+  headerRow->setDirection(FlexDirection::Horizontal);
+  headerRow->setJustify(FlexJustify::SpaceBetween);
+  headerRow->setAlign(FlexAlign::Center);
+  headerRow->setSize(innerWidth, kCloseButtonSize);
+  headerRow->setPosition(kCardInnerPad, kCardInnerPad);
+
   auto appName = std::make_unique<Label>();
   appName->setText(entry.appName);
   appName->setFontSize(kMetaFontSize);
-  appName->setColor(palette.onSurfaceVariant);
-  appName->setMaxWidth(innerWidth);
+  appName->setColor(metaColor);
   appName->measure(*m_renderContext);
-  appName->setPosition(kCardInnerPad, kCardInnerPad);
   *outAppName = appName.get();
-  area->addChild(std::move(appName));
+  headerRow->addChild(std::move(appName));
+
+  auto closeArea = std::make_unique<InputArea>();
+  closeArea->setSize(kCloseButtonSize, kCloseButtonSize);
+  closeArea->setOnClick([this, id = entry.notificationId](const InputArea::PointerData& data) {
+    if (data.button == BTN_LEFT) {
+      removePopup(id);
+    }
+  });
+  auto closeGlyph = std::make_unique<Glyph>();
+  closeGlyph->setGlyph("close");
+  closeGlyph->setGlyphSize(kCloseGlyphSize);
+  closeGlyph->setColor(closeColorNormal);
+  closeGlyph->setPosition((kCloseButtonSize - kCloseGlyphSize) * 0.5f, (kCloseButtonSize - kCloseGlyphSize) * 0.5f);
+  auto* closeGlyphPtr = static_cast<Glyph*>(closeArea->addChild(std::move(closeGlyph)));
+  closeArea->setOnEnter([closeGlyphPtr, closeColorHover](const InputArea::PointerData&) {
+    closeGlyphPtr->setColor(closeColorHover);
+  });
+  closeArea->setOnLeave([closeGlyphPtr, closeColorNormal]() {
+    closeGlyphPtr->setColor(closeColorNormal);
+  });
+  headerRow->addChild(std::move(closeArea));
+  headerRow->layout(*m_renderContext);
+
+  area->addChild(std::move(headerRow));
 
   // Summary (bold title)
   auto summary = std::make_unique<Label>();
   summary->setText(entry.wrappedSummary);
   summary->setFontSize(kSummaryFontSize);
-  summary->setColor(palette.onSurface);
+  summary->setColor(contentColor);
   summary->setBold(true);
   summary->setMaxWidth(innerWidth);
   summary->measure(*m_renderContext);
-  summary->setPosition(kCardInnerPad, kCardInnerPad + kMetaFontSize + kMetaGap);
+  summary->setPosition(kCardInnerPad, kCardInnerPad + kCloseButtonSize + kMetaGap);
   *outSummary = summary.get();
   area->addChild(std::move(summary));
 
@@ -643,10 +710,10 @@ Node* NotificationPopup::buildCard(const PopupEntry& entry, Label** outAppName, 
   auto body = std::make_unique<Label>();
   body->setText(entry.wrappedBody);
   body->setFontSize(kBodyFontSize);
-  body->setColor(palette.onSurfaceVariant);
+  body->setColor(metaColor);
   body->setMaxWidth(innerWidth);
   body->measure(*m_renderContext);
-  body->setPosition(kCardInnerPad, kCardInnerPad + kMetaFontSize + kMetaGap +
+  body->setPosition(kCardInnerPad, kCardInnerPad + kCloseButtonSize + kMetaGap +
                                        static_cast<float>(entry.summaryLines) * kSummaryLineHeight + kSummaryBodyGap);
   *outBody = body.get();
   area->addChild(std::move(body));

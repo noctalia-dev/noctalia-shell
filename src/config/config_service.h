@@ -11,6 +11,7 @@
 #include <vector>
 
 struct WaylandOutput;
+class NotificationManager;
 
 struct BarMonitorOverride {
   std::string match;
@@ -142,6 +143,7 @@ public:
   [[nodiscard]] int watchFd() const noexcept { return m_inotifyFd; }
 
   void addReloadCallback(ReloadCallback callback);
+  void setNotificationManager(NotificationManager* manager);
   void checkReload();
   void forceReload();
 
@@ -154,6 +156,9 @@ private:
 
   Config m_config;
   std::string m_configPath;
+  std::string m_pendingError;         // parse error from initial load, sent as notification once manager is wired up
+  uint32_t m_errorNotificationId = 0; // ID of the active config-error notification, 0 if none
+  NotificationManager* m_notificationManager = nullptr;
   int m_inotifyFd = -1;
   int m_watchFd = -1;
   bool m_pendingReload = false;
