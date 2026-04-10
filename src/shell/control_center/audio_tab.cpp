@@ -26,8 +26,8 @@ namespace {
 constexpr float kDevicesColumnGrow = 3.0f;
 constexpr float kVolumeColumnGrow = 2.0f;
 constexpr float kValueLabelWidth = Style::controlHeightLg + Style::spaceLg;
-constexpr auto kVolumeDebounceInterval = std::chrono::milliseconds(45);
 constexpr float kVolumeSyncEpsilon = 0.005f;           // 0.5%
+constexpr auto kVolumeCommitInterval = std::chrono::milliseconds(16);
 constexpr auto kVolumeStateHoldoff = std::chrono::milliseconds(180);
 
 class AudioDeviceRow : public Flex {
@@ -327,14 +327,9 @@ std::unique_ptr<Flex> AudioTab::create() {
     if (m_syncingOutputSlider || m_audio == nullptr) {
       return;
     }
+    m_sinkVolumeDebounceTimer.stop();
     queueSinkVolume(value);
-    if (m_outputSlider != nullptr && m_outputSlider->dragging()) {
-      // Restart one-shot debounce while dragging; send latest settled value.
-      m_sinkVolumeDebounceTimer.start(kVolumeDebounceInterval, [this]() { flushPendingVolumes(); });
-    } else {
-      m_sinkVolumeDebounceTimer.stop();
-      flushPendingVolumes();
-    }
+    flushPendingVolumes();
     if (m_outputValue != nullptr) {
       m_outputValue->setText(std::to_string(static_cast<int>(std::round(value * 100.0f))) + "%");
     }
@@ -388,14 +383,9 @@ std::unique_ptr<Flex> AudioTab::create() {
     if (m_syncingInputSlider || m_audio == nullptr) {
       return;
     }
+    m_sourceVolumeDebounceTimer.stop();
     queueSourceVolume(value);
-    if (m_inputSlider != nullptr && m_inputSlider->dragging()) {
-      // Restart one-shot debounce while dragging; send latest settled value.
-      m_sourceVolumeDebounceTimer.start(kVolumeDebounceInterval, [this]() { flushPendingVolumes(); });
-    } else {
-      m_sourceVolumeDebounceTimer.stop();
-      flushPendingVolumes();
-    }
+    flushPendingVolumes();
     if (m_inputValue != nullptr) {
       m_inputValue->setText(std::to_string(static_cast<int>(std::round(value * 100.0f))) + "%");
     }
@@ -553,6 +543,8 @@ void AudioTab::onClose() {
   m_pendingSourceVolume = -1.0f;
   m_lastSentSinkVolume = -1.0f;
   m_lastSentSourceVolume = -1.0f;
+  m_lastSinkCommitAt = {};
+  m_lastSourceCommitAt = {};
   m_ignoreSinkStateUntil = {};
   m_ignoreSourceStateUntil = {};
 }
@@ -687,6 +679,7 @@ void AudioTab::flushPendingVolumes(bool force) {
   const float sliderMax = sliderMaxPercent() / 100.0f;
   const bool outputDragging = m_outputSlider != nullptr && m_outputSlider->dragging();
   const bool inputDragging = m_inputSlider != nullptr && m_inputSlider->dragging();
+  const auto now = std::chrono::steady_clock::now();
 
   if (m_pendingSinkVolume >= 0.0f) {
     m_pendingSinkVolume = std::clamp(m_pendingSinkVolume, 0.0f, sliderMax);
@@ -702,11 +695,21 @@ void AudioTab::flushPendingVolumes(bool force) {
       const float delta = std::abs(m_pendingSinkVolume - m_lastSentSinkVolume);
       shouldSendSink = delta >= 0.0001f;
     }
+    if (shouldSendSink && !force && outputDragging) {
+      const auto nextSendAt = m_lastSinkCommitAt + kVolumeCommitInterval;
+      if (now < nextSendAt) {
+        m_sinkVolumeDebounceTimer.start(
+            std::chrono::duration_cast<std::chrono::milliseconds>(nextSendAt - now),
+            [this]() { flushPendingVolumes(); });
+        shouldSendSink = false;
+      }
+    }
     if (sinkId != 0 && shouldSendSink) {
       m_audio->setSinkVolume(sinkId, m_pendingSinkVolume);
       m_audio->emitVolumePreview(false, sinkId, m_pendingSinkVolume);
       m_lastSentSinkVolume = m_pendingSinkVolume;
-      m_ignoreSinkStateUntil = std::chrono::steady_clock::now() + kVolumeStateHoldoff;
+      m_lastSinkCommitAt = std::chrono::steady_clock::now();
+      m_ignoreSinkStateUntil = m_lastSinkCommitAt + kVolumeStateHoldoff;
     }
     if (force || !outputDragging) {
       m_pendingSinkId = 0;
@@ -722,11 +725,21 @@ void AudioTab::flushPendingVolumes(bool force) {
       const float delta = std::abs(m_pendingSourceVolume - m_lastSentSourceVolume);
       shouldSendSource = delta >= 0.0001f;
     }
+    if (shouldSendSource && !force && inputDragging) {
+      const auto nextSendAt = m_lastSourceCommitAt + kVolumeCommitInterval;
+      if (now < nextSendAt) {
+        m_sourceVolumeDebounceTimer.start(
+            std::chrono::duration_cast<std::chrono::milliseconds>(nextSendAt - now),
+            [this]() { flushPendingVolumes(); });
+        shouldSendSource = false;
+      }
+    }
     if (sourceId != 0 && shouldSendSource) {
       m_audio->setSourceVolume(sourceId, m_pendingSourceVolume);
       m_audio->emitVolumePreview(true, sourceId, m_pendingSourceVolume);
       m_lastSentSourceVolume = m_pendingSourceVolume;
-      m_ignoreSourceStateUntil = std::chrono::steady_clock::now() + kVolumeStateHoldoff;
+      m_lastSourceCommitAt = std::chrono::steady_clock::now();
+      m_ignoreSourceStateUntil = m_lastSourceCommitAt + kVolumeStateHoldoff;
     }
     if (force || !inputDragging) {
       m_pendingSourceId = 0;
