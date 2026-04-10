@@ -31,9 +31,6 @@ public:
   [[nodiscard]] virtual std::vector<Workspace> forOutput(wl_output* output) const = 0;
   virtual void cleanup() = 0;
 
-  virtual void onOutputAdded(wl_output* /*output*/) {}
-  virtual void onOutputRemoved(wl_output* /*output*/) {}
-
   [[nodiscard]] virtual int pollFd() const noexcept { return -1; }
   [[nodiscard]] virtual short pollEvents() const noexcept { return POLLIN | POLLHUP | POLLERR; }
   [[nodiscard]] virtual int pollTimeoutMs() const noexcept { return -1; }

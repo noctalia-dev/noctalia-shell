@@ -40,6 +40,7 @@ private:
   void setActiveBackend(WorkspaceBackend* backend);
   void notifyChanged() const;
 
+  std::vector<class OutputBackend*> m_outputBackends;
   std::unique_ptr<class ExtWorkspaceBackend> m_extBackend;
   std::unique_ptr<class MangoWorkspaceBackend> m_mangoBackend;
   std::unique_ptr<class SwayWorkspaceBackend> m_swayBackend;

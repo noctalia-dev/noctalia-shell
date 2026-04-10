@@ -2,6 +2,7 @@
 
 #include "compositors/ext_workspace_backend.h"
 #include "compositors/mango/mango_workspace_backend.h"
+#include "compositors/output_backend.h"
 #include "compositors/sway/sway_workspace_backend.h"
 #include "core/log.h"
 
@@ -30,6 +31,7 @@ WaylandWorkspaces::WaylandWorkspaces() {
   m_extBackend = std::make_unique<ExtWorkspaceBackend>();
   m_mangoBackend = std::make_unique<MangoWorkspaceBackend>();
   m_swayBackend = std::make_unique<SwayWorkspaceBackend>([](wl_output* /*output*/) { return std::string{}; });
+  m_outputBackends.push_back(m_mangoBackend.get());
 }
 
 WaylandWorkspaces::~WaylandWorkspaces() = default;
@@ -83,26 +85,18 @@ void WaylandWorkspaces::initialize(std::string_view compositorHint) {
 }
 
 void WaylandWorkspaces::onOutputAdded(wl_output* output) {
-  if (m_extBackend != nullptr) {
-    m_extBackend->onOutputAdded(output);
-  }
-  if (m_mangoBackend != nullptr) {
-    m_mangoBackend->onOutputAdded(output);
-  }
-  if (m_swayBackend != nullptr) {
-    m_swayBackend->onOutputAdded(output);
+  for (auto* backend : m_outputBackends) {
+    if (backend != nullptr) {
+      backend->onOutputAdded(output);
+    }
   }
 }
 
 void WaylandWorkspaces::onOutputRemoved(wl_output* output) {
-  if (m_extBackend != nullptr) {
-    m_extBackend->onOutputRemoved(output);
-  }
-  if (m_mangoBackend != nullptr) {
-    m_mangoBackend->onOutputRemoved(output);
-  }
-  if (m_swayBackend != nullptr) {
-    m_swayBackend->onOutputRemoved(output);
+  for (auto* backend : m_outputBackends) {
+    if (backend != nullptr) {
+      backend->onOutputRemoved(output);
+    }
   }
 }
 
