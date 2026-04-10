@@ -524,7 +524,7 @@ void OverviewTab::onClose() {
 
 void OverviewTab::sync(Renderer& renderer) {
   if (m_userAvatar != nullptr && m_config != nullptr) {
-    const std::string avatarPath = m_config->config().controlCenter.overview.avatarPath;
+    const std::string avatarPath = m_config->config().shell.avatarPath;
     if (avatarPath != m_loadedAvatarPath) {
       if (avatarPath.empty()) {
         m_userAvatar->clear(renderer);

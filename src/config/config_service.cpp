@@ -472,6 +472,9 @@ void ConfigService::loadFromFile(const std::string& path) {
     if (auto notificationsDbus = (*shellTbl)["notifications_dbus"].value<bool>()) {
       shell.notificationsDbus = *notificationsDbus;
     }
+    if (auto v = (*shellTbl)["avatar_path"].value<std::string>()) {
+      shell.avatarPath = *v;
+    }
   }
 
   // Parse [wallpaper]
@@ -549,15 +552,6 @@ void ConfigService::loadFromFile(const std::string& path) {
       ov.blurIntensity = static_cast<float>(*v);
     if (auto v = (*ovTbl)["tint_intensity"].value<double>())
       ov.tintIntensity = static_cast<float>(*v);
-  }
-
-  // Parse [control_center.overview]
-  if (auto* ccTbl = tbl["control_center"].as_table()) {
-    if (auto* ccOverviewTbl = (*ccTbl)["overview"].as_table()) {
-      auto& ccOverview = m_config.controlCenter.overview;
-      if (auto v = (*ccOverviewTbl)["avatar_path"].value<std::string>())
-        ccOverview.avatarPath = *v;
-    }
   }
 
   // Parse [osd]

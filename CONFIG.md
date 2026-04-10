@@ -19,7 +19,6 @@ Changes are detected automatically via inotify — no restart required.
 - [OSD](#osd)
 - [Wallpaper](#wallpaper)
 - [Overview](#overview)
-- [Control Center](#control-center)
 - [Full example](#full-example)
 
 ---
@@ -366,21 +365,6 @@ The OSD currently powers the volume HUD and defaults to `top_right`.
 
 ---
 
-## Control Center
-
-Settings for the control center panels.
-
-```toml
-[control_center.overview]
-avatar_path = "/home/you/Pictures/avatar.png"
-```
-
-| Setting       | Type   | Default | Description |
-|---------------|--------|---------|-------------|
-| `avatar_path` | string | `""`    | Absolute path to the avatar image used in the Overview session card |
-
----
-
 ## Audio
 
 ```toml
@@ -473,6 +457,7 @@ Shell-wide UI settings for non-bar surfaces.
 ui_scale = 1.0              # content scale multiplier for panels and other non-bar shell UI
 lang = "en"                 # overidde language detection
 notifications_dbus = true   # when false, don't claim org.freedesktop.Notifications
+avatar_path = "/home/you/Pictures/avatar.png" # avatar image for Control Center overview session card
 ```
 
 `ui_scale` is completely separate from `bar.scale`:
@@ -481,6 +466,8 @@ notifications_dbus = true   # when false, don't claim org.freedesktop.Notificati
 - neither setting changes Wayland output scale / HiDPI buffer scale
 
 `notifications_dbus` only controls the external D-Bus notification daemon. When disabled, apps cannot send notifications through `org.freedesktop.Notifications`, but Noctalia internal notifications still appear in popups, history, and widgets.
+
+`avatar_path` sets the avatar image shown in the Control Center Overview session card.
 
 ---
 
@@ -567,6 +554,4 @@ enabled        = true
 blur_intensity = 0.6
 tint_intensity = 0.35
 
-[control_center.overview]
-avatar_path = "/home/you/Pictures/avatar.png"
 ```
