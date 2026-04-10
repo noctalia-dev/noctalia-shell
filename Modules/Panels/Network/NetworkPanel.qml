@@ -25,7 +25,6 @@ SmartPanel {
 
   // Unified panel view mode: "wifi" | "ethernet" (persisted)
   property string panelViewMode: "wifi"
-  property bool panelViewPersistEnabled: false
 
   // If VPN configs vanish while on VPN tab, switch away
   Connections {
@@ -133,14 +132,10 @@ SmartPanel {
     } else if (panelViewMode === "vpn") {
       _tabIdx = 2;
     }
-    if (modeTabBar.currentIndex !== _tabIdx) {
+    if (modeTabBar && modeTabBar.currentIndex !== _tabIdx) {
       modeTabBar.currentIndex = _tabIdx;
     }
 
-    // Persist last view (only after restored the initial value)
-    if (panelViewPersistEnabled) {
-      Settings.data.network.networkPanelView = panelViewMode;
-    }
     if (panelViewMode === "wifi") {
       ethernetInfoExpanded = false;
       if (NetworkService.wifiEnabled && !NetworkService.scanningActive) {
@@ -186,10 +181,11 @@ SmartPanel {
       panelViewMode = "ethernet";
     } else if (VPNService.hasConnections) {
       panelViewMode = "vpn";
+    } else if (NetworkService.wifiAvailable) {
+      panelViewMode = "wifi";
     } else {
       panelViewMode = "ethernet"; // fallback
     }
-    panelViewPersistEnabled = true;
   }
 
   panelContent: Rectangle {
@@ -269,6 +265,15 @@ SmartPanel {
               enabled: !NetworkService.airplaneModeEnabled && NetworkService.wifiAvailable
               onToggled: checked => NetworkService.setWifiEnabled(checked)
               baseSize: Style.baseWidgetSize * 0.7 // Slightly smaller
+            }
+
+            NIconButton {
+              icon: "refresh"
+              visible: panelViewMode === "wifi"
+              tooltipText: I18n.tr("common.refresh")
+              baseSize: Style.baseWidgetSize * 0.8
+              enabled: NetworkService.wifiEnabled && !NetworkService.scanningActive
+              onClicked: NetworkService.scan()
             }
 
             NIconButton {

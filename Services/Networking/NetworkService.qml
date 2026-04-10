@@ -697,12 +697,19 @@ Singleton {
           newActiveWifiDetails.signal = signal;
         }
 
+        let wifiWasAvailable = root._wifiAvailable;
         root._wifiAvailable = wifiAvailable;
         root._ethernetAvailable = ethernetAvailable;
         root.ethernetConnected = (activeEthIf !== "");
         root.wifiConnected = (activeWifiIf !== "");
 
         Logger.d("Network", "Device sync: wifiAvailable: " + wifiAvailable + ", ethAvailable: " + ethernetAvailable + ", wifiConnected: " + root.wifiConnected + " (" + activeWifiIf + "), ethConnected: " + root.ethernetConnected + " (" + activeEthIf + ")");
+
+        // Adapter (re-)appeared: trigger a scan so the network list populates
+        if (wifiAvailable && !wifiWasAvailable && root.wifiEnabled && !root.scanningActive) {
+          delayedScanTimer.interval = 2000;
+          delayedScanTimer.restart();
+        }
 
         ethList.sort((a, b) => (a.connected !== b.connected) ? (a.connected ? -1 : 1) : a.ifname.localeCompare(b.ifname));
         root.ethernetInterfaces = ethList;
@@ -1151,11 +1158,26 @@ Singleton {
     stdout: SplitParser {
       onRead: data => {
         if (data.endsWith(": connected") || data.endsWith(": disconnected")) {
+          // High-priority state changes: refresh immediately
           Logger.d("Network", "State changed: " + data);
+          _monitorDebounce.stop();
           deviceStatusProcess.running = true;
           connectivityCheckProcess.running = true;
+        } else if (data.endsWith(": unavailable") || data.endsWith(": unmanaged") || data.indexOf(": device removed") !== -1 || data.indexOf(": device created") !== -1) {
+          // Adapter added/removed: debounce to avoid rapid-fire refreshes
+          Logger.d("Network", "Device event: " + data);
+          _monitorDebounce.restart();
         }
       }
+    }
+  }
+
+  Timer {
+    id: _monitorDebounce
+    interval: 500
+    repeat: false
+    onTriggered: {
+      deviceStatusProcess.running = true;
     }
   }
 }
