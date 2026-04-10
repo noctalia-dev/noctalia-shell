@@ -176,29 +176,18 @@ Item {
         return;
 
       var shouldApplyToAll = root.applyToAllMonitors && root.getControllableMonitorCount() > 1;
-      if (shouldApplyToAll) {
-        var direction = angle > 0 ? 1 : -1;
-        var baseValue = !isNaN(monitor.queuedBrightness) ? monitor.queuedBrightness : monitor.brightness;
-        var step = monitor.stepSize;
-        var minValue = monitor.minBrightnessValue;
-
-        if (direction > 0 && Settings.data.brightness.enforceMinimum && baseValue < minValue) {
-          baseValue = Math.max(step, minValue);
+      if (angle > 0) {
+        if (shouldApplyToAll) {
+          BrightnessService.increaseBrightness();
         } else {
-          baseValue = baseValue + direction * step;
+          monitor.increaseBrightness();
         }
-
-        var targetValue = Math.max(minValue, Math.min(1, baseValue));
-
-        BrightnessService.monitors.forEach(function (m) {
-          if (m && m.brightnessControlAvailable) {
-            m.setBrightnessDebounced(targetValue);
-          }
-        });
-      } else if (angle > 0) {
-        monitor.increaseBrightness();
       } else if (angle < 0) {
-        monitor.decreaseBrightness();
+        if (shouldApplyToAll) {
+          BrightnessService.decreaseBrightness();
+        } else {
+          monitor.decreaseBrightness();
+        }
       }
     }
 

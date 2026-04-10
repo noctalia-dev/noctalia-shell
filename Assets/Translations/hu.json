@@ -37,7 +37,7 @@
       "scrolling-mode-description": "Mikor engedélyezett a szöveggörgetés a hosszú ablakcímek esetén.",
       "show-app-icon-description": "Az alkalmazás ikonjának megjelenítése az ablakcím mellett.",
       "show-app-icon-label": "Alkalmazásikon megjelenítése",
-      "show-app-text-description": "Ablakcím megjelenítése.",
+      "show-app-text-description": "Az aktív ablak címének megjelenítése.",
       "show-app-text-label": "Ablakcím megjelenítése"
     },
     "audio-visualizer": {
@@ -96,6 +96,7 @@
       "browse-library": "Könyvtár tallózása",
       "color-selection-description": "Témaszínek alkalmazása az ikonokra.",
       "enable-colorization-description": "Az ikon színezésének engedélyezése témaszínek alkalmazásával.",
+      "enable-colorization-label": "Színezés engedélyezése",
       "icon-description": "Ikon kiválasztása a könyvtárból vagy egy egyéni fájlból.",
       "select-custom-icon": "Egyéni ikon kiválasztása",
       "use-distro-logo-description": "Disztribúció logó használata egy egyéni ikon helyett.",
@@ -119,7 +120,14 @@
       "hide-mode-expand-with-output": "Kibontás, ha van kimenet",
       "hide-mode-label": "Elrejtési mód",
       "hide-mode-max-transparent": "Maximálisan kibontva, de átlátszó",
+      "icon-color-selection-description": "Téma színeinek alkalmazása az ikonokra.",
       "icon-description": "Ikon kiválasztása a könyvtárból.",
+      "icon-position-bottom": "Alul",
+      "icon-position-description": "Válaszd ki, hol jelenjen meg az ikon a szöveghez képest.",
+      "icon-position-label": "Ikon pozíciója",
+      "icon-position-left": "Bal",
+      "icon-position-right": "Jobb",
+      "icon-position-top": "Felül",
       "ipc-identifier-description": "Egyedi azonosító az IPC parancsokhoz. Használd ezt az azonosítót a 'qs -c noctalia-shell ipc call cb [akció] [azonosító]' paranccsal, hogy vezéreld ezt a gombot IPC-n keresztül.",
       "ipc-identifier-label": "IPC-azonosító",
       "left-click-description": "Végrehajtandó parancs a gomb bal egérgombbal történő kattintásakor.",
@@ -145,6 +153,10 @@
       "show-icon-label": "Ikon megjelenítése",
       "show-text-tooltip-description": "Eszköztippek megjelenítése a szöveges parancs kimenetével.",
       "show-text-tooltip-label": "Dinamikus szöveges eszköztippek megjelenítése",
+      "tab-actions": "Műveletek",
+      "tab-icon": "Ikon",
+      "tab-text": "Szöveges parancs",
+      "text-color-selection-description": "Téma színeinek alkalmazása a szövegre.",
       "text-stream-description": "A parancsból streamelt sorok szövegként jelennek meg a gombon.",
       "text-stream-label": "Stream",
       "wheel-description": "Végrehajtandó parancs a görgő használatakor.<br>Használd a $delta változót a parancsban a görgő elmozdulásához.",
@@ -517,6 +529,7 @@
     "select-color": "Szín kiválasztása",
     "select-color-description": "Témaszínek a kiemeléshez.",
     "select-icon-color": "Ikon színének kiválasztása",
+    "select-text-color": "Szövegszín kiválasztása",
     "settings": "Beállítások",
     "shortcuts": "Gyorsbillentyűk",
     "shutdown": "Leállítás",
@@ -550,7 +563,7 @@
     "wallpaper": "Háttérkép",
     "weather": "Időjárás",
     "weather-loading": "Időjárás betöltése…",
-    "weather-no-location": "Állítson be egy helyet a Beállításokban az időjárás megtekintéséhez",
+    "weather-no-location": "Állíts be egy helyet a Beállításokban az időjárás megtekintéséhez",
     "week": "Hét",
     "widgets": "Widgetek",
     "width": "Szélesség",
@@ -978,7 +991,7 @@
       "disable-discoverability-label": "Eszköz láthatóságának letiltása",
       "hide-unnamed-devices-description": "Elrejti azokat az eszközöket, amelyek csak Bluetooth-címként jelennek meg.",
       "hide-unnamed-devices-label": "Névtelen eszközök elrejtése",
-      "pin-instructions": "Írja be az eszközén megjelenő PIN-kódot.",
+      "pin-instructions": "Írd be az eszközön megjelenő PIN-kódot.",
       "title": "Kapcsolatok",
       "wifi-header-text": "Használd a Wi-Fi-t az elérhető hálózatok megtekintéséhez és az internethez való csatlakozáshoz."
     },
@@ -1641,7 +1654,7 @@
       "countdown-duration-label": "Visszaszámlálás időtartama",
       "enable-countdown-description": "Visszaszámlálás megjelenítése az energiagazdálkodási műveletek végrehajtása előtt.",
       "enable-countdown-label": "Visszaszámláló engedélyezése",
-      "entries-desc": "Mely energiagazdálkodási műveletek jelenjenek meg a munkamenet menüben, és milyen sorrendben.",
+      "entries-desc": "Mely energiagazdálkodási műveletek jelenjenek meg a munkamenetmenüben, és milyen sorrendben.",
       "entries-title": "Energiagazdálkodási műveletek",
       "entry-settings-command-description": "Egyéni parancs a művelet végrehajtásához. Hagyd üresen az alapértelmezett rendszerparancs használatához.",
       "entry-settings-command-placeholder": "pl. systemctl poweroff",
@@ -1649,7 +1662,7 @@
       "entry-settings-default-command-logout": "Belső kijelentkezés (nincs parancs)",
       "entry-settings-default-info-description": "Ha nincs megadva egyéni parancs, az alapértelmezett rendszerparancs kerül felhasználásra.",
       "entry-settings-default-info-label": "Alapértelmezett parancs",
-      "entry-settings-keybind-description": "Rendeljen hozzá billentyűkombinációt ezen művelet elindításához, amikor a munkamenet menü nyitva van.",
+      "entry-settings-keybind-description": "Rendelj hozzá billentyűkombinációt ezen művelet elindításához, amikor a munkamenet menü nyitva van.",
       "entry-settings-keybind-placeholder": "Nyomd meg a Felvétel gombot egy billentyű hozzárendeléséhez…",
       "entry-settings-keybind-recording": "Felvétel… Nyomj meg bármilyen billentyűkombinációt",
       "entry-settings-title": "{entry} konfigurálása",
@@ -1657,10 +1670,10 @@
       "general-desc": "A munkamenet menüpanel viselkedésének és megjelenésének konfigurálása.",
       "large-buttons-layout-description": "Hogyan jelenjenek meg a munkamenü menügombjai.",
       "large-buttons-layout-label": "Nagy gombok elrendezése",
-      "large-buttons-style-description": "A munkamenet menü megjelenítése nagy gombokkal, rácsos elrendezésben.",
+      "large-buttons-style-description": "A munkamenetmenü megjelenítése nagy gombokkal, rácsos elrendezésben.",
       "large-buttons-style-label": "Nagyméretű gombok stílusa",
       "position-description": "Hol jelenjen meg a munkamenet menüpanel megnyitáskor.",
-      "show-header-description": "A cím és a bezárás gomb megjelenítése a munkamenet menü tetején.",
+      "show-header-description": "A cím és a bezárás gomb megjelenítése a munkamenetmenü tetején.",
       "show-header-label": "Fejléc megjelenítése",
       "show-keybinds-description": "Gyorsbillentyű tippek megjelenítése a munkamenet-opcióknál.",
       "show-keybinds-label": "Gyorsbillentyűk megjelenítése"
@@ -1789,7 +1802,7 @@
       "settings-recursive-search-label": "Alkönyvtárak keresése",
       "settings-select-monitor-folder": "Monitor háttérkép mappa kiválasztása",
       "settings-selector-description": "Háttérkép kiválasztása.",
-      "settings-selector-position-description": "Hol jelenjen meg a háttérkép választó panel.",
+      "settings-selector-position-description": "Hol jelenjen meg a háttérképválasztó panel.",
       "settings-show-hidden-files-tooltip-hide": "Rejtett fájlok elrejtése",
       "settings-show-hidden-files-tooltip-show": "Rejtett fájlok megjelenítése",
       "settings-title": "Háttérkép beállítások",
@@ -1817,7 +1830,7 @@
     "search-icons": "pl. noctalia, niri, battery, cloud",
     "search-launcher": "Keress bejegyzéseket vagy írd be a  „>” jelet a parancsokhoz",
     "search-wallhaven": "Wallhaven keresése…",
-    "search-wallpapers": "Írja be a háttérképek szűréséhez…"
+    "search-wallpapers": "Gépelj háttérképek szűréséhez…"
   },
   "positions": {
     "bottom": "Alul",
@@ -1839,7 +1852,7 @@
   "session-menu": {
     "action-in-seconds": "{action} {seconds} másodperc múlva…",
     "cancel-timer": "Időzítő megszakítása",
-    "title": "Munkamenet menü"
+    "title": "Munkamenetmenü"
   },
   "setup": {
     "all-done": "Kész!",
@@ -2037,7 +2050,7 @@
     "refresh-wallpaper-list": "Háttérkép lista frissítése",
     "remove-widget": "Widget eltávolítása",
     "search-close": "Keresés bezárása",
-    "session-menu": "Munkamenet menü",
+    "session-menu": "Munkamenetmenü",
     "show-all-devices": "Összes eszköz megjelenítése",
     "switch-to-dark-mode": "Sötét mód",
     "switch-to-light-mode": "Világos mód",
@@ -2053,7 +2066,7 @@
       "go-up": "Ugrás a szülő mappába",
       "go-up-hint": "A visszagombbal navigálhatsz felfelé."
     },
-    "configure-directory": "A háttérképkönyvtár képekkel való konfigurálása.",
+    "configure-directory": "Konfiguráld a háttérképkönyvtárt képekkel.",
     "fill-modes": {
       "crop": "Vágás (Kitöltés)",
       "fit": "Illesztés (Tartalmazás)",
@@ -2109,7 +2122,7 @@
       "sorting-views": "Megtekintések",
       "source-label": "Forrás",
       "source-wallhaven": "Wallhaven",
-      "title": "Háttérkép-választó",
+      "title": "Háttérképválasztó",
       "wallhaven-settings-title": "Wallhaven beállítások"
     },
     "transitions": {
@@ -2225,7 +2238,7 @@
       "known-networks": "Ismert hálózatok",
       "link-speed": "Kapcsolati sebesség",
       "network-name-ssid": "Hálózat neve (SSID)",
-      "no-ethernet-devices": "Nem található Ethernet eszköz",
+      "no-ethernet-devices": "Nem található Ethernet-eszköz",
       "no-networks": "Nem található Wi‑Fi-hálózat",
       "saved": "Mentve",
       "scan-again": "Keresés újra",

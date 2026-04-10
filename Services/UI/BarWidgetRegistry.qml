@@ -126,11 +126,13 @@ Singleton {
                                     "customIconPath": "",
                                     "colorizeDistroLogo": false,
                                     "colorizeSystemIcon": "none",
+                                    "colorizeSystemText": "none",
                                     "enableColorization": false
                                   },
                                   "CustomButton": {
                                     "icon": "heart",
                                     "showIcon": true,
+                                    "iconPosition": "left",
                                     "showExecTooltip": true,
                                     "showTextTooltip": true,
                                     "generalTooltipText": "",
@@ -157,8 +159,8 @@ Singleton {
                                       "horizontal": 10,
                                       "vertical": 10
                                     },
-                                    "enableColorization": false,
                                     "colorizeSystemIcon": "none",
+                                    "colorizeSystemText": "none",
                                     "ipcIdentifier": ""
                                   },
                                   "DarkMode": {
@@ -188,6 +190,7 @@ Singleton {
                                     "icon": "rocket",
                                     "customIconPath": "",
                                     "colorizeSystemIcon": "none",
+                                    "colorizeSystemText": "none",
                                     "enableColorization": false,
                                     "iconColor": "none"
                                   },
