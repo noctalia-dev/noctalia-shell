@@ -59,6 +59,57 @@ tinyexpr_dep = declare_dependency(
   include_directories: include_directories('third_party/tinyexpr', is_system: true),
 )
 
+# ── Vendored: Material Color Utilities (Google) ───────────────────────────────
+# Upstream uses #include "cpp/..." prefixes, so the include root is the
+# material_color_utilities/ dir itself. Built as a quiet static library.
+_mcu_sources = files(
+  'third_party/material_color_utilities/cpp/blend/blend.cc',
+  'third_party/material_color_utilities/cpp/cam/cam.cc',
+  'third_party/material_color_utilities/cpp/cam/hct.cc',
+  'third_party/material_color_utilities/cpp/cam/hct_solver.cc',
+  'third_party/material_color_utilities/cpp/cam/viewing_conditions.cc',
+  'third_party/material_color_utilities/cpp/contrast/contrast.cc',
+  'third_party/material_color_utilities/cpp/dislike/dislike.cc',
+  'third_party/material_color_utilities/cpp/dynamiccolor/dynamic_color.cc',
+  'third_party/material_color_utilities/cpp/dynamiccolor/dynamic_scheme.cc',
+  'third_party/material_color_utilities/cpp/dynamiccolor/material_dynamic_colors.cc',
+  'third_party/material_color_utilities/cpp/palettes/tones.cc',
+  'third_party/material_color_utilities/cpp/quantize/celebi.cc',
+  'third_party/material_color_utilities/cpp/quantize/lab.cc',
+  'third_party/material_color_utilities/cpp/quantize/wsmeans.cc',
+  'third_party/material_color_utilities/cpp/quantize/wu.cc',
+  'third_party/material_color_utilities/cpp/scheme/scheme_content.cc',
+  'third_party/material_color_utilities/cpp/scheme/scheme_expressive.cc',
+  'third_party/material_color_utilities/cpp/scheme/scheme_fidelity.cc',
+  'third_party/material_color_utilities/cpp/scheme/scheme_fruit_salad.cc',
+  'third_party/material_color_utilities/cpp/scheme/scheme_monochrome.cc',
+  'third_party/material_color_utilities/cpp/scheme/scheme_neutral.cc',
+  'third_party/material_color_utilities/cpp/scheme/scheme_rainbow.cc',
+  'third_party/material_color_utilities/cpp/scheme/scheme_tonal_spot.cc',
+  'third_party/material_color_utilities/cpp/scheme/scheme_vibrant.cc',
+  'third_party/material_color_utilities/cpp/score/score.cc',
+  'third_party/material_color_utilities/cpp/temperature/temperature_cache.cc',
+  'third_party/material_color_utilities/cpp/utils/utils.cc',
+)
+_mcu_lib = static_library('material_color_utilities',
+  _mcu_sources,
+  include_directories: include_directories('third_party/material_color_utilities', is_system: true),
+  cpp_args: ['-Wno-pedantic', '-Wno-conversion', '-Wno-shadow', '-Wno-unused-parameter'],
+  override_options: ['warning_level=0'],
+)
+mcu_dep = declare_dependency(
+  link_with: _mcu_lib,
+  include_directories: include_directories('third_party/material_color_utilities', is_system: true),
+)
+
+# ── Vendored: stb_image_resize2 (header-only) ─────────────────────────────────
+stb_dep = declare_dependency(
+  include_directories: include_directories('third_party/stb', is_system: true),
+)
+
+# ── System: libwebp (VP8 lossy WebP; wuffs only handles VP8L lossless) ────────
+libwebp_dep = dependency('libwebp', required: true)
+
 # ── Wayland protocol generation ───────────────────────────────────────────────
 wayland_scanner    = find_program('wayland-scanner')
 wayland_protos_dir = wayland_protos_dep.get_variable('pkgdatadir')
@@ -177,7 +228,7 @@ _noctalia_sources = files(
   'src/render/animation/animation_manager.cpp',
   'src/render/core/shader_program.cpp',
   'src/render/core/texture_manager.cpp',
-  'src/render/core/wuffs_image_decoder.cpp',
+  'src/render/core/image_decoder.cpp',
   'src/render/image_loaders.cpp',
   'src/render/programs/color_glyph_program.cpp',
   'src/render/programs/image_program.cpp',
@@ -272,6 +323,16 @@ _noctalia_sources = files(
   'src/wayland/wayland_seat.cpp',
   'src/wayland/wayland_toplevels.cpp',
   'src/wayland/wayland_workspaces.cpp',
+  'src/theme/scheme.cpp',
+  'src/theme/color.cpp',
+  'src/theme/contrast.cpp',
+  'src/theme/image_loader.cpp',
+  'src/theme/palette_generator.cpp',
+  'src/theme/m3_schemes.cpp',
+  'src/theme/custom_schemes.cpp',
+  'src/theme/json_output.cpp',
+  'src/theme/cli.cpp',
+  'src/ipc/cli.cpp',
 )
 
 if sanitize
@@ -311,6 +372,9 @@ executable('noctalia',
     curl_dep,
     pam_dep,
     tinyexpr_dep,
+    mcu_dep,
+    stb_dep,
+    libwebp_dep,
   ],
   include_directories: _noctalia_inc,
   cpp_args: [

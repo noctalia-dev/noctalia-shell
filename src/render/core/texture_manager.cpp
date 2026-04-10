@@ -12,7 +12,7 @@
 #include <nanosvgrast.h>
 #pragma GCC diagnostic pop
 
-#include "render/core/wuffs_image_decoder.h"
+#include "render/core/image_decoder.h"
 
 #include <algorithm>
 #include <cstring>

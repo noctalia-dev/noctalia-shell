@@ -1,32 +1,21 @@
 #include "app/application.h"
 #include "core/log.h"
+#include "ipc/cli.h"
 #include "ipc/ipc_client.h"
+#include "theme/cli.h"
 
+#include <cstdio>
 #include <cstring>
 #include <stdexcept>
-#include <string>
 
-int main(int argc, char* argv[]) {
-  if (argc >= 2 && std::strcmp(argv[1], "msg") == 0) {
-    // noctalia msg <command> [args...]
-    if (argc < 3) {
-      std::fputs("error: msg requires a command (try: noctalia msg --help)\n", stderr);
-      return 1;
-    }
-    std::string cmd = argv[2];
-    for (int i = 3; i < argc; ++i) {
-      cmd += ' ';
-      cmd += argv[i];
-    }
-    return IpcClient::send(cmd);
-  }
+namespace {
 
-  for (int i = 1; i < argc; ++i) {
-    if (std::strcmp(argv[i], "--version") == 0) {
+  int runTopLevelFlag(const char* flag) {
+    if (std::strcmp(flag, "--version") == 0) {
       std::puts("noctalia v" NOCTALIA_VERSION);
       return 0;
     }
-    if (std::strcmp(argv[i], "--help") == 0) {
+    if (std::strcmp(flag, "--help") == 0) {
       std::puts("Usage: noctalia [OPTIONS]\n"
                 "\n"
                 "Options:\n"
@@ -34,25 +23,45 @@ int main(int argc, char* argv[]) {
                 "  --version  Show version information\n"
                 "\n"
                 "Subcommands:\n"
-                "  msg <command>  Send a command to the running instance\n"
-                "                 Run 'noctalia msg --help' for available commands\n"
+                "  msg <command>    Send a command to the running instance\n"
+                "                   Run 'noctalia msg --help' for available commands\n"
+                "  theme <image>    Generate a color palette from an image\n"
+                "                   Run 'noctalia theme --help' for options\n"
                 "\n"
                 "For more information and documentation, visit:\n"
                 "  https://noctalia.dev");
       return 0;
     }
+    return -1;
   }
 
-  if (IpcClient::isRunning()) {
-    std::fputs("error: noctalia is already running\n", stderr);
-    return 1;
+  int runShell() {
+    if (IpcClient::isRunning()) {
+      std::fputs("error: noctalia is already running\n", stderr);
+      return 1;
+    }
+    try {
+      Application app;
+      app.run();
+    } catch (const std::exception& e) {
+      logError("fatal: {}", e.what());
+      return 1;
+    }
+    return 0;
   }
 
-  try {
-    Application app;
-    app.run();
-  } catch (const std::exception& e) {
-    logError("fatal: {}", e.what());
-    return 1;
+} // namespace
+
+int main(int argc, char* argv[]) {
+  if (argc >= 2) {
+    if (std::strcmp(argv[1], "theme") == 0) return noctalia::theme::runCli(argc, argv);
+    if (std::strcmp(argv[1], "msg") == 0) return noctalia::ipc::runCli(argc, argv);
   }
+
+  for (int i = 1; i < argc; ++i) {
+    const int rc = runTopLevelFlag(argv[i]);
+    if (rc >= 0) return rc;
+  }
+
+  return runShell();
 }

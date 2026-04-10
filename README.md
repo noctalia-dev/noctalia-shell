@@ -26,7 +26,7 @@ A lightweight Wayland shell and bar with no Qt or GTK dependency.
 | Keyboard | `xkbcommon` |
 | Rendering | `EGL`, `OpenGL ES 3`, `wayland-egl` |
 | Text | `cairo`, `pango`, `pangocairo`, `freetype`, `harfbuzz`, `fontconfig` |
-| Images | `Wuffs` (vendored), `nanosvg` (vendored) |
+| Images | `Wuffs` (vendored), `nanosvg` (vendored), `libwebp` |
 | IPC | `sdbus-c++` |
 | Audio | `libpipewire` |
 | Authentication | `PAM` |
@@ -47,7 +47,7 @@ sudo dnf install meson gcc-c++ just \
   cairo-devel pango-devel \
   libxkbcommon-devel \
   sdbus-cpp-devel pipewire-devel \
-  pam-devel libcurl-devel \
+  pam-devel libcurl-devel libwebp-devel \
   libasan libubsan
 ```
 
@@ -60,7 +60,7 @@ sudo pacman -S meson gcc just \
   cairo pango \
   libxkbcommon \
   sdbus-cpp libpipewire \
-  pam curl \
+  pam curl libwebp \
   gcc-libs
 ```
 
@@ -74,11 +74,13 @@ sudo apt install meson g++ just \
   libcairo2-dev libpango1.0-dev \
   libxkbcommon-dev \
   libsdbus-c++-dev libpipewire-0.3-dev \
-  libpam0g-dev libcurl4-openssl-dev \
+  libpam0g-dev libcurl4-openssl-dev libwebp-dev \
   libasan8 libubsan1
 ```
 
 Vendored (no system package needed): `Wuffs`, `nanosvg`, `tomlplusplus`, `tinyexpr`, `nlohmann/json`.
+
+System packages required beyond the Wayland/GL stack: `libwebp` (VP8 lossy WebP; wuffs handles all other formats).
 
 ## Build
 

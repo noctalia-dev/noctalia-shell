@@ -1,0 +1,26 @@
+#pragma once
+
+#include <cstdint>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
+
+#include "theme/scheme.h"
+
+namespace noctalia::theme {
+
+  // A 112×112 RGB pixel buffer ready for quantization/clustering. No alpha.
+  // 112 * 112 * 3 = 37632 bytes.
+  struct LoadedImage {
+    std::vector<uint8_t> rgb; // size = 112 * 112 * 3
+    int width = 112;
+    int height = 112;
+  };
+
+  // Load `path`, decode via Wuffs, and resize to exactly 112×112 (aspect ratio
+  // squashed) with alpha stripped. The resize filter is scheme-dependent:
+  // triangle for M3 schemes, box for the custom schemes.
+  std::optional<LoadedImage> loadAndResize(std::string_view path, Scheme scheme, std::string* errorMessage = nullptr);
+
+} // namespace noctalia::theme
