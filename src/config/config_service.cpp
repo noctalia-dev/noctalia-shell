@@ -94,7 +94,7 @@ void ConfigService::addReloadCallback(ReloadCallback callback) { m_reloadCallbac
 void ConfigService::setNotificationManager(NotificationManager* manager) {
   m_notificationManager = manager;
   if (m_notificationManager != nullptr && !m_pendingError.empty()) {
-    m_errorNotificationId =
+    m_configErrorNotificationId =
         m_notificationManager->addInternal("Noctalia", "Config parse error", m_pendingError, Urgency::Critical, 0);
     m_pendingError.clear();
   }
@@ -284,9 +284,9 @@ void ConfigService::loadFromFile(const std::string& path) {
   try {
     tbl = toml::parse_file(path);
     // Parse succeeded — dismiss any previous config-error notification.
-    if (m_notificationManager != nullptr && m_errorNotificationId != 0) {
-      m_notificationManager->close(m_errorNotificationId);
-      m_errorNotificationId = 0;
+    if (m_notificationManager != nullptr && m_configErrorNotificationId != 0) {
+      m_notificationManager->close(m_configErrorNotificationId);
+      m_configErrorNotificationId = 0;
     }
     m_pendingError.clear();
   } catch (const toml::parse_error& e) {
@@ -294,7 +294,11 @@ void ConfigService::loadFromFile(const std::string& path) {
     kLog.warn("parse error at line {}, column {}: {}", src.begin.line, src.begin.column, e.description());
     const auto body = std::format("Line {}, column {}: {}", src.begin.line, src.begin.column, e.description());
     if (m_notificationManager != nullptr) {
-      m_errorNotificationId =
+      // Close previous error notification (if any) so they don't stack on repeated failing reloads.
+      if (m_configErrorNotificationId != 0) {
+        m_notificationManager->close(m_configErrorNotificationId);
+      }
+      m_configErrorNotificationId =
           m_notificationManager->addInternal("Noctalia", "Config parse error", body, Urgency::Critical, 0);
     } else {
       m_pendingError = body;
