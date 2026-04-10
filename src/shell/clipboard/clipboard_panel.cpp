@@ -625,7 +625,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
       auto label = std::make_unique<Label>();
       label->setText(expanded);
       label->setFontSize(Style::fontSizeBody);
-      label->setColor(palette.onSurfaceVariant);
+      label->setColor(palette.onSurface);
       label->setMaxWidth(width);
       label->setMaxLines(kMaxPreviewLines);
       m_previewContent->addChild(std::move(label));
