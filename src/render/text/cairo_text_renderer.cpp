@@ -50,7 +50,7 @@ void swizzleBgraToRgba(unsigned char* data, int width, int height, int stride) {
 
 bool CairoTextRenderer::CacheKey::operator==(const CacheKey& other) const noexcept {
   return bold == other.bold && sizeQ == other.sizeQ && colorRgba == other.colorRgba && scaleQ == other.scaleQ &&
-         maxWidthQ == other.maxWidthQ && text == other.text;
+         maxWidthQ == other.maxWidthQ && maxLines == other.maxLines && text == other.text;
 }
 
 std::size_t CairoTextRenderer::CacheKeyHash::operator()(const CacheKey& k) const noexcept {
@@ -59,6 +59,7 @@ std::size_t CairoTextRenderer::CacheKeyHash::operator()(const CacheKey& k) const
   hashCombine(seed, std::hash<std::uint32_t>{}(k.colorRgba));
   hashCombine(seed, std::hash<std::uint32_t>{}(k.maxWidthQ));
   hashCombine(seed, std::hash<std::uint16_t>{}(k.scaleQ));
+  hashCombine(seed, std::hash<std::uint16_t>{}(k.maxLines));
   hashCombine(seed, std::hash<bool>{}(k.bold));
   return seed;
 }
@@ -103,8 +104,10 @@ void CairoTextRenderer::initialize(ColorGlyphProgram* program) {
 
 void CairoTextRenderer::cleanup() {
   for (auto& [key, entry] : m_cache) {
-    if (entry.texture != 0) {
-      glDeleteTextures(1, &entry.texture);
+    for (auto& tile : entry.tiles) {
+      if (tile.texture != 0) {
+        glDeleteTextures(1, &tile.texture);
+      }
     }
   }
   m_cache.clear();
@@ -128,8 +131,8 @@ void CairoTextRenderer::setContentScale(float scale) {
 
 // ── Layout construction ─────────────────────────────────────────────────────
 
-PangoLayout* CairoTextRenderer::buildLayout(std::string_view text, float fontSize, bool bold,
-                                            float maxWidthPxScaled) const {
+PangoLayout* CairoTextRenderer::buildLayout(std::string_view text, float fontSize, bool bold, float maxWidthPxScaled,
+                                            int maxLines) const {
   PangoLayout* layout = pango_layout_new(m_pangoContext);
 
   const float rasterSize = std::max(1.0f, fontSize * m_contentScale);
@@ -142,10 +145,26 @@ PangoLayout* CairoTextRenderer::buildLayout(std::string_view text, float fontSiz
 
   pango_layout_set_text(layout, text.data(), static_cast<int>(text.size()));
 
+  // Honor embedded newlines as real line breaks (notifications etc. pre-wrap
+  // into '\n'-separated lines). Leaving single_paragraph_mode off lets Pango
+  // treat each '\n' as its own paragraph instead of collapsing to one line.
+  //
+  // For ellipsize END to work on multi-line text, Pango needs a line budget
+  // via set_height(-N). Callers that need wrapping to >1 lines pass maxLines
+  // explicitly. Otherwise we fall back to 1 + ('\n' count) so single-line
+  // callers keep their classic truncate-with-ellipsis behavior.
+  //
+  // kHardMaxLines is a safety cap so a pathological caller (or a runaway
+  // log-style payload) can't ask Pango to shape tens of thousands of lines
+  // and blow up memory / GL textures. Higher than any real UI needs.
   if (maxWidthPxScaled > 0.0f) {
+    constexpr int kHardMaxLines = 500;
+    int lineBudget = maxLines > 0 ? maxLines : 1 + static_cast<int>(std::count(text.begin(), text.end(), '\n'));
+    lineBudget = std::min(lineBudget, kHardMaxLines);
     pango_layout_set_width(layout, static_cast<int>(maxWidthPxScaled * PANGO_SCALE));
+    pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
+    pango_layout_set_height(layout, -lineBudget);
     pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
-    pango_layout_set_single_paragraph_mode(layout, TRUE);
   } else {
     pango_layout_set_width(layout, -1);
   }
@@ -177,12 +196,13 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::metricsFromLayout(PangoLayout*
 
 // ── measure / truncate ──────────────────────────────────────────────────────
 
-CairoTextRenderer::TextMetrics CairoTextRenderer::measure(std::string_view text, float fontSize, bool bold) {
+CairoTextRenderer::TextMetrics CairoTextRenderer::measure(std::string_view text, float fontSize, bool bold,
+                                                          float maxWidth, int maxLines) {
   if (m_pangoContext == nullptr || text.empty()) {
     return {};
   }
 
-  PangoLayout* layout = buildLayout(text, fontSize, bold, 0.0f);
+  PangoLayout* layout = buildLayout(text, fontSize, bold, maxWidth * m_contentScale, maxLines);
   const auto metrics = metricsFromLayout(layout);
   g_object_unref(layout);
   return metrics;
@@ -203,44 +223,151 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
   // Baseline from top of layout, in raster pixels.
   const int baselinePango = pango_layout_get_baseline(layout);
   entry.baselinePx = static_cast<float>(baselinePango) / static_cast<float>(PANGO_SCALE);
+
+  if (m_glMaxTextureSize <= 0) {
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &m_glMaxTextureSize);
+    if (m_glMaxTextureSize <= 0) {
+      m_glMaxTextureSize = 2048; // conservative fallback
+    }
+  }
+  const int maxTex = m_glMaxTextureSize;
+
+  // Width > GL_MAX_TEXTURE_SIZE is rare (would need a single line wider than
+  // the max). We clip rather than horizontally tile; horizontal tiling would
+  // mean splitting glyphs across textures.
+  if (pxWidth > maxTex) {
+    kLog.warn("text width {}px exceeds GL_MAX_TEXTURE_SIZE {} — clipping", pxWidth, maxTex);
+    pxWidth = maxTex;
+  }
+
   entry.pixelWidth = pxWidth;
   entry.pixelHeight = pxHeight;
+  entry.tiles.clear();
+  entry.bytes = 0;
 
-  cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, pxWidth, pxHeight);
-  cairo_t* cr = cairo_create(surface);
-  cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
-  cairo_paint(cr);
-  cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
-  cairo_set_source_rgba(cr, color.r, color.g, color.b, color.a);
-  pango_cairo_show_layout(cr, layout);
-  cairo_destroy(cr);
-  cairo_surface_flush(surface);
+  // For very tall layouts we can't fit everything in one texture, so we split
+  // the layout along line boundaries into tiles each ≤ maxTex tall. We walk
+  // the layout's lines once via PangoLayoutIter, assign each line to a tile,
+  // then rasterize each tile by drawing only its own lines (via
+  // pango_cairo_show_layout_line at the line's local y). Drawing per-line
+  // avoids any Pango/Cairo heuristic that might drop draws when the whole
+  // layout is translated far off-surface.
+  struct LineSlot {
+    PangoLayoutLine* line = nullptr;
+    int yTopPx = 0;    // top of line in full-layout raster pixels
+    int baselinePx = 0; // baseline of line in full-layout raster pixels
+  };
+  struct TilePlan {
+    int yTopPx = 0;
+    int heightPx = 0;
+    std::vector<LineSlot> lines;
+  };
 
-  const int stride = cairo_image_surface_get_stride(surface);
-  unsigned char* data = cairo_image_surface_get_data(surface);
-  swizzleBgraToRgba(data, pxWidth, pxHeight, stride);
+  std::vector<TilePlan> plan;
+  {
+    TilePlan current;
+    current.yTopPx = 0;
 
-  // Upload. ARGB32 stride may include row padding: GL_UNPACK_ROW_LENGTH is a
-  // GLES3 feature, so we repack the rows tightly for the texture.
-  const int tightRowBytes = pxWidth * 4;
-  std::vector<unsigned char> tight(static_cast<std::size_t>(tightRowBytes) * static_cast<std::size_t>(pxHeight));
-  for (int y = 0; y < pxHeight; ++y) {
-    std::memcpy(tight.data() + y * tightRowBytes, data + y * stride, static_cast<std::size_t>(tightRowBytes));
+    PangoLayoutIter* iter = pango_layout_get_iter(layout);
+    do {
+      PangoRectangle logical;
+      pango_layout_iter_get_line_extents(iter, nullptr, &logical);
+      const int lineTopPx = logical.y / PANGO_SCALE;
+      const int lineBottomPx = (logical.y + logical.height + PANGO_SCALE - 1) / PANGO_SCALE;
+      const int lineBaselinePx = pango_layout_iter_get_baseline(iter) / PANGO_SCALE;
+
+      // If adding this line would push the current tile past maxTex, close
+      // the current tile and start a new one at this line's top.
+      if (!current.lines.empty() && (lineBottomPx - current.yTopPx) > maxTex) {
+        plan.push_back(std::move(current));
+        current = TilePlan{};
+        current.yTopPx = lineTopPx;
+      }
+
+      LineSlot slot;
+      slot.line = pango_layout_iter_get_line_readonly(iter);
+      slot.yTopPx = lineTopPx;
+      slot.baselinePx = lineBaselinePx;
+      current.lines.push_back(slot);
+    } while (pango_layout_iter_next_line(iter));
+    pango_layout_iter_free(iter);
+
+    if (!current.lines.empty()) {
+      plan.push_back(std::move(current));
+    }
   }
-  cairo_surface_destroy(surface);
 
-  GLuint tex = 0;
-  glGenTextures(1, &tex);
-  glBindTexture(GL_TEXTURE_2D, tex);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pxWidth, pxHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, tight.data());
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  // Each tile's heightPx reaches down to either the next tile's top or to
+  // pxHeight (for the last tile), guaranteeing tiles abut on exact pixel
+  // boundaries with no seams and that the last tile includes descenders.
+  for (std::size_t i = 0; i < plan.size(); ++i) {
+    const int nextTop = (i + 1 < plan.size()) ? plan[i + 1].yTopPx : pxHeight;
+    plan[i].heightPx = std::max(1, nextTop - plan[i].yTopPx);
+  }
 
-  entry.texture = tex;
-  entry.bytes = static_cast<std::size_t>(tightRowBytes) * static_cast<std::size_t>(pxHeight);
+  if (plan.empty()) {
+    // Nothing to render (empty layout). Leave entry.tiles empty.
+    entry.metrics = metricsFromLayout(layout);
+    return;
+  }
+
+  // Rasterize each planned tile.
+  const int tightRowBytes = pxWidth * 4;
+  std::vector<unsigned char> tight;
+
+  for (const auto& tilePlan : plan) {
+    const int tileH = tilePlan.heightPx;
+
+    cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, pxWidth, tileH);
+    cairo_t* cr = cairo_create(surface);
+    cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
+    cairo_paint(cr);
+    cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+    cairo_set_source_rgba(cr, color.r, color.g, color.b, color.a);
+
+    // Draw only this tile's lines. show_layout_line draws at the current
+    // device origin placing the line's BASELINE at y=0, so move the device
+    // origin to the line's baseline within the tile.
+    for (const auto& ls : tilePlan.lines) {
+      const double baselineInTile = static_cast<double>(ls.baselinePx - tilePlan.yTopPx);
+      cairo_save(cr);
+      cairo_translate(cr, 0.0, baselineInTile);
+      pango_cairo_show_layout_line(cr, ls.line);
+      cairo_restore(cr);
+    }
+
+    cairo_destroy(cr);
+    cairo_surface_flush(surface);
+
+    const int stride = cairo_image_surface_get_stride(surface);
+    unsigned char* data = cairo_image_surface_get_data(surface);
+    swizzleBgraToRgba(data, pxWidth, tileH, stride);
+
+    // Repack tightly (GL_UNPACK_ROW_LENGTH is GLES3-only).
+    tight.resize(static_cast<std::size_t>(tightRowBytes) * static_cast<std::size_t>(tileH));
+    for (int y = 0; y < tileH; ++y) {
+      std::memcpy(tight.data() + y * tightRowBytes, data + y * stride, static_cast<std::size_t>(tightRowBytes));
+    }
+    cairo_surface_destroy(surface);
+
+    GLuint tex = 0;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pxWidth, tileH, 0, GL_RGBA, GL_UNSIGNED_BYTE, tight.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    Tile tile;
+    tile.texture = tex;
+    tile.pixelHeight = tileH;
+    tile.pixelYOffset = tilePlan.yTopPx;
+    entry.tiles.push_back(tile);
+    entry.bytes += static_cast<std::size_t>(tightRowBytes) * static_cast<std::size_t>(tileH);
+  }
+
   entry.metrics = metricsFromLayout(layout);
 }
 
@@ -260,8 +387,10 @@ void CairoTextRenderer::touch(CacheMap::iterator it) {
 }
 
 void CairoTextRenderer::evict(CacheMap::iterator it) {
-  if (it->second.texture != 0) {
-    glDeleteTextures(1, &it->second.texture);
+  for (auto& tile : it->second.tiles) {
+    if (tile.texture != 0) {
+      glDeleteTextures(1, &tile.texture);
+    }
   }
   m_cacheBytes -= it->second.bytes;
   m_lru.erase(it->second.lruIt);
@@ -269,7 +398,12 @@ void CairoTextRenderer::evict(CacheMap::iterator it) {
 }
 
 void CairoTextRenderer::evictIfNeeded() {
-  while (!m_lru.empty() && (m_cache.size() > kMaxCacheEntries || m_cacheBytes > kMaxCacheBytes)) {
+  // Never evict the most-recently-used entry (LRU front). This protects the
+  // just-inserted entry from self-eviction in the case where a single text
+  // block (e.g. a multi-megabyte code preview) is larger than kMaxCacheBytes
+  // on its own — we'd otherwise walk the LRU from back to front, evict every
+  // older entry, then evict our own new entry and return a dangling pointer.
+  while (m_lru.size() > 1 && (m_cache.size() > kMaxCacheEntries || m_cacheBytes > kMaxCacheBytes)) {
     const CacheKey* keyPtr = m_lru.back();
     auto mapIt = m_cache.find(*keyPtr);
     if (mapIt == m_cache.end()) {
@@ -281,13 +415,14 @@ void CairoTextRenderer::evictIfNeeded() {
 }
 
 CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_view text, float fontSize, bool bold,
-                                                                    float maxWidth, const Color& color) {
+                                                                    float maxWidth, int maxLines, const Color& color) {
   CacheKey key;
   key.text.assign(text);
   key.sizeQ = quantizeSize(fontSize);
   key.colorRgba = packColor(color);
   key.maxWidthQ = quantizeSize(std::max(0.0f, maxWidth));
   key.scaleQ = quantizeScale(m_contentScale);
+  key.maxLines = static_cast<std::uint16_t>(std::max(0, maxLines));
   key.bold = bold;
 
   auto it = m_cache.find(key);
@@ -296,7 +431,7 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_
     return &it->second;
   }
 
-  PangoLayout* layout = buildLayout(text, fontSize, bold, maxWidth * m_contentScale);
+  PangoLayout* layout = buildLayout(text, fontSize, bold, maxWidth * m_contentScale, maxLines);
   CacheEntry entry{};
   rasterizeLayout(layout, color, entry);
   g_object_unref(layout);
@@ -313,26 +448,30 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_
 // ── draw ────────────────────────────────────────────────────────────────────
 
 void CairoTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text,
-                             float fontSize, const Color& color, const Mat3& transform, bool bold, float maxWidth) {
+                             float fontSize, const Color& color, const Mat3& transform, bool bold, float maxWidth,
+                             int maxLines) {
   if (m_pangoContext == nullptr || m_program == nullptr || text.empty()) {
     return;
   }
 
-  CacheEntry* entry = lookupOrRasterize(text, fontSize, bold, maxWidth, color);
-  if (entry == nullptr || entry->texture == 0) {
+  CacheEntry* entry = lookupOrRasterize(text, fontSize, bold, maxWidth, maxLines, color);
+  if (entry == nullptr || entry->tiles.empty()) {
     return;
+  }
+  if (entry->tiles.size() > 1) {
+    kLog.warn("draw tiles={} pxW={} pxH={} baseXY=({}, {})", entry->tiles.size(), entry->pixelWidth,
+              entry->pixelHeight, x, baselineY);
   }
 
   const float invScale = 1.0f / m_contentScale;
   const float quadW = static_cast<float>(entry->pixelWidth) * invScale;
-  const float quadH = static_cast<float>(entry->pixelHeight) * invScale;
   const float baselineLocal = entry->baselinePx * invScale;
 
   // Translate the quad so that `baselineY` (local) lines up with the raster
   // surface's baseline row. With baselineY=0 (callers using Label), the surface
   // is shifted up by `baselineLocal`, placing the baseline at local y=0.
   const Mat3 localTranslation = Mat3::translation(x, baselineY - baselineLocal);
-  Mat3 world = transform * localTranslation;
+  Mat3 baseWorld = transform * localTranslation;
 
   // Snap the glyph quad's origin to the nearest buffer pixel. Without this,
   // fractional layout positions place the quad at sub-pixel offsets and
@@ -342,11 +481,20 @@ void CairoTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, f
   // Only snap when the transform is axis-aligned (no rotation/skew). During
   // a rotation animation, snapping causes the translation to jump by whole
   // buffer pixels between frames, which looks jittery on 1x outputs.
-  const bool axisAligned = world.m[1] == 0.0f && world.m[3] == 0.0f;
+  const bool axisAligned = baseWorld.m[1] == 0.0f && baseWorld.m[3] == 0.0f;
   if (axisAligned) {
-    world.m[6] = std::round(world.m[6] * m_contentScale) / m_contentScale;
-    world.m[7] = std::round(world.m[7] * m_contentScale) / m_contentScale;
+    baseWorld.m[6] = std::round(baseWorld.m[6] * m_contentScale) / m_contentScale;
+    baseWorld.m[7] = std::round(baseWorld.m[7] * m_contentScale) / m_contentScale;
   }
 
-  m_program->draw(entry->texture, surfaceWidth, surfaceHeight, quadW, quadH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, world);
+  // Emit one quad per tile. Tiles share the same X/width and abut on exact
+  // buffer-pixel boundaries (pixelYOffset is an integer number of raster
+  // pixels), so there is no seam between adjacent tiles even at fractional
+  // content scales.
+  for (const auto& tile : entry->tiles) {
+    const float tileYLocal = static_cast<float>(tile.pixelYOffset) * invScale;
+    const float tileH = static_cast<float>(tile.pixelHeight) * invScale;
+    const Mat3 tileWorld = baseWorld * Mat3::translation(0.0f, tileYLocal);
+    m_program->draw(tile.texture, surfaceWidth, surfaceHeight, quadW, tileH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, tileWorld);
+  }
 }

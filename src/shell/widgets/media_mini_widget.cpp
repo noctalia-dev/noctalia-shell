@@ -114,41 +114,6 @@ std::string decodeUriComponent(std::string_view text) {
   return decoded;
 }
 
-std::string fitTextToWidth(Renderer& renderer, const std::string& text, float fontSize, bool bold, float maxWidth) {
-  if (text.empty() || maxWidth <= 0.0f) {
-    return {};
-  }
-
-  if (renderer.measureText(text, fontSize, bold).width <= maxWidth) {
-    return text;
-  }
-
-  static constexpr const char* kEllipsis = "...";
-  const float ellipsisWidth = renderer.measureText(kEllipsis, fontSize, bold).width;
-  if (ellipsisWidth >= maxWidth) {
-    return {};
-  }
-
-  std::size_t lo = 0;
-  std::size_t hi = text.size();
-  std::size_t best = 0;
-  while (lo <= hi) {
-    const std::size_t mid = lo + ((hi - lo) / 2);
-    std::string candidate = text.substr(0, mid) + kEllipsis;
-    if (renderer.measureText(candidate, fontSize, bold).width <= maxWidth) {
-      best = mid;
-      lo = mid + 1;
-    } else {
-      if (mid == 0) {
-        break;
-      }
-      hi = mid - 1;
-    }
-  }
-
-  return text.substr(0, best) + kEllipsis;
-}
-
 std::string joinArtists(const std::vector<std::string>& artists) {
   if (artists.empty()) {
     return {};
@@ -217,6 +182,7 @@ void MediaMiniWidget::create() {
   label->setFontSize(Style::fontSizeBody * m_contentScale);
   label->setColor(palette.onSurface);
   label->setMaxWidth(m_maxWidth * m_contentScale);
+  label->setMaxLines(1);
   m_label = label.get();
   area->addChild(std::move(label));
 
@@ -279,8 +245,8 @@ void MediaMiniWidget::syncState(Renderer& renderer) {
   m_lastArtUrl = artUrl;
   m_lastPlaybackStatus = playbackStatus;
 
-  const float fontSize = Style::fontSizeBody * m_contentScale;
-  m_label->setText(fitTextToWidth(renderer, m_lastText, fontSize, true, m_maxWidth * m_contentScale));
+  m_label->setMaxWidth(m_maxWidth * m_contentScale);
+  m_label->setText(m_lastText);
   m_label->setColor(m_lastPlaybackStatus == "Playing" ? palette.onSurface : palette.onSurfaceVariant);
   m_label->measure(renderer);
 

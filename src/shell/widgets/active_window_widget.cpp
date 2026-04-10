@@ -23,41 +23,6 @@ std::string toLower(std::string_view value) {
   return out;
 }
 
-std::string fitTextToWidth(Renderer& renderer, const std::string& text, float fontSize, bool bold, float maxWidth) {
-  if (text.empty() || maxWidth <= 0.0f) {
-    return {};
-  }
-
-  if (renderer.measureText(text, fontSize, bold).width <= maxWidth) {
-    return text;
-  }
-
-  static constexpr const char* kEllipsis = "...";
-  const float ellipsisWidth = renderer.measureText(kEllipsis, fontSize, bold).width;
-  if (ellipsisWidth >= maxWidth) {
-    return {};
-  }
-
-  std::size_t lo = 0;
-  std::size_t hi = text.size();
-  std::size_t best = 0;
-  while (lo <= hi) {
-    const std::size_t mid = lo + ((hi - lo) / 2);
-    std::string candidate = text.substr(0, mid) + kEllipsis;
-    if (renderer.measureText(candidate, fontSize, bold).width <= maxWidth) {
-      best = mid;
-      lo = mid + 1;
-    } else {
-      if (mid == 0) {
-        break;
-      }
-      hi = mid - 1;
-    }
-  }
-
-  return text.substr(0, best) + kEllipsis;
-}
-
 } // namespace
 
 ActiveWindowWidget::ActiveWindowWidget(WaylandConnection& connection, float maxTitleWidth, float iconSize)
@@ -80,6 +45,7 @@ void ActiveWindowWidget::create() {
   title->setFontSize(Style::fontSizeBody * m_contentScale);
   title->setColor(palette.onSurface);
   title->setMaxWidth(m_maxTitleWidth * m_contentScale);
+  title->setMaxLines(1);
   m_title = static_cast<Label*>(rootNode->addChild(std::move(title)));
 
   setRoot(std::move(rootNode));
@@ -152,8 +118,8 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
     iconPath = m_iconResolver.resolve("application-x-executable");
   }
 
-  const float titleMaxWidth = m_maxTitleWidth * m_contentScale;
-  m_title->setText(fitTextToWidth(renderer, m_lastTitle, Style::fontSizeBody * m_contentScale, true, titleMaxWidth));
+  m_title->setMaxWidth(m_maxTitleWidth * m_contentScale);
+  m_title->setText(m_lastTitle);
   m_title->measure(renderer);
 
   if (iconPath != m_lastIconPath) {

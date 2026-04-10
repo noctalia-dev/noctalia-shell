@@ -18,6 +18,7 @@ public:
   void setColor(const Color& color);
   void setMinWidth(float minWidth);
   void setMaxWidth(float maxWidth);
+  void setMaxLines(int maxLines);
   void setBold(bool bold);
 
   [[nodiscard]] const std::string& text() const noexcept;

@@ -44,129 +44,20 @@ int resolveDisplayDuration(int32_t timeout) {
 constexpr int kProgressHeight = 3;
 constexpr int kSlideOffset = 20;                            // horizontal slide distance for entry/exit animation
 constexpr float kProgressBottomMargin = Style::spaceMd;    // space below progress bar to card edge
-constexpr float kProgressTopGap = Style::spaceLg;          // gap from text content to progress bar
+constexpr float kProgressTopGap = Style::spaceSm;          // gap from text content to progress bar
 
 constexpr float kMetaFontSize = Style::fontSizeCaption;
 constexpr float kSummaryFontSize = Style::fontSizeTitle;
 constexpr float kBodyFontSize = Style::fontSizeBody;
 
-constexpr float kSummaryLineHeight = Style::spaceLg;
 constexpr float kMetaGap = Style::spaceXs;        // vertical gap between app name and summary
 constexpr float kSummaryBodyGap = Style::spaceXs; // vertical gap between summary and body
 
 constexpr std::size_t kMaxSummaryLines = 2;
-constexpr std::size_t kMaxBodyLines = 4;
+constexpr std::size_t kMaxBodyLines = 3;
 
 constexpr int kSurfaceWidth = static_cast<int>(kCardWidth + kPadding * 2);
 constexpr int kSurfaceHeight = static_cast<int>(kCardMaxHeight * kMaxVisible + kGap * (kMaxVisible - 1) + kPadding * 2);
-
-std::string collapseWhitespace(std::string_view text) {
-  std::string out;
-  out.reserve(text.size());
-
-  bool lastWasSpace = true;
-  for (char ch : text) {
-    const bool isWhitespace = (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r');
-    if (isWhitespace) {
-      if (!lastWasSpace) {
-        out.push_back(' ');
-      }
-      lastWasSpace = true;
-      continue;
-    }
-    out.push_back(ch);
-    lastWasSpace = false;
-  }
-
-  if (!out.empty() && out.back() == ' ') {
-    out.pop_back();
-  }
-  return out;
-}
-
-std::string truncateToWidth(RenderContext& renderer, std::string text, float fontSize, float maxWidth) {
-  static constexpr std::string_view kEllipsis = "\xe2\x80\xa6";
-  if (renderer.measureText(text, fontSize).width <= maxWidth) {
-    return text;
-  }
-
-  while (!text.empty()) {
-    text.pop_back();
-    std::string candidate = text + std::string(kEllipsis);
-    if (renderer.measureText(candidate, fontSize).width <= maxWidth) {
-      return candidate;
-    }
-  }
-
-  return std::string(kEllipsis);
-}
-
-std::pair<std::string, std::size_t> wrapText(RenderContext* renderer, std::string_view text, float fontSize,
-                                             float maxWidth, std::size_t maxLines) {
-  const std::string normalized = collapseWhitespace(text);
-  if (renderer == nullptr || normalized.empty()) {
-    return {normalized, normalized.empty() ? 0u : 1u};
-  }
-
-  std::vector<std::string> words;
-  std::size_t start = 0;
-  while (start < normalized.size()) {
-    const std::size_t end = normalized.find(' ', start);
-    if (end == std::string::npos) {
-      words.push_back(normalized.substr(start));
-      break;
-    }
-    words.push_back(normalized.substr(start, end - start));
-    start = end + 1;
-  }
-
-  std::vector<std::string> lines;
-  lines.reserve(maxLines);
-
-  std::size_t wordIndex = 0;
-  while (wordIndex < words.size() && lines.size() < maxLines) {
-    std::string line = words[wordIndex];
-    if (renderer->measureText(line, fontSize).width > maxWidth) {
-      line = truncateToWidth(*renderer, line, fontSize, maxWidth);
-      lines.push_back(std::move(line));
-      ++wordIndex;
-      continue;
-    }
-
-    std::size_t nextIndex = wordIndex + 1;
-    while (nextIndex < words.size()) {
-      const std::string candidate = line + " " + words[nextIndex];
-      if (renderer->measureText(candidate, fontSize).width > maxWidth) {
-        break;
-      }
-      line = candidate;
-      ++nextIndex;
-    }
-
-    if (lines.size() + 1 == maxLines && nextIndex < words.size()) {
-      std::string remainder = line;
-      for (std::size_t i = nextIndex; i < words.size(); ++i) {
-        remainder += " ";
-        remainder += words[i];
-      }
-      line = truncateToWidth(*renderer, remainder, fontSize, maxWidth);
-      nextIndex = words.size();
-    }
-
-    lines.push_back(std::move(line));
-    wordIndex = nextIndex;
-  }
-
-  std::string wrapped;
-  for (std::size_t i = 0; i < lines.size(); ++i) {
-    if (i > 0) {
-      wrapped.push_back('\n');
-    }
-    wrapped += lines[i];
-  }
-
-  return {wrapped, std::max<std::size_t>(1, lines.size())};
-}
 
 } // namespace
 
@@ -219,11 +110,12 @@ void NotificationPopup::onNotificationEvent(const Notification& n, NotificationE
           cs.cardBg->setSize(kCardWidth, newHeight); // Surface::setSize auto-syncs internal rect
 
           cs.appNameLabel->setText(n.appName);
-          cs.summaryLabel->setText(m_entries[i].wrappedSummary);
-          cs.bodyLabel->setText(m_entries[i].wrappedBody);
-          cs.bodyLabel->setPosition(
-              kCardInnerPad, kCardInnerPad + kCloseButtonSize + kMetaGap +
-                                 static_cast<float>(m_entries[i].summaryLines) * kSummaryLineHeight + kSummaryBodyGap);
+          cs.summaryLabel->setText(m_entries[i].summary);
+          cs.summaryLabel->measure(*m_renderContext);
+          cs.bodyLabel->setText(m_entries[i].body);
+          cs.bodyLabel->measure(*m_renderContext);
+          cs.bodyLabel->setPosition(kCardInnerPad, kCardInnerPad + kCloseButtonSize + kMetaGap +
+                                                       m_entries[i].summaryHeight + kSummaryBodyGap);
 
           const float progressY = newHeight - kProgressHeight - kProgressBottomMargin;
           cs.progressBar->setPosition(kCardInnerPad, progressY);
@@ -518,18 +410,26 @@ float NotificationPopup::cardTargetY(std::size_t index) const {
 
 void NotificationPopup::updateEntryLayout(PopupEntry& entry) const {
   const float textWidth = kCardWidth - kCardInnerPad * 2;
-  const auto [wrappedSummary, summaryLines] =
-      wrapText(m_renderContext, entry.summary, kSummaryFontSize, textWidth, kMaxSummaryLines);
-  const auto [wrappedBody, bodyLines] = wrapText(m_renderContext, entry.body, kBodyFontSize, textWidth, kMaxBodyLines);
 
-  entry.wrappedSummary = wrappedSummary;
-  entry.wrappedBody = wrappedBody;
-  entry.summaryLines = summaryLines;
-  entry.bodyLines = bodyLines;
+  // Let Pango do the wrapping/ellipsizing. We just need the measured pixel
+  // height of each block so we can stack them and size the card.
+  entry.summaryHeight = 0.0f;
+  entry.bodyHeight = 0.0f;
+  if (m_renderContext != nullptr) {
+    if (!entry.summary.empty()) {
+      const auto sm = m_renderContext->measureText(entry.summary, kSummaryFontSize, /*bold=*/true, textWidth,
+                                                   kMaxSummaryLines);
+      entry.summaryHeight = sm.bottom - sm.top;
+    }
+    if (!entry.body.empty()) {
+      const auto bm =
+          m_renderContext->measureText(entry.body, kBodyFontSize, /*bold=*/false, textWidth, kMaxBodyLines);
+      entry.bodyHeight = bm.bottom - bm.top;
+    }
+  }
 
-  const float contentHeight = kCardInnerPad + kCloseButtonSize + kMetaGap +
-                              static_cast<float>(summaryLines) * kSummaryLineHeight + kSummaryBodyGap +
-                              static_cast<float>(bodyLines) * kBodyFontSize;
+  const float contentHeight = kCardInnerPad + kCloseButtonSize + kMetaGap + entry.summaryHeight + kSummaryBodyGap +
+                              entry.bodyHeight;
   entry.cardHeight = std::max(static_cast<float>(kCardMinHeight),
                               contentHeight + kProgressTopGap + kProgressHeight + kProgressBottomMargin);
 }
@@ -695,27 +595,29 @@ Node* NotificationPopup::buildCard(const PopupEntry& entry, Label** outAppName, 
 
   area->addChild(std::move(headerRow));
 
-  // Summary (bold title)
+  // Summary (bold title) — Pango handles wrap + ellipsize.
   auto summary = std::make_unique<Label>();
-  summary->setText(entry.wrappedSummary);
+  summary->setText(entry.summary);
   summary->setFontSize(kSummaryFontSize);
   summary->setColor(contentColor);
   summary->setBold(true);
   summary->setMaxWidth(innerWidth);
+  summary->setMaxLines(kMaxSummaryLines);
   summary->measure(*m_renderContext);
   summary->setPosition(kCardInnerPad, kCardInnerPad + kCloseButtonSize + kMetaGap);
   *outSummary = summary.get();
   area->addChild(std::move(summary));
 
-  // Body text
+  // Body text — Pango handles wrap + ellipsize.
   auto body = std::make_unique<Label>();
-  body->setText(entry.wrappedBody);
+  body->setText(entry.body);
   body->setFontSize(kBodyFontSize);
   body->setColor(metaColor);
   body->setMaxWidth(innerWidth);
+  body->setMaxLines(kMaxBodyLines);
   body->measure(*m_renderContext);
-  body->setPosition(kCardInnerPad, kCardInnerPad + kCloseButtonSize + kMetaGap +
-                                       static_cast<float>(entry.summaryLines) * kSummaryLineHeight + kSummaryBodyGap);
+  body->setPosition(kCardInnerPad,
+                    kCardInnerPad + kCloseButtonSize + kMetaGap + entry.summaryHeight + kSummaryBodyGap);
   *outBody = body.get();
   area->addChild(std::move(body));
 

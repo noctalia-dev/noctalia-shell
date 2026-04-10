@@ -176,8 +176,8 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
   }
 }
 
-TextMetrics RenderContext::measureText(std::string_view text, float fontSize, bool bold) {
-  auto m = m_textRenderer.measure(text, fontSize, bold);
+TextMetrics RenderContext::measureText(std::string_view text, float fontSize, bool bold, float maxWidth, int maxLines) {
+  auto m = m_textRenderer.measure(text, fontSize, bold, maxWidth, maxLines);
   return TextMetrics{.width = m.width, .left = m.left, .right = m.right, .top = m.top, .bottom = m.bottom};
 }
 
@@ -243,7 +243,7 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
       auto color = text->color();
       color.a *= effectiveOpacity;
       m_textRenderer.draw(sw, sh, 0.0f, 0.0f, text->text(), text->fontSize(), color, worldTransform, text->bold(),
-                          text->maxWidth());
+                          text->maxWidth(), text->maxLines());
     }
     break;
   }

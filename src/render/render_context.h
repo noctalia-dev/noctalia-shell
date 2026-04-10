@@ -42,7 +42,8 @@ public:
   [[nodiscard]] EGLContext eglContext() const noexcept { return m_eglContext; }
 
   // Renderer interface — used by widgets for measurement and textures
-  [[nodiscard]] TextMetrics measureText(std::string_view text, float fontSize, bool bold = false) override;
+  [[nodiscard]] TextMetrics measureText(std::string_view text, float fontSize, bool bold = false, float maxWidth = 0.0f,
+                                        int maxLines = 0) override;
   [[nodiscard]] TextMetrics measureGlyph(char32_t codepoint, float fontSize) override;
   [[nodiscard]] TextureManager& textureManager() override;
 

@@ -26,6 +26,8 @@ void Label::setMinWidth(float minWidth) { m_minWidth = minWidth; }
 
 void Label::setMaxWidth(float maxWidth) { m_textNode->setMaxWidth(maxWidth); }
 
+void Label::setMaxLines(int maxLines) { m_textNode->setMaxLines(maxLines); }
+
 void Label::setBold(bool bold) { m_textNode->setBold(bold); }
 
 const std::string& Label::text() const noexcept { return m_textNode->text(); }
@@ -46,18 +48,23 @@ void Label::setCaptionStyle() {
 }
 
 void Label::measure(Renderer& renderer) {
-  auto metrics    = renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold());
-  auto refMetrics = renderer.measureText("A", m_textNode->fontSize(), m_textNode->bold());
   const float maxWidth = m_textNode->maxWidth();
-  const float measuredWidth =
-      maxWidth > 0.0f ? std::min(metrics.width, maxWidth) : metrics.width;
+  const int maxLines = m_textNode->maxLines();
+  auto metrics = renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold(), maxWidth,
+                                      maxLines);
+  auto refMetrics = renderer.measureText("A", m_textNode->fontSize(), m_textNode->bold());
+  const float measuredWidth = maxWidth > 0.0f ? std::min(metrics.width, maxWidth) : metrics.width;
 
   // Use "A" (cap-height + SDF top/bottom padding, no descender) as the reference
-  // bounding box. This keeps all labels at the same font size at a consistent
-  // height, and places the digit/letter ink center at the geometric center of
-  // the bounding box — so geometric centering in a container (bar, control)
-  // yields optical centering for typical bar content (digits, short labels).
+  // bounding box for the *first* line — this keeps single-line labels of the
+  // same font size at a consistent height, and places the digit/letter ink
+  // center at the geometric center of the bounding box (optical centering in
+  // bars/controls). For wrapped multi-line text we grow the box to the
+  // actual Pango-rendered height so the container reserves enough room.
   m_baselineOffset = -refMetrics.top;
-  setSize(std::round(std::max(measuredWidth, m_minWidth)), std::round(refMetrics.bottom - refMetrics.top));
+  const float refHeight = refMetrics.bottom - refMetrics.top;
+  const float actualHeight = metrics.bottom - metrics.top;
+  const float height = std::max(refHeight, actualHeight);
+  setSize(std::round(std::max(measuredWidth, m_minWidth)), std::round(height));
   m_textNode->setPosition(0.0f, m_baselineOffset);
 }

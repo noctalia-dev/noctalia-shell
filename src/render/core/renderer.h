@@ -17,7 +17,8 @@ class Renderer {
 public:
   virtual ~Renderer() = default;
 
-  [[nodiscard]] virtual TextMetrics measureText(std::string_view text, float fontSize, bool bold = false) = 0;
+  [[nodiscard]] virtual TextMetrics measureText(std::string_view text, float fontSize, bool bold = false,
+                                                float maxWidth = 0.0f, int maxLines = 0) = 0;
   [[nodiscard]] virtual TextMetrics measureGlyph(char32_t codepoint, float fontSize) = 0;
   [[nodiscard]] virtual TextureManager& textureManager() = 0;
 };

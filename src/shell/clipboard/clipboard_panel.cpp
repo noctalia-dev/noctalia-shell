@@ -58,80 +58,6 @@ std::string collapseWhitespace(std::string_view text) {
   return out;
 }
 
-std::string truncateToWidth(Renderer& renderer, std::string text, float fontSize, float maxWidth, bool bold = false) {
-  static constexpr std::string_view kEllipsis = "\xe2\x80\xa6";
-  if (renderer.measureText(text, fontSize, bold).width <= maxWidth) {
-    return text;
-  }
-
-  while (!text.empty()) {
-    text.pop_back();
-    std::string candidate = text + std::string(kEllipsis);
-    if (renderer.measureText(candidate, fontSize, bold).width <= maxWidth) {
-      return candidate;
-    }
-  }
-
-  return std::string(kEllipsis);
-}
-
-std::vector<std::string> wrapLines(Renderer& renderer, std::string_view text, float fontSize, float maxWidth,
-                                   std::size_t maxLines = static_cast<std::size_t>(-1), bool bold = false) {
-  const std::string normalized = collapseWhitespace(text);
-  if (normalized.empty()) {
-    return {};
-  }
-
-  std::vector<std::string> words;
-  std::size_t start = 0;
-  while (start < normalized.size()) {
-    const std::size_t end = normalized.find(' ', start);
-    if (end == std::string::npos) {
-      words.push_back(normalized.substr(start));
-      break;
-    }
-    words.push_back(normalized.substr(start, end - start));
-    start = end + 1;
-  }
-
-  std::vector<std::string> lines;
-  std::size_t wordIndex = 0;
-  while (wordIndex < words.size() && lines.size() < maxLines) {
-    std::string line = words[wordIndex];
-    if (renderer.measureText(line, fontSize, bold).width > maxWidth) {
-      lines.push_back(truncateToWidth(renderer, line, fontSize, maxWidth, bold));
-      ++wordIndex;
-      continue;
-    }
-
-    std::size_t nextIndex = wordIndex + 1;
-    while (nextIndex < words.size()) {
-      const std::string candidate = line + " " + words[nextIndex];
-      if (renderer.measureText(candidate, fontSize, bold).width > maxWidth) {
-        break;
-      }
-      line = candidate;
-      ++nextIndex;
-    }
-
-    if (lines.size() + 1 == maxLines && nextIndex < words.size()) {
-      std::string remainder = line;
-      for (std::size_t i = nextIndex; i < words.size(); ++i) {
-        remainder += " ";
-        remainder += words[i];
-      }
-      line = truncateToWidth(renderer, remainder, fontSize, maxWidth, bold);
-      nextIndex = words.size();
-    }
-
-    lines.push_back(std::move(line));
-    wordIndex = nextIndex;
-  }
-
-  return lines;
-}
-
-
 std::string formatBytes(std::size_t bytes) {
   const char* units[] = {"B", "KB", "MB", "GB"};
   double value = static_cast<double>(bytes);
@@ -573,11 +499,12 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     const std::string rawTitle = entryTitle(entry);
     const std::string cleanTitle = entry.isImage() ? rawTitle : collapseWhitespace(rawTitle);
     auto title = std::make_unique<Label>();
-    title->setText(truncateToWidth(renderer, cleanTitle, Style::fontSizeBody, textWidth, true));
+    title->setText(cleanTitle);
     title->setFontSize(Style::fontSizeBody);
     title->setBold(true);
     title->setColor(palette.onSurface);
     title->setMaxWidth(textWidth);
+    title->setMaxLines(1);
     textColumn->addChild(std::move(title));
 
     auto timeLabel = std::make_unique<Label>();
@@ -664,73 +591,41 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
     m_previewContent->addChild(std::move(hint));
   } else {
     constexpr std::size_t kMaxPreviewChars = 8000;
-    constexpr std::size_t kMaxPreviewLines = 200;
+    constexpr int kMaxPreviewLines = 200;
 
     std::string text(loadedEntry.data.begin(), loadedEntry.data.end());
-    bool truncated = text.size() > kMaxPreviewChars;
+    const bool truncated = text.size() > kMaxPreviewChars;
     if (truncated) {
       text.resize(kMaxPreviewChars);
     }
 
-    // Split on newlines first to preserve line structure, then word-wrap each segment.
-    std::vector<std::string> outputLines;
-    std::size_t pos = 0;
-    while (pos <= text.size() && outputLines.size() < kMaxPreviewLines) {
-      const std::size_t nlPos = text.find('\n', pos);
-      const std::string_view segment = (nlPos == std::string::npos)
-                                           ? std::string_view(text).substr(pos)
-                                           : std::string_view(text).substr(pos, nlPos - pos);
-      if (segment.empty()) {
-        outputLines.emplace_back(" ");
+    // Expand tabs to 4 spaces once up front; Pango's natural wrapping then
+    // handles everything else — newlines become paragraph breaks, each
+    // paragraph's leading whitespace stays on its first line, continuations
+    // have no indent, and the whole layout ellipsizes at kMaxPreviewLines.
+    std::string expanded;
+    expanded.reserve(text.size());
+    for (char ch : text) {
+      if (ch == '\t') {
+        expanded.append("    ");
       } else {
-        // Preserve leading whitespace (tabs → 4 spaces).
-        std::string indent;
-        std::size_t contentStart = 0;
-        for (; contentStart < segment.size(); ++contentStart) {
-          if (segment[contentStart] == '\t') {
-            indent += "    ";
-          } else if (segment[contentStart] == ' ') {
-            indent += ' ';
-          } else {
-            break;
-          }
-        }
-        const float indentWidth =
-            indent.empty() ? 0.0f : renderer.measureText(indent, Style::fontSizeBody, false).width;
-        const std::string_view content = segment.substr(contentStart);
-        if (content.empty()) {
-          outputLines.push_back(indent.empty() ? std::string(" ") : indent);
-        } else {
-          auto wrapped = wrapLines(renderer, content, Style::fontSizeBody,
-                                   std::max(0.0f, width - indentWidth), kMaxPreviewLines - outputLines.size());
-          bool first = true;
-          for (auto& l : wrapped) {
-            outputLines.push_back(first ? indent + l : std::move(l));
-            first = false;
-          }
-        }
+        expanded.push_back(ch);
       }
-      if (nlPos == std::string::npos) {
-        break;
-      }
-      pos = nlPos + 1;
     }
-    truncated = truncated || outputLines.size() >= kMaxPreviewLines;
 
-    if (outputLines.empty()) {
+    if (expanded.empty()) {
       auto empty = std::make_unique<Label>();
       empty->setText("(empty text payload)");
       empty->setColor(palette.onSurfaceVariant);
       m_previewContent->addChild(std::move(empty));
     } else {
-      for (const auto& line : outputLines) {
-        auto label = std::make_unique<Label>();
-        label->setText(line);
-        label->setFontSize(Style::fontSizeBody);
-        label->setColor(palette.onSurface);
-        label->setMaxWidth(width);
-        m_previewContent->addChild(std::move(label));
-      }
+      auto label = std::make_unique<Label>();
+      label->setText(expanded);
+      label->setFontSize(Style::fontSizeBody);
+      label->setColor(palette.onSurfaceVariant);
+      label->setMaxWidth(width);
+      label->setMaxLines(kMaxPreviewLines);
+      m_previewContent->addChild(std::move(label));
       if (truncated) {
         auto hint = std::make_unique<Label>();
         hint->setText("… truncated");

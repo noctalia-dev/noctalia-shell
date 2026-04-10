@@ -10,6 +10,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 // Forward declarations to avoid dragging Pango headers into every TU.
 typedef struct _PangoContext PangoContext;
@@ -48,18 +49,20 @@ public:
   // HiDPI: raster at `scale × fontSize` pixels and shrink the quad by 1/scale.
   void setContentScale(float scale);
 
-  [[nodiscard]] TextMetrics measure(std::string_view text, float fontSize, bool bold = false);
+  [[nodiscard]] TextMetrics measure(std::string_view text, float fontSize, bool bold = false, float maxWidth = 0.0f,
+                                    int maxLines = 0);
 
   void draw(float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text, float fontSize,
-            const Color& color, const Mat3& transform, bool bold = false, float maxWidth = 0.0f);
+            const Color& color, const Mat3& transform, bool bold = false, float maxWidth = 0.0f, int maxLines = 0);
 
 private:
   struct CacheKey {
     std::string text;
-    std::uint32_t sizeQ = 0;      // fontSize * 64 + 0.5
-    std::uint32_t colorRgba = 0;  // packed r<<24|g<<16|b<<8|a
-    std::uint32_t maxWidthQ = 0;  // maxWidth * 64 + 0.5, 0 = no limit
-    std::uint16_t scaleQ = 0;     // contentScale * 64 + 0.5
+    std::uint32_t sizeQ = 0;     // fontSize * 64 + 0.5
+    std::uint32_t colorRgba = 0; // packed r<<24|g<<16|b<<8|a
+    std::uint32_t maxWidthQ = 0; // maxWidth * 64 + 0.5, 0 = no limit
+    std::uint16_t scaleQ = 0;    // contentScale * 64 + 0.5
+    std::uint16_t maxLines = 0;  // 0 = no explicit limit (use '\n'-count fallback)
     bool bold = false;
 
     bool operator==(const CacheKey& other) const noexcept;
@@ -74,11 +77,21 @@ private:
   // (we also reserve bucket capacity upfront to avoid rehashing).
   using LruList = std::list<const CacheKey*>;
 
-  struct CacheEntry {
+  // A very tall text block can exceed GL_MAX_TEXTURE_SIZE (typically 4096 or
+  // 8192). We slice the Pango layout into N vertically-stacked tiles, each its
+  // own GL texture sized ≤ GL_MAX_TEXTURE_SIZE. draw() emits one quad per tile;
+  // tiles abut on exact buffer-pixel boundaries so there is no visible seam.
+  struct Tile {
     GLuint texture = 0;
-    int pixelWidth = 0;    // raster surface pixel width
-    int pixelHeight = 0;   // raster surface pixel height
-    float baselinePx = 0;  // baseline from top of surface, in raster pixels
+    int pixelHeight = 0;  // raster pixels
+    int pixelYOffset = 0; // from top of full layout, in raster pixels
+  };
+
+  struct CacheEntry {
+    std::vector<Tile> tiles;
+    int pixelWidth = 0;    // total raster surface pixel width
+    int pixelHeight = 0;   // total raster surface pixel height (sum of tiles)
+    float baselinePx = 0;  // baseline from top of full layout, in raster pixels
     TextMetrics metrics;   // logical metrics in logical (unscaled) pixels
     std::size_t bytes = 0;
     LruList::iterator lruIt;
@@ -87,13 +100,15 @@ private:
   using CacheMap = std::unordered_map<CacheKey, CacheEntry, CacheKeyHash>;
 
   // Build a PangoLayout at the given scaled size. Caller owns the layout (g_object_unref).
-  PangoLayout* buildLayout(std::string_view text, float fontSize, bool bold, float maxWidthPxScaled) const;
+  PangoLayout* buildLayout(std::string_view text, float fontSize, bool bold, float maxWidthPxScaled,
+                           int maxLines) const;
   // Render a layout into a new GL texture; fills out fields of `entry`.
   void rasterizeLayout(PangoLayout* layout, const Color& color, CacheEntry& entry);
   // Extract logical metrics from a laid-out PangoLayout, dividing by PANGO_SCALE and by scale.
   TextMetrics metricsFromLayout(PangoLayout* layout) const;
 
-  CacheEntry* lookupOrRasterize(std::string_view text, float fontSize, bool bold, float maxWidth, const Color& color);
+  CacheEntry* lookupOrRasterize(std::string_view text, float fontSize, bool bold, float maxWidth, int maxLines,
+                                const Color& color);
   void touch(CacheMap::iterator it);
   void evict(CacheMap::iterator it);
   void evictIfNeeded();
@@ -109,6 +124,7 @@ private:
   CacheMap m_cache;
   LruList m_lru;
   std::size_t m_cacheBytes = 0;
+  int m_glMaxTextureSize = 0; // lazy-queried on first rasterize
 
   static constexpr std::size_t kMaxCacheEntries = 512;
   static constexpr std::size_t kMaxCacheBytes = 32 * 1024 * 1024;

@@ -13,6 +13,7 @@ public:
   [[nodiscard]] float fontSize() const noexcept { return m_fontSize; }
   [[nodiscard]] const Color& color() const noexcept { return m_color; }
   [[nodiscard]] float maxWidth() const noexcept { return m_maxWidth; }
+  [[nodiscard]] int maxLines() const noexcept { return m_maxLines; }
   [[nodiscard]] bool bold() const noexcept { return m_bold; }
 
   void setText(std::string text) {
@@ -44,6 +45,14 @@ public:
     markDirty();
   }
 
+  void setMaxLines(int maxLines) {
+    if (m_maxLines == maxLines) {
+      return;
+    }
+    m_maxLines = maxLines;
+    markDirty();
+  }
+
   void setBold(bool bold) {
     if (m_bold == bold) {
       return;
@@ -56,6 +65,7 @@ private:
   std::string m_text;
   float m_fontSize = 14.0f;
   float m_maxWidth = 0.0f;
+  int m_maxLines = 0;
   Color m_color;
   bool m_bold = false;
 };

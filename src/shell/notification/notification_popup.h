@@ -37,10 +37,8 @@ private:
     std::string appName;
     std::string summary;
     std::string body;
-    std::string wrappedSummary;
-    std::string wrappedBody;
-    std::size_t summaryLines = 1;
-    std::size_t bodyLines = 1;
+    float summaryHeight = 0.0f;
+    float bodyHeight = 0.0f;
     float cardHeight = 0.0f;
     Urgency urgency = Urgency::Normal;
     int displayDurationMs = 8000; // -1 = persistent (no auto-dismiss)
