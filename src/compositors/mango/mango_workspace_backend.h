@@ -1,5 +1,6 @@
 #pragma once
 
+#include "compositors/output_backend.h"
 #include "compositors/workspace_backend.h"
 
 #include <cstddef>
@@ -10,7 +11,7 @@
 struct zdwl_ipc_manager_v2;
 struct zdwl_ipc_output_v2;
 
-class MangoWorkspaceBackend final : public WorkspaceBackend {
+class MangoWorkspaceBackend final : public WorkspaceBackend, public OutputBackend {
 public:
   void bind(zdwl_ipc_manager_v2* manager);
 
