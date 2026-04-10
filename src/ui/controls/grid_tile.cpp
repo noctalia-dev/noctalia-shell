@@ -1,10 +1,10 @@
-#include "ui/controls/flex_grid_tile.h"
+#include "ui/controls/grid_tile.h"
 
 #include "render/core/renderer.h"
 
 #include <algorithm>
 
-void FlexGridTile::layout(Renderer& renderer) {
+void GridTile::layout(Renderer& renderer) {
   const float aw = width();
   const float ah = height();
   if (aw > 0.0f) {

@@ -306,7 +306,7 @@ _noctalia_sources = files(
   'src/ui/controls/glyph.cpp',
   'src/ui/controls/glyph_registry.cpp',
   'src/ui/controls/grid_view.cpp',
-  'src/ui/controls/flex_grid_tile.cpp',
+  'src/ui/controls/grid_tile.cpp',
   'src/ui/controls/image.cpp',
   'src/ui/controls/input.cpp',
   'src/ui/controls/label.cpp',
