@@ -44,6 +44,8 @@ public:
   void setContentAlign(ButtonContentAlign align);
   void setVariant(ButtonVariant variant);
   void setOnClick(std::function<void()> callback);
+  void setOnMotion(std::function<void()> callback);
+  void setHoverSuppressed(bool suppressed);
   void setCursorShape(std::uint32_t shape);
   void layout(Renderer& renderer) override;
 
@@ -69,6 +71,7 @@ private:
   InputArea* m_inputArea = nullptr;
   std::uint32_t m_animId = 0;
   std::function<void()> m_onClick;
+  std::function<void()> m_onMotion;
   ButtonVariant m_variant = ButtonVariant::Default;
   Color m_bgColorNormal{};
   Color m_bgColorHover{};
@@ -89,4 +92,5 @@ private:
   ButtonContentAlign m_contentAlign = ButtonContentAlign::Center;
   bool m_enabled = true;
   bool m_selected = false;
+  bool m_hoverSuppressed = false;
 };

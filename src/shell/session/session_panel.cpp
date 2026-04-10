@@ -125,6 +125,8 @@ Button* SessionPanel::createActionButton(ActionId id, float scale) {
       break;
     }
   });
+  button->setOnMotion([this]() { activateMouse(); });
+  button->setHoverSuppressed(!m_mouseActive);
 
   auto* raw = button.get();
   m_actionButtons[static_cast<std::size_t>(id)] = raw;
@@ -135,7 +137,21 @@ InputArea* SessionPanel::initialFocusArea() const { return m_focusArea; }
 
 void SessionPanel::onOpen(std::string_view /*context*/) {
   m_selectedIndex = 0;
+  m_mouseActive = false;
   updateSelectionVisuals();
+}
+
+void SessionPanel::activateMouse() {
+  if (m_mouseActive) {
+    return;
+  }
+  m_mouseActive = true;
+  for (Button* button : m_actionButtons) {
+    if (button != nullptr) {
+      button->setHoverSuppressed(false);
+    }
+  }
+  PanelManager::instance().refresh();
 }
 
 void SessionPanel::activateSelected() {
