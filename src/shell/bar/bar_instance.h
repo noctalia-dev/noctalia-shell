@@ -27,7 +27,7 @@ struct BarInstance {
   InputDispatcher inputDispatcher;
 
   // Bar background, shadow, and layout sections (start/center/end along main axis)
-  Node* bg = nullptr;
+  RectNode* bg = nullptr;
   RectNode* shadow = nullptr;
   Node* contentClip = nullptr;
   Node* startSlot = nullptr;

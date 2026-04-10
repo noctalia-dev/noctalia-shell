@@ -18,6 +18,8 @@ struct BarMonitorOverride {
   std::optional<bool> enabled;
   std::optional<std::int32_t> height;
   std::optional<std::int32_t> radius;
+  std::optional<std::int32_t> radiusOuter;
+  std::optional<std::int32_t> radiusInner;
   std::optional<std::int32_t> marginH;       // horizontal compositor margin (left = right = marginH)
   std::optional<std::int32_t> marginV;       // vertical compositor margin (gap between bar and screen edge)
   std::optional<std::int32_t> paddingH;      // horizontal padding from bar edges to start/end sections
@@ -37,6 +39,8 @@ struct BarConfig {
   bool enabled = true;
   std::int32_t height = Style::barHeightDefault;
   std::int32_t radius = Style::radiusXl;
+  std::int32_t radiusOuter = Style::radiusXl;
+  std::int32_t radiusInner = Style::radiusXl;
   std::int32_t marginH = 180;     // horizontal compositor margin (left = right = marginH)
   std::int32_t marginV = 10;      // vertical compositor margin (gap between bar and screen edge)
   std::int32_t paddingH = 14;     // horizontal padding from bar edges to start/end sections

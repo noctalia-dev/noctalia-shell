@@ -11,7 +11,6 @@
 #include "system/system_monitor_service.h"
 #include "system/weather_service.h"
 #include "time/time_service.h"
-#include "ui/controls/box.h"
 #include "ui/controls/flex.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -376,10 +375,27 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   const float barH = static_cast<float>(instance.barConfig.height);
   const float marginH = static_cast<float>(instance.barConfig.marginH);
   const float marginV = static_cast<float>(instance.barConfig.marginV);
-  const float radius = static_cast<float>(instance.barConfig.radius);
   const bool isBottom = instance.barConfig.position == "bottom";
   const bool isRight = instance.barConfig.position == "right";
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
+  const float radiusOuter = static_cast<float>(instance.barConfig.radiusOuter);
+  const float radiusInner = static_cast<float>(instance.barConfig.radiusInner);
+  const Radii barRadii = [&]() -> Radii {
+    if (isVertical) {
+      if (isRight) {
+        // Screen edge on right side: outer corners are top-right/bottom-right.
+        return Radii{radiusInner, radiusOuter, radiusOuter, radiusInner};
+      }
+      // Screen edge on left side: outer corners are top-left/bottom-left.
+      return Radii{radiusOuter, radiusInner, radiusInner, radiusOuter};
+    }
+    if (isBottom) {
+      // Screen edge on bottom side: outer corners are bottom-left/bottom-right.
+      return Radii{radiusInner, radiusInner, radiusOuter, radiusOuter};
+    }
+    // Screen edge on top side: outer corners are top-left/top-right.
+    return Radii{radiusOuter, radiusOuter, radiusInner, radiusInner};
+  }();
 
   // Compute the surface expansion (must match createInstance).
   const float shadowExpand = [&]() -> float {
@@ -408,10 +424,8 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.sceneRoot->setSize(w, h);
 
     // Bar background
-    auto bg = std::make_unique<Box>();
-    bg->setFlatStyle();
-    bg->setRadius(radius);
-    instance.bg = instance.sceneRoot->addChild(std::move(bg));
+    auto bg = std::make_unique<RectNode>();
+    instance.bg = static_cast<RectNode*>(instance.sceneRoot->addChild(std::move(bg)));
 
     // Shadow — bar shape copy rendered with large SDF softness to simulate a blurred drop shadow.
     if (shadowSize > 0.0f) {
@@ -484,8 +498,20 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
   // Background covers only the bar visual area (not the shadow extension).
   // Expand 1px beyond its edges so SDF fringe lands inside the rect.
-  instance.bg->setPosition(barAreaX - 1.0f, barAreaY - 1.0f);
-  instance.bg->setSize(barAreaW + 2.0f, barAreaH + 2.0f);
+  if (instance.bg != nullptr) {
+    const RoundedRectStyle bgStyle{
+        .fill = palette.surface,
+        .fillEnd = {},
+        .border = palette.outline,
+        .fillMode = FillMode::Solid,
+        .radius = barRadii,
+        .softness = 0.0f,
+        .borderWidth = 0.0f,
+    };
+    instance.bg->setStyle(bgStyle);
+    instance.bg->setPosition(barAreaX - 1.0f, barAreaY - 1.0f);
+    instance.bg->setSize(barAreaW + 2.0f, barAreaH + 2.0f);
+  }
   if (instance.contentClip != nullptr) {
     instance.contentClip->setPosition(barAreaX, barAreaY);
     instance.contentClip->setSize(barAreaW, barAreaH);
@@ -500,7 +526,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
         .fillEnd = {},
         .border = rgba(0.0f, 0.0f, 0.0f, 0.0f),
         .fillMode = FillMode::Solid,
-        .radius = radius,
+        .radius = barRadii,
         .softness = shadowSize,
     };
     instance.shadow->setStyle(shadowStyle);

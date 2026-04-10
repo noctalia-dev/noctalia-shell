@@ -183,8 +183,15 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.enabled = *ovr.enabled;
     if (ovr.height)
       resolved.height = *ovr.height;
-    if (ovr.radius)
+    if (ovr.radius) {
       resolved.radius = *ovr.radius;
+      resolved.radiusOuter = *ovr.radius;
+      resolved.radiusInner = *ovr.radius;
+    }
+    if (ovr.radiusOuter)
+      resolved.radiusOuter = *ovr.radiusOuter;
+    if (ovr.radiusInner)
+      resolved.radiusInner = *ovr.radiusInner;
     if (ovr.marginH)
       resolved.marginH = *ovr.marginH;
     if (ovr.marginV)
@@ -323,8 +330,19 @@ void ConfigService::loadFromFile(const std::string& path) {
         bar.enabled = *v;
       if (auto v = (*barTbl)["height"].value<int64_t>())
         bar.height = static_cast<std::int32_t>(*v);
-      if (auto v = (*barTbl)["radius"].value<int64_t>())
+      if (auto v = (*barTbl)["radius"].value<int64_t>()) {
         bar.radius = static_cast<std::int32_t>(*v);
+        bar.radiusOuter = static_cast<std::int32_t>(*v);
+        bar.radiusInner = static_cast<std::int32_t>(*v);
+      }
+      if (auto v = (*barTbl)["radius_outer"].value<int64_t>())
+        bar.radiusOuter = static_cast<std::int32_t>(*v);
+      if (auto v = (*barTbl)["radius_inner"].value<int64_t>())
+        bar.radiusInner = static_cast<std::int32_t>(*v);
+      if (auto v = (*barTbl)["radiusOuter"].value<int64_t>())
+        bar.radiusOuter = static_cast<std::int32_t>(*v);
+      if (auto v = (*barTbl)["radiusInner"].value<int64_t>())
+        bar.radiusInner = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["margin_h"].value<int64_t>())
         bar.marginH = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["margin_v"].value<int64_t>())
@@ -369,6 +387,14 @@ void ConfigService::loadFromFile(const std::string& path) {
             ovr.height = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["radius"].value<int64_t>())
             ovr.radius = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["radius_outer"].value<int64_t>())
+            ovr.radiusOuter = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["radius_inner"].value<int64_t>())
+            ovr.radiusInner = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["radiusOuter"].value<int64_t>())
+            ovr.radiusOuter = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["radiusInner"].value<int64_t>())
+            ovr.radiusInner = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["margin_h"].value<int64_t>())
             ovr.marginH = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["margin_v"].value<int64_t>())
