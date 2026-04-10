@@ -378,24 +378,12 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   const bool isBottom = instance.barConfig.position == "bottom";
   const bool isRight = instance.barConfig.position == "right";
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
-  const float radiusOuter = static_cast<float>(instance.barConfig.radiusOuter);
-  const float radiusInner = static_cast<float>(instance.barConfig.radiusInner);
-  const Radii barRadii = [&]() -> Radii {
-    if (isVertical) {
-      if (isRight) {
-        // Screen edge on right side: outer corners are top-right/bottom-right.
-        return Radii{radiusInner, radiusOuter, radiusOuter, radiusInner};
-      }
-      // Screen edge on left side: outer corners are top-left/bottom-left.
-      return Radii{radiusOuter, radiusInner, radiusInner, radiusOuter};
-    }
-    if (isBottom) {
-      // Screen edge on bottom side: outer corners are bottom-left/bottom-right.
-      return Radii{radiusInner, radiusInner, radiusOuter, radiusOuter};
-    }
-    // Screen edge on top side: outer corners are top-left/top-right.
-    return Radii{radiusOuter, radiusOuter, radiusInner, radiusInner};
-  }();
+  const Radii barRadii{
+      static_cast<float>(instance.barConfig.radiusTopLeft),
+      static_cast<float>(instance.barConfig.radiusTopRight),
+      static_cast<float>(instance.barConfig.radiusBottomRight),
+      static_cast<float>(instance.barConfig.radiusBottomLeft),
+  };
 
   // Compute the surface expansion (must match createInstance).
   const float shadowExpand = [&]() -> float {

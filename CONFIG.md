@@ -34,10 +34,11 @@ enabled         = true
 
 height          = 34          # bar thickness in pixels
 background_opacity = 1.0      # bar background alpha, from 0.0 (transparent) to 1.0 (opaque)
-radius          = 16          # global corner radius fallback (applies to outer+inner)
-radius_outer    = 16          # edge facing the screen boundary (top/bottom/left/right depending on position)
-radius_inner    = 16          # edge facing inward toward content/windows
-# camelCase aliases are also accepted: radiusOuter / radiusInner
+radius          = 16          # global corner radius fallback
+radius_top_left = 16
+radius_top_right = 16
+radius_bottom_left = 16
+radius_bottom_right = 16
 margin_h        = 180         # horizontal gap between bar and screen edge
 margin_v        = 10          # vertical gap between bar and screen edge
 padding_h       = 14          # padding from bar edge to the start/end widget sections
@@ -56,16 +57,7 @@ end    = ["tray", "notifications", "volume", "power_profiles", "battery", "sessi
 
 Radius precedence:
 - `radius` is the global fallback.
-- `radius_outer` and `radius_inner` override `radius` for their respective edges when provided.
-
-Radius mapping by bar position:
-
-| Bar `position` | `radius_outer` applies to | `radius_inner` applies to |
-|---|---|---|
-| `top` | top edge corners | bottom edge corners |
-| `bottom` | bottom edge corners | top edge corners |
-| `left` | left edge corners | right edge corners |
-| `right` | right edge corners | left edge corners |
+- Per-corner values override `radius` when provided.
 
 All fields are optional and fall back to the defaults shown above. Multiple `[bar.*]` entries are supported — each is independently configured and rendered on all outputs (subject to monitor overrides).
 
@@ -82,8 +74,10 @@ enabled        = true
 height         = 44
 background_opacity = 0.9
 radius         = 0
-radius_outer   = 0
-radius_inner   = 0
+radius_top_left = 12
+radius_top_right = 12
+radius_bottom_left = 0
+radius_bottom_right = 0
 padding_h      = 20
 widget_spacing = 6
 start          = []
