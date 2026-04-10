@@ -221,7 +221,7 @@ void TrayMenu::ensureSurfaces() {
         [this, instPtr](uint32_t width, uint32_t height) { buildScene(*instPtr, width, height); });
     inst->surface->setRenderContext(m_renderContext);
 
-    bool ok = inst->surface->initialize(output.output, output.scale);
+    bool ok = inst->surface->initialize(output.output);
     if (!ok) {
       kLog.warn("tray menu: failed to initialize surface on {}", output.connectorName);
       continue;

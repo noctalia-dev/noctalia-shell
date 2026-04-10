@@ -259,7 +259,7 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
 
   instance->surface->setUpdateCallback([this, inst]() { updateRendererState(*inst); });
 
-  if (!instance->surface->initialize(output.output, output.scale)) {
+  if (!instance->surface->initialize(output.output)) {
     kLog.warn("failed to initialize surface for output {}", output.name);
     return;
   }

@@ -331,7 +331,7 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
   instance->surface->setAnimationManager(&instance->animations);
   populateWidgets(*instance);
 
-  if (!instance->surface->initialize(output.output, output.scale)) {
+  if (!instance->surface->initialize(output.output)) {
     kLog.warn("failed to initialize surface for output {}", output.name);
     return;
   }

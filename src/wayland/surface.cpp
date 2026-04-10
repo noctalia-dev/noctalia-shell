@@ -72,13 +72,13 @@ void Surface::onConfigure(std::uint32_t width, std::uint32_t height) {
   m_height = height;
   m_configured = true;
 
-  if (m_scale > 1) {
-    wl_surface_set_buffer_scale(m_surface, m_scale);
+  if (m_bufferScale > 1) {
+    wl_surface_set_buffer_scale(m_surface, m_bufferScale);
   }
 
   if (m_renderContext != nullptr) {
-    const auto bufferWidth = m_width * static_cast<std::uint32_t>(m_scale);
-    const auto bufferHeight = m_height * static_cast<std::uint32_t>(m_scale);
+    const auto bufferWidth = m_width * static_cast<std::uint32_t>(m_bufferScale);
+    const auto bufferHeight = m_height * static_cast<std::uint32_t>(m_bufferScale);
     m_renderTarget.setLogicalSize(m_width, m_height);
     m_renderTarget.resize(bufferWidth, bufferHeight);
   }

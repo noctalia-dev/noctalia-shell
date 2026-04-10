@@ -9,14 +9,12 @@
 
 #include <memory>
 
-LauncherWidget::LauncherWidget(wl_output* output, std::int32_t scale) : m_output(output), m_scale(scale) {}
+LauncherWidget::LauncherWidget(wl_output* output) : m_output(output) {}
 
 void LauncherWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    float absX = 0.0f;
-    float absY = 0.0f;
-    PanelManager::instance().togglePanel("launcher", m_output, m_scale, absX, absY);
+    PanelManager::instance().togglePanel("launcher", m_output, 0.0f, 0.0f);
   });
 
   auto glyph = std::make_unique<Glyph>();

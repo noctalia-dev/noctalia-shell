@@ -32,15 +32,13 @@ LayerSurface::~LayerSurface() {
 
 bool LayerSurface::initialize() {
   wl_output* output = nullptr;
-  std::int32_t scale = 1;
   if (!m_connection.outputs().empty()) {
     output = m_connection.outputs().front().output;
-    scale = m_connection.outputs().front().scale;
   }
-  return initialize(output, scale);
+  return initialize(output);
 }
 
-bool LayerSurface::initialize(wl_output* output, std::int32_t scale) {
+bool LayerSurface::initialize(wl_output* output) {
   if (!m_connection.hasRequiredGlobals()) {
     kLog.warn("layer surface skipped: missing compositor/shm/layer-shell globals");
     return false;
@@ -50,8 +48,13 @@ bool LayerSurface::initialize(wl_output* output, std::int32_t scale) {
     return false;
   }
 
+  std::int32_t bufferScale = 1;
+  if (const auto* wlOutput = m_connection.findOutputByWl(output); wlOutput != nullptr) {
+    bufferScale = wlOutput->scale;
+  }
+
   m_connection.registerSurfaceOutput(m_surface, output);
-  setScale(scale);
+  setBufferScale(bufferScale);
 
   m_layerSurface =
       zwlr_layer_shell_v1_get_layer_surface(m_connection.layerShell(), m_surface, output,

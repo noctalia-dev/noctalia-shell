@@ -14,14 +14,13 @@
 #include <format>
 #include <memory>
 
-WeatherWidget::WeatherWidget(WeatherService* weather, wl_output* output, std::int32_t scale, float maxWidth,
-                             bool showCondition)
-    : m_weather(weather), m_output(output), m_scale(scale), m_maxWidth(maxWidth), m_showCondition(showCondition) {}
+WeatherWidget::WeatherWidget(WeatherService* weather, wl_output* output, float maxWidth, bool showCondition)
+    : m_weather(weather), m_output(output), m_maxWidth(maxWidth), m_showCondition(showCondition) {}
 
 void WeatherWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("control-center", m_output, m_scale, 0.0f, 0.0f, "weather");
+    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "weather");
   });
   m_area = area.get();
 

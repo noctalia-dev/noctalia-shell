@@ -8,21 +8,13 @@
 #include "ui/controls/label.h"
 #include "ui/style.h"
 
-ClockWidget::ClockWidget(const TimeService& timeService, wl_output* output, std::int32_t scale, std::string format)
-    : m_time(timeService), m_output(output), m_scale(scale), m_format(std::move(format)) {}
+ClockWidget::ClockWidget(const TimeService& timeService, wl_output* output, std::string format)
+    : m_time(timeService), m_output(output), m_format(std::move(format)) {}
 
 void ClockWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    float absX = 0.0f;
-    float absY = 0.0f;
-    // auto* node = root();
-    // if (node != nullptr) {
-    //   Node::absolutePosition(node, absX, absY);
-    //   absX += node->width() * 0.5f;
-    //   absY += node->height() * 0.5f;
-    // }
-    PanelManager::instance().togglePanel("control-center", m_output, m_scale, absX, absY, "calendar");
+    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "calendar");
   });
 
   auto label = std::make_unique<Label>();

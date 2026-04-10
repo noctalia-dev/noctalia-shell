@@ -67,8 +67,8 @@ void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> c
   m_panels[id] = std::move(content);
 }
 
-void PanelManager::openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX,
-                             float anchorY, std::string_view context) {
+void PanelManager::openPanel(const std::string& panelId, wl_output* output, float anchorX, float anchorY,
+                             std::string_view context) {
   if (m_inTransition) {
     return;
   }
@@ -166,7 +166,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, std:
   // Guard against re-entrancy: initialize() calls wl_display_roundtrip()
   // which can process queued pointer events, re-entering our event handler
   m_inTransition = true;
-  bool ok = m_surface->initialize(output, scale);
+  bool ok = m_surface->initialize(output);
   m_inTransition = false;
 
   if (!ok) {
@@ -225,8 +225,8 @@ void PanelManager::destroyPanel() {
   m_wayland->stopKeyRepeat();
 }
 
-void PanelManager::togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX,
-                               float anchorY, std::string_view context) {
+void PanelManager::togglePanel(const std::string& panelId, wl_output* output, float anchorX, float anchorY,
+                               std::string_view context) {
   if (isOpen() && m_activePanelId == panelId) {
     if (!context.empty() && m_activePanel != nullptr) {
       m_activePanel->onOpen(context);
@@ -235,7 +235,7 @@ void PanelManager::togglePanel(const std::string& panelId, wl_output* output, st
     }
     closePanel();
   } else {
-    openPanel(panelId, output, scale, anchorX, anchorY, context);
+    openPanel(panelId, output, anchorX, anchorY, context);
   }
 }
 
@@ -245,7 +245,6 @@ void PanelManager::togglePanel(const std::string& panelId) {
     return;
   }
   wl_output* output = nullptr;
-  std::int32_t scale = 1;
   if (m_wayland != nullptr) {
     output = m_wayland->activeToplevelOutput();
     if (output == nullptr) {
@@ -254,11 +253,8 @@ void PanelManager::togglePanel(const std::string& panelId) {
     if (output == nullptr && !m_wayland->outputs().empty()) {
       output = m_wayland->outputs().front().output;
     }
-    if (const auto* wlOutput = m_wayland->findOutputByWl(output); wlOutput != nullptr) {
-      scale = wlOutput->scale;
-    }
   }
-  openPanel(panelId, output, scale, /*anchorX=*/1.0f, /*anchorY=*/0.0f);
+  openPanel(panelId, output, 0.0f, 0.0f);
 }
 
 bool PanelManager::onPointerEvent(const PointerEvent& event) {

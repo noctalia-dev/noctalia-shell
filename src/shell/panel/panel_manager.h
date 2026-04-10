@@ -33,10 +33,10 @@ public:
 
   void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 
-  void openPanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX, float anchorY,
+  void openPanel(const std::string& panelId, wl_output* output, float anchorX, float anchorY,
                  std::string_view context = {});
   void closePanel();
-  void togglePanel(const std::string& panelId, wl_output* output, std::int32_t scale, float anchorX, float anchorY,
+  void togglePanel(const std::string& panelId, wl_output* output, float anchorX, float anchorY,
                    std::string_view context = {});
   // IPC-friendly overload: uses the first available output at a default position.
   void togglePanel(const std::string& panelId);

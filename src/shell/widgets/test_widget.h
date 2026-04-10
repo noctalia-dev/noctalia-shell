@@ -9,13 +9,12 @@ struct wl_output;
 
 class TestWidget : public Widget {
 public:
-  TestWidget(wl_output* output, std::int32_t scale);
+  TestWidget(wl_output* output);
 
   void create() override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
 
 private:
   wl_output* m_output;
-  std::int32_t m_scale;
   Glyph* m_glyph = nullptr;
 };

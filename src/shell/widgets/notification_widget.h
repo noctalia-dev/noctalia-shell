@@ -9,7 +9,7 @@ class NotificationManager;
 
 class NotificationWidget : public Widget {
 public:
-  NotificationWidget(NotificationManager* manager, wl_output* output, std::int32_t scale);
+  NotificationWidget(NotificationManager* manager, wl_output* output);
 
   void create() override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
@@ -20,7 +20,6 @@ private:
 
   NotificationManager* m_manager = nullptr;
   wl_output* m_output = nullptr;
-  std::int32_t m_scale = 1;
   Glyph* m_glyph = nullptr;
   Node* m_dot = nullptr;
   bool m_hasNotifications = false;

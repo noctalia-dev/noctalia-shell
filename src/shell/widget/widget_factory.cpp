@@ -58,12 +58,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       return nullptr;
     }
     std::string format = wc != nullptr ? wc->getString("format", "{:%H:%M}") : std::string("{:%H:%M}");
-    std::int32_t scale = 1;
-    const auto* wlOutput = m_wayland.findOutputByWl(output);
-    if (wlOutput != nullptr) {
-      scale = wlOutput->scale;
-    }
-    auto widget = std::make_unique<ClockWidget>(*m_time, output, scale, std::move(format));
+    auto widget = std::make_unique<ClockWidget>(*m_time, output, std::move(format));
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -92,23 +87,13 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "notifications") {
-    std::int32_t scale = 1;
-    const auto* wlOutput = m_wayland.findOutputByWl(output);
-    if (wlOutput != nullptr) {
-      scale = wlOutput->scale;
-    }
-    auto widget = std::make_unique<NotificationWidget>(m_notifications, output, scale);
+    auto widget = std::make_unique<NotificationWidget>(m_notifications, output);
     widget->setContentScale(contentScale);
     return widget;
   }
 
   if (type == "session") {
-    std::int32_t scale = 1;
-    const auto* wlOutput = m_wayland.findOutputByWl(output);
-    if (wlOutput != nullptr) {
-      scale = wlOutput->scale;
-    }
-    auto widget = std::make_unique<SessionWidget>(output, scale);
+    auto widget = std::make_unique<SessionWidget>(output);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -132,12 +117,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "volume") {
-    std::int32_t scale = 1;
-    const auto* wlOutput = m_wayland.findOutputByWl(output);
-    if (wlOutput != nullptr) {
-      scale = wlOutput->scale;
-    }
-    auto widget = std::make_unique<VolumeWidget>(m_audio, output, scale);
+    auto widget = std::make_unique<VolumeWidget>(m_audio, output);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -151,14 +131,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "weather") {
-    std::int32_t scale = 1;
-    const auto* wlOutput = m_wayland.findOutputByWl(output);
-    if (wlOutput != nullptr) {
-      scale = wlOutput->scale;
-    }
     const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_length", 160.0) : 160.0);
     const bool showCondition = wc != nullptr ? wc->getBool("show_condition", true) : true;
-    auto widget = std::make_unique<WeatherWidget>(m_weather, output, scale, maxWidth, showCondition);
+    auto widget = std::make_unique<WeatherWidget>(m_weather, output, maxWidth, showCondition);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -170,23 +145,13 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "launcher") {
-    std::int32_t scale = 1;
-    const auto* wlOutput = m_wayland.findOutputByWl(output);
-    if (wlOutput != nullptr) {
-      scale = wlOutput->scale;
-    }
-    auto widget = std::make_unique<LauncherWidget>(output, scale);
+    auto widget = std::make_unique<LauncherWidget>(output);
     widget->setContentScale(contentScale);
     return widget;
   }
 
   if (type == "test") {
-    std::int32_t scale = 1;
-    const auto* wlOutput = m_wayland.findOutputByWl(output);
-    if (wlOutput != nullptr) {
-      scale = wlOutput->scale;
-    }
-    auto widget = std::make_unique<TestWidget>(output, scale);
+    auto widget = std::make_unique<TestWidget>(output);
     widget->setContentScale(contentScale);
     return widget;
   }

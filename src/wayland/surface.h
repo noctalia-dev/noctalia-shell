@@ -40,7 +40,7 @@ public:
   [[nodiscard]] wl_surface* wlSurface() const noexcept { return m_surface; }
   [[nodiscard]] std::uint32_t width() const noexcept { return m_width; }
   [[nodiscard]] std::uint32_t height() const noexcept { return m_height; }
-  [[nodiscard]] std::int32_t scale() const noexcept { return m_scale; }
+  [[nodiscard]] std::int32_t bufferScale() const noexcept { return m_bufferScale; }
 
   static void handleFrameDone(void* data, wl_callback* callback, std::uint32_t callbackData);
 
@@ -52,7 +52,7 @@ protected:
   void destroySurface();
 
   void setRunning(bool running) noexcept { m_running = running; }
-  void setScale(std::int32_t scale) noexcept { m_scale = scale; }
+  void setBufferScale(std::int32_t bufferScale) noexcept { m_bufferScale = bufferScale; }
 
   WaylandConnection& m_connection;
   wl_surface* m_surface = nullptr;
@@ -70,5 +70,5 @@ private:
   bool m_configured = false;
   std::uint32_t m_width = 0;
   std::uint32_t m_height = 0;
-  std::int32_t m_scale = 1;
+  std::int32_t m_bufferScale = 1;
 };

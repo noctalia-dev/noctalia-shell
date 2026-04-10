@@ -155,7 +155,7 @@ void OsdOverlay::ensureSurfaces() {
     inst->surface->setAnimationManager(&inst->animations);
     inst->surface->setRenderContext(m_renderContext);
 
-    if (!inst->surface->initialize(output.output, output.scale)) {
+    if (!inst->surface->initialize(output.output)) {
       kLog.warn("osd overlay: failed to initialize surface on {}", output.connectorName);
       continue;
     }

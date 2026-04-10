@@ -11,7 +11,7 @@ struct wl_output;
 
 class VolumeWidget : public Widget {
 public:
-  VolumeWidget(PipeWireService* audio, wl_output* output, std::int32_t scale);
+  VolumeWidget(PipeWireService* audio, wl_output* output);
 
   void create() override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
@@ -22,7 +22,6 @@ private:
 
   PipeWireService* m_audio = nullptr;
   wl_output* m_output = nullptr;
-  std::int32_t m_scale = 1;
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
   float m_lastVolume = -1.0f;

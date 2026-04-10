@@ -72,7 +72,7 @@ void IdleInhibitor::ensureSurface() {
   surface->setRenderContext(m_renderContext);
   surface->setConfigureCallback([](std::uint32_t /*width*/, std::uint32_t /*height*/) {});
 
-  if (!surface->initialize(output.output, output.scale)) {
+  if (!surface->initialize(output.output)) {
     kLog.warn("failed to initialize idle inhibitor surface");
     return;
   }

@@ -63,8 +63,8 @@ bool OverviewSurface::createWlSurface() {
 }
 
 void OverviewSurface::onConfigure(std::uint32_t width, std::uint32_t height) {
-  const auto bw = width * static_cast<std::uint32_t>(scale());
-  const auto bh = height * static_cast<std::uint32_t>(scale());
+  const auto bw = width * static_cast<std::uint32_t>(bufferScale());
+  const auto bh = height * static_cast<std::uint32_t>(bufferScale());
 
   m_bufW = bw;
   m_bufH = bh;

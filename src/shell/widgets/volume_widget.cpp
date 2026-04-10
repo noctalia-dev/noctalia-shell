@@ -28,21 +28,13 @@ const char* volumeGlyphName(float volume, bool muted) {
 
 } // namespace
 
-VolumeWidget::VolumeWidget(PipeWireService* audio, wl_output* output, std::int32_t scale)
-    : m_audio(audio), m_output(output), m_scale(scale) {}
+VolumeWidget::VolumeWidget(PipeWireService* audio, wl_output* output)
+    : m_audio(audio), m_output(output) {}
 
 void VolumeWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    float absX = 0.0f;
-    float absY = 0.0f;
-    // auto* node = root();
-    // if (node != nullptr) {
-    //   Node::absolutePosition(node, absX, absY);
-    //   absX += node->width() * 0.5f;
-    //   absY += node->height() * 0.5f;
-    // }
-    PanelManager::instance().togglePanel("control-center", m_output, m_scale, absX, absY, "audio");
+    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "audio");
   });
 
   auto glyph = std::make_unique<Glyph>();

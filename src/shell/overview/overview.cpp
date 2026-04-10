@@ -148,7 +148,7 @@ void Overview::createInstance(const WaylandOutput& output) {
         }
       });
 
-  if (!inst->surface->initialize(output.output, output.scale)) {
+  if (!inst->surface->initialize(output.output)) {
     kLog.warn("failed to initialize overview surface for output {}", output.name);
     return;
   }

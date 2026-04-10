@@ -15,8 +15,8 @@ bool WallpaperSurface::createWlSurface() {
 }
 
 void WallpaperSurface::onConfigure(std::uint32_t width, std::uint32_t height) {
-  const auto bufferWidth = width * static_cast<std::uint32_t>(scale());
-  const auto bufferHeight = height * static_cast<std::uint32_t>(scale());
+  const auto bufferWidth = width * static_cast<std::uint32_t>(bufferScale());
+  const auto bufferHeight = height * static_cast<std::uint32_t>(bufferScale());
   m_wallpaperRenderer.resize(bufferWidth, bufferHeight, width, height);
 
   // Call base for bookkeeping (sets width/height/configured, calls configureCallback, calls render)

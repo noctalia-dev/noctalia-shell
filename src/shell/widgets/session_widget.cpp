@@ -9,14 +9,12 @@
 
 #include <memory>
 
-SessionWidget::SessionWidget(wl_output* output, std::int32_t scale) : m_output(output), m_scale(scale) {}
+SessionWidget::SessionWidget(wl_output* output) : m_output(output) {}
 
 void SessionWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    float absX = 0.0f;
-    float absY = 0.0f;
-    PanelManager::instance().togglePanel("session-menu", m_output, m_scale, absX, absY);
+    PanelManager::instance().togglePanel("session-menu", m_output, 0.0f, 0.0f);
   });
 
   auto glyph = std::make_unique<Glyph>();

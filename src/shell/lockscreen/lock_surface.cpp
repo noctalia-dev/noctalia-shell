@@ -90,7 +90,7 @@ bool LockSurface::initialize(ext_session_lock_v1* lock, wl_output* output, std::
   }
 
   m_output = output;
-  setScale(scale);
+  setBufferScale(scale);
 
   m_lockSurface = ext_session_lock_v1_get_lock_surface(lock, m_surface, output);
   if (m_lockSurface == nullptr) {

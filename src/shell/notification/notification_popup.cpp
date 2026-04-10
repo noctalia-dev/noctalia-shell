@@ -478,7 +478,7 @@ void NotificationPopup::ensureSurfaces() {
     inst->surface->setAnimationManager(&inst->animations);
     inst->surface->setRenderContext(m_renderContext);
 
-    bool ok = inst->surface->initialize(output.output, output.scale);
+    bool ok = inst->surface->initialize(output.output);
     if (!ok) {
       kLog.warn("notification popup: failed to initialize surface on {}", output.connectorName);
       continue;
