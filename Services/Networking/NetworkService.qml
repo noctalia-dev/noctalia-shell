@@ -1158,26 +1158,14 @@ Singleton {
     stdout: SplitParser {
       onRead: data => {
         if (data.endsWith(": connected") || data.endsWith(": disconnected")) {
-          // High-priority state changes: refresh immediately
           Logger.d("Network", "State changed: " + data);
-          _monitorDebounce.stop();
           deviceStatusProcess.running = true;
           connectivityCheckProcess.running = true;
-        } else if (data.endsWith(": unavailable") || data.endsWith(": unmanaged") || data.indexOf(": device removed") !== -1 || data.indexOf(": device created") !== -1) {
-          // Adapter added/removed: debounce to avoid rapid-fire refreshes
+        } else if (data.endsWith(": unavailable") || data.indexOf(": device removed") !== -1 || data.indexOf(": device created") !== -1) {
           Logger.d("Network", "Device event: " + data);
-          _monitorDebounce.restart();
+          deviceStatusProcess.running = true;
         }
       }
-    }
-  }
-
-  Timer {
-    id: _monitorDebounce
-    interval: 500
-    repeat: false
-    onTriggered: {
-      deviceStatusProcess.running = true;
     }
   }
 }
