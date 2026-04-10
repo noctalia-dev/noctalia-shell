@@ -1,0 +1,16 @@
+#pragma once
+
+#include <optional>
+#include <string>
+#include <string_view>
+
+class NiriOutputBackend {
+public:
+  explicit NiriOutputBackend(std::string_view compositorHint);
+
+  [[nodiscard]] bool isAvailable() const noexcept;
+  [[nodiscard]] std::optional<std::string> focusedOutputName() const;
+
+private:
+  bool m_enabled = false;
+};

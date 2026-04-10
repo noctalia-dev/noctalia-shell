@@ -1,5 +1,6 @@
 #include "wayland/wayland_connection.h"
 
+#include "compositors/niri/niri_output_backend.h"
 #include "core/log.h"
 #include "wayland/clipboard_service.h"
 
@@ -179,7 +180,9 @@ bool WaylandConnection::connect() {
     throw std::runtime_error("failed during Wayland output discovery roundtrip");
   }
 
-  m_workspacesHandler.initialize(compositorHintFromEnv());
+  const std::string compositorHint = compositorHintFromEnv();
+  m_workspacesHandler.initialize(compositorHint);
+  m_niriOutputBackend = std::make_unique<NiriOutputBackend>(compositorHint);
   logStartupSummary();
   return true;
 }
@@ -203,11 +206,10 @@ void WaylandConnection::setToplevelChangeCallback(ChangeCallback callback) {
 void WaylandConnection::setPointerEventCallback(WaylandSeat::PointerEventCallback callback) {
   m_pointerEventCallback = std::move(callback);
   m_seatHandler.setPointerEventCallback([this](const PointerEvent& event) {
-    if (event.type == PointerEvent::Type::Enter) {
-      const auto it = m_surfaceOutputMap.find(event.surface);
-      if (it != m_surfaceOutputMap.end()) {
-        m_lastPointerOutput = it->second;
-      }
+    const auto it = m_surfaceOutputMap.find(event.surface);
+    if (it != m_surfaceOutputMap.end() && it->second != nullptr) {
+      m_lastPointerOutput = it->second;
+      m_lastPointerOutputAt = std::chrono::steady_clock::now();
     }
     if (m_pointerEventCallback) {
       m_pointerEventCallback(event);
@@ -239,6 +241,38 @@ void WaylandConnection::notifyOutputReady(wl_output* output) {
 }
 
 wl_output* WaylandConnection::lastPointerOutput() const noexcept { return m_lastPointerOutput; }
+
+bool WaylandConnection::hasFreshPointerOutput(std::chrono::milliseconds maxAge) const noexcept {
+  if (m_lastPointerOutput == nullptr || m_lastPointerOutputAt.time_since_epoch().count() == 0) {
+    return false;
+  }
+  return std::chrono::steady_clock::now() - m_lastPointerOutputAt <= maxAge;
+}
+
+wl_output* WaylandConnection::preferredPanelOutput(std::chrono::milliseconds pointerMaxAge) const {
+  if (m_niriOutputBackend != nullptr && m_niriOutputBackend->isAvailable()) {
+    if (const auto focusedName = m_niriOutputBackend->focusedOutputName(); focusedName.has_value()) {
+      for (const auto& output : m_outputs) {
+        if (output.output == nullptr) {
+          continue;
+        }
+        if (output.connectorName == *focusedName || output.description == *focusedName) {
+          return output.output;
+        }
+      }
+    }
+  }
+
+  if (hasFreshPointerOutput(pointerMaxAge)) {
+    return m_lastPointerOutput;
+  }
+
+  if (!m_outputs.empty()) {
+    return m_outputs.front().output;
+  }
+
+  return nullptr;
+}
 
 void WaylandConnection::setKeyboardEventCallback(WaylandSeat::KeyboardEventCallback callback) {
   m_seatHandler.setKeyboardEventCallback(std::move(callback));
@@ -644,6 +678,7 @@ void WaylandConnection::cleanup() {
   m_hasExtWorkspaceGlobal = false;
   m_hasMangoWorkspaceGlobal = false;
   m_hasForeignToplevelManagerGlobal = false;
+  m_niriOutputBackend.reset();
 }
 
 void WaylandConnection::logStartupSummary() const {

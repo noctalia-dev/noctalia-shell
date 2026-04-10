@@ -1,4 +1,4 @@
-#include "wayland/compositors/sway_workspace_backend.h"
+#include "compositors/sway/sway_workspace_backend.h"
 
 #include "core/log.h"
 

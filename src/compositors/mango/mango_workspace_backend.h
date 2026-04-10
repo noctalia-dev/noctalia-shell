@@ -1,6 +1,6 @@
 #pragma once
 
-#include "wayland/compositors/workspace_backend.h"
+#include "compositors/workspace_backend.h"
 
 #include <cstddef>
 #include <optional>

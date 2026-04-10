@@ -244,16 +244,7 @@ void PanelManager::togglePanel(const std::string& panelId) {
     closePanel();
     return;
   }
-  wl_output* output = nullptr;
-  if (m_wayland != nullptr) {
-    output = m_wayland->activeToplevelOutput();
-    if (output == nullptr) {
-      output = m_wayland->lastPointerOutput();
-    }
-    if (output == nullptr && !m_wayland->outputs().empty()) {
-      output = m_wayland->outputs().front().output;
-    }
-  }
+  wl_output* output = m_wayland != nullptr ? m_wayland->preferredPanelOutput(std::chrono::milliseconds(1200)) : nullptr;
   openPanel(panelId, output, 0.0f, 0.0f);
 }
 

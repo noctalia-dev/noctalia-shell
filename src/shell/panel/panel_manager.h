@@ -38,7 +38,7 @@ public:
   void closePanel();
   void togglePanel(const std::string& panelId, wl_output* output, float anchorX, float anchorY,
                    std::string_view context = {});
-  // IPC-friendly overload: uses the first available output at a default position.
+  // IPC-friendly overload: asks WaylandConnection for preferred interactive output.
   void togglePanel(const std::string& panelId);
 
   bool onPointerEvent(const PointerEvent& event);

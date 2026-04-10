@@ -4,8 +4,10 @@
 #include "wayland/wayland_toplevels.h"
 #include "wayland/wayland_workspaces.h"
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -28,6 +30,7 @@ struct ext_session_lock_manager_v1;
 struct zwlr_foreign_toplevel_manager_v1;
 struct zdwl_ipc_manager_v2;
 class ClipboardService;
+class NiriOutputBackend;
 struct DataControlOps;
 
 struct WaylandOutput {
@@ -109,6 +112,9 @@ public:
   [[nodiscard]] std::optional<ActiveToplevel> activeToplevel() const;
   [[nodiscard]] wl_output* activeToplevelOutput() const;
   [[nodiscard]] wl_output* lastPointerOutput() const noexcept;
+  [[nodiscard]] bool hasFreshPointerOutput(std::chrono::milliseconds maxAge) const noexcept;
+  [[nodiscard]] wl_output*
+  preferredPanelOutput(std::chrono::milliseconds pointerMaxAge = std::chrono::milliseconds(1200)) const;
 
   void registerSurfaceOutput(wl_surface* surface, wl_output* output);
   void unregisterSurface(wl_surface* surface);
@@ -148,6 +154,8 @@ private:
   ChangeCallback m_outputChangeCallback;
   std::unordered_map<wl_surface*, wl_output*> m_surfaceOutputMap;
   wl_output* m_lastPointerOutput = nullptr;
+  std::chrono::steady_clock::time_point m_lastPointerOutputAt{};
+  std::unique_ptr<NiriOutputBackend> m_niriOutputBackend;
   WaylandSeat::PointerEventCallback m_pointerEventCallback;
 
   WaylandSeat m_seatHandler;

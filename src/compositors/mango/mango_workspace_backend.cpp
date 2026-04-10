@@ -1,4 +1,4 @@
-#include "wayland/compositors/mango_workspace_backend.h"
+#include "compositors/mango/mango_workspace_backend.h"
 
 #include "core/log.h"
 
