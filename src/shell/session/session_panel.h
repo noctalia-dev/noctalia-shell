@@ -48,6 +48,7 @@ private:
   void activateSelected();
   bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   void updateSelectionVisuals();
+  void activateMouse();
   [[nodiscard]] Button* createActionButton(ActionId id, float scale);
 
   Actions m_actions;
@@ -56,4 +57,5 @@ private:
   std::array<ActionId, static_cast<std::size_t>(ActionId::Count)> m_actionOrder{};
   std::array<Button*, static_cast<std::size_t>(ActionId::Count)> m_actionButtons{};
   std::size_t m_selectedIndex = 0;
+  bool m_mouseActive = false;
 };

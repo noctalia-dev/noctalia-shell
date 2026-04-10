@@ -59,6 +59,11 @@ void Button::setOnClick(std::function<void()> callback) {
     area->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
     area->setOnLeave([this]() { applyVisualState(); });
     area->setOnPress([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
+    area->setOnMotion([this](const InputArea::PointerData& /*data*/) {
+      if (m_onMotion) {
+        m_onMotion();
+      }
+    });
     area->setOnClick([this](const InputArea::PointerData& /*data*/) {
       if (m_enabled && m_onClick) {
         m_onClick();
@@ -68,6 +73,16 @@ void Button::setOnClick(std::function<void()> callback) {
     m_inputArea->setPosition(0.0f, 0.0f);
     m_inputArea->setSize(width(), height());
   }
+}
+
+void Button::setOnMotion(std::function<void()> callback) { m_onMotion = std::move(callback); }
+
+void Button::setHoverSuppressed(bool suppressed) {
+  if (m_hoverSuppressed == suppressed) {
+    return;
+  }
+  m_hoverSuppressed = suppressed;
+  applyVisualState();
 }
 
 void Button::setCursorShape(std::uint32_t shape) {
@@ -278,7 +293,7 @@ void Button::applyColors(const Color& bg, const Color& border, const Color& labe
 }
 
 void Button::applyVisualState() {
-  bool isHovered = m_enabled && (hovered() || m_selected);
+  bool isHovered = m_enabled && ((!m_hoverSuppressed && hovered()) || m_selected);
   bool isPressed = m_enabled && pressed();
 
   Color targetBg;
