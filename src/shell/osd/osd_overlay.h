@@ -10,6 +10,7 @@
 
 class ConfigService;
 class Box;
+class Flex;
 class Glyph;
 class Label;
 class Node;
@@ -45,6 +46,7 @@ private:
     wl_surface* wlSurface = nullptr;
 
     Node* card = nullptr;
+    Flex* row = nullptr;
     Box* background = nullptr;
     Glyph* glyph = nullptr;
     Label* value = nullptr;

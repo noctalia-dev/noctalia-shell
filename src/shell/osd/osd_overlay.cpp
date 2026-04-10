@@ -5,6 +5,7 @@
 #include "render/render_context.h"
 #include "render/scene/node.h"
 #include "ui/controls/box.h"
+#include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -206,12 +207,21 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   card->setZIndex(1);
   inst.card = card.get();
 
+  auto row = std::make_unique<Flex>();
+  row->setDirection(FlexDirection::Horizontal);
+  row->setAlign(FlexAlign::Center);
+  row->setJustify(FlexJustify::Start);
+  row->setGap(kInnerGap);
+  row->setSize(kCardWidth - kCardPadding * 2.0f, kCardHeight);
+  row->setZIndex(1);
+  inst.row = row.get();
+
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyphSize(kGlyphSize);
   glyph->setColor(palette.primary);
   inst.glyph = glyph.get();
   inst.glyph->setZIndex(1);
-  inst.card->addChild(std::move(glyph));
+  inst.row->addChild(std::move(glyph));
 
   auto value = std::make_unique<Label>();
   value->setBold(true);
@@ -219,44 +229,35 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   value->setColor(palette.onSurface);
   inst.value = value.get();
   inst.value->setZIndex(1);
-  inst.card->addChild(std::move(value));
 
   auto progress = std::make_unique<ProgressBar>();
   progress->setRadius(Style::radiusFull);
   progress->setTrackColor(palette.surface);
   progress->setFillColor(palette.primary);
+  progress->setFlexGrow(1.0f);
+  progress->setSize(0.0f, kProgressHeight);
   inst.progress = progress.get();
   inst.progress->setZIndex(1);
-  inst.card->addChild(std::move(progress));
+  inst.row->addChild(std::move(progress));
+  inst.row->addChild(std::move(value));
+  inst.card->addChild(std::move(row));
 
   inst.sceneRoot->addChild(std::move(card));
   updateInstanceContent(inst);
 }
 
 void OsdOverlay::updateInstanceContent(Instance& inst) {
-  if (m_renderContext == nullptr || inst.card == nullptr || inst.glyph == nullptr || inst.value == nullptr ||
-      inst.progress == nullptr) {
+  if (m_renderContext == nullptr || inst.card == nullptr || inst.row == nullptr || inst.glyph == nullptr ||
+      inst.value == nullptr || inst.progress == nullptr) {
     return;
   }
 
-  const float cardWidth = inst.card->width();
   inst.glyph->setGlyph(m_content.icon);
-  inst.glyph->measure(*m_renderContext);
-  inst.glyph->setPosition(kCardPadding, std::round((inst.card->height() - inst.glyph->height()) * 0.5f) -
-                                            Style::borderWidth);
-
   inst.value->setText(m_content.value);
-  inst.value->setMaxWidth(cardWidth);
-  inst.value->measure(*m_renderContext);
-  inst.value->setPosition(cardWidth - kCardPadding - inst.value->width(),
-                          std::round((inst.card->height() - inst.value->height()) * 0.5f));
-
-  const float progressX = inst.glyph->x() + inst.glyph->width() + kInnerGap;
-  const float progressWidth = std::max(0.0f, inst.value->x() - progressX - kInnerGap);
-  inst.progress->setSize(progressWidth, kProgressHeight);
   inst.progress->setRadius(kProgressHeight * 0.5f);
-  inst.progress->setPosition(progressX, std::round((inst.card->height() - kProgressHeight) * 0.5f));
   inst.progress->setProgress(m_content.progress);
+  inst.row->layout(*m_renderContext);
+  inst.row->setPosition(kCardPadding, std::round((inst.card->height() - inst.row->height()) * 0.5f));
 }
 
 void OsdOverlay::animateInstance(Instance& inst) {
