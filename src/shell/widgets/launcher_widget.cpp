@@ -14,7 +14,9 @@ LauncherWidget::LauncherWidget(wl_output* output, std::int32_t scale) : m_output
 void LauncherWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("launcher");
+    float absX = 0.0f;
+    float absY = 0.0f;
+    PanelManager::instance().togglePanel("launcher", m_output, m_scale, absX, absY);
   });
 
   auto glyph = std::make_unique<Glyph>();

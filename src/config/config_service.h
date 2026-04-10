@@ -173,7 +173,7 @@ private:
 
   Config m_config;
   std::string m_configPath;
-  std::string m_pendingError;               // parse error from initial load, sent as notification once manager is wired up
+  std::string m_pendingError; // parse error from initial load, sent as notification once manager is wired up
   uint32_t m_configErrorNotificationId = 0; // ID of the active config-error notification, 0 if none
   NotificationManager* m_notificationManager = nullptr;
   int m_inotifyFd = -1;
