@@ -19,6 +19,8 @@ public:
   virtual void update(Renderer& renderer) = 0;
   virtual void onOpen(std::string_view context) { (void)context; }
   virtual void onClose() {}
+  [[nodiscard]] virtual bool deferExternalRefresh() const { return false; }
+  [[nodiscard]] virtual bool deferPointerRelayout() const { return false; }
 
   [[nodiscard]] virtual float preferredWidth() const = 0;
   [[nodiscard]] virtual float preferredHeight() const = 0;

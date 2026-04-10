@@ -4,6 +4,8 @@
 #include "shell/control_center/tab.h"
 
 #include <cstdint>
+#include <chrono>
+#include <string>
 #include <vector>
 
 class ConfigService;
@@ -22,9 +24,11 @@ public:
   void layout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void update(Renderer& renderer) override;
   void onClose() override;
+  [[nodiscard]] bool dragging() const noexcept;
 
 private:
   void rebuildLists(Renderer& renderer);
+  void syncValueLabelWidths(Renderer& renderer);
   [[nodiscard]] float sliderMaxPercent() const;
   void queueSinkVolume(float value);
   void queueSourceVolume(float value);
@@ -53,7 +57,8 @@ private:
 
   float m_lastOutputWidth = -1.0f;
   float m_lastInputWidth = -1.0f;
-  std::uint64_t m_lastChangeSerial = 0;
+  std::string m_lastOutputListKey;
+  std::string m_lastInputListKey;
   float m_lastSinkVolume = -1.0f;
   float m_lastSourceVolume = -1.0f;
   std::uint32_t m_pendingSinkId = 0;
@@ -62,6 +67,10 @@ private:
   float m_pendingSourceVolume = -1.0f;
   float m_lastSentSinkVolume = -1.0f;
   float m_lastSentSourceVolume = -1.0f;
+  std::chrono::steady_clock::time_point m_lastSinkCommitAt{};
+  std::chrono::steady_clock::time_point m_lastSourceCommitAt{};
+  std::chrono::steady_clock::time_point m_ignoreSinkStateUntil{};
+  std::chrono::steady_clock::time_point m_ignoreSourceStateUntil{};
   Timer m_sinkVolumeDebounceTimer;
   Timer m_sourceVolumeDebounceTimer;
   bool m_syncingOutputSlider = false;

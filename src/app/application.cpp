@@ -2,6 +2,7 @@
 
 #include "app/poll_source.h"
 #include "core/log.h"
+#include "core/process.h"
 #include "i18n/i18n_service.h"
 #include "launcher/app_provider.h"
 #include "launcher/emoji_provider.h"
@@ -18,11 +19,8 @@
 #include <cmath>
 #include <csignal>
 #include <cstdlib>
-#include <fcntl.h>
-#include <filesystem>
 #include <stdexcept>
 #include <thread>
-#include <unistd.h>
 
 std::atomic<bool> Application::s_shutdownRequested{false};
 
@@ -30,108 +28,15 @@ namespace {
 
   constexpr Logger kLog("app");
 
-  bool commandExists(const char* name) {
-    if (name == nullptr || name[0] == '\0') {
-      return false;
-    }
-
-    if (std::strchr(name, '/') != nullptr) {
-      return ::access(name, X_OK) == 0;
-    }
-
-    const char* pathEnv = std::getenv("PATH");
-    if (pathEnv == nullptr || pathEnv[0] == '\0') {
-      pathEnv = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
-    }
-
-    std::string_view path(pathEnv);
-    std::size_t start = 0;
-    while (start <= path.size()) {
-      const std::size_t end = path.find(':', start);
-      const std::string_view dir = end == std::string_view::npos ? path.substr(start) : path.substr(start, end - start);
-      const std::filesystem::path candidate =
-          dir.empty() ? std::filesystem::path(name) : (std::filesystem::path(dir) / name);
-      if (::access(candidate.c_str(), X_OK) == 0) {
-        return true;
-      }
-      if (end == std::string_view::npos) {
-        break;
-      }
-      start = end + 1;
-    }
-
-    return false;
-  }
-
-  bool launchDetachedCommand(std::initializer_list<const char*> args) {
-    if (args.size() == 0 || *args.begin() == nullptr) {
-      return false;
-    }
-
-    pid_t pid = fork();
-    if (pid < 0) {
-      return false;
-    }
-
-    if (pid == 0) {
-      setsid();
-
-      int devnull = open("/dev/null", O_RDWR);
-      if (devnull >= 0) {
-        dup2(devnull, STDIN_FILENO);
-        dup2(devnull, STDOUT_FILENO);
-        dup2(devnull, STDERR_FILENO);
-        if (devnull > STDERR_FILENO) {
-          close(devnull);
-        }
-      }
-
-      std::vector<char*> argv;
-      argv.reserve(args.size() + 1);
-      for (const char* arg : args) {
-        argv.push_back(const_cast<char*>(arg));
-      }
-      argv.push_back(nullptr);
-
-      execvp(argv[0], argv.data());
-      _exit(1);
-    }
-
-    return true;
-  }
-
-  bool launchShellCommand(const std::string& command) {
-    if (command.empty()) {
-      return false;
-    }
-    return launchDetachedCommand({"/bin/sh", "-lc", command.c_str()});
-  }
-
-  bool launchFirstAvailableCommand(std::initializer_list<std::initializer_list<const char*>> commandVariants) {
-    for (const auto& variant : commandVariants) {
-      if (variant.size() == 0) {
-        continue;
-      }
-      const char* executable = *variant.begin();
-      if (!commandExists(executable)) {
-        continue;
-      }
-      if (launchDetachedCommand(variant)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   bool launchLogoutCommand() {
     const char* sessionId = std::getenv("XDG_SESSION_ID");
     if (sessionId != nullptr && sessionId[0] != '\0') {
-      return launchDetachedCommand({"loginctl", "terminate-session", sessionId});
+      return process::launchDetached({"loginctl", "terminate-session", sessionId});
     }
 
     const char* user = std::getenv("USER");
     if (user != nullptr && user[0] != '\0') {
-      return launchDetachedCommand({"loginctl", "terminate-user", user});
+      return process::launchDetached({"loginctl", "terminate-user", user});
     }
 
     return false;
@@ -455,13 +360,13 @@ void Application::initUi() {
               },
           .reboot =
               [this]() {
-                if (!launchFirstAvailableCommand({{"systemctl", "reboot"}, {"loginctl", "reboot"}})) {
+                if (!process::launchFirstAvailable({{"systemctl", "reboot"}, {"loginctl", "reboot"}})) {
                   m_notificationManager.addInternal("Noctalia", "Reboot failed", "Could not launch systemctl reboot.");
                 }
               },
           .shutdown =
               [this]() {
-                if (!launchFirstAvailableCommand({{"systemctl", "poweroff"}, {"loginctl", "poweroff"}})) {
+                if (!process::launchFirstAvailable({{"systemctl", "poweroff"}, {"loginctl", "poweroff"}})) {
                   m_notificationManager.addInternal("Noctalia", "Shutdown failed",
                                                     "Could not launch a shutdown command.");
                 }
@@ -711,7 +616,7 @@ bool Application::runIdleCommand(const std::string& command) {
     return true;
   }
 
-  if (!launchShellCommand(command)) {
+  if (!process::launchShellCommand(command)) {
     kLog.warn("idle command failed to launch: {}", command);
     return false;
   }

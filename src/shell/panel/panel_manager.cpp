@@ -259,7 +259,7 @@ void PanelManager::togglePanel(const std::string& panelId) {
 }
 
 bool PanelManager::onPointerEvent(const PointerEvent& event) {
-  if (!isOpen()) {
+  if (!isOpen() || m_inTransition) {
     return false;
   }
 
@@ -316,7 +316,7 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
 
   // Trigger redraw if scene changed
   if (m_surface != nullptr && m_sceneRoot != nullptr && m_sceneRoot->dirty()) {
-    if (m_renderContext != nullptr && m_activePanel != nullptr) {
+    if (m_renderContext != nullptr && m_activePanel != nullptr && !m_activePanel->deferPointerRelayout()) {
       m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
     }
     m_surface->requestRedraw();
@@ -331,6 +331,9 @@ const std::string& PanelManager::activePanelId() const noexcept { return m_activ
 
 void PanelManager::refresh() {
   if (!isOpen() || m_renderContext == nullptr || m_activePanel == nullptr || m_surface == nullptr) {
+    return;
+  }
+  if (m_activePanel->deferExternalRefresh()) {
     return;
   }
 
@@ -433,6 +436,7 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
   const float kPadding = hasDecoration ? m_activePanel->contentScale() * 12.0f : 0.0f;
   m_contentWidth = w - kPadding * 2.0f;
   m_contentHeight = h - kPadding * 2.0f;
+  m_activePanel->update(*renderer);
   m_activePanel->layout(*renderer, m_contentWidth, m_contentHeight);
   if (m_contentNode != nullptr) {
     m_contentNode->setPosition(kPadding, kPadding);

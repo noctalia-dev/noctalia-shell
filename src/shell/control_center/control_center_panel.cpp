@@ -77,6 +77,7 @@ void ControlCenterPanel::create() {
   content->setBorderColor(palette.outline);
   content->setSoftness(1.0f);
   content->setFlexGrow(4.0f);
+  content->setClipChildren(true);
   m_content = content.get();
 
   auto title = std::make_unique<Label>();
@@ -163,6 +164,16 @@ void ControlCenterPanel::onClose() {
   m_tabContainers.fill(nullptr);
   clearReleasedRoot();
 }
+
+bool ControlCenterPanel::deferExternalRefresh() const {
+  if (m_activeTab != TabId::Audio) {
+    return false;
+  }
+  const auto* audioTab = dynamic_cast<const AudioTab*>(m_tabs[tabIndex(TabId::Audio)].get());
+  return audioTab != nullptr && audioTab->dragging();
+}
+
+bool ControlCenterPanel::deferPointerRelayout() const { return deferExternalRefresh(); }
 
 void ControlCenterPanel::selectTab(TabId tab) {
   m_activeTab = tab;

@@ -45,7 +45,13 @@ Slider::Slider() {
 
   auto area = std::make_unique<InputArea>();
   area->setOnPress([this](const InputArea::PointerData& data) {
-    if (!m_enabled || data.button != BTN_LEFT || !data.pressed) {
+    if (!m_enabled || data.button != BTN_LEFT) {
+      return;
+    }
+    if (!data.pressed) {
+      if (m_onDragEnd) {
+        m_onDragEnd();
+      }
       return;
     }
     updateFromLocalX(data.localX);
@@ -120,6 +126,8 @@ void Slider::setControlHeight(float height) {
 }
 
 void Slider::setOnValueChanged(std::function<void(float)> callback) { m_onValueChanged = std::move(callback); }
+
+void Slider::setOnDragEnd(std::function<void()> callback) { m_onDragEnd = std::move(callback); }
 
 bool Slider::dragging() const noexcept { return m_inputArea != nullptr && m_inputArea->pressed(); }
 

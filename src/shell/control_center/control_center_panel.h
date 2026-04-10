@@ -40,6 +40,8 @@ public:
   void update(Renderer& renderer) override;
   void onOpen(std::string_view context) override;
   void onClose() override;
+  [[nodiscard]] bool deferExternalRefresh() const override;
+  [[nodiscard]] bool deferPointerRelayout() const override;
 
   [[nodiscard]] float preferredWidth() const override { return scaled(kPreferredPanelWidth); }
   [[nodiscard]] float preferredHeight() const override { return scaled(kPreferredPanelHeight); }
