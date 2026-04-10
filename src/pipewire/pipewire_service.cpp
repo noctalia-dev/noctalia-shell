@@ -555,13 +555,24 @@ void PipeWireService::setSourceMuted(std::uint32_t id, bool muted) { setNodeMute
 void PipeWireService::setDefaultSource(std::uint32_t id) { setDefaultNode(id, "default.audio.source"); }
 
 void PipeWireService::setDefaultNode(std::uint32_t id, const char* key) {
-  if (m_defaultMetadata == nullptr) {
-    kLog.warn("unable to set {} - default metadata unavailable", key != nullptr ? key : "default node");
+  const auto it = m_nodes.find(id);
+  if (it == m_nodes.end() || key == nullptr) {
     return;
   }
 
-  const auto it = m_nodes.find(id);
-  if (it == m_nodes.end() || key == nullptr) {
+  // Prefer wpctl so WirePlumber persists the default. Metadata API alone often does not survive reboot.
+  if (process::runSync({"wpctl", "set-default", std::to_string(id)})) {
+    if (std::strcmp(key, "default.audio.sink") == 0) {
+      m_defaultSinkName = it->second->name;
+    } else if (std::strcmp(key, "default.audio.source") == 0) {
+      m_defaultSourceName = it->second->name;
+    }
+    rebuildState();
+    return;
+  }
+
+  if (m_defaultMetadata == nullptr) {
+    kLog.warn("unable to set {} - default metadata unavailable", key);
     return;
   }
 
