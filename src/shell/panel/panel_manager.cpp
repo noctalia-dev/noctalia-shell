@@ -346,7 +346,14 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
   // Keyboard events that arrive during this roundtrip (e.g. a buffered Enter from
   // the lockscreen unlock) must be ignored — the panel is not ready for input yet.
   if (!isOpen() || m_inTransition) {
+    if (event.pressed && m_inTransition) {
+      kLog.debug("onKeyboardEvent: dropping key sym=0x{:x} during transition", event.sym);
+    }
     return;
+  }
+
+  if (event.pressed) {
+    kLog.debug("onKeyboardEvent: panel={} sym=0x{:x}", m_activePanelId, event.sym);
   }
 
   if (event.pressed && event.sym == XKB_KEY_Escape) {

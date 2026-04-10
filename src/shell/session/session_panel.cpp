@@ -1,5 +1,6 @@
 #include "shell/session/session_panel.h"
 
+#include "core/log.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
@@ -12,6 +13,10 @@
 #include <memory>
 #include <utility>
 #include <xkbcommon/xkbcommon-keysyms.h>
+
+namespace {
+constexpr Logger kLog("session");
+} // namespace
 
 namespace {
 
@@ -94,6 +99,7 @@ Button* SessionPanel::createActionButton(ActionId id, float scale) {
   button->setFlexGrow(1.0f);
 
   button->setOnClick([this, id]() {
+    kLog.debug("button onClick: id={}", static_cast<std::size_t>(id));
     PanelManager::instance().close();
     switch (id) {
     case ActionId::Logout:
@@ -112,6 +118,7 @@ Button* SessionPanel::createActionButton(ActionId id, float scale) {
       }
       break;
     case ActionId::Lock:
+      kLog.debug("button onClick: triggering lock");
       if (m_actions.lock) {
         m_actions.lock();
       }
@@ -129,6 +136,7 @@ Button* SessionPanel::createActionButton(ActionId id, float scale) {
 InputArea* SessionPanel::initialFocusArea() const { return m_focusArea; }
 
 void SessionPanel::onOpen(std::string_view /*context*/) {
+  kLog.debug("onOpen: resetting selectedIndex to 0");
   m_selectedIndex = 0;
   updateSelectionVisuals();
 }
@@ -139,6 +147,7 @@ void SessionPanel::activateSelected() {
   }
 
   const ActionId selectedAction = m_actionOrder[m_selectedIndex];
+  kLog.debug("activateSelected: index={} action={}", m_selectedIndex, static_cast<std::size_t>(selectedAction));
   if (Button* button = m_actionButtons[static_cast<std::size_t>(selectedAction)]; button != nullptr && button->enabled()) {
     PanelManager::instance().close();
     switch (selectedAction) {
@@ -158,6 +167,7 @@ void SessionPanel::activateSelected() {
       }
       break;
     case ActionId::Lock:
+      kLog.debug("activateSelected: triggering lock");
       if (m_actions.lock) {
         m_actions.lock();
       }
@@ -195,6 +205,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*/
   }
 
   if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter || sym == XKB_KEY_space) {
+    kLog.debug("handleKeyEvent: Enter/Space pressed, calling activateSelected");
     activateSelected();
     return true;
   }

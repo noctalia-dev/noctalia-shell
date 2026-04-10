@@ -21,11 +21,14 @@
 #include <fcntl.h>
 #include <filesystem>
 #include <stdexcept>
+#include <thread>
 #include <unistd.h>
 
 std::atomic<bool> Application::s_shutdownRequested{false};
 
 namespace {
+
+  constexpr Logger kLog("app");
 
   bool commandExists(const char* name) {
     if (name == nullptr || name[0] == '\0') {
@@ -134,13 +137,42 @@ namespace {
     return false;
   }
 
+  template <typename Factory>
+  auto makeWithStartupBackoff(std::string_view label, Factory&& factory) -> decltype(factory()) {
+    using namespace std::chrono_literals;
+
+    constexpr int kAttempts = 10;
+    auto delay = 100ms;
+    int failedAttempts = 0;
+
+    for (int attempt = 1; attempt <= kAttempts; ++attempt) {
+      try {
+        auto value = factory();
+        if (failedAttempts > 0) {
+          kLog.info("{} init succeeded after {} retr{}", label, failedAttempts, failedAttempts == 1 ? "y" : "ies");
+        }
+        return value;
+      } catch (const std::exception& e) {
+        if (attempt == kAttempts) {
+          throw;
+        }
+
+        failedAttempts = attempt;
+        kLog.warn("{} init attempt {}/{} failed: {}; retrying in {}ms", label, attempt, kAttempts, e.what(),
+                  delay.count());
+        std::this_thread::sleep_for(delay);
+        delay *= 2;
+      }
+    }
+
+    throw std::runtime_error(std::string(label) + " init failed");
+  }
+
   void signal_handler(int signum) {
     if (signum == SIGTERM || signum == SIGINT) {
       Application::s_shutdownRequested = true;
     }
   }
-
-  constexpr Logger kLog("app");
 
 } // namespace
 
@@ -217,7 +249,9 @@ void Application::syncNotificationDaemon() {
   }
 
   try {
-    m_notificationDbus = std::make_unique<NotificationService>(*m_bus, m_notificationManager);
+    m_notificationDbus = makeWithStartupBackoff("notification service", [this]() {
+      return std::make_unique<NotificationService>(*m_bus, m_notificationManager);
+    });
     m_notificationPollSource.setDbusService(m_notificationDbus.get());
     kLog.info("listening on org.freedesktop.Notifications");
   } catch (const std::exception& e) {
@@ -306,7 +340,7 @@ void Application::initServices() {
   }
 
   try {
-    m_systemBus = std::make_unique<SystemBus>();
+    m_systemBus = makeWithStartupBackoff("system dbus", []() { return std::make_unique<SystemBus>(); });
     kLog.info("connected to system bus");
   } catch (const std::exception& e) {
     kLog.warn("system dbus disabled: {}", e.what());
@@ -346,7 +380,7 @@ void Application::initServices() {
   }
 
   try {
-    m_bus = std::make_unique<SessionBus>();
+    m_bus = makeWithStartupBackoff("session dbus", []() { return std::make_unique<SessionBus>(); });
     kLog.info("connected to session bus");
   } catch (const std::exception& e) {
     kLog.warn("dbus disabled: {}", e.what());
@@ -355,7 +389,8 @@ void Application::initServices() {
 
   if (m_bus != nullptr) {
     try {
-      m_debugService = std::make_unique<DebugService>(*m_bus, m_notificationManager);
+      m_debugService = makeWithStartupBackoff(
+          "debug service", [this]() { return std::make_unique<DebugService>(*m_bus, m_notificationManager); });
       kLog.info("debug service active on dev.noctalia.Debug");
     } catch (const std::exception& e) {
       kLog.warn("debug service disabled: {}", e.what());
@@ -363,7 +398,8 @@ void Application::initServices() {
     }
 
     try {
-      m_mprisService = std::make_unique<MprisService>(*m_bus);
+      m_mprisService =
+          makeWithStartupBackoff("mpris service", [this]() { return std::make_unique<MprisService>(*m_bus); });
       m_mprisService->setChangeCallback([this]() {
         m_bar.refresh();
         m_panelManager.refresh();
@@ -379,7 +415,8 @@ void Application::initServices() {
     m_configService.addReloadCallback([this]() { syncNotificationDaemon(); });
 
     try {
-      m_trayService = std::make_unique<TrayService>(*m_bus);
+      m_trayService =
+          makeWithStartupBackoff("tray service", [this]() { return std::make_unique<TrayService>(*m_bus); });
       m_trayService->setChangeCallback([this]() {
         m_bar.refresh();
         m_trayMenu.onTrayChanged();
@@ -522,6 +559,9 @@ void Application::initUi() {
     if (m_lockScreen.isActive()) {
       m_lockScreen.onKeyboardEvent(event);
       return;
+    }
+    if (event.pressed) {
+      kLog.debug("keyboard: sym=0x{:x} routed to panelManager (lockActive=false)", event.sym);
     }
     m_panelManager.onKeyboardEvent(event);
   });
