@@ -113,6 +113,7 @@ struct OsdConfig {
 
 struct ShellConfig {
   float uiScale = 1.0f;
+  std::string lang; // empty = auto-detect from $LC_ALL/$LC_MESSAGES/$LANG
 };
 
 struct WeatherConfig {

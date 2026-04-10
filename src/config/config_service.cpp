@@ -466,6 +466,9 @@ void ConfigService::loadFromFile(const std::string& path) {
     if (auto v = (*shellTbl)["ui_scale"].value<double>()) {
       shell.uiScale = static_cast<float>(*v);
     }
+    if (auto v = (*shellTbl)["lang"].value<std::string>()) {
+      shell.lang = *v;
+    }
   }
 
   // Parse [wallpaper]

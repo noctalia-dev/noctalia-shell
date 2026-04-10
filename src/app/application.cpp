@@ -213,7 +213,9 @@ void Application::initServices() {
 
   // i18n has no dependencies on other services and must be ready before any
   // UI construction reads a translated string.
-  i18n::Service::instance().init();
+  i18n::Service::instance().init(m_configService.config().shell.lang);
+  m_configService.addReloadCallback(
+      [this]() { i18n::Service::instance().setLanguage(m_configService.config().shell.lang); });
 
   if (!m_wayland.connect()) {
     throw std::runtime_error("failed to connect to Wayland display");
