@@ -167,6 +167,7 @@ void LockScreen::unlock() {
   m_passwordSelectedAll = false;
   m_status.clear();
   m_statusIsError = false;
+  m_wayland->stopKeyRepeat();
   clearInstances();
   m_pointerSurface = nullptr;
   wl_display_flush(m_wayland->display());

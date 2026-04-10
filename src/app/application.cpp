@@ -560,9 +560,6 @@ void Application::initUi() {
       m_lockScreen.onKeyboardEvent(event);
       return;
     }
-    if (event.pressed) {
-      kLog.debug("keyboard: sym=0x{:x} routed to panelManager (lockActive=false)", event.sym);
-    }
     m_panelManager.onKeyboardEvent(event);
   });
 }

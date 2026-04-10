@@ -329,8 +329,11 @@ void WaylandSeat::handleKeyboardKeymap(void* data, wl_keyboard* /*keyboard*/, st
   kLog.info("keyboard: keymap loaded");
 }
 
-void WaylandSeat::handleKeyboardEnter(void* /*data*/, wl_keyboard* /*keyboard*/, std::uint32_t /*serial*/,
-                                      wl_surface* /*surface*/, wl_array* /*keys*/) {}
+void WaylandSeat::handleKeyboardEnter(void* data, wl_keyboard* /*keyboard*/, std::uint32_t /*serial*/,
+                                      wl_surface* /*surface*/, wl_array* /*keys*/) {
+  auto* self = static_cast<WaylandSeat*>(data);
+  self->m_repeatActive = false;
+}
 
 void WaylandSeat::handleKeyboardLeave(void* data, wl_keyboard* /*keyboard*/, std::uint32_t /*serial*/,
                                       wl_surface* /*surface*/) {
@@ -404,14 +407,9 @@ void WaylandSeat::handleKeyboardKey(void* data, wl_keyboard* /*keyboard*/, std::
     // XKB_COMPOSE_NOTHING → pass through normally
   }
 
-  self->m_keyboardEventCallback(KeyboardEvent{
-      .sym = sym,
-      .utf32 = utf32,
-      .key = key,
-      .modifiers = mods,
-      .pressed = pressed,
-  });
-
+  // Set up repeat state BEFORE dispatching, so the callback can authoritatively
+  // cancel it via stopKeyRepeat() if the key press causes a state transition
+  // (e.g. lockscreen unlock) that makes the held key irrelevant.
   if (pressed && self->m_repeatRate > 0) {
     self->m_repeatKey = KeyboardEvent{.sym = sym, .utf32 = utf32, .key = key, .modifiers = mods, .pressed = true};
     self->m_repeatActive = true;
@@ -420,6 +418,14 @@ void WaylandSeat::handleKeyboardKey(void* data, wl_keyboard* /*keyboard*/, std::
   } else if (!pressed && self->m_repeatKey.key == key) {
     self->m_repeatActive = false;
   }
+
+  self->m_keyboardEventCallback(KeyboardEvent{
+      .sym = sym,
+      .utf32 = utf32,
+      .key = key,
+      .modifiers = mods,
+      .pressed = pressed,
+  });
 }
 
 void WaylandSeat::handleKeyboardModifiers(void* data, wl_keyboard* /*keyboard*/, std::uint32_t /*serial*/,
