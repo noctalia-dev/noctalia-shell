@@ -31,6 +31,7 @@ Loader {
     } else {
       LockKeysService.unregisterComponent("lockscreen");
     }
+
   }
 
   onNeedsSpectrumChanged: {

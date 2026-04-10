@@ -235,7 +235,8 @@
     "wallhavenResolutionWidth": "",
     "wallhavenResolutionHeight": "",
     "sortOrder": "name",
-    "favorites": []
+    "favorites": [],
+    "livePaperEnabled": false
   },
   "appLauncher": {
     "enableClipboardHistory": false,

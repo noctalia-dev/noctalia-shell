@@ -105,6 +105,7 @@ ShellRoot {
 
         // Defer non-critical services to unblock first frame
         Qt.callLater(function () {
+          ProjectMService.init();
           LocationService.init();
           NightLightService.apply();
           IdleInhibitorService.init();
@@ -129,6 +130,7 @@ ShellRoot {
 
       Overview {}
       Background {}
+      LivePaper {}
       DesktopWidgets {}
       AllScreens {}
       Dock {}

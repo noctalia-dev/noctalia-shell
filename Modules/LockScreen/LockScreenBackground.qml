@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import Quickshell
 import qs.Commons
+import qs.Multimedia
 import qs.Services.Compositor
 import qs.Services.Power
 import qs.Services.UI
@@ -103,15 +104,43 @@ Item {
     });
   }
 
-  // Background - solid color or black fallback
+  // projectM rendered directly via QQuickFramebufferObject — zero IPC, synced to vsync.
+  // Preset is driven by ProjectMService (shared with desktop backgrounds for coherence).
+  ProjectMItem {
+    id: lockProjM
+    anchors.fill: parent
+    visible: Settings.data.wallpaper.livePaperEnabled
+    running: Settings.data.wallpaper.livePaperEnabled
+    autoPresets: false
+    darken: 0.0
+    meshWidth: 24
+    meshHeight: 18
+    fps: 30
+
+    onRunningChanged: {
+      if (running && ProjectMService.currentPreset !== "")
+        requestPreset(ProjectMService.currentPreset)
+    }
+  }
+
+  Connections {
+    target: ProjectMService
+    function onCurrentPresetChanged() {
+      if (lockProjM.running)
+        lockProjM.requestPreset(ProjectMService.currentPreset)
+    }
+  }
+
+  // Background - solid color or black fallback; hidden when live wallpaper is active.
   Rectangle {
     anchors.fill: parent
+    visible: !Settings.data.wallpaper.livePaperEnabled
     color: Settings.data.wallpaper.useSolidColor ? Settings.data.wallpaper.solidColor : "#000000"
   }
 
   Image {
     id: lockBgImage
-    visible: source !== "" && Settings.data.wallpaper.enabled && !Settings.data.wallpaper.useSolidColor && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableWallpaper)
+    visible: source !== "" && Settings.data.wallpaper.enabled && !Settings.data.wallpaper.livePaperEnabled && !Settings.data.wallpaper.useSolidColor && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableWallpaper)
     anchors.fill: parent
     fillMode: Image.PreserveAspectCrop
     source: resolvedWallpaperPath
@@ -137,7 +166,7 @@ Item {
   }
 
   Rectangle {
-    visible: !Settings.data.wallpaper.useSolidColor
+    visible: !Settings.data.wallpaper.useSolidColor && !Settings.data.wallpaper.livePaperEnabled
     anchors.fill: parent
     gradient: Gradient {
       GradientStop {

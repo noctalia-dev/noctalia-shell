@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.programs.noctalia-shell;
+  cfgWlp = cfg.waylivepaper;
   jsonFormat = pkgs.formats.json { };
   tomlFormat = pkgs.formats.toml { };
 
@@ -179,6 +180,53 @@ in
         or filepath, to be written to ~/.config/noctalia/plugins/plugin-name/settings.json.
       '';
     };
+
+    waylivepaper = {
+      enable = lib.mkEnableOption "projectM milkdrop visualizer as desktop and lockscreen background";
+
+      presetsSource = lib.mkOption {
+        type = lib.types.path;
+        description = ''
+          Directory of .milk/.prjm presets symlinked into
+          $XDG_DATA_HOME/waylivepaper/presets. Default is the
+          presets-cream-of-the-crop pack bundled with the noctalia-shell flake.
+        '';
+      };
+
+      darken = lib.mkOption {
+        type = lib.types.float;
+        default = 0.7;
+        description = "Black overlay opacity (0.0–1.0) applied on the desktop and lockscreen background.";
+      };
+
+      presetInterval = lib.mkOption {
+        type = lib.types.nullOr lib.types.int;
+        default = null;
+        example = 120;
+        description = "Seconds between random preset switches. null → default (120s).";
+      };
+
+      fps = lib.mkOption {
+        type = lib.types.nullOr lib.types.int;
+        default = null;
+        example = 30;
+        description = "Target frame rate. null → default (30).";
+      };
+
+      mesh = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "32x24";
+        description = "projectM warp mesh resolution as WxH. null → default (24x18).";
+      };
+
+      audioSource = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "alsa_output.pci-0000_00_1f.3.analog-stereo.monitor";
+        description = "PulseAudio source name. null → auto-detect default monitor.";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -208,7 +256,8 @@ in
       Install.WantedBy = [ config.wayland.systemd.target ];
     };
 
-    home.packages = lib.optional (cfg.package != null) cfg.package;
+    home.packages =
+      lib.optional (cfg.package != null) cfg.package;
 
     xdg.configFile = {
       "noctalia/settings.json" = lib.mkIf (cfg.settings != { }) {
@@ -237,10 +286,20 @@ in
       }
     ) cfg.pluginSettings;
 
+    # Symlink the presets pack into XDG_DATA_HOME so ProjectMService can
+    # find them at ~/.local/share/waylivepaper/presets at runtime.
+    xdg.dataFile."waylivepaper/presets" = lib.mkIf cfgWlp.enable {
+      source = cfgWlp.presetsSource;
+    };
+
     assertions = [
       {
         assertion = !cfg.systemd.enable || cfg.package != null;
         message = "noctalia-shell: The package option must not be null when systemd service is enabled.";
+      }
+      {
+        assertion = !cfgWlp.enable || cfg.enable;
+        message = "noctalia-shell: livePaper (waylivepaper) requires programs.noctalia-shell.enable = true.";
       }
     ];
   };

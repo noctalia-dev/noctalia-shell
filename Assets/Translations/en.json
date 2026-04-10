@@ -1783,6 +1783,8 @@
       "settings-clear-cache-label": "Wallpaper cache",
       "settings-clear-cache-toast": "Wallpaper cache cleared",
       "settings-desc": "Control how wallpapers are managed and displayed.",
+      "live-paper-enable-description": "Use projectM milkdrop visualizer as desktop and lockscreen background. Disables static wallpaper management.",
+      "live-paper-enable-label": "Live paper background",
       "settings-enable-management-description": "Manage wallpapers with Noctalia. Uncheck if you prefer using another application.",
       "settings-enable-management-label": "Enable wallpaper management",
       "settings-enable-overview-description": "Applies a blurred and dimmed wallpaper to the overview screen.",

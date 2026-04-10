@@ -10,14 +10,22 @@
     wlr-randr
     imagemagick
     wget
+    pulseaudio # pactl used by the ProjectM C++ plugin for audio source detection
     (python3.withPackages (pp: lib.optional calendarSupport pp.pygobject3))
   ],
 
   lib,
+  stdenv,
   stdenvNoCC,
+  cmake,
+  ninja,
+  pkg-config,
   # build
   qt6,
   quickshell,
+  # C++ plugin deps
+  libprojectm,
+  libpulseaudio,
   # runtime deps
   brightnessctl,
   cliphist,
@@ -27,6 +35,7 @@
   wlr-randr,
   imagemagick,
   wget,
+  pulseaudio,
   python3,
   wayland-scanner,
   # calendar support
@@ -68,6 +77,34 @@ let
     json-glib
     gobject-introspection
   ];
+
+  # C++ QML plugin: embeds libprojectM + PulseAudio audio capture directly.
+  # Used by LockScreenBackground as ProjectMItem (import qs.Multimedia).
+  multimediaPlugin = stdenv.mkDerivation {
+    pname = "noctalia-multimedia-plugin";
+    inherit version;
+    src = ../cpp;
+
+    nativeBuildInputs = [
+      cmake
+      ninja
+      pkg-config
+      qt6.qtbase
+      qt6.qtdeclarative
+    ];
+
+    buildInputs = [
+      qt6.qtbase
+      qt6.qtdeclarative
+      libprojectm
+      libpulseaudio
+    ];
+
+    # Plugin is a shared library, not an app — skip Qt app wrapping.
+    dontWrapQtApps = true;
+
+    meta.description = "ProjectM Qt Quick FBO plugin for noctalia-shell lock screen";
+  };
 in
 stdenvNoCC.mkDerivation {
   pname = "noctalia-shell";
@@ -79,13 +116,15 @@ stdenvNoCC.mkDerivation {
 
   buildInputs = [
     qt6.qtbase
-    qt6.qtmultimedia
   ];
 
   installPhase = ''
-    mkdir -p $out/share/noctalia-shell $out/bin
+    runHook preInstall
+    mkdir -p $out/share/noctalia-shell $out/bin $out/lib/qt6/qml
     cp -r . $out/share/noctalia-shell
+    cp -r ${multimediaPlugin}/lib/qt6/qml/. $out/lib/qt6/qml/
     ln -s ${quickshell}/bin/qs $out/bin/noctalia-shell
+    runHook postInstall
   '';
 
   preFixup = ''
@@ -93,6 +132,8 @@ stdenvNoCC.mkDerivation {
       --prefix PATH : ${lib.makeBinPath (runtimeDeps ++ extraPackages)}
       --prefix XDG_DATA_DIRS : ${wayland-scanner}/share
       --set-default QS_CONFIG_PATH "$out/share/noctalia-shell"
+      --prefix QML2_IMPORT_PATH : "$out/lib/qt6/qml"
+      --set-default QSG_RHI_BACKEND opengl
       ${lib.optionalString calendarSupport "--prefix GI_TYPELIB_PATH : ${giTypelibPath}"}
     )
   '';

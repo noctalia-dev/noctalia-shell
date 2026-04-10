@@ -7,6 +7,10 @@
       url = "github:noctalia-dev/noctalia-qs";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    presets-cream-of-the-crop = {
+      url = "github:projectM-visualizer/presets-cream-of-the-crop";
+      flake = false;
+    };
   };
 
   outputs =
@@ -14,6 +18,7 @@
       self,
       nixpkgs,
       noctalia-qs,
+      presets-cream-of-the-crop,
       ...
     }:
     let
@@ -70,6 +75,8 @@
           programs.noctalia-shell.package =
             lib.mkDefault
               self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+          programs.noctalia-shell.waylivepaper.presetsSource =
+            lib.mkDefault presets-cream-of-the-crop;
         };
 
       nixosModules.default =

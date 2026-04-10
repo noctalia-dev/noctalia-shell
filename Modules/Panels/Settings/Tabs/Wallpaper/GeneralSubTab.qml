@@ -18,6 +18,15 @@ ColumnLayout {
   signal openMonitorFolderPicker(string monitorName)
 
   NToggle {
+    label: I18n.tr("panels.wallpaper.live-paper-enable-label")
+    description: I18n.tr("panels.wallpaper.live-paper-enable-description")
+    checked: Settings.data.wallpaper.livePaperEnabled
+    onToggled: checked => Settings.data.wallpaper.livePaperEnabled = checked
+    defaultValue: Settings.getDefaultValue("wallpaper.livePaperEnabled")
+  }
+
+  NToggle {
+    enabled: !Settings.data.wallpaper.livePaperEnabled
     label: I18n.tr("panels.wallpaper.settings-enable-management-label")
     description: I18n.tr("panels.wallpaper.settings-enable-management-description")
     checked: Settings.data.wallpaper.enabled
@@ -26,7 +35,7 @@ ColumnLayout {
   }
 
   ColumnLayout {
-    enabled: Settings.data.wallpaper.enabled
+    enabled: Settings.data.wallpaper.enabled && !Settings.data.wallpaper.livePaperEnabled
     spacing: Style.marginL
     Layout.fillWidth: true
 

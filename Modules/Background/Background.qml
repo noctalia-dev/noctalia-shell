@@ -14,7 +14,7 @@ Variants {
 
     required property ShellScreen modelData
 
-    active: modelData && Settings.data.wallpaper.enabled && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableWallpaper)
+    active: modelData && Settings.data.wallpaper.enabled && !Settings.data.wallpaper.livePaperEnabled && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableWallpaper)
 
     sourceComponent: PanelWindow {
       id: root
