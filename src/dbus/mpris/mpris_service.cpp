@@ -818,6 +818,7 @@ void MprisService::discoverPlayers() {
     m_dbusProxy->callMethod("ListNames").onInterface(k_dbus_interface).storeResultsTo(names);
   } catch (const sdbus::Error& e) {
     kLog.warn("discover players failed err={}", e.what());
+    scheduleRecoveryDiscovery();
     return;
   }
 
@@ -845,6 +846,18 @@ void MprisService::scheduleStartupRediscovery() {
     if (m_startupRediscoveryPassesRemaining > 0) {
       scheduleStartupRediscovery();
     }
+  });
+}
+
+void MprisService::scheduleRecoveryDiscovery() {
+  if (m_recoveryDiscoveryScheduled) {
+    return;
+  }
+
+  m_recoveryDiscoveryScheduled = true;
+  DeferredCall::callLater([this]() {
+    m_recoveryDiscoveryScheduled = false;
+    discoverPlayers();
   });
 }
 
@@ -945,6 +958,7 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
     }
   } catch (const sdbus::Error& e) {
     kLog.warn("player query failed name={} err={}", busName, e.what());
+    scheduleRecoveryDiscovery();
   }
 }
 
@@ -969,6 +983,10 @@ void MprisService::removePlayer(const std::string& busName) {
   if (m_changeCallback) {
     m_changeCallback();
   }
+
+  // Name-owner churn can race with our own cache updates. Re-run discovery
+  // on the next loop tick so transient gaps do not leave media UI empty.
+  scheduleRecoveryDiscovery();
 }
 
 std::optional<std::string> MprisService::chooseActivePlayer() const {

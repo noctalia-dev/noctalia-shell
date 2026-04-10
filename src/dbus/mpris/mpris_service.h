@@ -92,6 +92,7 @@ private:
   void registerBusSignals();
   void discoverPlayers();
   void scheduleStartupRediscovery();
+  void scheduleRecoveryDiscovery();
   void addOrRefreshPlayer(const std::string& busName);
   void removePlayer(const std::string& busName);
   [[nodiscard]] MprisPlayerInfo readPlayerInfo(sdbus::IProxy& proxy, const std::string& busName) const;
@@ -141,4 +142,5 @@ private:
   std::vector<std::string> m_preferredPlayers;
   std::function<void()> m_changeCallback;
   int m_startupRediscoveryPassesRemaining = 4;
+  bool m_recoveryDiscoveryScheduled = false;
 };
