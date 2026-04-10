@@ -2,6 +2,7 @@
 
 #include "app/poll_source.h"
 #include "core/log.h"
+#include "i18n/i18n_service.h"
 #include "launcher/app_provider.h"
 #include "launcher/emoji_provider.h"
 #include "launcher/math_provider.h"
@@ -209,6 +210,10 @@ void Application::run() {
 void Application::initServices() {
   std::signal(SIGTERM, signal_handler);
   std::signal(SIGINT, signal_handler);
+
+  // i18n has no dependencies on other services and must be ready before any
+  // UI construction reads a translated string.
+  i18n::Service::instance().init();
 
   if (!m_wayland.connect()) {
     throw std::runtime_error("failed to connect to Wayland display");

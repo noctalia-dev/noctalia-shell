@@ -1,5 +1,6 @@
 #include "shell/clipboard/clipboard_panel.h"
 
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/control_center/tab.h"
@@ -81,17 +82,17 @@ std::string entryTitle(const ClipboardEntry& entry) {
     return entry.textPreview;
   }
   if (entry.isImage()) {
-    return "Image";
+    return i18n::tr("clipboard.entry-image");
   }
-  return entry.dataMimeType.empty() ? "Clipboard entry" : entry.dataMimeType;
+  return entry.dataMimeType.empty() ? i18n::tr("clipboard.entry-title") : entry.dataMimeType;
 }
 
 
 std::string previewTitle(const ClipboardEntry& entry) {
   if (entry.isImage()) {
-    return "Image Clipboard Entry";
+    return i18n::tr("clipboard.preview-image-title");
   }
-  return "Text Clipboard Entry";
+  return i18n::tr("clipboard.preview-text-title");
 }
 
 } // namespace
@@ -131,7 +132,7 @@ void ClipboardPanel::create() {
   m_sidebarHeaderRow = sidebarHeader.get();
 
   auto title = std::make_unique<Label>();
-  title->setText("Clipboard");
+  title->setText(i18n::tr("clipboard.title"));
   title->setFontSize(Style::fontSizeTitle * scale);
   title->setBold(true);
   title->setColor(palette.primary);
@@ -156,7 +157,7 @@ void ClipboardPanel::create() {
   sidebar->addChild(std::move(sidebarHeader));
 
   auto filterInput = std::make_unique<Input>();
-  filterInput->setPlaceholder("Filter clipboard...");
+  filterInput->setPlaceholder(i18n::tr("clipboard.filter-placeholder"));
   filterInput->setFontSize(Style::fontSizeBody * scale);
   filterInput->setControlHeight(Style::controlHeight * scale);
   filterInput->setHorizontalPadding(Style::spaceMd * scale);
@@ -199,7 +200,7 @@ void ClipboardPanel::create() {
   m_previewHeaderRow = previewHeader.get();
 
   auto previewTitleLabel = std::make_unique<Label>();
-  previewTitleLabel->setText("Clipboard entry");
+  previewTitleLabel->setText(i18n::tr("clipboard.entry-title"));
   previewTitleLabel->setFontSize(Style::fontSizeTitle * scale);
   previewTitleLabel->setBold(true);
   previewTitleLabel->setColor(palette.primary);
@@ -208,7 +209,7 @@ void ClipboardPanel::create() {
   previewHeader->addChild(std::move(previewTitleLabel));
 
   auto copyButton = std::make_unique<Button>();
-  copyButton->setText("Copy Selected");
+  copyButton->setText(i18n::tr("clipboard.copy-selected"));
   copyButton->setGlyph("copy");
   copyButton->setVariant(ButtonVariant::Secondary);
   copyButton->setOnClick([this]() { activateSelected(); });
@@ -417,9 +418,9 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
 
   if (history.empty() || m_filteredIndices.empty()) {
     auto empty = std::make_unique<Label>();
-    empty->setText(history.empty()         ? "Clipboard history is empty"
-                   : m_filterQuery.empty() ? "Clipboard history is empty"
-                                           : "No matching entries");
+    empty->setText(history.empty()         ? i18n::tr("clipboard.history-empty")
+                   : m_filterQuery.empty() ? i18n::tr("clipboard.history-empty")
+                                           : i18n::tr("clipboard.no-matching-entries"));
     empty->setCaptionStyle();
     empty->setColor(palette.onSurfaceVariant);
     empty->setMaxWidth(width);
@@ -540,11 +541,13 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
   const auto& history = m_clipboard != nullptr ? m_clipboard->history() : std::deque<ClipboardEntry>{};
   const std::size_t historyIndex = selectedHistoryIndex();
   if (history.empty() || historyIndex == static_cast<std::size_t>(-1)) {
-    m_previewTitle->setText("Clipboard entry");
-    m_previewMeta->setText(history.empty() ? "Clipboard history is empty." : "No matching entries");
+    m_previewTitle->setText(i18n::tr("clipboard.entry-title"));
+    m_previewMeta->setText(history.empty() ? i18n::tr("clipboard.history-empty-sentence")
+                                           : i18n::tr("clipboard.no-matching-entries"));
 
     auto empty = std::make_unique<Label>();
-    empty->setText(history.empty() ? "Clipboard history is empty." : "No entries match the current filter.");
+    empty->setText(history.empty() ? i18n::tr("clipboard.history-empty-sentence")
+                                   : i18n::tr("clipboard.no-matching-entries-sentence"));
     empty->setColor(palette.onSurfaceVariant);
     empty->setMaxWidth(width);
     m_previewContent->addChild(std::move(empty));
@@ -561,7 +564,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
 
   if (m_previewPayloadIndex != historyIndex) {
     auto pending = std::make_unique<Label>();
-    pending->setText("Loading preview...");
+    pending->setText(i18n::tr("clipboard.loading-preview"));
     pending->setColor(palette.onSurfaceVariant);
     pending->setMaxWidth(width);
     m_previewContent->addChild(std::move(pending));
@@ -584,7 +587,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
     m_previewContent->addChild(std::move(image));
 
     auto hint = std::make_unique<Label>();
-    hint->setText("Press Enter or use the button above to copy this entry and promote it to the top.");
+    hint->setText(i18n::tr("clipboard.image-copy-hint"));
     hint->setCaptionStyle();
     hint->setColor(palette.onSurfaceVariant);
     hint->setMaxWidth(width);
@@ -615,7 +618,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
 
     if (expanded.empty()) {
       auto empty = std::make_unique<Label>();
-      empty->setText("(empty text payload)");
+      empty->setText(i18n::tr("clipboard.empty-text-payload"));
       empty->setColor(palette.onSurfaceVariant);
       m_previewContent->addChild(std::move(empty));
     } else {
@@ -628,7 +631,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
       m_previewContent->addChild(std::move(label));
       if (truncated) {
         auto hint = std::make_unique<Label>();
-        hint->setText("… truncated");
+        hint->setText(i18n::tr("clipboard.truncated"));
         hint->setCaptionStyle();
         hint->setColor(palette.onSurfaceVariant);
         m_previewContent->addChild(std::move(hint));

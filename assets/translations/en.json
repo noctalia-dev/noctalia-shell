@@ -1,0 +1,19 @@
+{
+  "clipboard": {
+    "title": "Clipboard",
+    "filter-placeholder": "Filter clipboard...",
+    "copy-selected": "Copy Selected",
+    "entry-title": "Clipboard entry",
+    "entry-image": "Image",
+    "preview-image-title": "Image Clipboard Entry",
+    "preview-text-title": "Text Clipboard Entry",
+    "history-empty": "Clipboard history is empty",
+    "history-empty-sentence": "Clipboard history is empty.",
+    "no-matching-entries": "No matching entries",
+    "no-matching-entries-sentence": "No entries match the current filter.",
+    "loading-preview": "Loading preview...",
+    "image-copy-hint": "Press Enter or use the button above to copy this entry and promote it to the top.",
+    "empty-text-payload": "(empty text payload)",
+    "truncated": "… truncated"
+  }
+}

@@ -1,0 +1,148 @@
+#include "i18n/i18n_service.h"
+
+#include "core/log.h"
+
+#include <cstdlib>
+#include <fstream>
+#include <json.hpp>
+#include <string>
+#include <utility>
+
+namespace i18n {
+
+  namespace {
+
+    constexpr Logger kLog("i18n");
+
+    void flatten(const nlohmann::json& node, const std::string& prefix, Catalog& out) {
+      for (auto it = node.begin(); it != node.end(); ++it) {
+        std::string path = prefix.empty() ? it.key() : prefix + "." + it.key();
+        if (it->is_object()) {
+          flatten(*it, path, out);
+        } else if (it->is_string()) {
+          out.insert_or_assign(std::move(path), it->get<std::string>());
+        }
+      }
+    }
+
+    // Reads $LC_ALL / $LC_MESSAGES / $LANG, strips encoding + modifier, and
+    // normalizes underscores to hyphens. Returns empty string if unset.
+    std::string detectSystemLanguage() {
+      for (const char* var : {"LC_ALL", "LC_MESSAGES", "LANG"}) {
+        const char* value = std::getenv(var);
+        if (value != nullptr && value[0] != '\0') {
+          std::string out(value);
+          if (auto pos = out.find('.'); pos != std::string::npos) {
+            out.resize(pos);
+          }
+          if (auto pos = out.find('@'); pos != std::string::npos) {
+            out.resize(pos);
+          }
+          for (char& c : out) {
+            if (c == '_') {
+              c = '-';
+            }
+          }
+          if (out == "C" || out == "POSIX") {
+            return {};
+          }
+          return out;
+        }
+      }
+      return {};
+    }
+
+    std::string languageOnly(const std::string& tag) {
+      auto pos = tag.find('-');
+      if (pos == std::string::npos) {
+        return tag;
+      }
+      return tag.substr(0, pos);
+    }
+
+  } // namespace
+
+  Service& Service::instance() {
+    static Service s_instance;
+    return s_instance;
+  }
+
+  bool Service::loadCatalog(std::string_view lang, Catalog& out) const {
+    std::string path = std::string(NOCTALIA_I18N_DIR) + "/" + std::string(lang) + ".json";
+    std::ifstream file(path);
+    if (!file.is_open()) {
+      return false;
+    }
+    try {
+      auto json = nlohmann::json::parse(file);
+      if (!json.is_object()) {
+        kLog.warn("catalog {} is not a JSON object", path);
+        return false;
+      }
+      Catalog fresh;
+      flatten(json, {}, fresh);
+      out = std::move(fresh);
+      return true;
+    } catch (const std::exception& e) {
+      kLog.error("failed to parse {}: {}", path, e.what());
+      return false;
+    }
+  }
+
+  void Service::init(std::string_view preferredLang) {
+    std::string candidate;
+    if (!preferredLang.empty()) {
+      candidate.assign(preferredLang);
+    } else {
+      candidate = detectSystemLanguage();
+    }
+
+    // English fallback is always loaded first so lookup() can fall back to it
+    // even if the active catalog is English itself.
+    if (!loadCatalog("en", m_fallback)) {
+      kLog.warn("could not load English fallback catalog");
+    }
+
+    if (candidate.empty() || candidate == "en") {
+      m_active = m_fallback;
+      m_language = "en";
+      kLog.info("language: en");
+      return;
+    }
+
+    if (loadCatalog(candidate, m_active)) {
+      m_language = candidate;
+      kLog.info("language: {}", m_language);
+      return;
+    }
+
+    const std::string shortCode = languageOnly(candidate);
+    if (shortCode != candidate && loadCatalog(shortCode, m_active)) {
+      m_language = shortCode;
+      kLog.info("language: {} (from {})", m_language, candidate);
+      return;
+    }
+
+    kLog.warn("no catalog for '{}', falling back to English", candidate);
+    m_active = m_fallback;
+    m_language = "en";
+  }
+
+  void Service::setLanguage(std::string_view lang) {
+    if (lang == m_language) {
+      return;
+    }
+    init(lang);
+  }
+
+  std::string_view Service::lookup(std::string_view dottedKey) const {
+    if (auto it = m_active.find(dottedKey); it != m_active.end()) {
+      return it->second;
+    }
+    if (auto it = m_fallback.find(dottedKey); it != m_fallback.end()) {
+      return it->second;
+    }
+    return {};
+  }
+
+} // namespace i18n

@@ -1,0 +1,19 @@
+{
+  "clipboard": {
+    "title": "Presse-papiers",
+    "filter-placeholder": "Filtrer le presse-papiers...",
+    "copy-selected": "Copier la sélection",
+    "entry-title": "Entrée du presse-papiers",
+    "entry-image": "Image",
+    "preview-image-title": "Entrée image",
+    "preview-text-title": "Entrée texte",
+    "history-empty": "L'historique du presse-papiers est vide",
+    "history-empty-sentence": "L'historique du presse-papiers est vide.",
+    "no-matching-entries": "Aucune entrée correspondante",
+    "no-matching-entries-sentence": "Aucune entrée ne correspond au filtre actuel.",
+    "loading-preview": "Chargement de l'aperçu...",
+    "image-copy-hint": "Appuyez sur Entrée ou utilisez le bouton ci-dessus pour copier cette entrée et la placer en tête.",
+    "empty-text-payload": "(contenu texte vide)",
+    "truncated": "… tronqué"
+  }
+}
