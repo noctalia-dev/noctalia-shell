@@ -21,6 +21,7 @@ public:
   void setThumbSize(float size);
   void setControlHeight(float height);
   void setOnValueChanged(std::function<void(float)> callback);
+  void setOnDragEnd(std::function<void()> callback);
 
   [[nodiscard]] float value() const noexcept { return m_value; }
   [[nodiscard]] float minValue() const noexcept { return m_min; }
@@ -43,6 +44,7 @@ private:
   InputArea* m_inputArea = nullptr;
 
   std::function<void(float)> m_onValueChanged;
+  std::function<void()> m_onDragEnd;
 
   float m_min = 0.0f;
   float m_max = 100.0f;

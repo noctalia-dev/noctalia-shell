@@ -1,6 +1,7 @@
 #include "pipewire/pipewire_service.h"
 
 #include "core/log.h"
+#include "core/process.h"
 
 #include <pipewire/extensions/metadata.h>
 #include <pipewire/pipewire.h>
@@ -275,6 +276,9 @@ void PipeWireService::onRegistryGlobal(std::uint32_t id, const char* type, std::
       // Subscribe to Props param changes
       std::uint32_t params[] = {SPA_PARAM_Props};
       pw_node_subscribe_params(proxy, params, 1);
+      // Request the current props immediately so initial UI state does not sit
+      // on the default 100% placeholder until a later change arrives.
+      pw_node_enum_params(proxy, 0, SPA_PARAM_Props, 0, 1, nullptr);
     }
 
     m_nodes[id] = std::move(nd);
@@ -475,6 +479,17 @@ void PipeWireService::setNodeVolume(std::uint32_t id, float volume) {
   }
 
   volume = std::clamp(volume, 0.0f, 1.5f);
+
+  const bool updatedViaWpctl =
+      process::runSync({"wpctl", "set-volume", std::to_string(id), std::format("{:.4f}", volume)});
+  if (updatedViaWpctl) {
+    if (std::abs(nd.volume - volume) >= 0.0001f) {
+      nd.volume = volume;
+      rebuildState();
+    }
+    return;
+  }
+
   // Convert linear volume to cubic (PipeWire native)
   float cubic = volume * volume * volume;
 

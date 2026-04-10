@@ -25,10 +25,10 @@ namespace {
 
 constexpr float kDevicesColumnGrow = 3.0f;
 constexpr float kVolumeColumnGrow = 2.0f;
-constexpr float kColumnMinWidth = Style::controlHeightLg * 8;
 constexpr float kValueLabelWidth = Style::controlHeightLg + Style::spaceLg;
 constexpr auto kVolumeDebounceInterval = std::chrono::milliseconds(45);
 constexpr float kVolumeDragDeltaSendThreshold = 0.05f; // 5%
+constexpr auto kVolumeStateHoldoff = std::chrono::milliseconds(180);
 
 class AudioDeviceRow : public Flex {
 public:
@@ -196,14 +196,33 @@ void addEmptyState(Flex& parent, const std::string& title, const std::string& bo
   parent.addChild(std::move(card));
 }
 
-const AudioNode* findAudioNodeById(const std::vector<AudioNode>& devices, std::uint32_t id) {
-  const auto it = std::ranges::find(devices, id, &AudioNode::id);
-  return it != devices.end() ? &(*it) : nullptr;
+std::string deviceListKey(const std::vector<AudioNode>& devices) {
+  std::string key;
+  for (const auto& device : devices) {
+    key += std::to_string(device.id);
+    key.push_back(':');
+    key += device.isDefault ? '1' : '0';
+    key.push_back(':');
+    key += device.name;
+    key.push_back(':');
+    key += device.description;
+    key.push_back('\n');
+  }
+  return key;
+}
+
+std::string widestPercentLabel(float sliderMaxPercent) {
+  const std::size_t digits = std::to_string(static_cast<int>(std::round(std::max(0.0f, sliderMaxPercent)))).size();
+  return std::string(std::max<std::size_t>(1, digits), '8') + "%";
 }
 
 } // namespace
 
 AudioTab::AudioTab(PipeWireService* audio, ConfigService* config) : m_audio(audio), m_config(config) {}
+
+bool AudioTab::dragging() const noexcept {
+  return (m_outputSlider != nullptr && m_outputSlider->dragging()) || (m_inputSlider != nullptr && m_inputSlider->dragging());
+}
 
 std::unique_ptr<Flex> AudioTab::create() {
   const float scale = contentScale();
@@ -212,7 +231,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Horizontal);
   tab->setAlign(FlexAlign::Stretch);
-  tab->setGap(Style::spaceMd * scale);
+  tab->setGap(Style::spaceSm * scale);
   m_rootLayout = tab.get();
 
   auto deviceColumn = std::make_unique<Flex>();
@@ -220,7 +239,6 @@ std::unique_ptr<Flex> AudioTab::create() {
   deviceColumn->setAlign(FlexAlign::Stretch);
   deviceColumn->setGap(Style::spaceSm * scale);
   deviceColumn->setFlexGrow(kDevicesColumnGrow);
-  deviceColumn->setMinWidth(kColumnMinWidth * scale);
   m_deviceColumn = deviceColumn.get();
 
   auto outputCard = std::make_unique<Flex>();
@@ -274,7 +292,6 @@ std::unique_ptr<Flex> AudioTab::create() {
   volumeColumn->setAlign(FlexAlign::Stretch);
   volumeColumn->setGap(Style::spaceSm * scale);
   volumeColumn->setFlexGrow(kVolumeColumnGrow);
-  volumeColumn->setMinWidth(kColumnMinWidth * scale);
   m_volumeColumn = volumeColumn.get();
 
   auto outputVolumeCard = std::make_unique<Flex>();
@@ -320,6 +337,10 @@ std::unique_ptr<Flex> AudioTab::create() {
     if (m_outputValue != nullptr) {
       m_outputValue->setText(std::to_string(static_cast<int>(std::round(value))) + "%");
     }
+  });
+  outputSlider->setOnDragEnd([this]() {
+    m_sinkVolumeDebounceTimer.stop();
+    flushPendingVolumes();
   });
   m_outputSlider = outputSlider.get();
   outputRow->addChild(std::move(outputSlider));
@@ -378,6 +399,10 @@ std::unique_ptr<Flex> AudioTab::create() {
       m_inputValue->setText(std::to_string(static_cast<int>(std::round(value))) + "%");
     }
   });
+  inputSlider->setOnDragEnd([this]() {
+    m_sourceVolumeDebounceTimer.stop();
+    flushPendingVolumes();
+  });
   m_inputSlider = inputSlider.get();
   inputRow->addChild(std::move(inputSlider));
 
@@ -401,6 +426,7 @@ void AudioTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
     return;
   }
 
+  syncValueLabelWidths(renderer);
   m_rootLayout->setSize(contentWidth, bodyHeight);
   m_rootLayout->layout(renderer);
 
@@ -412,12 +438,14 @@ void AudioTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
     m_inputDeviceLabel->setMaxWidth(
         std::max(0.0f, m_inputVolumeCard->width() - m_inputVolumeCard->paddingLeft() - m_inputVolumeCard->paddingRight()));
   }
+  m_rootLayout->layout(renderer);
 
   rebuildLists(renderer);
 }
 
 void AudioTab::update(Renderer& renderer) {
   rebuildLists(renderer);
+  syncValueLabelWidths(renderer);
 
   const float sliderMax = sliderMaxPercent();
   if (m_outputSlider != nullptr) {
@@ -431,9 +459,11 @@ void AudioTab::update(Renderer& renderer) {
     m_syncingInputSlider = false;
   }
 
-  const AudioState* state = m_audio != nullptr ? &m_audio->state() : nullptr;
-  const AudioNode* sink = state != nullptr ? findAudioNodeById(state->sinks, state->defaultSinkId) : nullptr;
-  const AudioNode* source = state != nullptr ? findAudioNodeById(state->sources, state->defaultSourceId) : nullptr;
+  const AudioNode* sink = m_audio != nullptr ? m_audio->defaultSink() : nullptr;
+  const AudioNode* source = m_audio != nullptr ? m_audio->defaultSource() : nullptr;
+  const auto now = std::chrono::steady_clock::now();
+  const bool outputDragging = m_outputSlider != nullptr && m_outputSlider->dragging();
+  const bool inputDragging = m_inputSlider != nullptr && m_inputSlider->dragging();
 
   if (m_outputDeviceLabel != nullptr) {
     m_outputDeviceLabel->setText(
@@ -446,13 +476,21 @@ void AudioTab::update(Renderer& renderer) {
 
   const float sinkVolume = sink != nullptr ? sink->volume * 100.0f : 0.0f;
   const float sourceVolume = source != nullptr ? source->volume * 100.0f : 0.0f;
-  const bool showPendingSink = state != nullptr && m_pendingSinkVolume >= 0.0f && m_pendingSinkId == state->defaultSinkId;
-  const bool showPendingSource =
-      state != nullptr && m_pendingSourceVolume >= 0.0f && m_pendingSourceId == state->defaultSourceId;
+  const bool showPendingSink = sink != nullptr && m_pendingSinkVolume >= 0.0f && m_pendingSinkId == sink->id;
+  const bool showPendingSource = source != nullptr && m_pendingSourceVolume >= 0.0f && m_pendingSourceId == source->id;
+  const bool holdSinkState = outputDragging && sink != nullptr && m_lastSentSinkVolume >= 0.0f &&
+                             now < m_ignoreSinkStateUntil &&
+                             std::abs(sink->volume - m_lastSentSinkVolume) > 0.02f;
+  const bool holdSourceState = inputDragging && source != nullptr && m_lastSentSourceVolume >= 0.0f &&
+                               now < m_ignoreSourceStateUntil &&
+                               std::abs(source->volume - m_lastSentSourceVolume) > 0.02f;
   const float displayedSinkVolume =
-      std::clamp(showPendingSink ? m_pendingSinkVolume * 100.0f : sinkVolume, 0.0f, sliderMax);
+      std::clamp(showPendingSink ? m_pendingSinkVolume * 100.0f : (holdSinkState ? m_lastSentSinkVolume * 100.0f : sinkVolume),
+                 0.0f, sliderMax);
   const float displayedSourceVolume =
-      std::clamp(showPendingSource ? m_pendingSourceVolume * 100.0f : sourceVolume, 0.0f, sliderMax);
+      std::clamp(showPendingSource ? m_pendingSourceVolume * 100.0f
+                                   : (holdSourceState ? m_lastSentSourceVolume * 100.0f : sourceVolume),
+                 0.0f, sliderMax);
 
   if (m_outputSlider != nullptr) {
     m_outputSlider->setEnabled(sink != nullptr);
@@ -504,7 +542,8 @@ void AudioTab::onClose() {
   m_inputValue = nullptr;
   m_lastOutputWidth = -1.0f;
   m_lastInputWidth = -1.0f;
-  m_lastChangeSerial = 0;
+  m_lastOutputListKey.clear();
+  m_lastInputListKey.clear();
   m_pendingSinkId = 0;
   m_pendingSourceId = 0;
   m_lastSinkVolume = -1.0f;
@@ -513,6 +552,8 @@ void AudioTab::onClose() {
   m_pendingSourceVolume = -1.0f;
   m_lastSentSinkVolume = -1.0f;
   m_lastSentSourceVolume = -1.0f;
+  m_ignoreSinkStateUntil = {};
+  m_ignoreSourceStateUntil = {};
 }
 
 void AudioTab::rebuildLists(Renderer& renderer) {
@@ -522,12 +563,38 @@ void AudioTab::rebuildLists(Renderer& renderer) {
 
   const float outputWidth = m_outputScroll->contentViewportWidth();
   const float inputWidth = m_inputScroll->contentViewportWidth();
-  const std::uint64_t changeSerial = m_audio != nullptr ? m_audio->changeSerial() : 0;
 
   if (outputWidth <= 0.0f || inputWidth <= 0.0f) {
     return;
   }
-  if (outputWidth == m_lastOutputWidth && inputWidth == m_lastInputWidth && changeSerial == m_lastChangeSerial) {
+
+  const float scale = contentScale();
+  if (m_audio == nullptr) {
+    if (outputWidth == m_lastOutputWidth && inputWidth == m_lastInputWidth && m_lastOutputListKey == "unavailable" &&
+        m_lastInputListKey == "unavailable") {
+      return;
+    }
+    while (!m_outputList->children().empty()) {
+      m_outputList->removeChild(m_outputList->children().front().get());
+    }
+    while (!m_inputList->children().empty()) {
+      m_inputList->removeChild(m_inputList->children().front().get());
+    }
+    addEmptyState(*m_outputList, "Audio unavailable", "PipeWire is not active.", scale);
+    addEmptyState(*m_inputList, "Audio unavailable", "PipeWire is not active.", scale);
+    m_lastOutputWidth = outputWidth;
+    m_lastInputWidth = inputWidth;
+    m_lastOutputListKey = "unavailable";
+    m_lastInputListKey = "unavailable";
+    return;
+  }
+
+  const AudioState& state = m_audio->state();
+  const std::string nextOutputListKey = state.sinks.empty() ? "empty" : deviceListKey(state.sinks);
+  const std::string nextInputListKey = state.sources.empty() ? "empty" : deviceListKey(state.sources);
+
+  if (outputWidth == m_lastOutputWidth && inputWidth == m_lastInputWidth && nextOutputListKey == m_lastOutputListKey &&
+      nextInputListKey == m_lastInputListKey) {
     return;
   }
 
@@ -538,17 +605,6 @@ void AudioTab::rebuildLists(Renderer& renderer) {
     m_inputList->removeChild(m_inputList->children().front().get());
   }
 
-  const float scale = contentScale();
-  if (m_audio == nullptr) {
-    addEmptyState(*m_outputList, "Audio unavailable", "PipeWire is not active.", scale);
-    addEmptyState(*m_inputList, "Audio unavailable", "PipeWire is not active.", scale);
-    m_lastOutputWidth = outputWidth;
-    m_lastInputWidth = inputWidth;
-    m_lastChangeSerial = changeSerial;
-    return;
-  }
-
-  const AudioState& state = m_audio->state();
   if (state.sinks.empty()) {
     addEmptyState(*m_outputList, "No output devices", "No playback sinks are currently available.", scale);
   } else {
@@ -584,7 +640,20 @@ void AudioTab::rebuildLists(Renderer& renderer) {
 
   m_lastOutputWidth = outputWidth;
   m_lastInputWidth = inputWidth;
-  m_lastChangeSerial = changeSerial;
+  m_lastOutputListKey = nextOutputListKey;
+  m_lastInputListKey = nextInputListKey;
+}
+
+void AudioTab::syncValueLabelWidths(Renderer& renderer) {
+  const std::string sampleLabel = widestPercentLabel(sliderMaxPercent());
+  const TextMetrics metrics = renderer.measureText(sampleLabel, Style::fontSizeBody * contentScale(), true);
+  const float minWidth = std::round(metrics.width);
+  if (m_outputValue != nullptr) {
+    m_outputValue->setMinWidth(minWidth);
+  }
+  if (m_inputValue != nullptr) {
+    m_inputValue->setMinWidth(minWidth);
+  }
 }
 
 float AudioTab::sliderMaxPercent() const {
@@ -592,12 +661,14 @@ float AudioTab::sliderMaxPercent() const {
 }
 
 void AudioTab::queueSinkVolume(float value) {
-  m_pendingSinkId = m_audio != nullptr ? m_audio->state().defaultSinkId : 0;
+  const AudioNode* sink = m_audio != nullptr ? m_audio->defaultSink() : nullptr;
+  m_pendingSinkId = sink != nullptr ? sink->id : 0;
   m_pendingSinkVolume = std::clamp(value, 0.0f, sliderMaxPercent() / 100.0f);
 }
 
 void AudioTab::queueSourceVolume(float value) {
-  m_pendingSourceId = m_audio != nullptr ? m_audio->state().defaultSourceId : 0;
+  const AudioNode* source = m_audio != nullptr ? m_audio->defaultSource() : nullptr;
+  m_pendingSourceId = source != nullptr ? source->id : 0;
   m_pendingSourceVolume = std::clamp(value, 0.0f, sliderMaxPercent() / 100.0f);
 }
 
@@ -634,6 +705,7 @@ void AudioTab::flushPendingVolumes(bool force) {
       m_audio->setSinkVolume(sinkId, m_pendingSinkVolume);
       m_audio->emitVolumePreview(false, sinkId, m_pendingSinkVolume);
       m_lastSentSinkVolume = m_pendingSinkVolume;
+      m_ignoreSinkStateUntil = std::chrono::steady_clock::now() + kVolumeStateHoldoff;
     }
     if (force || !outputDragging) {
       m_pendingSinkId = 0;
@@ -653,6 +725,7 @@ void AudioTab::flushPendingVolumes(bool force) {
       m_audio->setSourceVolume(sourceId, m_pendingSourceVolume);
       m_audio->emitVolumePreview(true, sourceId, m_pendingSourceVolume);
       m_lastSentSourceVolume = m_pendingSourceVolume;
+      m_ignoreSourceStateUntil = std::chrono::steady_clock::now() + kVolumeStateHoldoff;
     }
     if (force || !inputDragging) {
       m_pendingSourceId = 0;
