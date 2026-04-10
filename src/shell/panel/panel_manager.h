@@ -77,4 +77,5 @@ private:
   bool m_pointerInside = false;
   bool m_inTransition = false;
   bool m_closing = false;
+  std::uint64_t m_destroyGeneration = 0; // invalidates stale deferred destroyPanel calls
 };

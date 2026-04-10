@@ -196,6 +196,38 @@ Application::~Application() {
   // MainLoop will be destroyed next, then SessionBus
 }
 
+void Application::syncNotificationDaemon() {
+  if (m_bus == nullptr) {
+    m_notificationDbus.reset();
+    m_notificationPollSource.setDbusService(nullptr);
+    return;
+  }
+
+  if (!m_configService.config().shell.notificationsDbus) {
+    if (m_notificationDbus != nullptr) {
+      kLog.info("notification daemon disabled by config");
+    }
+    m_notificationDbus.reset();
+    m_notificationPollSource.setDbusService(nullptr);
+    return;
+  }
+
+  if (m_notificationDbus != nullptr) {
+    return;
+  }
+
+  try {
+    m_notificationDbus = std::make_unique<NotificationService>(*m_bus, m_notificationManager);
+    m_notificationPollSource.setDbusService(m_notificationDbus.get());
+    kLog.info("listening on org.freedesktop.Notifications");
+  } catch (const std::exception& e) {
+    kLog.warn("notifications disabled: {}", e.what());
+    m_notificationDbus.reset();
+    m_notificationPollSource.setDbusService(nullptr);
+    m_notificationManager.addInternal("Noctalia", "DBus notifications disabled", e.what(), Urgency::Low);
+  }
+}
+
 void Application::run() {
   initLogFile();
   kLog.info("noctalia v{}", NOCTALIA_VERSION);
@@ -343,15 +375,8 @@ void Application::initServices() {
       m_notificationManager.addInternal("Noctalia", "MPRIS disabled", e.what(), Urgency::Low);
     }
 
-    try {
-      m_notificationDbus = std::make_unique<NotificationService>(*m_bus, m_notificationManager);
-      m_notificationPollSource.setDbusService(m_notificationDbus.get());
-      kLog.info("listening on org.freedesktop.Notifications");
-    } catch (const std::exception& e) {
-      kLog.warn("notifications disabled: {}", e.what());
-      m_notificationDbus.reset();
-      m_notificationManager.addInternal("Noctalia", "DBus notifications disabled", e.what(), Urgency::Low);
-    }
+    syncNotificationDaemon();
+    m_configService.addReloadCallback([this]() { syncNotificationDaemon(); });
 
     try {
       m_trayService = std::make_unique<TrayService>(*m_bus);

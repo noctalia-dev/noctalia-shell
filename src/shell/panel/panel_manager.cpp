@@ -73,8 +73,10 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
     return;
   }
 
-  // If a panel is open (or closing), destroy it immediately — no close animation when switching
+  // If a panel is open (or closing), destroy it immediately — no close animation when switching.
+  // Bump the generation first so any in-flight deferred destroyPanel is a no-op.
   if (isOpen() || m_closing) {
+    ++m_destroyGeneration;
     m_closing = false;
     destroyPanel();
   }
@@ -195,13 +197,20 @@ void PanelManager::closePanel() {
   // Fade out the whole scene
   if (m_sceneRoot != nullptr) {
     const float startY = m_sceneRoot->y();
+    const std::uint64_t gen = ++m_destroyGeneration;
     m_animations.animate(
         1.0f, 0.0f, Style::animFast, Easing::EaseInOutQuad,
         [this, startY](float v) {
           m_sceneRoot->setOpacity(v);
           m_sceneRoot->setPosition(m_sceneRoot->x(), startY + (1.0f - v) * 4.0f);
         },
-        [this]() { DeferredCall::callLater([this]() { destroyPanel(); }); });
+        [this, gen]() {
+          DeferredCall::callLater([this, gen]() {
+            if (m_destroyGeneration == gen) {
+              destroyPanel();
+            }
+          });
+        });
     m_surface->requestRedraw();
   } else {
     destroyPanel();
@@ -227,7 +236,8 @@ void PanelManager::destroyPanel() {
 
 void PanelManager::togglePanel(const std::string& panelId, wl_output* output, float anchorX, float anchorY,
                                std::string_view context) {
-  if (isOpen() && m_activePanelId == panelId) {
+  // Treat a closing panel as closed: re-clicking while it animates out reopens it immediately.
+  if (isOpen() && !m_closing && m_activePanelId == panelId) {
     if (!context.empty() && m_activePanel != nullptr) {
       m_activePanel->onOpen(context);
       refresh();
@@ -240,7 +250,7 @@ void PanelManager::togglePanel(const std::string& panelId, wl_output* output, fl
 }
 
 void PanelManager::togglePanel(const std::string& panelId) {
-  if (isOpen() && m_activePanelId == panelId) {
+  if (isOpen() && !m_closing && m_activePanelId == panelId) {
     closePanel();
     return;
   }
@@ -332,7 +342,10 @@ void PanelManager::refresh() {
 void PanelManager::close() { closePanel(); }
 
 void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
-  if (!isOpen()) {
+  // m_inTransition means wl_display_roundtrip() is running inside initialize().
+  // Keyboard events that arrive during this roundtrip (e.g. a buffered Enter from
+  // the lockscreen unlock) must be ignored — the panel is not ready for input yet.
+  if (!isOpen() || m_inTransition) {
     return;
   }
 

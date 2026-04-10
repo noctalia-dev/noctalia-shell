@@ -454,13 +454,17 @@ Shell-wide UI settings for non-bar surfaces.
 
 ```toml
 [shell]
-ui_scale = 1.0   # content scale multiplier for panels and other non-bar shell UI
+ui_scale = 1.0              # content scale multiplier for panels and other non-bar shell UI
+lang = "en"                 # overidde language detection
+notifications_dbus = true   # when false, don't claim org.freedesktop.Notifications
 ```
 
 `ui_scale` is completely separate from `bar.scale`:
 - `bar.scale` only affects bar widget content
 - `shell.ui_scale` is for control center, launcher, clipboard, and other non-bar shell UI
 - neither setting changes Wayland output scale / HiDPI buffer scale
+
+`notifications_dbus` only controls the external D-Bus notification daemon. When disabled, apps cannot send notifications through `org.freedesktop.Notifications`, but Noctalia internal notifications still appear in popups, history, and widgets.
 
 ---
 

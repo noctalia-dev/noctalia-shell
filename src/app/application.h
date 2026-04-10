@@ -68,6 +68,7 @@ private:
   void initServices();
   void initUi();
   void initIpc();
+  void syncNotificationDaemon();
   bool runIdleCommand(const std::string& command);
   [[nodiscard]] std::vector<PollSource*> buildPollSources();
 

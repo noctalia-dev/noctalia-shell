@@ -469,6 +469,9 @@ void ConfigService::loadFromFile(const std::string& path) {
     if (auto v = (*shellTbl)["lang"].value<std::string>()) {
       shell.lang = *v;
     }
+    if (auto notificationsDbus = (*shellTbl)["notifications_dbus"].value<bool>()) {
+      shell.notificationsDbus = *notificationsDbus;
+    }
   }
 
   // Parse [wallpaper]
