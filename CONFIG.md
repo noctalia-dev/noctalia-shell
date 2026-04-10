@@ -33,6 +33,7 @@ position        = "top"       # top | bottom | left | right
 enabled         = true
 
 height          = 34          # bar thickness in pixels
+background_opacity = 1.0      # bar background alpha, from 0.0 (transparent) to 1.0 (opaque)
 radius          = 16          # global corner radius fallback (applies to outer+inner)
 radius_outer    = 16          # edge facing the screen boundary (top/bottom/left/right depending on position)
 radius_inner    = 16          # edge facing inward toward content/windows
@@ -79,6 +80,7 @@ Inside a bar you can add named monitor subtables under `[bar.<name>.monitor.*]`.
 match          = "DP-1"    # connector name or description substring
 enabled        = true
 height         = 44
+background_opacity = 0.9
 radius         = 0
 radius_outer   = 0
 radius_inner   = 0
@@ -95,7 +97,7 @@ end            = ["volume", "clock"]
 
 `match` defaults to the subtable key name when omitted, so `[bar.main.monitor."DP-1"]` without a `match` field works too.
 
-Only the fields you specify are overridden; everything else falls through to the `[bar.*]` defaults. `scale` is also supported in monitor overrides.
+Only the fields you specify are overridden; everything else falls through to the `[bar.*]` defaults. `scale` and `background_opacity` are also supported in monitor overrides.
 
 ---
 
@@ -509,6 +511,7 @@ width = 16
 [bar.main]
 position        = "top"
 height          = 40
+background_opacity = 0.94
 margin_h        = 12
 margin_v        = 6
 padding_h       = 16
@@ -524,6 +527,7 @@ end    = ["tray", "notifications", "volume", "battery", "clock"]
 [bar.main.monitor.dp1]
 match  = "DP-1"        # main 4K display — taller bar, show seconds
 height = 44
+background_opacity = 1.0
 end    = ["tray", "notifications", "volume", "battery", "clock-seconds"]
 
 [osd]
@@ -535,6 +539,7 @@ enable_overdrive = false
 [bar.main.monitor.hdmi]
 match    = "HDMI-A-1"  # secondary 1080p — smaller, minimal widgets
 height   = 36
+background_opacity = 0.88
 margin_h = 8
 end      = ["volume", "clock"]
 

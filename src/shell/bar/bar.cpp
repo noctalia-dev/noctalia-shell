@@ -500,7 +500,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   // Expand 1px beyond its edges so SDF fringe lands inside the rect.
   if (instance.bg != nullptr) {
     const RoundedRectStyle bgStyle{
-        .fill = palette.surface,
+        .fill = withAlpha(palette.surface, instance.barConfig.backgroundOpacity),
         .fillEnd = {},
         .border = palette.outline,
         .fillMode = FillMode::Solid,

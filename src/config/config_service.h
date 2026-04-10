@@ -17,6 +17,7 @@ struct BarMonitorOverride {
   std::string match;
   std::optional<bool> enabled;
   std::optional<std::int32_t> height;
+  std::optional<float> backgroundOpacity;
   std::optional<std::int32_t> radius;
   std::optional<std::int32_t> radiusOuter;
   std::optional<std::int32_t> radiusInner;
@@ -38,6 +39,7 @@ struct BarConfig {
   std::string position = "top";
   bool enabled = true;
   std::int32_t height = Style::barHeightDefault;
+  float backgroundOpacity = 1.0f;
   std::int32_t radius = Style::radiusXl;
   std::int32_t radiusOuter = Style::radiusXl;
   std::int32_t radiusInner = Style::radiusXl;

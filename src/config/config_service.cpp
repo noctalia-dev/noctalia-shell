@@ -11,6 +11,7 @@
 #include <toml.hpp>
 #pragma GCC diagnostic pop
 
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 #include <sys/inotify.h>
@@ -183,6 +184,8 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.enabled = *ovr.enabled;
     if (ovr.height)
       resolved.height = *ovr.height;
+    if (ovr.backgroundOpacity)
+      resolved.backgroundOpacity = *ovr.backgroundOpacity;
     if (ovr.radius) {
       resolved.radius = *ovr.radius;
       resolved.radiusOuter = *ovr.radius;
@@ -330,6 +333,8 @@ void ConfigService::loadFromFile(const std::string& path) {
         bar.enabled = *v;
       if (auto v = (*barTbl)["height"].value<int64_t>())
         bar.height = static_cast<std::int32_t>(*v);
+      if (auto v = (*barTbl)["background_opacity"].value<double>())
+        bar.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
       if (auto v = (*barTbl)["radius"].value<int64_t>()) {
         bar.radius = static_cast<std::int32_t>(*v);
         bar.radiusOuter = static_cast<std::int32_t>(*v);
@@ -385,6 +390,8 @@ void ConfigService::loadFromFile(const std::string& path) {
             ovr.enabled = *v;
           if (auto v = (*monTbl)["height"].value<int64_t>())
             ovr.height = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["background_opacity"].value<double>())
+            ovr.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
           if (auto v = (*monTbl)["radius"].value<int64_t>())
             ovr.radius = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["radius_outer"].value<int64_t>())
