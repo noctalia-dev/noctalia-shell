@@ -225,6 +225,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   artworkRow->setAlign(FlexAlign::Center);
   artworkRow->setJustify(FlexJustify::Center);
   artworkRow->setGap(0.0f);
+  m_artworkRow = artworkRow.get();
 
   auto artwork = std::make_unique<Image>();
   artwork->setCornerRadius(Style::radiusLg * scale);
@@ -439,7 +440,14 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
   const float cardInnerWidth =
       std::max(0.0f, m_nowCard->width() - (m_nowCard->paddingLeft() + m_nowCard->paddingRight()));
   const float mediaWidth = std::clamp(cardInnerWidth, 1.0f, Style::controlHeightLg * 11.0f * scale);
-  m_mediaStack->setSize(mediaWidth, 0.0f);
+  const float mediaStackHeight = m_mediaStack->height();
+  m_mediaStack->setSize(mediaWidth, mediaStackHeight);
+
+  if (m_artworkRow != nullptr) {
+    // Horizontal Flex with justify Center under-reports its width when the child is narrower than
+    // the stretched cross-axis; min width keeps the row full-bleed so art centers.
+    m_artworkRow->setMinWidth(mediaWidth);
+  }
 
   if (m_playerSelect != nullptr) {
     m_playerSelect->setSize(mediaWidth, 0.0f);
@@ -506,6 +514,9 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
   if (m_progressSlider != nullptr) {
     m_progressSlider->setSize(mediaWidth, 0.0f);
   }
+
+  m_mediaStack->layout(renderer);
+
   if (m_visualizerColumn != nullptr && m_visualizerSpectrum != nullptr) {
     const float innerWidth =
         std::max(0.0f, m_visualizerColumn->width() - (m_visualizerColumn->paddingLeft() + m_visualizerColumn->paddingRight()));
@@ -544,6 +555,7 @@ void MediaTab::onClose() {
   m_visualizerColumn = nullptr;
   m_visualizerSpectrum = nullptr;
   m_artwork = nullptr;
+  m_artworkRow = nullptr;
   m_nowCard = nullptr;
   m_mediaStack = nullptr;
   m_trackTitle = nullptr;
