@@ -267,7 +267,8 @@ NBox {
                                               "widgetData": widgetData,
                                               "widgetId": widgetData.id,
                                               "sectionId": root.sectionId,
-                                              "screen": root.screen
+                                              "screen": root.screen,
+                                              "barIsVertical": root.barIsVertical
                                             });
 
         if (dialog) {

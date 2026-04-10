@@ -23,8 +23,11 @@ Singleton {
 
       if (Settings.data.colorSchemes.useWallpaperColors) {
         generateFromWallpaper();
+      } else if (ColorSchemeService.lastPredefinedSchemeData) {
+        // Regenerate templates only; skip applyScheme so colors.json and scheme reload stay untouched
+        // when outputs are unchanged (see template processor skip-identical writes).
+        generateFromPredefinedScheme(ColorSchemeService.lastPredefinedSchemeData);
       } else {
-        // Re-run predefined scheme templates so {{image}} reflects the new wallpaper path
         ColorSchemeService.applyScheme(Settings.data.colorSchemes.predefinedScheme);
       }
     }

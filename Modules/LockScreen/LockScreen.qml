@@ -17,7 +17,7 @@ Loader {
   active: false
 
   // Track if the visualizer should be shown (lockscreen active + media playing + non-compact mode)
-  readonly property bool needsSpectrum: root.active && !Settings.data.general.compactLockScreen && Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none" && MediaService.isPlaying
+  readonly property bool needsSpectrum: root.active && !Settings.data.general.compactLockScreen && Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none"
 
   onActiveChanged: {
     if (root.active && root.needsSpectrum) {
