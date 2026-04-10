@@ -770,6 +770,11 @@ Singleton {
       return "";
     if (icon.startsWith("/") || icon.startsWith("file://"))
       return icon;
+    // Verify the icon exists in the theme before returning its image:// URI.
+    // Without this check, missing icons render as the purple/black checkerboard
+    // from IconImageProvider::missingPixmap instead of the notification fallback icon.
+    if (!ThemeIcons.iconExists(icon))
+      return "";
     return ThemeIcons.iconFromName(icon);
   }
 
