@@ -22,6 +22,8 @@ struct NotificationHistoryEntry {
   std::uint64_t eventSerial = 0;
 };
 
+constexpr int32_t kDefaultNotificationTimeout = 6000;
+
 class NotificationManager {
 public:
   NotificationManager() = default;
@@ -34,14 +36,14 @@ public:
 
   // Adds a new notification or updates an existing one.
   uint32_t addOrReplace(uint32_t replaces_id, std::string app_name, std::string summary, std::string body,
-                        int32_t timeout, Urgency urgency, NotificationOrigin origin = NotificationOrigin::External,
+                        Urgency urgency, int32_t timeout, NotificationOrigin origin = NotificationOrigin::External,
                         std::vector<std::string> actions = {}, std::optional<std::string> icon = std::nullopt,
                         std::optional<std::string> category = std::nullopt,
                         std::optional<std::string> desktop_entry = std::nullopt);
 
   // Adds an internal notification to the same store as external notifications.
-  uint32_t addInternal(std::string app_name, std::string summary, std::string body, int32_t timeout,
-                       Urgency urgency = Urgency::Normal, std::optional<std::string> icon = std::nullopt,
+  uint32_t addInternal(std::string app_name, std::string summary, std::string body, Urgency urgency = Urgency::Normal,
+                       int32_t timeout = kDefaultNotificationTimeout, std::optional<std::string> icon = std::nullopt,
                        std::optional<std::string> category = std::nullopt,
                        std::optional<std::string> desktop_entry = std::nullopt);
 

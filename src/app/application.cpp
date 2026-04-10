@@ -311,7 +311,7 @@ void Application::initServices() {
     kLog.info("connected to session bus");
   } catch (const std::exception& e) {
     kLog.warn("dbus disabled: {}", e.what());
-    m_notificationManager.addInternal("Noctalia", "Session bus unavailable", e.what(), 8000, Urgency::Low);
+    m_notificationManager.addInternal("Noctalia", "Session bus unavailable", e.what(), Urgency::Low);
   }
 
   if (m_bus != nullptr) {
@@ -333,7 +333,7 @@ void Application::initServices() {
     } catch (const std::exception& e) {
       kLog.warn("mpris disabled: {}", e.what());
       m_mprisService.reset();
-      m_notificationManager.addInternal("Noctalia", "MPRIS disabled", e.what(), 7000, Urgency::Low);
+      m_notificationManager.addInternal("Noctalia", "MPRIS disabled", e.what(), Urgency::Low);
     }
 
     try {
@@ -343,7 +343,7 @@ void Application::initServices() {
     } catch (const std::exception& e) {
       kLog.warn("notifications disabled: {}", e.what());
       m_notificationDbus.reset();
-      m_notificationManager.addInternal("Noctalia", "DBus notifications disabled", e.what(), 7000, Urgency::Low);
+      m_notificationManager.addInternal("Noctalia", "DBus notifications disabled", e.what(), Urgency::Low);
     }
 
     try {
@@ -381,30 +381,27 @@ void Application::initUi() {
               [this]() {
                 if (!launchLogoutCommand()) {
                   m_notificationManager.addInternal("Noctalia", "Logout unavailable",
-                                                    "Could not determine how to terminate this session.", 5000,
-                                                    Urgency::Normal);
+                                                    "Could not determine how to terminate this session.");
                 }
               },
           .reboot =
               [this]() {
-                if (!launchFirstAvailableCommand({{"loginctl", "reboot"}, {"systemctl", "reboot"}})) {
-                  m_notificationManager.addInternal("Noctalia", "Reboot failed", "Could not launch systemctl reboot.",
-                                                    5000, Urgency::Normal);
+                if (!launchFirstAvailableCommand({{"systemctl", "reboot"}, {"loginctl", "reboot"}})) {
+                  m_notificationManager.addInternal("Noctalia", "Reboot failed", "Could not launch systemctl reboot.");
                 }
               },
           .shutdown =
               [this]() {
-                if (!launchFirstAvailableCommand({{"loginctl", "poweroff"}, {"systemctl", "poweroff"}})) {
+                if (!launchFirstAvailableCommand({{"systemctl", "poweroff"}, {"loginctl", "poweroff"}})) {
                   m_notificationManager.addInternal("Noctalia", "Shutdown failed",
-                                                    "Could not launch a shutdown command.", 5000, Urgency::Normal);
+                                                    "Could not launch a shutdown command.");
                 }
               },
           .lock =
               [this]() {
                 if (!m_lockScreen.lock()) {
                   m_notificationManager.addInternal("Noctalia", "Lock unavailable",
-                                                    "The session lock protocol is not available.", 5000,
-                                                    Urgency::Normal);
+                                                    "The session lock protocol is not available.");
                 }
               },
       }));

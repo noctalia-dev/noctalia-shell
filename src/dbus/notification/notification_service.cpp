@@ -150,7 +150,7 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
     }
   }
 
-  return m_manager.addOrReplace(replaces_id, clamp_str(app_name), clamp_str(summary), clamp_str(body), timeout, urgency,
+  return m_manager.addOrReplace(replaces_id, clamp_str(app_name), clamp_str(summary), clamp_str(body), urgency, timeout,
                                 NotificationOrigin::External, sanitizedActions, icon, category, desktop_entry);
 }
 

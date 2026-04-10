@@ -30,7 +30,7 @@ DebugService::DebugService(SessionBus& bus, NotificationManager& notifications) 
                       .withOutputParamNames("id")
                       .implementedAs([this](const std::string& app_name, const std::string& summary,
                                             const std::string& body, int32_t timeout, uint8_t urgency) {
-                        return onEmitInternalNotification(app_name, summary, body, timeout, urgency);
+                        return onEmitInternalNotification(app_name, summary, body, urgency, timeout);
                       }),
 
                   sdbus::registerMethod("SetVerboseLogs")
@@ -45,8 +45,8 @@ DebugService::DebugService(SessionBus& bus, NotificationManager& notifications) 
 }
 
 uint32_t DebugService::onEmitInternalNotification(const std::string& app_name, const std::string& summary,
-                                                  const std::string& body, int32_t timeout, uint8_t urgency) {
-  const uint32_t id = m_notifications.addInternal(app_name, summary, body, timeout, clamp_urgency(urgency));
+                                                  const std::string& body, uint8_t urgency, int32_t timeout) {
+  const uint32_t id = m_notifications.addInternal(app_name, summary, body, clamp_urgency(urgency), timeout);
   kLog.info("debug internal notification emitted id={} app=\"{}\"", id, app_name);
   return id;
 }

@@ -1,5 +1,6 @@
 #include "shell/notification/notification_popup.h"
 
+#include "notification/notification_manager.h"
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
@@ -30,7 +31,6 @@ constexpr std::size_t kMaxVisible = 5;
 constexpr float kGap = Style::spaceSm;
 constexpr float kPadding = Style::spaceMd;
 constexpr float kCardInnerPad = Style::spaceMd;
-constexpr int kDefaultPopupDurationMs = 6000; // fallback when timeout == -1 (server default)
 constexpr float kCloseButtonSize = 20.0f;
 constexpr float kCloseGlyphSize = 12.0f;
 
@@ -38,7 +38,7 @@ constexpr float kCloseGlyphSize = 12.0f;
 // Returns -1 to mean "persistent — never auto-dismiss".
 int resolveDisplayDuration(int32_t timeout) {
   if (timeout == 0)  return -1;
-  if (timeout == -1) return kDefaultPopupDurationMs;
+  if (timeout == -1) return kDefaultNotificationTimeout;
   return std::max(1000, static_cast<int>(timeout));
 }
 constexpr int kProgressHeight = 3;

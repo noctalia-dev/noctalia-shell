@@ -78,7 +78,7 @@ void NotificationManager::removeEventCallback(int token) {
 }
 
 uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app_name, std::string summary,
-                                           std::string body, int32_t timeout, Urgency urgency,
+                                           std::string body, Urgency urgency, int32_t timeout,
                                            NotificationOrigin origin, std::vector<std::string> actions,
                                            std::optional<std::string> icon, std::optional<std::string> category,
                                            std::optional<std::string> desktop_entry) {
@@ -149,11 +149,11 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
   return n.id;
 }
 
-uint32_t NotificationManager::addInternal(std::string app_name, std::string summary, std::string body, int32_t timeout,
-                                          Urgency urgency, std::optional<std::string> icon,
+uint32_t NotificationManager::addInternal(std::string app_name, std::string summary, std::string body, Urgency urgency,
+                                          int32_t timeout, std::optional<std::string> icon,
                                           std::optional<std::string> category,
                                           std::optional<std::string> desktop_entry) {
-  return addOrReplace(0, std::move(app_name), std::move(summary), std::move(body), timeout, urgency,
+  return addOrReplace(0, std::move(app_name), std::move(summary), std::move(body), urgency, timeout,
                       NotificationOrigin::Internal, {}, std::move(icon), std::move(category), std::move(desktop_entry));
 }
 

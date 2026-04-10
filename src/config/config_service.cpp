@@ -95,7 +95,7 @@ void ConfigService::setNotificationManager(NotificationManager* manager) {
   m_notificationManager = manager;
   if (m_notificationManager != nullptr && !m_pendingError.empty()) {
     m_errorNotificationId =
-        m_notificationManager->addInternal("Noctalia", "Config parse error", m_pendingError, 0, Urgency::Critical);
+        m_notificationManager->addInternal("Noctalia", "Config parse error", m_pendingError, Urgency::Critical, 0);
     m_pendingError.clear();
   }
 }
@@ -295,7 +295,7 @@ void ConfigService::loadFromFile(const std::string& path) {
     const auto body = std::format("Line {}, column {}: {}", src.begin.line, src.begin.column, e.description());
     if (m_notificationManager != nullptr) {
       m_errorNotificationId =
-          m_notificationManager->addInternal("Noctalia", "Config parse error", body, 0, Urgency::Critical);
+          m_notificationManager->addInternal("Noctalia", "Config parse error", body, Urgency::Critical, 0);
     } else {
       m_pendingError = body;
     }
