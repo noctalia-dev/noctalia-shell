@@ -19,6 +19,7 @@ Changes are detected automatically via inotify — no restart required.
 - [OSD](#osd)
 - [Wallpaper](#wallpaper)
 - [Overview](#overview)
+- [Control Center](#control-center)
 - [Full example](#full-example)
 
 ---
@@ -365,6 +366,21 @@ The OSD currently powers the volume HUD and defaults to `top_right`.
 
 ---
 
+## Control Center
+
+Settings for the control center panels.
+
+```toml
+[control_center.overview]
+avatar_path = "/home/you/Pictures/avatar.png"
+```
+
+| Setting       | Type   | Default | Description |
+|---------------|--------|---------|-------------|
+| `avatar_path` | string | `""`    | Absolute path to the avatar image used in the Overview session card |
+
+---
+
 ## Audio
 
 ```toml
@@ -550,4 +566,7 @@ edge_smoothness     = 0.5
 enabled        = true
 blur_intensity = 0.6
 tint_intensity = 0.35
+
+[control_center.overview]
+avatar_path = "/home/you/Pictures/avatar.png"
 ```

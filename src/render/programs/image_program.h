@@ -18,7 +18,7 @@ public:
   void destroy();
 
   void draw(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height, const Color& tint,
-            float opacity, const Mat3& transform = Mat3::identity()) const;
+            float opacity, float cornerRadius = 0.0f, const Mat3& transform = Mat3::identity()) const;
 
 private:
   ShaderProgram m_program;
@@ -28,6 +28,7 @@ private:
   GLint m_rectLocation = -1;
   GLint m_tintLocation = -1;
   GLint m_opacityLocation = -1;
+  GLint m_cornerRadiusLocation = -1;
   GLint m_samplerLocation = -1;
   GLint m_transformLocation = -1;
 };

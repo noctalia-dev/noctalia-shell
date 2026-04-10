@@ -24,13 +24,16 @@ class MprisService;
 class NotificationManager;
 class PipeWireService;
 class PipeWireSpectrum;
+class PowerProfilesService;
+class UPowerService;
 class WeatherService;
 
 class ControlCenterPanel : public Panel {
 public:
   ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris,
                      ConfigService* config = nullptr, HttpClient* httpClient = nullptr, WeatherService* weather = nullptr,
-                     PipeWireSpectrum* spectrum = nullptr);
+                     PipeWireSpectrum* spectrum = nullptr, UPowerService* upower = nullptr,
+                     PowerProfilesService* powerProfiles = nullptr);
 
   void create() override;
   void layout(Renderer& renderer, float width, float height) override;

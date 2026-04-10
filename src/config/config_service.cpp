@@ -551,6 +551,15 @@ void ConfigService::loadFromFile(const std::string& path) {
       ov.tintIntensity = static_cast<float>(*v);
   }
 
+  // Parse [control_center.overview]
+  if (auto* ccTbl = tbl["control_center"].as_table()) {
+    if (auto* ccOverviewTbl = (*ccTbl)["overview"].as_table()) {
+      auto& ccOverview = m_config.controlCenter.overview;
+      if (auto v = (*ccOverviewTbl)["avatar_path"].value<std::string>())
+        ccOverview.avatarPath = *v;
+    }
+  }
+
   // Parse [osd]
   if (auto* osdTbl = tbl["osd"].as_table()) {
     auto& osd = m_config.osd;

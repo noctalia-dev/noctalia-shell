@@ -107,6 +107,14 @@ struct OverviewConfig {
   float tintIntensity = 0.3f;
 };
 
+struct ControlCenterOverviewConfig {
+  std::string avatarPath;
+};
+
+struct ControlCenterConfig {
+  ControlCenterOverviewConfig overview;
+};
+
 struct OsdConfig {
   std::string position = "top_right";
 };
@@ -145,6 +153,7 @@ struct Config {
   std::unordered_map<std::string, WidgetConfig> widgets;
   WallpaperConfig wallpaper;
   OverviewConfig overview;
+  ControlCenterConfig controlCenter;
   ShellConfig shell;
   OsdConfig osd;
   WeatherConfig weather;

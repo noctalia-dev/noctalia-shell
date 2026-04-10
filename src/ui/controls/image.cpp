@@ -34,6 +34,9 @@ void Image::setCornerRadius(float radius) {
     return;
   }
   m_cornerRadius = radius;
+  if (m_image != nullptr) {
+    m_image->setCornerRadius(radius);
+  }
   if (m_background != nullptr) {
     m_background->setRadius(radius);
   }

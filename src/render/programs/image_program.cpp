@@ -1,5 +1,6 @@
 #include "render/programs/image_program.h"
 
+#include <algorithm>
 #include <array>
 #include <stdexcept>
 
@@ -14,6 +15,7 @@ uniform vec2 u_surface_size;
 uniform vec2 u_size;
 uniform mat3 u_transform;
 varying vec2 v_texcoord;
+varying vec2 v_local;
 
 vec2 to_ndc(vec2 pixel_pos) {
     vec2 normalized = pixel_pos / u_surface_size;
@@ -24,21 +26,32 @@ void main() {
     vec2 local = a_position * u_size;
     vec3 pixel = u_transform * vec3(local, 1.0);
     v_texcoord = a_texcoord;
+    v_local = local;
     gl_Position = vec4(to_ndc(pixel.xy), 0.0, 1.0);
 }
 )";
 
 constexpr char kFragmentShaderSource[] = R"(
-precision mediump float;
+precision highp float;
 
 uniform sampler2D u_texture;
 uniform vec4 u_tint;
 uniform float u_opacity;
+uniform vec2 u_size;
+uniform float u_corner_radius;
 varying vec2 v_texcoord;
+varying vec2 v_local;
 
 void main() {
     vec4 texel = texture2D(u_texture, v_texcoord);
     vec4 color = texel * u_tint * vec4(1.0, 1.0, 1.0, u_opacity);
+    if (u_corner_radius > 0.0) {
+        float radius = min(u_corner_radius, min(u_size.x, u_size.y) * 0.5);
+        vec2 q = abs(v_local - u_size * 0.5) - (u_size * 0.5 - vec2(radius));
+        float dist = length(max(q, 0.0)) - radius;
+        float aa = 1.0 - smoothstep(0.0, 1.0, dist);
+        color.a *= aa;
+    }
     gl_FragColor = vec4(color.rgb * color.a, color.a);
 }
 )";
@@ -57,11 +70,13 @@ void ImageProgram::ensureInitialized() {
   m_rectLocation = glGetUniformLocation(m_program.id(), "u_size");
   m_tintLocation = glGetUniformLocation(m_program.id(), "u_tint");
   m_opacityLocation = glGetUniformLocation(m_program.id(), "u_opacity");
+  m_cornerRadiusLocation = glGetUniformLocation(m_program.id(), "u_corner_radius");
   m_samplerLocation = glGetUniformLocation(m_program.id(), "u_texture");
   m_transformLocation = glGetUniformLocation(m_program.id(), "u_transform");
 
   if (m_positionLocation < 0 || m_texCoordLocation < 0 || m_surfaceSizeLocation < 0 || m_rectLocation < 0 ||
-      m_tintLocation < 0 || m_opacityLocation < 0 || m_samplerLocation < 0 || m_transformLocation < 0) {
+      m_tintLocation < 0 || m_opacityLocation < 0 || m_cornerRadiusLocation < 0 || m_samplerLocation < 0 ||
+      m_transformLocation < 0) {
     throw std::runtime_error("failed to query image shader locations");
   }
 }
@@ -74,12 +89,13 @@ void ImageProgram::destroy() {
   m_rectLocation = -1;
   m_tintLocation = -1;
   m_opacityLocation = -1;
+  m_cornerRadiusLocation = -1;
   m_samplerLocation = -1;
   m_transformLocation = -1;
 }
 
 void ImageProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
-                        const Color& tint, float opacity, const Mat3& transform) const {
+                        const Color& tint, float opacity, float cornerRadius, const Mat3& transform) const {
   if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
     return;
   }
@@ -97,6 +113,7 @@ void ImageProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight,
   glUniform2f(m_rectLocation, width, height);
   glUniform4f(m_tintLocation, tint.r, tint.g, tint.b, tint.a);
   glUniform1f(m_opacityLocation, opacity);
+  glUniform1f(m_cornerRadiusLocation, std::max(0.0f, cornerRadius));
   glUniformMatrix3fv(m_transformLocation, 1, GL_FALSE, transform.m.data());
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
