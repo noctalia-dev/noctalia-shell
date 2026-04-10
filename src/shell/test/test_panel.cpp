@@ -8,6 +8,7 @@
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/grid_view.h"
+#include "ui/controls/flex_grid_tile.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/radio_button.h"
@@ -391,7 +392,7 @@ void TestPanel::create() {
     };
 
     for (const auto& tileData : tiles) {
-      auto tile = std::make_unique<Flex>();
+      auto tile = std::make_unique<FlexGridTile>();
       tile->setDirection(FlexDirection::Vertical);
       tile->setAlign(FlexAlign::Center);
       tile->setJustify(FlexJustify::Center);

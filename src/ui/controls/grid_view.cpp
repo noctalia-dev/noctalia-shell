@@ -1,7 +1,6 @@
 #include "ui/controls/grid_view.h"
 
 #include "render/core/renderer.h"
-#include "ui/controls/flex.h"
 
 #include <algorithm>
 #include <numeric>
@@ -78,18 +77,10 @@ void GridView::setMinCellHeight(float height) {
 
 void GridView::layout(Renderer& renderer) {
   auto layoutWithAssignedSize = [&renderer](Node* child, float assignedWidth, float assignedHeight) {
-    Flex* flex = dynamic_cast<Flex*>(child);
-    if (flex != nullptr) {
-      flex->setPreserveAssignedSize(true);
-    }
     child->setSize(assignedWidth, assignedHeight);
     child->layout(renderer);
-    // Hard clamp final cell bounds so child controls that resize during layout
-    // still end up with identical grid dimensions.
+    // Clamp so controls that resize during layout still match the grid cell.
     child->setSize(assignedWidth, assignedHeight);
-    if (flex != nullptr) {
-      flex->setPreserveAssignedSize(false);
-    }
   };
 
   std::vector<Node*> visibleChildren;
@@ -134,7 +125,12 @@ void GridView::layout(Renderer& renderer) {
     }
 
     float uniformWidth = maxMeasuredWidth;
-    if (hasFixedWidth && m_stretchItems && stretchedWidth > 0.0f) {
+    if (hasFixedWidth && columns > 0) {
+      const float innerWidth = std::max(
+          0.0f,
+          fixedWidth - m_paddingLeft - m_paddingRight - m_columnGap * static_cast<float>(columns - 1));
+      uniformWidth = std::max(uniformWidth, innerWidth / static_cast<float>(columns));
+    } else if (hasFixedWidth && m_stretchItems && stretchedWidth > 0.0f) {
       uniformWidth = std::max(uniformWidth, stretchedWidth);
     }
     uniformWidth = std::max(uniformWidth, m_minCellWidth);
@@ -144,11 +140,6 @@ void GridView::layout(Renderer& renderer) {
     std::fill(rowHeights.begin(), rowHeights.end(), uniformHeight);
 
     for (Node* child : visibleChildren) {
-      if (Flex* flex = dynamic_cast<Flex*>(child); flex != nullptr) {
-        flex->setMinWidth(uniformWidth);
-        flex->setMinHeight(uniformHeight);
-        flex->setPreserveAssignedSize(true);
-      }
       layoutWithAssignedSize(child, uniformWidth, uniformHeight);
     }
   } else {

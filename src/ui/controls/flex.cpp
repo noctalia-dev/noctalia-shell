@@ -117,14 +117,6 @@ void Flex::setMinHeight(float minHeight) {
   markDirty();
 }
 
-void Flex::setPreserveAssignedSize(bool preserve) {
-  if (m_preserveAssignedSize == preserve) {
-    return;
-  }
-  m_preserveAssignedSize = preserve;
-  markDirty();
-}
-
 void Flex::setRowLayout() {
   setDirection(FlexDirection::Horizontal);
   setGap(Style::spaceXs);
@@ -151,9 +143,6 @@ void Flex::ensureBackground() {
 }
 
 void Flex::layout(Renderer& renderer) {
-  const float assignedWidth = width();
-  const float assignedHeight = height();
-
   auto& kids = children();
   const bool horizontal = m_direction == FlexDirection::Horizontal;
   const float containerMain = horizontal ? width() : height();
@@ -287,10 +276,6 @@ void Flex::layout(Renderer& renderer) {
     const float h =
         preserveMain ? std::max(containerMain, m_minHeight) : std::max(cursor + m_paddingBottom, m_minHeight);
     setSize(w, h);
-  }
-
-  if (m_preserveAssignedSize && (assignedWidth > 0.0f || assignedHeight > 0.0f)) {
-    setSize(std::max(width(), assignedWidth), std::max(height(), assignedHeight));
   }
 
   // Pass 4: Cross-axis alignment.
