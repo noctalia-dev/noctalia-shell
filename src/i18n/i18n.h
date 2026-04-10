@@ -49,8 +49,7 @@ namespace i18n {
   } // namespace detail
 
   template <typename... Args> std::string tr(std::string_view key, Args&&... args) {
-    static_assert(sizeof...(Args) % 2 == 0,
-                  "i18n::tr() requires an even number of trailing args (name, value pairs)");
+    static_assert(sizeof...(Args) % 2 == 0, "i18n::tr() requires an even number of trailing args (name, value pairs)");
     auto raw = Service::instance().lookup(key);
     if (raw.empty()) {
       return std::format("!!{}!!", key);

@@ -7,6 +7,7 @@
 #include "ui/controls/checkbox.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
+#include "ui/controls/grid_view.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/radio_button.h"
@@ -20,6 +21,7 @@
 #include <cmath>
 #include <memory>
 #include <string>
+#include <vector>
 
 void TestPanel::create() {
   const float scale = contentScale();
@@ -358,6 +360,67 @@ void TestPanel::create() {
     row->addChild(makeRowLabel("Input", kRowLabelWidth));
     row->addChild(std::move(col));
 
+    container->addChild(std::move(row));
+  }
+
+  // Grid view
+  {
+    auto grid = std::make_unique<GridView>();
+    grid->setColumns(4);
+    grid->setColumnGap(Style::spaceSm * scale);
+    grid->setRowGap(Style::spaceSm * scale);
+    grid->setPadding(Style::spaceXs * scale);
+    grid->setSize(360.0f * scale, 0.0f);
+    grid->setUniformCellSize(true);
+    grid->setMinCellHeight(76.0f * scale);
+
+    struct TileSpec {
+      const char* glyph;
+      const char* label;
+      bool accent;
+    };
+    const std::vector<TileSpec> tiles = {
+        {"home", "Home", false},
+        {"media-play", "Music", true},
+        {"copy", "Gallery", false},
+        {"settings", "Settings", false},
+        {"weather-cloud", "Weather", false},
+        {"check", "Calendar", false},
+        {"cpu-temperature", "Terminal", true},
+        {"shutdown", "Power", false},
+    };
+
+    for (const auto& tileData : tiles) {
+      auto tile = std::make_unique<Flex>();
+      tile->setDirection(FlexDirection::Vertical);
+      tile->setAlign(FlexAlign::Center);
+      tile->setJustify(FlexJustify::Center);
+      tile->setGap(Style::spaceXs * scale);
+      tile->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
+      tile->setRadius(Style::radiusMd * scale);
+      tile->setBackground(tileData.accent ? palette.primary : palette.surfaceVariant);
+      tile->setBorderColor(tileData.accent ? palette.primary : palette.outline);
+      tile->setBorderWidth(Style::borderWidth);
+
+      auto icon = std::make_unique<Glyph>();
+      icon->setGlyph(tileData.glyph);
+      icon->setGlyphSize(16.0f * scale);
+      icon->setColor(tileData.accent ? palette.onPrimary : palette.onSurface);
+      tile->addChild(std::move(icon));
+
+      auto label = std::make_unique<Label>();
+      label->setText(tileData.label);
+      label->setCaptionStyle();
+      label->setFontSize(Style::fontSizeCaption * scale);
+      label->setColor(tileData.accent ? palette.onPrimary : palette.onSurfaceVariant);
+      tile->addChild(std::move(label));
+
+      grid->addChild(std::move(tile));
+    }
+
+    auto row = makeRow();
+    row->addChild(makeRowLabel("Grid view", kRowLabelWidth));
+    row->addChild(std::move(grid));
     container->addChild(std::move(row));
   }
 

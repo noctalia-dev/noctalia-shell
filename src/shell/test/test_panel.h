@@ -21,8 +21,8 @@ public:
   void layout(Renderer& renderer, float width, float height) override;
   void update(Renderer& renderer) override;
 
-  [[nodiscard]] float preferredWidth() const override { return scaled(860.0f); }
-  [[nodiscard]] float preferredHeight() const override { return scaled(620.0f); }
+  [[nodiscard]] float preferredWidth() const override { return scaled(1280.0f); }
+  [[nodiscard]] float preferredHeight() const override { return scaled(900.0f); }
   // [[nodiscard]] bool centeredHorizontally() const override { return true; }
   // [[nodiscard]] bool centeredVertically() const override { return true; }
 private:
