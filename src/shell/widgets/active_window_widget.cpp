@@ -176,16 +176,33 @@ std::string ActiveWindowWidget::resolveIconPath(const std::string& appId) {
 
 void ActiveWindowWidget::buildDesktopIconIndex() {
   m_appIcons.clear();
+  auto addIndexKey = [this](std::string_view key, const std::string& icon) {
+    if (key.empty() || icon.empty()) {
+      return;
+    }
+    m_appIcons.try_emplace(std::string{key}, icon);
+    m_appIcons.try_emplace(toLower(key), icon);
+  };
+
   const auto& entries = desktopEntries();
   for (const auto& entry : entries) {
     if (entry.id.empty() || entry.icon.empty()) {
       continue;
     }
-    m_appIcons.try_emplace(entry.id, entry.icon);
-    m_appIcons.try_emplace(toLower(entry.id), entry.icon);
+
+    addIndexKey(entry.id, entry.icon);
     if (const auto dot = entry.id.rfind('.'); dot != std::string::npos && dot + 1 < entry.id.size()) {
-      m_appIcons.try_emplace(entry.id.substr(dot + 1), entry.icon);
-      m_appIcons.try_emplace(toLower(entry.id.substr(dot + 1)), entry.icon);
+      addIndexKey(entry.id.substr(dot + 1), entry.icon);
+    }
+    // Common packaging suffixes in desktop IDs (e.g. vesktop-bin.desktop).
+    if (const auto dash = entry.id.rfind('-'); dash != std::string::npos && dash + 1 < entry.id.size()) {
+      const std::string suffix = entry.id.substr(dash + 1);
+      if (suffix == "bin" || suffix == "desktop") {
+        addIndexKey(entry.id.substr(0, dash), entry.icon);
+      }
+    }
+    if (!entry.startupWmClass.empty()) {
+      addIndexKey(entry.startupWmClass, entry.icon);
     }
   }
   m_desktopEntriesVersion = desktopEntriesVersion();

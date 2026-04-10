@@ -14,6 +14,7 @@ struct DesktopEntry {
   std::string icon;
   std::string categories;
   std::string keywords;
+  std::string startupWmClass;
   bool noDisplay = false;
   bool hidden = false;
   bool terminal = false;
@@ -23,6 +24,7 @@ struct DesktopEntry {
   std::string genericNameLower;
   std::string keywordsLower;
   std::string categoriesLower;
+  std::string startupWmClassLower;
 };
 
 std::vector<DesktopEntry> scanDesktopEntries();

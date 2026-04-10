@@ -167,6 +167,8 @@ namespace {
         entry.categories = std::string(value);
       } else if (key == "Keywords") {
         entry.keywords = std::string(value);
+      } else if (key == "StartupWMClass") {
+        entry.startupWmClass = std::string(value);
       } else if (key == "NoDisplay") {
         entry.noDisplay = (value == "true");
       } else if (key == "Hidden") {
@@ -196,6 +198,7 @@ namespace {
     entry.genericNameLower = toLower(entry.genericName);
     entry.keywordsLower = toLower(entry.keywords);
     entry.categoriesLower = toLower(entry.categories);
+    entry.startupWmClassLower = toLower(entry.startupWmClass);
 
     entries.push_back(std::move(entry));
   }
