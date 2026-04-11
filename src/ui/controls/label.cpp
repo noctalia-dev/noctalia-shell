@@ -56,16 +56,14 @@ void Label::measure(Renderer& renderer) {
   auto refMetrics = renderer.measureText("A", m_textNode->fontSize(), m_textNode->bold());
   const float measuredWidth = maxWidth > 0.0f ? std::min(metrics.width, maxWidth) : metrics.width;
 
-  // Use "A" (cap-height + SDF top/bottom padding, no descender) as the reference
-  // bounding box for the *first* line — this keeps single-line labels of the
-  // same font size at a consistent height, and places the digit/letter ink
-  // center at the geometric center of the bounding box (optical centering in
-  // bars/controls). For wrapped multi-line text we grow the box to the
-  // actual Pango-rendered height so the container reserves enough room.
-  m_baselineOffset = -refMetrics.top;
+  // Keep "A" as the preferred reference for consistent control rhythm, but
+  // clamp baseline so glyphs with taller ascenders/combining marks stay
+  // inside the label bounds instead of visually jumping upward.
+  m_baselineOffset = -std::min(refMetrics.top, metrics.top);
   const float refHeight = refMetrics.bottom - refMetrics.top;
   const float actualHeight = metrics.bottom - metrics.top;
-  const float height = std::max(refHeight, actualHeight);
+  const float inkBottom = m_baselineOffset + metrics.bottom;
+  const float height = std::max({refHeight, actualHeight, inkBottom});
   const bool preserveAssignedWidth = flexGrow() > 0.0f && assignedWidth > 0.0f;
   const float finalWidth =
       preserveAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
