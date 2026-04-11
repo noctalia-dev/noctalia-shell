@@ -130,8 +130,6 @@ void Wallpaper::onStateChange() {
     }
 
     kLog.info("changing {} → {}", inst->connectorName, newPath);
-    inst->pendingPath = newPath;
-
     if (inst->surface == nullptr || inst->surface->wallpaperRenderer() == nullptr) {
       continue;
     }
@@ -420,6 +418,9 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
         inst->transitionProgress = 0.0f;
         inst->transitioning = false;
         updateRendererState(*inst);
+        // The frame loop stops once there are no active animations, so the
+        // promoted final wallpaper needs one explicit redraw.
+        inst->surface->requestRedraw();
       });
 
   updateRendererState(instance);
