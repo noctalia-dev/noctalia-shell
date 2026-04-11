@@ -6,6 +6,7 @@
 #include "ui/controls/context_menu.h"
 #include "wayland/popup_surface.h"
 
+#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
@@ -60,6 +61,8 @@ private:
   std::vector<TrayMenuEntry> m_entries;
   std::unique_ptr<MenuInstance> m_instance;
   bool m_visible = false;
+  std::string m_lastClosedItemId;
+  std::chrono::steady_clock::time_point m_lastCloseTime;
 
   std::vector<TrayMenuEntry> m_submenuEntries;
   std::int32_t m_submenuParentEntryId = 0;

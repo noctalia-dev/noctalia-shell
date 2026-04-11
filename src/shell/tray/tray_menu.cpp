@@ -156,6 +156,17 @@ void TrayMenu::toggleForItem(const std::string& itemId) {
     return;
   }
 
+  // popup_done fires on press; setOnClick fires on release. By the time we get here
+  // the menu is already closed (m_visible = false) even though the user is closing it.
+  // Suppress reopening if the same item was dismissed within the last 300 ms.
+  if (!m_visible && itemId == m_lastClosedItemId) {
+    const auto elapsed = std::chrono::steady_clock::now() - m_lastCloseTime;
+    if (elapsed < std::chrono::milliseconds(300)) {
+      m_lastClosedItemId.clear();
+      return;
+    }
+  }
+
   m_activeItemId = itemId;
   refreshEntries();
 
@@ -172,6 +183,8 @@ void TrayMenu::close() {
   if (!m_visible) {
     return;
   }
+  m_lastClosedItemId = m_activeItemId;
+  m_lastCloseTime = std::chrono::steady_clock::now();
   m_visible = false;
   closeSubmenu();
   destroySurface();
