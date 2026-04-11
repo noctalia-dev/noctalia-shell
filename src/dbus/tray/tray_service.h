@@ -57,13 +57,14 @@ public:
   [[nodiscard]] std::size_t itemCount() const noexcept;
   [[nodiscard]] std::vector<TrayItemInfo> items() const;
   [[nodiscard]] std::vector<TrayMenuEntry> menuEntries(const std::string& itemId);
+  [[nodiscard]] std::vector<TrayMenuEntry> menuEntriesForParent(const std::string& itemId, std::int32_t parentId);
   [[nodiscard]] bool activateMenuEntry(const std::string& itemId, std::int32_t entryId);
   [[nodiscard]] std::vector<std::string> registeredItems() const;
   [[nodiscard]] bool activateItem(const std::string& itemId, std::int32_t x = 0, std::int32_t y = 0);
   [[nodiscard]] bool openContextMenu(const std::string& itemId, std::int32_t x = 0, std::int32_t y = 0);
 
 private:
-  void onRegisterStatusNotifierItem(const std::string& serviceOrPath);
+  void onRegisterStatusNotifierItem(const std::string& serviceOrPath, const std::string& senderBusName);
   void onRegisterStatusNotifierHost(const std::string& host);
   void registerOrRefreshItem(const std::string& busName, const std::string& objectPath);
   void refreshItemMetadata(const std::string& itemId);

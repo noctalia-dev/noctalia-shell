@@ -34,8 +34,13 @@ public:
   using Surface::initialize;
   bool initialize() override { return false; }
   bool initialize(zwlr_layer_surface_v1* parentLayerSurface, wl_output* output, PopupSurfaceConfig config);
+  bool initializeAsChild(xdg_surface* parentXdgSurface, wl_output* output, PopupSurfaceConfig config);
 
   void setDismissedCallback(std::function<void()> callback);
+
+  [[nodiscard]] xdg_surface* xdgSurface() const noexcept { return m_xdgSurface; }
+  [[nodiscard]] std::int32_t configuredX() const noexcept { return m_configuredX; }
+  [[nodiscard]] std::int32_t configuredY() const noexcept { return m_configuredY; }
 
   static void handleXdgSurfaceConfigure(void* data, xdg_surface* surface, std::uint32_t serial);
   static void handlePopupConfigure(void* data, xdg_popup* popup, std::int32_t x, std::int32_t y, std::int32_t width,
@@ -52,4 +57,6 @@ private:
   std::function<void()> m_dismissedCallback;
   std::uint32_t m_pendingWidth = 0;
   std::uint32_t m_pendingHeight = 0;
+  std::int32_t m_configuredX = 0;
+  std::int32_t m_configuredY = 0;
 };

@@ -41,11 +41,15 @@ private:
 
   void refreshEntries();
   [[nodiscard]] uint32_t surfaceHeightPx() const;
+  [[nodiscard]] uint32_t submenuHeightPx() const;
   [[nodiscard]] bool ownsSurface(wl_surface* surface) const;
   void ensureSurface();
   void destroySurface();
   void rebuildScenes();
   void buildScene(MenuInstance& inst, uint32_t width, uint32_t height);
+  void openSubmenu(std::int32_t parentEntryId, float rowCenterY);
+  void closeSubmenu();
+  void buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t height);
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
@@ -56,4 +60,8 @@ private:
   std::vector<TrayMenuEntry> m_entries;
   std::unique_ptr<MenuInstance> m_instance;
   bool m_visible = false;
+
+  std::vector<TrayMenuEntry> m_submenuEntries;
+  std::int32_t m_submenuParentEntryId = 0;
+  std::unique_ptr<MenuInstance> m_submenuInstance;
 };

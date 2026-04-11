@@ -51,6 +51,11 @@ void ContextMenuControl::setOnActivate(std::function<void(const ContextMenuContr
   m_onActivate = std::move(onActivate);
 }
 
+void ContextMenuControl::setOnSubmenuOpen(
+    std::function<void(const ContextMenuControlEntry&, float rowCenterY)> onSubmenuOpen) {
+  m_onSubmenuOpen = std::move(onSubmenuOpen);
+}
+
 void ContextMenuControl::setRedrawCallback(std::function<void()> redrawCallback) {
   m_redrawCallback = std::move(redrawCallback);
 }
@@ -116,12 +121,19 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
     Label* labelPtr = nullptr;
     Glyph* chevronPtr = nullptr;
 
-    row->setOnClick([this, entry](const InputArea::PointerData& data) {
+    const float rowCenterY = currentY + rowHeight * 0.5f;
+    row->setOnClick([this, entry, rowCenterY](const InputArea::PointerData& data) {
       if (!entry.enabled || entry.separator || data.button != BTN_LEFT) {
         return;
       }
-      if (m_onActivate) {
-        m_onActivate(entry);
+      if (entry.hasSubmenu) {
+        if (m_onSubmenuOpen) {
+          m_onSubmenuOpen(entry, rowCenterY);
+        }
+      } else {
+        if (m_onActivate) {
+          m_onActivate(entry);
+        }
       }
     });
 

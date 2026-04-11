@@ -249,13 +249,21 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
   m_bus.connection().requestName(k_watcher_bus_name);
 
   m_watcherObject = sdbus::createObject(m_bus.connection(), k_watcher_object_path);
+
+  // RegisterStatusNotifierItem needs raw MethodCall access to capture the sender's unique
+  // bus name, which lets us skip the O(n) bus-name probe for path-only registrations.
+  auto regItem = sdbus::registerMethod("RegisterStatusNotifierItem").withInputParamNames("service");
+  regItem.inputSignature = "s"; // must be set explicitly when bypassing implementedAs
+  regItem.callbackHandler = [this](sdbus::MethodCall msg) {
+    std::string serviceOrPath;
+    msg >> serviceOrPath;
+    const char* sender = msg.getSender();
+    onRegisterStatusNotifierItem(serviceOrPath, sender != nullptr ? sender : "");
+  };
+
   m_watcherObject
       ->addVTable(
-          sdbus::registerMethod("RegisterStatusNotifierItem")
-              .withInputParamNames("service")
-              .implementedAs([this](const std::string& serviceOrPath) {
-                onRegisterStatusNotifierItem(serviceOrPath);
-              }),
+          std::move(regItem),
 
           sdbus::registerMethod("RegisterStatusNotifierHost")
               .withInputParamNames("service")
@@ -323,17 +331,27 @@ std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) {
   try {
     auto menuProxy = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{itemIt->second.busName},
                                         sdbus::ObjectPath{itemIt->second.menuObjectPath});
-    bool needsUpdate = false;
-    menuProxy->callMethod("AboutToShow").onInterface(k_menu_interface).withArguments(static_cast<std::int32_t>(0)).storeResultsTo(
-        needsUpdate);
+
+    // Signal the app to prepare its menu. Some apps (Electron-based) only populate
+    // GetLayout after receiving AboutToShow(0). Ignore errors — not all apps implement it.
+    try {
+      bool needsUpdate = false;
+      menuProxy->callMethod("AboutToShow")
+          .onInterface(k_menu_interface)
+          .withTimeout(std::chrono::milliseconds(500))
+          .withArguments(static_cast<std::int32_t>(0))
+          .storeResultsTo(needsUpdate);
+      (void)needsUpdate;
+    } catch (const sdbus::Error&) {
+    }
 
     std::uint32_t revision = 0;
     DbusMenuLayout root{};
     menuProxy->callMethod("GetLayout")
         .onInterface(k_menu_interface)
+        .withTimeout(std::chrono::milliseconds(2000))
         .withArguments(static_cast<std::int32_t>(0), static_cast<std::int32_t>(1), std::vector<std::string>{})
         .storeResultsTo(revision, root);
-    (void)needsUpdate;
     (void)revision;
 
     std::vector<TrayMenuEntry> out;
@@ -356,6 +374,55 @@ std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) {
     return out;
   } catch (const sdbus::Error& e) {
     kLog.debug("dbusmenu load failed id={} menu={} err={}", itemId, itemIt->second.menuObjectPath, e.what());
+    return {};
+  }
+}
+
+std::vector<TrayMenuEntry> TrayService::menuEntriesForParent(const std::string& itemId, std::int32_t parentId) {
+  if (!ensureItemProxy(itemId)) {
+    return {};
+  }
+  const auto itemIt = m_items.find(itemId);
+  if (itemIt == m_items.end()) {
+    return {};
+  }
+  if (itemIt->second.busName.empty() || itemIt->second.menuObjectPath.empty()) {
+    return {};
+  }
+
+  try {
+    auto menuProxy = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{itemIt->second.busName},
+                                        sdbus::ObjectPath{itemIt->second.menuObjectPath});
+
+    std::uint32_t revision = 0;
+    DbusMenuLayout root{};
+    menuProxy->callMethod("GetLayout")
+        .onInterface(k_menu_interface)
+        .withTimeout(std::chrono::milliseconds(2000))
+        .withArguments(parentId, static_cast<std::int32_t>(1), std::vector<std::string>{})
+        .storeResultsTo(revision, root);
+    (void)revision;
+
+    std::vector<TrayMenuEntry> out;
+    const auto& children = std::get<2>(root);
+    out.reserve(children.size());
+    for (const auto& childValue : children) {
+      try {
+        const auto child = childValue.get<DbusMenuLayout>();
+        auto entry = decodeMenuEntry(child);
+        if (entry.id <= 0 || !entry.visible) {
+          continue;
+        }
+        if (entry.label.empty() && !entry.separator) {
+          continue;
+        }
+        out.push_back(std::move(entry));
+      } catch (const sdbus::Error&) {
+      }
+    }
+    return out;
+  } catch (const sdbus::Error& e) {
+    kLog.debug("dbusmenu submenu load failed id={} parentId={} err={}", itemId, parentId, e.what());
     return {};
   }
 }
@@ -431,7 +498,8 @@ bool TrayService::openContextMenu(const std::string& itemId, std::int32_t x, std
   }
 }
 
-void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath) {
+void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath,
+                                               const std::string& senderBusName) {
   if (serviceOrPath.empty()) {
     kLog.warn("register item ignored: empty service/path");
     return;
@@ -441,8 +509,11 @@ void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath)
   std::string objectPath;
 
   if (starts_with_slash(serviceOrPath)) {
+    // Path-only registration: use the sender's unique bus name directly instead of
+    // deferring to lazy probing. The sender is the process that registered the item,
+    // so its unique name (:1.xxx) is always correct.
     objectPath = serviceOrPath;
-    busName = "__path_only__";
+    busName = looks_like_dbus_name(senderBusName) ? senderBusName : "__path_only__";
   } else {
     busName = serviceOrPath;
     objectPath = k_default_item_path;
@@ -584,6 +655,7 @@ bool TrayService::ensureItemProxy(const std::string& itemId) {
       std::map<std::string, sdbus::Variant> props;
       probe->callMethod("GetAll")
           .onInterface("org.freedesktop.DBus.Properties")
+          .withTimeout(std::chrono::milliseconds(500))
           .withArguments(k_item_interface)
           .storeResultsTo(props);
 
@@ -622,8 +694,11 @@ bool TrayService::ensureItemProxy(const std::string& itemId) {
     }
   }
 
+  // Fallback: only probe unique names (":1.xxx"). Well-known names may trigger
+  // D-Bus service auto-activation which blocks for hundreds of ms per candidate.
+  // Unique names represent currently-running processes and respond immediately.
   for (const auto& candidate : names) {
-    if (tryCandidate(candidate)) {
+    if (!candidate.empty() && candidate[0] == ':' && tryCandidate(candidate)) {
       return true;
     }
   }

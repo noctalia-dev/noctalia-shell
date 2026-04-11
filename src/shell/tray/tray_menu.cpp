@@ -173,12 +173,64 @@ void TrayMenu::close() {
     return;
   }
   m_visible = false;
+  closeSubmenu();
   destroySurface();
 }
 
 bool TrayMenu::onPointerEvent(const PointerEvent& event) {
   if (!m_visible || m_instance == nullptr) {
     return false;
+  }
+
+  // Route to submenu first — it holds the active grab when open.
+  if (m_submenuInstance != nullptr) {
+    auto* sub = m_submenuInstance.get();
+    const bool onSub = (event.surface != nullptr && event.surface == sub->wlSurface);
+    bool subConsumed = false;
+
+    switch (event.type) {
+    case PointerEvent::Type::Enter:
+      if (onSub) {
+        sub->pointerInside = true;
+        sub->inputDispatcher.pointerEnter(static_cast<float>(event.sx), static_cast<float>(event.sy), event.serial);
+      }
+      break;
+    case PointerEvent::Type::Leave:
+      if (onSub) {
+        sub->pointerInside = false;
+        sub->inputDispatcher.pointerLeave();
+      }
+      break;
+    case PointerEvent::Type::Motion:
+      if (onSub || sub->pointerInside) {
+        if (onSub) sub->pointerInside = true;
+        sub->inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), 0);
+        subConsumed = true;
+      }
+      break;
+    case PointerEvent::Type::Button:
+      if (onSub || sub->pointerInside) {
+        if (onSub) sub->pointerInside = true;
+        const bool pressed = (event.state == 1);
+        sub->inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy),
+                                           event.button, pressed);
+        subConsumed = true;
+        if (m_submenuInstance == nullptr) {
+          return subConsumed;
+        }
+      }
+      break;
+    case PointerEvent::Type::Axis:
+      break;
+    }
+
+    if (sub->surface != nullptr && sub->sceneRoot != nullptr && sub->sceneRoot->dirty()) {
+      sub->surface->requestRedraw();
+    }
+
+    if (subConsumed) {
+      return subConsumed;
+    }
   }
 
   auto* inst = m_instance.get();
@@ -251,6 +303,21 @@ void TrayMenu::refreshEntries() {
         .hasSubmenu = false,
     });
   }
+}
+
+uint32_t TrayMenu::submenuHeightPx() const {
+  std::vector<ContextMenuControlEntry> entries;
+  entries.reserve(m_submenuEntries.size());
+  for (const auto& entry : m_submenuEntries) {
+    entries.push_back(ContextMenuControlEntry{
+        .id = entry.id,
+        .label = entry.label,
+        .enabled = entry.enabled,
+        .separator = entry.separator,
+        .hasSubmenu = entry.hasSubmenu,
+    });
+  }
+  return static_cast<uint32_t>(ContextMenuControl::preferredHeight(entries, kMaxVisible));
 }
 
 uint32_t TrayMenu::surfaceHeightPx() const {
@@ -370,6 +437,137 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
   std::vector<ContextMenuControlEntry> entries;
   entries.reserve(m_entries.size());
   for (const auto& entry : m_entries) {
+    entries.push_back(ContextMenuControlEntry{
+        .id = entry.id,
+        .label = entry.label,
+        .enabled = entry.enabled,
+        .separator = entry.separator,
+        .hasSubmenu = entry.hasSubmenu,
+    });
+  }
+
+  auto menu = std::make_unique<ContextMenuControl>();
+  menu->setMenuWidth(w);
+  menu->setMaxVisible(kMaxVisible);
+  menu->setSubmenuDirection(inst.submenuDirection);
+  menu->setEntries(std::move(entries));
+  menu->setRedrawCallback([&inst]() {
+    if (inst.surface != nullptr) {
+      inst.surface->requestRedraw();
+    }
+  });
+  menu->setOnActivate([this](const ContextMenuControlEntry& entry) {
+    if (m_tray == nullptr || m_activeItemId.empty()) {
+      return;
+    }
+    DeferredCall::callLater([this, entry]() {
+      if (m_tray != nullptr) {
+        (void)m_tray->activateMenuEntry(m_activeItemId, entry.id);
+      }
+      close();
+    });
+  });
+  menu->setOnSubmenuOpen([this](const ContextMenuControlEntry& entry, float rowCenterY) {
+    openSubmenu(entry.id, rowCenterY);
+  });
+  menu->setPosition(0.0f, 0.0f);
+  menu->setSize(w, h);
+  menu->rebuild(*m_renderContext);
+  inst.sceneRoot->addChild(std::move(menu));
+
+  inst.inputDispatcher.setSceneRoot(inst.sceneRoot.get());
+  inst.inputDispatcher.setCursorShapeCallback(
+      [this](uint32_t serial, uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
+  inst.surface->setSceneRoot(inst.sceneRoot.get());
+}
+
+void TrayMenu::closeSubmenu() {
+  if (m_submenuInstance != nullptr) {
+    m_submenuInstance->inputDispatcher.setSceneRoot(nullptr);
+  }
+  m_submenuInstance.reset();
+  m_submenuEntries.clear();
+  m_submenuParentEntryId = 0;
+}
+
+void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
+  closeSubmenu();
+
+  if (m_instance == nullptr || m_instance->surface == nullptr || m_tray == nullptr) {
+    return;
+  }
+
+  m_submenuEntries = m_tray->menuEntriesForParent(m_activeItemId, parentEntryId);
+  if (m_submenuEntries.empty()) {
+    return;
+  }
+  m_submenuParentEntryId = parentEntryId;
+
+  // Anchor rect is in the main popup's coordinate space (0,0 = top-left of main popup surface)
+  const auto mainWidth = static_cast<std::int32_t>(m_instance->surface->width());
+  const auto rowTop = static_cast<std::int32_t>(rowCenterY - Style::controlHeightSm * 0.5f);
+  const auto rowH = static_cast<std::int32_t>(Style::controlHeightSm);
+  constexpr std::int32_t kSubGap = 4;
+
+  const auto surfaceWidth = static_cast<uint32_t>(kSurfaceWidth);
+  const auto surfaceHeight = submenuHeightPx();
+
+  const bool isRight = (m_instance->submenuDirection == ContextSubmenuDirection::Right);
+  const std::int32_t anchorX = isRight ? mainWidth : 0;
+  const std::uint32_t anchor = isRight ? XDG_POSITIONER_ANCHOR_TOP_RIGHT : XDG_POSITIONER_ANCHOR_TOP_LEFT;
+  const std::uint32_t gravity = isRight ? XDG_POSITIONER_GRAVITY_BOTTOM_RIGHT : XDG_POSITIONER_GRAVITY_BOTTOM_LEFT;
+  const std::int32_t offsetX = isRight ? kSubGap : -kSubGap;
+  const auto subDir = isRight ? ContextSubmenuDirection::Right : ContextSubmenuDirection::Left;
+
+  auto inst = std::make_unique<MenuInstance>();
+  inst->output = m_instance->output;
+  inst->surface = std::make_unique<PopupSurface>(*m_wayland);
+  inst->submenuDirection = subDir;
+  auto* instPtr = inst.get();
+
+  inst->surface->setConfigureCallback(
+      [this, instPtr](uint32_t w, uint32_t h) { buildSubmenuScene(*instPtr, w, h); });
+  inst->surface->setDismissedCallback([this]() { closeSubmenu(); });
+  inst->surface->setRenderContext(m_renderContext);
+
+  auto popupConfig = PopupSurfaceConfig{
+      .anchorX = anchorX,
+      .anchorY = rowTop,
+      .anchorWidth = 1,
+      .anchorHeight = rowH,
+      .width = surfaceWidth,
+      .height = surfaceHeight,
+      .anchor = anchor,
+      .gravity = gravity,
+      .constraintAdjustment = kPopupConstraintAdjust,
+      .offsetX = offsetX,
+      .offsetY = 0,
+      .serial = m_wayland->lastInputSerial(),
+      .grab = true,
+  };
+
+  xdg_surface* parentXdg = m_instance->surface->xdgSurface();
+  if (!inst->surface->initializeAsChild(parentXdg, m_instance->output, popupConfig)) {
+    kLog.warn("tray submenu: failed to create child popup surface");
+    m_submenuEntries.clear();
+    m_submenuParentEntryId = 0;
+    return;
+  }
+
+  inst->wlSurface = inst->surface->wlSurface();
+  m_submenuInstance = std::move(inst);
+}
+
+void TrayMenu::buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t height) {
+  const auto w = static_cast<float>(width);
+  const auto h = static_cast<float>(height);
+
+  inst.sceneRoot = std::make_unique<Node>();
+  inst.sceneRoot->setSize(w, h);
+
+  std::vector<ContextMenuControlEntry> entries;
+  entries.reserve(m_submenuEntries.size());
+  for (const auto& entry : m_submenuEntries) {
     entries.push_back(ContextMenuControlEntry{
         .id = entry.id,
         .label = entry.label,

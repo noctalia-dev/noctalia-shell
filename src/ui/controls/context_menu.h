@@ -31,6 +31,7 @@ public:
   void setMenuWidth(float width);
   void setSubmenuDirection(ContextSubmenuDirection direction);
   void setOnActivate(std::function<void(const ContextMenuControlEntry&)> onActivate);
+  void setOnSubmenuOpen(std::function<void(const ContextMenuControlEntry&, float rowCenterY)> onSubmenuOpen);
   void setRedrawCallback(std::function<void()> redrawCallback);
 
   [[nodiscard]] float preferredHeight() const;
@@ -48,5 +49,6 @@ private:
   ContextSubmenuDirection m_submenuDirection = ContextSubmenuDirection::Right;
   bool m_needsRebuild = true;
   std::function<void(const ContextMenuControlEntry&)> m_onActivate;
+  std::function<void(const ContextMenuControlEntry&, float rowCenterY)> m_onSubmenuOpen;
   std::function<void()> m_redrawCallback;
 };
