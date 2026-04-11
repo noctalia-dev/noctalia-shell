@@ -620,8 +620,8 @@ void ConfigService::loadFromFile(const std::string& path) {
     if (auto v = (*nightlightTbl)["force"].value<bool>()) {
       nightlight.force = *v;
     }
-    if (auto v = (*nightlightTbl)["auto_detect"].value<bool>()) {
-      nightlight.autoDetect = *v;
+    if (auto v = (*nightlightTbl)["use_weather_location"].value<bool>()) {
+      nightlight.useWeatherLocation = *v;
     }
     if (auto v = (*nightlightTbl)["start_time"].value<std::string>()) {
       nightlight.startTime = *v;

@@ -8,16 +8,20 @@
 #include <cerrno>
 #include <chrono>
 #include <cmath>
-#include <csignal>
+#include <ctime>
 #include <format>
 #include <string>
 #include <sys/wait.h>
-#include <thread>
 #include <vector>
 
 namespace {
 
   constexpr Logger kLog("nightlight");
+
+  // Parses a validated "HH:MM" string (already checked by normalizedClock) into minutes since midnight.
+  int timeToMinutes(std::string_view hhmm) {
+    return (hhmm[0] - '0') * 600 + (hhmm[1] - '0') * 60 + (hhmm[3] - '0') * 10 + (hhmm[4] - '0');
+  }
 
 } // namespace
 
@@ -25,6 +29,8 @@ NightLightManager::~NightLightManager() { stopProcess(); }
 
 void NightLightManager::reload(const NightLightConfig& config) {
   m_config = config;
+  m_enabledOverride.reset();
+  m_forceOverride.reset();
   apply();
 }
 
@@ -86,6 +92,60 @@ bool NightLightManager::effectiveForce() const {
   return m_config.force;
 }
 
+bool NightLightManager::isManualMode() const {
+  return !effectiveForce() && normalizedClock(m_config.startTime).has_value() &&
+         normalizedClock(m_config.stopTime).has_value();
+}
+
+bool NightLightManager::isManualNightPhase() const {
+  const auto now = std::chrono::system_clock::now();
+  const std::time_t t = std::chrono::system_clock::to_time_t(now);
+  std::tm local{};
+  ::localtime_r(&t, &local);
+  const int nowMin = local.tm_hour * 60 + local.tm_min;
+
+  const int sunsetMin = timeToMinutes(m_config.startTime); // night start
+  const int sunriseMin = timeToMinutes(m_config.stopTime); // day start
+
+  if (sunsetMin < sunriseMin) {
+    // Inverted schedule (e.g. 03:00–07:00): night is the window [sunset, sunrise)
+    return nowMin >= sunsetMin && nowMin < sunriseMin;
+  }
+  // Normal schedule (e.g. 20:00–06:00): night wraps midnight
+  return nowMin >= sunsetMin || nowMin < sunriseMin;
+}
+
+std::chrono::milliseconds NightLightManager::msUntilNextManualBoundary() const {
+  const auto now = std::chrono::system_clock::now();
+  const std::time_t t = std::chrono::system_clock::to_time_t(now);
+  std::tm local{};
+  ::localtime_r(&t, &local);
+  const int nowMin = local.tm_hour * 60 + local.tm_min;
+  const int nowSec = local.tm_sec;
+
+  const int sunsetMin = timeToMinutes(m_config.startTime);
+  const int sunriseMin = timeToMinutes(m_config.stopTime);
+  const int targetMin = isManualNightPhase() ? sunriseMin : sunsetMin;
+
+  int diffMin = targetMin - nowMin;
+  if (diffMin <= 0) {
+    diffMin += 1440; // wrap to next day
+  }
+
+  // Subtract elapsed seconds of the current minute so the timer fires at the exact boundary minute.
+  const auto ms = std::chrono::milliseconds(diffMin * 60 * 1000 - nowSec * 1000);
+  return std::max(ms, std::chrono::milliseconds(1000));
+}
+
+void NightLightManager::scheduleManualTimer() {
+  const auto delay = msUntilNextManualBoundary();
+  kLog.debug("nightlight manual schedule: next phase boundary in {}s", delay.count() / 1000);
+  m_scheduleTimer.start(delay, [this]() {
+    kLog.info("nightlight manual schedule: phase boundary reached, re-applying");
+    apply();
+  });
+}
+
 bool NightLightManager::hasRunningProcess() {
   if (m_pid <= 0) {
     return false;
@@ -126,6 +186,13 @@ std::optional<std::string> NightLightManager::normalizedClock(std::string_view v
 }
 
 void NightLightManager::apply() {
+  // In manual mode the timer drives phase transitions; keep it running whenever enabled.
+  if (effectiveEnabled() && isManualMode()) {
+    scheduleManualTimer();
+  } else {
+    m_scheduleTimer.stop();
+  }
+
   if (!effectiveEnabled()) {
     stopProcess();
     m_lastArgs.clear();
@@ -184,14 +251,24 @@ std::optional<std::vector<std::string>> NightLightManager::buildCommandArgs() co
     const bool hasStart = !m_config.startTime.empty();
     const bool hasStop = !m_config.stopTime.empty();
     if (start.has_value() && stop.has_value()) {
-      // start_time = night start (sunset), stop_time = day start (sunrise)
+      // Manual mode: the shell evaluates the phase itself to avoid wlsunset's assumption
+      // that sunset < sunrise (which breaks schedules that cross midnight).
+      if (!isManualNightPhase()) {
+        return std::nullopt; // Day phase — don't run wlsunset.
+      }
+      // Night phase: run wlsunset in permanent force mode.
       args.push_back("-s");
-      args.push_back(*start);
+      args.push_back("00:00");
       args.push_back("-S");
-      args.push_back(*stop);
+      args.push_back("23:59");
+      args.push_back("-d");
+      args.push_back("1");
     } else {
-      if ((hasStart && !start.has_value()) || (hasStop && !stop.has_value())) {
-        kLog.warn("nightlight invalid start/stop time format; expected HH:MM");
+      if (hasStart && !start.has_value()) {
+        kLog.warn("nightlight invalid start_time '{}'; expected zero-padded HH:MM (e.g. 20:30)", m_config.startTime);
+      }
+      if (hasStop && !stop.has_value()) {
+        kLog.warn("nightlight invalid stop_time '{}'; expected zero-padded HH:MM (e.g. 06:30)", m_config.stopTime);
       }
 
       std::optional<double> latitude;
@@ -202,12 +279,9 @@ std::optional<std::vector<std::string>> NightLightManager::buildCommandArgs() co
       } else if (m_config.latitude.has_value() || m_config.longitude.has_value()) {
         kLog.warn("nightlight needs both latitude and longitude when overriding location mode");
         return std::nullopt;
-      } else if (m_weatherLatitude.has_value() && m_weatherLongitude.has_value()) {
+      } else if (m_config.useWeatherLocation && m_weatherLatitude.has_value() && m_weatherLongitude.has_value()) {
         latitude = m_weatherLatitude;
         longitude = m_weatherLongitude;
-        if (!m_config.autoDetect) {
-          kLog.debug("nightlight using weather coordinates as fallback (auto_detect=false)");
-        }
       }
 
       if (!latitude.has_value() || !longitude.has_value()) {
@@ -244,26 +318,6 @@ void NightLightManager::stopProcess() {
     return;
   }
 
-  const pid_t pid = static_cast<pid_t>(m_pid);
-  ::kill(pid, SIGTERM);
-
-  constexpr int kAttempts = 20;
-  for (int i = 0; i < kAttempts; ++i) {
-    int status = 0;
-    const pid_t result = ::waitpid(pid, &status, WNOHANG);
-    if (result == pid) {
-      m_pid = -1;
-      return;
-    }
-    if (result < 0 && (errno == ECHILD || errno == ESRCH)) {
-      m_pid = -1;
-      return;
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds(25));
-  }
-
-  ::kill(pid, SIGKILL);
-  int status = 0;
-  (void)::waitpid(pid, &status, 0);
+  process::terminateTracked(static_cast<int>(m_pid));
   m_pid = -1;
 }

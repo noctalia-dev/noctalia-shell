@@ -217,10 +217,7 @@ void Application::initServices() {
   m_idleManager.reload(m_configService.config().idle);
   m_configService.addReloadCallback([this]() { m_idleManager.reload(m_configService.config().idle); });
   m_nightLightManager.reload(m_configService.config().nightlight);
-  m_configService.addReloadCallback([this]() {
-    m_nightLightManager.clearForceOverride();
-    m_nightLightManager.reload(m_configService.config().nightlight);
-  });
+  m_configService.addReloadCallback([this]() { m_nightLightManager.reload(m_configService.config().nightlight); });
 
   m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
   m_overview.initialize(m_wayland, &m_configService, &m_stateService, &m_wallpaper);
@@ -625,12 +622,12 @@ void Application::initIpc() {
       "toggle-nightlight", "Toggle night light schedule");
 
   m_ipcService.registerHandler(
-      "force-nightlight",
+      "toggle-force-nightlight",
       [this](const std::string&) -> std::string {
         m_nightLightManager.toggleForceEnabled();
         return "ok\n";
       },
-      "force-nightlight", "Toggle forced night light mode");
+      "toggle-force-nightlight", "Toggle forced night light mode");
 }
 
 bool Application::runIdleCommand(const std::string& command) {

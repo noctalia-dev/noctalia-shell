@@ -401,7 +401,7 @@ Uses `wlsunset` to apply temperature shifts.
 [nightlight]
 enabled = false
 force = false                 # force night mode from startup
-auto_detect = true            # use weather coordinates when no manual schedule is set
+use_weather_location = true   # use weather coordinates when no manual schedule or location is set
 
 temperature_day = 6500        # Kelvin, day color temperature
 temperature_night = 4000      # Kelvin, night color temperature
@@ -419,7 +419,7 @@ Notes:
 - `start_time` + `stop_time` always take priority.
 - If manual times are missing, explicit `latitude` + `longitude` are used.
 - If manual times and explicit coordinates are both missing, Night Light uses WeatherService coordinates.
-- `auto_detect = false` disables weather as the primary mode, but weather is still used as a final fallback when no other schedule is configured.
+- `use_weather_location = false` disables weather coordinates as a location source; explicit `latitude`/`longitude` or `start_time`/`stop_time` must be provided.
 - If only one of latitude/longitude is provided, Night Light refuses to start.
 
 IPC force controls:
@@ -428,11 +428,11 @@ IPC force controls:
 noctalia-ipc enable-nightlight
 noctalia-ipc disable-nightlight
 noctalia-ipc toggle-nightlight
-noctalia-ipc force-nightlight
+noctalia-ipc toggle-force-nightlight
 ```
 
 - `enable-nightlight` / `disable-nightlight` / `toggle-nightlight` control schedule enable state.
-- `force-nightlight` toggles forced night mode.
+- `toggle-force-nightlight` toggles forced night mode.
 
 ---
 
