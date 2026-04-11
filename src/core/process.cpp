@@ -92,6 +92,55 @@ namespace process {
     return launchDetached(command);
   }
 
+  std::optional<int> launchDetachedTracked(const std::vector<std::string>& args) {
+    if (args.empty() || args.front().empty()) {
+      return std::nullopt;
+    }
+
+    pid_t pid = fork();
+    if (pid < 0) {
+      return std::nullopt;
+    }
+
+    if (pid == 0) {
+      setsid();
+
+      int devnull = open("/dev/null", O_RDWR);
+      if (devnull >= 0) {
+        dup2(devnull, STDIN_FILENO);
+        dup2(devnull, STDOUT_FILENO);
+        dup2(devnull, STDERR_FILENO);
+        if (devnull > STDERR_FILENO) {
+          close(devnull);
+        }
+      }
+
+      std::vector<char*> argv;
+      argv.reserve(args.size() + 1);
+      for (const auto& arg : args) {
+        argv.push_back(const_cast<char*>(arg.c_str()));
+      }
+      argv.push_back(nullptr);
+
+      execvp(argv[0], argv.data());
+      _exit(127);
+    }
+
+    return static_cast<int>(pid);
+  }
+
+  std::optional<int> launchDetachedTracked(std::initializer_list<const char*> args) {
+    std::vector<std::string> command;
+    command.reserve(args.size());
+    for (const char* arg : args) {
+      if (arg == nullptr) {
+        return std::nullopt;
+      }
+      command.emplace_back(arg);
+    }
+    return launchDetachedTracked(command);
+  }
+
   bool runSync(const std::vector<std::string>& args) {
     if (args.empty() || args.front().empty()) {
       return false;

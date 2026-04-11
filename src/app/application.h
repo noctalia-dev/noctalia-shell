@@ -40,6 +40,7 @@
 #include "shell/wallpaper/panel/thumbnail_service.h"
 #include "shell/wallpaper/wallpaper.h"
 #include "system/desktop_entry_poll_source.h"
+#include "system/night_light_manager.h"
 #include "system/system_monitor_service.h"
 #include "system/weather_poll_source.h"
 #include "system/weather_service.h"
@@ -85,6 +86,7 @@ private:
   std::unique_ptr<DebugService> m_debugService;
   IdleInhibitor m_idleInhibitor;
   IdleManager m_idleManager;
+  NightLightManager m_nightLightManager;
   std::unique_ptr<MprisService> m_mprisService;
   std::unique_ptr<PowerProfilesService> m_powerProfilesService;
   std::unique_ptr<UPowerService> m_upowerService;

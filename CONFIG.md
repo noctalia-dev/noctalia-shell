@@ -14,6 +14,7 @@ Changes are detected automatically via inotify — no restart required.
 - [Built-in widgets](#built-in-widgets)
 - [Weather](#weather)
 - [Audio](#audio)
+- [Night Light](#night-light)
 - [Idle](#idle)
 - [Shell](#shell)
 - [OSD](#osd)
@@ -389,6 +390,49 @@ enable_overdrive = false   # allow the audio volume sliders to go above 100%
 
 When `enable_overdrive` is `false`, the Control Center output and microphone sliders clamp to `100%`.
 When it is `true`, those sliders allow values up to `150%`.
+
+---
+
+## Night Light
+
+Uses `wlsunset` to apply temperature shifts.
+
+```toml
+[nightlight]
+enabled = false
+force = false                 # force night mode from startup
+auto_detect = true            # use weather coordinates when no manual schedule is set
+
+temperature_day = 6500        # Kelvin, day color temperature
+temperature_night = 4000      # Kelvin, night color temperature
+
+# Option A: explicit schedule
+start_time = "20:30"          # HH:MM (sunset / night starts)
+stop_time = "07:30"           # HH:MM (sunrise / day starts)
+
+# Option B: geolocation schedule (used when start/stop are missing)
+# latitude = 52.5200
+# longitude = 13.4050
+```
+
+Notes:
+- `start_time` + `stop_time` always take priority.
+- If manual times are missing, explicit `latitude` + `longitude` are used.
+- If manual times and explicit coordinates are both missing, Night Light uses WeatherService coordinates.
+- `auto_detect = false` disables weather as the primary mode, but weather is still used as a final fallback when no other schedule is configured.
+- If only one of latitude/longitude is provided, Night Light refuses to start.
+
+IPC force controls:
+
+```sh
+noctalia-ipc enable-nightlight
+noctalia-ipc disable-nightlight
+noctalia-ipc toggle-nightlight
+noctalia-ipc force-nightlight
+```
+
+- `enable-nightlight` / `disable-nightlight` / `toggle-nightlight` control schedule enable state.
+- `force-nightlight` toggles forced night mode.
 
 ---
 

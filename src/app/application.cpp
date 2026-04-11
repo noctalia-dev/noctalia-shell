@@ -20,6 +20,7 @@
 #include <cmath>
 #include <csignal>
 #include <cstdlib>
+#include <optional>
 #include <stdexcept>
 #include <thread>
 
@@ -215,6 +216,11 @@ void Application::initServices() {
   m_idleManager.setCommandRunner([this](const std::string& command) { return runIdleCommand(command); });
   m_idleManager.reload(m_configService.config().idle);
   m_configService.addReloadCallback([this]() { m_idleManager.reload(m_configService.config().idle); });
+  m_nightLightManager.reload(m_configService.config().nightlight);
+  m_configService.addReloadCallback([this]() {
+    m_nightLightManager.clearForceOverride();
+    m_nightLightManager.reload(m_configService.config().nightlight);
+  });
 
   m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
   m_overview.initialize(m_wayland, &m_configService, &m_stateService, &m_wallpaper);
@@ -335,7 +341,19 @@ void Application::initServices() {
   }
 
   m_weatherService.initialize();
+  if (m_weatherService.hasData()) {
+    const WeatherSnapshot& snapshot = m_weatherService.snapshot();
+    m_nightLightManager.setWeatherCoordinates(snapshot.latitude, snapshot.longitude);
+  } else {
+    m_nightLightManager.setWeatherCoordinates(std::nullopt, std::nullopt);
+  }
   m_weatherService.addChangeCallback([this]() {
+    if (m_weatherService.hasData()) {
+      const WeatherSnapshot& snapshot = m_weatherService.snapshot();
+      m_nightLightManager.setWeatherCoordinates(snapshot.latitude, snapshot.longitude);
+    } else {
+      m_nightLightManager.setWeatherCoordinates(std::nullopt, std::nullopt);
+    }
     m_bar.refresh();
     m_panelManager.refresh();
   });
@@ -581,6 +599,38 @@ void Application::initIpc() {
         return "ok\n";
       },
       "toggle-idle-inhibitor", "Toggle the compositor idle inhibitor");
+
+  m_ipcService.registerHandler(
+      "enable-nightlight",
+      [this](const std::string&) -> std::string {
+        m_nightLightManager.setEnabled(true);
+        return "ok\n";
+      },
+      "enable-nightlight", "Enable night light schedule");
+
+  m_ipcService.registerHandler(
+      "disable-nightlight",
+      [this](const std::string&) -> std::string {
+        m_nightLightManager.setEnabled(false);
+        return "ok\n";
+      },
+      "disable-nightlight", "Disable night light schedule");
+
+  m_ipcService.registerHandler(
+      "toggle-nightlight",
+      [this](const std::string&) -> std::string {
+        m_nightLightManager.toggleEnabled();
+        return "ok\n";
+      },
+      "toggle-nightlight", "Toggle night light schedule");
+
+  m_ipcService.registerHandler(
+      "force-nightlight",
+      [this](const std::string&) -> std::string {
+        m_nightLightManager.toggleForceEnabled();
+        return "ok\n";
+      },
+      "force-nightlight", "Toggle forced night light mode");
 }
 
 bool Application::runIdleCommand(const std::string& command) {

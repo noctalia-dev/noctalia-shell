@@ -611,6 +611,38 @@ void ConfigService::loadFromFile(const std::string& path) {
     }
   }
 
+  // Parse [nightlight]
+  if (auto* nightlightTbl = tbl["nightlight"].as_table()) {
+    auto& nightlight = m_config.nightlight;
+    if (auto v = (*nightlightTbl)["enabled"].value<bool>()) {
+      nightlight.enabled = *v;
+    }
+    if (auto v = (*nightlightTbl)["force"].value<bool>()) {
+      nightlight.force = *v;
+    }
+    if (auto v = (*nightlightTbl)["auto_detect"].value<bool>()) {
+      nightlight.autoDetect = *v;
+    }
+    if (auto v = (*nightlightTbl)["start_time"].value<std::string>()) {
+      nightlight.startTime = *v;
+    }
+    if (auto v = (*nightlightTbl)["stop_time"].value<std::string>()) {
+      nightlight.stopTime = *v;
+    }
+    if (auto v = (*nightlightTbl)["latitude"].value<double>()) {
+      nightlight.latitude = *v;
+    }
+    if (auto v = (*nightlightTbl)["longitude"].value<double>()) {
+      nightlight.longitude = *v;
+    }
+    if (auto v = (*nightlightTbl)["temperature_day"].value<int64_t>()) {
+      nightlight.dayTemperature = static_cast<std::int32_t>(*v);
+    }
+    if (auto v = (*nightlightTbl)["temperature_night"].value<int64_t>()) {
+      nightlight.nightTemperature = static_cast<std::int32_t>(*v);
+    }
+  }
+
   // Parse [idle.behavior.*]
   if (auto* idleTbl = tbl["idle"].as_table()) {
     if (auto* behaviorTbl = (*idleTbl)["behavior"].as_table()) {

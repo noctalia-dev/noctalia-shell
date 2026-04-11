@@ -299,6 +299,7 @@ _noctalia_sources = files(
   'src/system/desktop_entry.cpp',
   'src/system/distro_info.cpp',
   'src/system/icon_resolver.cpp',
+  'src/system/night_light_manager.cpp',
   'src/system/system_monitor_service.cpp',
   'src/system/weather_service.cpp',
   'src/time/time_service.cpp',

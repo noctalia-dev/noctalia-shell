@@ -142,6 +142,18 @@ struct AudioConfig {
   bool enableOverdrive = false;
 };
 
+struct NightLightConfig {
+  bool enabled = false;
+  bool force = false;
+  bool autoDetect = true; // use WeatherService coordinates when start/stop and explicit lat/long are not set
+  std::string startTime;  // HH:MM sunset (night start), overrides location mode when paired with stop_time
+  std::string stopTime;   // HH:MM sunrise (day start)
+  std::optional<double> latitude;
+  std::optional<double> longitude;
+  std::int32_t dayTemperature = 6500;
+  std::int32_t nightTemperature = 4000;
+};
+
 struct IdleBehaviorConfig {
   std::string name;
   bool enabled = true;
@@ -162,6 +174,7 @@ struct Config {
   OsdConfig osd;
   WeatherConfig weather;
   AudioConfig audio;
+  NightLightConfig nightlight;
   IdleConfig idle;
 };
 
