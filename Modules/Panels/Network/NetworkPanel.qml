@@ -17,14 +17,15 @@ SmartPanel {
   preferredWidth: Math.round(440 * Style.uiScaleRatio)
   preferredHeight: Math.round(500 * Style.uiScaleRatio)
 
-  // Info panel collapsed by default, view mode persisted in settings
   // Ethernet details UI state (mirrors Wi‑Fi info behavior)
   property bool ethernetInfoExpanded: false
   property bool ethernetDetailsGrid: (Settings.data.network.wifiDetailsViewMode === "grid")
   property int ipVersion: 4
 
-  // Unified panel view mode: "wifi" | "ethernet" (persisted)
+  // Panel view mode: "wifi" | "ethernet" | "vpn" (chosen dynamically on open)
   property string panelViewMode: "wifi"
+  // Reference set by modeTabBar after creation (avoids ReferenceError in onPanelViewModeChanged)
+  property var _modeTabBar: null
 
   // If VPN configs vanish while on VPN tab, switch away
   Connections {
@@ -51,79 +52,6 @@ SmartPanel {
     }
   }
 
-  // VPN connect toast workaround: VPNService's stdout handler doesn't fire
-  // for WireGuard (and possibly other types) because nmcli doesn't print
-  // "successfully activated". We track the pending connect and watch
-  // VPNService.connections (refreshed every 5s / 1s after connect) for
-  // the UUID becoming active.
-  property string _vpnPendingUuid: ""
-  property string _vpnPendingName: ""
-
-  Connections {
-    target: VPNService
-    function onConnectingUuidChanged() {
-      if (VPNService.connectingUuid) {
-        // A new connect started — capture UUID/name
-        root._vpnPendingUuid = VPNService.connectingUuid;
-        const conn = VPNService.connections[root._vpnPendingUuid];
-        root._vpnPendingName = conn ? conn.name : "";
-        _vpnConnectTimeout.restart();
-      }
-    }
-
-    function onConnectingChanged() {
-      if (!VPNService.connecting && root._vpnPendingUuid) {
-        // connecting went false — check why:
-        const conn = VPNService.connections[root._vpnPendingUuid];
-        if (conn && conn.active) {
-          // VPNService's stdout handler worked (OpenVPN etc.) and already
-          // showed a toast + set active. Just clean up.
-          root._vpnPendingUuid = "";
-          root._vpnPendingName = "";
-          _vpnConnectTimeout.stop();
-        } else if (VPNService.lastError) {
-          // stderr handler fired with an error and already showed a
-          // warning toast. Clean up.
-          root._vpnPendingUuid = "";
-          root._vpnPendingName = "";
-          _vpnConnectTimeout.stop();
-        }
-        // Otherwise (WireGuard success): connecting=false via empty stderr
-        // handler, but active not yet set — keep pending, let
-        // onConnectionsChanged pick it up after the next refresh.
-      }
-    }
-  }
-
-  Connections {
-    target: VPNService
-    function onConnectionsChanged() {
-      if (!root._vpnPendingUuid) return;
-      const conn = VPNService.connections[root._vpnPendingUuid];
-      if (conn && conn.active) {
-        ToastService.showNotice(root._vpnPendingName, I18n.tr("toast.vpn.connected", {
-                                                                  "name": root._vpnPendingName
-                                                                }), "shield-lock");
-        root._vpnPendingUuid = "";
-        root._vpnPendingName = "";
-        _vpnConnectTimeout.stop();
-      }
-    }
-  }
-
-  Timer {
-    id: _vpnConnectTimeout
-    interval: 15000
-    repeat: false
-    onTriggered: {
-      if (root._vpnPendingName) {
-        ToastService.showWarning(root._vpnPendingName, I18n.tr("toast.wifi.connection-timeout"), "shield-off");
-      }
-      root._vpnPendingUuid = "";
-      root._vpnPendingName = "";
-    }
-  }
-
   onPanelViewModeChanged: {
     // Sync tab bar (imperative – avoids declarative binding being broken by NTabButton clicks)
     let _tabIdx = 0;
@@ -132,23 +60,22 @@ SmartPanel {
     } else if (panelViewMode === "vpn") {
       _tabIdx = 2;
     }
-    if (modeTabBar && modeTabBar.currentIndex !== _tabIdx) {
-      modeTabBar.currentIndex = _tabIdx;
+    if (_modeTabBar && _modeTabBar.currentIndex !== _tabIdx) {
+      _modeTabBar.currentIndex = _tabIdx;
     }
 
+    ethernetInfoExpanded = false;
+
     if (panelViewMode === "wifi") {
-      ethernetInfoExpanded = false;
       if (NetworkService.wifiEnabled && !NetworkService.scanningActive) {
         NetworkService.scan();
         NetworkService.refreshActiveWifiDetails();
       }
     } else if (panelViewMode === "ethernet") {
-      ethernetInfoExpanded = false;
       if (NetworkService.ethernetConnected) {
         NetworkService.refreshActiveEthernetDetails();
       }
     } else if (panelViewMode === "vpn") {
-      ethernetInfoExpanded = false;
       VPNService.refresh();
     }
   }
@@ -303,6 +230,7 @@ SmartPanel {
           // Mode switch (Wi‑Fi / Ethernet / VPN)
           NTabBar {
             id: modeTabBar
+            Component.onCompleted: root._modeTabBar = modeTabBar
             visible: {
               let count = 0;
               if (NetworkService.wifiAvailable) count++;
@@ -346,7 +274,6 @@ SmartPanel {
       // Unified scrollable content (Wi‑Fi or Ethernet view)
       ColumnLayout {
         id: wifiSectionContainer
-        visible: true
         Layout.fillWidth: true
         spacing: Style.marginM
 
