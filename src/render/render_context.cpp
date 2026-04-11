@@ -253,7 +253,9 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
       auto tint = img->tint();
       tint.a *= effectiveOpacity;
       m_imageProgram.draw(img->textureId(), sw, sh, node->width(), node->height(), tint, effectiveOpacity,
-                          img->cornerRadius(), worldTransform);
+                          img->cornerRadius(), img->borderColor(), img->borderWidth(),
+                          static_cast<int>(img->fitMode()), static_cast<float>(img->textureWidth()),
+                          static_cast<float>(img->textureHeight()), worldTransform);
     }
     break;
   }

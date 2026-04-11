@@ -43,6 +43,12 @@ void Image::setCornerRadius(float radius) {
   markDirty();
 }
 
+void Image::setBorder(const Color& color, float width) {
+  if (m_image != nullptr) {
+    m_image->setBorder(color, width);
+  }
+}
+
 void Image::setBackground(const Color& color) {
   ensureBackground();
   m_background->setFill(color);
@@ -173,27 +179,21 @@ void Image::updateLayout() {
 
   const float paddedWidth = std::max(0.0f, width() - m_padding * 2.0f);
   const float paddedHeight = std::max(0.0f, height() - m_padding * 2.0f);
-  if (m_texture.id == 0 || paddedWidth <= 0.0f || paddedHeight <= 0.0f || m_texture.width <= 0 || m_texture.height <= 0) {
-    m_image->setPosition(m_padding, m_padding);
-    m_image->setSize(paddedWidth, paddedHeight);
-    return;
+  m_image->setPosition(m_padding, m_padding);
+  m_image->setSize(paddedWidth, paddedHeight);
+  m_image->setTextureSize(m_texture.width, m_texture.height);
+
+  ImageFitMode mode = ImageFitMode::Stretch;
+  switch (m_fit) {
+  case ImageFit::Cover:
+    mode = ImageFitMode::Cover;
+    break;
+  case ImageFit::Contain:
+    mode = ImageFitMode::Contain;
+    break;
+  case ImageFit::Stretch:
+    mode = ImageFitMode::Stretch;
+    break;
   }
-
-  float imageWidth = paddedWidth;
-  float imageHeight = paddedHeight;
-
-  if (m_fit != ImageFit::Stretch) {
-    const float textureWidth = static_cast<float>(m_texture.width);
-    const float textureHeight = static_cast<float>(m_texture.height);
-    const float scaleX = paddedWidth / textureWidth;
-    const float scaleY = paddedHeight / textureHeight;
-    const float scale = (m_fit == ImageFit::Cover) ? std::max(scaleX, scaleY) : std::min(scaleX, scaleY);
-    imageWidth = std::max(0.0f, textureWidth * scale);
-    imageHeight = std::max(0.0f, textureHeight * scale);
-  }
-
-  const float imageX = m_padding + std::round((paddedWidth - imageWidth) * 0.5f);
-  const float imageY = m_padding + std::round((paddedHeight - imageHeight) * 0.5f);
-  m_image->setPosition(imageX, imageY);
-  m_image->setSize(imageWidth, imageHeight);
+  m_image->setFitMode(mode);
 }

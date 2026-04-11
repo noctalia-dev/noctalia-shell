@@ -178,7 +178,6 @@ std::string osAgeLabel() {
   if (oldest == 0) {
     return "unknown";
   }
-
   const std::time_t now = std::time(nullptr);
   if (now <= 0 || static_cast<std::uint64_t>(now) <= oldest) {
     return "<1d";
@@ -314,6 +313,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto avatar = std::make_unique<Image>();
   avatar->setCornerRadius(Style::radiusLg * scale);
   avatar->setBackground(palette.surfaceVariant);
+  avatar->setBorder(palette.primary, Style::borderWidth * 2.0f);
   avatar->setFit(ImageFit::Cover);
   avatar->setPadding(1.0f * scale);
   const float avatarSize = Style::controlHeightLg * 2.2f * scale;

@@ -10,7 +10,6 @@ class Flex;
 class Glyph;
 class Image;
 class Label;
-class RectNode;
 class Renderer;
 class ThumbnailService;
 
@@ -50,7 +49,6 @@ public:
 
 private:
   void applyVisualState();
-  void syncOutlineGeometry();
 
   float m_cellWidth;
   float m_cellHeight;
@@ -60,7 +58,6 @@ private:
   Flex* m_thumbBox = nullptr;
   Image* m_thumb = nullptr;
   Glyph* m_folderGlyph = nullptr;
-  RectNode* m_outline = nullptr;
   Label* m_label = nullptr;
 
   WallpaperEntry m_entry;

@@ -23,6 +23,7 @@ public:
 
   void setCornerRadius(float radius);
   void setBackground(const Color& color);
+  void setBorder(const Color& color, float width);
   void setTint(const Color& tint);
   void setFit(ImageFit fit);
   void setPadding(float padding);

@@ -13,6 +13,8 @@ attribute vec2 a_position;
 attribute vec2 a_texcoord;
 uniform vec2 u_surface_size;
 uniform vec2 u_size;
+uniform vec2 u_tex_size;
+uniform int u_fit_mode;
 uniform mat3 u_transform;
 varying vec2 v_texcoord;
 varying vec2 v_local;
@@ -25,7 +27,27 @@ vec2 to_ndc(vec2 pixel_pos) {
 void main() {
     vec2 local = a_position * u_size;
     vec3 pixel = u_transform * vec3(local, 1.0);
-    v_texcoord = a_texcoord;
+
+    vec2 scale = vec2(1.0);
+    if (u_fit_mode != 0 && u_tex_size.x > 0.0 && u_tex_size.y > 0.0 && u_size.x > 0.0 && u_size.y > 0.0) {
+        float rect_aspect = u_size.x / u_size.y;
+        float tex_aspect = u_tex_size.x / u_tex_size.y;
+        if (u_fit_mode == 1) { // Cover
+            if (tex_aspect > rect_aspect) {
+                scale.x = rect_aspect / tex_aspect;
+            } else {
+                scale.y = tex_aspect / rect_aspect;
+            }
+        } else { // Contain
+            if (tex_aspect > rect_aspect) {
+                scale.y = tex_aspect / rect_aspect;
+            } else {
+                scale.x = rect_aspect / tex_aspect;
+            }
+        }
+    }
+    vec2 offset = (vec2(1.0) - scale) * 0.5;
+    v_texcoord = offset + a_texcoord * scale;
     v_local = local;
     gl_Position = vec4(to_ndc(pixel.xy), 0.0, 1.0);
 }
@@ -39,20 +61,56 @@ uniform vec4 u_tint;
 uniform float u_opacity;
 uniform vec2 u_size;
 uniform float u_corner_radius;
+uniform vec4 u_border_color;
+uniform float u_border_width;
 varying vec2 v_texcoord;
 varying vec2 v_local;
 
+float rounded_rect_distance(vec2 centered, vec2 half_size, float radius) {
+    vec2 q = abs(centered) - (half_size - vec2(radius));
+    return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
+}
+
 void main() {
-    vec4 texel = texture2D(u_texture, v_texcoord);
-    vec4 color = texel * u_tint * vec4(1.0, 1.0, 1.0, u_opacity);
-    if (u_corner_radius > 0.0) {
-        float radius = min(u_corner_radius, min(u_size.x, u_size.y) * 0.5);
-        vec2 q = abs(v_local - u_size * 0.5) - (u_size * 0.5 - vec2(radius));
-        float dist = length(max(q, 0.0)) - radius;
-        float aa = 1.0 - smoothstep(0.0, 1.0, dist);
-        color.a *= aa;
+    float aa = 0.85;
+    float radius = min(u_corner_radius, min(u_size.x, u_size.y) * 0.5);
+    vec2 centered = v_local - u_size * 0.5;
+    float outer_distance = rounded_rect_distance(centered, u_size * 0.5, radius);
+    float outer_coverage = 1.0 - smoothstep(-aa, aa, outer_distance);
+    if (outer_coverage <= 0.0) {
+        discard;
     }
-    gl_FragColor = vec4(color.rgb * color.a, color.a);
+
+    vec2 sample_uv = clamp(v_texcoord, vec2(0.0), vec2(1.0));
+    vec4 texel = texture2D(u_texture, sample_uv);
+    if (v_texcoord.x < 0.0 || v_texcoord.x > 1.0 || v_texcoord.y < 0.0 || v_texcoord.y > 1.0) {
+        texel = vec4(0.0);
+    }
+    vec4 fill = texel * u_tint * vec4(1.0, 1.0, 1.0, u_opacity);
+
+    if (u_border_width <= 0.0 || u_border_color.a <= 0.0) {
+        float a = fill.a * outer_coverage;
+        gl_FragColor = vec4(fill.rgb * a, a);
+        return;
+    }
+
+    float inner_radius = max(radius - u_border_width, 0.0);
+    vec2 inner_half = max(u_size * 0.5 - vec2(u_border_width), vec2(0.0));
+    float inner_distance = rounded_rect_distance(centered, inner_half, inner_radius);
+    float inner_coverage = 1.0 - smoothstep(-aa, aa, inner_distance);
+
+    vec3 border_pm = u_border_color.rgb * u_border_color.a * u_opacity;
+    float border_a = u_border_color.a * u_opacity;
+    vec3 fill_pm = fill.rgb * fill.a;
+
+    vec3 combined_rgb = fill_pm + border_pm * (1.0 - fill.a);
+    float combined_a = fill.a + border_a * (1.0 - fill.a);
+
+    vec3 interior_rgb = mix(border_pm, combined_rgb, inner_coverage);
+    float interior_a = mix(border_a, combined_a, inner_coverage);
+
+    float out_a = interior_a * outer_coverage;
+    gl_FragColor = vec4(interior_rgb * outer_coverage, out_a);
 }
 )";
 
@@ -71,11 +129,16 @@ void ImageProgram::ensureInitialized() {
   m_tintLocation = glGetUniformLocation(m_program.id(), "u_tint");
   m_opacityLocation = glGetUniformLocation(m_program.id(), "u_opacity");
   m_cornerRadiusLocation = glGetUniformLocation(m_program.id(), "u_corner_radius");
+  m_borderColorLocation = glGetUniformLocation(m_program.id(), "u_border_color");
+  m_borderWidthLocation = glGetUniformLocation(m_program.id(), "u_border_width");
+  m_texSizeLocation = glGetUniformLocation(m_program.id(), "u_tex_size");
+  m_fitModeLocation = glGetUniformLocation(m_program.id(), "u_fit_mode");
   m_samplerLocation = glGetUniformLocation(m_program.id(), "u_texture");
   m_transformLocation = glGetUniformLocation(m_program.id(), "u_transform");
 
   if (m_positionLocation < 0 || m_texCoordLocation < 0 || m_surfaceSizeLocation < 0 || m_rectLocation < 0 ||
-      m_tintLocation < 0 || m_opacityLocation < 0 || m_cornerRadiusLocation < 0 || m_samplerLocation < 0 ||
+      m_tintLocation < 0 || m_opacityLocation < 0 || m_cornerRadiusLocation < 0 || m_borderColorLocation < 0 ||
+      m_borderWidthLocation < 0 || m_texSizeLocation < 0 || m_fitModeLocation < 0 || m_samplerLocation < 0 ||
       m_transformLocation < 0) {
     throw std::runtime_error("failed to query image shader locations");
   }
@@ -90,12 +153,18 @@ void ImageProgram::destroy() {
   m_tintLocation = -1;
   m_opacityLocation = -1;
   m_cornerRadiusLocation = -1;
+  m_borderColorLocation = -1;
+  m_borderWidthLocation = -1;
+  m_texSizeLocation = -1;
+  m_fitModeLocation = -1;
   m_samplerLocation = -1;
   m_transformLocation = -1;
 }
 
 void ImageProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
-                        const Color& tint, float opacity, float cornerRadius, const Mat3& transform) const {
+                        const Color& tint, float opacity, float cornerRadius, const Color& borderColor,
+                        float borderWidth, int fitMode, float textureWidth, float textureHeight,
+                        const Mat3& transform) const {
   if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
     return;
   }
@@ -114,6 +183,10 @@ void ImageProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight,
   glUniform4f(m_tintLocation, tint.r, tint.g, tint.b, tint.a);
   glUniform1f(m_opacityLocation, opacity);
   glUniform1f(m_cornerRadiusLocation, std::max(0.0f, cornerRadius));
+  glUniform4f(m_borderColorLocation, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+  glUniform1f(m_borderWidthLocation, std::max(0.0f, borderWidth));
+  glUniform2f(m_texSizeLocation, textureWidth, textureHeight);
+  glUniform1i(m_fitModeLocation, fitMode);
   glUniformMatrix3fv(m_transformLocation, 1, GL_FALSE, transform.m.data());
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
