@@ -6,6 +6,7 @@
 #include "dbus/tray/tray_service.h"
 #include "render/render_context.h"
 #include "ui/controls/context_menu.h"
+#include "ui/style.h"
 #include "wayland/layer_surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
@@ -64,74 +65,59 @@ std::optional<BarConfig> resolveTrayBarConfig(ConfigService* config, WaylandConn
   return fallback;
 }
 
-std::int32_t shadowExpandFor(const BarConfig& bar) {
-  if (bar.shadowBlur <= 0) {
-    return 0;
-  }
-  const bool isVertical = (bar.position == "left" || bar.position == "right");
-  if (isVertical) {
-    const std::int32_t inward = bar.position == "right" ? -bar.shadowOffsetX : bar.shadowOffsetX;
-    return bar.shadowBlur + std::max(0, inward);
-  }
-  const std::int32_t inward = bar.position == "bottom" ? -bar.shadowOffsetY : bar.shadowOffsetY;
-  return bar.shadowBlur + std::max(0, inward);
-}
-
 struct PopupPlacement {
   std::int32_t anchorX = 0;
   std::int32_t anchorY = 0;
-  std::uint32_t anchor = XDG_POSITIONER_ANCHOR_BOTTOM_LEFT;
-  std::uint32_t gravity = XDG_POSITIONER_GRAVITY_TOP_LEFT;
-  std::int32_t offsetX = 2;
+  std::int32_t anchorWidth = 1;
+  std::int32_t anchorHeight = 1;
+  std::uint32_t anchor = XDG_POSITIONER_ANCHOR_NONE;
+  std::uint32_t gravity = XDG_POSITIONER_GRAVITY_TOP;
+  std::int32_t offsetX = 0;
   std::int32_t offsetY = 2;
   ContextSubmenuDirection submenuDirection = ContextSubmenuDirection::Right;
 };
 
 PopupPlacement popupPlacementForBar(const BarConfig& bar, std::int32_t anchorX, std::int32_t anchorY) {
-  constexpr std::int32_t kGap = 2;
+  const std::int32_t kGap = std::max(2, static_cast<std::int32_t>(Style::spaceMd));
+  const std::int32_t iconSize = std::clamp(bar.height - 10, 16, 40);
+  const std::int32_t halfIcon = iconSize / 2;
   PopupPlacement placement{
-      .anchorX = anchorX,
-      .anchorY = anchorY,
+      .anchorX = anchorX - halfIcon,
+      .anchorY = anchorY - halfIcon,
+      .anchorWidth = iconSize,
+      .anchorHeight = iconSize,
   };
 
   if (bar.position == "bottom") {
-    const std::int32_t barTop = shadowExpandFor(bar);
-    placement.anchorY = barTop;
-    placement.anchor = XDG_POSITIONER_ANCHOR_TOP_LEFT;
-    placement.gravity = XDG_POSITIONER_GRAVITY_BOTTOM_LEFT;
-    placement.offsetX = kGap;
+    placement.anchor = XDG_POSITIONER_ANCHOR_TOP;
+    placement.gravity = XDG_POSITIONER_GRAVITY_TOP;
+    placement.offsetX = 0;
     placement.offsetY = -kGap;
     placement.submenuDirection = ContextSubmenuDirection::Right;
     return placement;
   }
 
   if (bar.position == "left") {
-    const std::int32_t barRight = bar.marginH + bar.height;
-    placement.anchorX = barRight;
-    placement.anchor = XDG_POSITIONER_ANCHOR_TOP_RIGHT;
-    placement.gravity = XDG_POSITIONER_GRAVITY_TOP_LEFT;
+    placement.anchor = XDG_POSITIONER_ANCHOR_RIGHT;
+    placement.gravity = XDG_POSITIONER_GRAVITY_RIGHT;
     placement.offsetX = kGap;
-    placement.offsetY = kGap;
+    placement.offsetY = 0;
     placement.submenuDirection = ContextSubmenuDirection::Right;
     return placement;
   }
 
   if (bar.position == "right") {
-    const std::int32_t barLeft = shadowExpandFor(bar);
-    placement.anchorX = barLeft;
-    placement.anchor = XDG_POSITIONER_ANCHOR_TOP_LEFT;
-    placement.gravity = XDG_POSITIONER_GRAVITY_TOP_RIGHT;
+    placement.anchor = XDG_POSITIONER_ANCHOR_LEFT;
+    placement.gravity = XDG_POSITIONER_GRAVITY_LEFT;
     placement.offsetX = -kGap;
-    placement.offsetY = kGap;
+    placement.offsetY = 0;
     placement.submenuDirection = ContextSubmenuDirection::Left;
     return placement;
   }
 
-  const std::int32_t barBottom = bar.marginV + bar.height;
-  placement.anchorY = barBottom;
-  placement.anchor = XDG_POSITIONER_ANCHOR_BOTTOM_LEFT;
-  placement.gravity = XDG_POSITIONER_GRAVITY_TOP_LEFT;
-  placement.offsetX = kGap;
+  placement.anchor = XDG_POSITIONER_ANCHOR_BOTTOM;
+  placement.gravity = XDG_POSITIONER_GRAVITY_BOTTOM;
+  placement.offsetX = 0;
   placement.offsetY = kGap;
   placement.submenuDirection = ContextSubmenuDirection::Right;
   return placement;
@@ -334,8 +320,8 @@ void TrayMenu::ensureSurface() {
   auto popupConfig = PopupSurfaceConfig{
       .anchorX = anchorX,
       .anchorY = anchorY,
-      .anchorWidth = 1,
-      .anchorHeight = 1,
+      .anchorWidth = placement.anchorWidth,
+      .anchorHeight = placement.anchorHeight,
       .width = surfaceWidth,
       .height = surfaceHeight,
       .anchor = placement.anchor,

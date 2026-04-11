@@ -1,7 +1,6 @@
 #pragma once
 
 #include "dbus/tray/tray_service.h"
-#include "render/core/texture_manager.h"
 #include "shell/widget/widget.h"
 #include "system/desktop_entry.h"
 #include "system/icon_resolver.h"
@@ -12,6 +11,7 @@
 #include <vector>
 
 class Flex;
+class Image;
 class TrayService;
 
 class TrayWidget : public Widget {
@@ -36,5 +36,5 @@ private:
   std::unordered_map<std::string, std::string> m_preferredIconPaths;
   std::uint64_t m_desktopEntriesVersion = 0;
   std::vector<TrayItemInfo> m_items;
-  std::vector<TextureHandle> m_loadedTextures;
+  std::vector<Image*> m_loadedImages;
 };

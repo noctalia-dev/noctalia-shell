@@ -3,12 +3,12 @@
 #include "core/log.h"
 #include "dbus/tray/tray_service.h"
 #include "render/core/renderer.h"
-#include "render/scene/image_node.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/glyph_registry.h"
+#include "ui/controls/image.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -203,10 +203,12 @@ void TrayWidget::rebuild(Renderer& renderer) {
     return;
   }
 
-  for (auto& texture : m_loadedTextures) {
-    renderer.textureManager().unload(texture);
+  for (auto* image : m_loadedImages) {
+    if (image != nullptr) {
+      image->clear(renderer);
+    }
   }
-  m_loadedTextures.clear();
+  m_loadedImages.clear();
 
   while (!m_container->children().empty()) {
     m_container->removeChild(m_container->children().back().get());
@@ -223,20 +225,16 @@ void TrayWidget::rebuild(Renderer& renderer) {
     float iconH = iconSize;
 
     if (!iconPath.empty()) {
-      auto texture = renderer.textureManager().loadFromFile(iconPath, iconRequestSize, true);
-      if (texture.id != 0) {
-        auto image = std::make_unique<ImageNode>();
-        image->setTextureId(texture.id);
-
-        const float maxDim = static_cast<float>(std::max(texture.width, texture.height));
-        iconW = maxDim > 0.0f ? iconSize * (static_cast<float>(texture.width) / maxDim) : iconSize;
-        iconH = maxDim > 0.0f ? iconSize * (static_cast<float>(texture.height) / maxDim) : iconSize;
-        image->setSize(iconW, iconH);
-
+      auto image = std::make_unique<Image>();
+      image->setFit(ImageFit::Contain);
+      image->setSize(iconSize, iconSize);
+      if (image->setSourceFile(renderer, iconPath, iconRequestSize, true)) {
+        iconW = iconSize;
+        iconH = iconSize;
+        kLog.debug("tray widget icon id={} source=file path={} size={}x{}", item.id, iconPath, image->sourceWidth(),
+                   image->sourceHeight());
+        m_loadedImages.push_back(image.get());
         iconNode = std::move(image);
-        m_loadedTextures.push_back(texture);
-        kLog.debug("tray widget icon id={} source=file path={} size={}x{}", item.id, iconPath, texture.width,
-                texture.height);
       } else {
         kLog.debug("tray widget icon id={} source=file path={} failed-to-load", item.id, iconPath);
       }
@@ -251,20 +249,16 @@ void TrayWidget::rebuild(Renderer& renderer) {
           item.needsAttention && !item.attentionArgb32.empty() ? item.attentionHeight : item.iconHeight;
 
       if (!pixmap.empty() && pixmapW > 0 && pixmapH > 0) {
-        auto texture = renderer.textureManager().loadFromArgbPixmap(pixmap.data(), pixmapW, pixmapH, true);
-        if (texture.id != 0) {
-          auto image = std::make_unique<ImageNode>();
-          image->setTextureId(texture.id);
-
-          const float maxDim = static_cast<float>(std::max(texture.width, texture.height));
-          iconW = maxDim > 0.0f ? iconSize * (static_cast<float>(texture.width) / maxDim) : iconSize;
-          iconH = maxDim > 0.0f ? iconSize * (static_cast<float>(texture.height) / maxDim) : iconSize;
-          image->setSize(iconW, iconH);
-
-          iconNode = std::move(image);
-          m_loadedTextures.push_back(texture);
+        auto image = std::make_unique<Image>();
+        image->setFit(ImageFit::Contain);
+        image->setSize(iconSize, iconSize);
+        if (image->setSourceArgbPixmap(renderer, pixmap.data(), pixmapW, pixmapH, true)) {
+          iconW = iconSize;
+          iconH = iconSize;
           kLog.debug("tray widget icon id={} source=pixmap size={}x{} (bytes={})", item.id, pixmapW, pixmapH,
-                  pixmap.size());
+                     pixmap.size());
+          m_loadedImages.push_back(image.get());
+          iconNode = std::move(image);
         } else {
           kLog.debug("tray widget icon id={} source=pixmap size={}x{} failed-to-load", item.id, pixmapW, pixmapH);
         }
