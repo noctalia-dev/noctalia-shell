@@ -170,6 +170,7 @@ void WallpaperPanel::create() {
   pagination->setDirection(FlexDirection::Horizontal);
   pagination->setAlign(FlexAlign::Center);
   pagination->setJustify(FlexJustify::Center);
+  pagination->setFillParentMainAxis(true);
   pagination->setGap(Style::spaceMd * scale);
   m_pagination = pagination.get();
 

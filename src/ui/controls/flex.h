@@ -45,6 +45,7 @@ public:
 
   void setMinWidth(float minWidth);
   void setMinHeight(float minHeight);
+  void setFillParentMainAxis(bool fill);
 
   void setRowLayout();
 
@@ -74,4 +75,5 @@ private:
   float m_paddingLeft = 0.0f;
   float m_minWidth = 0.0f;
   float m_minHeight = 0.0f;
+  bool m_fillParentMainAxis = false;
 };

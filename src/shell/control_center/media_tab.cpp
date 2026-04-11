@@ -284,6 +284,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   controlsRow->setDirection(FlexDirection::Horizontal);
   controlsRow->setAlign(FlexAlign::Center);
   controlsRow->setJustify(FlexJustify::Center);
+  controlsRow->setFillParentMainAxis(true);
   controlsRow->setGap(0.0f);
 
   auto controls = std::make_unique<Flex>();
