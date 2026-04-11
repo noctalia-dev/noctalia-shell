@@ -351,6 +351,7 @@ _noctalia_sources = files(
   'src/theme/m3_schemes.cpp',
   'src/theme/custom_schemes.cpp',
   'src/theme/json_output.cpp',
+  'src/theme/template_engine.cpp',
   'src/theme/cli.cpp',
   'src/ipc/cli.cpp',
 )

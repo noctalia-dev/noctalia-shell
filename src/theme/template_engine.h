@@ -1,0 +1,49 @@
+#pragma once
+
+#include <filesystem>
+#include <string>
+#include <unordered_map>
+
+#include "theme/palette.h"
+
+namespace noctalia::theme {
+
+  struct RenderResult {
+    std::string text;
+    int errorCount = 0;
+  };
+
+  struct RenderFileResult {
+    bool success = false;
+    bool wrote = false;
+    int errorCount = 0;
+  };
+
+  class TemplateEngine {
+  public:
+    using ModeMap = std::unordered_map<std::string, std::string>;
+    using ThemeData = std::unordered_map<std::string, ModeMap>;
+
+    struct Options {
+      std::string defaultMode = "dark";
+      std::string imagePath;
+      std::string closestColor;
+      std::string schemeType = "content";
+      bool verbose = true;
+    };
+
+    explicit TemplateEngine(ThemeData themeData);
+    TemplateEngine(ThemeData themeData, Options options);
+
+    static ThemeData makeThemeData(const GeneratedPalette& palette);
+
+    RenderResult render(std::string_view templateText);
+    RenderFileResult renderFile(const std::filesystem::path& inputPath, const std::filesystem::path& outputPath);
+    bool processConfigFile(const std::filesystem::path& configPath);
+
+  private:
+    ThemeData m_themeData;
+    Options m_options;
+  };
+
+} // namespace noctalia::theme
