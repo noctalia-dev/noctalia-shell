@@ -151,6 +151,7 @@ void ConfigService::checkReload() {
     return;
   }
 
+  kLog.info("config changed, reloading");
   m_config = Config{};
   if (!m_configPath.empty() && std::filesystem::exists(m_configPath)) {
     loadFromFile(m_configPath);
