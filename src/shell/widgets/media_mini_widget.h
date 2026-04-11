@@ -39,4 +39,6 @@ private:
   std::string m_lastArtUrl;
   std::string m_lastPlaybackStatus;
   std::unordered_set<std::string> m_pendingArtDownloads;
+  bool m_clickReady = false;
+  bool m_clickArmed = false;
 };

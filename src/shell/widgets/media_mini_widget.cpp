@@ -162,7 +162,22 @@ MediaMiniWidget::MediaMiniWidget(MprisService* mpris, HttpClient* httpClient, fl
 
 void MediaMiniWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
+  area->setOnMotion([this](const InputArea::PointerData& /*data*/) { m_clickReady = true; });
+  area->setOnLeave([this]() {
+    m_clickReady = false;
+    m_clickArmed = false;
+  });
+  area->setOnPress([this](const InputArea::PointerData& data) {
+    if (!data.pressed) {
+      return;
+    }
+    m_clickArmed = m_clickReady && data.button == BTN_LEFT;
+  });
+  area->setOnClick([this](const InputArea::PointerData& data) {
+    if (!m_clickArmed || data.button != BTN_LEFT) {
+      return;
+    }
+    m_clickArmed = false;
     if (m_mpris != nullptr) {
       m_mpris->playPauseActive();
     }
