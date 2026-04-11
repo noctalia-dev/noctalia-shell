@@ -547,30 +547,6 @@ void Application::initIpc() {
       "toggle-panel <id>", "Toggle a panel by id (e.g. control-center)");
 
   m_ipcService.registerHandler(
-      "toggle-session-menu",
-      [this](const std::string&) -> std::string {
-        m_panelManager.togglePanel("session-menu");
-        return "ok\n";
-      },
-      "toggle-session-menu", "Toggle the session actions panel");
-
-  m_ipcService.registerHandler(
-      "toggle-launcher",
-      [this](const std::string&) -> std::string {
-        m_panelManager.togglePanel("launcher");
-        return "ok\n";
-      },
-      "toggle-launcher", "Toggle the application launcher");
-
-  m_ipcService.registerHandler(
-      "toggle-clipboard",
-      [this](const std::string&) -> std::string {
-        m_panelManager.togglePanel("clipboard");
-        return "ok\n";
-      },
-      "toggle-clipboard", "Toggle the clipboard history panel");
-
-  m_ipcService.registerHandler(
       "enable-idle-inhibitor",
       [this](const std::string&) -> std::string {
         if (!m_idleInhibitor.available()) {
