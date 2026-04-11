@@ -270,7 +270,7 @@ void MediaMiniWidget::syncState(Renderer& renderer) {
     }
 
     if (!artPath.empty()) {
-      if (!m_art->setSourceFile(renderer, artPath, static_cast<int>(std::round(64.0f * m_contentScale)))) {
+      if (!m_art->setSourceFile(renderer, artPath, static_cast<int>(std::round(64.0f * m_contentScale)), true)) {
         kLog.warn("artwork load failed url=\"{}\" path=\"{}\"", m_lastArtUrl, artPath);
         m_art->clear(renderer);
       } else {

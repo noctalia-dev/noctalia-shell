@@ -31,10 +31,6 @@ bool endsWith(const std::string& str, const std::string& suffix) {
   return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
 }
 
-bool isPowerOfTwo(int value) {
-  return value > 0 && (value & (value - 1)) == 0;
-}
-
 std::vector<std::uint8_t> readFile(const std::string& path) {
   std::ifstream file(path, std::ios::binary | std::ios::ate);
   if (!file) {
@@ -53,14 +49,14 @@ std::vector<std::uint8_t> readFile(const std::string& path) {
 } // namespace
 
 TextureHandle TextureManager::decodeEncodedRaster(const std::uint8_t* data, std::size_t size,
-                                                  const std::string* debugPath) {
+                                                  const std::string* debugPath, bool mipmap) {
   if (data == nullptr || size == 0) {
     return {};
   }
 
   std::string errorMessage;
   if (auto decoded = decodeRasterImage(data, size, &errorMessage)) {
-    return uploadRgba(decoded->pixels.data(), decoded->width, decoded->height);
+    return uploadRgba(decoded->pixels.data(), decoded->width, decoded->height, mipmap);
   }
 
   if (debugPath != nullptr) {
@@ -71,7 +67,7 @@ TextureHandle TextureManager::decodeEncodedRaster(const std::uint8_t* data, std:
 
 TextureManager::~TextureManager() { cleanup(); }
 
-TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSize) {
+TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSize, bool mipmap) {
   if (endsWith(path, ".svg") || endsWith(path, ".SVG")) {
     // SVG rasterization via nanosvg
     auto fileData = readFile(path);
@@ -110,7 +106,7 @@ TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSi
     nsvgDeleteRasterizer(rast);
     nsvgDelete(image);
 
-    return uploadRgba(pixels.data(), w, h);
+    return uploadRgba(pixels.data(), w, h, mipmap);
   }
 
   // Raster images via Wuffs' stb-compatible decoder.
@@ -120,14 +116,16 @@ TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSi
     return {};
   }
 
-  return decodeEncodedRaster(fileData.data(), fileData.size(), &path);
+  return decodeEncodedRaster(fileData.data(), fileData.size(), &path, mipmap);
 }
 
-TextureHandle TextureManager::loadFromEncodedBytes(const std::uint8_t* data, std::size_t size) {
-  return decodeEncodedRaster(data, size);
+TextureHandle TextureManager::loadFromEncodedBytes(const std::uint8_t* data, std::size_t size,
+                                                   bool mipmap) {
+  return decodeEncodedRaster(data, size, nullptr, mipmap);
 }
 
-TextureHandle TextureManager::loadFromArgbPixmap(const std::uint8_t* data, int width, int height) {
+TextureHandle TextureManager::loadFromArgbPixmap(const std::uint8_t* data, int width, int height,
+                                                 bool mipmap) {
   if (data == nullptr || width <= 0 || height <= 0) {
     return {};
   }
@@ -145,7 +143,7 @@ TextureHandle TextureManager::loadFromArgbPixmap(const std::uint8_t* data, int w
     rgba[dstIdx + 3] = data[srcIdx + 0]; // A
   }
 
-  return uploadRgba(rgba.data(), width, height);
+  return uploadRgba(rgba.data(), width, height, mipmap);
 }
 
 void TextureManager::unload(TextureHandle& handle) {
@@ -163,14 +161,15 @@ void TextureManager::cleanup() {
   }
 }
 
-TextureHandle TextureManager::uploadRgba(const std::uint8_t* data, int width, int height) {
+TextureHandle TextureManager::uploadRgba(const std::uint8_t* data, int width, int height,
+                                         bool mipmap) {
   GLuint tex = 0;
   glGenTextures(1, &tex);
   glBindTexture(GL_TEXTURE_2D, tex);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  if (isPowerOfTwo(width) && isPowerOfTwo(height)) {
+  if (mipmap) {
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   } else {

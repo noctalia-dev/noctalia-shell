@@ -223,7 +223,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
     float iconH = iconSize;
 
     if (!iconPath.empty()) {
-      auto texture = renderer.textureManager().loadFromFile(iconPath, iconRequestSize);
+      auto texture = renderer.textureManager().loadFromFile(iconPath, iconRequestSize, true);
       if (texture.id != 0) {
         auto image = std::make_unique<ImageNode>();
         image->setTextureId(texture.id);
@@ -251,7 +251,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
           item.needsAttention && !item.attentionArgb32.empty() ? item.attentionHeight : item.iconHeight;
 
       if (!pixmap.empty() && pixmapW > 0 && pixmapH > 0) {
-        auto texture = renderer.textureManager().loadFromArgbPixmap(pixmap.data(), pixmapW, pixmapH);
+        auto texture = renderer.textureManager().loadFromArgbPixmap(pixmap.data(), pixmapW, pixmapH, true);
         if (texture.id != 0) {
           auto image = std::make_unique<ImageNode>();
           image->setTextureId(texture.id);

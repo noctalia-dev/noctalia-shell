@@ -77,7 +77,8 @@ void Image::setPadding(float padding) {
   updateLayout();
 }
 
-bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targetSize) {
+bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targetSize,
+                          bool mipmap) {
   if (m_ownsTexture && path == m_sourcePath && m_texture.id != 0) {
     return true;
   }
@@ -88,7 +89,7 @@ bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targe
     return false;
   }
 
-  m_texture = renderer.textureManager().loadFromFile(path, targetSize);
+  m_texture = renderer.textureManager().loadFromFile(path, targetSize, mipmap);
   if (m_texture.id == 0) {
     m_sourcePath.clear();
     if (m_image != nullptr) {
@@ -106,14 +107,15 @@ bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targe
   return true;
 }
 
-bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::size_t size) {
+bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::size_t size,
+                           bool mipmap) {
   clear(renderer);
 
   if (data == nullptr || size == 0) {
     return false;
   }
 
-  m_texture = renderer.textureManager().loadFromEncodedBytes(data, size);
+  m_texture = renderer.textureManager().loadFromEncodedBytes(data, size, mipmap);
   if (m_texture.id == 0) {
     m_sourcePath.clear();
     if (m_image != nullptr) {
