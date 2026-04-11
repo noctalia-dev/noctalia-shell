@@ -23,6 +23,7 @@
 #include <chrono>
 #include <memory>
 #include <utility>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -84,6 +85,7 @@ void WallpaperPanel::create() {
     refreshScan();
     applyFilter();
     resetPage();
+    resetSelection();
     applyPage();
     rebuildBreadcrumb();
     m_dirty = true;
@@ -108,11 +110,13 @@ void WallpaperPanel::create() {
       m_filterQuery = m_pendingFilterQuery;
       applyFilter();
       resetPage();
+      resetSelection();
       applyPage();
       m_dirty = true;
       PanelManager::instance().refresh();
     });
   });
+  filter->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t modifiers) { return handleKeyEvent(sym, modifiers); });
   m_filterInput = static_cast<Input*>(toolbar->addChild(std::move(filter)));
 
   auto flattenLabel = std::make_unique<Label>();
@@ -128,6 +132,7 @@ void WallpaperPanel::create() {
     refreshScan();
     applyFilter();
     resetPage();
+    resetSelection();
     applyPage();
     m_dirty = true;
     PanelManager::instance().refresh();
@@ -143,6 +148,7 @@ void WallpaperPanel::create() {
     refreshScan();
     applyFilter();
     resetPage();
+    resetSelection();
     applyPage();
     m_dirty = true;
     PanelManager::instance().refresh();
@@ -162,6 +168,46 @@ void WallpaperPanel::create() {
     } else {
       applyWallpaperFromEntry(entry);
     }
+  });
+  m_grid->setOnTileMotion([this](std::size_t index) {
+    const std::size_t visibleIndex = m_currentPage * WallpaperPageGrid::kPageSize + index;
+    if (visibleIndex >= m_visibleEntries.size()) {
+      return;
+    }
+    if (!m_mouseActive) {
+      m_mouseActive = true;
+    }
+    if (visibleIndex == m_selectedVisibleIndex || visibleIndex == m_hoverVisibleIndex) {
+      return;
+    }
+    m_hoverVisibleIndex = visibleIndex;
+    syncGridSelection();
+    m_dirty = true;
+    PanelManager::instance().refresh();
+  });
+  m_grid->setOnTileEnter([this](std::size_t index) {
+    if (!m_mouseActive) {
+      return;
+    }
+    const std::size_t visibleIndex = m_currentPage * WallpaperPageGrid::kPageSize + index;
+    if (visibleIndex >= m_visibleEntries.size() || visibleIndex == m_selectedVisibleIndex ||
+        visibleIndex == m_hoverVisibleIndex) {
+      return;
+    }
+    m_hoverVisibleIndex = visibleIndex;
+    syncGridSelection();
+    m_dirty = true;
+    PanelManager::instance().refresh();
+  });
+  m_grid->setOnTileLeave([this](std::size_t index) {
+    const std::size_t visibleIndex = m_currentPage * WallpaperPageGrid::kPageSize + index;
+    if (m_hoverVisibleIndex != visibleIndex) {
+      return;
+    }
+    m_hoverVisibleIndex = static_cast<std::size_t>(-1);
+    syncGridSelection();
+    m_dirty = true;
+    PanelManager::instance().refresh();
   });
   root->addChild(std::move(grid));
 
@@ -183,6 +229,12 @@ void WallpaperPanel::create() {
       return;
     }
     m_currentPage--;
+    const std::size_t firstIndex = m_currentPage * WallpaperPageGrid::kPageSize;
+    if (firstIndex < m_visibleEntries.size()) {
+      m_selectedVisibleIndex = firstIndex;
+    }
+    m_hoverVisibleIndex = static_cast<std::size_t>(-1);
+    m_mouseActive = false;
     applyPage();
     m_dirty = true;
     PanelManager::instance().refresh();
@@ -204,6 +256,12 @@ void WallpaperPanel::create() {
       return;
     }
     m_currentPage++;
+    const std::size_t firstIndex = m_currentPage * WallpaperPageGrid::kPageSize;
+    if (firstIndex < m_visibleEntries.size()) {
+      m_selectedVisibleIndex = firstIndex;
+    }
+    m_hoverVisibleIndex = static_cast<std::size_t>(-1);
+    m_mouseActive = false;
     applyPage();
     m_dirty = true;
     PanelManager::instance().refresh();
@@ -271,6 +329,7 @@ void WallpaperPanel::onOpen(std::string_view /*context*/) {
   refreshScan();
   applyFilter();
   resetPage();
+  resetSelection();
   applyPage();
   rebuildBreadcrumb();
   m_dirty = true;
@@ -375,12 +434,16 @@ void WallpaperPanel::applyFilter() {
   m_visibleEntries.clear();
   const auto dir = activeDirectoryForSelection();
   if (dir.empty()) {
+    resetSelection();
     return;
   }
   const auto& result = m_scanner.scan(dir, m_flatten);
 
   if (m_filterQuery.empty()) {
     m_visibleEntries = result.entries;
+    if (m_selectedVisibleIndex >= m_visibleEntries.size()) {
+      resetSelection();
+    }
     return;
   }
 
@@ -390,6 +453,9 @@ void WallpaperPanel::applyFilter() {
     if (toLower(e.name).find(needle) != std::string::npos) {
       m_visibleEntries.push_back(e);
     }
+  }
+  if (m_selectedVisibleIndex >= m_visibleEntries.size()) {
+    resetSelection();
   }
 }
 
@@ -417,6 +483,7 @@ void WallpaperPanel::applyPage() {
   const std::size_t count = (start >= total) ? 0 : std::min(pageSize, total - start);
 
   m_grid->setPage(count == 0 ? nullptr : m_visibleEntries.data() + start, count);
+  syncGridSelection();
 
   if (m_pageLabel != nullptr) {
     if (total == 0) {
@@ -431,6 +498,108 @@ void WallpaperPanel::applyPage() {
   if (m_nextButton != nullptr) {
     m_nextButton->setEnabled(total > 0 && m_currentPage + 1 < pages);
   }
+}
+
+void WallpaperPanel::resetSelection() {
+  m_selectedVisibleIndex = 0;
+  m_hoverVisibleIndex = static_cast<std::size_t>(-1);
+  m_mouseActive = false;
+}
+
+void WallpaperPanel::syncGridSelection() {
+  if (m_grid == nullptr) {
+    return;
+  }
+
+  const std::size_t pageStart = m_currentPage * WallpaperPageGrid::kPageSize;
+  const std::size_t pageEnd = pageStart + WallpaperPageGrid::kPageSize;
+  const std::size_t selectedIndex =
+      (m_selectedVisibleIndex < m_visibleEntries.size() && m_selectedVisibleIndex >= pageStart &&
+       m_selectedVisibleIndex < pageEnd)
+          ? (m_selectedVisibleIndex - pageStart)
+          : WallpaperPageGrid::kPageSize;
+  const std::size_t hoverIndex =
+      (m_hoverVisibleIndex < m_visibleEntries.size() && m_hoverVisibleIndex >= pageStart && m_hoverVisibleIndex < pageEnd)
+          ? (m_hoverVisibleIndex - pageStart)
+          : WallpaperPageGrid::kPageSize;
+
+  m_grid->setHighlightedIndex(selectedIndex, hoverIndex, m_mouseActive);
+}
+
+void WallpaperPanel::selectVisibleIndex(std::size_t index) {
+  if (m_visibleEntries.empty() || index >= m_visibleEntries.size()) {
+    return;
+  }
+
+  m_selectedVisibleIndex = index;
+  m_hoverVisibleIndex = static_cast<std::size_t>(-1);
+  m_mouseActive = false;
+
+  const std::size_t nextPage = index / WallpaperPageGrid::kPageSize;
+  if (nextPage != m_currentPage) {
+    m_currentPage = nextPage;
+    applyPage();
+  } else {
+    syncGridSelection();
+  }
+
+  m_dirty = true;
+  PanelManager::instance().refresh();
+}
+
+void WallpaperPanel::activateSelectedEntry() {
+  if (m_selectedVisibleIndex >= m_visibleEntries.size()) {
+    return;
+  }
+
+  const auto& entry = m_visibleEntries[m_selectedVisibleIndex];
+  if (entry.isDir) {
+    navigateInto(entry.absPath);
+  } else {
+    applyWallpaperFromEntry(entry);
+  }
+}
+
+bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*/) {
+  if (m_visibleEntries.empty()) {
+    return false;
+  }
+
+  if (sym == XKB_KEY_Left) {
+    if (m_selectedVisibleIndex > 0) {
+      selectVisibleIndex(m_selectedVisibleIndex - 1);
+    }
+    return true;
+  }
+
+  if (sym == XKB_KEY_Right) {
+    if (m_selectedVisibleIndex + 1 < m_visibleEntries.size()) {
+      selectVisibleIndex(m_selectedVisibleIndex + 1);
+    }
+    return true;
+  }
+
+  if (sym == XKB_KEY_Up) {
+    if (m_selectedVisibleIndex >= WallpaperPageGrid::kColumns) {
+      selectVisibleIndex(m_selectedVisibleIndex - WallpaperPageGrid::kColumns);
+    }
+    return true;
+  }
+
+  if (sym == XKB_KEY_Down) {
+    const std::size_t nextIndex = m_selectedVisibleIndex + WallpaperPageGrid::kColumns;
+    if (nextIndex < m_visibleEntries.size()) {
+      selectVisibleIndex(nextIndex);
+    }
+    return true;
+  }
+
+  if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
+    activateSelectedEntry();
+    return true;
+  }
+
+  return false;
 }
 
 void WallpaperPanel::rebuildBreadcrumb() {
@@ -465,6 +634,7 @@ void WallpaperPanel::navigateInto(const std::filesystem::path& dir) {
   refreshScan();
   applyFilter();
   resetPage();
+  resetSelection();
   applyPage();
   rebuildBreadcrumb();
   m_dirty = true;
@@ -479,6 +649,7 @@ void WallpaperPanel::navigateUp() {
   refreshScan();
   applyFilter();
   resetPage();
+  resetSelection();
   applyPage();
   rebuildBreadcrumb();
   m_dirty = true;

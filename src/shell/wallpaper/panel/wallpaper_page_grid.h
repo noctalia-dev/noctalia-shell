@@ -17,6 +17,8 @@ class ThumbnailService;
 // ThumbnailService and request new ones.
 class WallpaperPageGrid : public Node {
 public:
+  using TileIndexCallback = std::function<void(std::size_t index)>;
+
   static constexpr std::size_t kColumns = 5;
   static constexpr std::size_t kRows = 4;
   static constexpr std::size_t kPageSize = kColumns * kRows;
@@ -29,8 +31,12 @@ public:
   void setPage(const WallpaperEntry* entries, std::size_t count);
 
   void setOnTileClick(WallpaperTile::ClickCallback callback);
+  void setOnTileMotion(TileIndexCallback callback);
+  void setOnTileEnter(TileIndexCallback callback);
+  void setOnTileLeave(TileIndexCallback callback);
   void setRenderer(Renderer* renderer);
   void setThumbnailService(ThumbnailService* service);
+  void setHighlightedIndex(std::size_t selectedIndex, std::size_t hoverIndex, bool hoverEnabled);
 
   // Release and clear every tile's current thumbnail. Called by the panel on
   // close so no GL textures outlive the panel.
@@ -56,4 +62,10 @@ private:
 
   std::vector<WallpaperTile*> m_pool;
   WallpaperTile::ClickCallback m_onTileClick;
+  TileIndexCallback m_onTileMotion;
+  TileIndexCallback m_onTileEnter;
+  TileIndexCallback m_onTileLeave;
+  std::size_t m_selectedIndex = kPageSize;
+  std::size_t m_hoverIndex = kPageSize;
+  bool m_hoverEnabled = false;
 };

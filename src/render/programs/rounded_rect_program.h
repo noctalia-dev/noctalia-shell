@@ -7,6 +7,7 @@
 #include <GLES2/gl2.h>
 
 enum class FillMode {
+  None,
   Solid,
   LinearGradient,
 };

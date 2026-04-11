@@ -57,6 +57,11 @@ private:
   void applyWallpaperFromEntry(const WallpaperEntry& entry);
   void applyPage();
   void resetPage();
+  void resetSelection();
+  void syncGridSelection();
+  void selectVisibleIndex(std::size_t index);
+  void activateSelectedEntry();
+  [[nodiscard]] bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   [[nodiscard]] std::size_t pageCount() const noexcept;
   [[nodiscard]] std::filesystem::path activeDirectoryForSelection() const;
   [[nodiscard]] std::filesystem::path rootDirectoryForSelection() const;
@@ -101,6 +106,9 @@ private:
 
   bool m_flatten = false;
   std::size_t m_currentPage = 0;
+  std::size_t m_selectedVisibleIndex = 0;
+  std::size_t m_hoverVisibleIndex = static_cast<std::size_t>(-1);
+  bool m_mouseActive = false;
   float m_lastWidth = 0.0f;
   float m_lastHeight = 0.0f;
   bool m_dirty = false;

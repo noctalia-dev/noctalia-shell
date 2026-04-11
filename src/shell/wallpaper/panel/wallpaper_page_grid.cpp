@@ -4,6 +4,7 @@
 #include "ui/style.h"
 
 #include <cmath>
+#include <functional>
 #include <memory>
 
 WallpaperPageGrid::WallpaperPageGrid(float contentScale) : m_contentScale(contentScale) {
@@ -26,6 +27,10 @@ void WallpaperPageGrid::setOnTileClick(WallpaperTile::ClickCallback callback) {
   }
 }
 
+void WallpaperPageGrid::setOnTileMotion(TileIndexCallback callback) { m_onTileMotion = std::move(callback); }
+void WallpaperPageGrid::setOnTileEnter(TileIndexCallback callback) { m_onTileEnter = std::move(callback); }
+void WallpaperPageGrid::setOnTileLeave(TileIndexCallback callback) { m_onTileLeave = std::move(callback); }
+
 void WallpaperPageGrid::setRenderer(Renderer* renderer) { m_renderer = renderer; }
 
 void WallpaperPageGrid::setThumbnailService(ThumbnailService* service) {
@@ -35,6 +40,13 @@ void WallpaperPageGrid::setThumbnailService(ThumbnailService* service) {
       tile->setThumbnailService(service);
     }
   }
+}
+
+void WallpaperPageGrid::setHighlightedIndex(std::size_t selectedIndex, std::size_t hoverIndex, bool hoverEnabled) {
+  m_selectedIndex = selectedIndex;
+  m_hoverIndex = hoverIndex;
+  m_hoverEnabled = hoverEnabled;
+  markDirty();
 }
 
 void WallpaperPageGrid::releaseAllTiles(Renderer& renderer) {
@@ -53,6 +65,21 @@ void WallpaperPageGrid::buildPool(float cellW, float cellH) {
     if (m_onTileClick) {
       tile->setOnTileClick(m_onTileClick);
     }
+    tile->setOnTileMotion([this, i]() {
+      if (m_onTileMotion) {
+        m_onTileMotion(i);
+      }
+    });
+    tile->setOnTileEnter([this, i]() {
+      if (m_onTileEnter) {
+        m_onTileEnter(i);
+      }
+    });
+    tile->setOnTileLeave([this, i]() {
+      if (m_onTileLeave) {
+        m_onTileLeave(i);
+      }
+    });
     auto* ptr = static_cast<WallpaperTile*>(addChild(std::move(tile)));
     m_pool.push_back(ptr);
   }
@@ -102,6 +129,8 @@ void WallpaperPageGrid::layout(Renderer& renderer) {
       tile->setPosition(static_cast<float>(col) * (cellW + m_colGap),
                         static_cast<float>(row) * (cellH + m_rowGap));
       tile->setEntry(m_entries[i], *m_renderer);
+      tile->setSelected(i == m_selectedIndex);
+      tile->setHoveredVisual(m_hoverEnabled && i == m_hoverIndex && i != m_selectedIndex);
     } else {
       tile->clearEntry(renderer);
     }

@@ -63,7 +63,14 @@ void main() {
     float outer_coverage = 1.0 - smoothstep(-aa, aa, outer_distance);
 
     float gradient_t = clamp(dot(uv, u_gradient_direction), 0.0, 1.0);
-    vec4 fill_base = (u_fill_mode == 0) ? u_color : mix(u_color, u_fill_end_color, gradient_t);
+    vec4 fill_base;
+    if (u_fill_mode == 0) {
+        fill_base = vec4(0.0);
+    } else if (u_fill_mode == 1) {
+        fill_base = u_color;
+    } else {
+        fill_base = mix(u_color, u_fill_end_color, gradient_t);
+    }
 
     if (u_border_width <= 0.0 || u_border_color.a <= 0.0) {
         float out_alpha = fill_base.a * outer_coverage;
@@ -79,6 +86,16 @@ void main() {
     vec2 inner_point = local_point - vec2(u_border_width);
     float inner_distance = rounded_rect_distance(inner_point, inner_size, inner_radii);
     float inner_coverage = 1.0 - smoothstep(-aa, aa, inner_distance);
+
+    if (fill_base.a <= 0.0) {
+        float ring_coverage = outer_coverage * (1.0 - inner_coverage);
+        float out_alpha = u_border_color.a * ring_coverage;
+        if (out_alpha <= 0.0) {
+            discard;
+        }
+        gl_FragColor = vec4(u_border_color.rgb * out_alpha, out_alpha);
+        return;
+    }
 
     // Premultiplied-alpha compositing: border underneath, fill on top.
     // All intermediate colors are premultiplied (rgb already scaled by alpha).
@@ -177,7 +194,13 @@ void RoundedRectProgram::draw(float surfaceWidth, float surfaceHeight, float wid
   glUniform4f(m_colorLocation, style.fill.r, style.fill.g, style.fill.b, style.fill.a);
   glUniform4f(m_fillEndColorLocation, style.fillEnd.r, style.fillEnd.g, style.fillEnd.b, style.fillEnd.a);
   glUniform4f(m_borderColorLocation, style.border.r, style.border.g, style.border.b, style.border.a);
-  glUniform1i(m_fillModeLocation, style.fillMode == FillMode::Solid ? 0 : 1);
+  int fillMode = 0;
+  if (style.fillMode == FillMode::Solid) {
+    fillMode = 1;
+  } else if (style.fillMode == FillMode::LinearGradient) {
+    fillMode = 2;
+  }
+  glUniform1i(m_fillModeLocation, fillMode);
   glUniform2f(m_gradientDirectionLocation, style.gradientDirection == GradientDirection::Horizontal ? 1.0f : 0.0f,
               style.gradientDirection == GradientDirection::Vertical ? 1.0f : 0.0f);
   glUniform4f(m_radiiLocation, style.radius.tl, style.radius.tr, style.radius.br, style.radius.bl);
