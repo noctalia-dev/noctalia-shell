@@ -14,7 +14,7 @@ SessionWidget::SessionWidget(wl_output* output) : m_output(output) {}
 void SessionWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-    PanelManager::instance().togglePanel("session-menu", m_output, 0.0f, 0.0f);
+    PanelManager::instance().togglePanel("session", m_output, 0.0f, 0.0f);
   });
 
   auto glyph = std::make_unique<Glyph>();

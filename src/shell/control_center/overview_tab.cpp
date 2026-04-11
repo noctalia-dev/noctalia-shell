@@ -361,7 +361,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   sessionBtn->setMinHeight(Style::controlHeight * scale);
   sessionBtn->setMinWidth(Style::controlHeight * scale);
   sessionBtn->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
-  sessionBtn->setOnClick([]() { PanelManager::instance().togglePanel("session-menu"); });
+  sessionBtn->setOnClick([]() { PanelManager::instance().togglePanel("session"); });
   m_sessionMenuButton = sessionBtn.get();
   actions->addChild(std::move(sessionBtn));
 

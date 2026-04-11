@@ -349,36 +349,36 @@ void Application::initUi() {
   m_configService.addReloadCallback([this]() { m_panelManager.close(); });
   m_panelManager.registerPanel("clipboard", std::make_unique<ClipboardPanel>(&m_clipboardService));
   m_panelManager.registerPanel(
-      "session-menu",
-      std::make_unique<SessionPanel>(SessionPanel::Actions{
-          .logout =
-              [this]() {
-                if (!launchLogoutCommand()) {
-                  m_notificationManager.addInternal("Noctalia", "Logout unavailable",
-                                                    "Could not determine how to terminate this session.");
-                }
-              },
-          .reboot =
-              [this]() {
-                if (!process::launchFirstAvailable({{"systemctl", "reboot"}, {"loginctl", "reboot"}})) {
-                  m_notificationManager.addInternal("Noctalia", "Reboot failed", "Could not launch systemctl reboot.");
-                }
-              },
-          .shutdown =
-              [this]() {
-                if (!process::launchFirstAvailable({{"systemctl", "poweroff"}, {"loginctl", "poweroff"}})) {
-                  m_notificationManager.addInternal("Noctalia", "Shutdown failed",
-                                                    "Could not launch a shutdown command.");
-                }
-              },
-          .lock =
-              [this]() {
-                if (!m_lockScreen.lock()) {
-                  m_notificationManager.addInternal("Noctalia", "Lock unavailable",
-                                                    "The session lock protocol is not available.");
-                }
-              },
-      }));
+      "session", std::make_unique<SessionPanel>(SessionPanel::Actions{
+                     .logout =
+                         [this]() {
+                           if (!launchLogoutCommand()) {
+                             m_notificationManager.addInternal("Noctalia", "Logout unavailable",
+                                                               "Could not determine how to terminate this session.");
+                           }
+                         },
+                     .reboot =
+                         [this]() {
+                           if (!process::launchFirstAvailable({{"systemctl", "reboot"}, {"loginctl", "reboot"}})) {
+                             m_notificationManager.addInternal("Noctalia", "Reboot failed",
+                                                               "Could not launch systemctl reboot.");
+                           }
+                         },
+                     .shutdown =
+                         [this]() {
+                           if (!process::launchFirstAvailable({{"systemctl", "poweroff"}, {"loginctl", "poweroff"}})) {
+                             m_notificationManager.addInternal("Noctalia", "Shutdown failed",
+                                                               "Could not launch a shutdown command.");
+                           }
+                         },
+                     .lock =
+                         [this]() {
+                           if (!m_lockScreen.lock()) {
+                             m_notificationManager.addInternal("Noctalia", "Lock unavailable",
+                                                               "The session lock protocol is not available.");
+                           }
+                         },
+                 }));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
   m_panelManager.registerPanel(
       "control-center",
