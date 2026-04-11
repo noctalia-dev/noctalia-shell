@@ -318,13 +318,17 @@ std::vector<TrayItemInfo> TrayService::items() const {
 
 std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) {
   if (!ensureItemProxy(itemId)) {
+    kLog.warn("menuEntries: no proxy for id={}", itemId);
     return {};
   }
   const auto itemIt = m_items.find(itemId);
   if (itemIt == m_items.end()) {
+    kLog.warn("menuEntries: item not found id={}", itemId);
     return {};
   }
   if (itemIt->second.busName.empty() || itemIt->second.menuObjectPath.empty()) {
+    kLog.warn("menuEntries: missing bus/menu path id={} bus='{}' menu='{}'",
+              itemId, itemIt->second.busName, itemIt->second.menuObjectPath);
     return {};
   }
 
@@ -342,7 +346,8 @@ std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) {
           .withArguments(static_cast<std::int32_t>(0))
           .storeResultsTo(needsUpdate);
       (void)needsUpdate;
-    } catch (const sdbus::Error&) {
+    } catch (const sdbus::Error& e) {
+      kLog.warn("menuEntries: AboutToShow failed id={} err={}", itemId, e.what());
     }
 
     std::uint32_t revision = 0;
@@ -371,9 +376,12 @@ std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) {
       } catch (const sdbus::Error&) {
       }
     }
+    kLog.debug("menuEntries: id={} got {} entries (raw children={})", itemId, out.size(), children.size());
     return out;
   } catch (const sdbus::Error& e) {
-    kLog.debug("dbusmenu load failed id={} menu={} err={}", itemId, itemIt->second.menuObjectPath, e.what());
+    kLog.warn("menuEntries: GetLayout failed id={} menu={} err={}", itemId, itemIt->second.menuObjectPath, e.what());
+    // Recreate the LayoutUpdated subscription in case the proxy went stale.
+    refreshMenuWatch(itemId);
     return {};
   }
 }
@@ -424,6 +432,41 @@ std::vector<TrayMenuEntry> TrayService::menuEntriesForParent(const std::string& 
   } catch (const sdbus::Error& e) {
     kLog.debug("dbusmenu submenu load failed id={} parentId={} err={}", itemId, parentId, e.what());
     return {};
+  }
+}
+
+void TrayService::subscribeMenuLayoutUpdated(const std::string& itemId, const std::string& busName,
+                                              const std::string& menuPath) {
+  if (busName.empty() || menuPath.empty()) {
+    return;
+  }
+  // Check if we already have a subscription for the same endpoint — don't recreate it.
+  const auto existing = m_menuWatchProxies.find(itemId);
+  if (existing != m_menuWatchProxies.end()) {
+    return;
+  }
+
+  try {
+    auto proxy = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{busName},
+                                    sdbus::ObjectPath{menuPath});
+    proxy->uponSignal("LayoutUpdated")
+        .onInterface(k_menu_interface)
+        .call([this, itemId](std::uint32_t /*revision*/, std::int32_t /*parent*/) {
+          kLog.info("LayoutUpdated for id={}", itemId);
+          emitChanged();
+        });
+    m_menuWatchProxies[itemId] = std::move(proxy);
+    kLog.debug("menuWatch: permanent LayoutUpdated subscription for id={}", itemId);
+  } catch (const sdbus::Error& e) {
+    kLog.warn("menuWatch: failed to subscribe LayoutUpdated for id={} err={}", itemId, e.what());
+  }
+}
+
+void TrayService::refreshMenuWatch(const std::string& itemId) {
+  m_menuWatchProxies.erase(itemId);
+  const auto itemIt = m_items.find(itemId);
+  if (itemIt != m_items.end()) {
+    subscribeMenuLayoutUpdated(itemId, itemIt->second.busName, itemIt->second.menuObjectPath);
   }
 }
 
@@ -714,14 +757,17 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
     return;
   }
 
-  auto next = itemIt->second;
-  next.iconName = get_item_property_string_or(*proxyIt->second, "IconName", "");
-  next.iconThemePath = get_item_property_string_or(*proxyIt->second, "IconThemePath", "");
-  next.attentionIconName = get_item_property_string_or(*proxyIt->second, "AttentionIconName", "");
-  next.menuObjectPath = get_item_property_string_or(*proxyIt->second, "Menu", "");
-  next.itemName = get_item_property_string_or(*proxyIt->second, "Id", "");
-  next.title = get_item_property_string_or(*proxyIt->second, "Title", "");
-  next.status = get_item_property_string_or(*proxyIt->second, "Status", "");
+  const auto& cur = itemIt->second;
+  auto next = cur;
+  // Use the existing value as the fallback so a transient D-Bus failure doesn't
+  // wipe out data that was successfully fetched earlier (e.g. menuObjectPath).
+  next.iconName         = get_item_property_string_or(*proxyIt->second, "IconName",         cur.iconName);
+  next.iconThemePath    = get_item_property_string_or(*proxyIt->second, "IconThemePath",    cur.iconThemePath);
+  next.attentionIconName= get_item_property_string_or(*proxyIt->second, "AttentionIconName",cur.attentionIconName);
+  next.menuObjectPath   = get_item_property_string_or(*proxyIt->second, "Menu",             cur.menuObjectPath);
+  next.itemName         = get_item_property_string_or(*proxyIt->second, "Id",               cur.itemName);
+  next.title            = get_item_property_string_or(*proxyIt->second, "Title",            cur.title);
+  next.status           = get_item_property_string_or(*proxyIt->second, "Status",           cur.status);
   next.needsAttention = (next.status == "NeedsAttention");
 
   const auto iconPixmaps = get_icon_pixmaps_or(*proxyIt->second, "IconPixmap", {});
@@ -738,10 +784,19 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
       next.attentionHeight, next.attentionArgb32.size());
 
   if (next == itemIt->second) {
+    // Menu path unchanged — make sure subscription exists (may not have been set up yet
+    // if it was empty on first registration and only available now).
+    subscribeMenuLayoutUpdated(itemId, next.busName, next.menuObjectPath);
     return;
   }
 
+  // If the menu path changed, tear down the old subscription so the new one gets created.
+  if (next.menuObjectPath != itemIt->second.menuObjectPath) {
+    m_menuWatchProxies.erase(itemId);
+  }
+
   itemIt->second = std::move(next);
+  subscribeMenuLayoutUpdated(itemId, itemIt->second.busName, itemIt->second.menuObjectPath);
   emitChanged();
 }
 
@@ -760,6 +815,7 @@ void TrayService::removeItemsForBusName(const std::string& busName) {
   for (const auto& itemId : removedIds) {
     m_items.erase(itemId);
     m_itemProxies.erase(itemId);
+    m_menuWatchProxies.erase(itemId);
     kLog.debug("item unregistered: {}", itemId);
     m_watcherObject->emitSignal("StatusNotifierItemUnregistered").onInterface(k_watcher_interface).withArguments(
         itemId);

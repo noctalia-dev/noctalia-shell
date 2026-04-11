@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/timer_manager.h"
 #include "dbus/tray/tray_service.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
@@ -41,6 +42,7 @@ private:
   };
 
   void refreshEntries();
+  void scheduleEntryRetry(int attempt);
   [[nodiscard]] uint32_t surfaceHeightPx() const;
   [[nodiscard]] uint32_t submenuHeightPx() const;
   [[nodiscard]] bool ownsSurface(wl_surface* surface) const;
@@ -64,7 +66,14 @@ private:
   std::string m_lastClosedItemId;
   std::chrono::steady_clock::time_point m_lastCloseTime;
 
+  // Pre-warmed entries: populated by a background retry while the menu is closed,
+  // so the next open for the same item skips the D-Bus round-trip.
+  std::string m_preWarmedItemId;
+  std::vector<TrayMenuEntry> m_preWarmedEntries;
+
   std::vector<TrayMenuEntry> m_submenuEntries;
   std::int32_t m_submenuParentEntryId = 0;
   std::unique_ptr<MenuInstance> m_submenuInstance;
+
+  Timer m_retryTimer;
 };

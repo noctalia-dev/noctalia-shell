@@ -68,6 +68,9 @@ private:
   void onRegisterStatusNotifierHost(const std::string& host);
   void registerOrRefreshItem(const std::string& busName, const std::string& objectPath);
   void refreshItemMetadata(const std::string& itemId);
+  void subscribeMenuLayoutUpdated(const std::string& itemId, const std::string& busName,
+                                   const std::string& menuPath);
+  void refreshMenuWatch(const std::string& itemId);
   [[nodiscard]] bool ensureItemProxy(const std::string& itemId);
   void removeItemsForBusName(const std::string& busName);
   void emitChanged();
@@ -80,6 +83,7 @@ private:
   std::unique_ptr<sdbus::IProxy> m_dbusProxy;
   std::unordered_map<std::string, TrayItemInfo> m_items;
   std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_itemProxies;
+  std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_menuWatchProxies;
   bool m_hostRegistered = true;
   ChangeCallback m_changeCallback;
   MenuToggleCallback m_menuToggleCallback;

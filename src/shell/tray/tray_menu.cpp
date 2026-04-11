@@ -134,6 +134,10 @@ void TrayMenu::initialize(WaylandConnection& wayland, ConfigService* config, Tra
 }
 
 void TrayMenu::onTrayChanged() {
+  // Always clear pre-warmed entries on a tray change — they may be stale.
+  m_preWarmedItemId.clear();
+  m_preWarmedEntries.clear();
+
   if (!m_visible) {
     return;
   }
@@ -168,7 +172,16 @@ void TrayMenu::toggleForItem(const std::string& itemId) {
   }
 
   m_activeItemId = itemId;
-  refreshEntries();
+
+  // Use pre-warmed entries if they were fetched in the background for this item
+  // (avoids a D-Bus round-trip that might fail if the server is still initializing).
+  if (itemId == m_preWarmedItemId && !m_preWarmedEntries.empty()) {
+    m_entries = std::move(m_preWarmedEntries);
+    m_preWarmedItemId.clear();
+    m_retryTimer.stop();
+  } else {
+    refreshEntries();
+  }
 
   m_visible = true;
   ensureSurface();
@@ -186,6 +199,8 @@ void TrayMenu::close() {
   m_lastClosedItemId = m_activeItemId;
   m_lastCloseTime = std::chrono::steady_clock::now();
   m_visible = false;
+  // Do NOT stop m_retryTimer here — background retries continue so that entries
+  // are pre-warmed for the next open even while the menu is closed.
   closeSubmenu();
   destroySurface();
 }
@@ -301,6 +316,9 @@ bool TrayMenu::onPointerEvent(const PointerEvent& event) {
 }
 
 void TrayMenu::refreshEntries() {
+  m_retryTimer.stop();
+  m_preWarmedItemId.clear();
+  m_preWarmedEntries.clear();
   m_entries.clear();
   if (m_tray == nullptr || m_activeItemId.empty()) {
     return;
@@ -315,7 +333,42 @@ void TrayMenu::refreshEntries() {
         .separator = false,
         .hasSubmenu = false,
     });
+    // Retry in the background with increasing delays. Retries continue even after the
+    // menu is closed (visible=false) so that entries are pre-warmed for the next open.
+    // TrayService's permanent LayoutUpdated subscription also fires emitChanged() when
+    // Electron signals its menu is ready, which triggers onTrayChanged() → rebuild if visible.
+    scheduleEntryRetry(0);
   }
+}
+
+void TrayMenu::scheduleEntryRetry(int attempt) {
+  if (attempt >= 7 || m_tray == nullptr) {
+    return;
+  }
+  // Delays: 300ms, 700ms, 1.5s, 3s, 5s, 8s, 12s — total window ~30s
+  constexpr int kDelays[] = {300, 700, 1500, 3000, 5000, 8000, 12000};
+  const auto delay = std::chrono::milliseconds(kDelays[attempt]);
+  // Capture item ID so stale retries self-abort if the active item changes.
+  const std::string capturedItemId = m_activeItemId;
+  m_retryTimer.start(delay, [this, attempt, capturedItemId]() {
+    if (m_tray == nullptr || m_activeItemId != capturedItemId) {
+      return;
+    }
+    auto fresh = m_tray->menuEntries(capturedItemId);
+    if (fresh.empty()) {
+      scheduleEntryRetry(attempt + 1);
+      return;
+    }
+    kLog.info("tray menu recovered (attempt {}) for id={}", attempt + 1, capturedItemId);
+    if (m_visible) {
+      m_entries = std::move(fresh);
+      rebuildScenes();
+    } else {
+      // Pre-warm for the next open so it doesn't need to re-fetch.
+      m_preWarmedItemId = capturedItemId;
+      m_preWarmedEntries = std::move(fresh);
+    }
+  });
 }
 
 uint32_t TrayMenu::submenuHeightPx() const {
