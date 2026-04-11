@@ -70,6 +70,7 @@ private:
   std::unordered_map<std::string, std::unique_ptr<Panel>> m_panels;
   Panel* m_activePanel = nullptr;
   std::string m_activePanelId;
+  std::string m_pendingOpenContext;
 
   wl_surface* m_wlSurface = nullptr;
   float m_contentWidth = 0.0f;

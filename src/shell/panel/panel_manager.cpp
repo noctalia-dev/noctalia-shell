@@ -90,7 +90,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
   m_activePanel = it->second.get();
   m_activePanelId = panelId;
   m_activePanel->setContentScale(resolvePanelContentScale(m_config));
-  m_activePanel->onOpen(context);
+  m_pendingOpenContext = std::string(context);
 
   const auto panelWidth = static_cast<std::uint32_t>(m_activePanel->preferredWidth());
   const auto panelHeight = static_cast<std::uint32_t>(m_activePanel->preferredHeight());
@@ -391,6 +391,8 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     m_contentNode = contentWrapper.get();
     m_activePanel->setAnimationManager(&m_animations);
     m_activePanel->create();
+    m_activePanel->onOpen(m_pendingOpenContext);
+    m_pendingOpenContext.clear();
     if (m_activePanel->root() != nullptr) {
       contentWrapper->addChild(m_activePanel->releaseRoot());
     }
