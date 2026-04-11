@@ -1,4 +1,4 @@
-#include "shell/widgets/media_mini_widget.h"
+#include "shell/widgets/media_widget.h"
 
 #include "core/log.h"
 #include "dbus/mpris/mpris_service.h"
@@ -19,7 +19,7 @@
 
 namespace {
 
-const Logger kLog{"media_mini"};
+const Logger kLog{"media"};
 
 bool isRemoteArtUrl(std::string_view artUrl) {
   return artUrl.starts_with("https://") || artUrl.starts_with("http://");
@@ -157,10 +157,10 @@ std::filesystem::path artCachePath(std::string_view artUrl) {
 
 } // namespace
 
-MediaMiniWidget::MediaMiniWidget(MprisService* mpris, HttpClient* httpClient, float maxWidth, float artSize)
+MediaWidget::MediaWidget(MprisService* mpris, HttpClient* httpClient, float maxWidth, float artSize)
     : m_mpris(mpris), m_httpClient(httpClient), m_maxWidth(maxWidth), m_artSize(artSize) {}
 
-void MediaMiniWidget::create() {
+void MediaWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnMotion([this](const InputArea::PointerData& /*data*/) { m_clickReady = true; });
   area->setOnLeave([this]() {
@@ -204,7 +204,7 @@ void MediaMiniWidget::create() {
   setRoot(std::move(area));
 }
 
-void MediaMiniWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void MediaWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
   if (rootNode == nullptr || m_art == nullptr || m_label == nullptr) {
     return;
@@ -227,12 +227,12 @@ void MediaMiniWidget::layout(Renderer& renderer, float /*containerWidth*/, float
   rootNode->setSize(m_label->x() + m_label->width(), contentHeight);
 }
 
-void MediaMiniWidget::update(Renderer& renderer) {
+void MediaWidget::update(Renderer& renderer) {
   syncState(renderer);
   Widget::update(renderer);
 }
 
-void MediaMiniWidget::syncState(Renderer& renderer) {
+void MediaWidget::syncState(Renderer& renderer) {
   if (m_art == nullptr || m_label == nullptr) {
     return;
   }
@@ -316,7 +316,7 @@ void MediaMiniWidget::syncState(Renderer& renderer) {
   requestRedraw();
 }
 
-std::string MediaMiniWidget::buildDisplayText(const MprisPlayerInfo& player) {
+std::string MediaWidget::buildDisplayText(const MprisPlayerInfo& player) {
   const std::string artists = joinArtists(player.artists);
   if (!player.title.empty() && !artists.empty()) {
     return player.title + " - " + artists;
@@ -339,4 +339,4 @@ std::string MediaMiniWidget::buildDisplayText(const MprisPlayerInfo& player) {
   return "Nothing playing";
 }
 
-std::string MediaMiniWidget::resolveArtworkPath() const { return normalizeArtPath(m_lastArtUrl); }
+std::string MediaWidget::resolveArtworkPath() const { return normalizeArtPath(m_lastArtUrl); }

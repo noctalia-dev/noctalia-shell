@@ -14,9 +14,9 @@ class MprisService;
 class Renderer;
 struct MprisPlayerInfo;
 
-class MediaMiniWidget : public Widget {
+class MediaWidget : public Widget {
 public:
-  MediaMiniWidget(MprisService* mpris, HttpClient* httpClient, float maxWidth, float artSize);
+  MediaWidget(MprisService* mpris, HttpClient* httpClient, float maxWidth, float artSize);
 
   void create() override;
   void layout(Renderer& renderer, float containerWidth, float containerHeight) override;

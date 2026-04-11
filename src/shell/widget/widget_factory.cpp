@@ -14,7 +14,7 @@
 #include "shell/widgets/idle_inhibitor_widget.h"
 #include "shell/widgets/nightlight_widget.h"
 #include "shell/widgets/launcher_widget.h"
-#include "shell/widgets/media_mini_widget.h"
+#include "shell/widgets/media_widget.h"
 #include "shell/widgets/notification_widget.h"
 #include "shell/widgets/power_profiles_widget.h"
 #include "shell/widgets/session_widget.h"
@@ -133,7 +133,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   if (type == "media") {
     const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_length", 220.0) : 220.0);
     const float artSize = static_cast<float>(wc != nullptr ? wc->getDouble("art_size", 24.0) : 24.0);
-    auto widget = std::make_unique<MediaMiniWidget>(m_mpris, m_httpClient, maxWidth, artSize);
+    auto widget = std::make_unique<MediaWidget>(m_mpris, m_httpClient, maxWidth, artSize);
     widget->setContentScale(contentScale);
     return widget;
   }
