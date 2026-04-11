@@ -47,6 +47,95 @@ namespace noctalia::theme {
       return x < 1.0f ? 1.0f - x : 0.0f;
     }
 
+    void verticalBoxSampleU8ToF32(const uint8_t* src, int srcW, int srcH, float* dst, int dstH) {
+      constexpr double kEpsilon = 1.0e-12;
+      const double factor = static_cast<double>(dstH) / static_cast<double>(srcH);
+      double scale = std::max(1.0 / factor + kEpsilon, 1.0);
+      double support = scale * 0.5;
+      if (support < 0.5) {
+        support = 0.5;
+        scale = 1.0;
+      }
+      scale = 1.0 / scale;
+
+      for (int outy = 0; outy < dstH; ++outy) {
+        const double bisect = (static_cast<double>(outy) + 0.5) / factor + kEpsilon;
+        const int start = static_cast<int>(std::max(bisect - support + 0.5, 0.0));
+        const int stop = static_cast<int>(std::min(bisect + support + 0.5, static_cast<double>(srcH)));
+        const int count = stop - start;
+        if (count <= 0)
+          continue;
+        const float weight = 1.0f / static_cast<float>(count);
+
+        for (int x = 0; x < srcW; ++x) {
+          float t0 = 0.0f, t1 = 0.0f, t2 = 0.0f, t3 = 0.0f;
+          for (int i = start; i < stop; ++i) {
+            const float sampleWeight = weight;
+            const uint8_t* p = src + (i * srcW + x) * 4;
+            t0 += static_cast<float>(p[0]) * sampleWeight;
+            t1 += static_cast<float>(p[1]) * sampleWeight;
+            t2 += static_cast<float>(p[2]) * sampleWeight;
+            t3 += static_cast<float>(p[3]) * sampleWeight;
+          }
+          float* dp = dst + (outy * srcW + x) * 4;
+          dp[0] = t0;
+          dp[1] = t1;
+          dp[2] = t2;
+          dp[3] = t3;
+        }
+      }
+      (void)scale;
+    }
+
+    void horizontalBoxSampleF32ToU8(const float* src, int srcW, int srcH, uint8_t* dst, int dstW) {
+      constexpr double kEpsilon = 1.0e-12;
+      const double factor = static_cast<double>(dstW) / static_cast<double>(srcW);
+      double scale = std::max(1.0 / factor + kEpsilon, 1.0);
+      double support = scale * 0.5;
+      if (support < 0.5) {
+        support = 0.5;
+        scale = 1.0;
+      }
+      scale = 1.0 / scale;
+
+      auto toU8 = [](float v) -> uint8_t {
+        if (v < 0.0f)
+          v = 0.0f;
+        if (v > 255.0f)
+          v = 255.0f;
+        float r = v < 0.0f ? std::ceil(v - 0.5f) : std::floor(v + 0.5f);
+        return static_cast<uint8_t>(r);
+      };
+
+      for (int outx = 0; outx < dstW; ++outx) {
+        const double bisect = (static_cast<double>(outx) + 0.5) / factor + kEpsilon;
+        const int start = static_cast<int>(std::max(bisect - support + 0.5, 0.0));
+        const int stop = static_cast<int>(std::min(bisect + support + 0.5, static_cast<double>(srcW)));
+        const int count = stop - start;
+        if (count <= 0)
+          continue;
+        const float weight = 1.0f / static_cast<float>(count);
+
+        for (int y = 0; y < srcH; ++y) {
+          float t0 = 0.0f, t1 = 0.0f, t2 = 0.0f, t3 = 0.0f;
+          for (int i = start; i < stop; ++i) {
+            const float* p = src + (y * srcW + i) * 4;
+            t0 += p[0] * weight;
+            t1 += p[1] * weight;
+            t2 += p[2] * weight;
+            t3 += p[3] * weight;
+          }
+
+          uint8_t* dp = dst + (y * dstW + outx) * 4;
+          dp[0] = toU8(t0);
+          dp[1] = toU8(t1);
+          dp[2] = toU8(t2);
+          dp[3] = toU8(t3);
+        }
+      }
+      (void)scale;
+    }
+
     // Vertical pass: src is RGBA u8 (srcW × srcH), dst is RGBA f32 (srcW × dstH).
     void verticalSampleU8ToF32(const uint8_t* src, int srcW, int srcH, float* dst, int dstH) {
       const float ratio = (float)srcH / (float)dstH;
@@ -169,6 +258,14 @@ namespace noctalia::theme {
       return dst;
     }
 
+    std::vector<uint8_t> boxResize(const uint8_t* srcRgba, int srcW, int srcH, int dstW, int dstH) {
+      std::vector<float> tmp((size_t)srcW * (size_t)dstH * 4);
+      verticalBoxSampleU8ToF32(srcRgba, srcW, srcH, tmp.data(), dstH);
+      std::vector<uint8_t> dst((size_t)dstW * (size_t)dstH * 4);
+      horizontalBoxSampleF32ToU8(tmp.data(), srcW, dstH, dst.data(), dstW);
+      return dst;
+    }
+
   } // namespace
 
   std::optional<LoadedImage> loadAndResize(std::string_view path, Scheme scheme, std::string* errorMessage) {
@@ -188,19 +285,10 @@ namespace noctalia::theme {
       return std::nullopt;
     }
 
-    // Force-resize to 112×112 (aspect ratio ignored, matching matugen which
-    // calls `image::imageops::resize(112, 112, Triangle)` — that's a force
-    // resize despite the name).
-    //
-    // Implementation: hand-port of the Rust `image` crate's Triangle resize
-    // (separable scale-aware tent filter, no sRGB linearisation). We tried
-    // stb_image_resize2 first but its named filters (TRIANGLE/MITCHELL/...)
-    // use fixed unit support and severely alias at large downsample ratios;
-    // its BOX filter scales but is uniform-weight, leaving a residual ~10°
-    // hue offset on certain images. The custom port matches the image crate
-    // (matugen's underlying lib) within ≤ 2 LSB per channel.
-    (void)scheme;
-    std::vector<uint8_t> resizedRgba = triangleResize(decoded->pixels.data(), srcW, srcH, kTarget, kTarget);
+    // Force-resize to 112×112 (aspect ratio ignored).
+    std::vector<uint8_t> resizedRgba = isMaterialScheme(scheme)
+                                           ? triangleResize(decoded->pixels.data(), srcW, srcH, kTarget, kTarget)
+                                           : boxResize(decoded->pixels.data(), srcW, srcH, kTarget, kTarget);
 
     LoadedImage out;
     out.rgb.resize(kTarget * kTarget * 3);
