@@ -133,6 +133,32 @@ bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::si
   return true;
 }
 
+bool Image::setSourceArgbPixmap(Renderer& renderer, const std::uint8_t* data, int width, int height,
+                                bool mipmap) {
+  clear(renderer);
+
+  if (data == nullptr || width <= 0 || height <= 0) {
+    return false;
+  }
+
+  m_texture = renderer.textureManager().loadFromArgbPixmap(data, width, height, mipmap);
+  if (m_texture.id == 0) {
+    m_sourcePath.clear();
+    if (m_image != nullptr) {
+      m_image->setTextureId(0);
+    }
+    return false;
+  }
+
+  m_ownsTexture = true;
+  m_sourcePath.clear();
+  if (m_image != nullptr) {
+    m_image->setTextureId(m_texture.id);
+  }
+  updateLayout();
+  return true;
+}
+
 void Image::setExternalTexture(Renderer& renderer, TextureHandle handle) {
   if (!m_ownsTexture && m_texture.id == handle.id && m_texture.width == handle.width &&
       m_texture.height == handle.height) {
