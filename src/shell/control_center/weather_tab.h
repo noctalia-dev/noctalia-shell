@@ -42,11 +42,9 @@ private:
   Label* m_longitudeLabel = nullptr;
   Label* m_elevationLabel = nullptr;
   std::array<Flex*, kDayCount> m_dayCards{};
-  std::array<Flex*, kDayCount> m_dayNameSlots{};
-  std::array<Flex*, kDayCount> m_dayGlyphSlots{};
+  std::array<Flex*, kDayCount> m_dayIconSlots{};
   std::array<Glyph*, kDayCount> m_dayGlyphs{};
-  std::array<Label*, kDayCount> m_dayNames{};
-  std::array<Label*, kDayCount> m_dayDates{};
+  std::array<Label*, kDayCount> m_dayMetas{};
   std::array<Label*, kDayCount> m_dayDescs{};
   std::array<Label*, kDayCount> m_dayTemps{};
 };

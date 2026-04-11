@@ -51,19 +51,13 @@ public:
     });
     m_radio = static_cast<RadioButton*>(addChild(std::move(radio)));
 
-    auto textColumn = std::make_unique<Flex>();
-    textColumn->setDirection(FlexDirection::Vertical);
-    textColumn->setAlign(FlexAlign::Start);
-    textColumn->setGap(0.0f);
-    textColumn->setFlexGrow(1.0f);
-    m_textColumn = static_cast<Flex*>(addChild(std::move(textColumn)));
-
     auto title = std::make_unique<Label>();
     title->setBold(true);
     title->setFontSize(Style::fontSizeBody);
     title->setColor(palette.onSurface);
+    title->setFlexGrow(1.0f);
     m_title = title.get();
-    m_textColumn->addChild(std::move(title));
+    addChild(std::move(title));
 
     m_detail = nullptr; // Remove detail label (subtext)
 
@@ -141,7 +135,6 @@ private:
 
   std::function<void()> m_onSelect;
   RadioButton* m_radio = nullptr;
-  Flex* m_textColumn = nullptr;
   Label* m_title = nullptr;
   Label* m_detail = nullptr;
   InputArea* m_inputArea = nullptr;
