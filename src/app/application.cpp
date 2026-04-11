@@ -50,8 +50,8 @@ namespace {
   auto makeWithStartupBackoff(std::string_view label, Factory&& factory) -> decltype(factory()) {
     using namespace std::chrono_literals;
 
-    constexpr int kAttempts = 10;
-    auto delay = 100ms;
+    constexpr int kAttempts = 7;
+    auto delay = 50ms;
     int failedAttempts = 0;
 
     for (int attempt = 1; attempt <= kAttempts; ++attempt) {
