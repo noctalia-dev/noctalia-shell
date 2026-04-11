@@ -79,6 +79,7 @@ private:
   void removePopup(uint32_t notificationId);
   void finishRemoval(uint32_t notificationId);
   void layoutCards(PopupInstance& inst);
+  void updateInputRegion(PopupInstance& inst);
 
   void ensureSurfaces();
   void destroySurfaces();
