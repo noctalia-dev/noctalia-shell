@@ -50,6 +50,7 @@ void Label::setCaptionStyle() {
 void Label::measure(Renderer& renderer) {
   const float maxWidth = m_textNode->maxWidth();
   const int maxLines = m_textNode->maxLines();
+  const float assignedWidth = width();
   auto metrics = renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold(), maxWidth,
                                       maxLines);
   auto refMetrics = renderer.measureText("A", m_textNode->fontSize(), m_textNode->bold());
@@ -65,6 +66,9 @@ void Label::measure(Renderer& renderer) {
   const float refHeight = refMetrics.bottom - refMetrics.top;
   const float actualHeight = metrics.bottom - metrics.top;
   const float height = std::max(refHeight, actualHeight);
-  setSize(std::round(std::max(measuredWidth, m_minWidth)), std::round(height));
+  const bool preserveAssignedWidth = flexGrow() > 0.0f && assignedWidth > 0.0f;
+  const float finalWidth =
+      preserveAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
+  setSize(std::round(finalWidth), std::round(height));
   m_textNode->setPosition(0.0f, m_baselineOffset);
 }

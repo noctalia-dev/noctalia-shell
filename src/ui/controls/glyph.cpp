@@ -36,13 +36,16 @@ void Glyph::setColor(const Color& color) { m_glyphNode->setColor(color); }
 void Glyph::layout(Renderer& renderer) { measure(renderer); }
 
 void Glyph::measure(Renderer& renderer) {
+  const float assignedWidth = width();
   auto metrics    = renderer.measureGlyph(m_glyphNode->codepoint(), m_glyphNode->fontSize());
   auto refMetrics = renderer.measureText("A", m_logicalFontSize);
 
   // Bounding box uses the "A" text reference — same height as Label — so glyphs
   // and labels at the same font size are treated identically by Flex layout.
   m_baselineOffset = -refMetrics.top;
-  Node::setSize(std::round(metrics.width), std::round(refMetrics.bottom - refMetrics.top));
+  const bool preserveAssignedWidth = flexGrow() > 0.0f && assignedWidth > 0.0f;
+  const float finalWidth = preserveAssignedWidth ? assignedWidth : metrics.width;
+  Node::setSize(std::round(finalWidth), std::round(refMetrics.bottom - refMetrics.top));
 
   // Glyph glyphs (MDI) fill more of the em-square than text glyphs, so placing
   // the glyph at the text baseline leaves its ink center above the label ink center.
