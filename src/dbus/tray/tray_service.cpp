@@ -246,8 +246,6 @@ constexpr Logger kLog("tray");
 } // namespace
 
 TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
-  m_bus.connection().requestName(k_watcher_bus_name);
-
   m_watcherObject = sdbus::createObject(m_bus.connection(), k_watcher_object_path);
 
   // RegisterStatusNotifierItem needs raw MethodCall access to capture the sender's unique
@@ -282,6 +280,11 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
           sdbus::registerSignal("StatusNotifierHostRegistered").withParameters<>())
       .forInterface(k_watcher_interface);
 
+  // Claim the watcher name only after the vtable is fully registered, so any app
+  // that reacts to NameOwnerChanged and immediately calls RegisterStatusNotifierItem
+  // will find our methods already in place.
+  m_bus.connection().requestName(k_watcher_bus_name);
+
   m_dbusProxy = sdbus::createProxy(m_bus.connection(), k_dbus_name, k_dbus_path);
   m_dbusProxy->uponSignal("NameOwnerChanged")
       .onInterface(k_dbus_interface)
@@ -292,6 +295,11 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
       });
 
   kLog.info("watcher active on {}", std::string(k_watcher_bus_name));
+
+  // Tell apps that started before us to re-register. Compliant implementations
+  // (libayatana-appindicator, libappindicator) watch for StatusNotifierHostRegistered
+  // and call RegisterStatusNotifierItem again when they see it.
+  m_watcherObject->emitSignal("StatusNotifierHostRegistered").onInterface(k_watcher_interface);
 }
 
 void TrayService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
@@ -543,6 +551,7 @@ bool TrayService::openContextMenu(const std::string& itemId, std::int32_t x, std
 
 void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath,
                                                const std::string& senderBusName) {
+  kLog.info("RegisterStatusNotifierItem: service/path='{}' sender='{}'", serviceOrPath, senderBusName);
   if (serviceOrPath.empty()) {
     kLog.warn("register item ignored: empty service/path");
     return;
