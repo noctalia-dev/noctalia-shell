@@ -19,7 +19,7 @@ void main() {
 // Separable Gaussian blur with a fixed 81-tap loop (-40..40).
 // u_radius controls how many taps are active; taps beyond u_radius are skipped.
 constexpr char kFragmentShader[] = R"(
-precision mediump float;
+precision highp float;
 uniform sampler2D u_texture;
 uniform vec2 u_texelSize;
 uniform vec2 u_direction;

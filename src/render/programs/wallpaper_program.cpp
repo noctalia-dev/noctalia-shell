@@ -19,7 +19,7 @@ void main() {
 // Common GLSL functions shared by all transition fragment shaders.
 // Included at the top of each fragment source via string concatenation.
 constexpr char kCommonFunctions[] = R"(
-precision mediump float;
+precision highp float;
 
 uniform sampler2D u_source1;
 uniform sampler2D u_source2;

@@ -21,7 +21,7 @@ void main() {
 )";
 
 constexpr char kBlitFragment[] = R"(
-precision mediump float;
+precision highp float;
 uniform sampler2D u_texture;
 varying vec2 v_texcoord;
 
