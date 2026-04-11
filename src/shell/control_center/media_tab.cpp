@@ -37,6 +37,7 @@ constexpr float kMediaNowCardMinHeight = Style::controlHeightLg * 11 + Style::sp
 constexpr float kMediaControlsHeight = Style::controlHeightLg + Style::spaceXs;
 constexpr float kMediaPlayPauseHeight = Style::controlHeightLg + Style::spaceSm;
 constexpr float kMediaArtworkMinHeight = Style::controlHeightLg * 4;
+constexpr auto kNoActivePlayerGrace = std::chrono::milliseconds(2000);
 
 bool isRemoteArtUrl(std::string_view artUrl) {
   return artUrl.starts_with("https://") || artUrl.starts_with("http://");
@@ -598,6 +599,7 @@ void MediaTab::onClose() {
   m_lastPlaybackStatus.clear();
   m_lastLoopStatus.clear();
   m_playerBusNames.clear();
+  m_lastActiveSnapshot.reset();
   m_pendingSeekBusName.clear();
   m_pendingSeekUs = -1;
 }
@@ -611,13 +613,13 @@ void MediaTab::clearArt(Renderer& renderer) {
 void MediaTab::refresh(Renderer& renderer) {
   std::vector<MprisPlayerInfo> players;
   std::optional<MprisPlayerInfo> active;
+  const auto now = std::chrono::steady_clock::now();
   if (m_mpris != nullptr) {
     players = m_mpris->listPlayers();
     active = m_mpris->activePlayer();
     kLog.debug("media tab refresh initial players={} active={} active_bus=\"{}\"", players.size(), active.has_value(),
                active.has_value() ? active->busName : std::string{});
 
-    const auto now = std::chrono::steady_clock::now();
     const bool shouldRetryMpris =
         (!active.has_value() || players.empty()) && (m_lastMprisRefreshAttempt.time_since_epoch().count() == 0 ||
                                                      now - m_lastMprisRefreshAttempt >= std::chrono::milliseconds(750));
@@ -630,6 +632,12 @@ void MediaTab::refresh(Renderer& renderer) {
       kLog.debug("media tab refresh after retry players={} active={} active_bus=\"{}\"", players.size(),
                  active.has_value(), active.has_value() ? active->busName : std::string{});
     }
+  }
+
+  if (!active.has_value() && m_lastActiveSnapshot.has_value() &&
+      now - m_lastActiveSeenAt <= kNoActivePlayerGrace) {
+    // Keep last player briefly to hide transient MPRIS discovery gaps.
+    active = m_lastActiveSnapshot;
   }
 
   if (m_playerSelect != nullptr) {
@@ -668,7 +676,8 @@ void MediaTab::refresh(Renderer& renderer) {
 
   if (active.has_value()) {
     const auto& player = *active;
-    const auto now = std::chrono::steady_clock::now();
+    m_lastActiveSnapshot = player;
+    m_lastActiveSeenAt = now;
     const bool sameBus = m_positionBusName == player.busName && m_positionSampleAt.time_since_epoch().count() != 0;
     const bool trackComparable =
         player.trackId.empty() || m_positionTrackId.empty() || m_positionTrackId == player.trackId;
@@ -731,19 +740,26 @@ void MediaTab::refresh(Renderer& renderer) {
       }
     }
 
-    if (m_artwork != nullptr && resolvedArtUrl != m_lastArtPath) {
+    if (m_artwork != nullptr &&
+        (!resolvedArtUrl.empty() && (resolvedArtUrl != m_lastArtPath || !m_artwork->hasImage()))) {
+      bool loaded = false;
       if (artPath.empty()) {
-        if (!resolvedArtUrl.empty()) {
-          kLog.debug("artwork unresolved url=\"{}\"", resolvedArtUrl);
-        }
+        kLog.debug("artwork unresolved url=\"{}\"", resolvedArtUrl);
         clearArt(renderer);
       } else if (!m_artwork->setSourceFile(renderer, artPath, static_cast<int>(kArtworkSize))) {
         kLog.warn("artwork load failed url=\"{}\" path=\"{}\"", resolvedArtUrl, artPath);
         clearArt(renderer);
       } else {
         kLog.debug("artwork loaded url=\"{}\" path=\"{}\"", resolvedArtUrl, artPath);
+        loaded = true;
       }
-      m_lastArtPath = resolvedArtUrl;
+
+      // Only lock this URL once we actually have an image.
+      // Otherwise keep retrying while metadata/download catches up.
+      m_lastArtPath = loaded ? resolvedArtUrl : std::string{};
+    } else if (m_artwork != nullptr && resolvedArtUrl.empty()) {
+      clearArt(renderer);
+      m_lastArtPath.clear();
     }
 
     m_syncingProgress = true;
@@ -775,6 +791,7 @@ void MediaTab::refresh(Renderer& renderer) {
 
   m_pendingSeekBusName.clear();
   m_pendingSeekUs = -1;
+  m_lastActiveSnapshot.reset();
   m_positionBusName.clear();
   m_positionTrackId.clear();
   m_positionUs = 0;

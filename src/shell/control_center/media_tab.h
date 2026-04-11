@@ -1,9 +1,11 @@
 #pragma once
 
+#include "dbus/mpris/mpris_service.h"
 #include "shell/control_center/tab.h"
 
 #include <chrono>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -73,4 +75,6 @@ private:
   std::string m_positionTrackId;
   std::int64_t m_positionUs = 0;
   std::chrono::steady_clock::time_point m_positionSampleAt{};
+  std::optional<MprisPlayerInfo> m_lastActiveSnapshot;
+  std::chrono::steady_clock::time_point m_lastActiveSeenAt{};
 };
