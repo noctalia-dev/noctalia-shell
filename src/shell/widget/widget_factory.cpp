@@ -23,6 +23,7 @@
 #include "shell/widgets/test_widget.h"
 #include "shell/widgets/tray_widget.h"
 #include "shell/widgets/volume_widget.h"
+#include "shell/widgets/wallpaper_widget.h"
 #include "shell/widgets/weather_widget.h"
 #include "shell/widgets/workspaces_widget.h"
 #include "system/system_monitor_service.h"
@@ -154,6 +155,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "launcher") {
     auto widget = std::make_unique<LauncherWidget>(output);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "wallpaper") {
+    auto widget = std::make_unique<WallpaperWidget>(output);
     widget->setContentScale(contentScale);
     return widget;
   }

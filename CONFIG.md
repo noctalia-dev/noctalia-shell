@@ -53,7 +53,7 @@ shadow_offset_y = 6           # vertical shadow offset (positive = down)
 
 start  = ["cpu", "temp", "ram", "active_window"]  # widget names in the left/top section
 center = ["workspaces"]       # widget names in the center section
-end    = ["tray", "notifications", "volume", "power_profiles", "battery", "session", "clock"]
+end    = ["tray", "notifications", "volume", "power_profiles", "battery", "wallpaper", "session", "clock"]
 ```
 
 Radius precedence:
@@ -231,6 +231,12 @@ Shows the pending notification count. No configurable settings.
 ### `session`
 
 Shows a power glyph and opens the session menu panel on click. No configurable settings.
+
+---
+
+### `wallpaper`
+
+Shows a glyph and opens the wallpaper picker panel on click. No configurable settings.
 
 ---
 
