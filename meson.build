@@ -251,6 +251,7 @@ _noctalia_sources = files(
   'src/render/text/cairo_glyph_renderer.cpp',
   'src/render/wallpaper_renderer.cpp',
   'src/shell/bar/bar.cpp',
+  'src/shell/clipboard/clipboard_paste.cpp',
   'src/shell/clipboard/clipboard_panel.cpp',
   'src/shell/control_center/calendar_tab.cpp',
   'src/shell/control_center/audio_tab.cpp',

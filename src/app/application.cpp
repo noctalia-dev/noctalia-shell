@@ -9,6 +9,7 @@
 #include "launcher/emoji_provider.h"
 #include "launcher/math_provider.h"
 #include "shell/clipboard/clipboard_panel.h"
+#include "shell/clipboard/clipboard_paste.h"
 #include "shell/control_center/control_center_panel.h"
 #include "shell/launcher/launcher_panel.h"
 #include "shell/session/session_panel.h"
@@ -22,7 +23,6 @@
 #include <cmath>
 #include <csignal>
 #include <cstdlib>
-#include <optional>
 #include <stdexcept>
 #include <thread>
 
@@ -31,40 +31,6 @@ std::atomic<bool> Application::s_shutdownRequested{false};
 namespace {
 
   constexpr Logger kLog("app");
-
-  std::optional<VirtualPasteShortcut> virtualPasteShortcutFor(ClipboardAutoPasteMode mode, bool isImage) {
-    switch (mode) {
-    case ClipboardAutoPasteMode::Off:
-      return std::nullopt;
-    case ClipboardAutoPasteMode::Auto:
-      return isImage ? VirtualPasteShortcut::CtrlV : VirtualPasteShortcut::CtrlShiftV;
-    case ClipboardAutoPasteMode::CtrlV:
-      return VirtualPasteShortcut::CtrlV;
-    case ClipboardAutoPasteMode::CtrlShiftV:
-      return VirtualPasteShortcut::CtrlShiftV;
-    case ClipboardAutoPasteMode::ShiftInsert:
-      return VirtualPasteShortcut::ShiftInsert;
-    }
-    return std::nullopt;
-  }
-
-  std::vector<std::string> wtypeArgsFor(ClipboardAutoPasteMode mode, bool isImage) {
-    switch (mode) {
-    case ClipboardAutoPasteMode::Off:
-      return {};
-    case ClipboardAutoPasteMode::Auto:
-      return isImage ? std::vector<std::string>{"wtype", "-M", "ctrl", "-k", "v", "-m", "ctrl"}
-                     : std::vector<std::string>{"wtype", "-M", "ctrl",  "-M", "shift", "-k",
-                                                "v",     "-m", "shift", "-m", "ctrl"};
-    case ClipboardAutoPasteMode::CtrlV:
-      return {"wtype", "-M", "ctrl", "-k", "v", "-m", "ctrl"};
-    case ClipboardAutoPasteMode::CtrlShiftV:
-      return {"wtype", "-M", "ctrl", "-M", "shift", "-k", "v", "-m", "shift", "-m", "ctrl"};
-    case ClipboardAutoPasteMode::ShiftInsert:
-      return {"wtype", "-M", "shift", "-k", "Insert", "-m", "shift"};
-    }
-    return {};
-  }
 
   bool launchLogoutCommand() {
     const char* sessionId = std::getenv("XDG_SESSION_ID");
@@ -409,22 +375,12 @@ void Application::initUi() {
     if (mode == ClipboardAutoPasteMode::Off) {
       return;
     }
-    const bool isImage = entry.isImage();
+    const ClipboardEntry selectedEntry = entry;
     m_clipboardAutoPasteTimer.stop();
-    m_clipboardAutoPasteTimer.start(std::chrono::milliseconds(Style::animFast + 30), [this, isImage]() {
-      DeferredCall::callLater([this, isImage]() {
+    m_clipboardAutoPasteTimer.start(std::chrono::milliseconds(Style::animFast + 30), [this, selectedEntry]() {
+      DeferredCall::callLater([this, selectedEntry]() {
         const ClipboardAutoPasteMode activeMode = m_configService.config().shell.clipboardAutoPaste;
-        const auto shortcut = virtualPasteShortcutFor(activeMode, isImage);
-        if (shortcut.has_value() && m_virtualKeyboardService.sendPasteShortcut(*shortcut)) {
-          return;
-        }
-        const auto args = wtypeArgsFor(activeMode, isImage);
-        if (!args.empty() && process::launchDetached(args)) {
-          return;
-        }
-        if (activeMode != ClipboardAutoPasteMode::Off) {
-          kLog.warn("clipboard auto-paste failed: native virtual keyboard unavailable and wtype launch failed");
-        }
+        (void)clipboard_paste::pasteEntry(selectedEntry, activeMode, m_virtualKeyboardService);
       });
     });
   });
