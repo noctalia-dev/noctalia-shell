@@ -72,7 +72,7 @@ void Image::setPadding(float padding) {
 }
 
 bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targetSize) {
-  if (path == m_sourcePath && m_texture.id != 0) {
+  if (m_ownsTexture && path == m_sourcePath && m_texture.id != 0) {
     return true;
   }
 
@@ -91,6 +91,7 @@ bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targe
     return false;
   }
 
+  m_ownsTexture = true;
   m_sourcePath = path;
   if (m_image != nullptr) {
     m_image->setTextureId(m_texture.id);
@@ -115,6 +116,7 @@ bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::si
     return false;
   }
 
+  m_ownsTexture = true;
   m_sourcePath.clear();
   if (m_image != nullptr) {
     m_image->setTextureId(m_texture.id);
@@ -123,10 +125,31 @@ bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::si
   return true;
 }
 
-void Image::clear(Renderer& renderer) {
-  if (m_texture.id != 0) {
+void Image::setExternalTexture(Renderer& renderer, TextureHandle handle) {
+  if (!m_ownsTexture && m_texture.id == handle.id && m_texture.width == handle.width &&
+      m_texture.height == handle.height) {
+    return;
+  }
+
+  if (m_ownsTexture && m_texture.id != 0) {
     renderer.textureManager().unload(m_texture);
   }
+
+  m_texture = handle;
+  m_ownsTexture = false;
+  m_sourcePath.clear();
+  if (m_image != nullptr) {
+    m_image->setTextureId(m_texture.id);
+  }
+  updateLayout();
+}
+
+void Image::clear(Renderer& renderer) {
+  if (m_ownsTexture && m_texture.id != 0) {
+    renderer.textureManager().unload(m_texture);
+  }
+  m_texture = {};
+  m_ownsTexture = false;
   m_sourcePath.clear();
   if (m_image != nullptr) {
     m_image->setTextureId(0);

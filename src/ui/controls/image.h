@@ -29,6 +29,11 @@ public:
 
   bool setSourceFile(Renderer& renderer, const std::string& path, int targetSize = 0);
   bool setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::size_t size);
+
+  // Binds a texture that is owned externally (e.g. by a shared thumbnail
+  // cache). The Image will NOT unload the texture on clear or destruction.
+  void setExternalTexture(Renderer& renderer, TextureHandle handle);
+
   void clear(Renderer& renderer);
 
   [[nodiscard]] const std::string& sourcePath() const noexcept { return m_sourcePath; }
@@ -50,6 +55,7 @@ private:
   Box* m_background = nullptr;
   ImageNode* m_image = nullptr;
   TextureHandle m_texture{};
+  bool m_ownsTexture = false;
   std::string m_sourcePath;
   float m_cornerRadius = 0.0f;
   float m_padding = 0.0f;

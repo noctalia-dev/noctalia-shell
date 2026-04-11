@@ -539,6 +539,12 @@ void ConfigService::loadFromFile(const std::string& path) {
       wp.transitionDurationMs = static_cast<float>(*v);
     if (auto v = (*wpTbl)["edge_smoothness"].value<double>())
       wp.edgeSmoothness = static_cast<float>(*v);
+    if (auto v = (*wpTbl)["directory"].value<std::string>())
+      wp.directory = *v;
+    if (auto v = (*wpTbl)["directory_light"].value<std::string>())
+      wp.directoryLight = *v;
+    if (auto v = (*wpTbl)["directory_dark"].value<std::string>())
+      wp.directoryDark = *v;
 
     if (auto* monTblMap = (*wpTbl)["monitor"].as_table()) {
       for (const auto& [monName, monNode] : *monTblMap) {
@@ -553,6 +559,12 @@ void ConfigService::loadFromFile(const std::string& path) {
           ovr.match = std::string(monName.str());
         if (auto v = (*monTbl)["enabled"].value<bool>())
           ovr.enabled = *v;
+        if (auto v = (*monTbl)["directory"].value<std::string>())
+          ovr.directory = *v;
+        if (auto v = (*monTbl)["directory_light"].value<std::string>())
+          ovr.directoryLight = *v;
+        if (auto v = (*monTbl)["directory_dark"].value<std::string>())
+          ovr.directoryDark = *v;
         wp.monitorOverrides.push_back(std::move(ovr));
       }
     }

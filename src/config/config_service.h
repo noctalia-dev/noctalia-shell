@@ -94,6 +94,9 @@ enum class WallpaperTransition : std::uint8_t {
 struct WallpaperMonitorOverride {
   std::string match;
   std::optional<bool> enabled;
+  std::optional<std::string> directory;
+  std::optional<std::string> directoryLight;
+  std::optional<std::string> directoryDark;
 };
 
 struct WallpaperConfig {
@@ -104,6 +107,9 @@ struct WallpaperConfig {
                                                   WallpaperTransition::Zoom, WallpaperTransition::Honeycomb};
   float transitionDurationMs = 1500.0f;
   float edgeSmoothness = 0.3f;
+  std::string directory;
+  std::string directoryLight;
+  std::string directoryDark;
   std::vector<WallpaperMonitorOverride> monitorOverrides;
 };
 

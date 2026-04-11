@@ -111,7 +111,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"brightness-low", 0xFB23},    // brightness-down-filled
     {"brightness-high", 0xFB24},   // brightness-up-filled
 
-    // Chevrons / carets
+    // Chevrons / carets / arrows
     {"chevron-left", 0xEA60},      // chevron-left
     {"chevron-right", 0xEA61},     // chevron-right
     {"chevron-up", 0xEA62},        // chevron-up
@@ -121,6 +121,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"caret-left", 0xFB2B},        // caret-left-filled
     {"caret-right", 0xFB2C},       // caret-right-filled
     {"square-filled", 0xFC40},     // square-filled
+    {"arrow-left", 0xEA19},        // arrow-left
 
     // Wallpaper / color
     {"camera-video", 0xED22},      // video
@@ -189,6 +190,10 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"map-pin", 0xEAE8},           // map-pin
     {"mountain", 0xEF97},          // mountain
 
+    // Files & Folders
+    {"folder", 0xEAAD},            // folder
+
+
     // Settings tabs
     {"settings-general", 0xEC38},  // adjustments-horizontal
     {"settings-bar", 0xFD51},      // crop-16-9
@@ -217,6 +222,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"noctalia", 0xEC33},          // noctalia
     {"hyprland", 0xEC6A},          // hyprland
 
+    // Experimental
     {"flask", 0xEBD2}             // flask
 };
 // clang-format on

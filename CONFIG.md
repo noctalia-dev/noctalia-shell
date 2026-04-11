@@ -319,10 +319,29 @@ transition          = ["fade", "wipe", "disc", "stripes", "zoom", "honeycomb"]
 transition_duration = 1500.0    # milliseconds
 edge_smoothness     = 0.3       # 0.0 – 1.0
 
+# Directory browsed by the wallpaper picker panel.
+directory           = "/home/user/Wallpapers"
+# Optional separate directories used when light/dark mode switching lands.
+# Both are parsed today but not yet consumed by the renderer.
+directory_light     = "/home/user/Wallpapers/Light"
+directory_dark      = "/home/user/Wallpapers/Dark"
+
 # Per-monitor overrides — same match rules as bar monitor overrides
 [wallpaper.monitor.DP-2]
-enabled = false
+enabled         = false
+# Each monitor override may point at its own directories. When unset, the
+# top-level [wallpaper] directories are used.
+directory       = "/home/user/Wallpapers/Vertical"
+directory_light = "/home/user/Wallpapers/Vertical/Light"
+directory_dark  = "/home/user/Wallpapers/Vertical/Dark"
 ```
+
+The wallpaper picker panel (toggle via IPC `wallpaper`) lists the images found in
+`directory` as a grid of thumbnails. Selecting a monitor in the panel's toolbar
+switches to that monitor's override directory (falling back to the base
+`directory`). Clicking a tile writes the chosen path to `state.toml` and applies
+it immediately; picking a wallpaper while **ALL** is selected applies it to
+every connected output.
 
 ---
 
@@ -424,8 +443,9 @@ Examples:
 - `noctalia:enable-idle-inhibitor`
 - `noctalia:disable-idle-inhibitor`
 - `noctalia:toggle-idle-inhibitor`
-- `noctalia:toggle-launcher`
-- `noctalia:toggle-session-menu`
+- `noctalia:toggle-panel launcher`
+- `noctalia:toggle-panel session-menu`
+- `noctalia:toggle-panel clipboard`
 
 Idle behavior uses the Wayland `ext_idle_notifier_v1` protocol, so it reacts to compositor idle notifications instead of polling. The standard idle notification path respects active idle inhibitors.
 
@@ -536,15 +556,6 @@ height   = 36
 background_opacity = 0.88
 margin_h = 8
 end      = ["volume", "clock"]
-
-# ─── Wallpaper ─────────────────────────────────────────────────────────────────
-
-[wallpaper]
-enabled             = true
-fill_mode           = "crop"
-transition          = ["fade", "wipe", "zoom", "disc", "honeycomb", "stripes"]
-transition_duration = 1500.0
-edge_smoothness     = 0.5
 
 # ─── Overview ──────────────────────────────────────────────────────────────────
 

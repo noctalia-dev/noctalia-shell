@@ -130,7 +130,6 @@ void Wallpaper::onStateChange() {
     }
 
     kLog.info("changing {} → {}", inst->connectorName, newPath);
-    inst->pendingPath = newPath;
 
     if (inst->surface == nullptr || inst->surface->wallpaperRenderer() == nullptr) {
       continue;
@@ -339,52 +338,47 @@ void Wallpaper::releaseInstanceTextures(WallpaperInstance& inst) {
 // ── Wallpaper loading & transitions ──────────────────────────────────────────
 
 void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& path) {
+  // Already showing this wallpaper.
+  if (!instance.transitioning && path == instance.currentPath) {
+    instance.queuedPath.clear();
+    return;
+  }
+
+  // Mid-transition: queue the latest request, the completion callback will
+  // apply it once the current transition finishes.
+  if (instance.transitioning) {
+    if (path == instance.pendingPath) {
+      instance.queuedPath.clear();
+    } else {
+      instance.queuedPath = path;
+    }
+    return;
+  }
+
   auto newTex = acquireTexture(path);
   if (newTex.id == 0) {
     kLog.warn("failed to load {}", path);
     return;
   }
 
+  instance.queuedPath.clear();
+
   if (instance.currentTexture.id == 0) {
     // First wallpaper — display immediately, no transition
     instance.currentTexture = newTex;
     instance.currentPath = path;
-    instance.pendingPath.clear();
     updateRendererState(instance);
     instance.surface->requestRedraw();
-  } else {
-    // Transition from current to new
-    instance.nextTexture = newTex;
-    instance.pendingPath = path;
-    startTransition(instance);
+    return;
   }
+
+  instance.nextTexture = newTex;
+  instance.pendingPath = path;
+  startTransition(instance);
 }
 
 void Wallpaper::startTransition(WallpaperInstance& instance) {
   const auto& wpConfig = m_config->config().wallpaper;
-
-  // Cancel any in-progress transition
-  if (instance.transitioning) {
-    instance.animations.cancel(0);
-    // Commit the pending state — release old current, promote next to current
-    if (instance.nextTexture.id != 0) {
-      releaseTexture(instance.currentTexture, instance.currentPath);
-      instance.currentTexture = instance.nextTexture;
-      instance.nextTexture = {};
-      instance.currentPath = instance.pendingPath;
-    }
-    instance.transitionProgress = 0.0f;
-    instance.transitioning = false;
-  }
-
-  // Re-load pending into nextTexture if we just committed it above
-  if (instance.nextTexture.id == 0 && !instance.pendingPath.empty()) {
-    makeAnyContextCurrent();
-    auto tex = acquireTexture(instance.pendingPath);
-    if (tex.id == 0)
-      return;
-    instance.nextTexture = tex;
-  }
 
   float aspectRatio = 1.777f;
   if (instance.surface->height() > 0) {
@@ -413,6 +407,15 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
         inst->transitionProgress = 0.0f;
         inst->transitioning = false;
         updateRendererState(*inst);
+
+        // Drain any wallpaper that was queued during this transition.
+        if (!inst->queuedPath.empty()) {
+          std::string queued = std::move(inst->queuedPath);
+          inst->queuedPath.clear();
+          if (queued != inst->currentPath) {
+            loadWallpaper(*inst, queued);
+          }
+        }
       });
 
   updateRendererState(instance);

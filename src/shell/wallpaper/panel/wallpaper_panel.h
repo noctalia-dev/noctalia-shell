@@ -1,0 +1,107 @@
+#pragma once
+
+#include "core/timer_manager.h"
+#include "shell/panel/panel.h"
+#include "shell/wallpaper/panel/wallpaper_scanner.h"
+
+#include <cstddef>
+#include <filesystem>
+#include <string>
+#include <vector>
+
+class Button;
+class ConfigService;
+class Flex;
+class Input;
+class InputArea;
+class Label;
+class Select;
+class StateService;
+class ThumbnailService;
+class Toggle;
+class WallpaperPageGrid;
+class WaylandConnection;
+
+class WallpaperPanel : public Panel {
+public:
+  WallpaperPanel(WaylandConnection* wayland, ConfigService* config, StateService* state,
+                 ThumbnailService* thumbnails);
+
+  void create() override;
+  void layout(Renderer& renderer, float width, float height) override;
+  void update(Renderer& renderer) override;
+  void onOpen(std::string_view context) override;
+  void onClose() override;
+
+  [[nodiscard]] float preferredWidth() const override { return scaled(1100.0f); }
+  [[nodiscard]] float preferredHeight() const override { return scaled(720.0f); }
+  [[nodiscard]] bool centeredHorizontally() const override { return true; }
+  [[nodiscard]] bool centeredVertically() const override { return true; }
+  [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
+  [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
+  [[nodiscard]] InputArea* initialFocusArea() const override;
+
+private:
+  // "ALL" is represented by an empty connector string.
+  struct MonitorChoice {
+    std::string connector; // empty = ALL
+    std::string label;
+  };
+
+  void populateMonitorChoices();
+  void refreshScan();
+  void applyFilter();
+  void rebuildBreadcrumb();
+  void navigateInto(const std::filesystem::path& dir);
+  void navigateUp();
+  void applyWallpaperFromEntry(const WallpaperEntry& entry);
+  void applyPage();
+  void resetPage();
+  [[nodiscard]] std::size_t pageCount() const noexcept;
+  [[nodiscard]] std::filesystem::path activeDirectoryForSelection() const;
+  [[nodiscard]] std::filesystem::path rootDirectoryForSelection() const;
+
+  WaylandConnection* m_wayland = nullptr;
+  ConfigService* m_config = nullptr;
+  StateService* m_state = nullptr;
+  ThumbnailService* m_thumbnails = nullptr;
+
+  WallpaperScanner m_scanner;
+
+  // UI nodes (owned by the root flex tree).
+  Flex* m_rootLayout = nullptr;
+  Flex* m_toolbar = nullptr;
+  Button* m_backButton = nullptr;
+  Label* m_breadcrumb = nullptr;
+  Select* m_monitorSelect = nullptr;
+  Input* m_filterInput = nullptr;
+  Toggle* m_flattenToggle = nullptr;
+  Label* m_flattenLabel = nullptr;
+  Button* m_refreshButton = nullptr;
+  WallpaperPageGrid* m_grid = nullptr;
+  Flex* m_pagination = nullptr;
+  Button* m_prevButton = nullptr;
+  Button* m_nextButton = nullptr;
+  Label* m_pageLabel = nullptr;
+
+  std::vector<MonitorChoice> m_monitorChoices;
+  std::size_t m_selectedMonitorIndex = 0;
+
+  // Navigation state for the current selected monitor.
+  std::vector<std::filesystem::path> m_navStack;
+
+  // Filtered view of the scanner's entries for the currently active
+  // directory. The grid reads a page-sized slice of this vector via a
+  // raw pointer; any mutation of the vector must be followed by applyPage().
+  std::vector<WallpaperEntry> m_visibleEntries;
+
+  std::string m_filterQuery;
+  std::string m_pendingFilterQuery;
+  Timer m_filterDebounceTimer;
+
+  bool m_flatten = false;
+  std::size_t m_currentPage = 0;
+  float m_lastWidth = 0.0f;
+  float m_lastHeight = 0.0f;
+  bool m_dirty = false;
+};

@@ -37,6 +37,7 @@
 #include "shell/overview/overview.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/tray/tray_menu.h"
+#include "shell/wallpaper/panel/thumbnail_service.h"
 #include "shell/wallpaper/wallpaper.h"
 #include "system/desktop_entry_poll_source.h"
 #include "system/system_monitor_service.h"
@@ -102,6 +103,7 @@ private:
   TrayMenu m_trayMenu;
   Wallpaper m_wallpaper;
   Overview m_overview;
+  ThumbnailService m_thumbnailService;
 
   // Poll sources (must outlive MainLoop)
   std::unique_ptr<SessionBusPollSource> m_busPollSource;

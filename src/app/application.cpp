@@ -12,6 +12,7 @@
 #include "shell/launcher/launcher_panel.h"
 #include "shell/session/session_panel.h"
 #include "shell/test/test_panel.h"
+#include "shell/wallpaper/panel/wallpaper_panel.h"
 #include "system/distro_info.h"
 #include "ui/controls/input.h"
 
@@ -392,6 +393,8 @@ void Application::initUi() {
     launcherPanel->addProvider(std::make_unique<EmojiProvider>(&m_clipboardService));
     m_panelManager.registerPanel("launcher", std::move(launcherPanel));
   }
+  m_panelManager.registerPanel("wallpaper", std::make_unique<WallpaperPanel>(&m_wayland, &m_configService,
+                                                                             &m_stateService, &m_thumbnailService));
 
   m_notificationPopup.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);
   m_configService.setNotificationManager(&m_notificationManager);
@@ -629,5 +632,6 @@ std::vector<PollSource*> Application::buildPollSources() {
   sources.push_back(&m_ipcPollSource);
   sources.push_back(&m_httpClientPollSource);
   sources.push_back(&m_weatherPollSource);
+  sources.push_back(&m_thumbnailService);
   return sources;
 }

@@ -9,8 +9,10 @@
 #include <toml.hpp>
 #pragma GCC diagnostic pop
 
+#include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <sys/inotify.h>
 #include <unistd.h>
 
@@ -72,6 +74,81 @@ void StateService::setWallpaperChangeCallback(ChangeCallback callback) {
   m_wallpaperChangeCallback = std::move(callback);
 }
 
+void StateService::setWallpaperPath(const std::optional<std::string>& connectorName, const std::string& path) {
+  if (m_statePath.empty()) {
+    return;
+  }
+
+  bool changed = false;
+  if (connectorName.has_value()) {
+    auto it = m_monitorWallpaperPaths.find(*connectorName);
+    if (it == m_monitorWallpaperPaths.end() || it->second != path) {
+      m_monitorWallpaperPaths[*connectorName] = path;
+      changed = true;
+    }
+  } else {
+    if (m_defaultWallpaperPath != path) {
+      m_defaultWallpaperPath = path;
+      changed = true;
+    }
+  }
+
+  if (!changed) {
+    return;
+  }
+
+  if (!writeToFile()) {
+    kLog.warn("failed to write {}", m_statePath);
+    return;
+  }
+
+  m_ownWritePending = true;
+  if (m_wallpaperChangeCallback) {
+    m_wallpaperChangeCallback();
+  }
+}
+
+bool StateService::writeToFile() const {
+  toml::table root;
+
+  toml::table wallpaperTbl;
+  toml::table defaultTbl;
+  defaultTbl.insert("path", m_defaultWallpaperPath);
+  wallpaperTbl.insert("default", std::move(defaultTbl));
+
+  if (!m_monitorWallpaperPaths.empty()) {
+    toml::table monitorsTbl;
+    for (const auto& [connector, monPath] : m_monitorWallpaperPaths) {
+      toml::table monTbl;
+      monTbl.insert("path", monPath);
+      monitorsTbl.insert(connector, std::move(monTbl));
+    }
+    wallpaperTbl.insert("monitors", std::move(monitorsTbl));
+  }
+
+  root.insert("wallpaper", std::move(wallpaperTbl));
+
+  const std::string tmpPath = m_statePath + ".tmp";
+  {
+    std::ofstream out(tmpPath, std::ios::trunc);
+    if (!out.is_open()) {
+      return false;
+    }
+    out << root;
+    if (!out.good()) {
+      return false;
+    }
+  }
+
+  std::error_code ec;
+  std::filesystem::rename(tmpPath, m_statePath, ec);
+  if (ec) {
+    std::filesystem::remove(tmpPath, ec);
+    return false;
+  }
+  return true;
+}
+
 void StateService::checkReload() {
   if (m_inotifyFd < 0) {
     return;
@@ -98,6 +175,11 @@ void StateService::checkReload() {
   }
 
   if (!stateChanged) {
+    return;
+  }
+
+  if (m_ownWritePending) {
+    m_ownWritePending = false;
     return;
   }
 

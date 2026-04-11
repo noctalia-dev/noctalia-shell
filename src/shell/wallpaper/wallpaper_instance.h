@@ -21,6 +21,7 @@ struct WallpaperInstance {
   // Wallpaper state
   std::string currentPath;
   std::string pendingPath;
+  std::string queuedPath;
   TextureHandle currentTexture;
   TextureHandle nextTexture;
 
