@@ -1,4 +1,4 @@
-#include "shell/notification/notification_popup.h"
+#include "shell/notification/notification_toast.h"
 
 #include "notification/notification_manager.h"
 #include "config/config_service.h"
@@ -62,15 +62,15 @@ constexpr int kSurfaceHeight = static_cast<int>(kCardMaxHeight * kMaxVisible + k
 
 } // namespace
 
-NotificationPopup::NotificationPopup() = default;
+NotificationToast::NotificationToast() = default;
 
-NotificationPopup::~NotificationPopup() {
+NotificationToast::~NotificationToast() {
   if (m_notifications != nullptr && m_callbackToken >= 0) {
     m_notifications->removeEventCallback(m_callbackToken);
   }
 }
 
-void NotificationPopup::initialize(WaylandConnection& wayland, ConfigService* config,
+void NotificationToast::initialize(WaylandConnection& wayland, ConfigService* config,
                                    NotificationManager* notifications, RenderContext* renderContext) {
   m_wayland = &wayland;
   m_config = config;
@@ -83,7 +83,7 @@ void NotificationPopup::initialize(WaylandConnection& wayland, ConfigService* co
 
 // --- Notification events ---
 
-void NotificationPopup::onNotificationEvent(const Notification& n, NotificationEvent event) {
+void NotificationToast::onNotificationEvent(const Notification& n, NotificationEvent event) {
   switch (event) {
   case NotificationEvent::Added:
     addPopup(n);
@@ -156,7 +156,7 @@ void NotificationPopup::onNotificationEvent(const Notification& n, NotificationE
   }
 }
 
-void NotificationPopup::addPopup(const Notification& n) {
+void NotificationToast::addPopup(const Notification& n) {
   for (const auto& entry : m_entries) {
     if (entry.notificationId == n.id) {
       return;
@@ -196,10 +196,10 @@ void NotificationPopup::addPopup(const Notification& n) {
     addCardToInstance(*inst, index);
   }
 
-  kLog.debug("notification popup: showing #{} \"{}\"", n.id, n.summary);
+  kLog.debug("notification toast: showing #{} \"{}\"", n.id, n.summary);
 }
 
-void NotificationPopup::removePopup(uint32_t notificationId) {
+void NotificationToast::removePopup(uint32_t notificationId) {
   for (std::size_t i = 0; i < m_entries.size(); ++i) {
     if (m_entries[i].notificationId == notificationId && !m_entries[i].exiting) {
       dismissPopup(i);
@@ -208,7 +208,7 @@ void NotificationPopup::removePopup(uint32_t notificationId) {
   }
 }
 
-void NotificationPopup::dismissPopup(std::size_t index) {
+void NotificationToast::dismissPopup(std::size_t index) {
   if (index >= m_entries.size()) {
     return;
   }
@@ -223,7 +223,7 @@ void NotificationPopup::dismissPopup(std::size_t index) {
   }
 }
 
-void NotificationPopup::finishRemoval(uint32_t notificationId) {
+void NotificationToast::finishRemoval(uint32_t notificationId) {
   const auto it = std::find_if(m_entries.begin(), m_entries.end(), [notificationId](const PopupEntry& entry) {
     return entry.notificationId == notificationId;
   });
@@ -274,7 +274,7 @@ void NotificationPopup::finishRemoval(uint32_t notificationId) {
 
 // --- Per-instance card management ---
 
-void NotificationPopup::addCardToInstance(PopupInstance& inst, std::size_t entryIndex) {
+void NotificationToast::addCardToInstance(PopupInstance& inst, std::size_t entryIndex) {
   auto& entry = m_entries[entryIndex];
 
   PopupInstance::CardState cs;
@@ -321,7 +321,7 @@ void NotificationPopup::addCardToInstance(PopupInstance& inst, std::size_t entry
   inst.surface->requestRedraw();
 }
 
-void NotificationPopup::dismissCardFromInstance(PopupInstance& inst, std::size_t entryIndex) {
+void NotificationToast::dismissCardFromInstance(PopupInstance& inst, std::size_t entryIndex) {
   if (entryIndex >= inst.cards.size()) {
     return;
   }
@@ -369,7 +369,7 @@ void NotificationPopup::dismissCardFromInstance(PopupInstance& inst, std::size_t
   inst.surface->requestRedraw();
 }
 
-void NotificationPopup::layoutCards(PopupInstance& inst) {
+void NotificationToast::layoutCards(PopupInstance& inst) {
   for (std::size_t i = 0; i < inst.cards.size(); ++i) {
     auto& cs = inst.cards[i];
     if (i < m_entries.size() && m_entries[i].exiting) {
@@ -404,7 +404,7 @@ void NotificationPopup::layoutCards(PopupInstance& inst) {
   inst.surface->requestRedraw();
 }
 
-float NotificationPopup::cardTargetY(std::size_t index) const {
+float NotificationToast::cardTargetY(std::size_t index) const {
   float y = kPadding;
   for (std::size_t i = 0; i < index && i < m_entries.size(); ++i) {
     y += m_entries[i].cardHeight + kGap;
@@ -412,7 +412,7 @@ float NotificationPopup::cardTargetY(std::size_t index) const {
   return y;
 }
 
-void NotificationPopup::updateEntryLayout(PopupEntry& entry) const {
+void NotificationToast::updateEntryLayout(PopupEntry& entry) const {
   const float textWidth = kCardWidth - kCardInnerPad * 2;
 
   // Let Pango do the wrapping/ellipsizing. We just need the measured pixel
@@ -440,7 +440,7 @@ void NotificationPopup::updateEntryLayout(PopupEntry& entry) const {
 
 // --- Surface lifecycle ---
 
-void NotificationPopup::ensureSurfaces() {
+void NotificationToast::ensureSurfaces() {
   if (!m_instances.empty()) {
     return;
   }
@@ -484,26 +484,26 @@ void NotificationPopup::ensureSurfaces() {
 
     bool ok = inst->surface->initialize(output.output);
     if (!ok) {
-      kLog.warn("notification popup: failed to initialize surface on {}", output.connectorName);
+      kLog.warn("notification toast: failed to initialize surface on {}", output.connectorName);
       continue;
     }
 
-    kLog.debug("notification popup: surface created on {}", output.connectorName);
+    kLog.debug("notification toast: surface created on {}", output.connectorName);
     m_instances.push_back(std::move(inst));
   }
 }
 
-void NotificationPopup::destroySurfaces() {
+void NotificationToast::destroySurfaces() {
   for (auto& inst : m_instances) {
     inst->animations.cancelAll();
     inst->inputDispatcher.setSceneRoot(nullptr);
   }
   m_instances.clear();
   m_entries.clear();
-  kLog.debug("notification popup: all surfaces destroyed");
+  kLog.debug("notification toast: all surfaces destroyed");
 }
 
-void NotificationPopup::buildScene(PopupInstance& inst, uint32_t width, uint32_t height) {
+void NotificationToast::buildScene(PopupInstance& inst, uint32_t width, uint32_t height) {
   if (m_renderContext == nullptr) {
     return;
   }
@@ -531,7 +531,7 @@ void NotificationPopup::buildScene(PopupInstance& inst, uint32_t width, uint32_t
   updateInputRegion(inst);
 }
 
-void NotificationPopup::updateInputRegion(PopupInstance& inst) const {
+void NotificationToast::updateInputRegion(PopupInstance& inst) const {
   if (inst.surface == nullptr) {
     return;
   }
@@ -553,7 +553,7 @@ void NotificationPopup::updateInputRegion(PopupInstance& inst) const {
   inst.surface->setInputRegion(rects);
 }
 
-Node* NotificationPopup::buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary, Label** outBody,
+Node* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary, Label** outBody,
                                    Node** outBg, ProgressBar** outProgress) {
   const float innerWidth = kCardWidth - kCardInnerPad * 2;
   const float progressY = entry.cardHeight - kProgressHeight - kProgressBottomMargin;
@@ -659,7 +659,7 @@ Node* NotificationPopup::buildCard(const PopupEntry& entry, Label** outAppName, 
 
 // --- Pointer events ---
 
-bool NotificationPopup::onPointerEvent(const PointerEvent& event) {
+bool NotificationToast::onPointerEvent(const PointerEvent& event) {
   bool consumed = false;
 
   for (auto& inst : m_instances) {

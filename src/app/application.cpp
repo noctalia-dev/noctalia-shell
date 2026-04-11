@@ -414,7 +414,7 @@ void Application::initUi() {
   m_panelManager.registerPanel("wallpaper", std::make_unique<WallpaperPanel>(&m_wayland, &m_configService,
                                                                              &m_stateService, &m_thumbnailService));
 
-  m_notificationPopup.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);
+  m_notificationToast.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);
   m_configService.setNotificationManager(&m_notificationManager);
 
   m_osdOverlay.initialize(m_wayland, &m_configService, &m_renderContext);
@@ -479,7 +479,7 @@ void Application::initUi() {
       return;
     if (m_panelManager.onPointerEvent(event))
       return;
-    m_notificationPopup.onPointerEvent(event);
+    m_notificationToast.onPointerEvent(event);
   });
 
   m_wayland.setKeyboardEventCallback([this](const KeyboardEvent& event) {

@@ -262,7 +262,7 @@ _noctalia_sources = files(
   'src/shell/launcher/launcher_panel.cpp',
   'src/shell/lockscreen/lock_screen.cpp',
   'src/shell/lockscreen/lock_surface.cpp',
-  'src/shell/notification/notification_popup.cpp',
+  'src/shell/notification/notification_toast.cpp',
   'src/shell/osd/audio_osd.cpp',
   'src/shell/osd/osd_overlay.cpp',
   'src/shell/panel/panel_manager.cpp',

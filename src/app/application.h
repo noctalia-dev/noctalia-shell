@@ -31,7 +31,7 @@
 #include "render/render_context.h"
 #include "shell/bar/bar.h"
 #include "shell/lockscreen/lock_screen.h"
-#include "shell/notification/notification_popup.h"
+#include "shell/notification/notification_toast.h"
 #include "shell/osd/audio_osd.h"
 #include "shell/osd/osd_overlay.h"
 #include "shell/overview/overview.h"
@@ -99,7 +99,7 @@ private:
   Bar m_bar;
   LockScreen m_lockScreen;
   PanelManager m_panelManager;
-  NotificationPopup m_notificationPopup;
+  NotificationToast m_notificationToast;
   AudioOsd m_audioOsd;
   OsdOverlay m_osdOverlay;
   TrayMenu m_trayMenu;

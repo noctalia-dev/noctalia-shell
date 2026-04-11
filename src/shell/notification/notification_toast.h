@@ -17,13 +17,13 @@ class RenderContext;
 class WaylandConnection;
 struct PointerEvent;
 
-class NotificationPopup {
+class NotificationToast {
 public:
-  NotificationPopup();
-  ~NotificationPopup();
+  NotificationToast();
+  ~NotificationToast();
 
-  NotificationPopup(const NotificationPopup&) = delete;
-  NotificationPopup& operator=(const NotificationPopup&) = delete;
+  NotificationToast(const NotificationToast&) = delete;
+  NotificationToast& operator=(const NotificationToast&) = delete;
 
   void initialize(WaylandConnection& wayland, ConfigService* config, NotificationManager* notifications,
                   RenderContext* renderContext);
