@@ -6,6 +6,7 @@
 #include <GLES2/gl2.h>
 
 #include <algorithm>
+#include <cerrno>
 #include <cstdint>
 #include <fstream>
 #include <sys/eventfd.h>
@@ -229,7 +230,10 @@ void ThumbnailService::signalMain() {
     return;
   }
   const std::uint64_t one = 1;
-  (void)::write(m_eventFd, &one, sizeof(one));
+  const ssize_t written = ::write(m_eventFd, &one, sizeof(one));
+  if (written < 0 && errno != EAGAIN) {
+    kLog.warn("failed to signal thumbnail eventfd: errno={}", errno);
+  }
 }
 
 void ThumbnailService::pushResult(DecodedJob job) {
