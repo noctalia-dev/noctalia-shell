@@ -7,6 +7,7 @@
 #include "ui/controls/label.h"
 #include "ui/controls/progress_bar.h"
 #include "wayland/layer_surface.h"
+#include "wayland/surface.h"
 
 #include <memory>
 #include <vector>
@@ -15,7 +16,6 @@ class ConfigService;
 class RenderContext;
 class WaylandConnection;
 struct PointerEvent;
-struct wl_surface;
 
 class NotificationPopup {
 public:
@@ -54,7 +54,6 @@ private:
     std::unique_ptr<Node> sceneRoot;
     AnimationManager animations;
     InputDispatcher inputDispatcher;
-    wl_surface* wlSurface = nullptr;
     bool pointerInside = false;
 
     // Per-entry visual nodes for this instance
@@ -79,7 +78,7 @@ private:
   void removePopup(uint32_t notificationId);
   void finishRemoval(uint32_t notificationId);
   void layoutCards(PopupInstance& inst);
-  void updateInputRegion(PopupInstance& inst);
+  void updateInputRegion(PopupInstance& inst) const;
 
   void ensureSurfaces();
   void destroySurfaces();

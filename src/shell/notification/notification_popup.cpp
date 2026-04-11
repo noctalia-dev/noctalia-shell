@@ -19,7 +19,6 @@
 #include <algorithm>
 #include <cmath>
 #include <linux/input-event-codes.h>
-#include <wayland-client.h>
 
 namespace {
 
@@ -489,7 +488,6 @@ void NotificationPopup::ensureSurfaces() {
       continue;
     }
 
-    inst->wlSurface = inst->surface->wlSurface();
     kLog.debug("notification popup: surface created on {}", output.connectorName);
     m_instances.push_back(std::move(inst));
   }
@@ -521,7 +519,6 @@ void NotificationPopup::buildScene(PopupInstance& inst, uint32_t width, uint32_t
       [this](uint32_t serial, uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
 
   inst.surface->setSceneRoot(inst.sceneRoot.get());
-  inst.surface->setUpdateCallback([this, &inst]() { updateInputRegion(inst); });
 
   // Build cards for any entries that already exist
   inst.cards.clear();
@@ -534,29 +531,26 @@ void NotificationPopup::buildScene(PopupInstance& inst, uint32_t width, uint32_t
   updateInputRegion(inst);
 }
 
-void NotificationPopup::updateInputRegion(PopupInstance& inst) {
-  if (m_wayland == nullptr || inst.wlSurface == nullptr) {
+void NotificationPopup::updateInputRegion(PopupInstance& inst) const {
+  if (inst.surface == nullptr) {
     return;
   }
 
-  wl_region* region = wl_compositor_create_region(m_wayland->compositor());
-  if (region == nullptr) {
-    return;
-  }
-
+  std::vector<InputRect> rects;
+  rects.reserve(inst.cards.size());
   for (const auto& card : inst.cards) {
     if (card.cardNode == nullptr) {
       continue;
     }
-    const int x = static_cast<int>(std::floor(card.cardNode->x()));
-    const int y = static_cast<int>(std::floor(card.cardNode->y()));
-    const int w = std::max(1, static_cast<int>(std::ceil(card.cardNode->width())));
-    const int h = std::max(1, static_cast<int>(std::ceil(card.cardNode->height())));
-    wl_region_add(region, x, y, w, h);
+    rects.push_back({
+        .x = static_cast<int>(std::floor(card.cardNode->x())),
+        .y = static_cast<int>(std::floor(card.cardNode->y())),
+        .width = std::max(1, static_cast<int>(std::ceil(card.cardNode->width()))),
+        .height = std::max(1, static_cast<int>(std::ceil(card.cardNode->height()))),
+    });
   }
 
-  wl_surface_set_input_region(inst.wlSurface, region);
-  wl_region_destroy(region);
+  inst.surface->setInputRegion(rects);
 }
 
 Node* NotificationPopup::buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary, Label** outBody,
@@ -671,13 +665,13 @@ bool NotificationPopup::onPointerEvent(const PointerEvent& event) {
   for (auto& inst : m_instances) {
     switch (event.type) {
     case PointerEvent::Type::Enter:
-      if (event.surface == inst->wlSurface) {
+      if (event.surface == inst->surface->wlSurface()) {
         inst->pointerInside = true;
         inst->inputDispatcher.pointerEnter(static_cast<float>(event.sx), static_cast<float>(event.sy), event.serial);
       }
       break;
     case PointerEvent::Type::Leave:
-      if (event.surface == inst->wlSurface) {
+      if (event.surface == inst->surface->wlSurface()) {
         inst->pointerInside = false;
         inst->inputDispatcher.pointerLeave();
       }

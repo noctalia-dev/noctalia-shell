@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <vector>
 
 struct wl_callback;
 struct wl_surface;
@@ -12,6 +13,13 @@ class AnimationManager;
 class Node;
 class RenderContext;
 class WaylandConnection;
+
+struct InputRect {
+  int x = 0;
+  int y = 0;
+  int width = 0;
+  int height = 0;
+};
 
 class Surface {
 public:
@@ -30,6 +38,7 @@ public:
 
   void setConfigureCallback(ConfigureCallback callback);
   void setUpdateCallback(UpdateCallback callback);
+  void setInputRegion(const std::vector<InputRect>& rects);
   void requestRedraw();
   void renderNow();
   void setAnimationManager(AnimationManager* manager) noexcept { m_animationManager = manager; }

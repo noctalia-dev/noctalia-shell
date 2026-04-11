@@ -93,6 +93,24 @@ void Surface::setConfigureCallback(ConfigureCallback callback) { m_configureCall
 
 void Surface::setUpdateCallback(UpdateCallback callback) { m_updateCallback = std::move(callback); }
 
+void Surface::setInputRegion(const std::vector<InputRect>& rects) {
+  if (m_surface == nullptr) {
+    return;
+  }
+
+  wl_region* region = wl_compositor_create_region(m_connection.compositor());
+  if (region == nullptr) {
+    return;
+  }
+
+  for (const auto& r : rects) {
+    wl_region_add(region, r.x, r.y, r.width, r.height);
+  }
+
+  wl_surface_set_input_region(m_surface, region);
+  wl_region_destroy(region);
+}
+
 void Surface::requestRedraw() {
   if (m_running && m_configured && m_frameCallback == nullptr) {
     m_lastFrameTime = 0;
