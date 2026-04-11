@@ -4,6 +4,14 @@
 
 InputArea::InputArea() : Node(NodeType::Base) {}
 
+void InputArea::layout(Renderer& renderer) {
+  for (auto& child : children()) {
+    if (child->visible()) {
+      child->layout(renderer);
+    }
+  }
+}
+
 InputArea::~InputArea() {
   if (m_destroyCallback) {
     m_destroyCallback(this);

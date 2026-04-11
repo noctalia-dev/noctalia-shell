@@ -44,6 +44,11 @@ public:
   InputArea();
   ~InputArea() override;
 
+  // InputArea is a transparent hit-test wrapper with no layout semantics of its
+  // own; forward layout() to visible children so callers can use it as a
+  // clickable container without manually re-laying children.
+  void layout(Renderer& renderer) override;
+
   // Pointer callback setters
   void setOnEnter(PointerCallback callback);
   void setOnLeave(VoidCallback callback);
