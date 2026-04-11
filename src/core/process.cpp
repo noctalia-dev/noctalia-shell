@@ -1,5 +1,6 @@
 #include "core/process.h"
 
+#include <csignal>
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
@@ -7,6 +8,43 @@
 #include <string_view>
 #include <sys/wait.h>
 #include <unistd.h>
+
+namespace {
+
+  // Forks, redirects child stdio to /dev/null, and execvp the given args.
+  // Returns the child pid in the parent, or -1 on fork failure.
+  // Never returns in the child.
+  pid_t forkExecDetached(const std::vector<std::string>& args) {
+    const pid_t pid = ::fork();
+    if (pid != 0) {
+      return pid;
+    }
+
+    // Child
+    ::setsid();
+
+    const int devnull = ::open("/dev/null", O_RDWR);
+    if (devnull >= 0) {
+      ::dup2(devnull, STDIN_FILENO);
+      ::dup2(devnull, STDOUT_FILENO);
+      ::dup2(devnull, STDERR_FILENO);
+      if (devnull > STDERR_FILENO) {
+        ::close(devnull);
+      }
+    }
+
+    std::vector<char*> argv;
+    argv.reserve(args.size() + 1);
+    for (const auto& arg : args) {
+      argv.push_back(const_cast<char*>(arg.c_str()));
+    }
+    argv.push_back(nullptr);
+
+    ::execvp(argv[0], argv.data());
+    ::_exit(127);
+  }
+
+} // namespace
 
 namespace process {
 
@@ -47,37 +85,7 @@ namespace process {
     if (args.empty() || args.front().empty()) {
       return false;
     }
-
-    pid_t pid = fork();
-    if (pid < 0) {
-      return false;
-    }
-
-    if (pid == 0) {
-      setsid();
-
-      int devnull = open("/dev/null", O_RDWR);
-      if (devnull >= 0) {
-        dup2(devnull, STDIN_FILENO);
-        dup2(devnull, STDOUT_FILENO);
-        dup2(devnull, STDERR_FILENO);
-        if (devnull > STDERR_FILENO) {
-          close(devnull);
-        }
-      }
-
-      std::vector<char*> argv;
-      argv.reserve(args.size() + 1);
-      for (const auto& arg : args) {
-        argv.push_back(const_cast<char*>(arg.c_str()));
-      }
-      argv.push_back(nullptr);
-
-      execvp(argv[0], argv.data());
-      _exit(127);
-    }
-
-    return true;
+    return forkExecDetached(args) > 0;
   }
 
   bool launchDetached(std::initializer_list<const char*> args) {
@@ -96,36 +104,10 @@ namespace process {
     if (args.empty() || args.front().empty()) {
       return std::nullopt;
     }
-
-    pid_t pid = fork();
+    const pid_t pid = forkExecDetached(args);
     if (pid < 0) {
       return std::nullopt;
     }
-
-    if (pid == 0) {
-      setsid();
-
-      int devnull = open("/dev/null", O_RDWR);
-      if (devnull >= 0) {
-        dup2(devnull, STDIN_FILENO);
-        dup2(devnull, STDOUT_FILENO);
-        dup2(devnull, STDERR_FILENO);
-        if (devnull > STDERR_FILENO) {
-          close(devnull);
-        }
-      }
-
-      std::vector<char*> argv;
-      argv.reserve(args.size() + 1);
-      for (const auto& arg : args) {
-        argv.push_back(const_cast<char*>(arg.c_str()));
-      }
-      argv.push_back(nullptr);
-
-      execvp(argv[0], argv.data());
-      _exit(127);
-    }
-
     return static_cast<int>(pid);
   }
 
@@ -139,6 +121,20 @@ namespace process {
       command.emplace_back(arg);
     }
     return launchDetachedTracked(command);
+  }
+
+  void terminateTracked(int pid) {
+    if (pid <= 0) {
+      return;
+    }
+    const pid_t p = static_cast<pid_t>(pid);
+    ::kill(p, SIGTERM);
+    // Single non-blocking check; if still running after SIGTERM, escalate to SIGKILL.
+    int status = 0;
+    if (::waitpid(p, &status, WNOHANG) != p) {
+      ::kill(p, SIGKILL);
+      ::waitpid(p, &status, 0);
+    }
   }
 
   bool runSync(const std::vector<std::string>& args) {
