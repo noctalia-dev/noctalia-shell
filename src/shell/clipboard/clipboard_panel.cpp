@@ -99,6 +99,10 @@ std::string previewTitle(const ClipboardEntry& entry) {
 
 ClipboardPanel::ClipboardPanel(ClipboardService* clipboard) : m_clipboard(clipboard) {}
 
+void ClipboardPanel::setActivateCallback(std::function<void(const ClipboardEntry&)> callback) {
+  m_activateCallback = std::move(callback);
+}
+
 void ClipboardPanel::create() {
   const float scale = contentScale();
   auto rootLayout = std::make_unique<Flex>();
@@ -750,6 +754,10 @@ void ClipboardPanel::activateSelected() {
   const bool promoted = m_clipboard->promoteEntry(historyIndex);
   const bool copied = m_clipboard->copyEntry(entry);
   if (copied || promoted) {
+    if (m_activateCallback) {
+      m_activateCallback(entry);
+      return;
+    }
     m_selectedIndex = 0;
     applyFilter();
     schedulePreviewPayloadRefresh(false);

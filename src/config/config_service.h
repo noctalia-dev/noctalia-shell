@@ -123,11 +123,20 @@ struct OsdConfig {
   std::string position = "top_right";
 };
 
+enum class ClipboardAutoPasteMode : std::uint8_t {
+  Off = 0,
+  Auto = 1,
+  CtrlV = 2,
+  CtrlShiftV = 3,
+  ShiftInsert = 4,
+};
+
 struct ShellConfig {
   float uiScale = 1.0f;
   std::string lang; // empty = auto-detect from $LC_ALL/$LC_MESSAGES/$LANG
   bool notificationsDbus = true;
   std::string avatarPath;
+  ClipboardAutoPasteMode clipboardAutoPaste = ClipboardAutoPasteMode::Auto;
 };
 
 struct WeatherConfig {

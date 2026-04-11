@@ -1,6 +1,7 @@
 #include "application.h"
 
 #include "app/poll_source.h"
+#include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/process.h"
 #include "i18n/i18n_service.h"
@@ -15,6 +16,7 @@
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 #include "system/distro_info.h"
 #include "ui/controls/input.h"
+#include "ui/style.h"
 
 #include <chrono>
 #include <cmath>
@@ -29,6 +31,40 @@ std::atomic<bool> Application::s_shutdownRequested{false};
 namespace {
 
   constexpr Logger kLog("app");
+
+  std::optional<VirtualPasteShortcut> virtualPasteShortcutFor(ClipboardAutoPasteMode mode, bool isImage) {
+    switch (mode) {
+    case ClipboardAutoPasteMode::Off:
+      return std::nullopt;
+    case ClipboardAutoPasteMode::Auto:
+      return isImage ? VirtualPasteShortcut::CtrlV : VirtualPasteShortcut::CtrlShiftV;
+    case ClipboardAutoPasteMode::CtrlV:
+      return VirtualPasteShortcut::CtrlV;
+    case ClipboardAutoPasteMode::CtrlShiftV:
+      return VirtualPasteShortcut::CtrlShiftV;
+    case ClipboardAutoPasteMode::ShiftInsert:
+      return VirtualPasteShortcut::ShiftInsert;
+    }
+    return std::nullopt;
+  }
+
+  std::vector<std::string> wtypeArgsFor(ClipboardAutoPasteMode mode, bool isImage) {
+    switch (mode) {
+    case ClipboardAutoPasteMode::Off:
+      return {};
+    case ClipboardAutoPasteMode::Auto:
+      return isImage ? std::vector<std::string>{"wtype", "-M", "ctrl", "-k", "v", "-m", "ctrl"}
+                     : std::vector<std::string>{"wtype", "-M", "ctrl",  "-M", "shift", "-k",
+                                                "v",     "-m", "shift", "-m", "ctrl"};
+    case ClipboardAutoPasteMode::CtrlV:
+      return {"wtype", "-M", "ctrl", "-k", "v", "-m", "ctrl"};
+    case ClipboardAutoPasteMode::CtrlShiftV:
+      return {"wtype", "-M", "ctrl", "-M", "shift", "-k", "v", "-m", "shift", "-m", "ctrl"};
+    case ClipboardAutoPasteMode::ShiftInsert:
+      return {"wtype", "-M", "shift", "-k", "Insert", "-m", "shift"};
+    }
+    return {};
+  }
 
   bool launchLogoutCommand() {
     const char* sessionId = std::getenv("XDG_SESSION_ID");
@@ -102,6 +138,7 @@ Application::Application() : m_weatherService(m_configService, m_httpClient) {
 
 Application::~Application() {
   m_wayland.setClipboardService(nullptr);
+  m_wayland.setVirtualKeyboardService(nullptr);
 
   if (m_systemBus != nullptr) {
     m_systemBus->processPendingEvents();
@@ -194,6 +231,7 @@ void Application::initServices() {
     throw std::runtime_error("failed to connect to Wayland display");
   }
   m_wayland.setClipboardService(&m_clipboardService);
+  m_wayland.setVirtualKeyboardService(&m_virtualKeyboardService);
   Input::setClipboardService(&m_clipboardService);
 
   m_wayland.setOutputChangeCallback([this]() {
@@ -364,7 +402,33 @@ void Application::initUi() {
   // Panel manager must be before bar so widgets can access PanelManager::instance()
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
   m_configService.addReloadCallback([this]() { m_panelManager.close(); });
-  m_panelManager.registerPanel("clipboard", std::make_unique<ClipboardPanel>(&m_clipboardService));
+  auto clipboardPanel = std::make_unique<ClipboardPanel>(&m_clipboardService);
+  clipboardPanel->setActivateCallback([this](const ClipboardEntry& entry) {
+    m_panelManager.close();
+    const ClipboardAutoPasteMode mode = m_configService.config().shell.clipboardAutoPaste;
+    if (mode == ClipboardAutoPasteMode::Off) {
+      return;
+    }
+    const bool isImage = entry.isImage();
+    m_clipboardAutoPasteTimer.stop();
+    m_clipboardAutoPasteTimer.start(std::chrono::milliseconds(Style::animFast + 30), [this, isImage]() {
+      DeferredCall::callLater([this, isImage]() {
+        const ClipboardAutoPasteMode activeMode = m_configService.config().shell.clipboardAutoPaste;
+        const auto shortcut = virtualPasteShortcutFor(activeMode, isImage);
+        if (shortcut.has_value() && m_virtualKeyboardService.sendPasteShortcut(*shortcut)) {
+          return;
+        }
+        const auto args = wtypeArgsFor(activeMode, isImage);
+        if (!args.empty() && process::launchDetached(args)) {
+          return;
+        }
+        if (activeMode != ClipboardAutoPasteMode::Off) {
+          kLog.warn("clipboard auto-paste failed: native virtual keyboard unavailable and wtype launch failed");
+        }
+      });
+    });
+  });
+  m_panelManager.registerPanel("clipboard", std::move(clipboardPanel));
   m_panelManager.registerPanel(
       "session", std::make_unique<SessionPanel>(SessionPanel::Actions{
                      .logout =

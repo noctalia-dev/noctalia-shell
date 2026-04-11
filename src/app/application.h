@@ -6,6 +6,7 @@
 #include "config/config_service.h"
 #include "config/state_poll_source.h"
 #include "config/state_service.h"
+#include "core/timer_manager.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/notification/notification_poll_source.h"
 #include "dbus/notification/notification_service.h"
@@ -49,6 +50,7 @@
 #include "wayland/clipboard_poll_source.h"
 #include "wayland/clipboard_service.h"
 #include "wayland/key_repeat_poll_source.h"
+#include "wayland/virtual_keyboard_service.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/workspace_poll_source.h"
 
@@ -76,6 +78,7 @@ private:
 
   WaylandConnection m_wayland;
   ClipboardService m_clipboardService;
+  VirtualKeyboardService m_virtualKeyboardService;
   ConfigService m_configService;
   StateService m_stateService;
   TimeService m_timeService;
@@ -127,6 +130,7 @@ private:
   WeatherService m_weatherService;
   HttpClientPollSource m_httpClientPollSource{m_httpClient};
   WeatherPollSource m_weatherPollSource{m_weatherService};
+  Timer m_clipboardAutoPasteTimer;
 
   std::unique_ptr<MainLoop> m_mainLoop;
 };

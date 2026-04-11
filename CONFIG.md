@@ -545,6 +545,7 @@ ui_scale = 1.0              # content scale multiplier for panels and other non-
 lang = "en"                 # overidde language detection
 notifications_dbus = true   # when false, don't claim org.freedesktop.Notifications
 avatar_path = "/home/you/Pictures/avatar.png" # avatar image for Control Center overview session card
+clipboard_auto_paste = "auto" # off | auto | ctrl_v | ctrl_shift_v | shift_insert
 ```
 
 `ui_scale` is completely separate from `bar.scale`:
@@ -555,6 +556,8 @@ avatar_path = "/home/you/Pictures/avatar.png" # avatar image for Control Center 
 `notifications_dbus` only controls the external D-Bus notification daemon. When disabled, apps cannot send notifications through `org.freedesktop.Notifications`, but Noctalia internal notifications still appear in popups, history, and widgets.
 
 `avatar_path` sets the avatar image shown in the Control Center Overview session card.
+
+`clipboard_auto_paste` controls what Noctalia sends after selecting a clipboard entry. `auto` matches the old shell behavior: image entries use `Ctrl+V`, text entries use `Ctrl+Shift+V`. `ctrl_v` works for most GUI apps, `ctrl_shift_v` and `shift_insert` are better fits for many terminals, and `off` keeps the current behavior to “copy only, no automatic paste”.
 
 ---
 

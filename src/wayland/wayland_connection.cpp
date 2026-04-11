@@ -3,6 +3,7 @@
 #include "compositors/niri/niri_output_backend.h"
 #include "core/log.h"
 #include "wayland/clipboard_service.h"
+#include "wayland/virtual_keyboard_service.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -17,6 +18,7 @@
 #include "ext-session-lock-v1-client-protocol.h"
 #include "ext-workspace-v1-client-protocol.h"
 #include "idle-inhibit-unstable-v1-client-protocol.h"
+#include "virtual-keyboard-unstable-v1-client-protocol.h"
 #include "wlr-data-control-unstable-v1-client-protocol.h"
 #include "wlr-foreign-toplevel-management-unstable-v1-client-protocol.h"
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
@@ -40,6 +42,7 @@ namespace {
   constexpr std::uint32_t kExtIdleNotifierVersion = 1;
   constexpr std::uint32_t kIdleInhibitManagerVersion = 1;
   constexpr std::uint32_t kOutputVersion = 4;
+  constexpr std::uint32_t kVirtualKeyboardManagerVersion = 1;
 
   const wl_registry_listener kRegistryListener = {
       .global = &WaylandConnection::handleGlobal,
@@ -309,6 +312,11 @@ void WaylandConnection::setKeyboardEventCallback(WaylandSeat::KeyboardEventCallb
 void WaylandConnection::setClipboardService(ClipboardService* clipboardService) {
   m_clipboardService = clipboardService;
   bindClipboardService();
+}
+
+void WaylandConnection::setVirtualKeyboardService(VirtualKeyboardService* virtualKeyboardService) {
+  m_virtualKeyboardService = virtualKeyboardService;
+  bindVirtualKeyboardService();
 }
 
 int WaylandConnection::repeatPollTimeoutMs() const { return m_seatHandler.repeatPollTimeoutMs(); }
@@ -591,6 +599,14 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     return;
   }
 
+  if (interfaceName == zwp_virtual_keyboard_manager_v1_interface.name) {
+    const auto bindVersion = std::min(version, kVirtualKeyboardManagerVersion);
+    m_virtualKeyboardManager = static_cast<zwp_virtual_keyboard_manager_v1*>(
+        wl_registry_bind(registry, name, &zwp_virtual_keyboard_manager_v1_interface, bindVersion));
+    bindVirtualKeyboardService();
+    return;
+  }
+
   if (interfaceName == wl_output_interface.name) {
     const auto bindVersion = std::min(version, kOutputVersion);
     auto* output = static_cast<wl_output*>(wl_registry_bind(registry, name, &wl_output_interface, bindVersion));
@@ -622,9 +638,22 @@ void WaylandConnection::bindClipboardService() {
   m_clipboardService->bind(m_dataControlManager, m_dataControlOps, m_seat);
 }
 
+void WaylandConnection::bindVirtualKeyboardService() {
+  if (m_virtualKeyboardService == nullptr) {
+    return;
+  }
+  if (m_virtualKeyboardManager == nullptr || m_seat == nullptr) {
+    return;
+  }
+  m_virtualKeyboardService->bind(m_virtualKeyboardManager, m_seat);
+}
+
 void WaylandConnection::cleanup() {
   if (m_clipboardService != nullptr) {
     m_clipboardService->cleanup();
+  }
+  if (m_virtualKeyboardService != nullptr) {
+    m_virtualKeyboardService->cleanup();
   }
   m_toplevelsHandler.cleanup();
   m_workspacesHandler.cleanup();
@@ -675,6 +704,11 @@ void WaylandConnection::cleanup() {
     m_dataControlOps->destroyManager(m_dataControlManager);
     m_dataControlManager = nullptr;
     m_dataControlOps = nullptr;
+  }
+
+  if (m_virtualKeyboardManager != nullptr) {
+    zwp_virtual_keyboard_manager_v1_destroy(m_virtualKeyboardManager);
+    m_virtualKeyboardManager = nullptr;
   }
 
   if (m_cursorShapeManager != nullptr) {

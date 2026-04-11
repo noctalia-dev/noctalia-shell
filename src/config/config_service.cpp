@@ -491,6 +491,19 @@ void ConfigService::loadFromFile(const std::string& path) {
     if (auto v = (*shellTbl)["avatar_path"].value<std::string>()) {
       shell.avatarPath = *v;
     }
+    if (auto v = (*shellTbl)["clipboard_auto_paste"].value<std::string>()) {
+      if (*v == "off") {
+        shell.clipboardAutoPaste = ClipboardAutoPasteMode::Off;
+      } else if (*v == "auto") {
+        shell.clipboardAutoPaste = ClipboardAutoPasteMode::Auto;
+      } else if (*v == "ctrl_v") {
+        shell.clipboardAutoPaste = ClipboardAutoPasteMode::CtrlV;
+      } else if (*v == "ctrl_shift_v") {
+        shell.clipboardAutoPaste = ClipboardAutoPasteMode::CtrlShiftV;
+      } else if (*v == "shift_insert") {
+        shell.clipboardAutoPaste = ClipboardAutoPasteMode::ShiftInsert;
+      }
+    }
   }
 
   // Parse [wallpaper]

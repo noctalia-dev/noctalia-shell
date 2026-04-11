@@ -2,9 +2,11 @@
 
 #include "shell/panel/panel.h"
 #include "core/timer_manager.h"
+#include "wayland/clipboard_service.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -21,6 +23,7 @@ class ScrollView;
 class ClipboardPanel : public Panel {
 public:
   explicit ClipboardPanel(ClipboardService* clipboard);
+  void setActivateCallback(std::function<void(const ClipboardEntry&)> callback);
 
   void create() override;
   void layout(Renderer& renderer, float width, float height) override;
@@ -50,6 +53,7 @@ private:
   [[nodiscard]] std::size_t selectedHistoryIndex() const;
 
   ClipboardService* m_clipboard = nullptr;
+  std::function<void(const ClipboardEntry&)> m_activateCallback;
 
   InputArea* m_focusArea = nullptr;
   Flex* m_rootLayout = nullptr;

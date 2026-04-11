@@ -144,6 +144,8 @@ foreach _p : [
     wayland_protos_dir / 'staging/ext-idle-notify/ext-idle-notify-v1.xml'],
   ['idle-inhibit-unstable-v1',
     wayland_protos_dir / 'unstable/idle-inhibit/idle-inhibit-unstable-v1.xml'],
+  ['virtual-keyboard-unstable-v1',
+    'protocols/virtual-keyboard-unstable-v1.xml'],
 
   # ── project-local custom protocols ────────────────────────────────────────
   ['dwl-ipc-unstable-v2',
@@ -328,6 +330,7 @@ _noctalia_sources = files(
   'src/ui/controls/toggle.cpp',
   'src/util/fuzzy_match.cpp',
   'src/wayland/clipboard_service.cpp',
+  'src/wayland/virtual_keyboard_service.cpp',
   'src/compositors/ext_workspace_backend.cpp',
   'src/compositors/mango/mango_workspace_backend.cpp',
   'src/compositors/niri/niri_output_backend.cpp',

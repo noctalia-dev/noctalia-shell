@@ -31,9 +31,11 @@ struct xdg_activation_v1;
 struct ext_session_lock_manager_v1;
 struct zwlr_foreign_toplevel_manager_v1;
 struct zdwl_ipc_manager_v2;
+struct zwp_virtual_keyboard_manager_v1;
 class ClipboardService;
 class NiriOutputBackend;
 struct DataControlOps;
+class VirtualKeyboardService;
 
 struct WaylandOutput {
   std::uint32_t name = 0;
@@ -70,6 +72,7 @@ public:
   void setPointerEventCallback(WaylandSeat::PointerEventCallback callback);
   void setKeyboardEventCallback(WaylandSeat::KeyboardEventCallback callback);
   void setClipboardService(ClipboardService* clipboardService);
+  void setVirtualKeyboardService(VirtualKeyboardService* virtualKeyboardService);
   void setCursorShape(std::uint32_t serial, std::uint32_t shape);
 
   [[nodiscard]] int repeatPollTimeoutMs() const;
@@ -139,6 +142,7 @@ public:
 private:
   void bindGlobal(wl_registry* registry, std::uint32_t name, const char* interface, std::uint32_t version);
   void bindClipboardService();
+  void bindVirtualKeyboardService();
   void cleanup();
   void logStartupSummary() const;
 
@@ -157,7 +161,9 @@ private:
   zwp_idle_inhibit_manager_v1* m_idleInhibitManager = nullptr;
   void* m_dataControlManager = nullptr;
   const DataControlOps* m_dataControlOps = nullptr;
+  zwp_virtual_keyboard_manager_v1* m_virtualKeyboardManager = nullptr;
   ClipboardService* m_clipboardService = nullptr;
+  VirtualKeyboardService* m_virtualKeyboardService = nullptr;
   bool m_hasLayerShellGlobal = false;
   bool m_hasExtWorkspaceGlobal = false;
   bool m_hasMangoWorkspaceGlobal = false;
