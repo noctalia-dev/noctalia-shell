@@ -152,6 +152,7 @@ void WaylandSeat::handleSeatName(void* /*data*/, wl_seat* /*seat*/, const char* 
 void WaylandSeat::handlePointerEnter(void* data, wl_pointer* /*pointer*/, std::uint32_t serial, wl_surface* surface,
                                      std::int32_t sx, std::int32_t sy) {
   auto* self = static_cast<WaylandSeat*>(data);
+  self->m_lastSerial = serial;
   self->m_lastPointerSurface = surface;
   self->m_lastPointerX = wl_fixed_to_double(sx);
   self->m_lastPointerY = wl_fixed_to_double(sy);
@@ -167,6 +168,7 @@ void WaylandSeat::handlePointerEnter(void* data, wl_pointer* /*pointer*/, std::u
 
 void WaylandSeat::handlePointerLeave(void* data, wl_pointer* /*pointer*/, std::uint32_t serial, wl_surface* surface) {
   auto* self = static_cast<WaylandSeat*>(data);
+  self->m_lastSerial = serial;
   self->m_lastPointerSurface = surface;
   self->m_hasPointerPosition = false;
   self->m_pendingPointerEvents.push_back(PointerEvent{
@@ -193,6 +195,7 @@ void WaylandSeat::handlePointerMotion(void* data, wl_pointer* /*pointer*/, std::
 void WaylandSeat::handlePointerButton(void* data, wl_pointer* /*pointer*/, std::uint32_t serial, std::uint32_t time,
                                       std::uint32_t button, std::uint32_t state) {
   auto* self = static_cast<WaylandSeat*>(data);
+  self->m_lastSerial = serial;
   self->m_pendingPointerEvents.push_back(PointerEvent{
       .type = PointerEvent::Type::Button,
       .serial = serial,

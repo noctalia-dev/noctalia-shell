@@ -51,6 +51,7 @@ public:
 
   bool initialize() override;
   bool initialize(wl_output* output);
+  [[nodiscard]] zwlr_layer_surface_v1* layerSurface() const noexcept { return m_layerSurface; }
 
   static void handleConfigure(void* data, zwlr_layer_surface_v1* layerSurface, std::uint32_t serial,
                               std::uint32_t width, std::uint32_t height);

@@ -3,7 +3,8 @@
 #include "dbus/tray/tray_service.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
-#include "wayland/layer_surface.h"
+#include "ui/controls/context_menu.h"
+#include "wayland/popup_surface.h"
 
 #include <memory>
 #include <string>
@@ -30,20 +31,19 @@ public:
 private:
   struct MenuInstance {
     wl_output* output = nullptr;
-    std::int32_t scale = 1;
-
-    std::unique_ptr<LayerSurface> surface;
+    std::unique_ptr<PopupSurface> surface;
     std::unique_ptr<Node> sceneRoot;
     InputDispatcher inputDispatcher;
     wl_surface* wlSurface = nullptr;
     bool pointerInside = false;
+    ContextSubmenuDirection submenuDirection = ContextSubmenuDirection::Right;
   };
 
   void refreshEntries();
   [[nodiscard]] uint32_t surfaceHeightPx() const;
   [[nodiscard]] bool ownsSurface(wl_surface* surface) const;
-  void ensureSurfaces();
-  void destroySurfaces();
+  void ensureSurface();
+  void destroySurface();
   void rebuildScenes();
   void buildScene(MenuInstance& inst, uint32_t width, uint32_t height);
 
@@ -54,6 +54,6 @@ private:
 
   std::string m_activeItemId;
   std::vector<TrayMenuEntry> m_entries;
-  std::vector<std::unique_ptr<MenuInstance>> m_instances;
+  std::unique_ptr<MenuInstance> m_instance;
   bool m_visible = false;
 };

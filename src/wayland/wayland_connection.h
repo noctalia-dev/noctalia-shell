@@ -20,8 +20,10 @@ struct wl_registry;
 struct wl_seat;
 struct wl_shm;
 struct zwlr_layer_shell_v1;
+struct zwlr_layer_surface_v1;
 struct zxdg_output_manager_v1;
 struct zxdg_output_v1;
+struct xdg_wm_base;
 struct wp_cursor_shape_manager_v1;
 struct ext_idle_notifier_v1;
 struct zwp_idle_inhibit_manager_v1;
@@ -86,6 +88,7 @@ public:
   [[nodiscard]] bool hasRequiredGlobals() const noexcept;
   [[nodiscard]] bool hasLayerShell() const noexcept;
   [[nodiscard]] bool hasXdgOutputManager() const noexcept;
+  [[nodiscard]] bool hasXdgShell() const noexcept;
   [[nodiscard]] bool hasExtWorkspaceManager() const noexcept;
   [[nodiscard]] bool hasMangoWorkspaceManager() const noexcept;
   [[nodiscard]] bool hasForeignToplevelManager() const noexcept;
@@ -97,6 +100,7 @@ public:
   [[nodiscard]] wl_seat* seat() const noexcept;
   [[nodiscard]] wl_shm* shm() const noexcept;
   [[nodiscard]] zwlr_layer_shell_v1* layerShell() const noexcept;
+  [[nodiscard]] xdg_wm_base* xdgWmBase() const noexcept;
   [[nodiscard]] ext_session_lock_manager_v1* sessionLockManager() const noexcept;
   [[nodiscard]] ext_idle_notifier_v1* idleNotifier() const noexcept;
   [[nodiscard]] zwp_idle_inhibit_manager_v1* idleInhibitManager() const noexcept;
@@ -112,12 +116,19 @@ public:
   [[nodiscard]] std::optional<ActiveToplevel> activeToplevel() const;
   [[nodiscard]] wl_output* activeToplevelOutput() const;
   [[nodiscard]] wl_output* lastPointerOutput() const noexcept;
+  [[nodiscard]] wl_surface* lastPointerSurface() const noexcept;
+  [[nodiscard]] bool hasPointerPosition() const noexcept;
+  [[nodiscard]] double lastPointerX() const noexcept;
+  [[nodiscard]] double lastPointerY() const noexcept;
+  [[nodiscard]] std::uint32_t lastInputSerial() const noexcept;
   [[nodiscard]] bool hasFreshPointerOutput(std::chrono::milliseconds maxAge) const noexcept;
   [[nodiscard]] wl_output*
   preferredPanelOutput(std::chrono::milliseconds pointerMaxAge = std::chrono::milliseconds(1200)) const;
 
   void registerSurfaceOutput(wl_surface* surface, wl_output* output);
+  void registerLayerSurface(wl_surface* surface, zwlr_layer_surface_v1* layerSurface);
   void unregisterSurface(wl_surface* surface);
+  [[nodiscard]] zwlr_layer_surface_v1* layerSurfaceFor(wl_surface* surface) const noexcept;
   void notifyOutputReady(wl_output* output);
 
   // Registry listener entrypoints
@@ -138,6 +149,7 @@ private:
   wl_shm* m_shm = nullptr;
   zwlr_layer_shell_v1* m_layerShell = nullptr;
   zxdg_output_manager_v1* m_xdgOutputManager = nullptr;
+  xdg_wm_base* m_xdgWmBase = nullptr;
   wp_cursor_shape_manager_v1* m_cursorShapeManager = nullptr;
   xdg_activation_v1* m_xdgActivation = nullptr;
   ext_session_lock_manager_v1* m_sessionLockManager = nullptr;
@@ -153,6 +165,7 @@ private:
   std::vector<WaylandOutput> m_outputs;
   ChangeCallback m_outputChangeCallback;
   std::unordered_map<wl_surface*, wl_output*> m_surfaceOutputMap;
+  std::unordered_map<wl_surface*, zwlr_layer_surface_v1*> m_layerSurfaceMap;
   wl_output* m_lastPointerOutput = nullptr;
   std::chrono::steady_clock::time_point m_lastPointerOutputAt{};
   std::unique_ptr<NiriOutputBackend> m_niriOutputBackend;

@@ -22,6 +22,7 @@
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-activation-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
+#include "xdg-shell-client-protocol.h"
 
 namespace {
 
@@ -30,6 +31,7 @@ namespace {
   constexpr std::uint32_t kShmVersion = 1;
   constexpr std::uint32_t kLayerShellVersion = 4;
   constexpr std::uint32_t kXdgOutputManagerVersion = 3;
+  constexpr std::uint32_t kXdgWmBaseVersion = 6;
   constexpr std::uint32_t kExtWorkspaceManagerVersion = 1;
   constexpr std::uint32_t kWlrForeignToplevelManagerVersion = 3;
   constexpr std::uint32_t kCursorShapeManagerVersion = 1;
@@ -127,6 +129,12 @@ namespace {
 
   constexpr Logger kLog("wayland");
 
+  void xdgWmBasePing(void* /*data*/, xdg_wm_base* wmBase, std::uint32_t serial) { xdg_wm_base_pong(wmBase, serial); }
+
+  const xdg_wm_base_listener kXdgWmBaseListener = {
+      .ping = xdgWmBasePing,
+  };
+
   [[nodiscard]] std::string compositorHintFromEnv() {
     constexpr const char* vars[] = {"XDG_CURRENT_DESKTOP", "XDG_SESSION_DESKTOP", "DESKTOP_SESSION"};
     std::string hint;
@@ -223,14 +231,29 @@ void WaylandConnection::registerSurfaceOutput(wl_surface* surface, wl_output* ou
   }
 }
 
+void WaylandConnection::registerLayerSurface(wl_surface* surface, zwlr_layer_surface_v1* layerSurface) {
+  if (surface != nullptr && layerSurface != nullptr) {
+    m_layerSurfaceMap[surface] = layerSurface;
+  }
+}
+
 void WaylandConnection::unregisterSurface(wl_surface* surface) {
   if (surface != nullptr) {
     m_surfaceOutputMap.erase(surface);
+    m_layerSurfaceMap.erase(surface);
     if (m_lastPointerOutput != nullptr) {
       // Clear last pointer output only if it was from this surface
       // (we don't track which surface set it, so just leave it — it's a hint anyway)
     }
   }
+}
+
+zwlr_layer_surface_v1* WaylandConnection::layerSurfaceFor(wl_surface* surface) const noexcept {
+  if (surface == nullptr) {
+    return nullptr;
+  }
+  const auto it = m_layerSurfaceMap.find(surface);
+  return it != m_layerSurfaceMap.end() ? it->second : nullptr;
 }
 
 void WaylandConnection::notifyOutputReady(wl_output* output) {
@@ -241,6 +264,11 @@ void WaylandConnection::notifyOutputReady(wl_output* output) {
 }
 
 wl_output* WaylandConnection::lastPointerOutput() const noexcept { return m_lastPointerOutput; }
+wl_surface* WaylandConnection::lastPointerSurface() const noexcept { return m_seatHandler.lastPointerSurface(); }
+bool WaylandConnection::hasPointerPosition() const noexcept { return m_seatHandler.hasPointerPosition(); }
+double WaylandConnection::lastPointerX() const noexcept { return m_seatHandler.lastPointerX(); }
+double WaylandConnection::lastPointerY() const noexcept { return m_seatHandler.lastPointerY(); }
+std::uint32_t WaylandConnection::lastInputSerial() const noexcept { return m_seatHandler.lastSerial(); }
 
 bool WaylandConnection::hasFreshPointerOutput(std::chrono::milliseconds maxAge) const noexcept {
   if (m_lastPointerOutput == nullptr || m_lastPointerOutputAt.time_since_epoch().count() == 0) {
@@ -329,6 +357,7 @@ bool WaylandConnection::hasRequiredGlobals() const noexcept {
 bool WaylandConnection::hasLayerShell() const noexcept { return m_hasLayerShellGlobal; }
 
 bool WaylandConnection::hasXdgOutputManager() const noexcept { return m_xdgOutputManager != nullptr; }
+bool WaylandConnection::hasXdgShell() const noexcept { return m_xdgWmBase != nullptr; }
 
 bool WaylandConnection::hasExtWorkspaceManager() const noexcept { return m_hasExtWorkspaceGlobal; }
 bool WaylandConnection::hasMangoWorkspaceManager() const noexcept { return m_hasMangoWorkspaceGlobal; }
@@ -378,6 +407,7 @@ wl_seat* WaylandConnection::seat() const noexcept { return m_seatHandler.seat();
 wl_shm* WaylandConnection::shm() const noexcept { return m_shm; }
 
 zwlr_layer_shell_v1* WaylandConnection::layerShell() const noexcept { return m_layerShell; }
+xdg_wm_base* WaylandConnection::xdgWmBase() const noexcept { return m_xdgWmBase; }
 
 ext_session_lock_manager_v1* WaylandConnection::sessionLockManager() const noexcept { return m_sessionLockManager; }
 ext_idle_notifier_v1* WaylandConnection::idleNotifier() const noexcept { return m_idleNotifier; }
@@ -467,6 +497,13 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     const auto bindVersion = std::min(version, kXdgOutputManagerVersion);
     m_xdgOutputManager = static_cast<zxdg_output_manager_v1*>(
         wl_registry_bind(registry, name, &zxdg_output_manager_v1_interface, bindVersion));
+    return;
+  }
+
+  if (interfaceName == xdg_wm_base_interface.name) {
+    const auto bindVersion = std::min(version, kXdgWmBaseVersion);
+    m_xdgWmBase = static_cast<xdg_wm_base*>(wl_registry_bind(registry, name, &xdg_wm_base_interface, bindVersion));
+    xdg_wm_base_add_listener(m_xdgWmBase, &kXdgWmBaseListener, this);
     return;
   }
 
@@ -604,6 +641,11 @@ void WaylandConnection::cleanup() {
     m_xdgOutputManager = nullptr;
   }
 
+  if (m_xdgWmBase != nullptr) {
+    xdg_wm_base_destroy(m_xdgWmBase);
+    m_xdgWmBase = nullptr;
+  }
+
   if (m_layerShell != nullptr) {
     zwlr_layer_shell_v1_destroy(m_layerShell);
     m_layerShell = nullptr;
@@ -674,6 +716,8 @@ void WaylandConnection::cleanup() {
   }
 
   m_outputs.clear();
+  m_surfaceOutputMap.clear();
+  m_layerSurfaceMap.clear();
   m_hasLayerShellGlobal = false;
   m_hasExtWorkspaceGlobal = false;
   m_hasMangoWorkspaceGlobal = false;
@@ -682,12 +726,13 @@ void WaylandConnection::cleanup() {
 }
 
 void WaylandConnection::logStartupSummary() const {
-  kLog.info("connected compositor={} shm={} layer-shell={} xdg-output={} ext-workspace={} mango-workspace={} "
-            "session-lock={} outputs={} workspace-backend={}",
-            m_compositor != nullptr ? "yes" : "no", m_shm != nullptr ? "yes" : "no", hasLayerShell() ? "yes" : "no",
-            hasXdgOutputManager() ? "yes" : "no", hasExtWorkspaceManager() ? "yes" : "no",
-            hasMangoWorkspaceManager() ? "yes" : "no", hasSessionLockManager() ? "yes" : "no", m_outputs.size(),
-            m_workspacesHandler.backendName());
+  kLog.info(
+      "connected compositor={} shm={} layer-shell={} xdg-shell={} xdg-output={} ext-workspace={} mango-workspace={} "
+      "session-lock={} outputs={} workspace-backend={}",
+      m_compositor != nullptr ? "yes" : "no", m_shm != nullptr ? "yes" : "no", hasLayerShell() ? "yes" : "no",
+      hasXdgShell() ? "yes" : "no", hasXdgOutputManager() ? "yes" : "no", hasExtWorkspaceManager() ? "yes" : "no",
+      hasMangoWorkspaceManager() ? "yes" : "no", hasSessionLockManager() ? "yes" : "no", m_outputs.size(),
+      m_workspacesHandler.backendName());
 
   for (const auto& output : m_outputs) {
     kLog.info("output {} global={} scale={} mode={}x{} desc=\"{}\"", output.connectorName, output.name, output.scale,

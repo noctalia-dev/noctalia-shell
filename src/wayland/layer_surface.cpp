@@ -67,6 +67,8 @@ bool LayerSurface::initialize(wl_output* output) {
     throw std::runtime_error("failed to add layer surface listener");
   }
 
+  m_connection.registerLayerSurface(m_surface, m_layerSurface);
+
   zwlr_layer_surface_v1_set_anchor(m_layerSurface, m_config.anchor);
   zwlr_layer_surface_v1_set_size(m_layerSurface, m_config.width, m_config.height);
   zwlr_layer_surface_v1_set_exclusive_zone(m_layerSurface, m_config.exclusiveZone);
