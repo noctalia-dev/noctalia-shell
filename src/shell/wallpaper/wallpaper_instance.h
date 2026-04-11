@@ -28,6 +28,7 @@ struct WallpaperInstance {
   // Transition state
   float transitionProgress = 0.0f;
   bool transitioning = false;
+  AnimationManager::Id transitionAnimId = 0;
   WallpaperTransition activeTransition = WallpaperTransition::Fade;
   TransitionParams transitionParams;
 };

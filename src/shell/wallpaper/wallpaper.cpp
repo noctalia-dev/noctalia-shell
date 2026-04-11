@@ -130,6 +130,7 @@ void Wallpaper::onStateChange() {
     }
 
     kLog.info("changing {} → {}", inst->connectorName, newPath);
+    inst->pendingPath = newPath;
 
     if (inst->surface == nullptr || inst->surface->wallpaperRenderer() == nullptr) {
       continue;
@@ -338,20 +339,11 @@ void Wallpaper::releaseInstanceTextures(WallpaperInstance& inst) {
 // ── Wallpaper loading & transitions ──────────────────────────────────────────
 
 void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& path) {
-  // Already showing this wallpaper.
+  // Nothing to do if we're already at (or heading toward) this wallpaper.
   if (!instance.transitioning && path == instance.currentPath) {
-    instance.queuedPath.clear();
     return;
   }
-
-  // Mid-transition: queue the latest request, the completion callback will
-  // apply it once the current transition finishes.
-  if (instance.transitioning) {
-    if (path == instance.pendingPath) {
-      instance.queuedPath.clear();
-    } else {
-      instance.queuedPath = path;
-    }
+  if (instance.transitioning && path == instance.pendingPath) {
     return;
   }
 
@@ -361,12 +353,23 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
     return;
   }
 
-  instance.queuedPath.clear();
+  // Interrupt any in-flight transition: cancel the animation and drop the
+  // previous target so we restart cleanly from the currently-displayed
+  // wallpaper toward the newly requested one.
+  if (instance.transitioning) {
+    instance.animations.cancel(instance.transitionAnimId);
+    instance.transitioning = false;
+    instance.transitionProgress = 0.0f;
+    releaseTexture(instance.nextTexture, instance.pendingPath);
+    instance.nextTexture = {};
+    instance.pendingPath.clear();
+  }
 
   if (instance.currentTexture.id == 0) {
     // First wallpaper — display immediately, no transition
     instance.currentTexture = newTex;
     instance.currentPath = path;
+    instance.pendingPath.clear();
     updateRendererState(instance);
     instance.surface->requestRedraw();
     return;
@@ -394,10 +397,20 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
   instance.transitionProgress = 0.0f;
 
   auto* inst = &instance;
-  instance.animations.animate(
+  kLog.info("transition start {} → {} (current.id={}, next.id={})", instance.currentPath, instance.pendingPath,
+            instance.currentTexture.id, instance.nextTexture.id);
+
+  instance.transitionAnimId = instance.animations.animate(
       0.0f, 1.0f, wpConfig.transitionDurationMs, Easing::EaseInOutCubic,
-      [inst](float v) { inst->transitionProgress = v; },
+      [inst](float v) {
+        inst->transitionProgress = v;
+        if (v >= 1.0f) {
+          kLog.info("transition tick reached 1.0 for {} → {}", inst->currentPath, inst->pendingPath);
+        }
+      },
       [this, inst]() {
+        kLog.info("transition done {} → {} (progress={})", inst->currentPath, inst->pendingPath,
+                  inst->transitionProgress);
         // Transition complete — release old current, promote next to current
         releaseTexture(inst->currentTexture, inst->currentPath);
         inst->currentTexture = inst->nextTexture;
@@ -407,15 +420,6 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
         inst->transitionProgress = 0.0f;
         inst->transitioning = false;
         updateRendererState(*inst);
-
-        // Drain any wallpaper that was queued during this transition.
-        if (!inst->queuedPath.empty()) {
-          std::string queued = std::move(inst->queuedPath);
-          inst->queuedPath.clear();
-          if (queued != inst->currentPath) {
-            loadWallpaper(*inst, queued);
-          }
-        }
       });
 
   updateRendererState(instance);
