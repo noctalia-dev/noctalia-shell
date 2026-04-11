@@ -39,6 +39,21 @@ std::uint32_t positionToAnchor(const std::string& position) {
 
 constexpr Logger kLog("bar");
 
+struct ShadowBleed {
+  std::int32_t left = 0, right = 0, up = 0, down = 0;
+};
+
+ShadowBleed computeShadowBleed(const BarConfig& cfg) {
+  if (cfg.shadowBlur <= 0)
+    return {};
+  return {
+      cfg.shadowBlur + std::max(0, -cfg.shadowOffsetX),
+      cfg.shadowBlur + std::max(0, cfg.shadowOffsetX),
+      cfg.shadowBlur + std::max(0, -cfg.shadowOffsetY),
+      cfg.shadowBlur + std::max(0, cfg.shadowOffsetY),
+  };
+}
+
 void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW, float barAreaH, float paddingH,
                        bool isVertical) {
   auto layoutWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
@@ -284,44 +299,57 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
 
   const auto anchor = positionToAnchor(barConfig.position);
   const bool vertical = (barConfig.position == "left" || barConfig.position == "right");
+  const bool isBottom = barConfig.position == "bottom";
+  const bool isRight = barConfig.position == "right";
 
-  // All compositor margins are zero — the visual gaps (mH, mV) and shadow space are all
-  // rendered within the surface itself. This lets the shadow bleed toward the screen edge
-  // without being clipped by a surface boundary; only the physical screen edge clips it.
   const std::int32_t mH = barConfig.marginH;
   const std::int32_t mV = barConfig.marginV;
-  // Exclusive zone reserves barH + edge-gap from the anchor edge so windows stay clear.
-  const std::int32_t totalExclusive = barConfig.height + (vertical ? mH : mV);
-  const auto uHeight = static_cast<std::uint32_t>(barConfig.height);
-  const auto uMH = static_cast<std::uint32_t>(std::max(0, mH));
-  const auto uMV = static_cast<std::uint32_t>(std::max(0, mV));
+  const auto sb = computeShadowBleed(barConfig);
 
-  // Shadow expansion toward content (the "inward" side of the bar).
-  const auto shadowExpand = [&]() -> std::uint32_t {
-    if (barConfig.shadowBlur <= 0)
-      return 0u;
-    if (vertical) {
-      const std::int32_t inward = barConfig.position == "right" ? -barConfig.shadowOffsetX : barConfig.shadowOffsetX;
-      return static_cast<std::uint32_t>(barConfig.shadowBlur + std::max(0, inward));
+  // Compositor margins absorb the visual gap where the shadow doesn't reach.
+  // The surface is sized to cover only the bar rect plus its shadow footprint.
+  std::int32_t mLeft = 0, mRight = 0, mTop = 0, mBottom = 0;
+  std::uint32_t surfW = 0, surfH = 0;
+  std::int32_t exclusiveZone = 0;
+
+  if (!vertical) {
+    mLeft  = std::max(0, mH - sb.left);
+    mRight = std::max(0, mH - sb.right);
+    if (isBottom) {
+      mBottom       = std::max(0, mV - sb.down);
+      surfH         = static_cast<std::uint32_t>(sb.up + barConfig.height + std::min(mV, sb.down));
+      exclusiveZone = barConfig.height + std::min(mV, sb.down);
+    } else {
+      mTop          = std::max(0, mV - sb.up);
+      surfH         = static_cast<std::uint32_t>(std::min(mV, sb.up) + barConfig.height + sb.down);
+      exclusiveZone = std::min(mV, sb.up) + barConfig.height;
     }
-    const std::int32_t inward = barConfig.position == "bottom" ? -barConfig.shadowOffsetY : barConfig.shadowOffsetY;
-    return static_cast<std::uint32_t>(barConfig.shadowBlur + std::max(0, inward));
-  }();
+  } else {
+    mTop    = std::max(0, mV - sb.up);
+    mBottom = std::max(0, mV - sb.down);
+    if (isRight) {
+      mRight        = std::max(0, mH - sb.right);
+      surfW         = static_cast<std::uint32_t>(sb.left + barConfig.height + std::min(mH, sb.right));
+      exclusiveZone = barConfig.height + std::min(mH, sb.right);
+    } else {
+      mLeft         = std::max(0, mH - sb.left);
+      surfW         = static_cast<std::uint32_t>(std::min(mH, sb.left) + barConfig.height + sb.right);
+      exclusiveZone = std::min(mH, sb.left) + barConfig.height;
+    }
+  }
 
-  // Surface spans the full axis (no perpendicular compositor margins) plus the edge gap so
-  // the shadow can bleed all the way to the screen edge without hitting a surface boundary.
   auto surfaceConfig = LayerSurfaceConfig{
-      .nameSpace = "noctalia-" + barConfig.name,
-      .layer = LayerShellLayer::Top,
-      .anchor = anchor,
-      .width = vertical ? uMH + uHeight + shadowExpand : 0,
-      .height = vertical ? 0u : uMV + uHeight + shadowExpand,
-      .exclusiveZone = totalExclusive,
-      .marginTop = 0,
-      .marginRight = 0,
-      .marginBottom = 0,
-      .marginLeft = 0,
-      .defaultHeight = vertical ? 0u : uMV + uHeight + shadowExpand,
+      .nameSpace     = "noctalia-" + barConfig.name,
+      .layer         = LayerShellLayer::Top,
+      .anchor        = anchor,
+      .width         = surfW,
+      .height        = surfH,
+      .exclusiveZone = exclusiveZone,
+      .marginTop     = mTop,
+      .marginRight   = mRight,
+      .marginBottom  = mBottom,
+      .marginLeft    = mLeft,
+      .defaultHeight = surfH,
   };
 
   instance->surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
@@ -388,26 +416,28 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
       static_cast<float>(instance.barConfig.radiusBottomLeft),
   };
 
-  // Compute the surface expansion (must match createInstance).
-  const float shadowExpand = [&]() -> float {
-    if (shadowSize <= 0.0f)
-      return 0.0f;
-    if (isVertical) {
-      const float inward = isRight ? -shadowOffsetX : shadowOffsetX;
-      return shadowSize + std::max(0.0f, inward);
-    }
-    const float inward = isBottom ? -shadowOffsetY : shadowOffsetY;
-    return shadowSize + std::max(0.0f, inward);
-  }();
+  // Shadow bleed in each direction (matches createInstance geometry).
+  const auto sbi = computeShadowBleed(instance.barConfig);
+  const float bleedLeft  = static_cast<float>(sbi.left);
+  const float bleedRight = static_cast<float>(sbi.right);
+  const float bleedUp    = static_cast<float>(sbi.up);
+  const float bleedDown  = static_cast<float>(sbi.down);
 
-  // The bar's visual area within the surface.
-  // All compositor margins are zero; mH and mV are embedded here as the visual gap.
-  // For the anchor-edge side: the gap (mV for horizontal, mH for vertical) sits between
-  // the surface/screen edge and the bar, so barAreaY/X offsets by that amount.
-  const float barAreaX = isVertical ? (isRight ? shadowExpand : marginH) : marginH;
-  const float barAreaY = isVertical ? marginV : (isBottom ? shadowExpand : marginV);
-  const float barAreaW = isVertical ? barH : (w - 2.0f * marginH);
-  const float barAreaH = isVertical ? (h - 2.0f * marginV) : barH;
+  // The bar's visual area within the tight surface.
+  // compositor margins absorbed the outer gap; only the shadow bleed (capped at the gap)
+  // remains as padding between the surface edge and the bar rect.
+  float barAreaX, barAreaY, barAreaW, barAreaH;
+  if (isVertical) {
+    barAreaX = isRight ? bleedLeft : std::min(marginH, bleedLeft);
+    barAreaY = std::min(marginV, bleedUp);
+    barAreaW = barH;
+    barAreaH = h - barAreaY - std::min(marginV, bleedDown);
+  } else {
+    barAreaX = std::min(marginH, bleedLeft);
+    barAreaY = isBottom ? bleedUp : std::min(marginV, bleedUp);
+    barAreaW = w - barAreaX - std::min(marginH, bleedRight);
+    barAreaH = barH;
+  }
 
   if (instance.sceneRoot == nullptr) {
     instance.sceneRoot = std::make_unique<Node>();
@@ -542,8 +572,21 @@ void Bar::updateWidgets(BarInstance& instance) {
   const float marginH = static_cast<float>(instance.barConfig.marginH);
   const float marginV = static_cast<float>(instance.barConfig.marginV);
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
-  const float barAreaW = isVertical ? barH : (w - 2.0f * marginH);
-  const float barAreaH = isVertical ? (h - 2.0f * marginV) : barH;
+  const auto sbi = computeShadowBleed(instance.barConfig);
+  const float bleedLeft  = static_cast<float>(sbi.left);
+  const float bleedRight = static_cast<float>(sbi.right);
+  const float bleedUp    = static_cast<float>(sbi.up);
+  const float bleedDown  = static_cast<float>(sbi.down);
+  float barAreaW, barAreaH;
+  if (isVertical) {
+    const float barAreaY = std::min(marginV, bleedUp);
+    barAreaW = barH;
+    barAreaH = h - barAreaY - std::min(marginV, bleedDown);
+  } else {
+    const float barAreaX = std::min(marginH, bleedLeft);
+    barAreaW = w - barAreaX - std::min(marginH, bleedRight);
+    barAreaH = barH;
+  }
 
   auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
     bool changed = false;
