@@ -69,4 +69,8 @@ private:
   std::vector<std::string> m_playerBusNames;
   std::chrono::steady_clock::time_point m_lastMprisRefreshAttempt{};
   std::unordered_set<std::string> m_pendingArtDownloads;
+  std::string m_positionBusName;
+  std::string m_positionTrackId;
+  std::int64_t m_positionUs = 0;
+  std::chrono::steady_clock::time_point m_positionSampleAt{};
 };

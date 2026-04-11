@@ -270,12 +270,25 @@ std::unique_ptr<Flex> MediaTab::create() {
     }
     const auto active = m_mpris->activePlayer();
     const std::int64_t targetUs = static_cast<std::int64_t>(std::llround(value * 1000000.0f));
-    if (active.has_value()) {
-      m_pendingSeekBusName = active->busName;
-      m_pendingSeekUs = targetUs;
-      m_pendingSeekUntil = std::chrono::steady_clock::now() + std::chrono::milliseconds(1500);
+    const auto now = std::chrono::steady_clock::now();
+    m_positionUs = targetUs;
+    m_positionSampleAt = now;
+    const std::string seekBusName =
+        active.has_value() ? active->busName : (!m_positionBusName.empty() ? m_positionBusName : std::string{});
+    m_pendingSeekBusName = seekBusName;
+    m_pendingSeekUs = targetUs;
+    m_pendingSeekUntil = now + std::chrono::milliseconds(3000);
+
+    bool seekIssued = false;
+    if (!seekBusName.empty()) {
+      seekIssued = m_mpris->setPosition(seekBusName, targetUs);
+    } else {
+      seekIssued = m_mpris->setPositionActive(targetUs);
     }
-    m_mpris->setPositionActive(targetUs);
+    if (!seekIssued) {
+      // Keep the thumb stable briefly even if transport seek dispatch races.
+      m_pendingSeekUntil = now + std::chrono::milliseconds(750);
+    }
   });
   m_progressSlider = progress.get();
   mediaStack->addChild(std::move(progress));
@@ -540,9 +553,20 @@ void MediaTab::update(Renderer& renderer) {
 }
 
 void MediaTab::setActive(bool active) {
+  const bool becameActive = active && !m_active;
   m_active = active;
   if (m_spectrum != nullptr) {
     m_spectrum->setEnabled(active);
+  }
+  if (!active) {
+    m_positionSampleAt = {};
+  }
+  if (becameActive && m_mpris != nullptr) {
+    // Pull a fresh snapshot (including Position) when the tab opens so the
+    // progress slider starts at the current playback position.
+    m_positionSampleAt = {};
+    m_mpris->refreshPlayers();
+    m_lastMprisRefreshAttempt = std::chrono::steady_clock::now();
   }
 }
 
@@ -645,14 +669,40 @@ void MediaTab::refresh(Renderer& renderer) {
   if (active.has_value()) {
     const auto& player = *active;
     const auto now = std::chrono::steady_clock::now();
-    const bool seekPending = !m_pendingSeekBusName.empty() && m_pendingSeekBusName == player.busName &&
-                             now < m_pendingSeekUntil && m_pendingSeekUs >= 0;
-    const bool seekReached = seekPending && std::llabs(player.positionUs - m_pendingSeekUs) <= 1500000;
-    const std::int64_t displayPositionUs = seekPending && !seekReached ? m_pendingSeekUs : player.positionUs;
+    const bool sameBus = m_positionBusName == player.busName && m_positionSampleAt.time_since_epoch().count() != 0;
+    const bool trackComparable =
+        player.trackId.empty() || m_positionTrackId.empty() || m_positionTrackId == player.trackId;
+    const bool canExtrapolate = sameBus && trackComparable && player.playbackStatus == "Playing";
+    std::int64_t livePositionUs = player.positionUs;
+    if (canExtrapolate) {
+      const auto elapsedUs = std::chrono::duration_cast<std::chrono::microseconds>(now - m_positionSampleAt).count();
+      if (elapsedUs > 0 && elapsedUs <= 5'000'000) {
+        const std::int64_t predictedUs = m_positionUs + elapsedUs;
+        // Keep local timeline smooth for players with stale Position values.
+        // Only trust transport when it clearly advances ahead.
+        livePositionUs = (player.positionUs > predictedUs + 2'000'000) ? player.positionUs : predictedUs;
+      }
+    }
+    if (player.lengthUs > 0) {
+      livePositionUs = std::clamp<std::int64_t>(livePositionUs, 0, player.lengthUs);
+    } else {
+      livePositionUs = std::max<std::int64_t>(0, livePositionUs);
+    }
+    m_positionBusName = player.busName;
+    m_positionTrackId = player.trackId;
+    m_positionUs = livePositionUs;
+    m_positionSampleAt = now;
+
+    const bool pendingMatchesPlayer = m_pendingSeekBusName.empty() || m_pendingSeekBusName == player.busName;
+    const bool seekPending = pendingMatchesPlayer && now < m_pendingSeekUntil && m_pendingSeekUs >= 0;
+    const bool seekReached = seekPending && std::llabs(livePositionUs - m_pendingSeekUs) <= 1500000;
+    const std::int64_t displayPositionUs = seekPending && !seekReached ? m_pendingSeekUs : livePositionUs;
     if (!seekPending || seekReached) {
       m_pendingSeekBusName.clear();
       m_pendingSeekUs = -1;
     }
+    m_positionUs = displayPositionUs;
+    m_positionSampleAt = now;
 
     m_trackTitle->setText(player.title.empty() ? player.identity : player.title);
     m_trackArtist->setText(joinArtists(player.artists).empty() ? player.identity : joinArtists(player.artists));
@@ -699,7 +749,9 @@ void MediaTab::refresh(Renderer& renderer) {
     m_syncingProgress = true;
     m_progressSlider->setEnabled(player.canSeek && player.lengthUs > 0);
     m_progressSlider->setRange(0.0f, std::max(1.0f, static_cast<float>(player.lengthUs) / 1000000.0f));
-    m_progressSlider->setValue(static_cast<float>(displayPositionUs) / 1000000.0f);
+    if (!m_progressSlider->dragging()) {
+      m_progressSlider->setValue(static_cast<float>(displayPositionUs) / 1000000.0f);
+    }
     m_syncingProgress = false;
 
     m_playPauseButton->setGlyph(playPauseGlyph(player.playbackStatus));
@@ -723,6 +775,10 @@ void MediaTab::refresh(Renderer& renderer) {
 
   m_pendingSeekBusName.clear();
   m_pendingSeekUs = -1;
+  m_positionBusName.clear();
+  m_positionTrackId.clear();
+  m_positionUs = 0;
+  m_positionSampleAt = {};
   m_trackTitle->setText("Nothing playing");
   m_trackArtist->setText("Start playback in an MPRIS app");
   if (m_trackAlbum != nullptr) {
