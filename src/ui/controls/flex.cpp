@@ -262,9 +262,10 @@ void Flex::layout(Renderer& renderer) {
     }
   }
 
-  // Compute own size. Preserve pre-set size when grow/stretch constrain it.
-  const bool preserveMain = totalGrow > 0.0f && containerMain > 0.0f;
-  const bool preserveCross = m_align == FlexAlign::Stretch && containerCross > 0.0f;
+  // Compute own size. Preserve any axis the parent already assigned to us; shrink-to-fit
+  // only on axes that entered this layout at zero.
+  const bool preserveMain = containerMain > 0.0f;
+  const bool preserveCross = containerCross > 0.0f;
   if (horizontal) {
     const float w = preserveMain ? std::max(containerMain, m_minWidth) : std::max(cursor + m_paddingRight, m_minWidth);
     const float h = preserveCross ? std::max(containerCross, m_minHeight)
