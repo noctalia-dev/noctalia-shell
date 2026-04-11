@@ -443,6 +443,8 @@ namespace noctalia::theme {
     GeneratedPalette out;
     out.dark = buildTokenMap(*darkScheme);
     out.light = buildTokenMap(*lightScheme);
+    out.dark["source_color"] = seed;
+    out.light["source_color"] = seed;
     return out;
   }
 

@@ -5,11 +5,13 @@
 
 namespace noctalia::theme {
 
-  // Canonical list of colour tokens emitted in every generated palette. The
-  // order is the iteration order used by json_output. Both the M3 schemes
-  // (TonalPalette + tone tables) and the custom HSL schemes populate the same
-  // key set so consumers can treat them interchangeably.
-  inline constexpr std::array<std::string_view, 51> kTokens = {
+  // Canonical list of built-in color tokens emitted in every generated palette.
+  // The order is the iteration order used by json_output. Both the M3 schemes
+  // and the custom schemes populate the same key set so consumers can treat
+  // them interchangeably. `source_color` is the seed color used to generate
+  // the scheme and is exposed for template compatibility.
+  inline constexpr std::array<std::string_view, 50> kTokens = {
+      "source_color",
       "primary",
       "on_primary",
       "primary_container",
@@ -59,12 +61,8 @@ namespace noctalia::theme {
       "inverse_primary",
       "background",
       "on_background",
-      // Reserved slots for future expansion; not currently emitted to JSON.
-      "",
-      "",
   };
 
-  // Number of tokens actually emitted (the trailing reserved slots are skipped).
-  inline constexpr size_t kTokenCount = 49;
+  inline constexpr size_t kTokenCount = kTokens.size();
 
 } // namespace noctalia::theme

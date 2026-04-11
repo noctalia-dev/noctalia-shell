@@ -3,7 +3,7 @@
 // These do NOT use TonalPalette. Pipeline:
 //   downsample → k-means in Lab space (deterministic init by sort-by-L) →
 //   scheme-specific scoring to pick primary/secondary/tertiary seeds →
-//   generate the 49-token map in HSL space using shiftHue/adjustSurface/
+//   generate the built-in token map in HSL space using shiftHue/adjustSurface/
 //   ensureContrast helpers from theme/color.h + theme/contrast.h.
 
 #include <algorithm>
@@ -1235,6 +1235,10 @@ namespace noctalia::theme {
     } else {
       out.dark = generateNormalDark(palette);
       out.light = generateNormalLight(palette);
+    }
+    if (!palette.empty()) {
+      out.dark["source_color"] = palette[0].toArgb();
+      out.light["source_color"] = palette[0].toArgb();
     }
     return out;
   }
