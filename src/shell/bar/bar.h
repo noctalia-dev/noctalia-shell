@@ -20,6 +20,7 @@ class UPowerService;
 class TrayService;
 class TimeService;
 class WaylandConnection;
+class NightLightManager;
 class WeatherService;
 struct PointerEvent;
 struct wl_surface;
@@ -32,7 +33,7 @@ public:
                   NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                   UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
                   IdleInhibitor* idleInhibitor, MprisService* mpris, HttpClient* httpClient, WeatherService* weatherService,
-                  RenderContext* renderContext);
+                  RenderContext* renderContext, NightLightManager* nightLight);
   void reload();
   void closeAllInstances();
   void show();
@@ -67,6 +68,7 @@ private:
   HttpClient* m_httpClient = nullptr;
   WeatherService* m_weatherService = nullptr;
   RenderContext* m_renderContext = nullptr;
+  NightLightManager* m_nightLight = nullptr;
   std::unique_ptr<WidgetFactory> m_widgetFactory;
   std::vector<std::unique_ptr<BarInstance>> m_instances;
 

@@ -8,6 +8,7 @@
 #include "render/render_context.h"
 #include "render/scene/rect_node.h"
 #include "shell/widget/widget.h"
+#include "system/night_light_manager.h"
 #include "system/system_monitor_service.h"
 #include "system/weather_service.h"
 #include "time/time_service.h"
@@ -109,7 +110,8 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
                      NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                      UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
                      IdleInhibitor* idleInhibitor, MprisService* mpris,
-                     HttpClient* httpClient, WeatherService* weatherService, RenderContext* renderContext) {
+                     HttpClient* httpClient, WeatherService* weatherService, RenderContext* renderContext,
+                     NightLightManager* nightLight) {
   m_wayland = &wayland;
   m_config = config;
   m_time = timeService;
@@ -124,10 +126,11 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
   m_httpClient = httpClient;
   m_weatherService = weatherService;
   m_renderContext = renderContext;
+  m_nightLight = nightLight;
 
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
                                                     m_audio, m_upower, m_sysmon, m_powerProfiles, m_idleInhibitor, m_mpris, m_httpClient,
-                                                    m_weatherService);
+                                                    m_weatherService, m_nightLight);
 
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
@@ -169,7 +172,7 @@ void Bar::reload() {
   kLog.info("reloading config");
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
                                                     m_audio, m_upower, m_sysmon, m_powerProfiles, m_idleInhibitor, m_mpris, m_httpClient,
-                                                    m_weatherService);
+                                                    m_weatherService, m_nightLight);
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;

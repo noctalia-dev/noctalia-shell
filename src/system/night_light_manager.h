@@ -4,6 +4,7 @@
 #include "core/timer_manager.h"
 
 #include <chrono>
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -12,6 +13,8 @@
 
 class NightLightManager {
 public:
+  using ChangeCallback = std::function<void()>;
+
   NightLightManager() = default;
   ~NightLightManager();
 
@@ -22,6 +25,7 @@ public:
   void setForceEnabled(bool enabled);
   void toggleForceEnabled();
   void clearForceOverride();
+  void setChangeCallback(ChangeCallback callback);
 
   [[nodiscard]] bool enabled() const;
   [[nodiscard]] bool forceEnabled() const;
@@ -42,6 +46,7 @@ private:
   void startProcess(const std::vector<std::string>& args);
   void stopProcess();
 
+  ChangeCallback m_changeCallback;
   NightLightConfig m_config;
   std::optional<bool> m_enabledOverride;
   std::optional<bool> m_forceOverride;

@@ -266,6 +266,27 @@ noctalia-ipc toggle-idle-inhibitor
 
 ---
 
+### `nightlight`
+
+Cycles through three night light states on click:
+
+| State    | Icon       | Meaning                                              |
+|----------|------------|------------------------------------------------------|
+| Off      | moon-off   | Night light disabled                                 |
+| On       | moon       | Scheduled — follows `start_time`/`stop_time` or location; dimmed during day phase, highlighted at night |
+| Forced   | moon-stars | Always-on override — ignores schedule and location   |
+
+No configurable settings.
+
+You can also control it over Noctalia IPC:
+
+```sh
+noctalia-ipc toggle-nightlight
+noctalia-ipc toggle-force-nightlight
+```
+
+---
+
 ### `sysmon`
 
 System resource monitor. Shows an icon and value for one configurable stat. Multiple instances with different stats can coexist on the same bar.

@@ -17,6 +17,7 @@ class SystemMonitorService;
 class UPowerService;
 class WeatherService;
 struct wl_output;
+class NightLightManager;
 class TimeService;
 class WaylandConnection;
 
@@ -25,7 +26,7 @@ public:
   WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config, NotificationManager* notifications,
                 TrayService* tray, PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon,
                 PowerProfilesService* powerProfiles, IdleInhibitor* idleInhibitor, MprisService* mpris, HttpClient* httpClient,
-                WeatherService* weather);
+                WeatherService* weather, NightLightManager* nightLight);
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output,
                                                float contentScale = 1.0f) const;
@@ -44,4 +45,5 @@ private:
   MprisService* m_mpris;
   HttpClient* m_httpClient;
   WeatherService* m_weather;
+  NightLightManager* m_nightLight;
 };

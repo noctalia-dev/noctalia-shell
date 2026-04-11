@@ -217,6 +217,7 @@ void Application::initServices() {
   m_idleManager.reload(m_configService.config().idle);
   m_configService.addReloadCallback([this]() { m_idleManager.reload(m_configService.config().idle); });
   m_nightLightManager.reload(m_configService.config().nightlight);
+  m_nightLightManager.setChangeCallback([this]() { m_bar.refresh(); });
   m_configService.addReloadCallback([this]() { m_nightLightManager.reload(m_configService.config().nightlight); });
 
   m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
@@ -424,7 +425,8 @@ void Application::initUi() {
 
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
                    m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_powerProfilesService.get(),
-                   &m_idleInhibitor, m_mprisService.get(), &m_httpClient, &m_weatherService, &m_renderContext);
+                   &m_idleInhibitor, m_mprisService.get(), &m_httpClient, &m_weatherService, &m_renderContext,
+                   &m_nightLightManager);
 
   m_timeService.setTickSecondCallback([this]() {
     if (m_lockScreen.isActive()) {

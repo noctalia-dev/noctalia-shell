@@ -12,6 +12,7 @@
 #include "shell/widgets/battery_widget.h"
 #include "shell/widgets/clock_widget.h"
 #include "shell/widgets/idle_inhibitor_widget.h"
+#include "shell/widgets/nightlight_widget.h"
 #include "shell/widgets/launcher_widget.h"
 #include "shell/widgets/media_mini_widget.h"
 #include "shell/widgets/notification_widget.h"
@@ -35,10 +36,11 @@ namespace {
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
                              NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                              UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
-                             IdleInhibitor* idleInhibitor, MprisService* mpris, HttpClient* httpClient, WeatherService* weather)
+                             IdleInhibitor* idleInhibitor, MprisService* mpris, HttpClient* httpClient, WeatherService* weather,
+                             NightLightManager* nightLight)
     : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
       m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_httpClient(httpClient),
-      m_weather(weather) {}
+      m_weather(weather), m_nightLight(nightLight) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
@@ -106,6 +108,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "power_profiles") {
     auto widget = std::make_unique<PowerProfilesWidget>(m_powerProfiles);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "nightlight") {
+    auto widget = std::make_unique<NightLightWidget>(m_nightLight);
     widget->setContentScale(contentScale);
     return widget;
   }

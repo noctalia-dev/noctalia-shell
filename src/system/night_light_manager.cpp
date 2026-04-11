@@ -27,6 +27,8 @@ namespace {
 
 NightLightManager::~NightLightManager() { stopProcess(); }
 
+void NightLightManager::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
+
 void NightLightManager::reload(const NightLightConfig& config) {
   m_config = config;
   m_enabledOverride.reset();
@@ -196,6 +198,9 @@ void NightLightManager::apply() {
   if (!effectiveEnabled()) {
     stopProcess();
     m_lastArgs.clear();
+    if (m_changeCallback) {
+      m_changeCallback();
+    }
     return;
   }
 
@@ -203,6 +208,9 @@ void NightLightManager::apply() {
   if (!args.has_value()) {
     stopProcess();
     m_lastArgs.clear();
+    if (m_changeCallback) {
+      m_changeCallback();
+    }
     return;
   }
 
@@ -212,6 +220,9 @@ void NightLightManager::apply() {
 
   stopProcess();
   startProcess(*args);
+  if (m_changeCallback) {
+    m_changeCallback();
+  }
 }
 
 std::optional<std::vector<std::string>> NightLightManager::buildCommandArgs() const {
