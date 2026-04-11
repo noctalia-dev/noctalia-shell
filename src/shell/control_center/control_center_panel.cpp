@@ -80,13 +80,36 @@ void ControlCenterPanel::create() {
   content->setClipChildren(true);
   m_content = content.get();
 
+  auto header = std::make_unique<Flex>();
+  header->setDirection(FlexDirection::Horizontal);
+  header->setAlign(FlexAlign::Center);
+  header->setJustify(FlexJustify::SpaceBetween);
+  header->setGap(Style::spaceSm * scale);
+  m_contentHeader = header.get();
+
   auto title = std::make_unique<Label>();
   title->setText("Overview");
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle * scale);
   title->setColor(palette.primary);
+  title->setFlexGrow(1.0f);
   m_contentTitle = title.get();
-  content->addChild(std::move(title));
+  header->addChild(std::move(title));
+
+  auto closeButton = std::make_unique<Button>();
+  closeButton->setGlyph("close");
+  closeButton->setVariant(ButtonVariant::Default);
+  closeButton->setGlyphSize(Style::fontSizeBody * scale);
+  closeButton->setMinWidth(Style::controlHeight * scale);
+  closeButton->setMinHeight(Style::controlHeight * scale);
+  closeButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale,
+                          Style::spaceMd * scale);
+  closeButton->setRadius(Style::radiusMd * scale);
+  closeButton->setOnClick([]() { PanelManager::instance().close(); });
+  m_closeButton = closeButton.get();
+  header->addChild(std::move(closeButton));
+
+  content->addChild(std::move(header));
 
   auto bodies = std::make_unique<Flex>();
   bodies->setDirection(FlexDirection::Vertical);
@@ -127,8 +150,15 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
   const float bodyWidth = m_tabBodies->width();
   const float bodyHeight = m_tabBodies->height();
 
+  if (m_contentHeader != nullptr) {
+    m_contentHeader->setSize(contentInnerWidth, 0.0f);
+  }
+
   if (m_contentTitle != nullptr) {
-    m_contentTitle->setMaxWidth(contentInnerWidth);
+    const float closeWidth = m_closeButton != nullptr ? m_closeButton->width() : 0.0f;
+    const float headerGap = m_contentHeader != nullptr ? m_contentHeader->gap() : 0.0f;
+    const float titleWidth = std::max(0.0f, contentInnerWidth - closeWidth - headerGap);
+    m_contentTitle->setMaxWidth(titleWidth);
   }
 
   for (auto* container : m_tabContainers) {
@@ -158,7 +188,9 @@ void ControlCenterPanel::onClose() {
   m_rootLayout = nullptr;
   m_sidebar = nullptr;
   m_content = nullptr;
+  m_contentHeader = nullptr;
   m_contentTitle = nullptr;
+  m_closeButton = nullptr;
   m_tabBodies = nullptr;
   m_tabButtons.fill(nullptr);
   m_tabContainers.fill(nullptr);
