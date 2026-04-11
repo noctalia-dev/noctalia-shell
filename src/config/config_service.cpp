@@ -338,24 +338,25 @@ void ConfigService::loadFromFile(const std::string& path) {
       if (auto v = (*barTbl)["enabled"].value<bool>())
         bar.enabled = *v;
       if (auto v = (*barTbl)["height"].value<int64_t>())
-        bar.height = static_cast<std::int32_t>(*v);
+        bar.height = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
       if (auto v = (*barTbl)["background_opacity"].value<double>())
         bar.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
       if (auto v = (*barTbl)["radius"].value<int64_t>()) {
-        bar.radius = static_cast<std::int32_t>(*v);
-        bar.radiusTopLeft = static_cast<std::int32_t>(*v);
-        bar.radiusTopRight = static_cast<std::int32_t>(*v);
-        bar.radiusBottomLeft = static_cast<std::int32_t>(*v);
-        bar.radiusBottomRight = static_cast<std::int32_t>(*v);
+        const auto r = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
+        bar.radius = r;
+        bar.radiusTopLeft = r;
+        bar.radiusTopRight = r;
+        bar.radiusBottomLeft = r;
+        bar.radiusBottomRight = r;
       }
       if (auto v = (*barTbl)["radius_top_left"].value<int64_t>())
-        bar.radiusTopLeft = static_cast<std::int32_t>(*v);
+        bar.radiusTopLeft = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
       if (auto v = (*barTbl)["radius_top_right"].value<int64_t>())
-        bar.radiusTopRight = static_cast<std::int32_t>(*v);
+        bar.radiusTopRight = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
       if (auto v = (*barTbl)["radius_bottom_left"].value<int64_t>())
-        bar.radiusBottomLeft = static_cast<std::int32_t>(*v);
+        bar.radiusBottomLeft = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
       if (auto v = (*barTbl)["radius_bottom_right"].value<int64_t>())
-        bar.radiusBottomRight = static_cast<std::int32_t>(*v);
+        bar.radiusBottomRight = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
       if (auto v = (*barTbl)["margin_h"].value<int64_t>())
         bar.marginH = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["margin_v"].value<int64_t>())
@@ -365,13 +366,13 @@ void ConfigService::loadFromFile(const std::string& path) {
       if (auto v = (*barTbl)["widget_spacing"].value<int64_t>())
         bar.widgetSpacing = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["shadow_blur"].value<int64_t>())
-        bar.shadowBlur = static_cast<std::int32_t>(*v);
+        bar.shadowBlur = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
       if (auto v = (*barTbl)["shadow_offset_x"].value<int64_t>())
-        bar.shadowOffsetX = static_cast<std::int32_t>(*v);
+        bar.shadowOffsetX = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
       if (auto v = (*barTbl)["shadow_offset_y"].value<int64_t>())
-        bar.shadowOffsetY = static_cast<std::int32_t>(*v);
+        bar.shadowOffsetY = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
       if (auto v = (*barTbl)["scale"].value<double>())
-        bar.scale = static_cast<float>(*v);
+        bar.scale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
       if (auto* n = (*barTbl)["start"].as_array())
         bar.startWidgets = readStringArray(*n);
       if (auto* n = (*barTbl)["center"].as_array())
@@ -397,19 +398,19 @@ void ConfigService::loadFromFile(const std::string& path) {
           if (auto v = (*monTbl)["enabled"].value<bool>())
             ovr.enabled = *v;
           if (auto v = (*monTbl)["height"].value<int64_t>())
-            ovr.height = static_cast<std::int32_t>(*v);
+            ovr.height = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
           if (auto v = (*monTbl)["background_opacity"].value<double>())
             ovr.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
           if (auto v = (*monTbl)["radius"].value<int64_t>())
-            ovr.radius = static_cast<std::int32_t>(*v);
+            ovr.radius = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
           if (auto v = (*monTbl)["radius_top_left"].value<int64_t>())
-            ovr.radiusTopLeft = static_cast<std::int32_t>(*v);
+            ovr.radiusTopLeft = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
           if (auto v = (*monTbl)["radius_top_right"].value<int64_t>())
-            ovr.radiusTopRight = static_cast<std::int32_t>(*v);
+            ovr.radiusTopRight = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
           if (auto v = (*monTbl)["radius_bottom_left"].value<int64_t>())
-            ovr.radiusBottomLeft = static_cast<std::int32_t>(*v);
+            ovr.radiusBottomLeft = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
           if (auto v = (*monTbl)["radius_bottom_right"].value<int64_t>())
-            ovr.radiusBottomRight = static_cast<std::int32_t>(*v);
+            ovr.radiusBottomRight = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
           if (auto v = (*monTbl)["margin_h"].value<int64_t>())
             ovr.marginH = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["margin_v"].value<int64_t>())
@@ -419,13 +420,13 @@ void ConfigService::loadFromFile(const std::string& path) {
           if (auto v = (*monTbl)["widget_spacing"].value<int64_t>())
             ovr.widgetSpacing = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["scale"].value<double>())
-            ovr.scale = static_cast<float>(*v);
+            ovr.scale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
           if (auto v = (*monTbl)["shadow_blur"].value<int64_t>())
-            ovr.shadowBlur = static_cast<std::int32_t>(*v);
+            ovr.shadowBlur = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
           if (auto v = (*monTbl)["shadow_offset_x"].value<int64_t>())
-            ovr.shadowOffsetX = static_cast<std::int32_t>(*v);
+            ovr.shadowOffsetX = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
           if (auto v = (*monTbl)["shadow_offset_y"].value<int64_t>())
-            ovr.shadowOffsetY = static_cast<std::int32_t>(*v);
+            ovr.shadowOffsetY = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
           if (auto* n = (*monTbl)["start"].as_array())
             ovr.startWidgets = readStringArray(*n);
           if (auto* n = (*monTbl)["center"].as_array())
@@ -479,7 +480,7 @@ void ConfigService::loadFromFile(const std::string& path) {
   if (auto* shellTbl = tbl["shell"].as_table()) {
     auto& shell = m_config.shell;
     if (auto v = (*shellTbl)["ui_scale"].value<double>()) {
-      shell.uiScale = static_cast<float>(*v);
+      shell.uiScale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
     }
     if (auto v = (*shellTbl)["lang"].value<std::string>()) {
       shell.lang = *v;
@@ -536,9 +537,9 @@ void ConfigService::loadFromFile(const std::string& path) {
         wp.transitions.push_back(WallpaperTransition::Fade);
     }
     if (auto v = (*wpTbl)["transition_duration"].value<double>())
-      wp.transitionDurationMs = static_cast<float>(*v);
+      wp.transitionDurationMs = std::clamp(static_cast<float>(*v), 100.0f, 30000.0f);
     if (auto v = (*wpTbl)["edge_smoothness"].value<double>())
-      wp.edgeSmoothness = static_cast<float>(*v);
+      wp.edgeSmoothness = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
     if (auto v = (*wpTbl)["directory"].value<std::string>())
       wp.directory = *v;
     if (auto v = (*wpTbl)["directory_light"].value<std::string>())
@@ -576,9 +577,9 @@ void ConfigService::loadFromFile(const std::string& path) {
     if (auto v = (*ovTbl)["enabled"].value<bool>())
       ov.enabled = *v;
     if (auto v = (*ovTbl)["blur_intensity"].value<double>())
-      ov.blurIntensity = static_cast<float>(*v);
+      ov.blurIntensity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
     if (auto v = (*ovTbl)["tint_intensity"].value<double>())
-      ov.tintIntensity = static_cast<float>(*v);
+      ov.tintIntensity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
   }
 
   // Parse [osd]
@@ -636,10 +637,10 @@ void ConfigService::loadFromFile(const std::string& path) {
       nightlight.longitude = *v;
     }
     if (auto v = (*nightlightTbl)["temperature_day"].value<int64_t>()) {
-      nightlight.dayTemperature = static_cast<std::int32_t>(*v);
+      nightlight.dayTemperature = std::clamp(static_cast<std::int32_t>(*v), 1000, 25000);
     }
     if (auto v = (*nightlightTbl)["temperature_night"].value<int64_t>()) {
-      nightlight.nightTemperature = static_cast<std::int32_t>(*v);
+      nightlight.nightTemperature = std::clamp(static_cast<std::int32_t>(*v), 1000, 25000);
     }
   }
 
