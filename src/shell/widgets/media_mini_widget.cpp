@@ -230,7 +230,7 @@ void MediaMiniWidget::syncState(Renderer& renderer) {
 
   if (active.has_value()) {
     playbackStatus = active->playbackStatus;
-    displayText = buildDisplayText();
+    displayText = buildDisplayText(*active);
     artUrl = effectiveArtUrl(*active);
   }
 
@@ -301,24 +301,25 @@ void MediaMiniWidget::syncState(Renderer& renderer) {
   requestRedraw();
 }
 
-std::string MediaMiniWidget::buildDisplayText() const {
-  const auto active = m_mpris != nullptr ? m_mpris->activePlayer() : std::nullopt;
-  if (!active.has_value()) {
-    return "Nothing playing";
+std::string MediaMiniWidget::buildDisplayText(const MprisPlayerInfo& player) {
+  const std::string artists = joinArtists(player.artists);
+  if (!player.title.empty() && !artists.empty()) {
+    return player.title + " - " + artists;
   }
-
-  const std::string artists = joinArtists(active->artists);
-  if (!active->title.empty() && !artists.empty()) {
-    return active->title + " - " + artists;
-  }
-  if (!active->title.empty()) {
-    return active->title;
+  if (!player.title.empty()) {
+    return player.title;
   }
   if (!artists.empty()) {
     return artists;
   }
-  if (!active->identity.empty()) {
-    return active->identity;
+  if (!player.identity.empty()) {
+    return player.identity;
+  }
+  if (!player.busName.empty()) {
+    return player.busName;
+  }
+  if (player.playbackStatus == "Playing") {
+    return "Playing";
   }
   return "Nothing playing";
 }

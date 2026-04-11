@@ -12,6 +12,7 @@ class HttpClient;
 class Label;
 class MprisService;
 class Renderer;
+struct MprisPlayerInfo;
 
 class MediaMiniWidget : public Widget {
 public:
@@ -23,7 +24,7 @@ public:
 
 private:
   void syncState(Renderer& renderer);
-  [[nodiscard]] std::string buildDisplayText() const;
+  [[nodiscard]] static std::string buildDisplayText(const MprisPlayerInfo& player);
   [[nodiscard]] std::string resolveArtworkPath() const;
 
   MprisService* m_mpris = nullptr;
