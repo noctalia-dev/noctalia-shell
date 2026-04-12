@@ -687,6 +687,8 @@ void ConfigService::loadFromFile(const std::string& path) {
       dock.autoHide = *v;
     if (auto v = (*dockTbl)["indicator_style"].value<std::string>())
       dock.indicatorStyle = *v;
+    if (auto v = (*dockTbl)["show_instance_count"].value<bool>())
+      dock.showInstanceCount = *v;
     if (auto* arr = (*dockTbl)["pinned"].as_array())
       dock.pinned = readStringArray(*arr);
   }

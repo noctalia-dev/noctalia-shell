@@ -141,6 +141,7 @@ struct DockConfig {
   bool showRunning = true;            // also show running apps not in pinned list
   bool autoHide = false;              // fade out when not hovered (overlay mode)
   std::string indicatorStyle = "dot"; // dot | bar | none — running-app indicator
+  bool showInstanceCount = true;      // show a badge with count when app has >1 window
   std::vector<std::string> pinned;    // desktop entry IDs to always show
 
   bool operator==(const DockConfig&) const = default;

@@ -7,6 +7,7 @@
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
+#include "ui/controls/label.h"
 #include "system/desktop_entry.h"
 #include "ui/controls/box.h"
 #include "ui/controls/context_menu.h"
@@ -37,6 +38,11 @@ constexpr float kIndicatorGap  = 4.0f;
 constexpr float kDotDiameter   = 5.0f;
 constexpr float kBarHeight     = 3.0f;
 constexpr float kBarWidthRatio = 0.5f; // fraction of iconSize
+
+// Instance-count badge geometry — scales with icon size.
+constexpr float kBadgeSizeRatio = 0.30f;  // fraction of icon size
+constexpr float kBadgeMinSize   = 16.0f;  // minimum diameter in px
+constexpr float kBadgeFontRatio = 0.72f;  // font size relative to badge diameter
 
 // Thin strip (px) kept in the input region when auto-hide is in the hidden
 // state, so the pointer can re-trigger show on approach to the screen edge.
@@ -836,6 +842,27 @@ void Dock::rebuildItems(DockInstance& instance) {
       item.indicator = static_cast<RectNode*>(areaNode->addChild(std::move(dot)));
     }
 
+    // Instance-count badge — top-right corner of the icon, initially hidden.
+    if (cfg.showInstanceCount) {
+      const float bd = std::max(kBadgeMinSize, iSize * kBadgeSizeRatio);
+      const float badgeX = kCellPad + iSize - bd * 0.55f;
+      const float badgeY = kCellPad - bd * 0.45f;
+
+      auto badgeBox = std::make_unique<Box>();
+      badgeBox->setRadius(bd * 0.5f);
+      badgeBox->setSize(bd, bd);
+      badgeBox->setPosition(badgeX, badgeY);
+      badgeBox->setVisible(false);
+      item.badge = static_cast<Box*>(areaNode->addChild(std::move(badgeBox)));
+
+      auto labelNode = std::make_unique<Label>();
+      labelNode->setFontSize(bd * kBadgeFontRatio);
+      labelNode->setBold(true);
+      labelNode->setMaxLines(1);
+      labelNode->setVisible(false);
+      item.badgeLabel = static_cast<Label*>(item.badge->addChild(std::move(labelNode)));
+    }
+
     // Pointer callbacks.
     auto* itemPtr  = &item;
     auto* instPtr  = &instance;
@@ -927,6 +954,32 @@ void Dock::updateVisuals(DockInstance& instance) {
       auto style      = item.indicator->style();
       style.fill      = indicatorColor;
       item.indicator->setStyle(style);
+    }
+
+    // Instance-count badge.
+    if (item.badge != nullptr && item.badgeLabel != nullptr) {
+      const auto windows = m_wayland->windowsForApp(item.idLower, item.startupWmClassLower);
+      const std::size_t count = windows.size();
+      if (count != item.instanceCount) {
+        item.instanceCount = count;
+        const bool show = (count >= 2);
+        item.badge->setVisible(show);
+        item.badgeLabel->setVisible(show);
+        if (show) {
+          const std::string label = (count > 9) ? "9+" : std::to_string(count);
+          item.badgeLabel->setText(label);
+          item.badgeLabel->setColor(roleColor(ColorRole::OnError));
+          item.badge->setFill(roleColor(ColorRole::Error));
+          if (m_renderContext != nullptr) {
+            const float bd = std::max(kBadgeMinSize,
+                static_cast<float>(cfg.iconSize) * kBadgeSizeRatio);
+            item.badgeLabel->measure(*m_renderContext);
+            item.badgeLabel->setPosition(
+                std::round((bd - item.badgeLabel->width()) * 0.5f),
+                std::round((bd - item.badgeLabel->height()) * 0.5f));
+          }
+        }
+      }
     }
   }
 }

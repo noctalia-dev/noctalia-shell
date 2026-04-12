@@ -21,6 +21,7 @@ class Flex;
 class Glyph;
 class Image;
 class InputArea;
+class Label;
 class RectNode;
 class RenderContext;
 class WaylandConnection;
@@ -53,11 +54,14 @@ private:
     InputArea* area = nullptr;
     Box* background = nullptr;
     RectNode* indicator = nullptr;
+    Box* badge = nullptr;
+    Label* badgeLabel = nullptr;
     Image* iconImage = nullptr;
     Glyph* iconGlyph = nullptr;
     bool hovered = false;
     bool running = false;
     bool active = false;
+    std::size_t instanceCount = 0;
   };
 
   struct DockInstance {

@@ -378,6 +378,7 @@ shadow_offset_y    = 4          # vertical shadow offset (positive = down)
 show_running       = true       # also show running apps that are not in the pinned list
 auto_hide          = false      # fade out when the pointer leaves; fade in on approach
 indicator_style    = "dot"      # dot | bar | none
+show_instance_count = true      # show a badge with the window count when an app has 2+ open windows
 
 # Pinned apps: desktop entry IDs, StartupWMClass, or human-readable names.
 # Example: "firefox", "code", "org.gnome.Nautilus"
