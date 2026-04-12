@@ -38,7 +38,9 @@ public:
   [[nodiscard]] float flexGrow() const noexcept { return m_flexGrow; }
   [[nodiscard]] bool visible() const noexcept { return m_visible; }
   [[nodiscard]] bool participatesInLayout() const noexcept { return m_participatesInLayout; }
-  [[nodiscard]] bool dirty() const noexcept { return m_dirty; }
+  [[nodiscard]] bool dirty() const noexcept { return m_paintDirty || m_layoutDirty; }
+  [[nodiscard]] bool paintDirty() const noexcept { return m_paintDirty; }
+  [[nodiscard]] bool layoutDirty() const noexcept { return m_layoutDirty; }
   [[nodiscard]] bool clipChildren() const noexcept { return m_clipChildren; }
   [[nodiscard]] std::int32_t zIndex() const noexcept { return m_zIndex; }
   [[nodiscard]] Node* parent() const noexcept { return m_parent; }
@@ -72,6 +74,8 @@ public:
   static bool mapFromScene(const Node* node, float sceneX, float sceneY, float& outLocalX, float& outLocalY);
   static void transformedBounds(const Node* node, float& outLeft, float& outTop, float& outRight, float& outBottom);
 
+  void markPaintDirty();
+  void markLayoutDirty();
   void markDirty();
   void clearDirty();
 
@@ -91,11 +95,15 @@ private:
   float m_flexGrow = 0.0f;
   bool m_visible = true;
   bool m_participatesInLayout = true;
-  bool m_dirty = true;
+  bool m_paintDirty = true;
+  bool m_layoutDirty = true;
   bool m_clipChildren = false;
   std::int32_t m_zIndex = 0;
   void* m_userData = nullptr;
   AnimationManager* m_animationManager = nullptr;
   Node* m_parent = nullptr;
   std::vector<std::unique_ptr<Node>> m_children;
+
+  void propagatePaintDirty();
+  void propagateLayoutDirty();
 };

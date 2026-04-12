@@ -64,7 +64,7 @@ void Node::setPosition(float x, float y) {
   }
   m_x = x;
   m_y = y;
-  markDirty();
+  markPaintDirty();
 }
 
 void Node::setSize(float width, float height) {
@@ -73,7 +73,7 @@ void Node::setSize(float width, float height) {
   }
   m_width = width;
   m_height = height;
-  markDirty();
+  markLayoutDirty();
 }
 
 void Node::setRotation(float radians) {
@@ -81,7 +81,7 @@ void Node::setRotation(float radians) {
     return;
   }
   m_rotation = radians;
-  markDirty();
+  markPaintDirty();
 }
 
 void Node::setScale(float scale) {
@@ -89,7 +89,7 @@ void Node::setScale(float scale) {
     return;
   }
   m_scale = scale;
-  markDirty();
+  markPaintDirty();
 }
 
 void Node::setOpacity(float opacity) {
@@ -97,7 +97,7 @@ void Node::setOpacity(float opacity) {
     return;
   }
   m_opacity = opacity;
-  markDirty();
+  markPaintDirty();
 }
 
 void Node::setFlexGrow(float grow) {
@@ -105,7 +105,7 @@ void Node::setFlexGrow(float grow) {
     return;
   }
   m_flexGrow = grow;
-  markDirty();
+  markLayoutDirty();
 }
 
 void Node::setVisible(bool visible) {
@@ -113,7 +113,7 @@ void Node::setVisible(bool visible) {
     return;
   }
   m_visible = visible;
-  markDirty();
+  markLayoutDirty();
 }
 
 void Node::setParticipatesInLayout(bool participatesInLayout) {
@@ -122,7 +122,7 @@ void Node::setParticipatesInLayout(bool participatesInLayout) {
   }
   uiAssertSceneMutationAllowed("Node::setParticipatesInLayout");
   m_participatesInLayout = participatesInLayout;
-  markDirty();
+  markLayoutDirty();
 }
 
 void Node::setClipChildren(bool clipChildren) {
@@ -130,7 +130,7 @@ void Node::setClipChildren(bool clipChildren) {
     return;
   }
   m_clipChildren = clipChildren;
-  markDirty();
+  markPaintDirty();
 }
 
 void Node::setZIndex(std::int32_t zIndex) {
@@ -138,7 +138,7 @@ void Node::setZIndex(std::int32_t zIndex) {
     return;
   }
   m_zIndex = zIndex;
-  markDirty();
+  markPaintDirty();
 }
 
 void Node::setAnimationManager(AnimationManager* mgr) {
@@ -156,7 +156,7 @@ Node* Node::addChild(std::unique_ptr<Node> child) {
   }
   auto* raw = child.get();
   m_children.push_back(std::move(child));
-  markDirty();
+  markLayoutDirty();
   return raw;
 }
 
@@ -172,7 +172,7 @@ Node* Node::insertChildAt(std::size_t index, std::unique_ptr<Node> child) {
   } else {
     m_children.insert(m_children.begin() + static_cast<std::ptrdiff_t>(index), std::move(child));
   }
-  markDirty();
+  markLayoutDirty();
   return raw;
 }
 
@@ -187,21 +187,46 @@ std::unique_ptr<Node> Node::removeChild(Node* child) {
   auto removed = std::move(*it);
   m_children.erase(it);
   removed->m_parent = nullptr;
-  markDirty();
+  markLayoutDirty();
   return removed;
 }
 
+void Node::markPaintDirty() { propagatePaintDirty(); }
+
+void Node::markLayoutDirty() {
+  propagateLayoutDirty();
+  propagatePaintDirty();
+}
+
 void Node::markDirty() {
-  m_dirty = true;
-  if (m_parent != nullptr && !m_parent->m_dirty) {
-    m_parent->markDirty();
+  markLayoutDirty();
+}
+
+void Node::propagatePaintDirty() {
+  if (m_paintDirty) {
+    return;
+  }
+  m_paintDirty = true;
+  if (m_parent != nullptr) {
+    m_parent->propagatePaintDirty();
+  }
+}
+
+void Node::propagateLayoutDirty() {
+  if (m_layoutDirty) {
+    return;
+  }
+  m_layoutDirty = true;
+  if (m_parent != nullptr) {
+    m_parent->propagateLayoutDirty();
   }
 }
 
 void Node::clearDirty() {
-  m_dirty = false;
+  m_paintDirty = false;
+  m_layoutDirty = false;
   for (auto& child : m_children) {
-    if (child->m_dirty) {
+    if (child->dirty()) {
       child->clearDirty();
     }
   }

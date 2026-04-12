@@ -235,10 +235,14 @@ void Button::applyVariant() {
   m_palette = paletteForVariant(m_variant);
   setBorderWidth(m_palette.borderWidth);
 
-  // Seed animation state so the first transition has valid starting colors.
-  m_targetBg = resolveThemeColor(m_palette.normal.bg);
-  m_targetBorder = resolveThemeColor(m_palette.normal.border);
-  m_targetLabel = resolveThemeColor(m_palette.normal.label);
+  // Only seed targets before the first visual state application. Once the
+  // button has been painted, applyVisualState() must compare against the
+  // previous targets so variant/palette changes actually propagate.
+  if (!m_visualStateInitialized) {
+    m_targetBg = resolveThemeColor(m_palette.normal.bg);
+    m_targetBorder = resolveThemeColor(m_palette.normal.border);
+    m_targetLabel = resolveThemeColor(m_palette.normal.label);
+  }
   applyVisualState();
 }
 
@@ -300,6 +304,7 @@ void Button::applyColors(const Color& bg, const Color& border, const Color& labe
   if (m_glyph != nullptr) {
     m_glyph->setColor(label);
   }
+  m_visualStateInitialized = true;
 }
 
 void Button::resolveVisualStateColors(Color& targetBg, Color& targetBorder, Color& targetLabel) const {
@@ -332,8 +337,23 @@ void Button::applyVisualState() {
   Color targetLabel;
   resolveVisualStateColors(targetBg, targetBorder, targetLabel);
 
+  if (!m_visualStateInitialized) {
+    m_targetBg = targetBg;
+    m_targetBorder = targetBorder;
+    m_targetLabel = targetLabel;
+    applyColors(targetBg, targetBorder, targetLabel);
+    return;
+  }
+
+  if (targetBg == m_targetBg && targetBorder == m_targetBorder && targetLabel == m_targetLabel) {
+    return;
+  }
+
   if (animationManager() == nullptr) {
     applyColors(targetBg, targetBorder, targetLabel);
+    m_targetBg = targetBg;
+    m_targetBorder = targetBorder;
+    m_targetLabel = targetLabel;
     return;
   }
 
@@ -356,7 +376,7 @@ void Button::applyVisualState() {
                     lerpColor(m_fromLabel, m_targetLabel, t));
       },
       [this]() { m_animId = 0; });
-  markDirty();
+  markPaintDirty();
 }
 
 void Button::doLayout(Renderer& renderer) {

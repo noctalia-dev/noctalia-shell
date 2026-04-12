@@ -323,9 +323,10 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
   }
   }
 
-  // Trigger redraw if scene changed
+  // Pointer interactions often only affect visual state. Relayout only when the
+  // scene explicitly accumulated layout invalidation.
   if (m_surface != nullptr && m_sceneRoot != nullptr && m_sceneRoot->dirty()) {
-    if (m_activePanel != nullptr && !m_activePanel->deferPointerRelayout()) {
+    if (m_sceneRoot->layoutDirty() && m_activePanel != nullptr && !m_activePanel->deferPointerRelayout()) {
       m_surface->requestLayout();
     } else {
       m_surface->requestRedraw();
@@ -374,7 +375,11 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
 
   m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed, event.preedit);
   if (m_surface != nullptr && m_sceneRoot != nullptr && m_sceneRoot->dirty()) {
-    m_surface->requestLayout();
+    if (m_sceneRoot->layoutDirty()) {
+      m_surface->requestLayout();
+    } else {
+      m_surface->requestRedraw();
+    }
   }
 }
 

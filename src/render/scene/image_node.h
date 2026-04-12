@@ -29,12 +29,15 @@ public:
       return;
     }
     m_textureId = id;
-    markDirty();
+    markPaintDirty();
   }
 
   void setTint(const Color& tint) {
+    if (m_tint == tint) {
+      return;
+    }
     m_tint = tint;
-    markDirty();
+    markPaintDirty();
   }
 
   void setCornerRadius(float radius) {
@@ -42,13 +45,16 @@ public:
       return;
     }
     m_cornerRadius = radius;
-    markDirty();
+    markPaintDirty();
   }
 
   void setBorder(const Color& color, float width) {
+    if (m_borderColor == color && m_borderWidth == width) {
+      return;
+    }
     m_borderColor = color;
     m_borderWidth = width;
-    markDirty();
+    markPaintDirty();
   }
 
   void setFitMode(ImageFitMode mode) {
@@ -56,7 +62,7 @@ public:
       return;
     }
     m_fitMode = mode;
-    markDirty();
+    markPaintDirty();
   }
 
   void setTextureSize(int width, int height) {
@@ -65,7 +71,7 @@ public:
     }
     m_textureWidth = width;
     m_textureHeight = height;
-    markDirty();
+    markLayoutDirty();
   }
 
 private:

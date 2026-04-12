@@ -8,8 +8,20 @@ class SpinnerNode : public Node {
 public:
   SpinnerNode() : Node(NodeType::Spinner) {}
 
-  void setColor(const Color& color) { m_style.color = color; }
-  void setThickness(float thickness) { m_style.thickness = thickness; }
+  void setColor(const Color& color) {
+    if (m_style.color == color) {
+      return;
+    }
+    m_style.color = color;
+    markPaintDirty();
+  }
+  void setThickness(float thickness) {
+    if (m_style.thickness == thickness) {
+      return;
+    }
+    m_style.thickness = thickness;
+    markPaintDirty();
+  }
 
   [[nodiscard]] const Color& color() const noexcept { return m_style.color; }
   [[nodiscard]] float thickness() const noexcept { return m_style.thickness; }

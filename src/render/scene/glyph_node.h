@@ -16,7 +16,7 @@ public:
       return;
     }
     m_codepoint = codepoint;
-    markDirty();
+    markLayoutDirty();
   }
 
   void setFontSize(float size) {
@@ -24,12 +24,15 @@ public:
       return;
     }
     m_fontSize = size;
-    markDirty();
+    markLayoutDirty();
   }
 
   void setColor(const Color& color) {
+    if (m_color == color) {
+      return;
+    }
     m_color = color;
-    markDirty();
+    markPaintDirty();
   }
 
 private:

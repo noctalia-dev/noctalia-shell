@@ -14,7 +14,7 @@ public:
       return;
     }
     m_style = style;
-    markDirty();
+    markPaintDirty();
   }
 
 private:

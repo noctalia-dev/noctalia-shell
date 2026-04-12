@@ -21,7 +21,7 @@ public:
       return;
     }
     m_text = std::move(text);
-    markDirty();
+    markLayoutDirty();
   }
 
   void setFontSize(float size) {
@@ -29,7 +29,7 @@ public:
       return;
     }
     m_fontSize = size;
-    markDirty();
+    markLayoutDirty();
   }
 
   void setColor(const Color& color) {
@@ -37,7 +37,7 @@ public:
       return;
     }
     m_color = color;
-    markDirty();
+    markPaintDirty();
   }
 
   void setMaxWidth(float maxWidth) {
@@ -45,7 +45,7 @@ public:
       return;
     }
     m_maxWidth = maxWidth;
-    markDirty();
+    markLayoutDirty();
   }
 
   void setMaxLines(int maxLines) {
@@ -53,7 +53,7 @@ public:
       return;
     }
     m_maxLines = maxLines;
-    markDirty();
+    markLayoutDirty();
   }
 
   void setBold(bool bold) {
@@ -61,7 +61,7 @@ public:
       return;
     }
     m_bold = bold;
-    markDirty();
+    markLayoutDirty();
   }
 
 private:

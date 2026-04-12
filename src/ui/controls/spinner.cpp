@@ -72,7 +72,7 @@ void Spinner::startLoop() {
       0.0f, kTwoPi, kRevolutionMs, Easing::Linear,
       [this](float angle) {
         m_spinnerNode->setRotation(angle);
-        markDirty();
+        markPaintDirty();
       },
       [this]() {
         m_animId = 0;
@@ -80,7 +80,7 @@ void Spinner::startLoop() {
           startLoop();
         }
       });
-  markDirty();
+  markPaintDirty();
 }
 
 void Spinner::updateGeometry() {

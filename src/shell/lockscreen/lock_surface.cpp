@@ -187,7 +187,11 @@ void LockSurface::onPointerEvent(const PointerEvent& event) {
   }
 
   if (m_root.dirty()) {
-    requestLayout();
+    if (m_root.layoutDirty()) {
+      requestLayout();
+    } else {
+      requestRedraw();
+    }
   }
 }
 
@@ -208,7 +212,11 @@ void LockSurface::onThemeChanged() { requestLayout(); }
 void LockSurface::onKeyboardEvent(const KeyboardEvent& event) {
   m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed, event.preedit);
   if (m_root.dirty()) {
-    requestLayout();
+    if (m_root.layoutDirty()) {
+      requestLayout();
+    } else {
+      requestRedraw();
+    }
   }
 }
 

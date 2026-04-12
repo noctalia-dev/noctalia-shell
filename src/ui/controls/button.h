@@ -101,5 +101,6 @@ private:
   bool m_enabled = true;
   bool m_selected = false;
   bool m_hoverSuppressed = false;
+  bool m_visualStateInitialized = false;
   Signal<>::ScopedConnection m_paletteConn;
 };

@@ -650,23 +650,23 @@ void Bar::updateWidgets(BarInstance& instance) {
   }
 
   auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
-    bool changed = false;
+    bool needsRelayout = false;
     for (auto& widget : widgets) {
       widget->update(*renderer);
-      if (widget->root() != nullptr && widget->root()->dirty()) {
-        changed = true;
+      if (widget->root() != nullptr && widget->root()->layoutDirty()) {
+        needsRelayout = true;
         widget->layout(*renderer, barAreaW, barAreaH);
       }
     }
-    return changed;
+    return needsRelayout;
   };
 
   const bool startChanged = updateSection(instance.startWidgets);
   const bool centerChanged = updateSection(instance.centerWidgets);
   const bool endChanged = updateSection(instance.endWidgets);
 
-  if (startChanged || centerChanged || endChanged || instance.startSection->dirty() || instance.centerSection->dirty() ||
-      instance.endSection->dirty()) {
+  if (startChanged || centerChanged || endChanged || instance.startSection->layoutDirty() ||
+      instance.centerSection->layoutDirty() || instance.endSection->layoutDirty()) {
     layoutBarSections(instance, *renderer, barAreaW, barAreaH, paddingH, isVertical);
   }
 }
