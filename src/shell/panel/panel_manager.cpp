@@ -161,7 +161,10 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
   };
 
   m_surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
-  m_surface->setConfigureCallback([this](std::uint32_t width, std::uint32_t height) { buildScene(width, height); });
+  m_surface->setConfigureCallback(
+      [this](std::uint32_t /*width*/, std::uint32_t /*height*/) { m_surface->requestLayout(); });
+  m_surface->setPrepareFrameCallback(
+      [this](bool needsUpdate, bool needsLayout) { prepareFrame(needsUpdate, needsLayout); });
   m_surface->setFrameTickCallback([this](float deltaMs) {
     if (m_activePanel != nullptr) {
       m_activePanel->onFrameTick(deltaMs);
@@ -321,10 +324,11 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
 
   // Trigger redraw if scene changed
   if (m_surface != nullptr && m_sceneRoot != nullptr && m_sceneRoot->dirty()) {
-    if (m_renderContext != nullptr && m_activePanel != nullptr && !m_activePanel->deferPointerRelayout()) {
-      m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
+    if (m_activePanel != nullptr && !m_activePanel->deferPointerRelayout()) {
+      m_surface->requestLayout();
+    } else {
+      m_surface->requestRedraw();
     }
-    m_surface->requestRedraw();
   }
 
   return m_pointerInside;
@@ -342,9 +346,7 @@ void PanelManager::refresh() {
     return;
   }
 
-  m_activePanel->update(*m_renderContext);
-  m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
-  m_surface->requestRedraw();
+  m_surface->requestUpdate();
 }
 
 void PanelManager::requestRedraw() {
@@ -371,10 +373,7 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
 
   m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed, event.preedit);
   if (m_surface != nullptr && m_sceneRoot != nullptr && m_sceneRoot->dirty()) {
-    if (m_renderContext != nullptr && m_activePanel != nullptr) {
-      m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
-    }
-    m_surface->requestRedraw();
+    m_surface->requestLayout();
   }
 }
 
@@ -455,5 +454,30 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
   if (m_contentNode != nullptr) {
     m_contentNode->setPosition(kPadding, kPadding);
     m_contentNode->setSize(w - kPadding * 2.0f, h - kPadding * 2.0f);
+  }
+}
+
+void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
+  if (m_renderContext == nullptr || m_activePanel == nullptr || m_surface == nullptr) {
+    return;
+  }
+
+  m_renderContext->makeCurrent(m_surface->renderTarget());
+  m_renderContext->syncContentScale(m_surface->renderTarget());
+
+  const auto width = m_surface->width();
+  const auto height = m_surface->height();
+  const bool needsSceneBuild =
+      m_sceneRoot == nullptr || static_cast<std::uint32_t>(std::round(m_sceneRoot->width())) != width ||
+      static_cast<std::uint32_t>(std::round(m_sceneRoot->height())) != height;
+  if (needsSceneBuild) {
+    buildScene(width, height);
+  }
+
+  if (needsUpdate) {
+    m_activePanel->update(*m_renderContext);
+  }
+  if (needsUpdate || needsLayout) {
+    m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
   }
 }

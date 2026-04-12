@@ -83,6 +83,7 @@ private:
 
   void ensureSurfaces();
   void destroySurfaces();
+  void prepareFrame(PopupInstance& inst, bool needsUpdate, bool needsLayout);
   void buildScene(PopupInstance& inst, uint32_t width, uint32_t height);
   Node* buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary, Label** outBody,
                   Node** outBg, ProgressBar** outProgress);

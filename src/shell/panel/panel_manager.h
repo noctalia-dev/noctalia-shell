@@ -57,6 +57,7 @@ private:
   static PanelManager* s_instance;
 
   void buildScene(std::uint32_t width, std::uint32_t height);
+  void prepareFrame(bool needsUpdate, bool needsLayout);
   void destroyPanel();
 
   WaylandConnection* m_wayland = nullptr;

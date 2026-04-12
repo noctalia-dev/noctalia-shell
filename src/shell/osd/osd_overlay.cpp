@@ -59,12 +59,11 @@ void OsdOverlay::show(const OsdContent& content) {
   m_content = content;
   ensureSurfaces();
   for (auto& inst : m_instances) {
-    if (inst->sceneRoot == nullptr) {
+    if (inst->surface == nullptr) {
       continue;
     }
-    updateInstanceContent(*inst);
-    animateInstance(*inst);
-    inst->surface->requestRedraw();
+    inst->showPending = true;
+    inst->surface->requestUpdate();
   }
 }
 
@@ -158,9 +157,10 @@ void OsdOverlay::ensureSurfaces() {
 
     inst->surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
     auto* instPtr = inst.get();
-    inst->surface->setConfigureCallback([this, instPtr](std::uint32_t width, std::uint32_t height) {
-      buildScene(*instPtr, width, height);
-    });
+    inst->surface->setConfigureCallback(
+        [instPtr](std::uint32_t /*width*/, std::uint32_t /*height*/) { instPtr->surface->requestLayout(); });
+    inst->surface->setPrepareFrameCallback(
+        [this, instPtr](bool needsUpdate, bool needsLayout) { prepareFrame(*instPtr, needsUpdate, needsLayout); });
     inst->surface->setAnimationManager(&inst->animations);
     inst->surface->setRenderContext(m_renderContext);
 
@@ -179,6 +179,36 @@ void OsdOverlay::destroySurfaces() {
     inst->animations.cancelAll();
   }
   m_instances.clear();
+}
+
+void OsdOverlay::prepareFrame(Instance& inst, bool needsUpdate, bool needsLayout) {
+  if (m_renderContext == nullptr || inst.surface == nullptr) {
+    return;
+  }
+
+  const auto width = inst.surface->width();
+  const auto height = inst.surface->height();
+  if (width == 0 || height == 0) {
+    return;
+  }
+
+  m_renderContext->makeCurrent(inst.surface->renderTarget());
+
+  const bool needsSceneBuild =
+      inst.sceneRoot == nullptr || static_cast<std::uint32_t>(std::round(inst.sceneRoot->width())) != width ||
+      static_cast<std::uint32_t>(std::round(inst.sceneRoot->height())) != height;
+  if (needsSceneBuild) {
+    buildScene(inst, width, height);
+  }
+
+  if ((needsUpdate || needsLayout || needsSceneBuild) && inst.sceneRoot != nullptr) {
+    updateInstanceContent(inst);
+  }
+
+  if (needsUpdate && inst.showPending) {
+    animateInstance(inst);
+    inst.showPending = false;
+  }
 }
 
 void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t height) {
@@ -251,7 +281,6 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   inst.card->addChild(std::move(row));
 
   inst.sceneRoot->addChild(std::move(card));
-  updateInstanceContent(inst);
 }
 
 void OsdOverlay::updateInstanceContent(Instance& inst) {

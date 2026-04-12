@@ -486,7 +486,10 @@ void NotificationToast::ensureSurfaces() {
     inst->surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
 
     auto* instPtr = inst.get();
-    inst->surface->setConfigureCallback([this, instPtr](uint32_t w, uint32_t h) { buildScene(*instPtr, w, h); });
+    inst->surface->setConfigureCallback(
+        [instPtr](uint32_t /*w*/, uint32_t /*h*/) { instPtr->surface->requestLayout(); });
+    inst->surface->setPrepareFrameCallback(
+        [this, instPtr](bool needsUpdate, bool needsLayout) { prepareFrame(*instPtr, needsUpdate, needsLayout); });
     inst->surface->setAnimationManager(&inst->animations);
     inst->surface->setRenderContext(m_renderContext);
 
@@ -509,6 +512,27 @@ void NotificationToast::destroySurfaces() {
   m_instances.clear();
   m_entries.clear();
   kLog.debug("notification toast: all surfaces destroyed");
+}
+
+void NotificationToast::prepareFrame(PopupInstance& inst, bool /*needsUpdate*/, bool needsLayout) {
+  if (m_renderContext == nullptr || inst.surface == nullptr) {
+    return;
+  }
+
+  const auto width = inst.surface->width();
+  const auto height = inst.surface->height();
+  if (width == 0 || height == 0) {
+    return;
+  }
+
+  m_renderContext->makeCurrent(inst.surface->renderTarget());
+
+  const bool needsSceneBuild =
+      inst.sceneRoot == nullptr || static_cast<uint32_t>(std::round(inst.sceneRoot->width())) != width ||
+      static_cast<uint32_t>(std::round(inst.sceneRoot->height())) != height;
+  if (needsSceneBuild || needsLayout) {
+    buildScene(inst, width, height);
+  }
 }
 
 void NotificationToast::buildScene(PopupInstance& inst, uint32_t width, uint32_t height) {
@@ -626,6 +650,7 @@ Node* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppName, 
     closeGlyphPtr->setColor(closeColorNormal);
   });
   headerRow->addChild(std::move(closeArea));
+  headerRow->layout(*m_renderContext);
 
   area->addChild(std::move(headerRow));
 

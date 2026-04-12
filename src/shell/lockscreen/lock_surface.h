@@ -46,6 +46,7 @@ public:
                               std::uint32_t width, std::uint32_t height);
 
 private:
+  void prepareFrame(bool needsUpdate, bool needsLayout);
   void ensureWallpaperTexture();
   void updateClockText();
   void layoutScene(std::uint32_t width, std::uint32_t height);

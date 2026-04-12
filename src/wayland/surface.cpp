@@ -50,13 +50,16 @@ void Surface::handleFrameDone(void* data, wl_callback* callback, std::uint32_t c
     self->m_updateCallback();
   }
 
+  self->preparePendingFrame();
+
   if (self->m_running && self->m_configured) {
     bool dirty = self->m_sceneRoot != nullptr && self->m_sceneRoot->dirty();
     bool animating = self->m_animationManager != nullptr && self->m_animationManager->hasActive();
+    bool redrawRequested = self->m_redrawRequested;
 
-    if (dirty || animating) {
+    if (dirty || animating || redrawRequested) {
+      self->m_redrawRequested = false;
       self->render();
-      self->requestFrame();
     }
     // Frame loop stops here when idle. Restarted by requestRedraw().
   }
@@ -93,10 +96,13 @@ void Surface::onConfigure(std::uint32_t width, std::uint32_t height) {
   if (m_configureCallback) {
     m_configureCallback(m_width, m_height);
   }
+  preparePendingFrame();
   render();
 }
 
 void Surface::setConfigureCallback(ConfigureCallback callback) { m_configureCallback = std::move(callback); }
+
+void Surface::setPrepareFrameCallback(PrepareFrameCallback callback) { m_prepareFrameCallback = std::move(callback); }
 
 void Surface::setUpdateCallback(UpdateCallback callback) { m_updateCallback = std::move(callback); }
 
@@ -120,16 +126,25 @@ void Surface::setInputRegion(const std::vector<InputRect>& rects) {
   wl_region_destroy(region);
 }
 
+void Surface::requestUpdate() {
+  m_updateRequested = true;
+  m_layoutRequested = true;
+  kickFrameLoop();
+}
+
+void Surface::requestLayout() {
+  m_layoutRequested = true;
+  kickFrameLoop();
+}
+
 void Surface::requestRedraw() {
-  if (m_running && m_configured && m_frameCallback == nullptr) {
-    m_lastFrameAt.reset();
-    render();
-    requestFrame();
-  }
+  m_redrawRequested = true;
+  kickFrameLoop();
 }
 
 void Surface::renderNow() {
   if (m_running && m_configured) {
+    preparePendingFrame();
     render();
   }
 }
@@ -145,6 +160,7 @@ void Surface::render() {
   if (m_sceneRoot != nullptr) {
     m_sceneRoot->clearDirty();
   }
+  m_redrawRequested = false;
 }
 
 void Surface::requestFrame() {
@@ -173,4 +189,32 @@ void Surface::destroySurface() {
 
   m_running = false;
   m_configured = false;
+}
+
+void Surface::preparePendingFrame() {
+  if (m_prepareFrameCallback == nullptr || (!m_updateRequested && !m_layoutRequested)) {
+    return;
+  }
+
+  const bool needsUpdate = m_updateRequested;
+  const bool needsLayout = m_layoutRequested;
+  m_updateRequested = false;
+  m_layoutRequested = false;
+  m_prepareFrameCallback(needsUpdate, needsLayout);
+}
+
+void Surface::kickFrameLoop() {
+  if (!m_running || !m_configured || m_frameCallback != nullptr) {
+    return;
+  }
+
+  m_lastFrameAt.reset();
+  preparePendingFrame();
+
+  const bool dirty = m_sceneRoot != nullptr && m_sceneRoot->dirty();
+  const bool animating = m_animationManager != nullptr && m_animationManager->hasActive();
+  if (m_redrawRequested || dirty || animating) {
+    m_redrawRequested = false;
+    render();
+  }
 }

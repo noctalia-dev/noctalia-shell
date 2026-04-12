@@ -167,14 +167,8 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
       for (auto& inst : m_instances) {
-        if (inst->surface == nullptr || m_renderContext == nullptr) {
-          continue;
-        }
-        m_renderContext->makeCurrent(inst->surface->renderTarget());
-        m_renderContext->syncContentScale(inst->surface->renderTarget());
-        updateWidgets(*inst);
-        if (inst->sceneRoot != nullptr && inst->sceneRoot->dirty()) {
-          inst->surface->requestRedraw();
+        if (inst->surface != nullptr) {
+          inst->surface->requestUpdate();
         }
       }
     });
@@ -196,14 +190,8 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
 
 void Bar::onSecondTick() {
   for (auto& inst : m_instances) {
-    if (inst->surface == nullptr || m_renderContext == nullptr) {
-      continue;
-    }
-    m_renderContext->makeCurrent(inst->surface->renderTarget());
-    m_renderContext->syncContentScale(inst->surface->renderTarget());
-    updateWidgets(*inst);
-    if (inst->sceneRoot != nullptr && inst->sceneRoot->dirty()) {
-      inst->surface->requestRedraw();
+    if (inst->surface != nullptr) {
+      inst->surface->requestUpdate();
     }
   }
 }
@@ -238,17 +226,11 @@ void Bar::onOutputChange() { syncInstances(); }
 
 void Bar::refresh() {
   for (auto& inst : m_instances) {
-    if (inst->surface == nullptr || m_renderContext == nullptr) {
-      continue;
-    }
-    m_renderContext->makeCurrent(inst->surface->renderTarget());
-    m_renderContext->syncContentScale(inst->surface->renderTarget());
-    updateWidgets(*inst);
-    if (inst->sceneRoot != nullptr &&
-        (inst->sceneRoot->dirty() || inst->animations.hasActive() || instanceNeedsFrameTick(*inst))) {
-      inst->surface->requestRedraw();
-    } else {
-      inst->surface->renderNow();
+    if (inst->surface != nullptr) {
+      inst->surface->requestUpdate();
+      if (inst->animations.hasActive() || instanceNeedsFrameTick(*inst)) {
+        inst->surface->requestRedraw();
+      }
     }
   }
 }
@@ -395,6 +377,8 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
   auto* inst = instance.get();
   instance->surface->setConfigureCallback(
       [this, inst](std::uint32_t width, std::uint32_t height) { buildScene(*inst, width, height); });
+  instance->surface->setPrepareFrameCallback(
+      [this, inst](bool needsUpdate, bool needsLayout) { prepareFrame(*inst, needsUpdate, needsLayout); });
   instance->surface->setFrameTickCallback([inst](float deltaMs) {
     tickWidgets(inst->startWidgets, deltaMs);
     tickWidgets(inst->centerWidgets, deltaMs);
@@ -683,6 +667,59 @@ void Bar::updateWidgets(BarInstance& instance) {
       instance.endSection->dirty()) {
     layoutBarSections(instance, *renderer, barAreaW, barAreaH, paddingH, isVertical);
   }
+}
+
+void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout) {
+  if (m_renderContext == nullptr || instance.surface == nullptr) {
+    return;
+  }
+
+  m_renderContext->makeCurrent(instance.surface->renderTarget());
+  m_renderContext->syncContentScale(instance.surface->renderTarget());
+
+  if (needsUpdate) {
+    updateWidgets(instance);
+    return;
+  }
+
+  if (!needsLayout) {
+    return;
+  }
+
+  const auto w = static_cast<float>(instance.surface->width());
+  const auto h = static_cast<float>(instance.surface->height());
+  const float paddingH = static_cast<float>(instance.barConfig.paddingH);
+  const float barH = static_cast<float>(instance.barConfig.height);
+  const float marginH = static_cast<float>(instance.barConfig.marginH);
+  const float marginV = static_cast<float>(instance.barConfig.marginV);
+  const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
+  const auto sbi = computeShadowBleed(instance.barConfig);
+  const float bleedLeft = static_cast<float>(sbi.left);
+  const float bleedRight = static_cast<float>(sbi.right);
+  const float bleedUp = static_cast<float>(sbi.up);
+  const float bleedDown = static_cast<float>(sbi.down);
+  float barAreaW = 0.0f;
+  float barAreaH = 0.0f;
+  if (isVertical) {
+    const float barAreaY = std::min(marginV, bleedUp);
+    barAreaW = barH;
+    barAreaH = h - barAreaY - std::min(marginV, bleedDown);
+  } else {
+    const float barAreaX = std::min(marginH, bleedLeft);
+    barAreaW = w - barAreaX - std::min(marginH, bleedRight);
+    barAreaH = barH;
+  }
+
+  for (auto& widget : instance.startWidgets) {
+    widget->layout(*m_renderContext, barAreaW, barAreaH);
+  }
+  for (auto& widget : instance.centerWidgets) {
+    widget->layout(*m_renderContext, barAreaW, barAreaH);
+  }
+  for (auto& widget : instance.endWidgets) {
+    widget->layout(*m_renderContext, barAreaW, barAreaH);
+  }
+  layoutBarSections(instance, *m_renderContext, barAreaW, barAreaH, paddingH, isVertical);
 }
 
 bool Bar::onPointerEvent(const PointerEvent& event) {

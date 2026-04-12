@@ -54,11 +54,13 @@ private:
     ProgressBar* progress = nullptr;
     AnimationManager::Id showAnimId = 0;
     AnimationManager::Id hideAnimId = 0;
+    bool showPending = false;
     bool visible = false;
   };
 
   void ensureSurfaces();
   void destroySurfaces();
+  void prepareFrame(Instance& inst, bool needsUpdate, bool needsLayout);
   void buildScene(Instance& inst, std::uint32_t width, std::uint32_t height);
   void updateInstanceContent(Instance& inst);
   void animateInstance(Instance& inst);

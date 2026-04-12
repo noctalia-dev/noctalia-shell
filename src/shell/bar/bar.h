@@ -63,6 +63,7 @@ private:
   void destroyInstance(std::uint32_t outputName);
   void populateWidgets(BarInstance& instance);
   void buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height);
+  void prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout);
   void updateWidgets(BarInstance& instance);
   static void applyBackgroundPalette(BarInstance& instance);
 

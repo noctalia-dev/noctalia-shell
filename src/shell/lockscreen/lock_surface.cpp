@@ -67,8 +67,10 @@ LockSurface::LockSurface(WaylandConnection& connection) : Surface(connection) {
       [this](std::uint32_t serial, std::uint32_t shape) { m_connection.setCursorShape(serial, shape); });
 
   setSceneRoot(&m_root);
-  setConfigureCallback([this](std::uint32_t width, std::uint32_t height) { layoutScene(width, height); });
-  updateCopy();
+  setConfigureCallback([this](std::uint32_t /*width*/, std::uint32_t /*height*/) { requestLayout(); });
+  setPrepareFrameCallback(
+      [this](bool needsUpdate, bool needsLayout) { prepareFrame(needsUpdate, needsLayout); });
+  requestUpdate();
 }
 
 LockSurface::~LockSurface() {
@@ -115,28 +117,23 @@ void LockSurface::setLockedState(bool locked) {
     return;
   }
   m_locked = locked;
-  updateCopy();
   if (m_locked && m_passwordField != nullptr) {
     m_inputDispatcher.setFocus(m_passwordField->inputArea());
   } else {
     m_inputDispatcher.setFocus(nullptr);
   }
-  if (width() > 0 && height() > 0) {
-    layoutScene(width(), height());
-    requestRedraw();
-  }
+  requestUpdate();
 }
 
 void LockSurface::setPromptState(std::string user, std::string maskedPassword, std::string status, bool error) {
+  if (m_user == user && m_maskedPassword == maskedPassword && m_status == status && m_error == error) {
+    return;
+  }
   m_user = std::move(user);
   m_maskedPassword = std::move(maskedPassword);
   m_status = std::move(status);
   m_error = error;
-  updateCopy();
-  if (width() > 0 && height() > 0) {
-    layoutScene(width(), height());
-    requestRedraw();
-  }
+  requestUpdate();
 }
 
 void LockSurface::setWallpaperPath(std::string wallpaperPath) {
@@ -145,12 +142,7 @@ void LockSurface::setWallpaperPath(std::string wallpaperPath) {
   }
   m_wallpaperPath = std::move(wallpaperPath);
   m_wallpaperDirty = true;
-
-  if (width() > 0 && height() > 0) {
-    ensureWallpaperTexture();
-    layoutScene(width(), height());
-    requestRedraw();
-  }
+  requestLayout();
 }
 
 void LockSurface::setOnLogin(std::function<void()> onLogin) { m_onLogin = std::move(onLogin); }
@@ -160,7 +152,7 @@ void LockSurface::selectAllPassword() {
     return;
   }
   m_passwordField->selectAll();
-  requestRedraw();
+  requestLayout();
 }
 
 void LockSurface::clearPasswordSelection() {
@@ -168,7 +160,7 @@ void LockSurface::clearPasswordSelection() {
     return;
   }
   m_passwordField->clearSelection();
-  requestRedraw();
+  requestLayout();
 }
 
 void LockSurface::onPointerEvent(const PointerEvent& event) {
@@ -192,26 +184,31 @@ void LockSurface::onPointerEvent(const PointerEvent& event) {
                                   event.axisLines);
     break;
   }
+
+  if (m_root.dirty()) {
+    requestLayout();
+  }
 }
 
 void LockSurface::onSecondTick() {
-  const std::string previous = m_clock != nullptr ? m_clock->text() : std::string{};
-  updateClockText();
-  if (m_clock != nullptr && m_clock->text() != previous && width() > 0 && height() > 0) {
-    layoutScene(width(), height());
-    requestRedraw();
+  using clock = std::chrono::system_clock;
+  const std::time_t t = clock::to_time_t(clock::now());
+  std::tm local{};
+  localtime_r(&t, &local);
+  char buf[16];
+  std::strftime(buf, sizeof(buf), "%H:%M", &local);
+  if (m_clock != nullptr && m_clock->text() != buf) {
+    requestUpdate();
   }
 }
 
-void LockSurface::onThemeChanged() {
-  if (width() > 0 && height() > 0) {
-    layoutScene(width(), height());
-  }
-  requestRedraw();
-}
+void LockSurface::onThemeChanged() { requestLayout(); }
 
 void LockSurface::onKeyboardEvent(const KeyboardEvent& event) {
   m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed, event.preedit);
+  if (m_root.dirty()) {
+    requestLayout();
+  }
 }
 
 void LockSurface::handleConfigure(void* data, ext_session_lock_surface_v1* lockSurface, std::uint32_t serial,
@@ -219,6 +216,23 @@ void LockSurface::handleConfigure(void* data, ext_session_lock_surface_v1* lockS
   auto* self = static_cast<LockSurface*>(data);
   ext_session_lock_surface_v1_ack_configure(lockSurface, serial);
   self->Surface::onConfigure(width, height);
+}
+
+void LockSurface::prepareFrame(bool needsUpdate, bool needsLayout) {
+  auto* renderer = renderContext();
+  if (renderer == nullptr || width() == 0 || height() == 0) {
+    return;
+  }
+
+  renderer->makeCurrent(renderTarget());
+
+  if (needsUpdate) {
+    updateCopy();
+  }
+
+  if (needsUpdate || needsLayout) {
+    layoutScene(width(), height());
+  }
 }
 
 void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
@@ -282,10 +296,11 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
 
   m_passwordField->setSize(inputWidth, 0.0f);
   m_passwordField->setPosition(contentLeft, contentTop);
+  m_passwordField->layout(*renderer);
 
   m_loginButton->setSize(buttonWidth, Style::controlHeight);
   m_loginButton->setPosition(contentLeft + inputWidth + gap, contentTop);
-  m_loginButton->updateInputArea();
+  m_loginButton->layout(*renderer);
 
   m_root.markDirty();
 }

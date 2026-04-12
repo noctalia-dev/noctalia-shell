@@ -447,7 +447,9 @@ void TrayMenu::ensureSurface() {
   auto* instPtr = inst.get();
 
   inst->surface->setConfigureCallback(
-      [this, instPtr](uint32_t width, uint32_t height) { buildScene(*instPtr, width, height); });
+      [instPtr](uint32_t /*width*/, uint32_t /*height*/) { instPtr->surface->requestLayout(); });
+  inst->surface->setPrepareFrameCallback(
+      [this, instPtr](bool needsUpdate, bool needsLayout) { prepareMainMenuFrame(*instPtr, needsUpdate, needsLayout); });
   inst->surface->setDismissedCallback([this]() { close(); });
   inst->surface->setRenderContext(m_renderContext);
 
@@ -493,14 +495,36 @@ void TrayMenu::destroySurface() {
 }
 
 void TrayMenu::rebuildScenes() {
-  if (!m_visible || m_entries.empty() || m_instance == nullptr || m_instance->surface == nullptr) {
+  if (!m_visible) {
+    return;
+  }
+  if (!m_entries.empty() && m_instance != nullptr && m_instance->surface != nullptr) {
+    m_instance->surface->requestLayout();
+  }
+  if (!m_submenuEntries.empty() && m_submenuInstance != nullptr && m_submenuInstance->surface != nullptr) {
+    m_submenuInstance->surface->requestLayout();
+  }
+}
+
+void TrayMenu::prepareMainMenuFrame(MenuInstance& inst, bool /*needsUpdate*/, bool needsLayout) {
+  if (m_renderContext == nullptr || inst.surface == nullptr) {
     return;
   }
 
-  const std::uint32_t width = m_instance->surface->width() == 0 ? static_cast<uint32_t>(kSurfaceWidth) : m_instance->surface->width();
-  const std::uint32_t height = m_instance->surface->height() == 0 ? surfaceHeightPx() : m_instance->surface->height();
-  buildScene(*m_instance, width, height);
-  m_instance->surface->requestRedraw();
+  const auto width = inst.surface->width();
+  const auto height = inst.surface->height();
+  if (width == 0 || height == 0) {
+    return;
+  }
+
+  m_renderContext->makeCurrent(inst.surface->renderTarget());
+
+  const bool needsSceneBuild =
+      inst.sceneRoot == nullptr || static_cast<uint32_t>(std::round(inst.sceneRoot->width())) != width ||
+      static_cast<uint32_t>(std::round(inst.sceneRoot->height())) != height;
+  if (needsSceneBuild || needsLayout) {
+    buildScene(inst, width, height);
+  }
 }
 
 void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
@@ -602,7 +626,9 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
   auto* instPtr = inst.get();
 
   inst->surface->setConfigureCallback(
-      [this, instPtr](uint32_t w, uint32_t h) { buildSubmenuScene(*instPtr, w, h); });
+      [instPtr](uint32_t /*w*/, uint32_t /*h*/) { instPtr->surface->requestLayout(); });
+  inst->surface->setPrepareFrameCallback(
+      [this, instPtr](bool needsUpdate, bool needsLayout) { prepareSubmenuFrame(*instPtr, needsUpdate, needsLayout); });
   inst->surface->setDismissedCallback([this]() { closeSubmenu(); });
   inst->surface->setRenderContext(m_renderContext);
 
@@ -632,6 +658,27 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
 
   inst->wlSurface = inst->surface->wlSurface();
   m_submenuInstance = std::move(inst);
+}
+
+void TrayMenu::prepareSubmenuFrame(MenuInstance& inst, bool /*needsUpdate*/, bool needsLayout) {
+  if (m_renderContext == nullptr || inst.surface == nullptr) {
+    return;
+  }
+
+  const auto width = inst.surface->width();
+  const auto height = inst.surface->height();
+  if (width == 0 || height == 0) {
+    return;
+  }
+
+  m_renderContext->makeCurrent(inst.surface->renderTarget());
+
+  const bool needsSceneBuild =
+      inst.sceneRoot == nullptr || static_cast<uint32_t>(std::round(inst.sceneRoot->width())) != width ||
+      static_cast<uint32_t>(std::round(inst.sceneRoot->height())) != height;
+  if (needsSceneBuild || needsLayout) {
+    buildSubmenuScene(inst, width, height);
+  }
 }
 
 void TrayMenu::buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t height) {

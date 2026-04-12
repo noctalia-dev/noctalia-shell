@@ -89,6 +89,7 @@ private:
   void syncInstances();
   void createInstance(const WaylandOutput& output);
   void destroyInstance(std::uint32_t outputName);
+  void prepareFrame(DockInstance& instance, bool needsUpdate, bool needsLayout);
   void buildScene(DockInstance& instance);
   void rebuildItems(DockInstance& instance);
   void resizeSurface(DockInstance& instance);

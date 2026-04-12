@@ -143,6 +143,7 @@ void CalendarTab::layout(Renderer& renderer, float contentWidth, float bodyHeigh
   m_rootLayout->setSize(contentWidth, bodyHeight);
   m_rootLayout->layout(renderer);
   rebuild();
+  m_rootLayout->layout(renderer);
 }
 
 void CalendarTab::onClose() {

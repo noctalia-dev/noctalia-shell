@@ -50,9 +50,11 @@ private:
   void ensureSurface();
   void destroySurface();
   void rebuildScenes();
+  void prepareMainMenuFrame(MenuInstance& inst, bool needsUpdate, bool needsLayout);
   void buildScene(MenuInstance& inst, uint32_t width, uint32_t height);
   void openSubmenu(std::int32_t parentEntryId, float rowCenterY);
   void closeSubmenu();
+  void prepareSubmenuFrame(MenuInstance& inst, bool needsUpdate, bool needsLayout);
   void buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t height);
 
   WaylandConnection* m_wayland = nullptr;

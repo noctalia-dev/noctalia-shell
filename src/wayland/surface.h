@@ -26,6 +26,7 @@ struct InputRect {
 class Surface {
 public:
   using ConfigureCallback = std::function<void(std::uint32_t width, std::uint32_t height)>;
+  using PrepareFrameCallback = std::function<void(bool needsUpdate, bool needsLayout)>;
   using UpdateCallback = std::function<void()>;
   using FrameTickCallback = std::function<void(float deltaMs)>;
 
@@ -40,9 +41,12 @@ public:
   [[nodiscard]] bool isRunning() const noexcept;
 
   void setConfigureCallback(ConfigureCallback callback);
+  void setPrepareFrameCallback(PrepareFrameCallback callback);
   void setUpdateCallback(UpdateCallback callback);
   void setFrameTickCallback(FrameTickCallback callback);
   void setInputRegion(const std::vector<InputRect>& rects);
+  void requestUpdate();
+  void requestLayout();
   void requestRedraw();
   void renderNow();
   void setAnimationManager(AnimationManager* manager) noexcept { m_animationManager = manager; }
@@ -71,15 +75,22 @@ protected:
   wl_surface* m_surface = nullptr;
 
 private:
+  void preparePendingFrame();
+  void kickFrameLoop();
+
   RenderContext* m_renderContext = nullptr;
   RenderTarget m_renderTarget;
   AnimationManager* m_animationManager = nullptr;
   Node* m_sceneRoot = nullptr;
   ConfigureCallback m_configureCallback;
+  PrepareFrameCallback m_prepareFrameCallback;
   UpdateCallback m_updateCallback;
   FrameTickCallback m_frameTickCallback;
   wl_callback* m_frameCallback = nullptr;
   std::optional<std::chrono::steady_clock::time_point> m_lastFrameAt;
+  bool m_updateRequested = false;
+  bool m_layoutRequested = false;
+  bool m_redrawRequested = false;
   bool m_running = false;
   bool m_configured = false;
   std::uint32_t m_width = 0;

@@ -503,7 +503,9 @@ void Dock::createInstance(const WaylandOutput& output) {
 
   auto* inst = instance.get();
   instance->surface->setConfigureCallback(
-      [this, inst](std::uint32_t /*w*/, std::uint32_t /*h*/) { buildScene(*inst); });
+      [inst](std::uint32_t /*w*/, std::uint32_t /*h*/) { inst->surface->requestLayout(); });
+  instance->surface->setPrepareFrameCallback(
+      [this, inst](bool needsUpdate, bool needsLayout) { prepareFrame(*inst, needsUpdate, needsLayout); });
   instance->surface->setAnimationManager(&instance->animations);
 
   if (!instance->surface->initialize(output.output)) {
@@ -516,6 +518,27 @@ void Dock::createInstance(const WaylandOutput& output) {
 }
 
 // ── Private: scene building ───────────────────────────────────────────────────
+
+void Dock::prepareFrame(DockInstance& instance, bool /*needsUpdate*/, bool needsLayout) {
+  if (m_renderContext == nullptr || instance.surface == nullptr) {
+    return;
+  }
+
+  const auto width = instance.surface->width();
+  const auto height = instance.surface->height();
+  if (width == 0 || height == 0) {
+    return;
+  }
+
+  m_renderContext->makeCurrent(instance.surface->renderTarget());
+
+  const bool needsSceneBuild =
+      instance.sceneRoot == nullptr || static_cast<std::uint32_t>(std::round(instance.sceneRoot->width())) != width ||
+      static_cast<std::uint32_t>(std::round(instance.sceneRoot->height())) != height;
+  if (needsSceneBuild || needsLayout) {
+    buildScene(instance);
+  }
+}
 
 void Dock::buildScene(DockInstance& instance) {
   if (m_renderContext == nullptr || instance.surface == nullptr) {
@@ -629,7 +652,9 @@ void Dock::buildScene(DockInstance& instance) {
   instance.panel->setSize(panelW, panelH);
 
   // Row fills panel (padding already applied via Flex::setPadding).
+  instance.row->setPosition(0.0f, 0.0f);
   instance.row->setSize(panelW, panelH);
+  instance.row->layout(*m_renderContext);
 
   // Input region: trigger strip when hidden (autoHide), full panel otherwise.
   if (cfg.autoHide && instance.hideOpacity < 0.5f) {
@@ -1139,46 +1164,63 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item,
 
   auto* menuPtr = menu.get();
 
-  menu->surface->setConfigureCallback([this, menuPtr, entries = std::move(entries)](
-                                          std::uint32_t w, std::uint32_t h) mutable {
-    if (menuPtr->sceneRoot != nullptr) return; // already built
-
-    const auto fw = static_cast<float>(w);
-    const auto fh = static_cast<float>(h);
-
-    menuPtr->sceneRoot = std::make_unique<Node>();
-    menuPtr->sceneRoot->setSize(fw, fh);
-
-    auto ctrl = std::make_unique<ContextMenuControl>();
-    ctrl->setMenuWidth(fw);
-    ctrl->setMaxVisible(entries.size());
-    ctrl->setEntries(entries);
-    ctrl->setRedrawCallback([menuPtr]() {
-      if (menuPtr->surface) menuPtr->surface->requestRedraw();
-    });
-    ctrl->setOnActivate([this, menuPtr](const ContextMenuControlEntry& e) {
-      const auto idx = static_cast<std::size_t>(e.id);
-      auto* handle = (idx < menuPtr->handles.size()) ? menuPtr->handles[idx] : nullptr;
-      // Defer activation+close: avoids destroying InputDispatcher mid-callback.
-      DeferredCall::callLater([this, handle]() {
-        if (handle != nullptr) {
-          m_wayland->activateToplevel(handle);
+  menu->surface->setConfigureCallback(
+      [menuPtr](std::uint32_t /*w*/, std::uint32_t /*h*/) { menuPtr->surface->requestLayout(); });
+  menu->surface->setPrepareFrameCallback(
+      [this, menuPtr, entries](bool /*needsUpdate*/, bool needsLayout) {
+        if (m_renderContext == nullptr || menuPtr->surface == nullptr) {
+          return;
         }
-        closeWindowPicker();
-      });
-    });
-    ctrl->setPosition(0.0f, 0.0f);
-    ctrl->setSize(fw, fh);
-    ctrl->rebuild(*m_renderContext);
 
-    menuPtr->sceneRoot->addChild(std::move(ctrl));
-    menuPtr->inputDispatcher.setSceneRoot(menuPtr->sceneRoot.get());
-    menuPtr->inputDispatcher.setCursorShapeCallback(
-        [this](std::uint32_t serial, std::uint32_t shape) {
-          m_wayland->setCursorShape(serial, shape);
+        const auto width = menuPtr->surface->width();
+        const auto height = menuPtr->surface->height();
+        if (width == 0 || height == 0) {
+          return;
+        }
+
+        m_renderContext->makeCurrent(menuPtr->surface->renderTarget());
+
+        const bool needsSceneBuild =
+            menuPtr->sceneRoot == nullptr ||
+            static_cast<std::uint32_t>(std::round(menuPtr->sceneRoot->width())) != width ||
+            static_cast<std::uint32_t>(std::round(menuPtr->sceneRoot->height())) != height;
+        if (!needsSceneBuild && !needsLayout) {
+          return;
+        }
+
+        const auto fw = static_cast<float>(width);
+        const auto fh = static_cast<float>(height);
+
+        menuPtr->sceneRoot = std::make_unique<Node>();
+        menuPtr->sceneRoot->setSize(fw, fh);
+
+        auto ctrl = std::make_unique<ContextMenuControl>();
+        ctrl->setMenuWidth(fw);
+        ctrl->setMaxVisible(entries.size());
+        ctrl->setEntries(entries);
+        ctrl->setRedrawCallback([menuPtr]() {
+          if (menuPtr->surface) menuPtr->surface->requestRedraw();
         });
-    menuPtr->surface->setSceneRoot(menuPtr->sceneRoot.get());
-  });
+        ctrl->setOnActivate([this, menuPtr](const ContextMenuControlEntry& e) {
+          const auto idx = static_cast<std::size_t>(e.id);
+          auto* handle = (idx < menuPtr->handles.size()) ? menuPtr->handles[idx] : nullptr;
+          DeferredCall::callLater([this, handle]() {
+            if (handle != nullptr) {
+              m_wayland->activateToplevel(handle);
+            }
+            closeWindowPicker();
+          });
+        });
+        ctrl->setPosition(0.0f, 0.0f);
+        ctrl->setSize(fw, fh);
+        ctrl->rebuild(*m_renderContext);
+
+        menuPtr->sceneRoot->addChild(std::move(ctrl));
+        menuPtr->inputDispatcher.setSceneRoot(menuPtr->sceneRoot.get());
+        menuPtr->inputDispatcher.setCursorShapeCallback(
+            [this](std::uint32_t serial, std::uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
+        menuPtr->surface->setSceneRoot(menuPtr->sceneRoot.get());
+      });
 
   menu->surface->setDismissedCallback([this]() { closeWindowPicker(); });
 
@@ -1454,56 +1496,72 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
   // Capture actions by value — item may be rebuilt before the callback fires.
   auto entryActions = item.entry.actions;
 
-  menu->surface->setConfigureCallback([this, menuPtr, entries = std::move(entries),
-                                       entryActions = std::move(entryActions)](
-                                          std::uint32_t w, std::uint32_t h) mutable {
-    if (menuPtr->sceneRoot != nullptr) return;
-
-    const auto fw = static_cast<float>(w);
-    const auto fh = static_cast<float>(h);
-
-    menuPtr->sceneRoot = std::make_unique<Node>();
-    menuPtr->sceneRoot->setSize(fw, fh);
-
-    auto ctrl = std::make_unique<ContextMenuControl>();
-    ctrl->setMenuWidth(fw);
-    ctrl->setMaxVisible(entries.size());
-    ctrl->setEntries(entries);
-    ctrl->setRedrawCallback([menuPtr]() {
-      if (menuPtr->surface) menuPtr->surface->requestRedraw();
-    });
-    ctrl->setOnActivate([this, menuPtr, entryActions](const ContextMenuControlEntry& e) mutable {
-      const std::int32_t id = e.id;
-      // Defer activation+close: avoids destroying InputDispatcher mid-callback.
-      auto closingHandles = menuPtr->handles;
-      DeferredCall::callLater([this, id, entryActions, closingHandles = std::move(closingHandles)]() mutable {
-        if (id >= 0) {
-          const auto idx = static_cast<std::size_t>(id);
-          if (idx < entryActions.size()) {
-            launchAction(entryActions[idx]);
-          }
-        } else if (id == -1 && !closingHandles.empty()) {
-          m_wayland->closeToplevel(closingHandles[0]);
-        } else if (id == -2) {
-          for (auto* handle : closingHandles) {
-            m_wayland->closeToplevel(handle);
-          }
+  menu->surface->setConfigureCallback(
+      [menuPtr](std::uint32_t /*w*/, std::uint32_t /*h*/) { menuPtr->surface->requestLayout(); });
+  menu->surface->setPrepareFrameCallback(
+      [this, menuPtr, entries, entryActions](bool /*needsUpdate*/, bool needsLayout) {
+        if (m_renderContext == nullptr || menuPtr->surface == nullptr) {
+          return;
         }
-        closeItemMenu();
-      });
-    });
-    ctrl->setPosition(0.0f, 0.0f);
-    ctrl->setSize(fw, fh);
-    ctrl->rebuild(*m_renderContext);
 
-    menuPtr->sceneRoot->addChild(std::move(ctrl));
-    menuPtr->inputDispatcher.setSceneRoot(menuPtr->sceneRoot.get());
-    menuPtr->inputDispatcher.setCursorShapeCallback(
-        [this](std::uint32_t serial, std::uint32_t shape) {
-          m_wayland->setCursorShape(serial, shape);
+        const auto width = menuPtr->surface->width();
+        const auto height = menuPtr->surface->height();
+        if (width == 0 || height == 0) {
+          return;
+        }
+
+        m_renderContext->makeCurrent(menuPtr->surface->renderTarget());
+
+        const bool needsSceneBuild =
+            menuPtr->sceneRoot == nullptr ||
+            static_cast<std::uint32_t>(std::round(menuPtr->sceneRoot->width())) != width ||
+            static_cast<std::uint32_t>(std::round(menuPtr->sceneRoot->height())) != height;
+        if (!needsSceneBuild && !needsLayout) {
+          return;
+        }
+
+        const auto fw = static_cast<float>(width);
+        const auto fh = static_cast<float>(height);
+
+        menuPtr->sceneRoot = std::make_unique<Node>();
+        menuPtr->sceneRoot->setSize(fw, fh);
+
+        auto ctrl = std::make_unique<ContextMenuControl>();
+        ctrl->setMenuWidth(fw);
+        ctrl->setMaxVisible(entries.size());
+        ctrl->setEntries(entries);
+        ctrl->setRedrawCallback([menuPtr]() {
+          if (menuPtr->surface) menuPtr->surface->requestRedraw();
         });
-    menuPtr->surface->setSceneRoot(menuPtr->sceneRoot.get());
-  });
+        ctrl->setOnActivate([this, menuPtr, entryActions](const ContextMenuControlEntry& e) {
+          const std::int32_t id = e.id;
+          auto closingHandles = menuPtr->handles;
+          DeferredCall::callLater([this, id, entryActions, closingHandles = std::move(closingHandles)]() mutable {
+            if (id >= 0) {
+              const auto idx = static_cast<std::size_t>(id);
+              if (idx < entryActions.size()) {
+                launchAction(entryActions[idx]);
+              }
+            } else if (id == -1 && !closingHandles.empty()) {
+              m_wayland->closeToplevel(closingHandles[0]);
+            } else if (id == -2) {
+              for (auto* handle : closingHandles) {
+                m_wayland->closeToplevel(handle);
+              }
+            }
+            closeItemMenu();
+          });
+        });
+        ctrl->setPosition(0.0f, 0.0f);
+        ctrl->setSize(fw, fh);
+        ctrl->rebuild(*m_renderContext);
+
+        menuPtr->sceneRoot->addChild(std::move(ctrl));
+        menuPtr->inputDispatcher.setSceneRoot(menuPtr->sceneRoot.get());
+        menuPtr->inputDispatcher.setCursorShapeCallback(
+            [this](std::uint32_t serial, std::uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
+        menuPtr->surface->setSceneRoot(menuPtr->sceneRoot.get());
+      });
 
   menu->surface->setDismissedCallback([this]() { closeItemMenu(); });
 
