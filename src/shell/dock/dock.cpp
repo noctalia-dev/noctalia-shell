@@ -629,11 +629,17 @@ void Dock::buildScene(DockInstance& instance) {
     // Populate items and wire up palette reactivity.
     rebuildItems(instance);
 
-    // Fade-in.
-    instance.sceneRoot->setOpacity(0.0f);
-    instance.animations.animate(0.0f, 1.0f, Style::animSlow, Easing::EaseOutCubic,
-                                [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); },
-                                [inst = &instance]() { inst->hideOpacity = 1.0f; });
+    if (cfg.autoHide) {
+      // Start hidden immediately — no intro animation.
+      instance.sceneRoot->setOpacity(0.0f);
+      instance.hideOpacity = 0.0f;
+    } else {
+      // Normal intro fade-in.
+      instance.sceneRoot->setOpacity(0.0f);
+      instance.animations.animate(0.0f, 1.0f, Style::animSlow, Easing::EaseOutCubic,
+                                  [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); },
+                                  [inst = &instance]() { inst->hideOpacity = 1.0f; });
+    }
 
     instance.surface->setSceneRoot(instance.sceneRoot.get());
   }
@@ -667,13 +673,25 @@ void Dock::buildScene(DockInstance& instance) {
   // Row fills panel (padding already applied via Flex::setPadding).
   instance.row->setSize(panelW, panelH);
 
-  // Input region: full panel area (or trigger strip when auto-hidden).
-  instance.surface->setInputRegion({InputRect{
-      static_cast<int>(panelX),
-      static_cast<int>(panelY),
-      static_cast<int>(panelW),
-      static_cast<int>(panelH),
-  }});
+  // Input region: trigger strip when hidden (autoHide), full panel otherwise.
+  if (cfg.autoHide && instance.hideOpacity < 0.5f) {
+    const int surfW = static_cast<int>(w);
+    const int surfH = static_cast<int>(h);
+    if (!vert) {
+      instance.surface->setInputRegion({InputRect{0, surfH - kAutoHideTriggerPx, surfW, kAutoHideTriggerPx}});
+    } else if (cfg.position == "left") {
+      instance.surface->setInputRegion({InputRect{surfW - kAutoHideTriggerPx, 0, kAutoHideTriggerPx, surfH}});
+    } else {
+      instance.surface->setInputRegion({InputRect{0, 0, kAutoHideTriggerPx, surfH}});
+    }
+  } else {
+    instance.surface->setInputRegion({InputRect{
+        static_cast<int>(panelX),
+        static_cast<int>(panelY),
+        static_cast<int>(panelW),
+        static_cast<int>(panelH),
+    }});
+  }
 
   // Palette reactivity.
   instance.paletteConn = paletteChanged().connect([inst = &instance, this] {
