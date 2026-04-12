@@ -67,6 +67,29 @@ namespace {
 
 } // namespace
 
+PipeWireSpectrum::ListenerId PipeWireSpectrum::addChangeListener(ChangeCallback callback) {
+  if (!callback) {
+    return 0;
+  }
+  const bool wasEmpty = m_changeListeners.empty();
+  const ListenerId id = m_nextListenerId++;
+  m_changeListeners.emplace(id, std::move(callback));
+  if (wasEmpty) {
+    rebuildStream();
+  }
+  return id;
+}
+
+void PipeWireSpectrum::removeChangeListener(ListenerId id) {
+  if (id == 0) {
+    return;
+  }
+  const bool removed = m_changeListeners.erase(id) > 0;
+  if (removed && m_changeListeners.empty()) {
+    rebuildStream();
+  }
+}
+
 class PipeWireSpectrum::Stream {
 public:
   Stream(PipeWireSpectrum& spectrum, std::uint32_t nodeId) : m_spectrum(spectrum), m_nodeId(nodeId) {}
@@ -269,14 +292,6 @@ PipeWireSpectrum::PipeWireSpectrum(PipeWireService& service) : m_service(service
 
 PipeWireSpectrum::~PipeWireSpectrum() = default;
 
-void PipeWireSpectrum::setEnabled(bool enabled) {
-  if (enabled == m_enabled) {
-    return;
-  }
-  m_enabled = enabled;
-  rebuildStream();
-}
-
 void PipeWireSpectrum::setTargetNodeId(std::uint32_t id) {
   if (id == m_targetNodeId) {
     return;
@@ -329,7 +344,7 @@ void PipeWireSpectrum::setSmoothing(bool enabled) {
 }
 
 int PipeWireSpectrum::pollTimeoutMs() const {
-  if (!m_enabled || m_stream == nullptr) {
+  if (!hasListeners() || m_stream == nullptr) {
     return -1;
   }
   const auto now = std::chrono::steady_clock::now();
@@ -340,7 +355,7 @@ int PipeWireSpectrum::pollTimeoutMs() const {
 }
 
 void PipeWireSpectrum::tick() {
-  if (!m_enabled || m_stream == nullptr) {
+  if (!hasListeners() || m_stream == nullptr) {
     return;
   }
 
@@ -363,7 +378,7 @@ void PipeWireSpectrum::rebuildStream() {
   m_boundNodeId = 0;
 
   const std::uint32_t target = resolvedTargetNodeId();
-  if (!m_enabled || target == 0 || !hasResolvedTargetNode()) {
+  if (!hasListeners() || target == 0 || !hasResolvedTargetNode()) {
     clearValues(true);
     return;
   }
@@ -423,8 +438,11 @@ void PipeWireSpectrum::clearValues(bool notify) {
 }
 
 void PipeWireSpectrum::emitChanged() {
-  if (m_changeCallback) {
-    m_changeCallback();
+  for (const auto& [id, callback] : m_changeListeners) {
+    (void)id;
+    if (callback) {
+      callback();
+    }
   }
 }
 

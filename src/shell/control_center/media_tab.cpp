@@ -567,7 +567,17 @@ void MediaTab::setActive(bool active) {
   const bool becameActive = active && !m_active;
   m_active = active;
   if (m_spectrum != nullptr) {
-    m_spectrum->setEnabled(active);
+    if (active && m_spectrumListenerId == 0) {
+      m_spectrumListenerId = m_spectrum->addChangeListener([this]() {
+        if (!m_active) {
+          return;
+        }
+        PanelManager::instance().requestRedraw();
+      });
+    } else if (!active && m_spectrumListenerId != 0) {
+      m_spectrum->removeChangeListener(m_spectrumListenerId);
+      m_spectrumListenerId = 0;
+    }
   }
   if (!active) {
     m_positionSampleAt = {};
@@ -583,7 +593,10 @@ void MediaTab::setActive(bool active) {
 
 void MediaTab::onClose() {
   if (m_spectrum != nullptr) {
-    m_spectrum->setEnabled(false);
+    if (m_spectrumListenerId != 0) {
+      m_spectrum->removeChangeListener(m_spectrumListenerId);
+      m_spectrumListenerId = 0;
+    }
   }
   m_active = false;
   m_rootLayout = nullptr;

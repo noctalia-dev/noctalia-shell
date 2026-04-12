@@ -505,14 +505,6 @@ void Application::initUi() {
     });
   }
 
-  if (m_pipewireSpectrum != nullptr) {
-    m_pipewireSpectrum->setChangeCallback([this]() {
-      if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
-        m_panelManager.requestRedraw();
-      }
-    });
-  }
-
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
     if (m_lockScreen.isActive()) {
       m_lockScreen.onPointerEvent(event);

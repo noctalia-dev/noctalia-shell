@@ -38,6 +38,7 @@ private:
   MprisService* m_mpris = nullptr;
   HttpClient* m_httpClient = nullptr;
   PipeWireSpectrum* m_spectrum = nullptr;
+  std::uint64_t m_spectrumListenerId = 0;
   bool m_active = false;
 
   Flex* m_rootLayout = nullptr;

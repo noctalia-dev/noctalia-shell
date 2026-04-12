@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 class PipeWireService;
@@ -12,6 +13,7 @@ class PipeWireService;
 class PipeWireSpectrum {
 public:
   using ChangeCallback = std::function<void()>;
+  using ListenerId = std::uint64_t;
 
   explicit PipeWireSpectrum(PipeWireService& service);
   ~PipeWireSpectrum();
@@ -19,10 +21,8 @@ public:
   PipeWireSpectrum(const PipeWireSpectrum&) = delete;
   PipeWireSpectrum& operator=(const PipeWireSpectrum&) = delete;
 
-  void setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
-
-  void setEnabled(bool enabled);
-  [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
+  ListenerId addChangeListener(ChangeCallback callback);
+  void removeChangeListener(ListenerId id);
 
   void setTargetNodeId(std::uint32_t id);
   [[nodiscard]] std::uint32_t targetNodeId() const noexcept { return m_targetNodeId; }
@@ -53,6 +53,7 @@ private:
   class Stream;
   friend class Stream;
 
+  [[nodiscard]] bool hasListeners() const noexcept { return !m_changeListeners.empty(); }
   void rebuildStream();
   [[nodiscard]] std::uint32_t resolvedTargetNodeId() const noexcept;
   [[nodiscard]] bool hasResolvedTargetNode() const noexcept;
@@ -65,9 +66,9 @@ private:
   void processFrame();
 
   PipeWireService& m_service;
-  ChangeCallback m_changeCallback;
+  std::unordered_map<ListenerId, ChangeCallback> m_changeListeners;
+  ListenerId m_nextListenerId = 1;
 
-  bool m_enabled = false;
   std::uint32_t m_targetNodeId = 0;
   std::uint32_t m_boundNodeId = 0;
   int m_bandCount = 32;
