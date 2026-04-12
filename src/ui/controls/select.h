@@ -83,6 +83,7 @@ private:
   bool m_enabled = true;
   bool m_open = false;
   bool m_openUpward = false;
+  bool m_needsOptionRebuild = true;
   float m_fixedWidth = 0.0f;
   float m_scrollOffset = 0.0f;
   std::vector<std::pair<Node*, std::int32_t>> m_liftedNodes;

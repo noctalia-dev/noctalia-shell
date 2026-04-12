@@ -44,4 +44,5 @@ private:
   Flex* m_container = nullptr;
   std::vector<Workspace> m_cachedState;
   std::vector<Item> m_items;
+  bool m_rebuildPending = true;
 };

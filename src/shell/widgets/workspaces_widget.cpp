@@ -37,10 +37,15 @@ void WorkspacesWidget::create() {
 
 void WorkspacesWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   update(renderer);
+  if (m_rebuildPending) {
+    rebuild(renderer);
+    m_rebuildPending = false;
+  }
   m_container->layout(renderer);
 }
 
 void WorkspacesWidget::update(Renderer& renderer) {
+  (void)renderer;
   auto current = m_connection.workspaces(m_output);
   if (m_cachedState.empty() && current.empty()) {
     return;
@@ -65,8 +70,10 @@ void WorkspacesWidget::update(Renderer& renderer) {
       m_cachedState.push_back(
           Workspace{.id = ws.id, .name = ws.name, .coordinates = ws.coordinates, .active = ws.active});
     }
-
-    rebuild(renderer);
+    m_rebuildPending = true;
+    if (root() != nullptr) {
+      root()->markDirty();
+    }
   }
 }
 

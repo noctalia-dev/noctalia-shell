@@ -243,6 +243,10 @@ void TrayWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*co
     return;
   }
   syncState(renderer);
+  if (m_rebuildPending) {
+    rebuild(renderer);
+    m_rebuildPending = false;
+  }
 
   m_container->setGap(Style::spaceXs * m_contentScale);
 
@@ -262,6 +266,7 @@ void TrayWidget::update(Renderer& renderer) {
 }
 
 void TrayWidget::syncState(Renderer& renderer) {
+  (void)renderer;
   const auto desktopVersion = desktopEntriesVersion();
   const bool desktopEntriesChanged = desktopVersion != m_desktopEntriesVersion;
   if (desktopEntriesChanged) {
@@ -288,7 +293,10 @@ void TrayWidget::syncState(Renderer& renderer) {
   }
 
   m_items = next_items;
-  rebuild(renderer);
+  m_rebuildPending = true;
+  if (root() != nullptr) {
+    root()->markDirty();
+  }
 }
 
 void TrayWidget::rebuild(Renderer& renderer) {

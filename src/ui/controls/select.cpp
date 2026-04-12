@@ -108,7 +108,7 @@ void Select::setOptions(std::vector<std::string> options) {
     m_selectedIndex = 0;
   }
   syncTriggerText();
-  rebuildOptionViews();
+  m_needsOptionRebuild = true;
   applyVisualState();
   markDirty();
 }
@@ -157,7 +157,7 @@ void Select::setPlaceholder(std::string_view placeholder) {
 void Select::setFontSize(float size) {
   m_fontSize = std::max(1.0f, size);
   syncTriggerText();
-  rebuildOptionViews();
+  m_needsOptionRebuild = true;
   markDirty();
 }
 
@@ -199,6 +199,11 @@ void Select::layout(Renderer& renderer) {
   if (m_triggerBackground == nullptr || m_triggerLabel == nullptr || m_triggerGlyph == nullptr || m_triggerArea == nullptr ||
       m_menuBackground == nullptr) {
     return;
+  }
+
+  if (m_needsOptionRebuild) {
+    rebuildOptionViews();
+    m_needsOptionRebuild = false;
   }
 
   if (width() > 0.0f) {
