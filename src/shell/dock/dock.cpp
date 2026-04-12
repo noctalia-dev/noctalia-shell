@@ -288,10 +288,11 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
         }
       }
 
-      // Auto-hide: start fade-out when pointer leaves, unless a popup menu
-      // is open (some compositors steal pointer focus and send a spurious Leave).
-      if (m_config->config().dock.autoHide &&
-          m_itemMenu == nullptr && m_windowMenu == nullptr) {
+      // Auto-hide: start fade-out when pointer leaves, unless a popup is
+      // being opened (m_popupOwnerInstance is set before the roundtrip inside
+      // PopupSurface::initialize, which is where compositors like Hyprland
+      // deliver the Leave event synchronously).
+      if (m_config->config().dock.autoHide && m_popupOwnerInstance == nullptr) {
         startHideFadeOut(*m_hoveredInstance);
       }
       m_hoveredInstance = nullptr;
