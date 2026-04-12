@@ -35,7 +35,7 @@ Singleton {
                                                                                                                                        });
                                                                                                    })
 
-  readonly property var peripheralBatteries: UPower.devices.values.filter(d => d && isPeripheral(d)).sort((x, y) => x.percentage - y.percentage)
+  readonly property var peripheralBatteries: UPower.devices.values.filter(d => d && isPeripheral(d) && isDeviceReady(d)).sort((x, y) => x.percentage - y.percentage)
   readonly property var _laptopBattery: UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : null)
   readonly property var _peripheralBattery: peripheralBatteries.length > 0 ? peripheralBatteries[0] : null
 
@@ -89,7 +89,7 @@ Singleton {
 
     // Handle UPower devices
     if (device.type !== undefined) {
-      if (device.type === UPowerDeviceType.Battery && device.isPresent !== undefined) {
+      if (device.isPresent !== undefined) {
         return device.isPresent === true;
       }
       // Fallback for non-battery UPower devices or if isPresent is missing
