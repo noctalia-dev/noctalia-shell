@@ -11,6 +11,7 @@ class HttpClient;
 class IdleInhibitor;
 class MprisService;
 class PipeWireService;
+class PipeWireSpectrum;
 class PowerProfilesService;
 class TrayService;
 class SystemMonitorService;
@@ -28,8 +29,9 @@ class WidgetFactory {
 public:
   WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config, NotificationManager* notifications,
                 TrayService* tray, PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon,
-                PowerProfilesService* powerProfiles, IdleInhibitor* idleInhibitor, MprisService* mpris, HttpClient* httpClient,
-                WeatherService* weather, NightLightManager* nightLight, noctalia::theme::ThemeService* themeService);
+                PowerProfilesService* powerProfiles, IdleInhibitor* idleInhibitor, MprisService* mpris,
+                PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
+                NightLightManager* nightLight, noctalia::theme::ThemeService* themeService);
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output,
                                                float contentScale = 1.0f) const;
@@ -46,6 +48,7 @@ private:
   PowerProfilesService* m_powerProfiles;
   IdleInhibitor* m_idleInhibitor;
   MprisService* m_mpris;
+  PipeWireSpectrum* m_audioSpectrum;
   HttpClient* m_httpClient;
   WeatherService* m_weather;
   NightLightManager* m_nightLight;

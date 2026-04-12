@@ -1,0 +1,92 @@
+#include "shell/widgets/audio_visualizer_widget.h"
+
+#include "pipewire/pipewire_spectrum.h"
+#include "render/core/renderer.h"
+#include "render/scene/input_area.h"
+#include "ui/controls/audio_spectrum.h"
+#include "ui/palette.h"
+
+#include <algorithm>
+#include <memory>
+
+AudioVisualizerWidget::AudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, float height, int bands)
+    : m_spectrum(spectrum), m_width(width), m_height(height), m_bands(std::max(1, bands)) {}
+
+AudioVisualizerWidget::~AudioVisualizerWidget() {
+  if (m_spectrum != nullptr && m_listenerId != 0) {
+    m_spectrum->removeChangeListener(m_listenerId);
+  }
+}
+
+void AudioVisualizerWidget::create() {
+  auto root = std::make_unique<InputArea>();
+  root->setEnabled(false);
+
+  auto visualizer = std::make_unique<AudioSpectrum>();
+  visualizer->setOrientation(AudioSpectrumOrientation::Horizontal);
+  visualizer->setLayoutMode(AudioSpectrumLayoutMode::Fill);
+  visualizer->setCentered(true);
+  visualizer->setMirrored(false);
+  visualizer->setSpacingRatio(0.4f);
+  visualizer->setSmoothingTimeMs(60.0f);
+  visualizer->setGradient(resolveColorRole(ColorRole::Primary), resolveColorRole(ColorRole::Secondary));
+  m_visualizer = visualizer.get();
+  root->addChild(std::move(visualizer));
+
+  if (m_spectrum != nullptr) {
+    m_spectrum->setBandCount(m_bands);
+    m_listenerId = m_spectrum->addChangeListener([this]() {
+      m_pendingSpectrumUpdate = true;
+      requestRedraw();
+    });
+  }
+
+  setRoot(std::move(root));
+}
+
+void AudioVisualizerWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+  m_renderer = &renderer;
+  if (root() == nullptr || m_visualizer == nullptr) {
+    return;
+  }
+
+  const float width = std::max(1.0f, m_width * m_contentScale);
+  const float height = std::max(1.0f, m_height * m_contentScale);
+  m_visualizer->setPosition(0.0f, 0.0f);
+  m_visualizer->setSize(width, height);
+  m_visualizer->layout(renderer);
+  root()->setSize(width, height);
+}
+
+void AudioVisualizerWidget::update(Renderer& renderer) {
+  m_renderer = &renderer;
+  syncSpectrum();
+  Widget::update(renderer);
+}
+
+void AudioVisualizerWidget::onFrameTick(float deltaMs) {
+  if (m_visualizer == nullptr) {
+    return;
+  }
+  syncSpectrum();
+  m_visualizer->tick(deltaMs);
+  if (m_renderer != nullptr) {
+    m_visualizer->layout(*m_renderer);
+  }
+}
+
+bool AudioVisualizerWidget::needsFrameTick() const {
+  return m_visualizer != nullptr && (m_pendingSpectrumUpdate || !m_visualizer->converged());
+}
+
+void AudioVisualizerWidget::syncSpectrum() {
+  if (!m_pendingSpectrumUpdate || m_visualizer == nullptr || m_spectrum == nullptr) {
+    return;
+  }
+
+  m_visualizer->setValues(m_spectrum->values());
+  m_pendingSpectrumUpdate = false;
+  if (m_renderer != nullptr) {
+    m_visualizer->layout(*m_renderer);
+  }
+}

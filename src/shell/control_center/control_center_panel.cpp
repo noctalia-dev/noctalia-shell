@@ -167,20 +167,23 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
     }
   }
 
-  for (auto& tab : m_tabs) {
-    tab->layout(renderer, bodyWidth, bodyHeight);
+  const std::size_t activeIdx = tabIndex(m_activeTab);
+  if (m_tabs[activeIdx] != nullptr) {
+    m_tabs[activeIdx]->layout(renderer, bodyWidth, bodyHeight);
   }
 }
 
 void ControlCenterPanel::update(Renderer& renderer) {
-  for (auto& tab : m_tabs) {
-    tab->update(renderer);
+  const std::size_t activeIdx = tabIndex(m_activeTab);
+  if (m_tabs[activeIdx] != nullptr) {
+    m_tabs[activeIdx]->update(renderer);
   }
 }
 
 void ControlCenterPanel::onFrameTick(float deltaMs) {
-  for (auto& tab : m_tabs) {
-    tab->onFrameTick(deltaMs);
+  const std::size_t activeIdx = tabIndex(m_activeTab);
+  if (m_tabs[activeIdx] != nullptr) {
+    m_tabs[activeIdx]->onFrameTick(deltaMs);
   }
 }
 

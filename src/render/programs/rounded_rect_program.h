@@ -31,6 +31,10 @@ struct Radii {
   Radii(float tlv, float trv, float brv, float blv) : tl(tlv), tr(trv), br(brv), bl(blv) {}
 };
 
+constexpr bool operator==(const Radii& lhs, const Radii& rhs) noexcept {
+  return lhs.tl == rhs.tl && lhs.tr == rhs.tr && lhs.br == rhs.br && lhs.bl == rhs.bl;
+}
+
 struct RoundedRectStyle {
   Color fill{};
   Color fillEnd{};
@@ -41,6 +45,12 @@ struct RoundedRectStyle {
   float softness = 1.0f;
   float borderWidth = 0.0f;
 };
+
+constexpr bool operator==(const RoundedRectStyle& lhs, const RoundedRectStyle& rhs) noexcept {
+  return lhs.fill == rhs.fill && lhs.fillEnd == rhs.fillEnd && lhs.border == rhs.border &&
+         lhs.fillMode == rhs.fillMode && lhs.gradientDirection == rhs.gradientDirection &&
+         lhs.radius == rhs.radius && lhs.softness == rhs.softness && lhs.borderWidth == rhs.borderWidth;
+}
 
 class RoundedRectProgram {
 public:

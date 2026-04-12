@@ -180,6 +180,26 @@ Shows the default audio sink volume and mute state via PipeWire. No configurable
 
 ---
 
+### `audio_visualizer`
+
+Shows a simple horizontal audio spectrum using the current PipeWire monitor stream.
+
+| Setting  | Type   | Default | Description                    |
+|----------|--------|---------|--------------------------------|
+| `width`  | number | `56`    | Widget width in screen pixels  |
+| `height` | number | `16`    | Widget height in screen pixels |
+| `bands`  | number | `16`    | Number of spectrum bands       |
+
+```toml
+[widget.audio-vis]
+type = "audio_visualizer"
+width = 64
+height = 16
+bands = 20
+```
+
+---
+
 ### `media`
 
 Shows the current media artwork and track title from MPRIS.

@@ -87,7 +87,11 @@ namespace {
 } // namespace
 
 Application::Application() : m_weatherService(m_configService, m_httpClient) {
-  m_notificationManager.addEventCallback([this](const Notification& n, NotificationEvent event) {
+  auto shouldRefreshControlCenter = [this]() {
+    return m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center";
+  };
+
+  m_notificationManager.addEventCallback([this, shouldRefreshControlCenter](const Notification& n, NotificationEvent event) {
     const char* kind = "updated";
     if (event == NotificationEvent::Added) {
       kind = "added";
@@ -99,7 +103,9 @@ Application::Application() : m_weatherService(m_configService, m_httpClient) {
 
     // Keep bar widgets in sync with notification state changes.
     m_bar.refresh();
-    m_panelManager.refresh();
+    if (shouldRefreshControlCenter()) {
+      m_panelManager.refresh();
+    }
   });
 }
 
@@ -187,6 +193,10 @@ void Application::run() {
 void Application::initServices() {
   std::signal(SIGTERM, signal_handler);
   std::signal(SIGINT, signal_handler);
+
+  auto shouldRefreshControlCenter = [this]() {
+    return m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center";
+  };
 
   auto applyMotionConfig = [this]() {
     auto& motion = MotionService::instance();
@@ -346,9 +356,11 @@ void Application::initServices() {
     try {
       m_mprisService =
           makeWithStartupBackoff("mpris service", [this]() { return std::make_unique<MprisService>(*m_bus); });
-      m_mprisService->setChangeCallback([this]() {
+      m_mprisService->setChangeCallback([this, shouldRefreshControlCenter]() {
         m_bar.refresh();
-        m_panelManager.refresh();
+        if (shouldRefreshControlCenter()) {
+          m_panelManager.refresh();
+        }
       });
       kLog.info("mpris discovery active");
     } catch (const std::exception& e) {
@@ -381,7 +393,7 @@ void Application::initServices() {
   } else {
     m_nightLightManager.setWeatherCoordinates(std::nullopt, std::nullopt);
   }
-  m_weatherService.addChangeCallback([this]() {
+  m_weatherService.addChangeCallback([this, shouldRefreshControlCenter]() {
     if (m_weatherService.hasData()) {
       const WeatherSnapshot& snapshot = m_weatherService.snapshot();
       m_nightLightManager.setWeatherCoordinates(snapshot.latitude, snapshot.longitude);
@@ -389,11 +401,17 @@ void Application::initServices() {
       m_nightLightManager.setWeatherCoordinates(std::nullopt, std::nullopt);
     }
     m_bar.refresh();
-    m_panelManager.refresh();
+    if (shouldRefreshControlCenter()) {
+      m_panelManager.refresh();
+    }
   });
 }
 
 void Application::initUi() {
+  auto shouldRefreshControlCenter = [this]() {
+    return m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center";
+  };
+
   m_renderContext.initialize(m_wayland.display());
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_stateService);
 
@@ -476,8 +494,8 @@ void Application::initUi() {
 
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
                    m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_powerProfilesService.get(),
-                   &m_idleInhibitor, m_mprisService.get(), &m_httpClient, &m_weatherService, &m_renderContext,
-                   &m_nightLightManager, &m_themeService);
+                   &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(), &m_httpClient,
+                   &m_weatherService, &m_renderContext, &m_nightLightManager, &m_themeService);
 
   m_dock.initialize(m_wayland, &m_configService, &m_renderContext);
 
@@ -493,12 +511,14 @@ void Application::initUi() {
 
   if (m_pipewireService != nullptr) {
     m_audioOsd.suppressFor(std::chrono::milliseconds(2000));
-    m_pipewireService->setChangeCallback([this]() {
+    m_pipewireService->setChangeCallback([this, shouldRefreshControlCenter]() {
       if (m_pipewireSpectrum != nullptr) {
         m_pipewireSpectrum->handleAudioStateChanged();
       }
       m_bar.refresh();
-      m_panelManager.refresh();
+      if (shouldRefreshControlCenter()) {
+        m_panelManager.refresh();
+      }
       if (m_pipewireService != nullptr) {
         m_audioOsd.onAudioStateChanged(*m_pipewireService);
       }

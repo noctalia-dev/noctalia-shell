@@ -462,6 +462,10 @@ void PipeWireService::rebuildState() {
   std::ranges::sort(next.sinks, [](const auto& a, const auto& b) { return a.id < b.id; });
   std::ranges::sort(next.sources, [](const auto& a, const auto& b) { return a.id < b.id; });
 
+  if (next == m_state) {
+    return;
+  }
+
   m_state = std::move(next);
   ++m_changeSerial;
   emitChanged();

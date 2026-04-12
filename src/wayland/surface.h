@@ -2,8 +2,10 @@
 
 #include "render/render_target.h"
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <vector>
 
 struct wl_callback;
@@ -77,7 +79,7 @@ private:
   UpdateCallback m_updateCallback;
   FrameTickCallback m_frameTickCallback;
   wl_callback* m_frameCallback = nullptr;
-  std::uint32_t m_lastFrameTime = 0;
+  std::optional<std::chrono::steady_clock::time_point> m_lastFrameAt;
   bool m_running = false;
   bool m_configured = false;
   std::uint32_t m_width = 0;

@@ -22,6 +22,8 @@ struct AudioNode {
   bool muted = false;
   std::uint32_t channelCount = 0;
   bool isDefault = false;
+
+  bool operator==(const AudioNode&) const = default;
 };
 
 struct AudioState {
@@ -29,6 +31,8 @@ struct AudioState {
   std::vector<AudioNode> sources;
   std::uint32_t defaultSinkId = 0;
   std::uint32_t defaultSourceId = 0;
+
+  bool operator==(const AudioState&) const = default;
 };
 
 class PipeWireService {

@@ -13,6 +13,7 @@ class IdleInhibitor;
 class MprisService;
 class NotificationManager;
 class PipeWireService;
+class PipeWireSpectrum;
 class PowerProfilesService;
 class RenderContext;
 class SystemMonitorService;
@@ -35,8 +36,9 @@ public:
   bool initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                   NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                   UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
-                  IdleInhibitor* idleInhibitor, MprisService* mpris, HttpClient* httpClient, WeatherService* weatherService,
-                  RenderContext* renderContext, NightLightManager* nightLight, noctalia::theme::ThemeService* themeService);
+                  IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
+                  HttpClient* httpClient, WeatherService* weatherService, RenderContext* renderContext,
+                  NightLightManager* nightLight, noctalia::theme::ThemeService* themeService);
   void reload();
   void closeAllInstances();
   void show();
@@ -53,6 +55,9 @@ public:
   [[nodiscard]] bool isRunning() const noexcept;
 
 private:
+  static void tickWidgets(std::vector<std::unique_ptr<Widget>>& widgets, float deltaMs);
+  [[nodiscard]] static bool widgetsNeedFrameTick(const std::vector<std::unique_ptr<Widget>>& widgets);
+  [[nodiscard]] static bool instanceNeedsFrameTick(const BarInstance& instance);
   void syncInstances();
   void createInstance(const WaylandOutput& output, const BarConfig& barConfig);
   void destroyInstance(std::uint32_t outputName);
@@ -73,6 +78,7 @@ private:
   PowerProfilesService* m_powerProfiles = nullptr;
   IdleInhibitor* m_idleInhibitor = nullptr;
   MprisService* m_mpris = nullptr;
+  PipeWireSpectrum* m_audioSpectrum = nullptr;
   HttpClient* m_httpClient = nullptr;
   WeatherService* m_weatherService = nullptr;
   RenderContext* m_renderContext = nullptr;

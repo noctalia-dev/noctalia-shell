@@ -972,15 +972,22 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
       // kLog.debug("updated player name={} status={} title=\"{}\" artist=\"{}\" art_url=\"{}\"", merged.busName,
       //            merged.playbackStatus, merged.title, primary_artist(merged.artists), merged.artUrl);
 
-      if (previous_info.title != merged.title || previous_info.album != merged.album ||
-          previous_info.artists != merged.artists || previous_info.artUrl != merged.artUrl ||
-          previous_info.trackId != merged.trackId || previous_info.positionUs != merged.positionUs ||
-          previous_info.lengthUs != merged.lengthUs) {
+      const bool trackChanged = previous_info.title != merged.title || previous_info.album != merged.album ||
+                                previous_info.artists != merged.artists || previous_info.artUrl != merged.artUrl ||
+                                previous_info.trackId != merged.trackId || previous_info.lengthUs != merged.lengthUs;
+      const bool significantChanged =
+          trackChanged || previous_info.identity != merged.identity ||
+          previous_info.playbackStatus != merged.playbackStatus || previous_info.loopStatus != merged.loopStatus ||
+          previous_info.shuffle != merged.shuffle || previous_info.canGoPrevious != merged.canGoPrevious ||
+          previous_info.canGoNext != merged.canGoNext || previous_info.canPlay != merged.canPlay ||
+          previous_info.canPause != merged.canPause || previous_info.canSeek != merged.canSeek;
+
+      if (trackChanged) {
         emitTrackChanged(merged);
       }
 
       syncSignals(previousActive);
-      if (m_changeCallback) {
+      if (significantChanged && m_changeCallback) {
         m_changeCallback();
       }
     }

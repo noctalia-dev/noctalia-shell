@@ -17,6 +17,8 @@ public:
   virtual void create() = 0;
   virtual void layout(Renderer& renderer, float containerWidth, float containerHeight) = 0;
   virtual void update(Renderer& renderer);
+  virtual void onFrameTick(float deltaMs) { (void)deltaMs; }
+  [[nodiscard]] virtual bool needsFrameTick() const { return false; }
 
   // Input events. Coordinates are widget-local (relative to widget root node).
   virtual void onPointerEnter(float localX, float localY);

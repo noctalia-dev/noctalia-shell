@@ -63,6 +63,9 @@ Signal<>& paletteChanged() {
 }
 
 void setPalette(const Palette& p) {
+  if (palette == p) {
+    return;
+  }
   palette = p;
   paletteChanged().emit();
 }

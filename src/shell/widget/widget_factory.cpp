@@ -8,7 +8,9 @@
 #include "idle/idle_inhibitor.h"
 #include "net/http_client.h"
 #include "notification/notification_manager.h"
+#include "pipewire/pipewire_spectrum.h"
 #include "shell/widgets/active_window_widget.h"
+#include "shell/widgets/audio_visualizer_widget.h"
 #include "shell/widgets/battery_widget.h"
 #include "shell/widgets/clock_widget.h"
 #include "shell/widgets/idle_inhibitor_widget.h"
@@ -39,11 +41,13 @@ namespace {
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
                              NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                              UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
-                             IdleInhibitor* idleInhibitor, MprisService* mpris, HttpClient* httpClient, WeatherService* weather,
-                             NightLightManager* nightLight, noctalia::theme::ThemeService* themeService)
+                             IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
+                             HttpClient* httpClient, WeatherService* weather, NightLightManager* nightLight,
+                             noctalia::theme::ThemeService* themeService)
     : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
-      m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_httpClient(httpClient),
-      m_weather(weather), m_nightLight(nightLight), m_themeService(themeService) {}
+      m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_idleInhibitor(idleInhibitor),
+      m_mpris(mpris), m_audioSpectrum(audioSpectrum), m_httpClient(httpClient), m_weather(weather),
+      m_nightLight(nightLight), m_themeService(themeService) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
@@ -135,6 +139,15 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "volume") {
     auto widget = std::make_unique<VolumeWidget>(m_audio, output);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "audio_visualizer") {
+    const float width = static_cast<float>(wc != nullptr ? wc->getDouble("width", 56.0) : 56.0);
+    const float height = static_cast<float>(wc != nullptr ? wc->getDouble("height", 16.0) : 16.0);
+    const int bands = static_cast<int>(wc != nullptr ? wc->getInt("bands", 16) : 16);
+    auto widget = std::make_unique<AudioVisualizerWidget>(m_audioSpectrum, width, height, bands);
     widget->setContentScale(contentScale);
     return widget;
   }

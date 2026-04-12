@@ -11,6 +11,10 @@ struct Color {
   float a = 1.0f;
 };
 
+constexpr bool operator==(const Color& lhs, const Color& rhs) noexcept {
+  return lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
+}
+
 constexpr Color rgba(float r, float g, float b, float a = 1.0f) { return Color{r, g, b, a}; }
 
 constexpr float colorByte(std::uint32_t value) { return static_cast<float>(value) / 255.0f; }
@@ -115,5 +119,4 @@ constexpr Color lerpColor(const Color& a, const Color& b, float t) {
       .a = a.a + (b.a - a.a) * t,
   };
 }
-
 

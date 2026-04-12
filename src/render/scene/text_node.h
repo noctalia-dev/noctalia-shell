@@ -33,6 +33,9 @@ public:
   }
 
   void setColor(const Color& color) {
+    if (m_color == color) {
+      return;
+    }
     m_color = color;
     markDirty();
   }

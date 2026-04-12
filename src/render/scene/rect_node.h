@@ -10,6 +10,9 @@ public:
   [[nodiscard]] const RoundedRectStyle& style() const noexcept { return m_style; }
 
   void setStyle(const RoundedRectStyle& style) {
+    if (m_style == style) {
+      return;
+    }
     m_style = style;
     markDirty();
   }

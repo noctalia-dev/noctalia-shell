@@ -118,6 +118,19 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
   }
 }
 
+void tickWidgets(std::vector<std::unique_ptr<Widget>>& widgets, float deltaMs) {
+  for (auto& widget : widgets) {
+    if (widget != nullptr && widget->needsFrameTick()) {
+      widget->onFrameTick(deltaMs);
+    }
+  }
+}
+
+bool widgetsNeedFrameTick(const std::vector<std::unique_ptr<Widget>>& widgets) {
+  return std::any_of(widgets.begin(), widgets.end(),
+                     [](const auto& widget) { return widget != nullptr && widget->needsFrameTick(); });
+}
+
 } // namespace
 
 Bar::Bar() = default;
@@ -125,7 +138,7 @@ Bar::Bar() = default;
 bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                      NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                      UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
-                     IdleInhibitor* idleInhibitor, MprisService* mpris,
+                     IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
                      HttpClient* httpClient, WeatherService* weatherService, RenderContext* renderContext,
                      NightLightManager* nightLight, noctalia::theme::ThemeService* themeService) {
   m_wayland = &wayland;
@@ -139,6 +152,7 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
   m_powerProfiles = powerProfiles;
   m_idleInhibitor = idleInhibitor;
   m_mpris = mpris;
+  m_audioSpectrum = audioSpectrum;
   m_httpClient = httpClient;
   m_weatherService = weatherService;
   m_renderContext = renderContext;
@@ -146,8 +160,9 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
   m_themeService = themeService;
 
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
-                                                    m_audio, m_upower, m_sysmon, m_powerProfiles, m_idleInhibitor, m_mpris, m_httpClient,
-                                                    m_weatherService, m_nightLight, m_themeService);
+                                                    m_audio, m_upower, m_sysmon, m_powerProfiles, m_idleInhibitor,
+                                                    m_mpris, m_audioSpectrum, m_httpClient, m_weatherService,
+                                                    m_nightLight, m_themeService);
 
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
@@ -198,8 +213,9 @@ void Bar::reload() {
   m_lastBars = m_config->config().bars;
   m_lastWidgets = m_config->config().widgets;
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
-                                                    m_audio, m_upower, m_sysmon, m_powerProfiles, m_idleInhibitor, m_mpris, m_httpClient,
-                                                    m_weatherService, m_nightLight, m_themeService);
+                                                    m_audio, m_upower, m_sysmon, m_powerProfiles, m_idleInhibitor,
+                                                    m_mpris, m_audioSpectrum, m_httpClient, m_weatherService,
+                                                    m_nightLight, m_themeService);
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;
@@ -228,7 +244,8 @@ void Bar::refresh() {
     m_renderContext->makeCurrent(inst->surface->renderTarget());
     m_renderContext->syncContentScale(inst->surface->renderTarget());
     updateWidgets(*inst);
-    if (inst->sceneRoot != nullptr && (inst->sceneRoot->dirty() || inst->animations.hasActive())) {
+    if (inst->sceneRoot != nullptr &&
+        (inst->sceneRoot->dirty() || inst->animations.hasActive() || instanceNeedsFrameTick(*inst))) {
       inst->surface->requestRedraw();
     } else {
       inst->surface->renderNow();
@@ -378,6 +395,11 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
   auto* inst = instance.get();
   instance->surface->setConfigureCallback(
       [this, inst](std::uint32_t width, std::uint32_t height) { buildScene(*inst, width, height); });
+  instance->surface->setFrameTickCallback([inst](float deltaMs) {
+    tickWidgets(inst->startWidgets, deltaMs);
+    tickWidgets(inst->centerWidgets, deltaMs);
+    tickWidgets(inst->endWidgets, deltaMs);
+  });
 
   instance->surface->setAnimationManager(&instance->animations);
   populateWidgets(*instance);
@@ -408,6 +430,15 @@ void Bar::populateWidgets(BarInstance& instance) {
   createWidgets(instance.barConfig.startWidgets, instance.startWidgets);
   createWidgets(instance.barConfig.centerWidgets, instance.centerWidgets);
   createWidgets(instance.barConfig.endWidgets, instance.endWidgets);
+}
+
+void Bar::tickWidgets(std::vector<std::unique_ptr<Widget>>& widgets, float deltaMs) { ::tickWidgets(widgets, deltaMs); }
+
+bool Bar::widgetsNeedFrameTick(const std::vector<std::unique_ptr<Widget>>& widgets) { return ::widgetsNeedFrameTick(widgets); }
+
+bool Bar::instanceNeedsFrameTick(const BarInstance& instance) {
+  return widgetsNeedFrameTick(instance.startWidgets) || widgetsNeedFrameTick(instance.centerWidgets) ||
+         widgetsNeedFrameTick(instance.endWidgets);
 }
 
 void Bar::applyBackgroundPalette(BarInstance& instance) {

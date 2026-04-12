@@ -136,6 +136,9 @@ namespace noctalia::theme {
     if (animate) {
       startTransition(resolved->palette);
     } else {
+      if (m_transitionAnimId == 0 && palette == resolved->palette) {
+        return;
+      }
       if (m_transitionAnimId != 0) {
         m_animations.cancel(m_transitionAnimId);
         m_transitionAnimId = 0;
@@ -149,6 +152,12 @@ namespace noctalia::theme {
   }
 
   void ThemeService::startTransition(const Palette& target) {
+    if (m_transitionAnimId == 0 && palette == target) {
+      return;
+    }
+    if (m_transitionAnimId != 0 && m_targetPalette == target) {
+      return;
+    }
     // Capture the currently-displayed palette (possibly mid-fade) so a new
     // transition starts from wherever the previous one had reached.
     if (m_transitionAnimId != 0) {

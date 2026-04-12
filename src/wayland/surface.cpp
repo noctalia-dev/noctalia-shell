@@ -23,6 +23,7 @@ bool Surface::isRunning() const noexcept { return m_running; }
 
 void Surface::handleFrameDone(void* data, wl_callback* callback, std::uint32_t callbackData) {
   auto* self = static_cast<Surface*>(data);
+  (void)callbackData;
 
   if (callback != nullptr) {
     wl_callback_destroy(callback);
@@ -31,10 +32,11 @@ void Surface::handleFrameDone(void* data, wl_callback* callback, std::uint32_t c
   self->m_frameCallback = nullptr;
 
   float deltaMs = 0.0f;
-  if (self->m_lastFrameTime != 0 && callbackData > self->m_lastFrameTime) {
-    deltaMs = static_cast<float>(callbackData - self->m_lastFrameTime);
+  const auto now = std::chrono::steady_clock::now();
+  if (self->m_lastFrameAt.has_value()) {
+    deltaMs = std::chrono::duration<float, std::milli>(now - *self->m_lastFrameAt).count();
   }
-  self->m_lastFrameTime = callbackData;
+  self->m_lastFrameAt = now;
 
   if (self->m_animationManager != nullptr) {
     self->m_animationManager->tick(deltaMs);
@@ -120,7 +122,7 @@ void Surface::setInputRegion(const std::vector<InputRect>& rects) {
 
 void Surface::requestRedraw() {
   if (m_running && m_configured && m_frameCallback == nullptr) {
-    m_lastFrameTime = 0;
+    m_lastFrameAt.reset();
     render();
     requestFrame();
   }
