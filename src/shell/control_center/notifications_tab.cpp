@@ -18,6 +18,7 @@ using namespace control_center;
 namespace {
 
 constexpr float kNotificationListRightPadding = Style::spaceXs;
+constexpr float kNotificationActionButtonSize = 24.0f;
 constexpr int kSummaryMaxLines = 2;
 constexpr int kBodyMaxLines = 3;
 constexpr int kExpandedMaxLines = 500;
@@ -78,26 +79,7 @@ std::unique_ptr<Flex> NotificationsTab::create() {
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);
   tab->setAlign(FlexAlign::Stretch);
-  tab->setGap(Style::spaceSm * scale);
   m_root = tab.get();
-
-  auto actions = std::make_unique<Flex>();
-  actions->setDirection(FlexDirection::Horizontal);
-  actions->setAlign(FlexAlign::Center);
-  actions->setJustify(FlexJustify::End);
-  actions->setGap(Style::spaceSm * scale);
-
-  auto clearAll = std::make_unique<Button>();
-  clearAll->setText("Clear all");
-  clearAll->setGlyph("trash");
-  clearAll->setVariant(ButtonVariant::Default);
-  clearAll->setGlyphSize(Style::fontSizeBody * scale);
-  clearAll->setMinHeight(Style::controlHeightSm * scale);
-  clearAll->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-  clearAll->setOnClick([this]() { clearAllNotifications(); });
-  m_clearAllButton = clearAll.get();
-  actions->addChild(std::move(clearAll));
-  tab->addChild(std::move(actions));
 
   auto scroll = std::make_unique<ScrollView>();
   scroll->setScrollbarVisible(true);
@@ -114,6 +96,27 @@ std::unique_ptr<Flex> NotificationsTab::create() {
   return tab;
 }
 
+std::unique_ptr<Flex> NotificationsTab::createHeaderActions() {
+  const float scale = contentScale();
+  auto actions = std::make_unique<Flex>();
+  actions->setDirection(FlexDirection::Horizontal);
+  actions->setAlign(FlexAlign::Center);
+  actions->setGap(Style::spaceSm * scale);
+
+  auto clearAll = std::make_unique<Button>();
+  clearAll->setGlyph("trash");
+  clearAll->setVariant(ButtonVariant::Destructive);
+  clearAll->setGlyphSize(Style::fontSizeBody * scale);
+  clearAll->setMinWidth(Style::controlHeightSm * scale);
+  clearAll->setMinHeight(Style::controlHeightSm * scale);
+  clearAll->setPadding(Style::spaceXs * scale);
+  clearAll->setOnClick([this]() { clearAllNotifications(); });
+  m_clearAllButton = clearAll.get();
+  actions->addChild(std::move(clearAll));
+
+  return actions;
+}
+
 void NotificationsTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) {
   if (m_root == nullptr || m_scroll == nullptr) {
     return;
@@ -121,13 +124,31 @@ void NotificationsTab::layout(Renderer& renderer, float contentWidth, float body
 
   m_root->setSize(contentWidth, bodyHeight);
   m_root->layout(renderer);
-  rebuild(renderer, m_scroll->contentViewportWidth());
+  const float initialWidth = m_scroll->contentViewportWidth();
+  rebuild(renderer, initialWidth);
   m_scroll->layout(renderer);
+
+  const float settledWidth = m_scroll->contentViewportWidth();
+  if (std::abs(settledWidth - initialWidth) >= 0.5f) {
+    rebuild(renderer, settledWidth);
+    m_scroll->layout(renderer);
+  }
 }
 
 void NotificationsTab::update(Renderer& renderer) {
-  const float width = m_scroll != nullptr ? m_scroll->contentViewportWidth() : 0.0f;
-  rebuild(renderer, width);
+  if (m_scroll == nullptr) {
+    return;
+  }
+
+  const float initialWidth = m_scroll->contentViewportWidth();
+  rebuild(renderer, initialWidth);
+  m_scroll->layout(renderer);
+
+  const float settledWidth = m_scroll->contentViewportWidth();
+  if (std::abs(settledWidth - initialWidth) >= 0.5f) {
+    rebuild(renderer, settledWidth);
+    m_scroll->layout(renderer);
+  }
 }
 
 void NotificationsTab::onClose() {
@@ -202,17 +223,33 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
 
   const float scale = contentScale();
   const float cardWidth = std::max(0.0f, width - kNotificationListRightPadding * scale);
-  const float actionButtonSize = Style::controlHeightSm * scale;
+  const float actionButtonSize = kNotificationActionButtonSize * scale;
   const float actionButtonsGap = Style::spaceXs * scale;
   const float cardHorizontalPadding = Style::spaceMd * scale * 2.0f;
   const float cardTextWidth = std::max(0.0f, cardWidth - cardHorizontalPadding);
 
   if (m_notifications == nullptr || m_notifications->history().empty()) {
     auto empty = std::make_unique<Flex>();
-    applyNotificationCardStyle(*empty, scale);
+    empty->setDirection(FlexDirection::Vertical);
+    empty->setAlign(FlexAlign::Center);
+    empty->setGap(Style::spaceXs * scale);
+    empty->setPadding(Style::spaceLg * scale, 0.0f);
     empty->setMinWidth(cardWidth);
-    addTitle(*empty, "No notifications", scale);
-    addBody(*empty, "Recent notifications will show here.", scale);
+
+    auto title = std::make_unique<Label>();
+    title->setText("No notifications");
+    title->setBold(true);
+    title->setFontSize(Style::fontSizeBody * scale);
+    title->setColor(roleColor(ColorRole::OnSurface));
+    empty->addChild(std::move(title));
+
+    auto body = std::make_unique<Label>();
+    body->setText("Recent notifications will show here.");
+    body->setCaptionStyle();
+    body->setFontSize(Style::fontSizeCaption * scale);
+    body->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    empty->addChild(std::move(body));
+
     m_list->addChild(std::move(empty));
     m_lastSerial = serial;
     m_lastWidth = width;
@@ -268,8 +305,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
       expand->setGlyphSize(Style::fontSizeBody * scale);
       expand->setMinWidth(actionButtonSize);
       expand->setMinHeight(actionButtonSize);
-      expand->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale,
-                         Style::spaceMd * scale);
+      expand->setPadding(Style::spaceXs * scale);
       expand->setRadius(Style::radiusMd * scale);
       expand->setOnClick([this, id = it->notification.id]() { toggleNotificationExpanded(id); });
       headerActions->addChild(std::move(expand));
@@ -281,8 +317,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     dismiss->setGlyphSize(Style::fontSizeBody * scale);
     dismiss->setMinWidth(actionButtonSize);
     dismiss->setMinHeight(actionButtonSize);
-    dismiss->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale,
-                        Style::spaceMd * scale);
+    dismiss->setPadding(Style::spaceXs * scale);
     dismiss->setRadius(Style::radiusMd * scale);
     dismiss->setOnClick([this, id = it->notification.id, active = it->active]() {
       removeNotificationEntry(id, active);

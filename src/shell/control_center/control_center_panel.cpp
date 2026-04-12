@@ -24,10 +24,15 @@ ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeW
   m_tabs[tabIndex(TabId::Network)] = std::make_unique<NetworkTab>();
   m_tabButtons.fill(nullptr);
   m_tabContainers.fill(nullptr);
+  m_tabHeaderActions.fill(nullptr);
 }
 
 void ControlCenterPanel::create() {
   const float scale = contentScale();
+
+  for (auto& tab : m_tabs) {
+    tab->setContentScale(scale);
+  }
 
   auto rootLayout = std::make_unique<Flex>();
   rootLayout->setDirection(FlexDirection::Horizontal);
@@ -96,18 +101,33 @@ void ControlCenterPanel::create() {
   m_contentTitle = title.get();
   header->addChild(std::move(title));
 
+  auto headerActions = std::make_unique<Flex>();
+  headerActions->setDirection(FlexDirection::Horizontal);
+  headerActions->setAlign(FlexAlign::Center);
+  headerActions->setGap(Style::spaceSm * scale);
+  m_contentHeaderActions = headerActions.get();
+
+  for (std::size_t i = 0; i < kTabCount; ++i) {
+    auto actions = m_tabs[i]->createHeaderActions();
+    m_tabHeaderActions[i] = actions.get();
+    if (actions != nullptr) {
+      actions->setVisible(false);
+      m_contentHeaderActions->addChild(std::move(actions));
+    }
+  }
+
   auto closeButton = std::make_unique<Button>();
   closeButton->setGlyph("close");
   closeButton->setVariant(ButtonVariant::Default);
   closeButton->setGlyphSize(Style::fontSizeBody * scale);
-  closeButton->setMinWidth(Style::controlHeight * scale);
-  closeButton->setMinHeight(Style::controlHeight * scale);
-  closeButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale,
-                          Style::spaceMd * scale);
+  closeButton->setMinWidth(Style::controlHeightSm * scale);
+  closeButton->setMinHeight(Style::controlHeightSm * scale);
+  closeButton->setPadding(Style::spaceXs * scale);
   closeButton->setRadius(Style::radiusMd * scale);
   closeButton->setOnClick([]() { PanelManager::instance().close(); });
   m_closeButton = closeButton.get();
-  header->addChild(std::move(closeButton));
+  m_contentHeaderActions->addChild(std::move(closeButton));
+  header->addChild(std::move(headerActions));
 
   content->addChild(std::move(header));
 
@@ -119,7 +139,6 @@ void ControlCenterPanel::create() {
   m_tabBodies = bodies.get();
 
   for (std::size_t i = 0; i < kTabCount; ++i) {
-    m_tabs[i]->setContentScale(scale);
     auto container = m_tabs[i]->create();
     container->setFlexGrow(1.0f);
     m_tabContainers[i] = container.get();
@@ -155,9 +174,9 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
   }
 
   if (m_contentTitle != nullptr) {
-    const float closeWidth = m_closeButton != nullptr ? m_closeButton->width() : 0.0f;
+    const float actionsWidth = m_contentHeaderActions != nullptr ? m_contentHeaderActions->width() : 0.0f;
     const float headerGap = m_contentHeader != nullptr ? m_contentHeader->gap() : 0.0f;
-    const float titleWidth = std::max(0.0f, contentInnerWidth - closeWidth - headerGap);
+    const float titleWidth = std::max(0.0f, contentInnerWidth - actionsWidth - headerGap);
     m_contentTitle->setMaxWidth(titleWidth);
   }
 
@@ -198,11 +217,13 @@ void ControlCenterPanel::onClose() {
   m_sidebar = nullptr;
   m_content = nullptr;
   m_contentHeader = nullptr;
+  m_contentHeaderActions = nullptr;
   m_contentTitle = nullptr;
   m_closeButton = nullptr;
   m_tabBodies = nullptr;
   m_tabButtons.fill(nullptr);
   m_tabContainers.fill(nullptr);
+  m_tabHeaderActions.fill(nullptr);
   clearReleasedRoot();
 }
 
@@ -232,10 +253,16 @@ void ControlCenterPanel::selectTab(TabId tab) {
     if (meta.id == tab && m_contentTitle != nullptr) {
       m_contentTitle->setText(meta.title);
     }
+    if (m_tabHeaderActions[idx] != nullptr) {
+      m_tabHeaderActions[idx]->setVisible(meta.id == tab);
+    }
   }
 
   if (m_contentTitle != nullptr) {
     m_contentTitle->setVisible(true);
+  }
+  if (m_contentHeaderActions != nullptr) {
+    m_contentHeaderActions->setVisible(true);
   }
 }
 

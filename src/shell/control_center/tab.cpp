@@ -38,3 +38,5 @@ void addBody(Flex& parent, const std::string& text, float scale) {
 }
 
 } // namespace control_center
+
+std::unique_ptr<Flex> Tab::createHeaderActions() { return nullptr; }

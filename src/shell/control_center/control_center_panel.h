@@ -94,10 +94,12 @@ private:
   Flex* m_sidebar = nullptr;
   Flex* m_content = nullptr;
   Flex* m_contentHeader = nullptr;
+  Flex* m_contentHeaderActions = nullptr;
   Label* m_contentTitle = nullptr;
   Button* m_closeButton = nullptr;
   Flex* m_tabBodies = nullptr;
   std::array<Button*, kTabCount> m_tabButtons{};
   std::array<Flex*, kTabCount> m_tabContainers{};
+  std::array<Flex*, kTabCount> m_tabHeaderActions{};
   TabId m_activeTab = TabId::Overview;
 };

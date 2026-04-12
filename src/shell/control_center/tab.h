@@ -28,6 +28,10 @@ public:
   // Implementations may cache a raw pointer to it for later use.
   virtual std::unique_ptr<Flex> create() = 0;
 
+  // Optional trailing header actions shown in the shared control-center header
+  // while this tab is active.
+  virtual std::unique_ptr<Flex> createHeaderActions();
+
   // Called by ControlCenterPanel::layout() with the available content dimensions.
   virtual void layout(Renderer& renderer, float contentWidth, float bodyHeight) {
     (void)renderer;
