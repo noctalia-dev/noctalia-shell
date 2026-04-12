@@ -448,7 +448,7 @@ Item {
             }
 
             RowLayout {
-              visible: modelData.batteryAvailable
+              visible: BluetoothService.getBatteryPercent(modelData) !== null
               spacing: Style.marginS
               NIcon {
                 icon: {

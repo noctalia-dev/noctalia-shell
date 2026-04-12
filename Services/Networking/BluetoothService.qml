@@ -6,6 +6,7 @@ import Quickshell.Bluetooth
 import Quickshell.Io
 import "../../Helpers/BluetoothUtils.js" as BluetoothUtils
 import qs.Commons
+import qs.Services.Hardware
 import qs.Services.System
 import qs.Services.UI
 
@@ -285,7 +286,19 @@ Singleton {
   }
 
   function getBatteryPercent(device) {
-    return BluetoothUtils.batteryPercent(device);
+    if (!device || !BatteryService) {
+      return null;
+    }
+    var addr = BluetoothUtils.macFromDevice(device);
+    if (!addr) {
+      return null;
+    }
+    // Match against BatteryService.peripheralBatteries (UPower devices)
+    var match = (BatteryService.peripheralBatteries || []).find(d => {
+                                                                 var path = (d.nativePath || "").toLowerCase();
+                                                                 return path.includes(addr.toLowerCase().replace(/:/g, "_"));
+                                                               });
+    return match ? BatteryService.getPercentage(match) : null;
   }
 
   function getSignalIcon(device) {

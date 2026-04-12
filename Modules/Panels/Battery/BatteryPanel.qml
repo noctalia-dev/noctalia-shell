@@ -121,7 +121,7 @@ SmartPanel {
       NBox {
         Layout.fillWidth: true
         implicitHeight: chargeLayout.implicitHeight + Style.margin2L
-        visible: BatteryService.laptopBatteries.length > 0 || BatteryService.bluetoothBatteries.length > 0
+        visible: BatteryService.laptopBatteries.length > 0 || BatteryService.peripheralBatteries.length > 0
 
         ColumnLayout {
           id: chargeLayout
@@ -228,12 +228,12 @@ SmartPanel {
 
           NDivider {
             Layout.fillWidth: true
-            visible: BatteryService.laptopBatteries.length > 0 && BatteryService.bluetoothBatteries.length > 0
+            visible: BatteryService.laptopBatteries.length > 0 && BatteryService.peripheralBatteries.length > 0
           }
 
           // Other devices (Bluetooth) section
           Repeater {
-            model: BatteryService.bluetoothBatteries
+            model: BatteryService.peripheralBatteries
             delegate: ColumnLayout {
               Layout.fillWidth: true
               spacing: Style.marginS
@@ -242,7 +242,11 @@ SmartPanel {
                 spacing: Style.marginS
 
                 NIcon {
-                  icon: BluetoothService.getDeviceIcon(modelData)
+                  icon: {
+                    if (BatteryService.isCharging(modelData)) return "battery-charging";
+                    if (BatteryService.isPluggedIn(modelData)) return "battery-charging-2";
+                    return BatteryService.getDeviceIcon(modelData);
+                  }
                   color: (BatteryService.isCharging(modelData) || BatteryService.isPluggedIn(modelData)) ? Color.mPrimary : (BatteryService.isCriticalBattery(modelData) || BatteryService.isLowBattery(modelData)) ? Color.mError : Color.mOnSurface
                 }
 

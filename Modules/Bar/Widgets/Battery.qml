@@ -102,7 +102,7 @@ Item {
 
     // If we are showing the main laptop battery, append external devices
     if (isInternal) {
-      var external = BatteryService.bluetoothBatteries;
+      var external = BatteryService.peripheralBatteries;
       if (external.length > 0) {
         if (rows.length > 0) {
           rows.push(["---", "---"]); // Separator

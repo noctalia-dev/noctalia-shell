@@ -5,14 +5,14 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.UPower
+import "../../Helpers/BluetoothUtils.js" as BluetoothUtils
 import qs.Commons
-import qs.Services.Networking
 import qs.Services.UI
 
 Singleton {
   id: root
 
-  readonly property var primaryDevice: _laptopBattery || _bluetoothBattery || null // Primary battery device (prioritizes laptop over Bluetooth)
+  readonly property var primaryDevice: _laptopBattery || _peripheralBattery || null // Primary battery device (prioritizes laptop over peripherals)
   readonly property real batteryPercentage: getPercentage(primaryDevice)
   readonly property bool batteryCharging: isCharging(primaryDevice)
   readonly property bool batteryPluggedIn: isPluggedIn(primaryDevice)
@@ -35,10 +35,9 @@ Singleton {
                                                                                                                                        });
                                                                                                    })
 
-  readonly property var bluetoothBatteries: (BluetoothService.connectedDevices || []).filter(dev => dev && dev.batteryAvailable).sort((x, y) => x.battery - y.battery) // Sort Bluetooth devices by battery level (lowest first)
-
+  readonly property var peripheralBatteries: UPower.devices.values.filter(d => d && isPeripheral(d)).sort((x, y) => x.percentage - y.percentage)
   readonly property var _laptopBattery: UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : null)
-  readonly property var _bluetoothBattery: bluetoothBatteries.length > 0 ? bluetoothBatteries[0] : null
+  readonly property var _peripheralBattery: peripheralBatteries.length > 0 ? peripheralBatteries[0] : null
 
   property var deviceModel: {
     var model = [
@@ -88,11 +87,6 @@ Singleton {
       return false;
     }
 
-    // Handle Bluetooth devices (identified by having batteryAvailable property)
-    if (device.batteryAvailable !== undefined) {
-      return device.connected === true;
-    }
-
     // Handle UPower devices
     if (device.type !== undefined) {
       if (device.type === UPowerDeviceType.Battery && device.isPresent !== undefined) {
@@ -108,9 +102,6 @@ Singleton {
     if (!isDevicePresent(device)) {
       return false;
     }
-    if (device.batteryAvailable !== undefined) {
-      return device.battery !== undefined;
-    }
     return device.ready && device.percentage !== undefined;
   }
 
@@ -118,14 +109,13 @@ Singleton {
     if (!device) {
       return -1;
     }
-    const z = (device.batteryAvailable !== undefined) ? (device.battery || 0) : (device.percentage || 0);
+    const z = device.percentage || 0;
     return Math.round(z > 1.0 ? z : z * 100);
   }
 
   function isCharging(device) {
-    if (!device || isBluetoothDevice(device)) {
-      // Tracking bluetooth devices can charge or not is a loop hole, none of my devices has it, even if it possible?!
-      return false;  // Assuming not charging until someone/quickshell brings a way to do pretty unlikely.
+    if (!device) {
+      return false;
     }
     if (device.state !== undefined) {
       return device.state === UPowerDeviceState.Charging;
@@ -134,9 +124,8 @@ Singleton {
   }
 
   function isPluggedIn(device) {
-    if (!device || isBluetoothDevice(device)) {
-      // Tracking bluetooth devices can charge or not is a loop hole, none of my devices has it, even if it possible?!
-      return false;  // Assuming not charging until someone/quickshell brings a way to do pretty unlikely.
+    if (!device) {
+      return false;
     }
     if (device.state !== undefined) {
       return device.state === UPowerDeviceState.FullyCharged || device.state === UPowerDeviceState.PendingCharge;
@@ -152,19 +141,12 @@ Singleton {
     return (!isCharging(device) && !isPluggedIn(device)) && getPercentage(device) <= warningThreshold && getPercentage(device) > criticalThreshold;
   }
 
-  function isBluetoothDevice(device) {
+  function isPeripheral(device) {
     if (!device) {
       return false;
     }
-    // Check for Quickshell Bluetooth device property
-    if (device.batteryAvailable !== undefined) {
-      return true;
-    }
-    // Check for UPower device path indicating it's a Bluetooth device
-    if (device.nativePath && (device.nativePath.includes("bluez") || device.nativePath.includes("bluetooth"))) {
-      return true;
-    }
-    return false;
+    // Anything that isn't a main laptop battery or line power is a peripheral for our UI purposes
+    return !device.isLaptopBattery && device.type !== UPowerDeviceType.LinePower;
   }
 
   function getDeviceName(device) {
@@ -172,7 +154,7 @@ Singleton {
       return "";
     }
 
-    if (!isBluetoothDevice(device) && device.isLaptopBattery) {
+    if (!isPeripheral(device) && device.isLaptopBattery) {
       // If there is more than one battery explicitly name them
       // Logger.e("BatteryDebug", "Available Battery count: " + laptopBatteries.length); // can be useful for debugging
       if (laptopBatteries.length > 1 && device.nativePath) {
@@ -268,17 +250,11 @@ Singleton {
       return;
     }
 
-    // If BluetoothDevice is busy, do not send any notification - battery level at the moment not known to us/system.
-    if (isBluetoothDevice(device) && BluetoothService.isDeviceBusy(device)) {
-      return;
-    }
-
     const percentage = getPercentage(device);
     const charging = isCharging(device);
     const pluggedIn = isPluggedIn(device);
     const level = isLowBattery(device) ? "low" : (isCriticalBattery(device) ? "critical" : "");
-    // nativePath from UPower, device.address from BluetoothService - both should work independently without each other.
-    var deviceKey = device.nativePath || device.address || "";
+    var deviceKey = device.nativePath || "";
 
     if (!_hasNotified[deviceKey]) {
       _hasNotified[deviceKey] = {
@@ -321,12 +297,20 @@ Singleton {
                        });
     var icon = level === "critical" ? "battery-exclamation" : "battery-charging-2";
 
-    if (isBluetoothDevice(device) && name) {
+    if (isPeripheral(device) && name) {
       title = title + " " + name;
     }
 
     // Only 'showNotice' supports custom icons
     ToastService.showNotice(title, desc, icon, 6000);
+  }
+
+  function getDeviceIcon(device) {
+    if (!device) {
+      return "bt-device-generic";
+    }
+    const name = device.model || device.deviceName || device.name || "";
+    return BluetoothUtils.deviceIcon(name, "");
   }
 
   Instantiator {

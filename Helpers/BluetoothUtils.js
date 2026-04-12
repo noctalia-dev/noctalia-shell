@@ -117,11 +117,3 @@ var deviceIcon = (name, icon) => {
   }
   return "bt-device-generic";
 };
-
-// Battery percent helper
-var batteryPercent = (device) => {
-  if (!device || !device.batteryAvailable || device.battery === undefined) return null;
-  var val = Math.round(Number(device.battery) * 100);
-  if (isNaN(val)) return null;
-  return Math.max(0, Math.min(100, val));
-};
