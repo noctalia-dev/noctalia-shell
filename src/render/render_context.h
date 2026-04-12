@@ -50,7 +50,6 @@ public:
 private:
   void ensureGlPrograms();
   void makeCurrentNoSurface();
-  void layoutDirtySubtree(Node* node);
   void renderNode(const Node* node, const Mat3& parentTransform, float parentOpacity, float sw, float sh, float bw,
                   float bh, float clipLeft, float clipTop, float clipRight, float clipBottom, bool hasClip);
 

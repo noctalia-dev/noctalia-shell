@@ -162,8 +162,6 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
   glClear(GL_COLOR_BUFFER_BIT);
 
   if (sceneRoot != nullptr) {
-    layoutDirtySubtree(sceneRoot);
-    makeCurrent(target);
     const auto sw = static_cast<float>(target.logicalWidth());
     const auto sh = static_cast<float>(target.logicalHeight());
     const auto bw = static_cast<float>(target.bufferWidth());
@@ -189,20 +187,6 @@ TextMetrics RenderContext::measureGlyph(char32_t codepoint, float fontSize) {
 TextureManager& RenderContext::textureManager() {
   makeCurrentNoSurface();
   return m_textureManager;
-}
-
-void RenderContext::layoutDirtySubtree(Node* node) {
-  if (node == nullptr || !node->visible()) {
-    return;
-  }
-
-  if (node->dirty()) {
-    node->layout(*this);
-  }
-
-  for (const auto& child : node->children()) {
-    layoutDirtySubtree(child.get());
-  }
 }
 
 void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, float parentOpacity, float sw, float sh,
