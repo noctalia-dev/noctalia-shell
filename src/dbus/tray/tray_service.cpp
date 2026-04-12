@@ -786,7 +786,7 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
   const auto attentionPixmaps = get_icon_pixmaps_or(*proxyIt->second, "AttentionIconPixmap", {});
   pickBestPixmap(attentionPixmaps, next.attentionArgb32, next.attentionWidth, next.attentionHeight);
 
-  kLog.info(
+  kLog.debug(
       "item metadata id={} itemName='{}' status={} iconName='{}' attentionIconName='{}' menu='{}' "
       "iconThemePath='{}' iconPixmap={}x{} (bytes={}) attentionPixmap={}x{} (bytes={})",
       itemId, next.itemName, next.status, next.iconName, next.attentionIconName, next.menuObjectPath,

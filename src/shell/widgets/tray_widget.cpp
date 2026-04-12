@@ -397,7 +397,7 @@ void TrayWidget::buildDesktopIconIndex() {
 std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
   if (const auto it = m_preferredIconPaths.find(item.id);
       it != m_preferredIconPaths.end() && !it->second.empty()) {
-    kLog.info("tray widget resolve id={} source=cached path={}", item.id, it->second);
+    kLog.debug("tray widget resolve id={} source=cached path={}", item.id, it->second);
     return it->second;
   }
 
@@ -405,7 +405,7 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
       item.needsAttention && !item.attentionIconName.empty() ? item.attentionIconName : item.iconName;
 
   if (const auto themed = resolveFromTrayThemePath(item.iconThemePath, preferred); !themed.empty()) {
-    kLog.info("tray widget resolve id={} source=theme-path variant='{}' path={}", item.id, preferred, themed);
+    kLog.debug("tray widget resolve id={} source=theme-path variant='{}' path={}", item.id, preferred, themed);
     m_preferredIconPaths[item.id] = themed;
     return themed;
   }
@@ -470,35 +470,35 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
     for (const auto& variant : identifierVariants(*candidate)) {
       if (const auto mapped = resolveMapped(variant); !mapped.empty()) {
         if (!isSymbolicIconPath(mapped)) {
-          kLog.info("tray widget resolve id={} source=mapped label={} variant='{}' path={}",
-                    item.id, label, variant, mapped);
+          kLog.debug("tray widget resolve id={} source=mapped label={} variant='{}' path={}",
+                     item.id, label, variant, mapped);
           m_preferredIconPaths[item.id] = mapped;
           return mapped;
         }
         if (symbolicFallback.empty()) {
-          kLog.info("tray widget resolve id={} source=mapped-symbolic label={} variant='{}' path={}",
-                    item.id, label, variant, mapped);
+          kLog.debug("tray widget resolve id={} source=mapped-symbolic label={} variant='{}' path={}",
+                     item.id, label, variant, mapped);
           symbolicFallback = mapped;
         }
       }
 
       if (const auto direct = resolveDirect(variant); !direct.empty()) {
         if (!isSymbolicIconName(variant) && !isSymbolicIconPath(direct)) {
-          kLog.info("tray widget resolve id={} source=direct label={} variant='{}' path={}",
-                    item.id, label, variant, direct);
+          kLog.debug("tray widget resolve id={} source=direct label={} variant='{}' path={}",
+                     item.id, label, variant, direct);
           m_preferredIconPaths[item.id] = direct;
           return direct;
         }
         if (symbolicFallback.empty()) {
-          kLog.info("tray widget resolve id={} source=direct-symbolic label={} variant='{}' path={}",
-                    item.id, label, variant, direct);
+          kLog.debug("tray widget resolve id={} source=direct-symbolic label={} variant='{}' path={}",
+                     item.id, label, variant, direct);
           symbolicFallback = direct;
         }
       }
     }
   }
 
-  kLog.info(
+  kLog.debug(
       "tray widget resolve id={} fallback={} preferred='{}' itemName='{}' title='{}' bus='{}' objectPath='{}' stableBus='{}' stableId='{}'",
       item.id, symbolicFallback, preferred, item.itemName, item.title, item.busName, item.objectPath,
       stableBusName, stableItemId);
