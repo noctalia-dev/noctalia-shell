@@ -729,7 +729,11 @@ bool NotificationToast::onPointerEvent(const PointerEvent& event) {
     }
 
     if (inst->sceneRoot != nullptr && inst->sceneRoot->dirty()) {
-      inst->surface->requestRedraw();
+      if (inst->sceneRoot->layoutDirty()) {
+        inst->surface->requestLayout();
+      } else {
+        inst->surface->requestRedraw();
+      }
     }
   }
 

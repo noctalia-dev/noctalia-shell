@@ -284,7 +284,7 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
             item.background->setFill(clearThemeColor());
           }
           if (m_hoveredInstance->sceneRoot) {
-            m_hoveredInstance->sceneRoot->markDirty();
+            m_hoveredInstance->sceneRoot->markPaintDirty();
           }
         }
       }
@@ -320,7 +320,11 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
 
   if (m_hoveredInstance != nullptr && m_hoveredInstance->sceneRoot != nullptr &&
       m_hoveredInstance->sceneRoot->dirty()) {
-    m_hoveredInstance->surface->requestRedraw();
+    if (m_hoveredInstance->sceneRoot->layoutDirty()) {
+      m_hoveredInstance->surface->requestLayout();
+    } else {
+      m_hoveredInstance->surface->requestRedraw();
+    }
   }
 
   return m_hoveredInstance != nullptr;
@@ -878,7 +882,7 @@ void Dock::rebuildItems(DockInstance& instance) {
         if (itemPtr->background) {
           itemPtr->background->setFill(roleColor(ColorRole::Hover, 0.8f));
         }
-        if (instPtr->sceneRoot) instPtr->sceneRoot->markDirty();
+        if (instPtr->sceneRoot) instPtr->sceneRoot->markPaintDirty();
       }
     });
     areaNode->setOnLeave([itemPtr, instPtr]() {
@@ -887,7 +891,7 @@ void Dock::rebuildItems(DockInstance& instance) {
         if (itemPtr->background) {
           itemPtr->background->setFill(clearThemeColor());
         }
-        if (instPtr->sceneRoot) instPtr->sceneRoot->markDirty();
+        if (instPtr->sceneRoot) instPtr->sceneRoot->markPaintDirty();
       }
     });
     areaNode->setAcceptedButtons(BTN_LEFT | BTN_RIGHT);
@@ -1292,7 +1296,11 @@ bool Dock::routePopupEvent(DockPopup* popup, const PointerEvent& event) {
   }
 
   if (popup->surface != nullptr && popup->sceneRoot != nullptr && popup->sceneRoot->dirty()) {
-    popup->surface->requestRedraw();
+    if (popup->sceneRoot->layoutDirty()) {
+      popup->surface->requestLayout();
+    } else {
+      popup->surface->requestRedraw();
+    }
   }
 
   // Always consume: popup holds the grab.

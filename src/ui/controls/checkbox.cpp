@@ -63,7 +63,7 @@ void Checkbox::setOnChange(std::function<void(bool)> callback) { m_onChange = st
 void Checkbox::setScale(float scale) {
   m_scale = std::max(0.1f, scale);
   applyState();
-  markDirty();
+  markLayoutDirty();
 }
 
 bool Checkbox::hovered() const noexcept { return m_inputArea != nullptr && m_inputArea->hovered(); }

@@ -264,7 +264,11 @@ bool TrayMenu::onPointerEvent(const PointerEvent& event) {
     }
 
     if (sub->surface != nullptr && sub->sceneRoot != nullptr && sub->sceneRoot->dirty()) {
-      sub->surface->requestRedraw();
+      if (sub->sceneRoot->layoutDirty()) {
+        sub->surface->requestLayout();
+      } else {
+        sub->surface->requestRedraw();
+      }
     }
 
     if (subConsumed) {
@@ -317,7 +321,11 @@ bool TrayMenu::onPointerEvent(const PointerEvent& event) {
   }
 
   if (inst->surface != nullptr && inst->sceneRoot != nullptr && inst->sceneRoot->dirty()) {
-    inst->surface->requestRedraw();
+    if (inst->sceneRoot->layoutDirty()) {
+      inst->surface->requestLayout();
+    } else {
+      inst->surface->requestRedraw();
+    }
   }
 
   if (event.type == PointerEvent::Type::Button && event.state == 1 && !consumed) {
