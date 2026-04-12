@@ -535,8 +535,13 @@ zathura)
     ;;
 
 starship)
-    PALETTE_FILE="$HOME/.cache/noctalia/starship-palette.toml"
-    CONFIG_FILE="$HOME/.config/starship.toml"
+    # Check if the nested starship config exists first
+    if [ -f "$HOME/.config/starship/starship.toml" ]; then
+        CONFIG_FILE="$HOME/.config/starship/starship.toml"
+    else
+    # Fallback to the default path
+        CONFIG_FILE="$HOME/.config/starship.toml"
+    fi
 
     # Check if the generated palette file exists
     if [ ! -f "$PALETTE_FILE" ]; then
