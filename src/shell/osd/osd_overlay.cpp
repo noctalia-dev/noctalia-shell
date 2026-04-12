@@ -215,6 +215,7 @@ void OsdOverlay::prepareFrame(Instance& inst, bool needsUpdate, bool needsLayout
 }
 
 void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t height) {
+  uiAssertNotRendering("OsdOverlay::buildScene");
   if (m_renderContext == nullptr) {
     return;
   }

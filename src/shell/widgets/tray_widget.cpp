@@ -240,7 +240,6 @@ void TrayWidget::create() {
 }
 
 void TrayWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
-  uiAssertNotRendering("TrayWidget::layout");
   if (m_container == nullptr) {
     return;
   }

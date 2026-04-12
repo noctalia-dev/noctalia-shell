@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "config/state_service.h"
+#include "core/ui_phase.h"
 #include "core/log.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
@@ -603,6 +604,7 @@ bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers
 }
 
 void WallpaperPanel::rebuildBreadcrumb() {
+  uiAssertNotRendering("WallpaperPanel::rebuildBreadcrumb");
   if (m_breadcrumb == nullptr) {
     return;
   }

@@ -37,7 +37,6 @@ void WorkspacesWidget::create() {
 }
 
 void WorkspacesWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
-  uiAssertNotRendering("WorkspacesWidget::layout");
   update(renderer);
   if (m_rebuildPending) {
     rebuild(renderer);

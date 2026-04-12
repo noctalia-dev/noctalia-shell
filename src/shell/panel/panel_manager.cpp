@@ -379,6 +379,7 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
 }
 
 void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
+  uiAssertNotRendering("PanelManager::buildScene");
   if (m_renderContext == nullptr || m_activePanel == nullptr) {
     return;
   }

@@ -137,7 +137,6 @@ std::unique_ptr<Flex> CalendarTab::create() {
 }
 
 void CalendarTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
-  uiAssertNotRendering("CalendarTab::layout");
   if (m_rootLayout == nullptr) {
     return;
   }

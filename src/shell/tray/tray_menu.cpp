@@ -496,6 +496,7 @@ void TrayMenu::destroySurface() {
 }
 
 void TrayMenu::rebuildScenes() {
+  uiAssertNotRendering("TrayMenu::rebuildScenes");
   if (!m_visible) {
     return;
   }
@@ -530,6 +531,7 @@ void TrayMenu::prepareMainMenuFrame(MenuInstance& inst, bool /*needsUpdate*/, bo
 }
 
 void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
+  uiAssertNotRendering("TrayMenu::buildScene");
   const auto w = static_cast<float>(width);
   const auto h = static_cast<float>(height);
 
@@ -574,7 +576,7 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
   });
   menu->setPosition(0.0f, 0.0f);
   menu->setSize(w, h);
-  menu->rebuild(*m_renderContext);
+  menu->layout(*m_renderContext);
   inst.sceneRoot->addChild(std::move(menu));
 
   inst.inputDispatcher.setSceneRoot(inst.sceneRoot.get());
@@ -685,6 +687,7 @@ void TrayMenu::prepareSubmenuFrame(MenuInstance& inst, bool /*needsUpdate*/, boo
 }
 
 void TrayMenu::buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t height) {
+  uiAssertNotRendering("TrayMenu::buildSubmenuScene");
   const auto w = static_cast<float>(width);
   const auto h = static_cast<float>(height);
 
@@ -726,7 +729,7 @@ void TrayMenu::buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t he
   });
   menu->setPosition(0.0f, 0.0f);
   menu->setSize(w, h);
-  menu->rebuild(*m_renderContext);
+  menu->layout(*m_renderContext);
   inst.sceneRoot->addChild(std::move(menu));
 
   inst.inputDispatcher.setSceneRoot(inst.sceneRoot.get());

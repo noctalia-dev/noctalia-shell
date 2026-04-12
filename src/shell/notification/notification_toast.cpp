@@ -538,6 +538,7 @@ void NotificationToast::prepareFrame(PopupInstance& inst, bool /*needsUpdate*/, 
 }
 
 void NotificationToast::buildScene(PopupInstance& inst, uint32_t width, uint32_t height) {
+  uiAssertNotRendering("NotificationToast::buildScene");
   if (m_renderContext == nullptr) {
     return;
   }

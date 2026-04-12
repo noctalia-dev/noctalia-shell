@@ -1,5 +1,6 @@
 #include "shell/launcher/launcher_panel.h"
 
+#include "core/ui_phase.h"
 #include "render/core/renderer.h"
 #include "wayland/clipboard_service.h"
 #include "render/scene/input_area.h"
@@ -213,6 +214,7 @@ void LauncherPanel::onInputChanged(const std::string& text) {
 }
 
 void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
+  uiAssertNotRendering("LauncherPanel::rebuildResults");
   if (m_list == nullptr) {
     return;
   }

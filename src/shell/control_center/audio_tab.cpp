@@ -1,5 +1,6 @@
 #include "shell/control_center/audio_tab.h"
 
+#include "core/ui_phase.h"
 #include "config/config_service.h"
 #include "pipewire/pipewire_service.h"
 #include "render/core/renderer.h"
@@ -546,6 +547,7 @@ void AudioTab::onClose() {
 }
 
 void AudioTab::rebuildLists(Renderer& renderer) {
+  uiAssertNotRendering("AudioTab::rebuildLists");
   if (m_outputList == nullptr || m_inputList == nullptr || m_outputScroll == nullptr || m_inputScroll == nullptr) {
     return;
   }

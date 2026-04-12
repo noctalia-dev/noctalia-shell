@@ -543,6 +543,7 @@ void Dock::prepareFrame(DockInstance& instance, bool /*needsUpdate*/, bool needs
 }
 
 void Dock::buildScene(DockInstance& instance) {
+  uiAssertNotRendering("Dock::buildScene");
   if (m_renderContext == nullptr || instance.surface == nullptr) {
     return;
   }
@@ -697,6 +698,7 @@ void Dock::applyPanelPalette(DockInstance& instance) {
 // ── Private: item population ──────────────────────────────────────────────────
 
 void Dock::rebuildItems(DockInstance& instance) {
+  uiAssertNotRendering("Dock::rebuildItems");
   if (instance.row == nullptr || m_renderContext == nullptr) {
     return;
   }
@@ -1217,7 +1219,7 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item,
         });
         ctrl->setPosition(0.0f, 0.0f);
         ctrl->setSize(fw, fh);
-        ctrl->rebuild(*m_renderContext);
+        ctrl->layout(*m_renderContext);
 
         menuPtr->sceneRoot->addChild(std::move(ctrl));
         menuPtr->inputDispatcher.setSceneRoot(menuPtr->sceneRoot.get());
@@ -1560,7 +1562,7 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
         });
         ctrl->setPosition(0.0f, 0.0f);
         ctrl->setSize(fw, fh);
-        ctrl->rebuild(*m_renderContext);
+        ctrl->layout(*m_renderContext);
 
         menuPtr->sceneRoot->addChild(std::move(ctrl));
         menuPtr->inputDispatcher.setSceneRoot(menuPtr->sceneRoot.get());

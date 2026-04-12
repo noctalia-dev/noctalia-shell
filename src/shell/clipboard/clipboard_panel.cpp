@@ -1,5 +1,6 @@
 #include "shell/clipboard/clipboard_panel.h"
 
+#include "core/ui_phase.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
@@ -410,6 +411,7 @@ void ClipboardPanel::schedulePreviewPayloadRefresh(bool debounced) {
 }
 
 void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
+  uiAssertNotRendering("ClipboardPanel::rebuildList");
   if (m_list == nullptr) {
     return;
   }
@@ -531,6 +533,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
 }
 
 void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float height) {
+  uiAssertNotRendering("ClipboardPanel::rebuildPreview");
   if (m_previewContent == nullptr || m_previewTitle == nullptr || m_previewMeta == nullptr) {
     return;
   }

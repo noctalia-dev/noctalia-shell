@@ -37,10 +37,9 @@ public:
   [[nodiscard]] float preferredHeight() const;
   [[nodiscard]] static float preferredHeight(const std::vector<ContextMenuControlEntry>& entries, std::size_t maxVisible);
 
-  void rebuild(Renderer& renderer);
-
 private:
   void doLayout(Renderer& renderer) override;
+  void rebuild(Renderer& renderer);
   void rebuildRows(Renderer& renderer);
 
   std::vector<ContextMenuControlEntry> m_entries;

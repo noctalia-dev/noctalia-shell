@@ -437,6 +437,7 @@ void Bar::applyBackgroundPalette(BarInstance& instance) {
 }
 
 void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height) {
+  uiAssertNotRendering("Bar::buildScene");
   if (m_renderContext == nullptr) {
     return;
   }
