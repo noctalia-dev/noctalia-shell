@@ -27,6 +27,7 @@ public:
 
   void initialize(WaylandConnection& wayland, ConfigService* config, NotificationManager* notifications,
                   RenderContext* renderContext);
+  void requestRedraw();
 
   bool onPointerEvent(const PointerEvent& event);
 

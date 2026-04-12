@@ -21,7 +21,7 @@ void PowerProfilesWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("balanced");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(palette.onSurface);
+  glyph->setColor(roleColor(ColorRole::OnSurface));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -63,7 +63,7 @@ void PowerProfilesWidget::syncState(Renderer& renderer) {
   m_lastProfile = profile;
 
   m_glyph->setGlyph(glyphForProfile(profile));
-  m_glyph->setColor(m_available ? palette.onSurface : palette.onSurfaceVariant);
+  m_glyph->setColor(roleColor(m_available ? ColorRole::OnSurface : ColorRole::OnSurfaceVariant));
   m_glyph->measure(renderer);
   m_area->setEnabled(m_available);
   if (auto* rootNode = root(); rootNode != nullptr) {

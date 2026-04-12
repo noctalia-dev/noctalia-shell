@@ -14,7 +14,7 @@
 Toggle::Toggle() {
   setAlign(FlexAlign::Center);
   setDirection(FlexDirection::Horizontal);
-  setBorderColor(palette.outline);
+  setBorderColor(roleColor(ColorRole::Outline));
   setBorderWidth(Style::borderWidth);
 
   auto thumb = std::make_unique<RectNode>();
@@ -38,6 +38,7 @@ Toggle::Toggle() {
 
   applySize();
   applyState();
+  m_paletteConn = paletteChanged().connect([this] { applyAnimatedState(m_animationProgress); });
 }
 
 void Toggle::setChecked(bool checked) {
@@ -138,12 +139,15 @@ void Toggle::applyState() {
 }
 
 void Toggle::applyAnimatedState(float t) {
-  const Color trackColor = lerpColor(palette.surfaceVariant, palette.primary, t);
-  const Color thumbColor = lerpColor(palette.onSurfaceVariant, palette.onPrimary, t);
+  m_animationProgress = t;
+  const Color trackColor = lerpColor(resolveColorRole(ColorRole::SurfaceVariant),
+                                     resolveColorRole(ColorRole::Primary), t);
+  const Color thumbColor = lerpColor(resolveColorRole(ColorRole::OnSurfaceVariant),
+                                     resolveColorRole(ColorRole::OnPrimary), t);
   const float thumbX = m_inset + m_travel * t;
-  Color borderColor = palette.outline;
+  ThemeColor borderColor = roleColor(ColorRole::Outline);
   if (m_enabled && (pressed() || hovered())) {
-    borderColor = palette.primary;
+    borderColor = roleColor(ColorRole::Primary);
   }
 
   setBackground(trackColor);

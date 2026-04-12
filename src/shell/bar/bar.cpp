@@ -234,6 +234,14 @@ void Bar::refresh() {
   }
 }
 
+void Bar::requestRedraw() {
+  for (auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      inst->surface->requestRedraw();
+    }
+  }
+}
+
 bool Bar::isRunning() const noexcept {
   if (m_forceHidden) {
     return true; // hidden but still alive — do not exit the main loop
@@ -400,6 +408,16 @@ void Bar::populateWidgets(BarInstance& instance) {
   createWidgets(instance.barConfig.endWidgets, instance.endWidgets);
 }
 
+void Bar::applyBackgroundPalette(BarInstance& instance) {
+  if (instance.bg == nullptr) {
+    return;
+  }
+  auto style = instance.bg->style();
+  style.fill = resolveThemeColor(roleColor(ColorRole::Surface, instance.barConfig.backgroundOpacity));
+  style.border = resolveThemeColor(roleColor(ColorRole::Outline));
+  instance.bg->setStyle(style);
+}
+
 void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height) {
   if (m_renderContext == nullptr) {
     return;
@@ -531,9 +549,9 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   // Expand 1px beyond its edges so SDF fringe lands inside the rect.
   if (instance.bg != nullptr) {
     const RoundedRectStyle bgStyle{
-        .fill = withAlpha(palette.surface, instance.barConfig.backgroundOpacity),
+        .fill = resolveThemeColor(roleColor(ColorRole::Surface, instance.barConfig.backgroundOpacity)),
         .fillEnd = {},
-        .border = palette.outline,
+        .border = resolveThemeColor(roleColor(ColorRole::Outline)),
         .fillMode = FillMode::Solid,
         .radius = barRadii,
         .softness = 0.0f,
@@ -543,6 +561,13 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.bg->setPosition(barAreaX - 1.0f, barAreaY - 1.0f);
     instance.bg->setSize(barAreaW + 2.0f, barAreaH + 2.0f);
   }
+
+  instance.paletteConn = paletteChanged().connect([inst = &instance] {
+    applyBackgroundPalette(*inst);
+    if (inst->surface != nullptr) {
+      inst->surface->requestRedraw();
+    }
+  });
   if (instance.contentClip != nullptr) {
     instance.contentClip->setPosition(barAreaX, barAreaY);
     instance.contentClip->setSize(barAreaW, barAreaH);
@@ -555,7 +580,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     const RoundedRectStyle shadowStyle{
         .fill = rgba(0.0f, 0.0f, 0.0f, 0.55f),
         .fillEnd = {},
-        .border = rgba(0.0f, 0.0f, 0.0f, 0.0f),
+        .border = clearColor(),
         .fillMode = FillMode::Solid,
         .radius = barRadii,
         .softness = shadowSize,

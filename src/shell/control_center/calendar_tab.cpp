@@ -89,7 +89,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
   auto month = std::make_unique<Label>();
   month->setBold(true);
   month->setFontSize((Style::fontSizeTitle + Style::spaceXs) * scale);
-  month->setColor(palette.primary);
+  month->setColor(roleColor(ColorRole::Primary));
   m_monthLabel = month.get();
   monthWrap->addChild(std::move(month));
   header->addChild(std::move(monthWrap));
@@ -125,7 +125,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
   eventsLabel->setText("events");
   eventsLabel->setBold(true);
   eventsLabel->setFontSize(Style::fontSizeTitle * scale);
-  eventsLabel->setColor(palette.onSurfaceVariant);
+  eventsLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
   eventsCard->addChild(std::move(eventsLabel));
 
   tab->addChild(std::move(calendarCard));
@@ -212,7 +212,7 @@ void CalendarTab::rebuild() {
     dayLabel->setContentAlign(ButtonContentAlign::Center);
     dayLabel->setFlexGrow(1.0f);
     dayLabel->setMinHeight(weekdayHeight);
-    dayLabel->label()->setColor(i >= 5 ? palette.primary : palette.onSurfaceVariant);
+    dayLabel->label()->setColor(roleColor(i >= 5 ? ColorRole::Primary : ColorRole::OnSurfaceVariant));
     weekdayRow->addChild(std::move(dayLabel));
   }
   m_grid->addChild(std::move(weekdayRow));
@@ -247,17 +247,17 @@ void CalendarTab::rebuild() {
       if (index < firstWeekdayMonBased) {
         const int leadingDay = previousMonthDays - firstWeekdayMonBased + index + 1;
         cell->setText(std::to_string(leadingDay));
-        cell->label()->setColor(palette.onSurfaceVariant);
+        cell->label()->setColor(roleColor(ColorRole::OnSurfaceVariant));
       } else if (day > monthDays) {
         cell->setText(std::to_string(trailingDay));
-        cell->label()->setColor(palette.onSurfaceVariant);
+        cell->label()->setColor(roleColor(ColorRole::OnSurfaceVariant));
         ++trailingDay;
       } else {
         cell->setText(std::to_string(day));
         if (isCurrentMonth && day == today) {
           cell->setVariant(ButtonVariant::Accent);
         } else {
-          cell->label()->setColor(palette.onSurface);
+          cell->label()->setColor(roleColor(ColorRole::OnSurface));
         }
         ++day;
       }

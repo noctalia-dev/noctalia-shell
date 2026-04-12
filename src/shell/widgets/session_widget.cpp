@@ -20,7 +20,7 @@ void SessionWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("shutdown");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(palette.onSurface);
+  glyph->setColor(roleColor(ColorRole::OnSurface));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 

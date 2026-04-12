@@ -347,6 +347,13 @@ void PanelManager::refresh() {
   m_surface->requestRedraw();
 }
 
+void PanelManager::requestRedraw() {
+  if (!isOpen() || m_surface == nullptr) {
+    return;
+  }
+  m_surface->requestRedraw();
+}
+
 void PanelManager::close() { closePanel(); }
 
 void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {

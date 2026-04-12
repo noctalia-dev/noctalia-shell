@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/controls/flex.h"
+#include "ui/signal.h"
 #include "ui/style.h"
 
 #include <cstddef>
@@ -89,6 +90,7 @@ private:
   float m_controlHeight = Style::controlHeight;
   float m_horizontalPadding = Style::spaceMd;
   float m_glyphSize = 14.0f;
+  Signal<>::ScopedConnection m_paletteConn;
 
   std::function<void(std::size_t, std::string_view)> m_onSelectionChanged;
 };

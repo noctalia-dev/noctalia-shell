@@ -1,7 +1,6 @@
 #include "shell/control_center/notifications_tab.h"
 
 #include "notification/notification_manager.h"
-#include "render/core/color.h"
 #include "render/core/renderer.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/label.h"
@@ -32,14 +31,14 @@ std::string statusText(const NotificationHistoryEntry& entry) {
   return "Closed";
 }
 
-Color statusColor(const NotificationHistoryEntry& entry) {
+ColorRole statusColorRole(const NotificationHistoryEntry& entry) {
   if (entry.active) {
-    return palette.primary;
+    return ColorRole::Primary;
   }
   if (entry.closeReason == CloseReason::Dismissed) {
-    return palette.secondary;
+    return ColorRole::Secondary;
   }
-  return palette.onSurfaceVariant;
+  return ColorRole::OnSurfaceVariant;
 }
 
 } // namespace
@@ -56,7 +55,7 @@ std::unique_ptr<Flex> NotificationsTab::create() {
 
   auto scroll = std::make_unique<ScrollView>();
   scroll->setScrollbarVisible(true);
-  scroll->setBackgroundStyle(rgba(0.0f, 0.0f, 0.0f, 0.0f), rgba(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
+  scroll->clearBackgroundStyle();
   m_scroll = scroll.get();
   m_list = scroll->content();
   m_list->setDirection(FlexDirection::Vertical);
@@ -126,7 +125,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     meta->setText(it->notification.appName + " • " + statusText(*it));
     meta->setCaptionStyle();
     meta->setFontSize(Style::fontSizeCaption * scale);
-    meta->setColor(statusColor(*it));
+    meta->setColor(roleColor(statusColorRole(*it)));
     meta->setMaxWidth(cardWidth - Style::spaceMd * scale * 2.0f);
     meta->measure(renderer);
     card->addChild(std::move(meta));
@@ -143,7 +142,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
       auto body = std::make_unique<Label>();
       body->setText(it->notification.body);
       body->setFontSize(Style::fontSizeBody * scale);
-      body->setColor(palette.onSurfaceVariant);
+      body->setColor(roleColor(ColorRole::OnSurfaceVariant));
       body->setMaxWidth(cardWidth - Style::spaceMd * scale * 2.0f);
       body->measure(renderer);
       card->addChild(std::move(body));

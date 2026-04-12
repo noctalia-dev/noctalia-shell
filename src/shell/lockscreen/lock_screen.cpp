@@ -191,6 +191,17 @@ void LockScreen::onSecondTick() {
   }
 }
 
+void LockScreen::onThemeChanged() {
+  if (!isActive()) {
+    return;
+  }
+  for (auto& instance : m_instances) {
+    if (instance.surface != nullptr) {
+      instance.surface->onThemeChanged();
+    }
+  }
+}
+
 void LockScreen::onPointerEvent(const PointerEvent& event) {
   if (!isActive()) {
     return;

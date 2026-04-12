@@ -1,5 +1,4 @@
 #include "shell/widgets/workspaces_widget.h"
-#include "ui/palette.h"
 #include "ui/style.h"
 
 #include "core/log.h"
@@ -7,9 +6,9 @@
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
-#include "render/scene/text_node.h"
 #include "ui/controls/box.h"
 #include "ui/controls/flex.h"
+#include "ui/controls/label.h"
 
 #include <algorithm>
 #include <cmath>
@@ -75,6 +74,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
   while (!m_container->children().empty()) {
     m_container->removeChild(m_container->children().back().get());
   }
+  m_items.clear();
 
   auto workspaces = m_connection.workspaces(m_output);
 
@@ -100,28 +100,26 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     auto area = std::make_unique<InputArea>();
     area->setSize(indicatorWidth, indicatorHeight);
 
+    Item item{.active = ws.active};
+
     auto indicator = std::make_unique<Box>();
-    indicator->setFill(ws.active ? palette.primary : withAlpha(palette.onSurfaceVariant, 0.7f));
-    indicator->setBorder(rgba(0.0f, 0.0f, 0.0f, 0.0f), 0.0f);
+    indicator->clearBorder();
     indicator->setRadius(indicatorHeight * 0.5f);
     indicator->setSize(indicatorWidth, indicatorHeight);
-    area->addChild(std::move(indicator));
+    indicator->setFill(roleColor(ws.active ? ColorRole::Primary : ColorRole::Secondary));
+    item.indicator = static_cast<Box*>(area->addChild(std::move(indicator)));
 
     if (showLabel) {
       const float labelFontSize = Style::fontSizeCaption * m_contentScale;
-      const TextMetrics textMetrics = renderer.measureText(labelText, labelFontSize, true);
-      const float labelX =
-          std::round(indicatorWidth * 0.5f - (textMetrics.left + textMetrics.right) * 0.5f);
-      const float labelBaselineY = std::round(indicatorHeight * 0.5f - (textMetrics.top + textMetrics.bottom) * 0.5f);
-
-      auto text = std::make_unique<TextNode>();
+      auto text = std::make_unique<Label>();
       text->setText(labelText);
       text->setFontSize(labelFontSize);
       text->setBold(true);
-      text->setColor(ws.active ? palette.onPrimary : palette.onSurface);
-      text->setPosition(labelX, labelBaselineY);
-      text->setSize(textMetrics.width, textMetrics.bottom - textMetrics.top);
-      area->addChild(std::move(text));
+      text->setColor(roleColor(ws.active ? ColorRole::OnPrimary : ColorRole::OnSecondary));
+      text->measure(renderer);
+      text->setPosition(std::round((indicatorWidth - text->width()) * 0.5f),
+                        std::round((indicatorHeight - text->height()) * 0.5f));
+      item.text = static_cast<Label*>(area->addChild(std::move(text)));
     }
 
     auto wsCopy = ws;
@@ -131,6 +129,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
       }
     });
     m_container->addChild(std::move(area));
+    m_items.push_back(item);
   }
 }
 

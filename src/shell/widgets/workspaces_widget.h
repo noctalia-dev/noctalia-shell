@@ -9,7 +9,9 @@
 #include <string>
 #include <vector>
 
+class Box;
 class Flex;
+class Label;
 
 class WorkspacesWidget : public Widget {
 public:
@@ -30,9 +32,16 @@ private:
   [[nodiscard]] static std::optional<std::size_t> numericWorkspaceId(const Workspace& workspace);
   [[nodiscard]] std::string workspaceLabel(const Workspace& workspace, std::size_t displayIndex) const;
 
+  struct Item {
+    Box* indicator = nullptr;
+    Label* text = nullptr; // may be null when no label
+    bool active = false;
+  };
+
   WaylandConnection& m_connection;
   wl_output* m_output = nullptr;
   DisplayMode m_displayMode = DisplayMode::None;
   Flex* m_container = nullptr;
   std::vector<Workspace> m_cachedState;
+  std::vector<Item> m_items;
 };

@@ -81,6 +81,14 @@ void NotificationToast::initialize(WaylandConnection& wayland, ConfigService* co
       [this](const Notification& n, NotificationEvent event) { onNotificationEvent(n, event); });
 }
 
+void NotificationToast::requestRedraw() {
+  for (auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      inst->surface->requestRedraw();
+    }
+  }
+}
+
 // --- Notification events ---
 
 void NotificationToast::onNotificationEvent(const Notification& n, NotificationEvent event) {
@@ -572,16 +580,15 @@ Node* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppName, 
   auto bg = std::make_unique<Box>();
   bg->setCardStyle();
   if (isCritical) {
-    bg->setFill(palette.error);
+    bg->setFill(roleColor(ColorRole::Error));
   }
   bg->setSize(kCardWidth, entry.cardHeight);
   *outBg = area->addChild(std::move(bg));
 
-  const Color metaColor    = isCritical ? palette.onError : palette.onSurfaceVariant;
-  const Color contentColor = isCritical ? palette.onError : palette.onSurface;
-
-  const Color closeColorNormal = isCritical ? withAlpha(palette.onError, 0.6f) : withAlpha(palette.onSurfaceVariant, 0.6f);
-  const Color closeColorHover  = isCritical ? palette.onError : palette.onSurface;
+  const Color closeColorNormal = resolveThemeColor(
+      isCritical ? roleColor(ColorRole::OnError, 0.6f) : roleColor(ColorRole::OnSurfaceVariant, 0.6f));
+  const Color closeColorHover =
+      resolveThemeColor(isCritical ? roleColor(ColorRole::OnError) : roleColor(ColorRole::OnSurface));
 
   // Header row: app name (left) + close button (right), vertically centred via Flex
   auto headerRow = std::make_unique<Flex>();
@@ -594,7 +601,7 @@ Node* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppName, 
   auto appName = std::make_unique<Label>();
   appName->setText(entry.appName);
   appName->setFontSize(kMetaFontSize);
-  appName->setColor(metaColor);
+  appName->setColor(roleColor(isCritical ? ColorRole::OnError : ColorRole::OnSurfaceVariant));
   appName->measure(*m_renderContext);
   *outAppName = appName.get();
   headerRow->addChild(std::move(appName));
@@ -626,7 +633,7 @@ Node* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppName, 
   auto summary = std::make_unique<Label>();
   summary->setText(entry.summary);
   summary->setFontSize(kSummaryFontSize);
-  summary->setColor(contentColor);
+  summary->setColor(roleColor(isCritical ? ColorRole::OnError : ColorRole::OnSurface));
   summary->setBold(true);
   summary->setMaxWidth(innerWidth);
   summary->setMaxLines(kMaxSummaryLines);
@@ -639,7 +646,7 @@ Node* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppName, 
   auto body = std::make_unique<Label>();
   body->setText(entry.body);
   body->setFontSize(kBodyFontSize);
-  body->setColor(metaColor);
+  body->setColor(roleColor(isCritical ? ColorRole::OnError : ColorRole::OnSurfaceVariant));
   body->setMaxWidth(innerWidth);
   body->setMaxLines(kMaxBodyLines);
   body->measure(*m_renderContext);

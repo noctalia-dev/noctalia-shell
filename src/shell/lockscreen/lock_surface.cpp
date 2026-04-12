@@ -4,9 +4,9 @@
 #include "render/render_context.h"
 #include "render/scene/image_node.h"
 #include "render/scene/rect_node.h"
-#include "render/scene/text_node.h"
 #include "ui/controls/button.h"
 #include "ui/controls/input.h"
+#include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/wayland_connection.h"
@@ -36,11 +36,12 @@ LockSurface::LockSurface(WaylandConnection& connection) : Surface(connection) {
   auto backdrop = std::make_unique<RectNode>();
   m_backdrop = static_cast<RectNode*>(m_root.addChild(std::move(backdrop)));
 
-  auto clockShadow = std::make_unique<TextNode>();
-  m_clockShadow = static_cast<TextNode*>(m_root.addChild(std::move(clockShadow)));
+  auto clockShadow = std::make_unique<Label>();
+  m_clockShadow = static_cast<Label*>(m_root.addChild(std::move(clockShadow)));
 
-  auto clock = std::make_unique<TextNode>();
-  m_clock = static_cast<TextNode*>(m_root.addChild(std::move(clock)));
+  auto clock = std::make_unique<Label>();
+  clock->setColor(roleColor(ColorRole::Primary));
+  m_clock = static_cast<Label*>(m_root.addChild(std::move(clock)));
 
   auto loginPanel = std::make_unique<RectNode>();
   m_loginPanel = static_cast<RectNode*>(m_root.addChild(std::move(loginPanel)));
@@ -202,6 +203,13 @@ void LockSurface::onSecondTick() {
   }
 }
 
+void LockSurface::onThemeChanged() {
+  if (width() > 0 && height() > 0) {
+    layoutScene(width(), height());
+  }
+  requestRedraw();
+}
+
 void LockSurface::onKeyboardEvent(const KeyboardEvent& event) {
   m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed, event.preedit);
 }
@@ -238,29 +246,26 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   m_backdrop->setVisible(false);
 
   constexpr float kClockFontSize = 64.0f;
-  const auto clockMetrics = renderer->measureText(m_clock->text(), kClockFontSize, true);
-  const float clockX = sw - 48.0f - clockMetrics.width;
+  m_clock->setFontSize(kClockFontSize);
+  m_clock->setBold(true);
+  m_clock->measure(*renderer);
+  const float clockX = sw - 48.0f - m_clock->width();
   const float clockY = 86.0f;
 
   m_clockShadow->setVisible(m_clockShadowEnabled);
   m_clockShadow->setFontSize(kClockFontSize);
   m_clockShadow->setBold(true);
-  m_clockShadow->setColor(Color{palette.shadow.r, palette.shadow.g, palette.shadow.b, 0.55f});
+  m_clockShadow->setColor(roleColor(ColorRole::Shadow, 0.55f));
   m_clockShadow->setText(m_clock->text());
-  m_clockShadow->setPosition(clockX + 3.0f, clockY - clockMetrics.top + 4.0f);
-  m_clockShadow->setSize(clockMetrics.width, clockMetrics.bottom - clockMetrics.top);
-
-  m_clock->setFontSize(kClockFontSize);
-  m_clock->setBold(true);
-  m_clock->setColor(palette.primary);
-  m_clock->setPosition(clockX, clockY - clockMetrics.top);
-  m_clock->setSize(clockMetrics.width, clockMetrics.bottom - clockMetrics.top);
+  m_clockShadow->measure(*renderer);
+  m_clockShadow->setPosition(clockX + 3.0f, clockY + 4.0f);
+  m_clock->setPosition(clockX, clockY);
 
   m_loginPanel->setPosition(panelX, panelY);
   m_loginPanel->setSize(panelWidth, panelHeight);
   m_loginPanel->setStyle(RoundedRectStyle{
-      .fill = Color{palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.88f},
-      .border = Color{palette.outline.r, palette.outline.g, palette.outline.b, 0.95f},
+      .fill = resolveThemeColor(roleColor(ColorRole::SurfaceVariant, 0.88f)),
+      .border = resolveThemeColor(roleColor(ColorRole::Outline, 0.95f)),
       .fillMode = FillMode::Solid,
       .radius = Style::radiusXl,
       .softness = 1.0f,

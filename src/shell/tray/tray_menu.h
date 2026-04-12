@@ -27,6 +27,7 @@ public:
 
   void toggleForItem(const std::string& itemId);
   void close();
+  void onThemeChanged();
 
   [[nodiscard]] bool onPointerEvent(const PointerEvent& event);
 

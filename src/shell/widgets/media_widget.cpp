@@ -186,7 +186,7 @@ void MediaWidget::create() {
 
   auto art = std::make_unique<Image>();
   art->setCornerRadius(Style::radiusSm);
-  art->setBackground(Color{palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.9f});
+  art->setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
   art->setFit(ImageFit::Cover);
   art->setSize(m_artSize * m_contentScale, m_artSize * m_contentScale);
   m_art = art.get();
@@ -195,7 +195,7 @@ void MediaWidget::create() {
   auto label = std::make_unique<Label>();
   label->setBold(true);
   label->setFontSize(Style::fontSizeBody * m_contentScale);
-  label->setColor(palette.onSurface);
+  label->setColor(roleColor(ColorRole::OnSurface));
   label->setMaxWidth(m_maxWidth * m_contentScale);
   label->setMaxLines(1);
   m_label = label.get();
@@ -262,7 +262,7 @@ void MediaWidget::syncState(Renderer& renderer) {
 
   m_label->setMaxWidth(m_maxWidth * m_contentScale);
   m_label->setText(m_lastText);
-  m_label->setColor(m_lastPlaybackStatus == "Playing" ? palette.onSurface : palette.onSurfaceVariant);
+  m_label->setColor(roleColor(m_lastPlaybackStatus == "Playing" ? ColorRole::OnSurface : ColorRole::OnSurfaceVariant));
   m_label->measure(renderer);
 
   if (artChanged) {

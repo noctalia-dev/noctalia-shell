@@ -1,9 +1,11 @@
 #pragma once
 
-#include "render/core/color.h"
 #include "render/core/texture_manager.h"
 #include "render/scene/node.h"
+#include "ui/palette.h"
+#include "ui/signal.h"
 
+#include <optional>
 #include <string>
 
 class Box;
@@ -22,7 +24,9 @@ public:
   ~Image() override = default;
 
   void setCornerRadius(float radius);
+  void setBackground(const ThemeColor& color);
   void setBackground(const Color& color);
+  void setBorder(const ThemeColor& color, float width);
   void setBorder(const Color& color, float width);
   void setTint(const Color& tint);
   void setFit(ImageFit fit);
@@ -55,6 +59,7 @@ public:
 
 private:
   void ensureBackground();
+  void applyPalette();
   void updateLayout();
 
   Box* m_background = nullptr;
@@ -65,4 +70,8 @@ private:
   float m_cornerRadius = 0.0f;
   float m_padding = 0.0f;
   ImageFit m_fit = ImageFit::Contain;
+  ThemeColor m_backgroundColor = clearThemeColor();
+  ThemeColor m_borderColor = clearThemeColor();
+  float m_borderWidth = 0.0f;
+  Signal<>::ScopedConnection m_paletteConn;
 };

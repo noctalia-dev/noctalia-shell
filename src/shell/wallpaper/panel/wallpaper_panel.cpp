@@ -71,7 +71,7 @@ void WallpaperPanel::create() {
 
   auto breadcrumb = std::make_unique<Label>();
   breadcrumb->setFontSize(Style::fontSizeBody * scale);
-  breadcrumb->setColor(palette.onSurfaceVariant);
+  breadcrumb->setColor(roleColor(ColorRole::OnSurfaceVariant));
   breadcrumb->setMaxLines(1);
   breadcrumb->setFlexGrow(1.0f);
   m_breadcrumb = static_cast<Label*>(toolbar->addChild(std::move(breadcrumb)));
@@ -122,7 +122,7 @@ void WallpaperPanel::create() {
   auto flattenLabel = std::make_unique<Label>();
   flattenLabel->setText("Flatten");
   flattenLabel->setFontSize(Style::fontSizeBody * scale);
-  flattenLabel->setColor(palette.onSurfaceVariant);
+  flattenLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_flattenLabel = static_cast<Label*>(toolbar->addChild(std::move(flattenLabel)));
 
   auto flatten = std::make_unique<Toggle>();
@@ -243,7 +243,7 @@ void WallpaperPanel::create() {
 
   auto pageLabel = std::make_unique<Label>();
   pageLabel->setFontSize(Style::fontSizeBody * scale);
-  pageLabel->setColor(palette.onSurfaceVariant);
+  pageLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_pageLabel = static_cast<Label*>(pagination->addChild(std::move(pageLabel)));
 
   auto next = std::make_unique<Button>();

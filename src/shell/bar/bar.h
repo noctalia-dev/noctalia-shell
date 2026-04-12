@@ -42,6 +42,10 @@ public:
   void onOutputChange();
   void onSecondTick();
   void refresh();
+  // Requests a redraw on every bar surface without re-running widget update/layout.
+  // Intended for reactive restyling (palette changes) where the scene graph has
+  // already been mutated in place and only a repaint is needed.
+  void requestRedraw();
   bool onPointerEvent(const PointerEvent& event);
   [[nodiscard]] bool isRunning() const noexcept;
 
@@ -52,6 +56,7 @@ private:
   void populateWidgets(BarInstance& instance);
   void buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height);
   void updateWidgets(BarInstance& instance);
+  static void applyBackgroundPalette(BarInstance& instance);
 
   bool m_forceHidden = false;
   WaylandConnection* m_wayland = nullptr;

@@ -162,7 +162,7 @@ void AudioSpectrum::layout(Renderer& /*renderer*/) {
 void AudioSpectrum::ensureBarCount(std::size_t count) {
   while (m_bars.size() < count) {
     auto bar = std::make_unique<Box>();
-    bar->setBorder(rgba(0, 0, 0, 0), 0.0f);
+    bar->clearBorder();
     bar->setRadius(0.0f);
     bar->setSoftness(0.0f);
     m_bars.push_back(static_cast<Box*>(addChild(std::move(bar))));

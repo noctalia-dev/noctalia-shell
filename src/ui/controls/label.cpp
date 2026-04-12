@@ -13,14 +13,22 @@ Label::Label() {
   auto textNode = std::make_unique<TextNode>();
   m_textNode = static_cast<TextNode*>(addChild(std::move(textNode)));
   m_textNode->setFontSize(Style::fontSizeBody);
-  m_textNode->setColor(palette.onSurface);
+  applyPalette();
+  m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
 }
 
 void Label::setText(std::string_view text) { m_textNode->setText(std::string(text)); }
 
 void Label::setFontSize(float size) { m_textNode->setFontSize(size); }
 
-void Label::setColor(const Color& color) { m_textNode->setColor(color); }
+void Label::setColor(const ThemeColor& color) {
+  m_color = color;
+  applyPalette();
+}
+
+void Label::setColor(const Color& color) { setColor(fixedColor(color)); }
+
+void Label::applyPalette() { m_textNode->setColor(resolveThemeColor(m_color)); }
 
 void Label::setMinWidth(float minWidth) { m_minWidth = minWidth; }
 
@@ -44,7 +52,7 @@ void Label::layout(Renderer& renderer) { measure(renderer); }
 
 void Label::setCaptionStyle() {
   m_textNode->setFontSize(Style::fontSizeCaption);
-  m_textNode->setColor(palette.onSurface);
+  setColor(roleColor(ColorRole::OnSurface));
 }
 
 void Label::measure(Renderer& renderer) {

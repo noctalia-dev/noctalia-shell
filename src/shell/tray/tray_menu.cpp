@@ -205,6 +205,13 @@ void TrayMenu::close() {
   destroySurface();
 }
 
+void TrayMenu::onThemeChanged() {
+  if (!m_visible) {
+    return;
+  }
+  rebuildScenes();
+}
+
 bool TrayMenu::onPointerEvent(const PointerEvent& event) {
   if (!m_visible || m_instance == nullptr) {
     return false;

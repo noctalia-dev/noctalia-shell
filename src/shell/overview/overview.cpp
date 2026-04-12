@@ -87,6 +87,15 @@ void Overview::onStateChange() {
   }
 }
 
+void Overview::onThemeChanged() {
+  for (auto& inst : m_instances) {
+    updateRendererState(*inst);
+    if (inst->surface != nullptr) {
+      inst->surface->requestRedraw();
+    }
+  }
+}
+
 void Overview::syncInstances() {
   const auto& outputs = m_wayland->outputs();
 
@@ -180,8 +189,9 @@ void Overview::updateRendererState(OverviewInstance& inst) {
   inst.surface->setBlurIntensity(ov.blurIntensity);
   inst.surface->setTintIntensity(ov.tintIntensity);
 
-  // Tint color from palette.surface
-  inst.surface->setTintColor(palette.surface.r, palette.surface.g, palette.surface.b);
+  // Tint color from the current surface role.
+  const Color surface = resolveThemeColor(roleColor(ColorRole::Surface));
+  inst.surface->setTintColor(surface.r, surface.g, surface.b);
 
   if (inst.currentTexture.id != 0) {
     inst.surface->setWallpaperState(inst.currentTexture.id,

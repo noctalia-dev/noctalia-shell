@@ -1,9 +1,12 @@
 #pragma once
 
 #include "ui/controls/flex.h"
+#include "ui/palette.h"
+#include "ui/signal.h"
 #include "ui/style.h"
 
 #include <functional>
+#include <optional>
 
 class InputArea;
 class RectNode;
@@ -21,7 +24,10 @@ public:
   void setScrollbarVisible(bool visible);
   void setViewportPaddingH(float padding);
   void setViewportPaddingV(float padding);
+  void setBackgroundStyle(const ThemeColor& fill, const ThemeColor& border, float borderWidth);
   void setBackgroundStyle(const Color& fill, const Color& border, float borderWidth);
+  void clearBackgroundStyle();
+  void setBackgroundRoles(ColorRole fillRole, ColorRole borderRole, float borderWidth);
   void setOnScrollChanged(std::function<void(float)> callback);
 
   [[nodiscard]] float scrollOffset() const noexcept { return m_scrollOffset; }
@@ -32,6 +38,7 @@ public:
   void layout(Renderer& renderer) override;
 
 private:
+  void applyPalette();
   void applyScrollOffset();
   void updateScrollbarGeometry(float viewportHeight, float contentHeight);
   [[nodiscard]] float clampOffset(float offset) const noexcept;
@@ -44,6 +51,11 @@ private:
   InputArea* m_scrollbarThumbArea = nullptr;
 
   std::function<void(float)> m_onScrollChanged;
+  ThemeColor m_backgroundFill = clearThemeColor();
+  ThemeColor m_backgroundBorder = clearThemeColor();
+  ThemeColor m_scrollbarTrackColor = roleColor(ColorRole::Outline, 0.45f);
+  ThemeColor m_scrollbarThumbColor = roleColor(ColorRole::Primary);
+  Signal<>::ScopedConnection m_paletteConn;
 
   float m_viewportPaddingH = Style::spaceXs;
   float m_viewportPaddingV = Style::spaceSm;
@@ -55,6 +67,7 @@ private:
   float m_thumbTravel = 0.0f;
   float m_viewportHeight = 0.0f;
   float m_viewportWidth = 0.0f;
+  float m_backgroundBorderWidth = 0.0f;
   bool m_scrollbarShown = false;
   bool m_showScrollbar = true;
 };

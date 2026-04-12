@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/scene/node.h"
+#include "ui/signal.h"
 #include "ui/style.h"
 
 #include <cstddef>
@@ -76,4 +77,5 @@ private:
   float m_fontSize = Style::fontSizeBody;
   float m_controlHeight = Style::controlHeight;
   float m_horizontalPadding = Style::spaceMd;
+  Signal<>::ScopedConnection m_paletteConn;
 };

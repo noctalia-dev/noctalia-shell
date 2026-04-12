@@ -61,7 +61,7 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   thumbBox->setDirection(FlexDirection::Vertical);
   thumbBox->setAlign(FlexAlign::Center);
   thumbBox->setJustify(FlexJustify::Center);
-  thumbBox->setBackground(palette.surfaceVariant);
+  thumbBox->setBackground(roleColor(ColorRole::SurfaceVariant));
   thumbBox->setRadius(frameRadius);
   thumbBox->setMinWidth(frameWidth);
   thumbBox->setMinHeight(frameHeight);
@@ -71,20 +71,20 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   auto image = std::make_unique<Image>();
   image->setFit(ImageFit::Cover);
   image->setCornerRadius(frameRadius);
-  image->setBorder(palette.outline, outlineWidth);
+  image->setBorder(roleColor(ColorRole::Outline), outlineWidth);
   image->setSize(frameWidth, frameHeight);
   m_thumb = static_cast<Image*>(m_thumbBox->addChild(std::move(image)));
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("folder");
   glyph->setGlyphSize(std::min(frameWidth, frameHeight) * 0.45f);
-  glyph->setColor(palette.primary);
+  glyph->setColor(roleColor(ColorRole::Primary));
   glyph->setVisible(false);
   m_folderGlyph = static_cast<Glyph*>(m_thumbBox->addChild(std::move(glyph)));
 
   auto label = std::make_unique<Label>();
   label->setFontSize(Style::fontSizeCaption * m_contentScale);
-  label->setColor(palette.onSurfaceVariant);
+  label->setColor(roleColor(ColorRole::OnSurfaceVariant));
   label->setMaxWidth(frameWidth);
   label->setMaxLines(1);
   m_label = static_cast<Label*>(m_layout->addChild(std::move(label)));
@@ -175,13 +175,13 @@ void WallpaperTile::applyVisualState() {
   }
   const float outlineWidth = Style::borderWidth * 2.0f;
   if (m_selected) {
-    m_thumbBox->setBackground(palette.surfaceVariant);
-    m_thumb->setBorder(palette.primary, outlineWidth);
+    m_thumbBox->setBackground(roleColor(ColorRole::SurfaceVariant));
+    m_thumb->setBorder(roleColor(ColorRole::Primary), outlineWidth);
   } else if (m_hoveredVisual) {
-    m_thumbBox->setBackground(rgba(palette.primary.r, palette.primary.g, palette.primary.b, 0.12f));
-    m_thumb->setBorder(rgba(palette.primary.r, palette.primary.g, palette.primary.b, 0.75f), outlineWidth);
+    m_thumbBox->setBackground(roleColor(ColorRole::Primary, 0.12f));
+    m_thumb->setBorder(roleColor(ColorRole::Primary, 0.75f), outlineWidth);
   } else {
-    m_thumbBox->setBackground(palette.surfaceVariant);
-    m_thumb->setBorder(palette.outline, outlineWidth);
+    m_thumbBox->setBackground(roleColor(ColorRole::SurfaceVariant));
+    m_thumb->setBorder(roleColor(ColorRole::Outline), outlineWidth);
   }
 }

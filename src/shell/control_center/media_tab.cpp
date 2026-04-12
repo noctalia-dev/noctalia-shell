@@ -240,14 +240,14 @@ std::unique_ptr<Flex> MediaTab::create() {
   title->setText("Nothing playing");
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle * scale);
-  title->setColor(palette.onSurface);
+  title->setColor(roleColor(ColorRole::OnSurface));
   m_trackTitle = title.get();
   mediaStack->addChild(std::move(title));
 
   auto artist = std::make_unique<Label>();
   artist->setText("Start playback in an MPRIS app");
   artist->setFontSize(Style::fontSizeBody * scale);
-  artist->setColor(palette.onSurfaceVariant);
+  artist->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_trackArtist = artist.get();
   mediaStack->addChild(std::move(artist));
 
@@ -255,7 +255,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   album->setText(" ");
   album->setCaptionStyle();
   album->setFontSize(Style::fontSizeCaption * scale);
-  album->setColor(palette.onSurfaceVariant);
+  album->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_trackAlbum = album.get();
   mediaStack->addChild(std::move(album));
 
@@ -422,7 +422,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerColumn->setGap(0.0f);
   visualizerColumn->setFlexGrow(2.0f);
   visualizerColumn->setPadding(Style::spaceSm * scale);
-  visualizerColumn->setBackground(palette.surfaceVariant);
+  visualizerColumn->setBackground(roleColor(ColorRole::SurfaceVariant));
   visualizerColumn->setRadius(Style::radiusLg * scale);
   visualizerColumn->setBorderWidth(0.0f);
   visualizerColumn->setSoftness(1.0f);
@@ -430,7 +430,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   m_visualizerColumn = visualizerColumn.get();
 
   auto visualizerSpectrum = std::make_unique<AudioSpectrum>();
-  visualizerSpectrum->setGradient(palette.secondary, palette.tertiary);
+  visualizerSpectrum->setGradient(resolveColorRole(ColorRole::Secondary), resolveColorRole(ColorRole::Tertiary));
   visualizerSpectrum->setSpacingRatio(0.5f);
   visualizerSpectrum->setOrientation(AudioSpectrumOrientation::Vertical);
   visualizerSpectrum->setMirrored(true);

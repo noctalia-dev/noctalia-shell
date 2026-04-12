@@ -38,13 +38,14 @@ RoundedRectStyle makeSolid(const Color& fill, float radius) {
 } // namespace
 
 ScrollView::ScrollView() {
+  m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
   setClipChildren(true);
 
   auto background = std::make_unique<RectNode>();
   m_background = static_cast<RectNode*>(addChild(std::move(background)));
   m_background->setStyle(RoundedRectStyle{
-      .fill = rgba(0, 0, 0, 0),
-      .border = rgba(0, 0, 0, 0),
+      .fill = clearColor(),
+      .border = clearColor(),
       .fillMode = FillMode::Solid,
       .radius = Style::radiusMd,
       .softness = 1.0f,
@@ -87,12 +88,9 @@ ScrollView::ScrollView() {
 
   auto scrollbarTrack = std::make_unique<RectNode>();
   m_scrollbarTrack = static_cast<RectNode*>(addChild(std::move(scrollbarTrack)));
-  m_scrollbarTrack->setStyle(
-      makeSolid(rgba(palette.outline.r, palette.outline.g, palette.outline.b, 0.45f), kScrollbarWidth * 0.5f));
 
   auto scrollbarThumb = std::make_unique<RectNode>();
   m_scrollbarThumb = static_cast<RectNode*>(addChild(std::move(scrollbarThumb)));
-  m_scrollbarThumb->setStyle(makeSolid(palette.primary, kScrollbarWidth * 0.5f));
 
   auto scrollbarThumbArea = std::make_unique<InputArea>();
   scrollbarThumbArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
@@ -113,6 +111,8 @@ ScrollView::ScrollView() {
     setScrollOffset(m_dragStartOffset + deltaY * offsetPerPx);
   });
   m_scrollbarThumbArea = static_cast<InputArea*>(addChild(std::move(scrollbarThumbArea)));
+
+  applyPalette();
 }
 
 void ScrollView::setScrollOffset(float offset) {
@@ -138,18 +138,21 @@ void ScrollView::setScrollbarVisible(bool visible) {
   markDirty();
 }
 
+void ScrollView::setBackgroundStyle(const ThemeColor& fill, const ThemeColor& border, float borderWidth) {
+  m_backgroundFill = fill;
+  m_backgroundBorder = border;
+  m_backgroundBorderWidth = borderWidth;
+  applyPalette();
+}
+
 void ScrollView::setBackgroundStyle(const Color& fill, const Color& border, float borderWidth) {
-  if (m_background == nullptr) {
-    return;
-  }
-  m_background->setStyle(RoundedRectStyle{
-      .fill = fill,
-      .border = border,
-      .fillMode = FillMode::Solid,
-      .radius = Style::radiusMd,
-      .softness = 1.0f,
-      .borderWidth = borderWidth,
-  });
+  setBackgroundStyle(fixedColor(fill), fixedColor(border), borderWidth);
+}
+
+void ScrollView::clearBackgroundStyle() { setBackgroundStyle(clearThemeColor(), clearThemeColor(), 0.0f); }
+
+void ScrollView::setBackgroundRoles(ColorRole fillRole, ColorRole borderRole, float borderWidth) {
+  setBackgroundStyle(roleColor(fillRole), roleColor(borderRole), borderWidth);
 }
 
 void ScrollView::setOnScrollChanged(std::function<void(float)> callback) { m_onScrollChanged = std::move(callback); }
@@ -167,6 +170,25 @@ void ScrollView::setViewportPaddingV(float padding) {
 float ScrollView::contentViewportWidth() const noexcept {
   const float gutter = m_scrollbarShown ? (kScrollbarWidth + kScrollbarGap) : 0.0f;
   return std::max(0.0f, width() - m_viewportPaddingH * 2.0f - gutter);
+}
+
+void ScrollView::applyPalette() {
+  if (m_scrollbarTrack != nullptr) {
+    m_scrollbarTrack->setStyle(makeSolid(resolveThemeColor(m_scrollbarTrackColor), kScrollbarWidth * 0.5f));
+  }
+  if (m_scrollbarThumb != nullptr) {
+    m_scrollbarThumb->setStyle(makeSolid(resolveThemeColor(m_scrollbarThumbColor), kScrollbarWidth * 0.5f));
+  }
+  if (m_background != nullptr) {
+    m_background->setStyle(RoundedRectStyle{
+        .fill = resolveThemeColor(m_backgroundFill),
+        .border = resolveThemeColor(m_backgroundBorder),
+        .fillMode = FillMode::Solid,
+        .radius = Style::radiusMd,
+        .softness = 1.0f,
+        .borderWidth = m_backgroundBorderWidth,
+    });
+  }
 }
 
 void ScrollView::layout(Renderer& renderer) {

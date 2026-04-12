@@ -72,9 +72,9 @@ void ControlCenterPanel::create() {
   content->setGap(Style::spaceMd * scale);
   content->setPadding(Style::spaceLg * scale);
   content->setRadius(Style::radiusXl * scale);
-  content->setBackground(palette.surfaceVariant);
+  content->setBackground(roleColor(ColorRole::SurfaceVariant));
   content->setBorderWidth(Style::borderWidth);
-  content->setBorderColor(palette.outline);
+  content->setBorderColor(roleColor(ColorRole::Outline));
   content->setSoftness(1.0f);
   content->setFlexGrow(4.0f);
   content->setClipChildren(true);
@@ -91,7 +91,7 @@ void ControlCenterPanel::create() {
   title->setText("Overview");
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle * scale);
-  title->setColor(palette.primary);
+  title->setColor(roleColor(ColorRole::Primary));
   title->setFlexGrow(1.0f);
   m_contentTitle = title.get();
   header->addChild(std::move(title));

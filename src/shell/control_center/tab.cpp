@@ -13,7 +13,7 @@ void applyCard(Flex& card, float scale) {
   card.setGap(Style::spaceXs * scale);
   card.setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
   card.setRadius(Style::radiusLg * scale);
-  card.setBackground(palette.surfaceVariant);
+  card.setBackground(roleColor(ColorRole::SurfaceVariant));
   card.setBorderWidth(0.0f);
   card.setSoftness(1.0f);
 }
@@ -23,7 +23,7 @@ Label* addTitle(Flex& parent, const std::string& text, float scale) {
   label->setText(text);
   label->setBold(true);
   label->setFontSize(Style::fontSizeTitle * scale);
-  label->setColor(palette.onSurface);
+  label->setColor(roleColor(ColorRole::OnSurface));
   auto* ptr = label.get();
   parent.addChild(std::move(label));
   return ptr;
@@ -33,7 +33,7 @@ void addBody(Flex& parent, const std::string& text, float scale) {
   auto label = std::make_unique<Label>();
   label->setText(text);
   label->setFontSize(Style::fontSizeBody * scale);
-  label->setColor(palette.onSurfaceVariant);
+  label->setColor(roleColor(ColorRole::OnSurfaceVariant));
   parent.addChild(std::move(label));
 }
 

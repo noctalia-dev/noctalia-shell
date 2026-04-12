@@ -1,8 +1,9 @@
 #pragma once
 
-#include "render/core/color.h"
 #include "render/scene/node.h"
+#include "ui/palette.h"
 
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -15,6 +16,8 @@ public:
 
   void setText(std::string_view text);
   void setFontSize(float size);
+  void setColor(const ThemeColor& color);
+  // Explicit fixed color.
   void setColor(const Color& color);
   void setMinWidth(float minWidth);
   void setMaxWidth(float maxWidth);
@@ -34,7 +37,11 @@ public:
   void setCaptionStyle();
 
 private:
+  void applyPalette();
+
   TextNode* m_textNode = nullptr;
   float m_minWidth = 0.0f;
   float m_baselineOffset = 0.0f;
+  ThemeColor m_color = roleColor(ColorRole::OnSurface);
+  Signal<>::ScopedConnection m_paletteConn;
 };

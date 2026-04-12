@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <memory>
 
-Flex::Flex() = default;
+Flex::Flex() { m_paletteConn = paletteChanged().connect([this] { applyPalette(); }); }
 
 void Flex::setSize(float width, float height) {
   Node::setSize(width, height);
@@ -65,12 +65,19 @@ void Flex::setPadding(float all) { setPadding(all, all, all, all); }
 
 void Flex::setPadding(float vertical, float horizontal) { setPadding(vertical, horizontal, vertical, horizontal); }
 
-void Flex::setBackground(const Color& color) {
+void Flex::setBackground(const ThemeColor& color) {
+  m_backgroundColor = color;
   ensureBackground();
-  auto style = m_background->style();
-  style.fill = color;
-  style.fillMode = FillMode::Solid;
-  m_background->setStyle(style);
+  applyPalette();
+}
+
+void Flex::setBackground(const Color& color) { setBackground(fixedColor(color)); }
+
+void Flex::clearBackground() {
+  m_backgroundColor = clearThemeColor();
+  if (m_background != nullptr) {
+    applyPalette();
+  }
 }
 
 void Flex::setRadius(float radius) {
@@ -80,10 +87,32 @@ void Flex::setRadius(float radius) {
   m_background->setStyle(style);
 }
 
-void Flex::setBorderColor(const Color& color) {
+void Flex::setBorderColor(const ThemeColor& color) {
+  m_borderColor = color;
   ensureBackground();
+  applyPalette();
+}
+
+void Flex::setBorderColor(const Color& color) { setBorderColor(fixedColor(color)); }
+
+void Flex::clearBorder() {
+  m_borderColor = clearThemeColor();
+  if (m_background != nullptr) {
+    auto style = m_background->style();
+    style.borderWidth = 0.0f;
+    m_background->setStyle(style);
+    applyPalette();
+  }
+}
+
+void Flex::applyPalette() {
+  if (m_background == nullptr) {
+    return;
+  }
   auto style = m_background->style();
-  style.border = color;
+  style.fill = resolveThemeColor(m_backgroundColor);
+  style.border = resolveThemeColor(m_borderColor);
+  style.fillMode = FillMode::Solid;
   m_background->setStyle(style);
 }
 
@@ -148,6 +177,7 @@ void Flex::ensureBackground() {
   m_background = static_cast<RectNode*>(addChild(std::move(rect)));
   m_background->setZIndex(-1);
   m_background->setSize(width(), height());
+  applyPalette();
 }
 
 void Flex::layout(Renderer& renderer) {

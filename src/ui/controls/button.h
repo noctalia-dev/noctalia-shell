@@ -3,6 +3,7 @@
 #include "ui/controls/flex.h"
 
 #include "render/core/color.h"
+#include "ui/signal.h"
 
 #include <functional>
 #include <string_view>
@@ -32,6 +33,19 @@ enum class ButtonVariant : std::uint8_t {
 
 class Button : public Flex {
 public:
+  struct ButtonStateColors {
+    ThemeColor bg;
+    ThemeColor border;
+    ThemeColor label;
+  };
+
+  struct ButtonPalette {
+    float borderWidth = 0.0f;
+    ButtonStateColors normal;
+    ButtonStateColors hover;
+    ButtonStateColors pressed;
+  };
+
   Button();
   ~Button() override;
 
@@ -73,15 +87,7 @@ private:
   std::function<void()> m_onClick;
   std::function<void()> m_onMotion;
   ButtonVariant m_variant = ButtonVariant::Default;
-  Color m_bgColorNormal{};
-  Color m_bgColorHover{};
-  Color m_bgColorPressed{};
-  Color m_borderColorNormal{};
-  Color m_borderColorHover{};
-  Color m_borderColorPressed{};
-  Color m_labelColorNormal{};
-  Color m_labelColorHover{};
-  Color m_labelColorPressed{};
+  ButtonPalette m_palette;
   // Animation: snapshot of colors at transition start
   Color m_fromBg{};
   Color m_fromBorder{};
@@ -93,4 +99,5 @@ private:
   bool m_enabled = true;
   bool m_selected = false;
   bool m_hoverSuppressed = false;
+  Signal<>::ScopedConnection m_paletteConn;
 };

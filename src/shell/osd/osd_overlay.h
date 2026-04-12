@@ -33,6 +33,7 @@ public:
   OsdOverlay& operator=(const OsdOverlay&) = delete;
 
   void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext);
+  void requestRedraw();
 
   void show(const OsdContent& content);
 

@@ -240,8 +240,13 @@ void Application::initServices() {
   });
 
   m_themeService.setChangeCallback([this]() {
-    m_bar.reload();
-    m_panelManager.close();
+    m_bar.requestRedraw();
+    m_panelManager.requestRedraw();
+    m_notificationToast.requestRedraw();
+    m_lockScreen.onThemeChanged();
+    m_osdOverlay.requestRedraw();
+    m_trayMenu.onThemeChanged();
+    m_overview.onThemeChanged();
   });
 
   if (const auto distro = DistroDetector::detect(); distro.has_value()) {

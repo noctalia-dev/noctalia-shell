@@ -24,12 +24,12 @@ void NotificationWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("bell");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(palette.onSurface);
+  glyph->setColor(roleColor(ColorRole::OnSurface));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
   auto dot = std::make_unique<Box>();
-  dot->setFill(palette.primary);
+  dot->setFill(roleColor(ColorRole::Primary));
   dot->setRadius(Style::radiusFull);
   dot->setVisible(false);
   m_dot = area->addChild(std::move(dot));

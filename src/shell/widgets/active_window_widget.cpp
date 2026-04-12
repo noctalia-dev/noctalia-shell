@@ -35,7 +35,7 @@ void ActiveWindowWidget::create() {
 
   auto icon = std::make_unique<Image>();
   icon->setCornerRadius(Style::radiusSm);
-  icon->setBackground(Color{palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.75f});
+  icon->setBackground(roleColor(ColorRole::SurfaceVariant, 0.75f));
   icon->setFit(ImageFit::Contain);
   icon->setSize(m_iconSize * m_contentScale, m_iconSize * m_contentScale);
   m_icon = static_cast<Image*>(rootNode->addChild(std::move(icon)));
@@ -43,7 +43,7 @@ void ActiveWindowWidget::create() {
   auto title = std::make_unique<Label>();
   title->setBold(true);
   title->setFontSize(Style::fontSizeBody * m_contentScale);
-  title->setColor(palette.onSurface);
+  title->setColor(roleColor(ColorRole::OnSurface));
   title->setMaxWidth(m_maxTitleWidth * m_contentScale);
   title->setMaxLines(1);
   m_title = static_cast<Label*>(rootNode->addChild(std::move(title)));

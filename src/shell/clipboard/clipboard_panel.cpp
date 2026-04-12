@@ -139,7 +139,7 @@ void ClipboardPanel::create() {
   title->setText(i18n::tr("clipboard.title"));
   title->setFontSize(Style::fontSizeTitle * scale);
   title->setBold(true);
-  title->setColor(palette.primary);
+  title->setColor(roleColor(ColorRole::Primary));
   m_sidebarTitle = title.get();
   sidebarHeader->addChild(std::move(title));
 
@@ -207,7 +207,7 @@ void ClipboardPanel::create() {
   previewTitleLabel->setText(i18n::tr("clipboard.entry-title"));
   previewTitleLabel->setFontSize(Style::fontSizeTitle * scale);
   previewTitleLabel->setBold(true);
-  previewTitleLabel->setColor(palette.primary);
+  previewTitleLabel->setColor(roleColor(ColorRole::Primary));
   m_previewTitle = previewTitleLabel.get();
   previewTitleLabel->setFlexGrow(1.0f);
   previewHeader->addChild(std::move(previewTitleLabel));
@@ -224,13 +224,13 @@ void ClipboardPanel::create() {
   auto previewMetaLabel = std::make_unique<Label>();
   previewMetaLabel->setCaptionStyle();
   previewMetaLabel->setFontSize(Style::fontSizeCaption * scale);
-  previewMetaLabel->setColor(palette.onSurfaceVariant);
+  previewMetaLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_previewMeta = previewMetaLabel.get();
   preview->addChild(std::move(previewMetaLabel));
 
   auto previewScroll = std::make_unique<ScrollView>();
   previewScroll->setScrollbarVisible(true);
-  previewScroll->setBackgroundStyle(palette.surfaceVariant, palette.outline, Style::borderWidth);
+  previewScroll->setBackgroundRoles(ColorRole::SurfaceVariant, ColorRole::Outline, Style::borderWidth);
   previewScroll->setFlexGrow(1.0f);
   m_previewScrollView = previewScroll.get();
   m_previewContent = previewScroll->content();
@@ -426,7 +426,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
                    : m_filterQuery.empty() ? i18n::tr("clipboard.history-empty")
                                            : i18n::tr("clipboard.no-matching-entries"));
     empty->setCaptionStyle();
-    empty->setColor(palette.onSurfaceVariant);
+    empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
     empty->setMaxWidth(width);
     m_list->addChild(std::move(empty));
     m_lastChangeSerial = m_clipboard != nullptr ? m_clipboard->changeSerial() : 0;
@@ -448,7 +448,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     row->setMinHeight(kRowHeight);
     row->setRadius(Style::radiusMd);
     if (i == m_selectedIndex) {
-      row->setBackground(palette.surfaceVariant);
+      row->setBackground(roleColor(ColorRole::SurfaceVariant));
     }
 
     auto* rowPtr = row.get();
@@ -466,8 +466,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
         m_mouseActive = true;
         if (idx != m_selectedIndex && m_hoverIndex != idx) {
           m_hoverIndex = idx;
-          rowPtr->setBackground(
-              rgba(palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.45f));
+          rowPtr->setBackground(roleColor(ColorRole::SurfaceVariant, 0.45f));
           PanelManager::instance().refresh();
         }
       }
@@ -477,8 +476,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
         return;
       }
       m_hoverIndex = idx;
-      rowPtr->setBackground(
-          rgba(palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.45f));
+      rowPtr->setBackground(roleColor(ColorRole::SurfaceVariant, 0.45f));
       PanelManager::instance().refresh();
     });
     area->setOnLeave([this, idx = i, rowPtr]() {
@@ -493,7 +491,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     auto glyph = std::make_unique<Glyph>();
     glyph->setGlyph(entry.isImage() ? "photo" : "file-text");
     glyph->setGlyphSize(kListGlyphSize);
-    glyph->setColor(entry.isImage() ? palette.secondary : palette.primary);
+    glyph->setColor(roleColor(entry.isImage() ? ColorRole::Secondary : ColorRole::Primary));
     row->addChild(std::move(glyph));
 
     auto textColumn = std::make_unique<Flex>();
@@ -507,7 +505,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     title->setText(cleanTitle);
     title->setFontSize(Style::fontSizeBody);
     title->setBold(true);
-    title->setColor(palette.onSurface);
+    title->setColor(roleColor(ColorRole::OnSurface));
     title->setMaxWidth(textWidth);
     title->setMaxLines(1);
     textColumn->addChild(std::move(title));
@@ -515,7 +513,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     auto timeLabel = std::make_unique<Label>();
     timeLabel->setText(formatTimeAgo(entry.capturedAt) + "  •  " + formatBytes(entry.byteSize));
     timeLabel->setCaptionStyle();
-    timeLabel->setColor(palette.onSurfaceVariant);
+    timeLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
     timeLabel->setMaxWidth(textWidth);
     textColumn->addChild(std::move(timeLabel));
 
@@ -552,7 +550,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
     auto empty = std::make_unique<Label>();
     empty->setText(history.empty() ? i18n::tr("clipboard.history-empty-sentence")
                                    : i18n::tr("clipboard.no-matching-entries-sentence"));
-    empty->setColor(palette.onSurfaceVariant);
+    empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
     empty->setMaxWidth(width);
     m_previewContent->addChild(std::move(empty));
     m_lastPreviewWidth = width;
@@ -569,7 +567,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
   if (m_previewPayloadIndex != historyIndex) {
     auto pending = std::make_unique<Label>();
     pending->setText(i18n::tr("clipboard.loading-preview"));
-    pending->setColor(palette.onSurfaceVariant);
+    pending->setColor(roleColor(ColorRole::OnSurfaceVariant));
     pending->setMaxWidth(width);
     m_previewContent->addChild(std::move(pending));
     m_lastPreviewWidth = width;
@@ -593,7 +591,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
     auto hint = std::make_unique<Label>();
     hint->setText(i18n::tr("clipboard.image-copy-hint"));
     hint->setCaptionStyle();
-    hint->setColor(palette.onSurfaceVariant);
+    hint->setColor(roleColor(ColorRole::OnSurfaceVariant));
     hint->setMaxWidth(width);
     m_previewContent->addChild(std::move(hint));
   } else {
@@ -623,13 +621,13 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
     if (expanded.empty()) {
       auto empty = std::make_unique<Label>();
       empty->setText(i18n::tr("clipboard.empty-text-payload"));
-      empty->setColor(palette.onSurfaceVariant);
+      empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
       m_previewContent->addChild(std::move(empty));
     } else {
       auto label = std::make_unique<Label>();
       label->setText(expanded);
       label->setFontSize(Style::fontSizeBody);
-      label->setColor(palette.onSurface);
+      label->setColor(roleColor(ColorRole::OnSurface));
       label->setMaxWidth(width);
       label->setMaxLines(kMaxPreviewLines);
       m_previewContent->addChild(std::move(label));
@@ -637,7 +635,7 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
         auto hint = std::make_unique<Label>();
         hint->setText(i18n::tr("clipboard.truncated"));
         hint->setCaptionStyle();
-        hint->setColor(palette.onSurfaceVariant);
+        hint->setColor(roleColor(ColorRole::OnSurfaceVariant));
         m_previewContent->addChild(std::move(hint));
       }
     }
@@ -713,14 +711,13 @@ void ClipboardPanel::updateRowSelection(std::size_t previousIndex) {
   if (previousIndex < m_rowFlexes.size() && m_rowFlexes[previousIndex] != nullptr) {
     Flex* prev = m_rowFlexes[previousIndex];
     if (m_hoverIndex == previousIndex) {
-      prev->setBackground(
-          rgba(palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.45f));
+      prev->setBackground(roleColor(ColorRole::SurfaceVariant, 0.45f));
     } else {
       prev->setBackground(rgba(0, 0, 0, 0));
     }
   }
   if (m_selectedIndex < m_rowFlexes.size() && m_rowFlexes[m_selectedIndex] != nullptr) {
-    m_rowFlexes[m_selectedIndex]->setBackground(palette.surfaceVariant);
+    m_rowFlexes[m_selectedIndex]->setBackground(roleColor(ColorRole::SurfaceVariant));
   }
 }
 

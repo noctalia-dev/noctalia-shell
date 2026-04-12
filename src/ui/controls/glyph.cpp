@@ -14,7 +14,8 @@ Glyph::Glyph() {
   m_glyphNode = static_cast<GlyphNode*>(addChild(std::move(glyph)));
   m_logicalFontSize = Style::fontSizeBody;
   m_glyphNode->setFontSize(m_logicalFontSize * Style::glyphSizeRatio);
-  m_glyphNode->setColor(palette.onSurface);
+  applyPalette();
+  m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
 }
 
 void Glyph::setGlyph(std::string_view name) {
@@ -31,7 +32,14 @@ void Glyph::setGlyphSize(float size) {
   m_glyphNode->setFontSize(size * Style::glyphSizeRatio);
 }
 
-void Glyph::setColor(const Color& color) { m_glyphNode->setColor(color); }
+void Glyph::setColor(const ThemeColor& color) {
+  m_color = color;
+  applyPalette();
+}
+
+void Glyph::setColor(const Color& color) { setColor(fixedColor(color)); }
+
+void Glyph::applyPalette() { m_glyphNode->setColor(resolveThemeColor(m_color)); }
 
 void Glyph::layout(Renderer& renderer) { measure(renderer); }
 

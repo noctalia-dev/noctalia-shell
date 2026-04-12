@@ -11,6 +11,7 @@
 #include "ui/controls/radio_button.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/slider.h"
+#include "ui/palette.h"
 
 #include <algorithm>
 #include <cmath>
@@ -39,7 +40,7 @@ public:
     setPadding(Style::spaceSm, Style::spaceMd);
     setMinHeight(Style::controlHeightLg);
     setRadius(Style::radiusMd);
-    setBackground(palette.surface);
+    setBackground(roleColor(ColorRole::Surface));
     setBorderWidth(0.0f);
     setSoftness(1.0f);
 
@@ -54,7 +55,7 @@ public:
     auto title = std::make_unique<Label>();
     title->setBold(true);
     title->setFontSize(Style::fontSizeBody);
-    title->setColor(palette.onSurface);
+    title->setColor(roleColor(ColorRole::OnSurface));
     title->setFlexGrow(1.0f);
     m_title = title.get();
     addChild(std::move(title));
@@ -74,6 +75,7 @@ public:
     m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
 
     applyState();
+    m_paletteConn = paletteChanged().connect([this] { applyState(); });
   }
 
   void setDevice(const AudioNode& node) {
@@ -112,20 +114,20 @@ public:
 private:
   void applyState() {
     if (pressed()) {
-      setBackground(palette.primary);
-      setBorderColor(palette.primary);
+      setBackground(roleColor(ColorRole::Primary));
+      setBorderColor(roleColor(ColorRole::Primary));
       setBorderWidth(Style::borderWidth);
       if (m_title != nullptr) {
-        m_title->setColor(palette.onPrimary);
+        m_title->setColor(roleColor(ColorRole::OnPrimary));
       }
       return;
     }
 
-    setBackground(palette.surface);
-    setBorderColor(hovered() ? palette.primary : palette.surface);
+    setBackground(roleColor(ColorRole::Surface));
+    setBorderColor(roleColor(hovered() ? ColorRole::Primary : ColorRole::Surface));
     setBorderWidth(hovered() ? Style::borderWidth : 0.0f);
     if (m_title != nullptr) {
-      m_title->setColor(palette.onSurface);
+      m_title->setColor(roleColor(ColorRole::OnSurface));
     }
     // Removed subtext (detail) color handling
   }
@@ -138,6 +140,7 @@ private:
   Label* m_title = nullptr;
   Label* m_detail = nullptr;
   InputArea* m_inputArea = nullptr;
+  Signal<>::ScopedConnection m_paletteConn;
 };
 
 std::vector<AudioNode> sortedDevices(const std::vector<AudioNode>& devices) {
@@ -158,7 +161,7 @@ void addSubtitle(Flex& parent, const std::string& text, float scale) {
   label->setText(text);
   label->setCaptionStyle();
   label->setFontSize(Style::fontSizeCaption * scale);
-  label->setColor(palette.onSurfaceVariant);
+  label->setColor(roleColor(ColorRole::OnSurfaceVariant));
   parent.addChild(std::move(label));
 }
 
@@ -169,21 +172,21 @@ void addEmptyState(Flex& parent, const std::string& title, const std::string& bo
   card->setGap(Style::spaceXs * scale);
   card->setPadding(Style::spaceMd * scale);
   card->setRadius(Style::radiusMd * scale);
-  card->setBackground(palette.surface);
+  card->setBackground(roleColor(ColorRole::Surface));
   card->setBorderWidth(0.0f);
 
   auto titleLabel = std::make_unique<Label>();
   titleLabel->setText(title);
   titleLabel->setBold(true);
   titleLabel->setFontSize(Style::fontSizeBody * scale);
-  titleLabel->setColor(palette.onSurface);
+  titleLabel->setColor(roleColor(ColorRole::OnSurface));
   card->addChild(std::move(titleLabel));
 
   auto bodyLabel = std::make_unique<Label>();
   bodyLabel->setText(body);
   bodyLabel->setCaptionStyle();
   bodyLabel->setFontSize(Style::fontSizeCaption * scale);
-  bodyLabel->setColor(palette.onSurfaceVariant);
+  bodyLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
   card->addChild(std::move(bodyLabel));
 
   parent.addChild(std::move(card));
@@ -300,7 +303,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   outputDeviceLabel->setText("No output device selected");
   outputDeviceLabel->setCaptionStyle();
   outputDeviceLabel->setFontSize(Style::fontSizeCaption * scale);
-  outputDeviceLabel->setColor(palette.onSurfaceVariant);
+  outputDeviceLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_outputDeviceLabel = outputDeviceLabel.get();
   outputVolumeCard->addChild(std::move(outputDeviceLabel));
 
@@ -356,7 +359,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   inputDeviceLabel->setText("No input device selected");
   inputDeviceLabel->setCaptionStyle();
   inputDeviceLabel->setFontSize(Style::fontSizeCaption * scale);
-  inputDeviceLabel->setColor(palette.onSurfaceVariant);
+  inputDeviceLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_inputDeviceLabel = inputDeviceLabel.get();
   inputVolumeCard->addChild(std::move(inputDeviceLabel));
 

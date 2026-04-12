@@ -48,6 +48,9 @@ public:
   [[nodiscard]] const std::string& activePanelId() const noexcept;
 
   void refresh();
+  // Requests a redraw on the active panel surface without re-running panel
+  // update/layout. Used for reactive palette restyling.
+  void requestRedraw();
   void close();
 
 private:

@@ -228,7 +228,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     auto emptyLabel = std::make_unique<Label>();
     emptyLabel->setText(m_query.empty() ? "Type to search..." : "No results found");
     emptyLabel->setCaptionStyle();
-    emptyLabel->setColor(palette.onSurfaceVariant);
+    emptyLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
     emptyLabel->setMaxWidth(width);
     m_list->addChild(std::move(emptyLabel));
     return;
@@ -245,7 +245,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     row->setMinWidth(width);
     row->setRadius(Style::radiusMd * scale);
     if (i == m_selectedIndex) {
-      row->setBackground(palette.surfaceVariant);
+      row->setBackground(roleColor(ColorRole::SurfaceVariant));
     }
 
     auto* rowPtr = row.get();
@@ -260,8 +260,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
         m_mouseActive = true;
         if (idx != m_selectedIndex && m_hoverIndex != idx) {
           m_hoverIndex = idx;
-          rowPtr->setBackground(
-              rgba(palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.45f));
+          rowPtr->setBackground(roleColor(ColorRole::SurfaceVariant, 0.45f));
           PanelManager::instance().refresh();
         }
       }
@@ -271,8 +270,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
         return;
       }
       m_hoverIndex = idx;
-      rowPtr->setBackground(
-          rgba(palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.45f));
+      rowPtr->setBackground(roleColor(ColorRole::SurfaceVariant, 0.45f));
       PanelManager::instance().refresh();
     });
     area->setOnLeave([this, idx = i, rowPtr]() {
@@ -289,7 +287,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
       auto actionLabel = std::make_unique<Label>();
       actionLabel->setText(result.actionText);
       actionLabel->setFontSize(iconSize);
-      actionLabel->setColor(palette.onSurface);
+      actionLabel->setColor(roleColor(ColorRole::OnSurface));
       actionLabel->setSize(iconSize, iconSize);
       row->addChild(std::move(actionLabel));
     } else if (!result.iconPath.empty()) {
@@ -301,7 +299,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
       auto glyph = std::make_unique<Glyph>();
       glyph->setGlyph(result.glyphName.empty() ? "app-window" : result.glyphName);
       glyph->setGlyphSize(iconSize);
-      glyph->setColor(palette.onSurface);
+      glyph->setColor(roleColor(ColorRole::OnSurface));
       row->addChild(std::move(glyph));
     }
 
@@ -317,7 +315,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     title->setText(result.title);
     title->setFontSize(Style::fontSizeBody * scale);
     title->setBold(true);
-    title->setColor(palette.onSurface);
+    title->setColor(roleColor(ColorRole::OnSurface));
     title->setMaxWidth(textWidth);
     textCol->addChild(std::move(title));
 
@@ -326,7 +324,7 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
       subtitle->setText(result.subtitle);
       subtitle->setCaptionStyle();
       subtitle->setFontSize(Style::fontSizeCaption * scale);
-      subtitle->setColor(palette.onSurfaceVariant);
+      subtitle->setColor(roleColor(ColorRole::OnSurfaceVariant));
       subtitle->setMaxWidth(textWidth);
       textCol->addChild(std::move(subtitle));
     }

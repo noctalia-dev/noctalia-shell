@@ -270,7 +270,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
       const std::string fallback = iconForItem(item);
       glyph->setGlyph(fallback);
       glyph->setGlyphSize(iconSize);
-      glyph->setColor(item.needsAttention ? palette.error : palette.onSurface);
+      glyph->setColor(roleColor(item.needsAttention ? ColorRole::Error : ColorRole::OnSurface));
       glyph->measure(renderer);
       iconW = glyph->width();
       iconH = glyph->height();

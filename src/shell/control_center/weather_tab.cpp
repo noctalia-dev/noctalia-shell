@@ -70,7 +70,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   auto currentGlyph = std::make_unique<Glyph>();
   currentGlyph->setGlyph("weather-cloud");
   currentGlyph->setGlyphSize(kCurrentGlyphSize * scale);
-  currentGlyph->setColor(palette.primary);
+  currentGlyph->setColor(roleColor(ColorRole::Primary));
   m_currentGlyph = currentGlyph.get();
   currentCard->addChild(std::move(currentGlyph));
 
@@ -98,7 +98,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   auto currentDesc = std::make_unique<Label>();
   currentDesc->setText("Waiting for weather data");
   currentDesc->setFontSize(Style::fontSizeBody * scale);
-  currentDesc->setColor(palette.onSurfaceVariant);
+  currentDesc->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_currentDescLabel = currentDesc.get();
   currentText->addChild(std::move(currentDesc));
 
@@ -106,7 +106,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   updated->setText(" ");
   updated->setCaptionStyle();
   updated->setFontSize(Style::fontSizeCaption * scale);
-  updated->setColor(palette.onSurfaceVariant);
+  updated->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_updatedLabel = updated.get();
   currentText->addChild(std::move(updated));
 
@@ -116,7 +116,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   auto status = std::make_unique<Label>();
   status->setText(" ");
   status->setFontSize(Style::fontSizeBody * scale);
-  status->setColor(palette.onSurfaceVariant);
+  status->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_statusLabel = status.get();
   leftColumn->addChild(std::move(status));
 
@@ -136,7 +136,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     auto icon = std::make_unique<Glyph>();
     icon->setGlyph(iconName);
     icon->setGlyphSize((Style::fontSizeBody + Style::spaceXs) * scale);
-    icon->setColor(palette.primary);
+    icon->setColor(roleColor(ColorRole::Primary));
     row->addChild(std::move(icon));
 
     auto keyLabel = std::make_unique<Label>();
@@ -155,7 +155,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     auto value = std::make_unique<Label>();
     value->setText("--");
     value->setFontSize(Style::fontSizeBody * scale);
-    value->setColor(palette.onSurfaceVariant);
+    value->setColor(roleColor(ColorRole::OnSurfaceVariant));
     valueOut = value.get();
     valueWrap->addChild(std::move(value));
 
@@ -198,7 +198,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     auto glyph = std::make_unique<Glyph>();
     glyph->setGlyph("weather-cloud");
     glyph->setGlyphSize(Style::fontSizeTitle * 1.9f * scale);
-    glyph->setColor(palette.primary);
+    glyph->setColor(roleColor(ColorRole::Primary));
     m_dayGlyphs[i] = glyph.get();
     iconSlot->addChild(std::move(glyph));
     card->addChild(std::move(iconSlot));
@@ -207,7 +207,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     meta->setText("Sun");
     meta->setBold(true);
     meta->setFontSize(Style::fontSizeBody * scale);
-    meta->setColor(palette.onSurfaceVariant);
+    meta->setColor(roleColor(ColorRole::OnSurfaceVariant));
     meta->setFlexGrow(1.0f);
     m_dayMetas[i] = meta.get();
     card->addChild(std::move(meta));
@@ -216,7 +216,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     temps->setText("10 / 4C");
     temps->setBold(true);
     temps->setFontSize(Style::fontSizeBody * scale);
-    temps->setColor(palette.onSurface);
+    temps->setColor(roleColor(ColorRole::OnSurface));
     temps->setFlexGrow(2.0f);
     m_dayTemps[i] = temps.get();
     card->addChild(std::move(temps));
@@ -224,7 +224,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     auto desc = std::make_unique<Label>();
     desc->setText("Weather");
     desc->setFontSize(Style::fontSizeBody * scale);
-    desc->setColor(palette.onSurfaceVariant);
+    desc->setColor(roleColor(ColorRole::OnSurfaceVariant));
     desc->setFlexGrow(2.75f);
     m_dayDescs[i] = desc.get();
     card->addChild(std::move(desc));

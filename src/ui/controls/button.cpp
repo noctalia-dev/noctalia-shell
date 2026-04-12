@@ -10,6 +10,93 @@
 #include <cmath>
 #include <memory>
 
+namespace {
+
+Button::ButtonStateColors makeState(ThemeColor bg, ThemeColor border, ThemeColor label) {
+  return Button::ButtonStateColors{
+      .bg = std::move(bg),
+      .border = std::move(border),
+      .label = std::move(label),
+  };
+}
+
+Button::ButtonPalette paletteForVariant(ButtonVariant variant) {
+  switch (variant) {
+  case ButtonVariant::Default:
+    return Button::ButtonPalette{
+        .borderWidth = Style::borderWidth,
+        .normal = makeState(roleColor(ColorRole::SurfaceVariant), roleColor(ColorRole::Outline),
+                            roleColor(ColorRole::OnSurface)),
+        .hover = makeState(roleColor(ColorRole::Primary), roleColor(ColorRole::Primary),
+                           roleColor(ColorRole::OnPrimary)),
+        .pressed = makeState(roleColor(ColorRole::Primary), roleColor(ColorRole::Primary),
+                             roleColor(ColorRole::OnPrimary)),
+    };
+  case ButtonVariant::Secondary:
+    return Button::ButtonPalette{
+        .borderWidth = Style::borderWidth,
+        .normal = makeState(roleColor(ColorRole::Secondary), roleColor(ColorRole::Outline),
+                            roleColor(ColorRole::OnSecondary)),
+        .hover = makeState(roleColor(ColorRole::Primary), roleColor(ColorRole::Primary),
+                           roleColor(ColorRole::OnPrimary)),
+        .pressed = makeState(roleColor(ColorRole::Primary), roleColor(ColorRole::Primary),
+                             roleColor(ColorRole::OnPrimary)),
+    };
+  case ButtonVariant::Destructive:
+    return Button::ButtonPalette{
+        .borderWidth = Style::borderWidth,
+        .normal = makeState(roleColor(ColorRole::Error), roleColor(ColorRole::Outline),
+                            roleColor(ColorRole::OnError)),
+        .hover = makeState(roleColor(ColorRole::Primary), roleColor(ColorRole::Primary),
+                           roleColor(ColorRole::OnPrimary)),
+        .pressed = makeState(roleColor(ColorRole::Error), roleColor(ColorRole::Error),
+                             roleColor(ColorRole::OnError)),
+    };
+  case ButtonVariant::Outline:
+    return Button::ButtonPalette{
+        .borderWidth = Style::borderWidth,
+        .normal = makeState(roleColor(ColorRole::Surface), roleColor(ColorRole::Outline),
+                            roleColor(ColorRole::OnSurface)),
+        .hover = makeState(roleColor(ColorRole::Primary), roleColor(ColorRole::Primary),
+                           roleColor(ColorRole::OnPrimary)),
+        .pressed = makeState(roleColor(ColorRole::Primary), roleColor(ColorRole::Primary),
+                             roleColor(ColorRole::OnPrimary)),
+    };
+  case ButtonVariant::Ghost:
+    return Button::ButtonPalette{
+        .borderWidth = 0.0f,
+        .normal = makeState(clearThemeColor(), clearThemeColor(), roleColor(ColorRole::OnSurface)),
+        .hover = makeState(roleColor(ColorRole::SurfaceVariant), clearThemeColor(), roleColor(ColorRole::OnSurface)),
+        .pressed = makeState(roleColor(ColorRole::SurfaceVariant), clearThemeColor(), roleColor(ColorRole::OnSurface)),
+    };
+  case ButtonVariant::Accent:
+    return Button::ButtonPalette{
+        .borderWidth = 0.0f,
+        .normal = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
+        .hover = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
+        .pressed = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
+    };
+  case ButtonVariant::Tab:
+    return Button::ButtonPalette{
+        .borderWidth = 0.0f,
+        .normal = makeState(clearThemeColor(), clearThemeColor(), roleColor(ColorRole::OnSurface)),
+        .hover = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
+        .pressed = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
+    };
+  case ButtonVariant::TabActive:
+    return Button::ButtonPalette{
+        .borderWidth = 0.0f,
+        .normal = makeState(clearThemeColor(), clearThemeColor(), roleColor(ColorRole::Primary)),
+        .hover = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
+        .pressed = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
+    };
+  }
+
+  return {};
+}
+
+} // namespace
+
 Button::Button() {
   setAlign(FlexAlign::Center);
   setMinHeight(Style::controlHeight);
@@ -17,6 +104,13 @@ Button::Button() {
   setRadius(Style::radiusMd);
 
   applyVariant();
+  m_paletteConn = paletteChanged().connect([this] {
+    // Re-derive color slots from the (possibly updated) palette and push
+    // them immediately if no hover/press animation is in flight. Otherwise
+    // the running animation keeps its old snapshot for one more tick and
+    // the next applyVisualState() will resync.
+    applyVariant();
+  });
 }
 
 Button::~Button() {
@@ -134,111 +228,13 @@ void Button::applyVariant() {
   setPadding(Style::spaceSm, Style::spaceMd);
   setRadius(Style::radiusMd);
 
-  switch (m_variant) {
-  case ButtonVariant::Default:
-    setBorderWidth(Style::borderWidth);
-    // Resting state is neutral; hover/pressed use the primary accent.
-    m_bgColorNormal = palette.surfaceVariant;
-    m_bgColorHover = palette.primary;
-    m_bgColorPressed = palette.primary;
-    m_labelColorNormal = palette.onSurface;
-    m_labelColorHover = palette.onPrimary;
-    m_labelColorPressed = palette.onPrimary;
-    m_borderColorNormal = palette.outline;
-    m_borderColorHover = palette.primary;
-    m_borderColorPressed = palette.primary;
-    break;
-  case ButtonVariant::Secondary:
-    setBorderWidth(Style::borderWidth);
-    m_bgColorNormal = palette.secondary;
-    m_bgColorHover = palette.primary;
-    m_bgColorPressed = palette.primary;
-    m_labelColorNormal = palette.onSecondary;
-    m_labelColorHover = palette.onPrimary;
-    m_labelColorPressed = palette.onPrimary;
-    m_borderColorNormal = palette.outline;
-    m_borderColorHover = palette.primary;
-    m_borderColorPressed = palette.primary;
-    break;
-  case ButtonVariant::Destructive:
-    setBorderWidth(Style::borderWidth);
-    m_bgColorNormal = palette.error;
-    m_bgColorHover = palette.primary;
-    m_bgColorPressed = palette.error;
-    m_labelColorNormal = palette.onError;
-    m_labelColorHover = palette.onPrimary;
-    m_labelColorPressed = palette.onError;
-    m_borderColorNormal = palette.outline;
-    m_borderColorHover = palette.primary;
-    m_borderColorPressed = palette.error;
-    break;
-  case ButtonVariant::Outline:
-    setBorderWidth(Style::borderWidth);
-    m_bgColorNormal = palette.surface;
-    m_bgColorHover = palette.primary;
-    m_bgColorPressed = palette.primary;
-    m_labelColorNormal = palette.onSurface;
-    m_labelColorHover = palette.onPrimary;
-    m_labelColorPressed = palette.onPrimary;
-    m_borderColorNormal = palette.outline;
-    m_borderColorHover = palette.primary;
-    m_borderColorPressed = palette.primary;
-    break;
-  case ButtonVariant::Ghost:
-    setBorderWidth(0.0f);
-    m_bgColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    m_bgColorHover = palette.surfaceVariant;
-    m_bgColorPressed = palette.surfaceVariant;
-    m_labelColorNormal = palette.onSurface;
-    m_labelColorHover = palette.onSurface;
-    m_labelColorPressed = palette.onSurface;
-    m_borderColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    m_borderColorHover = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    m_borderColorPressed = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    break;
-  case ButtonVariant::Accent:
-    setBorderWidth(0.0f);
-    m_bgColorNormal = palette.primary;
-    m_bgColorHover = palette.primary;
-    m_bgColorPressed = palette.primary;
-    m_labelColorNormal = palette.onPrimary;
-    m_labelColorHover = palette.onPrimary;
-    m_labelColorPressed = palette.onPrimary;
-    m_borderColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    m_borderColorHover = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    m_borderColorPressed = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    break;
-  case ButtonVariant::Tab:
-    setBorderWidth(0.0f);
-    m_bgColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    m_bgColorHover = palette.primary;
-    m_bgColorPressed = palette.primary;
-    m_labelColorNormal = palette.onSurface;
-    m_labelColorHover = palette.onPrimary;
-    m_labelColorPressed = palette.onPrimary;
-    m_borderColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    m_borderColorHover = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    m_borderColorPressed = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    break;
-  case ButtonVariant::TabActive:
-    setBorderWidth(0.0f);
-    // Active tab is emphasized via primary text/icon, not a filled chip.
-    m_bgColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    m_bgColorHover = palette.primary;
-    m_bgColorPressed = palette.primary;
-    m_labelColorNormal = palette.primary;
-    m_labelColorHover = palette.onPrimary;
-    m_labelColorPressed = palette.onPrimary;
-    m_borderColorNormal = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    m_borderColorHover = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    m_borderColorPressed = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    break;
-  }
+  m_palette = paletteForVariant(m_variant);
+  setBorderWidth(m_palette.borderWidth);
 
   // Seed animation state so the first transition has valid starting colors.
-  m_targetBg = m_bgColorNormal;
-  m_targetBorder = m_borderColorNormal;
-  m_targetLabel = m_labelColorNormal;
+  m_targetBg = resolveThemeColor(m_palette.normal.bg);
+  m_targetBorder = resolveThemeColor(m_palette.normal.border);
+  m_targetLabel = resolveThemeColor(m_palette.normal.label);
   applyVisualState();
 }
 
@@ -300,21 +296,21 @@ void Button::applyVisualState() {
   Color targetBorder;
   Color targetLabel;
   if (!m_enabled) {
-    targetBg = lerpColor(m_bgColorNormal, palette.surface, 0.35f);
-    targetBorder = lerpColor(m_borderColorNormal, palette.outline, 0.35f);
-    targetLabel = rgba(m_labelColorNormal.r, m_labelColorNormal.g, m_labelColorNormal.b, 0.45f);
+    targetBg = lerpColor(resolveThemeColor(m_palette.normal.bg), resolveColorRole(ColorRole::Surface), 0.35f);
+    targetBorder = lerpColor(resolveThemeColor(m_palette.normal.border), resolveColorRole(ColorRole::Outline), 0.35f);
+    targetLabel = resolveThemeColor(roleColor(ColorRole::OnSurface, 0.45f));
   } else if (isPressed) {
-    targetBg = m_bgColorPressed;
-    targetBorder = m_borderColorPressed;
-    targetLabel = m_labelColorPressed;
+    targetBg = resolveThemeColor(m_palette.pressed.bg);
+    targetBorder = resolveThemeColor(m_palette.pressed.border);
+    targetLabel = resolveThemeColor(m_palette.pressed.label);
   } else if (isHovered) {
-    targetBg = m_bgColorHover;
-    targetBorder = m_borderColorHover;
-    targetLabel = m_labelColorHover;
+    targetBg = resolveThemeColor(m_palette.hover.bg);
+    targetBorder = resolveThemeColor(m_palette.hover.border);
+    targetLabel = resolveThemeColor(m_palette.hover.label);
   } else {
-    targetBg = m_bgColorNormal;
-    targetBorder = m_borderColorNormal;
-    targetLabel = m_labelColorNormal;
+    targetBg = resolveThemeColor(m_palette.normal.bg);
+    targetBorder = resolveThemeColor(m_palette.normal.border);
+    targetLabel = resolveThemeColor(m_palette.normal.label);
   }
 
   if (animationManager() == nullptr) {

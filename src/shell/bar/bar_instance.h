@@ -7,6 +7,8 @@
 #include "shell/widget/widget.h"
 #include "wayland/layer_surface.h"
 
+#include "ui/signal.h"
+
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -40,4 +42,6 @@ struct BarInstance {
   std::vector<std::unique_ptr<Widget>> startWidgets;
   std::vector<std::unique_ptr<Widget>> centerWidgets;
   std::vector<std::unique_ptr<Widget>> endWidgets;
+
+  Signal<>::ScopedConnection paletteConn;
 };

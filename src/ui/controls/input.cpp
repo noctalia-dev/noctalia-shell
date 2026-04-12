@@ -51,6 +51,8 @@ constexpr float kDefaultWidth = 200.0f;
 constexpr float kCursorWidth  = 1.5f;
 constexpr float kCursorPadV   = 3.0f;
 
+Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
+
 } // namespace
 
 Input::Input() {
@@ -63,7 +65,7 @@ Input::Input() {
   // 1: selection highlight (rendered behind text)
   auto sel = std::make_unique<RectNode>();
   sel->setStyle(RoundedRectStyle{
-      .fill = palette.primary,
+      .fill = resolved(ColorRole::Primary),
       .fillMode = FillMode::Solid,
       .radius = 2.0f,
   });
@@ -74,13 +76,13 @@ Input::Input() {
   // 2: text
   auto text = std::make_unique<TextNode>();
   text->setFontSize(m_fontSize);
-  text->setColor(palette.onSurface);
+  text->setColor(resolved(ColorRole::OnSurface));
   m_textNode = static_cast<TextNode*>(addChild(std::move(text)));
 
   // 3: cursor
   auto cursor = std::make_unique<RectNode>();
   cursor->setStyle(RoundedRectStyle{
-      .fill = palette.primary,
+      .fill = resolved(ColorRole::Primary),
       .fillMode = FillMode::Solid,
       .radius = 1.0f,
   });
@@ -119,6 +121,10 @@ Input::Input() {
   m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
 
   applyVisualState();
+  m_paletteConn = paletteChanged().connect([this] {
+    updateDisplayText();
+    applyVisualState();
+  });
 }
 
 void Input::setValue(std::string_view value) {
@@ -372,9 +378,10 @@ void Input::applyVisualState() {
   const bool focused = m_inputArea != nullptr && m_inputArea->focused();
   const bool hovered = m_inputArea != nullptr && m_inputArea->hovered();
 
-  const Color fill   = focused ? palette.surface : palette.surfaceVariant;
-  const Color border = focused ? palette.primary
-                               : (hovered ? brighten(palette.outline, 1.3f) : palette.outline);
+  const Color fill = focused ? resolved(ColorRole::Surface) : resolved(ColorRole::SurfaceVariant);
+  const Color border = focused ? resolved(ColorRole::Primary)
+                               : (hovered ? brighten(resolved(ColorRole::Outline), 1.3f)
+                                          : resolved(ColorRole::Outline));
 
   m_background->setStyle(RoundedRectStyle{
       .fill = fill,
@@ -384,15 +391,27 @@ void Input::applyVisualState() {
       .softness = 1.0f,
       .borderWidth = Style::borderWidth,
   });
+
+  auto selectionStyle = m_selectionRect->style();
+  selectionStyle.fill = resolved(ColorRole::Primary);
+  selectionStyle.fillMode = FillMode::Solid;
+  selectionStyle.radius = 2.0f;
+  m_selectionRect->setStyle(selectionStyle);
+
+  auto cursorStyle = m_cursor->style();
+  cursorStyle.fill = resolved(ColorRole::Primary);
+  cursorStyle.fillMode = FillMode::Solid;
+  cursorStyle.radius = 1.0f;
+  m_cursor->setStyle(cursorStyle);
 }
 
 void Input::updateDisplayText() {
   if (m_value.empty() && !m_placeholder.empty()) {
     m_textNode->setText(m_placeholder);
-    m_textNode->setColor(palette.onSurfaceVariant);
+    m_textNode->setColor(resolved(ColorRole::OnSurfaceVariant));
   } else {
     m_textNode->setText(m_value);
-    m_textNode->setColor(palette.onSurface);
+    m_textNode->setColor(resolved(ColorRole::OnSurface));
   }
 }
 

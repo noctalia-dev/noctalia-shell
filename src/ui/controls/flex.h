@@ -1,7 +1,9 @@
 #pragma once
 
-#include "render/core/color.h"
 #include "render/scene/node.h"
+#include "ui/palette.h"
+
+#include <optional>
 
 class Renderer;
 class RectNode;
@@ -37,9 +39,15 @@ public:
   void setPadding(float all);
   void setPadding(float vertical, float horizontal);
 
+  void setBackground(const ThemeColor& color);
+  // Explicit fixed color.
   void setBackground(const Color& color);
+  void clearBackground();
   void setRadius(float radius);
+  void setBorderColor(const ThemeColor& color);
+  // Explicit fixed color.
   void setBorderColor(const Color& color);
+  void clearBorder();
   void setBorderWidth(float width);
   void setSoftness(float softness);
 
@@ -63,8 +71,12 @@ public:
 
 private:
   void ensureBackground();
+  void applyPalette();
 
   RectNode* m_background = nullptr;
+  ThemeColor m_backgroundColor = clearThemeColor();
+  ThemeColor m_borderColor = clearThemeColor();
+  Signal<>::ScopedConnection m_paletteConn;
   FlexDirection m_direction = FlexDirection::Horizontal;
   FlexAlign m_align = FlexAlign::Center;
   FlexJustify m_justify = FlexJustify::Start;

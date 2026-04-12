@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/controls/flex.h"
+#include "ui/signal.h"
 
 #include <functional>
 
@@ -45,4 +46,6 @@ private:
   float m_travel = 0.0f;
   float m_thumbSize = 0.0f;
   float m_scale = 1.0f;
+  float m_animationProgress = 0.0f;
+  Signal<>::ScopedConnection m_paletteConn;
 };

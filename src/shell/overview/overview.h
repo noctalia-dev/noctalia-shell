@@ -19,6 +19,7 @@ public:
   bool initialize(WaylandConnection& wayland, ConfigService* config, StateService* state, Wallpaper* wallpaper);
   void onOutputChange();
   void onStateChange();
+  void onThemeChanged();
 
 private:
   void reload();

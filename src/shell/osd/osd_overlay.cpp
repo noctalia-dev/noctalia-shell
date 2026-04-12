@@ -43,6 +43,14 @@ void OsdOverlay::initialize(WaylandConnection& wayland, ConfigService* config, R
   m_renderContext = renderContext;
 }
 
+void OsdOverlay::requestRedraw() {
+  for (auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      inst->surface->requestRedraw();
+    }
+  }
+}
+
 void OsdOverlay::show(const OsdContent& content) {
   if (m_wayland == nullptr || m_renderContext == nullptr) {
     return;
@@ -191,8 +199,8 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
 
   auto background = std::make_unique<Box>();
   background->setCardStyle();
-  background->setFill(palette.surface);
-  background->setBorder(palette.outline, Style::borderWidth);
+  background->setFill(roleColor(ColorRole::Surface));
+  background->setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
   background->setRadius(kCardHeight * 0.5f);
   background->setSoftness(1.2f);
   background->setSize(kCardWidth, kCardHeight);
@@ -218,7 +226,7 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyphSize(kGlyphSize);
-  glyph->setColor(palette.primary);
+  glyph->setColor(roleColor(ColorRole::Primary));
   inst.glyph = glyph.get();
   inst.glyph->setZIndex(1);
   inst.row->addChild(std::move(glyph));
@@ -226,14 +234,14 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   auto value = std::make_unique<Label>();
   value->setBold(true);
   value->setFontSize(kValueFontSize);
-  value->setColor(palette.onSurface);
+  value->setColor(roleColor(ColorRole::OnSurface));
   inst.value = value.get();
   inst.value->setZIndex(1);
 
   auto progress = std::make_unique<ProgressBar>();
   progress->setRadius(Style::radiusFull);
-  progress->setTrackColor(palette.surface);
-  progress->setFillColor(palette.primary);
+  progress->setTrack(roleColor(ColorRole::Surface));
+  progress->setFill(roleColor(ColorRole::Primary));
   progress->setFlexGrow(1.0f);
   progress->setSize(0.0f, kProgressHeight);
   inst.progress = progress.get();

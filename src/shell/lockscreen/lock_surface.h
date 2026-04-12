@@ -17,8 +17,8 @@ struct wl_output;
 class ImageNode;
 class Button;
 class Input;
+class Label;
 class RectNode;
-class TextNode;
 struct KeyboardEvent;
 struct PointerEvent;
 
@@ -37,6 +37,7 @@ public:
   void selectAllPassword();
   void clearPasswordSelection();
   void onSecondTick();
+  void onThemeChanged();
   void onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);
   [[nodiscard]] wl_output* output() const noexcept { return m_output; }
@@ -55,8 +56,8 @@ private:
   Node m_root;
   ImageNode* m_wallpaper = nullptr;
   RectNode* m_backdrop = nullptr;
-  TextNode* m_clockShadow = nullptr;
-  TextNode* m_clock = nullptr;
+  Label* m_clockShadow = nullptr;
+  Label* m_clock = nullptr;
   RectNode* m_loginPanel = nullptr;
   Input* m_passwordField = nullptr;
   Button* m_loginButton = nullptr;

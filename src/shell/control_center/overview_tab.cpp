@@ -201,7 +201,7 @@ void styleCard(Flex& card, float scale) {
   card.setAlign(FlexAlign::Stretch);
   card.setGap(Style::spaceSm * scale);
   card.setBorderWidth(Style::borderWidth);
-  card.setBorderColor(palette.outline);
+  card.setBorderColor(roleColor(ColorRole::Outline));
 }
 
 } // namespace
@@ -241,7 +241,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto weatherGlyph = std::make_unique<Glyph>();
   weatherGlyph->setGlyph("weather-cloud-sun");
   weatherGlyph->setGlyphSize(Style::fontSizeTitle * 2.2f * scale);
-  weatherGlyph->setColor(palette.primary);
+  weatherGlyph->setColor(roleColor(ColorRole::Primary));
   m_weatherGlyph = weatherGlyph.get();
 
   auto weatherText = std::make_unique<Flex>();
@@ -254,13 +254,13 @@ std::unique_ptr<Flex> OverviewTab::create() {
   weatherTemp->setText("—");
   weatherTemp->setBold(true);
   weatherTemp->setFontSize(Style::fontSizeTitle * 1.6f * scale);
-  weatherTemp->setColor(palette.onSurface);
+  weatherTemp->setColor(roleColor(ColorRole::OnSurface));
   m_weatherTemp = weatherTemp.get();
 
   auto weatherSub = std::make_unique<Label>();
   weatherSub->setText(" ");
   weatherSub->setFontSize(Style::fontSizeBody * scale);
-  weatherSub->setColor(palette.onSurfaceVariant);
+  weatherSub->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_weatherSub = weatherSub.get();
 
   weatherText->addChild(std::move(weatherTemp));
@@ -281,19 +281,19 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto mediaTrack = std::make_unique<Label>();
   mediaTrack->setText("…");
   mediaTrack->setFontSize(Style::fontSizeBody * scale);
-  mediaTrack->setColor(palette.onSurface);
+  mediaTrack->setColor(roleColor(ColorRole::OnSurface));
   m_mediaTrack = mediaTrack.get();
 
   auto mediaArtist = std::make_unique<Label>();
   mediaArtist->setText(" ");
   mediaArtist->setFontSize(Style::fontSizeBody * scale);
-  mediaArtist->setColor(palette.onSurfaceVariant);
+  mediaArtist->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_mediaArtist = mediaArtist.get();
 
   auto mediaStatus = std::make_unique<Label>();
   mediaStatus->setText(" ");
   mediaStatus->setFontSize(Style::fontSizeCaption * scale);
-  mediaStatus->setColor(palette.secondary);
+  mediaStatus->setColor(roleColor(ColorRole::Secondary));
   m_mediaStatus = mediaStatus.get();
 
   mediaCard->addChild(std::move(mediaTrack));
@@ -312,8 +312,8 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   auto avatar = std::make_unique<Image>();
   avatar->setCornerRadius(Style::radiusLg * scale);
-  avatar->setBackground(palette.surfaceVariant);
-  avatar->setBorder(palette.primary, Style::borderWidth * 2.0f);
+  avatar->setBackground(roleColor(ColorRole::SurfaceVariant));
+  avatar->setBorder(roleColor(ColorRole::Primary), Style::borderWidth * 2.0f);
   avatar->setFit(ImageFit::Cover);
   avatar->setPadding(1.0f * scale);
   const float avatarSize = Style::controlHeightLg * 2.2f * scale;
@@ -337,7 +337,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userTitle->setText(identity.displayName);
   userTitle->setBold(true);
   userTitle->setFontSize(Style::fontSizeTitle * scale);
-  userTitle->setColor(palette.onSurface);
+  userTitle->setColor(roleColor(ColorRole::OnSurface));
   userHeader->addChild(std::move(userTitle));
 
   auto actions = std::make_unique<Flex>();
@@ -371,7 +371,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto userFacts = std::make_unique<Label>();
   userFacts->setText("…");
   userFacts->setFontSize(Style::fontSizeCaption * scale);
-  userFacts->setColor(palette.onSurfaceVariant);
+  userFacts->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_userFacts = userFacts.get();
   userMain->addChild(std::move(userFacts));
   userRow->addChild(std::move(userMain));
@@ -395,14 +395,14 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto powerLine = std::make_unique<Label>();
   powerLine->setText("…");
   powerLine->setFontSize(Style::fontSizeBody * scale);
-  powerLine->setColor(palette.onSurface);
+  powerLine->setColor(roleColor(ColorRole::OnSurface));
   m_powerLine = powerLine.get();
   powerCard->addChild(std::move(powerLine));
 
   auto powerSub = std::make_unique<Label>();
   powerSub->setText(" ");
   powerSub->setFontSize(Style::fontSizeCaption * scale);
-  powerSub->setColor(palette.onSurfaceVariant);
+  powerSub->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_powerSub = powerSub.get();
   powerCard->addChild(std::move(powerSub));
   bottomRow->addChild(std::move(powerCard));
@@ -416,14 +416,14 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto audioLine = std::make_unique<Label>();
   audioLine->setText("…");
   audioLine->setFontSize(Style::fontSizeBody * scale);
-  audioLine->setColor(palette.onSurface);
+  audioLine->setColor(roleColor(ColorRole::OnSurface));
   m_audioLine = audioLine.get();
   audioCard->addChild(std::move(audioLine));
 
   auto audioSub = std::make_unique<Label>();
   audioSub->setText(" ");
   audioSub->setFontSize(Style::fontSizeCaption * scale);
-  audioSub->setColor(palette.onSurfaceVariant);
+  audioSub->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_audioSub = audioSub.get();
   audioCard->addChild(std::move(audioSub));
   bottomRow->addChild(std::move(audioCard));
@@ -545,24 +545,24 @@ void OverviewTab::sync(Renderer& renderer) {
   if (m_weatherGlyph != nullptr && m_weatherTemp != nullptr && m_weatherSub != nullptr) {
     if (m_weather == nullptr || !m_weather->enabled()) {
       m_weatherGlyph->setGlyph("weather-cloud-off");
-      m_weatherGlyph->setColor(palette.onSurfaceVariant);
+      m_weatherGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
       m_weatherTemp->setText("—");
       m_weatherSub->setText("Weather is disabled in config.");
     } else if (!m_weather->locationConfigured()) {
       m_weatherGlyph->setGlyph("weather-cloud");
-      m_weatherGlyph->setColor(palette.onSurfaceVariant);
+      m_weatherGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
       m_weatherTemp->setText("—");
       m_weatherSub->setText("Add [weather].address or enable auto_locate.");
     } else {
       const auto& snapshot = m_weather->snapshot();
       if (!snapshot.valid) {
         m_weatherGlyph->setGlyph("weather-cloud");
-        m_weatherGlyph->setColor(palette.onSurfaceVariant);
+        m_weatherGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
         m_weatherTemp->setText("—");
         m_weatherSub->setText(m_weather->loading() ? "Fetching forecast…" : "Weather data unavailable.");
       } else {
         m_weatherGlyph->setGlyph(WeatherService::glyphForCode(snapshot.current.weatherCode, snapshot.current.isDay));
-        m_weatherGlyph->setColor(palette.primary);
+        m_weatherGlyph->setColor(roleColor(ColorRole::Primary));
         const int t = static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.current.temperatureC)));
         m_weatherTemp->setText(std::format("{}{}", t, m_weather->displayTemperatureUnit()));
         const std::string place = snapshot.locationName.empty() ? "Current location" : snapshot.locationName;
@@ -577,27 +577,27 @@ void OverviewTab::sync(Renderer& renderer) {
       m_mediaTrack->setText("Playback unavailable");
       m_mediaArtist->setText(" ");
       m_mediaStatus->setText(" ");
-      m_mediaStatus->setColor(palette.onSurfaceVariant);
+      m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
     } else {
       const auto active = m_mpris->activePlayer();
       if (!active.has_value()) {
         m_mediaTrack->setText("Nothing playing");
         m_mediaArtist->setText("Start something in an MPRIS app to see it here.");
         m_mediaStatus->setText(" ");
-        m_mediaStatus->setColor(palette.onSurfaceVariant);
+        m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
       } else {
         m_mediaTrack->setText(active->title.empty() ? "Unknown track" : active->title);
         const std::string artists = joinArtists(active->artists);
         m_mediaArtist->setText(artists.empty() ? "Unknown artist" : artists);
         if (active->playbackStatus == "Playing") {
           m_mediaStatus->setText("Playing");
-          m_mediaStatus->setColor(palette.primary);
+          m_mediaStatus->setColor(roleColor(ColorRole::Primary));
         } else if (active->playbackStatus == "Paused") {
           m_mediaStatus->setText("Paused");
-          m_mediaStatus->setColor(palette.onSurfaceVariant);
+          m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
         } else {
           m_mediaStatus->setText(active->playbackStatus);
-          m_mediaStatus->setColor(palette.onSurfaceVariant);
+          m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
         }
       }
     }

@@ -19,6 +19,10 @@ constexpr float kItemHeight = Style::controlHeightSm;
 constexpr float kSeparatorHeight = 10.0f;
 constexpr float kItemGap = 0.0f;
 
+ThemeColor enabledItemColor() { return roleColor(ColorRole::OnSurface); }
+
+ThemeColor disabledItemColor() { return roleColor(ColorRole::OnSurface, 0.55f); }
+
 } // namespace
 
 ContextMenuControl::ContextMenuControl() : Node(NodeType::Base) {}
@@ -91,8 +95,8 @@ void ContextMenuControl::rebuild(Renderer& renderer) {
   auto bg = std::make_unique<Box>();
   bg->setCardStyle();
   bg->setRadius(Style::radiusLg);
-  bg->setFill(brighten(palette.surface, 1.03f));
-  bg->setBorder(rgba(palette.outline.r, palette.outline.g, palette.outline.b, 0.9f), Style::borderWidth);
+  bg->setFill(fixedColor(brighten(resolveColorRole(ColorRole::Surface), 1.03f)));
+  bg->setBorder(roleColor(ColorRole::Outline, 0.9f), Style::borderWidth);
   bg->setSize(width(), height());
   addChild(std::move(bg));
 
@@ -139,7 +143,7 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
 
     if (!entry.separator) {
       auto rowBg = std::make_unique<Box>();
-      rowBg->setFill(rgba(0.0f, 0.0f, 0.0f, 0.0f));
+      rowBg->setFill(clearThemeColor());
       rowBg->setRadius(Style::radiusSm);
       rowBg->setSize(rowWidth, rowHeight);
       rowBgPtr = static_cast<Box*>(row->addChild(std::move(rowBg)));
@@ -148,8 +152,7 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
       auto label = std::make_unique<Label>();
       label->setText(labelText);
       label->setFontSize(Style::fontSizeBody);
-      label->setColor(entry.enabled ? palette.onSurface
-                                    : rgba(palette.onSurface.r, palette.onSurface.g, palette.onSurface.b, 0.55f));
+      label->setColor(entry.enabled ? enabledItemColor() : disabledItemColor());
       label->setMaxWidth(entry.hasSubmenu ? (rowWidth - 30.0f) : (rowWidth - 16.0f));
       label->measure(renderer);
       label->setPosition(8.0f, (rowHeight - label->height()) * 0.5f);
@@ -159,15 +162,14 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
         auto chevron = std::make_unique<Glyph>();
         chevron->setGlyph(m_submenuDirection == ContextSubmenuDirection::Right ? "chevron-right" : "chevron-left");
         chevron->setGlyphSize(Style::fontSizeBody - 1.0f);
-        chevron->setColor(entry.enabled ? palette.onSurface
-                                        : rgba(palette.onSurface.r, palette.onSurface.g, palette.onSurface.b, 0.55f));
+        chevron->setColor(entry.enabled ? enabledItemColor() : disabledItemColor());
         chevron->measure(renderer);
         chevron->setPosition(rowWidth - 8.0f - chevron->width(), (rowHeight - chevron->height()) * 0.5f);
         chevronPtr = static_cast<Glyph*>(row->addChild(std::move(chevron)));
       }
     } else {
       auto rowBg = std::make_unique<Box>();
-      rowBg->setFill(rgba(0.0f, 0.0f, 0.0f, 0.0f));
+      rowBg->setFill(clearThemeColor());
       rowBg->setRadius(Style::radiusSm);
       rowBg->setSize(rowWidth, rowHeight);
       rowBgPtr = static_cast<Box*>(row->addChild(std::move(rowBg)));
@@ -175,60 +177,48 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
       auto label = std::make_unique<Label>();
       label->setText("");
       label->setFontSize(Style::fontSizeBody);
-      label->setColor(palette.onSurfaceVariant);
+      label->setColor(roleColor(ColorRole::OnSurfaceVariant));
       labelPtr = static_cast<Label*>(row->addChild(std::move(label)));
 
       auto separatorLine = std::make_unique<Box>();
-      separatorLine->setFill(rgba(palette.outline.r, palette.outline.g, palette.outline.b, 0.85f));
+      separatorLine->setFill(roleColor(ColorRole::Outline, 0.85f));
       separatorLine->setSize(rowWidth - 20.0f, 1.0f);
       separatorLine->setPosition(10.0f, (rowHeight - 1.0f) * 0.5f);
       row->addChild(std::move(separatorLine));
     }
 
     if (rowBgPtr != nullptr && labelPtr != nullptr) {
-      row->setOnEnter([this, rowBgPtr, labelPtr, chevronPtr](const InputArea::PointerData& /*data*/) {
-        rowBgPtr->setFill(palette.primary);
-        labelPtr->setColor(palette.onPrimary);
-        if (chevronPtr != nullptr) {
-          chevronPtr->setColor(palette.onPrimary);
-        }
-        if (m_redrawCallback) {
-          m_redrawCallback();
-        }
-      });
-      row->setOnLeave([this, rowBgPtr, labelPtr, chevronPtr, interactive, separator]() {
-        rowBgPtr->setFill(rgba(0.0f, 0.0f, 0.0f, 0.0f));
+      const auto applyRowState = [rowBgPtr, labelPtr, chevronPtr, interactive, separator](bool highlighted) {
+        rowBgPtr->setFill(highlighted ? roleColor(ColorRole::Primary) : clearThemeColor());
         if (separator) {
-          labelPtr->setColor(palette.onSurfaceVariant);
+          labelPtr->setColor(roleColor(ColorRole::OnSurfaceVariant));
         } else {
-          labelPtr->setColor(interactive ? palette.onSurface
-                                         : rgba(palette.onSurface.r, palette.onSurface.g, palette.onSurface.b, 0.55f));
+          labelPtr->setColor(highlighted ? roleColor(ColorRole::OnPrimary)
+                                         : (interactive ? enabledItemColor() : disabledItemColor()));
         }
         if (chevronPtr != nullptr) {
-          chevronPtr->setColor(interactive ? palette.onSurface
-                                           : rgba(palette.onSurface.r, palette.onSurface.g, palette.onSurface.b, 0.55f));
+          chevronPtr->setColor(highlighted ? roleColor(ColorRole::OnPrimary)
+                                           : (interactive ? enabledItemColor() : disabledItemColor()));
         }
+      };
+
+      row->setOnEnter([this, applyRowState](const InputArea::PointerData& /*data*/) {
+        applyRowState(true);
         if (m_redrawCallback) {
           m_redrawCallback();
         }
       });
-      row->setOnPress([this, rowBgPtr, labelPtr, chevronPtr, interactive](const InputArea::PointerData& data) {
+      row->setOnLeave([this, applyRowState]() {
+        applyRowState(false);
+        if (m_redrawCallback) {
+          m_redrawCallback();
+        }
+      });
+      row->setOnPress([this, applyRowState, interactive](const InputArea::PointerData& /*data*/) {
         if (!interactive) {
           return;
         }
-        if (data.pressed) {
-          rowBgPtr->setFill(palette.primary);
-          labelPtr->setColor(palette.onPrimary);
-          if (chevronPtr != nullptr) {
-            chevronPtr->setColor(palette.onPrimary);
-          }
-        } else {
-          rowBgPtr->setFill(palette.primary);
-          labelPtr->setColor(palette.onPrimary);
-          if (chevronPtr != nullptr) {
-            chevronPtr->setColor(palette.onPrimary);
-          }
-        }
+        applyRowState(true);
         if (m_redrawCallback) {
           m_redrawCallback();
         }

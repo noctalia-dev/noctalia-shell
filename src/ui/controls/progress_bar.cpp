@@ -15,25 +15,34 @@ ProgressBar::ProgressBar() {
   auto fill = std::make_unique<RectNode>();
   m_fill = static_cast<RectNode*>(addChild(std::move(fill)));
 
-  setTrackColor(palette.surfaceVariant);
-  setFillColor(palette.primary);
+  setTrack(roleColor(ColorRole::SurfaceVariant));
+  setFill(roleColor(ColorRole::Primary));
   setRadius(Style::radiusSm);
   setSoftness(0.5f);
+  m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
 }
 
-void ProgressBar::setFillColor(const Color& color) {
-  auto style = m_fill->style();
-  style.fill = color;
-  style.fillMode = FillMode::Solid;
-  m_fill->setStyle(style);
+void ProgressBar::setFill(const ThemeColor& color) { setFillColor(color); }
+
+void ProgressBar::setFillColor(const ThemeColor& color) {
+  m_fillColor = color;
+  applyPalette();
 }
 
-void ProgressBar::setTrackColor(const Color& color) {
-  auto style = m_track->style();
-  style.fill = color;
-  style.fillMode = FillMode::Solid;
-  m_track->setStyle(style);
+void ProgressBar::setFill(const Color& color) { setFillColor(color); }
+
+void ProgressBar::setFillColor(const Color& color) { setFillColor(fixedColor(color)); }
+
+void ProgressBar::setTrack(const ThemeColor& color) { setTrackColor(color); }
+
+void ProgressBar::setTrackColor(const ThemeColor& color) {
+  m_trackColor = color;
+  applyPalette();
 }
+
+void ProgressBar::setTrack(const Color& color) { setTrackColor(color); }
+
+void ProgressBar::setTrackColor(const Color& color) { setTrackColor(fixedColor(color)); }
 
 void ProgressBar::setRadius(float radius) {
   auto style = m_track->style();
@@ -66,6 +75,18 @@ void ProgressBar::setSize(float w, float h) {
 void ProgressBar::setOrientation(ProgressBarOrientation orientation) {
   m_orientation = orientation;
   updateGeometry();
+}
+
+void ProgressBar::applyPalette() {
+  auto trackStyle = m_track->style();
+  trackStyle.fill = resolveThemeColor(m_trackColor);
+  trackStyle.fillMode = FillMode::Solid;
+  m_track->setStyle(trackStyle);
+
+  auto fillStyle = m_fill->style();
+  fillStyle.fill = resolveThemeColor(m_fillColor);
+  fillStyle.fillMode = FillMode::Solid;
+  m_fill->setStyle(fillStyle);
 }
 
 void ProgressBar::updateGeometry() {

@@ -3,13 +3,15 @@
 #include "config/config_service.h"
 #include "config/state_service.h"
 #include "core/log.h"
+#include "render/animation/animation.h"
 #include "render/core/color.h"
 #include "theme/builtin_schemes.h"
 #include "theme/image_loader.h"
 #include "theme/palette_generator.h"
 #include "theme/scheme.h"
-#include "ui/palette.h"
 
+#include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -19,6 +21,9 @@ namespace noctalia::theme {
   namespace {
 
     constexpr auto kLog = Logger("theme");
+
+    constexpr float kTransitionDurationMs = 400.0f;
+    constexpr std::chrono::milliseconds kTransitionTick{16};
 
     Color tokenToColor(const std::unordered_map<std::string, uint32_t>& tokens, std::string_view key) {
       auto it = tokens.find(std::string(key));
@@ -90,19 +95,19 @@ namespace noctalia::theme {
   ThemeService::ThemeService(const ConfigService& config, const StateService& state)
       : m_config(config), m_state(state) {}
 
-  void ThemeService::apply() { resolveAndSet(); }
+  void ThemeService::apply() { resolveAndSet(/*animate=*/false); }
 
-  void ThemeService::onConfigReload() { resolveAndSet(); }
+  void ThemeService::onConfigReload() { resolveAndSet(/*animate=*/true); }
 
   void ThemeService::onWallpaperChange() {
     if (m_config.config().theme.source == ThemeSource::Wallpaper) {
-      resolveAndSet();
+      resolveAndSet(/*animate=*/true);
     }
   }
 
   void ThemeService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
 
-  void ThemeService::resolveAndSet() {
+  void ThemeService::resolveAndSet(bool animate) {
     const auto& cfg = m_config.config().theme;
     std::optional<Palette> resolved;
 
@@ -113,9 +118,50 @@ namespace noctalia::theme {
       resolved = resolveBuiltin(cfg);
     }
 
-    setPalette(*resolved);
+    if (animate) {
+      startTransition(*resolved);
+    } else {
+      m_transitionActive = false;
+      m_transitionTimer.stop();
+      setPalette(*resolved);
+      if (m_changeCallback) {
+        m_changeCallback();
+      }
+    }
+  }
+
+  void ThemeService::startTransition(const Palette& target) {
+    // Capture the currently-displayed palette (possibly mid-fade) so a new
+    // transition starts from wherever the previous one had reached.
+    m_fromPalette = palette;
+    m_targetPalette = target;
+    m_transitionStart = std::chrono::steady_clock::now();
+    m_transitionActive = true;
+    m_transitionTimer.startRepeating(kTransitionTick, [this] { tickTransition(); });
+  }
+
+  void ThemeService::tickTransition() {
+    if (!m_transitionActive) {
+      m_transitionTimer.stop();
+      return;
+    }
+    const auto now = std::chrono::steady_clock::now();
+    const auto elapsedMs = std::chrono::duration<float, std::milli>(now - m_transitionStart).count();
+    const float rawT = std::clamp(elapsedMs / kTransitionDurationMs, 0.0f, 1.0f);
+    const float easedT = applyEasing(Easing::EaseOutCubic, rawT);
+
+    setPalette(lerpPalette(m_fromPalette, m_targetPalette, easedT));
     if (m_changeCallback) {
       m_changeCallback();
+    }
+
+    if (rawT >= 1.0f) {
+      setPalette(m_targetPalette); // snap to exact values
+      if (m_changeCallback) {
+        m_changeCallback();
+      }
+      m_transitionActive = false;
+      m_transitionTimer.stop();
     }
   }
 

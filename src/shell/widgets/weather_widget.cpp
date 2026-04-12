@@ -27,7 +27,7 @@ void WeatherWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("weather-cloud");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(palette.primary);
+  glyph->setColor(roleColor(ColorRole::Primary));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 

@@ -18,15 +18,21 @@ constexpr float kTwoPi = 2.0f * 3.14159265358979f;
 } // namespace
 
 Spinner::Spinner() {
+  m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
   auto node = std::make_unique<SpinnerNode>();
-  node->setColor(palette.primary);
   node->setThickness(kDefaultThickness);
   m_spinnerNode = static_cast<SpinnerNode*>(addChild(std::move(node)));
   m_spinnerSize = kDefaultSize;
+  applyPalette();
   updateGeometry();
 }
 
-void Spinner::setColor(const Color& color) { m_spinnerNode->setColor(color); }
+void Spinner::setColor(const ThemeColor& color) {
+  m_color = color;
+  applyPalette();
+}
+
+void Spinner::setColor(const Color& color) { setColor(fixedColor(color)); }
 
 void Spinner::setSpinnerSize(float size) {
   m_spinnerSize = size;
@@ -48,6 +54,12 @@ void Spinner::stop() {
   if (animationManager() != nullptr && m_animId != 0) {
     animationManager()->cancel(m_animId);
     m_animId = 0;
+  }
+}
+
+void Spinner::applyPalette() {
+  if (m_spinnerNode != nullptr) {
+    m_spinnerNode->setColor(resolveThemeColor(m_color));
   }
 }
 

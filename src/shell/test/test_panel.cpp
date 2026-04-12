@@ -34,7 +34,7 @@ void TestPanel::create() {
   auto header = std::make_unique<Label>();
   header->setText("Test Controls");
   header->setFontSize(Style::fontSizeTitle * scale);
-  header->setColor(palette.primary);
+  header->setColor(roleColor(ColorRole::Primary));
   m_headerLabel = header.get();
   rootLayout->addChild(std::move(header));
 
@@ -132,15 +132,15 @@ void TestPanel::create() {
   // Glyph in a box
   auto glyphBox = std::make_unique<Box>();
   glyphBox->setSize(Style::controlHeight * scale, Style::controlHeight * scale);
-  glyphBox->setFill(palette.surfaceVariant);
-  glyphBox->setBorder(palette.outline, Style::borderWidth);
+  glyphBox->setFill(roleColor(ColorRole::SurfaceVariant));
+  glyphBox->setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
   glyphBox->setRadius(Style::radiusMd * scale);
   m_glyphBox = glyphBox.get();
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("home");
   glyph->setGlyphSize(Style::fontSizeBody * scale);
-  glyph->setColor(palette.onSurface);
+  glyph->setColor(roleColor(ColorRole::OnSurface));
   m_glyph = glyph.get();
   m_glyphBox->addChild(std::move(glyph));
   {
@@ -399,21 +399,21 @@ void TestPanel::create() {
       tile->setGap(Style::spaceXs * scale);
       tile->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
       tile->setRadius(Style::radiusMd * scale);
-      tile->setBackground(tileData.accent ? palette.primary : palette.surfaceVariant);
-      tile->setBorderColor(tileData.accent ? palette.primary : palette.outline);
+      tile->setBackground(roleColor(tileData.accent ? ColorRole::Primary : ColorRole::SurfaceVariant));
+      tile->setBorderColor(roleColor(tileData.accent ? ColorRole::Primary : ColorRole::Outline));
       tile->setBorderWidth(Style::borderWidth);
 
       auto icon = std::make_unique<Glyph>();
       icon->setGlyph(tileData.glyph);
       icon->setGlyphSize(16.0f * scale);
-      icon->setColor(tileData.accent ? palette.onPrimary : palette.onSurface);
+      icon->setColor(roleColor(tileData.accent ? ColorRole::OnPrimary : ColorRole::OnSurface));
       tile->addChild(std::move(icon));
 
       auto label = std::make_unique<Label>();
       label->setText(tileData.label);
       label->setCaptionStyle();
       label->setFontSize(Style::fontSizeCaption * scale);
-      label->setColor(tileData.accent ? palette.onPrimary : palette.onSurfaceVariant);
+      label->setColor(roleColor(tileData.accent ? ColorRole::OnPrimary : ColorRole::OnSurfaceVariant));
       tile->addChild(std::move(label));
 
       grid->addChild(std::move(tile));
@@ -433,29 +433,29 @@ void TestPanel::create() {
   auto transformHeader = std::make_unique<Label>();
   transformHeader->setText("Transforms");
   transformHeader->setFontSize(Style::fontSizeBody * scale);
-  transformHeader->setColor(palette.primary);
+  transformHeader->setColor(roleColor(ColorRole::Primary));
   transformColumn->addChild(std::move(transformHeader));
 
   auto transformHelp = std::make_unique<Label>();
   transformHelp->setText("Rotated node with children.");
   transformHelp->setFontSize(Style::fontSizeCaption * scale);
-  transformHelp->setColor(palette.onSurfaceVariant);
+  transformHelp->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_transformHelp = transformHelp.get();
   transformColumn->addChild(std::move(transformHelp));
 
 
   auto transformStage = std::make_unique<Box>();
   transformStage->setSize(360.0f * scale, 360.0f * scale);
-  transformStage->setFill(palette.surface);
-  transformStage->setBorder(palette.outline, Style::borderWidth * scale);
+  transformStage->setFill(roleColor(ColorRole::Surface));
+  transformStage->setBorder(roleColor(ColorRole::Outline), Style::borderWidth * scale);
   transformStage->setRadius(Style::radiusLg * scale);
   m_transformStage = transformStage.get();
 
   auto demoBox = std::make_unique<Box>();
   demoBox->setPosition(60.f, 80.f);
   demoBox->setSize(240.0f * scale, 130.0f * scale);
-  demoBox->setFill(palette.surfaceVariant);
-  demoBox->setBorder(palette.primary, Style::borderWidth * scale);
+  demoBox->setFill(roleColor(ColorRole::SurfaceVariant));
+  demoBox->setBorder(roleColor(ColorRole::Primary), Style::borderWidth * scale);
   demoBox->setRadius(Style::radiusLg * scale);
   demoBox->setRotation(0.0f);
   m_transformDemoBox = demoBox.get();
@@ -472,7 +472,7 @@ void TestPanel::create() {
   demoButton->setOnClick([this]() {
     if (m_transformHelp != nullptr) {
       m_transformHelp->setText("Transform button clicked!!!");
-      m_transformHelp->setColor(palette.secondary);
+      m_transformHelp->setColor(roleColor(ColorRole::Secondary));
     }
   });
   m_transformDemoButton = demoButton.get();
@@ -482,7 +482,7 @@ void TestPanel::create() {
   demoGlyph->setGlyph("noctalia");
   demoGlyph->setPosition(200.0f, 80.0f);
   demoGlyph->setGlyphSize(28.0f * scale);
-  demoGlyph->setColor(palette.primary);
+  demoGlyph->setColor(roleColor(ColorRole::Primary));
   demoGlyph->setRotation(static_cast<float>(M_PI) * 0.5f);
   m_transformDemoGlyph = demoGlyph.get();
   m_transformDemoBox->addChild(std::move(demoGlyph));
@@ -490,8 +490,8 @@ void TestPanel::create() {
   auto badgeBox = std::make_unique<Box>();
   badgeBox->setPosition(80.0f, 80.0f);
   badgeBox->setSize(30.0f * scale, 30.0f * scale);
-  badgeBox->setFill(palette.primary);
-  badgeBox->setBorder(palette.outline, Style::borderWidth * scale);
+  badgeBox->setFill(roleColor(ColorRole::Primary));
+  badgeBox->setBorder(roleColor(ColorRole::Outline), Style::borderWidth * scale);
   badgeBox->setRadius(15.0f * scale);
   m_transformBadgeBox = badgeBox.get();
 
@@ -499,7 +499,7 @@ void TestPanel::create() {
   badgeLabel->setText("3");
   badgeLabel->setPosition(10.0f, 10.0f);
   badgeLabel->setFontSize(Style::fontSizeCaption * scale);
-  badgeLabel->setColor(palette.onPrimary);
+  badgeLabel->setColor(roleColor(ColorRole::OnPrimary));
   m_transformBadgeLabel = badgeLabel.get();
   m_transformBadgeBox->addChild(std::move(badgeLabel));
   m_transformDemoBox->addChild(std::move(badgeBox));

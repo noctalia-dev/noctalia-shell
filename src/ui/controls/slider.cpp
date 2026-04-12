@@ -31,6 +31,8 @@ RoundedRectStyle solidStyle(const Color& fill, float radius) {
   };
 }
 
+Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
+
 } // namespace
 
 Slider::Slider() {
@@ -176,21 +178,21 @@ void Slider::applyVisualState() {
   const bool hovering = m_inputArea != nullptr && m_inputArea->hovered();
   const bool pressing = m_inputArea != nullptr && m_inputArea->pressed();
 
-  Color trackColor = palette.outline;
-  Color fillColor = palette.primary;
-  Color thumbColor = palette.primary;
-  Color thumbBorder = palette.onPrimary;
+  Color trackColor = resolved(ColorRole::Outline);
+  Color fillColor = resolved(ColorRole::Primary);
+  Color thumbColor = resolved(ColorRole::Primary);
+  Color thumbBorder = resolved(ColorRole::OnPrimary);
 
   if (!m_enabled) {
-    trackColor = rgba(palette.outline.r, palette.outline.g, palette.outline.b, 0.5f);
-    fillColor = rgba(palette.primary.r, palette.primary.g, palette.primary.b, 0.5f);
-    thumbColor = rgba(palette.surface.r, palette.surface.g, palette.surface.b, 0.7f);
-    thumbBorder = rgba(palette.primary.r, palette.primary.g, palette.primary.b, 0.6f);
+    trackColor = resolved(ColorRole::Outline, 0.5f);
+    fillColor = resolved(ColorRole::Primary, 0.5f);
+    thumbColor = resolved(ColorRole::Surface, 0.7f);
+    thumbBorder = resolved(ColorRole::Primary, 0.6f);
   } else if (pressing) {
-    thumbColor = palette.primary;
-    thumbBorder = palette.primary;
+    thumbColor = resolved(ColorRole::Primary);
+    thumbBorder = resolved(ColorRole::Primary);
   } else if (hovering) {
-    thumbBorder = palette.secondary;
+    thumbBorder = resolved(ColorRole::Secondary);
   }
 
   auto trackStyle = solidStyle(trackColor, m_trackHeight * 0.5f);

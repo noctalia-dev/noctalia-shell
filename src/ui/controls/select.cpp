@@ -28,6 +28,8 @@ constexpr float kGlyphSize = 14.0f;
 constexpr std::int32_t kOpenSelectZIndex = 100;
 constexpr std::size_t kMaxVisibleOptions = 6;
 
+Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
+
 } // namespace
 
 Select* Select::s_openSelect = nullptr;
@@ -85,6 +87,7 @@ Select::Select() {
   m_menuArea = static_cast<InputArea*>(m_menuViewport->addChild(std::move(menuArea)));
 
   applyVisualState();
+  m_paletteConn = paletteChanged().connect([this] { applyVisualState(); });
 }
 
 Select::~Select() {
@@ -379,17 +382,17 @@ void Select::applyVisualState() {
   const bool triggerHovered = m_triggerArea != nullptr && m_triggerArea->hovered();
   const bool triggerPressed = m_triggerArea != nullptr && m_triggerArea->pressed();
 
-  Color triggerBg = palette.surfaceVariant;
-  Color triggerBorder = palette.outline;
-  Color triggerText = selectedText().empty() ? palette.onSurfaceVariant : palette.onSurface;
+  Color triggerBg = resolved(ColorRole::SurfaceVariant);
+  Color triggerBorder = resolved(ColorRole::Outline);
+  ThemeColor triggerText = selectedText().empty() ? roleColor(ColorRole::OnSurfaceVariant) : roleColor(ColorRole::OnSurface);
 
   if (!m_enabled) {
-    triggerBg = rgba(palette.surfaceVariant.r, palette.surfaceVariant.g, palette.surfaceVariant.b, 0.75f);
-    triggerBorder = rgba(palette.outline.r, palette.outline.g, palette.outline.b, 0.6f);
-    triggerText = rgba(palette.onSurface.r, palette.onSurface.g, palette.onSurface.b, 0.55f);
+    triggerBg = resolved(ColorRole::SurfaceVariant, 0.75f);
+    triggerBorder = resolved(ColorRole::Outline, 0.6f);
+    triggerText = roleColor(ColorRole::OnSurface, 0.55f);
   } else if (triggerHovered || triggerPressed) {
-    triggerBg = brighten(palette.surfaceVariant, 1.14f);
-    triggerBorder = brighten(palette.outline, 1.14f);
+    triggerBg = brighten(resolved(ColorRole::SurfaceVariant), 1.14f);
+    triggerBorder = brighten(resolved(ColorRole::Outline), 1.14f);
   }
 
   m_triggerLabel->setColor(triggerText);
@@ -408,8 +411,8 @@ void Select::applyVisualState() {
   const bool showMenu = m_open && !m_optionViews.empty();
   m_menuBackground->setVisible(showMenu);
   m_menuBackground->setStyle(RoundedRectStyle{
-      .fill = palette.surfaceVariant,
-      .border = palette.outline,
+      .fill = resolved(ColorRole::SurfaceVariant),
+      .border = resolved(ColorRole::Outline),
       .fillMode = FillMode::Solid,
       .radius = Style::radiusMd,
       .softness = 1.0f,
@@ -423,14 +426,14 @@ void Select::applyVisualState() {
     option.checkGlyph->setVisible(showMenu && i == m_selectedIndex);
     option.area->setVisible(showMenu);
 
-    Color bg = rgba(0.0f, 0.0f, 0.0f, 0.0f);
-    Color fg = palette.onSurface;
+    Color bg = clearColor();
+    ThemeColor fg = roleColor(ColorRole::OnSurface);
 
     if (!m_enabled) {
-      fg = rgba(palette.onSurface.r, palette.onSurface.g, palette.onSurface.b, 0.55f);
+      fg = roleColor(ColorRole::OnSurface, 0.55f);
     } else if (i == m_hoveredOptionIndex) {
-      bg = palette.primary;
-      fg = palette.onPrimary;
+      bg = resolved(ColorRole::Primary);
+      fg = roleColor(ColorRole::OnPrimary);
     }
 
     option.label->setColor(fg);

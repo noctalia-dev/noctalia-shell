@@ -35,14 +35,14 @@ void SysmonWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph(glyphName(m_stat));
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(palette.onSurface);
+  glyph->setColor(roleColor(ColorRole::OnSurface));
   m_glyph = glyph.get();
   container->addChild(std::move(glyph));
 
   if (m_displayMode == SysmonDisplayMode::Graph) {
     auto chartBg = std::make_unique<RectNode>();
     RoundedRectStyle bgStyle;
-    bgStyle.fill = palette.surfaceVariant;
+    bgStyle.fill = resolveColorRole(ColorRole::SurfaceVariant);
     bgStyle.radius = Style::radiusSm;
     bgStyle.softness = 0.5f;
     chartBg->setStyle(bgStyle);
@@ -51,7 +51,7 @@ void SysmonWidget::create() {
     for (int i = 0; i < kHistorySamples; i++) {
       auto bar = std::make_unique<ProgressBar>();
       bar->setOrientation(ProgressBarOrientation::Vertical);
-      bar->setFillColor(palette.primary);
+      bar->setFill(roleColor(ColorRole::Primary));
       bar->setTrackColor(Color{0, 0, 0, 0});
       bar->setRadius(0.0f);
       bar->setProgress(0.0f);
@@ -62,8 +62,8 @@ void SysmonWidget::create() {
   if (m_displayMode == SysmonDisplayMode::Gauge) {
     auto gauge = std::make_unique<ProgressBar>();
     gauge->setOrientation(ProgressBarOrientation::Vertical);
-    gauge->setFillColor(palette.primary);
-    gauge->setTrackColor(withAlpha(palette.onSurface, 0.25));
+    gauge->setFill(roleColor(ColorRole::Primary));
+    gauge->setTrackColor(roleColor(ColorRole::OnSurface, 0.25f));
     gauge->setProgress(0.0f);
     m_gauge = static_cast<ProgressBar*>(container->addChild(std::move(gauge)));
   }

@@ -13,6 +13,7 @@ Image::Image() {
 
   auto image = std::make_unique<ImageNode>();
   m_image = static_cast<ImageNode*>(addChild(std::move(image)));
+  m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
 }
 
 void Image::ensureBackground() {
@@ -43,17 +44,21 @@ void Image::setCornerRadius(float radius) {
   markDirty();
 }
 
-void Image::setBorder(const Color& color, float width) {
-  if (m_image != nullptr) {
-    m_image->setBorder(color, width);
-  }
+void Image::setBackground(const ThemeColor& color) {
+  m_backgroundColor = color;
+  ensureBackground();
+  applyPalette();
 }
 
-void Image::setBackground(const Color& color) {
-  ensureBackground();
-  m_background->setFill(color);
-  m_background->setBorder(color, 0.0f);
+void Image::setBackground(const Color& color) { setBackground(fixedColor(color)); }
+
+void Image::setBorder(const ThemeColor& color, float width) {
+  m_borderColor = color;
+  m_borderWidth = width;
+  applyPalette();
 }
+
+void Image::setBorder(const Color& color, float width) { setBorder(fixedColor(color), width); }
 
 void Image::setTint(const Color& tint) {
   if (m_image != nullptr) {
@@ -194,6 +199,16 @@ void Image::clear(Renderer& renderer) {
 void Image::setSize(float width, float height) {
   Node::setSize(width, height);
   updateLayout();
+}
+
+void Image::applyPalette() {
+  if (m_background != nullptr) {
+    m_background->setFill(m_backgroundColor);
+    m_background->clearBorder();
+  }
+  if (m_image != nullptr) {
+    m_image->setBorder(resolveThemeColor(m_borderColor), m_borderWidth);
+  }
 }
 
 void Image::updateLayout() {
