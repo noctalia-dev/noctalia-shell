@@ -627,6 +627,7 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
 
   const bool inserted = !m_items.contains(itemId);
   if (inserted) {
+    kLog.info("tray item registered id={} bus='{}' path='{}'", itemId, busName, objectPath);
     m_items.emplace(itemId, TrayItemInfo{
         .id = itemId,
         .busName = busName,
@@ -785,7 +786,7 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
   const auto attentionPixmaps = get_icon_pixmaps_or(*proxyIt->second, "AttentionIconPixmap", {});
   pickBestPixmap(attentionPixmaps, next.attentionArgb32, next.attentionWidth, next.attentionHeight);
 
-  kLog.debug(
+  kLog.info(
       "item metadata id={} itemName='{}' status={} iconName='{}' attentionIconName='{}' menu='{}' "
       "iconThemePath='{}' iconPixmap={}x{} (bytes={}) attentionPixmap={}x{} (bytes={})",
       itemId, next.itemName, next.status, next.iconName, next.attentionIconName, next.menuObjectPath,

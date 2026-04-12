@@ -15,11 +15,14 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <filesystem>
 #include <linux/input-event-codes.h>
 #include <memory>
 #include <string>
 
 namespace {
+
+namespace fs = std::filesystem;
 
 constexpr Logger kLog("tray");
 
@@ -67,15 +70,60 @@ std::vector<std::string> identifierVariants(std::string_view value) {
   pushUnique(underscored);
   pushUnique(toLower(underscored));
 
-  for (const auto& candidate : std::vector<std::string>{base, dashed, underscored}) {
-    for (const auto& suffix : {"_client", "-client", ".desktop"}) {
-      if (candidate.size() > std::char_traits<char>::length(suffix) &&
-          candidate.ends_with(suffix)) {
-        const auto trimmed = candidate.substr(0, candidate.size() - std::char_traits<char>::length(suffix));
-        pushUnique(trimmed);
-        pushUnique(toLower(trimmed));
+  auto pushReducedForms = [&pushUnique](std::string candidate) {
+    if (candidate.empty()) {
+      return;
+    }
+
+    pushUnique(candidate);
+    pushUnique(toLower(candidate));
+
+    bool changed = true;
+    while (changed && !candidate.empty()) {
+      changed = false;
+
+      for (const auto& suffix : {"_client", "-client", ".desktop", "_indicator", "-indicator", "_tray", "-tray",
+                                 "_status", "-status", "_panel", "-panel"}) {
+        if (candidate.size() > std::char_traits<char>::length(suffix) && candidate.ends_with(suffix)) {
+          candidate = candidate.substr(0, candidate.size() - std::char_traits<char>::length(suffix));
+          pushUnique(candidate);
+          pushUnique(toLower(candidate));
+          changed = true;
+          break;
+        }
+      }
+
+      if (changed || candidate.empty()) {
+        continue;
+      }
+
+      const auto separator = candidate.find_last_of("-_");
+      if (separator != std::string::npos && separator + 1 < candidate.size()) {
+        const std::string tail = candidate.substr(separator + 1);
+        const bool numericTail = std::ranges::all_of(tail, [](unsigned char c) { return std::isdigit(c) != 0; });
+        if (numericTail) {
+          candidate = candidate.substr(0, separator);
+          pushUnique(candidate);
+          pushUnique(toLower(candidate));
+          changed = true;
+          continue;
+        }
+      }
+
+      for (const auto& suffix : {"-linux", "_linux"}) {
+        if (candidate.size() > std::char_traits<char>::length(suffix) && candidate.ends_with(suffix)) {
+          candidate = candidate.substr(0, candidate.size() - std::char_traits<char>::length(suffix));
+          pushUnique(candidate);
+          pushUnique(toLower(candidate));
+          changed = true;
+          break;
+        }
       }
     }
+  };
+
+  for (const auto& candidate : std::vector<std::string>{base, dashed, underscored}) {
+    pushReducedForms(candidate);
   }
 
   return out;
@@ -129,6 +177,34 @@ bool isSymbolicIconName(std::string_view name) {
 
 bool isSymbolicIconPath(std::string_view path) {
   return path.find("symbolic") != std::string_view::npos || path.find("/status/") != std::string_view::npos;
+}
+
+bool isUniqueBusName(std::string_view value) {
+  return !value.empty() && value.front() == ':';
+}
+
+std::string resolveFromTrayThemePath(std::string_view themePath, std::string_view iconName) {
+  if (themePath.empty() || iconName.empty()) {
+    return {};
+  }
+
+  static constexpr std::array<std::string_view, 2> kExtensions = {".svg", ".png"};
+  static constexpr std::array<std::string_view, 11> kSubdirs = {
+      "",            "scalable/status/", "scalable/apps/", "48x48/status/", "48x48/apps/", "32x32/status/",
+      "32x32/apps/", "24x24/status/",   "24x24/apps/",   "22x22/status/",  "22x22/apps/"};
+
+  for (const auto& variant : identifierVariants(iconName)) {
+    for (const auto& subdir : kSubdirs) {
+      for (const auto& ext : kExtensions) {
+        const fs::path candidate = fs::path(themePath) / std::string(subdir) / (variant + std::string(ext));
+        if (fs::exists(candidate)) {
+          return candidate.string();
+        }
+      }
+    }
+  }
+
+  return {};
 }
 
 } // namespace
@@ -321,11 +397,18 @@ void TrayWidget::buildDesktopIconIndex() {
 std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
   if (const auto it = m_preferredIconPaths.find(item.id);
       it != m_preferredIconPaths.end() && !it->second.empty()) {
+    kLog.info("tray widget resolve id={} source=cached path={}", item.id, it->second);
     return it->second;
   }
 
   const std::string preferred =
       item.needsAttention && !item.attentionIconName.empty() ? item.attentionIconName : item.iconName;
+
+  if (const auto themed = resolveFromTrayThemePath(item.iconThemePath, preferred); !themed.empty()) {
+    kLog.info("tray widget resolve id={} source=theme-path variant='{}' path={}", item.id, preferred, themed);
+    m_preferredIconPaths[item.id] = themed;
+    return themed;
+  }
 
   auto resolveMapped = [this](const std::string& name) -> std::string {
     if (name.empty()) {
@@ -372,37 +455,53 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
 
   std::string symbolicFallback;
 
+  const std::string stableBusName = isUniqueBusName(item.busName) ? std::string{} : item.busName;
+  const std::string stableItemId =
+      (!item.id.empty() && !isUniqueBusName(item.id)) ? item.id
+                                                      : (isUniqueBusName(item.busName) ? item.objectPath : item.id);
+
   for (const auto& [label, candidate] : std::array<std::pair<const char*, const std::string*>, 6>{
            {{"preferred", &preferred},
             {"itemName", &item.itemName},
             {"title", &item.title},
-            {"busName", &item.busName},
             {"objectPath", &item.objectPath},
-            {"id", &item.id}}}) {
-    (void)label;
+            {"busName", &stableBusName},
+            {"id", &stableItemId}}}) {
     for (const auto& variant : identifierVariants(*candidate)) {
       if (const auto mapped = resolveMapped(variant); !mapped.empty()) {
         if (!isSymbolicIconPath(mapped)) {
+          kLog.info("tray widget resolve id={} source=mapped label={} variant='{}' path={}",
+                    item.id, label, variant, mapped);
           m_preferredIconPaths[item.id] = mapped;
           return mapped;
         }
         if (symbolicFallback.empty()) {
+          kLog.info("tray widget resolve id={} source=mapped-symbolic label={} variant='{}' path={}",
+                    item.id, label, variant, mapped);
           symbolicFallback = mapped;
         }
       }
 
       if (const auto direct = resolveDirect(variant); !direct.empty()) {
         if (!isSymbolicIconName(variant) && !isSymbolicIconPath(direct)) {
+          kLog.info("tray widget resolve id={} source=direct label={} variant='{}' path={}",
+                    item.id, label, variant, direct);
           m_preferredIconPaths[item.id] = direct;
           return direct;
         }
         if (symbolicFallback.empty()) {
+          kLog.info("tray widget resolve id={} source=direct-symbolic label={} variant='{}' path={}",
+                    item.id, label, variant, direct);
           symbolicFallback = direct;
         }
       }
     }
   }
 
+  kLog.info(
+      "tray widget resolve id={} fallback={} preferred='{}' itemName='{}' title='{}' bus='{}' objectPath='{}' stableBus='{}' stableId='{}'",
+      item.id, symbolicFallback, preferred, item.itemName, item.title, item.busName, item.objectPath,
+      stableBusName, stableItemId);
   return symbolicFallback;
 }
 
