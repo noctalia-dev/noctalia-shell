@@ -507,6 +507,29 @@ void ConfigService::loadFromFile(const std::string& path) {
     }
   }
 
+  // Parse [theme]
+  if (auto* themeTbl = tbl["theme"].as_table()) {
+    auto& theme = m_config.theme;
+    if (auto v = (*themeTbl)["source"].value<std::string>()) {
+      if (*v == "builtin")
+        theme.source = ThemeSource::Builtin;
+      else if (*v == "wallpaper")
+        theme.source = ThemeSource::Wallpaper;
+    }
+    if (auto v = (*themeTbl)["builtin"].value<std::string>())
+      theme.builtinName = *v;
+    if (auto v = (*themeTbl)["wallpaper_scheme"].value<std::string>())
+      theme.wallpaperScheme = *v;
+    if (auto v = (*themeTbl)["mode"].value<std::string>()) {
+      if (*v == "dark")
+        theme.mode = ThemeMode::Dark;
+      else if (*v == "light")
+        theme.mode = ThemeMode::Light;
+      else if (*v == "auto")
+        theme.mode = ThemeMode::Auto;
+    }
+  }
+
   // Parse [wallpaper]
   if (auto* wpTbl = tbl["wallpaper"].as_table()) {
     auto& wp = m_config.wallpaper;

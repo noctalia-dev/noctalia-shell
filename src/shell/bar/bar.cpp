@@ -163,7 +163,15 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
     });
   }
 
-  m_config->addReloadCallback([this]() { reload(); });
+  m_lastBars = m_config->config().bars;
+  m_lastWidgets = m_config->config().widgets;
+  m_config->addReloadCallback([this]() {
+    const auto& cfg = m_config->config();
+    if (cfg.bars == m_lastBars && cfg.widgets == m_lastWidgets) {
+      return;
+    }
+    reload();
+  });
 
   syncInstances();
   return true;
@@ -185,6 +193,8 @@ void Bar::onSecondTick() {
 
 void Bar::reload() {
   kLog.info("reloading config");
+  m_lastBars = m_config->config().bars;
+  m_lastWidgets = m_config->config().widgets;
   m_widgetFactory = std::make_unique<WidgetFactory>(*m_wayland, m_time, m_config->config(), m_notifications, m_tray,
                                                     m_audio, m_upower, m_sysmon, m_powerProfiles, m_idleInhibitor, m_mpris, m_httpClient,
                                                     m_weatherService, m_nightLight);

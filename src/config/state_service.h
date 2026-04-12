@@ -9,6 +9,20 @@ class StateService {
 public:
   using ChangeCallback = std::function<void()>;
 
+  // RAII scope that coalesces wallpaper changes: any setWallpaperPath() calls
+  // inside the scope skip the per-call callback, and a single callback is
+  // fired on scope exit if anything actually changed.
+  class WallpaperBatch {
+  public:
+    explicit WallpaperBatch(StateService& state);
+    ~WallpaperBatch();
+    WallpaperBatch(const WallpaperBatch&) = delete;
+    WallpaperBatch& operator=(const WallpaperBatch&) = delete;
+
+  private:
+    StateService& m_state;
+  };
+
   StateService();
   ~StateService();
 
@@ -39,4 +53,6 @@ private:
   int m_inotifyFd = -1;
   int m_watchDescriptor = -1;
   bool m_ownWritePending = false;
+  int m_batchDepth = 0;
+  bool m_batchDirty = false;
 };

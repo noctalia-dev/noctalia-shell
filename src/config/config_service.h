@@ -34,6 +34,8 @@ struct BarMonitorOverride {
   std::optional<std::vector<std::string>> startWidgets;
   std::optional<std::vector<std::string>> centerWidgets;
   std::optional<std::vector<std::string>> endWidgets;
+
+  bool operator==(const BarMonitorOverride&) const = default;
 };
 
 struct BarConfig {
@@ -60,6 +62,8 @@ struct BarConfig {
   std::vector<std::string> endWidgets = {"media",     "tray",    "notifications", "volume", "power_profiles", "battery",
                                          "wallpaper", "session", "spacer",        "date",   "clock"};
   std::vector<BarMonitorOverride> monitorOverrides;
+
+  bool operator==(const BarConfig&) const = default;
 };
 
 using WidgetSettingValue = std::variant<bool, std::int64_t, double, std::string>;
@@ -72,6 +76,8 @@ struct WidgetConfig {
   [[nodiscard]] std::int64_t getInt(const std::string& key, std::int64_t fallback = 0) const;
   [[nodiscard]] double getDouble(const std::string& key, double fallback = 0.0) const;
   [[nodiscard]] bool getBool(const std::string& key, bool fallback = false) const;
+
+  bool operator==(const WidgetConfig&) const = default;
 };
 
 enum class WallpaperFillMode : std::uint8_t {
@@ -174,6 +180,24 @@ struct IdleConfig {
   std::vector<IdleBehaviorConfig> behaviors;
 };
 
+enum class ThemeSource : std::uint8_t {
+  Builtin = 0,
+  Wallpaper = 1,
+};
+
+enum class ThemeMode : std::uint8_t {
+  Dark = 0,
+  Light = 1,
+  Auto = 2,
+};
+
+struct ThemeConfig {
+  ThemeSource source = ThemeSource::Builtin;
+  std::string builtinName = "Noctalia";
+  std::string wallpaperScheme = "m3-content";
+  ThemeMode mode = ThemeMode::Dark;
+};
+
 struct Config {
   std::vector<BarConfig> bars;
   std::unordered_map<std::string, WidgetConfig> widgets;
@@ -185,6 +209,7 @@ struct Config {
   AudioConfig audio;
   NightLightConfig nightlight;
   IdleConfig idle;
+  ThemeConfig theme;
 };
 
 class ConfigService {

@@ -34,6 +34,18 @@ namespace {
 
 } // namespace
 
+StateService::WallpaperBatch::WallpaperBatch(StateService& state) : m_state(state) { ++m_state.m_batchDepth; }
+
+StateService::WallpaperBatch::~WallpaperBatch() {
+  --m_state.m_batchDepth;
+  if (m_state.m_batchDepth == 0 && m_state.m_batchDirty) {
+    m_state.m_batchDirty = false;
+    if (m_state.m_wallpaperChangeCallback) {
+      m_state.m_wallpaperChangeCallback();
+    }
+  }
+}
+
 StateService::StateService() {
   m_statePath = statePath();
   if (!m_statePath.empty()) {
@@ -103,6 +115,10 @@ void StateService::setWallpaperPath(const std::optional<std::string>& connectorN
   }
 
   m_ownWritePending = true;
+  if (m_batchDepth > 0) {
+    m_batchDirty = true;
+    return;
+  }
   if (m_wallpaperChangeCallback) {
     m_wallpaperChangeCallback();
   }

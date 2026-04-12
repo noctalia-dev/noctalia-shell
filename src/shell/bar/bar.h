@@ -72,6 +72,11 @@ private:
   std::unique_ptr<WidgetFactory> m_widgetFactory;
   std::vector<std::unique_ptr<BarInstance>> m_instances;
 
+  // Snapshot of the config fields the bar depends on. Used to skip reloads
+  // triggered by unrelated config changes (theme, weather, idle, etc.).
+  std::vector<BarConfig> m_lastBars;
+  std::unordered_map<std::string, WidgetConfig> m_lastWidgets;
+
   // Surface → BarInstance mapping for pointer event routing
   std::unordered_map<wl_surface*, BarInstance*> m_surfaceMap;
   BarInstance* m_hoveredInstance = nullptr;

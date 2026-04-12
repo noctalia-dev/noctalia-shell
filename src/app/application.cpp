@@ -193,6 +193,10 @@ void Application::initServices() {
   m_configService.addReloadCallback(
       [this]() { i18n::Service::instance().setLanguage(m_configService.config().shell.lang); });
 
+  // Apply theme before any UI constructs palette-dependent scene nodes.
+  m_themeService.apply();
+  m_configService.addReloadCallback([this]() { m_themeService.onConfigReload(); });
+
   if (!m_wayland.connect()) {
     throw std::runtime_error("failed to connect to Wayland display");
   }
@@ -232,6 +236,12 @@ void Application::initServices() {
   m_stateService.setWallpaperChangeCallback([this]() {
     m_wallpaper.onStateChange();
     m_overview.onStateChange();
+    m_themeService.onWallpaperChange();
+  });
+
+  m_themeService.setChangeCallback([this]() {
+    m_bar.reload();
+    m_panelManager.close();
   });
 
   if (const auto distro = DistroDetector::detect(); distro.has_value()) {
@@ -367,7 +377,6 @@ void Application::initUi() {
 
   // Panel manager must be before bar so widgets can access PanelManager::instance()
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
-  m_configService.addReloadCallback([this]() { m_panelManager.close(); });
   auto clipboardPanel = std::make_unique<ClipboardPanel>(&m_clipboardService);
   clipboardPanel->setActivateCallback([this](const ClipboardEntry& entry) {
     m_panelManager.close();

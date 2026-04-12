@@ -664,6 +664,7 @@ void WallpaperPanel::applyWallpaperFromEntry(const WallpaperEntry& entry) {
   const std::string path = entry.absPath.string();
 
   if (choice.connector.empty()) {
+    StateService::WallpaperBatch batch(*m_state);
     if (m_wayland != nullptr) {
       for (const auto& out : m_wayland->outputs()) {
         if (!out.connectorName.empty()) {

@@ -20,6 +20,7 @@ Changes are detected automatically via inotify — no restart required.
 - [OSD](#osd)
 - [Wallpaper](#wallpaper)
 - [Overview](#overview)
+- [Theme](#theme)
 - [Full example](#full-example)
 
 ---
@@ -575,6 +576,45 @@ unit            = "celsius"   # celsius | fahrenheit
 `auto_locate` is off by default. When it is disabled, Noctalia geocodes `address` to latitude/longitude and then fetches current weather plus a 6-day forecast. When `auto_locate` is enabled, the configured address is ignored and the shell resolves your location via IP before fetching the forecast.
 
 The bar widget type is `weather`, and the control center gains a `Weather` tab automatically.
+
+---
+
+## Theme
+
+Controls the colors used by the shell — bars, panels, widgets, OSD, overview, and notifications. Pick a bundled scheme or have Noctalia generate one from the current wallpaper.
+
+```toml
+[theme]
+source           = "builtin"      # builtin | wallpaper
+builtin          = "Noctalia"     # bundled scheme name
+wallpaper_scheme = "m3-content"   # generator used when source = "wallpaper"
+mode             = "dark"         # dark | light | auto
+```
+
+**`source`** selects where the palette comes from:
+
+- `builtin` — use one of the schemes compiled into the binary (see list below).
+- `wallpaper` — generate a palette from the current default wallpaper each time it changes.
+
+**`builtin`** names which bundled scheme to load when `source = "builtin"`. Unknown names fall back to `Noctalia`. Available schemes:
+
+`Ayu`, `Catppuccin`, `Dracula`, `Eldritch`, `Gruvbox`, `Kanagawa`, `Noctalia`, `Nord`, `Rosé Pine`, `Tokyo-Night`
+
+**`wallpaper_scheme`** picks the generator used when `source = "wallpaper"`. The `m3-*` schemes are Material Design 3 palettes built on Google's Material Color Utilities; the rest are custom HSL-space generators with distinct aesthetics.
+
+- `m3-tonal-spot` — M3 default, balanced tones anchored on the seed color
+- `m3-content` — M3 for content-forward UIs, higher chroma
+- `m3-fruit-salad` — M3 with playful cross-hue accents
+- `m3-rainbow` — M3 spanning the wheel for multi-accent layouts
+- `m3-monochrome` — M3 collapsed to a single hue
+- `vibrant` — custom, saturated and high-contrast
+- `faithful` — custom, stays close to the source image
+- `dysfunctional` — custom, deliberately off-kilter
+- `muted` — custom, low-saturation
+
+**`mode`** selects the dark or light variant. `auto` is treated as `dark` until system light/dark tracking lands. Bundled schemes and wallpaper-derived palettes both provide dark and light variants.
+
+Theme changes apply live when you edit `config.toml`, and wallpaper-derived themes re-resolve automatically when the default wallpaper changes.
 
 ---
 
