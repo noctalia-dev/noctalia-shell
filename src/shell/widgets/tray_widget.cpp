@@ -179,37 +179,54 @@ bool isSymbolicIconPath(std::string_view path) {
   return path.find("symbolic") != std::string_view::npos || path.find("/status/") != std::string_view::npos;
 }
 
-bool isUniqueBusName(std::string_view value) {
-  return !value.empty() && value.front() == ':';
-}
+bool isUniqueBusName(std::string_view value) { return !value.empty() && value.front() == ':'; }
 
-std::string resolveFromTrayThemePath(std::string_view themePath, std::string_view iconName) {
+} // namespace
+
+TrayWidget::TrayWidget(TrayService* tray) : m_tray(tray) { buildDesktopIconIndex(); }
+
+std::string TrayWidget::resolveFromTrayThemePath(std::string_view themePath, std::string_view iconName) {
   if (themePath.empty() || iconName.empty()) {
     return {};
   }
 
-  static constexpr std::array<std::string_view, 2> kExtensions = {".svg", ".png"};
-  static constexpr std::array<std::string_view, 11> kSubdirs = {
-      "",            "scalable/status/", "scalable/apps/", "48x48/status/", "48x48/apps/", "32x32/status/",
-      "32x32/apps/", "24x24/status/",   "24x24/apps/",   "22x22/status/",  "22x22/apps/"};
+  const std::string themePathKey(themePath);
+  auto [cacheIt, inserted] = m_trayThemePathIcons.try_emplace(themePathKey);
+  if (inserted) {
+    std::error_code ec;
+    if (!fs::is_directory(themePathKey, ec)) {
+      return {};
+    }
 
-  for (const auto& variant : identifierVariants(iconName)) {
-    for (const auto& subdir : kSubdirs) {
-      for (const auto& ext : kExtensions) {
-        const fs::path candidate = fs::path(themePath) / std::string(subdir) / (variant + std::string(ext));
-        if (fs::exists(candidate)) {
-          return candidate.string();
-        }
+    auto& iconIndex = cacheIt->second;
+    for (fs::recursive_directory_iterator it(themePathKey, fs::directory_options::skip_permission_denied, ec), end;
+         !ec && it != end; it.increment(ec)) {
+      if (ec || !it->is_regular_file()) {
+        continue;
       }
+
+      const fs::path path = it->path();
+      const auto extension = toLower(path.extension().string());
+      if (extension != ".svg" && extension != ".png") {
+        continue;
+      }
+
+      const std::string stem = path.stem().string();
+      for (const auto& variant : identifierVariants(stem)) {
+        iconIndex.try_emplace(variant, path.string());
+      }
+    }
+  }
+
+  const auto& iconIndex = cacheIt->second;
+  for (const auto& variant : identifierVariants(iconName)) {
+    if (const auto it = iconIndex.find(variant); it != iconIndex.end()) {
+      return it->second;
     }
   }
 
   return {};
 }
-
-} // namespace
-
-TrayWidget::TrayWidget(TrayService* tray) : m_tray(tray) { buildDesktopIconIndex(); }
 
 void TrayWidget::create() {
   auto container = std::make_unique<Flex>();
