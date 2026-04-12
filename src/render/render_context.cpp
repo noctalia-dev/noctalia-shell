@@ -1,5 +1,6 @@
 #include "render/render_context.h"
 #include "core/log.h"
+#include "core/ui_phase.h"
 #include "render/render_target.h"
 #include "render/scene/glyph_node.h"
 #include "render/scene/image_node.h"
@@ -149,6 +150,7 @@ void RenderContext::syncContentScale(RenderTarget& target) {
 }
 
 void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
+  UiPhaseScope renderPhase(UiPhase::Render);
   makeCurrent(target);
   ensureGlPrograms();
   syncContentScale(target);

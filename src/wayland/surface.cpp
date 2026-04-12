@@ -1,4 +1,5 @@
 #include "wayland/surface.h"
+#include "core/ui_phase.h"
 
 #include "render/animation/animation_manager.h"
 #include "render/render_context.h"
@@ -196,6 +197,7 @@ void Surface::preparePendingFrame() {
     return;
   }
 
+  UiPhaseScope preparePhase(UiPhase::PrepareFrame);
   const bool needsUpdate = m_updateRequested;
   const bool needsLayout = m_layoutRequested;
   m_updateRequested = false;

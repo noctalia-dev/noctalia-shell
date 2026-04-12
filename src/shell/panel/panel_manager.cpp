@@ -1,6 +1,7 @@
 #include "shell/panel/panel_manager.h"
 
 #include "config/config_service.h"
+#include "core/ui_phase.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "render/render_context.h"
@@ -449,8 +450,14 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
   const float kPadding = hasDecoration ? m_activePanel->contentScale() * 12.0f : 0.0f;
   m_contentWidth = w - kPadding * 2.0f;
   m_contentHeight = h - kPadding * 2.0f;
-  m_activePanel->update(*renderer);
-  m_activePanel->layout(*renderer, m_contentWidth, m_contentHeight);
+  {
+    UiPhaseScope updatePhase(UiPhase::Update);
+    m_activePanel->update(*renderer);
+  }
+  {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
+    m_activePanel->layout(*renderer, m_contentWidth, m_contentHeight);
+  }
   if (m_contentNode != nullptr) {
     m_contentNode->setPosition(kPadding, kPadding);
     m_contentNode->setSize(w - kPadding * 2.0f, h - kPadding * 2.0f);
@@ -475,9 +482,11 @@ void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
   }
 
   if (needsUpdate) {
+    UiPhaseScope updatePhase(UiPhase::Update);
     m_activePanel->update(*m_renderContext);
   }
   if (needsUpdate || needsLayout) {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
     m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
   }
 }

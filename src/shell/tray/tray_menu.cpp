@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "shell/tray/tray_menu.h"
 
 #include "config/config_service.h"
@@ -523,6 +524,7 @@ void TrayMenu::prepareMainMenuFrame(MenuInstance& inst, bool /*needsUpdate*/, bo
       inst.sceneRoot == nullptr || static_cast<uint32_t>(std::round(inst.sceneRoot->width())) != width ||
       static_cast<uint32_t>(std::round(inst.sceneRoot->height())) != height;
   if (needsSceneBuild || needsLayout) {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
     buildScene(inst, width, height);
   }
 }
@@ -677,6 +679,7 @@ void TrayMenu::prepareSubmenuFrame(MenuInstance& inst, bool /*needsUpdate*/, boo
       inst.sceneRoot == nullptr || static_cast<uint32_t>(std::round(inst.sceneRoot->width())) != width ||
       static_cast<uint32_t>(std::round(inst.sceneRoot->height())) != height;
   if (needsSceneBuild || needsLayout) {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
     buildSubmenuScene(inst, width, height);
   }
 }

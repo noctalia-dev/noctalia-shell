@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "render/scene/node.h"
 
 #include "render/core/mat3.h"
@@ -114,6 +115,7 @@ void Node::setParticipatesInLayout(bool participatesInLayout) {
   if (m_participatesInLayout == participatesInLayout) {
     return;
   }
+  uiAssertSceneMutationAllowed("Node::setParticipatesInLayout");
   m_participatesInLayout = participatesInLayout;
   markDirty();
 }
@@ -142,6 +144,7 @@ void Node::setAnimationManager(AnimationManager* mgr) {
 }
 
 Node* Node::addChild(std::unique_ptr<Node> child) {
+  uiAssertSceneMutationAllowed("Node::addChild");
   child->m_parent = this;
   if (m_animationManager != nullptr && child->m_animationManager == nullptr) {
     child->setAnimationManager(m_animationManager);
@@ -153,6 +156,7 @@ Node* Node::addChild(std::unique_ptr<Node> child) {
 }
 
 Node* Node::insertChildAt(std::size_t index, std::unique_ptr<Node> child) {
+  uiAssertSceneMutationAllowed("Node::insertChildAt");
   child->m_parent = this;
   if (m_animationManager != nullptr && child->m_animationManager == nullptr) {
     child->setAnimationManager(m_animationManager);
@@ -168,6 +172,7 @@ Node* Node::insertChildAt(std::size_t index, std::unique_ptr<Node> child) {
 }
 
 std::unique_ptr<Node> Node::removeChild(Node* child) {
+  uiAssertSceneMutationAllowed("Node::removeChild");
   auto it = std::find_if(m_children.begin(), m_children.end(), [child](const auto& ptr) { return ptr.get() == child; });
 
   if (it == m_children.end()) {

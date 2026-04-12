@@ -205,6 +205,7 @@ _noctalia_sources = files(
   'src/core/log.cpp',
   'src/core/process.cpp',
   'src/core/timer_manager.cpp',
+  'src/core/ui_phase.cpp',
   'src/dbus/mpris/mpris_service.cpp',
   'src/dbus/notification/notification_poll_source.cpp',
   'src/dbus/notification/notification_service.cpp',

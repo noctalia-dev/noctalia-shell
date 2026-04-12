@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "shell/osd/osd_overlay.h"
 
 #include "config/config_service.h"
@@ -198,10 +199,12 @@ void OsdOverlay::prepareFrame(Instance& inst, bool needsUpdate, bool needsLayout
       inst.sceneRoot == nullptr || static_cast<std::uint32_t>(std::round(inst.sceneRoot->width())) != width ||
       static_cast<std::uint32_t>(std::round(inst.sceneRoot->height())) != height;
   if (needsSceneBuild) {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
     buildScene(inst, width, height);
   }
 
   if ((needsUpdate || needsLayout || needsSceneBuild) && inst.sceneRoot != nullptr) {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
     updateInstanceContent(inst);
   }
 

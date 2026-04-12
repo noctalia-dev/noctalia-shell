@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "shell/lockscreen/lock_surface.h"
 
 #include "render/programs/rounded_rect_program.h"
@@ -227,10 +228,12 @@ void LockSurface::prepareFrame(bool needsUpdate, bool needsLayout) {
   renderer->makeCurrent(renderTarget());
 
   if (needsUpdate) {
+    UiPhaseScope updatePhase(UiPhase::Update);
     updateCopy();
   }
 
   if (needsUpdate || needsLayout) {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
     layoutScene(width(), height());
   }
 }

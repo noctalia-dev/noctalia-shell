@@ -1,6 +1,7 @@
 #include "shell/bar/bar.h"
 
 #include "config/config_service.h"
+#include "core/ui_phase.h"
 #include "core/log.h"
 #include "dbus/power/power_profiles_service.h"
 #include "dbus/tray/tray_service.h"
@@ -678,6 +679,7 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
   m_renderContext->syncContentScale(instance.surface->renderTarget());
 
   if (needsUpdate) {
+    UiPhaseScope updatePhase(UiPhase::Update);
     updateWidgets(instance);
     return;
   }
@@ -710,16 +712,19 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
     barAreaH = barH;
   }
 
-  for (auto& widget : instance.startWidgets) {
-    widget->layout(*m_renderContext, barAreaW, barAreaH);
+  {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
+    for (auto& widget : instance.startWidgets) {
+      widget->layout(*m_renderContext, barAreaW, barAreaH);
+    }
+    for (auto& widget : instance.centerWidgets) {
+      widget->layout(*m_renderContext, barAreaW, barAreaH);
+    }
+    for (auto& widget : instance.endWidgets) {
+      widget->layout(*m_renderContext, barAreaW, barAreaH);
+    }
+    layoutBarSections(instance, *m_renderContext, barAreaW, barAreaH, paddingH, isVertical);
   }
-  for (auto& widget : instance.centerWidgets) {
-    widget->layout(*m_renderContext, barAreaW, barAreaH);
-  }
-  for (auto& widget : instance.endWidgets) {
-    widget->layout(*m_renderContext, barAreaW, barAreaH);
-  }
-  layoutBarSections(instance, *m_renderContext, barAreaW, barAreaH, paddingH, isVertical);
 }
 
 bool Bar::onPointerEvent(const PointerEvent& event) {

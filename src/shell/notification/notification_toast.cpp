@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "shell/notification/notification_toast.h"
 
 #include "notification/notification_manager.h"
@@ -531,6 +532,7 @@ void NotificationToast::prepareFrame(PopupInstance& inst, bool /*needsUpdate*/, 
       inst.sceneRoot == nullptr || static_cast<uint32_t>(std::round(inst.sceneRoot->width())) != width ||
       static_cast<uint32_t>(std::round(inst.sceneRoot->height())) != height;
   if (needsSceneBuild || needsLayout) {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
     buildScene(inst, width, height);
   }
 }

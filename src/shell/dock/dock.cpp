@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "shell/dock/dock.h"
 
 #include "config/config_service.h"
@@ -536,6 +537,7 @@ void Dock::prepareFrame(DockInstance& instance, bool /*needsUpdate*/, bool needs
       instance.sceneRoot == nullptr || static_cast<std::uint32_t>(std::round(instance.sceneRoot->width())) != width ||
       static_cast<std::uint32_t>(std::round(instance.sceneRoot->height())) != height;
   if (needsSceneBuild || needsLayout) {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
     buildScene(instance);
   }
 }
@@ -1188,6 +1190,8 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item,
           return;
         }
 
+        UiPhaseScope layoutPhase(UiPhase::Layout);
+
         const auto fw = static_cast<float>(width);
         const auto fh = static_cast<float>(height);
 
@@ -1519,6 +1523,8 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
         if (!needsSceneBuild && !needsLayout) {
           return;
         }
+
+        UiPhaseScope layoutPhase(UiPhase::Layout);
 
         const auto fw = static_cast<float>(width);
         const auto fh = static_cast<float>(height);
