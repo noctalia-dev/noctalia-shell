@@ -94,7 +94,7 @@ void Slider::setValue(float value) {
   }
   m_value = next;
   updateGeometry();
-  markDirty();
+  markPaintDirty();
   if (m_onValueChanged) {
     m_onValueChanged(m_value);
   }
@@ -106,25 +106,25 @@ void Slider::setEnabled(bool enabled) {
   }
   m_enabled = enabled;
   applyVisualState();
-  markDirty();
+  markPaintDirty();
 }
 
 void Slider::setTrackHeight(float height) {
   m_trackHeight = std::max(1.0f, height);
   updateGeometry();
-  markDirty();
+  markLayoutDirty();
 }
 
 void Slider::setThumbSize(float size) {
   m_thumbSizePx = std::max(1.0f, size);
   updateGeometry();
-  markDirty();
+  markLayoutDirty();
 }
 
 void Slider::setControlHeight(float height) {
   m_controlHeightPx = std::max(1.0f, height);
   updateGeometry();
-  markDirty();
+  markLayoutDirty();
 }
 
 void Slider::setOnValueChanged(std::function<void(float)> callback) { m_onValueChanged = std::move(callback); }

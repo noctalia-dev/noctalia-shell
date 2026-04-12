@@ -108,13 +108,13 @@ Input::Input() {
       const std::size_t offset = xToByteOffset(data.localX - m_horizontalPadding);
       m_cursorPos = offset;
       m_selectionAnchor = offset;
-      markDirty();
+      markPaintDirty();
     }
   });
   area->setOnMotion([this](const InputArea::PointerData& data) {
     if (m_inputArea != nullptr && m_inputArea->pressed()) {
       m_cursorPos = xToByteOffset(data.localX - m_horizontalPadding);
-      markDirty();
+      markPaintDirty();
     }
   });
   area->setOnKeyDown([this](const InputArea::KeyData& k) { handleKey(k.sym, k.utf32, k.modifiers, k.preedit); });
@@ -132,14 +132,14 @@ void Input::setValue(std::string_view value) {
   m_cursorPos = m_value.size();
   m_selectionAnchor = m_cursorPos;
   updateDisplayText();
-  markDirty();
+  markLayoutDirty();
 }
 
 void Input::setPlaceholder(std::string_view placeholder) {
   m_placeholder = std::string(placeholder);
   if (m_value.empty()) {
     updateDisplayText();
-    markDirty();
+    markLayoutDirty();
   }
 }
 
@@ -148,17 +148,17 @@ void Input::setFontSize(float size) {
   if (m_textNode != nullptr) {
     m_textNode->setFontSize(m_fontSize);
   }
-  markDirty();
+  markLayoutDirty();
 }
 
 void Input::setControlHeight(float height) {
   m_controlHeight = std::max(1.0f, height);
-  markDirty();
+  markLayoutDirty();
 }
 
 void Input::setHorizontalPadding(float padding) {
   m_horizontalPadding = std::max(0.0f, padding);
-  markDirty();
+  markLayoutDirty();
 }
 
 void Input::setOnChange(std::function<void(const std::string&)> callback) {
@@ -178,12 +178,12 @@ void Input::setClipboardService(ClipboardService* clipboard) noexcept { g_clipbo
 void Input::selectAll() {
   m_selectionAnchor = 0;
   m_cursorPos = m_value.size();
-  markDirty();
+  markPaintDirty();
 }
 
 void Input::clearSelection() {
   m_selectionAnchor = m_cursorPos;
-  markDirty();
+  markPaintDirty();
 }
 
 void Input::doLayout(Renderer& renderer) {
@@ -367,7 +367,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
   }
 
   updateDisplayText();
-  markDirty();
+  markLayoutDirty();
 
   if (changed && !preedit && m_onChange) {
     m_onChange(m_value);

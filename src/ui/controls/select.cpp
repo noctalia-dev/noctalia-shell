@@ -50,15 +50,15 @@ Select::Select() {
   triggerArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
   triggerArea->setOnEnter([this](const InputArea::PointerData& /*data*/) {
     applyVisualState();
-    markDirty();
+    markPaintDirty();
   });
   triggerArea->setOnLeave([this]() {
     applyVisualState();
-    markDirty();
+    markPaintDirty();
   });
   triggerArea->setOnPress([this](const InputArea::PointerData& /*data*/) {
     applyVisualState();
-    markDirty();
+    markPaintDirty();
   });
   triggerArea->setOnClick([this](const InputArea::PointerData& data) {
     if (!m_enabled || data.button != BTN_LEFT) {
@@ -110,7 +110,7 @@ void Select::setOptions(std::vector<std::string> options) {
   syncTriggerText();
   m_needsOptionRebuild = true;
   applyVisualState();
-  markDirty();
+  markLayoutDirty();
 }
 
 void Select::setSelectedIndex(std::size_t index) {
@@ -123,7 +123,7 @@ void Select::setSelectedIndex(std::size_t index) {
   m_selectedIndex = index;
   syncTriggerText();
   applyVisualState();
-  markDirty();
+  markLayoutDirty();
   if (m_onSelectionChanged) {
     m_onSelectionChanged(m_selectedIndex, selectedText());
   }
@@ -144,31 +144,31 @@ void Select::setEnabled(bool enabled) {
     setZIndex(0);
   }
   applyVisualState();
-  markDirty();
+  markPaintDirty();
 }
 
 void Select::setPlaceholder(std::string_view placeholder) {
   m_placeholder = std::string(placeholder);
   syncTriggerText();
   applyVisualState();
-  markDirty();
+  markLayoutDirty();
 }
 
 void Select::setFontSize(float size) {
   m_fontSize = std::max(1.0f, size);
   syncTriggerText();
   m_needsOptionRebuild = true;
-  markDirty();
+  markLayoutDirty();
 }
 
 void Select::setControlHeight(float height) {
   m_controlHeight = std::max(1.0f, height);
-  markDirty();
+  markLayoutDirty();
 }
 
 void Select::setHorizontalPadding(float padding) {
   m_horizontalPadding = std::max(0.0f, padding);
-  markDirty();
+  markLayoutDirty();
 }
 
 void Select::setGlyphSize(float size) {
@@ -181,7 +181,7 @@ void Select::setGlyphSize(float size) {
       option.checkGlyph->setGlyphSize(m_glyphSize);
     }
   }
-  markDirty();
+  markLayoutDirty();
 }
 
 void Select::setOnSelectionChanged(std::function<void(std::size_t, std::string_view)> callback) {
@@ -346,13 +346,13 @@ void Select::rebuildOptionViews() {
       }
       m_hoveredOptionIndex = i;
       applyVisualState();
-      markDirty();
+      markPaintDirty();
     });
     area->setOnLeave([this, i]() {
       if (m_hoveredOptionIndex == i) {
         m_hoveredOptionIndex = npos;
         applyVisualState();
-        markDirty();
+        markPaintDirty();
       }
     });
     area->setOnClick([this, i](const InputArea::PointerData& data) {
@@ -494,7 +494,7 @@ void Select::toggleOpen() {
     setZIndex(0);
   }
   applyVisualState();
-  markDirty();
+  markLayoutDirty();
 }
 
 void Select::closeMenu() {
@@ -509,7 +509,7 @@ void Select::closeMenu() {
   restoreAncestorChain();
   setZIndex(0);
   applyVisualState();
-  markDirty();
+  markLayoutDirty();
 }
 
 bool Select::containsNode(const Node* node) const noexcept {
@@ -527,7 +527,7 @@ void Select::scrollBy(float delta) {
   }
   m_scrollOffset += delta;
   clampScrollOffset();
-  markDirty();
+  markPaintDirty();
 }
 
 void Select::clampScrollOffset() {

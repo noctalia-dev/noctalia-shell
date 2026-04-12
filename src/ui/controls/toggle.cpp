@@ -59,7 +59,7 @@ void Toggle::setChecked(bool checked) {
                                      [this](float t) { applyAnimatedState(t); },
                                      [this]() { m_animId = 0; });
     // Mark dirty so the surface's frame loop restarts and ticks the animation
-    markDirty();
+    markPaintDirty();
   } else {
     applyState();
   }
@@ -89,6 +89,7 @@ void Toggle::setScale(float scale) {
   m_scale = std::max(0.1f, scale);
   applySize();
   applyState();
+  markLayoutDirty();
 }
 
 void Toggle::setOnChange(std::function<void(bool)> callback) {
