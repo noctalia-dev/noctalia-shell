@@ -110,6 +110,14 @@ void Node::setVisible(bool visible) {
   markDirty();
 }
 
+void Node::setParticipatesInLayout(bool participatesInLayout) {
+  if (m_participatesInLayout == participatesInLayout) {
+    return;
+  }
+  m_participatesInLayout = participatesInLayout;
+  markDirty();
+}
+
 void Node::setClipChildren(bool clipChildren) {
   if (m_clipChildren == clipChildren) {
     return;

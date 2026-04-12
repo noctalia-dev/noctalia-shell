@@ -103,6 +103,27 @@ Button::Button() {
   setPadding(Style::spaceSm, Style::spaceMd);
   setRadius(Style::radiusMd);
 
+  auto area = std::make_unique<InputArea>();
+  area->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
+  area->setOnLeave([this]() { applyVisualState(); });
+  area->setOnPress([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
+  area->setOnMotion([this](const InputArea::PointerData& /*data*/) {
+    if (m_onMotion) {
+      m_onMotion();
+    }
+  });
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
+    if (m_enabled && m_onClick) {
+      m_onClick();
+    }
+  });
+  area->setEnabled(false);
+  m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
+  m_inputArea->setParticipatesInLayout(false);
+  m_inputArea->setZIndex(1);
+  m_inputArea->setPosition(0.0f, 0.0f);
+  m_inputArea->setSize(width(), height());
+
   applyVariant();
   m_paletteConn = paletteChanged().connect([this] {
     // Re-derive color slots from the (possibly updated) palette and push
@@ -146,30 +167,13 @@ void Button::setGlyphSize(float size) {
 
 void Button::setOnClick(std::function<void()> callback) {
   m_onClick = std::move(callback);
-
-  // Lazily create InputArea on first setOnClick
-  if (m_inputArea == nullptr) {
-    auto area = std::make_unique<InputArea>();
-    area->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
-    area->setOnLeave([this]() { applyVisualState(); });
-    area->setOnPress([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
-    area->setOnMotion([this](const InputArea::PointerData& /*data*/) {
-      if (m_onMotion) {
-        m_onMotion();
-      }
-    });
-    area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-      if (m_enabled && m_onClick) {
-        m_onClick();
-      }
-    });
-    m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
-    m_inputArea->setPosition(0.0f, 0.0f);
-    m_inputArea->setSize(width(), height());
-  }
+  refreshInputAreaEnabled();
 }
 
-void Button::setOnMotion(std::function<void()> callback) { m_onMotion = std::move(callback); }
+void Button::setOnMotion(std::function<void()> callback) {
+  m_onMotion = std::move(callback);
+  refreshInputAreaEnabled();
+}
 
 void Button::setHoverSuppressed(bool suppressed) {
   if (m_hoverSuppressed == suppressed) {
@@ -201,6 +205,7 @@ void Button::setEnabled(bool enabled) {
     return;
   }
   m_enabled = enabled;
+  refreshInputAreaEnabled();
   applyVisualState();
 }
 
@@ -236,6 +241,12 @@ void Button::applyVariant() {
   m_targetBorder = resolveThemeColor(m_palette.normal.border);
   m_targetLabel = resolveThemeColor(m_palette.normal.label);
   applyVisualState();
+}
+
+void Button::refreshInputAreaEnabled() {
+  if (m_inputArea != nullptr) {
+    m_inputArea->setEnabled(m_enabled && (static_cast<bool>(m_onClick) || static_cast<bool>(m_onMotion)));
+  }
 }
 
 void Button::ensureLabel() {
@@ -351,10 +362,6 @@ void Button::layout(Renderer& renderer) {
     m_glyph->measure(renderer);
   }
 
-  if (m_inputArea != nullptr) {
-    m_inputArea->setVisible(false);
-  }
-
   Flex::layout(renderer);
 
   // Buttons are often sized by a parent stretch pass. Preserve that assigned
@@ -413,7 +420,6 @@ void Button::layout(Renderer& renderer) {
   }
 
   if (m_inputArea != nullptr) {
-    m_inputArea->setVisible(true);
     m_inputArea->setPosition(0.0f, 0.0f);
     m_inputArea->setSize(width(), height());
   }

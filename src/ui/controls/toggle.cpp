@@ -35,6 +35,8 @@ Toggle::Toggle() {
     }
   });
   m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
+  m_inputArea->setParticipatesInLayout(false);
+  m_inputArea->setZIndex(1);
 
   applySize();
   applyState();
@@ -98,14 +100,9 @@ bool Toggle::hovered() const noexcept { return m_inputArea != nullptr && m_input
 bool Toggle::pressed() const noexcept { return m_inputArea != nullptr && m_inputArea->pressed(); }
 
 void Toggle::layout(Renderer& renderer) {
-  if (m_inputArea != nullptr) {
-    m_inputArea->setVisible(false);
-  }
-
   Flex::layout(renderer);
 
   if (m_inputArea != nullptr) {
-    m_inputArea->setVisible(true);
     m_inputArea->setPosition(0.0f, 0.0f);
     m_inputArea->setSize(width(), height());
   }

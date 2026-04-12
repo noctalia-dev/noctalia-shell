@@ -37,6 +37,7 @@ public:
   [[nodiscard]] float opacity() const noexcept { return m_opacity; }
   [[nodiscard]] float flexGrow() const noexcept { return m_flexGrow; }
   [[nodiscard]] bool visible() const noexcept { return m_visible; }
+  [[nodiscard]] bool participatesInLayout() const noexcept { return m_participatesInLayout; }
   [[nodiscard]] bool dirty() const noexcept { return m_dirty; }
   [[nodiscard]] bool clipChildren() const noexcept { return m_clipChildren; }
   [[nodiscard]] std::int32_t zIndex() const noexcept { return m_zIndex; }
@@ -50,6 +51,7 @@ public:
   void setOpacity(float opacity);
   void setFlexGrow(float grow);
   void setVisible(bool visible);
+  void setParticipatesInLayout(bool participatesInLayout);
   void setClipChildren(bool clipChildren);
   void setZIndex(std::int32_t zIndex);
 
@@ -85,6 +87,7 @@ private:
   float m_opacity = 1.0f;
   float m_flexGrow = 0.0f;
   bool m_visible = true;
+  bool m_participatesInLayout = true;
   bool m_dirty = true;
   bool m_clipChildren = false;
   std::int32_t m_zIndex = 0;

@@ -191,7 +191,7 @@ void Flex::layout(Renderer& renderer) {
     const float availCross = horizontal ? (containerCross - m_paddingTop - m_paddingBottom)
                                         : (containerCross - m_paddingLeft - m_paddingRight);
     for (auto& child : kids) {
-      if (!child->visible() || child.get() == m_background) {
+      if (!child->visible() || !child->participatesInLayout() || child.get() == m_background) {
         continue;
       }
       if (horizontal) {
@@ -205,7 +205,7 @@ void Flex::layout(Renderer& renderer) {
   // Pass 1: Measure non-grow children (skip grow children — they need sizing first).
   float totalGrow = 0.0f;
   for (auto& child : kids) {
-    if (!child->visible() || child.get() == m_background) {
+    if (!child->visible() || !child->participatesInLayout() || child.get() == m_background) {
       continue;
     }
     if (child->flexGrow() > 0.0f) {
@@ -220,7 +220,7 @@ void Flex::layout(Renderer& renderer) {
     float fixedTotal = horizontal ? (m_paddingLeft + m_paddingRight) : (m_paddingTop + m_paddingBottom);
     int visibleCount = 0;
     for (auto& child : kids) {
-      if (!child->visible() || child.get() == m_background) {
+      if (!child->visible() || !child->participatesInLayout() || child.get() == m_background) {
         continue;
       }
       ++visibleCount;
@@ -235,7 +235,8 @@ void Flex::layout(Renderer& renderer) {
 
     const float remaining = std::max(0.0f, containerMain - fixedTotal);
     for (auto& child : kids) {
-      if (!child->visible() || child.get() == m_background || child->flexGrow() <= 0.0f) {
+      if (!child->visible() || !child->participatesInLayout() || child.get() == m_background ||
+          child->flexGrow() <= 0.0f) {
         continue;
       }
       const float share = remaining * (child->flexGrow() / totalGrow);
@@ -254,7 +255,7 @@ void Flex::layout(Renderer& renderer) {
   float contentMain = 0.0f;
   int visibleCount = 0;
   for (auto& child : kids) {
-    if (!child->visible() || child.get() == m_background) {
+    if (!child->visible() || !child->participatesInLayout() || child.get() == m_background) {
       continue;
     }
     ++visibleCount;
@@ -280,7 +281,7 @@ void Flex::layout(Renderer& renderer) {
   bool first = true;
 
   for (auto& child : kids) {
-    if (!child->visible() || child.get() == m_background) {
+    if (!child->visible() || !child->participatesInLayout() || child.get() == m_background) {
       continue;
     }
 
@@ -318,7 +319,7 @@ void Flex::layout(Renderer& renderer) {
 
   // Pass 4: Cross-axis alignment.
   for (auto& child : kids) {
-    if (!child->visible() || child.get() == m_background) {
+    if (!child->visible() || !child->participatesInLayout() || child.get() == m_background) {
       continue;
     }
 
