@@ -27,6 +27,7 @@ public:
   std::unique_ptr<Flex> create() override;
   void layout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void update(Renderer& renderer) override;
+  void onFrameTick(float deltaMs) override;
   void setActive(bool active) override;
   void onClose() override;
 

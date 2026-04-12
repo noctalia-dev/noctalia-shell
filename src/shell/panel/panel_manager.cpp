@@ -162,6 +162,11 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
 
   m_surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
   m_surface->setConfigureCallback([this](std::uint32_t width, std::uint32_t height) { buildScene(width, height); });
+  m_surface->setFrameTickCallback([this](float deltaMs) {
+    if (m_activePanel != nullptr) {
+      m_activePanel->onFrameTick(deltaMs);
+    }
+  });
   m_surface->setAnimationManager(&m_animations);
   m_surface->setRenderContext(m_renderContext);
 

@@ -25,6 +25,7 @@ class Surface {
 public:
   using ConfigureCallback = std::function<void(std::uint32_t width, std::uint32_t height)>;
   using UpdateCallback = std::function<void()>;
+  using FrameTickCallback = std::function<void(float deltaMs)>;
 
   explicit Surface(WaylandConnection& connection);
   virtual ~Surface();
@@ -38,6 +39,7 @@ public:
 
   void setConfigureCallback(ConfigureCallback callback);
   void setUpdateCallback(UpdateCallback callback);
+  void setFrameTickCallback(FrameTickCallback callback);
   void setInputRegion(const std::vector<InputRect>& rects);
   void requestRedraw();
   void renderNow();
@@ -73,6 +75,7 @@ private:
   Node* m_sceneRoot = nullptr;
   ConfigureCallback m_configureCallback;
   UpdateCallback m_updateCallback;
+  FrameTickCallback m_frameTickCallback;
   wl_callback* m_frameCallback = nullptr;
   std::uint32_t m_lastFrameTime = 0;
   bool m_running = false;

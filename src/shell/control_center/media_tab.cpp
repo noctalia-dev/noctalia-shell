@@ -553,6 +553,13 @@ void MediaTab::update(Renderer& renderer) {
   refresh(renderer);
 }
 
+void MediaTab::onFrameTick(float deltaMs) {
+  if (!m_active || m_visualizerSpectrum == nullptr) {
+    return;
+  }
+  m_visualizerSpectrum->tick(deltaMs);
+}
+
 void MediaTab::setActive(bool active) {
   const bool becameActive = active && !m_active;
   m_active = active;

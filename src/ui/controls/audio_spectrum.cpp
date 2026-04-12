@@ -13,9 +13,51 @@ AudioSpectrum::AudioSpectrum() {
 }
 
 void AudioSpectrum::setValues(const std::vector<float>& values) {
-  m_values = values;
-  ensureBarCount(m_mirrored ? m_values.size() * 2 : m_values.size());
+  m_targetValues = values;
+  if (m_displayValues.size() != m_targetValues.size()) {
+    m_displayValues.resize(m_targetValues.size(), 0.0f);
+  }
+  ensureBarCount(m_mirrored ? m_targetValues.size() * 2 : m_targetValues.size());
+  m_converged = false;
   markDirty();
+}
+
+void AudioSpectrum::tick(float deltaMs) {
+  if (m_targetValues.empty()) {
+    m_converged = true;
+    return;
+  }
+  if (m_displayValues.size() != m_targetValues.size()) {
+    m_displayValues.resize(m_targetValues.size(), 0.0f);
+  }
+
+  const float alpha = m_smoothingTauMs > 0.0f
+                          ? 1.0f - std::exp(-std::max(0.0f, deltaMs) / m_smoothingTauMs)
+                          : 1.0f;
+
+  constexpr float kEpsilon = 1.0f / 512.0f;
+  bool changed = false;
+  bool converged = true;
+  for (std::size_t i = 0; i < m_targetValues.size(); ++i) {
+    const float target = m_targetValues[i];
+    float& display = m_displayValues[i];
+    const float delta = target - display;
+    if (std::fabs(delta) < kEpsilon) {
+      if (display != target) {
+        display = target;
+        changed = true;
+      }
+      continue;
+    }
+    display += delta * alpha;
+    converged = false;
+    changed = true;
+  }
+
+  m_converged = converged;
+  if (changed) {
+    markDirty();
+  }
 }
 
 void AudioSpectrum::setGradient(const Color& lowColor, const Color& highColor) {
@@ -46,7 +88,7 @@ void AudioSpectrum::setMirrored(bool mirrored) {
     return;
   }
   m_mirrored = mirrored;
-  ensureBarCount(m_mirrored ? m_values.size() * 2 : m_values.size());
+  ensureBarCount(m_mirrored ? m_targetValues.size() * 2 : m_targetValues.size());
   markDirty();
 }
 
@@ -74,12 +116,12 @@ void AudioSpectrum::layout(Renderer& /*renderer*/) {
 
     for (int i = 0; i < barCount; ++i) {
       const int valueIndex =
-          m_mirrored ? (i < static_cast<int>(m_values.size()) ? static_cast<int>(m_values.size()) - 1 - i
-                                                              : i - static_cast<int>(m_values.size()))
+          m_mirrored ? (i < static_cast<int>(m_displayValues.size()) ? static_cast<int>(m_displayValues.size()) - 1 - i
+                                                              : i - static_cast<int>(m_displayValues.size()))
                      : i;
       const float value =
-          valueIndex >= 0 && valueIndex < static_cast<int>(m_values.size())
-              ? std::clamp(m_values[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
+          valueIndex >= 0 && valueIndex < static_cast<int>(m_displayValues.size())
+              ? std::clamp(m_displayValues[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
               : 0.0f;
       const float barHeight = std::floor(value * height() + 0.5f);
       const float y = m_centered ? std::floor((height() - barHeight) * 0.5f) : std::floor(height() - barHeight);
@@ -100,12 +142,12 @@ void AudioSpectrum::layout(Renderer& /*renderer*/) {
 
   for (int i = 0; i < barCount; ++i) {
     const int valueIndex =
-        m_mirrored ? (i < static_cast<int>(m_values.size()) ? static_cast<int>(m_values.size()) - 1 - i
-                                                            : i - static_cast<int>(m_values.size()))
+        m_mirrored ? (i < static_cast<int>(m_displayValues.size()) ? static_cast<int>(m_displayValues.size()) - 1 - i
+                                                            : i - static_cast<int>(m_displayValues.size()))
                    : i;
     const float value =
-        valueIndex >= 0 && valueIndex < static_cast<int>(m_values.size())
-            ? std::clamp(m_values[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
+        valueIndex >= 0 && valueIndex < static_cast<int>(m_displayValues.size())
+            ? std::clamp(m_displayValues[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
             : 0.0f;
     const float barWidth = std::floor(value * width() + 0.5f);
     const float x = m_centered ? std::floor((width() - barWidth) * 0.5f) : std::floor(width() - barWidth);

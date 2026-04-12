@@ -17,6 +17,7 @@ public:
   virtual void create() = 0;
   virtual void layout(Renderer& renderer, float width, float height) = 0;
   virtual void update(Renderer& renderer) = 0;
+  virtual void onFrameTick(float deltaMs) { (void)deltaMs; }
   virtual void onOpen(std::string_view context) { (void)context; }
   virtual void onClose() {}
   [[nodiscard]] virtual bool deferExternalRefresh() const { return false; }

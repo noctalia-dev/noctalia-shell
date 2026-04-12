@@ -178,6 +178,12 @@ void ControlCenterPanel::update(Renderer& renderer) {
   }
 }
 
+void ControlCenterPanel::onFrameTick(float deltaMs) {
+  for (auto& tab : m_tabs) {
+    tab->onFrameTick(deltaMs);
+  }
+}
+
 void ControlCenterPanel::onOpen(std::string_view context) { selectTab(tabFromContext(context)); }
 
 void ControlCenterPanel::onClose() {

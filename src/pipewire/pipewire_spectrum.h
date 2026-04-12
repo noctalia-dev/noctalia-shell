@@ -30,9 +30,6 @@ public:
   void setBandCount(int count);
   [[nodiscard]] int bandCount() const noexcept { return m_bandCount; }
 
-  void setFrameRate(int rate);
-  [[nodiscard]] int frameRate() const noexcept { return m_frameRate; }
-
   void setLowerCutoff(int freq);
   [[nodiscard]] int lowerCutoff() const noexcept { return m_lowerCutoff; }
 
@@ -74,7 +71,6 @@ private:
   std::uint32_t m_targetNodeId = 0;
   std::uint32_t m_boundNodeId = 0;
   int m_bandCount = 32;
-  int m_frameRate = 30;
   int m_lowerCutoff = 50;
   int m_upperCutoff = 12000;
   float m_noiseReduction = 0.77f;
@@ -86,7 +82,8 @@ private:
   std::chrono::steady_clock::time_point m_nextFrameAt{};
 
   static constexpr int kFftSize = 4096;
-  static constexpr int kIdleThreshold = 30;
+  static constexpr int kFrameRate = 60;
+  static constexpr int kIdleThreshold = kFrameRate;
 
   std::vector<float> m_ringBuffer;
   int m_ringPos = 0;
@@ -105,7 +102,5 @@ private:
   std::vector<float> m_bands;
   float m_sensitivity = 1.0f;
   bool m_sensInit = true;
-  double m_cachedGravityMod = 1.0;
-  int m_cachedGravityFrameRate = 0;
   std::vector<std::complex<float>> m_fftBuf;
 };

@@ -38,6 +38,10 @@ public:
   // Called by ControlCenterPanel::update() every frame.
   virtual void update(Renderer& renderer) { (void)renderer; }
 
+  // Called every Wayland frame callback with elapsed milliseconds. Default is a no-op.
+  // Tabs override this to advance per-frame animations independently of data arrival.
+  virtual void onFrameTick(float deltaMs) { (void)deltaMs; }
+
   // Called when the tab becomes visible or hidden.
   virtual void setActive(bool active) { (void)active; }
 

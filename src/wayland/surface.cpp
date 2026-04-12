@@ -30,13 +30,18 @@ void Surface::handleFrameDone(void* data, wl_callback* callback, std::uint32_t c
 
   self->m_frameCallback = nullptr;
 
+  float deltaMs = 0.0f;
+  if (self->m_lastFrameTime != 0 && callbackData > self->m_lastFrameTime) {
+    deltaMs = static_cast<float>(callbackData - self->m_lastFrameTime);
+  }
+  self->m_lastFrameTime = callbackData;
+
   if (self->m_animationManager != nullptr) {
-    float deltaMs = 0.0f;
-    if (self->m_lastFrameTime != 0 && callbackData > self->m_lastFrameTime) {
-      deltaMs = static_cast<float>(callbackData - self->m_lastFrameTime);
-    }
-    self->m_lastFrameTime = callbackData;
     self->m_animationManager->tick(deltaMs);
+  }
+
+  if (self->m_frameTickCallback) {
+    self->m_frameTickCallback(deltaMs);
   }
 
   if (self->m_updateCallback) {
@@ -92,6 +97,8 @@ void Surface::onConfigure(std::uint32_t width, std::uint32_t height) {
 void Surface::setConfigureCallback(ConfigureCallback callback) { m_configureCallback = std::move(callback); }
 
 void Surface::setUpdateCallback(UpdateCallback callback) { m_updateCallback = std::move(callback); }
+
+void Surface::setFrameTickCallback(FrameTickCallback callback) { m_frameTickCallback = std::move(callback); }
 
 void Surface::setInputRegion(const std::vector<InputRect>& rects) {
   if (m_surface == nullptr) {

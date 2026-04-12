@@ -38,6 +38,7 @@ public:
   void create() override;
   void layout(Renderer& renderer, float width, float height) override;
   void update(Renderer& renderer) override;
+  void onFrameTick(float deltaMs) override;
   void onOpen(std::string_view context) override;
   void onClose() override;
   [[nodiscard]] bool deferExternalRefresh() const override;

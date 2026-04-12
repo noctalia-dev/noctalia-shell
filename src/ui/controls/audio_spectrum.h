@@ -3,6 +3,7 @@
 #include "render/core/color.h"
 #include "render/scene/node.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <vector>
 
@@ -24,6 +25,10 @@ public:
   void setOrientation(AudioSpectrumOrientation orientation);
   void setMirrored(bool mirrored);
   void setCentered(bool centered);
+  void setSmoothingTimeMs(float tauMs) noexcept { m_smoothingTauMs = std::max(0.0f, tauMs); }
+
+  void tick(float deltaMs);
+  [[nodiscard]] bool converged() const noexcept { return m_converged; }
 
   void layout(Renderer& renderer) override;
 
@@ -31,8 +36,11 @@ private:
   void ensureBarCount(std::size_t count);
   void recolorBars();
 
-  std::vector<float> m_values;
+  std::vector<float> m_targetValues;
+  std::vector<float> m_displayValues;
   std::vector<Box*> m_bars;
+  float m_smoothingTauMs = 60.0f;
+  bool m_converged = true;
   Color m_lowColor = {};
   Color m_highColor = {};
   float m_spacingRatio = 0.5f;

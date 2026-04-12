@@ -295,16 +295,6 @@ void PipeWireSpectrum::setBandCount(int count) {
   emitChanged();
 }
 
-void PipeWireSpectrum::setFrameRate(int rate) {
-  rate = std::clamp(rate, 1, 240);
-  if (rate == m_frameRate) {
-    return;
-  }
-  m_frameRate = rate;
-  m_cachedGravityFrameRate = 0;
-  m_nextFrameAt = std::chrono::steady_clock::now();
-}
-
 void PipeWireSpectrum::setLowerCutoff(int freq) {
   freq = std::max(1, freq);
   if (freq == m_lowerCutoff) {
@@ -329,7 +319,6 @@ void PipeWireSpectrum::setNoiseReduction(float amount) {
     return;
   }
   m_noiseReduction = amount;
-  m_cachedGravityFrameRate = 0;
 }
 
 void PipeWireSpectrum::setSmoothing(bool enabled) {
@@ -358,7 +347,7 @@ void PipeWireSpectrum::tick() {
   const auto now = std::chrono::steady_clock::now();
   if (m_nextFrameAt.time_since_epoch().count() == 0 || now >= m_nextFrameAt) {
     processFrame();
-    m_nextFrameAt = now + std::chrono::milliseconds(std::max(1, 1000 / m_frameRate));
+    m_nextFrameAt = now + std::chrono::milliseconds(1000 / kFrameRate);
   }
 }
 
@@ -458,7 +447,6 @@ void PipeWireSpectrum::initProcessing() {
   m_mem.assign(m_bandCount, 0.0f);
   m_bands.assign(m_bandCount, 0.0f);
   m_values.assign(m_bandCount, 0.0f);
-  m_cachedGravityFrameRate = 0;
   computeBandBins();
 }
 
@@ -556,16 +544,8 @@ void PipeWireSpectrum::processFrame() {
     band *= m_sensitivity;
   }
 
-  if (m_cachedGravityFrameRate != m_frameRate) {
-    const auto fps = static_cast<double>(m_frameRate);
-    m_cachedGravityMod = std::pow(60.0 / fps, 2.5) * 1.54 / std::max(static_cast<double>(m_noiseReduction), 0.01);
-    if (m_cachedGravityMod < 1.0) {
-      m_cachedGravityMod = 1.0;
-    }
-    m_cachedGravityFrameRate = m_frameRate;
-  }
+  const double gravityMod = std::max(1.0, 1.54 / std::max(static_cast<double>(m_noiseReduction), 0.01));
 
-  const auto gravityMod = m_cachedGravityMod;
   bool overshoot = false;
   bool silence = true;
 
