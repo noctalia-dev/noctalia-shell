@@ -24,6 +24,7 @@ static constexpr auto k_mpris_root_interface = "org.mpris.MediaPlayer2";
 static constexpr auto k_mpris_player_interface = "org.mpris.MediaPlayer2.Player";
 static constexpr auto k_noctalia_mpris_interface = "dev.noctalia.Mpris";
 static constexpr auto k_properties_debounce_window = std::chrono::milliseconds{120};
+static constexpr auto k_metadata_stabilize_window = std::chrono::milliseconds{900};
 static const sdbus::ServiceName k_dbus_name{"org.freedesktop.DBus"};
 static const sdbus::ObjectPath k_dbus_path{"/org/freedesktop/DBus"};
 static const sdbus::ObjectPath k_mpris_path{"/org/mpris/MediaPlayer2"};
@@ -153,6 +154,13 @@ int64_t get_int64_from_variant(const std::map<std::string, sdbus::Variant>& valu
     out += value;
   }
   return out;
+}
+
+bool hasStrongNowPlayingMetadata(const MprisPlayerInfo& info) {
+  // Track IDs/source URLs can exist during transient "loading" states where the
+  // user-visible metadata is still placeholder-only (e.g. app identity + logo).
+  // Treat metadata as strong only when actual now-playing fields are present.
+  return !info.title.empty() || !info.artists.empty() || !info.album.empty();
 }
 
 std::map<std::string, sdbus::Variant> to_dbus_player(const MprisPlayerInfo& info) {
@@ -873,23 +881,22 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
         .call([this, busName](const std::string& interface_name,
                               const std::map<std::string, sdbus::Variant>& changed_properties,
                               const std::vector<std::string>& invalidated_properties) {
-          (void)invalidated_properties;
           if (interface_name == k_mpris_root_interface || interface_name == k_mpris_player_interface) {
-            const bool metadataChanged = changed_properties.contains("Metadata");
+            const bool metadataChanged =
+                changed_properties.contains("Metadata") ||
+                std::ranges::find(invalidated_properties, std::string{"Metadata"}) != invalidated_properties.end();
             // kLog.info("properties changed name={} interface={} changed=[{}] invalidated=[{}] metadata_changed={}",
             //           busName, interface_name, joinKeys(changed_properties), joinStrings(invalidated_properties),
             //           metadataChanged);
-            if (metadataChanged) {
-              try {
-                const auto metadata = changed_properties.at("Metadata").get<std::map<std::string, sdbus::Variant>>();
-                // kLog.info("metadata payload name={} keys=[{}] art_url_present={} title_present={} artist_present={}",
-                //           busName, joinKeys(metadata), metadata.contains("mpris:artUrl"),
-                //           metadata.contains("xesam:title"), metadata.contains("xesam:artist"));
-              } catch (const sdbus::Error& e) {
-                kLog.warn("metadata payload decode failed name={} err={}", busName, e.what());
-              }
-            }
             const auto now = std::chrono::steady_clock::now();
+            if (metadataChanged) {
+              // Metadata updates often arrive in short bursts (first partial, then full artwork/title payload).
+              // Never debounce these or we can get stuck on stale app/logo art after rapid stream switches.
+              m_lastPropertiesUpdate[busName] = now;
+              addOrRefreshPlayer(busName);
+              return;
+            }
+
             const auto last_it = m_lastPropertiesUpdate.find(busName);
             if (last_it != m_lastPropertiesUpdate.end() && now - last_it->second < k_properties_debounce_window) {
               return;
@@ -902,6 +909,7 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
 
   try {
     const MprisPlayerInfo info = readPlayerInfo(*proxyIt->second, busName);
+    const auto now = std::chrono::steady_clock::now();
     // kLog.debug(
     //     "queried player name={} identity=\"{}\" status=\"{}\" title=\"{}\" artist=\"{}\" track_id=\"{}\" art_url=\"{}\"",
     //     info.busName, info.identity, info.playbackStatus, info.title, primary_artist(info.artists), info.trackId,
@@ -912,7 +920,10 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
     }
     if (info.playbackStatus == "Playing") {
       m_lastActivePlayer = busName;
-      m_lastPlayingUpdate[busName] = std::chrono::steady_clock::now();
+      m_lastPlayingUpdate[busName] = now;
+    }
+    if (hasStrongNowPlayingMetadata(info)) {
+      m_lastStrongMetadataUpdate[busName] = now;
     }
 
     const auto existing = m_players.find(busName);
@@ -937,6 +948,23 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
       // to avoid transient empty artwork bursts during track switches.
       MprisPlayerInfo merged = info;
       if (merged.artUrl.empty() && !previous_info.artUrl.empty()) {
+        merged.artUrl = previous_info.artUrl;
+      }
+
+      // Some players emit a short placeholder metadata frame (identity/logo)
+      // before publishing the next stream/video metadata. Keep previous track
+      // details briefly to avoid visible "app name + logo" flicker.
+      const bool previousStrong = hasStrongNowPlayingMetadata(previous_info) || !previous_info.artUrl.empty();
+      const bool incomingWeak = !hasStrongNowPlayingMetadata(info);
+      const auto strongIt = m_lastStrongMetadataUpdate.find(busName);
+      const bool withinStabilizeWindow =
+          strongIt != m_lastStrongMetadataUpdate.end() && now - strongIt->second < k_metadata_stabilize_window;
+      if (merged.playbackStatus == "Playing" && previousStrong && incomingWeak && withinStabilizeWindow) {
+        merged.trackId = previous_info.trackId;
+        merged.title = previous_info.title;
+        merged.artists = previous_info.artists;
+        merged.album = previous_info.album;
+        merged.sourceUrl = previous_info.sourceUrl;
         merged.artUrl = previous_info.artUrl;
       }
 
@@ -973,6 +1001,7 @@ void MprisService::removePlayer(const std::string& busName) {
   m_playerProxies.erase(busName);
   m_lastPropertiesUpdate.erase(busName);
   m_lastPlayingUpdate.erase(busName);
+  m_lastStrongMetadataUpdate.erase(busName);
   if (m_lastActivePlayer == busName) {
     m_lastActivePlayer.clear();
   }

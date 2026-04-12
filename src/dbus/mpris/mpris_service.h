@@ -136,6 +136,7 @@ private:
   std::unordered_map<std::string, MprisPlayerInfo> m_players;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastPropertiesUpdate;
   std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastPlayingUpdate;
+  std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_lastStrongMetadataUpdate;
   std::string m_lastActivePlayer;
   std::string m_lastEmittedActivePlayer;
   std::optional<std::string> m_pinnedPlayerPreference;
