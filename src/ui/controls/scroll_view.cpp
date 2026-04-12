@@ -212,12 +212,6 @@ void ScrollView::layout(Renderer& renderer) {
   m_viewportArea->setPosition(viewportX, viewportY);
   m_viewportArea->setSize(viewportW, viewportH);
 
-  for (const auto& child : m_content->children()) {
-    if (!child->visible()) {
-      child->setVisible(true);
-    }
-  }
-
   m_content->setPosition(0.0f, 0.0f);
   m_content->setSize(viewportW, m_content->height());
   m_content->layout(renderer);
