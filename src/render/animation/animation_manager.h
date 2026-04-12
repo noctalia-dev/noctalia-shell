@@ -10,7 +10,13 @@ class AnimationManager {
 public:
   using Id = std::uint32_t;
 
-  AnimationManager() = default;
+  AnimationManager();
+  ~AnimationManager();
+
+  AnimationManager(const AnimationManager&) = delete;
+  AnimationManager& operator=(const AnimationManager&) = delete;
+  AnimationManager(AnimationManager&&) = delete;
+  AnimationManager& operator=(AnimationManager&&) = delete;
 
   Id animate(float from, float to, float durationMs, Easing easing, std::function<void(float)> setter,
              std::function<void()> onComplete = {});

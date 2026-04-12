@@ -231,6 +231,7 @@ _noctalia_sources = files(
   'src/pipewire/pipewire_spectrum.cpp',
   'src/render/animation/animation.cpp',
   'src/render/animation/animation_manager.cpp',
+  'src/render/animation/motion_service.cpp',
   'src/render/core/shader_program.cpp',
   'src/render/core/texture_manager.cpp',
   'src/render/core/image_decoder.cpp',

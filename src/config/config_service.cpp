@@ -489,6 +489,14 @@ void ConfigService::loadFromFile(const std::string& path) {
     if (auto notificationsDbus = (*shellTbl)["notifications_dbus"].value<bool>()) {
       shell.notificationsDbus = *notificationsDbus;
     }
+    if (const auto* animationTbl = (*shellTbl)["animation"].as_table()) {
+      if (auto enabled = (*animationTbl)["enabled"].value<bool>()) {
+        shell.animation.enabled = *enabled;
+      }
+      if (auto v = (*animationTbl)["speed"].value<double>()) {
+        shell.animation.speed = std::clamp(static_cast<float>(*v), 0.05f, 4.0f);
+      }
+    }
     if (auto v = (*shellTbl)["avatar_path"].value<std::string>()) {
       shell.avatarPath = *v;
     }

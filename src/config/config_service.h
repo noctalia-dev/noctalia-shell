@@ -138,9 +138,15 @@ enum class ClipboardAutoPasteMode : std::uint8_t {
 };
 
 struct ShellConfig {
+  struct AnimationConfig {
+    bool enabled = true;
+    float speed = 1.0f;
+  };
+
   float uiScale = 1.0f;
   std::string lang; // empty = auto-detect from $LC_ALL/$LC_MESSAGES/$LANG
   bool notificationsDbus = true;
+  AnimationConfig animation;
   std::string avatarPath;
   ClipboardAutoPasteMode clipboardAutoPaste = ClipboardAutoPasteMode::Auto;
 };

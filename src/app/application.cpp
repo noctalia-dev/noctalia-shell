@@ -8,6 +8,7 @@
 #include "launcher/app_provider.h"
 #include "launcher/emoji_provider.h"
 #include "launcher/math_provider.h"
+#include "render/animation/motion_service.h"
 #include "shell/clipboard/clipboard_panel.h"
 #include "shell/clipboard/clipboard_paste.h"
 #include "shell/control_center/control_center_panel.h"
@@ -186,6 +187,14 @@ void Application::run() {
 void Application::initServices() {
   std::signal(SIGTERM, signal_handler);
   std::signal(SIGINT, signal_handler);
+
+  auto applyMotionConfig = [this]() {
+    auto& motion = MotionService::instance();
+    motion.setSpeed(m_configService.config().shell.animation.speed);
+    motion.setEnabled(m_configService.config().shell.animation.enabled);
+  };
+  applyMotionConfig();
+  m_configService.addReloadCallback(applyMotionConfig);
 
   // i18n has no dependencies on other services and must be ready before any
   // UI construction reads a translated string.
@@ -492,14 +501,6 @@ void Application::initUi() {
         m_audioOsd.showInput(id, volume, muted);
       } else {
         m_audioOsd.showOutput(id, volume, muted);
-      }
-    });
-  }
-
-  if (m_pipewireSpectrum != nullptr) {
-    m_pipewireSpectrum->setChangeCallback([this]() {
-      if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
-        m_panelManager.refresh();
       }
     });
   }
