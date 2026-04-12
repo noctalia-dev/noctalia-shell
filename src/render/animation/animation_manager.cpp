@@ -1,9 +1,37 @@
 #include "render/animation/animation_manager.h"
 
+#include "render/animation/motion_service.h"
+
 #include <algorithm>
+
+AnimationManager::AnimationManager() { MotionService::instance().registerManager(this); }
+
+AnimationManager::~AnimationManager() { MotionService::instance().unregisterManager(this); }
 
 AnimationManager::Id AnimationManager::animate(float from, float to, float durationMs, Easing easing,
                                                std::function<void(float)> setter, std::function<void()> onComplete) {
+  const auto& motion = MotionService::instance();
+  if (!motion.enabled()) {
+    if (setter) {
+      setter(to);
+    }
+    if (onComplete) {
+      onComplete();
+    }
+    return 0;
+  }
+
+  const float effectiveDurationMs = durationMs / motion.speed();
+  if (effectiveDurationMs <= 0.0f) {
+    if (setter) {
+      setter(to);
+    }
+    if (onComplete) {
+      onComplete();
+    }
+    return 0;
+  }
+
   Id id = m_nextId++;
   m_animations.push_back(Entry{
       .id = id,
@@ -11,7 +39,7 @@ AnimationManager::Id AnimationManager::animate(float from, float to, float durat
           Animation{
               .startValue = from,
               .endValue = to,
-              .durationMs = durationMs,
+              .durationMs = effectiveDurationMs,
               .easing = easing,
               .setter = std::move(setter),
               .onComplete = std::move(onComplete),

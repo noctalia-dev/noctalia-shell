@@ -547,6 +547,10 @@ lang = "en"                 # overidde language detection
 notifications_dbus = true   # when false, don't claim org.freedesktop.Notifications
 avatar_path = "/home/you/Pictures/avatar.png" # avatar image for Control Center overview session card
 clipboard_auto_paste = "auto" # off | auto | ctrl_v | ctrl_shift_v | shift_insert
+
+[shell.animation]
+enabled = true              # master switch for UI and theme motion
+speed = 1.0                 # 1.0 = normal, 0.5 = 2x slower, 2.0 = 2x faster
 ```
 
 `ui_scale` is completely separate from `bar.scale`:
@@ -555,6 +559,8 @@ clipboard_auto_paste = "auto" # off | auto | ctrl_v | ctrl_shift_v | shift_inser
 - neither setting changes Wayland output scale / HiDPI buffer scale
 
 `notifications_dbus` only controls the external D-Bus notification daemon. When disabled, apps cannot send notifications through `org.freedesktop.Notifications`, but Noctalia internal notifications still appear in popups, history, and widgets.
+
+`shell.animation.enabled` disables animated transitions globally. `shell.animation.speed` scales animation durations globally; values below `1.0` slow motion down and values above `1.0` speed it up.
 
 `avatar_path` sets the avatar image shown in the Control Center Overview session card.
 

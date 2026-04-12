@@ -557,6 +557,9 @@ void MediaTab::onFrameTick(float deltaMs) {
   if (!m_active || m_visualizerSpectrum == nullptr) {
     return;
   }
+  if (m_spectrum != nullptr) {
+    m_visualizerSpectrum->setValues(m_spectrum->values());
+  }
   m_visualizerSpectrum->tick(deltaMs);
 }
 
