@@ -102,6 +102,7 @@ private:
   void closeWindowPicker();
   void openItemMenu(DockInstance& instance, DockItemView& item);
   void closeItemMenu();
+  void startHideFadeOut(DockInstance& inst);
 
   [[nodiscard]] bool matchesActiveApp(const DockItemView& item, std::string_view activeAppIdLower) const;
   [[nodiscard]] bool matchesRunningApp(const DockItemView& item,
@@ -137,6 +138,7 @@ private:
   std::vector<std::unique_ptr<DockInstance>> m_instances;
   std::unordered_map<wl_surface*, DockInstance*> m_surfaceMap;
   DockInstance* m_hoveredInstance = nullptr;
+  DockInstance* m_popupOwnerInstance = nullptr; // instance that owns the current open popup
   std::unique_ptr<DockPopup> m_windowMenu;  // left-click multi-window picker
   std::unique_ptr<DockPopup> m_itemMenu;    // right-click context menu
 };

@@ -288,43 +288,11 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
         }
       }
 
-      // Auto-hide: start fade-out when pointer leaves.
-      if (m_config->config().dock.autoHide) {
-        auto* inst = m_hoveredInstance;
-        const float current = inst->hideOpacity;
-        inst->animations.animate(
-            current, 0.0f, Style::animSlow, Easing::EaseInQuad,
-            [inst](float v) {
-              if (inst->sceneRoot) inst->sceneRoot->setOpacity(v);
-              inst->hideOpacity = v;
-            },
-            [inst, this]() {
-              // When fully hidden, shrink input region to trigger strip only.
-              if (inst->surface == nullptr) return;
-              const auto& cfg = m_config->config().dock;
-              const bool vert = isVertical();
-              const bool isBottom = (cfg.position == "bottom");
-              const bool isRight  = (cfg.position == "right");
-              const auto sb = computeBleed(cfg);
-              const auto panelW = dockContentSize(inst->items.size());
-              const auto panelH = dockThickness();
-              const auto surfW = static_cast<int>(
-                  vert ? (sb.left + panelH + sb.right) : (panelW + sb.left + sb.right));
-              const auto surfH = static_cast<int>(
-                  vert ? (panelW + sb.up + sb.down)   : (sb.up + panelH + cfg.marginV));
-              (void)isBottom; (void)isRight;
-              if (!vert) {
-                // Trigger strip at bottom edge
-                inst->surface->setInputRegion({InputRect{0, surfH - kAutoHideTriggerPx, surfW, kAutoHideTriggerPx}});
-              } else if (cfg.position == "left") {
-                inst->surface->setInputRegion({InputRect{surfW - kAutoHideTriggerPx, 0, kAutoHideTriggerPx, surfH}});
-              } else {
-                inst->surface->setInputRegion({InputRect{0, 0, kAutoHideTriggerPx, surfH}});
-              }
-            });
-        if (m_hoveredInstance->surface) {
-          m_hoveredInstance->surface->requestRedraw();
-        }
+      // Auto-hide: start fade-out when pointer leaves, unless a popup menu
+      // is open (some compositors steal pointer focus and send a spurious Leave).
+      if (m_config->config().dock.autoHide &&
+          m_itemMenu == nullptr && m_windowMenu == nullptr) {
+        startHideFadeOut(*m_hoveredInstance);
       }
       m_hoveredInstance = nullptr;
     }
@@ -1069,6 +1037,7 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item,
 
   closeWindowPicker();
 
+  m_popupOwnerInstance = &instance;
   auto menu = std::make_unique<DockPopup>();
 
   // Build context menu entries (window titles).
@@ -1224,7 +1193,16 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item,
 }
 
 void Dock::closeWindowPicker() {
+  DockInstance* owner = m_popupOwnerInstance;
+  m_popupOwnerInstance = nullptr;
   m_windowMenu.reset();
+  if (m_config->config().dock.autoHide && owner != nullptr && owner->hideOpacity > 0.0f) {
+    owner->pointerInside = false;
+    if (m_hoveredInstance == owner) {
+      m_hoveredInstance = nullptr;
+    }
+    startHideFadeOut(*owner);
+  }
 }
 
 // ── Private: generic popup routing ───────────────────────────────────────────
@@ -1274,8 +1252,49 @@ bool Dock::routePopupEvent(DockPopup* popup, const PointerEvent& event) {
 
 // ── Private: item context menu (right-click) ──────────────────────────────────
 
+void Dock::startHideFadeOut(DockInstance& inst) {
+  const float current = inst.hideOpacity;
+  inst.animations.animate(
+      current, 0.0f, Style::animSlow, Easing::EaseInQuad,
+      [&inst](float v) {
+        if (inst.sceneRoot) inst.sceneRoot->setOpacity(v);
+        inst.hideOpacity = v;
+      },
+      [&inst, this]() {
+        if (inst.surface == nullptr) return;
+        const auto& cfg = m_config->config().dock;
+        const bool vert = isVertical();
+        const auto sb   = computeBleed(cfg);
+        const auto panelW = dockContentSize(inst.items.size());
+        const auto panelH = dockThickness();
+        const auto surfW = static_cast<int>(
+            vert ? (sb.left + panelH + sb.right) : (panelW + sb.left + sb.right));
+        const auto surfH = static_cast<int>(
+            vert ? (panelW + sb.up + sb.down)   : (sb.up + panelH + cfg.marginV));
+        if (!vert) {
+          inst.surface->setInputRegion({InputRect{0, surfH - kAutoHideTriggerPx, surfW, kAutoHideTriggerPx}});
+        } else if (cfg.position == "left") {
+          inst.surface->setInputRegion({InputRect{surfW - kAutoHideTriggerPx, 0, kAutoHideTriggerPx, surfH}});
+        } else {
+          inst.surface->setInputRegion({InputRect{0, 0, kAutoHideTriggerPx, surfH}});
+        }
+      });
+  if (inst.surface) inst.surface->requestRedraw();
+}
+
 void Dock::closeItemMenu() {
+  DockInstance* owner = m_popupOwnerInstance;
+  m_popupOwnerInstance = nullptr;
   m_itemMenu.reset();
+  // Fade the owner out — the pointer left the dock to interact with the menu,
+  // whether or not the compositor sent a Leave event at that time.
+  if (m_config->config().dock.autoHide && owner != nullptr && owner->hideOpacity > 0.0f) {
+    owner->pointerInside = false;
+    if (m_hoveredInstance == owner) {
+      m_hoveredInstance = nullptr;
+    }
+    startHideFadeOut(*owner);
+  }
 }
 
 void Dock::launchAction(const DesktopAction& action) {
@@ -1307,6 +1326,7 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
   closeWindowPicker();
   closeItemMenu();
 
+  m_popupOwnerInstance = &instance;
   auto menu = std::make_unique<DockPopup>();
 
   // Collect running windows for "Close" / "Close All" entries.
