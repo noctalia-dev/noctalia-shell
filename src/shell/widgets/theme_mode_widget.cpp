@@ -43,7 +43,7 @@ void ThemeModeWidget::create() {
   setRoot(std::move(area));
 }
 
-void ThemeModeWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void ThemeModeWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   if (m_glyph == nullptr) {
     return;
   }
@@ -57,9 +57,8 @@ void ThemeModeWidget::layout(Renderer& renderer, float /*containerWidth*/, float
   }
 }
 
-void ThemeModeWidget::update(Renderer& renderer) {
+void ThemeModeWidget::doUpdate(Renderer& renderer) {
   syncState(renderer);
-  Widget::update(renderer);
 }
 
 void ThemeModeWidget::syncState(Renderer& renderer) {
@@ -83,4 +82,3 @@ void ThemeModeWidget::syncState(Renderer& renderer) {
   }
   requestRedraw();
 }
-

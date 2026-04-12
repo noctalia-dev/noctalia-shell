@@ -534,7 +534,7 @@ void TestPanel::create() {
   }
 }
 
-void TestPanel::layout(Renderer& renderer, float /*width*/, float /*height*/) {
+void TestPanel::doLayout(Renderer& renderer, float /*width*/, float /*height*/) {
   if (root() == nullptr) {
     return;
   }
@@ -571,4 +571,4 @@ void TestPanel::layout(Renderer& renderer, float /*width*/, float /*height*/) {
   }
 }
 
-void TestPanel::update(Renderer& /*renderer*/) {}
+void TestPanel::doUpdate(Renderer& /*renderer*/) {}

@@ -53,7 +53,7 @@ void VolumeWidget::create() {
   setRoot(std::move(area));
 }
 
-void VolumeWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void VolumeWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
   if (m_glyph == nullptr || m_label == nullptr || rootNode == nullptr) {
     return;
@@ -70,9 +70,8 @@ void VolumeWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
   rootNode->setSize(m_label->x() + m_label->width(), m_glyph->height());
 }
 
-void VolumeWidget::update(Renderer& renderer) {
+void VolumeWidget::doUpdate(Renderer& renderer) {
   syncState(renderer);
-  Widget::update(renderer);
 }
 
 void VolumeWidget::syncState(Renderer& renderer) {

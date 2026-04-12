@@ -28,8 +28,6 @@ public:
                  ThumbnailService* thumbnails);
 
   void create() override;
-  void layout(Renderer& renderer, float width, float height) override;
-  void update(Renderer& renderer) override;
   void onOpen(std::string_view context) override;
   void onClose() override;
 
@@ -42,6 +40,8 @@ public:
   [[nodiscard]] InputArea* initialFocusArea() const override;
 
 private:
+  void doLayout(Renderer& renderer, float width, float height) override;
+  void doUpdate(Renderer& renderer) override;
   // "ALL" is represented by an empty connector string.
   struct MonitorChoice {
     std::string connector; // empty = ALL

@@ -116,8 +116,9 @@ private:
   static std::uint32_t packColor(const Color& c);
 
   float m_contentScale = 1.0f;
+  bool m_fontConfigInitialized = false;
 
-  PangoFontMap* m_fontMap = nullptr;    // not owned (default font map)
+  PangoFontMap* m_fontMap = nullptr;    // owned
   PangoContext* m_pangoContext = nullptr; // owned
   ColorGlyphProgram* m_program = nullptr;
 

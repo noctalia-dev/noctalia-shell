@@ -19,10 +19,10 @@ public:
   explicit TrayWidget(TrayService* tray);
 
   void create() override;
-  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
-  void update(Renderer& renderer) override;
 
 private:
+  void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
+  void doUpdate(Renderer& renderer) override;
   void buildDesktopIconIndex();
   [[nodiscard]] std::string resolveIconPath(const TrayItemInfo& item);
   [[nodiscard]] std::string resolveFromTrayThemePath(std::string_view themePath, std::string_view iconName);

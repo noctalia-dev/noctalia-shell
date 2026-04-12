@@ -52,7 +52,7 @@ void NightLightWidget::create() {
   setRoot(std::move(area));
 }
 
-void NightLightWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void NightLightWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   if (m_glyph == nullptr) {
     return;
   }
@@ -66,9 +66,8 @@ void NightLightWidget::layout(Renderer& renderer, float /*containerWidth*/, floa
   }
 }
 
-void NightLightWidget::update(Renderer& renderer) {
+void NightLightWidget::doUpdate(Renderer& renderer) {
   syncState(renderer);
-  Widget::update(renderer);
 }
 
 void NightLightWidget::syncState(Renderer& renderer) {

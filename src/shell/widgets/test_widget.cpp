@@ -27,7 +27,7 @@ void TestWidget::create() {
   setRoot(std::move(area));
 }
 
-void TestWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void TestWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   if (m_glyph == nullptr) {
     return;
   }

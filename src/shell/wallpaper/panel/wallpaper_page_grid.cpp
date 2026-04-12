@@ -94,7 +94,7 @@ void WallpaperPageGrid::clearPool() {
   m_pool.clear();
 }
 
-void WallpaperPageGrid::layout(Renderer& renderer) {
+void WallpaperPageGrid::doLayout(Renderer& renderer) {
   const float W = width();
   const float H = height();
   if (W <= 0.0f || H <= 0.0f) {

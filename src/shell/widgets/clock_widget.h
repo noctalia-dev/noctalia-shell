@@ -14,10 +14,10 @@ public:
   ClockWidget(const TimeService& timeService, wl_output* output, std::string format = "{:%H:%M}");
 
   void create() override;
-  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
-  void update(Renderer& renderer) override;
 
 private:
+  void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
+  void doUpdate(Renderer& renderer) override;
   const TimeService& m_time;
   wl_output* m_output = nullptr;
   std::string m_format;

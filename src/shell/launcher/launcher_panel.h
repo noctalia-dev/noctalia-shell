@@ -25,8 +25,6 @@ public:
   void addProvider(std::unique_ptr<LauncherProvider> provider);
 
   void create() override;
-  void layout(Renderer& renderer, float width, float height) override;
-  void update(Renderer& renderer) override;
   void onOpen(std::string_view context) override;
   void onClose() override;
 
@@ -39,6 +37,8 @@ public:
   [[nodiscard]] InputArea* initialFocusArea() const override;
 
 private:
+  void doLayout(Renderer& renderer, float width, float height) override;
+  void doUpdate(Renderer& renderer) override;
   void onInputChanged(const std::string& text);
   void rebuildResults(Renderer& renderer, float width);
   void activateSelected();

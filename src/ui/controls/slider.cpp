@@ -1,4 +1,3 @@
-#include "core/ui_phase.h"
 #include "ui/controls/slider.h"
 
 #include "render/programs/rounded_rect_program.h"
@@ -134,8 +133,7 @@ void Slider::setOnDragEnd(std::function<void()> callback) { m_onDragEnd = std::m
 
 bool Slider::dragging() const noexcept { return m_inputArea != nullptr && m_inputArea->pressed(); }
 
-void Slider::layout(Renderer& /*renderer*/) {
-  uiAssertNotRendering("Slider::layout");
+void Slider::doLayout(Renderer& /*renderer*/) {
   updateGeometry();
   applyVisualState();
 }

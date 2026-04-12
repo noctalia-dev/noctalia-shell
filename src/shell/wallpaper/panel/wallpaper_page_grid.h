@@ -42,9 +42,8 @@ public:
   // close so no GL textures outlive the panel.
   void releaseAllTiles(Renderer& renderer);
 
-  void layout(Renderer& renderer) override;
-
 private:
+  void doLayout(Renderer& renderer) override;
   void buildPool(float cellW, float cellH);
   void clearPool();
 

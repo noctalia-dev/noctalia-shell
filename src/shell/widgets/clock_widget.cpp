@@ -25,7 +25,7 @@ void ClockWidget::create() {
   setRoot(std::move(area));
 }
 
-void ClockWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void ClockWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
   if (m_label == nullptr || rootNode == nullptr) {
     return;
@@ -36,7 +36,7 @@ void ClockWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*c
   rootNode->setSize(m_label->width(), m_label->height());
 }
 
-void ClockWidget::update(Renderer& renderer) {
+void ClockWidget::doUpdate(Renderer& renderer) {
   auto text = m_time.format(m_format.c_str());
 
   if (text != m_lastText) {

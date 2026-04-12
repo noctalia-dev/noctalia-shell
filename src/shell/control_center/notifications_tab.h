@@ -15,11 +15,11 @@ public:
 
   std::unique_ptr<Flex> create() override;
   std::unique_ptr<Flex> createHeaderActions() override;
-  void layout(Renderer& renderer, float contentWidth, float bodyHeight) override;
-  void update(Renderer& renderer) override;
   void onClose() override;
 
 private:
+  void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) override;
+  void doUpdate(Renderer& renderer) override;
   void clearAllNotifications();
   void removeNotificationEntry(uint32_t id, bool wasActive);
   void toggleNotificationExpanded(uint32_t id);

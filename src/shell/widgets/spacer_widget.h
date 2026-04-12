@@ -7,8 +7,8 @@ public:
   explicit SpacerWidget(float length = 0.0f);
 
   void create() override;
-  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
 
 private:
+  void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   float m_fixedLength;
 };

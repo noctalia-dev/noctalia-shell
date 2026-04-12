@@ -31,9 +31,8 @@ public:
   [[nodiscard]] float minCellWidth() const noexcept { return m_minCellWidth; }
   [[nodiscard]] float minCellHeight() const noexcept { return m_minCellHeight; }
 
-  void layout(Renderer& renderer) override;
-
 private:
+  void doLayout(Renderer& renderer) override;
   std::size_t m_columns = 1;
   float m_columnGap = 0.0f;
   float m_rowGap = 0.0f;

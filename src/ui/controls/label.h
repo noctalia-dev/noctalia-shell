@@ -31,12 +31,12 @@ public:
   [[nodiscard]] bool bold() const noexcept;
   [[nodiscard]] float baselineOffset() const noexcept { return m_baselineOffset; }
 
-  void layout(Renderer& renderer) override;
   void measure(Renderer& renderer);
 
   void setCaptionStyle();
 
 private:
+  void doLayout(Renderer& renderer) override;
   void applyPalette();
 
   TextNode* m_textNode = nullptr;

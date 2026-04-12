@@ -1,7 +1,5 @@
 #include "shell/widget/widget.h"
 
-void Widget::update(Renderer& /*renderer*/) {}
-
 void Widget::onPointerEnter(float /*localX*/, float /*localY*/) {}
 void Widget::onPointerLeave() {}
 void Widget::onPointerMotion(float /*localX*/, float /*localY*/) {}

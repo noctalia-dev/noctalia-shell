@@ -41,7 +41,7 @@ void Glyph::setColor(const Color& color) { setColor(fixedColor(color)); }
 
 void Glyph::applyPalette() { m_glyphNode->setColor(resolveThemeColor(m_color)); }
 
-void Glyph::layout(Renderer& renderer) { measure(renderer); }
+void Glyph::doLayout(Renderer& renderer) { measure(renderer); }
 
 void Glyph::measure(Renderer& renderer) {
   const float assignedWidth = width();

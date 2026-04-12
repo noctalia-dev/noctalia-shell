@@ -38,7 +38,7 @@ void IdleInhibitorWidget::create() {
   setRoot(std::move(area));
 }
 
-void IdleInhibitorWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void IdleInhibitorWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   if (m_glyph == nullptr) {
     return;
   }
@@ -52,9 +52,8 @@ void IdleInhibitorWidget::layout(Renderer& renderer, float /*containerWidth*/, f
   }
 }
 
-void IdleInhibitorWidget::update(Renderer& renderer) {
+void IdleInhibitorWidget::doUpdate(Renderer& renderer) {
   syncState(renderer);
-  Widget::update(renderer);
 }
 
 void IdleInhibitorWidget::syncState(Renderer& renderer) {

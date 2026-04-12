@@ -17,10 +17,10 @@ public:
   ActiveWindowWidget(WaylandConnection& connection, float maxTitleWidth, float iconSize);
 
   void create() override;
-  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
-  void update(Renderer& renderer) override;
 
 private:
+  void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
+  void doUpdate(Renderer& renderer) override;
   void syncState(Renderer& renderer);
   [[nodiscard]] std::string resolveIconPath(const std::string& appId);
   void buildDesktopIconIndex();

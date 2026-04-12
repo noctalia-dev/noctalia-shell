@@ -234,7 +234,7 @@ void SessionPanel::updateSelectionVisuals() {
   }
 }
 
-void SessionPanel::layout(Renderer& renderer, float width, float height) {
+void SessionPanel::doLayout(Renderer& renderer, float width, float height) {
   if (m_rootLayout == nullptr) {
     return;
   }
@@ -249,7 +249,7 @@ void SessionPanel::layout(Renderer& renderer, float width, float height) {
   }
 }
 
-void SessionPanel::update(Renderer& /*renderer*/) {}
+void SessionPanel::doUpdate(Renderer& /*renderer*/) {}
 
 void SessionPanel::onClose() {
   m_rootLayout = nullptr;

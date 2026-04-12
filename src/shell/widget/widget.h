@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/ui_phase.h"
 #include "render/scene/node.h"
 
 #include <functional>
@@ -15,8 +16,14 @@ public:
   virtual ~Widget() = default;
 
   virtual void create() = 0;
-  virtual void layout(Renderer& renderer, float containerWidth, float containerHeight) = 0;
-  virtual void update(Renderer& renderer);
+  void layout(Renderer& renderer, float containerWidth, float containerHeight) {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
+    doLayout(renderer, containerWidth, containerHeight);
+  }
+  void update(Renderer& renderer) {
+    UiPhaseScope updatePhase(UiPhase::Update);
+    doUpdate(renderer);
+  }
   virtual void onFrameTick(float deltaMs) { (void)deltaMs; }
   [[nodiscard]] virtual bool needsFrameTick() const { return false; }
 
@@ -41,6 +48,8 @@ protected:
   void requestRedraw();
   void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
   void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
+  virtual void doLayout(Renderer& renderer, float containerWidth, float containerHeight) = 0;
+  virtual void doUpdate(Renderer& renderer) { (void)renderer; }
 
   float m_contentScale = 1.0f;
   AnimationManager* m_animations = nullptr;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/ui_phase.h"
 #include "render/scene/node.h"
 #include "wayland/layer_surface.h"
 
@@ -15,8 +16,14 @@ public:
   virtual ~Panel() = default;
 
   virtual void create() = 0;
-  virtual void layout(Renderer& renderer, float width, float height) = 0;
-  virtual void update(Renderer& renderer) = 0;
+  void layout(Renderer& renderer, float width, float height) {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
+    doLayout(renderer, width, height);
+  }
+  void update(Renderer& renderer) {
+    UiPhaseScope updatePhase(UiPhase::Update);
+    doUpdate(renderer);
+  }
   virtual void onFrameTick(float deltaMs) { (void)deltaMs; }
   virtual void onOpen(std::string_view context) { (void)context; }
   virtual void onClose() {}
@@ -48,6 +55,8 @@ protected:
   [[nodiscard]] float scaled(float value) const noexcept { return value * m_contentScale; }
   void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
   void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
+  virtual void doLayout(Renderer& renderer, float width, float height) = 0;
+  virtual void doUpdate(Renderer& renderer) { (void)renderer; }
 
   float m_contentScale = 1.0f;
   AnimationManager* m_animations = nullptr;

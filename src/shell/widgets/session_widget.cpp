@@ -27,7 +27,7 @@ void SessionWidget::create() {
   setRoot(std::move(area));
 }
 
-void SessionWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void SessionWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   if (m_glyph == nullptr) {
     return;
   }

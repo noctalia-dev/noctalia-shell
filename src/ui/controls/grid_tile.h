@@ -8,5 +8,6 @@ class Renderer;
 // then clears mins to zero (do not rely on persistent setMinWidth/setMinHeight here).
 class GridTile : public Flex {
 public:
-  void layout(Renderer& renderer) override;
+protected:
+  void doLayout(Renderer& renderer) override;
 };

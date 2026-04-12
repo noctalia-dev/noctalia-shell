@@ -1,0 +1,297 @@
+18:16:17.410 [[32mINF[0m] [[34mclipboard[0m] loaded 50 persisted clipboard entries
+18:16:17.410 [[32mINF[0m] [[34mconfig[0m] loading /home/lemmy/.config/noctalia/config.toml
+18:16:17.411 [[32mINF[0m] [[34mconfig[0m] 1 bar(s) defined
+18:16:17.411 [[32mINF[0m] [[34mconfig[0m] idle behaviors=0
+18:16:17.411 [[32mINF[0m] [[34mstate[0m] loading /home/lemmy/.local/state/noctalia/state.toml
+18:16:17.411 [[32mINF[0m] [[34mstate[0m] wallpaper default="/home/lemmy/Pictures/Wallpapers/assassin-creed.jpg" monitors=3
+18:16:17.422 [[32mINF[0m] [[34mthumb[0m] spawned 8 decode worker(s)
+18:16:17.423 [[32mINF[0m] [[34mapp[0m] noctalia v0.1.0
+18:16:17.423 [[32mINF[0m] [[34mi18n[0m] language: en
+18:16:17.821 [[32mINF[0m] [[34mseat[0m] keyboard: bound
+18:16:17.821 [[32mINF[0m] [[34mseat[0m] pointer: bound
+18:16:17.821 [[32mINF[0m] [[34mseat[0m] pointer: cursor-shape-v1 available
+18:16:17.821 [[32mINF[0m] [[34mworkspace[0m] workspace backend=ext-workspace
+18:16:17.821 [[32mINF[0m] [[34mwayland[0m] connected compositor=yes shm=yes layer-shell=yes xdg-shell=yes xdg-output=yes ext-workspace=yes mango-workspace=no session-lock=yes outputs=3 workspace-backend=ext-workspace
+18:16:17.821 [[32mINF[0m] [[34mwayland[0m] output DP-2 global=44 scale=1 mode=2560x1440 desc="Ancor Communications Inc - ROG PG279Q - DP-2"
+18:16:17.821 [[32mINF[0m] [[34mwayland[0m] output HDMI-A-1 global=45 scale=1 mode=1920x1080 desc="Dell Inc. - DELL P2418HT - HDMI-A-1"
+18:16:17.821 [[32mINF[0m] [[34mwayland[0m] output DP-1 global=46 scale=2 mode=3840x2160 desc="Technical Concepts Ltd - 32R84 - DP-1"
+18:16:17.821 [[32mINF[0m] [[34mclipboard[0m] clipboard service bound via ext_data_control_manager_v1
+18:16:17.821 [[32mINF[0m] [[34mwallpaper[0m] creating on DP-2 (Ancor Communications Inc - ROG PG279Q - DP-2), path=/home/lemmy/Pictures/Wallpapers/assassin-creed.jpg
+18:16:17.845 [[32mINF[0m] [[34mseat[0m] keyboard: keymap loaded
+18:16:18.039 [[32mINF[0m] [[34mwallpaper[0m] texture uploaded and cached for /home/lemmy/Pictures/Wallpapers/assassin-creed.jpg
+18:16:18.044 [[32mINF[0m] [[34mwallpaper[0m] creating on HDMI-A-1 (Dell Inc. - DELL P2418HT - HDMI-A-1), path=/home/lemmy/Pictures/Wallpapers/assassin-creed.jpg
+18:16:18.048 [[32mINF[0m] [[34mwallpaper[0m] texture cache hit for /home/lemmy/Pictures/Wallpapers/assassin-creed.jpg (refCount=2)
+18:16:18.049 [[32mINF[0m] [[34mwallpaper[0m] creating on DP-1 (Technical Concepts Ltd - 32R84 - DP-1), path=/home/lemmy/Pictures/Wallpapers/assassin-creed.jpg
+18:16:18.052 [[32mINF[0m] [[34mwallpaper[0m] texture cache hit for /home/lemmy/Pictures/Wallpapers/assassin-creed.jpg (refCount=3)
+18:16:18.052 [[32mINF[0m] [[34moverview[0m] creating on DP-2 (Ancor Communications Inc - ROG PG279Q - DP-2), path=/home/lemmy/Pictures/Wallpapers/assassin-creed.jpg
+18:16:18.055 [[32mINF[0m] [[34mwallpaper[0m] texture cache hit for /home/lemmy/Pictures/Wallpapers/assassin-creed.jpg (refCount=4)
+18:16:18.057 [[32mINF[0m] [[34moverview[0m] creating on HDMI-A-1 (Dell Inc. - DELL P2418HT - HDMI-A-1), path=/home/lemmy/Pictures/Wallpapers/assassin-creed.jpg
+18:16:18.060 [[32mINF[0m] [[34mwallpaper[0m] texture cache hit for /home/lemmy/Pictures/Wallpapers/assassin-creed.jpg (refCount=5)
+18:16:18.062 [[32mINF[0m] [[34moverview[0m] creating on DP-1 (Technical Concepts Ltd - 32R84 - DP-1), path=/home/lemmy/Pictures/Wallpapers/assassin-creed.jpg
+18:16:18.065 [[32mINF[0m] [[34mwallpaper[0m] texture cache hit for /home/lemmy/Pictures/Wallpapers/assassin-creed.jpg (refCount=6)
+18:16:18.066 [[32mINF[0m] [[34mapp[0m] distro: Fedora Linux 43 (Forty Three)
+18:16:18.066 [[32mINF[0m] [[34mapp[0m] system monitor service active
+18:16:18.067 [[32mINF[0m] [[34mapp[0m] connected to system bus
+18:16:18.067 [[32mINF[0m] [[34mapp[0m] power profiles active profile: balanced
+18:16:18.068 [[32mINF[0m] [[34mupower[0m] connected (no battery present)
+18:16:18.069 [[32mINF[0m] [[34mpipewire[0m] connected (version 1.4.11)
+18:16:18.069 [[32mINF[0m] [[34mapp[0m] connected to session bus
+18:16:18.069 [[32mINF[0m] [[34mapp[0m] debug service active on dev.noctalia.Debug
+18:16:18.072 [[32mINF[0m] [[34mapp[0m] mpris discovery active
+18:16:18.072 [[32mINF[0m] [[34mapp[0m] listening on org.freedesktop.Notifications
+18:16:18.072 [[32mINF[0m] [[34mtray[0m] watcher active on org.kde.StatusNotifierWatcher
+18:16:18.073 [[32mINF[0m] [[34mweather[0m] loaded cached weather for Saint-Adrien, Canada from /home/lemmy/.cache/noctalia/weather.json
+18:16:18.178 [[32mINF[0m] [[34mbar[0m] creating "main" on HDMI-A-1 (Dell Inc. - DELL P2418HT - HDMI-A-1), height=32 position=top
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==186257==ERROR: AddressSanitizer: stack-overflow on address 0x7fffe1613f58 (pc 0x7f029760872c bp 0x7c0294e8c640 sp 0x7fffe1613f60 T0)
+    #0 0x7f029760872c in HandleDynamicTypeCacheMiss(__ubsan::DynamicTypeCacheMissData*, unsigned long, unsigned long, __ubsan::ReportOptions) (/lib64/libubsan.so.1+0x872c) (BuildId: 406b10e0252b3e63fcaa201683122332ef973e66)
+    #1 0x7f0297608e2e in __ubsan_handle_dynamic_type_cache_miss (/lib64/libubsan.so.1+0x8e2e) (BuildId: 406b10e0252b3e63fcaa201683122332ef973e66)
+    #2 0x0000016fa8c1 in ProgressBar::updateGeometry() ../src/ui/controls/progress_bar.cpp:93
+    #3 0x0000016f8fa3 in ProgressBar::setProgress(float) ../src/ui/controls/progress_bar.cpp:67
+    #4 0x00000146b889 in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:150
+    #5 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #6 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #7 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #8 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #9 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #10 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #11 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #12 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #13 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #14 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #15 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #16 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #17 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #18 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #19 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #20 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #21 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #22 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #23 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #24 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #25 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #26 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #27 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #28 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #29 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #30 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #31 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #32 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #33 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #34 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #35 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #36 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #37 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #38 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #39 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #40 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #41 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #42 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #43 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #44 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #45 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #46 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #47 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #48 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #49 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #50 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #51 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #52 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #53 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #54 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #55 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #56 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #57 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #58 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #59 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #60 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #61 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #62 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #63 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #64 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #65 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #66 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #67 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #68 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #69 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #70 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #71 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #72 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #73 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #74 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #75 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #76 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #77 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #78 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #79 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #80 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #81 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #82 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #83 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #84 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #85 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #86 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #87 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #88 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #89 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #90 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #91 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #92 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #93 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #94 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #95 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #96 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #97 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #98 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #99 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #100 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #101 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #102 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #103 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #104 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #105 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #106 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #107 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #108 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #109 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #110 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #111 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #112 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #113 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #114 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #115 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #116 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #117 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #118 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #119 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #120 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #121 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #122 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #123 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #124 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #125 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #126 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #127 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #128 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #129 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #130 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #131 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #132 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #133 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #134 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #135 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #136 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #137 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #138 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #139 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #140 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #141 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #142 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #143 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #144 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #145 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #146 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #147 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #148 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #149 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #150 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #151 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #152 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #153 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #154 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #155 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #156 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #157 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #158 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #159 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #160 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #161 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #162 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #163 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #164 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #165 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #166 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #167 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #168 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #169 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #170 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #171 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #172 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #173 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #174 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #175 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #176 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #177 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #178 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #179 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #180 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #181 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #182 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #183 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #184 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #185 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #186 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #187 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #188 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #189 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #190 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #191 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #192 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #193 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #194 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #195 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #196 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #197 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #198 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #199 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #200 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #201 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #202 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #203 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #204 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #205 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #206 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #207 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #208 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #209 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #210 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #211 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #212 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #213 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #214 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #215 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #216 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #217 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #218 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #219 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #220 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #221 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #222 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #223 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #224 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #225 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #226 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #227 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #228 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #229 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #230 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #231 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #232 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #233 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #234 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #235 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #236 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #237 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #238 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #239 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #240 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #241 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #242 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #243 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #244 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+    #245 0x000000f131f6 in Widget::update(Renderer&) ../src/shell/widget/widget.h:25
+    #246 0x00000146babf in SysmonWidget::doUpdate(Renderer&) ../src/shell/widgets/sysmon_widget.cpp:153
+
+SUMMARY: AddressSanitizer: stack-overflow ../src/ui/controls/progress_bar.cpp:93 in ProgressBar::updateGeometry()
+==186257==ABORTING

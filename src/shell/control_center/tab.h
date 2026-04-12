@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/ui_phase.h"
 #include "render/core/color.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -33,14 +34,16 @@ public:
   virtual std::unique_ptr<Flex> createHeaderActions();
 
   // Called by ControlCenterPanel::layout() with the available content dimensions.
-  virtual void layout(Renderer& renderer, float contentWidth, float bodyHeight) {
-    (void)renderer;
-    (void)contentWidth;
-    (void)bodyHeight;
+  void layout(Renderer& renderer, float contentWidth, float bodyHeight) {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
+    doLayout(renderer, contentWidth, bodyHeight);
   }
 
   // Called by ControlCenterPanel::update() every frame.
-  virtual void update(Renderer& renderer) { (void)renderer; }
+  void update(Renderer& renderer) {
+    UiPhaseScope updatePhase(UiPhase::Update);
+    doUpdate(renderer);
+  }
 
   // Called every Wayland frame callback with elapsed milliseconds. Default is a no-op.
   // Tabs override this to advance per-frame animations independently of data arrival.
@@ -57,6 +60,12 @@ public:
 protected:
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
   [[nodiscard]] float scaled(float value) const noexcept { return value * m_contentScale; }
+  virtual void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
+    (void)renderer;
+    (void)contentWidth;
+    (void)bodyHeight;
+  }
+  virtual void doUpdate(Renderer& renderer) { (void)renderer; }
 
 private:
   float m_contentScale = 1.0f;

@@ -23,7 +23,6 @@ public:
   using HoverCallback = std::function<void()>;
 
   WallpaperTile(float cellWidth, float cellHeight, float contentScale);
-  void layout(Renderer& renderer) override;
 
   // Non-owning pointer to the shared async thumbnail service. If null, tiles
   // will leave their image blank.
@@ -49,6 +48,7 @@ public:
 
 private:
   void applyVisualState();
+  void doLayout(Renderer& renderer) override;
 
   float m_cellWidth;
   float m_cellHeight;

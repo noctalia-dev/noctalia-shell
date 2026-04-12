@@ -433,7 +433,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   return tab;
 }
 
-void OverviewTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) {
+void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
   (void)bodyHeight;
   if (m_rootLayout == nullptr) {
     return;
@@ -488,7 +488,7 @@ void OverviewTab::layout(Renderer& renderer, float contentWidth, float bodyHeigh
   }
 }
 
-void OverviewTab::update(Renderer& renderer) {
+void OverviewTab::doUpdate(Renderer& renderer) {
   if (!m_active) {
     return;
   }

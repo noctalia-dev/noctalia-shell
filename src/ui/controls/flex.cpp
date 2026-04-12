@@ -1,4 +1,3 @@
-#include "core/ui_phase.h"
 #include "ui/controls/flex.h"
 
 #include "render/core/renderer.h"
@@ -181,8 +180,7 @@ void Flex::ensureBackground() {
   applyPalette();
 }
 
-void Flex::layout(Renderer& renderer) {
-  uiAssertNotRendering("Flex::layout");
+void Flex::doLayout(Renderer& renderer) {
   auto& kids = children();
   const bool horizontal = m_direction == FlexDirection::Horizontal;
   const float containerMain = horizontal ? width() : height();

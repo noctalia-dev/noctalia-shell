@@ -452,7 +452,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   return tab;
 }
 
-void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) {
+void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
   if (m_rootLayout == nullptr || m_nowCard == nullptr || m_mediaStack == nullptr) {
     return;
   }
@@ -552,7 +552,7 @@ void MediaTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
   }
 }
 
-void MediaTab::update(Renderer& renderer) {
+void MediaTab::doUpdate(Renderer& renderer) {
   if (!m_active) {
     return;
   }

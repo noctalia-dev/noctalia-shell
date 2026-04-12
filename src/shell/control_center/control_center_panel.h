@@ -36,8 +36,6 @@ public:
                      PowerProfilesService* powerProfiles = nullptr);
 
   void create() override;
-  void layout(Renderer& renderer, float width, float height) override;
-  void update(Renderer& renderer) override;
   void onFrameTick(float deltaMs) override;
   void onOpen(std::string_view context) override;
   void onClose() override;
@@ -50,6 +48,8 @@ public:
   [[nodiscard]] bool centeredVertically() const override { return true; }
 
 private:
+  void doLayout(Renderer& renderer, float width, float height) override;
+  void doUpdate(Renderer& renderer) override;
   static constexpr float kPreferredPanelWidth = 932.0f;
   static constexpr float kPreferredPanelHeight = Style::controlHeightLg * 15 + Style::spaceLg + Style::spaceSm;
 

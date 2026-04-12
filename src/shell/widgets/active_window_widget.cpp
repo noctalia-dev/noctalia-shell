@@ -51,7 +51,7 @@ void ActiveWindowWidget::create() {
   setRoot(std::move(rootNode));
 }
 
-void ActiveWindowWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void ActiveWindowWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
   if (rootNode == nullptr || m_icon == nullptr || m_title == nullptr) {
     return;
@@ -73,9 +73,8 @@ void ActiveWindowWidget::layout(Renderer& renderer, float /*containerWidth*/, fl
   rootNode->setSize(m_title->x() + m_title->width(), contentHeight);
 }
 
-void ActiveWindowWidget::update(Renderer& renderer) {
+void ActiveWindowWidget::doUpdate(Renderer& renderer) {
   syncState(renderer);
-  Widget::update(renderer);
 }
 
 void ActiveWindowWidget::syncState(Renderer& renderer) {

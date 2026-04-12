@@ -156,7 +156,7 @@ void ControlCenterPanel::create() {
   selectTab(m_activeTab);
 }
 
-void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
+void ControlCenterPanel::doLayout(Renderer& renderer, float width, float height) {
   if (m_rootLayout == nullptr || m_content == nullptr || m_tabBodies == nullptr) {
     return;
   }
@@ -192,7 +192,7 @@ void ControlCenterPanel::layout(Renderer& renderer, float width, float height) {
   }
 }
 
-void ControlCenterPanel::update(Renderer& renderer) {
+void ControlCenterPanel::doUpdate(Renderer& renderer) {
   const std::size_t activeIdx = tabIndex(m_activeTab);
   if (m_tabs[activeIdx] != nullptr) {
     m_tabs[activeIdx]->update(renderer);

@@ -12,10 +12,10 @@ public:
   NotificationWidget(NotificationManager* manager, wl_output* output);
 
   void create() override;
-  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
-  void update(Renderer& renderer) override;
 
 private:
+  void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
+  void doUpdate(Renderer& renderer) override;
   void refreshIndicatorState();
 
   NotificationManager* m_manager = nullptr;

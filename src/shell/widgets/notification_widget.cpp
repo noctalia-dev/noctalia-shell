@@ -38,7 +38,7 @@ void NotificationWidget::create() {
   refreshIndicatorState();
 }
 
-void NotificationWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void NotificationWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
   if (m_glyph == nullptr || rootNode == nullptr) {
     return;
@@ -57,9 +57,8 @@ void NotificationWidget::layout(Renderer& renderer, float /*containerWidth*/, fl
   }
 }
 
-void NotificationWidget::update(Renderer& renderer) {
+void NotificationWidget::doUpdate(Renderer& renderer) {
   refreshIndicatorState();
-  Widget::update(renderer);
 }
 
 void NotificationWidget::refreshIndicatorState() {

@@ -23,9 +23,8 @@ public:
   [[nodiscard]] bool hovered() const noexcept;
   [[nodiscard]] bool pressed() const noexcept;
 
-  void layout(Renderer& renderer) override;
-
 private:
+  void doLayout(Renderer& renderer) override;
   void applyState();
 
   Box* m_box = nullptr;
@@ -36,4 +35,3 @@ private:
   bool m_enabled = true;
   float m_scale = 1.0f;
 };
-

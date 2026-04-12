@@ -73,13 +73,17 @@ CairoTextRenderer::~CairoTextRenderer() { cleanup(); }
 void CairoTextRenderer::initialize(ColorGlyphProgram* program) {
   m_program = program;
 
-  FcInit();
+  if (FcInit()) {
+    m_fontConfigInitialized = true;
+  } else {
+    kLog.warn("fontconfig initialization failed");
+  }
 
   if (cairo_version() < CAIRO_VERSION_ENCODE(1, 18, 0)) {
     kLog.warn("cairo version {} (<1.18) — COLR v1 color emoji will not render", cairo_version_string());
   }
 
-  m_fontMap = pango_cairo_font_map_get_default(); // not owned
+  m_fontMap = pango_cairo_font_map_new();
   m_pangoContext = pango_font_map_create_context(m_fontMap);
 
   // Force grayscale AA + full hinting + hinted metrics. Without this, Cairo
@@ -118,7 +122,14 @@ void CairoTextRenderer::cleanup() {
     g_object_unref(m_pangoContext);
     m_pangoContext = nullptr;
   }
-  m_fontMap = nullptr; // default map is not owned
+  if (m_fontMap != nullptr) {
+    g_object_unref(m_fontMap);
+    m_fontMap = nullptr;
+  }
+  if (m_fontConfigInitialized) {
+    FcFini();
+    m_fontConfigInitialized = false;
+  }
   m_program = nullptr;
 }
 

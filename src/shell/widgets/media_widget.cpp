@@ -204,7 +204,7 @@ void MediaWidget::create() {
   setRoot(std::move(area));
 }
 
-void MediaWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void MediaWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
   if (rootNode == nullptr || m_art == nullptr || m_label == nullptr) {
     return;
@@ -227,9 +227,8 @@ void MediaWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*c
   rootNode->setSize(m_label->x() + m_label->width(), contentHeight);
 }
 
-void MediaWidget::update(Renderer& renderer) {
+void MediaWidget::doUpdate(Renderer& renderer) {
   syncState(renderer);
-  Widget::update(renderer);
 }
 
 void MediaWidget::syncState(Renderer& renderer) {

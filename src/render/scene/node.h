@@ -62,7 +62,7 @@ public:
 
   void setAnimationManager(AnimationManager* mgr);
   [[nodiscard]] AnimationManager* animationManager() const noexcept { return m_animationManager; }
-  virtual void layout(Renderer& renderer);
+  void layout(Renderer& renderer);
 
   void setUserData(void* data) noexcept { m_userData = data; }
   [[nodiscard]] void* userData() const noexcept { return m_userData; }
@@ -74,6 +74,9 @@ public:
 
   void markDirty();
   void clearDirty();
+
+protected:
+  virtual void doLayout(Renderer& renderer);
 
 private:
   static Node* hitTestImpl(Node* node, float px, float py);

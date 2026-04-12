@@ -286,7 +286,7 @@ void WallpaperPanel::create() {
   }
 }
 
-void WallpaperPanel::layout(Renderer& renderer, float width, float height) {
+void WallpaperPanel::doLayout(Renderer& renderer, float width, float height) {
   if (m_rootLayout == nullptr) {
     return;
   }
@@ -306,7 +306,7 @@ void WallpaperPanel::layout(Renderer& renderer, float width, float height) {
   m_dirty = false;
 }
 
-void WallpaperPanel::update(Renderer& renderer) {
+void WallpaperPanel::doUpdate(Renderer& renderer) {
   if (!m_dirty || m_rootLayout == nullptr) {
     return;
   }

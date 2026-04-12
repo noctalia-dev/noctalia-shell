@@ -21,10 +21,10 @@ public:
   ~SysmonWidget() override;
 
   void create() override;
-  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
-  void update(Renderer& renderer) override;
 
 private:
+  void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
+  void doUpdate(Renderer& renderer) override;
   [[nodiscard]] std::string formatValue() const;
   [[nodiscard]] double currentNormalized() const;
   [[nodiscard]] static const char* glyphName(SysmonStat stat);

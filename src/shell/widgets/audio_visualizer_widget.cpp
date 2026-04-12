@@ -44,7 +44,7 @@ void AudioVisualizerWidget::create() {
   setRoot(std::move(root));
 }
 
-void AudioVisualizerWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void AudioVisualizerWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   m_renderer = &renderer;
   if (root() == nullptr || m_visualizer == nullptr) {
     return;
@@ -58,10 +58,9 @@ void AudioVisualizerWidget::layout(Renderer& renderer, float /*containerWidth*/,
   root()->setSize(width, height);
 }
 
-void AudioVisualizerWidget::update(Renderer& renderer) {
+void AudioVisualizerWidget::doUpdate(Renderer& renderer) {
   m_renderer = &renderer;
   syncSpectrum();
-  Widget::update(renderer);
 }
 
 void AudioVisualizerWidget::onFrameTick(float deltaMs) {

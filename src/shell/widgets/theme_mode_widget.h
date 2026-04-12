@@ -14,10 +14,10 @@ public:
   explicit ThemeModeWidget(noctalia::theme::ThemeService* themeService);
 
   void create() override;
-  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
-  void update(Renderer& renderer) override;
 
 private:
+  void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
+  void doUpdate(Renderer& renderer) override;
   void syncState(Renderer& renderer);
 
   noctalia::theme::ThemeService* m_themeService = nullptr;
@@ -25,4 +25,3 @@ private:
   Glyph* m_glyph = nullptr;
   bool m_lastIsLight = false;
 };
-

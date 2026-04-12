@@ -28,7 +28,7 @@ void PowerProfilesWidget::create() {
   setRoot(std::move(area));
 }
 
-void PowerProfilesWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void PowerProfilesWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
   if (m_glyph == nullptr || rootNode == nullptr) {
     return;
@@ -41,9 +41,8 @@ void PowerProfilesWidget::layout(Renderer& renderer, float /*containerWidth*/, f
   rootNode->setSize(m_glyph->width(), m_glyph->height());
 }
 
-void PowerProfilesWidget::update(Renderer& renderer) {
+void PowerProfilesWidget::doUpdate(Renderer& renderer) {
   syncState(renderer);
-  Widget::update(renderer);
 }
 
 void PowerProfilesWidget::syncState(Renderer& renderer) {

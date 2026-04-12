@@ -35,9 +35,8 @@ public:
   [[nodiscard]] bool scrollable() const noexcept { return m_maxScrollOffset > 0.0f; }
   [[nodiscard]] float contentViewportWidth() const noexcept;
 
-  void layout(Renderer& renderer) override;
-
 private:
+  void doLayout(Renderer& renderer) override;
   void applyPalette();
   void applyScrollOffset();
   void updateScrollbarGeometry(float viewportHeight, float contentHeight);

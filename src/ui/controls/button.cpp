@@ -1,4 +1,3 @@
-#include "core/ui_phase.h"
 #include "ui/controls/button.h"
 
 #include "render/animation/animation_manager.h"
@@ -360,8 +359,7 @@ void Button::applyVisualState() {
   markDirty();
 }
 
-void Button::layout(Renderer& renderer) {
-  uiAssertNotRendering("Button::layout");
+void Button::doLayout(Renderer& renderer) {
   const float assignedWidth = width();
   const float assignedHeight = height();
   const bool hasVisibleLabel = m_label != nullptr && m_label->visible();
@@ -374,7 +372,7 @@ void Button::layout(Renderer& renderer) {
     m_glyph->measure(renderer);
   }
 
-  Flex::layout(renderer);
+  Flex::doLayout(renderer);
 
   // Buttons are often sized by a parent stretch pass. Preserve that assigned
   // box instead of collapsing back to intrinsic content width.

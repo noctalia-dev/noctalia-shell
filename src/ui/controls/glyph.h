@@ -20,12 +20,12 @@ public:
   // Explicit fixed color.
   void setColor(const Color& color);
 
-  void layout(Renderer& renderer) override;
   void measure(Renderer& renderer);
 
   [[nodiscard]] float baselineOffset() const noexcept { return m_baselineOffset; }
 
 private:
+  void doLayout(Renderer& renderer) override;
   void applyPalette();
 
   GlyphNode* m_glyphNode = nullptr;

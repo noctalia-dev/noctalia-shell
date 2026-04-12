@@ -18,14 +18,14 @@ class Toggle;
 class TestPanel : public Panel {
 public:
   void create() override;
-  void layout(Renderer& renderer, float width, float height) override;
-  void update(Renderer& renderer) override;
 
   [[nodiscard]] float preferredWidth() const override { return scaled(1280.0f); }
   [[nodiscard]] float preferredHeight() const override { return scaled(900.0f); }
   // [[nodiscard]] bool centeredHorizontally() const override { return true; }
   // [[nodiscard]] bool centeredVertically() const override { return true; }
 private:
+  void doLayout(Renderer& renderer, float width, float height) override;
+  void doUpdate(Renderer& renderer) override;
   Flex* m_container = nullptr;
   Label* m_headerLabel = nullptr;
   Label* m_sliderValueLabel = nullptr;

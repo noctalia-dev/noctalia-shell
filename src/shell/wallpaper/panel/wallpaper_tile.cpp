@@ -90,7 +90,7 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   m_label = static_cast<Label*>(m_layout->addChild(std::move(label)));
 }
 
-void WallpaperTile::layout(Renderer& renderer) { InputArea::layout(renderer); }
+void WallpaperTile::doLayout(Renderer& renderer) { InputArea::doLayout(renderer); }
 
 void WallpaperTile::setEntry(const WallpaperEntry& entry, Renderer& renderer) {
   const std::string newPath = entry.isDir ? std::string{} : entry.absPath.string();

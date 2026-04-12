@@ -61,7 +61,6 @@ public:
   void setOnMotion(std::function<void()> callback);
   void setHoverSuppressed(bool suppressed);
   void setCursorShape(std::uint32_t shape);
-  void layout(Renderer& renderer) override;
 
   // Call after layout() to sync InputArea bounds
   void updateInputArea();
@@ -79,6 +78,7 @@ private:
   void applyVariant();
   void applyVisualState();
   void resolveVisualStateColors(Color& bg, Color& border, Color& label) const;
+  void doLayout(Renderer& renderer) override;
 
   void applyColors(const Color& bg, const Color& border, const Color& label);
 

@@ -10,7 +10,7 @@ void SpacerWidget::create() {
   setRoot(std::move(spacer));
 }
 
-void SpacerWidget::layout(Renderer& /*renderer*/, float /*containerWidth*/, float containerHeight) {
+void SpacerWidget::doLayout(Renderer& /*renderer*/, float /*containerWidth*/, float containerHeight) {
   if (root() != nullptr) {
     root()->setSize(m_fixedLength * m_contentScale, containerHeight);
   }

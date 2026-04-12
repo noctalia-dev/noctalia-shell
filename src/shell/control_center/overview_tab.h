@@ -21,12 +21,12 @@ public:
               PowerProfilesService* powerProfiles, ConfigService* config);
 
   std::unique_ptr<Flex> create() override;
-  void layout(Renderer& renderer, float contentWidth, float bodyHeight) override;
-  void update(Renderer& renderer) override;
   void setActive(bool active) override;
   void onClose() override;
 
 private:
+  void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) override;
+  void doUpdate(Renderer& renderer) override;
   void sync(Renderer& renderer);
 
   MprisService* m_mpris = nullptr;

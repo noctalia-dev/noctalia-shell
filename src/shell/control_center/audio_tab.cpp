@@ -90,7 +90,7 @@ public:
     // Removed subtext (detail) handling
   }
 
-  void layout(Renderer& renderer) override {
+  void doLayout(Renderer& renderer) override {
     if (m_radio == nullptr || m_title == nullptr || m_inputArea == nullptr) {
       return;
     }
@@ -103,7 +103,7 @@ public:
     // Removed subtext (detail) max width
 
     m_inputArea->setVisible(false);
-    Flex::layout(renderer);
+    Flex::doLayout(renderer);
     m_inputArea->setVisible(true);
     m_inputArea->setPosition(0.0f, 0.0f);
     m_inputArea->setSize(width(), height());
@@ -408,7 +408,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   return tab;
 }
 
-void AudioTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) {
+void AudioTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
   if (m_rootLayout == nullptr) {
     return;
   }
@@ -430,7 +430,7 @@ void AudioTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) 
   rebuildLists(renderer);
 }
 
-void AudioTab::update(Renderer& renderer) {
+void AudioTab::doUpdate(Renderer& renderer) {
   rebuildLists(renderer);
   syncValueLabelWidths(renderer);
 

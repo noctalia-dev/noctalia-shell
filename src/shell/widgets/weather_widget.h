@@ -17,10 +17,10 @@ public:
   WeatherWidget(WeatherService* weather, wl_output* output, float maxWidth, bool showCondition);
 
   void create() override;
-  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
-  void update(Renderer& renderer) override;
 
 private:
+  void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
+  void doUpdate(Renderer& renderer) override;
   void sync(Renderer& renderer);
 
   WeatherService* m_weather = nullptr;

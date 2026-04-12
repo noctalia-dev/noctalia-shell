@@ -74,7 +74,7 @@ void LauncherPanel::create() {
   onInputChanged("");
 }
 
-void LauncherPanel::layout(Renderer& renderer, float width, float height) {
+void LauncherPanel::doLayout(Renderer& renderer, float width, float height) {
   if (m_container == nullptr || m_input == nullptr || m_scrollView == nullptr) {
     return;
   }
@@ -101,7 +101,7 @@ void LauncherPanel::layout(Renderer& renderer, float width, float height) {
   m_lastWidth = width;
 }
 
-void LauncherPanel::update(Renderer& renderer) {
+void LauncherPanel::doUpdate(Renderer& renderer) {
   if (m_dirty && m_lastWidth > 0.0f) {
     const float listWidth = m_scrollView != nullptr ? m_scrollView->contentViewportWidth() : m_lastWidth;
     rebuildResults(renderer, listWidth);

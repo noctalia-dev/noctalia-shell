@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-void GridTile::layout(Renderer& renderer) {
+void GridTile::doLayout(Renderer& renderer) {
   const float aw = width();
   const float ah = height();
   if (aw > 0.0f) {
@@ -13,7 +13,7 @@ void GridTile::layout(Renderer& renderer) {
   if (ah > 0.0f) {
     Flex::setMinHeight(ah);
   }
-  Flex::layout(renderer);
+  Flex::doLayout(renderer);
   Flex::setMinWidth(0.0f);
   Flex::setMinHeight(0.0f);
   if (aw > 0.0f || ah > 0.0f) {

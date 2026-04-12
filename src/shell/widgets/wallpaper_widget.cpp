@@ -27,7 +27,7 @@ void WallpaperWidget::create() {
   setRoot(std::move(area));
 }
 
-void WallpaperWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void WallpaperWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   if (m_glyph == nullptr) {
     return;
   }

@@ -249,7 +249,7 @@ void ClipboardPanel::create() {
   schedulePreviewPayloadRefresh(false);
 }
 
-void ClipboardPanel::layout(Renderer& renderer, float width, float height) {
+void ClipboardPanel::doLayout(Renderer& renderer, float width, float height) {
   if (m_rootLayout == nullptr || m_sidebar == nullptr || m_previewCard == nullptr || m_listScrollView == nullptr ||
       m_previewScrollView == nullptr) {
     return;
@@ -296,7 +296,7 @@ void ClipboardPanel::layout(Renderer& renderer, float width, float height) {
   }
 }
 
-void ClipboardPanel::update(Renderer& renderer) {
+void ClipboardPanel::doUpdate(Renderer& renderer) {
   if (m_clipboard == nullptr || m_lastWidth <= 0.0f) {
     return;
   }

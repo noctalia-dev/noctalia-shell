@@ -29,9 +29,8 @@ public:
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
   [[nodiscard]] bool dragging() const noexcept;
 
-  void layout(Renderer& renderer) override;
-
 private:
+  void doLayout(Renderer& renderer) override;
   void updateFromLocalX(float x);
   void updateGeometry();
   void applyVisualState();

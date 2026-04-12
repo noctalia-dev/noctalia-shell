@@ -235,7 +235,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   return tab;
 }
 
-void WeatherTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) {
+void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
   if (m_rootLayout == nullptr || m_currentText == nullptr || m_forecastColumn == nullptr) {
     return;
   }
@@ -293,7 +293,7 @@ void WeatherTab::layout(Renderer& renderer, float contentWidth, float bodyHeight
   m_rootLayout->layout(renderer);
 }
 
-void WeatherTab::update(Renderer& renderer) { sync(renderer); }
+void WeatherTab::doUpdate(Renderer& renderer) { sync(renderer); }
 
 void WeatherTab::onClose() {
   m_rootLayout = nullptr;

@@ -41,7 +41,7 @@ void WeatherWidget::create() {
   setRoot(std::move(area));
 }
 
-void WeatherWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void WeatherWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   if (m_glyph == nullptr || m_label == nullptr || root() == nullptr) {
     return;
   }
@@ -61,9 +61,8 @@ void WeatherWidget::layout(Renderer& renderer, float /*containerWidth*/, float /
   root()->setSize(m_label->x() + m_label->width(), contentHeight);
 }
 
-void WeatherWidget::update(Renderer& renderer) {
+void WeatherWidget::doUpdate(Renderer& renderer) {
   sync(renderer);
-  Widget::update(renderer);
 }
 
 void WeatherWidget::sync(Renderer& renderer) {

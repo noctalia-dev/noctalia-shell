@@ -4,7 +4,7 @@
 
 InputArea::InputArea() : Node(NodeType::Base) {}
 
-void InputArea::layout(Renderer& renderer) {
+void InputArea::doLayout(Renderer& renderer) {
   for (auto& child : children()) {
     if (child->visible()) {
       child->layout(renderer);

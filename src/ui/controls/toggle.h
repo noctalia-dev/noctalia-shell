@@ -28,12 +28,12 @@ public:
   [[nodiscard]] bool checked() const noexcept { return m_checked; }
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
   [[nodiscard]] ToggleSize toggleSize() const noexcept { return m_size; }
-  void layout(Renderer& renderer) override;
 
 private:
   void applySize();
   void applyState();
   void applyAnimatedState(float t);
+  void doLayout(Renderer& renderer) override;
 
   class RectNode* m_thumb = nullptr;
   InputArea* m_inputArea = nullptr;

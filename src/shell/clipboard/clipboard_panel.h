@@ -26,8 +26,6 @@ public:
   void setActivateCallback(std::function<void(const ClipboardEntry&)> callback);
 
   void create() override;
-  void layout(Renderer& renderer, float width, float height) override;
-  void update(Renderer& renderer) override;
   void onOpen(std::string_view context) override;
   void onClose() override;
 
@@ -40,6 +38,8 @@ public:
   [[nodiscard]] InputArea* initialFocusArea() const override;
 
 private:
+  void doLayout(Renderer& renderer, float width, float height) override;
+  void doUpdate(Renderer& renderer) override;
   void schedulePreviewPayloadRefresh(bool debounced);
   void rebuildList(Renderer& renderer, float width);
   void rebuildPreview(Renderer& renderer, float width, float height);

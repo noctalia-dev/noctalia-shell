@@ -40,8 +40,6 @@ public:
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
   [[nodiscard]] bool open() const noexcept { return m_open; }
 
-  void layout(Renderer& renderer) override;
-
 private:
   struct OptionView {
     RectNode* background = nullptr;
@@ -52,6 +50,7 @@ private:
 
   static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
+  void doLayout(Renderer& renderer) override;
   void clearOptionViews();
   void rebuildOptionViews();
   void syncTriggerText();

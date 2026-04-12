@@ -24,10 +24,10 @@ public:
   WorkspacesWidget(WaylandConnection& connection, wl_output* output, DisplayMode displayMode);
 
   void create() override;
-  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
-  void update(Renderer& renderer) override;
 
 private:
+  void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
+  void doUpdate(Renderer& renderer) override;
   void rebuild(Renderer& renderer);
   [[nodiscard]] static std::optional<std::size_t> numericWorkspaceId(const Workspace& workspace);
   [[nodiscard]] std::string workspaceLabel(const Workspace& workspace, std::size_t displayIndex) const;

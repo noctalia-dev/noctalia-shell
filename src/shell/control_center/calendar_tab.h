@@ -7,10 +7,10 @@ class Label;
 class CalendarTab : public Tab {
 public:
   std::unique_ptr<Flex> create() override;
-  void layout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void onClose() override;
 
 private:
+  void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void rebuild();
 
   Flex* m_rootLayout = nullptr;

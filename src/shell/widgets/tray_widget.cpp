@@ -239,7 +239,7 @@ void TrayWidget::create() {
   setRoot(std::move(container));
 }
 
-void TrayWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void TrayWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   uiAssertNotRendering("TrayWidget::layout");
   if (m_container == nullptr) {
     return;
@@ -262,9 +262,8 @@ void TrayWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*co
   m_container->layout(renderer);
 }
 
-void TrayWidget::update(Renderer& renderer) {
+void TrayWidget::doUpdate(Renderer& renderer) {
   syncState(renderer);
-  Widget::update(renderer);
 }
 
 void TrayWidget::syncState(Renderer& renderer) {

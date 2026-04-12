@@ -10,9 +10,9 @@ public:
   explicit WallpaperWidget(wl_output* output);
 
   void create() override;
-  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
 
 private:
+  void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   wl_output* m_output;
   Glyph* m_glyph = nullptr;
 };

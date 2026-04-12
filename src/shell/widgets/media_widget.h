@@ -19,10 +19,10 @@ public:
   MediaWidget(MprisService* mpris, HttpClient* httpClient, float maxWidth, float artSize);
 
   void create() override;
-  void layout(Renderer& renderer, float containerWidth, float containerHeight) override;
-  void update(Renderer& renderer) override;
 
 private:
+  void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
+  void doUpdate(Renderer& renderer) override;
   void syncState(Renderer& renderer);
   [[nodiscard]] static std::string buildDisplayText(const MprisPlayerInfo& player);
   [[nodiscard]] std::string resolveArtworkPath() const;

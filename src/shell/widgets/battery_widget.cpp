@@ -59,7 +59,7 @@ void BatteryWidget::create() {
   setRoot(std::move(container));
 }
 
-void BatteryWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void BatteryWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
   if (m_glyph == nullptr || m_label == nullptr || rootNode == nullptr) {
     return;
@@ -75,9 +75,8 @@ void BatteryWidget::layout(Renderer& renderer, float /*containerWidth*/, float /
   rootNode->setSize(m_label->x() + m_label->width(), m_glyph->height());
 }
 
-void BatteryWidget::update(Renderer& renderer) {
+void BatteryWidget::doUpdate(Renderer& renderer) {
   syncState(renderer);
-  Widget::update(renderer);
 }
 
 void BatteryWidget::syncState(Renderer& renderer) {

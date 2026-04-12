@@ -118,7 +118,7 @@ std::unique_ptr<Flex> NotificationsTab::createHeaderActions() {
   return actions;
 }
 
-void NotificationsTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) {
+void NotificationsTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
   uiAssertNotRendering("NotificationsTab::layout");
   if (m_root == nullptr || m_scroll == nullptr) {
     return;
@@ -137,7 +137,7 @@ void NotificationsTab::layout(Renderer& renderer, float contentWidth, float body
   }
 }
 
-void NotificationsTab::update(Renderer& renderer) {
+void NotificationsTab::doUpdate(Renderer& renderer) {
   uiAssertNotRendering("NotificationsTab::update");
   if (m_scroll == nullptr) {
     return;

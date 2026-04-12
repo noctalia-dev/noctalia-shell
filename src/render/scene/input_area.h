@@ -45,9 +45,8 @@ public:
   ~InputArea() override;
 
   // InputArea is a transparent hit-test wrapper with no layout semantics of its
-  // own; forward layout() to visible children so callers can use it as a
-  // clickable container without manually re-laying children.
-  void layout(Renderer& renderer) override;
+  // own; its internal layout hook forwards to visible children so callers can
+  // use it as a clickable container without manually re-laying children.
 
   // Pointer callback setters
   void setOnEnter(PointerCallback callback);
@@ -96,6 +95,9 @@ public:
   void dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed, bool preedit = false);
   void dispatchFocusGain();
   void dispatchFocusLoss();
+
+protected:
+  void doLayout(Renderer& renderer) override;
 
 private:
   DestroyCallback m_destroyCallback;

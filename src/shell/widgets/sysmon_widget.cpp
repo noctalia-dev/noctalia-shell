@@ -79,7 +79,7 @@ void SysmonWidget::create() {
   setRoot(std::move(container));
 }
 
-void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void SysmonWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   auto* rootNode = root();
   if (m_glyph == nullptr || rootNode == nullptr) {
     return;
@@ -134,7 +134,7 @@ void SysmonWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*
   }
 }
 
-void SysmonWidget::update(Renderer& renderer) {
+void SysmonWidget::doUpdate(Renderer& renderer) {
   if (m_glyph == nullptr) {
     return;
   }
@@ -150,7 +150,6 @@ void SysmonWidget::update(Renderer& renderer) {
       m_gauge->setProgress(progress);
       requestRedraw();
     }
-    Widget::update(renderer);
     return;
   }
 
@@ -172,7 +171,6 @@ void SysmonWidget::update(Renderer& renderer) {
     requestRedraw();
   }
 
-  Widget::update(renderer);
 }
 
 void SysmonWidget::pushHistory(double normalized) {

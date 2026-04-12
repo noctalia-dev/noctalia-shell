@@ -36,7 +36,7 @@ void WorkspacesWidget::create() {
   setRoot(std::move(container));
 }
 
-void WorkspacesWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void WorkspacesWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
   uiAssertNotRendering("WorkspacesWidget::layout");
   update(renderer);
   if (m_rebuildPending) {
@@ -46,7 +46,7 @@ void WorkspacesWidget::layout(Renderer& renderer, float /*containerWidth*/, floa
   m_container->layout(renderer);
 }
 
-void WorkspacesWidget::update(Renderer& renderer) {
+void WorkspacesWidget::doUpdate(Renderer& renderer) {
   (void)renderer;
   auto current = m_connection.workspaces(m_output);
   if (m_cachedState.empty() && current.empty()) {

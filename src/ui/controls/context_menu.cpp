@@ -80,8 +80,7 @@ float ContextMenuControl::preferredHeight(const std::vector<ContextMenuControlEn
   return kMenuPadding * 2.0f + contentHeight + kItemGap * static_cast<float>(visibleEntries - 1);
 }
 
-void ContextMenuControl::layout(Renderer& renderer) {
-  uiAssertNotRendering("ContextMenuControl::layout");
+void ContextMenuControl::doLayout(Renderer& renderer) {
   if (m_needsRebuild) {
     rebuild(renderer);
   }

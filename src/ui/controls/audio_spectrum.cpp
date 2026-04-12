@@ -1,4 +1,3 @@
-#include "core/ui_phase.h"
 #include "ui/controls/audio_spectrum.h"
 
 #include "render/core/color.h"
@@ -124,8 +123,7 @@ void AudioSpectrum::setSize(float width, float height) {
   updateBarsGeometry();
 }
 
-void AudioSpectrum::layout(Renderer& /*renderer*/) {
-  uiAssertNotRendering("AudioSpectrum::layout");
+void AudioSpectrum::doLayout(Renderer& /*renderer*/) {
   updateBarsGeometry();
 }
 
