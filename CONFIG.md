@@ -263,7 +263,7 @@ This uses the standard Wayland `zwp_idle_inhibit_manager_v1` protocol when avail
 
 No configurable settings.
 
-You can also control it over Noctalia IPC:
+IPC:
 
 ```sh
 noctalia-ipc enable-idle-inhibitor
@@ -285,11 +285,28 @@ Cycles through three night light states on click:
 
 No configurable settings.
 
-You can also control it over Noctalia IPC:
+IPC:
 
 ```sh
 noctalia-ipc toggle-nightlight
 noctalia-ipc toggle-force-nightlight
+```
+
+---
+
+### `theme_mode`
+
+Toggles the active theme mode between dark and light on click.
+
+- Dark mode shows a moon glyph.
+- Light mode shows a sun glyph.
+
+No configurable settings.
+
+IPC:
+
+```sh
+noctalia msg toggle-theme-mode
 ```
 
 ---

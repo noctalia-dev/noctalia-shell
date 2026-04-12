@@ -22,6 +22,9 @@ class TimeService;
 class WaylandConnection;
 class NightLightManager;
 class WeatherService;
+namespace noctalia::theme {
+  class ThemeService;
+}
 struct PointerEvent;
 struct wl_surface;
 
@@ -33,7 +36,7 @@ public:
                   NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                   UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
                   IdleInhibitor* idleInhibitor, MprisService* mpris, HttpClient* httpClient, WeatherService* weatherService,
-                  RenderContext* renderContext, NightLightManager* nightLight);
+                  RenderContext* renderContext, NightLightManager* nightLight, noctalia::theme::ThemeService* themeService);
   void reload();
   void closeAllInstances();
   void show();
@@ -74,6 +77,7 @@ private:
   WeatherService* m_weatherService = nullptr;
   RenderContext* m_renderContext = nullptr;
   NightLightManager* m_nightLight = nullptr;
+  noctalia::theme::ThemeService* m_themeService = nullptr;
   std::unique_ptr<WidgetFactory> m_widgetFactory;
   std::vector<std::unique_ptr<BarInstance>> m_instances;
 

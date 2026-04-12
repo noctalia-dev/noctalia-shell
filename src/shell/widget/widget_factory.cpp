@@ -21,11 +21,13 @@
 #include "shell/widgets/spacer_widget.h"
 #include "shell/widgets/sysmon_widget.h"
 #include "shell/widgets/test_widget.h"
+#include "shell/widgets/theme_mode_widget.h"
 #include "shell/widgets/tray_widget.h"
 #include "shell/widgets/volume_widget.h"
 #include "shell/widgets/wallpaper_widget.h"
 #include "shell/widgets/weather_widget.h"
 #include "shell/widgets/workspaces_widget.h"
+#include "theme/theme_service.h"
 #include "system/system_monitor_service.h"
 #include "system/weather_service.h"
 #include "wayland/wayland_connection.h"
@@ -38,10 +40,10 @@ WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, cons
                              NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                              UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
                              IdleInhibitor* idleInhibitor, MprisService* mpris, HttpClient* httpClient, WeatherService* weather,
-                             NightLightManager* nightLight)
+                             NightLightManager* nightLight, noctalia::theme::ThemeService* themeService)
     : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
       m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_httpClient(httpClient),
-      m_weather(weather), m_nightLight(nightLight) {}
+      m_weather(weather), m_nightLight(nightLight), m_themeService(themeService) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
@@ -115,6 +117,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "nightlight") {
     auto widget = std::make_unique<NightLightWidget>(m_nightLight);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "theme_mode") {
+    auto widget = std::make_unique<ThemeModeWidget>(m_themeService);
     widget->setContentScale(contentScale);
     return widget;
   }

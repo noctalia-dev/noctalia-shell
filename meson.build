@@ -296,6 +296,7 @@ _noctalia_sources = files(
   'src/shell/widgets/spacer_widget.cpp',
   'src/shell/widgets/sysmon_widget.cpp',
   'src/shell/widgets/test_widget.cpp',
+  'src/shell/widgets/theme_mode_widget.cpp',
   'src/shell/widgets/tray_widget.cpp',
   'src/shell/widgets/volume_widget.cpp',
   'src/shell/widgets/wallpaper_widget.cpp',

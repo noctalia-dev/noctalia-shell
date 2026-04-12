@@ -172,11 +172,15 @@ async def main():
     (config_dir / "gtk-3.0").mkdir(parents=True, exist_ok=True)
     (config_dir / "gtk-4.0").mkdir(parents=True, exist_ok=True)
 
-    results = await asyncio.gather(apply_gtk3_colors(config_dir), apply_gtk4_colors(config_dir))
+    gtk3_ok, gtk4_ok = await asyncio.gather(apply_gtk3_colors(config_dir), apply_gtk4_colors(config_dir))
 
-    if all(results):
+    if gtk3_ok:
+        print("GTK3 colors applied successfully")
+    if gtk4_ok:
+        print("GTK4 colors applied successfully")
+
+    if gtk3_ok and gtk4_ok:
         await sync_system_appearance(mode, update_gtk_theme=True)
-        print("GTK colors applied successfully")
     else:
         # Still push light/dark preference so portal/GTK apps follow the shell even when
         # gtk.css / noctalia.css setup failed.

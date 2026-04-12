@@ -20,13 +20,16 @@ struct wl_output;
 class NightLightManager;
 class TimeService;
 class WaylandConnection;
+namespace noctalia::theme {
+  class ThemeService;
+}
 
 class WidgetFactory {
 public:
   WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config, NotificationManager* notifications,
                 TrayService* tray, PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon,
                 PowerProfilesService* powerProfiles, IdleInhibitor* idleInhibitor, MprisService* mpris, HttpClient* httpClient,
-                WeatherService* weather, NightLightManager* nightLight);
+                WeatherService* weather, NightLightManager* nightLight, noctalia::theme::ThemeService* themeService);
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output,
                                                float contentScale = 1.0f) const;
@@ -46,4 +49,5 @@ private:
   HttpClient* m_httpClient;
   WeatherService* m_weather;
   NightLightManager* m_nightLight;
+  noctalia::theme::ThemeService* m_themeService;
 };

@@ -75,6 +75,17 @@ namespace noctalia::theme {
       };
     }
 
+    std::optional<ResolvedTheme> resolveForConfig(const ThemeConfig& cfg, const StateService& state) {
+      std::optional<ResolvedTheme> resolved;
+      if (cfg.source == ThemeSource::Wallpaper) {
+        resolved = resolveWallpaper(cfg, state.getDefaultWallpaperPath());
+      }
+      if (!resolved.has_value()) {
+        resolved = resolveBuiltin(cfg);
+      }
+      return resolved;
+    }
+
   } // namespace
 
   ThemeService::ThemeService(const ConfigService& config, const StateService& state)
@@ -90,24 +101,39 @@ namespace noctalia::theme {
     }
   }
 
+  void ThemeService::toggleLightDark() {
+    ThemeConfig cfg = m_config.config().theme;
+    cfg.mode = m_isLightMode ? ThemeMode::Dark : ThemeMode::Light;
+
+    auto resolved = resolveForConfig(cfg, m_state);
+    if (!resolved.has_value()) {
+      return;
+    }
+
+    m_isLightMode = resolved->mode == "light";
+
+    if (m_resolvedCallback) {
+      m_resolvedCallback(resolved->generated, resolved->mode);
+    }
+
+    startTransition(resolved->palette);
+  }
+
+  bool ThemeService::isLightMode() const noexcept { return m_isLightMode; }
+
   void ThemeService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
 
   void ThemeService::setResolvedCallback(ResolvedCallback callback) { m_resolvedCallback = std::move(callback); }
 
   void ThemeService::resolveAndSet(bool animate) {
     const auto& cfg = m_config.config().theme;
-    std::optional<ResolvedTheme> resolved;
-
-    if (cfg.source == ThemeSource::Wallpaper) {
-      resolved = resolveWallpaper(cfg, m_state.getDefaultWallpaperPath());
-    }
-    if (!resolved.has_value()) {
-      resolved = resolveBuiltin(cfg);
-    }
+    auto resolved = resolveForConfig(cfg, m_state);
 
     if (m_resolvedCallback) {
       m_resolvedCallback(resolved->generated, resolved->mode);
     }
+
+    m_isLightMode = resolved->mode == "light";
 
     if (animate) {
       startTransition(resolved->palette);

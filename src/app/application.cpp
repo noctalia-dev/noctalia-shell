@@ -463,7 +463,7 @@ void Application::initUi() {
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
                    m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_powerProfilesService.get(),
                    &m_idleInhibitor, m_mprisService.get(), &m_httpClient, &m_weatherService, &m_renderContext,
-                   &m_nightLightManager);
+                   &m_nightLightManager, &m_themeService);
 
   m_timeService.setTickSecondCallback([this]() {
     if (m_lockScreen.isActive()) {
@@ -667,6 +667,14 @@ void Application::initIpc() {
         return "ok\n";
       },
       "toggle-force-nightlight", "Toggle forced night light mode");
+
+  m_ipcService.registerHandler(
+      "toggle-theme-mode",
+      [this](const std::string&) -> std::string {
+        m_themeService.toggleLightDark();
+        return "ok\n";
+      },
+      "toggle-theme-mode", "Toggle theme mode between dark and light");
 }
 
 bool Application::runIdleCommand(const std::string& command) {

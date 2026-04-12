@@ -26,6 +26,8 @@ namespace noctalia::theme {
     // Resolves the target theme and cross-fades to it.
     void onConfigReload();
     void onWallpaperChange();
+    void toggleLightDark();
+    [[nodiscard]] bool isLightMode() const noexcept;
 
     void setChangeCallback(ChangeCallback callback);
     void setResolvedCallback(ResolvedCallback callback);
@@ -45,6 +47,7 @@ namespace noctalia::theme {
     Palette m_targetPalette{};
     std::chrono::steady_clock::time_point m_transitionStart{};
     bool m_transitionActive = false;
+    bool m_isLightMode = false;
   };
 
 } // namespace noctalia::theme
