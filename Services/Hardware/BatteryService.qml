@@ -35,17 +35,7 @@ Singleton {
                                                                                                                                        });
                                                                                                    })
 
-  readonly property var bluetoothBatteries: {
-    var list = [];
-    var btArray = BluetoothService.devices?.values || [];
-    for (var i = 0; i < btArray.length; i++) {
-      var btd = btArray[i];
-      if (btd && btd.connected && btd.batteryAvailable) {
-        list.push(btd);
-      }
-    }
-    return list;
-  }
+  readonly property var bluetoothBatteries: (BluetoothService.connectedDevices || []).filter(dev => dev && dev.batteryAvailable).sort((x, y) => x.battery - y.battery) // Sort Bluetooth devices by battery level (lowest first)
 
   readonly property var _laptopBattery: UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : null)
   readonly property var _bluetoothBattery: bluetoothBatteries.length > 0 ? bluetoothBatteries[0] : null
@@ -128,10 +118,8 @@ Singleton {
     if (!device) {
       return -1;
     }
-    if (device.batteryAvailable !== undefined) {
-      return Math.round((device.battery || 0) * 100);
-    }
-    return Math.round((device.percentage || 0) * 100);
+    const z = (device.batteryAvailable !== undefined) ? (device.battery || 0) : (device.percentage || 0);
+    return Math.round(z > 1.0 ? z : z * 100);
   }
 
   function isCharging(device) {
@@ -188,7 +176,7 @@ Singleton {
       // If there is more than one battery explicitly name them
       // Logger.e("BatteryDebug", "Available Battery count: " + laptopBatteries.length); // can be useful for debugging
       if (laptopBatteries.length > 1 && device.nativePath) {
-        if (device.nativePath === "DisplayDevice") {
+        if (device.nativePath.includes("DisplayDevice")) {
           return I18n.tr("battery.all-batteries");
         }
         var match = device.nativePath.match(/(\d+)$/);
@@ -200,16 +188,7 @@ Singleton {
       // Return Battery if there is only one
       return I18n.tr("common.battery");
     }
-
-    if (isBluetoothDevice(device) && device.name) {
-      return device.name;
-    }
-
-    if (device.model) {
-      return device.model;
-    }
-
-    return "";
+    return device.name || device.deviceName || device.model || "";
   }
 
   function getIcon(percent, charging, pluggedIn, isReady) {
@@ -289,11 +268,17 @@ Singleton {
       return;
     }
 
+    // If BluetoothDevice is busy, do not send any notification - battery level at the moment not known to us/system.
+    if (isBluetoothDevice(device) && BluetoothService.isDeviceBusy(device)) {
+      return;
+    }
+
     const percentage = getPercentage(device);
     const charging = isCharging(device);
     const pluggedIn = isPluggedIn(device);
     const level = isLowBattery(device) ? "low" : (isCriticalBattery(device) ? "critical" : "");
-    var deviceKey = device.nativePath;
+    // nativePath from UPower, device.address from BluetoothService - both should work independently without each other.
+    var deviceKey = device.nativePath || device.address || "";
 
     if (!_hasNotified[deviceKey]) {
       _hasNotified[deviceKey] = {
@@ -336,7 +321,7 @@ Singleton {
                        });
     var icon = level === "critical" ? "battery-exclamation" : "battery-charging-2";
 
-    if (device == _bluetoothBattery && name) {
+    if (isBluetoothDevice(device) && name) {
       title = title + " " + name;
     }
 
