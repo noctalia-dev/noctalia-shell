@@ -217,7 +217,8 @@ std::unique_ptr<Flex> MediaTab::create() {
   auto mediaStack = std::make_unique<Flex>();
   mediaStack->setDirection(FlexDirection::Vertical);
   mediaStack->setAlign(FlexAlign::Stretch);
-  mediaStack->setGap(Style::spaceMd * scale);
+  mediaStack->setGap(Style::spaceSm * scale);
+  mediaStack->setPadding(0.0f, 0.0f, Style::spaceSm * scale, 0.0f);
   mediaStack->setFlexGrow(1.0f);
   m_mediaStack = mediaStack.get();
 
@@ -236,28 +237,36 @@ std::unique_ptr<Flex> MediaTab::create() {
   artworkRow->addChild(std::move(artwork));
   mediaStack->addChild(std::move(artworkRow));
 
+  auto metadataStack = std::make_unique<Flex>();
+  metadataStack->setDirection(FlexDirection::Vertical);
+  metadataStack->setAlign(FlexAlign::Stretch);
+  metadataStack->setGap(Style::spaceXs * scale);
+
   auto title = std::make_unique<Label>();
   title->setText("Nothing playing");
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle * scale);
   title->setColor(roleColor(ColorRole::OnSurface));
   m_trackTitle = title.get();
-  mediaStack->addChild(std::move(title));
+  metadataStack->addChild(std::move(title));
 
   auto artist = std::make_unique<Label>();
   artist->setText("Start playback in an MPRIS app");
   artist->setFontSize(Style::fontSizeBody * scale);
   artist->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_trackArtist = artist.get();
-  mediaStack->addChild(std::move(artist));
+  metadataStack->addChild(std::move(artist));
 
   auto album = std::make_unique<Label>();
-  album->setText(" ");
+  album->setText("");
   album->setCaptionStyle();
   album->setFontSize(Style::fontSizeCaption * scale);
   album->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  album->setVisible(false);
   m_trackAlbum = album.get();
-  mediaStack->addChild(std::move(album));
+  metadataStack->addChild(std::move(album));
+
+  mediaStack->addChild(std::move(metadataStack));
 
   auto progress = std::make_unique<Slider>();
   progress->setRange(0.0f, 100.0f);
@@ -739,7 +748,8 @@ void MediaTab::refresh(Renderer& renderer) {
     m_trackTitle->setText(player.title.empty() ? player.identity : player.title);
     m_trackArtist->setText(joinArtists(player.artists).empty() ? player.identity : joinArtists(player.artists));
     if (m_trackAlbum != nullptr) {
-      m_trackAlbum->setText(player.album.empty() ? " " : player.album);
+      m_trackAlbum->setText(player.album);
+      m_trackAlbum->setVisible(!player.album.empty());
     }
 
     const std::string resolvedArtUrl = effectiveArtUrl(player);
@@ -822,7 +832,8 @@ void MediaTab::refresh(Renderer& renderer) {
   m_trackTitle->setText("Nothing playing");
   m_trackArtist->setText("Start playback in an MPRIS app");
   if (m_trackAlbum != nullptr) {
-    m_trackAlbum->setText(" ");
+    m_trackAlbum->setText("");
+    m_trackAlbum->setVisible(false);
   }
   clearArt(renderer);
   m_lastArtPath.clear();
