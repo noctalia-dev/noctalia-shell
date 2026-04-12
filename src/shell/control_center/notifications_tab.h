@@ -5,6 +5,7 @@
 #include <cstdint>
 
 class NotificationManager;
+class Button;
 class ScrollView;
 
 class NotificationsTab : public Tab {
@@ -17,11 +18,15 @@ public:
   void onClose() override;
 
 private:
+  void clearAllNotifications();
+  void removeNotificationEntry(uint32_t id, bool wasActive);
   void rebuild(Renderer& renderer, float width);
 
   NotificationManager* m_notifications = nullptr;
+  Flex* m_root = nullptr;
   ScrollView* m_scroll = nullptr;
   Flex* m_list = nullptr;
+  Button* m_clearAllButton = nullptr;
   std::uint64_t m_lastSerial = 0;
   float m_lastWidth = -1.0f;
 };

@@ -232,8 +232,7 @@ void ControlCenterPanel::selectTab(TabId tab) {
   }
 
   if (m_contentTitle != nullptr) {
-    const bool showTitle = tab != TabId::Notifications;
-    m_contentTitle->setVisible(showTitle);
+    m_contentTitle->setVisible(true);
   }
 }
 
