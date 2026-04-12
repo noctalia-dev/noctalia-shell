@@ -253,6 +253,7 @@ _noctalia_sources = files(
   'src/render/wallpaper_renderer.cpp',
   'src/shell/bar/bar.cpp',
   'src/shell/clipboard/clipboard_paste.cpp',
+  'src/shell/dock/dock.cpp',
   'src/shell/clipboard/clipboard_panel.cpp',
   'src/shell/control_center/calendar_tab.cpp',
   'src/shell/control_center/audio_tab.cpp',

@@ -12,6 +12,7 @@ Changes are detected automatically via inotify — no restart required.
 - [Per-monitor overrides](#per-monitor-overrides)
 - [Widget definitions](#widget-definitions)
 - [Built-in widgets](#built-in-widgets)
+- [Dock](#dock)
 - [Weather](#weather)
 - [Audio](#audio)
 - [Night Light](#night-light)
@@ -349,6 +350,74 @@ stat = "ram_used"
 type = "sysmon"
 stat = "disk_pct"
 path = "/"
+```
+
+---
+
+## Dock
+
+A standalone application dock that displays pinned and running apps. Disabled by default — set `enabled = true` to activate it.
+
+```toml
+[dock]
+enabled            = true
+position           = "bottom"   # top | bottom | left | right
+
+icon_size          = 48         # icon size in pixels
+padding            = 8          # inner padding around the icon row (all sides)
+item_spacing       = 6          # gap between items in pixels
+background_opacity = 0.88       # dock panel background alpha (0.0–1.0)
+radius             = 16         # dock panel corner radius in pixels
+margin_h           = 0          # horizontal compositor margin (space from screen sides)
+margin_v           = 8          # vertical gap between dock and screen edge
+
+shadow_blur        = 12         # drop-shadow blur radius in pixels (0 = no shadow)
+shadow_offset_x    = 0          # horizontal shadow offset
+shadow_offset_y    = 4          # vertical shadow offset (positive = down)
+
+show_running       = true       # also show running apps that are not in the pinned list
+auto_hide          = false      # fade out when the pointer leaves; fade in on approach
+indicator_style    = "dot"      # dot | bar | none
+
+# Pinned apps: desktop entry IDs, StartupWMClass, or human-readable names.
+# Example: "firefox", "code", "org.gnome.Nautilus"
+pinned = ["firefox", "code", "kitty"]
+```
+
+### `pinned` matching
+
+Each entry in `pinned` is matched against desktop entries using these rules in order:
+
+1. Desktop entry ID stem (e.g. `"firefox"` matches `firefox.desktop` and `org.mozilla.Firefox.desktop`)
+2. `StartupWMClass` field of the desktop entry
+3. App `Name` field (case-insensitive)
+4. Full desktop entry path
+
+If no match is found, a placeholder slot is reserved so the dock position is preserved.
+
+### Indicator styles
+
+| Style  | Appearance                                                          |
+|--------|---------------------------------------------------------------------|
+| `dot`  | Small filled circle below (or beside) the icon                      |
+| `bar`  | Short rounded bar below (or beside) the icon; half the icon width   |
+| `none` | No indicator drawn                                                  |
+
+Indicators use **primary** color when the app is the active window, and a dimmed **onSurface** color when the app is running but not focused.
+
+### Auto-hide
+
+When `auto_hide = true`, the dock:
+- Does **not** reserve compositor exclusive zone (windows are not pushed aside).
+- Fades out after the pointer leaves (uses a slow ease-in animation).
+- Fades back in when the pointer enters the thin edge trigger strip, so you can reach it by moving the cursor to the screen edge even when the dock is invisible.
+
+### IPC
+
+```sh
+noctalia-ipc show-dock       # Re-display all instances
+noctalia-ipc hide-dock       # Close all instances until next reload
+noctalia-ipc reload-dock     # Reload dock configuration
 ```
 
 ---

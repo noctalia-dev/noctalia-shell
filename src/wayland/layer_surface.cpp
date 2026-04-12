@@ -98,3 +98,15 @@ void LayerSurface::handleClosed(void* data, zwlr_layer_surface_v1* /*layerSurfac
   auto* self = static_cast<LayerSurface*>(data);
   self->setRunning(false);
 }
+
+void LayerSurface::requestSize(std::uint32_t width, std::uint32_t height) {
+  if (m_layerSurface == nullptr || m_surface == nullptr) {
+    return;
+  }
+  m_config.width = width;
+  m_config.height = height;
+  m_config.defaultWidth = width;
+  m_config.defaultHeight = height;
+  zwlr_layer_surface_v1_set_size(m_layerSurface, width, height);
+  wl_surface_commit(m_surface);
+}

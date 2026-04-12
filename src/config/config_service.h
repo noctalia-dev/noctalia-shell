@@ -125,6 +125,27 @@ struct OverviewConfig {
   float tintIntensity = 0.3f;
 };
 
+struct DockConfig {
+  bool enabled = false;            // opt-in; dock is hidden by default
+  std::string position = "bottom"; // top | bottom | left | right
+  std::int32_t iconSize = 48;      // icon size in pixels (before ui_scale)
+  std::int32_t padding = 8;        // inner padding around the icon row
+  std::int32_t itemSpacing = 6;    // gap between items
+  float backgroundOpacity = 0.88f;
+  std::int32_t radius = 16; // dock background corner radius
+  std::int32_t marginH = 0; // horizontal compositor margin from screen edges
+  std::int32_t marginV = 8; // vertical gap between dock and screen edge
+  std::int32_t shadowBlur = 12;
+  std::int32_t shadowOffsetX = 0;
+  std::int32_t shadowOffsetY = 4;
+  bool showRunning = true;            // also show running apps not in pinned list
+  bool autoHide = false;              // fade out when not hovered (overlay mode)
+  std::string indicatorStyle = "dot"; // dot | bar | none — running-app indicator
+  std::vector<std::string> pinned;    // desktop entry IDs to always show
+
+  bool operator==(const DockConfig&) const = default;
+};
+
 struct OsdConfig {
   std::string position = "top_right";
 };
@@ -219,6 +240,7 @@ struct Config {
   std::unordered_map<std::string, WidgetConfig> widgets;
   WallpaperConfig wallpaper;
   OverviewConfig overview;
+  DockConfig dock;
   ShellConfig shell;
   OsdConfig osd;
   WeatherConfig weather;

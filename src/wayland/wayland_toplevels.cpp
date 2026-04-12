@@ -1,6 +1,7 @@
 #include "wayland/wayland_toplevels.h"
 
 #include <algorithm>
+#include <cctype>
 
 #include <wayland-client.h>
 
@@ -200,6 +201,52 @@ wl_output* WaylandToplevels::currentOutput() const {
     return nullptr;
   }
   return it->second.output;
+}
+
+std::vector<std::string> WaylandToplevels::allAppIds() const {
+  std::vector<std::string> ids;
+  ids.reserve(m_handles.size());
+  for (const auto& [handle, state] : m_handles) {
+    if (!state.appId.empty()) {
+      ids.push_back(state.appId);
+    }
+  }
+  return ids;
+}
+
+std::vector<ToplevelInfo> WaylandToplevels::windowsForApp(const std::string& idLower,
+                                                          const std::string& wmClassLower) const {
+  std::vector<ToplevelInfo> out;
+  for (const auto& [handle, state] : m_handles) {
+    if (state.appId.empty())
+      continue;
+    const auto appLower = [&] {
+      std::string s = state.appId;
+      for (auto& c : s)
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+      return s;
+    }();
+    if (appLower == idLower || (!wmClassLower.empty() && appLower == wmClassLower)) {
+      out.push_back(ToplevelInfo{
+          .title = state.title,
+          .appId = state.appId,
+          .handle = handle,
+      });
+    }
+  }
+  return out;
+}
+
+void WaylandToplevels::activateHandle(zwlr_foreign_toplevel_handle_v1* handle, wl_seat* seat) {
+  if (handle == nullptr || seat == nullptr)
+    return;
+  zwlr_foreign_toplevel_handle_v1_activate(handle, seat);
+}
+
+void WaylandToplevels::closeHandle(zwlr_foreign_toplevel_handle_v1* handle) {
+  if (handle == nullptr)
+    return;
+  zwlr_foreign_toplevel_handle_v1_close(handle);
 }
 
 void WaylandToplevels::onHandleOutputEnter(zwlr_foreign_toplevel_handle_v1* handle, wl_output* output) {

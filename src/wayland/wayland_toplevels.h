@@ -10,11 +10,18 @@ struct zwlr_foreign_toplevel_handle_v1;
 struct zwlr_foreign_toplevel_manager_v1;
 struct wl_array;
 struct wl_output;
+struct wl_seat;
 
 struct ActiveToplevel {
   std::string title;
   std::string appId;
   std::string identifier;
+};
+
+struct ToplevelInfo {
+  std::string title;
+  std::string appId;
+  zwlr_foreign_toplevel_handle_v1* handle = nullptr;
 };
 
 class WaylandToplevels {
@@ -27,6 +34,11 @@ public:
 
   [[nodiscard]] std::optional<ActiveToplevel> current() const;
   [[nodiscard]] wl_output* currentOutput() const;
+  [[nodiscard]] std::vector<std::string> allAppIds() const;
+  [[nodiscard]] std::vector<ToplevelInfo> windowsForApp(const std::string& idLower,
+                                                        const std::string& wmClassLower) const;
+  void activateHandle(zwlr_foreign_toplevel_handle_v1* handle, wl_seat* seat);
+  void closeHandle(zwlr_foreign_toplevel_handle_v1* handle);
 
   // Listener entrypoints called by C callbacks
   void onToplevelCreated(zwlr_foreign_toplevel_handle_v1* handle);

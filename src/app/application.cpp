@@ -220,6 +220,7 @@ void Application::initServices() {
     m_wallpaper.onOutputChange();
     m_overview.onOutputChange();
     m_bar.onOutputChange();
+    m_dock.onOutputChange();
     m_lockScreen.onOutputChange();
   });
   m_clipboardService.setChangeCallback([this]() {
@@ -228,7 +229,10 @@ void Application::initServices() {
     }
   });
   m_wayland.setWorkspaceChangeCallback([this]() { m_bar.refresh(); });
-  m_wayland.setToplevelChangeCallback([this]() { m_bar.refresh(); });
+  m_wayland.setToplevelChangeCallback([this]() {
+    m_bar.refresh();
+    m_dock.refresh();
+  });
 
   m_idleInhibitor.initialize(m_wayland, &m_renderContext);
   m_idleInhibitor.setChangeCallback([this]() { m_bar.refresh(); });
@@ -253,6 +257,7 @@ void Application::initServices() {
 
   m_themeService.setChangeCallback([this]() {
     m_bar.requestRedraw();
+    m_dock.requestRedraw();
     m_panelManager.requestRedraw();
     m_notificationToast.requestRedraw();
     m_lockScreen.onThemeChanged();
@@ -474,6 +479,8 @@ void Application::initUi() {
                    &m_idleInhibitor, m_mprisService.get(), &m_httpClient, &m_weatherService, &m_renderContext,
                    &m_nightLightManager, &m_themeService);
 
+  m_dock.initialize(m_wayland, &m_configService, &m_renderContext);
+
   m_timeService.setTickSecondCallback([this]() {
     if (m_lockScreen.isActive()) {
       if (m_timeService.format("{:%S}") == "00") {
@@ -513,6 +520,8 @@ void Application::initUi() {
     if (m_trayMenu.onPointerEvent(event))
       return;
     if (m_bar.onPointerEvent(event))
+      return;
+    if (m_dock.onPointerEvent(event))
       return;
     if (m_panelManager.onPointerEvent(event))
       return;
@@ -676,6 +685,32 @@ void Application::initIpc() {
         return "ok\n";
       },
       "toggle-theme-mode", "Toggle theme mode between dark and light");
+
+  m_ipcService.registerHandler(
+      "show-dock",
+      [this](const std::string&) -> std::string {
+        // Reload dock with enabled forced — users should edit config for persistence.
+        // For IPC convenience, simply refresh the dock (re-creates instances if enabled).
+        m_dock.refresh();
+        return "ok\n";
+      },
+      "show-dock", "Show the dock (re-displays all instances)");
+
+  m_ipcService.registerHandler(
+      "hide-dock",
+      [this](const std::string&) -> std::string {
+        m_dock.closeAllInstances();
+        return "ok\n";
+      },
+      "hide-dock", "Hide the dock (closes all instances until next reload)");
+
+  m_ipcService.registerHandler(
+      "reload-dock",
+      [this](const std::string&) -> std::string {
+        m_dock.reload();
+        return "ok\n";
+      },
+      "reload-dock", "Reload dock configuration");
 }
 
 bool Application::runIdleCommand(const std::string& command) {

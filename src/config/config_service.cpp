@@ -654,6 +654,43 @@ void ConfigService::loadFromFile(const std::string& path) {
       osd.position = *v;
   }
 
+  // Parse [dock]
+  if (auto* dockTbl = tbl["dock"].as_table()) {
+    auto& dock = m_config.dock;
+    if (auto v = (*dockTbl)["enabled"].value<bool>())
+      dock.enabled = *v;
+    if (auto v = (*dockTbl)["position"].value<std::string>())
+      dock.position = *v;
+    if (auto v = (*dockTbl)["icon_size"].value<int64_t>())
+      dock.iconSize = std::clamp(static_cast<std::int32_t>(*v), 16, 256);
+    if (auto v = (*dockTbl)["padding"].value<int64_t>())
+      dock.padding = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
+    if (auto v = (*dockTbl)["item_spacing"].value<int64_t>())
+      dock.itemSpacing = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
+    if (auto v = (*dockTbl)["background_opacity"].value<double>())
+      dock.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+    if (auto v = (*dockTbl)["radius"].value<int64_t>())
+      dock.radius = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
+    if (auto v = (*dockTbl)["margin_h"].value<int64_t>())
+      dock.marginH = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
+    if (auto v = (*dockTbl)["margin_v"].value<int64_t>())
+      dock.marginV = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
+    if (auto v = (*dockTbl)["shadow_blur"].value<int64_t>())
+      dock.shadowBlur = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
+    if (auto v = (*dockTbl)["shadow_offset_x"].value<int64_t>())
+      dock.shadowOffsetX = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
+    if (auto v = (*dockTbl)["shadow_offset_y"].value<int64_t>())
+      dock.shadowOffsetY = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
+    if (auto v = (*dockTbl)["show_running"].value<bool>())
+      dock.showRunning = *v;
+    if (auto v = (*dockTbl)["auto_hide"].value<bool>())
+      dock.autoHide = *v;
+    if (auto v = (*dockTbl)["indicator_style"].value<std::string>())
+      dock.indicatorStyle = *v;
+    if (auto* arr = (*dockTbl)["pinned"].as_array())
+      dock.pinned = readStringArray(*arr);
+  }
+
   // Parse [weather]
   if (auto* weatherTbl = tbl["weather"].as_table()) {
     auto& weather = m_config.weather;

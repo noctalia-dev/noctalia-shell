@@ -96,10 +96,33 @@ namespace {
     entry.id = filepath.stem().string();
 
     bool inDesktopEntry = false;
+    bool inAction = false;
     std::string localizedName;
     std::string localizedGenericName;
     std::string localizedComment;
     std::string type;
+
+    // Action parsing state
+    std::vector<std::string> actionOrder;
+    struct ActionData {
+      std::string name, exec, localizedName;
+    };
+    std::unordered_map<std::string, ActionData> actionMap;
+    std::string currentActionId;
+    ActionData currentActionData;
+
+    auto flushCurrentAction = [&]() {
+      if (!currentActionId.empty()) {
+        if (!currentActionData.localizedName.empty()) {
+          currentActionData.name = currentActionData.localizedName;
+        }
+        if (!currentActionData.name.empty() && !currentActionData.exec.empty()) {
+          actionMap[currentActionId] = currentActionData;
+        }
+        currentActionId.clear();
+        currentActionData = {};
+      }
+    };
 
     std::string line;
     while (std::getline(file, line)) {
@@ -113,11 +136,36 @@ namespace {
       }
 
       if (line[0] == '[') {
-        if (inDesktopEntry) {
-          break; // Only parse [Desktop Entry] section
-        }
+        flushCurrentAction();
+        inDesktopEntry = false;
+        inAction = false;
+
         if (line == "[Desktop Entry]") {
           inDesktopEntry = true;
+        } else if (line.size() > 17 && line.compare(0, 16, "[Desktop Action ") == 0 && line.back() == ']') {
+          currentActionId = line.substr(16, line.size() - 17);
+          if (!currentActionId.empty()) {
+            inAction = true;
+          }
+        }
+        continue;
+      }
+
+      if (inAction) {
+        auto locName = extractLocalizedValue(line, "Name", locale);
+        if (!locName.empty()) {
+          currentActionData.localizedName = std::move(locName);
+          continue;
+        }
+        auto eq = line.find('=');
+        if (eq == std::string::npos)
+          continue;
+        std::string_view key(line.data(), eq);
+        std::string_view value(line.data() + eq + 1, line.size() - eq - 1);
+        if (key == "Name") {
+          currentActionData.name = std::string(value);
+        } else if (key == "Exec") {
+          currentActionData.exec = std::string(value);
         }
         continue;
       }
@@ -175,8 +223,24 @@ namespace {
         entry.hidden = (value == "true");
       } else if (key == "Terminal") {
         entry.terminal = (value == "true");
+      } else if (key == "Actions") {
+        // Semicolon-separated list of action IDs, e.g. "NewWindow;NewPrivateWindow;"
+        std::size_t start = 0;
+        while (start < value.size()) {
+          auto semi = value.find(';', start);
+          auto id = (semi == std::string_view::npos) ? value.substr(start) : value.substr(start, semi - start);
+          if (!id.empty()) {
+            actionOrder.emplace_back(id);
+          }
+          if (semi == std::string_view::npos)
+            break;
+          start = semi + 1;
+        }
       }
     }
+
+    // Flush any trailing action section.
+    flushCurrentAction();
 
     if (type != "Application" || entry.noDisplay || entry.hidden || entry.name.empty()) {
       return;
@@ -199,6 +263,18 @@ namespace {
     entry.keywordsLower = toLower(entry.keywords);
     entry.categoriesLower = toLower(entry.categories);
     entry.startupWmClassLower = toLower(entry.startupWmClass);
+
+    // Build actions in the declared order.
+    for (const auto& id : actionOrder) {
+      auto it = actionMap.find(id);
+      if (it != actionMap.end()) {
+        entry.actions.push_back(DesktopAction{
+            .id = it->first,
+            .name = it->second.name,
+            .exec = it->second.exec,
+        });
+      }
+    }
 
     entries.push_back(std::move(entry));
   }

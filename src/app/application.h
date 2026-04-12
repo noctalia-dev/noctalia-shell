@@ -31,6 +31,7 @@
 #include "pipewire/pipewire_spectrum_poll_source.h"
 #include "render/render_context.h"
 #include "shell/bar/bar.h"
+#include "shell/dock/dock.h"
 #include "shell/lockscreen/lock_screen.h"
 #include "shell/notification/notification_toast.h"
 #include "shell/osd/audio_osd.h"
@@ -104,6 +105,7 @@ private:
 
   RenderContext m_renderContext;
   Bar m_bar;
+  Dock m_dock;
   LockScreen m_lockScreen;
   PanelManager m_panelManager;
   NotificationToast m_notificationToast;

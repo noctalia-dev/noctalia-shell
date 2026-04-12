@@ -355,6 +355,20 @@ std::vector<Workspace> WaylandConnection::workspaces(wl_output* output) const {
 
 std::optional<ActiveToplevel> WaylandConnection::activeToplevel() const { return m_toplevelsHandler.current(); }
 wl_output* WaylandConnection::activeToplevelOutput() const { return m_toplevelsHandler.currentOutput(); }
+std::vector<std::string> WaylandConnection::runningAppIds() const { return m_toplevelsHandler.allAppIds(); }
+
+std::vector<ToplevelInfo> WaylandConnection::windowsForApp(const std::string& idLower,
+                                                           const std::string& wmClassLower) const {
+  return m_toplevelsHandler.windowsForApp(idLower, wmClassLower);
+}
+
+void WaylandConnection::activateToplevel(zwlr_foreign_toplevel_handle_v1* handle) {
+  m_toplevelsHandler.activateHandle(handle, m_seat);
+}
+
+void WaylandConnection::closeToplevel(zwlr_foreign_toplevel_handle_v1* handle) {
+  m_toplevelsHandler.closeHandle(handle);
+}
 
 bool WaylandConnection::isConnected() const noexcept { return m_display != nullptr; }
 

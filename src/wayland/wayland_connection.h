@@ -30,6 +30,7 @@ struct zwp_idle_inhibit_manager_v1;
 struct xdg_activation_v1;
 struct ext_session_lock_manager_v1;
 struct zwlr_foreign_toplevel_manager_v1;
+struct zwlr_foreign_toplevel_handle_v1;
 struct zdwl_ipc_manager_v2;
 struct zwp_virtual_keyboard_manager_v1;
 class ClipboardService;
@@ -118,6 +119,11 @@ public:
   [[nodiscard]] std::vector<Workspace> workspaces(wl_output* output) const;
   [[nodiscard]] std::optional<ActiveToplevel> activeToplevel() const;
   [[nodiscard]] wl_output* activeToplevelOutput() const;
+  [[nodiscard]] std::vector<std::string> runningAppIds() const;
+  [[nodiscard]] std::vector<ToplevelInfo> windowsForApp(const std::string& idLower,
+                                                        const std::string& wmClassLower) const;
+  void activateToplevel(zwlr_foreign_toplevel_handle_v1* handle);
+  void closeToplevel(zwlr_foreign_toplevel_handle_v1* handle);
   [[nodiscard]] wl_output* lastPointerOutput() const noexcept;
   [[nodiscard]] wl_surface* lastPointerSurface() const noexcept;
   [[nodiscard]] bool hasPointerPosition() const noexcept;
