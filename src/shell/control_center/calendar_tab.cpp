@@ -6,10 +6,13 @@
 #include "shell/panel/panel_manager.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
+#include "ui/controls/grid_tile.h"
+#include "ui/controls/grid_view.h"
 #include "ui/controls/label.h"
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <ctime>
 #include <memory>
@@ -23,6 +26,7 @@ constexpr float kCalendarWeekdayRowHeight = Style::controlHeight;
 constexpr float kCalendarHeaderHeight = Style::controlHeightLg;
 constexpr float kCalendarCellSizeMin = Style::controlHeightSm + Style::spaceXs;
 constexpr float kCalendarCellSizeMax = Style::controlHeightLg + Style::spaceLg;
+constexpr float kCalendarLayoutEpsilon = 0.5f;
 
 std::string monthName(int month) {
   static constexpr std::array<const char*, 12> kMonths = {"January",   "February", "March",    "April",
@@ -42,6 +46,36 @@ int daysInMonth(int yearValue, int monthValue) {
     result = leap ? 29 : 28;
   }
   return result;
+}
+
+struct CalendarBuildState {
+  int currentYear = 0;
+  int currentMonth = 0;
+  int today = 0;
+  int displayYear = 0;
+  int displayMonth = 0;
+  int displayWeekday = 0;
+  bool isCurrentMonth = false;
+};
+
+CalendarBuildState currentCalendarState(int monthOffset) {
+  std::time_t now = std::time(nullptr);
+  std::tm local = *std::localtime(&now);
+
+  CalendarBuildState state;
+  state.currentYear = local.tm_year + 1900;
+  state.currentMonth = local.tm_mon;
+  state.today = local.tm_mday;
+
+  std::tm display = local;
+  display.tm_mday = 1;
+  display.tm_mon += monthOffset;
+  std::mktime(&display);
+  state.displayYear = display.tm_year + 1900;
+  state.displayMonth = display.tm_mon;
+  state.displayWeekday = display.tm_wday;
+  state.isCurrentMonth = state.displayYear == state.currentYear && state.displayMonth == state.currentMonth;
+  return state;
 }
 
 } // namespace
@@ -65,9 +99,16 @@ std::unique_ptr<Flex> CalendarTab::create() {
   auto header = std::make_unique<Flex>();
   header->setDirection(FlexDirection::Horizontal);
   header->setAlign(FlexAlign::Center);
+  header->setJustify(FlexJustify::SpaceBetween);
   header->setGap(Style::spaceSm * scale);
   header->setMinHeight(kCalendarHeaderHeight * scale);
   m_header = header.get();
+
+  auto previousSlot = std::make_unique<Flex>();
+  previousSlot->setDirection(FlexDirection::Horizontal);
+  previousSlot->setAlign(FlexAlign::Center);
+  previousSlot->setJustify(FlexJustify::Center);
+  m_previousSlot = previousSlot.get();
 
   auto previous = std::make_unique<Button>();
   previous->setGlyph("chevron-left");
@@ -78,7 +119,9 @@ std::unique_ptr<Flex> CalendarTab::create() {
     --m_monthOffset;
     PanelManager::instance().refresh();
   });
-  header->addChild(std::move(previous));
+  m_previousButton = previous.get();
+  previousSlot->addChild(std::move(previous));
+  header->addChild(std::move(previousSlot));
 
   auto monthWrap = std::make_unique<Flex>();
   monthWrap->setDirection(FlexDirection::Vertical);
@@ -90,10 +133,17 @@ std::unique_ptr<Flex> CalendarTab::create() {
   auto month = std::make_unique<Label>();
   month->setBold(true);
   month->setFontSize((Style::fontSizeTitle + Style::spaceXs) * scale);
+  month->setMaxLines(1);
   month->setColor(roleColor(ColorRole::Primary));
   m_monthLabel = month.get();
   monthWrap->addChild(std::move(month));
   header->addChild(std::move(monthWrap));
+
+  auto nextSlot = std::make_unique<Flex>();
+  nextSlot->setDirection(FlexDirection::Horizontal);
+  nextSlot->setAlign(FlexAlign::Center);
+  nextSlot->setJustify(FlexJustify::Center);
+  m_nextSlot = nextSlot.get();
 
   auto next = std::make_unique<Button>();
   next->setGlyph("chevron-right");
@@ -104,7 +154,9 @@ std::unique_ptr<Flex> CalendarTab::create() {
     ++m_monthOffset;
     PanelManager::instance().refresh();
   });
-  header->addChild(std::move(next));
+  m_nextButton = next.get();
+  nextSlot->addChild(std::move(next));
+  header->addChild(std::move(nextSlot));
 
   calendarCard->addChild(std::move(header));
 
@@ -132,17 +184,38 @@ std::unique_ptr<Flex> CalendarTab::create() {
   tab->addChild(std::move(calendarCard));
   tab->addChild(std::move(eventsCard));
 
-  rebuild();
   return tab;
 }
 
 void CalendarTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
-  if (m_rootLayout == nullptr) {
+  if (m_rootLayout == nullptr || m_card == nullptr) {
     return;
   }
 
   m_rootLayout->setSize(contentWidth, bodyHeight);
   m_rootLayout->layout(renderer);
+
+  const float innerWidth = std::max(0.0f, m_card->width() - (m_card->paddingLeft() + m_card->paddingRight()));
+  const float innerHeight = std::max(0.0f, m_card->height() - (m_card->paddingTop() + m_card->paddingBottom()));
+  const CalendarBuildState state = currentCalendarState(m_monthOffset);
+
+  const bool sizeChanged = std::abs(innerWidth - m_lastInnerWidth) >= kCalendarLayoutEpsilon ||
+                           std::abs(innerHeight - m_lastInnerHeight) >= kCalendarLayoutEpsilon;
+  const bool displayChanged = state.displayYear != m_lastDisplayYear || state.displayMonth != m_lastDisplayMonth;
+  const bool todayChanged = state.currentYear != m_lastCurrentYear || state.currentMonth != m_lastCurrentMonth ||
+                            state.today != m_lastToday;
+  if (!sizeChanged && !displayChanged && !todayChanged) {
+    return;
+  }
+
+  m_lastInnerWidth = innerWidth;
+  m_lastInnerHeight = innerHeight;
+  m_lastDisplayYear = state.displayYear;
+  m_lastDisplayMonth = state.displayMonth;
+  m_lastCurrentYear = state.currentYear;
+  m_lastCurrentMonth = state.currentMonth;
+  m_lastToday = state.today;
+
   rebuild();
   m_rootLayout->layout(renderer);
 }
@@ -151,9 +224,20 @@ void CalendarTab::onClose() {
   m_rootLayout = nullptr;
   m_card = nullptr;
   m_header = nullptr;
+  m_previousSlot = nullptr;
+  m_nextSlot = nullptr;
   m_monthWrap = nullptr;
   m_monthLabel = nullptr;
+  m_previousButton = nullptr;
+  m_nextButton = nullptr;
   m_grid = nullptr;
+  m_lastInnerWidth = -1.0f;
+  m_lastInnerHeight = -1.0f;
+  m_lastDisplayYear = std::numeric_limits<int>::min();
+  m_lastDisplayMonth = -1;
+  m_lastCurrentYear = std::numeric_limits<int>::min();
+  m_lastCurrentMonth = -1;
+  m_lastToday = -1;
 }
 
 void CalendarTab::rebuild() {
@@ -180,94 +264,96 @@ void CalendarTab::rebuild() {
   if (m_header != nullptr) {
     m_header->setSize(innerWidth, kCalendarHeaderHeight * scale);
   }
+  if (m_previousSlot != nullptr) {
+    m_previousSlot->setSize(kCalendarNavButtonSize * scale, kCalendarHeaderHeight * scale);
+  }
+  if (m_nextSlot != nullptr) {
+    m_nextSlot->setSize(kCalendarNavButtonSize * scale, kCalendarHeaderHeight * scale);
+  }
+  if (m_previousButton != nullptr) {
+    m_previousButton->setSize(kCalendarNavButtonSize * scale, kCalendarNavButtonSize * scale);
+  }
+  if (m_nextButton != nullptr) {
+    m_nextButton->setSize(kCalendarNavButtonSize * scale, kCalendarNavButtonSize * scale);
+  }
   if (m_monthWrap != nullptr) {
     m_monthWrap->setSize(monthWidth, kCalendarHeaderHeight * scale);
   }
 
-  std::time_t now = std::time(nullptr);
-  std::tm local = *std::localtime(&now);
-  const int currentYear = local.tm_year + 1900;
-  const int currentMonth = local.tm_mon;
-  const int today = local.tm_mday;
-
-  std::tm display = local;
-  display.tm_mday = 1;
-  display.tm_mon += m_monthOffset;
-  std::mktime(&display);
-  const int year = display.tm_year + 1900;
-  const int month = display.tm_mon;
-  const bool isCurrentMonth = year == currentYear && month == currentMonth;
+  const CalendarBuildState state = currentCalendarState(m_monthOffset);
+  const int year = state.displayYear;
+  const int month = state.displayMonth;
 
   m_monthLabel->setText(monthName(month) + " " + std::to_string(year));
   m_monthLabel->setMaxWidth(monthWidth);
 
   static constexpr std::array<const char*, 7> kWeekdays = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
-  auto weekdayRow = std::make_unique<Flex>();
-  weekdayRow->setDirection(FlexDirection::Horizontal);
-  weekdayRow->setAlign(FlexAlign::Stretch);
-  weekdayRow->setGap(kCalendarGridGap * scale);
+  auto weekdayRow = std::make_unique<GridView>();
+  weekdayRow->setColumns(kWeekdays.size());
+  weekdayRow->setColumnGap(kCalendarGridGap * scale);
   weekdayRow->setSize(innerWidth, weekdayHeight);
+  weekdayRow->setMinCellHeight(weekdayHeight);
   for (std::size_t i = 0; i < kWeekdays.size(); ++i) {
-    auto dayLabel = std::make_unique<Button>();
+    auto dayCell = std::make_unique<GridTile>();
+    dayCell->setDirection(FlexDirection::Vertical);
+    dayCell->setAlign(FlexAlign::Center);
+    dayCell->setJustify(FlexJustify::Center);
+
+    auto dayLabel = std::make_unique<Label>();
     dayLabel->setText(kWeekdays[i]);
-    dayLabel->setVariant(ButtonVariant::Tab);
     dayLabel->setFontSize((Style::fontSizeCaption + 1.0f) * scale);
-    dayLabel->setContentAlign(ButtonContentAlign::Center);
-    dayLabel->setFlexGrow(1.0f);
-    dayLabel->setMinHeight(weekdayHeight);
-    dayLabel->label()->setColor(roleColor(i >= 5 ? ColorRole::Primary : ColorRole::OnSurfaceVariant));
-    weekdayRow->addChild(std::move(dayLabel));
+    dayLabel->setBold(true);
+    dayLabel->setColor(roleColor(i >= 5 ? ColorRole::Primary : ColorRole::OnSurfaceVariant));
+    dayCell->addChild(std::move(dayLabel));
+
+    weekdayRow->addChild(std::move(dayCell));
   }
   m_grid->addChild(std::move(weekdayRow));
 
-  const int firstWeekdayMonBased = (display.tm_wday == 0) ? 6 : (display.tm_wday - 1);
+  const int firstWeekdayMonBased = (state.displayWeekday == 0) ? 6 : (state.displayWeekday - 1);
   const int previousMonth = month == 0 ? 11 : month - 1;
   const int previousMonthYear = month == 0 ? year - 1 : year;
   const int previousMonthDays = daysInMonth(previousMonthYear, previousMonth);
   const int monthDays = daysInMonth(year, month);
 
+  auto dayGrid = std::make_unique<GridView>();
+  dayGrid->setColumns(7);
+  dayGrid->setColumnGap(kCalendarGridGap * scale);
+  dayGrid->setSize(innerWidth, 0.0f);
+  dayGrid->setMinCellHeight(dayCellHeight);
+
   int day = 1;
   int trailingDay = 1;
-  for (int week = 0; week < 6; ++week) {
-    auto row = std::make_unique<Flex>();
-    row->setDirection(FlexDirection::Horizontal);
-    row->setAlign(FlexAlign::Stretch);
-    row->setGap(kCalendarGridGap * scale);
-    row->setSize(innerWidth, dayCellHeight);
+  for (int index = 0; index < 42; ++index) {
+    auto cell = std::make_unique<Button>();
+    cell->setVariant(ButtonVariant::Default);
+    cell->setContentAlign(ButtonContentAlign::Center);
+    cell->setMinHeight(dayCellHeight);
+    cell->setRadius(Style::radiusLg * scale);
+    cell->setFontSize(dayCellHeight > (Style::controlHeightLg + Style::spaceXs) * scale ? Style::fontSizeTitle * scale
+                                                                                           : Style::fontSizeBody * scale);
+    cell->setText("");
 
-    for (int wd = 0; wd < 7; ++wd) {
-      auto cell = std::make_unique<Button>();
-      cell->setVariant(ButtonVariant::Default);
-      cell->setContentAlign(ButtonContentAlign::Center);
-      cell->setFlexGrow(1.0f);
-      cell->setMinHeight(dayCellHeight);
-      cell->setRadius(Style::radiusLg * scale);
-      cell->setFontSize(dayCellHeight > (Style::controlHeightLg + Style::spaceXs) * scale ? Style::fontSizeTitle * scale
-                                                                                             : Style::fontSizeBody * scale);
-      cell->setText("");
-
-      const int index = week * 7 + wd;
-      if (index < firstWeekdayMonBased) {
-        const int leadingDay = previousMonthDays - firstWeekdayMonBased + index + 1;
-        cell->setText(std::to_string(leadingDay));
-        cell->label()->setColor(roleColor(ColorRole::OnSurfaceVariant));
-      } else if (day > monthDays) {
-        cell->setText(std::to_string(trailingDay));
-        cell->label()->setColor(roleColor(ColorRole::OnSurfaceVariant));
-        ++trailingDay;
+    if (index < firstWeekdayMonBased) {
+      const int leadingDay = previousMonthDays - firstWeekdayMonBased + index + 1;
+      cell->setText(std::to_string(leadingDay));
+      cell->label()->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    } else if (day > monthDays) {
+      cell->setText(std::to_string(trailingDay));
+      cell->label()->setColor(roleColor(ColorRole::OnSurfaceVariant));
+      ++trailingDay;
+    } else {
+      cell->setText(std::to_string(day));
+      if (state.isCurrentMonth && day == state.today) {
+        cell->setVariant(ButtonVariant::Accent);
       } else {
-        cell->setText(std::to_string(day));
-        if (isCurrentMonth && day == today) {
-          cell->setVariant(ButtonVariant::Accent);
-        } else {
-          cell->label()->setColor(roleColor(ColorRole::OnSurface));
-        }
-        ++day;
+        cell->label()->setColor(roleColor(ColorRole::OnSurface));
       }
-
-      row->addChild(std::move(cell));
+      ++day;
     }
 
-    m_grid->addChild(std::move(row));
+    dayGrid->addChild(std::move(cell));
   }
+
+  m_grid->addChild(std::move(dayGrid));
 }
