@@ -3,6 +3,7 @@
 #include "shell/control_center/tab.h"
 
 #include <cstdint>
+#include <unordered_set>
 
 class NotificationManager;
 class Button;
@@ -20,6 +21,7 @@ public:
 private:
   void clearAllNotifications();
   void removeNotificationEntry(uint32_t id, bool wasActive);
+  void toggleNotificationExpanded(uint32_t id);
   void rebuild(Renderer& renderer, float width);
 
   NotificationManager* m_notifications = nullptr;
@@ -27,6 +29,7 @@ private:
   ScrollView* m_scroll = nullptr;
   Flex* m_list = nullptr;
   Button* m_clearAllButton = nullptr;
+  std::unordered_set<uint32_t> m_expandedIds;
   std::uint64_t m_lastSerial = 0;
   float m_lastWidth = -1.0f;
 };

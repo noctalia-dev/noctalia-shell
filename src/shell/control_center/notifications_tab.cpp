@@ -20,6 +20,7 @@ namespace {
 constexpr float kNotificationListRightPadding = Style::spaceXs;
 constexpr int kSummaryMaxLines = 2;
 constexpr int kBodyMaxLines = 3;
+constexpr int kExpandedMaxLines = 500;
 
 std::string statusText(const NotificationHistoryEntry& entry) {
   if (entry.active) {
@@ -52,6 +53,19 @@ void applyNotificationCardStyle(Flex& card, float scale) {
   card.setBackground(roleColor(ColorRole::Surface));
   card.setBorderWidth(Style::borderWidth);
   card.setBorderColor(roleColor(ColorRole::Outline, 0.75f));
+}
+
+bool canExpandText(Renderer& renderer, std::string_view text, float fontSize, bool bold, float maxWidth,
+                   int collapsedMaxLines) {
+  if (text.empty()) {
+    return false;
+  }
+
+  const auto collapsed = renderer.measureText(text, fontSize, bold, maxWidth, collapsedMaxLines);
+  const auto expanded = renderer.measureText(text, fontSize, bold, maxWidth, kExpandedMaxLines);
+  const float collapsedHeight = collapsed.bottom - collapsed.top;
+  const float expandedHeight = expanded.bottom - expanded.top;
+  return expandedHeight > collapsedHeight + 0.5f;
 }
 
 } // namespace
@@ -121,6 +135,7 @@ void NotificationsTab::onClose() {
   m_scroll = nullptr;
   m_list = nullptr;
   m_clearAllButton = nullptr;
+  m_expandedIds.clear();
   m_lastSerial = 0;
   m_lastWidth = -1.0f;
 }
@@ -139,6 +154,7 @@ void NotificationsTab::clearAllNotifications() {
     (void)m_notifications->close(id, CloseReason::Dismissed);
   }
   m_notifications->clearHistory();
+  m_expandedIds.clear();
   PanelManager::instance().refresh();
 }
 
@@ -151,6 +167,17 @@ void NotificationsTab::removeNotificationEntry(uint32_t id, bool wasActive) {
     (void)m_notifications->close(id, CloseReason::Dismissed);
   }
   m_notifications->removeHistoryEntry(id);
+  m_expandedIds.erase(id);
+  PanelManager::instance().refresh();
+}
+
+void NotificationsTab::toggleNotificationExpanded(uint32_t id) {
+  if (m_expandedIds.contains(id)) {
+    m_expandedIds.erase(id);
+  } else {
+    m_expandedIds.insert(id);
+  }
+  m_lastWidth = -1.0f;
   PanelManager::instance().refresh();
 }
 
@@ -176,10 +203,9 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
   const float scale = contentScale();
   const float cardWidth = std::max(0.0f, width - kNotificationListRightPadding * scale);
   const float actionButtonSize = Style::controlHeightSm * scale;
+  const float actionButtonsGap = Style::spaceXs * scale;
   const float cardHorizontalPadding = Style::spaceMd * scale * 2.0f;
   const float cardTextWidth = std::max(0.0f, cardWidth - cardHorizontalPadding);
-  const float metaTextWidth =
-      std::max(0.0f, cardTextWidth - actionButtonSize - Style::spaceSm * scale);
 
   if (m_notifications == nullptr || m_notifications->history().empty()) {
     auto empty = std::make_unique<Flex>();
@@ -194,6 +220,22 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
   }
 
   for (auto it = m_notifications->history().rbegin(); it != m_notifications->history().rend(); ++it) {
+    const std::string summaryText =
+        it->notification.summary.empty() ? "Untitled notification" : it->notification.summary;
+    const std::string& bodyText = it->notification.body;
+    const bool summaryExpandable =
+        canExpandText(renderer, summaryText, Style::fontSizeBody * scale, true, cardTextWidth, kSummaryMaxLines);
+    const bool bodyExpandable =
+        canExpandText(renderer, bodyText, Style::fontSizeBody * scale, false, cardTextWidth, kBodyMaxLines);
+    const bool canExpand = summaryExpandable || bodyExpandable;
+    const bool expanded = canExpand && m_expandedIds.contains(it->notification.id);
+    if (!canExpand) {
+      m_expandedIds.erase(it->notification.id);
+    }
+
+    const float headerActionsWidth = actionButtonSize + (canExpand ? (actionButtonsGap + actionButtonSize) : 0.0f);
+    const float metaTextWidth = std::max(0.0f, cardTextWidth - headerActionsWidth - Style::spaceSm * scale);
+
     auto card = std::make_unique<Flex>();
     applyNotificationCardStyle(*card, scale);
     card->setMinWidth(cardWidth);
@@ -214,6 +256,25 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     meta->measure(renderer);
     header->addChild(std::move(meta));
 
+    auto headerActions = std::make_unique<Flex>();
+    headerActions->setDirection(FlexDirection::Horizontal);
+    headerActions->setAlign(FlexAlign::Center);
+    headerActions->setGap(actionButtonsGap);
+
+    if (canExpand) {
+      auto expand = std::make_unique<Button>();
+      expand->setGlyph(expanded ? "chevron-up" : "chevron-down");
+      expand->setVariant(ButtonVariant::Default);
+      expand->setGlyphSize(Style::fontSizeBody * scale);
+      expand->setMinWidth(actionButtonSize);
+      expand->setMinHeight(actionButtonSize);
+      expand->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale,
+                         Style::spaceMd * scale);
+      expand->setRadius(Style::radiusMd * scale);
+      expand->setOnClick([this, id = it->notification.id]() { toggleNotificationExpanded(id); });
+      headerActions->addChild(std::move(expand));
+    }
+
     auto dismiss = std::make_unique<Button>();
     dismiss->setGlyph("trash");
     dismiss->setVariant(ButtonVariant::Default);
@@ -226,25 +287,26 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     dismiss->setOnClick([this, id = it->notification.id, active = it->active]() {
       removeNotificationEntry(id, active);
     });
-    header->addChild(std::move(dismiss));
+    headerActions->addChild(std::move(dismiss));
+    header->addChild(std::move(headerActions));
     card->addChild(std::move(header));
 
     auto summary = std::make_unique<Label>();
-    summary->setText(it->notification.summary.empty() ? "Untitled notification" : it->notification.summary);
+    summary->setText(summaryText);
     summary->setBold(true);
     summary->setFontSize(Style::fontSizeBody * scale);
     summary->setMaxWidth(cardTextWidth);
-    summary->setMaxLines(kSummaryMaxLines);
+    summary->setMaxLines(expanded ? kExpandedMaxLines : kSummaryMaxLines);
     summary->measure(renderer);
     card->addChild(std::move(summary));
 
-    if (!it->notification.body.empty()) {
+    if (!bodyText.empty()) {
       auto body = std::make_unique<Label>();
-      body->setText(it->notification.body);
+      body->setText(bodyText);
       body->setFontSize(Style::fontSizeBody * scale);
       body->setColor(roleColor(ColorRole::OnSurfaceVariant));
       body->setMaxWidth(cardTextWidth);
-      body->setMaxLines(kBodyMaxLines);
+      body->setMaxLines(expanded ? kExpandedMaxLines : kBodyMaxLines);
       body->measure(renderer);
       card->addChild(std::move(body));
     }
