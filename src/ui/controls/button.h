@@ -78,6 +78,7 @@ private:
   void ensureGlyph();
   void applyVariant();
   void applyVisualState();
+  void resolveVisualStateColors(Color& bg, Color& border, Color& label) const;
 
   void applyColors(const Color& bg, const Color& border, const Color& label);
 

@@ -99,8 +99,8 @@ Button::ButtonPalette paletteForVariant(ButtonVariant variant) {
 
 Button::Button() {
   setAlign(FlexAlign::Center);
-  setMinHeight(Style::controlHeight);
-  setPadding(Style::spaceSm, Style::spaceMd);
+  setMinHeight(Style::controlHeightSm);
+  setPadding(Style::spaceSm);
   setRadius(Style::radiusMd);
 
   auto area = std::make_unique<InputArea>();
@@ -230,7 +230,6 @@ void Button::setVariant(ButtonVariant variant) {
 }
 
 void Button::applyVariant() {
-  setPadding(Style::spaceSm, Style::spaceMd);
   setRadius(Style::radiusMd);
 
   m_palette = paletteForVariant(m_variant);
@@ -255,10 +254,13 @@ void Button::ensureLabel() {
   }
   auto label = std::make_unique<Label>();
   m_label = static_cast<Label*>(addChild(std::move(label)));
+  setMinHeight(Style::controlHeight);
+  setPadding(Style::spaceSm, Style::spaceMd);
   if (m_glyph != nullptr) {
     setDirection(FlexDirection::Horizontal);
     setGap(Style::spaceXs);
   }
+  applyColors(m_targetBg, m_targetBorder, m_targetLabel);
 }
 
 void Button::ensureGlyph() {
@@ -286,6 +288,7 @@ void Button::ensureGlyph() {
     setDirection(FlexDirection::Horizontal);
     setGap(Style::spaceXs);
   }
+  applyColors(m_targetBg, m_targetBorder, m_targetLabel);
 }
 
 void Button::applyColors(const Color& bg, const Color& border, const Color& label) {
@@ -299,17 +302,15 @@ void Button::applyColors(const Color& bg, const Color& border, const Color& labe
   }
 }
 
-void Button::applyVisualState() {
+void Button::resolveVisualStateColors(Color& targetBg, Color& targetBorder, Color& targetLabel) const {
   bool isHovered = m_enabled && ((!m_hoverSuppressed && hovered()) || m_selected);
   bool isPressed = m_enabled && pressed();
 
-  Color targetBg;
-  Color targetBorder;
-  Color targetLabel;
   if (!m_enabled) {
-    targetBg = lerpColor(resolveThemeColor(m_palette.normal.bg), resolveColorRole(ColorRole::Surface), 0.35f);
-    targetBorder = lerpColor(resolveThemeColor(m_palette.normal.border), resolveColorRole(ColorRole::Outline), 0.35f);
-    targetLabel = resolveThemeColor(roleColor(ColorRole::OnSurface, 0.45f));
+    constexpr float kDisabledAlpha = 0.5f;
+    targetBg = withAlpha(resolveThemeColor(m_palette.normal.bg), kDisabledAlpha);
+    targetBorder = withAlpha(resolveThemeColor(m_palette.normal.border), kDisabledAlpha);
+    targetLabel = withAlpha(resolveThemeColor(m_palette.normal.label), kDisabledAlpha);
   } else if (isPressed) {
     targetBg = resolveThemeColor(m_palette.pressed.bg);
     targetBorder = resolveThemeColor(m_palette.pressed.border);
@@ -323,6 +324,13 @@ void Button::applyVisualState() {
     targetBorder = resolveThemeColor(m_palette.normal.border);
     targetLabel = resolveThemeColor(m_palette.normal.label);
   }
+}
+
+void Button::applyVisualState() {
+  Color targetBg;
+  Color targetBorder;
+  Color targetLabel;
+  resolveVisualStateColors(targetBg, targetBorder, targetLabel);
 
   if (animationManager() == nullptr) {
     applyColors(targetBg, targetBorder, targetLabel);
@@ -354,6 +362,8 @@ void Button::applyVisualState() {
 void Button::layout(Renderer& renderer) {
   const float assignedWidth = width();
   const float assignedHeight = height();
+  const bool hasVisibleLabel = m_label != nullptr && m_label->visible();
+  const bool glyphOnly = m_glyph != nullptr && !hasVisibleLabel;
 
   if (m_label != nullptr) {
     m_label->measure(renderer);
@@ -370,6 +380,11 @@ void Button::layout(Renderer& renderer) {
     setSize(std::max(width(), assignedWidth), std::max(height(), assignedHeight));
   }
 
+  if (glyphOnly && m_contentAlign == ButtonContentAlign::Center) {
+    const float squareSize = std::max(width(), height());
+    setSize(squareSize, squareSize);
+  }
+
   // After Flex layout the content row is left-anchored inside the padding.
   // Shift the whole group to honour m_contentAlign (Start leaves it as-is).
   if (m_contentAlign != ButtonContentAlign::Start) {
@@ -379,28 +394,39 @@ void Button::layout(Renderer& renderer) {
 
     float contentLeft = 0.0f;
     float contentRight = 0.0f;
+    float contentTop = 0.0f;
+    float contentBottom = 0.0f;
     bool haveContent = false;
 
     if (includeContent(m_label)) {
       contentLeft = m_label->x();
       contentRight = m_label->x() + m_label->width();
+      contentTop = m_label->y();
+      contentBottom = m_label->y() + m_label->height();
       haveContent = true;
     }
     if (includeContent(m_glyph)) {
       const float left = m_glyph->x();
       const float right = m_glyph->x() + m_glyph->width();
+      const float top = m_glyph->y();
+      const float bottom = m_glyph->y() + m_glyph->height();
       if (!haveContent) {
         contentLeft = left;
         contentRight = right;
+        contentTop = top;
+        contentBottom = bottom;
         haveContent = true;
       } else {
         contentLeft = std::min(contentLeft, left);
         contentRight = std::max(contentRight, right);
+        contentTop = std::min(contentTop, top);
+        contentBottom = std::max(contentBottom, bottom);
       }
     }
 
     if (haveContent) {
       const float contentWidth = contentRight - contentLeft;
+      const float contentHeight = contentBottom - contentTop;
       float targetLeft = 0.0f;
       if (m_contentAlign == ButtonContentAlign::Center) {
         targetLeft = std::round((width() - contentWidth) * 0.5f);
@@ -408,12 +434,14 @@ void Button::layout(Renderer& renderer) {
         targetLeft = std::round(width() - contentWidth - paddingRight());
       }
       const float shiftX = targetLeft - contentLeft;
-      if (std::abs(shiftX) > 0.01f) {
+      const float targetTop = std::round((height() - contentHeight) * 0.5f);
+      const float shiftY = targetTop - contentTop;
+      if (std::abs(shiftX) > 0.01f || std::abs(shiftY) > 0.01f) {
         if (includeContent(m_label)) {
-          m_label->setPosition(m_label->x() + shiftX, m_label->y());
+          m_label->setPosition(m_label->x() + shiftX, m_label->y() + shiftY);
         }
         if (includeContent(m_glyph)) {
-          m_glyph->setPosition(m_glyph->x() + shiftX, m_glyph->y());
+          m_glyph->setPosition(m_glyph->x() + shiftX, m_glyph->y() + shiftY);
         }
       }
     }
