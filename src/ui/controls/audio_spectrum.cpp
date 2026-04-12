@@ -19,6 +19,7 @@ void AudioSpectrum::setValues(const std::vector<float>& values) {
   }
   ensureBarCount(m_mirrored ? m_targetValues.size() * 2 : m_targetValues.size());
   m_converged = false;
+  updateBarsGeometry();
   markDirty();
 }
 
@@ -56,6 +57,7 @@ void AudioSpectrum::tick(float deltaMs) {
 
   m_converged = converged;
   if (changed) {
+    updateBarsGeometry();
     markDirty();
   }
 }
@@ -72,6 +74,7 @@ void AudioSpectrum::setSpacingRatio(float ratio) {
     return;
   }
   m_spacingRatio = clamped;
+  updateBarsGeometry();
   markDirty();
 }
 
@@ -80,6 +83,7 @@ void AudioSpectrum::setOrientation(AudioSpectrumOrientation orientation) {
     return;
   }
   m_orientation = orientation;
+  updateBarsGeometry();
   markDirty();
 }
 
@@ -88,6 +92,7 @@ void AudioSpectrum::setLayoutMode(AudioSpectrumLayoutMode mode) {
     return;
   }
   m_layoutMode = mode;
+  updateBarsGeometry();
   markDirty();
 }
 
@@ -97,6 +102,7 @@ void AudioSpectrum::setMirrored(bool mirrored) {
   }
   m_mirrored = mirrored;
   ensureBarCount(m_mirrored ? m_targetValues.size() * 2 : m_targetValues.size());
+  updateBarsGeometry();
   markDirty();
 }
 
@@ -105,10 +111,21 @@ void AudioSpectrum::setCentered(bool centered) {
     return;
   }
   m_centered = centered;
+  updateBarsGeometry();
   markDirty();
 }
 
-void AudioSpectrum::layout(Renderer& /*renderer*/) {
+void AudioSpectrum::setSize(float width, float height) {
+  if (this->width() == width && this->height() == height) {
+    return;
+  }
+  Node::setSize(width, height);
+  updateBarsGeometry();
+}
+
+void AudioSpectrum::layout(Renderer& /*renderer*/) { updateBarsGeometry(); }
+
+void AudioSpectrum::updateBarsGeometry() {
   const int barCount = static_cast<int>(m_bars.size());
   if (barCount <= 0 || width() <= 0.0f || height() <= 0.0f) {
     return;

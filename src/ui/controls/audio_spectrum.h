@@ -36,11 +36,13 @@ public:
   void tick(float deltaMs);
   [[nodiscard]] bool converged() const noexcept { return m_converged; }
 
+  void setSize(float width, float height) override;
   void layout(Renderer& renderer) override;
 
 private:
   void ensureBarCount(std::size_t count);
   void recolorBars();
+  void updateBarsGeometry();
 
   std::vector<float> m_targetValues;
   std::vector<float> m_displayValues;
