@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "ui/controls/context_menu.h"
 
 #include "render/core/renderer.h"
@@ -80,12 +81,14 @@ float ContextMenuControl::preferredHeight(const std::vector<ContextMenuControlEn
 }
 
 void ContextMenuControl::layout(Renderer& renderer) {
+  uiAssertNotRendering("ContextMenuControl::layout");
   if (m_needsRebuild) {
     rebuild(renderer);
   }
 }
 
 void ContextMenuControl::rebuild(Renderer& renderer) {
+  uiAssertNotRendering("ContextMenuControl::rebuild");
   while (!children().empty()) {
     removeChild(children().back().get());
   }

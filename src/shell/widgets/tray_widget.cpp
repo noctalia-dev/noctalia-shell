@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "shell/widgets/tray_widget.h"
 
 #include "core/log.h"
@@ -239,6 +240,7 @@ void TrayWidget::create() {
 }
 
 void TrayWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+  uiAssertNotRendering("TrayWidget::layout");
   if (m_container == nullptr) {
     return;
   }
@@ -300,6 +302,7 @@ void TrayWidget::syncState(Renderer& renderer) {
 }
 
 void TrayWidget::rebuild(Renderer& renderer) {
+  uiAssertNotRendering("TrayWidget::rebuild");
   if (m_container == nullptr) {
     return;
   }

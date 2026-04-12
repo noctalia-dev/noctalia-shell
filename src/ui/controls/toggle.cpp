@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "ui/controls/toggle.h"
 
 #include "render/animation/animation_manager.h"
@@ -100,6 +101,7 @@ bool Toggle::hovered() const noexcept { return m_inputArea != nullptr && m_input
 bool Toggle::pressed() const noexcept { return m_inputArea != nullptr && m_inputArea->pressed(); }
 
 void Toggle::layout(Renderer& renderer) {
+  uiAssertNotRendering("Toggle::layout");
   Flex::layout(renderer);
 
   if (m_inputArea != nullptr) {

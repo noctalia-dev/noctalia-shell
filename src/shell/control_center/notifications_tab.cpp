@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "shell/control_center/notifications_tab.h"
 
 #include "notification/notification_manager.h"
@@ -118,6 +119,7 @@ std::unique_ptr<Flex> NotificationsTab::createHeaderActions() {
 }
 
 void NotificationsTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) {
+  uiAssertNotRendering("NotificationsTab::layout");
   if (m_root == nullptr || m_scroll == nullptr) {
     return;
   }
@@ -136,6 +138,7 @@ void NotificationsTab::layout(Renderer& renderer, float contentWidth, float body
 }
 
 void NotificationsTab::update(Renderer& renderer) {
+  uiAssertNotRendering("NotificationsTab::update");
   if (m_scroll == nullptr) {
     return;
   }
@@ -203,6 +206,7 @@ void NotificationsTab::toggleNotificationExpanded(uint32_t id) {
 }
 
 void NotificationsTab::rebuild(Renderer& renderer, float width) {
+  uiAssertNotRendering("NotificationsTab::rebuild");
   if (m_list == nullptr) {
     return;
   }

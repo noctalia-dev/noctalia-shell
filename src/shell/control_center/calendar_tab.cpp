@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "shell/control_center/calendar_tab.h"
 
 #include "render/core/renderer.h"
@@ -136,6 +137,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
 }
 
 void CalendarTab::layout(Renderer& renderer, float contentWidth, float bodyHeight) {
+  uiAssertNotRendering("CalendarTab::layout");
   if (m_rootLayout == nullptr) {
     return;
   }
@@ -156,6 +158,7 @@ void CalendarTab::onClose() {
 }
 
 void CalendarTab::rebuild() {
+  uiAssertNotRendering("CalendarTab::rebuild");
   if (m_grid == nullptr || m_monthLabel == nullptr || m_card == nullptr) {
     return;
   }

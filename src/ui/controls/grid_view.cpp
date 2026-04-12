@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "ui/controls/grid_view.h"
 
 #include "render/core/renderer.h"
@@ -76,6 +77,7 @@ void GridView::setMinCellHeight(float height) {
 }
 
 void GridView::layout(Renderer& renderer) {
+  uiAssertNotRendering("GridView::layout");
   auto layoutWithAssignedSize = [&renderer](Node* child, float assignedWidth, float assignedHeight) {
     child->setSize(assignedWidth, assignedHeight);
     child->layout(renderer);

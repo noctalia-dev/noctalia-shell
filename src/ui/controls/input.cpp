@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "ui/controls/input.h"
 
 #include "cursor-shape-v1-client-protocol.h"
@@ -187,6 +188,7 @@ void Input::clearSelection() {
 }
 
 void Input::layout(Renderer& renderer) {
+  uiAssertNotRendering("Input::layout");
   const float w = width() > 0.0f ? width() : kDefaultWidth;
   const float h = m_controlHeight;
   setSize(w, h);

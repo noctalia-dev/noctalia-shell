@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "shell/widgets/workspaces_widget.h"
 #include "ui/style.h"
 
@@ -36,6 +37,7 @@ void WorkspacesWidget::create() {
 }
 
 void WorkspacesWidget::layout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+  uiAssertNotRendering("WorkspacesWidget::layout");
   update(renderer);
   if (m_rebuildPending) {
     rebuild(renderer);
@@ -78,6 +80,7 @@ void WorkspacesWidget::update(Renderer& renderer) {
 }
 
 void WorkspacesWidget::rebuild(Renderer& renderer) {
+  uiAssertNotRendering("WorkspacesWidget::rebuild");
   while (!m_container->children().empty()) {
     m_container->removeChild(m_container->children().back().get());
   }

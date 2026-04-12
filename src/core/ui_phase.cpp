@@ -1,11 +1,12 @@
 #include "core/ui_phase.h"
+#include "core/log.h"
 
-#include <cstdio>
 #include <cstdlib>
 
 namespace {
 
   thread_local UiPhase g_currentUiPhase = UiPhase::Idle;
+  constexpr Logger kLog{"ui_phase"};
 
 } // namespace
 
@@ -34,7 +35,18 @@ UiPhaseScope::~UiPhaseScope() { g_currentUiPhase = m_previous; }
 void uiAssertSceneMutationAllowed(const char* operation) {
 #ifndef NDEBUG
   if (g_currentUiPhase == UiPhase::Render) {
-    std::fprintf(stderr, "UI phase violation: %s is not allowed during %s\n", operation, uiPhaseName(g_currentUiPhase));
+    kLog.error("UI phase violation: {} is not allowed during {}", operation, uiPhaseName(g_currentUiPhase));
+    std::abort();
+  }
+#else
+  (void)operation;
+#endif
+}
+
+void uiAssertNotRendering(const char* operation) {
+#ifndef NDEBUG
+  if (g_currentUiPhase == UiPhase::Render) {
+    kLog.error("UI phase violation: {} is not allowed during {}", operation, uiPhaseName(g_currentUiPhase));
     std::abort();
   }
 #else

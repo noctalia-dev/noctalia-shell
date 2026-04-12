@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "ui/controls/scroll_view.h"
 
 #include "render/programs/rounded_rect_program.h"
@@ -192,6 +193,7 @@ void ScrollView::applyPalette() {
 }
 
 void ScrollView::layout(Renderer& renderer) {
+  uiAssertNotRendering("ScrollView::layout");
   if (m_background == nullptr || m_viewportArea == nullptr || m_content == nullptr || m_scrollbarTrack == nullptr ||
       m_scrollbarThumb == nullptr || m_scrollbarThumbArea == nullptr) {
     return;

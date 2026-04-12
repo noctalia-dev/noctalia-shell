@@ -24,3 +24,4 @@ private:
 };
 
 void uiAssertSceneMutationAllowed(const char* operation);
+void uiAssertNotRendering(const char* operation);

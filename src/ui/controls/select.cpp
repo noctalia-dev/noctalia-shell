@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "ui/controls/select.h"
 
 #include "render/programs/rounded_rect_program.h"
@@ -196,6 +197,7 @@ std::string_view Select::selectedText() const noexcept {
 }
 
 void Select::layout(Renderer& renderer) {
+  uiAssertNotRendering("Select::layout");
   if (m_triggerBackground == nullptr || m_triggerLabel == nullptr || m_triggerGlyph == nullptr || m_triggerArea == nullptr ||
       m_menuBackground == nullptr) {
     return;

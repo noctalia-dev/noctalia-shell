@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "ui/controls/audio_spectrum.h"
 
 #include "render/core/color.h"
@@ -123,7 +124,10 @@ void AudioSpectrum::setSize(float width, float height) {
   updateBarsGeometry();
 }
 
-void AudioSpectrum::layout(Renderer& /*renderer*/) { updateBarsGeometry(); }
+void AudioSpectrum::layout(Renderer& /*renderer*/) {
+  uiAssertNotRendering("AudioSpectrum::layout");
+  updateBarsGeometry();
+}
 
 void AudioSpectrum::updateBarsGeometry() {
   const int barCount = static_cast<int>(m_bars.size());

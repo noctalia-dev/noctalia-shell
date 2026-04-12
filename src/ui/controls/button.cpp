@@ -1,3 +1,4 @@
+#include "core/ui_phase.h"
 #include "ui/controls/button.h"
 
 #include "render/animation/animation_manager.h"
@@ -360,6 +361,7 @@ void Button::applyVisualState() {
 }
 
 void Button::layout(Renderer& renderer) {
+  uiAssertNotRendering("Button::layout");
   const float assignedWidth = width();
   const float assignedHeight = height();
   const bool hasVisibleLabel = m_label != nullptr && m_label->visible();
