@@ -259,23 +259,12 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
             if (inst->sceneRoot) inst->sceneRoot->setOpacity(v);
             inst->hideOpacity = v;
           });
-      // Restore full input region.
+      // Restore full input region (full surface so shadow-margin edges don't
+      // cause an immediate Leave when triggered from the edge of the strip).
       if (m_hoveredInstance->surface != nullptr) {
-        const auto& cfg = m_config->config().dock;
-        const bool vert = isVertical();
-        const auto sb   = computeBleed(cfg);
-        const auto panelW = static_cast<std::int32_t>(dockContentSize(m_hoveredInstance->items.size()));
-        const auto panelH = static_cast<std::int32_t>(dockThickness());
-        const auto surfW = static_cast<std::uint32_t>(
-            vert ? (sb.left + panelH + sb.right) : (panelW + sb.left + sb.right));
-        const auto surfH = static_cast<std::uint32_t>(
-            vert ? (panelW + sb.up + sb.down)   : (sb.up + panelH + cfg.marginV));
-        (void)surfW; (void)surfH;
-        m_hoveredInstance->surface->setInputRegion({InputRect{
-            sb.left, 0,
-            static_cast<int>(surfW) - sb.left - sb.right,
-            static_cast<int>(surfH)
-        }});
+        const int sw = static_cast<int>(m_hoveredInstance->surface->width());
+        const int sh = static_cast<int>(m_hoveredInstance->surface->height());
+        m_hoveredInstance->surface->setInputRegion({InputRect{0, 0, sw, sh}});
       }
       m_hoveredInstance->surface->requestRedraw();
     }
