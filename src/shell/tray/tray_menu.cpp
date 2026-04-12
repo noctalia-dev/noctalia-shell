@@ -22,7 +22,6 @@ namespace {
 constexpr Logger kLog("tray");
 
 constexpr float kMenuWidth = 246.0f;
-constexpr std::size_t kMaxVisible = 14;
 
 constexpr float kSurfaceWidth = kMenuWidth;
 
@@ -33,6 +32,10 @@ constexpr std::uint32_t kPopupConstraintAdjust = XDG_POSITIONER_CONSTRAINT_ADJUS
 
 bool containsTrayWidget(const std::vector<std::string>& widgets) {
   return std::find(widgets.begin(), widgets.end(), "tray") != widgets.end();
+}
+
+std::size_t visibleEntryLimit(std::size_t entryCount) {
+  return std::max<std::size_t>(1, entryCount);
 }
 
 std::optional<BarConfig> resolveTrayBarConfig(ConfigService* config, WaylandConnection* wayland, wl_output* output) {
@@ -390,7 +393,7 @@ uint32_t TrayMenu::submenuHeightPx() const {
         .hasSubmenu = entry.hasSubmenu,
     });
   }
-  return static_cast<uint32_t>(ContextMenuControl::preferredHeight(entries, kMaxVisible));
+  return static_cast<uint32_t>(ContextMenuControl::preferredHeight(entries, visibleEntryLimit(entries.size())));
 }
 
 uint32_t TrayMenu::surfaceHeightPx() const {
@@ -405,7 +408,7 @@ uint32_t TrayMenu::surfaceHeightPx() const {
         .hasSubmenu = entry.hasSubmenu,
     });
   }
-  return static_cast<uint32_t>(ContextMenuControl::preferredHeight(entries, kMaxVisible));
+  return static_cast<uint32_t>(ContextMenuControl::preferredHeight(entries, visibleEntryLimit(entries.size())));
 }
 
 bool TrayMenu::ownsSurface(wl_surface* surface) const {
@@ -521,7 +524,7 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
 
   auto menu = std::make_unique<ContextMenuControl>();
   menu->setMenuWidth(w);
-  menu->setMaxVisible(kMaxVisible);
+  menu->setMaxVisible(visibleEntryLimit(m_entries.size()));
   menu->setSubmenuDirection(inst.submenuDirection);
   menu->setEntries(std::move(entries));
   menu->setRedrawCallback([&inst]() {
@@ -652,7 +655,7 @@ void TrayMenu::buildSubmenuScene(MenuInstance& inst, uint32_t width, uint32_t he
 
   auto menu = std::make_unique<ContextMenuControl>();
   menu->setMenuWidth(w);
-  menu->setMaxVisible(kMaxVisible);
+  menu->setMaxVisible(visibleEntryLimit(m_submenuEntries.size()));
   menu->setSubmenuDirection(inst.submenuDirection);
   menu->setEntries(std::move(entries));
   menu->setRedrawCallback([&inst]() {
