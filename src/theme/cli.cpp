@@ -1,5 +1,6 @@
 #include "theme/cli.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
@@ -12,8 +13,15 @@
 
 #include <json.hpp>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#include <toml.hpp>
+#pragma GCC diagnostic pop
+
 #include "theme/color.h"
-#include "theme/contrast.h"
+#include "theme/fixed_palette.h"
 #include "theme/image_loader.h"
 #include "theme/json_output.h"
 #include "theme/palette_generator.h"
@@ -48,7 +56,17 @@ namespace noctalia::theme {
                                       "  -o <file>         Write JSON to file instead of stdout\n"
                                       "  -r <in:out>       Render a template file to an output path\n"
                                       "  -c <file>         Process a TOML template config file\n"
+                                      "  --builtin-config  Process the shipped built-in template catalog\n"
+                                      "  --list-builtins   List built-in templates from the shipped catalog\n"
                                       "  --default-mode    Template default mode: dark or light";
+
+    constexpr const char* kBuiltinTemplateConfig = NOCTALIA_ASSETS_DIR "/templates/builtin.toml";
+
+    struct BuiltinTemplateInfo {
+      std::string id;
+      std::string name;
+      std::string category;
+    };
 
     std::filesystem::path expandUserPath(const std::string& path) {
       if (path.empty() || path[0] != '~')
@@ -63,6 +81,41 @@ namespace noctalia::theme {
       return std::filesystem::path(path);
     }
 
+    std::vector<BuiltinTemplateInfo> loadBuiltinTemplateInfo(std::string& err) {
+      toml::table root;
+      try {
+        root = toml::parse_file(kBuiltinTemplateConfig);
+      } catch (const toml::parse_error& e) {
+        err = e.description();
+        return {};
+      }
+
+      std::vector<BuiltinTemplateInfo> out;
+      const toml::table* catalog = root["catalog"].as_table();
+      if (catalog == nullptr)
+        return out;
+
+      for (const auto& [idNode, node] : *catalog) {
+        const toml::table* info = node.as_table();
+        if (info == nullptr)
+          continue;
+        BuiltinTemplateInfo entry;
+        entry.id = std::string(idNode.str());
+        if (const auto name = info->get_as<std::string>("name"))
+          entry.name = name->get();
+        if (const auto category = info->get_as<std::string>("category"))
+          entry.category = category->get();
+        out.push_back(std::move(entry));
+      }
+
+      std::sort(out.begin(), out.end(), [](const BuiltinTemplateInfo& lhs, const BuiltinTemplateInfo& rhs) {
+        if (lhs.category != rhs.category)
+          return lhs.category < rhs.category;
+        return lhs.id < rhs.id;
+      });
+      return out;
+    }
+
     using TokenMap = std::unordered_map<std::string, uint32_t>;
 
     std::optional<Color> loadHexColor(const nlohmann::json& src, const char* key) {
@@ -75,18 +128,11 @@ namespace noctalia::theme {
       }
     }
 
-    Color interpolateColor(const Color& a, const Color& b, double t) {
-      auto mix = [t](int lhs, int rhs) { return static_cast<int>(lhs + (rhs - lhs) * t); };
-      return Color(mix(a.r, b.r), mix(a.g, b.g), mix(a.b, b.b));
-    }
-
-    void setToken(TokenMap& dst, std::string_view key, const Color& color) { dst[std::string(key)] = color.toArgb(); }
-
     void setToken(TokenMap& dst, std::string_view key, std::string_view hex) {
       dst[std::string(key)] = Color::fromHex(hex).toArgb();
     }
 
-    std::optional<TokenMap> expandPredefinedMode(const nlohmann::json& src, std::string_view mode, std::string& err) {
+    std::optional<::Palette> parseFixedPaletteJson(const nlohmann::json& src, std::string& err) {
       const auto primary = loadHexColor(src, "mPrimary");
       const auto onPrimary = loadHexColor(src, "mOnPrimary");
       const auto secondary = loadHexColor(src, "mSecondary");
@@ -101,156 +147,30 @@ namespace noctalia::theme {
       const auto onSurfaceVariant = loadHexColor(src, "mOnSurfaceVariant");
       const auto outlineRaw = loadHexColor(src, "mOutline");
       const auto shadow = loadHexColor(src, "mShadow").value_or(surface.value_or(Color{}));
-      const bool isDark = mode == "dark";
 
       if (!primary || !onPrimary || !secondary || !onSecondary || !tertiary || !onTertiary || !error || !onError ||
           !surface || !onSurface || !surfaceVariant || !onSurfaceVariant || !outlineRaw) {
-        err = "predefined scheme is missing required colors";
+        err = "fixed palette json is missing required colors";
         return std::nullopt;
       }
-
-      auto makeContainerDark = [](const Color& base) {
-        auto [h, s, l] = base.toHsl();
-        return Color::fromHsl(h, std::min(s + 0.15, 1.0), std::max(l - 0.35, 0.15));
+      return ::Palette{
+          .primary = rgbHex(primary->toArgb() & 0x00FFFFFFU),
+          .onPrimary = rgbHex(onPrimary->toArgb() & 0x00FFFFFFU),
+          .secondary = rgbHex(secondary->toArgb() & 0x00FFFFFFU),
+          .onSecondary = rgbHex(onSecondary->toArgb() & 0x00FFFFFFU),
+          .tertiary = rgbHex(tertiary->toArgb() & 0x00FFFFFFU),
+          .onTertiary = rgbHex(onTertiary->toArgb() & 0x00FFFFFFU),
+          .error = rgbHex(error->toArgb() & 0x00FFFFFFU),
+          .onError = rgbHex(onError->toArgb() & 0x00FFFFFFU),
+          .surface = rgbHex(surface->toArgb() & 0x00FFFFFFU),
+          .onSurface = rgbHex(onSurface->toArgb() & 0x00FFFFFFU),
+          .surfaceVariant = rgbHex(surfaceVariant->toArgb() & 0x00FFFFFFU),
+          .onSurfaceVariant = rgbHex(onSurfaceVariant->toArgb() & 0x00FFFFFFU),
+          .outline = rgbHex(outlineRaw->toArgb() & 0x00FFFFFFU),
+          .shadow = rgbHex(shadow.toArgb() & 0x00FFFFFFU),
+          .hover = rgbHex(tertiary->toArgb() & 0x00FFFFFFU),
+          .onHover = rgbHex(onTertiary->toArgb() & 0x00FFFFFFU),
       };
-      auto makeContainerLight = [](const Color& base) {
-        auto [h, s, l] = base.toHsl();
-        return Color::fromHsl(h, std::max(s - 0.20, 0.30), std::min(l + 0.35, 0.85));
-      };
-      auto makeFixedDark = [](const Color& base) {
-        auto [h, s, _] = base.toHsl();
-        return std::make_tuple(Color::fromHsl(h, std::max(s, 0.70), 0.85), Color::fromHsl(h, std::max(s, 0.65), 0.75));
-      };
-      auto makeFixedLight = [](const Color& base) {
-        auto [h, s, _] = base.toHsl();
-        return std::make_tuple(Color::fromHsl(h, std::max(s, 0.70), 0.40), Color::fromHsl(h, std::max(s, 0.65), 0.30));
-      };
-
-      const Color primaryContainer = isDark ? makeContainerDark(*primary) : makeContainerLight(*primary);
-      const Color secondaryContainer = isDark ? makeContainerDark(*secondary) : makeContainerLight(*secondary);
-      const Color tertiaryContainer = isDark ? makeContainerDark(*tertiary) : makeContainerLight(*tertiary);
-      const Color errorContainer = isDark ? makeContainerDark(*error) : makeContainerLight(*error);
-
-      const auto [primaryH, primaryS, _primaryL] = primary->toHsl();
-      const auto [secondaryH, secondaryS, _secondaryL] = secondary->toHsl();
-      const auto [tertiaryH, tertiaryS, _tertiaryL] = tertiary->toHsl();
-      const auto [errorH, errorS, _errorL] = error->toHsl();
-
-      const Color onPrimaryContainer =
-          isDark ? ensureContrast(Color::fromHsl(primaryH, primaryS, 0.90), primaryContainer, 4.5)
-                 : ensureContrast(Color::fromHsl(primaryH, primaryS, 0.15), primaryContainer, 4.5);
-      const Color onSecondaryContainer =
-          isDark ? ensureContrast(Color::fromHsl(secondaryH, secondaryS, 0.90), secondaryContainer, 4.5)
-                 : ensureContrast(Color::fromHsl(secondaryH, secondaryS, 0.15), secondaryContainer, 4.5);
-      const Color onTertiaryContainer =
-          isDark ? ensureContrast(Color::fromHsl(tertiaryH, tertiaryS, 0.90), tertiaryContainer, 4.5)
-                 : ensureContrast(Color::fromHsl(tertiaryH, tertiaryS, 0.15), tertiaryContainer, 4.5);
-      const Color onErrorContainer = isDark ? ensureContrast(Color::fromHsl(errorH, errorS, 0.90), errorContainer, 4.5)
-                                            : ensureContrast(Color::fromHsl(errorH, errorS, 0.15), errorContainer, 4.5);
-
-      const auto [primaryFixed, primaryFixedDim] = isDark ? makeFixedDark(*primary) : makeFixedLight(*primary);
-      const auto [secondaryFixed, secondaryFixedDim] = isDark ? makeFixedDark(*secondary) : makeFixedLight(*secondary);
-      const auto [tertiaryFixed, tertiaryFixedDim] = isDark ? makeFixedDark(*tertiary) : makeFixedLight(*tertiary);
-
-      const Color onPrimaryFixed = isDark ? ensureContrast(Color::fromHsl(primaryH, 0.15, 0.15), primaryFixed, 4.5)
-                                          : ensureContrast(Color::fromHsl(primaryH, 0.15, 0.90), primaryFixed, 4.5);
-      const Color onPrimaryFixedVariant =
-          isDark ? ensureContrast(Color::fromHsl(primaryH, 0.15, 0.20), primaryFixedDim, 4.5)
-                 : ensureContrast(Color::fromHsl(primaryH, 0.15, 0.85), primaryFixedDim, 4.5);
-      const Color onSecondaryFixed = isDark
-                                         ? ensureContrast(Color::fromHsl(secondaryH, 0.15, 0.15), secondaryFixed, 4.5)
-                                         : ensureContrast(Color::fromHsl(secondaryH, 0.15, 0.90), secondaryFixed, 4.5);
-      const Color onSecondaryFixedVariant =
-          isDark ? ensureContrast(Color::fromHsl(secondaryH, 0.15, 0.20), secondaryFixedDim, 4.5)
-                 : ensureContrast(Color::fromHsl(secondaryH, 0.15, 0.85), secondaryFixedDim, 4.5);
-      const Color onTertiaryFixed = isDark ? ensureContrast(Color::fromHsl(tertiaryH, 0.15, 0.15), tertiaryFixed, 4.5)
-                                           : ensureContrast(Color::fromHsl(tertiaryH, 0.15, 0.90), tertiaryFixed, 4.5);
-      const Color onTertiaryFixedVariant =
-          isDark ? ensureContrast(Color::fromHsl(tertiaryH, 0.15, 0.20), tertiaryFixedDim, 4.5)
-                 : ensureContrast(Color::fromHsl(tertiaryH, 0.15, 0.85), tertiaryFixedDim, 4.5);
-
-      const auto [surfaceH, surfaceS, surfaceL] = surface->toHsl();
-      const auto [surfaceVariantH, surfaceVariantS, surfaceVariantL] = surfaceVariant->toHsl();
-      const Color surfaceContainer = *surfaceVariant;
-      const Color surfaceContainerLowest = interpolateColor(*surface, *surfaceVariant, 0.2);
-      const Color surfaceContainerLow = interpolateColor(*surface, *surfaceVariant, 0.5);
-      const Color surfaceContainerHigh =
-          isDark ? Color::fromHsl(surfaceVariantH, surfaceVariantS, std::min(surfaceVariantL + 0.04, 0.40))
-                 : Color::fromHsl(surfaceVariantH, surfaceVariantS, std::max(surfaceVariantL - 0.04, 0.60));
-      const Color surfaceContainerHighest =
-          isDark ? Color::fromHsl(surfaceVariantH, surfaceVariantS, std::min(surfaceVariantL + 0.08, 0.45))
-                 : Color::fromHsl(surfaceVariantH, surfaceVariantS, std::max(surfaceVariantL - 0.08, 0.55));
-      const Color surfaceDim =
-          isDark ? Color::fromHsl(surfaceH, surfaceS, std::max(surfaceL - 0.04, 0.02))
-                 : Color::fromHsl(surfaceVariantH, surfaceVariantS, std::max(surfaceVariantL - 0.12, 0.50));
-      const Color surfaceBright =
-          isDark ? Color::fromHsl(surfaceVariantH, surfaceVariantS, std::min(surfaceVariantL + 0.12, 0.50))
-                 : Color::fromHsl(surfaceH, surfaceS, std::min(surfaceL + 0.03, 0.98));
-
-      const Color outline = ensureContrast(*outlineRaw, *surface, 3.0);
-      const auto [outlineH, outlineS, outlineL] = outline.toHsl();
-      const Color outlineVariant = isDark ? Color::fromHsl(outlineH, outlineS, std::max(outlineL - 0.15, 0.1))
-                                          : Color::fromHsl(outlineH, outlineS, std::min(outlineL + 0.15, 0.9));
-      const Color scrim(0, 0, 0);
-      const Color inverseSurface = isDark ? Color::fromHsl(surfaceH, 0.08, 0.90) : Color::fromHsl(surfaceH, 0.08, 0.15);
-      const Color inverseOnSurface =
-          isDark ? Color::fromHsl(surfaceH, 0.05, 0.15) : Color::fromHsl(surfaceH, 0.05, 0.90);
-      const Color inversePrimary = isDark ? Color::fromHsl(primaryH, std::max(primaryS * 0.8, 0.5), 0.40)
-                                          : Color::fromHsl(primaryH, std::max(primaryS * 0.8, 0.5), 0.70);
-      const Color background = *surface;
-      const Color onBackground = *onSurface;
-
-      TokenMap result;
-      setToken(result, "primary", *primary);
-      setToken(result, "on_primary", *onPrimary);
-      setToken(result, "primary_container", primaryContainer);
-      setToken(result, "on_primary_container", onPrimaryContainer);
-      setToken(result, "primary_fixed", primaryFixed);
-      setToken(result, "primary_fixed_dim", primaryFixedDim);
-      setToken(result, "on_primary_fixed", onPrimaryFixed);
-      setToken(result, "on_primary_fixed_variant", onPrimaryFixedVariant);
-      setToken(result, "secondary", *secondary);
-      setToken(result, "on_secondary", *onSecondary);
-      setToken(result, "secondary_container", secondaryContainer);
-      setToken(result, "on_secondary_container", onSecondaryContainer);
-      setToken(result, "secondary_fixed", secondaryFixed);
-      setToken(result, "secondary_fixed_dim", secondaryFixedDim);
-      setToken(result, "on_secondary_fixed", onSecondaryFixed);
-      setToken(result, "on_secondary_fixed_variant", onSecondaryFixedVariant);
-      setToken(result, "tertiary", *tertiary);
-      setToken(result, "on_tertiary", *onTertiary);
-      setToken(result, "tertiary_container", tertiaryContainer);
-      setToken(result, "on_tertiary_container", onTertiaryContainer);
-      setToken(result, "tertiary_fixed", tertiaryFixed);
-      setToken(result, "tertiary_fixed_dim", tertiaryFixedDim);
-      setToken(result, "on_tertiary_fixed", onTertiaryFixed);
-      setToken(result, "on_tertiary_fixed_variant", onTertiaryFixedVariant);
-      setToken(result, "error", *error);
-      setToken(result, "on_error", *onError);
-      setToken(result, "error_container", errorContainer);
-      setToken(result, "on_error_container", onErrorContainer);
-      setToken(result, "surface", *surface);
-      setToken(result, "on_surface", *onSurface);
-      setToken(result, "surface_variant", *surfaceVariant);
-      setToken(result, "on_surface_variant", *onSurfaceVariant);
-      setToken(result, "surface_container_lowest", surfaceContainerLowest);
-      setToken(result, "surface_container_low", surfaceContainerLow);
-      setToken(result, "surface_container", surfaceContainer);
-      setToken(result, "surface_container_high", surfaceContainerHigh);
-      setToken(result, "surface_container_highest", surfaceContainerHighest);
-      setToken(result, "surface_dim", surfaceDim);
-      setToken(result, "surface_bright", surfaceBright);
-      setToken(result, "surface_tint", *primary);
-      setToken(result, "outline", outline);
-      setToken(result, "outline_variant", outlineVariant);
-      setToken(result, "shadow", shadow);
-      setToken(result, "scrim", scrim);
-      setToken(result, "inverse_surface", inverseSurface);
-      setToken(result, "inverse_on_surface", inverseOnSurface);
-      setToken(result, "inverse_primary", inversePrimary);
-      setToken(result, "background", background);
-      setToken(result, "on_background", onBackground);
-      return result;
     }
 
     void injectTerminalColors(TokenMap& dst, const nlohmann::json& modeJson) {
@@ -308,36 +228,36 @@ namespace noctalia::theme {
         }
       };
 
-      auto loadPredefined = [&](const nlohmann::json& src, std::string_view mode, TokenMap& dst) -> bool {
-        auto expanded = expandPredefinedMode(src, mode, err);
-        if (!expanded)
+      auto loadFixedPalette = [&](const nlohmann::json& src, std::string_view mode, TokenMap& dst) -> bool {
+        auto parsed = parseFixedPaletteJson(src, err);
+        if (!parsed)
           return false;
-        dst = std::move(*expanded);
+        dst = expandFixedPaletteMode(*parsed, mode == "dark");
         injectTerminalColors(dst, src);
         return true;
       };
 
-      auto isPredefinedMode = [](const nlohmann::json& src) { return src.is_object() && src.contains("mPrimary"); };
+      auto isFixedPaletteMode = [](const nlohmann::json& src) { return src.is_object() && src.contains("mPrimary"); };
 
       if (root.contains("dark") || root.contains("light")) {
         if (root.contains("dark")) {
-          if (isPredefinedMode(root["dark"])) {
-            if (!loadPredefined(root["dark"], "dark", palette.dark))
+          if (isFixedPaletteMode(root["dark"])) {
+            if (!loadFixedPalette(root["dark"], "dark", palette.dark))
               return false;
           } else {
             loadTokenMode(root["dark"], palette.dark);
           }
         }
         if (root.contains("light")) {
-          if (isPredefinedMode(root["light"])) {
-            if (!loadPredefined(root["light"], "light", palette.light))
+          if (isFixedPaletteMode(root["light"])) {
+            if (!loadFixedPalette(root["light"], "light", palette.light))
               return false;
           } else {
             loadTokenMode(root["light"], palette.light);
           }
         }
-      } else if (isPredefinedMode(root)) {
-        if (!loadPredefined(root, "dark", palette.dark) || !loadPredefined(root, "light", palette.light))
+      } else if (isFixedPaletteMode(root)) {
+        if (!loadFixedPalette(root, "dark", palette.dark) || !loadFixedPalette(root, "light", palette.light))
           return false;
       } else {
         loadTokenMode(root, palette.dark);
@@ -359,6 +279,8 @@ namespace noctalia::theme {
     Variant variant = Variant::Dark;
     const char* outPath = nullptr;
     const char* configPath = nullptr;
+    bool builtinConfig = false;
+    bool listBuiltins = false;
     std::string defaultMode = "dark";
     std::vector<std::string> renderSpecs;
 
@@ -400,6 +322,14 @@ namespace noctalia::theme {
         configPath = argv[++i];
         continue;
       }
+      if (std::strcmp(a, "--builtin-config") == 0) {
+        builtinConfig = true;
+        continue;
+      }
+      if (std::strcmp(a, "--list-builtins") == 0) {
+        listBuiltins = true;
+        continue;
+      }
       if (std::strcmp(a, "--default-mode") == 0 && i + 1 < argc) {
         defaultMode = argv[++i];
         continue;
@@ -410,6 +340,30 @@ namespace noctalia::theme {
       }
       std::fprintf(stderr, "error: unknown theme argument: %s\n", a);
       return 1;
+    }
+
+    if (listBuiltins) {
+      std::string err;
+      const auto builtins = loadBuiltinTemplateInfo(err);
+      if (!err.empty()) {
+        std::fprintf(stderr, "error: failed to load built-in templates: %s\n", err.c_str());
+        return 1;
+      }
+      for (const auto& builtin : builtins) {
+        if (builtin.category.empty())
+          std::printf("%s\t%s\n", builtin.id.c_str(), builtin.name.c_str());
+        else
+          std::printf("%s\t%s\t%s\n", builtin.id.c_str(), builtin.category.c_str(), builtin.name.c_str());
+      }
+      return 0;
+    }
+
+    if (builtinConfig) {
+      if (configPath != nullptr) {
+        std::fputs("error: --builtin-config cannot be combined with --config\n", stderr);
+        return 1;
+      }
+      configPath = kBuiltinTemplateConfig;
     }
 
     if (!imagePath && !themeJsonPath) {

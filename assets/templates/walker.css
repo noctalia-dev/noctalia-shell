@@ -1,0 +1,189 @@
+@define-color surface {{colors.surface.default.hex}};
+@define-color surfaceVariant {{colors.surface_variant.default.hex}};
+
+@define-color onSurface {{colors.on_surface.default.hex}};
+@define-color onSurfaceVariant {{colors.on_surface_variant.default.hex}};
+
+@define-color primary {{colors.primary.default.hex}};
+@define-color secondary {{colors.secondary.default.hex}};
+@define-color error {{colors.error.default.hex}};
+@define-color outline {{colors.outline.default.hex}};
+
+* {
+  all: unset;
+}
+
+.normal-icons {
+  -gtk-icon-size: 16px;
+}
+
+.large-icons {
+  -gtk-icon-size: 36px;
+}
+
+scrollbar {
+  opacity: 0;
+}
+
+.box-wrapper {
+  box-shadow:
+    0 19px 38px rgba(0, 0, 0, 0.3),
+    0 15px 12px rgba(0, 0, 0, 0.22);
+  background: @surface;
+  padding: 12px;
+  border-radius: 20px;
+  border: 2px solid @outline;
+}
+
+.preview-box,
+.elephant-hint,
+.placeholder {
+  color: @onSurface;
+}
+
+.box {
+  background: @surfaceVariant;
+  padding: 20px;
+  border-radius: 20px;
+  border: 2px solid @outline;
+}
+
+.search-container {
+  border-radius: 10px;
+  border: 2px solid @outline;
+}
+
+.input placeholder {
+  opacity: 0.5;
+}
+
+.input {
+  background: @surface;
+  color: @onSurface;
+  caret-color: @onSurface;
+  padding: 10px;
+}
+
+.input:focus,
+.input:active {
+}
+
+.content-container {
+}
+
+.placeholder {
+}
+
+.scroll {
+}
+
+.list {
+  color: @onSurface;
+}
+
+child {
+}
+
+.item-box {
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.item-quick-activation {
+  background: @secondary;
+  border-radius: 10px;
+  padding: 10px;
+  color: @surface;
+}
+
+child:hover .item-box,
+child:selected .item-box {
+ background: alpha(@primary, 0.4);
+}
+
+.item-text-box {
+}
+
+.item-subtext {
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.providerlist .item-subtext {
+  font-size: unset;
+  opacity: 0.75;
+}
+
+.item-image-text {
+  font-size: 28px;
+}
+
+.preview {
+  border-top: 1px solid @primary;
+  padding: 10px;
+  border-radius: 10px;
+  color: @onSurface;
+}
+
+.calc .item-text {
+  font-size: 24px;
+}
+
+.calc .item-subtext {
+}
+
+.symbols .item-image {
+  font-size: 24px;
+}
+
+.todo.done .item-text-box {
+  opacity: 0.25;
+}
+
+.todo.urgent {
+  font-size: 24px;
+}
+
+.todo.active {
+  font-weight: bold;
+}
+
+.primarytooth.disconnected {
+  opacity: 0.5;
+}
+
+.preview .large-icons {
+  -gtk-icon-size: 64px;
+}
+
+.keybinds-wrapper {
+  border-top: 1px solid @primary;
+  font-size: 12px;
+  color: @primary;
+}
+
+.keybinds {
+}
+
+.keybind {
+  color: @onSurfaceVariant;
+}
+
+.keybind-bind {
+  font-weight: bold;
+  text-transform: lowercase;
+}
+
+.keybind-label {
+}
+
+.error {
+  padding: 10px;
+  background: @error;
+  color: @surface;
+}
+
+:not(.calc).current {
+  font-style: italic;
+}
+

@@ -391,6 +391,31 @@ Each template entry supports:
 - `compare_to`
 - `pre_hook`
 - `post_hook`
+- `input_path_modes`
+- `index`
+
+`output_path` accepts either a single string or an array of strings:
+
+```toml
+[templates.qt]
+input_path = "./qtct.conf"
+output_path = [
+  "~/.config/qt5ct/colors/noctalia.conf",
+  "~/.config/qt6ct/colors/noctalia.conf",
+]
+```
+
+`input_path_modes` selects a different template input for dark and light mode:
+
+```toml
+[templates.foo]
+input_path_modes = { dark = "./dark.css", light = "./light.css" }
+output_path = "~/.config/foo/theme.css"
+```
+
+Relative `input_path` and `output_path` values are resolved from the config file directory.
+
+`index` controls processing order and defaults to `0`.
 
 ### Closest Color
 
@@ -412,8 +437,17 @@ Supported hooks:
 Behavior:
 
 - hook commands are rendered through the template engine first
-- hooks run only when the target file was written
+- `pre_hook` runs before any output files are written
+- `post_hook` runs after rendering, but only when at least one output file changed
 - `closest_color` is available inside hooks
+
+Additional variables available inside hooks and templates:
+
+- `{{ mode }}`
+- `{{ image }}`
+- `{{ closest_color }}`
+- `{{ config_dir }}`
+- `{{ config_file }}`
 
 ## Terminal Tokens
 
@@ -458,6 +492,26 @@ Render one file:
 ```sh
 noctalia theme <image> -r input.txt:output.txt
 ```
+
+Process a TOML config:
+
+```sh
+noctalia theme <image> -c templates.toml
+```
+
+List shipped built-in templates:
+
+```sh
+noctalia theme --list-builtins
+```
+
+Process the shipped built-in template catalog:
+
+```sh
+noctalia theme <image> --builtin-config
+```
+
+The shipped built-in catalog lives at `assets/templates/builtin.toml`.
 
 Render from a precomputed theme JSON:
 

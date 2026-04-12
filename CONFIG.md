@@ -589,6 +589,12 @@ source           = "builtin"      # builtin | wallpaper
 builtin          = "Noctalia"     # bundled scheme name
 wallpaper_scheme = "m3-content"   # generator used when source = "wallpaper"
 mode             = "dark"         # dark | light | auto
+
+[theme.templates]
+enable_builtins       = true
+builtin_ids           = []        # built-in template ids to apply
+enable_user_templates = false
+user_config           = "~/.config/noctalia/user-templates.toml"
 ```
 
 **`source`** selects where the palette comes from:
@@ -615,6 +621,35 @@ mode             = "dark"         # dark | light | auto
 **`mode`** selects the dark or light variant. `auto` is treated as `dark` until system light/dark tracking lands. Bundled schemes and wallpaper-derived palettes both provide dark and light variants.
 
 Theme changes apply live when you edit `config.toml`, and wallpaper-derived themes re-resolve automatically when the default wallpaper changes.
+
+### External App Templates
+
+Noctalia can also apply generated colors to external app config templates whenever the resolved theme changes.
+
+`[theme.templates]` controls that behavior:
+
+- `enable_builtins` enables the shipped built-in template catalog.
+- `builtin_ids` selects which built-in templates actually run. The default is an empty array, so nothing is applied until you opt in.
+- `enable_user_templates` enables loading your own `user-templates.toml`.
+- `user_config` points at that extra config file.
+
+Example:
+
+```toml
+[theme.templates]
+enable_builtins = true
+builtin_ids = ["foot", "walker", "gtk3", "gtk4"]
+enable_user_templates = true
+user_config = "~/.config/noctalia/user-templates.toml"
+```
+
+Built-in template ids can be listed with:
+
+```sh
+noctalia theme --list-builtins
+```
+
+When `enable_user_templates = true`, Noctalia creates a stub `~/.config/noctalia/user-templates.toml` if it does not already exist.
 
 ---
 

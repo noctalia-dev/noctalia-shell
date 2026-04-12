@@ -194,6 +194,9 @@ void Application::initServices() {
       [this]() { i18n::Service::instance().setLanguage(m_configService.config().shell.lang); });
 
   // Apply theme before any UI constructs palette-dependent scene nodes.
+  m_themeService.setResolvedCallback([this](const noctalia::theme::GeneratedPalette& generated, std::string_view mode) {
+    m_templateApplyService.apply(generated, mode);
+  });
   m_themeService.apply();
   m_configService.addReloadCallback([this]() { m_themeService.onConfigReload(); });
 

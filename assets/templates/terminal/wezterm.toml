@@ -1,0 +1,31 @@
+[colors]
+ansi = [
+    "{{colors.surface.default.hex}}",
+    "{{colors.error.default.hex}}",
+    "{{colors.tertiary.default.hex}}",
+    "{{colors.secondary.default.hex}}",
+    "{{colors.primary.default.hex}}",
+    "{{colors.tertiary_fixed_dim.default.hex}}",
+    "{{colors.secondary_fixed_dim.default.hex}}",
+    "{{colors.on_surface.default.hex}}",
+]
+background = "{{colors.surface.default.hex}}"
+brights = [
+    "{{colors.outline.default.hex}}",
+    "{{colors.error.default.hex}}",
+    "{{colors.tertiary.default.hex}}",
+    "{{colors.secondary.default.hex}}",
+    "{{colors.primary.default.hex}}",
+    "{{colors.tertiary_fixed_dim.default.hex}}",
+    "{{colors.secondary_fixed_dim.default.hex}}",
+    "{{colors.on_surface.default.hex}}",
+]
+cursor_bg = "{{colors.on_surface.default.hex}}"
+cursor_border = "{{colors.on_surface.default.hex}}"
+cursor_fg = "{{colors.surface.default.hex}}"
+foreground = "{{colors.on_surface.default.hex}}"
+selection_bg = "{{colors.surface_variant.default.hex}}"
+selection_fg = "{{colors.on_surface_variant.default.hex}}"
+
+[metadata]
+name = "Noctalia"

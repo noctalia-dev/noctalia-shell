@@ -1,0 +1,160 @@
+[config]
+
+[catalog.alacritty]
+name = "Alacritty"
+category = "terminal"
+
+[catalog.btop]
+name = "btop"
+category = "misc"
+
+[catalog.foot]
+name = "Foot"
+category = "terminal"
+
+[catalog.fuzzel]
+name = "Fuzzel"
+category = "launcher"
+
+[catalog.ghostty]
+name = "Ghostty"
+category = "terminal"
+
+[catalog.gtk3]
+name = "GTK 3"
+category = "system"
+
+[catalog.gtk4]
+name = "GTK 4"
+category = "system"
+
+[catalog.helix]
+name = "Helix"
+category = "editor"
+
+[catalog.kcolorscheme]
+name = "KColorScheme"
+category = "system"
+
+[catalog.kitty]
+name = "Kitty"
+category = "terminal"
+
+[catalog.qtct]
+name = "Qt"
+category = "system"
+
+[catalog.starship]
+name = "Starship"
+category = "terminal"
+
+[catalog.vicinae]
+name = "Vicinae"
+category = "launcher"
+
+[catalog.walker]
+name = "Walker"
+category = "launcher"
+
+[catalog.wezterm]
+name = "Wezterm"
+category = "terminal"
+
+[catalog.yazi]
+name = "Yazi"
+category = "misc"
+
+[catalog.zathura]
+name = "Zathura"
+category = "misc"
+
+[catalog.zed]
+name = "Zed"
+category = "editor"
+
+[templates.alacritty]
+input_path = "./terminal/alacritty.toml"
+output_path = "~/.config/alacritty/themes/noctalia.toml"
+post_hook = "bash '{{ config_dir }}/scripts/template-apply.sh' alacritty"
+
+[templates.btop]
+input_path = "./btop.theme"
+output_path = "~/.config/btop/themes/noctalia.theme"
+post_hook = "bash '{{ config_dir }}/scripts/template-apply.sh' btop"
+
+[templates.foot]
+input_path = "./terminal/foot"
+output_path = "~/.config/foot/themes/noctalia"
+post_hook = "bash '{{ config_dir }}/scripts/template-apply.sh' foot"
+
+[templates.fuzzel]
+input_path = "./fuzzel.conf"
+output_path = "~/.config/fuzzel/themes/noctalia"
+post_hook = "bash '{{ config_dir }}/scripts/template-apply.sh' fuzzel"
+
+[templates.ghostty]
+input_path = "./terminal/ghostty"
+output_path = "~/.config/ghostty/themes/noctalia"
+post_hook = "bash '{{ config_dir }}/scripts/template-apply.sh' ghostty"
+
+[templates.gtk3]
+input_path = "./gtk3.css"
+output_path = "~/.config/gtk-3.0/noctalia.css"
+post_hook = "python3 '{{ config_dir }}/scripts/gtk-refresh.py' {{ mode }}"
+
+[templates.gtk4]
+input_path = "./gtk4.css"
+output_path = "~/.config/gtk-4.0/noctalia.css"
+post_hook = "python3 '{{ config_dir }}/scripts/gtk-refresh.py' {{ mode }}"
+
+[templates.helix]
+input_path = "./helix.toml"
+output_path = "~/.config/helix/themes/noctalia.toml"
+
+[templates.kcolorscheme]
+input_path = "./kcolorscheme.colors"
+output_path = "~/.local/share/color-schemes/noctalia.colors"
+post_hook = "python3 '{{ config_dir }}/scripts/kde-apply-scheme.py' noctalia"
+
+[templates.kitty]
+input_path = "./terminal/kitty.conf"
+output_path = "~/.config/kitty/themes/noctalia.conf"
+post_hook = "bash '{{ config_dir }}/scripts/template-apply.sh' kitty"
+
+[templates.qtct]
+input_path = "./qtct.conf"
+output_path = ["~/.config/qt5ct/colors/noctalia.conf", "~/.config/qt6ct/colors/noctalia.conf"]
+
+[templates.starship]
+input_path = "./terminal/starship.toml"
+output_path = "~/.cache/noctalia/starship-palette.toml"
+post_hook = "bash '{{ config_dir }}/scripts/template-apply.sh' starship"
+
+[templates.vicinae]
+input_path = "./vicinae.toml"
+output_path = "~/.local/share/vicinae/themes/noctalia.toml"
+post_hook = "cp --update=none '{{ config_dir }}/../noctalia.svg' \"$HOME/.local/share/vicinae/themes/noctalia.svg\" && bash '{{ config_dir }}/scripts/template-apply.sh' vicinae"
+
+[templates.walker]
+input_path = "./walker.css"
+output_path = "~/.config/walker/themes/noctalia/style.css"
+post_hook = "bash '{{ config_dir }}/scripts/template-apply.sh' walker"
+
+[templates.wezterm]
+input_path = "./terminal/wezterm.toml"
+output_path = "~/.config/wezterm/colors/Noctalia.toml"
+post_hook = "bash '{{ config_dir }}/scripts/template-apply.sh' wezterm"
+
+[templates.yazi]
+input_path = "./yazi.toml"
+output_path = "~/.config/yazi/flavors/noctalia.yazi/flavor.toml"
+post_hook = "bash '{{ config_dir }}/scripts/template-apply.sh' yazi"
+
+[templates.zathura]
+input_path = "./zathurarc"
+output_path = "~/.config/zathura/noctaliarc"
+post_hook = "bash '{{ config_dir }}/scripts/template-apply.sh' zathura"
+
+[templates.zed]
+input_path = "./zed.json"
+output_path = "~/.config/zed/themes/noctalia.json"

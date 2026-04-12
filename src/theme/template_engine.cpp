@@ -144,6 +144,22 @@ namespace noctalia::theme {
       std::string color;
     };
 
+    struct InputPathModes {
+      std::string dark;
+      std::string light;
+    };
+
+    struct ParsedTemplateEntry {
+      std::string name;
+      std::string inputPath;
+      std::vector<std::string> outputPaths;
+      std::string compareTo;
+      std::vector<CompareColorEntry> colorsToCompare;
+      std::string preHook;
+      std::string postHook;
+      int index = 0;
+    };
+
     const std::regex kBlockRegex(R"(<\*([\s\S]*?)\*>)");
     const std::regex kExprRegex(R"(\{\{([^}\n]+?)\}\})");
 
@@ -798,6 +814,10 @@ namespace noctalia::theme {
           resolved = ScopeValue(m_options.closestColor);
         } else if (base == "image") {
           resolved = ScopeValue(m_options.imagePath);
+        } else if (base == "config_dir") {
+          resolved = ScopeValue(m_options.configDir);
+        } else if (base == "config_file") {
+          resolved = ScopeValue(m_options.configFile);
         } else if (auto fromScope = resolveFromScope(base, scope);
                    !std::holds_alternative<std::monostate>(fromScope.value)) {
           resolved = std::move(fromScope);
@@ -1083,6 +1103,77 @@ namespace noctalia::theme {
       return out;
     }
 
+    std::optional<InputPathModes> parseInputPathModes(const toml::table& tpl) {
+      const toml::table* tbl = tpl["input_path_modes"].as_table();
+      if (tbl == nullptr)
+        return std::nullopt;
+      auto dark = tbl->get_as<std::string>("dark");
+      auto light = tbl->get_as<std::string>("light");
+      if (!dark || !light)
+        return std::nullopt;
+      return InputPathModes{.dark = dark->get(), .light = light->get()};
+    }
+
+    std::vector<std::string> parseOutputPaths(const toml::node* node) {
+      std::vector<std::string> out;
+      if (node == nullptr)
+        return out;
+      if (const toml::value<std::string>* str = node->as_string()) {
+        out.push_back(str->get());
+        return out;
+      }
+      const toml::array* arr = node->as_array();
+      if (arr == nullptr)
+        return out;
+      out.reserve(arr->size());
+      for (const auto& item : *arr) {
+        if (const toml::value<std::string>* str = item.as_string())
+          out.push_back(str->get());
+      }
+      return out;
+    }
+
+    std::filesystem::path resolveConfigPath(const std::filesystem::path& configPath, const std::string& path) {
+      const std::filesystem::path expanded = expandUserPath(path);
+      if (expanded.is_absolute())
+        return expanded;
+      const std::filesystem::path base =
+          configPath.has_parent_path() ? configPath.parent_path() : std::filesystem::path{};
+      return base / expanded;
+    }
+
+    std::optional<ParsedTemplateEntry> parseTemplateEntry(const std::filesystem::path& configPath,
+                                                          std::string_view name, const toml::table& tpl,
+                                                          std::string_view defaultMode) {
+      std::string inputPath;
+      if (const auto modes = parseInputPathModes(tpl)) {
+        inputPath = defaultMode == "light" ? modes->light : modes->dark;
+      } else if (const auto input = tpl.get_as<std::string>("input_path")) {
+        inputPath = input->get();
+      }
+
+      if (inputPath.empty())
+        return std::nullopt;
+
+      ParsedTemplateEntry entry;
+      entry.name = std::string(name);
+      entry.inputPath = resolveConfigPath(configPath, inputPath).string();
+      entry.outputPaths = parseOutputPaths(tpl.get("output_path"));
+      for (std::string& output : entry.outputPaths)
+        output = resolveConfigPath(configPath, output).string();
+      entry.colorsToCompare = parseColorsToCompare(tpl.get("colors_to_compare"));
+
+      if (const auto compareTo = tpl.get_as<std::string>("compare_to"))
+        entry.compareTo = compareTo->get();
+      if (const auto preHook = tpl.get_as<std::string>("pre_hook"))
+        entry.preHook = preHook->get();
+      if (const auto postHook = tpl.get_as<std::string>("post_hook"))
+        entry.postHook = postHook->get();
+      if (const auto index = tpl.get_as<int64_t>("index"))
+        entry.index = static_cast<int>(index->get());
+      return entry;
+    }
+
   } // namespace
 
   bool TemplateEngine::processConfigFile(const std::filesystem::path& configPath) {
@@ -1151,50 +1242,66 @@ namespace noctalia::theme {
     if (templates == nullptr)
       return true;
 
-    bool ok = true;
-    for (const auto& [_templateName, templateNode] : *templates) {
+    std::vector<ParsedTemplateEntry> entries;
+    entries.reserve(templates->size());
+    for (const auto& [templateName, templateNode] : *templates) {
+      if (!m_options.enabledTemplates.empty() &&
+          !m_options.enabledTemplates.contains(std::string(templateName.str()))) {
+        continue;
+      }
       const toml::table* tpl = templateNode.as_table();
       if (tpl == nullptr)
         continue;
+      if (auto entry = parseTemplateEntry(configPath, templateName.str(), *tpl, m_options.defaultMode))
+        entries.push_back(std::move(*entry));
+    }
+    std::stable_sort(
+        entries.begin(), entries.end(),
+        [](const ParsedTemplateEntry& lhs, const ParsedTemplateEntry& rhs) { return lhs.index < rhs.index; });
 
-      const auto inputPath = tpl->get_as<std::string>("input_path");
-      const auto outputPath = tpl->get_as<std::string>("output_path");
-      if (!inputPath || !outputPath)
-        continue;
-
+    bool ok = true;
+    for (const ParsedTemplateEntry& entry : entries) {
       std::string closestColor;
-      if (const auto compareTo = tpl->get_as<std::string>("compare_to")) {
-        const auto colorsToCompare = parseColorsToCompare(tpl->get("colors_to_compare"));
-        if (!colorsToCompare.empty()) {
-          Options compareOptions = m_options;
-          compareOptions.closestColor.clear();
-          const auto compareRendered = EngineImpl(m_themeData, compareOptions).render(compareTo->get());
-          if (compareRendered.errorCount == 0)
-            closestColor = findClosestColor(compareRendered.text, colorsToCompare);
-        }
+      if (!entry.compareTo.empty() && !entry.colorsToCompare.empty()) {
+        Options compareOptions = m_options;
+        compareOptions.closestColor.clear();
+        compareOptions.configDir = configPath.has_parent_path() ? configPath.parent_path().string() : "";
+        compareOptions.configFile = configPath.string();
+        const auto compareRendered = EngineImpl(m_themeData, compareOptions).render(entry.compareTo);
+        if (compareRendered.errorCount == 0)
+          closestColor = findClosestColor(compareRendered.text, entry.colorsToCompare);
       }
 
       Options renderOptions = m_options;
       renderOptions.closestColor = closestColor;
-      auto fileResult = EngineImpl(m_themeData, renderOptions)
-                            .renderFile(expandUserPath(inputPath->get()), expandUserPath(outputPath->get()));
-      if (!fileResult.success) {
-        ok = false;
-        continue;
-      }
-      if (!fileResult.wrote)
-        continue;
+      renderOptions.configDir = configPath.has_parent_path() ? configPath.parent_path().string() : "";
+      renderOptions.configFile = configPath.string();
 
-      auto runHook = [&](const char* key) {
-        if (const auto hook = tpl->get_as<std::string>(key)) {
-          const auto hookRendered = EngineImpl(m_themeData, renderOptions).render(hook->get());
+      auto runHook = [&](const std::string& hook) {
+        if (!hook.empty()) {
+          const auto hookRendered = EngineImpl(m_themeData, renderOptions).render(hook);
           if (hookRendered.errorCount == 0 && !hookRendered.text.empty()) [[maybe_unused]]
             const bool hookOk = process::runSync(std::vector<std::string>{"/bin/sh", "-lc", hookRendered.text});
         }
       };
 
-      runHook("pre_hook");
-      runHook("post_hook");
+      const bool hasOutputs = !entry.outputPaths.empty();
+      if (hasOutputs)
+        runHook(entry.preHook);
+
+      bool wroteAny = false;
+      for (const std::string& outputPath : entry.outputPaths) {
+        const auto fileResult =
+            EngineImpl(m_themeData, renderOptions).renderFile(entry.inputPath, std::filesystem::path(outputPath));
+        if (!fileResult.success) {
+          ok = false;
+          continue;
+        }
+        wroteAny = wroteAny || fileResult.wrote;
+      }
+
+      if ((hasOutputs && wroteAny) || (!hasOutputs && !entry.postHook.empty()))
+        runHook(entry.postHook);
     }
 
     return ok;

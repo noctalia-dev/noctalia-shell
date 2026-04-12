@@ -516,8 +516,11 @@ void ConfigService::loadFromFile(const std::string& path) {
       else if (*v == "wallpaper")
         theme.source = ThemeSource::Wallpaper;
     }
-    if (auto v = (*themeTbl)["builtin"].value<std::string>())
-      theme.builtinName = *v;
+    if (auto builtinPalette = (*themeTbl)["builtin_palette"].value<std::string>()) {
+      theme.builtinPalette = *builtinPalette;
+    } else if (auto builtin = (*themeTbl)["builtin"].value<std::string>()) {
+      theme.builtinPalette = *builtin;
+    }
     if (auto v = (*themeTbl)["wallpaper_scheme"].value<std::string>())
       theme.wallpaperScheme = *v;
     if (auto v = (*themeTbl)["mode"].value<std::string>()) {
@@ -527,6 +530,23 @@ void ConfigService::loadFromFile(const std::string& path) {
         theme.mode = ThemeMode::Light;
       else if (*v == "auto")
         theme.mode = ThemeMode::Auto;
+    }
+    if (const auto* templatesTbl = (*themeTbl)["templates"].as_table()) {
+      auto& templates = theme.templates;
+      if (auto v = (*templatesTbl)["enable_builtins"].value<bool>())
+        templates.enableBuiltins = *v;
+      if (auto v = (*templatesTbl)["enable_user_templates"].value<bool>())
+        templates.enableUserTemplates = *v;
+      if (auto v = (*templatesTbl)["user_config"].value<std::string>())
+        templates.userConfig = *v;
+      if (const auto* builtinIds = (*templatesTbl)["builtin_ids"].as_array()) {
+        templates.builtinIds.clear();
+        templates.builtinIds.reserve(builtinIds->size());
+        for (const auto& item : *builtinIds) {
+          if (const auto* id = item.as_string())
+            templates.builtinIds.push_back(id->get());
+        }
+      }
     }
   }
 

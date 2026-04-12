@@ -1,8 +1,8 @@
 #include "ui/palette.h"
 
-#include "theme/builtin_schemes.h"
+#include "theme/builtin_palettes.h"
 
-Palette palette = noctalia::theme::findBuiltinScheme("Noctalia")->dark;
+Palette palette = noctalia::theme::findBuiltinPalette("Noctalia")->dark;
 
 const Color& resolveColorRole(ColorRole role) noexcept {
   switch (role) {

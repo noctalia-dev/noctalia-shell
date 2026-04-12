@@ -1,0 +1,162 @@
+# Syntax highlighting
+# -------------------
+"attribute" = { fg = "primary", modifiers = ["bold"] }
+
+"type" = "primary"
+"type.enum.variant" = "secondary"
+
+"constructor" = "tertiary"
+
+"constant" = "secondary"
+"constant.character" = "secondaryContainer"
+"constant.character.escape" = "tertiaryContainer"
+
+"string" = { fg = "tertiary", bg = "surfaceContainerHigh" }
+"string.regexp" = { fg = "tertiaryContainer", bg = "surfaceContainerHigh" }
+"string.special" = { fg = "tertiary", bg = "surfaceContainerHigh" }
+"string.special.symbol" = { fg = "tertiary", bg = "surfaceContainerHigh" }
+"string.special.path" = { fg = "secondary", underline = { color = "secondary", style = "line" } }
+
+"path" = { fg = "secondary", underline = { color = "secondary", style = "line" } }
+
+"comment" = { fg = "outline", bg = "surfaceContainerHigh", modifiers = ["italic"] }
+
+"variable" = "onSurface"
+"variable.builtin" = "secondary"
+"variable.parameter" = { fg = "onSurfaceVariant", modifiers = ["italic"] }
+"variable.other.member" = "primary"
+
+"label" = "secondary"
+
+"punctuation" = "outlineVariant"
+"punctuation.special" = "outline"
+
+"keyword" = { fg = "primary", modifiers = ["bold"] }
+"keyword.control.conditional" = { fg = "tertiary", modifiers = ["italic", "bold"] }
+
+"operator" = { fg = "secondary", modifiers = ["bold"] }
+
+"function" = "tertiary"
+"function.macro" = "tertiary"
+
+"tag" = "secondary"
+
+"namespace" = { fg = "secondary", modifiers = ["italic"] }
+
+"special" = "secondary"
+
+"markup.heading" = "primary"
+"markup.list" = "onSurface"
+"markup.bold" = { fg = "secondary", modifiers = ["bold"] }
+"markup.italic" = { fg = "secondary", modifiers = ["italic"] }
+"markup.link.url" = { fg = "secondary", modifiers = ["italic", "underlined"] }
+"markup.link.label" = "primary"
+"markup.raw" = "onSurface"
+"markup.quote" = "secondary"
+
+"diff.plus" = "plus"
+"diff.minus" = "error"
+"diff.delta" = "delta"
+
+# User Interface
+# --------------
+"ui.background" = "none"
+
+"ui.cursor" = { fg = "onSecondary", bg = "secondary" }
+"ui.cursor.match" = { fg = "onTertiary", bg = "tertiary", modifiers = ["bold"] }
+"ui.cursor.primary" = { fg = "onPrimary", bg = "primary" }
+
+"ui.linenr" = { fg = "onSurfaceVariant" }
+"ui.linenr.selected" = { fg = "primary" }
+
+"ui.statusline" = { fg = "onSurface", bg = "surfaceContainerLow" }
+"ui.statusline.inactive" = { fg = "onSurface", bg = "surfaceContainerLowest" }
+"ui.statusline.normal" = { fg = "onPrimary", bg = "primary", modifiers = ["bold"] }
+"ui.statusline.insert" = { fg = "onTertiary", bg = "tertiary", modifiers = ["bold"] }
+"ui.statusline.select" = { fg = "onSecondary", bg = "secondary", modifiers = ["bold"] }
+
+"ui.bufferline" = { fg = "onSurface", bg = "surfaceContainerLowest" }
+"ui.bufferline.active" = { fg = "onSurface", bg = "surfaceContainer", underline = { color = "primary", style = "line" } }
+"ui.bufferline.background" = { bg = "surfaceContainerLowest" }
+
+"ui.popup" = { fg = "onSurface", bg = "surfaceContainerLow" }
+
+"ui.window" = { fg = "onSurface" }
+"ui.help" = { fg = "onSurface", bg = "surfaceContainerLow" }
+
+"ui.text" = { fg = "onBackground" }
+"ui.text.focus" = { fg = "onSurface", bg = "surfaceContainer", modifiers = ["bold"] }
+
+"ui.virtual" = "surfaceVariant"
+"ui.virtual.ruler" = { bg = "surfaceContainerLow" }
+"ui.virtual.indent-guide" = "surfaceVariant"
+"ui.virtual.inlay-hint" = { fg = "onSurfaceVariant", bg = "surfaceContainer", modifiers = ["dim"] }
+"ui.virtual.jump-label" = { fg = "primary", modifiers = ["bold"] }
+
+"ui.menu" = { fg = "onSurface", bg = "surfaceContainer" }
+"ui.menu.selected" = { fg = "onPrimary", bg = "primary", modifiers = ["bold"] }
+
+"ui.selection" = { bg = "surfaceContainerHigh" }
+
+"ui.highlight" = { bg = "primaryContainer", modifiers = ["bold"] }
+
+"ui.cursorline" = { bg = "surfaceContainerLowest" }
+"ui.cursorline.primary" = { bg = "surfaceContainerLow" }
+"ui.cursorline.secondary" = { bg = "surfaceContainerLow" }
+
+error = "error"
+warning = "warning"
+info = "info"
+hint = "hint"
+
+"diagnostic.hint" = { underline = { color = "hint", style = "curl" } }
+"diagnostic.info" = { underline = { color = "info", style = "curl" } }
+"diagnostic.warning" = { underline = { color = "warning", style = "curl" } }
+"diagnostic.error" = { underline = { color = "error", style = "curl" } }
+"diagnostic.unnecessary" = { modifiers = ["dim"] }
+
+[palette]
+# Constants to be used in syntax highlighting, not meant for template processor.
+warning = "#f9e2af"
+info = "#89dceb"
+hint = "#94e2d5"
+plus = "#a6e3a1"
+delta = "#89b4fa"
+
+# Template colors
+primary = "{{colors.primary.default.hex}}"
+surfaceTint = "{{colors.primary.default.hex}}"
+onPrimary = "{{colors.on_primary.default.hex}}"
+primaryContainer = "{{colors.primary_container.default.hex}}"
+onPrimaryContainer = "{{colors.on_primary_container.default.hex}}"
+
+secondary = "{{colors.secondary.default.hex}}"
+onSecondary = "{{colors.on_secondary.default.hex}}"
+secondaryContainer = "{{colors.secondary_container.default.hex}}"
+onSecondaryContainer = "{{colors.on_secondary_container.default.hex}}"
+
+tertiary = "{{colors.tertiary.default.hex}}"
+onTertiary = "{{colors.on_tertiary.default.hex}}"
+tertiaryContainer = "{{colors.tertiary_container.default.hex}}"
+onTertiaryContainer = "{{colors.on_tertiary_container.default.hex}}"
+
+error = "{{colors.error.default.hex}}"
+onError = "{{colors.on_error.default.hex}}"
+errorContainer = "{{colors.error_container.default.hex}}"
+onErrorContainer = "{{colors.on_error_container.default.hex}}"
+
+background = "{{colors.background.default.hex}}"
+onBackground = "{{colors.on_background.default.hex}}"
+surface = "{{colors.surface.default.hex}}"
+onSurface = "{{colors.on_surface.default.hex}}"
+surfaceVariant = "{{colors.surface_variant.default.hex}}"
+onSurfaceVariant = "{{colors.on_surface_variant.default.hex}}"
+
+outline = "{{colors.outline.default.hex}}"
+outlineVariant = "{{colors.outline_variant.default.hex}}"
+
+surfaceContainerLowest = "{{colors.surface_container_lowest.default.hex}}"
+surfaceContainerLow = "{{colors.surface_container_low.default.hex}}"
+surfaceContainer = "{{colors.surface_container.default.hex}}"
+surfaceContainerHigh = "{{colors.surface_container_high.default.hex}}"
+surfaceContainerHighest = "{{colors.surface_container_highest.default.hex}}"

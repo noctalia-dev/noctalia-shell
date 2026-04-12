@@ -1,0 +1,24 @@
+[colors-dark]
+background = {{colors.surface.default.hex_stripped}}
+foreground = {{colors.on_surface.default.hex_stripped}}
+
+selection-background = {{colors.tertiary.default.hex_stripped}}
+selection-foreground = {{colors.on_tertiary.default.hex_stripped}}
+
+regular0 = {{colors.surface_variant.default.hex_stripped}}
+regular1 = {{colors.error.default.hex_stripped}}
+regular2 = {{colors.primary.default.hex_stripped}}
+regular3 = {{colors.secondary.default.hex_stripped}}
+regular4 = {{colors.tertiary.default.hex_stripped}}
+regular5 = {{colors.primary_fixed_dim.default.hex_stripped}}
+regular6 = {{colors.secondary_fixed_dim.default.hex_stripped}}
+regular7 = {{colors.on_surface.default.hex_stripped}}
+
+bright0  = {{colors.on_surface_variant.default.hex_stripped}}
+bright1  = {{colors.error.default.hex_stripped}}
+bright2  = {{colors.primary.default.hex_stripped}}
+bright3  = {{colors.secondary.default.hex_stripped}}
+bright4  = {{colors.tertiary.default.hex_stripped}}
+bright5  = {{colors.primary_fixed_dim.default.hex_stripped}}
+bright6  = {{colors.secondary_fixed_dim.default.hex_stripped}}
+bright7  = {{colors.on_surface.default.hex_stripped}}

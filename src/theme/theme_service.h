@@ -1,10 +1,12 @@
 #pragma once
 
 #include "core/timer_manager.h"
+#include "theme/palette.h"
 #include "ui/palette.h"
 
 #include <chrono>
 #include <functional>
+#include <string_view>
 
 class ConfigService;
 class StateService;
@@ -14,6 +16,7 @@ namespace noctalia::theme {
   class ThemeService {
   public:
     using ChangeCallback = std::function<void()>;
+    using ResolvedCallback = std::function<void(const GeneratedPalette&, std::string_view)>;
 
     ThemeService(const ConfigService& config, const StateService& state);
 
@@ -25,6 +28,7 @@ namespace noctalia::theme {
     void onWallpaperChange();
 
     void setChangeCallback(ChangeCallback callback);
+    void setResolvedCallback(ResolvedCallback callback);
 
   private:
     void resolveAndSet(bool animate);
@@ -34,6 +38,7 @@ namespace noctalia::theme {
     const ConfigService& m_config;
     const StateService& m_state;
     ChangeCallback m_changeCallback;
+    ResolvedCallback m_resolvedCallback;
 
     Timer m_transitionTimer;
     Palette m_fromPalette{};

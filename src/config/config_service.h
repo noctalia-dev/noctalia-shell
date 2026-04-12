@@ -192,10 +192,20 @@ enum class ThemeMode : std::uint8_t {
 };
 
 struct ThemeConfig {
+  struct TemplatesConfig {
+    bool enableBuiltins = true;
+    std::vector<std::string> builtinIds;
+    bool enableUserTemplates = false;
+    std::string userConfig = "~/.config/noctalia/user-templates.toml";
+
+    bool operator==(const TemplatesConfig&) const = default;
+  };
+
   ThemeSource source = ThemeSource::Builtin;
-  std::string builtinName = "Noctalia";
+  std::string builtinPalette = "Noctalia";
   std::string wallpaperScheme = "m3-content";
   ThemeMode mode = ThemeMode::Dark;
+  TemplatesConfig templates;
 };
 
 struct Config {

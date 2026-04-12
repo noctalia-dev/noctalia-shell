@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "theme/palette.h"
 
@@ -28,6 +29,9 @@ namespace noctalia::theme {
       std::string defaultMode = "dark";
       std::string imagePath;
       std::string closestColor;
+      std::string configDir;
+      std::string configFile;
+      std::unordered_set<std::string> enabledTemplates;
       std::string schemeType = "content";
       bool verbose = true;
     };
