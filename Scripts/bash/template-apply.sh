@@ -4,7 +4,7 @@
 if [ "$#" -lt 1 ]; then
     # Print usage information to standard error.
     echo "Error: No application specified." >&2
-    echo "Usage: $0 {kitty|ghostty|foot|alacritty|wezterm|fuzzel|walker|pywalfox|cava|yazi|labwc|niri|hyprland|sway|scroll|mango|btop|zathura} [dark|light]" >&2
+    echo "Usage: $0 {kitty|ghostty|foot|alacritty|wezterm|starship|fuzzel|walker|pywalfox|cava|yazi|labwc|niri|hyprland|sway|scroll|mango|btop|zathura} [dark|light]" >&2
     exit 1
 fi
 
@@ -532,6 +532,59 @@ zathura)
             org.pwmt.zathura.ExecuteCommand \
             string:"source"
     done
+    ;;
+
+starship)
+    # Check if the nested starship config exists first
+    if [ -f "$HOME/.config/starship/starship.toml" ]; then
+        CONFIG_FILE="$HOME/.config/starship/starship.toml"
+    else
+    # Fallback to the default path
+        CONFIG_FILE="$HOME/.config/starship.toml"
+    fi
+
+    # Check if the generated palette file exists
+    if [ ! -f "$PALETTE_FILE" ]; then
+        echo "Error: Starship palette file not found at $PALETTE_FILE" >&2
+        exit 1
+    fi
+
+    MARKER_BEGIN="# >>> NOCTALIA STARSHIP PALETTE >>>"
+    MARKER_END="# <<< NOCTALIA STARSHIP PALETTE <<<"
+
+    # Create config file if it doesn't exist
+    if [ ! -f "$CONFIG_FILE" ]; then
+        mkdir -p "$(dirname "$CONFIG_FILE")"
+        echo 'palette = "noctalia"' > "$CONFIG_FILE"
+        echo "" >> "$CONFIG_FILE"
+        echo "$MARKER_BEGIN" >> "$CONFIG_FILE"
+        cat "$PALETTE_FILE" >> "$CONFIG_FILE"
+        echo "$MARKER_END" >> "$CONFIG_FILE"
+        exit 0
+    fi
+
+    # 1. Set palette = "noctalia" at top level
+    if grep -qE '^palette\s*=' "$CONFIG_FILE"; then
+        sed -i -E 's/^palette\s*=.*/palette = "noctalia"/' "$CONFIG_FILE"
+    else
+        # Insert after schema line if present, otherwise at line 1
+        if grep -qE '^\"\$schema\"' "$CONFIG_FILE"; then
+            sed -i '/^\"\$schema\"/a palette = "noctalia"' "$CONFIG_FILE"
+        else
+            sed -i '1i palette = "noctalia"' "$CONFIG_FILE"
+        fi
+    fi
+
+    # 2. Remove existing noctalia palette block (between markers)
+    if grep -qF "$MARKER_BEGIN" "$CONFIG_FILE"; then
+        sed -i "/$(echo "$MARKER_BEGIN" | sed 's/[[\.*^$()+?{|]/\\&/g')/,/$(echo "$MARKER_END" | sed 's/[[\.*^$()+?{|]/\\&/g')/d" "$CONFIG_FILE"
+    fi
+
+    # 3. Append the new palette block
+    echo "" >> "$CONFIG_FILE"
+    echo "$MARKER_BEGIN" >> "$CONFIG_FILE"
+    cat "$PALETTE_FILE" >> "$CONFIG_FILE"
+    echo "$MARKER_END" >> "$CONFIG_FILE"
     ;;
 
 *)

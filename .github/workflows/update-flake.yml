@@ -8,6 +8,7 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'noctalia-dev/noctalia-shell' }}
     permissions:
       contents: write
     steps:

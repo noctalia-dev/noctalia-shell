@@ -38,7 +38,7 @@ Item {
 
       // Enable layer caching to prevent continuous re-rendering
       layer.enabled: true
-      opacity: Color.adaptiveOpacity(Settings.data.ui.panelBackgroundOpacity)
+      opacity: Style.effectivePanelOpacity
 
       Shape {
         id: unifiedBackgroundsShape
@@ -106,7 +106,7 @@ Item {
         anchors.fill: parent
 
         layer.enabled: true
-        opacity: Color.adaptiveOpacity(Settings.data.ui.panelBackgroundOpacity)
+        opacity: Style.effectivePanelOpacity
 
         Shape {
           id: panelBackgroundsShape
@@ -155,7 +155,7 @@ Item {
         anchors.fill: parent
 
         layer.enabled: true
-        opacity: Settings.data.bar.backgroundOpacity
+        opacity: Style.effectiveBarOpacity
 
         Shape {
           id: barBackgroundShape

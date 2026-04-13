@@ -109,7 +109,6 @@
       "display-command-output-stream-description": "Gjev kommando for å køyra heile tida.",
       "dynamic-text": "Dynamisk tekst",
       "enable-colorization-description": "Gjev temafargane til ikonet og teksten på den eigendefinerte knappen.",
-      "enable-colorization-label": "Slå på fargelegging",
       "general-tooltip-text-description": "Eigendefinert tekst som skal visast i hjelpeteksta for knappen.",
       "general-tooltip-text-label": "Eigendefinert hjelpetekst",
       "hide-mode-always-expanded": "Alltid utvida",
