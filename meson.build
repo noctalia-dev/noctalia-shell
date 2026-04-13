@@ -239,7 +239,7 @@ _noctalia_sources = files(
   'src/render/programs/glyph_program.cpp',
   'src/render/programs/image_program.cpp',
   'src/render/programs/linear_gradient_program.cpp',
-  'src/render/programs/rounded_rect_program.cpp',
+  'src/render/programs/rect_program.cpp',
   'src/render/programs/spinner_program.cpp',
   'src/render/programs/blur_program.cpp',
   'src/render/programs/wallpaper_program.cpp',

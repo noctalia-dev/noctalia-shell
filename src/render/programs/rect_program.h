@@ -52,13 +52,13 @@ constexpr bool operator==(const RoundedRectStyle& lhs, const RoundedRectStyle& r
          lhs.radius == rhs.radius && lhs.softness == rhs.softness && lhs.borderWidth == rhs.borderWidth;
 }
 
-class RoundedRectProgram {
+class RectProgram {
 public:
-  RoundedRectProgram() = default;
-  ~RoundedRectProgram() = default;
+  RectProgram() = default;
+  ~RectProgram() = default;
 
-  RoundedRectProgram(const RoundedRectProgram&) = delete;
-  RoundedRectProgram& operator=(const RoundedRectProgram&) = delete;
+  RectProgram(const RectProgram&) = delete;
+  RectProgram& operator=(const RectProgram&) = delete;
 
   void ensureInitialized();
   void destroy();

@@ -1,7 +1,7 @@
 #include "core/ui_phase.h"
 #include "shell/lockscreen/lock_surface.h"
 
-#include "render/programs/rounded_rect_program.h"
+#include "render/programs/rect_program.h"
 #include "render/render_context.h"
 #include "render/scene/image_node.h"
 #include "render/scene/rect_node.h"

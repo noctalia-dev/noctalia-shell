@@ -1,6 +1,6 @@
 #include "ui/controls/scroll_view.h"
 
-#include "render/programs/rounded_rect_program.h"
+#include "render/programs/rect_program.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
 #include "ui/palette.h"

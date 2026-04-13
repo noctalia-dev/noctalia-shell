@@ -6,7 +6,7 @@
 #include "render/programs/glyph_program.h"
 #include "render/programs/image_program.h"
 #include "render/programs/linear_gradient_program.h"
-#include "render/programs/rounded_rect_program.h"
+#include "render/programs/rect_program.h"
 #include "render/programs/spinner_program.h"
 #include "render/text/cairo_glyph_renderer.h"
 #include "render/text/cairo_text_renderer.h"
@@ -60,7 +60,7 @@ private:
 
   ImageProgram m_imageProgram;
   LinearGradientProgram m_linearGradientProgram;
-  RoundedRectProgram m_roundedRectProgram;
+  RectProgram m_rectProgram;
   SpinnerProgram m_spinnerProgram;
   GlyphProgram m_glyphProgram;
   CairoTextRenderer m_textRenderer;

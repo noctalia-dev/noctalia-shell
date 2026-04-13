@@ -3,7 +3,7 @@
 #include "cursor-shape-v1-client-protocol.h"
 #include "render/core/color.h"
 #include "render/core/renderer.h"
-#include "render/programs/rounded_rect_program.h"
+#include "render/programs/rect_program.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
 #include "ui/controls/label.h"

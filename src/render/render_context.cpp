@@ -119,7 +119,7 @@ void RenderContext::ensureGlPrograms() {
   }
   m_imageProgram.ensureInitialized();
   m_linearGradientProgram.ensureInitialized();
-  m_roundedRectProgram.ensureInitialized();
+  m_rectProgram.ensureInitialized();
   m_spinnerProgram.ensureInitialized();
   m_glyphProgram.ensureInitialized();
   m_glReady = true;
@@ -220,7 +220,7 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     style.fill.a *= effectiveOpacity;
     style.fillEnd.a *= effectiveOpacity;
     style.border.a *= effectiveOpacity;
-    m_roundedRectProgram.draw(sw, sh, node->width(), node->height(), style, worldTransform);
+    m_rectProgram.draw(sw, sh, node->width(), node->height(), style, worldTransform);
     break;
   }
   case NodeType::Text: {
@@ -333,7 +333,7 @@ void RenderContext::cleanup() {
   m_textureManager.cleanup();
   m_imageProgram.destroy();
   m_linearGradientProgram.destroy();
-  m_roundedRectProgram.destroy();
+  m_rectProgram.destroy();
   m_spinnerProgram.destroy();
   m_glyphProgram.destroy();
   m_glReady = false;

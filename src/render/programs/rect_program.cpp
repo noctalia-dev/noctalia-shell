@@ -1,4 +1,4 @@
-#include "render/programs/rounded_rect_program.h"
+#include "render/programs/rect_program.h"
 
 #include <array>
 #include <stdexcept>
@@ -123,7 +123,7 @@ void main() {
 
 } // namespace
 
-void RoundedRectProgram::ensureInitialized() {
+void RectProgram::ensureInitialized() {
   if (m_program.isValid()) {
     return;
   }
@@ -152,7 +152,7 @@ void RoundedRectProgram::ensureInitialized() {
   }
 }
 
-void RoundedRectProgram::destroy() {
+void RectProgram::destroy() {
   m_program.destroy();
   m_positionLocation = -1;
   m_surfaceSizeLocation = -1;
@@ -170,7 +170,7 @@ void RoundedRectProgram::destroy() {
   m_transformLocation = -1;
 }
 
-void RoundedRectProgram::draw(float surfaceWidth, float surfaceHeight, float width, float height,
+void RectProgram::draw(float surfaceWidth, float surfaceHeight, float width, float height,
                               const RoundedRectStyle& style, const Mat3& transform) const {
   if (!m_program.isValid() || width <= 0.0f || height <= 0.0f) {
     return;
