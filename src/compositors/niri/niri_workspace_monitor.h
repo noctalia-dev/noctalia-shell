@@ -64,6 +64,7 @@ private:
   parseWindow(const nlohmann::json& json);
   [[nodiscard]] static std::optional<std::uint64_t> parseUnsigned(const std::string& value);
   [[nodiscard]] static std::optional<std::size_t> parseLeadingNumber(const std::string& value);
+  void recomputeOccupancy();
   void notifyChanged() const;
 
   bool m_enabled = false;
@@ -71,6 +72,7 @@ private:
   std::optional<std::string> m_socketPath;
   std::vector<char> m_readBuffer;
   std::unordered_map<std::uint64_t, WindowState> m_windows;
+  std::unordered_map<std::uint64_t, std::size_t> m_occupancy;
   std::unordered_map<std::uint64_t, WorkspaceState> m_workspaces;
   std::chrono::steady_clock::time_point m_nextReconnectAt{};
   ChangeCallback m_changeCallback;

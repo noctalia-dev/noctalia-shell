@@ -142,14 +142,6 @@ void NiriWorkspaceMonitor::apply(std::vector<Workspace>& workspaces, const std::
     return;
   }
 
-  std::unordered_map<std::uint64_t, std::size_t> occupancy;
-  for (const auto& [windowId, window] : m_windows) {
-    (void)windowId;
-    if (window.workspaceId.has_value()) {
-      ++occupancy[*window.workspaceId];
-    }
-  }
-
   std::vector<const WorkspaceState*> candidates;
   candidates.reserve(m_workspaces.size());
   for (const auto& [workspaceId, workspace] : m_workspaces) {
@@ -226,7 +218,8 @@ void NiriWorkspaceMonitor::apply(std::vector<Workspace>& workspaces, const std::
   }
 
   for (std::size_t i = 0; i < workspaces.size(); ++i) {
-    workspaces[i].occupied = matches[i] != nullptr && occupancy.contains(matches[i]->id) && occupancy[matches[i]->id] > 0;
+    workspaces[i].occupied =
+        matches[i] != nullptr && m_occupancy.contains(matches[i]->id) && m_occupancy.at(matches[i]->id) > 0;
   }
 }
 
@@ -434,6 +427,7 @@ bool NiriWorkspaceMonitor::handleWindowsChanged(const nlohmann::json& payload) {
   }
 
   m_windows = std::move(next);
+  recomputeOccupancy();
   return true;
 }
 
@@ -455,6 +449,7 @@ bool NiriWorkspaceMonitor::handleWindowOpenedOrChanged(const nlohmann::json& pay
   }
 
   m_windows[id] = state;
+  recomputeOccupancy();
   return true;
 }
 
@@ -470,7 +465,11 @@ bool NiriWorkspaceMonitor::handleWindowClosed(const nlohmann::json& payload) {
     return false;
   }
 
-  return m_windows.erase(*windowId) > 0;
+  if (m_windows.erase(*windowId) == 0) {
+    return false;
+  }
+  recomputeOccupancy();
+  return true;
 }
 
 std::optional<NiriWorkspaceMonitor::WorkspaceState> NiriWorkspaceMonitor::parseWorkspace(const nlohmann::json& json) {
@@ -534,6 +533,16 @@ std::optional<std::size_t> NiriWorkspaceMonitor::parseLeadingNumber(const std::s
     ++index;
   }
   return parsed > 0 ? std::optional<std::size_t>(parsed) : std::nullopt;
+}
+
+void NiriWorkspaceMonitor::recomputeOccupancy() {
+  m_occupancy.clear();
+  for (const auto& [windowId, window] : m_windows) {
+    (void)windowId;
+    if (window.workspaceId.has_value()) {
+      ++m_occupancy[*window.workspaceId];
+    }
+  }
 }
 
 void NiriWorkspaceMonitor::notifyChanged() const {
