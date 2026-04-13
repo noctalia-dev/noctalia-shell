@@ -14,6 +14,7 @@
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/select.h"
+#include "ui/controls/spacer.h"
 #include "ui/controls/toggle.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -156,9 +157,7 @@ void WallpaperPanel::create() {
   back->setOnClick([this]() { navigateUp(); });
   m_backButton = static_cast<Button*>(toolbar->addChild(std::move(back)));
 
-  auto spacer = std::make_unique<Flex>();
-  spacer->setFlexGrow(1.0f);
-  spacer->setFillParentMainAxis(true);
+  auto spacer = std::make_unique<Spacer>();
   toolbar->addChild(std::move(spacer));
 
   auto flattenLabel = std::make_unique<Label>();

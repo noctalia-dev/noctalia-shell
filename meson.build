@@ -332,6 +332,7 @@ _noctalia_sources = files(
   'src/ui/controls/scroll_view.cpp',
   'src/ui/controls/select.cpp',
   'src/ui/controls/slider.cpp',
+  'src/ui/controls/spacer.cpp',
   'src/ui/controls/spinner.cpp',
   'src/ui/controls/toggle.cpp',
   'src/ui/palette.cpp',
