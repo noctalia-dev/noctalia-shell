@@ -359,6 +359,9 @@ Singleton {
         return "bt-device-speaker";
       }
     }
+
+    // The last resort if nothing else matches - generic battery icon
+    return getIcon(getPercentage(device), isCharging(device), isPluggedIn(device), isDeviceReady(device));
   }
 
   Instantiator {
