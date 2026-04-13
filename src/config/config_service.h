@@ -130,6 +130,7 @@ struct OverviewConfig {
 struct DockConfig {
   bool enabled = false;            // opt-in; dock is hidden by default
   std::string position = "bottom"; // top | bottom | left | right
+  bool activeMonitorOnly = false;  // render only on preferred active output
   std::int32_t iconSize = 48;      // icon size in pixels (before ui_scale)
   std::int32_t padding = 8;        // inner padding around the icon row
   std::int32_t itemSpacing = 6;    // gap between items
@@ -140,11 +141,14 @@ struct DockConfig {
   std::int32_t shadowBlur = 12;
   std::int32_t shadowOffsetX = 0;
   std::int32_t shadowOffsetY = 4;
-  bool showRunning = true;            // also show running apps not in pinned list
-  bool autoHide = false;              // fade out when not hovered (overlay mode)
-  std::string indicatorStyle = "dot"; // dot | bar | none — running-app indicator
-  bool showInstanceCount = true;      // show a badge with count when app has >1 window
-  std::vector<std::string> pinned;    // desktop entry IDs to always show
+  bool showRunning = true;         // also show running apps not in pinned list
+  bool autoHide = false;           // fade out when not hovered (overlay mode)
+  float activeScale = 1.0f;        // focused app icon scale
+  float inactiveScale = 0.85f;     // non-focused app icon scale
+  float activeOpacity = 1.0f;      // focused app icon opacity
+  float inactiveOpacity = 0.85f;   // non-focused app icon opacity
+  bool showInstanceCount = true;   // show a badge with count when app has >1 window
+  std::vector<std::string> pinned; // desktop entry IDs to always show
 
   bool operator==(const DockConfig&) const = default;
 };

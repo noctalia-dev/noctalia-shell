@@ -203,10 +203,13 @@ wl_output* WaylandToplevels::currentOutput() const {
   return it->second.output;
 }
 
-std::vector<std::string> WaylandToplevels::allAppIds() const {
+std::vector<std::string> WaylandToplevels::allAppIds(wl_output* outputFilter) const {
   std::vector<std::string> ids;
   ids.reserve(m_handles.size());
   for (const auto& [handle, state] : m_handles) {
+    if (outputFilter != nullptr && state.output != outputFilter) {
+      continue;
+    }
     if (!state.appId.empty()) {
       ids.push_back(state.appId);
     }
@@ -214,10 +217,13 @@ std::vector<std::string> WaylandToplevels::allAppIds() const {
   return ids;
 }
 
-std::vector<ToplevelInfo> WaylandToplevels::windowsForApp(const std::string& idLower,
-                                                          const std::string& wmClassLower) const {
+std::vector<ToplevelInfo> WaylandToplevels::windowsForApp(const std::string& idLower, const std::string& wmClassLower,
+                                                          wl_output* outputFilter) const {
   std::vector<ToplevelInfo> out;
   for (const auto& [handle, state] : m_handles) {
+    if (outputFilter != nullptr && state.output != outputFilter) {
+      continue;
+    }
     if (state.appId.empty())
       continue;
     const auto appLower = [&] {

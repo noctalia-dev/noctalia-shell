@@ -413,11 +413,13 @@ std::vector<Workspace> WaylandConnection::workspaces(wl_output* output) const {
 
 std::optional<ActiveToplevel> WaylandConnection::activeToplevel() const { return m_toplevelsHandler.current(); }
 wl_output* WaylandConnection::activeToplevelOutput() const { return m_toplevelsHandler.currentOutput(); }
-std::vector<std::string> WaylandConnection::runningAppIds() const { return m_toplevelsHandler.allAppIds(); }
+std::vector<std::string> WaylandConnection::runningAppIds(wl_output* outputFilter) const {
+  return m_toplevelsHandler.allAppIds(outputFilter);
+}
 
-std::vector<ToplevelInfo> WaylandConnection::windowsForApp(const std::string& idLower,
-                                                           const std::string& wmClassLower) const {
-  return m_toplevelsHandler.windowsForApp(idLower, wmClassLower);
+std::vector<ToplevelInfo> WaylandConnection::windowsForApp(const std::string& idLower, const std::string& wmClassLower,
+                                                           wl_output* outputFilter) const {
+  return m_toplevelsHandler.windowsForApp(idLower, wmClassLower, outputFilter);
 }
 
 void WaylandConnection::activateToplevel(zwlr_foreign_toplevel_handle_v1* handle) {

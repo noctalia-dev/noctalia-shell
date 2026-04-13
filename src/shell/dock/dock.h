@@ -55,7 +55,6 @@ private:
     std::string startupWmClassLower;
     InputArea* area = nullptr;
     Box* background = nullptr;
-    RectNode* indicator = nullptr;
     Box* badge = nullptr;
     Label* badgeLabel = nullptr;
     Image* iconImage = nullptr;
@@ -63,6 +62,10 @@ private:
     bool hovered = false;
     bool running = false;
     bool active = false;
+    float visualScale = -1.0f;
+    float visualOpacity = -1.0f;
+    AnimationManager::Id scaleAnimId = 0;
+    AnimationManager::Id opacityAnimId = 0;
     std::size_t instanceCount = 0;
   };
 
@@ -113,7 +116,7 @@ private:
 
   // Geometry helpers
   [[nodiscard]] std::int32_t dockContentSize(std::size_t itemCount) const; // item row length (main axis)
-  [[nodiscard]] std::int32_t dockThickness() const;     // cross-axis (includes padding + indicator)
+  [[nodiscard]] std::int32_t dockThickness() const;     // cross-axis (includes icon, cell padding, dock padding)
   [[nodiscard]] bool isVertical() const;
 
   // Generic popup (window picker and item context menu).
@@ -141,6 +144,7 @@ private:
   std::vector<std::unique_ptr<DockInstance>> m_instances;
   std::unordered_map<wl_surface*, DockInstance*> m_surfaceMap;
   DockInstance* m_hoveredInstance = nullptr;
+  wl_output* m_lastFilterOutput = nullptr;
   DockInstance* m_popupOwnerInstance = nullptr; // instance that owns the current open popup
   std::unique_ptr<DockPopup> m_windowMenu;  // left-click multi-window picker
   std::unique_ptr<DockPopup> m_itemMenu;    // right-click context menu

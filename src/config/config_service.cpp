@@ -946,6 +946,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
     auto& dock = m_config.dock;
     if (auto v = (*dockTbl)["enabled"].value<bool>())
       dock.enabled = *v;
+    if (auto v = (*dockTbl)["active_monitor_only"].value<bool>())
+      dock.activeMonitorOnly = *v;
     if (auto v = (*dockTbl)["position"].value<std::string>())
       dock.position = *v;
     if (auto v = (*dockTbl)["icon_size"].value<int64_t>())
@@ -972,8 +974,14 @@ void ConfigService::parseTable(const toml::table& tbl) {
       dock.showRunning = *v;
     if (auto v = (*dockTbl)["auto_hide"].value<bool>())
       dock.autoHide = *v;
-    if (auto v = (*dockTbl)["indicator_style"].value<std::string>())
-      dock.indicatorStyle = *v;
+    if (auto v = (*dockTbl)["active_scale"].value<double>())
+      dock.activeScale = std::clamp(static_cast<float>(*v), 0.1f, 1.75f);
+    if (auto v = (*dockTbl)["inactive_scale"].value<double>())
+      dock.inactiveScale = std::clamp(static_cast<float>(*v), 0.1f, 1.0f);
+    if (auto v = (*dockTbl)["active_opacity"].value<double>())
+      dock.activeOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+    if (auto v = (*dockTbl)["inactive_opacity"].value<double>())
+      dock.inactiveOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
     if (auto v = (*dockTbl)["show_instance_count"].value<bool>())
       dock.showInstanceCount = *v;
     if (auto* arr = (*dockTbl)["pinned"].as_array())

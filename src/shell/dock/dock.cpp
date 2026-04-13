@@ -33,13 +33,6 @@ namespace {
 
 constexpr Logger kLog("dock");
 
-// Vertical gap between icon bottom and the indicator mark.
-constexpr float kIndicatorGap  = 4.0f;
-// Indicator geometry.
-constexpr float kDotDiameter   = 5.0f;
-constexpr float kBarHeight     = 3.0f;
-constexpr float kBarWidthRatio = 0.5f; // fraction of iconSize
-
 // Instance-count badge geometry — scales with icon size.
 constexpr float kBadgeSizeRatio = 0.30f;  // fraction of icon size
 constexpr float kBadgeMinSize   = 16.0f;  // minimum diameter in px
@@ -54,6 +47,23 @@ std::string toLower(std::string s) {
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
   return s;
+}
+
+std::string currentActiveAppIdLower(const WaylandConnection& wayland) {
+  if (const auto active = wayland.activeToplevel(); active.has_value()) {
+    return toLower(active->appId);
+  }
+  return {};
+}
+
+wl_output* currentDockFilterOutput(const WaylandConnection& wayland, const DockConfig& cfg) {
+  if (!cfg.activeMonitorOnly) {
+    return nullptr;
+  }
+  if (wl_output* output = wayland.activeToplevelOutput(); output != nullptr) {
+    return output;
+  }
+  return wayland.preferredPanelOutput();
 }
 
 // Returns an anchor bitmask for the given position string.
@@ -125,6 +135,7 @@ void Dock::reload() {
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;
+  m_lastFilterOutput = nullptr;
 
   wl_display_roundtrip(m_wayland->display());
   syncInstances();
@@ -149,6 +160,7 @@ void Dock::closeAllInstances() {
   m_itemMenu.reset();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;
+  m_lastFilterOutput = nullptr;
   m_instances.clear();
 }
 
@@ -167,9 +179,12 @@ void Dock::refresh() {
   refreshPinnedAppsIfNeeded();
 
   const auto& cfg = m_config->config().dock;
-  const auto active = m_wayland->activeToplevel();
-  const std::string activeIdLower = active ? toLower(active->appId) : std::string{};
-  const auto runningIds  = cfg.showRunning ? m_wayland->runningAppIds() : std::vector<std::string>{};
+  const wl_output* filterOutput = currentDockFilterOutput(*m_wayland, cfg);
+  const bool filterOutputChanged = (filterOutput != m_lastFilterOutput);
+  m_lastFilterOutput = const_cast<wl_output*>(filterOutput);
+
+  const std::string activeIdLower = currentActiveAppIdLower(*m_wayland);
+  const auto runningIds  = cfg.showRunning ? m_wayland->runningAppIds(m_lastFilterOutput) : std::vector<std::string>{};
   std::vector<std::string> runningLower;
   runningLower.reserve(runningIds.size());
   for (const auto& id : runningIds) {
@@ -184,7 +199,7 @@ void Dock::refresh() {
     inst->activeAppIdLower = activeIdLower;
 
     // Rebuild if model changed or running-only app set changed.
-    bool needRebuild = (inst->modelSerial != m_modelSerial);
+    bool needRebuild = (inst->modelSerial != m_modelSerial) || filterOutputChanged;
 
     if (!needRebuild && cfg.showRunning) {
       // Count running-only items expected vs current.
@@ -217,7 +232,7 @@ void Dock::refresh() {
       }
     }
 
-    // Sync running/active flags (even without a rebuild, for indicator updates).
+    // Sync running/active flags even without a rebuild (icon emphasis updates).
     for (auto& item : inst->items) {
       item.running = matchesRunningApp(item, runningLower);
       item.active  = matchesActiveApp(item, activeIdLower);
@@ -366,12 +381,8 @@ bool Dock::isVertical() const {
 
 std::int32_t Dock::dockThickness() const {
   const auto& cfg = m_config->config().dock;
-  const bool hasIndicator = (cfg.indicatorStyle != "none");
-  const auto indicatorSpace = hasIndicator
-      ? static_cast<std::int32_t>(std::ceil(kIndicatorGap + kDotDiameter))
-      : 0;
   constexpr std::int32_t kCellPad = 6;
-  return cfg.iconSize + kCellPad * 2 + cfg.padding * 2 + indicatorSpace;
+  return cfg.iconSize + kCellPad * 2 + cfg.padding * 2;
 }
 
 std::int32_t Dock::dockContentSize(std::size_t itemCount) const {
@@ -469,6 +480,7 @@ void Dock::createInstance(const WaylandOutput& output) {
   instance->outputName = output.name;
   instance->output     = output.output;
   instance->scale      = output.scale;
+  instance->activeAppIdLower = currentActiveAppIdLower(*m_wayland);
 
   const bool vert = isVertical();
   const auto sb   = computeBleed(cfg);
@@ -578,6 +590,8 @@ void Dock::buildScene(DockInstance& instance) {
   if (m_renderContext == nullptr || instance.surface == nullptr) {
     return;
   }
+
+  instance.activeAppIdLower = currentActiveAppIdLower(*m_wayland);
 
   const auto& cfg  = m_config->config().dock;
   const bool vert  = isVertical();
@@ -738,8 +752,16 @@ void Dock::rebuildItems(DockInstance& instance) {
   const bool vert   = isVertical();
   const float iSize = static_cast<float>(cfg.iconSize);
 
-  const bool hasIndicator = (cfg.indicatorStyle != "none");
-  const float indicatorArea = hasIndicator ? (kIndicatorGap + kDotDiameter) : 0.0f;
+  for (auto& item : instance.items) {
+    if (item.scaleAnimId != 0) {
+      instance.animations.cancel(item.scaleAnimId);
+      item.scaleAnimId = 0;
+    }
+    if (item.opacityAnimId != 0) {
+      instance.animations.cancel(item.opacityAnimId);
+      item.opacityAnimId = 0;
+    }
+  }
 
   // Clear previous items by recreating the row.
   if (instance.row != nullptr && instance.panel != nullptr) {
@@ -760,9 +782,10 @@ void Dock::rebuildItems(DockInstance& instance) {
 
   // Determine items: pinned + (optionally) running-only apps not in pinned.
   std::vector<DesktopEntry> itemEntries = m_pinnedEntries;
+  wl_output* filterOutput = currentDockFilterOutput(*m_wayland, cfg);
 
   if (cfg.showRunning) {
-    const auto runningIds = m_wayland->runningAppIds();
+    const auto runningIds = m_wayland->runningAppIds(filterOutput);
     const auto& allEntries = desktopEntries();
 
     for (const auto& runId : runningIds) {
@@ -794,7 +817,7 @@ void Dock::rebuildItems(DockInstance& instance) {
   }
 
   const auto activeIdLower = instance.activeAppIdLower;
-  const auto runningIds    = m_wayland->runningAppIds();
+  const auto runningIds    = m_wayland->runningAppIds(filterOutput);
   std::vector<std::string> runningLower;
   for (const auto& id : runningIds) runningLower.push_back(toLower(id));
 
@@ -812,7 +835,7 @@ void Dock::rebuildItems(DockInstance& instance) {
     // Cell is icon + kCellPad on each side; hover bg fills the full cell.
     constexpr float kCellPad = 6.0f; // px extra on each side
     const float cellMain  = iSize + 2.0f * kCellPad;
-    const float cellCross = iSize + indicatorArea + 2.0f * kCellPad;
+    const float cellCross = iSize + 2.0f * kCellPad;
     auto areaNode = std::make_unique<InputArea>();
     if (!vert) {
       areaNode->setSize(cellMain, cellCross);
@@ -848,34 +871,6 @@ void Dock::rebuildItems(DockInstance& instance) {
       glyph->setSize(iSize, iSize);
       glyph->setPosition(kCellPad, kCellPad);
       item.iconGlyph = static_cast<Glyph*>(areaNode->addChild(std::move(glyph)));
-    }
-
-    // Indicator — placed outside the hover bg (cellMain = icon + 2×pad).
-    if (hasIndicator) {
-      auto dot = std::make_unique<RectNode>();
-      const float dotW = (cfg.indicatorStyle == "bar")
-          ? iSize * kBarWidthRatio
-          : kDotDiameter;
-      const float dotH = (cfg.indicatorStyle == "bar") ? kBarHeight : kDotDiameter;
-      const float dotRadius = (cfg.indicatorStyle == "bar") ? kBarHeight * 0.5f : kDotDiameter * 0.5f;
-
-      RoundedRectStyle dotStyle{
-          .fill      = clearColor(),
-          .fillEnd   = {},
-          .border    = clearColor(),
-          .fillMode  = FillMode::Solid,
-          .radius    = Radii{ dotRadius, dotRadius, dotRadius, dotRadius },
-          .softness  = 0.0f,
-      };
-      dot->setStyle(dotStyle);
-
-      if (!vert) {
-        dot->setPosition(kCellPad + (iSize - dotW) * 0.5f, cellMain + kIndicatorGap);
-      } else {
-        dot->setPosition(cellMain + kIndicatorGap, kCellPad + (iSize - dotH) * 0.5f);
-      }
-      dot->setSize(dotW, dotH);
-      item.indicator = static_cast<RectNode*>(areaNode->addChild(std::move(dot)));
     }
 
     // Instance-count badge — top-right corner of the icon, initially hidden.
@@ -976,25 +971,54 @@ void Dock::updateVisuals(DockInstance& instance) {
   const auto& cfg = m_config->config().dock;
 
   for (auto& item : instance.items) {
-    if (item.indicator == nullptr) continue;
+    const float iconScale = item.active ? cfg.activeScale : cfg.inactiveScale;
+    const float iconOpacity = item.active ? cfg.activeOpacity : cfg.inactiveOpacity;
+    Node* iconNode = item.iconImage != nullptr
+        ? static_cast<Node*>(item.iconImage)
+        : static_cast<Node*>(item.iconGlyph);
 
-    // Indicator color: active → primary, running → onSurface (dim), inactive → transparent.
-    Color indicatorColor = clearColor();
-    if (item.active) {
-      indicatorColor = resolveThemeColor(roleColor(ColorRole::Primary));
-    } else if (item.running) {
-      indicatorColor = resolveThemeColor(roleColor(ColorRole::OnSurface, 0.5f));
-    }
+    if (iconNode != nullptr) {
+      if (item.visualScale < 0.0f) {
+        item.visualScale = iconScale;
+        iconNode->setScale(iconScale);
+      } else if (std::abs(item.visualScale - iconScale) > 0.001f) {
+        if (item.scaleAnimId != 0) {
+          instance.animations.cancel(item.scaleAnimId);
+        }
+        item.scaleAnimId = instance.animations.animate(
+            item.visualScale, iconScale, Style::animNormal, Easing::EaseOutCubic,
+            [node = iconNode, itemPtr = &item](float value) {
+              itemPtr->visualScale = value;
+              node->setScale(value);
+            },
+            [itemPtr = &item] {
+              itemPtr->scaleAnimId = 0;
+            });
+      }
 
-    if (cfg.indicatorStyle != "none") {
-      auto style      = item.indicator->style();
-      style.fill      = indicatorColor;
-      item.indicator->setStyle(style);
+      if (item.visualOpacity < 0.0f) {
+        item.visualOpacity = iconOpacity;
+        iconNode->setOpacity(iconOpacity);
+      } else if (std::abs(item.visualOpacity - iconOpacity) > 0.001f) {
+        if (item.opacityAnimId != 0) {
+          instance.animations.cancel(item.opacityAnimId);
+        }
+        item.opacityAnimId = instance.animations.animate(
+            item.visualOpacity, iconOpacity, Style::animNormal, Easing::EaseOutCubic,
+            [node = iconNode, itemPtr = &item](float value) {
+              itemPtr->visualOpacity = value;
+              node->setOpacity(value);
+            },
+            [itemPtr = &item] {
+              itemPtr->opacityAnimId = 0;
+            });
+      }
     }
 
     // Instance-count badge.
     if (item.badge != nullptr && item.badgeLabel != nullptr) {
-      const auto windows = m_wayland->windowsForApp(item.idLower, item.startupWmClassLower);
+      const auto windows = m_wayland->windowsForApp(item.idLower, item.startupWmClassLower,
+                        currentDockFilterOutput(*m_wayland, cfg));
       const std::size_t count = windows.size();
       if (count != item.instanceCount) {
         item.instanceCount = count;
@@ -1064,7 +1088,8 @@ void Dock::launchEntry(const DesktopEntry& entry) {
 
 void Dock::handleItemClick(DockInstance& instance, DockItemView& item) {
   // Find all windows matching this item's app.
-  auto windows = m_wayland->windowsForApp(item.idLower, item.startupWmClassLower);
+  auto windows = m_wayland->windowsForApp(item.idLower, item.startupWmClassLower,
+                                          currentDockFilterOutput(*m_wayland, m_config->config().dock));
 
   if (windows.empty()) {
     // Nothing running — launch the app.
@@ -1415,7 +1440,8 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
   auto menu = std::make_unique<DockPopup>();
 
   // Collect running windows for "Close" / "Close All" entries.
-  auto windows = m_wayland->windowsForApp(item.idLower, item.startupWmClassLower);
+  auto windows = m_wayland->windowsForApp(item.idLower, item.startupWmClassLower,
+                                          currentDockFilterOutput(*m_wayland, m_config->config().dock));
   for (const auto& w : windows) {
     menu->handles.push_back(w.handle);
   }

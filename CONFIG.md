@@ -382,6 +382,7 @@ A standalone application dock that displays pinned and running apps. Disabled by
 [dock]
 enabled            = true
 position           = "bottom"   # top | bottom | left | right
+active_monitor_only = false      # when true, only show apps/windows from the active monitor in the dock
 
 icon_size          = 48         # icon size in pixels
 padding            = 8          # inner padding around the icon row (all sides)
@@ -397,7 +398,10 @@ shadow_offset_y    = 4          # vertical shadow offset (positive = down)
 
 show_running       = true       # also show running apps that are not in the pinned list
 auto_hide          = false      # fade out when the pointer leaves; fade in on approach
-indicator_style    = "dot"      # dot | bar | none
+active_scale       = 1.0        # icon scale for the focused app (clamped to 0.1-1.75)
+inactive_scale     = 0.85       # icon scale for non-focused apps (clamped to 0.1-1.0)
+active_opacity     = 1.0        # icon opacity for the focused app
+inactive_opacity   = 0.85       # icon opacity for non-focused apps
 show_instance_count = true      # show a badge with the window count when an app has 2+ open windows
 
 # Pinned apps: desktop entry IDs, StartupWMClass, or human-readable names.
@@ -416,15 +420,11 @@ Each entry in `pinned` is matched against desktop entries using these rules in o
 
 If no match is found, a placeholder slot is reserved so the dock position is preserved.
 
-### Indicator styles
+### Active app emphasis
 
-| Style  | Appearance                                                          |
-|--------|---------------------------------------------------------------------|
-| `dot`  | Small filled circle below (or beside) the icon                      |
-| `bar`  | Short rounded bar below (or beside) the icon; half the icon width   |
-| `none` | No indicator drawn                                                  |
-
-Indicators use **primary** color when the app is the active window, and a dimmed **onSurface** color when the app is running but not focused.
+- The active app icon uses `active_scale` and `active_opacity`.
+- Non-active app icons use `inactive_scale` and `inactive_opacity`.
+- Focus changes animate smoothly between the active and inactive scale/opacity values.
 
 ### Auto-hide
 
