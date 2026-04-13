@@ -82,38 +82,3 @@ var signalIcon = (p) => {
   if (p >= 20) return "antenna-bars-2";
   return "antenna-bars-1";
 };
-
-// Icon mapping
-var deviceIcon = (name, icon) => {
-  var s1 = String(name || "").toLowerCase();
-  var s2 = String(icon || "").toLowerCase();
-
-  // Prefer icon-based hints for display devices first to avoid "audio" catching TVs
-  var displayHints = ["display", "tv", "monitor", "projector", "screen", "chromecast", "cast"];
-  for (var dh = 0; dh < displayHints.length; dh++) {
-    if (s2.indexOf(displayHints[dh]) !== -1) return "bt-device-tv";
-  }
-
-  var tests = [
-    [["controller", "gamepad"], "bt-device-gamepad"],
-    [["microphone"], "bt-device-microphone"],
-    [["pod", "bud", "minor"], "bt-device-earbuds"],
-    [["headset", "arctis", "major"], "bt-device-headset"],
-    [["headphone"], "bt-device-headphones"],
-    [["mouse"], "bt-device-mouse"],
-    [["keyboard"], "bt-device-keyboard"],
-    [["watch"], "bt-device-watch"],
-    [["display", "tv", "monitor", "projector", "screen", "chromecast", "cast"], "bt-device-tv"],
-    [["speaker", "audio", "sound"], "bt-device-speaker"],
-    [["phone", "iphone", "android", "samsung"], "bt-device-phone"]
-  ];
-  for (var i = 0; i < tests.length; i++) {
-    var keys = tests[i][0];
-    var out = tests[i][1];
-    for (var j = 0; j < keys.length; j++) {
-      var k = keys[j];
-      if (s1.indexOf(k) !== -1 || s2.indexOf(k) !== -1) return out;
-    }
-  }
-  return "bt-device-generic";
-};

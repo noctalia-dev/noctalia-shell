@@ -237,10 +237,7 @@ Singleton {
   }
 
   function getDeviceIcon(device) {
-    if (!device) {
-      return "bt-device-generic";
-    }
-    return BluetoothUtils.deviceIcon(device.name || device.deviceName, device.icon);
+    return BatteryService.getDeviceIcon(device);
   }
 
   function canConnect(device) {

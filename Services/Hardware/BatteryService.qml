@@ -311,34 +311,35 @@ Singleton {
 
     const name = (device.model || device.deviceName || device.name || "").toLowerCase();
     const nativePath = (device.nativePath || "").toLowerCase();
+    const iconHint = (device.icon || "").toLowerCase();
 
-    // 1. High-precision sub-types from the model name (e.g., "AirPods" should be earbuds, not just a headset)
-    if (name.includes("pod") || name.includes("bud") || name.includes("minor"))
+    // 1. High-precision sub-types (Commented out as requested)
+    if (name.includes("pod") || name.includes("bud") || name.includes("minor") || iconHint.includes("earbud"))
       return "bt-device-earbuds";
     if (name.includes("arctis") || name.includes("major"))
       return "bt-device-headset";
 
-    // 2. Broad categories from the UPower object path (very reliable for basic device types)
-    if (nativePath.includes("mouse"))
+    // 2. Broad categories from the UPower object path or icon hint
+    if (nativePath.includes("mouse") || iconHint.includes("mouse"))
       return "bt-device-mouse";
-    if (nativePath.includes("keyboard"))
+    if (nativePath.includes("keyboard") || iconHint.includes("keyboard"))
       return "bt-device-keyboard";
-    if (nativePath.includes("phone"))
+    if (nativePath.includes("phone") || iconHint.includes("phone"))
       return "bt-device-phone";
-    if (nativePath.includes("headset"))
+    if (nativePath.includes("headset") || iconHint.includes("headset"))
       return "bt-device-headset";
-    if (nativePath.includes("headphones"))
+    if (nativePath.includes("headphones") || iconHint.includes("headphones"))
       return "bt-device-headphones";
-    if (nativePath.includes("gaming_input") || nativePath.includes("controller") || nativePath.includes("joypad"))
+    if (nativePath.includes("gaming_input") || nativePath.includes("controller") || nativePath.includes("joypad") || iconHint.includes("gamepad"))
       return "bt-device-gamepad";
-    if (nativePath.includes("tablet"))
+    if (nativePath.includes("tablet") || iconHint.includes("tablet"))
       return "bt-device-tablet";
-    if (nativePath.includes("watch"))
+    if (nativePath.includes("watch") || iconHint.includes("watch"))
       return "bt-device-watch";
-    if (nativePath.includes("speaker") || nativePath.includes("audio") || nativePath.includes("sound"))
+    if (nativePath.includes("speaker") || nativePath.includes("audio") || nativePath.includes("sound") || iconHint.includes("speaker"))
       return "bt-device-speaker";
 
-    // 3. Fallback to UPowerDeviceType enum - Less reliable due lacks variety (e.g., all headphones are just "headset" in the enum, no distinction for earbuds)
+    // 3. Fallback to UPowerDeviceType enum
     if (device.type !== undefined) {
       switch (device.type) {
       case UPowerDeviceType.Mouse:
@@ -360,8 +361,14 @@ Singleton {
       }
     }
 
-    // The last resort if nothing else matches - generic battery icon
-    return getIcon(getPercentage(device), isCharging(device), isPluggedIn(device), isDeviceReady(device));
+    // 5. Context-aware fallback:
+    // If it's a battery-reporting device (UPower), show its battery level as the icon.
+    // Otherwise (Bluetooth), return the generic bluetooth device icon.
+    if (device.percentage !== undefined) {
+      return getIcon(getPercentage(device), isCharging(device), isPluggedIn(device), isDeviceReady(device));
+    }
+
+    return "bt-device-generic";
   }
 
   Instantiator {

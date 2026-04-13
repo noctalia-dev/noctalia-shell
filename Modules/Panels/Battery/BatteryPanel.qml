@@ -242,7 +242,7 @@ SmartPanel {
                 spacing: Style.marginS
 
                 NIcon {
-                  icon: BatteryService.getDeviceIcon(modelData);
+                  icon: BatteryService.getDeviceIcon(modelData)
                   color: (BatteryService.isCharging(modelData) || BatteryService.isPluggedIn(modelData)) ? Color.mPrimary : (BatteryService.isCriticalBattery(modelData) || BatteryService.isLowBattery(modelData)) ? Color.mError : Color.mOnSurface
                 }
 
