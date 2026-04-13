@@ -249,21 +249,41 @@ Node* Node::hitTestImpl(Node* node, float px, float py) {
     return nullptr;
   }
 
-  std::vector<Node*> orderedChildren;
-  orderedChildren.reserve(node->m_children.size());
-  for (auto& child : node->m_children) {
-    orderedChildren.push_back(child.get());
+  // Fast path: children are already in zIndex order (the common case). Skip
+  // allocating/sorting a side vector and iterate the child list directly in
+  // reverse. Only fall back to the sorted copy when there's an out-of-order
+  // pair, which removes a per-node heap allocation from every pointer event.
+  auto& children = node->m_children;
+  bool childrenSorted = true;
+  for (std::size_t i = 1; i < children.size(); ++i) {
+    if (children[i]->zIndex() < children[i - 1]->zIndex()) {
+      childrenSorted = false;
+      break;
+    }
   }
-
-  std::stable_sort(orderedChildren.begin(), orderedChildren.end(),
-                   [](const Node* a, const Node* b) { return a->zIndex() < b->zIndex(); });
 
   // Traverse children in reverse (topmost first).
   // Children are allowed to overflow parent bounds (needed for menus/popovers).
-  for (auto it = orderedChildren.rbegin(); it != orderedChildren.rend(); ++it) {
-    auto* hit = hitTestImpl(*it, px, py);
-    if (hit != nullptr) {
-      return hit;
+  if (childrenSorted) {
+    for (auto it = children.rbegin(); it != children.rend(); ++it) {
+      auto* hit = hitTestImpl(it->get(), px, py);
+      if (hit != nullptr) {
+        return hit;
+      }
+    }
+  } else {
+    std::vector<Node*> orderedChildren;
+    orderedChildren.reserve(children.size());
+    for (auto& child : children) {
+      orderedChildren.push_back(child.get());
+    }
+    std::stable_sort(orderedChildren.begin(), orderedChildren.end(),
+                     [](const Node* a, const Node* b) { return a->zIndex() < b->zIndex(); });
+    for (auto it = orderedChildren.rbegin(); it != orderedChildren.rend(); ++it) {
+      auto* hit = hitTestImpl(*it, px, py);
+      if (hit != nullptr) {
+        return hit;
+      }
     }
   }
 
