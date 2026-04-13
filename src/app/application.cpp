@@ -24,6 +24,7 @@
 #include <cmath>
 #include <csignal>
 #include <cstdlib>
+#include <malloc.h>
 #include <stdexcept>
 #include <thread>
 
@@ -186,6 +187,9 @@ void Application::run() {
   initServices();
   initUi();
   initIpc();
+
+  malloc_trim(0);
+
   m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, buildPollSources());
   m_mainLoop->run();
   kLog.info("shutdown");
