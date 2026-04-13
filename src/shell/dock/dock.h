@@ -84,6 +84,7 @@ private:
     std::vector<DockItemView> items;
     std::uint64_t modelSerial = 0;
     std::string activeAppIdLower;
+    wl_output* lastFilterOutput = nullptr;
     bool pointerInside = false;
     // Auto-hide: tracks visibility [0,1] driven by hover.
     float hideOpacity = 1.0f;
@@ -145,7 +146,6 @@ private:
   std::vector<std::unique_ptr<DockInstance>> m_instances;
   std::unordered_map<wl_surface*, DockInstance*> m_surfaceMap;
   DockInstance* m_hoveredInstance = nullptr;
-  wl_output* m_lastFilterOutput = nullptr;
   DockInstance* m_popupOwnerInstance = nullptr; // instance that owns the current open popup
   std::unique_ptr<DockPopup> m_windowMenu;  // left-click multi-window picker
   std::unique_ptr<DockPopup> m_itemMenu;    // right-click context menu

@@ -56,14 +56,11 @@ std::string currentActiveAppIdLower(const WaylandConnection& wayland) {
   return {};
 }
 
-wl_output* currentDockFilterOutput(const WaylandConnection& wayland, const DockConfig& cfg) {
+wl_output* currentDockFilterOutput(const DockConfig& cfg, wl_output* instanceOutput) {
   if (!cfg.activeMonitorOnly) {
     return nullptr;
   }
-  if (wl_output* output = wayland.activeToplevelOutput(); output != nullptr) {
-    return output;
-  }
-  return wayland.preferredPanelOutput();
+  return instanceOutput;
 }
 
 // Returns an anchor bitmask for the given position string.
@@ -135,7 +132,6 @@ void Dock::reload() {
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;
-  m_lastFilterOutput = nullptr;
 
   wl_display_roundtrip(m_wayland->display());
   syncInstances();
@@ -160,7 +156,6 @@ void Dock::closeAllInstances() {
   m_itemMenu.reset();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;
-  m_lastFilterOutput = nullptr;
   m_instances.clear();
 }
 
@@ -179,26 +174,34 @@ void Dock::refresh() {
   refreshPinnedAppsIfNeeded();
 
   const auto& cfg = m_config->config().dock;
-  const wl_output* filterOutput = currentDockFilterOutput(*m_wayland, cfg);
-  const bool filterOutputChanged = (filterOutput != m_lastFilterOutput);
-  m_lastFilterOutput = const_cast<wl_output*>(filterOutput);
-
-  const std::string activeIdLower = currentActiveAppIdLower(*m_wayland);
-  const auto runningIds  = cfg.showRunning ? m_wayland->runningAppIds(m_lastFilterOutput) : std::vector<std::string>{};
-  std::vector<std::string> runningLower;
-  runningLower.reserve(runningIds.size());
-  for (const auto& id : runningIds) {
-    runningLower.push_back(toLower(id));
-  }
+  const std::string globalActiveIdLower = currentActiveAppIdLower(*m_wayland);
+  wl_output* const activeOutput = m_wayland->activeToplevelOutput();
 
   for (auto& inst : m_instances) {
     if (inst->surface == nullptr || m_renderContext == nullptr) {
       continue;
     }
 
+    wl_output* filterOutput = currentDockFilterOutput(cfg, inst->output);
+    const bool filterOutputChanged = (filterOutput != inst->lastFilterOutput);
+    inst->lastFilterOutput = filterOutput;
+
+    // When filtering by active monitor, inactive monitors' docks should not
+    // highlight the globally-active app — it isn't on them.
+    const std::string activeIdLower =
+        (cfg.activeMonitorOnly && activeOutput != inst->output) ? std::string{} : globalActiveIdLower;
     inst->activeAppIdLower = activeIdLower;
 
-    // Rebuild if model changed or running-only app set changed.
+    const auto runningIds = cfg.showRunning
+        ? m_wayland->runningAppIds(filterOutput)
+        : std::vector<std::string>{};
+    std::vector<std::string> runningLower;
+    runningLower.reserve(runningIds.size());
+    for (const auto& id : runningIds) {
+      runningLower.push_back(toLower(id));
+    }
+
+    // Rebuild if model changed or this instance's filter output changed.
     bool needRebuild = (inst->modelSerial != m_modelSerial) || filterOutputChanged;
 
     if (!needRebuild && cfg.showRunning) {
@@ -782,7 +785,8 @@ void Dock::rebuildItems(DockInstance& instance) {
 
   // Determine items: pinned + (optionally) running-only apps not in pinned.
   std::vector<DesktopEntry> itemEntries = m_pinnedEntries;
-  wl_output* filterOutput = currentDockFilterOutput(*m_wayland, cfg);
+  wl_output* filterOutput = currentDockFilterOutput(cfg, instance.output);
+  instance.lastFilterOutput = filterOutput;
 
   if (cfg.showRunning) {
     const auto runningIds = m_wayland->runningAppIds(filterOutput);
@@ -1018,7 +1022,7 @@ void Dock::updateVisuals(DockInstance& instance) {
     // Instance-count badge.
     if (item.badge != nullptr && item.badgeLabel != nullptr) {
       const auto windows = m_wayland->windowsForApp(item.idLower, item.startupWmClassLower,
-                        currentDockFilterOutput(*m_wayland, cfg));
+                        currentDockFilterOutput(cfg, instance.output));
       const std::size_t count = windows.size();
       if (count != item.instanceCount) {
         item.instanceCount = count;
@@ -1089,7 +1093,7 @@ void Dock::launchEntry(const DesktopEntry& entry) {
 void Dock::handleItemClick(DockInstance& instance, DockItemView& item) {
   // Find all windows matching this item's app.
   auto windows = m_wayland->windowsForApp(item.idLower, item.startupWmClassLower,
-                                          currentDockFilterOutput(*m_wayland, m_config->config().dock));
+                                          currentDockFilterOutput(m_config->config().dock, instance.output));
 
   if (windows.empty()) {
     // Nothing running — launch the app.
@@ -1441,7 +1445,7 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
 
   // Collect running windows for "Close" / "Close All" entries.
   auto windows = m_wayland->windowsForApp(item.idLower, item.startupWmClassLower,
-                                          currentDockFilterOutput(*m_wayland, m_config->config().dock));
+                                          currentDockFilterOutput(m_config->config().dock, instance.output));
   for (const auto& w : windows) {
     menu->handles.push_back(w.handle);
   }
