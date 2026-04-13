@@ -339,6 +339,7 @@ void ClipboardPanel::onOpen(std::string_view /*context*/) {
     m_filterInput->setValue("");
   }
   applyFilter();
+  schedulePreviewPayloadRefresh(false);
 }
 
 void ClipboardPanel::onClose() {
