@@ -201,6 +201,11 @@ void Image::setSize(float width, float height) {
   updateLayout();
 }
 
+void Image::setFrameSize(float width, float height) {
+  Node::setFrameSize(width, height);
+  updateLayout();
+}
+
 void Image::applyPalette() {
   if (m_background != nullptr) {
     m_background->setFill(m_backgroundColor);

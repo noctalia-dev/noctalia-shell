@@ -21,6 +21,14 @@ void Flex::setSize(float width, float height) {
   }
 }
 
+void Flex::setFrameSize(float width, float height) {
+  Node::setFrameSize(width, height);
+  if (m_background != nullptr) {
+    m_background->setPosition(0.0f, 0.0f);
+    m_background->setFrameSize(width, height);
+  }
+}
+
 void Flex::setDirection(FlexDirection direction) {
   if (m_direction == direction) {
     return;

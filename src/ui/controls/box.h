@@ -29,6 +29,7 @@ public:
   void setPanelStyle();
 
   void setSize(float width, float height) override;
+  void setFrameSize(float width, float height);
 
 private:
   void applyPalette();

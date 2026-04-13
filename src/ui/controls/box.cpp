@@ -51,6 +51,11 @@ void Box::setSize(float w, float h) {
   m_rect->setFrameSize(w, h);
 }
 
+void Box::setFrameSize(float w, float h) {
+  Node::setFrameSize(w, h);
+  m_rect->setFrameSize(w, h);
+}
+
 void Box::setFlatStyle() {
   m_fill = roleColor(ColorRole::Surface);
   m_border = roleColor(ColorRole::Outline);

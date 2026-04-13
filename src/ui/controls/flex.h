@@ -67,6 +67,7 @@ public:
   [[nodiscard]] float paddingLeft() const noexcept { return m_paddingLeft; }
 
   void setSize(float width, float height) override;
+  void setFrameSize(float width, float height);
 
 protected:
   void doLayout(Renderer& renderer) override;
