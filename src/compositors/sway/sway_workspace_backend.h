@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 class SwayWorkspaceBackend final : public WorkspaceBackend {
@@ -33,6 +34,8 @@ private:
     std::string name;
     std::string output;
     bool visible = false;
+    bool urgent = false;
+    bool occupied = false;
     int num = -1;
     std::size_t ordinal = 0;
   };
@@ -43,6 +46,7 @@ private:
   void parseMessages();
   void handleMessage(std::uint32_t type, const std::string& payload);
   void parseWorkspaceList(const std::string& payload);
+  void parseTree(const std::string& payload);
   void refreshFromWorkspaceEvent();
   [[nodiscard]] static Workspace toWorkspace(const SwayWorkspace& workspace);
   [[nodiscard]] static std::string quoteCommandArg(const std::string& value);
@@ -51,5 +55,6 @@ private:
   int m_socketFd = -1;
   std::vector<char> m_readBuffer;
   std::vector<SwayWorkspace> m_workspaces;
+  std::unordered_map<std::string, std::size_t> m_workspaceOccupancy;
   ChangeCallback m_changeCallback;
 };

@@ -9,6 +9,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <poll.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -35,6 +36,7 @@ struct zdwl_ipc_manager_v2;
 struct zwp_virtual_keyboard_manager_v1;
 class ClipboardService;
 class NiriOutputBackend;
+class NiriWorkspaceMonitor;
 struct DataControlOps;
 class VirtualKeyboardService;
 
@@ -82,10 +84,9 @@ public:
   void activateWorkspace(const std::string& id);
   void activateWorkspace(wl_output* output, const std::string& id);
   void activateWorkspace(wl_output* output, const Workspace& workspace);
-  [[nodiscard]] int workspacePollFd() const noexcept;
-  [[nodiscard]] short workspacePollEvents() const noexcept;
+  std::size_t addWorkspacePollFds(std::vector<pollfd>& fds) const;
   [[nodiscard]] int workspacePollTimeoutMs() const noexcept;
-  void dispatchWorkspacePoll(short revents);
+  void dispatchWorkspacePoll(const std::vector<pollfd>& fds, std::size_t startIdx);
 
   // Queries
   [[nodiscard]] bool isConnected() const noexcept;
@@ -176,11 +177,13 @@ private:
   bool m_hasForeignToplevelManagerGlobal = false;
   std::vector<WaylandOutput> m_outputs;
   ChangeCallback m_outputChangeCallback;
+  ChangeCallback m_workspaceChangeCallback;
   std::unordered_map<wl_surface*, wl_output*> m_surfaceOutputMap;
   std::unordered_map<wl_surface*, zwlr_layer_surface_v1*> m_layerSurfaceMap;
   wl_output* m_lastPointerOutput = nullptr;
   std::chrono::steady_clock::time_point m_lastPointerOutputAt{};
   std::unique_ptr<NiriOutputBackend> m_niriOutputBackend;
+  std::unique_ptr<NiriWorkspaceMonitor> m_niriWorkspaceMonitor;
   WaylandSeat::PointerEventCallback m_pointerEventCallback;
 
   WaylandSeat m_seatHandler;

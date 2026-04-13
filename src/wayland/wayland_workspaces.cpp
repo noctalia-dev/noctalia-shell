@@ -1,6 +1,7 @@
 #include "wayland/wayland_workspaces.h"
 
 #include "compositors/ext_workspace_backend.h"
+#include "compositors/hyprland/hyprland_workspace_backend.h"
 #include "compositors/mango/mango_workspace_backend.h"
 #include "compositors/output_backend.h"
 #include "compositors/sway/sway_workspace_backend.h"
@@ -30,6 +31,7 @@ namespace {
 WaylandWorkspaces::WaylandWorkspaces() {
   m_extBackend = std::make_unique<ExtWorkspaceBackend>();
   m_mangoBackend = std::make_unique<MangoWorkspaceBackend>();
+  m_hyprlandBackend = std::make_unique<HyprlandWorkspaceBackend>([](wl_output* /*output*/) { return std::string{}; });
   m_swayBackend = std::make_unique<SwayWorkspaceBackend>([](wl_output* /*output*/) { return std::string{}; });
   m_outputBackends.push_back(m_mangoBackend.get());
 }
@@ -54,7 +56,19 @@ void WaylandWorkspaces::setSwayOutputNameResolver(std::function<std::string(wl_o
   }
 }
 
+void WaylandWorkspaces::setHyprlandOutputNameResolver(std::function<std::string(wl_output*)> resolver) {
+  if (m_hyprlandBackend != nullptr) {
+    m_hyprlandBackend->setOutputNameResolver(std::move(resolver));
+  }
+}
+
 void WaylandWorkspaces::initialize(std::string_view compositorHint) {
+  if (containsToken(compositorHint, "hyprland") || containsToken(compositorHint, "hypr")) {
+    if (m_hyprlandBackend != nullptr && (m_hyprlandBackend->isAvailable() || m_hyprlandBackend->connectSocket())) {
+      setActiveBackend(m_hyprlandBackend.get());
+      return;
+    }
+  }
   if (containsToken(compositorHint, "mango")) {
     if (m_mangoBackend != nullptr && m_mangoBackend->isAvailable()) {
       setActiveBackend(m_mangoBackend.get());
@@ -70,6 +84,10 @@ void WaylandWorkspaces::initialize(std::string_view compositorHint) {
 
   if (m_extBackend != nullptr && m_extBackend->isAvailable()) {
     setActiveBackend(m_extBackend.get());
+    return;
+  }
+  if (m_hyprlandBackend != nullptr && (m_hyprlandBackend->isAvailable() || m_hyprlandBackend->connectSocket())) {
+    setActiveBackend(m_hyprlandBackend.get());
     return;
   }
   if (m_mangoBackend != nullptr && m_mangoBackend->isAvailable()) {
@@ -109,6 +127,9 @@ void WaylandWorkspaces::setChangeCallback(ChangeCallback callback) {
   if (m_mangoBackend != nullptr) {
     m_mangoBackend->setChangeCallback(wrapper);
   }
+  if (m_hyprlandBackend != nullptr) {
+    m_hyprlandBackend->setChangeCallback(wrapper);
+  }
   if (m_swayBackend != nullptr) {
     m_swayBackend->setChangeCallback(wrapper);
   }
@@ -135,6 +156,9 @@ void WaylandWorkspaces::activateForOutput(wl_output* output, const Workspace& wo
 void WaylandWorkspaces::cleanup() {
   if (m_swayBackend != nullptr) {
     m_swayBackend->cleanup();
+  }
+  if (m_hyprlandBackend != nullptr) {
+    m_hyprlandBackend->cleanup();
   }
   if (m_mangoBackend != nullptr) {
     m_mangoBackend->cleanup();

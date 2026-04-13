@@ -22,7 +22,53 @@ namespace {
   constexpr std::uint32_t kIpcRunCommand = 0;
   constexpr std::uint32_t kIpcGetWorkspaces = 1;
   constexpr std::uint32_t kIpcSubscribe = 2;
+  constexpr std::uint32_t kIpcGetTree = 4;
   constexpr std::uint32_t kIpcWorkspaceEvent = 0x80000000u;
+
+  void tallyWorkspaceWindows(const nlohmann::json& node, const std::string& currentWorkspace,
+                             std::unordered_map<std::string, std::size_t>& counts) {
+    if (!node.is_object()) {
+      return;
+    }
+
+    std::string workspaceName = currentWorkspace;
+    if (const auto typeIt = node.find("type"); typeIt != node.end() && typeIt->is_string()) {
+      if (typeIt->get<std::string>() == "workspace") {
+        if (const auto nameIt = node.find("name"); nameIt != node.end() && nameIt->is_string()) {
+          workspaceName = nameIt->get<std::string>();
+        }
+      }
+    }
+
+    const auto nodesIt = node.find("nodes");
+    const auto floatingIt = node.find("floating_nodes");
+
+    const bool hasNodes = nodesIt != node.end() && nodesIt->is_array();
+    const bool hasFloating = floatingIt != node.end() && floatingIt->is_array();
+    const bool isLeaf = (!hasNodes || nodesIt->empty()) && (!hasFloating || floatingIt->empty());
+
+    bool hasWindow = false;
+    if (const auto windowIt = node.find("window"); windowIt != node.end() && !windowIt->is_null()) {
+      hasWindow = true;
+    } else if (const auto appIdIt = node.find("app_id"); appIdIt != node.end() && appIdIt->is_string()) {
+      hasWindow = !appIdIt->get<std::string>().empty();
+    }
+
+    if (isLeaf && hasWindow && !workspaceName.empty()) {
+      ++counts[workspaceName];
+    }
+
+    if (hasNodes) {
+      for (const auto& child : *nodesIt) {
+        tallyWorkspaceWindows(child, workspaceName, counts);
+      }
+    }
+    if (hasFloating) {
+      for (const auto& child : *floatingIt) {
+        tallyWorkspaceWindows(child, workspaceName, counts);
+      }
+    }
+  }
 
   std::string socketPathFromEnv() {
     if (const char* swaySock = std::getenv("SWAYSOCK"); swaySock != nullptr && swaySock[0] != '\0') {
@@ -144,7 +190,10 @@ void SwayWorkspaceBackend::dispatchPoll(short revents) {
   }
 }
 
-void SwayWorkspaceBackend::requestSnapshot() { sendMessage(kIpcGetWorkspaces, ""); }
+void SwayWorkspaceBackend::requestSnapshot() {
+  sendMessage(kIpcGetWorkspaces, "");
+  sendMessage(kIpcGetTree, "");
+}
 
 void SwayWorkspaceBackend::sendMessage(std::uint32_t type, const std::string& payload) {
   if (m_socketFd < 0) {
@@ -242,6 +291,10 @@ void SwayWorkspaceBackend::handleMessage(std::uint32_t type, const std::string& 
     parseWorkspaceList(payload);
     return;
   }
+  if (type == kIpcGetTree) {
+    parseTree(payload);
+    return;
+  }
   if (type == kIpcWorkspaceEvent) {
     refreshFromWorkspaceEvent();
   }
@@ -265,8 +318,11 @@ void SwayWorkspaceBackend::parseWorkspaceList(const std::string& payload) {
       workspace.name = item.value("name", "");
       workspace.output = item.value("output", "");
       workspace.visible = item.value("visible", false);
+      workspace.urgent = item.value("urgent", false);
       workspace.num = item.value("num", -1);
       workspace.ordinal = ordinal++;
+      auto occupancy = m_workspaceOccupancy.find(workspace.name);
+      workspace.occupied = occupancy != m_workspaceOccupancy.end() && occupancy->second > 0;
       if (!workspace.name.empty()) {
         next.push_back(std::move(workspace));
       }
@@ -291,6 +347,31 @@ void SwayWorkspaceBackend::parseWorkspaceList(const std::string& payload) {
   }
 }
 
+void SwayWorkspaceBackend::parseTree(const std::string& payload) {
+  try {
+    const auto json = nlohmann::json::parse(payload);
+    if (!json.is_object()) {
+      return;
+    }
+
+    std::unordered_map<std::string, std::size_t> occupancy;
+    tallyWorkspaceWindows(json, std::string{}, occupancy);
+    m_workspaceOccupancy = std::move(occupancy);
+
+    if (!m_workspaces.empty()) {
+      for (auto& workspace : m_workspaces) {
+        auto it = m_workspaceOccupancy.find(workspace.name);
+        workspace.occupied = it != m_workspaceOccupancy.end() && it->second > 0;
+      }
+      if (m_changeCallback) {
+        m_changeCallback();
+      }
+    }
+  } catch (const nlohmann::json::exception& e) {
+    kLog.warn("failed to parse sway tree: {}", e.what());
+  }
+}
+
 void SwayWorkspaceBackend::refreshFromWorkspaceEvent() { requestSnapshot(); }
 
 Workspace SwayWorkspaceBackend::toWorkspace(const SwayWorkspace& workspace) {
@@ -301,6 +382,8 @@ Workspace SwayWorkspaceBackend::toWorkspace(const SwayWorkspace& workspace) {
       .name = workspace.name,
       .coordinates = {coord},
       .active = workspace.visible,
+      .urgent = workspace.urgent,
+      .occupied = workspace.occupied,
   };
 }
 

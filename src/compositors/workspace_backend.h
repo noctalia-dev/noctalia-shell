@@ -13,6 +13,8 @@ struct Workspace {
   std::string name;
   std::vector<std::uint32_t> coordinates;
   bool active = false;
+  bool urgent = false;
+  bool occupied = false;
 };
 
 class WorkspaceBackend {

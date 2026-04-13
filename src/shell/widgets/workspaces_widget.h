@@ -2,6 +2,7 @@
 
 #include "render/animation/animation_manager.h"
 #include "shell/widget/widget.h"
+#include "ui/palette.h"
 #include "wayland/wayland_connection.h"
 
 #include <cstdint>
@@ -37,6 +38,9 @@ private:
     Label* text = nullptr; // may be null when no label
     bool active = false;
   };
+
+  [[nodiscard]] static ColorRole workspaceFillRole(const Workspace& workspace);
+  [[nodiscard]] static ColorRole workspaceTextRole(const Workspace& workspace);
 
   WaylandConnection& m_connection;
   wl_output* m_output = nullptr;

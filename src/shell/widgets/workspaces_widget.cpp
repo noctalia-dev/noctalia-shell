@@ -56,6 +56,7 @@ void WorkspacesWidget::doUpdate(Renderer& renderer) {
   if (!changed) {
     for (std::size_t i = 0; i < current.size(); ++i) {
       if (current[i].name != m_cachedState[i].name || current[i].active != m_cachedState[i].active ||
+          current[i].urgent != m_cachedState[i].urgent || current[i].occupied != m_cachedState[i].occupied ||
           current[i].coordinates != m_cachedState[i].coordinates) {
         changed = true;
         break;
@@ -68,8 +69,12 @@ void WorkspacesWidget::doUpdate(Renderer& renderer) {
     m_cachedState.clear();
     m_cachedState.reserve(current.size());
     for (const auto& ws : current) {
-      m_cachedState.push_back(
-          Workspace{.id = ws.id, .name = ws.name, .coordinates = ws.coordinates, .active = ws.active});
+      m_cachedState.push_back(Workspace{.id = ws.id,
+                                        .name = ws.name,
+                                        .coordinates = ws.coordinates,
+                                        .active = ws.active,
+                                        .urgent = ws.urgent,
+                                        .occupied = ws.occupied});
     }
     m_rebuildPending = true;
     if (root() != nullptr) {
@@ -115,7 +120,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     indicator->clearBorder();
     indicator->setRadius(indicatorHeight * 0.5f);
     indicator->setSize(indicatorWidth, indicatorHeight);
-    indicator->setFill(roleColor(ws.active ? ColorRole::Primary : ColorRole::Secondary));
+    indicator->setFill(roleColor(workspaceFillRole(ws)));
     item.indicator = static_cast<Box*>(area->addChild(std::move(indicator)));
 
     if (showLabel) {
@@ -124,7 +129,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
       text->setText(labelText);
       text->setFontSize(labelFontSize);
       text->setBold(true);
-      text->setColor(roleColor(ws.active ? ColorRole::OnPrimary : ColorRole::OnSecondary));
+      text->setColor(roleColor(workspaceTextRole(ws)));
       text->measure(renderer);
       text->setPosition(std::round((indicatorWidth - text->width()) * 0.5f),
                         std::round((indicatorHeight - text->height()) * 0.5f));
@@ -180,4 +185,30 @@ std::optional<std::size_t> WorkspacesWidget::numericWorkspaceId(const Workspace&
     return name;
   }
   return std::nullopt;
+}
+
+ColorRole WorkspacesWidget::workspaceFillRole(const Workspace& workspace) {
+  if (workspace.active) {
+    return ColorRole::Primary;
+  }
+  if (workspace.urgent) {
+    return ColorRole::Error;
+  }
+  if (workspace.occupied) {
+    return ColorRole::Secondary;
+  }
+  return ColorRole::SurfaceVariant;
+}
+
+ColorRole WorkspacesWidget::workspaceTextRole(const Workspace& workspace) {
+  if (workspace.active) {
+    return ColorRole::OnPrimary;
+  }
+  if (workspace.urgent) {
+    return ColorRole::OnError;
+  }
+  if (workspace.occupied) {
+    return ColorRole::OnSecondary;
+  }
+  return ColorRole::OnSurfaceVariant;
 }

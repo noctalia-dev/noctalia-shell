@@ -386,11 +386,13 @@ void ExtWorkspaceBackend::onWorkspaceStateChanged(ext_workspace_handle_v1* works
   }
 
   const bool isActive = (state & EXT_WORKSPACE_HANDLE_V1_STATE_ACTIVE) != 0;
-  if (it->second.active == isActive) {
+  const bool isUrgent = (state & EXT_WORKSPACE_HANDLE_V1_STATE_URGENT) != 0;
+  if (it->second.active == isActive && it->second.urgent == isUrgent) {
     return;
   }
 
   it->second.active = isActive;
+  it->second.urgent = isUrgent;
   if (isActive) {
     kLog.debug("active: {}", it->second.name.empty() ? "(unnamed)" : it->second.name);
   }

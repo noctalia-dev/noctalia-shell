@@ -31,9 +31,9 @@ namespace {
     static_cast<MangoWorkspaceBackend*>(data)->onOutputActive(output, active);
   }
 
-  void outputTag(void* data, zdwl_ipc_output_v2* output, uint32_t tag, uint32_t state, uint32_t /*clients*/,
-                 uint32_t /*focused*/) {
-    static_cast<MangoWorkspaceBackend*>(data)->onOutputTag(output, tag, state);
+  void outputTag(void* data, zdwl_ipc_output_v2* output, uint32_t tag, uint32_t state, uint32_t clients,
+                 uint32_t focused) {
+    static_cast<MangoWorkspaceBackend*>(data)->onOutputTag(output, tag, state, clients, focused);
   }
 
   void outputLayout(void* /*data*/, zdwl_ipc_output_v2* /*output*/, uint32_t /*layout*/) {}
@@ -198,7 +198,8 @@ void MangoWorkspaceBackend::onOutputActive(zdwl_ipc_output_v2* handle, std::uint
   }
 }
 
-void MangoWorkspaceBackend::onOutputTag(zdwl_ipc_output_v2* handle, std::uint32_t tag, std::uint32_t stateValue) {
+void MangoWorkspaceBackend::onOutputTag(zdwl_ipc_output_v2* handle, std::uint32_t tag, std::uint32_t stateValue,
+                                        std::uint32_t clients, std::uint32_t /*focused*/) {
   const auto it = m_outputByHandle.find(handle);
   if (it == m_outputByHandle.end()) {
     return;
@@ -226,9 +227,11 @@ void MangoWorkspaceBackend::onOutputTag(zdwl_ipc_output_v2* handle, std::uint32_
   auto& tagInfo = output->second.tags[tag];
   tagInfo.active = (stateValue & ZDWL_IPC_OUTPUT_V2_TAG_STATE_ACTIVE) != 0;
   tagInfo.urgent = (stateValue & ZDWL_IPC_OUTPUT_V2_TAG_STATE_URGENT) != 0;
-  kLog.debug("tag event output={} protocol_tag={} active={} urgent={} total_tags={} snapshot={}",
+  tagInfo.occupied = clients > 0;
+  kLog.debug("tag event output={} protocol_tag={} active={} urgent={} occupied={} total_tags={} snapshot={}",
              static_cast<const void*>(output->second.output), tag + 1, tagInfo.active ? "yes" : "no",
-             tagInfo.urgent ? "yes" : "no", m_tagCount, summarizeTags(output->second));
+             tagInfo.urgent ? "yes" : "no", tagInfo.occupied ? "yes" : "no", m_tagCount,
+             summarizeTags(output->second));
 }
 
 void MangoWorkspaceBackend::onOutputFrame(zdwl_ipc_output_v2* handle) {
@@ -311,6 +314,8 @@ Workspace MangoWorkspaceBackend::makeWorkspace(std::size_t index, const TagInfo&
       .name = std::to_string(index + 1),
       .coordinates = {static_cast<std::uint32_t>(index)},
       .active = tag.active,
+      .urgent = tag.urgent,
+      .occupied = tag.occupied,
   };
 }
 

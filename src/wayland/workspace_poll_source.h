@@ -10,17 +10,11 @@ public:
   [[nodiscard]] int pollTimeoutMs() const override { return m_connection.workspacePollTimeoutMs(); }
 
   void dispatch(const std::vector<pollfd>& fds, std::size_t startIdx) override {
-    if (startIdx < fds.size() && fds[startIdx].fd == m_connection.workspacePollFd()) {
-      m_connection.dispatchWorkspacePoll(fds[startIdx].revents);
-    }
+    m_connection.dispatchWorkspacePoll(fds, startIdx);
   }
 
 protected:
-  void doAddPollFds(std::vector<pollfd>& fds) override {
-    if (m_connection.workspacePollFd() >= 0) {
-      fds.push_back({.fd = m_connection.workspacePollFd(), .events = m_connection.workspacePollEvents(), .revents = 0});
-    }
-  }
+  void doAddPollFds(std::vector<pollfd>& fds) override { (void)m_connection.addWorkspacePollFds(fds); }
 
 private:
   WaylandConnection& m_connection;

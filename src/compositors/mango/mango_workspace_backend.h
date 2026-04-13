@@ -31,13 +31,15 @@ public:
   void onTagCount(std::uint32_t amount);
   void onLayoutAnnounced(const char* name);
   void onOutputActive(zdwl_ipc_output_v2* handle, std::uint32_t active);
-  void onOutputTag(zdwl_ipc_output_v2* handle, std::uint32_t tag, std::uint32_t state);
+  void onOutputTag(zdwl_ipc_output_v2* handle, std::uint32_t tag, std::uint32_t state, std::uint32_t clients,
+                   std::uint32_t focused);
   void onOutputFrame(zdwl_ipc_output_v2* handle);
 
 private:
   struct TagInfo {
     bool active = false;
     bool urgent = false;
+    bool occupied = false;
   };
 
   struct OutputState {

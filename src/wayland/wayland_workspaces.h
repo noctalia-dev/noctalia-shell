@@ -19,6 +19,7 @@ public:
   void bindExtWorkspace(ext_workspace_manager_v1* manager);
   void bindMangoWorkspace(zdwl_ipc_manager_v2* manager);
   void setSwayOutputNameResolver(std::function<std::string(wl_output*)> resolver);
+  void setHyprlandOutputNameResolver(std::function<std::string(wl_output*)> resolver);
   void initialize(std::string_view compositorHint);
   void onOutputAdded(wl_output* output);
   void onOutputRemoved(wl_output* output);
@@ -43,6 +44,7 @@ private:
   std::vector<class OutputBackend*> m_outputBackends;
   std::unique_ptr<class ExtWorkspaceBackend> m_extBackend;
   std::unique_ptr<class MangoWorkspaceBackend> m_mangoBackend;
+  std::unique_ptr<class HyprlandWorkspaceBackend> m_hyprlandBackend;
   std::unique_ptr<class SwayWorkspaceBackend> m_swayBackend;
   WorkspaceBackend* m_activeBackend = nullptr;
   ChangeCallback m_changeCallback;
