@@ -147,10 +147,10 @@ void ClipboardPanel::create() {
   auto clearHistoryButton = std::make_unique<Button>();
   clearHistoryButton->setGlyph("trash");
   clearHistoryButton->setVariant(ButtonVariant::Destructive);
-  clearHistoryButton->setGlyphSize(Style::fontSizeTitle * scale);
-  clearHistoryButton->setMinWidth(Style::controlHeight * scale);
-  clearHistoryButton->setMinHeight(Style::controlHeight * scale);
-  clearHistoryButton->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
+  clearHistoryButton->setGlyphSize(Style::fontSizeBody * scale);
+  clearHistoryButton->setMinWidth(Style::controlHeightSm * scale);
+  clearHistoryButton->setMinHeight(Style::controlHeightSm * scale);
+  clearHistoryButton->setPadding(Style::spaceXs * scale);
   clearHistoryButton->setRadius(Style::radiusMd * scale);
   clearHistoryButton->setOnClick([this]() {
     if (m_clipboard != nullptr) {
@@ -214,9 +214,13 @@ void ClipboardPanel::create() {
   previewHeader->addChild(std::move(previewTitleLabel));
 
   auto copyButton = std::make_unique<Button>();
-  copyButton->setText(i18n::tr("clipboard.copy-selected"));
   copyButton->setGlyph("copy");
   copyButton->setVariant(ButtonVariant::Secondary);
+  copyButton->setGlyphSize(Style::fontSizeBody * scale);
+  copyButton->setMinWidth(Style::controlHeightSm * scale);
+  copyButton->setMinHeight(Style::controlHeightSm * scale);
+  copyButton->setPadding(Style::spaceXs * scale);
+  copyButton->setRadius(Style::radiusMd * scale);
   copyButton->setOnClick([this]() { activateSelected(); });
   m_copyButton = copyButton.get();
   previewHeader->addChild(std::move(copyButton));
@@ -447,7 +451,8 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     row->setGap(Style::spaceMd);
     row->setPadding(Style::spaceXs, Style::spaceSm,
                     Style::spaceXs, Style::spaceSm);
-    row->setMinWidth(width);
+    row->setSize(width, 0.0f);
+    row->setFillParentMainAxis(true);
     row->setMinHeight(kRowHeight);
     row->setRadius(Style::radiusMd);
     if (i == m_selectedIndex) {
