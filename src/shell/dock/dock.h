@@ -40,9 +40,11 @@ public:
 
   bool initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext);
   void reload();
+  void show();
   void closeAllInstances();
   void onOutputChange();
   void refresh();
+  void toggleVisibility();
   void requestRedraw();
   bool onPointerEvent(const PointerEvent& event);
 

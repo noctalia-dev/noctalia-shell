@@ -438,6 +438,7 @@ When `auto_hide = true`, the dock:
 ```sh
 noctalia-ipc show-dock       # Re-display all instances
 noctalia-ipc hide-dock       # Close all instances until next reload
+noctalia-ipc toggle-dock     # Toggle dock visibility
 noctalia-ipc reload-dock     # Reload dock configuration
 ```
 

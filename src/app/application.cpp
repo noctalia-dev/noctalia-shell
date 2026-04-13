@@ -710,9 +710,7 @@ void Application::initIpc() {
   m_ipcService.registerHandler(
       "show-dock",
       [this](const std::string&) -> std::string {
-        // Reload dock with enabled forced — users should edit config for persistence.
-        // For IPC convenience, simply refresh the dock (re-creates instances if enabled).
-        m_dock.refresh();
+        m_dock.show();
         return "ok\n";
       },
       "show-dock", "Show the dock (re-displays all instances)");
@@ -724,6 +722,14 @@ void Application::initIpc() {
         return "ok\n";
       },
       "hide-dock", "Hide the dock (closes all instances until next reload)");
+
+  m_ipcService.registerHandler(
+      "toggle-dock",
+      [this](const std::string&) -> std::string {
+        m_dock.toggleVisibility();
+        return "ok\n";
+      },
+      "toggle-dock", "Toggle dock visibility");
 
   m_ipcService.registerHandler(
       "reload-dock",

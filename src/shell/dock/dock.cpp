@@ -130,6 +130,20 @@ void Dock::reload() {
   syncInstances();
 }
 
+void Dock::show() {
+  if (m_config == nullptr || !m_config->config().dock.enabled) {
+    return;
+  }
+
+  refreshPinnedAppsIfNeeded();
+  if (m_instances.empty()) {
+    syncInstances();
+    return;
+  }
+
+  refresh();
+}
+
 void Dock::closeAllInstances() {
   m_windowMenu.reset();
   m_itemMenu.reset();
@@ -224,6 +238,14 @@ void Dock::refresh() {
         inst->surface->requestRedraw();
       }
     }
+  }
+}
+
+void Dock::toggleVisibility() {
+  if (m_instances.empty()) {
+    show();
+  } else {
+    closeAllInstances();
   }
 }
 
