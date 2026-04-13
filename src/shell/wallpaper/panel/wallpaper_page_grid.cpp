@@ -30,6 +30,7 @@ void WallpaperPageGrid::setOnTileClick(WallpaperTile::ClickCallback callback) {
 void WallpaperPageGrid::setOnTileMotion(TileIndexCallback callback) { m_onTileMotion = std::move(callback); }
 void WallpaperPageGrid::setOnTileEnter(TileIndexCallback callback) { m_onTileEnter = std::move(callback); }
 void WallpaperPageGrid::setOnTileLeave(TileIndexCallback callback) { m_onTileLeave = std::move(callback); }
+void WallpaperPageGrid::setOnScroll(ScrollCallback callback) { m_onScroll = std::move(callback); }
 
 void WallpaperPageGrid::setRenderer(Renderer* renderer) { m_renderer = renderer; }
 
@@ -86,6 +87,15 @@ void WallpaperPageGrid::buildPool(float cellW, float cellH) {
     tile->setOnTileLeave([this, i]() {
       if (m_onTileLeave) {
         m_onTileLeave(i);
+      }
+    });
+    tile->setOnAxis([this](const InputArea::PointerData& data) {
+      if (!m_onScroll) {
+        return;
+      }
+      const float delta = data.scrollDelta(1.0f);
+      if (delta != 0.0f) {
+        m_onScroll(delta);
       }
     });
     auto* ptr = static_cast<WallpaperTile*>(addChild(std::move(tile)));

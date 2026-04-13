@@ -18,6 +18,7 @@ class ThumbnailService;
 class WallpaperPageGrid : public Node {
 public:
   using TileIndexCallback = std::function<void(std::size_t index)>;
+  using ScrollCallback = std::function<void(float delta)>;
 
   static constexpr std::size_t kColumns = 5;
   static constexpr std::size_t kRows = 4;
@@ -34,6 +35,7 @@ public:
   void setOnTileMotion(TileIndexCallback callback);
   void setOnTileEnter(TileIndexCallback callback);
   void setOnTileLeave(TileIndexCallback callback);
+  void setOnScroll(ScrollCallback callback);
   void setRenderer(Renderer* renderer);
   void setThumbnailService(ThumbnailService* service);
   void setHighlightedIndex(std::size_t selectedIndex, std::size_t hoverIndex, bool hoverEnabled);
@@ -65,6 +67,7 @@ private:
   TileIndexCallback m_onTileMotion;
   TileIndexCallback m_onTileEnter;
   TileIndexCallback m_onTileLeave;
+  ScrollCallback m_onScroll;
   std::size_t m_selectedIndex = kPageSize;
   std::size_t m_hoverIndex = kPageSize;
   bool m_hoverEnabled = false;

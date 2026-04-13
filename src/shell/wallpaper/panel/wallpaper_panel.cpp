@@ -255,6 +255,29 @@ void WallpaperPanel::create() {
     m_dirty = true;
     PanelManager::instance().refresh();
   });
+  m_grid->setOnScroll([this](float delta) {
+    if (m_visibleEntries.empty() || delta == 0.0f) {
+      return;
+    }
+    const std::size_t cols = WallpaperPageGrid::kColumns;
+    if (delta > 0.0f) {
+      const std::size_t next = m_selectedVisibleIndex + cols;
+      if (next < m_visibleEntries.size()) {
+        selectVisibleIndex(next);
+      } else {
+        const std::size_t last = m_visibleEntries.size() - 1;
+        if (m_selectedVisibleIndex != last) {
+          selectVisibleIndex(last);
+        }
+      }
+    } else {
+      if (m_selectedVisibleIndex >= cols) {
+        selectVisibleIndex(m_selectedVisibleIndex - cols);
+      } else if (m_selectedVisibleIndex != 0) {
+        selectVisibleIndex(0);
+      }
+    }
+  });
   m_grid->setOnTileLeave([this](std::size_t index) {
     const std::size_t visibleIndex = m_currentPage * WallpaperPageGrid::kPageSize + index;
     if (m_hoverVisibleIndex != visibleIndex) {
