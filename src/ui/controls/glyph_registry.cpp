@@ -123,6 +123,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"caret-right", 0xFB2C},       // caret-right-filled
     {"square-filled", 0xFC40},     // square-filled
     {"arrow-left", 0xEA19},        // arrow-left
+    {"arrow-back", 0xEA0c},        // arrow-back
 
     // Wallpaper / color
     {"camera-video", 0xED22},      // video

@@ -48,6 +48,16 @@ WallpaperPanel::WallpaperPanel(WaylandConnection* wayland, ConfigService* config
 
 void WallpaperPanel::create() {
   const float scale = contentScale();
+  const auto configureIconButton = [scale](Button* button) {
+    if (button == nullptr) {
+      return;
+    }
+    button->setGlyphSize(Style::fontSizeBody * scale);
+    button->setMinWidth(Style::controlHeightSm * scale);
+    button->setMinHeight(Style::controlHeightSm * scale);
+    button->setPadding(Style::spaceXs * scale);
+    button->setRadius(Style::radiusMd * scale);
+  };
 
   auto root = std::make_unique<Flex>();
   root->setDirection(FlexDirection::Vertical);
@@ -56,6 +66,54 @@ void WallpaperPanel::create() {
   root->setPadding(Style::spaceMd * scale);
   m_rootLayout = root.get();
 
+  auto header = std::make_unique<Flex>();
+  header->setDirection(FlexDirection::Horizontal);
+  header->setAlign(FlexAlign::Center);
+  header->setGap(Style::spaceSm * scale);
+  header->setFillParentMainAxis(true);
+  m_header = header.get();
+
+  auto headerLeft = std::make_unique<Flex>();
+  headerLeft->setDirection(FlexDirection::Horizontal);
+  headerLeft->setAlign(FlexAlign::Center);
+  headerLeft->setJustify(FlexJustify::Start);
+  headerLeft->setFlexGrow(1.0f);
+  headerLeft->setFillParentMainAxis(true);
+
+  auto title = std::make_unique<Label>();
+  title->setText("Wallpaper");
+  title->setFontSize(Style::fontSizeTitle * scale);
+  title->setBold(true);
+  title->setColor(roleColor(ColorRole::Primary));
+  m_title = title.get();
+  headerLeft->addChild(std::move(title));
+  header->addChild(std::move(headerLeft));
+
+  auto breadcrumb = std::make_unique<Label>();
+  breadcrumb->setFontSize(Style::fontSizeBody * scale);
+  breadcrumb->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  breadcrumb->setMaxLines(1);
+  m_breadcrumb = breadcrumb.get();
+  header->addChild(std::move(breadcrumb));
+
+  auto headerRight = std::make_unique<Flex>();
+  headerRight->setDirection(FlexDirection::Horizontal);
+  headerRight->setAlign(FlexAlign::Center);
+  headerRight->setJustify(FlexJustify::End);
+  headerRight->setFlexGrow(1.0f);
+  headerRight->setFillParentMainAxis(true);
+
+  auto closeButton = std::make_unique<Button>();
+  closeButton->setGlyph("close");
+  closeButton->setVariant(ButtonVariant::Default);
+  configureIconButton(closeButton.get());
+  closeButton->setOnClick([]() { PanelManager::instance().close(); });
+  m_closeButton = closeButton.get();
+  headerRight->addChild(std::move(closeButton));
+  header->addChild(std::move(headerRight));
+
+  root->addChild(std::move(header));
+
   // ── Toolbar ────────────────────────────────────────────────────────────
   auto toolbar = std::make_unique<Flex>();
   toolbar->setDirection(FlexDirection::Horizontal);
@@ -63,42 +121,12 @@ void WallpaperPanel::create() {
   toolbar->setGap(Style::spaceSm * scale);
   m_toolbar = toolbar.get();
 
-  auto back = std::make_unique<Button>();
-  back->setGlyph("arrow-left");
-  back->setVariant(ButtonVariant::Secondary);
-  back->setGlyphSize(Style::fontSizeTitle * scale);
-  back->setOnClick([this]() { navigateUp(); });
-  m_backButton = static_cast<Button*>(toolbar->addChild(std::move(back)));
-
-  auto breadcrumb = std::make_unique<Label>();
-  breadcrumb->setFontSize(Style::fontSizeBody * scale);
-  breadcrumb->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  breadcrumb->setMaxLines(1);
-  breadcrumb->setFlexGrow(1.0f);
-  m_breadcrumb = static_cast<Label*>(toolbar->addChild(std::move(breadcrumb)));
-
-  auto monitorSelect = std::make_unique<Select>();
-  monitorSelect->setFontSize(Style::fontSizeBody * scale);
-  monitorSelect->setControlHeight(Style::controlHeight * scale);
-  monitorSelect->setOnSelectionChanged([this](std::size_t idx, std::string_view) {
-    m_selectedMonitorIndex = idx;
-    m_navStack.clear();
-    refreshScan();
-    applyFilter();
-    resetPage();
-    resetSelection();
-    applyPage();
-    rebuildBreadcrumb();
-    m_dirty = true;
-    PanelManager::instance().refresh();
-  });
-  m_monitorSelect = static_cast<Select*>(toolbar->addChild(std::move(monitorSelect)));
-
   auto filter = std::make_unique<Input>();
   filter->setPlaceholder("Filter…");
   filter->setFontSize(Style::fontSizeBody * scale);
   filter->setControlHeight(Style::controlHeight * scale);
   filter->setHorizontalPadding(Style::spaceMd * scale);
+  filter->setSize(360.0f * scale, 0.0f);
   filter->setOnChange([this](const std::string& text) {
     if (text == m_pendingFilterQuery) {
       return;
@@ -120,6 +148,18 @@ void WallpaperPanel::create() {
   filter->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t modifiers) { return handleKeyEvent(sym, modifiers); });
   m_filterInput = static_cast<Input*>(toolbar->addChild(std::move(filter)));
 
+  auto back = std::make_unique<Button>();
+  back->setGlyph("arrow-back");
+  back->setVariant(ButtonVariant::Secondary);
+  configureIconButton(back.get());
+  back->setOnClick([this]() { navigateUp(); });
+  m_backButton = static_cast<Button*>(toolbar->addChild(std::move(back)));
+
+  auto spacer = std::make_unique<Flex>();
+  spacer->setFlexGrow(1.0f);
+  spacer->setFillParentMainAxis(true);
+  toolbar->addChild(std::move(spacer));
+
   auto flattenLabel = std::make_unique<Label>();
   flattenLabel->setText("Flatten");
   flattenLabel->setFontSize(Style::fontSizeBody * scale);
@@ -140,10 +180,27 @@ void WallpaperPanel::create() {
   });
   m_flattenToggle = static_cast<Toggle*>(toolbar->addChild(std::move(flatten)));
 
+  auto monitorSelect = std::make_unique<Select>();
+  monitorSelect->setFontSize(Style::fontSizeBody * scale);
+  monitorSelect->setControlHeight(Style::controlHeight * scale);
+  monitorSelect->setOnSelectionChanged([this](std::size_t idx, std::string_view) {
+    m_selectedMonitorIndex = idx;
+    m_navStack.clear();
+    refreshScan();
+    applyFilter();
+    resetPage();
+    resetSelection();
+    applyPage();
+    rebuildBreadcrumb();
+    m_dirty = true;
+    PanelManager::instance().refresh();
+  });
+  m_monitorSelect = static_cast<Select*>(toolbar->addChild(std::move(monitorSelect)));
+
   auto refresh = std::make_unique<Button>();
   refresh->setGlyph("refresh");
   refresh->setVariant(ButtonVariant::Secondary);
-  refresh->setGlyphSize(Style::fontSizeTitle * scale);
+  configureIconButton(refresh.get());
   refresh->setOnClick([this]() {
     m_scanner.invalidate();
     refreshScan();
@@ -224,7 +281,7 @@ void WallpaperPanel::create() {
   auto prev = std::make_unique<Button>();
   prev->setGlyph("chevron-left");
   prev->setVariant(ButtonVariant::Secondary);
-  prev->setGlyphSize(Style::fontSizeTitle * scale);
+  configureIconButton(prev.get());
   prev->setOnClick([this]() {
     if (m_currentPage == 0) {
       return;
@@ -250,7 +307,7 @@ void WallpaperPanel::create() {
   auto next = std::make_unique<Button>();
   next->setGlyph("chevron-right");
   next->setVariant(ButtonVariant::Secondary);
-  next->setGlyphSize(Style::fontSizeTitle * scale);
+  configureIconButton(next.get());
   next->setOnClick([this]() {
     const std::size_t total = pageCount();
     if (m_currentPage + 1 >= total) {
@@ -326,9 +383,13 @@ void WallpaperPanel::doUpdate(Renderer& renderer) {
 void WallpaperPanel::onOpen(std::string_view /*context*/) {
   m_filterQuery.clear();
   m_pendingFilterQuery.clear();
+  m_flatten = false;
   m_filterDebounceTimer.stop();
   if (m_filterInput != nullptr) {
     m_filterInput->setValue("");
+  }
+  if (m_flattenToggle != nullptr) {
+    m_flattenToggle->setChecked(false);
   }
   m_navStack.clear();
   populateMonitorChoices();
@@ -354,7 +415,9 @@ void WallpaperPanel::onClose() {
   m_visibleEntries.clear();
 
   m_rootLayout = nullptr;
+  m_header = nullptr;
   m_toolbar = nullptr;
+  m_title = nullptr;
   m_backButton = nullptr;
   m_breadcrumb = nullptr;
   m_monitorSelect = nullptr;
@@ -362,6 +425,7 @@ void WallpaperPanel::onClose() {
   m_flattenToggle = nullptr;
   m_flattenLabel = nullptr;
   m_refreshButton = nullptr;
+  m_closeButton = nullptr;
   m_grid = nullptr;
   m_pagination = nullptr;
   m_prevButton = nullptr;
@@ -620,6 +684,7 @@ void WallpaperPanel::rebuildBreadcrumb() {
     m_breadcrumb->setText("No directory configured");
     if (m_backButton != nullptr) {
       m_backButton->setEnabled(false);
+      m_backButton->setVisible(false);
     }
     return;
   }
@@ -633,7 +698,9 @@ void WallpaperPanel::rebuildBreadcrumb() {
   }
   m_breadcrumb->setText(text);
   if (m_backButton != nullptr) {
-    m_backButton->setEnabled(!m_navStack.empty());
+    const bool canNavigateUp = !m_navStack.empty();
+    m_backButton->setEnabled(canNavigateUp);
+    m_backButton->setVisible(canNavigateUp);
   }
 }
 

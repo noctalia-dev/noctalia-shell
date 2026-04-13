@@ -75,7 +75,9 @@ private:
 
   // UI nodes (owned by the root flex tree).
   Flex* m_rootLayout = nullptr;
+  Flex* m_header = nullptr;
   Flex* m_toolbar = nullptr;
+  Label* m_title = nullptr;
   Button* m_backButton = nullptr;
   Label* m_breadcrumb = nullptr;
   Select* m_monitorSelect = nullptr;
@@ -83,6 +85,7 @@ private:
   Toggle* m_flattenToggle = nullptr;
   Label* m_flattenLabel = nullptr;
   Button* m_refreshButton = nullptr;
+  Button* m_closeButton = nullptr;
   WallpaperPageGrid* m_grid = nullptr;
   Flex* m_pagination = nullptr;
   Button* m_prevButton = nullptr;
