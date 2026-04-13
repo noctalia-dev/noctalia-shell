@@ -49,6 +49,14 @@ void WallpaperPageGrid::setHighlightedIndex(std::size_t selectedIndex, std::size
   markPaintDirty();
 }
 
+void WallpaperPageGrid::refreshVisibleThumbnails(Renderer& renderer) {
+  for (std::size_t i = 0; i < std::min(m_count, m_pool.size()); ++i) {
+    if (auto* tile = m_pool[i]; tile != nullptr && tile->visible()) {
+      tile->refreshThumbnail(renderer);
+    }
+  }
+}
+
 void WallpaperPageGrid::releaseAllTiles(Renderer& renderer) {
   for (WallpaperTile* tile : m_pool) {
     if (tile != nullptr) {

@@ -112,4 +112,5 @@ private:
   float m_lastWidth = 0.0f;
   float m_lastHeight = 0.0f;
   bool m_dirty = false;
+  bool m_thumbnailRefreshPending = false;
 };

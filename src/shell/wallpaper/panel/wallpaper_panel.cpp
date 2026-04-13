@@ -281,8 +281,8 @@ void WallpaperPanel::create() {
       if (m_rootLayout == nullptr) {
         return;
       }
-      m_dirty = true;
-      PanelManager::instance().refresh();
+      m_thumbnailRefreshPending = true;
+      PanelManager::instance().requestUpdateOnly();
     });
   }
 }
@@ -296,6 +296,7 @@ void WallpaperPanel::doLayout(Renderer& renderer, float width, float height) {
 
   if (m_thumbnails != nullptr) {
     m_thumbnails->uploadPending();
+    m_thumbnailRefreshPending = false;
   }
 
   if (m_grid != nullptr) {
@@ -308,14 +309,18 @@ void WallpaperPanel::doLayout(Renderer& renderer, float width, float height) {
 }
 
 void WallpaperPanel::doUpdate(Renderer& renderer) {
-  if (!m_dirty || m_rootLayout == nullptr) {
+  if (m_rootLayout == nullptr) {
     return;
   }
-  if (m_thumbnails != nullptr) {
+
+  if (m_thumbnailRefreshPending && m_thumbnails != nullptr) {
     m_thumbnails->uploadPending();
+    m_thumbnailRefreshPending = false;
+    if (m_grid != nullptr) {
+      m_grid->setRenderer(&renderer);
+      m_grid->refreshVisibleThumbnails(renderer);
+    }
   }
-  m_rootLayout->layout(renderer);
-  m_dirty = false;
 }
 
 void WallpaperPanel::onOpen(std::string_view /*context*/) {
@@ -366,6 +371,7 @@ void WallpaperPanel::onClose() {
   clearReleasedRoot();
   m_lastWidth = 0.0f;
   m_lastHeight = 0.0f;
+  m_thumbnailRefreshPending = false;
 }
 
 InputArea* WallpaperPanel::initialFocusArea() const {

@@ -55,7 +55,7 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   layout->setGap(innerGap);
   layout->setPadding(padding);
   m_layout = static_cast<Flex*>(addChild(std::move(layout)));
-  m_layout->setSize(cellWidth, cellHeight);
+  m_layout->setFrameSize(cellWidth, cellHeight);
 
   auto thumbBox = std::make_unique<Flex>();
   thumbBox->setDirection(FlexDirection::Vertical);
@@ -65,14 +65,14 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   thumbBox->setRadius(frameRadius);
   thumbBox->setMinWidth(frameWidth);
   thumbBox->setMinHeight(frameHeight);
-  thumbBox->setSize(frameWidth, frameHeight);
+  thumbBox->setFrameSize(frameWidth, frameHeight);
   m_thumbBox = static_cast<Flex*>(m_layout->addChild(std::move(thumbBox)));
 
   auto image = std::make_unique<Image>();
   image->setFit(ImageFit::Cover);
   image->setCornerRadius(frameRadius);
   image->setBorder(roleColor(ColorRole::Outline), outlineWidth);
-  image->setSize(frameWidth, frameHeight);
+  image->setFrameSize(frameWidth, frameHeight);
   m_thumb = static_cast<Image*>(m_thumbBox->addChild(std::move(image)));
 
   auto glyph = std::make_unique<Glyph>();
@@ -81,6 +81,13 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   glyph->setColor(roleColor(ColorRole::Primary));
   glyph->setVisible(false);
   m_folderGlyph = static_cast<Glyph*>(m_thumbBox->addChild(std::move(glyph)));
+
+  auto loadingGlyph = std::make_unique<Glyph>();
+  loadingGlyph->setGlyph("hourglass");
+  loadingGlyph->setGlyphSize(std::min(frameWidth, frameHeight) * 0.32f);
+  loadingGlyph->setColor(roleColor(ColorRole::OnSurface, 0.5f));
+  loadingGlyph->setVisible(false);
+  m_loadingGlyph = static_cast<Glyph*>(m_thumbBox->addChild(std::move(loadingGlyph)));
 
   auto label = std::make_unique<Label>();
   label->setFontSize(Style::fontSizeCaption * m_contentScale);
@@ -94,6 +101,14 @@ void WallpaperTile::doLayout(Renderer& renderer) { InputArea::doLayout(renderer)
 
 void WallpaperTile::setEntry(const WallpaperEntry& entry, Renderer& renderer) {
   const std::string newPath = entry.isDir ? std::string{} : entry.absPath.string();
+  const bool sameEntry =
+      m_hasEntry && m_entry.absPath == entry.absPath && m_entry.name == entry.name && m_entry.isDir == entry.isDir;
+  if (sameEntry) {
+    setVisible(true);
+    refreshThumbnail(renderer);
+    return;
+  }
+
   if (!m_thumbPath.empty() && m_thumbPath != newPath && m_thumbnails != nullptr) {
     m_thumbnails->release(m_thumbPath);
   }
@@ -107,8 +122,12 @@ void WallpaperTile::setEntry(const WallpaperEntry& entry, Renderer& renderer) {
   if (entry.isDir) {
     m_thumb->clear(renderer);
     m_thumb->setVisible(false);
+    m_loadingThumbnail = false;
     if (m_folderGlyph != nullptr) {
       m_folderGlyph->setVisible(true);
+    }
+    if (m_loadingGlyph != nullptr) {
+      m_loadingGlyph->setVisible(false);
     }
     m_thumbPath.clear();
     return;
@@ -116,6 +135,9 @@ void WallpaperTile::setEntry(const WallpaperEntry& entry, Renderer& renderer) {
 
   if (m_folderGlyph != nullptr) {
     m_folderGlyph->setVisible(false);
+  }
+  if (m_loadingGlyph != nullptr) {
+    m_loadingGlyph->setVisible(false);
   }
   m_thumb->setVisible(true);
   m_thumbPath = newPath;
@@ -125,15 +147,13 @@ void WallpaperTile::setEntry(const WallpaperEntry& entry, Renderer& renderer) {
     return;
   }
 
-  TextureHandle handle = m_thumbnails->request(newPath);
-  if (handle.id != 0) {
-    m_thumb->setExternalTexture(renderer, handle);
-  } else {
-    m_thumb->clear(renderer);
-  }
+  refreshThumbnail(renderer);
 }
 
 void WallpaperTile::clearEntry(Renderer& renderer) {
+  if (!m_hasEntry && !visible()) {
+    return;
+  }
   if (!m_thumbPath.empty() && m_thumbnails != nullptr) {
     m_thumbnails->release(m_thumbPath);
   }
@@ -141,11 +161,45 @@ void WallpaperTile::clearEntry(Renderer& renderer) {
   if (m_thumb != nullptr) {
     m_thumb->clear(renderer);
   }
+  if (m_folderGlyph != nullptr) {
+    m_folderGlyph->setVisible(false);
+  }
+  if (m_loadingGlyph != nullptr) {
+    m_loadingGlyph->setVisible(false);
+  }
   m_hasEntry = false;
   m_selected = false;
   m_hoveredVisual = false;
+  m_loadingThumbnail = false;
   applyVisualState();
   setVisible(false);
+}
+
+void WallpaperTile::refreshThumbnail(Renderer& renderer) {
+  if (!m_hasEntry || m_entry.isDir || m_thumb == nullptr) {
+    return;
+  }
+  if (m_thumbnails == nullptr || m_thumbPath.empty()) {
+    m_thumb->clear(renderer);
+    return;
+  }
+
+  const TextureHandle handle = m_thumbnails->request(m_thumbPath);
+  if (handle.id != 0) {
+    m_loadingThumbnail = false;
+    m_thumb->setExternalTexture(renderer, handle);
+    m_thumb->setVisible(true);
+    if (m_loadingGlyph != nullptr) {
+      m_loadingGlyph->setVisible(false);
+    }
+  } else {
+    m_loadingThumbnail = true;
+    m_thumb->clear(renderer);
+    m_thumb->setVisible(false);
+    if (m_loadingGlyph != nullptr) {
+      m_loadingGlyph->setVisible(true);
+    }
+  }
 }
 
 void WallpaperTile::setSelected(bool selected) {

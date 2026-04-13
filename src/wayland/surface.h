@@ -46,6 +46,7 @@ public:
   void setFrameTickCallback(FrameTickCallback callback);
   void setInputRegion(const std::vector<InputRect>& rects);
   void requestUpdate();
+  void requestUpdateOnly();
   void requestLayout();
   void requestRedraw();
   void renderNow();

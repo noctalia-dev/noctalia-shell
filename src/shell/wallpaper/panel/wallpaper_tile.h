@@ -36,6 +36,7 @@ public:
 
   // Detach from the current entry and release any held thumbnail.
   void clearEntry(Renderer& renderer);
+  void refreshThumbnail(Renderer& renderer);
 
   void setSelected(bool selected);
   void setHoveredVisual(bool hovered);
@@ -58,12 +59,14 @@ private:
   Flex* m_thumbBox = nullptr;
   Image* m_thumb = nullptr;
   Glyph* m_folderGlyph = nullptr;
+  Glyph* m_loadingGlyph = nullptr;
   Label* m_label = nullptr;
 
   WallpaperEntry m_entry;
   bool m_hasEntry = false;
   bool m_selected = false;
   bool m_hoveredVisual = false;
+  bool m_loadingThumbnail = false;
   std::string m_thumbPath;
   ClickCallback m_onClick;
   HoverCallback m_onMotion;

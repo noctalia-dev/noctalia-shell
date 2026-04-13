@@ -37,6 +37,7 @@ public:
   void setRenderer(Renderer* renderer);
   void setThumbnailService(ThumbnailService* service);
   void setHighlightedIndex(std::size_t selectedIndex, std::size_t hoverIndex, bool hoverEnabled);
+  void refreshVisibleThumbnails(Renderer& renderer);
 
   // Release and clear every tile's current thumbnail. Called by the panel on
   // close so no GL textures outlive the panel.

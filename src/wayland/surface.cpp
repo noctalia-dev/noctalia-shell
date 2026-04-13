@@ -134,6 +134,11 @@ void Surface::requestUpdate() {
   kickFrameLoop();
 }
 
+void Surface::requestUpdateOnly() {
+  m_updateRequested = true;
+  kickFrameLoop();
+}
+
 void Surface::requestLayout() {
   m_layoutRequested = true;
   kickFrameLoop();

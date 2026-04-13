@@ -352,6 +352,13 @@ void PanelManager::refresh() {
   m_surface->requestUpdate();
 }
 
+void PanelManager::requestUpdateOnly() {
+  if (!isOpen() || m_surface == nullptr) {
+    return;
+  }
+  m_surface->requestUpdateOnly();
+}
+
 void PanelManager::requestRedraw() {
   if (!isOpen() || m_surface == nullptr) {
     return;
@@ -493,7 +500,7 @@ void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
     UiPhaseScope updatePhase(UiPhase::Update);
     m_activePanel->update(*m_renderContext);
   }
-  if (needsUpdate || needsLayout) {
+  if (needsLayout) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
   }
