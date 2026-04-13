@@ -50,27 +50,28 @@ Item {
     var list = root.unnamedAvailableDevices;
 
     if (Settings.data.network.bluetoothHideUnnamedDevices) {
-      list = list.filter(function (dev) {
-        var dn = dev.name || dev.deviceName || "";
-        var s = String(dn).trim();
-        if (s.length === 0)
-          return false;
-        var lower = s.toLowerCase();
-        if (lower === "unknown" || lower === "unnamed" || lower === "n/a" || lower === "na")
-          return false;
-        var addr = dev.address || dev.bdaddr || dev.mac || "";
-        if (addr.length > 0) {
-          var normName = s.toLowerCase().replace(/[^0-9a-z]/g, "");
-          var normAddr = String(addr).toLowerCase().replace(/[^0-9a-z]/g, "");
-          if (normName.length > 0 && normName === normAddr)
-            return false;
-        }
-        var macRegexComb = /^(([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}|([0-9A-Fa-f]{4}\.){2}[0-9A-Fa-f]{4}|[0-9A-Fa-f]{12})$/;
-        if (macRegexComb.test(s)) {
-          return false;
-        }
-        return true;
-      });
+      list = list.filter(dev => {
+                           const name = (dev.name || dev.deviceName || "").trim();
+                           if (!name) {
+                             return false;
+                           }
+                           if (["unknown", "unnamed", "n/a", "na"].includes(name.toLowerCase())) {
+                             return false;
+                           }
+                           const macRegex = /^(([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}|([0-9A-Fa-f]{4}\.){2}[0-9A-Fa-f]{4}|[0-9A-Fa-f]{12})$/;
+                           if (macRegex.test(name)) {
+                             return false;
+                           }
+                           const addr = dev.address || dev.bdaddr || dev.mac || "";
+                           if (addr) {
+                             const normName = name.toLowerCase().replace(/[^0-9a-z]/g, "");
+                             const normAddr = addr.toLowerCase().replace(/[^0-9a-z]/g, "");
+                             if (normName && normName === normAddr) {
+                               return false;
+                             }
+                           }
+                           return true;
+                         });
     }
     list = BluetoothService.dedupeDevices(list);
     return BluetoothService.sortDevices(list);
