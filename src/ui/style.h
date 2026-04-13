@@ -14,7 +14,6 @@ namespace Style {
   inline constexpr float radiusMd = 5.0f;
   inline constexpr float radiusLg = 8.0f;
   inline constexpr float radiusXl = 12.0f;
-  inline constexpr float radiusFull = 9999.0f;
 
   inline constexpr float borderWidth = 1.0f;
 

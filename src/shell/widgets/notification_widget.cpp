@@ -9,8 +9,11 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
-#include <algorithm>
 #include <memory>
+
+namespace {
+constexpr float kDotBaseSize = 6.0f;
+} // namespace
 
 NotificationWidget::NotificationWidget(NotificationManager* manager, wl_output* output)
     : m_manager(manager), m_output(output) {}
@@ -30,7 +33,9 @@ void NotificationWidget::create() {
 
   auto dot = std::make_unique<Box>();
   dot->setFill(roleColor(ColorRole::Primary));
-  dot->setRadius(Style::radiusFull);
+  const float dotSize = kDotBaseSize * m_contentScale;
+  dot->setRadius(dotSize * 0.5f);
+  dot->setSize(dotSize, dotSize);
   dot->setVisible(false);
   m_dot = area->addChild(std::move(dot));
 
@@ -48,12 +53,9 @@ void NotificationWidget::doLayout(Renderer& renderer, float /*containerWidth*/, 
   m_glyph->setPosition(0.0f, 0.0f);
   rootNode->setSize(m_glyph->width(), m_glyph->height());
 
-  if (m_dot != nullptr && m_dot->visible()) {
-    const float kDotSize = 5.0f * m_contentScale;
-    const float dotX = std::max(0.0f, m_glyph->width() - kDotSize + 1.0f);
-    const float dotY = -1.0f;
-    m_dot->setPosition(dotX, dotY);
-    m_dot->setSize(kDotSize, kDotSize);
+  if (m_dot != nullptr) {
+    const float dotSize = kDotBaseSize * m_contentScale;
+    m_dot->setPosition(m_glyph->width() - dotSize, 0.0f);
   }
 }
 
@@ -66,7 +68,6 @@ void NotificationWidget::refreshIndicatorState() {
   if (hasNotifications == m_hasNotifications) {
     return;
   }
-
   m_hasNotifications = hasNotifications;
   if (m_dot != nullptr) {
     m_dot->setVisible(m_hasNotifications);
