@@ -54,5 +54,9 @@ void TimeService::tick() {
 
 std::string TimeService::format(const char* fmt) const {
   const auto local = std::chrono::current_zone()->to_local(m_nowSeconds);
-  return std::vformat(fmt, std::make_format_args(local));
+  try {
+    return std::vformat(fmt, std::make_format_args(local));
+  } catch (const std::format_error&) {
+    return fmt;
+  }
 }
