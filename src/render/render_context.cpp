@@ -265,13 +265,29 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     break;
   }
 
-  std::vector<const Node*> orderedChildren;
-  orderedChildren.reserve(node->children().size());
-  for (const auto& child : node->children()) {
-    orderedChildren.push_back(child.get());
+  // Fast path: children are already in zIndex order (the common case — most
+  // callers never touch zIndex, or set it identically across siblings). Skip
+  // allocating/sorting a side vector and iterate the child list directly.
+  // Only fall back to the sorted copy when there's an actual out-of-order
+  // pair, which removes a per-node heap allocation from every rendered frame.
+  const auto& children = node->children();
+  bool childrenSorted = true;
+  for (std::size_t i = 1; i < children.size(); ++i) {
+    if (children[i]->zIndex() < children[i - 1]->zIndex()) {
+      childrenSorted = false;
+      break;
+    }
   }
-  std::stable_sort(orderedChildren.begin(), orderedChildren.end(),
-                   [](const Node* a, const Node* b) { return a->zIndex() < b->zIndex(); });
+
+  std::vector<const Node*> orderedChildren;
+  if (!childrenSorted) {
+    orderedChildren.reserve(children.size());
+    for (const auto& child : children) {
+      orderedChildren.push_back(child.get());
+    }
+    std::stable_sort(orderedChildren.begin(), orderedChildren.end(),
+                     [](const Node* a, const Node* b) { return a->zIndex() < b->zIndex(); });
+  }
 
   float childClipLeft = clipLeft;
   float childClipTop = clipTop;
@@ -291,9 +307,16 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     return;
   }
 
-  for (const auto* child : orderedChildren) {
-    renderNode(child, worldTransform, effectiveOpacity, sw, sh, bw, bh, childClipLeft, childClipTop, childClipRight,
-               childClipBottom, childHasClip);
+  if (childrenSorted) {
+    for (const auto& child : children) {
+      renderNode(child.get(), worldTransform, effectiveOpacity, sw, sh, bw, bh, childClipLeft, childClipTop,
+                 childClipRight, childClipBottom, childHasClip);
+    }
+  } else {
+    for (const auto* child : orderedChildren) {
+      renderNode(child, worldTransform, effectiveOpacity, sw, sh, bw, bh, childClipLeft, childClipTop, childClipRight,
+                 childClipBottom, childHasClip);
+    }
   }
 }
 
