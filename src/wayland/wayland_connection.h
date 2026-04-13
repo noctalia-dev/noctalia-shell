@@ -120,9 +120,9 @@ public:
   [[nodiscard]] std::vector<Workspace> workspaces(wl_output* output) const;
   [[nodiscard]] std::optional<ActiveToplevel> activeToplevel() const;
   [[nodiscard]] wl_output* activeToplevelOutput() const;
-  [[nodiscard]] std::vector<std::string> runningAppIds() const;
-  [[nodiscard]] std::vector<ToplevelInfo> windowsForApp(const std::string& idLower,
-                                                        const std::string& wmClassLower) const;
+  [[nodiscard]] std::vector<std::string> runningAppIds(wl_output* outputFilter = nullptr) const;
+  [[nodiscard]] std::vector<ToplevelInfo> windowsForApp(const std::string& idLower, const std::string& wmClassLower,
+                                                        wl_output* outputFilter = nullptr) const;
   void activateToplevel(zwlr_foreign_toplevel_handle_v1* handle);
   void closeToplevel(zwlr_foreign_toplevel_handle_v1* handle);
   [[nodiscard]] wl_output* lastPointerOutput() const noexcept;
