@@ -273,11 +273,11 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   inst.value->setZIndex(1);
 
   auto progress = std::make_unique<ProgressBar>();
-  progress->setRadius(Style::radiusFull);
   progress->setTrack(roleColor(ColorRole::Surface));
   progress->setFill(roleColor(ColorRole::Primary));
   progress->setFlexGrow(1.0f);
   progress->setSize(0.0f, kProgressHeight);
+  progress->setRadius(kProgressHeight * 0.5);
   inst.progress = progress.get();
   inst.progress->setZIndex(1);
   inst.row->addChild(std::move(progress));
