@@ -44,4 +44,16 @@ private:
   float m_baselineOffset = 0.0f;
   ThemeColor m_color = roleColor(ColorRole::OnSurface);
   Signal<>::ScopedConnection m_paletteConn;
+
+  // Memoized measure() inputs — lets repeated layout passes with identical
+  // text skip the Pango/fontconfig path entirely.
+  std::string m_cachedText;
+  float m_cachedFontSize = 0.0f;
+  float m_cachedMaxWidth = 0.0f;
+  float m_cachedMinWidth = 0.0f;
+  float m_cachedAssignedWidth = -1.0f;
+  float m_cachedFlexGrow = 0.0f;
+  int m_cachedMaxLines = 0;
+  bool m_cachedBold = false;
+  bool m_measureCached = false;
 };

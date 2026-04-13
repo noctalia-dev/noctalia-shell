@@ -33,4 +33,13 @@ private:
   float m_logicalFontSize = 0.0f;
   ThemeColor m_color = roleColor(ColorRole::OnSurface);
   Signal<>::ScopedConnection m_paletteConn;
+
+  // Memoized measure() inputs — lets repeated layout passes with identical
+  // glyph + size skip the Pango/fontconfig path entirely.
+  char32_t m_cachedCodepoint = 0;
+  float m_cachedFontSize = 0.0f;
+  float m_cachedLogicalFontSize = 0.0f;
+  float m_cachedAssignedWidth = -1.0f;
+  float m_cachedFlexGrow = 0.0f;
+  bool m_measureCached = false;
 };

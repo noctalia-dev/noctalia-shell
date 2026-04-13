@@ -17,9 +17,21 @@ Label::Label() {
   m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
 }
 
-void Label::setText(std::string_view text) { m_textNode->setText(std::string(text)); }
+void Label::setText(std::string_view text) {
+  if (m_textNode->text() == text) {
+    return;
+  }
+  m_textNode->setText(std::string(text));
+  m_measureCached = false;
+}
 
-void Label::setFontSize(float size) { m_textNode->setFontSize(size); }
+void Label::setFontSize(float size) {
+  if (m_textNode->fontSize() == size) {
+    return;
+  }
+  m_textNode->setFontSize(size);
+  m_measureCached = false;
+}
 
 void Label::setColor(const ThemeColor& color) {
   m_color = color;
@@ -30,13 +42,37 @@ void Label::setColor(const Color& color) { setColor(fixedColor(color)); }
 
 void Label::applyPalette() { m_textNode->setColor(resolveThemeColor(m_color)); }
 
-void Label::setMinWidth(float minWidth) { m_minWidth = minWidth; }
+void Label::setMinWidth(float minWidth) {
+  if (m_minWidth == minWidth) {
+    return;
+  }
+  m_minWidth = minWidth;
+  m_measureCached = false;
+}
 
-void Label::setMaxWidth(float maxWidth) { m_textNode->setMaxWidth(maxWidth); }
+void Label::setMaxWidth(float maxWidth) {
+  if (m_textNode->maxWidth() == maxWidth) {
+    return;
+  }
+  m_textNode->setMaxWidth(maxWidth);
+  m_measureCached = false;
+}
 
-void Label::setMaxLines(int maxLines) { m_textNode->setMaxLines(maxLines); }
+void Label::setMaxLines(int maxLines) {
+  if (m_textNode->maxLines() == maxLines) {
+    return;
+  }
+  m_textNode->setMaxLines(maxLines);
+  m_measureCached = false;
+}
 
-void Label::setBold(bool bold) { m_textNode->setBold(bold); }
+void Label::setBold(bool bold) {
+  if (m_textNode->bold() == bold) {
+    return;
+  }
+  m_textNode->setBold(bold);
+  m_measureCached = false;
+}
 
 const std::string& Label::text() const noexcept { return m_textNode->text(); }
 
@@ -51,7 +87,7 @@ bool Label::bold() const noexcept { return m_textNode->bold(); }
 void Label::doLayout(Renderer& renderer) { measure(renderer); }
 
 void Label::setCaptionStyle() {
-  m_textNode->setFontSize(Style::fontSizeCaption);
+  setFontSize(Style::fontSizeCaption);
   setColor(roleColor(ColorRole::OnSurface));
 }
 
@@ -59,6 +95,12 @@ void Label::measure(Renderer& renderer) {
   const float maxWidth = m_textNode->maxWidth();
   const int maxLines = m_textNode->maxLines();
   const float assignedWidth = width();
+  const float curFlexGrow = flexGrow();
+  if (m_measureCached && m_cachedText == m_textNode->text() && m_cachedFontSize == m_textNode->fontSize() &&
+      m_cachedBold == m_textNode->bold() && m_cachedMaxWidth == maxWidth && m_cachedMaxLines == maxLines &&
+      m_cachedMinWidth == m_minWidth && m_cachedAssignedWidth == assignedWidth && m_cachedFlexGrow == curFlexGrow) {
+    return;
+  }
   auto metrics = renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold(), maxWidth,
                                       maxLines);
   auto refMetrics = renderer.measureText("A", m_textNode->fontSize(), m_textNode->bold());
@@ -79,4 +121,14 @@ void Label::measure(Renderer& renderer) {
       preserveAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
   setSize(std::round(finalWidth), std::round(height));
   m_textNode->setPosition(0.0f, m_baselineOffset);
+
+  m_cachedText = m_textNode->text();
+  m_cachedFontSize = m_textNode->fontSize();
+  m_cachedBold = m_textNode->bold();
+  m_cachedMaxWidth = maxWidth;
+  m_cachedMaxLines = maxLines;
+  m_cachedMinWidth = m_minWidth;
+  m_cachedAssignedWidth = assignedWidth;
+  m_cachedFlexGrow = curFlexGrow;
+  m_measureCached = true;
 }

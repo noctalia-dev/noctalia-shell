@@ -20,16 +20,26 @@ Glyph::Glyph() {
 
 void Glyph::setGlyph(std::string_view name) {
   char32_t cp = GlyphRegistry::lookup(name);
-  if (cp != 0) {
+  if (cp != 0 && cp != m_glyphNode->codepoint()) {
     m_glyphNode->setCodepoint(cp);
+    m_measureCached = false;
   }
 }
 
-void Glyph::setCodepoint(char32_t codepoint) { m_glyphNode->setCodepoint(codepoint); }
+void Glyph::setCodepoint(char32_t codepoint) {
+  if (codepoint != m_glyphNode->codepoint()) {
+    m_glyphNode->setCodepoint(codepoint);
+    m_measureCached = false;
+  }
+}
 
 void Glyph::setGlyphSize(float size) {
+  if (size == m_logicalFontSize) {
+    return;
+  }
   m_logicalFontSize = size;
   m_glyphNode->setFontSize(size * Style::glyphSizeRatio);
+  m_measureCached = false;
 }
 
 void Glyph::setColor(const ThemeColor& color) {
@@ -45,6 +55,12 @@ void Glyph::doLayout(Renderer& renderer) { measure(renderer); }
 
 void Glyph::measure(Renderer& renderer) {
   const float assignedWidth = width();
+  const float curFlexGrow = flexGrow();
+  if (m_measureCached && m_cachedCodepoint == m_glyphNode->codepoint() &&
+      m_cachedFontSize == m_glyphNode->fontSize() && m_cachedLogicalFontSize == m_logicalFontSize &&
+      m_cachedAssignedWidth == assignedWidth && m_cachedFlexGrow == curFlexGrow) {
+    return;
+  }
   auto metrics    = renderer.measureGlyph(m_glyphNode->codepoint(), m_glyphNode->fontSize());
   auto refMetrics = renderer.measureText("A", m_logicalFontSize);
 
@@ -64,4 +80,11 @@ void Glyph::measure(Renderer& renderer) {
   const float glyphCenterX = (metrics.left + metrics.right) * 0.5f;
   const float glyphNodeY = refCenter - glyphInkCenter;
   m_glyphNode->setPosition(std::round(width() * 0.5f - glyphCenterX), glyphNodeY);
+
+  m_cachedCodepoint = m_glyphNode->codepoint();
+  m_cachedFontSize = m_glyphNode->fontSize();
+  m_cachedLogicalFontSize = m_logicalFontSize;
+  m_cachedAssignedWidth = assignedWidth;
+  m_cachedFlexGrow = curFlexGrow;
+  m_measureCached = true;
 }
