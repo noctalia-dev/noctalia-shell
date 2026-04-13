@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.UPower
 import qs.Commons
+import qs.Services.Networking // For Bluetooth device presence check
 import qs.Services.UI
 
 Singleton {
@@ -21,20 +22,20 @@ Singleton {
   readonly property real criticalThreshold: Settings.data.systemMonitor.batteryCriticalThreshold
   readonly property string batteryIcon: getIcon(batteryPercentage, batteryCharging, batteryPluggedIn, batteryReady)
 
-  readonly property var laptopBatteries: UPower.devices.values.filter(d => d.isLaptopBattery).sort((x, y) => {
-                                                                                                     // Force DisplayDevice to the top
-                                                                                                     if (x.nativePath.includes("DisplayDevice"))
-                                                                                                     return -1;
-                                                                                                     if (y.nativePath.includes("DisplayDevice"))
-                                                                                                     return 1;
+  readonly property var laptopBatteries: (UPower.devices?.values ?? []).filter(d => d.isLaptopBattery).sort((x, y) => {
+                                                                                                              // Force DisplayDevice to the top
+                                                                                                              if (x.nativePath.includes("DisplayDevice"))
+                                                                                                              return -1;
+                                                                                                              if (y.nativePath.includes("DisplayDevice"))
+                                                                                                              return 1;
 
-                                                                                                     // Standard string comparison works for BAT0 vs BAT1
-                                                                                                     return x.nativePath.localeCompare(y.nativePath, undefined, {
-                                                                                                                                         numeric: true
-                                                                                                                                       });
-                                                                                                   })
+                                                                                                              // Standard string comparison works for BAT0 vs BAT1
+                                                                                                              return x.nativePath.localeCompare(y.nativePath, undefined, {
+                                                                                                                                                  numeric: true
+                                                                                                                                                });
+                                                                                                            })
 
-  readonly property var peripheralBatteries: UPower.devices.values.filter(d => d && isPeripheral(d) && isDeviceReady(d)).sort((x, y) => x.percentage - y.percentage)
+  readonly property var peripheralBatteries: (UPower.devices?.values ?? []).filter(d => d && isPeripheral(d) && isDeviceReady(d)).sort((x, y) => x.percentage - y.percentage)
   readonly property var _laptopBattery: UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : null)
   readonly property var _peripheralBattery: peripheralBatteries.length > 0 ? peripheralBatteries[0] : null
 
@@ -86,15 +87,28 @@ Singleton {
       return false;
     }
 
-    // Handle UPower devices
+    if (!device.isLaptopBattery && device.type !== UPowerDeviceType.LinePower) {
+      const path = (device.nativePath || "").toLowerCase();
+      if (path.includes("bluez") && path.includes("dev_")) {
+        const macMatch = path.match(/dev_([a-f0-9_]{17})/i);
+        if (macMatch) {
+          const mac = macMatch[1].replace(/_/g, ":").toUpperCase();
+          const btDevice = (BluetoothService.devices?.values || []).find(d => (d.address || "").toUpperCase() === mac);
+          if (btDevice && !btDevice.connected) {
+            return false;
+          }
+        }
+      }
+    }
+
     if (device.type !== undefined) {
       if (device.isPresent !== undefined) {
         return device.isPresent === true;
       }
-      // Fallback for non-battery UPower devices or if isPresent is missing
       return device.ready && device.percentage !== undefined;
     }
-    return false;
+
+    return device.percentage !== undefined;
   }
 
   function isDeviceReady(device) {
