@@ -57,7 +57,7 @@ void NotificationWidget::doLayout(Renderer& renderer, float /*containerWidth*/, 
   }
 }
 
-void NotificationWidget::doUpdate(Renderer& renderer) {
+void NotificationWidget::doUpdate(Renderer& /*renderer*/) {
   refreshIndicatorState();
 }
 
