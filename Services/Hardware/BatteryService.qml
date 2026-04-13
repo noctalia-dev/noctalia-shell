@@ -327,7 +327,7 @@ Singleton {
     const nativePath = (device.nativePath || "").toLowerCase();
     const iconHint = (device.icon || "").toLowerCase();
 
-    // 1. High-precision sub-types (Commented out as requested)
+    // 1. High-precision sub-types
     if (name.includes("pod") || name.includes("bud") || name.includes("minor") || iconHint.includes("earbud"))
       return "bt-device-earbuds";
     if (name.includes("arctis") || name.includes("major"))
