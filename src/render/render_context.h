@@ -3,7 +3,7 @@
 #include "render/core/mat3.h"
 #include "render/core/renderer.h"
 #include "render/core/texture_manager.h"
-#include "render/programs/color_glyph_program.h"
+#include "render/programs/glyph_program.h"
 #include "render/programs/image_program.h"
 #include "render/programs/linear_gradient_program.h"
 #include "render/programs/rounded_rect_program.h"
@@ -62,7 +62,7 @@ private:
   LinearGradientProgram m_linearGradientProgram;
   RoundedRectProgram m_roundedRectProgram;
   SpinnerProgram m_spinnerProgram;
-  ColorGlyphProgram m_colorGlyphProgram;
+  GlyphProgram m_glyphProgram;
   CairoTextRenderer m_textRenderer;
   CairoGlyphRenderer m_glyphRenderer;
   TextureManager m_textureManager;

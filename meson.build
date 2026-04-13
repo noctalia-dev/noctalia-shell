@@ -236,7 +236,7 @@ _noctalia_sources = files(
   'src/render/core/texture_manager.cpp',
   'src/render/core/image_decoder.cpp',
   'src/render/image_loaders.cpp',
-  'src/render/programs/color_glyph_program.cpp',
+  'src/render/programs/glyph_program.cpp',
   'src/render/programs/image_program.cpp',
   'src/render/programs/linear_gradient_program.cpp',
   'src/render/programs/rounded_rect_program.cpp',

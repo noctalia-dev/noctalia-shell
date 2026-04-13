@@ -10,13 +10,13 @@
 //   - a pre-rasterized premultiplied-RGBA texture (colored emoji, etc.), or
 //   - an alpha-only (GL_ALPHA) coverage texture that gets tinted by u_tint.
 // Used by the Pango/Cairo text renderer and the FreeType/Cairo icon renderer.
-class ColorGlyphProgram {
+class GlyphProgram {
 public:
-  ColorGlyphProgram() = default;
-  ~ColorGlyphProgram() = default;
+  GlyphProgram() = default;
+  ~GlyphProgram() = default;
 
-  ColorGlyphProgram(const ColorGlyphProgram&) = delete;
-  ColorGlyphProgram& operator=(const ColorGlyphProgram&) = delete;
+  GlyphProgram(const GlyphProgram&) = delete;
+  GlyphProgram& operator=(const GlyphProgram&) = delete;
 
   void ensureInitialized();
   void destroy();

@@ -109,8 +109,8 @@ void RenderContext::initialize(wl_display* display) {
 
   // Pango handles font fallback via Fontconfig automatically — no explicit chain.
   ensureGlPrograms();
-  m_textRenderer.initialize(&m_colorGlyphProgram);
-  m_glyphRenderer.initialize(NOCTALIA_ASSETS_DIR "/fonts/tabler.ttf", &m_colorGlyphProgram);
+  m_textRenderer.initialize(&m_glyphProgram);
+  m_glyphRenderer.initialize(NOCTALIA_ASSETS_DIR "/fonts/tabler.ttf", &m_glyphProgram);
 }
 
 void RenderContext::ensureGlPrograms() {
@@ -121,7 +121,7 @@ void RenderContext::ensureGlPrograms() {
   m_linearGradientProgram.ensureInitialized();
   m_roundedRectProgram.ensureInitialized();
   m_spinnerProgram.ensureInitialized();
-  m_colorGlyphProgram.ensureInitialized();
+  m_glyphProgram.ensureInitialized();
   m_glReady = true;
 }
 
@@ -335,7 +335,7 @@ void RenderContext::cleanup() {
   m_linearGradientProgram.destroy();
   m_roundedRectProgram.destroy();
   m_spinnerProgram.destroy();
-  m_colorGlyphProgram.destroy();
+  m_glyphProgram.destroy();
   m_glReady = false;
 
   eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);

@@ -1,4 +1,4 @@
-#include "render/programs/color_glyph_program.h"
+#include "render/programs/glyph_program.h"
 
 #include <array>
 #include <stdexcept>
@@ -57,7 +57,7 @@ void main() {
 
 } // namespace
 
-void ColorGlyphProgram::ensureInitialized() {
+void GlyphProgram::ensureInitialized() {
   if (m_program.isValid()) {
     return;
   }
@@ -80,7 +80,7 @@ void ColorGlyphProgram::ensureInitialized() {
   }
 }
 
-void ColorGlyphProgram::destroy() {
+void GlyphProgram::destroy() {
   m_program.destroy();
   m_positionLocation  = -1;
   m_texCoordLocation  = -1;
@@ -93,7 +93,7 @@ void ColorGlyphProgram::destroy() {
   m_tintModeLocation  = -1;
 }
 
-void ColorGlyphProgram::bindCommon(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
+void GlyphProgram::bindCommon(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
                                     float u0, float v0, float u1, float v1, float opacity,
                                     const Mat3& transform) const {
   const std::array<GLfloat, 12> positions = {
@@ -123,7 +123,7 @@ void ColorGlyphProgram::bindCommon(GLuint texture, float surfaceWidth, float sur
   glDisableVertexAttribArray(texAttr);
 }
 
-void ColorGlyphProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
+void GlyphProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
                               float u0, float v0, float u1, float v1, float opacity,
                               const Mat3& transform) const {
   if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
@@ -135,7 +135,7 @@ void ColorGlyphProgram::draw(GLuint texture, float surfaceWidth, float surfaceHe
   bindCommon(texture, surfaceWidth, surfaceHeight, width, height, u0, v0, u1, v1, opacity, transform);
 }
 
-void ColorGlyphProgram::drawTinted(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
+void GlyphProgram::drawTinted(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
                                     float u0, float v0, float u1, float v1, float opacity, const Color& tint,
                                     const Mat3& transform) const {
   if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {

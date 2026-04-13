@@ -17,12 +17,12 @@ typedef struct _PangoContext PangoContext;
 typedef struct _PangoFontMap PangoFontMap;
 typedef struct _PangoLayout PangoLayout;
 
-class ColorGlyphProgram;
+class GlyphProgram;
 
 // Pango/Cairo-backed text renderer.
 //
 // Rasterizes a shaped PangoLayout into an ARGB32 Cairo surface, uploads it as
-// a premultiplied RGBA texture, and draws it through ColorGlyphProgram.
+// a premultiplied RGBA texture, and draws it through GlyphProgram.
 // Handles Latin, CJK, Arabic, BiDi, and COLR v1 emoji via fontconfig fallback.
 //
 // measure() and truncate() do not require a current EGL context.
@@ -43,7 +43,7 @@ public:
   CairoTextRenderer(const CairoTextRenderer&) = delete;
   CairoTextRenderer& operator=(const CairoTextRenderer&) = delete;
 
-  void initialize(ColorGlyphProgram* program);
+  void initialize(GlyphProgram* program);
   void cleanup();
 
   // HiDPI: raster at `scale × fontSize` pixels and shrink the quad by 1/scale.
@@ -140,7 +140,7 @@ private:
 
   PangoFontMap* m_fontMap = nullptr;    // owned
   PangoContext* m_pangoContext = nullptr; // owned
-  ColorGlyphProgram* m_program = nullptr;
+  GlyphProgram* m_program = nullptr;
 
   CacheMap m_cache;
   LruList m_lru;

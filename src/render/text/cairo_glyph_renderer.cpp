@@ -1,7 +1,7 @@
 #include "render/text/cairo_glyph_renderer.h"
 
 #include "core/log.h"
-#include "render/programs/color_glyph_program.h"
+#include "render/programs/glyph_program.h"
 
 #include <cairo.h>
 #include <cairo-ft.h>
@@ -50,7 +50,7 @@ std::size_t CairoGlyphRenderer::CacheKeyHash::operator()(const CacheKey& k) cons
 CairoGlyphRenderer::CairoGlyphRenderer() = default;
 CairoGlyphRenderer::~CairoGlyphRenderer() { cleanup(); }
 
-void CairoGlyphRenderer::initialize(const std::string& fontPath, ColorGlyphProgram* program) {
+void CairoGlyphRenderer::initialize(const std::string& fontPath, GlyphProgram* program) {
   m_program = program;
 
   if (FT_Init_FreeType(&m_ftLibrary) != 0) {

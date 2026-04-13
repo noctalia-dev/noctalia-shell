@@ -17,7 +17,7 @@ typedef struct FT_FaceRec_* FT_Face;
 // Cairo forwards
 typedef struct _cairo_font_face cairo_font_face_t;
 
-class ColorGlyphProgram;
+class GlyphProgram;
 
 // Direct FreeType + Cairo renderer for single codepoints in a dedicated font
 // (tabler.ttf icon font). No Pango, no shaping, no fallback — the icon font
@@ -38,7 +38,7 @@ public:
   CairoGlyphRenderer(const CairoGlyphRenderer&) = delete;
   CairoGlyphRenderer& operator=(const CairoGlyphRenderer&) = delete;
 
-  void initialize(const std::string& fontPath, ColorGlyphProgram* program);
+  void initialize(const std::string& fontPath, GlyphProgram* program);
   void cleanup();
 
   void setContentScale(float scale);
@@ -84,7 +84,7 @@ private:
   FT_Library m_ftLibrary = nullptr;
   FT_Face m_face = nullptr;
   cairo_font_face_t* m_cairoFace = nullptr;
-  ColorGlyphProgram* m_program = nullptr;
+  GlyphProgram* m_program = nullptr;
 
   CacheMap m_cache;
   LruList m_lru;

@@ -1,7 +1,7 @@
 #include "render/text/cairo_text_renderer.h"
 
 #include "core/log.h"
-#include "render/programs/color_glyph_program.h"
+#include "render/programs/glyph_program.h"
 
 #include <cairo.h>
 #include <fontconfig/fontconfig.h>
@@ -133,7 +133,7 @@ CairoTextRenderer::CairoTextRenderer() = default;
 
 CairoTextRenderer::~CairoTextRenderer() { cleanup(); }
 
-void CairoTextRenderer::initialize(ColorGlyphProgram* program) {
+void CairoTextRenderer::initialize(GlyphProgram* program) {
   m_program = program;
 
   if (FcInit()) {
