@@ -295,9 +295,9 @@ Singleton {
     }
     // Match against BatteryService.peripheralBatteries (UPower devices)
     var match = (BatteryService.peripheralBatteries || []).find(d => {
-                                                                 var path = (d.nativePath || "").toLowerCase();
-                                                                 return path.includes(addr.toLowerCase().replace(/:/g, "_"));
-                                                               });
+                                                                  var path = (d.nativePath || "").toLowerCase();
+                                                                  return path.includes(addr.toLowerCase().replace(/:/g, "_"));
+                                                                });
     return match ? BatteryService.getPercentage(match) : null;
   }
 

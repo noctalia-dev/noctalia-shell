@@ -5,7 +5,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.UPower
-import "../../Helpers/BluetoothUtils.js" as BluetoothUtils
 import qs.Commons
 import qs.Services.UI
 
@@ -309,8 +308,57 @@ Singleton {
     if (!device) {
       return "bt-device-generic";
     }
-    const name = device.model || device.deviceName || device.name || "";
-    return BluetoothUtils.deviceIcon(name, "");
+
+    const name = (device.model || device.deviceName || device.name || "").toLowerCase();
+    const nativePath = (device.nativePath || "").toLowerCase();
+
+    // 1. High-precision sub-types from the model name (e.g., "AirPods" should be earbuds, not just a headset)
+    if (name.includes("pod") || name.includes("bud") || name.includes("minor"))
+      return "bt-device-earbuds";
+    if (name.includes("arctis") || name.includes("major"))
+      return "bt-device-headset";
+
+    // 2. Broad categories from the UPower object path (very reliable for basic device types)
+    if (nativePath.includes("mouse"))
+      return "bt-device-mouse";
+    if (nativePath.includes("keyboard"))
+      return "bt-device-keyboard";
+    if (nativePath.includes("phone"))
+      return "bt-device-phone";
+    if (nativePath.includes("headset"))
+      return "bt-device-headset";
+    if (nativePath.includes("headphones"))
+      return "bt-device-headphones";
+    if (nativePath.includes("gaming_input") || nativePath.includes("controller") || nativePath.includes("joypad"))
+      return "bt-device-gamepad";
+    if (nativePath.includes("tablet"))
+      return "bt-device-tablet";
+    if (nativePath.includes("watch"))
+      return "bt-device-watch";
+    if (nativePath.includes("speaker") || nativePath.includes("audio") || nativePath.includes("sound"))
+      return "bt-device-speaker";
+
+    // 3. Fallback to UPowerDeviceType enum - Less reliable due lacks variety (e.g., all headphones are just "headset" in the enum, no distinction for earbuds)
+    if (device.type !== undefined) {
+      switch (device.type) {
+      case UPowerDeviceType.Mouse:
+        return "bt-device-mouse";
+      case UPowerDeviceType.Keyboard:
+        return "bt-device-keyboard";
+      case UPowerDeviceType.Headset:
+        return "bt-device-headset";
+      case UPowerDeviceType.Phone:
+        return "bt-device-phone";
+      case UPowerDeviceType.Tablet:
+        return "bt-device-tablet";
+      case UPowerDeviceType.GamingInput:
+        return "bt-device-gamepad";
+      case UPowerDeviceType.Speakers:
+        return "bt-device-speaker";
+      case UPowerDeviceType.MediaPlayer:
+        return "bt-device-speaker";
+      }
+    }
   }
 
   Instantiator {
