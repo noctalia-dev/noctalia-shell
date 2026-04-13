@@ -12,7 +12,7 @@ void GridView::setColumns(std::size_t columns) {
     return;
   }
   m_columns = normalized;
-  markDirty();
+  markLayoutDirty();
 }
 
 void GridView::setColumnGap(float gap) {
@@ -21,7 +21,7 @@ void GridView::setColumnGap(float gap) {
   }
   m_columnGap = gap;
   m_rowGap = gap;
-  markDirty();
+  markLayoutDirty();
 }
 
 void GridView::setRowGap(float gap) {
@@ -34,7 +34,7 @@ void GridView::setPadding(float top, float right, float bottom, float left) {
   m_paddingRight = right;
   m_paddingBottom = bottom;
   m_paddingLeft = left;
-  markDirty();
+  markLayoutDirty();
 }
 
 void GridView::setPadding(float all) { setPadding(all, all, all, all); }
@@ -46,7 +46,7 @@ void GridView::setStretchItems(bool stretch) {
     return;
   }
   m_stretchItems = stretch;
-  markDirty();
+  markLayoutDirty();
 }
 
 void GridView::setUniformCellSize(bool uniform) {
@@ -54,7 +54,7 @@ void GridView::setUniformCellSize(bool uniform) {
     return;
   }
   m_uniformCellSize = uniform;
-  markDirty();
+  markLayoutDirty();
 }
 
 void GridView::setMinCellWidth(float width) {
@@ -63,7 +63,7 @@ void GridView::setMinCellWidth(float width) {
     return;
   }
   m_minCellWidth = normalized;
-  markDirty();
+  markLayoutDirty();
 }
 
 void GridView::setMinCellHeight(float height) {
@@ -72,7 +72,7 @@ void GridView::setMinCellHeight(float height) {
     return;
   }
   m_minCellHeight = normalized;
-  markDirty();
+  markLayoutDirty();
 }
 
 void GridView::doLayout(Renderer& renderer) {

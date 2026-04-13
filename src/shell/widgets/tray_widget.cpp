@@ -295,7 +295,7 @@ void TrayWidget::syncState(Renderer& renderer) {
   m_items = next_items;
   m_rebuildPending = true;
   if (root() != nullptr) {
-    root()->markDirty();
+    root()->markLayoutDirty();
   }
 }
 

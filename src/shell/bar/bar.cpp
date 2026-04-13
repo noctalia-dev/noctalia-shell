@@ -769,8 +769,12 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
 
   // Trigger redraw if any widget changed visual state
   if (m_hoveredInstance != nullptr && m_hoveredInstance->sceneRoot != nullptr &&
-      m_hoveredInstance->sceneRoot->dirty()) {
-    m_hoveredInstance->surface->requestRedraw();
+      (m_hoveredInstance->sceneRoot->paintDirty() || m_hoveredInstance->sceneRoot->layoutDirty())) {
+    if (m_hoveredInstance->sceneRoot->layoutDirty()) {
+      m_hoveredInstance->surface->requestLayout();
+    } else {
+      m_hoveredInstance->surface->requestRedraw();
+    }
   }
 
   return consumed;

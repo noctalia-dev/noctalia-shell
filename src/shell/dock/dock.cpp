@@ -216,8 +216,13 @@ void Dock::refresh() {
     m_renderContext->makeCurrent(inst->surface->renderTarget());
     m_renderContext->syncContentScale(inst->surface->renderTarget());
     updateVisuals(*inst);
-    if (inst->sceneRoot != nullptr && (inst->sceneRoot->dirty() || inst->animations.hasActive())) {
-      inst->surface->requestRedraw();
+    if (inst->sceneRoot != nullptr &&
+        ((inst->sceneRoot->paintDirty() || inst->sceneRoot->layoutDirty()) || inst->animations.hasActive())) {
+      if (inst->sceneRoot->layoutDirty()) {
+        inst->surface->requestLayout();
+      } else {
+        inst->surface->requestRedraw();
+      }
     }
   }
 }
@@ -319,7 +324,7 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
   }
 
   if (m_hoveredInstance != nullptr && m_hoveredInstance->sceneRoot != nullptr &&
-      m_hoveredInstance->sceneRoot->dirty()) {
+      (m_hoveredInstance->sceneRoot->paintDirty() || m_hoveredInstance->sceneRoot->layoutDirty())) {
     if (m_hoveredInstance->sceneRoot->layoutDirty()) {
       m_hoveredInstance->surface->requestLayout();
     } else {
@@ -1295,7 +1300,8 @@ bool Dock::routePopupEvent(DockPopup* popup, const PointerEvent& event) {
     break;
   }
 
-  if (popup->surface != nullptr && popup->sceneRoot != nullptr && popup->sceneRoot->dirty()) {
+  if (popup->surface != nullptr && popup->sceneRoot != nullptr &&
+      (popup->sceneRoot->paintDirty() || popup->sceneRoot->layoutDirty())) {
     if (popup->sceneRoot->layoutDirty()) {
       popup->surface->requestLayout();
     } else {

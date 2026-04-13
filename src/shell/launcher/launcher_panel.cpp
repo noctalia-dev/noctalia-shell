@@ -366,7 +366,7 @@ bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*
       m_dirty = true;
       m_pendingScrollToSelected = true;
       if (root() != nullptr) {
-        root()->markDirty();
+        root()->markLayoutDirty();
       }
     }
     return true;
@@ -378,7 +378,7 @@ bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*
       m_dirty = true;
       m_pendingScrollToSelected = true;
       if (root() != nullptr) {
-        root()->markDirty();
+        root()->markLayoutDirty();
       }
     }
     return true;

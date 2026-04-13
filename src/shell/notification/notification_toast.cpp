@@ -728,7 +728,7 @@ bool NotificationToast::onPointerEvent(const PointerEvent& event) {
       break;
     }
 
-    if (inst->sceneRoot != nullptr && inst->sceneRoot->dirty()) {
+    if (inst->sceneRoot != nullptr && (inst->sceneRoot->paintDirty() || inst->sceneRoot->layoutDirty())) {
       if (inst->sceneRoot->layoutDirty()) {
         inst->surface->requestLayout();
       } else {

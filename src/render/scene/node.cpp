@@ -198,10 +198,6 @@ void Node::markLayoutDirty() {
   propagatePaintDirty();
 }
 
-void Node::markDirty() {
-  markLayoutDirty();
-}
-
 void Node::propagatePaintDirty() {
   if (m_paintDirty) {
     return;
@@ -226,7 +222,7 @@ void Node::clearDirty() {
   m_paintDirty = false;
   m_layoutDirty = false;
   for (auto& child : m_children) {
-    if (child->dirty()) {
+    if (child->paintDirty() || child->layoutDirty()) {
       child->clearDirty();
     }
   }

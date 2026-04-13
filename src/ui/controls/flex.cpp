@@ -26,7 +26,7 @@ void Flex::setDirection(FlexDirection direction) {
     return;
   }
   m_direction = direction;
-  markDirty();
+  markLayoutDirty();
 }
 
 void Flex::setGap(float gap) {
@@ -34,7 +34,7 @@ void Flex::setGap(float gap) {
     return;
   }
   m_gap = gap;
-  markDirty();
+  markLayoutDirty();
 }
 
 void Flex::setAlign(FlexAlign align) {
@@ -42,7 +42,7 @@ void Flex::setAlign(FlexAlign align) {
     return;
   }
   m_align = align;
-  markDirty();
+  markLayoutDirty();
 }
 
 void Flex::setJustify(FlexJustify justify) {
@@ -50,7 +50,7 @@ void Flex::setJustify(FlexJustify justify) {
     return;
   }
   m_justify = justify;
-  markDirty();
+  markLayoutDirty();
 }
 
 void Flex::setPadding(float top, float right, float bottom, float left) {
@@ -58,7 +58,7 @@ void Flex::setPadding(float top, float right, float bottom, float left) {
   m_paddingRight = right;
   m_paddingBottom = bottom;
   m_paddingLeft = left;
-  markDirty();
+  markLayoutDirty();
 }
 
 void Flex::setPadding(float all) { setPadding(all, all, all, all); }
@@ -135,7 +135,7 @@ void Flex::setMinWidth(float minWidth) {
     return;
   }
   m_minWidth = minWidth;
-  markDirty();
+  markLayoutDirty();
 }
 
 void Flex::setMinHeight(float minHeight) {
@@ -143,7 +143,7 @@ void Flex::setMinHeight(float minHeight) {
     return;
   }
   m_minHeight = minHeight;
-  markDirty();
+  markLayoutDirty();
 }
 
 void Flex::setFillParentMainAxis(bool fill) {
@@ -151,7 +151,7 @@ void Flex::setFillParentMainAxis(bool fill) {
     return;
   }
   m_fillParentMainAxis = fill;
-  markDirty();
+  markLayoutDirty();
 }
 
 void Flex::setRowLayout() {

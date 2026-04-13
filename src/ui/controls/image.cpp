@@ -41,7 +41,7 @@ void Image::setCornerRadius(float radius) {
   if (m_background != nullptr) {
     m_background->setRadius(radius);
   }
-  markDirty();
+  markPaintDirty();
 }
 
 void Image::setBackground(const ThemeColor& color) {

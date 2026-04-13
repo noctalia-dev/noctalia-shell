@@ -31,25 +31,25 @@ ContextMenuControl::ContextMenuControl() : Node(NodeType::Base) {}
 void ContextMenuControl::setEntries(std::vector<ContextMenuControlEntry> entries) {
   m_entries = std::move(entries);
   m_needsRebuild = true;
-  markDirty();
+  markLayoutDirty();
 }
 
 void ContextMenuControl::setMaxVisible(std::size_t maxVisible) {
   m_maxVisible = std::max<std::size_t>(1, maxVisible);
   m_needsRebuild = true;
-  markDirty();
+  markLayoutDirty();
 }
 
 void ContextMenuControl::setMenuWidth(float width) {
   m_menuWidth = std::max(1.0f, width);
   m_needsRebuild = true;
-  markDirty();
+  markLayoutDirty();
 }
 
 void ContextMenuControl::setSubmenuDirection(ContextSubmenuDirection direction) {
   m_submenuDirection = direction;
   m_needsRebuild = true;
-  markDirty();
+  markLayoutDirty();
 }
 
 void ContextMenuControl::setOnActivate(std::function<void(const ContextMenuControlEntry&)> onActivate) {
@@ -104,7 +104,6 @@ void ContextMenuControl::rebuild(Renderer& renderer) {
 
   rebuildRows(renderer);
   m_needsRebuild = false;
-  markDirty();
 }
 
 void ContextMenuControl::rebuildRows(Renderer& renderer) {

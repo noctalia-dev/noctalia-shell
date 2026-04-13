@@ -263,7 +263,8 @@ bool TrayMenu::onPointerEvent(const PointerEvent& event) {
       break;
     }
 
-    if (sub->surface != nullptr && sub->sceneRoot != nullptr && sub->sceneRoot->dirty()) {
+    if (sub->surface != nullptr && sub->sceneRoot != nullptr &&
+        (sub->sceneRoot->paintDirty() || sub->sceneRoot->layoutDirty())) {
       if (sub->sceneRoot->layoutDirty()) {
         sub->surface->requestLayout();
       } else {
@@ -320,7 +321,8 @@ bool TrayMenu::onPointerEvent(const PointerEvent& event) {
     break;
   }
 
-  if (inst->surface != nullptr && inst->sceneRoot != nullptr && inst->sceneRoot->dirty()) {
+  if (inst->surface != nullptr && inst->sceneRoot != nullptr &&
+      (inst->sceneRoot->paintDirty() || inst->sceneRoot->layoutDirty())) {
     if (inst->sceneRoot->layoutDirty()) {
       inst->surface->requestLayout();
     } else {

@@ -195,7 +195,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*/
       --m_selectedIndex;
       updateSelectionVisuals();
       if (root() != nullptr) {
-        root()->markDirty();
+        root()->markPaintDirty();
       }
       PanelManager::instance().refresh();
     }
@@ -208,7 +208,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*/
       ++m_selectedIndex;
       updateSelectionVisuals();
       if (root() != nullptr) {
-        root()->markDirty();
+        root()->markPaintDirty();
       }
       PanelManager::instance().refresh();
     }

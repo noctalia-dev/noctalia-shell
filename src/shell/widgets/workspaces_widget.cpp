@@ -73,7 +73,7 @@ void WorkspacesWidget::doUpdate(Renderer& renderer) {
     }
     m_rebuildPending = true;
     if (root() != nullptr) {
-      root()->markDirty();
+      root()->markLayoutDirty();
     }
   }
 }

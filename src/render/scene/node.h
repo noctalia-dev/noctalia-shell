@@ -38,7 +38,6 @@ public:
   [[nodiscard]] float flexGrow() const noexcept { return m_flexGrow; }
   [[nodiscard]] bool visible() const noexcept { return m_visible; }
   [[nodiscard]] bool participatesInLayout() const noexcept { return m_participatesInLayout; }
-  [[nodiscard]] bool dirty() const noexcept { return m_paintDirty || m_layoutDirty; }
   [[nodiscard]] bool paintDirty() const noexcept { return m_paintDirty; }
   [[nodiscard]] bool layoutDirty() const noexcept { return m_layoutDirty; }
   [[nodiscard]] bool clipChildren() const noexcept { return m_clipChildren; }
@@ -76,7 +75,6 @@ public:
 
   void markPaintDirty();
   void markLayoutDirty();
-  void markDirty();
   void clearDirty();
 
 protected:

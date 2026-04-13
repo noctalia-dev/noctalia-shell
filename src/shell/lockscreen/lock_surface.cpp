@@ -186,7 +186,7 @@ void LockSurface::onPointerEvent(const PointerEvent& event) {
     break;
   }
 
-  if (m_root.dirty()) {
+  if (m_root.paintDirty() || m_root.layoutDirty()) {
     if (m_root.layoutDirty()) {
       requestLayout();
     } else {
@@ -211,7 +211,7 @@ void LockSurface::onThemeChanged() { requestLayout(); }
 
 void LockSurface::onKeyboardEvent(const KeyboardEvent& event) {
   m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed, event.preedit);
-  if (m_root.dirty()) {
+  if (m_root.paintDirty() || m_root.layoutDirty()) {
     if (m_root.layoutDirty()) {
       requestLayout();
     } else {
@@ -313,7 +313,6 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   m_loginButton->setPosition(contentLeft + inputWidth + gap, contentTop);
   m_loginButton->layout(*renderer);
 
-  m_root.markDirty();
 }
 
 void LockSurface::updateCopy() {

@@ -15,7 +15,7 @@ WallpaperPageGrid::WallpaperPageGrid(float contentScale) : m_contentScale(conten
 void WallpaperPageGrid::setPage(const WallpaperEntry* entries, std::size_t count) {
   m_entries = entries;
   m_count = std::min(count, kPageSize);
-  markDirty();
+  markLayoutDirty();
 }
 
 void WallpaperPageGrid::setOnTileClick(WallpaperTile::ClickCallback callback) {
@@ -46,7 +46,7 @@ void WallpaperPageGrid::setHighlightedIndex(std::size_t selectedIndex, std::size
   m_selectedIndex = selectedIndex;
   m_hoverIndex = hoverIndex;
   m_hoverEnabled = hoverEnabled;
-  markDirty();
+  markPaintDirty();
 }
 
 void WallpaperPageGrid::releaseAllTiles(Renderer& renderer) {

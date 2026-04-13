@@ -20,7 +20,7 @@ void AudioSpectrum::setValues(const std::vector<float>& values) {
   ensureBarCount(m_mirrored ? m_targetValues.size() * 2 : m_targetValues.size());
   m_converged = false;
   updateBarsGeometry();
-  markDirty();
+  markPaintDirty();
 }
 
 void AudioSpectrum::tick(float deltaMs) {
@@ -58,7 +58,7 @@ void AudioSpectrum::tick(float deltaMs) {
   m_converged = converged;
   if (changed) {
     updateBarsGeometry();
-    markDirty();
+    markPaintDirty();
   }
 }
 
@@ -75,7 +75,7 @@ void AudioSpectrum::setSpacingRatio(float ratio) {
   }
   m_spacingRatio = clamped;
   updateBarsGeometry();
-  markDirty();
+  markLayoutDirty();
 }
 
 void AudioSpectrum::setOrientation(AudioSpectrumOrientation orientation) {
@@ -84,7 +84,7 @@ void AudioSpectrum::setOrientation(AudioSpectrumOrientation orientation) {
   }
   m_orientation = orientation;
   updateBarsGeometry();
-  markDirty();
+  markLayoutDirty();
 }
 
 void AudioSpectrum::setLayoutMode(AudioSpectrumLayoutMode mode) {
@@ -93,7 +93,7 @@ void AudioSpectrum::setLayoutMode(AudioSpectrumLayoutMode mode) {
   }
   m_layoutMode = mode;
   updateBarsGeometry();
-  markDirty();
+  markLayoutDirty();
 }
 
 void AudioSpectrum::setMirrored(bool mirrored) {
@@ -103,7 +103,7 @@ void AudioSpectrum::setMirrored(bool mirrored) {
   m_mirrored = mirrored;
   ensureBarCount(m_mirrored ? m_targetValues.size() * 2 : m_targetValues.size());
   updateBarsGeometry();
-  markDirty();
+  markLayoutDirty();
 }
 
 void AudioSpectrum::setCentered(bool centered) {
@@ -112,7 +112,7 @@ void AudioSpectrum::setCentered(bool centered) {
   }
   m_centered = centered;
   updateBarsGeometry();
-  markDirty();
+  markLayoutDirty();
 }
 
 void AudioSpectrum::setSize(float width, float height) {

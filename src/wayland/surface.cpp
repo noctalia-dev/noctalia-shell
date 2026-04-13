@@ -54,11 +54,12 @@ void Surface::handleFrameDone(void* data, wl_callback* callback, std::uint32_t c
   self->preparePendingFrame();
 
   if (self->m_running && self->m_configured) {
-    bool dirty = self->m_sceneRoot != nullptr && self->m_sceneRoot->dirty();
+    const bool invalidated =
+        self->m_sceneRoot != nullptr && (self->m_sceneRoot->paintDirty() || self->m_sceneRoot->layoutDirty());
     bool animating = self->m_animationManager != nullptr && self->m_animationManager->hasActive();
     bool redrawRequested = self->m_redrawRequested;
 
-    if (dirty || animating || redrawRequested) {
+    if (invalidated || animating || redrawRequested) {
       self->m_redrawRequested = false;
       self->render();
     }
@@ -213,9 +214,9 @@ void Surface::kickFrameLoop() {
   m_lastFrameAt.reset();
   preparePendingFrame();
 
-  const bool dirty = m_sceneRoot != nullptr && m_sceneRoot->dirty();
+  const bool invalidated = m_sceneRoot != nullptr && (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty());
   const bool animating = m_animationManager != nullptr && m_animationManager->hasActive();
-  if (m_redrawRequested || dirty || animating) {
+  if (m_redrawRequested || invalidated || animating) {
     m_redrawRequested = false;
     render();
   }

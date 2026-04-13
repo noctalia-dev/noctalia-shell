@@ -122,7 +122,7 @@ void ScrollView::setScrollOffset(float offset) {
   }
   m_scrollOffset = clamped;
   applyScrollOffset();
-  markDirty();
+  markPaintDirty();
   if (m_onScrollChanged) {
     m_onScrollChanged(m_scrollOffset);
   }
@@ -135,7 +135,7 @@ void ScrollView::setScrollbarVisible(bool visible) {
     return;
   }
   m_showScrollbar = visible;
-  markDirty();
+  markLayoutDirty();
 }
 
 void ScrollView::setBackgroundStyle(const ThemeColor& fill, const ThemeColor& border, float borderWidth) {
@@ -159,12 +159,12 @@ void ScrollView::setOnScrollChanged(std::function<void(float)> callback) { m_onS
 
 void ScrollView::setViewportPaddingH(float padding) {
   m_viewportPaddingH = padding;
-  markDirty();
+  markLayoutDirty();
 }
 
 void ScrollView::setViewportPaddingV(float padding) {
   m_viewportPaddingV = padding;
-  markDirty();
+  markLayoutDirty();
 }
 
 float ScrollView::contentViewportWidth() const noexcept {
