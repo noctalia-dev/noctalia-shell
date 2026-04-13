@@ -122,7 +122,7 @@ Button::Button() {
   m_inputArea->setParticipatesInLayout(false);
   m_inputArea->setZIndex(1);
   m_inputArea->setPosition(0.0f, 0.0f);
-  m_inputArea->setSize(width(), height());
+  m_inputArea->setFrameSize(width(), height());
 
   applyVariant();
   m_paletteConn = paletteChanged().connect([this] {
@@ -192,7 +192,7 @@ void Button::setCursorShape(std::uint32_t shape) {
 void Button::updateInputArea() {
   if (m_inputArea != nullptr) {
     m_inputArea->setPosition(0.0f, 0.0f);
-    m_inputArea->setSize(width(), height());
+    m_inputArea->setFrameSize(width(), height());
   }
 }
 

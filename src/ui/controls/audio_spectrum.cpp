@@ -159,7 +159,7 @@ void AudioSpectrum::updateBarsGeometry() {
                      : (fill ? std::round(height() - barHeight) : std::floor(height() - barHeight));
       if (auto* bar = m_bars[static_cast<std::size_t>(i)]; bar != nullptr) {
         bar->setPosition(fill ? std::round(x) : x, y);
-        bar->setSize(barWidth, barHeight);
+        bar->setFrameSize(barWidth, barHeight);
       }
       x += barWidth + gap;
     }
@@ -190,7 +190,7 @@ void AudioSpectrum::updateBarsGeometry() {
                    : (fill ? std::round(width() - barWidth) : std::floor(width() - barWidth));
     if (auto* bar = m_bars[static_cast<std::size_t>(i)]; bar != nullptr) {
       bar->setPosition(x, fill ? std::round(y) : y);
-      bar->setSize(barWidth, barHeight);
+      bar->setFrameSize(barWidth, barHeight);
     }
     y += barHeight + gap;
   }

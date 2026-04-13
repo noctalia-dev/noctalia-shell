@@ -202,7 +202,7 @@ void Input::doLayout(Renderer& renderer) {
   // then add baselineOffset (= -top) to get baseline position.
   const float textNodeY  = std::round((h - fontH) * 0.5f) - fontMetrics.top;
   m_textNode->setPosition(m_horizontalPadding, textNodeY);
-  m_textNode->setSize(metrics.width, fontH);
+  m_textNode->setFrameSize(metrics.width, fontH);
 
   // Build stop arrays for click-to-position and selection rect
   m_stopByte.clear();
@@ -221,24 +221,24 @@ void Input::doLayout(Renderer& renderer) {
   // Cursor
   const float cursorX = m_horizontalPadding + stopXForByte(m_cursorPos);
   m_cursor->setPosition(cursorX, kCursorPadV);
-  m_cursor->setSize(kCursorWidth, h - kCursorPadV * 2.0f);
+  m_cursor->setFrameSize(kCursorWidth, h - kCursorPadV * 2.0f);
 
   // Selection highlight
   if (hasSelection()) {
     const float selX0 = m_horizontalPadding + stopXForByte(selectionStart());
     const float selX1 = m_horizontalPadding + stopXForByte(selectionEnd());
     m_selectionRect->setPosition(selX0, kCursorPadV);
-    m_selectionRect->setSize(selX1 - selX0, h - kCursorPadV * 2.0f);
+    m_selectionRect->setFrameSize(selX1 - selX0, h - kCursorPadV * 2.0f);
     m_selectionRect->setVisible(true);
   } else {
     m_selectionRect->setVisible(false);
   }
 
   m_background->setPosition(0.0f, 0.0f);
-  m_background->setSize(w, h);
+  m_background->setFrameSize(w, h);
 
   m_inputArea->setPosition(0.0f, 0.0f);
-  m_inputArea->setSize(w, h);
+  m_inputArea->setFrameSize(w, h);
 
   applyVisualState();
 }

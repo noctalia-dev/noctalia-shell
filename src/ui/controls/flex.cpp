@@ -17,7 +17,7 @@ void Flex::setSize(float width, float height) {
   Node::setSize(width, height);
   if (m_background != nullptr) {
     m_background->setPosition(0.0f, 0.0f);
-    m_background->setSize(width, height);
+    m_background->setFrameSize(width, height);
   }
 }
 
@@ -176,7 +176,7 @@ void Flex::ensureBackground() {
   });
   m_background = static_cast<RectNode*>(addChild(std::move(rect)));
   m_background->setZIndex(-1);
-  m_background->setSize(width(), height());
+  m_background->setFrameSize(width(), height());
   applyPalette();
 }
 

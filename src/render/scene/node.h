@@ -47,6 +47,7 @@ public:
 
   void setPosition(float x, float y);
   virtual void setSize(float width, float height);
+  void setFrameSize(float width, float height);
   void setRotation(float radians);
   void setScale(float scale);
   void setOpacity(float opacity);

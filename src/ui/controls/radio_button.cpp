@@ -78,21 +78,21 @@ void RadioButton::doLayout(Renderer& /*renderer*/) {
 
   if (m_outer != nullptr) {
     m_outer->setPosition(indicatorInset, indicatorInset);
-    m_outer->setSize(indicatorSize, indicatorSize);
+    m_outer->setFrameSize(indicatorSize, indicatorSize);
     m_outer->setRadius(indicatorSize * 0.5f);
     m_outer->setSoftness(1.0f);
   }
 
   if (m_inner != nullptr) {
     m_inner->setPosition(indicatorInset + innerInset, indicatorInset + innerInset);
-    m_inner->setSize(innerSize, innerSize);
+    m_inner->setFrameSize(innerSize, innerSize);
     m_inner->setRadius(innerSize * 0.5f);
     m_inner->setSoftness(1.0f);
   }
 
   if (m_inputArea != nullptr) {
     m_inputArea->setPosition(0.0f, 0.0f);
-    m_inputArea->setSize(width(), height());
+    m_inputArea->setFrameSize(width(), height());
   }
 }
 

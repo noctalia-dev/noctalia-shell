@@ -48,7 +48,7 @@ void Box::setSoftness(float softness) {
 
 void Box::setSize(float w, float h) {
   Node::setSize(w, h);
-  m_rect->setSize(w, h);
+  m_rect->setFrameSize(w, h);
 }
 
 void Box::setFlatStyle() {

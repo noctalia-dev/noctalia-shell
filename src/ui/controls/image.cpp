@@ -24,7 +24,7 @@ void Image::ensureBackground() {
   m_background = static_cast<Box*>(addChild(std::move(background)));
   m_background->setZIndex(-1);
   m_background->setFlatStyle();
-  m_background->setSize(width(), height());
+  m_background->setFrameSize(width(), height());
   if (m_cornerRadius != 0.0f) {
     m_background->setRadius(m_cornerRadius);
   }
@@ -192,7 +192,7 @@ void Image::clear(Renderer& renderer) {
   m_sourcePath.clear();
   if (m_image != nullptr) {
     m_image->setTextureId(0);
-    m_image->setSize(0.0f, 0.0f);
+    m_image->setFrameSize(0.0f, 0.0f);
   }
 }
 
@@ -213,7 +213,7 @@ void Image::applyPalette() {
 
 void Image::updateLayout() {
   if (m_background != nullptr) {
-    m_background->setSize(width(), height());
+    m_background->setFrameSize(width(), height());
   }
 
   if (m_image == nullptr) {
@@ -223,7 +223,7 @@ void Image::updateLayout() {
   const float paddedWidth = std::max(0.0f, width() - m_padding * 2.0f);
   const float paddedHeight = std::max(0.0f, height() - m_padding * 2.0f);
   m_image->setPosition(m_padding, m_padding);
-  m_image->setSize(paddedWidth, paddedHeight);
+  m_image->setFrameSize(paddedWidth, paddedHeight);
   m_image->setTextureSize(m_texture.width, m_texture.height);
 
   ImageFitMode mode = ImageFitMode::Stretch;

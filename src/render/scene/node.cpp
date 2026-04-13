@@ -76,6 +76,15 @@ void Node::setSize(float width, float height) {
   markLayoutDirty();
 }
 
+void Node::setFrameSize(float width, float height) {
+  if (m_width == width && m_height == height) {
+    return;
+  }
+  m_width = width;
+  m_height = height;
+  markPaintDirty();
+}
+
 void Node::setRotation(float radians) {
   if (m_rotation == radians) {
     return;

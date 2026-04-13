@@ -105,7 +105,7 @@ void Toggle::doLayout(Renderer& renderer) {
 
   if (m_inputArea != nullptr) {
     m_inputArea->setPosition(0.0f, 0.0f);
-    m_inputArea->setSize(width(), height());
+    m_inputArea->setFrameSize(width(), height());
   }
 }
 
@@ -128,7 +128,7 @@ void Toggle::applySize() {
     break;
   }
 
-  m_thumb->setSize(m_thumbSize, m_thumbSize);
+  m_thumb->setFrameSize(m_thumbSize, m_thumbSize);
   setRadius((m_thumbSize + (m_inset * 2.0f)) * 0.5f);
 }
 

@@ -99,7 +99,7 @@ void ContextMenuControl::rebuild(Renderer& renderer) {
   bg->setRadius(Style::radiusLg);
   bg->setFill(fixedColor(brighten(resolveColorRole(ColorRole::Surface), 1.03f)));
   bg->setBorder(roleColor(ColorRole::Outline, 0.9f), Style::borderWidth);
-  bg->setSize(width(), height());
+  bg->setFrameSize(width(), height());
   addChild(std::move(bg));
 
   rebuildRows(renderer);
@@ -118,7 +118,7 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
     const float rowHeight = separator ? kSeparatorHeight : kItemHeight;
 
     auto row = std::make_unique<InputArea>();
-    row->setSize(rowWidth, rowHeight);
+    row->setFrameSize(rowWidth, rowHeight);
     row->setPosition(kMenuPadding, currentY);
     row->setEnabled(interactive);
 
@@ -146,7 +146,7 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
       auto rowBg = std::make_unique<Box>();
       rowBg->setFill(clearThemeColor());
       rowBg->setRadius(Style::radiusSm);
-      rowBg->setSize(rowWidth, rowHeight);
+      rowBg->setFrameSize(rowWidth, rowHeight);
       rowBgPtr = static_cast<Box*>(row->addChild(std::move(rowBg)));
 
       std::string labelText = entry.label;
@@ -172,7 +172,7 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
       auto rowBg = std::make_unique<Box>();
       rowBg->setFill(clearThemeColor());
       rowBg->setRadius(Style::radiusSm);
-      rowBg->setSize(rowWidth, rowHeight);
+      rowBg->setFrameSize(rowWidth, rowHeight);
       rowBgPtr = static_cast<Box*>(row->addChild(std::move(rowBg)));
 
       auto label = std::make_unique<Label>();
@@ -183,7 +183,7 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
 
       auto separatorLine = std::make_unique<Box>();
       separatorLine->setFill(roleColor(ColorRole::Outline, 0.85f));
-      separatorLine->setSize(rowWidth - 20.0f, 1.0f);
+      separatorLine->setFrameSize(rowWidth - 20.0f, 1.0f);
       separatorLine->setPosition(10.0f, (rowHeight - 1.0f) * 0.5f);
       row->addChild(std::move(separatorLine));
     }

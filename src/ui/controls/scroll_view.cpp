@@ -208,19 +208,19 @@ void ScrollView::doLayout(Renderer& renderer) {
   setSize(w, h);
 
   m_background->setPosition(0.0f, 0.0f);
-  m_background->setSize(w, h);
+  m_background->setFrameSize(w, h);
   m_viewportArea->setPosition(viewportX, viewportY);
-  m_viewportArea->setSize(viewportW, viewportH);
+  m_viewportArea->setFrameSize(viewportW, viewportH);
 
   m_content->setPosition(0.0f, 0.0f);
-  m_content->setSize(viewportW, m_content->height());
+  m_content->setFrameSize(viewportW, m_content->height());
   m_content->layout(renderer);
 
   m_scrollbarShown = m_showScrollbar && m_content->height() > viewportH + 0.5f;
   const float gutter = m_scrollbarShown ? (kScrollbarWidth + kScrollbarGap) : 0.0f;
   const float contentWidth = std::max(0.0f, viewportW - gutter);
   if (std::abs(m_content->width() - contentWidth) >= 0.5f) {
-    m_content->setSize(contentWidth, m_content->height());
+    m_content->setFrameSize(contentWidth, m_content->height());
     m_content->layout(renderer);
   }
 
@@ -249,7 +249,7 @@ void ScrollView::applyScrollOffset() {
 
   m_scrollbarThumb->setPosition(m_scrollbarTrack->x(), thumbY);
   m_scrollbarThumbArea->setPosition(m_scrollbarTrack->x(), thumbY);
-  m_scrollbarThumbArea->setSize(kScrollbarWidth, thumbH);
+  m_scrollbarThumbArea->setFrameSize(kScrollbarWidth, thumbH);
 }
 
 void ScrollView::updateScrollbarGeometry(float viewportHeight, float contentHeight) {
@@ -267,12 +267,12 @@ void ScrollView::updateScrollbarGeometry(float viewportHeight, float contentHeig
   const float trackY = m_viewportPaddingV;
   const float trackH = std::max(0.0f, viewportHeight);
   m_scrollbarTrack->setPosition(trackX, trackY);
-  m_scrollbarTrack->setSize(kScrollbarWidth, trackH);
+  m_scrollbarTrack->setFrameSize(kScrollbarWidth, trackH);
 
   const float thumbH =
       std::clamp((viewportHeight * viewportHeight) / std::max(viewportHeight, contentHeight), kMinThumbHeight, trackH);
   m_thumbTravel = std::max(0.0f, trackH - thumbH);
-  m_scrollbarThumb->setSize(kScrollbarWidth, thumbH);
+  m_scrollbarThumb->setFrameSize(kScrollbarWidth, thumbH);
 }
 
 float ScrollView::clampOffset(float offset) const noexcept { return std::clamp(offset, 0.0f, m_maxScrollOffset); }

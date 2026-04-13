@@ -227,7 +227,7 @@ void Select::doLayout(Renderer& renderer) {
   setSize(dropdownWidth, m_controlHeight);
 
   m_triggerBackground->setPosition(0.0f, 0.0f);
-  m_triggerBackground->setSize(dropdownWidth, m_controlHeight);
+  m_triggerBackground->setFrameSize(dropdownWidth, m_controlHeight);
 
   const float triggerLabelMax =
       std::max(0.0f, dropdownWidth - (m_horizontalPadding * 2.0f + m_glyphSize + Style::spaceXs));
@@ -237,7 +237,7 @@ void Select::doLayout(Renderer& renderer) {
   m_triggerLabel->setPosition(m_horizontalPadding, triggerLabelY);
   m_triggerGlyph->setPosition(dropdownWidth - m_horizontalPadding - m_triggerGlyph->width(), triggerLabelY);
   m_triggerArea->setPosition(0.0f, 0.0f);
-  m_triggerArea->setSize(dropdownWidth, m_controlHeight);
+  m_triggerArea->setFrameSize(dropdownWidth, m_controlHeight);
 
   float absLeft = 0.0f;
   float absTop = 0.0f;
@@ -258,16 +258,16 @@ void Select::doLayout(Renderer& renderer) {
 
   m_menuViewport->setVisible(m_open && !m_optionViews.empty());
   m_menuViewport->setPosition(0.0f, menuY);
-  m_menuViewport->setSize(dropdownWidth, viewportHeight);
+  m_menuViewport->setFrameSize(dropdownWidth, viewportHeight);
   m_menuViewport->setZIndex(1);
 
   m_menuBackground->setPosition(0.0f, 0.0f);
-  m_menuBackground->setSize(dropdownWidth, viewportHeight);
+  m_menuBackground->setFrameSize(dropdownWidth, viewportHeight);
   m_menuBackground->setZIndex(1);
 
   m_menuArea->setVisible(m_open && !m_optionViews.empty());
   m_menuArea->setPosition(0.0f, 0.0f);
-  m_menuArea->setSize(dropdownWidth, viewportHeight);
+  m_menuArea->setFrameSize(dropdownWidth, viewportHeight);
   m_menuArea->setZIndex(2);
 
   for (std::size_t i = 0; i < m_optionViews.size(); ++i) {
@@ -280,7 +280,7 @@ void Select::doLayout(Renderer& renderer) {
 
     const float rowY = static_cast<float>(i) * m_controlHeight - m_scrollOffset;
     option.background->setPosition(0.0f, rowY);
-    option.background->setSize(dropdownWidth, m_controlHeight);
+    option.background->setFrameSize(dropdownWidth, m_controlHeight);
     option.background->setZIndex(3);
 
     option.label->setMaxWidth(
@@ -296,7 +296,7 @@ void Select::doLayout(Renderer& renderer) {
     option.checkGlyph->setZIndex(4);
 
     option.area->setPosition(0.0f, rowY);
-    option.area->setSize(dropdownWidth, m_controlHeight);
+    option.area->setFrameSize(dropdownWidth, m_controlHeight);
     option.area->setZIndex(5);
   }
 

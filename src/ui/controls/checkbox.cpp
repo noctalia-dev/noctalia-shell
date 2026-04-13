@@ -79,7 +79,7 @@ void Checkbox::doLayout(Renderer& renderer) {
 
   if (m_box != nullptr) {
     m_box->setPosition(boxInset, boxInset);
-    m_box->setSize(boxSize, boxSize);
+    m_box->setFrameSize(boxSize, boxSize);
     m_box->setRadius(Style::radiusSm * m_scale);
     m_box->setSoftness(1.0f);
   }
@@ -93,7 +93,7 @@ void Checkbox::doLayout(Renderer& renderer) {
 
   if (m_inputArea != nullptr) {
     m_inputArea->setPosition(0.0f, 0.0f);
-    m_inputArea->setSize(width(), height());
+    m_inputArea->setFrameSize(width(), height());
   }
 }
 

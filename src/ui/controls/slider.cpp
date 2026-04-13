@@ -151,16 +151,16 @@ void Slider::updateGeometry() {
   const float thumbY = (heightPx - m_thumbSizePx) * 0.5f;
 
   m_track->setPosition(trackX, trackY);
-  m_track->setSize(trackW, m_trackHeight);
+  m_track->setFrameSize(trackW, m_trackHeight);
 
   m_fill->setPosition(trackX, trackY);
-  m_fill->setSize(std::max(0.0f, thumbX - trackX), m_trackHeight);
+  m_fill->setFrameSize(std::max(0.0f, thumbX - trackX), m_trackHeight);
 
   m_thumb->setPosition(std::clamp(thumbX - m_thumbSizePx * 0.5f, trackX, trackX + trackW - m_thumbSizePx), thumbY);
-  m_thumb->setSize(m_thumbSizePx, m_thumbSizePx);
+  m_thumb->setFrameSize(m_thumbSizePx, m_thumbSizePx);
 
   m_inputArea->setPosition(0.0f, 0.0f);
-  m_inputArea->setSize(widthPx, heightPx);
+  m_inputArea->setFrameSize(widthPx, heightPx);
 }
 
 void Slider::updateFromLocalX(float x) {

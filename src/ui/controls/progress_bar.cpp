@@ -90,12 +90,12 @@ void ProgressBar::applyPalette() {
 }
 
 void ProgressBar::updateGeometry() {
-  m_track->setSize(width(), height());
+  m_track->setFrameSize(width(), height());
   if (m_orientation == ProgressBarOrientation::Vertical) {
     const float fillH = height() * m_progress;
     m_fill->setPosition(0.0f, height() - fillH);
-    m_fill->setSize(width(), fillH);
+    m_fill->setFrameSize(width(), fillH);
   } else {
-    m_fill->setSize(width() * m_progress, height());
+    m_fill->setFrameSize(width() * m_progress, height());
   }
 }
