@@ -119,6 +119,7 @@ void WallpaperPanel::create() {
   toolbar->setDirection(FlexDirection::Horizontal);
   toolbar->setAlign(FlexAlign::Center);
   toolbar->setGap(Style::spaceSm * scale);
+  toolbar->setFillParentMainAxis(true);
   m_toolbar = toolbar.get();
 
   auto filter = std::make_unique<Input>();
