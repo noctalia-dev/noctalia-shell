@@ -13,12 +13,7 @@
 
 #include <json.hpp>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#include <toml.hpp>
-#pragma GCC diagnostic pop
+#include "core/toml.h"
 
 #include "theme/color.h"
 #include "theme/fixed_palette.h"
