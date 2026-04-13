@@ -204,7 +204,7 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
   float boundsTop = 0.0f;
   float boundsRight = 0.0f;
   float boundsBottom = 0.0f;
-  Node::transformedBounds(node, boundsLeft, boundsTop, boundsRight, boundsBottom);
+  Node::transformedBounds(node, worldTransform, boundsLeft, boundsTop, boundsRight, boundsBottom);
 
   if (hasClip) {
     glEnable(GL_SCISSOR_TEST);

@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <vector>
 
 namespace {
 
@@ -18,18 +17,9 @@ Mat3 localTransform(const Node* node) {
 }
 
 Mat3 computeWorldTransform(const Node* node) {
-  if (node == nullptr) {
-    return Mat3::identity();
-  }
-
-  std::vector<const Node*> chain;
-  for (const Node* current = node; current != nullptr; current = current->parent()) {
-    chain.push_back(current);
-  }
-
   Mat3 world = Mat3::identity();
-  for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
-    world = world * localTransform(*it);
+  for (const Node* current = node; current != nullptr; current = current->parent()) {
+    world = localTransform(current) * world;
   }
   return world;
 }
@@ -296,8 +286,8 @@ bool Node::mapFromScene(const Node* node, float sceneX, float sceneY, float& out
   return pointInsideNode(node, sceneX, sceneY, outLocalX, outLocalY);
 }
 
-void Node::transformedBounds(const Node* node, float& outLeft, float& outTop, float& outRight, float& outBottom) {
-  const Mat3 world = computeWorldTransform(node);
+void Node::transformedBounds(const Node* node, const Mat3& world, float& outLeft, float& outTop, float& outRight,
+                              float& outBottom) {
   const Vec2 corners[] = {
       world.transformPoint(0.0f, 0.0f),
       world.transformPoint(node->width(), 0.0f),
@@ -316,4 +306,8 @@ void Node::transformedBounds(const Node* node, float& outLeft, float& outTop, fl
     outRight = std::max(outRight, corner.x);
     outBottom = std::max(outBottom, corner.y);
   }
+}
+
+void Node::transformedBounds(const Node* node, float& outLeft, float& outTop, float& outRight, float& outBottom) {
+  transformedBounds(node, computeWorldTransform(node), outLeft, outTop, outRight, outBottom);
 }
