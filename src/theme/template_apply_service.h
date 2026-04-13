@@ -6,13 +6,12 @@
 #include <string_view>
 
 class ConfigService;
-class StateService;
 
 namespace noctalia::theme {
 
   class TemplateApplyService {
   public:
-    TemplateApplyService(const ConfigService& config, const StateService& state);
+    explicit TemplateApplyService(const ConfigService& config);
 
     void apply(const GeneratedPalette& palette, std::string_view defaultMode) const;
 
@@ -20,7 +19,6 @@ namespace noctalia::theme {
     void ensureUserConfigStub(const std::filesystem::path& path) const;
 
     const ConfigService& m_config;
-    const StateService& m_state;
   };
 
 } // namespace noctalia::theme

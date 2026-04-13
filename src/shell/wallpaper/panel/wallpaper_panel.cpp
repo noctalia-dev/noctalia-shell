@@ -1,7 +1,6 @@
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 
 #include "config/config_service.h"
-#include "config/state_service.h"
 #include "core/ui_phase.h"
 #include "core/log.h"
 #include "render/core/renderer.h"
@@ -43,9 +42,8 @@ std::string toLower(std::string_view text) {
 
 } // namespace
 
-WallpaperPanel::WallpaperPanel(WaylandConnection* wayland, ConfigService* config, StateService* state,
-                               ThumbnailService* thumbnails)
-    : m_wayland(wayland), m_config(config), m_state(state), m_thumbnails(thumbnails) {}
+WallpaperPanel::WallpaperPanel(WaylandConnection* wayland, ConfigService* config, ThumbnailService* thumbnails)
+    : m_wayland(wayland), m_config(config), m_thumbnails(thumbnails) {}
 
 void WallpaperPanel::create() {
   const float scale = contentScale();
@@ -732,24 +730,24 @@ void WallpaperPanel::navigateUp() {
 }
 
 void WallpaperPanel::applyWallpaperFromEntry(const WallpaperEntry& entry) {
-  if (m_state == nullptr || m_selectedMonitorIndex >= m_monitorChoices.size()) {
+  if (m_config == nullptr || m_selectedMonitorIndex >= m_monitorChoices.size()) {
     return;
   }
   const auto& choice = m_monitorChoices[m_selectedMonitorIndex];
   const std::string path = entry.absPath.string();
 
   if (choice.connector.empty()) {
-    StateService::WallpaperBatch batch(*m_state);
+    ConfigService::WallpaperBatch batch(*m_config);
     if (m_wayland != nullptr) {
       for (const auto& out : m_wayland->outputs()) {
         if (!out.connectorName.empty()) {
-          m_state->setWallpaperPath(out.connectorName, path);
+          m_config->setWallpaperPath(out.connectorName, path);
         }
       }
     }
-    m_state->setWallpaperPath(std::nullopt, path);
+    m_config->setWallpaperPath(std::nullopt, path);
   } else {
-    m_state->setWallpaperPath(choice.connector, path);
+    m_config->setWallpaperPath(choice.connector, path);
   }
   kLog.info("applied wallpaper {} to {}", path, choice.connector.empty() ? "ALL" : choice.connector);
 }

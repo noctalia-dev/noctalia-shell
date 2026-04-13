@@ -1,7 +1,6 @@
 #include "shell/overview/overview.h"
 
 #include "config/config_service.h"
-#include "config/state_service.h"
 #include "core/log.h"
 #include "shell/overview/overview_surface.h"
 #include "shell/wallpaper/wallpaper.h"
@@ -19,11 +18,9 @@ constexpr Logger kLog("overview");
 Overview::Overview() = default;
 Overview::~Overview() = default;
 
-bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, StateService* state,
-                          Wallpaper* wallpaper) {
+bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, Wallpaper* wallpaper) {
   m_wayland  = &wayland;
   m_config   = config;
-  m_state    = state;
   m_wallpaper = wallpaper;
 
   // Register reload callback unconditionally so toggling enabled in config works.
@@ -76,7 +73,7 @@ void Overview::onStateChange() {
   kLog.info("state changed, checking wallpaper updates");
 
   for (auto& inst : m_instances) {
-    auto newPath = m_state->getWallpaperPath(inst->connectorName);
+    auto newPath = m_config->getWallpaperPath(inst->connectorName);
     if (newPath.empty() || newPath == inst->currentPath) {
       continue;
     }
@@ -125,7 +122,7 @@ void Overview::syncInstances() {
 }
 
 void Overview::createInstance(const WaylandOutput& output) {
-  auto wallpaperPath = m_state->getWallpaperPath(output.connectorName);
+  auto wallpaperPath = m_config->getWallpaperPath(output.connectorName);
   kLog.info("creating on {} ({}), path={}", output.connectorName, output.description, wallpaperPath);
 
   auto inst = std::make_unique<OverviewInstance>();

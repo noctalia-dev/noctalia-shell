@@ -4,31 +4,59 @@
 #include "notification/notification_manager.h"
 #include "wayland/wayland_connection.h"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#include <toml.hpp>
-#pragma GCC diagnostic pop
-
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
+#include <fstream>
 #include <sys/inotify.h>
 #include <unistd.h>
+#include <vector>
 
 namespace {
 
-  std::string configPath() {
+  std::string configDir() {
     const char* xdg = std::getenv("XDG_CONFIG_HOME");
     if (xdg != nullptr && xdg[0] != '\0') {
-      return std::string(xdg) + "/noctalia/config.toml";
+      return std::string(xdg) + "/noctalia";
     }
     const char* home = std::getenv("HOME");
     if (home != nullptr && home[0] != '\0') {
-      return std::string(home) + "/.config/noctalia/config.toml";
+      return std::string(home) + "/.config/noctalia";
     }
     return {};
+  }
+
+  std::string stateDir() {
+    const char* xdg = std::getenv("XDG_STATE_HOME");
+    if (xdg != nullptr && xdg[0] != '\0') {
+      return std::string(xdg) + "/noctalia";
+    }
+    const char* home = std::getenv("HOME");
+    if (home != nullptr && home[0] != '\0') {
+      return std::string(home) + "/.local/state/noctalia";
+    }
+    return {};
+  }
+
+  const char* themeModeString(ThemeMode mode) {
+    switch (mode) {
+    case ThemeMode::Dark:
+      return "dark";
+    case ThemeMode::Light:
+      return "light";
+    case ThemeMode::Auto:
+      return "auto";
+    }
+    return "dark";
+  }
+
+  toml::table* ensureTable(toml::table& parent, std::string_view key) {
+    if (auto* existing = parent.get_as<toml::table>(key)) {
+      return existing;
+    }
+    auto [it, _] = parent.insert_or_assign(key, toml::table{});
+    return it->second.as_table();
   }
 
   std::vector<std::string> readStringArray(const toml::node& node) {
@@ -61,29 +89,44 @@ namespace {
 
 // ── Lifecycle ────────────────────────────────────────────────────────────────
 
-ConfigService::ConfigService() {
-  m_configPath = configPath();
-  if (!m_configPath.empty() && std::filesystem::exists(m_configPath)) {
-    loadFromFile(m_configPath);
-  } else {
-    kLog.info("no config file found, using defaults");
-    seedBuiltinWidgets(m_config);
-    m_config.idle.behaviors.push_back(IdleBehaviorConfig{
-        .name = "lock",
-        .enabled = false,
-        .timeoutSeconds = 660,
-        .command = "noctalia:lock",
-    });
-    m_config.bars.push_back(BarConfig{});
+ConfigService::WallpaperBatch::WallpaperBatch(ConfigService& config) : m_config(config) {
+  ++m_config.m_wallpaperBatchDepth;
+}
+
+ConfigService::WallpaperBatch::~WallpaperBatch() {
+  --m_config.m_wallpaperBatchDepth;
+  if (m_config.m_wallpaperBatchDepth == 0 && m_config.m_wallpaperBatchDirty) {
+    m_config.m_wallpaperBatchDirty = false;
+    if (m_config.m_wallpaperChangeCallback) {
+      m_config.m_wallpaperChangeCallback();
+    }
   }
+}
+
+ConfigService::ConfigService() {
+  m_configDir = configDir();
+
+  // Resolve overrides.toml path; create the state dir eagerly so writes don't
+  // race with directory creation later.
+  if (auto dir = stateDir(); !dir.empty()) {
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    m_overridesPath = dir + "/overrides.toml";
+  }
+
+  loadOverridesFromFile();
+  loadAll();
   setupWatch();
 }
 
 ConfigService::~ConfigService() {
-  if (m_watchFd >= 0 && m_inotifyFd >= 0) {
-    inotify_rm_watch(m_inotifyFd, m_watchFd);
-  }
   if (m_inotifyFd >= 0) {
+    if (m_configWatchWd >= 0) {
+      inotify_rm_watch(m_inotifyFd, m_configWatchWd);
+    }
+    if (m_overridesWatchWd >= 0) {
+      inotify_rm_watch(m_inotifyFd, m_overridesWatchWd);
+    }
     ::close(m_inotifyFd);
   }
 }
@@ -102,19 +145,11 @@ void ConfigService::setNotificationManager(NotificationManager* manager) {
 }
 
 void ConfigService::forceReload() {
-  m_config = Config{};
-  if (!m_configPath.empty() && std::filesystem::exists(m_configPath)) {
-    loadFromFile(m_configPath);
-  } else {
-    seedBuiltinWidgets(m_config);
-    m_config.idle.behaviors.push_back(IdleBehaviorConfig{
-        .name = "lock",
-        .enabled = false,
-        .timeoutSeconds = 660,
-        .command = "noctalia:lock",
-    });
-    m_config.bars.push_back(BarConfig{});
-  }
+  loadAll();
+  fireReloadCallbacks();
+}
+
+void ConfigService::fireReloadCallbacks() {
   for (const auto& cb : m_reloadCallbacks) {
     cb();
   }
@@ -125,10 +160,10 @@ void ConfigService::checkReload() {
     return;
   }
 
-  // Drain inotify events, check if our config file was involved
+  // Drain inotify events and bucket them per watch descriptor.
   alignas(inotify_event) char buf[4096];
   bool configChanged = false;
-  const auto configFilename = std::filesystem::path(m_configPath).filename().string();
+  bool overridesChanged = false;
 
   while (true) {
     const auto n = ::read(m_inotifyFd, buf, sizeof(buf));
@@ -136,15 +171,45 @@ void ConfigService::checkReload() {
       break;
     }
 
-    // Walk through events to check filenames
     std::size_t offset = 0;
     while (offset < static_cast<std::size_t>(n)) {
       auto* event = reinterpret_cast<inotify_event*>(buf + offset);
-      if (event->len > 0 && configFilename == event->name) {
-        configChanged = true;
+      if (event->len > 0) {
+        const std::string_view name{event->name};
+        if (event->wd == m_configWatchWd) {
+          if (name.size() >= 5 && name.substr(name.size() - 5) == ".toml") {
+            configChanged = true;
+          }
+        } else if (event->wd == m_overridesWatchWd) {
+          const auto overridesFilename = std::filesystem::path(m_overridesPath).filename().string();
+          if (name == overridesFilename) {
+            overridesChanged = true;
+          }
+        }
       }
       offset += sizeof(inotify_event) + event->len;
     }
+  }
+
+  // Skip the echo of our own write.
+  if (overridesChanged && m_ownOverridesWritePending) {
+    m_ownOverridesWritePending = false;
+    overridesChanged = false;
+  }
+
+  if (overridesChanged) {
+    kLog.info("reloading {}", m_overridesPath);
+
+    const auto oldDefault = m_defaultWallpaperPath;
+    const auto oldMonitors = m_monitorWallpaperPaths;
+
+    loadOverridesFromFile();
+
+    const bool wallpaperChanged = (oldDefault != m_defaultWallpaperPath || oldMonitors != m_monitorWallpaperPaths);
+    if (wallpaperChanged && m_wallpaperChangeCallback) {
+      m_wallpaperChangeCallback();
+    }
+    configChanged = true; // overrides affect Config — rebuild it
   }
 
   if (!configChanged) {
@@ -152,22 +217,90 @@ void ConfigService::checkReload() {
   }
 
   kLog.info("config changed, reloading");
-  m_config = Config{};
-  if (!m_configPath.empty() && std::filesystem::exists(m_configPath)) {
-    loadFromFile(m_configPath);
-  } else {
-    seedBuiltinWidgets(m_config);
-    m_config.idle.behaviors.push_back(IdleBehaviorConfig{
-        .name = "lock",
-        .enabled = false,
-        .timeoutSeconds = 660,
-        .command = "noctalia:lock",
-    });
-    m_config.bars.push_back(BarConfig{});
+  loadAll();
+  fireReloadCallbacks();
+}
+
+void ConfigService::setThemeMode(ThemeMode mode) {
+  if (m_overridesPath.empty()) {
+    return;
   }
 
-  for (const auto& cb : m_reloadCallbacks) {
-    cb();
+  auto* themeTbl = ensureTable(m_overridesTable, "theme");
+  themeTbl->insert_or_assign("mode", std::string(themeModeString(mode)));
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return;
+  }
+
+  m_ownOverridesWritePending = true;
+
+  // Rebuild Config and fan out reload callbacks so ThemeService transitions.
+  loadAll();
+  fireReloadCallbacks();
+}
+
+std::string ConfigService::getWallpaperPath(const std::string& connectorName) const {
+  auto it = m_monitorWallpaperPaths.find(connectorName);
+  if (it != m_monitorWallpaperPaths.end()) {
+    return it->second;
+  }
+  return m_defaultWallpaperPath;
+}
+
+std::string ConfigService::getDefaultWallpaperPath() const { return m_defaultWallpaperPath; }
+
+void ConfigService::setWallpaperChangeCallback(ChangeCallback callback) {
+  m_wallpaperChangeCallback = std::move(callback);
+}
+
+void ConfigService::setWallpaperPath(const std::optional<std::string>& connectorName, const std::string& path) {
+  if (m_overridesPath.empty()) {
+    return;
+  }
+
+  bool changed = false;
+  if (connectorName.has_value()) {
+    auto it = m_monitorWallpaperPaths.find(*connectorName);
+    if (it == m_monitorWallpaperPaths.end() || it->second != path) {
+      m_monitorWallpaperPaths[*connectorName] = path;
+      changed = true;
+    }
+  } else {
+    if (m_defaultWallpaperPath != path) {
+      m_defaultWallpaperPath = path;
+      changed = true;
+    }
+  }
+
+  if (!changed) {
+    return;
+  }
+
+  // Mirror the change into the overrides table so writeOverridesToFile() serializes it.
+  auto* wallpaperTbl = ensureTable(m_overridesTable, "wallpaper");
+  if (connectorName.has_value()) {
+    auto* monitorsTbl = ensureTable(*wallpaperTbl, "monitors");
+    auto* monTbl = ensureTable(*monitorsTbl, *connectorName);
+    monTbl->insert_or_assign("path", path);
+  } else {
+    auto* defaultTbl = ensureTable(*wallpaperTbl, "default");
+    defaultTbl->insert_or_assign("path", path);
+  }
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return;
+  }
+
+  m_ownOverridesWritePending = true;
+  if (m_wallpaperBatchDepth > 0) {
+    m_wallpaperBatchDirty = true;
+    return;
+  }
+  if (m_wallpaperChangeCallback) {
+    m_wallpaperChangeCallback();
   }
 }
 
@@ -233,9 +366,12 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
 // ── Private helpers ──────────────────────────────────────────────────────────
 
 void ConfigService::setupWatch() {
-  if (m_configPath.empty()) {
+  if (m_configDir.empty()) {
     return;
   }
+
+  std::error_code ec;
+  std::filesystem::create_directories(m_configDir, ec);
 
   m_inotifyFd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
   if (m_inotifyFd < 0) {
@@ -243,17 +379,102 @@ void ConfigService::setupWatch() {
     return;
   }
 
-  // Watch the directory (not just the file) to catch editors that rename+create
-  auto dir = std::filesystem::path(m_configPath).parent_path().string();
-  m_watchFd = inotify_add_watch(m_inotifyFd, dir.c_str(), IN_MODIFY | IN_CREATE | IN_MOVED_TO);
-  if (m_watchFd < 0) {
+  m_configWatchWd = inotify_add_watch(m_inotifyFd, m_configDir.c_str(), IN_MODIFY | IN_CREATE | IN_MOVED_TO);
+  if (m_configWatchWd < 0) {
     kLog.warn("inotify_add_watch failed, hot reload disabled");
     ::close(m_inotifyFd);
     m_inotifyFd = -1;
     return;
   }
 
-  kLog.debug("watching {} for changes", dir);
+  kLog.debug("watching {} for changes", m_configDir);
+
+  // Also watch the state dir for overrides.toml edits (external writes).
+  if (!m_overridesPath.empty()) {
+    const auto overridesDir = std::filesystem::path(m_overridesPath).parent_path().string();
+    m_overridesWatchWd = inotify_add_watch(m_inotifyFd, overridesDir.c_str(), IN_MODIFY | IN_CREATE | IN_MOVED_TO);
+    if (m_overridesWatchWd < 0) {
+      kLog.warn("inotify_add_watch failed for {}, overrides reload disabled", overridesDir);
+    } else {
+      kLog.debug("watching {} for changes", overridesDir);
+    }
+  }
+}
+
+void ConfigService::loadOverridesFromFile() {
+  m_overridesTable = toml::table{};
+  m_defaultWallpaperPath.clear();
+  m_monitorWallpaperPaths.clear();
+
+  if (m_overridesPath.empty() || !std::filesystem::exists(m_overridesPath)) {
+    return;
+  }
+
+  kLog.info("loading {}", m_overridesPath);
+  try {
+    m_overridesTable = toml::parse_file(m_overridesPath);
+  } catch (const toml::parse_error& e) {
+    kLog.warn("parse error in {}: {}", m_overridesPath, e.what());
+    m_overridesTable = toml::table{};
+    return;
+  }
+  extractWallpaperFromOverrides();
+}
+
+void ConfigService::extractWallpaperFromOverrides() {
+  if (auto* wpDefault = m_overridesTable["wallpaper"]["default"].as_table()) {
+    if (auto v = (*wpDefault)["path"].value<std::string>()) {
+      m_defaultWallpaperPath = *v;
+    }
+  }
+  if (auto* monitors = m_overridesTable["wallpaper"]["monitors"].as_table()) {
+    for (const auto& [key, value] : *monitors) {
+      if (auto* monTbl = value.as_table()) {
+        if (auto v = (*monTbl)["path"].value<std::string>()) {
+          m_monitorWallpaperPaths[std::string(key.str())] = *v;
+        }
+      }
+    }
+  }
+}
+
+bool ConfigService::writeOverridesToFile() {
+  if (m_overridesPath.empty()) {
+    return false;
+  }
+  const std::string tmpPath = m_overridesPath + ".tmp";
+  {
+    std::ofstream out(tmpPath, std::ios::trunc);
+    if (!out.is_open()) {
+      return false;
+    }
+    out << m_overridesTable;
+    if (!out.good()) {
+      return false;
+    }
+  }
+  std::error_code ec;
+  std::filesystem::rename(tmpPath, m_overridesPath, ec);
+  if (ec) {
+    std::filesystem::remove(tmpPath, ec);
+    return false;
+  }
+  return true;
+}
+
+void ConfigService::deepMerge(toml::table& base, const toml::table& overlay) {
+  for (const auto& [k, v] : overlay) {
+    if (const auto* overlayTbl = v.as_table()) {
+      if (auto* baseNode = base.get(k)) {
+        if (auto* baseTbl = baseNode->as_table()) {
+          deepMerge(*baseTbl, *overlayTbl);
+          continue;
+        }
+      }
+    }
+    // Tables-over-non-tables, non-tables, and arrays: overlay replaces base wholesale.
+    base.insert_or_assign(k, v);
+  }
 }
 
 void ConfigService::seedBuiltinWidgets(Config& config) {
@@ -291,39 +512,81 @@ void ConfigService::seedBuiltinWidgets(Config& config) {
   seed("spacer", std::move(spacer));
 }
 
-void ConfigService::loadFromFile(const std::string& path) {
-  kLog.info("loading {}", path);
-
-  // Seed built-in named widget instances before parsing so [widget.*] entries override them.
+void ConfigService::loadAll() {
+  m_config = Config{};
   seedBuiltinWidgets(m_config);
 
-  toml::table tbl;
-  try {
-    tbl = toml::parse_file(path);
-    // Parse succeeded — dismiss any previous config-error notification.
+  // Collect all *.toml files in the config dir, sorted alphabetically.
+  std::vector<std::filesystem::path> files;
+  if (!m_configDir.empty()) {
+    std::error_code ec;
+    if (std::filesystem::is_directory(m_configDir, ec)) {
+      for (const auto& entry : std::filesystem::directory_iterator(m_configDir, ec)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".toml") {
+          files.push_back(entry.path());
+        }
+      }
+    }
+  }
+  std::sort(files.begin(), files.end());
+
+  toml::table merged;
+  std::string firstError;
+
+  for (const auto& path : files) {
+    try {
+      auto tbl = toml::parse_file(path.string());
+      deepMerge(merged, tbl);
+      kLog.info("loaded {}", path.string());
+    } catch (const toml::parse_error& e) {
+      const auto& src = e.source();
+      kLog.warn("parse error in {} at line {}, column {}: {}", path.filename().string(), src.begin.line,
+                src.begin.column, e.description());
+      if (firstError.empty()) {
+        firstError = std::format("{} line {}, column {}: {}", path.filename().string(), src.begin.line,
+                                 src.begin.column, e.description());
+      }
+    }
+  }
+
+  // Apply the app-writable overrides overlay last — sidecar wins.
+  deepMerge(merged, m_overridesTable);
+
+  if (firstError.empty()) {
+    // Dismiss any previous config-error notification.
     if (m_notificationManager != nullptr && m_configErrorNotificationId != 0) {
       m_notificationManager->close(m_configErrorNotificationId);
       m_configErrorNotificationId = 0;
     }
     m_pendingError.clear();
-  } catch (const toml::parse_error& e) {
-    const auto& src = e.source();
-    kLog.warn("parse error at line {}, column {}: {}", src.begin.line, src.begin.column, e.description());
-    const auto body = std::format("Line {}, column {}: {}", src.begin.line, src.begin.column, e.description());
+  } else {
     if (m_notificationManager != nullptr) {
-      // Close previous error notification (if any) so they don't stack on repeated failing reloads.
       if (m_configErrorNotificationId != 0) {
         m_notificationManager->close(m_configErrorNotificationId);
       }
       m_configErrorNotificationId =
-          m_notificationManager->addInternal("Noctalia", "Config parse error", body, Urgency::Critical, 0);
+          m_notificationManager->addInternal("Noctalia", "Config parse error", firstError, Urgency::Critical, 0);
     } else {
-      m_pendingError = body;
+      m_pendingError = firstError;
     }
+  }
+
+  if (files.empty() && m_overridesTable.empty()) {
+    kLog.info("no config files found, using defaults");
+    m_config.idle.behaviors.push_back(IdleBehaviorConfig{
+        .name = "lock",
+        .enabled = false,
+        .timeoutSeconds = 660,
+        .command = "noctalia:lock",
+    });
     m_config.bars.push_back(BarConfig{});
     return;
   }
 
+  parseTable(merged);
+}
+
+void ConfigService::parseTable(const toml::table& tbl) {
   // Parse [bar.*] named subtables
   if (auto* barTblMap = tbl["bar"].as_table()) {
     for (const auto& [barName, barNode] : *barTblMap) {

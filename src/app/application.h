@@ -4,8 +4,6 @@
 #include "app/timer_poll_source.h"
 #include "config/config_poll_source.h"
 #include "config/config_service.h"
-#include "config/state_poll_source.h"
-#include "config/state_service.h"
 #include "core/timer_manager.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/notification/notification_poll_source.h"
@@ -83,9 +81,8 @@ private:
   ClipboardService m_clipboardService;
   VirtualKeyboardService m_virtualKeyboardService;
   ConfigService m_configService;
-  StateService m_stateService;
-  noctalia::theme::ThemeService m_themeService{m_configService, m_stateService};
-  noctalia::theme::TemplateApplyService m_templateApplyService{m_configService, m_stateService};
+  noctalia::theme::ThemeService m_themeService{m_configService};
+  noctalia::theme::TemplateApplyService m_templateApplyService{m_configService};
   TimeService m_timeService;
   NotificationManager m_notificationManager;
   std::unique_ptr<SessionBus> m_bus;
@@ -122,7 +119,6 @@ private:
   NotificationPollSource m_notificationPollSource{m_notificationManager};
   TimePollSource m_timePollSource{m_timeService};
   ConfigPollSource m_configPollSource{m_configService};
-  StatePollSource m_statePollSource{m_stateService};
   DesktopEntryPollSource m_desktopEntryPollSource;
   ClipboardPollSource m_clipboardPollSource{m_clipboardService};
   TimerPollSource m_timerPollSource;

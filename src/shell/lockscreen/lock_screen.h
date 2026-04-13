@@ -13,7 +13,7 @@ struct WaylandOutput;
 struct ext_session_lock_v1;
 struct wl_surface;
 struct wl_output;
-class StateService;
+class ConfigService;
 
 class LockSurface;
 class RenderContext;
@@ -24,7 +24,7 @@ public:
   LockScreen();
   ~LockScreen();
 
-  bool initialize(WaylandConnection& wayland, RenderContext* renderContext, StateService* stateService);
+  bool initialize(WaylandConnection& wayland, RenderContext* renderContext, ConfigService* configService);
   bool lock();
   void unlock();
   void onOutputChange();
@@ -55,7 +55,7 @@ private:
 
   WaylandConnection* m_wayland = nullptr;
   RenderContext* m_renderContext = nullptr;
-  StateService* m_stateService = nullptr;
+  ConfigService* m_configService = nullptr;
   ext_session_lock_v1* m_lock = nullptr;
   std::vector<Instance> m_instances;
   PamAuthenticator m_authenticator;

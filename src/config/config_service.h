@@ -2,6 +2,13 @@
 
 #include "ui/style.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#include <toml.hpp>
+#pragma GCC diagnostic pop
+
 #include <cstdint>
 #include <functional>
 #include <optional>
@@ -254,6 +261,21 @@ struct Config {
 class ConfigService {
 public:
   using ReloadCallback = std::function<void()>;
+  using ChangeCallback = std::function<void()>;
+
+  // RAII scope that coalesces wallpaper changes: any setWallpaperPath() calls
+  // inside the scope skip the per-call callback, and a single callback is
+  // fired on scope exit if anything actually changed.
+  class WallpaperBatch {
+  public:
+    explicit WallpaperBatch(ConfigService& config);
+    ~WallpaperBatch();
+    WallpaperBatch(const WallpaperBatch&) = delete;
+    WallpaperBatch& operator=(const WallpaperBatch&) = delete;
+
+  private:
+    ConfigService& m_config;
+  };
 
   ConfigService();
   ~ConfigService();
@@ -269,20 +291,53 @@ public:
   void checkReload();
   void forceReload();
 
+  // Persisted wallpaper paths (written to overrides.toml, app-managed).
+  [[nodiscard]] std::string getWallpaperPath(const std::string& connectorName) const;
+  [[nodiscard]] std::string getDefaultWallpaperPath() const;
+  void setWallpaperPath(const std::optional<std::string>& connectorName, const std::string& path);
+  void setWallpaperChangeCallback(ChangeCallback callback);
+
+  // Persist a theme-mode override to overrides.toml and trigger the reload pipeline.
+  void setThemeMode(ThemeMode mode);
+
   [[nodiscard]] static BarConfig resolveForOutput(const BarConfig& base, const WaylandOutput& output);
 
 private:
   static void seedBuiltinWidgets(Config& config);
-  void loadFromFile(const std::string& path);
+  static void deepMerge(toml::table& base, const toml::table& overlay);
+  void loadAll();
+  void parseTable(const toml::table& tbl);
   void setupWatch();
+  void fireReloadCallbacks();
+  void loadOverridesFromFile();
+  bool writeOverridesToFile();
+  void extractWallpaperFromOverrides();
 
   Config m_config;
-  std::string m_configPath;
+
+  // Hand-authored config directory: all *.toml merged alphabetically.
+  std::string m_configDir;
+
+  // App-writable overrides file (state dir): lives outside config dir so it
+  // can still be written when the config dir is read-only (e.g. NixOS).
+  std::string m_overridesPath;
+  toml::table m_overridesTable;
+  std::string m_defaultWallpaperPath;
+  std::unordered_map<std::string, std::string> m_monitorWallpaperPaths;
+
   std::string m_pendingError; // parse error from initial load, sent as notification once manager is wired up
   uint32_t m_configErrorNotificationId = 0; // ID of the active config-error notification, 0 if none
   NotificationManager* m_notificationManager = nullptr;
+
+  // Single inotify fd, two watch descriptors (config dir + state dir).
   int m_inotifyFd = -1;
-  int m_watchFd = -1;
-  bool m_pendingReload = false;
+  int m_configWatchWd = -1;
+  int m_overridesWatchWd = -1;
+
+  bool m_ownOverridesWritePending = false;
+  int m_wallpaperBatchDepth = 0;
+  bool m_wallpaperBatchDirty = false;
+
+  ChangeCallback m_wallpaperChangeCallback;
   std::vector<ReloadCallback> m_reloadCallbacks;
 };

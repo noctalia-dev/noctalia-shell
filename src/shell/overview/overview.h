@@ -6,7 +6,6 @@
 #include <vector>
 
 class ConfigService;
-class StateService;
 class Wallpaper;
 class WaylandConnection;
 struct WaylandOutput;
@@ -16,7 +15,7 @@ public:
   Overview();
   ~Overview();
 
-  bool initialize(WaylandConnection& wayland, ConfigService* config, StateService* state, Wallpaper* wallpaper);
+  bool initialize(WaylandConnection& wayland, ConfigService* config, Wallpaper* wallpaper);
   void onOutputChange();
   void onStateChange();
   void onThemeChanged();
@@ -31,7 +30,6 @@ private:
 
   WaylandConnection* m_wayland  = nullptr;
   ConfigService*     m_config   = nullptr;
-  StateService*      m_state    = nullptr;
   Wallpaper*         m_wallpaper = nullptr;
   std::vector<std::unique_ptr<OverviewInstance>> m_instances;
 };

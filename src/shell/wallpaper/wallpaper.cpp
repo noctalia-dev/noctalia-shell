@@ -1,7 +1,6 @@
 #include "shell/wallpaper/wallpaper.h"
 
 #include "config/config_service.h"
-#include "config/state_service.h"
 #include "core/log.h"
 #include "render/wallpaper_renderer.h"
 #include "shell/wallpaper/wallpaper_surface.h"
@@ -65,17 +64,16 @@ Wallpaper::~Wallpaper() {
   // m_instances and EGL contexts destroyed after this point
 }
 
-bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, StateService* state) {
+bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config) {
   m_wayland = &wayland;
   m_config = config;
-  m_state = state;
 
   if (!m_config->config().wallpaper.enabled) {
     kLog.info("disabled in config");
     return true;
   }
 
-  m_state->setWallpaperChangeCallback([this]() { onStateChange(); });
+  m_config->setWallpaperChangeCallback([this]() { onStateChange(); });
   m_config->addReloadCallback([this]() { reload(); });
 
   syncInstances();
@@ -124,7 +122,7 @@ void Wallpaper::onStateChange() {
   kLog.info("state file changed, checking for updates");
 
   for (auto& inst : m_instances) {
-    auto newPath = m_state->getWallpaperPath(inst->connectorName);
+    auto newPath = m_config->getWallpaperPath(inst->connectorName);
     if (newPath.empty()) {
       continue;
     }
@@ -237,7 +235,7 @@ void Wallpaper::refreshShareContext() {
 }
 
 void Wallpaper::createInstance(const WaylandOutput& output) {
-  auto wallpaperPath = m_state->getWallpaperPath(output.connectorName);
+  auto wallpaperPath = m_config->getWallpaperPath(output.connectorName);
   kLog.info("creating on {} ({}), path={}", output.connectorName, output.description, wallpaperPath);
 
   auto instance = std::make_unique<WallpaperInstance>();

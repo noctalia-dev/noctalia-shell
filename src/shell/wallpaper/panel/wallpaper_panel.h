@@ -16,7 +16,6 @@ class Input;
 class InputArea;
 class Label;
 class Select;
-class StateService;
 class ThumbnailService;
 class Toggle;
 class WallpaperPageGrid;
@@ -24,8 +23,7 @@ class WaylandConnection;
 
 class WallpaperPanel : public Panel {
 public:
-  WallpaperPanel(WaylandConnection* wayland, ConfigService* config, StateService* state,
-                 ThumbnailService* thumbnails);
+  WallpaperPanel(WaylandConnection* wayland, ConfigService* config, ThumbnailService* thumbnails);
 
   void create() override;
   void onOpen(std::string_view context) override;
@@ -68,7 +66,6 @@ private:
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
-  StateService* m_state = nullptr;
   ThumbnailService* m_thumbnails = nullptr;
 
   WallpaperScanner m_scanner;

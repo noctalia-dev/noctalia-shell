@@ -1,7 +1,7 @@
 #include "shell/lockscreen/lock_screen.h"
 
 #include "core/log.h"
-#include "config/state_service.h"
+#include "config/config_service.h"
 #include "render/render_context.h"
 #include "shell/lockscreen/lock_surface.h"
 #include "wayland/wayland_connection.h"
@@ -96,10 +96,10 @@ LockScreen::~LockScreen() {
   resetLockState();
 }
 
-bool LockScreen::initialize(WaylandConnection& wayland, RenderContext* renderContext, StateService* stateService) {
+bool LockScreen::initialize(WaylandConnection& wayland, RenderContext* renderContext, ConfigService* configService) {
   m_wayland = &wayland;
   m_renderContext = renderContext;
-  m_stateService = stateService;
+  m_configService = configService;
   m_user = PamAuthenticator::currentUsername();
   return true;
 }
@@ -349,8 +349,8 @@ void LockScreen::createInstance(const WaylandOutput& output) {
   auto surface = std::make_unique<LockSurface>(*m_wayland);
   surface->setRenderContext(m_renderContext);
   surface->setLockedState(m_locked);
-  if (m_stateService != nullptr) {
-    surface->setWallpaperPath(m_stateService->getWallpaperPath(output.connectorName));
+  if (m_configService != nullptr) {
+    surface->setWallpaperPath(m_configService->getWallpaperPath(output.connectorName));
   }
   surface->setOnLogin([this]() { tryAuthenticate(); });
   const auto masked = maskedCircles(utf8CodepointCount(m_password));

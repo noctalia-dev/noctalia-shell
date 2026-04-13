@@ -9,7 +9,6 @@
 #include <string_view>
 
 class ConfigService;
-class StateService;
 
 namespace noctalia::theme {
 
@@ -18,7 +17,7 @@ namespace noctalia::theme {
     using ChangeCallback = std::function<void()>;
     using ResolvedCallback = std::function<void(const GeneratedPalette&, std::string_view)>;
 
-    ThemeService(const ConfigService& config, const StateService& state);
+    explicit ThemeService(ConfigService& config);
 
     // Snaps the palette to the resolved theme (no fade). Used at startup.
     void apply();
@@ -37,8 +36,7 @@ namespace noctalia::theme {
     void startTransition(const Palette& target);
     void tickTransition();
 
-    const ConfigService& m_config;
-    const StateService& m_state;
+    ConfigService& m_config;
     ChangeCallback m_changeCallback;
     ResolvedCallback m_resolvedCallback;
 

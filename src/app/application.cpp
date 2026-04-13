@@ -255,12 +255,12 @@ void Application::initServices() {
   m_nightLightManager.setChangeCallback([this]() { m_bar.refresh(); });
   m_configService.addReloadCallback([this]() { m_nightLightManager.reload(m_configService.config().nightlight); });
 
-  m_wallpaper.initialize(m_wayland, &m_configService, &m_stateService);
-  m_overview.initialize(m_wayland, &m_configService, &m_stateService, &m_wallpaper);
+  m_wallpaper.initialize(m_wayland, &m_configService);
+  m_overview.initialize(m_wayland, &m_configService, &m_wallpaper);
 
   // Override the single-callback slot set by Wallpaper::initialize() so both
   // wallpaper and overview are notified of wallpaper path changes.
-  m_stateService.setWallpaperChangeCallback([this]() {
+  m_configService.setWallpaperChangeCallback([this]() {
     m_wallpaper.onStateChange();
     m_overview.onStateChange();
     m_themeService.onWallpaperChange();
@@ -414,7 +414,7 @@ void Application::initUi() {
   };
 
   m_renderContext.initialize(m_wayland.display());
-  m_lockScreen.initialize(m_wayland, &m_renderContext, &m_stateService);
+  m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService);
 
   // Panel manager must be before bar so widgets can access PanelManager::instance()
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
@@ -479,8 +479,8 @@ void Application::initUi() {
     launcherPanel->addProvider(std::make_unique<EmojiProvider>(&m_clipboardService));
     m_panelManager.registerPanel("launcher", std::move(launcherPanel));
   }
-  m_panelManager.registerPanel("wallpaper", std::make_unique<WallpaperPanel>(&m_wayland, &m_configService,
-                                                                             &m_stateService, &m_thumbnailService));
+  m_panelManager.registerPanel("wallpaper",
+                               std::make_unique<WallpaperPanel>(&m_wayland, &m_configService, &m_thumbnailService));
 
   m_notificationToast.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);
   m_configService.setNotificationManager(&m_notificationManager);
@@ -766,7 +766,6 @@ std::vector<PollSource*> Application::buildPollSources() {
   sources.push_back(&m_notificationPollSource);
   sources.push_back(&m_timePollSource);
   sources.push_back(&m_configPollSource);
-  sources.push_back(&m_statePollSource);
   sources.push_back(&m_desktopEntryPollSource);
   sources.push_back(&m_clipboardPollSource);
   sources.push_back(&m_timerPollSource);

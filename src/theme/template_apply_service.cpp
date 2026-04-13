@@ -1,7 +1,6 @@
 #include "theme/template_apply_service.h"
 
 #include "config/config_service.h"
-#include "config/state_service.h"
 #include "core/log.h"
 #include "theme/template_engine.h"
 
@@ -37,15 +36,14 @@ namespace noctalia::theme {
 
   } // namespace
 
-  TemplateApplyService::TemplateApplyService(const ConfigService& config, const StateService& state)
-      : m_config(config), m_state(state) {}
+  TemplateApplyService::TemplateApplyService(const ConfigService& config) : m_config(config) {}
 
   void TemplateApplyService::apply(const GeneratedPalette& palette, std::string_view defaultMode) const {
     const auto& templateCfg = m_config.config().theme.templates;
 
     TemplateEngine::Options options;
     options.defaultMode = std::string(defaultMode);
-    options.imagePath = m_state.getDefaultWallpaperPath();
+    options.imagePath = m_config.getDefaultWallpaperPath();
     options.schemeType = schemeTypeFromConfig(m_config.config().theme);
     options.verbose = true;
 

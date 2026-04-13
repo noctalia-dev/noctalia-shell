@@ -1,7 +1,6 @@
 #include "theme/theme_service.h"
 
 #include "config/config_service.h"
-#include "config/state_service.h"
 #include "core/log.h"
 #include "theme/builtin_palettes.h"
 #include "theme/fixed_palette.h"
@@ -73,10 +72,10 @@ namespace noctalia::theme {
       };
     }
 
-    std::optional<ResolvedTheme> resolveForConfig(const ThemeConfig& cfg, const StateService& state) {
+    std::optional<ResolvedTheme> resolveForConfig(const ThemeConfig& cfg, const ConfigService& config) {
       std::optional<ResolvedTheme> resolved;
       if (cfg.source == ThemeSource::Wallpaper) {
-        resolved = resolveWallpaper(cfg, state.getDefaultWallpaperPath());
+        resolved = resolveWallpaper(cfg, config.getDefaultWallpaperPath());
       }
       if (!resolved.has_value()) {
         resolved = resolveBuiltin(cfg);
@@ -86,8 +85,7 @@ namespace noctalia::theme {
 
   } // namespace
 
-  ThemeService::ThemeService(const ConfigService& config, const StateService& state)
-      : m_config(config), m_state(state) {}
+  ThemeService::ThemeService(ConfigService& config) : m_config(config) {}
 
   void ThemeService::apply() { resolveAndSet(/*animate=*/false); }
 
@@ -100,21 +98,11 @@ namespace noctalia::theme {
   }
 
   void ThemeService::toggleLightDark() {
-    ThemeConfig cfg = m_config.config().theme;
-    cfg.mode = m_isLightMode ? ThemeMode::Dark : ThemeMode::Light;
-
-    auto resolved = resolveForConfig(cfg, m_state);
-    if (!resolved.has_value()) {
-      return;
-    }
-
-    m_isLightMode = resolved->mode == "light";
-
-    if (m_resolvedCallback) {
-      m_resolvedCallback(resolved->generated, resolved->mode);
-    }
-
-    startTransition(resolved->palette);
+    const auto next = m_isLightMode ? ThemeMode::Dark : ThemeMode::Light;
+    // Persist via ConfigService → StateService. The resulting overrides-change
+    // callback rebuilds the Config and fires the reload callbacks, which call
+    // ThemeService::onConfigReload() to transition to the new palette.
+    m_config.setThemeMode(next);
   }
 
   bool ThemeService::isLightMode() const noexcept { return m_isLightMode; }
@@ -125,7 +113,7 @@ namespace noctalia::theme {
 
   void ThemeService::resolveAndSet(bool animate) {
     const auto& cfg = m_config.config().theme;
-    auto resolved = resolveForConfig(cfg, m_state);
+    auto resolved = resolveForConfig(cfg, m_config);
 
     if (m_resolvedCallback) {
       m_resolvedCallback(resolved->generated, resolved->mode);

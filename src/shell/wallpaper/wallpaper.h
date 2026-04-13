@@ -10,7 +10,6 @@
 #include <vector>
 
 class ConfigService;
-class StateService;
 class WaylandConnection;
 struct WaylandOutput;
 
@@ -19,7 +18,7 @@ public:
   Wallpaper();
   ~Wallpaper();
 
-  bool initialize(WaylandConnection& wayland, ConfigService* config, StateService* state);
+  bool initialize(WaylandConnection& wayland, ConfigService* config);
   void onOutputChange();
   void onStateChange();
   [[nodiscard]] bool hasInstances() const noexcept;
@@ -50,7 +49,6 @@ private:
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
-  StateService* m_state = nullptr;
   std::vector<std::unique_ptr<WallpaperInstance>> m_instances;
 
   // Shared GL resources — must be declared after m_instances so it is
