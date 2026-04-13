@@ -810,7 +810,7 @@ void Dock::rebuildItems(DockInstance& instance) {
     const std::string& iconPath = m_iconResolver.resolve(entry.icon);
     auto iconImg = std::make_unique<Image>();
     if (!iconPath.empty() && m_renderContext != nullptr) {
-      iconImg->setSourceFile(*m_renderContext, iconPath, cfg.iconSize);
+      iconImg->setSourceFile(*m_renderContext, iconPath, cfg.iconSize, true);
     }
     iconImg->setSize(iSize, iSize);
     iconImg->setPosition(kCellPad, kCellPad);
