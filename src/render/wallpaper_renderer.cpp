@@ -165,8 +165,6 @@ void WallpaperRenderer::renderToFbo(GLuint targetFbo) {
 
 void WallpaperRenderer::swapBuffers() { eglSwapBuffers(m_eglDisplay, m_eglSurface); }
 
-TextureManager& WallpaperRenderer::textureManager() { return m_textureManager; }
-
 void WallpaperRenderer::setTransitionState(GLuint tex1, GLuint tex2, float imgW1, float imgH1, float imgW2, float imgH2,
                                            float progress, WallpaperTransition transition, WallpaperFillMode fillMode,
                                            const TransitionParams& params) {
@@ -184,7 +182,6 @@ void WallpaperRenderer::setTransitionState(GLuint tex1, GLuint tex2, float imgW1
 
 void WallpaperRenderer::cleanup() {
   m_program.destroy();
-  m_textureManager.cleanup();
 
   if (m_eglDisplay != EGL_NO_DISPLAY) {
     eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);

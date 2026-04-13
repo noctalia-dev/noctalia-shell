@@ -1,7 +1,6 @@
 #pragma once
 
 #include "config/config_service.h"
-#include "render/core/texture_manager.h"
 #include "render/programs/wallpaper_program.h"
 
 #include <EGL/egl.h>
@@ -26,7 +25,6 @@ public:
   void render();
   void renderToFbo(GLuint targetFbo);
   void swapBuffers();
-  [[nodiscard]] TextureManager& textureManager();
 
   void setTransitionState(GLuint tex1, GLuint tex2, float imgW1, float imgH1, float imgW2, float imgH2, float progress,
                           WallpaperTransition transition, WallpaperFillMode fillMode, const TransitionParams& params);
@@ -43,7 +41,6 @@ private:
   EGLSurface m_eglSurface = EGL_NO_SURFACE;
 
   WallpaperProgram m_program;
-  TextureManager m_textureManager;
 
   std::uint32_t m_bufferWidth = 0;
   std::uint32_t m_bufferHeight = 0;
