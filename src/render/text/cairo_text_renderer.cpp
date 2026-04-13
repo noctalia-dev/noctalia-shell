@@ -33,6 +33,18 @@ void hashCombine(std::size_t& seed, std::size_t v) {
   seed ^= v + 0x9E3779B97F4A7C15ULL + (seed << 12) + (seed >> 4);
 }
 
+// Pack rgb into the top 24 bits; alpha is always forced to 0xFF so that
+// opacity animations on a mixed-content string (the RGBA emoji path) reuse
+// the same cache entry — the caller's alpha is applied at draw time via
+// u_opacity instead of being baked into the raster.
+std::uint32_t packColorRgb(const Color& c) {
+  const auto clamp8 = [](float v) -> std::uint32_t {
+    const float s = std::clamp(v, 0.0f, 1.0f);
+    return static_cast<std::uint32_t>(s * 255.0f + 0.5f);
+  };
+  return (clamp8(c.r) << 24) | (clamp8(c.g) << 16) | (clamp8(c.b) << 8) | 0xFFu;
+}
+
 // Swap BGRA<->RGBA in place on a premultiplied ARGB32 Cairo surface buffer.
 void swizzleBgraToRgba(unsigned char* data, int width, int height, int stride) {
   for (int y = 0; y < height; ++y) {
@@ -86,7 +98,7 @@ bool containsColorGlyph(std::string_view text) {
 
 bool CairoTextRenderer::CacheKey::operator==(const CacheKey& other) const noexcept {
   return bold == other.bold && sizeQ == other.sizeQ && scaleQ == other.scaleQ && maxWidthQ == other.maxWidthQ &&
-         maxLines == other.maxLines && text == other.text;
+         maxLines == other.maxLines && colorRgba == other.colorRgba && text == other.text;
 }
 
 std::size_t CairoTextRenderer::CacheKeyHash::operator()(const CacheKey& k) const noexcept {
@@ -95,6 +107,7 @@ std::size_t CairoTextRenderer::CacheKeyHash::operator()(const CacheKey& k) const
   hashCombine(seed, std::hash<std::uint32_t>{}(k.maxWidthQ));
   hashCombine(seed, std::hash<std::uint16_t>{}(k.scaleQ));
   hashCombine(seed, std::hash<std::uint16_t>{}(k.maxLines));
+  hashCombine(seed, std::hash<std::uint32_t>{}(k.colorRgba));
   hashCombine(seed, std::hash<bool>{}(k.bold));
   return seed;
 }
@@ -507,6 +520,14 @@ void CairoTextRenderer::evictIfNeeded() {
 
 CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_view text, float fontSize, bool bold,
                                                                     float maxWidth, int maxLines, const Color& color) {
+  // Tinted (A8 coverage) entries are color-independent — the shader applies
+  // u_tint at draw time, so one cache entry serves every color. RGBA entries
+  // (mixed content with COLR emoji) bake non-emoji ink color into the Cairo
+  // surface, so rgb must be part of the key. Alpha is normalized to 1.0 in
+  // the key AND in the rasterized source so opacity animations on mixed
+  // strings still reuse one entry.
+  const bool tinted = !containsColorGlyph(text);
+
   CacheKey key;
   key.text.assign(text);
   key.sizeQ = quantizeSize(fontSize);
@@ -514,6 +535,7 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_
   key.scaleQ = quantizeScale(m_contentScale);
   key.maxLines = static_cast<std::uint16_t>(std::max(0, maxLines));
   key.bold = bold;
+  key.colorRgba = tinted ? 0u : packColorRgb(color);
 
   auto it = m_cache.find(key);
   if (it != m_cache.end()) {
@@ -522,9 +544,12 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_
   }
 
   PangoLayout* layout = buildLayout(text, fontSize, bold, maxWidth * m_contentScale, maxLines);
-  const bool tinted = !containsColorGlyph(text);
+  Color rasterColor = color;
+  if (!tinted) {
+    rasterColor.a = 1.0f;
+  }
   CacheEntry entry{};
-  rasterizeLayout(layout, color, tinted, entry);
+  rasterizeLayout(layout, rasterColor, tinted, entry);
   g_object_unref(layout);
 
   MetricsKey mkey;
@@ -602,7 +627,10 @@ void CairoTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, f
       m_program->drawTinted(tile.texture, surfaceWidth, surfaceHeight, quadW, tileH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
                             color, tileWorld);
     } else {
-      m_program->draw(tile.texture, surfaceWidth, surfaceHeight, quadW, tileH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, tileWorld);
+      // RGBA entries are rasterized at alpha=1.0 and color-keyed by rgb, so
+      // the caller's alpha is applied here as opacity.
+      m_program->draw(tile.texture, surfaceWidth, surfaceHeight, quadW, tileH, 0.0f, 0.0f, 1.0f, 1.0f, color.a,
+                      tileWorld);
     }
   }
 }

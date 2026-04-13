@@ -5,7 +5,7 @@ echo "Sending test notifications..."
 notify-send "Notification #1" "A 'low' urgency notification" -u low
 sleep 0.5
 
-notify-send "Notification #2" "A 'normal' urgency notification" -u normal
+notify-send "Notification #2" "A 'normal' urgency notification with a smiley 😛 face." -u normal
 sleep 0.5
 
 notify-send "Notification #3" "A 'critical' urgency notification with a long timeout" -u critical -t 12000
