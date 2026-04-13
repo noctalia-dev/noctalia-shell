@@ -4,11 +4,11 @@
 
 #include "core/log.h"
 #include "render/animation/animation.h"
+#include "render/animation/animation_manager.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "ui/controls/box.h"
-#include "ui/controls/flex.h"
 #include "ui/controls/label.h"
 
 #include <algorithm>
@@ -23,15 +23,14 @@ constexpr float kWorkspaceDotSize = Style::controlHeightSm * 0.62f;
 constexpr float kWorkspacePillMinWidth = Style::controlHeightLg + Style::spaceXs;
 constexpr float kWorkspaceIndicatorHeight = Style::controlHeightSm * 0.62f;
 constexpr float kWorkspaceLabelPadH = Style::spaceSm;
+constexpr float kWorkspaceAnimDurationMs = static_cast<float>(Style::animNormal);
 } // namespace
 
 WorkspacesWidget::WorkspacesWidget(WaylandConnection& connection, wl_output* output, DisplayMode displayMode)
     : m_connection(connection), m_output(output), m_displayMode(displayMode) {}
 
 void WorkspacesWidget::create() {
-  auto container = std::make_unique<Flex>();
-  container->setRowLayout();
-  container->setGap(kWorkspaceGap * m_contentScale);
+  auto container = std::make_unique<Node>();
   m_container = container.get();
   setRoot(std::move(container));
 }
@@ -42,97 +41,154 @@ void WorkspacesWidget::doLayout(Renderer& renderer, float /*containerWidth*/, fl
     rebuild(renderer);
     m_rebuildPending = false;
   }
-  m_container->layout(renderer);
 }
 
 void WorkspacesWidget::doUpdate(Renderer& renderer) {
-  (void)renderer;
   auto current = m_connection.workspaces(m_output);
   if (m_cachedState.empty() && current.empty()) {
     return;
   }
 
-  bool changed = current.size() != m_cachedState.size();
-  if (!changed) {
+  bool structuralChange = current.size() != m_cachedState.size();
+  bool activeChange = false;
+  if (!structuralChange) {
     for (std::size_t i = 0; i < current.size(); ++i) {
-      if (current[i].name != m_cachedState[i].name || current[i].active != m_cachedState[i].active ||
-          current[i].urgent != m_cachedState[i].urgent || current[i].occupied != m_cachedState[i].occupied ||
-          current[i].coordinates != m_cachedState[i].coordinates) {
-        changed = true;
+      const auto& a = current[i];
+      const auto& b = m_cachedState[i];
+      if (a.name != b.name || a.coordinates != b.coordinates) {
+        structuralChange = true;
         break;
+      }
+      if (a.active != b.active || a.urgent != b.urgent || a.occupied != b.occupied) {
+        activeChange = true;
       }
     }
   }
 
-  if (changed) {
-    kLog.debug("workspaces widget: state changed, rebuilding ({} workspaces)", current.size());
-    m_cachedState.clear();
-    m_cachedState.reserve(current.size());
-    for (const auto& ws : current) {
-      m_cachedState.push_back(Workspace{.id = ws.id,
-                                        .name = ws.name,
-                                        .coordinates = ws.coordinates,
-                                        .active = ws.active,
-                                        .urgent = ws.urgent,
-                                        .occupied = ws.occupied});
-    }
+  if (!structuralChange && !activeChange) {
+    return;
+  }
+
+  kLog.debug("workspaces widget: state changed (structural={}, {} workspaces)", structuralChange, current.size());
+  m_cachedState.clear();
+  m_cachedState.reserve(current.size());
+  for (const auto& ws : current) {
+    m_cachedState.push_back(Workspace{.id = ws.id,
+                                      .name = ws.name,
+                                      .coordinates = ws.coordinates,
+                                      .active = ws.active,
+                                      .urgent = ws.urgent,
+                                      .occupied = ws.occupied});
+  }
+
+  if (structuralChange) {
     m_rebuildPending = true;
     if (root() != nullptr) {
       root()->markLayoutDirty();
     }
+  } else {
+    retarget(renderer);
   }
 }
 
 void WorkspacesWidget::rebuild(Renderer& renderer) {
   uiAssertNotRendering("WorkspacesWidget::rebuild");
+  cancelAnimation();
   while (!m_container->children().empty()) {
     m_container->removeChild(m_container->children().back().get());
   }
   m_items.clear();
 
-  auto workspaces = m_connection.workspaces(m_output);
+  const auto& workspaces = m_cachedState;
+  const float indicatorHeight = kWorkspaceIndicatorHeight * m_contentScale;
+  const float dotWidth = kWorkspaceDotSize * m_contentScale;
+  const float gap = kWorkspaceGap * m_contentScale;
+  const float pillMin = kWorkspacePillMinWidth * m_contentScale;
+  const float labelFontSize = Style::fontSizeCaption * m_contentScale;
+
+  std::vector<std::string> labels;
+  labels.reserve(workspaces.size());
+  for (std::size_t i = 0; i < workspaces.size(); ++i) {
+    labels.push_back(workspaceLabel(workspaces[i], i));
+  }
+
+  // Compute each slot's intrinsic label-padded width (if labelled).
+  std::vector<float> labelPadded(workspaces.size(), 0.0f);
+  bool anyMultiChar = false;
+  bool anyLabel = false;
+  for (std::size_t i = 0; i < workspaces.size(); ++i) {
+    const bool showLabel = (m_displayMode != DisplayMode::None) && !labels[i].empty();
+    if (!showLabel) {
+      continue;
+    }
+    anyLabel = true;
+    if (labels[i].size() > 1) {
+      anyMultiChar = true;
+    }
+    const TextMetrics tm = renderer.measureText(labels[i], labelFontSize, true);
+    const float inkWidth = tm.right - tm.left;
+    labelPadded[i] = std::max(pillMin, inkWidth + (kWorkspaceLabelPadH * m_contentScale * 2.0f));
+  }
+
+  // Pick per-slot active/inactive widths so (active - inactive) is constant across slots,
+  // guaranteeing stable total width regardless of which slot is active.
+  //
+  //   None mode       : inactive = dot,             active = pillMin                 (morph animation)
+  //   Single-char Id  : inactive = indicatorHeight, active = max(labelPadded)        (morph animation)
+  //   Multi-char Name : inactive = labelPadded[i],  active = labelPadded[i]          (color-only, no morph)
+  float uniformActive = pillMin;
+  for (float w : labelPadded) {
+    uniformActive = std::max(uniformActive, w);
+  }
+
+  m_gap = gap;
+  m_indicatorHeight = indicatorHeight;
 
   for (std::size_t i = 0; i < workspaces.size(); ++i) {
     const auto& ws = workspaces[i];
-    const std::string labelText = workspaceLabel(ws, i);
-    const bool showLabel = (m_displayMode != DisplayMode::None) && !labelText.empty();
-    const bool singleCharLabel = showLabel && labelText.size() == 1;
+    const bool showLabel = (m_displayMode != DisplayMode::None) && !labels[i].empty();
 
-    const float indicatorHeight = kWorkspaceIndicatorHeight * m_contentScale;
-    float indicatorWidth = (ws.active ? kWorkspacePillMinWidth : kWorkspaceDotSize) * m_contentScale;
-    if (singleCharLabel && !ws.active) {
-      indicatorWidth = indicatorHeight;
-    } else if (showLabel) {
-      const float labelFontSize = Style::fontSizeCaption * m_contentScale;
-      const TextMetrics labelMetrics = renderer.measureText(labelText, labelFontSize, true);
-      const float inkWidth = labelMetrics.right - labelMetrics.left;
-      const float paddedWidth = inkWidth + (kWorkspaceLabelPadH * m_contentScale * 2.0f);
-      indicatorWidth = std::max(kWorkspacePillMinWidth * m_contentScale, paddedWidth);
+    float inactiveWidth = 0.0f;
+    float activeWidth = 0.0f;
+    if (!anyLabel) {
+      inactiveWidth = dotWidth;
+      activeWidth = uniformActive;
+    } else if (anyMultiChar) {
+      // Uniform width — inactive must reserve enough room for its own label.
+      inactiveWidth = showLabel ? labelPadded[i] : dotWidth;
+      activeWidth = inactiveWidth;
+    } else {
+      // All single-char labels: morph from square to uniform pill.
+      inactiveWidth = showLabel ? indicatorHeight : dotWidth;
+      activeWidth = uniformActive;
     }
 
-    // Single clickable badge with optional centered text.
     auto area = std::make_unique<InputArea>();
-    area->setSize(indicatorWidth, indicatorHeight);
+    const float w = ws.active ? activeWidth : inactiveWidth;
+    area->setFrameSize(w, indicatorHeight);
 
-    Item item{.active = ws.active};
+    Item item{};
+    item.active = ws.active;
+    item.label = labels[i];
+    item.showLabel = showLabel;
+    item.inactiveWidth = inactiveWidth;
+    item.activeWidth = activeWidth;
 
     auto indicator = std::make_unique<Box>();
     indicator->clearBorder();
     indicator->setRadius(indicatorHeight * 0.5f);
-    indicator->setSize(indicatorWidth, indicatorHeight);
+    indicator->setFrameSize(w, indicatorHeight);
     indicator->setFill(roleColor(workspaceFillRole(ws)));
     item.indicator = static_cast<Box*>(area->addChild(std::move(indicator)));
 
     if (showLabel) {
-      const float labelFontSize = Style::fontSizeCaption * m_contentScale;
       auto text = std::make_unique<Label>();
-      text->setText(labelText);
+      text->setText(labels[i]);
       text->setFontSize(labelFontSize);
       text->setBold(true);
       text->setColor(roleColor(workspaceTextRole(ws)));
       text->measure(renderer);
-      text->setPosition(std::round((indicatorWidth - text->width()) * 0.5f),
-                        std::round((indicatorHeight - text->height()) * 0.5f));
+      item.label = labels[i];
       item.text = static_cast<Label*>(area->addChild(std::move(text)));
     }
 
@@ -142,10 +198,120 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
         m_connection.activateWorkspace(m_output, wsCopy);
       }
     });
-    m_container->addChild(std::move(area));
+    item.area = static_cast<InputArea*>(m_container->addChild(std::move(area)));
     m_items.push_back(item);
   }
+
+  // Size the container now that per-item widths are known.
+  float total = 0.0f;
+  for (std::size_t i = 0; i < m_items.size(); ++i) {
+    total += (m_cachedState[i].active) ? m_items[i].activeWidth : m_items[i].inactiveWidth;
+  }
+  if (m_items.size() > 1) {
+    total += gap * static_cast<float>(m_items.size() - 1);
+  }
+  m_container->setFrameSize(total, indicatorHeight);
+
+  // Snap to targets immediately (no animation on structural rebuild).
+  computeTargets();
+  for (std::size_t i = 0; i < m_items.size(); ++i) {
+    auto& it = m_items[i];
+    it.currentX = it.targetX;
+    it.currentWidth = it.targetWidth;
+    applyItemLayout(i);
+  }
 }
+
+void WorkspacesWidget::computeTargets() {
+  float cursor = 0.0f;
+  for (std::size_t i = 0; i < m_items.size(); ++i) {
+    auto& it = m_items[i];
+    const float w = (m_cachedState[i].active) ? it.activeWidth : it.inactiveWidth;
+    it.targetX = cursor;
+    it.targetWidth = w;
+    it.active = m_cachedState[i].active;
+    cursor += w + m_gap;
+  }
+}
+
+void WorkspacesWidget::retarget(Renderer& renderer) {
+  (void)renderer;
+  // Snapshot current positions as "from" values and compute new targets.
+  for (auto& it : m_items) {
+    it.fromX = it.currentX;
+    it.fromWidth = it.currentWidth;
+  }
+  computeTargets();
+
+  // Update per-item label text color (no animation on color — instant).
+  for (std::size_t i = 0; i < m_items.size(); ++i) {
+    auto& it = m_items[i];
+    if (it.indicator != nullptr) {
+      it.indicator->setFill(roleColor(workspaceFillRole(m_cachedState[i])));
+    }
+    if (it.text != nullptr) {
+      it.text->setColor(roleColor(workspaceTextRole(m_cachedState[i])));
+    }
+  }
+
+  startAnimation();
+}
+
+void WorkspacesWidget::startAnimation() {
+  auto* mgr = m_animations;
+  if (mgr == nullptr) {
+    for (std::size_t i = 0; i < m_items.size(); ++i) {
+      auto& it = m_items[i];
+      it.currentX = it.targetX;
+      it.currentWidth = it.targetWidth;
+      applyItemLayout(i);
+    }
+    return;
+  }
+  cancelAnimation();
+  m_animId = mgr->animate(
+      0.0f, 1.0f, kWorkspaceAnimDurationMs, Easing::EaseOutCubic,
+      [this](float t) {
+        for (std::size_t i = 0; i < m_items.size(); ++i) {
+          auto& it = m_items[i];
+          it.currentX = it.fromX + (it.targetX - it.fromX) * t;
+          it.currentWidth = it.fromWidth + (it.targetWidth - it.fromWidth) * t;
+          applyItemLayout(i);
+        }
+        if (root() != nullptr) {
+          root()->markPaintDirty();
+        }
+      },
+      [this]() { m_animId = 0; }, this);
+  if (root() != nullptr) {
+    root()->markPaintDirty();
+  }
+}
+
+void WorkspacesWidget::cancelAnimation() {
+  if (m_animId != 0 && m_animations != nullptr) {
+    m_animations->cancel(m_animId);
+  }
+  m_animId = 0;
+}
+
+void WorkspacesWidget::applyItemLayout(std::size_t i) {
+  auto& it = m_items[i];
+  if (it.area == nullptr) {
+    return;
+  }
+  it.area->setPosition(std::round(it.currentX), 0.0f);
+  it.area->setFrameSize(it.currentWidth, m_indicatorHeight);
+  if (it.indicator != nullptr) {
+    it.indicator->setFrameSize(it.currentWidth, m_indicatorHeight);
+  }
+  if (it.text != nullptr) {
+    it.text->setPosition(std::round((it.currentWidth - it.text->width()) * 0.5f),
+                         std::round((m_indicatorHeight - it.text->height()) * 0.5f));
+  }
+}
+
+WorkspacesWidget::~WorkspacesWidget() { cancelAnimation(); }
 
 std::string WorkspacesWidget::workspaceLabel(const Workspace& workspace, std::size_t displayIndex) const {
   if (m_displayMode == DisplayMode::Id) {
