@@ -71,6 +71,23 @@ private:
     std::size_t operator()(const CacheKey& k) const noexcept;
   };
 
+  // Color-independent key used to cache logical TextMetrics. measure() is
+  // called from layout paths that run every frame on dirty surfaces; rebuilding
+  // a PangoLayout for each call was the top allocation hot-spot in heaptrack.
+  struct MetricsKey {
+    std::string text;
+    std::uint32_t sizeQ = 0;
+    std::uint32_t maxWidthQ = 0;
+    std::uint16_t scaleQ = 0;
+    std::uint16_t maxLines = 0;
+    bool bold = false;
+
+    bool operator==(const MetricsKey& other) const noexcept;
+  };
+  struct MetricsKeyHash {
+    std::size_t operator()(const MetricsKey& k) const noexcept;
+  };
+
   // LruList is a list of pointers into map keys — we break the otherwise
   // circular type dependency (CacheEntry ↔ CacheMap) this way. CacheKey* is
   // stable because unordered_map never moves key-value nodes under insert
@@ -94,16 +111,21 @@ private:
     float baselinePx = 0;  // baseline from top of full layout, in raster pixels
     TextMetrics metrics;   // logical metrics in logical (unscaled) pixels
     std::size_t bytes = 0;
+    bool tinted = false;   // true: GL_ALPHA coverage, tint in shader; false: premul RGBA
     LruList::iterator lruIt;
   };
 
   using CacheMap = std::unordered_map<CacheKey, CacheEntry, CacheKeyHash>;
+  using MetricsMap = std::unordered_map<MetricsKey, TextMetrics, MetricsKeyHash>;
 
   // Build a PangoLayout at the given scaled size. Caller owns the layout (g_object_unref).
   PangoLayout* buildLayout(std::string_view text, float fontSize, bool bold, float maxWidthPxScaled,
                            int maxLines) const;
   // Render a layout into a new GL texture; fills out fields of `entry`.
-  void rasterizeLayout(PangoLayout* layout, const Color& color, CacheEntry& entry);
+  // When `tinted` is true, rasterizes as CAIRO_FORMAT_A8 / GL_ALPHA and the
+  // color is applied via u_tint at draw time. When false, rasterizes as
+  // CAIRO_FORMAT_ARGB32 with `color` baked in (for COLR emoji content).
+  void rasterizeLayout(PangoLayout* layout, const Color& color, bool tinted, CacheEntry& entry);
   // Extract logical metrics from a laid-out PangoLayout, dividing by PANGO_SCALE and by scale.
   TextMetrics metricsFromLayout(PangoLayout* layout) const;
 
@@ -112,8 +134,6 @@ private:
   void touch(CacheMap::iterator it);
   void evict(CacheMap::iterator it);
   void evictIfNeeded();
-
-  static std::uint32_t packColor(const Color& c);
 
   float m_contentScale = 1.0f;
   bool m_fontConfigInitialized = false;
@@ -127,6 +147,9 @@ private:
   std::size_t m_cacheBytes = 0;
   int m_glMaxTextureSize = 0; // lazy-queried on first rasterize
 
+  MetricsMap m_metricsCache;
+
   static constexpr std::size_t kMaxCacheEntries = 512;
   static constexpr std::size_t kMaxCacheBytes = 32 * 1024 * 1024;
+  static constexpr std::size_t kMaxMetricsEntries = 1024;
 };

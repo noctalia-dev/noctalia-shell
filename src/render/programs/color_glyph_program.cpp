@@ -29,19 +29,29 @@ void main() {
 }
 )";
 
-// Fragment shader: premultiplied RGBA sample with opacity.
-// The atlas stores premultiplied RGBA. Output is premultiplied to match the
-// pipeline-wide GL_ONE / GL_ONE_MINUS_SRC_ALPHA blend mode.
+// Fragment shader: two modes selected by u_tint_mode.
+//   mode 0 (RGBA): texture stores a premultiplied RGBA glyph; scale by opacity.
+//   mode 1 (tint): texture stores an alpha coverage mask; the output is
+//                  premul(tint) * coverage * opacity.
+// Both paths output premultiplied to match the pipeline-wide
+// GL_ONE / GL_ONE_MINUS_SRC_ALPHA blend mode.
 constexpr char kFragmentShaderSource[] = R"(
 precision highp float;
 
 uniform sampler2D u_texture;
 uniform float u_opacity;
+uniform vec4 u_tint;        // straight (non-premul) rgba
+uniform float u_tint_mode;  // 0 = RGBA texture, 1 = alpha coverage + u_tint
 varying vec2 v_texcoord;
 
 void main() {
     vec4 c = texture2D(u_texture, v_texcoord);
-    gl_FragColor = vec4(c.rgb * u_opacity, c.a * u_opacity);
+    if (u_tint_mode > 0.5) {
+        float coverage = c.a * u_tint.a * u_opacity;
+        gl_FragColor = vec4(u_tint.rgb * coverage, coverage);
+    } else {
+        gl_FragColor = vec4(c.rgb * u_opacity, c.a * u_opacity);
+    }
 }
 )";
 
@@ -60,9 +70,12 @@ void ColorGlyphProgram::ensureInitialized() {
   m_opacityLocation   = glGetUniformLocation(m_program.id(), "u_opacity");
   m_samplerLocation   = glGetUniformLocation(m_program.id(), "u_texture");
   m_transformLocation = glGetUniformLocation(m_program.id(), "u_transform");
+  m_tintLocation      = glGetUniformLocation(m_program.id(), "u_tint");
+  m_tintModeLocation  = glGetUniformLocation(m_program.id(), "u_tint_mode");
 
   if (m_positionLocation < 0 || m_texCoordLocation < 0 || m_surfaceSizeLocation < 0 || m_rectLocation < 0 ||
-      m_opacityLocation < 0 || m_samplerLocation < 0 || m_transformLocation < 0) {
+      m_opacityLocation < 0 || m_samplerLocation < 0 || m_transformLocation < 0 || m_tintLocation < 0 ||
+      m_tintModeLocation < 0) {
     throw std::runtime_error("failed to query color glyph shader locations");
   }
 }
@@ -76,15 +89,13 @@ void ColorGlyphProgram::destroy() {
   m_opacityLocation   = -1;
   m_samplerLocation   = -1;
   m_transformLocation = -1;
+  m_tintLocation      = -1;
+  m_tintModeLocation  = -1;
 }
 
-void ColorGlyphProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
-                              float u0, float v0, float u1, float v1, float opacity,
-                              const Mat3& transform) const {
-  if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
-    return;
-  }
-
+void ColorGlyphProgram::bindCommon(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
+                                    float u0, float v0, float u1, float v1, float opacity,
+                                    const Mat3& transform) const {
   const std::array<GLfloat, 12> positions = {
       0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
   };
@@ -110,4 +121,28 @@ void ColorGlyphProgram::draw(GLuint texture, float surfaceWidth, float surfaceHe
   glDrawArrays(GL_TRIANGLES, 0, 6);
   glDisableVertexAttribArray(posAttr);
   glDisableVertexAttribArray(texAttr);
+}
+
+void ColorGlyphProgram::draw(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
+                              float u0, float v0, float u1, float v1, float opacity,
+                              const Mat3& transform) const {
+  if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
+    return;
+  }
+  glUseProgram(m_program.id());
+  glUniform1f(m_tintModeLocation, 0.0f);
+  glUniform4f(m_tintLocation, 1.0f, 1.0f, 1.0f, 1.0f);
+  bindCommon(texture, surfaceWidth, surfaceHeight, width, height, u0, v0, u1, v1, opacity, transform);
+}
+
+void ColorGlyphProgram::drawTinted(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height,
+                                    float u0, float v0, float u1, float v1, float opacity, const Color& tint,
+                                    const Mat3& transform) const {
+  if (!m_program.isValid() || texture == 0 || width <= 0.0f || height <= 0.0f) {
+    return;
+  }
+  glUseProgram(m_program.id());
+  glUniform1f(m_tintModeLocation, 1.0f);
+  glUniform4f(m_tintLocation, tint.r, tint.g, tint.b, tint.a);
+  bindCommon(texture, surfaceWidth, surfaceHeight, width, height, u0, v0, u1, v1, opacity, transform);
 }

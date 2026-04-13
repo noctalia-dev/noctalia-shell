@@ -34,26 +34,15 @@ void hashCombine(std::size_t& seed, std::size_t v) {
   seed ^= v + 0x9E3779B97F4A7C15ULL + (seed << 12) + (seed >> 4);
 }
 
-void swizzleBgraToRgba(unsigned char* data, int width, int height, int stride) {
-  for (int y = 0; y < height; ++y) {
-    unsigned char* row = data + y * stride;
-    for (int x = 0; x < width; ++x) {
-      unsigned char* p = row + x * 4;
-      std::swap(p[0], p[2]);
-    }
-  }
-}
-
 } // namespace
 
 bool CairoGlyphRenderer::CacheKey::operator==(const CacheKey& other) const noexcept {
-  return codepoint == other.codepoint && sizeQ == other.sizeQ && colorRgba == other.colorRgba && scaleQ == other.scaleQ;
+  return codepoint == other.codepoint && sizeQ == other.sizeQ && scaleQ == other.scaleQ;
 }
 
 std::size_t CairoGlyphRenderer::CacheKeyHash::operator()(const CacheKey& k) const noexcept {
   std::size_t seed = std::hash<char32_t>{}(k.codepoint);
   hashCombine(seed, std::hash<std::uint32_t>{}(k.sizeQ));
-  hashCombine(seed, std::hash<std::uint32_t>{}(k.colorRgba));
   hashCombine(seed, std::hash<std::uint16_t>{}(k.scaleQ));
   return seed;
 }
@@ -109,14 +98,6 @@ void CairoGlyphRenderer::setContentScale(float scale) {
   if (scale > 0.0f) {
     m_contentScale = scale;
   }
-}
-
-std::uint32_t CairoGlyphRenderer::packColor(const Color& c) {
-  const auto clamp8 = [](float v) -> std::uint32_t {
-    const float s = std::clamp(v, 0.0f, 1.0f);
-    return static_cast<std::uint32_t>(s * 255.0f + 0.5f);
-  };
-  return (clamp8(c.r) << 24) | (clamp8(c.g) << 16) | (clamp8(c.b) << 8) | clamp8(c.a);
 }
 
 void CairoGlyphRenderer::touch(CacheMap::iterator it) {
@@ -176,12 +157,10 @@ CairoGlyphRenderer::TextMetrics CairoGlyphRenderer::measureGlyph(char32_t codepo
   return out;
 }
 
-CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t codepoint, float fontSize,
-                                                                      const Color& color) {
+CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t codepoint, float fontSize) {
   CacheKey key;
   key.codepoint = codepoint;
   key.sizeQ = quantizeSize(fontSize);
-  key.colorRgba = packColor(color);
   key.scaleQ = quantizeScale(m_contentScale);
 
   auto it = m_cache.find(key);
@@ -244,25 +223,28 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
   // of origin, and we placed origin so that ink-top = pad).
   entry.baselinePx = static_cast<float>(glyph.y);
 
-  cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, pxWidth, pxHeight);
+  // A8 (alpha coverage) rasterization: color gets applied in the shader via
+  // u_tint, so the cache is color-independent. cairo draws coverage by setting
+  // an opaque source on the A8 surface (rgb is ignored for A8).
+  cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_A8, pxWidth, pxHeight);
   cairo_t* cr = cairo_create(surface);
   cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
   cairo_paint(cr);
   cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
   cairo_set_scaled_font(cr, scaledFont);
-  cairo_set_source_rgba(cr, color.r, color.g, color.b, color.a);
+  cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
   cairo_show_glyphs(cr, &glyph, 1);
   cairo_destroy(cr);
   cairo_surface_flush(surface);
 
   const int stride = cairo_image_surface_get_stride(surface);
   unsigned char* data = cairo_image_surface_get_data(surface);
-  swizzleBgraToRgba(data, pxWidth, pxHeight, stride);
 
-  const int tightRowBytes = pxWidth * 4;
-  std::vector<unsigned char> tight(static_cast<std::size_t>(tightRowBytes) * static_cast<std::size_t>(pxHeight));
+  // Repack tightly to pxWidth bytes per row (cairo's stride is 4-byte aligned).
+  std::vector<unsigned char> tight(static_cast<std::size_t>(pxWidth) * static_cast<std::size_t>(pxHeight));
   for (int y = 0; y < pxHeight; ++y) {
-    std::memcpy(tight.data() + y * tightRowBytes, data + y * stride, static_cast<std::size_t>(tightRowBytes));
+    std::memcpy(tight.data() + static_cast<std::size_t>(y) * pxWidth, data + y * stride,
+                static_cast<std::size_t>(pxWidth));
   }
   cairo_surface_destroy(surface);
   cairo_scaled_font_destroy(scaledFont);
@@ -270,15 +252,15 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
   GLuint tex = 0;
   glGenTextures(1, &tex);
   glBindTexture(GL_TEXTURE_2D, tex);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pxWidth, pxHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, tight.data());
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, pxWidth, pxHeight, 0, GL_ALPHA, GL_UNSIGNED_BYTE, tight.data());
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
   entry.texture = tex;
-  entry.bytes = static_cast<std::size_t>(tightRowBytes) * static_cast<std::size_t>(pxHeight);
+  entry.bytes = static_cast<std::size_t>(pxWidth) * static_cast<std::size_t>(pxHeight);
 
   // Logical metrics (unscaled).
   const float invScale = 1.0f / m_contentScale;
@@ -308,7 +290,7 @@ void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, floa
     return;
   }
 
-  CacheEntry* entry = lookupOrRasterize(codepoint, fontSize, color);
+  CacheEntry* entry = lookupOrRasterize(codepoint, fontSize);
   if (entry == nullptr || entry->texture == 0) {
     return;
   }
@@ -331,5 +313,6 @@ void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, floa
     world.m[7] = std::round(world.m[7] * m_contentScale) / m_contentScale;
   }
 
-  m_program->draw(entry->texture, surfaceWidth, surfaceHeight, quadW, quadH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, world);
+  m_program->drawTinted(entry->texture, surfaceWidth, surfaceHeight, quadW, quadH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, color,
+                        world);
 }

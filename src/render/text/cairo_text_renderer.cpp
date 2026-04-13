@@ -44,19 +44,69 @@ void swizzleBgraToRgba(unsigned char* data, int width, int height, int stride) {
   }
 }
 
+// Scan UTF-8 text for codepoints that are likely to resolve to a COLR/bitmap
+// color glyph. We can't ask Pango cheaply whether a shaped run used a color
+// font, so we approximate: if the text contains codepoints in the common
+// emoji / symbol / dingbat ranges, rasterize as RGBA so the color layers are
+// preserved. Otherwise we can use A8 coverage + shader tint, which lets one
+// cache entry serve all colors for the same text.
+bool containsColorGlyph(std::string_view text) {
+  const auto* s = reinterpret_cast<const unsigned char*>(text.data());
+  const std::size_t n = text.size();
+  std::size_t i = 0;
+  while (i < n) {
+    unsigned char b = s[i];
+    char32_t cp = 0;
+    int len = 1;
+    if (b < 0x80) {
+      cp = b;
+    } else if ((b & 0xE0) == 0xC0 && i + 1 < n) {
+      cp = static_cast<char32_t>((b & 0x1F) << 6 | (s[i + 1] & 0x3F));
+      len = 2;
+    } else if ((b & 0xF0) == 0xE0 && i + 2 < n) {
+      cp = static_cast<char32_t>((b & 0x0F) << 12 | (s[i + 1] & 0x3F) << 6 | (s[i + 2] & 0x3F));
+      len = 3;
+    } else if ((b & 0xF8) == 0xF0 && i + 3 < n) {
+      cp = static_cast<char32_t>((b & 0x07) << 18 | (s[i + 1] & 0x3F) << 12 | (s[i + 2] & 0x3F) << 6 | (s[i + 3] & 0x3F));
+      len = 4;
+    } else {
+      return true; // malformed — be safe
+    }
+    i += static_cast<std::size_t>(len);
+    if (cp >= 0x2600 && cp <= 0x27BF) return true;   // misc symbols + dingbats
+    if (cp >= 0x1F000 && cp <= 0x1FFFF) return true; // emoji planes
+    if (cp >= 0x1F900 && cp <= 0x1F9FF) return true; // supplemental symbols
+  }
+  return false;
+}
+
 } // namespace
 
 // ── CacheKey equality/hash ──────────────────────────────────────────────────
 
 bool CairoTextRenderer::CacheKey::operator==(const CacheKey& other) const noexcept {
-  return bold == other.bold && sizeQ == other.sizeQ && colorRgba == other.colorRgba && scaleQ == other.scaleQ &&
-         maxWidthQ == other.maxWidthQ && maxLines == other.maxLines && text == other.text;
+  return bold == other.bold && sizeQ == other.sizeQ && scaleQ == other.scaleQ && maxWidthQ == other.maxWidthQ &&
+         maxLines == other.maxLines && text == other.text;
 }
 
 std::size_t CairoTextRenderer::CacheKeyHash::operator()(const CacheKey& k) const noexcept {
   std::size_t seed = std::hash<std::string>{}(k.text);
   hashCombine(seed, std::hash<std::uint32_t>{}(k.sizeQ));
-  hashCombine(seed, std::hash<std::uint32_t>{}(k.colorRgba));
+  hashCombine(seed, std::hash<std::uint32_t>{}(k.maxWidthQ));
+  hashCombine(seed, std::hash<std::uint16_t>{}(k.scaleQ));
+  hashCombine(seed, std::hash<std::uint16_t>{}(k.maxLines));
+  hashCombine(seed, std::hash<bool>{}(k.bold));
+  return seed;
+}
+
+bool CairoTextRenderer::MetricsKey::operator==(const MetricsKey& other) const noexcept {
+  return bold == other.bold && sizeQ == other.sizeQ && scaleQ == other.scaleQ && maxWidthQ == other.maxWidthQ &&
+         maxLines == other.maxLines && text == other.text;
+}
+
+std::size_t CairoTextRenderer::MetricsKeyHash::operator()(const MetricsKey& k) const noexcept {
+  std::size_t seed = std::hash<std::string>{}(k.text);
+  hashCombine(seed, std::hash<std::uint32_t>{}(k.sizeQ));
   hashCombine(seed, std::hash<std::uint32_t>{}(k.maxWidthQ));
   hashCombine(seed, std::hash<std::uint16_t>{}(k.scaleQ));
   hashCombine(seed, std::hash<std::uint16_t>{}(k.maxLines));
@@ -104,6 +154,9 @@ void CairoTextRenderer::initialize(ColorGlyphProgram* program) {
   // entries (which hold map iterators) valid.
   m_cache.max_load_factor(1.0f);
   m_cache.reserve(kMaxCacheEntries + 16);
+
+  m_metricsCache.max_load_factor(1.0f);
+  m_metricsCache.reserve(kMaxMetricsEntries + 16);
 }
 
 void CairoTextRenderer::cleanup() {
@@ -117,6 +170,7 @@ void CairoTextRenderer::cleanup() {
   m_cache.clear();
   m_lru.clear();
   m_cacheBytes = 0;
+  m_metricsCache.clear();
 
   if (m_pangoContext != nullptr) {
     g_object_unref(m_pangoContext);
@@ -213,15 +267,34 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::measure(std::string_view text,
     return {};
   }
 
+  MetricsKey key;
+  key.text.assign(text);
+  key.sizeQ = quantizeSize(fontSize);
+  key.maxWidthQ = quantizeSize(std::max(0.0f, maxWidth));
+  key.scaleQ = quantizeScale(m_contentScale);
+  key.maxLines = static_cast<std::uint16_t>(std::max(0, maxLines));
+  key.bold = bold;
+
+  auto it = m_metricsCache.find(key);
+  if (it != m_metricsCache.end()) {
+    return it->second;
+  }
+
   PangoLayout* layout = buildLayout(text, fontSize, bold, maxWidth * m_contentScale, maxLines);
   const auto metrics = metricsFromLayout(layout);
   g_object_unref(layout);
+
+  if (m_metricsCache.size() >= kMaxMetricsEntries) {
+    m_metricsCache.clear();
+  }
+  m_metricsCache.emplace(std::move(key), metrics);
   return metrics;
 }
 
 // ── Rasterization ───────────────────────────────────────────────────────────
 
-void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color, CacheEntry& entry) {
+void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color, bool tinted, CacheEntry& entry) {
+  entry.tinted = tinted;
   // Pixel-sized surface: ceil the logical rect up.
   int pxWidth = 0;
   int pxHeight = 0;
@@ -323,18 +396,30 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
   }
 
   // Rasterize each planned tile.
-  const int tightRowBytes = pxWidth * 4;
+  // Tinted path: CAIRO_FORMAT_A8 coverage mask, 1 byte/pixel, GL_ALPHA upload,
+  // color applied in shader (u_tint). Color-independent → one cache entry per
+  // string serves every color animation state.
+  // Untinted path: CAIRO_FORMAT_ARGB32 with `color` baked in, BGRA->RGBA
+  // swizzle, GL_RGBA upload. Used for COLR color emoji.
+  const int bytesPerPixel = tinted ? 1 : 4;
+  const int tightRowBytes = pxWidth * bytesPerPixel;
   std::vector<unsigned char> tight;
 
   for (const auto& tilePlan : plan) {
     const int tileH = tilePlan.heightPx;
 
-    cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, pxWidth, tileH);
+    const cairo_format_t fmt = tinted ? CAIRO_FORMAT_A8 : CAIRO_FORMAT_ARGB32;
+    cairo_surface_t* surface = cairo_image_surface_create(fmt, pxWidth, tileH);
     cairo_t* cr = cairo_create(surface);
     cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
     cairo_paint(cr);
     cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
-    cairo_set_source_rgba(cr, color.r, color.g, color.b, color.a);
+    if (tinted) {
+      // A8: rgb ignored, opaque alpha so show_glyphs writes coverage = 1.
+      cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
+    } else {
+      cairo_set_source_rgba(cr, color.r, color.g, color.b, color.a);
+    }
 
     // Draw only this tile's lines. show_layout_line draws at the current
     // device origin placing the line's BASELINE at y=0, so move the device
@@ -352,7 +437,9 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
 
     const int stride = cairo_image_surface_get_stride(surface);
     unsigned char* data = cairo_image_surface_get_data(surface);
-    swizzleBgraToRgba(data, pxWidth, tileH, stride);
+    if (!tinted) {
+      swizzleBgraToRgba(data, pxWidth, tileH, stride);
+    }
 
     // Repack tightly (GL_UNPACK_ROW_LENGTH is GLES3-only).
     tight.resize(static_cast<std::size_t>(tightRowBytes) * static_cast<std::size_t>(tileH));
@@ -364,8 +451,9 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
     GLuint tex = 0;
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pxWidth, tileH, 0, GL_RGBA, GL_UNSIGNED_BYTE, tight.data());
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    const GLenum glFmt = tinted ? GL_ALPHA : GL_RGBA;
+    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(glFmt), pxWidth, tileH, 0, glFmt, GL_UNSIGNED_BYTE, tight.data());
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -383,14 +471,6 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
 }
 
 // ── Cache management ────────────────────────────────────────────────────────
-
-std::uint32_t CairoTextRenderer::packColor(const Color& c) {
-  const auto clamp8 = [](float v) -> std::uint32_t {
-    const float s = std::clamp(v, 0.0f, 1.0f);
-    return static_cast<std::uint32_t>(s * 255.0f + 0.5f);
-  };
-  return (clamp8(c.r) << 24) | (clamp8(c.g) << 16) | (clamp8(c.b) << 8) | clamp8(c.a);
-}
 
 void CairoTextRenderer::touch(CacheMap::iterator it) {
   // Splice the LRU node to the front (most-recently-used).
@@ -430,7 +510,6 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_
   CacheKey key;
   key.text.assign(text);
   key.sizeQ = quantizeSize(fontSize);
-  key.colorRgba = packColor(color);
   key.maxWidthQ = quantizeSize(std::max(0.0f, maxWidth));
   key.scaleQ = quantizeScale(m_contentScale);
   key.maxLines = static_cast<std::uint16_t>(std::max(0, maxLines));
@@ -443,9 +522,22 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_
   }
 
   PangoLayout* layout = buildLayout(text, fontSize, bold, maxWidth * m_contentScale, maxLines);
+  const bool tinted = !containsColorGlyph(text);
   CacheEntry entry{};
-  rasterizeLayout(layout, color, entry);
+  rasterizeLayout(layout, color, tinted, entry);
   g_object_unref(layout);
+
+  MetricsKey mkey;
+  mkey.text = key.text;
+  mkey.sizeQ = key.sizeQ;
+  mkey.maxWidthQ = key.maxWidthQ;
+  mkey.scaleQ = key.scaleQ;
+  mkey.maxLines = key.maxLines;
+  mkey.bold = key.bold;
+  if (m_metricsCache.size() >= kMaxMetricsEntries) {
+    m_metricsCache.clear();
+  }
+  m_metricsCache.emplace(std::move(mkey), entry.metrics);
 
   auto [ins, inserted] = m_cache.emplace(std::move(key), std::move(entry));
   m_lru.push_front(&ins->first);
@@ -506,6 +598,11 @@ void CairoTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, f
     const float tileYLocal = static_cast<float>(tile.pixelYOffset) * invScale;
     const float tileH = static_cast<float>(tile.pixelHeight) * invScale;
     const Mat3 tileWorld = baseWorld * Mat3::translation(0.0f, tileYLocal);
-    m_program->draw(tile.texture, surfaceWidth, surfaceHeight, quadW, tileH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, tileWorld);
+    if (entry->tinted) {
+      m_program->drawTinted(tile.texture, surfaceWidth, surfaceHeight, quadW, tileH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+                            color, tileWorld);
+    } else {
+      m_program->draw(tile.texture, surfaceWidth, surfaceHeight, quadW, tileH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, tileWorld);
+    }
   }
 }

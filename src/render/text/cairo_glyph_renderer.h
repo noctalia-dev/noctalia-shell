@@ -52,7 +52,6 @@ private:
   struct CacheKey {
     char32_t codepoint = 0;
     std::uint32_t sizeQ = 0;
-    std::uint32_t colorRgba = 0;
     std::uint16_t scaleQ = 0;
 
     bool operator==(const CacheKey& other) const noexcept;
@@ -75,12 +74,10 @@ private:
 
   using CacheMap = std::unordered_map<CacheKey, CacheEntry, CacheKeyHash>;
 
-  CacheEntry* lookupOrRasterize(char32_t codepoint, float fontSize, const Color& color);
+  CacheEntry* lookupOrRasterize(char32_t codepoint, float fontSize);
   void touch(CacheMap::iterator it);
   void evict(CacheMap::iterator it);
   void evictIfNeeded();
-
-  static std::uint32_t packColor(const Color& c);
 
   float m_contentScale = 1.0f;
 
