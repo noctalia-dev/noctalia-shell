@@ -241,6 +241,30 @@ void ConfigService::setThemeMode(ThemeMode mode) {
   fireReloadCallbacks();
 }
 
+void ConfigService::setDockEnabled(bool enabled) {
+  if (m_overridesPath.empty()) {
+    return;
+  }
+
+  auto* dockTbl = ensureTable(m_overridesTable, "dock");
+  const auto existing = (*dockTbl)["enabled"].value<bool>();
+  if (existing.has_value() && *existing == enabled && m_config.dock.enabled == enabled) {
+    return;
+  }
+
+  dockTbl->insert_or_assign("enabled", enabled);
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return;
+  }
+
+  m_ownOverridesWritePending = true;
+
+  loadAll();
+  fireReloadCallbacks();
+}
+
 std::string ConfigService::getWallpaperPath(const std::string& connectorName) const {
   auto it = m_monitorWallpaperPaths.find(connectorName);
   if (it != m_monitorWallpaperPaths.end()) {

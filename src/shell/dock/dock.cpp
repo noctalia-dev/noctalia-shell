@@ -88,14 +88,6 @@ bool Dock::initialize(WaylandConnection& wayland, ConfigService* config, RenderC
   m_renderContext = renderContext;
 
   const auto& cfg = m_config->config().dock;
-  if (!cfg.enabled) {
-    kLog.info("dock disabled in config");
-    return true;
-  }
-
-  m_lastDockConfig  = cfg;
-  m_lastPinnedConfig = cfg.pinned;
-
   m_config->addReloadCallback([this]() {
     const auto& newCfg = m_config->config().dock;
     if (newCfg == m_lastDockConfig) {
@@ -103,6 +95,14 @@ bool Dock::initialize(WaylandConnection& wayland, ConfigService* config, RenderC
     }
     reload();
   });
+
+  m_lastDockConfig  = cfg;
+  m_lastPinnedConfig = cfg.pinned;
+
+  if (!cfg.enabled) {
+    kLog.info("dock disabled in config");
+    return true;
+  }
 
   refreshPinnedAppsIfNeeded();
   syncInstances();

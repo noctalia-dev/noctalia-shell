@@ -294,6 +294,8 @@ public:
 
   // Persist a theme-mode override to overrides.toml and trigger the reload pipeline.
   void setThemeMode(ThemeMode mode);
+  // Persist dock enabled override to overrides.toml and trigger the reload pipeline.
+  void setDockEnabled(bool enabled);
 
   [[nodiscard]] static BarConfig resolveForOutput(const BarConfig& base, const WaylandOutput& output);
 

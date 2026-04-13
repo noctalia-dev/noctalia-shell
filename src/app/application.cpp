@@ -710,26 +710,26 @@ void Application::initIpc() {
   m_ipcService.registerHandler(
       "show-dock",
       [this](const std::string&) -> std::string {
-        m_dock.show();
+        m_configService.setDockEnabled(true);
         return "ok\n";
       },
-      "show-dock", "Show the dock (re-displays all instances)");
+      "show-dock", "Show the dock (persists override)");
 
   m_ipcService.registerHandler(
       "hide-dock",
       [this](const std::string&) -> std::string {
-        m_dock.closeAllInstances();
+        m_configService.setDockEnabled(false);
         return "ok\n";
       },
-      "hide-dock", "Hide the dock (closes all instances until next reload)");
+      "hide-dock", "Hide the dock (persists override)");
 
   m_ipcService.registerHandler(
       "toggle-dock",
       [this](const std::string&) -> std::string {
-        m_dock.toggleVisibility();
+        m_configService.setDockEnabled(!m_configService.config().dock.enabled);
         return "ok\n";
       },
-      "toggle-dock", "Toggle dock visibility");
+      "toggle-dock", "Toggle dock visibility (persists override)");
 
   m_ipcService.registerHandler(
       "reload-dock",
