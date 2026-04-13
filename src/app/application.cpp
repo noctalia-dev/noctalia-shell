@@ -416,6 +416,30 @@ void Application::initUi() {
   m_renderContext.initialize(m_wayland.display());
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService);
 
+  m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
+    if (m_lockScreen.isActive()) {
+      m_lockScreen.onPointerEvent(event);
+      return;
+    }
+    if (m_trayMenu.onPointerEvent(event))
+      return;
+    if (m_bar.onPointerEvent(event))
+      return;
+    if (m_dock.onPointerEvent(event))
+      return;
+    if (m_panelManager.onPointerEvent(event))
+      return;
+    m_notificationToast.onPointerEvent(event);
+  });
+
+  m_wayland.setKeyboardEventCallback([this](const KeyboardEvent& event) {
+    if (m_lockScreen.isActive()) {
+      m_lockScreen.onKeyboardEvent(event);
+      return;
+    }
+    m_panelManager.onKeyboardEvent(event);
+  });
+
   // Panel manager must be before bar so widgets can access PanelManager::instance()
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
   auto clipboardPanel = std::make_unique<ClipboardPanel>(&m_clipboardService);
@@ -532,30 +556,6 @@ void Application::initUi() {
       }
     });
   }
-
-  m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
-    if (m_lockScreen.isActive()) {
-      m_lockScreen.onPointerEvent(event);
-      return;
-    }
-    if (m_trayMenu.onPointerEvent(event))
-      return;
-    if (m_bar.onPointerEvent(event))
-      return;
-    if (m_dock.onPointerEvent(event))
-      return;
-    if (m_panelManager.onPointerEvent(event))
-      return;
-    m_notificationToast.onPointerEvent(event);
-  });
-
-  m_wayland.setKeyboardEventCallback([this](const KeyboardEvent& event) {
-    if (m_lockScreen.isActive()) {
-      m_lockScreen.onKeyboardEvent(event);
-      return;
-    }
-    m_panelManager.onKeyboardEvent(event);
-  });
 }
 
 void Application::initIpc() {

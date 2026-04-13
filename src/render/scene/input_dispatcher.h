@@ -44,4 +44,7 @@ private:
   InputArea* m_focusedArea = nullptr;
   InputArea* m_capturedArea = nullptr; // held while any button is pressed
   std::uint32_t m_lastSerial = 0;
+  float m_lastPointerX = 0.0f;
+  float m_lastPointerY = 0.0f;
+  bool m_hasPointerPosition = false;
 };

@@ -18,6 +18,9 @@ void InputDispatcher::setSceneRoot(Node* root) {
     }
   }
   m_sceneRoot = root;
+  if (m_sceneRoot != nullptr && m_hasPointerPosition) {
+    updateHover(m_lastPointerX, m_lastPointerY, m_lastSerial);
+  }
 }
 
 void InputDispatcher::setCursorShapeCallback(CursorShapeCallback callback) {
@@ -26,11 +29,15 @@ void InputDispatcher::setCursorShapeCallback(CursorShapeCallback callback) {
 
 void InputDispatcher::pointerEnter(float x, float y, std::uint32_t serial) {
   m_lastSerial = serial;
+  m_lastPointerX = x;
+  m_lastPointerY = y;
+  m_hasPointerPosition = true;
   updateHover(x, y, serial);
 }
 
 void InputDispatcher::pointerLeave() {
   m_capturedArea = nullptr;
+  m_hasPointerPosition = false;
   if (m_hoveredArea != nullptr) {
     m_hoveredArea->dispatchLeave();
     m_hoveredArea = nullptr;
@@ -41,6 +48,9 @@ void InputDispatcher::pointerMotion(float x, float y, std::uint32_t serial) {
   if (serial != 0) {
     m_lastSerial = serial;
   }
+  m_lastPointerX = x;
+  m_lastPointerY = y;
+  m_hasPointerPosition = true;
   updateHover(x, y, m_lastSerial);
 }
 
