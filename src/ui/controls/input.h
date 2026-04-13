@@ -12,9 +12,9 @@
 
 class ClipboardService;
 class InputArea;
+class Label;
 class RectNode;
 class Renderer;
-class TextNode;
 
 class Input : public Node {
 public:
@@ -56,7 +56,7 @@ private:
 
   RectNode* m_background = nullptr;
   RectNode* m_selectionRect = nullptr;
-  TextNode* m_textNode = nullptr;
+  Label* m_label = nullptr;
   RectNode* m_cursor = nullptr;
   InputArea* m_inputArea = nullptr;
 

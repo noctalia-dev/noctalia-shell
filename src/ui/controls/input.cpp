@@ -6,7 +6,7 @@
 #include "render/programs/rounded_rect_program.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
-#include "render/scene/text_node.h"
+#include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/clipboard_service.h"
@@ -74,10 +74,11 @@ Input::Input() {
   m_selectionRect = static_cast<RectNode*>(addChild(std::move(sel)));
 
   // 2: text
-  auto text = std::make_unique<TextNode>();
-  text->setFontSize(m_fontSize);
-  text->setColor(resolved(ColorRole::OnSurface));
-  m_textNode = static_cast<TextNode*>(addChild(std::move(text)));
+  auto label = std::make_unique<Label>();
+  label->setFontSize(m_fontSize);
+  label->setMaxLines(1);
+  label->setColor(roleColor(ColorRole::OnSurface));
+  m_label = static_cast<Label*>(addChild(std::move(label)));
 
   // 3: cursor
   auto cursor = std::make_unique<RectNode>();
@@ -145,8 +146,8 @@ void Input::setPlaceholder(std::string_view placeholder) {
 
 void Input::setFontSize(float size) {
   m_fontSize = std::max(1.0f, size);
-  if (m_textNode != nullptr) {
-    m_textNode->setFontSize(m_fontSize);
+  if (m_label != nullptr) {
+    m_label->setFontSize(m_fontSize);
   }
   markLayoutDirty();
 }
@@ -191,18 +192,11 @@ void Input::doLayout(Renderer& renderer) {
   const float h = m_controlHeight;
   setSize(w, h);
 
-  // Measure display text for width; use a stable reference for vertical centering
-  // so the baseline doesn't jump when characters with descenders are typed.
-  const std::string& display = m_value.empty() ? m_placeholder : m_value;
-  const auto metrics     = renderer.measureText(display, m_fontSize);
-  const auto fontMetrics = renderer.measureText("Ay", m_fontSize);
-  const float fontH      = fontMetrics.bottom - fontMetrics.top;
-  // TextNode y is interpreted as baseline by the renderer. Place it so the
-  // reference line box is geometrically centered: top = (h - fontH) / 2,
-  // then add baselineOffset (= -top) to get baseline position.
-  const float textNodeY  = std::round((h - fontH) * 0.5f) - fontMetrics.top;
-  m_textNode->setPosition(m_horizontalPadding, textNodeY);
-  m_textNode->setFrameSize(metrics.width, fontH);
+  // Let the Label measure itself (single-line; uses a stable "A" reference so
+  // the baseline doesn't jump when characters with descenders are typed).
+  m_label->measure(renderer);
+  const float labelY = std::round((h - m_label->height()) * 0.5f);
+  m_label->setPosition(m_horizontalPadding, labelY);
 
   // Build stop arrays for click-to-position and selection rect
   m_stopByte.clear();
@@ -407,11 +401,11 @@ void Input::applyVisualState() {
 
 void Input::updateDisplayText() {
   if (m_value.empty() && !m_placeholder.empty()) {
-    m_textNode->setText(m_placeholder);
-    m_textNode->setColor(resolved(ColorRole::OnSurfaceVariant));
+    m_label->setText(m_placeholder);
+    m_label->setColor(roleColor(ColorRole::OnSurfaceVariant));
   } else {
-    m_textNode->setText(m_value);
-    m_textNode->setColor(resolved(ColorRole::OnSurface));
+    m_label->setText(m_value);
+    m_label->setColor(roleColor(ColorRole::OnSurface));
   }
 }
 
