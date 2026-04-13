@@ -59,6 +59,12 @@ public:
   // Closes all expired notifications.
   void processExpired();
 
+  // Pauses the expiry timer on a notification (clears its expiryTime). Used by the
+  // toast to freeze the auto-dismiss while the user hovers a card.
+  void pauseExpiry(uint32_t id);
+  // Resumes expiry by setting expiryTime = now + remainingMs.
+  void resumeExpiry(uint32_t id, int32_t remainingMs);
+
   // All stored notifications.
   [[nodiscard]] const std::deque<Notification>& all() const noexcept;
 

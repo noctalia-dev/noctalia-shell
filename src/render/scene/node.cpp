@@ -1,6 +1,7 @@
 #include "core/ui_phase.h"
 #include "render/scene/node.h"
 
+#include "render/animation/animation_manager.h"
 #include "render/core/mat3.h"
 
 #include <algorithm>
@@ -49,7 +50,13 @@ bool pointInsideNode(const Node* node, float sceneX, float sceneY, float& localX
 
 Node::Node(NodeType type) : m_type(type) {}
 
-Node::~Node() = default;
+Node::~Node() {
+  // Ensure any animation still targeting this node is cancelled before the node goes away.
+  // Call sites that pass `this` as the animation owner get lifetime safety for free.
+  if (m_animationManager != nullptr) {
+    m_animationManager->cancelForOwner(this);
+  }
+}
 
 void Node::layout(Renderer& renderer) {
   uiAssertNotRendering("Node::layout");

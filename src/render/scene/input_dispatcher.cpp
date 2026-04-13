@@ -4,6 +4,13 @@
 #include "render/scene/node.h"
 
 void InputDispatcher::setSceneRoot(Node* root) {
+  if (root != m_sceneRoot) {
+    m_capturedArea = nullptr;
+    if (m_hoveredArea != nullptr) {
+      m_hoveredArea->dispatchLeave();
+      m_hoveredArea = nullptr;
+    }
+  }
   if (root == nullptr) {
     if (m_focusedArea != nullptr) {
       m_focusedArea->dispatchFocusLoss();

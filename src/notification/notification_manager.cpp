@@ -243,3 +243,23 @@ void NotificationManager::processExpired() {
     close(id, CloseReason::Expired);
   }
 }
+
+void NotificationManager::pauseExpiry(uint32_t id) {
+  const auto it = m_idToIndex.find(id);
+  if (it == m_idToIndex.end()) {
+    return;
+  }
+  m_notifications[it->second].expiryTime.reset();
+}
+
+void NotificationManager::resumeExpiry(uint32_t id, int32_t remainingMs) {
+  const auto it = m_idToIndex.find(id);
+  if (it == m_idToIndex.end()) {
+    return;
+  }
+  if (remainingMs <= 0) {
+    m_notifications[it->second].expiryTime = Clock::now();
+    return;
+  }
+  m_notifications[it->second].expiryTime = Clock::now() + std::chrono::milliseconds(remainingMs);
+}

@@ -66,10 +66,13 @@ private:
   RenderContext* m_renderContext = nullptr;
 
   std::unique_ptr<LayerSurface> m_surface;
+  // m_sceneRoot must be destroyed before m_animations — ~Node() calls cancelForOwner().
+  // Also m_panels (which own their own Nodes parented under m_sceneRoot) must be destroyed
+  // before m_animations for the same reason.
+  AnimationManager m_animations;
   std::unique_ptr<Node> m_sceneRoot;
   Node* m_bgNode = nullptr;
   Node* m_contentNode = nullptr;
-  AnimationManager m_animations;
   InputDispatcher m_inputDispatcher;
 
   std::unordered_map<std::string, std::unique_ptr<Panel>> m_panels;

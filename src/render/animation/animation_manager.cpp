@@ -9,7 +9,8 @@ AnimationManager::AnimationManager() { MotionService::instance().registerManager
 AnimationManager::~AnimationManager() { MotionService::instance().unregisterManager(this); }
 
 AnimationManager::Id AnimationManager::animate(float from, float to, float durationMs, Easing easing,
-                                               std::function<void(float)> setter, std::function<void()> onComplete) {
+                                               std::function<void(float)> setter, std::function<void()> onComplete,
+                                               const void* owner) {
   const auto& motion = MotionService::instance();
   if (!motion.enabled()) {
     if (setter) {
@@ -35,6 +36,7 @@ AnimationManager::Id AnimationManager::animate(float from, float to, float durat
   Id id = m_nextId++;
   m_animations.push_back(Entry{
       .id = id,
+      .owner = owner,
       .animation =
           Animation{
               .startValue = from,
@@ -53,6 +55,13 @@ void AnimationManager::cancel(Id id) {
 }
 
 void AnimationManager::cancelAll() { m_animations.clear(); }
+
+void AnimationManager::cancelForOwner(const void* owner) {
+  if (owner == nullptr) {
+    return;
+  }
+  std::erase_if(m_animations, [owner](const Entry& e) { return e.owner == owner; });
+}
 
 void AnimationManager::tick(float deltaMs) {
   // Collect completed callbacks separately — onComplete may call animate()

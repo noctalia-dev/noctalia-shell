@@ -653,7 +653,7 @@ void Dock::buildScene(DockInstance& instance) {
       instance.sceneRoot->setOpacity(0.0f);
       instance.animations.animate(0.0f, 1.0f, Style::animSlow, Easing::EaseOutCubic,
                                   [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); },
-                                  [inst = &instance]() { inst->hideOpacity = 1.0f; });
+                                  [inst = &instance]() { inst->hideOpacity = 1.0f; }, instance.sceneRoot.get());
     }
 
     instance.surface->setSceneRoot(instance.sceneRoot.get());

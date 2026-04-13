@@ -24,8 +24,9 @@ struct BarInstance {
   std::size_t barIndex = 0;
   BarConfig barConfig;
   std::unique_ptr<LayerSurface> surface;
-  std::unique_ptr<Node> sceneRoot;
+  // sceneRoot must be destroyed before `animations` — ~Node() calls cancelForOwner().
   AnimationManager animations;
+  std::unique_ptr<Node> sceneRoot;
   InputDispatcher inputDispatcher;
 
   // Bar background, shadow, and layout sections (start/center/end along main axis)

@@ -42,8 +42,9 @@ private:
     wl_output* output = nullptr;
     std::int32_t scale = 1;
     std::unique_ptr<LayerSurface> surface;
-    std::unique_ptr<Node> sceneRoot;
+    // sceneRoot must be destroyed before `animations` — ~Node() calls cancelForOwner().
     AnimationManager animations;
+    std::unique_ptr<Node> sceneRoot;
     wl_surface* wlSurface = nullptr;
 
     Node* card = nullptr;
