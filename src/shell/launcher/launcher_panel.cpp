@@ -84,7 +84,7 @@ void LauncherPanel::doLayout(Renderer& renderer, float width, float height) {
   m_container->layout(renderer);
 
   bool relayoutNeeded = false;
-  if (m_dirty) {
+  if (m_dirty || m_lastListWidth != m_scrollView->contentViewportWidth()) {
     rebuildResults(renderer, m_scrollView->contentViewportWidth());
     m_dirty = false;
     relayoutNeeded = true;
@@ -92,6 +92,14 @@ void LauncherPanel::doLayout(Renderer& renderer, float width, float height) {
 
   if (relayoutNeeded) {
     m_container->layout(renderer);
+    // Rebuilding may have shown/hidden the scrollbar, which changes the
+    // viewport width. Re-measure and rebuild once more so every row lands at
+    // the final width — otherwise the first-frame selection background can
+    // overshoot.
+    if (m_lastListWidth != m_scrollView->contentViewportWidth()) {
+      rebuildResults(renderer, m_scrollView->contentViewportWidth());
+      m_container->layout(renderer);
+    }
   }
 
   if (m_pendingScrollToSelected) {
@@ -130,6 +138,7 @@ void LauncherPanel::onClose() {
   m_results.clear();
   m_selectedIndex = 0;
   m_lastWidth = 0.0f;
+  m_lastListWidth = -1.0f;
   m_dirty = false;
   m_pendingScrollToSelected = false;
 
@@ -338,6 +347,8 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
     area->addChild(std::move(row));
     m_list->addChild(std::move(area));
   }
+
+  m_lastListWidth = width;
 }
 
 void LauncherPanel::activateSelected() {
