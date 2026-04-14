@@ -82,6 +82,7 @@ NotificationToast::~NotificationToast() {
   if (m_notifications != nullptr && m_callbackToken >= 0) {
     m_notifications->removeEventCallback(m_callbackToken);
   }
+  destroySurfaces();
 }
 
 void NotificationToast::initialize(WaylandConnection& wayland, ConfigService* config,
@@ -93,6 +94,10 @@ void NotificationToast::initialize(WaylandConnection& wayland, ConfigService* co
 
   m_callbackToken = m_notifications->addEventCallback(
       [this](const Notification& n, NotificationEvent event) { onNotificationEvent(n, event); });
+
+  // Prewarm toast layer surfaces so first notification does not pay
+  // surface creation/scene setup latency on the critical path.
+  ensureSurfaces();
 }
 
 void NotificationToast::requestRedraw() {
@@ -295,7 +300,13 @@ void NotificationToast::finishRemoval(uint32_t notificationId) {
   m_entries.erase(m_entries.begin() + static_cast<std::ptrdiff_t>(index));
 
   if (m_entries.empty()) {
-    destroySurfaces();
+    for (auto& inst : m_instances) {
+      if (inst->surface == nullptr) {
+        continue;
+      }
+      updateInputRegion(*inst);
+      inst->surface->requestRedraw();
+    }
   } else {
     revealQueuedEntries();
   }
@@ -625,9 +636,6 @@ std::size_t NotificationToast::findFreeSlot() const {
 // --- Surface lifecycle ---
 
 void NotificationToast::ensureSurfaces() {
-  if (!m_instances.empty()) {
-    return;
-  }
   if (m_wayland == nullptr || m_renderContext == nullptr) {
     return;
   }
@@ -641,6 +649,16 @@ void NotificationToast::ensureSurfaces() {
   auto surfaceHeight = static_cast<uint32_t>(kSurfaceHeight);
 
   for (const auto& output : m_wayland->outputs()) {
+    if (output.output == nullptr) {
+      continue;
+    }
+    const bool alreadyExists = std::any_of(m_instances.begin(), m_instances.end(), [&output](const auto& inst) {
+      return inst != nullptr && inst->output == output.output;
+    });
+    if (alreadyExists) {
+      continue;
+    }
+
     auto inst = std::make_unique<PopupInstance>();
     inst->output = output.output;
     inst->scale = output.scale;
