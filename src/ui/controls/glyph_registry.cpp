@@ -141,12 +141,17 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"battery-exclamation", 0xFF1D}, // battery-exclamation
     {"battery-off", 0xED1C},       // battery-off
 
-    // WiFi
+    // WiFi & Network
     {"wifi", 0xEB52},              // wifi
     {"wifi-0", 0xEBA3},            // wifi-0
     {"wifi-1", 0xEBA4},            // wifi-1
     {"wifi-2", 0xEBA5},            // wifi-2
     {"wifi-off", 0xECFA},          // wifi-off
+    {"ethernet", 0xECCC},
+    {"ethernet-off", 0xECCD},
+    {"ethernet-exclamation", 0xECCE},
+    {"ethernet-question", 0xECCF},
+
 
     // Bluetooth devices
     {"bluetooth", 0xEA37},         // bluetooth

@@ -201,10 +201,9 @@ void styleCard(Flex& card, float scale) {
   card.setGap(Style::spaceSm * scale);
   card.setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
   card.setRadius(Style::radiusXl * scale);
-  card.setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
+  card.setBackground(roleColor(ColorRole::Surface, 0.75f));
   card.setBorderWidth(Style::borderWidth);
-  card.setBorderColor(roleColor(ColorRole::Outline, 0.85f));
-  card.setSoftness(1.25f);
+  card.setBorderColor(roleColor(ColorRole::Outline));
 }
 
 } // namespace

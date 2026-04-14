@@ -6,6 +6,8 @@
 #include "config/config_service.h"
 #include "core/timer_manager.h"
 #include "dbus/mpris/mpris_service.h"
+#include "dbus/network/network_secret_agent.h"
+#include "dbus/network/network_service.h"
 #include "dbus/notification/notification_poll_source.h"
 #include "dbus/notification/notification_service.h"
 #include "dbus/power/power_profiles_service.h"
@@ -96,6 +98,8 @@ private:
   NightLightManager m_nightLightManager;
   std::unique_ptr<MprisService> m_mprisService;
   std::unique_ptr<PowerProfilesService> m_powerProfilesService;
+  std::unique_ptr<NetworkService> m_networkService;
+  std::unique_ptr<NetworkSecretAgent> m_networkSecretAgent;
   std::unique_ptr<UPowerService> m_upowerService;
   std::unique_ptr<TrayService> m_trayService;
   std::unique_ptr<NotificationService> m_notificationDbus;

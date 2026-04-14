@@ -226,6 +226,22 @@ No configurable settings.
 
 ---
 
+### `network`
+
+Shows the current network connection (Wi-Fi SSID and signal strength, or wired) via NetworkManager. Dims and shows a `wifi-off` glyph when disconnected.
+
+| Setting      | Type | Default | Description                                |
+|--------------|------|---------|--------------------------------------------|
+| `show_label` | bool | `true`  | Show the SSID or interface name next to the glyph |
+
+```toml
+[widget.network]
+type = "network"
+show_label = false
+```
+
+---
+
 ### `weather`
 
 Shows the current weather in the bar and opens the Weather control-center tab on click.
