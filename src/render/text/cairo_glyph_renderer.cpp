@@ -184,8 +184,8 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
   cairo_matrix_init_identity(&ctm);
   // Disable hinting for icons: tabler glyphs are monoline strokes with
   // fractional widths by design. Autohinter snaps each stroke to the nearest
-  // integer pixel, which visibly thins the icons vs. the old MSDF output.
-  // Grayscale AA without hinting preserves the intended stroke thickness.
+  // integer pixel, which visibly thins the icons. Grayscale AA without
+  // hinting preserves the intended stroke thickness.
   cairo_font_options_t* fontOptions = cairo_font_options_create();
   cairo_font_options_set_antialias(fontOptions, CAIRO_ANTIALIAS_GRAY);
   cairo_font_options_set_hint_style(fontOptions, CAIRO_HINT_STYLE_NONE);

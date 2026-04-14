@@ -151,10 +151,10 @@ void CairoTextRenderer::initialize(GlyphProgram* program) {
 
   // Force grayscale AA + full hinting + hinted metrics. Without this, Cairo
   // on an ARGB32 image surface produces unhinted glyph outlines that sample
-  // off the pixel grid → noticeably blurrier than the old MSDF output. The
-  // font options are applied on the shared PangoContext so both measure()
-  // and draw() agree on glyph widths (critical — unhinted metrics produce
-  // sub-pixel widths that differ from the hinted raster).
+  // off the pixel grid → noticeably blurrier output. The font options are
+  // applied on the shared PangoContext so both measure() and draw() agree
+  // on glyph widths (critical — unhinted metrics produce sub-pixel widths
+  // that differ from the hinted raster).
   cairo_font_options_t* fontOptions = cairo_font_options_create();
   cairo_font_options_set_antialias(fontOptions, CAIRO_ANTIALIAS_GRAY);
   cairo_font_options_set_hint_style(fontOptions, CAIRO_HINT_STYLE_FULL);
