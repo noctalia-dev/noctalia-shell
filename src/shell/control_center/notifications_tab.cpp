@@ -18,8 +18,8 @@ using namespace control_center;
 
 namespace {
 
-constexpr float kNotificationListRightPadding = Style::spaceXs;
-constexpr float kNotificationActionButtonSize = 24.0f;
+constexpr float kNotificationListRightPadding = Style::spaceSm;
+constexpr float kNotificationActionButtonSize = Style::controlHeightSm;
 constexpr int kSummaryMaxLines = 2;
 constexpr int kBodyMaxLines = 3;
 constexpr int kExpandedMaxLines = 500;
@@ -52,9 +52,13 @@ ColorRole statusColorRole(const NotificationHistoryEntry& entry) {
 void applyNotificationCardStyle(Flex& card, float scale) {
   applyCard(card, scale);
   card.setAlign(FlexAlign::Stretch);
-  card.setBackground(roleColor(ColorRole::Surface));
+  card.setGap(Style::spaceSm * scale);
+  card.setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
+  card.setRadius(Style::radiusXl * scale);
+  card.setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
   card.setBorderWidth(Style::borderWidth);
-  card.setBorderColor(roleColor(ColorRole::Outline, 0.75f));
+  card.setBorderColor(roleColor(ColorRole::Outline, 0.85f));
+  card.setSoftness(1.25f);
 }
 
 bool canExpandText(Renderer& renderer, std::string_view text, float fontSize, bool bold, float maxWidth,
@@ -80,6 +84,7 @@ std::unique_ptr<Flex> NotificationsTab::create() {
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);
   tab->setAlign(FlexAlign::Stretch);
+  tab->setGap(Style::spaceSm * scale);
   m_root = tab.get();
 
   auto scroll = std::make_unique<ScrollView>();
@@ -89,8 +94,8 @@ std::unique_ptr<Flex> NotificationsTab::create() {
   m_scroll = scroll.get();
   m_list = scroll->content();
   m_list->setDirection(FlexDirection::Vertical);
-  m_list->setAlign(FlexAlign::Start);
-  m_list->setGap(Style::spaceSm * scale);
+  m_list->setAlign(FlexAlign::Stretch);
+  m_list->setGap(Style::spaceMd * scale);
   m_list->setPadding(0.0f, kNotificationListRightPadding * scale, 0.0f, 0.0f);
   tab->addChild(std::move(scroll));
 
@@ -232,10 +237,10 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
 
   if (m_notifications == nullptr || m_notifications->history().empty()) {
     auto empty = std::make_unique<Flex>();
-    empty->setDirection(FlexDirection::Vertical);
+    applyNotificationCardStyle(*empty, scale);
     empty->setAlign(FlexAlign::Center);
-    empty->setGap(Style::spaceXs * scale);
-    empty->setPadding(Style::spaceLg * scale, 0.0f);
+    empty->setGap(Style::spaceSm * scale);
+    empty->setPadding(Style::spaceLg * scale, Style::spaceMd * scale);
     empty->setMinWidth(cardWidth);
 
     auto title = std::make_unique<Label>();
@@ -303,7 +308,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     if (canExpand) {
       auto expand = std::make_unique<Button>();
       expand->setGlyph(expanded ? "chevron-up" : "chevron-down");
-      expand->setVariant(ButtonVariant::Default);
+      expand->setVariant(ButtonVariant::Ghost);
       expand->setGlyphSize(Style::fontSizeBody * scale);
       expand->setMinWidth(actionButtonSize);
       expand->setMinHeight(actionButtonSize);
@@ -315,7 +320,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
 
     auto dismiss = std::make_unique<Button>();
     dismiss->setGlyph("trash");
-    dismiss->setVariant(ButtonVariant::Default);
+    dismiss->setVariant(ButtonVariant::Ghost);
     dismiss->setGlyphSize(Style::fontSizeBody * scale);
     dismiss->setMinWidth(actionButtonSize);
     dismiss->setMinHeight(actionButtonSize);
@@ -331,7 +336,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     auto summary = std::make_unique<Label>();
     summary->setText(summaryText);
     summary->setBold(true);
-    summary->setFontSize(Style::fontSizeBody * scale);
+    summary->setFontSize(Style::fontSizeTitle * scale);
     summary->setMaxWidth(cardTextWidth);
     summary->setMaxLines(expanded ? kExpandedMaxLines : kSummaryMaxLines);
     summary->measure(renderer);
@@ -340,7 +345,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     if (!bodyText.empty()) {
       auto body = std::make_unique<Label>();
       body->setText(bodyText);
-      body->setFontSize(Style::fontSizeBody * scale);
+      body->setFontSize(Style::fontSizeCaption * scale);
       body->setColor(roleColor(ColorRole::OnSurfaceVariant));
       body->setMaxWidth(cardTextWidth);
       body->setMaxLines(expanded ? kExpandedMaxLines : kBodyMaxLines);
