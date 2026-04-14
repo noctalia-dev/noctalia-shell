@@ -27,7 +27,7 @@ namespace fs = std::filesystem;
 
 constexpr Logger kLog("tray");
 
-constexpr float kTrayIconScale = 0.96f;
+constexpr float kTrayIconScale = 1.15f;
 
 std::string toLower(std::string_view value) {
   std::string out(value);
@@ -239,25 +239,21 @@ void TrayWidget::create() {
   setRoot(std::move(container));
 }
 
-void TrayWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void TrayWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float containerHeight) {
   if (m_container == nullptr) {
     return;
   }
   syncState(renderer);
+  if (containerHeight > 0.0f && std::abs(containerHeight - m_contentHeight) > 0.5f) {
+    m_contentHeight = containerHeight;
+    m_rebuildPending = true;
+  }
   if (m_rebuildPending) {
     rebuild(renderer);
     m_rebuildPending = false;
   }
 
   m_container->setGap(Style::spaceXs * m_contentScale);
-
-  for (const auto& child : m_container->children()) {
-    if (auto* glyph = dynamic_cast<Glyph*>(child.get())) {
-      glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-      glyph->measure(renderer);
-    }
-  }
-
   m_container->layout(renderer);
 }
 
@@ -371,7 +367,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
       auto glyph = std::make_unique<Glyph>();
       const std::string fallback = iconForItem(item);
       glyph->setGlyph(fallback);
-      glyph->setGlyphSize(iconSize);
+      glyph->setGlyphSize(slotSize);
       glyph->setColor(roleColor(item.needsAttention ? ColorRole::Error : ColorRole::OnSurface));
       glyph->measure(renderer);
       iconW = glyph->width();
@@ -384,7 +380,7 @@ void TrayWidget::rebuild(Renderer& renderer) {
     auto area = std::make_unique<InputArea>();
     area->setSize(slotSize, slotSize);
     iconNode->setPosition(std::round((slotSize - iconW) * 0.5f),
-                          std::round((slotSize - iconH) * 0.5f + Style::borderWidth * m_contentScale));
+                          std::round((slotSize - iconH) * 0.5f));
     auto itemId = item.id;
     area->setOnClick([this, itemId](const InputArea::PointerData& data) {
       if (m_tray == nullptr) {
