@@ -2,8 +2,8 @@
 
 #include "config/config_service.h"
 #include "core/log.h"
+#include "render/core/shared_texture_cache.h"
 #include "shell/overview/overview_surface.h"
-#include "shell/wallpaper/wallpaper.h"
 #include "ui/palette.h"
 #include "wayland/wayland_connection.h"
 
@@ -18,10 +18,12 @@ constexpr Logger kLog("overview");
 Overview::Overview() = default;
 Overview::~Overview() = default;
 
-bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, Wallpaper* wallpaper) {
+bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache,
+                          GlSharedContext* sharedGl) {
   m_wayland  = &wayland;
   m_config   = config;
-  m_wallpaper = wallpaper;
+  m_textureCache = textureCache;
+  m_sharedGl = sharedGl;
 
   // Register reload callback unconditionally so toggling enabled in config works.
   m_config->addReloadCallback([this]() { reload(); });
@@ -49,13 +51,6 @@ void Overview::reload() {
   m_instances.clear();
 
   if (!m_config->config().overview.enabled) {
-    return;
-  }
-
-  // Only create instances if the wallpaper share context is available.
-  // If wallpaper is currently disabled its share context is EGL_NO_CONTEXT.
-  if (m_wallpaper->shareContext() == EGL_NO_CONTEXT) {
-    kLog.info("wallpaper share context unavailable, deferring instance creation");
     return;
   }
 
@@ -142,7 +137,7 @@ void Overview::createInstance(const WaylandOutput& output) {
   };
 
   inst->surface = std::make_unique<OverviewSurface>(*m_wayland, std::move(surfaceConfig));
-  inst->surface->setShareContext(m_wallpaper->shareContext());
+  inst->surface->setSharedGl(m_sharedGl);
 
   updateRendererState(*inst);
 
@@ -163,7 +158,7 @@ void Overview::createInstance(const WaylandOutput& output) {
 }
 
 void Overview::loadWallpaper(OverviewInstance& inst, const std::string& path) {
-  auto tex = m_wallpaper->acquireTexture(path);
+  auto tex = m_textureCache->acquire(path);
   if (tex.id == 0) {
     kLog.warn("failed to load {}", path);
     return;
@@ -200,7 +195,7 @@ void Overview::updateRendererState(OverviewInstance& inst) {
 
 void Overview::releaseInstanceTexture(OverviewInstance& inst) {
   if (inst.currentTexture.id != 0) {
-    m_wallpaper->releaseTexture(inst.currentTexture, inst.currentPath);
+    m_textureCache->release(inst.currentTexture, inst.currentPath);
     inst.currentPath.clear();
   }
 }

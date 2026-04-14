@@ -6,7 +6,8 @@
 #include <vector>
 
 class ConfigService;
-class Wallpaper;
+class GlSharedContext;
+class SharedTextureCache;
 class WaylandConnection;
 struct WaylandOutput;
 
@@ -15,7 +16,8 @@ public:
   Overview();
   ~Overview();
 
-  bool initialize(WaylandConnection& wayland, ConfigService* config, Wallpaper* wallpaper);
+  bool initialize(WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache,
+                  GlSharedContext* sharedGl);
   void onOutputChange();
   void onStateChange();
   void onThemeChanged();
@@ -30,6 +32,7 @@ private:
 
   WaylandConnection* m_wayland  = nullptr;
   ConfigService*     m_config   = nullptr;
-  Wallpaper*         m_wallpaper = nullptr;
+  SharedTextureCache* m_textureCache = nullptr;
+  GlSharedContext*   m_sharedGl = nullptr;
   std::vector<std::unique_ptr<OverviewInstance>> m_instances;
 };

@@ -19,6 +19,7 @@ class Button;
 class Input;
 class Label;
 class RectNode;
+class SharedTextureCache;
 struct KeyboardEvent;
 struct PointerEvent;
 
@@ -32,6 +33,7 @@ public:
   bool initialize(ext_session_lock_v1* lock, wl_output* output, std::int32_t scale);
   void setLockedState(bool locked);
   void setPromptState(std::string user, std::string maskedPassword, std::string status, bool error);
+  void setTextureCache(SharedTextureCache* cache) noexcept { m_textureCache = cache; }
   void setWallpaperPath(std::string wallpaperPath);
   void setOnLogin(std::function<void()> onLogin);
   void selectAllPassword();
@@ -47,7 +49,7 @@ public:
 
 private:
   void prepareFrame(bool needsUpdate, bool needsLayout);
-  void ensureWallpaperTexture();
+  void applyWallpaperTexture();
   void updateClockText();
   void layoutScene(std::uint32_t width, std::uint32_t height);
   void updateCopy();
@@ -62,6 +64,7 @@ private:
   RectNode* m_loginPanel = nullptr;
   Input* m_passwordField = nullptr;
   Button* m_loginButton = nullptr;
+  SharedTextureCache* m_textureCache = nullptr;
   TextureHandle m_wallpaperTexture{};
   std::string m_wallpaperPath;
   bool m_wallpaperDirty = false;

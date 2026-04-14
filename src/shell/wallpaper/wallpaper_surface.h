@@ -3,12 +3,14 @@
 #include "render/wallpaper_renderer.h"
 #include "wayland/layer_surface.h"
 
+class GlSharedContext;
+
 class WallpaperSurface : public LayerSurface {
 public:
   using LayerSurface::LayerSurface;
 
   [[nodiscard]] WallpaperRenderer* wallpaperRenderer() noexcept { return &m_wallpaperRenderer; }
-  void setShareContext(EGLContext ctx) noexcept { m_shareContext = ctx; }
+  void setSharedGl(GlSharedContext* shared) noexcept { m_shared = shared; }
 
 protected:
   bool createWlSurface() override;
@@ -17,5 +19,5 @@ protected:
 
 private:
   WallpaperRenderer m_wallpaperRenderer;
-  EGLContext m_shareContext = EGL_NO_CONTEXT;
+  GlSharedContext* m_shared = nullptr;
 };

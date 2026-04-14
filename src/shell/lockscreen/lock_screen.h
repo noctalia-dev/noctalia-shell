@@ -17,6 +17,7 @@ class ConfigService;
 
 class LockSurface;
 class RenderContext;
+class SharedTextureCache;
 class WaylandConnection;
 
 class LockScreen {
@@ -24,7 +25,8 @@ public:
   LockScreen();
   ~LockScreen();
 
-  bool initialize(WaylandConnection& wayland, RenderContext* renderContext, ConfigService* configService);
+  bool initialize(WaylandConnection& wayland, RenderContext* renderContext, ConfigService* configService,
+                  SharedTextureCache* textureCache);
   bool lock();
   void unlock();
   void onOutputChange();
@@ -59,6 +61,7 @@ private:
   WaylandConnection* m_wayland = nullptr;
   RenderContext* m_renderContext = nullptr;
   ConfigService* m_configService = nullptr;
+  SharedTextureCache* m_textureCache = nullptr;
   ext_session_lock_v1* m_lock = nullptr;
   std::vector<Instance> m_instances;
   PamAuthenticator m_authenticator;

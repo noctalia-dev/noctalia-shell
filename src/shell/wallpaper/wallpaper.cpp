@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/log.h"
+#include "render/core/shared_texture_cache.h"
 #include "render/wallpaper_renderer.h"
 #include "shell/wallpaper/wallpaper_surface.h"
 #include "wayland/wayland_connection.h"
@@ -54,19 +55,17 @@ constexpr Logger kLog("wallpaper");
 Wallpaper::Wallpaper() = default;
 
 Wallpaper::~Wallpaper() {
-  // Release all instance textures while contexts are still alive, then clean
-  // up the shared TextureManager (also needs a current context).
   for (auto& inst : m_instances) {
     releaseInstanceTextures(*inst);
   }
-  makeAnyContextCurrent();
-  m_sharedTexManager.cleanup();
-  // m_instances and EGL contexts destroyed after this point
 }
 
-bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config) {
+bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, GlSharedContext* sharedGl,
+                           SharedTextureCache* textureCache) {
   m_wayland = &wayland;
   m_config = config;
+  m_sharedGl = sharedGl;
+  m_textureCache = textureCache;
 
   if (!m_config->config().wallpaper.enabled) {
     kLog.info("disabled in config");
@@ -90,11 +89,7 @@ void Wallpaper::reload() {
     for (auto& inst : m_instances) {
       releaseInstanceTextures(*inst);
     }
-    makeAnyContextCurrent();
-    m_sharedTexManager.cleanup();
-    m_textureCache.clear();
     m_instances.clear();
-    m_shareContext = EGL_NO_CONTEXT;
     return;
   }
 
@@ -146,12 +141,9 @@ void Wallpaper::onStateChange() {
     }
 
     kLog.info("changing {} → {}", inst->connectorName, newPath);
-    inst->surface->wallpaperRenderer()->makeCurrent();
     loadWallpaper(*inst, newPath);
   }
 }
-
-bool Wallpaper::hasInstances() const noexcept { return !m_instances.empty(); }
 
 void Wallpaper::syncInstances() {
   const auto& outputs = m_wayland->outputs();
@@ -186,8 +178,6 @@ void Wallpaper::syncInstances() {
     return false;
   });
 
-  refreshShareContext();
-
   // Create instances for new outputs
   for (const auto& output : outputs) {
     if (!output.done || output.connectorName.empty()) {
@@ -219,21 +209,6 @@ void Wallpaper::syncInstances() {
   }
 }
 
-void Wallpaper::refreshShareContext() {
-  m_shareContext = EGL_NO_CONTEXT;
-  for (const auto& inst : m_instances) {
-    if (inst->surface == nullptr || inst->surface->wallpaperRenderer() == nullptr) {
-      continue;
-    }
-
-    const EGLContext context = inst->surface->wallpaperRenderer()->eglContext();
-    if (context != EGL_NO_CONTEXT) {
-      m_shareContext = context;
-      return;
-    }
-  }
-}
-
 void Wallpaper::createInstance(const WaylandOutput& output) {
   auto wallpaperPath = m_config->getWallpaperPath(output.connectorName);
   kLog.info("creating on {} ({}), path={}", output.connectorName, output.description, wallpaperPath);
@@ -254,13 +229,12 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
   };
 
   instance->surface = std::make_unique<WallpaperSurface>(*m_wayland, std::move(surfaceConfig));
-  instance->surface->setShareContext(m_shareContext);
+  instance->surface->setSharedGl(m_sharedGl);
 
   auto* inst = instance.get();
   instance->surface->setConfigureCallback(
       [this, inst, wallpaperPath](std::uint32_t /*width*/, std::uint32_t /*height*/) {
         if (inst->currentPath.empty() && !wallpaperPath.empty()) {
-          inst->surface->wallpaperRenderer()->makeCurrent();
           loadWallpaper(*inst, wallpaperPath);
         }
       });
@@ -274,76 +248,12 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
     return;
   }
 
-  // After the first successful init, capture the EGL context as the share root
-  // for all subsequent renderers.
-  if (m_shareContext == EGL_NO_CONTEXT) {
-    m_shareContext = instance->surface->wallpaperRenderer()->eglContext();
-  }
-
   m_instances.push_back(std::move(instance));
 }
 
-// ── Shared texture cache ──────────────────────────────────────────────────────
-
-void Wallpaper::makeAnyContextCurrent() {
-  for (const auto& inst : m_instances) {
-    if (inst->surface != nullptr) {
-      auto* renderer = inst->surface->wallpaperRenderer();
-      if (renderer != nullptr) {
-        renderer->makeCurrent();
-        return;
-      }
-    }
-  }
-}
-
-TextureHandle Wallpaper::acquireTexture(const std::string& path) {
-  makeAnyContextCurrent();
-  auto it = m_textureCache.find(path);
-  if (it != m_textureCache.end()) {
-    ++it->second.refCount;
-    kLog.info("texture cache hit for {} (refCount={})", path, it->second.refCount);
-    return it->second.handle;
-  }
-
-  // Upload into the shared context — caller is responsible for making a
-  // context current before calling acquireTexture.
-  auto handle = m_sharedTexManager.loadFromFile(path);
-  if (handle.id == 0) {
-    return handle;
-  }
-
-  m_textureCache[path] = CachedTexture{.handle = handle, .refCount = 1};
-  kLog.info("texture uploaded and cached for {}", path);
-  return handle;
-}
-
-void Wallpaper::releaseTexture(TextureHandle& handle, const std::string& path) {
-  if (handle.id == 0 || path.empty()) {
-    handle = {};
-    return;
-  }
-
-  auto it = m_textureCache.find(path);
-  if (it == m_textureCache.end()) {
-    handle = {};
-    return;
-  }
-
-  --it->second.refCount;
-  if (it->second.refCount <= 0) {
-    makeAnyContextCurrent();
-    m_sharedTexManager.unload(it->second.handle);
-    m_textureCache.erase(it);
-    kLog.info("texture evicted from cache for {}", path);
-  }
-
-  handle = {};
-}
-
 void Wallpaper::releaseInstanceTextures(WallpaperInstance& inst) {
-  releaseTexture(inst.currentTexture, inst.currentPath);
-  releaseTexture(inst.nextTexture, inst.pendingPath);
+  m_textureCache->release(inst.currentTexture, inst.currentPath);
+  m_textureCache->release(inst.nextTexture, inst.pendingPath);
 }
 
 // ── Wallpaper loading & transitions ──────────────────────────────────────────
@@ -362,7 +272,7 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
     return;
   }
 
-  auto newTex = acquireTexture(path);
+  auto newTex = m_textureCache->acquire(path);
   if (newTex.id == 0) {
     kLog.warn("failed to load {}", path);
     return;
@@ -406,7 +316,7 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
       [inst](float v) { inst->transitionProgress = v; },
       [this, inst]() {
         // Transition complete — release old current, promote next to current
-        releaseTexture(inst->currentTexture, inst->currentPath);
+        m_textureCache->release(inst->currentTexture, inst->currentPath);
         inst->currentTexture = inst->nextTexture;
         inst->nextTexture = {};
         inst->currentPath = inst->pendingPath;
@@ -421,7 +331,6 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
         if (!inst->queuedPath.empty() && inst->queuedPath != inst->currentPath) {
           const std::string queuedPath = inst->queuedPath;
           inst->queuedPath.clear();
-          inst->surface->wallpaperRenderer()->makeCurrent();
           loadWallpaper(*inst, queuedPath);
         } else {
           inst->queuedPath.clear();

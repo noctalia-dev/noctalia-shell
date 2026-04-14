@@ -5,9 +5,10 @@
 
 #include <EGL/egl.h>
 
-struct wl_display;
 struct wl_surface;
 struct wl_egl_window;
+
+class GlSharedContext;
 
 class WallpaperRenderer {
 public:
@@ -17,7 +18,7 @@ public:
   WallpaperRenderer(const WallpaperRenderer&) = delete;
   WallpaperRenderer& operator=(const WallpaperRenderer&) = delete;
 
-  void bind(wl_display* display, wl_surface* surface, EGLContext shareContext = EGL_NO_CONTEXT);
+  void bind(GlSharedContext& shared, wl_surface* surface);
   void makeCurrent();
   [[nodiscard]] EGLContext eglContext() const noexcept { return m_eglContext; }
   void resize(std::uint32_t bufferWidth, std::uint32_t bufferHeight, std::uint32_t logicalWidth,
@@ -32,7 +33,6 @@ public:
 private:
   void cleanup();
 
-  wl_display* m_display = nullptr;
   wl_surface* m_surface = nullptr;
   wl_egl_window* m_window = nullptr;
   EGLDisplay m_eglDisplay = EGL_NO_DISPLAY;

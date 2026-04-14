@@ -5,6 +5,7 @@
 #include "render/render_context.h"
 #include "render/scene/image_node.h"
 #include "render/scene/rect_node.h"
+#include "render/core/shared_texture_cache.h"
 #include "ui/controls/button.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
@@ -75,8 +76,8 @@ LockSurface::LockSurface(WaylandConnection& connection) : Surface(connection) {
 }
 
 LockSurface::~LockSurface() {
-  if (renderContext() != nullptr) {
-    renderContext()->textureManager().unload(m_wallpaperTexture);
+  if (m_textureCache != nullptr && m_wallpaperTexture.id != 0) {
+    m_textureCache->release(m_wallpaperTexture, m_wallpaperPath);
   }
   if (m_lockSurface != nullptr) {
     ext_session_lock_surface_v1_destroy(m_lockSurface);
@@ -141,7 +142,11 @@ void LockSurface::setWallpaperPath(std::string wallpaperPath) {
   if (m_wallpaperPath == wallpaperPath) {
     return;
   }
+  if (m_textureCache != nullptr && m_wallpaperTexture.id != 0) {
+    m_textureCache->release(m_wallpaperTexture, m_wallpaperPath);
+  }
   m_wallpaperPath = std::move(wallpaperPath);
+  m_wallpaperTexture = {};
   m_wallpaperDirty = true;
   requestLayout();
 }
@@ -251,7 +256,7 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   if (renderer == nullptr) {
     return;
   }
-  ensureWallpaperTexture();
+  applyWallpaperTexture();
 
   const float sw = static_cast<float>(width);
   const float sh = static_cast<float>(height);
@@ -320,20 +325,13 @@ void LockSurface::updateCopy() {
   updateClockText();
 }
 
-void LockSurface::ensureWallpaperTexture() {
-  auto* renderer = renderContext();
-  if (renderer == nullptr || !m_wallpaperDirty || !renderTarget().isReady()) {
+void LockSurface::applyWallpaperTexture() {
+  if (!m_wallpaperDirty) {
     return;
   }
 
-  renderer->makeCurrent(renderTarget());
-
-  if (m_wallpaperTexture.id != 0) {
-    renderer->textureManager().unload(m_wallpaperTexture);
-  }
-
-  if (!m_wallpaperPath.empty()) {
-    m_wallpaperTexture = renderer->textureManager().loadFromFile(m_wallpaperPath);
+  if (m_textureCache != nullptr && !m_wallpaperPath.empty()) {
+    m_wallpaperTexture = m_textureCache->acquire(m_wallpaperPath);
     m_wallpaper->setTextureId(m_wallpaperTexture.id);
     m_wallpaper->setTint(Color{1.0f, 1.0f, 1.0f, 1.0f});
   } else {

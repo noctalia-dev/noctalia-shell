@@ -13,7 +13,7 @@
 
 #include <EGL/egl.h>
 
-struct wl_display;
+class GlSharedContext;
 class Node;
 class RenderTarget;
 
@@ -25,7 +25,7 @@ public:
   RenderContext(const RenderContext&) = delete;
   RenderContext& operator=(const RenderContext&) = delete;
 
-  void initialize(wl_display* display);
+  void initialize(GlSharedContext& shared);
   void cleanup();
 
   void renderScene(RenderTarget& target, Node* sceneRoot);

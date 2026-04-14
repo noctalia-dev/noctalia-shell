@@ -1,7 +1,9 @@
 #include "shell/wallpaper/wallpaper_surface.h"
 
+#include "render/gl_shared_context.h"
 #include "wayland/wayland_connection.h"
 
+#include <stdexcept>
 #include <wayland-client.h>
 
 bool WallpaperSurface::createWlSurface() {
@@ -10,7 +12,10 @@ bool WallpaperSurface::createWlSurface() {
     return false;
   }
 
-  m_wallpaperRenderer.bind(m_connection.display(), m_surface, m_shareContext);
+  if (m_shared == nullptr) {
+    throw std::runtime_error("WallpaperSurface requires a GlSharedContext");
+  }
+  m_wallpaperRenderer.bind(*m_shared, m_surface);
   return true;
 }
 

@@ -8,12 +8,14 @@
 #include <GLES2/gl2.h>
 #include <cstdint>
 
+class GlSharedContext;
+
 class OverviewSurface : public LayerSurface {
 public:
   using LayerSurface::LayerSurface;
   ~OverviewSurface() override;
 
-  void setShareContext(EGLContext ctx) noexcept { m_shareContext = ctx; }
+  void setSharedGl(GlSharedContext* shared) noexcept { m_shared = shared; }
   void setBlurIntensity(float v) noexcept { m_blurIntensity = v; }
   void setTintIntensity(float v) noexcept { m_tintIntensity = v; }
   void setTintColor(float r, float g, float b) noexcept { m_tintR = r; m_tintG = g; m_tintB = b; }
@@ -44,7 +46,7 @@ private:
   std::uint32_t m_bufW = 0;
   std::uint32_t m_bufH = 0;
 
-  EGLContext m_shareContext = EGL_NO_CONTEXT;
+  GlSharedContext* m_shared = nullptr;
   float m_blurIntensity = 0.5f;
   float m_tintIntensity = 0.3f;
   float m_tintR = 0.0f;

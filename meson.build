@@ -243,6 +243,8 @@ _noctalia_sources = files(
   'src/render/programs/spinner_program.cpp',
   'src/render/programs/blur_program.cpp',
   'src/render/programs/wallpaper_program.cpp',
+  'src/render/core/shared_texture_cache.cpp',
+  'src/render/gl_shared_context.cpp',
   'src/render/render_context.cpp',
   'src/render/render_target.cpp',
   'src/render/scene/input_area.cpp',

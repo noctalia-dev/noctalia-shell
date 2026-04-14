@@ -103,10 +103,12 @@ LockScreen::~LockScreen() {
   resetLockState();
 }
 
-bool LockScreen::initialize(WaylandConnection& wayland, RenderContext* renderContext, ConfigService* configService) {
+bool LockScreen::initialize(WaylandConnection& wayland, RenderContext* renderContext, ConfigService* configService,
+                            SharedTextureCache* textureCache) {
   m_wayland = &wayland;
   m_renderContext = renderContext;
   m_configService = configService;
+  m_textureCache = textureCache;
   m_user = PamAuthenticator::currentUsername();
   return true;
 }
@@ -355,6 +357,7 @@ void LockScreen::syncInstances() {
 void LockScreen::createInstance(const WaylandOutput& output) {
   auto surface = std::make_unique<LockSurface>(*m_wayland);
   surface->setRenderContext(m_renderContext);
+  surface->setTextureCache(m_textureCache);
   surface->setLockedState(m_locked);
   if (m_configService != nullptr) {
     surface->setWallpaperPath(m_configService->getWallpaperPath(output.connectorName));

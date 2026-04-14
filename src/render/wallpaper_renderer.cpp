@@ -1,27 +1,13 @@
 #include "render/wallpaper_renderer.h"
 
+#include "render/gl_shared_context.h"
+
 #include <stdexcept>
 
 #include <GLES2/gl2.h>
 #include <wayland-egl.h>
 
 namespace {
-
-  constexpr EGLint kConfigAttributes[] = {
-      EGL_SURFACE_TYPE,
-      EGL_WINDOW_BIT,
-      EGL_RENDERABLE_TYPE,
-      EGL_OPENGL_ES2_BIT,
-      EGL_RED_SIZE,
-      8,
-      EGL_GREEN_SIZE,
-      8,
-      EGL_BLUE_SIZE,
-      8,
-      EGL_ALPHA_SIZE,
-      8,
-      EGL_NONE,
-  };
 
   constexpr EGLint kContextAttributes[] = {
       EGL_CONTEXT_CLIENT_VERSION,
@@ -35,35 +21,16 @@ WallpaperRenderer::WallpaperRenderer() = default;
 
 WallpaperRenderer::~WallpaperRenderer() { cleanup(); }
 
-void WallpaperRenderer::bind(wl_display* display, wl_surface* surface, EGLContext shareContext) {
-  if (display == nullptr || surface == nullptr) {
-    throw std::runtime_error("wallpaper renderer requires a valid Wayland display and surface");
+void WallpaperRenderer::bind(GlSharedContext& shared, wl_surface* surface) {
+  if (surface == nullptr) {
+    throw std::runtime_error("wallpaper renderer requires a valid Wayland surface");
   }
 
-  m_display = display;
   m_surface = surface;
+  m_eglDisplay = shared.display();
+  m_eglConfig = shared.config();
 
-  m_eglDisplay = eglGetDisplay(reinterpret_cast<EGLNativeDisplayType>(display));
-  if (m_eglDisplay == EGL_NO_DISPLAY) {
-    throw std::runtime_error("eglGetDisplay failed");
-  }
-
-  EGLint major = 0;
-  EGLint minor = 0;
-  if (eglInitialize(m_eglDisplay, &major, &minor) != EGL_TRUE) {
-    throw std::runtime_error("eglInitialize failed");
-  }
-
-  if (eglBindAPI(EGL_OPENGL_ES_API) != EGL_TRUE) {
-    throw std::runtime_error("eglBindAPI failed");
-  }
-
-  EGLint configCount = 0;
-  if (eglChooseConfig(m_eglDisplay, kConfigAttributes, &m_eglConfig, 1, &configCount) != EGL_TRUE || configCount != 1) {
-    throw std::runtime_error("eglChooseConfig failed");
-  }
-
-  m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, shareContext, kContextAttributes);
+  m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, shared.rootContext(), kContextAttributes);
   if (m_eglContext == EGL_NO_CONTEXT) {
     throw std::runtime_error("eglCreateContext failed");
   }
@@ -191,9 +158,6 @@ void WallpaperRenderer::cleanup() {
     if (m_eglContext != EGL_NO_CONTEXT) {
       eglDestroyContext(m_eglDisplay, m_eglContext);
     }
-    // Do NOT call eglTerminate — the EGLDisplay is the application-wide Wayland
-    // display handle shared with the bar's RenderContext. Terminating it here
-    // would invalidate all other contexts (bar, other wallpaper renderers).
   }
 
   if (m_window != nullptr) {

@@ -219,6 +219,8 @@ void Application::initServices() {
   if (!m_wayland.connect()) {
     throw std::runtime_error("failed to connect to Wayland display");
   }
+  m_glShared.initialize(m_wayland.display());
+  m_sharedTextureCache.initialize(&m_glShared);
   m_wayland.setClipboardService(&m_clipboardService);
   m_wayland.setVirtualKeyboardService(&m_virtualKeyboardService);
   Input::setClipboardService(&m_clipboardService);
@@ -251,8 +253,8 @@ void Application::initServices() {
   m_nightLightManager.setChangeCallback([this]() { m_bar.refresh(); });
   m_configService.addReloadCallback([this]() { m_nightLightManager.reload(m_configService.config().nightlight); });
 
-  m_wallpaper.initialize(m_wayland, &m_configService);
-  m_overview.initialize(m_wayland, &m_configService, &m_wallpaper);
+  m_wallpaper.initialize(m_wayland, &m_configService, &m_glShared, &m_sharedTextureCache);
+  m_overview.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
 
   // Override the single-callback slot set by Wallpaper::initialize() so both
   // wallpaper and overview are notified of wallpaper path changes.
@@ -409,8 +411,8 @@ void Application::initUi() {
     return m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center";
   };
 
-  m_renderContext.initialize(m_wayland.display());
-  m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService);
+  m_renderContext.initialize(m_glShared);
+  m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache);
 
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
     if (m_lockScreen.isActive()) {

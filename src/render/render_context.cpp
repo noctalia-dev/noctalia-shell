@@ -1,6 +1,7 @@
 #include "render/render_context.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
+#include "render/gl_shared_context.h"
 #include "render/render_target.h"
 #include "render/scene/glyph_node.h"
 #include "render/scene/image_node.h"
@@ -22,22 +23,6 @@
 namespace {
 
   constexpr Logger kLog("render");
-
-  constexpr EGLint kConfigAttributes[] = {
-      EGL_SURFACE_TYPE,
-      EGL_WINDOW_BIT,
-      EGL_RENDERABLE_TYPE,
-      EGL_OPENGL_ES2_BIT,
-      EGL_RED_SIZE,
-      8,
-      EGL_GREEN_SIZE,
-      8,
-      EGL_BLUE_SIZE,
-      8,
-      EGL_ALPHA_SIZE,
-      8,
-      EGL_NONE,
-  };
 
   constexpr EGLint kContextAttributes[] = {
       EGL_CONTEXT_CLIENT_VERSION,
@@ -73,32 +58,11 @@ RenderContext::RenderContext() = default;
 
 RenderContext::~RenderContext() { cleanup(); }
 
-void RenderContext::initialize(wl_display* display) {
-  if (display == nullptr) {
-    throw std::runtime_error("RenderContext requires a valid Wayland display");
-  }
+void RenderContext::initialize(GlSharedContext& shared) {
+  m_eglDisplay = shared.display();
+  m_eglConfig = shared.config();
 
-  m_eglDisplay = eglGetDisplay(reinterpret_cast<EGLNativeDisplayType>(display));
-  if (m_eglDisplay == EGL_NO_DISPLAY) {
-    throw std::runtime_error("eglGetDisplay failed");
-  }
-
-  EGLint major = 0;
-  EGLint minor = 0;
-  if (eglInitialize(m_eglDisplay, &major, &minor) != EGL_TRUE) {
-    throw std::runtime_error("eglInitialize failed");
-  }
-
-  if (eglBindAPI(EGL_OPENGL_ES_API) != EGL_TRUE) {
-    throw std::runtime_error("eglBindAPI failed");
-  }
-
-  EGLint configCount = 0;
-  if (eglChooseConfig(m_eglDisplay, kConfigAttributes, &m_eglConfig, 1, &configCount) != EGL_TRUE || configCount != 1) {
-    throw std::runtime_error("eglChooseConfig failed");
-  }
-
-  m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, EGL_NO_CONTEXT, kContextAttributes);
+  m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, shared.rootContext(), kContextAttributes);
   if (m_eglContext == EGL_NO_CONTEXT) {
     throw std::runtime_error("eglCreateContext failed");
   }
@@ -338,17 +302,17 @@ void RenderContext::cleanup() {
   m_glyphProgram.destroy();
   m_glReady = false;
 
-  eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-
-  if (m_eglContext != EGL_NO_CONTEXT) {
-    eglDestroyContext(m_eglDisplay, m_eglContext);
-    m_eglContext = EGL_NO_CONTEXT;
-  }
-
   if (m_eglDisplay != EGL_NO_DISPLAY) {
-    eglTerminate(m_eglDisplay);
-    m_eglDisplay = EGL_NO_DISPLAY;
+    eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
   }
 
+  if (m_eglContext != EGL_NO_CONTEXT && m_eglDisplay != EGL_NO_DISPLAY) {
+    eglDestroyContext(m_eglDisplay, m_eglContext);
+  }
+  m_eglContext = EGL_NO_CONTEXT;
+
+  // The EGLDisplay and EGLConfig belong to GlSharedContext — do not terminate
+  // or forget them. Just clear our references.
+  m_eglDisplay = EGL_NO_DISPLAY;
   m_eglConfig = nullptr;
 }
