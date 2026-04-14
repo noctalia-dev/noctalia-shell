@@ -2,8 +2,8 @@
 
 #include "config/config_service.h"
 #include "core/log.h"
-#include "dbus/power/power_profiles_service.h"
 #include "dbus/mpris/mpris_service.h"
+#include "dbus/power/power_profiles_service.h"
 #include "dbus/tray/tray_service.h"
 #include "idle/idle_inhibitor.h"
 #include "net/http_client.h"
@@ -14,10 +14,11 @@
 #include "shell/widgets/battery_widget.h"
 #include "shell/widgets/clock_widget.h"
 #include "shell/widgets/idle_inhibitor_widget.h"
-#include "shell/widgets/network_widget.h"
-#include "shell/widgets/nightlight_widget.h"
+#include "shell/widgets/keyboard_layout_widget.h"
 #include "shell/widgets/launcher_widget.h"
 #include "shell/widgets/media_widget.h"
+#include "shell/widgets/network_widget.h"
+#include "shell/widgets/nightlight_widget.h"
 #include "shell/widgets/notification_widget.h"
 #include "shell/widgets/power_profiles_widget.h"
 #include "shell/widgets/scripted_widget.h"
@@ -31,9 +32,9 @@
 #include "shell/widgets/wallpaper_widget.h"
 #include "shell/widgets/weather_widget.h"
 #include "shell/widgets/workspaces_widget.h"
-#include "theme/theme_service.h"
 #include "system/system_monitor_service.h"
 #include "system/weather_service.h"
+#include "theme/theme_service.h"
 #include "wayland/wayland_connection.h"
 
 namespace {
@@ -183,6 +184,15 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     return widget;
   }
 
+  if (type == "keyboard_layout") {
+    const std::string cycleCommand = wc != nullptr ? wc->getString("cycle_command", "") : std::string{};
+    const std::string display = wc != nullptr ? wc->getString("display", "short") : std::string("short");
+    auto widget = std::make_unique<KeyboardLayoutWidget>(m_wayland, cycleCommand,
+                                                         KeyboardLayoutWidget::parseDisplayMode(display));
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
   if (type == "launcher") {
     auto widget = std::make_unique<LauncherWidget>(output);
     widget->setContentScale(contentScale);
@@ -209,8 +219,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "spacer") {
-    const auto length = static_cast<float>(wc != nullptr ? wc->getDouble("length", wc->getDouble("width", 8.0))
-                                                         : 8.0);
+    const auto length = static_cast<float>(wc != nullptr ? wc->getDouble("length", wc->getDouble("width", 8.0)) : 8.0);
     auto widget = std::make_unique<SpacerWidget>(length);
     widget->setContentScale(contentScale);
     return widget;

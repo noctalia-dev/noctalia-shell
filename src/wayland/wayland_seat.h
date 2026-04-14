@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <limits>
+#include <string>
 #include <vector>
 
 struct wl_array;
@@ -106,6 +107,8 @@ public:
   [[nodiscard]] bool hasPointerPosition() const noexcept { return m_hasPointerPosition; }
   [[nodiscard]] double lastPointerX() const noexcept { return m_lastPointerX; }
   [[nodiscard]] double lastPointerY() const noexcept { return m_lastPointerY; }
+  [[nodiscard]] std::string currentLayoutName() const;
+  [[nodiscard]] std::vector<std::string> layoutNames() const;
 
 private:
   // Pointer

@@ -1,0 +1,523 @@
+#include "shell/widgets/keyboard_layout_widget.h"
+
+#include "core/log.h"
+#include "core/process.h"
+#include "render/core/renderer.h"
+#include "render/scene/input_area.h"
+#include "ui/controls/glyph.h"
+#include "ui/controls/label.h"
+#include "ui/palette.h"
+#include "ui/style.h"
+#include "wayland/wayland_connection.h"
+
+#include <algorithm>
+#include <cctype>
+#include <chrono>
+#include <cmath>
+#include <memory>
+#include <string_view>
+#include <utility>
+#include <vector>
+
+namespace {
+
+  constexpr Logger kLog("keyboard_layout_widget");
+  constexpr auto kRefreshTickInterval = std::chrono::milliseconds(40);
+  constexpr int kRefreshBurstAttempts = 8;
+  constexpr auto kIdleProbeInterval = std::chrono::milliseconds(350);
+  constexpr std::string_view kUnknownLabel = "--";
+
+  std::string toLowerAscii(std::string_view text) {
+    std::string out;
+    out.reserve(text.size());
+    for (unsigned char ch : text) {
+      out.push_back(static_cast<char>(std::tolower(ch)));
+    }
+    return out;
+  }
+
+  bool isAsciiAlpha(char ch) { return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'); }
+
+  bool isWordBoundary(std::string_view text, std::size_t pos) {
+    if (pos >= text.size()) {
+      return true;
+    }
+    return !std::isalnum(static_cast<unsigned char>(text[pos])) && text[pos] != '_';
+  }
+
+  bool containsWord(std::string_view haystack, std::string_view needle) {
+    if (haystack.empty() || needle.empty()) {
+      return false;
+    }
+
+    std::size_t pos = haystack.find(needle);
+    while (pos != std::string_view::npos) {
+      if (isWordBoundary(haystack, pos == 0 ? haystack.size() : pos - 1) &&
+          isWordBoundary(haystack, pos + needle.size())) {
+        return true;
+      }
+      pos = haystack.find(needle, pos + 1);
+    }
+    return false;
+  }
+
+  bool extractLeadingCode(std::string_view text, std::string& out) {
+    std::size_t count = 0;
+    while (count < text.size() && count < 3 && isAsciiAlpha(text[count])) {
+      ++count;
+    }
+    if (count < 2 || count > 3) {
+      return false;
+    }
+    if (count < text.size() && text[count] != '+' && !std::isspace(static_cast<unsigned char>(text[count])) &&
+        text[count] != '_' && text[count] != '-') {
+      return false;
+    }
+    out.assign(text.substr(0, count));
+    return true;
+  }
+
+  bool extractParenthesizedCode(std::string_view text, std::string& out) {
+    const std::size_t open = text.find('(');
+    const std::size_t close = text.find(')', open == std::string_view::npos ? 0 : open + 1);
+    if (open == std::string_view::npos || close == std::string_view::npos || close <= open + 2) {
+      return false;
+    }
+    std::string_view inner = text.substr(open + 1, close - open - 1);
+    if (inner.size() < 2 || inner.size() > 3) {
+      return false;
+    }
+    if (!std::all_of(inner.begin(), inner.end(), [](char ch) { return isAsciiAlpha(ch); })) {
+      return false;
+    }
+    out.assign(inner);
+    return true;
+  }
+
+  void uppercaseAscii(std::string& text) {
+    for (char& ch : text) {
+      ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    }
+  }
+
+  const std::vector<std::pair<std::string_view, std::string_view>>& variantMap() {
+    static const std::vector<std::pair<std::string_view, std::string_view>> kMap = {
+        {"programmer dvorak", "Dvk-P"}, {"colemak", "Colemak"}, {"dvorak", "Dvorak"},
+        {"workman", "Workman"},         {"norman", "Norman"},   {"altgr-intl", "Intl"},
+        {"international", "Intl"},      {"intl", "Intl"},       {"with dead keys", "Dead"},
+        {"phonetic", "Phon"},           {"extended", "Ext"},    {"ergonomic", "Ergo"},
+        {"legacy", "Legacy"},           {"pinyin", "Pinyin"},   {"cangjie", "Cangjie"},
+        {"romaji", "Romaji"},           {"kana", "Kana"},
+    };
+    return kMap;
+  }
+
+  const std::vector<std::pair<std::string_view, std::string_view>>& languageMap() {
+    static const std::vector<std::pair<std::string_view, std::string_view>> kMap = {
+        {"english", "us"},
+        {"american", "us"},
+        {"united states", "us"},
+        {"us english", "us"},
+        {"british", "gb"},
+        {"united kingdom", "gb"},
+        {"english (uk)", "gb"},
+        {"canadian", "ca"},
+        {"canada", "ca"},
+        {"canadian english", "ca"},
+        {"australian", "au"},
+        {"australia", "au"},
+        {"swedish", "se"},
+        {"svenska", "se"},
+        {"sweden", "se"},
+        {"norwegian", "no"},
+        {"norsk", "no"},
+        {"norway", "no"},
+        {"danish", "dk"},
+        {"dansk", "dk"},
+        {"denmark", "dk"},
+        {"finnish", "fi"},
+        {"suomi", "fi"},
+        {"finland", "fi"},
+        {"icelandic", "is"},
+        {"iceland", "is"},
+        {"german", "de"},
+        {"deutsch", "de"},
+        {"germany", "de"},
+        {"austrian", "at"},
+        {"austria", "at"},
+        {"swiss", "ch"},
+        {"switzerland", "ch"},
+        {"schweiz", "ch"},
+        {"suisse", "ch"},
+        {"dutch", "nl"},
+        {"nederlands", "nl"},
+        {"netherlands", "nl"},
+        {"holland", "nl"},
+        {"belgian", "be"},
+        {"belgium", "be"},
+        {"french", "fr"},
+        {"francais", "fr"},
+        {"france", "fr"},
+        {"canadian french", "ca"},
+        {"spanish", "es"},
+        {"espanol", "es"},
+        {"spain", "es"},
+        {"castilian", "es"},
+        {"italian", "it"},
+        {"italiano", "it"},
+        {"italy", "it"},
+        {"portuguese", "pt"},
+        {"portugues", "pt"},
+        {"portugal", "pt"},
+        {"catalan", "ad"},
+        {"andorra", "ad"},
+        {"romanian", "ro"},
+        {"romania", "ro"},
+        {"russian", "ru"},
+        {"russia", "ru"},
+        {"polish", "pl"},
+        {"polski", "pl"},
+        {"poland", "pl"},
+        {"czech", "cz"},
+        {"czech republic", "cz"},
+        {"slovak", "sk"},
+        {"slovakia", "sk"},
+        {"ukraine", "ua"},
+        {"ukrainian", "ua"},
+        {"bulgarian", "bg"},
+        {"bulgaria", "bg"},
+        {"serbian", "rs"},
+        {"serbia", "rs"},
+        {"croatian", "hr"},
+        {"croatia", "hr"},
+        {"slovenian", "si"},
+        {"slovenia", "si"},
+        {"bosnian", "ba"},
+        {"bosnia", "ba"},
+        {"macedonian", "mk"},
+        {"macedonia", "mk"},
+        {"irish", "ie"},
+        {"ireland", "ie"},
+        {"welsh", "gb"},
+        {"wales", "gb"},
+        {"scottish", "gb"},
+        {"scotland", "gb"},
+        {"estonian", "ee"},
+        {"estonia", "ee"},
+        {"latvian", "lv"},
+        {"latvia", "lv"},
+        {"lithuanian", "lt"},
+        {"lithuania", "lt"},
+        {"hungarian", "hu"},
+        {"hungary", "hu"},
+        {"greek", "gr"},
+        {"greece", "gr"},
+        {"albanian", "al"},
+        {"albania", "al"},
+        {"maltese", "mt"},
+        {"malta", "mt"},
+        {"turkish", "tr"},
+        {"turkey", "tr"},
+        {"arabic", "ar"},
+        {"arab", "ar"},
+        {"hebrew", "il"},
+        {"israel", "il"},
+        {"brazilian", "br"},
+        {"brazilian portuguese", "br"},
+        {"brasil", "br"},
+        {"brazil", "br"},
+        {"japanese", "jp"},
+        {"japan", "jp"},
+        {"korean", "kr"},
+        {"korea", "kr"},
+        {"south korea", "kr"},
+        {"chinese", "cn"},
+        {"china", "cn"},
+        {"simplified chinese", "cn"},
+        {"traditional chinese", "tw"},
+        {"taiwan", "tw"},
+        {"thai", "th"},
+        {"thailand", "th"},
+        {"vietnamese", "vn"},
+        {"vietnam", "vn"},
+        {"hindi", "in"},
+        {"india", "in"},
+        {"afrikaans", "za"},
+        {"south africa", "za"},
+        {"south african", "za"},
+    };
+    return kMap;
+  }
+
+  std::string shortLayoutLabel(const std::string& layoutName) {
+    if (layoutName.empty()) {
+      return std::string(kUnknownLabel);
+    }
+
+    const std::string lower = toLowerAscii(layoutName);
+
+    std::string code;
+    if (extractLeadingCode(lower, code)) {
+      uppercaseAscii(code);
+      return code;
+    }
+
+    for (const auto& [pattern, display] : variantMap()) {
+      if (lower.find(pattern) != std::string::npos) {
+        return std::string(display);
+      }
+    }
+
+    if (extractParenthesizedCode(lower, code)) {
+      uppercaseAscii(code);
+      return code;
+    }
+
+    for (const auto& [lang, mapped] : languageMap()) {
+      if (lower.rfind(lang, 0) == 0) {
+        code = std::string(mapped);
+        uppercaseAscii(code);
+        return code;
+      }
+    }
+
+    for (const auto& [lang, mapped] : languageMap()) {
+      if (containsWord(lower, lang)) {
+        code = std::string(mapped);
+        uppercaseAscii(code);
+        return code;
+      }
+    }
+
+    if (extractLeadingCode(lower, code)) {
+      uppercaseAscii(code);
+      return code;
+    }
+
+    return std::string(kUnknownLabel);
+  }
+
+} // namespace
+
+KeyboardLayoutWidget::KeyboardLayoutWidget(WaylandConnection& wayland, std::string cycleCommand,
+                                           DisplayMode displayMode)
+    : m_wayland(wayland), m_cycleCommand(std::move(cycleCommand)), m_displayMode(displayMode) {}
+
+void KeyboardLayoutWidget::create() {
+  auto area = std::make_unique<InputArea>();
+  area->setOnLeave([this]() { m_clickArmed = false; });
+  area->setOnPress([this](const InputArea::PointerData& data) {
+    if (!data.pressed) {
+      return;
+    }
+    m_clickArmed = data.button == BTN_LEFT;
+  });
+  area->setOnClick([this](const InputArea::PointerData& data) {
+    if (!m_clickArmed || data.button != BTN_LEFT) {
+      return;
+    }
+    m_clickArmed = false;
+    cycleLayout();
+  });
+
+  auto glyph = std::make_unique<Glyph>();
+  glyph->setGlyph("keyboard");
+  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setColor(roleColor(ColorRole::OnSurface));
+  m_glyph = glyph.get();
+  area->addChild(std::move(glyph));
+
+  auto label = std::make_unique<Label>();
+  label->setBold(true);
+  label->setFontSize(Style::fontSizeBody * m_contentScale);
+  label->setText("--");
+  m_label = label.get();
+  area->addChild(std::move(label));
+
+  setRoot(std::move(area));
+
+  // Keyboard layout changes are not event-pushed for all compositor backends.
+  // Keep a low-frequency idle probe so passive switches are reflected promptly.
+  m_idleRefreshTimer.startRepeating(kIdleProbeInterval, [this]() {
+    if (m_refreshAttemptsRemaining > 0) {
+      return;
+    }
+    requestRedraw();
+  });
+}
+
+void KeyboardLayoutWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+  if (m_label == nullptr || root() == nullptr) {
+    return;
+  }
+
+  sync(renderer);
+
+  const float spacing = Style::spaceXs;
+
+  float x = 0.0f;
+  float h = 0.0f;
+
+  if (m_glyph != nullptr) {
+    m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+    m_glyph->measure(renderer);
+    if (m_glyph->width() <= 0.0f) {
+      // Some icon fonts may miss the keyboard glyph; use a guaranteed fallback.
+      m_glyph->setGlyph("world");
+      m_glyph->measure(renderer);
+    }
+    m_glyph->setPosition(0.0f, 0.0f);
+    x += m_glyph->width() + spacing;
+    h = std::max(h, m_glyph->height());
+  }
+
+  m_label->measure(renderer);
+  m_label->setPosition(x, 0.0f);
+  h = std::max(h, m_label->height());
+
+  if (m_glyph != nullptr) {
+    const float glyphY = std::round((h - m_glyph->height()) * 0.5f);
+    const float labelY = std::round((h - m_label->height()) * 0.5f);
+    m_glyph->setPosition(0.0f, glyphY);
+    m_label->setPosition(x, labelY);
+  }
+
+  root()->setSize(m_label->x() + m_label->width(), h);
+}
+
+void KeyboardLayoutWidget::doUpdate(Renderer& renderer) { sync(renderer); }
+
+std::string KeyboardLayoutWidget::resolvedLayoutName() const {
+  const auto state = m_keyboardBackend.layoutState();
+  if (state.has_value() && state->currentIndex >= 0 && state->currentIndex < static_cast<int>(state->names.size())) {
+    const std::string actual = state->names[static_cast<std::size_t>(state->currentIndex)];
+    if (!m_pendingLayoutName.empty() && (actual.empty() || actual == m_lastLayoutName)) {
+      return m_pendingLayoutName;
+    }
+    return actual;
+  }
+
+  std::string layoutName = m_keyboardBackend.currentLayoutName().value_or(m_wayland.currentKeyboardLayoutName());
+  if (!m_pendingLayoutName.empty() && (layoutName.empty() || layoutName == m_lastLayoutName)) {
+    return m_pendingLayoutName;
+  }
+  if (!layoutName.empty()) {
+    return layoutName;
+  }
+
+  return m_pendingLayoutName;
+}
+
+void KeyboardLayoutWidget::sync(Renderer& renderer) {
+  if (m_label == nullptr) {
+    return;
+  }
+
+  std::string layoutName = resolvedLayoutName();
+  if (!m_pendingLayoutName.empty() && layoutName == m_pendingLayoutName) {
+    m_pendingLayoutName.clear();
+    m_refreshAttemptsRemaining = 0;
+    m_refreshTimer.stop();
+  }
+  const std::string layoutLabel = formatLayoutLabel(layoutName, m_displayMode);
+
+  if (layoutName == m_lastLayoutName && layoutLabel == m_lastLabel) {
+    return;
+  }
+
+  m_lastLayoutName = layoutName;
+  m_lastLabel = layoutLabel;
+
+  m_label->setText(layoutLabel);
+  m_label->measure(renderer);
+
+  if (auto* node = root(); node != nullptr) {
+    node->setOpacity((m_cycleCommand.empty() && !m_keyboardBackend.isAvailable()) ? 0.85f : 1.0f);
+  }
+
+  requestRedraw();
+}
+
+void KeyboardLayoutWidget::cycleLayout() {
+  const auto stateBefore = m_keyboardBackend.layoutState();
+
+  bool cycled = false;
+  if (!m_cycleCommand.empty()) {
+    cycled = process::runSync({"/bin/sh", "-lc", m_cycleCommand});
+    if (!cycled) {
+      kLog.warn("keyboard_layout: cycle command failed");
+      return;
+    }
+  } else if (m_keyboardBackend.isAvailable()) {
+    cycled = m_keyboardBackend.cycleLayout();
+    if (!cycled) {
+      kLog.warn("keyboard_layout: compositor backend failed to cycle layout");
+      return;
+    }
+  } else {
+    return;
+  }
+
+  if (stateBefore.has_value() && stateBefore->currentIndex >= 0 &&
+      stateBefore->currentIndex < static_cast<int>(stateBefore->names.size()) && stateBefore->names.size() > 1) {
+    std::size_t nextIndex = static_cast<std::size_t>(stateBefore->currentIndex + 1);
+    if (nextIndex >= stateBefore->names.size()) {
+      nextIndex = 0;
+    }
+    m_pendingLayoutName = stateBefore->names[nextIndex];
+  }
+
+  scheduleRefreshBurst();
+  requestRedraw();
+}
+
+void KeyboardLayoutWidget::scheduleRefreshBurst() {
+  m_refreshAttemptsRemaining = kRefreshBurstAttempts;
+  armRefreshTick();
+}
+
+void KeyboardLayoutWidget::armRefreshTick() {
+  m_refreshTimer.start(kRefreshTickInterval, [this]() {
+    if (m_refreshAttemptsRemaining <= 0) {
+      m_pendingLayoutName.clear();
+      m_refreshTimer.stop();
+      requestRedraw();
+      return;
+    }
+
+    const std::string resolved = resolvedLayoutName();
+    if (!m_pendingLayoutName.empty() && resolved == m_pendingLayoutName) {
+      m_pendingLayoutName.clear();
+      m_refreshAttemptsRemaining = 0;
+      m_refreshTimer.stop();
+      requestRedraw();
+      return;
+    }
+
+    --m_refreshAttemptsRemaining;
+    requestRedraw();
+    if (m_refreshAttemptsRemaining > 0) {
+      armRefreshTick();
+      return;
+    }
+
+    m_pendingLayoutName.clear();
+    m_refreshTimer.stop();
+    requestRedraw();
+  });
+}
+
+KeyboardLayoutWidget::DisplayMode KeyboardLayoutWidget::parseDisplayMode(const std::string& value) {
+  return value == "full" ? DisplayMode::Full : DisplayMode::Short;
+}
+
+std::string KeyboardLayoutWidget::formatLayoutLabel(const std::string& layoutName, DisplayMode displayMode) {
+  if (layoutName.empty()) {
+    return std::string(kUnknownLabel);
+  }
+
+  if (displayMode == DisplayMode::Full) {
+    return layoutName;
+  }
+  return shortLayoutLabel(layoutName);
+}

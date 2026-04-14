@@ -286,6 +286,8 @@ wl_surface* WaylandConnection::lastPointerSurface() const noexcept { return m_se
 bool WaylandConnection::hasPointerPosition() const noexcept { return m_seatHandler.hasPointerPosition(); }
 double WaylandConnection::lastPointerX() const noexcept { return m_seatHandler.lastPointerX(); }
 double WaylandConnection::lastPointerY() const noexcept { return m_seatHandler.lastPointerY(); }
+std::string WaylandConnection::currentKeyboardLayoutName() const { return m_seatHandler.currentLayoutName(); }
+std::vector<std::string> WaylandConnection::keyboardLayoutNames() const { return m_seatHandler.layoutNames(); }
 std::uint32_t WaylandConnection::lastInputSerial() const noexcept { return m_seatHandler.lastSerial(); }
 
 bool WaylandConnection::hasFreshPointerOutput(std::chrono::milliseconds maxAge) const noexcept {

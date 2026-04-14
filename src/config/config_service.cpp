@@ -657,6 +657,11 @@ void ConfigService::seedBuiltinWidgets(Config& config) {
   media.settings["art_size"] = 24.0;
   seed("media", std::move(media));
 
+  WidgetConfig keyboardLayout;
+  keyboardLayout.type = "keyboard_layout";
+  keyboardLayout.settings["cycle_command"] = std::string("");
+  seed("keyboard_layout", std::move(keyboardLayout));
+
   WidgetConfig spacer;
   spacer.type = "spacer";
   seed("spacer", std::move(spacer));

@@ -243,6 +243,33 @@ show_label = false
 
 ---
 
+### `keyboard_layout`
+
+Shows the current keyboard layout indicator from your active XKB state.
+
+Left-click cycles layouts using the compositor backend when supported. You can still override that with `cycle_command` if you want a custom shell command instead.
+
+| Setting         | Type   | Default   | Description                                                         |
+|-----------------|--------|-----------|---------------------------------------------------------------------|
+| `display`       | string | `"short"` | Show either the compact code (`short`) or full layout name (`full`) |
+| `cycle_command` | string | `""`      | Optional override command run on left click instead of the compositor backend |
+
+The widget always shows the keyboard glyph.
+
+```toml
+[widget.keyboard_layout]
+display = "short" # short | full
+```
+
+Use the widget by name in your bar:
+
+```toml
+[bar.main]
+end = ["keyboard_layout", "clock"]
+```
+
+---
+
 ### `weather`
 
 Shows the current weather in the bar and opens the Weather control-center tab on click.

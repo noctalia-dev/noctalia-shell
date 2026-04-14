@@ -1,16 +1,16 @@
-#include "core/log.h"
 #include "ui/controls/glyph_registry.h"
+#include "core/log.h"
 
 #include <string>
 #include <unordered_map>
 
 namespace {
 
-constexpr Logger kLog("glyph");
+  constexpr Logger kLog("glyph");
 
-// Hand-curated alias → codepoint map.
-// To add a new icon, find its codepoint in assets/fonts/tabler-icons.json.
-// clang-format off
+  // Hand-curated alias → codepoint map.
+  // To add a new icon, find its codepoint in assets/fonts/tabler-icons.json.
+  // clang-format off
 const std::unordered_map<std::string, char32_t> kIcons = {
     // General
     {"close", 0xEB55},             // x
@@ -233,7 +233,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     // Experimental
     {"flask", 0xEBD2}             // flask
 };
-// clang-format on
+  // clang-format on
 
 } // namespace
 

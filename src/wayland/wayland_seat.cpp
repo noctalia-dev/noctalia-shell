@@ -474,3 +474,44 @@ void WaylandSeat::repeatTick() {
   const auto intervalMs = std::chrono::milliseconds(1000 / m_repeatRate);
   m_repeatNextFire = now + intervalMs;
 }
+
+std::string WaylandSeat::currentLayoutName() const {
+  if (m_xkbState == nullptr || m_xkbKeymap == nullptr) {
+    return {};
+  }
+
+  const xkb_layout_index_t layout = xkb_state_serialize_layout(m_xkbState, XKB_STATE_LAYOUT_EFFECTIVE);
+  if (layout == XKB_LAYOUT_INVALID) {
+    return {};
+  }
+
+  const xkb_layout_index_t layoutCount = xkb_keymap_num_layouts(m_xkbKeymap);
+  if (layout >= layoutCount) {
+    return {};
+  }
+
+  const char* name = xkb_keymap_layout_get_name(m_xkbKeymap, layout);
+  if (name == nullptr) {
+    return {};
+  }
+
+  return name;
+}
+
+std::vector<std::string> WaylandSeat::layoutNames() const {
+  std::vector<std::string> layouts;
+  if (m_xkbKeymap == nullptr) {
+    return layouts;
+  }
+
+  const xkb_layout_index_t layoutCount = xkb_keymap_num_layouts(m_xkbKeymap);
+  layouts.reserve(layoutCount);
+  for (xkb_layout_index_t i = 0; i < layoutCount; ++i) {
+    const char* name = xkb_keymap_layout_get_name(m_xkbKeymap, i);
+    if (name != nullptr && name[0] != '\0') {
+      layouts.emplace_back(name);
+    }
+  }
+
+  return layouts;
+}
