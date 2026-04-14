@@ -7,28 +7,16 @@
 
 namespace control_center {
 
-void applyCard(Flex& card, float scale) {
+void applyOutlinedCard(Flex& card, float scale) {
   card.setDirection(FlexDirection::Vertical);
-  card.setAlign(FlexAlign::Start);
-  card.setGap(Style::spaceXs * scale);
-  card.setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-  card.setRadius(Style::radiusLg * scale);
-  card.setBackground(roleColor(ColorRole::SurfaceVariant));
-  card.setBorderWidth(0.0f);
-  card.setSoftness(1.0f);
-}
-
-void applyOutlinedCard(Flex& card, float scale, ColorRole backgroundRole, float backgroundAlpha, float outlineAlpha,
-                       float softness) {
-  applyCard(card, scale);
   card.setAlign(FlexAlign::Stretch);
   card.setGap(Style::spaceSm * scale);
   card.setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
   card.setRadius(Style::radiusXl * scale);
-  card.setBackground(roleColor(backgroundRole, backgroundAlpha));
+  card.setBackground(roleColor(ColorRole::Surface, 0.75f));
   card.setBorderWidth(Style::borderWidth);
-  card.setBorderColor(roleColor(ColorRole::Outline, outlineAlpha));
-  card.setSoftness(softness);
+  card.setBorderColor(roleColor(ColorRole::Outline));
+  card.setSoftness(1.0f);
 }
 
 Label* addTitle(Flex& parent, const std::string& text, float scale) {

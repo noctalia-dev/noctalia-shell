@@ -339,6 +339,7 @@ std::unique_ptr<Flex> NetworkTab::createHeaderActions() {
   row->setDirection(FlexDirection::Horizontal);
   row->setAlign(FlexAlign::Center);
   row->setGap(Style::spaceSm * scale);
+  row->setMinHeight(Style::controlHeightSm * scale);
 
   auto wifiLabel = std::make_unique<Label>();
   wifiLabel->setText("Wi-Fi");
@@ -347,6 +348,8 @@ std::unique_ptr<Flex> NetworkTab::createHeaderActions() {
   row->addChild(std::move(wifiLabel));
 
   auto wifiToggle = std::make_unique<Toggle>();
+  wifiToggle->setToggleSize(ToggleSize::Small);
+  wifiToggle->setScale(scale);
   wifiToggle->setOnChange([this](bool checked) {
     if (m_network != nullptr) {
       m_network->setWirelessEnabled(checked);
@@ -356,9 +359,13 @@ std::unique_ptr<Flex> NetworkTab::createHeaderActions() {
   row->addChild(std::move(wifiToggle));
 
   auto rescan = std::make_unique<Button>();
-  rescan->setVariant(ButtonVariant::Secondary);
+  rescan->setVariant(ButtonVariant::Default);
   rescan->setGlyph("refresh");
-  rescan->setText("Rescan");
+  rescan->setGlyphSize(Style::fontSizeBody * scale);
+  rescan->setMinWidth(Style::controlHeightSm * scale);
+  rescan->setMinHeight(Style::controlHeightSm * scale);
+  rescan->setPadding(Style::spaceXs * scale);
+  rescan->setRadius(Style::radiusMd * scale);
   rescan->setOnClick([this]() {
     if (m_network != nullptr) {
       m_network->requestScan();
