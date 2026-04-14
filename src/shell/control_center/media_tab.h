@@ -16,9 +16,9 @@ class Image;
 class Label;
 class MprisService;
 class PipeWireSpectrum;
-class Select;
 class Slider;
 class AudioSpectrum;
+class ContextMenuControl;
 
 class MediaTab : public Tab {
 public:
@@ -44,16 +44,18 @@ private:
   Flex* m_rootLayout = nullptr;
   Flex* m_mediaColumn = nullptr;
   Flex* m_visualizerColumn = nullptr;
+  Flex* m_visualizerBody = nullptr;
   AudioSpectrum* m_visualizerSpectrum = nullptr;
   Image* m_artwork = nullptr;
   Flex* m_artworkRow = nullptr;
   Flex* m_nowCard = nullptr;
   Flex* m_mediaStack = nullptr;
+  Button* m_playerMenuButton = nullptr;
+  ContextMenuControl* m_playerMenu = nullptr;
   Label* m_trackTitle = nullptr;
   Label* m_trackArtist = nullptr;
   Label* m_trackAlbum = nullptr;
   Slider* m_progressSlider = nullptr;
-  Select* m_playerSelect = nullptr;
   Button* m_prevButton = nullptr;
   Button* m_playPauseButton = nullptr;
   Button* m_nextButton = nullptr;
@@ -70,6 +72,7 @@ private:
   std::string m_pendingSeekBusName;
   std::chrono::steady_clock::time_point m_pendingSeekUntil{};
   bool m_syncingPlayerSelect = false;
+  bool m_playerMenuOpen = false;
   std::vector<std::string> m_playerBusNames;
   std::chrono::steady_clock::time_point m_lastMprisRefreshAttempt{};
   std::unordered_set<std::string> m_pendingArtDownloads;

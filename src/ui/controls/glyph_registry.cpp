@@ -59,6 +59,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"repeat-once", 0xEB71},       // repeat-once
     {"stop", 0xF695},              // player-stop-filled
     {"disc", 0x1003E},             // disc-filled
+    {"headphones", 0xEABD},        // headphones
     {"microphone", 0xEAF0},        // microphone
     {"microphone-mute", 0xED16},   // microphone-off
 
