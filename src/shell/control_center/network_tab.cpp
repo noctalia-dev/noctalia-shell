@@ -187,18 +187,6 @@ private:
   Signal<>::ScopedConnection m_paletteConn;
 };
 
-void styleCard(Flex& card, float scale) {
-  applyCard(card, scale);
-  card.setAlign(FlexAlign::Stretch);
-  card.setGap(Style::spaceSm * scale);
-  card.setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
-  card.setRadius(Style::radiusXl * scale);
-  card.setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
-  card.setBorderWidth(Style::borderWidth);
-  card.setBorderColor(roleColor(ColorRole::Outline, 0.85f));
-  card.setSoftness(1.25f);
-}
-
 } // namespace
 
 NetworkTab::NetworkTab(NetworkService* network, NetworkSecretAgent* secrets) : m_network(network), m_secrets(secrets) {
@@ -227,7 +215,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   m_rootLayout = tab.get();
 
   auto currentCard = std::make_unique<Flex>();
-  styleCard(*currentCard, scale);
+  applyOutlinedCard(*currentCard, scale);
   m_currentCard = currentCard.get();
   addTitle(*currentCard, "Current connection", scale);
 
@@ -266,7 +254,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   tab->addChild(std::move(currentCard));
 
   auto passwordCard = std::make_unique<Flex>();
-  styleCard(*passwordCard, scale);
+  applyOutlinedCard(*passwordCard, scale);
   passwordCard->setVisible(false);
   m_passwordCard = passwordCard.get();
 
@@ -323,7 +311,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   tab->addChild(std::move(passwordCard));
 
   auto listCard = std::make_unique<Flex>();
-  styleCard(*listCard, scale);
+  applyOutlinedCard(*listCard, scale);
   listCard->setFlexGrow(1.0f);
   m_listCard = listCard.get();
   addTitle(*listCard, "Available networks", scale);

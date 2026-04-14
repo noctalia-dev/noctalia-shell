@@ -18,6 +18,19 @@ void applyCard(Flex& card, float scale) {
   card.setSoftness(1.0f);
 }
 
+void applyOutlinedCard(Flex& card, float scale, ColorRole backgroundRole, float backgroundAlpha, float outlineAlpha,
+                       float softness) {
+  applyCard(card, scale);
+  card.setAlign(FlexAlign::Stretch);
+  card.setGap(Style::spaceSm * scale);
+  card.setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
+  card.setRadius(Style::radiusXl * scale);
+  card.setBackground(roleColor(backgroundRole, backgroundAlpha));
+  card.setBorderWidth(Style::borderWidth);
+  card.setBorderColor(roleColor(ColorRole::Outline, outlineAlpha));
+  card.setSoftness(softness);
+}
+
 Label* addTitle(Flex& parent, const std::string& text, float scale) {
   auto label = std::make_unique<Label>();
   label->setText(text);

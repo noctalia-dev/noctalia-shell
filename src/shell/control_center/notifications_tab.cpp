@@ -50,15 +50,7 @@ ColorRole statusColorRole(const NotificationHistoryEntry& entry) {
 }
 
 void applyNotificationCardStyle(Flex& card, float scale) {
-  applyCard(card, scale);
-  card.setAlign(FlexAlign::Stretch);
-  card.setGap(Style::spaceSm * scale);
-  card.setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
-  card.setRadius(Style::radiusXl * scale);
-  card.setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
-  card.setBorderWidth(Style::borderWidth);
-  card.setBorderColor(roleColor(ColorRole::Outline, 0.85f));
-  card.setSoftness(1.25f);
+  applyOutlinedCard(card, scale);
 }
 
 bool canExpandText(Renderer& renderer, std::string_view text, float fontSize, bool bold, float maxWidth,

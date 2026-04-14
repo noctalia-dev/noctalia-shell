@@ -15,6 +15,8 @@ class Renderer;
 namespace control_center {
 
   void applyCard(Flex& card, float scale = 1.0f);
+  void applyOutlinedCard(Flex& card, float scale = 1.0f, ColorRole backgroundRole = ColorRole::SurfaceVariant,
+                         float backgroundAlpha = 0.9f, float outlineAlpha = 0.85f, float softness = 1.0f);
   Label* addTitle(Flex& parent, const std::string& text, float scale = 1.0f);
   void addBody(Flex& parent, const std::string& text, float scale = 1.0f);
 

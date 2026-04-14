@@ -100,15 +100,8 @@ std::unique_ptr<Flex> CalendarTab::create() {
   m_rootLayout = tab.get();
 
   auto calendarCard = std::make_unique<Flex>();
-  control_center::applyCard(*calendarCard, scale);
-  calendarCard->setAlign(FlexAlign::Stretch);
+  control_center::applyOutlinedCard(*calendarCard, scale);
   calendarCard->setGap(Style::spaceMd * scale);
-  calendarCard->setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
-  calendarCard->setRadius(Style::radiusXl * scale);
-  calendarCard->setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
-  calendarCard->setBorderWidth(Style::borderWidth);
-  calendarCard->setBorderColor(roleColor(ColorRole::Outline, 0.85f));
-  calendarCard->setSoftness(1.25f);
   calendarCard->setFlexGrow(3.0f);
   m_card = calendarCard.get();
 
@@ -195,15 +188,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
   tab->addChild(std::move(calendarCard));
 
   auto tasksCard = std::make_unique<Flex>();
-  control_center::applyCard(*tasksCard, scale);
-  tasksCard->setAlign(FlexAlign::Stretch);
-  tasksCard->setGap(Style::spaceSm * scale);
-  tasksCard->setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
-  tasksCard->setRadius(Style::radiusXl * scale);
-  tasksCard->setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
-  tasksCard->setBorderWidth(Style::borderWidth);
-  tasksCard->setBorderColor(roleColor(ColorRole::Outline, 0.85f));
-  tasksCard->setSoftness(1.25f);
+  control_center::applyOutlinedCard(*tasksCard, scale);
   tasksCard->setFlexGrow(2.0f);
 
   auto tasksTitle = std::make_unique<Label>();

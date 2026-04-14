@@ -39,18 +39,6 @@ constexpr float kMediaPlayPauseHeight = Style::controlHeightLg + Style::spaceSm;
 constexpr float kMediaArtworkMinHeight = Style::controlHeightLg * 4;
 constexpr auto kNoActivePlayerGrace = std::chrono::milliseconds(2000);
 
-void styleMediaCard(Flex& card, float scale) {
-  applyCard(card, scale);
-  card.setAlign(FlexAlign::Stretch);
-  card.setGap(Style::spaceMd * scale);
-  card.setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
-  card.setRadius(Style::radiusXl * scale);
-  card.setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
-  card.setBorderWidth(Style::borderWidth);
-  card.setBorderColor(roleColor(ColorRole::Outline, 0.85f));
-  card.setSoftness(1.25f);
-}
-
 bool isRemoteArtUrl(std::string_view artUrl) {
   return artUrl.starts_with("https://") || artUrl.starts_with("http://");
 }
@@ -219,7 +207,8 @@ std::unique_ptr<Flex> MediaTab::create() {
   m_mediaColumn = mediaColumn.get();
 
   auto nowCard = std::make_unique<Flex>();
-  styleMediaCard(*nowCard, scale);
+  applyOutlinedCard(*nowCard, scale);
+  nowCard->setGap(Style::spaceMd * scale);
   nowCard->setFlexGrow(1.0f);
   nowCard->setMinHeight(kMediaNowCardMinHeight * scale);
   m_nowCard = nowCard.get();
@@ -478,12 +467,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerColumn->setAlign(FlexAlign::Stretch);
   visualizerColumn->setGap(Style::spaceSm * scale);
   visualizerColumn->setFlexGrow(2.0f);
-  visualizerColumn->setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
-  visualizerColumn->setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
-  visualizerColumn->setRadius(Style::radiusXl * scale);
-  visualizerColumn->setBorderWidth(Style::borderWidth);
-  visualizerColumn->setBorderColor(roleColor(ColorRole::Outline, 0.85f));
-  visualizerColumn->setSoftness(1.25f);
+  applyOutlinedCard(*visualizerColumn, scale);
   visualizerColumn->setClipChildren(true);
   m_visualizerColumn = visualizerColumn.get();
 

@@ -31,18 +31,6 @@ constexpr float kVolumeSyncEpsilon = 0.005f;           // 0.5%
 constexpr auto kVolumeCommitInterval = std::chrono::milliseconds(16);
 constexpr auto kVolumeStateHoldoff = std::chrono::milliseconds(180);
 
-void styleAudioCard(Flex& card, float scale) {
-  applyCard(card, scale);
-  card.setAlign(FlexAlign::Stretch);
-  card.setGap(Style::spaceSm * scale);
-  card.setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
-  card.setRadius(Style::radiusXl * scale);
-  card.setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
-  card.setBorderWidth(Style::borderWidth);
-  card.setBorderColor(roleColor(ColorRole::Outline, 0.85f));
-  card.setSoftness(1.25f);
-}
-
 class AudioDeviceRow : public Flex {
 public:
   explicit AudioDeviceRow(std::function<void()> onSelect) : m_onSelect(std::move(onSelect)) {
@@ -251,7 +239,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   m_deviceColumn = deviceRow.get();
 
   auto outputCard = std::make_unique<Flex>();
-  styleAudioCard(*outputCard, scale);
+  applyOutlinedCard(*outputCard, scale);
   outputCard->setFlexGrow(1.0f);
   m_outputCard = outputCard.get();
   addTitle(*outputCard, "Outputs", scale);
@@ -272,7 +260,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   deviceRow->addChild(std::move(outputCard));
 
   auto inputCard = std::make_unique<Flex>();
-  styleAudioCard(*inputCard, scale);
+  applyOutlinedCard(*inputCard, scale);
   inputCard->setFlexGrow(1.0f);
   m_inputCard = inputCard.get();
   addTitle(*inputCard, "Inputs", scale);
@@ -302,7 +290,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   m_volumeColumn = volumeRow.get();
 
   auto outputVolumeCard = std::make_unique<Flex>();
-  styleAudioCard(*outputVolumeCard, scale);
+  applyOutlinedCard(*outputVolumeCard, scale);
   outputVolumeCard->setFlexGrow(1.0f);
   m_outputVolumeCard = outputVolumeCard.get();
   addTitle(*outputVolumeCard, "Output Volume", scale);
@@ -356,7 +344,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   volumeRow->addChild(std::move(outputVolumeCard));
 
   auto inputVolumeCard = std::make_unique<Flex>();
-  styleAudioCard(*inputVolumeCard, scale);
+  applyOutlinedCard(*inputVolumeCard, scale);
   inputVolumeCard->setFlexGrow(1.0f);
   m_inputVolumeCard = inputVolumeCard.get();
   addTitle(*inputVolumeCard, "Input Volume", scale);

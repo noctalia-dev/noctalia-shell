@@ -195,15 +195,9 @@ std::string osAgeLabel() {
   return std::format("{}d", days);
 }
 
-void styleCard(Flex& card, float scale) {
-  applyCard(card, scale);
-  card.setAlign(FlexAlign::Stretch);
+void styleOverviewCard(Flex& card, float scale) {
+  applyOutlinedCard(card, scale);
   card.setGap(Style::spaceSm * scale);
-  card.setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
-  card.setRadius(Style::radiusXl * scale);
-  card.setBackground(roleColor(ColorRole::Surface, 0.75f));
-  card.setBorderWidth(Style::borderWidth);
-  card.setBorderColor(roleColor(ColorRole::Outline));
 }
 
 } // namespace
@@ -230,7 +224,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   // --- Weather ---
   auto weatherCard = std::make_unique<Flex>();
-  styleCard(*weatherCard, scale);
+  styleOverviewCard(*weatherCard, scale);
   m_weatherCard = weatherCard.get();
   weatherCard->setFlexGrow(1.0f);
   addTitle(*weatherCard, "Today", scale);
@@ -274,7 +268,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   // --- Media ---
   auto mediaCard = std::make_unique<Flex>();
-  styleCard(*mediaCard, scale);
+  styleOverviewCard(*mediaCard, scale);
   m_mediaCard = mediaCard.get();
   mediaCard->setFlexGrow(1.0f);
 
@@ -306,7 +300,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   // --- Session (display name + uptime) ---
   auto userCard = std::make_unique<Flex>();
-  styleCard(*userCard, scale);
+  styleOverviewCard(*userCard, scale);
   m_userCard = userCard.get();
   auto userRow = std::make_unique<Flex>();
   userRow->setDirection(FlexDirection::Horizontal);
@@ -391,7 +385,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   bottomRow->setGap(Style::spaceMd * scale);
 
   auto powerCard = std::make_unique<Flex>();
-  styleCard(*powerCard, scale);
+  styleOverviewCard(*powerCard, scale);
   m_powerCard = powerCard.get();
   powerCard->setFlexGrow(1.0f);
   addTitle(*powerCard, "Power", scale);
@@ -412,7 +406,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   bottomRow->addChild(std::move(powerCard));
 
   auto audioCard = std::make_unique<Flex>();
-  styleCard(*audioCard, scale);
+  styleOverviewCard(*audioCard, scale);
   m_audioCard = audioCard.get();
   audioCard->setFlexGrow(1.0f);
   addTitle(*audioCard, "Audio", scale);

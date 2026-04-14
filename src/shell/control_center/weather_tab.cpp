@@ -18,18 +18,6 @@ namespace {
 
   constexpr float kCurrentGlyphSize = Style::controlHeightLg * 2.2f;
 
-  void styleWeatherCard(Flex& card, float scale) {
-    applyCard(card, scale);
-    card.setAlign(FlexAlign::Stretch);
-    card.setGap(Style::spaceSm * scale);
-    card.setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
-    card.setRadius(Style::radiusXl * scale);
-    card.setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
-    card.setBorderWidth(Style::borderWidth);
-    card.setBorderColor(roleColor(ColorRole::Outline, 0.85f));
-    card.setSoftness(1.25f);
-  }
-
   std::string formatIsoClock(std::string_view isoTime) {
     const auto pos = isoTime.find('T');
     const std::size_t start = pos == std::string_view::npos ? 0 : pos + 1;
@@ -74,7 +62,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   m_leftColumn = leftColumn.get();
 
   auto currentCard = std::make_unique<Flex>();
-  styleWeatherCard(*currentCard, scale);
+  applyOutlinedCard(*currentCard, scale);
   m_currentCard = currentCard.get();
   currentCard->setDirection(FlexDirection::Horizontal);
   currentCard->setAlign(FlexAlign::Center);
@@ -152,7 +140,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   leftColumn->addChild(std::move(currentCard));
 
   auto detailsCard = std::make_unique<Flex>();
-  styleWeatherCard(*detailsCard, scale);
+  applyOutlinedCard(*detailsCard, scale);
   m_detailsCard = detailsCard.get();
   detailsCard->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
   detailsCard->setAlign(FlexAlign::Stretch);
@@ -223,7 +211,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
 
   for (std::size_t i = 0; i < kDayCount; ++i) {
     auto card = std::make_unique<Flex>();
-    styleWeatherCard(*card, scale);
+    applyOutlinedCard(*card, scale);
     card->setDirection(FlexDirection::Horizontal);
     card->setAlign(FlexAlign::Center);
     card->setGap(Style::spaceSm * scale);
