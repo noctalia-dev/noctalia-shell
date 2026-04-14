@@ -43,6 +43,8 @@ public:
   void setAnimationManager(AnimationManager* mgr) noexcept;
   void setRedrawCallback(RedrawCallback callback);
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
+  void setAnchor(bool anchor) noexcept { m_anchor = anchor; }
+  [[nodiscard]] bool isAnchor() const noexcept { return m_anchor; }
 
 protected:
   void requestRedraw();
@@ -52,6 +54,7 @@ protected:
   virtual void doUpdate(Renderer& renderer) { (void)renderer; }
 
   float m_contentScale = 1.0f;
+  bool m_anchor = false;
   AnimationManager* m_animations = nullptr;
   RedrawCallback m_redrawCallback;
 

@@ -92,9 +92,41 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
   configureSection(instance.centerSection, FlexJustify::Center);
   configureSection(instance.endSection, FlexJustify::End);
 
+  // Anchor mode: if a center widget is flagged as the anchor, pin its center to the
+  // bar midline so surrounding siblings growing/shrinking cannot drift it sideways.
+  const Node* anchorNode = nullptr;
+  for (const auto& widget : instance.centerWidgets) {
+    if (widget != nullptr && widget->isAnchor() && widget->root() != nullptr) {
+      anchorNode = widget->root();
+      break;
+    }
+  }
+
+  const float barMidline = contentMainStart + contentMainSpan * 0.5f;
   const float centerNaturalMain = isVertical ? instance.centerSection->height() : instance.centerSection->width();
-  const float centerSlotMain = std::min(contentMainSpan, centerNaturalMain);
-  const float centerSlotStart = contentMainStart + std::max(0.0f, (contentMainSpan - centerSlotMain) * 0.5f);
+
+  float centerSlotStart;
+  float centerSlotMain;
+  float centerSectionOffset; // offset of section origin within its slot along main axis
+  if (anchorNode != nullptr) {
+    const float anchorOffsetInSection =
+        isVertical ? anchorNode->y() : anchorNode->x();
+    const float anchorSpan =
+        isVertical ? anchorNode->height() : anchorNode->width();
+    const float anchorCenterInSection = anchorOffsetInSection + anchorSpan * 0.5f;
+    // Place the section so that the anchor's center sits at barMidline.
+    float desiredSectionStart = barMidline - anchorCenterInSection;
+    // Clamp so the section stays within the content area.
+    const float maxStart = contentMainEnd - centerNaturalMain;
+    desiredSectionStart = std::clamp(desiredSectionStart, contentMainStart, std::max(contentMainStart, maxStart));
+    centerSlotStart = desiredSectionStart;
+    centerSlotMain = std::min(centerNaturalMain, contentMainEnd - centerSlotStart);
+    centerSectionOffset = 0.0f;
+  } else {
+    centerSlotMain = std::min(contentMainSpan, centerNaturalMain);
+    centerSlotStart = contentMainStart + std::max(0.0f, (contentMainSpan - centerSlotMain) * 0.5f);
+    centerSectionOffset = (centerSlotMain - centerNaturalMain) * 0.5f;
+  }
   const float centerSlotEnd = centerSlotStart + centerSlotMain;
   const float startSlotMain = std::max(0.0f, centerSlotStart - contentMainStart);
   const float endSlotMain = std::max(0.0f, contentMainEnd - centerSlotEnd);
@@ -107,12 +139,12 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
     instance.startSection->setPosition((slotCross - instance.startSection->width()) * 0.5f,
                                        (startSlotMain - instance.startSection->height()) * 0.5f);
     instance.centerSection->setPosition((slotCross - instance.centerSection->width()) * 0.5f,
-                                        (centerSlotMain - instance.centerSection->height()) * 0.5f);
+                                        centerSectionOffset);
     instance.endSection->setPosition((slotCross - instance.endSection->width()) * 0.5f,
                                      (endSlotMain - instance.endSection->height()) * 0.5f);
   } else {
     instance.startSection->setPosition(0.0f, (slotCross - instance.startSection->height()) * 0.5f);
-    instance.centerSection->setPosition((centerSlotMain - instance.centerSection->width()) * 0.5f,
+    instance.centerSection->setPosition(centerSectionOffset,
                                         (slotCross - instance.centerSection->height()) * 0.5f);
     instance.endSection->setPosition(endSlotMain - instance.endSection->width(),
                                      (slotCross - instance.endSection->height()) * 0.5f);
@@ -403,10 +435,14 @@ void Bar::destroyInstance(std::uint32_t outputName) {
 }
 
 void Bar::populateWidgets(BarInstance& instance) {
+  const auto& widgetConfigs = m_config->config().widgets;
   auto createWidgets = [&](const std::vector<std::string>& names, std::vector<std::unique_ptr<Widget>>& dest) {
     for (const auto& name : names) {
       auto widget = m_widgetFactory->create(name, instance.output, instance.barConfig.scale);
       if (widget != nullptr) {
+        if (auto it = widgetConfigs.find(name); it != widgetConfigs.end()) {
+          widget->setAnchor(it->second.getBool("anchor", false));
+        }
         dest.push_back(std::move(widget));
       }
     }
