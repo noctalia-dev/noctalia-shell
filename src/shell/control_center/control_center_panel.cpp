@@ -79,8 +79,8 @@ void ControlCenterPanel::create() {
   content->setPadding(Style::spaceLg * scale);
   content->setRadius(Style::radiusXl * scale);
   content->setBackground(roleColor(ColorRole::SurfaceVariant));
-  content->setBorderWidth(Style::borderWidth);
-  content->setBorderColor(roleColor(ColorRole::Outline));
+  // content->setBorderWidth(Style::borderWidth);
+  // content->setBorderColor(roleColor(ColorRole::Outline));
   content->setSoftness(1.0f);
   content->setFlexGrow(4.0f);
   content->setClipChildren(true);
