@@ -19,6 +19,7 @@
 #include "shell/widgets/media_widget.h"
 #include "shell/widgets/notification_widget.h"
 #include "shell/widgets/power_profiles_widget.h"
+#include "shell/widgets/scripted_widget.h"
 #include "shell/widgets/session_widget.h"
 #include "shell/widgets/spacer_widget.h"
 #include "shell/widgets/sysmon_widget.h"
@@ -188,6 +189,13 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "test") {
     auto widget = std::make_unique<TestWidget>(output);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "scripted") {
+    std::string script = wc != nullptr ? wc->getString("script", "") : std::string();
+    auto widget = std::make_unique<ScriptedWidget>(std::move(script));
     widget->setContentScale(contentScale);
     return widget;
   }
