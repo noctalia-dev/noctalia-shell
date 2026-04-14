@@ -18,6 +18,7 @@ Changes are detected automatically via inotify — no restart required.
 - [Night Light](#night-light)
 - [Idle](#idle)
 - [Shell](#shell)
+- [Keybinds](#keybinds)
 - [OSD](#osd)
 - [Wallpaper](#wallpaper)
 - [Overview](#overview)
@@ -303,9 +304,9 @@ No configurable settings.
 IPC:
 
 ```sh
-noctalia-ipc enable-idle-inhibitor
-noctalia-ipc disable-idle-inhibitor
-noctalia-ipc toggle-idle-inhibitor
+noctalia msg enable-idle-inhibitor
+noctalia msg disable-idle-inhibitor
+noctalia msg toggle-idle-inhibitor
 ```
 
 ---
@@ -325,8 +326,8 @@ No configurable settings.
 IPC:
 
 ```sh
-noctalia-ipc toggle-nightlight
-noctalia-ipc toggle-force-nightlight
+noctalia msg toggle-nightlight
+noctalia msg toggle-force-nightlight
 ```
 
 ---
@@ -452,10 +453,10 @@ When `auto_hide = true`, the dock:
 ### IPC
 
 ```sh
-noctalia-ipc show-dock       # Re-display all instances
-noctalia-ipc hide-dock       # Close all instances until next reload
-noctalia-ipc toggle-dock     # Toggle dock visibility
-noctalia-ipc reload-dock     # Reload dock configuration
+noctalia msg show-dock       # Re-display all instances
+noctalia msg hide-dock       # Close all instances until next reload
+noctalia msg toggle-dock     # Toggle dock visibility
+noctalia msg reload-dock     # Reload dock configuration
 ```
 
 ---
@@ -577,10 +578,10 @@ Notes:
 IPC force controls:
 
 ```sh
-noctalia-ipc enable-nightlight
-noctalia-ipc disable-nightlight
-noctalia-ipc toggle-nightlight
-noctalia-ipc toggle-force-nightlight
+noctalia msg enable-nightlight
+noctalia msg disable-nightlight
+noctalia msg toggle-nightlight
+noctalia msg toggle-force-nightlight
 ```
 
 - `enable-nightlight` / `disable-nightlight` / `toggle-nightlight` control schedule enable state.
@@ -628,7 +629,7 @@ Available fields:
 - a regular shell command such as `notify-send 'Idle' 'Locking soon'`
 - a Noctalia IPC command using the `noctalia:` prefix
 
-When you use the `noctalia:` prefix, the rest of the string is executed through the same IPC command registry as `noctalia-ipc`.
+When you use the `noctalia:` prefix, the rest of the string is executed through the same IPC command registry as `noctalia msg`.
 That means all existing Noctalia IPC commands are available inside idle behaviors, not just a special idle-only subset.
 
 Examples:
@@ -689,6 +690,54 @@ speed = 1.0                 # 1.0 = normal, 0.5 = 2x slower, 2.0 = 2x faster
 `avatar_path` sets the avatar image shown in the Control Center Overview session card.
 
 `clipboard_auto_paste` controls what Noctalia sends after selecting a clipboard entry. `auto` matches the old shell behavior: image entries use `Ctrl+V`, text entries use `Ctrl+Shift+V`. `ctrl_v` works for most GUI apps, `ctrl_shift_v` and `shift_insert` are better fits for many terminals, and `off` keeps the current behavior to “copy only, no automatic paste”.
+
+---
+
+## Keybinds
+
+Centralized keyboard actions used by shell panels (`launcher`, `session`, `clipboard`, `wallpaper`, and panel close/cancel).
+
+Supported actions:
+- `validate`
+- `cancel`
+- `left`
+- `right`
+- `up`
+- `down`
+
+Each action accepts either:
+- one string chord, or
+- an array of string chords
+
+Chord format:
+- `key`
+- `modifier+key`
+- `modifier+modifier+key`
+
+Supported modifiers:
+- `ctrl`
+- `shift`
+- `alt`
+
+`super/windows` bindings are intentionally rejected (`super`, `win`, `windows`, `logo`, `meta`, `mod4`) and produce a config parse error.
+
+```toml
+[keybinds]
+validate = ["return", "kp_enter"]
+cancel = ["escape"]
+left = ["left", "ctrl+h"]
+right = ["right", "ctrl+l"]
+up = ["up", "ctrl+k"]
+down = ["down", "ctrl+j"]
+```
+
+Defaults (when unset):
+- `validate` = `return`, `kp_enter`
+- `cancel` = `escape`
+- `left` = `left`
+- `right` = `right`
+- `up` = `up`
+- `down` = `down`
 
 ---
 
