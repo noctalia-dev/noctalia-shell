@@ -453,7 +453,7 @@ fill_mode           = "crop"    # center | crop | fit | stretch | repeat
 transition          = ["fade", "wipe", "disc", "stripes", "zoom", "honeycomb"]
                                 # array of effects to pick from at random each transition
                                 # omit to use all effects; valid values: fade | wipe | disc | stripes | zoom | honeycomb
-transition_duration = 1500.0    # milliseconds
+transition_duration = 1500      # milliseconds
 edge_smoothness     = 0.3       # 0.0 – 1.0
 
 # Directory browsed by the wallpaper picker panel.
