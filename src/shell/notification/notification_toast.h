@@ -4,16 +4,20 @@
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
+#include "system/icon_resolver.h"
 #include "ui/controls/label.h"
 #include "ui/controls/progress_bar.h"
 #include "wayland/layer_surface.h"
 #include "wayland/surface.h"
 
 #include <memory>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 class ConfigService;
 class Glyph;
+class HttpClient;
 class InputArea;
 class RenderContext;
 class WaylandConnection;
@@ -28,7 +32,7 @@ public:
   NotificationToast& operator=(const NotificationToast&) = delete;
 
   void initialize(WaylandConnection& wayland, ConfigService* config, NotificationManager* notifications,
-                  RenderContext* renderContext);
+                  RenderContext* renderContext, HttpClient* httpClient = nullptr);
   void requestRedraw();
 
   bool onPointerEvent(const PointerEvent& event);
@@ -40,6 +44,9 @@ private:
     std::string appName;
     std::string summary;
     std::string body;
+    std::vector<std::string> actions;
+    std::optional<std::string> icon;
+    std::optional<NotificationImageData> imageData;
     Urgency urgency = Urgency::Normal;
     int displayDurationMs = 0; // -1 = persistent (no auto-dismiss)
     float remainingProgress = 1.0f;
@@ -65,6 +72,7 @@ private:
     struct CardState {
       Node* cardNode = nullptr;
       Node* cardBg = nullptr;
+      Node* appIconNode = nullptr;
       Label* appNameLabel = nullptr;
       Label* summaryLabel = nullptr;
       Label* bodyLabel = nullptr;
@@ -93,7 +101,7 @@ private:
   void prepareFrame(PopupInstance& inst, bool needsUpdate, bool needsLayout);
   void buildScene(PopupInstance& inst, uint32_t width, uint32_t height);
   InputArea* buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary, Label** outBody,
-                       Node** outBg, ProgressBar** outProgress, Glyph** outCloseGlyph);
+                       Node** outBg, Node** outAppIcon, ProgressBar** outProgress, Glyph** outCloseGlyph);
   void addCardToInstance(PopupInstance& inst, std::size_t entryIndex);
   void dismissCardFromInstance(PopupInstance& inst, std::size_t entryIndex);
 
@@ -104,13 +112,19 @@ private:
   void resumeCountdowns(uint32_t notificationId);
   void revealQueuedEntries();
   std::size_t findFreeSlot() const;
+  [[nodiscard]] std::string resolveNotificationIconPath(const PopupEntry& entry);
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
   NotificationManager* m_notifications = nullptr;
   RenderContext* m_renderContext = nullptr;
+  HttpClient* m_httpClient = nullptr;
 
   std::vector<PopupEntry> m_entries;
   std::vector<std::unique_ptr<PopupInstance>> m_instances;
   int m_callbackToken = -1;
+  IconResolver m_iconResolver;
+  std::unordered_map<std::string, std::string> m_remoteIconCache;
+  std::unordered_set<std::string> m_pendingRemoteIconDownloads;
+  std::unordered_set<std::string> m_failedRemoteIconDownloads;
 };

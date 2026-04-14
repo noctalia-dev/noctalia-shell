@@ -2,14 +2,17 @@
 #include "shell/notification/notification_toast.h"
 
 #include "notification/notification_manager.h"
+#include "net/http_client.h"
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
+#include "ui/controls/button.h"
 #include "ui/controls/box.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
+#include "ui/controls/image.h"
 #include "ui/controls/label.h"
 #include "ui/controls/progress_bar.h"
 #include "ui/palette.h"
@@ -19,14 +22,19 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cctype>
+#include <charconv>
+#include <filesystem>
 #include <linux/input-event-codes.h>
+#include <unistd.h>
 
 namespace {
 
 constexpr Logger kLog("notification");
 
 constexpr int kCardWidth = 340;
-constexpr int kCardHeight = 130;
+constexpr int kCardHeightCompact = 132;
+constexpr int kCardHeightWithActions = 170;
 
 constexpr std::size_t kMaxVisible = 5;
 constexpr float kGap = Style::spaceSm;
@@ -34,6 +42,13 @@ constexpr float kPadding = Style::spaceMd;
 constexpr float kCardInnerPad = Style::spaceMd;
 constexpr float kCloseButtonSize = 20.0f;
 constexpr float kCloseGlyphSize = 12.0f;
+constexpr float kNotificationIconSize = 42.0f;
+constexpr float kNotificationIconRadius = 10.0f;
+constexpr float kNotificationIconGlyphSize = 24.0f;
+constexpr float kIconTextGap = Style::spaceSm;
+constexpr float kActionGap = Style::spaceXs;
+constexpr float kActionRowGap = Style::spaceSm;
+constexpr int kMaxActionButtons = 2;
 
 // Maps the raw DBus timeout value to a popup display duration.
 // Returns -1 to mean "persistent — never auto-dismiss".
@@ -55,15 +70,21 @@ constexpr float kMetaGap = Style::spaceXs;        // vertical gap between app na
 constexpr float kSummaryBodyGap = Style::spaceXs; // vertical gap between summary and body
 
 constexpr std::size_t kMaxSummaryLines = 2;
-constexpr std::size_t kMaxBodyLines = 3;
+constexpr std::size_t kMaxBodyLines = 5;
 
 constexpr int kSurfaceWidth = static_cast<int>(kCardWidth + kPadding * 2);
-constexpr int kSurfaceHeight = static_cast<int>(kCardHeight * kMaxVisible + kGap * (kMaxVisible - 1) + kPadding * 2);
+constexpr int kSurfaceHeight =
+    static_cast<int>(kCardHeightWithActions * kMaxVisible + kGap * (kMaxVisible - 1) + kPadding * 2);
 
-int fitBodyLines(RenderContext& renderContext, float summaryHeight) {
-  const float progressY = static_cast<float>(kCardHeight) - kProgressHeight - kProgressBottomMargin;
+float cardHeightForEntry(bool hasActions) {
+  return hasActions ? static_cast<float>(kCardHeightWithActions) : static_cast<float>(kCardHeightCompact);
+}
+
+int fitBodyLines(RenderContext& renderContext, float summaryHeight, bool hasActions, float cardHeight) {
+  const float progressY = cardHeight - kProgressHeight - kProgressBottomMargin;
+  const float actionsReserved = hasActions ? (Style::controlHeightSm + kActionRowGap) : 0.0f;
   const float bodyTop = kCardInnerPad + kCloseButtonSize + kMetaGap + summaryHeight + kSummaryBodyGap;
-  const float availableHeight = progressY - kBodyBottomGap - bodyTop;
+  const float availableHeight = progressY - kBodyBottomGap - actionsReserved - bodyTop;
   if (availableHeight <= 0.0f) {
     return 0;
   }
@@ -72,6 +93,75 @@ int fitBodyLines(RenderContext& renderContext, float summaryHeight) {
   const float lineHeight = std::max(1.0f, metrics.bottom - metrics.top);
   return std::clamp(static_cast<int>(std::floor((availableHeight + 0.5f) / lineHeight)), 0,
                     static_cast<int>(kMaxBodyLines));
+}
+
+float notificationTextStartX() {
+  return kCardInnerPad + kNotificationIconSize + kIconTextGap;
+}
+
+float notificationTextMaxWidth() {
+  return std::max(0.0f, kCardWidth - notificationTextStartX() - kCardInnerPad);
+}
+
+bool isRemoteIconUrl(std::string_view url) {
+  return url.starts_with("http://") || url.starts_with("https://");
+}
+
+std::string decodeUriComponent(std::string_view text) {
+  std::string decoded;
+  decoded.reserve(text.size());
+
+  auto hexValue = [](char c) -> int {
+    if (c >= '0' && c <= '9') {
+      return c - '0';
+    }
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    if (c >= 'a' && c <= 'f') {
+      return 10 + (c - 'a');
+    }
+    return -1;
+  };
+
+  for (std::size_t i = 0; i < text.size(); ++i) {
+    if (text[i] == '%' && i + 2 < text.size()) {
+      const int hi = hexValue(text[i + 1]);
+      const int lo = hexValue(text[i + 2]);
+      if (hi >= 0 && lo >= 0) {
+        decoded.push_back(static_cast<char>((hi << 4) | lo));
+        i += 2;
+        continue;
+      }
+    }
+    decoded.push_back(text[i]);
+  }
+
+  return decoded;
+}
+
+std::string normalizeLocalIconPath(std::string_view iconValue) {
+  if (iconValue.empty()) {
+    return {};
+  }
+
+  std::string path(iconValue);
+  constexpr std::string_view prefix = "file://";
+  if (path.starts_with(prefix)) {
+    path.erase(0, prefix.size());
+    if (path.starts_with("localhost/")) {
+      path.erase(0, std::string_view("localhost").size());
+    } else if (!path.empty() && path.front() != '/') {
+      const auto firstSlash = path.find('/');
+      path = firstSlash == std::string::npos ? std::string{} : path.substr(firstSlash);
+    }
+  }
+
+  return decodeUriComponent(path);
+}
+
+std::filesystem::path remoteIconCachePath(std::string_view url) {
+  const std::filesystem::path cacheDir = std::filesystem::path("/tmp") / "noctalia-notification-icons";
+  const std::size_t hash = std::hash<std::string_view>{}(url);
+  return cacheDir / (std::to_string(hash) + ".img");
 }
 
 } // namespace
@@ -86,11 +176,13 @@ NotificationToast::~NotificationToast() {
 }
 
 void NotificationToast::initialize(WaylandConnection& wayland, ConfigService* config,
-                                   NotificationManager* notifications, RenderContext* renderContext) {
+                                   NotificationManager* notifications, RenderContext* renderContext,
+                                   HttpClient* httpClient) {
   m_wayland = &wayland;
   m_config = config;
   m_notifications = notifications;
   m_renderContext = renderContext;
+  m_httpClient = httpClient;
 
   m_callbackToken = m_notifications->addEventCallback(
       [this](const Notification& n, NotificationEvent event) { onNotificationEvent(n, event); });
@@ -118,9 +210,14 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
   case NotificationEvent::Updated: {
     for (std::size_t i = 0; i < m_entries.size(); ++i) {
       if (m_entries[i].notificationId == n.id && !m_entries[i].exiting) {
+        const bool actionSetChanged = (m_entries[i].actions != n.actions) || (m_entries[i].icon != n.icon);
+        const bool imageDataChanged = (m_entries[i].imageData != n.imageData);
         m_entries[i].appName = n.appName;
         m_entries[i].summary = n.summary;
         m_entries[i].body = n.body;
+        m_entries[i].actions = n.actions;
+        m_entries[i].icon = n.icon;
+        m_entries[i].imageData = n.imageData;
         const bool hovered = m_entries[i].hovered;
 
         // Update text nodes and reset countdown on each instance
@@ -133,15 +230,49 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
             continue;
           }
 
+          if (actionSetChanged || imageDataChanged) {
+            const float preservedX = cs.cardNode->x();
+            const float preservedY = cs.cardNode->y();
+            const float preservedOpacity = cs.cardNode->opacity();
+
+            if (cs.countdownAnimId != 0) {
+              inst->animations.cancel(cs.countdownAnimId);
+            }
+            if (cs.entryAnimId != 0) {
+              inst->animations.cancel(cs.entryAnimId);
+            }
+            if (cs.slideAnimId != 0) {
+              inst->animations.cancel(cs.slideAnimId);
+            }
+            if (cs.exitAnimId != 0) {
+              inst->animations.cancel(cs.exitAnimId);
+            }
+
+            if (inst->sceneRoot != nullptr) {
+              inst->sceneRoot->removeChild(cs.cardNode);
+            }
+
+            cs = {};
+            InputArea* rebuilt = buildCard(m_entries[i], &cs.appNameLabel, &cs.summaryLabel, &cs.bodyLabel,
+                                           &cs.cardBg, &cs.appIconNode, &cs.progressBar, &cs.closeGlyph);
+            cs.cardNode = rebuilt;
+            rebuilt->setPosition(preservedX, preservedY);
+            rebuilt->setOpacity(preservedOpacity);
+            if (inst->sceneRoot != nullptr) {
+              inst->sceneRoot->addChild(std::unique_ptr<Node>(rebuilt));
+            }
+          }
+
           cs.appNameLabel->setText(n.appName);
           cs.summaryLabel->setText(m_entries[i].summary);
           cs.summaryLabel->measure(*m_renderContext);
-          const int bodyLines = fitBodyLines(*m_renderContext, cs.summaryLabel->height());
+            const int bodyLines =
+              fitBodyLines(*m_renderContext, cs.summaryLabel->height(), !m_entries[i].actions.empty(), cs.cardNode->height());
           cs.bodyLabel->setMaxLines(std::max(1, bodyLines));
           cs.bodyLabel->setText(bodyLines > 0 ? m_entries[i].body : "");
           cs.bodyLabel->measure(*m_renderContext);
           cs.bodyLabel->setVisible(bodyLines > 0 && !m_entries[i].body.empty());
-          cs.bodyLabel->setPosition(kCardInnerPad,
+            cs.bodyLabel->setPosition(notificationTextStartX(),
                                     kCardInnerPad + kCloseButtonSize + kMetaGap +
                                         cs.summaryLabel->height() + kSummaryBodyGap);
 
@@ -215,6 +346,9 @@ void NotificationToast::addPopup(const Notification& n) {
   entry.appName = n.appName;
   entry.summary = n.summary;
   entry.body = n.body;
+  entry.actions = n.actions;
+  entry.icon = n.icon;
+  entry.imageData = n.imageData;
   entry.urgency = n.urgency;
   entry.displayDurationMs = resolveDisplayDuration(n.timeout);
   entry.remainingProgress = 1.0f;
@@ -326,8 +460,8 @@ void NotificationToast::addCardToInstance(PopupInstance& inst, std::size_t entry
 
   auto& cs = inst.cards[entryIndex];
   cs = {};
-  InputArea* card =
-      buildCard(entry, &cs.appNameLabel, &cs.summaryLabel, &cs.bodyLabel, &cs.cardBg, &cs.progressBar, &cs.closeGlyph);
+  InputArea* card = buildCard(entry, &cs.appNameLabel, &cs.summaryLabel, &cs.bodyLabel, &cs.cardBg, &cs.appIconNode,
+                              &cs.progressBar, &cs.closeGlyph);
   cs.cardNode = card;
 
   float targetY = cardTargetY(entry.slot);
@@ -514,7 +648,18 @@ void NotificationToast::layoutCards(PopupInstance& inst) {
 }
 
 float NotificationToast::cardTargetY(std::size_t slot) const {
-  return kPadding + static_cast<float>(slot) * (static_cast<float>(kCardHeight) + kGap);
+  float y = kPadding;
+  for (std::size_t s = 0; s < slot; ++s) {
+    const auto it = std::find_if(m_entries.begin(), m_entries.end(), [s](const PopupEntry& entry) {
+      return !entry.exiting && entry.slot == s;
+    });
+    if (it != m_entries.end()) {
+      y += cardHeightForEntry(!it->actions.empty()) + kGap;
+    } else {
+      y += static_cast<float>(kCardHeightCompact) + kGap;
+    }
+  }
+  return y;
 }
 
 NotificationToast::PopupEntry* NotificationToast::findEntry(uint32_t notificationId) {
@@ -788,13 +933,14 @@ void NotificationToast::updateInputRegion(PopupInstance& inst) const {
 }
 
 InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary,
-                                        Label** outBody, Node** outBg, ProgressBar** outProgress,
-                                        Glyph** outCloseGlyph) {
+                                        Label** outBody, Node** outBg, Node** outAppIcon,
+                                        ProgressBar** outProgress, Glyph** outCloseGlyph) {
+  const float cardHeight = cardHeightForEntry(!entry.actions.empty());
   const float innerWidth = kCardWidth - kCardInnerPad * 2;
-  const float progressY = static_cast<float>(kCardHeight) - kProgressHeight - kProgressBottomMargin;
+  const float progressY = cardHeight - kProgressHeight - kProgressBottomMargin;
 
   auto area = std::make_unique<InputArea>();
-  area->setSize(kCardWidth, static_cast<float>(kCardHeight));
+  area->setSize(kCardWidth, cardHeight);
   // Unified close mechanism: clicking anywhere on the card dismisses it. The (X) glyph
   // is purely visual — it brightens while the card is hovered via the card's own
   // onEnter/onLeave handlers installed in addCardToInstance().
@@ -805,6 +951,8 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
   });
 
   const bool isCritical = (entry.urgency == Urgency::Critical);
+  const float textStartX = notificationTextStartX();
+  const float textMaxWidth = notificationTextMaxWidth();
 
   // Background
   auto bg = std::make_unique<Box>();
@@ -819,7 +967,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
     bg->setFill(roleColor(ColorRole::Surface, 0.97f));
     bg->setBorder(roleColor(ColorRole::Outline, 0.8f), Style::borderWidth);
   }
-  bg->setSize(kCardWidth, static_cast<float>(kCardHeight));
+  bg->setSize(kCardWidth, cardHeight);
   *outBg = area->addChild(std::move(bg));
 
   // Header row: app name (left) + close glyph (right), vertically centred via Flex
@@ -830,13 +978,75 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
   headerRow->setSize(innerWidth, kCloseButtonSize);
   headerRow->setPosition(kCardInnerPad, kCardInnerPad);
 
+  auto headerLeft = std::make_unique<Flex>();
+  headerLeft->setDirection(FlexDirection::Horizontal);
+  headerLeft->setAlign(FlexAlign::Center);
+  headerLeft->setGap(Style::spaceXs);
+
+  auto iconSlot = std::make_unique<Node>();
+  iconSlot->setSize(kNotificationIconSize, kNotificationIconSize);
+  iconSlot->setPosition(kCardInnerPad, std::round((cardHeight - kNotificationIconSize) * 0.5f));
+
+  bool iconAssigned = false;
+  const std::string iconPath = resolveNotificationIconPath(entry);
+  if (!iconPath.empty()) {
+    auto appIcon = std::make_unique<Image>();
+    appIcon->setSize(kNotificationIconSize, kNotificationIconSize);
+    appIcon->setPosition(0.0f, 0.0f);
+    appIcon->setCornerRadius(kNotificationIconRadius);
+    appIcon->setFit(ImageFit::Cover);
+    if (appIcon->setSourceFile(*m_renderContext, iconPath, static_cast<int>(std::round(kNotificationIconSize)))) {
+      *outAppIcon = iconSlot->addChild(std::move(appIcon));
+      iconAssigned = true;
+    } else {
+      kLog.warn("notification toast: failed to load icon image for #{} from '{}'", entry.notificationId, iconPath);
+    }
+  } else if (entry.imageData.has_value()) {
+    const auto& image = *entry.imageData;
+    if (image.width > 0 && image.height > 0 && !image.data.empty()) {
+      auto appIcon = std::make_unique<Image>();
+      appIcon->setSize(kNotificationIconSize, kNotificationIconSize);
+      appIcon->setPosition(0.0f, 0.0f);
+      appIcon->setCornerRadius(kNotificationIconRadius);
+      appIcon->setFit(ImageFit::Cover);
+      if (appIcon->setSourceArgbPixmap(*m_renderContext, image.data.data(), image.width, image.height, true)) {
+        *outAppIcon = iconSlot->addChild(std::move(appIcon));
+        iconAssigned = true;
+        kLog.info("notification toast: using image-data avatar for #{} ({}x{}, bytes={})", entry.notificationId,
+                  image.width, image.height, image.data.size());
+      } else {
+        kLog.warn("notification toast: failed to load image-data avatar for #{} ({}x{}, bytes={})",
+                  entry.notificationId, image.width, image.height, image.data.size());
+      }
+    } else {
+      kLog.warn("notification toast: invalid image-data avatar for #{} ({}x{}, bytes={})", entry.notificationId,
+                image.width, image.height, image.data.size());
+    }
+  }
+
+  if (!iconAssigned) {
+    auto fallback = std::make_unique<Glyph>();
+    fallback->setGlyph("bell");
+    fallback->setGlyphSize(kNotificationIconGlyphSize);
+    fallback->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    fallback->measure(*m_renderContext);
+    fallback->setPosition(std::round((kNotificationIconSize - fallback->width()) * 0.5f),
+                          std::round((kNotificationIconSize - fallback->height()) * 0.5f));
+    *outAppIcon = iconSlot->addChild(std::move(fallback));
+  }
+
+  area->addChild(std::move(iconSlot));
+
   auto appName = std::make_unique<Label>();
   appName->setText(entry.appName);
   appName->setFontSize(kMetaFontSize);
   appName->setColor(roleColor(isCritical ? ColorRole::Error : ColorRole::OnSurfaceVariant));
+  appName->setMaxWidth(innerWidth - kCloseButtonSize - Style::spaceXs);
   appName->measure(*m_renderContext);
   *outAppName = appName.get();
-  headerRow->addChild(std::move(appName));
+  headerLeft->addChild(std::move(appName));
+  headerLeft->layout(*m_renderContext);
+  headerRow->addChild(std::move(headerLeft));
 
   auto closeGlyph = std::make_unique<Glyph>();
   closeGlyph->setGlyph("close");
@@ -854,10 +1064,10 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
   summary->setFontSize(kSummaryFontSize);
   summary->setColor(roleColor(ColorRole::OnSurface));
   summary->setBold(true);
-  summary->setMaxWidth(innerWidth);
+  summary->setMaxWidth(textMaxWidth);
   summary->setMaxLines(kMaxSummaryLines);
   summary->measure(*m_renderContext);
-  summary->setPosition(kCardInnerPad, kCardInnerPad + kCloseButtonSize + kMetaGap);
+  summary->setPosition(textStartX, kCardInnerPad + kCloseButtonSize + kMetaGap);
   *outSummary = summary.get();
   area->addChild(std::move(summary));
 
@@ -866,18 +1076,55 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
   body->setText(entry.body);
   body->setFontSize(kBodyFontSize);
   body->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  body->setMaxWidth(innerWidth);
-  const int bodyLines = fitBodyLines(*m_renderContext, (*outSummary)->height());
+  body->setMaxWidth(textMaxWidth);
+  const int bodyLines = fitBodyLines(*m_renderContext, (*outSummary)->height(), !entry.actions.empty(), cardHeight);
   body->setMaxLines(std::max(1, bodyLines));
   if (bodyLines <= 0) {
     body->setText("");
     body->setVisible(false);
   }
   body->measure(*m_renderContext);
-  body->setPosition(kCardInnerPad,
+  body->setPosition(textStartX,
                     kCardInnerPad + kCloseButtonSize + kMetaGap + (*outSummary)->height() + kSummaryBodyGap);
   *outBody = body.get();
   area->addChild(std::move(body));
+
+  if (!entry.actions.empty()) {
+    auto actionsRow = std::make_unique<Flex>();
+    actionsRow->setDirection(FlexDirection::Horizontal);
+    actionsRow->setAlign(FlexAlign::Center);
+    actionsRow->setGap(kActionGap);
+
+    int actionCount = 0;
+    for (std::size_t i = 0; i + 1 < entry.actions.size() && actionCount < kMaxActionButtons; i += 2) {
+      const std::string actionKey = entry.actions[i];
+      const std::string actionLabel = entry.actions[i + 1].empty() ? actionKey : entry.actions[i + 1];
+      if (actionKey.empty() || actionLabel.empty()) {
+        continue;
+      }
+
+      auto actionButton = std::make_unique<Button>();
+      actionButton->setVariant(ButtonVariant::Outline);
+      actionButton->setFontSize(Style::fontSizeCaption);
+      actionButton->setText(actionLabel);
+      actionButton->setOnClick([this, id = entry.notificationId, actionKey]() {
+        if (m_notifications == nullptr) {
+          return;
+        }
+        if (!m_notifications->invokeAction(id, actionKey, true)) {
+          kLog.warn("notification toast: failed to invoke action '{}' for #{}", actionKey, id);
+        }
+      });
+      actionsRow->addChild(std::move(actionButton));
+      ++actionCount;
+    }
+
+    if (actionCount > 0) {
+      actionsRow->layout(*m_renderContext);
+      actionsRow->setPosition(textStartX, progressY - actionsRow->height() - kActionRowGap);
+      area->addChild(std::move(actionsRow));
+    }
+  }
 
   // Progress bar (countdown)
   auto progressBar = std::make_unique<ProgressBar>();
@@ -943,4 +1190,99 @@ bool NotificationToast::onPointerEvent(const PointerEvent& event) {
   }
 
   return consumed;
+}
+
+std::string NotificationToast::resolveNotificationIconPath(const PopupEntry& entry) {
+  if (!entry.icon.has_value() || entry.icon->empty()) {
+    kLog.info("notification toast: #{} has no icon metadata", entry.notificationId);
+    return {};
+  }
+
+  const std::string iconValue = *entry.icon;
+  kLog.info("notification toast: #{} icon value='{}'", entry.notificationId, iconValue);
+
+  if (isRemoteIconUrl(iconValue)) {
+    if (const auto it = m_remoteIconCache.find(iconValue); it != m_remoteIconCache.end()) {
+      std::error_code ec;
+      if (std::filesystem::exists(it->second, ec) && std::filesystem::file_size(it->second, ec) > 0) {
+        kLog.info("notification toast: #{} remote icon cache hit path='{}'", entry.notificationId, it->second);
+        return it->second;
+      }
+      kLog.warn("notification toast: #{} remote cache entry stale path='{}'", entry.notificationId, it->second);
+      m_remoteIconCache.erase(it);
+    }
+
+    if (m_failedRemoteIconDownloads.find(iconValue) != m_failedRemoteIconDownloads.end()) {
+      kLog.warn("notification toast: #{} remote icon URL marked failed url='{}'", entry.notificationId, iconValue);
+      return {};
+    }
+
+    const auto cached = remoteIconCachePath(iconValue);
+    std::error_code ec;
+    if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0) {
+      const std::string cachedPath = cached.string();
+      m_remoteIconCache[iconValue] = cachedPath;
+      kLog.info("notification toast: #{} remote icon disk cache hit path='{}'", entry.notificationId, cachedPath);
+      return cachedPath;
+    }
+
+    if (m_httpClient != nullptr && m_pendingRemoteIconDownloads.find(iconValue) == m_pendingRemoteIconDownloads.end()) {
+      std::filesystem::create_directories(cached.parent_path(), ec);
+      if (ec) {
+        kLog.warn("notification toast: #{} failed to create icon cache dir '{}' error='{}'", entry.notificationId,
+                  cached.parent_path().string(), ec.message());
+      }
+
+      kLog.info("notification toast: #{} scheduling remote icon download url='{}' dest='{}'", entry.notificationId,
+            iconValue, cached.string());
+      m_pendingRemoteIconDownloads.insert(iconValue);
+      m_httpClient->download(iconValue, cached, [this, url = iconValue, path = cached.string()](bool success) {
+        m_pendingRemoteIconDownloads.erase(url);
+        if (!success) {
+          kLog.warn("notification toast: remote icon download failed url='{}'", url);
+          m_failedRemoteIconDownloads.insert(url);
+          return;
+        }
+
+        kLog.info("notification toast: remote icon download succeeded url='{}' path='{}'", url, path);
+        m_failedRemoteIconDownloads.erase(url);
+        m_remoteIconCache[url] = path;
+        for (auto& inst : m_instances) {
+          if (inst->surface != nullptr) {
+            inst->surface->requestLayout();
+          }
+        }
+      });
+    } else if (m_httpClient == nullptr) {
+      kLog.warn("notification toast: cannot download remote icon url='{}' because HttpClient is null", iconValue);
+    } else {
+      kLog.info("notification toast: remote icon download already pending url='{}'", iconValue);
+    }
+    return {};
+  }
+
+  const std::string localPath = normalizeLocalIconPath(iconValue);
+  if (!localPath.empty() && localPath.front() == '/') {
+    if (access(localPath.c_str(), R_OK) == 0) {
+      kLog.info("notification toast: #{} using local icon path='{}'", entry.notificationId, localPath);
+      return localPath;
+    }
+    kLog.warn("notification toast: #{} local icon path not readable path='{}'", entry.notificationId, localPath);
+    return {};
+  }
+
+  if (localPath.empty()) {
+    kLog.warn("notification toast: #{} icon value normalized to empty path", entry.notificationId);
+    return {};
+  }
+
+  const std::string& resolved = m_iconResolver.resolve(localPath);
+  if (!resolved.empty()) {
+    kLog.info("notification toast: #{} theme icon resolved name='{}' path='{}'", entry.notificationId, localPath,
+          resolved);
+    return resolved;
+  }
+
+  kLog.warn("notification toast: #{} theme icon not found name='{}'", entry.notificationId, localPath);
+  return {};
 }

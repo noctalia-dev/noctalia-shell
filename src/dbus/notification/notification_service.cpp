@@ -4,6 +4,9 @@
 #include "dbus/session_bus.h"
 
 #include <algorithm>
+#include <cstdint>
+#include <sstream>
+#include <tuple>
 
 namespace {
   constexpr Logger kLog("notification");
@@ -14,6 +17,10 @@ static const sdbus::ObjectPath k_object_path{"/org/freedesktop/Notifications"};
 static constexpr auto k_interface = "org.freedesktop.Notifications";
 
 NotificationService::NotificationService(SessionBus& bus, NotificationManager& manager) : m_manager(manager) {
+  m_manager.setActionInvokeCallback([this](uint32_t id, const std::string& actionKey) {
+    emitActionInvoked(id, actionKey);
+  });
+
   bus.connection().requestName(k_bus_name);
   m_object = sdbus::createObject(bus.connection(), k_object_path);
 
@@ -92,13 +99,90 @@ std::vector<std::string> sanitize_actions(const std::vector<std::string>& action
   return sanitized;
 }
 
-bool notification_has_action(const Notification& notification, const std::string& action_key) {
-  for (size_t i = 0; i + 1 < notification.actions.size(); i += 2) {
-    if (notification.actions[i] == action_key) {
-      return true;
+std::string join_hint_keys(const std::map<std::string, sdbus::Variant>& hints) {
+  if (hints.empty()) {
+    return "<none>";
+  }
+
+  std::ostringstream oss;
+  bool first = true;
+  for (const auto& [key, _] : hints) {
+    if (!first) {
+      oss << ", ";
+    }
+    first = false;
+    oss << key;
+  }
+  return oss.str();
+}
+
+std::string get_string_hint_or_empty(const std::map<std::string, sdbus::Variant>& hints, std::string_view key) {
+  const auto it = hints.find(std::string(key));
+  if (it == hints.end()) {
+    return {};
+  }
+  try {
+    return clamp_str(it->second.get<std::string>());
+  } catch (...) {
+    return {};
+  }
+}
+
+using NotificationImageDataStruct =
+    sdbus::Struct<std::int32_t, std::int32_t, std::int32_t, bool, std::int32_t, std::int32_t,
+                  std::vector<std::uint8_t>>;
+
+std::optional<NotificationImageData> decode_image_data_variant(const sdbus::Variant& value) {
+  try {
+    const auto data = value.get<NotificationImageDataStruct>();
+    NotificationImageData out;
+    out.width = std::get<0>(data);
+    out.height = std::get<1>(data);
+    out.rowStride = std::get<2>(data);
+    out.hasAlpha = std::get<3>(data);
+    out.bitsPerSample = std::get<4>(data);
+    out.channels = std::get<5>(data);
+    out.data = std::get<6>(data);
+    return out;
+  } catch (const sdbus::Error&) {
+  }
+
+  try {
+    const auto data = value.get<std::tuple<std::int32_t, std::int32_t, std::int32_t, bool, std::int32_t,
+                                           std::int32_t, std::vector<std::uint8_t>>>();
+    NotificationImageData out;
+    out.width = std::get<0>(data);
+    out.height = std::get<1>(data);
+    out.rowStride = std::get<2>(data);
+    out.hasAlpha = std::get<3>(data);
+    out.bitsPerSample = std::get<4>(data);
+    out.channels = std::get<5>(data);
+    out.data = std::get<6>(data);
+    return out;
+  } catch (const sdbus::Error&) {
+  }
+
+  return std::nullopt;
+}
+
+std::optional<NotificationImageData> decode_image_hint(const std::map<std::string, sdbus::Variant>& hints,
+                                                       std::string* outSourceKey = nullptr) {
+  for (const char* key : {"image-data", "image_data", "icon_data"}) {
+    const auto it = hints.find(key);
+    if (it == hints.end()) {
+      continue;
+    }
+
+    auto decoded = decode_image_data_variant(it->second);
+    if (decoded.has_value()) {
+      if (outSourceKey != nullptr) {
+        *outSourceKey = key;
+      }
+      return decoded;
     }
   }
-  return false;
+
+  return std::nullopt;
 }
 
 } // namespace
@@ -107,6 +191,15 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
                                        const std::string& summary, const std::string& body,
                                        const std::vector<std::string>& actions,
                                        const std::map<std::string, sdbus::Variant>& hints, int32_t expire_timeout) {
+  kLog.info("notify ingress app='{}' replaces_id={} app_icon='{}' actions={} hint_keys=[{}] timeout={}",
+            clamp_str(app_name), replaces_id, clamp_str(app_icon), actions.size(), join_hint_keys(hints),
+            expire_timeout);
+  kLog.info("notify icon hints image-path='{}' image_path='{}' desktop-entry='{}' category='{}'",
+            get_string_hint_or_empty(hints, "image-path"), get_string_hint_or_empty(hints, "image_path"),
+            get_string_hint_or_empty(hints, "desktop-entry"), get_string_hint_or_empty(hints, "category"));
+  kLog.info("notify image data hints present image-data={} image_data={} icon_data={}",
+            hints.contains("image-data"), hints.contains("image_data"), hints.contains("icon_data"));
+
   // Sanitize scalar inputs
   const int32_t timeout = std::max(expire_timeout, k_min_timeout);
   const auto sanitizedActions = sanitize_actions(actions);
@@ -133,6 +226,12 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
     } catch (...) {
     }
   }
+  if (auto it = hints.find("image_path"); it != hints.end()) {
+    try {
+      icon = clamp_str(it->second.get<std::string>());
+    } catch (...) {
+    }
+  }
 
   std::optional<std::string> category;
   if (auto it = hints.find("category"); it != hints.end()) {
@@ -150,8 +249,22 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
     }
   }
 
+  std::string imageSourceKey;
+  std::optional<NotificationImageData> imageData = decode_image_hint(hints, &imageSourceKey);
+  if (imageData.has_value()) {
+    kLog.info("notify decoded image hint key='{}' {}x{} stride={} channels={} bps={} bytes={}", imageSourceKey,
+              imageData->width, imageData->height, imageData->rowStride, imageData->channels,
+              imageData->bitsPerSample, imageData->data.size());
+  } else if (hints.contains("image-data") || hints.contains("image_data") || hints.contains("icon_data")) {
+    kLog.warn("notify found image hint key but failed to decode image-data payload");
+  }
+
+  kLog.info("notify resolved icon='{}' image_data={} summary='{}'", icon.value_or("<none>"),
+            imageData.has_value(), clamp_str(summary));
+
   return m_manager.addOrReplace(replaces_id, clamp_str(app_name), clamp_str(summary), clamp_str(body), urgency, timeout,
-                                NotificationOrigin::External, sanitizedActions, icon, category, desktop_entry);
+                                NotificationOrigin::External, sanitizedActions, icon, imageData, category,
+                                desktop_entry);
 }
 
 std::vector<std::string> NotificationService::onGetCapabilities() { return {"body", "actions"}; }
@@ -188,28 +301,18 @@ void NotificationService::emitClose(uint32_t id, CloseReason reason) {
 }
 
 void NotificationService::onInvokeAction(uint32_t id, const std::string& actionKey) {
-  const auto& notifs = m_manager.all();
-  for (const auto& n : notifs) {
-    if (n.id == id) {
-      const std::string sanitizedKey = clamp_str(actionKey);
-      if (sanitizedKey.empty()) {
-        throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.InvalidAction"},
-                           "action_key must not be empty");
-      }
-
-      if (!notification_has_action(n, sanitizedKey)) {
-        throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.InvalidAction"},
-                           "action_key is not available for this notification");
-      }
-
-      kLog.debug("notification action #{} key='{}'", id, actionKey);
-      emitActionInvoked(id, sanitizedKey);
-      return;
-    }
+  const std::string sanitizedKey = clamp_str(actionKey);
+  if (sanitizedKey.empty()) {
+    throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.InvalidAction"},
+                       "action_key must not be empty");
   }
 
-  throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.NotFound"},
-                     "notification id was not found");
+  if (!m_manager.invokeAction(id, sanitizedKey, false)) {
+    throw sdbus::Error(sdbus::Error::Name{"org.freedesktop.Notifications.Error.InvalidAction"},
+                       "action_key is not available for this notification");
+  }
+
+  kLog.debug("notification action #{} key='{}'", id, sanitizedKey);
 }
 
 void NotificationService::emitActionInvoked(uint32_t id, const std::string& actionKey) {

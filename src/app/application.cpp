@@ -499,7 +499,7 @@ void Application::initUi() {
   m_panelManager.registerPanel("wallpaper",
                                std::make_unique<WallpaperPanel>(&m_wayland, &m_configService, &m_thumbnailService));
 
-  m_notificationToast.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);
+  m_notificationToast.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext, &m_httpClient);
   m_configService.setNotificationManager(&m_notificationManager);
 
   m_osdOverlay.initialize(m_wayland, &m_configService, &m_renderContext);
