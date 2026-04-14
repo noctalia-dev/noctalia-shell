@@ -28,6 +28,16 @@ constexpr float kCalendarCellSizeMin = Style::controlHeightSm + Style::spaceXs;
 constexpr float kCalendarCellSizeMax = Style::controlHeightLg + Style::spaceLg;
 constexpr float kCalendarLayoutEpsilon = 0.5f;
 
+std::string todayLabel() {
+  std::time_t now = std::time(nullptr);
+  std::tm local = *std::localtime(&now);
+  char buf[64];
+  if (std::strftime(buf, sizeof(buf), "Today · %A, %d %B %Y", &local) == 0) {
+    return "Today";
+  }
+  return buf;
+}
+
 std::string monthName(int month) {
   static constexpr std::array<const char*, 12> kMonths = {"January",   "February", "March",    "April",
                                                            "May",       "June",     "July",     "August",
@@ -92,7 +102,13 @@ std::unique_ptr<Flex> CalendarTab::create() {
   auto calendarCard = std::make_unique<Flex>();
   control_center::applyCard(*calendarCard, scale);
   calendarCard->setAlign(FlexAlign::Stretch);
-  calendarCard->setGap(kCalendarGridGap * scale);
+  calendarCard->setGap(Style::spaceMd * scale);
+  calendarCard->setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
+  calendarCard->setRadius(Style::radiusXl * scale);
+  calendarCard->setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
+  calendarCard->setBorderWidth(Style::borderWidth);
+  calendarCard->setBorderColor(roleColor(ColorRole::Outline, 0.85f));
+  calendarCard->setSoftness(1.25f);
   calendarCard->setFlexGrow(3.0f);
   m_card = calendarCard.get();
 
@@ -134,9 +150,18 @@ std::unique_ptr<Flex> CalendarTab::create() {
   month->setBold(true);
   month->setFontSize((Style::fontSizeTitle + Style::spaceXs) * scale);
   month->setMaxLines(1);
-  month->setColor(roleColor(ColorRole::Primary));
+  month->setColor(roleColor(ColorRole::OnSurface));
   m_monthLabel = month.get();
   monthWrap->addChild(std::move(month));
+
+  auto monthSub = std::make_unique<Label>();
+  monthSub->setText("Today");
+  monthSub->setCaptionStyle();
+  monthSub->setFontSize(Style::fontSizeCaption * scale);
+  monthSub->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  monthSub->setMaxLines(1);
+  m_monthSubLabel = monthSub.get();
+  monthWrap->addChild(std::move(monthSub));
   header->addChild(std::move(monthWrap));
 
   auto nextSlot = std::make_unique<Flex>();
@@ -167,22 +192,35 @@ std::unique_ptr<Flex> CalendarTab::create() {
   grid->setFlexGrow(1.0f);
   m_grid = grid.get();
   calendarCard->addChild(std::move(grid));
-
-  auto eventsCard = std::make_unique<Flex>();
-  control_center::applyCard(*eventsCard, scale);
-  eventsCard->setAlign(FlexAlign::Center);
-  eventsCard->setJustify(FlexJustify::Center);
-  eventsCard->setFlexGrow(2.0f);
-
-  auto eventsLabel = std::make_unique<Label>();
-  eventsLabel->setText("events");
-  eventsLabel->setBold(true);
-  eventsLabel->setFontSize(Style::fontSizeTitle * scale);
-  eventsLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  eventsCard->addChild(std::move(eventsLabel));
-
   tab->addChild(std::move(calendarCard));
-  tab->addChild(std::move(eventsCard));
+
+  auto tasksCard = std::make_unique<Flex>();
+  control_center::applyCard(*tasksCard, scale);
+  tasksCard->setAlign(FlexAlign::Stretch);
+  tasksCard->setGap(Style::spaceSm * scale);
+  tasksCard->setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
+  tasksCard->setRadius(Style::radiusXl * scale);
+  tasksCard->setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
+  tasksCard->setBorderWidth(Style::borderWidth);
+  tasksCard->setBorderColor(roleColor(ColorRole::Outline, 0.85f));
+  tasksCard->setSoftness(1.25f);
+  tasksCard->setFlexGrow(2.0f);
+
+  auto tasksTitle = std::make_unique<Label>();
+  tasksTitle->setText("Tasks");
+  tasksTitle->setBold(true);
+  tasksTitle->setFontSize(Style::fontSizeTitle * scale);
+  tasksTitle->setColor(roleColor(ColorRole::OnSurface));
+  tasksCard->addChild(std::move(tasksTitle));
+
+  auto tasksBody = std::make_unique<Label>();
+  tasksBody->setText("No tasks yet.");
+  tasksBody->setFontSize(Style::fontSizeBody * scale);
+  tasksBody->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  tasksBody->setMaxLines(3);
+  tasksCard->addChild(std::move(tasksBody));
+
+  tab->addChild(std::move(tasksCard));
 
   return tab;
 }
@@ -228,6 +266,7 @@ void CalendarTab::onClose() {
   m_nextSlot = nullptr;
   m_monthWrap = nullptr;
   m_monthLabel = nullptr;
+  m_monthSubLabel = nullptr;
   m_previousButton = nullptr;
   m_nextButton = nullptr;
   m_grid = nullptr;
@@ -286,6 +325,10 @@ void CalendarTab::rebuild() {
 
   m_monthLabel->setText(monthName(month) + " " + std::to_string(year));
   m_monthLabel->setMaxWidth(monthWidth);
+  if (m_monthSubLabel != nullptr) {
+    m_monthSubLabel->setText(todayLabel());
+    m_monthSubLabel->setMaxWidth(monthWidth);
+  }
 
   static constexpr std::array<const char*, 7> kWeekdays = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
   auto weekdayRow = std::make_unique<GridView>();
@@ -303,7 +346,7 @@ void CalendarTab::rebuild() {
     dayLabel->setText(kWeekdays[i]);
     dayLabel->setFontSize((Style::fontSizeCaption + 1.0f) * scale);
     dayLabel->setBold(true);
-    dayLabel->setColor(roleColor(i >= 5 ? ColorRole::Primary : ColorRole::OnSurfaceVariant));
+    dayLabel->setColor(roleColor(i >= 5 ? ColorRole::Secondary : ColorRole::OnSurfaceVariant));
     dayCell->addChild(std::move(dayLabel));
 
     weekdayRow->addChild(std::move(dayCell));
@@ -326,7 +369,7 @@ void CalendarTab::rebuild() {
   int trailingDay = 1;
   for (int index = 0; index < 42; ++index) {
     auto cell = std::make_unique<Button>();
-    cell->setVariant(ButtonVariant::Default);
+    cell->setVariant(ButtonVariant::Ghost);
     cell->setContentAlign(ButtonContentAlign::Center);
     cell->setMinHeight(dayCellHeight);
     cell->setRadius(Style::radiusLg * scale);
@@ -337,10 +380,10 @@ void CalendarTab::rebuild() {
     if (index < firstWeekdayMonBased) {
       const int leadingDay = previousMonthDays - firstWeekdayMonBased + index + 1;
       cell->setText(std::to_string(leadingDay));
-      cell->label()->setColor(roleColor(ColorRole::OnSurfaceVariant));
+      cell->label()->setColor(roleColor(ColorRole::OnSurfaceVariant, 0.75f));
     } else if (day > monthDays) {
       cell->setText(std::to_string(trailingDay));
-      cell->label()->setColor(roleColor(ColorRole::OnSurfaceVariant));
+      cell->label()->setColor(roleColor(ColorRole::OnSurfaceVariant, 0.75f));
       ++trailingDay;
     } else {
       cell->setText(std::to_string(day));
