@@ -465,7 +465,7 @@ void Application::initUi() {
 
   // Panel manager must be before bar so widgets can access PanelManager::instance()
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
-  auto clipboardPanel = std::make_unique<ClipboardPanel>(&m_clipboardService);
+  auto clipboardPanel = std::make_unique<ClipboardPanel>(&m_clipboardService, &m_configService);
   clipboardPanel->setActivateCallback([this](const ClipboardEntry& entry) {
     m_panelManager.close();
     const ClipboardAutoPasteMode mode = m_configService.config().shell.clipboardAutoPaste;
@@ -482,7 +482,7 @@ void Application::initUi() {
     });
   });
   m_panelManager.registerPanel("clipboard", std::move(clipboardPanel));
-  m_panelManager.registerPanel("session", std::make_unique<SessionPanel>());
+  m_panelManager.registerPanel("session", std::make_unique<SessionPanel>(&m_configService));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
   m_panelManager.registerPanel(
       "control-center", std::make_unique<ControlCenterPanel>(
@@ -490,7 +490,7 @@ void Application::initUi() {
                             &m_httpClient, &m_weatherService, m_pipewireSpectrum.get(), m_upowerService.get(),
                             m_powerProfilesService.get(), m_networkService.get(), m_networkSecretAgent.get()));
   {
-    auto launcherPanel = std::make_unique<LauncherPanel>();
+    auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService);
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
     launcherPanel->addProvider(std::make_unique<MathProvider>(&m_clipboardService));
     launcherPanel->addProvider(std::make_unique<EmojiProvider>(&m_clipboardService));

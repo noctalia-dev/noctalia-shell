@@ -17,10 +17,11 @@ class InputArea;
 class Label;
 class Renderer;
 class ScrollView;
+class ConfigService;
 
 class LauncherPanel : public Panel {
 public:
-  LauncherPanel();
+  explicit LauncherPanel(ConfigService* config);
 
   void addProvider(std::unique_ptr<LauncherProvider> provider);
 
@@ -62,4 +63,5 @@ private:
   bool m_dirty = false;
   bool m_mouseActive = false;
   bool m_pendingScrollToSelected = false;
+  ConfigService* m_config = nullptr;
 };

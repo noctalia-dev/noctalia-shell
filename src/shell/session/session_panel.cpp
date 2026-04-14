@@ -1,5 +1,6 @@
 #include "shell/session/session_panel.h"
 
+#include "config/config_service.h"
 #include "core/log.h"
 #include "core/process.h"
 #include "notification/notifications.h"
@@ -193,8 +194,8 @@ void SessionPanel::activateSelected() {
   }
 }
 
-bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*/) {
-  if (sym == XKB_KEY_Left) {
+bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
+  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Left, sym, modifiers)) {
     if (m_selectedIndex > 0) {
       --m_selectedIndex;
       updateSelectionVisuals();
@@ -206,7 +207,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*/
     return true;
   }
 
-  if (sym == XKB_KEY_Right) {
+  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Right, sym, modifiers)) {
     const std::size_t lastIndex = static_cast<std::size_t>(ActionId::Count) - 1;
     if (m_selectedIndex < lastIndex) {
       ++m_selectedIndex;
@@ -219,7 +220,7 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*/
     return true;
   }
 
-  if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter || sym == XKB_KEY_space) {
+  if ((m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) || sym == XKB_KEY_space) {
     activateSelected();
     return true;
   }

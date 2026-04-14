@@ -19,10 +19,11 @@ class InputArea;
 class Label;
 class Renderer;
 class ScrollView;
+class ConfigService;
 
 class ClipboardPanel : public Panel {
 public:
-  explicit ClipboardPanel(ClipboardService* clipboard);
+  ClipboardPanel(ClipboardService* clipboard, ConfigService* config);
   void setActivateCallback(std::function<void(const ClipboardEntry&)> callback);
 
   void create() override;
@@ -54,6 +55,7 @@ private:
 
   ClipboardService* m_clipboard = nullptr;
   std::function<void(const ClipboardEntry&)> m_activateCallback;
+  ConfigService* m_config = nullptr;
 
   InputArea* m_focusArea = nullptr;
   Flex* m_rootLayout = nullptr;

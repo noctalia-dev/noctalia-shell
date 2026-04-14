@@ -9,9 +9,11 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <stdexcept>
 #include <sys/inotify.h>
 #include <unistd.h>
 #include <vector>
+#include <xkbcommon/xkbcommon.h>
 
 namespace {
 
@@ -69,6 +71,130 @@ namespace {
       }
     }
     return result;
+  }
+
+  std::string trim(std::string_view input) {
+    std::size_t start = 0;
+    while (start < input.size() && std::isspace(static_cast<unsigned char>(input[start])) != 0) {
+      ++start;
+    }
+    std::size_t end = input.size();
+    while (end > start && std::isspace(static_cast<unsigned char>(input[end - 1])) != 0) {
+      --end;
+    }
+    return std::string(input.substr(start, end - start));
+  }
+
+  std::string toLower(std::string_view input) {
+    std::string out(input);
+    std::transform(out.begin(), out.end(), out.begin(),
+                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    return out;
+  }
+
+  std::optional<KeyChord> parseKeyChord(std::string_view rawSpec) {
+    const std::string spec = trim(rawSpec);
+    if (spec.empty()) {
+      return std::nullopt;
+    }
+
+    std::vector<std::string> tokens;
+    std::size_t start = 0;
+    while (start <= spec.size()) {
+      const std::size_t plus = spec.find('+', start);
+      const std::size_t len = (plus == std::string::npos) ? (spec.size() - start) : (plus - start);
+      const std::string token = trim(std::string_view(spec).substr(start, len));
+      if (token.empty()) {
+        return std::nullopt;
+      }
+      tokens.push_back(token);
+      if (plus == std::string::npos) {
+        break;
+      }
+      start = plus + 1;
+    }
+
+    if (tokens.empty()) {
+      return std::nullopt;
+    }
+
+    std::uint32_t modifiers = 0;
+    for (std::size_t i = 0; i + 1 < tokens.size(); ++i) {
+      const std::string mod = toLower(tokens[i]);
+      if (mod == "ctrl" || mod == "control" || mod == "ctl") {
+        modifiers |= KeyMod::Ctrl;
+      } else if (mod == "shift") {
+        modifiers |= KeyMod::Shift;
+      } else if (mod == "alt" || mod == "option") {
+        modifiers |= KeyMod::Alt;
+      } else if (mod == "super" || mod == "meta" || mod == "logo" || mod == "win" || mod == "mod4") {
+        throw std::runtime_error("modifier \"super/windows\" is not allowed");
+      } else {
+        return std::nullopt;
+      }
+    }
+
+    std::string keyName = toLower(tokens.back());
+    if (keyName == "esc") {
+      keyName = "Escape";
+    } else if (keyName == "enter") {
+      keyName = "Return";
+    } else if (keyName == "kp_enter") {
+      keyName = "KP_Enter";
+    } else if (keyName == "space" || keyName == "spacebar") {
+      keyName = "space";
+    } else if (keyName == "left") {
+      keyName = "Left";
+    } else if (keyName == "right") {
+      keyName = "Right";
+    } else if (keyName == "up") {
+      keyName = "Up";
+    } else if (keyName == "down") {
+      keyName = "Down";
+    }
+
+    xkb_keysym_t sym = xkb_keysym_from_name(keyName.c_str(), XKB_KEYSYM_CASE_INSENSITIVE);
+    if (sym == XKB_KEY_NoSymbol) {
+      return std::nullopt;
+    }
+
+    return KeyChord{.sym = static_cast<std::uint32_t>(sym), .modifiers = modifiers};
+  }
+
+  const std::vector<KeyChord>& keybindSet(const KeybindsConfig& keybinds, KeybindAction action) {
+    switch (action) {
+    case KeybindAction::Validate:
+      return keybinds.validate;
+    case KeybindAction::Cancel:
+      return keybinds.cancel;
+    case KeybindAction::Left:
+      return keybinds.left;
+    case KeybindAction::Right:
+      return keybinds.right;
+    case KeybindAction::Up:
+      return keybinds.up;
+    case KeybindAction::Down:
+      return keybinds.down;
+    }
+    return keybinds.validate;
+  }
+
+  std::vector<KeyChord> defaultKeybindSet(KeybindAction action) {
+    switch (action) {
+    case KeybindAction::Validate:
+      return {{.sym = XKB_KEY_Return, .modifiers = 0}, {.sym = XKB_KEY_KP_Enter, .modifiers = 0}};
+    case KeybindAction::Cancel:
+      return {{.sym = XKB_KEY_Escape, .modifiers = 0}};
+    case KeybindAction::Left:
+      return {{.sym = XKB_KEY_Left, .modifiers = 0}};
+    case KeybindAction::Right:
+      return {{.sym = XKB_KEY_Right, .modifiers = 0}};
+    case KeybindAction::Up:
+      return {{.sym = XKB_KEY_Up, .modifiers = 0}};
+    case KeybindAction::Down:
+      return {{.sym = XKB_KEY_Down, .modifiers = 0}};
+    }
+    return {};
   }
 
   bool matchesOutput(const std::string& match, const WaylandOutput& output) {
@@ -576,25 +702,6 @@ void ConfigService::loadAll() {
   // Apply the app-writable overrides overlay last — sidecar wins.
   deepMerge(merged, m_overridesTable);
 
-  if (firstError.empty()) {
-    // Dismiss any previous config-error notification.
-    if (m_notificationManager != nullptr && m_configErrorNotificationId != 0) {
-      m_notificationManager->close(m_configErrorNotificationId);
-      m_configErrorNotificationId = 0;
-    }
-    m_pendingError.clear();
-  } else {
-    if (m_notificationManager != nullptr) {
-      if (m_configErrorNotificationId != 0) {
-        m_notificationManager->close(m_configErrorNotificationId);
-      }
-      m_configErrorNotificationId =
-          m_notificationManager->addInternal("Noctalia", "Config parse error", firstError, Urgency::Critical, 0);
-    } else {
-      m_pendingError = firstError;
-    }
-  }
-
   if (files.empty() && m_overridesTable.empty()) {
     kLog.info("no config files found, using defaults");
     m_config.idle.behaviors.push_back(IdleBehaviorConfig{
@@ -607,7 +714,33 @@ void ConfigService::loadAll() {
     return;
   }
 
-  parseTable(merged);
+  std::string semanticError;
+  try {
+    parseTable(merged);
+  } catch (const std::exception& e) {
+    semanticError = e.what();
+    kLog.warn("config parse error: {}", semanticError);
+  }
+
+  const std::string parseError = !firstError.empty() ? firstError : semanticError;
+  if (parseError.empty()) {
+    // Dismiss any previous config-error notification.
+    if (m_notificationManager != nullptr && m_configErrorNotificationId != 0) {
+      m_notificationManager->close(m_configErrorNotificationId);
+      m_configErrorNotificationId = 0;
+    }
+    m_pendingError.clear();
+  } else {
+    if (m_notificationManager != nullptr) {
+      if (m_configErrorNotificationId != 0) {
+        m_notificationManager->close(m_configErrorNotificationId);
+      }
+      m_configErrorNotificationId =
+          m_notificationManager->addInternal("Noctalia", "Config parse error", parseError, Urgency::Critical, 0);
+    } else {
+      m_pendingError = parseError;
+    }
+  }
 }
 
 void ConfigService::parseTable(const toml::table& tbl) {
@@ -1011,6 +1144,51 @@ void ConfigService::parseTable(const toml::table& tbl) {
     }
   }
 
+  // Parse [keybinds]
+  if (auto* keybindsTbl = tbl["keybinds"].as_table()) {
+    auto& keybinds = m_config.keybinds;
+
+    auto parseAction = [&](std::string_view key, std::vector<KeyChord>& out) {
+      out.clear();
+      if (const auto* node = keybindsTbl->get(key)) {
+        if (const auto v = node->value<std::string>()) {
+          try {
+            if (const auto chord = parseKeyChord(*v); chord.has_value()) {
+              out.push_back(*chord);
+            } else {
+              kLog.warn("invalid keybind chord for [{}] {} = \"{}\"", "keybinds", key, *v);
+            }
+          } catch (const std::exception& e) {
+            throw std::runtime_error(std::format("keybinds.{}: {}", key, e.what()));
+          }
+          return;
+        }
+        if (const auto* arr = node->as_array()) {
+          for (const auto& item : *arr) {
+            if (const auto v = item.value<std::string>()) {
+              try {
+                if (const auto chord = parseKeyChord(*v); chord.has_value()) {
+                  out.push_back(*chord);
+                } else {
+                  kLog.warn("invalid keybind chord for [{}] {} item = \"{}\"", "keybinds", key, *v);
+                }
+              } catch (const std::exception& e) {
+                throw std::runtime_error(std::format("keybinds.{}: {}", key, e.what()));
+              }
+            }
+          }
+        }
+      }
+    };
+
+    parseAction("validate", keybinds.validate);
+    parseAction("cancel", keybinds.cancel);
+    parseAction("left", keybinds.left);
+    parseAction("right", keybinds.right);
+    parseAction("up", keybinds.up);
+    parseAction("down", keybinds.down);
+  }
+
   // Parse [nightlight]
   if (auto* nightlightTbl = tbl["nightlight"].as_table()) {
     auto& nightlight = m_config.nightlight;
@@ -1077,6 +1255,14 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   kLog.info("{} bar(s) defined", m_config.bars.size());
   kLog.info("idle behaviors={}", m_config.idle.behaviors.size());
+}
+
+bool ConfigService::matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const {
+  const auto& configured = keybindSet(m_config.keybinds, action);
+  const auto active = configured.empty() ? defaultKeybindSet(action) : configured;
+  return std::any_of(active.begin(), active.end(), [sym, modifiers](const KeyChord& chord) {
+    return chord.sym == sym && chord.modifiers == modifiers;
+  });
 }
 
 // ── WidgetConfig accessors ───────────────────────────────────────────────────

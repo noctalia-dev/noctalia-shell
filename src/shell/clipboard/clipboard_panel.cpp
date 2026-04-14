@@ -1,5 +1,6 @@
 #include "shell/clipboard/clipboard_panel.h"
 
+#include "config/config_service.h"
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
@@ -98,7 +99,8 @@ std::string previewTitle(const ClipboardEntry& entry) {
 
 } // namespace
 
-ClipboardPanel::ClipboardPanel(ClipboardService* clipboard) : m_clipboard(clipboard) {}
+ClipboardPanel::ClipboardPanel(ClipboardService* clipboard, ConfigService* config)
+    : m_clipboard(clipboard), m_config(config) {}
 
 void ClipboardPanel::setActivateCallback(std::function<void(const ClipboardEntry&)> callback) {
   m_activateCallback = std::move(callback);
@@ -772,12 +774,12 @@ void ClipboardPanel::activateSelected() {
   }
 }
 
-bool ClipboardPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*/) {
+bool ClipboardPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
   if (m_clipboard == nullptr || m_filteredIndices.empty()) {
     return false;
   }
 
-  if (sym == XKB_KEY_Up) {
+  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Up, sym, modifiers)) {
     if (m_selectedIndex > 0) {
       const std::size_t previous = m_selectedIndex;
       --m_selectedIndex;
@@ -789,7 +791,7 @@ bool ClipboardPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers
     return true;
   }
 
-  if (sym == XKB_KEY_Down) {
+  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Down, sym, modifiers)) {
     if (m_selectedIndex + 1 < m_filteredIndices.size()) {
       const std::size_t previous = m_selectedIndex;
       ++m_selectedIndex;
@@ -801,7 +803,7 @@ bool ClipboardPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers
     return true;
   }
 
-  if (sym == XKB_KEY_Return) {
+  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) {
     activateSelected();
     return true;
   }
