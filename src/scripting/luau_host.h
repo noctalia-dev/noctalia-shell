@@ -32,7 +32,7 @@ public:
   lua_State* state() { return m_T; }
 
 private:
-  lua_State* m_L = nullptr;  // main state, frozen by luaL_sandbox
-  lua_State* m_T = nullptr;  // sandboxed thread; user code runs here
-  int m_threadRef = -1;      // registry ref pinning m_T against the GC
+  lua_State* m_L = nullptr; // main state, frozen by luaL_sandbox
+  lua_State* m_T = nullptr; // sandboxed thread; user code runs here
+  int m_threadRef = -1;     // registry ref pinning m_T against the GC
 };
