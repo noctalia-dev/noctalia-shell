@@ -35,6 +35,10 @@ namespace {
   constexpr Logger kLog("app");
 
   bool launchLogoutCommand() {
+    if (process::launchDetached({"systemctl", "--user", "stop", "graphical-session.target"})) {
+      return true;
+    }
+
     const char* sessionId = std::getenv("XDG_SESSION_ID");
     if (sessionId != nullptr && sessionId[0] != '\0') {
       return process::launchDetached({"loginctl", "terminate-session", sessionId});
