@@ -2,6 +2,7 @@
 #include "shell/osd/osd_overlay.h"
 
 #include "config/config_service.h"
+#include "core/deferred_call.h"
 #include "core/log.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
@@ -170,6 +171,7 @@ void OsdOverlay::ensureSurfaces() {
       continue;
     }
 
+    inst->surface->setInputRegion({});
     inst->wlSurface = inst->surface->wlSurface();
     m_instances.push_back(std::move(inst));
   }
@@ -347,7 +349,7 @@ void OsdOverlay::animateInstance(Instance& inst) {
 
   inst.hideAnimId = inst.animations.animate(
       1.0f, 0.0f, kHideDelayMs, Easing::Linear, [](float /*v*/) {},
-      [&inst, baseY]() {
+      [this, &inst, baseY]() {
         inst.hideAnimId = inst.animations.animate(
             1.0f, 0.0f, Style::animNormal, Easing::EaseInOutQuad,
             [&inst, baseY](float v) {
@@ -357,9 +359,16 @@ void OsdOverlay::animateInstance(Instance& inst) {
                 inst.background->setPosition(inst.background->x(), baseY + (1.0f - v) * 6.0f);
               }
             },
-            [&inst]() {
+            [this, &inst]() {
               inst.hideAnimId = 0;
               inst.visible = false;
+              DeferredCall::callLater([this]() {
+                const bool allHidden = std::all_of(m_instances.begin(), m_instances.end(),
+                    [](const auto& i) { return !i->visible; });
+                if (allHidden) {
+                  destroySurfaces();
+                }
+              });
             });
       });
 }

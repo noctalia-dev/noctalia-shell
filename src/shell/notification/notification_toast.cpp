@@ -186,10 +186,6 @@ void NotificationToast::initialize(WaylandConnection& wayland, ConfigService* co
 
   m_callbackToken = m_notifications->addEventCallback(
       [this](const Notification& n, NotificationEvent event) { onNotificationEvent(n, event); });
-
-  // Prewarm toast layer surfaces so first notification does not pay
-  // surface creation/scene setup latency on the critical path.
-  ensureSurfaces();
 }
 
 void NotificationToast::requestRedraw() {
@@ -434,13 +430,7 @@ void NotificationToast::finishRemoval(uint32_t notificationId) {
   m_entries.erase(m_entries.begin() + static_cast<std::ptrdiff_t>(index));
 
   if (m_entries.empty()) {
-    for (auto& inst : m_instances) {
-      if (inst->surface == nullptr) {
-        continue;
-      }
-      updateInputRegion(*inst);
-      inst->surface->requestRedraw();
-    }
+    destroySurfaces();
   } else {
     revealQueuedEntries();
   }
@@ -448,7 +438,7 @@ void NotificationToast::finishRemoval(uint32_t notificationId) {
 
 // --- Per-instance card management ---
 
-void NotificationToast::addCardToInstance(PopupInstance& inst, std::size_t entryIndex) {
+void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex) {
   auto& entry = m_entries[entryIndex];
   if (entry.slot >= kMaxVisible) {
     return;
@@ -566,7 +556,7 @@ void NotificationToast::addCardToInstance(PopupInstance& inst, std::size_t entry
   inst.surface->requestRedraw();
 }
 
-void NotificationToast::dismissCardFromInstance(PopupInstance& inst, std::size_t entryIndex) {
+void NotificationToast::dismissCardFromInstance(Instance& inst, std::size_t entryIndex) {
   if (entryIndex >= inst.cards.size()) {
     return;
   }
@@ -618,7 +608,7 @@ void NotificationToast::dismissCardFromInstance(PopupInstance& inst, std::size_t
   inst.surface->requestRedraw();
 }
 
-void NotificationToast::layoutCards(PopupInstance& inst) {
+void NotificationToast::layoutCards(Instance& inst) {
   // Reflow is intentionally snapped rather than animated. Notifications are transient
   // UI and slide-up reordering makes hover/freeze behavior harder to track.
   for (std::size_t i = 0; i < inst.cards.size(); ++i) {
@@ -672,7 +662,7 @@ NotificationToast::PopupEntry* NotificationToast::findEntry(uint32_t notificatio
   return &*it;
 }
 
-NotificationToast::PopupInstance::CardState* NotificationToast::findCardState(PopupInstance& inst,
+NotificationToast::Instance::CardState* NotificationToast::findCardState(Instance& inst,
                                                                                uint32_t notificationId) {
   for (std::size_t i = 0; i < inst.cards.size() && i < m_entries.size(); ++i) {
     if (m_entries[i].notificationId == notificationId) {
@@ -804,7 +794,7 @@ void NotificationToast::ensureSurfaces() {
       continue;
     }
 
-    auto inst = std::make_unique<PopupInstance>();
+    auto inst = std::make_unique<Instance>();
     inst->output = output.output;
     inst->scale = output.scale;
 
@@ -853,7 +843,7 @@ void NotificationToast::destroySurfaces() {
   kLog.debug("notification toast: all surfaces destroyed");
 }
 
-void NotificationToast::prepareFrame(PopupInstance& inst, bool /*needsUpdate*/, bool needsLayout) {
+void NotificationToast::prepareFrame(Instance& inst, bool /*needsUpdate*/, bool needsLayout) {
   if (m_renderContext == nullptr || inst.surface == nullptr) {
     return;
   }
@@ -875,7 +865,7 @@ void NotificationToast::prepareFrame(PopupInstance& inst, bool /*needsUpdate*/, 
   }
 }
 
-void NotificationToast::buildScene(PopupInstance& inst, uint32_t width, uint32_t height) {
+void NotificationToast::buildScene(Instance& inst, uint32_t width, uint32_t height) {
   uiAssertNotRendering("NotificationToast::buildScene");
   if (m_renderContext == nullptr) {
     return;
@@ -910,7 +900,7 @@ void NotificationToast::buildScene(PopupInstance& inst, uint32_t width, uint32_t
   }
 }
 
-void NotificationToast::updateInputRegion(PopupInstance& inst) const {
+void NotificationToast::updateInputRegion(Instance& inst) const {
   if (inst.surface == nullptr) {
     return;
   }

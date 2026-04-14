@@ -56,7 +56,7 @@ private:
   };
 
   // Per-output instance (each has its own surface, scene, animations)
-  struct PopupInstance {
+  struct Instance {
     wl_output* output = nullptr;
     std::int32_t scale = 1;
 
@@ -93,21 +93,21 @@ private:
   void dismissPopup(std::size_t index);
   void removePopup(uint32_t notificationId);
   void finishRemoval(uint32_t notificationId);
-  void layoutCards(PopupInstance& inst);
-  void updateInputRegion(PopupInstance& inst) const;
+  void layoutCards(Instance& inst);
+  void updateInputRegion(Instance& inst) const;
 
   void ensureSurfaces();
   void destroySurfaces();
-  void prepareFrame(PopupInstance& inst, bool needsUpdate, bool needsLayout);
-  void buildScene(PopupInstance& inst, uint32_t width, uint32_t height);
+  void prepareFrame(Instance& inst, bool needsUpdate, bool needsLayout);
+  void buildScene(Instance& inst, uint32_t width, uint32_t height);
   InputArea* buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary, Label** outBody,
                        Node** outBg, Node** outAppIcon, ProgressBar** outProgress, Glyph** outCloseGlyph);
-  void addCardToInstance(PopupInstance& inst, std::size_t entryIndex);
-  void dismissCardFromInstance(PopupInstance& inst, std::size_t entryIndex);
+  void addCardToInstance(Instance& inst, std::size_t entryIndex);
+  void dismissCardFromInstance(Instance& inst, std::size_t entryIndex);
 
   float cardTargetY(std::size_t slot) const;
   PopupEntry* findEntry(uint32_t notificationId);
-  PopupInstance::CardState* findCardState(PopupInstance& inst, uint32_t notificationId);
+  Instance::CardState* findCardState(Instance& inst, uint32_t notificationId);
   void pauseCountdowns(uint32_t notificationId);
   void resumeCountdowns(uint32_t notificationId);
   void revealQueuedEntries();
@@ -121,7 +121,7 @@ private:
   HttpClient* m_httpClient = nullptr;
 
   std::vector<PopupEntry> m_entries;
-  std::vector<std::unique_ptr<PopupInstance>> m_instances;
+  std::vector<std::unique_ptr<Instance>> m_instances;
   int m_callbackToken = -1;
   IconResolver m_iconResolver;
   std::unordered_map<std::string, std::string> m_remoteIconCache;
