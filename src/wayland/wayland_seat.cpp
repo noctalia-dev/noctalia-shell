@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <wayland-client.h>
 #include <xkbcommon/xkbcommon-compose.h>
+#include <xkbcommon/xkbcommon-names.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include "cursor-shape-v1-client-protocol.h"
@@ -514,4 +515,16 @@ std::vector<std::string> WaylandSeat::layoutNames() const {
   }
 
   return layouts;
+}
+
+WaylandSeat::LockKeysState WaylandSeat::lockKeysState() const {
+  LockKeysState state{};
+  if (m_xkbState == nullptr) {
+    return state;
+  }
+
+  state.capsLock = xkb_state_led_name_is_active(m_xkbState, XKB_LED_NAME_CAPS) != 0;
+  state.numLock = xkb_state_led_name_is_active(m_xkbState, XKB_LED_NAME_NUM) != 0;
+  state.scrollLock = xkb_state_led_name_is_active(m_xkbState, XKB_LED_NAME_SCROLL) != 0;
+  return state;
 }

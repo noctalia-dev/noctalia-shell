@@ -373,6 +373,7 @@ _noctalia_sources = files(
   'src/shell/widgets/clock_widget.cpp',
   'src/shell/widgets/idle_inhibitor_widget.cpp',
   'src/shell/widgets/keyboard_layout_widget.cpp',
+  'src/shell/widgets/lock_keys_widget.cpp',
   'src/shell/widgets/nightlight_widget.cpp',
   'src/shell/widgets/launcher_widget.cpp',
   'src/shell/widgets/media_widget.cpp',

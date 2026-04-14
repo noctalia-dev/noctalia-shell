@@ -15,6 +15,7 @@
 #include "shell/widgets/clock_widget.h"
 #include "shell/widgets/idle_inhibitor_widget.h"
 #include "shell/widgets/keyboard_layout_widget.h"
+#include "shell/widgets/lock_keys_widget.h"
 #include "shell/widgets/launcher_widget.h"
 #include "shell/widgets/media_widget.h"
 #include "shell/widgets/network_widget.h"
@@ -189,6 +190,19 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     const std::string display = wc != nullptr ? wc->getString("display", "short") : std::string("short");
     auto widget = std::make_unique<KeyboardLayoutWidget>(m_wayland, cycleCommand,
                                                          KeyboardLayoutWidget::parseDisplayMode(display));
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "lock_keys") {
+    const bool showCaps = wc != nullptr ? wc->getBool("show_caps_lock", true) : true;
+    const bool showNum = wc != nullptr ? wc->getBool("show_num_lock", true) : true;
+    const bool showScroll = wc != nullptr ? wc->getBool("show_scroll_lock", false) : false;
+    const bool hideWhenOff = wc != nullptr ? wc->getBool("hide_when_off", false) : false;
+    const std::string display = wc != nullptr ? wc->getString("display", "short") : std::string("short");
+
+    auto widget = std::make_unique<LockKeysWidget>(m_wayland, showCaps, showNum, showScroll, hideWhenOff,
+                                                   LockKeysWidget::parseDisplayMode(display));
     widget->setContentScale(contentScale);
     return widget;
   }

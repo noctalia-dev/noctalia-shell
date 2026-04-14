@@ -270,6 +270,36 @@ end = ["keyboard_layout", "clock"]
 
 ---
 
+### `lock_keys`
+
+Shows Caps Lock / Num Lock / Scroll Lock state from the active Wayland/XKB keyboard state.
+
+| Setting            | Type   | Default   | Description                                                         |
+|--------------------|--------|-----------|---------------------------------------------------------------------|
+| `display`          | string | `"short"` | Label style: `short` (`C N S`) or `full` (`Caps Num Scroll`)       |
+| `show_caps_lock`   | bool   | `true`    | Show the Caps Lock indicator                                        |
+| `show_num_lock`    | bool   | `true`    | Show the Num Lock indicator                                         |
+| `show_scroll_lock` | bool   | `false`   | Show the Scroll Lock indicator                                      |
+| `hide_when_off`    | bool   | `false`   | Hide each indicator when it is off                                  |
+
+```toml
+[widget.lock_keys]
+display = "short" # short | full
+show_caps_lock = true
+show_num_lock = true
+show_scroll_lock = false
+hide_when_off = false
+```
+
+Use the widget by name in your bar:
+
+```toml
+[bar.main]
+end = ["lock_keys", "keyboard_layout", "clock"]
+```
+
+---
+
 ### `weather`
 
 Shows the current weather in the bar and opens the Weather control-center tab on click.

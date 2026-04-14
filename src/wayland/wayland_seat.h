@@ -56,6 +56,14 @@ struct KeyboardEvent {
 
 class WaylandSeat {
 public:
+  struct LockKeysState {
+    bool capsLock = false;
+    bool numLock = false;
+    bool scrollLock = false;
+
+    bool operator==(const LockKeysState&) const = default;
+  };
+
   using PointerEventCallback = std::function<void(const PointerEvent&)>;
   using KeyboardEventCallback = std::function<void(const KeyboardEvent&)>;
 
@@ -109,6 +117,7 @@ public:
   [[nodiscard]] double lastPointerY() const noexcept { return m_lastPointerY; }
   [[nodiscard]] std::string currentLayoutName() const;
   [[nodiscard]] std::vector<std::string> layoutNames() const;
+  [[nodiscard]] LockKeysState lockKeysState() const;
 
 private:
   // Pointer

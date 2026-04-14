@@ -31,6 +31,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"unpin", 0xED5F},             // pinned-off
     {"image", 0xEB0A},             // photo
     {"keyboard", 0xEBD6},          // keyboard
+    {"lock", 0xEAE2},              // lock
     {"star", 0xEB2E},              // star
     {"star-off", 0xED62},          // star-off
     {"plugin", 0xF00A},            // plug-connected

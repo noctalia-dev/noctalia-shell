@@ -662,6 +662,15 @@ void ConfigService::seedBuiltinWidgets(Config& config) {
   keyboardLayout.settings["cycle_command"] = std::string("");
   seed("keyboard_layout", std::move(keyboardLayout));
 
+  WidgetConfig lockKeys;
+  lockKeys.type = "lock_keys";
+  lockKeys.settings["show_caps_lock"] = true;
+  lockKeys.settings["show_num_lock"] = true;
+  lockKeys.settings["show_scroll_lock"] = false;
+  lockKeys.settings["hide_when_off"] = false;
+  lockKeys.settings["display"] = std::string("short");
+  seed("lock_keys", std::move(lockKeys));
+
   WidgetConfig spacer;
   spacer.type = "spacer";
   seed("spacer", std::move(spacer));
