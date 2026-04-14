@@ -49,6 +49,7 @@ constexpr float kIconTextGap = Style::spaceSm;
 constexpr float kActionGap = Style::spaceXs;
 constexpr float kActionRowGap = Style::spaceSm;
 constexpr int kMaxActionButtons = 2;
+constexpr std::string_view kFallbackActionLabel = "Action";
 
 // Maps the raw DBus timeout value to a popup display duration.
 // Returns -1 to mean "persistent — never auto-dismiss".
@@ -105,6 +106,12 @@ float notificationTextMaxWidth() {
 
 bool isRemoteIconUrl(std::string_view url) {
   return url.starts_with("http://") || url.starts_with("https://");
+}
+
+bool isBlankText(std::string_view text) {
+  return text.empty() ||
+         std::all_of(text.begin(), text.end(),
+                     [](unsigned char ch) { return std::isspace(ch) != 0; });
 }
 
 std::string decodeUriComponent(std::string_view text) {
@@ -1088,8 +1095,11 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
     int actionCount = 0;
     for (std::size_t i = 0; i + 1 < entry.actions.size() && actionCount < kMaxActionButtons; i += 2) {
       const std::string actionKey = entry.actions[i];
-      const std::string actionLabel = entry.actions[i + 1].empty() ? actionKey : entry.actions[i + 1];
-      if (actionKey.empty() || actionLabel.empty()) {
+      std::string actionLabel = entry.actions[i + 1];
+      if (isBlankText(actionLabel)) {
+        actionLabel = kFallbackActionLabel;
+      }
+      if (actionKey.empty()) {
         continue;
       }
 

@@ -4,6 +4,7 @@
 #include "dbus/session_bus.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <sstream>
 #include <tuple>
@@ -80,7 +81,15 @@ std::string clamp_str(std::string_view s) {
   return std::string{s.substr(0, len)};
 }
 
+bool isBlankText(std::string_view text) {
+  return text.empty() ||
+         std::all_of(text.begin(), text.end(),
+                     [](unsigned char ch) { return std::isspace(ch) != 0; });
+}
+
 std::vector<std::string> sanitize_actions(const std::vector<std::string>& actions) {
+  static constexpr std::string_view kFallbackActionLabel = "Action";
+
   std::vector<std::string> sanitized;
   sanitized.reserve(actions.size() - (actions.size() % 2));
 
@@ -90,6 +99,10 @@ std::vector<std::string> sanitize_actions(const std::vector<std::string>& action
 
     if (actionKey.empty()) {
       continue;
+    }
+
+    if (isBlankText(label)) {
+      label = kFallbackActionLabel;
     }
 
     sanitized.push_back(std::move(actionKey));
