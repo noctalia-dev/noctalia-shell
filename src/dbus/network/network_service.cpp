@@ -31,8 +31,7 @@ constexpr auto k_nmAccessPointInterface = "org.freedesktop.NetworkManager.Access
 constexpr auto k_nmIp4ConfigInterface = "org.freedesktop.NetworkManager.IP4Config";
 constexpr auto k_propertiesInterface = "org.freedesktop.DBus.Properties";
 
-// NMDeviceType values from NetworkManager.h
-constexpr std::uint32_t k_nmDeviceTypeEthernet = 1;
+// NMDeviceType values from NetworkManager D-Bus API.
 constexpr std::uint32_t k_nmDeviceTypeWifi = 2;
 
 // NMActiveConnectionState
@@ -662,10 +661,10 @@ NetworkState NetworkService::readState() {
       next.signalStrength =
           getPropertyOr<std::uint8_t>(*m_activeAp, k_nmAccessPointInterface, "Strength", std::uint8_t{0});
     }
-  } else if (deviceType == k_nmDeviceTypeEthernet) {
-    next.kind = NetworkConnectivity::Wired;
   } else {
-    next.kind = NetworkConnectivity::Unknown;
+    // Ethernet, bridge, bond, VLAN, team, tun, and other wired-like device types
+    // are all displayed as wired — we don't need to enumerate every NMDeviceType.
+    next.kind = NetworkConnectivity::Wired;
   }
 
   return next;

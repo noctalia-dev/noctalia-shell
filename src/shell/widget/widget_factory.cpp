@@ -180,7 +180,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "network") {
     const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
-    auto widget = std::make_unique<NetworkWidget>(m_network, showLabel);
+    auto widget = std::make_unique<NetworkWidget>(m_network, output, showLabel);
     widget->setContentScale(contentScale);
     return widget;
   }

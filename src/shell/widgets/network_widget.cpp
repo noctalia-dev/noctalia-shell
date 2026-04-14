@@ -1,7 +1,9 @@
 #include "shell/widgets/network_widget.h"
 
 #include "render/core/renderer.h"
+#include "render/scene/input_area.h"
 #include "render/scene/node.h"
+#include "shell/panel/panel_manager.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -39,27 +41,30 @@ std::string labelForState(const NetworkState& s) {
 
 } // namespace
 
-NetworkWidget::NetworkWidget(NetworkService* network, bool showLabel)
-    : m_network(network), m_showLabel(showLabel) {}
+NetworkWidget::NetworkWidget(NetworkService* network, wl_output* output, bool showLabel)
+    : m_network(network), m_output(output), m_showLabel(showLabel) {}
 
 void NetworkWidget::create() {
-  auto container = std::make_unique<Node>();
+  auto area = std::make_unique<InputArea>();
+  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
+    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "network");
+  });
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("wifi-off");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   glyph->setColor(roleColor(ColorRole::OnSurface));
   m_glyph = glyph.get();
-  container->addChild(std::move(glyph));
+  area->addChild(std::move(glyph));
 
   if (m_showLabel) {
     auto label = std::make_unique<Label>();
     label->setFontSize(Style::fontSizeBody * m_contentScale);
     m_label = label.get();
-    container->addChild(std::move(label));
+    area->addChild(std::move(label));
   }
 
-  setRoot(std::move(container));
+  setRoot(std::move(area));
 }
 
 void NetworkWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {

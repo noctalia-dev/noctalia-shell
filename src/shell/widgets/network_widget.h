@@ -7,10 +7,11 @@
 
 class Glyph;
 class Label;
+struct wl_output;
 
 class NetworkWidget : public Widget {
 public:
-  explicit NetworkWidget(NetworkService* network, bool showLabel);
+  NetworkWidget(NetworkService* network, wl_output* output, bool showLabel);
 
   void create() override;
 
@@ -20,6 +21,7 @@ private:
   void syncState(Renderer& renderer);
 
   NetworkService* m_network = nullptr;
+  wl_output* m_output = nullptr;
   bool m_showLabel = true;
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
