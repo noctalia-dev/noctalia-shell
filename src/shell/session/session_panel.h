@@ -3,7 +3,6 @@
 #include "shell/panel/panel.h"
 
 #include <array>
-#include <functional>
 
 class Button;
 class Flex;
@@ -20,14 +19,7 @@ public:
     Count = 4,
   };
 
-  struct Actions {
-    std::function<void()> logout;
-    std::function<void()> reboot;
-    std::function<void()> shutdown;
-    std::function<void()> lock;
-  };
-
-  explicit SessionPanel(Actions actions);
+  SessionPanel() = default;
 
   void create() override;
   void onOpen(std::string_view context) override;
@@ -51,7 +43,6 @@ private:
   void activateMouse();
   [[nodiscard]] Button* createActionButton(ActionId id, float scale);
 
-  Actions m_actions;
   Flex* m_rootLayout = nullptr;
   InputArea* m_focusArea = nullptr;
   std::array<ActionId, static_cast<std::size_t>(ActionId::Count)> m_actionOrder{};

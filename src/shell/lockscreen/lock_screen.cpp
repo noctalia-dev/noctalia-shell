@@ -89,6 +89,13 @@ std::string maskedCircles(std::size_t count) {
 
 } // namespace
 
+namespace {
+LockScreen* g_lockScreenInstance = nullptr;
+}
+
+void LockScreen::setInstance(LockScreen* instance) { g_lockScreenInstance = instance; }
+LockScreen* LockScreen::instance() { return g_lockScreenInstance; }
+
 LockScreen::LockScreen() = default;
 
 LockScreen::~LockScreen() {

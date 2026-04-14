@@ -37,6 +37,9 @@ public:
   static void handleLocked(void* data, ext_session_lock_v1* lock);
   static void handleFinished(void* data, ext_session_lock_v1* lock);
 
+  static void setInstance(LockScreen* instance);
+  static LockScreen* instance();
+
 private:
   struct Instance {
     std::uint32_t outputName = 0;

@@ -1,7 +1,10 @@
 #include "shell/session/session_panel.h"
 
 #include "core/log.h"
+#include "core/process.h"
+#include "notification/notifications.h"
 #include "render/core/renderer.h"
+#include "shell/lockscreen/lock_screen.h"
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
 #include "ui/controls/button.h"
@@ -10,6 +13,7 @@
 #include "ui/style.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <memory>
 #include <utility>
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -34,9 +38,55 @@ constexpr std::array<ActionSpec, 4> kActionSpecs{{
     {SessionPanel::ActionId::Shutdown, "Shut Down", "shutdown", ButtonVariant::Destructive},
 }};
 
+bool doLogout() {
+  if (process::launchDetached({"systemctl", "--user", "stop", "graphical-session.target"})) {
+    return true;
+  }
+  if (const char* sessionId = std::getenv("XDG_SESSION_ID"); sessionId != nullptr && sessionId[0] != '\0') {
+    return process::launchDetached({"loginctl", "terminate-session", sessionId});
+  }
+  if (const char* user = std::getenv("USER"); user != nullptr && user[0] != '\0') {
+    return process::launchDetached({"loginctl", "terminate-user", user});
+  }
+  return false;
+}
+
+bool doReboot() { return process::launchFirstAvailable({{"systemctl", "reboot"}, {"loginctl", "reboot"}}); }
+
+bool doShutdown() { return process::launchFirstAvailable({{"systemctl", "poweroff"}, {"loginctl", "poweroff"}}); }
+
 } // namespace
 
-SessionPanel::SessionPanel(Actions actions) : m_actions(std::move(actions)) {}
+namespace {
+
+void runAction(SessionPanel::ActionId id) {
+  switch (id) {
+  case SessionPanel::ActionId::Logout:
+    if (!doLogout()) {
+      notify::error("Noctalia", "Logout unavailable", "Could not determine how to terminate this session.");
+    }
+    break;
+  case SessionPanel::ActionId::Reboot:
+    if (!doReboot()) {
+      notify::error("Noctalia", "Reboot failed", "Could not launch systemctl reboot.");
+    }
+    break;
+  case SessionPanel::ActionId::Shutdown:
+    if (!doShutdown()) {
+      notify::error("Noctalia", "Shutdown failed", "Could not launch a shutdown command.");
+    }
+    break;
+  case SessionPanel::ActionId::Lock:
+    if (auto* ls = LockScreen::instance(); ls == nullptr || !ls->lock()) {
+      notify::error("Noctalia", "Lock unavailable", "The session lock protocol is not available.");
+    }
+    break;
+  case SessionPanel::ActionId::Count:
+    break;
+  }
+}
+
+} // namespace
 
 void SessionPanel::create() {
   const float scale = contentScale();
@@ -98,32 +148,9 @@ Button* SessionPanel::createActionButton(ActionId id, float scale) {
   button->setMinHeight(112.0f * scale);
   button->setFlexGrow(1.0f);
 
-  button->setOnClick([this, id]() {
+  button->setOnClick([id]() {
     PanelManager::instance().close();
-    switch (id) {
-    case ActionId::Logout:
-      if (m_actions.logout) {
-        m_actions.logout();
-      }
-      break;
-    case ActionId::Reboot:
-      if (m_actions.reboot) {
-        m_actions.reboot();
-      }
-      break;
-    case ActionId::Shutdown:
-      if (m_actions.shutdown) {
-        m_actions.shutdown();
-      }
-      break;
-    case ActionId::Lock:
-      if (m_actions.lock) {
-        m_actions.lock();
-      }
-      break;
-    case ActionId::Count:
-      break;
-    }
+    runAction(id);
   });
   button->setOnMotion([this]() { activateMouse(); });
   button->setHoverSuppressed(!m_mouseActive);
@@ -162,30 +189,7 @@ void SessionPanel::activateSelected() {
   const ActionId selectedAction = m_actionOrder[m_selectedIndex];
   if (Button* button = m_actionButtons[static_cast<std::size_t>(selectedAction)]; button != nullptr && button->enabled()) {
     PanelManager::instance().close();
-    switch (selectedAction) {
-    case ActionId::Logout:
-      if (m_actions.logout) {
-        m_actions.logout();
-      }
-      break;
-    case ActionId::Reboot:
-      if (m_actions.reboot) {
-        m_actions.reboot();
-      }
-      break;
-    case ActionId::Shutdown:
-      if (m_actions.shutdown) {
-        m_actions.shutdown();
-      }
-      break;
-    case ActionId::Lock:
-      if (m_actions.lock) {
-        m_actions.lock();
-      }
-      break;
-    case ActionId::Count:
-      break;
-    }
+    runAction(selectedAction);
   }
 }
 

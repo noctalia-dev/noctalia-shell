@@ -8,6 +8,7 @@
 #include "launcher/app_provider.h"
 #include "launcher/emoji_provider.h"
 #include "launcher/math_provider.h"
+#include "notification/notifications.h"
 #include "render/animation/motion_service.h"
 #include "shell/clipboard/clipboard_panel.h"
 #include "shell/clipboard/clipboard_paste.h"
@@ -33,24 +34,6 @@ std::atomic<bool> Application::s_shutdownRequested{false};
 namespace {
 
   constexpr Logger kLog("app");
-
-  bool launchLogoutCommand() {
-    if (process::launchDetached({"systemctl", "--user", "stop", "graphical-session.target"})) {
-      return true;
-    }
-
-    const char* sessionId = std::getenv("XDG_SESSION_ID");
-    if (sessionId != nullptr && sessionId[0] != '\0') {
-      return process::launchDetached({"loginctl", "terminate-session", sessionId});
-    }
-
-    const char* user = std::getenv("USER");
-    if (user != nullptr && user[0] != '\0') {
-      return process::launchDetached({"loginctl", "terminate-user", user});
-    }
-
-    return false;
-  }
 
   template <typename Factory>
   auto makeWithStartupBackoff(std::string_view label, Factory&& factory) -> decltype(factory()) {
@@ -92,6 +75,9 @@ namespace {
 } // namespace
 
 Application::Application() : m_weatherService(m_configService, m_httpClient) {
+  notify::setInstance(&m_notificationManager);
+  LockScreen::setInstance(&m_lockScreen);
+
   auto shouldRefreshControlCenter = [this]() {
     return m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center";
   };
@@ -149,6 +135,8 @@ Application::~Application() {
   m_pipewireService.reset();
 
   // MainLoop will be destroyed next, then SessionBus
+  LockScreen::setInstance(nullptr);
+  notify::setInstance(nullptr);
 }
 
 void Application::syncNotificationDaemon() {
@@ -467,37 +455,7 @@ void Application::initUi() {
     });
   });
   m_panelManager.registerPanel("clipboard", std::move(clipboardPanel));
-  m_panelManager.registerPanel(
-      "session", std::make_unique<SessionPanel>(SessionPanel::Actions{
-                     .logout =
-                         [this]() {
-                           if (!launchLogoutCommand()) {
-                             m_notificationManager.addInternal("Noctalia", "Logout unavailable",
-                                                               "Could not determine how to terminate this session.");
-                           }
-                         },
-                     .reboot =
-                         [this]() {
-                           if (!process::launchFirstAvailable({{"systemctl", "reboot"}, {"loginctl", "reboot"}})) {
-                             m_notificationManager.addInternal("Noctalia", "Reboot failed",
-                                                               "Could not launch systemctl reboot.");
-                           }
-                         },
-                     .shutdown =
-                         [this]() {
-                           if (!process::launchFirstAvailable({{"systemctl", "poweroff"}, {"loginctl", "poweroff"}})) {
-                             m_notificationManager.addInternal("Noctalia", "Shutdown failed",
-                                                               "Could not launch a shutdown command.");
-                           }
-                         },
-                     .lock =
-                         [this]() {
-                           if (!m_lockScreen.lock()) {
-                             m_notificationManager.addInternal("Noctalia", "Lock unavailable",
-                                                               "The session lock protocol is not available.");
-                           }
-                         },
-                 }));
+  m_panelManager.registerPanel("session", std::make_unique<SessionPanel>());
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
   m_panelManager.registerPanel(
       "control-center",
