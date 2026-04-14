@@ -100,7 +100,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"nightlight-on", 0xEAF8},     // moon
     {"nightlight-off", 0xF162},    // moon-off
     {"nightlight-forced", 0xECE7}, // moon-stars
-    {"dark-mode", 0xFE56},         // contrast-filled
+    {"theme-mode", 0xFE56},        // contrast-filled
 
     // Notifications
     {"bell", 0xEA35},              // bell
