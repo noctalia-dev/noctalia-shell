@@ -12,6 +12,7 @@ class Flex;
 class Input;
 class Label;
 class ScrollView;
+class Spinner;
 class Toggle;
 
 class NetworkTab : public Tab {
@@ -52,6 +53,7 @@ private:
   Button* m_rescanButton = nullptr;
   Toggle* m_wifiToggle = nullptr;
   Button* m_disconnectButton = nullptr;
+  Spinner* m_scanSpinner = nullptr;
 
   std::string m_lastListKey;
   float m_lastListWidth = -1.0f;

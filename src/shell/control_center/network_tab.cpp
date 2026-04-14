@@ -10,6 +10,7 @@
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
+#include "ui/controls/spinner.h"
 #include "ui/controls/toggle.h"
 #include "ui/palette.h"
 
@@ -358,6 +359,12 @@ std::unique_ptr<Flex> NetworkTab::createHeaderActions() {
   m_wifiToggle = wifiToggle.get();
   row->addChild(std::move(wifiToggle));
 
+  auto spinner = std::make_unique<Spinner>();
+  spinner->setSpinnerSize(Style::fontSizeBody * scale);
+  spinner->setColor(roleColor(ColorRole::Primary));
+  m_scanSpinner = spinner.get();
+  row->addChild(std::move(spinner));
+
   auto rescan = std::make_unique<Button>();
   rescan->setVariant(ButtonVariant::Default);
   rescan->setGlyph("refresh");
@@ -408,6 +415,7 @@ void NetworkTab::onClose() {
   m_rescanButton = nullptr;
   m_wifiToggle = nullptr;
   m_disconnectButton = nullptr;
+  m_scanSpinner = nullptr;
   m_lastListKey.clear();
   m_lastListWidth = -1.0f;
 }
@@ -459,6 +467,14 @@ void NetworkTab::syncCurrentCard() {
   }
   if (m_wifiToggle != nullptr) {
     m_wifiToggle->setChecked(s.wirelessEnabled);
+  }
+  if (m_scanSpinner != nullptr) {
+    m_scanSpinner->setVisible(s.scanning);
+    if (s.scanning && !m_scanSpinner->spinning()) {
+      m_scanSpinner->start();
+    } else if (!s.scanning && m_scanSpinner->spinning()) {
+      m_scanSpinner->stop();
+    }
   }
 }
 

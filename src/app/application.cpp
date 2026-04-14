@@ -328,7 +328,12 @@ void Application::initServices() {
 
     try {
       m_networkService = std::make_unique<NetworkService>(*m_systemBus);
-      m_networkService->setChangeCallback([this](const NetworkState& /*state*/) { m_bar.refresh(); });
+      m_networkService->setChangeCallback([this, shouldRefreshControlCenter](const NetworkState& /*state*/) {
+        m_bar.refresh();
+        if (shouldRefreshControlCenter()) {
+          m_panelManager.refresh();
+        }
+      });
       kLog.info("network service active");
     } catch (const std::exception& e) {
       kLog.warn("network service disabled: {}", e.what());
