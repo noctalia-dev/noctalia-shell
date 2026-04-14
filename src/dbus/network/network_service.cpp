@@ -109,10 +109,48 @@ NetworkService::NetworkService(SystemBus& bus) : m_bus(bus) {
         if (interfaceName != k_nmInterface) {
           return;
         }
+        bool wirelessNowOn = false;
+        if (auto it = changedProperties.find("WirelessEnabled"); it != changedProperties.end()) {
+          try {
+            wirelessNowOn = it->second.get<bool>();
+          } catch (const sdbus::Error&) {
+          }
+        }
         if (changedProperties.contains("PrimaryConnection") || changedProperties.contains("ActiveConnections") ||
             changedProperties.contains("WirelessEnabled") || changedProperties.contains("State") ||
             changedProperties.contains("Connectivity")) {
           rebindActiveConnection();
+        }
+        if (wirelessNowOn) {
+          // NM powered the radio on but the wifi device is still transitioning
+          // out of Unavailable, so calling RequestScan now would be rejected.
+          // NM starts its own scan as soon as the device reaches Disconnected;
+          // just mark ourselves scanning and snapshot LastScan so the device
+          // PropertiesChanged watcher clears the flag when the scan finishes.
+          std::int64_t baseline = 0;
+          try {
+            std::vector<sdbus::ObjectPath> devices;
+            m_nm->callMethod("GetDevices").onInterface(k_nmInterface).storeResultsTo(devices);
+            for (const auto& devicePath : devices) {
+              try {
+                auto device = sdbus::createProxy(m_bus.connection(), k_nmBusName, devicePath);
+                const auto deviceType = getPropertyOr<std::uint32_t>(*device, k_nmDeviceInterface, "DeviceType", 0U);
+                if (deviceType != k_nmDeviceTypeWifi) {
+                  continue;
+                }
+                const auto lastScan = getPropertyOr<std::int64_t>(*device, k_nmDeviceWirelessInterface, "LastScan",
+                                                                  std::int64_t{0});
+                if (lastScan > baseline) {
+                  baseline = lastScan;
+                }
+              } catch (const sdbus::Error&) {
+              }
+            }
+          } catch (const sdbus::Error&) {
+          }
+          m_scanning = true;
+          m_scanBaselineLastScan = baseline;
+          refresh();
         }
       });
 
@@ -124,12 +162,23 @@ NetworkService::~NetworkService() = default;
 void NetworkService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
 
 void NetworkService::refresh() {
+  const auto previousAps = m_accessPoints;
+  const auto previousSaved = m_savedSsids;
   refreshAccessPoints();
   refreshSavedConnections();
-  emitChangedIfNeeded(readState());
+  NetworkState next = readState();
+  const bool apsChanged = previousAps != m_accessPoints;
+  const bool savedChanged = previousSaved != m_savedSsids;
+  const bool stateChanged = next != m_state;
+  m_state = std::move(next);
+  if ((stateChanged || apsChanged || savedChanged) && m_changeCallback) {
+    m_changeCallback(m_state);
+  }
 }
 
 void NetworkService::requestScan() {
+  std::int64_t baseline = 0;
+  bool anyRequested = false;
   try {
     std::vector<sdbus::ObjectPath> devices;
     m_nm->callMethod("GetDevices").onInterface(k_nmInterface).storeResultsTo(devices);
@@ -140,14 +189,25 @@ void NetworkService::requestScan() {
         if (deviceType != k_nmDeviceTypeWifi) {
           continue;
         }
+        const auto lastScan =
+            getPropertyOr<std::int64_t>(*device, k_nmDeviceWirelessInterface, "LastScan", std::int64_t{0});
+        if (lastScan > baseline) {
+          baseline = lastScan;
+        }
         const std::map<std::string, sdbus::Variant> options;
         device->callMethod("RequestScan").onInterface(k_nmDeviceWirelessInterface).withArguments(options);
+        anyRequested = true;
       } catch (const sdbus::Error& e) {
         kLog.debug("RequestScan failed on {}: {}", std::string(devicePath), e.what());
       }
     }
   } catch (const sdbus::Error& e) {
     kLog.warn("GetDevices failed: {}", e.what());
+  }
+  if (anyRequested) {
+    m_scanning = true;
+    m_scanBaselineLastScan = baseline;
+    refresh();
   }
 }
 
@@ -312,6 +372,41 @@ void NetworkService::refreshSavedConnections() {
   m_savedSsids = std::move(next);
 }
 
+void NetworkService::ensureWifiDeviceSubscribed(const std::string& devicePath) {
+  if (m_wifiDevices.contains(devicePath)) {
+    return;
+  }
+  try {
+    auto proxy = sdbus::createProxy(m_bus.connection(), k_nmBusName, sdbus::ObjectPath{devicePath});
+    proxy->uponSignal("PropertiesChanged")
+        .onInterface(k_propertiesInterface)
+        .call([this](const std::string& interfaceName, const std::map<std::string, sdbus::Variant>& changedProperties,
+                     const std::vector<std::string>& /*invalidatedProperties*/) {
+          if (interfaceName == k_nmDeviceWirelessInterface) {
+            if (auto it = changedProperties.find("LastScan"); it != changedProperties.end()) {
+              try {
+                const auto lastScan = it->second.get<std::int64_t>();
+                if (m_scanning && lastScan > m_scanBaselineLastScan) {
+                  m_scanning = false;
+                }
+              } catch (const sdbus::Error&) {
+              }
+            }
+            if (changedProperties.contains("AccessPoints") || changedProperties.contains("LastScan")) {
+              refresh();
+            }
+          } else if (interfaceName == k_nmDeviceInterface) {
+            if (changedProperties.contains("State")) {
+              refresh();
+            }
+          }
+        });
+    m_wifiDevices.emplace(devicePath, std::move(proxy));
+  } catch (const sdbus::Error& e) {
+    kLog.debug("wifi device subscribe failed {}: {}", devicePath, e.what());
+  }
+}
+
 void NetworkService::refreshAccessPoints() {
   std::vector<AccessPointInfo> next;
   try {
@@ -324,6 +419,7 @@ void NetworkService::refreshAccessPoints() {
         if (deviceType != k_nmDeviceTypeWifi) {
           continue;
         }
+        ensureWifiDeviceSubscribed(devicePath);
         std::string activeApPath;
         try {
           const sdbus::Variant value =
@@ -536,6 +632,7 @@ NetworkState NetworkService::readState() {
   NetworkState next;
 
   next.wirelessEnabled = getPropertyOr<bool>(*m_nm, k_nmInterface, "WirelessEnabled", false);
+  next.scanning = m_scanning;
 
   if (m_activeDevice == nullptr) {
     return next;

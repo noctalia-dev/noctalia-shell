@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 class SystemBus;
@@ -34,9 +35,10 @@ struct NetworkState {
   NetworkConnectivity kind = NetworkConnectivity::Unknown;
   bool connected = false;
   bool wirelessEnabled = false;
-  std::string ssid;          // Wi-Fi only
-  std::string ipv4;          // dotted-quad of first address; empty if none
-  std::string interfaceName; // e.g. "wlan0", "eth0"
+  bool scanning = false;
+  std::string ssid;                // Wi-Fi only
+  std::string ipv4;                // dotted-quad of first address; empty if none
+  std::string interfaceName;       // e.g. "wlan0", "eth0"
   std::uint8_t signalStrength = 0; // 0..100, Wi-Fi only
 
   bool operator==(const NetworkState&) const = default;
@@ -86,6 +88,7 @@ private:
   void rebindActiveConnection();
   void rebindActiveDevice(const std::string& devicePath);
   void rebindActiveAccessPoint(const std::string& apPath);
+  void ensureWifiDeviceSubscribed(const std::string& devicePath);
   [[nodiscard]] NetworkState readState();
   void emitChangedIfNeeded(NetworkState next);
 
@@ -94,11 +97,14 @@ private:
   std::unique_ptr<sdbus::IProxy> m_activeConnection;
   std::unique_ptr<sdbus::IProxy> m_activeDevice;
   std::unique_ptr<sdbus::IProxy> m_activeAp;
+  std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_wifiDevices;
   std::string m_activeConnectionPath;
   std::string m_activeDevicePath;
   std::string m_activeApPath;
   NetworkState m_state;
   std::vector<AccessPointInfo> m_accessPoints;
   std::vector<std::string> m_savedSsids;
+  bool m_scanning = false;
+  std::int64_t m_scanBaselineLastScan = 0;
   ChangeCallback m_changeCallback;
 };
