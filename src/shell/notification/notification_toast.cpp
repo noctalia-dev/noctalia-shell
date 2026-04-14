@@ -368,10 +368,10 @@ void NotificationToast::addCardToInstance(PopupInstance& inst, std::size_t entry
   // Hover wiring: pause countdown while the card is hovered, and brighten the (X).
   // On leave, resume the countdown from the remaining progress.
   const bool isCritical = (entry.urgency == Urgency::Critical);
-  const Color closeColorNormal = resolveThemeColor(
-      isCritical ? roleColor(ColorRole::OnError, 0.6f) : roleColor(ColorRole::OnSurfaceVariant, 0.6f));
+  const Color closeColorNormal =
+      resolveThemeColor(isCritical ? roleColor(ColorRole::Error, 0.75f) : roleColor(ColorRole::OnSurfaceVariant, 0.6f));
   const Color closeColorHover =
-      resolveThemeColor(isCritical ? roleColor(ColorRole::OnError) : roleColor(ColorRole::OnSurface));
+      resolveThemeColor(isCritical ? roleColor(ColorRole::Error) : roleColor(ColorRole::OnSurface));
   const int totalDuration = entry.displayDurationMs;
   const uint32_t notificationId = entry.notificationId;
   Glyph* closeGlyphPtr = cs.closeGlyph;
@@ -791,8 +791,15 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
   // Background
   auto bg = std::make_unique<Box>();
   bg->setCardStyle();
+  bg->setRadius(Style::radiusXl);
+  bg->setSoftness(1.25f);
   if (isCritical) {
-    bg->setFill(roleColor(ColorRole::Error));
+    // Keep critical toasts readable: solid surface background + urgent border.
+    bg->setFill(roleColor(ColorRole::Surface, 0.97f));
+    bg->setBorder(roleColor(ColorRole::Error, 0.95f), Style::borderWidth * 1.4f);
+  } else {
+    bg->setFill(roleColor(ColorRole::Surface, 0.97f));
+    bg->setBorder(roleColor(ColorRole::Outline, 0.8f), Style::borderWidth);
   }
   bg->setSize(kCardWidth, static_cast<float>(kCardHeight));
   *outBg = area->addChild(std::move(bg));
@@ -808,7 +815,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
   auto appName = std::make_unique<Label>();
   appName->setText(entry.appName);
   appName->setFontSize(kMetaFontSize);
-  appName->setColor(roleColor(isCritical ? ColorRole::OnError : ColorRole::OnSurfaceVariant));
+  appName->setColor(roleColor(isCritical ? ColorRole::Error : ColorRole::OnSurfaceVariant));
   appName->measure(*m_renderContext);
   *outAppName = appName.get();
   headerRow->addChild(std::move(appName));
@@ -817,7 +824,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
   closeGlyph->setGlyph("close");
   closeGlyph->setGlyphSize(kCloseGlyphSize);
   closeGlyph->setColor(resolveThemeColor(
-      isCritical ? roleColor(ColorRole::OnError, 0.6f) : roleColor(ColorRole::OnSurfaceVariant, 0.6f)));
+      isCritical ? roleColor(ColorRole::Error, 0.75f) : roleColor(ColorRole::OnSurfaceVariant, 0.6f)));
   *outCloseGlyph = static_cast<Glyph*>(headerRow->addChild(std::move(closeGlyph)));
   headerRow->layout(*m_renderContext);
 
@@ -827,7 +834,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
   auto summary = std::make_unique<Label>();
   summary->setText(entry.summary);
   summary->setFontSize(kSummaryFontSize);
-  summary->setColor(roleColor(isCritical ? ColorRole::OnError : ColorRole::OnSurface));
+  summary->setColor(roleColor(ColorRole::OnSurface));
   summary->setBold(true);
   summary->setMaxWidth(innerWidth);
   summary->setMaxLines(kMaxSummaryLines);
@@ -840,7 +847,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
   auto body = std::make_unique<Label>();
   body->setText(entry.body);
   body->setFontSize(kBodyFontSize);
-  body->setColor(roleColor(isCritical ? ColorRole::OnError : ColorRole::OnSurfaceVariant));
+  body->setColor(roleColor(ColorRole::OnSurfaceVariant));
   body->setMaxWidth(innerWidth);
   const int bodyLines = fitBodyLines(*m_renderContext, (*outSummary)->height());
   body->setMaxLines(std::max(1, bodyLines));
@@ -856,6 +863,8 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
 
   // Progress bar (countdown)
   auto progressBar = std::make_unique<ProgressBar>();
+  progressBar->setTrackColor(roleColor(ColorRole::OnSurfaceVariant, 0.35f));
+  progressBar->setFillColor(roleColor(isCritical ? ColorRole::Error : ColorRole::Primary));
   progressBar->setSize(innerWidth, kProgressHeight);
   progressBar->setPosition(kCardInnerPad, progressY);
   *outProgress = static_cast<ProgressBar*>(area->addChild(std::move(progressBar)));
