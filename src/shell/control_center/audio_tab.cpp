@@ -409,8 +409,8 @@ std::unique_ptr<Flex> AudioTab::create() {
   inputVolumeCard->addChild(std::move(inputRow));
   volumeRow->addChild(std::move(inputVolumeCard));
 
-  tab->addChild(std::move(deviceRow));
   tab->addChild(std::move(volumeRow));
+  tab->addChild(std::move(deviceRow));
   return tab;
 }
 
