@@ -14,7 +14,6 @@ Popup {
   anchors.centerIn: parent
 
   width: Math.min(550 * Style.uiScaleRatio, parent.width * 0.9)
-  height: Math.min(contentLayout.implicitHeight + padding * 2, parent.height * 0.85)
   padding: Style.marginL
 
   // Input properties
@@ -170,193 +169,229 @@ Popup {
     try { NetworkService.connectionModified.disconnect(root._modifiedSlot); } catch (e) {}
   }
 
-  contentItem: ColumnLayout {
-    id: contentLayout
-    spacing: Style.marginL
+  contentItem: Flickable {
+    id: flickable
+    implicitHeight: Math.min(contentColumn.implicitHeight, root.parent ? root.parent.height * 0.8 : 600)
+    contentHeight: contentColumn.implicitHeight
+    clip: true
+    boundsBehavior: Flickable.StopAtBounds
 
-    // Header
-    RowLayout {
-      Layout.fillWidth: true
-      NText {
-        text: I18n.tr("wifi.edit.title") + " — " + root.connectionName
-        font.weight: Style.fontWeightBold
-        pointSize: Style.fontSizeL
+    ColumnLayout {
+      id: contentColumn
+      width: flickable.width
+      spacing: Style.marginL
+
+      // Header
+      RowLayout {
         Layout.fillWidth: true
-        elide: Text.ElideRight
+        NText {
+          text: I18n.tr("wifi.edit.title") + " — " + root.connectionName
+          font.weight: Style.fontWeightBold
+          pointSize: Style.fontSizeL
+          Layout.fillWidth: true
+          elide: Text.ElideRight
+        }
+        NIconButton {
+          icon: "close"
+          onClicked: root.close()
+        }
       }
-      NIconButton {
-        icon: "close"
-        onClicked: root.close()
+
+      // Loading indicator
+      NText {
+        visible: root.loading
+        text: "..."
+        color: Color.mOnSurfaceVariant
+        Layout.alignment: Qt.AlignHCenter
       }
-    }
 
-    // Loading indicator
-    NText {
-      visible: root.loading
-      text: "..."
-      color: Color.mOnSurfaceVariant
-      Layout.alignment: Qt.AlignHCenter
-    }
-
-    // Form content
-    NScrollView {
-      visible: !root.loading
-      Layout.fillWidth: true
-      Layout.fillHeight: true
-      Layout.maximumHeight: root.height - 160 * Style.uiScaleRatio
-
+      // === IPv4 Section ===
       ColumnLayout {
-        width: parent.width
+        visible: !root.loading
+        Layout.fillWidth: true
         spacing: Style.marginM
 
-        // === IPv4 Section ===
-        NCollapsible {
-          label: I18n.tr("wifi.edit.ipv4")
-          expanded: true
-          Layout.fillWidth: true
-
-          NComboBox {
-            Layout.fillWidth: true
-            label: I18n.tr("wifi.edit.method")
-            model: [
-              { key: "auto", name: I18n.tr("wifi.edit.method-auto") },
-              { key: "manual", name: I18n.tr("wifi.edit.method-manual") },
-              { key: "disabled", name: I18n.tr("wifi.edit.method-disabled") }
-            ]
-            currentKey: root.ipv4Method
-            onSelected: key => root.ipv4Method = key
-          }
-
-          NTextInput {
-            Layout.fillWidth: true
-            label: I18n.tr("wifi.edit.address")
-            placeholderText: I18n.tr("wifi.edit.address-placeholder-v4")
-            text: root.ipv4Address
-            onTextChanged: root.ipv4Address = text
-            enabled: root.ipv4Method === "manual"
-            readOnly: root.ipv4Method !== "manual"
-          }
-
-          NTextInput {
-            Layout.fillWidth: true
-            label: I18n.tr("wifi.edit.gateway")
-            placeholderText: I18n.tr("wifi.edit.gateway-placeholder-v4")
-            text: root.ipv4Gateway
-            onTextChanged: root.ipv4Gateway = text
-            enabled: root.ipv4Method === "manual"
-            readOnly: root.ipv4Method !== "manual"
-          }
-
-          NTextInput {
-            Layout.fillWidth: true
-            label: I18n.tr("wifi.edit.dns") + " (" + I18n.tr("wifi.edit.dns-hint") + ")"
-            placeholderText: I18n.tr("wifi.edit.dns-placeholder-v4")
-            text: root.ipv4Dns
-            onTextChanged: root.ipv4Dns = text
-            enabled: root.ipv4Method !== "disabled"
-            readOnly: root.ipv4Method === "disabled"
-          }
+        NText {
+          text: I18n.tr("wifi.edit.ipv4")
+          pointSize: Style.fontSizeM
+          font.weight: Style.fontWeightSemiBold
+          color: Color.mPrimary
         }
 
-        // === IPv6 Section ===
-        NCollapsible {
-          label: I18n.tr("wifi.edit.ipv6")
-          expanded: false
+        NComboBox {
+          id: ipv4MethodCombo
           Layout.fillWidth: true
-
-          NComboBox {
-            Layout.fillWidth: true
-            label: I18n.tr("wifi.edit.method")
-            model: [
-              { key: "auto", name: I18n.tr("wifi.edit.method-auto") },
-              { key: "manual", name: I18n.tr("wifi.edit.method-manual") },
-              { key: "link-local", name: I18n.tr("wifi.edit.method-link-local") },
-              { key: "disabled", name: I18n.tr("wifi.edit.method-disabled") }
-            ]
-            currentKey: root.ipv6Method
-            onSelected: key => root.ipv6Method = key
-          }
-
-          NTextInput {
-            Layout.fillWidth: true
-            label: I18n.tr("wifi.edit.address")
-            placeholderText: I18n.tr("wifi.edit.address-placeholder-v6")
-            text: root.ipv6Address
-            onTextChanged: root.ipv6Address = text
-            enabled: root.ipv6Method === "manual"
-            readOnly: root.ipv6Method !== "manual"
-          }
-
-          NTextInput {
-            Layout.fillWidth: true
-            label: I18n.tr("wifi.edit.gateway")
-            placeholderText: I18n.tr("wifi.edit.gateway-placeholder-v6")
-            text: root.ipv6Gateway
-            onTextChanged: root.ipv6Gateway = text
-            enabled: root.ipv6Method === "manual"
-            readOnly: root.ipv6Method !== "manual"
-          }
-
-          NTextInput {
-            Layout.fillWidth: true
-            label: I18n.tr("wifi.edit.dns") + " (" + I18n.tr("wifi.edit.dns-hint") + ")"
-            placeholderText: I18n.tr("wifi.edit.dns-placeholder-v6")
-            text: root.ipv6Dns
-            onTextChanged: root.ipv6Dns = text
-            enabled: root.ipv6Method !== "disabled"
-            readOnly: root.ipv6Method === "disabled"
-          }
+          label: I18n.tr("wifi.edit.method")
+          model: [
+            { key: "auto", name: I18n.tr("wifi.edit.method-auto") },
+            { key: "manual", name: I18n.tr("wifi.edit.method-manual") },
+            { key: "disabled", name: I18n.tr("wifi.edit.method-disabled") }
+          ]
+          currentKey: root.ipv4Method
+          onSelected: key => root.ipv4Method = key
         }
 
-        // === General Section ===
-        NCollapsible {
-          label: I18n.tr("wifi.edit.general")
-          expanded: false
+        NTextInput {
+          id: ipv4AddressInput
           Layout.fillWidth: true
+          label: I18n.tr("wifi.edit.address")
+          placeholderText: I18n.tr("wifi.edit.address-placeholder-v4")
+          text: root.ipv4Address
+          onTextChanged: root.ipv4Address = text
+          visible: root.ipv4Method === "manual"
+        }
 
-          NSpinBox {
-            Layout.fillWidth: true
-            label: I18n.tr("wifi.edit.mtu")
-            description: I18n.tr("wifi.edit.mtu-description")
-            value: root.mtu
-            from: 0
-            to: 9000
-            stepSize: 1
-            onValueChanged: root.mtu = value
-          }
+        NTextInput {
+          id: ipv4GatewayInput
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.edit.gateway")
+          placeholderText: I18n.tr("wifi.edit.gateway-placeholder-v4")
+          text: root.ipv4Gateway
+          onTextChanged: root.ipv4Gateway = text
+          visible: root.ipv4Method === "manual"
+        }
+
+        NTextInput {
+          id: ipv4DnsInput
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.edit.dns") + " (" + I18n.tr("wifi.edit.dns-hint") + ")"
+          placeholderText: I18n.tr("wifi.edit.dns-placeholder-v4")
+          text: root.ipv4Dns
+          onTextChanged: root.ipv4Dns = text
+          visible: root.ipv4Method !== "disabled"
         }
       }
-    }
 
-    // Error message
-    NText {
-      visible: root.errorMsg.length > 0
-      text: root.errorMsg
-      color: Color.mError
-      wrapMode: Text.WordWrap
-      Layout.fillWidth: true
-    }
-
-    // Footer buttons
-    RowLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginM
-
-      Item { Layout.fillWidth: true }
-
-      NButton {
-        text: I18n.tr("wifi.edit.cancel")
-        outlined: true
-        onClicked: root.close()
+      // Separator
+      Rectangle {
+        visible: !root.loading
+        Layout.fillWidth: true
+        height: Style.borderS
+        color: Color.mOutline
       }
 
-      NButton {
-        text: NetworkService.modifyingConnection ? I18n.tr("wifi.edit.applying") : I18n.tr("wifi.edit.apply")
-        icon: "check"
-        backgroundColor: Color.mPrimary
-        textColor: Color.mOnPrimary
-        enabled: root.canApply()
-        onClicked: root.applySettings()
+      // === IPv6 Section ===
+      ColumnLayout {
+        visible: !root.loading
+        Layout.fillWidth: true
+        spacing: Style.marginM
+
+        NText {
+          text: I18n.tr("wifi.edit.ipv6")
+          pointSize: Style.fontSizeM
+          font.weight: Style.fontWeightSemiBold
+          color: Color.mPrimary
+        }
+
+        NComboBox {
+          id: ipv6MethodCombo
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.edit.method")
+          model: [
+            { key: "auto", name: I18n.tr("wifi.edit.method-auto") },
+            { key: "manual", name: I18n.tr("wifi.edit.method-manual") },
+            { key: "link-local", name: I18n.tr("wifi.edit.method-link-local") },
+            { key: "disabled", name: I18n.tr("wifi.edit.method-disabled") }
+          ]
+          currentKey: root.ipv6Method
+          onSelected: key => root.ipv6Method = key
+        }
+
+        NTextInput {
+          id: ipv6AddressInput
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.edit.address")
+          placeholderText: I18n.tr("wifi.edit.address-placeholder-v6")
+          text: root.ipv6Address
+          onTextChanged: root.ipv6Address = text
+          visible: root.ipv6Method === "manual"
+        }
+
+        NTextInput {
+          id: ipv6GatewayInput
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.edit.gateway")
+          placeholderText: I18n.tr("wifi.edit.gateway-placeholder-v6")
+          text: root.ipv6Gateway
+          onTextChanged: root.ipv6Gateway = text
+          visible: root.ipv6Method === "manual"
+        }
+
+        NTextInput {
+          id: ipv6DnsInput
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.edit.dns") + " (" + I18n.tr("wifi.edit.dns-hint") + ")"
+          placeholderText: I18n.tr("wifi.edit.dns-placeholder-v6")
+          text: root.ipv6Dns
+          onTextChanged: root.ipv6Dns = text
+          visible: root.ipv6Method !== "disabled"
+        }
+      }
+
+      // Separator
+      Rectangle {
+        visible: !root.loading
+        Layout.fillWidth: true
+        height: Style.borderS
+        color: Color.mOutline
+      }
+
+      // === General Section ===
+      ColumnLayout {
+        visible: !root.loading
+        Layout.fillWidth: true
+        spacing: Style.marginM
+
+        NText {
+          text: I18n.tr("wifi.edit.general")
+          pointSize: Style.fontSizeM
+          font.weight: Style.fontWeightSemiBold
+          color: Color.mPrimary
+        }
+
+        NSpinBox {
+          id: mtuSpinBox
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.edit.mtu")
+          description: I18n.tr("wifi.edit.mtu-description")
+          value: root.mtu
+          from: 0
+          to: 9000
+          stepSize: 1
+          onValueChanged: root.mtu = value
+        }
+      }
+
+      // Error message
+      NText {
+        visible: root.errorMsg.length > 0
+        text: root.errorMsg
+        color: Color.mError
+        wrapMode: Text.WordWrap
+        Layout.fillWidth: true
+      }
+
+      // Footer buttons
+      RowLayout {
+        Layout.fillWidth: true
+        spacing: Style.marginM
+
+        Item { Layout.fillWidth: true }
+
+        NButton {
+          text: I18n.tr("wifi.edit.cancel")
+          outlined: true
+          onClicked: root.close()
+        }
+
+        NButton {
+          text: NetworkService.modifyingConnection ? I18n.tr("wifi.edit.applying") : I18n.tr("wifi.edit.apply")
+          icon: "check"
+          backgroundColor: Color.mPrimary
+          textColor: Color.mOnPrimary
+          enabled: root.canApply()
+          onClicked: root.applySettings()
+        }
       }
     }
   }
