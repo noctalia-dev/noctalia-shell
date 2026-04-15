@@ -100,12 +100,12 @@ post_hook = "bash '{{ config_dir }}/scripts/template-apply.sh' ghostty"
 [templates.gtk3]
 input_path = "./gtk3.css"
 output_path = "~/.config/gtk-3.0/noctalia.css"
-post_hook = "python3 '{{ config_dir }}/scripts/gtk-refresh.py' {{ mode }}"
+post_hook = "bash '{{ config_dir }}/scripts/gtk-refresh.sh' {{ mode }}"
 
 [templates.gtk4]
 input_path = "./gtk4.css"
 output_path = "~/.config/gtk-4.0/noctalia.css"
-post_hook = "python3 '{{ config_dir }}/scripts/gtk-refresh.py' {{ mode }}"
+post_hook = "bash '{{ config_dir }}/scripts/gtk-refresh.sh' {{ mode }}"
 
 [templates.helix]
 input_path = "./helix.toml"
