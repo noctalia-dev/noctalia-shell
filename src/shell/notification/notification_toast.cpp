@@ -238,6 +238,7 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
         m_entries[i].icon = n.icon;
         m_entries[i].imageData = n.imageData;
         m_entries[i].height = entryHeight(m_entries[i]);
+        m_entries[i].rawTimeoutMs = n.timeout;
         const bool hovered = m_entries[i].hovered;
 
         if (previouslyPlaced) {
@@ -248,6 +249,9 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
             }
           } else {
             m_entries[i].y = kQueuedY;
+          }
+          if (!hasPlacement(m_entries[i]) && m_entries[i].rawTimeoutMs > 0 && m_notifications != nullptr) {
+            m_notifications->pauseExpiry(n.id);
           }
         }
 
@@ -383,10 +387,16 @@ void NotificationToast::addPopup(const Notification& n) {
   entry.imageData = n.imageData;
   entry.urgency = n.urgency;
   entry.displayDurationMs = resolveDisplayDuration(n.timeout);
+  entry.rawTimeoutMs = n.timeout;
   entry.remainingProgress = 1.0f;
   entry.height = entryHeight(entry);
   if (const auto placement = findPlacementY(entry.height); placement.has_value()) {
     entry.y = *placement;
+  } else if (entry.rawTimeoutMs > 0 && m_notifications != nullptr) {
+    // Queued off-screen: freeze the manager-side auto-dismiss timer so the notification
+    // doesn't expire silently before a slot opens up. It will be resumed with the full
+    // duration when revealQueuedEntries() places the card.
+    m_notifications->pauseExpiry(n.id);
   }
   m_entries.push_back(std::move(entry));
   std::size_t index = m_entries.size() - 1;
@@ -498,8 +508,10 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
       },
       card);
 
-  // Countdown (only the first instance drives the timeout to avoid duplicate removals)
-  bool isDriver = (m_instances.size() > 0 && m_instances[0].get() == &inst);
+  // Countdown. Every instance that hosts a card runs its own countdown animation and
+  // calls removePopup when it finishes; dismissPopup's `exiting` guard dedupes. Picking
+  // a single "driver" instance is unsafe because addCardToInstance skips instances
+  // whose surface can't fit the card, so the nominal driver may never have a card at all.
   if (entry.displayDurationMs < 0) {
     // Persistent — no countdown, no auto-dismiss
     cs.progressBar->setOpacity(0.0f);
@@ -516,10 +528,8 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
             popup->remainingProgress = v;
           }
         },
-        [this, id = entry.notificationId, isDriver]() {
-          if (isDriver) {
-            DeferredCall::callLater([this, id]() { removePopup(id); });
-          }
+        [this, id = entry.notificationId]() {
+          DeferredCall::callLater([this, id]() { removePopup(id); });
         },
         cs.progressBar);
   }
@@ -805,6 +815,12 @@ void NotificationToast::revealQueuedEntries() {
         continue;
       }
       entry.y = *placement;
+      // Restart the manager-side expiry with the full duration now that the card is
+      // actually visible. Matches displayDurationMs so the progress bar and the
+      // manager timer finish together.
+      if (entry.rawTimeoutMs > 0 && m_notifications != nullptr) {
+        m_notifications->resumeExpiry(entry.notificationId, entry.rawTimeoutMs);
+      }
       syncEntryVisibility(i);
       placed = true;
     }
@@ -833,6 +849,9 @@ void NotificationToast::evictOverlappingEntries(std::size_t anchorIndex) {
     }
 
     m_entries[i].y = kQueuedY;
+    if (m_entries[i].rawTimeoutMs > 0 && m_notifications != nullptr) {
+      m_notifications->pauseExpiry(m_entries[i].notificationId);
+    }
     syncEntryVisibility(i);
   }
 }

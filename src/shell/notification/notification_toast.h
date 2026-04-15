@@ -49,6 +49,7 @@ private:
     std::optional<NotificationImageData> imageData;
     Urgency urgency = Urgency::Normal;
     int displayDurationMs = 0; // -1 = persistent (no auto-dismiss)
+    int32_t rawTimeoutMs = 0;  // raw DBus timeout; >0 means manager has an auto-expire timer we must coordinate with
     float remainingProgress = 1.0f;
     float y = -1.0f;              // stable top position while visible; negative = queued/off-screen
     float height = 0.0f;
