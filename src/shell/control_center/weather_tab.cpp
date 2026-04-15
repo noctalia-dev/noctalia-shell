@@ -16,7 +16,7 @@ using namespace control_center;
 
 namespace {
 
-  constexpr float kCurrentGlyphSize = Style::controlHeightLg * 1.9f;
+  constexpr float kCurrentGlyphSize = Style::controlHeightLg * 2.2f;
 
   std::string formatIsoClock(std::string_view isoTime) {
     const auto pos = isoTime.find('T');
@@ -37,6 +37,7 @@ namespace {
 } // namespace
 
 WeatherTab::WeatherTab(WeatherService* weather) : m_weather(weather) {
+  m_detailRows.fill(nullptr);
   m_dayCards.fill(nullptr);
   m_dayIconSlots.fill(nullptr);
   m_dayGlyphs.fill(nullptr);
@@ -50,7 +51,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Horizontal);
   tab->setAlign(FlexAlign::Stretch);
-  tab->setGap(Style::spaceSm * scale);
+  tab->setGap(Style::spaceMd * scale);
   m_rootLayout = tab.get();
 
   auto leftColumn = std::make_unique<Flex>();
@@ -61,11 +62,13 @@ std::unique_ptr<Flex> WeatherTab::create() {
   m_leftColumn = leftColumn.get();
 
   auto currentCard = std::make_unique<Flex>();
-  applyCard(*currentCard, scale);
+  applyOutlinedCard(*currentCard, scale);
+  m_currentCard = currentCard.get();
   currentCard->setDirection(FlexDirection::Horizontal);
   currentCard->setAlign(FlexAlign::Center);
-  currentCard->setGap(Style::spaceMd * scale);
-  currentCard->setPadding(Style::spaceXs * scale, Style::spaceMd * scale);
+  currentCard->setJustify(FlexJustify::Center);
+  currentCard->setGap((Style::spaceMd + Style::spaceXs) * scale);
+  currentCard->setFlexGrow(0.9f);
 
   auto currentGlyph = std::make_unique<Glyph>();
   currentGlyph->setGlyph("weather-cloud");
@@ -76,31 +79,42 @@ std::unique_ptr<Flex> WeatherTab::create() {
 
   auto currentText = std::make_unique<Flex>();
   currentText->setDirection(FlexDirection::Vertical);
-  currentText->setAlign(FlexAlign::Stretch);
+  currentText->setAlign(FlexAlign::Start);
+  currentText->setJustify(FlexJustify::SpaceBetween);
   currentText->setGap(Style::spaceXs * scale);
-  currentText->setFlexGrow(1.0f);
   m_currentText = currentText.get();
 
-  auto location = std::make_unique<Label>();
-  location->setText("Weather");
-  location->setBold(true);
-  location->setFontSize(Style::fontSizeTitle * scale);
-  m_locationLabel = location.get();
-  currentText->addChild(std::move(location));
+  auto currentTop = std::make_unique<Flex>();
+  currentTop->setDirection(FlexDirection::Vertical);
+  currentTop->setAlign(FlexAlign::Stretch);
+  currentTop->setGap(Style::spaceXs * scale);
 
   auto temp = std::make_unique<Label>();
   temp->setText("--°C");
   temp->setBold(true);
-  temp->setFontSize(Style::fontSizeTitle * 2.0f * scale);
+  temp->setFontSize(Style::fontSizeTitle * 2.35f * scale);
+  temp->setColor(roleColor(ColorRole::OnSurface));
   m_currentTempLabel = temp.get();
-  currentText->addChild(std::move(temp));
+  currentTop->addChild(std::move(temp));
+
+  auto hilo = std::make_unique<Label>();
+  hilo->setText("H/L -- / --");
+  hilo->setFontSize(Style::fontSizeBody * scale);
+  hilo->setColor(roleColor(ColorRole::Primary));
+  m_currentHiLoLabel = hilo.get();
+  currentTop->addChild(std::move(hilo));
+
+  auto currentBottom = std::make_unique<Flex>();
+  currentBottom->setDirection(FlexDirection::Vertical);
+  currentBottom->setAlign(FlexAlign::Stretch);
+  currentBottom->setGap(Style::spaceXs * 0.5f * scale);
 
   auto currentDesc = std::make_unique<Label>();
   currentDesc->setText("Waiting for weather data");
   currentDesc->setFontSize(Style::fontSizeBody * scale);
-  currentDesc->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  currentDesc->setColor(roleColor(ColorRole::OnSurface));
   m_currentDescLabel = currentDesc.get();
-  currentText->addChild(std::move(currentDesc));
+  currentBottom->addChild(std::move(currentDesc));
 
   auto updated = std::make_unique<Label>();
   updated->setText(" ");
@@ -108,40 +122,53 @@ std::unique_ptr<Flex> WeatherTab::create() {
   updated->setFontSize(Style::fontSizeCaption * scale);
   updated->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_updatedLabel = updated.get();
-  currentText->addChild(std::move(updated));
+  currentBottom->addChild(std::move(updated));
+
+  auto status = std::make_unique<Label>();
+  status->setText(" ");
+  status->setCaptionStyle();
+  status->setFontSize(Style::fontSizeCaption * scale);
+  status->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  status->setVisible(false);
+  m_statusLabel = status.get();
+  currentBottom->addChild(std::move(status));
+
+  currentText->addChild(std::move(currentTop));
+  currentText->addChild(std::move(currentBottom));
 
   currentCard->addChild(std::move(currentText));
   leftColumn->addChild(std::move(currentCard));
 
-  auto status = std::make_unique<Label>();
-  status->setText(" ");
-  status->setFontSize(Style::fontSizeBody * scale);
-  status->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  m_statusLabel = status.get();
-  leftColumn->addChild(std::move(status));
-
   auto detailsCard = std::make_unique<Flex>();
-  applyCard(*detailsCard, scale);
-  detailsCard->setPadding(Style::spaceXs * scale, Style::spaceMd * scale);
+  applyOutlinedCard(*detailsCard, scale);
+  m_detailsCard = detailsCard.get();
+  detailsCard->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
   detailsCard->setAlign(FlexAlign::Stretch);
-  detailsCard->setGap(Style::spaceXs * scale);
+  detailsCard->setGap(Style::spaceSm * scale);
+  detailsCard->setFlexGrow(1.1f);
   const float detailKeyWidth = Style::controlHeightLg * 2.0f * scale;
 
+  std::size_t detailRowIndex = 0;
   auto addDetailRow = [&](std::string_view iconName, std::string_view key, Label*& valueOut) {
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
+    row->setMinHeight(Style::controlHeightSm * scale);
     row->setGap((Style::spaceSm + Style::spaceXs) * scale);
+    if (detailRowIndex < kDetailRowCount) {
+      m_detailRows[detailRowIndex] = row.get();
+    }
+    ++detailRowIndex;
 
     auto icon = std::make_unique<Glyph>();
     icon->setGlyph(iconName);
     icon->setGlyphSize((Style::fontSizeBody + Style::spaceXs) * scale);
-    icon->setColor(roleColor(ColorRole::Primary));
+    icon->setColor(roleColor(ColorRole::OnSurfaceVariant));
     row->addChild(std::move(icon));
 
     auto keyLabel = std::make_unique<Label>();
     keyLabel->setText(key);
-    keyLabel->setBold(true);
+    keyLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
     keyLabel->setFontSize(Style::fontSizeBody * scale);
     keyLabel->setMinWidth(detailKeyWidth - (Style::fontSizeBody + Style::spaceXs) * scale - Style::spaceSm * scale);
     row->addChild(std::move(keyLabel));
@@ -154,8 +181,9 @@ std::unique_ptr<Flex> WeatherTab::create() {
 
     auto value = std::make_unique<Label>();
     value->setText("--");
+    value->setBold(true);
     value->setFontSize(Style::fontSizeBody * scale);
-    value->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    value->setColor(roleColor(ColorRole::OnSurface));
     valueOut = value.get();
     valueWrap->addChild(std::move(value));
 
@@ -183,51 +211,66 @@ std::unique_ptr<Flex> WeatherTab::create() {
 
   for (std::size_t i = 0; i < kDayCount; ++i) {
     auto card = std::make_unique<Flex>();
-    applyCard(*card, scale);
+    applyOutlinedCard(*card, scale);
     card->setDirection(FlexDirection::Horizontal);
     card->setAlign(FlexAlign::Center);
     card->setGap(Style::spaceSm * scale);
-    card->setPadding(Style::spaceXs * scale, Style::spaceXs * scale);
+    card->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    card->setFlexGrow(1.0f);
     m_dayCards[i] = card.get();
 
     auto iconSlot = std::make_unique<Flex>();
     iconSlot->setDirection(FlexDirection::Horizontal);
     iconSlot->setAlign(FlexAlign::Center);
+    iconSlot->setJustify(FlexJustify::Center);
     m_dayIconSlots[i] = iconSlot.get();
 
     auto glyph = std::make_unique<Glyph>();
     glyph->setGlyph("weather-cloud");
-    glyph->setGlyphSize(Style::fontSizeTitle * 1.9f * scale);
-    glyph->setColor(roleColor(ColorRole::Primary));
+    glyph->setGlyphSize(Style::fontSizeTitle * 1.7f * scale);
+    glyph->setColor(roleColor(ColorRole::OnSurface));
     m_dayGlyphs[i] = glyph.get();
     iconSlot->addChild(std::move(glyph));
     card->addChild(std::move(iconSlot));
 
+    auto infoStack = std::make_unique<Flex>();
+    infoStack->setDirection(FlexDirection::Vertical);
+    infoStack->setAlign(FlexAlign::Stretch);
+    infoStack->setGap(Style::spaceXs * 0.5f * scale);
+    infoStack->setFlexGrow(1.0f);
+
+    auto topRow = std::make_unique<Flex>();
+    topRow->setDirection(FlexDirection::Horizontal);
+    topRow->setAlign(FlexAlign::Center);
+    topRow->setJustify(FlexJustify::SpaceBetween);
+    topRow->setGap(Style::spaceSm * scale);
+
     auto meta = std::make_unique<Label>();
-    meta->setText("Sun");
+    meta->setText("Sunday");
     meta->setBold(true);
     meta->setFontSize(Style::fontSizeBody * scale);
-    meta->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    meta->setColor(roleColor(ColorRole::OnSurface));
     meta->setFlexGrow(1.0f);
     m_dayMetas[i] = meta.get();
-    card->addChild(std::move(meta));
+    topRow->addChild(std::move(meta));
 
     auto temps = std::make_unique<Label>();
     temps->setText("10 / 4C");
     temps->setBold(true);
     temps->setFontSize(Style::fontSizeBody * scale);
-    temps->setColor(roleColor(ColorRole::OnSurface));
-    temps->setFlexGrow(2.0f);
+    temps->setColor(roleColor(ColorRole::Primary));
     m_dayTemps[i] = temps.get();
-    card->addChild(std::move(temps));
+    topRow->addChild(std::move(temps));
 
     auto desc = std::make_unique<Label>();
     desc->setText("Weather");
-    desc->setFontSize(Style::fontSizeBody * scale);
+    desc->setFontSize(Style::fontSizeCaption * scale);
     desc->setColor(roleColor(ColorRole::OnSurfaceVariant));
-    desc->setFlexGrow(2.75f);
     m_dayDescs[i] = desc.get();
-    card->addChild(std::move(desc));
+
+    infoStack->addChild(std::move(topRow));
+    infoStack->addChild(std::move(desc));
+    card->addChild(std::move(infoStack));
     forecastColumn->addChild(std::move(card));
   }
 
@@ -243,12 +286,21 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
   m_rootLayout->setSize(contentWidth, bodyHeight);
   m_rootLayout->layout(renderer);
 
-  const float currentTextWidth = m_currentText->width();
-  if (m_locationLabel != nullptr) {
-    m_locationLabel->setMaxWidth(currentTextWidth);
+  float currentTextWidth = m_currentText->width();
+  if (m_currentCard != nullptr && m_currentGlyph != nullptr) {
+    const float cardInnerWidth =
+        std::max(0.0f, m_currentCard->width() - (m_currentCard->paddingLeft() + m_currentCard->paddingRight()));
+    currentTextWidth =
+        std::max(1.0f, cardInnerWidth - m_currentGlyph->width() - m_currentCard->gap());
+  }
+  if (m_currentTempLabel != nullptr) {
+    m_currentTempLabel->setMaxWidth(currentTextWidth);
   }
   if (m_currentDescLabel != nullptr) {
     m_currentDescLabel->setMaxWidth(currentTextWidth);
+  }
+  if (m_currentHiLoLabel != nullptr) {
+    m_currentHiLoLabel->setMaxWidth(currentTextWidth);
   }
   if (m_updatedLabel != nullptr) {
     m_updatedLabel->setMaxWidth(currentTextWidth);
@@ -257,6 +309,12 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
       m_leftColumn != nullptr
           ? std::max(0.0f, m_leftColumn->width() - (m_leftColumn->paddingLeft() + m_leftColumn->paddingRight()))
           : contentWidth;
+  if (m_currentCard != nullptr) {
+    m_currentCard->setMinWidth(leftColumnWidth);
+  }
+  if (m_detailsCard != nullptr) {
+    m_detailsCard->setMinWidth(leftColumnWidth);
+  }
   if (m_statusLabel != nullptr) {
     m_statusLabel->setMaxWidth(leftColumnWidth);
   }
@@ -267,7 +325,71 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
   }
 
   const float scale = contentScale();
+
+  if (m_leftColumn != nullptr && m_currentCard != nullptr && m_detailsCard != nullptr) {
+    const float leftInnerHeight =
+        std::max(0.0f, m_leftColumn->height() - (m_leftColumn->paddingTop() + m_leftColumn->paddingBottom()));
+    const float leftGap = m_leftColumn->gap();
+    const float available = std::max(0.0f, leftInnerHeight - leftGap);
+    const float currentShare = 0.39f;
+    const float currentMin = Style::controlHeightLg * 3.1f * scale;
+    const float detailsMin = Style::controlHeightSm * 6.0f * scale;
+    const float currentH = std::max(currentMin, available * currentShare);
+    const float detailsH = std::max(detailsMin, available - currentH);
+    m_currentCard->setMinHeight(currentH);
+    m_detailsCard->setMinHeight(detailsH);
+  }
+
+  if (m_currentGlyph != nullptr && m_currentText != nullptr && m_currentCard != nullptr) {
+    const float cardInnerHeight =
+        std::max(0.0f, m_currentCard->height() - (m_currentCard->paddingTop() + m_currentCard->paddingBottom()));
+    const float desiredGlyph = std::max(Style::controlHeightLg * 1.8f * scale, std::min(m_currentText->height(), cardInnerHeight));
+    m_currentGlyph->setGlyphSize(desiredGlyph);
+  }
+
+  if (m_detailsCard != nullptr) {
+    std::size_t visibleRows = 0;
+    for (auto* row : m_detailRows) {
+      if (row != nullptr && row->visible()) {
+        ++visibleRows;
+      }
+    }
+    if (visibleRows > 0) {
+      const float detailsInnerHeight = std::max(
+          0.0f, m_detailsCard->height() - (m_detailsCard->paddingTop() + m_detailsCard->paddingBottom()));
+      const float gapsTotal = m_detailsCard->gap() * static_cast<float>(visibleRows - 1);
+      const float rowHeight =
+          std::max(Style::controlHeightSm * scale, (detailsInnerHeight - gapsTotal) / static_cast<float>(visibleRows));
+      for (auto* row : m_detailRows) {
+        if (row != nullptr) {
+          row->setMinHeight(row->visible() ? rowHeight : 0.0f);
+        }
+      }
+    }
+  }
+
   const float iconSlotWidth = Style::fontSizeTitle * 2.6f * scale;
+  std::size_t visibleForecastDays = 0;
+  for (std::size_t i = 0; i < kDayCount; ++i) {
+    if (m_dayCards[i] != nullptr && m_dayCards[i]->visible()) {
+      ++visibleForecastDays;
+    }
+  }
+
+  if (m_forecastColumn != nullptr && visibleForecastDays > 0) {
+    const float forecastInnerHeight = std::max(
+        0.0f, m_forecastColumn->height() - (m_forecastColumn->paddingTop() + m_forecastColumn->paddingBottom()));
+    const float gapsTotal = m_forecastColumn->gap() * static_cast<float>(visibleForecastDays - 1);
+    const float rowHeight = std::max(Style::controlHeightLg * scale, (forecastInnerHeight - gapsTotal) /
+                                                                       static_cast<float>(visibleForecastDays));
+
+    for (std::size_t i = 0; i < kDayCount; ++i) {
+      if (m_dayCards[i] == nullptr) {
+        continue;
+      }
+      m_dayCards[i]->setMinHeight(m_dayCards[i]->visible() ? rowHeight : 0.0f);
+    }
+  }
 
   for (std::size_t i = 0; i < kDayCount; ++i) {
     if (m_dayCards[i] == nullptr) {
@@ -277,13 +399,13 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
       m_dayIconSlots[i]->setMinWidth(iconSlotWidth);
     }
     if (m_dayMetas[i] != nullptr) {
-      m_dayMetas[i]->setMaxWidth(m_dayMetas[i]->width());
+      m_dayMetas[i]->setMaxWidth(std::max(1.0f, m_dayMetas[i]->width()));
     }
     if (m_dayTemps[i] != nullptr) {
-      m_dayTemps[i]->setMaxWidth(m_dayTemps[i]->width());
+      m_dayTemps[i]->setMaxWidth(std::max(1.0f, m_dayTemps[i]->width()));
     }
     if (m_dayDescs[i] != nullptr) {
-      m_dayDescs[i]->setMaxWidth(m_dayDescs[i]->width());
+      m_dayDescs[i]->setMaxWidth(std::max(1.0f, m_dayDescs[i]->width()));
     }
   }
 
@@ -298,12 +420,14 @@ void WeatherTab::doUpdate(Renderer& renderer) { sync(renderer); }
 void WeatherTab::onClose() {
   m_rootLayout = nullptr;
   m_leftColumn = nullptr;
+  m_currentCard = nullptr;
+  m_detailsCard = nullptr;
   m_currentText = nullptr;
   m_forecastColumn = nullptr;
   m_statusLabel = nullptr;
   m_currentGlyph = nullptr;
-  m_locationLabel = nullptr;
   m_currentTempLabel = nullptr;
+  m_currentHiLoLabel = nullptr;
   m_currentDescLabel = nullptr;
   m_updatedLabel = nullptr;
   m_windLabel = nullptr;
@@ -312,6 +436,7 @@ void WeatherTab::onClose() {
   m_timezoneLabel = nullptr;
   m_longitudeLabel = nullptr;
   m_elevationLabel = nullptr;
+  m_detailRows.fill(nullptr);
   m_dayCards.fill(nullptr);
   m_dayIconSlots.fill(nullptr);
   m_dayGlyphs.fill(nullptr);
@@ -321,16 +446,19 @@ void WeatherTab::onClose() {
 }
 
 void WeatherTab::sync(Renderer& renderer) {
-  if (m_statusLabel == nullptr || m_currentGlyph == nullptr || m_locationLabel == nullptr ||
-      m_currentTempLabel == nullptr || m_currentDescLabel == nullptr || m_updatedLabel == nullptr) {
+  if (m_statusLabel == nullptr || m_currentGlyph == nullptr || m_currentTempLabel == nullptr ||
+      m_currentDescLabel == nullptr || m_updatedLabel == nullptr) {
     return;
   }
 
   if (m_weather == nullptr || !m_weather->enabled()) {
-    m_locationLabel->setText("Weather disabled");
+    m_currentGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
     m_currentTempLabel->setText("--°C");
+    if (m_currentHiLoLabel != nullptr) {
+      m_currentHiLoLabel->setText("H/L -- / --");
+    }
     m_currentDescLabel->setText("Enable [weather] in config.toml");
-    m_updatedLabel->setText("");
+    m_updatedLabel->setText("Location unavailable");
     m_updatedLabel->setVisible(false);
     m_statusLabel->setText("");
     m_statusLabel->setVisible(false);
@@ -361,10 +489,13 @@ void WeatherTab::sync(Renderer& renderer) {
   }
 
   if (!m_weather->locationConfigured()) {
-    m_locationLabel->setText("Weather not configured");
+    m_currentGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
     m_currentTempLabel->setText(std::format("--{}", m_weather->displayTemperatureUnit()));
+    if (m_currentHiLoLabel != nullptr) {
+      m_currentHiLoLabel->setText("H/L -- / --");
+    }
     m_currentDescLabel->setText("Set [weather].address or enable auto_locate");
-    m_updatedLabel->setText("");
+    m_updatedLabel->setText("Location unavailable");
     m_updatedLabel->setVisible(false);
     m_statusLabel->setText("");
     m_statusLabel->setVisible(false);
@@ -396,10 +527,13 @@ void WeatherTab::sync(Renderer& renderer) {
 
   const auto& snapshot = m_weather->snapshot();
   if (!snapshot.valid) {
-    m_locationLabel->setText("Weather");
+    m_currentGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
     m_currentTempLabel->setText(std::format("--{}", m_weather->displayTemperatureUnit()));
+    if (m_currentHiLoLabel != nullptr) {
+      m_currentHiLoLabel->setText("H/L -- / --");
+    }
     m_currentDescLabel->setText(m_weather->loading() ? "Fetching forecast..." : "Weather data unavailable");
-    m_updatedLabel->setText("");
+    m_updatedLabel->setText(snapshot.locationName.empty() ? "Current location" : snapshot.locationName);
     m_updatedLabel->setVisible(false);
     m_statusLabel->setText(m_weather->error());
     m_statusLabel->setVisible(!m_weather->error().empty());
@@ -430,15 +564,27 @@ void WeatherTab::sync(Renderer& renderer) {
   }
 
   m_currentGlyph->setGlyph(WeatherService::glyphForCode(snapshot.current.weatherCode, snapshot.current.isDay));
-  m_locationLabel->setText(snapshot.locationName.empty() ? "Weather" : snapshot.locationName);
+  m_currentGlyph->setColor(roleColor(snapshot.current.isDay ? ColorRole::Primary : ColorRole::Secondary));
   m_currentTempLabel->setText(
       std::format("{}{}", static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.current.temperatureC))),
                   m_weather->displayTemperatureUnit()));
+  if (m_currentHiLoLabel != nullptr) {
+    if (!snapshot.forecastDays.empty()) {
+      m_currentHiLoLabel->setText(
+          std::format("H/L {} / {}{}", static_cast<int>(std::lround(m_weather->displayTemperature(
+                                            snapshot.forecastDays.front().temperatureMaxC))),
+                      static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMinC))),
+                      m_weather->displayTemperatureUnit()));
+    } else {
+      m_currentHiLoLabel->setText("H/L -- / --");
+    }
+  }
   m_currentDescLabel->setText(WeatherService::descriptionForCode(snapshot.current.weatherCode));
-  m_updatedLabel->setText(std::format("Updated {}", formatTimeAgo(snapshot.fetchedAt)));
+  m_updatedLabel->setText(snapshot.locationName.empty() ? "Current location" : snapshot.locationName);
   m_updatedLabel->setVisible(true);
   const std::string status = m_weather->loading() ? "Refreshing weather..." : m_weather->error();
   m_statusLabel->setText(status);
+  m_statusLabel->setColor(roleColor(m_weather->error().empty() ? ColorRole::OnSurfaceVariant : ColorRole::Error));
   m_statusLabel->setVisible(!status.empty());
   if (m_windLabel != nullptr) {
     m_windLabel->setText(std::format("{} {} {}", static_cast<int>(std::lround(snapshot.current.windSpeedKmh)),
@@ -477,6 +623,7 @@ void WeatherTab::sync(Renderer& renderer) {
     const auto& day = snapshot.forecastDays[i];
     if (m_dayGlyphs[i] != nullptr) {
       m_dayGlyphs[i]->setGlyph(WeatherService::glyphForCode(day.weatherCode, true));
+      m_dayGlyphs[i]->setColor(roleColor(day.weatherCode < 3 ? ColorRole::Primary : ColorRole::OnSurface));
       m_dayGlyphs[i]->measure(renderer);
     }
     if (m_dayMetas[i] != nullptr) {
@@ -511,7 +658,7 @@ std::string WeatherTab::weekdayLabel(const std::string& isoDate) {
   }
 
   char buf[16];
-  if (std::strftime(buf, sizeof(buf), "%a", &tm) == 0) {
+  if (std::strftime(buf, sizeof(buf), "%A", &tm) == 0) {
     return isoDate;
   }
   return buf;

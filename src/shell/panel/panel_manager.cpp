@@ -13,7 +13,6 @@
 #include "wayland/wayland_seat.h"
 
 #include <algorithm>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 PanelManager* PanelManager::s_instance = nullptr;
 
@@ -376,7 +375,8 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  if (event.pressed && event.sym == XKB_KEY_Escape) {
+  if (event.pressed && m_config != nullptr &&
+      m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
     closePanel();
     return;
   }

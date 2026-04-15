@@ -21,6 +21,8 @@ class Flex;
 class HttpClient;
 class Label;
 class MprisService;
+class NetworkSecretAgent;
+class NetworkService;
 class NotificationManager;
 class PipeWireService;
 class PipeWireSpectrum;
@@ -33,7 +35,8 @@ public:
   ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris,
                      ConfigService* config = nullptr, HttpClient* httpClient = nullptr, WeatherService* weather = nullptr,
                      PipeWireSpectrum* spectrum = nullptr, UPowerService* upower = nullptr,
-                     PowerProfilesService* powerProfiles = nullptr);
+                     PowerProfilesService* powerProfiles = nullptr, NetworkService* network = nullptr,
+                     NetworkSecretAgent* networkSecrets = nullptr);
 
   void create() override;
   void onFrameTick(float deltaMs) override;

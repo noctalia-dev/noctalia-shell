@@ -8,6 +8,7 @@ class Button;
 class Flex;
 class InputArea;
 class Renderer;
+class ConfigService;
 
 class SessionPanel : public Panel {
 public:
@@ -19,7 +20,7 @@ public:
     Count = 4,
   };
 
-  SessionPanel() = default;
+  explicit SessionPanel(ConfigService* config) : m_config(config) {}
 
   void create() override;
   void onOpen(std::string_view context) override;
@@ -49,4 +50,5 @@ private:
   std::array<Button*, static_cast<std::size_t>(ActionId::Count)> m_actionButtons{};
   std::size_t m_selectedIndex = 0;
   bool m_mouseActive = false;
+  ConfigService* m_config = nullptr;
 };

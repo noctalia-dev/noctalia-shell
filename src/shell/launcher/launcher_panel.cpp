@@ -1,5 +1,6 @@
 #include "shell/launcher/launcher_panel.h"
 
+#include "config/config_service.h"
 #include "core/ui_phase.h"
 #include "render/core/renderer.h"
 #include "wayland/clipboard_service.h"
@@ -27,7 +28,7 @@ constexpr float kIconSize = 32.0f;
 
 } // namespace
 
-LauncherPanel::LauncherPanel() = default;
+LauncherPanel::LauncherPanel(ConfigService* config) : m_config(config) {}
 
 void LauncherPanel::addProvider(std::unique_ptr<LauncherProvider> provider) {
   provider->initialize();
@@ -370,8 +371,8 @@ void LauncherPanel::activateSelected() {
   }
 }
 
-bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*/) {
-  if (sym == XKB_KEY_Up) {
+bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
+  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Up, sym, modifiers)) {
     if (m_selectedIndex > 0) {
       --m_selectedIndex;
       m_dirty = true;
@@ -383,7 +384,7 @@ bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*
     return true;
   }
 
-  if (sym == XKB_KEY_Down) {
+  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Down, sym, modifiers)) {
     if (!m_results.empty() && m_selectedIndex < m_results.size() - 1) {
       ++m_selectedIndex;
       m_dirty = true;
@@ -395,7 +396,7 @@ bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*
     return true;
   }
 
-  if (sym == XKB_KEY_Return) {
+  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) {
     activateSelected();
     return true;
   }

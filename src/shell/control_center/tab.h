@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/ui_phase.h"
-#include "render/core/color.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -14,7 +13,7 @@ class Renderer;
 
 namespace control_center {
 
-  void applyCard(Flex& card, float scale = 1.0f);
+  void applyOutlinedCard(Flex& card, float scale = 1.0f);
   Label* addTitle(Flex& parent, const std::string& text, float scale = 1.0f);
   void addBody(Flex& parent, const std::string& text, float scale = 1.0f);
 

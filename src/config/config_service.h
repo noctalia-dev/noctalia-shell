@@ -191,6 +191,31 @@ struct AudioConfig {
   bool enableOverdrive = false;
 };
 
+enum class KeybindAction : std::uint8_t {
+  Validate = 0,
+  Cancel = 1,
+  Left = 2,
+  Right = 3,
+  Up = 4,
+  Down = 5,
+};
+
+struct KeyChord {
+  std::uint32_t sym = 0;       // XKB keysym
+  std::uint32_t modifiers = 0; // KeyMod bitmask
+
+  bool operator==(const KeyChord&) const = default;
+};
+
+struct KeybindsConfig {
+  std::vector<KeyChord> validate;
+  std::vector<KeyChord> cancel;
+  std::vector<KeyChord> left;
+  std::vector<KeyChord> right;
+  std::vector<KeyChord> up;
+  std::vector<KeyChord> down;
+};
+
 struct NightLightConfig {
   bool enabled = false;
   bool force = false;
@@ -254,6 +279,7 @@ struct Config {
   OsdConfig osd;
   WeatherConfig weather;
   AudioConfig audio;
+  KeybindsConfig keybinds;
   NightLightConfig nightlight;
   IdleConfig idle;
   ThemeConfig theme;
@@ -285,6 +311,7 @@ public:
   ConfigService& operator=(const ConfigService&) = delete;
 
   [[nodiscard]] const Config& config() const noexcept { return m_config; }
+  [[nodiscard]] bool matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const;
   [[nodiscard]] int watchFd() const noexcept { return m_inotifyFd; }
 
   void addReloadCallback(ReloadCallback callback);

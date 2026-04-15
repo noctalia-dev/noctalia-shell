@@ -2,8 +2,8 @@
 
 #include "config/config_service.h"
 #include "core/log.h"
-#include "dbus/power/power_profiles_service.h"
 #include "dbus/mpris/mpris_service.h"
+#include "dbus/power/power_profiles_service.h"
 #include "dbus/tray/tray_service.h"
 #include "idle/idle_inhibitor.h"
 #include "net/http_client.h"
@@ -14,9 +14,12 @@
 #include "shell/widgets/battery_widget.h"
 #include "shell/widgets/clock_widget.h"
 #include "shell/widgets/idle_inhibitor_widget.h"
-#include "shell/widgets/nightlight_widget.h"
+#include "shell/widgets/keyboard_layout_widget.h"
+#include "shell/widgets/lock_keys_widget.h"
 #include "shell/widgets/launcher_widget.h"
 #include "shell/widgets/media_widget.h"
+#include "shell/widgets/network_widget.h"
+#include "shell/widgets/nightlight_widget.h"
 #include "shell/widgets/notification_widget.h"
 #include "shell/widgets/power_profiles_widget.h"
 #include "shell/widgets/scripted_widget.h"
@@ -30,9 +33,9 @@
 #include "shell/widgets/wallpaper_widget.h"
 #include "shell/widgets/weather_widget.h"
 #include "shell/widgets/workspaces_widget.h"
-#include "theme/theme_service.h"
 #include "system/system_monitor_service.h"
 #include "system/weather_service.h"
+#include "theme/theme_service.h"
 #include "wayland/wayland_connection.h"
 
 namespace {
@@ -42,13 +45,13 @@ namespace {
 WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
                              NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                              UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
-                             IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
-                             HttpClient* httpClient, WeatherService* weather, NightLightManager* nightLight,
-                             noctalia::theme::ThemeService* themeService)
+                             NetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
+                             PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
+                             NightLightManager* nightLight, noctalia::theme::ThemeService* themeService)
     : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
-      m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_idleInhibitor(idleInhibitor),
-      m_mpris(mpris), m_audioSpectrum(audioSpectrum), m_httpClient(httpClient), m_weather(weather),
-      m_nightLight(nightLight), m_themeService(themeService) {}
+      m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_network(network),
+      m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_audioSpectrum(audioSpectrum), m_httpClient(httpClient),
+      m_weather(weather), m_nightLight(nightLight), m_themeService(themeService) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
@@ -175,6 +178,35 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     return widget;
   }
 
+  if (type == "network") {
+    const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
+    auto widget = std::make_unique<NetworkWidget>(m_network, output, showLabel);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "keyboard_layout") {
+    const std::string cycleCommand = wc != nullptr ? wc->getString("cycle_command", "") : std::string{};
+    const std::string display = wc != nullptr ? wc->getString("display", "short") : std::string("short");
+    auto widget = std::make_unique<KeyboardLayoutWidget>(m_wayland, cycleCommand,
+                                                         KeyboardLayoutWidget::parseDisplayMode(display));
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "lock_keys") {
+    const bool showCaps = wc != nullptr ? wc->getBool("show_caps_lock", true) : true;
+    const bool showNum = wc != nullptr ? wc->getBool("show_num_lock", true) : true;
+    const bool showScroll = wc != nullptr ? wc->getBool("show_scroll_lock", false) : false;
+    const bool hideWhenOff = wc != nullptr ? wc->getBool("hide_when_off", false) : false;
+    const std::string display = wc != nullptr ? wc->getString("display", "short") : std::string("short");
+
+    auto widget = std::make_unique<LockKeysWidget>(m_wayland, showCaps, showNum, showScroll, hideWhenOff,
+                                                   LockKeysWidget::parseDisplayMode(display));
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
   if (type == "launcher") {
     auto widget = std::make_unique<LauncherWidget>(output);
     widget->setContentScale(contentScale);
@@ -201,8 +233,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "spacer") {
-    const auto length = static_cast<float>(wc != nullptr ? wc->getDouble("length", wc->getDouble("width", 8.0))
-                                                         : 8.0);
+    const auto length = static_cast<float>(wc != nullptr ? wc->getDouble("length", wc->getDouble("width", 8.0)) : 8.0);
     auto widget = std::make_unique<SpacerWidget>(length);
     widget->setContentScale(contentScale);
     return widget;

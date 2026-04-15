@@ -23,16 +23,19 @@ private:
   [[nodiscard]] static std::string weekdayLabel(const std::string& isoDate);
 
   static constexpr std::size_t kDayCount = 7;
+  static constexpr std::size_t kDetailRowCount = 6;
 
   WeatherService* m_weather = nullptr;
   Flex* m_rootLayout = nullptr;
   Flex* m_leftColumn = nullptr;
+  Flex* m_currentCard = nullptr;
+  Flex* m_detailsCard = nullptr;
   Flex* m_currentText = nullptr;
   Flex* m_forecastColumn = nullptr;
   Label* m_statusLabel = nullptr;
   Glyph* m_currentGlyph = nullptr;
-  Label* m_locationLabel = nullptr;
   Label* m_currentTempLabel = nullptr;
+  Label* m_currentHiLoLabel = nullptr;
   Label* m_currentDescLabel = nullptr;
   Label* m_updatedLabel = nullptr;
   Label* m_windLabel = nullptr;
@@ -41,6 +44,7 @@ private:
   Label* m_timezoneLabel = nullptr;
   Label* m_longitudeLabel = nullptr;
   Label* m_elevationLabel = nullptr;
+  std::array<Flex*, kDetailRowCount> m_detailRows{};
   std::array<Flex*, kDayCount> m_dayCards{};
   std::array<Flex*, kDayCount> m_dayIconSlots{};
   std::array<Glyph*, kDayCount> m_dayGlyphs{};

@@ -41,6 +41,7 @@ private:
   Flex* m_weatherCard = nullptr;
   Flex* m_mediaCard = nullptr;
   Flex* m_userCard = nullptr;
+  Flex* m_userMain = nullptr;
   Flex* m_powerCard = nullptr;
   Flex* m_audioCard = nullptr;
   Image* m_userAvatar = nullptr;

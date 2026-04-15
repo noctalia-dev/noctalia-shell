@@ -13,7 +13,8 @@ using namespace control_center;
 ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris,
                                        ConfigService* config, HttpClient* httpClient, WeatherService* weather,
                                        PipeWireSpectrum* spectrum, UPowerService* upower,
-                                       PowerProfilesService* powerProfiles) {
+                                       PowerProfilesService* powerProfiles, NetworkService* network,
+                                       NetworkSecretAgent* networkSecrets) {
   m_tabs[tabIndex(TabId::Overview)] =
       std::make_unique<OverviewTab>(mpris, weather, audio, upower, powerProfiles, config);
   m_tabs[tabIndex(TabId::Media)] = std::make_unique<MediaTab>(mpris, httpClient, spectrum);
@@ -21,7 +22,7 @@ ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeW
   m_tabs[tabIndex(TabId::Weather)] = std::make_unique<WeatherTab>(weather);
   m_tabs[tabIndex(TabId::Calendar)] = std::make_unique<CalendarTab>();
   m_tabs[tabIndex(TabId::Notifications)] = std::make_unique<NotificationsTab>(notifications);
-  m_tabs[tabIndex(TabId::Network)] = std::make_unique<NetworkTab>();
+  m_tabs[tabIndex(TabId::Network)] = std::make_unique<NetworkTab>(network, networkSecrets);
   m_tabButtons.fill(nullptr);
   m_tabContainers.fill(nullptr);
   m_tabHeaderActions.fill(nullptr);
@@ -78,8 +79,8 @@ void ControlCenterPanel::create() {
   content->setPadding(Style::spaceLg * scale);
   content->setRadius(Style::radiusXl * scale);
   content->setBackground(roleColor(ColorRole::SurfaceVariant));
-  content->setBorderWidth(Style::borderWidth);
-  content->setBorderColor(roleColor(ColorRole::Outline));
+  // content->setBorderWidth(Style::borderWidth);
+  // content->setBorderColor(roleColor(ColorRole::Outline));
   content->setSoftness(1.0f);
   content->setFlexGrow(4.0f);
   content->setClipChildren(true);

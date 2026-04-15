@@ -108,6 +108,8 @@ Application::~Application() {
   if (m_systemBus != nullptr) {
     m_systemBus->processPendingEvents();
     m_upowerService.reset();
+    m_networkSecretAgent.reset();
+    m_networkService.reset();
     m_powerProfilesService.reset();
     m_systemBus->processPendingEvents();
   }
@@ -323,6 +325,29 @@ void Application::initServices() {
       kLog.warn("upower disabled: {}", e.what());
       m_upowerService.reset();
     }
+
+    try {
+      m_networkService = std::make_unique<NetworkService>(*m_systemBus);
+      m_networkService->setChangeCallback([this, shouldRefreshControlCenter](const NetworkState& /*state*/) {
+        m_bar.refresh();
+        if (shouldRefreshControlCenter()) {
+          m_panelManager.refresh();
+        }
+      });
+      kLog.info("network service active");
+    } catch (const std::exception& e) {
+      kLog.warn("network service disabled: {}", e.what());
+      m_networkService.reset();
+    }
+
+    if (m_networkService != nullptr) {
+      try {
+        m_networkSecretAgent = std::make_unique<NetworkSecretAgent>(*m_systemBus);
+      } catch (const std::exception& e) {
+        kLog.warn("network secret agent disabled: {}", e.what());
+        m_networkSecretAgent.reset();
+      }
+    }
   }
 
   try {
@@ -440,7 +465,7 @@ void Application::initUi() {
 
   // Panel manager must be before bar so widgets can access PanelManager::instance()
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
-  auto clipboardPanel = std::make_unique<ClipboardPanel>(&m_clipboardService);
+  auto clipboardPanel = std::make_unique<ClipboardPanel>(&m_clipboardService, &m_configService);
   clipboardPanel->setActivateCallback([this](const ClipboardEntry& entry) {
     m_panelManager.close();
     const ClipboardAutoPasteMode mode = m_configService.config().shell.clipboardAutoPaste;
@@ -457,15 +482,15 @@ void Application::initUi() {
     });
   });
   m_panelManager.registerPanel("clipboard", std::move(clipboardPanel));
-  m_panelManager.registerPanel("session", std::make_unique<SessionPanel>());
+  m_panelManager.registerPanel("session", std::make_unique<SessionPanel>(&m_configService));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
   m_panelManager.registerPanel(
-      "control-center",
-      std::make_unique<ControlCenterPanel>(&m_notificationManager, m_pipewireService.get(), m_mprisService.get(),
-                                           &m_configService, &m_httpClient, &m_weatherService, m_pipewireSpectrum.get(),
-                                           m_upowerService.get(), m_powerProfilesService.get()));
+      "control-center", std::make_unique<ControlCenterPanel>(
+                            &m_notificationManager, m_pipewireService.get(), m_mprisService.get(), &m_configService,
+                            &m_httpClient, &m_weatherService, m_pipewireSpectrum.get(), m_upowerService.get(),
+                            m_powerProfilesService.get(), m_networkService.get(), m_networkSecretAgent.get()));
   {
-    auto launcherPanel = std::make_unique<LauncherPanel>();
+    auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService);
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
     launcherPanel->addProvider(std::make_unique<MathProvider>(&m_clipboardService));
     launcherPanel->addProvider(std::make_unique<EmojiProvider>(&m_clipboardService));
@@ -474,7 +499,7 @@ void Application::initUi() {
   m_panelManager.registerPanel("wallpaper",
                                std::make_unique<WallpaperPanel>(&m_wayland, &m_configService, &m_thumbnailService));
 
-  m_notificationToast.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext);
+  m_notificationToast.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext, &m_httpClient);
   m_configService.setNotificationManager(&m_notificationManager);
 
   m_osdOverlay.initialize(m_wayland, &m_configService, &m_renderContext);
@@ -487,8 +512,8 @@ void Application::initUi() {
 
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
                    m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_powerProfilesService.get(),
-                   &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(), &m_httpClient, &m_weatherService,
-                   &m_renderContext, &m_nightLightManager, &m_themeService);
+                   m_networkService.get(), &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(),
+                   &m_httpClient, &m_weatherService, &m_renderContext, &m_nightLightManager, &m_themeService);
 
   m_dock.initialize(m_wayland, &m_configService, &m_renderContext);
 

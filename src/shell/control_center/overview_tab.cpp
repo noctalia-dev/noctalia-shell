@@ -47,7 +47,6 @@ std::string joinArtists(const std::vector<std::string>& artists) {
 
 struct SessionIdentity {
   std::string displayName;
-  std::string login;
 };
 
 SessionIdentity sessionIdentity() {
@@ -66,7 +65,7 @@ SessionIdentity sessionIdentity() {
     const auto comma = gecos.find(',');
     display = comma == std::string::npos ? gecos : gecos.substr(0, comma);
   }
-  return {.displayName = display, .login = login};
+  return {.displayName = display};
 }
 
 std::optional<std::uint64_t> readUptimeSeconds() {
@@ -196,12 +195,9 @@ std::string osAgeLabel() {
   return std::format("{}d", days);
 }
 
-void styleCard(Flex& card, float scale) {
-  applyCard(card, scale);
-  card.setAlign(FlexAlign::Stretch);
+void styleOverviewCard(Flex& card, float scale) {
+  applyOutlinedCard(card, scale);
   card.setGap(Style::spaceSm * scale);
-  card.setBorderWidth(Style::borderWidth);
-  card.setBorderColor(roleColor(ColorRole::Outline));
 }
 
 } // namespace
@@ -228,7 +224,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   // --- Weather ---
   auto weatherCard = std::make_unique<Flex>();
-  styleCard(*weatherCard, scale);
+  styleOverviewCard(*weatherCard, scale);
   m_weatherCard = weatherCard.get();
   weatherCard->setFlexGrow(1.0f);
   addTitle(*weatherCard, "Today", scale);
@@ -253,7 +249,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto weatherTemp = std::make_unique<Label>();
   weatherTemp->setText("—");
   weatherTemp->setBold(true);
-  weatherTemp->setFontSize(Style::fontSizeTitle * 1.6f * scale);
+  weatherTemp->setFontSize(Style::fontSizeTitle * 1.85f * scale);
   weatherTemp->setColor(roleColor(ColorRole::OnSurface));
   m_weatherTemp = weatherTemp.get();
 
@@ -272,7 +268,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   // --- Media ---
   auto mediaCard = std::make_unique<Flex>();
-  styleCard(*mediaCard, scale);
+  styleOverviewCard(*mediaCard, scale);
   m_mediaCard = mediaCard.get();
   mediaCard->setFlexGrow(1.0f);
 
@@ -280,7 +276,8 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   auto mediaTrack = std::make_unique<Label>();
   mediaTrack->setText("…");
-  mediaTrack->setFontSize(Style::fontSizeBody * scale);
+  mediaTrack->setBold(true);
+  mediaTrack->setFontSize(Style::fontSizeTitle * scale);
   mediaTrack->setColor(roleColor(ColorRole::OnSurface));
   m_mediaTrack = mediaTrack.get();
 
@@ -303,7 +300,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   // --- Session (display name + uptime) ---
   auto userCard = std::make_unique<Flex>();
-  styleCard(*userCard, scale);
+  styleOverviewCard(*userCard, scale);
   m_userCard = userCard.get();
   auto userRow = std::make_unique<Flex>();
   userRow->setDirection(FlexDirection::Horizontal);
@@ -324,8 +321,10 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto userMain = std::make_unique<Flex>();
   userMain->setDirection(FlexDirection::Vertical);
   userMain->setAlign(FlexAlign::Stretch);
+  userMain->setJustify(FlexJustify::Center);
   userMain->setGap(Style::spaceXs * 0.5f * scale);
   userMain->setFlexGrow(1.0f);
+  m_userMain = userMain.get();
 
   auto userHeader = std::make_unique<Flex>();
   userHeader->setDirection(FlexDirection::Horizontal);
@@ -336,7 +335,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto userTitle = std::make_unique<Label>();
   userTitle->setText(identity.displayName);
   userTitle->setBold(true);
-  userTitle->setFontSize(Style::fontSizeTitle * scale);
+  userTitle->setFontSize(Style::fontSizeTitle * 1.12f * scale);
   userTitle->setColor(roleColor(ColorRole::OnSurface));
   userHeader->addChild(std::move(userTitle));
 
@@ -357,7 +356,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   auto sessionBtn = std::make_unique<Button>();
   sessionBtn->setGlyph("shutdown");
-  sessionBtn->setVariant(ButtonVariant::Secondary);
+  sessionBtn->setVariant(ButtonVariant::Default);
   sessionBtn->setMinHeight(Style::controlHeight * scale);
   sessionBtn->setMinWidth(Style::controlHeight * scale);
   sessionBtn->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
@@ -376,7 +375,6 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userMain->addChild(std::move(userFacts));
   userRow->addChild(std::move(userMain));
   userCard->addChild(std::move(userRow));
-  userCard->setMinHeight(avatarSize + Style::spaceSm * scale * 2.0f);
 
   tab->addChild(std::move(userCard));
   tab->addChild(std::move(topRow));
@@ -387,7 +385,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   bottomRow->setGap(Style::spaceMd * scale);
 
   auto powerCard = std::make_unique<Flex>();
-  styleCard(*powerCard, scale);
+  styleOverviewCard(*powerCard, scale);
   m_powerCard = powerCard.get();
   powerCard->setFlexGrow(1.0f);
   addTitle(*powerCard, "Power", scale);
@@ -408,7 +406,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   bottomRow->addChild(std::move(powerCard));
 
   auto audioCard = std::make_unique<Flex>();
-  styleCard(*audioCard, scale);
+  styleOverviewCard(*audioCard, scale);
   m_audioCard = audioCard.get();
   audioCard->setFlexGrow(1.0f);
   addTitle(*audioCard, "Audio", scale);
@@ -482,6 +480,17 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
   if (m_weatherCard != nullptr && m_mediaCard != nullptr) {
     m_mediaCard->setMinHeight(m_weatherCard->height());
   }
+
+  if (m_userAvatar != nullptr && m_userMain != nullptr) {
+    const float scale = contentScale();
+    const float minAvatar = Style::controlHeightLg * 2.2f * scale;
+    const float desiredAvatar = std::max(minAvatar, m_userMain->height());
+    if (std::abs(m_userAvatar->width() - desiredAvatar) > 0.5f) {
+      m_userAvatar->setSize(desiredAvatar, desiredAvatar);
+    }
+    m_userMain->setMinHeight(desiredAvatar);
+  }
+
   m_rootLayout->layout(renderer);
   if (m_weatherGlyph != nullptr) {
     m_weatherGlyph->measure(renderer);
@@ -502,6 +511,7 @@ void OverviewTab::onClose() {
   m_weatherCard = nullptr;
   m_mediaCard = nullptr;
   m_userCard = nullptr;
+  m_userMain = nullptr;
   m_powerCard = nullptr;
   m_audioCard = nullptr;
   m_weatherGlyph = nullptr;

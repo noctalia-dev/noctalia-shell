@@ -652,33 +652,33 @@ void WallpaperPanel::activateSelectedEntry() {
   }
 }
 
-bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers*/) {
+bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
   if (m_visibleEntries.empty()) {
     return false;
   }
 
-  if (sym == XKB_KEY_Left) {
+  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Left, sym, modifiers)) {
     if (m_selectedVisibleIndex > 0) {
       selectVisibleIndex(m_selectedVisibleIndex - 1);
     }
     return true;
   }
 
-  if (sym == XKB_KEY_Right) {
+  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Right, sym, modifiers)) {
     if (m_selectedVisibleIndex + 1 < m_visibleEntries.size()) {
       selectVisibleIndex(m_selectedVisibleIndex + 1);
     }
     return true;
   }
 
-  if (sym == XKB_KEY_Up) {
+  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Up, sym, modifiers)) {
     if (m_selectedVisibleIndex >= WallpaperPageGrid::kColumns) {
       selectVisibleIndex(m_selectedVisibleIndex - WallpaperPageGrid::kColumns);
     }
     return true;
   }
 
-  if (sym == XKB_KEY_Down) {
+  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Down, sym, modifiers)) {
     const std::size_t nextIndex = m_selectedVisibleIndex + WallpaperPageGrid::kColumns;
     if (nextIndex < m_visibleEntries.size()) {
       selectVisibleIndex(nextIndex);
@@ -686,7 +686,7 @@ bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t /*modifiers
     return true;
   }
 
-  if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
+  if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) {
     activateSelectedEntry();
     return true;
   }

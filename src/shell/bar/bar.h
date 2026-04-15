@@ -11,6 +11,7 @@ class ConfigService;
 class HttpClient;
 class IdleInhibitor;
 class MprisService;
+class NetworkService;
 class NotificationManager;
 class PipeWireService;
 class PipeWireSpectrum;
@@ -36,9 +37,10 @@ public:
   bool initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                   NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                   UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
-                  IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
-                  HttpClient* httpClient, WeatherService* weatherService, RenderContext* renderContext,
-                  NightLightManager* nightLight, noctalia::theme::ThemeService* themeService);
+                  NetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
+                  PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weatherService,
+                  RenderContext* renderContext, NightLightManager* nightLight,
+                  noctalia::theme::ThemeService* themeService);
   void reload();
   void closeAllInstances();
   void show();
@@ -77,6 +79,7 @@ private:
   UPowerService* m_upower = nullptr;
   SystemMonitorService* m_sysmon = nullptr;
   PowerProfilesService* m_powerProfiles = nullptr;
+  NetworkService* m_network = nullptr;
   IdleInhibitor* m_idleInhibitor = nullptr;
   MprisService* m_mpris = nullptr;
   PipeWireSpectrum* m_audioSpectrum = nullptr;

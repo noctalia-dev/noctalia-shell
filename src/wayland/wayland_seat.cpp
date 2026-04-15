@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <wayland-client.h>
 #include <xkbcommon/xkbcommon-compose.h>
+#include <xkbcommon/xkbcommon-names.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include "cursor-shape-v1-client-protocol.h"
@@ -473,4 +474,57 @@ void WaylandSeat::repeatTick() {
   m_repeatInDelay = false;
   const auto intervalMs = std::chrono::milliseconds(1000 / m_repeatRate);
   m_repeatNextFire = now + intervalMs;
+}
+
+std::string WaylandSeat::currentLayoutName() const {
+  if (m_xkbState == nullptr || m_xkbKeymap == nullptr) {
+    return {};
+  }
+
+  const xkb_layout_index_t layout = xkb_state_serialize_layout(m_xkbState, XKB_STATE_LAYOUT_EFFECTIVE);
+  if (layout == XKB_LAYOUT_INVALID) {
+    return {};
+  }
+
+  const xkb_layout_index_t layoutCount = xkb_keymap_num_layouts(m_xkbKeymap);
+  if (layout >= layoutCount) {
+    return {};
+  }
+
+  const char* name = xkb_keymap_layout_get_name(m_xkbKeymap, layout);
+  if (name == nullptr) {
+    return {};
+  }
+
+  return name;
+}
+
+std::vector<std::string> WaylandSeat::layoutNames() const {
+  std::vector<std::string> layouts;
+  if (m_xkbKeymap == nullptr) {
+    return layouts;
+  }
+
+  const xkb_layout_index_t layoutCount = xkb_keymap_num_layouts(m_xkbKeymap);
+  layouts.reserve(layoutCount);
+  for (xkb_layout_index_t i = 0; i < layoutCount; ++i) {
+    const char* name = xkb_keymap_layout_get_name(m_xkbKeymap, i);
+    if (name != nullptr && name[0] != '\0') {
+      layouts.emplace_back(name);
+    }
+  }
+
+  return layouts;
+}
+
+WaylandSeat::LockKeysState WaylandSeat::lockKeysState() const {
+  LockKeysState state{};
+  if (m_xkbState == nullptr) {
+    return state;
+  }
+
+  state.capsLock = xkb_state_led_name_is_active(m_xkbState, XKB_LED_NAME_CAPS) != 0;
+  state.numLock = xkb_state_led_name_is_active(m_xkbState, XKB_LED_NAME_NUM) != 0;
+  state.scrollLock = xkb_state_led_name_is_active(m_xkbState, XKB_LED_NAME_SCROLL) != 0;
+  return state;
 }

@@ -1,16 +1,16 @@
-#include "core/log.h"
 #include "ui/controls/glyph_registry.h"
+#include "core/log.h"
 
 #include <string>
 #include <unordered_map>
 
 namespace {
 
-constexpr Logger kLog("glyph");
+  constexpr Logger kLog("glyph");
 
-// Hand-curated alias → codepoint map.
-// To add a new icon, find its codepoint in assets/fonts/tabler-icons.json.
-// clang-format off
+  // Hand-curated alias → codepoint map.
+  // To add a new icon, find its codepoint in assets/fonts/tabler-icons.json.
+  // clang-format off
 const std::unordered_map<std::string, char32_t> kIcons = {
     // General
     {"close", 0xEB55},             // x
@@ -31,6 +31,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"unpin", 0xED5F},             // pinned-off
     {"image", 0xEB0A},             // photo
     {"keyboard", 0xEBD6},          // keyboard
+    {"lock", 0xEAE2},              // lock
     {"star", 0xEB2E},              // star
     {"star-off", 0xED62},          // star-off
     {"plugin", 0xF00A},            // plug-connected
@@ -59,6 +60,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"repeat-once", 0xEB71},       // repeat-once
     {"stop", 0xF695},              // player-stop-filled
     {"disc", 0x1003E},             // disc-filled
+    {"headphones", 0xEABD},        // headphones
     {"microphone", 0xEAF0},        // microphone
     {"microphone-mute", 0xED16},   // microphone-off
 
@@ -98,7 +100,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"nightlight-on", 0xEAF8},     // moon
     {"nightlight-off", 0xF162},    // moon-off
     {"nightlight-forced", 0xECE7}, // moon-stars
-    {"dark-mode", 0xFE56},         // contrast-filled
+    {"theme-mode", 0xFE56},        // contrast-filled
 
     // Notifications
     {"bell", 0xEA35},              // bell
@@ -141,12 +143,17 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"battery-exclamation", 0xFF1D}, // battery-exclamation
     {"battery-off", 0xED1C},       // battery-off
 
-    // WiFi
+    // WiFi & Network
     {"wifi", 0xEB52},              // wifi
     {"wifi-0", 0xEBA3},            // wifi-0
     {"wifi-1", 0xEBA4},            // wifi-1
     {"wifi-2", 0xEBA5},            // wifi-2
     {"wifi-off", 0xECFA},          // wifi-off
+    {"ethernet", 0xECCC},
+    {"ethernet-off", 0xECCD},
+    {"ethernet-exclamation", 0xECCE},
+    {"ethernet-question", 0xECCF},
+
 
     // Bluetooth devices
     {"bluetooth", 0xEA37},         // bluetooth
@@ -227,7 +234,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     // Experimental
     {"flask", 0xEBD2}             // flask
 };
-// clang-format on
+  // clang-format on
 
 } // namespace
 

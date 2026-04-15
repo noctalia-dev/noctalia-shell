@@ -11,7 +11,7 @@
 
 namespace {
 
-const char* glyphForMode(bool isLight) { return isLight ? "weather-sun" : "weather-moon"; }
+const char* glyphForMode(bool /*isLight*/) { return "theme-mode"; }
 
 } // namespace
 
@@ -34,7 +34,7 @@ void ThemeModeWidget::create() {
   m_area = area.get();
 
   auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyph("weather-moon");
+  glyph->setGlyph("theme-mode");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   glyph->setColor(roleColor(ColorRole::OnSurface));
   m_glyph = glyph.get();

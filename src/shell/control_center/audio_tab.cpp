@@ -26,7 +26,6 @@ using namespace control_center;
 namespace {
 
 constexpr float kDevicesColumnGrow = 3.0f;
-constexpr float kVolumeColumnGrow = 2.0f;
 constexpr float kValueLabelWidth = Style::controlHeightLg + Style::spaceLg;
 constexpr float kVolumeSyncEpsilon = 0.005f;           // 0.5%
 constexpr auto kVolumeCommitInterval = std::chrono::milliseconds(16);
@@ -81,14 +80,11 @@ public:
 
   void setDevice(const AudioNode& node) {
     m_radio->setChecked(node.isDefault);
-
     const std::string title = !node.description.empty() ? node.description : node.name;
-    // Removed unused variable 'showDetail'
 
     if (m_title != nullptr) {
       m_title->setText(title);
     }
-    // Removed subtext (detail) handling
   }
 
   void doLayout(Renderer& renderer) override {
@@ -101,7 +97,6 @@ public:
     const float textMaxWidth =
         std::max(0.0f, width() - paddingLeft() - paddingRight() - gap() - m_radio->width());
     m_title->setMaxWidth(textMaxWidth);
-    // Removed subtext (detail) max width
 
     m_inputArea->setVisible(false);
     Flex::doLayout(renderer);
@@ -130,7 +125,6 @@ private:
     if (m_title != nullptr) {
       m_title->setColor(roleColor(ColorRole::OnSurface));
     }
-    // Removed subtext (detail) color handling
   }
 
   [[nodiscard]] bool hovered() const noexcept { return m_inputArea != nullptr && m_inputArea->hovered(); }
@@ -227,22 +221,20 @@ std::unique_ptr<Flex> AudioTab::create() {
   const float sliderMax = sliderMaxPercent() / 100.0f;
 
   auto tab = std::make_unique<Flex>();
-  tab->setDirection(FlexDirection::Horizontal);
+  tab->setDirection(FlexDirection::Vertical);
   tab->setAlign(FlexAlign::Stretch);
-  tab->setGap(Style::spaceSm * scale);
+  tab->setGap(Style::spaceMd * scale);
   m_rootLayout = tab.get();
 
-  auto deviceColumn = std::make_unique<Flex>();
-  deviceColumn->setDirection(FlexDirection::Vertical);
-  deviceColumn->setAlign(FlexAlign::Stretch);
-  deviceColumn->setGap(Style::spaceSm * scale);
-  deviceColumn->setFlexGrow(kDevicesColumnGrow);
-  m_deviceColumn = deviceColumn.get();
+  auto deviceRow = std::make_unique<Flex>();
+  deviceRow->setDirection(FlexDirection::Horizontal);
+  deviceRow->setAlign(FlexAlign::Stretch);
+  deviceRow->setGap(Style::spaceSm * scale);
+  deviceRow->setFlexGrow(kDevicesColumnGrow);
+  m_deviceColumn = deviceRow.get();
 
   auto outputCard = std::make_unique<Flex>();
-  applyCard(*outputCard, scale);
-  outputCard->setAlign(FlexAlign::Stretch);
-  outputCard->setGap(Style::spaceSm * scale);
+  applyOutlinedCard(*outputCard, scale);
   outputCard->setFlexGrow(1.0f);
   m_outputCard = outputCard.get();
   addTitle(*outputCard, "Outputs", scale);
@@ -260,12 +252,10 @@ std::unique_ptr<Flex> AudioTab::create() {
   m_outputList->setAlign(FlexAlign::Stretch);
   m_outputList->setGap(Style::spaceSm * scale);
   outputCard->addChild(std::move(outputScroll));
-  deviceColumn->addChild(std::move(outputCard));
+  deviceRow->addChild(std::move(outputCard));
 
   auto inputCard = std::make_unique<Flex>();
-  applyCard(*inputCard, scale);
-  inputCard->setAlign(FlexAlign::Stretch);
-  inputCard->setGap(Style::spaceSm * scale);
+  applyOutlinedCard(*inputCard, scale);
   inputCard->setFlexGrow(1.0f);
   m_inputCard = inputCard.get();
   addTitle(*inputCard, "Inputs", scale);
@@ -283,22 +273,22 @@ std::unique_ptr<Flex> AudioTab::create() {
   m_inputList->setAlign(FlexAlign::Stretch);
   m_inputList->setGap(Style::spaceSm * scale);
   inputCard->addChild(std::move(inputScroll));
-  deviceColumn->addChild(std::move(inputCard));
+  deviceRow->addChild(std::move(inputCard));
 
-  auto volumeColumn = std::make_unique<Flex>();
-  volumeColumn->setDirection(FlexDirection::Vertical);
-  volumeColumn->setAlign(FlexAlign::Stretch);
-  volumeColumn->setGap(Style::spaceSm * scale);
-  volumeColumn->setFlexGrow(kVolumeColumnGrow);
-  m_volumeColumn = volumeColumn.get();
+  auto volumeRow = std::make_unique<Flex>();
+  volumeRow->setDirection(FlexDirection::Horizontal);
+  volumeRow->setAlign(FlexAlign::Stretch);
+  volumeRow->setGap(Style::spaceSm * scale);
+  // Keep volume cards at their natural content height so the device lists
+  // can consume the remaining vertical space.
+  volumeRow->setFlexGrow(0.0f);
+  m_volumeColumn = volumeRow.get();
 
   auto outputVolumeCard = std::make_unique<Flex>();
-  applyCard(*outputVolumeCard, scale);
-  outputVolumeCard->setAlign(FlexAlign::Stretch);
-  outputVolumeCard->setGap(Style::spaceSm * scale);
+  applyOutlinedCard(*outputVolumeCard, scale);
   outputVolumeCard->setFlexGrow(1.0f);
   m_outputVolumeCard = outputVolumeCard.get();
-  addTitle(*outputVolumeCard, "Speaker Volume", scale);
+  addTitle(*outputVolumeCard, "Output Volume", scale);
 
   auto outputDeviceLabel = std::make_unique<Label>();
   outputDeviceLabel->setText("No output device selected");
@@ -346,15 +336,13 @@ std::unique_ptr<Flex> AudioTab::create() {
   m_outputValue = outputValue.get();
   outputRow->addChild(std::move(outputValue));
   outputVolumeCard->addChild(std::move(outputRow));
-  volumeColumn->addChild(std::move(outputVolumeCard));
+  volumeRow->addChild(std::move(outputVolumeCard));
 
   auto inputVolumeCard = std::make_unique<Flex>();
-  applyCard(*inputVolumeCard, scale);
-  inputVolumeCard->setAlign(FlexAlign::Stretch);
-  inputVolumeCard->setGap(Style::spaceSm * scale);
+  applyOutlinedCard(*inputVolumeCard, scale);
   inputVolumeCard->setFlexGrow(1.0f);
   m_inputVolumeCard = inputVolumeCard.get();
-  addTitle(*inputVolumeCard, "Microphone Volume", scale);
+  addTitle(*inputVolumeCard, "Input Volume", scale);
 
   auto inputDeviceLabel = std::make_unique<Label>();
   inputDeviceLabel->setText("No input device selected");
@@ -402,10 +390,10 @@ std::unique_ptr<Flex> AudioTab::create() {
   m_inputValue = inputValue.get();
   inputRow->addChild(std::move(inputValue));
   inputVolumeCard->addChild(std::move(inputRow));
-  volumeColumn->addChild(std::move(inputVolumeCard));
+  volumeRow->addChild(std::move(inputVolumeCard));
 
-  tab->addChild(std::move(deviceColumn));
-  tab->addChild(std::move(volumeColumn));
+  tab->addChild(std::move(volumeRow));
+  tab->addChild(std::move(deviceRow));
   return tab;
 }
 

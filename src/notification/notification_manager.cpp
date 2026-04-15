@@ -80,7 +80,9 @@ void NotificationManager::removeEventCallback(int token) {
 uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app_name, std::string summary,
                                            std::string body, Urgency urgency, int32_t timeout,
                                            NotificationOrigin origin, std::vector<std::string> actions,
-                                           std::optional<std::string> icon, std::optional<std::string> category,
+                                           std::optional<std::string> icon,
+                                           std::optional<NotificationImageData> image_data,
+                                           std::optional<std::string> category,
                                            std::optional<std::string> desktop_entry) {
   auto log_notification = [](const Notification& n, std::string_view action) {
     kLog.debug("notification {} #{} origin={} from=\"{}\" urgency={} summary=\"{}\" body=\"{}\" timeout={}ms", action,
@@ -94,7 +96,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
       // Check if anything changed to avoid duplicate events
       const bool changed = (n.appName != app_name || n.summary != summary || n.body != body || n.timeout != timeout ||
                             n.urgency != urgency || n.origin != origin || n.actions != actions || n.icon != icon ||
-                            n.category != category || n.desktopEntry != desktop_entry);
+                            n.imageData != image_data || n.category != category || n.desktopEntry != desktop_entry);
 
       n.origin = origin;
       n.appName = std::move(app_name);
@@ -104,6 +106,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
       n.urgency = urgency;
       n.actions = std::move(actions);
       n.icon = std::move(icon);
+      n.imageData = std::move(image_data);
       n.category = std::move(category);
       n.desktopEntry = std::move(desktop_entry);
       n.expiryTime = schedule_expiry(timeout);
@@ -132,6 +135,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
       .urgency = urgency,
       .actions = std::move(actions),
       .icon = std::move(icon),
+      .imageData = std::move(image_data),
       .category = std::move(category),
       .desktopEntry = std::move(desktop_entry),
       .expiryTime = schedule_expiry(timeout),
@@ -151,10 +155,44 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
 
 uint32_t NotificationManager::addInternal(std::string app_name, std::string summary, std::string body, Urgency urgency,
                                           int32_t timeout, std::optional<std::string> icon,
+                                          std::optional<NotificationImageData> image_data,
                                           std::optional<std::string> category,
                                           std::optional<std::string> desktop_entry) {
   return addOrReplace(0, std::move(app_name), std::move(summary), std::move(body), urgency, timeout,
-                      NotificationOrigin::Internal, {}, std::move(icon), std::move(category), std::move(desktop_entry));
+                      NotificationOrigin::Internal, {}, std::move(icon), std::move(image_data), std::move(category),
+                      std::move(desktop_entry));
+}
+
+void NotificationManager::setActionInvokeCallback(ActionInvokeCallback callback) {
+  m_actionInvokeCallback = std::move(callback);
+}
+
+bool NotificationManager::invokeAction(uint32_t id, const std::string& actionKey, bool closeAfterInvoke) {
+  const auto it = m_idToIndex.find(id);
+  if (it == m_idToIndex.end() || actionKey.empty()) {
+    return false;
+  }
+
+  const Notification& notification = m_notifications[it->second];
+  bool actionFound = false;
+  for (std::size_t i = 0; i + 1 < notification.actions.size(); i += 2) {
+    if (notification.actions[i] == actionKey) {
+      actionFound = true;
+      break;
+    }
+  }
+  if (!actionFound) {
+    return false;
+  }
+
+  if (m_actionInvokeCallback) {
+    m_actionInvokeCallback(id, actionKey);
+  }
+
+  if (closeAfterInvoke) {
+    (void)close(id, CloseReason::Dismissed);
+  }
+  return true;
 }
 
 bool NotificationManager::close(uint32_t id, CloseReason reason) {

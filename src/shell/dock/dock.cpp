@@ -278,12 +278,37 @@ void Dock::requestRedraw() {
 // ── Input ─────────────────────────────────────────────────────────────────────
 
 bool Dock::onPointerEvent(const PointerEvent& event) {
+  auto isOnPopup = [&](DockPopup* popup) {
+    return popup != nullptr && event.surface != nullptr && event.surface == popup->wlSurface;
+  };
+
+  auto isWithinPopupBounds = [&](DockPopup* popup) {
+    if (!isOnPopup(popup) || popup == nullptr || popup->surface == nullptr) {
+      return false;
+    }
+    const float w = static_cast<float>(popup->surface->width());
+    const float h = static_cast<float>(popup->surface->height());
+    return event.sx >= 0.0 && event.sy >= 0.0 && event.sx < w && event.sy < h;
+  };
+
   // Route to any open popup first (item menu takes priority over window picker).
+  // If the click is outside the popup surface, close the popup and let the
+  // same event continue to dock item hit-testing.
   if (m_itemMenu != nullptr) {
-    return routePopupEvent(m_itemMenu.get(), event);
+    const bool outsidePress =
+        (event.type == PointerEvent::Type::Button && event.state == 1 && !isWithinPopupBounds(m_itemMenu.get()));
+    if (!outsidePress) {
+      return routePopupEvent(m_itemMenu.get(), event);
+    }
+    closeItemMenu();
   }
   if (m_windowMenu != nullptr) {
-    return routePopupEvent(m_windowMenu.get(), event);
+    const bool outsidePress =
+        (event.type == PointerEvent::Type::Button && event.state == 1 && !isWithinPopupBounds(m_windowMenu.get()));
+    if (!outsidePress) {
+      return routePopupEvent(m_windowMenu.get(), event);
+    }
+    closeWindowPicker();
   }
 
   switch (event.type) {
@@ -352,6 +377,24 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
     break;
   }
   case PointerEvent::Type::Button: {
+    auto it = m_surfaceMap.find(event.surface);
+    if (it != m_surfaceMap.end()) {
+      DockInstance* targetInstance = it->second;
+      if (m_hoveredInstance != targetInstance) {
+        if (m_hoveredInstance != nullptr) {
+          m_hoveredInstance->pointerInside = false;
+          m_hoveredInstance->inputDispatcher.pointerLeave();
+        }
+        m_hoveredInstance = targetInstance;
+        m_hoveredInstance->pointerInside = true;
+        m_hoveredInstance->inputDispatcher.pointerEnter(static_cast<float>(event.sx),
+                                                        static_cast<float>(event.sy), event.serial);
+      } else {
+        m_hoveredInstance->inputDispatcher.pointerMotion(static_cast<float>(event.sx),
+                                                         static_cast<float>(event.sy), event.serial);
+      }
+    }
+
     if (m_hoveredInstance == nullptr) break;
     const bool pressed = (event.state == 1);
     m_hoveredInstance->inputDispatcher.pointerButton(static_cast<float>(event.sx),
@@ -1318,6 +1361,14 @@ void Dock::closeWindowPicker() {
 
 bool Dock::routePopupEvent(DockPopup* popup, const PointerEvent& event) {
   const bool onPopup = (event.surface != nullptr && event.surface == popup->wlSurface);
+  const bool inBounds = [&]() {
+    if (!onPopup || popup->surface == nullptr) {
+      return false;
+    }
+    const float w = static_cast<float>(popup->surface->width());
+    const float h = static_cast<float>(popup->surface->height());
+    return event.sx >= 0.0 && event.sy >= 0.0 && event.sx < w && event.sy < h;
+  }();
 
   switch (event.type) {
   case PointerEvent::Type::Enter:
@@ -1334,13 +1385,13 @@ bool Dock::routePopupEvent(DockPopup* popup, const PointerEvent& event) {
     }
     break;
   case PointerEvent::Type::Motion:
-    if (onPopup || popup->pointerInside) {
+    if (onPopup && inBounds) {
       popup->inputDispatcher.pointerMotion(static_cast<float>(event.sx),
                                            static_cast<float>(event.sy), 0);
     }
     break;
   case PointerEvent::Type::Button:
-    if (onPopup || popup->pointerInside) {
+    if (onPopup && inBounds) {
       const bool pressed = (event.state == 1);
       popup->inputDispatcher.pointerButton(static_cast<float>(event.sx),
                                            static_cast<float>(event.sy),
