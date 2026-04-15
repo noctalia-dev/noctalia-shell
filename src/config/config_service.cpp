@@ -1245,6 +1245,12 @@ void ConfigService::parseTable(const toml::table& tbl) {
       osd.position = *v;
   }
 
+  if (auto* notifTbl = tbl["notification"].as_table()) {
+    auto& notif = m_config.notification;
+    if (auto v = (*notifTbl)["background_opacity"].value<double>())
+      notif.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+  }
+
   // Parse [dock]
   if (auto* dockTbl = tbl["dock"].as_table()) {
     auto& dock = m_config.dock;

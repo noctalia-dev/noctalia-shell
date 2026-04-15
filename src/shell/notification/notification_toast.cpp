@@ -1015,6 +1015,13 @@ void NotificationToast::ensureSurfaces() {
         [instPtr](uint32_t /*w*/, uint32_t /*h*/) { instPtr->surface->requestLayout(); });
     inst->surface->setPrepareFrameCallback(
         [this, instPtr](bool needsUpdate, bool needsLayout) { prepareFrame(*instPtr, needsUpdate, needsLayout); });
+    inst->surface->setFrameTickCallback([this, instPtr](float /*deltaMs*/) {
+      // Cards animate horizontally during entry/exit slides; the input and blur regions
+      // must follow the visible position or the rounded right edge bleeds.
+      if (instPtr->animations.hasActive()) {
+        updateInputRegion(*instPtr);
+      }
+    });
     inst->surface->setAnimationManager(&inst->animations);
     inst->surface->setRenderContext(m_renderContext);
 
@@ -1143,6 +1150,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
   const bool isCritical = (entry.urgency == Urgency::Critical);
   const float textStartX = notificationTextStartX();
   const float textMaxWidth = notificationTextMaxWidth();
+  const float bgAlpha = m_config != nullptr ? m_config->config().notification.backgroundOpacity : 0.97f;
 
   // Background
   auto bg = std::make_unique<Box>();
@@ -1150,11 +1158,11 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
   bg->setRadius(Style::radiusXl);
   bg->setSoftness(1.25f);
   if (isCritical) {
-    // Keep critical toasts readable: solid surface background + urgent border.
-    bg->setFill(roleColor(ColorRole::Surface, 0.97f));
+    // Keep critical toasts readable: surface background + urgent border.
+    bg->setFill(roleColor(ColorRole::Surface, bgAlpha));
     bg->setBorder(roleColor(ColorRole::Error, 0.95f), Style::borderWidth * 1.4f);
   } else {
-    bg->setFill(roleColor(ColorRole::Surface, 0.97f));
+    bg->setFill(roleColor(ColorRole::Surface, bgAlpha));
     bg->setBorder(roleColor(ColorRole::Outline, 0.8f), Style::borderWidth);
   }
   bg->setSize(kCardWidth, cardHeight);

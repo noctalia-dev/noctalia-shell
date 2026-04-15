@@ -186,6 +186,10 @@ struct OsdConfig {
   std::string position = "top_right";
 };
 
+struct NotificationConfig {
+  float backgroundOpacity = 0.97f; // toast card background alpha (0.0–1.0)
+};
+
 enum class ClipboardAutoPasteMode : std::uint8_t {
   Off = 0,
   Auto = 1,
@@ -306,6 +310,7 @@ struct Config {
   DockConfig dock;
   ShellConfig shell;
   OsdConfig osd;
+  NotificationConfig notification;
   WeatherConfig weather;
   AudioConfig audio;
   KeybindsConfig keybinds;
