@@ -320,115 +320,104 @@ Singleton {
 
   function getDeviceIcon(device) {
     if (!device) {
-      return "bt-device-generic";
+      return "bt-device-undefined";
     }
 
-    const name = (device.model || device.deviceName || device.name || "").toLowerCase();
+    const name = (device.model || device.name || "").toLowerCase();
+    Logger.e("BatteryDebug", "Determining icon for device Model (upower): " + device.model + ", name: (bluez) " + device.name); // Useful for debugging device recognition
     const nativePath = (device.nativePath || "").toLowerCase();
-    const iconHint = (device.icon || "").toLowerCase();
+    Logger.e("BatteryDebug", "Device native path: " + nativePath); // Useful for debugging device recognition
+    const iconHint = (device.icon || device.iconName || "").toLowerCase();  // Some devices are not known to UPower (eg: Bluetooth devices, hint is often does the heavy lfting for recognition)
+    Logger.e("BatteryDebug", "Device icon hint: " + iconHint); // Useful for debugging device recognition
     const isEarbud = name.includes("pod") || name.includes("bud") || iconHint.includes("earbud");
-
-    // https://upower.freedesktop.org/docs/Device.html - Type property
+    Logger.e("BatteryDebug", "Is device an earbud based on name or icon hint? " + isEarbud); // Useful for debugging device recognitiontml - Type property - Skipped: 7, 16, 27
     // 3: UPS
     if (device.type === UPowerDeviceType.Ups || nativePath.includes("ups")) {
-      return "";
+      return "device-ups";
     }
     // 4: Monitor
     if (device.type === UPowerDeviceType.Monitor || nativePath.includes("monitor") || iconHint.includes("display")) {
-      return "";
+      return "device-monitor";
     }
     // 5: Mouse
     if (device.type === UPowerDeviceType.Mouse || nativePath.includes("mouse") || iconHint.includes("mouse")) {
-      return "bt-device-mouse";
+      return "device-mouse";
     }
     // 6: Keyboard
     if (device.type === UPowerDeviceType.Keyboard || nativePath.includes("keyboard") || iconHint.includes("keyboard")) {
-      return "bt-device-keyboard";
-    }
-    // 7: PDA
-    if (device.type === UPowerDeviceType.Pda || nativePath.includes("pda")) {
-      return "";
+      return "device-keyboard";
     }
     // 8: Phone
     if (device.type === UPowerDeviceType.Phone || nativePath.includes("phone") || iconHint.includes("phone")) {
-      return "bt-device-phone";
+      return "device-phone";
     }
     // 9: Media Player
     if (device.type === UPowerDeviceType.MediaPlayer || nativePath.includes("media_player")) {
-      return "";
+      return "device-media-player";
     }
     // 10: Tablet
     if (device.type === UPowerDeviceType.Tablet || nativePath.includes("tablet") || iconHint.includes("tablet")) {
-      return "";
+      return "device-tablet";
     }
     // 11: Computer
     if (device.type === UPowerDeviceType.Computer || nativePath.includes("computer")) {
-      return "";
+      return "device-desktop";
     }
     // 12: Gaming Input
-    if (device.type === UPowerDeviceType.GamingInput || nativePath.includes("gaming_input") || nativePath.includes("controller") || nativePath.includes("joypad") || iconHint.includes("gamepad") || iconHint.includes("controller") || iconHint.includes("dualsense") || iconHint.includes("dualshock") || iconHint.includes("ps5") || iconHint.includes("xbox one")
-        || iconHint.includes("xbox series") || iconHint.includes("xbox")) {
-      return "bt-device-gamepad";
+    if (device.type === UPowerDeviceType.GamingInput || nativePath.includes("gaming_input") || nativePath.includes("controller") || nativePath.includes("joypad") || iconHint.includes("gamepad") || iconHint.includes("controller") || iconHint.includes("dualshock") || iconHint.includes("dualsense") || iconHint.includes("ps5") || iconHint.includes("xbox")) {
+      return "device-gamepad";
     }
     // 13: Pen
     if (device.type === UPowerDeviceType.Pen || nativePath.includes("pen")) {
-      return "";
+      return "device-pen";
     }
     // 14: Touchpad
     if (device.type === UPowerDeviceType.Touchpad || nativePath.includes("touchpad")) {
-      return "";
+      return "device-touchpad";
     }
     // 15: Modem
     if (device.type === UPowerDeviceType.Modem || nativePath.includes("modem")) {
-      return "";
-    }
-    // 16: Network
-    if (device.type === UPowerDeviceType.Network || nativePath.includes("network")) {
-      return "";
+      return "device-modem";
     }
     // 17: Headset
     if (device.type === UPowerDeviceType.Headset || nativePath.includes("headset") || iconHint.includes("headset")) {
-      return isEarbud ? "bt-device-earbuds" : "bt-device-headset";
+      return isEarbud ? "device-earbuds" : "device-headset";
     }
     // 18: Speakers
     if (device.type === UPowerDeviceType.Speakers || nativePath.includes("speaker") || iconHint.includes("speaker")) {
-      return "bt-device-speaker";
+      return "device-speaker";
     }
     // 19: Headphones
     if (device.type === UPowerDeviceType.Headphones || nativePath.includes("headphones") || iconHint.includes("headphones")) {
-      return isEarbud ? "bt-device-earbuds" : "bt-device-headphones";
+      return isEarbud ? "device-earbuds" : "device-headphones";
     }
     // 20: Video
     if (device.type === UPowerDeviceType.Video || device.type === UPowerDeviceType.OtherVideo || nativePath.includes("video")) {
-      return "";
+      return "device-monitor";
     }
     // 21: Other Audio
     if (device.type === UPowerDeviceType.OtherAudio || nativePath.includes("audio") || nativePath.includes("sound")) {
-      return "";
+      return "device-audio";
     }
     // 22: Remote Control
     if (device.type === UPowerDeviceType.RemoteControl || nativePath.includes("remote")) {
-      return "";
+      return "device-remote";
     }
     // 23: Printer
     if (device.type === UPowerDeviceType.Printer || nativePath.includes("printer")) {
-      return "";
+      return "device-printer";
     }
     // 24: Scanner
     if (device.type === UPowerDeviceType.Scanner || nativePath.includes("scanner")) {
-      return "";
+      return "device-scanner";
     }
     // 25: Camera
     if (device.type === UPowerDeviceType.Camera || nativePath.includes("camera")) {
-      return "";
+      return "device-camera";
     }
     // 26: Wearable
     if (device.type === UPowerDeviceType.Wearable || nativePath.includes("watch") || iconHint.includes("watch")) {
-      return "bt-device-watch";
-    }
-    // 27: Toy
-    if (device.type === UPowerDeviceType.Toy || nativePath.includes("toy")) {
-      return "";
+      return "device-watch";
     }
 
     // 2. Context-aware fallback:
@@ -438,7 +427,7 @@ Singleton {
       return getIcon(getPercentage(device), isCharging(device), isPluggedIn(device), isDeviceReady(device));
     }
 
-    return "bt-device-generic"; // 28
+    return "bt-device-undefined"; // 28
   }
 
   Instantiator {
