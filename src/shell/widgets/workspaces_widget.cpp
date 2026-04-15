@@ -142,7 +142,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
   }
 
   m_gap = gap;
-  m_indicatorHeight = indicatorHeight;
+  m_indicatorHeight = std::round(indicatorHeight);
 
   for (std::size_t i = 0; i < workspaces.size(); ++i) {
     const auto& ws = workspaces[i];
