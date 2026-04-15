@@ -50,7 +50,8 @@ private:
     Urgency urgency = Urgency::Normal;
     int displayDurationMs = 0; // -1 = persistent (no auto-dismiss)
     float remainingProgress = 1.0f;
-    std::size_t slot = 0;         // stable visual slot index; entries keep their slot while hovered
+    float y = -1.0f;              // stable top position while visible; negative = queued/off-screen
+    float height = 0.0f;
     bool exiting = false;
     bool hovered = false; // pointer is currently over the card on some instance
   };
@@ -93,7 +94,6 @@ private:
   void dismissPopup(std::size_t index);
   void removePopup(uint32_t notificationId);
   void finishRemoval(uint32_t notificationId);
-  void layoutCards(Instance& inst);
   void updateInputRegion(Instance& inst) const;
 
   void ensureSurfaces();
@@ -103,15 +103,26 @@ private:
   InputArea* buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary, Label** outBody,
                        Node** outBg, Node** outAppIcon, ProgressBar** outProgress, Glyph** outCloseGlyph);
   void addCardToInstance(Instance& inst, std::size_t entryIndex);
+  void removeCardFromInstance(Instance& inst, std::size_t entryIndex);
+  void syncEntryVisibility(std::size_t entryIndex);
   void dismissCardFromInstance(Instance& inst, std::size_t entryIndex);
 
-  float cardTargetY(std::size_t slot) const;
   PopupEntry* findEntry(uint32_t notificationId);
   Instance::CardState* findCardState(Instance& inst, uint32_t notificationId);
   void pauseCountdowns(uint32_t notificationId);
   void resumeCountdowns(uint32_t notificationId);
   void revealQueuedEntries();
-  std::size_t findFreeSlot() const;
+  void evictOverlappingEntries(std::size_t anchorIndex);
+  [[nodiscard]] bool hasPlacement(const PopupEntry& entry) const;
+  [[nodiscard]] bool canKeepPlacement(const PopupEntry& entry,
+                                      std::optional<uint32_t> ignoreNotificationId = std::nullopt) const;
+  [[nodiscard]] bool fitsOnSurface(const PopupEntry& entry, float surfaceHeight) const;
+  [[nodiscard]] float entryHeight(const PopupEntry& entry) const;
+  [[nodiscard]] float layoutBottomForSurfaceHeight(float surfaceHeight) const;
+  [[nodiscard]] float maxPlacementBottom() const;
+  [[nodiscard]] std::optional<float> findPlacementY(float entryHeight,
+                                                    std::optional<uint32_t> ignoreNotificationId = std::nullopt) const;
+  [[nodiscard]] uint32_t surfaceHeightForOutput(wl_output* output) const;
   [[nodiscard]] std::string resolveNotificationIconPath(const PopupEntry& entry);
 
   WaylandConnection* m_wayland = nullptr;
