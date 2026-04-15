@@ -98,7 +98,7 @@ Popup {
     NetworkService.connectionModified.connect(root._modifiedSlot);
 
     root.open();
-    NetworkService.getConnectionSettings(connName);
+    NetworkService.getConnectionSettings(connName, wifi);
   }
 
   // Validation helpers
@@ -162,7 +162,7 @@ Popup {
       ipv6Gateway: ipv6Method === "manual" ? ipv6Gateway : "",
       ipv6Dns: v6dns,
       mtu: mtu
-    }, isActive);
+    }, isActive, isWifi);
   }
 
   onClosed: {

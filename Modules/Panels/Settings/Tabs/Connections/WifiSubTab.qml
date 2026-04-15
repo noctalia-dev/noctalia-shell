@@ -905,7 +905,7 @@ Item {
             tooltipText: I18n.tr("wifi.edit.title")
             baseSize: Style.baseWidgetSize * 0.65
             onClicked: {
-              var connName = modelData.ssid;
+              var connName = (modelData.connected && NetworkService.activeWifiDetails.connectionName) ? NetworkService.activeWifiDetails.connectionName : modelData.ssid;
               var isActive = modelData.connected;
               networkEditPopup.openEdit(connName, isActive, true);
             }

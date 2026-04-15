@@ -318,16 +318,18 @@ Singleton {
   }
 
   // Fetch saved profile settings for editing
-  function getConnectionSettings(connName) {
+  function getConnectionSettings(connName, isWifi) {
     if (!ProgramCheckerService.nmcliAvailable || !connName) {
       return;
     }
     getSettingsProcess.connName = connName;
+    var mtuField = isWifi ? "802-11-wireless.mtu" : "802-3-ethernet.mtu";
+    getSettingsProcess.command = ["nmcli", "-t", "-f", "ipv4.method,ipv4.addresses,ipv4.gateway,ipv4.dns,ipv6.method,ipv6.addresses,ipv6.gateway,ipv6.dns," + mtuField, "connection", "show", connName];
     getSettingsProcess.running = true;
   }
 
   // Modify connection profile and optionally reapply
-  function modifyConnection(connName, settings, isActive) {
+  function modifyConnection(connName, settings, isActive, isWifi) {
     if (!ProgramCheckerService.nmcliAvailable || !connName || modifyingConnection) {
       return;
     }
@@ -358,7 +360,7 @@ Singleton {
     if (settings.ipv6Method === "manual") {
       args.push("ipv6.addresses", settings.ipv6Address || "");
       args.push("ipv6.gateway", settings.ipv6Gateway || "");
-    } else if (settings.ipv6Method !== "manual") {
+    } else if (settings.ipv6Method === "auto" || settings.ipv6Method === "disabled" || settings.ipv6Method === "link-local") {
       args.push("ipv6.addresses", "");
       args.push("ipv6.gateway", "");
     }
@@ -368,7 +370,8 @@ Singleton {
 
     // MTU
     if (settings.mtu !== undefined) {
-      args.push("802-3-ethernet.mtu", String(settings.mtu));
+      var mtuKey = isWifi ? "802-11-wireless.mtu" : "802-3-ethernet.mtu";
+      args.push(mtuKey, String(settings.mtu));
     }
 
     modifyProcess.command = args;
@@ -1264,7 +1267,8 @@ Singleton {
             case "ipv6.addresses": settings.ipv6Address = val || ""; break;
             case "ipv6.gateway": settings.ipv6Gateway = val || ""; break;
             case "ipv6.dns": settings.ipv6Dns = val || ""; break;
-            case "802-3-ethernet.mtu": settings.mtu = parseInt(val) || 0; break;
+            case "802-3-ethernet.mtu":
+            case "802-11-wireless.mtu": settings.mtu = parseInt(val) || 0; break;
           }
         }
 
