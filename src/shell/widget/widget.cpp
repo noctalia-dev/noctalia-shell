@@ -1,5 +1,37 @@
 #include "shell/widget/widget.h"
 
+#include "render/scene/node.h"
+#include "ui/controls/box.h"
+
+namespace {
+
+constexpr float kCapsuleInkEpsilon = 0.5f;
+
+} // namespace
+
+bool Widget::shouldShowBarCapsule() const {
+  if (!m_barCapsuleSpec.enabled) {
+    return false;
+  }
+  const Node* r = root();
+  if (r == nullptr || !r->visible()) {
+    return false;
+  }
+  if (r->width() <= kCapsuleInkEpsilon || r->height() <= kCapsuleInkEpsilon) {
+    return false;
+  }
+  // No scene children ⇒ nothing to frame (spacer bare node, empty tray flex, etc.).
+  if (r->children().empty()) {
+    return false;
+  }
+  return true;
+}
+
+void Widget::setBarCapsuleScene(Node* shell, Box* box) noexcept {
+  m_capsuleShell = shell;
+  m_capsuleBox = box;
+}
+
 void Widget::onPointerEnter(float /*localX*/, float /*localY*/) {}
 void Widget::onPointerLeave() {}
 void Widget::onPointerMotion(float /*localX*/, float /*localY*/) {}

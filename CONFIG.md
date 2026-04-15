@@ -53,6 +53,10 @@ shadow_blur     = 12          # blur radius in pixels (0 = no shadow)
 shadow_offset_x = 3           # horizontal shadow offset (positive = right)
 shadow_offset_y = 6           # vertical shadow offset (positive = down)
 
+# Optional defaults for every widget’s capsule on this bar (see “Bar widget capsule”).
+capsule         = true
+capsule_fill    = "surface_variant"
+capsule_border  = "outline"   # omit this key entirely for no outline by default
 
 start  = ["cpu", "temp", "ram", "active_window"]  # widget names in the left/top section
 center = ["workspaces"]       # widget names in the center section
@@ -95,7 +99,7 @@ end            = ["volume", "clock"]
 
 `match` defaults to the subtable key name when omitted, so `[bar.main.monitor."DP-1"]` without a `match` field works too.
 
-Only the fields you specify are overridden; everything else falls through to the `[bar.*]` defaults. `scale` and `background_opacity` are also supported in monitor overrides.
+Only the fields you specify are overridden; everything else falls through to the `[bar.*]` defaults. `scale`, `background_opacity`, and the bar-level **`capsule` / `capsule_fill` / `capsule_border`** keys are also supported in monitor overrides.
 
 ---
 
@@ -118,6 +122,52 @@ format = "{:%H:%M:%S}"
 
 [bar.main]
 end = ["clock", "clock-seconds"]   # two clock widgets, different formats
+```
+
+### Bar widget capsule (background + border)
+
+**Bar defaults** — Under `[bar.<name>]` (and optionally under `[bar.<name>.monitor.*]`), you can set:
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `capsule` | bool | `false` | When `true`, **all** widgets on this bar get a capsule unless a `[widget.*]` entry sets `capsule = false`. |
+| `capsule_fill` | string | `surface_variant` | Default fill when the widget does not set `capsule_fill`. Same color rules as below. |
+| `capsule_border` | string | *(key omitted)* | If the key is **omitted**, widgets inherit **no border** unless they set `capsule_border` themselves. If the key is present (including `""`), the same rules as per-widget `capsule_border` apply. |
+
+**Per-widget overrides** — Under `[widget.<name>]`:
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `capsule` | bool | *(from bar)* | Omit the key to use the bar’s `capsule` flag; set `false` to disable the capsule for this instance; set `true` to force it on even when the bar default is off. |
+| `capsule_fill` | string | *(from bar)* | Omit to use the bar’s `capsule_fill`. Theme role or `#` hex; fill is **100% opacity** for roles; hex alpha is ignored (RGB forced opaque). |
+| `capsule_border` | string | *(from bar)* | Omit to use the bar’s border policy. If the key is **present** but empty/whitespace-only, **no border**. |
+
+The shell uses a fixed inset (`Style::spaceXs`, scaled by the bar widget `scale`), `Style::borderWidth` for outlines, and a full pill radius—those are not configurable per bar or widget.
+
+For each layout pass, the bar **hides** the decorative capsule when the widget reports no visible “ink”: the root is invisible, has negligible size, or has **no child nodes** (covers spacers, an empty system tray, and widgets like the battery that collapse to `0×0` when absent). Subclasses may override `Widget::shouldShowBarCapsule()` if they need different rules.
+
+Theme role names are **snake_case** (e.g. `on_surface`, `surface_variant`, `surface_secondary` → secondary). Hyphens in roles are accepted and normalized to underscores.
+
+```toml
+[bar.main]
+capsule = true
+capsule_fill = "surface_secondary"
+capsule_border = "outline"
+end = ["clock", "volume"]
+
+# Inherits bar capsule + fill + border
+[widget.clock]
+type = "clock"
+
+# Same capsule shape, custom fill, no border
+[widget.volume]
+capsule_fill = "#2a2a33"
+capsule_border = ""
+
+# No capsule on this instance
+[widget.spacer]
+type = "spacer"
+capsule = false
 ```
 
 ---

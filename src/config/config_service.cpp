@@ -2,13 +2,16 @@
 
 #include "core/log.h"
 #include "notification/notification_manager.h"
+#include "render/core/color.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <stdexcept>
 #include <sys/inotify.h>
 #include <unistd.h>
@@ -454,6 +457,112 @@ void ConfigService::setWallpaperPath(const std::optional<std::string>& connector
   }
 }
 
+namespace {
+
+  constexpr Logger kCapsuleLog("config");
+
+  void trimAsciiInPlace(std::string& s) {
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front())) != 0) {
+      s.erase(s.begin());
+    }
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back())) != 0) {
+      s.pop_back();
+    }
+  }
+
+  std::optional<ColorRole> colorRoleFromToken(std::string token) {
+    trimAsciiInPlace(token);
+    for (auto& c : token) {
+      if (c == '-') {
+        c = '_';
+      } else {
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+      }
+    }
+    if (token == "primary") {
+      return ColorRole::Primary;
+    }
+    if (token == "on_primary") {
+      return ColorRole::OnPrimary;
+    }
+    if (token == "secondary") {
+      return ColorRole::Secondary;
+    }
+    if (token == "on_secondary") {
+      return ColorRole::OnSecondary;
+    }
+    if (token == "tertiary") {
+      return ColorRole::Tertiary;
+    }
+    if (token == "on_tertiary") {
+      return ColorRole::OnTertiary;
+    }
+    if (token == "error") {
+      return ColorRole::Error;
+    }
+    if (token == "on_error") {
+      return ColorRole::OnError;
+    }
+    if (token == "surface") {
+      return ColorRole::Surface;
+    }
+    if (token == "on_surface") {
+      return ColorRole::OnSurface;
+    }
+    if (token == "surface_variant") {
+      return ColorRole::SurfaceVariant;
+    }
+    if (token == "surface_secondary") {
+      return ColorRole::Secondary;
+    }
+    if (token == "on_surface_variant") {
+      return ColorRole::OnSurfaceVariant;
+    }
+    if (token == "outline") {
+      return ColorRole::Outline;
+    }
+    if (token == "shadow") {
+      return ColorRole::Shadow;
+    }
+    if (token == "hover") {
+      return ColorRole::Hover;
+    }
+    if (token == "on_hover") {
+      return ColorRole::OnHover;
+    }
+    return std::nullopt;
+  }
+
+  ThemeColor themeColorFromCapsuleString(const std::string& raw) {
+    std::string trimmed = raw;
+    trimAsciiInPlace(trimmed);
+    if (!trimmed.empty() && trimmed.front() == '#') {
+      try {
+        const Color c = hex(trimmed);
+        return fixedColor(withAlpha(c, 1.0f));
+      } catch (const std::invalid_argument&) {
+        kCapsuleLog.warn("invalid capsule color \"{}\", using surface_variant", raw);
+        return roleColor(ColorRole::SurfaceVariant);
+      }
+    }
+    if (auto role = colorRoleFromToken(trimmed)) {
+      return roleColor(*role);
+    }
+    kCapsuleLog.warn("unknown capsule color role \"{}\", using surface_variant", raw);
+    return roleColor(ColorRole::SurfaceVariant);
+  }
+
+  std::optional<ThemeColor> optionalCapsuleBorder(const std::string& raw) {
+    std::string t = raw;
+    trimAsciiInPlace(t);
+    if (t.empty()) {
+      return std::nullopt;
+    }
+    return themeColorFromCapsuleString(t);
+  }
+
+} // namespace
+
 BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOutput& output) {
   BarConfig resolved = base;
 
@@ -507,6 +616,14 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.endWidgets = *ovr.endWidgets;
     if (ovr.scale)
       resolved.scale = *ovr.scale;
+    if (ovr.widgetCapsuleDefault)
+      resolved.widgetCapsuleDefault = *ovr.widgetCapsuleDefault;
+    if (ovr.widgetCapsuleFill)
+      resolved.widgetCapsuleFill = themeColorFromCapsuleString(*ovr.widgetCapsuleFill);
+    if (ovr.widgetCapsuleBorder) {
+      resolved.widgetCapsuleBorderSpecified = true;
+      resolved.widgetCapsuleBorder = optionalCapsuleBorder(*ovr.widgetCapsuleBorder);
+    }
     break; // first match wins
   }
 
@@ -815,6 +932,21 @@ void ConfigService::parseTable(const toml::table& tbl) {
       if (auto* n = (*barTbl)["end"].as_array())
         bar.endWidgets = readStringArray(*n);
 
+      if (auto v = (*barTbl)["capsule"].value<bool>()) {
+        bar.widgetCapsuleDefault = *v;
+      }
+      if (auto v = (*barTbl)["capsule_fill"].value<std::string>()) {
+        bar.widgetCapsuleFill = themeColorFromCapsuleString(*v);
+      }
+      if (barTbl->contains("capsule_border")) {
+        bar.widgetCapsuleBorderSpecified = true;
+        std::string borderStr;
+        if (auto v = (*barTbl)["capsule_border"].value<std::string>()) {
+          borderStr = *v;
+        }
+        bar.widgetCapsuleBorder = optionalCapsuleBorder(borderStr);
+      }
+
       // Parse [bar.<name>.monitor.*] overrides — insertion order preserved by toml++
       if (auto* monTblMap = (*barTbl)["monitor"].as_table()) {
         for (const auto& [monName, monNode] : *monTblMap) {
@@ -868,6 +1000,20 @@ void ConfigService::parseTable(const toml::table& tbl) {
             ovr.centerWidgets = readStringArray(*n);
           if (auto* n = (*monTbl)["end"].as_array())
             ovr.endWidgets = readStringArray(*n);
+
+          if (auto v = (*monTbl)["capsule"].value<bool>()) {
+            ovr.widgetCapsuleDefault = *v;
+          }
+          if (auto v = (*monTbl)["capsule_fill"].value<std::string>()) {
+            ovr.widgetCapsuleFill = *v;
+          }
+          if (monTbl->contains("capsule_border")) {
+            std::string borderStr;
+            if (auto v = (*monTbl)["capsule_border"].value<std::string>()) {
+              borderStr = *v;
+            }
+            ovr.widgetCapsuleBorder = borderStr;
+          }
 
           bar.monitorOverrides.push_back(std::move(ovr));
         }
@@ -1332,4 +1478,37 @@ bool WidgetConfig::getBool(const std::string& key, bool fallback) const {
     return *v;
   }
   return fallback;
+}
+
+bool WidgetConfig::hasSetting(const std::string& key) const { return settings.find(key) != settings.end(); }
+
+WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const WidgetConfig* widget) {
+  WidgetBarCapsuleSpec spec{};
+  const bool widgetHasCapsuleKey = widget != nullptr && widget->hasSetting("capsule");
+  const bool widgetHasFillKey = widget != nullptr && widget->hasSetting("capsule_fill");
+  const bool widgetHasBorderKey = widget != nullptr && widget->hasSetting("capsule_border");
+
+  if (widgetHasCapsuleKey) {
+    spec.enabled = widget->getBool("capsule", false);
+  } else {
+    spec.enabled = bar.widgetCapsuleDefault;
+  }
+  if (!spec.enabled) {
+    return spec;
+  }
+
+  if (widgetHasFillKey) {
+    spec.fill = themeColorFromCapsuleString(widget->getString("capsule_fill", ""));
+  } else {
+    spec.fill = bar.widgetCapsuleFill;
+  }
+
+  if (widgetHasBorderKey) {
+    spec.border = optionalCapsuleBorder(widget->getString("capsule_border", ""));
+  } else if (bar.widgetCapsuleBorderSpecified) {
+    spec.border = bar.widgetCapsuleBorder;
+  } else {
+    spec.border = std::nullopt;
+  }
+  return spec;
 }

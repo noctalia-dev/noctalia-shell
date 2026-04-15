@@ -32,6 +32,10 @@ struct ThemeColor {
   float alpha = 1.0f;
 };
 
+constexpr bool operator==(const ThemeColor& a, const ThemeColor& b) noexcept {
+  return a.role == b.role && a.fixed == b.fixed && a.alpha == b.alpha;
+}
+
 [[nodiscard]] constexpr ThemeColor clearThemeColor() noexcept {
   return ThemeColor{.role = std::nullopt, .fixed = clearColor(), .alpha = 1.0f};
 }

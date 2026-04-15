@@ -14,6 +14,7 @@
 #include "system/weather_service.h"
 #include "theme/theme_service.h"
 #include "time/time_service.h"
+#include "ui/controls/box.h"
 #include "ui/controls/flex.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -67,6 +68,43 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
   layoutWidgets(instance.centerWidgets);
   layoutWidgets(instance.endWidgets);
 
+  auto finalizeCapsules = [](std::vector<std::unique_ptr<Widget>>& widgets) {
+    for (auto& w : widgets) {
+      if (w == nullptr || !w->barCapsuleSpec().enabled) {
+        continue;
+      }
+      Node* shell = w->barCapsuleShell();
+      Box* bg = w->barCapsuleBox();
+      Node* inner = w->root();
+      if (shell == nullptr || bg == nullptr || inner == nullptr) {
+        continue;
+      }
+      const float scale = w->contentScale();
+      const float iw = inner->width();
+      const float ih = inner->height();
+      if (!w->shouldShowBarCapsule()) {
+        shell->setSize(iw, ih);
+        inner->setPosition(0.0f, 0.0f);
+        bg->setVisible(false);
+        bg->setPosition(0.0f, 0.0f);
+        bg->setSize(iw, ih);
+        continue;
+      }
+      const float pad = Style::spaceXs * scale;
+      const float shellW = iw + 2.0f * pad;
+      const float shellH = ih + 2.0f * pad;
+      shell->setSize(shellW, shellH);
+      bg->setVisible(true);
+      bg->setPosition(0.0f, 0.0f);
+      bg->setSize(shellW, shellH);
+      inner->setPosition(pad, pad);
+      bg->setRadius(std::min(shellW, shellH) * 0.5f);
+    }
+  };
+  finalizeCapsules(instance.startWidgets);
+  finalizeCapsules(instance.centerWidgets);
+  finalizeCapsules(instance.endWidgets);
+
   const float slotCross = isVertical ? barAreaW : barAreaH;
   const float contentMainStart = paddingH;
   const float contentMainEnd = std::max(contentMainStart, (isVertical ? barAreaH : barAreaW) - paddingH);
@@ -96,8 +134,8 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
   // bar midline so surrounding siblings growing/shrinking cannot drift it sideways.
   const Node* anchorNode = nullptr;
   for (const auto& widget : instance.centerWidgets) {
-    if (widget != nullptr && widget->isAnchor() && widget->root() != nullptr) {
-      anchorNode = widget->root();
+    if (widget != nullptr && widget->isAnchor() && widget->layoutBoundsNode() != nullptr) {
+      anchorNode = widget->layoutBoundsNode();
       break;
     }
   }
@@ -442,9 +480,12 @@ void Bar::populateWidgets(BarInstance& instance) {
     for (const auto& name : names) {
       auto widget = m_widgetFactory->create(name, instance.output, instance.barConfig.scale);
       if (widget != nullptr) {
+        const WidgetConfig* wcPtr = nullptr;
         if (auto it = widgetConfigs.find(name); it != widgetConfigs.end()) {
-          widget->setAnchor(it->second.getBool("anchor", false));
+          wcPtr = &it->second;
+          widget->setAnchor(wcPtr->getBool("anchor", false));
         }
+        widget->setBarCapsuleSpec(resolveWidgetBarCapsuleSpec(instance.barConfig, wcPtr));
         dest.push_back(std::move(widget));
       }
     }
@@ -576,7 +617,30 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
           }
         });
         widget->create();
-        if (widget->root() != nullptr) {
+        if (widget->root() == nullptr) {
+          continue;
+        }
+        if (widget->barCapsuleSpec().enabled) {
+          const auto& cap = widget->barCapsuleSpec();
+          auto shell = std::make_unique<Node>();
+          Node* shellPtr = shell.get();
+          auto capsuleBg = std::make_unique<Box>();
+          Box* bgPtr = capsuleBg.get();
+          capsuleBg->setFill(cap.fill);
+          const float scale = widget->contentScale();
+          if (cap.border.has_value()) {
+            capsuleBg->setBorder(*cap.border, Style::borderWidth * scale);
+          } else {
+            capsuleBg->clearBorder();
+          }
+          capsuleBg->setSoftness(1.2f * scale);
+          capsuleBg->setZIndex(-1);
+          shellPtr->addChild(std::move(capsuleBg));
+          shellPtr->addChild(widget->releaseRoot());
+          widget->setBarCapsuleScene(shellPtr, bgPtr);
+          section->addChild(std::move(shell));
+        } else {
+          widget->setBarCapsuleScene(nullptr, nullptr);
           section->addChild(widget->releaseRoot());
         }
       }

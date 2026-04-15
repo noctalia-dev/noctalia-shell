@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/config_service.h"
 #include "core/ui_phase.h"
 #include "render/scene/node.h"
 
@@ -7,6 +8,7 @@
 #include <memory>
 
 class AnimationManager;
+class Box;
 class Renderer;
 
 class Widget {
@@ -43,8 +45,20 @@ public:
   void setAnimationManager(AnimationManager* mgr) noexcept;
   void setRedrawCallback(RedrawCallback callback);
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
+  [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
   void setAnchor(bool anchor) noexcept { m_anchor = anchor; }
   [[nodiscard]] bool isAnchor() const noexcept { return m_anchor; }
+
+  void setBarCapsuleSpec(WidgetBarCapsuleSpec spec) noexcept { m_barCapsuleSpec = std::move(spec); }
+  [[nodiscard]] const WidgetBarCapsuleSpec& barCapsuleSpec() const noexcept { return m_barCapsuleSpec; }
+  void setBarCapsuleScene(Node* shell, Box* box) noexcept;
+  [[nodiscard]] Node* barCapsuleShell() const noexcept { return m_capsuleShell; }
+  [[nodiscard]] Box* barCapsuleBox() const noexcept { return m_capsuleBox; }
+  // Outermost node for flex layout / anchor alignment (capsule shell when enabled).
+  [[nodiscard]] Node* layoutBoundsNode() const noexcept { return m_capsuleShell != nullptr ? m_capsuleShell : root(); }
+
+  // Whether the bar should paint the decorative capsule for this frame (spec enabled + visible ink).
+  [[nodiscard]] virtual bool shouldShowBarCapsule() const;
 
 protected:
   void requestRedraw();
@@ -57,6 +71,9 @@ protected:
   bool m_anchor = false;
   AnimationManager* m_animations = nullptr;
   RedrawCallback m_redrawCallback;
+  WidgetBarCapsuleSpec m_barCapsuleSpec{};
+  Node* m_capsuleShell = nullptr;
+  Box* m_capsuleBox = nullptr;
 
 private:
   std::unique_ptr<Node> m_root;

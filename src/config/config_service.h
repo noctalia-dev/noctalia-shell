@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ui/palette.h"
 #include "ui/style.h"
 
 #include "core/toml.h"
@@ -36,6 +37,9 @@ struct BarMonitorOverride {
   std::optional<std::vector<std::string>> startWidgets;
   std::optional<std::vector<std::string>> centerWidgets;
   std::optional<std::vector<std::string>> endWidgets;
+  std::optional<bool> widgetCapsuleDefault;
+  std::optional<std::string> widgetCapsuleFill;
+  std::optional<std::string> widgetCapsuleBorder;
 
   bool operator==(const BarMonitorOverride&) const = default;
 };
@@ -63,12 +67,29 @@ struct BarConfig {
   std::vector<std::string> centerWidgets = {"workspaces"};
   std::vector<std::string> endWidgets = {"media",     "tray",    "notifications", "volume", "power_profiles", "battery",
                                          "wallpaper", "session", "spacer",        "date",   "clock"};
+  // When true, widgets on this bar use a capsule unless `[widget.*] capsule = false`.
+  bool widgetCapsuleDefault = false;
+  ThemeColor widgetCapsuleFill = roleColor(ColorRole::SurfaceVariant);
+  // True when `capsule_border` appears under `[bar.*]` (empty value = no outline for widgets that inherit border).
+  bool widgetCapsuleBorderSpecified = false;
+  std::optional<ThemeColor> widgetCapsuleBorder;
   std::vector<BarMonitorOverride> monitorOverrides;
 
   bool operator==(const BarConfig&) const = default;
 };
 
 using WidgetSettingValue = std::variant<bool, std::int64_t, double, std::string>;
+
+// Optional rounded “capsule” behind a bar widget (see `[widget.*] capsule_*` in CONFIG.md).
+// Padding, corner shape (pill), border width, and edge softness are fixed in the shell code.
+struct WidgetBarCapsuleSpec {
+  bool enabled = false;
+  ThemeColor fill = roleColor(ColorRole::SurfaceVariant);
+  // Set only when `capsule_border` is present and non-empty in config; otherwise no outline.
+  std::optional<ThemeColor> border;
+
+  bool operator==(const WidgetBarCapsuleSpec&) const = default;
+};
 
 struct WidgetConfig {
   std::string type; // widget type (e.g. "clock", "spacer"); defaults to the entry name
@@ -78,9 +99,13 @@ struct WidgetConfig {
   [[nodiscard]] std::int64_t getInt(const std::string& key, std::int64_t fallback = 0) const;
   [[nodiscard]] double getDouble(const std::string& key, double fallback = 0.0) const;
   [[nodiscard]] bool getBool(const std::string& key, bool fallback = false) const;
+  [[nodiscard]] bool hasSetting(const std::string& key) const;
 
   bool operator==(const WidgetConfig&) const = default;
 };
+
+// Merges `[bar.*]` capsule defaults with `[widget.*]` overrides (see CONFIG.md).
+[[nodiscard]] WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const WidgetConfig* widget);
 
 enum class WallpaperFillMode : std::uint8_t {
   Center = 0,
