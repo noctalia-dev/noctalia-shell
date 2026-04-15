@@ -1336,11 +1336,11 @@ Singleton {
         root.connectionModified(true, "");
         ToastService.showNotice(I18n.tr("common.network"), I18n.tr("toast.wifi.settings-applied"), "settings");
 
-        // Refresh details after reapply
+        // Invalidate cache and schedule scan (same pattern as connectProcess)
         root.activeWifiDetailsTimestamp = 0;
         root.activeEthernetDetailsTimestamp = 0;
-        root.refreshActiveWifiDetails();
-        root.refreshActiveEthernetDetails();
+        delayedScanTimer.interval = 5000;
+        delayedScanTimer.restart();
       }
     }
     stderr: StdioCollector {
