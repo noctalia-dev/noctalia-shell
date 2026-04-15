@@ -103,6 +103,11 @@ void RenderContext::makeCurrent(RenderTarget& target) {
   if (eglMakeCurrent(m_eglDisplay, target.eglSurface(), target.eglSurface(), m_eglContext) != EGL_TRUE) {
     throw std::runtime_error("eglMakeCurrent failed");
   }
+  // Non-blocking swap: pacing is driven by wl_surface.frame callbacks, not by
+  // eglSwapBuffers. Default interval=1 blocks indefinitely in Mesa when the
+  // compositor holds our buffer (e.g. niri direct-scanout of a fullscreen
+  // client occludes our overlay layer), which would freeze the whole main loop.
+  eglSwapInterval(m_eglDisplay, 0);
 }
 
 void RenderContext::syncContentScale(RenderTarget& target) {

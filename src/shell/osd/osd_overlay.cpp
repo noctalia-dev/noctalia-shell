@@ -363,9 +363,11 @@ void OsdOverlay::animateInstance(Instance& inst) {
               inst.hideAnimId = 0;
               inst.visible = false;
               DeferredCall::callLater([this]() {
-                const bool allHidden = std::all_of(m_instances.begin(), m_instances.end(),
-                    [](const auto& i) { return !i->visible; });
-                if (allHidden) {
+                const bool allIdle = std::all_of(m_instances.begin(), m_instances.end(),
+                    [](const auto& i) {
+                      return !i->visible && !i->showPending && i->showAnimId == 0 && i->hideAnimId == 0;
+                    });
+                if (allIdle) {
                   destroySurfaces();
                 }
               });

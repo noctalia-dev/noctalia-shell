@@ -61,8 +61,8 @@ void Surface::handleFrameDone(void* data, wl_callback* callback, std::uint32_t c
   if (self->m_running && self->m_configured) {
     const bool invalidated =
         self->m_sceneRoot != nullptr && (self->m_sceneRoot->paintDirty() || self->m_sceneRoot->layoutDirty());
-    bool animating = self->m_animationManager != nullptr && self->m_animationManager->hasActive();
-    bool redrawRequested = self->m_redrawRequested;
+    const bool animating = self->m_animationManager != nullptr && self->m_animationManager->hasActive();
+    const bool redrawRequested = self->m_redrawRequested;
 
     if (invalidated || animating || redrawRequested) {
       self->m_redrawRequested = false;

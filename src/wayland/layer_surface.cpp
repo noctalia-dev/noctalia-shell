@@ -77,9 +77,6 @@ bool LayerSurface::initialize(wl_output* output) {
   zwlr_layer_surface_v1_set_keyboard_interactivity(m_layerSurface, static_cast<std::uint32_t>(m_config.keyboard));
 
   wl_surface_commit(m_surface);
-  if (wl_display_roundtrip(m_connection.display()) < 0) {
-    throw std::runtime_error("failed during layer surface initial roundtrip");
-  }
 
   setRunning(true);
   return true;
