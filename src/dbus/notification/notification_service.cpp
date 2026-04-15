@@ -223,15 +223,7 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
     }
   }
 
-  std::string imageSourceKey;
-  std::optional<NotificationImageData> imageData = decode_image_hint(hints, &imageSourceKey);
-  if (imageData.has_value()) {
-    kLog.info("notify decoded image hint key='{}' {}x{} stride={} channels={} bps={} bytes={}", imageSourceKey,
-              imageData->width, imageData->height, imageData->rowStride, imageData->channels,
-              imageData->bitsPerSample, imageData->data.size());
-  } else if (hints.contains("image-data") || hints.contains("image_data") || hints.contains("icon_data")) {
-    kLog.warn("notify found image hint key but failed to decode image-data payload");
-  }
+  std::optional<NotificationImageData> imageData = decode_image_hint(hints);
 
   return m_manager.addOrReplace(replaces_id, clamp_str(app_name), clamp_str(summary), clamp_str(body), urgency, timeout,
                                 NotificationOrigin::External, sanitizedActions, icon, imageData, category,
