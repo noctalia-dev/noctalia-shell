@@ -322,6 +322,8 @@
       "pill-size-label": "Pill size",
       "reverse-scrolling-description": "Reverse the direction of workspace switching when scrolling.",
       "reverse-scrolling-label": "Reverse scrolling",
+      "show-all-description": "Display workspaces from all screens, rather than the screen where the bar is located.",
+      "show-all-label": "Show all workspaces",
       "show-applications-description": "Display application icons inside each workspace.",
       "show-applications-hover-description": "Display application icons inside each workspace when the workspace is hovered.",
       "show-applications-hover-label": "Show applications when hovered",

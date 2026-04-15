@@ -59,6 +59,7 @@ Item {
   }
   readonly property bool hideUnoccupied: (widgetSettings.hideUnoccupied !== undefined) ? widgetSettings.hideUnoccupied : widgetMetadata.hideUnoccupied
   readonly property bool followFocusedScreen: (widgetSettings.followFocusedScreen !== undefined) ? widgetSettings.followFocusedScreen : widgetMetadata.followFocusedScreen
+  readonly property bool showAll: (widgetSettings.showAll !== undefined) ? widgetSettings.showAll : widgetMetadata.showAll
   readonly property int characterCount: {
     const count = (widgetSettings.characterCount !== undefined) ? widgetSettings.characterCount : widgetMetadata.characterCount;
     return isVertical ? Math.min(count, 2) : count;
@@ -342,7 +343,7 @@ Item {
         // For global workspaces (e.g., LabWC), show all workspaces on all screens
         const matchesScreen = CompositorService.globalWorkspaces || (followFocusedScreen && ws.output.toLowerCase() == focusedOutput) || (!followFocusedScreen && ws.output.toLowerCase() == screenName);
 
-        if (!matchesScreen)
+        if (!matchesScreen && !showAll)
           continue;
         if (hideUnoccupied && !ws.isOccupied && !ws.isFocused)
           continue;
@@ -356,7 +357,8 @@ Item {
           isFocused: ws.isFocused,
           isActive: ws.isActive,
           isUrgent: ws.isUrgent,
-          isOccupied: ws.isOccupied
+          isOccupied: ws.isOccupied,
+          matchesScreen: matchesScreen
         };
 
         if (ws.handle !== null && ws.handle !== undefined) {
