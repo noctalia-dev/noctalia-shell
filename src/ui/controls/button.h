@@ -59,6 +59,8 @@ public:
   void setVariant(ButtonVariant variant);
   void setOnClick(std::function<void()> callback);
   void setOnMotion(std::function<void()> callback);
+  void setOnEnter(std::function<void()> callback);
+  void setOnLeave(std::function<void()> callback);
   void setHoverSuppressed(bool suppressed);
   void setCursorShape(std::uint32_t shape);
 
@@ -88,6 +90,8 @@ private:
   std::uint32_t m_animId = 0;
   std::function<void()> m_onClick;
   std::function<void()> m_onMotion;
+  std::function<void()> m_onEnter;
+  std::function<void()> m_onLeave;
   ButtonVariant m_variant = ButtonVariant::Default;
   ButtonPalette m_palette;
   // Animation: snapshot of colors at transition start

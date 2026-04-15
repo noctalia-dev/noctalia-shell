@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
-#include <sstream>
 #include <tuple>
 
 namespace {
@@ -112,35 +111,6 @@ std::vector<std::string> sanitize_actions(const std::vector<std::string>& action
   return sanitized;
 }
 
-std::string join_hint_keys(const std::map<std::string, sdbus::Variant>& hints) {
-  if (hints.empty()) {
-    return "<none>";
-  }
-
-  std::ostringstream oss;
-  bool first = true;
-  for (const auto& [key, _] : hints) {
-    if (!first) {
-      oss << ", ";
-    }
-    first = false;
-    oss << key;
-  }
-  return oss.str();
-}
-
-std::string get_string_hint_or_empty(const std::map<std::string, sdbus::Variant>& hints, std::string_view key) {
-  const auto it = hints.find(std::string(key));
-  if (it == hints.end()) {
-    return {};
-  }
-  try {
-    return clamp_str(it->second.get<std::string>());
-  } catch (...) {
-    return {};
-  }
-}
-
 using NotificationImageDataStruct =
     sdbus::Struct<std::int32_t, std::int32_t, std::int32_t, bool, std::int32_t, std::int32_t,
                   std::vector<std::uint8_t>>;
@@ -204,15 +174,6 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
                                        const std::string& summary, const std::string& body,
                                        const std::vector<std::string>& actions,
                                        const std::map<std::string, sdbus::Variant>& hints, int32_t expire_timeout) {
-  kLog.info("notify ingress app='{}' replaces_id={} app_icon='{}' actions={} hint_keys=[{}] timeout={}",
-            clamp_str(app_name), replaces_id, clamp_str(app_icon), actions.size(), join_hint_keys(hints),
-            expire_timeout);
-  kLog.info("notify icon hints image-path='{}' image_path='{}' desktop-entry='{}' category='{}'",
-            get_string_hint_or_empty(hints, "image-path"), get_string_hint_or_empty(hints, "image_path"),
-            get_string_hint_or_empty(hints, "desktop-entry"), get_string_hint_or_empty(hints, "category"));
-  kLog.info("notify image data hints present image-data={} image_data={} icon_data={}",
-            hints.contains("image-data"), hints.contains("image_data"), hints.contains("icon_data"));
-
   // Sanitize scalar inputs
   const int32_t timeout = std::max(expire_timeout, k_min_timeout);
   const auto sanitizedActions = sanitize_actions(actions);
@@ -271,9 +232,6 @@ uint32_t NotificationService::onNotify(const std::string& app_name, uint32_t rep
   } else if (hints.contains("image-data") || hints.contains("image_data") || hints.contains("icon_data")) {
     kLog.warn("notify found image hint key but failed to decode image-data payload");
   }
-
-  kLog.info("notify resolved icon='{}' image_data={} summary='{}'", icon.value_or("<none>"),
-            imageData.has_value(), clamp_str(summary));
 
   return m_manager.addOrReplace(replaces_id, clamp_str(app_name), clamp_str(summary), clamp_str(body), urgency, timeout,
                                 NotificationOrigin::External, sanitizedActions, icon, imageData, category,

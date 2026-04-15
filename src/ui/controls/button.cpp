@@ -104,8 +104,18 @@ Button::Button() {
   setRadius(Style::radiusMd);
 
   auto area = std::make_unique<InputArea>();
-  area->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
-  area->setOnLeave([this]() { applyVisualState(); });
+  area->setOnEnter([this](const InputArea::PointerData& /*data*/) {
+    applyVisualState();
+    if (m_onEnter) {
+      m_onEnter();
+    }
+  });
+  area->setOnLeave([this]() {
+    applyVisualState();
+    if (m_onLeave) {
+      m_onLeave();
+    }
+  });
   area->setOnPress([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
   area->setOnMotion([this](const InputArea::PointerData& /*data*/) {
     if (m_onMotion) {
@@ -172,6 +182,16 @@ void Button::setOnClick(std::function<void()> callback) {
 
 void Button::setOnMotion(std::function<void()> callback) {
   m_onMotion = std::move(callback);
+  refreshInputAreaEnabled();
+}
+
+void Button::setOnEnter(std::function<void()> callback) {
+  m_onEnter = std::move(callback);
+  refreshInputAreaEnabled();
+}
+
+void Button::setOnLeave(std::function<void()> callback) {
+  m_onLeave = std::move(callback);
   refreshInputAreaEnabled();
 }
 
@@ -248,7 +268,8 @@ void Button::applyVariant() {
 
 void Button::refreshInputAreaEnabled() {
   if (m_inputArea != nullptr) {
-    m_inputArea->setEnabled(m_enabled && (static_cast<bool>(m_onClick) || static_cast<bool>(m_onMotion)));
+    m_inputArea->setEnabled(m_enabled && (static_cast<bool>(m_onClick) || static_cast<bool>(m_onMotion) ||
+                                          static_cast<bool>(m_onEnter) || static_cast<bool>(m_onLeave)));
   }
 }
 

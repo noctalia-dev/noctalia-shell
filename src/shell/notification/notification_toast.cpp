@@ -727,13 +727,26 @@ NotificationToast::Instance::CardState* NotificationToast::findCardState(Instanc
 }
 
 void NotificationToast::pauseCountdowns(uint32_t notificationId) {
+  auto* entry = findEntry(notificationId);
+  float remaining = (entry != nullptr) ? std::clamp(entry->remainingProgress, 0.0f, 1.0f) : 1.0f;
+
   for (auto& inst : m_instances) {
     auto* state = findCardState(*inst, notificationId);
-    if (state == nullptr || state->countdownAnimId == 0) {
+    if (state == nullptr) {
+      continue;
+    }
+    if (state->progressBar != nullptr) {
+      remaining = std::clamp(state->progressBar->progress(), 0.0f, 1.0f);
+    }
+    if (state->countdownAnimId == 0) {
       continue;
     }
     inst->animations.cancel(state->countdownAnimId);
     state->countdownAnimId = 0;
+  }
+
+  if (entry != nullptr) {
+    entry->remainingProgress = remaining;
   }
 }
 
@@ -1186,8 +1199,6 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
       if (appIcon->setSourceArgbPixmap(*m_renderContext, image.data.data(), image.width, image.height, true)) {
         *outAppIcon = iconSlot->addChild(std::move(appIcon));
         iconAssigned = true;
-        kLog.info("notification toast: using image-data avatar for #{} ({}x{}, bytes={})", entry.notificationId,
-                  image.width, image.height, image.data.size());
       } else {
         kLog.warn("notification toast: failed to load image-data avatar for #{} ({}x{}, bytes={})",
                   entry.notificationId, image.width, image.height, image.data.size());
@@ -1269,6 +1280,8 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
     actionsRow->setAlign(FlexAlign::Center);
     actionsRow->setGap(kActionGap);
 
+    const uint32_t notificationId = entry.notificationId;
+    const int totalDuration = entry.displayDurationMs;
     int actionCount = 0;
     for (std::size_t i = 0; i + 1 < entry.actions.size() && actionCount < kMaxActionButtons; i += 2) {
       const std::string actionKey = entry.actions[i];
@@ -1284,6 +1297,34 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
       actionButton->setVariant(ButtonVariant::Outline);
       actionButton->setFontSize(Style::fontSizeCaption);
       actionButton->setText(actionLabel);
+      actionButton->setOnEnter([this, notificationId]() {
+        pauseCountdowns(notificationId);
+        if (m_notifications != nullptr) {
+          m_notifications->pauseExpiry(notificationId);
+        }
+      });
+      actionButton->setOnLeave([this, notificationId, totalDuration]() {
+        if (totalDuration < 0) {
+          return;
+        }
+        const auto* popup = findEntry(notificationId);
+        if (popup == nullptr) {
+          return;
+        }
+        const float remaining = std::clamp(popup->remainingProgress, 0.0f, 1.0f);
+        if (remaining <= 0.0f) {
+          if (m_notifications != nullptr) {
+            m_notifications->resumeExpiry(notificationId, 0);
+          }
+          return;
+        }
+        const int32_t remainingMs =
+            std::max<int32_t>(1, static_cast<int32_t>(std::ceil(static_cast<float>(totalDuration) * remaining)));
+        if (m_notifications != nullptr) {
+          m_notifications->resumeExpiry(notificationId, remainingMs);
+        }
+        resumeCountdowns(notificationId);
+      });
       actionButton->setOnClick([this, id = entry.notificationId, actionKey]() {
         if (m_notifications == nullptr) {
           return;
@@ -1371,18 +1412,15 @@ bool NotificationToast::onPointerEvent(const PointerEvent& event) {
 
 std::string NotificationToast::resolveNotificationIconPath(const PopupEntry& entry) {
   if (!entry.icon.has_value() || entry.icon->empty()) {
-    kLog.info("notification toast: #{} has no icon metadata", entry.notificationId);
     return {};
   }
 
   const std::string iconValue = *entry.icon;
-  kLog.info("notification toast: #{} icon value='{}'", entry.notificationId, iconValue);
 
   if (isRemoteIconUrl(iconValue)) {
     if (const auto it = m_remoteIconCache.find(iconValue); it != m_remoteIconCache.end()) {
       std::error_code ec;
       if (std::filesystem::exists(it->second, ec) && std::filesystem::file_size(it->second, ec) > 0) {
-        kLog.info("notification toast: #{} remote icon cache hit path='{}'", entry.notificationId, it->second);
         return it->second;
       }
       kLog.warn("notification toast: #{} remote cache entry stale path='{}'", entry.notificationId, it->second);
@@ -1399,7 +1437,6 @@ std::string NotificationToast::resolveNotificationIconPath(const PopupEntry& ent
     if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0) {
       const std::string cachedPath = cached.string();
       m_remoteIconCache[iconValue] = cachedPath;
-      kLog.info("notification toast: #{} remote icon disk cache hit path='{}'", entry.notificationId, cachedPath);
       return cachedPath;
     }
 
@@ -1410,8 +1447,6 @@ std::string NotificationToast::resolveNotificationIconPath(const PopupEntry& ent
                   cached.parent_path().string(), ec.message());
       }
 
-      kLog.info("notification toast: #{} scheduling remote icon download url='{}' dest='{}'", entry.notificationId,
-            iconValue, cached.string());
       m_pendingRemoteIconDownloads.insert(iconValue);
       m_httpClient->download(iconValue, cached, [this, url = iconValue, path = cached.string()](bool success) {
         m_pendingRemoteIconDownloads.erase(url);
@@ -1421,7 +1456,6 @@ std::string NotificationToast::resolveNotificationIconPath(const PopupEntry& ent
           return;
         }
 
-        kLog.info("notification toast: remote icon download succeeded url='{}' path='{}'", url, path);
         m_failedRemoteIconDownloads.erase(url);
         m_remoteIconCache[url] = path;
         for (auto& inst : m_instances) {
@@ -1432,8 +1466,6 @@ std::string NotificationToast::resolveNotificationIconPath(const PopupEntry& ent
       });
     } else if (m_httpClient == nullptr) {
       kLog.warn("notification toast: cannot download remote icon url='{}' because HttpClient is null", iconValue);
-    } else {
-      kLog.info("notification toast: remote icon download already pending url='{}'", iconValue);
     }
     return {};
   }
@@ -1441,7 +1473,6 @@ std::string NotificationToast::resolveNotificationIconPath(const PopupEntry& ent
   const std::string localPath = normalizeLocalIconPath(iconValue);
   if (!localPath.empty() && localPath.front() == '/') {
     if (access(localPath.c_str(), R_OK) == 0) {
-      kLog.info("notification toast: #{} using local icon path='{}'", entry.notificationId, localPath);
       return localPath;
     }
     kLog.warn("notification toast: #{} local icon path not readable path='{}'", entry.notificationId, localPath);
@@ -1455,8 +1486,6 @@ std::string NotificationToast::resolveNotificationIconPath(const PopupEntry& ent
 
   const std::string& resolved = m_iconResolver.resolve(localPath);
   if (!resolved.empty()) {
-    kLog.info("notification toast: #{} theme icon resolved name='{}' path='{}'", entry.notificationId, localPath,
-          resolved);
     return resolved;
   }
 
