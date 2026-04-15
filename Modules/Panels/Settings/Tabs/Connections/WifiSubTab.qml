@@ -13,6 +13,11 @@ import qs.Widgets
 
 Item {
   id: root
+
+  NetworkEditPopup {
+    id: networkEditPopup
+    parent: Overlay.overlay
+  }
   Layout.fillWidth: true
   implicitHeight: mainLayout.implicitHeight
 
@@ -887,6 +892,22 @@ Item {
             onClicked: {
               root.detailsGrid = !root.detailsGrid;
               Settings.data.network.wifiDetailsViewMode = root.detailsGrid ? "grid" : "list";
+            }
+            z: 1
+          }
+
+          NIconButton {
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.rightMargin: Style.marginS + (Style.baseWidgetSize * 0.65) + Style.marginS
+            anchors.topMargin: Style.marginS
+            icon: "settings"
+            tooltipText: I18n.tr("wifi.edit.title")
+            baseSize: Style.baseWidgetSize * 0.65
+            onClicked: {
+              var connName = modelData.ssid;
+              var isActive = modelData.connected;
+              networkEditPopup.openEdit(connName, isActive, true);
             }
             z: 1
           }
