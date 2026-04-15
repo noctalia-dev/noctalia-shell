@@ -810,11 +810,16 @@ void ConfigService::parseTable(const toml::table& tbl) {
         theme.source = ThemeSource::Builtin;
       else if (*v == "wallpaper")
         theme.source = ThemeSource::Wallpaper;
+      else if (*v == "community")
+        theme.source = ThemeSource::Community;
     }
     if (auto builtinPalette = (*themeTbl)["builtin_palette"].value<std::string>()) {
       theme.builtinPalette = *builtinPalette;
     } else if (auto builtin = (*themeTbl)["builtin"].value<std::string>()) {
       theme.builtinPalette = *builtin;
+    }
+    if (auto v = (*themeTbl)["community_palette"].value<std::string>()) {
+      theme.communityPalette = *v;
     }
     if (auto v = (*themeTbl)["wallpaper_scheme"].value<std::string>())
       theme.wallpaperScheme = *v;

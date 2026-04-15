@@ -699,10 +699,11 @@ Controls the colors used by the shell — bars, panels, widgets, OSD, overview, 
 
 ```toml
 [theme]
-source           = "builtin"      # builtin | wallpaper
-builtin          = "Noctalia"     # bundled scheme name
-wallpaper_scheme = "m3-content"   # generator used when source = "wallpaper"
-mode             = "dark"         # dark | light | auto
+source            = "builtin"      # builtin | wallpaper | community
+builtin           = "Noctalia"     # bundled scheme name
+community_palette = "Noctalia"     # community palette name when source = "community"
+wallpaper_scheme  = "m3-content"   # generator used when source = "wallpaper"
+mode              = "dark"         # dark | light | auto
 
 [theme.templates]
 enable_builtins       = true
@@ -715,10 +716,13 @@ user_config           = "~/.config/noctalia/user-templates.toml"
 
 - `builtin` — use one of the schemes compiled into the binary (see list below).
 - `wallpaper` — generate a palette from the current default wallpaper each time it changes.
+- `community` — fetch a palette by name from `https://api.noctalia.dev/palette/<name>`.
 
 **`builtin`** names which bundled scheme to load when `source = "builtin"`. Unknown names fall back to `Noctalia`. Available schemes:
 
 `Ayu`, `Catppuccin`, `Dracula`, `Eldritch`, `Gruvbox`, `Kanagawa`, `Noctalia`, `Nord`, `Rosé Pine`, `Tokyo-Night`
+
+**`community_palette`** names a palette served by `https://api.noctalia.dev/palette/<name>`. The shell downloads the palette on first use and caches it permanently in `~/.cache/noctalia/community-palettes/` (honoring `XDG_CACHE_HOME`). Subsequent launches load the cached file directly and never touch the network, so community palettes keep working offline. While the initial download is in flight — or if it fails for any reason — the shell falls back to the `Noctalia` built-in palette and cross-fades into the downloaded palette once it arrives. To refresh a palette, delete the corresponding file under `~/.cache/noctalia/community-palettes/`. Names with spaces or other special characters are URL-encoded before being sent to the API and used as the cache filename.
 
 **`wallpaper_scheme`** picks the generator used when `source = "wallpaper"`. The `m3-*` schemes are Material Design 3 palettes built on Google's Material Color Utilities; the rest are custom HSL-space generators with distinct aesthetics.
 

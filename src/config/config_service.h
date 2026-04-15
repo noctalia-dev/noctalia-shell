@@ -217,6 +217,7 @@ struct IdleConfig {
 enum class ThemeSource : std::uint8_t {
   Builtin = 0,
   Wallpaper = 1,
+  Community = 2,
 };
 
 enum class ThemeMode : std::uint8_t {
@@ -237,6 +238,7 @@ struct ThemeConfig {
 
   ThemeSource source = ThemeSource::Builtin;
   std::string builtinPalette = "Noctalia";
+  std::string communityPalette = "Noctalia";
   std::string wallpaperScheme = "m3-content";
   ThemeMode mode = ThemeMode::Dark;
   TemplatesConfig templates;

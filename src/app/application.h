@@ -83,7 +83,8 @@ private:
   ClipboardService m_clipboardService;
   VirtualKeyboardService m_virtualKeyboardService;
   ConfigService m_configService;
-  noctalia::theme::ThemeService m_themeService{m_configService};
+  HttpClient m_httpClient;
+  noctalia::theme::ThemeService m_themeService{m_configService, m_httpClient};
   noctalia::theme::TemplateApplyService m_templateApplyService{m_configService};
   TimeService m_timeService;
   NotificationManager m_notificationManager;
@@ -132,7 +133,6 @@ private:
   std::unique_ptr<PipeWireSpectrumPollSource> m_pipewireSpectrumPollSource;
   IpcService m_ipcService;
   IpcPollSource m_ipcPollSource{m_ipcService};
-  HttpClient m_httpClient;
   WeatherService m_weatherService;
   HttpClientPollSource m_httpClientPollSource{m_httpClient};
   WeatherPollSource m_weatherPollSource{m_weatherService};

@@ -6,9 +6,11 @@
 #include "ui/palette.h"
 
 #include <functional>
+#include <string>
 #include <string_view>
 
 class ConfigService;
+class HttpClient;
 
 namespace noctalia::theme {
 
@@ -17,7 +19,7 @@ namespace noctalia::theme {
     using ChangeCallback = std::function<void()>;
     using ResolvedCallback = std::function<void(const GeneratedPalette&, std::string_view)>;
 
-    explicit ThemeService(ConfigService& config);
+    ThemeService(ConfigService& config, HttpClient& httpClient);
 
     // Snaps the palette to the resolved theme (no fade). Used at startup.
     void apply();
@@ -35,8 +37,11 @@ namespace noctalia::theme {
     void resolveAndSet(bool animate);
     void startTransition(const Palette& target);
     void tickTransition();
+    void startCommunityDownload(const std::string& name);
 
     ConfigService& m_config;
+    HttpClient& m_httpClient;
+    std::string m_inflightCommunityName;
     ChangeCallback m_changeCallback;
     ResolvedCallback m_resolvedCallback;
 

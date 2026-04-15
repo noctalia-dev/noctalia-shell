@@ -45,7 +45,8 @@ LuauHost::LuauHost() {
 
 LuauHost::~LuauHost() {
   if (m_L) {
-    if (m_threadRef != -1) lua_unref(m_L, m_threadRef);
+    if (m_threadRef != -1)
+      lua_unref(m_L, m_threadRef);
     lua_close(m_L);
   }
 }
