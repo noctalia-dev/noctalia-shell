@@ -1650,9 +1650,9 @@
       "title": "Regiune"
     },
     "session-menu": {
-      "countdown-duration-description": "Stabilește cât timp durează cronometrul de numărătoare inversă înainte de a executa acțiuni de alimentare.",
+      "countdown-duration-description": "Stabilește cât durează numărătoarea inversă înainte de a executa acțiuni de alimentare.",
       "countdown-duration-label": "Durată numărătoare inversă",
-      "enable-countdown-description": "Afișează un cronometru cu numărătoare inversă înainte de a executa acțiuni de alimentare.",
+      "enable-countdown-description": "Afișează o numărătoare inversă înainte de a executa acțiuni de alimentare.",
       "enable-countdown-label": "Activează temporizatorul cu numărătoare inversă",
       "entries-desc": "Personalizează ce acțiuni de alimentare apar în meniul de sesiune și în ce ordine.",
       "entries-title": "Acțiuni de sesiune",
@@ -1918,9 +1918,9 @@
       "title": "Mod avion"
     },
     "battery": {
-      "critical": "Baterie critică",
-      "critical-desc": "Bateria este la {percent}% — conectați încărcătorul imediat",
-      "low": "Baterie slabă",
+      "critical": "Nivel baterie critic",
+      "critical-desc": "Bateria este la {percent}% — conectează încărcătorul imediat",
+      "low": "Nivel baterie scăzut",
       "low-desc": "Bateria este la {percent}% — conectează încărcătorul"
     },
     "bluetooth": {
