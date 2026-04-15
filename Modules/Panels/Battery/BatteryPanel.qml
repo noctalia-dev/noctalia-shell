@@ -90,9 +90,9 @@ SmartPanel {
 
           NIcon {
             pointSize: Style.fontSizeXXL
-            // If UPower is not installed but a battery is detected via sysfs, show an error icon in mError [red]. Otherwise, show the appropriate battery icon based on the primary device's status.
-            color: (!BatteryService.upowerInstalled && BatteryService.sysfsBatteryDetected) ? Color.mError : (BatteryService.isCharging(primaryDevice) || BatteryService.isPluggedIn(primaryDevice)) ? Color.mPrimary : (BatteryService.isCriticalBattery(primaryDevice) || BatteryService.isLowBattery(primaryDevice)) ? Color.mError : Color.mOnSurface
-            icon: (!BatteryService.upowerInstalled && BatteryService.sysfsBatteryDetected) ? "battery-exclamation" : BatteryService.getIcon(BatteryService.getPercentage(primaryDevice), BatteryService.isCharging(primaryDevice), BatteryService.isPluggedIn(primaryDevice), BatteryService.isDeviceReady(primaryDevice))
+            // If UPower is not installed, show it error icon in mError [red]. Otherwise, show the appropriate battery icon based on the primary device's status.
+            color: !BatteryService.upowerInstalled ? Color.mError : (BatteryService.isCharging(primaryDevice) || BatteryService.isPluggedIn(primaryDevice)) ? Color.mPrimary : (BatteryService.isCriticalBattery(primaryDevice) || BatteryService.isLowBattery(primaryDevice)) ? Color.mError : Color.mOnSurface
+            icon: !BatteryService.upowerInstalled ? "battery-exclamation" : BatteryService.getIcon(BatteryService.getPercentage(primaryDevice), BatteryService.isCharging(primaryDevice), BatteryService.isPluggedIn(primaryDevice), BatteryService.isDeviceReady(primaryDevice))
           }
 
           ColumnLayout {

@@ -23,17 +23,6 @@ Singleton {
   readonly property real criticalThreshold: Settings.data.systemMonitor.batteryCriticalThreshold
   readonly property string batteryIcon: getIcon(batteryPercentage, batteryCharging, batteryPluggedIn, batteryReady)
   readonly property bool upowerInstalled: ProgramCheckerService.upowerAvailable
-  property bool sysfsBatteryDetected: false
-
-  Process {
-    id: sysfsCheck
-    command: ["sh", "-c", "grep -q 'Battery' /sys/class/power_supply/*/type 2>/dev/null"]
-    running: true
-    onExited: exitCode => {
-      root.sysfsBatteryDetected = (exitCode === 0); // If exit code is 0, we have a battery detected via sysfs.
-    }
-  }
-
   readonly property var laptopBatteries: upowerInstalled ? (UPower.devices?.values || []).filter(d => d && d.isLaptopBattery).sort((x, y) => {
                                                                                                                                      // Force DisplayDevice to the top
                                                                                                                                      if (x.nativePath?.includes("DisplayDevice"))

@@ -56,13 +56,13 @@ Item {
   // Visibility logic:
   // 1. Always show if hideIfNotDetected is false
   // 2. Show if a battery is ready (unless hideIfIdle is true and it's plugged in)
-  // 3. Show UPower missing error only on laptops (detected via sysfs)
-  readonly property bool shouldShow: (!BatteryService.upowerInstalled && BatteryService.sysfsBatteryDetected) || !hideIfNotDetected || (isReady && (hideIfIdle ? !isPluggedIn : true))
+  // 3. Show UPower missing.
+  readonly property bool shouldShow: (!BatteryService.upowerInstalled) || !hideIfNotDetected || (isReady && (hideIfIdle ? !isPluggedIn : true))
   readonly property string deviceNativePath: widgetSettings.deviceNativePath !== undefined ? widgetSettings.deviceNativePath : widgetMetadata.deviceNativePath
   readonly property var selectedDevice: BatteryService.isDevicePresent(BatteryService.findDevice(deviceNativePath)) ? BatteryService.findDevice(deviceNativePath) : null
 
   readonly property var tooltipContent: {
-    if (!BatteryService.upowerInstalled && BatteryService.sysfsBatteryDetected && BatteryService.bluetoothBatteries.length === 0) {
+    if (!BatteryService.upowerInstalled && BatteryService.bluetoothBatteries.length === 0) {
       return I18n.tr("battery.no-upower-title");
     }
     if (!isReady || !isPresent) {
