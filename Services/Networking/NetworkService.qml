@@ -351,6 +351,8 @@ Singleton {
     }
     if (settings.ipv4Dns !== undefined) {
       args.push("ipv4.dns", settings.ipv4Dns || "");
+      var ignoreV4Dns = (settings.ipv4Method === "auto" && settings.ipv4Dns) ? "yes" : "no";
+      args.push("ipv4.ignore-auto-dns", ignoreV4Dns);
     }
 
     // IPv6
@@ -366,6 +368,8 @@ Singleton {
     }
     if (settings.ipv6Dns !== undefined) {
       args.push("ipv6.dns", settings.ipv6Dns || "");
+      var ignoreV6Dns = (settings.ipv6Method === "auto" && settings.ipv6Dns) ? "yes" : "no";
+      args.push("ipv6.ignore-auto-dns", ignoreV6Dns);
     }
 
     // MTU
