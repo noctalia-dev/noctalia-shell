@@ -57,6 +57,7 @@ Item {
       return Style.fontWeightBold;
     return Style.fontWeightBold;
   }
+  readonly property bool largeActive: (widgetSettings.largeActive !== undefined) ? widgetSettings.largeActive : widgetMetadata.largeActive
   readonly property bool hideUnoccupied: (widgetSettings.hideUnoccupied !== undefined) ? widgetSettings.hideUnoccupied : widgetMetadata.hideUnoccupied
   readonly property bool followFocusedScreen: (widgetSettings.followFocusedScreen !== undefined) ? widgetSettings.followFocusedScreen : widgetMetadata.followFocusedScreen
   readonly property bool showAll: (widgetSettings.showAll !== undefined) ? widgetSettings.showAll : widgetMetadata.showAll
@@ -161,10 +162,10 @@ Item {
   implicitWidth: appVisible ? (isVertical ? groupedGrid.implicitWidth : Math.round(groupedGrid.implicitWidth + horizontalPadding * hasLabel)) : (isVertical ? barHeight : computeWidth())
   implicitHeight: appVisible ? (isVertical ? Math.round(groupedGrid.implicitHeight + horizontalPadding * 0.6 * hasLabel) : barHeight) : (isVertical ? computeHeight() : barHeight)
 
-  function getWorkspaceWidth(ws, activeOverride) {
+  function getWorkspaceWidth(ws, largeOverride) {
     const d = Math.round(capsuleHeight * root.baseDimensionRatio);
-    const isActive = activeOverride !== undefined ? activeOverride : ws.isActive;
-    const factor = isActive ? 2.2 : 1;
+    const isLarge = largeOverride !== undefined ? largeOverride : (largeActive ? ws.isActive : ws.isFocused);
+    const factor = isLarge ? 2.2 : 1;
 
     // Don't calculate text width if labels are off
     if (labelMode === "none") {
@@ -186,10 +187,10 @@ Item {
     return Style.toOdd(Math.max(d * factor, textWidth + padding));
   }
 
-  function getWorkspaceHeight(ws, activeOverride) {
+  function getWorkspaceHeight(ws, largeOverride) {
     const d = Math.round(capsuleHeight * root.baseDimensionRatio);
-    const isActive = activeOverride !== undefined ? activeOverride : ws.isActive;
-    const factor = isActive ? 2.2 : 1;
+    const isLarge = largeOverride !== undefined ? largeOverride : (largeActive ? ws.isActive : ws.isFocused);
+    const factor = isLarge ? 2.2 : 1;
     return Style.toOdd(d * factor);
   }
 
@@ -629,6 +630,7 @@ Item {
         fontWeight: root.fontWeight
         characterCount: root.characterCount
         textRatio: root.textRatio
+        largeActive: root.largeActive
         showLabelsOnlyWhenOccupied: root.showLabelsOnlyWhenOccupied
         focusedColor: root.focusedColor
         occupiedColor: root.occupiedColor
@@ -672,6 +674,7 @@ Item {
         fontWeight: root.fontWeight
         characterCount: root.characterCount
         textRatio: root.textRatio
+        largeActive: root.largeActive
         showLabelsOnlyWhenOccupied: root.showLabelsOnlyWhenOccupied
         focusedColor: root.focusedColor
         occupiedColor: root.occupiedColor

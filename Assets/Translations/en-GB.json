@@ -316,6 +316,8 @@
       "hide-unoccupied-label": "Hide unoccupied",
       "label-mode-description": "Choose how workspace labels are displayed.",
       "label-mode-label": "Label mode",
+      "large-active-description": "Make the size of active workspaces same as focused one.",
+      "large-active-label": "Large active workspaces",
       "occupied-color-description": "Set the background colour for occupied workspaces.",
       "occupied-color-label": "Occupied workspace colour",
       "pill-size-description": "Adjust the size of workspace pills.",

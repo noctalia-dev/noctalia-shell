@@ -295,6 +295,7 @@ Singleton {
                                     "labelMode": "index",
                                     "followFocusedScreen": false,
                                     "showAll": false,
+                                    "largeActive": true,
                                     "hideUnoccupied": false,
                                     "characterCount": 2,
                                     "showApplications": false,

@@ -16,6 +16,7 @@ ColumnLayout {
   signal settingsChanged(var settings)
 
   property string valueLabelMode: widgetData.labelMode !== undefined ? widgetData.labelMode : widgetMetadata.labelMode
+  property bool valueLargeActive: widgetData.largeActive !== undefined ? widgetData.largeActive : widgetMetadata.largeActive
   property bool valueHideUnoccupied: widgetData.hideUnoccupied !== undefined ? widgetData.hideUnoccupied : widgetMetadata.hideUnoccupied
   property bool valueFollowFocusedScreen: widgetData.followFocusedScreen !== undefined ? widgetData.followFocusedScreen : widgetMetadata.followFocusedScreen
   property bool valueShowAll: widgetData.showAll !== undefined ? widgetData.showAll : widgetMetadata.showAll
@@ -40,6 +41,7 @@ ColumnLayout {
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.labelMode = valueLabelMode;
+    settings.largeActive = valueLargeActive;
     settings.hideUnoccupied = valueHideUnoccupied;
     settings.characterCount = valueCharacterCount;
     settings.followFocusedScreen = valueFollowFocusedScreen;
@@ -149,6 +151,16 @@ ColumnLayout {
                   saveSettings();
                 }
     minimumWidth: 200
+  }
+
+  NToggle {
+    label: I18n.tr("bar.workspace.large-active-label")
+    description: I18n.tr("bar.workspace.large-active-description")
+    checked: valueLargeActive
+    onToggled: checked => {
+                 valueLargeActive = checked;
+                 saveSettings();
+               }
   }
 
   NToggle {
