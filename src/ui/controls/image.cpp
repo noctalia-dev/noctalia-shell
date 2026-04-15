@@ -136,15 +136,15 @@ bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::si
   return true;
 }
 
-bool Image::setSourceRaw(Renderer& renderer, const std::uint8_t* data, int width, int height,
-                       int stride, PixmapFormat format, bool mipmap) {
+bool Image::setSourceRaw(Renderer& renderer, const std::uint8_t* data, std::size_t size, int width,
+                         int height, int stride, PixmapFormat format, bool mipmap) {
   clear(renderer);
 
-  if (data == nullptr || width <= 0 || height <= 0) {
+  if (data == nullptr || size == 0 || width <= 0 || height <= 0) {
     return false;
   }
 
-  m_texture = renderer.textureManager().loadFromRaw(data, width, height, stride, format, mipmap);
+  m_texture = renderer.textureManager().loadFromRaw(data, size, width, height, stride, format, mipmap);
   if (m_texture.id == 0) {
     m_sourcePath.clear();
     if (m_image != nullptr) {

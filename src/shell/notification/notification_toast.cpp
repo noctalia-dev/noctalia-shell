@@ -1195,11 +1195,19 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
       appIcon->setPosition(0.0f, 0.0f);
       appIcon->setCornerRadius(kNotificationIconRadius);
       appIcon->setFit(ImageFit::Cover);
-      const PixmapFormat format = (image.channels == 3) ? PixmapFormat::Rgb : PixmapFormat::Rgba;
-      if (appIcon->setSourceRaw(*m_renderContext, image.data.data(), image.width, image.height,
-                                image.rowStride, format, true)) {
+      const bool validImageMetadata =
+          image.bitsPerSample == 8 &&
+          ((image.channels == 4 && image.hasAlpha) || (image.channels == 3 && !image.hasAlpha));
+      const PixmapFormat format = image.channels == 3 ? PixmapFormat::RGB : PixmapFormat::RGBA;
+      if (validImageMetadata &&
+          appIcon->setSourceRaw(*m_renderContext, image.data.data(), image.data.size(), image.width,
+                                image.height, image.rowStride, format, true)) {
         *outAppIcon = iconSlot->addChild(std::move(appIcon));
         iconAssigned = true;
+      } else if (!validImageMetadata) {
+        kLog.warn(
+            "notification toast: unsupported image-data avatar metadata for #{} (alpha={}, bits={}, channels={})",
+            entry.notificationId, image.hasAlpha, image.bitsPerSample, image.channels);
       } else {
         kLog.warn("notification toast: failed to load image-data avatar for #{} ({}x{}, bytes={})",
                   entry.notificationId, image.width, image.height, image.data.size());

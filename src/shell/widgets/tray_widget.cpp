@@ -350,7 +350,8 @@ void TrayWidget::rebuild(Renderer& renderer) {
         auto image = std::make_unique<Image>();
         image->setFit(ImageFit::Contain);
         image->setSize(iconSize, iconSize);
-        if (image->setSourceRaw(renderer, pixmap.data(), pixmapW, pixmapH, 0, PixmapFormat::Bgra, true)) {
+        if (image->setSourceRaw(renderer, pixmap.data(), pixmap.size(), pixmapW, pixmapH, 0,
+                                PixmapFormat::ARGB, true)) {
           iconW = iconSize;
           iconH = iconSize;
           kLog.debug("tray widget icon id={} source=pixmap size={}x{} (bytes={})", item.id, pixmapW, pixmapH,
