@@ -324,13 +324,9 @@ Singleton {
     }
 
     const name = (device.model || device.name || "").toLowerCase();
-    Logger.e("BatteryDebug", "Determining icon for device Model (upower): " + device.model + ", name: (bluez) " + device.name); // Useful for debugging device recognition
     const nativePath = (device.nativePath || "").toLowerCase();
-    Logger.e("BatteryDebug", "Device native path: " + nativePath); // Useful for debugging device recognition
     const iconHint = (device.icon || device.iconName || "").toLowerCase();  // Some devices are not known to UPower (eg: Bluetooth devices, hint is often does the heavy lfting for recognition)
-    Logger.e("BatteryDebug", "Device icon hint: " + iconHint); // Useful for debugging device recognition
     const isEarbud = name.includes("pod") || name.includes("bud") || iconHint.includes("earbud");
-    Logger.e("BatteryDebug", "Is device an earbud based on name or icon hint? " + isEarbud); // Useful for debugging device recognitiontml - Type property - Skipped: 7, 16, 27
     // 3: UPS
     if (device.type === UPowerDeviceType.Ups || nativePath.includes("ups")) {
       return "device-ups";
