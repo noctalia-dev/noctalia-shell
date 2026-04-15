@@ -171,8 +171,7 @@ SmartPanel {
       if (actionIndex >= 0) {
         var actions = parseActions(item.actionsJson);
         if (actionIndex < actions.length) {
-          if (NotificationService.invokeAction(item.id, actions[actionIndex].identifier))
-            root.close();
+          NotificationService.invokeAction(item.id, actions[actionIndex].identifier);
         }
       } else {
         var delegate = notificationColumn.children[focusIndex];
@@ -792,18 +791,18 @@ SmartPanel {
                                       return;
                                     }
 
-                                    // Without a default action, or if invoking it fails,
-                                    // fall back to focusing the sender window by app identity.
+                                    // Focus sender window (and invoke default action if available)
                                     var actions = notificationDelegate.actionsList;
                                     var hasDefault = actions.some(function (a) {
                                       return a.identifier === "default";
                                     });
-                                    if (hasDefault && NotificationService.invokeAction(notificationDelegate.notificationId, "default")) {
-                                      root.close();
+                                    if (hasDefault) {
+                                      NotificationService.focusSenderWindow(notificationDelegate.appName);
+                                      NotificationService.invokeAction(notificationDelegate.notificationId, "default");
                                     } else {
                                       NotificationService.focusSenderWindow(notificationDelegate.appName);
-                                      root.close();
                                     }
+                                    root.close();
                                   }
                       onCanceled: {
                         notificationDelegate.isSwiping = false;
@@ -961,8 +960,9 @@ SmartPanel {
                                 // Capture modelData in a property to avoid reference errors
                                 property var actionData: modelData
                                 onClicked: {
-                                  if (NotificationService.invokeAction(notificationDelegate.notificationId, actionData.identifier))
-                                    root.close();
+                                  NotificationService.focusSenderWindow(notificationDelegate.appName);
+                                  root.close();
+                                  NotificationService.invokeAction(notificationDelegate.notificationId, actionData.identifier);
                                 }
                               }
                             }

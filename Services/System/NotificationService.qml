@@ -923,29 +923,13 @@ Singleton {
 
   function invokeActionAndSuppressClose(id, actionId) {
     const notifData = popupState[id];
-    const notification = notifData?.notification;
-    const onClosed = notifData?.onClosed;
-    let restoreClosedHandler = false;
-
-    if (notification && onClosed) {
+    if (notifData && notifData.notification && notifData.onClosed) {
       try {
-        // A successful action may synchronously close the notification. Disconnect
-        // our close handler first so the popup is only dismissed by the action path.
-        notification.closed.disconnect(onClosed);
-        restoreClosedHandler = true;
+        notifData.notification.closed.disconnect(notifData.onClosed);
       } catch (e) {}
     }
 
-    const invoked = invokeAction(id, actionId);
-
-    if (!invoked && restoreClosedHandler && notification && onClosed) {
-      try {
-        // If invoking the action failed, restore normal close handling for this popup.
-        notification.closed.connect(onClosed);
-      } catch (e) {}
-    }
-
-    return invoked;
+    return invokeAction(id, actionId);
   }
 
   function invokeAction(id, actionId) {
