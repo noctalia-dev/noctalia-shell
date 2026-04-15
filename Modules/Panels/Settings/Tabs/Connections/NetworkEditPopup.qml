@@ -151,13 +151,19 @@ Popup {
     var v4dns = ipv4Dns.split(",").map(function(s) { return s.trim(); }).filter(function(s) { return s; }).join(" ");
     var v6dns = ipv6Dns.split(",").map(function(s) { return s.trim(); }).filter(function(s) { return s; }).join(" ");
 
+    // Default prefix if user omits it: /24 for IPv4, /64 for IPv6
+    var v4addr = ipv4Address;
+    if (v4addr && v4addr.indexOf("/") === -1) v4addr += "/24";
+    var v6addr = ipv6Address;
+    if (v6addr && v6addr.indexOf("/") === -1) v6addr += "/64";
+
     NetworkService.modifyConnection(connectionName, {
       ipv4Method: ipv4Method,
-      ipv4Address: ipv4Method === "manual" ? ipv4Address : "",
+      ipv4Address: ipv4Method === "manual" ? v4addr : "",
       ipv4Gateway: ipv4Method === "manual" ? ipv4Gateway : "",
       ipv4Dns: v4dns,
       ipv6Method: ipv6Method,
-      ipv6Address: ipv6Method === "manual" ? ipv6Address : "",
+      ipv6Address: ipv6Method === "manual" ? v6addr : "",
       ipv6Gateway: ipv6Method === "manual" ? ipv6Gateway : "",
       ipv6Dns: v6dns,
       mtu: mtu
