@@ -1321,6 +1321,14 @@ Singleton {
     }
   }
 
+  Timer {
+    id: postReapplyRefreshTimer
+    interval: 5000
+    onTriggered: {
+      deviceStatusProcess.running = true;
+    }
+  }
+
   // Reapply connection after modify (bring it up with new settings)
   Process {
     id: reapplyProcess
@@ -1336,11 +1344,10 @@ Singleton {
         root.connectionModified(true, "");
         ToastService.showNotice(I18n.tr("common.network"), I18n.tr("toast.wifi.settings-applied"), "settings");
 
-        // Invalidate cache and schedule scan (same pattern as connectProcess)
+        // Invalidate cache and schedule delayed refresh
         root.activeWifiDetailsTimestamp = 0;
         root.activeEthernetDetailsTimestamp = 0;
-        delayedScanTimer.interval = 5000;
-        delayedScanTimer.restart();
+        postReapplyRefreshTimer.restart();
       }
     }
     stderr: StdioCollector {
