@@ -80,14 +80,11 @@ public:
 
   void setDevice(const AudioNode& node) {
     m_radio->setChecked(node.isDefault);
-
     const std::string title = !node.description.empty() ? node.description : node.name;
-    // Removed unused variable 'showDetail'
 
     if (m_title != nullptr) {
       m_title->setText(title);
     }
-    // Removed subtext (detail) handling
   }
 
   void doLayout(Renderer& renderer) override {
@@ -100,7 +97,6 @@ public:
     const float textMaxWidth =
         std::max(0.0f, width() - paddingLeft() - paddingRight() - gap() - m_radio->width());
     m_title->setMaxWidth(textMaxWidth);
-    // Removed subtext (detail) max width
 
     m_inputArea->setVisible(false);
     Flex::doLayout(renderer);
@@ -129,7 +125,6 @@ private:
     if (m_title != nullptr) {
       m_title->setColor(roleColor(ColorRole::OnSurface));
     }
-    // Removed subtext (detail) color handling
   }
 
   [[nodiscard]] bool hovered() const noexcept { return m_inputArea != nullptr && m_inputArea->hovered(); }
