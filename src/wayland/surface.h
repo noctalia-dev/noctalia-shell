@@ -48,6 +48,16 @@ public:
   void setInputRegion(const std::vector<InputRect>& rects);
   void setBlurRegion(const std::vector<InputRect>& rects);
   void clearBlurRegion();
+
+  // Approximates a rounded rectangle as a stack of horizontal axis-aligned strips
+  // suitable for `wl_region` (which has no curve primitives). The four corner radii
+  // are applied independently. `stripPx` is the strip height through the corner
+  // bands; smaller is smoother but produces more rects.
+  static std::vector<InputRect> tessellateRoundedRect(int x, int y, int w, int h, float tlRadius, float trRadius,
+                                                      float brRadius, float blRadius, int stripPx = 1);
+  static std::vector<InputRect> tessellateRoundedRect(int x, int y, int w, int h, float radius, int stripPx = 1) {
+    return tessellateRoundedRect(x, y, w, h, radius, radius, radius, radius, stripPx);
+  }
   void requestUpdate();
   void requestUpdateOnly();
   void requestLayout();

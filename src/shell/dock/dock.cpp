@@ -771,12 +771,10 @@ void Dock::buildScene(DockInstance& instance) {
   }
 
   if (cfg.backgroundBlur) {
-    instance.surface->setBlurRegion({InputRect{
-        static_cast<int>(panelX),
-        static_cast<int>(panelY),
-        static_cast<int>(panelW),
-        static_cast<int>(panelH),
-    }});
+    auto blurStrips =
+        Surface::tessellateRoundedRect(static_cast<int>(panelX), static_cast<int>(panelY), static_cast<int>(panelW),
+                                       static_cast<int>(panelH), static_cast<float>(cfg.radius));
+    instance.surface->setBlurRegion(blurStrips);
   } else {
     instance.surface->clearBlurRegion();
   }

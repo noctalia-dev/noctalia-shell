@@ -723,7 +723,9 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   };
   instance.surface->setInputRegion({barRect});
   if (instance.barConfig.backgroundBlur) {
-    instance.surface->setBlurRegion({barRect});
+    auto blurStrips = Surface::tessellateRoundedRect(barRect.x, barRect.y, barRect.width, barRect.height, barRadii.tl,
+                                                     barRadii.tr, barRadii.br, barRadii.bl);
+    instance.surface->setBlurRegion(blurStrips);
   } else {
     instance.surface->clearBlurRegion();
   }

@@ -17,6 +17,7 @@
 #include "ui/controls/progress_bar.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "wayland/surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
 
@@ -1102,21 +1103,23 @@ void NotificationToast::updateInputRegion(Instance& inst) const {
   }
 
   std::vector<InputRect> rects;
+  std::vector<InputRect> blurRects;
   rects.reserve(inst.cards.size());
   for (const auto& card : inst.cards) {
     if (card.cardNode == nullptr) {
       continue;
     }
-    rects.push_back({
-        .x = static_cast<int>(std::floor(card.cardNode->x())),
-        .y = static_cast<int>(std::floor(card.cardNode->y())),
-        .width = std::max(1, static_cast<int>(std::ceil(card.cardNode->width()))),
-        .height = std::max(1, static_cast<int>(std::ceil(card.cardNode->height()))),
-    });
+    const int rx = static_cast<int>(std::floor(card.cardNode->x()));
+    const int ry = static_cast<int>(std::floor(card.cardNode->y()));
+    const int rw = std::max(1, static_cast<int>(std::ceil(card.cardNode->width())));
+    const int rh = std::max(1, static_cast<int>(std::ceil(card.cardNode->height())));
+    rects.push_back({rx, ry, rw, rh});
+    auto strips = Surface::tessellateRoundedRect(rx, ry, rw, rh, Style::radiusXl);
+    blurRects.insert(blurRects.end(), strips.begin(), strips.end());
   }
 
   inst.surface->setInputRegion(rects);
-  inst.surface->setBlurRegion(rects);
+  inst.surface->setBlurRegion(blurRects);
 }
 
 InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary,
