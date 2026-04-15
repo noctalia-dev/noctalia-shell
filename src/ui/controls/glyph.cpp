@@ -71,15 +71,15 @@ void Glyph::measure(Renderer& renderer) {
   const float finalWidth = preserveAssignedWidth ? assignedWidth : metrics.width;
   Node::setSize(std::round(finalWidth), std::round(refMetrics.bottom - refMetrics.top));
 
-  // Glyph glyphs (MDI) fill more of the em-square than text glyphs, so placing
-  // the glyph at the text baseline leaves its ink center above the label ink center.
-  // Instead, compute the Y that puts the glyph ink center at the reference center,
-  // matching where label ink sits regardless of per-glyph metrics.
-  const float refCenter = (refMetrics.bottom - refMetrics.top) * 0.5f;
-  const float glyphInkCenter = (metrics.top + metrics.bottom) * 0.5f; // relative to baseline
+  // MDI glyphs fill more of the em-square than text, so placing the glyph at
+  // the text baseline leaves its ink above the label's ink. Center the glyph
+  // ink on the reference ink center (computed from rounded container height so
+  // glyph and label containers agree on the same midline at any scale).
+  const float containerHeight = height();
   const float glyphCenterX = (metrics.left + metrics.right) * 0.5f;
-  const float glyphNodeY = refCenter - glyphInkCenter;
-  m_glyphNode->setPosition(std::round(width() * 0.5f - glyphCenterX), glyphNodeY);
+  const float glyphInkCenter = (metrics.top + metrics.bottom) * 0.5f; // relative to baseline
+  const float glyphNodeY = containerHeight * 0.5f - glyphInkCenter;
+  m_glyphNode->setPosition(std::round(width() * 0.5f - glyphCenterX), std::round(glyphNodeY));
 
   m_cachedCodepoint = m_glyphNode->codepoint();
   m_cachedFontSize = m_glyphNode->fontSize();

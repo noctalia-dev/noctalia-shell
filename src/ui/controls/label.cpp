@@ -120,7 +120,7 @@ void Label::measure(Renderer& renderer) {
   const float finalWidth =
       preserveAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
   setSize(std::round(finalWidth), std::round(height));
-  m_textNode->setPosition(0.0f, m_baselineOffset);
+  m_textNode->setPosition(0.0f, std::round(m_baselineOffset));
 
   m_cachedText = m_textNode->text();
   m_cachedFontSize = m_textNode->fontSize();
