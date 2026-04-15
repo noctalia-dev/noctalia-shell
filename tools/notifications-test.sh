@@ -20,7 +20,7 @@ sleep 0.5
 notify-send "Notification #6" "A notification with an absolute path icon" -i "/usr/share/pixmaps/steam.png" 
 sleep 0.5
 
-notify-send "Notification #7" "A notification with an absolute file://path icon" -i "file://usr/share/pixmaps/steam.png" 
+notify-send "Notification #7" "A notification with an absolute file://path icon" -i "file:///usr/share/pixmaps/steam.png" 
 sleep 0.5
 
 # A test notification with actions
