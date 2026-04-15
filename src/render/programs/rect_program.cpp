@@ -97,18 +97,15 @@ void main() {
         return;
     }
 
-    // Premultiplied-alpha compositing: border underneath, fill on top.
-    // All intermediate colors are premultiplied (rgb already scaled by alpha).
+    // Border occupies the ring where inner_coverage < 1. Inside that ring
+    // (inner_coverage == 1) the fill must stand alone — otherwise a translucent
+    // fill ends up composited over a full-area border backplane and looks opaque.
     vec3 border_pm = u_border_color.rgb * u_border_color.a;
     vec3 fill_pm = fill_base.rgb * fill_base.a;
 
-    // Blend fill over border (premultiplied "over" operator)
-    vec3 combined_rgb = fill_pm + border_pm * (1.0 - fill_base.a);
-    float combined_a = fill_base.a + u_border_color.a * (1.0 - fill_base.a);
-
-    // Lerp between border-only and fill-over-border using inner_coverage
-    vec3 interior_rgb = mix(border_pm, combined_rgb, inner_coverage);
-    float interior_a = mix(u_border_color.a, combined_a, inner_coverage);
+    float border_weight = 1.0 - inner_coverage;
+    vec3 interior_rgb = fill_pm + border_pm * border_weight * (1.0 - fill_base.a);
+    float interior_a = fill_base.a + u_border_color.a * border_weight * (1.0 - fill_base.a);
 
     // Apply outer shape mask
     float out_alpha = interior_a * outer_coverage;
