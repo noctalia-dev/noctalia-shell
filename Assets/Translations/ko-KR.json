@@ -1999,7 +1999,9 @@
       "connection-timeout": "연결 시간 초과",
       "disconnected": "'{ssid}' 연결 끊김",
       "incorrect-password": "잘못된 비밀번호",
-      "network-not-found": "네트워크를 찾을 수 없음"
+      "network-not-found": "네트워크를 찾을 수 없음",
+      "settings-applied": "네트워크 설정이 적용되었습니다",
+      "settings-apply-failed": "네트워크 설정 적용에 실패했습니다"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,36 @@
     "tooltip-placeholder": "플레이스홀더"
   },
   "wifi": {
+    "edit": {
+      "address": "IP 주소",
+      "address-placeholder-v4": "예: 192.168.1.50/24",
+      "address-placeholder-v6": "예: fd00::1/64",
+      "apply": "적용",
+      "applying": "적용 중...",
+      "cancel": "취소",
+      "dns": "DNS 서버",
+      "dns-hint": "쉼표로 구분",
+      "dns-placeholder-v4": "예: 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "예: 2001:4860:4860::8888",
+      "error-apply-failed": "설정 적용 실패",
+      "error-invalid-dns": "잘못된 DNS 형식",
+      "error-invalid-gateway": "잘못된 게이트웨이 형식",
+      "error-invalid-ip": "잘못된 IP 주소 형식",
+      "gateway": "게이트웨이",
+      "gateway-placeholder-v4": "예: 192.168.1.1",
+      "gateway-placeholder-v6": "예: fd00::1",
+      "general": "일반",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "방식",
+      "method-auto": "자동 (DHCP)",
+      "method-disabled": "비활성화",
+      "method-link-local": "링크 로컬만",
+      "method-manual": "수동",
+      "mtu": "MTU",
+      "mtu-description": "0 = 자동",
+      "title": "연결 편집"
+    },
     "enterprise": {
       "anonymous-identity": "익명 ID",
       "ca-cert": "CA 인증서",

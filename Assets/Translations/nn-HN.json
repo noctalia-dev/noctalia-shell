@@ -236,5 +236,43 @@
   },
   "system": {
     "welcome-back": "Velkomen attende,"
+  },
+  "toast": {
+    "wifi": {
+      "settings-applied": "Nettverksinnstillingar brukte",
+      "settings-apply-failed": "Klarte ikkje å bruka nettverksinnstillingane"
+    }
+  },
+  "wifi": {
+    "edit": {
+      "address": "IP-adresse",
+      "address-placeholder-v4": "t.d. 192.168.1.50/24",
+      "address-placeholder-v6": "t.d. fd00::1/64",
+      "apply": "Bruk",
+      "applying": "Brukar...",
+      "cancel": "Avbryt",
+      "dns": "DNS-tenarar",
+      "dns-hint": "Skilde med komma",
+      "dns-placeholder-v4": "t.d. 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "t.d. 2001:4860:4860::8888",
+      "error-apply-failed": "Klarte ikkje å bruka innstillingane",
+      "error-invalid-dns": "Ugyldig DNS-format",
+      "error-invalid-gateway": "Ugyldig gateway-format",
+      "error-invalid-ip": "Ugyldig IP-adresseformat",
+      "gateway": "Gateway",
+      "gateway-placeholder-v4": "t.d. 192.168.1.1",
+      "gateway-placeholder-v6": "t.d. fd00::1",
+      "general": "Generelt",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Metode",
+      "method-auto": "Automatisk (DHCP)",
+      "method-disabled": "Deaktivert",
+      "method-link-local": "Berre lokal lenkje",
+      "method-manual": "Manuell",
+      "mtu": "MTU",
+      "mtu-description": "0 = automatisk",
+      "title": "Rediger tilkopling"
+    }
   }
 }

@@ -1999,7 +1999,9 @@
       "connection-timeout": "Tiempo de conexión agotado",
       "disconnected": "Desconectado de '{ssid}'",
       "incorrect-password": "Contraseña incorrecta",
-      "network-not-found": "Red no encontrada"
+      "network-not-found": "Red no encontrada",
+      "settings-applied": "Configuración de red aplicada",
+      "settings-apply-failed": "Error al aplicar la configuración de red"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,36 @@
     "tooltip-placeholder": "Marcador de posición"
   },
   "wifi": {
+    "edit": {
+      "address": "Dirección IP",
+      "address-placeholder-v4": "ej. 192.168.1.50/24",
+      "address-placeholder-v6": "ej. fd00::1/64",
+      "apply": "Aplicar",
+      "applying": "Aplicando...",
+      "cancel": "Cancelar",
+      "dns": "Servidores DNS",
+      "dns-hint": "Separados por comas",
+      "dns-placeholder-v4": "ej. 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "ej. 2001:4860:4860::8888",
+      "error-apply-failed": "Error al aplicar la configuración",
+      "error-invalid-dns": "Formato de DNS no válido",
+      "error-invalid-gateway": "Formato de puerta de enlace no válido",
+      "error-invalid-ip": "Formato de dirección IP no válido",
+      "gateway": "Puerta de enlace",
+      "gateway-placeholder-v4": "ej. 192.168.1.1",
+      "gateway-placeholder-v6": "ej. fd00::1",
+      "general": "General",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Método",
+      "method-auto": "Automático (DHCP)",
+      "method-disabled": "Desactivado",
+      "method-link-local": "Solo enlace local",
+      "method-manual": "Manual",
+      "mtu": "MTU",
+      "mtu-description": "0 = automático",
+      "title": "Editar conexión"
+    },
     "enterprise": {
       "anonymous-identity": "Identidad Anónima",
       "ca-cert": "Certificado CA",

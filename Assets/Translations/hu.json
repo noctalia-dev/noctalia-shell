@@ -1999,7 +1999,9 @@
       "connection-timeout": "Csatlakozási időtúllépés",
       "disconnected": "Kapcsolat megszakadt a(z) „{ssid}” hálózattal",
       "incorrect-password": "Helytelen jelszó.",
-      "network-not-found": "Hálózat nem található"
+      "network-not-found": "Hálózat nem található",
+      "settings-applied": "Hálózati beállítások alkalmazva",
+      "settings-apply-failed": "Nem sikerült alkalmazni a hálózati beállításokat"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,36 @@
     "tooltip-placeholder": "Helyőrző"
   },
   "wifi": {
+    "edit": {
+      "address": "IP-cím",
+      "address-placeholder-v4": "pl. 192.168.1.50/24",
+      "address-placeholder-v6": "pl. fd00::1/64",
+      "apply": "Alkalmaz",
+      "applying": "Alkalmazás...",
+      "cancel": "Mégse",
+      "dns": "DNS-kiszolgálók",
+      "dns-hint": "Vesszővel elválasztva",
+      "dns-placeholder-v4": "pl. 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "pl. 2001:4860:4860::8888",
+      "error-apply-failed": "Nem sikerült alkalmazni a beállításokat",
+      "error-invalid-dns": "Érvénytelen DNS-formátum",
+      "error-invalid-gateway": "Érvénytelen átjáró formátum",
+      "error-invalid-ip": "Érvénytelen IP-cím formátum",
+      "gateway": "Átjáró",
+      "gateway-placeholder-v4": "pl. 192.168.1.1",
+      "gateway-placeholder-v6": "pl. fd00::1",
+      "general": "Általános",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Módszer",
+      "method-auto": "Automatikus (DHCP)",
+      "method-disabled": "Letiltva",
+      "method-link-local": "Csak helyi kapcsolat",
+      "method-manual": "Kézi",
+      "mtu": "MTU",
+      "mtu-description": "0 = automatikus",
+      "title": "Kapcsolat szerkesztése"
+    },
     "enterprise": {
       "anonymous-identity": "Anonim Identitás",
       "ca-cert": "CA tanúsítvány",

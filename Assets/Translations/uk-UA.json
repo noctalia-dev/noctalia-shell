@@ -1999,7 +1999,9 @@
       "connection-timeout": "Час очікування з'єднання вичерпано",
       "disconnected": "Відключено від '{ssid}'",
       "incorrect-password": "Неправильний пароль",
-      "network-not-found": "Мережу не знайдено"
+      "network-not-found": "Мережу не знайдено",
+      "settings-applied": "Мережеві налаштування застосовано",
+      "settings-apply-failed": "Не вдалося застосувати мережеві налаштування"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,36 @@
     "tooltip-placeholder": "Заповнювач"
   },
   "wifi": {
+    "edit": {
+      "address": "IP-адреса",
+      "address-placeholder-v4": "напр. 192.168.1.50/24",
+      "address-placeholder-v6": "напр. fd00::1/64",
+      "apply": "Застосувати",
+      "applying": "Застосування...",
+      "cancel": "Скасувати",
+      "dns": "DNS-сервери",
+      "dns-hint": "Через кому",
+      "dns-placeholder-v4": "напр. 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "напр. 2001:4860:4860::8888",
+      "error-apply-failed": "Не вдалося застосувати налаштування",
+      "error-invalid-dns": "Невірний формат DNS",
+      "error-invalid-gateway": "Невірний формат шлюзу",
+      "error-invalid-ip": "Невірний формат IP-адреси",
+      "gateway": "Шлюз",
+      "gateway-placeholder-v4": "напр. 192.168.1.1",
+      "gateway-placeholder-v6": "напр. fd00::1",
+      "general": "Загальне",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Метод",
+      "method-auto": "Автоматично (DHCP)",
+      "method-disabled": "Вимкнено",
+      "method-link-local": "Лише локальне з'єднання",
+      "method-manual": "Вручну",
+      "mtu": "MTU",
+      "mtu-description": "0 = автоматично",
+      "title": "Редагувати з'єднання"
+    },
     "enterprise": {
       "anonymous-identity": "Анонімна Ідентичність",
       "ca-cert": "Сертифікат CA",

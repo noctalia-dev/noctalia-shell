@@ -1999,7 +1999,9 @@
       "connection-timeout": "Превышено время ожидания соединения",
       "disconnected": "Отключено от '{ssid}'",
       "incorrect-password": "Неверный пароль",
-      "network-not-found": "Сеть не найдена"
+      "network-not-found": "Сеть не найдена",
+      "settings-applied": "Сетевые настройки применены",
+      "settings-apply-failed": "Не удалось применить сетевые настройки"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,36 @@
     "tooltip-placeholder": "Заполнитель"
   },
   "wifi": {
+    "edit": {
+      "address": "IP-адрес",
+      "address-placeholder-v4": "напр. 192.168.1.50/24",
+      "address-placeholder-v6": "напр. fd00::1/64",
+      "apply": "Применить",
+      "applying": "Применение...",
+      "cancel": "Отмена",
+      "dns": "DNS-серверы",
+      "dns-hint": "Через запятую",
+      "dns-placeholder-v4": "напр. 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "напр. 2001:4860:4860::8888",
+      "error-apply-failed": "Не удалось применить настройки",
+      "error-invalid-dns": "Неверный формат DNS",
+      "error-invalid-gateway": "Неверный формат шлюза",
+      "error-invalid-ip": "Неверный формат IP-адреса",
+      "gateway": "Шлюз",
+      "gateway-placeholder-v4": "напр. 192.168.1.1",
+      "gateway-placeholder-v6": "напр. fd00::1",
+      "general": "Общие",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Метод",
+      "method-auto": "Автоматически (DHCP)",
+      "method-disabled": "Отключено",
+      "method-link-local": "Только локальная связь",
+      "method-manual": "Вручную",
+      "mtu": "MTU",
+      "mtu-description": "0 = автоматически",
+      "title": "Редактировать подключение"
+    },
     "enterprise": {
       "anonymous-identity": "Анонимная Личность",
       "ca-cert": "Сертификат CA",

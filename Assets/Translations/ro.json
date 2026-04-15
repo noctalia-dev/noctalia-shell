@@ -1999,7 +1999,9 @@
       "connection-timeout": "Timp de expirare a conexiunii",
       "disconnected": "Deconectat de la '{ssid}'",
       "incorrect-password": "Parolă incorectă",
-      "network-not-found": "Rețeaua nu a fost găsită"
+      "network-not-found": "Rețeaua nu a fost găsită",
+      "settings-applied": "Setări de rețea aplicate",
+      "settings-apply-failed": "Nu s-au putut aplica setările de rețea"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,36 @@
     "tooltip-placeholder": "Spațiu rezervat"
   },
   "wifi": {
+    "edit": {
+      "address": "Adresă IP",
+      "address-placeholder-v4": "ex. 192.168.1.50/24",
+      "address-placeholder-v6": "ex. fd00::1/64",
+      "apply": "Aplică",
+      "applying": "Se aplică...",
+      "cancel": "Anulează",
+      "dns": "Servere DNS",
+      "dns-hint": "Separate prin virgulă",
+      "dns-placeholder-v4": "ex. 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "ex. 2001:4860:4860::8888",
+      "error-apply-failed": "Nu s-au putut aplica setările",
+      "error-invalid-dns": "Format DNS invalid",
+      "error-invalid-gateway": "Format gateway invalid",
+      "error-invalid-ip": "Format adresă IP invalid",
+      "gateway": "Gateway",
+      "gateway-placeholder-v4": "ex. 192.168.1.1",
+      "gateway-placeholder-v6": "ex. fd00::1",
+      "general": "General",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Metodă",
+      "method-auto": "Automat (DHCP)",
+      "method-disabled": "Dezactivat",
+      "method-link-local": "Doar legătură locală",
+      "method-manual": "Manual",
+      "mtu": "MTU",
+      "mtu-description": "0 = automat",
+      "title": "Editare conexiune"
+    },
     "enterprise": {
       "anonymous-identity": "Identitate Anonimă",
       "ca-cert": "Certificat CA",

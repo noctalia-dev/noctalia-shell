@@ -1999,7 +1999,9 @@
       "connection-timeout": "连接超时",
       "disconnected": "已断开与 '{ssid}' 的连接",
       "incorrect-password": "密码错误",
-      "network-not-found": "未找到网络"
+      "network-not-found": "未找到网络",
+      "settings-applied": "网络设置已应用",
+      "settings-apply-failed": "应用网络设置失败"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,36 @@
     "tooltip-placeholder": "占位符"
   },
   "wifi": {
+    "edit": {
+      "address": "IP 地址",
+      "address-placeholder-v4": "例如 192.168.1.50/24",
+      "address-placeholder-v6": "例如 fd00::1/64",
+      "apply": "应用",
+      "applying": "正在应用...",
+      "cancel": "取消",
+      "dns": "DNS 服务器",
+      "dns-hint": "以逗号分隔",
+      "dns-placeholder-v4": "例如 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "例如 2001:4860:4860::8888",
+      "error-apply-failed": "应用设置失败",
+      "error-invalid-dns": "无效的 DNS 格式",
+      "error-invalid-gateway": "无效的网关格式",
+      "error-invalid-ip": "无效的 IP 地址格式",
+      "gateway": "网关",
+      "gateway-placeholder-v4": "例如 192.168.1.1",
+      "gateway-placeholder-v6": "例如 fd00::1",
+      "general": "常规",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "方式",
+      "method-auto": "自动 (DHCP)",
+      "method-disabled": "已禁用",
+      "method-link-local": "仅本地链路",
+      "method-manual": "手动",
+      "mtu": "MTU",
+      "mtu-description": "0 = 自动",
+      "title": "编辑连接"
+    },
     "enterprise": {
       "anonymous-identity": "匿名身份",
       "ca-cert": "CA 证书",

@@ -1999,7 +1999,9 @@
       "connection-timeout": "Bağlantı zaman aşımı",
       "disconnected": "'{ssid}' bağlantısı kesildi",
       "incorrect-password": "Yanlış şifre",
-      "network-not-found": "Ağ bulunamadı"
+      "network-not-found": "Ağ bulunamadı",
+      "settings-applied": "Ağ ayarları uygulandı",
+      "settings-apply-failed": "Ağ ayarları uygulanamadı"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,36 @@
     "tooltip-placeholder": "Yer tutucu"
   },
   "wifi": {
+    "edit": {
+      "address": "IP Adresi",
+      "address-placeholder-v4": "ör. 192.168.1.50/24",
+      "address-placeholder-v6": "ör. fd00::1/64",
+      "apply": "Uygula",
+      "applying": "Uygulanıyor...",
+      "cancel": "İptal",
+      "dns": "DNS Sunucuları",
+      "dns-hint": "Virgülle ayrılmış",
+      "dns-placeholder-v4": "ör. 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "ör. 2001:4860:4860::8888",
+      "error-apply-failed": "Ayarlar uygulanamadı",
+      "error-invalid-dns": "Geçersiz DNS biçimi",
+      "error-invalid-gateway": "Geçersiz ağ geçidi biçimi",
+      "error-invalid-ip": "Geçersiz IP adresi biçimi",
+      "gateway": "Ağ Geçidi",
+      "gateway-placeholder-v4": "ör. 192.168.1.1",
+      "gateway-placeholder-v6": "ör. fd00::1",
+      "general": "Genel",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Yöntem",
+      "method-auto": "Otomatik (DHCP)",
+      "method-disabled": "Devre dışı",
+      "method-link-local": "Yalnızca yerel bağlantı",
+      "method-manual": "Manuel",
+      "mtu": "MTU",
+      "mtu-description": "0 = otomatik",
+      "title": "Bağlantıyı düzenle"
+    },
     "enterprise": {
       "anonymous-identity": "Anonim Kimlik",
       "ca-cert": "CA Sertifikası",

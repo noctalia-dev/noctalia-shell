@@ -1999,7 +1999,9 @@
       "connection-timeout": "Time-out bij verbinding",
       "disconnected": "Verbinding met '{ssid}' verbroken",
       "incorrect-password": "Onjuist wachtwoord",
-      "network-not-found": "Netwerk niet gevonden"
+      "network-not-found": "Netwerk niet gevonden",
+      "settings-applied": "Netwerkinstellingen toegepast",
+      "settings-apply-failed": "Netwerkinstellingen konden niet worden toegepast"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,36 @@
     "tooltip-placeholder": "Plaatshouder"
   },
   "wifi": {
+    "edit": {
+      "address": "IP-adres",
+      "address-placeholder-v4": "bijv. 192.168.1.50/24",
+      "address-placeholder-v6": "bijv. fd00::1/64",
+      "apply": "Toepassen",
+      "applying": "Toepassen...",
+      "cancel": "Annuleren",
+      "dns": "DNS-servers",
+      "dns-hint": "Kommagescheiden",
+      "dns-placeholder-v4": "bijv. 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "bijv. 2001:4860:4860::8888",
+      "error-apply-failed": "Instellingen konden niet worden toegepast",
+      "error-invalid-dns": "Ongeldig DNS-formaat",
+      "error-invalid-gateway": "Ongeldig gatewayformaat",
+      "error-invalid-ip": "Ongeldig IP-adresformaat",
+      "gateway": "Gateway",
+      "gateway-placeholder-v4": "bijv. 192.168.1.1",
+      "gateway-placeholder-v6": "bijv. fd00::1",
+      "general": "Algemeen",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Methode",
+      "method-auto": "Automatisch (DHCP)",
+      "method-disabled": "Uitgeschakeld",
+      "method-link-local": "Alleen lokale verbinding",
+      "method-manual": "Handmatig",
+      "mtu": "MTU",
+      "mtu-description": "0 = automatisch",
+      "title": "Verbinding bewerken"
+    },
     "enterprise": {
       "anonymous-identity": "Anonieme Identiteit",
       "ca-cert": "CA-certificaat",

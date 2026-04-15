@@ -1999,7 +1999,9 @@
       "connection-timeout": "Przekroczenie czasu połączenia",
       "disconnected": "Rozłączono z '{ssid}'",
       "incorrect-password": "Nieprawidłowe hasło",
-      "network-not-found": "Nie znaleziono sieci"
+      "network-not-found": "Nie znaleziono sieci",
+      "settings-applied": "Ustawienia sieciowe zastosowane",
+      "settings-apply-failed": "Nie udało się zastosować ustawień sieciowych"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,36 @@
     "tooltip-placeholder": "Miejsce na tekst"
   },
   "wifi": {
+    "edit": {
+      "address": "Adres IP",
+      "address-placeholder-v4": "np. 192.168.1.50/24",
+      "address-placeholder-v6": "np. fd00::1/64",
+      "apply": "Zastosuj",
+      "applying": "Stosowanie...",
+      "cancel": "Anuluj",
+      "dns": "Serwery DNS",
+      "dns-hint": "Oddzielone przecinkami",
+      "dns-placeholder-v4": "np. 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "np. 2001:4860:4860::8888",
+      "error-apply-failed": "Nie udało się zastosować ustawień",
+      "error-invalid-dns": "Nieprawidłowy format DNS",
+      "error-invalid-gateway": "Nieprawidłowy format bramy",
+      "error-invalid-ip": "Nieprawidłowy format adresu IP",
+      "gateway": "Brama",
+      "gateway-placeholder-v4": "np. 192.168.1.1",
+      "gateway-placeholder-v6": "np. fd00::1",
+      "general": "Ogólne",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Metoda",
+      "method-auto": "Automatycznie (DHCP)",
+      "method-disabled": "Wyłączony",
+      "method-link-local": "Tylko łącze lokalne",
+      "method-manual": "Ręcznie",
+      "mtu": "MTU",
+      "mtu-description": "0 = automatycznie",
+      "title": "Edytuj połączenie"
+    },
     "enterprise": {
       "anonymous-identity": "Anonimowa Tożsamość",
       "ca-cert": "Certyfikat CA",

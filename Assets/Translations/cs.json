@@ -1999,7 +1999,9 @@
       "connection-timeout": "Časový limit připojení",
       "disconnected": "Odpojeno od '{ssid}'",
       "incorrect-password": "Nesprávné heslo",
-      "network-not-found": "Síť nenalezena"
+      "network-not-found": "Síť nenalezena",
+      "settings-applied": "Síťová nastavení byla použita",
+      "settings-apply-failed": "Nepodařilo se použít síťová nastavení"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,36 @@
     "tooltip-placeholder": "Zástupný symbol"
   },
   "wifi": {
+    "edit": {
+      "address": "IP adresa",
+      "address-placeholder-v4": "např. 192.168.1.50/24",
+      "address-placeholder-v6": "např. fd00::1/64",
+      "apply": "Použít",
+      "applying": "Aplikování...",
+      "cancel": "Zrušit",
+      "dns": "DNS servery",
+      "dns-hint": "Oddělené čárkami",
+      "dns-placeholder-v4": "např. 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "např. 2001:4860:4860::8888",
+      "error-apply-failed": "Nepodařilo se použít nastavení",
+      "error-invalid-dns": "Neplatný formát DNS",
+      "error-invalid-gateway": "Neplatný formát brány",
+      "error-invalid-ip": "Neplatný formát IP adresy",
+      "gateway": "Brána",
+      "gateway-placeholder-v4": "např. 192.168.1.1",
+      "gateway-placeholder-v6": "např. fd00::1",
+      "general": "Obecné",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Metoda",
+      "method-auto": "Automaticky (DHCP)",
+      "method-disabled": "Vypnuto",
+      "method-link-local": "Pouze místní spojení",
+      "method-manual": "Ručně",
+      "mtu": "MTU",
+      "mtu-description": "0 = automaticky",
+      "title": "Upravit připojení"
+    },
     "enterprise": {
       "anonymous-identity": "Anonymní identita",
       "ca-cert": "Certifikát CA",

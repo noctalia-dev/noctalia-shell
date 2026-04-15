@@ -1638,7 +1638,9 @@
       "connection-timeout": "Dema girêdanê qediya",
       "disconnected": "Ji '{ssid}' qut bû",
       "incorrect-password": "Borînpeyva şaş e",
-      "network-not-found": "Tor nehat dîtin"
+      "network-not-found": "Tor nehat dîtin",
+      "settings-applied": "Mîhengên torê hatin bicîhkirin",
+      "settings-apply-failed": "Mîhengên torê nehatin bicîhkirin"
     }
   },
   "tooltips": {
@@ -1824,6 +1826,36 @@
     "tooltip-placeholder": "Cihgir"
   },
   "wifi": {
+    "edit": {
+      "address": "Navnîşana IP",
+      "address-placeholder-v4": "wek 192.168.1.50/24",
+      "address-placeholder-v6": "wek fd00::1/64",
+      "apply": "Bicîh bike",
+      "applying": "Tê bicîhkirin...",
+      "cancel": "Betal bike",
+      "dns": "Pêşkêşkerên DNS",
+      "dns-hint": "Bi vîrgulê veqetandî",
+      "dns-placeholder-v4": "wek 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "wek 2001:4860:4860::8888",
+      "error-apply-failed": "Mîheng nehatin bicîhkirin",
+      "error-invalid-dns": "Forma DNS ne derbasdar e",
+      "error-invalid-gateway": "Forma dergehê ne derbasdar e",
+      "error-invalid-ip": "Forma navnîşana IP ne derbasdar e",
+      "gateway": "Dergeh",
+      "gateway-placeholder-v4": "wek 192.168.1.1",
+      "gateway-placeholder-v6": "wek fd00::1",
+      "general": "Giştî",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "Rêbaz",
+      "method-auto": "Otomatîk (DHCP)",
+      "method-disabled": "Neçalak",
+      "method-link-local": "Tenê girêdana herêmî",
+      "method-manual": "Bi destan",
+      "mtu": "MTU",
+      "mtu-description": "0 = otomatîk",
+      "title": "Girêdanê biguherîne"
+    },
     "panel": {
       "action-required": "Çalakî pêwîst e",
       "available-interfaces": "Navrûyên heyî",

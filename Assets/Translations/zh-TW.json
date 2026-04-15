@@ -1999,7 +1999,9 @@
       "connection-timeout": "連線逾時",
       "disconnected": "已自 '{ssid}' 斷開連線",
       "incorrect-password": "密碼錯誤",
-      "network-not-found": "找不到網路"
+      "network-not-found": "找不到網路",
+      "settings-applied": "網路設定已套用",
+      "settings-apply-failed": "套用網路設定失敗"
     }
   },
   "tooltips": {
@@ -2206,6 +2208,36 @@
     "tooltip-placeholder": "暫用文字"
   },
   "wifi": {
+    "edit": {
+      "address": "IP 位址",
+      "address-placeholder-v4": "例如 192.168.1.50/24",
+      "address-placeholder-v6": "例如 fd00::1/64",
+      "apply": "套用",
+      "applying": "正在套用...",
+      "cancel": "取消",
+      "dns": "DNS 伺服器",
+      "dns-hint": "以逗號分隔",
+      "dns-placeholder-v4": "例如 8.8.8.8, 8.8.4.4",
+      "dns-placeholder-v6": "例如 2001:4860:4860::8888",
+      "error-apply-failed": "套用設定失敗",
+      "error-invalid-dns": "無效的 DNS 格式",
+      "error-invalid-gateway": "無效的閘道器格式",
+      "error-invalid-ip": "無效的 IP 位址格式",
+      "gateway": "閘道器",
+      "gateway-placeholder-v4": "例如 192.168.1.1",
+      "gateway-placeholder-v6": "例如 fd00::1",
+      "general": "一般",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "method": "方式",
+      "method-auto": "自動 (DHCP)",
+      "method-disabled": "已停用",
+      "method-link-local": "僅本機連結",
+      "method-manual": "手動",
+      "mtu": "MTU",
+      "mtu-description": "0 = 自動",
+      "title": "編輯連線"
+    },
     "enterprise": {
       "anonymous-identity": "匿名身份",
       "ca-cert": "CA 憑證",
