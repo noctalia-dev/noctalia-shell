@@ -2223,6 +2223,7 @@
       "error-invalid-dns": "Format DNS invalide",
       "error-invalid-gateway": "Format de passerelle invalide",
       "error-invalid-ip": "Format d'adresse IP invalide",
+      "error-load-failed": "Échec du chargement des paramètres",
       "gateway": "Passerelle",
       "gateway-placeholder-v4": "ex. 192.168.1.1",
       "gateway-placeholder-v6": "ex. fd00::1",

@@ -2223,6 +2223,7 @@
       "error-invalid-dns": "Formato de DNS no válido",
       "error-invalid-gateway": "Formato de puerta de enlace no válido",
       "error-invalid-ip": "Formato de dirección IP no válido",
+      "error-load-failed": "Error al cargar la configuración",
       "gateway": "Puerta de enlace",
       "gateway-placeholder-v4": "ej. 192.168.1.1",
       "gateway-placeholder-v6": "ej. fd00::1",

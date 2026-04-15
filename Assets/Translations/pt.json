@@ -2223,6 +2223,7 @@
       "error-invalid-dns": "Formato de DNS inválido",
       "error-invalid-gateway": "Formato de gateway inválido",
       "error-invalid-ip": "Formato de endereço IP inválido",
+      "error-load-failed": "Falha ao carregar as configurações",
       "gateway": "Gateway",
       "gateway-placeholder-v4": "ex. 192.168.1.1",
       "gateway-placeholder-v6": "ex. fd00::1",

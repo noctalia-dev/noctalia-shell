@@ -259,6 +259,7 @@
       "error-invalid-dns": "Ugyldig DNS-format",
       "error-invalid-gateway": "Ugyldig gateway-format",
       "error-invalid-ip": "Ugyldig IP-adresseformat",
+      "error-load-failed": "Klarte ikkje å lasta innstillingane",
       "gateway": "Gateway",
       "gateway-placeholder-v4": "t.d. 192.168.1.1",
       "gateway-placeholder-v6": "t.d. fd00::1",

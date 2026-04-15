@@ -2223,6 +2223,7 @@
       "error-invalid-dns": "Neplatný formát DNS",
       "error-invalid-gateway": "Neplatný formát brány",
       "error-invalid-ip": "Neplatný formát IP adresy",
+      "error-load-failed": "Nepodařilo se načíst nastavení",
       "gateway": "Brána",
       "gateway-placeholder-v4": "např. 192.168.1.1",
       "gateway-placeholder-v6": "např. fd00::1",

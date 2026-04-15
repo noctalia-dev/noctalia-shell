@@ -2223,6 +2223,7 @@
       "error-invalid-dns": "Érvénytelen DNS-formátum",
       "error-invalid-gateway": "Érvénytelen átjáró formátum",
       "error-invalid-ip": "Érvénytelen IP-cím formátum",
+      "error-load-failed": "Nem sikerült betölteni a beállításokat",
       "gateway": "Átjáró",
       "gateway-placeholder-v4": "pl. 192.168.1.1",
       "gateway-placeholder-v6": "pl. fd00::1",

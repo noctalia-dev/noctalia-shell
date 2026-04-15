@@ -2223,6 +2223,7 @@
       "error-invalid-dns": "Неверный формат DNS",
       "error-invalid-gateway": "Неверный формат шлюза",
       "error-invalid-ip": "Неверный формат IP-адреса",
+      "error-load-failed": "Не удалось загрузить настройки",
       "gateway": "Шлюз",
       "gateway-placeholder-v4": "напр. 192.168.1.1",
       "gateway-placeholder-v6": "напр. fd00::1",

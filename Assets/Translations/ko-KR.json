@@ -2223,6 +2223,7 @@
       "error-invalid-dns": "잘못된 DNS 형식",
       "error-invalid-gateway": "잘못된 게이트웨이 형식",
       "error-invalid-ip": "잘못된 IP 주소 형식",
+      "error-load-failed": "설정 불러오기 실패",
       "gateway": "게이트웨이",
       "gateway-placeholder-v4": "예: 192.168.1.1",
       "gateway-placeholder-v6": "예: fd00::1",

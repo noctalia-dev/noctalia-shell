@@ -2223,6 +2223,7 @@
       "error-invalid-dns": "Nieprawidłowy format DNS",
       "error-invalid-gateway": "Nieprawidłowy format bramy",
       "error-invalid-ip": "Nieprawidłowy format adresu IP",
+      "error-load-failed": "Nie udało się załadować ustawień",
       "gateway": "Brama",
       "gateway-placeholder-v4": "np. 192.168.1.1",
       "gateway-placeholder-v6": "np. fd00::1",

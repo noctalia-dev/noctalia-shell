@@ -2223,6 +2223,7 @@
       "error-invalid-dns": "Ogiltigt DNS-format",
       "error-invalid-gateway": "Ogiltigt gatewayformat",
       "error-invalid-ip": "Ogiltigt IP-adressformat",
+      "error-load-failed": "Kunde inte läsa in inställningarna",
       "gateway": "Gateway",
       "gateway-placeholder-v4": "t.ex. 192.168.1.1",
       "gateway-placeholder-v6": "t.ex. fd00::1",

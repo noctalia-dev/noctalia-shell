@@ -2223,6 +2223,7 @@
       "error-invalid-dns": "Invalid DNS format",
       "error-invalid-gateway": "Invalid gateway format",
       "error-invalid-ip": "Invalid IP address format",
+      "error-load-failed": "Failed to load settings",
       "gateway": "Gateway",
       "gateway-placeholder-v4": "e.g. 192.168.1.1",
       "gateway-placeholder-v6": "e.g. fd00::1",

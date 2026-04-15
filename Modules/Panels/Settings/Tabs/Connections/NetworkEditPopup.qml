@@ -67,7 +67,7 @@ Popup {
     root._settingsSlot = function(settings) {
       try { NetworkService.connectionSettingsLoaded.disconnect(root._settingsSlot); } catch (e) {}
       if (!settings) {
-        root.errorMsg = I18n.tr("wifi.edit.error-apply-failed");
+        root.errorMsg = I18n.tr("wifi.edit.error-load-failed");
         root.loading = false;
         return;
       }
@@ -246,6 +246,12 @@ Popup {
           onTextChanged: root.ipv4Address = text
           visible: root.ipv4Method === "manual"
         }
+        NText {
+          visible: ipv4AddressInput.visible && root.ipv4Address && !root.isValidIpv4(root.ipv4Address)
+          text: I18n.tr("wifi.edit.error-invalid-ip")
+          pointSize: Style.fontSizeXS
+          color: Color.mError
+        }
 
         NTextInput {
           id: ipv4GatewayInput
@@ -256,6 +262,12 @@ Popup {
           onTextChanged: root.ipv4Gateway = text
           visible: root.ipv4Method === "manual"
         }
+        NText {
+          visible: ipv4GatewayInput.visible && root.ipv4Gateway && !root.isValidIpv4(root.ipv4Gateway)
+          text: I18n.tr("wifi.edit.error-invalid-gateway")
+          pointSize: Style.fontSizeXS
+          color: Color.mError
+        }
 
         NTextInput {
           id: ipv4DnsInput
@@ -265,6 +277,12 @@ Popup {
           text: root.ipv4Dns
           onTextChanged: root.ipv4Dns = text
           visible: root.ipv4Method !== "disabled"
+        }
+        NText {
+          visible: ipv4DnsInput.visible && root.ipv4Dns && !root.isValidDnsList(root.ipv4Dns, false)
+          text: I18n.tr("wifi.edit.error-invalid-dns")
+          pointSize: Style.fontSizeXS
+          color: Color.mError
         }
       }
 
@@ -312,6 +330,12 @@ Popup {
           onTextChanged: root.ipv6Address = text
           visible: root.ipv6Method === "manual"
         }
+        NText {
+          visible: ipv6AddressInput.visible && root.ipv6Address && !root.isValidIpv6(root.ipv6Address)
+          text: I18n.tr("wifi.edit.error-invalid-ip")
+          pointSize: Style.fontSizeXS
+          color: Color.mError
+        }
 
         NTextInput {
           id: ipv6GatewayInput
@@ -322,6 +346,12 @@ Popup {
           onTextChanged: root.ipv6Gateway = text
           visible: root.ipv6Method === "manual"
         }
+        NText {
+          visible: ipv6GatewayInput.visible && root.ipv6Gateway && !root.isValidIpv6(root.ipv6Gateway)
+          text: I18n.tr("wifi.edit.error-invalid-gateway")
+          pointSize: Style.fontSizeXS
+          color: Color.mError
+        }
 
         NTextInput {
           id: ipv6DnsInput
@@ -331,6 +361,12 @@ Popup {
           text: root.ipv6Dns
           onTextChanged: root.ipv6Dns = text
           visible: root.ipv6Method !== "disabled"
+        }
+        NText {
+          visible: ipv6DnsInput.visible && root.ipv6Dns && !root.isValidDnsList(root.ipv6Dns, true)
+          text: I18n.tr("wifi.edit.error-invalid-dns")
+          pointSize: Style.fontSizeXS
+          color: Color.mError
         }
       }
 

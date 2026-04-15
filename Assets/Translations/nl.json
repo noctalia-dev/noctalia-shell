@@ -2223,6 +2223,7 @@
       "error-invalid-dns": "Ongeldig DNS-formaat",
       "error-invalid-gateway": "Ongeldig gatewayformaat",
       "error-invalid-ip": "Ongeldig IP-adresformaat",
+      "error-load-failed": "Instellingen konden niet worden geladen",
       "gateway": "Gateway",
       "gateway-placeholder-v4": "bijv. 192.168.1.1",
       "gateway-placeholder-v6": "bijv. fd00::1",
