@@ -12,6 +12,14 @@ struct TextureHandle {
   int height = 0;
 };
 
+enum class PixmapFormat {
+  Rgba, // Red, Green, Blue, Alpha
+  Bgra, // Blue, Green, Red, Alpha (Common in SNI/X11)
+  Argb, // Alpha, Red, Green, Blue
+  Rgb,  // Red, Green, Blue (No Alpha)
+  Bgr   // Blue, Green, Red (No Alpha)
+};
+
 class TextureManager {
 public:
   TextureManager() = default;
@@ -24,8 +32,8 @@ public:
                                            bool mipmap = false);
   [[nodiscard]] TextureHandle loadFromEncodedBytes(const std::uint8_t* data, std::size_t size,
                                                    bool mipmap = false);
-  [[nodiscard]] TextureHandle loadFromArgbPixmap(const std::uint8_t* data, int width, int height,
-                                                 bool mipmap = false);
+  [[nodiscard]] TextureHandle loadFromRaw(const std::uint8_t* data, int width, int height,
+                                          int stride, PixmapFormat format, bool mipmap = false);
   void unload(TextureHandle& handle);
   void cleanup();
 

@@ -5,7 +5,6 @@
 #include "ui/palette.h"
 #include "ui/signal.h"
 
-#include <optional>
 #include <string>
 
 class Box;
@@ -36,8 +35,8 @@ public:
                      bool mipmap = false);
   bool setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::size_t size,
                       bool mipmap = false);
-  bool setSourceArgbPixmap(Renderer& renderer, const std::uint8_t* data, int width, int height,
-                           bool mipmap = false);
+  bool setSourceRaw(Renderer& renderer, const std::uint8_t* data, int width, int height,
+                    int stride, PixmapFormat format, bool mipmap = false);
 
   // Binds a texture that is owned externally (e.g. by a shared thumbnail
   // cache). The Image will NOT unload the texture on clear or destruction.

@@ -4,8 +4,6 @@
 #include "render/scene/image_node.h"
 #include "ui/controls/box.h"
 
-#include <algorithm>
-#include <cmath>
 #include <memory>
 
 Image::Image() {
@@ -138,15 +136,15 @@ bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::si
   return true;
 }
 
-bool Image::setSourceArgbPixmap(Renderer& renderer, const std::uint8_t* data, int width, int height,
-                                bool mipmap) {
+bool Image::setSourceRaw(Renderer& renderer, const std::uint8_t* data, int width, int height,
+                       int stride, PixmapFormat format, bool mipmap) {
   clear(renderer);
 
   if (data == nullptr || width <= 0 || height <= 0) {
     return false;
   }
 
-  m_texture = renderer.textureManager().loadFromArgbPixmap(data, width, height, mipmap);
+  m_texture = renderer.textureManager().loadFromRaw(data, width, height, stride, format, mipmap);
   if (m_texture.id == 0) {
     m_sourcePath.clear();
     if (m_image != nullptr) {

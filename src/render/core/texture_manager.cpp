@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <cstring>
 #include <fstream>
-#include <stdexcept>
 #include <vector>
 
 namespace {
@@ -124,23 +123,43 @@ TextureHandle TextureManager::loadFromEncodedBytes(const std::uint8_t* data, std
   return decodeEncodedRaster(data, size, nullptr, mipmap);
 }
 
-TextureHandle TextureManager::loadFromArgbPixmap(const std::uint8_t* data, int width, int height,
-                                                 bool mipmap) {
+TextureHandle TextureManager::loadFromRaw(const std::uint8_t* data, int width, int height,
+                                         int stride, PixmapFormat format, bool mipmap) {
   if (data == nullptr || width <= 0 || height <= 0) {
     return {};
   }
 
-  const auto pixelCount = static_cast<std::size_t>(width * height);
+  const int channels = (format == PixmapFormat::Rgb || format == PixmapFormat::Bgr) ? 3 : 4;
+  const int actualStride = stride > 0 ? stride : (width * channels);
+  const std::size_t pixelCount = static_cast<std::size_t>(width) * static_cast<std::size_t>(height);
   std::vector<std::uint8_t> rgba(pixelCount * 4);
 
-  for (std::size_t i = 0; i < pixelCount; ++i) {
-    const std::size_t srcIdx = i * 4;
-    const std::size_t dstIdx = i * 4;
-    // ARGB → RGBA
-    rgba[dstIdx + 0] = data[srcIdx + 1]; // R
-    rgba[dstIdx + 1] = data[srcIdx + 2]; // G
-    rgba[dstIdx + 2] = data[srcIdx + 3]; // B
-    rgba[dstIdx + 3] = data[srcIdx + 0]; // A
+  for (int y = 0; y < height; ++y) {
+    const std::uint8_t* srcRow = data + (y * actualStride);
+    std::uint8_t* dstRow = rgba.data() + (y * width * 4);
+
+    for (int x = 0; x < width; ++x) {
+      const std::uint8_t* s = srcRow + (x * channels);
+      std::uint8_t* d = dstRow + (x * 4);
+
+      switch (format) {
+      case PixmapFormat::Rgba:
+        d[0] = s[0]; d[1] = s[1]; d[2] = s[2]; d[3] = s[3];
+        break;
+      case PixmapFormat::Bgra:
+        d[0] = s[2]; d[1] = s[1]; d[2] = s[0]; d[3] = s[3];
+        break;
+      case PixmapFormat::Argb:
+        d[0] = s[1]; d[1] = s[2]; d[2] = s[3]; d[3] = s[0];
+        break;
+      case PixmapFormat::Rgb:
+        d[0] = s[0]; d[1] = s[1]; d[2] = s[2]; d[3] = 255;
+        break;
+      case PixmapFormat::Bgr:
+        d[0] = s[2]; d[1] = s[1]; d[2] = s[0]; d[3] = 255;
+        break;
+      }
+    }
   }
 
   return uploadRgba(rgba.data(), width, height, mipmap);

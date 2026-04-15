@@ -23,7 +23,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cctype>
-#include <charconv>
 #include <filesystem>
 #include <linux/input-event-codes.h>
 #include <unistd.h>
@@ -940,7 +939,7 @@ std::optional<float> NotificationToast::findPlacementY(float candidateHeight,
 uint32_t NotificationToast::surfaceHeightForOutput(wl_output* output) const {
   std::uint32_t barHeight = Style::barHeightDefault;
   if (m_config != nullptr && !m_config->config().bars.empty()) {
-    barHeight = m_config->config().bars[0].height;
+    barHeight = static_cast<uint32_t>(m_config->config().bars[0].height);
   }
 
   if (m_wayland != nullptr && output != nullptr) {
@@ -966,7 +965,7 @@ void NotificationToast::ensureSurfaces() {
 
   std::uint32_t barHeight = Style::barHeightDefault;
   if (m_config != nullptr && !m_config->config().bars.empty()) {
-    barHeight = m_config->config().bars[0].height;
+    barHeight = static_cast<uint32_t>(m_config->config().bars[0].height);
   }
 
   const auto surfaceWidth = static_cast<uint32_t>(kSurfaceWidth);
@@ -1196,7 +1195,9 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
       appIcon->setPosition(0.0f, 0.0f);
       appIcon->setCornerRadius(kNotificationIconRadius);
       appIcon->setFit(ImageFit::Cover);
-      if (appIcon->setSourceArgbPixmap(*m_renderContext, image.data.data(), image.width, image.height, true)) {
+      const PixmapFormat format = (image.channels == 3) ? PixmapFormat::Rgb : PixmapFormat::Rgba;
+      if (appIcon->setSourceRaw(*m_renderContext, image.data.data(), image.width, image.height,
+                                image.rowStride, format, true)) {
         *outAppIcon = iconSlot->addChild(std::move(appIcon));
         iconAssigned = true;
       } else {
