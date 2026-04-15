@@ -10,6 +10,7 @@
 
 struct wl_callback;
 struct wl_surface;
+struct ext_background_effect_surface_v1;
 
 class AnimationManager;
 class Node;
@@ -45,6 +46,8 @@ public:
   void setUpdateCallback(UpdateCallback callback);
   void setFrameTickCallback(FrameTickCallback callback);
   void setInputRegion(const std::vector<InputRect>& rects);
+  void setBlurRegion(const std::vector<InputRect>& rects);
+  void clearBlurRegion();
   void requestUpdate();
   void requestUpdateOnly();
   void requestLayout();
@@ -88,6 +91,7 @@ private:
   UpdateCallback m_updateCallback;
   FrameTickCallback m_frameTickCallback;
   wl_callback* m_frameCallback = nullptr;
+  ext_background_effect_surface_v1* m_backgroundEffect = nullptr;
   std::optional<std::chrono::steady_clock::time_point> m_lastFrameAt;
   bool m_updateRequested = false;
   bool m_layoutRequested = false;

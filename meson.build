@@ -219,6 +219,8 @@ foreach _p : [
     wayland_protos_dir / 'staging/ext-session-lock/ext-session-lock-v1.xml'],
   ['ext-idle-notify-v1',
     wayland_protos_dir / 'staging/ext-idle-notify/ext-idle-notify-v1.xml'],
+  ['ext-background-effect-v1',
+    wayland_protos_dir / 'staging/ext-background-effect/ext-background-effect-v1.xml'],
   ['idle-inhibit-unstable-v1',
     wayland_protos_dir / 'unstable/idle-inhibit/idle-inhibit-unstable-v1.xml'],
   ['virtual-keyboard-unstable-v1',

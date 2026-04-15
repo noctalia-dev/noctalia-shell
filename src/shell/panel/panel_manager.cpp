@@ -188,6 +188,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
   }
 
   m_wlSurface = m_surface->wlSurface();
+  m_surface->setBlurRegion({});
   kLog.debug("panel manager: opened \"{}\"", panelId);
 }
 

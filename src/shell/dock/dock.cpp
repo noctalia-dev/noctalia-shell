@@ -770,6 +770,17 @@ void Dock::buildScene(DockInstance& instance) {
     }});
   }
 
+  if (cfg.backgroundBlur) {
+    instance.surface->setBlurRegion({InputRect{
+        static_cast<int>(panelX),
+        static_cast<int>(panelY),
+        static_cast<int>(panelW),
+        static_cast<int>(panelH),
+    }});
+  } else {
+    instance.surface->clearBlurRegion();
+  }
+
   // Palette reactivity.
   instance.paletteConn = paletteChanged().connect([inst = &instance, this] {
     applyPanelPalette(*inst);

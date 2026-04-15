@@ -53,6 +53,12 @@ shadow_blur     = 12          # blur radius in pixels (0 = no shadow)
 shadow_offset_x = 3           # horizontal shadow offset (positive = right)
 shadow_offset_y = 6           # vertical shadow offset (positive = down)
 
+# Request compositor to blur content behind the bar via the
+# `ext-background-effect-v1` Wayland protocol (used by niri).
+# Ignored on compositors that don't advertise the protocol; those that
+# already blur transparent regions (KWin, Hyprland) behave as usual.
+background_blur = true
+
 # Optional defaults for every widget’s capsule on this bar (see “Bar widget capsule”).
 capsule         = true
 capsule_fill    = "surface_variant"
@@ -520,6 +526,10 @@ shadow_blur        = 12         # drop-shadow blur radius in pixels (0 = no shad
 shadow_offset_x    = 0          # horizontal shadow offset
 shadow_offset_y    = 4          # vertical shadow offset (positive = down)
 
+# Request compositor blur behind the dock via ext-background-effect-v1 (niri).
+# Inert on compositors that don't advertise the protocol.
+background_blur    = true
+
 show_running       = true       # also show running apps that are not in the pinned list
 auto_hide          = false      # fade out when the pointer leaves; fade in on approach
 active_scale       = 1.0        # icon scale for the focused app (clamped to 0.1-1.75)
@@ -972,6 +982,7 @@ widget_spacing  = 8
 shadow_blur     = 16
 shadow_offset_x = 6
 shadow_offset_y = 6
+background_blur = true
 
 start  = []
 center = ["workspaces"]

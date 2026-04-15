@@ -1116,6 +1116,7 @@ void NotificationToast::updateInputRegion(Instance& inst) const {
   }
 
   inst.surface->setInputRegion(rects);
+  inst.surface->setBlurRegion(rects);
 }
 
 InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary,

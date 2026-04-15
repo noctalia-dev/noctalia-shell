@@ -33,6 +33,7 @@ struct BarMonitorOverride {
   std::optional<std::int32_t> shadowBlur;    // shadow blur radius in pixels (0 = no shadow)
   std::optional<std::int32_t> shadowOffsetX; // horizontal shadow offset in pixels
   std::optional<std::int32_t> shadowOffsetY; // vertical shadow offset in pixels (positive = down)
+  std::optional<bool> backgroundBlur;        // request compositor blur via ext-background-effect-v1
   std::optional<float> scale;
   std::optional<std::vector<std::string>> startWidgets;
   std::optional<std::vector<std::string>> centerWidgets;
@@ -62,7 +63,9 @@ struct BarConfig {
   std::int32_t shadowBlur = 12;   // shadow blur radius in pixels (0 = no shadow)
   std::int32_t shadowOffsetX = 0; // horizontal shadow offset in pixels
   std::int32_t shadowOffsetY = 6; // vertical shadow offset in pixels (positive = down)
-  float scale = 1.0f;             // content scale multiplier for glyphs and text
+  bool backgroundBlur =
+      true;           // request compositor blur behind the bar via ext-background-effect-v1 (inert where unsupported)
+  float scale = 1.0f; // content scale multiplier for glyphs and text
   std::vector<std::string> startWidgets = {"cpu", "temp", "ram", "active_window"};
   std::vector<std::string> centerWidgets = {"workspaces"};
   std::vector<std::string> endWidgets = {"media",     "tray",    "notifications", "volume", "power_profiles", "battery",
@@ -166,6 +169,7 @@ struct DockConfig {
   std::int32_t shadowBlur = 12;
   std::int32_t shadowOffsetX = 0;
   std::int32_t shadowOffsetY = 4;
+  bool backgroundBlur = true;
   bool showRunning = true;         // also show running apps not in pinned list
   bool autoHide = false;           // fade out when not hovered (overlay mode)
   float activeScale = 1.0f;        // focused app icon scale

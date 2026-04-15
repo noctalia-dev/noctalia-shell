@@ -14,6 +14,7 @@
 
 #include "cursor-shape-v1-client-protocol.h"
 #include "dwl-ipc-unstable-v2-client-protocol.h"
+#include "ext-background-effect-v1-client-protocol.h"
 #include "ext-data-control-v1-client-protocol.h"
 #include "ext-idle-notify-v1-client-protocol.h"
 #include "ext-session-lock-v1-client-protocol.h"
@@ -42,12 +43,23 @@ namespace {
   constexpr std::uint32_t kExtSessionLockManagerVersion = 1;
   constexpr std::uint32_t kExtIdleNotifierVersion = 1;
   constexpr std::uint32_t kIdleInhibitManagerVersion = 1;
+  constexpr std::uint32_t kExtBackgroundEffectManagerVersion = 1;
   constexpr std::uint32_t kOutputVersion = 4;
   constexpr std::uint32_t kVirtualKeyboardManagerVersion = 1;
 
   const wl_registry_listener kRegistryListener = {
       .global = &WaylandConnection::handleGlobal,
       .global_remove = &WaylandConnection::handleGlobalRemove,
+  };
+
+  void backgroundEffectCapabilities(void* data, ext_background_effect_manager_v1* /*manager*/,
+                                    std::uint32_t capabilities) {
+    auto* self = static_cast<WaylandConnection*>(data);
+    self->onBackgroundEffectCapabilities(capabilities);
+  }
+
+  const ext_background_effect_manager_v1_listener kBackgroundEffectListener = {
+      .capabilities = &backgroundEffectCapabilities,
   };
 
   void outputGeometry(void* /*data*/, wl_output* /*output*/, int32_t /*x*/, int32_t /*y*/, int32_t /*physW*/,
@@ -497,6 +509,14 @@ xdg_wm_base* WaylandConnection::xdgWmBase() const noexcept { return m_xdgWmBase;
 ext_session_lock_manager_v1* WaylandConnection::sessionLockManager() const noexcept { return m_sessionLockManager; }
 ext_idle_notifier_v1* WaylandConnection::idleNotifier() const noexcept { return m_idleNotifier; }
 zwp_idle_inhibit_manager_v1* WaylandConnection::idleInhibitManager() const noexcept { return m_idleInhibitManager; }
+bool WaylandConnection::hasBackgroundEffectBlur() const noexcept { return m_backgroundEffectBlurSupported; }
+ext_background_effect_manager_v1* WaylandConnection::backgroundEffectManager() const noexcept {
+  return m_backgroundEffectManager;
+}
+
+void WaylandConnection::onBackgroundEffectCapabilities(std::uint32_t capabilities) noexcept {
+  m_backgroundEffectBlurSupported = (capabilities & EXT_BACKGROUND_EFFECT_MANAGER_V1_CAPABILITY_BLUR) != 0;
+}
 
 const std::vector<WaylandOutput>& WaylandConnection::outputs() const noexcept { return m_outputs; }
 
@@ -654,6 +674,14 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     return;
   }
 
+  if (interfaceName == ext_background_effect_manager_v1_interface.name) {
+    const auto bindVersion = std::min(version, kExtBackgroundEffectManagerVersion);
+    m_backgroundEffectManager = static_cast<ext_background_effect_manager_v1*>(
+        wl_registry_bind(registry, name, &ext_background_effect_manager_v1_interface, bindVersion));
+    ext_background_effect_manager_v1_add_listener(m_backgroundEffectManager, &kBackgroundEffectListener, this);
+    return;
+  }
+
   if (interfaceName == ext_data_control_manager_v1_interface.name) {
     if (m_dataControlManager != nullptr && m_dataControlOps != extDataControlOps()) {
       m_dataControlOps->destroyManager(m_dataControlManager);
@@ -778,6 +806,11 @@ void WaylandConnection::cleanup() {
   if (m_idleInhibitManager != nullptr) {
     zwp_idle_inhibit_manager_v1_destroy(m_idleInhibitManager);
     m_idleInhibitManager = nullptr;
+  }
+  if (m_backgroundEffectManager != nullptr) {
+    ext_background_effect_manager_v1_destroy(m_backgroundEffectManager);
+    m_backgroundEffectManager = nullptr;
+    m_backgroundEffectBlurSupported = false;
   }
 
   if (m_dataControlManager != nullptr && m_dataControlOps != nullptr) {

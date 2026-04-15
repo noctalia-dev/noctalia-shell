@@ -8,6 +8,8 @@
 
 #include <wayland-client.h>
 
+#include "ext-background-effect-v1-client-protocol.h"
+
 namespace {
 
   const wl_callback_listener kFrameListener = {
@@ -128,6 +130,46 @@ void Surface::setInputRegion(const std::vector<InputRect>& rects) {
   wl_region_destroy(region);
 }
 
+void Surface::setBlurRegion(const std::vector<InputRect>& rects) {
+  if (m_surface == nullptr || !m_connection.hasBackgroundEffectBlur()) {
+    return;
+  }
+
+  if (m_backgroundEffect == nullptr) {
+    auto* manager = m_connection.backgroundEffectManager();
+    if (manager == nullptr) {
+      return;
+    }
+    m_backgroundEffect = ext_background_effect_manager_v1_get_background_effect(manager, m_surface);
+    if (m_backgroundEffect == nullptr) {
+      return;
+    }
+  }
+
+  wl_region* region = nullptr;
+  if (!rects.empty()) {
+    region = wl_compositor_create_region(m_connection.compositor());
+    if (region == nullptr) {
+      return;
+    }
+    for (const auto& r : rects) {
+      wl_region_add(region, r.x, r.y, r.width, r.height);
+    }
+  }
+  ext_background_effect_surface_v1_set_blur_region(m_backgroundEffect, region);
+  if (region != nullptr) {
+    wl_region_destroy(region);
+  }
+}
+
+void Surface::clearBlurRegion() {
+  if (m_backgroundEffect == nullptr) {
+    return;
+  }
+  ext_background_effect_surface_v1_destroy(m_backgroundEffect);
+  m_backgroundEffect = nullptr;
+}
+
 void Surface::requestUpdate() {
   m_updateRequested = true;
   m_layoutRequested = true;
@@ -188,6 +230,11 @@ void Surface::destroySurface() {
   }
 
   m_renderTarget.destroy();
+
+  if (m_backgroundEffect != nullptr) {
+    ext_background_effect_surface_v1_destroy(m_backgroundEffect);
+    m_backgroundEffect = nullptr;
+  }
 
   if (m_surface != nullptr) {
     wl_surface_destroy(m_surface);

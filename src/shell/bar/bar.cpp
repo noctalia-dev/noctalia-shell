@@ -715,12 +715,18 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
   layoutBarSections(instance, *renderer, barAreaW, barAreaH, paddingH, isVertical);
 
-  instance.surface->setInputRegion({InputRect{
+  const InputRect barRect{
       static_cast<int>(barAreaX),
       static_cast<int>(barAreaY),
       static_cast<int>(barAreaW),
       static_cast<int>(barAreaH),
-  }});
+  };
+  instance.surface->setInputRegion({barRect});
+  if (instance.barConfig.backgroundBlur) {
+    instance.surface->setBlurRegion({barRect});
+  } else {
+    instance.surface->clearBlurRegion();
+  }
 }
 
 void Bar::updateWidgets(BarInstance& instance) {

@@ -28,6 +28,7 @@ struct xdg_wm_base;
 struct wp_cursor_shape_manager_v1;
 struct ext_idle_notifier_v1;
 struct zwp_idle_inhibit_manager_v1;
+struct ext_background_effect_manager_v1;
 struct xdg_activation_v1;
 struct ext_session_lock_manager_v1;
 struct zwlr_foreign_toplevel_manager_v1;
@@ -100,6 +101,8 @@ public:
   [[nodiscard]] bool hasSessionLockManager() const noexcept;
   [[nodiscard]] bool hasIdleNotifier() const noexcept;
   [[nodiscard]] bool hasIdleInhibitManager() const noexcept;
+  [[nodiscard]] bool hasBackgroundEffectBlur() const noexcept;
+  [[nodiscard]] ext_background_effect_manager_v1* backgroundEffectManager() const noexcept;
   [[nodiscard]] wl_display* display() const noexcept;
   [[nodiscard]] wl_compositor* compositor() const noexcept;
   [[nodiscard]] wl_seat* seat() const noexcept;
@@ -149,6 +152,8 @@ public:
                            std::uint32_t version);
   static void handleGlobalRemove(void* data, wl_registry* registry, std::uint32_t name);
 
+  void onBackgroundEffectCapabilities(std::uint32_t capabilities) noexcept;
+
 private:
   void bindGlobal(wl_registry* registry, std::uint32_t name, const char* interface, std::uint32_t version);
   void bindClipboardService();
@@ -169,6 +174,8 @@ private:
   ext_session_lock_manager_v1* m_sessionLockManager = nullptr;
   ext_idle_notifier_v1* m_idleNotifier = nullptr;
   zwp_idle_inhibit_manager_v1* m_idleInhibitManager = nullptr;
+  ext_background_effect_manager_v1* m_backgroundEffectManager = nullptr;
+  bool m_backgroundEffectBlurSupported = false;
   void* m_dataControlManager = nullptr;
   const DataControlOps* m_dataControlOps = nullptr;
   zwp_virtual_keyboard_manager_v1* m_virtualKeyboardManager = nullptr;

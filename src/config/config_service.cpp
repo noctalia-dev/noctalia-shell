@@ -608,6 +608,8 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.shadowOffsetX = *ovr.shadowOffsetX;
     if (ovr.shadowOffsetY)
       resolved.shadowOffsetY = *ovr.shadowOffsetY;
+    if (ovr.backgroundBlur)
+      resolved.backgroundBlur = *ovr.backgroundBlur;
     if (ovr.startWidgets)
       resolved.startWidgets = *ovr.startWidgets;
     if (ovr.centerWidgets)
@@ -923,6 +925,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
         bar.shadowOffsetX = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
       if (auto v = (*barTbl)["shadow_offset_y"].value<int64_t>())
         bar.shadowOffsetY = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
+      if (auto v = (*barTbl)["background_blur"].value<bool>())
+        bar.backgroundBlur = *v;
       if (auto v = (*barTbl)["scale"].value<double>())
         bar.scale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
       if (auto* n = (*barTbl)["start"].as_array())
@@ -994,6 +998,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
             ovr.shadowOffsetX = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
           if (auto v = (*monTbl)["shadow_offset_y"].value<int64_t>())
             ovr.shadowOffsetY = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
+          if (auto v = (*monTbl)["background_blur"].value<bool>())
+            ovr.backgroundBlur = *v;
           if (auto* n = (*monTbl)["start"].as_array())
             ovr.startWidgets = readStringArray(*n);
           if (auto* n = (*monTbl)["center"].as_array())
@@ -1268,6 +1274,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
       dock.shadowOffsetX = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
     if (auto v = (*dockTbl)["shadow_offset_y"].value<int64_t>())
       dock.shadowOffsetY = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
+    if (auto v = (*dockTbl)["background_blur"].value<bool>())
+      dock.backgroundBlur = *v;
     if (auto v = (*dockTbl)["show_running"].value<bool>())
       dock.showRunning = *v;
     if (auto v = (*dockTbl)["auto_hide"].value<bool>())
