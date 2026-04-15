@@ -31,8 +31,8 @@ SmartPanel {
     property int profileIndex: profileToIndex(PowerProfileService.profile)
     readonly property bool showPowerProfiles: panelID ? panelID.showPowerProfiles : resolveWidgetSetting("showPowerProfiles", false)
     readonly property bool showNoctaliaPerformance: panelID ? panelID.showNoctaliaPerformance : resolveWidgetSetting("showNoctaliaPerformance", false)
-    readonly property bool isLowBattery: BatteryService.isLowBattery
-    readonly property bool isCriticalBattery: BatteryService.isCriticalBattery
+    readonly property bool isLowBattery: BatteryService.isLowBattery(primaryDevice)
+    readonly property bool isCriticalBattery: BatteryService.isCriticalBattery(primaryDevice)
     readonly property var primaryDevice: BatteryService.primaryDevice
 
     function profileToIndex(p) {
@@ -90,8 +90,9 @@ SmartPanel {
 
           NIcon {
             pointSize: Style.fontSizeXXL
-            color: (BatteryService.isCharging(primaryDevice) || BatteryService.isPluggedIn(primaryDevice)) ? Color.mPrimary : (BatteryService.isCriticalBattery(primaryDevice) || BatteryService.isLowBattery(primaryDevice)) ? Color.mError : Color.mOnSurface
-            icon: BatteryService.getIcon(BatteryService.getPercentage(primaryDevice), BatteryService.isCharging(primaryDevice), BatteryService.isPluggedIn(primaryDevice), BatteryService.isDeviceReady(primaryDevice))
+            // If UPower is not installed, show it error icon in mError [red]. Otherwise, show the appropriate battery icon based on the primary device's status.
+            color: !BatteryService.upowerInstalled ? Color.mError : (BatteryService.isCharging(primaryDevice) || BatteryService.isPluggedIn(primaryDevice)) ? Color.mPrimary : (BatteryService.isCriticalBattery(primaryDevice) || BatteryService.isLowBattery(primaryDevice)) ? Color.mError : Color.mOnSurface
+            icon: !BatteryService.upowerInstalled ? "battery-exclamation" : BatteryService.getIcon(BatteryService.getPercentage(primaryDevice), BatteryService.isCharging(primaryDevice), BatteryService.isPluggedIn(primaryDevice), BatteryService.isDeviceReady(primaryDevice))
           }
 
           ColumnLayout {
@@ -113,6 +114,50 @@ SmartPanel {
             tooltipText: I18n.tr("common.close")
             baseSize: Style.baseWidgetSize * 0.8
             onClicked: root.close()
+          }
+        }
+      }
+
+      // UPower not installed.
+      NBox {
+        id: upowerMissing
+        visible: !BatteryService.upowerInstalled
+        Layout.fillWidth: true
+        Layout.preferredHeight: upowerMissingColumn.implicitHeight + Style.margin2M
+
+        ColumnLayout {
+          id: upowerMissingColumn
+          anchors.fill: parent
+          anchors.margins: Style.marginM
+          spacing: Style.marginL
+
+          Item {
+            Layout.fillHeight: true
+          }
+
+          NIcon {
+            icon: "battery-exclamation"
+            pointSize: 48
+            color: Color.mOnSurfaceVariant
+            Layout.alignment: Qt.AlignHCenter
+          }
+
+          NText {
+            text: I18n.tr("battery.no-upower-title")
+            pointSize: Style.fontSizeL
+            color: Color.mOnSurfaceVariant
+            Layout.alignment: Qt.AlignHCenter
+          }
+
+          NText {
+            text: I18n.tr("battery.no-upower-description")
+            pointSize: Style.fontSizeS
+            color: Color.mOnSurfaceVariant
+            Layout.alignment: Qt.AlignHCenter
+          }
+
+          Item {
+            Layout.fillHeight: true
           }
         }
       }
@@ -293,7 +338,7 @@ SmartPanel {
       NBox {
         Layout.fillWidth: true
         height: controlsLayout.implicitHeight + Style.margin2L
-        visible: showPowerProfiles || showNoctaliaPerformance
+        visible: BatteryService.upowerInstalled && (showPowerProfiles || showNoctaliaPerformance)
 
         ColumnLayout {
           id: controlsLayout

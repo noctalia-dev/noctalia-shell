@@ -347,7 +347,9 @@
     "plugged-in": "Plugged in",
     "power-profile": "Power profile",
     "time-left": "Time left: {time}",
-    "time-until-full": "Time until full: {time}"
+    "time-until-full": "Time until full: {time}",
+    "no-upower-title": "UPower is not installed.",
+    "no-upower-description": "Please install the 'upower' package\nto enable power management features."
   },
   "bluetooth": {
     "panel": {
