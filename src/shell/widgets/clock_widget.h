@@ -16,11 +16,13 @@ public:
   void create() override;
 
 private:
+  [[nodiscard]] std::string formatTimeText() const;
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void doUpdate(Renderer& renderer) override;
   const TimeService& m_time;
   wl_output* m_output = nullptr;
   std::string m_format;
+  bool m_isVertical = false;
   Label* m_label = nullptr;
   std::string m_lastText;
 };
