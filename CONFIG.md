@@ -706,6 +706,7 @@ Brightness control uses the kernel backlight interface by default. `ddcutil` sup
 ```toml
 [brightness]
 enable_ddcutil = false
+ignore_mmids = ["ACI-ROG_PG279Q-10220"]   # skip these monitors in all ddcutil commands
 
 [brightness.monitor.eDP-1]
 backend = "backlight"      # auto | none | backlight | ddcutil
@@ -716,6 +717,7 @@ backend = "ddcutil"
 
 Notes:
 - `enable_ddcutil = true` only enables DDC/CI discovery. It does not force every monitor onto `ddcutil`.
+- `ignore_mmids` passes `--ignore-mmid` to every `ddcutil` invocation (detect, getvcp, setvcp). Use this to skip monitors that don't support DDC/CI or cause bus lock timeouts. Run `ddcutil --verbose detect` to find the monitor model id strings.
 - Per-monitor overrides use the same connector/description matching rules as bar monitor overrides.
 - Mixed setups are supported: an internal laptop panel can stay on `backlight` while an external `DP-1` or `HDMI-A-1` display uses `ddcutil`.
 - `backend = "auto"` prefers kernel backlight when available and falls back to `ddcutil` for matched external displays.
