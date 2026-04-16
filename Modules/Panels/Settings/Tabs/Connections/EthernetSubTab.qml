@@ -275,6 +275,7 @@ Item {
             }
 
             NIconButton {
+              visible: (NetworkService.activeEthernetDetails.connectionName || "").length > 0
               anchors.top: parent.top
               anchors.right: parent.right
               anchors.rightMargin: Style.marginS + (Style.baseWidgetSize * 0.65) + Style.marginS
@@ -282,12 +283,7 @@ Item {
               icon: "settings"
               tooltipText: I18n.tr("wifi.edit.title")
               baseSize: Style.baseWidgetSize * 0.65
-              onClicked: {
-                var connName = NetworkService.activeEthernetDetails.connectionName || "";
-                if (connName) {
-                  networkEditPopup.openEdit(connName, true, false);
-                }
-              }
+              onClicked: networkEditPopup.openEdit(NetworkService.activeEthernetDetails.connectionName, true, false)
               z: 1
             }
 
