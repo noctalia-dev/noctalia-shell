@@ -972,12 +972,23 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
       const bool withinStabilizeWindow =
           strongIt != m_lastStrongMetadataUpdate.end() && now - strongIt->second < k_metadata_stabilize_window;
       if (merged.playbackStatus == "Playing" && previousStrong && incomingWeak && withinStabilizeWindow) {
+        // Weak frames often carry mpris:artUrl / xesam:url before xesam text fields populate.
+        // Copying previous_info wholesale used to drop that artwork until something else refreshed
+        // (e.g. PlayPause from the bar widget, which re-queries the player immediately).
+        const std::string incomingArtUrl = info.artUrl;
+        const std::string incomingSourceUrl = info.sourceUrl;
         merged.trackId = previous_info.trackId;
         merged.title = previous_info.title;
         merged.artists = previous_info.artists;
         merged.album = previous_info.album;
         merged.sourceUrl = previous_info.sourceUrl;
         merged.artUrl = previous_info.artUrl;
+        if (!incomingArtUrl.empty()) {
+          merged.artUrl = incomingArtUrl;
+        }
+        if (!incomingSourceUrl.empty()) {
+          merged.sourceUrl = incomingSourceUrl;
+        }
       }
 
       existing->second = merged;
@@ -986,6 +997,7 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
 
       const bool trackChanged = previous_info.title != merged.title || previous_info.album != merged.album ||
                                 previous_info.artists != merged.artists || previous_info.artUrl != merged.artUrl ||
+                                previous_info.sourceUrl != merged.sourceUrl ||
                                 previous_info.trackId != merged.trackId || previous_info.lengthUs != merged.lengthUs;
       const bool significantChanged =
           trackChanged || previous_info.identity != merged.identity ||
