@@ -1842,6 +1842,7 @@
       "error-invalid-gateway": "Forma dergehê ne derbasdar e",
       "error-invalid-ip": "Forma navnîşana IP ne derbasdar e",
       "error-load-failed": "Mîheng nehatin barkirin",
+      "error-invalid-mtu": "MTU divê 0 (otomatîk) an 68–9216 be",
       "gateway": "Dergeh",
       "gateway-placeholder-v4": "wek 192.168.1.1",
       "gateway-placeholder-v6": "wek fd00::1",

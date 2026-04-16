@@ -2224,6 +2224,7 @@
       "error-invalid-gateway": "Format de passerelle invalide",
       "error-invalid-ip": "Format d'adresse IP invalide",
       "error-load-failed": "Échec du chargement des paramètres",
+      "error-invalid-mtu": "MTU doit être 0 (auto) ou 68–9216",
       "gateway": "Passerelle",
       "gateway-placeholder-v4": "ex. 192.168.1.1",
       "gateway-placeholder-v6": "ex. fd00::1",

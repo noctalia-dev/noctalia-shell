@@ -129,6 +129,10 @@ Popup {
     return true;
   }
 
+  function isValidMtu(val) {
+    return val === 0 || (val >= 68 && val <= 9216);
+  }
+
   function canApply() {
     if (loading || NetworkService.modifyingConnection) return false;
     if (ipv4Method === "manual") {
@@ -141,6 +145,7 @@ Popup {
       if (ipv6Gateway && !isValidIpv6(ipv6Gateway)) return false;
     }
     if (!isValidDnsList(ipv6Dns, true)) return false;
+    if (!isValidMtu(mtu)) return false;
     return true;
   }
 
@@ -391,16 +396,22 @@ Popup {
           color: Color.mPrimary
         }
 
-        NSpinBox {
-          id: mtuSpinBox
+        NTextInput {
+          id: mtuInput
           Layout.fillWidth: true
-          label: I18n.tr("wifi.edit.mtu")
-          description: I18n.tr("wifi.edit.mtu-description")
-          value: root.mtu
-          from: 0
-          to: 9000
-          stepSize: 1
-          onValueChanged: root.mtu = value
+          label: I18n.tr("wifi.edit.mtu") + " (" + I18n.tr("wifi.edit.mtu-description") + ")"
+          placeholderText: "1500"
+          text: root.mtu > 0 ? String(root.mtu) : ""
+          onTextChanged: {
+            var val = parseInt(text);
+            root.mtu = (!text || isNaN(val)) ? 0 : val;
+          }
+        }
+        NText {
+          visible: mtuInput.text.length > 0 && !root.isValidMtu(parseInt(mtuInput.text) || -1)
+          text: I18n.tr("wifi.edit.error-invalid-mtu")
+          pointSize: Style.fontSizeXS
+          color: Color.mError
         }
       }
 

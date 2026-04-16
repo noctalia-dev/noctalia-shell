@@ -2224,6 +2224,7 @@
       "error-invalid-gateway": "Neplatný formát brány",
       "error-invalid-ip": "Neplatný formát IP adresy",
       "error-load-failed": "Nepodařilo se načíst nastavení",
+      "error-invalid-mtu": "MTU musí být 0 (auto) nebo 68–9216",
       "gateway": "Brána",
       "gateway-placeholder-v4": "např. 192.168.1.1",
       "gateway-placeholder-v6": "např. fd00::1",

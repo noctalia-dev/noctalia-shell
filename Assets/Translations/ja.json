@@ -2224,6 +2224,7 @@
       "error-invalid-gateway": "無効なゲートウェイ形式",
       "error-invalid-ip": "無効なIPアドレス形式",
       "error-load-failed": "設定の読み込みに失敗しました",
+      "error-invalid-mtu": "MTU は 0（自動）または 68〜9216 にしてください",
       "gateway": "ゲートウェイ",
       "gateway-placeholder-v4": "例: 192.168.1.1",
       "gateway-placeholder-v6": "例: fd00::1",

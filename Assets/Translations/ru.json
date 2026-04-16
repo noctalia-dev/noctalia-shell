@@ -2224,6 +2224,7 @@
       "error-invalid-gateway": "Неверный формат шлюза",
       "error-invalid-ip": "Неверный формат IP-адреса",
       "error-load-failed": "Не удалось загрузить настройки",
+      "error-invalid-mtu": "MTU должен быть 0 (авто) или 68–9216",
       "gateway": "Шлюз",
       "gateway-placeholder-v4": "напр. 192.168.1.1",
       "gateway-placeholder-v6": "напр. fd00::1",

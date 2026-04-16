@@ -2224,6 +2224,7 @@
       "error-invalid-gateway": "Định dạng gateway không hợp lệ",
       "error-invalid-ip": "Định dạng địa chỉ IP không hợp lệ",
       "error-load-failed": "Không thể tải cài đặt",
+      "error-invalid-mtu": "MTU phải là 0 (tự động) hoặc 68–9216",
       "gateway": "Gateway",
       "gateway-placeholder-v4": "vd. 192.168.1.1",
       "gateway-placeholder-v6": "vd. fd00::1",

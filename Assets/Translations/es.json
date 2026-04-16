@@ -2224,6 +2224,7 @@
       "error-invalid-gateway": "Formato de puerta de enlace no válido",
       "error-invalid-ip": "Formato de dirección IP no válido",
       "error-load-failed": "Error al cargar la configuración",
+      "error-invalid-mtu": "MTU debe ser 0 (auto) o 68–9216",
       "gateway": "Puerta de enlace",
       "gateway-placeholder-v4": "ej. 192.168.1.1",
       "gateway-placeholder-v6": "ej. fd00::1",

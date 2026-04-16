@@ -2224,6 +2224,7 @@
       "error-invalid-gateway": "Geçersiz ağ geçidi biçimi",
       "error-invalid-ip": "Geçersiz IP adresi biçimi",
       "error-load-failed": "Ayarlar yüklenemedi",
+      "error-invalid-mtu": "MTU 0 (otomatik) veya 68–9216 olmalıdır",
       "gateway": "Ağ Geçidi",
       "gateway-placeholder-v4": "ör. 192.168.1.1",
       "gateway-placeholder-v6": "ör. fd00::1",
