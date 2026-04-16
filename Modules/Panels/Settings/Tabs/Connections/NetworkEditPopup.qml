@@ -408,7 +408,7 @@ Popup {
           }
         }
         NText {
-          visible: mtuInput.text.length > 0 && !root.isValidMtu(parseInt(mtuInput.text) || -1)
+          visible: mtuInput.text.length > 0 && !root.isValidMtu(isNaN(parseInt(mtuInput.text)) ? -1 : parseInt(mtuInput.text))
           text: I18n.tr("wifi.edit.error-invalid-mtu")
           pointSize: Style.fontSizeXS
           color: Color.mError
