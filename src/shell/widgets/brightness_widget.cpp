@@ -70,6 +70,10 @@ void BrightnessWidget::doLayout(Renderer& renderer, float /*containerWidth*/, fl
     return;
   }
   syncState(renderer);
+  if (!rootNode->visible()) {
+    rootNode->setSize(0.0f, 0.0f);
+    return;
+  }
 
   m_glyph->measure(renderer);
   m_label->measure(renderer);
@@ -90,30 +94,28 @@ void BrightnessWidget::syncState(Renderer& renderer) {
   }
 
   auto* rootNode = root();
-  if (!m_brightness->available()) {
+  const auto* display = m_brightness->findByOutput(m_output);
+  if (display == nullptr) {
+    m_lastAvailable = false;
+    m_lastBrightness = -1.0f;
     if (rootNode != nullptr) {
       rootNode->setVisible(false);
+      rootNode->setSize(0.0f, 0.0f);
     }
     return;
   }
+
   if (rootNode != nullptr) {
     rootNode->setVisible(true);
   }
 
-  const auto* display = m_brightness->findByOutput(m_output);
-  if (display == nullptr) {
-    if (rootNode != nullptr) {
-      rootNode->setVisible(false);
-    }
-    return;
-  }
-
   const float brightness = display->brightness;
-
-  if (std::abs(brightness - m_lastBrightness) < 0.001f) {
+  const bool becameAvailable = !m_lastAvailable;
+  if (!becameAvailable && std::abs(brightness - m_lastBrightness) < 0.001f) {
     return;
   }
 
+  m_lastAvailable = true;
   m_lastBrightness = brightness;
 
   m_glyph->setGlyph(brightnessGlyphName(brightness));
