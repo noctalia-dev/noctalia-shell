@@ -35,7 +35,12 @@ void WorkspacesWidget::create() {
   setRoot(std::move(container));
 }
 
-void WorkspacesWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void WorkspacesWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
+  const bool wasVertical = m_isVertical;
+  m_isVertical = containerHeight > containerWidth;
+  if (wasVertical != m_isVertical) {
+    m_rebuildPending = true;
+  }
   update(renderer);
   if (m_rebuildPending) {
     rebuild(renderer);
@@ -204,13 +209,21 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
 
   // Size the container now that per-item widths are known.
   float total = 0.0f;
+  float maxWidth = 0.0f;
   for (std::size_t i = 0; i < m_items.size(); ++i) {
-    total += (m_cachedState[i].active) ? m_items[i].activeWidth : m_items[i].inactiveWidth;
+    const float itemWidth = (m_cachedState[i].active) ? m_items[i].activeWidth : m_items[i].inactiveWidth;
+    total += itemWidth;
+    maxWidth = std::max(maxWidth, itemWidth);
   }
   if (m_items.size() > 1) {
     total += gap * static_cast<float>(m_items.size() - 1);
   }
-  m_container->setFrameSize(total, indicatorHeight);
+  if (m_isVertical) {
+    (void)maxWidth;
+    m_container->setFrameSize(indicatorHeight, total);
+  } else {
+    m_container->setFrameSize(total, indicatorHeight);
+  }
 
   // Snap to targets immediately (no animation on structural rebuild).
   computeTargets();
@@ -300,14 +313,24 @@ void WorkspacesWidget::applyItemLayout(std::size_t i) {
   if (it.area == nullptr) {
     return;
   }
-  it.area->setPosition(std::round(it.currentX), 0.0f);
-  it.area->setFrameSize(it.currentWidth, m_indicatorHeight);
-  if (it.indicator != nullptr) {
-    it.indicator->setFrameSize(it.currentWidth, m_indicatorHeight);
+  if (m_isVertical) {
+    it.area->setPosition(0.0f, std::round(it.currentX));
+    it.area->setFrameSize(m_indicatorHeight, it.currentWidth);
+    if (it.indicator != nullptr) {
+      it.indicator->setFrameSize(m_indicatorHeight, it.currentWidth);
+    }
+  } else {
+    it.area->setPosition(std::round(it.currentX), 0.0f);
+    it.area->setFrameSize(it.currentWidth, m_indicatorHeight);
+    if (it.indicator != nullptr) {
+      it.indicator->setFrameSize(it.currentWidth, m_indicatorHeight);
+    }
   }
   if (it.text != nullptr) {
-    it.text->setPosition(std::round((it.currentWidth - it.text->width()) * 0.5f),
-                         std::round((m_indicatorHeight - it.text->height()) * 0.5f));
+    const float itemW = m_isVertical ? m_indicatorHeight : it.currentWidth;
+    const float itemH = m_isVertical ? it.currentWidth : m_indicatorHeight;
+    it.text->setPosition(std::round((itemW - it.text->width()) * 0.5f),
+                         std::round((itemH - it.text->height()) * 0.5f));
   }
 }
 
