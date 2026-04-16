@@ -66,10 +66,10 @@ struct BarConfig {
   bool backgroundBlur =
       true;           // request compositor blur behind the bar via ext-background-effect-v1 (inert where unsupported)
   float scale = 1.0f; // content scale multiplier for glyphs and text
-  std::vector<std::string> startWidgets = {"cpu", "temp", "ram", "active_window"};
-  std::vector<std::string> centerWidgets = {"workspaces"};
-  std::vector<std::string> endWidgets = {"media",     "tray",    "notifications", "volume", "power_profiles", "battery",
-                                         "wallpaper", "session", "spacer",        "date",   "clock"};
+  std::vector<std::string> startWidgets = {"launcher", "wallpaper", "workspaces"};
+  std::vector<std::string> centerWidgets = {"clock"};
+  std::vector<std::string> endWidgets = {"media",     "tray",   "notifications", "network",
+                                         "bluetooth", "volume", "battery",       "session"};
   // When true, widgets on this bar use a capsule unless `[widget.*] capsule = false`.
   bool widgetCapsuleDefault = false;
   ThemeColor widgetCapsuleFill = roleColor(ColorRole::SurfaceVariant);
