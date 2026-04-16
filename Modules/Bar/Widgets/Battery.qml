@@ -45,6 +45,9 @@ Item {
   readonly property bool hideIfIdle: widgetSettings.hideIfIdle !== undefined ? widgetSettings.hideIfIdle : widgetMetadata.hideIfIdle
 
   // Check if selected device is actually present/connected
+  readonly property string deviceNativePath: widgetSettings.deviceNativePath !== undefined ? widgetSettings.deviceNativePath : widgetMetadata.deviceNativePath
+  readonly property var selectedDevice: BatteryService.isDevicePresent(BatteryService.findDevice(deviceNativePath)) ? BatteryService.findDevice(deviceNativePath) : null
+
   readonly property bool isReady: BatteryService.isDeviceReady(selectedDevice)
   readonly property bool isPresent: BatteryService.isDevicePresent(selectedDevice)
   readonly property real percent: isReady ? BatteryService.getPercentage(selectedDevice) : -1
@@ -52,17 +55,17 @@ Item {
   readonly property bool isPluggedIn: isReady ? BatteryService.isPluggedIn(selectedDevice) : false
   readonly property bool isLowBattery: isReady ? BatteryService.isLowBattery(selectedDevice) : false
   readonly property bool isCriticalBattery: isReady ? BatteryService.isCriticalBattery(selectedDevice) : false
+  readonly property var timeText: isReady ? BatteryService.getTimeRemainingText(selectedDevice) : ""
+  readonly property var rateText: isReady ? BatteryService.getRateText(selectedDevice) : ""
 
   // Visibility logic:
   // 1. Always show if hideIfNotDetected is false
   // 2. Show if a battery is ready (unless hideIfIdle is true and it's plugged in)
   // 3. Show UPower missing.
   readonly property bool shouldShow: !BatteryService.upowerInstalled || !hideIfNotDetected || (isReady && (hideIfIdle ? !isPluggedIn : true))
-  readonly property string deviceNativePath: widgetSettings.deviceNativePath !== undefined ? widgetSettings.deviceNativePath : widgetMetadata.deviceNativePath
-  readonly property var selectedDevice: BatteryService.isDevicePresent(BatteryService.findDevice(deviceNativePath)) ? BatteryService.findDevice(deviceNativePath) : null
 
   readonly property var tooltipContent: {
-    if (!BatteryService.upowerInstalled && BatteryService.peripheralBatteries.length === 0) {
+    if (!BatteryService.upowerInstalled) {
       return I18n.tr("battery.no-upower-title");
     }
     if (!isReady || !isPresent) {
@@ -75,7 +78,6 @@ Item {
       // Show charge percentage
       rows.push([I18n.tr("battery.battery-level"), `${percent}%`]);
 
-      let timeText = BatteryService.getTimeRemainingText(selectedDevice);
       if (timeText) {
         const colonIdx = timeText.indexOf(":");
         if (colonIdx >= 0) {
@@ -85,7 +87,6 @@ Item {
         }
       }
 
-      let rateText = BatteryService.getRateText(selectedDevice);
       if (!isPluggedIn && rateText) {
         const colonIdx = rateText.indexOf(":");
         if (colonIdx >= 0) {
