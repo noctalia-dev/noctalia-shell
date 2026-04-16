@@ -290,6 +290,7 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
           if (cs.cardNode == nullptr) {
             continue;
           }
+          bool regionChanged = false;
 
           if (actionSetChanged || imageDataChanged) {
             const float preservedX = cs.cardNode->x();
@@ -321,6 +322,7 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
             if (inst->sceneRoot != nullptr) {
               inst->sceneRoot->addChild(std::unique_ptr<Node>(rebuilt));
             }
+            regionChanged = true;
           }
 
           cs.appNameLabel->setText(n.appName);
@@ -374,6 +376,14 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
           inst->animations.animate(0.7f, 1.0f, Style::animFast, Easing::EaseOutCubic,
                                    [card = cs.cardNode](float v) { card->setOpacity(v); }, {}, cs.cardNode);
 
+          // Recompute input + blur regions whenever a card node is rebuilt in place,
+          // otherwise the compositor can keep stale strips from the previous geometry.
+          if (regionChanged) {
+            updateInputRegion(*inst);
+            if (inst->pointerInside) {
+              inst->inputDispatcher.pointerMotion(inst->lastPointerX, inst->lastPointerY, 0);
+            }
+          }
           inst->surface->requestRedraw();
         }
         if (hovered && m_notifications != nullptr) {
