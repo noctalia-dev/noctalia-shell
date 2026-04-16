@@ -70,7 +70,7 @@ Item {
                    if (action === "toggle-bluetooth") {
                      BluetoothService.setBluetoothEnabled(!BluetoothService.enabled);
                    } else if (action === "bluetooth-settings") {
-                     SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, 1, screen);
+                     SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, 2, screen);
                    } else if (action === "widget-settings") {
                      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
                    }
