@@ -46,10 +46,9 @@ Item {
 
   // Check if selected device is actually present/connected
   readonly property string deviceNativePath: widgetSettings.deviceNativePath !== undefined ? widgetSettings.deviceNativePath : widgetMetadata.deviceNativePath
-  readonly property var selectedDevice: BatteryService.isDevicePresent(BatteryService.findDevice(deviceNativePath)) ? BatteryService.findDevice(deviceNativePath) : null
+  readonly property var selectedDevice: BatteryService.findDevice(deviceNativePath)
 
-  readonly property bool isReady: BatteryService.isDeviceReady(selectedDevice)
-  readonly property bool isPresent: BatteryService.isDevicePresent(selectedDevice)
+  readonly property bool isReady: BatteryService.isDevicePresent(selectedDevice) && BatteryService.isDeviceReady(selectedDevice)
   readonly property real percent: isReady ? BatteryService.getPercentage(selectedDevice) : -1
   readonly property bool isCharging: isReady ? BatteryService.isCharging(selectedDevice) : false
   readonly property bool isPluggedIn: isReady ? BatteryService.isPluggedIn(selectedDevice) : false
@@ -68,7 +67,7 @@ Item {
     if (!BatteryService.upowerInstalled) {
       return I18n.tr("battery.no-upower-title");
     }
-    if (!isReady || !isPresent) {
+    if (!isReady) {
       return I18n.tr("battery.no-battery-detected");
     }
 

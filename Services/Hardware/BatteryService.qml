@@ -14,22 +14,22 @@ Singleton {
   id: root
 
   readonly property bool upowerInstalled: ProgramCheckerService.upowerAvailable
-  readonly property var primaryDevice: upowerInstalled ? (UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : (peripheralBatteries.length > 0 ? peripheralBatteries[0] : null))) : null // Primary battery device (prioritizes laptop over peripherals)
+  readonly property var primaryDevice: UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : (peripheralBatteries.length > 0 ? peripheralBatteries[0] : null)) // Primary battery device (prioritizes laptop over peripherals)
   readonly property real warningThreshold: Settings.data.systemMonitor.batteryWarningThreshold
   readonly property real criticalThreshold: Settings.data.systemMonitor.batteryCriticalThreshold
   readonly property var laptopBatteries: {
     if (!upowerInstalled) {
       return [];
     }
-    let _laptopbatteries = (UPower.devices?.values ?? []).filter(d => d && d.isLaptopBattery).sort((x, y) => x.nativePath.localeCompare(y.nativePath, undefined, {
-                                                                                                                                          numeric: true
-                                                                                                                                        }));
-    if (_laptopbatteries.length > 1 && UPower.displayDevice.isPresent) {
-      return [UPower.displayDevice].concat(_laptopbatteries);
+    let laptopBatteriesList = (UPower.devices?.values ?? []).filter(d => d && d.isLaptopBattery).sort((x, y) => x.nativePath.localeCompare(y.nativePath, undefined, {
+                                                                                                                                             numeric: true
+                                                                                                                                           }));
+    if (laptopBatteriesList.length > 1 && UPower.displayDevice.isPresent) {
+      return [UPower.displayDevice].concat(laptopBatteriesList);
     }
-    return _laptopbatteries;
+    return laptopBatteriesList;
   }
-  readonly property var peripheralBatteries: upowerInstalled ? (UPower.devices?.values ?? []).filter(d => d && isPeripheral(d) && isDeviceReady(d)).sort((x, y) => x.percentage - y.percentage) : []
+  readonly property var peripheralBatteries: upowerInstalled ? (UPower.devices?.values ?? []).filter(d => d && isPeripheral(d) && isDeviceReady(d)).sort((x, y) => (x.percentage || 0) - (y.percentage || 0)) : []
 
   property var deviceModel: {
     var model = [
@@ -113,10 +113,10 @@ Singleton {
   }
 
   function getPercentage(device) {
-    if (!device) {
+    if (!device || isNaN(device.percentage)) {
       return -1;
     }
-    const z = device.percentage || 0;
+    const z = device.percentage;
     return Math.round(z > 1.0 ? z : z * 100);
   }
 
@@ -157,7 +157,7 @@ Singleton {
   }
 
   function getDeviceName(device) {
-    if (!isDeviceReady(device)) {
+    if (!device || !isDeviceReady(device)) {
       return "";
     }
 
