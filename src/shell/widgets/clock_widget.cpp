@@ -9,15 +9,20 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
-ClockWidget::ClockWidget(const TimeService& timeService, wl_output* output, std::string format)
-    : m_time(timeService), m_output(output), m_format(std::move(format)) {}
+ClockWidget::ClockWidget(const TimeService& timeService, wl_output* output, std::string format,
+                         std::string verticalFormat)
+    : m_time(timeService), m_output(output), m_format(std::move(format)), m_verticalFormat(std::move(verticalFormat)) {}
 
 std::string ClockWidget::formatTimeText() const {
-  auto text = m_time.format(m_format.c_str());
   if (!m_isVertical) {
-    return text;
+    return m_time.format(m_format.c_str());
   }
 
+  if (!m_verticalFormat.empty()) {
+    return m_time.format(m_verticalFormat.c_str());
+  }
+
+  auto text = m_time.format(m_format.c_str());
   for (char& c : text) {
     if (c == ':') {
       c = '\n';

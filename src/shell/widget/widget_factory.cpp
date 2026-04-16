@@ -75,7 +75,8 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       return nullptr;
     }
     std::string format = wc != nullptr ? wc->getString("format", "{:%H:%M}") : std::string("{:%H:%M}");
-    auto widget = std::make_unique<ClockWidget>(*m_time, output, std::move(format));
+    std::string verticalFormat = wc != nullptr ? wc->getString("vertical_format", "") : std::string{};
+    auto widget = std::make_unique<ClockWidget>(*m_time, output, std::move(format), std::move(verticalFormat));
     widget->setContentScale(contentScale);
     return widget;
   }

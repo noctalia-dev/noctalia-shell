@@ -208,17 +208,20 @@ capsule = false
 
 Displays the current time.
 
-| Setting  | Type   | Default    | Description                              |
-|----------|--------|------------|------------------------------------------|
-| `format` | string | `{:%H:%M}` | `std::format`-style chrono format string |
+| Setting           | Type   | Default    | Description |
+|-------------------|--------|------------|-------------|
+| `format`          | string | `{:%H:%M}` | `std::format`-style chrono format string (used on horizontal bars, and as vertical fallback) |
+| `vertical_format` | string | `""`       | Optional format used when the bar is vertical (`left`/`right`). When empty, Noctalia falls back to `format` and replaces `:` with line breaks. |
 
 ```toml
 [widget.clock]
 format = "{:%H:%M}"
+vertical_format = "{:%H\n%M}"
 
 [widget.clock-seconds]
 type   = "clock"
 format = "{:%H:%M:%S}"
+vertical_format = "{:%H\n%M\n%S}"
 ```
 
 ---
