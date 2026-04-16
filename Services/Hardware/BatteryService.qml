@@ -13,33 +13,22 @@ import qs.Services.UI
 Singleton {
   id: root
 
-  readonly property var primaryDevice: _laptopBattery || _peripheralBattery || null // Primary battery device (prioritizes laptop over peripherals)
-  readonly property real batteryPercentage: getPercentage(primaryDevice)
-  readonly property bool batteryCharging: isCharging(primaryDevice)
-  readonly property bool batteryPluggedIn: isPluggedIn(primaryDevice)
-  readonly property bool batteryReady: isDeviceReady(primaryDevice)
-  readonly property bool batteryPresent: isDevicePresent(primaryDevice)
+  readonly property bool upowerInstalled: ProgramCheckerService.upowerAvailable
+  readonly property var primaryDevice: upowerInstalled ? (UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : (peripheralBatteries.length > 0 ? peripheralBatteries[0] : null))) : null // Primary battery device (prioritizes laptop over peripherals)
   readonly property real warningThreshold: Settings.data.systemMonitor.batteryWarningThreshold
   readonly property real criticalThreshold: Settings.data.systemMonitor.batteryCriticalThreshold
-  readonly property string batteryIcon: getIcon(batteryPercentage, batteryCharging, batteryPluggedIn, batteryReady)
-  readonly property bool upowerInstalled: ProgramCheckerService.upowerAvailable
-
-  readonly property var laptopBatteries: upowerInstalled ? (UPower.devices?.values ?? []).filter(d => d && d.isLaptopBattery).sort((x, y) => {
-                                                                                                                                     // Force DisplayDevice to the top
-                                                                                                                                     if (x.nativePath.includes("DisplayDevice"))
-                                                                                                                                     return -1;
-                                                                                                                                     if (y.nativePath.includes("DisplayDevice"))
-                                                                                                                                     return 1;
-
-                                                                                                                                     // Standard string comparison works for BAT0 vs BAT1
-                                                                                                                                     return x.nativePath.localeCompare(y.nativePath, undefined, {
-                                                                                                                                                                         numeric: true
-                                                                                                                                                                       });
-                                                                                                                                   }) : []
-
+  readonly property var laptopBatteries: {
+    if (!upowerInstalled){
+    return [];}
+    let _laptopbatteries = (UPower.devices?.values ?? []).filter(d => d && d.isLaptopBattery).sort((x, y) => x.nativePath.localeCompare(y.nativePath, undefined, {
+                                                                                                                                          numeric: true
+                                                                                                                                        }));
+    if (_laptopbatteries.length > 1 && UPower.displayDevice.isPresent) {
+      return [UPower.displayDevice].concat(_laptopbatteries);
+    }
+    return _laptopbatteries;
+  }
   readonly property var peripheralBatteries: upowerInstalled ? (UPower.devices?.values ?? []).filter(d => d && isPeripheral(d) && isDeviceReady(d)).sort((x, y) => x.percentage - y.percentage) : []
-  readonly property var _laptopBattery: upowerInstalled ? (UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : null)) : null
-  readonly property var _peripheralBattery: upowerInstalled ? (peripheralBatteries.length > 0 ? peripheralBatteries[0] : null) : null
 
   property var deviceModel: {
     var model = [
@@ -67,7 +56,7 @@ Singleton {
 
   function findDevice(nativePath) {
     if (!nativePath || nativePath === "__default__" || nativePath === "DisplayDevice") {
-      return _laptopBattery;
+      return primaryDevice;
     }
 
     if (!UPower.devices) {
@@ -171,18 +160,20 @@ Singleton {
       return "";
     }
 
+    const isDD = device === UPower.displayDevice || (device.nativePath && device.nativePath.includes("DisplayDevice"));
+    if (isDD) {
+      return I18n.tr("battery.all-batteries");
+    }
+
     if (device.isLaptopBattery) {
       // If there is more than one battery explicitly name them
       // Logger.e("BatteryDebug", "Available Battery count: " + laptopBatteries.length); // can be useful for debugging
-      if (laptopBatteries.length > 1 && device.nativePath) {
-        if (device.nativePath.includes("DisplayDevice")) {
-          return I18n.tr("battery.all-batteries");
-        }
-        var match = device.nativePath.match(/(\d+)$/);
-        if (match) {
-          // In case of 2 batteries: bat0 => bat1  bat1 => bat2
-          return I18n.tr("common.battery") + " " + (parseInt(match[1]) + 1);  // Append numbers
-        }
+      const i = laptopBatteries.indexOf(device);
+      const hasDD = laptopBatteries.length > 0 && (laptopBatteries[0] === UPower.displayDevice || (laptopBatteries[0].nativePath && laptopBatteries[0].nativePath.includes("DisplayDevice")));
+      if (i !== -1 && laptopBatteries.length > (hasDD ? 2 : 1)) {
+        // If there's an aggregate device at 0, physical batteries start at index (dIx) 1 and we want them labeled starting at 'Battery 1'
+        const dIx = hasDD ? i : i + 1;
+        return I18n.tr("common.battery") + " " + dIx;
       }
       // Return Battery if there is only one
       return I18n.tr("common.battery");
