@@ -59,6 +59,8 @@ ShadowBleed computeShadowBleed(const BarConfig& cfg) {
 
 void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW, float barAreaH, float paddingH,
                        bool isVertical) {
+  const float slotCross = isVertical ? barAreaW : barAreaH;
+
   auto layoutWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
     for (auto& widget : widgets) {
       widget->layout(renderer, barAreaW, barAreaH);
@@ -68,7 +70,7 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
   layoutWidgets(instance.centerWidgets);
   layoutWidgets(instance.endWidgets);
 
-  auto finalizeCapsules = [](std::vector<std::unique_ptr<Widget>>& widgets) {
+  auto finalizeCapsules = [isVertical, slotCross](std::vector<std::unique_ptr<Widget>>& widgets) {
     for (auto& w : widgets) {
       if (w == nullptr || !w->barCapsuleSpec().enabled) {
         continue;
@@ -80,8 +82,7 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
         continue;
       }
       // Keep the capsule shell visibility in sync with the inner root so that
-      // hidden widgets (e.g. brightness with no data) don't occupy phantom
-      // space in the flex layout.
+      // hidden widgets don't occupy phantom space in the flex layout.
       shell->setVisible(inner->visible());
       const float scale = w->contentScale();
       const float iw = inner->width();
@@ -95,13 +96,22 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
         continue;
       }
       const float pad = w->barCapsuleSpec().padding * scale;
-      const float shellW = iw + 2.0f * pad;
+      float shellW = iw + 2.0f * pad;
       const float shellH = ih + 2.0f * pad;
+      float innerX = pad;
+      const float innerY = pad;
+      if (isVertical) {
+        // Shared vertical-bar capsule policy:
+        // tighter cross-axis padding + clamp to available cross-axis slot width.
+        const float padCross = std::min(pad, Style::spaceXs * scale);
+        shellW = std::max(iw, std::min(iw + 2.0f * padCross, slotCross));
+        innerX = std::max(0.0f, (shellW - iw) * 0.5f);
+      }
       shell->setSize(shellW, shellH);
       bg->setVisible(true);
       bg->setPosition(0.0f, 0.0f);
       bg->setSize(shellW, shellH);
-      inner->setPosition(pad, pad);
+      inner->setPosition(innerX, innerY);
       bg->setRadius(std::min(shellW, shellH) * 0.5f);
     }
   };
@@ -109,7 +119,6 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
   finalizeCapsules(instance.centerWidgets);
   finalizeCapsules(instance.endWidgets);
 
-  const float slotCross = isVertical ? barAreaW : barAreaH;
   const float contentMainStart = paddingH;
   const float contentMainEnd = std::max(contentMainStart, (isVertical ? barAreaH : barAreaW) - paddingH);
   const float contentMainSpan = std::max(0.0f, contentMainEnd - contentMainStart);
