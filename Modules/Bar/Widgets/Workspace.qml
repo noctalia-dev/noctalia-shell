@@ -122,7 +122,7 @@ Item {
   property int lastFocusedWorkspaceId: -1
   property real masterProgress: 0.0
   property bool effectsActive: false
-  property color effectColor: Color.mPrimary
+  property color effectColor: Color.resolveColorKey(root.focusedColor)
 
   property int horizontalPadding: Style.marginS
   property int spacingBetweenPills: Style.marginXS
@@ -401,8 +401,8 @@ Item {
     updateWorkspaceFocus();
   }
 
-  function triggerUnifiedWave() {
-    effectColor = Color.mPrimary;
+  function triggerUnifiedWave(color) {
+    effectColor = color !== undefined ? color : Color.resolveColorKey(root.focusedColor);
     masterAnimation.restart();
   }
 
@@ -411,7 +411,8 @@ Item {
       const ws = localWorkspaces.get(i);
       if (ws.isFocused === true) {
         if (root.lastFocusedWorkspaceId !== -1 && root.lastFocusedWorkspaceId !== ws.id) {
-          root.triggerUnifiedWave();
+          const waveColor = ws.matchesScreen ? Color.resolveColorKey(root.focusedColor) : Qt.alpha(Color.resolveColorKey(root.focusedColor), 0.6);
+          root.triggerUnifiedWave(waveColor);
         }
         root.lastFocusedWorkspaceId = ws.id;
         root.workspaceChanged(ws.id, Color.mPrimary);
