@@ -6,12 +6,14 @@ SpacerWidget::SpacerWidget(float length) : m_fixedLength(length) {}
 
 void SpacerWidget::create() {
   auto spacer = std::make_unique<Node>();
-  spacer->setSize(m_fixedLength * m_contentScale, 0.0f);
+  spacer->setSize(0.0f, 0.0f);
   setRoot(std::move(spacer));
 }
 
-void SpacerWidget::doLayout(Renderer& /*renderer*/, float /*containerWidth*/, float containerHeight) {
+void SpacerWidget::doLayout(Renderer& /*renderer*/, float containerWidth, float containerHeight) {
   if (root() != nullptr) {
-    root()->setSize(m_fixedLength * m_contentScale, containerHeight);
+    const float length = m_fixedLength * m_contentScale;
+    const bool isVertical = containerHeight > containerWidth;
+    root()->setSize(isVertical ? 0.0f : length, isVertical ? length : 0.0f);
   }
 }
