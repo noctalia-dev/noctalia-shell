@@ -156,19 +156,21 @@ const std::unordered_map<std::string, char32_t> kIcons = {
 
 
     // Bluetooth devices
-    {"bluetooth", 0xEA37},         // bluetooth
-    {"bt-device-generic", 0xEA37}, // bluetooth
-    {"bt-device-gamepad", 0xF1D2}, // device-gamepad-2
-    {"bt-device-microphone", 0xEAF0}, // microphone
-    {"bt-device-headset", 0xEB90}, // headset
-    {"bt-device-earbuds", 0xF5A9}, // device-airpods
-    {"bt-device-headphones", 0xEABD}, // headphones
-    {"bt-device-mouse", 0xF1D7},   // mouse-2
-    {"bt-device-keyboard", 0xEA37}, // bluetooth
-    {"bt-device-phone", 0xEA8A},   // device-mobile
-    {"bt-device-watch", 0xEBF9},   // device-watch
-    {"bt-device-speaker", 0xEA8B}, // device-speaker
-    {"bt-device-tv", 0xEA8D},      // device-tv
+    {"bluetooth", 0xEA37},
+    {"bluetooth-connected", 0xECEA},
+    {"bluetooth-off", 0xECEB},
+    {"bluetooth-device-generic", 0xEA37}, // bluetooth
+    {"bluetooth-device-gamepad", 0xF1D2}, // device-gamepad-2
+    {"bluetooth-device-microphone", 0xEAF0}, // microphone
+    {"bluetooth-device-headset", 0xEB90}, // headset
+    {"bluetooth-device-earbuds", 0xF5A9}, // device-airpods
+    {"bluetooth-device-headphones", 0xEABD}, // headphones
+    {"bluetooth-device-mouse", 0xF1D7},   // mouse-2
+    {"bluetooth-device-keyboard", 0xEA37}, // bluetooth
+    {"bluetooth-device-phone", 0xEA8A},   // device-mobile
+    {"bluetooth-device-watch", 0xEBF9},   // device-watch
+    {"bluetooth-device-speaker", 0xEA8B}, // device-speaker
+    {"bluetooth-device-tv", 0xEA8D},      // device-tv
 
     // Antenna
     {"antenna-bars-1", 0xECC7},    // antenna-bars-1

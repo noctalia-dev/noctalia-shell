@@ -549,7 +549,8 @@ void Application::initUi() {
   m_bar.initialize(m_wayland, &m_configService, &m_timeService, &m_notificationManager, m_trayService.get(),
                    m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_powerProfilesService.get(),
                    m_networkService.get(), &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(),
-                   &m_httpClient, &m_weatherService, &m_renderContext, &m_nightLightManager, &m_themeService);
+                   &m_httpClient, &m_weatherService, &m_renderContext, &m_nightLightManager, &m_themeService,
+                   m_bluetoothService.get());
 
   m_dock.initialize(m_wayland, &m_configService, &m_renderContext);
 

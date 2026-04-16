@@ -1,0 +1,32 @@
+#pragma once
+
+#include "dbus/bluetooth/bluetooth_service.h"
+#include "shell/widget/widget.h"
+
+#include <string>
+
+class Glyph;
+class Label;
+struct wl_output;
+
+class BluetoothWidget : public Widget {
+public:
+  BluetoothWidget(BluetoothService* bluetooth, wl_output* output, bool showLabel);
+
+  void create() override;
+
+private:
+  void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
+  void doUpdate(Renderer& renderer) override;
+  void syncState(Renderer& renderer);
+
+  BluetoothService* m_bluetooth = nullptr;
+  wl_output* m_output = nullptr;
+  bool m_showLabel = false;
+  Glyph* m_glyph = nullptr;
+  Label* m_label = nullptr;
+  BluetoothState m_lastState;
+  bool m_haveLastState = false;
+  int m_lastConnectedCount = -1;
+  std::string m_lastConnectedAlias;
+};

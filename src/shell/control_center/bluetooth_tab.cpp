@@ -29,32 +29,32 @@ constexpr float kRowMinHeight = Style::controlHeightLg;
 const char* glyphFor(BluetoothDeviceKind kind) {
   switch (kind) {
   case BluetoothDeviceKind::Headset:
-    return "bt-device-headset";
+    return "bluetooth-device-headset";
   case BluetoothDeviceKind::Headphones:
-    return "bt-device-headphones";
+    return "bluetooth-device-headphones";
   case BluetoothDeviceKind::Earbuds:
-    return "bt-device-earbuds";
+    return "bluetooth-device-earbuds";
   case BluetoothDeviceKind::Speaker:
-    return "bt-device-speaker";
+    return "bluetooth-device-speaker";
   case BluetoothDeviceKind::Microphone:
-    return "bt-device-microphone";
+    return "bluetooth-device-microphone";
   case BluetoothDeviceKind::Mouse:
-    return "bt-device-mouse";
+    return "bluetooth-device-mouse";
   case BluetoothDeviceKind::Keyboard:
-    return "bt-device-keyboard";
+    return "bluetooth-device-keyboard";
   case BluetoothDeviceKind::Phone:
-    return "bt-device-phone";
+    return "bluetooth-device-phone";
   case BluetoothDeviceKind::Computer:
     return "settings-display";
   case BluetoothDeviceKind::Gamepad:
-    return "bt-device-gamepad";
+    return "bluetooth-device-gamepad";
   case BluetoothDeviceKind::Watch:
-    return "bt-device-watch";
+    return "bluetooth-device-watch";
   case BluetoothDeviceKind::Tv:
-    return "bt-device-tv";
+    return "bluetooth-device-tv";
   case BluetoothDeviceKind::Unknown:
   default:
-    return "bt-device-generic";
+    return "bluetooth-device-generic";
   }
 }
 
