@@ -107,6 +107,8 @@ Application::~Application() {
 
   if (m_systemBus != nullptr) {
     m_systemBus->processPendingEvents();
+    m_brightnessPollSource.reset();
+    m_brightnessService.reset();
     m_upowerService.reset();
     m_networkSecretAgent.reset();
     m_networkService.reset();
@@ -329,6 +331,19 @@ void Application::initServices() {
     }
 
     try {
+      m_brightnessService = std::make_unique<BrightnessService>(*m_systemBus, m_wayland);
+      m_brightnessService->setChangeCallback([this, shouldRefreshControlCenter]() {
+        m_bar.refresh();
+        if (shouldRefreshControlCenter()) {
+          m_panelManager.refresh();
+        }
+      });
+    } catch (const std::exception& e) {
+      kLog.warn("brightness service disabled: {}", e.what());
+      m_brightnessService.reset();
+    }
+
+    try {
       m_networkService = std::make_unique<NetworkService>(*m_systemBus);
       m_networkService->setChangeCallback([this, shouldRefreshControlCenter](const NetworkState& /*state*/) {
         m_bar.refresh();
@@ -519,12 +534,12 @@ void Application::initUi() {
   m_panelManager.registerPanel("clipboard", std::move(clipboardPanel));
   m_panelManager.registerPanel("session", std::make_unique<SessionPanel>(&m_configService));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
-  m_panelManager.registerPanel("control-center",
-                               std::make_unique<ControlCenterPanel>(
-                                   &m_notificationManager, m_pipewireService.get(), m_mprisService.get(),
-                                   &m_configService, &m_httpClient, &m_weatherService, m_pipewireSpectrum.get(),
-                                   m_upowerService.get(), m_powerProfilesService.get(), m_networkService.get(),
-                                   m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get()));
+  m_panelManager.registerPanel(
+      "control-center", std::make_unique<ControlCenterPanel>(
+                            &m_notificationManager, m_pipewireService.get(), m_mprisService.get(), &m_configService,
+                            &m_httpClient, &m_weatherService, m_pipewireSpectrum.get(), m_upowerService.get(),
+                            m_powerProfilesService.get(), m_networkService.get(), m_networkSecretAgent.get(),
+                            m_bluetoothService.get(), m_bluetoothAgent.get(), m_brightnessService.get()));
   {
     auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService);
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
@@ -550,7 +565,7 @@ void Application::initUi() {
                    m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_powerProfilesService.get(),
                    m_networkService.get(), &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(),
                    &m_httpClient, &m_weatherService, &m_renderContext, &m_nightLightManager, &m_themeService,
-                   m_bluetoothService.get());
+                   m_bluetoothService.get(), m_brightnessService.get());
 
   m_dock.initialize(m_wayland, &m_configService, &m_renderContext);
 
@@ -814,6 +829,10 @@ std::vector<PollSource*> Application::buildPollSources() {
   if (m_pipewireSpectrum != nullptr) {
     m_pipewireSpectrumPollSource = std::make_unique<PipeWireSpectrumPollSource>(*m_pipewireSpectrum);
     sources.push_back(m_pipewireSpectrumPollSource.get());
+  }
+  if (m_brightnessService != nullptr) {
+    m_brightnessPollSource = std::make_unique<BrightnessPollSource>(*m_brightnessService);
+    sources.push_back(m_brightnessPollSource.get());
   }
   sources.push_back(&m_ipcPollSource);
   sources.push_back(&m_httpClientPollSource);

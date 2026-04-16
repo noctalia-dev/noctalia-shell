@@ -2,6 +2,7 @@
 
 #include "shell/control_center/audio_tab.h"
 #include "shell/control_center/bluetooth_tab.h"
+#include "shell/control_center/display_tab.h"
 #include "shell/control_center/calendar_tab.h"
 #include "shell/control_center/media_tab.h"
 #include "shell/control_center/network_tab.h"
@@ -18,6 +19,7 @@
 
 class BluetoothAgent;
 class BluetoothService;
+class BrightnessService;
 class Button;
 class ConfigService;
 class Flex;
@@ -40,7 +42,7 @@ public:
                      PipeWireSpectrum* spectrum = nullptr, UPowerService* upower = nullptr,
                      PowerProfilesService* powerProfiles = nullptr, NetworkService* network = nullptr,
                      NetworkSecretAgent* networkSecrets = nullptr, BluetoothService* bluetooth = nullptr,
-                     BluetoothAgent* bluetoothAgent = nullptr);
+                     BluetoothAgent* bluetoothAgent = nullptr, BrightnessService* brightness = nullptr);
 
   void create() override;
   void onFrameTick(float deltaMs) override;
@@ -64,11 +66,12 @@ private:
     Overview,
     Media,
     Audio,
+    Display,
+    Network,
+    Bluetooth,
     Weather,
     Calendar,
     Notifications,
-    Network,
-    Bluetooth,
     Count,
   };
 
@@ -84,11 +87,12 @@ private:
       {TabId::Overview, "overview", "Overview", "person"},
       {TabId::Media, "media", "Media", "disc"},
       {TabId::Audio, "audio", "Audio", "volume-high"},
+      {TabId::Display, "display", "Display", "settings-display"},
+      {TabId::Network, "network", "Network", "wifi"},
+      {TabId::Bluetooth, "bluetooth", "Bluetooth", "bluetooth"},
       {TabId::Weather, "weather", "Weather", "weather-cloud-sun"},
       {TabId::Calendar, "calendar", "Calendar", "calendar"},
       {TabId::Notifications, "notifications", "Notifications", "bell"},
-      {TabId::Network, "network", "Network", "wifi"},
-      {TabId::Bluetooth, "bluetooth", "Bluetooth", "bluetooth"},
   }};
 
   void selectTab(TabId tab);

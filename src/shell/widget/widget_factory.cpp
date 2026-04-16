@@ -12,6 +12,7 @@
 #include "shell/widgets/active_window_widget.h"
 #include "shell/widgets/audio_visualizer_widget.h"
 #include "shell/widgets/battery_widget.h"
+#include "shell/widgets/brightness_widget.h"
 #include "shell/widgets/bluetooth_widget.h"
 #include "shell/widgets/clock_widget.h"
 #include "shell/widgets/idle_inhibitor_widget.h"
@@ -49,11 +50,12 @@ WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, cons
                              NetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
                              PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
                              NightLightManager* nightLight, noctalia::theme::ThemeService* themeService,
-                             BluetoothService* bluetooth)
+                             BluetoothService* bluetooth, BrightnessService* brightness)
     : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
       m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_network(network),
       m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_audioSpectrum(audioSpectrum), m_httpClient(httpClient),
-      m_weather(weather), m_nightLight(nightLight), m_themeService(themeService), m_bluetooth(bluetooth) {}
+      m_weather(weather), m_nightLight(nightLight), m_themeService(themeService), m_bluetooth(bluetooth),
+      m_brightness(brightness) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
@@ -145,6 +147,12 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "volume") {
     auto widget = std::make_unique<VolumeWidget>(m_audio, output);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "brightness") {
+    auto widget = std::make_unique<BrightnessWidget>(m_brightness, output);
     widget->setContentScale(contentScale);
     return widget;
   }

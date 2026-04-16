@@ -12,6 +12,7 @@ class HttpClient;
 class IdleInhibitor;
 class MprisService;
 class BluetoothService;
+class BrightnessService;
 class NetworkService;
 class NotificationManager;
 class PipeWireService;
@@ -41,7 +42,8 @@ public:
                   NetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
                   PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weatherService,
                   RenderContext* renderContext, NightLightManager* nightLight,
-                  noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth);
+                  noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
+                  BrightnessService* brightness);
   void reload();
   void closeAllInstances();
   void show();
@@ -90,6 +92,7 @@ private:
   NightLightManager* m_nightLight = nullptr;
   noctalia::theme::ThemeService* m_themeService = nullptr;
   BluetoothService* m_bluetooth = nullptr;
+  BrightnessService* m_brightness = nullptr;
   std::unique_ptr<WidgetFactory> m_widgetFactory;
   std::vector<std::unique_ptr<BarInstance>> m_instances;
 

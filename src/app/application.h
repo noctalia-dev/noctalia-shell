@@ -45,6 +45,8 @@
 #include "shell/tray/tray_menu.h"
 #include "shell/wallpaper/panel/thumbnail_service.h"
 #include "shell/wallpaper/wallpaper.h"
+#include "system/brightness_poll_source.h"
+#include "system/brightness_service.h"
 #include "system/desktop_entry_poll_source.h"
 #include "system/night_light_manager.h"
 #include "system/system_monitor_service.h"
@@ -106,6 +108,7 @@ private:
   std::unique_ptr<BluetoothService> m_bluetoothService;
   std::unique_ptr<BluetoothAgent> m_bluetoothAgent;
   std::unique_ptr<UPowerService> m_upowerService;
+  std::unique_ptr<BrightnessService> m_brightnessService;
   std::unique_ptr<TrayService> m_trayService;
   std::unique_ptr<NotificationService> m_notificationDbus;
   std::unique_ptr<PipeWireService> m_pipewireService;
@@ -137,6 +140,7 @@ private:
   TimerPollSource m_timerPollSource;
   KeyRepeatPollSource m_keyRepeatPollSource{m_wayland};
   WorkspacePollSource m_workspacePollSource{m_wayland};
+  std::unique_ptr<BrightnessPollSource> m_brightnessPollSource;
   std::unique_ptr<PipeWirePollSource> m_pipewirePollSource;
   std::unique_ptr<PipeWireSpectrumPollSource> m_pipewireSpectrumPollSource;
   IpcService m_ipcService;

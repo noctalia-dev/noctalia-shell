@@ -708,7 +708,8 @@ void ConfigService::setupWatch() {
       const auto realName = real.filename().string();
       // inotify_add_watch is idempotent per inode — if realDir == m_configDir the
       // existing watch descriptor is returned and we simply record the extra name.
-      const int wd = inotify_add_watch(m_inotifyFd, realDir.c_str(), IN_MODIFY | IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
+      const int wd =
+          inotify_add_watch(m_inotifyFd, realDir.c_str(), IN_MODIFY | IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
       if (wd >= 0) {
         m_symlinkDirWds[wd].push_back(realName);
         kLog.debug("watching symlink target {} in {}", realName, realDir);

@@ -11,6 +11,7 @@ class HttpClient;
 class IdleInhibitor;
 class MprisService;
 class BluetoothService;
+class BrightnessService;
 class NetworkService;
 class PipeWireService;
 class PipeWireSpectrum;
@@ -34,7 +35,7 @@ public:
                 PowerProfilesService* powerProfiles, NetworkService* network, IdleInhibitor* idleInhibitor,
                 MprisService* mpris, PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
                 NightLightManager* nightLight, noctalia::theme::ThemeService* themeService,
-                BluetoothService* bluetooth);
+                BluetoothService* bluetooth, BrightnessService* brightness);
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output,
                                                float contentScale = 1.0f) const;
@@ -58,4 +59,5 @@ private:
   NightLightManager* m_nightLight;
   noctalia::theme::ThemeService* m_themeService;
   BluetoothService* m_bluetooth;
+  BrightnessService* m_brightness;
 };
