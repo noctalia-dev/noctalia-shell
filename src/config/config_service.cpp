@@ -205,9 +205,21 @@ namespace {
     if (!output.connectorName.empty() && match == output.connectorName) {
       return true;
     }
-    // Substring match on description
-    if (!output.description.empty() && output.description.find(match) != std::string::npos) {
-      return true;
+    // Word-boundary substring match on description.
+    // A bare substring search would let "DP-1" match "eDP-1" inside descriptions
+    // like "BOE 0x0BCA eDP-1", so require the token to be surrounded by whitespace
+    // or string boundaries.
+    if (!output.description.empty()) {
+      std::size_t pos = 0;
+      while ((pos = output.description.find(match, pos)) != std::string::npos) {
+        const bool startOk = (pos == 0 || std::isspace(static_cast<unsigned char>(output.description[pos - 1])) != 0);
+        const bool endOk = (pos + match.size() == output.description.size() ||
+                            std::isspace(static_cast<unsigned char>(output.description[pos + match.size()])) != 0);
+        if (startOk && endOk) {
+          return true;
+        }
+        ++pos;
+      }
     }
     return false;
   }
