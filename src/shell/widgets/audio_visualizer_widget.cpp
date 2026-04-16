@@ -44,14 +44,17 @@ void AudioVisualizerWidget::create() {
   setRoot(std::move(root));
 }
 
-void AudioVisualizerWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void AudioVisualizerWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   m_renderer = &renderer;
   if (root() == nullptr || m_visualizer == nullptr) {
     return;
   }
 
-  const float width = std::max(1.0f, m_width * m_contentScale);
-  const float height = std::max(1.0f, m_height * m_contentScale);
+  m_isVertical = containerHeight > containerWidth;
+  m_visualizer->setOrientation(m_isVertical ? AudioSpectrumOrientation::Vertical
+                                            : AudioSpectrumOrientation::Horizontal);
+  const float width = std::max(1.0f, (m_isVertical ? m_height : m_width) * m_contentScale);
+  const float height = std::max(1.0f, (m_isVertical ? m_width : m_height) * m_contentScale);
   m_visualizer->setPosition(0.0f, 0.0f);
   m_visualizer->setSize(width, height);
   m_visualizer->layout(renderer);
