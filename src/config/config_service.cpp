@@ -256,6 +256,11 @@ ConfigService::~ConfigService() {
     if (m_overridesWatchWd >= 0) {
       inotify_rm_watch(m_inotifyFd, m_overridesWatchWd);
     }
+    for (const auto& [wd, _] : m_symlinkDirWds) {
+      if (wd != m_configWatchWd && wd != m_overridesWatchWd) {
+        inotify_rm_watch(m_inotifyFd, wd);
+      }
+    }
     ::close(m_inotifyFd);
   }
 }
@@ -313,6 +318,17 @@ void ConfigService::checkReload() {
           const auto overridesFilename = std::filesystem::path(m_overridesPath).filename().string();
           if (name == overridesFilename) {
             overridesChanged = true;
+          }
+        } else {
+          // Check whether this event comes from a symlink-target directory.
+          const auto symIt = m_symlinkDirWds.find(event->wd);
+          if (symIt != m_symlinkDirWds.end()) {
+            for (const auto& watched : symIt->second) {
+              if (name == watched) {
+                configChanged = true;
+                break;
+              }
+            }
           }
         }
       }
@@ -657,6 +673,36 @@ void ConfigService::setupWatch() {
   }
 
   kLog.debug("watching {} for changes", m_configDir);
+
+  // For any *.toml entries that are symlinks, also watch the real target's parent
+  // directory so that edits to the target file (e.g. via dotfile management) trigger
+  // a reload even though the modification event fires in a different directory.
+  {
+    std::error_code scanEc;
+    for (const auto& entry : std::filesystem::directory_iterator(m_configDir, scanEc)) {
+      if (entry.path().extension() != ".toml") {
+        continue;
+      }
+      std::error_code symlinkEc;
+      if (!entry.is_symlink(symlinkEc) || symlinkEc) {
+        continue;
+      }
+      std::error_code canonEc;
+      const auto real = std::filesystem::canonical(entry.path(), canonEc);
+      if (canonEc) {
+        continue;
+      }
+      const auto realDir = real.parent_path().string();
+      const auto realName = real.filename().string();
+      // inotify_add_watch is idempotent per inode — if realDir == m_configDir the
+      // existing watch descriptor is returned and we simply record the extra name.
+      const int wd = inotify_add_watch(m_inotifyFd, realDir.c_str(), IN_MODIFY | IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE);
+      if (wd >= 0) {
+        m_symlinkDirWds[wd].push_back(realName);
+        kLog.debug("watching symlink target {} in {}", realName, realDir);
+      }
+    }
+  }
 
   // Also watch the state dir for overrides.toml edits (external writes).
   if (!m_overridesPath.empty()) {

@@ -397,6 +397,8 @@ private:
   int m_inotifyFd = -1;
   int m_configWatchWd = -1;
   int m_overridesWatchWd = -1;
+  // Extra watches on symlink-target directories: wd → list of filenames to match.
+  std::unordered_map<int, std::vector<std::string>> m_symlinkDirWds;
 
   bool m_ownOverridesWritePending = false;
   int m_wallpaperBatchDepth = 0;
