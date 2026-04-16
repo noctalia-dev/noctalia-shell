@@ -463,9 +463,7 @@ namespace {
     return result;
   }
 
-  std::vector<std::string> ddcBaseArgs(int bus) {
-    return {"ddcutil", "--noconfig", "--disable-usb", "--bus", std::to_string(bus)};
-  }
+  std::vector<std::string> ddcBaseArgs(int bus) { return {"ddcutil", "--noconfig", "--bus", std::to_string(bus)}; }
 
   std::optional<std::pair<int, int>> queryDdcBrightness(int bus, std::chrono::milliseconds timeout,
                                                         std::string* detailOut) {
@@ -484,7 +482,7 @@ namespace {
   }
 
   std::vector<DdcCandidate> detectDdcDisplays(std::chrono::milliseconds timeout, std::string* detailOut) {
-    std::vector<std::string> args{"ddcutil", "--noconfig", "--disable-usb", "detect"};
+    std::vector<std::string> args{"ddcutil", "--noconfig", "detect"};
     const CommandResult detectResult = runCommandCapture(args, timeout);
     if (detailOut != nullptr) {
       *detailOut = detectResult.output;
