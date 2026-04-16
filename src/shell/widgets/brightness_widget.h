@@ -22,5 +22,6 @@ private:
   wl_output* m_output = nullptr;
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
+  bool m_lastAvailable = false;
   float m_lastBrightness = -1.0f;
 };

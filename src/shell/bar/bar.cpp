@@ -79,6 +79,10 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
       if (shell == nullptr || bg == nullptr || inner == nullptr) {
         continue;
       }
+      // Keep the capsule shell visibility in sync with the inner root so that
+      // hidden widgets (e.g. brightness with no data) don't occupy phantom
+      // space in the flex layout.
+      shell->setVisible(inner->visible());
       const float scale = w->contentScale();
       const float iw = inner->width();
       const float ih = inner->height();
@@ -769,25 +773,18 @@ void Bar::updateWidgets(BarInstance& instance) {
   }
 
   auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
-    bool needsRelayout = false;
     for (auto& widget : widgets) {
       widget->update(*renderer);
-      if (widget->root() != nullptr && widget->root()->layoutDirty()) {
-        needsRelayout = true;
+      if (widget->root() != nullptr) {
         widget->layout(*renderer, barAreaW, barAreaH);
       }
     }
-    return needsRelayout;
   };
 
-  const bool startChanged = updateSection(instance.startWidgets);
-  const bool centerChanged = updateSection(instance.centerWidgets);
-  const bool endChanged = updateSection(instance.endWidgets);
-
-  if (startChanged || centerChanged || endChanged || instance.startSection->layoutDirty() ||
-      instance.centerSection->layoutDirty() || instance.endSection->layoutDirty()) {
-    layoutBarSections(instance, *renderer, barAreaW, barAreaH, paddingH, isVertical);
-  }
+  updateSection(instance.startWidgets);
+  updateSection(instance.centerWidgets);
+  updateSection(instance.endWidgets);
+  layoutBarSections(instance, *renderer, barAreaW, barAreaH, paddingH, isVertical);
 }
 
 void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout) {
