@@ -24,6 +24,7 @@ notify-send "Notification #7" "A notification with an absolute file://path icon"
 sleep 0.5
 
 # A test notification with actions
+
 gdbus call --session \
           --dest org.freedesktop.Notifications \
           --object-path /org/freedesktop/Notifications \
@@ -32,7 +33,10 @@ gdbus call --session \
           0 \
           "dialog-question" \
           "Notification #8 - Confirmation Required" \
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Do you want to proceed with the action? " \
+          "Two questions:
+What do we think about this? https://github.com/noctalia-dev/noctalia-plugins/pull/638
+Also Cleboost have tried to convert many of the workflows to use a tool called semgrep instead of usual bash. I've researched it a bit but I'm not sure if it's a paid tool or anything like that. Would such a change be welcome or not? https://github.com/noctalia-dev/noctalia-plugins/pull/644
+" \
           "['default', 'OK', 'cancel', 'Cancel', 'maybe', 'Maybe', 'undecided', 'Undecided']" \
           "{}" \
           5000
