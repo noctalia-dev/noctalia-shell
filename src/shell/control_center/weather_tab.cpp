@@ -200,7 +200,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   auto forecastColumn = std::make_unique<Flex>();
   forecastColumn->setDirection(FlexDirection::Vertical);
   forecastColumn->setAlign(FlexAlign::Stretch);
-  forecastColumn->setGap(Style::spaceXs * scale);
+  forecastColumn->setGap(Style::spaceSm * scale);
   forecastColumn->setFlexGrow(2.0f);
   m_forecastColumn = forecastColumn.get();
 
@@ -321,18 +321,19 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
 
   const float scale = contentScale();
 
+  float detailsTargetHeight = 0.0f;
   if (m_leftColumn != nullptr && m_currentCard != nullptr && m_detailsCard != nullptr) {
     const float leftInnerHeight =
         std::max(0.0f, m_leftColumn->height() - (m_leftColumn->paddingTop() + m_leftColumn->paddingBottom()));
     const float leftGap = m_leftColumn->gap();
     const float available = std::max(0.0f, leftInnerHeight - leftGap);
-    const float currentShare = 0.39f;
+    const float currentShare = 0.43f;
     const float currentMin = Style::controlHeightLg * 3.1f * scale;
     const float detailsMin = Style::controlHeightSm * 6.0f * scale;
     const float currentH = std::max(currentMin, available * currentShare);
-    const float detailsH = std::max(detailsMin, available - currentH);
+    detailsTargetHeight = std::max(detailsMin, available - currentH);
     m_currentCard->setMinHeight(currentH);
-    m_detailsCard->setMinHeight(detailsH);
+    m_detailsCard->setMinHeight(detailsTargetHeight);
   }
 
   if (m_currentGlyph != nullptr && m_currentText != nullptr && m_currentCard != nullptr) {
@@ -342,7 +343,7 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
     m_currentGlyph->setGlyphSize(desiredGlyph);
   }
 
-  if (m_detailsCard != nullptr) {
+  if (m_detailsCard != nullptr && detailsTargetHeight > 0.0f) {
     std::size_t visibleRows = 0;
     for (auto* row : m_detailRows) {
       if (row != nullptr && row->visible()) {
@@ -351,7 +352,7 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
     }
     if (visibleRows > 0) {
       const float detailsInnerHeight = std::max(
-          0.0f, m_detailsCard->height() - (m_detailsCard->paddingTop() + m_detailsCard->paddingBottom()));
+          0.0f, detailsTargetHeight - (m_detailsCard->paddingTop() + m_detailsCard->paddingBottom()));
       const float gapsTotal = m_detailsCard->gap() * static_cast<float>(visibleRows - 1);
       const float rowHeight =
           std::max(Style::controlHeightSm * scale, (detailsInnerHeight - gapsTotal) / static_cast<float>(visibleRows));
