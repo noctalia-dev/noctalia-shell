@@ -49,5 +49,6 @@ private:
 
   CachedState m_cachedState;
   bool m_hasState = false;
+  bool m_isVertical = false;
   Timer m_refreshTimer;
 };

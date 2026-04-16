@@ -128,13 +128,19 @@ void LockKeysWidget::create() {
   setRoot(std::move(rootNode));
 
   // Lock LED state updates are not event-driven; probe at a low interval.
-  m_refreshTimer.startRepeating(kLockKeysProbeInterval, [this]() { requestRedraw(); });
+  m_refreshTimer.startRepeating(kLockKeysProbeInterval, [this]() {
+    if (auto* node = root(); node != nullptr) {
+      node->markLayoutDirty();
+    }
+    requestRedraw();
+  });
 }
 
-void LockKeysWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void LockKeysWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   if (root() == nullptr) {
     return;
   }
+  m_isVertical = containerHeight > containerWidth;
 
   sync(renderer);
 
@@ -144,41 +150,76 @@ void LockKeysWidget::doLayout(Renderer& renderer, float /*containerWidth*/, floa
   }
 
   constexpr float kSpacing = Style::spaceXs;
+  const float spacing = kSpacing * m_contentScale;
   float x = 0.0f;
+  float y = 0.0f;
   float h = 0.0f;
+  float w = 0.0f;
 
   if (m_glyph != nullptr) {
     m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
     m_glyph->measure(renderer);
-    m_glyph->setPosition(0.0f, 0.0f);
-    x += m_glyph->width() + kSpacing;
-    h = std::max(h, m_glyph->height());
+    if (m_isVertical) {
+      y += m_glyph->height() + spacing;
+      w = std::max(w, m_glyph->width());
+    } else {
+      m_glyph->setPosition(0.0f, 0.0f);
+      x += m_glyph->width() + spacing;
+      h = std::max(h, m_glyph->height());
+    }
   }
 
   auto layoutLabel = [&](Label* label) {
     if (label == nullptr || !label->visible()) {
       return;
     }
+    label->setTextAlign(m_isVertical ? TextAlign::Center : TextAlign::Start);
+    label->setMaxWidth(m_isVertical ? containerWidth : 0.0f);
     label->measure(renderer);
-    label->setPosition(x, 0.0f);
-    x += label->width() + kSpacing;
-    h = std::max(h, label->height());
+    if (m_isVertical) {
+      y += label->height() + spacing;
+      w = std::max(w, label->width());
+    } else {
+      label->setPosition(x, 0.0f);
+      x += label->width() + spacing;
+      h = std::max(h, label->height());
+    }
   };
 
   layoutLabel(m_capsLabel);
   layoutLabel(m_numLabel);
   layoutLabel(m_scrollLabel);
 
-  if (x > 0.0f) {
-    x -= kSpacing;
+  if (m_isVertical) {
+    if (y > 0.0f) {
+      y -= spacing;
+    }
+    float cursorY = 0.0f;
+    if (m_glyph != nullptr) {
+      m_glyph->setPosition(std::round((w - m_glyph->width()) * 0.5f), 0.0f);
+      cursorY = m_glyph->height() + spacing;
+    }
+    auto placeLabel = [&](Label* label) {
+      if (label == nullptr || !label->visible()) {
+        return;
+      }
+      label->setPosition(std::round((w - label->width()) * 0.5f), cursorY);
+      cursorY += label->height() + spacing;
+    };
+    placeLabel(m_capsLabel);
+    placeLabel(m_numLabel);
+    placeLabel(m_scrollLabel);
+    root()->setSize(w, y);
+  } else {
+    if (x > 0.0f) {
+      x -= spacing;
+    }
+    if (m_glyph != nullptr) {
+      const float glyphY = std::round((h - m_glyph->height()) * 0.5f);
+      m_glyph->setPosition(0.0f, glyphY);
+    }
+    root()->setSize(x, h);
   }
-
-  if (m_glyph != nullptr) {
-    const float glyphY = std::round((h - m_glyph->height()) * 0.5f);
-    m_glyph->setPosition(0.0f, glyphY);
-  }
-
-  root()->setSize(x, h);
 }
 
 void LockKeysWidget::doUpdate(Renderer& renderer) { sync(renderer); }
@@ -244,5 +285,8 @@ void LockKeysWidget::sync(Renderer& renderer) {
                                                  : widgetForegroundOr(roleColor(ColorRole::OnSurfaceVariant)));
   }
 
+  if (auto* node = root(); node != nullptr) {
+    node->markLayoutDirty();
+  }
   requestRedraw();
 }
