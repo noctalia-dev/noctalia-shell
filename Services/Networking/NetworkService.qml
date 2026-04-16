@@ -1171,8 +1171,10 @@ Singleton {
       onRead: data => {
         if (data.endsWith(": connected") || data.endsWith(": disconnected")) {
           Logger.d("Network", "State changed: " + data);
+          // Refresh status and trigger a scan to update SSID
           deviceStatusProcess.running = true;
           connectivityCheckProcess.running = true;
+          root.scan();
         }
       }
     }
