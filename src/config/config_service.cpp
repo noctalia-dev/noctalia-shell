@@ -1444,6 +1444,13 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto v = (*brightnessTbl)["enable_ddcutil"].value<bool>()) {
       brightness.enableDdcutil = *v;
     }
+    if (auto* mmidArr = (*brightnessTbl)["ignore_mmids"].as_array()) {
+      for (const auto& item : *mmidArr) {
+        if (auto s = item.value<std::string>()) {
+          brightness.ddcutilIgnoreMmids.push_back(*s);
+        }
+      }
+    }
     if (auto* monitorTblMap = (*brightnessTbl)["monitor"].as_table()) {
       for (const auto& [name, node] : *monitorTblMap) {
         auto* entryTbl = node.as_table();

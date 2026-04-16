@@ -463,6 +463,16 @@ namespace {
     return result;
   }
 
+  std::vector<std::string> ddcDetectArgs(const std::vector<std::string>& ignoreMmids) {
+    std::vector<std::string> args{"ddcutil", "--noconfig"};
+    for (const auto& mmid : ignoreMmids) {
+      args.push_back("--ignore-mmid");
+      args.push_back(mmid);
+    }
+    args.push_back("detect");
+    return args;
+  }
+
   std::vector<std::string> ddcBaseArgs(int bus) { return {"ddcutil", "--noconfig", "--bus", std::to_string(bus)}; }
 
   std::optional<std::pair<int, int>> queryDdcBrightness(int bus, std::chrono::milliseconds timeout,
@@ -481,8 +491,9 @@ namespace {
     return parseDdcVcpBrightness(result.output);
   }
 
-  std::vector<DdcCandidate> detectDdcDisplays(std::chrono::milliseconds timeout, std::string* detailOut) {
-    std::vector<std::string> args{"ddcutil", "--noconfig", "detect"};
+  std::vector<DdcCandidate> detectDdcDisplays(std::chrono::milliseconds timeout,
+                                              const std::vector<std::string>& ignoreMmids, std::string* detailOut) {
+    auto args = ddcDetectArgs(ignoreMmids);
     const CommandResult detectResult = runCommandCapture(args, timeout);
     if (detailOut != nullptr) {
       *detailOut = detectResult.output;
@@ -529,7 +540,10 @@ namespace {
           start, end == std::string::npos ? detectResult.output.size() - start : end - start));
       if (line.starts_with("Display ")) {
         flushCurrent();
-        inDisplay = true;
+        inDisplay = !line.starts_with("Display not found");
+      } else if (line.starts_with("Invalid display") || line.starts_with("DDC_disabled")) {
+        flushCurrent();
+        inDisplay = false;
       } else if (line.starts_with("I2C bus:")) {
         if (const auto bus = parseI2cBus(line); bus.has_value()) {
           current.bus = *bus;
@@ -936,6 +950,7 @@ struct BrightnessService::Impl {
       std::uint64_t detectGen = 0;
       std::optional<DdcJob> writeJob;
       std::optional<DdcJob> refreshJob;
+      std::vector<std::string> ignoreMmids;
 
       {
         std::unique_lock lock(workerMutex);
@@ -946,6 +961,8 @@ struct BrightnessService::Impl {
         if (workerStop) {
           return;
         }
+
+        ignoreMmids = activeConfig.ddcutilIgnoreMmids;
 
         if (detectPending) {
           runDetect = true;
@@ -969,7 +986,7 @@ struct BrightnessService::Impl {
         completion.generation = detectGen;
         completion.success = true;
         std::string detail;
-        completion.candidates = detectDdcDisplays(kDdcDetectTimeout, &detail);
+        completion.candidates = detectDdcDisplays(kDdcDetectTimeout, ignoreMmids, &detail);
         completion.detail = std::move(detail);
         enqueueCompletion(std::move(completion));
         continue;

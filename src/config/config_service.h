@@ -258,6 +258,7 @@ struct BrightnessMonitorOverride {
 
 struct BrightnessConfig {
   bool enableDdcutil = false;
+  std::vector<std::string> ddcutilIgnoreMmids;
   std::vector<BrightnessMonitorOverride> monitorOverrides;
 
   bool operator==(const BrightnessConfig&) const = default;
