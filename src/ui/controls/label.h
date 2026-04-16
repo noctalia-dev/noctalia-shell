@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/scene/node.h"
+#include "render/scene/text_node.h"
 #include "ui/palette.h"
 
 #include <optional>
@@ -8,7 +9,6 @@
 #include <string_view>
 
 class Renderer;
-class TextNode;
 
 class Label : public Node {
 public:
@@ -23,12 +23,14 @@ public:
   void setMaxWidth(float maxWidth);
   void setMaxLines(int maxLines);
   void setBold(bool bold);
+  void setTextAlign(TextAlign align);
 
   [[nodiscard]] const std::string& text() const noexcept;
   [[nodiscard]] float fontSize() const noexcept;
   [[nodiscard]] const Color& color() const noexcept;
   [[nodiscard]] float maxWidth() const noexcept;
   [[nodiscard]] bool bold() const noexcept;
+  [[nodiscard]] TextAlign textAlign() const noexcept;
   [[nodiscard]] float baselineOffset() const noexcept { return m_baselineOffset; }
 
   void measure(Renderer& renderer);
@@ -54,6 +56,7 @@ private:
   float m_cachedAssignedWidth = -1.0f;
   float m_cachedFlexGrow = 0.0f;
   int m_cachedMaxLines = 0;
+  TextAlign m_cachedTextAlign = TextAlign::Start;
   bool m_cachedBold = false;
   bool m_measureCached = false;
 };

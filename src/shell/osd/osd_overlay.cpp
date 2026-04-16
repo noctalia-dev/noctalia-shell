@@ -271,20 +271,13 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   value->setBold(true);
   value->setFontSize(kValueFontSize);
   value->setColor(roleColor(ColorRole::OnSurface));
-  inst.value = value.get();
-
-  // Wrap the value label in a right-aligned container so shorter values
-  // ("5%") sit flush-right and the progress bar width stays stable.
-  auto valueBox = std::make_unique<Flex>();
-  valueBox->setDirection(FlexDirection::Horizontal);
-  valueBox->setJustify(FlexJustify::End);
-  valueBox->setAlign(FlexAlign::Center);
+  value->setTextAlign(TextAlign::End);
   // Reserve enough width for "100%" so the progress bar doesn't shrink at max values.
   value->setText("100%");
   value->measure(*m_renderContext);
-  valueBox->setMinWidth(value->width());
-  valueBox->setZIndex(1);
-  valueBox->addChild(std::move(value));
+  value->setMinWidth(value->width());
+  value->setZIndex(1);
+  inst.value = value.get();
 
   auto progress = std::make_unique<ProgressBar>();
   progress->setTrack(roleColor(ColorRole::SurfaceVariant));
@@ -295,7 +288,7 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   inst.progress = progress.get();
   inst.progress->setZIndex(1);
   inst.row->addChild(std::move(progress));
-  inst.row->addChild(std::move(valueBox));
+  inst.row->addChild(std::move(value));
   inst.card->addChild(std::move(row));
 
   inst.sceneRoot->addChild(std::move(card));

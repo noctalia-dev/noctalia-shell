@@ -5,6 +5,8 @@
 
 #include <string>
 
+enum class TextAlign : std::uint8_t { Start, Center, End };
+
 class TextNode : public Node {
 public:
   TextNode() : Node(NodeType::Text) {}
@@ -64,11 +66,22 @@ public:
     markLayoutDirty();
   }
 
+  [[nodiscard]] TextAlign textAlign() const noexcept { return m_textAlign; }
+
+  void setTextAlign(TextAlign align) {
+    if (m_textAlign == align) {
+      return;
+    }
+    m_textAlign = align;
+    markLayoutDirty();
+  }
+
 private:
   std::string m_text;
   float m_fontSize = 14.0f;
   float m_maxWidth = 0.0f;
   int m_maxLines = 0;
   Color m_color;
+  TextAlign m_textAlign = TextAlign::Start;
   bool m_bold = false;
 };

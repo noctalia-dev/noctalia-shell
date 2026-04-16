@@ -1,7 +1,6 @@
 #include "ui/controls/label.h"
 
 #include "render/core/renderer.h"
-#include "render/scene/text_node.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -84,6 +83,16 @@ float Label::maxWidth() const noexcept { return m_textNode->maxWidth(); }
 
 bool Label::bold() const noexcept { return m_textNode->bold(); }
 
+TextAlign Label::textAlign() const noexcept { return m_textNode->textAlign(); }
+
+void Label::setTextAlign(TextAlign align) {
+  if (m_textNode->textAlign() == align) {
+    return;
+  }
+  m_textNode->setTextAlign(align);
+  m_measureCached = false;
+}
+
 void Label::doLayout(Renderer& renderer) { measure(renderer); }
 
 void Label::setCaptionStyle() {
@@ -96,9 +105,11 @@ void Label::measure(Renderer& renderer) {
   const int maxLines = m_textNode->maxLines();
   const float assignedWidth = width();
   const float curFlexGrow = flexGrow();
+  const TextAlign align = m_textNode->textAlign();
   if (m_measureCached && m_cachedText == m_textNode->text() && m_cachedFontSize == m_textNode->fontSize() &&
       m_cachedBold == m_textNode->bold() && m_cachedMaxWidth == maxWidth && m_cachedMaxLines == maxLines &&
-      m_cachedMinWidth == m_minWidth && m_cachedAssignedWidth == assignedWidth && m_cachedFlexGrow == curFlexGrow) {
+      m_cachedMinWidth == m_minWidth && m_cachedAssignedWidth == assignedWidth && m_cachedFlexGrow == curFlexGrow &&
+      m_cachedTextAlign == align) {
     return;
   }
   auto metrics = renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold(), maxWidth,
@@ -120,7 +131,13 @@ void Label::measure(Renderer& renderer) {
   const float finalWidth =
       preserveAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
   setSize(std::round(finalWidth), std::round(height));
-  m_textNode->setPosition(0.0f, std::round(m_baselineOffset));
+  float textX = 0.0f;
+  if (align == TextAlign::Center) {
+    textX = std::round((finalWidth - measuredWidth) * 0.5f);
+  } else if (align == TextAlign::End) {
+    textX = std::round(finalWidth - measuredWidth);
+  }
+  m_textNode->setPosition(textX, std::round(m_baselineOffset));
 
   m_cachedText = m_textNode->text();
   m_cachedFontSize = m_textNode->fontSize();
@@ -130,5 +147,6 @@ void Label::measure(Renderer& renderer) {
   m_cachedMinWidth = m_minWidth;
   m_cachedAssignedWidth = assignedWidth;
   m_cachedFlexGrow = curFlexGrow;
+  m_cachedTextAlign = align;
   m_measureCached = true;
 }

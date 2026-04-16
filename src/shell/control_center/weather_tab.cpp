@@ -173,21 +173,16 @@ std::unique_ptr<Flex> WeatherTab::create() {
     keyLabel->setMinWidth(detailKeyWidth - (Style::fontSizeBody + Style::spaceXs) * scale - Style::spaceSm * scale);
     row->addChild(std::move(keyLabel));
 
-    auto valueWrap = std::make_unique<Flex>();
-    valueWrap->setDirection(FlexDirection::Horizontal);
-    valueWrap->setAlign(FlexAlign::Center);
-    valueWrap->setJustify(FlexJustify::End);
-    valueWrap->setFlexGrow(1.0f);
-
     auto value = std::make_unique<Label>();
     value->setText("--");
     value->setBold(true);
     value->setFontSize(Style::fontSizeBody * scale);
     value->setColor(roleColor(ColorRole::OnSurface));
+    value->setTextAlign(TextAlign::End);
+    value->setFlexGrow(1.0f);
     valueOut = value.get();
-    valueWrap->addChild(std::move(value));
 
-    row->addChild(std::move(valueWrap));
+    row->addChild(std::move(value));
     detailsCard->addChild(std::move(row));
   };
 
