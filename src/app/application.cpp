@@ -803,37 +803,40 @@ void Application::initIpc() {
       },
       "reload-dock", "Reload dock configuration");
 
-  // === Audio Output (Speaker) IPC ===
+  // === Volume Output (Speaker) IPC ===
   m_ipcService.registerHandler(
-      "audio-output-volume-up",
+      "volume-output-up",
       [this](const std::string&) -> std::string {
         if (!m_pipewireService)
           return "error: pipewire unavailable\n";
         const auto* sink = m_pipewireService->defaultSink();
         if (!sink)
           return "error: no default output\n";
-        float newVol = std::clamp(sink->volume + 0.05f, 0.0f, 1.5f);
+        float maxVol = m_configService.config().audio.enableOverdrive ? 1.5f : 1.0f;
+        float newVol = std::clamp(sink->volume + 0.05f, 0.0f, maxVol);
         m_pipewireService->setVolume(newVol);
         return "ok\n";
       },
-      "audio-output-volume-up", "Increase output (speaker) volume");
+      "volume-output-up", "Increase output (speaker) volume");
 
   m_ipcService.registerHandler(
-      "audio-output-volume-down",
+      "volume-output-down",
       [this](const std::string&) -> std::string {
         if (!m_pipewireService)
           return "error: pipewire unavailable\n";
         const auto* sink = m_pipewireService->defaultSink();
         if (!sink)
           return "error: no default output\n";
-        float newVol = std::clamp(sink->volume - 0.05f, 0.0f, 1.5f);
+        float minVol = 0.0f;
+        float maxVol = m_configService.config().audio.enableOverdrive ? 1.5f : 1.0f;
+        float newVol = std::clamp(sink->volume - 0.05f, minVol, maxVol);
         m_pipewireService->setVolume(newVol);
         return "ok\n";
       },
-      "audio-output-volume-down", "Decrease output (speaker) volume");
+      "volume-output-down", "Decrease output (speaker) volume");
 
   m_ipcService.registerHandler(
-      "audio-output-toggle-mute",
+      "volume-output-toggle-mute",
       [this](const std::string&) -> std::string {
         if (!m_pipewireService)
           return "error: pipewire unavailable\n";
@@ -843,39 +846,42 @@ void Application::initIpc() {
         m_pipewireService->setMuted(!sink->muted);
         return "ok\n";
       },
-      "audio-output-toggle-mute", "Toggle output (speaker) mute");
+      "volume-output-toggle-mute", "Toggle output (speaker) mute");
 
-  // === Audio Input (Microphone) IPC ===
+  // === Volume Input (Microphone) IPC ===
   m_ipcService.registerHandler(
-      "audio-input-volume-up",
+      "volume-input-up",
       [this](const std::string&) -> std::string {
         if (!m_pipewireService)
           return "error: pipewire unavailable\n";
         const auto* source = m_pipewireService->defaultSource();
         if (!source)
           return "error: no default input\n";
-        float newVol = std::clamp(source->volume + 0.05f, 0.0f, 1.5f);
+        float maxVol = m_configService.config().audio.enableOverdrive ? 1.5f : 1.0f;
+        float newVol = std::clamp(source->volume + 0.05f, 0.0f, maxVol);
         m_pipewireService->setMicVolume(newVol);
         return "ok\n";
       },
-      "audio-input-volume-up", "Increase input (microphone) volume");
+      "volume-input-up", "Increase input (microphone) volume");
 
   m_ipcService.registerHandler(
-      "audio-input-volume-down",
+      "volume-input-down",
       [this](const std::string&) -> std::string {
         if (!m_pipewireService)
           return "error: pipewire unavailable\n";
         const auto* source = m_pipewireService->defaultSource();
         if (!source)
           return "error: no default input\n";
-        float newVol = std::clamp(source->volume - 0.05f, 0.0f, 1.5f);
+        float minVol = 0.0f;
+        float maxVol = m_configService.config().audio.enableOverdrive ? 1.5f : 1.0f;
+        float newVol = std::clamp(source->volume - 0.05f, minVol, maxVol);
         m_pipewireService->setMicVolume(newVol);
         return "ok\n";
       },
-      "audio-input-volume-down", "Decrease input (microphone) volume");
+      "volume-input-down", "Decrease input (microphone) volume");
 
   m_ipcService.registerHandler(
-      "audio-input-toggle-mute",
+      "volume-input-toggle-mute",
       [this](const std::string&) -> std::string {
         if (!m_pipewireService)
           return "error: pipewire unavailable\n";
@@ -885,7 +891,7 @@ void Application::initIpc() {
         m_pipewireService->setMicMuted(!source->muted);
         return "ok\n";
       },
-      "audio-input-toggle-mute", "Toggle input (microphone) mute");
+      "volume-input-toggle-mute", "Toggle input (microphone) mute");
 }
 
 bool Application::runIdleCommand(const std::string& command) {

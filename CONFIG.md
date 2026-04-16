@@ -263,14 +263,16 @@ Shows the default audio sink volume and mute state via PipeWire. No configurable
 
 ```sh
 # Output (speaker)
-noctalia msg audio-output-volume-up
-noctalia msg audio-output-volume-down
-noctalia msg audio-output-toggle-mute
+noctalia msg volume-output-up
+noctalia msg volume-output-down
+noctalia msg volume-output-toggle-mute
 
 # Input (microphone)
-noctalia msg audio-input-volume-up
-noctalia msg audio-input-volume-down
-noctalia msg audio-input-toggle-mute
+noctalia msg volume-input-up
+noctalia msg volume-input-down
+noctalia msg volume-input-toggle-mute
+
+Volume is clamped to 0–100% by default. If `[audio] enable_overdrive = true` is set in the config, the maximum is raised to 150% for both input and output.
 ```
 
 ---
