@@ -110,6 +110,8 @@ Application::~Application() {
     m_upowerService.reset();
     m_networkSecretAgent.reset();
     m_networkService.reset();
+    m_bluetoothAgent.reset();
+    m_bluetoothService.reset();
     m_powerProfilesService.reset();
     m_systemBus->processPendingEvents();
   }
@@ -348,6 +350,39 @@ void Application::initServices() {
         m_networkSecretAgent.reset();
       }
     }
+
+    try {
+      m_bluetoothService = std::make_unique<BluetoothService>(*m_systemBus);
+      auto refreshBluetoothUi = [this, shouldRefreshControlCenter]() {
+        m_bar.refresh();
+        if (shouldRefreshControlCenter()) {
+          m_panelManager.refresh();
+        }
+      };
+      m_bluetoothService->setStateCallback(
+          [refreshBluetoothUi](const BluetoothState& /*state*/) { refreshBluetoothUi(); });
+      m_bluetoothService->setDevicesCallback(
+          [refreshBluetoothUi](const std::vector<BluetoothDeviceInfo>& /*devices*/) { refreshBluetoothUi(); });
+      kLog.info("bluetooth service active");
+    } catch (const std::exception& e) {
+      kLog.warn("bluetooth service disabled: {}", e.what());
+      m_bluetoothService.reset();
+    }
+
+    if (m_bluetoothService != nullptr) {
+      try {
+        m_bluetoothAgent = std::make_unique<BluetoothAgent>(*m_systemBus);
+        m_bluetoothAgent->setRequestCallback(
+            [this, shouldRefreshControlCenter](const BluetoothPairingRequest& /*request*/) {
+              if (shouldRefreshControlCenter()) {
+                m_panelManager.refresh();
+              }
+            });
+      } catch (const std::exception& e) {
+        kLog.warn("bluetooth agent disabled: {}", e.what());
+        m_bluetoothAgent.reset();
+      }
+    }
   }
 
   try {
@@ -484,11 +519,12 @@ void Application::initUi() {
   m_panelManager.registerPanel("clipboard", std::move(clipboardPanel));
   m_panelManager.registerPanel("session", std::make_unique<SessionPanel>(&m_configService));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
-  m_panelManager.registerPanel(
-      "control-center", std::make_unique<ControlCenterPanel>(
-                            &m_notificationManager, m_pipewireService.get(), m_mprisService.get(), &m_configService,
-                            &m_httpClient, &m_weatherService, m_pipewireSpectrum.get(), m_upowerService.get(),
-                            m_powerProfilesService.get(), m_networkService.get(), m_networkSecretAgent.get()));
+  m_panelManager.registerPanel("control-center",
+                               std::make_unique<ControlCenterPanel>(
+                                   &m_notificationManager, m_pipewireService.get(), m_mprisService.get(),
+                                   &m_configService, &m_httpClient, &m_weatherService, m_pipewireSpectrum.get(),
+                                   m_upowerService.get(), m_powerProfilesService.get(), m_networkService.get(),
+                                   m_networkSecretAgent.get(), m_bluetoothService.get(), m_bluetoothAgent.get()));
   {
     auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService);
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shell/control_center/audio_tab.h"
+#include "shell/control_center/bluetooth_tab.h"
 #include "shell/control_center/calendar_tab.h"
 #include "shell/control_center/media_tab.h"
 #include "shell/control_center/network_tab.h"
@@ -15,6 +16,8 @@
 #include <memory>
 #include <string_view>
 
+class BluetoothAgent;
+class BluetoothService;
 class Button;
 class ConfigService;
 class Flex;
@@ -36,7 +39,8 @@ public:
                      ConfigService* config = nullptr, HttpClient* httpClient = nullptr, WeatherService* weather = nullptr,
                      PipeWireSpectrum* spectrum = nullptr, UPowerService* upower = nullptr,
                      PowerProfilesService* powerProfiles = nullptr, NetworkService* network = nullptr,
-                     NetworkSecretAgent* networkSecrets = nullptr);
+                     NetworkSecretAgent* networkSecrets = nullptr, BluetoothService* bluetooth = nullptr,
+                     BluetoothAgent* bluetoothAgent = nullptr);
 
   void create() override;
   void onFrameTick(float deltaMs) override;
@@ -57,14 +61,15 @@ private:
   static constexpr float kPreferredPanelHeight = Style::controlHeightLg * 15 + Style::spaceLg + Style::spaceSm;
 
   enum class TabId : std::uint8_t {
-    Overview = 0,
-    Media = 1,
-    Audio = 2,
-    Weather = 3,
-    Calendar = 4,
-    Notifications = 5,
-    Network = 6,
-    Count = 7,
+    Overview,
+    Media,
+    Audio,
+    Weather,
+    Calendar,
+    Notifications,
+    Network,
+    Bluetooth,
+    Count,
   };
 
   struct TabMeta {
@@ -83,6 +88,7 @@ private:
       {TabId::Calendar, "calendar", "Calendar", "calendar"},
       {TabId::Notifications, "notifications", "Notifications", "bell"},
       {TabId::Network, "network", "Network", "wifi"},
+      {TabId::Bluetooth, "bluetooth", "Bluetooth", "bluetooth"},
   }};
 
   void selectTab(TabId tab);

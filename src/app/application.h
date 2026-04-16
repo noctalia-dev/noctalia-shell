@@ -5,6 +5,8 @@
 #include "config/config_poll_source.h"
 #include "config/config_service.h"
 #include "core/timer_manager.h"
+#include "dbus/bluetooth/bluetooth_agent.h"
+#include "dbus/bluetooth/bluetooth_service.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/network/network_secret_agent.h"
 #include "dbus/network/network_service.h"
@@ -101,6 +103,8 @@ private:
   std::unique_ptr<PowerProfilesService> m_powerProfilesService;
   std::unique_ptr<NetworkService> m_networkService;
   std::unique_ptr<NetworkSecretAgent> m_networkSecretAgent;
+  std::unique_ptr<BluetoothService> m_bluetoothService;
+  std::unique_ptr<BluetoothAgent> m_bluetoothAgent;
   std::unique_ptr<UPowerService> m_upowerService;
   std::unique_ptr<TrayService> m_trayService;
   std::unique_ptr<NotificationService> m_notificationDbus;
