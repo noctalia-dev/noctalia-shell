@@ -5,6 +5,7 @@
 #include "net/http_client.h"
 #include "pipewire/pipewire_spectrum.h"
 #include "render/core/renderer.h"
+#include "render/scene/input_area.h"
 #include "shell/control_center/tab.h"
 #include "shell/panel/panel_manager.h"
 #include "ui/controls/audio_spectrum.h"
@@ -436,30 +437,6 @@ std::unique_ptr<Flex> MediaTab::create() {
   mediaStack->addChild(std::move(controlsRow));
 
   nowCard->addChild(std::move(mediaStack));
-
-  auto playerMenu = std::make_unique<ContextMenuControl>();
-  playerMenu->setParticipatesInLayout(false);
-  playerMenu->setVisible(false);
-  playerMenu->setMaxVisible(10);
-  playerMenu->setMenuWidth(Style::controlHeightLg * 6.0f * scale);
-  playerMenu->setOnActivate([this](const ContextMenuControlEntry& entry) {
-    if (m_mpris == nullptr) {
-      return;
-    }
-    if (entry.id == 0) {
-      m_mpris->clearPinnedPlayerPreference();
-    } else {
-      const std::size_t idx = static_cast<std::size_t>(entry.id - 1);
-      if (idx < m_playerBusNames.size()) {
-        m_mpris->setPinnedPlayerPreference(m_playerBusNames[idx]);
-      }
-    }
-    m_playerMenuOpen = false;
-    PanelManager::instance().refresh();
-  });
-  playerMenu->setRedrawCallback([]() { PanelManager::instance().requestRedraw(); });
-  playerMenu->setZIndex(20);
-  m_playerMenu = static_cast<ContextMenuControl*>(nowCard->addChild(std::move(playerMenu)));
   mediaColumn->addChild(std::move(nowCard));
 
   auto visualizerColumn = std::make_unique<Flex>();
@@ -498,6 +475,44 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerColumn->addChild(std::move(visualizerBody));
   tab->addChild(std::move(mediaColumn));
   tab->addChild(std::move(visualizerColumn));
+
+  auto dismissCatcher = std::make_unique<InputArea>();
+  dismissCatcher->setParticipatesInLayout(false);
+  dismissCatcher->setVisible(false);
+  dismissCatcher->setZIndex(19);
+  dismissCatcher->setOnPress([this](const InputArea::PointerData& /*data*/) {
+    if (!m_playerMenuOpen) {
+      return;
+    }
+    m_playerMenuOpen = false;
+    PanelManager::instance().refresh();
+  });
+  m_playerMenuDismissCatcher = static_cast<InputArea*>(tab->addChild(std::move(dismissCatcher)));
+
+  auto playerMenu = std::make_unique<ContextMenuControl>();
+  playerMenu->setParticipatesInLayout(false);
+  playerMenu->setVisible(false);
+  playerMenu->setMaxVisible(10);
+  playerMenu->setMenuWidth(Style::controlHeightLg * 6.0f * scale);
+  playerMenu->setOnActivate([this](const ContextMenuControlEntry& entry) {
+    if (m_mpris == nullptr) {
+      return;
+    }
+    if (entry.id == 0) {
+      m_mpris->clearPinnedPlayerPreference();
+    } else {
+      const std::size_t idx = static_cast<std::size_t>(entry.id - 1);
+      if (idx < m_playerBusNames.size()) {
+        m_mpris->setPinnedPlayerPreference(m_playerBusNames[idx]);
+      }
+    }
+    m_playerMenuOpen = false;
+    PanelManager::instance().refresh();
+  });
+  playerMenu->setRedrawCallback([]() { PanelManager::instance().requestRedraw(); });
+  playerMenu->setZIndex(20);
+  m_playerMenu = static_cast<ContextMenuControl*>(tab->addChild(std::move(playerMenu)));
+
   return tab;
 }
 
@@ -571,6 +586,14 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
     m_mediaStack->layout(renderer);
   }
 
+  if (m_playerMenuDismissCatcher != nullptr) {
+    m_playerMenuDismissCatcher->setVisible(m_playerMenuOpen);
+    if (m_playerMenuOpen) {
+      m_playerMenuDismissCatcher->setPosition(0.0f, 0.0f);
+      m_playerMenuDismissCatcher->setFrameSize(m_rootLayout->width(), m_rootLayout->height());
+    }
+  }
+
   if (m_playerMenu != nullptr && m_nowCard != nullptr) {
     const float menuWidth = std::clamp(Style::controlHeightLg * 6.0f * scale, Style::controlHeightLg * 4.2f * scale,
                                        std::max(1.0f, m_nowCard->width() - (m_nowCard->paddingLeft() + m_nowCard->paddingRight())));
@@ -578,8 +601,17 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
     m_playerMenu->setVisible(m_playerMenuOpen);
     if (m_playerMenuOpen) {
       m_playerMenu->setSize(menuWidth, m_playerMenu->preferredHeight());
-      const float x = std::max(m_nowCard->paddingLeft(), m_nowCard->width() - m_nowCard->paddingRight() - menuWidth);
-      const float y = m_nowCard->paddingTop() + Style::controlHeightSm * scale + Style::spaceXs * scale;
+      float nowAbsX = 0.0f;
+      float nowAbsY = 0.0f;
+      float rootAbsX = 0.0f;
+      float rootAbsY = 0.0f;
+      Node::absolutePosition(m_nowCard, nowAbsX, nowAbsY);
+      Node::absolutePosition(m_rootLayout, rootAbsX, rootAbsY);
+      const float localNowX = nowAbsX - rootAbsX;
+      const float localNowY = nowAbsY - rootAbsY;
+      const float x = localNowX + std::max(m_nowCard->paddingLeft(),
+                                           m_nowCard->width() - m_nowCard->paddingRight() - menuWidth);
+      const float y = localNowY + m_nowCard->paddingTop() + Style::controlHeightSm * scale + Style::spaceXs * scale;
       m_playerMenu->setPosition(x, y);
       m_playerMenu->layout(renderer);
     }
@@ -664,6 +696,7 @@ void MediaTab::onClose() {
   m_mediaStack = nullptr;
   m_playerMenuButton = nullptr;
   m_playerMenu = nullptr;
+  m_playerMenuDismissCatcher = nullptr;
   m_playerMenuOpen = false;
   m_trackTitle = nullptr;
   m_trackArtist = nullptr;

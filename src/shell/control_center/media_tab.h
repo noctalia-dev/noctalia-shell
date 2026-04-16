@@ -13,6 +13,7 @@
 class Button;
 class HttpClient;
 class Image;
+class InputArea;
 class Label;
 class MprisService;
 class PipeWireSpectrum;
@@ -52,6 +53,7 @@ private:
   Flex* m_mediaStack = nullptr;
   Button* m_playerMenuButton = nullptr;
   ContextMenuControl* m_playerMenu = nullptr;
+  InputArea* m_playerMenuDismissCatcher = nullptr;
   Label* m_trackTitle = nullptr;
   Label* m_trackArtist = nullptr;
   Label* m_trackAlbum = nullptr;
