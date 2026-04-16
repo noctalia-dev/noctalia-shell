@@ -105,13 +105,12 @@ Loader {
             Item {
               Item {
                 id: batteryIndicator
-
-                property bool isReady: BatteryService.batteryReady
-                property real percent: BatteryService.batteryPercentage
-                property bool charging: BatteryService.batteryCharging
-                property bool pluggedIn: BatteryService.batteryPluggedIn
-                property bool batteryVisible: isReady
-                property string icon: BatteryService.batteryIcon
+                readonly property var battery: BatteryService.primaryDevice
+                readonly property bool isReady: BatteryService.isDeviceReady(battery)
+                readonly property real percent: isReady ? BatteryService.getPercentage(battery) : -1
+                readonly property bool charging: isReady ? BatteryService.isCharging(battery) : false
+                readonly property bool pluggedIn: isReady ? BatteryService.isPluggedIn(battery) : false
+                readonly property string icon: BatteryService.getIcon(percent, charging, pluggedIn, isReady)
               }
 
               Item {
