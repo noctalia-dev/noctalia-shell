@@ -20,7 +20,7 @@ void SessionWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("shutdown");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(roleColor(ColorRole::OnSurface));
+  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -32,6 +32,7 @@ void SessionWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float
     return;
   }
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   auto* node = root();
   if (node != nullptr) {

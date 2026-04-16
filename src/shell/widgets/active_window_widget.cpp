@@ -43,7 +43,7 @@ void ActiveWindowWidget::create() {
   auto title = std::make_unique<Label>();
   title->setBold(true);
   title->setFontSize(Style::fontSizeBody * m_contentScale);
-  title->setColor(roleColor(ColorRole::OnSurface));
+  title->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   title->setMaxWidth(m_maxTitleWidth * m_contentScale);
   title->setMaxLines(1);
   m_title = static_cast<Label*>(rootNode->addChild(std::move(title)));
@@ -61,6 +61,7 @@ void ActiveWindowWidget::doLayout(Renderer& renderer, float /*containerWidth*/, 
   const float iconSize = m_iconSize * m_contentScale;
   m_icon->setSize(iconSize, iconSize);
   m_title->setMaxWidth(m_maxTitleWidth * m_contentScale);
+  m_title->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_title->measure(renderer);
 
   const float contentHeight = std::max(iconSize, m_title->height());
@@ -119,6 +120,7 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
 
   m_title->setMaxWidth(m_maxTitleWidth * m_contentScale);
   m_title->setText(m_lastTitle);
+  m_title->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_title->measure(renderer);
 
   if (iconPath != m_lastIconPath) {

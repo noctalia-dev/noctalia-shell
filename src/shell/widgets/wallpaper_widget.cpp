@@ -20,7 +20,7 @@ void WallpaperWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("wallpaper-selector");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(roleColor(ColorRole::OnSurface));
+  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -32,6 +32,7 @@ void WallpaperWidget::doLayout(Renderer& renderer, float /*containerWidth*/, flo
     return;
   }
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   if (auto* node = root(); node != nullptr) {
     node->setSize(m_glyph->width(), m_glyph->height());

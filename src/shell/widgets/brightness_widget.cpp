@@ -51,7 +51,7 @@ void BrightnessWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("brightness-high");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(roleColor(ColorRole::OnSurface));
+  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -111,11 +111,12 @@ void BrightnessWidget::syncState(Renderer& renderer) {
 
   m_glyph->setGlyph(brightnessGlyphName(brightness));
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  m_glyph->setColor(roleColor(ColorRole::OnSurface));
+  m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
 
   int pct = static_cast<int>(std::round(brightness * 100.0f));
   m_label->setText(std::to_string(pct) + "%");
+  m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_label->measure(renderer);
 
   requestRedraw();

@@ -40,7 +40,7 @@ void VolumeWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("volume-high");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(roleColor(ColorRole::OnSurface));
+  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -92,11 +92,14 @@ void VolumeWidget::syncState(Renderer& renderer) {
 
   m_glyph->setGlyph(volumeGlyphName(volume, muted));
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  m_glyph->setColor(roleColor(muted ? ColorRole::OnSurfaceVariant : ColorRole::OnSurface));
+  m_glyph->setColor(muted ? roleColor(ColorRole::OnSurfaceVariant)
+                          : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
 
   int pct = static_cast<int>(std::round(volume * 100.0f));
   m_label->setText(std::to_string(pct) + "%");
+  m_label->setColor(muted ? roleColor(ColorRole::OnSurfaceVariant)
+                          : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_label->measure(renderer);
 
   requestRedraw();

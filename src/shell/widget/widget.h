@@ -6,6 +6,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 
 class AnimationManager;
 class Box;
@@ -50,6 +51,7 @@ public:
   [[nodiscard]] bool isAnchor() const noexcept { return m_anchor; }
 
   void setBarCapsuleSpec(WidgetBarCapsuleSpec spec) noexcept { m_barCapsuleSpec = std::move(spec); }
+  void setWidgetForeground(std::optional<ThemeColor> color) noexcept { m_widgetForeground = std::move(color); }
   [[nodiscard]] const WidgetBarCapsuleSpec& barCapsuleSpec() const noexcept { return m_barCapsuleSpec; }
   void setBarCapsuleScene(Node* shell, Box* box) noexcept;
   [[nodiscard]] Node* barCapsuleShell() const noexcept { return m_capsuleShell; }
@@ -59,6 +61,10 @@ public:
 
   // Whether the bar should paint the decorative capsule for this frame (spec enabled + visible ink).
   [[nodiscard]] virtual bool shouldShowBarCapsule() const;
+
+  // Resolved icon + primary label color: `[widget.*] color` when set, else `capsule_foreground` when the capsule is
+  // visible, else `fallback` (e.g. roleColor(OnSurface)).
+  [[nodiscard]] ThemeColor widgetForegroundOr(const ThemeColor& fallback) const noexcept;
 
 protected:
   void requestRedraw();
@@ -72,6 +78,7 @@ protected:
   AnimationManager* m_animations = nullptr;
   RedrawCallback m_redrawCallback;
   WidgetBarCapsuleSpec m_barCapsuleSpec{};
+  std::optional<ThemeColor> m_widgetForeground;
   Node* m_capsuleShell = nullptr;
   Box* m_capsuleBox = nullptr;
 

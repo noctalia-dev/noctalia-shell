@@ -41,6 +41,9 @@ struct BarMonitorOverride {
   std::optional<bool> widgetCapsuleDefault;
   std::optional<std::string> widgetCapsuleFill;
   std::optional<std::string> widgetCapsuleBorder;
+  std::optional<std::string> widgetCapsuleForeground;
+  std::optional<std::string> widgetColor;
+  std::optional<double> widgetCapsulePadding;
 
   bool operator==(const BarMonitorOverride&) const = default;
 };
@@ -73,6 +76,13 @@ struct BarConfig {
   // When true, widgets on this bar use a capsule unless `[widget.*] capsule = false`.
   bool widgetCapsuleDefault = false;
   ThemeColor widgetCapsuleFill = roleColor(ColorRole::SurfaceVariant);
+  // When set, bar widgets with capsules use this for icon + primary label color unless overridden per widget.
+  std::optional<ThemeColor> widgetCapsuleForeground;
+  // Default icon + primary label color for all widgets on this bar (same as per-widget `color`); per-widget `color`
+  // overrides.
+  std::optional<ThemeColor> widgetColor;
+  // Inner padding between capsule edge and widget content (logical px), multiplied by widget content scale on the bar.
+  float widgetCapsulePadding = Style::barCapsulePadding;
   // True when `capsule_border` appears under `[bar.*]` (empty value = no outline for widgets that inherit border).
   bool widgetCapsuleBorderSpecified = false;
   std::optional<ThemeColor> widgetCapsuleBorder;
@@ -84,12 +94,16 @@ struct BarConfig {
 using WidgetSettingValue = std::variant<bool, std::int64_t, double, std::string>;
 
 // Optional rounded “capsule” behind a bar widget (see `[widget.*] capsule_*` in CONFIG.md).
-// Padding, corner shape (pill), border width, and edge softness are fixed in the shell code.
+// Corner shape (pill), border width, and edge softness are fixed in the shell code; padding is configurable.
 struct WidgetBarCapsuleSpec {
   bool enabled = false;
   ThemeColor fill = roleColor(ColorRole::SurfaceVariant);
   // Set only when `capsule_border` is present and non-empty in config; otherwise no outline.
   std::optional<ThemeColor> border;
+  // Icon + primary label color when the capsule is visible (theme role or `#` hex); unset = widget defaults.
+  std::optional<ThemeColor> foreground;
+  // Inner padding in logical pixels before content-scale (see `capsule_padding` / bar default).
+  float padding = Style::barCapsulePadding;
 
   bool operator==(const WidgetBarCapsuleSpec&) const = default;
 };
@@ -109,6 +123,9 @@ struct WidgetConfig {
 
 // Merges `[bar.*]` capsule defaults with `[widget.*]` overrides (see CONFIG.md).
 [[nodiscard]] WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const WidgetConfig* widget);
+
+// Theme role or `#` hex for `[widget.*] color` and other user color strings (same rules as `capsule_fill`).
+[[nodiscard]] ThemeColor themeColorFromConfigString(const std::string& raw);
 
 enum class WallpaperFillMode : std::uint8_t {
   Center = 0,

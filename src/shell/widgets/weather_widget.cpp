@@ -27,7 +27,7 @@ void WeatherWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("weather-cloud");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(roleColor(ColorRole::Primary));
+  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -48,8 +48,10 @@ void WeatherWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float
   sync(renderer);
 
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   m_label->setMaxWidth(m_maxWidth * m_contentScale);
+  m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_label->measure(renderer);
 
   const float spacing = m_label->text().empty() ? 0.0f : Style::spaceXs;
@@ -98,6 +100,7 @@ void WeatherWidget::sync(Renderer& renderer) {
   if (glyph != m_lastGlyph) {
     m_lastGlyph = glyph;
     m_glyph->setGlyph(glyph);
+    m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
     m_glyph->measure(renderer);
     changed = true;
   }
@@ -105,6 +108,7 @@ void WeatherWidget::sync(Renderer& renderer) {
   if (text != m_lastText) {
     m_lastText = text;
     m_label->setText(text);
+    m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
     m_label->measure(renderer);
     changed = true;
   }

@@ -46,7 +46,7 @@ void BatteryWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("battery-4");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(roleColor(ColorRole::OnSurface));
+  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   container->addChild(std::move(glyph));
 
@@ -109,11 +109,12 @@ void BatteryWidget::syncState(Renderer& renderer) {
 
   m_glyph->setGlyph(batteryGlyphName(s.percentage, s.state));
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  m_glyph->setColor(roleColor(ColorRole::OnSurface));
+  m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
 
   const int pct = static_cast<int>(std::round(s.percentage));
   m_label->setText(std::to_string(pct) + "%");
+  m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_label->measure(renderer);
 
   requestRedraw();

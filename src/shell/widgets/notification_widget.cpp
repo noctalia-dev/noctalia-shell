@@ -27,7 +27,7 @@ void NotificationWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("bell");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(roleColor(ColorRole::OnSurface));
+  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -49,6 +49,8 @@ void NotificationWidget::doLayout(Renderer& renderer, float /*containerWidth*/, 
     return;
   }
 
+  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   m_glyph->setPosition(0.0f, 0.0f);
   rootNode->setSize(m_glyph->width(), m_glyph->height());

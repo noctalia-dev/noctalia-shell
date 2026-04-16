@@ -4,6 +4,7 @@
 #include "render/scene/node.h"
 #include "scripting/luau_host.h"
 #include "ui/controls/label.h"
+#include "ui/palette.h"
 #include "ui/style.h"
 
 #include <cstdlib>
@@ -64,6 +65,7 @@ void ScriptedWidget::doLayout(Renderer& renderer, float, float) {
   auto* rootNode = root();
   if (m_label == nullptr || rootNode == nullptr) return;
   doUpdate(renderer);
+  m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_label->measure(renderer);
   m_label->setPosition(0.0f, 0.0f);
   rootNode->setSize(m_label->width(), m_label->height());

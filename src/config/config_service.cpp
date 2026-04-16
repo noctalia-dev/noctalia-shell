@@ -591,6 +591,8 @@ namespace {
 
 } // namespace
 
+ThemeColor themeColorFromConfigString(const std::string& raw) { return themeColorFromCapsuleString(raw); }
+
 BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOutput& output) {
   BarConfig resolved = base;
 
@@ -653,6 +655,15 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
     if (ovr.widgetCapsuleBorder) {
       resolved.widgetCapsuleBorderSpecified = true;
       resolved.widgetCapsuleBorder = optionalCapsuleBorder(*ovr.widgetCapsuleBorder);
+    }
+    if (ovr.widgetCapsuleForeground) {
+      resolved.widgetCapsuleForeground = themeColorFromCapsuleString(*ovr.widgetCapsuleForeground);
+    }
+    if (ovr.widgetColor) {
+      resolved.widgetColor = themeColorFromCapsuleString(*ovr.widgetColor);
+    }
+    if (ovr.widgetCapsulePadding) {
+      resolved.widgetCapsulePadding = std::clamp(static_cast<float>(*ovr.widgetCapsulePadding), 0.0f, 48.0f);
     }
     break; // first match wins
   }
@@ -998,8 +1009,18 @@ void ConfigService::parseTable(const toml::table& tbl) {
       if (auto v = (*barTbl)["capsule"].value<bool>()) {
         bar.widgetCapsuleDefault = *v;
       }
-      if (auto v = (*barTbl)["capsule_fill"].value<std::string>()) {
-        bar.widgetCapsuleFill = themeColorFromCapsuleString(*v);
+      if (auto fillStr = (*barTbl)["capsule_fill"].value<std::string>()) {
+        bar.widgetCapsuleFill = themeColorFromCapsuleString(*fillStr);
+      } else if (auto colorStr = (*barTbl)["capsule_color"].value<std::string>()) {
+        bar.widgetCapsuleFill = themeColorFromCapsuleString(*colorStr);
+      }
+      if (auto fgStr = (*barTbl)["capsule_foreground"].value<std::string>()) {
+        bar.widgetCapsuleForeground = themeColorFromCapsuleString(*fgStr);
+      } else if (auto legacyInk = (*barTbl)["capsule_ink"].value<std::string>()) {
+        bar.widgetCapsuleForeground = themeColorFromCapsuleString(*legacyInk);
+      }
+      if (auto v = (*barTbl)["capsule_padding"].value<double>()) {
+        bar.widgetCapsulePadding = std::clamp(static_cast<float>(*v), 0.0f, 48.0f);
       }
       if (barTbl->contains("capsule_border")) {
         bar.widgetCapsuleBorderSpecified = true;
@@ -1008,6 +1029,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
           borderStr = *v;
         }
         bar.widgetCapsuleBorder = optionalCapsuleBorder(borderStr);
+      }
+      if (auto widgetColorStr = (*barTbl)["color"].value<std::string>()) {
+        bar.widgetColor = themeColorFromCapsuleString(*widgetColorStr);
       }
 
       // Parse [bar.<name>.monitor.*] overrides — insertion order preserved by toml++
@@ -1069,8 +1093,18 @@ void ConfigService::parseTable(const toml::table& tbl) {
           if (auto v = (*monTbl)["capsule"].value<bool>()) {
             ovr.widgetCapsuleDefault = *v;
           }
-          if (auto v = (*monTbl)["capsule_fill"].value<std::string>()) {
-            ovr.widgetCapsuleFill = *v;
+          if (auto fillStr = (*monTbl)["capsule_fill"].value<std::string>()) {
+            ovr.widgetCapsuleFill = *fillStr;
+          } else if (auto colorStr = (*monTbl)["capsule_color"].value<std::string>()) {
+            ovr.widgetCapsuleFill = *colorStr;
+          }
+          if (auto fgStr = (*monTbl)["capsule_foreground"].value<std::string>()) {
+            ovr.widgetCapsuleForeground = *fgStr;
+          } else if (auto legacyInk = (*monTbl)["capsule_ink"].value<std::string>()) {
+            ovr.widgetCapsuleForeground = *legacyInk;
+          }
+          if (auto v = (*monTbl)["capsule_padding"].value<double>()) {
+            ovr.widgetCapsulePadding = *v;
           }
           if (monTbl->contains("capsule_border")) {
             std::string borderStr;
@@ -1078,6 +1112,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
               borderStr = *v;
             }
             ovr.widgetCapsuleBorder = borderStr;
+          }
+          if (auto cStr = (*monTbl)["color"].value<std::string>()) {
+            ovr.widgetColor = *cStr;
           }
 
           bar.monitorOverrides.push_back(std::move(ovr));
@@ -1559,6 +1596,7 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
   WidgetBarCapsuleSpec spec{};
   const bool widgetHasCapsuleKey = widget != nullptr && widget->hasSetting("capsule");
   const bool widgetHasFillKey = widget != nullptr && widget->hasSetting("capsule_fill");
+  const bool widgetHasColorKey = widget != nullptr && widget->hasSetting("capsule_color");
   const bool widgetHasBorderKey = widget != nullptr && widget->hasSetting("capsule_border");
 
   if (widgetHasCapsuleKey) {
@@ -1572,6 +1610,8 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
 
   if (widgetHasFillKey) {
     spec.fill = themeColorFromCapsuleString(widget->getString("capsule_fill", ""));
+  } else if (widgetHasColorKey) {
+    spec.fill = themeColorFromCapsuleString(widget->getString("capsule_color", ""));
   } else {
     spec.fill = bar.widgetCapsuleFill;
   }
@@ -1582,6 +1622,22 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
     spec.border = bar.widgetCapsuleBorder;
   } else {
     spec.border = std::nullopt;
+  }
+
+  spec.padding = bar.widgetCapsulePadding;
+  if (widget != nullptr && widget->hasSetting("capsule_padding")) {
+    spec.padding = std::clamp(
+        static_cast<float>(widget->getDouble("capsule_padding", static_cast<double>(spec.padding))), 0.0f, 48.0f);
+  }
+
+  if (widget != nullptr && widget->hasSetting("capsule_foreground")) {
+    spec.foreground = themeColorFromCapsuleString(widget->getString("capsule_foreground", ""));
+  } else if (widget != nullptr && widget->hasSetting("capsule_ink")) {
+    spec.foreground = themeColorFromCapsuleString(widget->getString("capsule_ink", ""));
+  } else if (bar.widgetCapsuleForeground.has_value()) {
+    spec.foreground = bar.widgetCapsuleForeground;
+  } else {
+    spec.foreground = std::nullopt;
   }
   return spec;
 }

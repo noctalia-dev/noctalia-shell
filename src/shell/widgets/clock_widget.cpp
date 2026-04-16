@@ -6,6 +6,7 @@
 #include "shell/panel/panel_manager.h"
 #include "time/time_service.h"
 #include "ui/controls/label.h"
+#include "ui/palette.h"
 #include "ui/style.h"
 
 ClockWidget::ClockWidget(const TimeService& timeService, wl_output* output, std::string format)
@@ -31,6 +32,7 @@ void ClockWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /
     return;
   }
   update(renderer);
+  m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_label->measure(renderer);
   m_label->setPosition(0.0f, 0.0f);
   rootNode->setSize(m_label->width(), m_label->height());

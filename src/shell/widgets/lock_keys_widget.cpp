@@ -109,7 +109,7 @@ void LockKeysWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("lock");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(roleColor(ColorRole::OnSurface));
+  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   rootNode->addChild(std::move(glyph));
 
@@ -223,7 +223,7 @@ void LockKeysWidget::sync(Renderer& renderer) {
 
   if (m_glyph != nullptr) {
     m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-    m_glyph->setColor(roleColor(ColorRole::OnSurface));
+    m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   }
 
   const bool full = m_displayMode == DisplayMode::Full;
@@ -232,13 +232,16 @@ void LockKeysWidget::sync(Renderer& renderer) {
   configureLabel(m_scrollLabel, full ? "Scroll" : "S", scrollVisible, m_contentScale);
 
   if (m_capsLabel != nullptr) {
-    m_capsLabel->setColor(roleColor(lockState.capsLock ? ColorRole::Primary : ColorRole::OnSurfaceVariant));
+    m_capsLabel->setColor(lockState.capsLock ? roleColor(ColorRole::Primary)
+                                              : widgetForegroundOr(roleColor(ColorRole::OnSurfaceVariant)));
   }
   if (m_numLabel != nullptr) {
-    m_numLabel->setColor(roleColor(lockState.numLock ? ColorRole::Primary : ColorRole::OnSurfaceVariant));
+    m_numLabel->setColor(lockState.numLock ? roleColor(ColorRole::Primary)
+                                            : widgetForegroundOr(roleColor(ColorRole::OnSurfaceVariant)));
   }
   if (m_scrollLabel != nullptr) {
-    m_scrollLabel->setColor(roleColor(lockState.scrollLock ? ColorRole::Primary : ColorRole::OnSurfaceVariant));
+    m_scrollLabel->setColor(lockState.scrollLock ? roleColor(ColorRole::Primary)
+                                                 : widgetForegroundOr(roleColor(ColorRole::OnSurfaceVariant)));
   }
 
   requestRedraw();

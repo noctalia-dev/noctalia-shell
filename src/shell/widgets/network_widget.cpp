@@ -53,7 +53,7 @@ void NetworkWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("wifi-off");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(roleColor(ColorRole::OnSurface));
+  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -104,11 +104,14 @@ void NetworkWidget::syncState(Renderer& renderer) {
 
   m_glyph->setGlyph(glyphForState(s));
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  m_glyph->setColor(roleColor(s.connected ? ColorRole::OnSurface : ColorRole::OnSurfaceVariant));
+  m_glyph->setColor(s.connected ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
+                                : roleColor(ColorRole::OnSurfaceVariant));
   m_glyph->measure(renderer);
 
   if (m_label != nullptr) {
     m_label->setText(labelForState(s));
+    m_label->setColor(s.connected ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
+                                  : roleColor(ColorRole::OnSurfaceVariant));
     m_label->measure(renderer);
   }
 

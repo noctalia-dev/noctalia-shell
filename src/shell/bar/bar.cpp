@@ -90,7 +90,7 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
         bg->setSize(iw, ih);
         continue;
       }
-      const float pad = Style::spaceXs * scale;
+      const float pad = w->barCapsuleSpec().padding * scale;
       const float shellW = iw + 2.0f * pad;
       const float shellH = ih + 2.0f * pad;
       shell->setSize(shellW, shellH);
@@ -489,6 +489,11 @@ void Bar::populateWidgets(BarInstance& instance) {
           widget->setAnchor(wcPtr->getBool("anchor", false));
         }
         widget->setBarCapsuleSpec(resolveWidgetBarCapsuleSpec(instance.barConfig, wcPtr));
+        if (wcPtr != nullptr && wcPtr->hasSetting("color")) {
+          widget->setWidgetForeground(themeColorFromConfigString(wcPtr->getString("color", "")));
+        } else if (instance.barConfig.widgetColor.has_value()) {
+          widget->setWidgetForeground(*instance.barConfig.widgetColor);
+        }
         dest.push_back(std::move(widget));
       }
     }

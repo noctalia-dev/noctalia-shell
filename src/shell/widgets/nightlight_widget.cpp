@@ -93,7 +93,7 @@ void NightLightWidget::syncState(Renderer& renderer) {
   if (forced || (enabled && active)) {
     m_glyph->setColor(roleColor(ColorRole::Primary));
   } else if (enabled) {
-    m_glyph->setColor(roleColor(ColorRole::OnSurface));
+    m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   } else {
     m_glyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
   }

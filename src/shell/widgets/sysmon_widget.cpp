@@ -35,7 +35,7 @@ void SysmonWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph(glyphName(m_stat));
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(roleColor(ColorRole::OnSurface));
+  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   container->addChild(std::move(glyph));
 
@@ -86,6 +86,7 @@ void SysmonWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float 
   }
   update(renderer);
 
+  m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   const float glyphH = m_glyph->height();
 
@@ -110,6 +111,7 @@ void SysmonWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float 
   if (m_label == nullptr) {
     return;
   }
+  m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_label->measure(renderer);
 
   if (m_displayMode == SysmonDisplayMode::Graph && m_chartBg != nullptr) {

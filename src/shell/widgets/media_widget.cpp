@@ -195,7 +195,7 @@ void MediaWidget::create() {
   auto label = std::make_unique<Label>();
   label->setBold(true);
   label->setFontSize(Style::fontSizeBody * m_contentScale);
-  label->setColor(roleColor(ColorRole::OnSurface));
+  label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   label->setMaxWidth(m_maxWidth * m_contentScale);
   label->setMaxLines(1);
   m_label = label.get();
@@ -214,6 +214,9 @@ void MediaWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /
   const float artSize = m_artSize * m_contentScale;
   m_art->setSize(artSize, artSize);
   m_label->setMaxWidth(m_maxWidth * m_contentScale);
+  m_label->setColor(m_lastPlaybackStatus == "Playing"
+                         ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
+                         : roleColor(ColorRole::OnSurfaceVariant));
   m_label->measure(renderer);
 
   const float contentHeight = std::max(artSize, m_label->height());
@@ -261,7 +264,9 @@ void MediaWidget::syncState(Renderer& renderer) {
 
   m_label->setMaxWidth(m_maxWidth * m_contentScale);
   m_label->setText(m_lastText);
-  m_label->setColor(roleColor(m_lastPlaybackStatus == "Playing" ? ColorRole::OnSurface : ColorRole::OnSurfaceVariant));
+  m_label->setColor(m_lastPlaybackStatus == "Playing"
+                        ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
+                        : roleColor(ColorRole::OnSurfaceVariant));
   m_label->measure(renderer);
 
   if (artChanged) {

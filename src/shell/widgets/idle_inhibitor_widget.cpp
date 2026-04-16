@@ -73,7 +73,13 @@ void IdleInhibitorWidget::syncState(Renderer& renderer) {
 
   m_glyph->setGlyph(glyphForState(enabled));
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  m_glyph->setColor(roleColor(!available ? ColorRole::OnSurfaceVariant : (enabled ? ColorRole::Primary : ColorRole::OnSurface)));
+  if (!available) {
+    m_glyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  } else if (enabled) {
+    m_glyph->setColor(roleColor(ColorRole::Primary));
+  } else {
+    m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  }
   m_glyph->measure(renderer);
   m_area->setEnabled(available);
   if (auto* node = root(); node != nullptr) {

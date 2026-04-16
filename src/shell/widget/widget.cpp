@@ -2,12 +2,26 @@
 
 #include "render/scene/node.h"
 #include "ui/controls/box.h"
+#include "ui/palette.h"
 
 namespace {
 
 constexpr float kCapsuleInkEpsilon = 0.5f;
 
 } // namespace
+
+ThemeColor Widget::widgetForegroundOr(const ThemeColor& fallback) const noexcept {
+  // Per-widget `color` must win over bar/widget `capsule_foreground`, otherwise a bar-level
+  // capsule_foreground (e.g. on_primary) overrides explicit `color = primary` after layout.
+  if (m_widgetForeground.has_value()) {
+    return *m_widgetForeground;
+  }
+  const auto& spec = m_barCapsuleSpec;
+  if (spec.enabled && spec.foreground.has_value() && shouldShowBarCapsule()) {
+    return *spec.foreground;
+  }
+  return fallback;
+}
 
 bool Widget::shouldShowBarCapsule() const {
   if (!m_barCapsuleSpec.enabled) {

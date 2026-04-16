@@ -27,7 +27,8 @@ void ThemeModeWidget::create() {
     m_lastIsLight = !m_lastIsLight;
     if (m_glyph != nullptr) {
       m_glyph->setGlyph(glyphForMode(m_lastIsLight));
-      m_glyph->setColor(roleColor(m_lastIsLight ? ColorRole::Primary : ColorRole::OnSurface));
+      m_glyph->setColor(m_lastIsLight ? roleColor(ColorRole::Primary)
+                                      : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
     }
     requestRedraw();
   });
@@ -36,7 +37,7 @@ void ThemeModeWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("theme-mode");
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
-  glyph->setColor(roleColor(ColorRole::OnSurface));
+  glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
@@ -50,6 +51,8 @@ void ThemeModeWidget::doLayout(Renderer& renderer, float /*containerWidth*/, flo
 
   syncState(renderer);
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setColor(m_lastIsLight ? roleColor(ColorRole::Primary)
+                                  : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
 
   if (auto* node = root(); node != nullptr) {
@@ -73,7 +76,8 @@ void ThemeModeWidget::syncState(Renderer& renderer) {
 
   m_lastIsLight = isLight;
   m_glyph->setGlyph(glyphForMode(isLight));
-  m_glyph->setColor(roleColor(isLight ? ColorRole::Primary : ColorRole::OnSurface));
+  m_glyph->setColor(isLight ? roleColor(ColorRole::Primary)
+                            : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   m_glyph->measure(renderer);
 
