@@ -607,9 +607,9 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.endSlot = makeSlot();
 
     // Create section boxes
-    auto makeSection = [widgetSpacing]() {
+    auto makeSection = [widgetSpacing, isVertical]() {
       auto box = std::make_unique<Flex>();
-      box->setDirection(FlexDirection::Horizontal);
+      box->setDirection(isVertical ? FlexDirection::Vertical : FlexDirection::Horizontal);
       box->setGap(widgetSpacing);
       box->setAlign(FlexAlign::Center);
       return box;
