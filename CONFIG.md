@@ -259,6 +259,20 @@ display = "id" # none | id | name
 
 Shows the default audio sink volume and mute state via PipeWire. No configurable settings.
 
+#### IPC
+
+```sh
+# Output (speaker)
+noctalia msg audio-output-volume-up
+noctalia msg audio-output-volume-down
+noctalia msg audio-output-toggle-mute
+
+# Input (microphone)
+noctalia msg audio-input-volume-up
+noctalia msg audio-input-volume-down
+noctalia msg audio-input-toggle-mute
+```
+
 ---
 
 ### `audio_visualizer`

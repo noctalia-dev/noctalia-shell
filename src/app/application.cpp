@@ -802,6 +802,90 @@ void Application::initIpc() {
         return "ok\n";
       },
       "reload-dock", "Reload dock configuration");
+
+  // === Audio Output (Speaker) IPC ===
+  m_ipcService.registerHandler(
+      "audio-output-volume-up",
+      [this](const std::string&) -> std::string {
+        if (!m_pipewireService)
+          return "error: pipewire unavailable\n";
+        const auto* sink = m_pipewireService->defaultSink();
+        if (!sink)
+          return "error: no default output\n";
+        float newVol = std::clamp(sink->volume + 0.05f, 0.0f, 1.5f);
+        m_pipewireService->setVolume(newVol);
+        return "ok\n";
+      },
+      "audio-output-volume-up", "Increase output (speaker) volume");
+
+  m_ipcService.registerHandler(
+      "audio-output-volume-down",
+      [this](const std::string&) -> std::string {
+        if (!m_pipewireService)
+          return "error: pipewire unavailable\n";
+        const auto* sink = m_pipewireService->defaultSink();
+        if (!sink)
+          return "error: no default output\n";
+        float newVol = std::clamp(sink->volume - 0.05f, 0.0f, 1.5f);
+        m_pipewireService->setVolume(newVol);
+        return "ok\n";
+      },
+      "audio-output-volume-down", "Decrease output (speaker) volume");
+
+  m_ipcService.registerHandler(
+      "audio-output-toggle-mute",
+      [this](const std::string&) -> std::string {
+        if (!m_pipewireService)
+          return "error: pipewire unavailable\n";
+        const auto* sink = m_pipewireService->defaultSink();
+        if (!sink)
+          return "error: no default output\n";
+        m_pipewireService->setMuted(!sink->muted);
+        return "ok\n";
+      },
+      "audio-output-toggle-mute", "Toggle output (speaker) mute");
+
+  // === Audio Input (Microphone) IPC ===
+  m_ipcService.registerHandler(
+      "audio-input-volume-up",
+      [this](const std::string&) -> std::string {
+        if (!m_pipewireService)
+          return "error: pipewire unavailable\n";
+        const auto* source = m_pipewireService->defaultSource();
+        if (!source)
+          return "error: no default input\n";
+        float newVol = std::clamp(source->volume + 0.05f, 0.0f, 1.5f);
+        m_pipewireService->setMicVolume(newVol);
+        return "ok\n";
+      },
+      "audio-input-volume-up", "Increase input (microphone) volume");
+
+  m_ipcService.registerHandler(
+      "audio-input-volume-down",
+      [this](const std::string&) -> std::string {
+        if (!m_pipewireService)
+          return "error: pipewire unavailable\n";
+        const auto* source = m_pipewireService->defaultSource();
+        if (!source)
+          return "error: no default input\n";
+        float newVol = std::clamp(source->volume - 0.05f, 0.0f, 1.5f);
+        m_pipewireService->setMicVolume(newVol);
+        return "ok\n";
+      },
+      "audio-input-volume-down", "Decrease input (microphone) volume");
+
+  m_ipcService.registerHandler(
+      "audio-input-toggle-mute",
+      [this](const std::string&) -> std::string {
+        if (!m_pipewireService)
+          return "error: pipewire unavailable\n";
+        const auto* source = m_pipewireService->defaultSource();
+        if (!source)
+          return "error: no default input\n";
+        m_pipewireService->setMicMuted(!source->muted);
+        return "ok\n";
+      },
+      "audio-input-toggle-mute", "Toggle input (microphone) mute");
 }
 
 bool Application::runIdleCommand(const std::string& command) {
