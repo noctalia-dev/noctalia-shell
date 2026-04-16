@@ -333,6 +333,7 @@ void Application::initServices() {
     try {
       m_brightnessService = std::make_unique<BrightnessService>(*m_systemBus, m_wayland);
       m_brightnessService->setChangeCallback([this, shouldRefreshControlCenter]() {
+        m_brightnessOsd.onBrightnessChanged(*m_brightnessService);
         m_bar.refresh();
         if (shouldRefreshControlCenter()) {
           m_panelManager.refresh();
@@ -557,6 +558,10 @@ void Application::initUi() {
   m_audioOsd.bindOverlay(m_osdOverlay);
   if (m_pipewireService != nullptr) {
     m_audioOsd.primeFromService(*m_pipewireService);
+  }
+  m_brightnessOsd.bindOverlay(m_osdOverlay);
+  if (m_brightnessService != nullptr) {
+    m_brightnessOsd.primeFromService(*m_brightnessService);
   }
 
   m_trayMenu.initialize(m_wayland, &m_configService, m_trayService.get(), &m_renderContext);

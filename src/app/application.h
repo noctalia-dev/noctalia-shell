@@ -39,6 +39,7 @@
 #include "shell/lockscreen/lock_screen.h"
 #include "shell/notification/notification_toast.h"
 #include "shell/osd/audio_osd.h"
+#include "shell/osd/brightness_osd.h"
 #include "shell/osd/osd_overlay.h"
 #include "shell/overview/overview.h"
 #include "shell/panel/panel_manager.h"
@@ -123,6 +124,7 @@ private:
   PanelManager m_panelManager;
   NotificationToast m_notificationToast;
   AudioOsd m_audioOsd;
+  BrightnessOsd m_brightnessOsd;
   OsdOverlay m_osdOverlay;
   TrayMenu m_trayMenu;
   Wallpaper m_wallpaper;
