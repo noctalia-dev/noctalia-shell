@@ -40,5 +40,6 @@ private:
   std::vector<TrayItemInfo> m_items;
   std::vector<Image*> m_loadedImages;
   float m_contentHeight = 0.0f;
+  bool m_isVertical = false;
   bool m_rebuildPending = true;
 };

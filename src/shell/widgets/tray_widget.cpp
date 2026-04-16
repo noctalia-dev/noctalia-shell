@@ -239,9 +239,14 @@ void TrayWidget::create() {
   setRoot(std::move(container));
 }
 
-void TrayWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float containerHeight) {
+void TrayWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   if (m_container == nullptr) {
     return;
+  }
+  const bool vertical = containerHeight > containerWidth;
+  if (vertical != m_isVertical) {
+    m_isVertical = vertical;
+    m_container->setDirection(m_isVertical ? FlexDirection::Vertical : FlexDirection::Horizontal);
   }
   syncState(renderer);
   if (containerHeight > 0.0f && std::abs(containerHeight - m_contentHeight) > 0.5f) {
