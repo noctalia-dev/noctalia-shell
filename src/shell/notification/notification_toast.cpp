@@ -95,19 +95,45 @@ std::int32_t outputLogicalHeight(const WaylandOutput& output) {
   return 0;
 }
 
-int fitBodyLines(RenderContext& renderContext, float summaryHeight, bool hasActions, float cardHeight) {
+float bodyTopForSummary(float summaryHeight) {
+  return kCardInnerPad + kCloseButtonSize + kMetaGap + summaryHeight + kSummaryBodyGap;
+}
+
+float availableBodyHeight(float summaryHeight, float actionsReservedHeight, float cardHeight) {
   const float progressY = cardHeight - kProgressHeight - kProgressBottomMargin;
-  const float actionsReserved = hasActions ? (Style::controlHeightSm + kActionRowGap) : 0.0f;
-  const float bodyTop = kCardInnerPad + kCloseButtonSize + kMetaGap + summaryHeight + kSummaryBodyGap;
-  const float availableHeight = progressY - kBodyBottomGap - actionsReserved - bodyTop;
+  const float availableHeight = progressY - kBodyBottomGap - actionsReservedHeight - bodyTopForSummary(summaryHeight);
+  return availableHeight;
+}
+
+int fitBodyLines(RenderContext& renderContext, std::string_view bodyText, float textMaxWidth, float availableHeight) {
   if (availableHeight <= 0.0f) {
     return 0;
   }
 
-  const auto metrics = renderContext.measureText("A", kBodyFontSize);
-  const float lineHeight = std::max(1.0f, metrics.bottom - metrics.top);
-  return std::clamp(static_cast<int>(std::floor((availableHeight + 0.5f) / lineHeight)), 0,
-                    static_cast<int>(kMaxBodyLines));
+  Label probe;
+  probe.setFontSize(kBodyFontSize);
+  probe.setMaxWidth(textMaxWidth);
+  probe.setText(bodyText);
+
+  for (int lines = static_cast<int>(kMaxBodyLines); lines >= 1; --lines) {
+    probe.setMaxLines(static_cast<std::size_t>(lines));
+    probe.measure(renderContext);
+    if (probe.height() <= availableHeight + 0.5f) {
+      return lines;
+    }
+  }
+  return 0;
+}
+
+void clampBodyLabelHeight(Label& bodyLabel, float maxBodyHeight) {
+  if (maxBodyHeight <= 0.0f) {
+    bodyLabel.setText("");
+    bodyLabel.setVisible(false);
+    return;
+  }
+
+  bodyLabel.setClipChildren(true);
+  bodyLabel.setSize(bodyLabel.width(), std::max(1.0f, std::floor(maxBodyHeight)));
 }
 
 float notificationTextStartX() {
@@ -300,15 +326,19 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
           cs.appNameLabel->setText(n.appName);
           cs.summaryLabel->setText(m_entries[i].summary);
           cs.summaryLabel->measure(*m_renderContext);
-            const int bodyLines =
-              fitBodyLines(*m_renderContext, cs.summaryLabel->height(), !m_entries[i].actions.empty(), cs.cardNode->height());
+          const float actionsReservedHeight =
+              m_entries[i].actions.empty() ? 0.0f : (Style::controlHeight + kActionRowGap);
+          const float bodyHeight = availableBodyHeight(cs.summaryLabel->height(), actionsReservedHeight, cs.cardNode->height());
+          int bodyLines = fitBodyLines(*m_renderContext, m_entries[i].body, notificationTextMaxWidth(), bodyHeight);
+          if (!m_entries[i].actions.empty()) {
+            bodyLines = std::min(bodyLines, 2);
+          }
           cs.bodyLabel->setMaxLines(std::max(1, bodyLines));
           cs.bodyLabel->setText(bodyLines > 0 ? m_entries[i].body : "");
           cs.bodyLabel->measure(*m_renderContext);
           cs.bodyLabel->setVisible(bodyLines > 0 && !m_entries[i].body.empty());
-            cs.bodyLabel->setPosition(notificationTextStartX(),
-                                    kCardInnerPad + kCloseButtonSize + kMetaGap +
-                                        cs.summaryLabel->height() + kSummaryBodyGap);
+          cs.bodyLabel->setPosition(notificationTextStartX(), bodyTopForSummary(cs.summaryLabel->height()));
+          clampBodyLabelHeight(*cs.bodyLabel, bodyHeight);
 
           // Reset countdown
           if (cs.countdownAnimId != 0) {
@@ -1298,26 +1328,10 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
   *outSummary = summary.get();
   area->addChild(std::move(summary));
 
-  // Body text — Pango handles wrap + ellipsize.
-  auto body = std::make_unique<Label>();
-  body->setText(entry.body);
-  body->setFontSize(kBodyFontSize);
-  body->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  body->setMaxWidth(textMaxWidth);
-  const int bodyLines = fitBodyLines(*m_renderContext, (*outSummary)->height(), !entry.actions.empty(), cardHeight);
-  body->setMaxLines(std::max(1, bodyLines));
-  if (bodyLines <= 0) {
-    body->setText("");
-    body->setVisible(false);
-  }
-  body->measure(*m_renderContext);
-  body->setPosition(textStartX,
-                    kCardInnerPad + kCloseButtonSize + kMetaGap + (*outSummary)->height() + kSummaryBodyGap);
-  *outBody = body.get();
-  area->addChild(std::move(body));
-
+  std::unique_ptr<Flex> actionsRow;
+  float actionsReservedHeight = 0.0f;
   if (!entry.actions.empty()) {
-    auto actionsRow = std::make_unique<Flex>();
+    actionsRow = std::make_unique<Flex>();
     actionsRow->setDirection(FlexDirection::Horizontal);
     actionsRow->setAlign(FlexAlign::Center);
     actionsRow->setGap(kActionGap);
@@ -1381,9 +1395,36 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppN
 
     if (actionCount > 0) {
       actionsRow->layout(*m_renderContext);
+      actionsReservedHeight = actionsRow->height() + kActionRowGap;
       actionsRow->setPosition(textStartX, progressY - actionsRow->height() - kActionRowGap);
-      area->addChild(std::move(actionsRow));
+    } else {
+      actionsRow.reset();
     }
+  }
+
+  auto body = std::make_unique<Label>();
+  body->setText(entry.body);
+  body->setFontSize(kBodyFontSize);
+  body->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  body->setMaxWidth(textMaxWidth);
+  const float bodyHeight = availableBodyHeight((*outSummary)->height(), actionsReservedHeight, cardHeight);
+  int bodyLines = fitBodyLines(*m_renderContext, entry.body, textMaxWidth, bodyHeight);
+  if (!entry.actions.empty()) {
+    bodyLines = std::min(bodyLines, 2);
+  }
+  body->setMaxLines(std::max(1, bodyLines));
+  if (bodyLines <= 0) {
+    body->setText("");
+    body->setVisible(false);
+  }
+  body->measure(*m_renderContext);
+  body->setPosition(textStartX, bodyTopForSummary((*outSummary)->height()));
+  clampBodyLabelHeight(*body, bodyHeight);
+  *outBody = body.get();
+  area->addChild(std::move(body));
+
+  if (actionsRow != nullptr) {
+    area->addChild(std::move(actionsRow));
   }
 
   // Progress bar (countdown)
