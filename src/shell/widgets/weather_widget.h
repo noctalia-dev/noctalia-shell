@@ -32,4 +32,5 @@ private:
   Label* m_label = nullptr;
   std::string m_lastText;
   std::string m_lastGlyph;
+  bool m_isVertical = false;
 };

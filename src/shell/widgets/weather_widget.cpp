@@ -41,26 +41,35 @@ void WeatherWidget::create() {
   setRoot(std::move(area));
 }
 
-void WeatherWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void WeatherWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   if (m_glyph == nullptr || m_label == nullptr || root() == nullptr) {
     return;
   }
+  m_isVertical = containerHeight > containerWidth;
   sync(renderer);
 
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
-  m_label->setMaxWidth(m_maxWidth * m_contentScale);
+  m_label->setTextAlign(m_isVertical ? TextAlign::Center : TextAlign::Start);
+  m_label->setMaxWidth(m_isVertical ? containerWidth : (m_maxWidth * m_contentScale));
   m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_label->measure(renderer);
 
-  const float spacing = m_label->text().empty() ? 0.0f : Style::spaceXs;
-  const float contentHeight = std::max(m_glyph->height(), m_label->height());
-  const float glyphY = std::round((contentHeight - m_glyph->height()) * 0.5f);
-  const float labelY = std::round((contentHeight - m_label->height()) * 0.5f);
-  m_glyph->setPosition(0.0f, glyphY);
-  m_label->setPosition(m_glyph->width() + spacing, labelY);
-  root()->setSize(m_label->x() + m_label->width(), contentHeight);
+  const float spacing = m_label->text().empty() ? 0.0f : (Style::spaceXs * m_contentScale);
+  if (m_isVertical) {
+    const float contentWidth = std::max(m_glyph->width(), m_label->width());
+    m_glyph->setPosition(std::round((contentWidth - m_glyph->width()) * 0.5f), 0.0f);
+    m_label->setPosition(std::round((contentWidth - m_label->width()) * 0.5f), m_glyph->height() + spacing);
+    root()->setSize(contentWidth, m_label->y() + m_label->height());
+  } else {
+    const float contentHeight = std::max(m_glyph->height(), m_label->height());
+    const float glyphY = std::round((contentHeight - m_glyph->height()) * 0.5f);
+    const float labelY = std::round((contentHeight - m_label->height()) * 0.5f);
+    m_glyph->setPosition(0.0f, glyphY);
+    m_label->setPosition(m_glyph->width() + spacing, labelY);
+    root()->setSize(m_label->x() + m_label->width(), contentHeight);
+  }
 }
 
 void WeatherWidget::doUpdate(Renderer& renderer) {
@@ -72,27 +81,36 @@ void WeatherWidget::sync(Renderer& renderer) {
     return;
   }
 
+  auto stackTemperature = [](int temp, char unitLetter) {
+    return std::format("{}\n\xC2\xB0{}", temp, unitLetter);
+  };
+
   std::string glyph = "weather-cloud";
-  std::string text = "Weather";
+  std::string text = m_isVertical ? "W\nX" : "Weather";
 
   if (m_weather == nullptr || !m_weather->enabled()) {
-    text = "Weather off";
+    text = m_isVertical ? "O\nF\nF" : "Weather off";
   } else if (!m_weather->locationConfigured()) {
-    text = "No location";
+    text = m_isVertical ? "N\nO\nL\nO\nC" : "No location";
   } else if (m_weather->hasData()) {
     const auto& snapshot = m_weather->snapshot();
     glyph = WeatherService::glyphForCode(snapshot.current.weatherCode, snapshot.current.isDay);
-    text = std::format("{}{}",
-                       static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.current.temperatureC))),
-                       m_weather->displayTemperatureUnit());
-    if (m_showCondition) {
+    const int temp = static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.current.temperatureC)));
+    const std::string unit = m_weather->displayTemperatureUnit();
+    if (m_isVertical) {
+      const char unitLetter = (unit.find('F') != std::string::npos || unit.find('f') != std::string::npos) ? 'F' : 'C';
+      text = stackTemperature(temp, unitLetter);
+    } else {
+      text = std::format("{}{}", temp, unit);
+    }
+    if (m_showCondition && !m_isVertical) {
       text += " ";
       text += WeatherService::shortDescriptionForCode(snapshot.current.weatherCode);
     }
   } else if (m_weather->loading()) {
-    text = "Weather...";
+    text = m_isVertical ? ".\n.\n." : "Weather...";
   } else if (!m_weather->error().empty()) {
-    text = "Weather err";
+    text = m_isVertical ? "E\nR\nR" : "Weather err";
   }
 
   bool changed = false;
