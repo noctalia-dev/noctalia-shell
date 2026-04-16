@@ -70,6 +70,7 @@ private:
 
   float m_gap = 0.0f;
   float m_indicatorHeight = 0.0f;
+  float m_crossSize = 0.0f;
   bool m_isVertical = false;
 
   AnimationManager::Id m_animId = 0;

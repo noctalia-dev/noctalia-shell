@@ -148,6 +148,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
 
   m_gap = gap;
   m_indicatorHeight = std::round(indicatorHeight);
+  m_crossSize = m_indicatorHeight;
 
   for (std::size_t i = 0; i < workspaces.size(); ++i) {
     const auto& ws = workspaces[i];
@@ -220,7 +221,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
   }
   if (m_isVertical) {
     (void)maxWidth;
-    m_container->setFrameSize(indicatorHeight, total);
+    m_container->setFrameSize(m_crossSize, total);
   } else {
     m_container->setFrameSize(total, indicatorHeight);
   }
@@ -315,9 +316,9 @@ void WorkspacesWidget::applyItemLayout(std::size_t i) {
   }
   if (m_isVertical) {
     it.area->setPosition(0.0f, std::round(it.currentX));
-    it.area->setFrameSize(m_indicatorHeight, it.currentWidth);
+    it.area->setFrameSize(m_crossSize, it.currentWidth);
     if (it.indicator != nullptr) {
-      it.indicator->setFrameSize(m_indicatorHeight, it.currentWidth);
+      it.indicator->setFrameSize(m_crossSize, it.currentWidth);
     }
   } else {
     it.area->setPosition(std::round(it.currentX), 0.0f);
@@ -327,10 +328,15 @@ void WorkspacesWidget::applyItemLayout(std::size_t i) {
     }
   }
   if (it.text != nullptr) {
-    const float itemW = m_isVertical ? m_indicatorHeight : it.currentWidth;
+    const float itemW = m_isVertical ? m_crossSize : it.currentWidth;
     const float itemH = m_isVertical ? it.currentWidth : m_indicatorHeight;
-    it.text->setPosition(std::round((itemW - it.text->width()) * 0.5f),
+    it.text->setPosition(std::max(0.0f, std::round((itemW - it.text->width()) * 0.5f)),
                          std::round((itemH - it.text->height()) * 0.5f));
+  }
+  if (it.indicator != nullptr) {
+    const float itemW = m_isVertical ? m_crossSize : it.currentWidth;
+    const float itemH = m_isVertical ? it.currentWidth : m_indicatorHeight;
+    it.indicator->setRadius(std::min(itemW, itemH) * 0.5f);
   }
 }
 
