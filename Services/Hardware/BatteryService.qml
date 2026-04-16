@@ -18,8 +18,9 @@ Singleton {
   readonly property real warningThreshold: Settings.data.systemMonitor.batteryWarningThreshold
   readonly property real criticalThreshold: Settings.data.systemMonitor.batteryCriticalThreshold
   readonly property var laptopBatteries: {
-    if (!upowerInstalled){
-    return [];}
+    if (!upowerInstalled) {
+      return [];
+    }
     let _laptopbatteries = (UPower.devices?.values ?? []).filter(d => d && d.isLaptopBattery).sort((x, y) => x.nativePath.localeCompare(y.nativePath, undefined, {
                                                                                                                                           numeric: true
                                                                                                                                         }));
