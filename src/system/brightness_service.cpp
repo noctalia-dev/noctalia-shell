@@ -1,18 +1,42 @@
 #include "system/brightness_service.h"
 
+#include "config/config_service.h"
 #include "core/log.h"
+#include "core/process.h"
+#include "core/timer_manager.h"
 #include "dbus/system_bus.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
+#include <cctype>
+#include <cerrno>
+#include <chrono>
 #include <cmath>
+#include <condition_variable>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <dirent.h>
+#include <fcntl.h>
 #include <filesystem>
 #include <fstream>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <poll.h>
+#include <queue>
 #include <sdbus-c++/IProxy.h>
 #include <sdbus-c++/Types.h>
+#include <string>
+#include <string_view>
+#include <sys/epoll.h>
+#include <sys/eventfd.h>
 #include <sys/inotify.h>
+#include <sys/wait.h>
+#include <thread>
 #include <unistd.h>
+#include <unordered_map>
+#include <vector>
 
 namespace {
 
@@ -20,61 +44,169 @@ namespace {
 
   namespace fs = std::filesystem;
 
-  // ── Backend enum (private) ──────────────────────────────────────────────────
-
-  enum class BrightnessBackend : std::uint8_t {
+  constexpr std::chrono::milliseconds kDdcDetectTimeout{15000};
+  constexpr std::chrono::milliseconds kDdcQueryTimeout{10000};
+  constexpr std::chrono::milliseconds kDdcSetTimeout{8000};
+  constexpr std::chrono::milliseconds kDdcRefreshInterval{5000};
+  constexpr std::chrono::seconds kDdcFailureCooldown{30};
+  constexpr int kDdcFailureThreshold = 3;
+  enum class RuntimeBackend : std::uint8_t {
     Backlight,
-    // DdcCi,
-    // Wayland,
+    Ddcutil,
   };
-
-  // ── Per-display internal state ──────────────────────────────────────────────
 
   struct DisplayInternal {
     BrightnessDisplay pub;
-    BrightnessBackend backend = BrightnessBackend::Backlight;
+    RuntimeBackend backend = RuntimeBackend::Backlight;
     int maxRaw = 0;
-    std::string sysfsPath;     // e.g. "/sys/class/backlight/intel_backlight"
-    std::string connectorName; // matched wayland connector, or empty
+    std::string sysfsPath;
+    std::string connectorName;
     int inotifyWd = -1;
+
+    int ddcBus = -1;
+    int failureCount = 0;
+    bool quarantined = false;
+    std::chrono::steady_clock::time_point cooldownUntil{};
   };
 
-  // ── logind D-Bus constants ──────────────────────────────────────────────────
+  struct DdcCandidate {
+    std::string connectorName;
+    std::string label;
+    int bus = -1;
+    int currentRaw = -1;
+    int maxRaw = 100;
+  };
 
-  static const sdbus::ServiceName k_logindBusName{"org.freedesktop.login1"};
-  static constexpr auto k_logindManagerInterface = "org.freedesktop.login1.Manager";
-  static constexpr auto k_logindSessionInterface = "org.freedesktop.login1.Session";
-  // ── sysfs helpers ───────────────────────────────────────────────────────────
+  struct CommandResult {
+    bool launched = false;
+    bool timedOut = false;
+    int exitCode = -1;
+    std::string output;
+  };
+
+  struct DdcJob {
+    std::uint64_t generation = 0;
+    std::string displayId;
+    int bus = -1;
+    int targetRaw = -1;
+  };
+
+  struct WorkerCompletion {
+    enum class Type : std::uint8_t {
+      Detect,
+      Refresh,
+      Set,
+    };
+
+    Type type = Type::Detect;
+    std::uint64_t generation = 0;
+    std::string displayId;
+    bool success = false;
+    bool timedOut = false;
+    int currentRaw = -1;
+    int maxRaw = 100;
+    std::string detail;
+    std::vector<DdcCandidate> candidates;
+  };
+
+  static const sdbus::ServiceName kLogindBusName{"org.freedesktop.login1"};
+  static constexpr auto kLogindManagerInterface = "org.freedesktop.login1.Manager";
+  static constexpr auto kLogindSessionInterface = "org.freedesktop.login1.Session";
+
+  std::string trim(std::string_view input) {
+    std::size_t start = 0;
+    while (start < input.size() && std::isspace(static_cast<unsigned char>(input[start])) != 0) {
+      ++start;
+    }
+    std::size_t end = input.size();
+    while (end > start && std::isspace(static_cast<unsigned char>(input[end - 1])) != 0) {
+      --end;
+    }
+    return std::string(input.substr(start, end - start));
+  }
+
+  std::string toLower(std::string_view input) {
+    std::string out(input);
+    std::transform(out.begin(), out.end(), out.begin(),
+                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    return out;
+  }
 
   int readSysfsInt(const std::string& path) {
-    std::ifstream f(path);
+    std::ifstream file(path);
     int value = -1;
-    if (f.is_open()) {
-      f >> value;
+    if (file.is_open()) {
+      file >> value;
     }
     return value;
   }
 
-  float readBrightness(const std::string& sysfsPath, int maxRaw) {
-    if (maxRaw <= 0) {
+  float normalizedBrightness(int currentRaw, int maxRaw) {
+    if (currentRaw < 0 || maxRaw <= 0) {
       return 0.0f;
     }
-    const int actual = readSysfsInt(sysfsPath + "/actual_brightness");
-    if (actual < 0) {
-      return 0.0f;
-    }
-    return std::clamp(static_cast<float>(actual) / static_cast<float>(maxRaw), 0.0f, 1.0f);
+    return std::clamp(static_cast<float>(currentRaw) / static_cast<float>(maxRaw), 0.0f, 1.0f);
   }
 
-  // Try to resolve which wayland connector a backlight belongs to by following the
-  // sysfs device tree. Returns empty string if no match found.
-  std::string resolveConnector(const std::string& sysfsPath, const WaylandConnection& wayland) {
-    // Follow /sys/class/backlight/<name>/device to find parent PCI/platform device,
-    // then look for DRM connector directories in its children.
+  float readBacklightBrightness(const std::string& sysfsPath, int maxRaw) {
+    const int actual = readSysfsInt(sysfsPath + "/actual_brightness");
+    return normalizedBrightness(actual, maxRaw);
+  }
+
+  const WaylandOutput* findOutputByConnector(const WaylandConnection& wayland, std::string_view connectorName) {
+    if (connectorName.empty()) {
+      return nullptr;
+    }
+    for (const auto& output : wayland.outputs()) {
+      if (output.connectorName == connectorName) {
+        return &output;
+      }
+    }
+    return nullptr;
+  }
+
+  bool matchesOutput(std::string_view match, const WaylandOutput& output) {
+    if (!output.connectorName.empty() && match == output.connectorName) {
+      return true;
+    }
+    if (!output.description.empty()) {
+      std::size_t pos = 0;
+      while ((pos = output.description.find(match, pos)) != std::string::npos) {
+        const bool startOk = (pos == 0 || std::isspace(static_cast<unsigned char>(output.description[pos - 1])) != 0);
+        const bool endOk = (pos + match.size() == output.description.size() ||
+                            std::isspace(static_cast<unsigned char>(output.description[pos + match.size()])) != 0);
+        if (startOk && endOk) {
+          return true;
+        }
+        ++pos;
+      }
+    }
+    return false;
+  }
+
+  BrightnessBackendPreference backendPreferenceForOutput(const BrightnessConfig& config, const WaylandOutput* output) {
+    if (output == nullptr) {
+      return BrightnessBackendPreference::Auto;
+    }
+
+    for (const auto& override : config.monitorOverrides) {
+      const std::string match = !override.match.empty() ? override.match : std::string{};
+      if (match.empty() || !matchesOutput(match, *output)) {
+        continue;
+      }
+      if (override.backend.has_value()) {
+        return *override.backend;
+      }
+      break;
+    }
+
+    return BrightnessBackendPreference::Auto;
+  }
+
+  std::string resolveBacklightConnector(const std::string& sysfsPath, const WaylandConnection& wayland) {
     std::error_code ec;
     const auto deviceLink = fs::read_symlink(sysfsPath + "/device", ec);
     if (ec) {
-      // No device symlink — try heuristic: if there's exactly one eDP output, assume it.
       for (const auto& output : wayland.outputs()) {
         if (output.connectorName.starts_with("eDP")) {
           return output.connectorName;
@@ -88,7 +220,6 @@ namespace {
       return {};
     }
 
-    // Walk /sys/class/drm/ looking for connectors whose device resolves to our parent.
     const std::string drmClassPath = "/sys/class/drm";
     DIR* dir = ::opendir(drmClassPath.c_str());
     if (dir == nullptr) {
@@ -98,7 +229,6 @@ namespace {
     std::string match;
     while (auto* entry = ::readdir(dir)) {
       const std::string name = entry->d_name;
-      // DRM connector dirs look like "card0-eDP-1", "card1-HDMI-A-1", etc.
       if (name.find('-') == std::string::npos) {
         continue;
       }
@@ -108,32 +238,27 @@ namespace {
         continue;
       }
 
-      if (drmDevicePath == devicePath) {
-        // Extract connector name: strip "cardN-" prefix
-        const auto dashPos = name.find('-');
-        if (dashPos != std::string::npos) {
-          const std::string connector = name.substr(dashPos + 1);
-          // Verify this connector exists in wayland outputs
-          for (const auto& output : wayland.outputs()) {
-            if (output.connectorName == connector) {
-              match = connector;
-              break;
-            }
-          }
-          if (!match.empty()) {
-            break;
-          }
-        }
+      if (drmDevicePath != devicePath) {
+        continue;
+      }
+
+      const auto dashPos = name.find('-');
+      if (dashPos == std::string::npos) {
+        continue;
+      }
+
+      const std::string connector = name.substr(dashPos + 1);
+      if (findOutputByConnector(wayland, connector) != nullptr) {
+        match = connector;
+        break;
       }
     }
     ::closedir(dir);
 
-    // Fallback: if still no match and single eDP, assume it
     if (match.empty()) {
       for (const auto& output : wayland.outputs()) {
         if (output.connectorName.starts_with("eDP")) {
-          match = output.connectorName;
-          break;
+          return output.connectorName;
         }
       }
     }
@@ -141,17 +266,27 @@ namespace {
     return match;
   }
 
-  // ── logind session path resolution ──────────────────────────────────────────
-
   sdbus::ObjectPath resolveSessionPath(sdbus::IConnection& connection) {
     try {
-      auto managerProxy = sdbus::createProxy(connection, k_logindBusName, sdbus::ObjectPath{"/org/freedesktop/login1"});
+      auto managerProxy = sdbus::createProxy(connection, kLogindBusName, sdbus::ObjectPath{"/org/freedesktop/login1"});
 
-      // GetSessionByPID(0) returns the session of the calling process.
+      if (const char* sessionId = std::getenv("XDG_SESSION_ID"); sessionId != nullptr && sessionId[0] != '\0') {
+        try {
+          sdbus::ObjectPath sessionPath;
+          managerProxy->callMethod("GetSession")
+              .onInterface(kLogindManagerInterface)
+              .withArguments(std::string(sessionId))
+              .storeResultsTo(sessionPath);
+          return sessionPath;
+        } catch (const sdbus::Error& e) {
+          kLog.debug("failed to resolve logind session via XDG_SESSION_ID={}: {}", sessionId, e.what());
+        }
+      }
+
       sdbus::ObjectPath sessionPath;
       managerProxy->callMethod("GetSessionByPID")
-          .onInterface(k_logindManagerInterface)
-          .withArguments(static_cast<std::uint32_t>(0))
+          .onInterface(kLogindManagerInterface)
+          .withArguments(static_cast<std::uint32_t>(::getpid()))
           .storeResultsTo(sessionPath);
       return sessionPath;
     } catch (const sdbus::Error& e) {
@@ -160,54 +295,434 @@ namespace {
     }
   }
 
-} // namespace
+  std::optional<int> parseTrailingInteger(std::string_view input) {
+    std::size_t end = input.size();
+    while (end > 0 && !std::isdigit(static_cast<unsigned char>(input[end - 1]))) {
+      --end;
+    }
+    if (end == 0) {
+      return std::nullopt;
+    }
 
-// ── Impl ────────────────────────────────────────────────────────────────────
+    std::size_t start = end;
+    while (start > 0 && std::isdigit(static_cast<unsigned char>(input[start - 1])) != 0) {
+      --start;
+    }
+    if (start == end) {
+      return std::nullopt;
+    }
 
-struct BrightnessService::Impl {
-  SystemBus& bus;
-  WaylandConnection& wayland;
-  ChangeCallback changeCallback;
-  std::vector<BrightnessDisplay> publicDisplays;
-  std::vector<DisplayInternal> internals;
-  std::unique_ptr<sdbus::IProxy> sessionProxy;
-  sdbus::ObjectPath sessionPath;
-  int inotifyFd = -1;
+    return std::atoi(std::string(input.substr(start, end - start)).c_str());
+  }
 
-  Impl(SystemBus& b, WaylandConnection& w) : bus(b), wayland(w) {}
+  std::optional<int> parseI2cBus(std::string_view line) {
+    const std::size_t pathPos = line.find("/dev/i2c-");
+    if (pathPos != std::string::npos) {
+      return parseTrailingInteger(line.substr(pathPos));
+    }
+    return parseTrailingInteger(line);
+  }
 
-  ~Impl() {
-    if (inotifyFd >= 0) {
-      for (auto& d : internals) {
-        if (d.inotifyWd >= 0) {
-          inotify_rm_watch(inotifyFd, d.inotifyWd);
+  std::string normalizeConnectorName(std::string_view raw) {
+    std::string connector = trim(raw);
+    if (connector.starts_with("card")) {
+      const auto dash = connector.find('-');
+      if (dash != std::string::npos) {
+        connector = connector.substr(dash + 1);
+      }
+    }
+    return connector;
+  }
+
+  std::optional<std::pair<int, int>> parseDdcVcpBrightness(const std::string& output) {
+    std::size_t start = 0;
+    while (start <= output.size()) {
+      const std::size_t end = output.find('\n', start);
+      const std::string line = output.substr(start, end == std::string::npos ? output.size() - start : end - start);
+      const std::string lower = toLower(line);
+      const std::size_t currentPos = lower.find("current value");
+      const std::size_t maxPos = lower.find("max value");
+      if (currentPos == std::string::npos || maxPos == std::string::npos || maxPos <= currentPos) {
+        if (end == std::string::npos) {
+          break;
+        }
+        start = end + 1;
+        continue;
+      }
+
+      const auto current = parseTrailingInteger(line.substr(currentPos, maxPos - currentPos));
+      const auto max = parseTrailingInteger(line.substr(maxPos));
+      if (current.has_value() && max.has_value() && *max > 0) {
+        return std::pair<int, int>{*current, *max};
+      }
+
+      if (end == std::string::npos) {
+        break;
+      }
+      start = end + 1;
+    }
+    return std::nullopt;
+  }
+
+  CommandResult runCommandCapture(const std::vector<std::string>& args, std::chrono::milliseconds timeout) {
+    CommandResult result;
+    if (args.empty() || args.front().empty()) {
+      return result;
+    }
+
+    int pipeFds[2] = {-1, -1};
+    if (::pipe2(pipeFds, O_CLOEXEC | O_NONBLOCK) != 0) {
+      return result;
+    }
+
+    const pid_t pid = ::fork();
+    if (pid < 0) {
+      ::close(pipeFds[0]);
+      ::close(pipeFds[1]);
+      return result;
+    }
+
+    if (pid == 0) {
+      ::dup2(pipeFds[1], STDOUT_FILENO);
+      ::dup2(pipeFds[1], STDERR_FILENO);
+      ::close(pipeFds[0]);
+      ::close(pipeFds[1]);
+
+      std::vector<char*> argv;
+      argv.reserve(args.size() + 1);
+      for (const auto& arg : args) {
+        argv.push_back(const_cast<char*>(arg.c_str()));
+      }
+      argv.push_back(nullptr);
+
+      ::execvp(argv[0], argv.data());
+      ::_exit(127);
+    }
+
+    result.launched = true;
+    ::close(pipeFds[1]);
+
+    std::string output;
+    bool childExited = false;
+    bool pipeOpen = true;
+    int status = 0;
+    const auto deadline = std::chrono::steady_clock::now() + timeout;
+
+    while (pipeOpen || !childExited) {
+      char buffer[4096];
+      while (true) {
+        const ssize_t n = ::read(pipeFds[0], buffer, sizeof(buffer));
+        if (n > 0) {
+          output.append(buffer, static_cast<std::size_t>(n));
+          continue;
+        }
+        if (n == 0) {
+          pipeOpen = false;
+        } else if (errno != EAGAIN && errno != EWOULDBLOCK) {
+          pipeOpen = false;
+        }
+        break;
+      }
+
+      if (!childExited) {
+        const pid_t waited = ::waitpid(pid, &status, WNOHANG);
+        if (waited == pid) {
+          childExited = true;
         }
       }
+
+      if ((!pipeOpen && childExited) || timeout.count() <= 0) {
+        break;
+      }
+
+      const auto now = std::chrono::steady_clock::now();
+      if (now >= deadline) {
+        result.timedOut = true;
+        ::kill(pid, SIGKILL);
+        ::waitpid(pid, &status, 0);
+        childExited = true;
+        break;
+      }
+
+      const int waitMs = static_cast<int>(
+          std::min<std::chrono::milliseconds>(std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now),
+                                              std::chrono::milliseconds(100))
+              .count());
+      pollfd fd{.fd = pipeFds[0], .events = POLLIN, .revents = 0};
+      (void)::poll(&fd, 1, waitMs);
+    }
+
+    ::close(pipeFds[0]);
+
+    if (WIFEXITED(status)) {
+      result.exitCode = WEXITSTATUS(status);
+    } else if (WIFSIGNALED(status)) {
+      result.exitCode = 128 + WTERMSIG(status);
+    }
+    result.output = std::move(output);
+    return result;
+  }
+
+  std::vector<std::string> ddcBaseArgs(int bus) {
+    return {"ddcutil", "--noconfig", "--disable-usb", "--bus", std::to_string(bus)};
+  }
+
+  std::optional<std::pair<int, int>> queryDdcBrightness(int bus, std::chrono::milliseconds timeout,
+                                                        std::string* detailOut) {
+    auto args = ddcBaseArgs(bus);
+    args.push_back("getvcp");
+    args.push_back("10");
+
+    const CommandResult result = runCommandCapture(args, timeout);
+    if (detailOut != nullptr) {
+      *detailOut = result.output;
+    }
+    if (!result.launched || result.timedOut || result.exitCode != 0) {
+      return std::nullopt;
+    }
+    return parseDdcVcpBrightness(result.output);
+  }
+
+  std::vector<DdcCandidate> detectDdcDisplays(std::chrono::milliseconds timeout, std::string* detailOut) {
+    std::vector<std::string> args{"ddcutil", "--noconfig", "--disable-usb", "detect"};
+    const CommandResult detectResult = runCommandCapture(args, timeout);
+    if (detailOut != nullptr) {
+      *detailOut = detectResult.output;
+    }
+    if (!detectResult.launched) {
+      kLog.warn("ddcutil detect could not be launched");
+      return {};
+    }
+    if (detectResult.timedOut) {
+      kLog.warn("ddcutil detect timed out after {}ms", timeout.count());
+      return {};
+    }
+    if (detectResult.exitCode != 0) {
+      kLog.warn("ddcutil detect failed with exit code {}: {}", detectResult.exitCode, trim(detectResult.output));
+      return {};
+    }
+
+    std::vector<DdcCandidate> candidates;
+    DdcCandidate current;
+    bool inDisplay = false;
+
+    auto flushCurrent = [&]() {
+      if (inDisplay && current.bus >= 0 && !current.connectorName.empty()) {
+        if (std::string getvcpDetail; true) {
+          const auto brightness = queryDdcBrightness(current.bus, kDdcQueryTimeout, &getvcpDetail);
+          if (brightness.has_value()) {
+            current.currentRaw = brightness->first;
+            current.maxRaw = brightness->second;
+          } else {
+            kLog.warn("ddcutil: skipping bus {} because brightness query failed: {}", current.bus, trim(getvcpDetail));
+          }
+        }
+        if (current.currentRaw >= 0 && current.maxRaw > 0) {
+          candidates.push_back(current);
+        }
+      }
+      current = DdcCandidate{};
+    };
+
+    std::size_t start = 0;
+    while (start <= detectResult.output.size()) {
+      const std::size_t end = detectResult.output.find('\n', start);
+      const std::string line = trim(detectResult.output.substr(
+          start, end == std::string::npos ? detectResult.output.size() - start : end - start));
+      if (line.starts_with("Display ")) {
+        flushCurrent();
+        inDisplay = true;
+      } else if (line.starts_with("I2C bus:")) {
+        if (const auto bus = parseI2cBus(line); bus.has_value()) {
+          current.bus = *bus;
+        }
+      } else if (line.starts_with("DRM connector:")) {
+        current.connectorName = normalizeConnectorName(line.substr(std::strlen("DRM connector:")));
+      } else if (line.starts_with("DRM_connector:")) {
+        current.connectorName = normalizeConnectorName(line.substr(std::strlen("DRM_connector:")));
+      } else if (line.starts_with("Monitor:")) {
+        current.label = trim(line.substr(std::strlen("Monitor:")));
+      } else if (line.starts_with("Model:") && current.label.empty()) {
+        current.label = trim(line.substr(std::strlen("Model:")));
+      }
+
+      if (end == std::string::npos) {
+        break;
+      }
+      start = end + 1;
+    }
+
+    flushCurrent();
+    kLog.info("ddcutil detect parsed {} candidate display(s)", candidates.size());
+    return candidates;
+  }
+
+} // namespace
+
+struct BrightnessService::Impl {
+  SystemBus* bus = nullptr;
+  WaylandConnection& wayland;
+  BrightnessConfig activeConfig;
+  ChangeCallback changeCallback;
+
+  std::vector<BrightnessDisplay> publicDisplays;
+  std::vector<DisplayInternal> internals;
+
+  std::unique_ptr<sdbus::IProxy> sessionProxy;
+  sdbus::ObjectPath sessionPath;
+
+  int inotifyFd = -1;
+  int eventFd = -1;
+  int epollFd = -1;
+  std::uint64_t generation = 0;
+  bool warnedMissingDdcutil = false;
+
+  Timer ddcRefreshTimer;
+
+  std::mutex workerMutex;
+  std::condition_variable workerCv;
+  std::thread workerThread;
+  bool workerStop = false;
+  bool detectPending = false;
+  std::uint64_t detectGeneration = 0;
+  std::unordered_map<std::string, DdcJob> pendingWrites;
+  std::unordered_map<std::string, DdcJob> pendingRefreshes;
+  std::queue<WorkerCompletion> completions;
+
+  Impl(SystemBus* systemBus, WaylandConnection& wl, const BrightnessConfig& config)
+      : bus(systemBus), wayland(wl), activeConfig(config) {
+    setupPollFds();
+    workerThread = std::thread([this]() { workerLoop(); });
+  }
+
+  ~Impl() {
+    ddcRefreshTimer.stop();
+    {
+      std::lock_guard lock(workerMutex);
+      workerStop = true;
+      workerCv.notify_all();
+    }
+    if (workerThread.joinable()) {
+      workerThread.join();
+    }
+    clearBacklightWatches();
+    if (epollFd >= 0) {
+      ::close(epollFd);
+    }
+    if (eventFd >= 0) {
+      ::close(eventFd);
+    }
+    if (inotifyFd >= 0) {
       ::close(inotifyFd);
     }
   }
 
-  void enumerate() {
-    internals.clear();
-
-    // Set up inotify
+  void setupPollFds() {
     if (inotifyFd < 0) {
       inotifyFd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
       if (inotifyFd < 0) {
-        kLog.warn("inotify_init1 failed, external brightness changes won't be tracked");
+        kLog.warn("inotify_init1 failed, external backlight changes won't be tracked");
       }
     }
 
-    // Resolve logind session
-    sessionPath = resolveSessionPath(bus.connection());
-    sessionProxy = sdbus::createProxy(bus.connection(), k_logindBusName, sessionPath);
+    if (eventFd < 0) {
+      eventFd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+      if (eventFd < 0) {
+        kLog.warn("eventfd failed, asynchronous DDC brightness updates will be disabled");
+      }
+    }
 
-    // Scan /sys/class/backlight/
+    if (epollFd < 0 && (inotifyFd >= 0 || eventFd >= 0)) {
+      epollFd = epoll_create1(EPOLL_CLOEXEC);
+      if (epollFd < 0) {
+        kLog.warn("epoll_create1 failed, brightness watcher integration degraded");
+        return;
+      }
+
+      auto addFd = [this](int fd) {
+        if (fd < 0) {
+          return;
+        }
+        epoll_event event{};
+        event.events = EPOLLIN;
+        event.data.fd = fd;
+        if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &event) != 0) {
+          kLog.warn("epoll_ctl add failed for fd {}", fd);
+        }
+      };
+
+      addFd(inotifyFd);
+      addFd(eventFd);
+    }
+  }
+
+  void reload(const BrightnessConfig& config) {
+    activeConfig = config;
+    rebuildState(true);
+  }
+
+  void onOutputsChanged() { rebuildState(true); }
+
+  void rebuildState(bool notify) {
+    const auto oldPublic = publicDisplays;
+    ++generation;
+
+    clearBacklightWatches();
+    removeDdcDisplays();
+    updateSessionProxy();
+    enumerateBacklights();
+    rebuildPublic();
+    scheduleDdcDetect();
+    updateDdcRefreshTimer();
+
+    if (notify && oldPublic != publicDisplays && changeCallback) {
+      changeCallback();
+    }
+  }
+
+  void updateSessionProxy() {
+    sessionProxy.reset();
+    if (bus == nullptr) {
+      return;
+    }
+
+    sessionPath = resolveSessionPath(bus->connection());
+    sessionProxy = sdbus::createProxy(bus->connection(), kLogindBusName, sessionPath);
+  }
+
+  void clearBacklightWatches() {
+    if (inotifyFd >= 0) {
+      for (auto& display : internals) {
+        if (display.inotifyWd >= 0) {
+          inotify_rm_watch(inotifyFd, display.inotifyWd);
+          display.inotifyWd = -1;
+        }
+      }
+    }
+    internals.erase(
+        std::remove_if(internals.begin(), internals.end(),
+                       [](const DisplayInternal& display) { return display.backend == RuntimeBackend::Backlight; }),
+        internals.end());
+  }
+
+  void removeDdcDisplays() {
+    internals.erase(
+        std::remove_if(internals.begin(), internals.end(),
+                       [](const DisplayInternal& display) { return display.backend == RuntimeBackend::Ddcutil; }),
+        internals.end());
+    {
+      std::lock_guard lock(workerMutex);
+      pendingWrites.clear();
+      pendingRefreshes.clear();
+      detectPending = false;
+    }
+  }
+
+  void enumerateBacklights() {
     const std::string backlightDir = "/sys/class/backlight";
     DIR* dir = ::opendir(backlightDir.c_str());
     if (dir == nullptr) {
       kLog.debug("no /sys/class/backlight directory");
-      rebuildPublic();
       return;
     }
 
@@ -220,106 +735,454 @@ struct BrightnessService::Impl {
       const std::string path = backlightDir + "/" + name;
       const int maxBrightness = readSysfsInt(path + "/max_brightness");
       if (maxBrightness <= 0) {
-        kLog.debug("skipping {} (max_brightness={})", name, maxBrightness);
         continue;
       }
 
-      DisplayInternal d;
-      d.backend = BrightnessBackend::Backlight;
-      d.maxRaw = maxBrightness;
-      d.sysfsPath = path;
-      d.connectorName = resolveConnector(path, wayland);
-      d.pub.id = name;
-      d.pub.brightness = readBrightness(path, maxBrightness);
-
-      // Use connector name as label if resolved, otherwise the sysfs name
-      if (!d.connectorName.empty()) {
-        // Find the wayland output description for a friendlier label
-        for (const auto& output : wayland.outputs()) {
-          if (output.connectorName == d.connectorName) {
-            d.pub.label = output.description.empty() ? d.connectorName : output.description;
-            break;
-          }
-        }
-      }
-      if (d.pub.label.empty()) {
-        d.pub.label = name;
+      const std::string connectorName = resolveBacklightConnector(path, wayland);
+      const WaylandOutput* output = findOutputByConnector(wayland, connectorName);
+      const BrightnessBackendPreference preference = backendPreferenceForOutput(activeConfig, output);
+      if (preference == BrightnessBackendPreference::None || preference == BrightnessBackendPreference::Ddcutil) {
+        continue;
       }
 
-      // Watch actual_brightness for external changes
+      if (sessionProxy == nullptr) {
+        kLog.debug("skipping backlight '{}' because logind brightness control is unavailable", name);
+        continue;
+      }
+
+      DisplayInternal display;
+      display.backend = RuntimeBackend::Backlight;
+      display.maxRaw = maxBrightness;
+      display.sysfsPath = path;
+      display.connectorName = connectorName;
+      display.pub.id = !connectorName.empty() ? connectorName : name;
+      display.pub.brightness = readBacklightBrightness(path, maxBrightness);
+
+      if (output != nullptr) {
+        display.pub.label = output->description.empty() ? output->connectorName : output->description;
+      }
+      if (display.pub.label.empty()) {
+        display.pub.label = !connectorName.empty() ? connectorName : name;
+      }
+
       if (inotifyFd >= 0) {
         const std::string watchPath = path + "/actual_brightness";
-        d.inotifyWd = inotify_add_watch(inotifyFd, watchPath.c_str(), IN_MODIFY);
-        if (d.inotifyWd < 0) {
+        display.inotifyWd = inotify_add_watch(inotifyFd, watchPath.c_str(), IN_MODIFY);
+        if (display.inotifyWd < 0) {
           kLog.debug("inotify_add_watch failed for {}", watchPath);
         }
       }
 
-      kLog.info("found backlight '{}' max={} current={:.0f}% connector={}", name, maxBrightness,
-                d.pub.brightness * 100.0f, d.connectorName.empty() ? "(none)" : d.connectorName);
-
-      internals.push_back(std::move(d));
+      kLog.info("found backlight '{}' current={:.0f}% connector={}", name, display.pub.brightness * 100.0f,
+                display.connectorName.empty() ? "(none)" : display.connectorName);
+      internals.push_back(std::move(display));
     }
-    ::closedir(dir);
 
-    rebuildPublic();
+    ::closedir(dir);
+  }
+
+  void scheduleDdcDetect() {
+    if (!activeConfig.enableDdcutil) {
+      return;
+    }
+    if (!process::commandExists("ddcutil")) {
+      if (!warnedMissingDdcutil) {
+        kLog.warn("brightness.enable_ddcutil is set but ddcutil is not installed");
+        warnedMissingDdcutil = true;
+      }
+      return;
+    }
+
+    warnedMissingDdcutil = false;
+    std::lock_guard lock(workerMutex);
+    detectPending = true;
+    detectGeneration = generation;
+    workerCv.notify_all();
+  }
+
+  void updateDdcRefreshTimer() {
+    const bool hasDdcDisplays = std::any_of(internals.begin(), internals.end(), [](const DisplayInternal& display) {
+      return display.backend == RuntimeBackend::Ddcutil;
+    });
+    if (!hasDdcDisplays) {
+      ddcRefreshTimer.stop();
+      return;
+    }
+
+    ddcRefreshTimer.startRepeating(kDdcRefreshInterval, [this]() { queueDdcRefreshes(); });
   }
 
   void rebuildPublic() {
     publicDisplays.clear();
     publicDisplays.reserve(internals.size());
-    for (const auto& d : internals) {
-      publicDisplays.push_back(d.pub);
+    for (const auto& display : internals) {
+      publicDisplays.push_back(display.pub);
     }
   }
 
   DisplayInternal* findInternal(const std::string& id) {
-    for (auto& d : internals) {
-      if (d.pub.id == id) {
-        return &d;
+    for (auto& display : internals) {
+      if (display.pub.id == id) {
+        return &display;
       }
     }
     return nullptr;
   }
 
+  const DisplayInternal* findInternal(const std::string& id) const {
+    for (const auto& display : internals) {
+      if (display.pub.id == id) {
+        return &display;
+      }
+    }
+    return nullptr;
+  }
+
+  void syncPublicDisplay(const DisplayInternal& display) {
+    for (auto& pub : publicDisplays) {
+      if (pub.id == display.pub.id) {
+        pub = display.pub;
+        return;
+      }
+    }
+  }
+
   void setBrightness(const std::string& displayId, float value) {
-    auto* d = findInternal(displayId);
-    if (d == nullptr) {
+    DisplayInternal* display = findInternal(displayId);
+    if (display == nullptr) {
       return;
     }
 
     value = std::clamp(value, 0.0f, 1.0f);
-
-    switch (d->backend) {
-    case BrightnessBackend::Backlight:
-      setBrightnessBacklight(*d, value);
+    switch (display->backend) {
+    case RuntimeBackend::Backlight:
+      setBacklightBrightness(*display, value);
+      break;
+    case RuntimeBackend::Ddcutil:
+      setDdcBrightness(*display, value);
       break;
     }
   }
 
-  void setBrightnessBacklight(DisplayInternal& d, float value) {
-    const auto rawValue = static_cast<std::uint32_t>(std::round(value * static_cast<float>(d.maxRaw)));
-
-    try {
-      sessionProxy->callMethod("SetBrightness")
-          .onInterface(k_logindSessionInterface)
-          .withArguments(std::string("backlight"), d.pub.id, rawValue);
-    } catch (const sdbus::Error& e) {
-      kLog.warn("SetBrightness failed for '{}': {}", d.pub.id, e.what());
+  void setBacklightBrightness(DisplayInternal& display, float value) {
+    if (sessionProxy == nullptr) {
       return;
     }
 
-    d.pub.brightness = value;
-    syncPublicDisplay(d);
+    const auto rawValue = static_cast<std::uint32_t>(std::round(value * static_cast<float>(display.maxRaw)));
+    try {
+      sessionProxy->callMethod("SetBrightness")
+          .onInterface(kLogindSessionInterface)
+          .withArguments(std::string("backlight"), display.pub.id, rawValue);
+    } catch (const sdbus::Error& e) {
+      kLog.warn("SetBrightness failed for '{}': {}", display.pub.id, e.what());
+    }
   }
 
-  void syncPublicDisplay(const DisplayInternal& d) {
-    for (auto& pub : publicDisplays) {
-      if (pub.id == d.pub.id) {
-        pub.brightness = d.pub.brightness;
-        break;
+  void setDdcBrightness(DisplayInternal& display, float value) {
+    const auto now = std::chrono::steady_clock::now();
+    if (display.quarantined && now < display.cooldownUntil) {
+      kLog.debug("ddcutil write skipped for '{}' during cooldown", display.pub.id);
+      return;
+    }
+
+    display.pub.brightness = value;
+    display.quarantined = false;
+    syncPublicDisplay(display);
+    if (changeCallback) {
+      changeCallback();
+    }
+
+    DdcJob job{
+        .generation = generation,
+        .displayId = display.pub.id,
+        .bus = display.ddcBus,
+        .targetRaw = static_cast<int>(std::round(value * 100.0f)),
+    };
+
+    std::lock_guard lock(workerMutex);
+    pendingWrites[display.pub.id] = job;
+    pendingRefreshes.erase(display.pub.id);
+    workerCv.notify_all();
+  }
+
+  void queueDdcRefreshes() {
+    const auto now = std::chrono::steady_clock::now();
+    std::lock_guard lock(workerMutex);
+
+    for (const auto& display : internals) {
+      if (display.backend != RuntimeBackend::Ddcutil) {
+        continue;
+      }
+      if (display.quarantined && now < display.cooldownUntil) {
+        continue;
+      }
+      if (pendingWrites.contains(display.pub.id)) {
+        continue;
+      }
+
+      pendingRefreshes[display.pub.id] = DdcJob{
+          .generation = generation,
+          .displayId = display.pub.id,
+          .bus = display.ddcBus,
+          .targetRaw = -1,
+      };
+    }
+
+    workerCv.notify_all();
+  }
+
+  void workerLoop() {
+    while (true) {
+      bool runDetect = false;
+      std::uint64_t detectGen = 0;
+      std::optional<DdcJob> writeJob;
+      std::optional<DdcJob> refreshJob;
+
+      {
+        std::unique_lock lock(workerMutex);
+        workerCv.wait(lock, [this]() {
+          return workerStop || detectPending || !pendingWrites.empty() || !pendingRefreshes.empty();
+        });
+
+        if (workerStop) {
+          return;
+        }
+
+        if (detectPending) {
+          runDetect = true;
+          detectGen = detectGeneration;
+          detectPending = false;
+        } else if (!pendingWrites.empty()) {
+          auto it = pendingWrites.begin();
+          writeJob = it->second;
+          pendingWrites.erase(it);
+          pendingRefreshes.erase(writeJob->displayId);
+        } else if (!pendingRefreshes.empty()) {
+          auto it = pendingRefreshes.begin();
+          refreshJob = it->second;
+          pendingRefreshes.erase(it);
+        }
+      }
+
+      if (runDetect) {
+        WorkerCompletion completion;
+        completion.type = WorkerCompletion::Type::Detect;
+        completion.generation = detectGen;
+        completion.success = true;
+        std::string detail;
+        completion.candidates = detectDdcDisplays(kDdcDetectTimeout, &detail);
+        completion.detail = std::move(detail);
+        enqueueCompletion(std::move(completion));
+        continue;
+      }
+
+      if (writeJob.has_value()) {
+        WorkerCompletion completion;
+        completion.type = WorkerCompletion::Type::Set;
+        completion.generation = writeJob->generation;
+        completion.displayId = writeJob->displayId;
+
+        auto args = ddcBaseArgs(writeJob->bus);
+        args.push_back("setvcp");
+        args.push_back("10");
+        args.push_back(std::to_string(std::clamp(writeJob->targetRaw, 0, 100)));
+
+        const CommandResult result = runCommandCapture(args, kDdcSetTimeout);
+        completion.timedOut = result.timedOut;
+        completion.detail = result.output;
+        completion.success = result.launched && !result.timedOut && result.exitCode == 0;
+
+        std::string readbackDetail;
+        if (const auto brightness = queryDdcBrightness(writeJob->bus, kDdcQueryTimeout, &readbackDetail);
+            brightness.has_value()) {
+          completion.currentRaw = brightness->first;
+          completion.maxRaw = brightness->second;
+        } else if (completion.detail.empty()) {
+          completion.detail = std::move(readbackDetail);
+        }
+
+        enqueueCompletion(std::move(completion));
+        continue;
+      }
+
+      if (refreshJob.has_value()) {
+        WorkerCompletion completion;
+        completion.type = WorkerCompletion::Type::Refresh;
+        completion.generation = refreshJob->generation;
+        completion.displayId = refreshJob->displayId;
+
+        std::string detail;
+        const auto brightness = queryDdcBrightness(refreshJob->bus, kDdcQueryTimeout, &detail);
+        completion.detail = std::move(detail);
+        completion.success = brightness.has_value();
+        if (brightness.has_value()) {
+          completion.currentRaw = brightness->first;
+          completion.maxRaw = brightness->second;
+        }
+
+        enqueueCompletion(std::move(completion));
       }
     }
+  }
+
+  void enqueueCompletion(WorkerCompletion completion) {
+    {
+      std::lock_guard lock(workerMutex);
+      completions.push(std::move(completion));
+    }
+
+    if (eventFd >= 0) {
+      const std::uint64_t one = 1;
+      const ssize_t ignored = ::write(eventFd, &one, sizeof(one));
+      (void)ignored;
+    }
+  }
+
+  void handlePollEvents() {
+    if (epollFd >= 0) {
+      epoll_event events[8];
+      const int count = epoll_wait(epollFd, events, 8, 0);
+      for (int i = 0; i < count; ++i) {
+        if (events[i].data.fd == inotifyFd) {
+          handleInotify();
+        } else if (events[i].data.fd == eventFd) {
+          drainWorkerEvent();
+          processCompletions();
+        }
+      }
+      return;
+    }
+
+    if (inotifyFd >= 0) {
+      handleInotify();
+    }
+  }
+
+  void drainWorkerEvent() {
+    if (eventFd < 0) {
+      return;
+    }
+
+    std::uint64_t value = 0;
+    while (::read(eventFd, &value, sizeof(value)) > 0) {
+    }
+  }
+
+  void processCompletions() {
+    std::queue<WorkerCompletion> ready;
+    {
+      std::lock_guard lock(workerMutex);
+      std::swap(ready, completions);
+    }
+
+    bool changed = false;
+    while (!ready.empty()) {
+      changed = applyCompletion(ready.front()) || changed;
+      ready.pop();
+    }
+
+    if (changed) {
+      rebuildPublic();
+      updateDdcRefreshTimer();
+      if (changeCallback) {
+        changeCallback();
+      }
+    }
+  }
+
+  bool applyCompletion(const WorkerCompletion& completion) {
+    if (completion.generation != generation) {
+      return false;
+    }
+
+    switch (completion.type) {
+    case WorkerCompletion::Type::Detect:
+      return applyDetectCompletion(completion);
+    case WorkerCompletion::Type::Refresh:
+    case WorkerCompletion::Type::Set:
+      return applyDdcUpdateCompletion(completion);
+    }
+    return false;
+  }
+
+  bool applyDetectCompletion(const WorkerCompletion& completion) {
+    const auto oldPublic = publicDisplays;
+
+    internals.erase(
+        std::remove_if(internals.begin(), internals.end(),
+                       [](const DisplayInternal& display) { return display.backend == RuntimeBackend::Ddcutil; }),
+        internals.end());
+
+    for (const auto& candidate : completion.candidates) {
+      const WaylandOutput* output = findOutputByConnector(wayland, candidate.connectorName);
+      if (output == nullptr) {
+        kLog.debug("ddcutil: skipping bus {} because connector '{}' is not active", candidate.bus,
+                   candidate.connectorName);
+        continue;
+      }
+
+      const BrightnessBackendPreference preference = backendPreferenceForOutput(activeConfig, output);
+      if (preference == BrightnessBackendPreference::None || preference == BrightnessBackendPreference::Backlight) {
+        continue;
+      }
+
+      const bool hasBacklight =
+          std::any_of(internals.begin(), internals.end(), [&candidate](const DisplayInternal& display) {
+            return display.backend == RuntimeBackend::Backlight && display.connectorName == candidate.connectorName;
+          });
+      if (hasBacklight && preference != BrightnessBackendPreference::Ddcutil) {
+        continue;
+      }
+
+      DisplayInternal display;
+      display.backend = RuntimeBackend::Ddcutil;
+      display.connectorName = candidate.connectorName;
+      display.ddcBus = candidate.bus;
+      display.maxRaw = candidate.maxRaw;
+      display.pub.id = candidate.connectorName;
+      display.pub.label = output->description.empty() ? output->connectorName : output->description;
+      display.pub.brightness = normalizedBrightness(candidate.currentRaw, candidate.maxRaw);
+      internals.push_back(std::move(display));
+
+      kLog.info("found ddcutil display connector={} bus={} current={:.0f}%", candidate.connectorName, candidate.bus,
+                normalizedBrightness(candidate.currentRaw, candidate.maxRaw) * 100.0f);
+    }
+
+    rebuildPublic();
+    return oldPublic != publicDisplays;
+  }
+
+  bool applyDdcUpdateCompletion(const WorkerCompletion& completion) {
+    DisplayInternal* display = findInternal(completion.displayId);
+    if (display == nullptr || display->backend != RuntimeBackend::Ddcutil) {
+      return false;
+    }
+
+    const float oldBrightness = display->pub.brightness;
+    if (completion.success && completion.maxRaw > 0 && completion.currentRaw >= 0) {
+      display->failureCount = 0;
+      display->quarantined = false;
+      display->cooldownUntil = {};
+      display->maxRaw = completion.maxRaw;
+      display->pub.brightness = normalizedBrightness(completion.currentRaw, completion.maxRaw);
+      syncPublicDisplay(*display);
+      return std::abs(display->pub.brightness - oldBrightness) > 0.001f;
+    }
+
+    ++display->failureCount;
+    if (display->failureCount >= kDdcFailureThreshold) {
+      display->quarantined = true;
+      display->cooldownUntil = std::chrono::steady_clock::now() + kDdcFailureCooldown;
+      kLog.warn("ddcutil {} failed for '{}' {} times; cooling down for {}s",
+                completion.type == WorkerCompletion::Type::Set ? "write" : "refresh", display->pub.id,
+                display->failureCount, kDdcFailureCooldown.count());
+    } else {
+      kLog.warn("ddcutil {} failed for '{}': {}", completion.type == WorkerCompletion::Type::Set ? "write" : "refresh",
+                display->pub.id, trim(completion.detail));
+    }
+
+    return false;
   }
 
   void handleInotify() {
@@ -327,32 +1190,32 @@ struct BrightnessService::Impl {
       return;
     }
 
-    alignas(inotify_event) char buf[4096];
+    alignas(inotify_event) char buffer[4096];
     bool changed = false;
 
     while (true) {
-      const auto n = ::read(inotifyFd, buf, sizeof(buf));
+      const ssize_t n = ::read(inotifyFd, buffer, sizeof(buffer));
       if (n <= 0) {
         break;
       }
 
       std::size_t offset = 0;
       while (offset < static_cast<std::size_t>(n)) {
-        // Consume the event — we just need to know something changed
-        auto* event = reinterpret_cast<inotify_event*>(buf + offset);
+        auto* event = reinterpret_cast<inotify_event*>(buffer + offset);
         offset += sizeof(inotify_event) + event->len;
 
-        // Find which display this wd belongs to and refresh its brightness
-        for (auto& d : internals) {
-          if (d.inotifyWd == event->wd) {
-            const float newBrightness = readBrightness(d.sysfsPath, d.maxRaw);
-            if (std::abs(newBrightness - d.pub.brightness) > 0.001f) {
-              d.pub.brightness = newBrightness;
-              syncPublicDisplay(d);
-              changed = true;
-            }
-            break;
+        for (auto& display : internals) {
+          if (display.backend != RuntimeBackend::Backlight || display.inotifyWd != event->wd) {
+            continue;
           }
+
+          const float newBrightness = readBacklightBrightness(display.sysfsPath, display.maxRaw);
+          if (std::abs(newBrightness - display.pub.brightness) > 0.001f) {
+            display.pub.brightness = newBrightness;
+            syncPublicDisplay(display);
+            changed = true;
+          }
+          break;
         }
       }
     }
@@ -366,35 +1229,36 @@ struct BrightnessService::Impl {
     if (output == nullptr) {
       return nullptr;
     }
-    auto* wlOutput = wayland.findOutputByWl(output);
+
+    const WaylandOutput* wlOutput = nullptr;
+    for (const auto& candidate : wayland.outputs()) {
+      if (candidate.output == output) {
+        wlOutput = &candidate;
+        break;
+      }
+    }
     if (wlOutput == nullptr) {
       return nullptr;
     }
 
-    for (const auto& d : internals) {
-      if (d.connectorName == wlOutput->connectorName) {
-        // Return from the public vector for stable pointers
-        for (const auto& pub : publicDisplays) {
-          if (pub.id == d.pub.id) {
-            return &pub;
-          }
+    for (const auto& display : internals) {
+      if (display.connectorName != wlOutput->connectorName) {
+        continue;
+      }
+      for (const auto& pub : publicDisplays) {
+        if (pub.id == display.pub.id) {
+          return &pub;
         }
       }
-    }
-
-    // Fallback: if only one display, return it
-    if (publicDisplays.size() == 1) {
-      return &publicDisplays[0];
     }
 
     return nullptr;
   }
 };
 
-// ── BrightnessService public methods ────────────────────────────────────────
-
-BrightnessService::BrightnessService(SystemBus& bus, WaylandConnection& wayland) : m_impl(new Impl(bus, wayland)) {
-  m_impl->enumerate();
+BrightnessService::BrightnessService(SystemBus* bus, WaylandConnection& wayland, const BrightnessConfig& config)
+    : m_impl(new Impl(bus, wayland, config)) {
+  m_impl->rebuildState(false);
 }
 
 BrightnessService::~BrightnessService() { delete m_impl; }
@@ -402,9 +1266,9 @@ BrightnessService::~BrightnessService() { delete m_impl; }
 const std::vector<BrightnessDisplay>& BrightnessService::displays() const noexcept { return m_impl->publicDisplays; }
 
 const BrightnessDisplay* BrightnessService::findDisplay(const std::string& id) const {
-  for (const auto& d : m_impl->publicDisplays) {
-    if (d.id == id) {
-      return &d;
+  for (const auto& display : m_impl->publicDisplays) {
+    if (display.id == id) {
+      return &display;
     }
   }
   return nullptr;
@@ -420,8 +1284,12 @@ void BrightnessService::setBrightness(const std::string& displayId, float value)
   m_impl->setBrightness(displayId, value);
 }
 
+void BrightnessService::reload(const BrightnessConfig& config) { m_impl->reload(config); }
+
+void BrightnessService::onOutputsChanged() { m_impl->onOutputsChanged(); }
+
 void BrightnessService::setChangeCallback(ChangeCallback callback) { m_impl->changeCallback = std::move(callback); }
 
-int BrightnessService::watchFd() const noexcept { return m_impl->inotifyFd; }
+int BrightnessService::watchFd() const noexcept { return m_impl->epollFd >= 0 ? m_impl->epollFd : m_impl->inotifyFd; }
 
-void BrightnessService::dispatchWatch() { m_impl->handleInotify(); }
+void BrightnessService::dispatchWatch() { m_impl->handlePollEvents(); }

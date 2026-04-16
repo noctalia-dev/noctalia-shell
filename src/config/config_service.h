@@ -241,6 +241,27 @@ struct AudioConfig {
   bool enableOverdrive = false;
 };
 
+enum class BrightnessBackendPreference : std::uint8_t {
+  Auto = 0,
+  None = 1,
+  Backlight = 2,
+  Ddcutil = 3,
+};
+
+struct BrightnessMonitorOverride {
+  std::string match;
+  std::optional<BrightnessBackendPreference> backend;
+
+  bool operator==(const BrightnessMonitorOverride&) const = default;
+};
+
+struct BrightnessConfig {
+  bool enableDdcutil = false;
+  std::vector<BrightnessMonitorOverride> monitorOverrides;
+
+  bool operator==(const BrightnessConfig&) const = default;
+};
+
 enum class KeybindAction : std::uint8_t {
   Validate = 0,
   Cancel = 1,
@@ -330,6 +351,7 @@ struct Config {
   NotificationConfig notification;
   WeatherConfig weather;
   AudioConfig audio;
+  BrightnessConfig brightness;
   KeybindsConfig keybinds;
   NightLightConfig nightlight;
   IdleConfig idle;

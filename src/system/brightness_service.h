@@ -6,19 +6,22 @@
 
 class SystemBus;
 class WaylandConnection;
+struct BrightnessConfig;
 struct wl_output;
 
 struct BrightnessDisplay {
   std::string id;       // opaque unique key
   std::string label;    // human-readable (connector name or description)
   float brightness = 0; // 0.0–1.0 normalized
+
+  bool operator==(const BrightnessDisplay&) const = default;
 };
 
 class BrightnessService {
 public:
   using ChangeCallback = std::function<void()>;
 
-  BrightnessService(SystemBus& bus, WaylandConnection& wayland);
+  BrightnessService(SystemBus* bus, WaylandConnection& wayland, const BrightnessConfig& config);
   ~BrightnessService();
 
   BrightnessService(const BrightnessService&) = delete;
@@ -30,6 +33,8 @@ public:
   [[nodiscard]] bool available() const noexcept;
 
   void setBrightness(const std::string& displayId, float value);
+  void reload(const BrightnessConfig& config);
+  void onOutputsChanged();
 
   void setChangeCallback(ChangeCallback callback);
 

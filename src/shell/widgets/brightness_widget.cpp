@@ -101,7 +101,14 @@ void BrightnessWidget::syncState(Renderer& renderer) {
   }
 
   const auto* display = m_brightness->findByOutput(m_output);
-  const float brightness = display != nullptr ? display->brightness : 0.0f;
+  if (display == nullptr) {
+    if (rootNode != nullptr) {
+      rootNode->setVisible(false);
+    }
+    return;
+  }
+
+  const float brightness = display->brightness;
 
   if (std::abs(brightness - m_lastBrightness) < 0.001f) {
     return;

@@ -15,6 +15,7 @@ Changes are detected automatically via inotify — no restart required.
 - [Dock](#dock)
 - [Weather](#weather)
 - [Audio](#audio)
+- [Brightness](#brightness)
 - [Night Light](#night-light)
 - [Idle](#idle)
 - [Shell](#shell)
@@ -695,6 +696,31 @@ enable_overdrive = false   # allow the audio volume sliders to go above 100%
 
 When `enable_overdrive` is `false`, the Control Center output and microphone sliders clamp to `100%`.
 When it is `true`, those sliders allow values up to `150%`.
+
+---
+
+## Brightness
+
+Brightness control uses the kernel backlight interface by default. `ddcutil` support is opt-in and intended for external monitors that expose DDC/CI brightness.
+
+```toml
+[brightness]
+enable_ddcutil = false
+
+[brightness.monitor.eDP-1]
+backend = "backlight"      # auto | none | backlight | ddcutil
+
+[brightness.monitor.DP-1]
+backend = "ddcutil"
+```
+
+Notes:
+- `enable_ddcutil = true` only enables DDC/CI discovery. It does not force every monitor onto `ddcutil`.
+- Per-monitor overrides use the same connector/description matching rules as bar monitor overrides.
+- Mixed setups are supported: an internal laptop panel can stay on `backlight` while an external `DP-1` or `HDMI-A-1` display uses `ddcutil`.
+- `backend = "auto"` prefers kernel backlight when available and falls back to `ddcutil` for matched external displays.
+- `backend = "none"` hides brightness control for the matched display.
+- `ddcutil` is treated as best-effort. Repeated DDC failures temporarily cool down that display instead of hammering the monitor bus.
 
 ---
 

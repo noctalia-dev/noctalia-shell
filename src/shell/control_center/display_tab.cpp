@@ -41,6 +41,7 @@ std::unique_ptr<Flex> DisplayTab::create() {
 
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);
+  tab->setAlign(FlexAlign::Stretch);
   tab->setGap(Style::spaceMd * scale);
   m_rootLayout = tab.get();
 
@@ -85,6 +86,22 @@ void DisplayTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
   }
 
   rebuildCards(renderer);
+
+  const float scale = contentScale();
+  const float cardWidth = std::max(1.0f, contentWidth);
+  const float cardInnerWidth = std::max(1.0f, cardWidth - Style::spaceMd * scale * 2.0f);
+  const float headerTextMaxWidth =
+      std::max(1.0f, cardInnerWidth - Style::fontSizeTitle * scale - Style::spaceSm * scale);
+  for (auto& card : m_cards) {
+    if (card.card != nullptr) {
+      card.card->setMinWidth(cardWidth);
+    }
+    if (card.nameLabel != nullptr) {
+      card.nameLabel->setMaxLines(1);
+      card.nameLabel->setMaxWidth(headerTextMaxWidth);
+    }
+  }
+
   m_rootLayout->setSize(contentWidth, bodyHeight);
   m_rootLayout->layout(renderer);
 }

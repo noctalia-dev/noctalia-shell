@@ -95,6 +95,23 @@ namespace {
     return out;
   }
 
+  std::optional<BrightnessBackendPreference> parseBrightnessBackendPreference(std::string_view raw) {
+    const std::string value = toLower(trim(raw));
+    if (value.empty() || value == "auto") {
+      return BrightnessBackendPreference::Auto;
+    }
+    if (value == "none" || value == "off" || value == "disabled") {
+      return BrightnessBackendPreference::None;
+    }
+    if (value == "backlight" || value == "sysfs") {
+      return BrightnessBackendPreference::Backlight;
+    }
+    if (value == "ddcutil" || value == "ddc" || value == "ddcci" || value == "ddc/ci") {
+      return BrightnessBackendPreference::Ddcutil;
+    }
+    return std::nullopt;
+  }
+
   std::optional<KeyChord> parseKeyChord(std::string_view rawSpec) {
     const std::string spec = trim(rawSpec);
     if (spec.empty()) {
@@ -1416,6 +1433,38 @@ void ConfigService::parseTable(const toml::table& tbl) {
     auto& audio = m_config.audio;
     if (auto v = (*audioTbl)["enable_overdrive"].value<bool>()) {
       audio.enableOverdrive = *v;
+    }
+  }
+
+  // Parse [brightness]
+  if (auto* brightnessTbl = tbl["brightness"].as_table()) {
+    auto& brightness = m_config.brightness;
+    if (auto v = (*brightnessTbl)["enable_ddcutil"].value<bool>()) {
+      brightness.enableDdcutil = *v;
+    }
+    if (auto* monitorTblMap = (*brightnessTbl)["monitor"].as_table()) {
+      for (const auto& [name, node] : *monitorTblMap) {
+        auto* entryTbl = node.as_table();
+        if (entryTbl == nullptr) {
+          continue;
+        }
+
+        BrightnessMonitorOverride override;
+        override.match = std::string(name.str());
+
+        if (auto v = (*entryTbl)["match"].value<std::string>()) {
+          override.match = *v;
+        }
+        if (auto v = (*entryTbl)["backend"].value<std::string>()) {
+          if (const auto parsed = parseBrightnessBackendPreference(*v); parsed.has_value()) {
+            override.backend = *parsed;
+          } else {
+            kLog.warn("invalid brightness backend '{}' for monitor override '{}'", *v, override.match);
+          }
+        }
+
+        brightness.monitorOverrides.push_back(std::move(override));
+      }
     }
   }
 

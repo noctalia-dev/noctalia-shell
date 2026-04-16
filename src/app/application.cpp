@@ -232,6 +232,9 @@ void Application::initServices() {
   Input::setClipboardService(&m_clipboardService);
 
   m_wayland.setOutputChangeCallback([this]() {
+    if (m_brightnessService != nullptr) {
+      m_brightnessService->onOutputsChanged();
+    }
     m_wallpaper.onOutputChange();
     m_overview.onOutputChange();
     m_bar.onOutputChange();
@@ -331,20 +334,6 @@ void Application::initServices() {
     }
 
     try {
-      m_brightnessService = std::make_unique<BrightnessService>(*m_systemBus, m_wayland);
-      m_brightnessService->setChangeCallback([this, shouldRefreshControlCenter]() {
-        m_brightnessOsd.onBrightnessChanged(*m_brightnessService);
-        m_bar.refresh();
-        if (shouldRefreshControlCenter()) {
-          m_panelManager.refresh();
-        }
-      });
-    } catch (const std::exception& e) {
-      kLog.warn("brightness service disabled: {}", e.what());
-      m_brightnessService.reset();
-    }
-
-    try {
       m_networkService = std::make_unique<NetworkService>(*m_systemBus);
       m_networkService->setChangeCallback([this, shouldRefreshControlCenter](const NetworkState& /*state*/) {
         m_bar.refresh();
@@ -399,6 +388,31 @@ void Application::initServices() {
         m_bluetoothAgent.reset();
       }
     }
+  }
+
+  try {
+    m_brightnessService =
+        std::make_unique<BrightnessService>(m_systemBus.get(), m_wayland, m_configService.config().brightness);
+    m_brightnessService->setChangeCallback([this, shouldRefreshControlCenter]() {
+      m_brightnessOsd.onBrightnessChanged(*m_brightnessService);
+      m_bar.refresh();
+      if (shouldRefreshControlCenter()) {
+        m_panelManager.refresh();
+      }
+    });
+    m_configService.addReloadCallback([this, shouldRefreshControlCenter]() {
+      if (m_brightnessService == nullptr) {
+        return;
+      }
+      m_brightnessService->reload(m_configService.config().brightness);
+      m_bar.refresh();
+      if (shouldRefreshControlCenter()) {
+        m_panelManager.refresh();
+      }
+    });
+  } catch (const std::exception& e) {
+    kLog.warn("brightness service disabled: {}", e.what());
+    m_brightnessService.reset();
   }
 
   try {
