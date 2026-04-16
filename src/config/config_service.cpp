@@ -1362,6 +1362,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
     auto& notif = m_config.notification;
     if (auto v = (*notifTbl)["background_opacity"].value<double>())
       notif.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+    if (auto v = (*notifTbl)["background_blur"].value<bool>())
+      notif.backgroundBlur = *v;
   }
 
   // Parse [dock]

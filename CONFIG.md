@@ -680,9 +680,9 @@ The OSD currently powers the volume HUD and defaults to `top_right`.
 ```toml
 [notification]
 background_opacity = 0.97   # toast card background alpha (0.0–1.0).
-                            # Lower values let the compositor blur (when
-                            # `bar.background_blur = true` and supported)
-                            # show through behind the toast.
+                            # Lower values let the compositor blur show
+                            # through behind the toast.
+background_blur    = true   # request compositor background blur behind toasts
 ```
 
 ---

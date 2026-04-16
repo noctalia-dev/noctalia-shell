@@ -1145,7 +1145,9 @@ void NotificationToast::updateInputRegion(Instance& inst) const {
   }
 
   inst.surface->setInputRegion(rects);
-  inst.surface->setBlurRegion(blurRects);
+
+  const bool blur = m_config != nullptr ? m_config->config().notification.backgroundBlur : true;
+  inst.surface->setBlurRegion(blur ? blurRects : std::vector<InputRect>{});
 }
 
 InputArea* NotificationToast::buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary,

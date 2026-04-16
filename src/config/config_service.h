@@ -205,6 +205,7 @@ struct OsdConfig {
 
 struct NotificationConfig {
   float backgroundOpacity = 0.97f; // toast card background alpha (0.0–1.0)
+  bool backgroundBlur = true;
 };
 
 enum class ClipboardAutoPasteMode : std::uint8_t {
