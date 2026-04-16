@@ -158,7 +158,7 @@ SmartPanel {
               icon: "settings"
               tooltipText: I18n.tr("tooltips.open-settings")
               baseSize: Style.baseWidgetSize * 0.8
-              onClicked: SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, 0, screen)
+              onClicked: SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, panelViewMode === "ethernet" ? 1 : 0, screen)
             }
 
             NIconButton {
