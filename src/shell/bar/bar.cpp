@@ -97,15 +97,18 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
       }
       const float pad = w->barCapsuleSpec().padding * scale;
       float shellW = iw + 2.0f * pad;
-      const float shellH = ih + 2.0f * pad;
+      float shellH = ih + 2.0f * pad;
       float innerX = pad;
-      const float innerY = pad;
+      float innerY = pad;
       if (isVertical) {
         // Shared vertical-bar capsule policy:
-        // tighter cross-axis padding + clamp to available cross-axis slot width.
+        // tighter but symmetric capsule padding, plus cross-axis width clamping.
+        // Symmetric padding keeps icon-only capsules circular (not vertically oval).
         const float padCross = std::min(pad, Style::spaceXs * scale);
+        shellH = ih + 2.0f * padCross;
         shellW = std::max(iw, std::min(iw + 2.0f * padCross, slotCross));
         innerX = std::max(0.0f, (shellW - iw) * 0.5f);
+        innerY = std::max(0.0f, (shellH - ih) * 0.5f);
       }
       shell->setSize(shellW, shellH);
       bg->setVisible(true);
