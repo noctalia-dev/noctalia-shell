@@ -42,6 +42,9 @@ struct MprisPlayerInfo {
   bool operator==(const MprisPlayerInfo&) const = default;
 };
 
+// Joins artist names with ", ".
+[[nodiscard]] std::string joinedArtists(const std::vector<std::string>& artists);
+
 class MprisService {
 public:
   explicit MprisService(SessionBus& bus);

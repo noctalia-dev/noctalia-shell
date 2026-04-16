@@ -1,10 +1,19 @@
 #include "system/distro_info.h"
 
 #include <cctype>
+#include <cstdint>
+#include <cstdlib>
+#include <ctime>
+#include <fcntl.h>
 #include <filesystem>
+#include <format>
 #include <fstream>
+#include <pwd.h>
 #include <string>
 #include <string_view>
+#include <sys/stat.h>
+#include <sys/utsname.h>
+#include <unistd.h>
 #include <unordered_map>
 
 namespace {
@@ -105,4 +114,87 @@ std::optional<DistroInfo> DistroDetector::detect() {
   }
 
   return std::nullopt;
+}
+
+std::string distroLabel() {
+  if (const auto distro = DistroDetector::detect(); distro.has_value()) {
+    if (!distro->prettyName.empty()) {
+      return distro->prettyName;
+    }
+    if (!distro->name.empty()) {
+      return distro->name;
+    }
+    if (!distro->id.empty()) {
+      return distro->id;
+    }
+  }
+  return "Unknown distro";
+}
+
+std::string kernelRelease() {
+  struct utsname un{};
+  if (uname(&un) == 0 && un.release[0] != '\0') {
+    return un.release;
+  }
+  return "unknown";
+}
+
+std::string osAgeLabel() {
+  std::uint64_t oldest = 0;
+
+  for (const char* path : {"/", "/etc", "/var", "/home"}) {
+    struct statx sx{};
+    if (statx(AT_FDCWD, path, AT_SYMLINK_NOFOLLOW, STATX_BTIME, &sx) == 0 && (sx.stx_mask & STATX_BTIME) != 0 &&
+        sx.stx_btime.tv_sec > 0) {
+      const std::uint64_t birth = static_cast<std::uint64_t>(sx.stx_btime.tv_sec);
+      if (oldest == 0 || birth < oldest) {
+        oldest = birth;
+      }
+    }
+  }
+
+  if (oldest == 0) {
+    struct stat st{};
+    if (stat("/etc/machine-id", &st) == 0 && st.st_mtime > 0) {
+      oldest = static_cast<std::uint64_t>(st.st_mtime);
+    }
+  }
+
+  if (oldest == 0) {
+    return "unknown";
+  }
+  const std::time_t now = std::time(nullptr);
+  if (now <= 0 || static_cast<std::uint64_t>(now) <= oldest) {
+    return "<1d";
+  }
+
+  const std::uint64_t seconds = static_cast<std::uint64_t>(now) - oldest;
+  const std::uint64_t days = seconds / 86400;
+  const std::uint64_t years = days / 365;
+  const std::uint64_t months = (days % 365) / 30;
+  if (years > 0) {
+    if (months > 0) {
+      return std::format("{}y {}mo", years, months);
+    }
+    return std::format("{}y", years);
+  }
+  return std::format("{}d", days);
+}
+
+std::string sessionDisplayName() {
+  struct passwd* pw = getpwuid(getuid());
+  const char* loginEnv = std::getenv("USER");
+  std::string login = "user";
+  if (pw != nullptr) {
+    login = pw->pw_name;
+  } else if (loginEnv != nullptr) {
+    login = loginEnv;
+  }
+
+  if (pw != nullptr && pw->pw_gecos != nullptr && pw->pw_gecos[0] != '\0') {
+    std::string gecos = pw->pw_gecos;
+    const auto comma = gecos.find(',');
+    return comma == std::string::npos ? gecos : gecos.substr(0, comma);
+  }
+  return login;
 }

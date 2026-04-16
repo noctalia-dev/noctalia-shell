@@ -1,13 +1,14 @@
 #include "shell/control_center/overview_tab.h"
 
+#include "config/config_service.h"
+#include "dbus/mpris/mpris_service.h"
 #include "dbus/power/power_profiles_service.h"
 #include "dbus/upower/upower_service.h"
-#include "dbus/mpris/mpris_service.h"
 #include "pipewire/pipewire_service.h"
 #include "shell/panel/panel_manager.h"
-#include "config/config_service.h"
 #include "system/distro_info.h"
 #include "system/weather_service.h"
+#include "time/time_service.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
@@ -15,185 +16,13 @@
 #include "ui/controls/label.h"
 
 #include <cmath>
-#include <cstdlib>
-#include <ctime>
-#include <fstream>
 #include <format>
 #include <memory>
-#include <optional>
-#include <pwd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/utsname.h>
 #include <string>
-#include <unistd.h>
-#include <vector>
 
 using namespace control_center;
 
 namespace {
-
-std::string joinArtists(const std::vector<std::string>& artists) {
-  if (artists.empty()) {
-    return {};
-  }
-  std::string joined = artists.front();
-  for (std::size_t i = 1; i < artists.size(); ++i) {
-    joined += ", ";
-    joined += artists[i];
-  }
-  return joined;
-}
-
-struct SessionIdentity {
-  std::string displayName;
-};
-
-SessionIdentity sessionIdentity() {
-  struct passwd* pw = getpwuid(getuid());
-  const char* loginEnv = std::getenv("USER");
-  std::string login = "user";
-  if (pw != nullptr) {
-    login = pw->pw_name;
-  } else if (loginEnv != nullptr) {
-    login = loginEnv;
-  }
-
-  std::string display = login;
-  if (pw != nullptr && pw->pw_gecos != nullptr && pw->pw_gecos[0] != '\0') {
-    std::string gecos = pw->pw_gecos;
-    const auto comma = gecos.find(',');
-    display = comma == std::string::npos ? gecos : gecos.substr(0, comma);
-  }
-  return {.displayName = display};
-}
-
-std::optional<std::uint64_t> readUptimeSeconds() {
-  std::ifstream in{"/proc/uptime"};
-  double up = 0.0;
-  double idleDummy = 0.0;
-  if (in >> up >> idleDummy) {
-    (void)idleDummy;
-    return static_cast<std::uint64_t>(up);
-  }
-  return std::nullopt;
-}
-
-std::string formatUptime(std::uint64_t totalSeconds) {
-  const std::uint64_t days = totalSeconds / 86400;
-  std::uint64_t rem = totalSeconds % 86400;
-  const std::uint64_t hours = rem / 3600;
-  rem %= 3600;
-  const std::uint64_t minutes = rem / 60;
-  if (days > 0) {
-    return std::format("{}d {}h {}m", days, hours, minutes);
-  }
-  if (hours > 0) {
-    return std::format("{}h {}m", hours, minutes);
-  }
-  if (minutes > 0) {
-    return std::format("{}m", minutes);
-  }
-  return "<1m";
-}
-
-std::string batteryStateText(BatteryState state) {
-  switch (state) {
-  case BatteryState::Charging:
-    return "Charging";
-  case BatteryState::Discharging:
-    return "Discharging";
-  case BatteryState::FullyCharged:
-    return "Charged";
-  case BatteryState::Empty:
-    return "Empty";
-  case BatteryState::PendingCharge:
-    return "Pending charge";
-  case BatteryState::PendingDischarge:
-    return "Pending discharge";
-  case BatteryState::Unknown:
-  default:
-    return "Battery";
-  }
-}
-
-std::string profileLabel(std::string_view profile) {
-  if (profile == "power-saver") {
-    return "Power saver";
-  }
-  if (profile == "balanced") {
-    return "Balanced";
-  }
-  if (profile == "performance") {
-    return "Performance";
-  }
-  return std::string(profile);
-}
-
-std::string kernelRelease() {
-  struct utsname un{};
-  if (uname(&un) == 0 && un.release[0] != '\0') {
-    return un.release;
-  }
-  return "unknown";
-}
-
-std::string distroLabel() {
-  if (const auto distro = DistroDetector::detect(); distro.has_value()) {
-    if (!distro->prettyName.empty()) {
-      return distro->prettyName;
-    }
-    if (!distro->name.empty()) {
-      return distro->name;
-    }
-    if (!distro->id.empty()) {
-      return distro->id;
-    }
-  }
-  return "Unknown distro";
-}
-
-std::string osAgeLabel() {
-  std::uint64_t oldest = 0;
-
-  for (const char* path : {"/", "/etc", "/var", "/home"}) {
-    struct statx sx {};
-    if (statx(AT_FDCWD, path, AT_SYMLINK_NOFOLLOW, STATX_BTIME, &sx) == 0 &&
-        (sx.stx_mask & STATX_BTIME) != 0 && sx.stx_btime.tv_sec > 0) {
-      const std::uint64_t birth = static_cast<std::uint64_t>(sx.stx_btime.tv_sec);
-      if (oldest == 0 || birth < oldest) {
-        oldest = birth;
-      }
-    }
-  }
-
-  if (oldest == 0) {
-    struct stat st {};
-    if (stat("/etc/machine-id", &st) == 0 && st.st_mtime > 0) {
-      oldest = static_cast<std::uint64_t>(st.st_mtime);
-    }
-  }
-
-  if (oldest == 0) {
-    return "unknown";
-  }
-  const std::time_t now = std::time(nullptr);
-  if (now <= 0 || static_cast<std::uint64_t>(now) <= oldest) {
-    return "<1d";
-  }
-
-  const std::uint64_t seconds = static_cast<std::uint64_t>(now) - oldest;
-  const std::uint64_t days = seconds / 86400;
-  const std::uint64_t years = days / 365;
-  const std::uint64_t months = (days % 365) / 30;
-  if (years > 0) {
-    if (months > 0) {
-      return std::format("{}y {}mo", years, months);
-    }
-    return std::format("{}y", years);
-  }
-  return std::format("{}d", days);
-}
 
 void styleOverviewCard(Flex& card, float scale) {
   applyOutlinedCard(card, scale);
@@ -209,7 +38,7 @@ OverviewTab::OverviewTab(MprisService* mpris, WeatherService* weather, PipeWireS
 
 std::unique_ptr<Flex> OverviewTab::create() {
   const float scale = contentScale();
-  const SessionIdentity identity = sessionIdentity();
+  const std::string displayName = sessionDisplayName();
 
   auto tab = std::make_unique<Flex>();
   tab->setDirection(FlexDirection::Vertical);
@@ -333,7 +162,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userHeader->setGap(Style::spaceSm * scale);
 
   auto userTitle = std::make_unique<Label>();
-  userTitle->setText(identity.displayName);
+  userTitle->setText(displayName);
   userTitle->setBold(true);
   userTitle->setFontSize(Style::fontSizeTitle * 1.12f * scale);
   userTitle->setColor(roleColor(ColorRole::OnSurface));
@@ -546,9 +375,9 @@ void OverviewTab::sync(Renderer& renderer) {
   }
 
   if (m_userFacts != nullptr) {
-    const auto uptimeSec = readUptimeSeconds();
-    const std::string uptime = uptimeSec.has_value() ? formatUptime(*uptimeSec) : "unknown";
-    m_userFacts->setText(std::format("Uptime · {}\nDistro · {}\nKernel · {}\nOS age · {}", uptime, distroLabel(),
+    const auto uptime = systemUptime();
+    const std::string uptimeText = uptime.has_value() ? formatDuration(*uptime) : "unknown";
+    m_userFacts->setText(std::format("Uptime · {}\nDistro · {}\nKernel · {}\nOS age · {}", uptimeText, distroLabel(),
                                      kernelRelease(), osAgeLabel()));
   }
 
@@ -597,7 +426,7 @@ void OverviewTab::sync(Renderer& renderer) {
         m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
       } else {
         m_mediaTrack->setText(active->title.empty() ? "Unknown track" : active->title);
-        const std::string artists = joinArtists(active->artists);
+        const std::string artists = joinedArtists(active->artists);
         m_mediaArtist->setText(artists.empty() ? "Unknown artist" : artists);
         if (active->playbackStatus == "Playing") {
           m_mediaStatus->setText("Playing");
@@ -622,7 +451,7 @@ void OverviewTab::sync(Renderer& renderer) {
       if (!st.isPresent) {
         m_powerLine->setText(st.onBattery ? "On battery" : "AC connected");
       } else {
-        m_powerLine->setText(std::format("{} · {:.0f}%", batteryStateText(st.state), st.percentage));
+        m_powerLine->setText(std::format("{} · {:.0f}%", batteryStateLabel(st.state), st.percentage));
       }
       if (m_powerProfiles != nullptr && !m_powerProfiles->activeProfile().empty()) {
         m_powerSub->setText(std::format("Mode · {}", profileLabel(m_powerProfiles->activeProfile())));

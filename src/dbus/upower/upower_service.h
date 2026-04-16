@@ -22,6 +22,8 @@ enum class BatteryState : std::uint8_t {
   PendingDischarge = 6,
 };
 
+[[nodiscard]] std::string batteryStateLabel(BatteryState state);
+
 struct UPowerState {
   double percentage = 0.0;
   BatteryState state = BatteryState::Unknown;

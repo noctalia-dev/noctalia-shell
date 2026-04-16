@@ -28,6 +28,30 @@ constexpr std::uint32_t k_stateFullyCharged = 4;
 constexpr std::uint32_t k_statePendingCharge = 5;
 constexpr std::uint32_t k_statePendingDischarge = 6;
 
+} // namespace
+
+std::string batteryStateLabel(BatteryState state) {
+  switch (state) {
+  case BatteryState::Charging:
+    return "Charging";
+  case BatteryState::Discharging:
+    return "Discharging";
+  case BatteryState::FullyCharged:
+    return "Charged";
+  case BatteryState::Empty:
+    return "Empty";
+  case BatteryState::PendingCharge:
+    return "Pending charge";
+  case BatteryState::PendingDischarge:
+    return "Pending discharge";
+  case BatteryState::Unknown:
+  default:
+    return "Battery";
+  }
+}
+
+namespace {
+
 template <typename T>
 T getPropertyOr(sdbus::IProxy& proxy, std::string_view iface, std::string_view propertyName, T fallback) {
   try {

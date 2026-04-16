@@ -8,6 +8,19 @@
 #include <sdbus-c++/IProxy.h>
 #include <sdbus-c++/Types.h>
 
+std::string profileLabel(std::string_view profile) {
+  if (profile == "power-saver") {
+    return "Power saver";
+  }
+  if (profile == "balanced") {
+    return "Balanced";
+  }
+  if (profile == "performance") {
+    return "Performance";
+  }
+  return std::string(profile);
+}
+
 namespace {
 
 constexpr Logger kLog("power");

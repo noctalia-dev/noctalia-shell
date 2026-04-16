@@ -12,6 +12,8 @@ namespace sdbus {
 class IProxy;
 }
 
+[[nodiscard]] std::string profileLabel(std::string_view profile);
+
 struct PowerProfilesState {
   std::string activeProfile;
   std::vector<std::string> profiles;

@@ -16,6 +16,18 @@
 #include <tuple>
 #include <unordered_set>
 
+std::string joinedArtists(const std::vector<std::string>& artists) {
+  if (artists.empty()) {
+    return {};
+  }
+  std::string joined = artists.front();
+  for (std::size_t i = 1; i < artists.size(); ++i) {
+    joined += ", ";
+    joined += artists[i];
+  }
+  return joined;
+}
+
 namespace {
 
 static constexpr auto k_dbus_interface = "org.freedesktop.DBus";

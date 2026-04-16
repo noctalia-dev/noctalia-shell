@@ -1,7 +1,9 @@
 #include "time/time_service.h"
 
+#include <cstdint>
 #include <ctime>
 #include <format>
+#include <fstream>
 
 std::string formatTimeAgo(std::chrono::system_clock::time_point tp) {
   using namespace std::chrono;
@@ -28,6 +30,35 @@ std::string formatTimeAgo(std::chrono::system_clock::time_point tp) {
   char buffer[32];
   std::strftime(buffer, sizeof(buffer), "%b %e", &localTime);
   return buffer;
+}
+
+std::optional<std::chrono::seconds> systemUptime() {
+  std::ifstream in{"/proc/uptime"};
+  double up = 0.0;
+  double idleDummy = 0.0;
+  if (in >> up >> idleDummy) {
+    return std::chrono::seconds{static_cast<std::int64_t>(up)};
+  }
+  return std::nullopt;
+}
+
+std::string formatDuration(std::chrono::seconds duration) {
+  const std::uint64_t totalSeconds = static_cast<std::uint64_t>(duration.count());
+  const std::uint64_t days = totalSeconds / 86400;
+  std::uint64_t rem = totalSeconds % 86400;
+  const std::uint64_t hours = rem / 3600;
+  rem %= 3600;
+  const std::uint64_t minutes = rem / 60;
+  if (days > 0) {
+    return std::format("{}d {}h {}m", days, hours, minutes);
+  }
+  if (hours > 0) {
+    return std::format("{}h {}m", hours, minutes);
+  }
+  if (minutes > 0) {
+    return std::format("{}m", minutes);
+  }
+  return "<1m";
 }
 
 void TimeService::setTickSecondCallback(TickCallback callback) { m_secondCallback = std::move(callback); }
