@@ -300,14 +300,16 @@ Singleton {
     var titleKey = level === "critical" ? "toast.battery.critical" : "toast.battery.low";
     var descKey = level === "critical" ? "toast.battery.critical-desc" : "toast.battery.low-desc";
 
-    var title = I18n.tr(titleKey);
+    var title = I18n.tr(titleKey); // - "Low Battery" & "Critical Battery"
     var desc = I18n.tr(descKey, {
                          "percent": getPercentage(device)
                        });
     var icon = level === "critical" ? "battery-exclamation" : "battery-charging-2";
 
     if (isPeripheral(device) && name) {
-      title = title + " " + name;
+      title = name + " - " + title;
+      // ex A: 'Turann_s AirPods Pro III - Low Battery' - I prefer this makes most sense.
+      // ex B: 'Low Battery - Turann_s AirPods Pro III'
     }
 
     // Only 'showNotice' supports custom icons
@@ -321,7 +323,7 @@ Singleton {
 
     const name = (device.model || device.name || "").toLowerCase();
     const nativePath = (device.nativePath || "").toLowerCase();
-    const iconHint = (device.icon || device.iconName || "").toLowerCase();  // Some devices are not known to UPower (eg: Bluetooth devices, hint is often does the heavy lfting for recognition)
+    const iconHint = (device.icon || device.iconName || "").toLowerCase();  // Some devices are not known to UPower (eg: Bluetooth devices, hint is often does the heavy lifting for recognition)
     const isEarbud = name.includes("pod") || name.includes("bud") || iconHint.includes("earbud");
     // 3: UPS
     if (device.type === UPowerDeviceType.Ups || nativePath.includes("ups")) {

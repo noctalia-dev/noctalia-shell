@@ -15,6 +15,8 @@ Item {
   property color fillColor: Color.mPrimary
   property var tooltipText
   property string tooltipDirection: "top"
+  property bool showText: true
+  property bool fullCircle: false
 
   // Arc geometry constants
   readonly property real _gaugeSize: 60 * contentScale
@@ -23,10 +25,10 @@ Item {
   // Arc goes from 150° to 390° (30°), gap at bottom
   // Bottom of arc is at y = center + radius * sin(30°) = center + radius * 0.5
   // Plus half line width for stroke
-  readonly property real _arcBottomY: _gaugeSize / 2 + _arcRadius * 0.5 + _lineWidth / 2
+  readonly property real _arcBottomY: root.fullCircle ? (_gaugeSize) : (_gaugeSize / 2 + _arcRadius * 0.5 + _lineWidth / 2)
   // Height needs to include the icon which sits inside the arc gap
   // Icon is ~12px tall, positioned 4px below text center, need ~4px more padding
-  readonly property real _contentHeight: _arcBottomY + 4 * contentScale
+  readonly property real _contentHeight: root.fullCircle ? _gaugeSize : (_arcBottomY + 4 * contentScale)
 
   implicitWidth: Math.round(_gaugeSize)
   implicitHeight: Math.round(_contentHeight)
@@ -70,7 +72,7 @@ Item {
     id: gauge
     width: root._gaugeSize
     height: root._gaugeSize
-    anchors.horizontalCenter: parent.horizontalCenter
+    x: (parent.width - width) / 2
     y: 0
 
     // Optimized Canvas settings for better GPU performance
@@ -95,14 +97,14 @@ Item {
       const cx = w / 2, cy = h / 2;
       const r = root._arcRadius;
 
-      // Rotated 90° to the right: gap at the bottom
       // Start at 150° and end at 390° (30°) → bottom opening
-      const start = Math.PI * 5 / 6; // 150°
-      const endBg = Math.PI * 13 / 6; // 390° (equivalent to 30°)
+      // If fullCircle, start at -90° and end at 270° (360°)
+      const start = root.fullCircle ? -Math.PI / 2 : Math.PI * 5 / 6;
+      const endBg = root.fullCircle ? Math.PI * 3 / 2 : Math.PI * 13 / 6;
 
       ctx.reset();
       ctx.lineWidth = root._lineWidth;
-      ctx.lineCap = Settings.data.general.iRadiusRatio > 0 ? "round" : "butt";
+      ctx.lineCap = (Settings.data.general.iRadiusRatio > 0 && !root.fullCircle) ? "round" : "butt";
 
       // Track uses outline for contrast against surfaceVariant backgrounds
       ctx.strokeStyle = Color.mSurface;
@@ -125,9 +127,9 @@ Item {
   // Percent centered in the circle
   NText {
     id: valueLabel
-    anchors.horizontalCenter: gauge.horizontalCenter
-    anchors.verticalCenter: gauge.verticalCenter
-    anchors.verticalCenterOffset: -4 * root.contentScale
+    visible: root.showText
+    x: (parent.width - width) / 2
+    y: (gauge.height - height) / 2 - 4 * root.contentScale
     text: `${Math.round(root.animatedRatio * 100)}${root.suffix}`
     pointSize: Style.fontSizeM * root.contentScale * 0.9
     font.weight: Style.fontWeightBold
@@ -137,12 +139,11 @@ Item {
 
   NIcon {
     id: iconText
-    anchors.horizontalCenter: gauge.horizontalCenter
-    anchors.top: valueLabel.bottom
-    anchors.topMargin: 4 * root.contentScale
+    x: (parent.width - width) / 2
+    y: root.showText ? (valueLabel.y + valueLabel.height + 4 * root.contentScale) : (gauge.height - height) / 2
     icon: root.icon
     color: root.fillColor
-    pointSize: Style.fontSizeM * root.contentScale
+    pointSize: (root.showText ? Style.fontSizeM : Style.fontSizeXXL) * root.contentScale
     horizontalAlignment: Text.AlignHCenter
     verticalAlignment: Text.AlignVCenter
   }

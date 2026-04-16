@@ -31,6 +31,9 @@ Singleton {
   property Component audioVisualizerComponent: Component {
     DesktopAudioVisualizer {}
   }
+  property Component batteryComponent: Component {
+    DesktopBattery {}
+  }
 
   // Widget registry object mapping widget names to components
   // Created in Component.onCompleted to ensure Components are ready
@@ -50,6 +53,7 @@ Singleton {
     widgetsObj["Weather"] = weatherComponent;
     widgetsObj["SystemStat"] = systemStatComponent;
     widgetsObj["AudioVisualizer"] = audioVisualizerComponent;
+    widgetsObj["Battery"] = batteryComponent;
     widgets = widgetsObj;
 
     var urlsObj = {};
@@ -58,6 +62,7 @@ Singleton {
     urlsObj["Weather"] = _widgetsDir + "DesktopWeather.qml";
     urlsObj["SystemStat"] = _widgetsDir + "DesktopSystemStat.qml";
     urlsObj["AudioVisualizer"] = _widgetsDir + "DesktopAudioVisualizer.qml";
+    urlsObj["Battery"] = _widgetsDir + "DesktopBattery.qml";
     widgetUrls = urlsObj;
 
     Logger.i("DesktopWidgetRegistry", "Service started");
@@ -68,7 +73,8 @@ Singleton {
                                      "MediaPlayer": "WidgetSettings/MediaPlayerSettings.qml",
                                      "Weather": "WidgetSettings/WeatherSettings.qml",
                                      "SystemStat": "WidgetSettings/SystemStatSettings.qml",
-                                     "AudioVisualizer": "WidgetSettings/AudioVisualizerSettings.qml"
+                                     "AudioVisualizer": "WidgetSettings/AudioVisualizerSettings.qml",
+                                     "Battery": "WidgetSettings/BatterySettings.qml"
                                    })
 
   property var widgetMetadata: ({
@@ -109,6 +115,14 @@ Singleton {
                                     "visualizerType": "linear",
                                     "hideWhenIdle": false,
                                     "colorName": "primary"
+                                  },
+                                  "Battery": {
+                                    "showBackground": true,
+                                    "roundedCorners": true,
+                                    "mode": "ring",
+                                    "ringColor": "none",
+                                    "showPercentage": false,
+                                    "fullCircle": true
                                   }
                                 })
 
