@@ -16,7 +16,7 @@ class TrayService;
 
 class TrayWidget : public Widget {
 public:
-  explicit TrayWidget(TrayService* tray);
+  TrayWidget(TrayService* tray, std::vector<std::string> hiddenItems = {});
 
   void create() override;
 
@@ -29,6 +29,7 @@ private:
   void syncState(Renderer& renderer);
   void rebuild(Renderer& renderer);
   [[nodiscard]] std::string iconForItem(const TrayItemInfo& item) const;
+  [[nodiscard]] bool isHiddenItem(const TrayItemInfo& item) const;
 
   TrayService* m_tray = nullptr;
   Flex* m_container = nullptr;
@@ -38,6 +39,7 @@ private:
   std::unordered_map<std::string, std::unordered_map<std::string, std::string>> m_trayThemePathIcons;
   std::uint64_t m_desktopEntriesVersion = 0;
   std::vector<TrayItemInfo> m_items;
+  std::vector<std::string> m_hiddenItems;
   std::vector<Image*> m_loadedImages;
   float m_contentHeight = 0.0f;
   bool m_isVertical = false;

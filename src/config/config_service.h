@@ -95,7 +95,7 @@ struct BarConfig {
   bool operator==(const BarConfig&) const = default;
 };
 
-using WidgetSettingValue = std::variant<bool, std::int64_t, double, std::string>;
+using WidgetSettingValue = std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>>;
 
 // Optional rounded “capsule” behind a bar widget (see `[widget.*] capsule_*` in CONFIG.md).
 // Corner shape (pill), border width, and edge softness are fixed in the shell code; padding is configurable.
@@ -119,6 +119,8 @@ struct WidgetConfig {
   std::unordered_map<std::string, WidgetSettingValue> settings;
 
   [[nodiscard]] std::string getString(const std::string& key, const std::string& fallback = {}) const;
+  [[nodiscard]] std::vector<std::string> getStringList(const std::string& key,
+                                                       const std::vector<std::string>& fallback = {}) const;
   [[nodiscard]] std::int64_t getInt(const std::string& key, std::int64_t fallback = 0) const;
   [[nodiscard]] double getDouble(const std::string& key, double fallback = 0.0) const;
   [[nodiscard]] bool getBool(const std::string& key, bool fallback = false) const;

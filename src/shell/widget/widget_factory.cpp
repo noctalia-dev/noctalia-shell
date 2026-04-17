@@ -117,7 +117,8 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "tray") {
-    auto widget = std::make_unique<TrayWidget>(m_tray);
+    const auto hiddenItems = wc != nullptr ? wc->getStringList("hidden") : std::vector<std::string>{};
+    auto widget = std::make_unique<TrayWidget>(m_tray, hiddenItems);
     widget->setContentScale(contentScale);
     return widget;
   }

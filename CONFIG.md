@@ -462,7 +462,17 @@ Shows a glyph and opens the wallpaper picker panel on click. No configurable set
 
 ### `tray`
 
-System tray (StatusNotifierItem). No configurable settings.
+System tray (StatusNotifierItem).
+
+| Setting  | Type            | Default | Description |
+|----------|-----------------|---------|-------------|
+| `hidden` | array of string | `[]`    | Tray items to hide by id/name/bus/path token (matching uses the same normalized variants as tray icon lookup). |
+
+```toml
+[widget.tray]
+type = "tray"
+hidden = ["nm-applet", "blueman", "org.kde.StatusNotifierItem-1-1"]
+```
 
 ---
 

@@ -95,5 +95,4 @@ void NotificationWidget::refreshIndicatorState() {
   if (m_dot != nullptr) {
     m_dot->setVisible(m_hasNotifications && !m_dndEnabled);
   }
-  requestRedraw();
 }

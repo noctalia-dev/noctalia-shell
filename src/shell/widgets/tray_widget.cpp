@@ -184,7 +184,20 @@ bool isUniqueBusName(std::string_view value) { return !value.empty() && value.fr
 
 } // namespace
 
-TrayWidget::TrayWidget(TrayService* tray) : m_tray(tray) { buildDesktopIconIndex(); }
+TrayWidget::TrayWidget(TrayService* tray, std::vector<std::string> hiddenItems)
+    : m_tray(tray), m_hiddenItems(std::move(hiddenItems)) {
+  std::vector<std::string> normalized;
+  normalized.reserve(m_hiddenItems.size());
+  for (const auto& token : m_hiddenItems) {
+    for (const auto& variant : identifierVariants(token)) {
+      if (std::ranges::find(normalized, variant) == normalized.end()) {
+        normalized.push_back(variant);
+      }
+    }
+  }
+  m_hiddenItems = std::move(normalized);
+  buildDesktopIconIndex();
+}
 
 std::string TrayWidget::resolveFromTrayThemePath(std::string_view themePath, std::string_view iconName) {
   if (themePath.empty() || iconName.empty()) {
@@ -318,6 +331,9 @@ void TrayWidget::rebuild(Renderer& renderer) {
   }
 
   for (const auto& item : m_items) {
+    if (isHiddenItem(item)) {
+      continue;
+    }
     const std::string iconPath = resolveIconPath(item);
     const float slotSize = Style::fontSizeBody * m_contentScale;
     const float iconSize = slotSize * kTrayIconScale;
@@ -404,6 +420,37 @@ void TrayWidget::rebuild(Renderer& renderer) {
     area->addChild(std::move(iconNode));
     m_container->addChild(std::move(area));
   }
+}
+
+bool TrayWidget::isHiddenItem(const TrayItemInfo& item) const {
+  if (m_hiddenItems.empty()) {
+    return false;
+  }
+
+  std::vector<std::string> candidates;
+  auto appendVariants = [&candidates](std::string_view text) {
+    for (const auto& variant : identifierVariants(text)) {
+      if (std::ranges::find(candidates, variant) == candidates.end()) {
+        candidates.push_back(variant);
+      }
+    }
+  };
+
+  appendVariants(item.id);
+  appendVariants(item.busName);
+  appendVariants(item.objectPath);
+  appendVariants(item.itemName);
+  appendVariants(item.title);
+  appendVariants(item.iconName);
+  appendVariants(item.attentionIconName);
+
+  for (const auto& needle : m_hiddenItems) {
+    if (std::ranges::find(candidates, needle) != candidates.end()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 void TrayWidget::buildDesktopIconIndex() {

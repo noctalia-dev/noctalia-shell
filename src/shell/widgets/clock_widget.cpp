@@ -79,6 +79,10 @@ void ClockWidget::doLayout(Renderer& renderer, float containerWidth, float conta
 }
 
 void ClockWidget::doUpdate(Renderer& renderer) {
+  if (m_label == nullptr) {
+    return;
+  }
+
   auto text = formatTimeText();
 
   if (text != m_lastText) {

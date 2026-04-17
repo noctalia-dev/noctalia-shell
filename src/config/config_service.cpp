@@ -1179,6 +1179,15 @@ void ConfigService::parseTable(const toml::table& tbl) {
           wc.settings[std::string(key.str())] = f->get();
         } else if (auto* b = val.as_boolean()) {
           wc.settings[std::string(key.str())] = b->get();
+        } else if (auto* arr = val.as_array()) {
+          std::vector<std::string> list;
+          list.reserve(arr->size());
+          for (const auto& item : *arr) {
+            if (auto v = item.value<std::string>()) {
+              list.push_back(*v);
+            }
+          }
+          wc.settings[std::string(key.str())] = std::move(list);
         }
       }
 
@@ -1640,6 +1649,21 @@ std::string WidgetConfig::getString(const std::string& key, const std::string& f
   }
   if (const auto* v = std::get_if<std::string>(&it->second)) {
     return *v;
+  }
+  return fallback;
+}
+
+std::vector<std::string> WidgetConfig::getStringList(const std::string& key,
+                                                     const std::vector<std::string>& fallback) const {
+  auto it = settings.find(key);
+  if (it == settings.end()) {
+    return fallback;
+  }
+  if (const auto* v = std::get_if<std::vector<std::string>>(&it->second)) {
+    return *v;
+  }
+  if (const auto* v = std::get_if<std::string>(&it->second)) {
+    return {*v};
   }
   return fallback;
 }
