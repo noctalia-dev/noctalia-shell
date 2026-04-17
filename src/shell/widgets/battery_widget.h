@@ -23,4 +23,6 @@ private:
   double m_lastPct = -1.0;
   BatteryState m_lastState = BatteryState::Unknown;
   bool m_lastPresent = false;
+  bool m_isVertical = false;
+  bool m_lastVertical = false;
 };

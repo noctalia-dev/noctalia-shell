@@ -59,20 +59,27 @@ void BatteryWidget::create() {
   setRoot(std::move(container));
 }
 
-void BatteryWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void BatteryWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   auto* rootNode = root();
   if (m_glyph == nullptr || m_label == nullptr || rootNode == nullptr) {
     return;
   }
+  m_isVertical = containerHeight > containerWidth;
   syncState(renderer);
 
   m_glyph->measure(renderer);
   m_label->measure(renderer);
 
-  m_glyph->setPosition(0.0f, 0.0f);
-  m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
-
-  rootNode->setSize(m_label->x() + m_label->width(), m_glyph->height());
+  if (m_isVertical) {
+    const float w = std::max(m_glyph->width(), m_label->width());
+    m_glyph->setPosition(std::round((w - m_glyph->width()) * 0.5f), 0.0f);
+    m_label->setPosition(std::round((w - m_label->width()) * 0.5f), m_glyph->height());
+    rootNode->setSize(w, m_glyph->height() + m_label->height());
+  } else {
+    m_glyph->setPosition(0.0f, 0.0f);
+    m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
+    rootNode->setSize(m_label->x() + m_label->width(), m_glyph->height());
+  }
 }
 
 void BatteryWidget::doUpdate(Renderer& renderer) {
@@ -86,13 +93,15 @@ void BatteryWidget::syncState(Renderer& renderer) {
 
   const auto& s = m_upower->state();
 
-  if (s.percentage == m_lastPct && s.state == m_lastState && s.isPresent == m_lastPresent) {
+  if (s.percentage == m_lastPct && s.state == m_lastState && s.isPresent == m_lastPresent &&
+      m_isVertical == m_lastVertical) {
     return;
   }
 
   m_lastPct = s.percentage;
   m_lastState = s.state;
   m_lastPresent = s.isPresent;
+  m_lastVertical = m_isVertical;
 
   auto* rootNode = root();
   if (!s.isPresent) {
@@ -113,7 +122,8 @@ void BatteryWidget::syncState(Renderer& renderer) {
   m_glyph->measure(renderer);
 
   const int pct = static_cast<int>(std::round(s.percentage));
-  m_label->setText(std::to_string(pct) + "%");
+  m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
+  m_label->setText(m_isVertical ? std::to_string(pct) : std::to_string(pct) + "%");
   m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_label->measure(renderer);
 
