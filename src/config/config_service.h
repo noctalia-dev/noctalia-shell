@@ -45,6 +45,7 @@ struct BarMonitorOverride {
   std::optional<std::string> widgetCapsuleForeground;
   std::optional<std::string> widgetColor;
   std::optional<double> widgetCapsulePadding;
+  std::optional<double> widgetCapsuleOpacity;
 
   bool operator==(const BarMonitorOverride&) const = default;
 };
@@ -84,6 +85,8 @@ struct BarConfig {
   std::optional<ThemeColor> widgetColor;
   // Inner padding between capsule edge and widget content (logical px), multiplied by widget content scale on the bar.
   float widgetCapsulePadding = Style::barCapsulePadding;
+  // Capsule background opacity multiplier (0.0–1.0).
+  float widgetCapsuleOpacity = 1.0f;
   // True when `capsule_border` appears under `[bar.*]` (empty value = no outline for widgets that inherit border).
   bool widgetCapsuleBorderSpecified = false;
   std::optional<ThemeColor> widgetCapsuleBorder;
@@ -105,6 +108,8 @@ struct WidgetBarCapsuleSpec {
   std::optional<ThemeColor> foreground;
   // Inner padding in logical pixels before content-scale (see `capsule_padding` / bar default).
   float padding = Style::barCapsulePadding;
+  // Capsule background opacity multiplier (0.0–1.0).
+  float opacity = 1.0f;
 
   bool operator==(const WidgetBarCapsuleSpec&) const = default;
 };

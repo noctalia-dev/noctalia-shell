@@ -43,6 +43,12 @@ std::uint32_t positionToAnchor(const std::string& position) {
 
 constexpr Logger kLog("bar");
 
+ThemeColor withOpacity(const ThemeColor& color, float opacity) {
+  ThemeColor out = color;
+  out.alpha = std::clamp(out.alpha * std::clamp(opacity, 0.0f, 1.0f), 0.0f, 1.0f);
+  return out;
+}
+
 struct ShadowBleed {
   std::int32_t left = 0, right = 0, up = 0, down = 0;
 };
@@ -650,7 +656,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
           Node* shellPtr = shell.get();
           auto capsuleBg = std::make_unique<Box>();
           Box* bgPtr = capsuleBg.get();
-          capsuleBg->setFill(cap.fill);
+          capsuleBg->setFill(withOpacity(cap.fill, cap.opacity));
           const float scale = widget->contentScale();
           if (cap.border.has_value()) {
             capsuleBg->setBorder(*cap.border, Style::borderWidth * scale);

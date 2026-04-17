@@ -683,6 +683,9 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
     if (ovr.widgetCapsulePadding) {
       resolved.widgetCapsulePadding = std::clamp(static_cast<float>(*ovr.widgetCapsulePadding), 0.0f, 48.0f);
     }
+    if (ovr.widgetCapsuleOpacity) {
+      resolved.widgetCapsuleOpacity = std::clamp(static_cast<float>(*ovr.widgetCapsuleOpacity), 0.0f, 1.0f);
+    }
     break; // first match wins
   }
 
@@ -1040,6 +1043,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
       if (auto v = (*barTbl)["capsule_padding"].value<double>()) {
         bar.widgetCapsulePadding = std::clamp(static_cast<float>(*v), 0.0f, 48.0f);
       }
+      if (auto v = (*barTbl)["capsule_opacity"].value<double>()) {
+        bar.widgetCapsuleOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+      }
       if (barTbl->contains("capsule_border")) {
         bar.widgetCapsuleBorderSpecified = true;
         std::string borderStr;
@@ -1123,6 +1129,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
           }
           if (auto v = (*monTbl)["capsule_padding"].value<double>()) {
             ovr.widgetCapsulePadding = *v;
+          }
+          if (auto v = (*monTbl)["capsule_opacity"].value<double>()) {
+            ovr.widgetCapsuleOpacity = *v;
           }
           if (monTbl->contains("capsule_border")) {
             std::string borderStr;
@@ -1710,6 +1719,11 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
   if (widget != nullptr && widget->hasSetting("capsule_padding")) {
     spec.padding = std::clamp(
         static_cast<float>(widget->getDouble("capsule_padding", static_cast<double>(spec.padding))), 0.0f, 48.0f);
+  }
+  spec.opacity = bar.widgetCapsuleOpacity;
+  if (widget != nullptr && widget->hasSetting("capsule_opacity")) {
+    spec.opacity = std::clamp(
+        static_cast<float>(widget->getDouble("capsule_opacity", static_cast<double>(spec.opacity))), 0.0f, 1.0f);
   }
 
   if (widget != nullptr && widget->hasSetting("capsule_foreground")) {

@@ -63,6 +63,7 @@ background_blur = true
 # Optional defaults for every widget’s capsule on this bar (see “Bar widget capsule”).
 capsule         = true
 capsule_fill    = "surface_variant"
+capsule_opacity = 1.0         # 0.0-1.0 background opacity multiplier
 capsule_border  = "outline"   # omit this key entirely for no outline by default
 
 start  = ["cpu", "temp", "ram", "active_window"]  # widget names in the left/top section
@@ -106,7 +107,7 @@ end            = ["volume", "clock"]
 
 `match` defaults to the subtable key name when omitted, so `[bar.main.monitor."DP-1"]` without a `match` field works too.
 
-Only the fields you specify are overridden; everything else falls through to the `[bar.*]` defaults. `scale`, `background_opacity`, **`color`**, and the bar-level **`capsule` / `capsule_fill` / `capsule_color` / `capsule_foreground` / `capsule_padding` / `capsule_border`** keys are also supported in monitor overrides.
+Only the fields you specify are overridden; everything else falls through to the `[bar.*]` defaults. `scale`, `background_opacity`, **`color`**, and the bar-level **`capsule` / `capsule_fill` / `capsule_color` / `capsule_foreground` / `capsule_padding` / `capsule_opacity` / `capsule_border`** keys are also supported in monitor overrides.
 
 ---
 
@@ -143,6 +144,7 @@ end = ["clock", "clock-seconds"]   # two clock widgets, different formats
 | `capsule_color` | string | — | **Synonym** for `capsule_fill` when `capsule_fill` is not set. Use for emphasis fills such as `primary`. |
 | `capsule_foreground` | string | *(unset)* | Optional default **icon + primary label** color for capped widgets (e.g. `on_primary`). Same role / `#` hex rules as fills. If omitted, widgets keep their usual `OnSurface` / `Primary` roles. The old name `capsule_ink` is still read as an alias. Per-widget **`color`** overrides this when both are set. |
 | `capsule_padding` | number | `6` | Inner padding between the capsule edge and the widget content, in **logical** pixels before the bar `scale` multiplier is applied (clamped 0–48). |
+| `capsule_opacity` | number | `1.0` | Capsule background opacity multiplier (clamped 0.0–1.0). |
 | `capsule_border` | string | *(key omitted)* | If the key is **omitted**, widgets inherit **no border** unless they set `capsule_border` themselves. If the key is present (including `""`), the same rules as per-widget `capsule_border` apply. |
 
 **Per-widget overrides** — Under `[widget.<name>]`:
@@ -150,10 +152,11 @@ end = ["clock", "clock-seconds"]   # two clock widgets, different formats
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `capsule` | bool | *(from bar)* | Omit the key to use the bar’s `capsule` flag; set `false` to disable the capsule for this instance; set `true` to force it on even when the bar default is off. |
-| `capsule_fill` | string | *(from bar)* | Omit to use the bar’s `capsule_fill`. Theme role or `#` hex; fill is **100% opacity** for roles; hex alpha is ignored (RGB forced opaque). |
+| `capsule_fill` | string | *(from bar)* | Omit to use the bar’s `capsule_fill`. Theme role or `#` hex; hex alpha is ignored (RGB forced opaque). Use `capsule_opacity` for transparency. |
 | `capsule_color` | string | *(from bar)* | Same as `capsule_fill` when that key is not set on the widget. **Only** the capsule background — not icon or text (use `color` or `capsule_foreground` for those). |
 | `capsule_foreground` | string | *(from bar)* | Icon + primary label color **when this widget’s capsule is visible**; overrides the bar default when set. If both `capsule_foreground` and **`color`** are set, **`color` wins**. `capsule_ink` is accepted as a deprecated alias. |
 | `capsule_padding` | number | *(from bar)* | Per-widget inner padding (logical px, 0–48). |
+| `capsule_opacity` | number | *(from bar)* | Per-widget capsule background opacity multiplier (0.0–1.0). |
 | `capsule_border` | string | *(from bar)* | Omit to use the bar’s border policy. If the key is **present** but empty/whitespace-only, **no border**. |
 | `color` | string | *(unset)* | Icon + primary label color with or without a capsule. Same theme role / `#` hex rules as `capsule_fill`. Resolution order: **`color`** (if set) → `capsule_foreground` (if the capsule is visible) → built-in defaults (`OnSurface`, state-specific `Primary` / `OnSurfaceVariant`, etc.). |
 
@@ -168,6 +171,7 @@ Theme role names are **snake_case** (e.g. `on_surface`, `surface_variant`, `surf
 color = "primary" # optional: same foreground for all widgets unless a [widget.*] sets color
 capsule = true
 capsule_fill = "surface_secondary"
+capsule_opacity = 0.9
 capsule_border = "outline"
 end = ["clock", "volume"]
 
