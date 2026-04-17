@@ -263,8 +263,16 @@ void Application::initServices() {
     motion.setSpeed(m_configService.config().shell.animation.speed);
     motion.setEnabled(m_configService.config().shell.animation.enabled);
   };
+  auto applyPasswordMaskStyle = [this]() {
+    const auto style = m_configService.config().shell.passwordMaskStyle == PasswordMaskStyle::RandomIcons
+                           ? Input::PasswordMaskStyle::RandomIcons
+                           : Input::PasswordMaskStyle::CircleFilled;
+    Input::setPasswordMaskStyle(style);
+  };
   applyMotionConfig();
+  applyPasswordMaskStyle();
   m_configService.addReloadCallback(applyMotionConfig);
+  m_configService.addReloadCallback(applyPasswordMaskStyle);
 
   // i18n has no dependencies on other services and must be ready before any
   // UI construction reads a translated string.

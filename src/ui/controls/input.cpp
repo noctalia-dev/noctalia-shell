@@ -4,14 +4,17 @@
 #include "render/core/color.h"
 #include "render/core/renderer.h"
 #include "render/programs/rect_program.h"
+#include "render/scene/glyph_node.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
+#include "ui/controls/glyph_registry.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/clipboard_service.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <memory>
 #include <optional>
@@ -21,6 +24,7 @@
 namespace {
 
 ClipboardService* g_clipboard = nullptr;
+Input::PasswordMaskStyle g_passwordMaskStyle = Input::PasswordMaskStyle::CircleFilled;
 
 std::optional<std::string> readClipboardText() {
   if (g_clipboard == nullptr) {
@@ -50,7 +54,23 @@ constexpr std::uint32_t kModCtrl  = 1u << 1;
 constexpr float kDefaultWidth = 200.0f;
 constexpr float kCursorWidth  = 1.5f;
 constexpr float kCursorPadV   = 3.0f;
-constexpr std::string_view kPasswordMaskGlyph = "●";
+constexpr float kPasswordGlyphScale = 0.82f;
+
+char32_t passwordMaskCodepointForIndex(std::size_t index) {
+  if (g_passwordMaskStyle == Input::PasswordMaskStyle::CircleFilled) {
+    return GlyphRegistry::lookup("circle-filled");
+  }
+  static const std::array<char32_t, 7> randomCodepoints = {
+      GlyphRegistry::lookup("circle-filled"),
+      GlyphRegistry::lookup("pentagon-filled"),
+      GlyphRegistry::lookup("michelin-star-filled"),
+      GlyphRegistry::lookup("square-rounded-filled"),
+      GlyphRegistry::lookup("guitar-pick-filled"),
+      GlyphRegistry::lookup("blob-filled"),
+      GlyphRegistry::lookup("triangle-filled"),
+  };
+  return randomCodepoints[index % randomCodepoints.size()];
+}
 
 Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
 
@@ -168,6 +188,9 @@ void Input::setPasswordMode(bool enabled) {
     return;
   }
   m_passwordMode = enabled;
+  if (!m_passwordMode) {
+    syncPasswordGlyphNodes(0);
+  }
   updateDisplayText();
   markLayoutDirty();
 }
@@ -186,6 +209,8 @@ void Input::setOnKeyEvent(std::function<bool(std::uint32_t, std::uint32_t)> call
 
 void Input::setClipboardService(ClipboardService* clipboard) noexcept { g_clipboard = clipboard; }
 
+void Input::setPasswordMaskStyle(PasswordMaskStyle style) noexcept { g_passwordMaskStyle = style; }
+
 void Input::selectAll() {
   m_selectionAnchor = 0;
   m_cursorPos = m_value.size();
@@ -202,43 +227,48 @@ void Input::doLayout(Renderer& renderer) {
   const float h = m_controlHeight;
   setSize(w, h);
 
-  // Let the Label measure itself (single-line; uses a stable "A" reference so
-  // the baseline doesn't jump when characters with descenders are typed).
-  m_label->measure(renderer);
-  const float labelY = std::round((h - m_label->height()) * 0.5f);
-  m_label->setPosition(m_horizontalPadding, labelY);
+  const bool showPasswordGlyphs = m_passwordMode && !m_value.empty();
+  m_label->setVisible(!showPasswordGlyphs);
+  if (!showPasswordGlyphs) {
+    m_label->measure(renderer);
+    const float labelY = std::round((h - m_label->height()) * 0.5f);
+    m_label->setPosition(m_horizontalPadding, labelY);
+  }
 
-  // Build stop arrays for click-to-position and selection rect
   m_stopByte.clear();
   m_stopX.clear();
   m_stopByte.push_back(0);
   m_stopX.push_back(0.0f);
+  std::size_t charCount = 0;
+  float maskGlyphY = 0.0f;
+  float glyphSize = 0.0f;
+  if (showPasswordGlyphs) {
+    glyphSize = m_fontSize * Style::glyphSizeRatio * kPasswordGlyphScale;
+    const auto metrics = renderer.measureGlyph(passwordMaskCodepointForIndex(0), glyphSize);
+    const float glyphInkCenter = (metrics.top + metrics.bottom) * 0.5f;
+    maskGlyphY = std::round(h * 0.5f - glyphInkCenter);
+  }
   if (!m_value.empty()) {
     std::size_t pos = 0;
-    std::size_t charCount = 0;
+    float maskX = 0.0f;
     while (pos < m_value.size()) {
       pos = nextCharPos(m_value, pos);
       ++charCount;
       m_stopByte.push_back(pos);
-      if (m_passwordMode) {
-        std::string maskedForMeasure;
-        maskedForMeasure.reserve(charCount * kPasswordMaskGlyph.size());
-        for (std::size_t i = 0; i < charCount; ++i) {
-          maskedForMeasure.append(kPasswordMaskGlyph);
-        }
-        m_stopX.push_back(renderer.measureText(maskedForMeasure, m_fontSize).width);
+      if (showPasswordGlyphs) {
+        const auto metrics = renderer.measureGlyph(passwordMaskCodepointForIndex(charCount - 1), glyphSize);
+        maskX += metrics.width;
+        m_stopX.push_back(maskX);
       } else {
         m_stopX.push_back(renderer.measureText(m_value.substr(0, pos), m_fontSize).width);
       }
     }
   }
 
-  // Cursor
   const float cursorX = m_horizontalPadding + stopXForByte(m_cursorPos);
   m_cursor->setPosition(cursorX, kCursorPadV);
   m_cursor->setFrameSize(kCursorWidth, h - kCursorPadV * 2.0f);
 
-  // Selection highlight
   if (hasSelection()) {
     const float selX0 = m_horizontalPadding + stopXForByte(selectionStart());
     const float selX1 = m_horizontalPadding + stopXForByte(selectionEnd());
@@ -247,6 +277,24 @@ void Input::doLayout(Renderer& renderer) {
     m_selectionRect->setVisible(true);
   } else {
     m_selectionRect->setVisible(false);
+  }
+
+  if (showPasswordGlyphs) {
+    syncPasswordGlyphNodes(charCount);
+    float maskX = 0.0f;
+    for (std::size_t i = 0; i < m_passwordGlyphs.size(); ++i) {
+      auto* glyph = m_passwordGlyphs[i];
+      const char32_t codepoint = passwordMaskCodepointForIndex(i);
+      const auto metrics = renderer.measureGlyph(codepoint, glyphSize);
+      glyph->setCodepoint(codepoint);
+      glyph->setFontSize(glyphSize);
+      glyph->setColor(resolveThemeColor(roleColor(ColorRole::OnSurface)));
+      glyph->setPosition(m_horizontalPadding + maskX, maskGlyphY);
+      glyph->setVisible(true);
+      maskX += metrics.width;
+    }
+  } else {
+    syncPasswordGlyphNodes(0);
   }
 
   m_background->setPosition(0.0f, 0.0f);
@@ -425,18 +473,21 @@ void Input::updateDisplayText() {
     m_label->setText(m_placeholder);
     m_label->setColor(roleColor(ColorRole::OnSurfaceVariant));
   } else {
-    if (m_passwordMode) {
-      std::string masked;
-      masked.reserve(m_value.size());
-      for (std::size_t pos = 0; pos < m_value.size();) {
-        pos = nextCharPos(m_value, pos);
-        masked.append(kPasswordMaskGlyph);
-      }
-      m_label->setText(masked);
-    } else {
-      m_label->setText(m_value);
-    }
+    m_label->setText(m_passwordMode ? std::string{} : m_value);
     m_label->setColor(roleColor(ColorRole::OnSurface));
+  }
+}
+
+void Input::syncPasswordGlyphNodes(std::size_t count) {
+  while (m_passwordGlyphs.size() > count) {
+    auto* node = m_passwordGlyphs.back();
+    (void)removeChild(node);
+    m_passwordGlyphs.pop_back();
+  }
+  while (m_passwordGlyphs.size() < count) {
+    auto glyph = std::make_unique<GlyphNode>();
+    auto* glyphPtr = static_cast<GlyphNode*>(insertChildAt(3, std::move(glyph)));
+    m_passwordGlyphs.push_back(glyphPtr);
   }
 }
 

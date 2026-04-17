@@ -11,6 +11,7 @@
 #include <vector>
 
 class ClipboardService;
+class GlyphNode;
 class InputArea;
 class Label;
 class RectNode;
@@ -18,6 +19,11 @@ class Renderer;
 
 class Input : public Node {
 public:
+  enum class PasswordMaskStyle : std::uint8_t {
+    CircleFilled = 0,
+    RandomIcons = 1,
+  };
+
   Input();
 
   void setValue(std::string_view value);
@@ -33,6 +39,7 @@ public:
 
   // Set once at application startup; all Input instances use this for Ctrl+C/X/V.
   static void setClipboardService(ClipboardService* clipboard) noexcept;
+  static void setPasswordMaskStyle(PasswordMaskStyle style) noexcept;
   void clearSelection();
 
   [[nodiscard]] const std::string& value() const noexcept { return m_value; }
@@ -50,6 +57,7 @@ private:
   void deleteSelection();
   [[nodiscard]] std::size_t xToByteOffset(float localX) const;
   [[nodiscard]] float stopXForByte(std::size_t bytePos) const;
+  void syncPasswordGlyphNodes(std::size_t count);
 
   static std::size_t nextCharPos(const std::string& s, std::size_t pos);
   static std::size_t prevCharPos(const std::string& s, std::size_t pos);
@@ -70,6 +78,7 @@ private:
 
   std::vector<float> m_stopX;
   std::vector<std::size_t> m_stopByte;
+  std::vector<GlyphNode*> m_passwordGlyphs;
 
   std::function<void(const std::string&)> m_onChange;
   std::function<void(const std::string&)> m_onSubmit;

@@ -32,10 +32,11 @@ public:
   bool initialize() override { return false; }
   bool initialize(ext_session_lock_v1* lock, wl_output* output, std::int32_t scale);
   void setLockedState(bool locked);
-  void setPromptState(std::string user, std::string maskedPassword, std::string status, bool error);
+  void setPromptState(std::string user, std::string password, std::string status, bool error);
   void setTextureCache(SharedTextureCache* cache) noexcept { m_textureCache = cache; }
   void setWallpaperPath(std::string wallpaperPath);
   void setOnLogin(std::function<void()> onLogin);
+  void setOnPasswordChanged(std::function<void(const std::string&)> onPasswordChanged);
   void selectAllPassword();
   void clearPasswordSelection();
   void onSecondTick();
@@ -70,9 +71,10 @@ private:
   bool m_wallpaperDirty = false;
   InputDispatcher m_inputDispatcher;
   std::function<void()> m_onLogin;
+  std::function<void(const std::string&)> m_onPasswordChanged;
   bool m_locked = false;
   std::string m_user;
-  std::string m_maskedPassword;
+  std::string m_password;
   std::string m_status;
   bool m_error = false;
   bool m_clockShadowEnabled = true;

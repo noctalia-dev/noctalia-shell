@@ -36,6 +36,13 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"star-off", 0xED62},          // star-off
     {"plugin", 0xF00A},            // plug-connected
     {"official-plugin", 0xF69F},   // shield-filled
+    {"circle-filled", 0xF671},
+    {"pentagon-filled", 0xF68C},
+    {"michelin-star-filled", 0x1000C},
+    {"square-rounded-filled", 0xF6A5},
+    {"guitar-pick-filled", 0xF67B},
+    {"blob-filled", 0xFEB1},
+    {"triangle-filled", 0xF6AD},
     {"calendar", 0xEA53},          // calendar
     {"calculator", 0xEB80},        // calculator
     {"copy", 0xEA7A},              // copy

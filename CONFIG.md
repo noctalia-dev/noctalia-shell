@@ -899,6 +899,7 @@ ui_scale = 1.0              # content scale multiplier for panels and other non-
 lang = "en"                 # overidde language detection
 notifications_dbus = true   # when false, don't claim org.freedesktop.Notifications
 polkit_agent = false        # when true, register Noctalia's native polkit authentication agent
+password_style = "default"  # changes how the password characters are displayed - default | random
 avatar_path = "/home/you/Pictures/avatar.png" # avatar image for Control Center overview session card
 clipboard_auto_paste = "auto" # off | auto | ctrl_v | ctrl_shift_v | shift_insert
 
@@ -915,6 +916,8 @@ speed = 1.0                 # 1.0 = normal, 0.5 = 2x slower, 2.0 = 2x faster
 `notifications_dbus` only controls the external D-Bus notification daemon. When disabled, apps cannot send notifications through `org.freedesktop.Notifications`, but Noctalia internal notifications still appear in popups, history, and widgets.
 
 `polkit_agent` controls Noctalia's native polkit authentication agent registration on `org.freedesktop.PolicyKit1`. Keep this disabled if another desktop agent should handle auth prompts.
+
+`password_style` controls password masking glyphs for shell password inputs (including polkit and lock screen). `default` uses `circle-filled`; `random` cycles through multiple filled glyph shapes.
 
 `shell.animation.enabled` disables animated transitions globally. `shell.animation.speed` scales animation durations globally; values below `1.0` slow motion down and values above `1.0` speed it up.
 

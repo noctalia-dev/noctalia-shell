@@ -217,6 +217,11 @@ enum class ClipboardAutoPasteMode : std::uint8_t {
   ShiftInsert = 4,
 };
 
+enum class PasswordMaskStyle : std::uint8_t {
+  CircleFilled = 0,
+  RandomIcons = 1,
+};
+
 struct ShellConfig {
   struct AnimationConfig {
     bool enabled = true;
@@ -227,6 +232,7 @@ struct ShellConfig {
   std::string lang; // empty = auto-detect from $LC_ALL/$LC_MESSAGES/$LANG
   bool notificationsDbus = true;
   bool polkitAgent = false;
+  PasswordMaskStyle passwordMaskStyle = PasswordMaskStyle::CircleFilled;
   AnimationConfig animation;
   std::string avatarPath;
   ClipboardAutoPasteMode clipboardAutoPaste = ClipboardAutoPasteMode::Auto;

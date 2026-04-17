@@ -50,6 +50,17 @@ LockSurface::LockSurface(WaylandConnection& connection) : Surface(connection) {
 
   auto passwordField = std::make_unique<Input>();
   passwordField->setPlaceholder("Password");
+  passwordField->setPasswordMode(true);
+  passwordField->setOnChange([this](const std::string& value) {
+    if (m_onPasswordChanged) {
+      m_onPasswordChanged(value);
+    }
+  });
+  passwordField->setOnSubmit([this](const std::string& /*value*/) {
+    if (m_onLogin) {
+      m_onLogin();
+    }
+  });
   m_passwordField = static_cast<Input*>(m_root.addChild(std::move(passwordField)));
 
   auto loginButton = std::make_unique<Button>();
@@ -127,12 +138,12 @@ void LockSurface::setLockedState(bool locked) {
   requestUpdate();
 }
 
-void LockSurface::setPromptState(std::string user, std::string maskedPassword, std::string status, bool error) {
-  if (m_user == user && m_maskedPassword == maskedPassword && m_status == status && m_error == error) {
+void LockSurface::setPromptState(std::string user, std::string password, std::string status, bool error) {
+  if (m_user == user && m_password == password && m_status == status && m_error == error) {
     return;
   }
   m_user = std::move(user);
-  m_maskedPassword = std::move(maskedPassword);
+  m_password = std::move(password);
   m_status = std::move(status);
   m_error = error;
   requestUpdate();
@@ -152,6 +163,10 @@ void LockSurface::setWallpaperPath(std::string wallpaperPath) {
 }
 
 void LockSurface::setOnLogin(std::function<void()> onLogin) { m_onLogin = std::move(onLogin); }
+
+void LockSurface::setOnPasswordChanged(std::function<void(const std::string&)> onPasswordChanged) {
+  m_onPasswordChanged = std::move(onPasswordChanged);
+}
 
 void LockSurface::selectAllPassword() {
   if (m_passwordField == nullptr) {
@@ -321,7 +336,7 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
 }
 
 void LockSurface::updateCopy() {
-  m_passwordField->setValue(m_maskedPassword);
+  m_passwordField->setValue(m_password);
   updateClockText();
 }
 

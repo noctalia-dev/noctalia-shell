@@ -1192,6 +1192,26 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto polkitAgent = (*shellTbl)["polkit_agent"].value<bool>()) {
       shell.polkitAgent = *polkitAgent;
     }
+    const auto parsePasswordMaskStyle = [](std::string_view raw) -> std::optional<PasswordMaskStyle> {
+      const std::string style = toLower(trim(raw));
+      if (style == "default" || style == "circle_filled" || style == "circle-filled" || style == "circle") {
+        return PasswordMaskStyle::CircleFilled;
+      }
+      if (style == "random" || style == "random_icons" || style == "random-icons") {
+        return PasswordMaskStyle::RandomIcons;
+      }
+      return std::nullopt;
+    };
+    if (auto passwordStyle = (*shellTbl)["password_style"].value<std::string>()) {
+      if (const auto parsed = parsePasswordMaskStyle(*passwordStyle); parsed.has_value()) {
+        shell.passwordMaskStyle = *parsed;
+      }
+    } else if (auto passwordMaskStyle = (*shellTbl)["password_mask_style"].value<std::string>()) {
+      // Backward-compat alias for older configs.
+      if (const auto parsed = parsePasswordMaskStyle(*passwordMaskStyle); parsed.has_value()) {
+        shell.passwordMaskStyle = *parsed;
+      }
+    }
     if (const auto* animationTbl = (*shellTbl)["animation"].as_table()) {
       if (auto enabled = (*animationTbl)["enabled"].value<bool>()) {
         shell.animation.enabled = *enabled;
