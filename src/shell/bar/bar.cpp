@@ -105,10 +105,12 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
         continue;
       }
       const float pad = w->barCapsuleSpec().padding * scale;
-      float shellW = iw + 2.0f * pad;
-      float shellH = ih + 2.0f * pad;
-      float innerX = pad;
-      float innerY = pad;
+      float padX = pad;
+      float padY = std::min(pad, Style::spaceXs * scale);
+      float shellW = iw + 2.0f * padX;
+      float shellH = ih + 2.0f * padY;
+      float innerX = padX;
+      float innerY = padY;
       if (isVertical) {
         // Shared vertical-bar capsule policy:
         // tighter but symmetric capsule padding, plus cross-axis width clamping.
