@@ -723,8 +723,10 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   // SDF softness to produce a Gaussian-like blurred drop shadow. Rendered at z=-1 so the bar sits
   // on top and hides the shadow's opaque interior.
   if (instance.shadow != nullptr) {
+    const float bgOpacity = std::clamp(instance.barConfig.backgroundOpacity, 0.0f, 1.0f);
+    constexpr float baseShadowAlpha = 0.55f;
     const RoundedRectStyle shadowStyle{
-        .fill = rgba(0.0f, 0.0f, 0.0f, 0.55f),
+        .fill = rgba(0.0f, 0.0f, 0.0f, baseShadowAlpha * bgOpacity),
         .fillEnd = {},
         .border = clearColor(),
         .fillMode = FillMode::Solid,
