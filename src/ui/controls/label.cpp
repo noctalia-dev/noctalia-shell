@@ -147,11 +147,13 @@ void Label::measure(Renderer& renderer) {
   float textX = 0.0f;
   const float finalWidth = width();
   if (align == TextAlign::Center) {
-    textX = std::round((finalWidth - measuredWidth) * 0.5f);
+    textX = (finalWidth - measuredWidth) * 0.5f;
   } else if (align == TextAlign::End) {
-    textX = std::round(finalWidth - measuredWidth);
+    textX = finalWidth - measuredWidth;
   }
-  m_textNode->setPosition(textX, std::round(m_baselineOffset));
+  // Keep subpixel baseline/text offsets here; cairo text rendering performs
+  // a single final snap in device-pixel space after full world transform.
+  m_textNode->setPosition(textX, m_baselineOffset);
 
   m_cachedText = m_textNode->text();
   m_cachedFontSize = m_textNode->fontSize();
