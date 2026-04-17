@@ -50,6 +50,9 @@ public:
   using MenuToggleCallback = std::function<void(const std::string&)>;
 
   explicit TrayService(SessionBus& bus);
+  ~TrayService();
+  TrayService(const TrayService&) = delete;
+  TrayService& operator=(const TrayService&) = delete;
 
   void setChangeCallback(ChangeCallback callback);
   void setMenuToggleCallback(MenuToggleCallback callback);
@@ -59,18 +62,34 @@ public:
   [[nodiscard]] std::vector<TrayMenuEntry> menuEntries(const std::string& itemId);
   [[nodiscard]] std::vector<TrayMenuEntry> menuEntriesForParent(const std::string& itemId, std::int32_t parentId);
   [[nodiscard]] bool activateMenuEntry(const std::string& itemId, std::int32_t entryId);
+  // Notify the dbusmenu server that a (sub)menu is being opened/closed. `entryId`
+  // is the menu item id: 0 for the root menu, or a submenu parent id otherwise.
+  // Well-behaved dbusmenu servers (including Electron) rely on paired opened/closed
+  // events to reset internal state — skipping these causes state drift after many
+  // open/close cycles.
+  void notifyMenuOpened(const std::string& itemId, std::int32_t entryId = 0);
+  void notifyMenuClosed(const std::string& itemId, std::int32_t entryId = 0);
   [[nodiscard]] std::vector<std::string> registeredItems() const;
   [[nodiscard]] bool activateItem(const std::string& itemId, std::int32_t x = 0, std::int32_t y = 0);
   [[nodiscard]] bool openContextMenu(const std::string& itemId, std::int32_t x = 0, std::int32_t y = 0);
 
 private:
+  struct MenuCache {
+    std::unique_ptr<sdbus::IProxy> proxy;
+    // Decoded children per parent-id. parentId=0 is the root menu.
+    std::unordered_map<std::int32_t, std::vector<TrayMenuEntry>> entriesByParent;
+    std::uint32_t revision = 0;
+    bool rootLoaded = false;
+  };
+
   void onRegisterStatusNotifierItem(const std::string& serviceOrPath, const std::string& senderBusName);
   void onRegisterStatusNotifierHost(const std::string& host);
   void registerOrRefreshItem(const std::string& busName, const std::string& objectPath);
   void refreshItemMetadata(const std::string& itemId);
-  void subscribeMenuLayoutUpdated(const std::string& itemId, const std::string& busName,
-                                   const std::string& menuPath);
-  void refreshMenuWatch(const std::string& itemId);
+  void ensureMenuCache(const std::string& itemId, const std::string& busName, const std::string& menuPath);
+  void dropMenuCache(const std::string& itemId);
+  bool fetchMenuSubtree(const std::string& itemId, std::int32_t parentId);
+  void sendMenuEvent(const std::string& itemId, std::int32_t entryId, const std::string& eventName);
   [[nodiscard]] bool ensureItemProxy(const std::string& itemId);
   void removeItemsForBusName(const std::string& busName);
   void emitChanged();
@@ -83,7 +102,7 @@ private:
   std::unique_ptr<sdbus::IProxy> m_dbusProxy;
   std::unordered_map<std::string, TrayItemInfo> m_items;
   std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_itemProxies;
-  std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_menuWatchProxies;
+  std::unordered_map<std::string, MenuCache> m_menuCache;
   bool m_hostRegistered = true;
   ChangeCallback m_changeCallback;
   MenuToggleCallback m_menuToggleCallback;

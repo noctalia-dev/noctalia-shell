@@ -4,6 +4,7 @@
 #include "dbus/session_bus.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <string_view>
 
@@ -302,6 +303,8 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
   m_watcherObject->emitSignal("StatusNotifierHostRegistered").onInterface(k_watcher_interface);
 }
 
+TrayService::~TrayService() = default;
+
 void TrayService::setChangeCallback(ChangeCallback callback) { m_changeCallback = std::move(callback); }
 
 void TrayService::setMenuToggleCallback(MenuToggleCallback callback) { m_menuToggleCallback = std::move(callback); }
@@ -324,6 +327,84 @@ std::vector<TrayItemInfo> TrayService::items() const {
   return out;
 }
 
+namespace {
+
+// Recursively decode a DbusMenuLayout into the cache. Each layout node contributes
+// a `std::vector<TrayMenuEntry>` keyed by its id into entriesByParent. Invisible
+// entries are skipped from display but we still recurse so their own children
+// (if any) are reachable from the cache.
+void ingestLayoutNode(const DbusMenuLayout& node,
+                      std::unordered_map<std::int32_t, std::vector<TrayMenuEntry>>& entriesByParent) {
+  const auto nodeId = std::get<0>(node);
+  const auto& children = std::get<2>(node);
+
+  std::vector<TrayMenuEntry> entries;
+  entries.reserve(children.size());
+  for (const auto& childValue : children) {
+    try {
+      const auto child = childValue.get<DbusMenuLayout>();
+      auto entry = decodeMenuEntry(child);
+      ingestLayoutNode(child, entriesByParent);
+      if (entry.id <= 0 || !entry.visible) {
+        continue;
+      }
+      if (entry.label.empty() && !entry.separator) {
+        continue;
+      }
+      entries.push_back(std::move(entry));
+    } catch (const sdbus::Error&) {
+    }
+  }
+  entriesByParent[nodeId] = std::move(entries);
+}
+
+} // namespace
+
+bool TrayService::fetchMenuSubtree(const std::string& itemId, std::int32_t parentId) {
+  auto cacheIt = m_menuCache.find(itemId);
+  if (cacheIt == m_menuCache.end() || cacheIt->second.proxy == nullptr) {
+    return false;
+  }
+  auto& cache = cacheIt->second;
+
+  // AboutToShow lets the server populate or refresh this subtree. Failures are
+  // non-fatal — not every app implements it, and some Electron versions throw
+  // on it even when GetLayout would succeed.
+  try {
+    bool needsUpdate = false;
+    cache.proxy->callMethod("AboutToShow")
+        .onInterface(k_menu_interface)
+        .withTimeout(std::chrono::milliseconds(500))
+        .withArguments(parentId)
+        .storeResultsTo(needsUpdate);
+    (void)needsUpdate;
+  } catch (const sdbus::Error& e) {
+    kLog.debug("AboutToShow failed id={} parentId={} err={}", itemId, parentId, e.what());
+  }
+
+  try {
+    std::uint32_t revision = 0;
+    DbusMenuLayout layout{};
+    // depth=-1 asks for the full subtree in one call so we don't round-trip
+    // per submenu. Matches quickshell's behavior; dbusmenu spec allows it.
+    cache.proxy->callMethod("GetLayout")
+        .onInterface(k_menu_interface)
+        .withTimeout(std::chrono::milliseconds(2000))
+        .withArguments(parentId, static_cast<std::int32_t>(-1), std::vector<std::string>{})
+        .storeResultsTo(revision, layout);
+
+    cache.revision = revision;
+    ingestLayoutNode(layout, cache.entriesByParent);
+    if (parentId == 0) {
+      cache.rootLoaded = true;
+    }
+    return true;
+  } catch (const sdbus::Error& e) {
+    kLog.warn("GetLayout failed id={} parentId={} err={}", itemId, parentId, e.what());
+    return false;
+  }
+}
+
 std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) {
   if (!ensureItemProxy(itemId)) {
     kLog.warn("menuEntries: no proxy for id={}", itemId);
@@ -340,165 +421,154 @@ std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) {
     return {};
   }
 
-  try {
-    auto menuProxy = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{itemIt->second.busName},
-                                        sdbus::ObjectPath{itemIt->second.menuObjectPath});
-
-    // Signal the app to prepare its menu. Some apps (Electron-based) only populate
-    // GetLayout after receiving AboutToShow(0). Ignore errors — not all apps implement it.
-    try {
-      bool needsUpdate = false;
-      menuProxy->callMethod("AboutToShow")
-          .onInterface(k_menu_interface)
-          .withTimeout(std::chrono::milliseconds(500))
-          .withArguments(static_cast<std::int32_t>(0))
-          .storeResultsTo(needsUpdate);
-      (void)needsUpdate;
-    } catch (const sdbus::Error& e) {
-      kLog.warn("menuEntries: AboutToShow failed id={} err={}", itemId, e.what());
-    }
-
-    std::uint32_t revision = 0;
-    DbusMenuLayout root{};
-    menuProxy->callMethod("GetLayout")
-        .onInterface(k_menu_interface)
-        .withTimeout(std::chrono::milliseconds(2000))
-        .withArguments(static_cast<std::int32_t>(0), static_cast<std::int32_t>(1), std::vector<std::string>{})
-        .storeResultsTo(revision, root);
-    (void)revision;
-
-    std::vector<TrayMenuEntry> out;
-    const auto& children = std::get<2>(root);
-    out.reserve(children.size());
-    for (const auto& childValue : children) {
-      try {
-        const auto child = childValue.get<DbusMenuLayout>();
-        auto entry = decodeMenuEntry(child);
-        if (entry.id <= 0 || !entry.visible) {
-          continue;
-        }
-        if (entry.label.empty() && !entry.separator) {
-          continue;
-        }
-        out.push_back(std::move(entry));
-      } catch (const sdbus::Error&) {
-      }
-    }
-    kLog.debug("menuEntries: id={} got {} entries (raw children={})", itemId, out.size(), children.size());
-    return out;
-  } catch (const sdbus::Error& e) {
-    kLog.warn("menuEntries: GetLayout failed id={} menu={} err={}", itemId, itemIt->second.menuObjectPath, e.what());
-    // Recreate the LayoutUpdated subscription in case the proxy went stale.
-    refreshMenuWatch(itemId);
+  ensureMenuCache(itemId, itemIt->second.busName, itemIt->second.menuObjectPath);
+  auto cacheIt = m_menuCache.find(itemId);
+  if (cacheIt == m_menuCache.end() || cacheIt->second.proxy == nullptr) {
     return {};
   }
+
+  if (!cacheIt->second.rootLoaded) {
+    if (!fetchMenuSubtree(itemId, 0)) {
+      return {};
+    }
+  }
+
+  const auto& byParent = cacheIt->second.entriesByParent;
+  const auto it = byParent.find(0);
+  if (it == byParent.end()) {
+    return {};
+  }
+  return it->second;
 }
 
 std::vector<TrayMenuEntry> TrayService::menuEntriesForParent(const std::string& itemId, std::int32_t parentId) {
-  if (!ensureItemProxy(itemId)) {
-    return {};
-  }
-  const auto itemIt = m_items.find(itemId);
-  if (itemIt == m_items.end()) {
-    return {};
-  }
-  if (itemIt->second.busName.empty() || itemIt->second.menuObjectPath.empty()) {
-    return {};
-  }
-
-  try {
-    auto menuProxy = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{itemIt->second.busName},
-                                        sdbus::ObjectPath{itemIt->second.menuObjectPath});
-
-    std::uint32_t revision = 0;
-    DbusMenuLayout root{};
-    menuProxy->callMethod("GetLayout")
-        .onInterface(k_menu_interface)
-        .withTimeout(std::chrono::milliseconds(2000))
-        .withArguments(parentId, static_cast<std::int32_t>(1), std::vector<std::string>{})
-        .storeResultsTo(revision, root);
-    (void)revision;
-
-    std::vector<TrayMenuEntry> out;
-    const auto& children = std::get<2>(root);
-    out.reserve(children.size());
-    for (const auto& childValue : children) {
-      try {
-        const auto child = childValue.get<DbusMenuLayout>();
-        auto entry = decodeMenuEntry(child);
-        if (entry.id <= 0 || !entry.visible) {
-          continue;
-        }
-        if (entry.label.empty() && !entry.separator) {
-          continue;
-        }
-        out.push_back(std::move(entry));
-      } catch (const sdbus::Error&) {
-      }
+  auto cacheIt = m_menuCache.find(itemId);
+  if (cacheIt == m_menuCache.end() || cacheIt->second.proxy == nullptr) {
+    // Fall back to opening the root cache path — if a caller asks for a submenu
+    // before the root was fetched we have no idea if the parent is valid.
+    (void)menuEntries(itemId);
+    cacheIt = m_menuCache.find(itemId);
+    if (cacheIt == m_menuCache.end() || cacheIt->second.proxy == nullptr) {
+      return {};
     }
-    return out;
-  } catch (const sdbus::Error& e) {
-    kLog.debug("dbusmenu submenu load failed id={} parentId={} err={}", itemId, parentId, e.what());
+  }
+
+  auto& cache = cacheIt->second;
+  if (const auto it = cache.entriesByParent.find(parentId); it != cache.entriesByParent.end()) {
+    return it->second;
+  }
+
+  // Parent's children weren't populated by the recursive root fetch (some apps
+  // populate submenus lazily on AboutToShow). Fetch the subtree now.
+  if (!fetchMenuSubtree(itemId, parentId)) {
     return {};
   }
+  if (const auto it = cache.entriesByParent.find(parentId); it != cache.entriesByParent.end()) {
+    return it->second;
+  }
+  return {};
 }
 
-void TrayService::subscribeMenuLayoutUpdated(const std::string& itemId, const std::string& busName,
-                                              const std::string& menuPath) {
+void TrayService::ensureMenuCache(const std::string& itemId, const std::string& busName,
+                                  const std::string& menuPath) {
   if (busName.empty() || menuPath.empty()) {
     return;
   }
-  // Check if we already have a subscription for the same endpoint — don't recreate it.
-  const auto existing = m_menuWatchProxies.find(itemId);
-  if (existing != m_menuWatchProxies.end()) {
+  const auto existing = m_menuCache.find(itemId);
+  if (existing != m_menuCache.end() && existing->second.proxy != nullptr) {
     return;
   }
 
   try {
     auto proxy = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{busName},
                                     sdbus::ObjectPath{menuPath});
+
+    // LayoutUpdated(rev, parent): server is telling us the subtree rooted at
+    // `parent` changed. Invalidate aggressively — menus are small so re-fetch
+    // is cheap — and wake the UI so it refreshes if currently visible.
     proxy->uponSignal("LayoutUpdated")
         .onInterface(k_menu_interface)
-        .call([this, itemId](std::uint32_t /*revision*/, std::int32_t /*parent*/) {
-          kLog.info("LayoutUpdated for id={}", itemId);
+        .call([this, itemId](std::uint32_t revision, std::int32_t parent) {
+          if (auto it = m_menuCache.find(itemId); it != m_menuCache.end()) {
+            it->second.entriesByParent.clear();
+            it->second.rootLoaded = false;
+            it->second.revision = revision;
+          }
+          kLog.debug("LayoutUpdated id={} rev={} parent={}", itemId, revision, parent);
           emitChanged();
         });
-    m_menuWatchProxies[itemId] = std::move(proxy);
-    kLog.debug("menuWatch: permanent LayoutUpdated subscription for id={}", itemId);
+
+    // ItemsPropertiesUpdated(updated, removed): fine-grained property changes.
+    // We invalidate wholesale rather than trying to patch individual entries —
+    // the cost is one extra GetLayout on next open, and it keeps the code path
+    // simple and correct. Signature matches the dbusmenu spec (a(ia{sv}) + a(ias)).
+    using PropertiesUpdate = std::vector<sdbus::Struct<std::int32_t, std::map<std::string, sdbus::Variant>>>;
+    using PropertiesRemoved = std::vector<sdbus::Struct<std::int32_t, std::vector<std::string>>>;
+    proxy->uponSignal("ItemsPropertiesUpdated")
+        .onInterface(k_menu_interface)
+        .call([this, itemId](const PropertiesUpdate& /*updated*/, const PropertiesRemoved& /*removed*/) {
+          if (auto it = m_menuCache.find(itemId); it != m_menuCache.end()) {
+            it->second.entriesByParent.clear();
+            it->second.rootLoaded = false;
+          }
+          emitChanged();
+        });
+
+    MenuCache cache;
+    cache.proxy = std::move(proxy);
+    m_menuCache[itemId] = std::move(cache);
+    kLog.debug("menuCache: persistent proxy + signals for id={}", itemId);
   } catch (const sdbus::Error& e) {
-    kLog.warn("menuWatch: failed to subscribe LayoutUpdated for id={} err={}", itemId, e.what());
+    kLog.warn("menuCache: failed to create proxy for id={} err={}", itemId, e.what());
   }
 }
 
-void TrayService::refreshMenuWatch(const std::string& itemId) {
-  m_menuWatchProxies.erase(itemId);
-  const auto itemIt = m_items.find(itemId);
-  if (itemIt != m_items.end()) {
-    subscribeMenuLayoutUpdated(itemId, itemIt->second.busName, itemIt->second.menuObjectPath);
+void TrayService::dropMenuCache(const std::string& itemId) { m_menuCache.erase(itemId); }
+
+void TrayService::sendMenuEvent(const std::string& itemId, std::int32_t entryId, const std::string& eventName) {
+  auto it = m_menuCache.find(itemId);
+  if (it == m_menuCache.end() || it->second.proxy == nullptr) {
+    return;
   }
+  const auto timestamp = static_cast<std::uint32_t>(
+      std::chrono::duration_cast<std::chrono::seconds>(
+          std::chrono::system_clock::now().time_since_epoch())
+          .count());
+  try {
+    it->second.proxy->callMethod("Event")
+        .onInterface(k_menu_interface)
+        .withTimeout(std::chrono::milliseconds(500))
+        .withArguments(entryId, eventName, sdbus::Variant{std::int32_t{0}}, timestamp);
+  } catch (const sdbus::Error& e) {
+    kLog.debug("dbusmenu Event failed id={} entryId={} event={} err={}",
+               itemId, entryId, eventName, e.what());
+  }
+}
+
+void TrayService::notifyMenuOpened(const std::string& itemId, std::int32_t entryId) {
+  sendMenuEvent(itemId, entryId, "opened");
+}
+
+void TrayService::notifyMenuClosed(const std::string& itemId, std::int32_t entryId) {
+  sendMenuEvent(itemId, entryId, "closed");
 }
 
 bool TrayService::activateMenuEntry(const std::string& itemId, std::int32_t entryId) {
-  if (!ensureItemProxy(itemId)) {
+  auto it = m_menuCache.find(itemId);
+  if (it == m_menuCache.end() || it->second.proxy == nullptr) {
     return false;
   }
-  const auto itemIt = m_items.find(itemId);
-  if (itemIt == m_items.end()) {
-    return false;
-  }
-  if (itemIt->second.busName.empty() || itemIt->second.menuObjectPath.empty()) {
-    return false;
-  }
-
+  const auto timestamp = static_cast<std::uint32_t>(
+      std::chrono::duration_cast<std::chrono::seconds>(
+          std::chrono::system_clock::now().time_since_epoch())
+          .count());
   try {
-    auto menuProxy = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{itemIt->second.busName},
-                                        sdbus::ObjectPath{itemIt->second.menuObjectPath});
-    menuProxy->callMethod("Event")
+    it->second.proxy->callMethod("Event")
         .onInterface(k_menu_interface)
-        .withArguments(entryId, std::string("clicked"), sdbus::Variant{std::int32_t{0}}, static_cast<std::uint32_t>(0));
+        .withArguments(entryId, std::string("clicked"), sdbus::Variant{std::int32_t{0}}, timestamp);
     return true;
   } catch (const sdbus::Error& e) {
-    kLog.debug("dbusmenu event failed id={} entryId={} err={}", itemId, entryId, e.what());
+    kLog.debug("dbusmenu clicked failed id={} entryId={} err={}", itemId, entryId, e.what());
     return false;
   }
 }
@@ -794,19 +864,19 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
       next.attentionHeight, next.attentionArgb32.size());
 
   if (next == itemIt->second) {
-    // Menu path unchanged — make sure subscription exists (may not have been set up yet
-    // if it was empty on first registration and only available now).
-    subscribeMenuLayoutUpdated(itemId, next.busName, next.menuObjectPath);
+    // Menu path unchanged — make sure the cache/subscription exists (may not have
+    // been set up yet if the Menu property was empty on first registration).
+    ensureMenuCache(itemId, next.busName, next.menuObjectPath);
     return;
   }
 
-  // If the menu path changed, tear down the old subscription so the new one gets created.
+  // If the menu path changed, drop the cache so it gets recreated against the new endpoint.
   if (next.menuObjectPath != itemIt->second.menuObjectPath) {
-    m_menuWatchProxies.erase(itemId);
+    dropMenuCache(itemId);
   }
 
   itemIt->second = std::move(next);
-  subscribeMenuLayoutUpdated(itemId, itemIt->second.busName, itemIt->second.menuObjectPath);
+  ensureMenuCache(itemId, itemIt->second.busName, itemIt->second.menuObjectPath);
   emitChanged();
 }
 
@@ -825,7 +895,7 @@ void TrayService::removeItemsForBusName(const std::string& busName) {
   for (const auto& itemId : removedIds) {
     m_items.erase(itemId);
     m_itemProxies.erase(itemId);
-    m_menuWatchProxies.erase(itemId);
+    m_menuCache.erase(itemId);
     kLog.debug("item unregistered: {}", itemId);
     m_watcherObject->emitSignal("StatusNotifierItemUnregistered").onInterface(k_watcher_interface).withArguments(
         itemId);

@@ -69,11 +69,6 @@ private:
   std::string m_lastClosedItemId;
   std::chrono::steady_clock::time_point m_lastCloseTime;
 
-  // Pre-warmed entries: populated by a background retry while the menu is closed,
-  // so the next open for the same item skips the D-Bus round-trip.
-  std::string m_preWarmedItemId;
-  std::vector<TrayMenuEntry> m_preWarmedEntries;
-
   std::vector<TrayMenuEntry> m_submenuEntries;
   std::int32_t m_submenuParentEntryId = 0;
   std::unique_ptr<MenuInstance> m_submenuInstance;

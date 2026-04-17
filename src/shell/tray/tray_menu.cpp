@@ -138,10 +138,6 @@ void TrayMenu::initialize(WaylandConnection& wayland, ConfigService* config, Tra
 }
 
 void TrayMenu::onTrayChanged() {
-  // Always clear pre-warmed entries on a tray change — they may be stale.
-  m_preWarmedItemId.clear();
-  m_preWarmedEntries.clear();
-
   if (!m_visible) {
     return;
   }
@@ -176,16 +172,7 @@ void TrayMenu::toggleForItem(const std::string& itemId) {
   }
 
   m_activeItemId = itemId;
-
-  // Use pre-warmed entries if they were fetched in the background for this item
-  // (avoids a D-Bus round-trip that might fail if the server is still initializing).
-  if (itemId == m_preWarmedItemId && !m_preWarmedEntries.empty()) {
-    m_entries = std::move(m_preWarmedEntries);
-    m_preWarmedItemId.clear();
-    m_retryTimer.stop();
-  } else {
-    refreshEntries();
-  }
+  refreshEntries();
 
   m_visible = true;
   ensureSurface();
@@ -193,6 +180,15 @@ void TrayMenu::toggleForItem(const std::string& itemId) {
     close();
     return;
   }
+
+  // Notify the dbusmenu server the root menu is being opened. Well-behaved
+  // servers (including Electron) rely on paired opened/closed events to reset
+  // internal state — skipping them causes their handlers to desync after many
+  // open/close cycles, eventually returning errors on every GetLayout.
+  if (m_tray != nullptr) {
+    m_tray->notifyMenuOpened(m_activeItemId);
+  }
+
   rebuildScenes();
 }
 
@@ -203,9 +199,15 @@ void TrayMenu::close() {
   m_lastClosedItemId = m_activeItemId;
   m_lastCloseTime = std::chrono::steady_clock::now();
   m_visible = false;
-  // Do NOT stop m_retryTimer here — background retries continue so that entries
-  // are pre-warmed for the next open even while the menu is closed.
+  // Stop any in-flight retry: continuing to hit GetLayout while the user is
+  // spam-clicking the tray is what wedges Electron's dbusmenu handler.
+  m_retryTimer.stop();
   closeSubmenu();
+  // Send the "closed" event before tearing down the surface so the server
+  // has a chance to reset its internal open-state before the next open.
+  if (m_tray != nullptr && !m_activeItemId.empty()) {
+    m_tray->notifyMenuClosed(m_activeItemId);
+  }
   destroySurface();
 }
 
@@ -338,8 +340,6 @@ bool TrayMenu::onPointerEvent(const PointerEvent& event) {
 
 void TrayMenu::refreshEntries() {
   m_retryTimer.stop();
-  m_preWarmedItemId.clear();
-  m_preWarmedEntries.clear();
   m_entries.clear();
   if (m_tray == nullptr || m_activeItemId.empty()) {
     return;
@@ -348,31 +348,34 @@ void TrayMenu::refreshEntries() {
   if (m_entries.empty()) {
     m_entries.push_back(TrayMenuEntry{
         .id = -1,
-        .label = "No custom menu entries exposed",
+        .label = "No menu items...",
         .enabled = false,
         .visible = true,
         .separator = false,
         .hasSubmenu = false,
     });
-    // Retry in the background with increasing delays. Retries continue even after the
-    // menu is closed (visible=false) so that entries are pre-warmed for the next open.
-    // TrayService's permanent LayoutUpdated subscription also fires emitChanged() when
-    // Electron signals its menu is ready, which triggers onTrayChanged() → rebuild if visible.
+    // Short retry window for apps that need a moment to populate after registration.
+    // LayoutUpdated from TrayService will also trigger a refresh via onTrayChanged,
+    // so this is just a fallback for servers that don't emit it reliably.
     scheduleEntryRetry(0);
   }
 }
 
 void TrayMenu::scheduleEntryRetry(int attempt) {
-  if (attempt >= 7 || m_tray == nullptr) {
+  // Delays: 300ms, 900ms, 2000ms — total window ~3s. Kept small on purpose:
+  // longer retry loops hammer the server while the user is clicking and that is
+  // what wedges Electron's dbusmenu handler.
+  constexpr int kDelays[] = {300, 900, 2000};
+  constexpr int kMaxAttempts = static_cast<int>(sizeof(kDelays) / sizeof(kDelays[0]));
+  if (attempt >= kMaxAttempts || m_tray == nullptr) {
     return;
   }
-  // Delays: 300ms, 700ms, 1.5s, 3s, 5s, 8s, 12s — total window ~30s
-  constexpr int kDelays[] = {300, 700, 1500, 3000, 5000, 8000, 12000};
   const auto delay = std::chrono::milliseconds(kDelays[attempt]);
-  // Capture item ID so stale retries self-abort if the active item changes.
   const std::string capturedItemId = m_activeItemId;
   m_retryTimer.start(delay, [this, attempt, capturedItemId]() {
-    if (m_tray == nullptr || m_activeItemId != capturedItemId) {
+    // Abort if the menu closed or the user switched tray items — we only retry
+    // while the placeholder menu is still visible to the user.
+    if (!m_visible || m_tray == nullptr || m_activeItemId != capturedItemId) {
       return;
     }
     auto fresh = m_tray->menuEntries(capturedItemId);
@@ -381,14 +384,8 @@ void TrayMenu::scheduleEntryRetry(int attempt) {
       return;
     }
     kLog.info("tray menu recovered (attempt {}) for id={}", attempt + 1, capturedItemId);
-    if (m_visible) {
-      m_entries = std::move(fresh);
-      rebuildScenes();
-    } else {
-      // Pre-warm for the next open so it doesn't need to re-fetch.
-      m_preWarmedItemId = capturedItemId;
-      m_preWarmedEntries = std::move(fresh);
-    }
+    m_entries = std::move(fresh);
+    rebuildScenes();
   });
 }
 
@@ -599,6 +596,10 @@ void TrayMenu::closeSubmenu() {
   if (m_submenuInstance != nullptr) {
     m_submenuInstance->inputDispatcher.setSceneRoot(nullptr);
   }
+  // Notify the server before clearing state so the parent id is still valid.
+  if (m_tray != nullptr && !m_activeItemId.empty() && m_submenuParentEntryId != 0) {
+    m_tray->notifyMenuClosed(m_activeItemId, m_submenuParentEntryId);
+  }
   m_submenuInstance.reset();
   m_submenuEntries.clear();
   m_submenuParentEntryId = 0;
@@ -616,6 +617,9 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
     return;
   }
   m_submenuParentEntryId = parentEntryId;
+  // Signal the server that this submenu is being opened. Matches the opened/closed
+  // pairing we do for the root menu.
+  m_tray->notifyMenuOpened(m_activeItemId, parentEntryId);
 
   // Anchor rect is in the main popup's coordinate space (0,0 = top-left of main popup surface)
   const auto mainWidth = static_cast<std::int32_t>(m_instance->surface->width());
