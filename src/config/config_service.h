@@ -29,7 +29,7 @@ struct BarMonitorOverride {
   std::optional<std::int32_t> radiusBottomRight;
   std::optional<std::int32_t> marginH;       // horizontal compositor margin (left = right = marginH)
   std::optional<std::int32_t> marginV;       // vertical compositor margin (gap between bar and screen edge)
-  std::optional<std::int32_t> paddingH;      // horizontal padding from bar edges to start/end sections
+  std::optional<std::int32_t> padding;       // main-axis padding from bar edges to start/end sections
   std::optional<std::int32_t> widgetSpacing; // gap between widgets within a section
   std::optional<std::int32_t> shadowBlur;    // shadow blur radius in pixels (0 = no shadow)
   std::optional<std::int32_t> shadowOffsetX; // horizontal shadow offset in pixels
@@ -62,7 +62,7 @@ struct BarConfig {
   std::int32_t radiusBottomRight = Style::radiusXl;
   std::int32_t marginH = 180;     // horizontal compositor margin (left = right = marginH)
   std::int32_t marginV = 10;      // vertical compositor margin (gap between bar and screen edge)
-  std::int32_t paddingH = 14;     // horizontal padding from bar edges to start/end sections
+  std::int32_t padding = 14;      // main-axis padding from bar edges to start/end sections
   std::int32_t widgetSpacing = 6; // gap between widgets within a section
   std::int32_t shadowBlur = 12;   // shadow blur radius in pixels (0 = no shadow)
   std::int32_t shadowOffsetX = 0; // horizontal shadow offset in pixels

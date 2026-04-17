@@ -58,7 +58,7 @@ ShadowBleed computeShadowBleed(const BarConfig& cfg) {
   };
 }
 
-void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW, float barAreaH, float paddingH,
+void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW, float barAreaH, float padding,
                        bool isVertical) {
   const float slotCross = isVertical ? barAreaW : barAreaH;
 
@@ -123,8 +123,8 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
   finalizeCapsules(instance.centerWidgets);
   finalizeCapsules(instance.endWidgets);
 
-  const float contentMainStart = paddingH;
-  const float contentMainEnd = std::max(contentMainStart, (isVertical ? barAreaH : barAreaW) - paddingH);
+  const float contentMainStart = padding;
+  const float contentMainEnd = std::max(contentMainStart, (isVertical ? barAreaH : barAreaW) - padding);
   const float contentMainSpan = std::max(0.0f, contentMainEnd - contentMainStart);
 
   auto configureSlot = [&](Node* slot, float mainOffset, float mainSize) {
@@ -191,12 +191,11 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
   configureSlot(instance.endSlot, centerSlotEnd, endSlotMain);
 
   if (isVertical) {
-    instance.startSection->setPosition((slotCross - instance.startSection->width()) * 0.5f,
-                                       (startSlotMain - instance.startSection->height()) * 0.5f);
+    instance.startSection->setPosition((slotCross - instance.startSection->width()) * 0.5f, 0.0f);
     instance.centerSection->setPosition((slotCross - instance.centerSection->width()) * 0.5f,
                                         centerSectionOffset);
     instance.endSection->setPosition((slotCross - instance.endSection->width()) * 0.5f,
-                                     (endSlotMain - instance.endSection->height()) * 0.5f);
+                                     endSlotMain - instance.endSection->height());
   } else {
     instance.startSection->setPosition(0.0f, (slotCross - instance.startSection->height()) * 0.5f);
     instance.centerSection->setPosition(centerSectionOffset,
@@ -549,7 +548,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
   const auto w = static_cast<float>(width);
   const auto h = static_cast<float>(height);
-  const float paddingH = static_cast<float>(instance.barConfig.paddingH);
+  const float padding = static_cast<float>(instance.barConfig.padding);
   const float widgetSpacing = static_cast<float>(instance.barConfig.widgetSpacing);
   const float shadowSize = static_cast<float>(std::max(0, instance.barConfig.shadowBlur));
   const float shadowOffsetX = static_cast<float>(instance.barConfig.shadowOffsetX);
@@ -738,7 +737,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.shadow->setSize(barAreaW, barAreaH);
   }
 
-  layoutBarSections(instance, *renderer, barAreaW, barAreaH, paddingH, isVertical);
+  layoutBarSections(instance, *renderer, barAreaW, barAreaH, padding, isVertical);
 
   const InputRect barRect{
       static_cast<int>(barAreaX),
@@ -764,7 +763,7 @@ void Bar::updateWidgets(BarInstance& instance) {
 
   const auto w = static_cast<float>(instance.surface->width());
   const auto h = static_cast<float>(instance.surface->height());
-  const float paddingH = static_cast<float>(instance.barConfig.paddingH);
+  const float padding = static_cast<float>(instance.barConfig.padding);
   const float barH = static_cast<float>(instance.barConfig.height);
   const float marginH = static_cast<float>(instance.barConfig.marginH);
   const float marginV = static_cast<float>(instance.barConfig.marginV);
@@ -797,7 +796,7 @@ void Bar::updateWidgets(BarInstance& instance) {
   updateSection(instance.startWidgets);
   updateSection(instance.centerWidgets);
   updateSection(instance.endWidgets);
-  layoutBarSections(instance, *renderer, barAreaW, barAreaH, paddingH, isVertical);
+  layoutBarSections(instance, *renderer, barAreaW, barAreaH, padding, isVertical);
 }
 
 void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout) {
@@ -820,7 +819,7 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
 
   const auto w = static_cast<float>(instance.surface->width());
   const auto h = static_cast<float>(instance.surface->height());
-  const float paddingH = static_cast<float>(instance.barConfig.paddingH);
+  const float padding = static_cast<float>(instance.barConfig.padding);
   const float barH = static_cast<float>(instance.barConfig.height);
   const float marginH = static_cast<float>(instance.barConfig.marginH);
   const float marginV = static_cast<float>(instance.barConfig.marginV);
@@ -853,7 +852,7 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
     for (auto& widget : instance.endWidgets) {
       widget->layout(*m_renderContext, barAreaW, barAreaH);
     }
-    layoutBarSections(instance, *m_renderContext, barAreaW, barAreaH, paddingH, isVertical);
+    layoutBarSections(instance, *m_renderContext, barAreaW, barAreaH, padding, isVertical);
   }
 }
 

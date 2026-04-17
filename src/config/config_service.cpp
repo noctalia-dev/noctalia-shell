@@ -646,8 +646,8 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.marginH = *ovr.marginH;
     if (ovr.marginV)
       resolved.marginV = *ovr.marginV;
-    if (ovr.paddingH)
-      resolved.paddingH = *ovr.paddingH;
+    if (ovr.padding)
+      resolved.padding = *ovr.padding;
     if (ovr.widgetSpacing)
       resolved.widgetSpacing = *ovr.widgetSpacing;
     if (ovr.shadowBlur)
@@ -1003,8 +1003,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
         bar.marginH = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["margin_v"].value<int64_t>())
         bar.marginV = static_cast<std::int32_t>(*v);
-      if (auto v = (*barTbl)["padding_h"].value<int64_t>())
-        bar.paddingH = static_cast<std::int32_t>(*v);
+      if (auto v = (*barTbl)["padding"].value<int64_t>())
+        bar.padding = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["widget_spacing"].value<int64_t>())
         bar.widgetSpacing = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["shadow_blur"].value<int64_t>())
@@ -1087,8 +1087,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
             ovr.marginH = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["margin_v"].value<int64_t>())
             ovr.marginV = static_cast<std::int32_t>(*v);
-          if (auto v = (*monTbl)["padding_h"].value<int64_t>())
-            ovr.paddingH = static_cast<std::int32_t>(*v);
+          if (auto v = (*monTbl)["padding"].value<int64_t>())
+            ovr.padding = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["widget_spacing"].value<int64_t>())
             ovr.widgetSpacing = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["scale"].value<double>())
