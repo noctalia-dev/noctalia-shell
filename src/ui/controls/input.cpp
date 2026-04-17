@@ -243,7 +243,7 @@ void Input::doLayout(Renderer& renderer) {
   float maskGlyphY = 0.0f;
   float glyphSize = 0.0f;
   if (showPasswordGlyphs) {
-    glyphSize = m_fontSize * Style::glyphSizeRatio * kPasswordGlyphScale;
+    glyphSize = m_fontSize * kPasswordGlyphScale;
     const auto metrics = renderer.measureGlyph(passwordMaskCodepointForIndex(0), glyphSize);
     const float glyphInkCenter = (metrics.top + metrics.bottom) * 0.5f;
     maskGlyphY = std::round(h * 0.5f - glyphInkCenter);

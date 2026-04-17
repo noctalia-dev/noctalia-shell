@@ -13,7 +13,7 @@ Glyph::Glyph() {
   auto glyph = std::make_unique<GlyphNode>();
   m_glyphNode = static_cast<GlyphNode*>(addChild(std::move(glyph)));
   m_logicalFontSize = Style::fontSizeBody;
-  m_glyphNode->setFontSize(m_logicalFontSize * Style::glyphSizeRatio);
+  m_glyphNode->setFontSize(m_logicalFontSize);
   applyPalette();
   m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
 }
@@ -38,7 +38,7 @@ void Glyph::setGlyphSize(float size) {
     return;
   }
   m_logicalFontSize = size;
-  m_glyphNode->setFontSize(size * Style::glyphSizeRatio);
+  m_glyphNode->setFontSize(size);
   m_measureCached = false;
 }
 

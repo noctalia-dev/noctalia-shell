@@ -29,10 +29,6 @@ namespace Style {
   inline constexpr float fontSizeBody = 14.0f;
   inline constexpr float fontSizeTitle = 16.0f;
 
-  // Icon glyphs are rendered slightly larger than their nominal font size to compensate for Cairo's crisp-outline
-  // rasterization
-  inline constexpr float glyphSizeRatio = 1.12f;
-
   inline constexpr float controlHeightSm = 28.0f;
   inline constexpr float controlHeight = 32.0f;
   inline constexpr float controlHeightLg = 36.0f;
