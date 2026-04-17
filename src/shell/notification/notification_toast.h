@@ -51,7 +51,7 @@ private:
     int displayDurationMs = 0; // -1 = persistent (no auto-dismiss)
     int32_t rawTimeoutMs = 0;  // raw DBus timeout; >0 means manager has an auto-expire timer we must coordinate with
     float remainingProgress = 1.0f;
-    float y = -1.0f;              // stable top position while visible; negative = queued/off-screen
+    float y = -1.0f; // stable top position while visible; negative = queued/off-screen
     float height = 0.0f;
     bool exiting = false;
     bool hovered = false; // pointer is currently over the card on some instance
@@ -73,6 +73,8 @@ private:
     // Per-entry visual nodes for this instance
     struct CardState {
       Node* cardNode = nullptr;
+      Node* cardContent = nullptr;
+      Node* cardForeground = nullptr;
       Node* cardBg = nullptr;
       Node* appIconNode = nullptr;
       Label* appNameLabel = nullptr;
@@ -101,8 +103,11 @@ private:
   void destroySurfaces();
   void prepareFrame(Instance& inst, bool needsUpdate, bool needsLayout);
   void buildScene(Instance& inst, uint32_t width, uint32_t height);
-  InputArea* buildCard(const PopupEntry& entry, Label** outAppName, Label** outSummary, Label** outBody,
-                       Node** outBg, Node** outAppIcon, ProgressBar** outProgress, Glyph** outCloseGlyph);
+  InputArea* buildCard(const PopupEntry& entry, Node** outCardContent, Node** outCardForeground, Label** outAppName,
+                       Label** outSummary, Label** outBody, Node** outBg, Node** outAppIcon, ProgressBar** outProgress,
+                       Glyph** outCloseGlyph);
+  void applyCardReveal(Instance::CardState& cs, float reveal, float y) const;
+  [[nodiscard]] float cardReveal(const Instance::CardState& cs) const;
   void addCardToInstance(Instance& inst, std::size_t entryIndex);
   void removeCardFromInstance(Instance& inst, std::size_t entryIndex);
   void syncEntryVisibility(std::size_t entryIndex);
