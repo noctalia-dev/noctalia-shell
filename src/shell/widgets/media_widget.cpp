@@ -185,7 +185,7 @@ void MediaWidget::create() {
   m_area = area.get();
 
   auto art = std::make_unique<Image>();
-  art->setCornerRadius(Style::radiusSm);
+  art->setCornerRadius((m_artSize * m_contentScale) * 0.5f);
   art->setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
   art->setFit(ImageFit::Cover);
   art->setSize(m_artSize * m_contentScale, m_artSize * m_contentScale);
@@ -213,6 +213,7 @@ void MediaWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /
 
   const float artSize = m_artSize * m_contentScale;
   m_art->setSize(artSize, artSize);
+  m_art->setCornerRadius(artSize * 0.5f);
   m_label->setMaxWidth(m_maxWidth * m_contentScale);
   m_label->setColor(m_lastPlaybackStatus == "Playing"
                          ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
