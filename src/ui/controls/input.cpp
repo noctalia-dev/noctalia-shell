@@ -50,6 +50,7 @@ constexpr std::uint32_t kModCtrl  = 1u << 1;
 constexpr float kDefaultWidth = 200.0f;
 constexpr float kCursorWidth  = 1.5f;
 constexpr float kCursorPadV   = 3.0f;
+constexpr std::string_view kPasswordMaskGlyph = "●";
 
 Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
 
@@ -162,6 +163,15 @@ void Input::setHorizontalPadding(float padding) {
   markLayoutDirty();
 }
 
+void Input::setPasswordMode(bool enabled) {
+  if (m_passwordMode == enabled) {
+    return;
+  }
+  m_passwordMode = enabled;
+  updateDisplayText();
+  markLayoutDirty();
+}
+
 void Input::setOnChange(std::function<void(const std::string&)> callback) {
   m_onChange = std::move(callback);
 }
@@ -205,10 +215,21 @@ void Input::doLayout(Renderer& renderer) {
   m_stopX.push_back(0.0f);
   if (!m_value.empty()) {
     std::size_t pos = 0;
+    std::size_t charCount = 0;
     while (pos < m_value.size()) {
       pos = nextCharPos(m_value, pos);
+      ++charCount;
       m_stopByte.push_back(pos);
-      m_stopX.push_back(renderer.measureText(m_value.substr(0, pos), m_fontSize).width);
+      if (m_passwordMode) {
+        std::string maskedForMeasure;
+        maskedForMeasure.reserve(charCount * kPasswordMaskGlyph.size());
+        for (std::size_t i = 0; i < charCount; ++i) {
+          maskedForMeasure.append(kPasswordMaskGlyph);
+        }
+        m_stopX.push_back(renderer.measureText(maskedForMeasure, m_fontSize).width);
+      } else {
+        m_stopX.push_back(renderer.measureText(m_value.substr(0, pos), m_fontSize).width);
+      }
     }
   }
 
@@ -404,7 +425,17 @@ void Input::updateDisplayText() {
     m_label->setText(m_placeholder);
     m_label->setColor(roleColor(ColorRole::OnSurfaceVariant));
   } else {
-    m_label->setText(m_value);
+    if (m_passwordMode) {
+      std::string masked;
+      masked.reserve(m_value.size());
+      for (std::size_t pos = 0; pos < m_value.size();) {
+        pos = nextCharPos(m_value, pos);
+        masked.append(kPasswordMaskGlyph);
+      }
+      m_label->setText(masked);
+    } else {
+      m_label->setText(m_value);
+    }
     m_label->setColor(roleColor(ColorRole::OnSurface));
   }
 }

@@ -1,0 +1,54 @@
+#pragma once
+
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <string>
+#include <vector>
+#include <poll.h>
+
+class SystemBus;
+
+struct PolkitIdentity {
+  std::string kind;
+  std::uint32_t uid = 0;
+  std::string userName;
+};
+
+struct PolkitRequest {
+  std::string actionId;
+  std::string message;
+  std::string iconName;
+  std::string cookie;
+  std::vector<PolkitIdentity> identities;
+};
+
+class PolkitAgent {
+public:
+  using StateCallback = std::function<void()>;
+
+  explicit PolkitAgent(SystemBus& bus);
+  ~PolkitAgent();
+
+  PolkitAgent(const PolkitAgent&) = delete;
+  PolkitAgent& operator=(const PolkitAgent&) = delete;
+
+  void setStateCallback(StateCallback callback);
+  void submitResponse(const std::string& response);
+  void cancelRequest();
+
+  void addPollFds(std::vector<pollfd>& fds) const;
+  void dispatch(const std::vector<pollfd>& fds, std::size_t startIdx);
+
+  [[nodiscard]] bool hasPendingRequest() const noexcept;
+  [[nodiscard]] PolkitRequest pendingRequest() const;
+  [[nodiscard]] bool isResponseRequired() const noexcept;
+  [[nodiscard]] bool responseVisible() const noexcept;
+  [[nodiscard]] std::string inputPrompt() const;
+  [[nodiscard]] std::string supplementaryMessage() const;
+  [[nodiscard]] bool supplementaryIsError() const noexcept;
+
+private:
+  struct Impl;
+  std::unique_ptr<Impl> m_impl;
+};

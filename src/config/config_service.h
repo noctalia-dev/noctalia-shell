@@ -226,6 +226,7 @@ struct ShellConfig {
   float uiScale = 1.0f;
   std::string lang; // empty = auto-detect from $LC_ALL/$LC_MESSAGES/$LANG
   bool notificationsDbus = true;
+  bool polkitAgent = false;
   AnimationConfig animation;
   std::string avatarPath;
   ClipboardAutoPasteMode clipboardAutoPaste = ClipboardAutoPasteMode::Auto;

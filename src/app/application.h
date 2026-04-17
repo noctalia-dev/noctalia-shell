@@ -12,6 +12,8 @@
 #include "dbus/network/network_service.h"
 #include "dbus/notification/notification_poll_source.h"
 #include "dbus/notification/notification_service.h"
+#include "dbus/polkit/polkit_agent.h"
+#include "dbus/polkit/polkit_poll_source.h"
 #include "dbus/power/power_profiles_service.h"
 #include "dbus/session_bus.h"
 #include "dbus/session_bus_poll_source.h"
@@ -43,6 +45,7 @@
 #include "shell/osd/osd_overlay.h"
 #include "shell/overview/overview.h"
 #include "shell/panel/panel_manager.h"
+#include "shell/polkit/polkit_panel.h"
 #include "shell/tray/tray_menu.h"
 #include "shell/wallpaper/panel/thumbnail_service.h"
 #include "shell/wallpaper/wallpaper.h"
@@ -83,6 +86,7 @@ private:
   void initUi();
   void initIpc();
   void syncNotificationDaemon();
+  void syncPolkitAgent();
   bool runIdleCommand(const std::string& command);
   [[nodiscard]] std::vector<PollSource*> buildPollSources();
 
@@ -108,6 +112,7 @@ private:
   std::unique_ptr<NetworkSecretAgent> m_networkSecretAgent;
   std::unique_ptr<BluetoothService> m_bluetoothService;
   std::unique_ptr<BluetoothAgent> m_bluetoothAgent;
+  std::unique_ptr<PolkitAgent> m_polkitAgent;
   std::unique_ptr<UPowerService> m_upowerService;
   std::unique_ptr<BrightnessService> m_brightnessService;
   std::unique_ptr<TrayService> m_trayService;
@@ -145,6 +150,7 @@ private:
   std::unique_ptr<BrightnessPollSource> m_brightnessPollSource;
   std::unique_ptr<PipeWirePollSource> m_pipewirePollSource;
   std::unique_ptr<PipeWireSpectrumPollSource> m_pipewireSpectrumPollSource;
+  std::unique_ptr<PolkitPollSource> m_polkitPollSource;
   IpcService m_ipcService;
   IpcPollSource m_ipcPollSource{m_ipcService};
   WeatherService m_weatherService;

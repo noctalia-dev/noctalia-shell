@@ -1189,6 +1189,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto notificationsDbus = (*shellTbl)["notifications_dbus"].value<bool>()) {
       shell.notificationsDbus = *notificationsDbus;
     }
+    if (auto polkitAgent = (*shellTbl)["polkit_agent"].value<bool>()) {
+      shell.polkitAgent = *polkitAgent;
+    }
     if (const auto* animationTbl = (*shellTbl)["animation"].as_table()) {
       if (auto enabled = (*animationTbl)["enabled"].value<bool>()) {
         shell.animation.enabled = *enabled;

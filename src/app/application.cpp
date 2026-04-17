@@ -111,6 +111,8 @@ Application::~Application() {
     m_brightnessPollSource.reset();
     m_brightnessService.reset();
     m_upowerService.reset();
+    m_polkitPollSource.reset();
+    m_polkitAgent.reset();
     m_networkSecretAgent.reset();
     m_networkService.reset();
     m_bluetoothAgent.reset();
@@ -177,6 +179,60 @@ void Application::syncNotificationDaemon() {
     m_notificationDbus.reset();
     m_notificationPollSource.setDbusService(nullptr);
     m_notificationManager.addInternal("Noctalia", "DBus notifications disabled", e.what(), Urgency::Low);
+  }
+}
+
+void Application::syncPolkitAgent() {
+  if (m_systemBus == nullptr) {
+    m_polkitPollSource.reset();
+    m_polkitAgent.reset();
+    return;
+  }
+
+  if (!m_configService.config().shell.polkitAgent) {
+    if (m_polkitAgent != nullptr) {
+      kLog.info("polkit agent disabled by config");
+    }
+    m_polkitPollSource.reset();
+    m_polkitAgent.reset();
+    return;
+  }
+
+  if (m_polkitAgent != nullptr) {
+    return;
+  }
+
+  try {
+    m_polkitAgent = std::make_unique<PolkitAgent>(*m_systemBus);
+    m_polkitAgent->setStateCallback([this]() {
+      if (m_polkitAgent == nullptr) {
+        return;
+      }
+      const bool hasPending = m_polkitAgent->hasPendingRequest();
+      const bool needsInput = m_polkitAgent->isResponseRequired();
+      if (!hasPending) {
+        if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "polkit") {
+          m_panelManager.close();
+        }
+        return;
+      }
+      if (needsInput) {
+        if (!(m_panelManager.isOpen() && m_panelManager.activePanelId() == "polkit")) {
+          wl_output* output = m_wayland.preferredPanelOutput(std::chrono::milliseconds(1200));
+          m_panelManager.openPanel("polkit", output, 0.0f, 0.0f);
+        } else {
+          m_panelManager.refresh();
+        }
+      } else if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "polkit") {
+        m_panelManager.refresh();
+      }
+    });
+    m_polkitPollSource = std::make_unique<PolkitPollSource>(*m_polkitAgent);
+    kLog.info("polkit authentication agent active");
+  } catch (const std::exception& e) {
+    kLog.warn("polkit agent disabled: {}", e.what());
+    m_polkitPollSource.reset();
+    m_polkitAgent.reset();
   }
 }
 
@@ -389,6 +445,9 @@ void Application::initServices() {
         m_bluetoothAgent.reset();
       }
     }
+
+    syncPolkitAgent();
+    m_configService.addReloadCallback([this]() { syncPolkitAgent(); });
   }
 
   try {
@@ -565,6 +624,7 @@ void Application::initUi() {
   }
   m_panelManager.registerPanel("wallpaper",
                                std::make_unique<WallpaperPanel>(&m_wayland, &m_configService, &m_thumbnailService));
+  m_panelManager.registerPanel("polkit", std::make_unique<PolkitPanel>([this]() { return m_polkitAgent.get(); }));
 
   m_notificationToast.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext, &m_httpClient);
   m_configService.setNotificationManager(&m_notificationManager);
@@ -707,6 +767,9 @@ std::vector<PollSource*> Application::buildPollSources() {
   if (m_pipewireSpectrum != nullptr) {
     m_pipewireSpectrumPollSource = std::make_unique<PipeWireSpectrumPollSource>(*m_pipewireSpectrum);
     sources.push_back(m_pipewireSpectrumPollSource.get());
+  }
+  if (m_polkitPollSource != nullptr) {
+    sources.push_back(m_polkitPollSource.get());
   }
   if (m_brightnessService != nullptr) {
     m_brightnessPollSource = std::make_unique<BrightnessPollSource>(*m_brightnessService);
