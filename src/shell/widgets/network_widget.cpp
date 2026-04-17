@@ -57,36 +57,46 @@ void NetworkWidget::create() {
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
 
-  if (m_showLabel) {
-    auto label = std::make_unique<Label>();
-    label->setFontSize(Style::fontSizeBody * m_contentScale);
-    label->setBold(true);
-    m_label = label.get();
-    area->addChild(std::move(label));
-  }
+  // Always create the label node: horizontal bars honor m_showLabel, but
+  // vertical bars always display a 3-char truncation under the glyph to match
+  // volume/brightness.
+  auto label = std::make_unique<Label>();
+  label->setFontSize(Style::fontSizeBody * m_contentScale);
+  label->setBold(true);
+  m_label = label.get();
+  area->addChild(std::move(label));
 
   setRoot(std::move(area));
 }
 
-void NetworkWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void NetworkWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   auto* rootNode = root();
   if (m_glyph == nullptr || rootNode == nullptr) {
     return;
   }
+  m_isVertical = containerHeight > containerWidth;
   syncState(renderer);
 
   m_glyph->measure(renderer);
-  m_glyph->setPosition(0.0f, 0.0f);
-
-  float totalWidth = m_glyph->width();
   if (m_label != nullptr) {
     m_label->measure(renderer);
-    if (m_label->width() > 0.0f) {
+  }
+
+  const bool labelVisible = m_label != nullptr && m_label->width() > 0.0f && m_label->visible();
+  if (m_isVertical && labelVisible) {
+    const float w = std::max(m_glyph->width(), m_label->width());
+    m_glyph->setPosition(std::round((w - m_glyph->width()) * 0.5f), 0.0f);
+    m_label->setPosition(std::round((w - m_label->width()) * 0.5f), m_glyph->height());
+    rootNode->setSize(w, m_glyph->height() + m_label->height());
+  } else {
+    m_glyph->setPosition(0.0f, 0.0f);
+    float totalWidth = m_glyph->width();
+    if (labelVisible) {
       m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
       totalWidth = m_label->x() + m_label->width();
     }
+    rootNode->setSize(totalWidth, m_glyph->height());
   }
-  rootNode->setSize(totalWidth, m_glyph->height());
 }
 
 void NetworkWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
@@ -97,11 +107,12 @@ void NetworkWidget::syncState(Renderer& renderer) {
   }
 
   const NetworkState& s = m_network->state();
-  if (m_haveLastState && s == m_lastState) {
+  if (m_haveLastState && s == m_lastState && m_isVertical == m_lastVertical) {
     return;
   }
   m_lastState = s;
   m_haveLastState = true;
+  m_lastVertical = m_isVertical;
 
   m_glyph->setGlyph(glyphForState(s));
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
@@ -110,10 +121,19 @@ void NetworkWidget::syncState(Renderer& renderer) {
   m_glyph->measure(renderer);
 
   if (m_label != nullptr) {
-    m_label->setText(labelForState(s));
-    m_label->setColor(s.connected ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
-                                  : roleColor(ColorRole::OnSurfaceVariant));
-    m_label->measure(renderer);
+    const bool showLabel = m_isVertical || m_showLabel;
+    m_label->setVisible(showLabel);
+    if (showLabel) {
+      std::string text = labelForState(s);
+      if (m_isVertical && text.size() > 3) {
+        text = text.substr(0, 3);
+      }
+      m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
+      m_label->setText(text);
+      m_label->setColor(s.connected ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
+                                    : roleColor(ColorRole::OnSurfaceVariant));
+      m_label->measure(renderer);
+    }
   }
 
   if (auto* rootNode = root(); rootNode != nullptr) {

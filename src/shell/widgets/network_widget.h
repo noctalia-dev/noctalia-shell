@@ -27,4 +27,6 @@ private:
   Label* m_label = nullptr;
   NetworkState m_lastState;
   bool m_haveLastState = false;
+  bool m_isVertical = false;
+  bool m_lastVertical = false;
 };
