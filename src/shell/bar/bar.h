@@ -53,6 +53,7 @@ public:
   void onOutputChange();
   void onSecondTick();
   void refresh();
+  void requestLayout();
   // Requests a redraw on every bar surface without re-running widget update/layout.
   // Intended for reactive restyling (palette changes) where the scene graph has
   // already been mutated in place and only a repaint is needed.

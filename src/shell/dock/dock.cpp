@@ -276,6 +276,14 @@ void Dock::requestRedraw() {
   }
 }
 
+void Dock::requestLayout() {
+  for (auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      inst->surface->requestLayout();
+    }
+  }
+}
+
 // ── Input ─────────────────────────────────────────────────────────────────────
 
 bool Dock::onPointerEvent(const PointerEvent& event) {

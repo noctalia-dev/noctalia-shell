@@ -578,6 +578,7 @@ void Application::initUi() {
   };
 
   m_renderContext.initialize(m_glShared);
+  m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache);
 
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
@@ -664,6 +665,25 @@ void Application::initUi() {
                    m_bluetoothService.get(), m_brightnessService.get());
 
   m_dock.initialize(m_wayland, &m_configService, &m_renderContext);
+
+  std::string lastShellFontFamily = m_configService.config().shell.fontFamily;
+  m_configService.addReloadCallback([this, lastShellFontFamily]() mutable {
+    const std::string& newShellFontFamily = m_configService.config().shell.fontFamily;
+    if (newShellFontFamily == lastShellFontFamily) {
+      return;
+    }
+
+    lastShellFontFamily = newShellFontFamily;
+    m_renderContext.setTextFontFamily(newShellFontFamily);
+    m_bar.requestLayout();
+    m_dock.requestLayout();
+    m_panelManager.requestLayout();
+    m_notificationToast.requestLayout();
+    m_lockScreen.onFontChanged();
+    m_osdOverlay.requestLayout();
+    m_trayMenu.onFontChanged();
+    m_overview.onFontChanged();
+  });
 
   m_timeService.setTickSecondCallback([this]() {
     if (m_lockScreen.isActive()) {

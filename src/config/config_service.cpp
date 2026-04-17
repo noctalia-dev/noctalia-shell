@@ -1201,6 +1201,12 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto v = (*shellTbl)["ui_scale"].value<double>()) {
       shell.uiScale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
     }
+    if (auto v = (*shellTbl)["font_family"].value<std::string>()) {
+      shell.fontFamily = trim(*v);
+      if (shell.fontFamily.empty()) {
+        shell.fontFamily = "sans-serif";
+      }
+    }
     if (auto v = (*shellTbl)["lang"].value<std::string>()) {
       shell.lang = *v;
     }

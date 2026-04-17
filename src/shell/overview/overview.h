@@ -19,6 +19,7 @@ public:
   bool initialize(WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache,
                   GlSharedContext* sharedGl);
   void onOutputChange();
+  void onFontChanged();
   void onStateChange();
   void onThemeChanged();
 

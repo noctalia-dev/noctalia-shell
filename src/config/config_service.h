@@ -240,6 +240,7 @@ struct ShellConfig {
   };
 
   float uiScale = 1.0f;
+  std::string fontFamily = "sans-serif";
   std::string lang; // empty = auto-detect from $LC_ALL/$LC_MESSAGES/$LANG
   bool notificationsDbus = true;
   bool polkitAgent = false;

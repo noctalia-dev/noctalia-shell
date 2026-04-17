@@ -360,6 +360,13 @@ void PanelManager::requestUpdateOnly() {
   m_surface->requestUpdateOnly();
 }
 
+void PanelManager::requestLayout() {
+  if (!isOpen() || m_surface == nullptr) {
+    return;
+  }
+  m_surface->requestLayout();
+}
+
 void PanelManager::requestRedraw() {
   if (!isOpen() || m_surface == nullptr) {
     return;

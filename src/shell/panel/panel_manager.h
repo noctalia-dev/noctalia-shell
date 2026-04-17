@@ -50,6 +50,7 @@ public:
 
   void refresh();
   void requestUpdateOnly();
+  void requestLayout();
   // Requests a redraw on the active panel surface without re-running panel
   // update/layout. Used for reactive palette restyling.
   void requestRedraw();

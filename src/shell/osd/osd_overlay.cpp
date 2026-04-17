@@ -53,6 +53,14 @@ void OsdOverlay::requestRedraw() {
   }
 }
 
+void OsdOverlay::requestLayout() {
+  for (auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      inst->surface->requestLayout();
+    }
+  }
+}
+
 void OsdOverlay::show(const OsdContent& content) {
   if (m_wayland == nullptr || m_renderContext == nullptr) {
     return;

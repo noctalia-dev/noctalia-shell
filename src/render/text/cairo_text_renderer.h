@@ -49,6 +49,7 @@ public:
 
   // HiDPI: raster at `scale × fontSize` pixels and shrink the quad by 1/scale.
   void setContentScale(float scale);
+  void setFontFamily(std::string family);
 
   [[nodiscard]] TextMetrics measure(std::string_view text, float fontSize, bool bold = false, float maxWidth = 0.0f,
                                     int maxLines = 0, TextAlign align = TextAlign::Start);
@@ -138,9 +139,11 @@ private:
   void touch(CacheMap::iterator it);
   void evict(CacheMap::iterator it);
   void evictIfNeeded();
+  void clearCaches();
 
   float m_contentScale = 1.0f;
   bool m_fontConfigInitialized = false;
+  std::string m_fontFamily = "sans-serif";
 
   PangoFontMap* m_fontMap = nullptr;    // owned
   PangoContext* m_pangoContext = nullptr; // owned

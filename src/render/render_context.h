@@ -12,6 +12,7 @@
 #include "render/text/cairo_text_renderer.h"
 
 #include <EGL/egl.h>
+#include <string>
 
 class GlSharedContext;
 class Node;
@@ -36,6 +37,7 @@ public:
   // results depend on the rasterization scale and get baked into node
   // positions during layout.
   void syncContentScale(RenderTarget& target);
+  void setTextFontFamily(std::string family);
 
   [[nodiscard]] EGLDisplay eglDisplay() const noexcept { return m_eglDisplay; }
   [[nodiscard]] EGLConfig eglConfig() const noexcept { return m_eglConfig; }

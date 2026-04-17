@@ -338,6 +338,15 @@ bool TrayMenu::onPointerEvent(const PointerEvent& event) {
   return consumed;
 }
 
+void TrayMenu::onFontChanged() {
+  if (m_instance != nullptr && m_instance->surface != nullptr) {
+    m_instance->surface->requestLayout();
+  }
+  if (m_submenuInstance != nullptr && m_submenuInstance->surface != nullptr) {
+    m_submenuInstance->surface->requestLayout();
+  }
+}
+
 void TrayMenu::refreshEntries() {
   m_retryTimer.stop();
   m_entries.clear();

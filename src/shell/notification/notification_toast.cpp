@@ -265,6 +265,14 @@ void NotificationToast::initialize(WaylandConnection& wayland, ConfigService* co
       [this](const Notification& n, NotificationEvent event) { onNotificationEvent(n, event); });
 }
 
+void NotificationToast::requestLayout() {
+  for (auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      inst->surface->requestLayout();
+    }
+  }
+}
+
 void NotificationToast::requestRedraw() {
   for (auto& inst : m_instances) {
     if (inst->surface != nullptr) {

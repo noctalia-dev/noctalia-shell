@@ -33,6 +33,7 @@ public:
 
   void initialize(WaylandConnection& wayland, ConfigService* config, NotificationManager* notifications,
                   RenderContext* renderContext, HttpClient* httpClient = nullptr);
+  void requestLayout();
   void requestRedraw();
 
   bool onPointerEvent(const PointerEvent& event);

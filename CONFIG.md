@@ -918,11 +918,12 @@ enabled = false
 
 ## Shell
 
-Shell-wide UI settings for non-bar surfaces.
+Shell-wide UI settings. Note that `ui_scale` remains non-bar only.
 
 ```toml
 [shell]
 ui_scale = 1.0              # content scale multiplier for panels and other non-bar shell UI
+font_family = "sans-serif"  # main UI text family passed to Pango/Fontconfig
 lang = "en"                 # overidde language detection
 notifications_dbus = true   # when false, don't claim org.freedesktop.Notifications
 polkit_agent = false        # when true, register Noctalia's native polkit authentication agent
@@ -939,6 +940,8 @@ speed = 1.0                 # 1.0 = normal, 0.5 = 2x slower, 2.0 = 2x faster
 - `bar.scale` only affects bar widget content
 - `shell.ui_scale` is for control center, launcher, clipboard, and other non-bar shell UI
 - neither setting changes Wayland output scale / HiDPI buffer scale
+
+`font_family` sets the primary Pango family string for shell text, including bar labels and non-bar surfaces. This can be a concrete family like `Inter` or `Noto Sans`, or a generic family like `sans-serif`. Fontconfig still handles fallback for missing glyphs and other scripts.
 
 `notifications_dbus` only controls the external D-Bus notification daemon. When disabled, apps cannot send notifications through `org.freedesktop.Notifications`, but Noctalia internal notifications still appear in popups, history, and widgets.
 

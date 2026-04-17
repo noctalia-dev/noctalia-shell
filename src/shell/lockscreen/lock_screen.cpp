@@ -118,6 +118,14 @@ void LockScreen::unlock() {
   wl_display_flush(m_wayland->display());
 }
 
+void LockScreen::onFontChanged() {
+  for (auto& inst : m_instances) {
+    if (inst.surface != nullptr) {
+      inst.surface->requestLayout();
+    }
+  }
+}
+
 void LockScreen::onOutputChange() {
   if (!isActive()) {
     return;

@@ -341,6 +341,14 @@ void Bar::requestRedraw() {
   }
 }
 
+void Bar::requestLayout() {
+  for (auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      inst->surface->requestLayout();
+    }
+  }
+}
+
 bool Bar::isRunning() const noexcept {
   if (m_forceHidden) {
     return true; // hidden but still alive — do not exit the main loop

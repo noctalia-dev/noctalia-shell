@@ -32,6 +32,7 @@ public:
   void unlock();
   void onOutputChange();
   void onSecondTick();
+  void onFontChanged();
   void onThemeChanged();
   void onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);

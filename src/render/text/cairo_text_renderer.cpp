@@ -175,17 +175,7 @@ void CairoTextRenderer::initialize(GlyphProgram* program) {
 }
 
 void CairoTextRenderer::cleanup() {
-  for (auto& [key, entry] : m_cache) {
-    for (auto& tile : entry.tiles) {
-      if (tile.texture != 0) {
-        glDeleteTextures(1, &tile.texture);
-      }
-    }
-  }
-  m_cache.clear();
-  m_lru.clear();
-  m_cacheBytes = 0;
-  m_metricsCache.clear();
+  clearCaches();
 
   if (m_pangoContext != nullptr) {
     g_object_unref(m_pangoContext);
@@ -202,11 +192,36 @@ void CairoTextRenderer::cleanup() {
   m_program = nullptr;
 }
 
+void CairoTextRenderer::clearCaches() {
+  for (auto& [key, entry] : m_cache) {
+    for (auto& tile : entry.tiles) {
+      if (tile.texture != 0) {
+        glDeleteTextures(1, &tile.texture);
+      }
+    }
+  }
+  m_cache.clear();
+  m_lru.clear();
+  m_cacheBytes = 0;
+  m_metricsCache.clear();
+}
+
 void CairoTextRenderer::setContentScale(float scale) {
   if (scale <= 0.0f) {
     return;
   }
   m_contentScale = scale;
+}
+
+void CairoTextRenderer::setFontFamily(std::string family) {
+  if (family.empty()) {
+    family = "sans-serif";
+  }
+  if (m_fontFamily == family) {
+    return;
+  }
+  m_fontFamily = std::move(family);
+  clearCaches();
 }
 
 // ── Layout construction ─────────────────────────────────────────────────────
@@ -217,7 +232,7 @@ PangoLayout* CairoTextRenderer::buildLayout(std::string_view text, float fontSiz
 
   const float rasterSize = std::max(1.0f, fontSize * m_contentScale);
   PangoFontDescription* desc = pango_font_description_new();
-  pango_font_description_set_family(desc, "sans-serif");
+  pango_font_description_set_family(desc, m_fontFamily.c_str());
   pango_font_description_set_weight(desc, bold ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL);
   pango_font_description_set_absolute_size(desc, static_cast<double>(rasterSize) * PANGO_SCALE);
   pango_layout_set_font_description(layout, desc);

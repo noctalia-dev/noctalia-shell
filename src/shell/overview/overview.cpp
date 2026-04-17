@@ -88,6 +88,14 @@ void Overview::onThemeChanged() {
   }
 }
 
+void Overview::onFontChanged() {
+  for (auto& inst : m_instances) {
+    if (inst->surface != nullptr) {
+      inst->surface->requestLayout();
+    }
+  }
+}
+
 void Overview::syncInstances() {
   const auto& outputs = m_wayland->outputs();
 

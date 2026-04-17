@@ -118,6 +118,11 @@ void RenderContext::syncContentScale(RenderTarget& target) {
   m_glyphRenderer.setContentScale(contentScale);
 }
 
+void RenderContext::setTextFontFamily(std::string family) {
+  makeCurrentNoSurface();
+  m_textRenderer.setFontFamily(std::move(family));
+}
+
 void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
   UiPhaseScope renderPhase(UiPhase::Render);
   makeCurrent(target);
