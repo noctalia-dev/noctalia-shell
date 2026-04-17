@@ -59,6 +59,7 @@ namespace {
     BrightnessDisplay pub;
     RuntimeBackend backend = RuntimeBackend::Backlight;
     int maxRaw = 0;
+    std::string backlightName;
     std::string sysfsPath;
     std::string connectorName;
     int inotifyWd = -1;
@@ -765,6 +766,7 @@ struct BrightnessService::Impl {
       DisplayInternal display;
       display.backend = RuntimeBackend::Backlight;
       display.maxRaw = maxBrightness;
+      display.backlightName = name;
       display.sysfsPath = path;
       display.connectorName = connectorName;
       display.pub.id = !connectorName.empty() ? connectorName : name;
@@ -882,12 +884,13 @@ struct BrightnessService::Impl {
     }
 
     const auto rawValue = static_cast<std::uint32_t>(std::round(value * static_cast<float>(display.maxRaw)));
+    const std::string& backlightName = display.backlightName.empty() ? display.pub.id : display.backlightName;
     try {
       sessionProxy->callMethod("SetBrightness")
           .onInterface(kLogindSessionInterface)
-          .withArguments(std::string("backlight"), display.pub.id, rawValue);
+          .withArguments(std::string("backlight"), backlightName, rawValue);
     } catch (const sdbus::Error& e) {
-      kLog.warn("SetBrightness failed for '{}': {}", display.pub.id, e.what());
+      kLog.warn("SetBrightness failed for '{}' via '{}': {}", display.pub.id, backlightName, e.what());
     }
   }
 

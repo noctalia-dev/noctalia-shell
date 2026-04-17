@@ -10,7 +10,7 @@ struct BrightnessConfig;
 struct wl_output;
 
 struct BrightnessDisplay {
-  std::string id;       // opaque unique key
+  std::string id;       // stable display id (usually connector name)
   std::string label;    // human-readable (connector name or description)
   float brightness = 0; // 0.0–1.0 normalized
 

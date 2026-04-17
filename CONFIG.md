@@ -743,6 +743,25 @@ Notes:
 - `backend = "none"` hides brightness control for the matched display.
 - `ddcutil` is treated as best-effort. Repeated DDC failures temporarily cool down that display instead of hammering the monitor bus.
 
+IPC:
+
+```sh
+noctalia msg set-brightness current 65
+noctalia msg set-brightness DP-1 0.65
+noctalia msg set-brightness all 40%
+
+noctalia msg raise-brightness current
+noctalia msg raise-brightness DP-1 10
+noctalia msg lower-brightness all 5%
+```
+
+- Targets: `current`, `all`, or a specific display id such as `eDP-1` / `DP-1`.
+- `current` resolves from the active/focused output when possible, then falls back to the last interactive output.
+- Values and steps accept either:
+  - normalized values in the `0.0`–`1.0` range, such as `0.65` or `0.05`
+  - percentage-style values, such as `65`, `65%`, `5`, `5%`, or `12.5%`
+- Rule of thumb: if you include a decimal and the value is `<= 1.0`, it is treated as normalized; otherwise it is treated as a percentage.
+
 ---
 
 ## Night Light

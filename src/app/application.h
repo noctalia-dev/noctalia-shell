@@ -82,8 +82,10 @@ private:
   void initServices();
   void initUi();
   void initIpc();
+  void registerBrightnessIpc();
   void syncNotificationDaemon();
   bool runIdleCommand(const std::string& command);
+  [[nodiscard]] wl_output* resolveCurrentBrightnessOutput() const;
   [[nodiscard]] std::vector<PollSource*> buildPollSources();
 
   WaylandConnection m_wayland;
