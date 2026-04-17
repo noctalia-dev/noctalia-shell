@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cmath>
-
 // Values follow shadcn/ui proportions scaled to 85% for native desktop feel.
 // When porting a shadcn component, multiply its pixel values by 0.85.
 namespace Style {
@@ -38,16 +36,5 @@ namespace Style {
   inline constexpr float controlHeight = 32.0f;
   inline constexpr float controlHeightLg = 36.0f;
   inline constexpr float scrollWheelStep = 56.0f;
-
-  inline float pixelAlignCenter(float containerSize, float contentSize) {
-    return std::round((containerSize - contentSize) * 0.5f);
-  }
-
-  inline float toOdd(float n) {
-    if (n <= 0.0f) {
-      return 0.0f;
-    }
-    return std::floor(n * 0.5f) * 2.0f + 1.0f;
-  }
 
 } // namespace Style

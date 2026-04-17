@@ -63,27 +63,23 @@ void Glyph::measure(Renderer& renderer) {
   }
   auto metrics    = renderer.measureGlyph(m_glyphNode->codepoint(), m_glyphNode->fontSize());
   auto refMetrics = renderer.measureText("A", m_logicalFontSize);
-  const float refHeight = std::max(1.0f, Style::toOdd(refMetrics.bottom - refMetrics.top));
 
   // Bounding box uses the "A" text reference — same height as Label — so glyphs
   // and labels at the same font size are treated identically by Flex layout.
   m_baselineOffset = -refMetrics.top;
   const bool preserveAssignedWidth = flexGrow() > 0.0f && assignedWidth > 0.0f;
   const float finalWidth = preserveAssignedWidth ? assignedWidth : metrics.width;
-  Node::setSize(std::round(finalWidth), refHeight);
+  Node::setSize(std::round(finalWidth), std::round(refMetrics.bottom - refMetrics.top));
 
   // MDI glyphs fill more of the em-square than text, so placing the glyph at
-  // the text baseline leaves its ink above the label's ink. Use the same
-  // odd-height + rounded-center policy as the old QML bar so icon/text rows
-  // don't drift by 1 px at specific bar scales.
+  // the text baseline leaves its ink above the label's ink. Center the glyph
+  // ink on the reference ink center (computed from rounded container height so
+  // glyph and label containers agree on the same midline at any scale).
   const float containerHeight = height();
   const float glyphCenterX = (metrics.left + metrics.right) * 0.5f;
-  const float glyphInkHeight = std::max(0.0f, metrics.bottom - metrics.top);
-  const float glyphNodeY = Style::pixelAlignCenter(containerHeight, glyphInkHeight) - metrics.top;
-  const float snappedGlyphY = std::round(glyphNodeY);
-  m_glyphNode->setPosition(std::round(width() * 0.5f - glyphCenterX), snappedGlyphY);
-  m_visualTop = snappedGlyphY + metrics.top;
-  m_visualBottom = snappedGlyphY + metrics.bottom;
+  const float glyphInkCenter = (metrics.top + metrics.bottom) * 0.5f; // relative to baseline
+  const float glyphNodeY = containerHeight * 0.5f - glyphInkCenter;
+  m_glyphNode->setPosition(std::round(width() * 0.5f - glyphCenterX), std::round(glyphNodeY));
 
   m_cachedCodepoint = m_glyphNode->codepoint();
   m_cachedFontSize = m_glyphNode->fontSize();

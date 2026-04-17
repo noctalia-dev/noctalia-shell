@@ -25,15 +25,6 @@ const char* brightnessGlyphName(float brightness) {
 
 constexpr float kScrollStep = 0.05f;
 
-float alignedRowLabelY(const Glyph& glyph, const Label& label, float contentHeight) {
-  float labelY = std::round((contentHeight - label.height()) * 0.5f);
-  const float glyphY = std::round((contentHeight - glyph.height()) * 0.5f);
-  const float centerDelta =
-      (glyphY + glyph.visualCenterY()) - (labelY + label.visualCenterY());
-  labelY += std::round(centerDelta);
-  return labelY;
-}
-
 } // namespace
 
 BrightnessWidget::BrightnessWidget(BrightnessService* brightness, wl_output* output)
@@ -87,17 +78,10 @@ void BrightnessWidget::doLayout(Renderer& renderer, float /*containerWidth*/, fl
   m_glyph->measure(renderer);
   m_label->measure(renderer);
 
-  const float contentHeight = std::max(m_glyph->height(), m_label->height());
-  float glyphY = std::round((contentHeight - m_glyph->height()) * 0.5f);
-  float labelY = alignedRowLabelY(*m_glyph, *m_label, contentHeight);
-  const float contentTop = std::min(glyphY, labelY);
-  glyphY -= contentTop;
-  labelY -= contentTop;
+  m_glyph->setPosition(0.0f, 0.0f);
+  m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
 
-  m_glyph->setPosition(0.0f, glyphY);
-  m_label->setPosition(m_glyph->width() + Style::spaceXs, labelY);
-
-  rootNode->setSize(m_label->x() + m_label->width(), std::max(glyphY + m_glyph->height(), labelY + m_label->height()));
+  rootNode->setSize(m_label->x() + m_label->width(), m_glyph->height());
 }
 
 void BrightnessWidget::doUpdate(Renderer& renderer) {

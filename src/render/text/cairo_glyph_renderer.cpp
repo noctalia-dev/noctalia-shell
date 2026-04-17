@@ -30,16 +30,6 @@ inline std::uint16_t quantizeScale(float v) {
   return static_cast<std::uint16_t>(std::max(0.0f, v) * static_cast<float>(kScaleQuant) + 0.5f);
 }
 
-auto metricsFromExtents(const cairo_text_extents_t& extents, float invScale) {
-  CairoGlyphRenderer::TextMetrics metrics;
-  metrics.width = static_cast<float>(extents.x_advance) * invScale;
-  metrics.left = static_cast<float>(extents.x_bearing) * invScale;
-  metrics.right = static_cast<float>(extents.x_bearing + extents.width) * invScale;
-  metrics.top = static_cast<float>(extents.y_bearing) * invScale;
-  metrics.bottom = static_cast<float>(extents.y_bearing + extents.height) * invScale;
-  return metrics;
-}
-
 void hashCombine(std::size_t& seed, std::size_t v) {
   seed ^= v + 0x9E3779B97F4A7C15ULL + (seed << 12) + (seed >> 4);
 }
@@ -141,11 +131,7 @@ CairoGlyphRenderer::TextMetrics CairoGlyphRenderer::measureGlyph(char32_t codepo
   }
 
   const float rasterSize = std::max(1.0f, fontSize * m_contentScale);
-
-  CacheEntry* entry = lookupOrRasterize(codepoint, fontSize);
-  if (entry != nullptr) {
-    return entry->metrics;
-  }
+  const float invScale = 1.0f / m_contentScale;
 
   FT_Set_Pixel_Sizes(m_face, 0, static_cast<FT_UInt>(std::round(rasterSize)));
   const FT_UInt glyphIndex = FT_Get_Char_Index(m_face, codepoint);
@@ -155,7 +141,20 @@ CairoGlyphRenderer::TextMetrics CairoGlyphRenderer::measureGlyph(char32_t codepo
   if (FT_Load_Glyph(m_face, glyphIndex, FT_LOAD_DEFAULT) != 0) {
     return {};
   }
-  return {};
+
+  const auto& m = m_face->glyph->metrics;
+  // metrics are in 26.6 fixed point.
+  const float w = static_cast<float>(m.width) / 64.0f * invScale;
+  const float bearingY = static_cast<float>(m.horiBearingY) / 64.0f * invScale;
+  const float height = static_cast<float>(m.height) / 64.0f * invScale;
+
+  TextMetrics out;
+  out.width = static_cast<float>(m.horiAdvance) / 64.0f * invScale;
+  out.left = 0.0f;
+  out.right = w;
+  out.top = -bearingY;           // top of ink = -bearingY relative to baseline
+  out.bottom = height - bearingY;
+  return out;
 }
 
 CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t codepoint, float fontSize) {
@@ -263,10 +262,18 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
   entry.texture = tex;
   entry.bytes = static_cast<std::size_t>(pxWidth) * static_cast<std::size_t>(pxHeight);
 
-  // Logical metrics must come from the same Cairo extents used for rasterization,
-  // otherwise icon/text rows can drift by ~1 px when FreeType and Cairo disagree.
+  // Logical metrics (unscaled).
   const float invScale = 1.0f / m_contentScale;
-  entry.metrics = metricsFromExtents(extents, invScale);
+  TextMetrics metrics;
+  metrics.width = static_cast<float>(m_face->glyph->metrics.horiAdvance) / 64.0f * invScale;
+  const float w = static_cast<float>(m_face->glyph->metrics.width) / 64.0f * invScale;
+  const float bearingY = static_cast<float>(m_face->glyph->metrics.horiBearingY) / 64.0f * invScale;
+  const float height = static_cast<float>(m_face->glyph->metrics.height) / 64.0f * invScale;
+  metrics.left = 0.0f;
+  metrics.right = w;
+  metrics.top = -bearingY;
+  metrics.bottom = height - bearingY;
+  entry.metrics = metrics;
 
   auto [ins, inserted] = m_cache.emplace(std::move(key), std::move(entry));
   m_lru.push_front(ins->first);
@@ -292,7 +299,6 @@ void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, floa
   const float quadW = static_cast<float>(entry->pixelWidth) * invScale;
   const float quadH = static_cast<float>(entry->pixelHeight) * invScale;
   const float baselineLocal = entry->baselinePx * invScale;
-  const float inkTopInset = baselineLocal + entry->metrics.top;
 
   const Mat3 localTranslation = Mat3::translation(x, baselineY - baselineLocal);
   Mat3 world = transform * localTranslation;
@@ -304,8 +310,7 @@ void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, floa
   const bool axisAligned = world.m[1] == 0.0f && world.m[3] == 0.0f;
   if (axisAligned) {
     world.m[6] = std::round(world.m[6] * m_contentScale) / m_contentScale;
-    const float inkTop = world.m[7] + inkTopInset;
-    world.m[7] = std::round(inkTop * m_contentScale) / m_contentScale - inkTopInset;
+    world.m[7] = std::round(world.m[7] * m_contentScale) / m_contentScale;
   }
 
   m_program->drawTinted(entry->texture, surfaceWidth, surfaceHeight, quadW, quadH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, color,

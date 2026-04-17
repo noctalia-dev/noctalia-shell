@@ -29,24 +29,6 @@ namespace {
 
 constexpr float kCircularCapsuleNarrowWidthEpsilon = 1.0f;
 
-float centeredOffset(float containerSize, float contentSize) {
-  return std::max(0.0f, Style::pixelAlignCenter(containerSize, contentSize));
-}
-
-float fittedOddCrossSize(float desiredSize, float maxSize) {
-  const float cappedMax = std::max(1.0f, std::floor(maxSize));
-  float oddSize = std::max(1.0f, Style::toOdd(desiredSize));
-  if (oddSize <= cappedMax) {
-    return oddSize;
-  }
-
-  float fitted = cappedMax;
-  if (std::fmod(fitted, 2.0f) == 0.0f) {
-    fitted = std::max(1.0f, fitted - 1.0f);
-  }
-  return fitted;
-}
-
 std::uint32_t positionToAnchor(const std::string& position) {
   if (position == "bottom") {
     return LayerShellAnchor::Bottom | LayerShellAnchor::Left | LayerShellAnchor::Right;
@@ -129,29 +111,27 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
       float shellH = ih + 2.0f * padY;
       float innerX = padX;
       float innerY = padY;
-      shellH = fittedOddCrossSize(shellH, slotCross);
-      innerY = centeredOffset(shellH, ih);
       if (isVertical) {
         // Shared vertical-bar capsule policy:
         // tighter but symmetric capsule padding, plus cross-axis width clamping.
         // Symmetric padding keeps icon-only capsules circular (not vertically oval).
         const float padCross = std::min(pad, Style::spaceXs * scale);
-        shellH = fittedOddCrossSize(ih + 2.0f * padCross, slotCross);
+        shellH = ih + 2.0f * padCross;
         shellW = std::max(iw, std::min(iw + 2.0f * padCross, slotCross));
-        innerX = centeredOffset(shellW, iw);
-        innerY = centeredOffset(shellH, ih);
+        innerX = std::max(0.0f, (shellW - iw) * 0.5f);
+        innerY = std::max(0.0f, (shellH - ih) * 0.5f);
       }
       // Glyph-only widgets often report narrow width with full text-line height.
       // Treat these as circular capsules by forcing a square shell.
       if (iw <= ih + (kCircularCapsuleNarrowWidthEpsilon * scale)) {
-        float side = fittedOddCrossSize(std::max(shellW, shellH), slotCross);
+        float side = std::max(shellW, shellH);
         if (isVertical) {
           side = std::min(side, slotCross);
         }
         shellW = side;
         shellH = side;
-        innerX = centeredOffset(shellW, iw);
-        innerY = centeredOffset(shellH, ih);
+        innerX = std::max(0.0f, (shellW - iw) * 0.5f);
+        innerY = std::max(0.0f, (shellH - ih) * 0.5f);
       }
       shell->setSize(shellW, shellH);
       bg->setVisible(true);
@@ -233,17 +213,17 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
   configureSlot(instance.endSlot, centerSlotEnd, endSlotMain);
 
   if (isVertical) {
-    instance.startSection->setPosition(centeredOffset(slotCross, instance.startSection->width()), 0.0f);
-    instance.centerSection->setPosition(centeredOffset(slotCross, instance.centerSection->width()),
+    instance.startSection->setPosition((slotCross - instance.startSection->width()) * 0.5f, 0.0f);
+    instance.centerSection->setPosition((slotCross - instance.centerSection->width()) * 0.5f,
                                         centerSectionOffset);
-    instance.endSection->setPosition(centeredOffset(slotCross, instance.endSection->width()),
+    instance.endSection->setPosition((slotCross - instance.endSection->width()) * 0.5f,
                                      endSlotMain - instance.endSection->height());
   } else {
-    instance.startSection->setPosition(0.0f, centeredOffset(slotCross, instance.startSection->height()));
+    instance.startSection->setPosition(0.0f, (slotCross - instance.startSection->height()) * 0.5f);
     instance.centerSection->setPosition(centerSectionOffset,
-                                        centeredOffset(slotCross, instance.centerSection->height()));
+                                        (slotCross - instance.centerSection->height()) * 0.5f);
     instance.endSection->setPosition(endSlotMain - instance.endSection->width(),
-                                     centeredOffset(slotCross, instance.endSection->height()));
+                                     (slotCross - instance.endSection->height()) * 0.5f);
   }
 }
 

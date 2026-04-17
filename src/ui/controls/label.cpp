@@ -126,9 +126,9 @@ void Label::measure(Renderer& renderer) {
   // the visible text ink within that height so digits and symbols do not read
   // optically low beside icons.
   if (singleLine && inkHeight > 0.0f) {
-    const float slotHeight = std::max(1.0f, Style::toOdd(std::max(refHeight, inkHeight)));
-    m_baselineOffset = Style::pixelAlignCenter(slotHeight, inkHeight) - metrics.inkTop;
-    setSize(std::round(std::max(measuredWidth, m_minWidth)), slotHeight);
+    const float height = std::max(refHeight, inkHeight);
+    m_baselineOffset = -metrics.inkTop + (height - inkHeight) * 0.5f;
+    setSize(std::round(std::max(measuredWidth, m_minWidth)), std::round(height));
   } else {
     m_baselineOffset = -std::min(refMetrics.top, metrics.top);
     const float inkBottom = m_baselineOffset + metrics.bottom;
@@ -138,8 +138,6 @@ void Label::measure(Renderer& renderer) {
         preserveAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
     setSize(std::round(finalWidth), std::round(height));
   }
-  m_visualTop = m_baselineOffset + metrics.inkTop;
-  m_visualBottom = m_baselineOffset + metrics.inkBottom;
   const bool preserveAssignedWidth = flexGrow() > 0.0f && assignedWidth > 0.0f;
   if (preserveAssignedWidth) {
     setSize(std::round(std::max(assignedWidth, m_minWidth)), height());

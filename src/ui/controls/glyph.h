@@ -23,9 +23,6 @@ public:
   void measure(Renderer& renderer);
 
   [[nodiscard]] float baselineOffset() const noexcept { return m_baselineOffset; }
-  [[nodiscard]] float visualTop() const noexcept { return m_visualTop; }
-  [[nodiscard]] float visualBottom() const noexcept { return m_visualBottom; }
-  [[nodiscard]] float visualCenterY() const noexcept { return (m_visualTop + m_visualBottom) * 0.5f; }
 
 private:
   void doLayout(Renderer& renderer) override;
@@ -33,8 +30,6 @@ private:
 
   GlyphNode* m_glyphNode = nullptr;
   float m_baselineOffset = 0.0f;
-  float m_visualTop = 0.0f;
-  float m_visualBottom = 0.0f;
   float m_logicalFontSize = 0.0f;
   ThemeColor m_color = roleColor(ColorRole::OnSurface);
   Signal<>::ScopedConnection m_paletteConn;
