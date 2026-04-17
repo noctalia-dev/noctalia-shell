@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 
+class IpcService;
 class LayerSurface;
 class RenderContext;
 class WaylandConnection;
@@ -25,6 +26,8 @@ public:
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
   [[nodiscard]] bool available() const noexcept { return m_manager != nullptr; }
   void setChangeCallback(ChangeCallback callback);
+
+  void registerIpc(IpcService& ipc);
 
 private:
   void ensureSurface();

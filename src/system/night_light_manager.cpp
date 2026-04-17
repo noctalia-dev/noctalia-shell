@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "core/process.h"
+#include "ipc/ipc_service.h"
 
 #include <algorithm>
 #include <cctype>
@@ -331,4 +332,38 @@ void NightLightManager::stopProcess() {
 
   process::terminateTracked(static_cast<int>(m_pid));
   m_pid = -1;
+}
+
+void NightLightManager::registerIpc(IpcService& ipc) {
+  ipc.registerHandler(
+      "enable-nightlight",
+      [this](const std::string&) -> std::string {
+        setEnabled(true);
+        return "ok\n";
+      },
+      "enable-nightlight", "Enable night light schedule");
+
+  ipc.registerHandler(
+      "disable-nightlight",
+      [this](const std::string&) -> std::string {
+        setEnabled(false);
+        return "ok\n";
+      },
+      "disable-nightlight", "Disable night light schedule");
+
+  ipc.registerHandler(
+      "toggle-nightlight",
+      [this](const std::string&) -> std::string {
+        toggleEnabled();
+        return "ok\n";
+      },
+      "toggle-nightlight", "Toggle night light schedule");
+
+  ipc.registerHandler(
+      "toggle-force-nightlight",
+      [this](const std::string&) -> std::string {
+        toggleForceEnabled();
+        return "ok\n";
+      },
+      "toggle-force-nightlight", "Toggle forced night light mode");
 }

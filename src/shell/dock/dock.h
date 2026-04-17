@@ -18,6 +18,7 @@
 class Box;
 class ConfigService;
 class Flex;
+class IpcService;
 class Glyph;
 class Image;
 class InputArea;
@@ -47,6 +48,8 @@ public:
   void toggleVisibility();
   void requestRedraw();
   bool onPointerEvent(const PointerEvent& event);
+
+  void registerIpc(IpcService& ipc);
 
 private:
   struct DockItemView {

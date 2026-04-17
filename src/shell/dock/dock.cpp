@@ -5,6 +5,7 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/process.h"
+#include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
@@ -1708,4 +1709,41 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
 
   menu->wlSurface = menu->surface->wlSurface();
   m_itemMenu = std::move(menu);
+}
+
+void Dock::registerIpc(IpcService& ipc) {
+  ipc.registerHandler(
+      "show-dock",
+      [this](const std::string&) -> std::string {
+        if (m_config)
+          m_config->setDockEnabled(true);
+        return "ok\n";
+      },
+      "show-dock", "Show the dock (persists override)");
+
+  ipc.registerHandler(
+      "hide-dock",
+      [this](const std::string&) -> std::string {
+        if (m_config)
+          m_config->setDockEnabled(false);
+        return "ok\n";
+      },
+      "hide-dock", "Hide the dock (persists override)");
+
+  ipc.registerHandler(
+      "toggle-dock",
+      [this](const std::string&) -> std::string {
+        if (m_config)
+          m_config->setDockEnabled(!m_config->config().dock.enabled);
+        return "ok\n";
+      },
+      "toggle-dock", "Toggle dock visibility (persists override)");
+
+  ipc.registerHandler(
+      "reload-dock",
+      [this](const std::string&) -> std::string {
+        reload();
+        return "ok\n";
+      },
+      "reload-dock", "Reload dock configuration");
 }

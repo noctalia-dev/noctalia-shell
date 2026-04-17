@@ -14,6 +14,7 @@
 #include <vector>
 
 struct WaylandOutput;
+class IpcService;
 class NotificationManager;
 
 struct BarMonitorOverride {
@@ -393,6 +394,8 @@ public:
   void setNotificationManager(NotificationManager* manager);
   void checkReload();
   void forceReload();
+
+  void registerIpc(IpcService& ipc);
 
   // Persisted wallpaper paths (written to overrides.toml, app-managed).
   [[nodiscard]] std::string getWallpaperPath(const std::string& connectorName) const;

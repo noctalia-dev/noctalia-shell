@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "config/config_service.h"
+#include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "shell/lockscreen/lock_surface.h"
 #include "wayland/wayland_connection.h"
@@ -449,4 +450,16 @@ void LockScreen::clearSensitiveString(std::string& value) {
     ptr[i] = '\0';
   }
   value.clear();
+}
+
+void LockScreen::registerIpc(IpcService& ipc) {
+  ipc.registerHandler(
+      "lock",
+      [this](const std::string&) -> std::string {
+        if (lock()) {
+          return "ok\n";
+        }
+        return "error: lock screen unavailable\n";
+      },
+      "lock", "Lock the session using the development lock screen (press Escape to unlock)");
 }

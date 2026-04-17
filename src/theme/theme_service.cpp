@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/log.h"
+#include "ipc/ipc_service.h"
 #include "net/http_client.h"
 #include "theme/builtin_palettes.h"
 #include "theme/fixed_palette.h"
@@ -399,6 +400,16 @@ namespace noctalia::theme {
       return;
     }
     m_animations.tick(static_cast<float>(kTransitionTick.count()));
+  }
+
+  void ThemeService::registerIpc(IpcService& ipc) {
+    ipc.registerHandler(
+        "toggle-theme-mode",
+        [this](const std::string&) -> std::string {
+          toggleLightDark();
+          return "ok\n";
+        },
+        "toggle-theme-mode", "Toggle theme mode between dark and light");
   }
 
 } // namespace noctalia::theme

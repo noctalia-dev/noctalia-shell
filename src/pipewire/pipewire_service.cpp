@@ -1,7 +1,9 @@
 #include "pipewire/pipewire_service.h"
 
+#include "config/config_service.h"
 #include "core/log.h"
 #include "core/process.h"
+#include "ipc/ipc_service.h"
 
 #include <pipewire/extensions/metadata.h>
 #include <pipewire/pipewire.h>
@@ -636,4 +638,74 @@ void PipeWireService::emitChanged() {
   if (m_changeCallback) {
     m_changeCallback();
   }
+}
+
+void PipeWireService::registerIpc(IpcService& ipc, const ConfigService& config) {
+  const auto maxVolume = [&config] { return config.config().audio.enableOverdrive ? 1.5f : 1.0f; };
+
+  ipc.registerHandler(
+      "raise-volume",
+      [this, maxVolume](const std::string&) -> std::string {
+        const auto* sink = defaultSink();
+        if (!sink)
+          return "error: no default output\n";
+        setVolume(std::clamp(sink->volume + 0.05f, 0.0f, maxVolume()));
+        return "ok\n";
+      },
+      "raise-volume", "Increase speaker volume");
+
+  ipc.registerHandler(
+      "lower-volume",
+      [this, maxVolume](const std::string&) -> std::string {
+        const auto* sink = defaultSink();
+        if (!sink)
+          return "error: no default output\n";
+        setVolume(std::clamp(sink->volume - 0.05f, 0.0f, maxVolume()));
+        return "ok\n";
+      },
+      "lower-volume", "Decrease speaker volume");
+
+  ipc.registerHandler(
+      "mute",
+      [this](const std::string&) -> std::string {
+        const auto* sink = defaultSink();
+        if (!sink)
+          return "error: no default output\n";
+        setMuted(!sink->muted);
+        return "ok\n";
+      },
+      "mute", "Toggle speaker mute");
+
+  ipc.registerHandler(
+      "raise-mic-volume",
+      [this, maxVolume](const std::string&) -> std::string {
+        const auto* source = defaultSource();
+        if (!source)
+          return "error: no default input\n";
+        setMicVolume(std::clamp(source->volume + 0.05f, 0.0f, maxVolume()));
+        return "ok\n";
+      },
+      "raise-mic-volume", "Increase microphone volume");
+
+  ipc.registerHandler(
+      "lower-mic-volume",
+      [this, maxVolume](const std::string&) -> std::string {
+        const auto* source = defaultSource();
+        if (!source)
+          return "error: no default input\n";
+        setMicVolume(std::clamp(source->volume - 0.05f, 0.0f, maxVolume()));
+        return "ok\n";
+      },
+      "lower-mic-volume", "Decrease microphone volume");
+
+  ipc.registerHandler(
+      "mute-mic",
+      [this](const std::string&) -> std::string {
+        const auto* source = defaultSource();
+        if (!source)
+          return "error: no default input\n";
+        setMicMuted(!source->muted);
+        return "ok\n";
+      },
+      "mute-mic", "Toggle microphone mute");
 }

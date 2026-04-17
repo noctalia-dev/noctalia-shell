@@ -1,6 +1,7 @@
 #include "idle/idle_inhibitor.h"
 
 #include "core/log.h"
+#include "ipc/ipc_service.h"
 #include "wayland/layer_surface.h"
 #include "wayland/wayland_connection.h"
 
@@ -119,4 +120,36 @@ void IdleInhibitor::notifyChanged() {
   if (m_changeCallback) {
     m_changeCallback();
   }
+}
+
+void IdleInhibitor::registerIpc(IpcService& ipc) {
+  ipc.registerHandler(
+      "enable-idle-inhibitor",
+      [this](const std::string&) -> std::string {
+        if (!available())
+          return "error: idle inhibitor protocol unavailable\n";
+        setEnabled(true);
+        return "ok\n";
+      },
+      "enable-idle-inhibitor", "Enable the compositor idle inhibitor");
+
+  ipc.registerHandler(
+      "disable-idle-inhibitor",
+      [this](const std::string&) -> std::string {
+        if (!available())
+          return "error: idle inhibitor protocol unavailable\n";
+        setEnabled(false);
+        return "ok\n";
+      },
+      "disable-idle-inhibitor", "Disable the compositor idle inhibitor");
+
+  ipc.registerHandler(
+      "toggle-idle-inhibitor",
+      [this](const std::string&) -> std::string {
+        if (!available())
+          return "error: idle inhibitor protocol unavailable\n";
+        toggle();
+        return "ok\n";
+      },
+      "toggle-idle-inhibitor", "Toggle the compositor idle inhibitor");
 }

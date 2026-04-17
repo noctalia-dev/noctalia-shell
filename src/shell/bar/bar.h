@@ -10,6 +10,7 @@
 class ConfigService;
 class HttpClient;
 class IdleInhibitor;
+class IpcService;
 class MprisService;
 class BluetoothService;
 class BrightnessService;
@@ -58,6 +59,8 @@ public:
   void requestRedraw();
   bool onPointerEvent(const PointerEvent& event);
   [[nodiscard]] bool isRunning() const noexcept;
+
+  void registerIpc(IpcService& ipc);
 
 private:
   static void tickWidgets(std::vector<std::unique_ptr<Widget>>& widgets, float deltaMs);

@@ -1,6 +1,7 @@
 #include "config/config_service.h"
 
 #include "core/log.h"
+#include "ipc/ipc_service.h"
 #include "notification/notification_manager.h"
 #include "render/core/color.h"
 #include "wayland/wayland_connection.h"
@@ -1698,4 +1699,14 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
     spec.foreground = std::nullopt;
   }
   return spec;
+}
+
+void ConfigService::registerIpc(IpcService& ipc) {
+  ipc.registerHandler(
+      "reload-config",
+      [this](const std::string&) -> std::string {
+        forceReload();
+        return "ok\n";
+      },
+      "reload-config", "Reload the config file");
 }

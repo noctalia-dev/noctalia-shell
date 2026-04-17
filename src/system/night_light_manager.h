@@ -11,6 +11,8 @@
 #include <sys/types.h>
 #include <vector>
 
+class IpcService;
+
 class NightLightManager {
 public:
   using ChangeCallback = std::function<void()>;
@@ -30,6 +32,8 @@ public:
   [[nodiscard]] bool enabled() const;
   [[nodiscard]] bool forceEnabled() const;
   [[nodiscard]] bool active();
+
+  void registerIpc(IpcService& ipc);
 
 private:
   [[nodiscard]] bool effectiveConfiguredEnabled() const;

@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/ui_phase.h"
 #include "core/log.h"
+#include "ipc/ipc_service.h"
 #include "dbus/power/power_profiles_service.h"
 #include "dbus/tray/tray_service.h"
 #include "dbus/upower/upower_service.h"
@@ -906,4 +907,30 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
   }
 
   return consumed;
+}
+
+void Bar::registerIpc(IpcService& ipc) {
+  ipc.registerHandler(
+      "show-bar",
+      [this](const std::string&) -> std::string {
+        show();
+        return "ok\n";
+      },
+      "show-bar", "Show the bar");
+
+  ipc.registerHandler(
+      "hide-bar",
+      [this](const std::string&) -> std::string {
+        hide();
+        return "ok\n";
+      },
+      "hide-bar", "Hide the bar");
+
+  ipc.registerHandler(
+      "toggle-bar",
+      [this](const std::string&) -> std::string {
+        isVisible() ? hide() : show();
+        return "ok\n";
+      },
+      "toggle-bar", "Toggle bar visibility");
 }

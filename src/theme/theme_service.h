@@ -11,6 +11,7 @@
 
 class ConfigService;
 class HttpClient;
+class IpcService;
 
 namespace noctalia::theme {
 
@@ -32,6 +33,8 @@ namespace noctalia::theme {
 
     void setChangeCallback(ChangeCallback callback);
     void setResolvedCallback(ResolvedCallback callback);
+
+    void registerIpc(IpcService& ipc);
 
   private:
     void resolveAndSet(bool animate);

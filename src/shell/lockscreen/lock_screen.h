@@ -14,6 +14,7 @@ struct ext_session_lock_v1;
 struct wl_surface;
 struct wl_output;
 class ConfigService;
+class IpcService;
 
 class LockSurface;
 class RenderContext;
@@ -35,6 +36,8 @@ public:
   void onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);
   [[nodiscard]] bool isActive() const noexcept;
+
+  void registerIpc(IpcService& ipc);
 
   static void handleLocked(void* data, ext_session_lock_v1* lock);
   static void handleFinished(void* data, ext_session_lock_v1* lock);

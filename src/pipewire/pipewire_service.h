@@ -13,6 +13,9 @@ struct pw_loop;
 struct pw_registry;
 struct spa_hook;
 
+class ConfigService;
+class IpcService;
+
 struct AudioNode {
   std::uint32_t id = 0;
   std::string name;
@@ -73,6 +76,9 @@ public:
   void setMicVolume(float volume);
   void setMicMuted(bool muted);
   void emitVolumePreview(bool isInput, std::uint32_t id, float volume) const;
+
+  // Registers audio-related IPC commands (raise/lower-volume, mute, raise/lower-mic-volume, mute-mic).
+  void registerIpc(IpcService& ipc, const ConfigService& config);
 
   [[nodiscard]] std::uint64_t changeSerial() const noexcept { return m_changeSerial; }
 

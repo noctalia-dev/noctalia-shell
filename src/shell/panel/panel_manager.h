@@ -13,6 +13,7 @@
 #include <unordered_map>
 
 class ConfigService;
+class IpcService;
 class RenderContext;
 class WaylandConnection;
 struct PointerEvent;
@@ -53,6 +54,8 @@ public:
   // update/layout. Used for reactive palette restyling.
   void requestRedraw();
   void close();
+
+  void registerIpc(IpcService& ipc);
 
 private:
   static PanelManager* s_instance;

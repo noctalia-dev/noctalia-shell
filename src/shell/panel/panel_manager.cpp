@@ -4,6 +4,7 @@
 #include "core/ui_phase.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
+#include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "ui/controls/box.h"
 #include "ui/controls/select.h"
@@ -505,4 +506,17 @@ void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     m_activePanel->layout(*m_renderContext, m_contentWidth, m_contentHeight);
   }
+}
+
+void PanelManager::registerIpc(IpcService& ipc) {
+  ipc.registerHandler(
+      "toggle-panel",
+      [this](const std::string& args) -> std::string {
+        if (args.empty()) {
+          return "error: toggle-panel requires a panel id\n";
+        }
+        togglePanel(args);
+        return "ok\n";
+      },
+      "toggle-panel <id>", "Toggle a panel by id (e.g. control-center)");
 }
