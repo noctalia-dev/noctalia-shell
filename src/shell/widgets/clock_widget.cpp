@@ -22,13 +22,30 @@ std::string ClockWidget::formatTimeText() const {
     return m_time.format(m_verticalFormat.c_str());
   }
 
+  // Fallback for vertical bars when no explicit vertical_format is configured:
+  // stack each whitespace- or colon-separated token on its own line so "21:15"
+  // splits into "21" / "15". Matches Pango's lineBudget (1 + '\n' count) so
+  // nothing gets ellipsized unless a single token is wider than the bar.
   auto text = m_time.format(m_format.c_str());
-  for (char& c : text) {
-    if (c == ':') {
-      c = '\n';
+  std::string out;
+  out.reserve(text.size());
+  bool lastWasBreak = true;
+  for (char c : text) {
+    const bool isBreak = (c == ' ' || c == '\t' || c == ':');
+    if (isBreak) {
+      if (!lastWasBreak) {
+        out.push_back('\n');
+        lastWasBreak = true;
+      }
+    } else {
+      out.push_back(c);
+      lastWasBreak = false;
     }
   }
-  return text;
+  if (!out.empty() && out.back() == '\n') {
+    out.pop_back();
+  }
+  return out;
 }
 
 void ClockWidget::create() {
