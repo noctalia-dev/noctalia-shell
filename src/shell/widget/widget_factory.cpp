@@ -170,7 +170,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "media") {
     const float maxWidth = static_cast<float>(wc != nullptr ? wc->getDouble("max_length", 220.0) : 220.0);
-    const float artSize = static_cast<float>(wc != nullptr ? wc->getDouble("art_size", 24.0) : 24.0);
+    const float artSize = static_cast<float>(wc != nullptr ? wc->getDouble("art_size", 16.0) : 16.0);
     auto widget = std::make_unique<MediaWidget>(m_mpris, m_httpClient, maxWidth, artSize);
     widget->setContentScale(contentScale);
     return widget;

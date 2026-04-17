@@ -321,7 +321,7 @@ Shows the current media artwork and track title from MPRIS.
 | Setting      | Type   | Default | Description                         |
 |--------------|--------|---------|-------------------------------------|
 | `max_length` | number | `220`   | Maximum length for the title text   |
-| `art_size`   | number | `24`    | Artwork size in pixels before scale |
+| `art_size`   | number | `16`    | Artwork size in pixels before scale |
 
 ```toml
 [widget.media]
