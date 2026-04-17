@@ -18,11 +18,12 @@ namespace Style {
   inline constexpr float borderWidth = 1.0f;
 
   inline constexpr float spaceXs = 4.0f;
-  // Default inner inset for bar widget capsules (logical px, before bar content scale).
-  inline constexpr float barCapsulePadding = 6.0f;
   inline constexpr float spaceSm = 8.0f;
   inline constexpr float spaceMd = 12.0f;
   inline constexpr float spaceLg = 16.0f;
+
+  // Default inner inset for bar widget capsules (logical px, before bar content scale).
+  inline constexpr float barCapsulePadding = 6.0f;
 
   inline constexpr float fontSizeCaption = 12.0f;
   inline constexpr float fontSizeBody = 14.0f;

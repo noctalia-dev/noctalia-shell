@@ -86,7 +86,6 @@ public:
     setRadius(Style::radiusMd * scale);
     setBackground(roleColor(ColorRole::Surface));
     setBorderWidth(0.0f);
-    setSoftness(1.0f);
 
     auto icon = std::make_unique<Glyph>();
     icon->setGlyph(glyphFor(m_device.kind));

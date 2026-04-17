@@ -16,7 +16,6 @@ void applyOutlinedCard(Flex& card, float scale) {
   card.setBackground(roleColor(ColorRole::Surface, 0.75f));
   card.setBorderWidth(Style::borderWidth);
   card.setBorderColor(roleColor(ColorRole::Outline));
-  card.setSoftness(1.0f);
 }
 
 Label* addTitle(Flex& parent, const std::string& text, float scale) {

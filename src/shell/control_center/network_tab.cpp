@@ -71,7 +71,6 @@ public:
     setRadius(Style::radiusMd);
     setBackground(roleColor(ColorRole::Surface));
     setBorderWidth(0.0f);
-    setSoftness(1.0f);
 
     auto signalGlyph = std::make_unique<Glyph>();
     signalGlyph->setGlyph(NetworkTab_rowGlyph(m_ap));

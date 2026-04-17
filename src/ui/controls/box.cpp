@@ -80,7 +80,7 @@ void Box::setCardStyle() {
   style.borderWidth = m_borderWidth;
   style.fillMode = FillMode::Solid;
   style.radius = Style::radiusMd;
-  style.softness = 1.2f;
+  style.softness = 1.0f;
   m_rect->setStyle(style);
 }
 
@@ -94,7 +94,7 @@ void Box::setPanelStyle() {
   style.borderWidth = m_borderWidth;
   style.fillMode = FillMode::Solid;
   style.radius = Style::radiusXl;
-  style.softness = 1.2f;
+  style.softness = 1.0f;
   m_rect->setStyle(style);
 }
 

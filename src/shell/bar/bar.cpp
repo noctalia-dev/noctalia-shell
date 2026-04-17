@@ -687,7 +687,6 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
           } else {
             capsuleBg->clearBorder();
           }
-          capsuleBg->setSoftness(1.2f * scale);
           capsuleBg->setZIndex(-1);
           shellPtr->addChild(std::move(capsuleBg));
           shellPtr->addChild(widget->releaseRoot());

@@ -42,7 +42,6 @@ public:
     setRadius(Style::radiusMd);
     setBackground(roleColor(ColorRole::Surface));
     setBorderWidth(0.0f);
-    setSoftness(1.0f);
 
     auto radio = std::make_unique<RadioButton>();
     radio->setOnChange([this](bool /*checked*/) {
