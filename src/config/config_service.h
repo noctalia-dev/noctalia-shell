@@ -133,6 +133,10 @@ struct WidgetConfig {
 // Theme role or `#` hex for `[widget.*] color` and other user color strings (same rules as `capsule_fill`).
 [[nodiscard]] ThemeColor themeColorFromConfigString(const std::string& raw);
 
+// Shared output selector matching used by monitor-scoped config and IPC selectors.
+// Matches connector name exactly, or a word-boundary token within output description.
+[[nodiscard]] bool outputMatchesSelector(const std::string& match, const WaylandOutput& output);
+
 enum class WallpaperFillMode : std::uint8_t {
   Center = 0,
   Crop = 1,

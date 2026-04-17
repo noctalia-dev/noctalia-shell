@@ -180,25 +180,6 @@ namespace {
     return nullptr;
   }
 
-  bool matchesOutput(std::string_view match, const WaylandOutput& output) {
-    if (!output.connectorName.empty() && match == output.connectorName) {
-      return true;
-    }
-    if (!output.description.empty()) {
-      std::size_t pos = 0;
-      while ((pos = output.description.find(match, pos)) != std::string::npos) {
-        const bool startOk = (pos == 0 || std::isspace(static_cast<unsigned char>(output.description[pos - 1])) != 0);
-        const bool endOk = (pos + match.size() == output.description.size() ||
-                            std::isspace(static_cast<unsigned char>(output.description[pos + match.size()])) != 0);
-        if (startOk && endOk) {
-          return true;
-        }
-        ++pos;
-      }
-    }
-    return false;
-  }
-
   BrightnessBackendPreference backendPreferenceForOutput(const BrightnessConfig& config, const WaylandOutput* output) {
     if (output == nullptr) {
       return BrightnessBackendPreference::Auto;
@@ -206,7 +187,7 @@ namespace {
 
     for (const auto& override : config.monitorOverrides) {
       const std::string match = !override.match.empty() ? override.match : std::string{};
-      if (match.empty() || !matchesOutput(match, *output)) {
+      if (match.empty() || !outputMatchesSelector(match, *output)) {
         continue;
       }
       if (override.backend.has_value()) {
@@ -1327,14 +1308,13 @@ void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBat
       return false;
     }
 
-    if (token == "all") {
-      for (const auto& display : displays()) {
-        ids.push_back(display.id);
+    auto appendUnique = [&ids](const std::string& id) {
+      if (std::find(ids.begin(), ids.end(), id) == ids.end()) {
+        ids.push_back(id);
       }
-      return !ids.empty();
-    }
+    };
 
-    if (token == "current") {
+    if (token.empty() || token == "current") {
       wl_output* output = m_impl->wayland.activeToplevelOutput();
       if (output == nullptr) {
         output = m_impl->wayland.preferredPanelOutput();
@@ -1348,12 +1328,32 @@ void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBat
         error = "error: current output has no brightness control\n";
         return false;
       }
-      ids.push_back(display->id);
+      appendUnique(display->id);
       return true;
     }
 
+    if (token == "all" || token == "*") {
+      for (const auto& display : displays()) {
+        appendUnique(display.id);
+      }
+      return !ids.empty();
+    }
+
     if (const auto* display = findDisplay(std::string(token)); display != nullptr) {
-      ids.push_back(display->id);
+      appendUnique(display->id);
+      return true;
+    }
+
+    for (const auto& output : m_impl->wayland.outputs()) {
+      if (!outputMatchesSelector(std::string(token), output)) {
+        continue;
+      }
+      if (const auto* display = findByOutput(output.output); display != nullptr) {
+        appendUnique(display->id);
+      }
+    }
+
+    if (!ids.empty()) {
       return true;
     }
 
@@ -1390,59 +1390,67 @@ void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBat
       "set-brightness",
       [this, applyToTargets](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
-        if (parts.size() != 2) {
-          return "error: set-brightness requires <current|all|display-id> <value>\n";
+        if (parts.empty() || parts.size() > 2) {
+          return "error: set-brightness requires <value> or <target> <value>\n";
         }
 
-        const auto amount = noctalia::ipc::parseNormalizedOrPercent(parts[1]);
+        std::string target = "current";
+        std::string valueToken = parts[0];
+        if (parts.size() == 2) {
+          target = parts[0];
+          valueToken = parts[1];
+        }
+
+        const auto amount = noctalia::ipc::parseNormalizedOrPercent(valueToken);
         if (!amount.has_value()) {
           return "error: invalid brightness value (use percent like 65 or 65%, or normalized like 0.65)\n";
         }
 
-        return applyToTargets(parts[0],
+        return applyToTargets(target,
                               [this, amount](const BrightnessDisplay& display) { setBrightness(display.id, *amount); });
       },
-      "set-brightness <current|all|display-id> <value>", "Set brightness for one or more displays");
+      "set-brightness <value> | set-brightness <current|*|all|monitor-selector> <value>",
+      "Set brightness (defaults to current display)");
 
-  ipc.registerHandler(
-      "raise-brightness",
-      [this, applyToTargets](const std::string& args) -> std::string {
-        const auto parts = noctalia::ipc::splitWords(args);
-        if (parts.empty() || parts.size() > 2) {
-          return "error: raise-brightness requires <current|all|display-id> [step]\n";
-        }
+  auto registerDeltaHandler = [this, &ipc, applyToTargets](const std::string& command, float direction,
+                                                           std::string usage, std::string description) {
+    ipc.registerHandler(
+        command,
+        [this, applyToTargets, command, direction](const std::string& args) -> std::string {
+          const auto parts = noctalia::ipc::splitWords(args);
+          if (parts.size() > 2) {
+            return "error: " + command + " accepts at most [target] [step]\n";
+          }
 
-        const auto step = parts.size() == 2 ? noctalia::ipc::parseNormalizedOrPercent(parts[1])
-                                            : std::optional<float>(kDefaultBrightnessStep);
-        if (!step.has_value()) {
-          return "error: invalid brightness step (use percent like 5 or 5%, or normalized like 0.05)\n";
-        }
+          std::string target = "current";
+          std::optional<float> step = kDefaultBrightnessStep;
+          if (parts.size() == 1) {
+            const auto maybeStep = noctalia::ipc::parseNormalizedOrPercent(parts[0]);
+            if (maybeStep.has_value()) {
+              step = maybeStep;
+            } else {
+              target = parts[0];
+            }
+          } else if (parts.size() == 2) {
+            target = parts[0];
+            step = noctalia::ipc::parseNormalizedOrPercent(parts[1]);
+          }
 
-        return applyToTargets(parts[0], [this, step](const BrightnessDisplay& display) {
-          setBrightness(display.id, display.brightness + *step);
-        });
-      },
-      "raise-brightness <current|all|display-id> [step]", "Increase brightness for one or more displays");
+          if (!step.has_value()) {
+            return "error: invalid brightness step (use percent like 5 or 5%, or normalized like 0.05)\n";
+          }
 
-  ipc.registerHandler(
-      "lower-brightness",
-      [this, applyToTargets](const std::string& args) -> std::string {
-        const auto parts = noctalia::ipc::splitWords(args);
-        if (parts.empty() || parts.size() > 2) {
-          return "error: lower-brightness requires <current|all|display-id> [step]\n";
-        }
+          return applyToTargets(target, [this, step, direction](const BrightnessDisplay& display) {
+            setBrightness(display.id, display.brightness + direction * *step);
+          });
+        },
+        std::move(usage), std::move(description));
+  };
 
-        const auto step = parts.size() == 2 ? noctalia::ipc::parseNormalizedOrPercent(parts[1])
-                                            : std::optional<float>(kDefaultBrightnessStep);
-        if (!step.has_value()) {
-          return "error: invalid brightness step (use percent like 5 or 5%, or normalized like 0.05)\n";
-        }
-
-        return applyToTargets(parts[0], [this, step](const BrightnessDisplay& display) {
-          setBrightness(display.id, display.brightness - *step);
-        });
-      },
-      "lower-brightness <current|all|display-id> [step]", "Decrease brightness for one or more displays");
+  registerDeltaHandler("raise-brightness", 1.0f, "raise-brightness [current|*|all|monitor-selector] [step]",
+                       "Increase brightness (defaults to current display)");
+  registerDeltaHandler("lower-brightness", -1.0f, "lower-brightness [current|*|all|monitor-selector] [step]",
+                       "Decrease brightness (defaults to current display)");
 }
 
 void BrightnessService::setChangeCallback(ChangeCallback callback) { m_impl->changeCallback = std::move(callback); }

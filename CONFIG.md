@@ -760,21 +760,23 @@ Notes:
 IPC:
 
 ```sh
-noctalia msg set-brightness current 65
+noctalia msg set-brightness 65            # current display
 noctalia msg set-brightness DP-1 0.65
-noctalia msg set-brightness all 40%
+noctalia msg set-brightness * 40%         # set brightness for all displays
 
-noctalia msg raise-brightness current
+noctalia msg raise-brightness             # current display, default 5% step
 noctalia msg raise-brightness DP-1 10
-noctalia msg lower-brightness all 5%
+noctalia msg lower-brightness * 5%        # lower brightness for all displays
 ```
 
-- Targets: `current`, `all`, or a specific display id such as `eDP-1` / `DP-1`.
+- Targets: `current`, `all`/`*`, a display id (`eDP-1`, `DP-1`), or a monitor selector token using the same matching rules as monitor overrides.
 - `current` resolves from the active/focused output when possible, then falls back to the last interactive output.
 - Values and steps accept either:
   - normalized values in the `0.0`–`1.0` range, such as `0.65` or `0.05`
   - percentage-style values, such as `65`, `65%`, `5`, `5%`, or `12.5%`
 - Rule of thumb: if you include a decimal and the value is `<= 1.0`, it is treated as normalized; otherwise it is treated as a percentage.
+- `raise-brightness` / `lower-brightness` accept optional `[target] [step]`. With no arguments, they target `current` and use a `5%` step.
+- `set-brightness` accepts `<value>` (current display) or `<target> <value>`.
 
 ---
 

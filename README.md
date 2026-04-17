@@ -208,4 +208,4 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 Noctalia reads `$XDG_CONFIG_HOME/noctalia/config.toml` or `~/.config/noctalia/config.toml`.
 If no config file exists, it falls back to built-in defaults in code.
 
-See [CONFIG.md](CONFIG.md) for the full configuration reference.
+See [CONFIG.md](CONFIG.md) for the full configuration reference, including shell IPC command examples.
