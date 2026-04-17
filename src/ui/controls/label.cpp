@@ -148,9 +148,13 @@ void Label::measure(Renderer& renderer) {
         inkHeightForCentering = capInkHeight;
       }
     }
-    const float height = std::max(refHeight, inkHeight);
+    // Round height BEFORE computing the ink-centering offset so the ink center
+    // lands at the geometric center of the rounded (visible) box, not the
+    // unrounded refHeight — otherwise callers that center the label box inside
+    // a parent see the ink offset by up to 0.5px.
+    const float height = std::round(std::max(refHeight, inkHeight));
     m_baselineOffset = -inkTopForCentering + (height - inkHeightForCentering) * 0.5f;
-    setSize(std::round(std::max(measuredWidth, m_minWidth)), std::round(height));
+    setSize(std::round(std::max(measuredWidth, m_minWidth)), height);
   } else {
     m_baselineOffset = -std::min(refMetrics.top, metrics.top);
     const float inkBottom = m_baselineOffset + metrics.bottom;
