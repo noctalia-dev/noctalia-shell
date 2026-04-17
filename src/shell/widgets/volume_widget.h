@@ -26,4 +26,6 @@ private:
   Label* m_label = nullptr;
   float m_lastVolume = -1.0f;
   bool m_lastMuted = false;
+  bool m_isVertical = false;
+  bool m_lastVertical = false;
 };

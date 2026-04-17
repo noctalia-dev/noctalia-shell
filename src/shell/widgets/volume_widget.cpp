@@ -53,21 +53,28 @@ void VolumeWidget::create() {
   setRoot(std::move(area));
 }
 
-void VolumeWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void VolumeWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   auto* rootNode = root();
   if (m_glyph == nullptr || m_label == nullptr || rootNode == nullptr) {
     return;
   }
+  m_isVertical = containerHeight > containerWidth;
   syncState(renderer);
 
   m_glyph->measure(renderer);
   m_label->measure(renderer);
 
-  // Glyph and label share the same reference line height, so y=0 aligns both.
-  m_glyph->setPosition(0.0f, 0.0f);
-  m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
-
-  rootNode->setSize(m_label->x() + m_label->width(), m_glyph->height());
+  if (m_isVertical) {
+    const float w = std::max(m_glyph->width(), m_label->width());
+    m_glyph->setPosition(std::round((w - m_glyph->width()) * 0.5f), 0.0f);
+    m_label->setPosition(std::round((w - m_label->width()) * 0.5f), m_glyph->height());
+    rootNode->setSize(w, m_glyph->height() + m_label->height());
+  } else {
+    // Glyph and label share the same reference line height, so y=0 aligns both.
+    m_glyph->setPosition(0.0f, 0.0f);
+    m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
+    rootNode->setSize(m_label->x() + m_label->width(), m_glyph->height());
+  }
 }
 
 void VolumeWidget::doUpdate(Renderer& renderer) {
@@ -83,12 +90,13 @@ void VolumeWidget::syncState(Renderer& renderer) {
   float volume = sink != nullptr ? sink->volume : 0.0f;
   bool muted = sink != nullptr ? sink->muted : false;
 
-  if (volume == m_lastVolume && muted == m_lastMuted) {
+  if (volume == m_lastVolume && muted == m_lastMuted && m_isVertical == m_lastVertical) {
     return;
   }
 
   m_lastVolume = volume;
   m_lastMuted = muted;
+  m_lastVertical = m_isVertical;
 
   m_glyph->setGlyph(volumeGlyphName(volume, muted));
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
@@ -97,7 +105,8 @@ void VolumeWidget::syncState(Renderer& renderer) {
   m_glyph->measure(renderer);
 
   int pct = static_cast<int>(std::round(volume * 100.0f));
-  m_label->setText(std::to_string(pct) + "%");
+  m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
+  m_label->setText(m_isVertical ? std::to_string(pct) : std::to_string(pct) + "%");
   m_label->setColor(muted ? roleColor(ColorRole::OnSurfaceVariant)
                           : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_label->measure(renderer);

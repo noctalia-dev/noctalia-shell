@@ -24,4 +24,6 @@ private:
   Label* m_label = nullptr;
   bool m_lastAvailable = false;
   float m_lastBrightness = -1.0f;
+  bool m_isVertical = false;
+  bool m_lastVertical = false;
 };

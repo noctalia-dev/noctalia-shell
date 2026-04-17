@@ -64,11 +64,12 @@ void BrightnessWidget::create() {
   setRoot(std::move(area));
 }
 
-void BrightnessWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void BrightnessWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   auto* rootNode = root();
   if (m_glyph == nullptr || m_label == nullptr || rootNode == nullptr) {
     return;
   }
+  m_isVertical = containerHeight > containerWidth;
   syncState(renderer);
   if (!rootNode->visible()) {
     rootNode->setSize(0.0f, 0.0f);
@@ -78,10 +79,16 @@ void BrightnessWidget::doLayout(Renderer& renderer, float /*containerWidth*/, fl
   m_glyph->measure(renderer);
   m_label->measure(renderer);
 
-  m_glyph->setPosition(0.0f, 0.0f);
-  m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
-
-  rootNode->setSize(m_label->x() + m_label->width(), m_glyph->height());
+  if (m_isVertical) {
+    const float w = std::max(m_glyph->width(), m_label->width());
+    m_glyph->setPosition(std::round((w - m_glyph->width()) * 0.5f), 0.0f);
+    m_label->setPosition(std::round((w - m_label->width()) * 0.5f), m_glyph->height());
+    rootNode->setSize(w, m_glyph->height() + m_label->height());
+  } else {
+    m_glyph->setPosition(0.0f, 0.0f);
+    m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
+    rootNode->setSize(m_label->x() + m_label->width(), m_glyph->height());
+  }
 }
 
 void BrightnessWidget::doUpdate(Renderer& renderer) {
@@ -111,12 +118,14 @@ void BrightnessWidget::syncState(Renderer& renderer) {
 
   const float brightness = display->brightness;
   const bool becameAvailable = !m_lastAvailable;
-  if (!becameAvailable && std::abs(brightness - m_lastBrightness) < 0.001f) {
+  if (!becameAvailable && std::abs(brightness - m_lastBrightness) < 0.001f &&
+      m_isVertical == m_lastVertical) {
     return;
   }
 
   m_lastAvailable = true;
   m_lastBrightness = brightness;
+  m_lastVertical = m_isVertical;
 
   m_glyph->setGlyph(brightnessGlyphName(brightness));
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
@@ -124,7 +133,8 @@ void BrightnessWidget::syncState(Renderer& renderer) {
   m_glyph->measure(renderer);
 
   int pct = static_cast<int>(std::round(brightness * 100.0f));
-  m_label->setText(std::to_string(pct) + "%");
+  m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
+  m_label->setText(m_isVertical ? std::to_string(pct) : std::to_string(pct) + "%");
   m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_label->measure(renderer);
 
