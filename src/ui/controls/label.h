@@ -32,6 +32,9 @@ public:
   [[nodiscard]] bool bold() const noexcept;
   [[nodiscard]] TextAlign textAlign() const noexcept;
   [[nodiscard]] float baselineOffset() const noexcept { return m_baselineOffset; }
+  [[nodiscard]] float visualTop() const noexcept { return m_visualTop; }
+  [[nodiscard]] float visualBottom() const noexcept { return m_visualBottom; }
+  [[nodiscard]] float visualCenterY() const noexcept { return (m_visualTop + m_visualBottom) * 0.5f; }
 
   void measure(Renderer& renderer);
 
@@ -44,6 +47,8 @@ private:
   TextNode* m_textNode = nullptr;
   float m_minWidth = 0.0f;
   float m_baselineOffset = 0.0f;
+  float m_visualTop = 0.0f;
+  float m_visualBottom = 0.0f;
   ThemeColor m_color = roleColor(ColorRole::OnSurface);
   Signal<>::ScopedConnection m_paletteConn;
 
