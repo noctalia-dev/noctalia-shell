@@ -71,6 +71,8 @@ void ClockWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   m_isVertical = containerHeight > containerWidth;
   update(renderer);
   m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  // Horizontal clocks should use single-line metrics so capsule height matches sibling widgets.
+  m_label->setMaxLines(m_isVertical ? 0 : 1);
   m_label->setMinWidth(0.0f);
   m_label->setMaxWidth(m_isVertical ? containerWidth : 0.0f);
   m_label->measure(renderer);

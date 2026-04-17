@@ -27,6 +27,8 @@
 
 namespace {
 
+constexpr float kCircularCapsuleNarrowWidthEpsilon = 1.0f;
+
 std::uint32_t positionToAnchor(const std::string& position) {
   if (position == "bottom") {
     return LayerShellAnchor::Bottom | LayerShellAnchor::Left | LayerShellAnchor::Right;
@@ -114,6 +116,18 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
         const float padCross = std::min(pad, Style::spaceXs * scale);
         shellH = ih + 2.0f * padCross;
         shellW = std::max(iw, std::min(iw + 2.0f * padCross, slotCross));
+        innerX = std::max(0.0f, (shellW - iw) * 0.5f);
+        innerY = std::max(0.0f, (shellH - ih) * 0.5f);
+      }
+      // Glyph-only widgets often report narrow width with full text-line height.
+      // Treat these as circular capsules by forcing a square shell.
+      if (iw <= ih + (kCircularCapsuleNarrowWidthEpsilon * scale)) {
+        float side = std::max(shellW, shellH);
+        if (isVertical) {
+          side = std::min(side, slotCross);
+        }
+        shellW = side;
+        shellH = side;
         innerX = std::max(0.0f, (shellW - iw) * 0.5f);
         innerY = std::max(0.0f, (shellH - ih) * 0.5f);
       }
