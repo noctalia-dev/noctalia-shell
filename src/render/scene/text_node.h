@@ -1,11 +1,10 @@
 #pragma once
 
 #include "render/core/color.h"
+#include "render/core/renderer.h"
 #include "render/scene/node.h"
 
 #include <string>
-
-enum class TextAlign : std::uint8_t { Start, Center, End };
 
 class TextNode : public Node {
 public:

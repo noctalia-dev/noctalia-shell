@@ -5,6 +5,8 @@
 
 class TextureManager;
 
+enum class TextAlign : std::uint8_t { Start, Center, End };
+
 struct TextMetrics {
   float width = 0.0f;
   float left = 0.0f;
@@ -18,7 +20,8 @@ public:
   virtual ~Renderer() = default;
 
   [[nodiscard]] virtual TextMetrics measureText(std::string_view text, float fontSize, bool bold = false,
-                                                float maxWidth = 0.0f, int maxLines = 0) = 0;
+                                                float maxWidth = 0.0f, int maxLines = 0,
+                                                TextAlign align = TextAlign::Start) = 0;
   [[nodiscard]] virtual TextMetrics measureGlyph(char32_t codepoint, float fontSize) = 0;
   [[nodiscard]] virtual TextureManager& textureManager() = 0;
 };

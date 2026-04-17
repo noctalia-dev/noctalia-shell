@@ -2,6 +2,7 @@
 
 #include "render/core/color.h"
 #include "render/core/mat3.h"
+#include "render/core/renderer.h"
 
 #include <GLES2/gl2.h>
 
@@ -50,10 +51,11 @@ public:
   void setContentScale(float scale);
 
   [[nodiscard]] TextMetrics measure(std::string_view text, float fontSize, bool bold = false, float maxWidth = 0.0f,
-                                    int maxLines = 0);
+                                    int maxLines = 0, TextAlign align = TextAlign::Start);
 
   void draw(float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text, float fontSize,
-            const Color& color, const Mat3& transform, bool bold = false, float maxWidth = 0.0f, int maxLines = 0);
+            const Color& color, const Mat3& transform, bool bold = false, float maxWidth = 0.0f, int maxLines = 0,
+            TextAlign align = TextAlign::Start);
 
 private:
   struct CacheKey {
@@ -63,6 +65,7 @@ private:
     std::uint32_t maxWidthQ = 0; // maxWidth * 64 + 0.5, 0 = no limit
     std::uint16_t scaleQ = 0;    // contentScale * 64 + 0.5
     std::uint16_t maxLines = 0;  // 0 = no explicit limit (use '\n'-count fallback)
+    TextAlign align = TextAlign::Start;
     bool bold = false;
 
     bool operator==(const CacheKey& other) const noexcept;
@@ -80,6 +83,7 @@ private:
     std::uint32_t maxWidthQ = 0;
     std::uint16_t scaleQ = 0;
     std::uint16_t maxLines = 0;
+    TextAlign align = TextAlign::Start;
     bool bold = false;
 
     bool operator==(const MetricsKey& other) const noexcept;
@@ -119,8 +123,8 @@ private:
   using MetricsMap = std::unordered_map<MetricsKey, TextMetrics, MetricsKeyHash>;
 
   // Build a PangoLayout at the given scaled size. Caller owns the layout (g_object_unref).
-  PangoLayout* buildLayout(std::string_view text, float fontSize, bool bold, float maxWidthPxScaled,
-                           int maxLines) const;
+  PangoLayout* buildLayout(std::string_view text, float fontSize, bool bold, float maxWidthPxScaled, int maxLines,
+                           TextAlign align) const;
   // Render a layout into a new GL texture; fills out fields of `entry`.
   // When `tinted` is true, rasterizes as CAIRO_FORMAT_A8 / GL_ALPHA and the
   // color is applied via u_tint at draw time. When false, rasterizes as
@@ -130,7 +134,7 @@ private:
   TextMetrics metricsFromLayout(PangoLayout* layout) const;
 
   CacheEntry* lookupOrRasterize(std::string_view text, float fontSize, bool bold, float maxWidth, int maxLines,
-                                const Color& color);
+                                TextAlign align, const Color& color);
   void touch(CacheMap::iterator it);
   void evict(CacheMap::iterator it);
   void evictIfNeeded();

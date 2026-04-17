@@ -113,7 +113,7 @@ void Label::measure(Renderer& renderer) {
     return;
   }
   auto metrics = renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold(), maxWidth,
-                                      maxLines);
+                                      maxLines, align);
   auto refMetrics = renderer.measureText("A", m_textNode->fontSize(), m_textNode->bold());
   const float measuredWidth = maxWidth > 0.0f ? std::min(metrics.width, maxWidth) : metrics.width;
 

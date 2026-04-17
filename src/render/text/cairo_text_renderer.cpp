@@ -98,7 +98,7 @@ bool containsColorGlyph(std::string_view text) {
 
 bool CairoTextRenderer::CacheKey::operator==(const CacheKey& other) const noexcept {
   return bold == other.bold && sizeQ == other.sizeQ && scaleQ == other.scaleQ && maxWidthQ == other.maxWidthQ &&
-         maxLines == other.maxLines && colorRgba == other.colorRgba && text == other.text;
+         maxLines == other.maxLines && align == other.align && colorRgba == other.colorRgba && text == other.text;
 }
 
 std::size_t CairoTextRenderer::CacheKeyHash::operator()(const CacheKey& k) const noexcept {
@@ -107,6 +107,7 @@ std::size_t CairoTextRenderer::CacheKeyHash::operator()(const CacheKey& k) const
   hashCombine(seed, std::hash<std::uint32_t>{}(k.maxWidthQ));
   hashCombine(seed, std::hash<std::uint16_t>{}(k.scaleQ));
   hashCombine(seed, std::hash<std::uint16_t>{}(k.maxLines));
+  hashCombine(seed, std::hash<std::uint8_t>{}(static_cast<std::uint8_t>(k.align)));
   hashCombine(seed, std::hash<std::uint32_t>{}(k.colorRgba));
   hashCombine(seed, std::hash<bool>{}(k.bold));
   return seed;
@@ -114,7 +115,7 @@ std::size_t CairoTextRenderer::CacheKeyHash::operator()(const CacheKey& k) const
 
 bool CairoTextRenderer::MetricsKey::operator==(const MetricsKey& other) const noexcept {
   return bold == other.bold && sizeQ == other.sizeQ && scaleQ == other.scaleQ && maxWidthQ == other.maxWidthQ &&
-         maxLines == other.maxLines && text == other.text;
+         maxLines == other.maxLines && align == other.align && text == other.text;
 }
 
 std::size_t CairoTextRenderer::MetricsKeyHash::operator()(const MetricsKey& k) const noexcept {
@@ -123,6 +124,7 @@ std::size_t CairoTextRenderer::MetricsKeyHash::operator()(const MetricsKey& k) c
   hashCombine(seed, std::hash<std::uint32_t>{}(k.maxWidthQ));
   hashCombine(seed, std::hash<std::uint16_t>{}(k.scaleQ));
   hashCombine(seed, std::hash<std::uint16_t>{}(k.maxLines));
+  hashCombine(seed, std::hash<std::uint8_t>{}(static_cast<std::uint8_t>(k.align)));
   hashCombine(seed, std::hash<bool>{}(k.bold));
   return seed;
 }
@@ -210,7 +212,7 @@ void CairoTextRenderer::setContentScale(float scale) {
 // ── Layout construction ─────────────────────────────────────────────────────
 
 PangoLayout* CairoTextRenderer::buildLayout(std::string_view text, float fontSize, bool bold, float maxWidthPxScaled,
-                                            int maxLines) const {
+                                            int maxLines, TextAlign align) const {
   PangoLayout* layout = pango_layout_new(m_pangoContext);
 
   const float rasterSize = std::max(1.0f, fontSize * m_contentScale);
@@ -247,6 +249,14 @@ PangoLayout* CairoTextRenderer::buildLayout(std::string_view text, float fontSiz
     pango_layout_set_width(layout, -1);
   }
 
+  PangoAlignment pangoAlign = PANGO_ALIGN_LEFT;
+  if (align == TextAlign::Center) {
+    pangoAlign = PANGO_ALIGN_CENTER;
+  } else if (align == TextAlign::End) {
+    pangoAlign = PANGO_ALIGN_RIGHT;
+  }
+  pango_layout_set_alignment(layout, pangoAlign);
+
   return layout;
 }
 
@@ -275,7 +285,7 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::metricsFromLayout(PangoLayout*
 // ── measure / truncate ──────────────────────────────────────────────────────
 
 CairoTextRenderer::TextMetrics CairoTextRenderer::measure(std::string_view text, float fontSize, bool bold,
-                                                          float maxWidth, int maxLines) {
+                                                          float maxWidth, int maxLines, TextAlign align) {
   if (m_pangoContext == nullptr || text.empty()) {
     return {};
   }
@@ -286,6 +296,7 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::measure(std::string_view text,
   key.maxWidthQ = quantizeSize(std::max(0.0f, maxWidth));
   key.scaleQ = quantizeScale(m_contentScale);
   key.maxLines = static_cast<std::uint16_t>(std::max(0, maxLines));
+  key.align = align;
   key.bold = bold;
 
   auto it = m_metricsCache.find(key);
@@ -293,7 +304,7 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::measure(std::string_view text,
     return it->second;
   }
 
-  PangoLayout* layout = buildLayout(text, fontSize, bold, maxWidth * m_contentScale, maxLines);
+  PangoLayout* layout = buildLayout(text, fontSize, bold, maxWidth * m_contentScale, maxLines, align);
   const auto metrics = metricsFromLayout(layout);
   g_object_unref(layout);
 
@@ -309,9 +320,17 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::measure(std::string_view text,
 void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color, bool tinted, CacheEntry& entry) {
   entry.tinted = tinted;
   // Pixel-sized surface: ceil the logical rect up.
-  int pxWidth = 0;
-  int pxHeight = 0;
-  pango_layout_get_pixel_size(layout, &pxWidth, &pxHeight);
+  // For aligned multi-line text, Pango's logical rect is NOT anchored at x=0:
+  // logical.x is the block's alignment offset within set_width (e.g. for
+  // center-aligned text, logical.x = (set_width - widestLine) / 2). We use
+  // logical.width as the surface width and subtract logical.x from each
+  // per-line translation below so narrower lines stay centered relative to
+  // the widest line within the tight surface.
+  PangoRectangle logicalLayout;
+  pango_layout_get_extents(layout, nullptr, &logicalLayout);
+  int pxWidth = (logicalLayout.width + PANGO_SCALE - 1) / PANGO_SCALE;
+  int pxHeight = (logicalLayout.height + PANGO_SCALE - 1) / PANGO_SCALE;
+  const int blockLeftPx = logicalLayout.x / PANGO_SCALE;
 
   // Guard against zero-sized surfaces Cairo rejects.
   pxWidth = std::max(1, pxWidth);
@@ -351,6 +370,7 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
   // layout is translated far off-surface.
   struct LineSlot {
     PangoLayoutLine* line = nullptr;
+    int xLeftPx = 0;    // alignment offset of this line within the layout (pixels)
     int yTopPx = 0;    // top of line in full-layout raster pixels
     int baselinePx = 0; // baseline of line in full-layout raster pixels
   };
@@ -383,6 +403,7 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
 
       LineSlot slot;
       slot.line = pango_layout_iter_get_line_readonly(iter);
+      slot.xLeftPx = logical.x / PANGO_SCALE;
       slot.yTopPx = lineTopPx;
       slot.baselinePx = lineBaselinePx;
       current.lines.push_back(slot);
@@ -440,7 +461,7 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
     for (const auto& ls : tilePlan.lines) {
       const double baselineInTile = static_cast<double>(ls.baselinePx - tilePlan.yTopPx);
       cairo_save(cr);
-      cairo_translate(cr, 0.0, baselineInTile);
+      cairo_translate(cr, static_cast<double>(ls.xLeftPx - blockLeftPx), baselineInTile);
       pango_cairo_show_layout_line(cr, ls.line);
       cairo_restore(cr);
     }
@@ -519,7 +540,8 @@ void CairoTextRenderer::evictIfNeeded() {
 }
 
 CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_view text, float fontSize, bool bold,
-                                                                    float maxWidth, int maxLines, const Color& color) {
+                                                                    float maxWidth, int maxLines, TextAlign align,
+                                                                    const Color& color) {
   // Tinted (A8 coverage) entries are color-independent — the shader applies
   // u_tint at draw time, so one cache entry serves every color. RGBA entries
   // (mixed content with COLR emoji) bake non-emoji ink color into the Cairo
@@ -534,6 +556,7 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_
   key.maxWidthQ = quantizeSize(std::max(0.0f, maxWidth));
   key.scaleQ = quantizeScale(m_contentScale);
   key.maxLines = static_cast<std::uint16_t>(std::max(0, maxLines));
+  key.align = align;
   key.bold = bold;
   key.colorRgba = tinted ? 0u : packColorRgb(color);
 
@@ -543,7 +566,7 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_
     return &it->second;
   }
 
-  PangoLayout* layout = buildLayout(text, fontSize, bold, maxWidth * m_contentScale, maxLines);
+  PangoLayout* layout = buildLayout(text, fontSize, bold, maxWidth * m_contentScale, maxLines, align);
   Color rasterColor = color;
   if (!tinted) {
     rasterColor.a = 1.0f;
@@ -558,6 +581,7 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_
   mkey.maxWidthQ = key.maxWidthQ;
   mkey.scaleQ = key.scaleQ;
   mkey.maxLines = key.maxLines;
+  mkey.align = key.align;
   mkey.bold = key.bold;
   if (m_metricsCache.size() >= kMaxMetricsEntries) {
     m_metricsCache.clear();
@@ -577,12 +601,12 @@ CairoTextRenderer::CacheEntry* CairoTextRenderer::lookupOrRasterize(std::string_
 
 void CairoTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, float baselineY, std::string_view text,
                              float fontSize, const Color& color, const Mat3& transform, bool bold, float maxWidth,
-                             int maxLines) {
+                             int maxLines, TextAlign align) {
   if (m_pangoContext == nullptr || m_program == nullptr || text.empty()) {
     return;
   }
 
-  CacheEntry* entry = lookupOrRasterize(text, fontSize, bold, maxWidth, maxLines, color);
+  CacheEntry* entry = lookupOrRasterize(text, fontSize, bold, maxWidth, maxLines, align, color);
   if (entry == nullptr || entry->tiles.empty()) {
     return;
   }
