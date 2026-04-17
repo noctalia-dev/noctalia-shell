@@ -330,6 +330,7 @@ void KeyboardLayoutWidget::create() {
   auto label = std::make_unique<Label>();
   label->setBold(true);
   label->setFontSize(Style::fontSizeBody * m_contentScale);
+  label->setStableBaseline(true);
   label->setText("--");
   m_label = label.get();
   area->addChild(std::move(label));

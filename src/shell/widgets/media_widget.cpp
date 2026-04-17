@@ -198,6 +198,7 @@ void MediaWidget::create() {
   label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   label->setMaxWidth(m_maxWidth * m_contentScale);
   label->setMaxLines(1);
+  label->setStableBaseline(true);
   m_label = label.get();
   area->addChild(std::move(label));
 

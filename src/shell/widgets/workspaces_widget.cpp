@@ -193,6 +193,7 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
       text->setText(labels[i]);
       text->setFontSize(labelFontSize);
       text->setBold(true);
+      text->setStableBaseline(true);
       text->setColor(roleColor(workspaceTextRole(ws)));
       text->measure(renderer);
       item.label = labels[i];

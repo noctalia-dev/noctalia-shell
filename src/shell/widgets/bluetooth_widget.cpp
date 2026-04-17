@@ -63,6 +63,7 @@ void BluetoothWidget::create() {
   if (m_showLabel) {
     auto label = std::make_unique<Label>();
     label->setFontSize(Style::fontSizeBody * m_contentScale);
+    label->setStableBaseline(true);
     m_label = label.get();
     area->addChild(std::move(label));
   }

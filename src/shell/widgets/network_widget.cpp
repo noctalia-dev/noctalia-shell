@@ -63,6 +63,7 @@ void NetworkWidget::create() {
   auto label = std::make_unique<Label>();
   label->setFontSize(Style::fontSizeBody * m_contentScale);
   label->setBold(true);
+  label->setStableBaseline(true);
   m_label = label.get();
   area->addChild(std::move(label));
 

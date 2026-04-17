@@ -93,6 +93,14 @@ void Label::setTextAlign(TextAlign align) {
   m_measureCached = false;
 }
 
+void Label::setStableBaseline(bool stable) {
+  if (m_stableBaseline == stable) {
+    return;
+  }
+  m_stableBaseline = stable;
+  m_measureCached = false;
+}
+
 void Label::doLayout(Renderer& renderer) { measure(renderer); }
 
 void Label::setCaptionStyle() {
@@ -111,7 +119,7 @@ void Label::measure(Renderer& renderer) {
   if (m_measureCached && m_cachedText == m_textNode->text() && m_cachedFontSize == m_textNode->fontSize() &&
       m_cachedBold == m_textNode->bold() && m_cachedMaxWidth == maxWidth && m_cachedMaxLines == maxLines &&
       m_cachedMinWidth == m_minWidth && m_cachedAssignedWidth == assignedWidth && m_cachedFlexGrow == curFlexGrow &&
-      m_cachedTextAlign == align) {
+      m_cachedTextAlign == align && m_cachedStableBaseline == m_stableBaseline) {
     return;
   }
   auto metrics = renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold(), maxWidth,
@@ -126,8 +134,22 @@ void Label::measure(Renderer& renderer) {
   // the visible text ink within that height so digits and symbols do not read
   // optically low beside icons.
   if (singleLine && inkHeight > 0.0f) {
+    // Stable-baseline labels center on the caps reference ("A") instead of the
+    // current text's ink. That keeps caps at a fixed y across text changes
+    // (e.g. a clock cycling "Mar" → "Apr") AND matches the y-position used by
+    // sibling dynamic-mode labels whose text happens to be caps-only (e.g. a
+    // weather capsule reading "15°C"), so they align horizontally.
+    float inkTopForCentering = metrics.inkTop;
+    float inkHeightForCentering = inkHeight;
+    if (m_stableBaseline) {
+      const float capInkHeight = std::max(0.0f, refMetrics.inkBottom - refMetrics.inkTop);
+      if (capInkHeight > 0.0f) {
+        inkTopForCentering = refMetrics.inkTop;
+        inkHeightForCentering = capInkHeight;
+      }
+    }
     const float height = std::max(refHeight, inkHeight);
-    m_baselineOffset = -metrics.inkTop + (height - inkHeight) * 0.5f;
+    m_baselineOffset = -inkTopForCentering + (height - inkHeightForCentering) * 0.5f;
     setSize(std::round(std::max(measuredWidth, m_minWidth)), std::round(height));
   } else {
     m_baselineOffset = -std::min(refMetrics.top, metrics.top);
@@ -164,5 +186,6 @@ void Label::measure(Renderer& renderer) {
   m_cachedAssignedWidth = assignedWidth;
   m_cachedFlexGrow = curFlexGrow;
   m_cachedTextAlign = align;
+  m_cachedStableBaseline = m_stableBaseline;
   m_measureCached = true;
 }

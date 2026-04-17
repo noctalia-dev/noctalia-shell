@@ -58,6 +58,10 @@ void ClockWidget::create() {
   label->setBold(true);
   label->setTextAlign(TextAlign::Center);
   label->setFontSize(Style::fontSizeBody * m_contentScale);
+  // Clock text changes every minute and month names switch between descender
+  // and descender-less forms (e.g. "Mar" ↔ "Apr"), so anchor the baseline to
+  // a stable ink envelope instead of the current text's ink.
+  label->setStableBaseline(true);
   m_label = label.get();
   area->addChild(std::move(label));
   setRoot(std::move(area));

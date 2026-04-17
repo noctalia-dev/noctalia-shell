@@ -24,6 +24,12 @@ public:
   void setMaxLines(int maxLines);
   void setBold(bool bold);
   void setTextAlign(TextAlign align);
+  // Enable stable-baseline centering for single-line labels whose text changes
+  // frequently (clocks, counters). Caps are centered using the font's caps
+  // reference instead of the current text's ink, so the baseline stays fixed
+  // when descenders appear/disappear (e.g. "Mar" ↔ "Apr"). Also aligns with
+  // dynamic-mode sibling labels that happen to contain caps-only text.
+  void setStableBaseline(bool stable);
 
   [[nodiscard]] const std::string& text() const noexcept;
   [[nodiscard]] float fontSize() const noexcept;
@@ -58,5 +64,7 @@ private:
   int m_cachedMaxLines = 0;
   TextAlign m_cachedTextAlign = TextAlign::Start;
   bool m_cachedBold = false;
+  bool m_cachedStableBaseline = false;
   bool m_measureCached = false;
+  bool m_stableBaseline = false;
 };
