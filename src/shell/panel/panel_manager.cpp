@@ -131,7 +131,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
                                : isRight       ? LayerShellAnchor::Right | LayerShellAnchor::Top
                                                : LayerShellAnchor::Top | LayerShellAnchor::Left;
   const std::int32_t barOffset =
-      barConfig.height + (isVertical ? std::max(0, barConfig.marginH) : std::max(0, barConfig.marginV)) + panelGap;
+      barConfig.thickness + (isVertical ? std::max(0, barConfig.marginH) : std::max(0, barConfig.marginV)) + panelGap;
 
   const auto marginLeft = centeredH
                               ? 0

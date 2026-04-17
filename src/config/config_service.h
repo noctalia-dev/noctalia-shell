@@ -20,7 +20,7 @@ class NotificationManager;
 struct BarMonitorOverride {
   std::string match;
   std::optional<bool> enabled;
-  std::optional<std::int32_t> height;
+  std::optional<std::int32_t> thickness;
   std::optional<float> backgroundOpacity;
   std::optional<std::int32_t> radius;
   std::optional<std::int32_t> radiusTopLeft;
@@ -53,7 +53,7 @@ struct BarConfig {
   std::string name = "default";
   std::string position = "top";
   bool enabled = true;
-  std::int32_t height = Style::barHeightDefault;
+  std::int32_t thickness = Style::barThicknessDefault;
   float backgroundOpacity = 1.0f;
   std::int32_t radius = Style::radiusXl;
   std::int32_t radiusTopLeft = Style::radiusXl;

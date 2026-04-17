@@ -91,10 +91,10 @@ void OsdOverlay::ensureSurfaces() {
 
   const auto surfaceWidth = static_cast<std::uint32_t>(kSurfaceWidth);
   const auto surfaceHeight = static_cast<std::uint32_t>(kSurfaceHeight);
-  std::int32_t barHeight = Style::barHeightDefault;
+  std::int32_t barThickness = Style::barThicknessDefault;
   std::string barPosition = "top";
   if (m_config != nullptr && !m_config->config().bars.empty()) {
-    barHeight = m_config->config().bars[0].height;
+    barThickness = m_config->config().bars[0].thickness;
     barPosition = m_config->config().bars[0].position;
   }
 
@@ -134,11 +134,11 @@ void OsdOverlay::ensureSurfaces() {
     }
 
     if ((position == "top_left" || position == "top_center" || position == "top_right") && barPosition == "top") {
-      marginTop += barHeight + kBarGap;
+      marginTop += barThickness + kBarGap;
     }
     if ((position == "bottom_left" || position == "bottom_center" || position == "bottom_right") &&
         barPosition == "bottom") {
-      marginBottom += barHeight + kBarGap;
+      marginBottom += barThickness + kBarGap;
     }
 
     auto surfaceConfig = LayerSurfaceConfig{

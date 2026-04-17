@@ -83,7 +83,7 @@ struct PopupPlacement {
 
 PopupPlacement popupPlacementForBar(const BarConfig& bar, std::int32_t anchorX, std::int32_t anchorY) {
   const std::int32_t kGap = std::max(2, static_cast<std::int32_t>(Style::spaceMd));
-  const std::int32_t iconSize = std::clamp(bar.height - 10, 16, 40);
+  const std::int32_t iconSize = std::clamp(bar.thickness - 10, 16, 40);
   const std::int32_t halfIcon = iconSize / 2;
   PopupPlacement placement{
       .anchorX = anchorX - halfIcon,

@@ -400,7 +400,7 @@ void Bar::syncInstances() {
 
 void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig) {
   kLog.info("creating \"{}\" on {} ({}), height={} position={}", barConfig.name, output.connectorName,
-            output.description, barConfig.height, barConfig.position);
+            output.description, barConfig.thickness, barConfig.position);
 
   auto instance = std::make_unique<BarInstance>();
   instance->outputName = output.name;
@@ -428,24 +428,24 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
     mRight = std::max(0, mH - sb.right);
     if (isBottom) {
       mBottom       = std::max(0, mV - sb.down);
-      surfH         = static_cast<std::uint32_t>(sb.up + barConfig.height + std::min(mV, sb.down));
-      exclusiveZone = barConfig.height + std::min(mV, sb.down);
+      surfH         = static_cast<std::uint32_t>(sb.up + barConfig.thickness + std::min(mV, sb.down));
+      exclusiveZone = barConfig.thickness + std::min(mV, sb.down);
     } else {
       mTop          = std::max(0, mV - sb.up);
-      surfH         = static_cast<std::uint32_t>(std::min(mV, sb.up) + barConfig.height + sb.down);
-      exclusiveZone = std::min(mV, sb.up) + barConfig.height;
+      surfH         = static_cast<std::uint32_t>(std::min(mV, sb.up) + barConfig.thickness + sb.down);
+      exclusiveZone = std::min(mV, sb.up) + barConfig.thickness;
     }
   } else {
     mTop    = std::max(0, mV - sb.up);
     mBottom = std::max(0, mV - sb.down);
     if (isRight) {
       mRight        = std::max(0, mH - sb.right);
-      surfW         = static_cast<std::uint32_t>(sb.left + barConfig.height + std::min(mH, sb.right));
-      exclusiveZone = barConfig.height + std::min(mH, sb.right);
+      surfW         = static_cast<std::uint32_t>(sb.left + barConfig.thickness + std::min(mH, sb.right));
+      exclusiveZone = barConfig.thickness + std::min(mH, sb.right);
     } else {
       mLeft         = std::max(0, mH - sb.left);
-      surfW         = static_cast<std::uint32_t>(std::min(mH, sb.left) + barConfig.height + sb.right);
-      exclusiveZone = std::min(mH, sb.left) + barConfig.height;
+      surfW         = static_cast<std::uint32_t>(std::min(mH, sb.left) + barConfig.thickness + sb.right);
+      exclusiveZone = std::min(mH, sb.left) + barConfig.thickness;
     }
   }
 
@@ -553,7 +553,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   const float shadowSize = static_cast<float>(std::max(0, instance.barConfig.shadowBlur));
   const float shadowOffsetX = static_cast<float>(instance.barConfig.shadowOffsetX);
   const float shadowOffsetY = static_cast<float>(instance.barConfig.shadowOffsetY);
-  const float barH = static_cast<float>(instance.barConfig.height);
+  const float barThickness = static_cast<float>(instance.barConfig.thickness);
   const float marginH = static_cast<float>(instance.barConfig.marginH);
   const float marginV = static_cast<float>(instance.barConfig.marginV);
   const bool isBottom = instance.barConfig.position == "bottom";
@@ -580,13 +580,13 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   if (isVertical) {
     barAreaX = isRight ? bleedLeft : std::min(marginH, bleedLeft);
     barAreaY = std::min(marginV, bleedUp);
-    barAreaW = barH;
+    barAreaW = barThickness;
     barAreaH = h - barAreaY - std::min(marginV, bleedDown);
   } else {
     barAreaX = std::min(marginH, bleedLeft);
     barAreaY = isBottom ? bleedUp : std::min(marginV, bleedUp);
     barAreaW = w - barAreaX - std::min(marginH, bleedRight);
-    barAreaH = barH;
+    barAreaH = barThickness;
   }
 
   if (instance.sceneRoot == nullptr) {
@@ -764,7 +764,7 @@ void Bar::updateWidgets(BarInstance& instance) {
   const auto w = static_cast<float>(instance.surface->width());
   const auto h = static_cast<float>(instance.surface->height());
   const float padding = static_cast<float>(instance.barConfig.padding);
-  const float barH = static_cast<float>(instance.barConfig.height);
+  const float barThickness = static_cast<float>(instance.barConfig.thickness);
   const float marginH = static_cast<float>(instance.barConfig.marginH);
   const float marginV = static_cast<float>(instance.barConfig.marginV);
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
@@ -776,12 +776,12 @@ void Bar::updateWidgets(BarInstance& instance) {
   float barAreaW, barAreaH;
   if (isVertical) {
     const float barAreaY = std::min(marginV, bleedUp);
-    barAreaW = barH;
+    barAreaW = barThickness;
     barAreaH = h - barAreaY - std::min(marginV, bleedDown);
   } else {
     const float barAreaX = std::min(marginH, bleedLeft);
     barAreaW = w - barAreaX - std::min(marginH, bleedRight);
-    barAreaH = barH;
+    barAreaH = barThickness;
   }
 
   auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
@@ -820,7 +820,7 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
   const auto w = static_cast<float>(instance.surface->width());
   const auto h = static_cast<float>(instance.surface->height());
   const float padding = static_cast<float>(instance.barConfig.padding);
-  const float barH = static_cast<float>(instance.barConfig.height);
+  const float barThickness = static_cast<float>(instance.barConfig.thickness);
   const float marginH = static_cast<float>(instance.barConfig.marginH);
   const float marginV = static_cast<float>(instance.barConfig.marginV);
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
@@ -833,12 +833,12 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
   float barAreaH = 0.0f;
   if (isVertical) {
     const float barAreaY = std::min(marginV, bleedUp);
-    barAreaW = barH;
+    barAreaW = barThickness;
     barAreaH = h - barAreaY - std::min(marginV, bleedDown);
   } else {
     const float barAreaX = std::min(marginH, bleedLeft);
     barAreaW = w - barAreaX - std::min(marginH, bleedRight);
-    barAreaH = barH;
+    barAreaH = barThickness;
   }
 
   {

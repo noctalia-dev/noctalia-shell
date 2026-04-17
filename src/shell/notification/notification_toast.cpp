@@ -997,9 +997,9 @@ std::optional<float> NotificationToast::findPlacementY(float candidateHeight,
 }
 
 uint32_t NotificationToast::surfaceHeightForOutput(wl_output* output) const {
-  std::uint32_t barHeight = Style::barHeightDefault;
+  std::uint32_t barThickness = Style::barThicknessDefault;
   if (m_config != nullptr && !m_config->config().bars.empty()) {
-    barHeight = static_cast<uint32_t>(m_config->config().bars[0].height);
+    barThickness = static_cast<uint32_t>(m_config->config().bars[0].thickness);
   }
 
   if (m_wayland != nullptr && output != nullptr) {
@@ -1007,7 +1007,7 @@ uint32_t NotificationToast::surfaceHeightForOutput(wl_output* output) const {
       const std::int32_t logicalHeight = outputLogicalHeight(*wlOutput);
       if (logicalHeight > 0) {
         const std::int32_t available =
-            logicalHeight - static_cast<std::int32_t>(barHeight) - kSurfaceMarginTopExtra - kSurfaceMarginBottom;
+            logicalHeight - static_cast<std::int32_t>(barThickness) - kSurfaceMarginTopExtra - kSurfaceMarginBottom;
         return static_cast<uint32_t>(std::max(1, available));
       }
     }
@@ -1023,9 +1023,9 @@ void NotificationToast::ensureSurfaces() {
     return;
   }
 
-  std::uint32_t barHeight = Style::barHeightDefault;
+  std::uint32_t barThickness = Style::barThicknessDefault;
   if (m_config != nullptr && !m_config->config().bars.empty()) {
-    barHeight = static_cast<uint32_t>(m_config->config().bars[0].height);
+    barThickness = static_cast<uint32_t>(m_config->config().bars[0].thickness);
   }
 
   const auto surfaceWidth = static_cast<uint32_t>(kSurfaceWidth);
@@ -1060,7 +1060,7 @@ void NotificationToast::ensureSurfaces() {
         .width = surfaceWidth,
         .height = surfaceHeight,
         .exclusiveZone = 0,
-        .marginTop = static_cast<std::int32_t>(barHeight) + kSurfaceMarginTopExtra,
+        .marginTop = static_cast<std::int32_t>(barThickness) + kSurfaceMarginTopExtra,
         .marginRight = kSurfaceMarginRight,
         .keyboard = LayerShellKeyboard::None,
         .defaultWidth = surfaceWidth,

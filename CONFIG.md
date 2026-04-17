@@ -37,7 +37,7 @@ Bars are defined as named subtables under `[bar.*]`. Each bar is spawned on ever
 position        = "top"       # top | bottom | left | right
 enabled         = true
 
-height          = 34          # bar thickness in pixels
+thickness       = 34          # bar cross-axis size in pixels (width for vertical, height for horizontal)
 background_opacity = 1.0      # bar background alpha, from 0.0 (transparent) to 1.0 (opaque)
 radius          = 16          # global corner radius fallback
 radius_top_left = 16
@@ -86,7 +86,7 @@ Inside a bar you can add named monitor subtables under `[bar.<name>.monitor.*]`.
 [bar.main.monitor.dp1]
 match          = "DP-1"    # connector name or description substring
 enabled        = true
-height         = 44
+thickness      = 44
 background_opacity = 0.9
 radius         = 0
 radius_top_left = 12
@@ -1055,7 +1055,7 @@ width = 16
 
 [bar.main]
 position        = "top"
-height          = 40
+thickness       = 40
 background_opacity = 0.94
 margin_h        = 12
 margin_v        = 6
@@ -1072,7 +1072,7 @@ end    = ["tray", "notifications", "volume", "battery", "clock"]
 
 [bar.main.monitor.dp1]
 match  = "DP-1"        # main 4K display — taller bar, show seconds
-height = 44
+thickness = 44
 background_opacity = 1.0
 end    = ["tray", "notifications", "volume", "battery", "clock-seconds"]
 
@@ -1084,7 +1084,7 @@ enable_overdrive = false
 
 [bar.main.monitor.hdmi]
 match    = "HDMI-A-1"  # secondary 1080p — smaller, minimal widgets
-height   = 36
+thickness = 36
 background_opacity = 0.88
 margin_h = 8
 end      = ["volume", "clock"]

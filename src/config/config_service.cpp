@@ -623,8 +623,8 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
 
     if (ovr.enabled)
       resolved.enabled = *ovr.enabled;
-    if (ovr.height)
-      resolved.height = *ovr.height;
+    if (ovr.thickness)
+      resolved.thickness = *ovr.thickness;
     if (ovr.backgroundOpacity)
       resolved.backgroundOpacity = *ovr.backgroundOpacity;
     if (ovr.radius) {
@@ -979,8 +979,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
         bar.position = *v;
       if (auto v = (*barTbl)["enabled"].value<bool>())
         bar.enabled = *v;
-      if (auto v = (*barTbl)["height"].value<int64_t>())
-        bar.height = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
+      if (auto v = (*barTbl)["thickness"].value<int64_t>())
+        bar.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
       if (auto v = (*barTbl)["background_opacity"].value<double>())
         bar.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
       if (auto v = (*barTbl)["radius"].value<int64_t>()) {
@@ -1069,8 +1069,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
           if (auto v = (*monTbl)["enabled"].value<bool>())
             ovr.enabled = *v;
-          if (auto v = (*monTbl)["height"].value<int64_t>())
-            ovr.height = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
+          if (auto v = (*monTbl)["thickness"].value<int64_t>())
+            ovr.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
           if (auto v = (*monTbl)["background_opacity"].value<double>())
             ovr.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
           if (auto v = (*monTbl)["radius"].value<int64_t>())
