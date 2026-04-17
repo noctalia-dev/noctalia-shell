@@ -1281,7 +1281,6 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
   auto bg = std::make_unique<Box>();
   bg->setCardStyle();
   bg->setRadius(Style::radiusXl);
-  bg->setSoftness(1.25f);
   if (isCritical) {
     // Keep critical toasts readable: surface background + urgent border.
     bg->setFill(roleColor(ColorRole::Surface, bgAlpha));

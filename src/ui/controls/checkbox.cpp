@@ -81,7 +81,6 @@ void Checkbox::doLayout(Renderer& renderer) {
     m_box->setPosition(boxInset, boxInset);
     m_box->setFrameSize(boxSize, boxSize);
     m_box->setRadius(Style::radiusSm * m_scale);
-    m_box->setSoftness(1.0f);
   }
 
   if (m_checkGlyph != nullptr) {

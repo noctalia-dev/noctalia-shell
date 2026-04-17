@@ -246,7 +246,6 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   background->setFill(roleColor(ColorRole::Surface));
   background->setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
   background->setRadius(kCardHeight * 0.5f);
-  background->setSoftness(1.2f);
   background->setSize(kCardWidth, kCardHeight);
   background->setPosition(cardX, cardY);
   background->setZIndex(0);
