@@ -1085,8 +1085,8 @@ void Dock::updateVisuals(DockInstance& instance) {
         if (show) {
           const std::string label = (count > 9) ? "9+" : std::to_string(count);
           item.badgeLabel->setText(label);
-          item.badgeLabel->setColor(roleColor(ColorRole::OnError));
-          item.badge->setFill(roleColor(ColorRole::Error));
+          item.badgeLabel->setColor(roleColor(ColorRole::OnPrimary));
+          item.badge->setFill(roleColor(ColorRole::Primary));
           if (m_renderContext != nullptr) {
             const float bd = std::max(kBadgeMinSize,
                 static_cast<float>(cfg.iconSize) * kBadgeSizeRatio);
