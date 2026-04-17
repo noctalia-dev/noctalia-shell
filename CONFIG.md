@@ -435,6 +435,17 @@ show_condition = false
 
 Shows the pending notification count. No configurable settings.
 
+Right-clicking the widget toggles transient Do Not Disturb (DND) mode.
+
+IPC:
+
+```sh
+noctalia msg toggle-notification-dnd
+noctalia msg notification-dnd-status
+```
+
+When DND is enabled, incoming notifications are still stored in history/control center, but toast popups are suppressed.
+
 ---
 
 ### `session`

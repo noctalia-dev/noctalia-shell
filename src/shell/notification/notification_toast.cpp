@@ -278,6 +278,9 @@ void NotificationToast::requestRedraw() {
 void NotificationToast::onNotificationEvent(const Notification& n, NotificationEvent event) {
   switch (event) {
   case NotificationEvent::Added:
+    if (m_notifications != nullptr && m_notifications->doNotDisturb()) {
+      break;
+    }
     addPopup(n);
     break;
   case NotificationEvent::Updated: {

@@ -23,4 +23,5 @@ private:
   Glyph* m_glyph = nullptr;
   Node* m_dot = nullptr;
   bool m_hasNotifications = false;
+  bool m_dndEnabled = false;
 };

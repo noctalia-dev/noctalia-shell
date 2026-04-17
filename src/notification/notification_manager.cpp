@@ -301,3 +301,22 @@ void NotificationManager::resumeExpiry(uint32_t id, int32_t remainingMs) {
   }
   m_notifications[it->second].expiryTime = Clock::now() + std::chrono::milliseconds(remainingMs);
 }
+
+void NotificationManager::setDoNotDisturb(bool enabled) {
+  if (m_doNotDisturb == enabled) {
+    return;
+  }
+  m_doNotDisturb = enabled;
+  if (m_stateCallback) {
+    m_stateCallback();
+  }
+}
+
+bool NotificationManager::doNotDisturb() const noexcept { return m_doNotDisturb; }
+
+bool NotificationManager::toggleDoNotDisturb() {
+  setDoNotDisturb(!m_doNotDisturb);
+  return doNotDisturb();
+}
+
+void NotificationManager::setStateCallback(StateCallback callback) { m_stateCallback = std::move(callback); }

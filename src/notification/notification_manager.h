@@ -30,6 +30,7 @@ public:
 
   using EventCallback = std::function<void(const Notification&, NotificationEvent)>;
   using ActionInvokeCallback = std::function<void(uint32_t, const std::string&)>;
+  using StateCallback = std::function<void()>;
 
   // Register a callback for notification events. Returns a token for removal.
   int addEventCallback(EventCallback callback);
@@ -79,6 +80,10 @@ public:
   [[nodiscard]] std::uint64_t changeSerial() const noexcept;
   void removeHistoryEntry(uint32_t id);
   void clearHistory();
+  void setDoNotDisturb(bool enabled);
+  [[nodiscard]] bool doNotDisturb() const noexcept;
+  [[nodiscard]] bool toggleDoNotDisturb();
+  void setStateCallback(StateCallback callback);
 
 private:
   void upsertHistory(const Notification& notification, bool active, std::optional<CloseReason> closeReason);
@@ -90,7 +95,9 @@ private:
   std::unordered_map<uint32_t, size_t> m_historyIndex;
   std::vector<std::pair<int, EventCallback>> m_eventCallbacks;
   ActionInvokeCallback m_actionInvokeCallback;
+  StateCallback m_stateCallback;
   int m_nextCallbackToken{0};
   uint32_t m_nextId{1};
   std::uint64_t m_changeSerial{0};
+  bool m_doNotDisturb = false;
 };

@@ -9,6 +9,7 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
+#include <linux/input-event-codes.h>
 #include <memory>
 
 namespace {
@@ -20,7 +21,18 @@ NotificationWidget::NotificationWidget(NotificationManager* manager, wl_output* 
 
 void NotificationWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnClick([this](const InputArea::PointerData& /*data*/) {
+  area->setOnClick([this](const InputArea::PointerData& data) {
+    if (data.button == BTN_RIGHT) {
+      if (m_manager != nullptr) {
+        const bool dndEnabled = m_manager->toggleDoNotDisturb();
+        (void)dndEnabled;
+      }
+      requestRedraw();
+      return;
+    }
+    if (data.button != BTN_LEFT) {
+      return;
+    }
     PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "notifications");
   });
 
@@ -49,7 +61,10 @@ void NotificationWidget::doLayout(Renderer& renderer, float /*containerWidth*/, 
     return;
   }
 
+  refreshIndicatorState();
+
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setGlyph(m_dndEnabled ? "bell-off" : "bell");
   m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   m_glyph->setPosition(0.0f, 0.0f);
@@ -67,11 +82,18 @@ void NotificationWidget::doUpdate(Renderer& /*renderer*/) {
 
 void NotificationWidget::refreshIndicatorState() {
   const bool hasNotifications = (m_manager != nullptr) && !m_manager->all().empty();
-  if (hasNotifications == m_hasNotifications) {
+  const bool dndEnabled = (m_manager != nullptr) && m_manager->doNotDisturb();
+  if (hasNotifications == m_hasNotifications && dndEnabled == m_dndEnabled) {
     return;
   }
   m_hasNotifications = hasNotifications;
-  if (m_dot != nullptr) {
-    m_dot->setVisible(m_hasNotifications);
+  m_dndEnabled = dndEnabled;
+  if (m_glyph != nullptr) {
+    m_glyph->setGlyph(m_dndEnabled ? "bell-off" : "bell");
+    m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   }
+  if (m_dot != nullptr) {
+    m_dot->setVisible(m_hasNotifications && !m_dndEnabled);
+  }
+  requestRedraw();
 }

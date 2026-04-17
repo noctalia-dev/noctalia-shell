@@ -5,6 +5,7 @@
 #include "core/log.h"
 #include "core/process.h"
 #include "i18n/i18n_service.h"
+#include "ipc/ipc_arg_parse.h"
 #include "launcher/app_provider.h"
 #include "launcher/emoji_provider.h"
 #include "launcher/math_provider.h"
@@ -100,6 +101,13 @@ Application::Application() : m_weatherService(m_configService, m_httpClient) {
           m_panelManager.refresh();
         }
       });
+
+  m_notificationManager.setStateCallback([this, shouldRefreshControlCenter]() {
+    m_bar.refresh();
+    if (shouldRefreshControlCenter()) {
+      m_panelManager.refresh();
+    }
+  });
 }
 
 Application::~Application() {
@@ -713,6 +721,47 @@ void Application::initIpc() {
         return json;
       },
       "status", "Print current state as JSON");
+
+  auto applyNotificationDnd = [this](bool enabled) {
+    m_notificationManager.setDoNotDisturb(enabled);
+    m_bar.refresh();
+    if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
+      m_panelManager.refresh();
+    }
+  };
+
+  m_ipcService.registerHandler(
+      "set-notification-dnd",
+      [this, applyNotificationDnd](const std::string& args) -> std::string {
+        const auto parts = noctalia::ipc::splitWords(args);
+        if (parts.size() != 1) {
+          return "error: set-notification-dnd requires <on|off|true|false|1|0>\n";
+        }
+        const std::string value = parts[0];
+        if (value == "on" || value == "true" || value == "1") {
+          applyNotificationDnd(true);
+          return "ok\n";
+        }
+        if (value == "off" || value == "false" || value == "0") {
+          applyNotificationDnd(false);
+          return "ok\n";
+        }
+        return "error: invalid value (use on/off, true/false, 1/0)\n";
+      },
+      "set-notification-dnd <on|off|true|false|1|0>", "Set notification Do Not Disturb state");
+
+  m_ipcService.registerHandler(
+      "toggle-notification-dnd",
+      [this, applyNotificationDnd](const std::string&) -> std::string {
+        applyNotificationDnd(!m_notificationManager.doNotDisturb());
+        return "ok\n";
+      },
+      "toggle-notification-dnd", "Toggle notification Do Not Disturb state");
+
+  m_ipcService.registerHandler(
+      "notification-dnd-status",
+      [this](const std::string&) -> std::string { return m_notificationManager.doNotDisturb() ? "on\n" : "off\n"; },
+      "notification-dnd-status", "Print notification Do Not Disturb state");
 
   if (m_brightnessService != nullptr) {
     m_brightnessService->registerIpc(m_ipcService,
