@@ -33,7 +33,8 @@ private:
     std::filesystem::path destPath;
     std::filesystem::path tempPath;
     FILE* file = nullptr;
-    CompletionCallback callback;
+    std::vector<CompletionCallback> callbacks;
+    std::string destKey;
   };
 
   void finishTransfer(CURL* easy, bool success);
@@ -41,4 +42,5 @@ private:
   CURLM* m_multi = nullptr;
   int m_running = 0;
   std::unordered_map<CURL*, Transfer> m_transfers;
+  std::unordered_map<std::string, CURL*> m_activeByDest;
 };

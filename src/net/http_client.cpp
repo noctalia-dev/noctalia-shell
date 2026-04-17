@@ -24,6 +24,15 @@ HttpClient::~HttpClient() {
 }
 
 void HttpClient::download(std::string_view url, const std::filesystem::path& destPath, CompletionCallback cb) {
+  const std::string destKey = destPath.string();
+  if (auto activeIt = m_activeByDest.find(destKey); activeIt != m_activeByDest.end()) {
+    if (auto transferIt = m_transfers.find(activeIt->second); transferIt != m_transfers.end()) {
+      transferIt->second.callbacks.push_back(std::move(cb));
+      return;
+    }
+    m_activeByDest.erase(activeIt);
+  }
+
   const auto tempPath = destPath.parent_path() / (destPath.filename().string() + ".part");
 
   FILE* f = std::fopen(tempPath.c_str(), "wb");
@@ -47,7 +56,14 @@ void HttpClient::download(std::string_view url, const std::filesystem::path& des
   curl_easy_setopt(easy, CURLOPT_TIMEOUT, 30L);
   curl_easy_setopt(easy, CURLOPT_NOSIGNAL, 1L);
 
-  m_transfers[easy] = Transfer{destPath, tempPath, f, std::move(cb)};
+  Transfer transfer{};
+  transfer.destPath = destPath;
+  transfer.tempPath = tempPath;
+  transfer.file = f;
+  transfer.callbacks.push_back(std::move(cb));
+  transfer.destKey = destKey;
+  m_transfers[easy] = std::move(transfer);
+  m_activeByDest[destKey] = easy;
   curl_multi_add_handle(m_multi, easy);
   curl_multi_perform(m_multi, &m_running);
 }
@@ -118,6 +134,7 @@ void HttpClient::finishTransfer(CURL* easy, bool success) {
 
   Transfer transfer = std::move(it->second);
   m_transfers.erase(it);
+  m_activeByDest.erase(transfer.destKey);
 
   curl_multi_remove_handle(m_multi, easy);
   curl_easy_cleanup(easy);
@@ -140,5 +157,7 @@ void HttpClient::finishTransfer(CURL* easy, bool success) {
     std::filesystem::remove(transfer.tempPath);
   }
 
-  transfer.callback(success);
+  for (auto& callback : transfer.callbacks) {
+    callback(success);
+  }
 }
