@@ -204,12 +204,14 @@ void MediaWidget::create() {
   setRoot(std::move(area));
 }
 
-void MediaWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   auto* rootNode = root();
   if (rootNode == nullptr || m_art == nullptr || m_label == nullptr) {
     return;
   }
   syncState(renderer);
+
+  const bool isVertical = containerHeight > containerWidth;
 
   m_label->setMaxWidth(m_maxWidth * m_contentScale);
   m_label->setColor(m_lastPlaybackStatus == "Playing"
@@ -226,13 +228,17 @@ void MediaWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /
 
   const float contentHeight = m_label->height();
   const float artY = std::round((contentHeight - artSize) * 0.5f);
-  const float labelY = 0.0f;
-  const float spacing = m_label->text().empty() ? 0.0f : Style::spaceXs;
 
-  m_art->setPosition(0.0f, artY);
-  m_label->setPosition(artSize + spacing, labelY);
-
-  rootNode->setSize(m_label->x() + m_label->width(), contentHeight);
+  m_label->setVisible(!isVertical);
+  if (isVertical) {
+    m_art->setPosition(0.0f, artY);
+    rootNode->setSize(artSize, contentHeight);
+  } else {
+    const float spacing = m_label->text().empty() ? 0.0f : Style::spaceXs;
+    m_art->setPosition(0.0f, artY);
+    m_label->setPosition(artSize + spacing, 0.0f);
+    rootNode->setSize(m_label->x() + m_label->width(), contentHeight);
+  }
 }
 
 void MediaWidget::doUpdate(Renderer& renderer) {
