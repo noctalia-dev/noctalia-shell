@@ -103,6 +103,8 @@ void Label::setCaptionStyle() {
 void Label::measure(Renderer& renderer) {
   const float maxWidth = m_textNode->maxWidth();
   const int maxLines = m_textNode->maxLines();
+  const bool singleLine =
+      (maxLines == 1) || (maxLines == 0 && maxWidth <= 0.0f && m_textNode->text().find('\n') == std::string::npos);
   const float assignedWidth = width();
   const float curFlexGrow = flexGrow();
   const TextAlign align = m_textNode->textAlign();
@@ -119,19 +121,31 @@ void Label::measure(Renderer& renderer) {
 
   const float refHeight = refMetrics.bottom - refMetrics.top;
   const float actualHeight = metrics.bottom - metrics.top;
-  // Keep single-line labels on a fixed "A"-based baseline.
-  if (maxLines == 1) {
-    m_baselineOffset = -refMetrics.top;
+  const float inkHeight = std::max(0.0f, metrics.inkBottom - metrics.inkTop);
+  // Keep single-line labels on the same reference height as glyphs, but center
+  // the visible text ink within that height so digits and symbols do not read
+  // optically low beside icons.
+  if (singleLine && inkHeight > 0.0f) {
+    const float height = std::max(refHeight, inkHeight);
+    m_baselineOffset = -metrics.inkTop + (height - inkHeight) * 0.5f;
+    setSize(std::round(std::max(measuredWidth, m_minWidth)), std::round(height));
   } else {
     m_baselineOffset = -std::min(refMetrics.top, metrics.top);
+    const float inkBottom = m_baselineOffset + metrics.bottom;
+    const float height = std::max({refHeight, actualHeight, inkBottom});
+    const bool preserveAssignedWidth = flexGrow() > 0.0f && assignedWidth > 0.0f;
+    const float finalWidth =
+        preserveAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
+    setSize(std::round(finalWidth), std::round(height));
   }
-  const float inkBottom = m_baselineOffset + metrics.bottom;
-  const float height = (maxLines == 1) ? refHeight : std::max({refHeight, actualHeight, inkBottom});
   const bool preserveAssignedWidth = flexGrow() > 0.0f && assignedWidth > 0.0f;
-  const float finalWidth =
-      preserveAssignedWidth ? std::max(assignedWidth, m_minWidth) : std::max(measuredWidth, m_minWidth);
-  setSize(std::round(finalWidth), std::round(height));
+  if (preserveAssignedWidth) {
+    setSize(std::round(std::max(assignedWidth, m_minWidth)), height());
+  } else if (width() < m_minWidth) {
+    setSize(std::round(m_minWidth), height());
+  }
   float textX = 0.0f;
+  const float finalWidth = width();
   if (align == TextAlign::Center) {
     textX = std::round((finalWidth - measuredWidth) * 0.5f);
   } else if (align == TextAlign::End) {

@@ -276,8 +276,9 @@ PangoLayout* CairoTextRenderer::buildLayout(std::string_view text, float fontSiz
 }
 
 CairoTextRenderer::TextMetrics CairoTextRenderer::metricsFromLayout(PangoLayout* layout) const {
+  PangoRectangle ink;
   PangoRectangle logical;
-  pango_layout_get_extents(layout, nullptr, &logical);
+  pango_layout_get_extents(layout, &ink, &logical);
   const int baselinePango = pango_layout_get_baseline(layout);
 
   const float invScale = 1.0f / m_contentScale;
@@ -287,6 +288,8 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::metricsFromLayout(PangoLayout*
   // Pango logical rect y is 0 at top of layout box; baseline is offset from top.
   const float ascent = static_cast<float>(baselinePango - logical.y) * pscale * invScale;
   const float descent = static_cast<float>(logical.height - (baselinePango - logical.y)) * pscale * invScale;
+  const float inkTop = static_cast<float>(ink.y - baselinePango) * pscale * invScale;
+  const float inkBottom = static_cast<float>(ink.y + ink.height - baselinePango) * pscale * invScale;
 
   TextMetrics m;
   m.width = width;
@@ -294,6 +297,8 @@ CairoTextRenderer::TextMetrics CairoTextRenderer::metricsFromLayout(PangoLayout*
   m.right = width;
   m.top = -ascent;    // above baseline → negative
   m.bottom = descent; // below baseline → positive
+  m.inkTop = inkTop;
+  m.inkBottom = inkBottom;
   return m;
 }
 

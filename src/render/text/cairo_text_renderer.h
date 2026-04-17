@@ -36,6 +36,8 @@ public:
     float right = 0.0f;
     float top = 0.0f;    // negative — above baseline
     float bottom = 0.0f; // positive — below baseline
+    float inkTop = 0.0f;    // negative — visible ink above baseline
+    float inkBottom = 0.0f; // positive — visible ink below baseline
   };
 
   CairoTextRenderer();

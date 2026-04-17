@@ -153,12 +153,24 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
 TextMetrics RenderContext::measureText(std::string_view text, float fontSize, bool bold, float maxWidth, int maxLines,
                                        TextAlign align) {
   auto m = m_textRenderer.measure(text, fontSize, bold, maxWidth, maxLines, align);
-  return TextMetrics{.width = m.width, .left = m.left, .right = m.right, .top = m.top, .bottom = m.bottom};
+  return TextMetrics{.width = m.width,
+                     .left = m.left,
+                     .right = m.right,
+                     .top = m.top,
+                     .bottom = m.bottom,
+                     .inkTop = m.inkTop,
+                     .inkBottom = m.inkBottom};
 }
 
 TextMetrics RenderContext::measureGlyph(char32_t codepoint, float fontSize) {
   auto m = m_glyphRenderer.measureGlyph(codepoint, fontSize);
-  return TextMetrics{.width = m.width, .left = m.left, .right = m.right, .top = m.top, .bottom = m.bottom};
+  return TextMetrics{.width = m.width,
+                     .left = m.left,
+                     .right = m.right,
+                     .top = m.top,
+                     .bottom = m.bottom,
+                     .inkTop = m.top,
+                     .inkBottom = m.bottom};
 }
 
 TextureManager& RenderContext::textureManager() {
