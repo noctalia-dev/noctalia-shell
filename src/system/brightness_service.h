@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+class IpcService;
 class SystemBus;
 class WaylandConnection;
 struct BrightnessConfig;
@@ -35,6 +36,7 @@ public:
   void setBrightness(const std::string& displayId, float value);
   void reload(const BrightnessConfig& config);
   void onOutputsChanged();
+  void registerIpc(IpcService& ipc, std::function<void()> onBatchChange = {});
 
   void setChangeCallback(ChangeCallback callback);
 

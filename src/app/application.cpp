@@ -26,8 +26,6 @@
 #include <csignal>
 #include <cstdlib>
 #include <malloc.h>
-#include <optional>
-#include <sstream>
 #include <stdexcept>
 #include <string_view>
 #include <thread>
@@ -37,67 +35,6 @@ std::atomic<bool> Application::s_shutdownRequested{false};
 namespace {
 
   constexpr Logger kLog("app");
-  constexpr float kDefaultBrightnessStep = 0.05f;
-
-  std::vector<std::string> splitWords(std::string_view text) {
-    std::vector<std::string> words;
-    std::istringstream stream{std::string(text)};
-    std::string word;
-    while (stream >> word) {
-      words.push_back(std::move(word));
-    }
-    return words;
-  }
-
-  std::optional<float> parseBrightnessAmount(std::string_view token) {
-    std::string value(token);
-    bool isPercent = false;
-    if (!value.empty() && value.back() == '%') {
-      isPercent = true;
-      value.pop_back();
-    }
-    if (value.empty()) {
-      return std::nullopt;
-    }
-
-    std::size_t parsed = 0;
-    float amount = 0.0f;
-    try {
-      amount = std::stof(value, &parsed);
-    } catch (...) {
-      return std::nullopt;
-    }
-    if (parsed != value.size() || !std::isfinite(amount)) {
-      return std::nullopt;
-    }
-
-    if (isPercent || value.find('.') == std::string::npos) {
-      if (amount < 0.0f || amount > 100.0f) {
-        return std::nullopt;
-      }
-      return amount / 100.0f;
-    }
-
-    if (amount >= 0.0f && amount <= 1.0f) {
-      return amount;
-    }
-    if (amount > 1.0f && amount <= 100.0f) {
-      return amount / 100.0f;
-    }
-
-    return std::nullopt;
-  }
-
-  std::string joinBrightnessDisplayIds(const BrightnessService& service) {
-    std::string out;
-    for (const auto& display : service.displays()) {
-      if (!out.empty()) {
-        out += ", ";
-      }
-      out += display.id;
-    }
-    return out;
-  }
 
   template <typename Factory>
   auto makeWithStartupBackoff(std::string_view label, Factory&& factory) -> decltype(factory()) {
@@ -709,7 +646,10 @@ void Application::initIpc() {
       },
       "status", "Print current state as JSON");
 
-  registerBrightnessIpc();
+  if (m_brightnessService != nullptr) {
+    m_brightnessService->registerIpc(m_ipcService,
+                                     [this]() { m_brightnessOsd.suppressFor(std::chrono::milliseconds(250)); });
+  }
   m_configService.registerIpc(m_ipcService);
   m_bar.registerIpc(m_ipcService);
   m_lockScreen.registerIpc(m_ipcService);
@@ -721,136 +661,6 @@ void Application::initIpc() {
   if (m_pipewireService) {
     m_pipewireService->registerIpc(m_ipcService, m_configService);
   }
-}
-
-wl_output* Application::resolveCurrentBrightnessOutput() const {
-  if (wl_output* output = m_wayland.activeToplevelOutput(); output != nullptr) {
-    return output;
-  }
-  return m_wayland.preferredPanelOutput();
-}
-
-void Application::registerBrightnessIpc() {
-  auto resolveTargets = [this](std::string_view token, std::vector<std::string>& ids, std::string& error) -> bool {
-    if (m_brightnessService == nullptr || !m_brightnessService->available()) {
-      error = "error: brightness control unavailable\n";
-      return false;
-    }
-
-    if (token == "all") {
-      for (const auto& display : m_brightnessService->displays()) {
-        ids.push_back(display.id);
-      }
-      return !ids.empty();
-    }
-
-    if (token == "current") {
-      wl_output* output = resolveCurrentBrightnessOutput();
-      if (output == nullptr) {
-        error = "error: could not resolve the current output\n";
-        return false;
-      }
-      const auto* display = m_brightnessService->findByOutput(output);
-      if (display == nullptr) {
-        error = "error: current output has no brightness control\n";
-        return false;
-      }
-      ids.push_back(display->id);
-      return true;
-    }
-
-    if (const auto* display = m_brightnessService->findDisplay(std::string(token)); display != nullptr) {
-      ids.push_back(display->id);
-      return true;
-    }
-
-    error = "error: unknown brightness target '" + std::string(token) + "'";
-    if (m_brightnessService != nullptr && m_brightnessService->available()) {
-      error += " (available: " + joinBrightnessDisplayIds(*m_brightnessService) + ")";
-    }
-    error += "\n";
-    return false;
-  };
-
-  auto applyToTargets = [this, resolveTargets](const std::string& target, auto&& apply) -> std::string {
-    std::vector<std::string> ids;
-    std::string error;
-    if (!resolveTargets(target, ids, error)) {
-      return error;
-    }
-
-    if (ids.size() > 1) {
-      m_brightnessOsd.suppressFor(std::chrono::milliseconds(250));
-    }
-
-    for (const auto& id : ids) {
-      const auto* display = m_brightnessService->findDisplay(id);
-      if (display == nullptr) {
-        continue;
-      }
-      apply(*display);
-    }
-    return "ok\n";
-  };
-
-  m_ipcService.registerHandler(
-      "set-brightness",
-      [this, applyToTargets](const std::string& args) -> std::string {
-        const auto parts = splitWords(args);
-        if (parts.size() != 2) {
-          return "error: set-brightness requires <current|all|display-id> <value>\n";
-        }
-
-        const auto amount = parseBrightnessAmount(parts[1]);
-        if (!amount.has_value()) {
-          return "error: invalid brightness value (use percent like 65 or 65%, or normalized like 0.65)\n";
-        }
-
-        return applyToTargets(parts[0], [this, amount](const BrightnessDisplay& display) {
-          m_brightnessService->setBrightness(display.id, *amount);
-        });
-      },
-      "set-brightness <current|all|display-id> <value>", "Set brightness for one or more displays");
-
-  m_ipcService.registerHandler(
-      "raise-brightness",
-      [this, applyToTargets](const std::string& args) -> std::string {
-        const auto parts = splitWords(args);
-        if (parts.empty() || parts.size() > 2) {
-          return "error: raise-brightness requires <current|all|display-id> [step]\n";
-        }
-
-        const auto step =
-            parts.size() == 2 ? parseBrightnessAmount(parts[1]) : std::optional<float>(kDefaultBrightnessStep);
-        if (!step.has_value()) {
-          return "error: invalid brightness step (use percent like 5 or 5%, or normalized like 0.05)\n";
-        }
-
-        return applyToTargets(parts[0], [this, step](const BrightnessDisplay& display) {
-          m_brightnessService->setBrightness(display.id, display.brightness + *step);
-        });
-      },
-      "raise-brightness <current|all|display-id> [step]", "Increase brightness for one or more displays");
-
-  m_ipcService.registerHandler(
-      "lower-brightness",
-      [this, applyToTargets](const std::string& args) -> std::string {
-        const auto parts = splitWords(args);
-        if (parts.empty() || parts.size() > 2) {
-          return "error: lower-brightness requires <current|all|display-id> [step]\n";
-        }
-
-        const auto step =
-            parts.size() == 2 ? parseBrightnessAmount(parts[1]) : std::optional<float>(kDefaultBrightnessStep);
-        if (!step.has_value()) {
-          return "error: invalid brightness step (use percent like 5 or 5%, or normalized like 0.05)\n";
-        }
-
-        return applyToTargets(parts[0], [this, step](const BrightnessDisplay& display) {
-          m_brightnessService->setBrightness(display.id, display.brightness - *step);
-        });
-      },
-      "lower-brightness <current|all|display-id> [step]", "Decrease brightness for one or more displays");
 }
 
 bool Application::runIdleCommand(const std::string& command) {

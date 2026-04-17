@@ -266,16 +266,26 @@ Shows the default audio sink volume and mute state via PipeWire. No configurable
 
 ```sh
 # Output (speaker)
+noctalia msg set-volume 65
 noctalia msg raise-volume
+noctalia msg raise-volume 10
 noctalia msg lower-volume
 noctalia msg mute
 
 # Input (microphone)
+noctalia msg set-mic-volume 0.5
 noctalia msg raise-mic-volume
+noctalia msg raise-mic-volume 5%
 noctalia msg lower-mic-volume
 noctalia msg mute-mic
 
-Volume is clamped to 0–100% by default. If `[audio] enable_overdrive = true` is set in the config, the maximum is raised to 150% for both input and output.
+Volume and mic IPC use a default step of 5% when no explicit step is provided.
+
+- Values and steps accept either:
+  - normalized values in the `0.0`–`1.0` range, such as `0.65` or `0.05`
+  - percentage-style values, such as `65`, `65%`, `5`, `5%`, or `12.5%`
+- Rule of thumb: if you include a decimal and the value is `<= 1.0`, it is treated as normalized; otherwise it is treated as a percentage.
+- Output and mic volume are clamped to 0–100% by default. If `[audio] enable_overdrive = true` is set in the config, the maximum is raised to 150% for both input and output.
 ```
 
 ---

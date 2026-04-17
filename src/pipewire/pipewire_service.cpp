@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/log.h"
 #include "core/process.h"
+#include "ipc/ipc_arg_parse.h"
 #include "ipc/ipc_service.h"
 
 #include <pipewire/extensions/metadata.h>
@@ -17,10 +18,13 @@
 #include <cmath>
 #include <cstring>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 
 namespace {
+
+  constexpr float kDefaultVolumeStep = 0.05f;
 
   // Registry event callbacks (C-style, forwarded to service)
   void onRegistryGlobal(void* data, std::uint32_t id, std::uint32_t /*permissions*/, const char* type,
@@ -642,28 +646,74 @@ void PipeWireService::emitChanged() {
 
 void PipeWireService::registerIpc(IpcService& ipc, const ConfigService& config) {
   const auto maxVolume = [&config] { return config.config().audio.enableOverdrive ? 1.5f : 1.0f; };
+  const auto parseVolumeValueError =
+      "error: invalid volume value (use percent like 65 or 65%, or normalized like 0.65)\n";
+  const auto parseVolumeStepError = "error: invalid volume step (use percent like 5 or 5%, or normalized like 0.05)\n";
+
+  ipc.registerHandler(
+      "set-volume",
+      [this, maxVolume, parseVolumeValueError](const std::string& args) -> std::string {
+        const auto parts = noctalia::ipc::splitWords(args);
+        if (parts.size() != 1) {
+          return "error: set-volume requires <value>\n";
+        }
+        const auto* sink = defaultSink();
+        if (!sink)
+          return "error: no default output\n";
+
+        const auto amount = noctalia::ipc::parseNormalizedOrPercent(parts[0], maxVolume() * 100.0f);
+        if (!amount.has_value()) {
+          return parseVolumeValueError;
+        }
+
+        setVolume(std::clamp(*amount, 0.0f, maxVolume()));
+        return "ok\n";
+      },
+      "set-volume <value>", "Set speaker volume");
 
   ipc.registerHandler(
       "raise-volume",
-      [this, maxVolume](const std::string&) -> std::string {
+      [this, maxVolume, parseVolumeStepError](const std::string& args) -> std::string {
+        const auto parts = noctalia::ipc::splitWords(args);
+        if (parts.size() > 1) {
+          return "error: raise-volume accepts at most one optional [step]\n";
+        }
         const auto* sink = defaultSink();
         if (!sink)
           return "error: no default output\n";
-        setVolume(std::clamp(sink->volume + 0.05f, 0.0f, maxVolume()));
+
+        const auto step = parts.empty() ? std::optional<float>(kDefaultVolumeStep)
+                                        : noctalia::ipc::parseNormalizedOrPercent(parts[0], maxVolume() * 100.0f);
+        if (!step.has_value()) {
+          return parseVolumeStepError;
+        }
+
+        setVolume(std::clamp(sink->volume + *step, 0.0f, maxVolume()));
         return "ok\n";
       },
-      "raise-volume", "Increase speaker volume");
+      "raise-volume [step]", "Increase speaker volume");
 
   ipc.registerHandler(
       "lower-volume",
-      [this, maxVolume](const std::string&) -> std::string {
+      [this, maxVolume, parseVolumeStepError](const std::string& args) -> std::string {
+        const auto parts = noctalia::ipc::splitWords(args);
+        if (parts.size() > 1) {
+          return "error: lower-volume accepts at most one optional [step]\n";
+        }
         const auto* sink = defaultSink();
         if (!sink)
           return "error: no default output\n";
-        setVolume(std::clamp(sink->volume - 0.05f, 0.0f, maxVolume()));
+
+        const auto step = parts.empty() ? std::optional<float>(kDefaultVolumeStep)
+                                        : noctalia::ipc::parseNormalizedOrPercent(parts[0], maxVolume() * 100.0f);
+        if (!step.has_value()) {
+          return parseVolumeStepError;
+        }
+
+        setVolume(std::clamp(sink->volume - *step, 0.0f, maxVolume()));
         return "ok\n";
       },
-      "lower-volume", "Decrease speaker volume");
+      "lower-volume [step]", "Decrease speaker volume");
 
   ipc.registerHandler(
       "mute",
@@ -677,26 +727,69 @@ void PipeWireService::registerIpc(IpcService& ipc, const ConfigService& config) 
       "mute", "Toggle speaker mute");
 
   ipc.registerHandler(
-      "raise-mic-volume",
-      [this, maxVolume](const std::string&) -> std::string {
+      "set-mic-volume",
+      [this, maxVolume, parseVolumeValueError](const std::string& args) -> std::string {
+        const auto parts = noctalia::ipc::splitWords(args);
+        if (parts.size() != 1) {
+          return "error: set-mic-volume requires <value>\n";
+        }
         const auto* source = defaultSource();
         if (!source)
           return "error: no default input\n";
-        setMicVolume(std::clamp(source->volume + 0.05f, 0.0f, maxVolume()));
+
+        const auto amount = noctalia::ipc::parseNormalizedOrPercent(parts[0], maxVolume() * 100.0f);
+        if (!amount.has_value()) {
+          return parseVolumeValueError;
+        }
+
+        setMicVolume(std::clamp(*amount, 0.0f, maxVolume()));
         return "ok\n";
       },
-      "raise-mic-volume", "Increase microphone volume");
+      "set-mic-volume <value>", "Set microphone volume");
+
+  ipc.registerHandler(
+      "raise-mic-volume",
+      [this, maxVolume, parseVolumeStepError](const std::string& args) -> std::string {
+        const auto parts = noctalia::ipc::splitWords(args);
+        if (parts.size() > 1) {
+          return "error: raise-mic-volume accepts at most one optional [step]\n";
+        }
+        const auto* source = defaultSource();
+        if (!source)
+          return "error: no default input\n";
+
+        const auto step = parts.empty() ? std::optional<float>(kDefaultVolumeStep)
+                                        : noctalia::ipc::parseNormalizedOrPercent(parts[0], maxVolume() * 100.0f);
+        if (!step.has_value()) {
+          return parseVolumeStepError;
+        }
+
+        setMicVolume(std::clamp(source->volume + *step, 0.0f, maxVolume()));
+        return "ok\n";
+      },
+      "raise-mic-volume [step]", "Increase microphone volume");
 
   ipc.registerHandler(
       "lower-mic-volume",
-      [this, maxVolume](const std::string&) -> std::string {
+      [this, maxVolume, parseVolumeStepError](const std::string& args) -> std::string {
+        const auto parts = noctalia::ipc::splitWords(args);
+        if (parts.size() > 1) {
+          return "error: lower-mic-volume accepts at most one optional [step]\n";
+        }
         const auto* source = defaultSource();
         if (!source)
           return "error: no default input\n";
-        setMicVolume(std::clamp(source->volume - 0.05f, 0.0f, maxVolume()));
+
+        const auto step = parts.empty() ? std::optional<float>(kDefaultVolumeStep)
+                                        : noctalia::ipc::parseNormalizedOrPercent(parts[0], maxVolume() * 100.0f);
+        if (!step.has_value()) {
+          return parseVolumeStepError;
+        }
+
+        setMicVolume(std::clamp(source->volume - *step, 0.0f, maxVolume()));
         return "ok\n";
       },
-      "lower-mic-volume", "Decrease microphone volume");
+      "lower-mic-volume [step]", "Decrease microphone volume");
 
   ipc.registerHandler(
       "mute-mic",

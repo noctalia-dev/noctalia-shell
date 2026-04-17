@@ -77,7 +77,7 @@ public:
   void setMicMuted(bool muted);
   void emitVolumePreview(bool isInput, std::uint32_t id, float volume) const;
 
-  // Registers audio-related IPC commands (raise/lower-volume, mute, raise/lower-mic-volume, mute-mic).
+  // Registers audio-related IPC commands (set/raise/lower-volume, mute, set/raise/lower-mic-volume, mute-mic).
   void registerIpc(IpcService& ipc, const ConfigService& config);
 
   [[nodiscard]] std::uint64_t changeSerial() const noexcept { return m_changeSerial; }

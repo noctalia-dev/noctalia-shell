@@ -5,6 +5,8 @@
 #include "core/process.h"
 #include "core/timer_manager.h"
 #include "dbus/system_bus.h"
+#include "ipc/ipc_arg_parse.h"
+#include "ipc/ipc_service.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
@@ -41,6 +43,7 @@
 namespace {
 
   constexpr Logger kLog("brightness");
+  constexpr float kDefaultBrightnessStep = 0.05f;
 
   namespace fs = std::filesystem;
 
@@ -113,6 +116,17 @@ namespace {
   static const sdbus::ServiceName kLogindBusName{"org.freedesktop.login1"};
   static constexpr auto kLogindManagerInterface = "org.freedesktop.login1.Manager";
   static constexpr auto kLogindSessionInterface = "org.freedesktop.login1.Session";
+
+  std::string joinBrightnessDisplayIds(const BrightnessService& service) {
+    std::string out;
+    for (const auto& display : service.displays()) {
+      if (!out.empty()) {
+        out += ", ";
+      }
+      out += display.id;
+    }
+    return out;
+  }
 
   std::string trim(std::string_view input) {
     std::size_t start = 0;
@@ -1305,6 +1319,131 @@ void BrightnessService::setBrightness(const std::string& displayId, float value)
 void BrightnessService::reload(const BrightnessConfig& config) { m_impl->reload(config); }
 
 void BrightnessService::onOutputsChanged() { m_impl->onOutputsChanged(); }
+
+void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBatchChange) {
+  auto resolveTargets = [this](std::string_view token, std::vector<std::string>& ids, std::string& error) -> bool {
+    if (!available()) {
+      error = "error: brightness control unavailable\n";
+      return false;
+    }
+
+    if (token == "all") {
+      for (const auto& display : displays()) {
+        ids.push_back(display.id);
+      }
+      return !ids.empty();
+    }
+
+    if (token == "current") {
+      wl_output* output = m_impl->wayland.activeToplevelOutput();
+      if (output == nullptr) {
+        output = m_impl->wayland.preferredPanelOutput();
+      }
+      if (output == nullptr) {
+        error = "error: could not resolve the current output\n";
+        return false;
+      }
+      const auto* display = findByOutput(output);
+      if (display == nullptr) {
+        error = "error: current output has no brightness control\n";
+        return false;
+      }
+      ids.push_back(display->id);
+      return true;
+    }
+
+    if (const auto* display = findDisplay(std::string(token)); display != nullptr) {
+      ids.push_back(display->id);
+      return true;
+    }
+
+    error = "error: unknown brightness target '" + std::string(token) + "'";
+    if (available()) {
+      error += " (available: " + joinBrightnessDisplayIds(*this) + ")";
+    }
+    error += "\n";
+    return false;
+  };
+
+  auto applyToTargets = [this, resolveTargets, onBatchChange](const std::string& target, auto&& apply) -> std::string {
+    std::vector<std::string> ids;
+    std::string error;
+    if (!resolveTargets(target, ids, error)) {
+      return error;
+    }
+
+    if (ids.size() > 1 && onBatchChange) {
+      onBatchChange();
+    }
+
+    for (const auto& id : ids) {
+      const auto* display = findDisplay(id);
+      if (display == nullptr) {
+        continue;
+      }
+      apply(*display);
+    }
+    return "ok\n";
+  };
+
+  ipc.registerHandler(
+      "set-brightness",
+      [this, applyToTargets](const std::string& args) -> std::string {
+        const auto parts = noctalia::ipc::splitWords(args);
+        if (parts.size() != 2) {
+          return "error: set-brightness requires <current|all|display-id> <value>\n";
+        }
+
+        const auto amount = noctalia::ipc::parseNormalizedOrPercent(parts[1]);
+        if (!amount.has_value()) {
+          return "error: invalid brightness value (use percent like 65 or 65%, or normalized like 0.65)\n";
+        }
+
+        return applyToTargets(parts[0],
+                              [this, amount](const BrightnessDisplay& display) { setBrightness(display.id, *amount); });
+      },
+      "set-brightness <current|all|display-id> <value>", "Set brightness for one or more displays");
+
+  ipc.registerHandler(
+      "raise-brightness",
+      [this, applyToTargets](const std::string& args) -> std::string {
+        const auto parts = noctalia::ipc::splitWords(args);
+        if (parts.empty() || parts.size() > 2) {
+          return "error: raise-brightness requires <current|all|display-id> [step]\n";
+        }
+
+        const auto step = parts.size() == 2 ? noctalia::ipc::parseNormalizedOrPercent(parts[1])
+                                            : std::optional<float>(kDefaultBrightnessStep);
+        if (!step.has_value()) {
+          return "error: invalid brightness step (use percent like 5 or 5%, or normalized like 0.05)\n";
+        }
+
+        return applyToTargets(parts[0], [this, step](const BrightnessDisplay& display) {
+          setBrightness(display.id, display.brightness + *step);
+        });
+      },
+      "raise-brightness <current|all|display-id> [step]", "Increase brightness for one or more displays");
+
+  ipc.registerHandler(
+      "lower-brightness",
+      [this, applyToTargets](const std::string& args) -> std::string {
+        const auto parts = noctalia::ipc::splitWords(args);
+        if (parts.empty() || parts.size() > 2) {
+          return "error: lower-brightness requires <current|all|display-id> [step]\n";
+        }
+
+        const auto step = parts.size() == 2 ? noctalia::ipc::parseNormalizedOrPercent(parts[1])
+                                            : std::optional<float>(kDefaultBrightnessStep);
+        if (!step.has_value()) {
+          return "error: invalid brightness step (use percent like 5 or 5%, or normalized like 0.05)\n";
+        }
+
+        return applyToTargets(parts[0], [this, step](const BrightnessDisplay& display) {
+          setBrightness(display.id, display.brightness - *step);
+        });
+      },
+      "lower-brightness <current|all|display-id> [step]", "Decrease brightness for one or more displays");
+}
 
 void BrightnessService::setChangeCallback(ChangeCallback callback) { m_impl->changeCallback = std::move(callback); }
 
