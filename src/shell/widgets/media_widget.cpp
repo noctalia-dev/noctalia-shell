@@ -211,18 +211,22 @@ void MediaWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /
   }
   syncState(renderer);
 
-  const float artSize = m_artSize * m_contentScale;
-  m_art->setSize(artSize, artSize);
-  m_art->setCornerRadius(artSize * 0.5f);
   m_label->setMaxWidth(m_maxWidth * m_contentScale);
   m_label->setColor(m_lastPlaybackStatus == "Playing"
                          ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
                          : roleColor(ColorRole::OnSurfaceVariant));
   m_label->measure(renderer);
 
-  const float contentHeight = std::max(artSize, m_label->height());
+  // Clamp art to the label's single-line height so oversized art_size cannot
+  // distort the bar capsule. The bar uses a uniform cross-axis extent derived
+  // from the same reference metrics.
+  const float artSize = std::min(m_artSize * m_contentScale, m_label->height());
+  m_art->setSize(artSize, artSize);
+  m_art->setCornerRadius(artSize * 0.5f);
+
+  const float contentHeight = m_label->height();
   const float artY = std::round((contentHeight - artSize) * 0.5f);
-  const float labelY = std::round((contentHeight - m_label->height()) * 0.5f);
+  const float labelY = 0.0f;
   const float spacing = m_label->text().empty() ? 0.0f : Style::spaceXs;
 
   m_art->setPosition(0.0f, artY);

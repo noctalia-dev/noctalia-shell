@@ -79,7 +79,7 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
   layoutWidgets(instance.centerWidgets);
   layoutWidgets(instance.endWidgets);
 
-  auto finalizeCapsules = [isVertical, slotCross](std::vector<std::unique_ptr<Widget>>& widgets) {
+  auto finalizeCapsules = [isVertical, slotCross, &renderer](std::vector<std::unique_ptr<Widget>>& widgets) {
     for (auto& w : widgets) {
       if (w == nullptr || !w->barCapsuleSpec().enabled) {
         continue;
@@ -104,34 +104,38 @@ void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW
         bg->setSize(iw, ih);
         continue;
       }
+      // Uniform capsule body extent on the cross axis — matches the reference "A"
+      // height used by Glyph/Label so all capsules share the same cross size
+      // regardless of each widget's content height.
+      const auto refMetrics = renderer.measureText("A", Style::fontSizeBody * scale);
+      const float bodyExtent = std::round(refMetrics.bottom - refMetrics.top);
       const float pad = w->barCapsuleSpec().padding * scale;
-      float padX = pad;
-      float padY = std::min(pad, Style::spaceXs * scale);
-      float shellW = iw + 2.0f * padX;
-      float shellH = ih + 2.0f * padY;
-      float innerX = padX;
-      float innerY = padY;
+      const float padMain = pad;
+      const float padCross = std::min(pad, Style::spaceXs * scale);
+      float shellMain = (isVertical ? ih : iw) + 2.0f * padMain;
+      float shellCross = bodyExtent + 2.0f * padCross;
       if (isVertical) {
-        // Shared vertical-bar capsule policy:
-        // tighter but symmetric capsule padding, plus cross-axis width clamping.
-        // Symmetric padding keeps icon-only capsules circular (not vertically oval).
-        const float padCross = std::min(pad, Style::spaceXs * scale);
-        shellH = ih + 2.0f * padCross;
-        shellW = std::max(iw, std::min(iw + 2.0f * padCross, slotCross));
-        innerX = std::max(0.0f, (shellW - iw) * 0.5f);
-        innerY = std::max(0.0f, (shellH - ih) * 0.5f);
+        shellCross = std::min(shellCross, slotCross);
       }
-      // Glyph-only widgets often report narrow width with full text-line height.
-      // Treat these as circular capsules by forcing a square shell.
-      if (iw <= ih + (kCircularCapsuleNarrowWidthEpsilon * scale)) {
+      float shellW = isVertical ? shellCross : shellMain;
+      float shellH = isVertical ? shellMain : shellCross;
+      float innerX = std::round((shellW - iw) * 0.5f);
+      float innerY = std::round((shellH - ih) * 0.5f);
+      // Glyph-only widgets have content close to bodyExtent on both axes — round
+      // them into a circular capsule. Multi-line / wide content (e.g. stacked
+      // vertical clock) must NOT be squared, or the capsule collapses on the
+      // main axis.
+      const float iconThreshold = bodyExtent + (kCircularCapsuleNarrowWidthEpsilon * scale);
+      const bool iconSized = iw <= iconThreshold && ih <= iconThreshold;
+      if (iconSized) {
         float side = std::max(shellW, shellH);
         if (isVertical) {
           side = std::min(side, slotCross);
         }
         shellW = side;
         shellH = side;
-        innerX = std::max(0.0f, (shellW - iw) * 0.5f);
-        innerY = std::max(0.0f, (shellH - ih) * 0.5f);
+        innerX = std::round((shellW - iw) * 0.5f);
+        innerY = std::round((shellH - ih) * 0.5f);
       }
       shell->setSize(shellW, shellH);
       bg->setVisible(true);
