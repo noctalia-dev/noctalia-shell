@@ -45,4 +45,6 @@ private:
   int m_refreshAttemptsRemaining = 0;
   Timer m_refreshTimer;
   Timer m_idleRefreshTimer;
+  bool m_isVertical = false;
+  bool m_lastVertical = false;
 };
