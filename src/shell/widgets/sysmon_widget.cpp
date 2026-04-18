@@ -15,6 +15,17 @@
 #include <format>
 #include <sys/statvfs.h>
 
+namespace {
+
+[[nodiscard]] std::string displaySysmonLabel(const std::string& raw, bool verticalBar) {
+  if (!verticalBar || raw.size() < 2 || raw.back() != '%') {
+    return raw;
+  }
+  return raw.substr(0, raw.size() - 1);
+}
+
+} // namespace
+
 SysmonWidget::SysmonWidget(SystemMonitorService* monitor, SysmonStat stat, std::string diskPath,
                            SysmonDisplayMode displayMode)
     : m_monitor(monitor), m_stat(stat), m_displayMode(displayMode), m_diskPath(std::move(diskPath)) {
@@ -79,16 +90,20 @@ void SysmonWidget::create() {
   setRoot(std::move(container));
 }
 
-void SysmonWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   auto* rootNode = root();
   if (m_glyph == nullptr || rootNode == nullptr) {
     return;
   }
+  // Set before update() so doUpdate applies the same vertical sizing as volume_widget.
+  m_isVerticalBar = containerHeight > containerWidth;
   update(renderer);
 
   m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   const float glyphH = m_glyph->height();
+  const float gap = Style::spaceXs * m_contentScale;
+  const bool verticalBar = m_isVerticalBar;
 
   if (m_displayMode == SysmonDisplayMode::Gauge && m_gauge != nullptr) {
     // Size the gauge to the visible icon, not glyphH — glyphH is the full
@@ -99,39 +114,71 @@ void SysmonWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float 
     const float gaugeW = std::max(3.0f, roundf(baseSize * 0.3f));
     m_gauge->setRadius(gaugeW / 2.0f);
 
-    const float gaugeY = std::round((glyphH - gaugeH) * 0.5f);
-    m_glyph->setPosition(0.0f, 0.0f);
-    m_gauge->setPosition(m_glyph->width() + Style::spaceXs, gaugeY);
-    m_gauge->setSize(gaugeW, gaugeH);
-
-    rootNode->setSize(m_gauge->x() + gaugeW, glyphH);
+    if (verticalBar) {
+      const float contentW = std::max(m_glyph->width(), gaugeW);
+      m_glyph->setPosition(std::round((contentW - m_glyph->width()) * 0.5f), 0.0f);
+      m_gauge->setPosition(std::round((contentW - gaugeW) * 0.5f), glyphH + gap);
+      m_gauge->setSize(gaugeW, gaugeH);
+      rootNode->setSize(contentW, glyphH + gap + gaugeH);
+    } else {
+      const float gaugeY = std::round((glyphH - gaugeH) * 0.5f);
+      m_glyph->setPosition(0.0f, 0.0f);
+      m_gauge->setPosition(m_glyph->width() + gap, gaugeY);
+      m_gauge->setSize(gaugeW, gaugeH);
+      rootNode->setSize(m_gauge->x() + gaugeW, glyphH);
+    }
     return;
   }
 
   if (m_label == nullptr) {
     return;
   }
+  m_label->setFontSize((verticalBar ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
   m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_label->measure(renderer);
 
   if (m_displayMode == SysmonDisplayMode::Graph && m_chartBg != nullptr) {
-    const float chartW = 50.0f * m_contentScale;
+    const float chartW =
+        verticalBar ? std::min(50.0f * m_contentScale, std::max(1.0f, containerWidth)) : 50.0f * m_contentScale;
 
-    m_glyph->setPosition(0.0f, 0.0f);
-    m_chartBg->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
-    m_chartBg->setSize(chartW, glyphH);
+    if (verticalBar) {
+      const float contentW = std::max({m_glyph->width(), chartW, m_label->width()});
+      m_glyph->setPosition(std::round((contentW - m_glyph->width()) * 0.5f), 0.0f);
+      const float chartY = glyphH + gap;
+      m_chartBg->setPosition(std::round((contentW - chartW) * 0.5f), chartY);
+      m_chartBg->setSize(chartW, glyphH);
 
-    const float barW = chartW / static_cast<float>(kHistorySamples);
-    for (int i = 0; i < kHistorySamples; i++) {
-      m_bars[i]->setPosition(static_cast<float>(i) * barW, 0.0f);
-      m_bars[i]->setSize(barW, glyphH);
+      const float barW = chartW / static_cast<float>(kHistorySamples);
+      for (int i = 0; i < kHistorySamples; i++) {
+        m_bars[i]->setPosition(static_cast<float>(i) * barW, 0.0f);
+        m_bars[i]->setSize(barW, glyphH);
+      }
+
+      const float labelY = chartY + glyphH + gap;
+      m_label->setPosition(std::round((contentW - m_label->width()) * 0.5f), labelY);
+      rootNode->setSize(contentW, labelY + m_label->height());
+    } else {
+      m_glyph->setPosition(0.0f, 0.0f);
+      m_chartBg->setPosition(m_glyph->width() + gap, 0.0f);
+      m_chartBg->setSize(chartW, glyphH);
+
+      const float barW = chartW / static_cast<float>(kHistorySamples);
+      for (int i = 0; i < kHistorySamples; i++) {
+        m_bars[i]->setPosition(static_cast<float>(i) * barW, 0.0f);
+        m_bars[i]->setSize(barW, glyphH);
+      }
+
+      m_label->setPosition(m_chartBg->x() + chartW + gap, 0.0f);
+      rootNode->setSize(m_label->x() + m_label->width(), glyphH);
     }
-
-    m_label->setPosition(m_chartBg->x() + chartW + Style::spaceXs, 0.0f);
-    rootNode->setSize(m_label->x() + m_label->width(), glyphH);
+  } else if (verticalBar) {
+    const float contentW = std::max(m_glyph->width(), m_label->width());
+    m_glyph->setPosition(std::round((contentW - m_glyph->width()) * 0.5f), 0.0f);
+    m_label->setPosition(std::round((contentW - m_label->width()) * 0.5f), glyphH + gap);
+    rootNode->setSize(contentW, glyphH + gap + m_label->height());
   } else {
     m_glyph->setPosition(0.0f, 0.0f);
-    m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
+    m_label->setPosition(m_glyph->width() + gap, 0.0f);
     rootNode->setSize(m_label->x() + m_label->width(), glyphH);
   }
 }
@@ -159,13 +206,16 @@ void SysmonWidget::doUpdate(Renderer& renderer) {
     return;
   }
 
-  auto text = formatValue();
-  if (text != m_lastText) {
-    m_lastText = std::move(text);
-    m_label->setText(m_lastText);
-    m_label->measure(renderer);
+  const std::string raw = formatValue();
+  const std::string display = displaySysmonLabel(raw, m_isVerticalBar);
+  m_label->setFontSize((m_isVerticalBar ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
+  if (raw != m_lastRawValue || m_isVerticalBar != m_lastLabelVertical) {
+    m_lastRawValue = raw;
+    m_lastLabelVertical = m_isVerticalBar;
+    m_label->setText(display);
     requestRedraw();
   }
+  m_label->measure(renderer);
 
   if (m_displayMode == SysmonDisplayMode::Graph) {
     pushHistory(normalized);

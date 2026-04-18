@@ -35,7 +35,9 @@ private:
   SysmonStat m_stat;
   SysmonDisplayMode m_displayMode;
   std::string m_diskPath;
-  std::string m_lastText;
+  std::string m_lastRawValue;
+  bool m_isVerticalBar = false;
+  bool m_lastLabelVertical = false;
 
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
