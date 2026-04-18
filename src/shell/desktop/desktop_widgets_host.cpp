@@ -210,7 +210,7 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
       .anchor = LayerShellAnchor::Top | LayerShellAnchor::Left,
       .width = geometry.surfaceWidth,
       .height = geometry.surfaceHeight,
-      .exclusiveZone = 0,
+      .exclusiveZone = -1,
       .marginTop = geometry.marginTop,
       .marginLeft = geometry.marginLeft,
       .keyboard = LayerShellKeyboard::None,
