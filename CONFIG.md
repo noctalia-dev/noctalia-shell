@@ -993,9 +993,13 @@ Examples:
 - `noctalia:enable-idle-inhibitor`
 - `noctalia:disable-idle-inhibitor`
 - `noctalia:toggle-idle-inhibitor`
-- `noctalia:toggle-panel launcher`
-- `noctalia:toggle-panel session-menu`
-- `noctalia:toggle-panel clipboard`
+- `noctalia:panel-toggle launcher`
+- `noctalia:panel-toggle session`
+- `noctalia:panel-toggle clipboard`
+- `noctalia:panel-toggle wallpaper`
+- `noctalia:panel-toggle control-center`
+
+The substring after `noctalia:` is the same line you pass to `noctalia msg` (for example `noctalia msg panel-toggle clipboard` opens or closes the clipboard panel). Registered panel ids include `launcher`, `session`, `clipboard`, `wallpaper`, `control-center`, and `polkit`.
 
 Idle behavior uses the Wayland `ext_idle_notifier_v1` protocol, so it reacts to compositor idle notifications instead of polling. The standard idle notification path respects active idle inhibitors.
 
