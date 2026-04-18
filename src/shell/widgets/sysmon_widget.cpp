@@ -72,7 +72,6 @@ void SysmonWidget::create() {
 
   if (m_displayMode == SysmonDisplayMode::Gauge) {
     auto gauge = std::make_unique<ProgressBar>();
-    gauge->setOrientation(ProgressBarOrientation::Vertical);
     gauge->setFill(roleColor(ColorRole::Primary));
     gauge->setTrackColor(roleColor(ColorRole::OnSurface, 0.25f));
     gauge->setProgress(0.0f);
@@ -110,17 +109,24 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
     // text line-box (ascent+descent) from Pango, which is noticeably taller
     // than a tabler icon's ink. Tabler glyphs fill ~85% of the em square.
     const float baseSize = Style::fontSizeBody * m_contentScale;
-    const float gaugeH = std::round(baseSize * 0.85f);
-    const float gaugeW = std::max(3.0f, roundf(baseSize * 0.3f));
-    m_gauge->setRadius(gaugeW / 2.0f);
+    const float gaugeStem = std::round(baseSize * 0.85f);
+    const float gaugeThickness = std::max(3.0f, roundf(baseSize * 0.3f));
 
     if (verticalBar) {
-      const float contentW = std::max(m_glyph->width(), gaugeW);
+      m_gauge->setOrientation(ProgressBarOrientation::Horizontal);
+      const float trackW = std::max(m_glyph->width(), gaugeStem);
+      const float trackH = gaugeThickness;
+      m_gauge->setRadius(trackH / 2.0f);
+      const float contentW = std::max(m_glyph->width(), trackW);
       m_glyph->setPosition(std::round((contentW - m_glyph->width()) * 0.5f), 0.0f);
-      m_gauge->setPosition(std::round((contentW - gaugeW) * 0.5f), glyphH + gap);
-      m_gauge->setSize(gaugeW, gaugeH);
-      rootNode->setSize(contentW, glyphH + gap + gaugeH);
+      m_gauge->setPosition(std::round((contentW - trackW) * 0.5f), glyphH + gap);
+      m_gauge->setSize(trackW, trackH);
+      rootNode->setSize(contentW, glyphH + gap + trackH);
     } else {
+      m_gauge->setOrientation(ProgressBarOrientation::Vertical);
+      const float gaugeW = gaugeThickness;
+      const float gaugeH = gaugeStem;
+      m_gauge->setRadius(gaugeW / 2.0f);
       const float gaugeY = std::round((glyphH - gaugeH) * 0.5f);
       m_glyph->setPosition(0.0f, 0.0f);
       m_gauge->setPosition(m_glyph->width() + gap, gaugeY);
@@ -193,9 +199,9 @@ void SysmonWidget::doUpdate(Renderer& renderer) {
   if (m_displayMode == SysmonDisplayMode::Gauge) {
     if (m_gauge != nullptr) {
       // Sub-pixel snap: hide fill below 1px (matches QML NLinearGauge behaviour)
-      const float gaugeH = m_gauge->height();
-      const float progress = (gaugeH > 0.0f && normalized * gaugeH < 1.0f) ? 0.0f
-                                                                             : static_cast<float>(normalized);
+      const float fillAxis = m_isVerticalBar ? m_gauge->width() : m_gauge->height();
+      const float progress =
+          (fillAxis > 0.0f && normalized * fillAxis < 1.0f) ? 0.0f : static_cast<float>(normalized);
       m_gauge->setProgress(progress);
       requestRedraw();
     }
