@@ -253,7 +253,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     temps->setText("10 / 4C");
     temps->setBold(true);
     temps->setFontSize(Style::fontSizeBody * scale);
-    temps->setColor(roleColor(ColorRole::Primary));
+    temps->setColor(roleColor(ColorRole::OnSurface));
     m_dayTemps[i] = temps.get();
     topRow->addChild(std::move(temps));
 
@@ -619,7 +619,7 @@ void WeatherTab::sync(Renderer& renderer) {
     const auto& day = snapshot.forecastDays[i];
     if (m_dayGlyphs[i] != nullptr) {
       m_dayGlyphs[i]->setGlyph(WeatherService::glyphForCode(day.weatherCode, true));
-      m_dayGlyphs[i]->setColor(roleColor(day.weatherCode < 3 ? ColorRole::Primary : ColorRole::OnSurface));
+      m_dayGlyphs[i]->setColor(roleColor(ColorRole::OnSurface));
       m_dayGlyphs[i]->measure(renderer);
     }
     if (m_dayMetas[i] != nullptr) {
