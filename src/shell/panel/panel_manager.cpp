@@ -231,6 +231,7 @@ void PanelManager::destroyPanel() {
   m_animations.cancelAll();
   m_closing = false;
   m_pointerInside = false;
+  m_inputDispatcher.setSceneRoot(nullptr);
   if (m_activePanel != nullptr) {
     m_activePanel->onClose();
   }
@@ -241,7 +242,10 @@ void PanelManager::destroyPanel() {
   m_wlSurface = nullptr;
   m_activePanel = nullptr;
   m_activePanelId.clear();
-  m_wayland->stopKeyRepeat();
+  m_pendingOpenContext.clear();
+  if (m_wayland != nullptr) {
+    m_wayland->stopKeyRepeat();
+  }
 }
 
 void PanelManager::togglePanel(const std::string& panelId, wl_output* output, float anchorX, float anchorY,

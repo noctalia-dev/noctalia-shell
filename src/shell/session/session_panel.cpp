@@ -264,4 +264,5 @@ void SessionPanel::onClose() {
   m_focusArea = nullptr;
   m_actionOrder.fill(ActionId::Logout);
   m_actionButtons.fill(nullptr);
+  clearReleasedRoot();
 }
