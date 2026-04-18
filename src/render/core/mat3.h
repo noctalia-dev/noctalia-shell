@@ -53,8 +53,7 @@ struct Mat3 {
   }
 
   [[nodiscard]] float determinant() const {
-    return m[0] * (m[4] * m[8] - m[7] * m[5]) - m[3] * (m[1] * m[8] - m[7] * m[2]) +
-           m[6] * (m[1] * m[5] - m[4] * m[2]);
+    return m[0] * (m[4] * m[8] - m[7] * m[5]) - m[3] * (m[1] * m[8] - m[7] * m[2]) + m[6] * (m[1] * m[5] - m[4] * m[2]);
   }
 
   [[nodiscard]] Mat3 inverse() const {
@@ -66,14 +65,10 @@ struct Mat3 {
     const float invDet = 1.0f / det;
     Mat3 out;
     out.m = {
-        (m[4] * m[8] - m[7] * m[5]) * invDet,
-        (m[7] * m[2] - m[1] * m[8]) * invDet,
-        (m[1] * m[5] - m[4] * m[2]) * invDet,
-        (m[6] * m[5] - m[3] * m[8]) * invDet,
-        (m[0] * m[8] - m[6] * m[2]) * invDet,
-        (m[3] * m[2] - m[0] * m[5]) * invDet,
-        (m[3] * m[7] - m[6] * m[4]) * invDet,
-        (m[6] * m[1] - m[0] * m[7]) * invDet,
+        (m[4] * m[8] - m[7] * m[5]) * invDet, (m[7] * m[2] - m[1] * m[8]) * invDet,
+        (m[1] * m[5] - m[4] * m[2]) * invDet, (m[6] * m[5] - m[3] * m[8]) * invDet,
+        (m[0] * m[8] - m[6] * m[2]) * invDet, (m[3] * m[2] - m[0] * m[5]) * invDet,
+        (m[3] * m[7] - m[6] * m[4]) * invDet, (m[6] * m[1] - m[0] * m[7]) * invDet,
         (m[0] * m[4] - m[3] * m[1]) * invDet,
     };
     return out;

@@ -6,7 +6,7 @@
 
 namespace {
 
-constexpr float kCapsuleInkEpsilon = 0.5f;
+  constexpr float kCapsuleInkEpsilon = 0.5f;
 
 } // namespace
 

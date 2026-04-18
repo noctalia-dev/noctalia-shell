@@ -2,11 +2,10 @@
 
 #include "compositors/workspace_backend.h"
 
-#include <json.hpp>
-
 #include <chrono>
 #include <cstdint>
 #include <functional>
+#include <json.hpp>
 #include <optional>
 #include <poll.h>
 #include <string>
@@ -60,8 +59,7 @@ private:
   [[nodiscard]] bool handleWindowOpenedOrChanged(const nlohmann::json& payload);
   [[nodiscard]] bool handleWindowClosed(const nlohmann::json& payload);
   [[nodiscard]] static std::optional<WorkspaceState> parseWorkspace(const nlohmann::json& json);
-  [[nodiscard]] static std::optional<std::pair<std::uint64_t, WindowState>>
-  parseWindow(const nlohmann::json& json);
+  [[nodiscard]] static std::optional<std::pair<std::uint64_t, WindowState>> parseWindow(const nlohmann::json& json);
   [[nodiscard]] static std::optional<std::uint64_t> parseUnsigned(const std::string& value);
   [[nodiscard]] static std::optional<std::size_t> parseLeadingNumber(const std::string& value);
   void recomputeOccupancy();

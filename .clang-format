@@ -3,3 +3,10 @@ IndentWidth: 2
 ColumnLimit: 120
 PointerAlignment: Left
 NamespaceIndentation: All
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^".*"'
+    Priority: 1
+  - Regex: '^<.*>'
+    Priority: 2

@@ -1,11 +1,12 @@
-#include "core/ui_phase.h"
 #include "shell/lockscreen/lock_surface.h"
 
+#include "core/ui_phase.h"
+#include "ext-session-lock-v1-client-protocol.h"
+#include "render/core/shared_texture_cache.h"
 #include "render/programs/rect_program.h"
 #include "render/render_context.h"
 #include "render/scene/image_node.h"
 #include "render/scene/rect_node.h"
-#include "render/core/shared_texture_cache.h"
 #include "ui/controls/button.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
@@ -21,13 +22,11 @@
 #include <memory>
 #include <wayland-client.h>
 
-#include "ext-session-lock-v1-client-protocol.h"
-
 namespace {
 
-const ext_session_lock_surface_v1_listener kLockSurfaceListener = {
-    .configure = &LockSurface::handleConfigure,
-};
+  const ext_session_lock_surface_v1_listener kLockSurfaceListener = {
+      .configure = &LockSurface::handleConfigure,
+  };
 
 } // namespace
 
@@ -81,8 +80,7 @@ LockSurface::LockSurface(WaylandConnection& connection) : Surface(connection) {
 
   setSceneRoot(&m_root);
   setConfigureCallback([this](std::uint32_t /*width*/, std::uint32_t /*height*/) { requestLayout(); });
-  setPrepareFrameCallback(
-      [this](bool needsUpdate, bool needsLayout) { prepareFrame(needsUpdate, needsLayout); });
+  setPrepareFrameCallback([this](bool needsUpdate, bool needsLayout) { prepareFrame(needsUpdate, needsLayout); });
   requestUpdate();
 }
 
@@ -332,7 +330,6 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   m_loginButton->setSize(buttonWidth, Style::controlHeight);
   m_loginButton->setPosition(contentLeft + inputWidth + gap, contentTop);
   m_loginButton->layout(*renderer);
-
 }
 
 void LockSurface::updateCopy() {

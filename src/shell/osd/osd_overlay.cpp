@@ -1,9 +1,9 @@
-#include "core/ui_phase.h"
 #include "shell/osd/osd_overlay.h"
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
+#include "core/ui_phase.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
 #include "ui/controls/box.h"
@@ -19,23 +19,23 @@
 
 namespace {
 
-constexpr Logger kLog("osd");
+  constexpr Logger kLog("osd");
 
-constexpr float kCardWidth = Style::controlHeightLg * 7 + Style::spaceMd + Style::spaceSm;
-constexpr float kCardHeight = Style::controlHeightLg + Style::spaceXs;
-constexpr int kSurfaceWidth = static_cast<int>(kCardWidth + Style::spaceSm);
-constexpr int kSurfaceHeight = static_cast<int>(kCardHeight + Style::spaceLg);
-constexpr int kHideDelayMs = Style::animSlow * 3 + Style::animFast * 2;
+  constexpr float kCardWidth = Style::controlHeightLg * 7 + Style::spaceMd + Style::spaceSm;
+  constexpr float kCardHeight = Style::controlHeightLg + Style::spaceXs;
+  constexpr int kSurfaceWidth = static_cast<int>(kCardWidth + Style::spaceSm);
+  constexpr int kSurfaceHeight = static_cast<int>(kCardHeight + Style::spaceLg);
+  constexpr int kHideDelayMs = Style::animSlow * 3 + Style::animFast * 2;
 
-constexpr float kCardOpacity = 0.98f;
-constexpr float kGlyphSize = Style::fontSizeTitle + Style::borderWidth * 4;
-constexpr float kValueFontSize = Style::fontSizeBody;
+  constexpr float kCardOpacity = 0.98f;
+  constexpr float kGlyphSize = Style::fontSizeTitle + Style::borderWidth * 4;
+  constexpr float kValueFontSize = Style::fontSizeBody;
 
-constexpr float kProgressHeight = Style::spaceXs + Style::borderWidth * 2;
-constexpr float kCardPadding = Style::spaceMd;
-constexpr float kInnerGap = Style::spaceSm + Style::spaceXs;
-constexpr int kScreenMargin = static_cast<int>(Style::spaceLg);
-constexpr int kBarGap = static_cast<int>(Style::spaceXs);
+  constexpr float kProgressHeight = Style::spaceXs + Style::borderWidth * 2;
+  constexpr float kCardPadding = Style::spaceMd;
+  constexpr float kInnerGap = Style::spaceSm + Style::spaceXs;
+  constexpr int kScreenMargin = static_cast<int>(Style::spaceLg);
+  constexpr int kBarGap = static_cast<int>(Style::spaceXs);
 
 } // namespace
 
@@ -205,9 +205,9 @@ void OsdOverlay::prepareFrame(Instance& inst, bool needsUpdate, bool needsLayout
 
   m_renderContext->makeCurrent(inst.surface->renderTarget());
 
-  const bool needsSceneBuild =
-      inst.sceneRoot == nullptr || static_cast<std::uint32_t>(std::round(inst.sceneRoot->width())) != width ||
-      static_cast<std::uint32_t>(std::round(inst.sceneRoot->height())) != height;
+  const bool needsSceneBuild = inst.sceneRoot == nullptr ||
+                               static_cast<std::uint32_t>(std::round(inst.sceneRoot->width())) != width ||
+                               static_cast<std::uint32_t>(std::round(inst.sceneRoot->height())) != height;
   if (needsSceneBuild) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     buildScene(inst, width, height);
@@ -375,10 +375,9 @@ void OsdOverlay::animateInstance(Instance& inst) {
               inst.hideAnimId = 0;
               inst.visible = false;
               DeferredCall::callLater([this]() {
-                const bool allIdle = std::all_of(m_instances.begin(), m_instances.end(),
-                    [](const auto& i) {
-                      return !i->visible && !i->showPending && i->showAnimId == 0 && i->hideAnimId == 0;
-                    });
+                const bool allIdle = std::all_of(m_instances.begin(), m_instances.end(), [](const auto& i) {
+                  return !i->visible && !i->showPending && i->showAnimId == 0 && i->hideAnimId == 0;
+                });
                 if (allIdle) {
                   destroySurfaces();
                 }

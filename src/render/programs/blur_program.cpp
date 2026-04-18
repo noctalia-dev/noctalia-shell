@@ -4,7 +4,7 @@
 
 namespace {
 
-constexpr char kVertexShader[] = R"(
+  constexpr char kVertexShader[] = R"(
 precision highp float;
 attribute vec2 a_position;
 varying vec2 v_texcoord;
@@ -16,9 +16,9 @@ void main() {
 }
 )";
 
-// Separable Gaussian blur with a fixed 81-tap loop (-40..40).
-// u_radius controls how many taps are active; taps beyond u_radius are skipped.
-constexpr char kFragmentShader[] = R"(
+  // Separable Gaussian blur with a fixed 81-tap loop (-40..40).
+  // u_radius controls how many taps are active; taps beyond u_radius are skipped.
+  constexpr char kFragmentShader[] = R"(
 precision highp float;
 uniform sampler2D u_texture;
 uniform vec2 u_texelSize;
@@ -52,20 +52,18 @@ void BlurProgram::ensureInitialized() {
   m_program.create(kVertexShader, kFragmentShader);
 
   const auto id = m_program.id();
-  m_posLoc       = glGetAttribLocation(id, "a_position");
-  m_texLoc       = glGetUniformLocation(id, "u_texture");
-  m_texelSzLoc   = glGetUniformLocation(id, "u_texelSize");
+  m_posLoc = glGetAttribLocation(id, "a_position");
+  m_texLoc = glGetUniformLocation(id, "u_texture");
+  m_texelSzLoc = glGetUniformLocation(id, "u_texelSize");
   m_directionLoc = glGetUniformLocation(id, "u_direction");
-  m_radiusLoc    = glGetUniformLocation(id, "u_radius");
+  m_radiusLoc = glGetUniformLocation(id, "u_radius");
 
   if (m_posLoc < 0 || m_texLoc < 0 || m_texelSzLoc < 0 || m_directionLoc < 0 || m_radiusLoc < 0) {
     throw std::runtime_error("failed to query blur shader locations");
   }
 }
 
-void BlurProgram::destroy() {
-  m_program.destroy();
-}
+void BlurProgram::destroy() { m_program.destroy(); }
 
 void BlurProgram::draw(GLuint srcTex, std::uint32_t width, std::uint32_t height, float dirX, float dirY,
                        float radius) const {

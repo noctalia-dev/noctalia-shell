@@ -1,11 +1,11 @@
 #include "idle/idle_inhibitor.h"
 
 #include "core/log.h"
+#include "idle-inhibit-unstable-v1-client-protocol.h"
 #include "ipc/ipc_service.h"
 #include "wayland/layer_surface.h"
 #include "wayland/wayland_connection.h"
 
-#include "idle-inhibit-unstable-v1-client-protocol.h"
 #include <wayland-client.h>
 
 namespace {

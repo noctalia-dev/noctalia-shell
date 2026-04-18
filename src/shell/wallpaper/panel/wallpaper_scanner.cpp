@@ -9,57 +9,32 @@
 
 namespace {
 
-constexpr Logger kLog("wp-scan");
+  constexpr Logger kLog("wp-scan");
 
-bool hasImageExtension(const std::filesystem::path& p) {
-  auto ext = p.extension().string();
-  for (char& c : ext) {
-    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  bool hasImageExtension(const std::filesystem::path& p) {
+    auto ext = p.extension().string();
+    for (char& c : ext) {
+      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+    return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".webp" || ext == ".bmp" || ext == ".gif";
   }
-  return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".webp" || ext == ".bmp" || ext == ".gif";
-}
 
-void collectFlat(const std::filesystem::path& dir, std::vector<WallpaperEntry>& out) {
-  std::error_code ec;
-  for (auto it = std::filesystem::recursive_directory_iterator(
-           dir, std::filesystem::directory_options::skip_permission_denied, ec);
-       !ec && it != std::filesystem::end(it); it.increment(ec)) {
-    if (ec) {
-      break;
-    }
-    const auto& entry = *it;
-    std::error_code typeEc;
-    if (!entry.is_regular_file(typeEc) || typeEc) {
-      continue;
-    }
-    if (!hasImageExtension(entry.path())) {
-      continue;
-    }
-    WallpaperEntry e;
-    e.name = entry.path().filename().string();
-    e.absPath = entry.path();
-    e.isDir = false;
-    out.push_back(std::move(e));
-  }
-}
-
-void collectShallow(const std::filesystem::path& dir, std::vector<WallpaperEntry>& out) {
-  std::error_code ec;
-  for (const auto& entry : std::filesystem::directory_iterator(
-           dir, std::filesystem::directory_options::skip_permission_denied, ec)) {
-    if (ec) {
-      break;
-    }
-    std::error_code typeEc;
-    if (entry.is_directory(typeEc) && !typeEc) {
-      WallpaperEntry e;
-      e.name = entry.path().filename().string();
-      e.absPath = entry.path();
-      e.isDir = true;
-      out.push_back(std::move(e));
-      continue;
-    }
-    if (entry.is_regular_file(typeEc) && !typeEc && hasImageExtension(entry.path())) {
+  void collectFlat(const std::filesystem::path& dir, std::vector<WallpaperEntry>& out) {
+    std::error_code ec;
+    for (auto it = std::filesystem::recursive_directory_iterator(
+             dir, std::filesystem::directory_options::skip_permission_denied, ec);
+         !ec && it != std::filesystem::end(it); it.increment(ec)) {
+      if (ec) {
+        break;
+      }
+      const auto& entry = *it;
+      std::error_code typeEc;
+      if (!entry.is_regular_file(typeEc) || typeEc) {
+        continue;
+      }
+      if (!hasImageExtension(entry.path())) {
+        continue;
+      }
       WallpaperEntry e;
       e.name = entry.path().filename().string();
       e.absPath = entry.path();
@@ -67,7 +42,32 @@ void collectShallow(const std::filesystem::path& dir, std::vector<WallpaperEntry
       out.push_back(std::move(e));
     }
   }
-}
+
+  void collectShallow(const std::filesystem::path& dir, std::vector<WallpaperEntry>& out) {
+    std::error_code ec;
+    for (const auto& entry :
+         std::filesystem::directory_iterator(dir, std::filesystem::directory_options::skip_permission_denied, ec)) {
+      if (ec) {
+        break;
+      }
+      std::error_code typeEc;
+      if (entry.is_directory(typeEc) && !typeEc) {
+        WallpaperEntry e;
+        e.name = entry.path().filename().string();
+        e.absPath = entry.path();
+        e.isDir = true;
+        out.push_back(std::move(e));
+        continue;
+      }
+      if (entry.is_regular_file(typeEc) && !typeEc && hasImageExtension(entry.path())) {
+        WallpaperEntry e;
+        e.name = entry.path().filename().string();
+        e.absPath = entry.path();
+        e.isDir = false;
+        out.push_back(std::move(e));
+      }
+    }
+  }
 
 } // namespace
 

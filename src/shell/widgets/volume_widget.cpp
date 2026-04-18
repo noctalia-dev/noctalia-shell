@@ -16,20 +16,19 @@
 
 namespace {
 
-const char* volumeGlyphName(float volume, bool muted) {
-  if (muted || volume <= 0.0f) {
-    return "volume-mute";
+  const char* volumeGlyphName(float volume, bool muted) {
+    if (muted || volume <= 0.0f) {
+      return "volume-mute";
+    }
+    if (volume < 0.4f) {
+      return "volume-low";
+    }
+    return "volume-high";
   }
-  if (volume < 0.4f) {
-    return "volume-low";
-  }
-  return "volume-high";
-}
 
 } // namespace
 
-VolumeWidget::VolumeWidget(PipeWireService* audio, wl_output* output)
-    : m_audio(audio), m_output(output) {}
+VolumeWidget::VolumeWidget(PipeWireService* audio, wl_output* output) : m_audio(audio), m_output(output) {}
 
 void VolumeWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -77,9 +76,7 @@ void VolumeWidget::doLayout(Renderer& renderer, float containerWidth, float cont
   }
 }
 
-void VolumeWidget::doUpdate(Renderer& renderer) {
-  syncState(renderer);
-}
+void VolumeWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
 
 void VolumeWidget::syncState(Renderer& renderer) {
   if (m_audio == nullptr || m_glyph == nullptr || m_label == nullptr) {

@@ -1,10 +1,9 @@
 #include "theme/json_output.h"
 
-#include <cstdio>
-
-#include <json.hpp>
-
 #include "theme/tokens.h"
+
+#include <cstdio>
+#include <json.hpp>
 
 namespace noctalia::theme {
 

@@ -48,8 +48,8 @@ struct RoundedRectStyle {
 
 constexpr bool operator==(const RoundedRectStyle& lhs, const RoundedRectStyle& rhs) noexcept {
   return lhs.fill == rhs.fill && lhs.fillEnd == rhs.fillEnd && lhs.border == rhs.border &&
-         lhs.fillMode == rhs.fillMode && lhs.gradientDirection == rhs.gradientDirection &&
-         lhs.radius == rhs.radius && lhs.softness == rhs.softness && lhs.borderWidth == rhs.borderWidth;
+         lhs.fillMode == rhs.fillMode && lhs.gradientDirection == rhs.gradientDirection && lhs.radius == rhs.radius &&
+         lhs.softness == rhs.softness && lhs.borderWidth == rhs.borderWidth;
 }
 
 class RectProgram {

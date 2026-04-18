@@ -24,10 +24,10 @@ using namespace control_center;
 
 namespace {
 
-void styleOverviewCard(Flex& card, float scale) {
-  applyOutlinedCard(card, scale);
-  card.setGap(Style::spaceSm * scale);
-}
+  void styleOverviewCard(Flex& card, float scale) {
+    applyOutlinedCard(card, scale);
+    card.setGap(Style::spaceSm * scale);
+  }
 
 } // namespace
 

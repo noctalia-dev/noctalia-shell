@@ -1,7 +1,7 @@
 #include "shell/launcher/launcher_panel.h"
 
-#include "core/deferred_call.h"
 #include "config/config_service.h"
+#include "core/deferred_call.h"
 #include "core/ui_phase.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"

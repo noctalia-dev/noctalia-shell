@@ -1,7 +1,7 @@
 #include "shell/control_center/audio_tab.h"
 
-#include "core/ui_phase.h"
 #include "config/config_service.h"
+#include "core/ui_phase.h"
 #include "pipewire/pipewire_service.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
@@ -25,194 +25,194 @@ using namespace control_center;
 
 namespace {
 
-constexpr float kDevicesColumnGrow = 3.0f;
-constexpr float kValueLabelWidth = Style::controlHeightLg + Style::spaceLg;
-constexpr float kVolumeSyncEpsilon = 0.005f;           // 0.5%
-constexpr auto kVolumeCommitInterval = std::chrono::milliseconds(16);
-constexpr auto kVolumeStateHoldoff = std::chrono::milliseconds(180);
+  constexpr float kDevicesColumnGrow = 3.0f;
+  constexpr float kValueLabelWidth = Style::controlHeightLg + Style::spaceLg;
+  constexpr float kVolumeSyncEpsilon = 0.005f; // 0.5%
+  constexpr auto kVolumeCommitInterval = std::chrono::milliseconds(16);
+  constexpr auto kVolumeStateHoldoff = std::chrono::milliseconds(180);
 
-class AudioDeviceRow : public Flex {
-public:
-  explicit AudioDeviceRow(std::function<void()> onSelect) : m_onSelect(std::move(onSelect)) {
-    setDirection(FlexDirection::Horizontal);
-    setAlign(FlexAlign::Center);
-    setGap(Style::spaceSm);
-    setPadding(Style::spaceSm, Style::spaceMd);
-    setMinHeight(Style::controlHeightLg);
-    setRadius(Style::radiusMd);
-    setBackground(roleColor(ColorRole::Surface));
-    setBorderWidth(0.0f);
+  class AudioDeviceRow : public Flex {
+  public:
+    explicit AudioDeviceRow(std::function<void()> onSelect) : m_onSelect(std::move(onSelect)) {
+      setDirection(FlexDirection::Horizontal);
+      setAlign(FlexAlign::Center);
+      setGap(Style::spaceSm);
+      setPadding(Style::spaceSm, Style::spaceMd);
+      setMinHeight(Style::controlHeightLg);
+      setRadius(Style::radiusMd);
+      setBackground(roleColor(ColorRole::Surface));
+      setBorderWidth(0.0f);
 
-    auto radio = std::make_unique<RadioButton>();
-    radio->setOnChange([this](bool /*checked*/) {
-      if (m_onSelect) {
-        m_onSelect();
-      }
-    });
-    m_radio = static_cast<RadioButton*>(addChild(std::move(radio)));
+      auto radio = std::make_unique<RadioButton>();
+      radio->setOnChange([this](bool /*checked*/) {
+        if (m_onSelect) {
+          m_onSelect();
+        }
+      });
+      m_radio = static_cast<RadioButton*>(addChild(std::move(radio)));
 
-    auto title = std::make_unique<Label>();
-    title->setBold(true);
-    title->setFontSize(Style::fontSizeBody);
-    title->setColor(roleColor(ColorRole::OnSurface));
-    title->setFlexGrow(1.0f);
-    m_title = title.get();
-    addChild(std::move(title));
+      auto title = std::make_unique<Label>();
+      title->setBold(true);
+      title->setFontSize(Style::fontSizeBody);
+      title->setColor(roleColor(ColorRole::OnSurface));
+      title->setFlexGrow(1.0f);
+      m_title = title.get();
+      addChild(std::move(title));
 
-    m_detail = nullptr; // Remove detail label (subtext)
+      m_detail = nullptr; // Remove detail label (subtext)
 
-    auto area = std::make_unique<InputArea>();
-    area->setPropagateEvents(true);
-    area->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyState(); });
-    area->setOnLeave([this]() { applyState(); });
-    area->setOnPress([this](const InputArea::PointerData& /*data*/) { applyState(); });
-    area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-      if (m_onSelect) {
-        m_onSelect();
-      }
-    });
-    m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
+      auto area = std::make_unique<InputArea>();
+      area->setPropagateEvents(true);
+      area->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyState(); });
+      area->setOnLeave([this]() { applyState(); });
+      area->setOnPress([this](const InputArea::PointerData& /*data*/) { applyState(); });
+      area->setOnClick([this](const InputArea::PointerData& /*data*/) {
+        if (m_onSelect) {
+          m_onSelect();
+        }
+      });
+      m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
 
-    applyState();
-    m_paletteConn = paletteChanged().connect([this] { applyState(); });
-  }
-
-  void setDevice(const AudioNode& node) {
-    m_radio->setChecked(node.isDefault);
-    const std::string title = !node.description.empty() ? node.description : node.name;
-
-    if (m_title != nullptr) {
-      m_title->setText(title);
-    }
-  }
-
-  void doLayout(Renderer& renderer) override {
-    if (m_radio == nullptr || m_title == nullptr || m_inputArea == nullptr) {
-      return;
+      applyState();
+      m_paletteConn = paletteChanged().connect([this] { applyState(); });
     }
 
-    m_radio->layout(renderer);
+    void setDevice(const AudioNode& node) {
+      m_radio->setChecked(node.isDefault);
+      const std::string title = !node.description.empty() ? node.description : node.name;
 
-    const float textMaxWidth =
-        std::max(0.0f, width() - paddingLeft() - paddingRight() - gap() - m_radio->width());
-    m_title->setMaxWidth(textMaxWidth);
-
-    m_inputArea->setVisible(false);
-    Flex::doLayout(renderer);
-    m_inputArea->setVisible(true);
-    m_inputArea->setPosition(0.0f, 0.0f);
-    m_inputArea->setSize(width(), height());
-
-    applyState();
-  }
-
-private:
-  void applyState() {
-    if (pressed()) {
-      setBackground(roleColor(ColorRole::Primary));
-      setBorderColor(roleColor(ColorRole::Primary));
-      setBorderWidth(Style::borderWidth);
       if (m_title != nullptr) {
-        m_title->setColor(roleColor(ColorRole::OnPrimary));
+        m_title->setText(title);
       }
-      return;
     }
 
-    setBackground(roleColor(ColorRole::Surface));
-    setBorderColor(roleColor(hovered() ? ColorRole::Primary : ColorRole::Surface));
-    setBorderWidth(hovered() ? Style::borderWidth : 0.0f);
-    if (m_title != nullptr) {
-      m_title->setColor(roleColor(ColorRole::OnSurface));
+    void doLayout(Renderer& renderer) override {
+      if (m_radio == nullptr || m_title == nullptr || m_inputArea == nullptr) {
+        return;
+      }
+
+      m_radio->layout(renderer);
+
+      const float textMaxWidth = std::max(0.0f, width() - paddingLeft() - paddingRight() - gap() - m_radio->width());
+      m_title->setMaxWidth(textMaxWidth);
+
+      m_inputArea->setVisible(false);
+      Flex::doLayout(renderer);
+      m_inputArea->setVisible(true);
+      m_inputArea->setPosition(0.0f, 0.0f);
+      m_inputArea->setSize(width(), height());
+
+      applyState();
     }
+
+  private:
+    void applyState() {
+      if (pressed()) {
+        setBackground(roleColor(ColorRole::Primary));
+        setBorderColor(roleColor(ColorRole::Primary));
+        setBorderWidth(Style::borderWidth);
+        if (m_title != nullptr) {
+          m_title->setColor(roleColor(ColorRole::OnPrimary));
+        }
+        return;
+      }
+
+      setBackground(roleColor(ColorRole::Surface));
+      setBorderColor(roleColor(hovered() ? ColorRole::Primary : ColorRole::Surface));
+      setBorderWidth(hovered() ? Style::borderWidth : 0.0f);
+      if (m_title != nullptr) {
+        m_title->setColor(roleColor(ColorRole::OnSurface));
+      }
+    }
+
+    [[nodiscard]] bool hovered() const noexcept { return m_inputArea != nullptr && m_inputArea->hovered(); }
+    [[nodiscard]] bool pressed() const noexcept { return m_inputArea != nullptr && m_inputArea->pressed(); }
+
+    std::function<void()> m_onSelect;
+    RadioButton* m_radio = nullptr;
+    Label* m_title = nullptr;
+    Label* m_detail = nullptr;
+    InputArea* m_inputArea = nullptr;
+    Signal<>::ScopedConnection m_paletteConn;
+  };
+
+  std::vector<AudioNode> sortedDevices(const std::vector<AudioNode>& devices) {
+    std::vector<AudioNode> sorted = devices;
+    std::ranges::sort(sorted, [](const AudioNode& a, const AudioNode& b) {
+      const std::string& left = !a.description.empty() ? a.description : a.name;
+      const std::string& right = !b.description.empty() ? b.description : b.name;
+      if (left != right) {
+        return left < right;
+      }
+      return a.id < b.id;
+    });
+    return sorted;
   }
 
-  [[nodiscard]] bool hovered() const noexcept { return m_inputArea != nullptr && m_inputArea->hovered(); }
-  [[nodiscard]] bool pressed() const noexcept { return m_inputArea != nullptr && m_inputArea->pressed(); }
-
-  std::function<void()> m_onSelect;
-  RadioButton* m_radio = nullptr;
-  Label* m_title = nullptr;
-  Label* m_detail = nullptr;
-  InputArea* m_inputArea = nullptr;
-  Signal<>::ScopedConnection m_paletteConn;
-};
-
-std::vector<AudioNode> sortedDevices(const std::vector<AudioNode>& devices) {
-  std::vector<AudioNode> sorted = devices;
-  std::ranges::sort(sorted, [](const AudioNode& a, const AudioNode& b) {
-    const std::string& left = !a.description.empty() ? a.description : a.name;
-    const std::string& right = !b.description.empty() ? b.description : b.name;
-    if (left != right) {
-      return left < right;
-    }
-    return a.id < b.id;
-  });
-  return sorted;
-}
-
-void addSubtitle(Flex& parent, const std::string& text, float scale) {
-  auto label = std::make_unique<Label>();
-  label->setText(text);
-  label->setCaptionStyle();
-  label->setFontSize(Style::fontSizeCaption * scale);
-  label->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  parent.addChild(std::move(label));
-}
-
-void addEmptyState(Flex& parent, const std::string& title, const std::string& body, float scale) {
-  auto card = std::make_unique<Flex>();
-  card->setDirection(FlexDirection::Vertical);
-  card->setAlign(FlexAlign::Start);
-  card->setGap(Style::spaceXs * scale);
-  card->setPadding(Style::spaceMd * scale);
-  card->setRadius(Style::radiusMd * scale);
-  card->setBackground(roleColor(ColorRole::Surface));
-  card->setBorderWidth(0.0f);
-
-  auto titleLabel = std::make_unique<Label>();
-  titleLabel->setText(title);
-  titleLabel->setBold(true);
-  titleLabel->setFontSize(Style::fontSizeBody * scale);
-  titleLabel->setColor(roleColor(ColorRole::OnSurface));
-  card->addChild(std::move(titleLabel));
-
-  auto bodyLabel = std::make_unique<Label>();
-  bodyLabel->setText(body);
-  bodyLabel->setCaptionStyle();
-  bodyLabel->setFontSize(Style::fontSizeCaption * scale);
-  bodyLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  card->addChild(std::move(bodyLabel));
-
-  parent.addChild(std::move(card));
-}
-
-std::string deviceListKey(const std::vector<AudioNode>& devices) {
-  std::string key;
-  for (const auto& device : devices) {
-    key += std::to_string(device.id);
-    key.push_back(':');
-    key += device.isDefault ? '1' : '0';
-    key.push_back(':');
-    key += device.name;
-    key.push_back(':');
-    key += device.description;
-    key.push_back('\n');
+  void addSubtitle(Flex& parent, const std::string& text, float scale) {
+    auto label = std::make_unique<Label>();
+    label->setText(text);
+    label->setCaptionStyle();
+    label->setFontSize(Style::fontSizeCaption * scale);
+    label->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    parent.addChild(std::move(label));
   }
-  return key;
-}
 
-std::string widestPercentLabel(float sliderMaxValue) {
-  const std::size_t digits =
-      std::to_string(static_cast<int>(std::round(std::max(0.0f, sliderMaxValue) * 100.0f))).size();
-  return std::string(std::max<std::size_t>(1, digits), '8') + "%";
-}
+  void addEmptyState(Flex& parent, const std::string& title, const std::string& body, float scale) {
+    auto card = std::make_unique<Flex>();
+    card->setDirection(FlexDirection::Vertical);
+    card->setAlign(FlexAlign::Start);
+    card->setGap(Style::spaceXs * scale);
+    card->setPadding(Style::spaceMd * scale);
+    card->setRadius(Style::radiusMd * scale);
+    card->setBackground(roleColor(ColorRole::Surface));
+    card->setBorderWidth(0.0f);
+
+    auto titleLabel = std::make_unique<Label>();
+    titleLabel->setText(title);
+    titleLabel->setBold(true);
+    titleLabel->setFontSize(Style::fontSizeBody * scale);
+    titleLabel->setColor(roleColor(ColorRole::OnSurface));
+    card->addChild(std::move(titleLabel));
+
+    auto bodyLabel = std::make_unique<Label>();
+    bodyLabel->setText(body);
+    bodyLabel->setCaptionStyle();
+    bodyLabel->setFontSize(Style::fontSizeCaption * scale);
+    bodyLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    card->addChild(std::move(bodyLabel));
+
+    parent.addChild(std::move(card));
+  }
+
+  std::string deviceListKey(const std::vector<AudioNode>& devices) {
+    std::string key;
+    for (const auto& device : devices) {
+      key += std::to_string(device.id);
+      key.push_back(':');
+      key += device.isDefault ? '1' : '0';
+      key.push_back(':');
+      key += device.name;
+      key.push_back(':');
+      key += device.description;
+      key.push_back('\n');
+    }
+    return key;
+  }
+
+  std::string widestPercentLabel(float sliderMaxValue) {
+    const std::size_t digits =
+        std::to_string(static_cast<int>(std::round(std::max(0.0f, sliderMaxValue) * 100.0f))).size();
+    return std::string(std::max<std::size_t>(1, digits), '8') + "%";
+  }
 
 } // namespace
 
 AudioTab::AudioTab(PipeWireService* audio, ConfigService* config) : m_audio(audio), m_config(config) {}
 
 bool AudioTab::dragging() const noexcept {
-  return (m_outputSlider != nullptr && m_outputSlider->dragging()) || (m_inputSlider != nullptr && m_inputSlider->dragging());
+  return (m_outputSlider != nullptr && m_outputSlider->dragging()) ||
+         (m_inputSlider != nullptr && m_inputSlider->dragging());
 }
 
 std::unique_ptr<Flex> AudioTab::create() {
@@ -406,12 +406,12 @@ void AudioTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
   m_rootLayout->layout(renderer);
 
   if (m_outputDeviceLabel != nullptr && m_outputVolumeCard != nullptr) {
-    m_outputDeviceLabel->setMaxWidth(
-        std::max(0.0f, m_outputVolumeCard->width() - m_outputVolumeCard->paddingLeft() - m_outputVolumeCard->paddingRight()));
+    m_outputDeviceLabel->setMaxWidth(std::max(0.0f, m_outputVolumeCard->width() - m_outputVolumeCard->paddingLeft() -
+                                                        m_outputVolumeCard->paddingRight()));
   }
   if (m_inputDeviceLabel != nullptr && m_inputVolumeCard != nullptr) {
-    m_inputDeviceLabel->setMaxWidth(
-        std::max(0.0f, m_inputVolumeCard->width() - m_inputVolumeCard->paddingLeft() - m_inputVolumeCard->paddingRight()));
+    m_inputDeviceLabel->setMaxWidth(std::max(0.0f, m_inputVolumeCard->width() - m_inputVolumeCard->paddingLeft() -
+                                                       m_inputVolumeCard->paddingRight()));
   }
   m_rootLayout->layout(renderer);
 
@@ -441,12 +441,12 @@ void AudioTab::doUpdate(Renderer& renderer) {
   const bool inputDragging = m_inputSlider != nullptr && m_inputSlider->dragging();
 
   if (m_outputDeviceLabel != nullptr) {
-    m_outputDeviceLabel->setText(
-        sink != nullptr ? (!sink->description.empty() ? sink->description : sink->name) : "No output device selected");
+    m_outputDeviceLabel->setText(sink != nullptr ? (!sink->description.empty() ? sink->description : sink->name)
+                                                 : "No output device selected");
   }
   if (m_inputDeviceLabel != nullptr) {
-    m_inputDeviceLabel->setText(
-        source != nullptr ? (!source->description.empty() ? source->description : source->name) : "No input device selected");
+    m_inputDeviceLabel->setText(source != nullptr ? (!source->description.empty() ? source->description : source->name)
+                                                  : "No input device selected");
   }
 
   const float sinkVolume = sink != nullptr ? sink->volume : 0.0f;
@@ -454,17 +454,14 @@ void AudioTab::doUpdate(Renderer& renderer) {
   const bool showPendingSink = sink != nullptr && m_pendingSinkVolume >= 0.0f && m_pendingSinkId == sink->id;
   const bool showPendingSource = source != nullptr && m_pendingSourceVolume >= 0.0f && m_pendingSourceId == source->id;
   const bool holdSinkState = outputDragging && sink != nullptr && m_lastSentSinkVolume >= 0.0f &&
-                             now < m_ignoreSinkStateUntil &&
-                             std::abs(sink->volume - m_lastSentSinkVolume) > 0.02f;
+                             now < m_ignoreSinkStateUntil && std::abs(sink->volume - m_lastSentSinkVolume) > 0.02f;
   const bool holdSourceState = inputDragging && source != nullptr && m_lastSentSourceVolume >= 0.0f &&
                                now < m_ignoreSourceStateUntil &&
                                std::abs(source->volume - m_lastSentSourceVolume) > 0.02f;
-  const float displayedSinkVolume =
-      std::clamp(showPendingSink ? m_pendingSinkVolume : (holdSinkState ? m_lastSentSinkVolume : sinkVolume), 0.0f,
-                 sliderMax);
+  const float displayedSinkVolume = std::clamp(
+      showPendingSink ? m_pendingSinkVolume : (holdSinkState ? m_lastSentSinkVolume : sinkVolume), 0.0f, sliderMax);
   const float displayedSourceVolume =
-      std::clamp(showPendingSource ? m_pendingSourceVolume
-                                   : (holdSourceState ? m_lastSentSourceVolume : sourceVolume),
+      std::clamp(showPendingSource ? m_pendingSourceVolume : (holdSourceState ? m_lastSentSourceVolume : sourceVolume),
                  0.0f, sliderMax);
 
   if (m_outputSlider != nullptr) {
@@ -683,9 +680,8 @@ void AudioTab::flushPendingVolumes(bool force) {
     if (shouldSendSink && !force && outputDragging) {
       const auto nextSendAt = m_lastSinkCommitAt + kVolumeCommitInterval;
       if (now < nextSendAt) {
-        m_sinkVolumeDebounceTimer.start(
-            std::chrono::duration_cast<std::chrono::milliseconds>(nextSendAt - now),
-            [this]() { flushPendingVolumes(); });
+        m_sinkVolumeDebounceTimer.start(std::chrono::duration_cast<std::chrono::milliseconds>(nextSendAt - now),
+                                        [this]() { flushPendingVolumes(); });
         shouldSendSink = false;
       }
     }
@@ -713,9 +709,8 @@ void AudioTab::flushPendingVolumes(bool force) {
     if (shouldSendSource && !force && inputDragging) {
       const auto nextSendAt = m_lastSourceCommitAt + kVolumeCommitInterval;
       if (now < nextSendAt) {
-        m_sourceVolumeDebounceTimer.start(
-            std::chrono::duration_cast<std::chrono::milliseconds>(nextSendAt - now),
-            [this]() { flushPendingVolumes(); });
+        m_sourceVolumeDebounceTimer.start(std::chrono::duration_cast<std::chrono::milliseconds>(nextSendAt - now),
+                                          [this]() { flushPendingVolumes(); });
         shouldSendSource = false;
       }
     }

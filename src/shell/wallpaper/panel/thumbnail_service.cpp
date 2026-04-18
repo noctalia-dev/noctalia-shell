@@ -7,16 +7,15 @@
 #include <webp/encode.h>
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
-#include <stb_image_resize2.h>
-
 #include <algorithm>
 #include <cerrno>
-#include <cstdlib>
+#include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <cmath>
 #include <optional>
+#include <stb_image_resize2.h>
 #include <sys/eventfd.h>
 #include <system_error>
 #include <unistd.h>
@@ -24,138 +23,138 @@
 
 namespace {
 
-constexpr Logger kLog("thumb");
-constexpr int kThumbnailTargetPx = 192;
-constexpr float kThumbnailWebPQuality = 82.0f;
-constexpr std::size_t kMinWorkers = 2;
-constexpr std::size_t kMaxWorkers = 4;
+  constexpr Logger kLog("thumb");
+  constexpr int kThumbnailTargetPx = 192;
+  constexpr float kThumbnailWebPQuality = 82.0f;
+  constexpr std::size_t kMinWorkers = 2;
+  constexpr std::size_t kMaxWorkers = 4;
 
-std::vector<std::uint8_t> readFile(const std::string& path) {
-  std::ifstream file(path, std::ios::binary | std::ios::ate);
-  if (!file) {
-    return {};
-  }
-  const auto sz = file.tellg();
-  if (sz <= 0) {
-    return {};
-  }
-  std::vector<std::uint8_t> data(static_cast<std::size_t>(sz));
-  file.seekg(0);
-  file.read(reinterpret_cast<char*>(data.data()), sz);
-  if (!file) {
-    return {};
-  }
-  return data;
-}
-
-std::filesystem::path thumbnailCacheDir() {
-  if (const char* xdg = std::getenv("XDG_CACHE_HOME"); xdg != nullptr && xdg[0] != '\0') {
-    return std::filesystem::path(xdg) / "noctalia" / "thumbnails";
-  }
-  if (const char* home = std::getenv("HOME"); home != nullptr && home[0] != '\0') {
-    return std::filesystem::path(home) / ".cache" / "noctalia" / "thumbnails";
-  }
-  return std::filesystem::path("/tmp") / "noctalia" / "thumbnails";
-}
-
-std::uint64_t fnv1a64(std::string_view text) {
-  std::uint64_t hash = 14695981039346656037ull;
-  for (const unsigned char ch : text) {
-    hash ^= static_cast<std::uint64_t>(ch);
-    hash *= 1099511628211ull;
-  }
-  return hash;
-}
-
-std::string hex64(std::uint64_t value) {
-  static constexpr char kDigits[] = "0123456789abcdef";
-  std::string out(16, '0');
-  for (int i = 15; i >= 0; --i) {
-    out[static_cast<std::size_t>(i)] = kDigits[value & 0xF];
-    value >>= 4;
-  }
-  return out;
-}
-
-std::optional<std::filesystem::path> cachePathForSource(const std::string& sourcePath) {
-  namespace fs = std::filesystem;
-  std::error_code ec;
-  const auto size = fs::file_size(sourcePath, ec);
-  if (ec) {
-    return std::nullopt;
+  std::vector<std::uint8_t> readFile(const std::string& path) {
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file) {
+      return {};
+    }
+    const auto sz = file.tellg();
+    if (sz <= 0) {
+      return {};
+    }
+    std::vector<std::uint8_t> data(static_cast<std::size_t>(sz));
+    file.seekg(0);
+    file.read(reinterpret_cast<char*>(data.data()), sz);
+    if (!file) {
+      return {};
+    }
+    return data;
   }
 
-  const auto mtime = fs::last_write_time(sourcePath, ec);
-  if (ec) {
-    return std::nullopt;
+  std::filesystem::path thumbnailCacheDir() {
+    if (const char* xdg = std::getenv("XDG_CACHE_HOME"); xdg != nullptr && xdg[0] != '\0') {
+      return std::filesystem::path(xdg) / "noctalia" / "thumbnails";
+    }
+    if (const char* home = std::getenv("HOME"); home != nullptr && home[0] != '\0') {
+      return std::filesystem::path(home) / ".cache" / "noctalia" / "thumbnails";
+    }
+    return std::filesystem::path("/tmp") / "noctalia" / "thumbnails";
   }
 
-  const auto ticks = mtime.time_since_epoch().count();
-  const std::string key = sourcePath + '\n' + std::to_string(size) + '\n' + std::to_string(ticks) + '\n' +
-                          std::to_string(kThumbnailTargetPx) + '\n' + "wallpaper-thumb-v1";
-  return thumbnailCacheDir() / (hex64(fnv1a64(key)) + ".webp");
-}
-
-bool writeFile(const std::filesystem::path& path, const std::uint8_t* data, std::size_t size) {
-  std::error_code ec;
-  std::filesystem::create_directories(path.parent_path(), ec);
-  if (ec) {
-    return false;
+  std::uint64_t fnv1a64(std::string_view text) {
+    std::uint64_t hash = 14695981039346656037ull;
+    for (const unsigned char ch : text) {
+      hash ^= static_cast<std::uint64_t>(ch);
+      hash *= 1099511628211ull;
+    }
+    return hash;
   }
 
-  std::ofstream file(path, std::ios::binary | std::ios::trunc);
-  if (!file) {
-    return false;
+  std::string hex64(std::uint64_t value) {
+    static constexpr char kDigits[] = "0123456789abcdef";
+    std::string out(16, '0');
+    for (int i = 15; i >= 0; --i) {
+      out[static_cast<std::size_t>(i)] = kDigits[value & 0xF];
+      value >>= 4;
+    }
+    return out;
   }
-  file.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(size));
-  return static_cast<bool>(file);
-}
 
-std::vector<std::uint8_t> rgbaToRgb(const std::vector<std::uint8_t>& rgba) {
-  const std::size_t pixelCount = rgba.size() / 4;
-  std::vector<std::uint8_t> rgb(pixelCount * 3);
-  for (std::size_t i = 0; i < pixelCount; ++i) {
-    rgb[i * 3 + 0] = rgba[i * 4 + 0];
-    rgb[i * 3 + 1] = rgba[i * 4 + 1];
-    rgb[i * 3 + 2] = rgba[i * 4 + 2];
+  std::optional<std::filesystem::path> cachePathForSource(const std::string& sourcePath) {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    const auto size = fs::file_size(sourcePath, ec);
+    if (ec) {
+      return std::nullopt;
+    }
+
+    const auto mtime = fs::last_write_time(sourcePath, ec);
+    if (ec) {
+      return std::nullopt;
+    }
+
+    const auto ticks = mtime.time_since_epoch().count();
+    const std::string key = sourcePath + '\n' + std::to_string(size) + '\n' + std::to_string(ticks) + '\n' +
+                            std::to_string(kThumbnailTargetPx) + '\n' + "wallpaper-thumb-v1";
+    return thumbnailCacheDir() / (hex64(fnv1a64(key)) + ".webp");
   }
-  return rgb;
-}
 
-std::vector<std::uint8_t> rgbToRgba(const std::vector<std::uint8_t>& rgb) {
-  const std::size_t pixelCount = rgb.size() / 3;
-  std::vector<std::uint8_t> rgba(pixelCount * 4);
-  for (std::size_t i = 0; i < pixelCount; ++i) {
-    rgba[i * 4 + 0] = rgb[i * 3 + 0];
-    rgba[i * 4 + 1] = rgb[i * 3 + 1];
-    rgba[i * 4 + 2] = rgb[i * 3 + 2];
-    rgba[i * 4 + 3] = 255;
+  bool writeFile(const std::filesystem::path& path, const std::uint8_t* data, std::size_t size) {
+    std::error_code ec;
+    std::filesystem::create_directories(path.parent_path(), ec);
+    if (ec) {
+      return false;
+    }
+
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    if (!file) {
+      return false;
+    }
+    file.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(size));
+    return static_cast<bool>(file);
   }
-  return rgba;
-}
 
-bool resizeThumbnail(std::vector<std::uint8_t>& pixels, int& width, int& height) {
-  const int maxDim = std::max(width, height);
-  if (maxDim <= kThumbnailTargetPx || width <= 0 || height <= 0) {
+  std::vector<std::uint8_t> rgbaToRgb(const std::vector<std::uint8_t>& rgba) {
+    const std::size_t pixelCount = rgba.size() / 4;
+    std::vector<std::uint8_t> rgb(pixelCount * 3);
+    for (std::size_t i = 0; i < pixelCount; ++i) {
+      rgb[i * 3 + 0] = rgba[i * 4 + 0];
+      rgb[i * 3 + 1] = rgba[i * 4 + 1];
+      rgb[i * 3 + 2] = rgba[i * 4 + 2];
+    }
+    return rgb;
+  }
+
+  std::vector<std::uint8_t> rgbToRgba(const std::vector<std::uint8_t>& rgb) {
+    const std::size_t pixelCount = rgb.size() / 3;
+    std::vector<std::uint8_t> rgba(pixelCount * 4);
+    for (std::size_t i = 0; i < pixelCount; ++i) {
+      rgba[i * 4 + 0] = rgb[i * 3 + 0];
+      rgba[i * 4 + 1] = rgb[i * 3 + 1];
+      rgba[i * 4 + 2] = rgb[i * 3 + 2];
+      rgba[i * 4 + 3] = 255;
+    }
+    return rgba;
+  }
+
+  bool resizeThumbnail(std::vector<std::uint8_t>& pixels, int& width, int& height) {
+    const int maxDim = std::max(width, height);
+    if (maxDim <= kThumbnailTargetPx || width <= 0 || height <= 0) {
+      return true;
+    }
+
+    const float scale = static_cast<float>(kThumbnailTargetPx) / static_cast<float>(maxDim);
+    const int resizedW = std::max(1, static_cast<int>(std::lround(static_cast<float>(width) * scale)));
+    const int resizedH = std::max(1, static_cast<int>(std::lround(static_cast<float>(height) * scale)));
+
+    std::vector<std::uint8_t> out(static_cast<std::size_t>(resizedW) * static_cast<std::size_t>(resizedH) * 3);
+    unsigned char* result =
+        stbir_resize_uint8_linear(pixels.data(), width, height, 0, out.data(), resizedW, resizedH, 0, STBIR_RGB);
+    if (result == nullptr) {
+      return false;
+    }
+
+    pixels = std::move(out);
+    width = resizedW;
+    height = resizedH;
     return true;
   }
-
-  const float scale = static_cast<float>(kThumbnailTargetPx) / static_cast<float>(maxDim);
-  const int resizedW = std::max(1, static_cast<int>(std::lround(static_cast<float>(width) * scale)));
-  const int resizedH = std::max(1, static_cast<int>(std::lround(static_cast<float>(height) * scale)));
-
-  std::vector<std::uint8_t> out(static_cast<std::size_t>(resizedW) * static_cast<std::size_t>(resizedH) * 3);
-  unsigned char* result = stbir_resize_uint8_linear(
-      pixels.data(), width, height, 0, out.data(), resizedW, resizedH, 0, STBIR_RGB);
-  if (result == nullptr) {
-    return false;
-  }
-
-  pixels = std::move(out);
-  width = resizedW;
-  height = resizedH;
-  return true;
-}
 
 } // namespace
 
@@ -403,8 +402,7 @@ void ThumbnailService::workerLoop() {
 
     if (const auto cachePath = cachePathForSource(path); cachePath.has_value()) {
       std::uint8_t* encoded = nullptr;
-      const std::size_t encodedSize =
-          WebPEncodeRGB(pixels.data(), w, h, w * 3, kThumbnailWebPQuality, &encoded);
+      const std::size_t encodedSize = WebPEncodeRGB(pixels.data(), w, h, w * 3, kThumbnailWebPQuality, &encoded);
       if (encoded != nullptr && encodedSize > 0) {
         (void)writeFile(*cachePath, encoded, encodedSize);
         WebPFree(encoded);

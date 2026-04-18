@@ -3,15 +3,6 @@
 #include "compositors/niri/niri_output_backend.h"
 #include "compositors/niri/niri_workspace_monitor.h"
 #include "core/log.h"
-#include "wayland/clipboard_service.h"
-#include "wayland/virtual_keyboard_service.h"
-
-#include <algorithm>
-#include <cstdlib>
-#include <stdexcept>
-
-#include <wayland-client.h>
-
 #include "cursor-shape-v1-client-protocol.h"
 #include "dwl-ipc-unstable-v2-client-protocol.h"
 #include "ext-background-effect-v1-client-protocol.h"
@@ -21,12 +12,19 @@
 #include "ext-workspace-v1-client-protocol.h"
 #include "idle-inhibit-unstable-v1-client-protocol.h"
 #include "virtual-keyboard-unstable-v1-client-protocol.h"
+#include "wayland/clipboard_service.h"
+#include "wayland/virtual_keyboard_service.h"
 #include "wlr-data-control-unstable-v1-client-protocol.h"
 #include "wlr-foreign-toplevel-management-unstable-v1-client-protocol.h"
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "xdg-activation-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
+
+#include <algorithm>
+#include <cstdlib>
+#include <stdexcept>
+#include <wayland-client.h>
 
 namespace {
 

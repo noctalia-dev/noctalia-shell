@@ -1,13 +1,12 @@
 #include "auth/pam_authenticator.h"
 
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
 #include <pwd.h>
 #include <security/pam_appl.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
 #include <vector>
 
 namespace {

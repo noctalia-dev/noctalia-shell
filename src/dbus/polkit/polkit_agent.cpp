@@ -18,8 +18,8 @@
 #include <sdbus-c++/MethodResult.h>
 #include <sdbus-c++/Types.h>
 #include <sdbus-c++/VTableItems.h>
-#include <string_view>
 #include <sstream>
+#include <string_view>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <tuple>
@@ -28,249 +28,250 @@
 
 namespace {
 
-constexpr Logger kLog("polkit");
+  constexpr Logger kLog("polkit");
 
-const sdbus::ServiceName k_authorityBusName{"org.freedesktop.PolicyKit1"};
-const sdbus::ObjectPath k_authorityObjectPath{"/org/freedesktop/PolicyKit1/Authority"};
-constexpr auto k_authorityInterface = "org.freedesktop.PolicyKit1.Authority";
-const sdbus::ServiceName k_logindBusName{"org.freedesktop.login1"};
-const sdbus::ObjectPath k_logindObjectPath{"/org/freedesktop/login1"};
-constexpr auto k_logindManagerInterface = "org.freedesktop.login1.Manager";
-constexpr auto k_logindSessionInterface = "org.freedesktop.login1.Session";
+  const sdbus::ServiceName k_authorityBusName{"org.freedesktop.PolicyKit1"};
+  const sdbus::ObjectPath k_authorityObjectPath{"/org/freedesktop/PolicyKit1/Authority"};
+  constexpr auto k_authorityInterface = "org.freedesktop.PolicyKit1.Authority";
+  const sdbus::ServiceName k_logindBusName{"org.freedesktop.login1"};
+  const sdbus::ObjectPath k_logindObjectPath{"/org/freedesktop/login1"};
+  constexpr auto k_logindManagerInterface = "org.freedesktop.login1.Manager";
+  constexpr auto k_logindSessionInterface = "org.freedesktop.login1.Session";
 
-const sdbus::ObjectPath k_agentObjectPath{"/org/noctalia/PolkitAuthenticationAgent"};
-constexpr auto k_agentInterface = "org.freedesktop.PolicyKit1.AuthenticationAgent";
+  const sdbus::ObjectPath k_agentObjectPath{"/org/noctalia/PolkitAuthenticationAgent"};
+  constexpr auto k_agentInterface = "org.freedesktop.PolicyKit1.AuthenticationAgent";
 
-using Subject = sdbus::Struct<std::string, std::map<std::string, sdbus::Variant>>;
-using Identity = sdbus::Struct<std::string, std::map<std::string, sdbus::Variant>>;
-using IdentityDetails = std::map<std::string, sdbus::Variant>;
+  using Subject = sdbus::Struct<std::string, std::map<std::string, sdbus::Variant>>;
+  using Identity = sdbus::Struct<std::string, std::map<std::string, sdbus::Variant>>;
+  using IdentityDetails = std::map<std::string, sdbus::Variant>;
 
-std::string localeFromEnvironment() {
-  if (const char* lang = std::getenv("LANG"); lang != nullptr && lang[0] != '\0') {
-    return lang;
-  }
-  return "C";
-}
-
-std::optional<std::string> usernameFromUid(std::uint32_t uid) {
-  passwd pwd{};
-  passwd* result = nullptr;
-  std::array<char, 4096> buffer{};
-  const int rc = getpwuid_r(static_cast<uid_t>(uid), &pwd, buffer.data(), buffer.size(), &result);
-  if (rc != 0 || result == nullptr || result->pw_name == nullptr || result->pw_name[0] == '\0') {
-    return std::nullopt;
-  }
-  return std::string(result->pw_name);
-}
-
-std::optional<std::string> identityUsername(const Identity& identity) {
-  const std::string& kind = std::get<0>(identity);
-  const IdentityDetails& details = std::get<1>(identity);
-  if (kind != "unix-user") {
-    return std::nullopt;
-  }
-  const auto nameIt = details.find("name");
-  if (nameIt != details.end()) {
-    try {
-      const std::string name = nameIt->second.get<std::string>();
-      if (!name.empty()) {
-        return name;
-      }
-    } catch (const sdbus::Error&) {
+  std::string localeFromEnvironment() {
+    if (const char* lang = std::getenv("LANG"); lang != nullptr && lang[0] != '\0') {
+      return lang;
     }
+    return "C";
   }
-  const auto uidIt = details.find("uid");
-  if (uidIt != details.end()) {
-    try {
-      return usernameFromUid(uidIt->second.get<std::uint32_t>());
-    } catch (const sdbus::Error&) {
-    }
-  }
-  return std::nullopt;
-}
 
-bool writeAll(int fd, std::string_view payload) {
-  const char* cursor = payload.data();
-  std::size_t remaining = payload.size();
-  while (remaining > 0) {
-    const ssize_t written = ::write(fd, cursor, remaining);
-    if (written < 0) {
-      if (errno == EINTR) {
-        continue;
-      }
-      return false;
-    }
-    cursor += static_cast<std::size_t>(written);
-    remaining -= static_cast<std::size_t>(written);
-  }
-  return true;
-}
-
-std::optional<std::string> readLineNonBlocking(int fd, std::string& buffer) {
-  char chunk[256];
-  while (true) {
-    const ssize_t n = ::read(fd, chunk, sizeof(chunk));
-    if (n < 0) {
-      if (errno == EINTR) {
-        continue;
-      }
-      if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        break;
-      }
+  std::optional<std::string> usernameFromUid(std::uint32_t uid) {
+    passwd pwd{};
+    passwd* result = nullptr;
+    std::array<char, 4096> buffer{};
+    const int rc = getpwuid_r(static_cast<uid_t>(uid), &pwd, buffer.data(), buffer.size(), &result);
+    if (rc != 0 || result == nullptr || result->pw_name == nullptr || result->pw_name[0] == '\0') {
       return std::nullopt;
     }
-    if (n == 0) {
-      if (buffer.empty()) {
+    return std::string(result->pw_name);
+  }
+
+  std::optional<std::string> identityUsername(const Identity& identity) {
+    const std::string& kind = std::get<0>(identity);
+    const IdentityDetails& details = std::get<1>(identity);
+    if (kind != "unix-user") {
+      return std::nullopt;
+    }
+    const auto nameIt = details.find("name");
+    if (nameIt != details.end()) {
+      try {
+        const std::string name = nameIt->second.get<std::string>();
+        if (!name.empty()) {
+          return name;
+        }
+      } catch (const sdbus::Error&) {
+      }
+    }
+    const auto uidIt = details.find("uid");
+    if (uidIt != details.end()) {
+      try {
+        return usernameFromUid(uidIt->second.get<std::uint32_t>());
+      } catch (const sdbus::Error&) {
+      }
+    }
+    return std::nullopt;
+  }
+
+  bool writeAll(int fd, std::string_view payload) {
+    const char* cursor = payload.data();
+    std::size_t remaining = payload.size();
+    while (remaining > 0) {
+      const ssize_t written = ::write(fd, cursor, remaining);
+      if (written < 0) {
+        if (errno == EINTR) {
+          continue;
+        }
+        return false;
+      }
+      cursor += static_cast<std::size_t>(written);
+      remaining -= static_cast<std::size_t>(written);
+    }
+    return true;
+  }
+
+  std::optional<std::string> readLineNonBlocking(int fd, std::string& buffer) {
+    char chunk[256];
+    while (true) {
+      const ssize_t n = ::read(fd, chunk, sizeof(chunk));
+      if (n < 0) {
+        if (errno == EINTR) {
+          continue;
+        }
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+          break;
+        }
         return std::nullopt;
       }
-      std::string out = std::move(buffer);
-      buffer.clear();
-      return out;
-    }
-    buffer.append(chunk, static_cast<std::size_t>(n));
-    const std::size_t newlinePos = buffer.find('\n');
-    if (newlinePos != std::string::npos) {
-      std::string line = buffer.substr(0, newlinePos);
-      buffer.erase(0, newlinePos + 1);
-      return line;
-    }
-  }
-  return std::string{};
-}
-
-bool setFdNonBlocking(int fd) {
-  const int flags = ::fcntl(fd, F_GETFL, 0);
-  if (flags < 0) {
-    return false;
-  }
-  return ::fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0;
-}
-
-std::optional<std::string> helperPath() {
-  constexpr std::array<const char*, 2> candidates = {
-      "/usr/lib/polkit-1/polkit-agent-helper-1",
-      "/usr/libexec/polkit-agent-helper-1",
-  };
-  for (const char* path : candidates) {
-    if (::access(path, X_OK) == 0) {
-      return std::string(path);
-    }
-  }
-  return std::nullopt;
-}
-
-std::string extractPromptText(const std::string& line, const std::string& token) {
-  if (line.size() <= token.size()) {
-    return "Authentication required";
-  }
-  std::string prompt = line.substr(token.size());
-  if (!prompt.empty() && prompt.front() == ' ') {
-    prompt.erase(prompt.begin());
-  }
-  return prompt;
-}
-
-std::optional<std::string> sessionIdFromLogind(SystemBus& bus) {
-  try {
-    auto manager = sdbus::createProxy(bus.connection(), k_logindBusName, k_logindObjectPath);
-    sdbus::ObjectPath sessionPath;
-    manager->callMethod("GetSessionByPID")
-        .onInterface(k_logindManagerInterface)
-        .withArguments(static_cast<std::uint32_t>(::getpid()))
-        .storeResultsTo(sessionPath);
-
-    auto session = sdbus::createProxy(bus.connection(), k_logindBusName, sessionPath);
-    const sdbus::Variant idVar = session->getProperty("Id").onInterface(k_logindSessionInterface);
-    const std::string sessionId = idVar.get<std::string>();
-    if (!sessionId.empty()) {
-      return sessionId;
-    }
-  } catch (const sdbus::Error&) {
-  }
-  return std::nullopt;
-}
-
-Subject makeSessionSubject(SystemBus& bus) {
-  if (const auto sessionId = sessionIdFromLogind(bus); sessionId.has_value()) {
-    std::map<std::string, sdbus::Variant> sessionDetails;
-    sessionDetails.emplace("session-id", sdbus::Variant{*sessionId});
-    return Subject{"unix-session", std::move(sessionDetails)};
-  }
-
-  if (const char* sessionId = std::getenv("XDG_SESSION_ID"); sessionId != nullptr && sessionId[0] != '\0') {
-    std::map<std::string, sdbus::Variant> sessionDetails;
-    sessionDetails.emplace("session-id", sdbus::Variant{std::string(sessionId)});
-    return Subject{"unix-session", std::move(sessionDetails)};
-  }
-
-  // Fallback when the session id is unavailable: register for this process.
-  std::map<std::string, sdbus::Variant> details;
-  const pid_t pid = ::getpid();
-  std::ifstream statFile("/proc/self/stat");
-  if (statFile.is_open()) {
-    std::string line;
-    std::getline(statFile, line);
-    const std::size_t rightParen = line.rfind(')');
-    if (rightParen != std::string::npos && rightParen + 2 < line.size()) {
-      // /proc/<pid>/stat field 22 is process start time (clock ticks since boot).
-      std::istringstream rest(line.substr(rightParen + 2));
-      std::string field;
-      std::uint64_t startTime = 0;
-      for (int fieldIndex = 3; fieldIndex <= 22; ++fieldIndex) {
-        if (!(rest >> field)) {
-          break;
+      if (n == 0) {
+        if (buffer.empty()) {
+          return std::nullopt;
         }
-        if (fieldIndex == 22) {
-          try {
-            startTime = static_cast<std::uint64_t>(std::stoull(field));
-          } catch (const std::exception&) {
-            startTime = 0;
-          }
-          break;
-        }
+        std::string out = std::move(buffer);
+        buffer.clear();
+        return out;
       }
-      details.emplace("pid", sdbus::Variant{static_cast<std::uint32_t>(pid)});
-      details.emplace("start-time", sdbus::Variant{startTime});
-      return Subject{"unix-process", std::move(details)};
+      buffer.append(chunk, static_cast<std::size_t>(n));
+      const std::size_t newlinePos = buffer.find('\n');
+      if (newlinePos != std::string::npos) {
+        std::string line = buffer.substr(0, newlinePos);
+        buffer.erase(0, newlinePos + 1);
+        return line;
+      }
     }
+    return std::string{};
   }
-  // Fallback when /proc parsing fails.
-  details.emplace("pid", sdbus::Variant{static_cast<std::uint32_t>(pid)});
-  details.emplace("start-time", sdbus::Variant{static_cast<std::uint64_t>(0)});
-  return Subject{"unix-process", std::move(details)};
-}
 
-PolkitIdentity toPolkitIdentity(const Identity& wireIdentity) {
-  PolkitIdentity identity;
-  identity.kind = std::get<0>(wireIdentity);
-  const auto& details = std::get<1>(wireIdentity);
+  bool setFdNonBlocking(int fd) {
+    const int flags = ::fcntl(fd, F_GETFL, 0);
+    if (flags < 0) {
+      return false;
+    }
+    return ::fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0;
+  }
 
-  const auto uidIt = details.find("uid");
-  if (uidIt != details.end()) {
+  std::optional<std::string> helperPath() {
+    constexpr std::array<const char*, 2> candidates = {
+        "/usr/lib/polkit-1/polkit-agent-helper-1",
+        "/usr/libexec/polkit-agent-helper-1",
+    };
+    for (const char* path : candidates) {
+      if (::access(path, X_OK) == 0) {
+        return std::string(path);
+      }
+    }
+    return std::nullopt;
+  }
+
+  std::string extractPromptText(const std::string& line, const std::string& token) {
+    if (line.size() <= token.size()) {
+      return "Authentication required";
+    }
+    std::string prompt = line.substr(token.size());
+    if (!prompt.empty() && prompt.front() == ' ') {
+      prompt.erase(prompt.begin());
+    }
+    return prompt;
+  }
+
+  std::optional<std::string> sessionIdFromLogind(SystemBus& bus) {
     try {
-      identity.uid = uidIt->second.get<std::uint32_t>();
+      auto manager = sdbus::createProxy(bus.connection(), k_logindBusName, k_logindObjectPath);
+      sdbus::ObjectPath sessionPath;
+      manager->callMethod("GetSessionByPID")
+          .onInterface(k_logindManagerInterface)
+          .withArguments(static_cast<std::uint32_t>(::getpid()))
+          .storeResultsTo(sessionPath);
+
+      auto session = sdbus::createProxy(bus.connection(), k_logindBusName, sessionPath);
+      const sdbus::Variant idVar = session->getProperty("Id").onInterface(k_logindSessionInterface);
+      const std::string sessionId = idVar.get<std::string>();
+      if (!sessionId.empty()) {
+        return sessionId;
+      }
     } catch (const sdbus::Error&) {
     }
+    return std::nullopt;
   }
-  const auto userNameIt = details.find("name");
-  if (userNameIt != details.end()) {
-    try {
-      identity.userName = userNameIt->second.get<std::string>();
-    } catch (const sdbus::Error&) {
-    }
-  }
-  return identity;
-}
 
-std::optional<std::size_t> firstSupportedIdentityIndex(const std::vector<Identity>& identities, std::string& outUser) {
-  for (std::size_t i = 0; i < identities.size(); ++i) {
-    if (auto resolved = identityUsername(identities[i]); resolved.has_value()) {
-      outUser = *resolved;
-      return i;
+  Subject makeSessionSubject(SystemBus& bus) {
+    if (const auto sessionId = sessionIdFromLogind(bus); sessionId.has_value()) {
+      std::map<std::string, sdbus::Variant> sessionDetails;
+      sessionDetails.emplace("session-id", sdbus::Variant{*sessionId});
+      return Subject{"unix-session", std::move(sessionDetails)};
     }
+
+    if (const char* sessionId = std::getenv("XDG_SESSION_ID"); sessionId != nullptr && sessionId[0] != '\0') {
+      std::map<std::string, sdbus::Variant> sessionDetails;
+      sessionDetails.emplace("session-id", sdbus::Variant{std::string(sessionId)});
+      return Subject{"unix-session", std::move(sessionDetails)};
+    }
+
+    // Fallback when the session id is unavailable: register for this process.
+    std::map<std::string, sdbus::Variant> details;
+    const pid_t pid = ::getpid();
+    std::ifstream statFile("/proc/self/stat");
+    if (statFile.is_open()) {
+      std::string line;
+      std::getline(statFile, line);
+      const std::size_t rightParen = line.rfind(')');
+      if (rightParen != std::string::npos && rightParen + 2 < line.size()) {
+        // /proc/<pid>/stat field 22 is process start time (clock ticks since boot).
+        std::istringstream rest(line.substr(rightParen + 2));
+        std::string field;
+        std::uint64_t startTime = 0;
+        for (int fieldIndex = 3; fieldIndex <= 22; ++fieldIndex) {
+          if (!(rest >> field)) {
+            break;
+          }
+          if (fieldIndex == 22) {
+            try {
+              startTime = static_cast<std::uint64_t>(std::stoull(field));
+            } catch (const std::exception&) {
+              startTime = 0;
+            }
+            break;
+          }
+        }
+        details.emplace("pid", sdbus::Variant{static_cast<std::uint32_t>(pid)});
+        details.emplace("start-time", sdbus::Variant{startTime});
+        return Subject{"unix-process", std::move(details)};
+      }
+    }
+    // Fallback when /proc parsing fails.
+    details.emplace("pid", sdbus::Variant{static_cast<std::uint32_t>(pid)});
+    details.emplace("start-time", sdbus::Variant{static_cast<std::uint64_t>(0)});
+    return Subject{"unix-process", std::move(details)};
   }
-  return std::nullopt;
-}
+
+  PolkitIdentity toPolkitIdentity(const Identity& wireIdentity) {
+    PolkitIdentity identity;
+    identity.kind = std::get<0>(wireIdentity);
+    const auto& details = std::get<1>(wireIdentity);
+
+    const auto uidIt = details.find("uid");
+    if (uidIt != details.end()) {
+      try {
+        identity.uid = uidIt->second.get<std::uint32_t>();
+      } catch (const sdbus::Error&) {
+      }
+    }
+    const auto userNameIt = details.find("name");
+    if (userNameIt != details.end()) {
+      try {
+        identity.userName = userNameIt->second.get<std::string>();
+      } catch (const sdbus::Error&) {
+      }
+    }
+    return identity;
+  }
+
+  std::optional<std::size_t> firstSupportedIdentityIndex(const std::vector<Identity>& identities,
+                                                         std::string& outUser) {
+    for (std::size_t i = 0; i < identities.size(); ++i) {
+      if (auto resolved = identityUsername(identities[i]); resolved.has_value()) {
+        outUser = *resolved;
+        return i;
+      }
+    }
+    return std::nullopt;
+  }
 
 } // namespace
 
@@ -486,63 +487,62 @@ PolkitAgent::PolkitAgent(SystemBus& bus) : m_impl(std::make_unique<Impl>(bus)) {
   m_impl->object = sdbus::createObject(bus.connection(), k_agentObjectPath);
 
   m_impl->object
-      ->addVTable(
-          sdbus::registerMethod("BeginAuthentication")
-              .withInputParamNames("action_id", "message", "icon_name", "details", "cookie", "identities")
-              .implementedAs([this](sdbus::Result<>&& result, std::string actionId, std::string message,
-                                    std::string iconName,
-                                    std::map<std::string, std::string> /*details*/, std::string cookie,
-                                    std::vector<Identity> identities) {
-                if (m_impl == nullptr) {
-                  result.returnResults();
-                  return;
-                }
-                if (m_impl->pendingBeginResult.has_value()) {
-                  // Defensive: finish any previous deferred call before replacing state.
-                  m_impl->finishBeginAuthenticationCall();
-                }
-                if (m_impl->pending.has_value()) {
-                  m_impl->stopHelper();
-                  m_impl->clearConversationState();
-                }
-                m_impl->pendingBeginResult = std::move(result);
-                PolkitRequest request;
-                request.actionId = std::move(actionId);
-                request.message = std::move(message);
-                request.iconName = std::move(iconName);
-                request.cookie = std::move(cookie);
-                request.identities.reserve(identities.size());
-                for (const auto& identity : identities) {
-                  request.identities.push_back(toPolkitIdentity(identity));
-                }
-                m_impl->pending = request;
-                m_impl->pendingIdentitiesWire = std::move(identities);
+      ->addVTable(sdbus::registerMethod("BeginAuthentication")
+                      .withInputParamNames("action_id", "message", "icon_name", "details", "cookie", "identities")
+                      .implementedAs([this](sdbus::Result<>&& result, std::string actionId, std::string message,
+                                            std::string iconName, std::map<std::string, std::string> /*details*/,
+                                            std::string cookie, std::vector<Identity> identities) {
+                        if (m_impl == nullptr) {
+                          result.returnResults();
+                          return;
+                        }
+                        if (m_impl->pendingBeginResult.has_value()) {
+                          // Defensive: finish any previous deferred call before replacing state.
+                          m_impl->finishBeginAuthenticationCall();
+                        }
+                        if (m_impl->pending.has_value()) {
+                          m_impl->stopHelper();
+                          m_impl->clearConversationState();
+                        }
+                        m_impl->pendingBeginResult = std::move(result);
+                        PolkitRequest request;
+                        request.actionId = std::move(actionId);
+                        request.message = std::move(message);
+                        request.iconName = std::move(iconName);
+                        request.cookie = std::move(cookie);
+                        request.identities.reserve(identities.size());
+                        for (const auto& identity : identities) {
+                          request.identities.push_back(toPolkitIdentity(identity));
+                        }
+                        m_impl->pending = request;
+                        m_impl->pendingIdentitiesWire = std::move(identities);
 
-                std::string userName;
-                const auto selectedIdentityIndex =
-                    firstSupportedIdentityIndex(m_impl->pendingIdentitiesWire, userName);
-                if (!selectedIdentityIndex.has_value()) {
-                  kLog.warn("polkit request \"{}\" has no unix-user identity", request.actionId);
-                  m_impl->clearPending();
-                  return;
-                }
-                m_impl->activeIdentityIndex = *selectedIdentityIndex;
-                m_impl->activeUser = userName;
-                if (!m_impl->startHelperSession()) {
-                  kLog.warn("polkit helper startup failed for action \"{}\"", request.actionId);
-                  m_impl->clearPending();
-                  return;
-                }
-              }),
-          sdbus::registerMethod("CancelAuthentication").withInputParamNames("cookie").implementedAs(
-              [this](const std::string& cookie) {
-                if (m_impl == nullptr || !m_impl->pending.has_value()) {
-                  return;
-                }
-                if (m_impl->pending->cookie == cookie) {
-                  m_impl->clearPending();
-                }
-              }))
+                        std::string userName;
+                        const auto selectedIdentityIndex =
+                            firstSupportedIdentityIndex(m_impl->pendingIdentitiesWire, userName);
+                        if (!selectedIdentityIndex.has_value()) {
+                          kLog.warn("polkit request \"{}\" has no unix-user identity", request.actionId);
+                          m_impl->clearPending();
+                          return;
+                        }
+                        m_impl->activeIdentityIndex = *selectedIdentityIndex;
+                        m_impl->activeUser = userName;
+                        if (!m_impl->startHelperSession()) {
+                          kLog.warn("polkit helper startup failed for action \"{}\"", request.actionId);
+                          m_impl->clearPending();
+                          return;
+                        }
+                      }),
+                  sdbus::registerMethod("CancelAuthentication")
+                      .withInputParamNames("cookie")
+                      .implementedAs([this](const std::string& cookie) {
+                        if (m_impl == nullptr || !m_impl->pending.has_value()) {
+                          return;
+                        }
+                        if (m_impl->pending->cookie == cookie) {
+                          m_impl->clearPending();
+                        }
+                      }))
       .forInterface(k_agentInterface);
 
   try {
@@ -654,6 +654,4 @@ std::string PolkitAgent::supplementaryMessage() const {
   return m_impl != nullptr ? m_impl->supplementaryMessage : std::string{};
 }
 
-bool PolkitAgent::supplementaryIsError() const noexcept {
-  return m_impl != nullptr && m_impl->supplementaryError;
-}
+bool PolkitAgent::supplementaryIsError() const noexcept { return m_impl != nullptr && m_impl->supplementaryError; }

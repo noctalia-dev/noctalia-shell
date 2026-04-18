@@ -1,14 +1,13 @@
 #include "shell/test/test_panel.h"
 
 #include "render/animation/animation_manager.h"
-
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/checkbox.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
-#include "ui/controls/grid_view.h"
 #include "ui/controls/grid_tile.h"
+#include "ui/controls/grid_view.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/radio_button.h"
@@ -74,7 +73,6 @@ void TestPanel::create() {
     return label;
   };
 
-
   // Button
   auto button = std::make_unique<Button>();
   button->setText("Hello");
@@ -118,7 +116,7 @@ void TestPanel::create() {
   glyphButton->setVariant(ButtonVariant::Default);
   glyphButton->setMinHeight(Style::controlHeight * scale);
   glyphButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale,
-                              Style::spaceMd * scale);
+                          Style::spaceMd * scale);
   glyphButton->setRadius(Style::radiusMd * scale);
   glyphButton->setOnClick([]() {});
   m_glyphButton = glyphButton.get();
@@ -349,7 +347,7 @@ void TestPanel::create() {
 
     input->setOnChange([this](const std::string& val) {
       if (m_inputValueLabel != nullptr) {
-        m_inputValueLabel->setText(val.empty() ? "..." : val.substr(0,16));
+        m_inputValueLabel->setText(val.empty() ? "..." : val.substr(0, 16));
       }
     });
 
@@ -443,7 +441,6 @@ void TestPanel::create() {
   m_transformHelp = transformHelp.get();
   transformColumn->addChild(std::move(transformHelp));
 
-
   auto transformStage = std::make_unique<Box>();
   transformStage->setSize(360.0f * scale, 360.0f * scale);
   transformStage->setFill(roleColor(ColorRole::Surface));
@@ -524,13 +521,12 @@ void TestPanel::create() {
   }
 
   if (m_animations != nullptr && m_transformDemoBox != nullptr) {
-    m_animations->animate(0.0f, 2.0f * static_cast<float>(M_PI), 8000.0f, Easing::Linear,
-                          [this](float phase) {
-                            if (m_transformDemoBox != nullptr) {
-                              m_transformDemoBox->setRotation(phase);
-                              m_transformDemoBox->setScale(1.0f + 0.16f * std::sin(phase));
-                            }
-                          });
+    m_animations->animate(0.0f, 2.0f * static_cast<float>(M_PI), 8000.0f, Easing::Linear, [this](float phase) {
+      if (m_transformDemoBox != nullptr) {
+        m_transformDemoBox->setRotation(phase);
+        m_transformDemoBox->setScale(1.0f + 0.16f * std::sin(phase));
+      }
+    });
   }
 }
 
@@ -551,17 +547,18 @@ void TestPanel::doLayout(Renderer& renderer, float /*width*/, float /*height*/) 
   }
   if (m_transformDemoBox != nullptr && m_transformDemoButton != nullptr) {
     m_transformDemoButton->layout(renderer);
-    m_transformDemoButton->setPosition(std::round((m_transformDemoBox->width() - m_transformDemoButton->width()) * 0.5f),
-                                       std::round((m_transformDemoBox->height() - m_transformDemoButton->height()) * 0.5f));
+    m_transformDemoButton->setPosition(
+        std::round((m_transformDemoBox->width() - m_transformDemoButton->width()) * 0.5f),
+        std::round((m_transformDemoBox->height() - m_transformDemoButton->height()) * 0.5f));
   }
   if (m_transformDemoBox != nullptr && m_transformDemoGlyph != nullptr) {
     m_transformDemoGlyph->measure(renderer);
-    m_transformDemoGlyph->setPosition(18.0f * contentScale(),
-                                      std::round((m_transformDemoBox->height() - m_transformDemoGlyph->height()) * 0.85f));
+    m_transformDemoGlyph->setPosition(
+        18.0f * contentScale(), std::round((m_transformDemoBox->height() - m_transformDemoGlyph->height()) * 0.85f));
   }
   if (m_transformDemoBox != nullptr && m_transformBadgeBox != nullptr) {
-    m_transformBadgeBox->setPosition(m_transformDemoBox->width() - m_transformBadgeBox->width() - 12.0f * contentScale(),
-                                     12.0f * contentScale());
+    m_transformBadgeBox->setPosition(
+        m_transformDemoBox->width() - m_transformBadgeBox->width() - 12.0f * contentScale(), 12.0f * contentScale());
   }
   if (m_transformBadgeBox != nullptr && m_transformBadgeLabel != nullptr) {
     m_transformBadgeLabel->measure(renderer);

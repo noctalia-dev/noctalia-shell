@@ -1,13 +1,13 @@
 #include "theme/image_loader.h"
 
+#include "render/core/image_decoder.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iterator>
-
-#include "render/core/image_decoder.h"
 
 namespace noctalia::theme {
 

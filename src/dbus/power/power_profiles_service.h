@@ -9,7 +9,7 @@
 class SystemBus;
 
 namespace sdbus {
-class IProxy;
+  class IProxy;
 }
 
 [[nodiscard]] std::string profileLabel(std::string_view profile);

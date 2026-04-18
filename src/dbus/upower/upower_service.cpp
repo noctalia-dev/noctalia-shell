@@ -11,22 +11,22 @@
 
 namespace {
 
-static const sdbus::ServiceName k_upowerBusName{"org.freedesktop.UPower"};
-static const sdbus::ObjectPath k_upowerObjectPath{"/org/freedesktop/UPower"};
-static constexpr auto k_upowerInterface = "org.freedesktop.UPower";
-static constexpr auto k_deviceInterface = "org.freedesktop.UPower.Device";
-static constexpr auto k_propertiesInterface = "org.freedesktop.DBus.Properties";
+  static const sdbus::ServiceName k_upowerBusName{"org.freedesktop.UPower"};
+  static const sdbus::ObjectPath k_upowerObjectPath{"/org/freedesktop/UPower"};
+  static constexpr auto k_upowerInterface = "org.freedesktop.UPower";
+  static constexpr auto k_deviceInterface = "org.freedesktop.UPower.Device";
+  static constexpr auto k_propertiesInterface = "org.freedesktop.DBus.Properties";
 
-// UPower device types
-constexpr std::uint32_t k_deviceTypeBattery = 2;
+  // UPower device types
+  constexpr std::uint32_t k_deviceTypeBattery = 2;
 
-// UPower battery states
-constexpr std::uint32_t k_stateCharging = 1;
-constexpr std::uint32_t k_stateDischarging = 2;
-constexpr std::uint32_t k_stateEmpty = 3;
-constexpr std::uint32_t k_stateFullyCharged = 4;
-constexpr std::uint32_t k_statePendingCharge = 5;
-constexpr std::uint32_t k_statePendingDischarge = 6;
+  // UPower battery states
+  constexpr std::uint32_t k_stateCharging = 1;
+  constexpr std::uint32_t k_stateDischarging = 2;
+  constexpr std::uint32_t k_stateEmpty = 3;
+  constexpr std::uint32_t k_stateFullyCharged = 4;
+  constexpr std::uint32_t k_statePendingCharge = 5;
+  constexpr std::uint32_t k_statePendingDischarge = 6;
 
 } // namespace
 
@@ -52,36 +52,36 @@ std::string batteryStateLabel(BatteryState state) {
 
 namespace {
 
-template <typename T>
-T getPropertyOr(sdbus::IProxy& proxy, std::string_view iface, std::string_view propertyName, T fallback) {
-  try {
-    const sdbus::Variant value = proxy.getProperty(propertyName).onInterface(iface);
-    return value.get<T>();
-  } catch (const sdbus::Error&) {
-    return fallback;
+  template <typename T>
+  T getPropertyOr(sdbus::IProxy& proxy, std::string_view iface, std::string_view propertyName, T fallback) {
+    try {
+      const sdbus::Variant value = proxy.getProperty(propertyName).onInterface(iface);
+      return value.get<T>();
+    } catch (const sdbus::Error&) {
+      return fallback;
+    }
   }
-}
 
-BatteryState decodeBatteryState(std::uint32_t raw) {
-  switch (raw) {
-  case k_stateCharging:
-    return BatteryState::Charging;
-  case k_stateDischarging:
-    return BatteryState::Discharging;
-  case k_stateEmpty:
-    return BatteryState::Empty;
-  case k_stateFullyCharged:
-    return BatteryState::FullyCharged;
-  case k_statePendingCharge:
-    return BatteryState::PendingCharge;
-  case k_statePendingDischarge:
-    return BatteryState::PendingDischarge;
-  default:
-    return BatteryState::Unknown;
+  BatteryState decodeBatteryState(std::uint32_t raw) {
+    switch (raw) {
+    case k_stateCharging:
+      return BatteryState::Charging;
+    case k_stateDischarging:
+      return BatteryState::Discharging;
+    case k_stateEmpty:
+      return BatteryState::Empty;
+    case k_stateFullyCharged:
+      return BatteryState::FullyCharged;
+    case k_statePendingCharge:
+      return BatteryState::PendingCharge;
+    case k_statePendingDischarge:
+      return BatteryState::PendingDischarge;
+    default:
+      return BatteryState::Unknown;
+    }
   }
-}
 
-constexpr Logger kLog("upower");
+  constexpr Logger kLog("upower");
 
 } // namespace
 

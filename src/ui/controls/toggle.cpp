@@ -2,8 +2,8 @@
 
 #include "render/animation/animation_manager.h"
 #include "render/core/color.h"
-#include "render/scene/input_area.h"
 #include "render/programs/rect_program.h"
+#include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -55,9 +55,9 @@ void Toggle::setChecked(bool checked) {
     }
     float from = m_checked ? 0.0f : 1.0f;
     float to = m_checked ? 1.0f : 0.0f;
-    m_animId = animationManager()->animate(from, to, Style::animFast, Easing::EaseOutCubic,
-                                     [this](float t) { applyAnimatedState(t); },
-                                     [this]() { m_animId = 0; });
+    m_animId = animationManager()->animate(
+        from, to, Style::animFast, Easing::EaseOutCubic, [this](float t) { applyAnimatedState(t); },
+        [this]() { m_animId = 0; });
     // Mark dirty so the surface's frame loop restarts and ticks the animation
     markPaintDirty();
   } else {
@@ -92,9 +92,7 @@ void Toggle::setScale(float scale) {
   markLayoutDirty();
 }
 
-void Toggle::setOnChange(std::function<void(bool)> callback) {
-  m_onChange = std::move(callback);
-}
+void Toggle::setOnChange(std::function<void(bool)> callback) { m_onChange = std::move(callback); }
 
 bool Toggle::hovered() const noexcept { return m_inputArea != nullptr && m_inputArea->hovered(); }
 
@@ -132,16 +130,14 @@ void Toggle::applySize() {
   setRadius((m_thumbSize + (m_inset * 2.0f)) * 0.5f);
 }
 
-void Toggle::applyState() {
-  applyAnimatedState(m_checked ? 1.0f : 0.0f);
-}
+void Toggle::applyState() { applyAnimatedState(m_checked ? 1.0f : 0.0f); }
 
 void Toggle::applyAnimatedState(float t) {
   m_animationProgress = t;
-  const Color trackColor = lerpColor(resolveColorRole(ColorRole::SurfaceVariant),
-                                     resolveColorRole(ColorRole::Primary), t);
-  const Color thumbColor = lerpColor(resolveColorRole(ColorRole::OnSurfaceVariant),
-                                     resolveColorRole(ColorRole::OnPrimary), t);
+  const Color trackColor =
+      lerpColor(resolveColorRole(ColorRole::SurfaceVariant), resolveColorRole(ColorRole::Primary), t);
+  const Color thumbColor =
+      lerpColor(resolveColorRole(ColorRole::OnSurfaceVariant), resolveColorRole(ColorRole::OnPrimary), t);
   const float thumbX = m_inset + m_travel * t;
   ThemeColor borderColor = roleColor(ColorRole::Outline);
   if (m_enabled && (pressed() || hovered())) {

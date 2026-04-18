@@ -1,6 +1,6 @@
-#include "core/ui_phase.h"
 #include "shell/control_center/calendar_tab.h"
 
+#include "core/ui_phase.h"
 #include "render/core/renderer.h"
 #include "shell/control_center/tab.h"
 #include "shell/panel/panel_manager.h"
@@ -20,73 +20,73 @@
 
 namespace {
 
-constexpr float kCalendarGridGap = Style::spaceSm;
-constexpr float kCalendarNavButtonSize = Style::controlHeight;
-constexpr float kCalendarWeekdayRowHeight = Style::controlHeight;
-constexpr float kCalendarHeaderHeight = Style::controlHeightLg;
-constexpr float kCalendarCellSizeMin = Style::controlHeightSm + Style::spaceXs;
-constexpr float kCalendarCellSizeMax = Style::controlHeightLg + Style::spaceLg;
-constexpr float kCalendarLayoutEpsilon = 0.5f;
+  constexpr float kCalendarGridGap = Style::spaceSm;
+  constexpr float kCalendarNavButtonSize = Style::controlHeight;
+  constexpr float kCalendarWeekdayRowHeight = Style::controlHeight;
+  constexpr float kCalendarHeaderHeight = Style::controlHeightLg;
+  constexpr float kCalendarCellSizeMin = Style::controlHeightSm + Style::spaceXs;
+  constexpr float kCalendarCellSizeMax = Style::controlHeightLg + Style::spaceLg;
+  constexpr float kCalendarLayoutEpsilon = 0.5f;
 
-std::string todayLabel() {
-  std::time_t now = std::time(nullptr);
-  std::tm local = *std::localtime(&now);
-  char buf[64];
-  if (std::strftime(buf, sizeof(buf), "Today · %A, %d %B %Y", &local) == 0) {
-    return "Today";
+  std::string todayLabel() {
+    std::time_t now = std::time(nullptr);
+    std::tm local = *std::localtime(&now);
+    char buf[64];
+    if (std::strftime(buf, sizeof(buf), "Today · %A, %d %B %Y", &local) == 0) {
+      return "Today";
+    }
+    return buf;
   }
-  return buf;
-}
 
-std::string monthName(int month) {
-  static constexpr std::array<const char*, 12> kMonths = {"January",   "February", "March",    "April",
-                                                           "May",       "June",     "July",     "August",
-                                                           "September", "October",  "November", "December"};
-  if (month < 0 || month >= static_cast<int>(kMonths.size())) {
-    return "Calendar";
+  std::string monthName(int month) {
+    static constexpr std::array<const char*, 12> kMonths = {"January",   "February", "March",    "April",
+                                                            "May",       "June",     "July",     "August",
+                                                            "September", "October",  "November", "December"};
+    if (month < 0 || month >= static_cast<int>(kMonths.size())) {
+      return "Calendar";
+    }
+    return kMonths[static_cast<std::size_t>(month)];
   }
-  return kMonths[static_cast<std::size_t>(month)];
-}
 
-int daysInMonth(int yearValue, int monthValue) {
-  static constexpr std::array<int, 12> kDays = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-  int result = kDays[static_cast<std::size_t>(monthValue)];
-  if (monthValue == 1) {
-    const bool leap = ((yearValue % 4 == 0 && yearValue % 100 != 0) || (yearValue % 400 == 0));
-    result = leap ? 29 : 28;
+  int daysInMonth(int yearValue, int monthValue) {
+    static constexpr std::array<int, 12> kDays = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    int result = kDays[static_cast<std::size_t>(monthValue)];
+    if (monthValue == 1) {
+      const bool leap = ((yearValue % 4 == 0 && yearValue % 100 != 0) || (yearValue % 400 == 0));
+      result = leap ? 29 : 28;
+    }
+    return result;
   }
-  return result;
-}
 
-struct CalendarBuildState {
-  int currentYear = 0;
-  int currentMonth = 0;
-  int today = 0;
-  int displayYear = 0;
-  int displayMonth = 0;
-  int displayWeekday = 0;
-  bool isCurrentMonth = false;
-};
+  struct CalendarBuildState {
+    int currentYear = 0;
+    int currentMonth = 0;
+    int today = 0;
+    int displayYear = 0;
+    int displayMonth = 0;
+    int displayWeekday = 0;
+    bool isCurrentMonth = false;
+  };
 
-CalendarBuildState currentCalendarState(int monthOffset) {
-  std::time_t now = std::time(nullptr);
-  std::tm local = *std::localtime(&now);
+  CalendarBuildState currentCalendarState(int monthOffset) {
+    std::time_t now = std::time(nullptr);
+    std::tm local = *std::localtime(&now);
 
-  CalendarBuildState state;
-  state.currentYear = local.tm_year + 1900;
-  state.currentMonth = local.tm_mon;
-  state.today = local.tm_mday;
+    CalendarBuildState state;
+    state.currentYear = local.tm_year + 1900;
+    state.currentMonth = local.tm_mon;
+    state.today = local.tm_mday;
 
-  std::tm display = local;
-  display.tm_mday = 1;
-  display.tm_mon += monthOffset;
-  std::mktime(&display);
-  state.displayYear = display.tm_year + 1900;
-  state.displayMonth = display.tm_mon;
-  state.displayWeekday = display.tm_wday;
-  state.isCurrentMonth = state.displayYear == state.currentYear && state.displayMonth == state.currentMonth;
-  return state;
-}
+    std::tm display = local;
+    display.tm_mday = 1;
+    display.tm_mon += monthOffset;
+    std::mktime(&display);
+    state.displayYear = display.tm_year + 1900;
+    state.displayMonth = display.tm_mon;
+    state.displayWeekday = display.tm_wday;
+    state.isCurrentMonth = state.displayYear == state.currentYear && state.displayMonth == state.currentMonth;
+    return state;
+  }
 
 } // namespace
 
@@ -225,8 +225,8 @@ void CalendarTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
   const bool sizeChanged = std::abs(innerWidth - m_lastInnerWidth) >= kCalendarLayoutEpsilon ||
                            std::abs(innerHeight - m_lastInnerHeight) >= kCalendarLayoutEpsilon;
   const bool displayChanged = state.displayYear != m_lastDisplayYear || state.displayMonth != m_lastDisplayMonth;
-  const bool todayChanged = state.currentYear != m_lastCurrentYear || state.currentMonth != m_lastCurrentMonth ||
-                            state.today != m_lastToday;
+  const bool todayChanged =
+      state.currentYear != m_lastCurrentYear || state.currentMonth != m_lastCurrentMonth || state.today != m_lastToday;
   if (!sizeChanged && !displayChanged && !todayChanged) {
     return;
   }
@@ -359,7 +359,7 @@ void CalendarTab::rebuild() {
     cell->setMinHeight(dayCellHeight);
     cell->setRadius(Style::radiusLg * scale);
     cell->setFontSize(dayCellHeight > (Style::controlHeightLg + Style::spaceXs) * scale ? Style::fontSizeTitle * scale
-                                                                                           : Style::fontSizeBody * scale);
+                                                                                        : Style::fontSizeBody * scale);
     cell->setText("");
 
     if (index < firstWeekdayMonBased) {

@@ -31,9 +31,9 @@ private:
   void updateRendererState(OverviewInstance& inst);
   void releaseInstanceTexture(OverviewInstance& inst);
 
-  WaylandConnection* m_wayland  = nullptr;
-  ConfigService*     m_config   = nullptr;
+  WaylandConnection* m_wayland = nullptr;
+  ConfigService* m_config = nullptr;
   SharedTextureCache* m_textureCache = nullptr;
-  GlSharedContext*   m_sharedGl = nullptr;
+  GlSharedContext* m_sharedGl = nullptr;
   std::vector<std::unique_ptr<OverviewInstance>> m_instances;
 };

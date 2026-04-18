@@ -1,9 +1,8 @@
 #pragma once
 
+#include "core/toml.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-
-#include "core/toml.h"
 
 #include <array>
 #include <cstdint>

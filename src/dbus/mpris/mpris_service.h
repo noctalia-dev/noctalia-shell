@@ -11,8 +11,8 @@
 #include <vector>
 
 namespace sdbus {
-class IObject;
-class IProxy;
+  class IObject;
+  class IProxy;
 } // namespace sdbus
 
 class SessionBus;

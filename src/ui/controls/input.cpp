@@ -23,56 +23,53 @@
 
 namespace {
 
-ClipboardService* g_clipboard = nullptr;
-Input::PasswordMaskStyle g_passwordMaskStyle = Input::PasswordMaskStyle::CircleFilled;
+  ClipboardService* g_clipboard = nullptr;
+  Input::PasswordMaskStyle g_passwordMaskStyle = Input::PasswordMaskStyle::CircleFilled;
 
-std::optional<std::string> readClipboardText() {
-  if (g_clipboard == nullptr) {
+  std::optional<std::string> readClipboardText() {
+    if (g_clipboard == nullptr) {
+      return std::nullopt;
+    }
+    const auto& hist = g_clipboard->history();
+    for (std::size_t i = 0; i < hist.size(); ++i) {
+      if (hist[i].isImage()) {
+        continue;
+      }
+      if (!g_clipboard->ensureEntryLoaded(i)) {
+        continue;
+      }
+      const auto& entry = g_clipboard->history()[i];
+      if (entry.data.empty()) {
+        continue;
+      }
+      return std::string(entry.data.begin(), entry.data.end());
+    }
     return std::nullopt;
   }
-  const auto& hist = g_clipboard->history();
-  for (std::size_t i = 0; i < hist.size(); ++i) {
-    if (hist[i].isImage()) {
-      continue;
+
+  // Modifier bitmask — must match KeyMod constants in wayland/wayland_seat.h
+  constexpr std::uint32_t kModShift = 1u << 0;
+  constexpr std::uint32_t kModCtrl = 1u << 1;
+
+  constexpr float kDefaultWidth = 200.0f;
+  constexpr float kCursorWidth = 1.5f;
+  constexpr float kCursorPadV = 3.0f;
+  constexpr float kPasswordGlyphScale = 0.82f;
+
+  char32_t passwordMaskCodepointForIndex(std::size_t index) {
+    if (g_passwordMaskStyle == Input::PasswordMaskStyle::CircleFilled) {
+      return GlyphRegistry::lookup("circle-filled");
     }
-    if (!g_clipboard->ensureEntryLoaded(i)) {
-      continue;
-    }
-    const auto& entry = g_clipboard->history()[i];
-    if (entry.data.empty()) {
-      continue;
-    }
-    return std::string(entry.data.begin(), entry.data.end());
+    static const std::array<char32_t, 7> randomCodepoints = {
+        GlyphRegistry::lookup("circle-filled"),        GlyphRegistry::lookup("pentagon-filled"),
+        GlyphRegistry::lookup("michelin-star-filled"), GlyphRegistry::lookup("square-rounded-filled"),
+        GlyphRegistry::lookup("guitar-pick-filled"),   GlyphRegistry::lookup("blob-filled"),
+        GlyphRegistry::lookup("triangle-filled"),
+    };
+    return randomCodepoints[index % randomCodepoints.size()];
   }
-  return std::nullopt;
-}
 
-// Modifier bitmask — must match KeyMod constants in wayland/wayland_seat.h
-constexpr std::uint32_t kModShift = 1u << 0;
-constexpr std::uint32_t kModCtrl  = 1u << 1;
-
-constexpr float kDefaultWidth = 200.0f;
-constexpr float kCursorWidth  = 1.5f;
-constexpr float kCursorPadV   = 3.0f;
-constexpr float kPasswordGlyphScale = 0.82f;
-
-char32_t passwordMaskCodepointForIndex(std::size_t index) {
-  if (g_passwordMaskStyle == Input::PasswordMaskStyle::CircleFilled) {
-    return GlyphRegistry::lookup("circle-filled");
-  }
-  static const std::array<char32_t, 7> randomCodepoints = {
-      GlyphRegistry::lookup("circle-filled"),
-      GlyphRegistry::lookup("pentagon-filled"),
-      GlyphRegistry::lookup("michelin-star-filled"),
-      GlyphRegistry::lookup("square-rounded-filled"),
-      GlyphRegistry::lookup("guitar-pick-filled"),
-      GlyphRegistry::lookup("blob-filled"),
-      GlyphRegistry::lookup("triangle-filled"),
-  };
-  return randomCodepoints[index % randomCodepoints.size()];
-}
-
-Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
+  Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
 
 } // namespace
 
@@ -195,13 +192,9 @@ void Input::setPasswordMode(bool enabled) {
   markLayoutDirty();
 }
 
-void Input::setOnChange(std::function<void(const std::string&)> callback) {
-  m_onChange = std::move(callback);
-}
+void Input::setOnChange(std::function<void(const std::string&)> callback) { m_onChange = std::move(callback); }
 
-void Input::setOnSubmit(std::function<void(const std::string&)> callback) {
-  m_onSubmit = std::move(callback);
-}
+void Input::setOnSubmit(std::function<void(const std::string&)> callback) { m_onSubmit = std::move(callback); }
 
 void Input::setOnKeyEvent(std::function<bool(std::uint32_t, std::uint32_t)> callback) {
   m_onKeyEvent = std::move(callback);
@@ -319,7 +312,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
 
   bool changed = false;
   const bool shift = (modifiers & kModShift) != 0;
-  const bool ctrl  = (modifiers & kModCtrl)  != 0;
+  const bool ctrl = (modifiers & kModCtrl) != 0;
 
   // Remove previous preedit text before processing
   if (m_preeditLen > 0) {
@@ -442,9 +435,9 @@ void Input::applyVisualState() {
   const bool hovered = m_inputArea != nullptr && m_inputArea->hovered();
 
   const Color fill = focused ? resolved(ColorRole::Surface) : resolved(ColorRole::SurfaceVariant);
-  const Color border = focused ? resolved(ColorRole::Primary)
-                               : (hovered ? brighten(resolved(ColorRole::Outline), 1.3f)
-                                          : resolved(ColorRole::Outline));
+  const Color border = focused
+                           ? resolved(ColorRole::Primary)
+                           : (hovered ? brighten(resolved(ColorRole::Outline), 1.3f) : resolved(ColorRole::Outline));
 
   m_background->setStyle(RoundedRectStyle{
       .fill = fill,
@@ -506,7 +499,7 @@ std::size_t Input::selectionEnd() const noexcept { return std::max(m_selectionAn
 
 void Input::deleteSelection() {
   const std::size_t start = selectionStart();
-  const std::size_t end   = selectionEnd();
+  const std::size_t end = selectionEnd();
   m_value.erase(start, end - start);
   m_cursorPos = start;
   m_selectionAnchor = start;

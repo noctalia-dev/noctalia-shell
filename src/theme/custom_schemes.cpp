@@ -6,6 +6,13 @@
 //   generate the built-in token map in HSL space using shiftHue/adjustSurface/
 //   ensureContrast helpers from theme/color.h + theme/contrast.h.
 
+#include "cpp/cam/hct.h"
+#include "theme/color.h"
+#include "theme/contrast.h"
+#include "theme/palette.h"
+#include "theme/palette_generator.h"
+#include "theme/scheme.h"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -15,14 +22,6 @@
 #include <tuple>
 #include <unordered_map>
 #include <vector>
-
-#include "cpp/cam/hct.h"
-
-#include "theme/color.h"
-#include "theme/contrast.h"
-#include "theme/palette.h"
-#include "theme/palette_generator.h"
-#include "theme/scheme.h"
 
 namespace mcu = material_color_utilities;
 

@@ -1,4 +1,5 @@
 #include "core/ui_phase.h"
+
 #include "core/log.h"
 
 #include <cstdlib>

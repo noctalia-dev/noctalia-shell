@@ -1,6 +1,6 @@
-#include "core/ui_phase.h"
 #include "ui/controls/context_menu.h"
 
+#include "core/ui_phase.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "ui/controls/box.h"
@@ -10,19 +10,18 @@
 #include "ui/style.h"
 
 #include <algorithm>
-
 #include <linux/input-event-codes.h>
 
 namespace {
 
-constexpr float kMenuPadding = 6.0f;
-constexpr float kItemHeight = Style::controlHeightSm;
-constexpr float kSeparatorHeight = 10.0f;
-constexpr float kItemGap = 0.0f;
+  constexpr float kMenuPadding = 6.0f;
+  constexpr float kItemHeight = Style::controlHeightSm;
+  constexpr float kSeparatorHeight = 10.0f;
+  constexpr float kItemGap = 0.0f;
 
-ThemeColor enabledItemColor() { return roleColor(ColorRole::OnSurface); }
+  ThemeColor enabledItemColor() { return roleColor(ColorRole::OnSurface); }
 
-ThemeColor disabledItemColor() { return roleColor(ColorRole::OnSurface, 0.55f); }
+  ThemeColor disabledItemColor() { return roleColor(ColorRole::OnSurface, 0.55f); }
 
 } // namespace
 

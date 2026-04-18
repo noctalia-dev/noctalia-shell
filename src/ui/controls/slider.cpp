@@ -1,37 +1,36 @@
 #include "ui/controls/slider.h"
 
+#include "cursor-shape-v1-client-protocol.h"
 #include "render/programs/rect_program.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
-#include "cursor-shape-v1-client-protocol.h"
-#include <linux/input-event-codes.h>
-
 #include <algorithm>
 #include <cmath>
+#include <linux/input-event-codes.h>
 #include <memory>
 
 namespace {
 
-constexpr float kDefaultWidth = 180.0f;
-constexpr float kTrackHeight = 6.0f;
-constexpr float kThumbSize = 16.0f;
-constexpr float kHorizontalPadding = 2.0f;
+  constexpr float kDefaultWidth = 180.0f;
+  constexpr float kTrackHeight = 6.0f;
+  constexpr float kThumbSize = 16.0f;
+  constexpr float kHorizontalPadding = 2.0f;
 
-RoundedRectStyle solidStyle(const Color& fill, float radius) {
-  return RoundedRectStyle{
-      .fill = fill,
-      .border = fill,
-      .fillMode = FillMode::Solid,
-      .radius = radius,
-      .softness = 1.0f,
-      .borderWidth = 0.0f,
-  };
-}
+  RoundedRectStyle solidStyle(const Color& fill, float radius) {
+    return RoundedRectStyle{
+        .fill = fill,
+        .border = fill,
+        .fillMode = FillMode::Solid,
+        .radius = radius,
+        .softness = 1.0f,
+        .borderWidth = 0.0f,
+    };
+  }
 
-Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
+  Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
 
 } // namespace
 

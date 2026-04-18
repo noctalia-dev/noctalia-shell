@@ -1,5 +1,6 @@
 #include "shell/wallpaper/panel/wallpaper_tile.h"
 
+#include "cursor-shape-v1-client-protocol.h"
 #include "render/core/renderer.h"
 #include "shell/wallpaper/panel/thumbnail_service.h"
 #include "ui/controls/flex.h"
@@ -8,8 +9,6 @@
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-
-#include "cursor-shape-v1-client-protocol.h"
 
 #include <algorithm>
 #include <memory>

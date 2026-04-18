@@ -5,8 +5,8 @@
 #include "core/process.h"
 #include "notification/notifications.h"
 #include "render/core/renderer.h"
-#include "shell/lockscreen/lock_screen.h"
 #include "render/scene/input_area.h"
+#include "shell/lockscreen/lock_screen.h"
 #include "shell/panel/panel_manager.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
@@ -21,38 +21,38 @@
 
 namespace {
 
-constexpr Logger kLog("session");
+  constexpr Logger kLog("session");
 
-struct ActionSpec {
-  SessionPanel::ActionId id;
-  const char* label;
-  const char* glyph;
-  ButtonVariant variant;
-};
+  struct ActionSpec {
+    SessionPanel::ActionId id;
+    const char* label;
+    const char* glyph;
+    ButtonVariant variant;
+  };
 
-constexpr std::array<ActionSpec, 4> kActionSpecs{{
-    {SessionPanel::ActionId::Lock, "Lock", "lock", ButtonVariant::Outline},
-    {SessionPanel::ActionId::Logout, "Log Out", "logout", ButtonVariant::Outline},
-    {SessionPanel::ActionId::Reboot, "Reboot", "reboot", ButtonVariant::Outline},
-    {SessionPanel::ActionId::Shutdown, "Shut Down", "shutdown", ButtonVariant::Destructive},
-}};
+  constexpr std::array<ActionSpec, 4> kActionSpecs{{
+      {SessionPanel::ActionId::Lock, "Lock", "lock", ButtonVariant::Outline},
+      {SessionPanel::ActionId::Logout, "Log Out", "logout", ButtonVariant::Outline},
+      {SessionPanel::ActionId::Reboot, "Reboot", "reboot", ButtonVariant::Outline},
+      {SessionPanel::ActionId::Shutdown, "Shut Down", "shutdown", ButtonVariant::Destructive},
+  }};
 
-bool doLogout() {
-  if (process::launchDetached({"systemctl", "--user", "stop", "graphical-session.target"})) {
-    return true;
+  bool doLogout() {
+    if (process::launchDetached({"systemctl", "--user", "stop", "graphical-session.target"})) {
+      return true;
+    }
+    if (const char* sessionId = std::getenv("XDG_SESSION_ID"); sessionId != nullptr && sessionId[0] != '\0') {
+      return process::launchDetached({"loginctl", "terminate-session", sessionId});
+    }
+    if (const char* user = std::getenv("USER"); user != nullptr && user[0] != '\0') {
+      return process::launchDetached({"loginctl", "terminate-user", user});
+    }
+    return false;
   }
-  if (const char* sessionId = std::getenv("XDG_SESSION_ID"); sessionId != nullptr && sessionId[0] != '\0') {
-    return process::launchDetached({"loginctl", "terminate-session", sessionId});
-  }
-  if (const char* user = std::getenv("USER"); user != nullptr && user[0] != '\0') {
-    return process::launchDetached({"loginctl", "terminate-user", user});
-  }
-  return false;
-}
 
-bool doReboot() { return process::launchFirstAvailable({{"systemctl", "reboot"}, {"loginctl", "reboot"}}); }
+  bool doReboot() { return process::launchFirstAvailable({{"systemctl", "reboot"}, {"loginctl", "reboot"}}); }
 
-bool doShutdown() { return process::launchFirstAvailable({{"systemctl", "poweroff"}, {"loginctl", "poweroff"}}); }
+  bool doShutdown() { return process::launchFirstAvailable({{"systemctl", "poweroff"}, {"loginctl", "poweroff"}}); }
 
 } // namespace
 
@@ -155,7 +155,8 @@ void SessionPanel::activateSelected() {
   }
 
   const ActionId selectedAction = m_actionOrder[m_selectedIndex];
-  if (Button* button = m_actionButtons[static_cast<std::size_t>(selectedAction)]; button != nullptr && button->enabled()) {
+  if (Button* button = m_actionButtons[static_cast<std::size_t>(selectedAction)];
+      button != nullptr && button->enabled()) {
     PanelManager::instance().close();
     invokeAction(selectedAction);
   }
@@ -223,7 +224,8 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
     return true;
   }
 
-  if ((m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) || sym == XKB_KEY_space) {
+  if ((m_config != nullptr && m_config->matchesKeybind(KeybindAction::Validate, sym, modifiers)) ||
+      sym == XKB_KEY_space) {
     activateSelected();
     return true;
   }

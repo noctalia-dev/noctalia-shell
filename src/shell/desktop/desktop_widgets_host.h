@@ -1,7 +1,7 @@
 #pragma once
 
-#include "render/scene/node.h"
 #include "render/animation/animation_manager.h"
+#include "render/scene/node.h"
 #include "shell/desktop/desktop_widget_factory.h"
 #include "shell/desktop/desktop_widgets_controller.h"
 #include "wayland/layer_surface.h"

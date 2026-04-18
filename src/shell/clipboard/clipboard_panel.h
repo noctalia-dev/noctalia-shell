@@ -1,7 +1,7 @@
 #pragma once
 
-#include "shell/panel/panel.h"
 #include "core/timer_manager.h"
+#include "shell/panel/panel.h"
 #include "wayland/clipboard_service.h"
 
 #include <cstddef>

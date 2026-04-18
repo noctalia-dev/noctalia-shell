@@ -86,8 +86,7 @@ void Image::setPadding(float padding) {
   updateLayout();
 }
 
-bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targetSize,
-                          bool mipmap) {
+bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targetSize, bool mipmap) {
   if (m_ownsTexture && path == m_sourcePath && m_texture.id != 0) {
     return true;
   }
@@ -117,8 +116,7 @@ bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targe
   return true;
 }
 
-bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::size_t size,
-                           bool mipmap) {
+bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::size_t size, bool mipmap) {
   clear(renderer);
   m_renderer = &renderer;
 
@@ -144,8 +142,8 @@ bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::si
   return true;
 }
 
-bool Image::setSourceRaw(Renderer& renderer, const std::uint8_t* data, std::size_t size, int width,
-                         int height, int stride, PixmapFormat format, bool mipmap) {
+bool Image::setSourceRaw(Renderer& renderer, const std::uint8_t* data, std::size_t size, int width, int height,
+                         int stride, PixmapFormat format, bool mipmap) {
   clear(renderer);
   m_renderer = &renderer;
 

@@ -1,88 +1,93 @@
-#include "core/ui_phase.h"
 #include "shell/dock/dock.h"
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/process.h"
+#include "core/ui_phase.h"
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
-#include "ui/controls/label.h"
 #include "system/desktop_entry.h"
 #include "ui/controls/box.h"
 #include "ui/controls/context_menu.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/image.h"
+#include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/layer_surface.h"
 #include "wayland/popup_surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_toplevels.h"
+#include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
 #include <cctype>
 #include <format>
-
 #include <wayland-client-core.h>
-#include "xdg-shell-client-protocol.h"
 
 namespace {
 
-constexpr Logger kLog("dock");
+  constexpr Logger kLog("dock");
 
-// Instance-count badge geometry — scales with icon size.
-constexpr float kBadgeSizeRatio = 0.30f;  // fraction of icon size
-constexpr float kBadgeMinSize   = 16.0f;  // minimum diameter in px
-constexpr float kBadgeFontRatio = 0.72f;  // font size relative to badge diameter
+  // Instance-count badge geometry — scales with icon size.
+  constexpr float kBadgeSizeRatio = 0.30f; // fraction of icon size
+  constexpr float kBadgeMinSize = 16.0f;   // minimum diameter in px
+  constexpr float kBadgeFontRatio = 0.72f; // font size relative to badge diameter
 
-// Thin strip (px) kept in the input region when auto-hide is in the hidden
-// state, so the pointer can re-trigger show on approach to the screen edge.
-constexpr std::int32_t kAutoHideTriggerPx = 2;
+  // Thin strip (px) kept in the input region when auto-hide is in the hidden
+  // state, so the pointer can re-trigger show on approach to the screen edge.
+  constexpr std::int32_t kAutoHideTriggerPx = 2;
 
-std::string toLower(std::string s) {
-  for (auto& c : s) {
-    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  std::string toLower(std::string s) {
+    for (auto& c : s) {
+      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+    return s;
   }
-  return s;
-}
 
-std::string currentActiveAppIdLower(const WaylandConnection& wayland) {
-  if (const auto active = wayland.activeToplevel(); active.has_value()) {
-    return toLower(active->appId);
+  std::string currentActiveAppIdLower(const WaylandConnection& wayland) {
+    if (const auto active = wayland.activeToplevel(); active.has_value()) {
+      return toLower(active->appId);
+    }
+    return {};
   }
-  return {};
-}
 
-wl_output* currentDockFilterOutput(const DockConfig& cfg, wl_output* instanceOutput) {
-  if (!cfg.activeMonitorOnly) {
-    return nullptr;
+  wl_output* currentDockFilterOutput(const DockConfig& cfg, wl_output* instanceOutput) {
+    if (!cfg.activeMonitorOnly) {
+      return nullptr;
+    }
+    return instanceOutput;
   }
-  return instanceOutput;
-}
 
-// Returns an anchor bitmask for the given position string.
-std::uint32_t positionToAnchor(const std::string& pos) {
-  if (pos == "top")    return LayerShellAnchor::Top;
-  if (pos == "left")   return LayerShellAnchor::Left;
-  if (pos == "right")  return LayerShellAnchor::Right;
-  return LayerShellAnchor::Bottom; // default
-}
+  // Returns an anchor bitmask for the given position string.
+  std::uint32_t positionToAnchor(const std::string& pos) {
+    if (pos == "top")
+      return LayerShellAnchor::Top;
+    if (pos == "left")
+      return LayerShellAnchor::Left;
+    if (pos == "right")
+      return LayerShellAnchor::Right;
+    return LayerShellAnchor::Bottom; // default
+  }
 
-// Shadow bleed helpers (identical to bar's logic).
-struct ShadowBleed { std::int32_t left = 0, right = 0, up = 0, down = 0; };
-ShadowBleed computeBleed(const DockConfig& cfg) {
-  if (cfg.shadowBlur <= 0) return {};
-  return {
-      cfg.shadowBlur + std::max(0, -cfg.shadowOffsetX),
-      cfg.shadowBlur + std::max(0, cfg.shadowOffsetX),
-      cfg.shadowBlur + std::max(0, -cfg.shadowOffsetY),
-      cfg.shadowBlur + std::max(0, cfg.shadowOffsetY),
+  // Shadow bleed helpers (identical to bar's logic).
+  struct ShadowBleed {
+    std::int32_t left = 0, right = 0, up = 0, down = 0;
   };
-}
+  ShadowBleed computeBleed(const DockConfig& cfg) {
+    if (cfg.shadowBlur <= 0)
+      return {};
+    return {
+        cfg.shadowBlur + std::max(0, -cfg.shadowOffsetX),
+        cfg.shadowBlur + std::max(0, cfg.shadowOffsetX),
+        cfg.shadowBlur + std::max(0, -cfg.shadowOffsetY),
+        cfg.shadowBlur + std::max(0, cfg.shadowOffsetY),
+    };
+  }
 
 } // namespace
 
@@ -91,8 +96,8 @@ ShadowBleed computeBleed(const DockConfig& cfg) {
 Dock::Dock() = default;
 
 bool Dock::initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext) {
-  m_wayland      = &wayland;
-  m_config       = config;
+  m_wayland = &wayland;
+  m_config = config;
   m_renderContext = renderContext;
 
   const auto& cfg = m_config->config().dock;
@@ -104,7 +109,7 @@ bool Dock::initialize(WaylandConnection& wayland, ConfigService* config, RenderC
     reload();
   });
 
-  m_lastDockConfig  = cfg;
+  m_lastDockConfig = cfg;
   m_lastPinnedConfig = cfg.pinned;
 
   if (!cfg.enabled) {
@@ -120,7 +125,7 @@ bool Dock::initialize(WaylandConnection& wayland, ConfigService* config, RenderC
 void Dock::reload() {
   kLog.info("reloading config");
   const auto& cfg = m_config->config().dock;
-  m_lastDockConfig   = cfg;
+  m_lastDockConfig = cfg;
   m_lastPinnedConfig = cfg.pinned;
 
   if (!cfg.enabled) {
@@ -193,9 +198,7 @@ void Dock::refresh() {
         (cfg.activeMonitorOnly && activeOutput != inst->output) ? std::string{} : globalActiveIdLower;
     inst->activeAppIdLower = activeIdLower;
 
-    const auto runningIds = cfg.showRunning
-        ? m_wayland->runningAppIds(filterOutput)
-        : std::vector<std::string>{};
+    const auto runningIds = cfg.showRunning ? m_wayland->runningAppIds(filterOutput) : std::vector<std::string>{};
     std::vector<std::string> runningLower;
     runningLower.reserve(runningIds.size());
     for (const auto& id : runningIds) {
@@ -221,7 +224,8 @@ void Dock::refresh() {
           }
           if (!present) {
             for (const auto& de : allEntries) {
-              if (de.hidden || de.noDisplay) continue;
+              if (de.hidden || de.noDisplay)
+                continue;
               if (toLower(de.startupWmClass) == runLower || de.nameLower == runLower || toLower(de.id) == runLower) {
                 entries.push_back(de);
                 break;
@@ -239,7 +243,7 @@ void Dock::refresh() {
     // Sync running/active flags even without a rebuild (icon emphasis updates).
     for (auto& item : inst->items) {
       item.running = matchesRunningApp(item, runningLower);
-      item.active  = matchesActiveApp(item, activeIdLower);
+      item.active = matchesActiveApp(item, activeIdLower);
     }
 
     if (needRebuild) {
@@ -328,17 +332,17 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
     }
     m_hoveredInstance = it->second;
     m_hoveredInstance->pointerInside = true;
-    m_hoveredInstance->inputDispatcher.pointerEnter(static_cast<float>(event.sx),
-                                                     static_cast<float>(event.sy), event.serial);
+    m_hoveredInstance->inputDispatcher.pointerEnter(static_cast<float>(event.sx), static_cast<float>(event.sy),
+                                                    event.serial);
     // Auto-hide: show the dock when the pointer enters.
     if (m_config->config().dock.autoHide && m_hoveredInstance->sceneRoot != nullptr) {
       const float current = m_hoveredInstance->hideOpacity;
-      m_hoveredInstance->animations.animate(
-          current, 1.0f, Style::animNormal, Easing::EaseOutCubic,
-          [inst = m_hoveredInstance](float v) {
-            if (inst->sceneRoot) inst->sceneRoot->setOpacity(v);
-            inst->hideOpacity = v;
-          });
+      m_hoveredInstance->animations.animate(current, 1.0f, Style::animNormal, Easing::EaseOutCubic,
+                                            [inst = m_hoveredInstance](float v) {
+                                              if (inst->sceneRoot)
+                                                inst->sceneRoot->setOpacity(v);
+                                              inst->hideOpacity = v;
+                                            });
       // Restore full input region (full surface so shadow-margin edges don't
       // cause an immediate Leave when triggered from the edge of the strip).
       if (m_hoveredInstance->surface != nullptr) {
@@ -380,9 +384,9 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
     break;
   }
   case PointerEvent::Type::Motion: {
-    if (m_hoveredInstance == nullptr) break;
-    m_hoveredInstance->inputDispatcher.pointerMotion(static_cast<float>(event.sx),
-                                                      static_cast<float>(event.sy), 0);
+    if (m_hoveredInstance == nullptr)
+      break;
+    m_hoveredInstance->inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), 0);
     break;
   }
   case PointerEvent::Type::Button: {
@@ -396,19 +400,19 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
         }
         m_hoveredInstance = targetInstance;
         m_hoveredInstance->pointerInside = true;
-        m_hoveredInstance->inputDispatcher.pointerEnter(static_cast<float>(event.sx),
-                                                        static_cast<float>(event.sy), event.serial);
+        m_hoveredInstance->inputDispatcher.pointerEnter(static_cast<float>(event.sx), static_cast<float>(event.sy),
+                                                        event.serial);
       } else {
-        m_hoveredInstance->inputDispatcher.pointerMotion(static_cast<float>(event.sx),
-                                                         static_cast<float>(event.sy), event.serial);
+        m_hoveredInstance->inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy),
+                                                         event.serial);
       }
     }
 
-    if (m_hoveredInstance == nullptr) break;
+    if (m_hoveredInstance == nullptr)
+      break;
     const bool pressed = (event.state == 1);
-    m_hoveredInstance->inputDispatcher.pointerButton(static_cast<float>(event.sx),
-                                                      static_cast<float>(event.sy),
-                                                      event.button, pressed);
+    m_hoveredInstance->inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy),
+                                                     event.button, pressed);
     break;
   }
   case PointerEvent::Type::Axis:
@@ -445,20 +449,20 @@ std::int32_t Dock::dockContentSize(std::size_t itemCount) const {
   const auto n = static_cast<std::int32_t>(itemCount);
   constexpr std::int32_t kCellPad = 6;
   const std::int32_t cellSize = cfg.iconSize + kCellPad * 2;
-  if (n == 0) return cellSize + cfg.padding * 2;
+  if (n == 0)
+    return cellSize + cfg.padding * 2;
   return n * cellSize + std::max(0, n - 1) * cfg.itemSpacing + cfg.padding * 2;
 }
 
 // ── Private: instance management ─────────────────────────────────────────────
 
 bool Dock::refreshPinnedAppsIfNeeded() {
-  if (desktopEntriesVersion() == m_entriesVersion &&
-      m_config->config().dock.pinned == m_lastPinnedConfig) {
+  if (desktopEntriesVersion() == m_entriesVersion && m_config->config().dock.pinned == m_lastPinnedConfig) {
     return false;
   }
 
   m_lastPinnedConfig = m_config->config().dock.pinned;
-  m_entriesVersion   = desktopEntriesVersion();
+  m_entriesVersion = desktopEntriesVersion();
   m_pinnedEntries.clear();
 
   const auto& entries = desktopEntries();
@@ -473,17 +477,15 @@ bool Dock::refreshPinnedAppsIfNeeded() {
       }
       // Match by entry ID (stem of the desktop file path, e.g. "firefox"),
       // by StartupWMClass (lower), or by Name (lower).
-      const auto stemLower = toLower([&]{
+      const auto stemLower = toLower([&] {
         // Extract stem: "org.mozilla.firefox.desktop" → "firefox" (last component, no ext)
         const auto slash = entry.id.rfind('/');
-        const auto base  = (slash == std::string::npos) ? entry.id : entry.id.substr(slash + 1);
-        const auto dot   = base.rfind('.');
+        const auto base = (slash == std::string::npos) ? entry.id : entry.id.substr(slash + 1);
+        const auto dot = base.rfind('.');
         return (dot == std::string::npos) ? base : base.substr(0, dot);
       }());
 
-      if (stemLower == pinnedLower ||
-          toLower(entry.startupWmClass) == pinnedLower ||
-          entry.nameLower == pinnedLower ||
+      if (stemLower == pinnedLower || toLower(entry.startupWmClass) == pinnedLower || entry.nameLower == pinnedLower ||
           entry.id == pinnedId) {
         m_pinnedEntries.push_back(entry);
         found = true;
@@ -495,7 +497,7 @@ bool Dock::refreshPinnedAppsIfNeeded() {
       kLog.debug("pinned app not found: {}", pinnedId);
       // Add placeholder so the pinned slot is visible even when app is not installed.
       DesktopEntry placeholder;
-      placeholder.id   = pinnedId;
+      placeholder.id = pinnedId;
       placeholder.name = pinnedId;
       placeholder.nameLower = pinnedLower;
       m_pinnedEntries.push_back(std::move(placeholder));
@@ -512,12 +514,12 @@ void Dock::syncInstances() {
 
   // Remove instances for dead outputs.
   std::erase_if(m_instances, [&outputs](const auto& inst) {
-    return !std::any_of(outputs.begin(), outputs.end(),
-                        [&inst](const auto& o) { return o.name == inst->outputName; });
+    return !std::any_of(outputs.begin(), outputs.end(), [&inst](const auto& o) { return o.name == inst->outputName; });
   });
 
   for (const auto& output : outputs) {
-    if (!output.done) continue;
+    if (!output.done)
+      continue;
     const bool exists = std::any_of(m_instances.begin(), m_instances.end(),
                                     [&output](const auto& inst) { return inst->outputName == output.name; });
     if (!exists) {
@@ -528,22 +530,22 @@ void Dock::syncInstances() {
 
 void Dock::createInstance(const WaylandOutput& output) {
   const auto& cfg = m_config->config().dock;
-  kLog.info("creating dock on {} ({}) icon_size={} position={}",
-            output.connectorName, output.description, cfg.iconSize, cfg.position);
+  kLog.info("creating dock on {} ({}) icon_size={} position={}", output.connectorName, output.description, cfg.iconSize,
+            cfg.position);
 
   auto instance = std::make_unique<DockInstance>();
   instance->outputName = output.name;
-  instance->output     = output.output;
-  instance->scale      = output.scale;
+  instance->output = output.output;
+  instance->scale = output.scale;
   instance->activeAppIdLower = currentActiveAppIdLower(*m_wayland);
 
   const bool vert = isVertical();
-  const auto sb   = computeBleed(cfg);
+  const auto sb = computeBleed(cfg);
   const auto panelW = dockContentSize(cfg.pinned.size());
   const auto panelH = dockThickness();
   const auto anchor = positionToAnchor(cfg.position);
   const bool isBottom = (cfg.position == "bottom");
-  const bool isRight  = (cfg.position == "right");
+  const bool isRight = (cfg.position == "right");
 
   // Surface dimensions incorporate shadow bleed + margin.
   std::uint32_t surfW, surfH;
@@ -555,12 +557,12 @@ void Dock::createInstance(const WaylandOutput& output) {
     surfW = static_cast<std::uint32_t>(panelW + sb.left + sb.right);
     surfH = static_cast<std::uint32_t>(sb.up + panelH + std::min(cfg.marginV, sb.down));
     if (isBottom) {
-      mB          = std::max(0, cfg.marginV - sb.down);
-      surfH       = static_cast<std::uint32_t>(sb.up + panelH + std::min(cfg.marginV, sb.down));
+      mB = std::max(0, cfg.marginV - sb.down);
+      surfH = static_cast<std::uint32_t>(sb.up + panelH + std::min(cfg.marginV, sb.down));
       exclusiveZone = cfg.autoHide ? 0 : (panelH + std::min(cfg.marginV, sb.down));
     } else {
-      mT          = std::max(0, cfg.marginV - sb.up);
-      surfH       = static_cast<std::uint32_t>(std::min(cfg.marginV, sb.up) + panelH + sb.down);
+      mT = std::max(0, cfg.marginV - sb.up);
+      surfH = static_cast<std::uint32_t>(std::min(cfg.marginV, sb.up) + panelH + sb.down);
       exclusiveZone = cfg.autoHide ? 0 : (std::min(cfg.marginV, sb.up) + panelH);
     }
     // marginH is applied symmetrically as compositor side margins.
@@ -570,12 +572,12 @@ void Dock::createInstance(const WaylandOutput& output) {
     // Vertical dock (left / right): centered vertically, height = panel + shadow bleed + mV.
     surfH = static_cast<std::uint32_t>(panelW + sb.up + sb.down);
     if (isRight) {
-      mR          = std::max(0, cfg.marginH - sb.right);
-      surfW       = static_cast<std::uint32_t>(sb.left + panelH + std::min(cfg.marginH, sb.right));
+      mR = std::max(0, cfg.marginH - sb.right);
+      surfW = static_cast<std::uint32_t>(sb.left + panelH + std::min(cfg.marginH, sb.right));
       exclusiveZone = cfg.autoHide ? 0 : (panelH + std::min(cfg.marginH, sb.right));
     } else {
-      mL          = std::max(0, cfg.marginH - sb.left);
-      surfW       = static_cast<std::uint32_t>(std::min(cfg.marginH, sb.left) + panelH + sb.right);
+      mL = std::max(0, cfg.marginH - sb.left);
+      surfW = static_cast<std::uint32_t>(std::min(cfg.marginH, sb.left) + panelH + sb.right);
       exclusiveZone = cfg.autoHide ? 0 : (std::min(cfg.marginH, sb.left) + panelH);
     }
     mT = cfg.marginV;
@@ -583,17 +585,17 @@ void Dock::createInstance(const WaylandOutput& output) {
   }
 
   LayerSurfaceConfig lsCfg{
-      .nameSpace     = "noctalia-dock",
-      .layer         = LayerShellLayer::Top,
-      .anchor        = anchor,
-      .width         = surfW,
-      .height        = surfH,
+      .nameSpace = "noctalia-dock",
+      .layer = LayerShellLayer::Top,
+      .anchor = anchor,
+      .width = surfW,
+      .height = surfH,
       .exclusiveZone = exclusiveZone,
-      .marginTop     = mT,
-      .marginRight   = mR,
-      .marginBottom  = mB,
-      .marginLeft    = mL,
-      .defaultWidth  = surfW,
+      .marginTop = mT,
+      .marginRight = mR,
+      .marginBottom = mB,
+      .marginLeft = mL,
+      .defaultWidth = surfW,
       .defaultHeight = surfH,
   };
 
@@ -631,9 +633,9 @@ void Dock::prepareFrame(DockInstance& instance, bool /*needsUpdate*/, bool needs
 
   m_renderContext->makeCurrent(instance.surface->renderTarget());
 
-  const bool needsSceneBuild =
-      instance.sceneRoot == nullptr || static_cast<std::uint32_t>(std::round(instance.sceneRoot->width())) != width ||
-      static_cast<std::uint32_t>(std::round(instance.sceneRoot->height())) != height;
+  const bool needsSceneBuild = instance.sceneRoot == nullptr ||
+                               static_cast<std::uint32_t>(std::round(instance.sceneRoot->width())) != width ||
+                               static_cast<std::uint32_t>(std::round(instance.sceneRoot->height())) != height;
   if (needsSceneBuild || needsLayout) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     buildScene(instance);
@@ -648,21 +650,21 @@ void Dock::buildScene(DockInstance& instance) {
 
   instance.activeAppIdLower = currentActiveAppIdLower(*m_wayland);
 
-  const auto& cfg  = m_config->config().dock;
-  const bool vert  = isVertical();
+  const auto& cfg = m_config->config().dock;
+  const bool vert = isVertical();
 
   const float w = static_cast<float>(instance.surface->width());
   const float h = static_cast<float>(instance.surface->height());
 
-  const auto sb       = computeBleed(cfg);
-  const float bleedL  = static_cast<float>(sb.left);
-  const float bleedR  = static_cast<float>(sb.right);
-  const float bleedU  = static_cast<float>(sb.up);
-  const float bleedD  = static_cast<float>(sb.down);
-  const float mV      = static_cast<float>(cfg.marginV);
-  const float mH      = static_cast<float>(cfg.marginH);
+  const auto sb = computeBleed(cfg);
+  const float bleedL = static_cast<float>(sb.left);
+  const float bleedR = static_cast<float>(sb.right);
+  const float bleedU = static_cast<float>(sb.up);
+  const float bleedD = static_cast<float>(sb.down);
+  const float mV = static_cast<float>(cfg.marginV);
+  const float mH = static_cast<float>(cfg.marginH);
   const bool isBottom = (cfg.position == "bottom");
-  const bool isRight  = (cfg.position == "right");
+  const bool isRight = (cfg.position == "right");
 
   // Panel visual area within the surface.
   float panelX, panelY, panelW, panelH;
@@ -678,8 +680,8 @@ void Dock::buildScene(DockInstance& instance) {
     panelH = h - bleedU - bleedD;
   }
 
-  const Radii radii{ static_cast<float>(cfg.radius), static_cast<float>(cfg.radius),
-                     static_cast<float>(cfg.radius), static_cast<float>(cfg.radius) };
+  const Radii radii{static_cast<float>(cfg.radius), static_cast<float>(cfg.radius), static_cast<float>(cfg.radius),
+                    static_cast<float>(cfg.radius)};
 
   if (instance.sceneRoot == nullptr) {
     instance.sceneRoot = std::make_unique<Node>();
@@ -720,9 +722,10 @@ void Dock::buildScene(DockInstance& instance) {
     } else {
       // Normal intro fade-in.
       instance.sceneRoot->setOpacity(0.0f);
-      instance.animations.animate(0.0f, 1.0f, Style::animSlow, Easing::EaseOutCubic,
-                                  [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); },
-                                  [inst = &instance]() { inst->hideOpacity = 1.0f; }, instance.sceneRoot.get());
+      instance.animations.animate(
+          0.0f, 1.0f, Style::animSlow, Easing::EaseOutCubic,
+          [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); },
+          [inst = &instance]() { inst->hideOpacity = 1.0f; }, instance.sceneRoot.get());
     }
 
     instance.surface->setSceneRoot(instance.sceneRoot.get());
@@ -735,12 +738,12 @@ void Dock::buildScene(DockInstance& instance) {
   if (instance.shadow != nullptr) {
     const float sSize = static_cast<float>(cfg.shadowBlur);
     const RoundedRectStyle shadowStyle{
-        .fill      = rgba(0.0f, 0.0f, 0.0f, 0.5f),
-        .fillEnd   = {},
-        .border    = clearColor(),
-        .fillMode  = FillMode::Solid,
-        .radius    = radii,
-        .softness  = sSize,
+        .fill = rgba(0.0f, 0.0f, 0.0f, 0.5f),
+        .fillEnd = {},
+        .border = clearColor(),
+        .fillMode = FillMode::Solid,
+        .radius = radii,
+        .softness = sSize,
     };
     instance.shadow->setStyle(shadowStyle);
     instance.shadow->setZIndex(-1);
@@ -791,14 +794,16 @@ void Dock::buildScene(DockInstance& instance) {
   // Palette reactivity.
   instance.paletteConn = paletteChanged().connect([inst = &instance, this] {
     applyPanelPalette(*inst);
-    if (inst->surface) inst->surface->requestRedraw();
+    if (inst->surface)
+      inst->surface->requestRedraw();
   });
 
   updateVisuals(instance);
 }
 
 void Dock::applyPanelPalette(DockInstance& instance) {
-  if (instance.panel == nullptr) return;
+  if (instance.panel == nullptr)
+    return;
   const float opacity = m_config->config().dock.backgroundOpacity;
   instance.panel->setFill(roleColor(ColorRole::Surface, opacity));
   instance.panel->setBorder(roleColor(ColorRole::Outline), 0.0f);
@@ -812,8 +817,8 @@ void Dock::rebuildItems(DockInstance& instance) {
     return;
   }
 
-  const auto& cfg   = m_config->config().dock;
-  const bool vert   = isVertical();
+  const auto& cfg = m_config->config().dock;
+  const bool vert = isVertical();
   const float iSize = static_cast<float>(cfg.iconSize);
 
   for (auto& item : instance.items) {
@@ -840,9 +845,8 @@ void Dock::rebuildItems(DockInstance& instance) {
   freshRow->setGap(static_cast<float>(cfg.itemSpacing));
   freshRow->setAlign(FlexAlign::Center);
   freshRow->setPadding(static_cast<float>(cfg.padding));
-  instance.row = static_cast<Flex*>(instance.panel != nullptr
-      ? instance.panel->addChild(std::move(freshRow))
-      : instance.sceneRoot->addChild(std::move(freshRow)));
+  instance.row = static_cast<Flex*>(instance.panel != nullptr ? instance.panel->addChild(std::move(freshRow))
+                                                              : instance.sceneRoot->addChild(std::move(freshRow)));
 
   // Determine items: pinned + (optionally) running-only apps not in pinned.
   std::vector<DesktopEntry> itemEntries = m_pinnedEntries;
@@ -859,21 +863,19 @@ void Dock::rebuildItems(DockInstance& instance) {
       // Skip if already in itemEntries (covers pinned entries).
       bool alreadyPresent = false;
       for (const auto& itm : itemEntries) {
-        if (toLower(itm.id) == runLower ||
-            toLower(itm.startupWmClass) == runLower ||
-            itm.nameLower == runLower) {
+        if (toLower(itm.id) == runLower || toLower(itm.startupWmClass) == runLower || itm.nameLower == runLower) {
           alreadyPresent = true;
           break;
         }
       }
-      if (alreadyPresent) continue;
+      if (alreadyPresent)
+        continue;
 
       // Find desktop entry.
       for (const auto& de : allEntries) {
-        if (de.hidden || de.noDisplay) continue;
-        if (toLower(de.startupWmClass) == runLower ||
-            de.nameLower == runLower ||
-            toLower(de.id) == runLower) {
+        if (de.hidden || de.noDisplay)
+          continue;
+        if (toLower(de.startupWmClass) == runLower || de.nameLower == runLower || toLower(de.id) == runLower) {
           itemEntries.push_back(de);
           break;
         }
@@ -882,24 +884,25 @@ void Dock::rebuildItems(DockInstance& instance) {
   }
 
   const auto activeIdLower = instance.activeAppIdLower;
-  const auto runningIds    = m_wayland->runningAppIds(filterOutput);
+  const auto runningIds = m_wayland->runningAppIds(filterOutput);
   std::vector<std::string> runningLower;
-  for (const auto& id : runningIds) runningLower.push_back(toLower(id));
+  for (const auto& id : runningIds)
+    runningLower.push_back(toLower(id));
 
   // Reserve up-front so emplace_back never reallocates while lambdas hold raw pointers.
   instance.items.reserve(itemEntries.size());
 
   for (const auto& entry : itemEntries) {
     auto& item = instance.items.emplace_back();
-    item.entry               = entry;
-    item.idLower             = toLower(entry.id);
+    item.entry = entry;
+    item.idLower = toLower(entry.id);
     item.startupWmClassLower = toLower(entry.startupWmClass);
-    item.active              = matchesActiveApp(item, activeIdLower);
-    item.running             = matchesRunningApp(item, runningLower);
+    item.active = matchesActiveApp(item, activeIdLower);
+    item.running = matchesRunningApp(item, runningLower);
 
     // Cell is icon + kCellPad on each side; hover bg fills the full cell.
     constexpr float kCellPad = 6.0f; // px extra on each side
-    const float cellMain  = iSize + 2.0f * kCellPad;
+    const float cellMain = iSize + 2.0f * kCellPad;
     const float cellCross = iSize + 2.0f * kCellPad;
     auto areaNode = std::make_unique<InputArea>();
     if (!vert) {
@@ -960,8 +963,8 @@ void Dock::rebuildItems(DockInstance& instance) {
     }
 
     // Pointer callbacks.
-    auto* itemPtr  = &item;
-    auto* instPtr  = &instance;
+    auto* itemPtr = &item;
+    auto* instPtr = &instance;
 
     areaNode->setOnEnter([itemPtr, instPtr, this](const InputArea::PointerData&) {
       if (!itemPtr->hovered) {
@@ -969,7 +972,8 @@ void Dock::rebuildItems(DockInstance& instance) {
         if (itemPtr->background) {
           itemPtr->background->setFill(roleColor(ColorRole::Hover, 0.8f));
         }
-        if (instPtr->sceneRoot) instPtr->sceneRoot->markPaintDirty();
+        if (instPtr->sceneRoot)
+          instPtr->sceneRoot->markPaintDirty();
       }
     });
     areaNode->setOnLeave([itemPtr, instPtr]() {
@@ -978,7 +982,8 @@ void Dock::rebuildItems(DockInstance& instance) {
         if (itemPtr->background) {
           itemPtr->background->setFill(clearThemeColor());
         }
-        if (instPtr->sceneRoot) instPtr->sceneRoot->markPaintDirty();
+        if (instPtr->sceneRoot)
+          instPtr->sceneRoot->markPaintDirty();
       }
     });
     areaNode->setAcceptedButtons(BTN_LEFT | BTN_RIGHT);
@@ -1006,7 +1011,7 @@ void Dock::resizeSurface(DockInstance& instance) {
 
   const auto& cfg = m_config->config().dock;
   const bool vert = isVertical();
-  const auto sb   = computeBleed(cfg);
+  const auto sb = computeBleed(cfg);
   const auto panelW = dockContentSize(instance.items.size());
   const auto panelH = dockThickness();
   const bool isBottom = (cfg.position == "bottom");
@@ -1014,14 +1019,12 @@ void Dock::resizeSurface(DockInstance& instance) {
   std::uint32_t surfW, surfH;
   if (!vert) {
     surfW = static_cast<std::uint32_t>(panelW + sb.left + sb.right);
-    surfH = isBottom
-        ? static_cast<std::uint32_t>(sb.up + panelH + std::min(cfg.marginV, sb.down))
-        : static_cast<std::uint32_t>(std::min(cfg.marginV, sb.up) + panelH + sb.down);
+    surfH = isBottom ? static_cast<std::uint32_t>(sb.up + panelH + std::min(cfg.marginV, sb.down))
+                     : static_cast<std::uint32_t>(std::min(cfg.marginV, sb.up) + panelH + sb.down);
   } else {
     const bool isRight = (cfg.position == "right");
-    surfW = isRight
-        ? static_cast<std::uint32_t>(sb.left + panelH + std::min(cfg.marginH, sb.right))
-        : static_cast<std::uint32_t>(std::min(cfg.marginH, sb.left) + panelH + sb.right);
+    surfW = isRight ? static_cast<std::uint32_t>(sb.left + panelH + std::min(cfg.marginH, sb.right))
+                    : static_cast<std::uint32_t>(std::min(cfg.marginH, sb.left) + panelH + sb.right);
     surfH = static_cast<std::uint32_t>(panelW + sb.up + sb.down);
   }
 
@@ -1038,9 +1041,8 @@ void Dock::updateVisuals(DockInstance& instance) {
   for (auto& item : instance.items) {
     const float iconScale = item.active ? cfg.activeScale : cfg.inactiveScale;
     const float iconOpacity = item.active ? cfg.activeOpacity : cfg.inactiveOpacity;
-    Node* iconNode = item.iconImage != nullptr
-        ? static_cast<Node*>(item.iconImage)
-        : static_cast<Node*>(item.iconGlyph);
+    Node* iconNode =
+        item.iconImage != nullptr ? static_cast<Node*>(item.iconImage) : static_cast<Node*>(item.iconGlyph);
 
     if (iconNode != nullptr) {
       if (item.visualScale < 0.0f) {
@@ -1056,9 +1058,7 @@ void Dock::updateVisuals(DockInstance& instance) {
               itemPtr->visualScale = value;
               node->setScale(value);
             },
-            [itemPtr = &item] {
-              itemPtr->scaleAnimId = 0;
-            });
+            [itemPtr = &item] { itemPtr->scaleAnimId = 0; });
       }
 
       if (item.visualOpacity < 0.0f) {
@@ -1074,16 +1074,14 @@ void Dock::updateVisuals(DockInstance& instance) {
               itemPtr->visualOpacity = value;
               node->setOpacity(value);
             },
-            [itemPtr = &item] {
-              itemPtr->opacityAnimId = 0;
-            });
+            [itemPtr = &item] { itemPtr->opacityAnimId = 0; });
       }
     }
 
     // Instance-count badge.
     if (item.badge != nullptr && item.badgeLabel != nullptr) {
       const auto windows = m_wayland->windowsForApp(item.idLower, item.startupWmClassLower,
-                        currentDockFilterOutput(cfg, instance.output));
+                                                    currentDockFilterOutput(cfg, instance.output));
       const std::size_t count = windows.size();
       if (count != item.instanceCount) {
         item.instanceCount = count;
@@ -1096,12 +1094,10 @@ void Dock::updateVisuals(DockInstance& instance) {
           item.badgeLabel->setColor(roleColor(ColorRole::OnPrimary));
           item.badge->setFill(roleColor(ColorRole::Primary));
           if (m_renderContext != nullptr) {
-            const float bd = std::max(kBadgeMinSize,
-                static_cast<float>(cfg.iconSize) * kBadgeSizeRatio);
+            const float bd = std::max(kBadgeMinSize, static_cast<float>(cfg.iconSize) * kBadgeSizeRatio);
             item.badgeLabel->measure(*m_renderContext);
-            item.badgeLabel->setPosition(
-                std::round((bd - item.badgeLabel->width()) * 0.5f),
-                std::round((bd - item.badgeLabel->height()) * 0.5f));
+            item.badgeLabel->setPosition(std::round((bd - item.badgeLabel->width()) * 0.5f),
+                                         std::round((bd - item.badgeLabel->height()) * 0.5f));
           }
         }
       }
@@ -1112,9 +1108,9 @@ void Dock::updateVisuals(DockInstance& instance) {
 // ── Private: helpers ──────────────────────────────────────────────────────────
 
 bool Dock::matchesActiveApp(const DockItemView& item, std::string_view activeIdLower) const {
-  if (activeIdLower.empty()) return false;
-  return item.idLower == activeIdLower ||
-         item.startupWmClassLower == activeIdLower ||
+  if (activeIdLower.empty())
+    return false;
+  return item.idLower == activeIdLower || item.startupWmClassLower == activeIdLower ||
          item.entry.nameLower == activeIdLower;
 }
 
@@ -1176,8 +1172,7 @@ void Dock::handleItemClick(DockInstance& instance, DockItemView& item) {
 
 static constexpr float kMenuWidth = 240.0f;
 
-void Dock::openWindowPicker(DockInstance& instance, DockItemView& item,
-                             std::vector<ToplevelInfo> windows) {
+void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vector<ToplevelInfo> windows) {
   if (!m_wayland->hasXdgShell()) {
     // Fallback: activate the first window if we can't show a popup.
     if (!windows.empty()) {
@@ -1197,9 +1192,9 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item,
   for (std::int32_t i = 0; i < static_cast<std::int32_t>(windows.size()); ++i) {
     const auto& title = windows[i].title.empty() ? item.entry.name : windows[i].title;
     entries.push_back(ContextMenuControlEntry{
-        .id       = i,
-        .label    = title,
-        .enabled  = true,
+        .id = i,
+        .label = title,
+        .enabled = true,
         .separator = false,
         .hasSubmenu = false,
     });
@@ -1212,30 +1207,30 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item,
   // Determine anchor / gravity + gap based on dock position.
   const auto& cfg = m_config->config().dock;
   const bool isBottom = (cfg.position == "bottom");
-  const bool isTop    = (cfg.position == "top");
-  const bool isRight  = (cfg.position == "right");
+  const bool isTop = (cfg.position == "top");
+  const bool isRight = (cfg.position == "right");
 
-  std::uint32_t anchor  = XDG_POSITIONER_ANCHOR_NONE;
+  std::uint32_t anchor = XDG_POSITIONER_ANCHOR_NONE;
   std::uint32_t gravity = XDG_POSITIONER_GRAVITY_NONE;
-  std::int32_t offsetX  = 0;
-  std::int32_t offsetY  = 0;
+  std::int32_t offsetX = 0;
+  std::int32_t offsetY = 0;
   const std::int32_t kGapBottom = std::max(2, static_cast<std::int32_t>(Style::spaceLg));
-  const std::int32_t kGap       = std::max(2, static_cast<std::int32_t>(Style::spaceMd));
+  const std::int32_t kGap = std::max(2, static_cast<std::int32_t>(Style::spaceMd));
 
   if (isBottom) {
-    anchor  = XDG_POSITIONER_ANCHOR_TOP;
+    anchor = XDG_POSITIONER_ANCHOR_TOP;
     gravity = XDG_POSITIONER_GRAVITY_TOP;
     offsetY = -kGapBottom;
   } else if (isTop) {
-    anchor  = XDG_POSITIONER_ANCHOR_BOTTOM;
+    anchor = XDG_POSITIONER_ANCHOR_BOTTOM;
     gravity = XDG_POSITIONER_GRAVITY_BOTTOM;
     offsetY = kGap;
   } else if (isRight) {
-    anchor  = XDG_POSITIONER_ANCHOR_LEFT;
+    anchor = XDG_POSITIONER_ANCHOR_LEFT;
     gravity = XDG_POSITIONER_GRAVITY_LEFT;
     offsetX = -kGap;
   } else { // left
-    anchor  = XDG_POSITIONER_ANCHOR_RIGHT;
+    anchor = XDG_POSITIONER_ANCHOR_RIGHT;
     gravity = XDG_POSITIONER_GRAVITY_RIGHT;
     offsetX = kGap;
   }
@@ -1250,38 +1245,45 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item,
   std::int32_t aX, aY, aW, aH;
   if (isBottom) {
     // Panel top face is at sb.up.
-    aX = ptrX - halfCell; aY = sb.up;
-    aW = halfCell * 2;    aH = panelThk;
+    aX = ptrX - halfCell;
+    aY = sb.up;
+    aW = halfCell * 2;
+    aH = panelThk;
   } else if (isTop) {
     const std::int32_t panelFace = std::min(cfg.marginV, sb.up) + panelThk;
-    aX = ptrX - halfCell; aY = 0;
-    aW = halfCell * 2;    aH = panelFace;
+    aX = ptrX - halfCell;
+    aY = 0;
+    aW = halfCell * 2;
+    aH = panelFace;
   } else if (isRight) {
-    aX = sb.left;         aY = ptrY - halfCell;
-    aW = panelThk;        aH = halfCell * 2;
+    aX = sb.left;
+    aY = ptrY - halfCell;
+    aW = panelThk;
+    aH = halfCell * 2;
   } else { // left
     const std::int32_t panelFace = std::min(cfg.marginH, sb.left) + panelThk;
-    aX = 0;               aY = ptrY - halfCell;
-    aW = panelFace;       aH = halfCell * 2;
+    aX = 0;
+    aY = ptrY - halfCell;
+    aW = panelFace;
+    aH = halfCell * 2;
   }
 
   PopupSurfaceConfig popupCfg{
-      .anchorX             = aX,
-      .anchorY             = aY,
-      .anchorWidth         = std::max(1, aW),
-      .anchorHeight        = std::max(1, aH),
-      .width               = static_cast<std::uint32_t>(kMenuWidth),
-      .height              = static_cast<std::uint32_t>(std::max(1.0f, menuHeight)),
-      .anchor              = anchor,
-      .gravity             = gravity,
+      .anchorX = aX,
+      .anchorY = aY,
+      .anchorWidth = std::max(1, aW),
+      .anchorHeight = std::max(1, aH),
+      .width = static_cast<std::uint32_t>(kMenuWidth),
+      .height = static_cast<std::uint32_t>(std::max(1.0f, menuHeight)),
+      .anchor = anchor,
+      .gravity = gravity,
       .constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X |
                               XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_Y |
-                              XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_X  |
-                              XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y,
-      .offsetX             = offsetX,
-      .offsetY             = offsetY,
-      .serial              = m_wayland->lastInputSerial(),
-      .grab                = true,
+                              XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_X | XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y,
+      .offsetX = offsetX,
+      .offsetY = offsetY,
+      .serial = m_wayland->lastInputSerial(),
+      .grab = true,
   };
 
   menu->surface = std::make_unique<PopupSurface>(*m_wayland);
@@ -1291,69 +1293,67 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item,
 
   menu->surface->setConfigureCallback(
       [menuPtr](std::uint32_t /*w*/, std::uint32_t /*h*/) { menuPtr->surface->requestLayout(); });
-  menu->surface->setPrepareFrameCallback(
-      [this, menuPtr, entries](bool /*needsUpdate*/, bool needsLayout) {
-        if (m_renderContext == nullptr || menuPtr->surface == nullptr) {
-          return;
+  menu->surface->setPrepareFrameCallback([this, menuPtr, entries](bool /*needsUpdate*/, bool needsLayout) {
+    if (m_renderContext == nullptr || menuPtr->surface == nullptr) {
+      return;
+    }
+
+    const auto width = menuPtr->surface->width();
+    const auto height = menuPtr->surface->height();
+    if (width == 0 || height == 0) {
+      return;
+    }
+
+    m_renderContext->makeCurrent(menuPtr->surface->renderTarget());
+
+    const bool needsSceneBuild = menuPtr->sceneRoot == nullptr ||
+                                 static_cast<std::uint32_t>(std::round(menuPtr->sceneRoot->width())) != width ||
+                                 static_cast<std::uint32_t>(std::round(menuPtr->sceneRoot->height())) != height;
+    if (!needsSceneBuild && !needsLayout) {
+      return;
+    }
+
+    UiPhaseScope layoutPhase(UiPhase::Layout);
+
+    const auto fw = static_cast<float>(width);
+    const auto fh = static_cast<float>(height);
+
+    menuPtr->sceneRoot = std::make_unique<Node>();
+    menuPtr->sceneRoot->setSize(fw, fh);
+
+    auto ctrl = std::make_unique<ContextMenuControl>();
+    ctrl->setMenuWidth(fw);
+    ctrl->setMaxVisible(entries.size());
+    ctrl->setEntries(entries);
+    ctrl->setRedrawCallback([menuPtr]() {
+      if (menuPtr->surface)
+        menuPtr->surface->requestRedraw();
+    });
+    ctrl->setOnActivate([this, menuPtr](const ContextMenuControlEntry& e) {
+      const auto idx = static_cast<std::size_t>(e.id);
+      auto* handle = (idx < menuPtr->handles.size()) ? menuPtr->handles[idx] : nullptr;
+      DeferredCall::callLater([this, handle]() {
+        if (handle != nullptr) {
+          m_wayland->activateToplevel(handle);
         }
-
-        const auto width = menuPtr->surface->width();
-        const auto height = menuPtr->surface->height();
-        if (width == 0 || height == 0) {
-          return;
-        }
-
-        m_renderContext->makeCurrent(menuPtr->surface->renderTarget());
-
-        const bool needsSceneBuild =
-            menuPtr->sceneRoot == nullptr ||
-            static_cast<std::uint32_t>(std::round(menuPtr->sceneRoot->width())) != width ||
-            static_cast<std::uint32_t>(std::round(menuPtr->sceneRoot->height())) != height;
-        if (!needsSceneBuild && !needsLayout) {
-          return;
-        }
-
-        UiPhaseScope layoutPhase(UiPhase::Layout);
-
-        const auto fw = static_cast<float>(width);
-        const auto fh = static_cast<float>(height);
-
-        menuPtr->sceneRoot = std::make_unique<Node>();
-        menuPtr->sceneRoot->setSize(fw, fh);
-
-        auto ctrl = std::make_unique<ContextMenuControl>();
-        ctrl->setMenuWidth(fw);
-        ctrl->setMaxVisible(entries.size());
-        ctrl->setEntries(entries);
-        ctrl->setRedrawCallback([menuPtr]() {
-          if (menuPtr->surface) menuPtr->surface->requestRedraw();
-        });
-        ctrl->setOnActivate([this, menuPtr](const ContextMenuControlEntry& e) {
-          const auto idx = static_cast<std::size_t>(e.id);
-          auto* handle = (idx < menuPtr->handles.size()) ? menuPtr->handles[idx] : nullptr;
-          DeferredCall::callLater([this, handle]() {
-            if (handle != nullptr) {
-              m_wayland->activateToplevel(handle);
-            }
-            closeWindowPicker();
-          });
-        });
-        ctrl->setPosition(0.0f, 0.0f);
-        ctrl->setSize(fw, fh);
-        ctrl->layout(*m_renderContext);
-
-        menuPtr->sceneRoot->addChild(std::move(ctrl));
-        menuPtr->inputDispatcher.setSceneRoot(menuPtr->sceneRoot.get());
-        menuPtr->inputDispatcher.setCursorShapeCallback(
-            [this](std::uint32_t serial, std::uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
-        menuPtr->surface->setSceneRoot(menuPtr->sceneRoot.get());
+        closeWindowPicker();
       });
+    });
+    ctrl->setPosition(0.0f, 0.0f);
+    ctrl->setSize(fw, fh);
+    ctrl->layout(*m_renderContext);
+
+    menuPtr->sceneRoot->addChild(std::move(ctrl));
+    menuPtr->inputDispatcher.setSceneRoot(menuPtr->sceneRoot.get());
+    menuPtr->inputDispatcher.setCursorShapeCallback(
+        [this](std::uint32_t serial, std::uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
+    menuPtr->surface->setSceneRoot(menuPtr->sceneRoot.get());
+  });
 
   menu->surface->setDismissedCallback([this]() { closeWindowPicker(); });
 
   auto* layerSurface = m_wayland->layerSurfaceFor(instance.surface->wlSurface());
-  if (layerSurface == nullptr ||
-      !menu->surface->initialize(layerSurface, instance.output, popupCfg)) {
+  if (layerSurface == nullptr || !menu->surface->initialize(layerSurface, instance.output, popupCfg)) {
     kLog.warn("dock: failed to create window-picker popup");
     return;
   }
@@ -1392,8 +1392,7 @@ bool Dock::routePopupEvent(DockPopup* popup, const PointerEvent& event) {
   case PointerEvent::Type::Enter:
     if (onPopup) {
       popup->pointerInside = true;
-      popup->inputDispatcher.pointerEnter(static_cast<float>(event.sx),
-                                          static_cast<float>(event.sy), event.serial);
+      popup->inputDispatcher.pointerEnter(static_cast<float>(event.sx), static_cast<float>(event.sy), event.serial);
     }
     break;
   case PointerEvent::Type::Leave:
@@ -1404,16 +1403,14 @@ bool Dock::routePopupEvent(DockPopup* popup, const PointerEvent& event) {
     break;
   case PointerEvent::Type::Motion:
     if (onPopup && inBounds) {
-      popup->inputDispatcher.pointerMotion(static_cast<float>(event.sx),
-                                           static_cast<float>(event.sy), 0);
+      popup->inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), 0);
     }
     break;
   case PointerEvent::Type::Button:
     if (onPopup && inBounds) {
       const bool pressed = (event.state == 1);
-      popup->inputDispatcher.pointerButton(static_cast<float>(event.sx),
-                                           static_cast<float>(event.sy),
-                                           event.button, pressed);
+      popup->inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy), event.button,
+                                           pressed);
     }
     break;
   case PointerEvent::Type::Axis:
@@ -1440,20 +1437,20 @@ void Dock::startHideFadeOut(DockInstance& inst) {
   inst.animations.animate(
       current, 0.0f, Style::animSlow, Easing::EaseInQuad,
       [&inst](float v) {
-        if (inst.sceneRoot) inst.sceneRoot->setOpacity(v);
+        if (inst.sceneRoot)
+          inst.sceneRoot->setOpacity(v);
         inst.hideOpacity = v;
       },
       [&inst, this]() {
-        if (inst.surface == nullptr) return;
+        if (inst.surface == nullptr)
+          return;
         const auto& cfg = m_config->config().dock;
         const bool vert = isVertical();
-        const auto sb   = computeBleed(cfg);
+        const auto sb = computeBleed(cfg);
         const auto panelW = dockContentSize(inst.items.size());
         const auto panelH = dockThickness();
-        const auto surfW = static_cast<int>(
-            vert ? (sb.left + panelH + sb.right) : (panelW + sb.left + sb.right));
-        const auto surfH = static_cast<int>(
-            vert ? (panelW + sb.up + sb.down)   : (sb.up + panelH + cfg.marginV));
+        const auto surfW = static_cast<int>(vert ? (sb.left + panelH + sb.right) : (panelW + sb.left + sb.right));
+        const auto surfH = static_cast<int>(vert ? (panelW + sb.up + sb.down) : (sb.up + panelH + cfg.marginV));
         if (!vert) {
           inst.surface->setInputRegion({InputRect{0, surfH - kAutoHideTriggerPx, surfW, kAutoHideTriggerPx}});
         } else if (cfg.position == "left") {
@@ -1462,7 +1459,8 @@ void Dock::startHideFadeOut(DockInstance& inst) {
           inst.surface->setInputRegion({InputRect{0, 0, kAutoHideTriggerPx, surfH}});
         }
       });
-  if (inst.surface) inst.surface->requestRedraw();
+  if (inst.surface)
+    inst.surface->requestRedraw();
 }
 
 void Dock::closeItemMenu() {
@@ -1503,7 +1501,8 @@ void Dock::launchAction(const DesktopAction& action) {
 }
 
 void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
-  if (!m_wayland->hasXdgShell()) return;
+  if (!m_wayland->hasXdgShell())
+    return;
 
   // Close existing popups before opening the new one.
   closeWindowPicker();
@@ -1525,10 +1524,10 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
 
   for (std::int32_t i = 0; i < static_cast<std::int32_t>(item.entry.actions.size()); ++i) {
     entries.push_back(ContextMenuControlEntry{
-        .id         = i,
-        .label      = item.entry.actions[static_cast<std::size_t>(i)].name,
-        .enabled    = true,
-        .separator  = false,
+        .id = i,
+        .label = item.entry.actions[static_cast<std::size_t>(i)].name,
+        .enabled = true,
+        .separator = false,
         .hasSubmenu = false,
     });
   }
@@ -1536,9 +1535,9 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
   const std::size_t runCount = menu->handles.size();
   if (runCount > 0) {
     if (!entries.empty()) {
-    // Separator between app actions and window-management entries.
-      entries.push_back(ContextMenuControlEntry{
-          .id = -3, .label = {}, .enabled = false, .separator = true, .hasSubmenu = false});
+      // Separator between app actions and window-management entries.
+      entries.push_back(
+          ContextMenuControlEntry{.id = -3, .label = {}, .enabled = false, .separator = true, .hasSubmenu = false});
     }
     if (runCount == 1) {
       entries.push_back(ContextMenuControlEntry{
@@ -1549,7 +1548,8 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
     }
   }
 
-  if (entries.empty()) return; // nothing to show
+  if (entries.empty())
+    return; // nothing to show
 
   // Compute popup height.
   const float menuHeight = ContextMenuControl::preferredHeight(entries, entries.size());
@@ -1557,30 +1557,30 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
   // Determine anchor / gravity + gap based on dock position.
   const auto& cfg = m_config->config().dock;
   const bool isBottom = (cfg.position == "bottom");
-  const bool isTop    = (cfg.position == "top");
-  const bool isRight  = (cfg.position == "right");
+  const bool isTop = (cfg.position == "top");
+  const bool isRight = (cfg.position == "right");
 
-  std::uint32_t anchor  = XDG_POSITIONER_ANCHOR_NONE;
+  std::uint32_t anchor = XDG_POSITIONER_ANCHOR_NONE;
   std::uint32_t gravity = XDG_POSITIONER_GRAVITY_NONE;
-  std::int32_t offsetX  = 0;
-  std::int32_t offsetY  = 0;
+  std::int32_t offsetX = 0;
+  std::int32_t offsetY = 0;
   const std::int32_t kGapBottom = std::max(2, static_cast<std::int32_t>(Style::spaceLg));
-  const std::int32_t kGap       = std::max(2, static_cast<std::int32_t>(Style::spaceMd));
+  const std::int32_t kGap = std::max(2, static_cast<std::int32_t>(Style::spaceMd));
 
   if (isBottom) {
-    anchor  = XDG_POSITIONER_ANCHOR_TOP;
+    anchor = XDG_POSITIONER_ANCHOR_TOP;
     gravity = XDG_POSITIONER_GRAVITY_TOP;
     offsetY = -kGapBottom;
   } else if (isTop) {
-    anchor  = XDG_POSITIONER_ANCHOR_BOTTOM;
+    anchor = XDG_POSITIONER_ANCHOR_BOTTOM;
     gravity = XDG_POSITIONER_GRAVITY_BOTTOM;
     offsetY = kGap;
   } else if (isRight) {
-    anchor  = XDG_POSITIONER_ANCHOR_LEFT;
+    anchor = XDG_POSITIONER_ANCHOR_LEFT;
     gravity = XDG_POSITIONER_GRAVITY_LEFT;
     offsetX = -kGap;
   } else { // left
-    anchor  = XDG_POSITIONER_ANCHOR_RIGHT;
+    anchor = XDG_POSITIONER_ANCHOR_RIGHT;
     gravity = XDG_POSITIONER_GRAVITY_RIGHT;
     offsetX = kGap;
   }
@@ -1595,38 +1595,45 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
   std::int32_t aX, aY, aW, aH;
   if (isBottom) {
     // Panel top face is at sb.up.
-    aX = ptrX - halfCell; aY = sb.up;
-    aW = halfCell * 2;    aH = panelThk;
+    aX = ptrX - halfCell;
+    aY = sb.up;
+    aW = halfCell * 2;
+    aH = panelThk;
   } else if (isTop) {
     const std::int32_t panelFace = std::min(cfg.marginV, sb.up) + panelThk;
-    aX = ptrX - halfCell; aY = 0;
-    aW = halfCell * 2;    aH = panelFace;
+    aX = ptrX - halfCell;
+    aY = 0;
+    aW = halfCell * 2;
+    aH = panelFace;
   } else if (isRight) {
-    aX = sb.left;         aY = ptrY - halfCell;
-    aW = panelThk;        aH = halfCell * 2;
+    aX = sb.left;
+    aY = ptrY - halfCell;
+    aW = panelThk;
+    aH = halfCell * 2;
   } else { // left
     const std::int32_t panelFace = std::min(cfg.marginH, sb.left) + panelThk;
-    aX = 0;               aY = ptrY - halfCell;
-    aW = panelFace;       aH = halfCell * 2;
+    aX = 0;
+    aY = ptrY - halfCell;
+    aW = panelFace;
+    aH = halfCell * 2;
   }
 
   PopupSurfaceConfig popupCfg{
-      .anchorX              = aX,
-      .anchorY              = aY,
-      .anchorWidth          = std::max(1, aW),
-      .anchorHeight         = std::max(1, aH),
-      .width                = static_cast<std::uint32_t>(kMenuWidth),
-      .height               = static_cast<std::uint32_t>(std::max(1.0f, menuHeight)),
-      .anchor               = anchor,
-      .gravity              = gravity,
+      .anchorX = aX,
+      .anchorY = aY,
+      .anchorWidth = std::max(1, aW),
+      .anchorHeight = std::max(1, aH),
+      .width = static_cast<std::uint32_t>(kMenuWidth),
+      .height = static_cast<std::uint32_t>(std::max(1.0f, menuHeight)),
+      .anchor = anchor,
+      .gravity = gravity,
       .constraintAdjustment = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X |
                               XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_Y |
-                              XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_X  |
-                              XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y,
-      .offsetX              = offsetX,
-      .offsetY              = offsetY,
-      .serial               = m_wayland->lastInputSerial(),
-      .grab                 = true,
+                              XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_X | XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y,
+      .offsetX = offsetX,
+      .offsetY = offsetY,
+      .serial = m_wayland->lastInputSerial(),
+      .grab = true,
   };
 
   menu->surface = std::make_unique<PopupSurface>(*m_wayland);
@@ -1653,10 +1660,9 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
 
         m_renderContext->makeCurrent(menuPtr->surface->renderTarget());
 
-        const bool needsSceneBuild =
-            menuPtr->sceneRoot == nullptr ||
-            static_cast<std::uint32_t>(std::round(menuPtr->sceneRoot->width())) != width ||
-            static_cast<std::uint32_t>(std::round(menuPtr->sceneRoot->height())) != height;
+        const bool needsSceneBuild = menuPtr->sceneRoot == nullptr ||
+                                     static_cast<std::uint32_t>(std::round(menuPtr->sceneRoot->width())) != width ||
+                                     static_cast<std::uint32_t>(std::round(menuPtr->sceneRoot->height())) != height;
         if (!needsSceneBuild && !needsLayout) {
           return;
         }
@@ -1674,7 +1680,8 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
         ctrl->setMaxVisible(entries.size());
         ctrl->setEntries(entries);
         ctrl->setRedrawCallback([menuPtr]() {
-          if (menuPtr->surface) menuPtr->surface->requestRedraw();
+          if (menuPtr->surface)
+            menuPtr->surface->requestRedraw();
         });
         ctrl->setOnActivate([this, menuPtr, entryActions](const ContextMenuControlEntry& e) {
           const std::int32_t id = e.id;
@@ -1709,8 +1716,7 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
   menu->surface->setDismissedCallback([this]() { closeItemMenu(); });
 
   auto* layerSurface = m_wayland->layerSurfaceFor(instance.surface->wlSurface());
-  if (layerSurface == nullptr ||
-      !menu->surface->initialize(layerSurface, instance.output, popupCfg)) {
+  if (layerSurface == nullptr || !menu->surface->initialize(layerSurface, instance.output, popupCfg)) {
     kLog.warn("dock: failed to create item-menu popup");
     return;
   }

@@ -1,6 +1,6 @@
-#include "core/ui_phase.h"
 #include "render/scene/node.h"
 
+#include "core/ui_phase.h"
 #include "render/animation/animation_manager.h"
 #include "render/core/mat3.h"
 
@@ -9,32 +9,32 @@
 
 namespace {
 
-Mat3 localTransform(const Node* node) {
-  const float cx = node->width() * 0.5f;
-  const float cy = node->height() * 0.5f;
-  return Mat3::translation(node->x(), node->y()) * Mat3::translation(cx, cy) * Mat3::rotation(node->rotation()) *
-         Mat3::scale(node->scale(), node->scale()) * Mat3::translation(-cx, -cy);
-}
-
-Mat3 computeWorldTransform(const Node* node) {
-  Mat3 world = Mat3::identity();
-  for (const Node* current = node; current != nullptr; current = current->parent()) {
-    world = localTransform(current) * world;
-  }
-  return world;
-}
-
-bool pointInsideNode(const Node* node, float sceneX, float sceneY, float& localX, float& localY) {
-  if (node == nullptr) {
-    return false;
+  Mat3 localTransform(const Node* node) {
+    const float cx = node->width() * 0.5f;
+    const float cy = node->height() * 0.5f;
+    return Mat3::translation(node->x(), node->y()) * Mat3::translation(cx, cy) * Mat3::rotation(node->rotation()) *
+           Mat3::scale(node->scale(), node->scale()) * Mat3::translation(-cx, -cy);
   }
 
-  const Mat3 inverse = computeWorldTransform(node).inverse();
-  const Vec2 local = inverse.transformPoint(sceneX, sceneY);
-  localX = local.x;
-  localY = local.y;
-  return localX >= 0.0f && localX < node->width() && localY >= 0.0f && localY < node->height();
-}
+  Mat3 computeWorldTransform(const Node* node) {
+    Mat3 world = Mat3::identity();
+    for (const Node* current = node; current != nullptr; current = current->parent()) {
+      world = localTransform(current) * world;
+    }
+    return world;
+  }
+
+  bool pointInsideNode(const Node* node, float sceneX, float sceneY, float& localX, float& localY) {
+    if (node == nullptr) {
+      return false;
+    }
+
+    const Mat3 inverse = computeWorldTransform(node).inverse();
+    const Vec2 local = inverse.transformPoint(sceneX, sceneY);
+    localX = local.x;
+    localY = local.y;
+    return localX >= 0.0f && localX < node->width() && localY >= 0.0f && localY < node->height();
+  }
 
 } // namespace
 
@@ -307,7 +307,7 @@ bool Node::mapFromScene(const Node* node, float sceneX, float sceneY, float& out
 }
 
 void Node::transformedBounds(const Node* node, const Mat3& world, float& outLeft, float& outTop, float& outRight,
-                              float& outBottom) {
+                             float& outBottom) {
   const Vec2 corners[] = {
       world.transformPoint(0.0f, 0.0f),
       world.transformPoint(node->width(), 0.0f),

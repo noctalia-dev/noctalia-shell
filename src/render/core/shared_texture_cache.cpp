@@ -4,7 +4,7 @@
 #include "render/gl_shared_context.h"
 
 namespace {
-constexpr Logger kLog("texcache");
+  constexpr Logger kLog("texcache");
 } // namespace
 
 SharedTextureCache::~SharedTextureCache() {

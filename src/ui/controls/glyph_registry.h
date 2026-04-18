@@ -7,6 +7,6 @@
 // and add an entry here.
 namespace GlyphRegistry {
 
-[[nodiscard]] char32_t lookup(std::string_view name);
+  [[nodiscard]] char32_t lookup(std::string_view name);
 
 } // namespace GlyphRegistry

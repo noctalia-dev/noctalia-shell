@@ -24,167 +24,167 @@ using namespace control_center;
 
 namespace {
 
-constexpr float kRowMinHeight = Style::controlHeightLg;
+  constexpr float kRowMinHeight = Style::controlHeightLg;
 
-const char* glyphFor(BluetoothDeviceKind kind) {
-  switch (kind) {
-  case BluetoothDeviceKind::Headset:
-    return "bluetooth-device-headset";
-  case BluetoothDeviceKind::Headphones:
-    return "bluetooth-device-headphones";
-  case BluetoothDeviceKind::Earbuds:
-    return "bluetooth-device-earbuds";
-  case BluetoothDeviceKind::Speaker:
-    return "bluetooth-device-speaker";
-  case BluetoothDeviceKind::Microphone:
-    return "bluetooth-device-microphone";
-  case BluetoothDeviceKind::Mouse:
-    return "bluetooth-device-mouse";
-  case BluetoothDeviceKind::Keyboard:
-    return "bluetooth-device-keyboard";
-  case BluetoothDeviceKind::Phone:
-    return "bluetooth-device-phone";
-  case BluetoothDeviceKind::Computer:
-    return "settings-display";
-  case BluetoothDeviceKind::Gamepad:
-    return "bluetooth-device-gamepad";
-  case BluetoothDeviceKind::Watch:
-    return "bluetooth-device-watch";
-  case BluetoothDeviceKind::Tv:
-    return "bluetooth-device-tv";
-  case BluetoothDeviceKind::Unknown:
-  default:
-    return "bluetooth-device-generic";
-  }
-}
-
-enum class DeviceBucket : std::uint8_t {
-  Connected,
-  Paired,
-  Available,
-};
-
-DeviceBucket bucketFor(const BluetoothDeviceInfo& d) {
-  if (d.connected) {
-    return DeviceBucket::Connected;
-  }
-  if (d.paired) {
-    return DeviceBucket::Paired;
-  }
-  return DeviceBucket::Available;
-}
-
-class BluetoothDeviceRow : public Flex {
-public:
-  BluetoothDeviceRow(BluetoothDeviceInfo device, BluetoothService* service, float scale)
-      : m_device(std::move(device)), m_service(service) {
-    setDirection(FlexDirection::Horizontal);
-    setAlign(FlexAlign::Center);
-    setGap(Style::spaceSm * scale);
-    setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    setMinHeight(kRowMinHeight * scale);
-    setRadius(Style::radiusMd * scale);
-    setBackground(roleColor(ColorRole::Surface));
-    setBorderWidth(0.0f);
-
-    auto icon = std::make_unique<Glyph>();
-    icon->setGlyph(glyphFor(m_device.kind));
-    icon->setGlyphSize(Style::fontSizeBody * scale);
-    icon->setColor(roleColor(ColorRole::OnSurface));
-    addChild(std::move(icon));
-
-    auto alias = std::make_unique<Label>();
-    alias->setText(m_device.alias);
-    alias->setBold(m_device.connected);
-    alias->setFontSize(Style::fontSizeBody * scale);
-    alias->setColor(roleColor(ColorRole::OnSurface));
-    alias->setFlexGrow(1.0f);
-    m_title = alias.get();
-    addChild(std::move(alias));
-
-    if (m_device.hasBattery) {
-      auto battery = std::make_unique<Label>();
-      battery->setText(std::to_string(static_cast<int>(m_device.batteryPercent)) + "%");
-      battery->setCaptionStyle();
-      battery->setFontSize(Style::fontSizeCaption * scale);
-      battery->setColor(roleColor(ColorRole::OnSurfaceVariant));
-      addChild(std::move(battery));
-    } else if (m_device.hasRssi && bucketFor(m_device) == DeviceBucket::Available) {
-      auto rssi = std::make_unique<Label>();
-      rssi->setText(std::to_string(static_cast<int>(m_device.rssi)) + " dBm");
-      rssi->setCaptionStyle();
-      rssi->setFontSize(Style::fontSizeCaption * scale);
-      rssi->setColor(roleColor(ColorRole::OnSurfaceVariant));
-      addChild(std::move(rssi));
+  const char* glyphFor(BluetoothDeviceKind kind) {
+    switch (kind) {
+    case BluetoothDeviceKind::Headset:
+      return "bluetooth-device-headset";
+    case BluetoothDeviceKind::Headphones:
+      return "bluetooth-device-headphones";
+    case BluetoothDeviceKind::Earbuds:
+      return "bluetooth-device-earbuds";
+    case BluetoothDeviceKind::Speaker:
+      return "bluetooth-device-speaker";
+    case BluetoothDeviceKind::Microphone:
+      return "bluetooth-device-microphone";
+    case BluetoothDeviceKind::Mouse:
+      return "bluetooth-device-mouse";
+    case BluetoothDeviceKind::Keyboard:
+      return "bluetooth-device-keyboard";
+    case BluetoothDeviceKind::Phone:
+      return "bluetooth-device-phone";
+    case BluetoothDeviceKind::Computer:
+      return "settings-display";
+    case BluetoothDeviceKind::Gamepad:
+      return "bluetooth-device-gamepad";
+    case BluetoothDeviceKind::Watch:
+      return "bluetooth-device-watch";
+    case BluetoothDeviceKind::Tv:
+      return "bluetooth-device-tv";
+    case BluetoothDeviceKind::Unknown:
+    default:
+      return "bluetooth-device-generic";
     }
+  }
 
-    if (m_device.paired) {
-      auto trust = std::make_unique<Toggle>();
-      trust->setToggleSize(ToggleSize::Small);
-      trust->setScale(scale);
-      trust->setChecked(m_device.trusted);
-      trust->setOnChange([this](bool checked) {
-        if (m_service != nullptr) {
-          m_service->setTrusted(m_device.path, checked);
-        }
-      });
-      addChild(std::move(trust));
-    }
+  enum class DeviceBucket : std::uint8_t {
+    Connected,
+    Paired,
+    Available,
+  };
 
-    auto primary = std::make_unique<Button>();
-    primary->setVariant(ButtonVariant::Default);
-    switch (bucketFor(m_device)) {
-    case DeviceBucket::Connected:
-      primary->setText("Disconnect");
-      primary->setVariant(ButtonVariant::Outline);
-      break;
-    case DeviceBucket::Paired:
-      primary->setText(m_device.connecting ? "Connecting…" : "Connect");
-      break;
-    case DeviceBucket::Available:
-      primary->setText(m_device.connecting ? "Pairing…" : "Pair");
-      break;
+  DeviceBucket bucketFor(const BluetoothDeviceInfo& d) {
+    if (d.connected) {
+      return DeviceBucket::Connected;
     }
-    primary->setOnClick([this]() {
-      if (m_service == nullptr) {
-        return;
+    if (d.paired) {
+      return DeviceBucket::Paired;
+    }
+    return DeviceBucket::Available;
+  }
+
+  class BluetoothDeviceRow : public Flex {
+  public:
+    BluetoothDeviceRow(BluetoothDeviceInfo device, BluetoothService* service, float scale)
+        : m_device(std::move(device)), m_service(service) {
+      setDirection(FlexDirection::Horizontal);
+      setAlign(FlexAlign::Center);
+      setGap(Style::spaceSm * scale);
+      setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+      setMinHeight(kRowMinHeight * scale);
+      setRadius(Style::radiusMd * scale);
+      setBackground(roleColor(ColorRole::Surface));
+      setBorderWidth(0.0f);
+
+      auto icon = std::make_unique<Glyph>();
+      icon->setGlyph(glyphFor(m_device.kind));
+      icon->setGlyphSize(Style::fontSizeBody * scale);
+      icon->setColor(roleColor(ColorRole::OnSurface));
+      addChild(std::move(icon));
+
+      auto alias = std::make_unique<Label>();
+      alias->setText(m_device.alias);
+      alias->setBold(m_device.connected);
+      alias->setFontSize(Style::fontSizeBody * scale);
+      alias->setColor(roleColor(ColorRole::OnSurface));
+      alias->setFlexGrow(1.0f);
+      m_title = alias.get();
+      addChild(std::move(alias));
+
+      if (m_device.hasBattery) {
+        auto battery = std::make_unique<Label>();
+        battery->setText(std::to_string(static_cast<int>(m_device.batteryPercent)) + "%");
+        battery->setCaptionStyle();
+        battery->setFontSize(Style::fontSizeCaption * scale);
+        battery->setColor(roleColor(ColorRole::OnSurfaceVariant));
+        addChild(std::move(battery));
+      } else if (m_device.hasRssi && bucketFor(m_device) == DeviceBucket::Available) {
+        auto rssi = std::make_unique<Label>();
+        rssi->setText(std::to_string(static_cast<int>(m_device.rssi)) + " dBm");
+        rssi->setCaptionStyle();
+        rssi->setFontSize(Style::fontSizeCaption * scale);
+        rssi->setColor(roleColor(ColorRole::OnSurfaceVariant));
+        addChild(std::move(rssi));
       }
+
+      if (m_device.paired) {
+        auto trust = std::make_unique<Toggle>();
+        trust->setToggleSize(ToggleSize::Small);
+        trust->setScale(scale);
+        trust->setChecked(m_device.trusted);
+        trust->setOnChange([this](bool checked) {
+          if (m_service != nullptr) {
+            m_service->setTrusted(m_device.path, checked);
+          }
+        });
+        addChild(std::move(trust));
+      }
+
+      auto primary = std::make_unique<Button>();
+      primary->setVariant(ButtonVariant::Default);
       switch (bucketFor(m_device)) {
       case DeviceBucket::Connected:
-        m_service->disconnectDevice(m_device.path);
+        primary->setText("Disconnect");
+        primary->setVariant(ButtonVariant::Outline);
         break;
       case DeviceBucket::Paired:
-        m_service->connect(m_device.path);
+        primary->setText(m_device.connecting ? "Connecting…" : "Connect");
         break;
       case DeviceBucket::Available:
-        m_service->pair(m_device.path);
+        primary->setText(m_device.connecting ? "Pairing…" : "Pair");
         break;
       }
-      PanelManager::instance().refresh();
-    });
-    m_primaryButton = static_cast<Button*>(addChild(std::move(primary)));
-
-    if (m_device.paired) {
-      auto forget = std::make_unique<Button>();
-      forget->setVariant(ButtonVariant::Ghost);
-      forget->setText("Forget");
-      forget->setOnClick([this]() {
-        if (m_service != nullptr) {
-          m_service->forget(m_device.path);
+      primary->setOnClick([this]() {
+        if (m_service == nullptr) {
+          return;
+        }
+        switch (bucketFor(m_device)) {
+        case DeviceBucket::Connected:
+          m_service->disconnectDevice(m_device.path);
+          break;
+        case DeviceBucket::Paired:
+          m_service->connect(m_device.path);
+          break;
+        case DeviceBucket::Available:
+          m_service->pair(m_device.path);
+          break;
         }
         PanelManager::instance().refresh();
       });
-      m_forgetButton = static_cast<Button*>(addChild(std::move(forget)));
-    }
-  }
+      m_primaryButton = static_cast<Button*>(addChild(std::move(primary)));
 
-private:
-  BluetoothDeviceInfo m_device;
-  BluetoothService* m_service = nullptr;
-  Label* m_title = nullptr;
-  Button* m_primaryButton = nullptr;
-  Button* m_forgetButton = nullptr;
-};
+      if (m_device.paired) {
+        auto forget = std::make_unique<Button>();
+        forget->setVariant(ButtonVariant::Ghost);
+        forget->setText("Forget");
+        forget->setOnClick([this]() {
+          if (m_service != nullptr) {
+            m_service->forget(m_device.path);
+          }
+          PanelManager::instance().refresh();
+        });
+        m_forgetButton = static_cast<Button*>(addChild(std::move(forget)));
+      }
+    }
+
+  private:
+    BluetoothDeviceInfo m_device;
+    BluetoothService* m_service = nullptr;
+    Label* m_title = nullptr;
+    Button* m_primaryButton = nullptr;
+    Button* m_forgetButton = nullptr;
+  };
 
 } // namespace
 
@@ -502,8 +502,7 @@ void BluetoothTab::syncPairingCard() {
   if (m_pairingTitle != nullptr) {
     m_pairingTitle->setText("Pair " + alias);
   }
-  const bool needsInput =
-      req.kind == BluetoothPairingKind::PinCode || req.kind == BluetoothPairingKind::Passkey;
+  const bool needsInput = req.kind == BluetoothPairingKind::PinCode || req.kind == BluetoothPairingKind::Passkey;
   const bool showsCode = req.kind == BluetoothPairingKind::Confirm ||
                          req.kind == BluetoothPairingKind::DisplayPasskey ||
                          req.kind == BluetoothPairingKind::DisplayPinCode;
@@ -634,7 +633,7 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
   if (devices.empty()) {
     auto empty = std::make_unique<Label>();
     empty->setText(m_service->state().powered ? "No devices found. Start scanning to discover nearby Bluetooth devices."
-                                               : "Bluetooth is off");
+                                              : "Bluetooth is off");
     empty->setCaptionStyle();
     empty->setFontSize(Style::fontSizeCaption);
     empty->setColor(roleColor(ColorRole::OnSurfaceVariant));

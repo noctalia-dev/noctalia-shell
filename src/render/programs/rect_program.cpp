@@ -5,7 +5,7 @@
 
 namespace {
 
-constexpr char kVertexShaderSource[] = R"(
+  constexpr char kVertexShaderSource[] = R"(
 precision highp float;
 
 attribute vec2 a_position;
@@ -29,7 +29,7 @@ void main() {
 }
 )";
 
-constexpr char kFragmentShaderSource[] = R"(
+  constexpr char kFragmentShaderSource[] = R"(
 precision highp float;
 
 uniform vec2 u_rect_size;
@@ -168,7 +168,7 @@ void RectProgram::destroy() {
 }
 
 void RectProgram::draw(float surfaceWidth, float surfaceHeight, float width, float height,
-                              const RoundedRectStyle& style, const Mat3& transform) const {
+                       const RoundedRectStyle& style, const Mat3& transform) const {
   if (!m_program.isValid() || width <= 0.0f || height <= 0.0f) {
     return;
   }

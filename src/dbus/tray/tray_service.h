@@ -3,11 +3,10 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <sdbus-c++/sdbus-c++.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include <sdbus-c++/sdbus-c++.h>
 
 class SessionBus;
 

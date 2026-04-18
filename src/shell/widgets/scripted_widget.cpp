@@ -15,15 +15,18 @@ namespace {
   constexpr Logger kLog("scripted-widget");
 
   std::string expandPath(const std::string& path) {
-    if (path.empty() || path[0] != '~') return path;
+    if (path.empty() || path[0] != '~')
+      return path;
     const char* home = std::getenv("HOME");
-    if (!home) return path;
+    if (!home)
+      return path;
     return std::string(home) + path.substr(1);
   }
 
   std::string readFile(const std::string& path) {
     std::ifstream f(expandPath(path));
-    if (!f) return {};
+    if (!f)
+      return {};
     std::stringstream ss;
     ss << f.rdbuf();
     return ss.str();
@@ -64,7 +67,8 @@ void ScriptedWidget::onFrameTick(float deltaMs) {
 
 void ScriptedWidget::doLayout(Renderer& renderer, float, float) {
   auto* rootNode = root();
-  if (m_label == nullptr || rootNode == nullptr) return;
+  if (m_label == nullptr || rootNode == nullptr)
+    return;
   doUpdate(renderer);
   m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_label->measure(renderer);
@@ -73,9 +77,11 @@ void ScriptedWidget::doLayout(Renderer& renderer, float, float) {
 }
 
 void ScriptedWidget::doUpdate(Renderer& renderer) {
-  if (!m_host || !m_label) return;
+  if (!m_host || !m_label)
+    return;
   auto text = m_host->callGlobalReturningString("update");
-  if (!text) return;
+  if (!text)
+    return;
   if (*text != m_lastText) {
     m_lastText = std::move(*text);
     m_label->setText(m_lastText);

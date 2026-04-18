@@ -13,7 +13,7 @@
 #include <memory>
 
 namespace {
-constexpr float kDotBaseSize = 6.0f;
+  constexpr float kDotBaseSize = 6.0f;
 } // namespace
 
 NotificationWidget::NotificationWidget(NotificationManager* manager, wl_output* output)
@@ -76,9 +76,7 @@ void NotificationWidget::doLayout(Renderer& renderer, float /*containerWidth*/, 
   }
 }
 
-void NotificationWidget::doUpdate(Renderer& /*renderer*/) {
-  refreshIndicatorState();
-}
+void NotificationWidget::doUpdate(Renderer& /*renderer*/) { refreshIndicatorState(); }
 
 void NotificationWidget::refreshIndicatorState() {
   const bool hasNotifications = (m_manager != nullptr) && !m_manager->all().empty();

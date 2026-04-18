@@ -1,11 +1,10 @@
 #include "wayland/wayland_toplevels.h"
 
+#include "wlr-foreign-toplevel-management-unstable-v1-client-protocol.h"
+
 #include <algorithm>
 #include <cctype>
-
 #include <wayland-client.h>
-
-#include "wlr-foreign-toplevel-management-unstable-v1-client-protocol.h"
 
 namespace {
 

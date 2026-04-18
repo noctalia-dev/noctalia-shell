@@ -109,20 +109,18 @@ private:
   void launchEntry(const DesktopEntry& entry);
   void launchAction(const DesktopAction& action);
   void handleItemClick(DockInstance& instance, DockItemView& item);
-  void openWindowPicker(DockInstance& instance, DockItemView& item,
-                        std::vector<ToplevelInfo> windows);
+  void openWindowPicker(DockInstance& instance, DockItemView& item, std::vector<ToplevelInfo> windows);
   void closeWindowPicker();
   void openItemMenu(DockInstance& instance, DockItemView& item);
   void closeItemMenu();
   void startHideFadeOut(DockInstance& inst);
 
   [[nodiscard]] bool matchesActiveApp(const DockItemView& item, std::string_view activeAppIdLower) const;
-  [[nodiscard]] bool matchesRunningApp(const DockItemView& item,
-                                       const std::vector<std::string>& runningLower) const;
+  [[nodiscard]] bool matchesRunningApp(const DockItemView& item, const std::vector<std::string>& runningLower) const;
 
   // Geometry helpers
   [[nodiscard]] std::int32_t dockContentSize(std::size_t itemCount) const; // item row length (main axis)
-  [[nodiscard]] std::int32_t dockThickness() const;     // cross-axis (includes icon, cell padding, dock padding)
+  [[nodiscard]] std::int32_t dockThickness() const; // cross-axis (includes icon, cell padding, dock padding)
   [[nodiscard]] bool isVertical() const;
 
   // Generic popup (window picker and item context menu).
@@ -151,6 +149,6 @@ private:
   std::unordered_map<wl_surface*, DockInstance*> m_surfaceMap;
   DockInstance* m_hoveredInstance = nullptr;
   DockInstance* m_popupOwnerInstance = nullptr; // instance that owns the current open popup
-  std::unique_ptr<DockPopup> m_windowMenu;  // left-click multi-window picker
-  std::unique_ptr<DockPopup> m_itemMenu;    // right-click context menu
+  std::unique_ptr<DockPopup> m_windowMenu;      // left-click multi-window picker
+  std::unique_ptr<DockPopup> m_itemMenu;        // right-click context menu
 };

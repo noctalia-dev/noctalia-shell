@@ -11,7 +11,9 @@
 #include <algorithm>
 #include <memory>
 
-Flex::Flex() { m_paletteConn = paletteChanged().connect([this] { applyPalette(); }); }
+Flex::Flex() {
+  m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
+}
 
 void Flex::setSize(float width, float height) {
   Node::setSize(width, height);

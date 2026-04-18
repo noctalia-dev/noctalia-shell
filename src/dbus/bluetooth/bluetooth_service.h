@@ -10,7 +10,7 @@
 class SystemBus;
 
 namespace sdbus {
-class IProxy;
+  class IProxy;
 }
 
 enum class BluetoothDeviceKind : std::uint8_t {

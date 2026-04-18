@@ -4,7 +4,6 @@
 #include "render/core/mat3.h"
 
 #include <GLES2/gl2.h>
-
 #include <cstdint>
 #include <list>
 #include <string>

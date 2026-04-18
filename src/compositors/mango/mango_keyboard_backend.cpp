@@ -1,14 +1,13 @@
 #include "compositors/mango/mango_keyboard_backend.h"
 
 #include "core/process.h"
+#include "dwl-ipc-unstable-v2-client-protocol.h"
+#include "wayland-client-core.h"
+#include "wayland-client-protocol.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
-
-#include "dwl-ipc-unstable-v2-client-protocol.h"
-#include "wayland-client-core.h"
-#include "wayland-client-protocol.h"
 
 namespace {
 
@@ -111,9 +110,7 @@ MangoKeyboardBackend::MangoKeyboardBackend(std::string_view compositorHint) {
 
 MangoKeyboardBackend::~MangoKeyboardBackend() { cleanup(); }
 
-bool MangoKeyboardBackend::isAvailable() const noexcept {
-  return syncState() && preferredOutputState() != nullptr;
-}
+bool MangoKeyboardBackend::isAvailable() const noexcept { return syncState() && preferredOutputState() != nullptr; }
 
 bool MangoKeyboardBackend::cycleLayout() const {
   if (!m_enabled) {
@@ -179,7 +176,8 @@ void MangoKeyboardBackend::ensureConnected() const {
   }
 
   m_registry = wl_display_get_registry(m_display);
-  if (m_registry == nullptr || wl_registry_add_listener(m_registry, &kRegistryListener, const_cast<MangoKeyboardBackend*>(this)) != 0) {
+  if (m_registry == nullptr ||
+      wl_registry_add_listener(m_registry, &kRegistryListener, const_cast<MangoKeyboardBackend*>(this)) != 0) {
     const_cast<MangoKeyboardBackend*>(this)->cleanup();
     m_failed = true;
     return;
@@ -262,12 +260,14 @@ void MangoKeyboardBackend::onRegistryGlobal(std::uint32_t name, const char* inte
     return;
   }
 
-  if (std::string_view(interfaceName) != zdwl_ipc_manager_v2_interface.name || m_registry == nullptr || m_manager != nullptr) {
+  if (std::string_view(interfaceName) != zdwl_ipc_manager_v2_interface.name || m_registry == nullptr ||
+      m_manager != nullptr) {
     return;
   }
 
   const auto bindVersion = std::min<std::uint32_t>(version, 2);
-  m_manager = static_cast<zdwl_ipc_manager_v2*>(wl_registry_bind(m_registry, name, &zdwl_ipc_manager_v2_interface, bindVersion));
+  m_manager = static_cast<zdwl_ipc_manager_v2*>(
+      wl_registry_bind(m_registry, name, &zdwl_ipc_manager_v2_interface, bindVersion));
   if (m_manager == nullptr) {
     return;
   }
@@ -349,9 +349,8 @@ void MangoKeyboardBackend::bindOutput(std::uint32_t name) {
   }
 
   m_outputsByName.emplace(name, output);
-  m_outputs.try_emplace(output,
-                        OutputState{.pending = {}, .output = output, .handle = nullptr, .active = false,
-                                    .keyboardLayout = {}});
+  m_outputs.try_emplace(
+      output, OutputState{.pending = {}, .output = output, .handle = nullptr, .active = false, .keyboardLayout = {}});
   bindOutputHandle(output);
 }
 

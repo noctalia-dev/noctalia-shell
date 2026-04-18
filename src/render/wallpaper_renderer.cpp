@@ -2,9 +2,8 @@
 
 #include "render/gl_shared_context.h"
 
-#include <stdexcept>
-
 #include <GLES2/gl2.h>
+#include <stdexcept>
 #include <wayland-egl.h>
 
 namespace {

@@ -72,18 +72,14 @@ void WeatherWidget::doLayout(Renderer& renderer, float containerWidth, float con
   }
 }
 
-void WeatherWidget::doUpdate(Renderer& renderer) {
-  sync(renderer);
-}
+void WeatherWidget::doUpdate(Renderer& renderer) { sync(renderer); }
 
 void WeatherWidget::sync(Renderer& renderer) {
   if (m_glyph == nullptr || m_label == nullptr) {
     return;
   }
 
-  auto stackTemperature = [](int temp, char unitLetter) {
-    return std::format("{}\n\xC2\xB0{}", temp, unitLetter);
-  };
+  auto stackTemperature = [](int temp, char unitLetter) { return std::format("{}\n\xC2\xB0{}", temp, unitLetter); };
 
   std::string glyph = "weather-cloud";
   std::string text = m_isVertical ? "W\nX" : "Weather";

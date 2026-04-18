@@ -17,9 +17,9 @@ public:
 
 private:
   ShaderProgram m_program;
-  GLint m_posLoc      = -1;
-  GLint m_texLoc      = -1;
-  GLint m_texelSzLoc  = -1;
+  GLint m_posLoc = -1;
+  GLint m_texLoc = -1;
+  GLint m_texelSzLoc = -1;
   GLint m_directionLoc = -1;
-  GLint m_radiusLoc   = -1;
+  GLint m_radiusLoc = -1;
 };

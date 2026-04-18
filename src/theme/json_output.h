@@ -1,9 +1,9 @@
 #pragma once
 
-#include <string>
-
 #include "theme/palette.h"
 #include "theme/scheme.h"
+
+#include <string>
 
 namespace noctalia::theme {
 

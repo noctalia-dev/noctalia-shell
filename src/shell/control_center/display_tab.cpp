@@ -18,18 +18,18 @@ using namespace control_center;
 
 namespace {
 
-constexpr float kBrightnessSyncEpsilon = 0.005f;
-constexpr auto kBrightnessCommitInterval = std::chrono::milliseconds(16);
-constexpr auto kBrightnessStateHoldoff = std::chrono::milliseconds(180);
+  constexpr float kBrightnessSyncEpsilon = 0.005f;
+  constexpr auto kBrightnessCommitInterval = std::chrono::milliseconds(16);
+  constexpr auto kBrightnessStateHoldoff = std::chrono::milliseconds(180);
 
-std::string buildDisplayListKey(const std::vector<BrightnessDisplay>& displays) {
-  std::string key;
-  for (const auto& d : displays) {
-    key += d.id;
-    key += ';';
+  std::string buildDisplayListKey(const std::vector<BrightnessDisplay>& displays) {
+    std::string key;
+    for (const auto& d : displays) {
+      key += d.id;
+      key += ';';
+    }
+    return key;
   }
-  return key;
-}
 
 } // namespace
 
@@ -126,8 +126,8 @@ void DisplayTab::doUpdate(Renderer& renderer) {
     const bool holdState = isDragging && m_lastSentBrightness >= 0.0f && now < m_ignoreStateUntil &&
                            std::abs(display->brightness - m_lastSentBrightness) > 0.02f;
 
-    const float displayedBrightness =
-        std::clamp(isPending ? m_pendingBrightness : (holdState ? m_lastSentBrightness : display->brightness), 0.0f, 1.0f);
+    const float displayedBrightness = std::clamp(
+        isPending ? m_pendingBrightness : (holdState ? m_lastSentBrightness : display->brightness), 0.0f, 1.0f);
 
     card.slider->setEnabled(true);
     if (!isDragging && std::abs(displayedBrightness - card.lastBrightness) >= kBrightnessSyncEpsilon) {
@@ -286,9 +286,7 @@ void DisplayTab::queueBrightness(const std::string& displayId, float value) {
   }
 
   if (!m_debounceTimer.active()) {
-    m_debounceTimer.start(kBrightnessCommitInterval, [this]() {
-      flushPendingBrightness();
-    });
+    m_debounceTimer.start(kBrightnessCommitInterval, [this]() { flushPendingBrightness(); });
   }
 }
 

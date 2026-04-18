@@ -1,9 +1,8 @@
 #include "idle/idle_manager.h"
 
 #include "core/log.h"
-#include "wayland/wayland_connection.h"
-
 #include "ext-idle-notify-v1-client-protocol.h"
+#include "wayland/wayland_connection.h"
 
 namespace {
 

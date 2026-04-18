@@ -7,6 +7,7 @@
 #include "render/scene/input_area.h"
 #include "shell/control_center/tab.h"
 #include "shell/panel/panel_manager.h"
+#include "time/time_service.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
@@ -16,7 +17,6 @@
 #include "ui/controls/scroll_view.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "time/time_service.h"
 #include "wayland/clipboard_service.h"
 
 #include <algorithm>
@@ -30,72 +30,71 @@
 
 namespace {
 
-constexpr float kSidebarWidth = 272.0f;
-constexpr float kRowHeight = 46.0f;
-constexpr float kPreviewImageHeight = 280.0f;
-constexpr float kListGlyphSize = 24.0f;
-constexpr auto kPreviewPayloadDebounceInterval = std::chrono::milliseconds(75);
-constexpr auto kFilterDebounceInterval = std::chrono::milliseconds(120);
+  constexpr float kSidebarWidth = 272.0f;
+  constexpr float kRowHeight = 46.0f;
+  constexpr float kPreviewImageHeight = 280.0f;
+  constexpr float kListGlyphSize = 24.0f;
+  constexpr auto kPreviewPayloadDebounceInterval = std::chrono::milliseconds(75);
+  constexpr auto kFilterDebounceInterval = std::chrono::milliseconds(120);
 
-std::string collapseWhitespace(std::string_view text) {
-  std::string out;
-  out.reserve(text.size());
+  std::string collapseWhitespace(std::string_view text) {
+    std::string out;
+    out.reserve(text.size());
 
-  bool lastWasSpace = true;
-  for (char ch : text) {
-    const bool isWhitespace = (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r');
-    if (isWhitespace) {
-      if (!lastWasSpace) {
-        out.push_back(' ');
+    bool lastWasSpace = true;
+    for (char ch : text) {
+      const bool isWhitespace = (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r');
+      if (isWhitespace) {
+        if (!lastWasSpace) {
+          out.push_back(' ');
+        }
+        lastWasSpace = true;
+        continue;
       }
-      lastWasSpace = true;
-      continue;
+      out.push_back(ch);
+      lastWasSpace = false;
     }
-    out.push_back(ch);
-    lastWasSpace = false;
+
+    if (!out.empty() && out.back() == ' ') {
+      out.pop_back();
+    }
+    return out;
   }
 
-  if (!out.empty() && out.back() == ' ') {
-    out.pop_back();
-  }
-  return out;
-}
+  std::string formatBytes(std::size_t bytes) {
+    const char* units[] = {"B", "KB", "MB", "GB"};
+    double value = static_cast<double>(bytes);
+    std::size_t unitIndex = 0;
+    while (value >= 1024.0 && unitIndex + 1 < std::size(units)) {
+      value /= 1024.0;
+      ++unitIndex;
+    }
 
-std::string formatBytes(std::size_t bytes) {
-  const char* units[] = {"B", "KB", "MB", "GB"};
-  double value = static_cast<double>(bytes);
-  std::size_t unitIndex = 0;
-  while (value >= 1024.0 && unitIndex + 1 < std::size(units)) {
-    value /= 1024.0;
-    ++unitIndex;
+    char buffer[32];
+    if (unitIndex == 0) {
+      std::snprintf(buffer, sizeof(buffer), "%zu %s", bytes, units[unitIndex]);
+    } else {
+      std::snprintf(buffer, sizeof(buffer), "%.1f %s", value, units[unitIndex]);
+    }
+    return buffer;
   }
 
-  char buffer[32];
-  if (unitIndex == 0) {
-    std::snprintf(buffer, sizeof(buffer), "%zu %s", bytes, units[unitIndex]);
-  } else {
-    std::snprintf(buffer, sizeof(buffer), "%.1f %s", value, units[unitIndex]);
+  std::string entryTitle(const ClipboardEntry& entry) {
+    if (!entry.textPreview.empty()) {
+      return entry.textPreview;
+    }
+    if (entry.isImage()) {
+      return i18n::tr("clipboard.entry-image");
+    }
+    return entry.dataMimeType.empty() ? i18n::tr("clipboard.entry-title") : entry.dataMimeType;
   }
-  return buffer;
-}
 
-std::string entryTitle(const ClipboardEntry& entry) {
-  if (!entry.textPreview.empty()) {
-    return entry.textPreview;
+  std::string previewTitle(const ClipboardEntry& entry) {
+    if (entry.isImage()) {
+      return i18n::tr("clipboard.preview-image-title");
+    }
+    return i18n::tr("clipboard.preview-text-title");
   }
-  if (entry.isImage()) {
-    return i18n::tr("clipboard.entry-image");
-  }
-  return entry.dataMimeType.empty() ? i18n::tr("clipboard.entry-title") : entry.dataMimeType;
-}
-
-
-std::string previewTitle(const ClipboardEntry& entry) {
-  if (entry.isImage()) {
-    return i18n::tr("clipboard.preview-image-title");
-  }
-  return i18n::tr("clipboard.preview-text-title");
-}
 
 } // namespace
 
@@ -170,9 +169,8 @@ void ClipboardPanel::create() {
   filterInput->setHorizontalPadding(Style::spaceMd * scale);
   filterInput->setOnChange([this](const std::string& text) { onFilterChanged(text); });
   filterInput->setOnSubmit([this](const std::string& /*text*/) { activateSelected(); });
-  filterInput->setOnKeyEvent([this](std::uint32_t sym, std::uint32_t modifiers) {
-    return handleKeyEvent(sym, modifiers);
-  });
+  filterInput->setOnKeyEvent(
+      [this](std::uint32_t sym, std::uint32_t modifiers) { return handleKeyEvent(sym, modifiers); });
   m_filterInput = filterInput.get();
   sidebar->addChild(std::move(filterInput));
 
@@ -287,8 +285,7 @@ void ClipboardPanel::doLayout(Renderer& renderer, float width, float height) {
   }
 
   const float previewScrollH = m_previewScrollView->height();
-  if (m_lastPreviewWidth != m_previewScrollView->contentViewportWidth() ||
-      m_lastPreviewHeight != previewScrollH) {
+  if (m_lastPreviewWidth != m_previewScrollView->contentViewportWidth() || m_lastPreviewHeight != previewScrollH) {
     rebuildPreview(renderer, m_previewScrollView->contentViewportWidth(), previewScrollH);
     relayoutNeeded = true;
   }
@@ -451,8 +448,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
     row->setGap(Style::spaceMd);
-    row->setPadding(Style::spaceXs, Style::spaceSm,
-                    Style::spaceXs, Style::spaceSm);
+    row->setPadding(Style::spaceXs, Style::spaceSm, Style::spaceXs, Style::spaceSm);
     row->setSize(width, 0.0f);
     row->setFillParentMainAxis(true);
     row->setMinHeight(kRowHeight);

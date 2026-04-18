@@ -2,8 +2,8 @@
 
 #include "shell/control_center/audio_tab.h"
 #include "shell/control_center/bluetooth_tab.h"
-#include "shell/control_center/display_tab.h"
 #include "shell/control_center/calendar_tab.h"
+#include "shell/control_center/display_tab.h"
 #include "shell/control_center/media_tab.h"
 #include "shell/control_center/network_tab.h"
 #include "shell/control_center/notifications_tab.h"
@@ -38,11 +38,12 @@ class WeatherService;
 class ControlCenterPanel : public Panel {
 public:
   ControlCenterPanel(NotificationManager* notifications, PipeWireService* audio, MprisService* mpris,
-                     ConfigService* config = nullptr, HttpClient* httpClient = nullptr, WeatherService* weather = nullptr,
-                     PipeWireSpectrum* spectrum = nullptr, UPowerService* upower = nullptr,
-                     PowerProfilesService* powerProfiles = nullptr, NetworkService* network = nullptr,
-                     NetworkSecretAgent* networkSecrets = nullptr, BluetoothService* bluetooth = nullptr,
-                     BluetoothAgent* bluetoothAgent = nullptr, BrightnessService* brightness = nullptr);
+                     ConfigService* config = nullptr, HttpClient* httpClient = nullptr,
+                     WeatherService* weather = nullptr, PipeWireSpectrum* spectrum = nullptr,
+                     UPowerService* upower = nullptr, PowerProfilesService* powerProfiles = nullptr,
+                     NetworkService* network = nullptr, NetworkSecretAgent* networkSecrets = nullptr,
+                     BluetoothService* bluetooth = nullptr, BluetoothAgent* bluetoothAgent = nullptr,
+                     BrightnessService* brightness = nullptr);
 
   void create() override;
   void onFrameTick(float deltaMs) override;

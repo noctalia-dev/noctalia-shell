@@ -13,88 +13,87 @@
 
 namespace {
 
-constexpr Logger kLog("network");
+  constexpr Logger kLog("network");
 
-const sdbus::ServiceName k_nmBusName{"org.freedesktop.NetworkManager"};
-const sdbus::ObjectPath k_nmObjectPath{"/org/freedesktop/NetworkManager"};
-constexpr auto k_nmInterface = "org.freedesktop.NetworkManager";
-constexpr auto k_nmDeviceInterface = "org.freedesktop.NetworkManager.Device";
-constexpr auto k_nmDeviceWirelessInterface = "org.freedesktop.NetworkManager.Device.Wireless";
-constexpr auto k_nmSettingsInterface = "org.freedesktop.NetworkManager.Settings";
-const sdbus::ObjectPath k_nmSettingsObjectPath{"/org/freedesktop/NetworkManager/Settings"};
-constexpr auto k_nmSettingsConnectionInterface = "org.freedesktop.NetworkManager.Settings.Connection";
+  const sdbus::ServiceName k_nmBusName{"org.freedesktop.NetworkManager"};
+  const sdbus::ObjectPath k_nmObjectPath{"/org/freedesktop/NetworkManager"};
+  constexpr auto k_nmInterface = "org.freedesktop.NetworkManager";
+  constexpr auto k_nmDeviceInterface = "org.freedesktop.NetworkManager.Device";
+  constexpr auto k_nmDeviceWirelessInterface = "org.freedesktop.NetworkManager.Device.Wireless";
+  constexpr auto k_nmSettingsInterface = "org.freedesktop.NetworkManager.Settings";
+  const sdbus::ObjectPath k_nmSettingsObjectPath{"/org/freedesktop/NetworkManager/Settings"};
+  constexpr auto k_nmSettingsConnectionInterface = "org.freedesktop.NetworkManager.Settings.Connection";
 
-// NM80211ApSecurityFlags bits we care about.
-constexpr std::uint32_t k_nm80211ApSecNone = 0x0;
-constexpr auto k_nmActiveConnectionInterface = "org.freedesktop.NetworkManager.Connection.Active";
-constexpr auto k_nmAccessPointInterface = "org.freedesktop.NetworkManager.AccessPoint";
-constexpr auto k_nmIp4ConfigInterface = "org.freedesktop.NetworkManager.IP4Config";
-constexpr auto k_propertiesInterface = "org.freedesktop.DBus.Properties";
+  // NM80211ApSecurityFlags bits we care about.
+  constexpr std::uint32_t k_nm80211ApSecNone = 0x0;
+  constexpr auto k_nmActiveConnectionInterface = "org.freedesktop.NetworkManager.Connection.Active";
+  constexpr auto k_nmAccessPointInterface = "org.freedesktop.NetworkManager.AccessPoint";
+  constexpr auto k_nmIp4ConfigInterface = "org.freedesktop.NetworkManager.IP4Config";
+  constexpr auto k_propertiesInterface = "org.freedesktop.DBus.Properties";
 
-// NMDeviceType values from NetworkManager D-Bus API.
-constexpr std::uint32_t k_nmDeviceTypeWifi = 2;
+  // NMDeviceType values from NetworkManager D-Bus API.
+  constexpr std::uint32_t k_nmDeviceTypeWifi = 2;
 
-// NMActiveConnectionState
-constexpr std::uint32_t k_nmActiveConnectionStateActivated = 2;
+  // NMActiveConnectionState
+  constexpr std::uint32_t k_nmActiveConnectionStateActivated = 2;
 
-template <typename T>
-T getPropertyOr(sdbus::IProxy& proxy, std::string_view interfaceName, std::string_view propertyName, T fallback) {
-  try {
-    const sdbus::Variant value = proxy.getProperty(propertyName).onInterface(std::string(interfaceName));
-    return value.get<T>();
-  } catch (const sdbus::Error&) {
-    return fallback;
-  }
-}
-
-std::string ipv4FromUint(std::uint32_t addrLe) {
-  // NM stores IPv4 addresses as native-byte-order uint32 in network order bytes.
-  // I.e. the bytes a.b.c.d are laid out in memory low->high as a,b,c,d.
-  std::array<std::uint8_t, 4> bytes{};
-  bytes[0] = static_cast<std::uint8_t>(addrLe & 0xffU);
-  bytes[1] = static_cast<std::uint8_t>((addrLe >> 8) & 0xffU);
-  bytes[2] = static_cast<std::uint8_t>((addrLe >> 16) & 0xffU);
-  bytes[3] = static_cast<std::uint8_t>((addrLe >> 24) & 0xffU);
-  char buf[32];
-  std::snprintf(buf, sizeof(buf), "%u.%u.%u.%u", bytes[0], bytes[1], bytes[2], bytes[3]);
-  return std::string(buf);
-}
-
-std::string firstIpv4FromConfig(sdbus::IConnection& conn, const std::string& ip4ConfigPath) {
-  if (ip4ConfigPath.empty() || ip4ConfigPath == "/") {
-    return {};
-  }
-  try {
-    auto proxy =
-        sdbus::createProxy(conn, k_nmBusName, sdbus::ObjectPath{ip4ConfigPath});
-    // Prefer "AddressData" (vector<dict<string,variant>>) since "Addresses" is deprecated.
+  template <typename T>
+  T getPropertyOr(sdbus::IProxy& proxy, std::string_view interfaceName, std::string_view propertyName, T fallback) {
     try {
-      const sdbus::Variant value = proxy->getProperty("AddressData").onInterface(k_nmIp4ConfigInterface);
-      const auto data = value.get<std::vector<std::map<std::string, sdbus::Variant>>>();
-      for (const auto& entry : data) {
-        auto it = entry.find("address");
-        if (it != entry.end()) {
-          try {
-            return it->second.get<std::string>();
-          } catch (const sdbus::Error&) {
+      const sdbus::Variant value = proxy.getProperty(propertyName).onInterface(std::string(interfaceName));
+      return value.get<T>();
+    } catch (const sdbus::Error&) {
+      return fallback;
+    }
+  }
+
+  std::string ipv4FromUint(std::uint32_t addrLe) {
+    // NM stores IPv4 addresses as native-byte-order uint32 in network order bytes.
+    // I.e. the bytes a.b.c.d are laid out in memory low->high as a,b,c,d.
+    std::array<std::uint8_t, 4> bytes{};
+    bytes[0] = static_cast<std::uint8_t>(addrLe & 0xffU);
+    bytes[1] = static_cast<std::uint8_t>((addrLe >> 8) & 0xffU);
+    bytes[2] = static_cast<std::uint8_t>((addrLe >> 16) & 0xffU);
+    bytes[3] = static_cast<std::uint8_t>((addrLe >> 24) & 0xffU);
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%u.%u.%u.%u", bytes[0], bytes[1], bytes[2], bytes[3]);
+    return std::string(buf);
+  }
+
+  std::string firstIpv4FromConfig(sdbus::IConnection& conn, const std::string& ip4ConfigPath) {
+    if (ip4ConfigPath.empty() || ip4ConfigPath == "/") {
+      return {};
+    }
+    try {
+      auto proxy = sdbus::createProxy(conn, k_nmBusName, sdbus::ObjectPath{ip4ConfigPath});
+      // Prefer "AddressData" (vector<dict<string,variant>>) since "Addresses" is deprecated.
+      try {
+        const sdbus::Variant value = proxy->getProperty("AddressData").onInterface(k_nmIp4ConfigInterface);
+        const auto data = value.get<std::vector<std::map<std::string, sdbus::Variant>>>();
+        for (const auto& entry : data) {
+          auto it = entry.find("address");
+          if (it != entry.end()) {
+            try {
+              return it->second.get<std::string>();
+            } catch (const sdbus::Error&) {
+            }
           }
         }
+      } catch (const sdbus::Error&) {
+      }
+      // Fallback: legacy Addresses (vector<vector<uint32>> — addr, prefix, gateway).
+      try {
+        const sdbus::Variant value = proxy->getProperty("Addresses").onInterface(k_nmIp4ConfigInterface);
+        const auto data = value.get<std::vector<std::vector<std::uint32_t>>>();
+        if (!data.empty() && !data.front().empty()) {
+          return ipv4FromUint(data.front().front());
+        }
+      } catch (const sdbus::Error&) {
       }
     } catch (const sdbus::Error&) {
     }
-    // Fallback: legacy Addresses (vector<vector<uint32>> — addr, prefix, gateway).
-    try {
-      const sdbus::Variant value = proxy->getProperty("Addresses").onInterface(k_nmIp4ConfigInterface);
-      const auto data = value.get<std::vector<std::vector<std::uint32_t>>>();
-      if (!data.empty() && !data.front().empty()) {
-        return ipv4FromUint(data.front().front());
-      }
-    } catch (const sdbus::Error&) {
-    }
-  } catch (const sdbus::Error&) {
+    return {};
   }
-  return {};
-}
 
 } // namespace
 
@@ -137,8 +136,8 @@ NetworkService::NetworkService(SystemBus& bus) : m_bus(bus) {
                 if (deviceType != k_nmDeviceTypeWifi) {
                   continue;
                 }
-                const auto lastScan = getPropertyOr<std::int64_t>(*device, k_nmDeviceWirelessInterface, "LastScan",
-                                                                  std::int64_t{0});
+                const auto lastScan =
+                    getPropertyOr<std::int64_t>(*device, k_nmDeviceWirelessInterface, "LastScan", std::int64_t{0});
                 if (lastScan > baseline) {
                   baseline = lastScan;
                 }
@@ -442,12 +441,9 @@ void NetworkService::refreshAccessPoints() {
               info.ssid.assign(ssidBytes.begin(), ssidBytes.end());
             } catch (const sdbus::Error&) {
             }
-            info.strength =
-                getPropertyOr<std::uint8_t>(*ap, k_nmAccessPointInterface, "Strength", std::uint8_t{0});
-            const auto wpaFlags =
-                getPropertyOr<std::uint32_t>(*ap, k_nmAccessPointInterface, "WpaFlags", 0U);
-            const auto rsnFlags =
-                getPropertyOr<std::uint32_t>(*ap, k_nmAccessPointInterface, "RsnFlags", 0U);
+            info.strength = getPropertyOr<std::uint8_t>(*ap, k_nmAccessPointInterface, "Strength", std::uint8_t{0});
+            const auto wpaFlags = getPropertyOr<std::uint32_t>(*ap, k_nmAccessPointInterface, "WpaFlags", 0U);
+            const auto rsnFlags = getPropertyOr<std::uint32_t>(*ap, k_nmAccessPointInterface, "RsnFlags", 0U);
             info.secured = (wpaFlags != k_nm80211ApSecNone) || (rsnFlags != k_nm80211ApSecNone);
             if (info.ssid.empty()) {
               continue; // skip hidden networks for now
@@ -531,7 +527,8 @@ void NetworkService::rebindActiveConnection() {
   std::string newDevicePath;
   if (m_activeConnection != nullptr) {
     try {
-      const sdbus::Variant value = m_activeConnection->getProperty("Devices").onInterface(k_nmActiveConnectionInterface);
+      const sdbus::Variant value =
+          m_activeConnection->getProperty("Devices").onInterface(k_nmActiveConnectionInterface);
       const auto devices = value.get<std::vector<sdbus::ObjectPath>>();
       if (!devices.empty()) {
         newDevicePath = devices.front();

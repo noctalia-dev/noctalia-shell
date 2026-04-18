@@ -13,31 +13,31 @@
 
 namespace {
 
-const char* glyphForState(const NetworkState& s) {
-  if (s.kind == NetworkConnectivity::Wired) {
-    return s.connected ? "ethernet" : "ethernet-off";
+  const char* glyphForState(const NetworkState& s) {
+    if (s.kind == NetworkConnectivity::Wired) {
+      return s.connected ? "ethernet" : "ethernet-off";
+    }
+    if (s.kind != NetworkConnectivity::Wireless || !s.connected) {
+      return "wifi-off";
+    }
+    if (s.signalStrength >= 67) {
+      return "wifi-2";
+    }
+    if (s.signalStrength >= 34) {
+      return "wifi-1";
+    }
+    return "wifi-0";
   }
-  if (s.kind != NetworkConnectivity::Wireless || !s.connected) {
-    return "wifi-off";
-  }
-  if (s.signalStrength >= 67) {
-    return "wifi-2";
-  }
-  if (s.signalStrength >= 34) {
-    return "wifi-1";
-  }
-  return "wifi-0";
-}
 
-std::string labelForState(const NetworkState& s) {
-  if (s.kind == NetworkConnectivity::Wireless && s.connected && !s.ssid.empty()) {
-    return s.ssid;
+  std::string labelForState(const NetworkState& s) {
+    if (s.kind == NetworkConnectivity::Wireless && s.connected && !s.ssid.empty()) {
+      return s.ssid;
+    }
+    if (s.kind == NetworkConnectivity::Wired && s.connected) {
+      return s.interfaceName.empty() ? std::string("Wired") : s.interfaceName;
+    }
+    return {};
   }
-  if (s.kind == NetworkConnectivity::Wired && s.connected) {
-    return s.interfaceName.empty() ? std::string("Wired") : s.interfaceName;
-  }
-  return {};
-}
 
 } // namespace
 

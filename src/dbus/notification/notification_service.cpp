@@ -17,9 +17,8 @@ static const sdbus::ObjectPath k_object_path{"/org/freedesktop/Notifications"};
 static constexpr auto k_interface = "org.freedesktop.Notifications";
 
 NotificationService::NotificationService(SessionBus& bus, NotificationManager& manager) : m_manager(manager) {
-  m_manager.setActionInvokeCallback([this](uint32_t id, const std::string& actionKey) {
-    emitActionInvoked(id, actionKey);
-  });
+  m_manager.setActionInvokeCallback(
+      [this](uint32_t id, const std::string& actionKey) { emitActionInvoked(id, actionKey); });
 
   bus.connection().requestName(k_bus_name);
   m_object = sdbus::createObject(bus.connection(), k_object_path);
@@ -75,98 +74,96 @@ static constexpr int32_t k_min_timeout = -1;
 
 namespace {
 
-std::string clamp_str(std::string_view s) {
-  const auto len = std::min(s.size(), k_max_string_len);
-  return std::string{s.substr(0, len)};
-}
-
-bool isBlankText(std::string_view text) {
-  return text.empty() ||
-         std::all_of(text.begin(), text.end(),
-                     [](unsigned char ch) { return std::isspace(ch) != 0; });
-}
-
-std::vector<std::string> sanitize_actions(const std::vector<std::string>& actions) {
-  static constexpr std::string_view kFallbackActionLabel = "Action";
-
-  std::vector<std::string> sanitized;
-  sanitized.reserve(actions.size() - (actions.size() % 2));
-
-  for (size_t i = 0; i + 1 < actions.size(); i += 2) {
-    std::string actionKey = clamp_str(actions[i]);
-    std::string label = clamp_str(actions[i + 1]);
-
-    if (actionKey.empty()) {
-      continue;
-    }
-
-    if (isBlankText(label)) {
-      label = kFallbackActionLabel;
-    }
-
-    sanitized.push_back(std::move(actionKey));
-    sanitized.push_back(std::move(label));
+  std::string clamp_str(std::string_view s) {
+    const auto len = std::min(s.size(), k_max_string_len);
+    return std::string{s.substr(0, len)};
   }
 
-  return sanitized;
-}
-
-using NotificationImageDataStruct =
-    sdbus::Struct<std::int32_t, std::int32_t, std::int32_t, bool, std::int32_t, std::int32_t,
-                  std::vector<std::uint8_t>>;
-
-std::optional<NotificationImageData> decode_image_data_variant(const sdbus::Variant& value) {
-  try {
-    const auto data = value.get<NotificationImageDataStruct>();
-    NotificationImageData out;
-    out.width = std::get<0>(data);
-    out.height = std::get<1>(data);
-    out.rowStride = std::get<2>(data);
-    out.hasAlpha = std::get<3>(data);
-    out.bitsPerSample = std::get<4>(data);
-    out.channels = std::get<5>(data);
-    out.data = std::get<6>(data);
-    return out;
-  } catch (const sdbus::Error&) {
+  bool isBlankText(std::string_view text) {
+    return text.empty() ||
+           std::all_of(text.begin(), text.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
   }
 
-  try {
-    const auto data = value.get<std::tuple<std::int32_t, std::int32_t, std::int32_t, bool, std::int32_t,
-                                           std::int32_t, std::vector<std::uint8_t>>>();
-    NotificationImageData out;
-    out.width = std::get<0>(data);
-    out.height = std::get<1>(data);
-    out.rowStride = std::get<2>(data);
-    out.hasAlpha = std::get<3>(data);
-    out.bitsPerSample = std::get<4>(data);
-    out.channels = std::get<5>(data);
-    out.data = std::get<6>(data);
-    return out;
-  } catch (const sdbus::Error&) {
-  }
+  std::vector<std::string> sanitize_actions(const std::vector<std::string>& actions) {
+    static constexpr std::string_view kFallbackActionLabel = "Action";
 
-  return std::nullopt;
-}
+    std::vector<std::string> sanitized;
+    sanitized.reserve(actions.size() - (actions.size() % 2));
 
-std::optional<NotificationImageData> decode_image_hint(const std::map<std::string, sdbus::Variant>& hints,
-                                                       std::string* outSourceKey = nullptr) {
-  for (const char* key : {"image-data", "image_data", "icon_data"}) {
-    const auto it = hints.find(key);
-    if (it == hints.end()) {
-      continue;
-    }
+    for (size_t i = 0; i + 1 < actions.size(); i += 2) {
+      std::string actionKey = clamp_str(actions[i]);
+      std::string label = clamp_str(actions[i + 1]);
 
-    auto decoded = decode_image_data_variant(it->second);
-    if (decoded.has_value()) {
-      if (outSourceKey != nullptr) {
-        *outSourceKey = key;
+      if (actionKey.empty()) {
+        continue;
       }
-      return decoded;
+
+      if (isBlankText(label)) {
+        label = kFallbackActionLabel;
+      }
+
+      sanitized.push_back(std::move(actionKey));
+      sanitized.push_back(std::move(label));
     }
+
+    return sanitized;
   }
 
-  return std::nullopt;
-}
+  using NotificationImageDataStruct = sdbus::Struct<std::int32_t, std::int32_t, std::int32_t, bool, std::int32_t,
+                                                    std::int32_t, std::vector<std::uint8_t>>;
+
+  std::optional<NotificationImageData> decode_image_data_variant(const sdbus::Variant& value) {
+    try {
+      const auto data = value.get<NotificationImageDataStruct>();
+      NotificationImageData out;
+      out.width = std::get<0>(data);
+      out.height = std::get<1>(data);
+      out.rowStride = std::get<2>(data);
+      out.hasAlpha = std::get<3>(data);
+      out.bitsPerSample = std::get<4>(data);
+      out.channels = std::get<5>(data);
+      out.data = std::get<6>(data);
+      return out;
+    } catch (const sdbus::Error&) {
+    }
+
+    try {
+      const auto data = value.get<std::tuple<std::int32_t, std::int32_t, std::int32_t, bool, std::int32_t, std::int32_t,
+                                             std::vector<std::uint8_t>>>();
+      NotificationImageData out;
+      out.width = std::get<0>(data);
+      out.height = std::get<1>(data);
+      out.rowStride = std::get<2>(data);
+      out.hasAlpha = std::get<3>(data);
+      out.bitsPerSample = std::get<4>(data);
+      out.channels = std::get<5>(data);
+      out.data = std::get<6>(data);
+      return out;
+    } catch (const sdbus::Error&) {
+    }
+
+    return std::nullopt;
+  }
+
+  std::optional<NotificationImageData> decode_image_hint(const std::map<std::string, sdbus::Variant>& hints,
+                                                         std::string* outSourceKey = nullptr) {
+    for (const char* key : {"image-data", "image_data", "icon_data"}) {
+      const auto it = hints.find(key);
+      if (it == hints.end()) {
+        continue;
+      }
+
+      auto decoded = decode_image_data_variant(it->second);
+      if (decoded.has_value()) {
+        if (outSourceKey != nullptr) {
+          *outSourceKey = key;
+        }
+        return decoded;
+      }
+    }
+
+    return std::nullopt;
+  }
 
 } // namespace
 

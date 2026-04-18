@@ -9,33 +9,33 @@
 
 namespace {
 
-const char* volumeIconName(float volume, bool muted) {
-  if (muted || volume <= 0.0f) {
-    return "volume-mute";
+  const char* volumeIconName(float volume, bool muted) {
+    if (muted || volume <= 0.0f) {
+      return "volume-mute";
+    }
+    if (volume < 0.4f) {
+      return "volume-low";
+    }
+    return "volume-high";
   }
-  if (volume < 0.4f) {
-    return "volume-low";
+
+  OsdContent makeOutputContent(float volume, bool muted) {
+    const int percent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
+    return OsdContent{
+        .icon = volumeIconName(volume, muted),
+        .value = std::to_string(percent) + "%",
+        .progress = std::clamp(volume, 0.0f, 1.0f),
+    };
   }
-  return "volume-high";
-}
 
-OsdContent makeOutputContent(float volume, bool muted) {
-  const int percent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
-  return OsdContent{
-      .icon = volumeIconName(volume, muted),
-      .value = std::to_string(percent) + "%",
-      .progress = std::clamp(volume, 0.0f, 1.0f),
-  };
-}
-
-OsdContent makeInputContent(float volume, bool muted) {
-  const int percent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
-  return OsdContent{
-      .icon = muted ? "microphone-mute" : "microphone",
-      .value = std::to_string(percent) + "%",
-      .progress = std::clamp(volume, 0.0f, 1.0f),
-  };
-}
+  OsdContent makeInputContent(float volume, bool muted) {
+    const int percent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
+    return OsdContent{
+        .icon = muted ? "microphone-mute" : "microphone",
+        .value = std::to_string(percent) + "%",
+        .progress = std::clamp(volume, 0.0f, 1.0f),
+    };
+  }
 
 } // namespace
 
@@ -88,8 +88,7 @@ void AudioOsd::onAudioStateChanged(const PipeWireService& service) {
   const auto* source = service.defaultSource();
 
   const std::uint32_t sinkId = sink != nullptr ? sink->id : 0;
-  const int sinkPercent =
-      sink != nullptr ? static_cast<int>(std::round(std::max(0.0f, sink->volume) * 100.0f)) : 0;
+  const int sinkPercent = sink != nullptr ? static_cast<int>(std::round(std::max(0.0f, sink->volume) * 100.0f)) : 0;
   const bool sinkMuted = sink != nullptr ? sink->muted : false;
 
   const std::uint32_t sourceId = source != nullptr ? source->id : 0;

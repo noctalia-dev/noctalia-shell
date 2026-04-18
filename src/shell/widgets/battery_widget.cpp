@@ -11,30 +11,30 @@
 
 namespace {
 
-const char* batteryGlyphName(double percentage, BatteryState state) {
-  if (state == BatteryState::Charging || state == BatteryState::PendingCharge) {
-    return "battery-charging";
+  const char* batteryGlyphName(double percentage, BatteryState state) {
+    if (state == BatteryState::Charging || state == BatteryState::PendingCharge) {
+      return "battery-charging";
+    }
+    if (state == BatteryState::FullyCharged) {
+      return "battery-plugged";
+    }
+    if (state == BatteryState::Unknown) {
+      return "battery-exclamation";
+    }
+    if (percentage >= 80.0) {
+      return "battery-4";
+    }
+    if (percentage >= 60.0) {
+      return "battery-3";
+    }
+    if (percentage >= 40.0) {
+      return "battery-2";
+    }
+    if (percentage >= 20.0) {
+      return "battery-1";
+    }
+    return "battery-0";
   }
-  if (state == BatteryState::FullyCharged) {
-    return "battery-plugged";
-  }
-  if (state == BatteryState::Unknown) {
-    return "battery-exclamation";
-  }
-  if (percentage >= 80.0) {
-    return "battery-4";
-  }
-  if (percentage >= 60.0) {
-    return "battery-3";
-  }
-  if (percentage >= 40.0) {
-    return "battery-2";
-  }
-  if (percentage >= 20.0) {
-    return "battery-1";
-  }
-  return "battery-0";
-}
 
 } // namespace
 
@@ -82,9 +82,7 @@ void BatteryWidget::doLayout(Renderer& renderer, float containerWidth, float con
   }
 }
 
-void BatteryWidget::doUpdate(Renderer& renderer) {
-  syncState(renderer);
-}
+void BatteryWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
 
 void BatteryWidget::syncState(Renderer& renderer) {
   if (m_upower == nullptr || m_glyph == nullptr || m_label == nullptr) {

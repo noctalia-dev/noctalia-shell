@@ -1,6 +1,7 @@
 #include "wayland/surface.h"
-#include "core/ui_phase.h"
 
+#include "core/ui_phase.h"
+#include "ext-background-effect-v1-client-protocol.h"
 #include "render/animation/animation_manager.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
@@ -8,10 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
-
 #include <wayland-client.h>
-
-#include "ext-background-effect-v1-client-protocol.h"
 
 namespace {
 

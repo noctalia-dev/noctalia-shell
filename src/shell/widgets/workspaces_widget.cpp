@@ -1,8 +1,7 @@
-#include "core/ui_phase.h"
 #include "shell/widgets/workspaces_widget.h"
-#include "ui/style.h"
 
 #include "core/log.h"
+#include "core/ui_phase.h"
 #include "render/animation/animation.h"
 #include "render/animation/animation_manager.h"
 #include "render/core/renderer.h"
@@ -10,19 +9,20 @@
 #include "render/scene/node.h"
 #include "ui/controls/box.h"
 #include "ui/controls/label.h"
+#include "ui/style.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cctype>
+#include <cmath>
 #include <linux/input-event-codes.h>
 
 namespace {
-constexpr Logger kLog("workspace");
-constexpr float kWorkspaceGap = Style::spaceSm;
-constexpr float kWorkspaceDotRatio = 0.62f;
-constexpr float kWorkspacePillMinWidth = Style::controlHeightLg + Style::spaceXs;
-constexpr float kWorkspaceLabelPadH = Style::spaceSm;
-constexpr float kWorkspaceAnimDurationMs = static_cast<float>(Style::animNormal);
+  constexpr Logger kLog("workspace");
+  constexpr float kWorkspaceGap = Style::spaceSm;
+  constexpr float kWorkspaceDotRatio = 0.62f;
+  constexpr float kWorkspacePillMinWidth = Style::controlHeightLg + Style::spaceXs;
+  constexpr float kWorkspaceLabelPadH = Style::spaceSm;
+  constexpr float kWorkspaceAnimDurationMs = static_cast<float>(Style::animNormal);
 } // namespace
 
 WorkspacesWidget::WorkspacesWidget(WaylandConnection& connection, wl_output* output, DisplayMode displayMode)

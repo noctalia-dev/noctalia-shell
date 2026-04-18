@@ -7,49 +7,49 @@
 
 namespace {
 
-constexpr Logger kLog("desktop");
+  constexpr Logger kLog("desktop");
 
-std::string getStringSetting(const std::unordered_map<std::string, WidgetSettingValue>& settings, const std::string& key,
-                             const std::string& fallback = {}) {
-  const auto it = settings.find(key);
-  if (it == settings.end()) {
+  std::string getStringSetting(const std::unordered_map<std::string, WidgetSettingValue>& settings,
+                               const std::string& key, const std::string& fallback = {}) {
+    const auto it = settings.find(key);
+    if (it == settings.end()) {
+      return fallback;
+    }
+    if (const auto* value = std::get_if<std::string>(&it->second)) {
+      return *value;
+    }
     return fallback;
   }
-  if (const auto* value = std::get_if<std::string>(&it->second)) {
-    return *value;
-  }
-  return fallback;
-}
 
-float getFloatSetting(const std::unordered_map<std::string, WidgetSettingValue>& settings, const std::string& key,
-                      float fallback) {
-  const auto it = settings.find(key);
-  if (it == settings.end()) {
+  float getFloatSetting(const std::unordered_map<std::string, WidgetSettingValue>& settings, const std::string& key,
+                        float fallback) {
+    const auto it = settings.find(key);
+    if (it == settings.end()) {
+      return fallback;
+    }
+    if (const auto* value = std::get_if<double>(&it->second)) {
+      return static_cast<float>(*value);
+    }
+    if (const auto* value = std::get_if<std::int64_t>(&it->second)) {
+      return static_cast<float>(*value);
+    }
     return fallback;
   }
-  if (const auto* value = std::get_if<double>(&it->second)) {
-    return static_cast<float>(*value);
-  }
-  if (const auto* value = std::get_if<std::int64_t>(&it->second)) {
-    return static_cast<float>(*value);
-  }
-  return fallback;
-}
 
-int getIntSetting(const std::unordered_map<std::string, WidgetSettingValue>& settings, const std::string& key,
-                  int fallback) {
-  const auto it = settings.find(key);
-  if (it == settings.end()) {
+  int getIntSetting(const std::unordered_map<std::string, WidgetSettingValue>& settings, const std::string& key,
+                    int fallback) {
+    const auto it = settings.find(key);
+    if (it == settings.end()) {
+      return fallback;
+    }
+    if (const auto* value = std::get_if<std::int64_t>(&it->second)) {
+      return static_cast<int>(*value);
+    }
+    if (const auto* value = std::get_if<double>(&it->second)) {
+      return static_cast<int>(*value);
+    }
     return fallback;
   }
-  if (const auto* value = std::get_if<std::int64_t>(&it->second)) {
-    return static_cast<int>(*value);
-  }
-  if (const auto* value = std::get_if<double>(&it->second)) {
-    return static_cast<int>(*value);
-  }
-  return fallback;
-}
 
 } // namespace
 
@@ -65,7 +65,8 @@ DesktopWidgetFactory::create(const std::string& type,
       kLog.warn("desktop widget factory: clock requires TimeService");
       return nullptr;
     }
-    auto widget = std::make_unique<DesktopClockWidget>(*m_timeService, getStringSetting(settings, "format", "{:%H:%M}"));
+    auto widget =
+        std::make_unique<DesktopClockWidget>(*m_timeService, getStringSetting(settings, "format", "{:%H:%M}"));
     widget->setContentScale(contentScale);
     return widget;
   }

@@ -25,8 +25,8 @@ run m=mode:
     ./build-{{m}}/noctalia
 
 format:
-    clang-format -i src/**/*.cpp src/**/*.h
-    find src \( -name '*.cpp' -o -name '*.h' \) | xargs grep -rlP '\s+$' | xargs -r sed -i 's/[[:space:]]*$//'
+    find src \( -name '*.cpp' -o -name '*.h' \) -print0 | xargs -0 clang-format -i
+    find src \( -name '*.cpp' -o -name '*.h' \) -print0 | xargs -0 grep -ZlP '\s+$' | xargs -0 -r sed -i 's/[[:space:]]*$//'
 
 clean m=mode:
     rm -rf build-{{m}}

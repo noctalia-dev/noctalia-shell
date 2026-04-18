@@ -122,8 +122,8 @@ void Label::measure(Renderer& renderer) {
       m_cachedTextAlign == align && m_cachedStableBaseline == m_stableBaseline) {
     return;
   }
-  auto metrics = renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold(), maxWidth,
-                                      maxLines, align);
+  auto metrics =
+      renderer.measureText(m_textNode->text(), m_textNode->fontSize(), m_textNode->bold(), maxWidth, maxLines, align);
   auto refMetrics = renderer.measureText("A", m_textNode->fontSize(), m_textNode->bold());
   const float measuredWidth = maxWidth > 0.0f ? std::min(metrics.width, maxWidth) : metrics.width;
 

@@ -274,11 +274,11 @@ void LockKeysWidget::sync(Renderer& renderer) {
 
   if (m_capsLabel != nullptr) {
     m_capsLabel->setColor(lockState.capsLock ? roleColor(ColorRole::Primary)
-                                              : widgetForegroundOr(roleColor(ColorRole::OnSurfaceVariant)));
+                                             : widgetForegroundOr(roleColor(ColorRole::OnSurfaceVariant)));
   }
   if (m_numLabel != nullptr) {
     m_numLabel->setColor(lockState.numLock ? roleColor(ColorRole::Primary)
-                                            : widgetForegroundOr(roleColor(ColorRole::OnSurfaceVariant)));
+                                           : widgetForegroundOr(roleColor(ColorRole::OnSurfaceVariant)));
   }
   if (m_scrollLabel != nullptr) {
     m_scrollLabel->setColor(lockState.scrollLock ? roleColor(ColorRole::Primary)

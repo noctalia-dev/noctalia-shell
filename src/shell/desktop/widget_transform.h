@@ -51,10 +51,8 @@ inline WidgetTransformSurfaceGeometry computeWidgetSurfaceGeometry(float cx, flo
   WidgetTransformSurfaceGeometry geometry;
   geometry.surfaceWidth = std::max<std::uint32_t>(1, static_cast<std::uint32_t>(std::ceil(bounds.aabbWidth)));
   geometry.surfaceHeight = std::max<std::uint32_t>(1, static_cast<std::uint32_t>(std::ceil(bounds.aabbHeight)));
-  geometry.marginLeft =
-      static_cast<std::int32_t>(std::lround(cx - static_cast<float>(geometry.surfaceWidth) * 0.5f));
-  geometry.marginTop =
-      static_cast<std::int32_t>(std::lround(cy - static_cast<float>(geometry.surfaceHeight) * 0.5f));
+  geometry.marginLeft = static_cast<std::int32_t>(std::lround(cx - static_cast<float>(geometry.surfaceWidth) * 0.5f));
+  geometry.marginTop = static_cast<std::int32_t>(std::lround(cy - static_cast<float>(geometry.surfaceHeight) * 0.5f));
   return geometry;
 }
 

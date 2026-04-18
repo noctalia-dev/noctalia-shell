@@ -1,39 +1,38 @@
 #include "ui/controls/scroll_view.h"
 
+#include "cursor-shape-v1-client-protocol.h"
 #include "render/programs/rect_program.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
-#include "cursor-shape-v1-client-protocol.h"
-#include <linux/input-event-codes.h>
-#include <wayland-client-protocol.h>
-
 #include <algorithm>
 #include <cmath>
+#include <linux/input-event-codes.h>
 #include <memory>
+#include <wayland-client-protocol.h>
 
 namespace {
 
-constexpr float kDefaultWidth = 260.0f;
-constexpr float kDefaultHeight = 180.0f;
-constexpr float kScrollbarWidth = 6.0f;
-constexpr float kScrollbarPadding = Style::borderWidth;
-constexpr float kViewportPaddingH = Style::spaceXs;
-constexpr float kScrollbarGap = Style::spaceSm;
-constexpr float kMinThumbHeight = 24.0f;
+  constexpr float kDefaultWidth = 260.0f;
+  constexpr float kDefaultHeight = 180.0f;
+  constexpr float kScrollbarWidth = 6.0f;
+  constexpr float kScrollbarPadding = Style::borderWidth;
+  constexpr float kViewportPaddingH = Style::spaceXs;
+  constexpr float kScrollbarGap = Style::spaceSm;
+  constexpr float kMinThumbHeight = 24.0f;
 
-RoundedRectStyle makeSolid(const Color& fill, float radius) {
-  return RoundedRectStyle{
-      .fill = fill,
-      .border = fill,
-      .fillMode = FillMode::Solid,
-      .radius = radius,
-      .softness = 1.0f,
-      .borderWidth = 0.0f,
-  };
-}
+  RoundedRectStyle makeSolid(const Color& fill, float radius) {
+    return RoundedRectStyle{
+        .fill = fill,
+        .border = fill,
+        .fillMode = FillMode::Solid,
+        .radius = radius,
+        .softness = 1.0f,
+        .borderWidth = 0.0f,
+    };
+  }
 
 } // namespace
 

@@ -1,12 +1,12 @@
 #include "shell/bar/bar.h"
 
 #include "config/config_service.h"
-#include "core/ui_phase.h"
 #include "core/log.h"
-#include "ipc/ipc_service.h"
+#include "core/ui_phase.h"
 #include "dbus/power/power_profiles_service.h"
 #include "dbus/tray/tray_service.h"
 #include "dbus/upower/upower_service.h"
+#include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "render/scene/rect_node.h"
 #include "shell/widget/widget.h"
@@ -22,227 +22,222 @@
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
-
 #include <wayland-client-core.h>
 
 namespace {
 
-constexpr float kCircularCapsuleNarrowWidthEpsilon = 1.0f;
+  constexpr float kCircularCapsuleNarrowWidthEpsilon = 1.0f;
 
-std::uint32_t positionToAnchor(const std::string& position) {
-  if (position == "bottom") {
-    return LayerShellAnchor::Bottom | LayerShellAnchor::Left | LayerShellAnchor::Right;
-  }
-  if (position == "left") {
-    return LayerShellAnchor::Top | LayerShellAnchor::Bottom | LayerShellAnchor::Left;
-  }
-  if (position == "right") {
-    return LayerShellAnchor::Top | LayerShellAnchor::Bottom | LayerShellAnchor::Right;
-  }
-  // Default: top
-  return LayerShellAnchor::Top | LayerShellAnchor::Left | LayerShellAnchor::Right;
-}
-
-constexpr Logger kLog("bar");
-
-ThemeColor withOpacity(const ThemeColor& color, float opacity) {
-  ThemeColor out = color;
-  out.alpha = std::clamp(out.alpha * std::clamp(opacity, 0.0f, 1.0f), 0.0f, 1.0f);
-  return out;
-}
-
-struct ShadowBleed {
-  std::int32_t left = 0, right = 0, up = 0, down = 0;
-};
-
-ShadowBleed computeShadowBleed(const BarConfig& cfg) {
-  if (cfg.shadowBlur <= 0)
-    return {};
-  return {
-      cfg.shadowBlur + std::max(0, -cfg.shadowOffsetX),
-      cfg.shadowBlur + std::max(0, cfg.shadowOffsetX),
-      cfg.shadowBlur + std::max(0, -cfg.shadowOffsetY),
-      cfg.shadowBlur + std::max(0, cfg.shadowOffsetY),
-  };
-}
-
-void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW, float barAreaH, float padding,
-                       bool isVertical) {
-  const float slotCross = isVertical ? barAreaW : barAreaH;
-
-  auto layoutWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
-    for (auto& widget : widgets) {
-      widget->layout(renderer, barAreaW, barAreaH);
+  std::uint32_t positionToAnchor(const std::string& position) {
+    if (position == "bottom") {
+      return LayerShellAnchor::Bottom | LayerShellAnchor::Left | LayerShellAnchor::Right;
     }
-  };
-  layoutWidgets(instance.startWidgets);
-  layoutWidgets(instance.centerWidgets);
-  layoutWidgets(instance.endWidgets);
+    if (position == "left") {
+      return LayerShellAnchor::Top | LayerShellAnchor::Bottom | LayerShellAnchor::Left;
+    }
+    if (position == "right") {
+      return LayerShellAnchor::Top | LayerShellAnchor::Bottom | LayerShellAnchor::Right;
+    }
+    // Default: top
+    return LayerShellAnchor::Top | LayerShellAnchor::Left | LayerShellAnchor::Right;
+  }
 
-  auto finalizeCapsules = [isVertical, slotCross, &renderer](std::vector<std::unique_ptr<Widget>>& widgets) {
-    for (auto& w : widgets) {
-      if (w == nullptr || !w->barCapsuleSpec().enabled) {
-        continue;
+  constexpr Logger kLog("bar");
+
+  ThemeColor withOpacity(const ThemeColor& color, float opacity) {
+    ThemeColor out = color;
+    out.alpha = std::clamp(out.alpha * std::clamp(opacity, 0.0f, 1.0f), 0.0f, 1.0f);
+    return out;
+  }
+
+  struct ShadowBleed {
+    std::int32_t left = 0, right = 0, up = 0, down = 0;
+  };
+
+  ShadowBleed computeShadowBleed(const BarConfig& cfg) {
+    if (cfg.shadowBlur <= 0)
+      return {};
+    return {
+        cfg.shadowBlur + std::max(0, -cfg.shadowOffsetX),
+        cfg.shadowBlur + std::max(0, cfg.shadowOffsetX),
+        cfg.shadowBlur + std::max(0, -cfg.shadowOffsetY),
+        cfg.shadowBlur + std::max(0, cfg.shadowOffsetY),
+    };
+  }
+
+  void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW, float barAreaH, float padding,
+                         bool isVertical) {
+    const float slotCross = isVertical ? barAreaW : barAreaH;
+
+    auto layoutWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
+      for (auto& widget : widgets) {
+        widget->layout(renderer, barAreaW, barAreaH);
       }
-      Node* shell = w->barCapsuleShell();
-      Box* bg = w->barCapsuleBox();
-      Node* inner = w->root();
-      if (shell == nullptr || bg == nullptr || inner == nullptr) {
-        continue;
-      }
-      // Keep the capsule shell visibility in sync with the inner root so that
-      // hidden widgets don't occupy phantom space in the flex layout.
-      shell->setVisible(inner->visible());
-      const float scale = w->contentScale();
-      const float iw = inner->width();
-      const float ih = inner->height();
-      if (!w->shouldShowBarCapsule()) {
-        shell->setSize(iw, ih);
-        inner->setPosition(0.0f, 0.0f);
-        bg->setVisible(false);
-        bg->setPosition(0.0f, 0.0f);
-        bg->setSize(iw, ih);
-        continue;
-      }
-      // Uniform capsule body extent on the cross axis — matches the reference "A"
-      // height used by Glyph/Label so all capsules share the same cross size
-      // regardless of each widget's content height.
-      const auto refMetrics = renderer.measureText("A", Style::fontSizeBody * scale);
-      const float bodyExtent = std::round(refMetrics.bottom - refMetrics.top);
-      const float pad = w->barCapsuleSpec().padding * scale;
-      const float padMain = pad;
-      const float padCross = std::min(pad, Style::spaceXs * scale);
-      float shellMain = (isVertical ? ih : iw) + 2.0f * padMain;
-      float shellCross = bodyExtent + 2.0f * padCross;
-      if (isVertical) {
-        shellCross = std::min(shellCross, slotCross);
-      }
-      float shellW = isVertical ? shellCross : shellMain;
-      float shellH = isVertical ? shellMain : shellCross;
-      float innerX = std::round((shellW - iw) * 0.5f);
-      float innerY = std::round((shellH - ih) * 0.5f);
-      // Glyph-only widgets have content close to bodyExtent on both axes — round
-      // them into a circular capsule. Multi-line / wide content (e.g. stacked
-      // vertical clock) must NOT be squared, or the capsule collapses on the
-      // main axis.
-      const float iconThreshold = bodyExtent + (kCircularCapsuleNarrowWidthEpsilon * scale);
-      const bool iconSized = iw <= iconThreshold && ih <= iconThreshold;
-      if (iconSized) {
-        float side = std::max(shellW, shellH);
-        if (isVertical) {
-          side = std::min(side, slotCross);
+    };
+    layoutWidgets(instance.startWidgets);
+    layoutWidgets(instance.centerWidgets);
+    layoutWidgets(instance.endWidgets);
+
+    auto finalizeCapsules = [isVertical, slotCross, &renderer](std::vector<std::unique_ptr<Widget>>& widgets) {
+      for (auto& w : widgets) {
+        if (w == nullptr || !w->barCapsuleSpec().enabled) {
+          continue;
         }
-        shellW = side;
-        shellH = side;
-        innerX = std::round((shellW - iw) * 0.5f);
-        innerY = std::round((shellH - ih) * 0.5f);
+        Node* shell = w->barCapsuleShell();
+        Box* bg = w->barCapsuleBox();
+        Node* inner = w->root();
+        if (shell == nullptr || bg == nullptr || inner == nullptr) {
+          continue;
+        }
+        // Keep the capsule shell visibility in sync with the inner root so that
+        // hidden widgets don't occupy phantom space in the flex layout.
+        shell->setVisible(inner->visible());
+        const float scale = w->contentScale();
+        const float iw = inner->width();
+        const float ih = inner->height();
+        if (!w->shouldShowBarCapsule()) {
+          shell->setSize(iw, ih);
+          inner->setPosition(0.0f, 0.0f);
+          bg->setVisible(false);
+          bg->setPosition(0.0f, 0.0f);
+          bg->setSize(iw, ih);
+          continue;
+        }
+        // Uniform capsule body extent on the cross axis — matches the reference "A"
+        // height used by Glyph/Label so all capsules share the same cross size
+        // regardless of each widget's content height.
+        const auto refMetrics = renderer.measureText("A", Style::fontSizeBody * scale);
+        const float bodyExtent = std::round(refMetrics.bottom - refMetrics.top);
+        const float pad = w->barCapsuleSpec().padding * scale;
+        const float padMain = pad;
+        const float padCross = std::min(pad, Style::spaceXs * scale);
+        float shellMain = (isVertical ? ih : iw) + 2.0f * padMain;
+        float shellCross = bodyExtent + 2.0f * padCross;
+        if (isVertical) {
+          shellCross = std::min(shellCross, slotCross);
+        }
+        float shellW = isVertical ? shellCross : shellMain;
+        float shellH = isVertical ? shellMain : shellCross;
+        float innerX = std::round((shellW - iw) * 0.5f);
+        float innerY = std::round((shellH - ih) * 0.5f);
+        // Glyph-only widgets have content close to bodyExtent on both axes — round
+        // them into a circular capsule. Multi-line / wide content (e.g. stacked
+        // vertical clock) must NOT be squared, or the capsule collapses on the
+        // main axis.
+        const float iconThreshold = bodyExtent + (kCircularCapsuleNarrowWidthEpsilon * scale);
+        const bool iconSized = iw <= iconThreshold && ih <= iconThreshold;
+        if (iconSized) {
+          float side = std::max(shellW, shellH);
+          if (isVertical) {
+            side = std::min(side, slotCross);
+          }
+          shellW = side;
+          shellH = side;
+          innerX = std::round((shellW - iw) * 0.5f);
+          innerY = std::round((shellH - ih) * 0.5f);
+        }
+        shell->setSize(shellW, shellH);
+        bg->setVisible(true);
+        bg->setPosition(0.0f, 0.0f);
+        bg->setSize(shellW, shellH);
+        inner->setPosition(innerX, innerY);
+        bg->setRadius(std::min(shellW, shellH) * 0.5f);
       }
-      shell->setSize(shellW, shellH);
-      bg->setVisible(true);
-      bg->setPosition(0.0f, 0.0f);
-      bg->setSize(shellW, shellH);
-      inner->setPosition(innerX, innerY);
-      bg->setRadius(std::min(shellW, shellH) * 0.5f);
+    };
+    finalizeCapsules(instance.startWidgets);
+    finalizeCapsules(instance.centerWidgets);
+    finalizeCapsules(instance.endWidgets);
+
+    const float contentMainStart = padding;
+    const float contentMainEnd = std::max(contentMainStart, (isVertical ? barAreaH : barAreaW) - padding);
+    const float contentMainSpan = std::max(0.0f, contentMainEnd - contentMainStart);
+
+    auto configureSlot = [&](Node* slot, float mainOffset, float mainSize) {
+      slot->setClipChildren(true);
+      if (isVertical) {
+        slot->setPosition(0.0f, mainOffset);
+        slot->setSize(slotCross, mainSize);
+      } else {
+        slot->setPosition(mainOffset, 0.0f);
+        slot->setSize(mainSize, slotCross);
+      }
+    };
+
+    auto configureSection = [&](Flex* section, FlexJustify justify) {
+      section->setJustify(justify);
+      section->layout(renderer);
+    };
+
+    configureSection(instance.startSection, FlexJustify::Start);
+    configureSection(instance.centerSection, FlexJustify::Center);
+    configureSection(instance.endSection, FlexJustify::End);
+
+    // Anchor mode: if a center widget is flagged as the anchor, pin its center to the
+    // bar midline so surrounding siblings growing/shrinking cannot drift it sideways.
+    const Node* anchorNode = nullptr;
+    for (const auto& widget : instance.centerWidgets) {
+      if (widget != nullptr && widget->isAnchor() && widget->layoutBoundsNode() != nullptr) {
+        anchorNode = widget->layoutBoundsNode();
+        break;
+      }
     }
-  };
-  finalizeCapsules(instance.startWidgets);
-  finalizeCapsules(instance.centerWidgets);
-  finalizeCapsules(instance.endWidgets);
 
-  const float contentMainStart = padding;
-  const float contentMainEnd = std::max(contentMainStart, (isVertical ? barAreaH : barAreaW) - padding);
-  const float contentMainSpan = std::max(0.0f, contentMainEnd - contentMainStart);
+    const float barMidline = contentMainStart + contentMainSpan * 0.5f;
+    const float centerNaturalMain = isVertical ? instance.centerSection->height() : instance.centerSection->width();
 
-  auto configureSlot = [&](Node* slot, float mainOffset, float mainSize) {
-    slot->setClipChildren(true);
-    if (isVertical) {
-      slot->setPosition(0.0f, mainOffset);
-      slot->setSize(slotCross, mainSize);
+    float centerSlotStart;
+    float centerSlotMain;
+    float centerSectionOffset; // offset of section origin within its slot along main axis
+    if (anchorNode != nullptr) {
+      const float anchorOffsetInSection = isVertical ? anchorNode->y() : anchorNode->x();
+      const float anchorSpan = isVertical ? anchorNode->height() : anchorNode->width();
+      const float anchorCenterInSection = anchorOffsetInSection + anchorSpan * 0.5f;
+      // Place the section so that the anchor's center sits at barMidline.
+      float desiredSectionStart = barMidline - anchorCenterInSection;
+      // Clamp so the section stays within the content area.
+      const float maxStart = contentMainEnd - centerNaturalMain;
+      desiredSectionStart = std::clamp(desiredSectionStart, contentMainStart, std::max(contentMainStart, maxStart));
+      centerSlotStart = desiredSectionStart;
+      centerSlotMain = std::min(centerNaturalMain, contentMainEnd - centerSlotStart);
+      centerSectionOffset = 0.0f;
     } else {
-      slot->setPosition(mainOffset, 0.0f);
-      slot->setSize(mainSize, slotCross);
+      centerSlotMain = std::min(contentMainSpan, centerNaturalMain);
+      centerSlotStart = contentMainStart + std::max(0.0f, (contentMainSpan - centerSlotMain) * 0.5f);
+      centerSectionOffset = (centerSlotMain - centerNaturalMain) * 0.5f;
     }
-  };
+    const float centerSlotEnd = centerSlotStart + centerSlotMain;
+    const float startSlotMain = std::max(0.0f, centerSlotStart - contentMainStart);
+    const float endSlotMain = std::max(0.0f, contentMainEnd - centerSlotEnd);
 
-  auto configureSection = [&](Flex* section, FlexJustify justify) {
-    section->setJustify(justify);
-    section->layout(renderer);
-  };
+    configureSlot(instance.startSlot, contentMainStart, startSlotMain);
+    configureSlot(instance.centerSlot, centerSlotStart, centerSlotMain);
+    configureSlot(instance.endSlot, centerSlotEnd, endSlotMain);
 
-  configureSection(instance.startSection, FlexJustify::Start);
-  configureSection(instance.centerSection, FlexJustify::Center);
-  configureSection(instance.endSection, FlexJustify::End);
-
-  // Anchor mode: if a center widget is flagged as the anchor, pin its center to the
-  // bar midline so surrounding siblings growing/shrinking cannot drift it sideways.
-  const Node* anchorNode = nullptr;
-  for (const auto& widget : instance.centerWidgets) {
-    if (widget != nullptr && widget->isAnchor() && widget->layoutBoundsNode() != nullptr) {
-      anchorNode = widget->layoutBoundsNode();
-      break;
-    }
-  }
-
-  const float barMidline = contentMainStart + contentMainSpan * 0.5f;
-  const float centerNaturalMain = isVertical ? instance.centerSection->height() : instance.centerSection->width();
-
-  float centerSlotStart;
-  float centerSlotMain;
-  float centerSectionOffset; // offset of section origin within its slot along main axis
-  if (anchorNode != nullptr) {
-    const float anchorOffsetInSection =
-        isVertical ? anchorNode->y() : anchorNode->x();
-    const float anchorSpan =
-        isVertical ? anchorNode->height() : anchorNode->width();
-    const float anchorCenterInSection = anchorOffsetInSection + anchorSpan * 0.5f;
-    // Place the section so that the anchor's center sits at barMidline.
-    float desiredSectionStart = barMidline - anchorCenterInSection;
-    // Clamp so the section stays within the content area.
-    const float maxStart = contentMainEnd - centerNaturalMain;
-    desiredSectionStart = std::clamp(desiredSectionStart, contentMainStart, std::max(contentMainStart, maxStart));
-    centerSlotStart = desiredSectionStart;
-    centerSlotMain = std::min(centerNaturalMain, contentMainEnd - centerSlotStart);
-    centerSectionOffset = 0.0f;
-  } else {
-    centerSlotMain = std::min(contentMainSpan, centerNaturalMain);
-    centerSlotStart = contentMainStart + std::max(0.0f, (contentMainSpan - centerSlotMain) * 0.5f);
-    centerSectionOffset = (centerSlotMain - centerNaturalMain) * 0.5f;
-  }
-  const float centerSlotEnd = centerSlotStart + centerSlotMain;
-  const float startSlotMain = std::max(0.0f, centerSlotStart - contentMainStart);
-  const float endSlotMain = std::max(0.0f, contentMainEnd - centerSlotEnd);
-
-  configureSlot(instance.startSlot, contentMainStart, startSlotMain);
-  configureSlot(instance.centerSlot, centerSlotStart, centerSlotMain);
-  configureSlot(instance.endSlot, centerSlotEnd, endSlotMain);
-
-  if (isVertical) {
-    instance.startSection->setPosition((slotCross - instance.startSection->width()) * 0.5f, 0.0f);
-    instance.centerSection->setPosition((slotCross - instance.centerSection->width()) * 0.5f,
-                                        centerSectionOffset);
-    instance.endSection->setPosition((slotCross - instance.endSection->width()) * 0.5f,
-                                     endSlotMain - instance.endSection->height());
-  } else {
-    instance.startSection->setPosition(0.0f, (slotCross - instance.startSection->height()) * 0.5f);
-    instance.centerSection->setPosition(centerSectionOffset,
-                                        (slotCross - instance.centerSection->height()) * 0.5f);
-    instance.endSection->setPosition(endSlotMain - instance.endSection->width(),
-                                     (slotCross - instance.endSection->height()) * 0.5f);
-  }
-}
-
-void tickWidgets(std::vector<std::unique_ptr<Widget>>& widgets, float deltaMs) {
-  for (auto& widget : widgets) {
-    if (widget != nullptr && widget->needsFrameTick()) {
-      widget->onFrameTick(deltaMs);
+    if (isVertical) {
+      instance.startSection->setPosition((slotCross - instance.startSection->width()) * 0.5f, 0.0f);
+      instance.centerSection->setPosition((slotCross - instance.centerSection->width()) * 0.5f, centerSectionOffset);
+      instance.endSection->setPosition((slotCross - instance.endSection->width()) * 0.5f,
+                                       endSlotMain - instance.endSection->height());
+    } else {
+      instance.startSection->setPosition(0.0f, (slotCross - instance.startSection->height()) * 0.5f);
+      instance.centerSection->setPosition(centerSectionOffset, (slotCross - instance.centerSection->height()) * 0.5f);
+      instance.endSection->setPosition(endSlotMain - instance.endSection->width(),
+                                       (slotCross - instance.endSection->height()) * 0.5f);
     }
   }
-}
 
-bool widgetsNeedFrameTick(const std::vector<std::unique_ptr<Widget>>& widgets) {
-  return std::any_of(widgets.begin(), widgets.end(),
-                     [](const auto& widget) { return widget != nullptr && widget->needsFrameTick(); });
-}
+  void tickWidgets(std::vector<std::unique_ptr<Widget>>& widgets, float deltaMs) {
+    for (auto& widget : widgets) {
+      if (widget != nullptr && widget->needsFrameTick()) {
+        widget->onFrameTick(deltaMs);
+      }
+    }
+  }
+
+  bool widgetsNeedFrameTick(const std::vector<std::unique_ptr<Widget>>& widgets) {
+    return std::any_of(widgets.begin(), widgets.end(),
+                       [](const auto& widget) { return widget != nullptr && widget->needsFrameTick(); });
+  }
 
 } // namespace
 
@@ -252,10 +247,10 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
                      NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
                      UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
                      NetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
-                     PipeWireSpectrum* audioSpectrum,
-                     HttpClient* httpClient, WeatherService* weatherService, RenderContext* renderContext,
-                     NightLightManager* nightLight, noctalia::theme::ThemeService* themeService,
-                     BluetoothService* bluetooth, BrightnessService* brightness) {
+                     PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weatherService,
+                     RenderContext* renderContext, NightLightManager* nightLight,
+                     noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
+                     BrightnessService* brightness) {
   m_wayland = &wayland;
   m_config = config;
   m_time = timeService;
@@ -458,42 +453,42 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
   std::int32_t exclusiveZone = 0;
 
   if (!vertical) {
-    mLeft  = std::max(0, mH - sb.left);
+    mLeft = std::max(0, mH - sb.left);
     mRight = std::max(0, mH - sb.right);
     if (isBottom) {
-      mBottom       = std::max(0, mV - sb.down);
-      surfH         = static_cast<std::uint32_t>(sb.up + barConfig.thickness + std::min(mV, sb.down));
+      mBottom = std::max(0, mV - sb.down);
+      surfH = static_cast<std::uint32_t>(sb.up + barConfig.thickness + std::min(mV, sb.down));
       exclusiveZone = barConfig.thickness + std::min(mV, sb.down);
     } else {
-      mTop          = std::max(0, mV - sb.up);
-      surfH         = static_cast<std::uint32_t>(std::min(mV, sb.up) + barConfig.thickness + sb.down);
+      mTop = std::max(0, mV - sb.up);
+      surfH = static_cast<std::uint32_t>(std::min(mV, sb.up) + barConfig.thickness + sb.down);
       exclusiveZone = std::min(mV, sb.up) + barConfig.thickness;
     }
   } else {
-    mTop    = std::max(0, mV - sb.up);
+    mTop = std::max(0, mV - sb.up);
     mBottom = std::max(0, mV - sb.down);
     if (isRight) {
-      mRight        = std::max(0, mH - sb.right);
-      surfW         = static_cast<std::uint32_t>(sb.left + barConfig.thickness + std::min(mH, sb.right));
+      mRight = std::max(0, mH - sb.right);
+      surfW = static_cast<std::uint32_t>(sb.left + barConfig.thickness + std::min(mH, sb.right));
       exclusiveZone = barConfig.thickness + std::min(mH, sb.right);
     } else {
-      mLeft         = std::max(0, mH - sb.left);
-      surfW         = static_cast<std::uint32_t>(std::min(mH, sb.left) + barConfig.thickness + sb.right);
+      mLeft = std::max(0, mH - sb.left);
+      surfW = static_cast<std::uint32_t>(std::min(mH, sb.left) + barConfig.thickness + sb.right);
       exclusiveZone = std::min(mH, sb.left) + barConfig.thickness;
     }
   }
 
   auto surfaceConfig = LayerSurfaceConfig{
-      .nameSpace     = "noctalia-" + barConfig.name,
-      .layer         = LayerShellLayer::Top,
-      .anchor        = anchor,
-      .width         = surfW,
-      .height        = surfH,
+      .nameSpace = "noctalia-" + barConfig.name,
+      .layer = LayerShellLayer::Top,
+      .anchor = anchor,
+      .width = surfW,
+      .height = surfH,
       .exclusiveZone = exclusiveZone,
-      .marginTop     = mTop,
-      .marginRight   = mRight,
-      .marginBottom  = mBottom,
-      .marginLeft    = mLeft,
+      .marginTop = mTop,
+      .marginRight = mRight,
+      .marginBottom = mBottom,
+      .marginLeft = mLeft,
       .defaultHeight = surfH,
   };
 
@@ -556,7 +551,9 @@ void Bar::populateWidgets(BarInstance& instance) {
 
 void Bar::tickWidgets(std::vector<std::unique_ptr<Widget>>& widgets, float deltaMs) { ::tickWidgets(widgets, deltaMs); }
 
-bool Bar::widgetsNeedFrameTick(const std::vector<std::unique_ptr<Widget>>& widgets) { return ::widgetsNeedFrameTick(widgets); }
+bool Bar::widgetsNeedFrameTick(const std::vector<std::unique_ptr<Widget>>& widgets) {
+  return ::widgetsNeedFrameTick(widgets);
+}
 
 bool Bar::instanceNeedsFrameTick(const BarInstance& instance) {
   return widgetsNeedFrameTick(instance.startWidgets) || widgetsNeedFrameTick(instance.centerWidgets) ||
@@ -602,10 +599,10 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
   // Shadow bleed in each direction (matches createInstance geometry).
   const auto sbi = computeShadowBleed(instance.barConfig);
-  const float bleedLeft  = static_cast<float>(sbi.left);
+  const float bleedLeft = static_cast<float>(sbi.left);
   const float bleedRight = static_cast<float>(sbi.right);
-  const float bleedUp    = static_cast<float>(sbi.up);
-  const float bleedDown  = static_cast<float>(sbi.down);
+  const float bleedUp = static_cast<float>(sbi.up);
+  const float bleedDown = static_cast<float>(sbi.down);
 
   // The bar's visual area within the tight surface.
   // compositor margins absorbed the outer gap; only the shadow bleed (capped at the gap)
@@ -714,9 +711,9 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
     // Fade-in animation
     instance.sceneRoot->setOpacity(0.0f);
-    instance.animations.animate(0.0f, 1.0f, Style::animSlow, Easing::EaseOutCubic,
-                                [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); }, {},
-                                instance.sceneRoot.get());
+    instance.animations.animate(
+        0.0f, 1.0f, Style::animSlow, Easing::EaseOutCubic,
+        [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); }, {}, instance.sceneRoot.get());
 
     instance.surface->setSceneRoot(instance.sceneRoot.get());
   }
@@ -804,10 +801,10 @@ void Bar::updateWidgets(BarInstance& instance) {
   const float marginV = static_cast<float>(instance.barConfig.marginV);
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
   const auto sbi = computeShadowBleed(instance.barConfig);
-  const float bleedLeft  = static_cast<float>(sbi.left);
+  const float bleedLeft = static_cast<float>(sbi.left);
   const float bleedRight = static_cast<float>(sbi.right);
-  const float bleedUp    = static_cast<float>(sbi.up);
-  const float bleedDown  = static_cast<float>(sbi.down);
+  const float bleedUp = static_cast<float>(sbi.up);
+  const float bleedDown = static_cast<float>(sbi.down);
   float barAreaW, barAreaH;
   if (isVertical) {
     const float barAreaY = std::min(marginV, bleedUp);

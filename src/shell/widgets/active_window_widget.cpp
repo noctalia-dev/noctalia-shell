@@ -1,8 +1,8 @@
 #include "shell/widgets/active_window_widget.h"
 
-#include "system/desktop_entry.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
+#include "system/desktop_entry.h"
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -16,12 +16,12 @@
 
 namespace {
 
-std::string toLower(std::string_view value) {
-  std::string out(value);
-  std::transform(out.begin(), out.end(), out.begin(),
-                 [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-  return out;
-}
+  std::string toLower(std::string_view value) {
+    std::string out(value);
+    std::transform(out.begin(), out.end(), out.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return out;
+  }
 
 } // namespace
 
@@ -84,9 +84,7 @@ void ActiveWindowWidget::doLayout(Renderer& renderer, float containerWidth, floa
   }
 }
 
-void ActiveWindowWidget::doUpdate(Renderer& renderer) {
-  syncState(renderer);
-}
+void ActiveWindowWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
 
 void ActiveWindowWidget::syncState(Renderer& renderer) {
   if (m_icon == nullptr || m_title == nullptr) {

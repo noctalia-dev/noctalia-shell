@@ -6,28 +6,28 @@
 
 namespace {
 
-GLuint compileShader(GLenum type, const char* source) {
-  const GLuint shader = glCreateShader(type);
-  if (shader == 0) {
-    throw std::runtime_error("glCreateShader failed");
+  GLuint compileShader(GLenum type, const char* source) {
+    const GLuint shader = glCreateShader(type);
+    if (shader == 0) {
+      throw std::runtime_error("glCreateShader failed");
+    }
+
+    glShaderSource(shader, 1, &source, nullptr);
+    glCompileShader(shader);
+
+    GLint compiled = 0;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+    if (compiled == GL_FALSE) {
+      GLint logLength = 0;
+      glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+      std::string log(static_cast<std::size_t>(std::max(logLength, 1)), '\0');
+      glGetShaderInfoLog(shader, logLength, nullptr, log.data());
+      glDeleteShader(shader);
+      throw std::runtime_error("shader compilation failed: " + log);
+    }
+
+    return shader;
   }
-
-  glShaderSource(shader, 1, &source, nullptr);
-  glCompileShader(shader);
-
-  GLint compiled = 0;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-  if (compiled == GL_FALSE) {
-    GLint logLength = 0;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
-    std::string log(static_cast<std::size_t>(std::max(logLength, 1)), '\0');
-    glGetShaderInfoLog(shader, logLength, nullptr, log.data());
-    glDeleteShader(shader);
-    throw std::runtime_error("shader compilation failed: " + log);
-  }
-
-  return shader;
-}
 
 } // namespace
 

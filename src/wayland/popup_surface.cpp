@@ -2,15 +2,13 @@
 
 #include "core/log.h"
 #include "wayland/wayland_connection.h"
+#include "wlr-layer-shell-unstable-v1-client-protocol.h"
+#include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
 #include <stdexcept>
 #include <utility>
-
 #include <wayland-client.h>
-
-#include "wlr-layer-shell-unstable-v1-client-protocol.h"
-#include "xdg-shell-client-protocol.h"
 
 namespace {
 

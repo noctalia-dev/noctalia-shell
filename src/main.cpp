@@ -54,13 +54,16 @@ namespace {
 
 int main(int argc, char* argv[]) {
   if (argc >= 2) {
-    if (std::strcmp(argv[1], "theme") == 0) return noctalia::theme::runCli(argc, argv);
-    if (std::strcmp(argv[1], "msg") == 0) return noctalia::ipc::runCli(argc, argv);
+    if (std::strcmp(argv[1], "theme") == 0)
+      return noctalia::theme::runCli(argc, argv);
+    if (std::strcmp(argv[1], "msg") == 0)
+      return noctalia::ipc::runCli(argc, argv);
   }
 
   for (int i = 1; i < argc; ++i) {
     const int rc = runTopLevelFlag(argv[i]);
-    if (rc >= 0) return rc;
+    if (rc >= 0)
+      return rc;
   }
 
   return runShell();

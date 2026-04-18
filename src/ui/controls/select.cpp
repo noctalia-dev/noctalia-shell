@@ -1,5 +1,6 @@
 #include "ui/controls/select.h"
 
+#include "cursor-shape-v1-client-protocol.h"
 #include "render/programs/rect_program.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
@@ -9,26 +10,24 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
-#include "cursor-shape-v1-client-protocol.h"
-#include <linux/input-event-codes.h>
-
 #include <algorithm>
 #include <cmath>
+#include <linux/input-event-codes.h>
 #include <memory>
 
 namespace {
 
-constexpr float kDefaultWidth = 220.0f;
-constexpr float kMinWidth = 160.0f;
-constexpr float kTriggerHeight = Style::controlHeight;
-constexpr float kOptionHeight = Style::controlHeight;
-constexpr float kMenuTopGap = Style::spaceXs;
-constexpr float kHorizontalPadding = Style::spaceMd;
-constexpr float kGlyphSize = 14.0f;
-constexpr std::int32_t kOpenSelectZIndex = 100;
-constexpr std::size_t kMaxVisibleOptions = 6;
+  constexpr float kDefaultWidth = 220.0f;
+  constexpr float kMinWidth = 160.0f;
+  constexpr float kTriggerHeight = Style::controlHeight;
+  constexpr float kOptionHeight = Style::controlHeight;
+  constexpr float kMenuTopGap = Style::spaceXs;
+  constexpr float kHorizontalPadding = Style::spaceMd;
+  constexpr float kGlyphSize = 14.0f;
+  constexpr std::int32_t kOpenSelectZIndex = 100;
+  constexpr std::size_t kMaxVisibleOptions = 6;
 
-Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
+  Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
 
 } // namespace
 
@@ -196,8 +195,8 @@ std::string_view Select::selectedText() const noexcept {
 }
 
 void Select::doLayout(Renderer& renderer) {
-  if (m_triggerBackground == nullptr || m_triggerLabel == nullptr || m_triggerGlyph == nullptr || m_triggerArea == nullptr ||
-      m_menuBackground == nullptr) {
+  if (m_triggerBackground == nullptr || m_triggerLabel == nullptr || m_triggerGlyph == nullptr ||
+      m_triggerArea == nullptr || m_menuBackground == nullptr) {
     return;
   }
 
@@ -291,8 +290,7 @@ void Select::doLayout(Renderer& renderer) {
     option.label->setZIndex(4);
 
     option.checkGlyph->measure(renderer);
-    option.checkGlyph->setPosition(dropdownWidth - m_horizontalPadding - option.checkGlyph->width(),
-                                   rowY + optLabelY);
+    option.checkGlyph->setPosition(dropdownWidth - m_horizontalPadding - option.checkGlyph->width(), rowY + optLabelY);
     option.checkGlyph->setZIndex(4);
 
     option.area->setPosition(0.0f, rowY);
@@ -362,12 +360,12 @@ void Select::rebuildOptionViews() {
       setSelectedIndex(i);
       closeMenu();
     });
-  area->setOnAxis([this](const InputArea::PointerData& data) {
-    if (!m_open) {
-      return;
-    }
-    scrollBy(data.scrollDelta(m_controlHeight));
-  });
+    area->setOnAxis([this](const InputArea::PointerData& data) {
+      if (!m_open) {
+        return;
+      }
+      scrollBy(data.scrollDelta(m_controlHeight));
+    });
     auto* areaPtr = static_cast<InputArea*>(m_menuViewport->addChild(std::move(area)));
 
     m_optionViews.push_back(OptionView{
@@ -380,7 +378,8 @@ void Select::rebuildOptionViews() {
 }
 
 void Select::applyVisualState() {
-  if (m_triggerLabel == nullptr || m_triggerGlyph == nullptr || m_triggerBackground == nullptr || m_menuBackground == nullptr) {
+  if (m_triggerLabel == nullptr || m_triggerGlyph == nullptr || m_triggerBackground == nullptr ||
+      m_menuBackground == nullptr) {
     return;
   }
 
@@ -389,7 +388,8 @@ void Select::applyVisualState() {
 
   Color triggerBg = resolved(ColorRole::SurfaceVariant);
   Color triggerBorder = resolved(ColorRole::Outline);
-  ThemeColor triggerText = selectedText().empty() ? roleColor(ColorRole::OnSurfaceVariant) : roleColor(ColorRole::OnSurface);
+  ThemeColor triggerText =
+      selectedText().empty() ? roleColor(ColorRole::OnSurfaceVariant) : roleColor(ColorRole::OnSurface);
 
   if (!m_enabled) {
     triggerBg = resolved(ColorRole::SurfaceVariant, 0.75f);

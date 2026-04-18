@@ -3,9 +3,8 @@
 #include "core/log.h"
 #include "render/programs/glyph_program.h"
 
-#include <cairo.h>
 #include <cairo-ft.h>
-
+#include <cairo.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
@@ -17,22 +16,20 @@
 
 namespace {
 
-constexpr Logger kLog("text");
+  constexpr Logger kLog("text");
 
-constexpr std::uint32_t kSizeQuant = 64;
-constexpr std::uint32_t kScaleQuant = 64;
+  constexpr std::uint32_t kSizeQuant = 64;
+  constexpr std::uint32_t kScaleQuant = 64;
 
-inline std::uint32_t quantizeSize(float v) {
-  return static_cast<std::uint32_t>(std::max(0.0f, v) * static_cast<float>(kSizeQuant) + 0.5f);
-}
+  inline std::uint32_t quantizeSize(float v) {
+    return static_cast<std::uint32_t>(std::max(0.0f, v) * static_cast<float>(kSizeQuant) + 0.5f);
+  }
 
-inline std::uint16_t quantizeScale(float v) {
-  return static_cast<std::uint16_t>(std::max(0.0f, v) * static_cast<float>(kScaleQuant) + 0.5f);
-}
+  inline std::uint16_t quantizeScale(float v) {
+    return static_cast<std::uint16_t>(std::max(0.0f, v) * static_cast<float>(kScaleQuant) + 0.5f);
+  }
 
-void hashCombine(std::size_t& seed, std::size_t v) {
-  seed ^= v + 0x9E3779B97F4A7C15ULL + (seed << 12) + (seed >> 4);
-}
+  void hashCombine(std::size_t& seed, std::size_t v) { seed ^= v + 0x9E3779B97F4A7C15ULL + (seed << 12) + (seed >> 4); }
 
 } // namespace
 
@@ -100,9 +97,7 @@ void CairoGlyphRenderer::setContentScale(float scale) {
   }
 }
 
-void CairoGlyphRenderer::touch(CacheMap::iterator it) {
-  m_lru.splice(m_lru.begin(), m_lru, it->second.lruIt);
-}
+void CairoGlyphRenderer::touch(CacheMap::iterator it) { m_lru.splice(m_lru.begin(), m_lru, it->second.lruIt); }
 
 void CairoGlyphRenderer::evict(CacheMap::iterator it) {
   if (it->second.texture != 0) {
@@ -152,7 +147,7 @@ CairoGlyphRenderer::TextMetrics CairoGlyphRenderer::measureGlyph(char32_t codepo
   out.width = static_cast<float>(m.horiAdvance) / 64.0f * invScale;
   out.left = 0.0f;
   out.right = w;
-  out.top = -bearingY;           // top of ink = -bearingY relative to baseline
+  out.top = -bearingY; // top of ink = -bearingY relative to baseline
   out.bottom = height - bearingY;
   return out;
 }
@@ -284,8 +279,8 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
   return &ins->second;
 }
 
-void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, float x, float baselineY, char32_t codepoint,
-                                   float fontSize, const Color& color, const Mat3& transform) {
+void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, float x, float baselineY,
+                                   char32_t codepoint, float fontSize, const Color& color, const Mat3& transform) {
   if (m_face == nullptr || m_program == nullptr || codepoint == 0) {
     return;
   }

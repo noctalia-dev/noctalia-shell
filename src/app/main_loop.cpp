@@ -10,7 +10,6 @@
 #include <cerrno>
 #include <poll.h>
 #include <stdexcept>
-
 #include <wayland-client-core.h>
 
 namespace {

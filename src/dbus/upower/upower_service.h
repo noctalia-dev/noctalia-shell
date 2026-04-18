@@ -8,8 +8,8 @@
 class SystemBus;
 
 namespace sdbus {
-class IProxy;
-class ObjectPath;
+  class IProxy;
+  class ObjectPath;
 } // namespace sdbus
 
 enum class BatteryState : std::uint8_t {

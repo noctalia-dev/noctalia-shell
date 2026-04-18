@@ -1,6 +1,7 @@
 #include "wayland/wayland_seat.h"
 
 #include "core/log.h"
+#include "cursor-shape-v1-client-protocol.h"
 
 #include <clocale>
 #include <cstring>
@@ -10,8 +11,6 @@
 #include <xkbcommon/xkbcommon-compose.h>
 #include <xkbcommon/xkbcommon-names.h>
 #include <xkbcommon/xkbcommon.h>
-
-#include "cursor-shape-v1-client-protocol.h"
 
 namespace {
 

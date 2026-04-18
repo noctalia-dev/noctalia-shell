@@ -23,49 +23,48 @@ std::string profileLabel(std::string_view profile) {
 
 namespace {
 
-constexpr Logger kLog("power");
+  constexpr Logger kLog("power");
 
-static const sdbus::ServiceName k_powerProfilesBusName{"org.freedesktop.UPower.PowerProfiles"};
-static const sdbus::ObjectPath k_powerProfilesObjectPath{"/org/freedesktop/UPower/PowerProfiles"};
-static constexpr auto k_powerProfilesInterface = "org.freedesktop.UPower.PowerProfiles";
-static constexpr auto k_propertiesInterface = "org.freedesktop.DBus.Properties";
+  static const sdbus::ServiceName k_powerProfilesBusName{"org.freedesktop.UPower.PowerProfiles"};
+  static const sdbus::ObjectPath k_powerProfilesObjectPath{"/org/freedesktop/UPower/PowerProfiles"};
+  static constexpr auto k_powerProfilesInterface = "org.freedesktop.UPower.PowerProfiles";
+  static constexpr auto k_propertiesInterface = "org.freedesktop.DBus.Properties";
 
-template <typename T>
-T getPropertyOr(sdbus::IProxy& proxy, std::string_view propertyName, T fallback) {
-  try {
-    const sdbus::Variant value = proxy.getProperty(propertyName).onInterface(k_powerProfilesInterface);
-    return value.get<T>();
-  } catch (const sdbus::Error&) {
-    return fallback;
-  }
-}
-
-std::vector<std::string> decodeProfiles(const sdbus::Variant& value) {
-  std::vector<std::string> profiles;
-
-  try {
-    const auto profileMaps = value.get<std::vector<std::map<std::string, sdbus::Variant>>>();
-    profiles.reserve(profileMaps.size());
-    for (const auto& profileMap : profileMaps) {
-      auto it = profileMap.find("Profile");
-      if (it == profileMap.end()) {
-        continue;
-      }
-      try {
-        const std::string profile = it->second.get<std::string>();
-        if (!profile.empty()) {
-          profiles.push_back(profile);
-        }
-      } catch (const sdbus::Error&) {
-      }
+  template <typename T> T getPropertyOr(sdbus::IProxy& proxy, std::string_view propertyName, T fallback) {
+    try {
+      const sdbus::Variant value = proxy.getProperty(propertyName).onInterface(k_powerProfilesInterface);
+      return value.get<T>();
+    } catch (const sdbus::Error&) {
+      return fallback;
     }
-  } catch (const sdbus::Error&) {
   }
 
-  std::ranges::sort(profiles);
-  profiles.erase(std::unique(profiles.begin(), profiles.end()), profiles.end());
-  return profiles;
-}
+  std::vector<std::string> decodeProfiles(const sdbus::Variant& value) {
+    std::vector<std::string> profiles;
+
+    try {
+      const auto profileMaps = value.get<std::vector<std::map<std::string, sdbus::Variant>>>();
+      profiles.reserve(profileMaps.size());
+      for (const auto& profileMap : profileMaps) {
+        auto it = profileMap.find("Profile");
+        if (it == profileMap.end()) {
+          continue;
+        }
+        try {
+          const std::string profile = it->second.get<std::string>();
+          if (!profile.empty()) {
+            profiles.push_back(profile);
+          }
+        } catch (const sdbus::Error&) {
+        }
+      }
+    } catch (const sdbus::Error&) {
+    }
+
+    std::ranges::sort(profiles);
+    profiles.erase(std::unique(profiles.begin(), profiles.end()), profiles.end());
+    return profiles;
+  }
 
 } // namespace
 

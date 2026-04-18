@@ -4,9 +4,9 @@
 
 #include <algorithm>
 #include <array>
-#include <charconv>
-#include <cerrno>
 #include <cctype>
+#include <cerrno>
+#include <charconv>
 #include <cstring>
 #include <fcntl.h>
 #include <json.hpp>
@@ -16,73 +16,73 @@
 
 namespace {
 
-constexpr Logger kLog("niri_workspace");
-constexpr auto kReconnectDelay = std::chrono::seconds(2);
-constexpr std::string_view kEventStreamRequest = "\"EventStream\"\n";
+  constexpr Logger kLog("niri_workspace");
+  constexpr auto kReconnectDelay = std::chrono::seconds(2);
+  constexpr std::string_view kEventStreamRequest = "\"EventStream\"\n";
 
-[[nodiscard]] bool containsToken(std::string_view haystack, std::string_view needle) {
-  if (haystack.empty() || needle.empty()) {
-    return false;
-  }
-  std::string lhs(haystack);
-  std::string rhs(needle);
-  std::ranges::transform(lhs, lhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-  std::ranges::transform(rhs, rhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-  return lhs.find(rhs) != std::string::npos;
-}
-
-[[nodiscard]] std::optional<std::uint64_t> jsonUnsigned(const nlohmann::json& json) {
-  if (json.is_number_unsigned()) {
-    return json.get<std::uint64_t>();
-  }
-  if (json.is_number_integer()) {
-    const auto value = json.get<std::int64_t>();
-    if (value >= 0) {
-      return static_cast<std::uint64_t>(value);
+  [[nodiscard]] bool containsToken(std::string_view haystack, std::string_view needle) {
+    if (haystack.empty() || needle.empty()) {
+      return false;
     }
+    std::string lhs(haystack);
+    std::string rhs(needle);
+    std::ranges::transform(lhs, lhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    std::ranges::transform(rhs, rhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return lhs.find(rhs) != std::string::npos;
   }
-  return std::nullopt;
-}
 
-[[nodiscard]] std::optional<std::uint64_t> jsonOptionalUnsigned(const nlohmann::json& json, const char* key) {
-  const auto it = json.find(key);
-  if (it == json.end() || it->is_null()) {
+  [[nodiscard]] std::optional<std::uint64_t> jsonUnsigned(const nlohmann::json& json) {
+    if (json.is_number_unsigned()) {
+      return json.get<std::uint64_t>();
+    }
+    if (json.is_number_integer()) {
+      const auto value = json.get<std::int64_t>();
+      if (value >= 0) {
+        return static_cast<std::uint64_t>(value);
+      }
+    }
     return std::nullopt;
   }
-  return jsonUnsigned(*it);
-}
 
-[[nodiscard]] std::string jsonOptionalString(const nlohmann::json& json, const char* key) {
-  const auto it = json.find(key);
-  if (it == json.end() || !it->is_string()) {
-    return {};
-  }
-  return it->get<std::string>();
-}
-
-[[nodiscard]] const nlohmann::json* arrayPayload(const nlohmann::json& payload, const char* key) {
-  if (payload.is_array()) {
-    return &payload;
-  }
-  const auto it = payload.find(key);
-  if (payload.is_object() && it != payload.end() && it->is_array()) {
-    return &(*it);
-  }
-  return nullptr;
-}
-
-[[nodiscard]] const nlohmann::json* objectPayload(const nlohmann::json& payload, const char* key) {
-  if (payload.is_object()) {
-    const auto it = payload.find(key);
-    if (it != payload.end() && it->is_object()) {
-      return &(*it);
+  [[nodiscard]] std::optional<std::uint64_t> jsonOptionalUnsigned(const nlohmann::json& json, const char* key) {
+    const auto it = json.find(key);
+    if (it == json.end() || it->is_null()) {
+      return std::nullopt;
     }
-    if (payload.contains("id")) {
+    return jsonUnsigned(*it);
+  }
+
+  [[nodiscard]] std::string jsonOptionalString(const nlohmann::json& json, const char* key) {
+    const auto it = json.find(key);
+    if (it == json.end() || !it->is_string()) {
+      return {};
+    }
+    return it->get<std::string>();
+  }
+
+  [[nodiscard]] const nlohmann::json* arrayPayload(const nlohmann::json& payload, const char* key) {
+    if (payload.is_array()) {
       return &payload;
     }
+    const auto it = payload.find(key);
+    if (payload.is_object() && it != payload.end() && it->is_array()) {
+      return &(*it);
+    }
+    return nullptr;
   }
-  return nullptr;
-}
+
+  [[nodiscard]] const nlohmann::json* objectPayload(const nlohmann::json& payload, const char* key) {
+    if (payload.is_object()) {
+      const auto it = payload.find(key);
+      if (it != payload.end() && it->is_object()) {
+        return &(*it);
+      }
+      if (payload.contains("id")) {
+        return &payload;
+      }
+    }
+    return nullptr;
+  }
 
 } // namespace
 
@@ -111,9 +111,9 @@ int NiriWorkspaceMonitor::pollTimeoutMs() const noexcept {
     return 0;
   }
 
-  const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(m_nextReconnectAt -
-                                                                                std::chrono::steady_clock::now())
-                             .count();
+  const auto remaining =
+      std::chrono::duration_cast<std::chrono::milliseconds>(m_nextReconnectAt - std::chrono::steady_clock::now())
+          .count();
   return static_cast<int>(std::max<std::int64_t>(0, remaining));
 }
 
@@ -189,13 +189,11 @@ void NiriWorkspaceMonitor::apply(std::vector<Workspace>& workspaces, const std::
       matches[i] = pickCandidate([&](const WorkspaceState& candidate) { return candidate.id == *parsedId; });
     }
     if (matches[i] == nullptr && !workspaces[i].name.empty()) {
-      matches[i] =
-          pickCandidate([&](const WorkspaceState& candidate) { return candidate.name == workspaces[i].name; });
+      matches[i] = pickCandidate([&](const WorkspaceState& candidate) { return candidate.name == workspaces[i].name; });
     }
     if (matches[i] == nullptr && parsedIndex.has_value()) {
-      matches[i] = pickCandidate([&](const WorkspaceState& candidate) {
-        return static_cast<std::size_t>(candidate.idx) == *parsedIndex;
-      });
+      matches[i] = pickCandidate(
+          [&](const WorkspaceState& candidate) { return static_cast<std::size_t>(candidate.idx) == *parsedIndex; });
     }
   }
 
@@ -293,7 +291,9 @@ void NiriWorkspaceMonitor::closeSocket(bool scheduleReconnectFlag) {
   }
 }
 
-void NiriWorkspaceMonitor::scheduleReconnect() { m_nextReconnectAt = std::chrono::steady_clock::now() + kReconnectDelay; }
+void NiriWorkspaceMonitor::scheduleReconnect() {
+  m_nextReconnectAt = std::chrono::steady_clock::now() + kReconnectDelay;
+}
 
 void NiriWorkspaceMonitor::readSocket() {
   std::array<char, 4096> buffer{};

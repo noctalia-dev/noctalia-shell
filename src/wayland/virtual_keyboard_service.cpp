@@ -1,6 +1,7 @@
 #include "wayland/virtual_keyboard_service.h"
 
 #include "core/log.h"
+#include "virtual-keyboard-unstable-v1-client-protocol.h"
 
 #include <chrono>
 #include <cstdlib>
@@ -8,11 +9,8 @@
 #include <linux/input-event-codes.h>
 #include <string>
 #include <unistd.h>
-#include <xkbcommon/xkbcommon.h>
-
 #include <wayland-client-core.h>
-
-#include "virtual-keyboard-unstable-v1-client-protocol.h"
+#include <xkbcommon/xkbcommon.h>
 
 namespace {
 

@@ -11,7 +11,7 @@
 
 namespace {
 
-const char* glyphForMode(bool /*isLight*/) { return "theme-mode"; }
+  const char* glyphForMode(bool /*isLight*/) { return "theme-mode"; }
 
 } // namespace
 
@@ -60,9 +60,7 @@ void ThemeModeWidget::doLayout(Renderer& renderer, float /*containerWidth*/, flo
   }
 }
 
-void ThemeModeWidget::doUpdate(Renderer& renderer) {
-  syncState(renderer);
-}
+void ThemeModeWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
 
 void ThemeModeWidget::syncState(Renderer& renderer) {
   if (m_themeService == nullptr || m_glyph == nullptr || m_area == nullptr) {
@@ -76,8 +74,7 @@ void ThemeModeWidget::syncState(Renderer& renderer) {
 
   m_lastIsLight = isLight;
   m_glyph->setGlyph(glyphForMode(isLight));
-  m_glyph->setColor(isLight ? roleColor(ColorRole::Primary)
-                            : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_glyph->setColor(isLight ? roleColor(ColorRole::Primary) : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   m_glyph->measure(renderer);
 

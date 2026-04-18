@@ -3,6 +3,10 @@
 #include "core/log.h"
 #include "pipewire/pipewire_service.h"
 
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <numbers>
 #include <pipewire/core.h>
 #include <pipewire/keys.h>
 #include <pipewire/properties.h>
@@ -11,11 +15,6 @@
 #include <spa/param/audio/raw.h>
 #include <spa/param/format-utils.h>
 #include <spa/pod/pod.h>
-
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <numbers>
 #include <utility>
 
 namespace {

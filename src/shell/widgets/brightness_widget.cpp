@@ -16,14 +16,14 @@
 
 namespace {
 
-const char* brightnessGlyphName(float brightness) {
-  if (brightness < 0.4f) {
-    return "brightness-low";
+  const char* brightnessGlyphName(float brightness) {
+    if (brightness < 0.4f) {
+      return "brightness-low";
+    }
+    return "brightness-high";
   }
-  return "brightness-high";
-}
 
-constexpr float kScrollStep = 0.05f;
+  constexpr float kScrollStep = 0.05f;
 
 } // namespace
 
@@ -91,9 +91,7 @@ void BrightnessWidget::doLayout(Renderer& renderer, float containerWidth, float 
   }
 }
 
-void BrightnessWidget::doUpdate(Renderer& renderer) {
-  syncState(renderer);
-}
+void BrightnessWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
 
 void BrightnessWidget::syncState(Renderer& renderer) {
   if (m_brightness == nullptr || m_glyph == nullptr || m_label == nullptr) {
@@ -118,8 +116,7 @@ void BrightnessWidget::syncState(Renderer& renderer) {
 
   const float brightness = display->brightness;
   const bool becameAvailable = !m_lastAvailable;
-  if (!becameAvailable && std::abs(brightness - m_lastBrightness) < 0.001f &&
-      m_isVertical == m_lastVertical) {
+  if (!becameAvailable && std::abs(brightness - m_lastBrightness) < 0.001f && m_isVertical == m_lastVertical) {
     return;
   }
 

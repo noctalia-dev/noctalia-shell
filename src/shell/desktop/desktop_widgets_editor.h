@@ -1,8 +1,8 @@
 #pragma once
 
-#include "render/scene/node.h"
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
+#include "render/scene/node.h"
 #include "shell/desktop/desktop_widget_factory.h"
 #include "shell/desktop/desktop_widgets_controller.h"
 #include "wayland/layer_surface.h"
@@ -100,7 +100,8 @@ private:
   void addWidget(const std::string& outputName, const std::string& type);
   void removeSelectedWidget();
   void requestExit();
-  void startDrag(DragMode mode, const std::string& widgetId, float intrinsicWidth, float intrinsicHeight, bool rebuildOnFinish);
+  void startDrag(DragMode mode, const std::string& widgetId, float intrinsicWidth, float intrinsicHeight,
+                 bool rebuildOnFinish);
   void updateDrag();
   void finishDrag();
   [[nodiscard]] OverlaySurface* findSurface(wl_surface* surface);

@@ -34,8 +34,8 @@ public:
                 TrayService* tray, PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon,
                 PowerProfilesService* powerProfiles, NetworkService* network, IdleInhibitor* idleInhibitor,
                 MprisService* mpris, PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
-                NightLightManager* nightLight, noctalia::theme::ThemeService* themeService,
-                BluetoothService* bluetooth, BrightnessService* brightness);
+                NightLightManager* nightLight, noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
+                BrightnessService* brightness);
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output,
                                                float contentScale = 1.0f) const;

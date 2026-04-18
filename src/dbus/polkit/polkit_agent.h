@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <poll.h>
 #include <string>
 #include <vector>
-#include <poll.h>
 
 class SystemBus;
 

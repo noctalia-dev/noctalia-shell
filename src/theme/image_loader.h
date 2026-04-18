@@ -1,12 +1,12 @@
 #pragma once
 
+#include "theme/scheme.h"
+
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
-
-#include "theme/scheme.h"
 
 namespace noctalia::theme {
 

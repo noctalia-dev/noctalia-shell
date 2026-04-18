@@ -16,8 +16,7 @@ enum class SysmonDisplayMode { Text, Graph, Gauge };
 
 class SysmonWidget : public Widget {
 public:
-  SysmonWidget(SystemMonitorService* monitor, SysmonStat stat, std::string diskPath,
-               SysmonDisplayMode displayMode);
+  SysmonWidget(SystemMonitorService* monitor, SysmonStat stat, std::string diskPath, SysmonDisplayMode displayMode);
   ~SysmonWidget() override;
 
   void create() override;

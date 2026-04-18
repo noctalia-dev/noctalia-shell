@@ -17,12 +17,12 @@
 
 namespace {
 
-[[nodiscard]] std::string displaySysmonLabel(const std::string& raw, bool verticalBar) {
-  if (!verticalBar || raw.size() < 2 || raw.back() != '%') {
-    return raw;
+  [[nodiscard]] std::string displaySysmonLabel(const std::string& raw, bool verticalBar) {
+    if (!verticalBar || raw.size() < 2 || raw.back() != '%') {
+      return raw;
+    }
+    return raw.substr(0, raw.size() - 1);
   }
-  return raw.substr(0, raw.size() - 1);
-}
 
 } // namespace
 
@@ -200,8 +200,7 @@ void SysmonWidget::doUpdate(Renderer& renderer) {
     if (m_gauge != nullptr) {
       // Sub-pixel snap: hide fill below 1px (matches QML NLinearGauge behaviour)
       const float fillAxis = m_isVerticalBar ? m_gauge->width() : m_gauge->height();
-      const float progress =
-          (fillAxis > 0.0f && normalized * fillAxis < 1.0f) ? 0.0f : static_cast<float>(normalized);
+      const float progress = (fillAxis > 0.0f && normalized * fillAxis < 1.0f) ? 0.0f : static_cast<float>(normalized);
       m_gauge->setProgress(progress);
       requestRedraw();
     }
@@ -228,7 +227,6 @@ void SysmonWidget::doUpdate(Renderer& renderer) {
     updateBars();
     requestRedraw();
   }
-
 }
 
 void SysmonWidget::pushHistory(double normalized) {
@@ -245,7 +243,7 @@ void SysmonWidget::updateBars() {
 
 double SysmonWidget::currentNormalized() const {
   if (m_stat == SysmonStat::DiskPct) {
-    struct statvfs sv {};
+    struct statvfs sv{};
     if (::statvfs(m_diskPath.c_str(), &sv) == 0 && sv.f_blocks > 0) {
       return static_cast<double>(sv.f_blocks - sv.f_bfree) / static_cast<double>(sv.f_blocks);
     }
@@ -301,7 +299,7 @@ double SysmonWidget::currentNormalized() const {
 
 std::string SysmonWidget::formatValue() const {
   if (m_stat == SysmonStat::DiskPct) {
-    struct statvfs sv {};
+    struct statvfs sv{};
     if (::statvfs(m_diskPath.c_str(), &sv) == 0 && sv.f_blocks > 0) {
       const double used = static_cast<double>(sv.f_blocks - sv.f_bfree);
       const double total = static_cast<double>(sv.f_blocks);

@@ -23,169 +23,169 @@ using namespace control_center;
 
 namespace {
 
-constexpr float kRowMinHeight = Style::controlHeightLg;
+  constexpr float kRowMinHeight = Style::controlHeightLg;
 
-std::string currentTitle(const NetworkState& s) {
-  if (s.kind == NetworkConnectivity::Wireless && s.connected && !s.ssid.empty()) {
-    return s.ssid;
-  }
-  if (s.kind == NetworkConnectivity::Wired && s.connected) {
-    return s.interfaceName.empty() ? std::string("Wired connection") : s.interfaceName;
-  }
-  return "Not connected";
-}
-
-std::string currentDetail(const NetworkState& s) {
-  if (!s.connected) {
-    return s.wirelessEnabled ? "Wi-Fi is on" : "Wi-Fi is off";
-  }
-  std::string out;
-  if (!s.interfaceName.empty()) {
-    out = s.interfaceName;
-  }
-  if (!s.ipv4.empty()) {
-    if (!out.empty()) {
-      out += "  •  ";
+  std::string currentTitle(const NetworkState& s) {
+    if (s.kind == NetworkConnectivity::Wireless && s.connected && !s.ssid.empty()) {
+      return s.ssid;
     }
-    out += s.ipv4;
-  }
-  if (s.kind == NetworkConnectivity::Wireless && s.signalStrength > 0) {
-    if (!out.empty()) {
-      out += "  •  ";
+    if (s.kind == NetworkConnectivity::Wired && s.connected) {
+      return s.interfaceName.empty() ? std::string("Wired connection") : s.interfaceName;
     }
-    out += std::to_string(static_cast<int>(s.signalStrength)) + "%";
+    return "Not connected";
   }
-  return out;
-}
 
-class AccessPointRow : public Flex {
-public:
-  AccessPointRow(AccessPointInfo ap, bool saved, std::function<void(const AccessPointInfo&)> onActivate,
-                 std::function<void(const AccessPointInfo&)> onForget)
-      : m_ap(std::move(ap)), m_onActivate(std::move(onActivate)), m_onForget(std::move(onForget)) {
-    setDirection(FlexDirection::Horizontal);
-    setAlign(FlexAlign::Center);
-    setGap(Style::spaceSm);
-    setPadding(Style::spaceSm, Style::spaceMd);
-    setMinHeight(kRowMinHeight);
-    setRadius(Style::radiusMd);
-    setBackground(roleColor(ColorRole::Surface));
-    setBorderWidth(0.0f);
-
-    auto signalGlyph = std::make_unique<Glyph>();
-    signalGlyph->setGlyph(NetworkTab_rowGlyph(m_ap));
-    signalGlyph->setGlyphSize(Style::fontSizeBody);
-    signalGlyph->setColor(roleColor(ColorRole::OnSurface));
-    addChild(std::move(signalGlyph));
-
-    auto ssid = std::make_unique<Label>();
-    ssid->setText(m_ap.ssid);
-    ssid->setBold(m_ap.active);
-    ssid->setFontSize(Style::fontSizeBody);
-    ssid->setColor(roleColor(ColorRole::OnSurface));
-    ssid->setFlexGrow(1.0f);
-    m_title = ssid.get();
-    addChild(std::move(ssid));
-
-    if (m_ap.secured) {
-      auto lock = std::make_unique<Glyph>();
-      lock->setGlyph("lock");
-      lock->setGlyphSize(Style::fontSizeCaption);
-      lock->setColor(roleColor(ColorRole::OnSurfaceVariant));
-      addChild(std::move(lock));
+  std::string currentDetail(const NetworkState& s) {
+    if (!s.connected) {
+      return s.wirelessEnabled ? "Wi-Fi is on" : "Wi-Fi is off";
     }
+    std::string out;
+    if (!s.interfaceName.empty()) {
+      out = s.interfaceName;
+    }
+    if (!s.ipv4.empty()) {
+      if (!out.empty()) {
+        out += "  •  ";
+      }
+      out += s.ipv4;
+    }
+    if (s.kind == NetworkConnectivity::Wireless && s.signalStrength > 0) {
+      if (!out.empty()) {
+        out += "  •  ";
+      }
+      out += std::to_string(static_cast<int>(s.signalStrength)) + "%";
+    }
+    return out;
+  }
 
-    auto strength = std::make_unique<Label>();
-    strength->setText(std::to_string(static_cast<int>(m_ap.strength)) + "%");
-    strength->setCaptionStyle();
-    strength->setFontSize(Style::fontSizeCaption);
-    strength->setColor(roleColor(ColorRole::OnSurfaceVariant));
-    addChild(std::move(strength));
+  class AccessPointRow : public Flex {
+  public:
+    AccessPointRow(AccessPointInfo ap, bool saved, std::function<void(const AccessPointInfo&)> onActivate,
+                   std::function<void(const AccessPointInfo&)> onForget)
+        : m_ap(std::move(ap)), m_onActivate(std::move(onActivate)), m_onForget(std::move(onForget)) {
+      setDirection(FlexDirection::Horizontal);
+      setAlign(FlexAlign::Center);
+      setGap(Style::spaceSm);
+      setPadding(Style::spaceSm, Style::spaceMd);
+      setMinHeight(kRowMinHeight);
+      setRadius(Style::radiusMd);
+      setBackground(roleColor(ColorRole::Surface));
+      setBorderWidth(0.0f);
 
-    if (saved) {
-      auto forget = std::make_unique<Button>();
-      forget->setVariant(ButtonVariant::Ghost);
-      forget->setText("Forget");
-      forget->setOnClick([this]() {
-        if (m_onForget) {
-          m_onForget(m_ap);
+      auto signalGlyph = std::make_unique<Glyph>();
+      signalGlyph->setGlyph(NetworkTab_rowGlyph(m_ap));
+      signalGlyph->setGlyphSize(Style::fontSizeBody);
+      signalGlyph->setColor(roleColor(ColorRole::OnSurface));
+      addChild(std::move(signalGlyph));
+
+      auto ssid = std::make_unique<Label>();
+      ssid->setText(m_ap.ssid);
+      ssid->setBold(m_ap.active);
+      ssid->setFontSize(Style::fontSizeBody);
+      ssid->setColor(roleColor(ColorRole::OnSurface));
+      ssid->setFlexGrow(1.0f);
+      m_title = ssid.get();
+      addChild(std::move(ssid));
+
+      if (m_ap.secured) {
+        auto lock = std::make_unique<Glyph>();
+        lock->setGlyph("lock");
+        lock->setGlyphSize(Style::fontSizeCaption);
+        lock->setColor(roleColor(ColorRole::OnSurfaceVariant));
+        addChild(std::move(lock));
+      }
+
+      auto strength = std::make_unique<Label>();
+      strength->setText(std::to_string(static_cast<int>(m_ap.strength)) + "%");
+      strength->setCaptionStyle();
+      strength->setFontSize(Style::fontSizeCaption);
+      strength->setColor(roleColor(ColorRole::OnSurfaceVariant));
+      addChild(std::move(strength));
+
+      if (saved) {
+        auto forget = std::make_unique<Button>();
+        forget->setVariant(ButtonVariant::Ghost);
+        forget->setText("Forget");
+        forget->setOnClick([this]() {
+          if (m_onForget) {
+            m_onForget(m_ap);
+          }
+        });
+        m_forgetButton = static_cast<Button*>(addChild(std::move(forget)));
+      }
+
+      auto area = std::make_unique<InputArea>();
+      area->setPropagateEvents(true);
+      area->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyState(); });
+      area->setOnLeave([this]() { applyState(); });
+      area->setOnPress([this](const InputArea::PointerData& /*data*/) { applyState(); });
+      area->setOnClick([this](const InputArea::PointerData& /*data*/) {
+        if (m_onActivate) {
+          m_onActivate(m_ap);
         }
       });
-      m_forgetButton = static_cast<Button*>(addChild(std::move(forget)));
+      m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
+
+      applyState();
+      m_paletteConn = paletteChanged().connect([this] { applyState(); });
     }
 
-    auto area = std::make_unique<InputArea>();
-    area->setPropagateEvents(true);
-    area->setOnEnter([this](const InputArea::PointerData& /*data*/) { applyState(); });
-    area->setOnLeave([this]() { applyState(); });
-    area->setOnPress([this](const InputArea::PointerData& /*data*/) { applyState(); });
-    area->setOnClick([this](const InputArea::PointerData& /*data*/) {
-      if (m_onActivate) {
-        m_onActivate(m_ap);
+    void doLayout(Renderer& renderer) override {
+      if (m_inputArea == nullptr) {
+        return;
       }
-    });
-    m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
-
-    applyState();
-    m_paletteConn = paletteChanged().connect([this] { applyState(); });
-  }
-
-  void doLayout(Renderer& renderer) override {
-    if (m_inputArea == nullptr) {
-      return;
+      m_inputArea->setVisible(false);
+      Flex::doLayout(renderer);
+      m_inputArea->setVisible(true);
+      m_inputArea->setPosition(0.0f, 0.0f);
+      m_inputArea->setSize(width(), height());
+      // Carve out the forget button so its own InputArea gets clicks first.
+      if (m_forgetButton != nullptr) {
+        const float areaWidth = std::max(0.0f, m_forgetButton->x() - gap());
+        m_inputArea->setSize(areaWidth, height());
+      }
+      applyState();
     }
-    m_inputArea->setVisible(false);
-    Flex::doLayout(renderer);
-    m_inputArea->setVisible(true);
-    m_inputArea->setPosition(0.0f, 0.0f);
-    m_inputArea->setSize(width(), height());
-    // Carve out the forget button so its own InputArea gets clicks first.
-    if (m_forgetButton != nullptr) {
-      const float areaWidth = std::max(0.0f, m_forgetButton->x() - gap());
-      m_inputArea->setSize(areaWidth, height());
-    }
-    applyState();
-  }
 
-  static const char* NetworkTab_rowGlyph(const AccessPointInfo& ap) {
-    if (ap.strength >= 67) {
-      return "wifi-2";
+    static const char* NetworkTab_rowGlyph(const AccessPointInfo& ap) {
+      if (ap.strength >= 67) {
+        return "wifi-2";
+      }
+      if (ap.strength >= 34) {
+        return "wifi-1";
+      }
+      return "wifi-0";
     }
-    if (ap.strength >= 34) {
-      return "wifi-1";
-    }
-    return "wifi-0";
-  }
 
-private:
-  void applyState() {
-    const bool hov = m_inputArea != nullptr && m_inputArea->hovered();
-    const bool pressed = m_inputArea != nullptr && m_inputArea->pressed();
-    if (pressed) {
-      setBackground(roleColor(ColorRole::Primary));
-      setBorderColor(roleColor(ColorRole::Primary));
-      setBorderWidth(Style::borderWidth);
+  private:
+    void applyState() {
+      const bool hov = m_inputArea != nullptr && m_inputArea->hovered();
+      const bool pressed = m_inputArea != nullptr && m_inputArea->pressed();
+      if (pressed) {
+        setBackground(roleColor(ColorRole::Primary));
+        setBorderColor(roleColor(ColorRole::Primary));
+        setBorderWidth(Style::borderWidth);
+        if (m_title != nullptr) {
+          m_title->setColor(roleColor(ColorRole::OnPrimary));
+        }
+        return;
+      }
+      setBackground(roleColor(m_ap.active ? ColorRole::Secondary : ColorRole::Surface, m_ap.active ? 0.25f : 1.0f));
+      setBorderColor(roleColor(hov ? ColorRole::Primary : ColorRole::Surface));
+      setBorderWidth(hov ? Style::borderWidth : 0.0f);
       if (m_title != nullptr) {
-        m_title->setColor(roleColor(ColorRole::OnPrimary));
+        m_title->setColor(roleColor(ColorRole::OnSurface));
       }
-      return;
     }
-    setBackground(roleColor(m_ap.active ? ColorRole::Secondary : ColorRole::Surface, m_ap.active ? 0.25f : 1.0f));
-    setBorderColor(roleColor(hov ? ColorRole::Primary : ColorRole::Surface));
-    setBorderWidth(hov ? Style::borderWidth : 0.0f);
-    if (m_title != nullptr) {
-      m_title->setColor(roleColor(ColorRole::OnSurface));
-    }
-  }
 
-  AccessPointInfo m_ap;
-  std::function<void(const AccessPointInfo&)> m_onActivate;
-  std::function<void(const AccessPointInfo&)> m_onForget;
-  Label* m_title = nullptr;
-  InputArea* m_inputArea = nullptr;
-  Button* m_forgetButton = nullptr;
-  Signal<>::ScopedConnection m_paletteConn;
-};
+    AccessPointInfo m_ap;
+    std::function<void(const AccessPointInfo&)> m_onActivate;
+    std::function<void(const AccessPointInfo&)> m_onForget;
+    Label* m_title = nullptr;
+    InputArea* m_inputArea = nullptr;
+    Button* m_forgetButton = nullptr;
+    Signal<>::ScopedConnection m_paletteConn;
+  };
 
 } // namespace
 

@@ -1,9 +1,9 @@
 #include "shell/notification/notification_toast.h"
-#include "core/ui_phase.h"
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
+#include "core/ui_phase.h"
 #include "net/http_client.h"
 #include "notification/notification_manager.h"
 #include "render/render_context.h"

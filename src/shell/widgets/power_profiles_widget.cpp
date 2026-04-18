@@ -37,15 +37,13 @@ void PowerProfilesWidget::doLayout(Renderer& renderer, float /*containerWidth*/,
 
   m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   m_glyph->setColor(m_available ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
-                                 : roleColor(ColorRole::OnSurfaceVariant));
+                                : roleColor(ColorRole::OnSurfaceVariant));
   m_glyph->measure(renderer);
   m_glyph->setPosition(0.0f, 0.0f);
   rootNode->setSize(m_glyph->width(), m_glyph->height());
 }
 
-void PowerProfilesWidget::doUpdate(Renderer& renderer) {
-  syncState(renderer);
-}
+void PowerProfilesWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
 
 void PowerProfilesWidget::syncState(Renderer& renderer) {
   if (m_glyph == nullptr || m_area == nullptr) {
@@ -53,8 +51,7 @@ void PowerProfilesWidget::syncState(Renderer& renderer) {
   }
 
   const std::string profile = m_powerProfiles != nullptr ? m_powerProfiles->activeProfile() : std::string{};
-  const bool available =
-      m_powerProfiles != nullptr && (!profile.empty() || !m_powerProfiles->profiles().empty());
+  const bool available = m_powerProfiles != nullptr && (!profile.empty() || !m_powerProfiles->profiles().empty());
 
   if (profile == m_lastProfile && available == m_available) {
     return;
@@ -65,7 +62,7 @@ void PowerProfilesWidget::syncState(Renderer& renderer) {
 
   m_glyph->setGlyph(glyphForProfile(profile));
   m_glyph->setColor(m_available ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
-                                 : roleColor(ColorRole::OnSurfaceVariant));
+                                : roleColor(ColorRole::OnSurfaceVariant));
   m_glyph->measure(renderer);
   m_area->setEnabled(m_available);
   if (auto* rootNode = root(); rootNode != nullptr) {

@@ -11,7 +11,7 @@
 
 namespace {
 
-constexpr Logger kLog("overview");
+  constexpr Logger kLog("overview");
 
 } // namespace
 
@@ -20,8 +20,8 @@ Overview::~Overview() = default;
 
 bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache,
                           GlSharedContext* sharedGl) {
-  m_wayland  = &wayland;
-  m_config   = config;
+  m_wayland = &wayland;
+  m_config = config;
   m_textureCache = textureCache;
   m_sharedGl = sharedGl;
 
@@ -129,18 +129,17 @@ void Overview::createInstance(const WaylandOutput& output) {
   kLog.info("creating on {} ({}), path={}", output.connectorName, output.description, wallpaperPath);
 
   auto inst = std::make_unique<OverviewInstance>();
-  inst->outputName    = output.name;
-  inst->output        = output.output;
-  inst->scale         = output.scale;
+  inst->outputName = output.name;
+  inst->output = output.output;
+  inst->scale = output.scale;
   inst->connectorName = output.connectorName;
 
   auto surfaceConfig = LayerSurfaceConfig{
-      .nameSpace     = "noctalia-overview",
-      .layer         = LayerShellLayer::Background,
-      .anchor        = LayerShellAnchor::Top | LayerShellAnchor::Bottom | LayerShellAnchor::Left |
-                       LayerShellAnchor::Right,
-      .width         = 0,
-      .height        = 0,
+      .nameSpace = "noctalia-overview",
+      .layer = LayerShellLayer::Background,
+      .anchor = LayerShellAnchor::Top | LayerShellAnchor::Bottom | LayerShellAnchor::Left | LayerShellAnchor::Right,
+      .width = 0,
+      .height = 0,
       .exclusiveZone = -1,
   };
 
@@ -173,7 +172,7 @@ void Overview::loadWallpaper(OverviewInstance& inst, const std::string& path) {
   }
 
   inst.currentTexture = tex;
-  inst.currentPath    = path;
+  inst.currentPath = path;
   updateRendererState(inst);
   if (inst.surface != nullptr) {
     inst.surface->requestRedraw();
@@ -194,8 +193,7 @@ void Overview::updateRendererState(OverviewInstance& inst) {
   inst.surface->setTintColor(surface.r, surface.g, surface.b);
 
   if (inst.currentTexture.id != 0) {
-    inst.surface->setWallpaperState(inst.currentTexture.id,
-                                    static_cast<float>(inst.currentTexture.width),
+    inst.surface->setWallpaperState(inst.currentTexture.id, static_cast<float>(inst.currentTexture.width),
                                     static_cast<float>(inst.currentTexture.height),
                                     m_config->config().wallpaper.fillMode);
   }

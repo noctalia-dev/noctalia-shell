@@ -1,4 +1,5 @@
 #include "render/render_context.h"
+
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "render/gl_shared_context.h"
@@ -9,16 +10,14 @@
 #include "render/scene/rect_node.h"
 #include "render/scene/spinner_node.h"
 #include "render/scene/text_node.h"
-
 #include "ui/style.h"
 
+#include <GLES2/gl2.h>
 #include <algorithm>
 #include <cmath>
 #include <optional>
 #include <stdexcept>
 #include <vector>
-
-#include <GLES2/gl2.h>
 
 namespace {
 

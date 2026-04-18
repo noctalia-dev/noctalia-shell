@@ -7,7 +7,7 @@
 class SystemBus;
 
 namespace sdbus {
-class IObject;
+  class IObject;
 }
 
 // NetworkManager secret agent. Registers with org.freedesktop.NetworkManager.AgentManager

@@ -18,7 +18,11 @@ public:
   void setSharedGl(GlSharedContext* shared) noexcept { m_shared = shared; }
   void setBlurIntensity(float v) noexcept { m_blurIntensity = v; }
   void setTintIntensity(float v) noexcept { m_tintIntensity = v; }
-  void setTintColor(float r, float g, float b) noexcept { m_tintR = r; m_tintG = g; m_tintB = b; }
+  void setTintColor(float r, float g, float b) noexcept {
+    m_tintR = r;
+    m_tintG = g;
+    m_tintB = b;
+  }
   void setWallpaperState(GLuint tex, float imgW, float imgH, WallpaperFillMode fillMode);
 
   [[nodiscard]] WallpaperRenderer* wallpaperRenderer() noexcept { return &m_wallpaperRenderer; }
@@ -34,9 +38,9 @@ private:
   void destroyFbos();
 
   WallpaperRenderer m_wallpaperRenderer;
-  BlurProgram       m_blurProgram;
-  ShaderProgram     m_blitProgram;
-  ShaderProgram     m_tintProgram;
+  BlurProgram m_blurProgram;
+  ShaderProgram m_blitProgram;
+  ShaderProgram m_tintProgram;
 
   GLuint m_fbo1 = 0;
   GLuint m_fboTex1 = 0;

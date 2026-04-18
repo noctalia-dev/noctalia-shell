@@ -30,177 +30,176 @@ std::string joinedArtists(const std::vector<std::string>& artists) {
 
 namespace {
 
-static constexpr auto k_dbus_interface = "org.freedesktop.DBus";
-static constexpr auto k_properties_interface = "org.freedesktop.DBus.Properties";
-static constexpr auto k_mpris_root_interface = "org.mpris.MediaPlayer2";
-static constexpr auto k_mpris_player_interface = "org.mpris.MediaPlayer2.Player";
-static constexpr auto k_noctalia_mpris_interface = "dev.noctalia.Mpris";
-static constexpr auto k_properties_debounce_window = std::chrono::milliseconds{120};
-static constexpr auto k_metadata_stabilize_window = std::chrono::milliseconds{900};
-static const sdbus::ServiceName k_dbus_name{"org.freedesktop.DBus"};
-static const sdbus::ObjectPath k_dbus_path{"/org/freedesktop/DBus"};
-static const sdbus::ObjectPath k_mpris_path{"/org/mpris/MediaPlayer2"};
-static const sdbus::ServiceName k_noctalia_mpris_bus_name{"dev.noctalia.Mpris"};
-static const sdbus::ObjectPath k_noctalia_mpris_object_path{"/dev/noctalia/Mpris"};
+  static constexpr auto k_dbus_interface = "org.freedesktop.DBus";
+  static constexpr auto k_properties_interface = "org.freedesktop.DBus.Properties";
+  static constexpr auto k_mpris_root_interface = "org.mpris.MediaPlayer2";
+  static constexpr auto k_mpris_player_interface = "org.mpris.MediaPlayer2.Player";
+  static constexpr auto k_noctalia_mpris_interface = "dev.noctalia.Mpris";
+  static constexpr auto k_properties_debounce_window = std::chrono::milliseconds{120};
+  static constexpr auto k_metadata_stabilize_window = std::chrono::milliseconds{900};
+  static const sdbus::ServiceName k_dbus_name{"org.freedesktop.DBus"};
+  static const sdbus::ObjectPath k_dbus_path{"/org/freedesktop/DBus"};
+  static const sdbus::ObjectPath k_mpris_path{"/org/mpris/MediaPlayer2"};
+  static const sdbus::ServiceName k_noctalia_mpris_bus_name{"dev.noctalia.Mpris"};
+  static const sdbus::ObjectPath k_noctalia_mpris_object_path{"/dev/noctalia/Mpris"};
 
-bool is_mpris_bus_name(std::string_view name) { return name.starts_with("org.mpris.MediaPlayer2."); }
+  bool is_mpris_bus_name(std::string_view name) { return name.starts_with("org.mpris.MediaPlayer2."); }
 
-bool is_valid_loop_status(std::string_view loop_status) {
-  return loop_status == "None" || loop_status == "Track" || loop_status == "Playlist";
-}
-
-template <typename T>
-T get_property_or(sdbus::IProxy& proxy, std::string_view interface_name, std::string_view property_name, T fallback) {
-  try {
-    const sdbus::Variant value = proxy.getProperty(property_name).onInterface(interface_name);
-    return value.get<T>();
-  } catch (const sdbus::Error&) {
-    return fallback;
-  }
-}
-
-std::map<std::string, sdbus::Variant> get_metadata_or(sdbus::IProxy& proxy) {
-  return get_property_or(proxy, k_mpris_player_interface, "Metadata", std::map<std::string, sdbus::Variant>{});
-}
-
-std::string get_string_from_variant(const std::map<std::string, sdbus::Variant>& values, std::string_view key) {
-  const auto it = values.find(std::string{key});
-  if (it == values.end()) {
-    return {};
+  bool is_valid_loop_status(std::string_view loop_status) {
+    return loop_status == "None" || loop_status == "Track" || loop_status == "Playlist";
   }
 
-  try {
-    return it->second.get<std::string>();
-  } catch (const sdbus::Error&) {
-    return {};
-  }
-}
-
-std::string get_object_path_from_variant(const std::map<std::string, sdbus::Variant>& values, std::string_view key) {
-  const auto it = values.find(std::string{key});
-  if (it == values.end()) {
-    return {};
+  template <typename T>
+  T get_property_or(sdbus::IProxy& proxy, std::string_view interface_name, std::string_view property_name, T fallback) {
+    try {
+      const sdbus::Variant value = proxy.getProperty(property_name).onInterface(interface_name);
+      return value.get<T>();
+    } catch (const sdbus::Error&) {
+      return fallback;
+    }
   }
 
-  try {
-    return it->second.get<sdbus::ObjectPath>();
-  } catch (const sdbus::Error&) {
+  std::map<std::string, sdbus::Variant> get_metadata_or(sdbus::IProxy& proxy) {
+    return get_property_or(proxy, k_mpris_player_interface, "Metadata", std::map<std::string, sdbus::Variant>{});
+  }
+
+  std::string get_string_from_variant(const std::map<std::string, sdbus::Variant>& values, std::string_view key) {
+    const auto it = values.find(std::string{key});
+    if (it == values.end()) {
+      return {};
+    }
+
     try {
       return it->second.get<std::string>();
     } catch (const sdbus::Error&) {
       return {};
     }
   }
-}
 
-std::vector<std::string> get_string_array_from_variant(const std::map<std::string, sdbus::Variant>& values,
-                                                       std::string_view key) {
-  const auto it = values.find(std::string{key});
-  if (it == values.end()) {
-    return {};
-  }
+  std::string get_object_path_from_variant(const std::map<std::string, sdbus::Variant>& values, std::string_view key) {
+    const auto it = values.find(std::string{key});
+    if (it == values.end()) {
+      return {};
+    }
 
-  try {
-    return it->second.get<std::vector<std::string>>();
-  } catch (const sdbus::Error&) {
-    return {};
-  }
-}
-
-int64_t get_int64_from_variant(const std::map<std::string, sdbus::Variant>& values, std::string_view key) {
-  const auto it = values.find(std::string{key});
-  if (it == values.end()) {
-    return 0;
-  }
-
-  try {
-    return it->second.get<int64_t>();
-  } catch (const sdbus::Error&) {
     try {
-      const auto value = it->second.get<uint64_t>();
-      return value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())
-                 ? std::numeric_limits<int64_t>::max()
-                 : static_cast<int64_t>(value);
+      return it->second.get<sdbus::ObjectPath>();
     } catch (const sdbus::Error&) {
       try {
-        return static_cast<int64_t>(it->second.get<int32_t>());
+        return it->second.get<std::string>();
+      } catch (const sdbus::Error&) {
+        return {};
+      }
+    }
+  }
+
+  std::vector<std::string> get_string_array_from_variant(const std::map<std::string, sdbus::Variant>& values,
+                                                         std::string_view key) {
+    const auto it = values.find(std::string{key});
+    if (it == values.end()) {
+      return {};
+    }
+
+    try {
+      return it->second.get<std::vector<std::string>>();
+    } catch (const sdbus::Error&) {
+      return {};
+    }
+  }
+
+  int64_t get_int64_from_variant(const std::map<std::string, sdbus::Variant>& values, std::string_view key) {
+    const auto it = values.find(std::string{key});
+    if (it == values.end()) {
+      return 0;
+    }
+
+    try {
+      return it->second.get<int64_t>();
+    } catch (const sdbus::Error&) {
+      try {
+        const auto value = it->second.get<uint64_t>();
+        return value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) ? std::numeric_limits<int64_t>::max()
+                                                                                  : static_cast<int64_t>(value);
       } catch (const sdbus::Error&) {
         try {
-          return static_cast<int64_t>(it->second.get<uint32_t>());
+          return static_cast<int64_t>(it->second.get<int32_t>());
         } catch (const sdbus::Error&) {
-          return 0;
+          try {
+            return static_cast<int64_t>(it->second.get<uint32_t>());
+          } catch (const sdbus::Error&) {
+            return 0;
+          }
         }
       }
     }
   }
-}
 
-[[maybe_unused]] std::string primary_artist(const std::vector<std::string>& artists) {
-  if (artists.empty()) {
-    return {};
-  }
-  return artists.front();
-}
-
-[[maybe_unused]] std::string joinKeys(const std::map<std::string, sdbus::Variant>& values) {
-  std::string out;
-  bool first = true;
-  for (const auto& [key, _] : values) {
-    if (!first) {
-      out += ", ";
+  [[maybe_unused]] std::string primary_artist(const std::vector<std::string>& artists) {
+    if (artists.empty()) {
+      return {};
     }
-    first = false;
-    out += key;
+    return artists.front();
   }
-  return out;
-}
 
-[[maybe_unused]] std::string joinStrings(const std::vector<std::string>& values) {
-  std::string out;
-  bool first = true;
-  for (const auto& value : values) {
-    if (!first) {
-      out += ", ";
+  [[maybe_unused]] std::string joinKeys(const std::map<std::string, sdbus::Variant>& values) {
+    std::string out;
+    bool first = true;
+    for (const auto& [key, _] : values) {
+      if (!first) {
+        out += ", ";
+      }
+      first = false;
+      out += key;
     }
-    first = false;
-    out += value;
+    return out;
   }
-  return out;
-}
 
-bool hasStrongNowPlayingMetadata(const MprisPlayerInfo& info) {
-  // Track IDs/source URLs can exist during transient "loading" states where the
-  // user-visible metadata is still placeholder-only (e.g. app identity + logo).
-  // Treat metadata as strong only when actual now-playing fields are present.
-  return !info.title.empty() || !info.artists.empty() || !info.album.empty();
-}
+  [[maybe_unused]] std::string joinStrings(const std::vector<std::string>& values) {
+    std::string out;
+    bool first = true;
+    for (const auto& value : values) {
+      if (!first) {
+        out += ", ";
+      }
+      first = false;
+      out += value;
+    }
+    return out;
+  }
 
-std::map<std::string, sdbus::Variant> to_dbus_player(const MprisPlayerInfo& info) {
-  std::map<std::string, sdbus::Variant> player;
-  player["bus_name"] = sdbus::Variant(info.busName);
-  player["identity"] = sdbus::Variant(info.identity);
-  player["desktop_entry"] = sdbus::Variant(info.desktopEntry);
-  player["playback_status"] = sdbus::Variant(info.playbackStatus);
-  player["track_id"] = sdbus::Variant(info.trackId);
-  player["title"] = sdbus::Variant(info.title);
-  player["artists"] = sdbus::Variant(info.artists);
-  player["album"] = sdbus::Variant(info.album);
-  player["source_url"] = sdbus::Variant(info.sourceUrl);
-  player["art_url"] = sdbus::Variant(info.artUrl);
-  player["loop_status"] = sdbus::Variant(info.loopStatus);
-  player["shuffle"] = sdbus::Variant(info.shuffle);
-  player["volume"] = sdbus::Variant(info.volume);
-  player["position_us"] = sdbus::Variant(info.positionUs);
-  player["length_us"] = sdbus::Variant(info.lengthUs);
-  player["can_play"] = sdbus::Variant(info.canPlay);
-  player["can_pause"] = sdbus::Variant(info.canPause);
-  player["can_go_next"] = sdbus::Variant(info.canGoNext);
-  player["can_go_previous"] = sdbus::Variant(info.canGoPrevious);
-  player["can_seek"] = sdbus::Variant(info.canSeek);
-  return player;
-}
+  bool hasStrongNowPlayingMetadata(const MprisPlayerInfo& info) {
+    // Track IDs/source URLs can exist during transient "loading" states where the
+    // user-visible metadata is still placeholder-only (e.g. app identity + logo).
+    // Treat metadata as strong only when actual now-playing fields are present.
+    return !info.title.empty() || !info.artists.empty() || !info.album.empty();
+  }
 
-constexpr Logger kLog("mpris");
+  std::map<std::string, sdbus::Variant> to_dbus_player(const MprisPlayerInfo& info) {
+    std::map<std::string, sdbus::Variant> player;
+    player["bus_name"] = sdbus::Variant(info.busName);
+    player["identity"] = sdbus::Variant(info.identity);
+    player["desktop_entry"] = sdbus::Variant(info.desktopEntry);
+    player["playback_status"] = sdbus::Variant(info.playbackStatus);
+    player["track_id"] = sdbus::Variant(info.trackId);
+    player["title"] = sdbus::Variant(info.title);
+    player["artists"] = sdbus::Variant(info.artists);
+    player["album"] = sdbus::Variant(info.album);
+    player["source_url"] = sdbus::Variant(info.sourceUrl);
+    player["art_url"] = sdbus::Variant(info.artUrl);
+    player["loop_status"] = sdbus::Variant(info.loopStatus);
+    player["shuffle"] = sdbus::Variant(info.shuffle);
+    player["volume"] = sdbus::Variant(info.volume);
+    player["position_us"] = sdbus::Variant(info.positionUs);
+    player["length_us"] = sdbus::Variant(info.lengthUs);
+    player["can_play"] = sdbus::Variant(info.canPlay);
+    player["can_pause"] = sdbus::Variant(info.canPause);
+    player["can_go_next"] = sdbus::Variant(info.canGoNext);
+    player["can_go_previous"] = sdbus::Variant(info.canGoPrevious);
+    player["can_seek"] = sdbus::Variant(info.canSeek);
+    return player;
+  }
+
+  constexpr Logger kLog("mpris");
 
 } // namespace
 
@@ -802,8 +801,8 @@ void MprisService::syncSignals(const std::optional<MprisPlayerInfo>& previousAct
     m_lastEmittedActivePlayer = current_active_name;
   }
 
-  if (previousActive.has_value() && current_active.has_value() &&
-      previousActive->busName == current_active->busName && previousActive->title != current_active->title) {
+  if (previousActive.has_value() && current_active.has_value() && previousActive->busName == current_active->busName &&
+      previousActive->title != current_active->title) {
     emitTrackChanged(*current_active);
   }
 }
@@ -923,9 +922,9 @@ void MprisService::addOrRefreshPlayer(const std::string& busName) {
     const MprisPlayerInfo info = readPlayerInfo(*proxyIt->second, busName);
     const auto now = std::chrono::steady_clock::now();
     // kLog.debug(
-    //     "queried player name={} identity=\"{}\" status=\"{}\" title=\"{}\" artist=\"{}\" track_id=\"{}\" art_url=\"{}\"",
-    //     info.busName, info.identity, info.playbackStatus, info.title, primary_artist(info.artists), info.trackId,
-    //     info.artUrl);
+    //     "queried player name={} identity=\"{}\" status=\"{}\" title=\"{}\" artist=\"{}\" track_id=\"{}\"
+    //     art_url=\"{}\"", info.busName, info.identity, info.playbackStatus, info.title, primary_artist(info.artists),
+    //     info.trackId, info.artUrl);
     if (info.artUrl.empty()) {
       const auto metadata = get_metadata_or(*proxyIt->second);
       // kLog.debug("queried player missing art url name={} metadata_keys=[{}]", info.busName, joinKeys(metadata));
@@ -1070,7 +1069,7 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
     }
   }
   if (mostRecentPlaying.has_value()) {
-    //kLog.debug("choose active player source=recent_playing name={}", *mostRecentPlaying);
+    // kLog.debug("choose active player source=recent_playing name={}", *mostRecentPlaying);
     return mostRecentPlaying;
   }
 

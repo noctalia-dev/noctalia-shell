@@ -11,12 +11,12 @@
 
 namespace {
 
-const char* glyphForState(bool enabled, bool forced) {
-  if (forced) {
-    return "nightlight-forced";
+  const char* glyphForState(bool enabled, bool forced) {
+    if (forced) {
+      return "nightlight-forced";
+    }
+    return enabled ? "nightlight-on" : "nightlight-off";
   }
-  return enabled ? "nightlight-on" : "nightlight-off";
-}
 
 } // namespace
 
@@ -66,9 +66,7 @@ void NightLightWidget::doLayout(Renderer& renderer, float /*containerWidth*/, fl
   }
 }
 
-void NightLightWidget::doUpdate(Renderer& renderer) {
-  syncState(renderer);
-}
+void NightLightWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
 
 void NightLightWidget::syncState(Renderer& renderer) {
   if (m_glyph == nullptr || m_area == nullptr) {

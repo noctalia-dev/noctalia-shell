@@ -126,9 +126,8 @@ void GridView::doLayout(Renderer& renderer) {
 
     float uniformWidth = maxMeasuredWidth;
     if (hasFixedWidth && columns > 0) {
-      const float innerWidth = std::max(
-          0.0f,
-          fixedWidth - m_paddingLeft - m_paddingRight - m_columnGap * static_cast<float>(columns - 1));
+      const float innerWidth =
+          std::max(0.0f, fixedWidth - m_paddingLeft - m_paddingRight - m_columnGap * static_cast<float>(columns - 1));
       uniformWidth = std::max(uniformWidth, innerWidth / static_cast<float>(columns));
     } else if (hasFixedWidth && m_stretchItems && stretchedWidth > 0.0f) {
       uniformWidth = std::max(uniformWidth, stretchedWidth);
@@ -172,12 +171,10 @@ void GridView::doLayout(Renderer& renderer) {
     }
   }
 
-  const float contentWidth = std::max(
-      0.0f, std::accumulate(columnWidths.begin(), columnWidths.end(), 0.0f) +
-                m_columnGap * static_cast<float>(columns > 0 ? columns - 1 : 0));
-  const float contentHeight = std::max(
-      0.0f, std::accumulate(rowHeights.begin(), rowHeights.end(), 0.0f) +
-                m_rowGap * static_cast<float>(rows > 0 ? rows - 1 : 0));
+  const float contentWidth = std::max(0.0f, std::accumulate(columnWidths.begin(), columnWidths.end(), 0.0f) +
+                                                m_columnGap * static_cast<float>(columns > 0 ? columns - 1 : 0));
+  const float contentHeight = std::max(0.0f, std::accumulate(rowHeights.begin(), rowHeights.end(), 0.0f) +
+                                                 m_rowGap * static_cast<float>(rows > 0 ? rows - 1 : 0));
 
   const float computedWidth = m_paddingLeft + contentWidth + m_paddingRight;
   const float computedHeight = m_paddingTop + contentHeight + m_paddingBottom;

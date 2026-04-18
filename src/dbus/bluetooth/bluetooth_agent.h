@@ -47,9 +47,9 @@ public:
   void setRequestCallback(RequestCallback callback);
 
   // Reply paths — safe no-ops if nothing is pending.
-  void acceptConfirm();                   // Confirm / Authorize / AuthorizeService / DisplayPinCode / DisplayPasskey
+  void acceptConfirm(); // Confirm / Authorize / AuthorizeService / DisplayPinCode / DisplayPasskey
   void rejectConfirm();
-  void submitPin(const std::string& pin); // PinCode kind
+  void submitPin(const std::string& pin);    // PinCode kind
   void submitPasskey(std::uint32_t passkey); // Passkey kind
   void cancelPending();
 

@@ -1,6 +1,8 @@
 #include "wayland/clipboard_service.h"
 
 #include "core/log.h"
+#include "ext-data-control-v1-client-protocol.h"
+#include "wlr-data-control-unstable-v1-client-protocol.h"
 
 #include <algorithm>
 #include <array>
@@ -18,12 +20,8 @@
 #include <string_view>
 #include <unistd.h>
 #include <unordered_set>
-
 #include <wayland-client-core.h>
 #include <wayland-client.h>
-
-#include "ext-data-control-v1-client-protocol.h"
-#include "wlr-data-control-unstable-v1-client-protocol.h"
 
 namespace {
 

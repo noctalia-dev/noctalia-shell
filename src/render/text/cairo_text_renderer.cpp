@@ -3,94 +3,95 @@
 #include "core/log.h"
 #include "render/programs/glyph_program.h"
 
-#include <cairo.h>
-#include <fontconfig/fontconfig.h>
-#include <pango/pango.h>
-#include <pango/pangocairo.h>
-
 #include <algorithm>
+#include <cairo.h>
 #include <cmath>
 #include <cstring>
+#include <fontconfig/fontconfig.h>
 #include <functional>
+#include <pango/pango.h>
+#include <pango/pangocairo.h>
 #include <vector>
 
 namespace {
 
-constexpr Logger kLog("text");
+  constexpr Logger kLog("text");
 
-constexpr std::uint32_t kSizeQuant = 64;
-constexpr std::uint32_t kScaleQuant = 64;
+  constexpr std::uint32_t kSizeQuant = 64;
+  constexpr std::uint32_t kScaleQuant = 64;
 
-inline std::uint32_t quantizeSize(float v) {
-  return static_cast<std::uint32_t>(std::max(0.0f, v) * static_cast<float>(kSizeQuant) + 0.5f);
-}
+  inline std::uint32_t quantizeSize(float v) {
+    return static_cast<std::uint32_t>(std::max(0.0f, v) * static_cast<float>(kSizeQuant) + 0.5f);
+  }
 
-inline std::uint16_t quantizeScale(float v) {
-  return static_cast<std::uint16_t>(std::max(0.0f, v) * static_cast<float>(kScaleQuant) + 0.5f);
-}
+  inline std::uint16_t quantizeScale(float v) {
+    return static_cast<std::uint16_t>(std::max(0.0f, v) * static_cast<float>(kScaleQuant) + 0.5f);
+  }
 
-void hashCombine(std::size_t& seed, std::size_t v) {
-  seed ^= v + 0x9E3779B97F4A7C15ULL + (seed << 12) + (seed >> 4);
-}
+  void hashCombine(std::size_t& seed, std::size_t v) { seed ^= v + 0x9E3779B97F4A7C15ULL + (seed << 12) + (seed >> 4); }
 
-// Pack rgb into the top 24 bits; alpha is always forced to 0xFF so that
-// opacity animations on a mixed-content string (the RGBA emoji path) reuse
-// the same cache entry — the caller's alpha is applied at draw time via
-// u_opacity instead of being baked into the raster.
-std::uint32_t packColorRgb(const Color& c) {
-  const auto clamp8 = [](float v) -> std::uint32_t {
-    const float s = std::clamp(v, 0.0f, 1.0f);
-    return static_cast<std::uint32_t>(s * 255.0f + 0.5f);
-  };
-  return (clamp8(c.r) << 24) | (clamp8(c.g) << 16) | (clamp8(c.b) << 8) | 0xFFu;
-}
+  // Pack rgb into the top 24 bits; alpha is always forced to 0xFF so that
+  // opacity animations on a mixed-content string (the RGBA emoji path) reuse
+  // the same cache entry — the caller's alpha is applied at draw time via
+  // u_opacity instead of being baked into the raster.
+  std::uint32_t packColorRgb(const Color& c) {
+    const auto clamp8 = [](float v) -> std::uint32_t {
+      const float s = std::clamp(v, 0.0f, 1.0f);
+      return static_cast<std::uint32_t>(s * 255.0f + 0.5f);
+    };
+    return (clamp8(c.r) << 24) | (clamp8(c.g) << 16) | (clamp8(c.b) << 8) | 0xFFu;
+  }
 
-// Swap BGRA<->RGBA in place on a premultiplied ARGB32 Cairo surface buffer.
-void swizzleBgraToRgba(unsigned char* data, int width, int height, int stride) {
-  for (int y = 0; y < height; ++y) {
-    unsigned char* row = data + y * stride;
-    for (int x = 0; x < width; ++x) {
-      unsigned char* p = row + x * 4;
-      std::swap(p[0], p[2]); // B <-> R; G and A unchanged
+  // Swap BGRA<->RGBA in place on a premultiplied ARGB32 Cairo surface buffer.
+  void swizzleBgraToRgba(unsigned char* data, int width, int height, int stride) {
+    for (int y = 0; y < height; ++y) {
+      unsigned char* row = data + y * stride;
+      for (int x = 0; x < width; ++x) {
+        unsigned char* p = row + x * 4;
+        std::swap(p[0], p[2]); // B <-> R; G and A unchanged
+      }
     }
   }
-}
 
-// Scan UTF-8 text for codepoints that are likely to resolve to a COLR/bitmap
-// color glyph. We can't ask Pango cheaply whether a shaped run used a color
-// font, so we approximate: if the text contains codepoints in the common
-// emoji / symbol / dingbat ranges, rasterize as RGBA so the color layers are
-// preserved. Otherwise we can use A8 coverage + shader tint, which lets one
-// cache entry serve all colors for the same text.
-bool containsColorGlyph(std::string_view text) {
-  const auto* s = reinterpret_cast<const unsigned char*>(text.data());
-  const std::size_t n = text.size();
-  std::size_t i = 0;
-  while (i < n) {
-    unsigned char b = s[i];
-    char32_t cp = 0;
-    int len = 1;
-    if (b < 0x80) {
-      cp = b;
-    } else if ((b & 0xE0) == 0xC0 && i + 1 < n) {
-      cp = static_cast<char32_t>((b & 0x1F) << 6 | (s[i + 1] & 0x3F));
-      len = 2;
-    } else if ((b & 0xF0) == 0xE0 && i + 2 < n) {
-      cp = static_cast<char32_t>((b & 0x0F) << 12 | (s[i + 1] & 0x3F) << 6 | (s[i + 2] & 0x3F));
-      len = 3;
-    } else if ((b & 0xF8) == 0xF0 && i + 3 < n) {
-      cp = static_cast<char32_t>((b & 0x07) << 18 | (s[i + 1] & 0x3F) << 12 | (s[i + 2] & 0x3F) << 6 | (s[i + 3] & 0x3F));
-      len = 4;
-    } else {
-      return true; // malformed — be safe
+  // Scan UTF-8 text for codepoints that are likely to resolve to a COLR/bitmap
+  // color glyph. We can't ask Pango cheaply whether a shaped run used a color
+  // font, so we approximate: if the text contains codepoints in the common
+  // emoji / symbol / dingbat ranges, rasterize as RGBA so the color layers are
+  // preserved. Otherwise we can use A8 coverage + shader tint, which lets one
+  // cache entry serve all colors for the same text.
+  bool containsColorGlyph(std::string_view text) {
+    const auto* s = reinterpret_cast<const unsigned char*>(text.data());
+    const std::size_t n = text.size();
+    std::size_t i = 0;
+    while (i < n) {
+      unsigned char b = s[i];
+      char32_t cp = 0;
+      int len = 1;
+      if (b < 0x80) {
+        cp = b;
+      } else if ((b & 0xE0) == 0xC0 && i + 1 < n) {
+        cp = static_cast<char32_t>((b & 0x1F) << 6 | (s[i + 1] & 0x3F));
+        len = 2;
+      } else if ((b & 0xF0) == 0xE0 && i + 2 < n) {
+        cp = static_cast<char32_t>((b & 0x0F) << 12 | (s[i + 1] & 0x3F) << 6 | (s[i + 2] & 0x3F));
+        len = 3;
+      } else if ((b & 0xF8) == 0xF0 && i + 3 < n) {
+        cp = static_cast<char32_t>((b & 0x07) << 18 | (s[i + 1] & 0x3F) << 12 | (s[i + 2] & 0x3F) << 6 |
+                                   (s[i + 3] & 0x3F));
+        len = 4;
+      } else {
+        return true; // malformed — be safe
+      }
+      i += static_cast<std::size_t>(len);
+      if (cp >= 0x2600 && cp <= 0x27BF)
+        return true; // misc symbols + dingbats
+      if (cp >= 0x1F000 && cp <= 0x1FFFF)
+        return true; // emoji planes
+      if (cp >= 0x1F900 && cp <= 0x1F9FF)
+        return true; // supplemental symbols
     }
-    i += static_cast<std::size_t>(len);
-    if (cp >= 0x2600 && cp <= 0x27BF) return true;   // misc symbols + dingbats
-    if (cp >= 0x1F000 && cp <= 0x1FFFF) return true; // emoji planes
-    if (cp >= 0x1F900 && cp <= 0x1F9FF) return true; // supplemental symbols
+    return false;
   }
-  return false;
-}
 
 } // namespace
 
@@ -391,7 +392,7 @@ void CairoTextRenderer::rasterizeLayout(PangoLayout* layout, const Color& color,
   struct LineSlot {
     PangoLayoutLine* line = nullptr;
     int xLeftPx = 0;    // alignment offset of this line within the layout (pixels)
-    int yTopPx = 0;    // top of line in full-layout raster pixels
+    int yTopPx = 0;     // top of line in full-layout raster pixels
     int baselinePx = 0; // baseline of line in full-layout raster pixels
   };
   struct TilePlan {
@@ -631,8 +632,8 @@ void CairoTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, f
     return;
   }
   if (entry->tiles.size() > 1) {
-    kLog.warn("draw tiles={} pxW={} pxH={} baseXY=({}, {})", entry->tiles.size(), entry->pixelWidth,
-              entry->pixelHeight, x, baselineY);
+    kLog.warn("draw tiles={} pxW={} pxH={} baseXY=({}, {})", entry->tiles.size(), entry->pixelWidth, entry->pixelHeight,
+              x, baselineY);
   }
 
   const float invScale = 1.0f / m_contentScale;

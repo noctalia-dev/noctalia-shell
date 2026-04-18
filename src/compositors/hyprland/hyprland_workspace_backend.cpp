@@ -3,35 +3,35 @@
 #include "core/log.h"
 
 #include <algorithm>
-#include <charconv>
 #include <cctype>
 #include <cerrno>
+#include <charconv>
 #include <cstring>
+#include <fcntl.h>
 #include <filesystem>
 #include <format>
 #include <string_view>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 namespace {
 
-constexpr Logger kLog("workspace_hyprland");
+  constexpr Logger kLog("workspace_hyprland");
 
-[[nodiscard]] std::optional<std::size_t> parseLeadingNumber(const std::string& value) {
-  if (value.empty() || !std::isdigit(static_cast<unsigned char>(value.front()))) {
-    return std::nullopt;
-  }
+  [[nodiscard]] std::optional<std::size_t> parseLeadingNumber(const std::string& value) {
+    if (value.empty() || !std::isdigit(static_cast<unsigned char>(value.front()))) {
+      return std::nullopt;
+    }
 
-  std::size_t parsed = 0;
-  std::size_t index = 0;
-  while (index < value.size() && std::isdigit(static_cast<unsigned char>(value[index]))) {
-    parsed = (parsed * 10) + static_cast<std::size_t>(value[index] - '0');
-    ++index;
+    std::size_t parsed = 0;
+    std::size_t index = 0;
+    while (index < value.size() && std::isdigit(static_cast<unsigned char>(value[index]))) {
+      parsed = (parsed * 10) + static_cast<std::size_t>(value[index] - '0');
+      ++index;
+    }
+    return parsed > 0 ? std::optional<std::size_t>(parsed) : std::nullopt;
   }
-  return parsed > 0 ? std::optional<std::size_t>(parsed) : std::nullopt;
-}
 
 } // namespace
 
@@ -589,8 +589,7 @@ void HyprlandWorkspaceBackend::handleEvent(std::string_view line) {
     }
     m_workspaces.erase(std::remove_if(m_workspaces.begin(), m_workspaces.end(),
                                       [&](const WorkspaceState& ws) {
-                                        return (id.has_value() && ws.id == *id) ||
-                                               (!name.empty() && ws.name == name);
+                                        return (id.has_value() && ws.id == *id) || (!name.empty() && ws.name == name);
                                       }),
                        m_workspaces.end());
 
@@ -840,8 +839,8 @@ std::string HyprlandWorkspaceBackend::quoteCommandArg(const std::string& value) 
 }
 
 Workspace HyprlandWorkspaceBackend::toWorkspace(const WorkspaceState& state) {
-  const std::uint32_t coord = state.id >= 0 ? static_cast<std::uint32_t>(state.id - 1)
-                                            : static_cast<std::uint32_t>(state.ordinal);
+  const std::uint32_t coord =
+      state.id >= 0 ? static_cast<std::uint32_t>(state.id - 1) : static_cast<std::uint32_t>(state.ordinal);
   return Workspace{
       .id = !state.name.empty() ? state.name : std::to_string(state.id),
       .name = state.name,

@@ -1,20 +1,6 @@
 #include "theme/cli.h"
 
-#include <algorithm>
-#include <cstdio>
-#include <cstring>
-#include <filesystem>
-#include <fstream>
-#include <optional>
-#include <string>
-#include <tuple>
-#include <unordered_map>
-#include <vector>
-
-#include <json.hpp>
-
 #include "core/toml.h"
-
 #include "theme/color.h"
 #include "theme/fixed_palette.h"
 #include "theme/image_loader.h"
@@ -22,6 +8,18 @@
 #include "theme/palette_generator.h"
 #include "theme/scheme.h"
 #include "theme/template_engine.h"
+
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <json.hpp>
+#include <optional>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <vector>
 
 namespace noctalia::theme {
 

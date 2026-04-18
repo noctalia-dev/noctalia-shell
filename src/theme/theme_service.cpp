@@ -17,12 +17,11 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <json.hpp>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <system_error>
-
-#include <json.hpp>
 
 namespace noctalia::theme {
 

@@ -16,54 +16,54 @@
 
 namespace {
 
-constexpr Logger kLog("desktop");
+  constexpr Logger kLog("desktop");
 
-std::string outputKey(const WaylandOutput& output) {
-  if (!output.connectorName.empty()) {
-    return output.connectorName;
-  }
-  return std::to_string(output.name);
-}
-
-float outputLogicalWidth(const WaylandOutput& output) {
-  if (output.logicalWidth > 0) {
-    return static_cast<float>(output.logicalWidth);
-  }
-  return static_cast<float>(std::max(1, output.width / std::max(1, output.scale)));
-}
-
-float outputLogicalHeight(const WaylandOutput& output) {
-  if (output.logicalHeight > 0) {
-    return static_cast<float>(output.logicalHeight);
-  }
-  return static_cast<float>(std::max(1, output.height / std::max(1, output.scale)));
-}
-
-const WaylandOutput* resolveEffectiveOutput(const WaylandConnection& wayland, const std::string& requestedOutput) {
-  const auto& outputs = wayland.outputs();
-  const WaylandOutput* primary = nullptr;
-  for (const auto& output : outputs) {
-    if (!output.done || output.output == nullptr) {
-      continue;
+  std::string outputKey(const WaylandOutput& output) {
+    if (!output.connectorName.empty()) {
+      return output.connectorName;
     }
-    if (primary == nullptr) {
-      primary = &output;
-    }
-    if (!requestedOutput.empty() && outputKey(output) == requestedOutput) {
-      return &output;
-    }
+    return std::to_string(output.name);
   }
-  return primary;
-}
 
-DesktopWidgetState* findStateById(DesktopWidgetsSnapshot& snapshot, const std::string& id) {
-  for (auto& widget : snapshot.widgets) {
-    if (widget.id == id) {
-      return &widget;
+  float outputLogicalWidth(const WaylandOutput& output) {
+    if (output.logicalWidth > 0) {
+      return static_cast<float>(output.logicalWidth);
     }
+    return static_cast<float>(std::max(1, output.width / std::max(1, output.scale)));
   }
-  return nullptr;
-}
+
+  float outputLogicalHeight(const WaylandOutput& output) {
+    if (output.logicalHeight > 0) {
+      return static_cast<float>(output.logicalHeight);
+    }
+    return static_cast<float>(std::max(1, output.height / std::max(1, output.scale)));
+  }
+
+  const WaylandOutput* resolveEffectiveOutput(const WaylandConnection& wayland, const std::string& requestedOutput) {
+    const auto& outputs = wayland.outputs();
+    const WaylandOutput* primary = nullptr;
+    for (const auto& output : outputs) {
+      if (!output.done || output.output == nullptr) {
+        continue;
+      }
+      if (primary == nullptr) {
+        primary = &output;
+      }
+      if (!requestedOutput.empty() && outputKey(output) == requestedOutput) {
+        return &output;
+      }
+    }
+    return primary;
+  }
+
+  DesktopWidgetState* findStateById(DesktopWidgetsSnapshot& snapshot, const std::string& id) {
+    for (auto& widget : snapshot.widgets) {
+      if (widget.id == id) {
+        return &widget;
+      }
+    }
+    return nullptr;
+  }
 
 } // namespace
 
@@ -148,9 +148,8 @@ void DesktopWidgetsHost::syncInstances() {
     return;
   }
 
-  std::erase_if(m_instances, [this](const auto& instance) {
-    return findStateById(m_snapshot, instance->state.id) == nullptr;
-  });
+  std::erase_if(m_instances,
+                [this](const auto& instance) { return findStateById(m_snapshot, instance->state.id) == nullptr; });
 
   for (const auto& state : m_snapshot.widgets) {
     const WaylandOutput* output = resolveEffectiveOutput(*m_wayland, state.outputName);
@@ -165,9 +164,9 @@ void DesktopWidgetsHost::syncInstances() {
     }
 
     const std::string effectiveOutputName = outputKey(*output);
-    const bool widgetDefinitionChanged =
-        existing->state.type != state.type || existing->state.settings != state.settings ||
-        existing->effectiveOutputName != effectiveOutputName;
+    const bool widgetDefinitionChanged = existing->state.type != state.type ||
+                                         existing->state.settings != state.settings ||
+                                         existing->effectiveOutputName != effectiveOutputName;
 
     if (widgetDefinitionChanged) {
       std::erase_if(m_instances, [&state](const auto& instance) { return instance->state.id == state.id; });
@@ -189,8 +188,8 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
     return;
   }
 
-  auto widget = m_factory->create(state.type, state.settings,
-                                  m_config != nullptr ? m_config->config().shell.uiScale : 1.0f);
+  auto widget =
+      m_factory->create(state.type, state.settings, m_config != nullptr ? m_config->config().shell.uiScale : 1.0f);
   if (widget == nullptr) {
     return;
   }
@@ -240,8 +239,9 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
 
   instance->surface->setConfigureCallback(
       [rawInstance](std::uint32_t /*width*/, std::uint32_t /*height*/) { rawInstance->surface->requestLayout(); });
-  instance->surface->setPrepareFrameCallback(
-      [this, rawInstance](bool needsUpdate, bool needsLayout) { prepareFrame(*rawInstance, needsUpdate, needsLayout); });
+  instance->surface->setPrepareFrameCallback([this, rawInstance](bool needsUpdate, bool needsLayout) {
+    prepareFrame(*rawInstance, needsUpdate, needsLayout);
+  });
   instance->surface->setFrameTickCallback([this, rawInstance](float deltaMs) {
     if (rawInstance->widget == nullptr || m_renderContext == nullptr) {
       return;
@@ -292,7 +292,8 @@ void DesktopWidgetsHost::prepareFrame(DesktopWidgetInstance& instance, bool need
   }
 
   if (m_wayland != nullptr) {
-    if (const WaylandOutput* output = resolveEffectiveOutput(*m_wayland, instance.state.outputName); output != nullptr) {
+    if (const WaylandOutput* output = resolveEffectiveOutput(*m_wayland, instance.state.outputName);
+        output != nullptr) {
       const WidgetTransformClampResult clamped = clampWidgetCenterToOutput(
           instance.state.cx, instance.state.cy, instance.intrinsicWidth, instance.intrinsicHeight, instance.state.scale,
           instance.state.rotationRad, outputLogicalWidth(*output), outputLogicalHeight(*output),
@@ -302,9 +303,9 @@ void DesktopWidgetsHost::prepareFrame(DesktopWidgetInstance& instance, bool need
     }
   }
 
-  const WidgetTransformSurfaceGeometry geometry = computeWidgetSurfaceGeometry(
-      instance.state.cx, instance.state.cy, instance.intrinsicWidth, instance.intrinsicHeight, instance.state.scale,
-      instance.state.rotationRad);
+  const WidgetTransformSurfaceGeometry geometry =
+      computeWidgetSurfaceGeometry(instance.state.cx, instance.state.cy, instance.intrinsicWidth,
+                                   instance.intrinsicHeight, instance.state.scale, instance.state.rotationRad);
 
   if (instance.surface->width() != geometry.surfaceWidth || instance.surface->height() != geometry.surfaceHeight) {
     instance.surface->requestSize(geometry.surfaceWidth, geometry.surfaceHeight);
@@ -317,9 +318,9 @@ void DesktopWidgetsHost::prepareFrame(DesktopWidgetInstance& instance, bool need
   }
   if (instance.transformNode != nullptr) {
     instance.transformNode->setFrameSize(instance.intrinsicWidth, instance.intrinsicHeight);
-    instance.transformNode->setPosition((static_cast<float>(instance.surface->width()) - instance.intrinsicWidth) * 0.5f,
-                                        (static_cast<float>(instance.surface->height()) - instance.intrinsicHeight) *
-                                            0.5f);
+    instance.transformNode->setPosition(
+        (static_cast<float>(instance.surface->width()) - instance.intrinsicWidth) * 0.5f,
+        (static_cast<float>(instance.surface->height()) - instance.intrinsicHeight) * 0.5f);
     instance.transformNode->setRotation(instance.state.rotationRad);
     instance.transformNode->setScale(instance.state.scale);
   }

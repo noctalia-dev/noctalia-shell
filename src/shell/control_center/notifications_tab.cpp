@@ -1,6 +1,6 @@
-#include "core/ui_phase.h"
 #include "shell/control_center/notifications_tab.h"
 
+#include "core/ui_phase.h"
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
 #include "shell/panel/panel_manager.h"
@@ -18,58 +18,58 @@ using namespace control_center;
 
 namespace {
 
-constexpr float kNotificationListRightPadding = Style::spaceSm;
-constexpr float kNotificationActionButtonSize = Style::controlHeightSm;
-constexpr int kSummaryMaxLines = 2;
-constexpr int kBodyMaxLines = 3;
-constexpr int kExpandedMaxLines = 500;
+  constexpr float kNotificationListRightPadding = Style::spaceSm;
+  constexpr float kNotificationActionButtonSize = Style::controlHeightSm;
+  constexpr int kSummaryMaxLines = 2;
+  constexpr int kBodyMaxLines = 3;
+  constexpr int kExpandedMaxLines = 500;
 
-std::string statusText(const NotificationHistoryEntry& entry) {
-  if (entry.active) {
-    return "Active";
-  }
-  if (!entry.closeReason.has_value()) {
+  std::string statusText(const NotificationHistoryEntry& entry) {
+    if (entry.active) {
+      return "Active";
+    }
+    if (!entry.closeReason.has_value()) {
+      return "Closed";
+    }
+    switch (*entry.closeReason) {
+    case CloseReason::Expired:
+      return "Expired";
+    case CloseReason::Dismissed:
+      return "Dismissed";
+    case CloseReason::ClosedByCall:
+      return "Closed";
+    }
     return "Closed";
   }
-  switch (*entry.closeReason) {
-  case CloseReason::Expired:    return "Expired";
-  case CloseReason::Dismissed:  return "Dismissed";
-  case CloseReason::ClosedByCall: return "Closed";
-  }
-  return "Closed";
-}
 
-ColorRole statusColorRole(const NotificationHistoryEntry& entry) {
-  if (entry.active) {
-    return ColorRole::Primary;
-  }
-  if (entry.closeReason == CloseReason::Dismissed) {
-    return ColorRole::Secondary;
-  }
-  return ColorRole::OnSurfaceVariant;
-}
-
-void applyNotificationCardStyle(Flex& card, float scale) {
-  applyOutlinedCard(card, scale);
-}
-
-bool canExpandText(Renderer& renderer, std::string_view text, float fontSize, bool bold, float maxWidth,
-                   int collapsedMaxLines) {
-  if (text.empty()) {
-    return false;
+  ColorRole statusColorRole(const NotificationHistoryEntry& entry) {
+    if (entry.active) {
+      return ColorRole::Primary;
+    }
+    if (entry.closeReason == CloseReason::Dismissed) {
+      return ColorRole::Secondary;
+    }
+    return ColorRole::OnSurfaceVariant;
   }
 
-  const auto collapsed = renderer.measureText(text, fontSize, bold, maxWidth, collapsedMaxLines);
-  const auto expanded = renderer.measureText(text, fontSize, bold, maxWidth, kExpandedMaxLines);
-  const float collapsedHeight = collapsed.bottom - collapsed.top;
-  const float expandedHeight = expanded.bottom - expanded.top;
-  return expandedHeight > collapsedHeight + 0.5f;
-}
+  void applyNotificationCardStyle(Flex& card, float scale) { applyOutlinedCard(card, scale); }
+
+  bool canExpandText(Renderer& renderer, std::string_view text, float fontSize, bool bold, float maxWidth,
+                     int collapsedMaxLines) {
+    if (text.empty()) {
+      return false;
+    }
+
+    const auto collapsed = renderer.measureText(text, fontSize, bold, maxWidth, collapsedMaxLines);
+    const auto expanded = renderer.measureText(text, fontSize, bold, maxWidth, kExpandedMaxLines);
+    const float collapsedHeight = collapsed.bottom - collapsed.top;
+    const float expandedHeight = expanded.bottom - expanded.top;
+    return expandedHeight > collapsedHeight + 0.5f;
+  }
 
 } // namespace
 
-NotificationsTab::NotificationsTab(NotificationManager* notifications)
-    : m_notifications(notifications) {}
+NotificationsTab::NotificationsTab(NotificationManager* notifications) : m_notifications(notifications) {}
 
 std::unique_ptr<Flex> NotificationsTab::create() {
   const float scale = contentScale();
@@ -318,9 +318,8 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     dismiss->setMinHeight(actionButtonSize);
     dismiss->setPadding(Style::spaceXs * scale);
     dismiss->setRadius(Style::radiusMd * scale);
-    dismiss->setOnClick([this, id = it->notification.id, active = it->active]() {
-      removeNotificationEntry(id, active);
-    });
+    dismiss->setOnClick(
+        [this, id = it->notification.id, active = it->active]() { removeNotificationEntry(id, active); });
     headerActions->addChild(std::move(dismiss));
     header->addChild(std::move(headerActions));
     card->addChild(std::move(header));

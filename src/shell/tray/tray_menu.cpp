@@ -1,9 +1,9 @@
-#include "core/ui_phase.h"
 #include "shell/tray/tray_menu.h"
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
+#include "core/ui_phase.h"
 #include "dbus/tray/tray_service.h"
 #include "render/render_context.h"
 #include "ui/controls/context_menu.h"
@@ -11,121 +11,117 @@
 #include "wayland/layer_surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
+#include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
 #include <optional>
 #include <string>
 
-#include "xdg-shell-client-protocol.h"
-
 namespace {
 
-constexpr Logger kLog("tray");
+  constexpr Logger kLog("tray");
 
-constexpr float kMenuWidth = 246.0f;
+  constexpr float kMenuWidth = 246.0f;
 
-constexpr float kSurfaceWidth = kMenuWidth;
+  constexpr float kSurfaceWidth = kMenuWidth;
 
-constexpr std::uint32_t kPopupConstraintAdjust = XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X |
-                                                 XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_Y |
-                                                 XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_X |
-                                                 XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y;
+  constexpr std::uint32_t kPopupConstraintAdjust =
+      XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X | XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_Y |
+      XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_X | XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_FLIP_Y;
 
-bool containsTrayWidget(const std::vector<std::string>& widgets) {
-  return std::find(widgets.begin(), widgets.end(), "tray") != widgets.end();
-}
-
-std::size_t visibleEntryLimit(std::size_t entryCount) {
-  return std::max<std::size_t>(1, entryCount);
-}
-
-std::optional<BarConfig> resolveTrayBarConfig(ConfigService* config, WaylandConnection* wayland, wl_output* output) {
-  if (config == nullptr) {
-    return std::nullopt;
+  bool containsTrayWidget(const std::vector<std::string>& widgets) {
+    return std::find(widgets.begin(), widgets.end(), "tray") != widgets.end();
   }
 
-  const WaylandOutput* wlOutput = nullptr;
-  if (wayland != nullptr && output != nullptr) {
-    wlOutput = wayland->findOutputByWl(output);
+  std::size_t visibleEntryLimit(std::size_t entryCount) { return std::max<std::size_t>(1, entryCount); }
+
+  std::optional<BarConfig> resolveTrayBarConfig(ConfigService* config, WaylandConnection* wayland, wl_output* output) {
+    if (config == nullptr) {
+      return std::nullopt;
+    }
+
+    const WaylandOutput* wlOutput = nullptr;
+    if (wayland != nullptr && output != nullptr) {
+      wlOutput = wayland->findOutputByWl(output);
+    }
+
+    std::optional<BarConfig> fallback;
+    for (const auto& base : config->config().bars) {
+      BarConfig resolved = base;
+      if (wlOutput != nullptr) {
+        resolved = ConfigService::resolveForOutput(base, *wlOutput);
+      }
+      if (!resolved.enabled) {
+        continue;
+      }
+      if (!fallback.has_value()) {
+        fallback = resolved;
+      }
+      if (containsTrayWidget(resolved.startWidgets) || containsTrayWidget(resolved.centerWidgets) ||
+          containsTrayWidget(resolved.endWidgets)) {
+        return resolved;
+      }
+    }
+    return fallback;
   }
 
-  std::optional<BarConfig> fallback;
-  for (const auto& base : config->config().bars) {
-    BarConfig resolved = base;
-    if (wlOutput != nullptr) {
-      resolved = ConfigService::resolveForOutput(base, *wlOutput);
-    }
-    if (!resolved.enabled) {
-      continue;
-    }
-    if (!fallback.has_value()) {
-      fallback = resolved;
-    }
-    if (containsTrayWidget(resolved.startWidgets) || containsTrayWidget(resolved.centerWidgets) ||
-        containsTrayWidget(resolved.endWidgets)) {
-      return resolved;
-    }
-  }
-  return fallback;
-}
-
-struct PopupPlacement {
-  std::int32_t anchorX = 0;
-  std::int32_t anchorY = 0;
-  std::int32_t anchorWidth = 1;
-  std::int32_t anchorHeight = 1;
-  std::uint32_t anchor = XDG_POSITIONER_ANCHOR_NONE;
-  std::uint32_t gravity = XDG_POSITIONER_GRAVITY_TOP;
-  std::int32_t offsetX = 0;
-  std::int32_t offsetY = 2;
-  ContextSubmenuDirection submenuDirection = ContextSubmenuDirection::Right;
-};
-
-PopupPlacement popupPlacementForBar(const BarConfig& bar, std::int32_t anchorX, std::int32_t anchorY) {
-  const std::int32_t kGap = std::max(2, static_cast<std::int32_t>(Style::spaceMd));
-  const std::int32_t iconSize = std::clamp(bar.thickness - 10, 16, 40);
-  const std::int32_t halfIcon = iconSize / 2;
-  PopupPlacement placement{
-      .anchorX = anchorX - halfIcon,
-      .anchorY = anchorY - halfIcon,
-      .anchorWidth = iconSize,
-      .anchorHeight = iconSize,
+  struct PopupPlacement {
+    std::int32_t anchorX = 0;
+    std::int32_t anchorY = 0;
+    std::int32_t anchorWidth = 1;
+    std::int32_t anchorHeight = 1;
+    std::uint32_t anchor = XDG_POSITIONER_ANCHOR_NONE;
+    std::uint32_t gravity = XDG_POSITIONER_GRAVITY_TOP;
+    std::int32_t offsetX = 0;
+    std::int32_t offsetY = 2;
+    ContextSubmenuDirection submenuDirection = ContextSubmenuDirection::Right;
   };
 
-  if (bar.position == "bottom") {
-    placement.anchor = XDG_POSITIONER_ANCHOR_TOP;
-    placement.gravity = XDG_POSITIONER_GRAVITY_TOP;
+  PopupPlacement popupPlacementForBar(const BarConfig& bar, std::int32_t anchorX, std::int32_t anchorY) {
+    const std::int32_t kGap = std::max(2, static_cast<std::int32_t>(Style::spaceMd));
+    const std::int32_t iconSize = std::clamp(bar.thickness - 10, 16, 40);
+    const std::int32_t halfIcon = iconSize / 2;
+    PopupPlacement placement{
+        .anchorX = anchorX - halfIcon,
+        .anchorY = anchorY - halfIcon,
+        .anchorWidth = iconSize,
+        .anchorHeight = iconSize,
+    };
+
+    if (bar.position == "bottom") {
+      placement.anchor = XDG_POSITIONER_ANCHOR_TOP;
+      placement.gravity = XDG_POSITIONER_GRAVITY_TOP;
+      placement.offsetX = 0;
+      placement.offsetY = -kGap;
+      placement.submenuDirection = ContextSubmenuDirection::Right;
+      return placement;
+    }
+
+    if (bar.position == "left") {
+      placement.anchor = XDG_POSITIONER_ANCHOR_RIGHT;
+      placement.gravity = XDG_POSITIONER_GRAVITY_RIGHT;
+      placement.offsetX = kGap;
+      placement.offsetY = 0;
+      placement.submenuDirection = ContextSubmenuDirection::Right;
+      return placement;
+    }
+
+    if (bar.position == "right") {
+      placement.anchor = XDG_POSITIONER_ANCHOR_LEFT;
+      placement.gravity = XDG_POSITIONER_GRAVITY_LEFT;
+      placement.offsetX = -kGap;
+      placement.offsetY = 0;
+      placement.submenuDirection = ContextSubmenuDirection::Left;
+      return placement;
+    }
+
+    placement.anchor = XDG_POSITIONER_ANCHOR_BOTTOM;
+    placement.gravity = XDG_POSITIONER_GRAVITY_BOTTOM;
     placement.offsetX = 0;
-    placement.offsetY = -kGap;
+    placement.offsetY = kGap;
     placement.submenuDirection = ContextSubmenuDirection::Right;
     return placement;
   }
-
-  if (bar.position == "left") {
-    placement.anchor = XDG_POSITIONER_ANCHOR_RIGHT;
-    placement.gravity = XDG_POSITIONER_GRAVITY_RIGHT;
-    placement.offsetX = kGap;
-    placement.offsetY = 0;
-    placement.submenuDirection = ContextSubmenuDirection::Right;
-    return placement;
-  }
-
-  if (bar.position == "right") {
-    placement.anchor = XDG_POSITIONER_ANCHOR_LEFT;
-    placement.gravity = XDG_POSITIONER_GRAVITY_LEFT;
-    placement.offsetX = -kGap;
-    placement.offsetY = 0;
-    placement.submenuDirection = ContextSubmenuDirection::Left;
-    return placement;
-  }
-
-  placement.anchor = XDG_POSITIONER_ANCHOR_BOTTOM;
-  placement.gravity = XDG_POSITIONER_GRAVITY_BOTTOM;
-  placement.offsetX = 0;
-  placement.offsetY = kGap;
-  placement.submenuDirection = ContextSubmenuDirection::Right;
-  return placement;
-}
 
 } // namespace
 
@@ -244,17 +240,19 @@ bool TrayMenu::onPointerEvent(const PointerEvent& event) {
       break;
     case PointerEvent::Type::Motion:
       if (onSub || sub->pointerInside) {
-        if (onSub) sub->pointerInside = true;
+        if (onSub)
+          sub->pointerInside = true;
         sub->inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), 0);
         subConsumed = true;
       }
       break;
     case PointerEvent::Type::Button:
       if (onSub || sub->pointerInside) {
-        if (onSub) sub->pointerInside = true;
+        if (onSub)
+          sub->pointerInside = true;
         const bool pressed = (event.state == 1);
-        sub->inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy),
-                                           event.button, pressed);
+        sub->inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy), event.button,
+                                           pressed);
         subConsumed = true;
         if (m_submenuInstance == nullptr) {
           return subConsumed;
@@ -446,8 +444,8 @@ void TrayMenu::ensureSurface() {
   const std::uint32_t serial = m_wayland->lastInputSerial();
 
   if (parentLayerSurface == nullptr || output == nullptr || serial == 0) {
-    kLog.warn("tray menu: missing popup anchor context (parent={}, output={}, serial={})", parentLayerSurface != nullptr,
-              output != nullptr, serial);
+    kLog.warn("tray menu: missing popup anchor context (parent={}, output={}, serial={})",
+              parentLayerSurface != nullptr, output != nullptr, serial);
     return;
   }
 
@@ -465,8 +463,9 @@ void TrayMenu::ensureSurface() {
 
   inst->surface->setConfigureCallback(
       [instPtr](uint32_t /*width*/, uint32_t /*height*/) { instPtr->surface->requestLayout(); });
-  inst->surface->setPrepareFrameCallback(
-      [this, instPtr](bool needsUpdate, bool needsLayout) { prepareMainMenuFrame(*instPtr, needsUpdate, needsLayout); });
+  inst->surface->setPrepareFrameCallback([this, instPtr](bool needsUpdate, bool needsLayout) {
+    prepareMainMenuFrame(*instPtr, needsUpdate, needsLayout);
+  });
   inst->surface->setDismissedCallback([this]() { close(); });
   inst->surface->setRenderContext(m_renderContext);
 
@@ -537,9 +536,9 @@ void TrayMenu::prepareMainMenuFrame(MenuInstance& inst, bool /*needsUpdate*/, bo
 
   m_renderContext->makeCurrent(inst.surface->renderTarget());
 
-  const bool needsSceneBuild =
-      inst.sceneRoot == nullptr || static_cast<uint32_t>(std::round(inst.sceneRoot->width())) != width ||
-      static_cast<uint32_t>(std::round(inst.sceneRoot->height())) != height;
+  const bool needsSceneBuild = inst.sceneRoot == nullptr ||
+                               static_cast<uint32_t>(std::round(inst.sceneRoot->width())) != width ||
+                               static_cast<uint32_t>(std::round(inst.sceneRoot->height())) != height;
   if (needsSceneBuild || needsLayout) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     buildScene(inst, width, height);
@@ -587,9 +586,8 @@ void TrayMenu::buildScene(MenuInstance& inst, uint32_t width, uint32_t height) {
       close();
     });
   });
-  menu->setOnSubmenuOpen([this](const ContextMenuControlEntry& entry, float rowCenterY) {
-    openSubmenu(entry.id, rowCenterY);
-  });
+  menu->setOnSubmenuOpen(
+      [this](const ContextMenuControlEntry& entry, float rowCenterY) { openSubmenu(entry.id, rowCenterY); });
   menu->setPosition(0.0f, 0.0f);
   menu->setSize(w, h);
   menu->layout(*m_renderContext);
@@ -652,8 +650,7 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
   inst->submenuDirection = subDir;
   auto* instPtr = inst.get();
 
-  inst->surface->setConfigureCallback(
-      [instPtr](uint32_t /*w*/, uint32_t /*h*/) { instPtr->surface->requestLayout(); });
+  inst->surface->setConfigureCallback([instPtr](uint32_t /*w*/, uint32_t /*h*/) { instPtr->surface->requestLayout(); });
   inst->surface->setPrepareFrameCallback(
       [this, instPtr](bool needsUpdate, bool needsLayout) { prepareSubmenuFrame(*instPtr, needsUpdate, needsLayout); });
   inst->surface->setDismissedCallback([this]() { closeSubmenu(); });
@@ -700,9 +697,9 @@ void TrayMenu::prepareSubmenuFrame(MenuInstance& inst, bool /*needsUpdate*/, boo
 
   m_renderContext->makeCurrent(inst.surface->renderTarget());
 
-  const bool needsSceneBuild =
-      inst.sceneRoot == nullptr || static_cast<uint32_t>(std::round(inst.sceneRoot->width())) != width ||
-      static_cast<uint32_t>(std::round(inst.sceneRoot->height())) != height;
+  const bool needsSceneBuild = inst.sceneRoot == nullptr ||
+                               static_cast<uint32_t>(std::round(inst.sceneRoot->width())) != width ||
+                               static_cast<uint32_t>(std::round(inst.sceneRoot->height())) != height;
   if (needsSceneBuild || needsLayout) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     buildSubmenuScene(inst, width, height);

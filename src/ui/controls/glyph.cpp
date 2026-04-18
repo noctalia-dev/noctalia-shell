@@ -56,12 +56,12 @@ void Glyph::doLayout(Renderer& renderer) { measure(renderer); }
 void Glyph::measure(Renderer& renderer) {
   const float assignedWidth = width();
   const float curFlexGrow = flexGrow();
-  if (m_measureCached && m_cachedCodepoint == m_glyphNode->codepoint() &&
-      m_cachedFontSize == m_glyphNode->fontSize() && m_cachedLogicalFontSize == m_logicalFontSize &&
-      m_cachedAssignedWidth == assignedWidth && m_cachedFlexGrow == curFlexGrow) {
+  if (m_measureCached && m_cachedCodepoint == m_glyphNode->codepoint() && m_cachedFontSize == m_glyphNode->fontSize() &&
+      m_cachedLogicalFontSize == m_logicalFontSize && m_cachedAssignedWidth == assignedWidth &&
+      m_cachedFlexGrow == curFlexGrow) {
     return;
   }
-  auto metrics    = renderer.measureGlyph(m_glyphNode->codepoint(), m_glyphNode->fontSize());
+  auto metrics = renderer.measureGlyph(m_glyphNode->codepoint(), m_glyphNode->fontSize());
   auto refMetrics = renderer.measureText("A", m_logicalFontSize);
 
   // Bounding box uses the "A" text reference — same height as Label — so glyphs

@@ -1,12 +1,11 @@
 #include "compositors/mango/mango_workspace_backend.h"
 
 #include "core/log.h"
+#include "dwl-ipc-unstable-v2-client-protocol.h"
 
 #include <algorithm>
 #include <charconv>
 #include <string>
-
-#include "dwl-ipc-unstable-v2-client-protocol.h"
 
 namespace {
 
@@ -230,8 +229,7 @@ void MangoWorkspaceBackend::onOutputTag(zdwl_ipc_output_v2* handle, std::uint32_
   tagInfo.occupied = clients > 0;
   kLog.debug("tag event output={} protocol_tag={} active={} urgent={} occupied={} total_tags={} snapshot={}",
              static_cast<const void*>(output->second.output), tag + 1, tagInfo.active ? "yes" : "no",
-             tagInfo.urgent ? "yes" : "no", tagInfo.occupied ? "yes" : "no", m_tagCount,
-             summarizeTags(output->second));
+             tagInfo.urgent ? "yes" : "no", tagInfo.occupied ? "yes" : "no", m_tagCount, summarizeTags(output->second));
 }
 
 void MangoWorkspaceBackend::onOutputFrame(zdwl_ipc_output_v2* handle) {

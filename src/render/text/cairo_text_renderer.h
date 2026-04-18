@@ -5,7 +5,6 @@
 #include "render/core/renderer.h"
 
 #include <GLES2/gl2.h>
-
 #include <cstdint>
 #include <list>
 #include <string>
@@ -34,8 +33,8 @@ public:
     float width = 0.0f;
     float left = 0.0f;
     float right = 0.0f;
-    float top = 0.0f;    // negative — above baseline
-    float bottom = 0.0f; // positive — below baseline
+    float top = 0.0f;       // negative — above baseline
+    float bottom = 0.0f;    // positive — below baseline
     float inkTop = 0.0f;    // negative — visible ink above baseline
     float inkBottom = 0.0f; // positive — visible ink below baseline
   };
@@ -113,12 +112,12 @@ private:
 
   struct CacheEntry {
     std::vector<Tile> tiles;
-    int pixelWidth = 0;    // total raster surface pixel width
-    int pixelHeight = 0;   // total raster surface pixel height (sum of tiles)
-    float baselinePx = 0;  // baseline from top of full layout, in raster pixels
-    TextMetrics metrics;   // logical metrics in logical (unscaled) pixels
+    int pixelWidth = 0;   // total raster surface pixel width
+    int pixelHeight = 0;  // total raster surface pixel height (sum of tiles)
+    float baselinePx = 0; // baseline from top of full layout, in raster pixels
+    TextMetrics metrics;  // logical metrics in logical (unscaled) pixels
     std::size_t bytes = 0;
-    bool tinted = false;   // true: GL_ALPHA coverage, tint in shader; false: premul RGBA
+    bool tinted = false; // true: GL_ALPHA coverage, tint in shader; false: premul RGBA
     LruList::iterator lruIt;
   };
 
@@ -147,7 +146,7 @@ private:
   bool m_fontConfigInitialized = false;
   std::string m_fontFamily = "sans-serif";
 
-  PangoFontMap* m_fontMap = nullptr;    // owned
+  PangoFontMap* m_fontMap = nullptr;      // owned
   PangoContext* m_pangoContext = nullptr; // owned
   GlyphProgram* m_program = nullptr;
 

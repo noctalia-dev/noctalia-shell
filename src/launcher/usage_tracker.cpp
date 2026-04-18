@@ -1,10 +1,9 @@
 #include "launcher/usage_tracker.h"
 
-#include <json.hpp>
-
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <json.hpp>
 
 namespace {
 

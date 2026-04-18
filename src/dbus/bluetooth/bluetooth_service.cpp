@@ -15,211 +15,210 @@
 
 namespace {
 
-constexpr Logger kLog("bluetooth");
+  constexpr Logger kLog("bluetooth");
 
-const sdbus::ServiceName k_bluezBusName{"org.bluez"};
-const sdbus::ObjectPath k_rootPath{"/"};
-constexpr auto k_adapterInterface = "org.bluez.Adapter1";
-constexpr auto k_deviceInterface = "org.bluez.Device1";
-constexpr auto k_batteryInterface = "org.bluez.Battery1";
-constexpr auto k_objectManagerInterface = "org.freedesktop.DBus.ObjectManager";
-constexpr auto k_propertiesInterface = "org.freedesktop.DBus.Properties";
+  const sdbus::ServiceName k_bluezBusName{"org.bluez"};
+  const sdbus::ObjectPath k_rootPath{"/"};
+  constexpr auto k_adapterInterface = "org.bluez.Adapter1";
+  constexpr auto k_deviceInterface = "org.bluez.Device1";
+  constexpr auto k_batteryInterface = "org.bluez.Battery1";
+  constexpr auto k_objectManagerInterface = "org.freedesktop.DBus.ObjectManager";
+  constexpr auto k_propertiesInterface = "org.freedesktop.DBus.Properties";
 
-using InterfaceProps = std::map<std::string, sdbus::Variant>;
-using ObjectInterfaces = std::map<std::string, InterfaceProps>;
-using ManagedObjects = std::map<sdbus::ObjectPath, ObjectInterfaces>;
+  using InterfaceProps = std::map<std::string, sdbus::Variant>;
+  using ObjectInterfaces = std::map<std::string, InterfaceProps>;
+  using ManagedObjects = std::map<sdbus::ObjectPath, ObjectInterfaces>;
 
-template <typename T>
-std::optional<T> variantGet(const sdbus::Variant& value) {
-  try {
-    return value.get<T>();
-  } catch (const sdbus::Error&) {
-    return std::nullopt;
+  template <typename T> std::optional<T> variantGet(const sdbus::Variant& value) {
+    try {
+      return value.get<T>();
+    } catch (const sdbus::Error&) {
+      return std::nullopt;
+    }
   }
-}
 
-BluetoothDeviceKind classifyIcon(std::string_view icon) {
-  // See https://specifications.freedesktop.org/icon-naming-spec/latest/
-  // BlueZ uses names like "audio-headset", "input-mouse", "phone", "computer".
-  if (icon == "audio-headset") {
-    return BluetoothDeviceKind::Headset;
-  }
-  if (icon == "audio-headphones") {
-    return BluetoothDeviceKind::Headphones;
-  }
-  if (icon == "audio-card" || icon == "audio-speakers") {
-    return BluetoothDeviceKind::Speaker;
-  }
-  if (icon == "input-mouse") {
-    return BluetoothDeviceKind::Mouse;
-  }
-  if (icon == "input-keyboard") {
-    return BluetoothDeviceKind::Keyboard;
-  }
-  if (icon == "input-gaming") {
-    return BluetoothDeviceKind::Gamepad;
-  }
-  if (icon == "phone") {
-    return BluetoothDeviceKind::Phone;
-  }
-  if (icon == "computer") {
-    return BluetoothDeviceKind::Computer;
-  }
-  if (icon == "video-display") {
-    return BluetoothDeviceKind::Tv;
-  }
-  return BluetoothDeviceKind::Unknown;
-}
-
-BluetoothDeviceKind classifyClass(std::uint32_t cod) {
-  // Bluetooth Class of Device: bits 8-12 are Major Device Class.
-  const std::uint32_t major = (cod >> 8) & 0x1FU;
-  const std::uint32_t minor = (cod >> 2) & 0x3FU;
-  switch (major) {
-  case 0x01: // Computer
-    return BluetoothDeviceKind::Computer;
-  case 0x02: // Phone
-    return BluetoothDeviceKind::Phone;
-  case 0x04: // Audio/Video
-    switch (minor) {
-    case 0x01: // Wearable headset
-    case 0x02: // Hands-free
+  BluetoothDeviceKind classifyIcon(std::string_view icon) {
+    // See https://specifications.freedesktop.org/icon-naming-spec/latest/
+    // BlueZ uses names like "audio-headset", "input-mouse", "phone", "computer".
+    if (icon == "audio-headset") {
       return BluetoothDeviceKind::Headset;
-    case 0x06:
-      return BluetoothDeviceKind::Headphones;
-    case 0x05: // Loudspeaker
-    case 0x07: // Portable audio
-      return BluetoothDeviceKind::Speaker;
-    case 0x04:
-      return BluetoothDeviceKind::Microphone;
-    case 0x0A: // Video display/loudspeaker
-    case 0x0B: // Video display/conferencing
-      return BluetoothDeviceKind::Tv;
-    default:
+    }
+    if (icon == "audio-headphones") {
       return BluetoothDeviceKind::Headphones;
     }
-  case 0x05: // Peripheral
-    switch (minor & 0x0FU) {
-    case 0x01:
-      return BluetoothDeviceKind::Keyboard;
-    case 0x02:
+    if (icon == "audio-card" || icon == "audio-speakers") {
+      return BluetoothDeviceKind::Speaker;
+    }
+    if (icon == "input-mouse") {
       return BluetoothDeviceKind::Mouse;
+    }
+    if (icon == "input-keyboard") {
+      return BluetoothDeviceKind::Keyboard;
+    }
+    if (icon == "input-gaming") {
+      return BluetoothDeviceKind::Gamepad;
+    }
+    if (icon == "phone") {
+      return BluetoothDeviceKind::Phone;
+    }
+    if (icon == "computer") {
+      return BluetoothDeviceKind::Computer;
+    }
+    if (icon == "video-display") {
+      return BluetoothDeviceKind::Tv;
+    }
+    return BluetoothDeviceKind::Unknown;
+  }
+
+  BluetoothDeviceKind classifyClass(std::uint32_t cod) {
+    // Bluetooth Class of Device: bits 8-12 are Major Device Class.
+    const std::uint32_t major = (cod >> 8) & 0x1FU;
+    const std::uint32_t minor = (cod >> 2) & 0x3FU;
+    switch (major) {
+    case 0x01: // Computer
+      return BluetoothDeviceKind::Computer;
+    case 0x02: // Phone
+      return BluetoothDeviceKind::Phone;
+    case 0x04: // Audio/Video
+      switch (minor) {
+      case 0x01: // Wearable headset
+      case 0x02: // Hands-free
+        return BluetoothDeviceKind::Headset;
+      case 0x06:
+        return BluetoothDeviceKind::Headphones;
+      case 0x05: // Loudspeaker
+      case 0x07: // Portable audio
+        return BluetoothDeviceKind::Speaker;
+      case 0x04:
+        return BluetoothDeviceKind::Microphone;
+      case 0x0A: // Video display/loudspeaker
+      case 0x0B: // Video display/conferencing
+        return BluetoothDeviceKind::Tv;
+      default:
+        return BluetoothDeviceKind::Headphones;
+      }
+    case 0x05: // Peripheral
+      switch (minor & 0x0FU) {
+      case 0x01:
+        return BluetoothDeviceKind::Keyboard;
+      case 0x02:
+        return BluetoothDeviceKind::Mouse;
+      default:
+        return BluetoothDeviceKind::Unknown;
+      }
+    case 0x07: // Wearable
+      return BluetoothDeviceKind::Watch;
+    case 0x08: // Toy / Gamepad
+      return BluetoothDeviceKind::Gamepad;
     default:
       return BluetoothDeviceKind::Unknown;
     }
-  case 0x07: // Wearable
-    return BluetoothDeviceKind::Watch;
-  case 0x08: // Toy / Gamepad
-    return BluetoothDeviceKind::Gamepad;
-  default:
-    return BluetoothDeviceKind::Unknown;
   }
-}
 
-void readAdapterProps(const InterfaceProps& props, BluetoothState& out) {
-  out.adapterPresent = true;
-  if (auto it = props.find("Powered"); it != props.end()) {
-    if (auto v = variantGet<bool>(it->second)) {
-      out.powered = *v;
+  void readAdapterProps(const InterfaceProps& props, BluetoothState& out) {
+    out.adapterPresent = true;
+    if (auto it = props.find("Powered"); it != props.end()) {
+      if (auto v = variantGet<bool>(it->second)) {
+        out.powered = *v;
+      }
+    }
+    if (auto it = props.find("Discoverable"); it != props.end()) {
+      if (auto v = variantGet<bool>(it->second)) {
+        out.discoverable = *v;
+      }
+    }
+    if (auto it = props.find("Pairable"); it != props.end()) {
+      if (auto v = variantGet<bool>(it->second)) {
+        out.pairable = *v;
+      }
+    }
+    if (auto it = props.find("Discovering"); it != props.end()) {
+      if (auto v = variantGet<bool>(it->second)) {
+        out.discovering = *v;
+      }
+    }
+    if (auto it = props.find("Alias"); it != props.end()) {
+      if (auto v = variantGet<std::string>(it->second)) {
+        out.adapterName = std::move(*v);
+      }
+    } else if (auto nameIt = props.find("Name"); nameIt != props.end()) {
+      if (auto v = variantGet<std::string>(nameIt->second)) {
+        out.adapterName = std::move(*v);
+      }
     }
   }
-  if (auto it = props.find("Discoverable"); it != props.end()) {
-    if (auto v = variantGet<bool>(it->second)) {
-      out.discoverable = *v;
-    }
-  }
-  if (auto it = props.find("Pairable"); it != props.end()) {
-    if (auto v = variantGet<bool>(it->second)) {
-      out.pairable = *v;
-    }
-  }
-  if (auto it = props.find("Discovering"); it != props.end()) {
-    if (auto v = variantGet<bool>(it->second)) {
-      out.discovering = *v;
-    }
-  }
-  if (auto it = props.find("Alias"); it != props.end()) {
-    if (auto v = variantGet<std::string>(it->second)) {
-      out.adapterName = std::move(*v);
-    }
-  } else if (auto nameIt = props.find("Name"); nameIt != props.end()) {
-    if (auto v = variantGet<std::string>(nameIt->second)) {
-      out.adapterName = std::move(*v);
-    }
-  }
-}
 
-void mergeDeviceProps(const InterfaceProps& props, BluetoothDeviceInfo& out) {
-  if (auto it = props.find("Address"); it != props.end()) {
-    if (auto v = variantGet<std::string>(it->second)) {
-      out.address = std::move(*v);
+  void mergeDeviceProps(const InterfaceProps& props, BluetoothDeviceInfo& out) {
+    if (auto it = props.find("Address"); it != props.end()) {
+      if (auto v = variantGet<std::string>(it->second)) {
+        out.address = std::move(*v);
+      }
     }
-  }
-  if (auto it = props.find("Alias"); it != props.end()) {
-    if (auto v = variantGet<std::string>(it->second)) {
-      out.alias = std::move(*v);
-    }
-  }
-  if (out.alias.empty()) {
-    if (auto it = props.find("Name"); it != props.end()) {
+    if (auto it = props.find("Alias"); it != props.end()) {
       if (auto v = variantGet<std::string>(it->second)) {
         out.alias = std::move(*v);
       }
     }
-  }
-  if (auto it = props.find("Paired"); it != props.end()) {
-    if (auto v = variantGet<bool>(it->second)) {
-      out.paired = *v;
-    }
-  }
-  if (auto it = props.find("Trusted"); it != props.end()) {
-    if (auto v = variantGet<bool>(it->second)) {
-      out.trusted = *v;
-    }
-  }
-  if (auto it = props.find("Connected"); it != props.end()) {
-    if (auto v = variantGet<bool>(it->second)) {
-      out.connected = *v;
-      if (out.connected) {
-        out.connecting = false;
+    if (out.alias.empty()) {
+      if (auto it = props.find("Name"); it != props.end()) {
+        if (auto v = variantGet<std::string>(it->second)) {
+          out.alias = std::move(*v);
+        }
       }
     }
-  }
-  if (auto it = props.find("RSSI"); it != props.end()) {
-    if (auto v = variantGet<std::int16_t>(it->second)) {
-      out.rssi = *v;
-      out.hasRssi = true;
-    }
-  }
-  BluetoothDeviceKind kindFromIcon = BluetoothDeviceKind::Unknown;
-  if (auto it = props.find("Icon"); it != props.end()) {
-    if (auto v = variantGet<std::string>(it->second)) {
-      kindFromIcon = classifyIcon(*v);
-    }
-  }
-  if (kindFromIcon != BluetoothDeviceKind::Unknown) {
-    out.kind = kindFromIcon;
-  } else if (auto it = props.find("Class"); it != props.end()) {
-    if (auto v = variantGet<std::uint32_t>(it->second)) {
-      const auto kindFromCod = classifyClass(*v);
-      if (kindFromCod != BluetoothDeviceKind::Unknown) {
-        out.kind = kindFromCod;
+    if (auto it = props.find("Paired"); it != props.end()) {
+      if (auto v = variantGet<bool>(it->second)) {
+        out.paired = *v;
       }
     }
+    if (auto it = props.find("Trusted"); it != props.end()) {
+      if (auto v = variantGet<bool>(it->second)) {
+        out.trusted = *v;
+      }
+    }
+    if (auto it = props.find("Connected"); it != props.end()) {
+      if (auto v = variantGet<bool>(it->second)) {
+        out.connected = *v;
+        if (out.connected) {
+          out.connecting = false;
+        }
+      }
+    }
+    if (auto it = props.find("RSSI"); it != props.end()) {
+      if (auto v = variantGet<std::int16_t>(it->second)) {
+        out.rssi = *v;
+        out.hasRssi = true;
+      }
+    }
+    BluetoothDeviceKind kindFromIcon = BluetoothDeviceKind::Unknown;
+    if (auto it = props.find("Icon"); it != props.end()) {
+      if (auto v = variantGet<std::string>(it->second)) {
+        kindFromIcon = classifyIcon(*v);
+      }
+    }
+    if (kindFromIcon != BluetoothDeviceKind::Unknown) {
+      out.kind = kindFromIcon;
+    } else if (auto it = props.find("Class"); it != props.end()) {
+      if (auto v = variantGet<std::uint32_t>(it->second)) {
+        const auto kindFromCod = classifyClass(*v);
+        if (kindFromCod != BluetoothDeviceKind::Unknown) {
+          out.kind = kindFromCod;
+        }
+      }
+    }
+    if (out.alias.empty()) {
+      out.alias = out.address.empty() ? std::string("Unknown device") : out.address;
+    }
   }
-  if (out.alias.empty()) {
-    out.alias = out.address.empty() ? std::string("Unknown device") : out.address;
-  }
-}
 
-void mergeBatteryProps(const InterfaceProps& props, BluetoothDeviceInfo& out) {
-  if (auto it = props.find("Percentage"); it != props.end()) {
-    if (auto v = variantGet<std::uint8_t>(it->second)) {
-      out.hasBattery = true;
-      out.batteryPercent = *v;
+  void mergeBatteryProps(const InterfaceProps& props, BluetoothDeviceInfo& out) {
+    if (auto it = props.find("Percentage"); it != props.end()) {
+      if (auto v = variantGet<std::uint8_t>(it->second)) {
+        out.hasBattery = true;
+        out.batteryPercent = *v;
+      }
     }
   }
-}
 
 } // namespace
 
@@ -613,8 +612,8 @@ void BluetoothService::forget(const std::string& devicePath) {
 }
 
 BluetoothDeviceInfo* BluetoothService::findDevice(const std::string& path) {
-  auto it = std::find_if(m_devices.begin(), m_devices.end(),
-                         [&](const BluetoothDeviceInfo& d) { return d.path == path; });
+  auto it =
+      std::find_if(m_devices.begin(), m_devices.end(), [&](const BluetoothDeviceInfo& d) { return d.path == path; });
   return it == m_devices.end() ? nullptr : &*it;
 }
 

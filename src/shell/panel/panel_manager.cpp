@@ -1,9 +1,9 @@
 #include "shell/panel/panel_manager.h"
 
 #include "config/config_service.h"
-#include "core/ui_phase.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
+#include "core/ui_phase.h"
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "ui/controls/box.h"
@@ -19,32 +19,32 @@ PanelManager* PanelManager::s_instance = nullptr;
 
 namespace {
 
-constexpr Logger kLog("panel");
+  constexpr Logger kLog("panel");
 
-BarConfig resolvePanelBarConfig(ConfigService* configService, WaylandConnection* wayland, wl_output* output) {
-  BarConfig barConfig;
-  if (configService == nullptr || configService->config().bars.empty()) {
+  BarConfig resolvePanelBarConfig(ConfigService* configService, WaylandConnection* wayland, wl_output* output) {
+    BarConfig barConfig;
+    if (configService == nullptr || configService->config().bars.empty()) {
+      return barConfig;
+    }
+
+    barConfig = configService->config().bars.front();
+    if (wayland == nullptr || output == nullptr) {
+      return barConfig;
+    }
+
+    if (const auto* wlOutput = wayland->findOutputByWl(output); wlOutput != nullptr) {
+      return ConfigService::resolveForOutput(barConfig, *wlOutput);
+    }
+
     return barConfig;
   }
 
-  barConfig = configService->config().bars.front();
-  if (wayland == nullptr || output == nullptr) {
-    return barConfig;
+  float resolvePanelContentScale(ConfigService* configService) {
+    if (configService == nullptr) {
+      return 1.0f;
+    }
+    return std::max(0.1f, configService->config().shell.uiScale);
   }
-
-  if (const auto* wlOutput = wayland->findOutputByWl(output); wlOutput != nullptr) {
-    return ConfigService::resolveForOutput(barConfig, *wlOutput);
-  }
-
-  return barConfig;
-}
-
-float resolvePanelContentScale(ConfigService* configService) {
-  if (configService == nullptr) {
-    return 1.0f;
-  }
-  return std::max(0.1f, configService->config().shell.uiScale);
-}
 
 } // namespace
 
@@ -108,35 +108,34 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
   if (m_wayland != nullptr) {
     const auto* wlOutput = m_wayland->findOutputByWl(output);
     if (wlOutput != nullptr && wlOutput->width > 0) {
-      outputWidth = wlOutput->logicalWidth > 0 ? wlOutput->logicalWidth : wlOutput->width / std::max(1, wlOutput->scale);
+      outputWidth =
+          wlOutput->logicalWidth > 0 ? wlOutput->logicalWidth : wlOutput->width / std::max(1, wlOutput->scale);
     }
     if (wlOutput != nullptr && wlOutput->height > 0) {
-      outputHeight = wlOutput->logicalHeight > 0 ? wlOutput->logicalHeight : wlOutput->height / std::max(1, wlOutput->scale);
+      outputHeight =
+          wlOutput->logicalHeight > 0 ? wlOutput->logicalHeight : wlOutput->height / std::max(1, wlOutput->scale);
     }
   }
 
   const auto clampMargin = [](float desired, std::int32_t panelSize, std::int32_t outputSize,
                               std::int32_t padding) -> std::int32_t {
     const std::int32_t maxValue = std::max(padding, outputSize - panelSize - padding);
-    return static_cast<std::int32_t>(
-        std::clamp(desired, static_cast<float>(padding), static_cast<float>(maxValue)));
+    return static_cast<std::int32_t>(std::clamp(desired, static_cast<float>(padding), static_cast<float>(maxValue)));
   };
 
   const bool centeredH = m_activePanel->centeredHorizontally();
   const bool centeredV = m_activePanel->centeredVertically();
-  const std::uint32_t anchor = centeredH
-                                   ? (isBottom ? LayerShellAnchor::Bottom : LayerShellAnchor::Top)
-                               : isBottom      ? LayerShellAnchor::Bottom | LayerShellAnchor::Left
-                               : isLeft        ? LayerShellAnchor::Left | LayerShellAnchor::Top
-                               : isRight       ? LayerShellAnchor::Right | LayerShellAnchor::Top
-                                               : LayerShellAnchor::Top | LayerShellAnchor::Left;
+  const std::uint32_t anchor = centeredH  ? (isBottom ? LayerShellAnchor::Bottom : LayerShellAnchor::Top)
+                               : isBottom ? LayerShellAnchor::Bottom | LayerShellAnchor::Left
+                               : isLeft   ? LayerShellAnchor::Left | LayerShellAnchor::Top
+                               : isRight  ? LayerShellAnchor::Right | LayerShellAnchor::Top
+                                          : LayerShellAnchor::Top | LayerShellAnchor::Left;
   const std::int32_t barOffset =
       barConfig.thickness + (isVertical ? std::max(0, barConfig.marginH) : std::max(0, barConfig.marginV)) + panelGap;
 
-  const auto marginLeft = centeredH
-                              ? 0
-                              : clampMargin(anchorX - static_cast<float>(panelWidth) * 0.5f,
-                                            static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
+  const auto marginLeft = centeredH ? 0
+                                    : clampMargin(anchorX - static_cast<float>(panelWidth) * 0.5f,
+                                                  static_cast<std::int32_t>(panelWidth), outputWidth, screenPadding);
   const auto marginTop = clampMargin(anchorY - static_cast<float>(panelHeight) * 0.5f,
                                      static_cast<std::int32_t>(panelHeight), outputHeight, screenPadding);
 
@@ -147,10 +146,8 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
       .width = panelWidth,
       .height = panelHeight,
       .exclusiveZone = 0,
-      .marginTop = centeredV
-                       ? static_cast<std::int32_t>((outputHeight - static_cast<std::int32_t>(panelHeight)) / 2)
-                   : centeredH
-                       ? (isBottom ? 0 : barOffset)
+      .marginTop = centeredV   ? static_cast<std::int32_t>((outputHeight - static_cast<std::int32_t>(panelHeight)) / 2)
+                   : centeredH ? (isBottom ? 0 : barOffset)
                    : (isLeft || isRight) ? marginTop
                                          : (isBottom ? 0 : barOffset),
       .marginRight = isRight ? barOffset : 0,
@@ -330,8 +327,7 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
 
   // Pointer interactions often only affect visual state. Relayout only when the
   // scene explicitly accumulated layout invalidation.
-  if (m_surface != nullptr && m_sceneRoot != nullptr &&
-      (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty())) {
+  if (m_surface != nullptr && m_sceneRoot != nullptr && (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty())) {
     if (m_sceneRoot->layoutDirty() && m_activePanel != nullptr && !m_activePanel->deferPointerRelayout()) {
       m_surface->requestLayout();
     } else {
@@ -395,8 +391,7 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
   }
 
   m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed, event.preedit);
-  if (m_surface != nullptr && m_sceneRoot != nullptr &&
-      (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty())) {
+  if (m_surface != nullptr && m_sceneRoot != nullptr && (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty())) {
     if (m_sceneRoot->layoutDirty()) {
       m_surface->requestLayout();
     } else {
@@ -502,9 +497,9 @@ void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
 
   const auto width = m_surface->width();
   const auto height = m_surface->height();
-  const bool needsSceneBuild =
-      m_sceneRoot == nullptr || static_cast<std::uint32_t>(std::round(m_sceneRoot->width())) != width ||
-      static_cast<std::uint32_t>(std::round(m_sceneRoot->height())) != height;
+  const bool needsSceneBuild = m_sceneRoot == nullptr ||
+                               static_cast<std::uint32_t>(std::round(m_sceneRoot->width())) != width ||
+                               static_cast<std::uint32_t>(std::round(m_sceneRoot->height())) != height;
   if (needsSceneBuild) {
     buildScene(width, height);
   }

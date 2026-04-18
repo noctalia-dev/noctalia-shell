@@ -32,9 +32,7 @@ void AudioSpectrum::tick(float deltaMs) {
     m_displayValues.resize(m_targetValues.size(), 0.0f);
   }
 
-  const float alpha = m_smoothingTauMs > 0.0f
-                          ? 1.0f - std::exp(-std::max(0.0f, deltaMs) / m_smoothingTauMs)
-                          : 1.0f;
+  const float alpha = m_smoothingTauMs > 0.0f ? 1.0f - std::exp(-std::max(0.0f, deltaMs) / m_smoothingTauMs) : 1.0f;
 
   constexpr float kEpsilon = 1.0f / 512.0f;
   bool changed = false;
@@ -123,9 +121,7 @@ void AudioSpectrum::setSize(float width, float height) {
   updateBarsGeometry();
 }
 
-void AudioSpectrum::doLayout(Renderer& /*renderer*/) {
-  updateBarsGeometry();
-}
+void AudioSpectrum::doLayout(Renderer& /*renderer*/) { updateBarsGeometry(); }
 
 void AudioSpectrum::updateBarsGeometry() {
   const int barCount = static_cast<int>(m_bars.size());
@@ -141,18 +137,17 @@ void AudioSpectrum::updateBarsGeometry() {
     const float gap = fill ? unit * m_spacingRatio : std::floor(barWidth * m_spacingRatio);
     const float usedWidth =
         barWidth * static_cast<float>(barCount) + gap * static_cast<float>(std::max(0, barCount - 1));
-    float x = fill ? std::max(0.0f, (width() - usedWidth) * 0.5f)
-                   : std::floor(std::max(0.0f, (width() - usedWidth) * 0.5f));
+    float x =
+        fill ? std::max(0.0f, (width() - usedWidth) * 0.5f) : std::floor(std::max(0.0f, (width() - usedWidth) * 0.5f));
 
     for (int i = 0; i < barCount; ++i) {
       const int valueIndex =
           m_mirrored ? (i < static_cast<int>(m_displayValues.size()) ? static_cast<int>(m_displayValues.size()) - 1 - i
-                                                              : i - static_cast<int>(m_displayValues.size()))
+                                                                     : i - static_cast<int>(m_displayValues.size()))
                      : i;
-      const float value =
-          valueIndex >= 0 && valueIndex < static_cast<int>(m_displayValues.size())
-              ? std::clamp(m_displayValues[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
-              : 0.0f;
+      const float value = valueIndex >= 0 && valueIndex < static_cast<int>(m_displayValues.size())
+                              ? std::clamp(m_displayValues[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
+                              : 0.0f;
       const float barHeight = fill ? std::round(value * height()) : std::floor(value * height() + 0.5f);
       const float y =
           m_centered ? (fill ? std::round((height() - barHeight) * 0.5f) : std::floor((height() - barHeight) * 0.5f))
@@ -178,16 +173,15 @@ void AudioSpectrum::updateBarsGeometry() {
   for (int i = 0; i < barCount; ++i) {
     const int valueIndex =
         m_mirrored ? (i < static_cast<int>(m_displayValues.size()) ? static_cast<int>(m_displayValues.size()) - 1 - i
-                                                            : i - static_cast<int>(m_displayValues.size()))
+                                                                   : i - static_cast<int>(m_displayValues.size()))
                    : i;
-    const float value =
-        valueIndex >= 0 && valueIndex < static_cast<int>(m_displayValues.size())
-            ? std::clamp(m_displayValues[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
-            : 0.0f;
+    const float value = valueIndex >= 0 && valueIndex < static_cast<int>(m_displayValues.size())
+                            ? std::clamp(m_displayValues[static_cast<std::size_t>(valueIndex)], 0.0f, 1.0f)
+                            : 0.0f;
     const float barWidth = fill ? std::round(value * width()) : std::floor(value * width() + 0.5f);
-    const float x =
-        m_centered ? (fill ? std::round((width() - barWidth) * 0.5f) : std::floor((width() - barWidth) * 0.5f))
-                   : (fill ? std::round(width() - barWidth) : std::floor(width() - barWidth));
+    const float x = m_centered
+                        ? (fill ? std::round((width() - barWidth) * 0.5f) : std::floor((width() - barWidth) * 0.5f))
+                        : (fill ? std::round(width() - barWidth) : std::floor(width() - barWidth));
     if (auto* bar = m_bars[static_cast<std::size_t>(i)]; bar != nullptr) {
       bar->setPosition(x, fill ? std::round(y) : y);
       bar->setFrameSize(barWidth, barHeight);

@@ -1,7 +1,6 @@
 #include "scripting/luau_host.h"
 
 #include "core/log.h"
-
 #include "lua.h"
 #include "luacode.h"
 #include "lualib.h"

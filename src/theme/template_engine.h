@@ -1,11 +1,11 @@
 #pragma once
 
+#include "theme/palette.h"
+
 #include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-
-#include "theme/palette.h"
 
 namespace noctalia::theme {
 

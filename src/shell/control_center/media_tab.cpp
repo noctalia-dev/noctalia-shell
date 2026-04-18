@@ -31,156 +31,156 @@ using namespace control_center;
 
 namespace {
 
-const Logger kLog{"media_tab"};
+  const Logger kLog{"media_tab"};
 
-constexpr float kArtworkSize = Style::controlHeightLg * 6;
-constexpr float kMediaNowCardMinHeight = Style::controlHeightLg * 11 + Style::spaceSm * 2;
-constexpr float kMediaControlsHeight = Style::controlHeightLg + Style::spaceXs;
-constexpr float kMediaPlayPauseHeight = Style::controlHeightLg + Style::spaceSm;
-constexpr float kMediaArtworkMinHeight = Style::controlHeightLg * 4;
-constexpr auto kNoActivePlayerGrace = std::chrono::milliseconds(2000);
+  constexpr float kArtworkSize = Style::controlHeightLg * 6;
+  constexpr float kMediaNowCardMinHeight = Style::controlHeightLg * 11 + Style::spaceSm * 2;
+  constexpr float kMediaControlsHeight = Style::controlHeightLg + Style::spaceXs;
+  constexpr float kMediaPlayPauseHeight = Style::controlHeightLg + Style::spaceSm;
+  constexpr float kMediaArtworkMinHeight = Style::controlHeightLg * 4;
+  constexpr auto kNoActivePlayerGrace = std::chrono::milliseconds(2000);
 
-bool isRemoteArtUrl(std::string_view artUrl) {
-  return artUrl.starts_with("https://") || artUrl.starts_with("http://");
-}
-
-std::string extractQueryParam(std::string_view url, std::string_view key) {
-  const auto queryPos = url.find('?');
-  if (queryPos == std::string_view::npos) {
-    return {};
+  bool isRemoteArtUrl(std::string_view artUrl) {
+    return artUrl.starts_with("https://") || artUrl.starts_with("http://");
   }
 
-  std::string_view query = url.substr(queryPos + 1);
-  while (!query.empty()) {
-    const auto ampPos = query.find('&');
-    const std::string_view pair = query.substr(0, ampPos);
-    const auto eqPos = pair.find('=');
-    const std::string_view pairKey = pair.substr(0, eqPos);
-    if (pairKey == key) {
-      return eqPos == std::string_view::npos ? std::string{} : std::string(pair.substr(eqPos + 1));
+  std::string extractQueryParam(std::string_view url, std::string_view key) {
+    const auto queryPos = url.find('?');
+    if (queryPos == std::string_view::npos) {
+      return {};
     }
-    if (ampPos == std::string_view::npos) {
-      break;
+
+    std::string_view query = url.substr(queryPos + 1);
+    while (!query.empty()) {
+      const auto ampPos = query.find('&');
+      const std::string_view pair = query.substr(0, ampPos);
+      const auto eqPos = pair.find('=');
+      const std::string_view pairKey = pair.substr(0, eqPos);
+      if (pairKey == key) {
+        return eqPos == std::string_view::npos ? std::string{} : std::string(pair.substr(eqPos + 1));
+      }
+      if (ampPos == std::string_view::npos) {
+        break;
+      }
+      query.remove_prefix(ampPos + 1);
     }
-    query.remove_prefix(ampPos + 1);
-  }
 
-  return {};
-}
-
-std::string deriveYouTubeThumbnailUrl(std::string_view sourceUrl) {
-  if (sourceUrl.empty()) {
     return {};
   }
 
-  std::string videoId;
-  if (sourceUrl.find("youtube.com/watch") != std::string_view::npos) {
-    videoId = extractQueryParam(sourceUrl, "v");
-  } else if (sourceUrl.find("youtu.be/") != std::string_view::npos) {
-    const auto marker = sourceUrl.find("youtu.be/");
-    const auto start = marker + std::string_view("youtu.be/").size();
-    const auto end = sourceUrl.find_first_of("?#&/", start);
-    videoId =
-        std::string(sourceUrl.substr(start, end == std::string_view::npos ? sourceUrl.size() - start : end - start));
-  } else if (sourceUrl.find("youtube.com/shorts/") != std::string_view::npos) {
-    const auto marker = sourceUrl.find("youtube.com/shorts/");
-    const auto start = marker + std::string_view("youtube.com/shorts/").size();
-    const auto end = sourceUrl.find_first_of("?#&/", start);
-    videoId =
-        std::string(sourceUrl.substr(start, end == std::string_view::npos ? sourceUrl.size() - start : end - start));
+  std::string deriveYouTubeThumbnailUrl(std::string_view sourceUrl) {
+    if (sourceUrl.empty()) {
+      return {};
+    }
+
+    std::string videoId;
+    if (sourceUrl.find("youtube.com/watch") != std::string_view::npos) {
+      videoId = extractQueryParam(sourceUrl, "v");
+    } else if (sourceUrl.find("youtu.be/") != std::string_view::npos) {
+      const auto marker = sourceUrl.find("youtu.be/");
+      const auto start = marker + std::string_view("youtu.be/").size();
+      const auto end = sourceUrl.find_first_of("?#&/", start);
+      videoId =
+          std::string(sourceUrl.substr(start, end == std::string_view::npos ? sourceUrl.size() - start : end - start));
+    } else if (sourceUrl.find("youtube.com/shorts/") != std::string_view::npos) {
+      const auto marker = sourceUrl.find("youtube.com/shorts/");
+      const auto start = marker + std::string_view("youtube.com/shorts/").size();
+      const auto end = sourceUrl.find_first_of("?#&/", start);
+      videoId =
+          std::string(sourceUrl.substr(start, end == std::string_view::npos ? sourceUrl.size() - start : end - start));
+    }
+
+    if (videoId.empty()) {
+      return {};
+    }
+
+    return std::format("https://i.ytimg.com/vi/{}/hqdefault.jpg", videoId);
   }
 
-  if (videoId.empty()) {
-    return {};
+  std::string effectiveArtUrl(const MprisPlayerInfo& player) {
+    if (!player.artUrl.empty()) {
+      return player.artUrl;
+    }
+    return deriveYouTubeThumbnailUrl(player.sourceUrl);
   }
 
-  return std::format("https://i.ytimg.com/vi/{}/hqdefault.jpg", videoId);
-}
-
-std::string effectiveArtUrl(const MprisPlayerInfo& player) {
-  if (!player.artUrl.empty()) {
-    return player.artUrl;
+  int hexValue(char ch) {
+    if (ch >= '0' && ch <= '9') {
+      return ch - '0';
+    }
+    ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    if (ch >= 'a' && ch <= 'f') {
+      return 10 + (ch - 'a');
+    }
+    return -1;
   }
-  return deriveYouTubeThumbnailUrl(player.sourceUrl);
-}
 
-int hexValue(char ch) {
-  if (ch >= '0' && ch <= '9') {
-    return ch - '0';
+  std::string decodeUriComponent(std::string_view text) {
+    std::string decoded;
+    decoded.reserve(text.size());
+
+    for (std::size_t i = 0; i < text.size(); ++i) {
+      if (text[i] == '%' && i + 2 < text.size()) {
+        const int hi = hexValue(text[i + 1]);
+        const int lo = hexValue(text[i + 2]);
+        if (hi >= 0 && lo >= 0) {
+          decoded.push_back(static_cast<char>((hi << 4) | lo));
+          i += 2;
+          continue;
+        }
+      }
+      decoded.push_back(text[i]);
+    }
+
+    return decoded;
   }
-  ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
-  if (ch >= 'a' && ch <= 'f') {
-    return 10 + (ch - 'a');
-  }
-  return -1;
-}
 
-std::string decodeUriComponent(std::string_view text) {
-  std::string decoded;
-  decoded.reserve(text.size());
-
-  for (std::size_t i = 0; i < text.size(); ++i) {
-    if (text[i] == '%' && i + 2 < text.size()) {
-      const int hi = hexValue(text[i + 1]);
-      const int lo = hexValue(text[i + 2]);
-      if (hi >= 0 && lo >= 0) {
-        decoded.push_back(static_cast<char>((hi << 4) | lo));
-        i += 2;
-        continue;
+  std::string normalizeArtPath(std::string_view artUrl) {
+    if (artUrl.empty()) {
+      return {};
+    }
+    if (isRemoteArtUrl(artUrl)) {
+      return {};
+    }
+    std::string path(artUrl);
+    constexpr std::string_view prefix = "file://";
+    if (path.starts_with(prefix)) {
+      path.erase(0, prefix.size());
+      if (path.starts_with("localhost/")) {
+        path.erase(0, std::string_view("localhost").size());
+      } else if (!path.empty() && path.front() != '/') {
+        const auto firstSlash = path.find('/');
+        path = firstSlash == std::string::npos ? std::string{} : path.substr(firstSlash);
       }
     }
-    decoded.push_back(text[i]);
+    return decodeUriComponent(path);
   }
 
-  return decoded;
-}
+  std::filesystem::path artCachePath(std::string_view artUrl) {
+    const std::filesystem::path cacheDir = std::filesystem::path("/tmp") / "noctalia-media-art";
+    const std::size_t hash = std::hash<std::string_view>{}(artUrl);
+    return cacheDir / (std::to_string(hash) + ".img");
+  }
 
-std::string normalizeArtPath(std::string_view artUrl) {
-  if (artUrl.empty()) {
-    return {};
-  }
-  if (isRemoteArtUrl(artUrl)) {
-    return {};
-  }
-  std::string path(artUrl);
-  constexpr std::string_view prefix = "file://";
-  if (path.starts_with(prefix)) {
-    path.erase(0, prefix.size());
-    if (path.starts_with("localhost/")) {
-      path.erase(0, std::string_view("localhost").size());
-    } else if (!path.empty() && path.front() != '/') {
-      const auto firstSlash = path.find('/');
-      path = firstSlash == std::string::npos ? std::string{} : path.substr(firstSlash);
+  std::string joinArtists(const std::vector<std::string>& artists) {
+    if (artists.empty()) {
+      return {};
     }
+    std::string joined = artists.front();
+    for (std::size_t i = 1; i < artists.size(); ++i) {
+      joined += ", ";
+      joined += artists[i];
+    }
+    return joined;
   }
-  return decodeUriComponent(path);
-}
 
-std::filesystem::path artCachePath(std::string_view artUrl) {
-  const std::filesystem::path cacheDir = std::filesystem::path("/tmp") / "noctalia-media-art";
-  const std::size_t hash = std::hash<std::string_view>{}(artUrl);
-  return cacheDir / (std::to_string(hash) + ".img");
-}
-
-std::string joinArtists(const std::vector<std::string>& artists) {
-  if (artists.empty()) {
-    return {};
+  std::string playPauseGlyph(const std::string& playbackStatus) {
+    return playbackStatus == "Playing" ? "media-pause" : "media-play";
   }
-  std::string joined = artists.front();
-  for (std::size_t i = 1; i < artists.size(); ++i) {
-    joined += ", ";
-    joined += artists[i];
-  }
-  return joined;
-}
 
-std::string playPauseGlyph(const std::string& playbackStatus) {
-  return playbackStatus == "Playing" ? "media-pause" : "media-play";
-}
+  std::string repeatGlyph(const std::string& loopStatus) { return loopStatus == "Track" ? "repeat-once" : "repeat"; }
 
-std::string repeatGlyph(const std::string& loopStatus) { return loopStatus == "Track" ? "repeat-once" : "repeat"; }
-
-ButtonVariant toggleVariant(bool active) { return active ? ButtonVariant::Accent : ButtonVariant::Ghost; }
+  ButtonVariant toggleVariant(bool active) { return active ? ButtonVariant::Accent : ButtonVariant::Ghost; }
 
 } // namespace
 
@@ -607,8 +607,9 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
   }
 
   if (m_playerMenu != nullptr && m_nowCard != nullptr) {
-    const float menuWidth = std::clamp(Style::controlHeightLg * 6.0f * scale, Style::controlHeightLg * 4.2f * scale,
-                                       std::max(1.0f, m_nowCard->width() - (m_nowCard->paddingLeft() + m_nowCard->paddingRight())));
+    const float menuWidth =
+        std::clamp(Style::controlHeightLg * 6.0f * scale, Style::controlHeightLg * 4.2f * scale,
+                   std::max(1.0f, m_nowCard->width() - (m_nowCard->paddingLeft() + m_nowCard->paddingRight())));
     m_playerMenu->setMenuWidth(menuWidth);
     m_playerMenu->setVisible(m_playerMenuOpen);
     if (m_playerMenuOpen) {
@@ -621,8 +622,8 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
       Node::absolutePosition(m_rootLayout, rootAbsX, rootAbsY);
       const float localNowX = nowAbsX - rootAbsX;
       const float localNowY = nowAbsY - rootAbsY;
-      const float x = localNowX + std::max(m_nowCard->paddingLeft(),
-                                           m_nowCard->width() - m_nowCard->paddingRight() - menuWidth);
+      const float x =
+          localNowX + std::max(m_nowCard->paddingLeft(), m_nowCard->width() - m_nowCard->paddingRight() - menuWidth);
       const float y = localNowY + m_nowCard->paddingTop() + Style::controlHeightSm * scale + Style::spaceXs * scale;
       m_playerMenu->setPosition(x, y);
       m_playerMenu->layout(renderer);
@@ -630,10 +631,10 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
   }
 
   if (m_visualizerBody != nullptr && m_visualizerSpectrum != nullptr) {
-    const float bodyWidth =
-        std::max(0.0f, m_visualizerBody->width() - (m_visualizerBody->paddingLeft() + m_visualizerBody->paddingRight()));
-    const float bodyHeightAvail =
-        std::max(0.0f, m_visualizerBody->height() - (m_visualizerBody->paddingTop() + m_visualizerBody->paddingBottom()));
+    const float bodyWidth = std::max(0.0f, m_visualizerBody->width() -
+                                               (m_visualizerBody->paddingLeft() + m_visualizerBody->paddingRight()));
+    const float bodyHeightAvail = std::max(
+        0.0f, m_visualizerBody->height() - (m_visualizerBody->paddingTop() + m_visualizerBody->paddingBottom()));
     const float spectrumWidth = std::max(1.0f, bodyWidth);
     const float spectrumHeight = std::max(1.0f, bodyHeightAvail);
     m_visualizerSpectrum->setSize(spectrumWidth, spectrumHeight);
@@ -759,8 +760,7 @@ void MediaTab::refresh(Renderer& renderer) {
     }
   }
 
-  if (!active.has_value() && m_lastActiveSnapshot.has_value() &&
-      now - m_lastActiveSeenAt <= kNoActivePlayerGrace) {
+  if (!active.has_value() && m_lastActiveSnapshot.has_value() && now - m_lastActiveSeenAt <= kNoActivePlayerGrace) {
     // Keep last player briefly to hide transient MPRIS discovery gaps.
     active = m_lastActiveSnapshot;
   }
@@ -796,8 +796,8 @@ void MediaTab::refresh(Renderer& renderer) {
     }
   }
 
-  if (m_trackTitle == nullptr || m_trackArtist == nullptr || m_progressSlider == nullptr || m_playPauseButton == nullptr ||
-      m_repeatButton == nullptr || m_shuffleButton == nullptr) {
+  if (m_trackTitle == nullptr || m_trackArtist == nullptr || m_progressSlider == nullptr ||
+      m_playPauseButton == nullptr || m_repeatButton == nullptr || m_shuffleButton == nullptr) {
     return;
   }
 
@@ -854,8 +854,7 @@ void MediaTab::refresh(Renderer& renderer) {
       std::error_code ec;
       if (std::filesystem::exists(cached, ec) && std::filesystem::file_size(cached, ec) > 0) {
         artPath = cached.string();
-      } else if (m_httpClient != nullptr &&
-                 m_pendingArtDownloads.find(resolvedArtUrl) == m_pendingArtDownloads.end()) {
+      } else if (m_httpClient != nullptr && m_pendingArtDownloads.find(resolvedArtUrl) == m_pendingArtDownloads.end()) {
         std::filesystem::create_directories(cached.parent_path(), ec);
         m_pendingArtDownloads.insert(resolvedArtUrl);
         m_httpClient->download(resolvedArtUrl, cached, [this, url = resolvedArtUrl](bool success) {

@@ -11,9 +11,7 @@
 
 namespace {
 
-const char* glyphForState(bool enabled) {
-  return enabled ? "keep-awake-on" : "keep-awake-off";
-}
+  const char* glyphForState(bool enabled) { return enabled ? "keep-awake-on" : "keep-awake-off"; }
 
 } // namespace
 
@@ -52,9 +50,7 @@ void IdleInhibitorWidget::doLayout(Renderer& renderer, float /*containerWidth*/,
   }
 }
 
-void IdleInhibitorWidget::doUpdate(Renderer& renderer) {
-  syncState(renderer);
-}
+void IdleInhibitorWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
 
 void IdleInhibitorWidget::syncState(Renderer& renderer) {
   if (m_glyph == nullptr || m_area == nullptr) {

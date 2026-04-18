@@ -119,4 +119,3 @@ constexpr Color lerpColor(const Color& a, const Color& b, float t) {
       .a = a.a + (b.a - a.a) * t,
   };
 }
-

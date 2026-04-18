@@ -17,41 +17,41 @@
 
 namespace {
 
-constexpr Logger kLog("network");
+  constexpr Logger kLog("network");
 
-using SecretsDict = std::map<std::string, std::map<std::string, sdbus::Variant>>;
+  using SecretsDict = std::map<std::string, std::map<std::string, sdbus::Variant>>;
 
-const sdbus::ServiceName k_agentBusName{"org.noctalia.SecretAgent"};
-const sdbus::ObjectPath k_agentObjectPath{"/org/freedesktop/NetworkManager/SecretAgent"};
-constexpr auto k_agentInterface = "org.freedesktop.NetworkManager.SecretAgent";
-constexpr auto k_agentIdentifier = "org.noctalia.SecretAgent";
+  const sdbus::ServiceName k_agentBusName{"org.noctalia.SecretAgent"};
+  const sdbus::ObjectPath k_agentObjectPath{"/org/freedesktop/NetworkManager/SecretAgent"};
+  constexpr auto k_agentInterface = "org.freedesktop.NetworkManager.SecretAgent";
+  constexpr auto k_agentIdentifier = "org.noctalia.SecretAgent";
 
-const sdbus::ServiceName k_nmBusName{"org.freedesktop.NetworkManager"};
-const sdbus::ObjectPath k_agentManagerObjectPath{"/org/freedesktop/NetworkManager/AgentManager"};
-constexpr auto k_agentManagerInterface = "org.freedesktop.NetworkManager.AgentManager";
+  const sdbus::ServiceName k_nmBusName{"org.freedesktop.NetworkManager"};
+  const sdbus::ObjectPath k_agentManagerObjectPath{"/org/freedesktop/NetworkManager/AgentManager"};
+  constexpr auto k_agentManagerInterface = "org.freedesktop.NetworkManager.AgentManager";
 
-constexpr std::uint32_t k_nmSecretAgentGetSecretsFlagAllowInteraction = 0x1;
+  constexpr std::uint32_t k_nmSecretAgentGetSecretsFlagAllowInteraction = 0x1;
 
-constexpr auto k_wirelessSettingName = "802-11-wireless";
-constexpr auto k_wirelessSecuritySettingName = "802-11-wireless-security";
-constexpr auto k_pskKey = "psk";
+  constexpr auto k_wirelessSettingName = "802-11-wireless";
+  constexpr auto k_wirelessSecuritySettingName = "802-11-wireless-security";
+  constexpr auto k_pskKey = "psk";
 
-std::string extractSsid(const SecretsDict& connection) {
-  auto wifiIt = connection.find(k_wirelessSettingName);
-  if (wifiIt == connection.end()) {
-    return {};
+  std::string extractSsid(const SecretsDict& connection) {
+    auto wifiIt = connection.find(k_wirelessSettingName);
+    if (wifiIt == connection.end()) {
+      return {};
+    }
+    auto ssidIt = wifiIt->second.find("ssid");
+    if (ssidIt == wifiIt->second.end()) {
+      return {};
+    }
+    try {
+      const auto bytes = ssidIt->second.get<std::vector<std::uint8_t>>();
+      return std::string(bytes.begin(), bytes.end());
+    } catch (const sdbus::Error&) {
+      return {};
+    }
   }
-  auto ssidIt = wifiIt->second.find("ssid");
-  if (ssidIt == wifiIt->second.end()) {
-    return {};
-  }
-  try {
-    const auto bytes = ssidIt->second.get<std::vector<std::uint8_t>>();
-    return std::string(bytes.begin(), bytes.end());
-  } catch (const sdbus::Error&) {
-    return {};
-  }
-}
 
 } // namespace
 
@@ -154,7 +154,9 @@ NetworkSecretAgent::NetworkSecretAgent(SystemBus& bus) : m_impl(std::make_unique
   // Register with NM's agent manager.
   try {
     auto agentManager = sdbus::createProxy(bus.connection(), k_nmBusName, k_agentManagerObjectPath);
-    agentManager->callMethod("Register").onInterface(k_agentManagerInterface).withArguments(std::string(k_agentIdentifier));
+    agentManager->callMethod("Register")
+        .onInterface(k_agentManagerInterface)
+        .withArguments(std::string(k_agentIdentifier));
     kLog.info("registered NetworkManager secret agent as {}", k_agentIdentifier);
   } catch (const sdbus::Error& e) {
     kLog.warn("secret agent registration failed: {}", e.what());

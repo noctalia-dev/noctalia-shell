@@ -285,8 +285,7 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
   if (m_currentCard != nullptr && m_currentGlyph != nullptr) {
     const float cardInnerWidth =
         std::max(0.0f, m_currentCard->width() - (m_currentCard->paddingLeft() + m_currentCard->paddingRight()));
-    currentTextWidth =
-        std::max(1.0f, cardInnerWidth - m_currentGlyph->width() - m_currentCard->gap());
+    currentTextWidth = std::max(1.0f, cardInnerWidth - m_currentGlyph->width() - m_currentCard->gap());
   }
   if (m_currentTempLabel != nullptr) {
     m_currentTempLabel->setMaxWidth(currentTextWidth);
@@ -313,7 +312,8 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
   if (m_statusLabel != nullptr) {
     m_statusLabel->setMaxWidth(leftColumnWidth);
   }
-  for (auto* label : {m_windLabel, m_sunriseLabel, m_sunsetLabel, m_timezoneLabel, m_longitudeLabel, m_elevationLabel}) {
+  for (auto* label :
+       {m_windLabel, m_sunriseLabel, m_sunsetLabel, m_timezoneLabel, m_longitudeLabel, m_elevationLabel}) {
     if (label != nullptr) {
       label->setMaxWidth(leftColumnWidth);
     }
@@ -339,7 +339,8 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
   if (m_currentGlyph != nullptr && m_currentText != nullptr && m_currentCard != nullptr) {
     const float cardInnerHeight =
         std::max(0.0f, m_currentCard->height() - (m_currentCard->paddingTop() + m_currentCard->paddingBottom()));
-    const float desiredGlyph = std::max(Style::controlHeightLg * 1.8f * scale, std::min(m_currentText->height(), cardInnerHeight));
+    const float desiredGlyph =
+        std::max(Style::controlHeightLg * 1.8f * scale, std::min(m_currentText->height(), cardInnerHeight));
     m_currentGlyph->setGlyphSize(desiredGlyph);
   }
 
@@ -351,8 +352,8 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
       }
     }
     if (visibleRows > 0) {
-      const float detailsInnerHeight = std::max(
-          0.0f, detailsTargetHeight - (m_detailsCard->paddingTop() + m_detailsCard->paddingBottom()));
+      const float detailsInnerHeight =
+          std::max(0.0f, detailsTargetHeight - (m_detailsCard->paddingTop() + m_detailsCard->paddingBottom()));
       const float gapsTotal = m_detailsCard->gap() * static_cast<float>(visibleRows - 1);
       const float rowHeight =
           std::max(Style::controlHeightSm * scale, (detailsInnerHeight - gapsTotal) / static_cast<float>(visibleRows));
@@ -376,8 +377,8 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
     const float forecastInnerHeight = std::max(
         0.0f, m_forecastColumn->height() - (m_forecastColumn->paddingTop() + m_forecastColumn->paddingBottom()));
     const float gapsTotal = m_forecastColumn->gap() * static_cast<float>(visibleForecastDays - 1);
-    const float rowHeight = std::max(Style::controlHeightLg * scale, (forecastInnerHeight - gapsTotal) /
-                                                                       static_cast<float>(visibleForecastDays));
+    const float rowHeight = std::max(Style::controlHeightLg * scale,
+                                     (forecastInnerHeight - gapsTotal) / static_cast<float>(visibleForecastDays));
 
     for (std::size_t i = 0; i < kDayCount; ++i) {
       if (m_dayCards[i] == nullptr) {
@@ -566,11 +567,11 @@ void WeatherTab::sync(Renderer& renderer) {
                   m_weather->displayTemperatureUnit()));
   if (m_currentHiLoLabel != nullptr) {
     if (!snapshot.forecastDays.empty()) {
-      m_currentHiLoLabel->setText(
-          std::format("H/L {} / {}{}", static_cast<int>(std::lround(m_weather->displayTemperature(
-                                            snapshot.forecastDays.front().temperatureMaxC))),
-                      static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMinC))),
-                      m_weather->displayTemperatureUnit()));
+      m_currentHiLoLabel->setText(std::format(
+          "H/L {} / {}{}",
+          static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMaxC))),
+          static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMinC))),
+          m_weather->displayTemperatureUnit()));
     } else {
       m_currentHiLoLabel->setText("H/L -- / --");
     }

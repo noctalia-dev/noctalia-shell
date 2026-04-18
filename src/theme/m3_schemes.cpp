@@ -1,14 +1,3 @@
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <memory>
-#include <string>
-#include <unordered_map>
-#include <utility>
-#include <vector>
-
 #include "cpp/cam/cam.h"
 #include "cpp/cam/hct.h"
 #include "cpp/dynamiccolor/dynamic_scheme.h"
@@ -21,10 +10,20 @@
 #include "cpp/scheme/scheme_rainbow.h"
 #include "cpp/scheme/scheme_tonal_spot.h"
 #include "cpp/utils/utils.h"
-
 #include "theme/palette.h"
 #include "theme/palette_generator.h"
 #include "theme/scheme.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 // Material Design 3 scheme path. Quantize the resized pixels, score for the
 // dominant colourful seed, build a DynamicScheme, then pull each token via

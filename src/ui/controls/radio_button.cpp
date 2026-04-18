@@ -53,9 +53,7 @@ void RadioButton::setEnabled(bool enabled) {
   applyState();
 }
 
-void RadioButton::setOnChange(std::function<void(bool)> callback) {
-  m_onChange = std::move(callback);
-}
+void RadioButton::setOnChange(std::function<void(bool)> callback) { m_onChange = std::move(callback); }
 
 void RadioButton::setScale(float scale) {
   m_scale = std::max(0.1f, scale);

@@ -4,7 +4,7 @@
 
 namespace {
 
-constexpr char kVertexShader[] = R"(
+  constexpr char kVertexShader[] = R"(
 precision highp float;
 attribute vec2 a_position;
 varying vec2 v_texcoord;
@@ -16,9 +16,9 @@ void main() {
 }
 )";
 
-// Common GLSL functions shared by all transition fragment shaders.
-// Included at the top of each fragment source via string concatenation.
-constexpr char kCommonFunctions[] = R"(
+  // Common GLSL functions shared by all transition fragment shaders.
+  // Included at the top of each fragment source via string concatenation.
+  constexpr char kCommonFunctions[] = R"(
 precision highp float;
 
 uniform sampler2D u_source1;
@@ -89,7 +89,7 @@ vec4 sampleWithFillMode(sampler2D tex, vec2 uv, float imgWidth, float imgHeight)
 }
 )";
 
-constexpr char kFadeFragment[] = R"(
+  constexpr char kFadeFragment[] = R"(
 void main() {
     vec2 uv = v_texcoord;
     vec4 color1 = sampleWithFillMode(u_source1, uv, u_imageWidth1, u_imageHeight1);
@@ -98,7 +98,7 @@ void main() {
 }
 )";
 
-constexpr char kWipeFragment[] = R"(
+  constexpr char kWipeFragment[] = R"(
 uniform float u_direction;
 uniform float u_smoothness;
 
@@ -135,7 +135,7 @@ void main() {
 }
 )";
 
-constexpr char kDiscFragment[] = R"(
+  constexpr char kDiscFragment[] = R"(
 uniform float u_smoothness;
 uniform float u_centerX;
 uniform float u_centerY;
@@ -166,7 +166,7 @@ void main() {
 }
 )";
 
-constexpr char kStripesFragment[] = R"(
+  constexpr char kStripesFragment[] = R"(
 uniform float u_smoothness;
 uniform float u_aspectRatio;
 uniform float u_stripeCount;
@@ -216,7 +216,7 @@ void main() {
 }
 )";
 
-constexpr char kZoomFragment[] = R"(
+  constexpr char kZoomFragment[] = R"(
 void main() {
     vec2 uv = v_texcoord;
 
@@ -237,7 +237,7 @@ void main() {
 }
 )";
 
-constexpr char kHoneycombFragment[] = R"(
+  constexpr char kHoneycombFragment[] = R"(
 uniform float u_cellSize;
 uniform float u_centerX;
 uniform float u_centerY;

@@ -4,7 +4,6 @@
 #include "render/core/shader_program.h"
 
 #include <GLES2/gl2.h>
-
 #include <array>
 
 struct TransitionParams {

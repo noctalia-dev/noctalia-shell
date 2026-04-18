@@ -13,34 +13,34 @@
 
 namespace {
 
-const char* glyphForState(const BluetoothState& s, int connectedCount) {
-  if (!s.adapterPresent || !s.powered) {
-    return "bluetooth-off";
-  }
-  if (connectedCount > 0) {
-    return "bluetooth-connected";
-  }
-  return "bluetooth";
-}
-
-std::string firstConnectedAlias(const std::vector<BluetoothDeviceInfo>& devices) {
-  for (const auto& d : devices) {
-    if (d.connected) {
-      return d.alias;
+  const char* glyphForState(const BluetoothState& s, int connectedCount) {
+    if (!s.adapterPresent || !s.powered) {
+      return "bluetooth-off";
     }
-  }
-  return {};
-}
-
-int connectedCount(const std::vector<BluetoothDeviceInfo>& devices) {
-  int count = 0;
-  for (const auto& d : devices) {
-    if (d.connected) {
-      ++count;
+    if (connectedCount > 0) {
+      return "bluetooth-connected";
     }
+    return "bluetooth";
   }
-  return count;
-}
+
+  std::string firstConnectedAlias(const std::vector<BluetoothDeviceInfo>& devices) {
+    for (const auto& d : devices) {
+      if (d.connected) {
+        return d.alias;
+      }
+    }
+    return {};
+  }
+
+  int connectedCount(const std::vector<BluetoothDeviceInfo>& devices) {
+    int count = 0;
+    for (const auto& d : devices) {
+      if (d.connected) {
+        ++count;
+      }
+    }
+    return count;
+  }
 
 } // namespace
 
@@ -104,8 +104,7 @@ void BluetoothWidget::syncState(Renderer& renderer) {
   const int numConnected = connectedCount(devices);
   const std::string alias = m_showLabel ? firstConnectedAlias(devices) : std::string{};
 
-  if (m_haveLastState && s == m_lastState && numConnected == m_lastConnectedCount &&
-      alias == m_lastConnectedAlias) {
+  if (m_haveLastState && s == m_lastState && numConnected == m_lastConnectedCount && alias == m_lastConnectedAlias) {
     return;
   }
   m_lastState = s;

@@ -21,29 +21,29 @@
 
 namespace {
 
-constexpr Logger kLog("texture");
+  constexpr Logger kLog("texture");
 
-bool endsWith(const std::string& str, const std::string& suffix) {
-  if (suffix.size() > str.size()) {
-    return false;
+  bool endsWith(const std::string& str, const std::string& suffix) {
+    if (suffix.size() > str.size()) {
+      return false;
+    }
+    return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
   }
-  return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
-}
 
-std::vector<std::uint8_t> readFile(const std::string& path) {
-  std::ifstream file(path, std::ios::binary | std::ios::ate);
-  if (!file) {
-    return {};
+  std::vector<std::uint8_t> readFile(const std::string& path) {
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file) {
+      return {};
+    }
+    const auto size = file.tellg();
+    if (size <= 0) {
+      return {};
+    }
+    std::vector<std::uint8_t> data(static_cast<std::size_t>(size));
+    file.seekg(0);
+    file.read(reinterpret_cast<char*>(data.data()), size);
+    return data;
   }
-  const auto size = file.tellg();
-  if (size <= 0) {
-    return {};
-  }
-  std::vector<std::uint8_t> data(static_cast<std::size_t>(size));
-  file.seekg(0);
-  file.read(reinterpret_cast<char*>(data.data()), size);
-  return data;
-}
 
 } // namespace
 
@@ -118,13 +118,12 @@ TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSi
   return decodeEncodedRaster(fileData.data(), fileData.size(), &path, mipmap);
 }
 
-TextureHandle TextureManager::loadFromEncodedBytes(const std::uint8_t* data, std::size_t size,
-                                                   bool mipmap) {
+TextureHandle TextureManager::loadFromEncodedBytes(const std::uint8_t* data, std::size_t size, bool mipmap) {
   return decodeEncodedRaster(data, size, nullptr, mipmap);
 }
 
-TextureHandle TextureManager::loadFromRaw(const std::uint8_t* data, std::size_t size, int width,
-                                         int height, int stride, PixmapFormat format, bool mipmap) {
+TextureHandle TextureManager::loadFromRaw(const std::uint8_t* data, std::size_t size, int width, int height, int stride,
+                                          PixmapFormat format, bool mipmap) {
   if (data == nullptr || size == 0 || width <= 0 || height <= 0) {
     return {};
   }
@@ -141,8 +140,8 @@ TextureHandle TextureManager::loadFromRaw(const std::uint8_t* data, std::size_t 
 
   const std::size_t requiredSize = (heightSize - 1U) * actualStride + minStride;
   if (size < requiredSize) {
-    kLog.warn("raw pixmap buffer too small: width={} height={} stride={} have={} need={}", width,
-              height, stride, size, requiredSize);
+    kLog.warn("raw pixmap buffer too small: width={} height={} stride={} have={} need={}", width, height, stride, size,
+              requiredSize);
     return {};
   }
 
@@ -159,19 +158,34 @@ TextureHandle TextureManager::loadFromRaw(const std::uint8_t* data, std::size_t 
 
       switch (format) {
       case PixmapFormat::RGBA:
-        d[0] = s[0]; d[1] = s[1]; d[2] = s[2]; d[3] = s[3];
+        d[0] = s[0];
+        d[1] = s[1];
+        d[2] = s[2];
+        d[3] = s[3];
         break;
       case PixmapFormat::BGRA:
-        d[0] = s[2]; d[1] = s[1]; d[2] = s[0]; d[3] = s[3];
+        d[0] = s[2];
+        d[1] = s[1];
+        d[2] = s[0];
+        d[3] = s[3];
         break;
       case PixmapFormat::ARGB:
-        d[0] = s[1]; d[1] = s[2]; d[2] = s[3]; d[3] = s[0];
+        d[0] = s[1];
+        d[1] = s[2];
+        d[2] = s[3];
+        d[3] = s[0];
         break;
       case PixmapFormat::RGB:
-        d[0] = s[0]; d[1] = s[1]; d[2] = s[2]; d[3] = 255;
+        d[0] = s[0];
+        d[1] = s[1];
+        d[2] = s[2];
+        d[3] = 255;
         break;
       case PixmapFormat::BGR:
-        d[0] = s[2]; d[1] = s[1]; d[2] = s[0]; d[3] = 255;
+        d[0] = s[2];
+        d[1] = s[1];
+        d[2] = s[0];
+        d[3] = 255;
         break;
       }
     }
@@ -195,8 +209,7 @@ void TextureManager::cleanup() {
   }
 }
 
-TextureHandle TextureManager::uploadRgba(const std::uint8_t* data, int width, int height,
-                                         bool mipmap) {
+TextureHandle TextureManager::uploadRgba(const std::uint8_t* data, int width, int height, bool mipmap) {
   GLuint tex = 0;
   glGenTextures(1, &tex);
   glBindTexture(GL_TEXTURE_2D, tex);

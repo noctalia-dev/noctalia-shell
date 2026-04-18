@@ -1,6 +1,15 @@
 #include "theme/template_engine.h"
 
 #include "core/process.h"
+#include "core/toml.h"
+#include "cpp/cam/hct.h"
+#include "cpp/palettes/tones.h"
+#include "cpp/scheme/scheme_content.h"
+#include "cpp/scheme/scheme_fruit_salad.h"
+#include "cpp/scheme/scheme_monochrome.h"
+#include "cpp/scheme/scheme_rainbow.h"
+#include "cpp/scheme/scheme_tonal_spot.h"
+#include "theme/color.h"
 
 #include <algorithm>
 #include <array>
@@ -16,17 +25,6 @@
 #include <unordered_set>
 #include <variant>
 #include <vector>
-
-#include "cpp/cam/hct.h"
-#include "cpp/palettes/tones.h"
-#include "cpp/scheme/scheme_content.h"
-#include "cpp/scheme/scheme_fruit_salad.h"
-#include "cpp/scheme/scheme_monochrome.h"
-#include "cpp/scheme/scheme_rainbow.h"
-#include "cpp/scheme/scheme_tonal_spot.h"
-
-#include "core/toml.h"
-#include "theme/color.h"
 
 namespace noctalia::theme {
 

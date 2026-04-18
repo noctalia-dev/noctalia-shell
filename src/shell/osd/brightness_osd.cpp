@@ -9,21 +9,21 @@
 
 namespace {
 
-const char* brightnessIconName(float brightness) {
-  if (brightness < 0.4f) {
-    return "brightness-low";
+  const char* brightnessIconName(float brightness) {
+    if (brightness < 0.4f) {
+      return "brightness-low";
+    }
+    return "brightness-high";
   }
-  return "brightness-high";
-}
 
-OsdContent makeBrightnessContent(float brightness) {
-  const int percent = static_cast<int>(std::round(std::max(0.0f, brightness) * 100.0f));
-  return OsdContent{
-      .icon = brightnessIconName(brightness),
-      .value = std::to_string(percent) + "%",
-      .progress = std::clamp(brightness, 0.0f, 1.0f),
-  };
-}
+  OsdContent makeBrightnessContent(float brightness) {
+    const int percent = static_cast<int>(std::round(std::max(0.0f, brightness) * 100.0f));
+    return OsdContent{
+        .icon = brightnessIconName(brightness),
+        .value = std::to_string(percent) + "%",
+        .progress = std::clamp(brightness, 0.0f, 1.0f),
+    };
+  }
 
 } // namespace
 

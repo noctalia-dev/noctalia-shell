@@ -5,7 +5,7 @@
 
 namespace {
 
-constexpr char kVertexShaderSource[] = R"(
+  constexpr char kVertexShaderSource[] = R"(
 precision highp float;
 
 attribute vec2 a_position;
@@ -25,7 +25,7 @@ void main() {
 }
 )";
 
-constexpr char kFragmentShaderSource[] = R"(
+  constexpr char kFragmentShaderSource[] = R"(
 precision highp float;
 
 uniform vec4 u_start_color;

@@ -9,7 +9,7 @@
 
 namespace {
 
-constexpr char kVertexShader[] = R"(
+  constexpr char kVertexShader[] = R"(
 precision highp float;
 attribute vec2 a_position;
 varying vec2 v_texcoord;
@@ -21,7 +21,7 @@ void main() {
 }
 )";
 
-constexpr char kBlitFragment[] = R"(
+  constexpr char kBlitFragment[] = R"(
 precision highp float;
 uniform sampler2D u_texture;
 varying vec2 v_texcoord;
@@ -33,7 +33,7 @@ void main() {
 }
 )";
 
-constexpr char kTintFragment[] = R"(
+  constexpr char kTintFragment[] = R"(
 precision mediump float;
 uniform vec4 u_color;
 varying vec2 v_texcoord;

@@ -9,8 +9,8 @@
 #include "shell/desktop/widget_transform.h"
 #include "wayland/wayland_connection.h"
 
-#include <cstdlib>
 #include <charconv>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <limits>
@@ -18,170 +18,170 @@
 
 namespace {
 
-constexpr Logger kLog("desktop");
-constexpr std::string_view kDesktopWidgetIdPrefix = "desktop-widget-";
+  constexpr Logger kLog("desktop");
+  constexpr std::string_view kDesktopWidgetIdPrefix = "desktop-widget-";
 
-std::string stateDir() {
-  const char* xdg = std::getenv("XDG_STATE_HOME");
-  if (xdg != nullptr && xdg[0] != '\0') {
-    return std::string(xdg) + "/noctalia";
-  }
-  const char* home = std::getenv("HOME");
-  if (home != nullptr && home[0] != '\0') {
-    return std::string(home) + "/.local/state/noctalia";
-  }
-  return {};
-}
-
-std::string outputKey(const WaylandOutput& output) {
-  if (!output.connectorName.empty()) {
-    return output.connectorName;
-  }
-  return std::to_string(output.name);
-}
-
-const WaylandOutput* resolveEffectiveOutput(const WaylandConnection& wayland, const std::string& requestedOutput) {
-  const auto& outputs = wayland.outputs();
-  const WaylandOutput* primary = nullptr;
-  for (const auto& output : outputs) {
-    if (!output.done || output.output == nullptr) {
-      continue;
+  std::string stateDir() {
+    const char* xdg = std::getenv("XDG_STATE_HOME");
+    if (xdg != nullptr && xdg[0] != '\0') {
+      return std::string(xdg) + "/noctalia";
     }
-    if (primary == nullptr) {
-      primary = &output;
+    const char* home = std::getenv("HOME");
+    if (home != nullptr && home[0] != '\0') {
+      return std::string(home) + "/.local/state/noctalia";
     }
-    if (!requestedOutput.empty() && outputKey(output) == requestedOutput) {
-      return &output;
+    return {};
+  }
+
+  std::string outputKey(const WaylandOutput& output) {
+    if (!output.connectorName.empty()) {
+      return output.connectorName;
     }
+    return std::to_string(output.name);
   }
-  return primary;
-}
 
-float outputLogicalWidth(const WaylandOutput& output) {
-  if (output.logicalWidth > 0) {
-    return static_cast<float>(output.logicalWidth);
-  }
-  return static_cast<float>(std::max(1, output.width / std::max(1, output.scale)));
-}
-
-float outputLogicalHeight(const WaylandOutput& output) {
-  if (output.logicalHeight > 0) {
-    return static_cast<float>(output.logicalHeight);
-  }
-  return static_cast<float>(std::max(1, output.height / std::max(1, output.scale)));
-}
-
-bool formatShowsSeconds(const DesktopWidgetState& state) {
-  if (state.type != "clock") {
-    return false;
-  }
-  const auto it = state.settings.find("format");
-  if (it == state.settings.end()) {
-    return false;
-  }
-  const auto* format = std::get_if<std::string>(&it->second);
-  if (format == nullptr) {
-    return false;
-  }
-  return format->find("%S") != std::string::npos || format->find("%T") != std::string::npos ||
-         format->find("%X") != std::string::npos;
-}
-
-float estimateIntrinsicWidth(const DesktopWidgetState& state) {
-  if (state.type == "clock") {
-    return formatShowsSeconds(state) ? 270.0f : 210.0f;
-  }
-  if (state.type == "audio_visualizer") {
-    const auto it = state.settings.find("width");
-    if (it != state.settings.end()) {
-      if (const auto* value = std::get_if<double>(&it->second)) {
-        return static_cast<float>(*value);
+  const WaylandOutput* resolveEffectiveOutput(const WaylandConnection& wayland, const std::string& requestedOutput) {
+    const auto& outputs = wayland.outputs();
+    const WaylandOutput* primary = nullptr;
+    for (const auto& output : outputs) {
+      if (!output.done || output.output == nullptr) {
+        continue;
       }
-      if (const auto* value = std::get_if<std::int64_t>(&it->second)) {
-        return static_cast<float>(*value);
+      if (primary == nullptr) {
+        primary = &output;
+      }
+      if (!requestedOutput.empty() && outputKey(output) == requestedOutput) {
+        return &output;
       }
     }
-    return 240.0f;
+    return primary;
   }
-  return 210.0f;
-}
 
-float estimateIntrinsicHeight(const DesktopWidgetState& state) {
-  if (state.type == "audio_visualizer") {
-    const auto it = state.settings.find("height");
-    if (it != state.settings.end()) {
-      if (const auto* value = std::get_if<double>(&it->second)) {
-        return static_cast<float>(*value);
-      }
-      if (const auto* value = std::get_if<std::int64_t>(&it->second)) {
-        return static_cast<float>(*value);
-      }
+  float outputLogicalWidth(const WaylandOutput& output) {
+    if (output.logicalWidth > 0) {
+      return static_cast<float>(output.logicalWidth);
     }
-    return 96.0f;
+    return static_cast<float>(std::max(1, output.width / std::max(1, output.scale)));
   }
-  return 70.0f;
-}
 
-void writeSetting(toml::table& table, const std::string& key, const WidgetSettingValue& value) {
-  std::visit(
-      [&](const auto& concrete) {
-        using T = std::decay_t<decltype(concrete)>;
-        if constexpr (std::is_same_v<T, std::vector<std::string>>) {
-          toml::array array;
-          for (const auto& item : concrete) {
-            array.push_back(item);
-          }
-          table.insert_or_assign(key, std::move(array));
-        } else {
-          table.insert_or_assign(key, concrete);
+  float outputLogicalHeight(const WaylandOutput& output) {
+    if (output.logicalHeight > 0) {
+      return static_cast<float>(output.logicalHeight);
+    }
+    return static_cast<float>(std::max(1, output.height / std::max(1, output.scale)));
+  }
+
+  bool formatShowsSeconds(const DesktopWidgetState& state) {
+    if (state.type != "clock") {
+      return false;
+    }
+    const auto it = state.settings.find("format");
+    if (it == state.settings.end()) {
+      return false;
+    }
+    const auto* format = std::get_if<std::string>(&it->second);
+    if (format == nullptr) {
+      return false;
+    }
+    return format->find("%S") != std::string::npos || format->find("%T") != std::string::npos ||
+           format->find("%X") != std::string::npos;
+  }
+
+  float estimateIntrinsicWidth(const DesktopWidgetState& state) {
+    if (state.type == "clock") {
+      return formatShowsSeconds(state) ? 270.0f : 210.0f;
+    }
+    if (state.type == "audio_visualizer") {
+      const auto it = state.settings.find("width");
+      if (it != state.settings.end()) {
+        if (const auto* value = std::get_if<double>(&it->second)) {
+          return static_cast<float>(*value);
         }
-      },
-      value);
-}
-
-std::optional<WidgetSettingValue> readSetting(const toml::node& node) {
-  if (const auto* stringValue = node.as_string()) {
-    return WidgetSettingValue{stringValue->get()};
-  }
-  if (const auto* intValue = node.as_integer()) {
-    return WidgetSettingValue{intValue->get()};
-  }
-  if (const auto* floatValue = node.as_floating_point()) {
-    return WidgetSettingValue{floatValue->get()};
-  }
-  if (const auto* boolValue = node.as_boolean()) {
-    return WidgetSettingValue{boolValue->get()};
-  }
-  if (const auto* arrayValue = node.as_array()) {
-    std::vector<std::string> strings;
-    for (const auto& item : *arrayValue) {
-      if (auto value = item.value<std::string>()) {
-        strings.push_back(*value);
+        if (const auto* value = std::get_if<std::int64_t>(&it->second)) {
+          return static_cast<float>(*value);
+        }
       }
+      return 240.0f;
     }
-    return WidgetSettingValue{std::move(strings)};
-  }
-  return std::nullopt;
-}
-
-bool parseDesktopWidgetCounter(std::string_view id, std::uint64_t& value) {
-  if (!id.starts_with(kDesktopWidgetIdPrefix)) {
-    return false;
+    return 210.0f;
   }
 
-  const std::string_view suffix = id.substr(kDesktopWidgetIdPrefix.size());
-  if (suffix.empty()) {
-    return false;
+  float estimateIntrinsicHeight(const DesktopWidgetState& state) {
+    if (state.type == "audio_visualizer") {
+      const auto it = state.settings.find("height");
+      if (it != state.settings.end()) {
+        if (const auto* value = std::get_if<double>(&it->second)) {
+          return static_cast<float>(*value);
+        }
+        if (const auto* value = std::get_if<std::int64_t>(&it->second)) {
+          return static_cast<float>(*value);
+        }
+      }
+      return 96.0f;
+    }
+    return 70.0f;
   }
 
-  value = 0;
-  const auto* begin = suffix.data();
-  const auto* end = suffix.data() + suffix.size();
-  const auto [ptr, ec] = std::from_chars(begin, end, value, 16);
-  return ec == std::errc{} && ptr == end;
-}
+  void writeSetting(toml::table& table, const std::string& key, const WidgetSettingValue& value) {
+    std::visit(
+        [&](const auto& concrete) {
+          using T = std::decay_t<decltype(concrete)>;
+          if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+            toml::array array;
+            for (const auto& item : concrete) {
+              array.push_back(item);
+            }
+            table.insert_or_assign(key, std::move(array));
+          } else {
+            table.insert_or_assign(key, concrete);
+          }
+        },
+        value);
+  }
 
-std::string makeDesktopWidgetId(std::uint64_t counter) { return std::format("desktop-widget-{:016x}", counter); }
+  std::optional<WidgetSettingValue> readSetting(const toml::node& node) {
+    if (const auto* stringValue = node.as_string()) {
+      return WidgetSettingValue{stringValue->get()};
+    }
+    if (const auto* intValue = node.as_integer()) {
+      return WidgetSettingValue{intValue->get()};
+    }
+    if (const auto* floatValue = node.as_floating_point()) {
+      return WidgetSettingValue{floatValue->get()};
+    }
+    if (const auto* boolValue = node.as_boolean()) {
+      return WidgetSettingValue{boolValue->get()};
+    }
+    if (const auto* arrayValue = node.as_array()) {
+      std::vector<std::string> strings;
+      for (const auto& item : *arrayValue) {
+        if (auto value = item.value<std::string>()) {
+          strings.push_back(*value);
+        }
+      }
+      return WidgetSettingValue{std::move(strings)};
+    }
+    return std::nullopt;
+  }
+
+  bool parseDesktopWidgetCounter(std::string_view id, std::uint64_t& value) {
+    if (!id.starts_with(kDesktopWidgetIdPrefix)) {
+      return false;
+    }
+
+    const std::string_view suffix = id.substr(kDesktopWidgetIdPrefix.size());
+    if (suffix.empty()) {
+      return false;
+    }
+
+    value = 0;
+    const auto* begin = suffix.data();
+    const auto* end = suffix.data() + suffix.size();
+    const auto [ptr, ec] = std::from_chars(begin, end, value, 16);
+    return ec == std::errc{} && ptr == end;
+  }
+
+  std::string makeDesktopWidgetId(std::uint64_t counter) { return std::format("desktop-widget-{:016x}", counter); }
 
 } // namespace
 
@@ -207,7 +207,6 @@ void DesktopWidgetsController::initialize(WaylandConnection& wayland, ConfigServ
   if (m_config != nullptr) {
     m_config->addReloadCallback([this]() { applyVisibility(); });
   }
-
 }
 
 void DesktopWidgetsController::registerIpc(IpcService& ipc) {

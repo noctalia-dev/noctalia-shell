@@ -1,7 +1,8 @@
 #include "shell/lockscreen/lock_screen.h"
 
-#include "core/log.h"
 #include "config/config_service.h"
+#include "core/log.h"
+#include "ext-session-lock-v1-client-protocol.h"
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "shell/lockscreen/lock_surface.h"
@@ -10,25 +11,22 @@
 
 #include <algorithm>
 #include <string>
-
 #include <wayland-client.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
-#include "ext-session-lock-v1-client-protocol.h"
-
 namespace {
 
-constexpr Logger kLog("lockscreen");
+  constexpr Logger kLog("lockscreen");
 
-const ext_session_lock_v1_listener kSessionLockListener = {
-    .locked = &LockScreen::handleLocked,
-    .finished = &LockScreen::handleFinished,
-};
+  const ext_session_lock_v1_listener kSessionLockListener = {
+      .locked = &LockScreen::handleLocked,
+      .finished = &LockScreen::handleFinished,
+  };
 
 } // namespace
 
 namespace {
-LockScreen* g_lockScreenInstance = nullptr;
+  LockScreen* g_lockScreenInstance = nullptr;
 }
 
 void LockScreen::setInstance(LockScreen* instance) { g_lockScreenInstance = instance; }

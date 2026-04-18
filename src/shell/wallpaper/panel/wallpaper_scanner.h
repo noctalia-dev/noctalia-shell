@@ -31,9 +31,7 @@ private:
   struct CacheKey {
     std::string dir;
     bool flatten;
-    bool operator==(const CacheKey& other) const noexcept {
-      return flatten == other.flatten && dir == other.dir;
-    }
+    bool operator==(const CacheKey& other) const noexcept { return flatten == other.flatten && dir == other.dir; }
   };
   struct CacheKeyHash {
     std::size_t operator()(const CacheKey& k) const noexcept {

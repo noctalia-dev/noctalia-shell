@@ -1,4 +1,5 @@
 #include "ui/controls/glyph_registry.h"
+
 #include "core/log.h"
 
 #include <string>

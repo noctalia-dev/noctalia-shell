@@ -11,7 +11,8 @@
 
 DesktopAudioVisualizerWidget::DesktopAudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, float height,
                                                            int bands)
-    : m_spectrum(spectrum), m_width(std::max(1.0f, width)), m_height(std::max(1.0f, height)), m_bands(std::max(1, bands)) {}
+    : m_spectrum(spectrum), m_width(std::max(1.0f, width)), m_height(std::max(1.0f, height)),
+      m_bands(std::max(1, bands)) {}
 
 DesktopAudioVisualizerWidget::~DesktopAudioVisualizerWidget() {
   if (m_spectrum != nullptr && m_listenerId != 0) {

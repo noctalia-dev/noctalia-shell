@@ -123,8 +123,7 @@ void WallpaperPageGrid::doLayout(Renderer& renderer) {
   const float cellH = (H - static_cast<float>(kRows - 1) * m_rowGap) / static_cast<float>(kRows);
 
   const bool poolEmpty = m_pool.empty();
-  const bool sizeChanged = !poolEmpty &&
-                           (std::abs(cellW - m_cellW) > 0.5f || std::abs(cellH - m_cellH) > 0.5f);
+  const bool sizeChanged = !poolEmpty && (std::abs(cellW - m_cellW) > 0.5f || std::abs(cellH - m_cellH) > 0.5f);
   if (poolEmpty || sizeChanged) {
     clearPool();
     buildPool(cellW, cellH);
@@ -144,8 +143,7 @@ void WallpaperPageGrid::doLayout(Renderer& renderer) {
     if (i < m_count) {
       const std::size_t row = i / kColumns;
       const std::size_t col = i % kColumns;
-      tile->setPosition(static_cast<float>(col) * (cellW + m_colGap),
-                        static_cast<float>(row) * (cellH + m_rowGap));
+      tile->setPosition(static_cast<float>(col) * (cellW + m_colGap), static_cast<float>(row) * (cellH + m_rowGap));
       tile->setEntry(m_entries[i], *m_renderer);
       tile->setSelected(i == m_selectedIndex);
       tile->setHoveredVisual(m_hoverEnabled && i == m_hoverIndex && i != m_selectedIndex);

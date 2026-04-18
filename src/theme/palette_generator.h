@@ -1,11 +1,11 @@
 #pragma once
 
+#include "theme/palette.h"
+#include "theme/scheme.h"
+
 #include <cstdint>
 #include <string>
 #include <vector>
-
-#include "theme/palette.h"
-#include "theme/scheme.h"
 
 namespace noctalia::theme {
 

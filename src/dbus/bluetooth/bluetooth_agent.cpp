@@ -13,17 +13,17 @@
 
 namespace {
 
-constexpr Logger kLog("bluetooth");
+  constexpr Logger kLog("bluetooth");
 
-const sdbus::ServiceName k_bluezBusName{"org.bluez"};
-const sdbus::ObjectPath k_bluezRoot{"/org/bluez"};
-const sdbus::ObjectPath k_agentObjectPath{"/org/noctalia/BluetoothAgent"};
-constexpr auto k_agentInterface = "org.bluez.Agent1";
-constexpr auto k_agentManagerInterface = "org.bluez.AgentManager1";
-constexpr auto k_capability = "KeyboardDisplay";
+  const sdbus::ServiceName k_bluezBusName{"org.bluez"};
+  const sdbus::ObjectPath k_bluezRoot{"/org/bluez"};
+  const sdbus::ObjectPath k_agentObjectPath{"/org/noctalia/BluetoothAgent"};
+  constexpr auto k_agentInterface = "org.bluez.Agent1";
+  constexpr auto k_agentManagerInterface = "org.bluez.AgentManager1";
+  constexpr auto k_capability = "KeyboardDisplay";
 
-const sdbus::Error::Name k_errRejected{"org.bluez.Error.Rejected"};
-const sdbus::Error::Name k_errCanceled{"org.bluez.Error.Canceled"};
+  const sdbus::Error::Name k_errRejected{"org.bluez.Error.Rejected"};
+  const sdbus::Error::Name k_errCanceled{"org.bluez.Error.Canceled"};
 
 } // namespace
 
@@ -182,48 +182,45 @@ BluetoothAgent::BluetoothAgent(SystemBus& bus) : m_impl(std::make_unique<Impl>(b
   m_impl->object = sdbus::createObject(bus.connection(), k_agentObjectPath);
 
   m_impl->object
-      ->addVTable(
-          sdbus::registerMethod("Release").implementedAs([]() {}),
-          sdbus::registerMethod("RequestPinCode")
-              .withInputParamNames("device")
-              .withOutputParamNames("pincode")
-              .implementedAs([this](sdbus::Result<std::string>&& result, sdbus::ObjectPath device) {
-                m_impl->onRequestPinCode(std::move(result), std::move(device));
-              }),
-          sdbus::registerMethod("DisplayPinCode")
-              .withInputParamNames("device", "pincode")
-              .implementedAs(
-                  [this](sdbus::Result<>&& result, sdbus::ObjectPath device, std::string pincode) {
-                    m_impl->onDisplayPinCode(std::move(result), std::move(device), std::move(pincode));
-                  }),
-          sdbus::registerMethod("RequestPasskey")
-              .withInputParamNames("device")
-              .withOutputParamNames("passkey")
-              .implementedAs([this](sdbus::Result<std::uint32_t>&& result, sdbus::ObjectPath device) {
-                m_impl->onRequestPasskey(std::move(result), std::move(device));
-              }),
-          sdbus::registerMethod("DisplayPasskey")
-              .withInputParamNames("device", "passkey", "entered")
-              .implementedAs([this](sdbus::ObjectPath device, std::uint32_t passkey, std::uint16_t entered) {
-                m_impl->onDisplayPasskey(std::move(device), passkey, entered);
-              }),
-          sdbus::registerMethod("RequestConfirmation")
-              .withInputParamNames("device", "passkey")
-              .implementedAs(
-                  [this](sdbus::Result<>&& result, sdbus::ObjectPath device, std::uint32_t passkey) {
-                    m_impl->onRequestConfirmation(std::move(result), std::move(device), passkey);
-                  }),
-          sdbus::registerMethod("RequestAuthorization")
-              .withInputParamNames("device")
-              .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device) {
-                m_impl->onRequestAuthorization(std::move(result), std::move(device));
-              }),
-          sdbus::registerMethod("AuthorizeService")
-              .withInputParamNames("device", "uuid")
-              .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device, std::string uuid) {
-                m_impl->onAuthorizeService(std::move(result), std::move(device), std::move(uuid));
-              }),
-          sdbus::registerMethod("Cancel").implementedAs([this]() { m_impl->onCancel(); }))
+      ->addVTable(sdbus::registerMethod("Release").implementedAs([]() {}),
+                  sdbus::registerMethod("RequestPinCode")
+                      .withInputParamNames("device")
+                      .withOutputParamNames("pincode")
+                      .implementedAs([this](sdbus::Result<std::string>&& result, sdbus::ObjectPath device) {
+                        m_impl->onRequestPinCode(std::move(result), std::move(device));
+                      }),
+                  sdbus::registerMethod("DisplayPinCode")
+                      .withInputParamNames("device", "pincode")
+                      .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device, std::string pincode) {
+                        m_impl->onDisplayPinCode(std::move(result), std::move(device), std::move(pincode));
+                      }),
+                  sdbus::registerMethod("RequestPasskey")
+                      .withInputParamNames("device")
+                      .withOutputParamNames("passkey")
+                      .implementedAs([this](sdbus::Result<std::uint32_t>&& result, sdbus::ObjectPath device) {
+                        m_impl->onRequestPasskey(std::move(result), std::move(device));
+                      }),
+                  sdbus::registerMethod("DisplayPasskey")
+                      .withInputParamNames("device", "passkey", "entered")
+                      .implementedAs([this](sdbus::ObjectPath device, std::uint32_t passkey, std::uint16_t entered) {
+                        m_impl->onDisplayPasskey(std::move(device), passkey, entered);
+                      }),
+                  sdbus::registerMethod("RequestConfirmation")
+                      .withInputParamNames("device", "passkey")
+                      .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device, std::uint32_t passkey) {
+                        m_impl->onRequestConfirmation(std::move(result), std::move(device), passkey);
+                      }),
+                  sdbus::registerMethod("RequestAuthorization")
+                      .withInputParamNames("device")
+                      .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device) {
+                        m_impl->onRequestAuthorization(std::move(result), std::move(device));
+                      }),
+                  sdbus::registerMethod("AuthorizeService")
+                      .withInputParamNames("device", "uuid")
+                      .implementedAs([this](sdbus::Result<>&& result, sdbus::ObjectPath device, std::string uuid) {
+                        m_impl->onAuthorizeService(std::move(result), std::move(device), std::move(uuid));
+                      }),
+                  sdbus::registerMethod("Cancel").implementedAs([this]() { m_impl->onCancel(); }))
       .forInterface(k_agentInterface);
 
   try {
@@ -247,9 +244,7 @@ BluetoothAgent::~BluetoothAgent() {
   m_impl->cancelPending();
   try {
     auto agentManager = sdbus::createProxy(m_impl->bus.connection(), k_bluezBusName, k_bluezRoot);
-    agentManager->callMethod("UnregisterAgent")
-        .onInterface(k_agentManagerInterface)
-        .withArguments(k_agentObjectPath);
+    agentManager->callMethod("UnregisterAgent").onInterface(k_agentManagerInterface).withArguments(k_agentObjectPath);
   } catch (const sdbus::Error& e) {
     kLog.debug("BlueZ agent unregister failed: {}", e.what());
   }
@@ -299,9 +294,7 @@ void BluetoothAgent::cancelPending() {
   }
 }
 
-bool BluetoothAgent::hasPendingRequest() const noexcept {
-  return m_impl != nullptr && m_impl->hasPending();
-}
+bool BluetoothAgent::hasPendingRequest() const noexcept { return m_impl != nullptr && m_impl->hasPending(); }
 
 BluetoothPairingRequest BluetoothAgent::pendingRequest() const {
   return m_impl != nullptr ? m_impl->pending : BluetoothPairingRequest{};

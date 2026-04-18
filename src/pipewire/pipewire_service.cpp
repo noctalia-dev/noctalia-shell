@@ -6,6 +6,11 @@
 #include "ipc/ipc_arg_parse.h"
 #include "ipc/ipc_service.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include <memory>
+#include <optional>
 #include <pipewire/extensions/metadata.h>
 #include <pipewire/pipewire.h>
 #include <spa/param/audio/format-utils.h>
@@ -13,12 +18,6 @@
 #include <spa/pod/builder.h>
 #include <spa/pod/parser.h>
 #include <spa/utils/result.h>
-
-#include <algorithm>
-#include <cmath>
-#include <cstring>
-#include <memory>
-#include <optional>
 #include <string>
 #include <string_view>
 

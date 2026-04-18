@@ -38,13 +38,12 @@ public:
   Bar();
 
   bool initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                  NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
-                  UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
-                  NetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
-                  PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weatherService,
-                  RenderContext* renderContext, NightLightManager* nightLight,
-                  noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                  BrightnessService* brightness);
+                  NotificationManager* notifications, TrayService* tray, PipeWireService* audio, UPowerService* upower,
+                  SystemMonitorService* sysmon, PowerProfilesService* powerProfiles, NetworkService* network,
+                  IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
+                  HttpClient* httpClient, WeatherService* weatherService, RenderContext* renderContext,
+                  NightLightManager* nightLight, noctalia::theme::ThemeService* themeService,
+                  BluetoothService* bluetooth, BrightnessService* brightness);
   void reload();
   void closeAllInstances();
   void show();

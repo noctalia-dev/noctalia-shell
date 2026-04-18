@@ -11,10 +11,10 @@
 
 namespace {
 
-bool formatShowsSeconds(const std::string& format) {
-  return format.find("%S") != std::string::npos || format.find("%T") != std::string::npos ||
-         format.find("%X") != std::string::npos;
-}
+  bool formatShowsSeconds(const std::string& format) {
+    return format.find("%S") != std::string::npos || format.find("%T") != std::string::npos ||
+           format.find("%X") != std::string::npos;
+  }
 
 } // namespace
 

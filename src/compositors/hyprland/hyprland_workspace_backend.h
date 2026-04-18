@@ -2,10 +2,9 @@
 
 #include "compositors/workspace_backend.h"
 
-#include <json.hpp>
-
 #include <cstdint>
 #include <functional>
+#include <json.hpp>
 #include <optional>
 #include <string>
 #include <unordered_map>

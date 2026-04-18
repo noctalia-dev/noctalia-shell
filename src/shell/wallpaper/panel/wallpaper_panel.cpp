@@ -1,8 +1,8 @@
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 
 #include "config/config_service.h"
-#include "core/ui_phase.h"
 #include "core/log.h"
+#include "core/ui_phase.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
@@ -28,17 +28,17 @@
 
 namespace {
 
-constexpr Logger kLog("wp-panel");
-constexpr auto kFilterDebounceInterval = std::chrono::milliseconds(120);
+  constexpr Logger kLog("wp-panel");
+  constexpr auto kFilterDebounceInterval = std::chrono::milliseconds(120);
 
-std::string toLower(std::string_view text) {
-  std::string out;
-  out.reserve(text.size());
-  for (char ch : text) {
-    out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
+  std::string toLower(std::string_view text) {
+    std::string out;
+    out.reserve(text.size());
+    for (char ch : text) {
+      out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
+    }
+    return out;
   }
-  return out;
-}
 
 } // namespace
 
@@ -605,15 +605,14 @@ void WallpaperPanel::syncGridSelection() {
 
   const std::size_t pageStart = m_currentPage * WallpaperPageGrid::kPageSize;
   const std::size_t pageEnd = pageStart + WallpaperPageGrid::kPageSize;
-  const std::size_t selectedIndex =
-      (m_selectedVisibleIndex < m_visibleEntries.size() && m_selectedVisibleIndex >= pageStart &&
-       m_selectedVisibleIndex < pageEnd)
-          ? (m_selectedVisibleIndex - pageStart)
-          : WallpaperPageGrid::kPageSize;
-  const std::size_t hoverIndex =
-      (m_hoverVisibleIndex < m_visibleEntries.size() && m_hoverVisibleIndex >= pageStart && m_hoverVisibleIndex < pageEnd)
-          ? (m_hoverVisibleIndex - pageStart)
-          : WallpaperPageGrid::kPageSize;
+  const std::size_t selectedIndex = (m_selectedVisibleIndex < m_visibleEntries.size() &&
+                                     m_selectedVisibleIndex >= pageStart && m_selectedVisibleIndex < pageEnd)
+                                        ? (m_selectedVisibleIndex - pageStart)
+                                        : WallpaperPageGrid::kPageSize;
+  const std::size_t hoverIndex = (m_hoverVisibleIndex < m_visibleEntries.size() && m_hoverVisibleIndex >= pageStart &&
+                                  m_hoverVisibleIndex < pageEnd)
+                                     ? (m_hoverVisibleIndex - pageStart)
+                                     : WallpaperPageGrid::kPageSize;
 
   m_grid->setHighlightedIndex(selectedIndex, hoverIndex, m_mouseActive);
 }

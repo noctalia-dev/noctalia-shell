@@ -2,12 +2,11 @@
 
 #include "config/config_service.h"
 #include "core/log.h"
+#include "core/random.h"
 #include "render/core/shared_texture_cache.h"
 #include "render/wallpaper_renderer.h"
 #include "shell/wallpaper/wallpaper_surface.h"
 #include "wayland/wayland_connection.h"
-
-#include "core/random.h"
 
 #include <algorithm>
 #include <cmath>
@@ -16,39 +15,39 @@ using Random::randomFloat;
 
 namespace {
 
-TransitionParams randomizeParams(WallpaperTransition type, float smoothness, float aspectRatio) {
-  TransitionParams params;
-  params.smoothness = smoothness;
-  params.aspectRatio = aspectRatio;
+  TransitionParams randomizeParams(WallpaperTransition type, float smoothness, float aspectRatio) {
+    TransitionParams params;
+    params.smoothness = smoothness;
+    params.aspectRatio = aspectRatio;
 
-  switch (type) {
-  case WallpaperTransition::Wipe:
-    params.direction = std::floor(randomFloat(0.0f, 4.0f));
-    break;
-  case WallpaperTransition::Disc:
-    params.centerX = randomFloat(0.2f, 0.8f);
-    params.centerY = randomFloat(0.2f, 0.8f);
-    break;
-  case WallpaperTransition::Stripes:
-    params.stripeCount = std::round(randomFloat(4.0f, 24.0f));
-    params.angle = randomFloat(0.0f, 360.0f);
-    break;
-  case WallpaperTransition::Zoom:
-    break;
-  case WallpaperTransition::Honeycomb:
-    params.cellSize = randomFloat(0.02f, 0.06f);
-    params.centerX = randomFloat(0.2f, 0.8f);
-    params.centerY = randomFloat(0.2f, 0.8f);
-    break;
-  case WallpaperTransition::Fade:
-  default:
-    break;
+    switch (type) {
+    case WallpaperTransition::Wipe:
+      params.direction = std::floor(randomFloat(0.0f, 4.0f));
+      break;
+    case WallpaperTransition::Disc:
+      params.centerX = randomFloat(0.2f, 0.8f);
+      params.centerY = randomFloat(0.2f, 0.8f);
+      break;
+    case WallpaperTransition::Stripes:
+      params.stripeCount = std::round(randomFloat(4.0f, 24.0f));
+      params.angle = randomFloat(0.0f, 360.0f);
+      break;
+    case WallpaperTransition::Zoom:
+      break;
+    case WallpaperTransition::Honeycomb:
+      params.cellSize = randomFloat(0.02f, 0.06f);
+      params.centerX = randomFloat(0.2f, 0.8f);
+      params.centerY = randomFloat(0.2f, 0.8f);
+      break;
+    case WallpaperTransition::Fade:
+    default:
+      break;
+    }
+
+    return params;
   }
 
-  return params;
-}
-
-constexpr Logger kLog("wallpaper");
+  constexpr Logger kLog("wallpaper");
 
 } // namespace
 
@@ -152,7 +151,8 @@ void Wallpaper::syncInstances() {
   std::erase_if(m_instances, [&](const auto& inst) {
     const auto* output = [&]() -> const WaylandOutput* {
       for (const auto& out : outputs) {
-        if (out.name == inst->outputName) return &out;
+        if (out.name == inst->outputName)
+          return &out;
       }
       return nullptr;
     }();
@@ -303,8 +303,8 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
   }
 
   const auto& transitions = wpConfig.transitions;
-  const auto picked = transitions[static_cast<std::size_t>(
-      std::floor(randomFloat(0.0f, static_cast<float>(transitions.size()))))];
+  const auto picked =
+      transitions[static_cast<std::size_t>(std::floor(randomFloat(0.0f, static_cast<float>(transitions.size()))))];
   instance.activeTransition = picked;
   instance.transitionParams = randomizeParams(picked, wpConfig.edgeSmoothness, aspectRatio);
   instance.transitioning = true;

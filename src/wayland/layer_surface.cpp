@@ -2,11 +2,10 @@
 
 #include "core/log.h"
 #include "wayland/wayland_connection.h"
+#include "wlr-layer-shell-unstable-v1-client-protocol.h"
 
 #include <stdexcept>
 #include <wayland-client.h>
-
-#include "wlr-layer-shell-unstable-v1-client-protocol.h"
 
 namespace {
 
