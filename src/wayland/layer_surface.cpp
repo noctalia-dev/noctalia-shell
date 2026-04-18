@@ -75,6 +75,7 @@ bool LayerSurface::initialize(wl_output* output) {
   zwlr_layer_surface_v1_set_margin(m_layerSurface, m_config.marginTop, m_config.marginRight, m_config.marginBottom,
                                    m_config.marginLeft);
   zwlr_layer_surface_v1_set_keyboard_interactivity(m_layerSurface, static_cast<std::uint32_t>(m_config.keyboard));
+  applyInputRegion();
 
   wl_surface_commit(m_surface);
 
@@ -106,4 +107,40 @@ void LayerSurface::requestSize(std::uint32_t width, std::uint32_t height) {
   m_config.defaultHeight = height;
   zwlr_layer_surface_v1_set_size(m_layerSurface, width, height);
   wl_surface_commit(m_surface);
+}
+
+void LayerSurface::setMargins(std::int32_t top, std::int32_t right, std::int32_t bottom, std::int32_t left) {
+  m_config.marginTop = top;
+  m_config.marginRight = right;
+  m_config.marginBottom = bottom;
+  m_config.marginLeft = left;
+  if (m_layerSurface == nullptr || m_surface == nullptr) {
+    return;
+  }
+  zwlr_layer_surface_v1_set_margin(m_layerSurface, top, right, bottom, left);
+  wl_surface_commit(m_surface);
+}
+
+void LayerSurface::setClickThrough(bool clickThrough) {
+  if (m_clickThrough == clickThrough) {
+    return;
+  }
+  m_clickThrough = clickThrough;
+  applyInputRegion();
+  if (m_surface != nullptr) {
+    wl_surface_commit(m_surface);
+  }
+}
+
+void LayerSurface::applyInputRegion() {
+  if (m_surface == nullptr) {
+    return;
+  }
+
+  if (m_clickThrough) {
+    setInputRegion({});
+    return;
+  }
+
+  wl_surface_set_input_region(m_surface, nullptr);
 }

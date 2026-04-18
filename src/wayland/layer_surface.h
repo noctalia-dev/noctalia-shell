@@ -56,12 +56,17 @@ public:
   // Requests a new surface size from the compositor. The compositor will
   // respond with a configure event, which triggers the configure callback.
   void requestSize(std::uint32_t width, std::uint32_t height);
+  void setMargins(std::int32_t top, std::int32_t right, std::int32_t bottom, std::int32_t left);
+  void setClickThrough(bool clickThrough);
 
   static void handleConfigure(void* data, zwlr_layer_surface_v1* layerSurface, std::uint32_t serial,
                               std::uint32_t width, std::uint32_t height);
   static void handleClosed(void* data, zwlr_layer_surface_v1* layerSurface);
 
 private:
+  void applyInputRegion();
+
   LayerSurfaceConfig m_config;
   zwlr_layer_surface_v1* m_layerSurface = nullptr;
+  bool m_clickThrough = false;
 };

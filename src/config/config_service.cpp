@@ -1463,6 +1463,14 @@ void ConfigService::parseTable(const toml::table& tbl) {
       dock.pinned = readStringArray(*arr);
   }
 
+  // Parse [desktop_widgets]
+  if (auto* desktopWidgetsTbl = tbl["desktop_widgets"].as_table()) {
+    auto& desktopWidgets = m_config.desktopWidgets;
+    if (auto v = (*desktopWidgetsTbl)["enabled"].value<bool>()) {
+      desktopWidgets.enabled = *v;
+    }
+  }
+
   // Parse [weather]
   if (auto* weatherTbl = tbl["weather"].as_table()) {
     auto& weather = m_config.weather;

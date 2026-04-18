@@ -312,6 +312,7 @@ void Application::initServices() {
     m_overview.onOutputChange();
     m_bar.onOutputChange();
     m_dock.onOutputChange();
+    m_desktopWidgetsController.onOutputChange();
     m_lockScreen.onOutputChange();
   });
   m_clipboardService.setChangeCallback([this]() {
@@ -349,6 +350,7 @@ void Application::initServices() {
   m_themeService.setChangeCallback([this]() {
     m_bar.requestRedraw();
     m_dock.requestRedraw();
+    m_desktopWidgetsController.requestRedraw();
     m_panelManager.requestRedraw();
     m_notificationToast.requestRedraw();
     m_lockScreen.onThemeChanged();
@@ -586,6 +588,9 @@ void Application::initUi() {
       m_lockScreen.onPointerEvent(event);
       return;
     }
+    if (m_desktopWidgetsController.onPointerEvent(event)) {
+      return;
+    }
     if (m_trayMenu.onPointerEvent(event))
       return;
     if (m_bar.onPointerEvent(event))
@@ -600,6 +605,10 @@ void Application::initUi() {
   m_wayland.setKeyboardEventCallback([this](const KeyboardEvent& event) {
     if (m_lockScreen.isActive()) {
       m_lockScreen.onKeyboardEvent(event);
+      return;
+    }
+    if (m_desktopWidgetsController.isEditing()) {
+      m_desktopWidgetsController.onKeyboardEvent(event);
       return;
     }
     m_panelManager.onKeyboardEvent(event);
@@ -665,6 +674,8 @@ void Application::initUi() {
                    m_bluetoothService.get(), m_brightnessService.get());
 
   m_dock.initialize(m_wayland, &m_configService, &m_renderContext);
+  m_desktopWidgetsController.initialize(m_wayland, &m_configService, &m_timeService, m_pipewireSpectrum.get(),
+                                        &m_renderContext);
 
   std::string lastShellFontFamily = m_configService.config().shell.fontFamily;
   m_configService.addReloadCallback([this, lastShellFontFamily]() mutable {
@@ -677,6 +688,7 @@ void Application::initUi() {
     m_renderContext.setTextFontFamily(newShellFontFamily);
     m_bar.requestLayout();
     m_dock.requestLayout();
+    m_desktopWidgetsController.requestLayout();
     m_panelManager.requestLayout();
     m_notificationToast.requestLayout();
     m_lockScreen.onFontChanged();
@@ -692,6 +704,7 @@ void Application::initUi() {
       }
     } else {
       m_bar.onSecondTick();
+      m_desktopWidgetsController.onSecondTick();
     }
   });
 
@@ -789,6 +802,7 @@ void Application::initIpc() {
   }
   m_configService.registerIpc(m_ipcService);
   m_bar.registerIpc(m_ipcService);
+  m_desktopWidgetsController.registerIpc(m_ipcService);
   m_lockScreen.registerIpc(m_ipcService);
   m_panelManager.registerIpc(m_ipcService);
   m_idleInhibitor.registerIpc(m_ipcService);

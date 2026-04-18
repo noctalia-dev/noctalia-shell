@@ -211,6 +211,12 @@ struct DockConfig {
   bool operator==(const DockConfig&) const = default;
 };
 
+struct DesktopWidgetsConfig {
+  bool enabled = true;
+
+  bool operator==(const DesktopWidgetsConfig&) const = default;
+};
+
 struct OsdConfig {
   std::string position = "top_right";
 };
@@ -368,6 +374,7 @@ struct Config {
   WallpaperConfig wallpaper;
   OverviewConfig overview;
   DockConfig dock;
+  DesktopWidgetsConfig desktopWidgets;
   ShellConfig shell;
   OsdConfig osd;
   NotificationConfig notification;

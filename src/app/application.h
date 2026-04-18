@@ -37,6 +37,7 @@
 #include "render/gl_shared_context.h"
 #include "render/render_context.h"
 #include "shell/bar/bar.h"
+#include "shell/desktop/desktop_widgets_controller.h"
 #include "shell/dock/dock.h"
 #include "shell/lockscreen/lock_screen.h"
 #include "shell/notification/notification_toast.h"
@@ -125,6 +126,7 @@ private:
   RenderContext m_renderContext;
   Bar m_bar;
   Dock m_dock;
+  DesktopWidgetsController m_desktopWidgetsController;
   LockScreen m_lockScreen;
   PanelManager m_panelManager;
   NotificationToast m_notificationToast;

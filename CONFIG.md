@@ -13,6 +13,7 @@ Changes are detected automatically via inotify — no restart required.
 - [Widget definitions](#widget-definitions)
 - [Built-in widgets](#built-in-widgets)
 - [Dock](#dock)
+- [Desktop Widgets](#desktop-widgets)
 - [Weather](#weather)
 - [Audio](#audio)
 - [Brightness](#brightness)
@@ -652,6 +653,66 @@ noctalia msg show-dock       # Re-display all instances
 noctalia msg hide-dock       # Close all instances until next reload
 noctalia msg toggle-dock     # Toggle dock visibility
 noctalia msg reload-dock     # Reload dock configuration
+```
+
+---
+
+## Desktop Widgets
+
+Desktop widgets are enabled from `config.toml`, while widget instances and edit-mode grid settings are stored in a separate state file:
+
+- Config toggle: `[desktop_widgets]`
+- State file: `$XDG_STATE_HOME/noctalia/desktop_widgets.toml`
+  Falls back to `~/.local/state/noctalia/desktop_widgets.toml`
+
+```toml
+[desktop_widgets]
+enabled = true
+```
+
+When enabled, Noctalia renders each desktop widget as its own tightly-sized layer-shell surface on the `Bottom` layer. The current v1 implementation ships with the `clock` desktop widget type and an interactive edit mode.
+
+### Edit mode IPC
+
+```sh
+noctalia msg edit-desktop-widgets
+noctalia msg exit-desktop-widgets
+noctalia msg toggle-desktop-widgets-edit
+```
+
+### Edit mode controls
+
+- Drag the widget body to move it.
+- Drag the outer selection ring to rotate it.
+- Drag the bottom-right handle to scale it uniformly.
+- Press `G` to toggle the snap grid.
+- Hold `Shift` while dragging to temporarily disable snapping.
+- Press `Delete` or `Backspace` to remove the selected widget.
+- Press `Escape` or click `Done` to exit edit mode.
+
+### State file format
+
+Widget definitions are intentionally not read from `config.toml`; edit mode writes them to the state file so positions and transforms can be changed interactively.
+
+```toml
+schema_version = 1
+
+[grid]
+visible = true
+cell_size = 16
+major_interval = 4
+
+[[widget]]
+id = "desktop-widget-0000000000000001"
+type = "clock"
+output = "DP-1"
+cx = 960.0
+cy = 540.0
+scale = 1.5
+rotation = 0.0
+
+[widget.settings]
+format = "{:%H:%M}"
 ```
 
 ---
