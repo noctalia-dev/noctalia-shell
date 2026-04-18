@@ -404,12 +404,12 @@ namespace noctalia::theme {
 
   void ThemeService::registerIpc(IpcService& ipc) {
     ipc.registerHandler(
-        "toggle-theme-mode",
+        "theme-mode-toggle",
         [this](const std::string&) -> std::string {
           toggleLightDark();
           return "ok\n";
         },
-        "toggle-theme-mode", "Toggle theme mode between dark and light");
+        "theme-mode-toggle", "Toggle theme mode between dark and light");
   }
 
 } // namespace noctalia::theme

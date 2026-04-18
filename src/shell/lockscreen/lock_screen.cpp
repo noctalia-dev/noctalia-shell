@@ -383,12 +383,12 @@ void LockScreen::clearSensitiveString(std::string& value) {
 
 void LockScreen::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
-      "lock",
+      "screen-lock",
       [this](const std::string&) -> std::string {
         if (lock()) {
           return "ok\n";
         }
         return "error: lock screen unavailable\n";
       },
-      "lock", "Lock the session using the development lock screen (press Escape to unlock)");
+      "screen-lock", "Lock the session");
 }

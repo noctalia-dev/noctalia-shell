@@ -945,26 +945,26 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
 
 void Bar::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
-      "show-bar",
+      "bar-show",
       [this](const std::string&) -> std::string {
         show();
         return "ok\n";
       },
-      "show-bar", "Show the bar");
+      "bar-show", "Show the bar");
 
   ipc.registerHandler(
-      "hide-bar",
+      "bar-hide",
       [this](const std::string&) -> std::string {
         hide();
         return "ok\n";
       },
-      "hide-bar", "Hide the bar");
+      "bar-hide", "Hide the bar");
 
   ipc.registerHandler(
-      "toggle-bar",
+      "bar-toggle",
       [this](const std::string&) -> std::string {
         isVisible() ? hide() : show();
         return "ok\n";
       },
-      "toggle-bar", "Toggle bar visibility");
+      "bar-toggle", "Toggle bar visibility");
 }

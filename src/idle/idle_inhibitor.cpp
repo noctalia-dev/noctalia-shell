@@ -124,32 +124,32 @@ void IdleInhibitor::notifyChanged() {
 
 void IdleInhibitor::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
-      "enable-idle-inhibitor",
+      "idle-inhibitor-enable",
       [this](const std::string&) -> std::string {
         if (!available())
           return "error: idle inhibitor protocol unavailable\n";
         setEnabled(true);
         return "ok\n";
       },
-      "enable-idle-inhibitor", "Enable the compositor idle inhibitor");
+      "idle-inhibitor-enable", "Enable the compositor idle inhibitor");
 
   ipc.registerHandler(
-      "disable-idle-inhibitor",
+      "idle-inhibitor-disable",
       [this](const std::string&) -> std::string {
         if (!available())
           return "error: idle inhibitor protocol unavailable\n";
         setEnabled(false);
         return "ok\n";
       },
-      "disable-idle-inhibitor", "Disable the compositor idle inhibitor");
+      "idle-inhibitor-disable", "Disable the compositor idle inhibitor");
 
   ipc.registerHandler(
-      "toggle-idle-inhibitor",
+      "idle-inhibitor-toggle",
       [this](const std::string&) -> std::string {
         if (!available())
           return "error: idle inhibitor protocol unavailable\n";
         toggle();
         return "ok\n";
       },
-      "toggle-idle-inhibitor", "Toggle the compositor idle inhibitor");
+      "idle-inhibitor-toggle", "Toggle the compositor idle inhibitor");
 }

@@ -31,7 +31,7 @@ public:
 
   // Register a handler for a command name. The handler receives everything after
   // the first space as `args`. Must return a string ending with '\n'.
-  // `usage` describes the command signature, e.g. "toggle-panel <id>".
+  // `usage` describes the command signature, e.g. "panel-toggle <id>".
   // `description` is a short human-readable explanation shown in --help.
   void registerHandler(const std::string& command, Handler handler, std::string usage = {},
                        std::string description = {});

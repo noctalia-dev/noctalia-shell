@@ -764,11 +764,11 @@ void Application::initIpc() {
   };
 
   m_ipcService.registerHandler(
-      "set-notification-dnd",
+      "notification-dnd-set",
       [this, applyNotificationDnd](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
         if (parts.size() != 1) {
-          return "error: set-notification-dnd requires <on|off|true|false|1|0>\n";
+          return "error: notification-dnd-set requires <on|off|true|false|1|0>\n";
         }
         const std::string value = parts[0];
         if (value == "on" || value == "true" || value == "1") {
@@ -781,15 +781,15 @@ void Application::initIpc() {
         }
         return "error: invalid value (use on/off, true/false, 1/0)\n";
       },
-      "set-notification-dnd <on|off|true|false|1|0>", "Set notification Do Not Disturb state");
+      "notification-dnd-set <on|off|true|false|1|0>", "Set notification Do Not Disturb state");
 
   m_ipcService.registerHandler(
-      "toggle-notification-dnd",
+      "notification-dnd-toggle",
       [this, applyNotificationDnd](const std::string&) -> std::string {
         applyNotificationDnd(!m_notificationManager.doNotDisturb());
         return "ok\n";
       },
-      "toggle-notification-dnd", "Toggle notification Do Not Disturb state");
+      "notification-dnd-toggle", "Toggle notification Do Not Disturb state");
 
   m_ipcService.registerHandler(
       "notification-dnd-status",

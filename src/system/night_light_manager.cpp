@@ -336,34 +336,34 @@ void NightLightManager::stopProcess() {
 
 void NightLightManager::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
-      "enable-nightlight",
+      "nightlight-enable",
       [this](const std::string&) -> std::string {
         setEnabled(true);
         return "ok\n";
       },
-      "enable-nightlight", "Enable night light schedule");
+      "nightlight-enable", "Enable night light schedule");
 
   ipc.registerHandler(
-      "disable-nightlight",
+      "nightlight-disable",
       [this](const std::string&) -> std::string {
         setEnabled(false);
         return "ok\n";
       },
-      "disable-nightlight", "Disable night light schedule");
+      "nightlight-disable", "Disable night light schedule");
 
   ipc.registerHandler(
-      "toggle-nightlight",
+      "nightlight-toggle",
       [this](const std::string&) -> std::string {
         toggleEnabled();
         return "ok\n";
       },
-      "toggle-nightlight", "Toggle night light schedule");
+      "nightlight-toggle", "Toggle night light schedule");
 
   ipc.registerHandler(
-      "toggle-force-nightlight",
+      "nightlight-force-toggle",
       [this](const std::string&) -> std::string {
         toggleForceEnabled();
         return "ok\n";
       },
-      "toggle-force-nightlight", "Toggle forced night light mode");
+      "nightlight-force-toggle", "Toggle forced night light mode");
 }

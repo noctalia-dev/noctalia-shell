@@ -1387,11 +1387,11 @@ void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBat
   };
 
   ipc.registerHandler(
-      "set-brightness",
+      "brightness-set",
       [this, applyToTargets](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
         if (parts.empty() || parts.size() > 2) {
-          return "error: set-brightness requires <value> or <target> <value>\n";
+          return "error: brightness-set requires <value> or <target> <value>\n";
         }
 
         std::string target = "current";
@@ -1409,7 +1409,7 @@ void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBat
         return applyToTargets(target,
                               [this, amount](const BrightnessDisplay& display) { setBrightness(display.id, *amount); });
       },
-      "set-brightness <value> | set-brightness <current|*|all|monitor-selector> <value>",
+      "brightness-set <value> | brightness-set <current|*|all|monitor-selector> <value>",
       "Set brightness (defaults to current display)");
 
   auto registerDeltaHandler = [this, &ipc, applyToTargets](const std::string& command, float direction,
@@ -1447,9 +1447,9 @@ void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBat
         std::move(usage), std::move(description));
   };
 
-  registerDeltaHandler("raise-brightness", 1.0f, "raise-brightness [current|*|all|monitor-selector] [step]",
+  registerDeltaHandler("brightness-up", 1.0f, "brightness-up [current|*|all|monitor-selector] [step]",
                        "Increase brightness (defaults to current display)");
-  registerDeltaHandler("lower-brightness", -1.0f, "lower-brightness [current|*|all|monitor-selector] [step]",
+  registerDeltaHandler("brightness-down", -1.0f, "brightness-down [current|*|all|monitor-selector] [step]",
                        "Decrease brightness (defaults to current display)");
 }
 

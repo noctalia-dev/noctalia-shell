@@ -1778,10 +1778,10 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
 
 void ConfigService::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
-      "reload-config",
+      "config-reload",
       [this](const std::string&) -> std::string {
         forceReload();
         return "ok\n";
       },
-      "reload-config", "Reload the config file");
+      "config-reload", "Reload the config file");
 }

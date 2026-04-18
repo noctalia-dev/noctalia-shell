@@ -1721,37 +1721,37 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
 
 void Dock::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
-      "show-dock",
+      "dock-show",
       [this](const std::string&) -> std::string {
         if (m_config)
           m_config->setDockEnabled(true);
         return "ok\n";
       },
-      "show-dock", "Show the dock (persists override)");
+      "dock-show", "Show the dock (persists override)");
 
   ipc.registerHandler(
-      "hide-dock",
+      "dock-hide",
       [this](const std::string&) -> std::string {
         if (m_config)
           m_config->setDockEnabled(false);
         return "ok\n";
       },
-      "hide-dock", "Hide the dock (persists override)");
+      "dock-hide", "Hide the dock (persists override)");
 
   ipc.registerHandler(
-      "toggle-dock",
+      "dock-toggle",
       [this](const std::string&) -> std::string {
         if (m_config)
           m_config->setDockEnabled(!m_config->config().dock.enabled);
         return "ok\n";
       },
-      "toggle-dock", "Toggle dock visibility (persists override)");
+      "dock-toggle", "Toggle dock visibility (persists override)");
 
   ipc.registerHandler(
-      "reload-dock",
+      "dock-reload",
       [this](const std::string&) -> std::string {
         reload();
         return "ok\n";
       },
-      "reload-dock", "Reload dock configuration");
+      "dock-reload", "Reload dock configuration");
 }

@@ -517,13 +517,13 @@ void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
 
 void PanelManager::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
-      "toggle-panel",
+      "panel-toggle",
       [this](const std::string& args) -> std::string {
         if (args.empty()) {
-          return "error: toggle-panel requires a panel id\n";
+          return "error: panel-toggle requires a panel id\n";
         }
         togglePanel(args);
         return "ok\n";
       },
-      "toggle-panel <id>", "Toggle a panel by id (e.g. control-center)");
+      "panel-toggle <id>", "Toggle a panel by id (e.g. control-center)");
 }

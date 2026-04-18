@@ -212,28 +212,28 @@ void DesktopWidgetsController::initialize(WaylandConnection& wayland, ConfigServ
 
 void DesktopWidgetsController::registerIpc(IpcService& ipc) {
   ipc.registerHandler(
-      "edit-desktop-widgets",
+      "desktop-widgets-edit",
       [this](const std::string&) -> std::string {
         enterEdit();
         return "ok\n";
       },
-      "edit-desktop-widgets", "Open the desktop widgets editor");
+      "desktop-widgets-edit", "Open the desktop widgets editor");
 
   ipc.registerHandler(
-      "exit-desktop-widgets",
+      "desktop-widgets-exit",
       [this](const std::string&) -> std::string {
         exitEdit();
         return "ok\n";
       },
-      "exit-desktop-widgets", "Close the desktop widgets editor");
+      "desktop-widgets-exit", "Close the desktop widgets editor");
 
   ipc.registerHandler(
-      "toggle-desktop-widgets-edit",
+      "desktop-widgets-toggle-edit",
       [this](const std::string&) -> std::string {
         toggleEdit();
         return "ok\n";
       },
-      "toggle-desktop-widgets-edit", "Toggle desktop widgets edit mode");
+      "desktop-widgets-toggle-edit", "Toggle desktop widgets edit mode");
 }
 
 void DesktopWidgetsController::onOutputChange() {
