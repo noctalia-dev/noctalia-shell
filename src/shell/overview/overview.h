@@ -22,6 +22,7 @@ public:
   void onFontChanged();
   void onStateChange();
   void onThemeChanged();
+  void requestLayout();
 
 private:
   void reload();

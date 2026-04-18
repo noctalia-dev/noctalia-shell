@@ -127,6 +127,10 @@ void LockScreen::unlock() {
 }
 
 void LockScreen::onFontChanged() {
+  requestLayout();
+}
+
+void LockScreen::requestLayout() {
   for (auto& inst : m_instances) {
     if (inst.surface != nullptr) {
       inst.surface->requestLayout();

@@ -1,0 +1,282 @@
+#include "render/core/async_texture_cache.h"
+
+#include "core/log.h"
+#include "render/core/image_file_loader.h"
+#include "render/gl_shared_context.h"
+
+#include <algorithm>
+#include <cerrno>
+#include <cstdint>
+#include <sys/eventfd.h>
+#include <unistd.h>
+#include <utility>
+
+namespace {
+
+  constexpr Logger kLog("async-tex");
+  constexpr std::size_t kMinWorkers = 2;
+  constexpr std::size_t kMaxWorkers = 4;
+
+} // namespace
+
+AsyncTextureCache::AsyncTextureCache() {
+  m_eventFd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+  if (m_eventFd < 0) {
+    kLog.warn("failed to create eventfd; async texture cache notifications will be disabled");
+  }
+
+  const unsigned hc = std::thread::hardware_concurrency();
+  const std::size_t suggested = hc == 0U ? kMinWorkers : std::max<std::size_t>(kMinWorkers, hc / 2U);
+  const std::size_t workerCount = std::clamp<std::size_t>(suggested, kMinWorkers, kMaxWorkers);
+  m_workers.reserve(workerCount);
+  for (std::size_t i = 0; i < workerCount; ++i) {
+    m_workers.emplace_back([this]() { workerLoop(); });
+  }
+}
+
+AsyncTextureCache::~AsyncTextureCache() {
+  {
+    std::lock_guard<std::mutex> lock(m_queueMutex);
+    m_shutdown.store(true);
+  }
+  m_queueCv.notify_all();
+  for (auto& worker : m_workers) {
+    if (worker.joinable()) {
+      worker.join();
+    }
+  }
+
+  if (!m_entries.empty()) {
+    makeCurrent();
+    for (auto& [key, entry] : m_entries) {
+      (void)key;
+      if (entry.handle.id != 0) {
+        m_textureManager.unload(entry.handle);
+      }
+    }
+    m_entries.clear();
+  }
+  m_textureManager.cleanup();
+
+  if (m_eventFd >= 0) {
+    ::close(m_eventFd);
+    m_eventFd = -1;
+  }
+}
+
+void AsyncTextureCache::initialize(GlSharedContext* sharedGl) { m_sharedGl = sharedGl; }
+
+void AsyncTextureCache::setReadyCallback(ReadyCallback callback) { m_readyCallback = std::move(callback); }
+
+TextureHandle AsyncTextureCache::acquire(const std::string& path, int targetSize, bool mipmap) {
+  const auto key = makeKey(path, targetSize, mipmap);
+  if (key.path.empty()) {
+    return {};
+  }
+
+  auto [it, inserted] = m_entries.try_emplace(key);
+  Entry& entry = it->second;
+  if (inserted) {
+    entry.refCount = 1;
+  } else {
+    ++entry.refCount;
+  }
+
+  if (entry.handle.id != 0 || entry.failed) {
+    return entry.handle;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(m_queueMutex);
+    m_canceled.erase(key);
+    if (!m_inFlight.contains(key)) {
+      m_inFlight.insert(key);
+      m_jobQueue.push_back(key);
+    }
+  }
+  m_queueCv.notify_one();
+  return {};
+}
+
+TextureHandle AsyncTextureCache::peek(const std::string& path, int targetSize, bool mipmap) const {
+  const auto key = makeKey(path, targetSize, mipmap);
+  if (key.path.empty()) {
+    return {};
+  }
+
+  auto it = m_entries.find(key);
+  return it != m_entries.end() ? it->second.handle : TextureHandle{};
+}
+
+void AsyncTextureCache::release(const std::string& path, int targetSize, bool mipmap) {
+  const auto key = makeKey(path, targetSize, mipmap);
+  if (key.path.empty()) {
+    return;
+  }
+
+  auto it = m_entries.find(key);
+  if (it == m_entries.end()) {
+    return;
+  }
+
+  if (it->second.refCount > 0) {
+    --it->second.refCount;
+  }
+  if (it->second.refCount > 0) {
+    return;
+  }
+
+  if (it->second.handle.id != 0) {
+    makeCurrent();
+    m_textureManager.unload(it->second.handle);
+  } else {
+    std::lock_guard<std::mutex> lock(m_queueMutex);
+    if (m_inFlight.contains(key)) {
+      m_canceled.insert(key);
+    }
+  }
+
+  m_entries.erase(it);
+}
+
+void AsyncTextureCache::doAddPollFds(std::vector<pollfd>& fds) {
+  if (m_eventFd < 0) {
+    return;
+  }
+  fds.push_back({.fd = m_eventFd, .events = POLLIN, .revents = 0});
+}
+
+void AsyncTextureCache::dispatch(const std::vector<pollfd>& fds, std::size_t startIdx) {
+  if (m_eventFd < 0 || startIdx >= fds.size()) {
+    return;
+  }
+  if ((fds[startIdx].revents & POLLIN) == 0) {
+    return;
+  }
+
+  std::uint64_t ignored = 0;
+  while (::read(m_eventFd, &ignored, sizeof(ignored)) > 0) {
+  }
+
+  std::deque<DecodedJob> jobs;
+  {
+    std::lock_guard<std::mutex> lock(m_resultMutex);
+    jobs = std::move(m_results);
+    m_results.clear();
+  }
+  if (jobs.empty()) {
+    return;
+  }
+
+  bool uploadedAny = false;
+  bool madeCurrent = false;
+
+  for (auto& job : jobs) {
+    bool dropped = false;
+    {
+      std::lock_guard<std::mutex> lock(m_queueMutex);
+      m_inFlight.erase(job.key);
+      if (auto canceled = m_canceled.find(job.key); canceled != m_canceled.end()) {
+        m_canceled.erase(canceled);
+        dropped = true;
+      }
+    }
+    if (dropped) {
+      continue;
+    }
+
+    auto entryIt = m_entries.find(job.key);
+    if (entryIt == m_entries.end()) {
+      continue;
+    }
+
+    if (job.failed || job.rgba.empty() || job.width <= 0 || job.height <= 0) {
+      entryIt->second.failed = true;
+      continue;
+    }
+
+    if (!madeCurrent) {
+      makeCurrent();
+      madeCurrent = true;
+    }
+
+    entryIt->second.handle = m_textureManager.loadFromRgba(job.rgba.data(), job.width, job.height, job.key.mipmap);
+    if (entryIt->second.handle.id == 0) {
+      entryIt->second.failed = true;
+      continue;
+    }
+
+    uploadedAny = true;
+  }
+
+  if (uploadedAny && m_readyCallback) {
+    m_readyCallback();
+  }
+}
+
+std::size_t AsyncTextureCache::RequestKeyHash::operator()(const RequestKey& key) const noexcept {
+  std::size_t seed = std::hash<std::string>{}(key.path);
+  seed ^= std::hash<int>{}(key.targetSize) + 0x9e3779b9U + (seed << 6U) + (seed >> 2U);
+  seed ^= std::hash<bool>{}(key.mipmap) + 0x9e3779b9U + (seed << 6U) + (seed >> 2U);
+  return seed;
+}
+
+void AsyncTextureCache::workerLoop() {
+  while (true) {
+    RequestKey key;
+    {
+      std::unique_lock<std::mutex> lock(m_queueMutex);
+      m_queueCv.wait(lock, [this]() { return m_shutdown.load() || !m_jobQueue.empty(); });
+      if (m_shutdown.load()) {
+        return;
+      }
+      key = std::move(m_jobQueue.front());
+      m_jobQueue.pop_front();
+    }
+
+    DecodedJob result;
+    result.key = key;
+
+    std::string errorMessage;
+    if (auto loaded = loadImageFile(key.path, key.targetSize, &errorMessage)) {
+      result.rgba = std::move(loaded->rgba);
+      result.width = loaded->width;
+      result.height = loaded->height;
+    } else {
+      result.failed = true;
+      kLog.warn("failed to decode image: {} ({})", key.path, errorMessage);
+    }
+
+    pushResult(std::move(result));
+  }
+}
+
+void AsyncTextureCache::signalMain() {
+  if (m_eventFd < 0) {
+    return;
+  }
+
+  const std::uint64_t one = 1;
+  const ssize_t written = ::write(m_eventFd, &one, sizeof(one));
+  if (written < 0 && errno != EAGAIN) {
+    kLog.warn("failed to signal async texture eventfd: errno={}", errno);
+  }
+}
+
+void AsyncTextureCache::pushResult(DecodedJob job) {
+  {
+    std::lock_guard<std::mutex> lock(m_resultMutex);
+    m_results.push_back(std::move(job));
+  }
+  signalMain();
+}
+
+void AsyncTextureCache::makeCurrent() {
+  if (m_sharedGl != nullptr) {
+    m_sharedGl->makeCurrentSurfaceless();
+  }
+}
+
+AsyncTextureCache::RequestKey AsyncTextureCache::makeKey(const std::string& path, int targetSize, bool mipmap) {
+  return RequestKey{.path = path, .targetSize = std::max(0, targetSize), .mipmap = mipmap};
+}

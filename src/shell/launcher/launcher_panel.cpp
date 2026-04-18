@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/ui_phase.h"
+#include "render/core/async_texture_cache.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
@@ -51,7 +52,8 @@ namespace {
   public:
     using IndexCallback = std::function<void(std::size_t)>;
 
-    explicit LauncherResultRow(float scale) : m_scale(scale), m_rowHeight(launcherRowHeight(scale)) {
+    LauncherResultRow(float scale, AsyncTextureCache* asyncTextures)
+        : m_scale(scale), m_rowHeight(launcherRowHeight(scale)), m_asyncTextures(asyncTextures) {
       setPropagateEvents(true);
       setOnClick([this](const InputArea::PointerData&) {
         if (m_boundIndex != static_cast<std::size_t>(-1) && m_onClick) {
@@ -135,6 +137,10 @@ namespace {
       m_boundIndex = index;
       m_selected = selected;
       m_hovered = hovered;
+      m_iconPath = result.iconPath;
+      m_fallbackGlyph = result.glyphName.empty() ? "app-window" : result.glyphName;
+      m_iconTargetSize = static_cast<int>(std::round(kIconSize * m_scale));
+      m_actionTextVisible = !result.actionText.empty();
 
       setVisible(true);
       setSize(width, m_rowHeight);
@@ -144,18 +150,19 @@ namespace {
       m_image->setVisible(false);
       m_glyph->setVisible(false);
 
-      if (!result.actionText.empty()) {
+      if (m_actionTextVisible) {
         m_actionLabel->setText(result.actionText);
         m_actionLabel->setSize(kIconSize * m_scale, kIconSize * m_scale);
         m_actionLabel->setVisible(true);
         m_image->clear(renderer);
-      } else if (!result.iconPath.empty()) {
-        m_image->setSize(kIconSize * m_scale, kIconSize * m_scale);
-        m_image->setSourceFile(renderer, result.iconPath, static_cast<int>(kIconSize * m_scale));
-        m_image->setVisible(true);
+      } else if (!m_iconPath.empty()) {
+        const bool ready = refreshAsyncIcon(renderer);
+        m_image->setVisible(ready);
+        m_glyph->setGlyph(m_fallbackGlyph);
+        m_glyph->setVisible(!ready);
       } else {
         m_image->clear(renderer);
-        m_glyph->setGlyph(result.glyphName.empty() ? "app-window" : result.glyphName);
+        m_glyph->setGlyph(m_fallbackGlyph);
         m_glyph->setVisible(true);
       }
 
@@ -177,11 +184,37 @@ namespace {
       layout(renderer);
     }
 
+    bool refreshAsyncIcon(Renderer& renderer) {
+      if (m_actionTextVisible || m_iconPath.empty()) {
+        return false;
+      }
+
+      bool ready = false;
+      if (m_asyncTextures != nullptr) {
+        ready = m_image->setSourceFileAsync(renderer, *m_asyncTextures, m_iconPath, m_iconTargetSize);
+      } else {
+        ready = m_image->setSourceFile(renderer, m_iconPath, m_iconTargetSize);
+      }
+
+      m_image->setSize(kIconSize * m_scale, kIconSize * m_scale);
+      m_image->setVisible(ready);
+      m_glyph->setGlyph(m_fallbackGlyph);
+      m_glyph->setVisible(!ready);
+      return ready;
+    }
+
     void clear(Renderer& renderer) {
       m_boundIndex = static_cast<std::size_t>(-1);
       m_selected = false;
       m_hovered = false;
+      m_actionTextVisible = false;
+      m_iconPath.clear();
+      m_fallbackGlyph = "app-window";
+      m_iconTargetSize = 0;
       m_image->clear(renderer);
+      m_actionLabel->setVisible(false);
+      m_image->setVisible(false);
+      m_glyph->setVisible(false);
       setVisible(false);
     }
 
@@ -217,6 +250,11 @@ namespace {
     Flex* m_textCol = nullptr;
     Label* m_title = nullptr;
     Label* m_subtitle = nullptr;
+    AsyncTextureCache* m_asyncTextures = nullptr;
+    std::string m_iconPath;
+    std::string m_fallbackGlyph;
+    int m_iconTargetSize = 0;
+    bool m_actionTextVisible = false;
     IndexCallback m_onClick;
     IndexCallback m_onMotion;
     IndexCallback m_onEnter;
@@ -225,7 +263,8 @@ namespace {
 
 } // namespace
 
-LauncherPanel::LauncherPanel(ConfigService* config) : m_config(config) {}
+LauncherPanel::LauncherPanel(ConfigService* config, AsyncTextureCache* asyncTextures)
+    : m_config(config), m_asyncTextures(asyncTextures) {}
 
 void LauncherPanel::addProvider(std::unique_ptr<LauncherProvider> provider) {
   provider->initialize();
@@ -511,7 +550,7 @@ void LauncherPanel::ensureRowPool(float viewportHeight) {
 
   const float scale = contentScale();
   for (std::size_t i = 0; i < desiredPoolSize; ++i) {
-    auto row = std::make_unique<LauncherResultRow>(scale);
+    auto row = std::make_unique<LauncherResultRow>(scale, m_asyncTextures);
     row->setCallbacks(
         [this](std::size_t index) {
           m_selectedIndex = index;

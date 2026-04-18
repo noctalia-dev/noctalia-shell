@@ -2,48 +2,14 @@
 
 #include "core/log.h"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wfloat-conversion"
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#pragma GCC diagnostic ignored "-Wshadow"
-#include <nanosvg.h>
-#include <nanosvgrast.h>
-#pragma GCC diagnostic pop
-
 #include "render/core/image_decoder.h"
+#include "render/core/image_file_loader.h"
 
-#include <algorithm>
-#include <cstring>
-#include <fstream>
 #include <vector>
 
 namespace {
 
   constexpr Logger kLog("texture");
-
-  bool endsWith(const std::string& str, const std::string& suffix) {
-    if (suffix.size() > str.size()) {
-      return false;
-    }
-    return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
-  }
-
-  std::vector<std::uint8_t> readFile(const std::string& path) {
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-    if (!file) {
-      return {};
-    }
-    const auto size = file.tellg();
-    if (size <= 0) {
-      return {};
-    }
-    std::vector<std::uint8_t> data(static_cast<std::size_t>(size));
-    file.seekg(0);
-    file.read(reinterpret_cast<char*>(data.data()), size);
-    return data;
-  }
 
 } // namespace
 
@@ -67,59 +33,29 @@ TextureHandle TextureManager::decodeEncodedRaster(const std::uint8_t* data, std:
 TextureManager::~TextureManager() { cleanup(); }
 
 TextureHandle TextureManager::loadFromFile(const std::string& path, int targetSize, bool mipmap) {
-  if (endsWith(path, ".svg") || endsWith(path, ".SVG")) {
-    // SVG rasterization via nanosvg
-    auto fileData = readFile(path);
-    if (fileData.empty()) {
-      kLog.warn("failed to read SVG: {}", path);
-      return {};
+  std::string errorMessage;
+  auto loaded = loadImageFile(path, targetSize, &errorMessage);
+  if (!loaded.has_value()) {
+    if (!errorMessage.empty()) {
+      kLog.warn("failed to load image: {} ({})", path, errorMessage);
+    } else {
+      kLog.warn("failed to load image: {}", path);
     }
-
-    // nsvgParse needs null-terminated mutable string
-    fileData.push_back(0);
-    auto* image = nsvgParse(reinterpret_cast<char*>(fileData.data()), "px", 96.0f);
-    if (image == nullptr) {
-      kLog.warn("failed to parse SVG: {}", path);
-      return {};
-    }
-
-    int w = targetSize > 0 ? targetSize : static_cast<int>(image->width);
-    int h = targetSize > 0 ? targetSize : static_cast<int>(image->height);
-    if (w <= 0 || h <= 0) {
-      nsvgDelete(image);
-      return {};
-    }
-
-    float scaleX = static_cast<float>(w) / image->width;
-    float scaleY = static_cast<float>(h) / image->height;
-    float scale = std::min(scaleX, scaleY);
-
-    auto* rast = nsvgCreateRasterizer();
-    if (rast == nullptr) {
-      nsvgDelete(image);
-      return {};
-    }
-
-    std::vector<std::uint8_t> pixels(static_cast<std::size_t>(w * h * 4));
-    nsvgRasterize(rast, image, 0, 0, scale, pixels.data(), w, h, w * 4);
-    nsvgDeleteRasterizer(rast);
-    nsvgDelete(image);
-
-    return uploadRgba(pixels.data(), w, h, mipmap);
-  }
-
-  // Raster images via Wuffs' stb-compatible decoder.
-  auto fileData = readFile(path);
-  if (fileData.empty()) {
-    kLog.warn("failed to read image: {}", path);
     return {};
   }
 
-  return decodeEncodedRaster(fileData.data(), fileData.size(), &path, mipmap);
+  return loadFromRgba(loaded->rgba.data(), loaded->width, loaded->height, mipmap);
 }
 
 TextureHandle TextureManager::loadFromEncodedBytes(const std::uint8_t* data, std::size_t size, bool mipmap) {
   return decodeEncodedRaster(data, size, nullptr, mipmap);
+}
+
+TextureHandle TextureManager::loadFromRgba(const std::uint8_t* data, int width, int height, bool mipmap) {
+  if (data == nullptr || width <= 0 || height <= 0) {
+    return {};
+  }
+  return uploadRgba(data, width, height, mipmap);
 }
 
 TextureHandle TextureManager::loadFromRaw(const std::uint8_t* data, std::size_t size, int width, int height, int stride,

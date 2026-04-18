@@ -184,20 +184,13 @@ void AppProvider::refreshEntriesIfNeeded() const {
 std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
   refreshEntriesIfNeeded();
 
-  auto buildResult = [&](const DesktopEntry& entry, int s, bool resolveIcon) {
+  auto buildResult = [&](const DesktopEntry& entry, int s) {
     LauncherResult result;
     result.id = entry.path;
     result.title = entry.name;
     result.subtitle = entry.genericName.empty() ? entry.comment : entry.genericName;
-    if (resolveIcon) {
-      result.iconPath = m_iconResolver.resolve(entry.icon);
-      if (result.iconPath.empty()) {
-        result.iconPath = m_iconResolver.resolve(std::string(kDefaultAppIcon));
-      }
-    } else {
-      result.iconName = entry.icon.empty() ? std::string(kDefaultAppIcon) : entry.icon;
-    }
-    result.glyphName = result.iconPath.empty() ? "app-window" : "";
+    result.iconName = entry.icon.empty() ? std::string(kDefaultAppIcon) : entry.icon;
+    result.glyphName = "app-window";
     result.score = s;
     return result;
   };
@@ -207,7 +200,7 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
     std::vector<LauncherResult> results;
     results.reserve(m_entries.size());
     for (const auto& entry : m_entries) {
-      results.push_back(buildResult(entry, 0, false));
+      results.push_back(buildResult(entry, 0));
     }
     return results;
   }
@@ -225,7 +218,7 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
   results.reserve(std::min(scored.size(), std::size_t(50)));
   for (std::size_t i = 0; i < scored.size() && i < 50; ++i) {
     const auto& [s, entry] = scored[i];
-    results.push_back(buildResult(*entry, s, true));
+    results.push_back(buildResult(*entry, s));
   }
   return results;
 }

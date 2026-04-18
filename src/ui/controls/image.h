@@ -10,6 +10,7 @@
 class Box;
 class ImageNode;
 class Renderer;
+class AsyncTextureCache;
 
 enum class ImageFit : std::uint8_t {
   Contain,
@@ -32,6 +33,8 @@ public:
   void setPadding(float padding);
 
   bool setSourceFile(Renderer& renderer, const std::string& path, int targetSize = 0, bool mipmap = false);
+  bool setSourceFileAsync(Renderer& renderer, AsyncTextureCache& cache, const std::string& path, int targetSize = 0,
+                          bool mipmap = false);
   bool setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::size_t size, bool mipmap = false);
   bool setSourceRaw(Renderer& renderer, const std::uint8_t* data, std::size_t size, int width, int height, int stride,
                     PixmapFormat format, bool mipmap = false);
@@ -56,9 +59,11 @@ public:
   void setFrameSize(float width, float height);
 
 private:
+  void doLayout(Renderer& renderer) override;
   void ensureBackground();
   void applyPalette();
   void updateLayout();
+  void clearAsyncSource();
 
   Box* m_background = nullptr;
   ImageNode* m_image = nullptr;
@@ -72,5 +77,9 @@ private:
   ThemeColor m_borderColor = clearThemeColor();
   float m_borderWidth = 0.0f;
   Renderer* m_renderer = nullptr;
+  AsyncTextureCache* m_asyncTextureCache = nullptr;
+  std::string m_asyncSourcePath;
+  int m_asyncTargetSize = 0;
+  bool m_asyncMipmap = false;
   Signal<>::ScopedConnection m_paletteConn;
 };

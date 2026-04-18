@@ -89,6 +89,10 @@ void Overview::onThemeChanged() {
 }
 
 void Overview::onFontChanged() {
+  requestLayout();
+}
+
+void Overview::requestLayout() {
   for (auto& inst : m_instances) {
     if (inst->surface != nullptr) {
       inst->surface->requestLayout();

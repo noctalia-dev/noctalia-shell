@@ -20,10 +20,11 @@ class Node;
 class Renderer;
 class ScrollView;
 class ConfigService;
+class AsyncTextureCache;
 
 class LauncherPanel : public Panel {
 public:
-  explicit LauncherPanel(ConfigService* config);
+  LauncherPanel(ConfigService* config, AsyncTextureCache* asyncTextures);
 
   void addProvider(std::unique_ptr<LauncherProvider> provider);
 
@@ -78,4 +79,5 @@ private:
   bool m_mouseActive = false;
   bool m_pendingScrollToSelected = false;
   ConfigService* m_config = nullptr;
+  AsyncTextureCache* m_asyncTextures = nullptr;
 };

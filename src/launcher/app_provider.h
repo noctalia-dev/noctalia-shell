@@ -2,7 +2,6 @@
 
 #include "launcher/launcher_provider.h"
 #include "system/desktop_entry.h"
-#include "system/icon_resolver.h"
 
 #include <cstdint>
 #include <vector>
@@ -29,5 +28,4 @@ private:
   WaylandConnection* m_wayland = nullptr;
   mutable std::vector<DesktopEntry> m_entries;
   mutable std::uint64_t m_entriesVersion = 0;
-  mutable IconResolver m_iconResolver;
 };

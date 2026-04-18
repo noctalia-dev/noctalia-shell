@@ -29,6 +29,7 @@ public:
 
   [[nodiscard]] TextureHandle loadFromFile(const std::string& path, int targetSize = 0, bool mipmap = false);
   [[nodiscard]] TextureHandle loadFromEncodedBytes(const std::uint8_t* data, std::size_t size, bool mipmap = false);
+  [[nodiscard]] TextureHandle loadFromRgba(const std::uint8_t* data, int width, int height, bool mipmap = false);
   [[nodiscard]] TextureHandle loadFromRaw(const std::uint8_t* data, std::size_t size, int width, int height, int stride,
                                           PixmapFormat format, bool mipmap = false);
   void unload(TextureHandle& handle);

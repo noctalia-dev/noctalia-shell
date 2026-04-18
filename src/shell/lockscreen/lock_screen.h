@@ -36,6 +36,7 @@ public:
   void onSecondTick();
   void onFontChanged();
   void onThemeChanged();
+  void requestLayout();
   void onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);
   [[nodiscard]] bool isActive() const noexcept;
