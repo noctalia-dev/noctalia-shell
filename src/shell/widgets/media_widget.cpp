@@ -221,22 +221,38 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
                                                       : roleColor(ColorRole::OnSurfaceVariant));
   m_label->measure(renderer);
 
+  const bool showArtSlot = m_lastText != "Nothing playing";
+
   // Clamp art to the label's single-line height so oversized art_size cannot
   // distort the bar capsule. The bar uses a uniform cross-axis extent derived
   // from the same reference metrics.
-  const float artSize = std::min(m_artSize * m_contentScale, m_label->height());
-  m_art->setSize(artSize, artSize);
-  m_art->setCornerRadius(artSize * 0.5f);
+  float artSize = 0.0f;
+  if (showArtSlot) {
+    artSize = std::min(m_artSize * m_contentScale, m_label->height());
+    m_art->setVisible(true);
+    m_art->setSize(artSize, artSize);
+    m_art->setCornerRadius(artSize * 0.5f);
+  } else {
+    m_art->setVisible(false);
+    m_art->setSize(0.0f, 0.0f);
+    m_art->setCornerRadius(0.0f);
+  }
 
   const float contentHeight = m_label->height();
-  const float artY = std::round((contentHeight - artSize) * 0.5f);
+  const float artY = showArtSlot ? std::round((contentHeight - artSize) * 0.5f) : 0.0f;
 
-  m_label->setVisible(!isVertical);
+  m_label->setVisible(!isVertical || !showArtSlot);
   if (isVertical) {
-    m_art->setPosition(0.0f, artY);
-    rootNode->setSize(artSize, contentHeight);
+    if (!showArtSlot) {
+      m_art->setPosition(0.0f, 0.0f);
+      m_label->setPosition(0.0f, 0.0f);
+      rootNode->setSize(m_label->width(), m_label->height());
+    } else {
+      m_art->setPosition(0.0f, artY);
+      rootNode->setSize(artSize, contentHeight);
+    }
   } else {
-    const float spacing = m_label->text().empty() ? 0.0f : Style::spaceXs;
+    const float spacing = (!showArtSlot || m_label->text().empty()) ? 0.0f : Style::spaceXs;
     m_art->setPosition(0.0f, artY);
     m_label->setPosition(artSize + spacing, 0.0f);
     rootNode->setSize(m_label->x() + m_label->width(), contentHeight);
