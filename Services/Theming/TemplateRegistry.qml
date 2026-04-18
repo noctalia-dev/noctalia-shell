@@ -15,6 +15,7 @@ Singleton {
 
   readonly property string templateApplyScript: Quickshell.shellDir + '/Scripts/bash/template-apply.sh'
   readonly property string gtkRefreshScript: Quickshell.shellDir + '/Scripts/python/src/theming/gtk-refresh.py'
+  readonly property string kdeApplyScript: Quickshell.shellDir + '/Scripts/python/src/theming/kde-apply-scheme.py'
   readonly property string vscodeHelperScript: Quickshell.shellDir + '/Scripts/python/src/theming/vscode-helper.py'
 
   // Dynamically resolved VSCode extension theme paths (all matching noctalia extensions)
@@ -63,6 +64,14 @@ Singleton {
       "predefinedTemplatePath": "terminal/wezterm-predefined.toml",
       "outputPath": "~/.config/wezterm/colors/Noctalia.toml",
       "postHook": `${templateApplyScript} wezterm`
+    },
+    {
+      "id": "starship",
+      "name": "Starship",
+      "templatePath": "terminal/starship.toml",
+      "predefinedTemplatePath": "terminal/starship-predefined.toml",
+      "outputPath": "~/.cache/noctalia/starship-palette.toml",
+      "postHook": `${templateApplyScript} starship`
     }
   ]
 
@@ -109,7 +118,7 @@ Singleton {
           "path": "~/.local/share/color-schemes/noctalia.colors"
         }
       ],
-      "postProcess": () => "if command -v plasma-apply-colorscheme >/dev/null 2>&1; then plasma-apply-colorscheme BreezeDark; sleep 0.5; plasma-apply-colorscheme noctalia; fi"
+      "postProcess": () => `${kdeApplyScript} noctalia`
     },
     {
       "id": "fuzzel",

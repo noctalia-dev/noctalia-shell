@@ -89,7 +89,7 @@ ColumnLayout {
 
         ColumnLayout {
           id: contentCol
-          width: parent.width - 2 * Style.marginL
+          width: parent.width - Style.margin2L
           x: Style.marginL
           y: Style.marginL
           spacing: Style.marginXXS

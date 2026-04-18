@@ -22,7 +22,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Tuple, Union
 
 try:
     import tomllib
@@ -87,7 +87,7 @@ class VariableScope:
 # --- Known color format types ---
 
 KNOWN_FORMATS = frozenset({
-    "hex", "hex_stripped", "rgb", "rgba", "hsl", "hsla",
+    "hex", "hex_stripped", "rgb", "rgb_csv", "rgba", "hsl", "hsla",
     "red", "green", "blue", "alpha", "hue", "saturation", "lightness",
 })
 
@@ -661,6 +661,8 @@ class TemplateRenderer:
             return color.to_hex().lstrip('#')
         elif format_type == "rgb":
             return f"rgb({color.r}, {color.g}, {color.b})"
+        elif format_type == "rgb_csv":
+            return f"{color.r},{color.g},{color.b}"
         elif format_type == "rgba":
             alpha = getattr(color, 'alpha', 1.0)
             return f"rgba({color.r}, {color.g}, {color.b}, {alpha})"
@@ -968,13 +970,15 @@ class TemplateRenderer:
 
         return result
 
-    def render_file(self, input_path: Path, output_path: Path) -> bool:
+    def render_file(self, input_path: Path, output_path: Path) -> Tuple[bool, bool]:
         """Render a template file to an output path.
 
-        Returns True if successful, False if skipped due to errors.
+        Returns (success, wrote) where wrote is False if the file was skipped because
+        content was already identical (avoids mtime bumps and app reloads).
         """
         self._current_file = str(input_path)
         success = False
+        wrote = False
         try:
             template_text = input_path.read_text()
             rendered_text = self.render(template_text)
@@ -982,8 +986,18 @@ class TemplateRenderer:
             if self._error_count > 0:
                 print(f"Skipping {output_path}: template has {self._error_count} error(s)", file=sys.stderr)
             else:
-                output_path.parent.mkdir(parents=True, exist_ok=True)
-                output_path.write_text(rendered_text)
+                out = Path(output_path).expanduser()
+                out.parent.mkdir(parents=True, exist_ok=True)
+                skip_write = False
+                if out.is_file():
+                    try:
+                        if out.read_text() == rendered_text:
+                            skip_write = True
+                    except OSError:
+                        pass
+                if not skip_write:
+                    out.write_text(rendered_text)
+                    wrote = True
                 success = True
         except FileNotFoundError:
             self._log_error(f"Template file not found: {input_path}")
@@ -993,7 +1007,7 @@ class TemplateRenderer:
             self._log_error(f"Unexpected error: {e}")
         finally:
             self._current_file = None
-        return success
+        return success, wrote
 
     # --- Custom Colors ---
 
@@ -1149,7 +1163,13 @@ class TemplateRenderer:
                     rendered_compare_to = self.render(compare_to)
                     self.closest_color = find_closest_color(rendered_compare_to, colors_to_compare)
 
-                self.render_file(Path(input_path).expanduser(), Path(output_path).expanduser())
+                ok, wrote = self.render_file(Path(input_path).expanduser(), Path(output_path).expanduser())
+                if not ok:
+                    continue
+
+                # Hooks reload external apps (e.g. Discord); skip when output unchanged
+                if not wrote:
+                    continue
 
                 # Execute pre_hook if specified
                 pre_hook = template.get("pre_hook")

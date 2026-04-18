@@ -19,8 +19,8 @@ Singleton {
   property PwNode _lastFeedbackSink: null
 
   // Devices
-  readonly property PwNode sink: Pipewire.ready ? Pipewire.defaultAudioSink : null
-  readonly property PwNode source: validatedSource
+  readonly property var sink: Pipewire.ready ? Pipewire.defaultAudioSink : null
+  readonly property var source: validatedSource
   readonly property bool hasInput: !!source
   readonly property list<PwNode> sinks: deviceNodes.sinks
   readonly property list<PwNode> sources: deviceNodes.sources
@@ -190,7 +190,7 @@ Singleton {
                                                       }
 
   // Validated source (ensures it's a proper audio source, not a sink)
-  readonly property PwNode validatedSource: {
+  readonly property var validatedSource: {
     if (!Pipewire.ready) {
       return null;
     }
@@ -223,7 +223,12 @@ Singleton {
   // Track links to the default sink to find active streams
   PwNodeLinkTracker {
     id: sinkLinkTracker
-    node: root.sink
+  }
+
+  onSinkChanged: {
+    if (root.sink) {
+      sinkLinkTracker.node = root.sink;
+    }
   }
 
   // Track all streams globally to prevent binding loops for filtered out streams
@@ -344,8 +349,14 @@ Singleton {
     objects: [...root.sinks, ...root.sources]
   }
 
-  // Per-stream volume overrides (app + media identity) so concurrent browser streams do not share one entry.
+  // Per-stream volume overrides (app + media identity) so concurrent streams do not share one entry.
   property var appVolumeOverrides: ({})
+  // Panel sticky: single stream per process base → store by base (survives track / node churn).
+  // Multiple streams same base → store by full stream key; base-only locks migrate when n grows.
+  property var panelAppVolumeByBase: ({})
+  property var panelAppMutedByBase: ({})
+  property var panelAppVolumeByStreamKey: ({})
+  property var panelAppMutedByStreamKey: ({})
   property var _knownAppStreamIds: ({})
   property bool _isApplyingAppOverride: false
 
@@ -353,7 +364,7 @@ Singleton {
     objects: root.streamNodes
   }
 
-  // Keep appVolumeOverrides aligned with PipeWire when apps change volume/mute.
+  // PipeWire → override sync (skipped while we are applying our own overrides).
   Item {
     width: 0
     height: 0
@@ -372,6 +383,9 @@ Singleton {
             if (root._isApplyingAppOverride || !modelData?.audio) {
               return;
             }
+            if (root._skipPipewireVolumeSyncForNode(modelData)) {
+              return;
+            }
             var key = root.getAppKey(modelData);
             if (key) {
               root.setAppStreamVolume(key, modelData.audio.volume);
@@ -380,6 +394,9 @@ Singleton {
 
           function onMutedChanged() {
             if (root._isApplyingAppOverride || !modelData?.audio) {
+              return;
+            }
+            if (root._skipPipewireMuteSyncForNode(modelData)) {
               return;
             }
             var key = root.getAppKey(modelData);
@@ -392,7 +409,7 @@ Singleton {
     }
   }
 
-  function getAppKey(node): string {
+  function getAppBaseKey(node): string {
     if (!node || !node.properties) {
       return "";
     }
@@ -415,6 +432,33 @@ Singleton {
         base = appId.toLowerCase();
       }
     }
+    return base;
+  }
+
+  function _concurrentStreamsForSameBase(base: string): int {
+    if (!base) {
+      return 0;
+    }
+    var streams = root.appStreams;
+    if (!streams) {
+      return 0;
+    }
+    var n = 0;
+    for (var i = 0; i < streams.length; i++) {
+      var s = streams[i];
+      if (s && getAppBaseKey(s) === base) {
+        n++;
+      }
+    }
+    return n;
+  }
+
+  function getAppKey(node): string {
+    if (!node || !node.properties) {
+      return "";
+    }
+    var props = node.properties;
+    var base = root.getAppBaseKey(node);
     if (!base) {
       return "";
     }
@@ -432,6 +476,22 @@ Singleton {
       return base + "\u001f" + tagParts.join("\u001e");
     }
     return base + "\u001f" + String(node.id);
+  }
+
+  function setPanelAppStreamVolume(node, volume: real): void {
+    _writePanelStickyVolume(node, volume);
+    var key = getAppKey(node);
+    if (key) {
+      setAppStreamVolume(key, volume);
+    }
+  }
+
+  function setPanelAppStreamMuted(node, muted: bool): void {
+    _writePanelStickyMute(node, muted);
+    var key = getAppKey(node);
+    if (key) {
+      setAppStreamMuted(key, muted);
+    }
   }
 
   function setAppStreamVolume(appKey: string, volume: real): void {
@@ -463,11 +523,198 @@ Singleton {
     return appKey ? (appVolumeOverrides[appKey] || null) : null;
   }
 
+  function _cloneStrMap(m) {
+    var d = {};
+    for (var k in m) {
+      if (Object.prototype.hasOwnProperty.call(m, k)) {
+        d[k] = m[k];
+      }
+    }
+    return d;
+  }
+
+  function _cloneOverrideMap(ovSrc) {
+    var out = {};
+    for (var ok in ovSrc) {
+      if (!Object.prototype.hasOwnProperty.call(ovSrc, ok)) {
+        continue;
+      }
+      var inner = ovSrc[ok];
+      out[ok] = inner ? {
+                          "volume": inner.volume,
+                          "muted": inner.muted
+                        } : {};
+    }
+    return out;
+  }
+
+  function _ensureOverrideSlot(o, key) {
+    if (!o[key]) {
+      o[key] = {};
+    }
+    return o[key];
+  }
+
+  function _panelStickyVolume(key, base) {
+    if (key && panelAppVolumeByStreamKey[key] !== undefined) {
+      return panelAppVolumeByStreamKey[key];
+    }
+    if (base && panelAppVolumeByBase[base] !== undefined) {
+      return panelAppVolumeByBase[base];
+    }
+    return undefined;
+  }
+
+  function _panelStickyMute(key, base) {
+    if (key && panelAppMutedByStreamKey[key] !== undefined) {
+      return panelAppMutedByStreamKey[key];
+    }
+    if (base && panelAppMutedByBase[base] !== undefined) {
+      return panelAppMutedByBase[base];
+    }
+    return undefined;
+  }
+
+  function _writePanelStickyVolume(node, volume: real): void {
+    var base = getAppBaseKey(node);
+    var key = getAppKey(node);
+    if (_concurrentStreamsForSameBase(base) > 1 && key) {
+      var psk = panelAppVolumeByStreamKey;
+      psk[key] = volume;
+      panelAppVolumeByStreamKey = psk;
+    } else if (base) {
+      var pvb = panelAppVolumeByBase;
+      pvb[base] = volume;
+      panelAppVolumeByBase = pvb;
+    }
+  }
+
+  function _writePanelStickyMute(node, muted: bool): void {
+    var base = getAppBaseKey(node);
+    var key = getAppKey(node);
+    if (_concurrentStreamsForSameBase(base) > 1 && key) {
+      var msk = panelAppMutedByStreamKey;
+      msk[key] = muted;
+      panelAppMutedByStreamKey = msk;
+    } else if (base) {
+      var pmb = panelAppMutedByBase;
+      pmb[base] = muted;
+      panelAppMutedByBase = pmb;
+    }
+  }
+
+  function _skipPipewireVolumeSyncForNode(node): bool {
+    var base = getAppBaseKey(node);
+    var key = getAppKey(node);
+    if (key && panelAppVolumeByStreamKey[key] !== undefined) {
+      return true;
+    }
+    return !!(base && panelAppVolumeByBase[base] !== undefined && _concurrentStreamsForSameBase(base) <= 1);
+  }
+
+  function _skipPipewireMuteSyncForNode(node): bool {
+    var base = getAppBaseKey(node);
+    var key = getAppKey(node);
+    if (key && panelAppMutedByStreamKey[key] !== undefined) {
+      return true;
+    }
+    return !!(base && panelAppMutedByBase[base] !== undefined && _concurrentStreamsForSameBase(base) <= 1);
+  }
+
+  function _migrateBasePanelLocksToPerStreamIfNeeded(): void {
+    var streams = root.appStreams;
+    if (!streams || streams.length === 0) {
+      return;
+    }
+
+    var bases = {};
+    for (var i = 0; i < streams.length; i++) {
+      var b = getAppBaseKey(streams[i]);
+      if (b) {
+        bases[b] = true;
+      }
+    }
+
+    var psk = _cloneStrMap(panelAppVolumeByStreamKey);
+    var msk = _cloneStrMap(panelAppMutedByStreamKey);
+    var pvb = _cloneStrMap(panelAppVolumeByBase);
+    var pmb = _cloneStrMap(panelAppMutedByBase);
+    var oNew = _cloneOverrideMap(appVolumeOverrides);
+    var changed = false;
+
+    for (var base in bases) {
+      if (!Object.prototype.hasOwnProperty.call(bases, base)) {
+        continue;
+      }
+      if (_concurrentStreamsForSameBase(base) <= 1) {
+        continue;
+      }
+      var volB = pvb[base];
+      var muteB = pmb[base];
+      if (volB === undefined && muteB === undefined) {
+        continue;
+      }
+
+      for (var j = 0; j < streams.length; j++) {
+        var s = streams[j];
+        if (!s || getAppBaseKey(s) !== base) {
+          continue;
+        }
+        var key = getAppKey(s);
+        if (!key) {
+          continue;
+        }
+        if (volB !== undefined && psk[key] === undefined) {
+          psk[key] = volB;
+          _ensureOverrideSlot(oNew, key).volume = volB;
+          changed = true;
+        }
+        if (muteB !== undefined && msk[key] === undefined) {
+          msk[key] = muteB;
+          _ensureOverrideSlot(oNew, key).muted = muteB;
+          changed = true;
+        }
+      }
+      if (volB !== undefined) {
+        delete pvb[base];
+        changed = true;
+      }
+      if (muteB !== undefined) {
+        delete pmb[base];
+        changed = true;
+      }
+    }
+
+    if (!changed) {
+      return;
+    }
+    panelAppVolumeByStreamKey = psk;
+    panelAppMutedByStreamKey = msk;
+    panelAppVolumeByBase = pvb;
+    panelAppMutedByBase = pmb;
+    appVolumeOverrides = oNew;
+  }
+
+  function _seedNewStreamOverride(key, base, audio) {
+    var seeded = appVolumeOverrides;
+    if (!seeded[key]) {
+      seeded[key] = {};
+    }
+    var pv = _panelStickyVolume(key, base);
+    var pm = _panelStickyMute(key, base);
+    seeded[key].volume = (pv !== undefined) ? pv : audio.volume;
+    seeded[key].muted = (pm !== undefined) ? pm : audio.muted;
+    appVolumeOverrides = seeded;
+    return seeded[key];
+  }
+
   function _applyAppOverrides(): void {
     var streams = root.appStreams;
     if (!streams) {
       return;
     }
+
+    root._migrateBasePanelLocksToPerStreamIfNeeded();
 
     var prevKnown = root._knownAppStreamIds;
     var currentIds = {};
@@ -480,29 +727,26 @@ Singleton {
 
       currentIds[s.id] = true;
       var key = getAppKey(s);
+      var base = getAppBaseKey(s);
       var ov = key ? appVolumeOverrides[key] : null;
 
-      // New stream node (reload, app restart, etc.): adopt PipeWire state into
-      // overrides so we do not force an outdated Noctalia-only value.
       if (key && s.audio && !prevKnown[s.id]) {
-        var seeded = appVolumeOverrides;
-        if (!seeded[key]) {
-          seeded[key] = {};
-        }
-        seeded[key].volume = s.audio.volume;
-        seeded[key].muted = s.audio.muted;
-        appVolumeOverrides = seeded;
-        ov = seeded[key];
+        ov = _seedNewStreamOverride(key, base, s.audio);
       }
 
-      if (!ov || !s.audio) {
+      if (!s.audio) {
         continue;
       }
-      if (ov.volume !== undefined && Math.abs(s.audio.volume - ov.volume) > root.epsilon) {
-        s.audio.volume = ov.volume;
+
+      var panelVol = _panelStickyVolume(key, base);
+      var panelMute = _panelStickyMute(key, base);
+      var targetVol = (panelVol !== undefined) ? panelVol : (ov && ov.volume !== undefined ? ov.volume : undefined);
+      var targetMuted = (panelMute !== undefined) ? panelMute : (ov && ov.muted !== undefined ? ov.muted : undefined);
+      if (targetVol !== undefined && Math.abs(s.audio.volume - targetVol) > root.epsilon) {
+        s.audio.volume = targetVol;
       }
-      if (ov.muted !== undefined && s.audio.muted !== ov.muted) {
-        s.audio.muted = ov.muted;
+      if (targetMuted !== undefined && s.audio.muted !== targetMuted) {
+        s.audio.muted = targetMuted;
       }
     }
     _knownAppStreamIds = currentIds;

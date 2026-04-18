@@ -108,7 +108,6 @@
       "display-command-output-stream-description": "Skriv inn styrebod som skal køyra heile tidi.",
       "dynamic-text": "Kvikskrift",
       "enable-colorization-description": "Lita fråmerket og teksti på den sjølvgjorde knappen med hamlitene.",
-      "enable-colorization-label": "Lita",
       "general-tooltip-text-description": "Sjølvvald tekst å syna i hjelpeteksti åt knappen.",
       "general-tooltip-text-label": "Sjølvvald hjelpetekst",
       "hide-mode-always-expanded": "Stødt vidka",

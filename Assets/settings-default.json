@@ -159,9 +159,10 @@
     "settingsPanelSideBarCardStyle": false
   },
   "location": {
-    "name": "Tokyo",
+    "name": "",
     "weatherEnabled": true,
     "weatherShowEffects": true,
+    "weatherTaliaMascotAlways": false,
     "useFahrenheit": false,
     "use12hourFormat": false,
     "showWeekNumberInCalendar": false,

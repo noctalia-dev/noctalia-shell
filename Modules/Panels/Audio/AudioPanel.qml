@@ -517,6 +517,45 @@ SmartPanel {
                   return result || "Unknown App";
                 }
 
+                // Tab / page / track label (browsers: media.title/name; players: artist+title when PW exposes it).
+                // Many apps (notably some Spotify builds) only set a generic media.name — then there is nothing useful to show.
+                readonly property string appStreamTitle: {
+                  if (!modelData) {
+                    return "";
+                  }
+                  var props = modelData.properties;
+                  var artist = "";
+                  var title = "";
+                  var mediaName = "";
+                  if (props) {
+                    artist = (props["media.artist"] || "").trim();
+                    title = (props["media.title"] || "").trim();
+                    mediaName = (props["media.name"] || "").trim();
+                  }
+                  var raw = "";
+                  if (title && artist) {
+                    raw = artist + " — " + title;
+                  } else if (title) {
+                    raw = title;
+                  } else if (artist) {
+                    raw = artist;
+                  } else if (mediaName) {
+                    raw = mediaName;
+                  }
+                  if (!raw) {
+                    raw = (modelData.description || "").trim();
+                  }
+                  if (!raw) {
+                    return "";
+                  }
+                  var norm = raw.toLowerCase();
+                  var mainNorm = appName.trim().toLowerCase();
+                  if (norm === mainNorm) {
+                    return "";
+                  }
+                  return raw;
+                }
+
                 readonly property string appIcon: {
                   if (!modelData)
                     return ThemeIcons.iconFromName("application-x-executable", "application-x-executable");
@@ -619,6 +658,17 @@ SmartPanel {
                       Layout.fillWidth: true
                     }
 
+                    NText {
+                      visible: appBox.appStreamTitle !== ""
+                      text: appBox.appStreamTitle
+                      pointSize: Style.fontSizeS
+                      color: Color.mOnSurfaceVariant
+                      elide: Text.ElideRight
+                      wrapMode: Text.NoWrap
+                      maximumLineCount: 1
+                      Layout.fillWidth: true
+                    }
+
                     RowLayout {
                       Layout.fillWidth: true
                       spacing: Style.marginM
@@ -634,9 +684,7 @@ SmartPanel {
                         onMoved: function (value) {
                           if (appBox.nodeAudio && appBox.modelData && appBox.modelData.ready === true) {
                             appBox.nodeAudio.volume = value;
-                            var key = AudioService.getAppKey(appBox.modelData);
-                            if (key)
-                              AudioService.setAppStreamVolume(key, value);
+                            AudioService.setPanelAppStreamVolume(appBox.modelData, value);
                           }
                         }
                       }
@@ -663,9 +711,7 @@ SmartPanel {
                           if (appBox.nodeAudio && appBox.modelData && appBox.modelData.ready === true) {
                             var newMuted = !appBox.appMuted;
                             appBox.nodeAudio.muted = newMuted;
-                            var key = AudioService.getAppKey(appBox.modelData);
-                            if (key)
-                              AudioService.setAppStreamMuted(key, newMuted);
+                            AudioService.setPanelAppStreamMuted(appBox.modelData, newMuted);
                           }
                         }
                       }

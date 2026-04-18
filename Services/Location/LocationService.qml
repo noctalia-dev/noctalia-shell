@@ -22,7 +22,12 @@ Singleton {
     return d.getMonth() === root.taliaMascotWeatherMonth && d.getDate() === root.taliaMascotWeatherDay;
   }
 
+  readonly property bool taliaWeatherMascotActive: taliaWeatherMascotDayActive || Settings.data.location.weatherTaliaMascotAlways
+
   readonly property alias data: adapter
+
+  // True when the user has set a location name or enabled auto-locate
+  readonly property bool locationConfigured: Settings.data.location.name !== "" || Settings.data.location.autoLocate
 
   // Stable UI properties - only updated when location is successfully geocoded
   property bool coordinatesReady: false
@@ -115,6 +120,7 @@ Singleton {
     adapter.name = "";
     adapter.weatherLastFetch = 0;
     adapter.weather = null;
+    isFetchingWeather = false;
     update();
   }
 
@@ -137,7 +143,6 @@ Singleton {
     }
 
     if (isFetchingWeather) {
-      Logger.w("Location", "Location update already in progress");
       return;
     }
 
@@ -149,8 +154,6 @@ Singleton {
     }
 
     geocodeLocation(Settings.data.location.name, function (latitude, longitude, name, country) {
-      Logger.d("Location", "Geocoded", Settings.data.location.name, "to:", latitude, "/", longitude);
-
       adapter.name = Settings.data.location.name;
       adapter.latitude = latitude.toString();
       adapter.longitude = longitude.toString();
@@ -160,7 +163,7 @@ Singleton {
       root.coordinatesReady = true;
 
       isFetchingWeather = false;
-      Logger.i("Location", "Coordinates ready");
+      Logger.i("Location", `Geocoded ${Settings.data.location.name}: ${root.stableLatitude}, ${root.stableLongitude}`);
 
       if (locationChanged) {
         adapter.weatherLastFetch = 0;
@@ -176,7 +179,6 @@ Singleton {
     }
 
     if (isFetchingWeather) {
-      Logger.w("Location", "Weather is still fetching");
       return;
     }
 
@@ -194,6 +196,11 @@ Singleton {
 
   // Query geocoding API to convert location name to coordinates
   function geocodeLocation(locationName, callback, errorCallback) {
+    if (locationName === "") {
+      isFetchingWeather = false;
+      return;
+    }
+
     Logger.d("Location", "Geocoding location name");
     var geoUrl = "https://api.noctalia.dev/geocode?city=" + encodeURIComponent(locationName);
     var xhr = new XMLHttpRequest();
@@ -211,7 +218,7 @@ Singleton {
             errorCallback("Location", "Failed to parse geocoding data: " + e);
           }
         } else {
-          errorCallback("Location", "Geocoding error: " + xhr.status);
+          errorCallback("Location", `Geocoding error: ${xhr.status} ${xhr.responseText}`);
         }
       }
     };
@@ -246,7 +253,7 @@ Singleton {
             errorCallback("Location", "Failed to parse weather data");
           }
         } else {
-          errorCallback("Location", "Weather fetch error: " + xhr.status);
+          errorCallback("Location", `Weather error: ${xhr.status} ${xhr.responseText}`);
         }
       }
     };
@@ -273,7 +280,7 @@ Singleton {
             errorCallback("Location", "Failed to parse geolocate data: " + e);
           }
         } else {
-          errorCallback("Location", "Geolocate error: " + xhr.status);
+          errorCallback("Location", `Geolocate error: ${xhr.status} ${xhr.responseText}`);
         }
       }
     };
@@ -288,20 +295,38 @@ Singleton {
       return;
     }
     geolocate(function (lat, lng, city, country) {
-      Logger.i("Location", "Geolocated to", city + ",", country);
+      Logger.i("Location", "Geolocated to", city + ",", country + ":", lat + "," + lng);
+
+      const locationChanged = adapter.name !== city;
       Settings.data.location.name = city;
-      resetWeather();
+      adapter.name = city;
+      adapter.latitude = lat.toString();
+      adapter.longitude = lng.toString();
+      root.stableLatitude = adapter.latitude;
+      root.stableLongitude = adapter.longitude;
+      root.stableName = `${city}, ${country}`;
+      root.coordinatesReady = true;
+
+      if (locationChanged) {
+        adapter.weatherLastFetch = 0;
+        adapter.weather = null;
+      }
+
+      if (Settings.data.location.weatherEnabled) {
+        updateWeatherData();
+      }
     }, errorCallback);
   }
 
   // --------------------------------
   function errorCallback(module, message) {
-    Logger.e(module, message);
+    Logger.w(module, message);
     isFetchingWeather = false;
   }
 
   // --------------------------------
-  function weatherSymbolFromCode(code, isDay) {
+  function weatherSymbolFromCode(code) {
+    var isDay = data.weather ? data.weather.current_weather.is_day : true;
     if (code === 0)
       return isDay ? "weather-sun" : "weather-moon";
     if (code === 1 || code === 2)
@@ -326,7 +351,8 @@ Singleton {
   }
 
   // --------------------------------
-  function taliaWeatherImageFromCode(code, isDay) {
+  function taliaWeatherImageFromCode(code) {
+    var isDay = data.weather ? data.weather.current_weather.is_day : true;
     if (code >= 40 && code <= 49)
       return Quickshell.shellDir + "/Assets/Talia/TaliaDazed.png";
     if (code >= 95 && code <= 99)

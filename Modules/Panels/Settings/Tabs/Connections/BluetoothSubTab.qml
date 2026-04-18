@@ -138,7 +138,7 @@ Item {
     id: mainLayout
     anchors.left: parent.left
     anchors.right: parent.right
-    spacing: Style.marginL
+    spacing: root.showOnlyLists ? Style.marginM : Style.marginL
 
     // Master Control Section
     NBox {

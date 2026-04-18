@@ -8,7 +8,7 @@
     "disable-dnd": "关闭勿扰模式",
     "disable-wifi": "关闭 Wi-Fi",
     "disconnect-vpn": "断开与 {name} 的连接",
-    "dock-settings": "Dock 设置",
+    "dock-settings": "Dock 栏设置",
     "enable-bluetooth": "启用蓝牙",
     "enable-dnd": "启用勿扰模式",
     "enable-wifi": "启用 Wi-Fi",
@@ -37,7 +37,7 @@
       "scrolling-mode-description": "控制何时为长窗口标题启用文本滚动。",
       "show-app-icon-description": "在窗口标题旁边显示应用程序图标。",
       "show-app-icon-label": "显示应用图标",
-      "show-app-text-description": "显示窗口标题。",
+      "show-app-text-description": "显示活动窗口的标题。",
       "show-app-text-label": "显示窗口标题"
     },
     "audio-visualizer": {
@@ -96,10 +96,11 @@
       "browse-library": "浏览库",
       "color-selection-description": "将主题颜色应用于图标。",
       "enable-colorization-description": "为图标启用着色，应用主题颜色。",
+      "enable-colorization-label": "启用着色",
       "icon-description": "从库中选择图标或自定义文件。",
       "select-custom-icon": "选择自定义图标",
       "use-distro-logo-description": "使用您的发行版徽标而不是自定义图标。",
-      "use-distro-logo-label": "使用发行版徽标而不是图标"
+      "use-distro-logo-label": "使用发行版徽标"
     },
     "custom-button": {
       "collapse-condition-description": "如果输出文本与此值匹配，按钮将折叠。",
@@ -119,7 +120,14 @@
       "hide-mode-expand-with-output": "有输出时展开",
       "hide-mode-label": "隐藏模式",
       "hide-mode-max-transparent": "最大展开但透明",
+      "icon-color-selection-description": "将主题颜色应用于图标。",
       "icon-description": "从库中选择图标。",
+      "icon-position-bottom": "底部",
+      "icon-position-description": "选择图标相对于文本出现的位置。",
+      "icon-position-label": "图标位置",
+      "icon-position-left": "左",
+      "icon-position-right": "右",
+      "icon-position-top": "顶部",
       "ipc-identifier-description": "IPC 命令的唯一标识符。使用此标识符以及“qs -c noctalia-shell ipc call cb [操作] [标识符]”通过 IPC 控制此按钮。",
       "ipc-identifier-label": "IPC标识符",
       "left-click-description": "左键单击按钮时执行的命令。",
@@ -145,6 +153,10 @@
       "show-icon-label": "显示图标",
       "show-text-tooltip-description": "显示带有文本命令输出的工具提示。",
       "show-text-tooltip-label": "显示动态文本工具提示",
+      "tab-actions": "操作",
+      "tab-icon": "图标",
+      "tab-text": "文本命令",
+      "text-color-selection-description": "将主题颜色应用于文本。",
       "text-stream-description": "来自命令的流式输出行将作为文本显示在按钮上。",
       "text-stream-label": "流",
       "wheel-description": "使用滚轮时执行的命令。<br>在命令中使用 $delta 表示滚轮增量。",
@@ -517,6 +529,7 @@
     "select-color": "选择颜色",
     "select-color-description": "应用主题颜色以示强调。",
     "select-icon-color": "选择图标颜色",
+    "select-text-color": "选择文本颜色",
     "settings": "设置",
     "shortcuts": "快捷方式",
     "shutdown": "关机",
@@ -550,6 +563,7 @@
     "wallpaper": "壁纸",
     "weather": "天气",
     "weather-loading": "正在加载天气...",
+    "weather-no-location": "在设置中设置位置以查看天气",
     "week": "周",
     "widgets": "小部件",
     "width": "宽度",
@@ -1404,7 +1418,9 @@
       "weather-show-effects-description": "在天气卡片上显示额外的视觉效果（如雨、雪或闪电）。",
       "weather-show-effects-label": "显示天气效果",
       "weather-show-in-calendar-description": "直接在您的日历视图中显示每日天气预报。",
-      "weather-show-in-calendar-label": "在日历中显示天气"
+      "weather-show-in-calendar-label": "在日历中显示天气",
+      "weather-talia-mascot-always-description": "始终使用 Talia emojis 而不是 tabler icons。",
+      "weather-talia-mascot-always-label": "始终显示Talia天气表情"
     },
     "lock-screen": {
       "allow-password-with-fprintd-description": "当 fprintd（指纹认证）处于活动状态时，此选项允许您使用密码而非指纹登录。",
