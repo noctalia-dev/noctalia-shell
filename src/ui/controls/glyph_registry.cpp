@@ -25,6 +25,8 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"folder-open", 0xFAF7},       // folder-open
     {"download", 0xEA96},          // download
     {"search", 0xEB1C},            // search
+    {"apps", 0xEBB6},              // apps
+    {"app-window", 0xEFE6},        // app-window
     {"question-mark", 0xEC9D},     // question-mark
     {"info", 0xF028},              // file-description
     {"eye", 0xEA9A},               // eye

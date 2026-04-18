@@ -304,6 +304,18 @@ void Application::initServices() {
   }
   m_glShared.initialize(m_wayland.display());
   m_sharedTextureCache.initialize(&m_glShared);
+  m_asyncTextureCache.initialize(&m_glShared);
+  m_asyncTextureCache.setReadyCallback([this]() {
+    m_bar.requestLayout();
+    m_dock.requestLayout();
+    m_desktopWidgetsController.requestLayout();
+    m_panelManager.requestLayout();
+    m_notificationToast.requestLayout();
+    m_lockScreen.requestLayout();
+    m_osdOverlay.requestLayout();
+    m_trayMenu.requestLayout();
+    m_overview.requestLayout();
+  });
   m_wayland.setClipboardService(&m_clipboardService);
   m_wayland.setVirtualKeyboardService(&m_virtualKeyboardService);
   Input::setClipboardService(&m_clipboardService);
@@ -663,7 +675,7 @@ void Application::initUi() {
                             m_powerProfilesService.get(), m_networkService.get(), m_networkSecretAgent.get(),
                             m_bluetoothService.get(), m_bluetoothAgent.get(), m_brightnessService.get()));
   {
-    auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService);
+    auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService, &m_asyncTextureCache);
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
     launcherPanel->addProvider(std::make_unique<MathProvider>(&m_clipboardService));
     launcherPanel->addProvider(std::make_unique<EmojiProvider>(&m_clipboardService));
@@ -949,5 +961,6 @@ std::vector<PollSource*> Application::buildPollSources() {
   sources.push_back(&m_httpClientPollSource);
   sources.push_back(&m_weatherPollSource);
   sources.push_back(&m_thumbnailService);
+  sources.push_back(&m_asyncTextureCache);
   return sources;
 }

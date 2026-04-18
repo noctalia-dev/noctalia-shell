@@ -35,6 +35,7 @@
 #include "pipewire/pipewire_spectrum.h"
 #include "pipewire/pipewire_spectrum_poll_source.h"
 #include "render/core/shared_texture_cache.h"
+#include "render/core/async_texture_cache.h"
 #include "render/gl_shared_context.h"
 #include "render/render_context.h"
 #include "shell/bar/bar.h"
@@ -148,6 +149,7 @@ private:
   Wallpaper m_wallpaper;
   Overview m_overview;
   ThumbnailService m_thumbnailService;
+  AsyncTextureCache m_asyncTextureCache;
 
   // Poll sources (must outlive MainLoop)
   std::unique_ptr<SessionBusPollSource> m_busPollSource;

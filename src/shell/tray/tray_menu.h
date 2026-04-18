@@ -29,6 +29,7 @@ public:
   void close();
   void onFontChanged();
   void onThemeChanged();
+  void requestLayout();
 
   [[nodiscard]] bool onPointerEvent(const PointerEvent& event);
 

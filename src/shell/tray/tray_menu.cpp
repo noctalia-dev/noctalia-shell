@@ -214,6 +214,18 @@ void TrayMenu::onThemeChanged() {
   rebuildScenes();
 }
 
+void TrayMenu::requestLayout() {
+  if (!m_visible) {
+    return;
+  }
+  if (m_instance != nullptr && m_instance->surface != nullptr) {
+    m_instance->surface->requestLayout();
+  }
+  if (m_submenuInstance != nullptr && m_submenuInstance->surface != nullptr) {
+    m_submenuInstance->surface->requestLayout();
+  }
+}
+
 bool TrayMenu::onPointerEvent(const PointerEvent& event) {
   if (!m_visible || m_instance == nullptr) {
     return false;

@@ -1,9 +1,11 @@
 #include "ui/controls/image.h"
 
+#include "render/core/async_texture_cache.h"
 #include "render/core/renderer.h"
 #include "render/scene/image_node.h"
 #include "ui/controls/box.h"
 
+#include <algorithm>
 #include <memory>
 
 Image::Image() {
@@ -15,6 +17,7 @@ Image::Image() {
 }
 
 Image::~Image() {
+  clearAsyncSource();
   if (m_ownsTexture && m_texture.id != 0 && m_renderer != nullptr) {
     m_renderer->textureManager().unload(m_texture);
   }
@@ -116,6 +119,51 @@ bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targe
   return true;
 }
 
+bool Image::setSourceFileAsync(Renderer& renderer, AsyncTextureCache& cache, const std::string& path, int targetSize,
+                               bool mipmap) {
+  m_renderer = &renderer;
+
+  const int normalizedTargetSize = std::max(0, targetSize);
+  if (path.empty()) {
+    clear(renderer);
+    return false;
+  }
+
+  const bool sameRequest = m_asyncTextureCache == &cache && m_asyncSourcePath == path &&
+                           m_asyncTargetSize == normalizedTargetSize && m_asyncMipmap == mipmap;
+  if (sameRequest && m_texture.id != 0) {
+    return true;
+  }
+
+  if (!sameRequest) {
+    clear(renderer);
+    m_asyncTextureCache = &cache;
+    m_asyncSourcePath = path;
+    m_asyncTargetSize = normalizedTargetSize;
+    m_asyncMipmap = mipmap;
+    m_texture = cache.acquire(path, normalizedTargetSize, mipmap);
+  } else if (m_texture.id == 0) {
+    m_texture = cache.peek(path, normalizedTargetSize, mipmap);
+  }
+
+  if (m_texture.id == 0) {
+    m_sourcePath = path;
+    if (m_image != nullptr) {
+      m_image->setTextureId(0);
+      m_image->setFrameSize(0.0f, 0.0f);
+    }
+    return false;
+  }
+
+  m_ownsTexture = false;
+  m_sourcePath = path;
+  if (m_image != nullptr) {
+    m_image->setTextureId(m_texture.id);
+  }
+  updateLayout();
+  return true;
+}
+
 bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::size_t size, bool mipmap) {
   clear(renderer);
   m_renderer = &renderer;
@@ -176,6 +224,7 @@ void Image::setExternalTexture(Renderer& renderer, TextureHandle handle) {
   }
 
   m_renderer = &renderer;
+  clearAsyncSource();
   if (m_ownsTexture && m_texture.id != 0) {
     renderer.textureManager().unload(m_texture);
   }
@@ -191,6 +240,7 @@ void Image::setExternalTexture(Renderer& renderer, TextureHandle handle) {
 
 void Image::clear(Renderer& renderer) {
   m_renderer = &renderer;
+  clearAsyncSource();
   if (m_ownsTexture && m_texture.id != 0) {
     renderer.textureManager().unload(m_texture);
   }
@@ -203,6 +253,16 @@ void Image::clear(Renderer& renderer) {
   }
 }
 
+void Image::clearAsyncSource() {
+  if (m_asyncTextureCache != nullptr && !m_asyncSourcePath.empty()) {
+    m_asyncTextureCache->release(m_asyncSourcePath, m_asyncTargetSize, m_asyncMipmap);
+  }
+  m_asyncTextureCache = nullptr;
+  m_asyncSourcePath.clear();
+  m_asyncTargetSize = 0;
+  m_asyncMipmap = false;
+}
+
 void Image::setSize(float width, float height) {
   Node::setSize(width, height);
   updateLayout();
@@ -211,6 +271,21 @@ void Image::setSize(float width, float height) {
 void Image::setFrameSize(float width, float height) {
   Node::setFrameSize(width, height);
   updateLayout();
+}
+
+void Image::doLayout(Renderer& /*renderer*/) {
+  if (m_texture.id == 0 && m_asyncTextureCache != nullptr && !m_asyncSourcePath.empty()) {
+    const auto handle = m_asyncTextureCache->peek(m_asyncSourcePath, m_asyncTargetSize, m_asyncMipmap);
+    if (handle.id != 0) {
+      m_texture = handle;
+      m_ownsTexture = false;
+      m_sourcePath = m_asyncSourcePath;
+      if (m_image != nullptr) {
+        m_image->setTextureId(m_texture.id);
+      }
+      updateLayout();
+    }
+  }
 }
 
 void Image::applyPalette() {
