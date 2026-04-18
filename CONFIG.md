@@ -19,6 +19,7 @@ Changes are detected automatically via inotify — no restart required.
 - [Brightness](#brightness)
 - [Night Light](#night-light)
 - [Idle](#idle)
+- [Hooks](#hooks)
 - [Shell](#shell)
 - [Keybinds](#keybinds)
 - [OSD](#osd)
@@ -973,6 +974,58 @@ command = "notify-send 'Noctalia' 'You have been idle for 5 minutes'"
 timeout = 660
 command = "noctalia:lock"
 enabled = false
+```
+
+---
+
+## Hooks
+
+Optional shell hooks run commands when specific events happen. Define them under `[hooks]` in `config.toml`. Each event is a **string** (one command) or an **array of strings** (run in order). The same rules as idle `command` apply: plain shell commands, or `noctalia:` followed by an IPC subcommand (see [Idle](#idle)).
+
+| Key | When it runs |
+|-----|----------------|
+| `started` | Once after Noctalia finishes startup (IPC is ready). |
+| `wallpaper_changed` | After a persisted wallpaper path change is applied (same moment the bar/overview refresh for the new wallpaper). |
+| `colors_changed` | After the theme palette is **resolved** (builtin, wallpaper-derived, or community) and terminal templates are updated — not on every animation frame of a cross-fade. |
+| `session_locked` | When the compositor confirms the session lock (Wayland session lock). |
+| `session_unlocked` | When the session leaves the locked state (successful unlock or equivalent). |
+| `logging_out` | Immediately before the session panel runs the configured logout sequence. |
+| `rebooting` | Immediately before the session panel runs reboot. |
+| `shutting_down` | Immediately before the session panel runs shutdown. |
+| `wifi_enabled` / `wifi_disabled` | When NetworkManager’s Wi‑Fi radio is turned on or off (not on first state snapshot). |
+| `bluetooth_enabled` / `bluetooth_disabled` | When the default adapter’s powered state toggles (not on first snapshot). |
+| `battery_state_changed` | When UPower’s reported battery state enum changes (charging, discharging, etc.). |
+| `battery_under_threshold` | When charge **crosses from above to at or below** `battery_low_percent_threshold` while a battery is present. |
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `battery_low_percent_threshold` | int | `0` | Percent (0–100). `0` disables the `battery_under_threshold` hook. Set to e.g. `15` to enable low-battery hooks. |
+
+Example:
+
+```toml
+[hooks]
+battery_low_percent_threshold = 15
+
+started = "notify-send 'Noctalia' 'Shell started'"
+wallpaper_changed = ["touch /tmp/noctalia-wallpaper"]
+colors_changed = "notify-send 'Theme' 'Palette updated'"
+
+session_locked = "notify-send 'Session' 'Locked'"
+session_unlocked = "notify-send 'Session' 'Unlocked'"
+
+logging_out = "echo logging out >> /tmp/noctalia-hooks.log"
+rebooting = "notify-send 'System' 'Rebooting'"
+shutting_down = "notify-send 'System' 'Shutting down'"
+
+wifi_enabled = "notify-send 'Network' 'Wi-Fi on'"
+wifi_disabled = "notify-send 'Network' 'Wi-Fi off'"
+
+bluetooth_enabled = "notify-send 'BT' 'Bluetooth on'"
+bluetooth_disabled = "notify-send 'BT' 'Bluetooth off'"
+
+battery_state_changed = "notify-send 'Power' 'Battery state changed'"
+battery_under_threshold = "notify-send 'Power' 'Low battery'"
 ```
 
 ---

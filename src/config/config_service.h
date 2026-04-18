@@ -5,6 +5,7 @@
 
 #include "core/toml.h"
 
+#include <array>
 #include <cstdint>
 #include <functional>
 #include <optional>
@@ -338,6 +339,33 @@ struct IdleConfig {
   std::vector<IdleBehaviorConfig> behaviors;
 };
 
+enum class HookKind : std::uint8_t {
+  Started = 0,
+  WallpaperChanged,
+  ColorsChanged,
+  SessionLocked,
+  SessionUnlocked,
+  LoggingOut,
+  Rebooting,
+  ShuttingDown,
+  WifiEnabled,
+  WifiDisabled,
+  BluetoothEnabled,
+  BluetoothDisabled,
+  BatteryStateChanged,
+  BatteryUnderThreshold,
+  Count
+};
+
+struct HooksConfig {
+  std::array<std::vector<std::string>, static_cast<std::size_t>(HookKind::Count)> commands{};
+  // When > 0, `battery_under_threshold` fires when charge crosses from above to at or below this value.
+  // When 0, the under-threshold hook never runs.
+  std::int32_t batteryLowPercentThreshold = 0;
+
+  bool operator==(const HooksConfig&) const = default;
+};
+
 enum class ThemeSource : std::uint8_t {
   Builtin = 0,
   Wallpaper = 1,
@@ -384,6 +412,7 @@ struct Config {
   KeybindsConfig keybinds;
   NightLightConfig nightlight;
   IdleConfig idle;
+  HooksConfig hooks;
   ThemeConfig theme;
 };
 

@@ -51,6 +51,11 @@ bool LockScreen::initialize(WaylandConnection& wayland, RenderContext* renderCon
   return true;
 }
 
+void LockScreen::setSessionHooks(std::function<void()> onLocked, std::function<void()> onUnlocked) {
+  m_onSessionLocked = std::move(onLocked);
+  m_onSessionUnlocked = std::move(onUnlocked);
+}
+
 bool LockScreen::lock() {
   if (m_wayland == nullptr || m_renderContext == nullptr) {
     return false;
@@ -94,6 +99,11 @@ bool LockScreen::lock() {
 void LockScreen::unlock() {
   if (!isActive()) {
     return;
+  }
+
+  const bool wasLockedInteractive = m_locked;
+  if (wasLockedInteractive && m_onSessionUnlocked) {
+    m_onSessionUnlocked();
   }
 
   if (m_lock != nullptr) {
@@ -242,6 +252,9 @@ void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
   }
   self->updatePromptOnSurfaces();
   kLog.info("session is locked");
+  if (self->m_onSessionLocked) {
+    self->m_onSessionLocked();
+  }
 }
 
 void LockScreen::handleFinished(void* data, ext_session_lock_v1* /*lock*/) {

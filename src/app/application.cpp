@@ -251,6 +251,9 @@ void Application::run() {
   initUi();
   initIpc();
 
+  m_hookManager.reload(m_configService.config().hooks);
+  m_hookManager.fire(HookKind::Started);
+
   malloc_trim(0);
 
   m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, buildPollSources());
@@ -291,6 +294,7 @@ void Application::initServices() {
   // Apply theme before any UI constructs palette-dependent scene nodes.
   m_themeService.setResolvedCallback([this](const noctalia::theme::GeneratedPalette& generated, std::string_view mode) {
     m_templateApplyService.apply(generated, mode);
+    m_hookManager.fire(HookKind::ColorsChanged);
   });
   m_themeService.apply();
   m_configService.addReloadCallback([this]() { m_themeService.onConfigReload(); });
@@ -329,9 +333,13 @@ void Application::initServices() {
   m_idleInhibitor.initialize(m_wayland, &m_renderContext);
   m_idleInhibitor.setChangeCallback([this]() { m_bar.refresh(); });
   m_idleManager.initialize(m_wayland);
-  m_idleManager.setCommandRunner([this](const std::string& command) { return runIdleCommand(command); });
+  m_idleManager.setCommandRunner([this](const std::string& command) { return runUserCommand(command); });
   m_idleManager.reload(m_configService.config().idle);
   m_configService.addReloadCallback([this]() { m_idleManager.reload(m_configService.config().idle); });
+
+  m_hookManager.setCommandRunner([this](const std::string& command) { return runUserCommand(command); });
+  m_hookManager.reload(m_configService.config().hooks);
+  m_configService.addReloadCallback([this]() { m_hookManager.reload(m_configService.config().hooks); });
   m_nightLightManager.reload(m_configService.config().nightlight);
   m_nightLightManager.setChangeCallback([this]() { m_bar.refresh(); });
   m_configService.addReloadCallback([this]() { m_nightLightManager.reload(m_configService.config().nightlight); });
@@ -345,6 +353,7 @@ void Application::initServices() {
     m_wallpaper.onStateChange();
     m_overview.onStateChange();
     m_themeService.onWallpaperChange();
+    m_hookManager.fire(HookKind::WallpaperChanged);
   });
 
   m_themeService.setChangeCallback([this]() {
@@ -402,7 +411,10 @@ void Application::initServices() {
 
     try {
       m_upowerService = std::make_unique<UPowerService>(*m_systemBus);
-      m_upowerService->setChangeCallback([this]() { m_bar.refresh(); });
+      m_upowerService->setChangeCallback([this]() {
+        onUpowerStateChangedForHooks();
+        m_bar.refresh();
+      });
     } catch (const std::exception& e) {
       kLog.warn("upower disabled: {}", e.what());
       m_upowerService.reset();
@@ -410,7 +422,8 @@ void Application::initServices() {
 
     try {
       m_networkService = std::make_unique<NetworkService>(*m_systemBus);
-      m_networkService->setChangeCallback([this, shouldRefreshControlCenter](const NetworkState& /*state*/) {
+      m_networkService->setChangeCallback([this, shouldRefreshControlCenter](const NetworkState& state) {
+        onNetworkStateChangedForHooks(state);
         m_bar.refresh();
         if (shouldRefreshControlCenter()) {
           m_panelManager.refresh();
@@ -439,8 +452,10 @@ void Application::initServices() {
           m_panelManager.refresh();
         }
       };
-      m_bluetoothService->setStateCallback(
-          [refreshBluetoothUi](const BluetoothState& /*state*/) { refreshBluetoothUi(); });
+      m_bluetoothService->setStateCallback([this, refreshBluetoothUi](const BluetoothState& state) {
+        onBluetoothStateChangedForHooks(state);
+        refreshBluetoothUi();
+      });
       m_bluetoothService->setDevicesCallback(
           [refreshBluetoothUi](const std::vector<BluetoothDeviceInfo>& /*devices*/) { refreshBluetoothUi(); });
       kLog.info("bluetooth service active");
@@ -582,6 +597,12 @@ void Application::initUi() {
   m_renderContext.initialize(m_glShared);
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache);
+  m_lockScreen.setSessionHooks([this]() { m_hookManager.fire(HookKind::SessionLocked); },
+                               [this]() { m_hookManager.fire(HookKind::SessionUnlocked); });
+
+  m_sessionActionHooks.onLogout = [this]() { m_hookManager.fire(HookKind::LoggingOut); };
+  m_sessionActionHooks.onReboot = [this]() { m_hookManager.fire(HookKind::Rebooting); };
+  m_sessionActionHooks.onShutdown = [this]() { m_hookManager.fire(HookKind::ShuttingDown); };
 
   m_wayland.setPointerEventCallback([this](const PointerEvent& event) {
     if (m_lockScreen.isActive()) {
@@ -633,7 +654,7 @@ void Application::initUi() {
     });
   });
   m_panelManager.registerPanel("clipboard", std::move(clipboardPanel));
-  m_panelManager.registerPanel("session", std::make_unique<SessionPanel>(&m_configService));
+  m_panelManager.registerPanel("session", std::make_unique<SessionPanel>(&m_configService, m_sessionActionHooks));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
   m_panelManager.registerPanel(
       "control-center", std::make_unique<ControlCenterPanel>(
@@ -814,23 +835,81 @@ void Application::initIpc() {
   }
 }
 
-bool Application::runIdleCommand(const std::string& command) {
+bool Application::runUserCommand(const std::string& command) {
   constexpr std::string_view prefix = "noctalia:";
 
   if (command.rfind(prefix, 0) == 0) {
     const std::string response = m_ipcService.execute(command.substr(prefix.size()));
     if (response.rfind("error:", 0) == 0) {
-      kLog.warn("idle IPC command '{}' failed: {}", command, response.substr(0, response.find('\n')));
+      kLog.warn("IPC command '{}' failed: {}", command, response.substr(0, response.find('\n')));
       return false;
     }
     return true;
   }
 
   if (!process::launchShellCommand(command)) {
-    kLog.warn("idle command failed to launch: {}", command);
+    kLog.warn("command failed to launch: {}", command);
     return false;
   }
   return true;
+}
+
+bool Application::runIdleCommand(const std::string& command) { return runUserCommand(command); }
+
+void Application::onUpowerStateChangedForHooks() {
+  if (m_upowerService == nullptr) {
+    return;
+  }
+  const UPowerState next = m_upowerService->state();
+  if (!m_prevUpowerForHooks.has_value()) {
+    m_prevUpowerForHooks = next;
+    return;
+  }
+  const UPowerState prev = *m_prevUpowerForHooks;
+  if (prev.state != next.state) {
+    m_hookManager.fire(HookKind::BatteryStateChanged);
+  }
+  const std::int32_t thr = m_configService.config().hooks.batteryLowPercentThreshold;
+  if (thr > 0 && next.isPresent) {
+    const bool wasAbove = !prev.isPresent || prev.percentage > static_cast<double>(thr);
+    const bool isAtOrBelow = next.percentage <= static_cast<double>(thr);
+    if (wasAbove && isAtOrBelow) {
+      m_hookManager.fire(HookKind::BatteryUnderThreshold);
+    }
+  }
+  m_prevUpowerForHooks = next;
+}
+
+void Application::onNetworkStateChangedForHooks(const NetworkState& state) {
+  if (!m_prevWirelessEnabledForHooks.has_value()) {
+    m_prevWirelessEnabledForHooks = state.wirelessEnabled;
+    return;
+  }
+  const bool prev = *m_prevWirelessEnabledForHooks;
+  if (prev != state.wirelessEnabled) {
+    if (state.wirelessEnabled) {
+      m_hookManager.fire(HookKind::WifiEnabled);
+    } else {
+      m_hookManager.fire(HookKind::WifiDisabled);
+    }
+  }
+  m_prevWirelessEnabledForHooks = state.wirelessEnabled;
+}
+
+void Application::onBluetoothStateChangedForHooks(const BluetoothState& state) {
+  if (!m_prevBluetoothPoweredForHooks.has_value()) {
+    m_prevBluetoothPoweredForHooks = state.powered;
+    return;
+  }
+  const bool prev = *m_prevBluetoothPoweredForHooks;
+  if (prev != state.powered) {
+    if (state.powered) {
+      m_hookManager.fire(HookKind::BluetoothEnabled);
+    } else {
+      m_hookManager.fire(HookKind::BluetoothDisabled);
+    }
+  }
+  m_prevBluetoothPoweredForHooks = state.powered;
 }
 
 std::vector<PollSource*> Application::buildPollSources() {

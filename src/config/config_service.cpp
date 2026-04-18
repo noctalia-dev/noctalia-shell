@@ -14,6 +14,7 @@
 #include <fstream>
 #include <optional>
 #include <stdexcept>
+#include <string_view>
 #include <sys/inotify.h>
 #include <unistd.h>
 #include <vector>
@@ -75,6 +76,48 @@ namespace {
       }
     }
     return result;
+  }
+
+  void setHookCommandsFromNode(const toml::node& node, std::vector<std::string>& out) {
+    out.clear();
+    if (auto* s = node.as_string()) {
+      const auto& val = s->get();
+      if (!val.empty()) {
+        out.push_back(val);
+      }
+      return;
+    }
+    for (const auto& line : readStringArray(node)) {
+      if (!line.empty()) {
+        out.push_back(line);
+      }
+    }
+  }
+
+  constexpr std::pair<std::string_view, HookKind> kHookKindByName[] = {
+      {"started", HookKind::Started},
+      {"wallpaper_changed", HookKind::WallpaperChanged},
+      {"colors_changed", HookKind::ColorsChanged},
+      {"session_locked", HookKind::SessionLocked},
+      {"session_unlocked", HookKind::SessionUnlocked},
+      {"logging_out", HookKind::LoggingOut},
+      {"rebooting", HookKind::Rebooting},
+      {"shutting_down", HookKind::ShuttingDown},
+      {"wifi_enabled", HookKind::WifiEnabled},
+      {"wifi_disabled", HookKind::WifiDisabled},
+      {"bluetooth_enabled", HookKind::BluetoothEnabled},
+      {"bluetooth_disabled", HookKind::BluetoothDisabled},
+      {"battery_state_changed", HookKind::BatteryStateChanged},
+      {"battery_under_threshold", HookKind::BatteryUnderThreshold},
+  };
+
+  std::optional<HookKind> hookKindFromKey(std::string_view key) {
+    for (const auto& [name, kind] : kHookKindByName) {
+      if (key == name) {
+        return kind;
+      }
+    }
+    return std::nullopt;
   }
 
   std::string trim(std::string_view input) {
@@ -1610,6 +1653,24 @@ void ConfigService::parseTable(const toml::table& tbl) {
     }
   }
 
+  // Parse [hooks]
+  if (auto* hooksTbl = tbl["hooks"].as_table()) {
+    auto& hooks = m_config.hooks;
+    for (const auto& [name, node] : *hooksTbl) {
+      const std::string_view keyView{name.str()};
+      if (keyView == "battery_low_percent_threshold") {
+        if (auto v = node.value<int64_t>()) {
+          hooks.batteryLowPercentThreshold =
+              static_cast<std::int32_t>(std::clamp(*v, static_cast<std::int64_t>(0), static_cast<std::int64_t>(100)));
+        }
+        continue;
+      }
+      if (const auto kind = hookKindFromKey(keyView)) {
+        setHookCommandsFromNode(node, hooks.commands[static_cast<std::size_t>(*kind)]);
+      }
+    }
+  }
+
   // Parse [idle.behavior.*]
   if (auto* idleTbl = tbl["idle"].as_table()) {
     if (auto* behaviorTbl = (*idleTbl)["behavior"].as_table()) {
@@ -1644,6 +1705,14 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   kLog.info("{} bar(s) defined", m_config.bars.size());
   kLog.info("idle behaviors={}", m_config.idle.behaviors.size());
+  std::size_t hookKindsUsed = 0;
+  for (const auto& cmds : m_config.hooks.commands) {
+    if (!cmds.empty()) {
+      ++hookKindsUsed;
+    }
+  }
+  kLog.info("hooks kinds with commands={} battery_low_threshold={}%", hookKindsUsed,
+            m_config.hooks.batteryLowPercentThreshold);
 }
 
 bool ConfigService::matchesKeybind(KeybindAction action, std::uint32_t sym, std::uint32_t modifiers) const {

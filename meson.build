@@ -300,6 +300,7 @@ _noctalia_sources = files(
   'src/debug/debug_service.cpp',
   'src/i18n/i18n.cpp',
   'src/i18n/i18n_service.cpp',
+  'src/hooks/hook_manager.cpp',
   'src/idle/idle_inhibitor.cpp',
   'src/idle/idle_manager.cpp',
   'src/ipc/ipc_client.cpp',

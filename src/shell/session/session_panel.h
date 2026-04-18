@@ -3,12 +3,19 @@
 #include "shell/panel/panel.h"
 
 #include <array>
+#include <functional>
 
 class Button;
 class Flex;
 class InputArea;
 class Renderer;
 class ConfigService;
+
+struct SessionActionHooks {
+  std::function<void()> onLogout;
+  std::function<void()> onReboot;
+  std::function<void()> onShutdown;
+};
 
 class SessionPanel : public Panel {
 public:
@@ -20,7 +27,8 @@ public:
     Count = 4,
   };
 
-  explicit SessionPanel(ConfigService* config) : m_config(config) {}
+  explicit SessionPanel(ConfigService* config, SessionActionHooks actionHooks = {})
+      : m_config(config), m_actionHooks(std::move(actionHooks)) {}
 
   void create() override;
   void onOpen(std::string_view context) override;
@@ -42,6 +50,7 @@ private:
   bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   void updateSelectionVisuals();
   void activateMouse();
+  void invokeAction(ActionId id);
   [[nodiscard]] Button* createActionButton(ActionId id, float scale);
 
   Flex* m_rootLayout = nullptr;
@@ -51,4 +60,5 @@ private:
   std::size_t m_selectedIndex = 0;
   bool m_mouseActive = false;
   ConfigService* m_config = nullptr;
+  SessionActionHooks m_actionHooks;
 };

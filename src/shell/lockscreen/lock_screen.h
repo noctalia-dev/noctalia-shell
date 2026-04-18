@@ -3,6 +3,7 @@
 #include "auth/pam_authenticator.h"
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -28,6 +29,7 @@ public:
 
   bool initialize(WaylandConnection& wayland, RenderContext* renderContext, ConfigService* configService,
                   SharedTextureCache* textureCache);
+  void setSessionHooks(std::function<void()> onLocked, std::function<void()> onUnlocked);
   bool lock();
   void unlock();
   void onOutputChange();
@@ -76,4 +78,6 @@ private:
   bool m_statusIsError = false;
   bool m_lockPending = false;
   bool m_locked = false;
+  std::function<void()> m_onSessionLocked;
+  std::function<void()> m_onSessionUnlocked;
 };

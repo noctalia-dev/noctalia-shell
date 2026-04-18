@@ -20,10 +20,8 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
-constexpr Logger kLog("session");
-} // namespace
 
-namespace {
+constexpr Logger kLog("session");
 
 struct ActionSpec {
   SessionPanel::ActionId id;
@@ -55,37 +53,6 @@ bool doLogout() {
 bool doReboot() { return process::launchFirstAvailable({{"systemctl", "reboot"}, {"loginctl", "reboot"}}); }
 
 bool doShutdown() { return process::launchFirstAvailable({{"systemctl", "poweroff"}, {"loginctl", "poweroff"}}); }
-
-} // namespace
-
-namespace {
-
-void runAction(SessionPanel::ActionId id) {
-  switch (id) {
-  case SessionPanel::ActionId::Logout:
-    if (!doLogout()) {
-      notify::error("Noctalia", "Logout unavailable", "Could not determine how to terminate this session.");
-    }
-    break;
-  case SessionPanel::ActionId::Reboot:
-    if (!doReboot()) {
-      notify::error("Noctalia", "Reboot failed", "Could not launch systemctl reboot.");
-    }
-    break;
-  case SessionPanel::ActionId::Shutdown:
-    if (!doShutdown()) {
-      notify::error("Noctalia", "Shutdown failed", "Could not launch a shutdown command.");
-    }
-    break;
-  case SessionPanel::ActionId::Lock:
-    if (auto* ls = LockScreen::instance(); ls == nullptr || !ls->lock()) {
-      notify::error("Noctalia", "Lock unavailable", "The session lock protocol is not available.");
-    }
-    break;
-  case SessionPanel::ActionId::Count:
-    break;
-  }
-}
 
 } // namespace
 
@@ -149,9 +116,9 @@ Button* SessionPanel::createActionButton(ActionId id, float scale) {
   button->setMinHeight(112.0f * scale);
   button->setFlexGrow(1.0f);
 
-  button->setOnClick([id]() {
+  button->setOnClick([this, id]() {
     PanelManager::instance().close();
-    runAction(id);
+    invokeAction(id);
   });
   button->setOnMotion([this]() { activateMouse(); });
   button->setHoverSuppressed(!m_mouseActive);
@@ -190,7 +157,43 @@ void SessionPanel::activateSelected() {
   const ActionId selectedAction = m_actionOrder[m_selectedIndex];
   if (Button* button = m_actionButtons[static_cast<std::size_t>(selectedAction)]; button != nullptr && button->enabled()) {
     PanelManager::instance().close();
-    runAction(selectedAction);
+    invokeAction(selectedAction);
+  }
+}
+
+void SessionPanel::invokeAction(ActionId id) {
+  switch (id) {
+  case ActionId::Logout:
+    if (m_actionHooks.onLogout) {
+      m_actionHooks.onLogout();
+    }
+    if (!doLogout()) {
+      notify::error("Noctalia", "Logout unavailable", "Could not determine how to terminate this session.");
+    }
+    break;
+  case ActionId::Reboot:
+    if (m_actionHooks.onReboot) {
+      m_actionHooks.onReboot();
+    }
+    if (!doReboot()) {
+      notify::error("Noctalia", "Reboot failed", "Could not launch systemctl reboot.");
+    }
+    break;
+  case ActionId::Shutdown:
+    if (m_actionHooks.onShutdown) {
+      m_actionHooks.onShutdown();
+    }
+    if (!doShutdown()) {
+      notify::error("Noctalia", "Shutdown failed", "Could not launch a shutdown command.");
+    }
+    break;
+  case ActionId::Lock:
+    if (auto* ls = LockScreen::instance(); ls == nullptr || !ls->lock()) {
+      notify::error("Noctalia", "Lock unavailable", "The session lock protocol is not available.");
+    }
+    break;
+  case ActionId::Count:
+    break;
   }
 }
 

@@ -22,6 +22,7 @@
 #include "dbus/tray/tray_service.h"
 #include "dbus/upower/upower_service.h"
 #include "debug/debug_service.h"
+#include "hooks/hook_manager.h"
 #include "idle/idle_inhibitor.h"
 #include "idle/idle_manager.h"
 #include "ipc/ipc_poll_source.h"
@@ -47,6 +48,7 @@
 #include "shell/overview/overview.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/polkit/polkit_panel.h"
+#include "shell/session/session_panel.h"
 #include "shell/tray/tray_menu.h"
 #include "shell/wallpaper/panel/thumbnail_service.h"
 #include "shell/wallpaper/wallpaper.h"
@@ -88,7 +90,11 @@ private:
   void initIpc();
   void syncNotificationDaemon();
   void syncPolkitAgent();
+  bool runUserCommand(const std::string& command);
   bool runIdleCommand(const std::string& command);
+  void onUpowerStateChangedForHooks();
+  void onNetworkStateChangedForHooks(const NetworkState& state);
+  void onBluetoothStateChangedForHooks(const BluetoothState& state);
   [[nodiscard]] std::vector<PollSource*> buildPollSources();
 
   WaylandConnection m_wayland;
@@ -106,6 +112,7 @@ private:
   std::unique_ptr<DebugService> m_debugService;
   IdleInhibitor m_idleInhibitor;
   IdleManager m_idleManager;
+  HookManager m_hookManager;
   NightLightManager m_nightLightManager;
   std::unique_ptr<MprisService> m_mprisService;
   std::unique_ptr<PowerProfilesService> m_powerProfilesService;
@@ -115,6 +122,10 @@ private:
   std::unique_ptr<BluetoothAgent> m_bluetoothAgent;
   std::unique_ptr<PolkitAgent> m_polkitAgent;
   std::unique_ptr<UPowerService> m_upowerService;
+  std::optional<UPowerState> m_prevUpowerForHooks;
+  std::optional<bool> m_prevWirelessEnabledForHooks;
+  std::optional<bool> m_prevBluetoothPoweredForHooks;
+  SessionActionHooks m_sessionActionHooks;
   std::unique_ptr<BrightnessService> m_brightnessService;
   std::unique_ptr<TrayService> m_trayService;
   std::unique_ptr<NotificationService> m_notificationDbus;
