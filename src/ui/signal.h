@@ -59,12 +59,9 @@ public:
         return;
       }
       if (auto state = m_state.lock()) {
-        for (auto& slot : state->slots) {
-          if (slot.id == m_id) {
-            slot.callback = nullptr; // tombstone; cleaned up on next emit
-            break;
-          }
-        }
+        auto& slots = state->slots;
+        slots.erase(std::remove_if(slots.begin(), slots.end(), [id = m_id](const Slot& slot) { return slot.id == id; }),
+                    slots.end());
       }
       m_id = 0;
     }
