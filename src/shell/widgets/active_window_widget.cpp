@@ -52,27 +52,36 @@ void ActiveWindowWidget::create() {
   setRoot(std::move(rootNode));
 }
 
-void ActiveWindowWidget::doLayout(Renderer& renderer, float /*containerWidth*/, float /*containerHeight*/) {
+void ActiveWindowWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   auto* rootNode = root();
   if (rootNode == nullptr || m_icon == nullptr || m_title == nullptr) {
     return;
   }
   syncState(renderer);
 
+  const bool isVertical = containerHeight > containerWidth;
   const float iconSize = m_iconSize * m_contentScale;
   m_icon->setSize(iconSize, iconSize);
   m_title->setMaxWidth(m_maxTitleWidth * m_contentScale);
   m_title->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
-  m_title->measure(renderer);
 
-  const float contentHeight = std::max(iconSize, m_title->height());
-  const float iconY = std::round((contentHeight - iconSize) * 0.5f);
-  const float labelY = std::round((contentHeight - m_title->height()) * 0.5f);
+  if (isVertical) {
+    m_title->setVisible(false);
+    m_icon->setPosition(0.0f, 0.0f);
+    rootNode->setSize(iconSize, iconSize);
+  } else {
+    m_title->setVisible(true);
+    m_title->measure(renderer);
 
-  m_icon->setPosition(0.0f, iconY);
-  m_title->setPosition(iconSize + Style::spaceXs, labelY);
+    const float contentHeight = std::max(iconSize, m_title->height());
+    const float iconY = std::round((contentHeight - iconSize) * 0.5f);
+    const float labelY = std::round((contentHeight - m_title->height()) * 0.5f);
 
-  rootNode->setSize(m_title->x() + m_title->width(), contentHeight);
+    m_icon->setPosition(0.0f, iconY);
+    m_title->setPosition(iconSize + Style::spaceXs, labelY);
+
+    rootNode->setSize(m_title->x() + m_title->width(), contentHeight);
+  }
 }
 
 void ActiveWindowWidget::doUpdate(Renderer& renderer) {
