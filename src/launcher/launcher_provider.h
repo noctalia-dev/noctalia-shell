@@ -10,6 +10,7 @@ struct LauncherResult {
   std::string title;
   std::string subtitle;
   std::string glyphName;
+  std::string iconName;
   std::string iconPath;
   std::string actionText;
   int score = 0;

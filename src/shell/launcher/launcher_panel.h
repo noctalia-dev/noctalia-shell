@@ -3,6 +3,7 @@
 #include "launcher/launcher_provider.h"
 #include "launcher/usage_tracker.h"
 #include "shell/panel/panel.h"
+#include "system/icon_resolver.h"
 
 #include <cstddef>
 #include <memory>
@@ -15,6 +16,7 @@ class Image;
 class Input;
 class InputArea;
 class Label;
+class Node;
 class Renderer;
 class ScrollView;
 class ConfigService;
@@ -42,6 +44,11 @@ private:
   void doUpdate(Renderer& renderer) override;
   void onInputChanged(const std::string& text);
   void rebuildResults(Renderer& renderer, float width);
+  void ensureRowPool(float viewportHeight);
+  void updateVisibleRowStates();
+  bool resolveVisibleIcons(std::size_t budget);
+  bool hasPendingVisibleIcons() const;
+  void scheduleVisibleIconUpdate();
   void activateSelected();
   bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   void scrollToSelected();
@@ -49,18 +56,25 @@ private:
   std::vector<std::unique_ptr<LauncherProvider>> m_providers;
   std::vector<LauncherResult> m_results;
   UsageTracker m_usageTracker;
+  IconResolver m_iconResolver;
 
   Flex* m_container = nullptr;
   Input* m_input = nullptr;
   ScrollView* m_scrollView = nullptr;
   Flex* m_list = nullptr;
+  Node* m_resultsRoot = nullptr;
+  Label* m_emptyLabel = nullptr;
+  std::vector<InputArea*> m_rowPool;
 
   std::string m_query;
   std::size_t m_selectedIndex = 0;
   std::size_t m_hoverIndex = static_cast<std::size_t>(-1);
+  std::size_t m_rowPoolStartIndex = static_cast<std::size_t>(-1);
   float m_lastWidth = 0.0f;
   float m_lastListWidth = -1.0f;
+  float m_virtualRowHeight = 0.0f;
   bool m_dirty = false;
+  bool m_iconUpdateQueued = false;
   bool m_mouseActive = false;
   bool m_pendingScrollToSelected = false;
   ConfigService* m_config = nullptr;

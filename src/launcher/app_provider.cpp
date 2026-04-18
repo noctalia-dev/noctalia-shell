@@ -13,6 +13,8 @@
 
 namespace {
 
+  constexpr std::string_view kDefaultAppIcon = "application-x-executable";
+
   int scoreEntry(std::string_view pattern, const DesktopEntry& entry) {
     if (pattern.empty()) {
       return 1;
@@ -182,14 +184,18 @@ void AppProvider::refreshEntriesIfNeeded() const {
 std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
   refreshEntriesIfNeeded();
 
-  auto buildResult = [&](const DesktopEntry& entry, int s) {
+  auto buildResult = [&](const DesktopEntry& entry, int s, bool resolveIcon) {
     LauncherResult result;
     result.id = entry.path;
     result.title = entry.name;
     result.subtitle = entry.genericName.empty() ? entry.comment : entry.genericName;
-    result.iconPath = m_iconResolver.resolve(entry.icon);
-    if (result.iconPath.empty()) {
-      result.iconPath = m_iconResolver.resolve("application-x-executable");
+    if (resolveIcon) {
+      result.iconPath = m_iconResolver.resolve(entry.icon);
+      if (result.iconPath.empty()) {
+        result.iconPath = m_iconResolver.resolve(std::string(kDefaultAppIcon));
+      }
+    } else {
+      result.iconName = entry.icon.empty() ? std::string(kDefaultAppIcon) : entry.icon;
     }
     result.glyphName = result.iconPath.empty() ? "app-window" : "";
     result.score = s;
@@ -199,9 +205,9 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
   // Empty query: return all entries in alphabetical order (as stored)
   if (text.empty()) {
     std::vector<LauncherResult> results;
-    results.reserve(std::min(m_entries.size(), std::size_t(50)));
-    for (std::size_t i = 0; i < m_entries.size() && i < 50; ++i) {
-      results.push_back(buildResult(m_entries[i], 0));
+    results.reserve(m_entries.size());
+    for (const auto& entry : m_entries) {
+      results.push_back(buildResult(entry, 0, false));
     }
     return results;
   }
@@ -219,7 +225,7 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
   results.reserve(std::min(scored.size(), std::size_t(50)));
   for (std::size_t i = 0; i < scored.size() && i < 50; ++i) {
     const auto& [s, entry] = scored[i];
-    results.push_back(buildResult(*entry, s));
+    results.push_back(buildResult(*entry, s, true));
   }
   return results;
 }
