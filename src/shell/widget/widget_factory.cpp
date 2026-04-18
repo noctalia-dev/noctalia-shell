@@ -41,6 +41,8 @@
 #include "ui/style.h"
 #include "wayland/wayland_connection.h"
 
+#include <string>
+
 namespace {
   constexpr Logger kLog("shell");
 } // namespace
@@ -113,7 +115,11 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "session") {
-    auto widget = std::make_unique<SessionWidget>(output);
+    auto barGlyph = wc != nullptr ? wc->getString("icon", "shutdown") : std::string{"shutdown"};
+    if (barGlyph.empty()) {
+      barGlyph = "shutdown";
+    }
+    auto widget = std::make_unique<SessionWidget>(output, std::move(barGlyph));
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -229,13 +235,21 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "launcher") {
-    auto widget = std::make_unique<LauncherWidget>(output);
+    auto barGlyph = wc != nullptr ? wc->getString("icon", "search") : std::string{"search"};
+    if (barGlyph.empty()) {
+      barGlyph = "search";
+    }
+    auto widget = std::make_unique<LauncherWidget>(output, std::move(barGlyph));
     widget->setContentScale(contentScale);
     return widget;
   }
 
   if (type == "wallpaper") {
-    auto widget = std::make_unique<WallpaperWidget>(output);
+    auto barGlyph = wc != nullptr ? wc->getString("icon", "wallpaper-selector") : std::string{"wallpaper-selector"};
+    if (barGlyph.empty()) {
+      barGlyph = "wallpaper-selector";
+    }
+    auto widget = std::make_unique<WallpaperWidget>(output, std::move(barGlyph));
     widget->setContentScale(contentScale);
     return widget;
   }

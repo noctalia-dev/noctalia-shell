@@ -9,7 +9,8 @@
 
 #include <memory>
 
-WallpaperWidget::WallpaperWidget(wl_output* output) : m_output(output) {}
+WallpaperWidget::WallpaperWidget(wl_output* output, std::string barGlyphId)
+    : m_output(output), m_barGlyphId(std::move(barGlyphId)) {}
 
 void WallpaperWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -18,7 +19,7 @@ void WallpaperWidget::create() {
   });
 
   auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyph("wallpaper-selector");
+  glyph->setGlyph(m_barGlyphId.empty() ? "wallpaper-selector" : m_barGlyphId);
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();

@@ -9,7 +9,8 @@
 
 #include <memory>
 
-LauncherWidget::LauncherWidget(wl_output* output) : m_output(output) {}
+LauncherWidget::LauncherWidget(wl_output* output, std::string barGlyphId)
+    : m_output(output), m_barGlyphId(std::move(barGlyphId)) {}
 
 void LauncherWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -18,7 +19,7 @@ void LauncherWidget::create() {
   });
 
   auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyph("search");
+  glyph->setGlyph(m_barGlyphId.empty() ? "search" : m_barGlyphId);
   glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
   glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();

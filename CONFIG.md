@@ -385,6 +385,22 @@ end = ["keyboard_layout", "clock"]
 
 ---
 
+### `launcher`
+
+Opens the launcher panel on click.
+
+| Setting | Type   | Default   | Description                                                                 |
+|---------|--------|-----------|-------------------------------------------------------------------------------|
+| `icon`  | string | `"search"` | Bar glyph id (Tabler-backed aliases; see names in `src/ui/controls/glyph_registry.cpp`) |
+
+```toml
+[widget.launcher]
+type = "launcher"
+icon = "menu"
+```
+
+---
+
 ### `lock_keys`
 
 Shows Caps Lock / Num Lock / Scroll Lock state from the active Wayland/XKB keyboard state.
@@ -452,13 +468,33 @@ When DND is enabled, incoming notifications are still stored in history/control 
 
 ### `session`
 
-Shows a power glyph and opens the session menu panel on click. No configurable settings.
+Shows a power glyph and opens the session menu panel on click.
+
+| Setting | Type   | Default      | Description                                                                 |
+|---------|--------|--------------|-------------------------------------------------------------------------------|
+| `icon`  | string | `"shutdown"` | Bar glyph id (Tabler-backed aliases; see names in `src/ui/controls/glyph_registry.cpp`) |
+
+```toml
+[widget.session]
+type = "session"
+icon = "lock"
+```
 
 ---
 
 ### `wallpaper`
 
-Shows a glyph and opens the wallpaper picker panel on click. No configurable settings.
+Shows a glyph and opens the wallpaper picker panel on click.
+
+| Setting | Type   | Default                 | Description                                                                 |
+|---------|--------|-------------------------|-------------------------------------------------------------------------------|
+| `icon`  | string | `"wallpaper-selector"`  | Bar glyph id (Tabler-backed aliases; see names in `src/ui/controls/glyph_registry.cpp`) |
+
+```toml
+[widget.wallpaper]
+type = "wallpaper"
+icon = "photo"
+```
 
 ---
 
