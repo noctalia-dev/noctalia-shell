@@ -14,6 +14,12 @@ Image::Image() {
   m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
 }
 
+Image::~Image() {
+  if (m_ownsTexture && m_texture.id != 0 && m_renderer != nullptr) {
+    m_renderer->textureManager().unload(m_texture);
+  }
+}
+
 void Image::ensureBackground() {
   if (m_background != nullptr) {
     return;
@@ -87,6 +93,7 @@ bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targe
   }
 
   clear(renderer);
+  m_renderer = &renderer;
 
   if (path.empty()) {
     return false;
@@ -113,6 +120,7 @@ bool Image::setSourceFile(Renderer& renderer, const std::string& path, int targe
 bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::size_t size,
                            bool mipmap) {
   clear(renderer);
+  m_renderer = &renderer;
 
   if (data == nullptr || size == 0) {
     return false;
@@ -139,6 +147,7 @@ bool Image::setSourceBytes(Renderer& renderer, const std::uint8_t* data, std::si
 bool Image::setSourceRaw(Renderer& renderer, const std::uint8_t* data, std::size_t size, int width,
                          int height, int stride, PixmapFormat format, bool mipmap) {
   clear(renderer);
+  m_renderer = &renderer;
 
   if (data == nullptr || size == 0 || width <= 0 || height <= 0) {
     return false;
@@ -168,6 +177,7 @@ void Image::setExternalTexture(Renderer& renderer, TextureHandle handle) {
     return;
   }
 
+  m_renderer = &renderer;
   if (m_ownsTexture && m_texture.id != 0) {
     renderer.textureManager().unload(m_texture);
   }
@@ -182,6 +192,7 @@ void Image::setExternalTexture(Renderer& renderer, TextureHandle handle) {
 }
 
 void Image::clear(Renderer& renderer) {
+  m_renderer = &renderer;
   if (m_ownsTexture && m_texture.id != 0) {
     renderer.textureManager().unload(m_texture);
   }

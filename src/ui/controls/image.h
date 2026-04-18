@@ -20,7 +20,7 @@ enum class ImageFit : std::uint8_t {
 class Image : public Node {
 public:
   Image();
-  ~Image() override = default;
+  ~Image() override;
 
   void setCornerRadius(float radius);
   void setBackground(const ThemeColor& color);
@@ -73,5 +73,6 @@ private:
   ThemeColor m_backgroundColor = clearThemeColor();
   ThemeColor m_borderColor = clearThemeColor();
   float m_borderWidth = 0.0f;
+  Renderer* m_renderer = nullptr;
   Signal<>::ScopedConnection m_paletteConn;
 };
