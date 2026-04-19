@@ -12,7 +12,6 @@
     "no-matching-entries": "No matching entries",
     "no-matching-entries-sentence": "No entries match the current filter.",
     "loading-preview": "Loading preview...",
-    "image-copy-hint": "Press Enter or use the button above to copy this entry and promote it to the top.",
     "empty-text-payload": "(empty text payload)",
     "truncated": "… truncated"
   }

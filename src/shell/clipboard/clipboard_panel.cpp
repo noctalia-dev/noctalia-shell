@@ -594,13 +594,6 @@ void ClipboardPanel::rebuildPreview(Renderer& renderer, float width, float heigh
     image->setSourceBytes(renderer, loadedEntry.data.data(), loadedEntry.data.size());
     m_previewImage = image.get();
     m_previewContent->addChild(std::move(image));
-
-    auto hint = std::make_unique<Label>();
-    hint->setText(i18n::tr("clipboard.image-copy-hint"));
-    hint->setCaptionStyle();
-    hint->setColor(roleColor(ColorRole::OnSurfaceVariant));
-    hint->setMaxWidth(width);
-    m_previewContent->addChild(std::move(hint));
   } else {
     constexpr std::size_t kMaxPreviewChars = 8000;
     constexpr int kMaxPreviewLines = 200;
