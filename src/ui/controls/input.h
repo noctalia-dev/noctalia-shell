@@ -50,6 +50,7 @@ private:
   void handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool preedit = false);
   void applyVisualState();
   void updateDisplayText();
+  void updateInteractiveGeometry();
   [[nodiscard]] float measureCursorX(Renderer& renderer) const;
   [[nodiscard]] bool hasSelection() const noexcept;
   [[nodiscard]] std::size_t selectionStart() const noexcept;

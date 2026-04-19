@@ -127,12 +127,14 @@ Input::Input() {
       const std::size_t offset = xToByteOffset(data.localX - m_horizontalPadding);
       m_cursorPos = offset;
       m_selectionAnchor = offset;
+      updateInteractiveGeometry();
       markPaintDirty();
     }
   });
   area->setOnMotion([this](const InputArea::PointerData& data) {
     if (m_inputArea != nullptr && m_inputArea->pressed()) {
       m_cursorPos = xToByteOffset(data.localX - m_horizontalPadding);
+      updateInteractiveGeometry();
       markPaintDirty();
     }
   });
@@ -207,11 +209,13 @@ void Input::setPasswordMaskStyle(PasswordMaskStyle style) noexcept { g_passwordM
 void Input::selectAll() {
   m_selectionAnchor = 0;
   m_cursorPos = m_value.size();
+  updateInteractiveGeometry();
   markPaintDirty();
 }
 
 void Input::clearSelection() {
   m_selectionAnchor = m_cursorPos;
+  updateInteractiveGeometry();
   markPaintDirty();
 }
 
@@ -258,19 +262,7 @@ void Input::doLayout(Renderer& renderer) {
     }
   }
 
-  const float cursorX = m_horizontalPadding + stopXForByte(m_cursorPos);
-  m_cursor->setPosition(cursorX, kCursorPadV);
-  m_cursor->setFrameSize(kCursorWidth, h - kCursorPadV * 2.0f);
-
-  if (hasSelection()) {
-    const float selX0 = m_horizontalPadding + stopXForByte(selectionStart());
-    const float selX1 = m_horizontalPadding + stopXForByte(selectionEnd());
-    m_selectionRect->setPosition(selX0, kCursorPadV);
-    m_selectionRect->setFrameSize(selX1 - selX0, h - kCursorPadV * 2.0f);
-    m_selectionRect->setVisible(true);
-  } else {
-    m_selectionRect->setVisible(false);
-  }
+  updateInteractiveGeometry();
 
   if (showPasswordGlyphs) {
     syncPasswordGlyphNodes(charCount);
@@ -468,6 +460,28 @@ void Input::updateDisplayText() {
   } else {
     m_label->setText(m_passwordMode ? std::string{} : m_value);
     m_label->setColor(roleColor(ColorRole::OnSurface));
+  }
+}
+
+void Input::updateInteractiveGeometry() {
+  if (m_cursor == nullptr || m_selectionRect == nullptr) {
+    return;
+  }
+
+  const float controlHeight = height() > 0.0f ? height() : m_controlHeight;
+  const float cursorHeight = std::max(0.0f, controlHeight - kCursorPadV * 2.0f);
+  const float cursorX = m_horizontalPadding + stopXForByte(m_cursorPos);
+  m_cursor->setPosition(cursorX, kCursorPadV);
+  m_cursor->setFrameSize(kCursorWidth, cursorHeight);
+
+  if (hasSelection()) {
+    const float selX0 = m_horizontalPadding + stopXForByte(selectionStart());
+    const float selX1 = m_horizontalPadding + stopXForByte(selectionEnd());
+    m_selectionRect->setPosition(selX0, kCursorPadV);
+    m_selectionRect->setFrameSize(std::max(0.0f, selX1 - selX0), cursorHeight);
+    m_selectionRect->setVisible(true);
+  } else {
+    m_selectionRect->setVisible(false);
   }
 }
 
