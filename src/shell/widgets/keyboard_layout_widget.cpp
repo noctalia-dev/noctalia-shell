@@ -26,6 +26,7 @@ namespace {
   constexpr int kRefreshBurstAttempts = 8;
   constexpr auto kIdleProbeInterval = std::chrono::milliseconds(350);
   constexpr std::string_view kUnknownLabel = "--";
+  constexpr std::string_view kVerticalStableLabel = "WWW";
 
   std::string toLowerAscii(std::string_view text) {
     std::string out;
@@ -343,7 +344,7 @@ void KeyboardLayoutWidget::create() {
     if (m_refreshAttemptsRemaining > 0) {
       return;
     }
-    requestRedraw();
+    requestUpdate();
   });
 }
 
@@ -367,6 +368,10 @@ void KeyboardLayoutWidget::doLayout(Renderer& renderer, float containerWidth, fl
   }
 
   m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+  m_label->setTextAlign(m_isVertical ? TextAlign::Center : TextAlign::Start);
+  const float stableLabelWidth =
+      std::round(renderer.measureText(kVerticalStableLabel, m_label->fontSize(), true).width);
+  m_label->setMinWidth(m_isVertical ? std::min(containerWidth, stableLabelWidth) : 0.0f);
   m_label->measure(renderer);
 
   if (m_isVertical && m_glyph != nullptr) {
@@ -479,7 +484,7 @@ void KeyboardLayoutWidget::cycleLayout() {
   }
 
   scheduleRefreshBurst();
-  requestRedraw();
+  requestUpdate();
 }
 
 void KeyboardLayoutWidget::scheduleRefreshBurst() {
@@ -492,29 +497,19 @@ void KeyboardLayoutWidget::armRefreshTick() {
     if (m_refreshAttemptsRemaining <= 0) {
       m_pendingLayoutName.clear();
       m_refreshTimer.stop();
-      requestRedraw();
-      return;
-    }
-
-    const std::string resolved = resolvedLayoutName();
-    if (!m_pendingLayoutName.empty() && resolved == m_pendingLayoutName) {
-      m_pendingLayoutName.clear();
-      m_refreshAttemptsRemaining = 0;
-      m_refreshTimer.stop();
-      requestRedraw();
+      requestUpdate();
       return;
     }
 
     --m_refreshAttemptsRemaining;
-    requestRedraw();
     if (m_refreshAttemptsRemaining > 0) {
       armRefreshTick();
-      return;
+    } else {
+      m_pendingLayoutName.clear();
+      m_refreshTimer.stop();
     }
 
-    m_pendingLayoutName.clear();
-    m_refreshTimer.stop();
-    requestRedraw();
+    requestUpdate();
   });
 }
 

@@ -770,6 +770,11 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     auto initWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets, Flex* section) {
       for (auto& widget : widgets) {
         widget->setAnimationManager(&instance.animations);
+        widget->setUpdateCallback([surface = instance.surface.get()]() {
+          if (surface != nullptr) {
+            surface->requestUpdate();
+          }
+        });
         widget->setRedrawCallback([surface = instance.surface.get()]() {
           if (surface != nullptr) {
             surface->requestRedraw();

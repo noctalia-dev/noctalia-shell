@@ -14,6 +14,7 @@ class Renderer;
 
 class Widget {
 public:
+  using UpdateCallback = std::function<void()>;
   using RedrawCallback = std::function<void()>;
 
   virtual ~Widget() = default;
@@ -44,6 +45,7 @@ public:
   std::unique_ptr<Node> releaseRoot();
 
   void setAnimationManager(AnimationManager* mgr) noexcept;
+  void setUpdateCallback(UpdateCallback callback);
   void setRedrawCallback(RedrawCallback callback);
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
@@ -67,6 +69,7 @@ public:
   [[nodiscard]] ThemeColor widgetForegroundOr(const ThemeColor& fallback) const noexcept;
 
 protected:
+  void requestUpdate();
   void requestRedraw();
   void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
   void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
@@ -76,6 +79,7 @@ protected:
   float m_contentScale = 1.0f;
   bool m_anchor = false;
   AnimationManager* m_animations = nullptr;
+  UpdateCallback m_updateCallback;
   RedrawCallback m_redrawCallback;
   WidgetBarCapsuleSpec m_barCapsuleSpec{};
   std::optional<ThemeColor> m_widgetForeground;
