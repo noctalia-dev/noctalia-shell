@@ -1,8 +1,10 @@
 #include "i18n/i18n_service.h"
 
 #include "core/log.h"
+#include "core/resource_paths.h"
 
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <json.hpp>
 #include <string>
@@ -68,7 +70,7 @@ namespace i18n {
   }
 
   bool Service::loadCatalog(std::string_view lang, Catalog& out) const {
-    std::string path = std::string(NOCTALIA_I18N_DIR) + "/" + std::string(lang) + ".json";
+    const std::filesystem::path path = paths::assetPath("translations/" + std::string(lang) + ".json");
     std::ifstream file(path);
     if (!file.is_open()) {
       return false;
@@ -76,7 +78,7 @@ namespace i18n {
     try {
       auto json = nlohmann::json::parse(file);
       if (!json.is_object()) {
-        kLog.warn("catalog {} is not a JSON object", path);
+        kLog.warn("catalog {} is not a JSON object", path.string());
         return false;
       }
       Catalog fresh;
@@ -84,7 +86,7 @@ namespace i18n {
       out = std::move(fresh);
       return true;
     } catch (const std::exception& e) {
-      kLog.error("failed to parse {}: {}", path, e.what());
+      kLog.error("failed to parse {}: {}", path.string(), e.what());
       return false;
     }
   }

@@ -282,6 +282,7 @@ _noctalia_sources = files(
   'src/core/deferred_call.cpp',
   'src/core/log.cpp',
   'src/core/process.cpp',
+  'src/core/resource_paths.cpp',
   'src/core/timer_manager.cpp',
   'src/core/ui_phase.cpp',
   'src/dbus/bluetooth/bluetooth_agent.cpp',
@@ -530,9 +531,14 @@ executable('noctalia',
   include_directories: _noctalia_inc,
   cpp_args: [
     '-Wall', '-Wextra', '-Wpedantic', '-Wconversion', '-Wshadow',
-    '-DNOCTALIA_ASSETS_DIR="' + meson.project_source_root() / 'assets' + '"',
-    '-DNOCTALIA_I18N_DIR="' + meson.project_source_root() / 'assets' / 'translations' + '"',
+    '-DNOCTALIA_SOURCE_ASSETS_DIR="' + meson.project_source_root() / 'assets' + '"',
+    '-DNOCTALIA_INSTALL_PREFIX="' + get_option('prefix') + '"',
+    '-DNOCTALIA_INSTALL_DATADIR="' + get_option('datadir') + '"',
     '-DNOCTALIA_VERSION="' + meson.project_version() + '"',
   ],
-  install: false,
+  install: true,
+)
+
+install_subdir('assets',
+  install_dir: get_option('datadir') / 'noctalia',
 )
