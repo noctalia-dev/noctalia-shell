@@ -79,7 +79,7 @@ void WeatherWidget::sync(Renderer& renderer) {
     return;
   }
 
-  auto stackTemperature = [](int temp, char unitLetter) { return std::format("{}\n\xC2\xB0{}", temp, unitLetter); };
+  auto verticalTemperature = [](int temp) { return std::format("{}\xC2\xB0", temp); };
 
   std::string glyph = "weather-cloud";
   std::string text = m_isVertical ? "W\nX" : "Weather";
@@ -94,8 +94,7 @@ void WeatherWidget::sync(Renderer& renderer) {
     const int temp = static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.current.temperatureC)));
     const std::string unit = m_weather->displayTemperatureUnit();
     if (m_isVertical) {
-      const char unitLetter = (unit.find('F') != std::string::npos || unit.find('f') != std::string::npos) ? 'F' : 'C';
-      text = stackTemperature(temp, unitLetter);
+      text = verticalTemperature(temp);
     } else {
       text = std::format("{}{}", temp, unit);
     }
