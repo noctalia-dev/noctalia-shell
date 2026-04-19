@@ -7,6 +7,7 @@
 #include "shell/desktop/desktop_widgets_controller.h"
 #include "wayland/layer_surface.h"
 
+#include <array>
 #include <functional>
 #include <memory>
 #include <string>
@@ -48,6 +49,13 @@ public:
   void requestRedraw();
 
 private:
+  enum class ScaleCorner : std::uint8_t {
+    TopLeft = 0,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+  };
+
   enum class DragMode : std::uint8_t {
     None,
     Move,
@@ -75,9 +83,9 @@ private:
     Node* selectionFrameTransform = nullptr;
     Box* selectionBorder = nullptr;
     Box* rotationRing = nullptr;
-    Box* scaleHandle = nullptr;
     InputArea* rotateArea = nullptr;
-    InputArea* scaleArea = nullptr;
+    std::array<Box*, 4> scaleHandles{};
+    std::array<InputArea*, 4> scaleAreas{};
     bool pointerInside = false;
   };
 
@@ -89,6 +97,7 @@ private:
     DesktopWidgetState initialState;
     float intrinsicWidth = 0.0f;
     float intrinsicHeight = 0.0f;
+    ScaleCorner scaleCorner = ScaleCorner::BottomRight;
     bool rebuildOnFinish = false;
   };
 
@@ -102,7 +111,8 @@ private:
   void addWidget(const std::string& outputName, const std::string& type);
   void removeSelectedWidget();
   void requestExit();
-  void startDrag(DragMode mode, const std::string& widgetId, bool rebuildOnFinish);
+  void startDrag(DragMode mode, const std::string& widgetId, bool rebuildOnFinish,
+                 ScaleCorner scaleCorner = ScaleCorner::BottomRight);
   void updateDrag();
   void finishDrag();
   [[nodiscard]] OverlaySurface* findSurface(wl_surface* surface);
