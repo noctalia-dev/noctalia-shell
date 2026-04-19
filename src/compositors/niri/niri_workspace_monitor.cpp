@@ -84,6 +84,29 @@ namespace {
     return nullptr;
   }
 
+  [[nodiscard]] std::optional<bool> jsonOptionalBool(const nlohmann::json& payload, const char* key) {
+    if (!payload.is_object()) {
+      return std::nullopt;
+    }
+    const auto it = payload.find(key);
+    if (it == payload.end()) {
+      return std::nullopt;
+    }
+    if (it->is_boolean()) {
+      return it->get<bool>();
+    }
+    if (it->is_string()) {
+      const auto value = it->get<std::string>();
+      if (value == "open" || value == "opened" || value == "true") {
+        return true;
+      }
+      if (value == "closed" || value == "false") {
+        return false;
+      }
+    }
+    return std::nullopt;
+  }
+
 } // namespace
 
 NiriWorkspaceMonitor::NiriWorkspaceMonitor(std::string_view compositorHint) {
@@ -225,6 +248,8 @@ void NiriWorkspaceMonitor::cleanup() {
   closeSocket(false);
   m_windows.clear();
   m_workspaces.clear();
+  m_overviewKnown = false;
+  m_overviewOpen = false;
   m_readBuffer.clear();
 }
 
@@ -376,6 +401,12 @@ bool NiriWorkspaceMonitor::handleMessage(std::string_view line) {
     changed = handleWorkspacesChanged(it.value());
   } else if (it.key() == "WindowsChanged") {
     changed = handleWindowsChanged(it.value());
+  } else if (it.key() == "OverviewOpenedOrClosed") {
+    changed = handleOverviewChanged(it.value());
+  } else if (it.key() == "OverviewOpened") {
+    changed = handleOverviewChanged(nlohmann::json{{"is_open", true}});
+  } else if (it.key() == "OverviewClosed") {
+    changed = handleOverviewChanged(nlohmann::json{{"is_open", false}});
   } else if (it.key() == "WindowOpenedOrChanged") {
     changed = handleWindowOpenedOrChanged(it.value());
   } else if (it.key() == "WindowClosed") {
@@ -429,6 +460,37 @@ bool NiriWorkspaceMonitor::handleWindowsChanged(const nlohmann::json& payload) {
   m_windows = std::move(next);
   recomputeOccupancy();
   return true;
+}
+
+bool NiriWorkspaceMonitor::handleOverviewChanged(const nlohmann::json& payload) {
+  std::optional<bool> open;
+  if (payload.is_boolean()) {
+    open = payload.get<bool>();
+  } else if (payload.is_string()) {
+    const auto value = payload.get<std::string>();
+    if (value == "open" || value == "opened" || value == "true") {
+      open = true;
+    } else if (value == "closed" || value == "false") {
+      open = false;
+    }
+  } else if (payload.is_object()) {
+    open = jsonOptionalBool(payload, "is_open");
+    if (!open.has_value()) {
+      open = jsonOptionalBool(payload, "isOpen");
+    }
+    if (!open.has_value()) {
+      open = jsonOptionalBool(payload, "open");
+    }
+  }
+
+  if (!open.has_value()) {
+    return false;
+  }
+
+  const bool changed = !m_overviewKnown || m_overviewOpen != *open;
+  m_overviewKnown = true;
+  m_overviewOpen = *open;
+  return changed;
 }
 
 bool NiriWorkspaceMonitor::handleWindowOpenedOrChanged(const nlohmann::json& payload) {

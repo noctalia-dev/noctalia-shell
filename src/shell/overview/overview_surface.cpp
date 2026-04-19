@@ -89,6 +89,9 @@ void OverviewSurface::render() {
   if (m_surface == nullptr) {
     return;
   }
+  if (!m_active) {
+    return;
+  }
 
   requestFrame();
 
@@ -179,6 +182,18 @@ void OverviewSurface::render() {
   }
 
   m_wallpaperRenderer.swapBuffers();
+}
+
+void OverviewSurface::setActive(bool active) {
+  if (m_active == active) {
+    return;
+  }
+  m_active = active;
+  if (!m_active) {
+    // Free blur render targets while overview is inactive to drop VRAM usage.
+    m_wallpaperRenderer.makeCurrent();
+    destroyFbos();
+  }
 }
 
 void OverviewSurface::setWallpaperState(GLuint tex, float imgW, float imgH, WallpaperFillMode fillMode) {

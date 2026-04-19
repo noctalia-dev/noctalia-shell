@@ -33,7 +33,9 @@ bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, Sha
     return true;
   }
 
-  syncInstances();
+  if (m_active) {
+    syncInstances();
+  }
   return true;
 }
 
@@ -54,11 +56,13 @@ void Overview::reload() {
     return;
   }
 
-  syncInstances();
+  if (m_active) {
+    syncInstances();
+  }
 }
 
 void Overview::onOutputChange() {
-  if (m_config == nullptr || !m_config->config().overview.enabled) {
+  if (m_config == nullptr || !m_config->config().overview.enabled || !m_active) {
     return;
   }
   syncInstances();
@@ -74,12 +78,20 @@ void Overview::onStateChange() {
     }
 
     kLog.info("updating {} → {}", inst->connectorName, newPath);
+    if (!m_active) {
+      releaseInstanceTexture(*inst, false);
+      inst->currentPath = newPath;
+      continue;
+    }
     releaseInstanceTexture(*inst);
     loadWallpaper(*inst, newPath);
   }
 }
 
 void Overview::onThemeChanged() {
+  if (!m_active) {
+    return;
+  }
   for (auto& inst : m_instances) {
     updateRendererState(*inst);
     if (inst->surface != nullptr) {
@@ -94,6 +106,45 @@ void Overview::requestLayout() {
   for (auto& inst : m_instances) {
     if (inst->surface != nullptr) {
       inst->surface->requestLayout();
+    }
+  }
+}
+
+void Overview::setActive(bool active) {
+  if (m_active == active) {
+    return;
+  }
+  m_active = active;
+
+  if (!m_active) {
+    for (auto& inst : m_instances) {
+      if (inst->surface != nullptr) {
+        inst->surface->setActive(false);
+      }
+      releaseInstanceTexture(*inst, false);
+    }
+    // Drop layer surfaces entirely so overview GL/EGL buffers are released.
+    m_instances.clear();
+    return;
+  }
+
+  syncInstances();
+  for (auto& inst : m_instances) {
+    if (inst->surface == nullptr) {
+      continue;
+    }
+    inst->surface->setActive(true);
+
+    if (inst->currentTexture.id == 0) {
+      std::string path = inst->currentPath;
+      if (path.empty() && m_config != nullptr) {
+        path = m_config->getWallpaperPath(inst->connectorName);
+      }
+      if (!path.empty()) {
+        loadWallpaper(*inst, path);
+      }
+    } else {
+      inst->surface->requestRedraw();
     }
   }
 }
@@ -151,17 +202,25 @@ void Overview::createInstance(const WaylandOutput& output) {
   updateRendererState(*inst);
 
   auto* instPtr = inst.get();
-  inst->surface->setConfigureCallback(
-      [this, instPtr, wallpaperPath](std::uint32_t /*width*/, std::uint32_t /*height*/) {
-        if (instPtr->currentPath.empty() && !wallpaperPath.empty()) {
-          loadWallpaper(*instPtr, wallpaperPath);
-        }
-      });
+  inst->surface->setConfigureCallback([this, instPtr](std::uint32_t /*width*/, std::uint32_t /*height*/) {
+    if (instPtr->currentTexture.id != 0 || !m_active || m_config == nullptr) {
+      return;
+    }
+    std::string path = instPtr->currentPath;
+    if (path.empty()) {
+      path = m_config->getWallpaperPath(instPtr->connectorName);
+    }
+    if (!path.empty()) {
+      loadWallpaper(*instPtr, path);
+    }
+  });
 
   if (!inst->surface->initialize(output.output)) {
     kLog.warn("failed to initialize overview surface for output {}", output.name);
     return;
   }
+
+  inst->surface->setActive(m_active);
 
   m_instances.push_back(std::move(inst));
 }
@@ -176,7 +235,7 @@ void Overview::loadWallpaper(OverviewInstance& inst, const std::string& path) {
   inst.currentTexture = tex;
   inst.currentPath = path;
   updateRendererState(inst);
-  if (inst.surface != nullptr) {
+  if (m_active && inst.surface != nullptr) {
     inst.surface->requestRedraw();
   }
 }
@@ -198,12 +257,17 @@ void Overview::updateRendererState(OverviewInstance& inst) {
     inst.surface->setWallpaperState(inst.currentTexture.id, static_cast<float>(inst.currentTexture.width),
                                     static_cast<float>(inst.currentTexture.height),
                                     m_config->config().wallpaper.fillMode);
+  } else {
+    inst.surface->setWallpaperState(0, 0.0f, 0.0f, m_config->config().wallpaper.fillMode);
   }
 }
 
-void Overview::releaseInstanceTexture(OverviewInstance& inst) {
+void Overview::releaseInstanceTexture(OverviewInstance& inst, bool clearPath) {
   if (inst.currentTexture.id != 0) {
     m_textureCache->release(inst.currentTexture, inst.currentPath);
+    inst.currentTexture = {};
+  }
+  if (clearPath) {
     inst.currentPath.clear();
   }
 }

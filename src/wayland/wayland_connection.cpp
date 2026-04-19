@@ -334,6 +334,17 @@ wl_output* WaylandConnection::preferredPanelOutput(std::chrono::milliseconds poi
   return nullptr;
 }
 
+bool WaylandConnection::hasNiriOverviewState() const noexcept {
+  return m_niriWorkspaceMonitor != nullptr && m_niriWorkspaceMonitor->hasOverviewState();
+}
+
+bool WaylandConnection::isNiriOverviewOpen() const noexcept {
+  if (m_niriWorkspaceMonitor == nullptr || !m_niriWorkspaceMonitor->hasOverviewState()) {
+    return true;
+  }
+  return m_niriWorkspaceMonitor->isOverviewOpen();
+}
+
 void WaylandConnection::setKeyboardEventCallback(WaylandSeat::KeyboardEventCallback callback) {
   m_seatHandler.setKeyboardEventCallback(std::move(callback));
 }

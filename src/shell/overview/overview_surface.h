@@ -23,6 +23,7 @@ public:
     m_tintG = g;
     m_tintB = b;
   }
+  void setActive(bool active);
   void setWallpaperState(GLuint tex, float imgW, float imgH, WallpaperFillMode fillMode);
 
   [[nodiscard]] WallpaperRenderer* wallpaperRenderer() noexcept { return &m_wallpaperRenderer; }
@@ -56,4 +57,5 @@ private:
   float m_tintR = 0.0f;
   float m_tintG = 0.0f;
   float m_tintB = 0.0f;
+  bool m_active = true;
 };

@@ -337,7 +337,10 @@ void Application::initServices() {
       m_panelManager.refresh();
     }
   });
-  m_wayland.setWorkspaceChangeCallback([this]() { m_bar.refresh(); });
+  m_wayland.setWorkspaceChangeCallback([this]() {
+    m_bar.refresh();
+    m_overview.setActive(m_wayland.isNiriOverviewOpen());
+  });
   m_wayland.setToplevelChangeCallback([this]() {
     m_bar.refresh();
     m_dock.refresh();
@@ -359,6 +362,7 @@ void Application::initServices() {
 
   m_wallpaper.initialize(m_wayland, &m_configService, &m_glShared, &m_sharedTextureCache);
   m_overview.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
+  m_overview.setActive(m_wayland.isNiriOverviewOpen());
 
   // Override the single-callback slot set by Wallpaper::initialize() so both
   // wallpaper and overview are notified of wallpaper path changes.

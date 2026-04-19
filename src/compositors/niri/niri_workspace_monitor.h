@@ -25,6 +25,8 @@ public:
 
   void setChangeCallback(ChangeCallback callback);
   [[nodiscard]] bool isEnabled() const noexcept { return m_enabled; }
+  [[nodiscard]] bool hasOverviewState() const noexcept { return m_overviewKnown; }
+  [[nodiscard]] bool isOverviewOpen() const noexcept { return m_overviewOpen; }
   [[nodiscard]] int pollFd() const noexcept { return m_socketFd; }
   [[nodiscard]] short pollEvents() const noexcept { return POLLIN | POLLHUP | POLLERR; }
   [[nodiscard]] int pollTimeoutMs() const noexcept;
@@ -56,6 +58,7 @@ private:
   [[nodiscard]] bool handleMessage(std::string_view line);
   [[nodiscard]] bool handleWorkspacesChanged(const nlohmann::json& payload);
   [[nodiscard]] bool handleWindowsChanged(const nlohmann::json& payload);
+  [[nodiscard]] bool handleOverviewChanged(const nlohmann::json& payload);
   [[nodiscard]] bool handleWindowOpenedOrChanged(const nlohmann::json& payload);
   [[nodiscard]] bool handleWindowClosed(const nlohmann::json& payload);
   [[nodiscard]] static std::optional<WorkspaceState> parseWorkspace(const nlohmann::json& json);
@@ -72,6 +75,8 @@ private:
   std::unordered_map<std::uint64_t, WindowState> m_windows;
   std::unordered_map<std::uint64_t, std::size_t> m_occupancy;
   std::unordered_map<std::uint64_t, WorkspaceState> m_workspaces;
+  bool m_overviewKnown = false;
+  bool m_overviewOpen = false;
   std::chrono::steady_clock::time_point m_nextReconnectAt{};
   ChangeCallback m_changeCallback;
 };
