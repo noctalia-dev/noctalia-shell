@@ -42,6 +42,7 @@ AnimationManager::Id AnimationManager::animate(float from, float to, float durat
               .startValue = from,
               .endValue = to,
               .durationMs = effectiveDurationMs,
+              .startedAt = std::chrono::steady_clock::now(),
               .easing = easing,
               .setter = std::move(setter),
               .onComplete = std::move(onComplete),
@@ -63,10 +64,12 @@ void AnimationManager::cancelForOwner(const void* owner) {
   std::erase_if(m_animations, [owner](const Entry& e) { return e.owner == owner; });
 }
 
-void AnimationManager::tick(float deltaMs) {
+void AnimationManager::tick(float /*deltaMs*/) {
   // Collect completed callbacks separately — onComplete may call animate()
   // which would push_back and invalidate iterators during iteration.
   std::vector<std::function<void()>> completedCallbacks;
+
+  const auto now = std::chrono::steady_clock::now();
 
   for (auto& entry : m_animations) {
     auto& anim = entry.animation;
@@ -74,8 +77,11 @@ void AnimationManager::tick(float deltaMs) {
       continue;
     }
 
-    anim.elapsedMs += deltaMs;
-    float t = anim.durationMs > 0.0f ? anim.elapsedMs / anim.durationMs : 1.0f;
+    // Progress from wall time so a fixed duration stays correct when the compositor
+    // delivers sparse `wl_surface.frame` callbacks (common right after cold boot).
+    const float wallElapsedMs = std::chrono::duration<float, std::milli>(now - anim.startedAt).count();
+    anim.elapsedMs = wallElapsedMs;
+    float t = anim.durationMs > 0.0f ? wallElapsedMs / anim.durationMs : 1.0f;
 
     if (t >= 1.0f) {
       t = 1.0f;
