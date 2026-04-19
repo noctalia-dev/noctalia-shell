@@ -1,5 +1,6 @@
 #include "theme/cli.h"
 
+#include "core/resource_paths.h"
 #include "core/toml.h"
 #include "theme/color.h"
 #include "theme/fixed_palette.h"
@@ -53,7 +54,7 @@ namespace noctalia::theme {
                                       "  --list-builtins   List built-in templates from the shipped catalog\n"
                                       "  --default-mode    Template default mode: dark or light";
 
-    constexpr const char* kBuiltinTemplateConfig = NOCTALIA_ASSETS_DIR "/templates/builtin.toml";
+    std::filesystem::path builtinTemplateConfigPath() { return paths::assetPath("templates/builtin.toml"); }
 
     struct BuiltinTemplateInfo {
       std::string id;
@@ -77,7 +78,7 @@ namespace noctalia::theme {
     std::vector<BuiltinTemplateInfo> loadBuiltinTemplateInfo(std::string& err) {
       toml::table root;
       try {
-        root = toml::parse_file(kBuiltinTemplateConfig);
+        root = toml::parse_file(builtinTemplateConfigPath().string());
       } catch (const toml::parse_error& e) {
         err = e.description();
         return {};
@@ -272,6 +273,7 @@ namespace noctalia::theme {
     Variant variant = Variant::Dark;
     const char* outPath = nullptr;
     const char* configPath = nullptr;
+    std::string builtinConfigPathStorage;
     bool builtinConfig = false;
     bool listBuiltins = false;
     std::string defaultMode = "dark";
@@ -356,7 +358,8 @@ namespace noctalia::theme {
         std::fputs("error: --builtin-config cannot be combined with --config\n", stderr);
         return 1;
       }
-      configPath = kBuiltinTemplateConfig;
+      builtinConfigPathStorage = builtinTemplateConfigPath().string();
+      configPath = builtinConfigPathStorage.c_str();
     }
 
     if (!imagePath && !themeJsonPath) {

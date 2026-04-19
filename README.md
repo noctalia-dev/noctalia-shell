@@ -116,6 +116,44 @@ meson compile -C build-debug
 ```
 </details>
 
+## Installation / Packaging
+
+`meson install` now installs the binary and shipped assets separately using the normal prefix layout:
+
+```text
+/usr/local/bin/noctalia
+/usr/local/share/noctalia/assets/...
+```
+
+With a different Meson `prefix`/`datadir`, the same structure is preserved under that prefix.
+
+For packagers, the important point is that Noctalia needs the `assets/` tree at runtime. Copying only the bare `noctalia` binary is not enough.
+
+Portable bundle layouts are also supported:
+
+```text
+bundle/
+  noctalia
+  assets/
+```
+
+```text
+bundle/
+  bin/noctalia
+  share/noctalia/assets/
+```
+
+Runtime asset lookup order:
+
+1. `NOCTALIA_ASSETS_DIR`
+2. `assets/` next to the executable
+3. `assets/` one level above the executable
+4. install-style `../share/noctalia/assets` relative to the executable
+5. the compiled install path from Meson (`<prefix>/<datadir>/noctalia/assets`)
+6. the source-tree `assets/` directory as a development fallback
+
+An asset root is only accepted if it contains the expected shipped files such as `emoji.json`, `fonts/tabler.ttf`, `templates/builtin.toml`, and `translations/en.json`.
+
 ## Code Style
 
 This project uses [clang-format](https://clang.llvm.org/docs/ClangFormat.html) for formatting. Run `just format` before committing.

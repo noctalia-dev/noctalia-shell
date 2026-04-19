@@ -1,6 +1,7 @@
 #include "render/render_context.h"
 
 #include "core/log.h"
+#include "core/resource_paths.h"
 #include "core/ui_phase.h"
 #include "render/gl_shared_context.h"
 #include "render/render_target.h"
@@ -73,7 +74,7 @@ void RenderContext::initialize(GlSharedContext& shared) {
   // Pango handles font fallback via Fontconfig automatically — no explicit chain.
   ensureGlPrograms();
   m_textRenderer.initialize(&m_glyphProgram);
-  m_glyphRenderer.initialize(NOCTALIA_ASSETS_DIR "/fonts/tabler.ttf", &m_glyphProgram);
+  m_glyphRenderer.initialize(paths::assetPath("fonts/tabler.ttf").string(), &m_glyphProgram);
 }
 
 void RenderContext::ensureGlPrograms() {

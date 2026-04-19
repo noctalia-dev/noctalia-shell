@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/log.h"
+#include "core/resource_paths.h"
 #include "theme/template_engine.h"
 
 #include <cstdlib>
@@ -13,7 +14,8 @@ namespace noctalia::theme {
   namespace {
 
     constexpr Logger kLog("theme_templates");
-    constexpr const char* kBuiltinTemplateConfig = NOCTALIA_ASSETS_DIR "/templates/builtin.toml";
+
+    std::filesystem::path builtinTemplateConfigPath() { return paths::assetPath("templates/builtin.toml"); }
 
     std::filesystem::path expandUserPath(const std::string& path) {
       if (path.empty() || path[0] != '~')
@@ -53,8 +55,9 @@ namespace noctalia::theme {
       TemplateEngine::Options builtinOptions = options;
       builtinOptions.enabledTemplates.insert(templateCfg.builtinIds.begin(), templateCfg.builtinIds.end());
       TemplateEngine builtinEngine(TemplateEngine::makeThemeData(palette), std::move(builtinOptions));
-      if (!builtinEngine.processConfigFile(kBuiltinTemplateConfig)) {
-        kLog.warn("failed to apply built-in templates from {}", kBuiltinTemplateConfig);
+      const std::filesystem::path builtinConfig = builtinTemplateConfigPath();
+      if (!builtinEngine.processConfigFile(builtinConfig)) {
+        kLog.warn("failed to apply built-in templates from {}", builtinConfig.string());
       }
     }
 

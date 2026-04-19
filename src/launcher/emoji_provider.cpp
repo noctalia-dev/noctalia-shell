@@ -1,8 +1,10 @@
 #include "launcher/emoji_provider.h"
 
+#include "core/resource_paths.h"
 #include "wayland/clipboard_service.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <json.hpp>
 #include <sstream>
@@ -20,7 +22,7 @@ namespace {
 } // namespace
 
 void EmojiProvider::initialize() {
-  std::string path = std::string(NOCTALIA_ASSETS_DIR) + "/emoji.json";
+  const std::filesystem::path path = paths::assetPath("emoji.json");
   std::ifstream file(path);
   if (!file.is_open()) {
     return;
