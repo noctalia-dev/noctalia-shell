@@ -43,7 +43,6 @@ std::unique_ptr<PanelColorPickerModal> PanelColorPickerModal::openOverHost(Panel
   auto modal = std::unique_ptr<PanelColorPickerModal>(new PanelColorPickerModal());
   modal->m_hostPanelId = pm.m_activePanelId;
   modal->m_hostPanel = pm.m_activePanel;
-
   pm.m_activePanel = cpIt->second.get();
   pm.m_activePanelId = "color-picker";
   pm.m_activePanel->setContentScale(resolvePanelContentScale(pm.m_config));
@@ -55,11 +54,19 @@ std::unique_ptr<PanelColorPickerModal> PanelColorPickerModal::openOverHost(Panel
   const std::uint32_t pickH = static_cast<std::uint32_t>(pm.m_activePanel->preferredHeight());
   const std::uint32_t nw = std::max(hostW, pickW);
   const std::uint32_t nh = std::max(hostH, pickH);
-  if (pm.m_surface != nullptr && (nw > pm.m_surface->width() || nh > pm.m_surface->height())) {
+  if (pm.m_surface != nullptr && (nw != pm.m_surface->width() || nh != pm.m_surface->height())) {
     pm.m_surface->requestSize(nw, nh);
   }
+
+  // Attach immediately when a host scene already exists so we do not depend solely
+  // on a later prepare-frame callback to materialize the modal subtree.
+  if (pm.m_sceneRoot != nullptr) {
+    modal->attach(pm);
+  }
+
   if (pm.m_surface != nullptr) {
     pm.m_surface->requestLayout();
+    pm.m_surface->requestRedraw();
   }
 
   return modal;
@@ -179,8 +186,6 @@ void PanelColorPickerModal::prepareFrame(PanelManager& pm, bool needsUpdate, boo
 }
 
 void PanelColorPickerModal::close(PanelManager& pm) {
-  pm.m_animations.cancelAll();
-  pm.m_pointerInside = false;
   if (pm.m_sceneRoot != nullptr && m_modalRoot != nullptr) {
     (void)pm.m_sceneRoot->removeChild(m_modalRoot);
     m_modalRoot = nullptr;
@@ -194,6 +199,8 @@ void PanelColorPickerModal::close(PanelManager& pm) {
   m_hostPanel = nullptr;
   m_hostPanelId.clear();
 
+  // Force input recapture against the host tree after removing the modal subtree.
+  pm.m_inputDispatcher.setSceneRoot(nullptr);
   if (pm.m_sceneRoot != nullptr) {
     pm.m_inputDispatcher.setSceneRoot(pm.m_sceneRoot.get());
   }
