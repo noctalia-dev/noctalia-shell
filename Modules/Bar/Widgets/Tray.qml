@@ -142,7 +142,7 @@ Item {
           continue;
         }
 
-        const title = item.tooltipTitle || item.name || item.id || "";
+        const title = item.id || item.title || item.tooltipTitle || "";
 
         // Skip passive items if hidePassive is enabled
         if (root.hidePassive && item.status !== undefined && (item.status === SystemTray.Passive || item.status === 0)) {
@@ -179,7 +179,7 @@ Item {
         let pinnedItems = [];
         for (var k = 0; k < newItems.length; k++) {
           const item2 = newItems[k];
-          const title2 = item2.tooltipTitle || item2.name || item2.id || "";
+          const title2 = item2.id || item2.title || item2.tooltipTitle || "";
           for (var m = 0; m < pinned.length; m++) {
             const rule2 = pinned[m];
             if (wildCardMatch(title2, rule2)) {
@@ -470,7 +470,7 @@ Item {
                 popupMenuWindow.close();
               }
               root.hoveredItemIndex = trayDelegate.index;
-              TooltipService.show(tooltipAnchor, modelData.tooltipTitle || modelData.name || modelData.id || "Tray Item", BarService.getTooltipDirection(root.screen?.name));
+              TooltipService.show(tooltipAnchor, modelData.tooltipTitle || modelData.title || modelData.id || "Tray Item", BarService.getTooltipDirection(root.screen?.name));
             } else if (root.hoveredItemIndex === trayDelegate.index) {
               root.hoveredItemIndex = -1;
               TooltipService.hide(tooltipAnchor);

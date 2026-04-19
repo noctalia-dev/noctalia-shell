@@ -128,7 +128,7 @@ SmartPanel {
     function isPinned(item) {
       if (!pinnedList || pinnedList.length === 0)
         return false;
-      const title = item?.tooltipTitle || item?.name || item?.id || "";
+      const title = item?.id || item?.title || item?.tooltipTitle || "";
       for (var i = 0; i < pinnedList.length; i++) {
         if (wildCardMatch(title, pinnedList[i]))
           return true;
@@ -277,7 +277,7 @@ SmartPanel {
                 if (panelContent.popupMenuWindow) {
                   panelContent.popupMenuWindow.close();
                 }
-                TooltipService.show(trayIcon, modelData.tooltipTitle || modelData.name || modelData.id || "Tray Item", BarService.getTooltipDirection(root.screen?.name));
+                TooltipService.show(trayIcon, modelData.tooltipTitle || modelData.title || modelData.id || "Tray Item", BarService.getTooltipDirection(root.screen?.name));
               }
               onExited: TooltipService.hide()
             }

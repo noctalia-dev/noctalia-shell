@@ -33,7 +33,7 @@ PopupWindow {
     if (!widgetSettings || widgetSettings.id !== "Tray")
       return false;
     var pinnedList = widgetSettings.pinned || [];
-    const itemName = trayItem.tooltipTitle || trayItem.name || trayItem.id || "";
+    const itemName = trayItem.id || trayItem.title || trayItem.tooltipTitle || "";
     for (var i = 0; i < pinnedList.length; i++) {
       if (pinnedList[i] === itemName)
         return true;
@@ -552,7 +552,7 @@ PopupWindow {
       Logger.w("TrayMenu", "Cannot pin: missing tray item or widget info");
       return;
     }
-    const itemName = trayItem.tooltipTitle || trayItem.name || trayItem.id || "";
+    const itemName = trayItem.id || trayItem.title || trayItem.tooltipTitle || "";
     if (!itemName) {
       Logger.w("TrayMenu", "Cannot pin: tray item has no name");
       return;
@@ -598,7 +598,7 @@ PopupWindow {
       Logger.w("TrayMenu", "Cannot unpin: missing tray item or widget info");
       return;
     }
-    const itemName = trayItem.tooltipTitle || trayItem.name || trayItem.id || "";
+    const itemName = trayItem.id || trayItem.title || trayItem.tooltipTitle || "";
     if (!itemName) {
       Logger.w("TrayMenu", "Cannot unpin: tray item has no name");
       return;
