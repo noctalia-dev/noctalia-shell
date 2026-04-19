@@ -822,6 +822,7 @@ layer-rule {
 ```toml
 [overview]
 enabled          = false
+unload_when_not_in_use = true  # release overview resources while closed; set false to keep them warm in VRAM
 blur_intensity   = 0.5   # 0.0 = no blur, 1.0 = maximum blur
 tint_intensity   = 0.3   # 0.0 = no tint, 1.0 = fully opaque tint
 ```
@@ -1326,6 +1327,7 @@ end      = ["volume", "clock"]
 
 [overview]
 enabled        = true
+unload_when_not_in_use = true
 blur_intensity = 0.6
 tint_intensity = 0.35
 

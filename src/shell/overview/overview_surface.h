@@ -23,6 +23,7 @@ public:
     m_tintG = g;
     m_tintB = b;
   }
+  void setUnloadWhenInactive(bool v) noexcept { m_unloadWhenInactive = v; }
   void setActive(bool active);
   void setWallpaperState(GLuint tex, float imgW, float imgH, WallpaperFillMode fillMode);
 
@@ -57,5 +58,6 @@ private:
   float m_tintR = 0.0f;
   float m_tintG = 0.0f;
   float m_tintB = 0.0f;
+  bool m_unloadWhenInactive = true;
   bool m_active = true;
 };

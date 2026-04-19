@@ -1448,6 +1448,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
     auto& ov = m_config.overview;
     if (auto v = (*ovTbl)["enabled"].value<bool>())
       ov.enabled = *v;
+    if (auto v = (*ovTbl)["unload_when_not_in_use"].value<bool>())
+      ov.unloadWhenNotInUse = *v;
     if (auto v = (*ovTbl)["blur_intensity"].value<double>())
       ov.blurIntensity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
     if (auto v = (*ovTbl)["tint_intensity"].value<double>())

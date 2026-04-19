@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/timer_manager.h"
 #include "shell/overview/overview_instance.h"
 
 #include <memory>
@@ -28,6 +29,7 @@ public:
 
 private:
   void reload();
+  void destroyInstances();
   void syncInstances();
   void createInstance(const WaylandOutput& output);
   void loadWallpaper(OverviewInstance& inst, const std::string& path);
@@ -40,4 +42,5 @@ private:
   GlSharedContext* m_sharedGl = nullptr;
   std::vector<std::unique_ptr<OverviewInstance>> m_instances;
   bool m_active = true;
+  Timer m_destroyDelayTimer;
 };

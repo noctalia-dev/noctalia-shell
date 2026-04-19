@@ -29,7 +29,8 @@ varying vec2 v_texcoord;
 void main() {
     // FBOs use GL convention (Y=0 at bottom), EGL window surfaces have Y=0 at top.
     // Flip V to compensate.
-    gl_FragColor = texture2D(u_texture, vec2(v_texcoord.x, 1.0 - v_texcoord.y));
+    vec4 c = texture2D(u_texture, vec2(v_texcoord.x, 1.0 - v_texcoord.y));
+    gl_FragColor = c;
 }
 )";
 
@@ -98,13 +99,37 @@ void OverviewSurface::render() {
   // 3 rounds of H+V blur gives effective sigma ≈ radius * sqrt(3), much stronger result.
   static constexpr int kBlurRounds = 3;
   const float blurRadius = m_blurIntensity * 40.0f;
+  const auto blitToScreen = [this](GLuint texture) {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, static_cast<GLsizei>(m_bufW), static_cast<GLsizei>(m_bufH));
+    glDisable(GL_BLEND);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glUseProgram(m_blitProgram.id());
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    const GLint texLoc = glGetUniformLocation(m_blitProgram.id(), "u_texture");
+    glUniform1i(texLoc, 0);
+    const GLint posAttr = glGetAttribLocation(m_blitProgram.id(), "a_position");
+    static constexpr float kQuad[] = {
+        0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+    };
+    glVertexAttribPointer(static_cast<GLuint>(posAttr), 2, GL_FLOAT, GL_FALSE, 0, kQuad);
+    glEnableVertexAttribArray(static_cast<GLuint>(posAttr));
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDisableVertexAttribArray(static_cast<GLuint>(posAttr));
+  };
 
   if (blurRadius < 0.5f) {
-    // No blur — render wallpaper directly to screen, then tint
-    m_wallpaperRenderer.renderToFbo(0);
+    // No blur — render wallpaper to FBO1, tint there, then blit to screen.
+    ensurePrograms();
+    ensureFbos();
+    m_wallpaperRenderer.renderToFbo(m_fbo1);
 
     if (m_tintIntensity > 0.001f) {
-      ensurePrograms();
+      glBindFramebuffer(GL_FRAMEBUFFER, m_fbo1);
+      glViewport(0, 0, static_cast<GLsizei>(m_bufW), static_cast<GLsizei>(m_bufH));
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
       glUseProgram(m_tintProgram.id());
@@ -119,6 +144,8 @@ void OverviewSurface::render() {
       glDrawArrays(GL_TRIANGLES, 0, 6);
       glDisableVertexAttribArray(static_cast<GLuint>(posAttr));
     }
+
+    blitToScreen(m_fboTex1);
 
     m_wallpaperRenderer.swapBuffers();
     return;
@@ -144,28 +171,9 @@ void OverviewSurface::render() {
     m_blurProgram.draw(m_fboTex2, m_bufW, m_bufH, 0.0f, 1.0f, blurRadius);
   }
 
-  // Blit blurred result to screen
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, static_cast<GLsizei>(m_bufW), static_cast<GLsizei>(m_bufH));
-  glDisable(GL_BLEND);
-
-  {
-    glUseProgram(m_blitProgram.id());
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_fboTex1);
-    GLint texLoc = glGetUniformLocation(m_blitProgram.id(), "u_texture");
-    glUniform1i(texLoc, 0);
-    GLint posAttr = glGetAttribLocation(m_blitProgram.id(), "a_position");
-    static constexpr float kQuad[] = {
-        0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-    };
-    glVertexAttribPointer(static_cast<GLuint>(posAttr), 2, GL_FLOAT, GL_FALSE, 0, kQuad);
-    glEnableVertexAttribArray(static_cast<GLuint>(posAttr));
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glDisableVertexAttribArray(static_cast<GLuint>(posAttr));
-  }
-
   if (m_tintIntensity > 0.001f) {
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo1);
+    glViewport(0, 0, static_cast<GLsizei>(m_bufW), static_cast<GLsizei>(m_bufH));
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glUseProgram(m_tintProgram.id());
@@ -181,6 +189,8 @@ void OverviewSurface::render() {
     glDisableVertexAttribArray(static_cast<GLuint>(posAttr));
   }
 
+  blitToScreen(m_fboTex1);
+
   m_wallpaperRenderer.swapBuffers();
 }
 
@@ -189,7 +199,7 @@ void OverviewSurface::setActive(bool active) {
     return;
   }
   m_active = active;
-  if (!m_active) {
+  if (!m_active && m_unloadWhenInactive) {
     // Free blur render targets while overview is inactive to drop VRAM usage.
     m_wallpaperRenderer.makeCurrent();
     destroyFbos();

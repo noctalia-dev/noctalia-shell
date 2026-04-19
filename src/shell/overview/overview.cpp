@@ -12,11 +12,19 @@
 namespace {
 
   constexpr Logger kLog("overview");
+  constexpr auto kDestroyDelay = std::chrono::milliseconds(2000);
 
 } // namespace
 
 Overview::Overview() = default;
 Overview::~Overview() = default;
+
+void Overview::destroyInstances() {
+  for (auto& inst : m_instances) {
+    releaseInstanceTexture(*inst);
+  }
+  m_instances.clear();
+}
 
 bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache,
                           GlSharedContext* sharedGl) {
@@ -41,16 +49,14 @@ bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, Sha
 
 void Overview::reload() {
   kLog.info("reloading config");
+  m_destroyDelayTimer.stop();
 
   // Always tear down existing instances. This is necessary because a
   // wallpaper enable/disable cycle resets the wallpaper share context, and any
   // overview instances created against the old context cannot access the new
   // textures. Full teardown + recreate is safe since overview surfaces are
   // hidden by the compositor outside of overview mode (no visible flash).
-  for (auto& inst : m_instances) {
-    releaseInstanceTexture(*inst);
-  }
-  m_instances.clear();
+  destroyInstances();
 
   if (!m_config->config().overview.enabled) {
     return;
@@ -115,20 +121,30 @@ void Overview::setActive(bool active) {
     return;
   }
   m_active = active;
+  const bool unloadWhenNotInUse = (m_config != nullptr) ? m_config->config().overview.unloadWhenNotInUse : true;
 
   if (!m_active) {
     for (auto& inst : m_instances) {
       if (inst->surface != nullptr) {
         inst->surface->setActive(false);
       }
-      releaseInstanceTexture(*inst, false);
     }
-    // Drop layer surfaces entirely so overview GL/EGL buffers are released.
-    m_instances.clear();
+    if (unloadWhenNotInUse) {
+      m_destroyDelayTimer.start(kDestroyDelay, [this]() {
+        if (!m_active) {
+          destroyInstances();
+        }
+      });
+    } else {
+      m_destroyDelayTimer.stop();
+    }
     return;
   }
 
-  syncInstances();
+  m_destroyDelayTimer.stop();
+  if (m_instances.empty()) {
+    syncInstances();
+  }
   for (auto& inst : m_instances) {
     if (inst->surface == nullptr) {
       continue;
@@ -246,6 +262,7 @@ void Overview::updateRendererState(OverviewInstance& inst) {
   }
 
   const auto& ov = m_config->config().overview;
+  inst.surface->setUnloadWhenInactive(ov.unloadWhenNotInUse);
   inst.surface->setBlurIntensity(ov.blurIntensity);
   inst.surface->setTintIntensity(ov.tintIntensity);
 
