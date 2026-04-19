@@ -110,6 +110,9 @@ private:
   void updateSelectionVisuals(OverlaySurface& surface);
   void addWidget(const std::string& outputName, const std::string& type);
   void removeSelectedWidget();
+  void sendSelectedWidgetToBack();
+  void bringSelectedWidgetToFront();
+  void deferEditorMutation(std::function<void()> action);
   void requestExit();
   void startDrag(DragMode mode, const std::string& widgetId, bool rebuildOnFinish,
                  ScaleCorner scaleCorner = ScaleCorner::BottomRight);
