@@ -28,6 +28,7 @@ public:
   void create() override;
   void onOpen(std::string_view context) override;
   void onClose() override;
+  [[nodiscard]] bool handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, bool pressed, bool preedit) override;
 
   [[nodiscard]] float preferredWidth() const override { return scaled(1100.0f); }
   [[nodiscard]] float preferredHeight() const override { return scaled(720.0f); }
