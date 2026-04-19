@@ -16,6 +16,8 @@ namespace {
            format.find("%X") != std::string::npos;
   }
 
+  float clockFontSize(float contentScale) { return Style::fontSizeBody * 4.0f * contentScale; }
+
 } // namespace
 
 DesktopClockWidget::DesktopClockWidget(const TimeService& timeService, std::string format)
@@ -29,7 +31,7 @@ void DesktopClockWidget::create() {
   label->setTextAlign(TextAlign::Center);
   label->setStableBaseline(true);
   label->setColor(roleColor(ColorRole::OnSurface));
-  label->setFontSize(Style::fontSizeBody * 4.0f * m_contentScale);
+  label->setFontSize(clockFontSize(contentScale()));
   m_label = label.get();
 
   rootNode->addChild(std::move(label));
@@ -45,6 +47,7 @@ void DesktopClockWidget::doLayout(Renderer& renderer) {
     return;
   }
 
+  m_label->setFontSize(clockFontSize(contentScale()));
   update(renderer);
   m_label->measure(renderer);
   m_label->setPosition(0.0f, 0.0f);
@@ -56,6 +59,7 @@ void DesktopClockWidget::doUpdate(Renderer& renderer) {
     return;
   }
 
+  m_label->setFontSize(clockFontSize(contentScale()));
   const std::string text = formatText();
   if (text == m_lastText) {
     return;

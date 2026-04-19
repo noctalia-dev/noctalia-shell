@@ -151,8 +151,8 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
     return;
   }
 
-  auto widget =
-      m_factory->create(state.type, state.settings, m_config != nullptr ? m_config->config().shell.uiScale : 1.0f);
+  const float baseUiScale = m_config != nullptr ? m_config->config().shell.uiScale : 1.0f;
+  auto widget = m_factory->create(state.type, state.settings, desktop_widgets::widgetContentScale(baseUiScale, state));
   if (widget == nullptr) {
     return;
   }
@@ -171,9 +171,8 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
 
   const float outW = desktop_widgets::outputLogicalWidth(output);
   const float outH = desktop_widgets::outputLogicalHeight(output);
-  const WidgetTransformClippedGeometry geometry =
-      computeClippedWidgetSurfaceGeometry(clampedState.cx, clampedState.cy, intrinsicWidth, intrinsicHeight,
-                                          clampedState.scale, clampedState.rotationRad, outW, outH);
+  const WidgetTransformClippedGeometry geometry = computeClippedWidgetSurfaceGeometry(
+      clampedState.cx, clampedState.cy, intrinsicWidth, intrinsicHeight, 1.0f, clampedState.rotationRad, outW, outH);
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-desktop-widget",
@@ -254,6 +253,9 @@ void DesktopWidgetsHost::prepareFrame(DesktopWidgetInstance& instance, bool need
 
   buildScene(instance);
 
+  const float baseUiScale = m_config != nullptr ? m_config->config().shell.uiScale : 1.0f;
+  instance.widget->setContentScale(desktop_widgets::widgetContentScale(baseUiScale, instance.state));
+
   if (needsUpdate) {
     instance.widget->update(*m_renderContext);
   }
@@ -277,9 +279,9 @@ void DesktopWidgetsHost::prepareFrame(DesktopWidgetInstance& instance, bool need
     }
   }
 
-  const WidgetTransformClippedGeometry geometry = computeClippedWidgetSurfaceGeometry(
-      instance.state.cx, instance.state.cy, instance.intrinsicWidth, instance.intrinsicHeight, instance.state.scale,
-      instance.state.rotationRad, outputW, outputH);
+  const WidgetTransformClippedGeometry geometry =
+      computeClippedWidgetSurfaceGeometry(instance.state.cx, instance.state.cy, instance.intrinsicWidth,
+                                          instance.intrinsicHeight, 1.0f, instance.state.rotationRad, outputW, outputH);
 
   if (instance.surface->width() != geometry.surfaceWidth || instance.surface->height() != geometry.surfaceHeight) {
     instance.surface->requestSize(geometry.surfaceWidth, geometry.surfaceHeight);
@@ -295,6 +297,6 @@ void DesktopWidgetsHost::prepareFrame(DesktopWidgetInstance& instance, bool need
     instance.transformNode->setPosition(geometry.contentOffsetX - instance.intrinsicWidth * 0.5f,
                                         geometry.contentOffsetY - instance.intrinsicHeight * 0.5f);
     instance.transformNode->setRotation(instance.state.rotationRad);
-    instance.transformNode->setScale(instance.state.scale);
+    instance.transformNode->setScale(1.0f);
   }
 }

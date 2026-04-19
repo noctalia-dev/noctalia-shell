@@ -9,6 +9,10 @@
 
 namespace desktop_widgets {
 
+  inline float widgetContentScale(float baseUiScale, const DesktopWidgetState& state) {
+    return std::max(0.01f, baseUiScale) * std::max(0.01f, state.scale);
+  }
+
   inline std::string outputKey(const WaylandOutput& output) {
     if (!output.connectorName.empty()) {
       return output.connectorName;
@@ -51,7 +55,9 @@ namespace desktop_widgets {
   // Single source of truth for desktop widget coordinate clamping. Edit mode, default mode, and
   // snapshot normalization all route through here so the visibility rule stays identical. Resolves
   // the widget's effective output, then constrains state.cx/cy so that at least
-  // kDesktopWidgetMinVisibleFraction of the widget's transformed AABB remains on screen.
+  // kDesktopWidgetMinVisibleFraction of the widget's rotated AABB remains on screen. The caller
+  // passes the widget's current content-scaled intrinsic size, so state.scale is already reflected
+  // in intrinsicWidth/intrinsicHeight and must not be applied again as a transform multiplier here.
   inline const WaylandOutput* clampStateToOutput(const WaylandConnection& wayland, DesktopWidgetState& state,
                                                  float intrinsicWidth, float intrinsicHeight) {
     const WaylandOutput* output = resolveEffectiveOutput(wayland, state.outputName);
@@ -59,8 +65,8 @@ namespace desktop_widgets {
       return nullptr;
     }
     const WidgetTransformClampResult clamped = clampWidgetCenterToOutput(
-        state.cx, state.cy, intrinsicWidth, intrinsicHeight, state.scale, state.rotationRad,
-        outputLogicalWidth(*output), outputLogicalHeight(*output), kDesktopWidgetMinVisibleFraction);
+        state.cx, state.cy, intrinsicWidth, intrinsicHeight, 1.0f, state.rotationRad, outputLogicalWidth(*output),
+        outputLogicalHeight(*output), kDesktopWidgetMinVisibleFraction);
     state.cx = clamped.cx;
     state.cy = clamped.cy;
     return output;
