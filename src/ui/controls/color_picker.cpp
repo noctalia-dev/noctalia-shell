@@ -1,0 +1,586 @@
+#include "ui/controls/color_picker.h"
+
+#include "cursor-shape-v1-client-protocol.h"
+#include "render/core/renderer.h"
+#include "render/core/texture_manager.h"
+#include "render/scene/input_area.h"
+#include "ui/controls/box.h"
+#include "ui/controls/button.h"
+#include "ui/controls/image.h"
+#include "ui/controls/input.h"
+#include "ui/controls/label.h"
+#include "ui/palette.h"
+#include "ui/style.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <linux/input-event-codes.h>
+#include <memory>
+#include <string>
+
+namespace {
+
+  Color colorFromHsv(float h, float s, float v) {
+    h = h - std::floor(h);
+    const float S = std::clamp(s, 0.0f, 1.0f);
+    const float V = std::clamp(v, 0.0f, 1.0f);
+    const float C = V * S;
+    const float hh = h * 6.0f;
+    const float X = C * (1.0f - std::fabs(std::fmod(hh, 2.0f) - 1.0f));
+    float rp = 0.0f;
+    float gp = 0.0f;
+    float bp = 0.0f;
+    const int sector = static_cast<int>(hh);
+    switch (sector % 6) {
+    case 0:
+      rp = C;
+      gp = X;
+      break;
+    case 1:
+      rp = X;
+      gp = C;
+      break;
+    case 2:
+      gp = C;
+      bp = X;
+      break;
+    case 3:
+      gp = X;
+      bp = C;
+      break;
+    case 4:
+      rp = X;
+      bp = C;
+      break;
+    default:
+      rp = C;
+      bp = X;
+      break;
+    }
+    const float m = V - C;
+    return rgba(rp + m, gp + m, bp + m, 1.0f);
+  }
+
+  void rgbToHsv(const Color& rgb, float& h, float& s, float& v) {
+    const float r = rgb.r;
+    const float g = rgb.g;
+    const float b = rgb.b;
+    const float maxc = std::max({r, g, b});
+    const float minc = std::min({r, g, b});
+    const float d = maxc - minc;
+    v = maxc;
+    if (maxc <= 1e-6f) {
+      s = 0.0f;
+      h = 0.0f;
+      return;
+    }
+    s = d / maxc;
+    if (d <= 1e-6f) {
+      h = 0.0f;
+      return;
+    }
+    if (maxc == r) {
+      h = (g - b) / d + (g < b ? 6.0f : 0.0f);
+    } else if (maxc == g) {
+      h = (b - r) / d + 2.0f;
+    } else {
+      h = (r - g) / d + 4.0f;
+    }
+    h /= 6.0f;
+    h = h - std::floor(h);
+  }
+
+  std::string formatRgbHex(const Color& c) {
+    auto u = [](float x) { return static_cast<int>(std::lround(std::clamp(x, 0.0f, 1.0f) * 255.0f)); };
+    char buf[16];
+    std::snprintf(buf, sizeof(buf), "#%02X%02X%02X", u(c.r), u(c.g), u(c.b));
+    return std::string(buf);
+  }
+
+  bool parseHexColor(std::string_view in, Color& out) {
+    while (!in.empty() && (in.front() == ' ' || in.front() == '\t')) {
+      in.remove_prefix(1);
+    }
+    if (in.size() >= 1 && in.front() == '#') {
+      in.remove_prefix(1);
+    }
+    if (in.size() < 6) {
+      return false;
+    }
+    auto hexVal = [](char c) -> int {
+      if (c >= '0' && c <= '9') {
+        return c - '0';
+      }
+      if (c >= 'a' && c <= 'f') {
+        return 10 + (c - 'a');
+      }
+      if (c >= 'A' && c <= 'F') {
+        return 10 + (c - 'A');
+      }
+      return -1;
+    };
+    const int rH = hexVal(in[0]);
+    const int rL = hexVal(in[1]);
+    const int gH = hexVal(in[2]);
+    const int gL = hexVal(in[3]);
+    const int bH = hexVal(in[4]);
+    const int bL = hexVal(in[5]);
+    if (rH < 0 || rL < 0 || gH < 0 || gL < 0 || bH < 0 || bL < 0) {
+      return false;
+    }
+    const int r = (rH << 4) | rL;
+    const int g = (gH << 4) | gL;
+    const int b = (bH << 4) | bL;
+    out = rgba(static_cast<float>(r) / 255.0f, static_cast<float>(g) / 255.0f, static_cast<float>(b) / 255.0f, 1.0f);
+    return true;
+  }
+
+  int parseIntClamp(const std::string& s, int lo, int hi) {
+    try {
+      const long v = std::stol(s);
+      return static_cast<int>(std::clamp(v, static_cast<long>(lo), static_cast<long>(hi)));
+    } catch (...) {
+      return lo;
+    }
+  }
+
+} // namespace
+
+Color ColorPicker::colorAtSv(float h, float s, float v) {
+  const Color chroma = colorFromHsv(h, 1.0f, 1.0f);
+  const Color top = lerpColor(rgba(1.0f, 1.0f, 1.0f, 1.0f), chroma, s);
+  return lerpColor(rgba(0.0f, 0.0f, 0.0f, 1.0f), top, v);
+}
+
+float ColorPicker::intrinsicColumnHeight(float pickerWidth, float scale) {
+  const float s = std::max(0.1f, scale);
+  const float pw = std::max(120.0f, pickerWidth);
+  const float stripH = std::max(10.0f, 12.0f * s);
+  const float labelLine = Style::fontSizeCaption * s * 1.4f;
+  const float fieldRowH = labelLine + Style::spaceXs * 0.5f * s + Style::controlHeightSm * s;
+  const float gapSm = Style::spaceSm * s;
+  return pw + stripH + fieldRowH + 2.0f * gapSm;
+}
+
+ColorPicker::ColorPicker() {
+  setDirection(FlexDirection::Vertical);
+  setAlign(FlexAlign::Stretch);
+  setGap(Style::spaceSm);
+  setPadding(0.0f);
+
+  auto svImage = std::make_unique<Image>();
+  svImage->setFit(ImageFit::Stretch);
+  svImage->setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
+  m_svImage = static_cast<Image*>(addChild(std::move(svImage)));
+
+  constexpr int kHueSegments = 36;
+  auto hueStrip = std::make_unique<Flex>();
+  hueStrip->setDirection(FlexDirection::Horizontal);
+  hueStrip->setGap(0.0f);
+  hueStrip->setAlign(FlexAlign::Stretch);
+  m_hueStrip = hueStrip.get();
+  for (int i = 0; i < kHueSegments; ++i) {
+    const float t = static_cast<float>(i) / static_cast<float>(kHueSegments - 1);
+    auto seg = std::make_unique<Box>();
+    seg->setFlexGrow(1.0f);
+    seg->clearBorder();
+    seg->setRadius(0.0f);
+    seg->setFill(colorFromHsv(t, 1.0f, 1.0f));
+    hueStrip->addChild(std::move(seg));
+  }
+  addChild(std::move(hueStrip));
+
+  auto fields = std::make_unique<Flex>();
+  fields->setDirection(FlexDirection::Horizontal);
+  fields->setAlign(FlexAlign::Center);
+  fields->setGap(Style::spaceSm);
+  fields->setJustify(FlexJustify::Start);
+  m_fieldsRow = fields.get();
+
+  auto addField = [this](const char* title, float w) {
+    auto col = std::make_unique<Flex>();
+    col->setDirection(FlexDirection::Vertical);
+    col->setGap(Style::spaceXs * 0.5f);
+    col->setAlign(FlexAlign::Stretch);
+    auto lab = std::make_unique<Label>();
+    lab->setText(title);
+    lab->setFontSize(Style::fontSizeCaption);
+    lab->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    col->addChild(std::move(lab));
+    auto in = std::make_unique<Input>();
+    in->setControlHeight(Style::controlHeightSm);
+    in->setHorizontalPadding(Style::spaceSm);
+    in->setFontSize(Style::fontSizeCaption);
+    in->setSize(w, 0.0f);
+    Input* inp = in.get();
+    col->addChild(std::move(in));
+    m_fieldsRow->addChild(std::move(col));
+    return inp;
+  };
+
+  m_hexInput = addField("Hex", 108.0f);
+  m_rInput = addField("R", 44.0f);
+  m_gInput = addField("G", 44.0f);
+  m_bInput = addField("B", 44.0f);
+
+  m_hexInput->setOnChange([this](const std::string& v) { onHexInputChange(v); });
+  m_rInput->setOnChange([this](const std::string& /*v*/) { onRgbInputChange(); });
+  m_gInput->setOnChange([this](const std::string& /*v*/) { onRgbInputChange(); });
+  m_bInput->setOnChange([this](const std::string& /*v*/) { onRgbInputChange(); });
+
+  addChild(std::move(fields));
+
+  auto svInput = std::make_unique<InputArea>();
+  svInput->setParticipatesInLayout(false);
+  svInput->setZIndex(10);
+  svInput->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
+  svInput->setOnPress([this](const InputArea::PointerData& data) {
+    if (!data.pressed || data.button != BTN_LEFT) {
+      return;
+    }
+    applyPickFromSv(data.localX, data.localY);
+  });
+  svInput->setOnMotion([this](const InputArea::PointerData& data) {
+    if (m_svInput == nullptr || !m_svInput->pressed()) {
+      return;
+    }
+    applyPickFromSv(data.localX, data.localY);
+  });
+  m_svInput = static_cast<InputArea*>(addChild(std::move(svInput)));
+
+  auto hueInput = std::make_unique<InputArea>();
+  hueInput->setParticipatesInLayout(false);
+  hueInput->setZIndex(10);
+  hueInput->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
+  hueInput->setOnPress([this](const InputArea::PointerData& data) {
+    if (!data.pressed || data.button != BTN_LEFT) {
+      return;
+    }
+    applyPickFromHue(data.localX);
+  });
+  hueInput->setOnMotion([this](const InputArea::PointerData& data) {
+    if (m_hueInput == nullptr || !m_hueInput->pressed()) {
+      return;
+    }
+    applyPickFromHue(data.localX);
+  });
+  m_hueInput = static_cast<InputArea*>(addChild(std::move(hueInput)));
+
+  auto svThumb = std::make_unique<Box>();
+  svThumb->setParticipatesInLayout(false);
+  svThumb->setZIndex(6);
+  svThumb->setSize(20.0f, 20.0f);
+  svThumb->setRadius(10.0f);
+  svThumb->setFill(rgba(0.0f, 0.0f, 0.0f, 0.0f));
+  svThumb->setBorder(rgba(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+  m_svThumb = static_cast<Box*>(addChild(std::move(svThumb)));
+
+  auto hueThumb = std::make_unique<Box>();
+  hueThumb->setParticipatesInLayout(false);
+  hueThumb->setZIndex(6);
+  hueThumb->setSize(18.0f, 18.0f);
+  hueThumb->setRadius(9.0f);
+  m_hueThumb = static_cast<Box*>(addChild(std::move(hueThumb)));
+
+  m_svTextureDirty = true;
+  updateHueThumbStyle();
+  syncFieldsFromColor();
+}
+
+void ColorPicker::setScale(float scale) {
+  m_scale = std::max(0.1f, scale);
+  setGap(Style::spaceSm * m_scale);
+  if (m_fieldsRow != nullptr) {
+    m_fieldsRow->setGap(Style::spaceSm * m_scale);
+  }
+  const float fs = Style::fontSizeCaption * m_scale;
+  const float ch = Style::controlHeightSm * m_scale;
+  const float pad = Style::spaceSm * m_scale;
+  for (Input* in : {m_hexInput, m_rInput, m_gInput, m_bInput}) {
+    if (in != nullptr) {
+      in->setFontSize(fs);
+      in->setControlHeight(ch);
+      in->setHorizontalPadding(pad);
+    }
+  }
+  if (m_svThumb != nullptr) {
+    const float t = 20.0f * m_scale;
+    m_svThumb->setSize(t, t);
+    m_svThumb->setRadius(t * 0.5f);
+    m_svThumb->setBorder(rgba(1.0f, 1.0f, 1.0f, 1.0f), 2.5f * m_scale);
+  }
+  if (m_hueThumb != nullptr) {
+    const float t = 18.0f * m_scale;
+    m_hueThumb->setSize(t, t);
+    m_hueThumb->setRadius(t * 0.5f);
+  }
+  if (m_svImage != nullptr) {
+    m_svImage->setBorder(roleColor(ColorRole::Outline), Style::borderWidth * m_scale);
+  }
+  markLayoutDirty();
+}
+
+void ColorPicker::setPickerWidth(float width) {
+  m_pickerWidth = std::max(120.0f, width);
+  setMinWidth(m_pickerWidth);
+  markLayoutDirty();
+}
+
+void ColorPicker::setColor(const Color& rgba) {
+  m_alpha = rgba.a;
+  rgbToHsv(rgba, m_h, m_s, m_v);
+  m_color = colorFromHsv(m_h, m_s, m_v);
+  m_color.a = m_alpha;
+  m_svTextureDirty = true;
+  updateHueThumbStyle();
+  syncFieldsFromColor();
+  markPaintDirty();
+  markLayoutDirty();
+}
+
+void ColorPicker::setOnColorChanged(std::function<void(const Color&)> callback) {
+  m_onColorChanged = std::move(callback);
+}
+
+void ColorPicker::rebuildSvTexture(Renderer& renderer) {
+  if (m_svImage == nullptr || !m_svTextureDirty) {
+    return;
+  }
+  const int tw = kSvTextureSize;
+  const int th = kSvTextureSize;
+  const std::size_t bytes = static_cast<std::size_t>(tw) * static_cast<std::size_t>(th) * 4U;
+  m_svPixels.resize(bytes);
+  for (int y = 0; y < th; ++y) {
+    const float v = 1.0f - (static_cast<float>(y) + 0.5f) / static_cast<float>(th);
+    for (int x = 0; x < tw; ++x) {
+      const float s = (static_cast<float>(x) + 0.5f) / static_cast<float>(tw);
+      const Color px = colorAtSv(m_h, s, v);
+      const std::size_t o =
+          (static_cast<std::size_t>(y) * static_cast<std::size_t>(tw) + static_cast<std::size_t>(x)) * 4U;
+      m_svPixels[o + 0U] = static_cast<std::uint8_t>(std::lround(std::clamp(px.r, 0.0f, 1.0f) * 255.0f));
+      m_svPixels[o + 1U] = static_cast<std::uint8_t>(std::lround(std::clamp(px.g, 0.0f, 1.0f) * 255.0f));
+      m_svPixels[o + 2U] = static_cast<std::uint8_t>(std::lround(std::clamp(px.b, 0.0f, 1.0f) * 255.0f));
+      m_svPixels[o + 3U] = 255U;
+    }
+  }
+  m_svImage->setSourceRaw(renderer, m_svPixels.data(), m_svPixels.size(), tw, th, tw * 4, PixmapFormat::RGBA, false);
+  m_svTextureDirty = false;
+}
+
+void ColorPicker::syncFieldsFromColor() {
+  m_suppressFieldCallbacks = true;
+  if (m_hexInput != nullptr) {
+    m_hexInput->setValue(formatRgbHex(m_color));
+  }
+  if (m_rInput != nullptr) {
+    m_rInput->setValue(std::to_string(static_cast<int>(std::lround(std::clamp(m_color.r, 0.0f, 1.0f) * 255.0f))));
+  }
+  if (m_gInput != nullptr) {
+    m_gInput->setValue(std::to_string(static_cast<int>(std::lround(std::clamp(m_color.g, 0.0f, 1.0f) * 255.0f))));
+  }
+  if (m_bInput != nullptr) {
+    m_bInput->setValue(std::to_string(static_cast<int>(std::lround(std::clamp(m_color.b, 0.0f, 1.0f) * 255.0f))));
+  }
+  m_suppressFieldCallbacks = false;
+}
+
+void ColorPicker::updateHueThumbStyle() {
+  if (m_hueThumb != nullptr) {
+    m_hueThumb->setFill(colorFromHsv(m_h, 1.0f, 1.0f));
+    m_hueThumb->setBorder(rgba(1.0f, 1.0f, 1.0f, 1.0f), 2.0f * m_scale);
+  }
+}
+
+void ColorPicker::applyPickFromSv(float localX, float localY) {
+  if (m_svImage == nullptr) {
+    return;
+  }
+  const float w = m_svImage->width();
+  const float h = m_svImage->height();
+  if (w <= 0.0f || h <= 0.0f) {
+    return;
+  }
+  m_s = std::clamp(localX / w, 0.0f, 1.0f);
+  m_v = std::clamp(1.0f - localY / h, 0.0f, 1.0f);
+  m_color = colorFromHsv(m_h, m_s, m_v);
+  m_color.a = m_alpha;
+  syncFieldsFromColor();
+  markPaintDirty();
+  positionOverlays();
+  if (m_onColorChanged) {
+    m_onColorChanged(m_color);
+  }
+}
+
+void ColorPicker::applyPickFromHue(float localX) {
+  if (m_hueStrip == nullptr) {
+    return;
+  }
+  const float w = m_hueStrip->width();
+  if (w <= 0.0f) {
+    return;
+  }
+  m_h = std::clamp(localX / w, 0.0f, 1.0f);
+  m_svTextureDirty = true;
+  m_color = colorFromHsv(m_h, m_s, m_v);
+  m_color.a = m_alpha;
+  syncFieldsFromColor();
+  updateHueThumbStyle();
+  markPaintDirty();
+  markLayoutDirty();
+  positionOverlays();
+  if (m_onColorChanged) {
+    m_onColorChanged(m_color);
+  }
+}
+
+void ColorPicker::onHexInputChange(const std::string& value) {
+  if (m_suppressFieldCallbacks) {
+    return;
+  }
+  Color parsed{};
+  if (!parseHexColor(value, parsed)) {
+    return;
+  }
+  parsed.a = m_alpha;
+  setColor(parsed);
+  if (m_onColorChanged) {
+    m_onColorChanged(m_color);
+  }
+}
+
+void ColorPicker::onRgbInputChange() {
+  if (m_suppressFieldCallbacks || m_rInput == nullptr || m_gInput == nullptr || m_bInput == nullptr) {
+    return;
+  }
+  const int r = parseIntClamp(m_rInput->value(), 0, 255);
+  const int g = parseIntClamp(m_gInput->value(), 0, 255);
+  const int b = parseIntClamp(m_bInput->value(), 0, 255);
+  Color c =
+      rgba(static_cast<float>(r) / 255.0f, static_cast<float>(g) / 255.0f, static_cast<float>(b) / 255.0f, m_alpha);
+  setColor(c);
+  if (m_onColorChanged) {
+    m_onColorChanged(m_color);
+  }
+}
+
+void ColorPicker::positionOverlays() {
+  if (m_svImage != nullptr && m_svInput != nullptr) {
+    m_svInput->setPosition(m_svImage->x(), m_svImage->y());
+    m_svInput->setFrameSize(m_svImage->width(), m_svImage->height());
+  }
+  if (m_hueStrip != nullptr && m_hueInput != nullptr) {
+    m_hueInput->setPosition(m_hueStrip->x(), m_hueStrip->y());
+    m_hueInput->setFrameSize(m_hueStrip->width(), m_hueStrip->height());
+  }
+  if (m_svImage != nullptr && m_svThumb != nullptr) {
+    const float w = m_svImage->width();
+    const float h = m_svImage->height();
+    const float cx = m_svImage->x() + m_s * w;
+    const float cy = m_svImage->y() + (1.0f - m_v) * h;
+    m_svThumb->setPosition(cx - m_svThumb->width() * 0.5f, cy - m_svThumb->height() * 0.5f);
+  }
+  if (m_hueStrip != nullptr && m_hueThumb != nullptr) {
+    const float stripW = m_hueStrip->width();
+    const float cx = m_hueStrip->x() + m_h * stripW;
+    const float x =
+        std::clamp(cx - m_hueThumb->width() * 0.5f, m_hueStrip->x(), m_hueStrip->x() + stripW - m_hueThumb->width());
+    const float y = m_hueStrip->y() + (m_hueStrip->height() - m_hueThumb->height()) * 0.5f;
+    m_hueThumb->setPosition(x, y);
+  }
+}
+
+void ColorPicker::doLayout(Renderer& renderer) {
+  const float pw = m_pickerWidth;
+  const float stripH = std::max(10.0f, 12.0f * m_scale);
+
+  if (m_svImage != nullptr) {
+    m_svImage->setSize(pw, pw);
+    m_svImage->layout(renderer);
+    rebuildSvTexture(renderer);
+  }
+  if (m_hueStrip != nullptr) {
+    m_hueStrip->setSize(pw, stripH);
+    m_hueStrip->layout(renderer);
+  }
+  if (m_fieldsRow != nullptr) {
+    m_fieldsRow->setSize(pw, 0.0f);
+    m_fieldsRow->layout(renderer);
+  }
+
+  Flex::doLayout(renderer);
+  positionOverlays();
+}
+
+ColorPickerSheet::ColorPickerSheet(float chromeScale) : m_chromeScale(std::max(0.1f, chromeScale)) {
+  setDirection(FlexDirection::Vertical);
+  setAlign(FlexAlign::Stretch);
+  setGap(Style::spaceMd * m_chromeScale);
+  setPadding(Style::spaceSm * m_chromeScale);
+
+  auto title = std::make_unique<Label>();
+  title->setText("Color");
+  title->setBold(true);
+  title->setFontSize(Style::fontSizeTitle * m_chromeScale);
+  title->setColor(roleColor(ColorRole::Primary));
+  addChild(std::move(title));
+
+  auto picker = std::make_unique<ColorPicker>();
+  picker->setScale(m_chromeScale);
+  m_picker = picker.get();
+  addChild(std::move(picker));
+
+  auto actions = std::make_unique<Flex>();
+  actions->setDirection(FlexDirection::Horizontal);
+  actions->setAlign(FlexAlign::Center);
+  actions->setJustify(FlexJustify::SpaceBetween);
+  actions->setGap(Style::spaceSm * m_chromeScale);
+
+  auto cancel = std::make_unique<Button>();
+  cancel->setText("Cancel");
+  cancel->setVariant(ButtonVariant::Outline);
+  cancel->setMinHeight(Style::controlHeight * m_chromeScale);
+  cancel->setPadding(Style::spaceSm * m_chromeScale, Style::spaceMd * m_chromeScale);
+  cancel->setOnClick([this]() {
+    if (m_onCancel) {
+      m_onCancel();
+    }
+  });
+  actions->addChild(std::move(cancel));
+
+  auto apply = std::make_unique<Button>();
+  apply->setText("Apply");
+  apply->setVariant(ButtonVariant::Default);
+  apply->setMinHeight(Style::controlHeight * m_chromeScale);
+  apply->setPadding(Style::spaceSm * m_chromeScale, Style::spaceMd * m_chromeScale);
+  apply->setOnClick([this]() {
+    if (m_picker != nullptr && m_onApply) {
+      m_onApply(m_picker->color());
+    }
+  });
+  actions->addChild(std::move(apply));
+
+  addChild(std::move(actions));
+}
+
+void ColorPickerSheet::setPickerColumnWidth(float width) {
+  if (m_picker != nullptr) {
+    m_picker->setPickerWidth(width);
+  }
+}
+
+float ColorPickerSheet::preferredPanelWidth(float scale) { return 440.0f * std::max(0.1f, scale); }
+
+float ColorPickerSheet::preferredPanelHeight(float panelWidth, float scale) {
+  const float s = std::max(0.1f, scale);
+  const float pad = Style::spaceSm * s;
+  const float innerW = std::max(160.0f, panelWidth - 2.0f * pad);
+  const float pickerColH = ColorPicker::intrinsicColumnHeight(innerW, s);
+  const float titleH = Style::fontSizeTitle * s * 1.3f;
+  const float actionsH = Style::controlHeight * s + 2.0f * Style::spaceSm * s;
+  const float gapMd = Style::spaceMd * s;
+  return 2.0f * pad + titleH + pickerColH + actionsH + 2.0f * gapMd;
+}

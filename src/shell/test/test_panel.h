@@ -18,6 +18,7 @@ class Toggle;
 class TestPanel : public Panel {
 public:
   void create() override;
+  void onClose() override;
 
   [[nodiscard]] float preferredWidth() const override { return scaled(1280.0f); }
   [[nodiscard]] float preferredHeight() const override { return scaled(900.0f); }
@@ -52,4 +53,6 @@ private:
   Input* m_input = nullptr;
   Label* m_inputValueLabel = nullptr;
   Label* m_transformHelp = nullptr;
+  Box* m_colorPickerResultSwatch = nullptr;
+  Button* m_openColorPickerButton = nullptr;
 };

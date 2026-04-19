@@ -1,6 +1,8 @@
 #include "shell/test/test_panel.h"
 
 #include "render/animation/animation_manager.h"
+#include "render/core/color.h"
+#include "shell/panel/panel_manager.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/checkbox.h"
@@ -362,6 +364,44 @@ void TestPanel::create() {
     container->addChild(std::move(row));
   }
 
+  // Color picker (layer panel)
+  {
+    auto resultSwatch = std::make_unique<Box>();
+    resultSwatch->setSize(28.0f * scale, 28.0f * scale);
+    resultSwatch->setRadius(Style::radiusMd * scale);
+    resultSwatch->setBorder(roleColor(ColorRole::Outline), Style::borderWidth * scale);
+    if (const auto last = PanelManager::instance().lastColorPickerResult()) {
+      resultSwatch->setFill(*last);
+    } else {
+      resultSwatch->setFill(resolveThemeColor(roleColor(ColorRole::Primary)));
+    }
+    m_colorPickerResultSwatch = resultSwatch.get();
+
+    auto openPicker = std::make_unique<Button>();
+    openPicker->setText("Open color picker…");
+    openPicker->setFontSize(Style::fontSizeBody * scale);
+    openPicker->setVariant(ButtonVariant::Default);
+    openPicker->setMinHeight(Style::controlHeight * scale);
+    openPicker->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    openPicker->setRadius(Style::radiusMd * scale);
+    openPicker->setOnClick([this]() {
+      PanelManager::instance().setColorPickerResultCallback([this](const Color& c) {
+        if (m_colorPickerResultSwatch != nullptr) {
+          m_colorPickerResultSwatch->setFill(c);
+        }
+      });
+      PanelManager::instance().togglePanel("color-picker");
+    });
+    m_openColorPickerButton = openPicker.get();
+
+    auto row = makeRow();
+    row->setAlign(FlexAlign::Start);
+    row->addChild(makeRowLabel("Color picker", kRowLabelWidth));
+    row->addChild(std::move(openPicker));
+    row->addChild(std::move(resultSwatch));
+    container->addChild(std::move(row));
+  }
+
   // Grid view
   {
     auto grid = std::make_unique<GridView>();
@@ -528,6 +568,37 @@ void TestPanel::create() {
       }
     });
   }
+}
+
+void TestPanel::onClose() {
+  m_container = nullptr;
+  m_headerLabel = nullptr;
+  m_sliderValueLabel = nullptr;
+  m_toggleValueLabel = nullptr;
+  m_checkboxValueLabel = nullptr;
+  m_button = nullptr;
+  m_select = nullptr;
+  m_glyphTextButton = nullptr;
+  m_glyphButton = nullptr;
+  m_glyphBox = nullptr;
+  m_glyph = nullptr;
+  m_transformStage = nullptr;
+  m_transformDemoBox = nullptr;
+  m_transformDemoGlyph = nullptr;
+  m_transformDemoButton = nullptr;
+  m_transformBadgeBox = nullptr;
+  m_transformBadgeLabel = nullptr;
+  m_slider = nullptr;
+  m_toggle = nullptr;
+  m_checkbox = nullptr;
+  m_radioA = nullptr;
+  m_radioB = nullptr;
+  m_spinner = nullptr;
+  m_input = nullptr;
+  m_inputValueLabel = nullptr;
+  m_transformHelp = nullptr;
+  m_colorPickerResultSwatch = nullptr;
+  m_openColorPickerButton = nullptr;
 }
 
 void TestPanel::doLayout(Renderer& renderer, float /*width*/, float /*height*/) {

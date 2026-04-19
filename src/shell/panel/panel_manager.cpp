@@ -5,7 +5,9 @@
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "ipc/ipc_service.h"
+#include "render/core/renderer.h"
 #include "render/render_context.h"
+#include "shell/color_picker/panel_color_picker_modal.h"
 #include "ui/controls/box.h"
 #include "ui/controls/select.h"
 #include "ui/palette.h"
@@ -14,6 +16,8 @@
 #include "wayland/wayland_seat.h"
 
 #include <algorithm>
+#include <cmath>
+#include <string>
 
 PanelManager* PanelManager::s_instance = nullptr;
 
@@ -74,6 +78,17 @@ void PanelManager::openSettingsWindow() {
   }
 }
 
+void PanelManager::setColorPickerResultCallback(std::function<void(const Color&)> callback) {
+  m_colorPickerResult = std::move(callback);
+}
+
+void PanelManager::notifyColorPickerResult(const Color& color) {
+  m_lastColorPickerResult = color;
+  if (m_colorPickerResult) {
+    m_colorPickerResult(color);
+  }
+}
+
 void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> content) {
   m_panels[id] = std::move(content);
 }
@@ -82,6 +97,13 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
                              std::string_view context) {
   if (m_inTransition) {
     return;
+  }
+
+  if (panelId == "color-picker" && isOpen() && !m_closing && m_activePanelId != "color-picker") {
+    m_colorPickerModal = PanelColorPickerModal::openOverHost(*this, output, anchorX, anchorY, context);
+    if (m_colorPickerModal != nullptr) {
+      return;
+    }
   }
 
   // If a panel is open (or closing), destroy it immediately — no close animation when switching.
@@ -174,6 +196,9 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
   m_surface->setPrepareFrameCallback(
       [this](bool needsUpdate, bool needsLayout) { prepareFrame(needsUpdate, needsLayout); });
   m_surface->setFrameTickCallback([this](float deltaMs) {
+    if (m_colorPickerModal != nullptr) {
+      m_colorPickerModal->frameTickHostIfPresent(*this, deltaMs);
+    }
     if (m_activePanel != nullptr) {
       m_activePanel->onFrameTick(deltaMs);
     }
@@ -202,6 +227,12 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
 
 void PanelManager::closePanel() {
   if (!isOpen() || m_inTransition || m_closing) {
+    return;
+  }
+
+  if (m_colorPickerModal != nullptr) {
+    m_colorPickerModal->close(*this);
+    m_colorPickerModal.reset();
     return;
   }
 
@@ -239,9 +270,14 @@ void PanelManager::destroyPanel() {
   m_closing = false;
   m_pointerInside = false;
   m_inputDispatcher.setSceneRoot(nullptr);
+  if (m_colorPickerModal != nullptr) {
+    m_colorPickerModal->prepareForDestroyPanel(*this);
+    m_colorPickerModal.reset();
+  }
   if (m_activePanel != nullptr) {
     m_activePanel->onClose();
   }
+  m_colorPickerResult = {};
   m_bgNode = nullptr;
   m_contentNode = nullptr;
   m_sceneRoot.reset();
@@ -386,6 +422,15 @@ void PanelManager::requestRedraw() {
 
 void PanelManager::close() { closePanel(); }
 
+void PanelManager::dismissColorPickerPanel() {
+  if (m_colorPickerModal != nullptr) {
+    m_colorPickerModal->close(*this);
+    m_colorPickerModal.reset();
+    return;
+  }
+  closePanel();
+}
+
 void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
   // m_inTransition means wl_display_roundtrip() is running inside initialize().
   // Keyboard events that arrive during this roundtrip (e.g. a buffered Enter from
@@ -498,7 +543,10 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
 }
 
 void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
-  if (m_renderContext == nullptr || m_activePanel == nullptr || m_surface == nullptr) {
+  if (m_renderContext == nullptr || m_surface == nullptr) {
+    return;
+  }
+  if (m_activePanel == nullptr) {
     return;
   }
 
@@ -507,6 +555,12 @@ void PanelManager::prepareFrame(bool needsUpdate, bool needsLayout) {
 
   const auto width = m_surface->width();
   const auto height = m_surface->height();
+
+  if (m_colorPickerModal != nullptr) {
+    m_colorPickerModal->prepareFrame(*this, needsUpdate, needsLayout);
+    return;
+  }
+
   const bool needsSceneBuild = m_sceneRoot == nullptr ||
                                static_cast<std::uint32_t>(std::round(m_sceneRoot->width())) != width ||
                                static_cast<std::uint32_t>(std::round(m_sceneRoot->height())) != height;

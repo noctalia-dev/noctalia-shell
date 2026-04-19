@@ -13,6 +13,7 @@
 #include "render/animation/motion_service.h"
 #include "shell/clipboard/clipboard_panel.h"
 #include "shell/clipboard/clipboard_paste.h"
+#include "shell/color_picker/color_picker_panel.h"
 #include "shell/control_center/control_center_panel.h"
 #include "shell/launcher/launcher_panel.h"
 #include "shell/session/session_panel.h"
@@ -678,6 +679,7 @@ void Application::initUi() {
   m_panelManager.registerPanel("clipboard", std::move(clipboardPanel));
   m_panelManager.registerPanel("session", std::make_unique<SessionPanel>(&m_configService, m_sessionActionHooks));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
+  m_panelManager.registerPanel("color-picker", std::make_unique<ColorPickerPanel>());
   m_panelManager.registerPanel(
       "control-center", std::make_unique<ControlCenterPanel>(
                             &m_notificationManager, m_pipewireService.get(), m_mprisService.get(), &m_configService,

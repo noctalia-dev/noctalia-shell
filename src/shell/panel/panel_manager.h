@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/animation/animation_manager.h"
+#include "render/core/color.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
 #include "shell/panel/panel.h"
@@ -9,19 +10,25 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 
 class ConfigService;
 class IpcService;
+class Renderer;
 class RenderContext;
 class WaylandConnection;
 struct PointerEvent;
 struct wl_output;
 struct wl_surface;
 
+class PanelColorPickerModal;
+
 class PanelManager {
+  friend class PanelColorPickerModal;
+
 public:
   PanelManager();
   ~PanelManager();
@@ -36,6 +43,11 @@ public:
   // Optional: invoked from shell UI (e.g. control center) to spawn the standalone settings toplevel.
   void setOpenSettingsWindowCallback(std::function<void()> callback);
   void openSettingsWindow();
+
+  // Optional: invoked when ColorPickerPanel Apply is pressed (single consumer; last setter wins).
+  void setColorPickerResultCallback(std::function<void(const Color&)> callback);
+  void notifyColorPickerResult(const Color& color);
+  [[nodiscard]] std::optional<Color> lastColorPickerResult() const noexcept { return m_lastColorPickerResult; }
 
   void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 
@@ -61,6 +73,9 @@ public:
   void requestRedraw();
   void close();
 
+  /// Close the color-picker layer only if it is open as a modal over another panel; otherwise same as closePanel().
+  void dismissColorPickerPanel();
+
   void registerIpc(IpcService& ipc);
 
 private:
@@ -74,6 +89,8 @@ private:
   ConfigService* m_config = nullptr;
   RenderContext* m_renderContext = nullptr;
   std::function<void()> m_openSettingsWindow;
+  std::function<void(const Color&)> m_colorPickerResult;
+  std::optional<Color> m_lastColorPickerResult;
 
   std::unique_ptr<LayerSurface> m_surface;
   // m_sceneRoot must be destroyed before m_animations — ~Node() calls cancelForOwner().
@@ -88,6 +105,7 @@ private:
   std::unordered_map<std::string, std::unique_ptr<Panel>> m_panels;
   Panel* m_activePanel = nullptr;
   std::string m_activePanelId;
+  std::unique_ptr<PanelColorPickerModal> m_colorPickerModal;
   std::string m_pendingOpenContext;
 
   wl_surface* m_wlSurface = nullptr;
