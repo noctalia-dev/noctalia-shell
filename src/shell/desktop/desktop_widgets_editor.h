@@ -150,6 +150,8 @@ private:
   DragState m_drag;
   bool m_open = false;
   bool m_shiftHeld = false;
+  bool m_leftShiftHeld = false;
+  bool m_rightShiftHeld = false;
   float m_currentEventSceneX = 0.0f;
   float m_currentEventSceneY = 0.0f;
 };

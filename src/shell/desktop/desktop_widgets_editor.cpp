@@ -158,6 +158,9 @@ void DesktopWidgetsEditor::open(const DesktopWidgetsSnapshot& snapshot) {
   m_open = true;
   m_selectedWidgetId.clear();
   m_drag = {};
+  m_shiftHeld = false;
+  m_leftShiftHeld = false;
+  m_rightShiftHeld = false;
   syncSurfaces();
   requestLayout();
 }
@@ -167,6 +170,9 @@ DesktopWidgetsSnapshot DesktopWidgetsEditor::close() {
   m_surfaces.clear();
   m_drag = {};
   m_selectedWidgetId.clear();
+  m_shiftHeld = false;
+  m_leftShiftHeld = false;
+  m_rightShiftHeld = false;
   m_open = false;
   return m_snapshot;
 }
@@ -1073,7 +1079,23 @@ void DesktopWidgetsEditor::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
-  m_shiftHeld = (event.modifiers & KeyMod::Shift) != 0;
+  if (!event.preedit) {
+    const bool shiftFromMask = (event.modifiers & KeyMod::Shift) != 0;
+    if (event.sym == XKB_KEY_Shift_L) {
+      m_leftShiftHeld = event.pressed;
+    } else if (event.sym == XKB_KEY_Shift_R) {
+      m_rightShiftHeld = event.pressed;
+    }
+
+    // wl_keyboard.modifiers is delivered separately from key up/down, so the
+    // modifier bit on a Shift key event can lag by one transition. Track the
+    // physical Shift keys directly and only fall back to the mask when we have
+    // no concrete Shift key state yet.
+    m_shiftHeld = m_leftShiftHeld || m_rightShiftHeld;
+    if (!m_shiftHeld && event.sym != XKB_KEY_Shift_L && event.sym != XKB_KEY_Shift_R) {
+      m_shiftHeld = shiftFromMask;
+    }
+  }
 
   if (!event.pressed || event.preedit) {
     return;
