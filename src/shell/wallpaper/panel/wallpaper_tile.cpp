@@ -129,6 +129,7 @@ void WallpaperTile::setEntry(const WallpaperEntry& entry, Renderer& renderer) {
       m_loadingGlyph->setVisible(false);
     }
     m_thumbPath.clear();
+    applyVisualState();
     return;
   }
 
@@ -143,10 +144,12 @@ void WallpaperTile::setEntry(const WallpaperEntry& entry, Renderer& renderer) {
 
   if (m_thumbnails == nullptr) {
     m_thumb->clear(renderer);
+    applyVisualState();
     return;
   }
 
   refreshThumbnail(renderer);
+  applyVisualState();
 }
 
 void WallpaperTile::clearEntry(Renderer& renderer) {
@@ -226,15 +229,27 @@ void WallpaperTile::applyVisualState() {
   if (m_thumbBox == nullptr || m_thumb == nullptr) {
     return;
   }
+  setOpacity(m_selected ? 1.0f : 0.75f);
+
   const float outlineWidth = Style::borderWidth * 2.0f;
+  ThemeColor borderColor = roleColor(ColorRole::Outline);
+  ThemeColor frameBg = roleColor(ColorRole::SurfaceVariant);
+
   if (m_selected) {
-    m_thumbBox->setBackground(roleColor(ColorRole::SurfaceVariant));
-    m_thumb->setBorder(roleColor(ColorRole::Primary), outlineWidth);
+    borderColor = roleColor(ColorRole::Primary);
   } else if (m_hoveredVisual) {
-    m_thumbBox->setBackground(roleColor(ColorRole::Primary, 0.12f));
-    m_thumb->setBorder(roleColor(ColorRole::Primary, 0.75f), outlineWidth);
-  } else {
-    m_thumbBox->setBackground(roleColor(ColorRole::SurfaceVariant));
+    frameBg = roleColor(ColorRole::Primary, 0.12f);
+    borderColor = roleColor(ColorRole::Primary, 0.75f);
+  }
+
+  m_thumbBox->setBackground(frameBg);
+  if (m_entry.isDir) {
+    // Folder tiles hide the image node, so draw the state outline on the frame.
+    m_thumbBox->setBorderColor(borderColor);
+    m_thumbBox->setBorderWidth(outlineWidth);
     m_thumb->setBorder(roleColor(ColorRole::Outline), outlineWidth);
+  } else {
+    m_thumbBox->clearBorder();
+    m_thumb->setBorder(borderColor, outlineWidth);
   }
 }
