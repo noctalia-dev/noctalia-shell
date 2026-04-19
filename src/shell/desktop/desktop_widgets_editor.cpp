@@ -44,6 +44,12 @@ namespace {
   constexpr float kRotationSnap = static_cast<float>(M_PI) / 12.0f;
   constexpr std::array<const char*, 2> kWidgetTypeLabels{"Clock", "Audio Visualizer"};
   constexpr std::string_view kDesktopWidgetIdPrefix = "desktop-widget-";
+  constexpr std::size_t kScaleCornerCount = 4;
+
+  struct CornerSigns {
+    float x = 1.0f;
+    float y = 1.0f;
+  };
 
   float snapToGrid(float value, std::int32_t cellSize) {
     if (cellSize <= 0) {
@@ -107,6 +113,20 @@ namespace {
     const std::uint64_t nextCounter =
         maxCounter == std::numeric_limits<std::uint64_t>::max() ? maxCounter : (maxCounter + 1);
     return std::format("desktop-widget-{:016x}", nextCounter);
+  }
+
+  CornerSigns cornerSigns(std::size_t cornerIndex) {
+    switch (cornerIndex) {
+    case 0:
+      return {-1.0f, -1.0f};
+    case 1:
+      return {1.0f, -1.0f};
+    case 2:
+      return {-1.0f, 1.0f};
+    case 3:
+    default:
+      return {1.0f, 1.0f};
+    }
   }
 
   std::pair<float, float> rotatedCorner(float cx, float cy, float halfWidth, float halfHeight, float rotationRad) {
@@ -303,9 +323,9 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   surface.selectionFrameTransform = nullptr;
   surface.selectionBorder = nullptr;
   surface.rotationRing = nullptr;
-  surface.scaleHandle = nullptr;
   surface.rotateArea = nullptr;
-  surface.scaleArea = nullptr;
+  surface.scaleHandles.fill(nullptr);
+  surface.scaleAreas.fill(nullptr);
 
   auto root = std::make_unique<InputArea>();
   root->setEnabled(false);
@@ -464,32 +484,36 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     surface.selectionFrameTransform->addChild(std::move(selectionBorder));
     root->addChild(std::move(selectionFrameTransform));
 
-    auto scaleHandle = std::make_unique<Box>();
-    scaleHandle->setFill(roleColor(ColorRole::Primary));
-    scaleHandle->setRadius(Style::radiusSm);
-    scaleHandle->setZIndex(6);
-    surface.scaleHandle = scaleHandle.get();
-    root->addChild(std::move(scaleHandle));
+    for (std::size_t i = 0; i < kScaleCornerCount; ++i) {
+      const ScaleCorner corner = static_cast<ScaleCorner>(i);
 
-    auto scaleArea = std::make_unique<InputArea>();
-    scaleArea->setZIndex(7);
-    scaleArea->setOnPress([this, id = m_selectedWidgetId](const InputArea::PointerData& data) {
-      if (data.button != BTN_LEFT) {
-        return;
-      }
-      if (data.pressed) {
-        startDrag(DragMode::Scale, id, false);
-      } else if (m_drag.mode == DragMode::Scale && m_drag.widgetId == id) {
-        finishDrag();
-      }
-    });
-    scaleArea->setOnMotion([this, id = m_selectedWidgetId](const InputArea::PointerData& /*data*/) {
-      if (m_drag.mode == DragMode::Scale && m_drag.widgetId == id) {
-        updateDrag();
-      }
-    });
-    surface.scaleArea = scaleArea.get();
-    root->addChild(std::move(scaleArea));
+      auto scaleHandle = std::make_unique<Box>();
+      scaleHandle->setFill(roleColor(ColorRole::Primary));
+      scaleHandle->setRadius(Style::radiusSm);
+      scaleHandle->setZIndex(6);
+      surface.scaleHandles[i] = scaleHandle.get();
+      root->addChild(std::move(scaleHandle));
+
+      auto scaleArea = std::make_unique<InputArea>();
+      scaleArea->setZIndex(7);
+      scaleArea->setOnPress([this, id = m_selectedWidgetId, corner](const InputArea::PointerData& data) {
+        if (data.button != BTN_LEFT) {
+          return;
+        }
+        if (data.pressed) {
+          startDrag(DragMode::Scale, id, false, corner);
+        } else if (m_drag.mode == DragMode::Scale && m_drag.widgetId == id) {
+          finishDrag();
+        }
+      });
+      scaleArea->setOnMotion([this, id = m_selectedWidgetId](const InputArea::PointerData& /*data*/) {
+        if (m_drag.mode == DragMode::Scale && m_drag.widgetId == id) {
+          updateDrag();
+        }
+      });
+      surface.scaleAreas[i] = scaleArea.get();
+      root->addChild(std::move(scaleArea));
+    }
 
     updateSelectionVisuals(surface);
   }
@@ -577,9 +601,13 @@ void DesktopWidgetsEditor::updateSelectionVisuals(OverlaySurface& surface) {
   const auto selectedIt = surface.views.find(m_selectedWidgetId);
   const DesktopWidgetState* state = findWidgetState(m_selectedWidgetId);
   if (selectedIt == surface.views.end() || state == nullptr || surface.selectionFrameTransform == nullptr ||
-      surface.selectionBorder == nullptr || surface.rotationRing == nullptr || surface.scaleHandle == nullptr ||
-      surface.rotateArea == nullptr || surface.scaleArea == nullptr) {
+      surface.selectionBorder == nullptr || surface.rotationRing == nullptr || surface.rotateArea == nullptr) {
     return;
+  }
+  for (std::size_t i = 0; i < kScaleCornerCount; ++i) {
+    if (surface.scaleHandles[i] == nullptr || surface.scaleAreas[i] == nullptr) {
+      return;
+    }
   }
 
   const float width = selectedIt->second.intrinsicWidth;
@@ -600,12 +628,16 @@ void DesktopWidgetsEditor::updateSelectionVisuals(OverlaySurface& surface) {
   surface.selectionBorder->setPosition(0.0f, 0.0f);
   surface.selectionBorder->setFrameSize(width, height);
 
-  const auto [cornerX, cornerY] = rotatedCorner(state->cx, state->cy, width * 0.5f, height * 0.5f, state->rotationRad);
-  surface.scaleHandle->setPosition(cornerX - kHandleSize * 0.5f, cornerY - kHandleSize * 0.5f);
-  surface.scaleHandle->setFrameSize(kHandleSize, kHandleSize);
+  for (std::size_t i = 0; i < kScaleCornerCount; ++i) {
+    const CornerSigns signs = cornerSigns(i);
+    const auto [cornerX, cornerY] =
+        rotatedCorner(state->cx, state->cy, width * 0.5f * signs.x, height * 0.5f * signs.y, state->rotationRad);
+    surface.scaleHandles[i]->setPosition(cornerX - kHandleSize * 0.5f, cornerY - kHandleSize * 0.5f);
+    surface.scaleHandles[i]->setFrameSize(kHandleSize, kHandleSize);
 
-  surface.scaleArea->setPosition(cornerX - kHandleSize, cornerY - kHandleSize);
-  surface.scaleArea->setFrameSize(kHandleSize * 1.5f, kHandleSize * 1.5f);
+    surface.scaleAreas[i]->setPosition(cornerX - kHandleSize, cornerY - kHandleSize);
+    surface.scaleAreas[i]->setFrameSize(kHandleSize * 1.5f, kHandleSize * 1.5f);
+  }
 }
 
 void DesktopWidgetsEditor::applyViewState(EditorWidgetView& view, const DesktopWidgetState& state,
@@ -697,7 +729,8 @@ void DesktopWidgetsEditor::requestExit() {
   });
 }
 
-void DesktopWidgetsEditor::startDrag(DragMode mode, const std::string& widgetId, bool rebuildOnFinish) {
+void DesktopWidgetsEditor::startDrag(DragMode mode, const std::string& widgetId, bool rebuildOnFinish,
+                                     ScaleCorner scaleCorner) {
   DesktopWidgetState* state = findWidgetState(widgetId);
   if (state == nullptr) {
     return;
@@ -715,6 +748,7 @@ void DesktopWidgetsEditor::startDrag(DragMode mode, const std::string& widgetId,
   m_drag.initialState = *state;
   m_drag.intrinsicWidth = view->intrinsicWidth;
   m_drag.intrinsicHeight = view->intrinsicHeight;
+  m_drag.scaleCorner = scaleCorner;
   m_drag.rebuildOnFinish = rebuildOnFinish;
 }
 
@@ -742,16 +776,17 @@ void DesktopWidgetsEditor::updateDrag() {
     }
     state->rotationRad = rotation;
   } else if (m_drag.mode == DragMode::Scale) {
+    const CornerSigns signs = cornerSigns(static_cast<std::size_t>(m_drag.scaleCorner));
     if (shouldSnap()) {
       const float snappedCornerX = snapToGrid(m_currentEventSceneX, m_snapshot.grid.cellSize);
       const float snappedCornerY = snapToGrid(m_currentEventSceneY, m_snapshot.grid.cellSize);
       const WidgetTransformBounds baseBounds =
           computeWidgetTransformBounds(m_drag.initialState.cx, m_drag.initialState.cy, m_drag.intrinsicWidth,
                                        m_drag.intrinsicHeight, 1.0f, m_drag.initialState.rotationRad);
-      const float relativeScaleX =
-          std::max(0.0f, (snappedCornerX - m_drag.initialState.cx) * 2.0f / std::max(1.0f, baseBounds.aabbWidth));
-      const float relativeScaleY =
-          std::max(0.0f, (snappedCornerY - m_drag.initialState.cy) * 2.0f / std::max(1.0f, baseBounds.aabbHeight));
+      const float relativeScaleX = std::max(0.0f, (snappedCornerX - m_drag.initialState.cx) * signs.x * 2.0f /
+                                                      std::max(1.0f, baseBounds.aabbWidth));
+      const float relativeScaleY = std::max(0.0f, (snappedCornerY - m_drag.initialState.cy) * signs.y * 2.0f /
+                                                      std::max(1.0f, baseBounds.aabbHeight));
       const float relativeScale = std::max(relativeScaleX, relativeScaleY);
       state->scale = std::clamp(m_drag.initialState.scale * relativeScale, kMinScale, kMaxScale);
     } else {
@@ -759,8 +794,8 @@ void DesktopWidgetsEditor::updateDrag() {
       const float dy = m_currentEventSceneY - m_drag.initialState.cy;
       const float cosTheta = std::cos(-m_drag.initialState.rotationRad);
       const float sinTheta = std::sin(-m_drag.initialState.rotationRad);
-      const float localX = dx * cosTheta - dy * sinTheta;
-      const float localY = dx * sinTheta + dy * cosTheta;
+      const float localX = (dx * cosTheta - dy * sinTheta) * signs.x;
+      const float localY = (dx * sinTheta + dy * cosTheta) * signs.y;
       const float halfWidth = std::max(1.0f, m_drag.intrinsicWidth * 0.5f);
       const float halfHeight = std::max(1.0f, m_drag.intrinsicHeight * 0.5f);
       const float denominator = halfWidth * halfWidth + halfHeight * halfHeight;
