@@ -721,7 +721,7 @@ Desktop widgets are enabled from `config.toml`, while widget instances and edit-
 enabled = true
 ```
 
-When enabled, Noctalia renders each desktop widget as its own tightly-sized layer-shell surface on the `Bottom` layer. The current v1 implementation ships with the `clock` desktop widget type and an interactive edit mode.
+When enabled, Noctalia renders each desktop widget as its own tightly-sized layer-shell surface on the `Bottom` layer. The current v1 implementation ships with the `clock` and `audio_visualizer` desktop widget types plus an interactive edit mode.
 
 ### Edit mode IPC
 
@@ -736,6 +736,7 @@ noctalia msg toggle-desktop-widgets-edit
 - Drag the widget body to move it.
 - Drag the outer selection ring to rotate it.
 - Drag the bottom-right handle to scale it uniformly.
+- Drag the toolbar handle to reposition the editor toolbar on that output.
 - Press `G` to toggle the snap grid.
 - Hold `Shift` while dragging to temporarily disable snapping.
 - Press `Delete` or `Backspace` to remove the selected widget.
@@ -764,6 +765,24 @@ rotation = 0.0
 
 [widget.settings]
 format = "{:%H:%M}"
+```
+
+Desktop audio visualizers store an `aspect_ratio` setting for shape while `scale`
+controls overall size:
+
+```toml
+[[widget]]
+id = "desktop-widget-0000000000000002"
+type = "audio_visualizer"
+output = "DP-1"
+cx = 1040.0
+cy = 620.0
+scale = 1.25
+rotation = 0.0
+
+[widget.settings]
+bands = 32
+aspect_ratio = 2.5
 ```
 
 ---

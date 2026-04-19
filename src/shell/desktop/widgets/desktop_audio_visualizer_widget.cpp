@@ -7,12 +7,27 @@
 #include "ui/palette.h"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 
-DesktopAudioVisualizerWidget::DesktopAudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, float height,
-                                                           int bands)
-    : m_spectrum(spectrum), m_width(std::max(1.0f, width)), m_height(std::max(1.0f, height)),
-      m_bands(std::max(1, bands)) {}
+namespace {
+
+  constexpr float kDefaultVisualizerArea = 240.0f * 96.0f;
+
+  float clampAspectRatio(float aspectRatio) { return std::max(0.05f, aspectRatio); }
+
+  float visualizerBaseWidth(float aspectRatio) {
+    return std::sqrt(kDefaultVisualizerArea * clampAspectRatio(aspectRatio));
+  }
+
+  float visualizerBaseHeight(float aspectRatio) {
+    return std::sqrt(kDefaultVisualizerArea / clampAspectRatio(aspectRatio));
+  }
+
+} // namespace
+
+DesktopAudioVisualizerWidget::DesktopAudioVisualizerWidget(PipeWireSpectrum* spectrum, float aspectRatio, int bands)
+    : m_spectrum(spectrum), m_aspectRatio(clampAspectRatio(aspectRatio)), m_bands(std::max(1, bands)) {}
 
 DesktopAudioVisualizerWidget::~DesktopAudioVisualizerWidget() {
   if (m_spectrum != nullptr && m_listenerId != 0) {
@@ -64,8 +79,8 @@ void DesktopAudioVisualizerWidget::doLayout(Renderer& renderer) {
   }
 
   syncSpectrum(&renderer);
-  const float width = m_width * m_contentScale;
-  const float height = m_height * m_contentScale;
+  const float width = visualizerBaseWidth(m_aspectRatio) * m_contentScale;
+  const float height = visualizerBaseHeight(m_aspectRatio) * m_contentScale;
   m_visualizer->setPosition(0.0f, 0.0f);
   m_visualizer->setSize(width, height);
   m_visualizer->layout(renderer);

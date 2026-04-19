@@ -20,6 +20,7 @@ namespace {
 
   constexpr Logger kLog("desktop");
   constexpr std::string_view kDesktopWidgetIdPrefix = "desktop-widget-";
+  constexpr float kDefaultDesktopAudioVisualizerAspectRatio = 240.0f / 96.0f;
 
   std::string stateDir() {
     const char* xdg = std::getenv("XDG_STATE_HOME");
@@ -73,6 +74,24 @@ namespace {
       return WidgetSettingValue{std::move(strings)};
     }
     return std::nullopt;
+  }
+
+  void normalizeDesktopWidgetSettings(DesktopWidgetState& widget) {
+    if (widget.type != "audio_visualizer") {
+      return;
+    }
+
+    const auto it = widget.settings.find("aspect_ratio");
+    if (it != widget.settings.end()) {
+      if (const auto* doubleValue = std::get_if<double>(&it->second); doubleValue != nullptr && *doubleValue > 0.0) {
+        return;
+      }
+      if (const auto* intValue = std::get_if<std::int64_t>(&it->second); intValue != nullptr && *intValue > 0) {
+        return;
+      }
+    }
+
+    widget.settings.insert_or_assign("aspect_ratio", static_cast<double>(kDefaultDesktopAudioVisualizerAspectRatio));
   }
 
   bool parseDesktopWidgetCounter(std::string_view id, std::uint64_t& value) {
@@ -400,6 +419,8 @@ void DesktopWidgetsController::normalizeSnapshot() {
 
   std::unordered_set<std::string> seenIds;
   for (auto& widget : m_snapshot.widgets) {
+    normalizeDesktopWidgetSettings(widget);
+
     if (widget.id.empty() || seenIds.contains(widget.id)) {
       const std::uint64_t nextCounter =
           maxCounter == std::numeric_limits<std::uint64_t>::max() ? maxCounter : (maxCounter + 1);

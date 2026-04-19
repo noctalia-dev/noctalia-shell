@@ -8,6 +8,7 @@
 namespace {
 
   constexpr Logger kLog("desktop");
+  constexpr float kDefaultDesktopAudioVisualizerAspectRatio = 240.0f / 96.0f;
 
   std::string getStringSetting(const std::unordered_map<std::string, WidgetSettingValue>& settings,
                                const std::string& key, const std::string& fallback = {}) {
@@ -77,7 +78,7 @@ DesktopWidgetFactory::create(const std::string& type,
       return nullptr;
     }
     auto widget = std::make_unique<DesktopAudioVisualizerWidget>(
-        m_pipewireSpectrum, getFloatSetting(settings, "width", 240.0f), getFloatSetting(settings, "height", 96.0f),
+        m_pipewireSpectrum, getFloatSetting(settings, "aspect_ratio", kDefaultDesktopAudioVisualizerAspectRatio),
         getIntSetting(settings, "bands", 32));
     widget->setContentScale(contentScale);
     return widget;

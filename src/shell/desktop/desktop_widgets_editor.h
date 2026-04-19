@@ -61,6 +61,7 @@ private:
     Move,
     Scale,
     Rotate,
+    ToolbarMove,
   };
 
   struct EditorWidgetView {
@@ -86,6 +87,10 @@ private:
     InputArea* rotateArea = nullptr;
     std::array<Box*, 4> scaleHandles{};
     std::array<InputArea*, 4> scaleAreas{};
+    Node* toolbar = nullptr;
+    float toolbarX = 0.0f;
+    float toolbarY = 0.0f;
+    bool toolbarPositionInitialized = false;
     bool pointerInside = false;
   };
 
@@ -98,6 +103,9 @@ private:
     float intrinsicWidth = 0.0f;
     float intrinsicHeight = 0.0f;
     ScaleCorner scaleCorner = ScaleCorner::BottomRight;
+    std::string surfaceOutputName;
+    float initialToolbarX = 0.0f;
+    float initialToolbarY = 0.0f;
     bool rebuildOnFinish = false;
   };
 
@@ -112,6 +120,8 @@ private:
   void removeSelectedWidget();
   void sendSelectedWidgetToBack();
   void bringSelectedWidgetToFront();
+  void startToolbarDrag(const std::string& outputName);
+  void clampToolbarPosition(OverlaySurface& surface, float toolbarWidth, float toolbarHeight);
   void deferEditorMutation(std::function<void()> action);
   void requestExit();
   void startDrag(DragMode mode, const std::string& widgetId, bool rebuildOnFinish,
@@ -119,6 +129,7 @@ private:
   void updateDrag();
   void finishDrag();
   [[nodiscard]] OverlaySurface* findSurface(wl_surface* surface);
+  [[nodiscard]] OverlaySurface* findSurface(const std::string& outputName);
   [[nodiscard]] EditorWidgetView* findView(const std::string& id);
   [[nodiscard]] DesktopWidgetState* findWidgetState(const std::string& id);
   [[nodiscard]] const DesktopWidgetState* findWidgetState(const std::string& id) const;

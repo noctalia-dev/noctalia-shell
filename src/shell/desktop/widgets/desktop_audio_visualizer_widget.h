@@ -10,7 +10,7 @@ class Renderer;
 
 class DesktopAudioVisualizerWidget : public DesktopWidget {
 public:
-  DesktopAudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, float height, int bands);
+  DesktopAudioVisualizerWidget(PipeWireSpectrum* spectrum, float aspectRatio, int bands);
   ~DesktopAudioVisualizerWidget() override;
 
   void create() override;
@@ -23,8 +23,7 @@ private:
   void syncSpectrum(Renderer* renderer);
 
   PipeWireSpectrum* m_spectrum = nullptr;
-  float m_width = 240.0f;
-  float m_height = 96.0f;
+  float m_aspectRatio = 2.5f;
   int m_bands = 32;
   std::uint64_t m_listenerId = 0;
   AudioSpectrum* m_visualizer = nullptr;

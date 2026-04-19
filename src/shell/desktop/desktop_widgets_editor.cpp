@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
+#include "cursor-shape-v1-client-protocol.h"
 #include "pipewire/pipewire_spectrum.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
@@ -13,6 +14,7 @@
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/controls/select.h"
 #include "ui/palette.h"
@@ -36,6 +38,7 @@ namespace {
 
   constexpr Logger kLog("desktop");
   constexpr float kToolbarY = 68.0f;
+  constexpr float kDefaultDesktopAudioVisualizerAspectRatio = 240.0f / 96.0f;
   constexpr float kSelectionStroke = 2.0f;
   constexpr float kRotatePadding = 14.0f;
   constexpr float kHandleSize = 14.0f;
@@ -259,6 +262,15 @@ DesktopWidgetsEditor::OverlaySurface* DesktopWidgetsEditor::findSurface(wl_surfa
   return nullptr;
 }
 
+DesktopWidgetsEditor::OverlaySurface* DesktopWidgetsEditor::findSurface(const std::string& outputName) {
+  for (auto& overlay : m_surfaces) {
+    if (overlay->outputName == outputName) {
+      return overlay.get();
+    }
+  }
+  return nullptr;
+}
+
 DesktopWidgetsEditor::EditorWidgetView* DesktopWidgetsEditor::findView(const std::string& id) {
   for (auto& overlay : m_surfaces) {
     const auto it = overlay->views.find(id);
@@ -326,6 +338,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   surface.rotateArea = nullptr;
   surface.scaleHandles.fill(nullptr);
   surface.scaleAreas.fill(nullptr);
+  surface.toolbar = nullptr;
 
   auto root = std::make_unique<InputArea>();
   root->setEnabled(false);
@@ -529,11 +542,49 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   toolbar->setRadius(Style::radiusXl);
   toolbar->setZIndex(20);
 
+  auto toolbarHandle = std::make_unique<Flex>();
+  toolbarHandle->setDirection(FlexDirection::Horizontal);
+  toolbarHandle->setAlign(FlexAlign::Center);
+  toolbarHandle->setGap(Style::spaceXs);
+  toolbarHandle->setPadding(Style::spaceXs, Style::spaceSm);
+  toolbarHandle->setBackground(roleColor(ColorRole::SurfaceVariant, 0.85f));
+  toolbarHandle->setRadius(Style::radiusLg);
+  toolbarHandle->setMinHeight(Style::controlHeightSm);
+
+  auto handleGlyph = std::make_unique<Glyph>();
+  handleGlyph->setGlyph("menu");
+  handleGlyph->setGlyphSize(14.0f);
+  toolbarHandle->addChild(std::move(handleGlyph));
+
   auto title = std::make_unique<Label>();
   title->setText("Desktop Widgets");
   title->setBold(true);
   title->setFontSize(Style::fontSizeBody);
-  toolbar->addChild(std::move(title));
+  toolbarHandle->addChild(std::move(title));
+
+  auto toolbarHandleArea = std::make_unique<InputArea>();
+  toolbarHandleArea->setParticipatesInLayout(false);
+  toolbarHandleArea->setZIndex(1);
+  toolbarHandleArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_MOVE);
+  toolbarHandleArea->setOnPress([this, outputName = surface.outputName](const InputArea::PointerData& data) {
+    if (data.button != BTN_LEFT) {
+      return;
+    }
+    if (data.pressed) {
+      startToolbarDrag(outputName);
+    } else if (m_drag.mode == DragMode::ToolbarMove && m_drag.surfaceOutputName == outputName) {
+      finishDrag();
+    }
+  });
+  toolbarHandleArea->setOnMotion([this, outputName = surface.outputName](const InputArea::PointerData& /*data*/) {
+    if (m_drag.mode == DragMode::ToolbarMove && m_drag.surfaceOutputName == outputName) {
+      updateDrag();
+    }
+  });
+  auto* toolbarHandlePtr = toolbarHandle.get();
+  auto* toolbarHandleAreaPtr = toolbarHandleArea.get();
+  toolbarHandle->addChild(std::move(toolbarHandleArea));
+  toolbar->addChild(std::move(toolbarHandle));
 
   const auto selectedWidgetIt = std::find_if(m_snapshot.widgets.begin(), m_snapshot.widgets.end(),
                                              [this](const auto& widget) { return widget.id == m_selectedWidgetId; });
@@ -621,9 +672,19 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   toolbar->addChild(std::move(doneButton));
 
   auto* toolbarPtr = toolbar.get();
+  surface.toolbar = toolbarPtr;
   root->addChild(std::move(toolbar));
   toolbarPtr->layout(*m_renderContext);
-  toolbarPtr->setPosition(std::round((root->width() - toolbarPtr->width()) * 0.5f), kToolbarY);
+  toolbarHandleAreaPtr->setPosition(0.0f, 0.0f);
+  toolbarHandleAreaPtr->setFrameSize(toolbarHandlePtr->width(), toolbarHandlePtr->height());
+
+  if (!surface.toolbarPositionInitialized) {
+    surface.toolbarX = std::round((root->width() - toolbarPtr->width()) * 0.5f);
+    surface.toolbarY = kToolbarY;
+    surface.toolbarPositionInitialized = true;
+  }
+  clampToolbarPosition(surface, toolbarPtr->width(), toolbarPtr->height());
+  toolbarPtr->setPosition(surface.toolbarX, surface.toolbarY);
 
   surface.sceneRoot = std::move(root);
   surface.surface->setSceneRoot(surface.sceneRoot.get());
@@ -732,8 +793,7 @@ void DesktopWidgetsEditor::addWidget(const std::string& outputName, const std::s
   widget.scale = 1.0f;
   widget.rotationRad = 0.0f;
   if (widget.type == "audio_visualizer") {
-    widget.settings.emplace("width", 240.0);
-    widget.settings.emplace("height", 96.0);
+    widget.settings.emplace("aspect_ratio", static_cast<double>(kDefaultDesktopAudioVisualizerAspectRatio));
     widget.settings.emplace("bands", static_cast<std::int64_t>(32));
   }
 
@@ -781,6 +841,32 @@ void DesktopWidgetsEditor::bringSelectedWidgetToFront() {
   requestLayout();
 }
 
+void DesktopWidgetsEditor::startToolbarDrag(const std::string& outputName) {
+  OverlaySurface* surface = findSurface(outputName);
+  if (surface == nullptr || surface->toolbar == nullptr) {
+    return;
+  }
+
+  m_drag = {};
+  m_drag.mode = DragMode::ToolbarMove;
+  m_drag.startSceneX = m_currentEventSceneX;
+  m_drag.startSceneY = m_currentEventSceneY;
+  m_drag.surfaceOutputName = outputName;
+  m_drag.initialToolbarX = surface->toolbarX;
+  m_drag.initialToolbarY = surface->toolbarY;
+}
+
+void DesktopWidgetsEditor::clampToolbarPosition(OverlaySurface& surface, float toolbarWidth, float toolbarHeight) {
+  if (surface.surface == nullptr) {
+    return;
+  }
+
+  const float maxX = std::max(0.0f, static_cast<float>(surface.surface->width()) - toolbarWidth);
+  const float maxY = std::max(0.0f, static_cast<float>(surface.surface->height()) - toolbarHeight);
+  surface.toolbarX = std::clamp(surface.toolbarX, 0.0f, maxX);
+  surface.toolbarY = std::clamp(surface.toolbarY, 0.0f, maxY);
+}
+
 void DesktopWidgetsEditor::deferEditorMutation(std::function<void()> action) {
   DeferredCall::callLater([this, action = std::move(action)]() mutable {
     if (m_open) {
@@ -824,8 +910,26 @@ void DesktopWidgetsEditor::startDrag(DragMode mode, const std::string& widgetId,
 }
 
 void DesktopWidgetsEditor::updateDrag() {
+  if (m_drag.mode == DragMode::None) {
+    return;
+  }
+
+  if (m_drag.mode == DragMode::ToolbarMove) {
+    OverlaySurface* surface = findSurface(m_drag.surfaceOutputName);
+    if (surface == nullptr || surface->toolbar == nullptr) {
+      return;
+    }
+
+    surface->toolbarX = m_drag.initialToolbarX + (m_currentEventSceneX - m_drag.startSceneX);
+    surface->toolbarY = m_drag.initialToolbarY + (m_currentEventSceneY - m_drag.startSceneY);
+    clampToolbarPosition(*surface, surface->toolbar->width(), surface->toolbar->height());
+    surface->toolbar->setPosition(surface->toolbarX, surface->toolbarY);
+    requestRedraw();
+    return;
+  }
+
   DesktopWidgetState* state = findWidgetState(m_drag.widgetId);
-  if (state == nullptr || m_drag.mode == DragMode::None) {
+  if (state == nullptr) {
     return;
   }
 
