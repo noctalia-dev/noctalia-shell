@@ -22,6 +22,7 @@
 #include "wayland/wayland_seat.h"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cmath>
 #include <filesystem>
@@ -74,14 +75,15 @@ namespace {
   constexpr float kBodyFontSize = Style::fontSizeBody;
 
   constexpr float kMetaGap = Style::spaceXs;        // vertical gap between app name and summary
-  constexpr float kSummaryBodyGap = Style::spaceXs; // vertical gap between summary and body
+  constexpr float kSummaryBodyGap = Style::spaceSm; // vertical gap between summary and body
 
-  constexpr std::size_t kMaxSummaryLines = 2;
-  constexpr std::size_t kMaxBodyLines = 5;
+  constexpr int kMaxSummaryLines = 2;
+  constexpr int kToastMaxBodyLines = 3;
+  constexpr int kMaxToastCardHeight = 320;
 
   constexpr int kSurfaceWidth = static_cast<int>(kCardWidth + kPadding * 2);
-  constexpr int kFallbackSurfaceHeight = static_cast<int>(kCardHeightWithActions * kFallbackVisibleCards +
-                                                          kGap * (kFallbackVisibleCards - 1) + kPadding * 2);
+  constexpr int kFallbackSurfaceHeight =
+      static_cast<int>(kMaxToastCardHeight * kFallbackVisibleCards + kGap * (kFallbackVisibleCards - 1) + kPadding * 2);
 
   float contentOpacityForReveal(float reveal) {
     const float v = std::clamp(reveal, 0.0f, 1.0f);
@@ -142,24 +144,151 @@ namespace {
     return availableHeight;
   }
 
-  int fitBodyLines(RenderContext& renderContext, std::string_view bodyText, float textMaxWidth, float availableHeight) {
-    if (availableHeight <= 0.0f) {
-      return 0;
+  float notificationTextStartX() { return kCardInnerPad + kNotificationIconSize + kIconTextGap; }
+
+  float notificationTextMaxWidth() { return std::max(0.0f, kCardWidth - notificationTextStartX() - kCardInnerPad); }
+
+  bool isBlankText(std::string_view text) {
+    return text.empty() ||
+           std::all_of(text.begin(), text.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
+  }
+
+  float measureActionsFromPairs(RenderContext& rc, const std::vector<std::string>& actions) {
+    if (actions.empty()) {
+      return 0.0f;
     }
 
-    Label probe;
-    probe.setFontSize(kBodyFontSize);
-    probe.setMaxWidth(textMaxWidth);
-    probe.setText(bodyText);
+    auto actionsRow = std::make_unique<Flex>();
+    actionsRow->setDirection(FlexDirection::Horizontal);
+    actionsRow->setAlign(FlexAlign::Center);
+    actionsRow->setGap(kActionGap);
 
-    for (int lines = static_cast<int>(kMaxBodyLines); lines >= 1; --lines) {
-      probe.setMaxLines(static_cast<std::size_t>(lines));
-      probe.measure(renderContext);
-      if (probe.height() <= availableHeight + 0.5f) {
-        return lines;
+    int actionCount = 0;
+    for (std::size_t i = 0; i + 1 < actions.size() && actionCount < kMaxActionButtons; i += 2) {
+      const std::string& actionKey = actions[i];
+      std::string actionLabel = actions[i + 1];
+      if (isBlankText(actionLabel)) {
+        actionLabel = std::string{kFallbackActionLabel};
+      }
+      if (actionKey.empty()) {
+        continue;
+      }
+
+      auto actionButton = std::make_unique<Button>();
+      actionButton->setVariant(ButtonVariant::Outline);
+      actionButton->setFontSize(Style::fontSizeCaption);
+      actionButton->setText(actionLabel);
+      actionsRow->addChild(std::move(actionButton));
+      ++actionCount;
+    }
+
+    if (actionCount == 0) {
+      return 0.0f;
+    }
+
+    actionsRow->layout(rc);
+    return actionsRow->height() + kActionRowGap;
+  }
+
+  struct ToastGeometry {
+    int summaryLines = kMaxSummaryLines;
+    int bodyLines = 0;
+    float summaryHeightPx = 0.0f;
+    float cardHeight = 0.0f;
+  };
+
+  float requiredToastCardHeight(float summaryHeight, float bodyHeight, float actionsReserved) {
+    const float bodyTop = bodyTopForSummary(summaryHeight);
+    return bodyTop + bodyHeight + kBodyBottomGap + actionsReserved + static_cast<float>(kProgressHeight) +
+           kProgressBottomMargin;
+  }
+
+  ToastGeometry planToastLayout(RenderContext& rc, std::string_view summary, std::string_view body,
+                                const std::vector<std::string>& actions, float floorCardHeight) {
+    const float textMaxWidth = notificationTextMaxWidth();
+    const float actionsReserved = measureActionsFromPairs(rc, actions);
+    const float maxCard = static_cast<float>(kMaxToastCardHeight);
+    const float floorH = floorCardHeight;
+
+    ToastGeometry out;
+
+    if (isBlankText(body)) {
+      Label summaryProbe;
+      summaryProbe.setFontSize(kSummaryFontSize);
+      summaryProbe.setBold(true);
+      summaryProbe.setMaxWidth(textMaxWidth);
+      summaryProbe.setText(summary);
+      summaryProbe.setMaxLines(kMaxSummaryLines);
+      summaryProbe.measure(rc);
+      const float sumH = summaryProbe.height();
+      const float required = requiredToastCardHeight(sumH, 0.0f, actionsReserved);
+      out.summaryLines = kMaxSummaryLines;
+      out.bodyLines = 0;
+      out.summaryHeightPx = sumH;
+      out.cardHeight = std::min(maxCard, std::max(floorH, std::ceil(required)));
+      return out;
+    }
+
+    static constexpr std::array<std::pair<int, int>, 6> kPreference = {{
+        {2, kToastMaxBodyLines},
+        {2, 2},
+        {2, 1},
+        {1, kToastMaxBodyLines},
+        {1, 2},
+        {1, 1},
+    }};
+
+    for (const auto& [sl, bl] : kPreference) {
+      Label summaryProbe;
+      summaryProbe.setFontSize(kSummaryFontSize);
+      summaryProbe.setBold(true);
+      summaryProbe.setMaxWidth(textMaxWidth);
+      summaryProbe.setText(summary);
+      summaryProbe.setMaxLines(sl);
+      summaryProbe.measure(rc);
+      const float sumH = summaryProbe.height();
+
+      Label bodyProbe;
+      bodyProbe.setFontSize(kBodyFontSize);
+      bodyProbe.setMaxWidth(textMaxWidth);
+      bodyProbe.setText(body);
+      bodyProbe.setMaxLines(bl);
+      bodyProbe.measure(rc);
+      const float bodyH = bodyProbe.height();
+
+      const float required = requiredToastCardHeight(sumH, bodyH, actionsReserved);
+      const float cardH = std::max(floorH, std::ceil(required));
+      if (cardH <= maxCard + 0.5f) {
+        out.summaryLines = sl;
+        out.bodyLines = bl;
+        out.summaryHeightPx = sumH;
+        out.cardHeight = cardH;
+        return out;
       }
     }
-    return 0;
+
+    Label summaryProbe;
+    summaryProbe.setFontSize(kSummaryFontSize);
+    summaryProbe.setBold(true);
+    summaryProbe.setMaxWidth(textMaxWidth);
+    summaryProbe.setText(summary);
+    summaryProbe.setMaxLines(1);
+    summaryProbe.measure(rc);
+
+    Label bodyProbe;
+    bodyProbe.setFontSize(kBodyFontSize);
+    bodyProbe.setMaxWidth(textMaxWidth);
+    bodyProbe.setText(body);
+    bodyProbe.setMaxLines(1);
+    bodyProbe.measure(rc);
+
+    out.summaryLines = 1;
+    out.bodyLines = 1;
+    out.summaryHeightPx = summaryProbe.height();
+    out.cardHeight = std::min(
+        maxCard,
+        std::max(floorH, std::ceil(requiredToastCardHeight(out.summaryHeightPx, bodyProbe.height(), actionsReserved))));
+    return out;
   }
 
   void clampBodyLabelHeight(Label& bodyLabel, float maxBodyHeight) {
@@ -173,16 +302,7 @@ namespace {
     bodyLabel.setSize(bodyLabel.width(), std::max(1.0f, std::floor(maxBodyHeight)));
   }
 
-  float notificationTextStartX() { return kCardInnerPad + kNotificationIconSize + kIconTextGap; }
-
-  float notificationTextMaxWidth() { return std::max(0.0f, kCardWidth - notificationTextStartX() - kCardInnerPad); }
-
   bool isRemoteIconUrl(std::string_view url) { return url.starts_with("http://") || url.starts_with("https://"); }
-
-  bool isBlankText(std::string_view text) {
-    return text.empty() ||
-           std::all_of(text.begin(), text.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
-  }
 
   std::string decodeUriComponent(std::string_view text) {
     std::string decoded;
@@ -297,6 +417,8 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
         const bool actionSetChanged = (m_entries[i].actions != n.actions) || (m_entries[i].icon != n.icon);
         const bool imageDataChanged = (m_entries[i].imageData != n.imageData);
         const float previousHeight = m_entries[i].height;
+        const int prevToastSummaryLines = m_entries[i].toastSummaryLines;
+        const int prevToastBodyLines = m_entries[i].toastBodyLines;
         const bool previouslyPlaced = hasPlacement(m_entries[i]);
         m_entries[i].appName = n.appName;
         m_entries[i].summary = n.summary;
@@ -304,8 +426,12 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
         m_entries[i].actions = n.actions;
         m_entries[i].icon = n.icon;
         m_entries[i].imageData = n.imageData;
-        m_entries[i].height = entryHeight(m_entries[i]);
+        refreshEntryGeometry(m_entries[i]);
         m_entries[i].rawTimeoutMs = n.timeout;
+        const bool layoutChanged = actionSetChanged || imageDataChanged ||
+                                   std::abs(previousHeight - m_entries[i].height) > 0.5f ||
+                                   prevToastSummaryLines != m_entries[i].toastSummaryLines ||
+                                   prevToastBodyLines != m_entries[i].toastBodyLines;
         const bool hovered = m_entries[i].hovered;
 
         if (previouslyPlaced) {
@@ -333,7 +459,7 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
           }
           bool regionChanged = false;
 
-          if (actionSetChanged || imageDataChanged) {
+          if (layoutChanged) {
             const float preservedReveal = cardReveal(cs);
             const float preservedContentOpacity = cs.cardForeground != nullptr ? cs.cardForeground->opacity() : 1.0f;
 
@@ -368,25 +494,23 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
               inst->sceneRoot->addChild(std::unique_ptr<Node>(rebuilt));
             }
             regionChanged = true;
+          } else if (!layoutChanged) {
+            cs.appNameLabel->setText(n.appName);
+            const float actionsReservedHeight = measureActionsFromPairs(*m_renderContext, m_entries[i].actions);
+            PopupEntry& e = m_entries[i];
+            cs.summaryLabel->setText(e.summary);
+            cs.summaryLabel->setMaxLines(std::max(1, e.toastSummaryLines));
+            cs.summaryLabel->measure(*m_renderContext);
+            const float summaryH = cs.summaryLabel->height();
+            const float bodyHeight = availableBodyHeight(summaryH, actionsReservedHeight, cs.cardNode->height());
+            const int bodyLines = e.toastBodyLines;
+            cs.bodyLabel->setMaxLines(std::max(1, bodyLines));
+            cs.bodyLabel->setText(bodyLines > 0 ? e.body : "");
+            cs.bodyLabel->measure(*m_renderContext);
+            cs.bodyLabel->setVisible(bodyLines > 0 && !e.body.empty());
+            cs.bodyLabel->setPosition(notificationTextStartX(), bodyTopForSummary(summaryH));
+            clampBodyLabelHeight(*cs.bodyLabel, bodyHeight);
           }
-
-          cs.appNameLabel->setText(n.appName);
-          cs.summaryLabel->setText(m_entries[i].summary);
-          cs.summaryLabel->measure(*m_renderContext);
-          const float actionsReservedHeight =
-              m_entries[i].actions.empty() ? 0.0f : (Style::controlHeight + kActionRowGap);
-          const float bodyHeight =
-              availableBodyHeight(cs.summaryLabel->height(), actionsReservedHeight, cs.cardNode->height());
-          int bodyLines = fitBodyLines(*m_renderContext, m_entries[i].body, notificationTextMaxWidth(), bodyHeight);
-          if (!m_entries[i].actions.empty()) {
-            bodyLines = std::min(bodyLines, 2);
-          }
-          cs.bodyLabel->setMaxLines(std::max(1, bodyLines));
-          cs.bodyLabel->setText(bodyLines > 0 ? m_entries[i].body : "");
-          cs.bodyLabel->measure(*m_renderContext);
-          cs.bodyLabel->setVisible(bodyLines > 0 && !m_entries[i].body.empty());
-          cs.bodyLabel->setPosition(notificationTextStartX(), bodyTopForSummary(cs.summaryLabel->height()));
-          clampBodyLabelHeight(*cs.bodyLabel, bodyHeight);
 
           // Reset countdown
           if (cs.countdownAnimId != 0) {
@@ -478,7 +602,7 @@ void NotificationToast::addPopup(const Notification& n) {
   entry.displayDurationMs = resolveDisplayDuration(n.timeout);
   entry.rawTimeoutMs = n.timeout;
   entry.remainingProgress = 1.0f;
-  entry.height = entryHeight(entry);
+  refreshEntryGeometry(entry);
   if (const auto placement = findPlacementY(entry.height); placement.has_value()) {
     entry.y = *placement;
   } else if (entry.rawTimeoutMs > 0 && m_notifications != nullptr) {
@@ -976,7 +1100,25 @@ bool NotificationToast::fitsOnSurface(const PopupEntry& entry, float surfaceHeig
 }
 
 float NotificationToast::entryHeight(const PopupEntry& entry) const {
+  if (entry.height > 0.5f) {
+    return entry.height;
+  }
   return cardHeightForEntry(!entry.actions.empty());
+}
+
+void NotificationToast::refreshEntryGeometry(PopupEntry& entry) const {
+  if (m_renderContext == nullptr) {
+    entry.toastSummaryLines = kMaxSummaryLines;
+    entry.toastBodyLines = 0;
+    entry.height = cardHeightForEntry(!entry.actions.empty());
+    return;
+  }
+
+  const ToastGeometry planned = planToastLayout(*m_renderContext, entry.summary, entry.body, entry.actions,
+                                                cardHeightForEntry(!entry.actions.empty()));
+  entry.toastSummaryLines = planned.summaryLines;
+  entry.toastBodyLines = planned.bodyLines;
+  entry.height = planned.cardHeight;
 }
 
 float NotificationToast::layoutBottomForSurfaceHeight(float surfaceHeight) const {
@@ -1248,7 +1390,7 @@ void NotificationToast::applyCardReveal(Instance::CardState& cs, float reveal, f
 InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardContent, Node** outCardForeground,
                                         Label** outAppName, Label** outSummary, Label** outBody, Node** outBg,
                                         Node** outAppIcon, ProgressBar** outProgress, Glyph** outCloseGlyph) {
-  const float cardHeight = cardHeightForEntry(!entry.actions.empty());
+  const float cardHeight = entry.height > 0.5f ? entry.height : cardHeightForEntry(!entry.actions.empty());
   const float innerWidth = kCardWidth - kCardInnerPad * 2;
   const float progressY = cardHeight - kProgressHeight - kProgressBottomMargin;
 
@@ -1392,12 +1534,6 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
   summary->setColor(roleColor(ColorRole::OnSurface));
   summary->setBold(true);
   summary->setMaxWidth(textMaxWidth);
-  summary->setMaxLines(kMaxSummaryLines);
-  summary->measure(*m_renderContext);
-  summary->setPosition(textStartX, kCardInnerPad + kCloseButtonSize + kMetaGap);
-  *outSummary = summary.get();
-  foreground->addChild(std::move(summary));
-
   std::unique_ptr<Flex> actionsRow;
   float actionsReservedHeight = 0.0f;
   if (!entry.actions.empty()) {
@@ -1472,23 +1608,27 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
     }
   }
 
+  summary->setMaxLines(std::max(1, entry.toastSummaryLines));
+  summary->measure(*m_renderContext);
+  summary->setPosition(textStartX, kCardInnerPad + kCloseButtonSize + kMetaGap);
+  const float summaryMeasuredH = summary->height();
+  *outSummary = summary.get();
+  foreground->addChild(std::move(summary));
+
   auto body = std::make_unique<Label>();
   body->setText(entry.body);
   body->setFontSize(kBodyFontSize);
   body->setColor(roleColor(ColorRole::OnSurfaceVariant));
   body->setMaxWidth(textMaxWidth);
-  const float bodyHeight = availableBodyHeight((*outSummary)->height(), actionsReservedHeight, cardHeight);
-  int bodyLines = fitBodyLines(*m_renderContext, entry.body, textMaxWidth, bodyHeight);
-  if (!entry.actions.empty()) {
-    bodyLines = std::min(bodyLines, 2);
-  }
+  const float bodyHeight = availableBodyHeight(summaryMeasuredH, actionsReservedHeight, cardHeight);
+  const int bodyLines = entry.toastBodyLines;
   body->setMaxLines(std::max(1, bodyLines));
   if (bodyLines <= 0) {
     body->setText("");
     body->setVisible(false);
   }
   body->measure(*m_renderContext);
-  body->setPosition(textStartX, bodyTopForSummary((*outSummary)->height()));
+  body->setPosition(textStartX, bodyTopForSummary(summaryMeasuredH));
   clampBodyLabelHeight(*body, bodyHeight);
   *outBody = body.get();
   foreground->addChild(std::move(body));

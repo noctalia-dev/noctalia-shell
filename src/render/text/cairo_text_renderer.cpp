@@ -9,6 +9,7 @@
 #include <cstring>
 #include <fontconfig/fontconfig.h>
 #include <functional>
+#include <pango/pango-attributes.h>
 #include <pango/pango.h>
 #include <pango/pangocairo.h>
 #include <vector>
@@ -254,6 +255,15 @@ PangoLayout* CairoTextRenderer::buildLayout(std::string_view text, float fontSiz
   // log-style payload) can't ask Pango to shape tens of thousands of lines
   // and blow up memory / GL textures. Higher than any real UI needs.
   if (maxWidthPxScaled > 0.0f) {
+    // Avoid Pango inserting hyphens at intra-word line breaks (looks like stray "-" in wrapped UI text).
+    PangoAttrList* attrs = pango_attr_list_new();
+    PangoAttribute* hyphens = pango_attr_insert_hyphens_new(FALSE);
+    hyphens->start_index = 0;
+    hyphens->end_index = PANGO_ATTR_INDEX_TO_TEXT_END;
+    pango_attr_list_insert(attrs, hyphens);
+    pango_layout_set_attributes(layout, attrs);
+    pango_attr_list_unref(attrs);
+
     constexpr int kHardMaxLines = 500;
     int lineBudget = maxLines > 0 ? maxLines : 1 + static_cast<int>(std::count(text.begin(), text.end(), '\n'));
     lineBudget = std::min(lineBudget, kHardMaxLines);
