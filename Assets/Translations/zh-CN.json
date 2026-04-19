@@ -8,7 +8,7 @@
     "disable-dnd": "关闭勿扰模式",
     "disable-wifi": "关闭 Wi-Fi",
     "disconnect-vpn": "断开与 {name} 的连接",
-    "dock-settings": "Dock 设置",
+    "dock-settings": "Dock 栏设置",
     "enable-bluetooth": "启用蓝牙",
     "enable-dnd": "启用勿扰模式",
     "enable-wifi": "启用 Wi-Fi",
@@ -100,7 +100,7 @@
       "icon-description": "从库中选择图标或自定义文件。",
       "select-custom-icon": "选择自定义图标",
       "use-distro-logo-description": "使用您的发行版徽标而不是自定义图标。",
-      "use-distro-logo-label": "使用发行版徽标而不是图标"
+      "use-distro-logo-label": "使用发行版徽标"
     },
     "custom-button": {
       "collapse-condition-description": "如果输出文本与此值匹配，按钮将折叠。",
