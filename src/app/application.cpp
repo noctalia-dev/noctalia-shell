@@ -378,6 +378,7 @@ void Application::initServices() {
     m_osdOverlay.requestRedraw();
     m_trayMenu.onThemeChanged();
     m_overview.onThemeChanged();
+    m_settingsWindow.onThemeChanged();
   });
 
   if (const auto distro = DistroDetector::detect(); distro.has_value()) {
@@ -608,6 +609,7 @@ void Application::initUi() {
 
   m_renderContext.initialize(m_glShared);
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
+  m_settingsWindow.initialize(m_wayland, &m_configService, &m_renderContext);
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache);
   m_lockScreen.setSessionHooks([this]() { m_hookManager.fire(HookKind::SessionLocked); },
                                [this]() { m_hookManager.fire(HookKind::SessionUnlocked); });
@@ -625,6 +627,8 @@ void Application::initUi() {
       return;
     }
     if (m_trayMenu.onPointerEvent(event))
+      return;
+    if (m_settingsWindow.onPointerEvent(event))
       return;
     if (m_bar.onPointerEvent(event))
       return;
@@ -644,11 +648,17 @@ void Application::initUi() {
       m_desktopWidgetsController.onKeyboardEvent(event);
       return;
     }
+    if (m_settingsWindow.isOpen() && m_settingsWindow.wlSurface() != nullptr &&
+        m_wayland.lastKeyboardSurface() == m_settingsWindow.wlSurface()) {
+      m_settingsWindow.onKeyboardEvent(event);
+      return;
+    }
     m_panelManager.onKeyboardEvent(event);
   });
 
   // Panel manager must be before bar so widgets can access PanelManager::instance()
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
+  m_panelManager.setOpenSettingsWindowCallback([this]() { m_settingsWindow.open(); });
   auto clipboardPanel = std::make_unique<ClipboardPanel>(&m_clipboardService, &m_configService);
   clipboardPanel->setActivateCallback([this](const ClipboardEntry& entry) {
     m_panelManager.close();
@@ -728,6 +738,7 @@ void Application::initUi() {
     m_osdOverlay.requestLayout();
     m_trayMenu.onFontChanged();
     m_overview.onFontChanged();
+    m_settingsWindow.onFontChanged();
   });
 
   m_timeService.setTickSecondCallback([this]() {

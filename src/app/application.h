@@ -50,6 +50,7 @@
 #include "shell/panel/panel_manager.h"
 #include "shell/polkit/polkit_panel.h"
 #include "shell/session/session_panel.h"
+#include "shell/settings/settings_window.h"
 #include "shell/tray/tray_menu.h"
 #include "shell/wallpaper/panel/thumbnail_service.h"
 #include "shell/wallpaper/wallpaper.h"
@@ -148,6 +149,7 @@ private:
   TrayMenu m_trayMenu;
   Wallpaper m_wallpaper;
   Overview m_overview;
+  SettingsWindow m_settingsWindow;
   ThumbnailService m_thumbnailService;
   AsyncTextureCache m_asyncTextureCache;
 

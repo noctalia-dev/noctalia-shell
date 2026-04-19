@@ -293,6 +293,7 @@ void WaylandConnection::notifyOutputReady(wl_output* output) {
 
 wl_output* WaylandConnection::lastPointerOutput() const noexcept { return m_lastPointerOutput; }
 wl_surface* WaylandConnection::lastPointerSurface() const noexcept { return m_seatHandler.lastPointerSurface(); }
+wl_surface* WaylandConnection::lastKeyboardSurface() const noexcept { return m_seatHandler.lastKeyboardSurface(); }
 bool WaylandConnection::hasPointerPosition() const noexcept { return m_seatHandler.hasPointerPosition(); }
 double WaylandConnection::lastPointerX() const noexcept { return m_seatHandler.lastPointerX(); }
 double WaylandConnection::lastPointerY() const noexcept { return m_seatHandler.lastPointerY(); }

@@ -112,6 +112,7 @@ public:
   static void handleKeyboardRepeatInfo(void* data, wl_keyboard* keyboard, std::int32_t rate, std::int32_t delay);
 
   [[nodiscard]] wl_surface* lastPointerSurface() const noexcept { return m_lastPointerSurface; }
+  [[nodiscard]] wl_surface* lastKeyboardSurface() const noexcept { return m_lastKeyboardSurface; }
   [[nodiscard]] bool hasPointerPosition() const noexcept { return m_hasPointerPosition; }
   [[nodiscard]] double lastPointerX() const noexcept { return m_lastPointerX; }
   [[nodiscard]] double lastPointerY() const noexcept { return m_lastPointerY; }
@@ -131,6 +132,7 @@ private:
   double m_lastPointerX = 0.0;
   double m_lastPointerY = 0.0;
   bool m_hasPointerPosition = false;
+  wl_surface* m_lastKeyboardSurface = nullptr;
 
   wl_seat* m_seat = nullptr;
   std::uint32_t m_lastSerial = 0;

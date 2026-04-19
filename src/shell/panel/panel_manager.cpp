@@ -64,6 +64,16 @@ void PanelManager::initialize(WaylandConnection& wayland, ConfigService* config,
   m_renderContext = renderContext;
 }
 
+void PanelManager::setOpenSettingsWindowCallback(std::function<void()> callback) {
+  m_openSettingsWindow = std::move(callback);
+}
+
+void PanelManager::openSettingsWindow() {
+  if (m_openSettingsWindow) {
+    m_openSettingsWindow();
+  }
+}
+
 void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> content) {
   m_panels[id] = std::move(content);
 }

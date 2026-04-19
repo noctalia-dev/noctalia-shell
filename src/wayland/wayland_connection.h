@@ -130,6 +130,7 @@ public:
   void closeToplevel(zwlr_foreign_toplevel_handle_v1* handle);
   [[nodiscard]] wl_output* lastPointerOutput() const noexcept;
   [[nodiscard]] wl_surface* lastPointerSurface() const noexcept;
+  [[nodiscard]] wl_surface* lastKeyboardSurface() const noexcept;
   [[nodiscard]] bool hasPointerPosition() const noexcept;
   [[nodiscard]] double lastPointerX() const noexcept;
   [[nodiscard]] double lastPointerY() const noexcept;

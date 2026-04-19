@@ -333,15 +333,19 @@ void WaylandSeat::handleKeyboardKeymap(void* data, wl_keyboard* /*keyboard*/, st
 }
 
 void WaylandSeat::handleKeyboardEnter(void* data, wl_keyboard* /*keyboard*/, std::uint32_t /*serial*/,
-                                      wl_surface* /*surface*/, wl_array* /*keys*/) {
+                                      wl_surface* surface, wl_array* /*keys*/) {
   auto* self = static_cast<WaylandSeat*>(data);
   self->m_repeatActive = false;
+  self->m_lastKeyboardSurface = surface;
 }
 
 void WaylandSeat::handleKeyboardLeave(void* data, wl_keyboard* /*keyboard*/, std::uint32_t /*serial*/,
-                                      wl_surface* /*surface*/) {
+                                      wl_surface* surface) {
   auto* self = static_cast<WaylandSeat*>(data);
   self->m_repeatActive = false;
+  if (self->m_lastKeyboardSurface == surface) {
+    self->m_lastKeyboardSurface = nullptr;
+  }
 }
 
 void WaylandSeat::handleKeyboardKey(void* data, wl_keyboard* /*keyboard*/, std::uint32_t serial, std::uint32_t /*time*/,

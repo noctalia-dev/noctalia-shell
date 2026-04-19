@@ -7,6 +7,7 @@
 #include "wayland/layer_surface.h"
 #include "wayland/wayland_seat.h"
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -31,6 +32,10 @@ public:
   static PanelManager& instance();
 
   void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext);
+
+  // Optional: invoked from shell UI (e.g. control center) to spawn the standalone settings toplevel.
+  void setOpenSettingsWindowCallback(std::function<void()> callback);
+  void openSettingsWindow();
 
   void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 
@@ -68,6 +73,7 @@ private:
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
   RenderContext* m_renderContext = nullptr;
+  std::function<void()> m_openSettingsWindow;
 
   std::unique_ptr<LayerSurface> m_surface;
   // m_sceneRoot must be destroyed before m_animations — ~Node() calls cancelForOwner().

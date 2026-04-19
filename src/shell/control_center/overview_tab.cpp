@@ -175,11 +175,11 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   auto settingsBtn = std::make_unique<Button>();
   settingsBtn->setGlyph("settings");
-  settingsBtn->setVariant(ButtonVariant::Ghost);
+  settingsBtn->setVariant(ButtonVariant::Default);
   settingsBtn->setMinHeight(Style::controlHeight * scale);
   settingsBtn->setMinWidth(Style::controlHeight * scale);
   settingsBtn->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
-  settingsBtn->setEnabled(false);
+  settingsBtn->setOnClick([]() { PanelManager::instance().openSettingsWindow(); });
   m_settingsButton = settingsBtn.get();
   actions->addChild(std::move(settingsBtn));
 

@@ -1,0 +1,52 @@
+#pragma once
+
+#include "render/animation/animation_manager.h"
+#include "render/scene/input_dispatcher.h"
+#include "render/scene/node.h"
+#include "wayland/toplevel_surface.h"
+
+#include <memory>
+
+class ConfigService;
+class RenderContext;
+class WaylandConnection;
+struct KeyboardEvent;
+struct PointerEvent;
+struct wl_surface;
+
+// Standalone xdg-toplevel settings UI (same binary as the shell; shares RenderContext / GLES).
+class SettingsWindow {
+public:
+  void initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext);
+
+  void open();
+  void close();
+  [[nodiscard]] bool isOpen() const noexcept { return m_surface != nullptr && m_surface->isRunning(); }
+  [[nodiscard]] wl_surface* wlSurface() const noexcept {
+    return m_surface != nullptr ? m_surface->wlSurface() : nullptr;
+  }
+
+  [[nodiscard]] bool onPointerEvent(const PointerEvent& event);
+  void onKeyboardEvent(const KeyboardEvent& event);
+  void onThemeChanged();
+  void onFontChanged();
+
+private:
+  void destroyWindow();
+  void prepareFrame(bool needsUpdate, bool needsLayout);
+  void buildScene(std::uint32_t width, std::uint32_t height);
+  [[nodiscard]] float uiScale() const;
+
+  WaylandConnection* m_wayland = nullptr;
+  ConfigService* m_config = nullptr;
+  RenderContext* m_renderContext = nullptr;
+
+  std::unique_ptr<ToplevelSurface> m_surface;
+  std::unique_ptr<Node> m_sceneRoot;
+  InputDispatcher m_inputDispatcher;
+  AnimationManager m_animations;
+  bool m_pointerInside = false;
+
+  std::uint32_t m_lastSceneWidth = 0;
+  std::uint32_t m_lastSceneHeight = 0;
+};
