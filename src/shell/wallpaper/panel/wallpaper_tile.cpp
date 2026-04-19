@@ -2,7 +2,7 @@
 
 #include "cursor-shape-v1-client-protocol.h"
 #include "render/core/renderer.h"
-#include "shell/wallpaper/panel/thumbnail_service.h"
+#include "render/core/thumbnail_service.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/image.h"

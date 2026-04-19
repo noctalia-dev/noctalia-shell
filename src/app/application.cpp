@@ -21,6 +21,7 @@
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 #include "system/distro_info.h"
 #include "ui/controls/input.h"
+#include "ui/dialogs/file_dialog.h"
 #include "ui/style.h"
 
 #include <chrono>
@@ -384,6 +385,7 @@ void Application::initServices() {
     m_trayMenu.onThemeChanged();
     m_overview.onThemeChanged();
     m_settingsWindow.onThemeChanged();
+    m_fileDialogPopup.requestThemeRedraw();
   });
 
   if (const auto distro = DistroDetector::detect(); distro.has_value()) {
@@ -635,6 +637,8 @@ void Application::initUi() {
       return;
     if (m_settingsWindow.onPointerEvent(event))
       return;
+    if (m_fileDialogPopup.onPointerEvent(event))
+      return;
     if (m_bar.onPointerEvent(event))
       return;
     if (m_dock.onPointerEvent(event))
@@ -651,6 +655,10 @@ void Application::initUi() {
     }
     if (m_desktopWidgetsController.isEditing()) {
       m_desktopWidgetsController.onKeyboardEvent(event);
+      return;
+    }
+    if (m_fileDialogPopup.isOpen()) {
+      m_fileDialogPopup.onKeyboardEvent(event);
       return;
     }
     if (m_settingsWindow.isOpen() && m_settingsWindow.wlSurface() != nullptr &&
@@ -723,6 +731,22 @@ void Application::initUi() {
                    m_bluetoothService.get(), m_brightnessService.get());
   m_bar.setAutoHideSuppressionCallback([this]() { return m_trayMenu.isOpen(); });
 
+  m_layerPopupHosts.registerHost(
+      [this](wl_surface* surface) { return m_panelManager.popupParentContextForSurface(surface); },
+      [this](wl_surface* surface) { m_panelManager.beginAttachedPopup(surface); },
+      [this](wl_surface* surface) { m_panelManager.endAttachedPopup(surface); },
+      [this]() { return m_panelManager.fallbackPopupParentContext(); });
+  m_layerPopupHosts.registerHost([this](wl_surface* surface) { return m_bar.popupParentContextForSurface(surface); },
+                                 [this](wl_surface* surface) { m_bar.beginAttachedPopup(surface); },
+                                 [this](wl_surface* surface) { m_bar.endAttachedPopup(surface); },
+                                 [this]() {
+                                   return m_bar.preferredPopupParentContext(
+                                       m_wayland.preferredPanelOutput(std::chrono::milliseconds(1200)));
+                                 });
+
+  m_fileDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts, m_thumbnailService);
+  FileDialog::setPresenter(&m_fileDialogPopup);
+
   m_dock.initialize(m_wayland, &m_configService, &m_renderContext);
   m_desktopWidgetsController.initialize(m_wayland, &m_configService, &m_timeService, m_pipewireSpectrum.get(),
                                         &m_renderContext);
@@ -746,6 +770,7 @@ void Application::initUi() {
     m_trayMenu.onFontChanged();
     m_overview.onFontChanged();
     m_settingsWindow.onFontChanged();
+    m_fileDialogPopup.requestFontLayout();
   });
 
   m_timeService.setTickSecondCallback([this]() {

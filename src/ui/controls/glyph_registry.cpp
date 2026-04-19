@@ -136,6 +136,10 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"square-filled", 0xFC40},     // square-filled
     {"arrow-left", 0xEA19},        // arrow-left
     {"arrow-back", 0xEA0c},        // arrow-back
+    {"list", 0xEB6B},              // list
+    {"layout-grid", 0XEDBA},       // layout-grid
+    {"sort-ascending", 0xEB26},    // sort-ascending
+    {"sort-descending", 0xEB27},   // sort-descending
 
     // Wallpaper / color
     {"camera-video", 0xED22},      // video
@@ -213,7 +217,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
 
     // Files & Folders
     {"folder", 0xEAAD},            // folder
-
+    {"file", 0xEAA4},              // file
 
     // Settings tabs
     {"settings-general", 0xEC38},  // adjustments-horizontal

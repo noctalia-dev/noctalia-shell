@@ -13,8 +13,8 @@ class ThumbnailService;
 // Fixed-size paged grid of WallpaperTiles. Holds a pool of exactly
 // kColumns*kRows tiles and binds them to the entries for the current page,
 // computing cell size adaptively from its own width/height. No scroll, no
-// virtualization, no cache: page changes release old thumbnails through the
-// ThumbnailService and request new ones.
+// virtualization, and no grid-owned cache: page changes release old
+// thumbnails through the shared ThumbnailService and request new ones.
 class WallpaperPageGrid : public Node {
 public:
   using TileIndexCallback = std::function<void(std::size_t index)>;
@@ -42,7 +42,7 @@ public:
   void refreshVisibleThumbnails(Renderer& renderer);
 
   // Release and clear every tile's current thumbnail. Called by the panel on
-  // close so no GL textures outlive the panel.
+  // close so no GL textures outlive the view.
   void releaseAllTiles(Renderer& renderer);
 
 private:

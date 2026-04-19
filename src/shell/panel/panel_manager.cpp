@@ -215,11 +215,13 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
   if (!ok) {
     kLog.warn("panel manager: failed to initialize surface for panel \"{}\"", panelId);
     m_surface.reset();
+    m_output = nullptr;
     m_activePanel = nullptr;
     m_activePanelId.clear();
     return;
   }
 
+  m_output = output;
   m_wlSurface = m_surface->wlSurface();
   m_surface->setBlurRegion({});
   kLog.debug("panel manager: opened \"{}\"", panelId);
@@ -269,6 +271,7 @@ void PanelManager::destroyPanel() {
   m_animations.cancelAll();
   m_closing = false;
   m_pointerInside = false;
+  m_attachedPopupCount = 0;
   m_inputDispatcher.setSceneRoot(nullptr);
   if (m_colorPickerModal != nullptr) {
     m_colorPickerModal->prepareForDestroyPanel(*this);
@@ -282,6 +285,7 @@ void PanelManager::destroyPanel() {
   m_contentNode = nullptr;
   m_sceneRoot.reset();
   m_surface.reset();
+  m_output = nullptr;
   m_wlSurface = nullptr;
   m_activePanel = nullptr;
   m_activePanelId.clear();
@@ -317,6 +321,17 @@ void PanelManager::togglePanel(const std::string& panelId) {
 
 bool PanelManager::onPointerEvent(const PointerEvent& event) {
   if (!isOpen() || m_inTransition) {
+    return false;
+  }
+
+  if (m_attachedPopupCount > 0) {
+    if (event.surface == m_wlSurface) {
+      if (event.type == PointerEvent::Type::Enter) {
+        m_pointerInside = true;
+      } else if (event.type == PointerEvent::Type::Leave) {
+        m_pointerInside = false;
+      }
+    }
     return false;
   }
 
@@ -421,6 +436,49 @@ void PanelManager::requestRedraw() {
 }
 
 void PanelManager::close() { closePanel(); }
+
+void PanelManager::beginAttachedPopup(wl_surface* surface) {
+  if (surface == nullptr || surface != m_wlSurface) {
+    return;
+  }
+  ++m_attachedPopupCount;
+}
+
+void PanelManager::endAttachedPopup(wl_surface* surface) {
+  if (surface == nullptr || surface != m_wlSurface) {
+    return;
+  }
+  if (m_attachedPopupCount > 0) {
+    --m_attachedPopupCount;
+  }
+  if (m_wayland != nullptr) {
+    m_pointerInside = (m_wayland->lastPointerSurface() == m_wlSurface);
+  }
+}
+
+std::optional<LayerPopupParentContext> PanelManager::popupParentContextForSurface(wl_surface* surface) const noexcept {
+  if (surface == nullptr || surface != m_wlSurface) {
+    return std::nullopt;
+  }
+  return fallbackPopupParentContext();
+}
+
+std::optional<LayerPopupParentContext> PanelManager::fallbackPopupParentContext() const noexcept {
+  if (!isOpen() || m_surface == nullptr || m_wlSurface == nullptr) {
+    return std::nullopt;
+  }
+
+  LayerPopupParentContext context;
+  context.surface = m_wlSurface;
+  context.layerSurface = m_surface->layerSurface();
+  context.output = m_output;
+  context.width = m_surface->width();
+  context.height = m_surface->height();
+  if (context.layerSurface == nullptr || context.width == 0 || context.height == 0) {
+    return std::nullopt;
+  }
+  return context;
+}
 
 void PanelManager::dismissColorPickerPanel() {
   if (m_colorPickerModal != nullptr) {

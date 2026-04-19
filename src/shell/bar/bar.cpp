@@ -395,6 +395,71 @@ bool Bar::isRunning() const noexcept {
                      [](const auto& inst) { return inst->surface && inst->surface->isRunning(); });
 }
 
+std::optional<LayerPopupParentContext> Bar::popupParentContextForSurface(wl_surface* surface) const noexcept {
+  auto* instance = instanceForSurface(surface);
+  if (instance == nullptr || instance->surface == nullptr) {
+    return std::nullopt;
+  }
+
+  auto* layerSurface = instance->surface->layerSurface();
+  const auto width = instance->surface->width();
+  const auto height = instance->surface->height();
+  if (layerSurface == nullptr || width == 0 || height == 0) {
+    return std::nullopt;
+  }
+
+  return LayerPopupParentContext{
+      .surface = instance->surface->wlSurface(),
+      .layerSurface = layerSurface,
+      .output = instance->output,
+      .width = width,
+      .height = height,
+  };
+}
+
+std::optional<LayerPopupParentContext> Bar::preferredPopupParentContext(wl_output* output) const noexcept {
+  BarInstance* instance = instanceForOutput(output);
+  if (instance == nullptr && !m_instances.empty()) {
+    instance = m_instances.front().get();
+  }
+  return instance != nullptr && instance->surface != nullptr
+             ? popupParentContextForSurface(instance->surface->wlSurface())
+             : std::nullopt;
+}
+
+void Bar::beginAttachedPopup(wl_surface* surface) {
+  auto* instance = instanceForSurface(surface);
+  if (instance == nullptr) {
+    return;
+  }
+  ++instance->attachedPopupCount;
+}
+
+void Bar::endAttachedPopup(wl_surface* surface) {
+  auto* instance = instanceForSurface(surface);
+  if (instance == nullptr) {
+    return;
+  }
+  if (instance->attachedPopupCount > 0) {
+    --instance->attachedPopupCount;
+  }
+  if (m_wayland != nullptr) {
+    instance->pointerInside = (m_wayland->lastPointerSurface() == surface);
+  }
+  if (!instance->pointerInside && m_hoveredInstance == instance) {
+    m_hoveredInstance = nullptr;
+  } else if (instance->pointerInside) {
+    m_hoveredInstance = instance;
+  }
+  if (instance->attachedPopupCount > 0 || !instance->barConfig.autoHide || instance->pointerInside) {
+    return;
+  }
+  const bool suppressAutoHide = (m_autoHideSuppressionCallback != nullptr) ? m_autoHideSuppressionCallback() : false;
+  if (!suppressAutoHide) {
+    startHideFadeOut(*instance);
+  }
+}
+
 void Bar::show() {
   if (!m_forceHidden) {
     return;
@@ -1038,6 +1103,32 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
 
 bool Bar::onPointerEvent(const PointerEvent& event) {
   bool consumed = false;
+  BarInstance* targetInstance = nullptr;
+  if (event.surface != nullptr) {
+    targetInstance = instanceForSurface(event.surface);
+  } else {
+    targetInstance = m_hoveredInstance;
+  }
+
+  if (targetInstance != nullptr && targetInstance->attachedPopupCount > 0) {
+    switch (event.type) {
+    case PointerEvent::Type::Enter:
+      m_hoveredInstance = targetInstance;
+      targetInstance->pointerInside = true;
+      break;
+    case PointerEvent::Type::Leave:
+      targetInstance->pointerInside = false;
+      if (m_hoveredInstance == targetInstance) {
+        m_hoveredInstance = nullptr;
+      }
+      break;
+    case PointerEvent::Type::Motion:
+    case PointerEvent::Type::Button:
+    case PointerEvent::Type::Axis:
+      break;
+    }
+    return false;
+  }
 
   switch (event.type) {
   case PointerEvent::Type::Enter: {
@@ -1108,6 +1199,27 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
   }
 
   return consumed;
+}
+
+BarInstance* Bar::instanceForSurface(wl_surface* surface) const noexcept {
+  if (surface == nullptr) {
+    return nullptr;
+  }
+  const auto it = m_surfaceMap.find(surface);
+  return it != m_surfaceMap.end() ? it->second : nullptr;
+}
+
+BarInstance* Bar::instanceForOutput(wl_output* output) const noexcept {
+  if (output == nullptr) {
+    return nullptr;
+  }
+
+  for (const auto& instance : m_instances) {
+    if (instance != nullptr && instance->output == output && instance->surface != nullptr) {
+      return instance.get();
+    }
+  }
+  return nullptr;
 }
 
 void Bar::registerIpc(IpcService& ipc) {

@@ -153,6 +153,7 @@ void WaylandSeat::handlePointerEnter(void* data, wl_pointer* /*pointer*/, std::u
                                      std::int32_t sx, std::int32_t sy) {
   auto* self = static_cast<WaylandSeat*>(data);
   self->m_lastSerial = serial;
+  self->m_lastInputSource = InputSource::Pointer;
   self->m_lastPointerSurface = surface;
   self->m_lastPointerX = wl_fixed_to_double(sx);
   self->m_lastPointerY = wl_fixed_to_double(sy);
@@ -169,6 +170,7 @@ void WaylandSeat::handlePointerEnter(void* data, wl_pointer* /*pointer*/, std::u
 void WaylandSeat::handlePointerLeave(void* data, wl_pointer* /*pointer*/, std::uint32_t serial, wl_surface* surface) {
   auto* self = static_cast<WaylandSeat*>(data);
   self->m_lastSerial = serial;
+  self->m_lastInputSource = InputSource::Pointer;
   self->m_lastPointerSurface = surface;
   self->m_hasPointerPosition = false;
   self->m_pendingPointerEvents.push_back(PointerEvent{
@@ -196,6 +198,7 @@ void WaylandSeat::handlePointerButton(void* data, wl_pointer* /*pointer*/, std::
                                       std::uint32_t button, std::uint32_t state) {
   auto* self = static_cast<WaylandSeat*>(data);
   self->m_lastSerial = serial;
+  self->m_lastInputSource = InputSource::Pointer;
   self->m_pendingPointerEvents.push_back(PointerEvent{
       .type = PointerEvent::Type::Button,
       .serial = serial,
@@ -352,6 +355,7 @@ void WaylandSeat::handleKeyboardKey(void* data, wl_keyboard* /*keyboard*/, std::
                                     std::uint32_t key, std::uint32_t state) {
   auto* self = static_cast<WaylandSeat*>(data);
   self->m_lastSerial = serial;
+  self->m_lastInputSource = InputSource::Keyboard;
   if (self->m_xkbState == nullptr || !self->m_keyboardEventCallback) {
     return;
   }

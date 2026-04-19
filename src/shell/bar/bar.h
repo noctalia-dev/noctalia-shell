@@ -2,9 +2,11 @@
 
 #include "shell/bar/bar_instance.h"
 #include "shell/widget/widget_factory.h"
+#include "ui/dialogs/layer_popup_host.h"
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
@@ -61,6 +63,10 @@ public:
   void requestRedraw();
   bool onPointerEvent(const PointerEvent& event);
   [[nodiscard]] bool isRunning() const noexcept;
+  [[nodiscard]] std::optional<LayerPopupParentContext> popupParentContextForSurface(wl_surface* surface) const noexcept;
+  [[nodiscard]] std::optional<LayerPopupParentContext> preferredPopupParentContext(wl_output* output) const noexcept;
+  void beginAttachedPopup(wl_surface* surface);
+  void endAttachedPopup(wl_surface* surface);
 
   void registerIpc(IpcService& ipc);
 
@@ -79,6 +85,8 @@ private:
   void syncBarSlideLayerTransform(BarInstance& instance) const;
   void startHideFadeOut(BarInstance& instance);
   static void applyBackgroundPalette(BarInstance& instance);
+  [[nodiscard]] BarInstance* instanceForSurface(wl_surface* surface) const noexcept;
+  [[nodiscard]] BarInstance* instanceForOutput(wl_output* output) const noexcept;
 
   bool m_forceHidden = false;
   WaylandConnection* m_wayland = nullptr;

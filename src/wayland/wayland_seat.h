@@ -56,6 +56,12 @@ struct KeyboardEvent {
 
 class WaylandSeat {
 public:
+  enum class InputSource : std::uint8_t {
+    None,
+    Pointer,
+    Keyboard,
+  };
+
   struct LockKeysState {
     bool capsLock = false;
     bool numLock = false;
@@ -119,6 +125,7 @@ public:
   [[nodiscard]] std::string currentLayoutName() const;
   [[nodiscard]] std::vector<std::string> layoutNames() const;
   [[nodiscard]] LockKeysState lockKeysState() const;
+  [[nodiscard]] InputSource lastInputSource() const noexcept { return m_lastInputSource; }
 
 private:
   // Pointer
@@ -136,6 +143,7 @@ private:
 
   wl_seat* m_seat = nullptr;
   std::uint32_t m_lastSerial = 0;
+  InputSource m_lastInputSource = InputSource::None;
 
   // Keyboard
   wl_keyboard* m_keyboard = nullptr;

@@ -17,6 +17,7 @@
 #include "ui/controls/slider.h"
 #include "ui/controls/spinner.h"
 #include "ui/controls/toggle.h"
+#include "ui/dialogs/file_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -364,6 +365,57 @@ void TestPanel::create() {
     container->addChild(std::move(row));
   }
 
+  // File dialog (popup)
+  {
+    auto resultLabel = std::make_unique<Label>();
+    resultLabel->setText("No image selected");
+    resultLabel->setCaptionStyle();
+    resultLabel->setFontSize(Style::fontSizeCaption * scale);
+    resultLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    resultLabel->setMaxWidth(320.0f * scale);
+    m_fileDialogResultLabel = resultLabel.get();
+
+    auto openFileDialog = std::make_unique<Button>();
+    openFileDialog->setText("Browse images...");
+    openFileDialog->setGlyph("image");
+    openFileDialog->setFontSize(Style::fontSizeBody * scale);
+    openFileDialog->setGlyphSize(Style::fontSizeBody * scale);
+    openFileDialog->setVariant(ButtonVariant::Default);
+    openFileDialog->setMinHeight(Style::controlHeight * scale);
+    openFileDialog->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    openFileDialog->setRadius(Style::radiusMd * scale);
+    openFileDialog->setOnClick([this]() {
+      FileDialogOptions options;
+      options.mode = FileDialogMode::Open;
+      options.title = "Select Image";
+      options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"};
+      (void)FileDialog::open(std::move(options), [this](std::optional<std::filesystem::path> result) {
+        if (m_fileDialogResultLabel == nullptr) {
+          return;
+        }
+        if (result.has_value()) {
+          m_fileDialogResultLabel->setText(result->string());
+          m_fileDialogResultLabel->setColor(roleColor(ColorRole::Primary));
+        } else {
+          m_fileDialogResultLabel->setText("Cancelled");
+          m_fileDialogResultLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+        }
+      });
+    });
+    m_openFileDialogButton = openFileDialog.get();
+
+    auto col = makeCol();
+    col->setAlign(FlexAlign::Start);
+    col->addChild(std::move(openFileDialog));
+    col->addChild(std::move(resultLabel));
+
+    auto row = makeRow();
+    row->setAlign(FlexAlign::Start);
+    row->addChild(makeRowLabel("File dialog", kRowLabelWidth));
+    row->addChild(std::move(col));
+    container->addChild(std::move(row));
+  }
+
   // Color picker (layer panel)
   {
     auto resultSwatch = std::make_unique<Box>();
@@ -596,6 +648,8 @@ void TestPanel::onClose() {
   m_spinner = nullptr;
   m_input = nullptr;
   m_inputValueLabel = nullptr;
+  m_openFileDialogButton = nullptr;
+  m_fileDialogResultLabel = nullptr;
   m_transformHelp = nullptr;
   m_colorPickerResultSwatch = nullptr;
   m_openColorPickerButton = nullptr;

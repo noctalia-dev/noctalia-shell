@@ -5,6 +5,7 @@
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
 #include "shell/panel/panel.h"
+#include "ui/dialogs/layer_popup_host.h"
 #include "wayland/layer_surface.h"
 #include "wayland/wayland_seat.h"
 
@@ -64,6 +65,8 @@ public:
 
   [[nodiscard]] bool isOpen() const noexcept;
   [[nodiscard]] const std::string& activePanelId() const noexcept;
+  [[nodiscard]] std::optional<LayerPopupParentContext> popupParentContextForSurface(wl_surface* surface) const noexcept;
+  [[nodiscard]] std::optional<LayerPopupParentContext> fallbackPopupParentContext() const noexcept;
 
   void refresh();
   void requestUpdateOnly();
@@ -72,6 +75,8 @@ public:
   // update/layout. Used for reactive palette restyling.
   void requestRedraw();
   void close();
+  void beginAttachedPopup(wl_surface* surface);
+  void endAttachedPopup(wl_surface* surface);
 
   /// Close the color-picker layer only if it is open as a modal over another panel; otherwise same as closePanel().
   void dismissColorPickerPanel();
@@ -108,11 +113,13 @@ private:
   std::unique_ptr<PanelColorPickerModal> m_colorPickerModal;
   std::string m_pendingOpenContext;
 
+  wl_output* m_output = nullptr;
   wl_surface* m_wlSurface = nullptr;
   float m_contentWidth = 0.0f;
   float m_contentHeight = 0.0f;
   bool m_pointerInside = false;
   bool m_inTransition = false;
   bool m_closing = false;
+  std::size_t m_attachedPopupCount = 0;
   std::uint64_t m_destroyGeneration = 0; // invalidates stale deferred destroyPanel calls
 };

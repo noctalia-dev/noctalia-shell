@@ -15,11 +15,11 @@
 #include <unordered_set>
 #include <vector>
 
-// Async thumbnail loader for the wallpaper picker. Worker threads decode and
+// Shared async thumbnail loader for image-backed UI. Worker threads decode and
 // downsample images off the main thread; the main loop uploads finished
-// pixmaps to GL textures via uploadPending(). The service holds no unbounded
-// cache: a texture lives only for the duration of an explicit request/release
-// pair, so the panel can drop everything when it pages away or closes.
+// pixmaps to GL textures via uploadPending(). The service keeps only explicit
+// in-memory request/release ownership while persisting resized WebP files in
+// the on-disk thumbnail cache.
 class ThumbnailService : public PollSource {
 public:
   using ReadyCallback = std::function<void()>;
@@ -45,7 +45,7 @@ public:
   void releaseAll();
 
   // Uploads decoded pixmaps to GL textures. Must run on the main thread with
-  // a GL context current. Called from WallpaperPanel::layout().
+  // a GL context current.
   void uploadPending();
 
   [[nodiscard]] int pollTimeoutMs() const override { return -1; }

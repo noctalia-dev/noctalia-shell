@@ -36,6 +36,7 @@
 #include "pipewire/pipewire_spectrum_poll_source.h"
 #include "render/core/async_texture_cache.h"
 #include "render/core/shared_texture_cache.h"
+#include "render/core/thumbnail_service.h"
 #include "render/gl_shared_context.h"
 #include "render/render_context.h"
 #include "shell/bar/bar.h"
@@ -52,7 +53,6 @@
 #include "shell/session/session_panel.h"
 #include "shell/settings/settings_window.h"
 #include "shell/tray/tray_menu.h"
-#include "shell/wallpaper/panel/thumbnail_service.h"
 #include "shell/wallpaper/wallpaper.h"
 #include "system/brightness_poll_source.h"
 #include "system/brightness_service.h"
@@ -65,6 +65,8 @@
 #include "theme/theme_service.h"
 #include "time/time_poll_source.h"
 #include "time/time_service.h"
+#include "ui/dialogs/file_dialog_popup.h"
+#include "ui/dialogs/layer_popup_host.h"
 #include "wayland/clipboard_poll_source.h"
 #include "wayland/clipboard_service.h"
 #include "wayland/key_repeat_poll_source.h"
@@ -150,6 +152,8 @@ private:
   Wallpaper m_wallpaper;
   Overview m_overview;
   SettingsWindow m_settingsWindow;
+  LayerPopupHostRegistry m_layerPopupHosts;
+  FileDialogPopup m_fileDialogPopup;
   ThumbnailService m_thumbnailService;
   AsyncTextureCache m_asyncTextureCache;
 

@@ -31,6 +31,7 @@ public:
   void setFocus(InputArea* area);
   [[nodiscard]] InputArea* focusedArea() const noexcept { return m_focusedArea; }
   [[nodiscard]] InputArea* hoveredArea() const noexcept { return m_hoveredArea; }
+  [[nodiscard]] bool pointerCaptured() const noexcept { return m_capturedArea != nullptr; }
 
 private:
   InputArea* findInputAreaAt(float x, float y);

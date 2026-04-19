@@ -1,4 +1,4 @@
-#include "shell/wallpaper/panel/thumbnail_service.h"
+#include "render/core/thumbnail_service.h"
 
 #include "core/log.h"
 #include "render/core/image_decoder.h"
@@ -23,11 +23,12 @@
 
 namespace {
 
-  constexpr Logger kLog("thumb");
+  constexpr Logger kLog("thumbnail");
   constexpr int kThumbnailTargetPx = 192;
   constexpr float kThumbnailWebPQuality = 82.0f;
   constexpr std::size_t kMinWorkers = 2;
   constexpr std::size_t kMaxWorkers = 4;
+  constexpr std::string_view kThumbnailCacheVersion = "thumbnail-service-v2";
 
   std::vector<std::uint8_t> readFile(const std::string& path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
@@ -91,7 +92,7 @@ namespace {
 
     const auto ticks = mtime.time_since_epoch().count();
     const std::string key = sourcePath + '\n' + std::to_string(size) + '\n' + std::to_string(ticks) + '\n' +
-                            std::to_string(kThumbnailTargetPx) + '\n' + "wallpaper-thumb-v1";
+                            std::to_string(kThumbnailTargetPx) + '\n' + std::string(kThumbnailCacheVersion);
     return thumbnailCacheDir() / (hex64(fnv1a64(key)) + ".webp");
   }
 
@@ -161,7 +162,7 @@ namespace {
 ThumbnailService::ThumbnailService() {
   m_eventFd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   if (m_eventFd < 0) {
-    kLog.warn("failed to create eventfd; thumbnail service will run synchronously-only");
+    kLog.warn("failed to create eventfd; thumbnail wakeups will be disabled");
   }
 
   const unsigned hc = std::thread::hardware_concurrency();

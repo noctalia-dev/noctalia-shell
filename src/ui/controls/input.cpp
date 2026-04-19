@@ -459,6 +459,7 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
 void Input::applyVisualState() {
   const bool focused = m_inputArea != nullptr && m_inputArea->focused();
   const bool hovered = m_inputArea != nullptr && m_inputArea->hovered();
+  const bool readOnly = isReadOnlyVisual();
 
   const Color fill = focused ? resolved(ColorRole::Surface) : resolved(ColorRole::SurfaceVariant);
   const Color border = focused
@@ -485,16 +486,26 @@ void Input::applyVisualState() {
   cursorStyle.fillMode = FillMode::Solid;
   cursorStyle.radius = 1.0f;
   m_cursor->setStyle(cursorStyle);
+
+  const ColorRole textRole =
+      ((m_value.empty() && !m_placeholder.empty()) || readOnly) ? ColorRole::OnSurfaceVariant : ColorRole::OnSurface;
+  m_label->setColor(roleColor(textRole));
+  const Color passwordGlyphColor = resolveThemeColor(roleColor(textRole));
+  for (auto* glyph : m_passwordGlyphs) {
+    glyph->setColor(passwordGlyphColor);
+  }
 }
 
 void Input::updateDisplayText() {
   if (m_value.empty() && !m_placeholder.empty()) {
     m_label->setText(m_placeholder);
-    m_label->setColor(roleColor(ColorRole::OnSurfaceVariant));
   } else {
     m_label->setText(m_passwordMode ? std::string{} : m_value);
-    m_label->setColor(roleColor(ColorRole::OnSurface));
   }
+}
+
+bool Input::isReadOnlyVisual() const noexcept {
+  return m_inputArea != nullptr && (!m_inputArea->focusable() || !m_inputArea->enabled());
 }
 
 void Input::updateInteractiveGeometry() {

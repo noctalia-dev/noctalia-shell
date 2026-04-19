@@ -59,6 +59,7 @@ private:
   [[nodiscard]] bool hasSelection() const noexcept;
   [[nodiscard]] std::size_t selectionStart() const noexcept;
   [[nodiscard]] std::size_t selectionEnd() const noexcept;
+  [[nodiscard]] bool isReadOnlyVisual() const noexcept;
   void deleteSelection();
   [[nodiscard]] std::size_t xToByteOffset(float localX) const;
   [[nodiscard]] float stopXForByte(std::size_t bytePos) const;
