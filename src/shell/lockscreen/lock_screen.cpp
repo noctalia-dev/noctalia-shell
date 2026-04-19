@@ -126,9 +126,7 @@ void LockScreen::unlock() {
   wl_display_flush(m_wayland->display());
 }
 
-void LockScreen::onFontChanged() {
-  requestLayout();
-}
+void LockScreen::onFontChanged() { requestLayout(); }
 
 void LockScreen::requestLayout() {
   for (auto& inst : m_instances) {

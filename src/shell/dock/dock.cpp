@@ -8,6 +8,7 @@
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
+#include "render/scene/node.h"
 #include "render/scene/rect_node.h"
 #include "system/desktop_entry.h"
 #include "ui/controls/box.h"
@@ -20,6 +21,7 @@
 #include "ui/style.h"
 #include "wayland/layer_surface.h"
 #include "wayland/popup_surface.h"
+#include "wayland/surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_toplevels.h"
 #include "xdg-shell-client-protocol.h"
@@ -41,6 +43,27 @@ namespace {
   // Thin strip (px) kept in the input region when auto-hide is in the hidden
   // state, so the pointer can re-trigger show on approach to the screen edge.
   constexpr std::int32_t kAutoHideTriggerPx = 2;
+  constexpr float kAutoHideSlideExtraPx = 16.0f;
+
+  // Slide the whole dock chrome (panel ± shadow) completely past the layer buffer edge, same
+  // idea as notification toasts driving `reveal` until the full card width has cleared the surface.
+  std::pair<float, float> computeAutoHideHiddenDelta(bool vert, bool isBottom, bool isRight, float w, float h,
+                                                     float contentLeft, float contentTop, float contentRight,
+                                                     float contentBottom) {
+    const float k = kAutoHideSlideExtraPx;
+    if (!vert) {
+      if (isBottom) {
+        // After slide: contentTop + dy >= h (+ slack) so nothing remains inside the buffer.
+        return {0.0f, (h - contentTop) + k};
+      }
+      // Top-anchored: move up until contentBottom + dy <= 0.
+      return {0.0f, -(contentBottom + k)};
+    }
+    if (isRight) {
+      return {(w - contentLeft) + k, 0.0f};
+    }
+    return {-(contentRight + k), 0.0f};
+  }
 
   std::string toLower(std::string s) {
     for (auto& c : s) {
@@ -338,10 +361,10 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
     if (m_config->config().dock.autoHide && m_hoveredInstance->sceneRoot != nullptr) {
       const float current = m_hoveredInstance->hideOpacity;
       m_hoveredInstance->animations.animate(current, 1.0f, Style::animNormal, Easing::EaseOutCubic,
-                                            [inst = m_hoveredInstance](float v) {
-                                              if (inst->sceneRoot)
-                                                inst->sceneRoot->setOpacity(v);
+                                            [inst = m_hoveredInstance, this](float v) {
                                               inst->hideOpacity = v;
+                                              syncDockSlideLayerTransform(*inst);
+                                              applyDockCompositorBlur(*inst);
                                             });
       // Restore full input region (full surface so shadow-margin edges don't
       // cause an immediate Leave when triggered from the edge of the strip).
@@ -642,6 +665,49 @@ void Dock::prepareFrame(DockInstance& instance, bool /*needsUpdate*/, bool needs
   }
 }
 
+void Dock::syncDockSlideLayerTransform(DockInstance& instance) {
+  if (instance.slideRoot == nullptr) {
+    return;
+  }
+  const auto& cfg = m_config->config().dock;
+  if (cfg.autoHide) {
+    const float t = 1.0f - instance.hideOpacity;
+    instance.slideRoot->setPosition(instance.slideHiddenDx * t, instance.slideHiddenDy * t);
+  } else {
+    instance.slideRoot->setPosition(0.0f, 0.0f);
+  }
+}
+
+void Dock::applyDockCompositorBlur(DockInstance& instance) {
+  const auto& cfg = m_config->config().dock;
+  if (instance.surface == nullptr) {
+    return;
+  }
+  if (!cfg.backgroundBlur) {
+    instance.surface->clearBlurRegion();
+    return;
+  }
+  // Compositor blur is independent of scene opacity — clear it while auto-hide
+  // has faded the dock out so a transparent buffer does not leave a blur halo.
+  constexpr float kBlurVisibleOpacity = 0.02f;
+  if (cfg.autoHide && instance.hideOpacity < kBlurVisibleOpacity) {
+    instance.surface->clearBlurRegion();
+    return;
+  }
+  if (instance.panel == nullptr) {
+    return;
+  }
+  float absX = 0.0f;
+  float absY = 0.0f;
+  Node::absolutePosition(instance.panel, absX, absY);
+  const int px = static_cast<int>(std::lround(absX));
+  const int py = static_cast<int>(std::lround(absY));
+  const int pw = static_cast<int>(std::lround(instance.panel->width()));
+  const int ph = static_cast<int>(std::lround(instance.panel->height()));
+  auto blurStrips = Surface::tessellateRoundedRect(px, py, pw, ph, static_cast<float>(cfg.radius));
+  instance.surface->setBlurRegion(blurStrips);
+}
+
 void Dock::buildScene(DockInstance& instance) {
   uiAssertNotRendering("Dock::buildScene");
   if (m_renderContext == nullptr || instance.surface == nullptr) {
@@ -687,17 +753,22 @@ void Dock::buildScene(DockInstance& instance) {
     instance.sceneRoot = std::make_unique<Node>();
     instance.sceneRoot->setAnimationManager(&instance.animations);
     instance.sceneRoot->setSize(w, h);
+    instance.sceneRoot->setOpacity(1.0f);
+
+    auto slide = std::make_unique<Node>();
+    slide->setParticipatesInLayout(false);
+    instance.slideRoot = instance.sceneRoot->addChild(std::move(slide));
 
     // Shadow
     if (cfg.shadowBlur > 0) {
       auto shadow = std::make_unique<RectNode>();
-      instance.shadow = static_cast<RectNode*>(instance.sceneRoot->addChild(std::move(shadow)));
+      instance.shadow = static_cast<RectNode*>(instance.slideRoot->addChild(std::move(shadow)));
     }
 
     // Panel background
     auto panel = std::make_unique<Box>();
     panel->setRadius(static_cast<float>(cfg.radius));
-    instance.panel = static_cast<Box*>(instance.sceneRoot->addChild(std::move(panel)));
+    instance.panel = static_cast<Box*>(instance.slideRoot->addChild(std::move(panel)));
 
     // Item row
     auto row = std::make_unique<Flex>();
@@ -716,16 +787,15 @@ void Dock::buildScene(DockInstance& instance) {
     rebuildItems(instance);
 
     if (cfg.autoHide) {
-      // Start hidden immediately — no intro animation.
-      instance.sceneRoot->setOpacity(0.0f);
+      // Start off-screen (slide); opacity stays at 1 so the compositor blur matches the panel.
+      instance.slideRoot->setOpacity(1.0f);
       instance.hideOpacity = 0.0f;
     } else {
-      // Normal intro fade-in.
-      instance.sceneRoot->setOpacity(0.0f);
+      instance.slideRoot->setOpacity(0.0f);
+      instance.hideOpacity = 1.0f;
       instance.animations.animate(
           0.0f, 1.0f, Style::animSlow, Easing::EaseOutCubic,
-          [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); },
-          [inst = &instance]() { inst->hideOpacity = 1.0f; }, instance.sceneRoot.get());
+          [slide = instance.slideRoot](float v) { slide->setOpacity(v); }, {}, instance.slideRoot);
     }
 
     instance.surface->setSceneRoot(instance.sceneRoot.get());
@@ -733,6 +803,9 @@ void Dock::buildScene(DockInstance& instance) {
 
   // Update root size on reconfigure.
   instance.sceneRoot->setSize(w, h);
+  if (instance.slideRoot != nullptr) {
+    instance.slideRoot->setSize(w, h);
+  }
 
   // Shadow
   if (instance.shadow != nullptr) {
@@ -762,6 +835,29 @@ void Dock::buildScene(DockInstance& instance) {
   instance.row->setSize(panelW, panelH);
   instance.row->layout(*m_renderContext);
 
+  if (cfg.autoHide) {
+    float contentLeft = panelX;
+    float contentTop = panelY;
+    float contentRight = panelX + panelW;
+    float contentBottom = panelY + panelH;
+    if (instance.shadow != nullptr) {
+      const float sx = panelX + static_cast<float>(cfg.shadowOffsetX);
+      const float sy = panelY + static_cast<float>(cfg.shadowOffsetY);
+      contentLeft = std::min(contentLeft, sx);
+      contentTop = std::min(contentTop, sy);
+      contentRight = std::max(contentRight, sx + panelW);
+      contentBottom = std::max(contentBottom, sy + panelH);
+    }
+    const auto hiddenDelta =
+        computeAutoHideHiddenDelta(vert, isBottom, isRight, w, h, contentLeft, contentTop, contentRight, contentBottom);
+    instance.slideHiddenDx = hiddenDelta.first;
+    instance.slideHiddenDy = hiddenDelta.second;
+  } else {
+    instance.slideHiddenDx = 0.0f;
+    instance.slideHiddenDy = 0.0f;
+  }
+  syncDockSlideLayerTransform(instance);
+
   // Input region: trigger strip when hidden (autoHide), full panel otherwise.
   if (cfg.autoHide && instance.hideOpacity < 0.5f) {
     const int surfW = static_cast<int>(w);
@@ -774,22 +870,18 @@ void Dock::buildScene(DockInstance& instance) {
       instance.surface->setInputRegion({InputRect{0, 0, kAutoHideTriggerPx, surfH}});
     }
   } else {
+    float absX = 0.0f;
+    float absY = 0.0f;
+    Node::absolutePosition(instance.panel, absX, absY);
     instance.surface->setInputRegion({InputRect{
-        static_cast<int>(panelX),
-        static_cast<int>(panelY),
-        static_cast<int>(panelW),
-        static_cast<int>(panelH),
+        static_cast<int>(std::lround(absX)),
+        static_cast<int>(std::lround(absY)),
+        static_cast<int>(std::lround(instance.panel->width())),
+        static_cast<int>(std::lround(instance.panel->height())),
     }});
   }
 
-  if (cfg.backgroundBlur) {
-    auto blurStrips =
-        Surface::tessellateRoundedRect(static_cast<int>(panelX), static_cast<int>(panelY), static_cast<int>(panelW),
-                                       static_cast<int>(panelH), static_cast<float>(cfg.radius));
-    instance.surface->setBlurRegion(blurStrips);
-  } else {
-    instance.surface->clearBlurRegion();
-  }
+  applyDockCompositorBlur(instance);
 
   // Palette reactivity.
   instance.paletteConn = paletteChanged().connect([inst = &instance, this] {
@@ -1436,10 +1528,10 @@ void Dock::startHideFadeOut(DockInstance& inst) {
   const float current = inst.hideOpacity;
   inst.animations.animate(
       current, 0.0f, Style::animSlow, Easing::EaseInQuad,
-      [&inst](float v) {
-        if (inst.sceneRoot)
-          inst.sceneRoot->setOpacity(v);
+      [&inst, this](float v) {
         inst.hideOpacity = v;
+        syncDockSlideLayerTransform(inst);
+        applyDockCompositorBlur(inst);
       },
       [&inst, this]() {
         if (inst.surface == nullptr)

@@ -81,6 +81,9 @@ private:
     // sceneRoot must be destroyed before `animations` — ~Node() calls cancelForOwner().
     AnimationManager animations;
     std::unique_ptr<Node> sceneRoot;
+    Node* slideRoot = nullptr;
+    float slideHiddenDx = 0.0f;
+    float slideHiddenDy = 0.0f;
     RectNode* shadow = nullptr;
     Box* panel = nullptr;
     Flex* row = nullptr;
@@ -101,6 +104,8 @@ private:
   void createInstance(const WaylandOutput& output);
   void destroyInstance(std::uint32_t outputName);
   void prepareFrame(DockInstance& instance, bool needsUpdate, bool needsLayout);
+  void applyDockCompositorBlur(DockInstance& instance);
+  void syncDockSlideLayerTransform(DockInstance& instance);
   void buildScene(DockInstance& instance);
   void rebuildItems(DockInstance& instance);
   void resizeSurface(DockInstance& instance);
