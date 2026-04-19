@@ -181,15 +181,12 @@ namespace {
   std::string repeatGlyph(const std::string& loopStatus) { return loopStatus == "Track" ? "repeat-once" : "repeat"; }
 
   ButtonVariant toggleVariant(bool active) { return active ? ButtonVariant::Accent : ButtonVariant::Ghost; }
+  constexpr int kVisualizerBandCount = 32;
 
 } // namespace
 
 MediaTab::MediaTab(MprisService* mpris, HttpClient* httpClient, PipeWireSpectrum* spectrum)
-    : m_mpris(mpris), m_httpClient(httpClient), m_spectrum(spectrum) {
-  if (m_spectrum != nullptr) {
-    m_spectrum->setBandCount(32);
-  }
-}
+    : m_mpris(mpris), m_httpClient(httpClient), m_spectrum(spectrum) {}
 
 std::unique_ptr<Flex> MediaTab::create() {
   const float scale = contentScale();
@@ -646,8 +643,8 @@ void MediaTab::doUpdate(Renderer& renderer) {
   if (!m_active) {
     return;
   }
-  if (m_visualizerSpectrum != nullptr && m_spectrum != nullptr) {
-    m_visualizerSpectrum->setValues(m_spectrum->values());
+  if (m_visualizerSpectrum != nullptr && m_spectrum != nullptr && m_spectrumListenerId != 0) {
+    m_visualizerSpectrum->setValues(m_spectrum->values(m_spectrumListenerId));
   }
   refresh(renderer);
 }
@@ -656,8 +653,8 @@ void MediaTab::onFrameTick(float deltaMs) {
   if (!m_active || m_visualizerSpectrum == nullptr) {
     return;
   }
-  if (m_spectrum != nullptr) {
-    m_visualizerSpectrum->setValues(m_spectrum->values());
+  if (m_spectrum != nullptr && m_spectrumListenerId != 0) {
+    m_visualizerSpectrum->setValues(m_spectrum->values(m_spectrumListenerId));
   }
   m_visualizerSpectrum->tick(deltaMs);
 }
@@ -667,7 +664,7 @@ void MediaTab::setActive(bool active) {
   m_active = active;
   if (m_spectrum != nullptr) {
     if (active && m_spectrumListenerId == 0) {
-      m_spectrumListenerId = m_spectrum->addChangeListener([this]() {
+      m_spectrumListenerId = m_spectrum->addChangeListener(kVisualizerBandCount, [this]() {
         if (!m_active) {
           return;
         }

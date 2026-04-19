@@ -20,6 +20,10 @@
 namespace {
 
   constexpr Logger kLog{"pipewire_spectrum"};
+  constexpr int kDefaultViewBandCount = 32;
+  constexpr int kMaxSpectrumBands = 4096 / 2;
+
+  int clampBandCount(int count) { return std::clamp(count, 1, kMaxSpectrumBands); }
 
   class BufferRequeueGuard {
   public:
@@ -66,13 +70,27 @@ namespace {
 
 } // namespace
 
-PipeWireSpectrum::ListenerId PipeWireSpectrum::addChangeListener(ChangeCallback callback) {
+const std::vector<float>& PipeWireSpectrum::values(ListenerId id) const noexcept {
+  static const std::vector<float> kEmptyValues;
+
+  const auto it = m_listeners.find(id);
+  if (it == m_listeners.end()) {
+    return kEmptyValues;
+  }
+  return it->second.values;
+}
+
+PipeWireSpectrum::ListenerId PipeWireSpectrum::addChangeListener(int bandCount, ChangeCallback callback) {
   if (!callback) {
     return 0;
   }
-  const bool wasEmpty = m_changeListeners.empty();
+  const bool wasEmpty = m_listeners.empty();
   const ListenerId id = m_nextListenerId++;
-  m_changeListeners.emplace(id, std::move(callback));
+  ListenerState state;
+  state.bandCount = clampBandCount(bandCount);
+  state.callback = std::move(callback);
+  m_listeners.emplace(id, std::move(state));
+  reconfigureAnalysisLayout();
   if (wasEmpty) {
     rebuildStream();
   }
@@ -83,10 +101,15 @@ void PipeWireSpectrum::removeChangeListener(ListenerId id) {
   if (id == 0) {
     return;
   }
-  const bool removed = m_changeListeners.erase(id) > 0;
-  if (removed && m_changeListeners.empty()) {
-    rebuildStream();
+  const bool removed = m_listeners.erase(id) > 0;
+  if (!removed) {
+    return;
   }
+  if (m_listeners.empty()) {
+    rebuildStream();
+    return;
+  }
+  reconfigureAnalysisLayout();
 }
 
 class PipeWireSpectrum::Stream {
@@ -229,7 +252,7 @@ void PipeWireSpectrum::Stream::handleParamChanged(std::uint32_t id, const spa_po
   m_formatReady = raw.channels > 0;
   if (m_formatReady) {
     m_spectrum.m_sampleRate = static_cast<int>(raw.rate);
-    m_spectrum.computeBandBins();
+    m_spectrum.computeAnalysisBandBins();
   }
 }
 
@@ -299,23 +322,13 @@ void PipeWireSpectrum::setTargetNodeId(std::uint32_t id) {
   rebuildStream();
 }
 
-void PipeWireSpectrum::setBandCount(int count) {
-  count = std::clamp(count, 1, kFftSize / 2);
-  if (count == m_bandCount) {
-    return;
-  }
-  m_bandCount = count;
-  initProcessing();
-  emitChanged();
-}
-
 void PipeWireSpectrum::setLowerCutoff(int freq) {
   freq = std::max(1, freq);
   if (freq == m_lowerCutoff) {
     return;
   }
   m_lowerCutoff = freq;
-  computeBandBins();
+  computeAnalysisBandBins();
 }
 
 void PipeWireSpectrum::setUpperCutoff(int freq) {
@@ -324,7 +337,7 @@ void PipeWireSpectrum::setUpperCutoff(int freq) {
     return;
   }
   m_upperCutoff = freq;
-  computeBandBins();
+  computeAnalysisBandBins();
 }
 
 void PipeWireSpectrum::setNoiseReduction(float amount) {
@@ -396,13 +409,17 @@ void PipeWireSpectrum::rebuildStream() {
   m_samplesReceived = false;
   m_sensitivity = 0.01f;
   m_sensInit = true;
-  std::fill(m_prevBands.begin(), m_prevBands.end(), 0.0f);
-  std::fill(m_peak.begin(), m_peak.end(), 0.0f);
-  std::fill(m_fall.begin(), m_fall.end(), 0.0f);
-  std::fill(m_mem.begin(), m_mem.end(), 0.0f);
+  std::fill(m_analysisBands.begin(), m_analysisBands.end(), 0.0f);
+  for (auto& [id, state] : m_listeners) {
+    (void)id;
+    resetListenerState(state, false);
+  }
   m_nextFrameAt = std::chrono::steady_clock::now();
   if (m_idle) {
-    emitChanged();
+    for (const auto& [id, state] : m_listeners) {
+      (void)state;
+      emitChanged(id);
+    }
   }
 }
 
@@ -425,23 +442,32 @@ bool PipeWireSpectrum::hasResolvedTargetNode() const noexcept {
 }
 
 void PipeWireSpectrum::clearValues(bool notify) {
-  const bool hadNonZero = std::ranges::any_of(m_values, [](float value) { return value > 0.0f; });
-  std::fill(m_values.begin(), m_values.end(), 0.0f);
+  std::vector<ListenerId> changedListeners;
+  changedListeners.reserve(m_listeners.size());
+  for (auto& [id, state] : m_listeners) {
+    const bool hadNonZero = std::ranges::any_of(state.values, [](float value) { return value > 0.0f; });
+    const bool hadValues = !state.values.empty();
+    resetListenerState(state, true);
+    if (notify && (hadNonZero || hadValues)) {
+      changedListeners.push_back(id);
+    }
+  }
+  std::fill(m_analysisBands.begin(), m_analysisBands.end(), 0.0f);
   m_idleFrames = 0;
   m_idle = true;
   m_samplesReceived = false;
   m_ringFull = false;
-  if (notify && (hadNonZero || !m_values.empty())) {
-    emitChanged();
+  if (notify) {
+    for (ListenerId id : changedListeners) {
+      emitChanged(id);
+    }
   }
 }
 
-void PipeWireSpectrum::emitChanged() {
-  for (const auto& [id, callback] : m_changeListeners) {
-    (void)id;
-    if (callback) {
-      callback();
-    }
+void PipeWireSpectrum::emitChanged(ListenerId id) {
+  const auto it = m_listeners.find(id);
+  if (it != m_listeners.end() && it->second.callback) {
+    it->second.callback();
   }
 }
 
@@ -458,27 +484,81 @@ void PipeWireSpectrum::initProcessing() {
         (1.0f - std::cos(2.0f * std::numbers::pi_v<float> * static_cast<float>(i) / static_cast<float>(kFftSize - 1)));
   }
 
-  m_prevBands.assign(m_bandCount, 0.0f);
-  m_peak.assign(m_bandCount, 0.0f);
-  m_fall.assign(m_bandCount, 0.0f);
-  m_mem.assign(m_bandCount, 0.0f);
-  m_bands.assign(m_bandCount, 0.0f);
-  m_values.assign(m_bandCount, 0.0f);
-  computeBandBins();
+  reconfigureAnalysisLayout();
 }
 
-void PipeWireSpectrum::computeBandBins() {
-  m_bandBinLow.resize(m_bandCount);
-  m_bandBinHigh.resize(m_bandCount);
+void PipeWireSpectrum::reconfigureAnalysisLayout() {
+  int maxBandCount = kDefaultViewBandCount;
+  for (const auto& [id, state] : m_listeners) {
+    (void)id;
+    maxBandCount = std::max(maxBandCount, clampBandCount(state.bandCount));
+  }
+
+  const bool analysisChanged = maxBandCount != m_analysisBandCount;
+  m_analysisBandCount = maxBandCount;
+  m_analysisBands.assign(m_analysisBandCount, 0.0f);
+  computeAnalysisBandBins();
+
+  for (auto& [id, state] : m_listeners) {
+    (void)id;
+    configureListenerState(state, analysisChanged);
+  }
+
+  if (analysisChanged) {
+    for (const auto& [id, state] : m_listeners) {
+      (void)state;
+      emitChanged(id);
+    }
+  }
+}
+
+void PipeWireSpectrum::configureListenerState(ListenerState& state, bool resetState) {
+  state.bandCount = clampBandCount(state.bandCount);
+  state.analysisBandLow.resize(state.bandCount);
+  state.analysisBandHigh.resize(state.bandCount);
+
+  const std::int64_t analysisBandCount = std::max(1, m_analysisBandCount);
+  const std::int64_t listenerBandCount = std::max(1, state.bandCount);
+  for (int i = 0; i < state.bandCount; ++i) {
+    const std::int64_t low = (static_cast<std::int64_t>(i) * analysisBandCount) / listenerBandCount;
+    const std::int64_t high =
+        ((static_cast<std::int64_t>(i + 1) * analysisBandCount) + listenerBandCount - 1) / listenerBandCount - 1;
+    state.analysisBandLow[i] = std::clamp<int>(static_cast<int>(low), 0, m_analysisBandCount - 1);
+    state.analysisBandHigh[i] =
+        std::clamp<int>(static_cast<int>(high), state.analysisBandLow[i], m_analysisBandCount - 1);
+  }
+
+  const bool sizeMismatch = static_cast<int>(state.values.size()) != state.bandCount;
+  if (resetState || sizeMismatch) {
+    resetListenerState(state, true);
+  }
+}
+
+void PipeWireSpectrum::resetListenerState(ListenerState& state, bool clearValues) {
+  state.workBands.assign(state.bandCount, 0.0f);
+  state.prevBands.assign(state.bandCount, 0.0f);
+  state.peak.assign(state.bandCount, 0.0f);
+  state.fall.assign(state.bandCount, 0.0f);
+  state.mem.assign(state.bandCount, 0.0f);
+  if (clearValues || static_cast<int>(state.values.size()) != state.bandCount) {
+    state.values.assign(state.bandCount, 0.0f);
+  }
+}
+
+void PipeWireSpectrum::computeAnalysisBandBins() {
+  m_analysisBandBinLow.resize(m_analysisBandCount);
+  m_analysisBandBinHigh.resize(m_analysisBandCount);
 
   const float fLow = static_cast<float>(m_lowerCutoff);
   const float fHigh = static_cast<float>(std::min(m_upperCutoff, m_sampleRate / 2));
   const float ratio = fHigh / fLow;
   const int fftBins = kFftSize / 2;
 
-  for (int i = 0; i < m_bandCount; ++i) {
-    const float bandFreqLow = fLow * std::pow(ratio, static_cast<float>(i) / static_cast<float>(m_bandCount));
-    const float bandFreqHigh = fLow * std::pow(ratio, static_cast<float>(i + 1) / static_cast<float>(m_bandCount));
+  for (int i = 0; i < m_analysisBandCount; ++i) {
+    const float bandFreqLow =
+        fLow * std::pow(ratio, static_cast<float>(i) / static_cast<float>(std::max(1, m_analysisBandCount)));
+    const float bandFreqHigh =
+        fLow * std::pow(ratio, static_cast<float>(i + 1) / static_cast<float>(std::max(1, m_analysisBandCount)));
 
     int binLow =
         static_cast<int>(std::ceil(bandFreqLow * static_cast<float>(kFftSize) / static_cast<float>(m_sampleRate)));
@@ -488,8 +568,8 @@ void PipeWireSpectrum::computeBandBins() {
     binLow = std::clamp(binLow, 1, fftBins);
     binHigh = std::clamp(binHigh, binLow, fftBins);
 
-    if (i > 0 && binLow <= m_bandBinHigh[i - 1]) {
-      binLow = m_bandBinHigh[i - 1] + 1;
+    if (i > 0 && binLow <= m_analysisBandBinHigh[i - 1]) {
+      binLow = m_analysisBandBinHigh[i - 1] + 1;
       if (binLow > fftBins) {
         binLow = fftBins;
       }
@@ -498,9 +578,67 @@ void PipeWireSpectrum::computeBandBins() {
       }
     }
 
-    m_bandBinLow[i] = binLow;
-    m_bandBinHigh[i] = binHigh;
+    m_analysisBandBinLow[i] = binLow;
+    m_analysisBandBinHigh[i] = binHigh;
   }
+}
+
+bool PipeWireSpectrum::processListenerView(ListenerState& state, float nrFactor, double gravityMod) {
+  auto& bands = state.workBands;
+  for (int i = 0; i < state.bandCount; ++i) {
+    float maxBand = 0.0f;
+    for (int band = state.analysisBandLow[i]; band <= state.analysisBandHigh[i]; ++band) {
+      maxBand = std::max(maxBand, m_analysisBands[band]);
+    }
+    bands[i] = maxBand;
+  }
+
+  for (int i = 0; i < state.bandCount; ++i) {
+    if (bands[i] < state.prevBands[i] && m_noiseReduction > 0.1f) {
+      bands[i] = static_cast<float>(
+          static_cast<double>(state.peak[i]) *
+          (1.0 - static_cast<double>(state.fall[i]) * static_cast<double>(state.fall[i]) * gravityMod));
+      if (bands[i] < 0.0f) {
+        bands[i] = 0.0f;
+      }
+      state.fall[i] += 0.028f;
+    } else {
+      state.peak[i] = bands[i];
+      state.fall[i] = 0.0f;
+    }
+    state.prevBands[i] = bands[i];
+
+    bands[i] = state.mem[i] * nrFactor + bands[i];
+    state.mem[i] = bands[i];
+    bands[i] = std::clamp(bands[i], 0.0f, 1.0f);
+  }
+
+  if (m_smoothing) {
+    constexpr float kMonstercatFactor = 1.5f;
+    constexpr float kMinSpread = 0.001f;
+    for (int z = 0; z < state.bandCount; ++z) {
+      float spread = bands[z] / kMonstercatFactor;
+      for (int m = z - 1; m >= 0 && spread > kMinSpread; --m) {
+        bands[m] = std::max(bands[m], spread);
+        spread /= kMonstercatFactor;
+      }
+      spread = bands[z] / kMonstercatFactor;
+      for (int m = z + 1; m < state.bandCount && spread > kMinSpread; ++m) {
+        bands[m] = std::max(bands[m], spread);
+        spread /= kMonstercatFactor;
+      }
+    }
+  }
+
+  bool changed = false;
+  for (int i = 0; i < state.bandCount; ++i) {
+    const float clamped = std::clamp(bands[i], 0.0f, 1.0f);
+    if (state.values[i] != clamped) {
+      state.values[i] = clamped;
+      changed = true;
+    }
+  }
+  return changed;
 }
 
 void PipeWireSpectrum::feedSamples(const float* monoSamples, int count) {
@@ -539,18 +677,18 @@ void PipeWireSpectrum::processFrame() {
 
   fft(m_fftBuf.data(), kFftSize);
 
-  auto& bands = m_bands;
-  for (int i = 0; i < m_bandCount; ++i) {
+  auto& bands = m_analysisBands;
+  for (int i = 0; i < m_analysisBandCount; ++i) {
     float maxMagSq = 0.0f;
-    for (int bin = m_bandBinLow[i]; bin <= m_bandBinHigh[i]; ++bin) {
+    for (int bin = m_analysisBandBinLow[i]; bin <= m_analysisBandBinHigh[i]; ++bin) {
       maxMagSq = std::max(maxMagSq, std::norm(m_fftBuf[bin]));
     }
     bands[i] = std::sqrt(maxMagSq);
   }
 
-  const float invBandCount = 1.0f / static_cast<float>(m_bandCount);
-  for (int i = 0; i < m_bandCount; ++i) {
-    const float weight = 1.0f + 0.5f * static_cast<float>(m_bandCount - i) * invBandCount;
+  const float invBandCount = 1.0f / static_cast<float>(std::max(1, m_analysisBandCount));
+  for (int i = 0; i < m_analysisBandCount; ++i) {
+    const float weight = 1.0f + 0.5f * static_cast<float>(m_analysisBandCount - i) * invBandCount;
     bands[i] *= weight;
   }
 
@@ -566,24 +704,7 @@ void PipeWireSpectrum::processFrame() {
   bool overshoot = false;
   bool silence = true;
 
-  for (int i = 0; i < m_bandCount; ++i) {
-    if (bands[i] < m_prevBands[i] && m_noiseReduction > 0.1f) {
-      bands[i] =
-          static_cast<float>(static_cast<double>(m_peak[i]) *
-                             (1.0 - static_cast<double>(m_fall[i]) * static_cast<double>(m_fall[i]) * gravityMod));
-      if (bands[i] < 0.0f) {
-        bands[i] = 0.0f;
-      }
-      m_fall[i] += 0.028f;
-    } else {
-      m_peak[i] = bands[i];
-      m_fall[i] = 0.0f;
-    }
-    m_prevBands[i] = bands[i];
-
-    bands[i] = m_mem[i] * nrFactor + bands[i];
-    m_mem[i] = bands[i];
-
+  for (int i = 0; i < m_analysisBandCount; ++i) {
     if (bands[i] > 1.0f) {
       overshoot = true;
       bands[i] = 1.0f;
@@ -604,23 +725,6 @@ void PipeWireSpectrum::processFrame() {
   }
   m_sensitivity = std::clamp(m_sensitivity, 0.001f, 50.0f);
 
-  if (m_smoothing) {
-    constexpr float kMonstercatFactor = 1.5f;
-    constexpr float kMinSpread = 0.001f;
-    for (int z = 0; z < m_bandCount; ++z) {
-      float spread = bands[z] / kMonstercatFactor;
-      for (int m = z - 1; m >= 0 && spread > kMinSpread; --m) {
-        bands[m] = std::max(bands[m], spread);
-        spread /= kMonstercatFactor;
-      }
-      spread = bands[z] / kMonstercatFactor;
-      for (int m = z + 1; m < m_bandCount && spread > kMinSpread; ++m) {
-        bands[m] = std::max(bands[m], spread);
-        spread /= kMonstercatFactor;
-      }
-    }
-  }
-
   for (auto& band : bands) {
     band = std::clamp(band, 0.0f, 1.0f);
   }
@@ -630,8 +734,7 @@ void PipeWireSpectrum::processFrame() {
     if (m_idleFrames >= kIdleThreshold) {
       if (!m_idle) {
         m_idle = true;
-        std::fill(m_values.begin(), m_values.end(), 0.0f);
-        emitChanged();
+        clearValues(true);
       }
       return;
     }
@@ -640,15 +743,15 @@ void PipeWireSpectrum::processFrame() {
     m_idle = false;
   }
 
-  bool changed = false;
-  for (int i = 0; i < m_bandCount; ++i) {
-    if (m_values[i] != bands[i]) {
-      m_values[i] = bands[i];
-      changed = true;
+  std::vector<ListenerId> changedListeners;
+  changedListeners.reserve(m_listeners.size());
+  for (auto& [id, state] : m_listeners) {
+    if (processListenerView(state, nrFactor, gravityMod)) {
+      changedListeners.push_back(id);
     }
   }
 
-  if (changed) {
-    emitChanged();
+  for (ListenerId id : changedListeners) {
+    emitChanged(id);
   }
 }

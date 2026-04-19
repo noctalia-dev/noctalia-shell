@@ -21,14 +21,11 @@ public:
   PipeWireSpectrum(const PipeWireSpectrum&) = delete;
   PipeWireSpectrum& operator=(const PipeWireSpectrum&) = delete;
 
-  ListenerId addChangeListener(ChangeCallback callback);
+  ListenerId addChangeListener(int bandCount, ChangeCallback callback);
   void removeChangeListener(ListenerId id);
 
   void setTargetNodeId(std::uint32_t id);
   [[nodiscard]] std::uint32_t targetNodeId() const noexcept { return m_targetNodeId; }
-
-  void setBandCount(int count);
-  [[nodiscard]] int bandCount() const noexcept { return m_bandCount; }
 
   void setLowerCutoff(int freq);
   [[nodiscard]] int lowerCutoff() const noexcept { return m_lowerCutoff; }
@@ -42,7 +39,7 @@ public:
   void setSmoothing(bool enabled);
   [[nodiscard]] bool smoothing() const noexcept { return m_smoothing; }
 
-  [[nodiscard]] const std::vector<float>& values() const noexcept { return m_values; }
+  [[nodiscard]] const std::vector<float>& values(ListenerId id) const noexcept;
   [[nodiscard]] bool idle() const noexcept { return m_idle; }
 
   [[nodiscard]] int pollTimeoutMs() const;
@@ -50,33 +47,50 @@ public:
   void handleAudioStateChanged();
 
 private:
+  struct ListenerState {
+    int bandCount = 32;
+    ChangeCallback callback;
+    std::vector<int> analysisBandLow;
+    std::vector<int> analysisBandHigh;
+    std::vector<float> values;
+    std::vector<float> workBands;
+    std::vector<float> prevBands;
+    std::vector<float> peak;
+    std::vector<float> fall;
+    std::vector<float> mem;
+  };
+
   class Stream;
   friend class Stream;
 
-  [[nodiscard]] bool hasListeners() const noexcept { return !m_changeListeners.empty(); }
+  [[nodiscard]] bool hasListeners() const noexcept { return !m_listeners.empty(); }
   void rebuildStream();
   [[nodiscard]] std::uint32_t resolvedTargetNodeId() const noexcept;
   [[nodiscard]] bool hasResolvedTargetNode() const noexcept;
   void clearValues(bool notify);
-  void emitChanged();
+  void emitChanged(ListenerId id);
 
   void initProcessing();
-  void computeBandBins();
+  void reconfigureAnalysisLayout();
+  void configureListenerState(ListenerState& state, bool resetState);
+  void resetListenerState(ListenerState& state, bool clearValues);
+  bool processListenerView(ListenerState& state, float nrFactor, double gravityMod);
+  void computeAnalysisBandBins();
   void feedSamples(const float* monoSamples, int count);
   void processFrame();
 
   PipeWireService& m_service;
-  std::unordered_map<ListenerId, ChangeCallback> m_changeListeners;
+  std::unordered_map<ListenerId, ListenerState> m_listeners;
   ListenerId m_nextListenerId = 1;
 
   std::uint32_t m_targetNodeId = 0;
   std::uint32_t m_boundNodeId = 0;
-  int m_bandCount = 32;
+  int m_analysisBandCount = 32;
   int m_lowerCutoff = 50;
   int m_upperCutoff = 12000;
   float m_noiseReduction = 0.77f;
   bool m_smoothing = true;
-  std::vector<float> m_values;
+  std::vector<float> m_analysisBands;
   bool m_idle = true;
 
   std::unique_ptr<Stream> m_stream;
@@ -94,13 +108,8 @@ private:
   bool m_samplesReceived = false;
 
   std::vector<float> m_window;
-  std::vector<int> m_bandBinLow;
-  std::vector<int> m_bandBinHigh;
-  std::vector<float> m_prevBands;
-  std::vector<float> m_peak;
-  std::vector<float> m_fall;
-  std::vector<float> m_mem;
-  std::vector<float> m_bands;
+  std::vector<int> m_analysisBandBinLow;
+  std::vector<int> m_analysisBandBinHigh;
   float m_sensitivity = 1.0f;
   bool m_sensInit = true;
   std::vector<std::complex<float>> m_fftBuf;

@@ -34,8 +34,7 @@ void AudioVisualizerWidget::create() {
   root->addChild(std::move(visualizer));
 
   if (m_spectrum != nullptr) {
-    m_spectrum->setBandCount(m_bands);
-    m_listenerId = m_spectrum->addChangeListener([this]() {
+    m_listenerId = m_spectrum->addChangeListener(m_bands, [this]() {
       m_pendingSpectrumUpdate = true;
       requestRedraw();
     });
@@ -82,11 +81,11 @@ bool AudioVisualizerWidget::needsFrameTick() const {
 }
 
 void AudioVisualizerWidget::syncSpectrum() {
-  if (!m_pendingSpectrumUpdate || m_visualizer == nullptr || m_spectrum == nullptr) {
+  if (!m_pendingSpectrumUpdate || m_visualizer == nullptr || m_spectrum == nullptr || m_listenerId == 0) {
     return;
   }
 
-  m_visualizer->setValues(m_spectrum->values());
+  m_visualizer->setValues(m_spectrum->values(m_listenerId));
   m_pendingSpectrumUpdate = false;
   if (m_renderer != nullptr) {
     m_visualizer->layout(*m_renderer);
