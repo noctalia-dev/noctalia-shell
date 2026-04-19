@@ -311,11 +311,14 @@ Volume and mic IPC use a default step of 5% when no explicit step is provided.
 
 Shows a simple horizontal audio spectrum using the current PipeWire monitor stream.
 
-| Setting  | Type   | Default | Description                    |
-|----------|--------|---------|--------------------------------|
-| `width`  | number | `56`    | Widget width in screen pixels  |
-| `height` | number | `16`    | Widget height in screen pixels |
-| `bands`  | number | `16`    | Number of spectrum bands       |
+| Setting      | Type   | Default     | Description                                      |
+|--------------|--------|-------------|--------------------------------------------------|
+| `width`      | number | `56`        | Widget width in screen pixels                    |
+| `height`     | number | `16`        | Widget height in screen pixels                   |
+| `bands`      | number | `16`        | Number of spectrum bands                         |
+| `mirrored`   | bool   | `false`     | Mirror the spectrum around the center line       |
+| `low_color`  | string | `"primary"` | Color for the first bars (theme role or `#` hex) |
+| `high_color` | string | `"primary"` | Color for the last bars (theme role or `#` hex)  |
 
 ```toml
 [widget.audio-vis]
@@ -323,6 +326,9 @@ type = "audio_visualizer"
 width = 64
 height = 16
 bands = 20
+mirrored = true
+low_color = "primary"
+high_color = "secondary"
 ```
 
 ---
@@ -768,7 +774,9 @@ format = "{:%H:%M}"
 ```
 
 Desktop audio visualizers store an `aspect_ratio` setting for shape while `scale`
-controls overall size:
+controls overall size. They also accept optional `mirrored`, `low_color`, and
+`high_color` settings; both colors default to `primary` so the widget is solid
+by default:
 
 ```toml
 [[widget]]
@@ -783,6 +791,9 @@ rotation = 0.0
 [widget.settings]
 bands = 32
 aspect_ratio = 2.5
+mirrored = true
+low_color = "primary"
+high_color = "secondary"
 ```
 
 ---

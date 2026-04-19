@@ -1,15 +1,14 @@
 #include "ui/controls/audio_spectrum.h"
 
-#include "render/core/color.h"
 #include "ui/controls/box.h"
+#include "ui/palette.h"
 
 #include <algorithm>
 #include <cmath>
 #include <memory>
 
 AudioSpectrum::AudioSpectrum() {
-  m_lowColor = hex("#ebbcba");
-  m_highColor = hex("#9ccfd8");
+  m_paletteConn = paletteChanged().connect([this] { recolorBars(); });
 }
 
 void AudioSpectrum::setValues(const std::vector<float>& values) {
@@ -60,10 +59,14 @@ void AudioSpectrum::tick(float deltaMs) {
   }
 }
 
-void AudioSpectrum::setGradient(const Color& lowColor, const Color& highColor) {
+void AudioSpectrum::setGradient(const ThemeColor& lowColor, const ThemeColor& highColor) {
   m_lowColor = lowColor;
   m_highColor = highColor;
   recolorBars();
+}
+
+void AudioSpectrum::setGradient(const Color& lowColor, const Color& highColor) {
+  setGradient(fixedColor(lowColor), fixedColor(highColor));
 }
 
 void AudioSpectrum::setSpacingRatio(float ratio) {
@@ -208,11 +211,13 @@ void AudioSpectrum::ensureBarCount(std::size_t count) {
 }
 
 void AudioSpectrum::recolorBars() {
+  const Color lowColor = resolveThemeColor(m_lowColor);
+  const Color highColor = resolveThemeColor(m_highColor);
   const std::size_t lastIndex = m_bars.empty() ? 0 : m_bars.size() - 1;
   for (std::size_t i = 0; i < m_bars.size(); ++i) {
     const float t = lastIndex == 0 ? 0.0f : static_cast<float>(i) / static_cast<float>(lastIndex);
     if (auto* bar = m_bars[i]; bar != nullptr) {
-      bar->setFill(lerpColor(m_lowColor, m_highColor, t));
+      bar->setFill(lerpColor(lowColor, highColor, t));
     }
   }
 }

@@ -9,8 +9,10 @@
 #include <algorithm>
 #include <memory>
 
-AudioVisualizerWidget::AudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, float height, int bands)
-    : m_spectrum(spectrum), m_width(width), m_height(height), m_bands(std::max(1, bands)) {}
+AudioVisualizerWidget::AudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, float height, int bands,
+                                             bool mirrored, ThemeColor lowColor, ThemeColor highColor)
+    : m_spectrum(spectrum), m_width(width), m_height(height), m_bands(std::max(1, bands)), m_mirrored(mirrored),
+      m_lowColor(lowColor), m_highColor(highColor) {}
 
 AudioVisualizerWidget::~AudioVisualizerWidget() {
   if (m_spectrum != nullptr && m_listenerId != 0) {
@@ -26,10 +28,10 @@ void AudioVisualizerWidget::create() {
   visualizer->setOrientation(AudioSpectrumOrientation::Horizontal);
   visualizer->setLayoutMode(AudioSpectrumLayoutMode::Fill);
   visualizer->setCentered(true);
-  visualizer->setMirrored(false);
+  visualizer->setMirrored(m_mirrored);
   visualizer->setSpacingRatio(0.4f);
   visualizer->setSmoothingTimeMs(60.0f);
-  visualizer->setGradient(resolveColorRole(ColorRole::Primary), resolveColorRole(ColorRole::Secondary));
+  visualizer->setGradient(m_lowColor, m_highColor);
   m_visualizer = visualizer.get();
   root->addChild(std::move(visualizer));
 

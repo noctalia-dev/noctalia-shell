@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shell/widget/widget.h"
+#include "ui/palette.h"
 
 #include <cstdint>
 
@@ -10,7 +11,8 @@ class Renderer;
 
 class AudioVisualizerWidget : public Widget {
 public:
-  AudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, float height, int bands);
+  AudioVisualizerWidget(PipeWireSpectrum* spectrum, float width, float height, int bands, bool mirrored,
+                        ThemeColor lowColor, ThemeColor highColor);
   ~AudioVisualizerWidget() override;
 
   void create() override;
@@ -26,6 +28,9 @@ private:
   float m_width = 56.0f;
   float m_height = 16.0f;
   int m_bands = 16;
+  bool m_mirrored = false;
+  ThemeColor m_lowColor = roleColor(ColorRole::Primary);
+  ThemeColor m_highColor = roleColor(ColorRole::Primary);
   std::uint64_t m_listenerId = 0;
   Renderer* m_renderer = nullptr;
   AudioSpectrum* m_visualizer = nullptr;

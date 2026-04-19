@@ -52,6 +52,30 @@ namespace {
     return fallback;
   }
 
+  bool getBoolSetting(const std::unordered_map<std::string, WidgetSettingValue>& settings, const std::string& key,
+                      bool fallback) {
+    const auto it = settings.find(key);
+    if (it == settings.end()) {
+      return fallback;
+    }
+    if (const auto* value = std::get_if<bool>(&it->second)) {
+      return *value;
+    }
+    return fallback;
+  }
+
+  ThemeColor getThemeColorSetting(const std::unordered_map<std::string, WidgetSettingValue>& settings,
+                                  const std::string& key, const ThemeColor& fallback) {
+    const auto it = settings.find(key);
+    if (it == settings.end()) {
+      return fallback;
+    }
+    if (const auto* value = std::get_if<std::string>(&it->second)) {
+      return themeColorFromConfigString(*value);
+    }
+    return fallback;
+  }
+
 } // namespace
 
 DesktopWidgetFactory::DesktopWidgetFactory(TimeService* timeService, PipeWireSpectrum* pipewireSpectrum)
@@ -79,7 +103,9 @@ DesktopWidgetFactory::create(const std::string& type,
     }
     auto widget = std::make_unique<DesktopAudioVisualizerWidget>(
         m_pipewireSpectrum, getFloatSetting(settings, "aspect_ratio", kDefaultDesktopAudioVisualizerAspectRatio),
-        getIntSetting(settings, "bands", 32));
+        getIntSetting(settings, "bands", 32), getBoolSetting(settings, "mirrored", false),
+        getThemeColorSetting(settings, "low_color", roleColor(ColorRole::Primary)),
+        getThemeColorSetting(settings, "high_color", roleColor(ColorRole::Primary)));
     widget->setContentScale(contentScale);
     return widget;
   }

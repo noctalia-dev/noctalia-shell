@@ -171,7 +171,13 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     const float width = static_cast<float>(wc != nullptr ? wc->getDouble("width", 56.0) : 56.0);
     const float height = static_cast<float>(wc != nullptr ? wc->getDouble("height", 16.0) : 16.0);
     const int bands = static_cast<int>(wc != nullptr ? wc->getInt("bands", 16) : 16);
-    auto widget = std::make_unique<AudioVisualizerWidget>(m_audioSpectrum, width, height, bands);
+    const bool mirrored = wc != nullptr ? wc->getBool("mirrored", false) : false;
+    const ThemeColor lowColor =
+        themeColorFromConfigString(wc != nullptr ? wc->getString("low_color", "primary") : std::string("primary"));
+    const ThemeColor highColor =
+        themeColorFromConfigString(wc != nullptr ? wc->getString("high_color", "primary") : std::string("primary"));
+    auto widget =
+        std::make_unique<AudioVisualizerWidget>(m_audioSpectrum, width, height, bands, mirrored, lowColor, highColor);
     widget->setContentScale(contentScale);
     return widget;
   }

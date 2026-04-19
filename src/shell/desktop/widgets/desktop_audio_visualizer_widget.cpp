@@ -26,8 +26,10 @@ namespace {
 
 } // namespace
 
-DesktopAudioVisualizerWidget::DesktopAudioVisualizerWidget(PipeWireSpectrum* spectrum, float aspectRatio, int bands)
-    : m_spectrum(spectrum), m_aspectRatio(clampAspectRatio(aspectRatio)), m_bands(std::max(1, bands)) {}
+DesktopAudioVisualizerWidget::DesktopAudioVisualizerWidget(PipeWireSpectrum* spectrum, float aspectRatio, int bands,
+                                                           bool mirrored, ThemeColor lowColor, ThemeColor highColor)
+    : m_spectrum(spectrum), m_aspectRatio(clampAspectRatio(aspectRatio)), m_bands(std::max(1, bands)),
+      m_mirrored(mirrored), m_lowColor(lowColor), m_highColor(highColor) {}
 
 DesktopAudioVisualizerWidget::~DesktopAudioVisualizerWidget() {
   if (m_spectrum != nullptr && m_listenerId != 0) {
@@ -42,10 +44,10 @@ void DesktopAudioVisualizerWidget::create() {
   visualizer->setOrientation(AudioSpectrumOrientation::Horizontal);
   visualizer->setLayoutMode(AudioSpectrumLayoutMode::Fill);
   visualizer->setCentered(true);
-  visualizer->setMirrored(false);
+  visualizer->setMirrored(m_mirrored);
   visualizer->setSpacingRatio(0.4f);
   visualizer->setSmoothingTimeMs(60.0f);
-  visualizer->setGradient(resolveColorRole(ColorRole::Primary), resolveColorRole(ColorRole::Secondary));
+  visualizer->setGradient(m_lowColor, m_highColor);
   m_visualizer = visualizer.get();
   rootNode->addChild(std::move(visualizer));
 
