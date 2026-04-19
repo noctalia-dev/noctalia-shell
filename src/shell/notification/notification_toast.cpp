@@ -33,7 +33,7 @@ namespace {
 
   constexpr Logger kLog("notification");
 
-  constexpr int kCardWidth = 340;
+  constexpr int kCardWidth = 360;
   constexpr int kCardHeightCompact = 132;
   constexpr int kCardHeightWithActions = 170;
 
