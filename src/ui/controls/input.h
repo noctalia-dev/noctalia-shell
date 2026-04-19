@@ -4,6 +4,7 @@
 #include "ui/signal.h"
 #include "ui/style.h"
 
+#include <chrono>
 #include <cstddef>
 #include <functional>
 #include <string>
@@ -51,6 +52,9 @@ private:
   void applyVisualState();
   void updateDisplayText();
   void updateInteractiveGeometry();
+  void selectWordAtByteOffset(std::size_t offset);
+  [[nodiscard]] std::size_t wordStartForByteOffset(std::size_t offset) const;
+  [[nodiscard]] std::size_t wordEndForByteOffset(std::size_t offset) const;
   [[nodiscard]] float measureCursorX(Renderer& renderer) const;
   [[nodiscard]] bool hasSelection() const noexcept;
   [[nodiscard]] std::size_t selectionStart() const noexcept;
@@ -88,5 +92,9 @@ private:
   float m_controlHeight = Style::controlHeight;
   float m_horizontalPadding = Style::spaceMd;
   bool m_passwordMode = false;
+  std::chrono::steady_clock::time_point m_lastPrimaryPressTime{};
+  float m_lastPrimaryPressX = 0.0f;
+  float m_lastPrimaryPressY = 0.0f;
+  bool m_hasLastPrimaryPress = false;
   Signal<>::ScopedConnection m_paletteConn;
 };

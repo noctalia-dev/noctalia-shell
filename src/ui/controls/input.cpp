@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cmath>
 #include <memory>
 #include <optional>
@@ -55,6 +56,20 @@ namespace {
   constexpr float kCursorWidth = 1.5f;
   constexpr float kCursorPadV = 3.0f;
   constexpr float kPasswordGlyphScale = 0.82f;
+  constexpr auto kDoubleClickThreshold = std::chrono::milliseconds(400);
+  constexpr float kDoubleClickDistance = 6.0f;
+
+  bool isWordCodepoint(const std::string& text, std::size_t bytePos) {
+    if (bytePos >= text.size()) {
+      return false;
+    }
+
+    const unsigned char lead = static_cast<unsigned char>(text[bytePos]);
+    if ((lead & 0x80U) != 0) {
+      return true;
+    }
+    return std::isalnum(lead) != 0 || lead == '_';
+  }
 
   char32_t passwordMaskCodepointForIndex(std::size_t index) {
     if (g_passwordMaskStyle == Input::PasswordMaskStyle::CircleFilled) {
@@ -125,8 +140,27 @@ Input::Input() {
   area->setOnPress([this](const InputArea::PointerData& data) {
     if (data.pressed) {
       const std::size_t offset = xToByteOffset(data.localX - m_horizontalPadding);
-      m_cursorPos = offset;
-      m_selectionAnchor = offset;
+      const auto now = std::chrono::steady_clock::now();
+      const bool isDoubleClick = data.button == BTN_LEFT && m_hasLastPrimaryPress &&
+                                 now - m_lastPrimaryPressTime <= kDoubleClickThreshold &&
+                                 std::abs(data.localX - m_lastPrimaryPressX) <= kDoubleClickDistance &&
+                                 std::abs(data.localY - m_lastPrimaryPressY) <= kDoubleClickDistance;
+
+      if (data.button == BTN_LEFT) {
+        m_lastPrimaryPressTime = now;
+        m_lastPrimaryPressX = data.localX;
+        m_lastPrimaryPressY = data.localY;
+        m_hasLastPrimaryPress = true;
+      } else {
+        m_hasLastPrimaryPress = false;
+      }
+
+      if (isDoubleClick) {
+        selectWordAtByteOffset(offset);
+      } else {
+        m_cursorPos = offset;
+        m_selectionAnchor = offset;
+      }
       updateInteractiveGeometry();
       markPaintDirty();
     }
@@ -483,6 +517,58 @@ void Input::updateInteractiveGeometry() {
   } else {
     m_selectionRect->setVisible(false);
   }
+}
+
+void Input::selectWordAtByteOffset(std::size_t offset) {
+  const std::size_t start = wordStartForByteOffset(offset);
+  const std::size_t end = wordEndForByteOffset(offset);
+  m_selectionAnchor = start;
+  m_cursorPos = end;
+}
+
+std::size_t Input::wordStartForByteOffset(std::size_t offset) const {
+  if (m_value.empty()) {
+    return 0;
+  }
+
+  std::size_t pos = std::min(offset, m_value.size());
+  if (pos == m_value.size() && pos > 0) {
+    pos = prevCharPos(m_value, pos);
+  }
+
+  if (!isWordCodepoint(m_value, pos)) {
+    return pos;
+  }
+
+  while (pos > 0) {
+    const std::size_t prev = prevCharPos(m_value, pos);
+    if (prev == pos || !isWordCodepoint(m_value, prev)) {
+      break;
+    }
+    pos = prev;
+  }
+  return pos;
+}
+
+std::size_t Input::wordEndForByteOffset(std::size_t offset) const {
+  if (m_value.empty()) {
+    return 0;
+  }
+
+  std::size_t pos = std::min(offset, m_value.size());
+  if (pos == m_value.size() && pos > 0) {
+    pos = prevCharPos(m_value, pos);
+  }
+
+  if (!isWordCodepoint(m_value, pos)) {
+    return nextCharPos(m_value, pos);
+  }
+
+  std::size_t end = nextCharPos(m_value, pos);
+  while (end < m_value.size() && isWordCodepoint(m_value, end)) {
+    end = nextCharPos(m_value, end);
+  }
+  return end;
 }
 
 void Input::syncPasswordGlyphNodes(std::size_t count) {
