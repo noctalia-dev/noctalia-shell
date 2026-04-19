@@ -229,18 +229,12 @@ void WallpaperTile::applyVisualState() {
   if (m_thumbBox == nullptr || m_thumb == nullptr) {
     return;
   }
-  setOpacity(m_selected ? 1.0f : 0.75f);
+  const bool active = m_selected || m_hoveredVisual;
+  setOpacity(active ? 1.0f : 0.75f);
 
   const float outlineWidth = Style::borderWidth * 2.0f;
-  ThemeColor borderColor = roleColor(ColorRole::Outline);
+  ThemeColor borderColor = active ? roleColor(ColorRole::Primary) : roleColor(ColorRole::Outline);
   ThemeColor frameBg = roleColor(ColorRole::SurfaceVariant);
-
-  if (m_selected) {
-    borderColor = roleColor(ColorRole::Primary);
-  } else if (m_hoveredVisual) {
-    frameBg = roleColor(ColorRole::Primary, 0.12f);
-    borderColor = roleColor(ColorRole::Primary, 0.75f);
-  }
 
   m_thumbBox->setBackground(frameBg);
   if (m_entry.isDir) {
