@@ -22,6 +22,23 @@ PopupWindow {
   // Derive menu from trayItem (only used for non-submenus)
   readonly property QsMenuHandle menu: isSubMenu ? null : (trayItem ? trayItem.menu : null)
 
+  // Helper functions
+  function wildCardMatch(str, rule) {
+    if (!str || !rule)
+      return false;
+    if (str === rule)
+      return true;
+    const placeholder = '\uE000';
+    let processedRule = rule.replace(/\*/g, placeholder);
+    let escaped = processedRule.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+    let pattern = '^' + escaped.replace(new RegExp(placeholder, 'g'), '.*') + '$';
+    try {
+      return new RegExp(pattern, 'i').test(str);
+    } catch (e) {
+      return false;
+    }
+  }
+
   // Compute if current tray item is pinned
   readonly property bool isPinned: {
     if (!trayItem || widgetSection === "" || widgetIndex < 0)
@@ -35,7 +52,7 @@ PopupWindow {
     var pinnedList = widgetSettings.pinned || [];
     const itemName = trayItem.id || trayItem.title || trayItem.tooltipTitle || "";
     for (var i = 0; i < pinnedList.length; i++) {
-      if (pinnedList[i] === itemName)
+      if (wildCardMatch(itemName, pinnedList[i]))
         return true;
     }
     return false;
@@ -617,7 +634,7 @@ PopupWindow {
     var pinnedList = widgetSettings.pinned || [];
     var newPinned = [];
     for (var i = 0; i < pinnedList.length; i++) {
-      if (pinnedList[i] !== itemName) {
+      if (!wildCardMatch(itemName, pinnedList[i])) {
         newPinned.push(pinnedList[i]);
       }
     }
