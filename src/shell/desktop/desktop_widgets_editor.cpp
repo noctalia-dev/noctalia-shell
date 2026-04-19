@@ -109,6 +109,12 @@ namespace {
     return std::format("desktop-widget-{:016x}", nextCounter);
   }
 
+  std::pair<float, float> rotatedCorner(float cx, float cy, float halfWidth, float halfHeight, float rotationRad) {
+    const float cosTheta = std::cos(rotationRad);
+    const float sinTheta = std::sin(rotationRad);
+    return {cx + halfWidth * cosTheta - halfHeight * sinTheta, cy + halfWidth * sinTheta + halfHeight * cosTheta};
+  }
+
 } // namespace
 
 void DesktopWidgetsEditor::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
@@ -143,6 +149,11 @@ DesktopWidgetsSnapshot DesktopWidgetsEditor::close() {
 }
 
 bool DesktopWidgetsEditor::isOpen() const noexcept { return m_open; }
+
+float DesktopWidgetsEditor::widgetContentScale(const DesktopWidgetState& state) const {
+  const float baseUiScale = m_config != nullptr ? m_config->config().shell.uiScale : 1.0f;
+  return desktop_widgets::widgetContentScale(baseUiScale, state);
+}
 
 void DesktopWidgetsEditor::syncSurfaces() {
   if (!m_open || m_wayland == nullptr || m_renderContext == nullptr) {
@@ -228,6 +239,16 @@ DesktopWidgetsEditor::OverlaySurface* DesktopWidgetsEditor::findSurface(wl_surfa
   return nullptr;
 }
 
+DesktopWidgetsEditor::EditorWidgetView* DesktopWidgetsEditor::findView(const std::string& id) {
+  for (auto& overlay : m_surfaces) {
+    const auto it = overlay->views.find(id);
+    if (it != overlay->views.end()) {
+      return &it->second;
+    }
+  }
+  return nullptr;
+}
+
 DesktopWidgetState* DesktopWidgetsEditor::findWidgetState(const std::string& id) {
   for (auto& widget : m_snapshot.widgets) {
     if (widget.id == id) {
@@ -279,6 +300,7 @@ void DesktopWidgetsEditor::prepareFrame(OverlaySurface& surface, bool needsUpdat
 
 void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   surface.views.clear();
+  surface.selectionFrameTransform = nullptr;
   surface.selectionBorder = nullptr;
   surface.rotationRing = nullptr;
   surface.scaleHandle = nullptr;
@@ -344,8 +366,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
       continue;
     }
 
-    auto widget = m_factory->create(widgetState.type, widgetState.settings,
-                                    m_config != nullptr ? m_config->config().shell.uiScale : 1.0f);
+    auto widget = m_factory->create(widgetState.type, widgetState.settings, widgetContentScale(widgetState));
     if (widget == nullptr) {
       continue;
     }
@@ -372,10 +393,9 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     view.transformNode->setPosition(widgetState.cx - view.intrinsicWidth * 0.5f,
                                     widgetState.cy - view.intrinsicHeight * 0.5f);
     view.transformNode->setRotation(widgetState.rotationRad);
-    view.transformNode->setScale(widgetState.scale);
+    view.transformNode->setScale(1.0f);
     view.transformNode->setZIndex(4);
-    view.bodyArea->setOnPress([this, id = widgetState.id, w = view.intrinsicWidth,
-                               h = view.intrinsicHeight](const InputArea::PointerData& data) {
+    view.bodyArea->setOnPress([this, id = widgetState.id](const InputArea::PointerData& data) {
       if (data.button != BTN_LEFT) {
         return;
       }
@@ -384,7 +404,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
           m_selectedWidgetId = id;
           DeferredCall::callLater([this]() { requestLayout(); });
         }
-        startDrag(DragMode::Move, id, w, h, false);
+        startDrag(DragMode::Move, id, false);
       } else if (m_drag.mode == DragMode::Move && m_drag.widgetId == id) {
         finishDrag();
       }
@@ -403,23 +423,25 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
 
   const auto selectedIt = surface.views.find(m_selectedWidgetId);
   if (selectedIt != surface.views.end()) {
+    auto selectionFrameTransform = std::make_unique<Node>();
+    selectionFrameTransform->setZIndex(3);
+    surface.selectionFrameTransform = selectionFrameTransform.get();
+
     auto ring = std::make_unique<Box>();
     ring->setBorder(roleColor(ColorRole::Primary, 0.55f), 1.0f);
     ring->setFill(clearThemeColor());
     ring->setRadius(Style::radiusMd + kRotatePadding);
-    ring->setZIndex(3);
     surface.rotationRing = ring.get();
-    root->addChild(std::move(ring));
+    surface.selectionFrameTransform->addChild(std::move(ring));
 
     auto rotateArea = std::make_unique<InputArea>();
-    rotateArea->setZIndex(3);
-    rotateArea->setOnPress([this, id = m_selectedWidgetId, w = selectedIt->second.intrinsicWidth,
-                            h = selectedIt->second.intrinsicHeight](const InputArea::PointerData& data) {
+    rotateArea->setZIndex(1);
+    rotateArea->setOnPress([this, id = m_selectedWidgetId](const InputArea::PointerData& data) {
       if (data.button != BTN_LEFT) {
         return;
       }
       if (data.pressed) {
-        startDrag(DragMode::Rotate, id, w, h, false);
+        startDrag(DragMode::Rotate, id, false);
       } else if (m_drag.mode == DragMode::Rotate && m_drag.widgetId == id) {
         finishDrag();
       }
@@ -430,7 +452,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
       }
     });
     surface.rotateArea = rotateArea.get();
-    root->addChild(std::move(rotateArea));
+    surface.selectionFrameTransform->addChild(std::move(rotateArea));
 
     auto selectionBorder = std::make_unique<Box>();
     selectionBorder->setBorder(roleColor(ColorRole::Primary), kSelectionStroke);
@@ -438,9 +460,9 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     selectionBorder->setRadius(Style::radiusMd);
     // Keep the selection stroke below the body InputArea so the visual outline
     // does not steal hit-tests from move-drag interactions after selection.
-    selectionBorder->setZIndex(3);
     surface.selectionBorder = selectionBorder.get();
-    root->addChild(std::move(selectionBorder));
+    surface.selectionFrameTransform->addChild(std::move(selectionBorder));
+    root->addChild(std::move(selectionFrameTransform));
 
     auto scaleHandle = std::make_unique<Box>();
     scaleHandle->setFill(roleColor(ColorRole::Primary));
@@ -451,13 +473,12 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
 
     auto scaleArea = std::make_unique<InputArea>();
     scaleArea->setZIndex(7);
-    scaleArea->setOnPress([this, id = m_selectedWidgetId, w = selectedIt->second.intrinsicWidth,
-                           h = selectedIt->second.intrinsicHeight](const InputArea::PointerData& data) {
+    scaleArea->setOnPress([this, id = m_selectedWidgetId](const InputArea::PointerData& data) {
       if (data.button != BTN_LEFT) {
         return;
       }
       if (data.pressed) {
-        startDrag(DragMode::Scale, id, w, h, false);
+        startDrag(DragMode::Scale, id, false);
       } else if (m_drag.mode == DragMode::Scale && m_drag.widgetId == id) {
         finishDrag();
       }
@@ -555,46 +576,66 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
 void DesktopWidgetsEditor::updateSelectionVisuals(OverlaySurface& surface) {
   const auto selectedIt = surface.views.find(m_selectedWidgetId);
   const DesktopWidgetState* state = findWidgetState(m_selectedWidgetId);
-  if (selectedIt == surface.views.end() || state == nullptr || surface.selectionBorder == nullptr ||
-      surface.rotationRing == nullptr || surface.scaleHandle == nullptr || surface.rotateArea == nullptr ||
-      surface.scaleArea == nullptr) {
+  if (selectedIt == surface.views.end() || state == nullptr || surface.selectionFrameTransform == nullptr ||
+      surface.selectionBorder == nullptr || surface.rotationRing == nullptr || surface.scaleHandle == nullptr ||
+      surface.rotateArea == nullptr || surface.scaleArea == nullptr) {
     return;
   }
 
-  const WidgetTransformBounds bounds =
-      computeWidgetTransformBounds(state->cx, state->cy, selectedIt->second.intrinsicWidth,
-                                   selectedIt->second.intrinsicHeight, state->scale, state->rotationRad);
+  const float width = selectedIt->second.intrinsicWidth;
+  const float height = selectedIt->second.intrinsicHeight;
+  const float left = state->cx - width * 0.5f;
+  const float top = state->cy - height * 0.5f;
 
-  surface.rotationRing->setPosition(bounds.left - kRotatePadding, bounds.top - kRotatePadding);
-  surface.rotationRing->setFrameSize(bounds.aabbWidth + kRotatePadding * 2.0f,
-                                     bounds.aabbHeight + kRotatePadding * 2.0f);
+  surface.selectionFrameTransform->setFrameSize(width, height);
+  surface.selectionFrameTransform->setPosition(left, top);
+  surface.selectionFrameTransform->setRotation(state->rotationRad);
 
-  surface.rotateArea->setPosition(bounds.left - kRotatePadding, bounds.top - kRotatePadding);
-  surface.rotateArea->setFrameSize(bounds.aabbWidth + kRotatePadding * 2.0f, bounds.aabbHeight + kRotatePadding * 2.0f);
+  surface.rotationRing->setPosition(-kRotatePadding, -kRotatePadding);
+  surface.rotationRing->setFrameSize(width + kRotatePadding * 2.0f, height + kRotatePadding * 2.0f);
 
-  surface.selectionBorder->setPosition(bounds.left, bounds.top);
-  surface.selectionBorder->setFrameSize(bounds.aabbWidth, bounds.aabbHeight);
+  surface.rotateArea->setPosition(-kRotatePadding, -kRotatePadding);
+  surface.rotateArea->setFrameSize(width + kRotatePadding * 2.0f, height + kRotatePadding * 2.0f);
 
-  surface.scaleHandle->setPosition(bounds.left + bounds.aabbWidth - kHandleSize * 0.5f,
-                                   bounds.top + bounds.aabbHeight - kHandleSize * 0.5f);
+  surface.selectionBorder->setPosition(0.0f, 0.0f);
+  surface.selectionBorder->setFrameSize(width, height);
+
+  const auto [cornerX, cornerY] = rotatedCorner(state->cx, state->cy, width * 0.5f, height * 0.5f, state->rotationRad);
+  surface.scaleHandle->setPosition(cornerX - kHandleSize * 0.5f, cornerY - kHandleSize * 0.5f);
   surface.scaleHandle->setFrameSize(kHandleSize, kHandleSize);
 
-  surface.scaleArea->setPosition(bounds.left + bounds.aabbWidth - kHandleSize,
-                                 bounds.top + bounds.aabbHeight - kHandleSize);
+  surface.scaleArea->setPosition(cornerX - kHandleSize, cornerY - kHandleSize);
   surface.scaleArea->setFrameSize(kHandleSize * 1.5f, kHandleSize * 1.5f);
 }
 
-void DesktopWidgetsEditor::updateViewTransforms() {
+void DesktopWidgetsEditor::applyViewState(EditorWidgetView& view, const DesktopWidgetState& state,
+                                          bool refreshContent) {
+  if (view.widget == nullptr || view.transformNode == nullptr || m_renderContext == nullptr) {
+    return;
+  }
+
+  if (refreshContent) {
+    view.widget->setContentScale(widgetContentScale(state));
+    view.widget->update(*m_renderContext);
+    view.widget->layout(*m_renderContext);
+    view.intrinsicWidth = std::max(1.0f, view.widget->intrinsicWidth());
+    view.intrinsicHeight = std::max(1.0f, view.widget->intrinsicHeight());
+  }
+
+  view.transformNode->setFrameSize(view.intrinsicWidth, view.intrinsicHeight);
+  view.transformNode->setPosition(state.cx - view.intrinsicWidth * 0.5f, state.cy - view.intrinsicHeight * 0.5f);
+  view.transformNode->setRotation(state.rotationRad);
+  view.transformNode->setScale(1.0f);
+}
+
+void DesktopWidgetsEditor::updateViewTransforms(const std::string* relayoutWidgetId) {
   for (auto& surface : m_surfaces) {
     for (auto& [id, view] : surface->views) {
       const DesktopWidgetState* state = findWidgetState(id);
       if (state == nullptr) {
         continue;
       }
-      view.transformNode->setFrameSize(view.intrinsicWidth, view.intrinsicHeight);
-      view.transformNode->setPosition(state->cx - view.intrinsicWidth * 0.5f, state->cy - view.intrinsicHeight * 0.5f);
-      view.transformNode->setRotation(state->rotationRad);
-      view.transformNode->setScale(state->scale);
+      applyViewState(view, *state, relayoutWidgetId != nullptr && *relayoutWidgetId == id);
     }
     updateSelectionVisuals(*surface);
   }
@@ -656,10 +697,14 @@ void DesktopWidgetsEditor::requestExit() {
   });
 }
 
-void DesktopWidgetsEditor::startDrag(DragMode mode, const std::string& widgetId, float intrinsicWidth,
-                                     float intrinsicHeight, bool rebuildOnFinish) {
+void DesktopWidgetsEditor::startDrag(DragMode mode, const std::string& widgetId, bool rebuildOnFinish) {
   DesktopWidgetState* state = findWidgetState(widgetId);
   if (state == nullptr) {
+    return;
+  }
+
+  const EditorWidgetView* view = findView(widgetId);
+  if (view == nullptr) {
     return;
   }
 
@@ -668,8 +713,8 @@ void DesktopWidgetsEditor::startDrag(DragMode mode, const std::string& widgetId,
   m_drag.startSceneX = m_currentEventSceneX;
   m_drag.startSceneY = m_currentEventSceneY;
   m_drag.initialState = *state;
-  m_drag.intrinsicWidth = intrinsicWidth;
-  m_drag.intrinsicHeight = intrinsicHeight;
+  m_drag.intrinsicWidth = view->intrinsicWidth;
+  m_drag.intrinsicHeight = view->intrinsicHeight;
   m_drag.rebuildOnFinish = rebuildOnFinish;
 }
 
@@ -703,11 +748,12 @@ void DesktopWidgetsEditor::updateDrag() {
       const WidgetTransformBounds baseBounds =
           computeWidgetTransformBounds(m_drag.initialState.cx, m_drag.initialState.cy, m_drag.intrinsicWidth,
                                        m_drag.intrinsicHeight, 1.0f, m_drag.initialState.rotationRad);
-      const float scaleX =
+      const float relativeScaleX =
           std::max(0.0f, (snappedCornerX - m_drag.initialState.cx) * 2.0f / std::max(1.0f, baseBounds.aabbWidth));
-      const float scaleY =
+      const float relativeScaleY =
           std::max(0.0f, (snappedCornerY - m_drag.initialState.cy) * 2.0f / std::max(1.0f, baseBounds.aabbHeight));
-      state->scale = std::clamp(std::max(scaleX, scaleY), kMinScale, kMaxScale);
+      const float relativeScale = std::max(relativeScaleX, relativeScaleY);
+      state->scale = std::clamp(m_drag.initialState.scale * relativeScale, kMinScale, kMaxScale);
     } else {
       const float dx = m_currentEventSceneX - m_drag.initialState.cx;
       const float dy = m_currentEventSceneY - m_drag.initialState.cy;
@@ -718,16 +764,29 @@ void DesktopWidgetsEditor::updateDrag() {
       const float halfWidth = std::max(1.0f, m_drag.intrinsicWidth * 0.5f);
       const float halfHeight = std::max(1.0f, m_drag.intrinsicHeight * 0.5f);
       const float denominator = halfWidth * halfWidth + halfHeight * halfHeight;
-      const float scale = (localX * halfWidth + localY * halfHeight) / std::max(1.0f, denominator);
-      state->scale = std::clamp(scale, kMinScale, kMaxScale);
+      const float relativeScale = (localX * halfWidth + localY * halfHeight) / std::max(1.0f, denominator);
+      state->scale = std::clamp(m_drag.initialState.scale * relativeScale, kMinScale, kMaxScale);
+    }
+  }
+
+  float clampWidth = m_drag.intrinsicWidth;
+  float clampHeight = m_drag.intrinsicHeight;
+  const std::string* relayoutWidgetId = nullptr;
+  if (m_drag.mode == DragMode::Scale) {
+    if (EditorWidgetView* view = findView(m_drag.widgetId); view != nullptr) {
+      applyViewState(*view, *state, true);
+      clampWidth = view->intrinsicWidth;
+      clampHeight = view->intrinsicHeight;
+    } else {
+      relayoutWidgetId = &m_drag.widgetId;
     }
   }
 
   if (m_wayland != nullptr) {
-    desktop_widgets::clampStateToOutput(*m_wayland, *state, m_drag.intrinsicWidth, m_drag.intrinsicHeight);
+    desktop_widgets::clampStateToOutput(*m_wayland, *state, clampWidth, clampHeight);
   }
 
-  updateViewTransforms();
+  updateViewTransforms(relayoutWidgetId);
   requestRedraw();
 }
 

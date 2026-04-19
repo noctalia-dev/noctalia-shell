@@ -72,6 +72,7 @@ private:
     std::unique_ptr<Node> sceneRoot;
     bool sceneRebuildRequested = true;
     std::unordered_map<std::string, EditorWidgetView> views;
+    Node* selectionFrameTransform = nullptr;
     Box* selectionBorder = nullptr;
     Box* rotationRing = nullptr;
     Box* scaleHandle = nullptr;
@@ -95,20 +96,22 @@ private:
   void createSurface(const WaylandOutput& output);
   void rebuildScene(OverlaySurface& surface);
   void prepareFrame(OverlaySurface& surface, bool needsUpdate, bool needsLayout);
-  void updateViewTransforms();
+  void applyViewState(EditorWidgetView& view, const DesktopWidgetState& state, bool refreshContent);
+  void updateViewTransforms(const std::string* relayoutWidgetId = nullptr);
   void updateSelectionVisuals(OverlaySurface& surface);
   void addWidget(const std::string& outputName, const std::string& type);
   void removeSelectedWidget();
   void requestExit();
-  void startDrag(DragMode mode, const std::string& widgetId, float intrinsicWidth, float intrinsicHeight,
-                 bool rebuildOnFinish);
+  void startDrag(DragMode mode, const std::string& widgetId, bool rebuildOnFinish);
   void updateDrag();
   void finishDrag();
   [[nodiscard]] OverlaySurface* findSurface(wl_surface* surface);
+  [[nodiscard]] EditorWidgetView* findView(const std::string& id);
   [[nodiscard]] DesktopWidgetState* findWidgetState(const std::string& id);
   [[nodiscard]] const DesktopWidgetState* findWidgetState(const std::string& id) const;
   [[nodiscard]] std::string effectiveOutputName(const DesktopWidgetState& state) const;
   [[nodiscard]] bool shouldSnap() const;
+  [[nodiscard]] float widgetContentScale(const DesktopWidgetState& state) const;
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
