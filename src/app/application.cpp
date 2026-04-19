@@ -717,6 +717,7 @@ void Application::initUi() {
                    m_networkService.get(), &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(),
                    &m_httpClient, &m_weatherService, &m_renderContext, &m_nightLightManager, &m_themeService,
                    m_bluetoothService.get(), m_brightnessService.get());
+  m_bar.setAutoHideSuppressionCallback([this]() { return m_trayMenu.isOpen(); });
 
   m_dock.initialize(m_wayland, &m_configService, &m_renderContext);
   m_desktopWidgetsController.initialize(m_wayland, &m_configService, &m_timeService, m_pipewireSpectrum.get(),

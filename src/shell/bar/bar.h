@@ -3,6 +3,7 @@
 #include "shell/bar/bar_instance.h"
 #include "shell/widget/widget_factory.h"
 
+#include <functional>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -53,6 +54,7 @@ public:
   void onSecondTick();
   void refresh();
   void requestLayout();
+  void setAutoHideSuppressionCallback(std::function<bool()> callback);
   // Requests a redraw on every bar surface without re-running widget update/layout.
   // Intended for reactive restyling (palette changes) where the scene graph has
   // already been mutated in place and only a repaint is needed.
@@ -73,6 +75,9 @@ private:
   void buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height);
   void prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout);
   void updateWidgets(BarInstance& instance);
+  void applyBarCompositorBlur(BarInstance& instance) const;
+  void syncBarSlideLayerTransform(BarInstance& instance) const;
+  void startHideFadeOut(BarInstance& instance);
   static void applyBackgroundPalette(BarInstance& instance);
 
   bool m_forceHidden = false;
@@ -107,4 +112,5 @@ private:
   // Surface → BarInstance mapping for pointer event routing
   std::unordered_map<wl_surface*, BarInstance*> m_surfaceMap;
   BarInstance* m_hoveredInstance = nullptr;
+  std::function<bool()> m_autoHideSuppressionCallback;
 };

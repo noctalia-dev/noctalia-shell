@@ -38,6 +38,8 @@ Bars are defined as named subtables under `[bar.*]`. Each bar is spawned on ever
 [bar.main]
 position        = "top"       # top | bottom | left | right
 enabled         = true
+auto_hide       = false       # slide out after pointer leaves; reveal from edge trigger strip
+reserve_space   = false       # keep exclusive zone even when auto-hidden
 
 thickness       = 34          # bar cross-axis size in pixels (width for vertical, height for horizontal)
 background_opacity = 1.0      # bar background alpha, from 0.0 (transparent) to 1.0 (opaque)
@@ -109,7 +111,16 @@ end            = ["volume", "clock"]
 
 `match` defaults to the subtable key name when omitted, so `[bar.main.monitor."DP-1"]` without a `match` field works too.
 
-Only the fields you specify are overridden; everything else falls through to the `[bar.*]` defaults. `scale`, `background_opacity`, **`color`**, and the bar-level **`capsule` / `capsule_fill` / `capsule_color` / `capsule_foreground` / `capsule_padding` / `capsule_opacity` / `capsule_border`** keys are also supported in monitor overrides.
+Only the fields you specify are overridden; everything else falls through to the `[bar.*]` defaults. `auto_hide`, `reserve_space`, `scale`, `background_opacity`, **`color`**, and the bar-level **`capsule` / `capsule_fill` / `capsule_color` / `capsule_foreground` / `capsule_padding` / `capsule_opacity` / `capsule_border`** keys are also supported in monitor overrides.
+
+### Auto-hide
+
+When `auto_hide = true`, the bar:
+- Does **not** reserve compositor exclusive zone (windows are not pushed away by this bar).
+- Slides out once the pointer leaves the bar.
+- Slides back in when the pointer reaches the matching screen edge trigger strip.
+
+Set `reserve_space = true` to keep the exclusive zone while auto-hide is active.
 
 ---
 
@@ -648,6 +659,7 @@ background_blur    = true
 
 show_running       = true       # also show running apps that are not in the pinned list
 auto_hide          = false      # fade out when the pointer leaves; fade in on approach
+reserve_space      = false      # keep exclusive zone even when auto-hidden
 active_scale       = 1.0        # icon scale for the focused app (clamped to 0.1-1.75)
 inactive_scale     = 0.85       # icon scale for non-focused apps (clamped to 0.1-1.0)
 active_opacity     = 1.0        # icon opacity for the focused app
@@ -682,6 +694,8 @@ When `auto_hide = true`, the dock:
 - Does **not** reserve compositor exclusive zone (windows are not pushed aside).
 - Fades out after the pointer leaves (uses a slow ease-in animation).
 - Fades back in when the pointer enters the thin edge trigger strip, so you can reach it by moving the cursor to the screen edge even when the dock is invisible.
+
+Set `reserve_space = true` to keep the exclusive zone while auto-hide is active.
 
 ### IPC
 

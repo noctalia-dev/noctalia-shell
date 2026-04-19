@@ -30,6 +30,7 @@ public:
   void onFontChanged();
   void onThemeChanged();
   void requestLayout();
+  [[nodiscard]] bool isOpen() const noexcept { return m_visible; }
 
   [[nodiscard]] bool onPointerEvent(const PointerEvent& event);
 

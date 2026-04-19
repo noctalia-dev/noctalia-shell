@@ -22,11 +22,14 @@
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
+#include <cmath>
 #include <wayland-client-core.h>
 
 namespace {
 
   constexpr float kCircularCapsuleNarrowWidthEpsilon = 1.0f;
+  constexpr std::int32_t kAutoHideTriggerPx = 2;
+  constexpr float kAutoHideSlideExtraPx = 16.0f;
 
   std::uint32_t positionToAnchor(const std::string& position) {
     if (position == "bottom") {
@@ -63,6 +66,22 @@ namespace {
         cfg.shadowBlur + std::max(0, -cfg.shadowOffsetY),
         cfg.shadowBlur + std::max(0, cfg.shadowOffsetY),
     };
+  }
+
+  std::pair<float, float> computeAutoHideHiddenDelta(bool isVertical, bool isBottom, bool isRight, float w, float h,
+                                                     float contentLeft, float contentTop, float contentRight,
+                                                     float contentBottom) {
+    const float k = kAutoHideSlideExtraPx;
+    if (!isVertical) {
+      if (isBottom) {
+        return {0.0f, (h - contentTop) + k};
+      }
+      return {0.0f, -(contentBottom + k)};
+    }
+    if (isRight) {
+      return {(w - contentLeft) + k, 0.0f};
+    }
+    return {-(contentRight + k), 0.0f};
   }
 
   void layoutBarSections(BarInstance& instance, Renderer& renderer, float barAreaW, float barAreaH, float padding,
@@ -364,6 +383,10 @@ void Bar::requestLayout() {
   }
 }
 
+void Bar::setAutoHideSuppressionCallback(std::function<bool()> callback) {
+  m_autoHideSuppressionCallback = std::move(callback);
+}
+
 bool Bar::isRunning() const noexcept {
   if (m_forceHidden) {
     return true; // hidden but still alive — do not exit the main loop
@@ -445,6 +468,7 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
   const std::int32_t mH = barConfig.marginH;
   const std::int32_t mV = barConfig.marginV;
   const auto sb = computeShadowBleed(barConfig);
+  const bool hiddenOverlayMode = barConfig.autoHide && !barConfig.reserveSpace;
 
   // Compositor margins absorb the visual gap where the shadow doesn't reach.
   // The surface is sized to cover only the bar rect plus its shadow footprint.
@@ -458,11 +482,11 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
     if (isBottom) {
       mBottom = std::max(0, mV - sb.down);
       surfH = static_cast<std::uint32_t>(sb.up + barConfig.thickness + std::min(mV, sb.down));
-      exclusiveZone = barConfig.thickness + std::min(mV, sb.down);
+      exclusiveZone = hiddenOverlayMode ? 0 : (barConfig.thickness + std::min(mV, sb.down));
     } else {
       mTop = std::max(0, mV - sb.up);
       surfH = static_cast<std::uint32_t>(std::min(mV, sb.up) + barConfig.thickness + sb.down);
-      exclusiveZone = std::min(mV, sb.up) + barConfig.thickness;
+      exclusiveZone = hiddenOverlayMode ? 0 : (std::min(mV, sb.up) + barConfig.thickness);
     }
   } else {
     mTop = std::max(0, mV - sb.up);
@@ -470,11 +494,11 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
     if (isRight) {
       mRight = std::max(0, mH - sb.right);
       surfW = static_cast<std::uint32_t>(sb.left + barConfig.thickness + std::min(mH, sb.right));
-      exclusiveZone = barConfig.thickness + std::min(mH, sb.right);
+      exclusiveZone = hiddenOverlayMode ? 0 : (barConfig.thickness + std::min(mH, sb.right));
     } else {
       mLeft = std::max(0, mH - sb.left);
       surfW = static_cast<std::uint32_t>(std::min(mH, sb.left) + barConfig.thickness + sb.right);
-      exclusiveZone = std::min(mH, sb.left) + barConfig.thickness;
+      exclusiveZone = hiddenOverlayMode ? 0 : (std::min(mH, sb.left) + barConfig.thickness);
     }
   }
 
@@ -570,6 +594,82 @@ void Bar::applyBackgroundPalette(BarInstance& instance) {
   instance.bg->setStyle(style);
 }
 
+void Bar::syncBarSlideLayerTransform(BarInstance& instance) const {
+  if (instance.slideRoot == nullptr) {
+    return;
+  }
+  if (instance.barConfig.autoHide) {
+    const float t = 1.0f - instance.hideOpacity;
+    instance.slideRoot->setPosition(instance.slideHiddenDx * t, instance.slideHiddenDy * t);
+  } else {
+    instance.slideRoot->setPosition(0.0f, 0.0f);
+  }
+}
+
+void Bar::applyBarCompositorBlur(BarInstance& instance) const {
+  if (instance.surface == nullptr) {
+    return;
+  }
+  if (!instance.barConfig.backgroundBlur) {
+    instance.surface->clearBlurRegion();
+    return;
+  }
+
+  constexpr float kBlurVisibleOpacity = 0.02f;
+  if (instance.barConfig.autoHide && instance.hideOpacity < kBlurVisibleOpacity) {
+    instance.surface->clearBlurRegion();
+    return;
+  }
+
+  if (instance.bg == nullptr) {
+    return;
+  }
+  float absX = 0.0f;
+  float absY = 0.0f;
+  Node::absolutePosition(instance.bg, absX, absY);
+  const int px = static_cast<int>(std::lround(absX + 1.0f));
+  const int py = static_cast<int>(std::lround(absY + 1.0f));
+  const int pw = static_cast<int>(std::lround(std::max(0.0f, instance.bg->width() - 2.0f)));
+  const int ph = static_cast<int>(std::lround(std::max(0.0f, instance.bg->height() - 2.0f)));
+  auto blurStrips = Surface::tessellateRoundedRect(px, py, pw, ph, static_cast<float>(instance.barConfig.radiusTopLeft),
+                                                   static_cast<float>(instance.barConfig.radiusTopRight),
+                                                   static_cast<float>(instance.barConfig.radiusBottomRight),
+                                                   static_cast<float>(instance.barConfig.radiusBottomLeft));
+  instance.surface->setBlurRegion(blurStrips);
+}
+
+void Bar::startHideFadeOut(BarInstance& instance) {
+  const float current = instance.hideOpacity;
+  instance.animations.animate(
+      current, 0.0f, Style::animSlow, Easing::EaseInQuad,
+      [this, inst = &instance](float v) {
+        inst->hideOpacity = v;
+        syncBarSlideLayerTransform(*inst);
+        applyBarCompositorBlur(*inst);
+      },
+      [this, inst = &instance]() {
+        if (inst->surface == nullptr) {
+          return;
+        }
+        const bool isVertical = (inst->barConfig.position == "left" || inst->barConfig.position == "right");
+        const bool isBottom = inst->barConfig.position == "bottom";
+        const int surfW = static_cast<int>(inst->surface->width());
+        const int surfH = static_cast<int>(inst->surface->height());
+        if (!isVertical) {
+          const int triggerY = isBottom ? std::max(0, surfH - kAutoHideTriggerPx) : 0;
+          inst->surface->setInputRegion({InputRect{0, triggerY, surfW, kAutoHideTriggerPx}});
+        } else if (inst->barConfig.position == "left") {
+          inst->surface->setInputRegion(
+              {InputRect{std::max(0, surfW - kAutoHideTriggerPx), 0, kAutoHideTriggerPx, surfH}});
+        } else {
+          inst->surface->setInputRegion({InputRect{0, 0, kAutoHideTriggerPx, surfH}});
+        }
+      });
+  if (instance.surface != nullptr) {
+    instance.surface->requestRedraw();
+  }
+}
+
 void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height) {
   uiAssertNotRendering("Bar::buildScene");
   if (m_renderContext == nullptr) {
@@ -625,20 +725,24 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.sceneRoot->setAnimationManager(&instance.animations);
     instance.sceneRoot->setSize(w, h);
 
+    auto slide = std::make_unique<Node>();
+    slide->setParticipatesInLayout(false);
+    instance.slideRoot = instance.sceneRoot->addChild(std::move(slide));
+
     // Bar background
     auto bg = std::make_unique<RectNode>();
-    instance.bg = static_cast<RectNode*>(instance.sceneRoot->addChild(std::move(bg)));
+    instance.bg = static_cast<RectNode*>(instance.slideRoot->addChild(std::move(bg)));
 
     // Shadow — bar shape copy rendered with large SDF softness to simulate a blurred drop shadow.
     if (shadowSize > 0.0f) {
       auto shadow = std::make_unique<RectNode>();
-      instance.shadow = static_cast<RectNode*>(instance.sceneRoot->addChild(std::move(shadow)));
+      instance.shadow = static_cast<RectNode*>(instance.slideRoot->addChild(std::move(shadow)));
     }
     // Note: shadow is inserted before bar sections so it renders below them (z=-1 is set below).
 
     auto contentClip = std::make_unique<Node>();
     contentClip->setClipChildren(true);
-    instance.contentClip = instance.sceneRoot->addChild(std::move(contentClip));
+    instance.contentClip = instance.slideRoot->addChild(std::move(contentClip));
 
     auto makeSlot = [&instance]() {
       auto slot = std::make_unique<Node>();
@@ -709,17 +813,25 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.inputDispatcher.setCursorShapeCallback(
         [this](std::uint32_t serial, std::uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
 
-    // Fade-in animation
-    instance.sceneRoot->setOpacity(0.0f);
-    instance.animations.animate(
-        0.0f, 1.0f, Style::animSlow, Easing::EaseOutCubic,
-        [root = instance.sceneRoot.get()](float v) { root->setOpacity(v); }, {}, instance.sceneRoot.get());
+    if (instance.barConfig.autoHide) {
+      instance.slideRoot->setOpacity(1.0f);
+      instance.hideOpacity = 0.0f;
+    } else {
+      instance.slideRoot->setOpacity(0.0f);
+      instance.hideOpacity = 1.0f;
+      instance.animations.animate(
+          0.0f, 1.0f, Style::animSlow, Easing::EaseOutCubic,
+          [slide = instance.slideRoot](float v) { slide->setOpacity(v); }, {}, instance.slideRoot);
+    }
 
     instance.surface->setSceneRoot(instance.sceneRoot.get());
   }
 
   // Update root size on reconfigure
   instance.sceneRoot->setSize(w, h);
+  if (instance.slideRoot != nullptr) {
+    instance.slideRoot->setSize(w, h);
+  }
 
   // Background covers only the bar visual area (not the shadow extension).
   // Expand 1px beyond its edges so SDF fringe lands inside the rect.
@@ -771,20 +883,51 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
 
   layoutBarSections(instance, *renderer, barAreaW, barAreaH, padding, isVertical);
 
+  if (instance.barConfig.autoHide) {
+    float contentLeft = barAreaX;
+    float contentTop = barAreaY;
+    float contentRight = barAreaX + barAreaW;
+    float contentBottom = barAreaY + barAreaH;
+    if (instance.shadow != nullptr) {
+      const float sx = barAreaX + shadowOffsetX;
+      const float sy = barAreaY + shadowOffsetY;
+      contentLeft = std::min(contentLeft, sx);
+      contentTop = std::min(contentTop, sy);
+      contentRight = std::max(contentRight, sx + barAreaW);
+      contentBottom = std::max(contentBottom, sy + barAreaH);
+    }
+    const auto hiddenDelta = computeAutoHideHiddenDelta(isVertical, isBottom, isRight, w, h, contentLeft, contentTop,
+                                                        contentRight, contentBottom);
+    instance.slideHiddenDx = hiddenDelta.first;
+    instance.slideHiddenDy = hiddenDelta.second;
+  } else {
+    instance.slideHiddenDx = 0.0f;
+    instance.slideHiddenDy = 0.0f;
+  }
+  syncBarSlideLayerTransform(instance);
+
   const InputRect barRect{
       static_cast<int>(barAreaX),
       static_cast<int>(barAreaY),
       static_cast<int>(barAreaW),
       static_cast<int>(barAreaH),
   };
-  instance.surface->setInputRegion({barRect});
-  if (instance.barConfig.backgroundBlur) {
-    auto blurStrips = Surface::tessellateRoundedRect(barRect.x, barRect.y, barRect.width, barRect.height, barRadii.tl,
-                                                     barRadii.tr, barRadii.br, barRadii.bl);
-    instance.surface->setBlurRegion(blurStrips);
+  if (instance.barConfig.autoHide && instance.hideOpacity < 0.5f) {
+    const int surfW = static_cast<int>(w);
+    const int surfH = static_cast<int>(h);
+    if (!isVertical) {
+      const int triggerY = isBottom ? std::max(0, surfH - kAutoHideTriggerPx) : 0;
+      instance.surface->setInputRegion({InputRect{0, triggerY, surfW, kAutoHideTriggerPx}});
+    } else if (instance.barConfig.position == "left") {
+      instance.surface->setInputRegion(
+          {InputRect{std::max(0, surfW - kAutoHideTriggerPx), 0, kAutoHideTriggerPx, surfH}});
+    } else {
+      instance.surface->setInputRegion({InputRect{0, 0, kAutoHideTriggerPx, surfH}});
+    }
   } else {
-    instance.surface->clearBlurRegion();
+    instance.surface->setInputRegion({barRect});
   }
+  applyBarCompositorBlur(instance);
 }
 
 void Bar::updateWidgets(BarInstance& instance) {
@@ -898,13 +1041,35 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
       break;
     }
     m_hoveredInstance = it->second;
+    m_hoveredInstance->pointerInside = true;
     m_hoveredInstance->inputDispatcher.pointerEnter(static_cast<float>(event.sx), static_cast<float>(event.sy),
                                                     event.serial);
+    if (m_hoveredInstance->barConfig.autoHide && m_hoveredInstance->sceneRoot != nullptr) {
+      const float current = m_hoveredInstance->hideOpacity;
+      m_hoveredInstance->animations.animate(current, 1.0f, Style::animNormal, Easing::EaseOutCubic,
+                                            [inst = m_hoveredInstance, this](float v) {
+                                              inst->hideOpacity = v;
+                                              syncBarSlideLayerTransform(*inst);
+                                              applyBarCompositorBlur(*inst);
+                                            });
+      if (m_hoveredInstance->surface != nullptr) {
+        const int sw = static_cast<int>(m_hoveredInstance->surface->width());
+        const int sh = static_cast<int>(m_hoveredInstance->surface->height());
+        m_hoveredInstance->surface->setInputRegion({InputRect{0, 0, sw, sh}});
+      }
+      m_hoveredInstance->surface->requestRedraw();
+    }
     break;
   }
   case PointerEvent::Type::Leave: {
     if (m_hoveredInstance != nullptr) {
+      m_hoveredInstance->pointerInside = false;
       m_hoveredInstance->inputDispatcher.pointerLeave();
+      const bool suppressAutoHide =
+          (m_autoHideSuppressionCallback != nullptr) ? m_autoHideSuppressionCallback() : false;
+      if (m_hoveredInstance->barConfig.autoHide && !suppressAutoHide) {
+        startHideFadeOut(*m_hoveredInstance);
+      }
       m_hoveredInstance = nullptr;
     }
     break;
