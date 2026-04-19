@@ -56,6 +56,45 @@ inline WidgetTransformSurfaceGeometry computeWidgetSurfaceGeometry(float cx, flo
   return geometry;
 }
 
+struct WidgetTransformClippedGeometry {
+  std::uint32_t surfaceWidth = 1;
+  std::uint32_t surfaceHeight = 1;
+  std::int32_t marginLeft = 0;
+  std::int32_t marginTop = 0;
+  float contentOffsetX = 0.0f;
+  float contentOffsetY = 0.0f;
+};
+
+inline WidgetTransformClippedGeometry computeClippedWidgetSurfaceGeometry(float cx, float cy, float width, float height,
+                                                                          float scale, float rotationRad,
+                                                                          float outputWidth, float outputHeight) {
+  const WidgetTransformBounds bounds = computeWidgetTransformBounds(cx, cy, width, height, scale, rotationRad);
+  const float halfW = bounds.aabbWidth * 0.5f;
+  const float halfH = bounds.aabbHeight * 0.5f;
+
+  const float desiredLeft = cx - halfW;
+  const float desiredTop = cy - halfH;
+  const float desiredRight = cx + halfW;
+  const float desiredBottom = cy + halfH;
+
+  const float clippedLeft = std::max(0.0f, desiredLeft);
+  const float clippedTop = std::max(0.0f, desiredTop);
+  const float clippedRight = std::min(outputWidth, desiredRight);
+  const float clippedBottom = std::min(outputHeight, desiredBottom);
+
+  const float visibleWidth = std::max(1.0f, clippedRight - clippedLeft);
+  const float visibleHeight = std::max(1.0f, clippedBottom - clippedTop);
+
+  WidgetTransformClippedGeometry geometry;
+  geometry.surfaceWidth = std::max<std::uint32_t>(1, static_cast<std::uint32_t>(std::ceil(visibleWidth)));
+  geometry.surfaceHeight = std::max<std::uint32_t>(1, static_cast<std::uint32_t>(std::ceil(visibleHeight)));
+  geometry.marginLeft = static_cast<std::int32_t>(std::lround(clippedLeft));
+  geometry.marginTop = static_cast<std::int32_t>(std::lround(clippedTop));
+  geometry.contentOffsetX = cx - clippedLeft;
+  geometry.contentOffsetY = cy - clippedTop;
+  return geometry;
+}
+
 inline WidgetTransformClampResult clampWidgetCenterToOutput(float cx, float cy, float width, float height, float scale,
                                                             float rotationRad, float outputWidth, float outputHeight,
                                                             float minVisibleFraction = 1.0f) {

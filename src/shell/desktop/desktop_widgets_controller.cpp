@@ -4,9 +4,9 @@
 #include "core/toml.h"
 #include "ipc/ipc_service.h"
 #include "pipewire/pipewire_spectrum.h"
+#include "shell/desktop/desktop_widget_layout.h"
 #include "shell/desktop/desktop_widgets_editor.h"
 #include "shell/desktop/desktop_widgets_host.h"
-#include "shell/desktop/widget_transform.h"
 #include "wayland/wayland_connection.h"
 
 #include <charconv>
@@ -31,95 +31,6 @@ namespace {
       return std::string(home) + "/.local/state/noctalia";
     }
     return {};
-  }
-
-  std::string outputKey(const WaylandOutput& output) {
-    if (!output.connectorName.empty()) {
-      return output.connectorName;
-    }
-    return std::to_string(output.name);
-  }
-
-  const WaylandOutput* resolveEffectiveOutput(const WaylandConnection& wayland, const std::string& requestedOutput) {
-    const auto& outputs = wayland.outputs();
-    const WaylandOutput* primary = nullptr;
-    for (const auto& output : outputs) {
-      if (!output.done || output.output == nullptr) {
-        continue;
-      }
-      if (primary == nullptr) {
-        primary = &output;
-      }
-      if (!requestedOutput.empty() && outputKey(output) == requestedOutput) {
-        return &output;
-      }
-    }
-    return primary;
-  }
-
-  float outputLogicalWidth(const WaylandOutput& output) {
-    if (output.logicalWidth > 0) {
-      return static_cast<float>(output.logicalWidth);
-    }
-    return static_cast<float>(std::max(1, output.width / std::max(1, output.scale)));
-  }
-
-  float outputLogicalHeight(const WaylandOutput& output) {
-    if (output.logicalHeight > 0) {
-      return static_cast<float>(output.logicalHeight);
-    }
-    return static_cast<float>(std::max(1, output.height / std::max(1, output.scale)));
-  }
-
-  bool formatShowsSeconds(const DesktopWidgetState& state) {
-    if (state.type != "clock") {
-      return false;
-    }
-    const auto it = state.settings.find("format");
-    if (it == state.settings.end()) {
-      return false;
-    }
-    const auto* format = std::get_if<std::string>(&it->second);
-    if (format == nullptr) {
-      return false;
-    }
-    return format->find("%S") != std::string::npos || format->find("%T") != std::string::npos ||
-           format->find("%X") != std::string::npos;
-  }
-
-  float estimateIntrinsicWidth(const DesktopWidgetState& state) {
-    if (state.type == "clock") {
-      return formatShowsSeconds(state) ? 270.0f : 210.0f;
-    }
-    if (state.type == "audio_visualizer") {
-      const auto it = state.settings.find("width");
-      if (it != state.settings.end()) {
-        if (const auto* value = std::get_if<double>(&it->second)) {
-          return static_cast<float>(*value);
-        }
-        if (const auto* value = std::get_if<std::int64_t>(&it->second)) {
-          return static_cast<float>(*value);
-        }
-      }
-      return 240.0f;
-    }
-    return 210.0f;
-  }
-
-  float estimateIntrinsicHeight(const DesktopWidgetState& state) {
-    if (state.type == "audio_visualizer") {
-      const auto it = state.settings.find("height");
-      if (it != state.settings.end()) {
-        if (const auto* value = std::get_if<double>(&it->second)) {
-          return static_cast<float>(*value);
-        }
-        if (const auto* value = std::get_if<std::int64_t>(&it->second)) {
-          return static_cast<float>(*value);
-        }
-      }
-      return 96.0f;
-    }
-    return 70.0f;
   }
 
   void writeSetting(toml::table& table, const std::string& key, const WidgetSettingValue& value) {
@@ -497,18 +408,15 @@ void DesktopWidgetsController::normalizeSnapshot() {
     }
     seenIds.insert(widget.id);
 
-    const WaylandOutput* output = resolveEffectiveOutput(*m_wayland, widget.outputName);
+    const WaylandOutput* output = desktop_widgets::resolveEffectiveOutput(*m_wayland, widget.outputName);
     if (output == nullptr) {
       continue;
     }
 
-    widget.outputName = outputKey(*output);
-    const WidgetTransformClampResult clamped =
-        clampWidgetCenterToOutput(widget.cx, widget.cy, estimateIntrinsicWidth(widget), estimateIntrinsicHeight(widget),
-                                  widget.scale, widget.rotationRad, outputLogicalWidth(*output),
-                                  outputLogicalHeight(*output), kDesktopWidgetMinVisibleFraction);
-    widget.cx = clamped.cx;
-    widget.cy = clamped.cy;
+    widget.outputName = desktop_widgets::outputKey(*output);
+    // cx/cy clamping is owned by the editor (during drag) and the host (on widget creation and
+    // prepareFrame). Both of those paths know the widget's actual intrinsic size; clamping here
+    // with an estimate can push widgets that the editor had legitimately placed at the edge.
   }
 }
 

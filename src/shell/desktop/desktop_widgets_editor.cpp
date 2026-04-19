@@ -7,6 +7,7 @@
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
+#include "shell/desktop/desktop_widget_layout.h"
 #include "shell/desktop/widget_transform.h"
 #include "time/time_service.h"
 #include "ui/controls/box.h"
@@ -44,30 +45,6 @@ namespace {
   constexpr std::array<const char*, 2> kWidgetTypeLabels{"Clock", "Audio Visualizer"};
   constexpr std::string_view kDesktopWidgetIdPrefix = "desktop-widget-";
 
-  std::string outputKey(const WaylandOutput& output) {
-    if (!output.connectorName.empty()) {
-      return output.connectorName;
-    }
-    return std::to_string(output.name);
-  }
-
-  const WaylandOutput* resolveEffectiveOutput(const WaylandConnection& wayland, const std::string& requestedOutput) {
-    const auto& outputs = wayland.outputs();
-    const WaylandOutput* primary = nullptr;
-    for (const auto& output : outputs) {
-      if (!output.done || output.output == nullptr) {
-        continue;
-      }
-      if (primary == nullptr) {
-        primary = &output;
-      }
-      if (!requestedOutput.empty() && outputKey(output) == requestedOutput) {
-        return &output;
-      }
-    }
-    return primary;
-  }
-
   float snapToGrid(float value, std::int32_t cellSize) {
     if (cellSize <= 0) {
       return value;
@@ -83,20 +60,6 @@ namespace {
       radians += static_cast<float>(M_PI * 2.0);
     }
     return radians;
-  }
-
-  float outputLogicalWidth(const WaylandOutput& output) {
-    if (output.logicalWidth > 0) {
-      return static_cast<float>(output.logicalWidth);
-    }
-    return static_cast<float>(std::max(1, output.width / std::max(1, output.scale)));
-  }
-
-  float outputLogicalHeight(const WaylandOutput& output) {
-    if (output.logicalHeight > 0) {
-      return static_cast<float>(output.logicalHeight);
-    }
-    return static_cast<float>(std::max(1, output.height / std::max(1, output.scale)));
   }
 
   bool formatShowsSeconds(const DesktopWidgetState& state) {
@@ -189,7 +152,7 @@ void DesktopWidgetsEditor::syncSurfaces() {
   const auto& outputs = m_wayland->outputs();
   std::erase_if(m_surfaces, [&outputs](const auto& surface) {
     return std::none_of(outputs.begin(), outputs.end(), [&surface](const auto& output) {
-      return output.done && output.output != nullptr && outputKey(output) == surface->outputName;
+      return output.done && output.output != nullptr && desktop_widgets::outputKey(output) == surface->outputName;
     });
   });
 
@@ -197,7 +160,7 @@ void DesktopWidgetsEditor::syncSurfaces() {
     if (!output.done || output.output == nullptr) {
       continue;
     }
-    const std::string key = outputKey(output);
+    const std::string key = desktop_widgets::outputKey(output);
     const bool exists = std::any_of(m_surfaces.begin(), m_surfaces.end(),
                                     [&key](const auto& surface) { return surface->outputName == key; });
     if (!exists) {
@@ -222,7 +185,7 @@ void DesktopWidgetsEditor::createSurface(const WaylandOutput& output) {
   };
 
   auto overlay = std::make_unique<OverlaySurface>();
-  overlay->outputName = outputKey(output);
+  overlay->outputName = desktop_widgets::outputKey(output);
   overlay->output = output.output;
   overlay->sceneRebuildRequested = true;
   overlay->surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
@@ -287,8 +250,9 @@ std::string DesktopWidgetsEditor::effectiveOutputName(const DesktopWidgetState& 
   if (m_wayland == nullptr) {
     return state.outputName;
   }
-  if (const WaylandOutput* output = resolveEffectiveOutput(*m_wayland, state.outputName); output != nullptr) {
-    return outputKey(*output);
+  if (const WaylandOutput* output = desktop_widgets::resolveEffectiveOutput(*m_wayland, state.outputName);
+      output != nullptr) {
+    return desktop_widgets::outputKey(*output);
   }
   return {};
 }
@@ -416,9 +380,11 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
         return;
       }
       if (data.pressed) {
-        const bool rebuildOnFinish = m_selectedWidgetId != id;
-        m_selectedWidgetId = id;
-        startDrag(DragMode::Move, id, w, h, rebuildOnFinish);
+        if (m_selectedWidgetId != id) {
+          m_selectedWidgetId = id;
+          DeferredCall::callLater([this]() { requestLayout(); });
+        }
+        startDrag(DragMode::Move, id, w, h, false);
       } else if (m_drag.mode == DragMode::Move && m_drag.widgetId == id) {
         finishDrag();
       }
@@ -641,7 +607,8 @@ void DesktopWidgetsEditor::addWidget(const std::string& outputName, const std::s
 
   float centerX = 320.0f;
   float centerY = 240.0f;
-  if (const WaylandOutput* output = resolveEffectiveOutput(*m_wayland, outputName); output != nullptr) {
+  if (const WaylandOutput* output = desktop_widgets::resolveEffectiveOutput(*m_wayland, outputName);
+      output != nullptr) {
     const int logicalWidth =
         output->logicalWidth > 0 ? output->logicalWidth : output->width / std::max(1, output->scale);
     const int logicalHeight =
@@ -757,13 +724,7 @@ void DesktopWidgetsEditor::updateDrag() {
   }
 
   if (m_wayland != nullptr) {
-    if (const WaylandOutput* output = resolveEffectiveOutput(*m_wayland, state->outputName); output != nullptr) {
-      const WidgetTransformClampResult clamped = clampWidgetCenterToOutput(
-          state->cx, state->cy, m_drag.intrinsicWidth, m_drag.intrinsicHeight, state->scale, state->rotationRad,
-          outputLogicalWidth(*output), outputLogicalHeight(*output), kDesktopWidgetMinVisibleFraction);
-      state->cx = clamped.cx;
-      state->cy = clamped.cy;
-    }
+    desktop_widgets::clampStateToOutput(*m_wayland, *state, m_drag.intrinsicWidth, m_drag.intrinsicHeight);
   }
 
   updateViewTransforms();

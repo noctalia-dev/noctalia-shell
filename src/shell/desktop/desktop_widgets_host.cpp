@@ -5,6 +5,7 @@
 #include "pipewire/pipewire_spectrum.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
+#include "shell/desktop/desktop_widget_layout.h"
 #include "shell/desktop/widget_transform.h"
 #include "time/time_service.h"
 #include "wayland/layer_surface.h"
@@ -17,44 +18,6 @@
 namespace {
 
   constexpr Logger kLog("desktop");
-
-  std::string outputKey(const WaylandOutput& output) {
-    if (!output.connectorName.empty()) {
-      return output.connectorName;
-    }
-    return std::to_string(output.name);
-  }
-
-  float outputLogicalWidth(const WaylandOutput& output) {
-    if (output.logicalWidth > 0) {
-      return static_cast<float>(output.logicalWidth);
-    }
-    return static_cast<float>(std::max(1, output.width / std::max(1, output.scale)));
-  }
-
-  float outputLogicalHeight(const WaylandOutput& output) {
-    if (output.logicalHeight > 0) {
-      return static_cast<float>(output.logicalHeight);
-    }
-    return static_cast<float>(std::max(1, output.height / std::max(1, output.scale)));
-  }
-
-  const WaylandOutput* resolveEffectiveOutput(const WaylandConnection& wayland, const std::string& requestedOutput) {
-    const auto& outputs = wayland.outputs();
-    const WaylandOutput* primary = nullptr;
-    for (const auto& output : outputs) {
-      if (!output.done || output.output == nullptr) {
-        continue;
-      }
-      if (primary == nullptr) {
-        primary = &output;
-      }
-      if (!requestedOutput.empty() && outputKey(output) == requestedOutput) {
-        return &output;
-      }
-    }
-    return primary;
-  }
 
   DesktopWidgetState* findStateById(DesktopWidgetsSnapshot& snapshot, const std::string& id) {
     for (auto& widget : snapshot.widgets) {
@@ -152,7 +115,7 @@ void DesktopWidgetsHost::syncInstances() {
                 [this](const auto& instance) { return findStateById(m_snapshot, instance->state.id) == nullptr; });
 
   for (const auto& state : m_snapshot.widgets) {
-    const WaylandOutput* output = resolveEffectiveOutput(*m_wayland, state.outputName);
+    const WaylandOutput* output = desktop_widgets::resolveEffectiveOutput(*m_wayland, state.outputName);
     if (output == nullptr) {
       continue;
     }
@@ -163,7 +126,7 @@ void DesktopWidgetsHost::syncInstances() {
       continue;
     }
 
-    const std::string effectiveOutputName = outputKey(*output);
+    const std::string effectiveOutputName = desktop_widgets::outputKey(*output);
     const bool widgetDefinitionChanged = existing->state.type != state.type ||
                                          existing->state.settings != state.settings ||
                                          existing->effectiveOutputName != effectiveOutputName;
@@ -200,8 +163,17 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
 
   const float intrinsicWidth = std::max(1.0f, widget->intrinsicWidth());
   const float intrinsicHeight = std::max(1.0f, widget->intrinsicHeight());
-  const WidgetTransformSurfaceGeometry geometry =
-      computeWidgetSurfaceGeometry(state.cx, state.cy, intrinsicWidth, intrinsicHeight, state.scale, state.rotationRad);
+
+  DesktopWidgetState clampedState = state;
+  if (m_wayland != nullptr) {
+    desktop_widgets::clampStateToOutput(*m_wayland, clampedState, intrinsicWidth, intrinsicHeight);
+  }
+
+  const float outW = desktop_widgets::outputLogicalWidth(output);
+  const float outH = desktop_widgets::outputLogicalHeight(output);
+  const WidgetTransformClippedGeometry geometry =
+      computeClippedWidgetSurfaceGeometry(clampedState.cx, clampedState.cy, intrinsicWidth, intrinsicHeight,
+                                          clampedState.scale, clampedState.rotationRad, outW, outH);
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-desktop-widget",
@@ -218,8 +190,8 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
   };
 
   auto instance = std::make_unique<DesktopWidgetInstance>();
-  instance->state = state;
-  instance->effectiveOutputName = outputKey(output);
+  instance->state = clampedState;
+  instance->effectiveOutputName = desktop_widgets::outputKey(output);
   instance->output = output.output;
   instance->widget = std::move(widget);
   instance->intrinsicWidth = intrinsicWidth;
@@ -292,20 +264,22 @@ void DesktopWidgetsHost::prepareFrame(DesktopWidgetInstance& instance, bool need
   }
 
   if (m_wayland != nullptr) {
-    if (const WaylandOutput* output = resolveEffectiveOutput(*m_wayland, instance.state.outputName);
+    desktop_widgets::clampStateToOutput(*m_wayland, instance.state, instance.intrinsicWidth, instance.intrinsicHeight);
+  }
+
+  float outputW = 1920.0f;
+  float outputH = 1080.0f;
+  if (m_wayland != nullptr) {
+    if (const WaylandOutput* output = desktop_widgets::resolveEffectiveOutput(*m_wayland, instance.state.outputName);
         output != nullptr) {
-      const WidgetTransformClampResult clamped = clampWidgetCenterToOutput(
-          instance.state.cx, instance.state.cy, instance.intrinsicWidth, instance.intrinsicHeight, instance.state.scale,
-          instance.state.rotationRad, outputLogicalWidth(*output), outputLogicalHeight(*output),
-          kDesktopWidgetMinVisibleFraction);
-      instance.state.cx = clamped.cx;
-      instance.state.cy = clamped.cy;
+      outputW = desktop_widgets::outputLogicalWidth(*output);
+      outputH = desktop_widgets::outputLogicalHeight(*output);
     }
   }
 
-  const WidgetTransformSurfaceGeometry geometry =
-      computeWidgetSurfaceGeometry(instance.state.cx, instance.state.cy, instance.intrinsicWidth,
-                                   instance.intrinsicHeight, instance.state.scale, instance.state.rotationRad);
+  const WidgetTransformClippedGeometry geometry = computeClippedWidgetSurfaceGeometry(
+      instance.state.cx, instance.state.cy, instance.intrinsicWidth, instance.intrinsicHeight, instance.state.scale,
+      instance.state.rotationRad, outputW, outputH);
 
   if (instance.surface->width() != geometry.surfaceWidth || instance.surface->height() != geometry.surfaceHeight) {
     instance.surface->requestSize(geometry.surfaceWidth, geometry.surfaceHeight);
@@ -318,9 +292,8 @@ void DesktopWidgetsHost::prepareFrame(DesktopWidgetInstance& instance, bool need
   }
   if (instance.transformNode != nullptr) {
     instance.transformNode->setFrameSize(instance.intrinsicWidth, instance.intrinsicHeight);
-    instance.transformNode->setPosition(
-        (static_cast<float>(instance.surface->width()) - instance.intrinsicWidth) * 0.5f,
-        (static_cast<float>(instance.surface->height()) - instance.intrinsicHeight) * 0.5f);
+    instance.transformNode->setPosition(geometry.contentOffsetX - instance.intrinsicWidth * 0.5f,
+                                        geometry.contentOffsetY - instance.intrinsicHeight * 0.5f);
     instance.transformNode->setRotation(instance.state.rotationRad);
     instance.transformNode->setScale(instance.state.scale);
   }
