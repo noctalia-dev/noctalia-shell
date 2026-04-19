@@ -54,6 +54,9 @@ private:
     float remainingProgress = 1.0f;
     float y = -1.0f; // stable top position while visible; negative = queued/off-screen
     float height = 0.0f;
+    // Planned toast chrome (refreshEntryGeometry); buildCard must match these for placement vs paint.
+    int toastSummaryLines = 2;
+    int toastBodyLines = 0;
     bool exiting = false;
     bool hovered = false; // pointer is currently over the card on some instance
   };
@@ -125,6 +128,7 @@ private:
                                       std::optional<uint32_t> ignoreNotificationId = std::nullopt) const;
   [[nodiscard]] bool fitsOnSurface(const PopupEntry& entry, float surfaceHeight) const;
   [[nodiscard]] float entryHeight(const PopupEntry& entry) const;
+  void refreshEntryGeometry(PopupEntry& entry) const;
   [[nodiscard]] float layoutBottomForSurfaceHeight(float surfaceHeight) const;
   [[nodiscard]] float maxPlacementBottom() const;
   [[nodiscard]] std::optional<float> findPlacementY(float entryHeight,
