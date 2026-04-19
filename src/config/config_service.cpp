@@ -666,6 +666,10 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
 
     if (ovr.enabled)
       resolved.enabled = *ovr.enabled;
+    if (ovr.autoHide)
+      resolved.autoHide = *ovr.autoHide;
+    if (ovr.reserveSpace)
+      resolved.reserveSpace = *ovr.reserveSpace;
     if (ovr.thickness)
       resolved.thickness = *ovr.thickness;
     if (ovr.backgroundOpacity)
@@ -1025,6 +1029,10 @@ void ConfigService::parseTable(const toml::table& tbl) {
         bar.position = *v;
       if (auto v = (*barTbl)["enabled"].value<bool>())
         bar.enabled = *v;
+      if (auto v = (*barTbl)["auto_hide"].value<bool>())
+        bar.autoHide = *v;
+      if (auto v = (*barTbl)["reserve_space"].value<bool>())
+        bar.reserveSpace = *v;
       if (auto v = (*barTbl)["thickness"].value<int64_t>())
         bar.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
       if (auto v = (*barTbl)["background_opacity"].value<double>())
@@ -1118,6 +1126,10 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
           if (auto v = (*monTbl)["enabled"].value<bool>())
             ovr.enabled = *v;
+          if (auto v = (*monTbl)["auto_hide"].value<bool>())
+            ovr.autoHide = *v;
+          if (auto v = (*monTbl)["reserve_space"].value<bool>())
+            ovr.reserveSpace = *v;
           if (auto v = (*monTbl)["thickness"].value<int64_t>())
             ovr.thickness = std::clamp(static_cast<std::int32_t>(*v), 10, 300);
           if (auto v = (*monTbl)["background_opacity"].value<double>())
@@ -1492,6 +1504,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
       dock.showRunning = *v;
     if (auto v = (*dockTbl)["auto_hide"].value<bool>())
       dock.autoHide = *v;
+    if (auto v = (*dockTbl)["reserve_space"].value<bool>())
+      dock.reserveSpace = *v;
     if (auto v = (*dockTbl)["active_scale"].value<double>())
       dock.activeScale = std::clamp(static_cast<float>(*v), 0.1f, 1.75f);
     if (auto v = (*dockTbl)["inactive_scale"].value<double>())

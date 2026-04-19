@@ -26,7 +26,12 @@ struct BarInstance {
   // sceneRoot must be destroyed before `animations` — ~Node() calls cancelForOwner().
   AnimationManager animations;
   std::unique_ptr<Node> sceneRoot;
+  Node* slideRoot = nullptr;
+  float slideHiddenDx = 0.0f;
+  float slideHiddenDy = 0.0f;
   InputDispatcher inputDispatcher;
+  float hideOpacity = 1.0f;
+  bool pointerInside = false;
 
   // Bar background, shadow, and layout sections (start/center/end along main axis)
   RectNode* bg = nullptr;

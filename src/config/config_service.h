@@ -20,6 +20,8 @@ class NotificationManager;
 struct BarMonitorOverride {
   std::string match;
   std::optional<bool> enabled;
+  std::optional<bool> autoHide;
+  std::optional<bool> reserveSpace;
   std::optional<std::int32_t> thickness;
   std::optional<float> backgroundOpacity;
   std::optional<std::int32_t> radius;
@@ -54,6 +56,8 @@ struct BarConfig {
   std::string name = "default";
   std::string position = "top";
   bool enabled = true;
+  bool autoHide = false;     // slide out when the pointer leaves; reveal on edge approach
+  bool reserveSpace = false; // keep compositor exclusive zone even while auto-hidden
   std::int32_t thickness = Style::barThicknessDefault;
   float backgroundOpacity = 1.0f;
   std::int32_t radius = Style::radiusXl;
@@ -201,6 +205,7 @@ struct DockConfig {
   bool backgroundBlur = true;
   bool showRunning = true;         // also show running apps not in pinned list
   bool autoHide = false;           // fade out when not hovered (overlay mode)
+  bool reserveSpace = false;       // keep compositor exclusive zone even while auto-hidden
   float activeScale = 1.0f;        // focused app icon scale
   float inactiveScale = 0.85f;     // non-focused app icon scale
   float activeOpacity = 1.0f;      // focused app icon opacity

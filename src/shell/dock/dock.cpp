@@ -564,6 +564,7 @@ void Dock::createInstance(const WaylandOutput& output) {
 
   const bool vert = isVertical();
   const auto sb = computeBleed(cfg);
+  const bool hiddenOverlayMode = cfg.autoHide && !cfg.reserveSpace;
   const auto panelW = dockContentSize(cfg.pinned.size());
   const auto panelH = dockThickness();
   const auto anchor = positionToAnchor(cfg.position);
@@ -582,11 +583,11 @@ void Dock::createInstance(const WaylandOutput& output) {
     if (isBottom) {
       mB = std::max(0, cfg.marginV - sb.down);
       surfH = static_cast<std::uint32_t>(sb.up + panelH + std::min(cfg.marginV, sb.down));
-      exclusiveZone = cfg.autoHide ? 0 : (panelH + std::min(cfg.marginV, sb.down));
+      exclusiveZone = hiddenOverlayMode ? 0 : (panelH + std::min(cfg.marginV, sb.down));
     } else {
       mT = std::max(0, cfg.marginV - sb.up);
       surfH = static_cast<std::uint32_t>(std::min(cfg.marginV, sb.up) + panelH + sb.down);
-      exclusiveZone = cfg.autoHide ? 0 : (std::min(cfg.marginV, sb.up) + panelH);
+      exclusiveZone = hiddenOverlayMode ? 0 : (std::min(cfg.marginV, sb.up) + panelH);
     }
     // marginH is applied symmetrically as compositor side margins.
     mL = cfg.marginH;
@@ -597,11 +598,11 @@ void Dock::createInstance(const WaylandOutput& output) {
     if (isRight) {
       mR = std::max(0, cfg.marginH - sb.right);
       surfW = static_cast<std::uint32_t>(sb.left + panelH + std::min(cfg.marginH, sb.right));
-      exclusiveZone = cfg.autoHide ? 0 : (panelH + std::min(cfg.marginH, sb.right));
+      exclusiveZone = hiddenOverlayMode ? 0 : (panelH + std::min(cfg.marginH, sb.right));
     } else {
       mL = std::max(0, cfg.marginH - sb.left);
       surfW = static_cast<std::uint32_t>(std::min(cfg.marginH, sb.left) + panelH + sb.right);
-      exclusiveZone = cfg.autoHide ? 0 : (std::min(cfg.marginH, sb.left) + panelH);
+      exclusiveZone = hiddenOverlayMode ? 0 : (std::min(cfg.marginH, sb.left) + panelH);
     }
     mT = cfg.marginV;
     mB = cfg.marginV;
