@@ -25,7 +25,7 @@ SmartPanel {
       x: Style.marginL
       y: Style.marginL
       width: parent.width - Style.margin2L
-      spacing: Style.marginL
+      spacing: Style.marginM
 
       // All clock panel cards
       Repeater {

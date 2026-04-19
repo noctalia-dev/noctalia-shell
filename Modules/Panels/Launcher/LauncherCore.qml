@@ -132,7 +132,7 @@ Rectangle {
     return base;
   }
   readonly property int listPanelWidth: Math.round(500 * Style.uiScaleRatio)
-  readonly property int gridContentWidth: listPanelWidth - (2 * Style.marginXS)
+  readonly property int gridContentWidth: listPanelWidth - Style.margin2XS
   readonly property int gridCellSize: Math.floor((gridContentWidth - ((targetGridColumns - 1) * Style.marginS)) / targetGridColumns)
 
   readonly property int gridColumns: targetGridColumns

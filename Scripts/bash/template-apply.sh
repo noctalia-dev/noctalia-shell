@@ -4,7 +4,7 @@
 if [ "$#" -lt 1 ]; then
     # Print usage information to standard error.
     echo "Error: No application specified." >&2
-    echo "Usage: $0 {kitty|ghostty|foot|alacritty|wezterm|fuzzel|walker|pywalfox|cava|yazi|labwc|niri|hyprland|sway|scroll|mango|btop|zathura} [dark|light]" >&2
+    echo "Usage: $0 {kitty|ghostty|foot|alacritty|wezterm|starship|fuzzel|walker|pywalfox|cava|yazi|labwc|niri|hyprland|sway|scroll|mango|btop|zathura} [dark|light]" >&2
     exit 1
 fi
 
@@ -14,6 +14,15 @@ MODE="${2:-}" # Optional second argument for dark/light mode
 # --- Apply theme based on the application name ---
 case "$APP_NAME" in
 kitty)
+    # Many configs use: include ./current-theme.conf
+    # Point it at the generated theme whenever the hook runs (including when noctalia.conf
+    # was unchanged on disk and the hook was forced from the template processor).
+    NOCTALIA_THEME="$HOME/.config/kitty/themes/noctalia.conf"
+    CURRENT_THEME="$HOME/.config/kitty/current-theme.conf"
+    if [ -f "$NOCTALIA_THEME" ]; then
+        mkdir -p "$HOME/.config/kitty"
+        ln -sf "themes/noctalia.conf" "$CURRENT_THEME"
+    fi
     KITTY_CONF="$HOME/.config/kitty/kitty.conf"
     if [ -w "$KITTY_CONF" ]; then
         kitty +kitten themes --reload-in=all noctalia
@@ -533,6 +542,75 @@ zathura)
             string:"source"
     done
     ;;
+
+starship)
+            PALETTE_FILE="$HOME/.cache/noctalia/starship-palette.toml"
+
+            # Respect STARSHIP_CONFIG env var, then fall back to standard lookup order
+            if [ -n "$STARSHIP_CONFIG" ]; then
+                CONFIG_FILE="$STARSHIP_CONFIG"
+            elif [ -f "$HOME/.config/starship.toml" ]; then
+                CONFIG_FILE="$HOME/.config/starship.toml"
+            elif [ -f "$HOME/.config/starship/starship.toml" ]; then
+                CONFIG_FILE="$HOME/.config/starship/starship.toml"
+            else
+                CONFIG_FILE="$HOME/.config/starship.toml"
+            fi
+
+            if [ ! -f "$PALETTE_FILE" ]; then
+                echo "Error: Starship palette file not found at $PALETTE_FILE" >&2
+                return 1
+            fi
+
+            MARKER_BEGIN='# >>> NOCTALIA STARSHIP PALETTE >>>'
+            MARKER_END='# <<< NOCTALIA STARSHIP PALETTE <<<'
+
+            # Create config file from scratch if it doesn't exist yet
+            if [ ! -f "$CONFIG_FILE" ]; then
+                mkdir -p "$(dirname "$CONFIG_FILE")"
+                {
+                    printf 'palette = "noctalia"\n\n'
+                    printf '%s\n' "$MARKER_BEGIN"
+                    cat "$PALETTE_FILE"
+                    printf '%s\n' "$MARKER_END"
+                } > "$CONFIG_FILE"
+                return 0
+            fi
+
+            # Follow symlinks so we edit the real file (safe for stow / dotfile managers)
+            if [ -L "$CONFIG_FILE" ]; then
+                CONFIG_FILE="$(readlink -f "$CONFIG_FILE")"
+            fi
+
+            # Set or insert top-level  palette = "noctalia"
+            if grep -qE '^[[:space:]]*palette[[:space:]]*=' "$CONFIG_FILE"; then
+                sed -i -E 's/^([[:space:]]*)palette([[:space:]]*)=.*/\1palette\2= "noctalia"/' "$CONFIG_FILE"
+            elif grep -qE '^[[:space:]]*"\$schema"' "$CONFIG_FILE"; then
+                sed -i '/^[[:space:]]*"\$schema"/a palette = "noctalia"' "$CONFIG_FILE"
+            else
+                sed -i '1i palette = "noctalia"' "$CONFIG_FILE"
+            fi
+
+            # Remove existing palette block using awk for literal string matching
+            # (avoids sed misinterpreting >, #, or other chars in the markers as regex)
+            if grep -qF "$MARKER_BEGIN" "$CONFIG_FILE"; then
+                awk -v begin="$MARKER_BEGIN" -v end="$MARKER_END" '
+                    $0 == begin { skip = 1; next }
+                    $0 == end   { skip = 0; next }
+                    !skip
+                ' "$CONFIG_FILE" > "${CONFIG_FILE}.noctalia.tmp" \
+                    && mv "${CONFIG_FILE}.noctalia.tmp" "$CONFIG_FILE"
+            fi
+
+            # Append fresh palette block, ensuring a clean newline boundary
+            {
+                printf '\n%s\n' "$MARKER_BEGIN"
+                cat "$PALETTE_FILE"
+                # Guard: ensure palette file ends with newline before closing marker
+                tail -c1 "$PALETTE_FILE" | grep -q $'\n' || printf '\n'
+                printf '%s\n' "$MARKER_END"
+            } >> "$CONFIG_FILE"
+            ;;
 
 *)
     # Handle unknown application names.
