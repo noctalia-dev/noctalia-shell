@@ -15,8 +15,7 @@ ColumnLayout {
     description: I18n.tr("panels.launcher.settings-terminal-command-description")
     Layout.fillWidth: true
     text: Settings.data.appLauncher.terminalCommand
-    onTextChanged: {
-      Settings.data.appLauncher.terminalCommand = text;
+    onTextChanged: Settings.data.appLauncher.terminalCommand = text
     }
   }
 

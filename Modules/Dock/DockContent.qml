@@ -145,11 +145,11 @@ Item {
           return;
         }
 
-        if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
-          const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");
+        if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix.trim() !== "") {
+          const prefix = Settings.data.appLauncher.customLaunchPrefix.trim().split(" ");
 
-          if (app.runInTerminal) {
-            const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+          if (app.runInTerminal && Settings.data.appLauncher.terminalCommand.trim() !== "") {
+            const terminal = Settings.data.appLauncher.terminalCommand.trim().split(" ");
             const command = prefix.concat(terminal.concat(app.command));
             Quickshell.execDetached(command);
           } else {
@@ -157,9 +157,9 @@ Item {
             Quickshell.execDetached(command);
           }
         } else {
-          if (app.runInTerminal) {
+          if (app.runInTerminal && Settings.data.appLauncher.terminalCommand.trim() !== "") {
             Logger.d("Dock", "Executing terminal app manually: " + app.name);
-            const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+            const terminal = Settings.data.appLauncher.terminalCommand.trim().split(" ");
             const command = terminal.concat(app.command);
             CompositorService.spawn(command);
           } else if (app.command && app.command.length > 0) {
