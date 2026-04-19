@@ -535,6 +535,12 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   title->setFontSize(Style::fontSizeBody);
   toolbar->addChild(std::move(title));
 
+  const auto selectedWidgetIt = std::find_if(m_snapshot.widgets.begin(), m_snapshot.widgets.end(),
+                                             [this](const auto& widget) { return widget.id == m_selectedWidgetId; });
+  const bool hasSelectedWidget = selectedWidgetIt != m_snapshot.widgets.end();
+  const bool canSendSelectedToBack = hasSelectedWidget && selectedWidgetIt != m_snapshot.widgets.begin();
+  const bool canBringSelectedToFront = hasSelectedWidget && std::next(selectedWidgetIt) != m_snapshot.widgets.end();
+
   auto typeSelect = std::make_unique<Select>();
   typeSelect->setOptions({kWidgetTypeLabels[0], kWidgetTypeLabels[1]});
   typeSelect->setSelectedIndex(m_addWidgetType == "audio_visualizer" ? 1 : 0);
@@ -547,16 +553,41 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   auto addButton = std::make_unique<Button>();
   addButton->setText("+");
   addButton->setVariant(ButtonVariant::Accent);
-  addButton->setOnClick([this, outputName = surface.outputName]() { addWidget(outputName, m_addWidgetType); });
+  addButton->setOnClick([this, outputName = surface.outputName]() {
+    deferEditorMutation([this, outputName]() { addWidget(outputName, m_addWidgetType); });
+  });
   toolbar->addChild(std::move(addButton));
+
+  auto backButton = std::make_unique<Button>();
+  backButton->setText("Back");
+  backButton->setVariant(ButtonVariant::Outline);
+  backButton->setEnabled(canSendSelectedToBack);
+  backButton->setOnClick([this]() { deferEditorMutation([this]() { sendSelectedWidgetToBack(); }); });
+  toolbar->addChild(std::move(backButton));
+
+  auto frontButton = std::make_unique<Button>();
+  frontButton->setText("Front");
+  frontButton->setVariant(ButtonVariant::Outline);
+  frontButton->setEnabled(canBringSelectedToFront);
+  frontButton->setOnClick([this]() { deferEditorMutation([this]() { bringSelectedWidgetToFront(); }); });
+  toolbar->addChild(std::move(frontButton));
+
+  auto deleteButton = std::make_unique<Button>();
+  deleteButton->setText("Delete");
+  deleteButton->setVariant(ButtonVariant::Destructive);
+  deleteButton->setEnabled(hasSelectedWidget);
+  deleteButton->setOnClick([this]() { deferEditorMutation([this]() { removeSelectedWidget(); }); });
+  toolbar->addChild(std::move(deleteButton));
 
   auto gridButton = std::make_unique<Button>();
   gridButton->setText(m_snapshot.grid.visible ? "Grid On" : "Grid Off");
   gridButton->setVariant(ButtonVariant::Outline);
   gridButton->setSelected(m_snapshot.grid.visible);
   gridButton->setOnClick([this]() {
-    m_snapshot.grid.visible = !m_snapshot.grid.visible;
-    requestLayout();
+    deferEditorMutation([this]() {
+      m_snapshot.grid.visible = !m_snapshot.grid.visible;
+      requestLayout();
+    });
   });
   toolbar->addChild(std::move(gridButton));
 
@@ -573,11 +604,13 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   }
   gridSizeSelect->setSelectedIndex(selectedGridIndex);
   gridSizeSelect->setOnSelectionChanged([this](std::size_t /*index*/, std::string_view text) {
-    try {
-      m_snapshot.grid.cellSize = std::stoi(std::string(text));
-      requestLayout();
-    } catch (...) {
-    }
+    deferEditorMutation([this, value = std::string(text)]() {
+      try {
+        m_snapshot.grid.cellSize = std::stoi(value);
+        requestLayout();
+      } catch (...) {
+      }
+    });
   });
   toolbar->addChild(std::move(gridSizeSelect));
 
@@ -716,6 +749,44 @@ void DesktopWidgetsEditor::removeSelectedWidget() {
   std::erase_if(m_snapshot.widgets, [this](const auto& widget) { return widget.id == m_selectedWidgetId; });
   m_selectedWidgetId.clear();
   requestLayout();
+}
+
+void DesktopWidgetsEditor::sendSelectedWidgetToBack() {
+  if (m_selectedWidgetId.empty()) {
+    return;
+  }
+
+  auto it = std::find_if(m_snapshot.widgets.begin(), m_snapshot.widgets.end(),
+                         [this](const auto& widget) { return widget.id == m_selectedWidgetId; });
+  if (it == m_snapshot.widgets.end() || it == m_snapshot.widgets.begin()) {
+    return;
+  }
+
+  std::rotate(m_snapshot.widgets.begin(), it, std::next(it));
+  requestLayout();
+}
+
+void DesktopWidgetsEditor::bringSelectedWidgetToFront() {
+  if (m_selectedWidgetId.empty()) {
+    return;
+  }
+
+  auto it = std::find_if(m_snapshot.widgets.begin(), m_snapshot.widgets.end(),
+                         [this](const auto& widget) { return widget.id == m_selectedWidgetId; });
+  if (it == m_snapshot.widgets.end() || std::next(it) == m_snapshot.widgets.end()) {
+    return;
+  }
+
+  std::rotate(it, std::next(it), m_snapshot.widgets.end());
+  requestLayout();
+}
+
+void DesktopWidgetsEditor::deferEditorMutation(std::function<void()> action) {
+  DeferredCall::callLater([this, action = std::move(action)]() mutable {
+    if (m_open) {
+      action();
+    }
+  });
 }
 
 void DesktopWidgetsEditor::requestExit() {
