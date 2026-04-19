@@ -459,6 +459,13 @@ void WallpaperPanel::onClose() {
   m_thumbnailRefreshPending = false;
 }
 
+bool WallpaperPanel::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, bool pressed, bool preedit) {
+  if (!pressed || preedit) {
+    return false;
+  }
+  return handleKeyEvent(sym, modifiers);
+}
+
 InputArea* WallpaperPanel::initialFocusArea() const {
   return m_filterInput != nullptr ? m_filterInput->inputArea() : nullptr;
 }

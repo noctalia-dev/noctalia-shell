@@ -4,6 +4,7 @@
 #include "render/scene/node.h"
 #include "wayland/layer_surface.h"
 
+#include <cstdint>
 #include <memory>
 #include <string_view>
 
@@ -27,6 +28,13 @@ public:
   virtual void onFrameTick(float deltaMs) { (void)deltaMs; }
   virtual void onOpen(std::string_view context) { (void)context; }
   virtual void onClose() {}
+  [[nodiscard]] virtual bool handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, bool pressed, bool preedit) {
+    (void)sym;
+    (void)modifiers;
+    (void)pressed;
+    (void)preedit;
+    return false;
+  }
   [[nodiscard]] virtual bool deferExternalRefresh() const { return false; }
   [[nodiscard]] virtual bool deferPointerRelayout() const { return false; }
 

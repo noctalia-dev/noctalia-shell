@@ -445,6 +445,18 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
 
+  if (m_activePanel != nullptr &&
+      m_activePanel->handleGlobalKey(event.sym, event.modifiers, event.pressed, event.preedit)) {
+    if (m_surface != nullptr && m_sceneRoot != nullptr && (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty())) {
+      if (m_sceneRoot->layoutDirty()) {
+        m_surface->requestLayout();
+      } else {
+        m_surface->requestRedraw();
+      }
+    }
+    return;
+  }
+
   m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed, event.preedit);
   if (m_surface != nullptr && m_sceneRoot != nullptr && (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty())) {
     if (m_sceneRoot->layoutDirty()) {
