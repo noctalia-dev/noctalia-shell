@@ -16,6 +16,7 @@ namespace {
   constexpr Logger kLog("async-tex");
   constexpr std::size_t kMinWorkers = 2;
   constexpr std::size_t kMaxWorkers = 4;
+  constexpr std::size_t kMaxUnusedResidentEntries = 128;
 
 } // namespace
 
@@ -81,6 +82,7 @@ TextureHandle AsyncTextureCache::acquire(const std::string& path, int targetSize
   } else {
     ++entry.refCount;
   }
+  touchEntry(entry);
 
   if (entry.handle.id != 0 || entry.failed) {
     return entry.handle;
@@ -126,10 +128,17 @@ void AsyncTextureCache::release(const std::string& path, int targetSize, bool mi
     return;
   }
 
-  if (it->second.handle.id != 0) {
-    makeCurrent();
-    m_textureManager.unload(it->second.handle);
-  } else {
+  if (it->second.handle.id != 0 || it->second.failed) {
+    // Keep a bounded set of recently used zero-ref textures resident so
+    // virtualized views can immediately rebind them while users scrub back and
+    // forth. Owners that truly tear down the view can explicitly trim unused
+    // entries once those consumers are gone.
+    touchEntry(it->second);
+    pruneUnusedEntries(kMaxUnusedResidentEntries);
+    return;
+  }
+
+  {
     std::lock_guard<std::mutex> lock(m_queueMutex);
     if (m_inFlight.contains(key)) {
       m_canceled.insert(key);
@@ -205,6 +214,7 @@ void AsyncTextureCache::dispatch(const std::vector<pollfd>& fds, std::size_t sta
       entryIt->second.failed = true;
       continue;
     }
+    touchEntry(entryIt->second);
 
     uploadedAny = true;
   }
@@ -213,6 +223,8 @@ void AsyncTextureCache::dispatch(const std::vector<pollfd>& fds, std::size_t sta
     m_readyCallback();
   }
 }
+
+void AsyncTextureCache::trimUnused(std::size_t maxUnusedEntries) { pruneUnusedEntries(maxUnusedEntries); }
 
 std::size_t AsyncTextureCache::RequestKeyHash::operator()(const RequestKey& key) const noexcept {
   std::size_t seed = std::hash<std::string>{}(key.path);
@@ -274,6 +286,41 @@ void AsyncTextureCache::pushResult(DecodedJob job) {
 void AsyncTextureCache::makeCurrent() {
   if (m_sharedGl != nullptr) {
     m_sharedGl->makeCurrentSurfaceless();
+  }
+}
+
+void AsyncTextureCache::touchEntry(Entry& entry) { entry.lastTouch = ++m_touchSerial; }
+
+void AsyncTextureCache::pruneUnusedEntries(std::size_t maxUnusedEntries) {
+  std::size_t unusedCount = 0;
+  for (const auto& [key, entry] : m_entries) {
+    (void)key;
+    if (entry.refCount == 0 && (entry.handle.id != 0 || entry.failed)) {
+      ++unusedCount;
+    }
+  }
+
+  while (unusedCount > maxUnusedEntries) {
+    auto oldestIt = m_entries.end();
+    for (auto it = m_entries.begin(); it != m_entries.end(); ++it) {
+      if (it->second.refCount != 0 || (it->second.handle.id == 0 && !it->second.failed)) {
+        continue;
+      }
+      if (oldestIt == m_entries.end() || it->second.lastTouch < oldestIt->second.lastTouch) {
+        oldestIt = it;
+      }
+    }
+
+    if (oldestIt == m_entries.end()) {
+      break;
+    }
+
+    if (oldestIt->second.handle.id != 0) {
+      makeCurrent();
+      m_textureManager.unload(oldestIt->second.handle);
+    }
+    m_entries.erase(oldestIt);
+    --unusedCount;
   }
 }
 

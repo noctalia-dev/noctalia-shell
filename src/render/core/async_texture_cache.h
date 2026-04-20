@@ -33,6 +33,7 @@ public:
   [[nodiscard]] TextureHandle acquire(const std::string& path, int targetSize = 0, bool mipmap = false);
   [[nodiscard]] TextureHandle peek(const std::string& path, int targetSize = 0, bool mipmap = false) const;
   void release(const std::string& path, int targetSize = 0, bool mipmap = false);
+  void trimUnused(std::size_t maxUnusedEntries = 0);
 
   [[nodiscard]] int pollTimeoutMs() const override { return -1; }
   void dispatch(const std::vector<pollfd>& fds, std::size_t startIdx) override;
@@ -59,6 +60,7 @@ private:
     TextureHandle handle;
     int refCount = 0;
     bool failed = false;
+    std::uint64_t lastTouch = 0;
   };
 
   struct DecodedJob {
@@ -73,6 +75,8 @@ private:
   void signalMain();
   void pushResult(DecodedJob job);
   void makeCurrent();
+  void touchEntry(Entry& entry);
+  void pruneUnusedEntries(std::size_t maxUnusedEntries);
 
   [[nodiscard]] static RequestKey makeKey(const std::string& path, int targetSize, bool mipmap);
 
@@ -93,5 +97,6 @@ private:
 
   // Main thread only state.
   std::unordered_map<RequestKey, Entry, RequestKeyHash> m_entries;
+  std::uint64_t m_touchSerial = 0;
   ReadyCallback m_readyCallback;
 };

@@ -227,6 +227,14 @@ namespace {
       applyVisualState();
     }
 
+  protected:
+    void doLayout(Renderer& renderer) override {
+      if (!m_actionTextVisible && !m_iconPath.empty()) {
+        (void)refreshAsyncIcon(renderer);
+      }
+      InputArea::doLayout(renderer);
+    }
+
   private:
     void applyVisualState() {
       if (m_selected) {
@@ -389,6 +397,10 @@ void LauncherPanel::onOpen(std::string_view /*context*/) {
 }
 
 void LauncherPanel::onClose() {
+  if (m_asyncTextures != nullptr) {
+    DeferredCall::callLater([asyncTextures = m_asyncTextures]() { asyncTextures->trimUnused(0); });
+  }
+
   m_query.clear();
   m_results.clear();
   m_selectedIndex = 0;
