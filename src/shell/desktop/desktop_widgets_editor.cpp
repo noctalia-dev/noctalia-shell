@@ -278,6 +278,15 @@ DesktopWidgetsEditor::OverlaySurface* DesktopWidgetsEditor::findSurface(const st
   return nullptr;
 }
 
+DesktopWidgetsEditor::OverlaySurface* DesktopWidgetsEditor::findSurfaceForWidget(const std::string& widgetId) {
+  for (auto& overlay : m_surfaces) {
+    if (overlay->views.contains(widgetId)) {
+      return overlay.get();
+    }
+  }
+  return nullptr;
+}
+
 DesktopWidgetsEditor::EditorWidgetView* DesktopWidgetsEditor::findView(const std::string& id) {
   for (auto& overlay : m_surfaces) {
     const auto it = overlay->views.find(id);
@@ -951,7 +960,7 @@ void DesktopWidgetsEditor::startDrag(DragMode mode, const std::string& widgetId,
     return;
   }
 
-  const EditorWidgetView* view = findView(widgetId);
+  EditorWidgetView* view = findView(widgetId);
   if (view == nullptr) {
     return;
   }
@@ -965,6 +974,25 @@ void DesktopWidgetsEditor::startDrag(DragMode mode, const std::string& widgetId,
   m_drag.intrinsicHeight = view->intrinsicHeight;
   m_drag.scaleCorner = scaleCorner;
   m_drag.rebuildOnFinish = rebuildOnFinish;
+
+  if (mode == DragMode::Scale && view->widget != nullptr && m_renderContext != nullptr) {
+    DesktopWidgetState maxState = *state;
+    maxState.scale = kMaxScale;
+    view->widget->setContentScale(widgetContentScale(maxState));
+    view->widget->update(*m_renderContext);
+    view->widget->layout(*m_renderContext);
+    m_drag.sourceIntrinsicWidth = std::max(1.0f, view->widget->intrinsicWidth());
+    m_drag.sourceIntrinsicHeight = std::max(1.0f, view->widget->intrinsicHeight());
+    m_drag.sourceScale = kMaxScale;
+
+    const float visualScale = state->scale / kMaxScale;
+    view->transformNode->setScale(visualScale);
+    view->transformNode->setFrameSize(m_drag.sourceIntrinsicWidth, m_drag.sourceIntrinsicHeight);
+    view->transformNode->setPosition(state->cx - m_drag.sourceIntrinsicWidth * 0.5f,
+                                     state->cy - m_drag.sourceIntrinsicHeight * 0.5f);
+    view->intrinsicWidth = m_drag.sourceIntrinsicWidth * visualScale;
+    view->intrinsicHeight = m_drag.sourceIntrinsicHeight * visualScale;
+  }
 }
 
 void DesktopWidgetsEditor::updateDrag() {
@@ -982,7 +1010,7 @@ void DesktopWidgetsEditor::updateDrag() {
     surface->toolbarY = m_drag.initialToolbarY + (m_currentEventSceneY - m_drag.startSceneY);
     clampToolbarPosition(*surface, surface->toolbar->width(), surface->toolbar->height());
     surface->toolbar->setPosition(surface->toolbarX, surface->toolbarY);
-    requestRedraw();
+    surface->surface->requestRedraw();
     return;
   }
 
@@ -1030,13 +1058,14 @@ void DesktopWidgetsEditor::updateDrag() {
   float clampWidth = m_drag.intrinsicWidth;
   float clampHeight = m_drag.intrinsicHeight;
   const std::string* relayoutWidgetId = nullptr;
-  if (m_drag.mode == DragMode::Scale) {
+  float dragVisualScale = 1.0f;
+  if (m_drag.mode == DragMode::Scale && m_drag.sourceScale > 0.0f) {
+    dragVisualScale = state->scale / m_drag.sourceScale;
+    clampWidth = m_drag.sourceIntrinsicWidth * dragVisualScale;
+    clampHeight = m_drag.sourceIntrinsicHeight * dragVisualScale;
     if (EditorWidgetView* view = findView(m_drag.widgetId); view != nullptr) {
-      applyViewState(*view, *state, true);
-      clampWidth = view->intrinsicWidth;
-      clampHeight = view->intrinsicHeight;
-    } else {
-      relayoutWidgetId = &m_drag.widgetId;
+      view->intrinsicWidth = clampWidth;
+      view->intrinsicHeight = clampHeight;
     }
   }
 
@@ -1045,11 +1074,24 @@ void DesktopWidgetsEditor::updateDrag() {
   }
 
   updateViewTransforms(relayoutWidgetId);
-  requestRedraw();
+
+  if (m_drag.mode == DragMode::Scale && m_drag.sourceScale > 0.0f) {
+    if (EditorWidgetView* view = findView(m_drag.widgetId); view != nullptr) {
+      view->transformNode->setScale(dragVisualScale);
+      view->transformNode->setFrameSize(m_drag.sourceIntrinsicWidth, m_drag.sourceIntrinsicHeight);
+      view->transformNode->setPosition(state->cx - m_drag.sourceIntrinsicWidth * 0.5f,
+                                       state->cy - m_drag.sourceIntrinsicHeight * 0.5f);
+    }
+  }
+
+  if (OverlaySurface* dragSurface = findSurfaceForWidget(m_drag.widgetId);
+      dragSurface != nullptr && dragSurface->surface != nullptr) {
+    dragSurface->surface->requestRedraw();
+  }
 }
 
 void DesktopWidgetsEditor::finishDrag() {
-  const bool rebuild = m_drag.rebuildOnFinish;
+  const bool rebuild = m_drag.rebuildOnFinish || m_drag.mode == DragMode::Scale;
   m_drag = {};
   if (rebuild) {
     requestLayout();

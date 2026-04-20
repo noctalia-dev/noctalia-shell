@@ -103,6 +103,9 @@ private:
     DesktopWidgetState initialState;
     float intrinsicWidth = 0.0f;
     float intrinsicHeight = 0.0f;
+    float sourceIntrinsicWidth = 0.0f;
+    float sourceIntrinsicHeight = 0.0f;
+    float sourceScale = 0.0f;
     ScaleCorner scaleCorner = ScaleCorner::BottomRight;
     std::string surfaceOutputName;
     float initialToolbarX = 0.0f;
@@ -131,6 +134,7 @@ private:
   void finishDrag();
   [[nodiscard]] OverlaySurface* findSurface(wl_surface* surface);
   [[nodiscard]] OverlaySurface* findSurface(const std::string& outputName);
+  [[nodiscard]] OverlaySurface* findSurfaceForWidget(const std::string& widgetId);
   [[nodiscard]] EditorWidgetView* findView(const std::string& id);
   [[nodiscard]] DesktopWidgetState* findWidgetState(const std::string& id);
   [[nodiscard]] const DesktopWidgetState* findWidgetState(const std::string& id) const;
