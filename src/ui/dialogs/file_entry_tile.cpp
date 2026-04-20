@@ -188,7 +188,7 @@ void FileEntryTile::applyVisualState() {
                                : clearColor();
   const Color fg = m_selected ? resolveThemeColor(roleColor(ColorRole::OnPrimary))
                               : resolveThemeColor(roleColor(ColorRole::OnSurface));
-  const float alpha = m_disabled ? 0.45f : 1.0f;
+  const float alpha = m_disabled ? 0.55f : 1.0f;
 
   m_background->setFill(bg);
   m_glyph->setColor(withAlpha(fg, alpha));

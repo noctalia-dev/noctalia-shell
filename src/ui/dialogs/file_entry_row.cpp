@@ -183,7 +183,7 @@ void FileEntryRow::applyVisualState() {
                               : resolveThemeColor(roleColor(ColorRole::OnSurface));
   const Color sub = m_selected ? resolveThemeColor(roleColor(ColorRole::OnPrimary, 0.82f))
                                : resolveThemeColor(roleColor(ColorRole::OnSurfaceVariant));
-  const float alpha = m_disabled ? 0.45f : 1.0f;
+  const float alpha = m_disabled ? 0.55f : 1.0f;
 
   m_background->setFill(bg);
   m_icon->setColor(withAlpha(fg, alpha));

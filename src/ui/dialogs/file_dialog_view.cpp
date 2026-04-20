@@ -10,6 +10,7 @@
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
+#include "ui/controls/separator.h"
 #include "ui/controls/spacer.h"
 #include "ui/dialogs/file_entry_row.h"
 #include "ui/dialogs/file_entry_tile.h"
@@ -175,7 +176,7 @@ void FileDialogView::create() {
   auto listContainer = std::make_unique<Flex>();
   listContainer->setDirection(FlexDirection::Vertical);
   listContainer->setAlign(FlexAlign::Stretch);
-  listContainer->setGap(Style::spaceXs * scale);
+  listContainer->setGap(Style::spaceSm * scale);
   listContainer->setFlexGrow(1.0f);
   m_listContainer = listContainer.get();
 
@@ -184,9 +185,15 @@ void FileDialogView::create() {
   listHeader->setAlign(FlexAlign::Center);
   listHeader->setGap(Style::spaceSm * scale);
 
+  const auto configureHeaderButton = [scale](Button* button) {
+    button->setVariant(ButtonVariant::Ghost);
+    button->setMinHeight(Style::controlHeightSm * scale);
+    button->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+  };
+
   auto nameSort = std::make_unique<Button>();
   nameSort->setText("Name");
-  nameSort->setVariant(ButtonVariant::Ghost);
+  configureHeaderButton(nameSort.get());
   nameSort->setContentAlign(ButtonContentAlign::Start);
   nameSort->setFlexGrow(1.0f);
   nameSort->setOnClick([this]() { DeferredCall::callLater([this]() { setSort(FileDialogSortField::Name); }); });
@@ -194,7 +201,7 @@ void FileDialogView::create() {
 
   auto sizeSort = std::make_unique<Button>();
   sizeSort->setText("Size");
-  sizeSort->setVariant(ButtonVariant::Ghost);
+  configureHeaderButton(sizeSort.get());
   sizeSort->setMinWidth(96.0f * scale);
   sizeSort->setContentAlign(ButtonContentAlign::End);
   sizeSort->setOnClick([this]() { DeferredCall::callLater([this]() { setSort(FileDialogSortField::Size); }); });
@@ -202,17 +209,19 @@ void FileDialogView::create() {
 
   auto dateSort = std::make_unique<Button>();
   dateSort->setText("Date");
-  dateSort->setVariant(ButtonVariant::Ghost);
+  configureHeaderButton(dateSort.get());
   dateSort->setMinWidth(152.0f * scale);
   dateSort->setContentAlign(ButtonContentAlign::End);
   dateSort->setOnClick([this]() { DeferredCall::callLater([this]() { setSort(FileDialogSortField::Modified); }); });
   m_dateSortButton = static_cast<Button*>(listHeader->addChild(std::move(dateSort)));
 
   listContainer->addChild(std::move(listHeader));
+  listContainer->addChild(std::make_unique<Separator>());
 
   auto listScroll = std::make_unique<ScrollView>();
   listScroll->setFlexGrow(1.0f);
   listScroll->setScrollbarVisible(true);
+  listScroll->setBackgroundRoles(ColorRole::SurfaceVariant, ColorRole::Outline, Style::borderWidth);
   listScroll->setOnScrollChanged([this](float offset) {
     if (m_visibleEntries.empty() || m_listRowHeight <= 0.0f) {
       return;
@@ -241,6 +250,7 @@ void FileDialogView::create() {
   auto gridScroll = std::make_unique<ScrollView>();
   gridScroll->setFlexGrow(1.0f);
   gridScroll->setScrollbarVisible(true);
+  gridScroll->setBackgroundRoles(ColorRole::SurfaceVariant, ColorRole::Outline, Style::borderWidth);
   gridScroll->setViewportPaddingH(0.0f);
   gridScroll->setVisible(false);
   gridScroll->setOnScrollChanged([this](float offset) {
@@ -418,6 +428,15 @@ void FileDialogView::doLayout(Renderer& renderer, float width, float height) {
 
   if (relayoutNeeded) {
     m_rootLayout->layout(renderer);
+
+    const bool listWidthChanged =
+        m_listScrollView != nullptr && std::abs(m_lastListWidth - m_listScrollView->contentViewportWidth()) >= 0.5f;
+    const bool gridWidthChanged =
+        m_gridScrollView != nullptr && std::abs(m_lastGridWidth - m_gridScrollView->contentViewportWidth()) >= 0.5f;
+    if (listWidthChanged || gridWidthChanged) {
+      rebuildVisibleEntries(renderer);
+      m_rootLayout->layout(renderer);
+    }
   }
 }
 
