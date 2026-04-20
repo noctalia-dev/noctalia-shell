@@ -317,7 +317,7 @@ std::string DesktopWidgetsEditor::effectiveOutputName(const DesktopWidgetState& 
 }
 
 bool DesktopWidgetsEditor::shouldSnap() const {
-  return m_snapshot.grid.visible && !m_shiftHeld && m_snapshot.grid.cellSize > 0;
+  return (m_snapshot.grid.visible != m_shiftHeld) && m_snapshot.grid.cellSize > 0;
 }
 
 void DesktopWidgetsEditor::prepareFrame(OverlaySurface& surface, bool needsUpdate, bool needsLayout) {
