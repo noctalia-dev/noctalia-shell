@@ -27,7 +27,7 @@ private:
   PipeWireSpectrum* m_spectrum = nullptr;
   float m_aspectRatio = 2.5f;
   int m_bands = 32;
-  bool m_mirrored = false;
+  bool m_mirrored = true;
   ThemeColor m_lowColor = roleColor(ColorRole::Primary);
   ThemeColor m_highColor = roleColor(ColorRole::Primary);
   std::uint64_t m_listenerId = 0;

@@ -106,7 +106,7 @@ DesktopWidgetFactory::create(const std::string& type,
     }
     auto widget = std::make_unique<DesktopAudioVisualizerWidget>(
         m_pipewireSpectrum, getFloatSetting(settings, "aspect_ratio", kDefaultDesktopAudioVisualizerAspectRatio),
-        getIntSetting(settings, "bands", 32), getBoolSetting(settings, "mirrored", false),
+        getIntSetting(settings, "bands", 32), getBoolSetting(settings, "mirrored", true),
         getThemeColorSetting(settings, "low_color", roleColor(ColorRole::Primary)),
         getThemeColorSetting(settings, "high_color", roleColor(ColorRole::Primary)));
     widget->setContentScale(contentScale);
