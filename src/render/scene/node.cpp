@@ -53,7 +53,13 @@ void Node::layout(Renderer& renderer) {
   doLayout(renderer);
 }
 
-void Node::doLayout(Renderer& /*renderer*/) {}
+void Node::doLayout(Renderer& renderer) {
+  for (auto& child : m_children) {
+    if (child->visible()) {
+      child->layout(renderer);
+    }
+  }
+}
 
 void Node::setPosition(float x, float y) {
   if (m_x == x && m_y == y) {

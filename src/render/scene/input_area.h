@@ -97,8 +97,6 @@ public:
   void dispatchFocusLoss();
 
 protected:
-  void doLayout(Renderer& renderer) override;
-
 private:
   DestroyCallback m_destroyCallback;
   PointerCallback m_onEnter;
