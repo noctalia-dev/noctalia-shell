@@ -34,7 +34,7 @@ DraggableDesktopWidget {
 
   // SpectrumService registration for visualizer
   readonly property string spectrumComponentId: "desktopmediaplayer:" + (root.screen ? root.screen.name : "unknown")
-  readonly property bool needsSpectrum: root.shouldShowVisualizer && !root.isHidden && root.isPlaying
+  readonly property bool needsSpectrum: root.shouldShowVisualizer && !root.isHidden
 
   onNeedsSpectrumChanged: {
     if (root.needsSpectrum) {

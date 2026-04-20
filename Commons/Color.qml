@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Services.Power
 
 /*
 Noctalia is not strictly a Material Design project, it supports both some predefined
@@ -348,10 +349,15 @@ Singleton {
 
   // Adaptive opacity calculation: automatically makes light mode more transparent
   function adaptiveOpacity(baseOpacity) {
+    if (PowerProfileService.noctaliaPerformanceMode)
+      return 1.0;
     return Settings.data.colorSchemes.darkMode ? baseOpacity : Math.pow(baseOpacity, 1.5);
   }
 
   function smartAlpha(baseColor, minAlpha = 0.4) {
+    if (PowerProfileService.noctaliaPerformanceMode)
+      return baseColor;
+
     if (!Settings.data.ui.translucentWidgets)
       return baseColor;
 

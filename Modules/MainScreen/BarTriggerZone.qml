@@ -45,6 +45,19 @@ PanelWindow {
     id: triggerArea
     anchors.fill: parent
     hoverEnabled: true
+    // Default MouseArea only accepts left; right/middle would fall through to Qt Quick's
+    // Wayland context-menu delivery, which can SIGSEGV in contextMenuTargets/mapToScene.
+    acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+
+    onPressed: function (mouse) {
+      if (mouse.button === Qt.RightButton || mouse.button === Qt.MiddleButton)
+        mouse.accepted = true;
+    }
+
+    onClicked: function (mouse) {
+      if (mouse.button === Qt.RightButton || mouse.button === Qt.MiddleButton)
+        mouse.accepted = true;
+    }
 
     onEntered: {
       if (root.isBeingDestroyed)

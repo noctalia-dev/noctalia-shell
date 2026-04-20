@@ -50,7 +50,7 @@ SmartPanel {
 
   readonly property bool isSideBySide: root.compactMode && root.showAlbumArt
 
-  readonly property bool needsSpectrum: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none" && root.isPanelOpen && MediaService.isPlaying
+  readonly property bool needsSpectrum: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none" && root.isPanelOpen
 
   onNeedsSpectrumChanged: {
     if (root.needsSpectrum) {
