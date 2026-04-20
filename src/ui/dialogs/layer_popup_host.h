@@ -3,8 +3,10 @@
 #include <cstdint>
 #include <functional>
 #include <optional>
+#include <utility>
 #include <vector>
 
+class WaylandConnection;
 struct wl_output;
 struct wl_surface;
 struct zwlr_layer_surface_v1;
@@ -15,6 +17,9 @@ struct LayerPopupParentContext {
   wl_output* output = nullptr;
   std::uint32_t width = 0;
   std::uint32_t height = 0;
+  bool usedFallback = false;
+
+  [[nodiscard]] std::pair<std::int32_t, std::int32_t> centeringOffset(WaylandConnection& wayland) const;
 };
 
 class LayerPopupHostRegistry {
@@ -28,6 +33,7 @@ public:
 
   [[nodiscard]] std::optional<LayerPopupParentContext> contextForSurface(wl_surface* surface) const;
   [[nodiscard]] std::optional<LayerPopupParentContext> fallbackContext() const;
+  [[nodiscard]] std::optional<LayerPopupParentContext> resolveForInput(WaylandConnection& wayland) const;
 
   void beginAttachedPopup(wl_surface* surface) const;
   void endAttachedPopup(wl_surface* surface) const;

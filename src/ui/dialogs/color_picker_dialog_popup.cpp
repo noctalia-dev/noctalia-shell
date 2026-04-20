@@ -62,6 +62,8 @@ bool ColorPickerDialogPopup::openColorPicker() {
       [this](bool needsUpdate, bool needsLayout) { prepareFrame(needsUpdate, needsLayout); });
   surface->setDismissedCallback([this]() { cancel(); });
 
+  const auto [offsetX, offsetY] = parentContext->centeringOffset(*m_wayland);
+
   PopupSurfaceConfig popupConfig{
       .anchorX = 0,
       .anchorY = 0,
@@ -72,8 +74,8 @@ bool ColorPickerDialogPopup::openColorPicker() {
       .anchor = XDG_POSITIONER_ANCHOR_NONE,
       .gravity = XDG_POSITIONER_GRAVITY_NONE,
       .constraintAdjustment = kPopupConstraintAdjust,
-      .offsetX = 0,
-      .offsetY = 0,
+      .offsetX = offsetX,
+      .offsetY = offsetY,
       .serial = m_wayland->lastInputSerial(),
       .grab = true,
   };
@@ -439,26 +441,7 @@ std::optional<LayerPopupParentContext> ColorPickerDialogPopup::resolveParentCont
   if (m_wayland == nullptr || m_popupHosts == nullptr) {
     return std::nullopt;
   }
-
-  const auto trySurface = [this](wl_surface* surface) { return m_popupHosts->contextForSurface(surface); };
-
-  if (m_wayland->lastInputSource() == WaylandSeat::InputSource::Keyboard) {
-    if (auto context = trySurface(m_wayland->lastKeyboardSurface()); context.has_value()) {
-      return context;
-    }
-    if (auto context = trySurface(m_wayland->lastPointerSurface()); context.has_value()) {
-      return context;
-    }
-  } else {
-    if (auto context = trySurface(m_wayland->lastPointerSurface()); context.has_value()) {
-      return context;
-    }
-    if (auto context = trySurface(m_wayland->lastKeyboardSurface()); context.has_value()) {
-      return context;
-    }
-  }
-
-  return m_popupHosts->fallbackContext();
+  return m_popupHosts->resolveForInput(*m_wayland);
 }
 
 float ColorPickerDialogPopup::uiScale() const {
