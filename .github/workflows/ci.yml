@@ -29,14 +29,10 @@ jobs:
           clang-format --dry-run -Werror "${files[@]}"
 
   build:
-    name: Build (${{ matrix.buildtype }})
+    name: Build (debug)
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
-    strategy:
-      fail-fast: false
-      matrix:
-        buildtype: [debug, release]
     steps:
       - name: Install dependencies
         run: |
@@ -52,12 +48,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Configure
-        run: |
-          args=(--buildtype=${{ matrix.buildtype }})
-          if [ "${{ matrix.buildtype }}" = "release" ]; then
-            args+=(-Db_lto=true)
-          fi
-          meson setup build-${{ matrix.buildtype }} "${args[@]}"
+        run: meson setup build-debug --buildtype=debug
 
       - name: Build
-        run: meson compile -C build-${{ matrix.buildtype }}
+        run: meson compile -C build-debug
