@@ -1,6 +1,6 @@
 {
     "name": "NoctaliaTheme",
-    "type": "dark",
+    "type": "{{mode}}",
     "semanticHighlighting": true,
     "semanticTokenColors": {
       "enumMember": {
@@ -1971,8 +1971,12 @@
       "terminal.foreground": "{{colors.on_background.default.hex}}",
       "terminalCursor.background": "{{colors.background.default.hex}}",
       "terminalCursor.foreground": "{{colors.primary.default.hex}}",
+      "textBlockQuote.background": "{{colors.surface_container_low.default.hex}}",
+      "textBlockQuote.border": "{{colors.outline.default.hex}}",
+      "textCodeBlock.background": "{{colors.surface_container.default.hex}}",
       "textLink.activeForeground": "{{colors.primary_container.default.hex}}",
       "textLink.foreground": "{{colors.primary.default.hex}}",
+      "textPreformat.foreground": "{{colors.on_surface.default.hex}}",
       "titleBar.activeBackground": "{{colors.surface.default.hex}}",
       "titleBar.activeForeground": "{{colors.on_surface.default.hex}}",
       "titleBar.border": "{{colors.outline.default.hex}}00",
