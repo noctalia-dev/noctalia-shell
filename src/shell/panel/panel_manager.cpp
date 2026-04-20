@@ -613,10 +613,14 @@ void PanelManager::registerIpc(IpcService& ipc) {
           togglePanel(args);
         } else {
           const std::string panelId = args.substr(0, sep);
-          const std::string_view context = std::string_view(args).substr(sep + 1);
-          wl_output* output =
-              m_wayland != nullptr ? m_wayland->preferredPanelOutput(std::chrono::milliseconds(1200)) : nullptr;
-          togglePanel(panelId, output, 0.0f, 0.0f, context);
+          if (isOpen() && !m_closing && m_activePanelId == panelId) {
+            closePanel();
+          } else {
+            const std::string_view context = std::string_view(args).substr(sep + 1);
+            wl_output* output =
+                m_wayland != nullptr ? m_wayland->preferredPanelOutput(std::chrono::milliseconds(1200)) : nullptr;
+            openPanel(panelId, output, 0.0f, 0.0f, context);
+          }
         }
         return "ok\n";
       },
