@@ -13,6 +13,7 @@
 
 namespace {
 
+  constexpr std::size_t kMaxSearchResults = 50;
   constexpr std::string_view kDefaultAppIcon = "application-x-executable";
 
   int scoreEntry(std::string_view pattern, const DesktopEntry& entry) {
@@ -212,11 +213,13 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
       scored.emplace_back(s, &entry);
     }
   }
-  std::sort(scored.begin(), scored.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+  const auto cmp = [](const auto& a, const auto& b) { return a.first > b.first; };
+  const std::size_t limit = std::min(scored.size(), kMaxSearchResults);
+  std::partial_sort(scored.begin(), scored.begin() + static_cast<std::ptrdiff_t>(limit), scored.end(), cmp);
 
   std::vector<LauncherResult> results;
-  results.reserve(std::min(scored.size(), std::size_t(50)));
-  for (std::size_t i = 0; i < scored.size() && i < 50; ++i) {
+  results.reserve(limit);
+  for (std::size_t i = 0; i < limit; ++i) {
     const auto& [s, entry] = scored[i];
     results.push_back(buildResult(*entry, s));
   }
