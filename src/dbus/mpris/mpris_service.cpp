@@ -134,6 +134,80 @@ namespace {
     }
   }
 
+  std::string get_string_from_props(const std::map<std::string, sdbus::Variant>& props, const char* key) {
+    auto it = props.find(key);
+    if (it == props.end()) {
+      return {};
+    }
+    try {
+      return it->second.get<std::string>();
+    } catch (const sdbus::Error&) {
+      return {};
+    }
+  }
+
+  std::string get_string_from_props_or(const std::map<std::string, sdbus::Variant>& props, const char* key,
+                                       const char* fallback) {
+    auto it = props.find(key);
+    if (it == props.end()) {
+      return fallback;
+    }
+    try {
+      return it->second.get<std::string>();
+    } catch (const sdbus::Error&) {
+      return fallback;
+    }
+  }
+
+  bool get_bool_from_props(const std::map<std::string, sdbus::Variant>& props, const char* key) {
+    auto it = props.find(key);
+    if (it == props.end()) {
+      return false;
+    }
+    try {
+      return it->second.get<bool>();
+    } catch (const sdbus::Error&) {
+      return false;
+    }
+  }
+
+  double get_double_from_props(const std::map<std::string, sdbus::Variant>& props, const char* key, double fallback) {
+    auto it = props.find(key);
+    if (it == props.end()) {
+      return fallback;
+    }
+    try {
+      return it->second.get<double>();
+    } catch (const sdbus::Error&) {
+      return fallback;
+    }
+  }
+
+  int64_t get_int64_from_props(const std::map<std::string, sdbus::Variant>& props, const char* key) {
+    auto it = props.find(key);
+    if (it == props.end()) {
+      return 0;
+    }
+    try {
+      return it->second.get<int64_t>();
+    } catch (const sdbus::Error&) {
+      return 0;
+    }
+  }
+
+  std::map<std::string, sdbus::Variant> get_variant_map_from_props(const std::map<std::string, sdbus::Variant>& props,
+                                                                   const char* key) {
+    auto it = props.find(key);
+    if (it == props.end()) {
+      return {};
+    }
+    try {
+      return it->second.get<std::map<std::string, sdbus::Variant>>();
+    } catch (const sdbus::Error&) {
+      return {};
+    }
+  }
+
   [[maybe_unused]] std::string primary_artist(const std::vector<std::string>& artists) {
     if (artists.empty()) {
       return {};
@@ -1444,28 +1518,44 @@ std::tuple<bool, std::string, std::vector<std::string>> MprisService::onGetPlaye
 }
 
 MprisPlayerInfo MprisService::readPlayerInfo(sdbus::IProxy& proxy, const std::string& busName) const {
-  const auto metadata = get_metadata_or(proxy);
+  std::map<std::string, sdbus::Variant> rootProps;
+  std::map<std::string, sdbus::Variant> playerProps;
+
+  try {
+    for (auto& [k, v] : proxy.getAllProperties().onInterface(k_mpris_root_interface)) {
+      rootProps.emplace(std::string(k), std::move(v));
+    }
+  } catch (const sdbus::Error&) {
+  }
+  try {
+    for (auto& [k, v] : proxy.getAllProperties().onInterface(k_mpris_player_interface)) {
+      playerProps.emplace(std::string(k), std::move(v));
+    }
+  } catch (const sdbus::Error&) {
+  }
+
+  auto metadata = get_variant_map_from_props(playerProps, "Metadata");
 
   return MprisPlayerInfo{
       .busName = busName,
-      .identity = get_property_or(proxy, k_mpris_root_interface, "Identity", std::string{}),
-      .desktopEntry = get_property_or(proxy, k_mpris_root_interface, "DesktopEntry", std::string{}),
-      .playbackStatus = get_property_or(proxy, k_mpris_player_interface, "PlaybackStatus", std::string{}),
+      .identity = get_string_from_props(rootProps, "Identity"),
+      .desktopEntry = get_string_from_props(rootProps, "DesktopEntry"),
+      .playbackStatus = get_string_from_props(playerProps, "PlaybackStatus"),
       .trackId = get_object_path_from_variant(metadata, "mpris:trackid"),
       .title = get_string_from_variant(metadata, "xesam:title"),
       .artists = get_string_array_from_variant(metadata, "xesam:artist"),
       .album = get_string_from_variant(metadata, "xesam:album"),
       .sourceUrl = get_string_from_variant(metadata, "xesam:url"),
       .artUrl = get_string_from_variant(metadata, "mpris:artUrl"),
-      .loopStatus = get_property_or(proxy, k_mpris_player_interface, "LoopStatus", std::string{"None"}),
-      .shuffle = get_property_or(proxy, k_mpris_player_interface, "Shuffle", false),
-      .volume = get_property_or(proxy, k_mpris_player_interface, "Volume", 1.0),
-      .positionUs = get_property_or(proxy, k_mpris_player_interface, "Position", int64_t{0}),
+      .loopStatus = get_string_from_props_or(playerProps, "LoopStatus", "None"),
+      .shuffle = get_bool_from_props(playerProps, "Shuffle"),
+      .volume = get_double_from_props(playerProps, "Volume", 1.0),
+      .positionUs = get_int64_from_props(playerProps, "Position"),
       .lengthUs = get_int64_from_variant(metadata, "mpris:length"),
-      .canPlay = get_property_or(proxy, k_mpris_player_interface, "CanPlay", false),
-      .canPause = get_property_or(proxy, k_mpris_player_interface, "CanPause", false),
-      .canGoNext = get_property_or(proxy, k_mpris_player_interface, "CanGoNext", false),
-      .canGoPrevious = get_property_or(proxy, k_mpris_player_interface, "CanGoPrevious", false),
-      .canSeek = get_property_or(proxy, k_mpris_player_interface, "CanSeek", false),
+      .canPlay = get_bool_from_props(playerProps, "CanPlay"),
+      .canPause = get_bool_from_props(playerProps, "CanPause"),
+      .canGoNext = get_bool_from_props(playerProps, "CanGoNext"),
+      .canGoPrevious = get_bool_from_props(playerProps, "CanGoPrevious"),
+      .canSeek = get_bool_from_props(playerProps, "CanSeek"),
   };
 }
