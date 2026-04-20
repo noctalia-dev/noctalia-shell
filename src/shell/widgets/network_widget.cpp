@@ -122,7 +122,7 @@ void NetworkWidget::syncState(Renderer& renderer) {
   m_glyph->measure(renderer);
 
   if (m_label != nullptr) {
-    const bool showLabel = m_isVertical || m_showLabel;
+    const bool showLabel = m_showLabel;
     m_label->setVisible(showLabel);
     if (showLabel) {
       std::string text = labelForState(s);
