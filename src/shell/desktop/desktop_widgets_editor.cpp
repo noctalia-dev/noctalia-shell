@@ -17,6 +17,7 @@
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/controls/select.h"
+#include "ui/dialogs/file_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/layer_surface.h"
@@ -45,7 +46,7 @@ namespace {
   constexpr float kMinScale = 0.2f;
   constexpr float kMaxScale = 8.0f;
   constexpr float kRotationSnap = static_cast<float>(M_PI) / 12.0f;
-  constexpr std::array<const char*, 2> kWidgetTypeLabels{"Clock", "Audio Visualizer"};
+  constexpr std::array<const char*, 3> kWidgetTypeLabels{"Clock", "Audio Visualizer", "Sticker"};
   constexpr std::string_view kDesktopWidgetIdPrefix = "desktop-widget-";
   constexpr std::size_t kScaleCornerCount = 4;
 
@@ -599,11 +600,21 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   const bool canBringSelectedToFront = hasSelectedWidget && std::next(selectedWidgetIt) != m_snapshot.widgets.end();
 
   auto typeSelect = std::make_unique<Select>();
-  typeSelect->setOptions({kWidgetTypeLabels[0], kWidgetTypeLabels[1]});
-  typeSelect->setSelectedIndex(m_addWidgetType == "audio_visualizer" ? 1 : 0);
+  typeSelect->setOptions({kWidgetTypeLabels[0], kWidgetTypeLabels[1], kWidgetTypeLabels[2]});
+  typeSelect->setSelectedIndex(m_addWidgetType == "audio_visualizer" ? 1 : m_addWidgetType == "sticker" ? 2 : 0);
   typeSelect->setControlHeight(Style::controlHeightSm);
   typeSelect->setOnSelectionChanged([this](std::size_t index, std::string_view /*text*/) {
-    m_addWidgetType = index == 1 ? "audio_visualizer" : "clock";
+    switch (index) {
+    case 1:
+      m_addWidgetType = "audio_visualizer";
+      break;
+    case 2:
+      m_addWidgetType = "sticker";
+      break;
+    default:
+      m_addWidgetType = "clock";
+      break;
+    }
   });
   toolbar->addChild(std::move(typeSelect));
 
@@ -801,6 +812,41 @@ void DesktopWidgetsEditor::addWidget(const std::string& outputName, const std::s
   if (widget.type == "audio_visualizer") {
     widget.settings.emplace("aspect_ratio", static_cast<double>(kDefaultDesktopAudioVisualizerAspectRatio));
     widget.settings.emplace("bands", static_cast<std::int64_t>(32));
+  }
+
+  if (widget.type == "sticker") {
+    auto widgetId = widget.id;
+    m_snapshot.widgets.push_back(std::move(widget));
+
+    FileDialogOptions options;
+    options.mode = FileDialogMode::Open;
+    options.title = "Select Sticker Image";
+    options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".svg"};
+    if (!FileDialog::open(std::move(options), [this, widgetId](std::optional<std::filesystem::path> result) {
+          deferEditorMutation([this, widgetId, result = std::move(result)]() {
+            auto* state = findWidgetState(widgetId);
+            if (state == nullptr) {
+              return;
+            }
+            if (result) {
+              state->settings["image_path"] = result->string();
+            } else {
+              std::erase_if(m_snapshot.widgets, [&](const auto& w) { return w.id == widgetId; });
+              if (m_selectedWidgetId == widgetId) {
+                m_selectedWidgetId.clear();
+              }
+            }
+            requestLayout();
+          });
+        })) {
+      std::erase_if(m_snapshot.widgets, [&](const auto& w) { return w.id == widgetId; });
+      requestLayout();
+      return;
+    }
+
+    m_selectedWidgetId = m_snapshot.widgets.back().id;
+    requestLayout();
+    return;
   }
 
   m_snapshot.widgets.push_back(std::move(widget));

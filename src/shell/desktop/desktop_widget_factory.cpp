@@ -4,6 +4,7 @@
 #include "pipewire/pipewire_spectrum.h"
 #include "shell/desktop/widgets/desktop_audio_visualizer_widget.h"
 #include "shell/desktop/widgets/desktop_clock_widget.h"
+#include "shell/desktop/widgets/desktop_sticker_widget.h"
 
 namespace {
 
@@ -106,6 +107,12 @@ DesktopWidgetFactory::create(const std::string& type,
         getIntSetting(settings, "bands", 32), getBoolSetting(settings, "mirrored", false),
         getThemeColorSetting(settings, "low_color", roleColor(ColorRole::Primary)),
         getThemeColorSetting(settings, "high_color", roleColor(ColorRole::Primary)));
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "sticker") {
+    auto widget = std::make_unique<DesktopStickerWidget>(getStringSetting(settings, "image_path"));
     widget->setContentScale(contentScale);
     return widget;
   }
