@@ -20,7 +20,7 @@
 @define-color view_bg_color {{colors.surface.default.hex}};
 @define-color view_fg_color {{colors.on_surface.default.hex}};
 
-@define-color headerbar_bg_color {{colors.surface.default.hex}};
+@define-color headerbar_bg_color {{colors.surface_container.default.hex}};
 @define-color headerbar_fg_color {{colors.on_surface.default.hex}};
 @define-color headerbar_backdrop_color @window_bg_color;
 
@@ -43,6 +43,10 @@
 
 @define-color secondary_sidebar_bg_color {{colors.surface.default.hex}};
 @define-color secondary_sidebar_fg_color {{colors.on_surface.default.hex}};
+
+/* Focused selection states */
+@define-color theme_selected_bg_color @accent_bg_color;
+@define-color theme_selected_fg_color @accent_fg_color;
 
 /* Backdrop/unfocused states */
 @define-color theme_unfocused_fg_color @window_fg_color;
