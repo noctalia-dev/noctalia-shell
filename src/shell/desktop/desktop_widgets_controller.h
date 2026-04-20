@@ -14,6 +14,7 @@ class PipeWireSpectrum;
 class RenderContext;
 class TimeService;
 class WaylandConnection;
+class WeatherService;
 struct KeyboardEvent;
 struct PointerEvent;
 
@@ -55,7 +56,7 @@ public:
   DesktopWidgetsController& operator=(const DesktopWidgetsController&) = delete;
 
   void initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                  PipeWireSpectrum* pipewireSpectrum, RenderContext* renderContext);
+                  PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext);
 
   void registerIpc(IpcService& ipc);
   void onOutputChange();

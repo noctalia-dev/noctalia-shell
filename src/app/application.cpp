@@ -605,6 +605,7 @@ void Application::initServices() {
       m_nightLightManager.setWeatherCoordinates(std::nullopt, std::nullopt);
     }
     m_bar.refresh();
+    m_desktopWidgetsController.requestLayout();
     if (shouldRefreshControlCenter()) {
       m_panelManager.refresh();
     }
@@ -759,7 +760,7 @@ void Application::initUi() {
 
   m_dock.initialize(m_wayland, &m_configService, &m_renderContext);
   m_desktopWidgetsController.initialize(m_wayland, &m_configService, &m_timeService, m_pipewireSpectrum.get(),
-                                        &m_renderContext);
+                                        &m_weatherService, &m_renderContext);
 
   std::string lastShellFontFamily = m_configService.config().shell.fontFamily;
   m_configService.addReloadCallback([this, lastShellFontFamily]() mutable {

@@ -5,6 +5,7 @@
 #include "shell/desktop/widgets/desktop_audio_visualizer_widget.h"
 #include "shell/desktop/widgets/desktop_clock_widget.h"
 #include "shell/desktop/widgets/desktop_sticker_widget.h"
+#include "shell/desktop/widgets/desktop_weather_widget.h"
 
 namespace {
 
@@ -79,8 +80,9 @@ namespace {
 
 } // namespace
 
-DesktopWidgetFactory::DesktopWidgetFactory(TimeService* timeService, PipeWireSpectrum* pipewireSpectrum)
-    : m_timeService(timeService), m_pipewireSpectrum(pipewireSpectrum) {}
+DesktopWidgetFactory::DesktopWidgetFactory(TimeService* timeService, PipeWireSpectrum* pipewireSpectrum,
+                                           const WeatherService* weather)
+    : m_timeService(timeService), m_pipewireSpectrum(pipewireSpectrum), m_weather(weather) {}
 
 std::unique_ptr<DesktopWidget>
 DesktopWidgetFactory::create(const std::string& type,
@@ -113,6 +115,16 @@ DesktopWidgetFactory::create(const std::string& type,
 
   if (type == "sticker") {
     auto widget = std::make_unique<DesktopStickerWidget>(getStringSetting(settings, "image_path"));
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "weather") {
+    if (m_weather == nullptr) {
+      kLog.warn("desktop widget factory: weather requires WeatherService");
+      return nullptr;
+    }
+    auto widget = std::make_unique<DesktopWeatherWidget>(m_weather);
     widget->setContentScale(contentScale);
     return widget;
   }

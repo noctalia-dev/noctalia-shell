@@ -9,10 +9,11 @@
 
 class TimeService;
 class PipeWireSpectrum;
+class WeatherService;
 
 class DesktopWidgetFactory {
 public:
-  DesktopWidgetFactory(TimeService* timeService, PipeWireSpectrum* pipewireSpectrum);
+  DesktopWidgetFactory(TimeService* timeService, PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather);
 
   [[nodiscard]] std::unique_ptr<DesktopWidget>
   create(const std::string& type, const std::unordered_map<std::string, WidgetSettingValue>& settings,
@@ -21,4 +22,5 @@ public:
 private:
   TimeService* m_timeService = nullptr;
   PipeWireSpectrum* m_pipewireSpectrum = nullptr;
+  const WeatherService* m_weather = nullptr;
 };

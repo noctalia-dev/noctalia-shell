@@ -14,6 +14,7 @@ class ConfigService;
 class PipeWireSpectrum;
 class RenderContext;
 class WaylandConnection;
+class WeatherService;
 struct WaylandOutput;
 struct wl_output;
 
@@ -22,7 +23,7 @@ public:
   DesktopWidgetsHost() = default;
 
   void initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                  PipeWireSpectrum* pipewireSpectrum, RenderContext* renderContext);
+                  PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext);
   void show(const DesktopWidgetsSnapshot& snapshot);
   void hide();
   void rebuild(const DesktopWidgetsSnapshot& snapshot);

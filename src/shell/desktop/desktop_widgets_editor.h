@@ -23,6 +23,7 @@ class RenderContext;
 class Select;
 class TimeService;
 class WaylandConnection;
+class WeatherService;
 struct KeyboardEvent;
 struct PointerEvent;
 struct WaylandOutput;
@@ -34,7 +35,7 @@ public:
   DesktopWidgetsEditor() = default;
 
   void initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                  PipeWireSpectrum* pipewireSpectrum, RenderContext* renderContext);
+                  PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext);
   void setExitRequestedCallback(std::function<void()> callback);
 
   void open(const DesktopWidgetsSnapshot& snapshot);

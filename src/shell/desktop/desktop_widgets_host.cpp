@@ -31,12 +31,13 @@ namespace {
 } // namespace
 
 void DesktopWidgetsHost::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                                    PipeWireSpectrum* pipewireSpectrum, RenderContext* renderContext) {
+                                    PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
+                                    RenderContext* renderContext) {
   m_wayland = &wayland;
   m_config = config;
   m_timeService = timeService;
   m_renderContext = renderContext;
-  m_factory = std::make_unique<DesktopWidgetFactory>(timeService, pipewireSpectrum);
+  m_factory = std::make_unique<DesktopWidgetFactory>(timeService, pipewireSpectrum, weather);
 }
 
 void DesktopWidgetsHost::show(const DesktopWidgetsSnapshot& snapshot) {

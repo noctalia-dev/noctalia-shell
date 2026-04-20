@@ -10,7 +10,7 @@ Desktop widgets are enabled from `config.toml`. Widget instances and edit-mode g
 enabled = true
 ```
 
-When enabled, Noctalia renders each desktop widget as its own tightly-sized layer-shell surface on the `Bottom` layer. The current implementation ships `clock` and `audio_visualizer` widget types plus an interactive edit mode.
+When enabled, Noctalia renders each desktop widget as its own tightly-sized layer-shell surface on the `Bottom` layer. The current implementation ships `clock`, `audio_visualizer`, `sticker`, and `weather` widget types plus an interactive edit mode.
 
 ---
 
@@ -19,9 +19,9 @@ When enabled, Noctalia renders each desktop widget as its own tightly-sized laye
 ### IPC
 
 ```sh
-noctalia msg edit-desktop-widgets
-noctalia msg exit-desktop-widgets
-noctalia msg toggle-desktop-widgets-edit
+noctalia msg desktop-widgets-edit
+noctalia msg desktop-widgets-exit
+noctalia msg desktop-widgets-toggle-edit
 ```
 
 ### Controls
@@ -82,4 +82,17 @@ aspect_ratio = 2.5
 mirrored     = true
 low_color    = "primary"
 high_color   = "secondary"
+```
+
+The `weather` widget draws the current weather glyph alongside the temperature and short condition, driven by the shared `WeatherService`. It requires `[weather] enabled = true` in `config.toml` (see [services.md](services.md#weather)) — the widget will render a placeholder otherwise.
+
+```toml
+[[widget]]
+id       = "desktop-widget-0000000000000003"
+type     = "weather"
+output   = "DP-1"
+cx       = 320.0
+cy       = 200.0
+scale    = 1.0
+rotation = 0.0
 ```
