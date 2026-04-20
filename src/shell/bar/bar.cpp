@@ -97,7 +97,10 @@ namespace {
     layoutWidgets(instance.centerWidgets);
     layoutWidgets(instance.endWidgets);
 
-    auto finalizeCapsules = [isVertical, slotCross, &renderer](std::vector<std::unique_ptr<Widget>>& widgets) {
+    float cachedBodyExtent = -1.0f;
+    float cachedBodyExtentScale = -1.0f;
+    auto finalizeCapsules = [isVertical, slotCross, &renderer, &cachedBodyExtent,
+                             &cachedBodyExtentScale](std::vector<std::unique_ptr<Widget>>& widgets) {
       for (auto& w : widgets) {
         if (w == nullptr || !w->barCapsuleSpec().enabled) {
           continue;
@@ -108,8 +111,6 @@ namespace {
         if (shell == nullptr || bg == nullptr || inner == nullptr) {
           continue;
         }
-        // Keep the capsule shell visibility in sync with the inner root so that
-        // hidden widgets don't occupy phantom space in the flex layout.
         shell->setVisible(inner->visible());
         const float scale = w->contentScale();
         const float iw = inner->width();
@@ -122,11 +123,12 @@ namespace {
           bg->setSize(iw, ih);
           continue;
         }
-        // Uniform capsule body extent on the cross axis — matches the reference "A"
-        // height used by Glyph/Label so all capsules share the same cross size
-        // regardless of each widget's content height.
-        const auto refMetrics = renderer.measureText("A", Style::fontSizeBody * scale);
-        const float bodyExtent = std::round(refMetrics.bottom - refMetrics.top);
+        if (scale != cachedBodyExtentScale) {
+          const auto refMetrics = renderer.measureText("A", Style::fontSizeBody * scale);
+          cachedBodyExtent = std::round(refMetrics.bottom - refMetrics.top);
+          cachedBodyExtentScale = scale;
+        }
+        const float bodyExtent = cachedBodyExtent;
         const float pad = w->barCapsuleSpec().padding * scale;
         const float padMain = pad;
         const float padCross = std::min(pad, Style::spaceXs * scale);
