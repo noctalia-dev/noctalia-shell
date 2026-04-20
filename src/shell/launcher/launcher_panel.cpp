@@ -375,18 +375,19 @@ void LauncherPanel::doUpdate(Renderer& renderer) {
   }
 }
 
-void LauncherPanel::onOpen(std::string_view /*context*/) {
+void LauncherPanel::onOpen(std::string_view context) {
   m_hoverIndex = static_cast<std::size_t>(-1);
   m_mouseActive = false;
   m_pendingScrollToSelected = false;
   m_lastListWidth = -1.0f;
+  const std::string initialValue(context);
   if (m_input != nullptr) {
-    m_input->setValue("");
+    m_input->setValue(initialValue);
   }
   if (m_scrollView != nullptr) {
     m_scrollView->setScrollOffset(0.0f);
   }
-  onInputChanged("");
+  onInputChanged(initialValue);
 }
 
 void LauncherPanel::onClose() {

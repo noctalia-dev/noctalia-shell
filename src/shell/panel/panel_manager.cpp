@@ -608,8 +608,21 @@ void PanelManager::registerIpc(IpcService& ipc) {
         if (args.empty()) {
           return "error: panel-toggle requires a panel id\n";
         }
-        togglePanel(args);
+        const auto sep = args.find(' ');
+        if (sep == std::string::npos) {
+          togglePanel(args);
+        } else {
+          const std::string panelId = args.substr(0, sep);
+          if (isOpen() && !m_closing && m_activePanelId == panelId) {
+            closePanel();
+          } else {
+            const std::string_view context = std::string_view(args).substr(sep + 1);
+            wl_output* output =
+                m_wayland != nullptr ? m_wayland->preferredPanelOutput(std::chrono::milliseconds(1200)) : nullptr;
+            openPanel(panelId, output, 0.0f, 0.0f, context);
+          }
+        }
         return "ok\n";
       },
-      "panel-toggle <id>", "Toggle a panel by id (e.g. control-center)");
+      "panel-toggle <id> [context]", "Toggle a panel by id, optionally with context (e.g. launcher /emo)");
 }
