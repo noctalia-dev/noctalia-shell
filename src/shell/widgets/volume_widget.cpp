@@ -26,6 +26,8 @@ namespace {
     return "volume-high";
   }
 
+  constexpr float kScrollStep = 0.05f;
+
 } // namespace
 
 VolumeWidget::VolumeWidget(PipeWireService* audio, wl_output* output) : m_audio(audio), m_output(output) {}
@@ -34,6 +36,18 @@ void VolumeWidget::create() {
   auto area = std::make_unique<InputArea>();
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
     PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "audio");
+  });
+  area->setOnAxis([this](const InputArea::PointerData& data) {
+    if (m_audio == nullptr) {
+      return;
+    }
+    const auto* sink = m_audio->defaultSink();
+    if (sink == nullptr) {
+      return;
+    }
+    const float delta = data.scrollDelta(1.0f) > 0 ? -kScrollStep : kScrollStep;
+    const float newValue = std::clamp(sink->volume + delta, 0.0f, 1.0f);
+    m_audio->setSinkVolume(sink->id, newValue);
   });
 
   auto glyph = std::make_unique<Glyph>();

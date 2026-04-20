@@ -1184,8 +1184,14 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
                                                                 static_cast<float>(event.sy), event.button, pressed);
     break;
   }
-  case PointerEvent::Type::Axis:
+  case PointerEvent::Type::Axis: {
+    if (m_hoveredInstance == nullptr)
+      break;
+    m_hoveredInstance->inputDispatcher.pointerAxis(static_cast<float>(event.sx), static_cast<float>(event.sy),
+                                                   event.axis, event.axisSource, event.axisValue, event.axisDiscrete,
+                                                   event.axisValue120, event.axisLines);
     break;
+  }
   }
 
   // Trigger redraw if any widget changed visual state
