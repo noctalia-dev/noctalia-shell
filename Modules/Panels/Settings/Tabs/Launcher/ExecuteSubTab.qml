@@ -16,7 +16,6 @@ ColumnLayout {
     Layout.fillWidth: true
     text: Settings.data.appLauncher.terminalCommand
     onTextChanged: Settings.data.appLauncher.terminalCommand = text
-    }
   }
 
   NToggle {
