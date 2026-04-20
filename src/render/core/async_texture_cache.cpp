@@ -292,35 +292,33 @@ void AsyncTextureCache::makeCurrent() {
 void AsyncTextureCache::touchEntry(Entry& entry) { entry.lastTouch = ++m_touchSerial; }
 
 void AsyncTextureCache::pruneUnusedEntries(std::size_t maxUnusedEntries) {
-  std::size_t unusedCount = 0;
-  for (const auto& [key, entry] : m_entries) {
-    (void)key;
-    if (entry.refCount == 0 && (entry.handle.id != 0 || entry.failed)) {
-      ++unusedCount;
+  using It = std::unordered_map<RequestKey, Entry, RequestKeyHash>::iterator;
+  std::vector<It> unused;
+
+  for (auto it = m_entries.begin(); it != m_entries.end(); ++it) {
+    if (it->second.refCount == 0 && (it->second.handle.id != 0 || it->second.failed)) {
+      unused.push_back(it);
     }
   }
 
-  while (unusedCount > maxUnusedEntries) {
-    auto oldestIt = m_entries.end();
-    for (auto it = m_entries.begin(); it != m_entries.end(); ++it) {
-      if (it->second.refCount != 0 || (it->second.handle.id == 0 && !it->second.failed)) {
-        continue;
-      }
-      if (oldestIt == m_entries.end() || it->second.lastTouch < oldestIt->second.lastTouch) {
-        oldestIt = it;
-      }
-    }
+  if (unused.size() <= maxUnusedEntries) {
+    return;
+  }
 
-    if (oldestIt == m_entries.end()) {
-      break;
-    }
+  std::sort(unused.begin(), unused.end(),
+            [](const It& a, const It& b) { return a->second.lastTouch < b->second.lastTouch; });
 
-    if (oldestIt->second.handle.id != 0) {
-      makeCurrent();
-      m_textureManager.unload(oldestIt->second.handle);
+  const std::size_t toEvict = unused.size() - maxUnusedEntries;
+  bool madeCurrent = false;
+  for (std::size_t i = 0; i < toEvict; ++i) {
+    if (unused[i]->second.handle.id != 0) {
+      if (!madeCurrent) {
+        makeCurrent();
+        madeCurrent = true;
+      }
+      m_textureManager.unload(unused[i]->second.handle);
     }
-    m_entries.erase(oldestIt);
-    --unusedCount;
+    m_entries.erase(unused[i]);
   }
 }
 
