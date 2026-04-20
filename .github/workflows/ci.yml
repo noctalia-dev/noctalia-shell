@@ -13,14 +13,15 @@ concurrency:
 jobs:
   format:
     name: clang-format
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install clang-format
+      - name: Install tools
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends clang-format
+          pacman -Syu --noconfirm --needed git clang
+
+      - uses: actions/checkout@v4
 
       - name: Check formatting
         run: |
@@ -29,26 +30,26 @@ jobs:
 
   build:
     name: Build (${{ matrix.buildtype }})
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
     strategy:
       fail-fast: false
       matrix:
         buildtype: [debug, release]
     steps:
-      - uses: actions/checkout@v4
-
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            meson ninja-build g++ pkg-config \
-            libwayland-dev wayland-protocols \
-            libegl-dev libgles-dev \
-            libfreetype-dev libharfbuzz-dev libfontconfig-dev \
-            libcairo2-dev libpango1.0-dev \
-            libxkbcommon-dev \
-            libsdbus-c++-dev libpipewire-0.3-dev \
-            libpam0g-dev libcurl4-openssl-dev libwebp-dev
+          pacman -Syu --noconfirm --needed \
+            base-devel git meson ninja pkgconf \
+            wayland wayland-protocols \
+            libglvnd freetype2 harfbuzz fontconfig \
+            cairo pango \
+            libxkbcommon \
+            sdbus-cpp libpipewire \
+            pam curl libwebp
+
+      - uses: actions/checkout@v4
 
       - name: Configure
         run: |
