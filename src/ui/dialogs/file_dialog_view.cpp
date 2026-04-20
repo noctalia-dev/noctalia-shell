@@ -45,9 +45,18 @@ namespace {
                                  static_cast<std::size_t>(std::ceil(viewportHeight / safeHeight)) + overscanRows * 2);
   }
 
+  void configureDialogActionButton(Button& button, float scale) {
+    button.setMinHeight(Style::controlHeight * scale);
+    button.setMinWidth(92.0f * scale);
+    button.setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    button.setRadius(Style::radiusMd * scale);
+  }
+
 } // namespace
 
 FileDialogView::FileDialogView(ThumbnailService* thumbnails) : m_thumbnails(thumbnails) {}
+
+FileDialogView::~FileDialogView() = default;
 
 void FileDialogView::create() {
   const float scale = contentScale();
@@ -88,6 +97,7 @@ void FileDialogView::create() {
   auto title = std::make_unique<Label>();
   title->setFontSize(Style::fontSizeTitle * scale);
   title->setBold(true);
+  title->setColor(roleColor(ColorRole::Primary));
   m_titleLabel = static_cast<Label*>(header->addChild(std::move(title)));
 
   header->addChild(std::make_unique<Spacer>());
@@ -279,11 +289,13 @@ void FileDialogView::create() {
   auto cancelButton = std::make_unique<Button>();
   cancelButton->setText("Cancel");
   cancelButton->setVariant(ButtonVariant::Secondary);
+  configureDialogActionButton(*cancelButton, scale);
   cancelButton->setOnClick([this]() { DeferredCall::callLater([this]() { cancelDialog(); }); });
   m_cancelButton = static_cast<Button*>(footer->addChild(std::move(cancelButton)));
 
   auto okButton = std::make_unique<Button>();
   okButton->setVariant(ButtonVariant::Accent);
+  configureDialogActionButton(*okButton, scale);
   okButton->setOnClick([this]() { DeferredCall::callLater([this]() { submitDialog(); }); });
   m_okButton = static_cast<Button*>(footer->addChild(std::move(okButton)));
 

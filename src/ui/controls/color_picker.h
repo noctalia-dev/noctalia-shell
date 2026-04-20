@@ -28,6 +28,7 @@ public:
   void setOnColorChanged(std::function<void(const Color&)> callback);
 
   [[nodiscard]] static float intrinsicColumnHeight(float pickerWidth, float scale);
+  [[nodiscard]] InputArea* primaryInputArea() const noexcept;
 
 private:
   void doLayout(Renderer& renderer) override;
@@ -71,23 +72,26 @@ private:
   std::function<void(const Color&)> m_onColorChanged;
 };
 
-// Title + ColorPicker + Cancel/Apply row — reusable chrome for layer panels or embedded UIs.
+// Title + ColorPicker + Cancel/Apply row — reusable chrome for dialogs or embedded UIs.
 class ColorPickerSheet : public Flex {
 public:
   explicit ColorPickerSheet(float chromeScale);
 
   [[nodiscard]] ColorPicker* colorPicker() noexcept { return m_picker; }
+  [[nodiscard]] InputArea* initialFocusArea() const noexcept;
 
+  void setTitle(std::string_view title);
   void setPickerColumnWidth(float width);
 
   void setOnCancel(std::function<void()> callback) { m_onCancel = std::move(callback); }
   void setOnApply(std::function<void(const Color&)> callback) { m_onApply = std::move(callback); }
 
-  [[nodiscard]] static float preferredPanelWidth(float scale);
-  [[nodiscard]] static float preferredPanelHeight(float panelWidth, float scale);
+  [[nodiscard]] static float preferredDialogWidth(float scale);
+  [[nodiscard]] static float preferredDialogHeight(float dialogWidth, float scale);
 
 private:
   float m_chromeScale = 1.0f;
+  Label* m_title = nullptr;
   ColorPicker* m_picker = nullptr;
   std::function<void()> m_onCancel;
   std::function<void(const Color&)> m_onApply;

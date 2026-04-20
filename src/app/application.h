@@ -65,6 +65,7 @@
 #include "theme/theme_service.h"
 #include "time/time_poll_source.h"
 #include "time/time_service.h"
+#include "ui/dialogs/color_picker_dialog_popup.h"
 #include "ui/dialogs/file_dialog_popup.h"
 #include "ui/dialogs/layer_popup_host.h"
 #include "wayland/clipboard_poll_source.h"
@@ -153,6 +154,7 @@ private:
   Overview m_overview;
   SettingsWindow m_settingsWindow;
   LayerPopupHostRegistry m_layerPopupHosts;
+  ColorPickerDialogPopup m_colorPickerDialogPopup;
   FileDialogPopup m_fileDialogPopup;
   ThumbnailService m_thumbnailService;
   AsyncTextureCache m_asyncTextureCache;

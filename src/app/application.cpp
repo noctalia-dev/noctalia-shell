@@ -13,7 +13,6 @@
 #include "render/animation/motion_service.h"
 #include "shell/clipboard/clipboard_panel.h"
 #include "shell/clipboard/clipboard_paste.h"
-#include "shell/color_picker/color_picker_panel.h"
 #include "shell/control_center/control_center_panel.h"
 #include "shell/launcher/launcher_panel.h"
 #include "shell/session/session_panel.h"
@@ -21,6 +20,7 @@
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 #include "system/distro_info.h"
 #include "ui/controls/input.h"
+#include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/style.h"
 
@@ -385,6 +385,7 @@ void Application::initServices() {
     m_trayMenu.onThemeChanged();
     m_overview.onThemeChanged();
     m_settingsWindow.onThemeChanged();
+    m_colorPickerDialogPopup.requestThemeRedraw();
     m_fileDialogPopup.requestThemeRedraw();
   });
 
@@ -637,6 +638,8 @@ void Application::initUi() {
       return;
     if (m_settingsWindow.onPointerEvent(event))
       return;
+    if (m_colorPickerDialogPopup.onPointerEvent(event))
+      return;
     if (m_fileDialogPopup.onPointerEvent(event))
       return;
     if (m_bar.onPointerEvent(event))
@@ -655,6 +658,10 @@ void Application::initUi() {
     }
     if (m_desktopWidgetsController.isEditing()) {
       m_desktopWidgetsController.onKeyboardEvent(event);
+      return;
+    }
+    if (m_colorPickerDialogPopup.isOpen()) {
+      m_colorPickerDialogPopup.onKeyboardEvent(event);
       return;
     }
     if (m_fileDialogPopup.isOpen()) {
@@ -691,7 +698,6 @@ void Application::initUi() {
   m_panelManager.registerPanel("clipboard", std::move(clipboardPanel));
   m_panelManager.registerPanel("session", std::make_unique<SessionPanel>(&m_configService, m_sessionActionHooks));
   m_panelManager.registerPanel("test", std::make_unique<TestPanel>());
-  m_panelManager.registerPanel("color-picker", std::make_unique<ColorPickerPanel>());
   m_panelManager.registerPanel(
       "control-center", std::make_unique<ControlCenterPanel>(
                             &m_notificationManager, m_pipewireService.get(), m_mprisService.get(), &m_configService,
@@ -744,6 +750,9 @@ void Application::initUi() {
                                        m_wayland.preferredPanelOutput(std::chrono::milliseconds(1200)));
                                  });
 
+  m_colorPickerDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts);
+  ColorPickerDialog::setPresenter(&m_colorPickerDialogPopup);
+
   m_fileDialogPopup.initialize(m_wayland, m_configService, m_renderContext, m_layerPopupHosts, m_thumbnailService);
   FileDialog::setPresenter(&m_fileDialogPopup);
 
@@ -770,6 +779,7 @@ void Application::initUi() {
     m_trayMenu.onFontChanged();
     m_overview.onFontChanged();
     m_settingsWindow.onFontChanged();
+    m_colorPickerDialogPopup.requestFontLayout();
     m_fileDialogPopup.requestFontLayout();
   });
 

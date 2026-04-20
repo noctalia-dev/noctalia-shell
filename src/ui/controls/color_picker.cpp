@@ -9,6 +9,7 @@
 #include "ui/controls/image.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
+#include "ui/controls/spacer.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -16,126 +17,27 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <cstdio>
 #include <linux/input-event-codes.h>
 #include <memory>
 #include <string>
 
 namespace {
 
-  Color colorFromHsv(float h, float s, float v) {
-    h = h - std::floor(h);
-    const float S = std::clamp(s, 0.0f, 1.0f);
-    const float V = std::clamp(v, 0.0f, 1.0f);
-    const float C = V * S;
-    const float hh = h * 6.0f;
-    const float X = C * (1.0f - std::fabs(std::fmod(hh, 2.0f) - 1.0f));
-    float rp = 0.0f;
-    float gp = 0.0f;
-    float bp = 0.0f;
-    const int sector = static_cast<int>(hh);
-    switch (sector % 6) {
-    case 0:
-      rp = C;
-      gp = X;
-      break;
-    case 1:
-      rp = X;
-      gp = C;
-      break;
-    case 2:
-      gp = C;
-      bp = X;
-      break;
-    case 3:
-      gp = X;
-      bp = C;
-      break;
-    case 4:
-      rp = X;
-      bp = C;
-      break;
-    default:
-      rp = C;
-      bp = X;
-      break;
-    }
-    const float m = V - C;
-    return rgba(rp + m, gp + m, bp + m, 1.0f);
+  void configureDialogActionButton(Button& button, float scale) {
+    button.setMinHeight(Style::controlHeight * scale);
+    button.setMinWidth(92.0f * scale);
+    button.setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    button.setRadius(Style::radiusMd * scale);
   }
 
-  void rgbToHsv(const Color& rgb, float& h, float& s, float& v) {
-    const float r = rgb.r;
-    const float g = rgb.g;
-    const float b = rgb.b;
-    const float maxc = std::max({r, g, b});
-    const float minc = std::min({r, g, b});
-    const float d = maxc - minc;
-    v = maxc;
-    if (maxc <= 1e-6f) {
-      s = 0.0f;
-      h = 0.0f;
-      return;
-    }
-    s = d / maxc;
-    if (d <= 1e-6f) {
-      h = 0.0f;
-      return;
-    }
-    if (maxc == r) {
-      h = (g - b) / d + (g < b ? 6.0f : 0.0f);
-    } else if (maxc == g) {
-      h = (b - r) / d + 2.0f;
-    } else {
-      h = (r - g) / d + 4.0f;
-    }
-    h /= 6.0f;
-    h = h - std::floor(h);
-  }
-
-  std::string formatRgbHex(const Color& c) {
-    auto u = [](float x) { return static_cast<int>(std::lround(std::clamp(x, 0.0f, 1.0f) * 255.0f)); };
-    char buf[16];
-    std::snprintf(buf, sizeof(buf), "#%02X%02X%02X", u(c.r), u(c.g), u(c.b));
-    return std::string(buf);
-  }
-
-  bool parseHexColor(std::string_view in, Color& out) {
-    while (!in.empty() && (in.front() == ' ' || in.front() == '\t')) {
-      in.remove_prefix(1);
-    }
-    if (in.size() >= 1 && in.front() == '#') {
-      in.remove_prefix(1);
-    }
-    if (in.size() < 6) {
-      return false;
-    }
-    auto hexVal = [](char c) -> int {
-      if (c >= '0' && c <= '9') {
-        return c - '0';
-      }
-      if (c >= 'a' && c <= 'f') {
-        return 10 + (c - 'a');
-      }
-      if (c >= 'A' && c <= 'F') {
-        return 10 + (c - 'A');
-      }
-      return -1;
-    };
-    const int rH = hexVal(in[0]);
-    const int rL = hexVal(in[1]);
-    const int gH = hexVal(in[2]);
-    const int gL = hexVal(in[3]);
-    const int bH = hexVal(in[4]);
-    const int bL = hexVal(in[5]);
-    if (rH < 0 || rL < 0 || gH < 0 || gL < 0 || bH < 0 || bL < 0) {
-      return false;
-    }
-    const int r = (rH << 4) | rL;
-    const int g = (gH << 4) | gL;
-    const int b = (bH << 4) | bL;
-    out = rgba(static_cast<float>(r) / 255.0f, static_cast<float>(g) / 255.0f, static_cast<float>(b) / 255.0f, 1.0f);
-    return true;
+  void configureDialogCloseButton(Button& button, float scale) {
+    button.setVariant(ButtonVariant::Default);
+    button.setGlyph("close");
+    button.setGlyphSize(Style::fontSizeBody * scale);
+    button.setMinWidth(Style::controlHeightSm * scale);
+    button.setMinHeight(Style::controlHeightSm * scale);
+    button.setPadding(Style::spaceXs * scale);
+    button.setRadius(Style::radiusMd * scale);
   }
 
   int parseIntClamp(const std::string& s, int lo, int hi) {
@@ -149,11 +51,7 @@ namespace {
 
 } // namespace
 
-Color ColorPicker::colorAtSv(float h, float s, float v) {
-  const Color chroma = colorFromHsv(h, 1.0f, 1.0f);
-  const Color top = lerpColor(rgba(1.0f, 1.0f, 1.0f, 1.0f), chroma, s);
-  return lerpColor(rgba(0.0f, 0.0f, 0.0f, 1.0f), top, v);
-}
+Color ColorPicker::colorAtSv(float h, float s, float v) { return hsv(h, s, v); }
 
 float ColorPicker::intrinsicColumnHeight(float pickerWidth, float scale) {
   const float s = std::max(0.1f, scale);
@@ -188,7 +86,7 @@ ColorPicker::ColorPicker() {
     seg->setFlexGrow(1.0f);
     seg->clearBorder();
     seg->setRadius(0.0f);
-    seg->setFill(colorFromHsv(t, 1.0f, 1.0f));
+    seg->setFill(hsv(t, 1.0f, 1.0f));
     hueStrip->addChild(std::move(seg));
   }
   addChild(std::move(hueStrip));
@@ -290,6 +188,10 @@ ColorPicker::ColorPicker() {
   syncFieldsFromColor();
 }
 
+InputArea* ColorPicker::primaryInputArea() const noexcept {
+  return m_hexInput != nullptr ? m_hexInput->inputArea() : nullptr;
+}
+
 void ColorPicker::setScale(float scale) {
   m_scale = std::max(0.1f, scale);
   setGap(Style::spaceSm * m_scale);
@@ -332,7 +234,7 @@ void ColorPicker::setPickerWidth(float width) {
 void ColorPicker::setColor(const Color& rgba) {
   m_alpha = rgba.a;
   rgbToHsv(rgba, m_h, m_s, m_v);
-  m_color = colorFromHsv(m_h, m_s, m_v);
+  m_color = hsv(m_h, m_s, m_v);
   m_color.a = m_alpha;
   m_svTextureDirty = true;
   updateHueThumbStyle();
@@ -389,7 +291,7 @@ void ColorPicker::syncFieldsFromColor() {
 
 void ColorPicker::updateHueThumbStyle() {
   if (m_hueThumb != nullptr) {
-    m_hueThumb->setFill(colorFromHsv(m_h, 1.0f, 1.0f));
+    m_hueThumb->setFill(hsv(m_h, 1.0f, 1.0f));
     m_hueThumb->setBorder(rgba(1.0f, 1.0f, 1.0f, 1.0f), 2.0f * m_scale);
   }
 }
@@ -405,7 +307,7 @@ void ColorPicker::applyPickFromSv(float localX, float localY) {
   }
   m_s = std::clamp(localX / w, 0.0f, 1.0f);
   m_v = std::clamp(1.0f - localY / h, 0.0f, 1.0f);
-  m_color = colorFromHsv(m_h, m_s, m_v);
+  m_color = hsv(m_h, m_s, m_v);
   m_color.a = m_alpha;
   syncFieldsFromColor();
   markPaintDirty();
@@ -425,7 +327,7 @@ void ColorPicker::applyPickFromHue(float localX) {
   }
   m_h = std::clamp(localX / w, 0.0f, 1.0f);
   m_svTextureDirty = true;
-  m_color = colorFromHsv(m_h, m_s, m_v);
+  m_color = hsv(m_h, m_s, m_v);
   m_color.a = m_alpha;
   syncFieldsFromColor();
   updateHueThumbStyle();
@@ -442,7 +344,7 @@ void ColorPicker::onHexInputChange(const std::string& value) {
     return;
   }
   Color parsed{};
-  if (!parseHexColor(value, parsed)) {
+  if (!tryParseHexColor(value, parsed)) {
     return;
   }
   parsed.a = m_alpha;
@@ -521,12 +423,30 @@ ColorPickerSheet::ColorPickerSheet(float chromeScale) : m_chromeScale(std::max(0
   setGap(Style::spaceMd * m_chromeScale);
   setPadding(Style::spaceSm * m_chromeScale);
 
+  auto header = std::make_unique<Flex>();
+  header->setDirection(FlexDirection::Horizontal);
+  header->setAlign(FlexAlign::Center);
+  header->setGap(Style::spaceSm * m_chromeScale);
+
   auto title = std::make_unique<Label>();
   title->setText("Color");
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle * m_chromeScale);
   title->setColor(roleColor(ColorRole::Primary));
-  addChild(std::move(title));
+  m_title = static_cast<Label*>(header->addChild(std::move(title)));
+
+  header->addChild(std::make_unique<Spacer>());
+
+  auto closeButton = std::make_unique<Button>();
+  configureDialogCloseButton(*closeButton, m_chromeScale);
+  closeButton->setOnClick([this]() {
+    if (m_onCancel) {
+      m_onCancel();
+    }
+  });
+  header->addChild(std::move(closeButton));
+
+  addChild(std::move(header));
 
   auto picker = std::make_unique<ColorPicker>();
   picker->setScale(m_chromeScale);
@@ -536,14 +456,13 @@ ColorPickerSheet::ColorPickerSheet(float chromeScale) : m_chromeScale(std::max(0
   auto actions = std::make_unique<Flex>();
   actions->setDirection(FlexDirection::Horizontal);
   actions->setAlign(FlexAlign::Center);
-  actions->setJustify(FlexJustify::SpaceBetween);
+  actions->setJustify(FlexJustify::End);
   actions->setGap(Style::spaceSm * m_chromeScale);
 
   auto cancel = std::make_unique<Button>();
   cancel->setText("Cancel");
-  cancel->setVariant(ButtonVariant::Outline);
-  cancel->setMinHeight(Style::controlHeight * m_chromeScale);
-  cancel->setPadding(Style::spaceSm * m_chromeScale, Style::spaceMd * m_chromeScale);
+  cancel->setVariant(ButtonVariant::Secondary);
+  configureDialogActionButton(*cancel, m_chromeScale);
   cancel->setOnClick([this]() {
     if (m_onCancel) {
       m_onCancel();
@@ -553,9 +472,8 @@ ColorPickerSheet::ColorPickerSheet(float chromeScale) : m_chromeScale(std::max(0
 
   auto apply = std::make_unique<Button>();
   apply->setText("Apply");
-  apply->setVariant(ButtonVariant::Default);
-  apply->setMinHeight(Style::controlHeight * m_chromeScale);
-  apply->setPadding(Style::spaceSm * m_chromeScale, Style::spaceMd * m_chromeScale);
+  apply->setVariant(ButtonVariant::Accent);
+  configureDialogActionButton(*apply, m_chromeScale);
   apply->setOnClick([this]() {
     if (m_picker != nullptr && m_onApply) {
       m_onApply(m_picker->color());
@@ -566,18 +484,28 @@ ColorPickerSheet::ColorPickerSheet(float chromeScale) : m_chromeScale(std::max(0
   addChild(std::move(actions));
 }
 
+InputArea* ColorPickerSheet::initialFocusArea() const noexcept {
+  return m_picker != nullptr ? m_picker->primaryInputArea() : nullptr;
+}
+
+void ColorPickerSheet::setTitle(std::string_view title) {
+  if (m_title != nullptr) {
+    m_title->setText(title.empty() ? "Color" : title);
+  }
+}
+
 void ColorPickerSheet::setPickerColumnWidth(float width) {
   if (m_picker != nullptr) {
     m_picker->setPickerWidth(width);
   }
 }
 
-float ColorPickerSheet::preferredPanelWidth(float scale) { return 440.0f * std::max(0.1f, scale); }
+float ColorPickerSheet::preferredDialogWidth(float scale) { return 440.0f * std::max(0.1f, scale); }
 
-float ColorPickerSheet::preferredPanelHeight(float panelWidth, float scale) {
+float ColorPickerSheet::preferredDialogHeight(float dialogWidth, float scale) {
   const float s = std::max(0.1f, scale);
   const float pad = Style::spaceSm * s;
-  const float innerW = std::max(160.0f, panelWidth - 2.0f * pad);
+  const float innerW = std::max(160.0f, dialogWidth - 2.0f * pad);
   const float pickerColH = ColorPicker::intrinsicColumnHeight(innerW, s);
   const float titleH = Style::fontSizeTitle * s * 1.3f;
   const float actionsH = Style::controlHeight * s + 2.0f * Style::spaceSm * s;

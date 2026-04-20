@@ -1,13 +1,14 @@
 #pragma once
 
 #include "core/files/directory_scanner.h"
-#include "shell/panel/panel.h"
 #include "ui/dialogs/file_dialog.h"
 
 #include <cstddef>
 #include <filesystem>
+#include <memory>
 #include <vector>
 
+class AnimationManager;
 class Button;
 class Flex;
 class Input;
@@ -31,25 +32,33 @@ public:
   virtual void cancel() = 0;
 };
 
-class FileDialogView : public Panel {
+class FileDialogView {
 public:
   explicit FileDialogView(ThumbnailService* thumbnails);
+  ~FileDialogView();
 
   void setHost(FileDialogHost* host) noexcept { m_host = host; }
+  void setAnimationManager(AnimationManager* animations) noexcept { m_animations = animations; }
+  void setContentScale(float scale) noexcept { m_contentScale = scale; }
 
-  void create() override;
-  void onOpen(std::string_view context) override;
-  void onClose() override;
-  [[nodiscard]] bool handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, bool pressed, bool preedit) override;
+  [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
+  [[nodiscard]] bool hasDecoration() const noexcept { return true; }
+  [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
 
-  [[nodiscard]] float preferredWidth() const override { return scaled(800.0f); }
-  [[nodiscard]] float preferredHeight() const override { return scaled(560.0f); }
-  [[nodiscard]] bool centeredHorizontally() const override { return true; }
-  [[nodiscard]] bool centeredVertically() const override { return true; }
-  [[nodiscard]] bool hasDecoration() const override { return true; }
-  [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
-  [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
-  [[nodiscard]] InputArea* initialFocusArea() const override;
+  void create();
+  void onOpen(std::string_view context);
+  void onClose();
+  void layout(Renderer& renderer, float width, float height) { doLayout(renderer, width, height); }
+  void update(Renderer& renderer) { doUpdate(renderer); }
+  [[nodiscard]] std::unique_ptr<Node> releaseRoot() {
+    m_rootPtr = m_root.get();
+    return std::move(m_root);
+  }
+  [[nodiscard]] bool handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, bool pressed, bool preedit);
+
+  [[nodiscard]] float preferredWidth() const { return scaled(800.0f); }
+  [[nodiscard]] float preferredHeight() const { return scaled(560.0f); }
+  [[nodiscard]] InputArea* initialFocusArea() const;
 
 private:
   enum class ViewMode : std::uint8_t {
@@ -57,8 +66,12 @@ private:
     Grid,
   };
 
-  void doLayout(Renderer& renderer, float width, float height) override;
-  void doUpdate(Renderer& renderer) override;
+  [[nodiscard]] float scaled(float value) const noexcept { return value * m_contentScale; }
+  void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
+  void clearReleasedRoot() noexcept { m_rootPtr = nullptr; }
+
+  void doLayout(Renderer& renderer, float width, float height);
+  void doUpdate(Renderer& renderer);
 
   void refreshDirectory();
   void applyFilter(bool resetScroll);
@@ -156,4 +169,8 @@ private:
   bool m_mouseActive = false;
   bool m_thumbnailRefreshPending = false;
   bool m_showHiddenFiles = false;
+  float m_contentScale = 1.0f;
+  AnimationManager* m_animations = nullptr;
+  std::unique_ptr<Node> m_root;
+  Node* m_rootPtr = nullptr;
 };

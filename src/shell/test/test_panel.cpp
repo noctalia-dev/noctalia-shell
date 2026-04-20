@@ -2,7 +2,6 @@
 
 #include "render/animation/animation_manager.h"
 #include "render/core/color.h"
-#include "shell/panel/panel_manager.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/checkbox.h"
@@ -17,6 +16,7 @@
 #include "ui/controls/slider.h"
 #include "ui/controls/spinner.h"
 #include "ui/controls/toggle.h"
+#include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -416,13 +416,13 @@ void TestPanel::create() {
     container->addChild(std::move(row));
   }
 
-  // Color picker (layer panel)
+  // Color picker dialog
   {
     auto resultSwatch = std::make_unique<Box>();
     resultSwatch->setSize(28.0f * scale, 28.0f * scale);
     resultSwatch->setRadius(Style::radiusMd * scale);
     resultSwatch->setBorder(roleColor(ColorRole::Outline), Style::borderWidth * scale);
-    if (const auto last = PanelManager::instance().lastColorPickerResult()) {
+    if (const auto last = ColorPickerDialog::lastResult()) {
       resultSwatch->setFill(*last);
     } else {
       resultSwatch->setFill(resolveThemeColor(roleColor(ColorRole::Primary)));
@@ -437,12 +437,16 @@ void TestPanel::create() {
     openPicker->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
     openPicker->setRadius(Style::radiusMd * scale);
     openPicker->setOnClick([this]() {
-      PanelManager::instance().setColorPickerResultCallback([this](const Color& c) {
-        if (m_colorPickerResultSwatch != nullptr) {
-          m_colorPickerResultSwatch->setFill(c);
+      ColorPickerDialogOptions options;
+      if (const auto last = ColorPickerDialog::lastResult()) {
+        options.initialColor = *last;
+      }
+      (void)ColorPickerDialog::open(std::move(options), [this](std::optional<Color> result) {
+        if (!result.has_value() || m_colorPickerResultSwatch == nullptr) {
+          return;
         }
+        m_colorPickerResultSwatch->setFill(*result);
       });
-      PanelManager::instance().togglePanel("color-picker");
     });
     m_openColorPickerButton = openPicker.get();
 
