@@ -140,7 +140,14 @@ void IpcService::handleConnection(int connFd) {
   }
 
   const std::string response = execute(std::string(buf, static_cast<std::size_t>(total)));
-  ::send(connFd, response.data(), response.size(), MSG_NOSIGNAL);
+  std::size_t sent = 0;
+  while (sent < response.size()) {
+    const auto n = ::send(connFd, response.data() + sent, response.size() - sent, MSG_NOSIGNAL);
+    if (n <= 0) {
+      break;
+    }
+    sent += static_cast<std::size_t>(n);
+  }
 }
 
 std::string IpcService::buildHelp() const {

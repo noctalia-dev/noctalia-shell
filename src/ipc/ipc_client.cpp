@@ -86,21 +86,20 @@ int IpcClient::send(const std::string& command) {
   }
 
   // Read response until EOF (server closes connection after writing)
+  std::string response;
   char buf[4096];
-  int total = 0;
-  while (total < static_cast<int>(sizeof(buf)) - 1) {
-    const auto n = ::read(fd, buf + total, static_cast<std::size_t>(sizeof(buf) - 1 - total));
+  for (;;) {
+    const auto n = ::read(fd, buf, sizeof(buf));
     if (n <= 0) {
       break;
     }
-    total += static_cast<int>(n);
+    response.append(buf, static_cast<std::size_t>(n));
   }
-  buf[total] = '\0';
 
   ::close(fd);
 
-  std::fputs(buf, stdout);
+  std::fputs(response.c_str(), stdout);
 
   // Return 1 if the response indicates an error
-  return (std::strncmp(buf, "error:", 6) == 0) ? 1 : 0;
+  return (response.compare(0, 6, "error:") == 0) ? 1 : 0;
 }
