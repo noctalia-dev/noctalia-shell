@@ -80,16 +80,16 @@ void DesktopWeatherWidget::doLayout(Renderer& renderer) {
     textHeight += lineGap + m_condition->height();
   }
 
-  const float hSpacing = columnSpacing(contentScale());
-  const float totalHeight = std::max(m_glyph->height(), textHeight);
-  const float totalWidth = m_glyph->width() + hSpacing + textWidth;
+  const float hSpacing = std::round(columnSpacing(contentScale()));
+  const float totalHeight = std::round(std::max(m_glyph->height(), textHeight));
+  const float totalWidth = std::round(m_glyph->width() + hSpacing + textWidth);
 
   m_glyph->setPosition(0.0f, std::round((totalHeight - m_glyph->height()) * 0.5f));
 
   const float textColX = m_glyph->width() + hSpacing;
   float y = std::round((totalHeight - textHeight) * 0.5f);
   m_temperature->setPosition(textColX, y);
-  y += m_temperature->height() + lineGap;
+  y += std::round(m_temperature->height() + lineGap);
 
   if (hasCondition) {
     m_condition->setPosition(textColX, y);
