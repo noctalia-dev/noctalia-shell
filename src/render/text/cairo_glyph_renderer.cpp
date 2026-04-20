@@ -54,11 +54,13 @@ void CairoGlyphRenderer::initialize(const std::string& fontPath, GlyphProgram* p
     throw std::runtime_error("CairoGlyphRenderer: FT_Init_FreeType failed");
   }
   if (FT_New_Face(m_ftLibrary, fontPath.c_str(), 0, &m_face) != 0) {
+    cleanup();
     throw std::runtime_error("CairoGlyphRenderer: failed to load icon font: " + fontPath);
   }
 
   m_cairoFace = cairo_ft_font_face_create_for_ft_face(m_face, 0);
   if (m_cairoFace == nullptr || cairo_font_face_status(m_cairoFace) != CAIRO_STATUS_SUCCESS) {
+    cleanup();
     throw std::runtime_error("CairoGlyphRenderer: cairo_ft_font_face_create_for_ft_face failed");
   }
 
