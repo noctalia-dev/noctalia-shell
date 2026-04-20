@@ -29,7 +29,6 @@ namespace {
 
   constexpr std::size_t kMaxResults = 50;
   constexpr std::size_t kRowOverscan = 3;
-  constexpr std::size_t kVisibleIconResolveBudget = 4;
   constexpr float kIconSize = 32.0f;
   constexpr float kScrollViewPaddingV = Style::spaceSm;
 
@@ -369,17 +368,11 @@ void LauncherPanel::doLayout(Renderer& renderer, float width, float height) {
 }
 
 void LauncherPanel::doUpdate(Renderer& renderer) {
-  if (resolveVisibleIcons(kVisibleIconResolveBudget)) {
-    m_dirty = true;
-  }
-
   if (m_dirty && m_lastWidth > 0.0f) {
     const float listWidth = m_scrollView != nullptr ? m_scrollView->contentViewportWidth() : m_lastWidth;
     rebuildResults(renderer, listWidth);
     m_dirty = false;
   }
-
-  scheduleVisibleIconUpdate();
 }
 
 void LauncherPanel::onOpen(std::string_view /*context*/) {
@@ -409,7 +402,6 @@ void LauncherPanel::onClose() {
   m_lastListWidth = -1.0f;
   m_virtualRowHeight = 0.0f;
   m_dirty = false;
-  m_iconUpdateQueued = false;
   m_pendingScrollToSelected = false;
 
   // The scene tree (and all nodes) is destroyed by PanelManager after onClose(),
@@ -490,6 +482,21 @@ void LauncherPanel::onInputChanged(const std::string& text) {
     m_results.resize(kMaxResults);
   }
 
+  for (auto& result : m_results) {
+    if (result.iconPath.empty() && !result.iconName.empty()) {
+      const std::string& resolved = m_iconResolver.resolve(result.iconName);
+      if (!resolved.empty()) {
+        result.iconPath = resolved;
+      } else if (result.iconName != "application-x-executable") {
+        const std::string& fallback = m_iconResolver.resolve("application-x-executable");
+        if (!fallback.empty()) {
+          result.iconPath = fallback;
+        }
+      }
+      result.iconName.clear();
+    }
+  }
+
   m_selectedIndex = 0;
   m_rowPoolStartIndex = static_cast<std::size_t>(-1);
   m_dirty = true;
@@ -527,7 +534,6 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
       static_cast<std::size_t>(std::floor(m_scrollView->scrollOffset() / m_virtualRowHeight)), m_results.size() - 1);
   const auto startIndex = topIndex > kRowOverscan ? topIndex - kRowOverscan : 0;
   m_rowPoolStartIndex = startIndex;
-  (void)resolveVisibleIcons(kVisibleIconResolveBudget);
 
   for (std::size_t slot = 0; slot < m_rowPool.size(); ++slot) {
     auto* row = static_cast<LauncherResultRow*>(m_rowPool[slot]);
@@ -542,7 +548,6 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
   }
 
   m_lastListWidth = width;
-  scheduleVisibleIconUpdate();
 }
 
 void LauncherPanel::ensureRowPool(float viewportHeight) {
@@ -608,71 +613,6 @@ void LauncherPanel::updateVisibleRowStates() {
     }
     row->setVisualState(index == m_selectedIndex, m_mouseActive && index == m_hoverIndex && index != m_selectedIndex);
   }
-}
-
-bool LauncherPanel::resolveVisibleIcons(std::size_t budget) {
-  if (budget == 0 || m_rowPoolStartIndex == static_cast<std::size_t>(-1) || m_rowPool.empty()) {
-    return false;
-  }
-
-  bool changed = false;
-  std::size_t resolvedCount = 0;
-  const std::size_t endIndex = std::min(m_results.size(), m_rowPoolStartIndex + m_rowPool.size());
-  for (std::size_t i = m_rowPoolStartIndex; i < endIndex && resolvedCount < budget; ++i) {
-    auto& result = m_results[i];
-    if (!result.iconPath.empty() || result.iconName.empty()) {
-      continue;
-    }
-
-    const std::string iconName = std::move(result.iconName);
-    result.iconName.clear();
-    const std::string& resolved = m_iconResolver.resolve(iconName);
-    if (!resolved.empty()) {
-      result.iconPath = resolved;
-      changed = true;
-    } else if (iconName != "application-x-executable") {
-      const std::string& fallback = m_iconResolver.resolve("application-x-executable");
-      if (!fallback.empty()) {
-        result.iconPath = fallback;
-        changed = true;
-      }
-    }
-
-    ++resolvedCount;
-  }
-
-  return changed;
-}
-
-bool LauncherPanel::hasPendingVisibleIcons() const {
-  if (m_rowPoolStartIndex == static_cast<std::size_t>(-1) || m_rowPool.empty()) {
-    return false;
-  }
-
-  const std::size_t endIndex = std::min(m_results.size(), m_rowPoolStartIndex + m_rowPool.size());
-  for (std::size_t i = m_rowPoolStartIndex; i < endIndex; ++i) {
-    const auto& result = m_results[i];
-    if (result.iconPath.empty() && !result.iconName.empty()) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-void LauncherPanel::scheduleVisibleIconUpdate() {
-  if (m_iconUpdateQueued || m_resultsRoot == nullptr || !hasPendingVisibleIcons()) {
-    return;
-  }
-
-  m_iconUpdateQueued = true;
-  DeferredCall::callLater([this]() {
-    m_iconUpdateQueued = false;
-    if (m_resultsRoot == nullptr || !hasPendingVisibleIcons()) {
-      return;
-    }
-    PanelManager::instance().requestUpdateOnly();
-  });
 }
 
 void LauncherPanel::activateSelected() {

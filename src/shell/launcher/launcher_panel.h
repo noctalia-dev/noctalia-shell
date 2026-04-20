@@ -47,9 +47,6 @@ private:
   void rebuildResults(Renderer& renderer, float width);
   void ensureRowPool(float viewportHeight);
   void updateVisibleRowStates();
-  bool resolveVisibleIcons(std::size_t budget);
-  bool hasPendingVisibleIcons() const;
-  void scheduleVisibleIconUpdate();
   void activateSelected();
   bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   void scrollToSelected();
@@ -75,7 +72,6 @@ private:
   float m_lastListWidth = -1.0f;
   float m_virtualRowHeight = 0.0f;
   bool m_dirty = false;
-  bool m_iconUpdateQueued = false;
   bool m_mouseActive = false;
   bool m_pendingScrollToSelected = false;
   ConfigService* m_config = nullptr;

@@ -9,7 +9,6 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "shell/desktop/desktop_widget_layout.h"
-#include "shell/desktop/widget_transform.h"
 #include "time/time_service.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
@@ -319,7 +318,7 @@ std::string DesktopWidgetsEditor::effectiveOutputName(const DesktopWidgetState& 
 }
 
 bool DesktopWidgetsEditor::shouldSnap() const {
-  return m_snapshot.grid.visible && !m_shiftHeld && m_snapshot.grid.cellSize > 0;
+  return (m_snapshot.grid.visible != m_shiftHeld) && m_snapshot.grid.cellSize > 0;
 }
 
 void DesktopWidgetsEditor::prepareFrame(OverlaySurface& surface, bool needsUpdate, bool needsLayout) {
@@ -1011,31 +1010,21 @@ void DesktopWidgetsEditor::updateDrag() {
     state->rotationRad = rotation;
   } else if (m_drag.mode == DragMode::Scale) {
     const CornerSigns signs = cornerSigns(static_cast<std::size_t>(m_drag.scaleCorner));
-    if (shouldSnap()) {
-      const float snappedCornerX = snapToGrid(m_currentEventSceneX, m_snapshot.grid.cellSize);
-      const float snappedCornerY = snapToGrid(m_currentEventSceneY, m_snapshot.grid.cellSize);
-      const WidgetTransformBounds baseBounds =
-          computeWidgetTransformBounds(m_drag.initialState.cx, m_drag.initialState.cy, m_drag.intrinsicWidth,
-                                       m_drag.intrinsicHeight, 1.0f, m_drag.initialState.rotationRad);
-      const float relativeScaleX = std::max(0.0f, (snappedCornerX - m_drag.initialState.cx) * signs.x * 2.0f /
-                                                      std::max(1.0f, baseBounds.aabbWidth));
-      const float relativeScaleY = std::max(0.0f, (snappedCornerY - m_drag.initialState.cy) * signs.y * 2.0f /
-                                                      std::max(1.0f, baseBounds.aabbHeight));
-      const float relativeScale = std::max(relativeScaleX, relativeScaleY);
-      state->scale = std::clamp(m_drag.initialState.scale * relativeScale, kMinScale, kMaxScale);
-    } else {
-      const float dx = m_currentEventSceneX - m_drag.initialState.cx;
-      const float dy = m_currentEventSceneY - m_drag.initialState.cy;
-      const float cosTheta = std::cos(-m_drag.initialState.rotationRad);
-      const float sinTheta = std::sin(-m_drag.initialState.rotationRad);
-      const float localX = (dx * cosTheta - dy * sinTheta) * signs.x;
-      const float localY = (dx * sinTheta + dy * cosTheta) * signs.y;
-      const float halfWidth = std::max(1.0f, m_drag.intrinsicWidth * 0.5f);
-      const float halfHeight = std::max(1.0f, m_drag.intrinsicHeight * 0.5f);
-      const float denominator = halfWidth * halfWidth + halfHeight * halfHeight;
-      const float relativeScale = (localX * halfWidth + localY * halfHeight) / std::max(1.0f, denominator);
-      state->scale = std::clamp(m_drag.initialState.scale * relativeScale, kMinScale, kMaxScale);
-    }
+    const float cornerX =
+        shouldSnap() ? snapToGrid(m_currentEventSceneX, m_snapshot.grid.cellSize) : m_currentEventSceneX;
+    const float cornerY =
+        shouldSnap() ? snapToGrid(m_currentEventSceneY, m_snapshot.grid.cellSize) : m_currentEventSceneY;
+    const float dx = cornerX - m_drag.initialState.cx;
+    const float dy = cornerY - m_drag.initialState.cy;
+    const float cosTheta = std::cos(-m_drag.initialState.rotationRad);
+    const float sinTheta = std::sin(-m_drag.initialState.rotationRad);
+    const float localX = (dx * cosTheta - dy * sinTheta) * signs.x;
+    const float localY = (dx * sinTheta + dy * cosTheta) * signs.y;
+    const float halfWidth = std::max(1.0f, m_drag.intrinsicWidth * 0.5f);
+    const float halfHeight = std::max(1.0f, m_drag.intrinsicHeight * 0.5f);
+    const float denominator = halfWidth * halfWidth + halfHeight * halfHeight;
+    const float relativeScale = (localX * halfWidth + localY * halfHeight) / std::max(1.0f, denominator);
+    state->scale = std::clamp(m_drag.initialState.scale * relativeScale, kMinScale, kMaxScale);
   }
 
   float clampWidth = m_drag.intrinsicWidth;
