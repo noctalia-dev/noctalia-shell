@@ -933,8 +933,7 @@ void Application::onUpowerStateChangedForHooks() {
   }
   const UPowerState prev = *m_prevUpowerForHooks;
   if (prev.state != next.state) {
-    m_hookManager.fire(HookKind::BatteryStateChanged,
-                       {{"NOCTALIA_BATTERY_STATE", batteryStateLabel(next.state)}});
+    m_hookManager.fire(HookKind::BatteryStateChanged, {{"NOCTALIA_BATTERY_STATE", batteryStateLabel(next.state)}});
   }
   const std::int32_t thr = m_configService.config().hooks.batteryLowPercentThreshold;
   if (thr > 0 && next.isPresent) {
