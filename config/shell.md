@@ -91,8 +91,8 @@ Optional shell hooks run commands when specific events happen. Define them under
 | `shutting_down` | Immediately before the session panel runs shutdown. |
 | `wifi_enabled` / `wifi_disabled` | When NetworkManager's Wi-Fi radio toggles (not on first snapshot). |
 | `bluetooth_enabled` / `bluetooth_disabled` | When the default adapter's powered state toggles (not on first snapshot). |
-| `battery_state_changed` | When UPower's battery state enum changes (charging, discharging, etc.). |
-| `battery_under_threshold` | When charge **crosses from above to at or below** `battery_low_percent_threshold`. |
+| `battery_state_changed` | When UPower's battery state enum changes (charging, discharging, etc.). Sets `NOCTALIA_BATTERY_STATE` (e.g. `Charging`, `Discharging`, `Charged`). |
+| `battery_under_threshold` | When charge **crosses from above to at or below** `battery_low_percent_threshold`. Sets `NOCTALIA_BATTERY_PERCENT`. |
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
@@ -118,6 +118,6 @@ bluetooth_enabled  = "notify-send 'BT' 'Bluetooth on'"
 bluetooth_disabled = "notify-send 'BT' 'Bluetooth off'"
 
 battery_low_percent_threshold = 15
-battery_state_changed   = "notify-send 'Power' 'Battery state changed'"
-battery_under_threshold = "notify-send 'Power' 'Low battery'"
+battery_state_changed   = "notify-send 'Power' \"Battery: $NOCTALIA_BATTERY_STATE\""
+battery_under_threshold = "notify-send 'Power' \"Battery at ${NOCTALIA_BATTERY_PERCENT}%\""
 ```
