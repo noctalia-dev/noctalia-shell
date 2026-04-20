@@ -4,7 +4,6 @@
 #include "render/scene/node.h"
 #include "system/weather_service.h"
 #include "ui/controls/glyph.h"
-#include "ui/controls/glyph_registry.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -18,7 +17,9 @@ namespace {
 
   float temperatureFontSize(float contentScale) { return Style::fontSizeBody * 2.25f * contentScale; }
   float conditionFontSize(float contentScale) { return Style::fontSizeBody * contentScale; }
+  float glyphFontSize(float contentScale) { return Style::fontSizeBody * 3.0f * contentScale; }
   float columnSpacing(float contentScale) { return Style::spaceSm * contentScale; }
+  float stackedLineGap(float contentScale) { return -Style::fontSizeBody * 0.5f * contentScale; }
 
 } // namespace
 
@@ -29,7 +30,7 @@ void DesktopWeatherWidget::create() {
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("weather-cloud");
-  glyph->setGlyphSize(temperatureFontSize(contentScale()));
+  glyph->setGlyphSize(glyphFontSize(contentScale()));
   glyph->setColor(roleColor(ColorRole::OnSurface));
   m_glyph = glyph.get();
   rootNode->addChild(std::move(glyph));
@@ -61,50 +62,23 @@ void DesktopWeatherWidget::doLayout(Renderer& renderer) {
 
   m_temperature->setFontSize(temperatureFontSize(contentScale()));
   m_condition->setFontSize(conditionFontSize(contentScale()));
+  m_glyph->setGlyphSize(glyphFontSize(contentScale()));
 
   sync(renderer);
 
   m_temperature->measure(renderer);
   m_condition->measure(renderer);
+  m_glyph->measure(renderer);
 
   const bool hasCondition = !m_condition->text().empty();
-  const float tempSize = temperatureFontSize(contentScale());
-  const float condSize = conditionFontSize(contentScale());
-  const float desiredInkGap = Style::spaceXs * contentScale();
-
-  const TextMetrics tempRef = renderer.measureText("A", tempSize, true);
-  const TextMetrics condRef = renderer.measureText("A", condSize, false);
-  const float tempCapInkH = std::max(0.0f, tempRef.inkBottom - tempRef.inkTop);
-  const float condCapInkH = std::max(0.0f, condRef.inkBottom - condRef.inkTop);
-
-  float lineGap = 0.0f;
-  if (hasCondition) {
-    const float tempDescentPadding = std::max(0.0f, tempRef.bottom - tempRef.inkBottom);
-    const float condAscentPadding = std::max(0.0f, condRef.inkTop - condRef.top);
-    lineGap = -(tempDescentPadding + condAscentPadding) + desiredInkGap;
-  }
+  const float lineGap = hasCondition ? stackedLineGap(contentScale()) : 0.0f;
 
   float textWidth = m_temperature->width();
   float textHeight = m_temperature->height();
-  float visibleInkHeight = tempCapInkH;
   if (hasCondition) {
     textWidth = std::max(textWidth, m_condition->width());
     textHeight += lineGap + m_condition->height();
-    visibleInkHeight = tempCapInkH + condCapInkH + desiredInkGap;
   }
-
-  const float probeSize = tempSize;
-  const char32_t glyphCp = GlyphRegistry::lookup(m_lastGlyph);
-  float targetGlyphSize = probeSize;
-  if (glyphCp != 0 && visibleInkHeight > 0.0f) {
-    const TextMetrics glyphRef = renderer.measureGlyph(glyphCp, probeSize);
-    const float probeInk = std::max(0.0f, glyphRef.inkBottom - glyphRef.inkTop);
-    if (probeInk > 0.0f) {
-      targetGlyphSize = probeSize * (visibleInkHeight / probeInk);
-    }
-  }
-  m_glyph->setGlyphSize(targetGlyphSize);
-  m_glyph->measure(renderer);
 
   const float hSpacing = columnSpacing(contentScale());
   const float totalHeight = std::max(m_glyph->height(), textHeight);
