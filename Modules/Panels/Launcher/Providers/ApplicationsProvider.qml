@@ -553,13 +553,13 @@ Item {
                          return;
                        }
 
-                       if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
+                       if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix.trim() !== "") {
                          // Use custom launch prefix
-                         const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");
-                         Logger.d("ApplicationsProvider", `Using custom launch prefix: ${Settings.data.appLauncher.customLaunchPrefix}`);
+                         const prefix = Settings.data.appLauncher.customLaunchPrefix.trim().split(" ");
+                         Logger.d("ApplicationsProvider", `Using custom launch prefix: ${Settings.data.appLauncher.customLaunchPrefix.trim()}`);
 
-                         if (app.runInTerminal) {
-                           const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+                         if (app.runInTerminal && Settings.data.appLauncher.terminalCommand.trim() !== "") {
+                           const terminal = Settings.data.appLauncher.terminalCommand.trim().split(" ");
                            const command = prefix.concat(terminal.concat(app.command));
                            Logger.d("ApplicationsProvider", `Executing command (with prefix and terminal): ${command.join(" ")}`);
                            Quickshell.execDetached(command);
@@ -569,9 +569,9 @@ Item {
                            Quickshell.execDetached(command);
                          }
                        } else {
-                         if (app.runInTerminal) {
+                         if (app.runInTerminal && Settings.data.appLauncher.terminalCommand.trim() !== "") {
                            Logger.d("ApplicationsProvider", "Executing terminal app manually: " + app.name);
-                           const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+                           const terminal = Settings.data.appLauncher.terminalCommand.trim().split(" ");
                            const command = terminal.concat(app.command);
                            Logger.d("ApplicationsProvider", "Executing command (manual terminal): " + command.join(" "));
                            CompositorService.spawn(command);

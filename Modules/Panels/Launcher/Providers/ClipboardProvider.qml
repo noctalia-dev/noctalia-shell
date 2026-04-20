@@ -385,12 +385,12 @@ Item {
     var actions = [];
 
     // Annotation tool for images
-    if (item.isImage && Settings.data.appLauncher.screenshotAnnotationTool !== "") {
+    if (item.isImage && Settings.data.appLauncher.screenshotAnnotationTool.trim() !== "") {
       actions.push({
                      "icon": "pencil",
                      "tooltip": I18n.tr("tooltips.open-annotation-tool"),
                      "action": function () {
-                       var tool = Settings.data.appLauncher.screenshotAnnotationTool;
+                       var tool = Settings.data.appLauncher.screenshotAnnotationTool.trim();
                        Quickshell.execDetached(["sh", "-c", "cliphist decode " + item.clipboardId + " | " + tool]);
                        if (launcher)
                          launcher.close();
