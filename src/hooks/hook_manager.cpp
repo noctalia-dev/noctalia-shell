@@ -2,6 +2,8 @@
 
 #include "core/log.h"
 
+#include <cstdlib>
+
 namespace {
 
   constexpr Logger kLog("hooks");
@@ -61,5 +63,15 @@ void HookManager::fire(HookKind kind) const {
     if (!m_runner(cmd)) {
       kLog.warn("hook '{}' command failed: {}", hookKindName(kind), cmd);
     }
+  }
+}
+
+void HookManager::fire(HookKind kind, std::initializer_list<EnvVar> env) const {
+  for (const auto& [key, value] : env) {
+    ::setenv(key, value.c_str(), 1);
+  }
+  fire(kind);
+  for (const auto& [key, value] : env) {
+    ::unsetenv(key);
   }
 }
