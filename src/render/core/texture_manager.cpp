@@ -4,11 +4,17 @@
 #include "render/core/image_decoder.h"
 #include "render/core/image_file_loader.h"
 
+#include <GLES2/gl2ext.h>
+#include <cstring>
 #include <vector>
 
 namespace {
 
   constexpr Logger kLog("texture");
+
+#ifndef GL_BGRA_EXT
+  constexpr GLenum GL_BGRA_EXT = 0x80E1;
+#endif
 
 } // namespace
 
@@ -80,6 +86,31 @@ TextureHandle TextureManager::loadFromRaw(const std::uint8_t* data, std::size_t 
     return {};
   }
 
+  const std::size_t widthBytes4 = static_cast<std::size_t>(width) * 4U;
+
+  if (format == PixmapFormat::RGBA && actualStride == widthBytes4) {
+    return uploadRgba(data, width, height, mipmap);
+  }
+
+  if (format == PixmapFormat::BGRA && m_hasBgraExt) {
+    if (actualStride == widthBytes4) {
+      return uploadBgra(data, width, height, mipmap);
+    }
+    std::vector<std::uint8_t> tight(widthBytes4 * static_cast<std::size_t>(height));
+    for (int y = 0; y < height; ++y) {
+      std::memcpy(tight.data() + static_cast<std::size_t>(y) * widthBytes4, data + y * actualStride, widthBytes4);
+    }
+    return uploadBgra(tight.data(), width, height, mipmap);
+  }
+
+  if (format == PixmapFormat::RGBA) {
+    std::vector<std::uint8_t> tight(widthBytes4 * static_cast<std::size_t>(height));
+    for (int y = 0; y < height; ++y) {
+      std::memcpy(tight.data() + static_cast<std::size_t>(y) * widthBytes4, data + y * actualStride, widthBytes4);
+    }
+    return uploadRgba(tight.data(), width, height, mipmap);
+  }
+
   const std::size_t pixelCount = static_cast<std::size_t>(width) * static_cast<std::size_t>(height);
   std::vector<std::uint8_t> rgba(pixelCount * 4);
 
@@ -92,12 +123,6 @@ TextureHandle TextureManager::loadFromRaw(const std::uint8_t* data, std::size_t 
       std::uint8_t* d = dstRow + (x * 4);
 
       switch (format) {
-      case PixmapFormat::RGBA:
-        d[0] = s[0];
-        d[1] = s[1];
-        d[2] = s[2];
-        d[3] = s[3];
-        break;
       case PixmapFormat::BGRA:
         d[0] = s[2];
         d[1] = s[1];
@@ -122,6 +147,8 @@ TextureHandle TextureManager::loadFromRaw(const std::uint8_t* data, std::size_t 
         d[2] = s[0];
         d[3] = 255;
         break;
+      default:
+        break;
       }
     }
   }
@@ -142,6 +169,32 @@ void TextureManager::cleanup() {
     glDeleteTextures(static_cast<GLsizei>(m_textures.size()), m_textures.data());
     m_textures.clear();
   }
+}
+
+void TextureManager::probeExtensions() {
+  const char* ext = reinterpret_cast<const char*>(glGetString(GL_EXTENSIONS));
+  if (ext != nullptr && std::strstr(ext, "GL_EXT_texture_format_BGRA8888") != nullptr) {
+    m_hasBgraExt = true;
+  }
+}
+
+TextureHandle TextureManager::uploadBgra(const std::uint8_t* data, int width, int height, bool mipmap) {
+  GLuint tex = 0;
+  glGenTextures(1, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA_EXT, width, height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, data);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  if (mipmap) {
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  } else {
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  }
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  m_textures.push_back(tex);
+  return TextureHandle{.id = tex, .width = width, .height = height};
 }
 
 TextureHandle TextureManager::uploadRgba(const std::uint8_t* data, int width, int height, bool mipmap) {

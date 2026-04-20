@@ -35,9 +35,13 @@ public:
   void unload(TextureHandle& handle);
   void cleanup();
 
+  void probeExtensions();
+
 private:
   TextureHandle decodeEncodedRaster(const std::uint8_t* data, std::size_t size, const std::string* debugPath = nullptr,
                                     bool mipmap = false);
   TextureHandle uploadRgba(const std::uint8_t* data, int width, int height, bool mipmap = false);
+  TextureHandle uploadBgra(const std::uint8_t* data, int width, int height, bool mipmap = false);
   std::vector<GLuint> m_textures;
+  bool m_hasBgraExt = false;
 };
