@@ -60,7 +60,6 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   thumbBox->setDirection(FlexDirection::Vertical);
   thumbBox->setAlign(FlexAlign::Center);
   thumbBox->setJustify(FlexJustify::Center);
-  thumbBox->setBackground(roleColor(ColorRole::SurfaceVariant));
   thumbBox->setRadius(frameRadius);
   thumbBox->setMinWidth(frameWidth);
   thumbBox->setMinHeight(frameHeight);
@@ -71,6 +70,7 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   image->setFit(ImageFit::Cover);
   image->setCornerRadius(frameRadius);
   image->setBorder(roleColor(ColorRole::Outline), outlineWidth);
+  image->setBackground(roleColor(ColorRole::Surface));
   image->setFrameSize(frameWidth, frameHeight);
   m_thumb = static_cast<Image*>(m_thumbBox->addChild(std::move(image)));
 
