@@ -47,6 +47,7 @@ private:
   Flex* m_content = nullptr;
   RectNode* m_scrollbarTrack = nullptr;
   RectNode* m_scrollbarThumb = nullptr;
+  InputArea* m_scrollbarTrackArea = nullptr;
   InputArea* m_scrollbarThumbArea = nullptr;
 
   std::function<void(float)> m_onScrollChanged;

@@ -91,6 +91,15 @@ ScrollView::ScrollView() {
   auto scrollbarThumb = std::make_unique<RectNode>();
   m_scrollbarThumb = static_cast<RectNode*>(addChild(std::move(scrollbarThumb)));
 
+  auto scrollbarTrackArea = std::make_unique<InputArea>();
+  scrollbarTrackArea->setOnAxis([this](const InputArea::PointerData& data) {
+    if (!scrollable() || data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
+      return;
+    }
+    scrollBy(data.scrollDelta(m_scrollWheelStep));
+  });
+  m_scrollbarTrackArea = static_cast<InputArea*>(addChild(std::move(scrollbarTrackArea)));
+
   auto scrollbarThumbArea = std::make_unique<InputArea>();
   scrollbarThumbArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
   scrollbarThumbArea->setOnPress([this](const InputArea::PointerData& data) {
@@ -108,6 +117,12 @@ ScrollView::ScrollView() {
     const float deltaY = pointerY - m_dragStartLocalY;
     const float offsetPerPx = m_maxScrollOffset / m_thumbTravel;
     setScrollOffset(m_dragStartOffset + deltaY * offsetPerPx);
+  });
+  scrollbarThumbArea->setOnAxis([this](const InputArea::PointerData& data) {
+    if (!scrollable() || data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
+      return;
+    }
+    scrollBy(data.scrollDelta(m_scrollWheelStep));
   });
   m_scrollbarThumbArea = static_cast<InputArea*>(addChild(std::move(scrollbarThumbArea)));
 
@@ -192,7 +207,7 @@ void ScrollView::applyPalette() {
 
 void ScrollView::doLayout(Renderer& renderer) {
   if (m_background == nullptr || m_viewportArea == nullptr || m_content == nullptr || m_scrollbarTrack == nullptr ||
-      m_scrollbarThumb == nullptr || m_scrollbarThumbArea == nullptr) {
+      m_scrollbarThumb == nullptr || m_scrollbarTrackArea == nullptr || m_scrollbarThumbArea == nullptr) {
     return;
   }
 
@@ -256,6 +271,7 @@ void ScrollView::updateScrollbarGeometry(float viewportHeight, float contentHeig
   m_scrollbarShown = show;
   m_scrollbarTrack->setVisible(show);
   m_scrollbarThumb->setVisible(show);
+  m_scrollbarTrackArea->setVisible(show);
   m_scrollbarThumbArea->setVisible(show);
   if (!show) {
     m_thumbTravel = 0.0f;
@@ -267,6 +283,8 @@ void ScrollView::updateScrollbarGeometry(float viewportHeight, float contentHeig
   const float trackH = std::max(0.0f, viewportHeight);
   m_scrollbarTrack->setPosition(trackX, trackY);
   m_scrollbarTrack->setFrameSize(kScrollbarWidth, trackH);
+  m_scrollbarTrackArea->setPosition(trackX, trackY);
+  m_scrollbarTrackArea->setFrameSize(kScrollbarWidth, trackH);
 
   const float thumbH =
       std::clamp((viewportHeight * viewportHeight) / std::max(viewportHeight, contentHeight), kMinThumbHeight, trackH);
