@@ -1,0 +1,210 @@
+# Noctalia configuration — all settings at their defaults.
+# Copy to ~/.config/noctalia/config.toml and edit what you need.
+# Changes are hot-reloaded via inotify — no restart required.
+
+# ── Bar ───────────────────────────────────────────────────────────────────────
+
+[bar.main]
+position           = "top"          # top | bottom | left | right
+thickness          = 34
+background_opacity = 1.0
+background_blur    = true           # ext-background-effect-v1 (niri); inert on other compositors
+radius             = 12
+margin_h           = 180
+margin_v           = 10
+padding            = 14
+widget_spacing     = 6
+scale              = 1.0
+shadow_blur        = 12
+shadow_offset_x    = 0
+shadow_offset_y    = 6
+auto_hide          = false
+reserve_space      = false
+capsule            = false
+# capsule_fill     = "surface_variant"
+# capsule_opacity  = 1.0
+# capsule_border   = "outline"      # uncomment for a border on all widgets
+
+start  = ["launcher", "wallpaper", "workspaces"]
+center = ["clock"]
+end    = ["media", "tray", "notifications", "network", "bluetooth", "volume", "brightness", "battery", "session"]
+
+# Per-monitor override example — only the fields you list are overridden:
+# [bar.main.monitor.dp1]
+# match     = "DP-1"
+# thickness = 44
+
+# ── Dock ──────────────────────────────────────────────────────────────────────
+
+[dock]
+enabled             = false         # set true to activate
+position            = "bottom"      # top | bottom | left | right
+icon_size           = 48
+padding             = 8
+item_spacing        = 6
+background_opacity  = 0.88
+background_blur     = true
+radius              = 16
+margin_h            = 0
+margin_v            = 8
+shadow_blur         = 12
+shadow_offset_x     = 0
+shadow_offset_y     = 4
+show_running        = true
+auto_hide           = false
+reserve_space       = false
+active_scale        = 1.0
+inactive_scale      = 0.85
+active_opacity      = 1.0
+inactive_opacity    = 0.85
+show_instance_count = true
+active_monitor_only = false
+pinned              = []            # e.g. ["firefox", "code", "kitty"]
+
+# ── Desktop Widgets ───────────────────────────────────────────────────────────
+
+[desktop_widgets]
+enabled = false
+
+# ── Wallpaper ─────────────────────────────────────────────────────────────────
+
+[wallpaper]
+enabled             = true
+fill_mode           = "crop"        # center | crop | fit | stretch | repeat
+transition          = ["fade", "wipe", "disc", "stripes", "zoom", "honeycomb"]
+transition_duration = 1500          # milliseconds
+edge_smoothness     = 0.3
+directory           = "~/Pictures/Wallpapers"
+
+# ── Overview ──────────────────────────────────────────────────────────────────
+
+[overview]
+enabled                = false
+unload_when_not_in_use = true
+blur_intensity         = 0.5        # 0.0 = no blur, 1.0 = maximum
+tint_intensity         = 0.3        # 0.0 = no tint, 1.0 = opaque
+
+# ── Theme ─────────────────────────────────────────────────────────────────────
+
+[theme]
+mode   = "dark"                     # dark | light | auto
+source = "builtin"                  # builtin | wallpaper | community
+builtin = "Noctalia"                # Ayu | Catppuccin | Dracula | Eldritch | Gruvbox |
+                                    # Kanagawa | Noctalia | Nord | Rosé Pine | Tokyo-Night
+# community_palette = "Noctalia"    # fetched from api.noctalia.dev, cached locally
+# wallpaper_scheme  = "m3-content"  # m3-tonal-spot | m3-content | m3-fruit-salad |
+                                    # m3-rainbow | m3-monochrome | vibrant | faithful |
+                                    # dysfunctional | muted
+
+[theme.templates]
+enable_builtins       = true
+builtin_ids           = []          # opt-in; list ids with: noctalia theme --list-builtins
+enable_user_templates = false
+user_config           = "~/.config/noctalia/user-templates.toml"
+
+# ── Audio ─────────────────────────────────────────────────────────────────────
+
+[audio]
+enable_overdrive = false            # allow volume above 100% (up to 150%)
+
+# ── Brightness ────────────────────────────────────────────────────────────────
+
+[brightness]
+enable_ddcutil = false
+# ignore_mmids = []                 # skip these monitors from ddcutil; run: ddcutil --verbose detect
+
+# Per-monitor backend override:
+# [brightness.monitor.eDP-1]
+# backend = "backlight"             # auto | none | backlight | ddcutil
+# [brightness.monitor.DP-1]
+# backend = "ddcutil"
+
+# ── Night Light ───────────────────────────────────────────────────────────────
+
+[nightlight]
+enabled              = false
+force                = false
+use_weather_location = true
+temperature_day      = 6500         # Kelvin
+temperature_night    = 4000         # Kelvin
+# start_time = "20:30"              # HH:MM — explicit schedule takes priority over geolocation
+# stop_time  = "07:30"
+# latitude   = 52.5200
+# longitude  = 13.4050
+
+# ── Weather ───────────────────────────────────────────────────────────────────
+
+[weather]
+enabled         = false
+auto_locate     = false             # resolve location from IP when true
+address         = "Toronto, ON"     # geocoded when auto_locate = false
+refresh_minutes = 30
+unit            = "celsius"         # celsius | fahrenheit
+
+# ── Idle ──────────────────────────────────────────────────────────────────────
+
+[idle.behavior.lock]
+timeout = 660
+command = "noctalia:lock"
+enabled = false
+
+# [idle.behavior.screen-off]
+# timeout = 32
+# command = "noctalia:dpms-off"
+
+# ── Notifications ─────────────────────────────────────────────────────────────
+
+[notification]
+background_opacity = 0.97
+background_blur    = true
+
+# ── OSD ───────────────────────────────────────────────────────────────────────
+
+[osd]
+position = "top_right"              # top_right | top_left | top_center | bottom_right | bottom_left | bottom_center
+
+# ── Shell ─────────────────────────────────────────────────────────────────────
+
+[shell]
+ui_scale             = 1.0
+font_family          = "sans-serif"
+notifications_dbus   = true
+polkit_agent         = false
+password_style       = "default"    # default | random
+clipboard_auto_paste = "auto"       # off | auto | ctrl_v | ctrl_shift_v | shift_insert
+# avatar_path        = "~/Pictures/avatar.png"
+# lang               = "en"
+
+[shell.animation]
+enabled = true
+speed   = 1.0                       # 0.5 = 2× slower, 2.0 = 2× faster
+
+# ── Keybinds ──────────────────────────────────────────────────────────────────
+
+[keybinds]
+validate = ["return", "kp_enter"]
+cancel   = ["escape"]
+left     = ["left"]
+right    = ["right"]
+up       = ["up"]
+down     = ["down"]
+
+# ── Hooks ─────────────────────────────────────────────────────────────────────
+
+[hooks]
+battery_low_percent_threshold = 0   # set to e.g. 15 to enable battery_under_threshold hook
+
+# started           = "notify-send 'Noctalia' 'Shell started'"
+# wallpaper_changed = []
+# colors_changed    = []
+# session_locked    = []
+# session_unlocked  = []
+# logging_out       = []
+# rebooting         = []
+# shutting_down     = []
+# wifi_enabled      = []
+# wifi_disabled     = []
+# bluetooth_enabled  = []
+# bluetooth_disabled = []
+# battery_state_changed   = []
+# battery_under_threshold = []
