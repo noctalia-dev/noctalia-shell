@@ -27,7 +27,8 @@ namespace {
 
 } // namespace
 
-DesktopClockWidget::DesktopClockWidget(const TimeService& timeService, std::string format, ThemeColor color, bool shadow)
+DesktopClockWidget::DesktopClockWidget(const TimeService& timeService, std::string format, ThemeColor color,
+                                       bool shadow)
     : m_timeService(timeService), m_format(std::move(format)), m_color(std::move(color)), m_shadow(shadow),
       m_showsSeconds(formatShowsSeconds(m_format)) {}
 

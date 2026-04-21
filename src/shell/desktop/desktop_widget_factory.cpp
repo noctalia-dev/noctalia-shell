@@ -82,8 +82,7 @@ namespace {
   constexpr float kDefaultBgRadius = 12.0f;
   constexpr float kDefaultBgPadding = 10.0f;
 
-  void applyCommonSettings(DesktopWidget& widget,
-                           const std::unordered_map<std::string, WidgetSettingValue>& settings) {
+  void applyCommonSettings(DesktopWidget& widget, const std::unordered_map<std::string, WidgetSettingValue>& settings) {
     if (getBoolSetting(settings, "background", false)) {
       const ThemeColor bgColor =
           getThemeColorSetting(settings, "background_color", roleColor(ColorRole::Surface, 0.8f));
@@ -109,10 +108,10 @@ DesktopWidgetFactory::create(const std::string& type,
       kLog.warn("desktop widget factory: clock requires TimeService");
       return nullptr;
     }
-    auto widget = std::make_unique<DesktopClockWidget>(
-        *m_timeService, getStringSetting(settings, "format", "{:%H:%M}"),
-        getThemeColorSetting(settings, "color", roleColor(ColorRole::OnSurface)),
-        getBoolSetting(settings, "shadow", true));
+    auto widget =
+        std::make_unique<DesktopClockWidget>(*m_timeService, getStringSetting(settings, "format", "{:%H:%M}"),
+                                             getThemeColorSetting(settings, "color", roleColor(ColorRole::OnSurface)),
+                                             getBoolSetting(settings, "shadow", true));
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);
     return widget;
