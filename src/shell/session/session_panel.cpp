@@ -38,14 +38,14 @@ namespace {
   }};
 
   bool doLogout() {
-    if (process::launchDetached({"systemctl", "--user", "stop", "graphical-session.target"})) {
+    if (process::runAsync({"systemctl", "--user", "stop", "graphical-session.target"})) {
       return true;
     }
     if (const char* sessionId = std::getenv("XDG_SESSION_ID"); sessionId != nullptr && sessionId[0] != '\0') {
-      return process::launchDetached({"loginctl", "terminate-session", sessionId});
+      return process::runAsync({"loginctl", "terminate-session", sessionId});
     }
     if (const char* user = std::getenv("USER"); user != nullptr && user[0] != '\0') {
-      return process::launchDetached({"loginctl", "terminate-user", user});
+      return process::runAsync({"loginctl", "terminate-user", user});
     }
     return false;
   }

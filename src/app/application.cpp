@@ -914,7 +914,7 @@ bool Application::runUserCommand(const std::string& command) {
     return true;
   }
 
-  if (!process::launchShellCommand(command)) {
+  if (!process::runAsync(command)) {
     kLog.warn("command failed to launch: {}", command);
     return false;
   }

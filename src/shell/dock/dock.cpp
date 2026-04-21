@@ -1235,7 +1235,7 @@ void Dock::launchEntry(const DesktopEntry& entry) {
     cmd.pop_back();
   }
   kLog.info("launching: {}", cmd);
-  (void)process::launchShellCommand(cmd);
+  (void)process::runAsync(cmd);
 }
 
 // ── Private: click handling ───────────────────────────────────────────────────
@@ -1590,7 +1590,7 @@ void Dock::launchAction(const DesktopAction& action) {
     cmd.pop_back();
   }
   kLog.info("launching action: {}", cmd);
-  (void)process::launchShellCommand(cmd);
+  (void)process::runAsync(cmd);
 }
 
 void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {

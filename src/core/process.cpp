@@ -81,14 +81,14 @@ namespace process {
     return false;
   }
 
-  bool launchDetached(const std::vector<std::string>& args) {
+  bool runAsync(const std::vector<std::string>& args) {
     if (args.empty() || args.front().empty()) {
       return false;
     }
     return forkExecDetached(args) > 0;
   }
 
-  bool launchDetached(std::initializer_list<const char*> args) {
+  bool runAsync(std::initializer_list<const char*> args) {
     std::vector<std::string> command;
     command.reserve(args.size());
     for (const char* arg : args) {
@@ -97,7 +97,14 @@ namespace process {
       }
       command.emplace_back(arg);
     }
-    return launchDetached(command);
+    return runAsync(command);
+  }
+
+  bool runAsync(const std::string& command) {
+    if (command.empty()) {
+      return false;
+    }
+    return runAsync(std::vector<std::string>{"/bin/sh", "-lc", command});
   }
 
   std::optional<int> launchDetachedTracked(const std::vector<std::string>& args) {
@@ -129,7 +136,6 @@ namespace process {
     }
     const pid_t p = static_cast<pid_t>(pid);
     ::kill(p, SIGTERM);
-    // Single non-blocking check; if still running after SIGTERM, escalate to SIGKILL.
     int status = 0;
     if (::waitpid(p, &status, WNOHANG) != p) {
       ::kill(p, SIGKILL);
@@ -166,11 +172,11 @@ namespace process {
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
   }
 
-  bool launchShellCommand(const std::string& command) {
+  bool runSync(const std::string& command) {
     if (command.empty()) {
       return false;
     }
-    return launchDetached({"/bin/sh", "-lc", command.c_str()});
+    return runSync(std::vector<std::string>{"/bin/sh", "-lc", command});
   }
 
   bool launchFirstAvailable(std::initializer_list<std::initializer_list<const char*>> commandVariants) {
@@ -182,7 +188,7 @@ namespace process {
       if (!commandExists(executable)) {
         continue;
       }
-      if (launchDetached(variant)) {
+      if (runAsync(variant)) {
         return true;
       }
     }

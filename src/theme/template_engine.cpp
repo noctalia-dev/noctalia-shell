@@ -1273,7 +1273,7 @@ namespace noctalia::theme {
         if (!hook.empty()) {
           const auto hookRendered = EngineImpl(m_themeData, renderOptions).render(hook);
           if (hookRendered.errorCount == 0 && !hookRendered.text.empty()) [[maybe_unused]]
-            const bool hookOk = process::runSync(std::vector<std::string>{"/bin/sh", "-lc", hookRendered.text});
+            const bool hookOk = process::runSync(hookRendered.text);
         }
       };
 

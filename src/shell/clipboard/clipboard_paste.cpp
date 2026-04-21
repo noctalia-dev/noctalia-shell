@@ -60,7 +60,7 @@ namespace clipboard_paste {
     }
 
     const auto args = wtypeArgsFor(mode, isImage);
-    if (!args.empty() && process::launchDetached(args)) {
+    if (!args.empty() && process::runAsync(args)) {
       return true;
     }
 

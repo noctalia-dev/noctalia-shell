@@ -459,7 +459,7 @@ void KeyboardLayoutWidget::cycleLayout() {
 
   bool cycled = false;
   if (!m_cycleCommand.empty()) {
-    cycled = process::runSync({"/bin/sh", "-lc", m_cycleCommand});
+    cycled = process::runSync(m_cycleCommand);
     if (!cycled) {
       kLog.warn("keyboard_layout: cycle command failed");
       return;
