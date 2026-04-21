@@ -103,7 +103,6 @@ void GlyphProgram::bindCommon(GLuint texture, float surfaceWidth, float surfaceH
       u0, v0, u1, v0, u0, v1, u0, v1, u1, v0, u1, v1,
   };
 
-  glUseProgram(m_program.id());
   glUniform2f(m_surfaceSizeLocation, surfaceWidth, surfaceHeight);
   glUniform2f(m_rectLocation, width, height);
   glUniform1f(m_opacityLocation, opacity);
