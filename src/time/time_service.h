@@ -22,6 +22,8 @@ public:
   using SecondPoint = std::chrono::time_point<Clock, std::chrono::seconds>;
   using TickCallback = std::function<void()>;
 
+  TimeService();
+
   void setTickSecondCallback(TickCallback callback);
   [[nodiscard]] int pollTimeoutMs() const;
   void tick();

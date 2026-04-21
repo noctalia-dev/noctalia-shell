@@ -61,6 +61,12 @@ std::string formatDuration(std::chrono::seconds duration) {
   return "<1m";
 }
 
+TimeService::TimeService() {
+  using namespace std::chrono;
+  m_now = system_clock::now();
+  m_nowSeconds = floor<seconds>(m_now);
+}
+
 void TimeService::setTickSecondCallback(TickCallback callback) { m_secondCallback = std::move(callback); }
 
 int TimeService::pollTimeoutMs() const {
