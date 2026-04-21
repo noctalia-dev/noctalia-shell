@@ -200,7 +200,7 @@ void main() {
 }
 )";
 
-  // --- Rain effect (procedural streaks, no texture sampling) ---
+  // --- Rain effect (atmospheric haze + discrete falling drops) ---
   constexpr char kRainFragment[] = R"(
 float rain_hash(vec2 p) {
     p = fract(p * vec2(443.897, 441.423));
@@ -208,51 +208,92 @@ float rain_hash(vec2 p) {
     return fract(p.x * p.y);
 }
 
+float rain_noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = rain_hash(i);
+    float b = rain_hash(i + vec2(1.0, 0.0));
+    float c = rain_hash(i + vec2(0.0, 1.0));
+    float d = rain_hash(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float rainLayer(vec2 uv, float columns, float rows, float speed, float dropLen, float tilt, float iTime, float seed) {
+    float x = uv.x + uv.y * tilt;
+    float y = uv.y - iTime * speed;
+
+    float col = x * columns;
+    float colId = floor(col);
+    float colFrac = fract(col);
+
+    float row = y * rows;
+
+    float streaks = 0.0;
+
+    for (int dc = -1; dc <= 1; dc++) {
+        float cId = colId + float(dc);
+
+        float rnd = rain_hash(vec2(cId, seed));
+        if (rnd < 0.55) continue;
+
+        float xPos = rain_hash(vec2(cId * 1.73, seed + 7.0)) * 0.4 + 0.3;
+        float px = colFrac - (float(dc) + xPos);
+
+        float width = 0.02 + rnd * 0.015;
+        float xFade = exp(-0.5 * (px * px) / (width * width));
+
+        // Per-column phase offset so drops don't align across columns
+        float phase = rain_hash(vec2(cId, seed + 3.0));
+        float dropY = fract(row + phase);
+
+        // Drop: visible from 0 to dropLen, gap from dropLen to 1
+        float head = smoothstep(0.0, 0.06, dropY);
+        float tail = smoothstep(dropLen, dropLen - 0.1, dropY);
+        float yFade = head * tail;
+
+        // Brightness tapers toward tail (brighter at head)
+        float taper = 1.0 - dropY / dropLen;
+        taper = clamp(taper, 0.0, 1.0);
+
+        float brightness = (0.4 + rain_hash(vec2(cId, seed + 5.0)) * 0.4) * (0.5 + taper * 0.5);
+        streaks += xFade * yFade * brightness;
+    }
+
+    return streaks;
+}
+
 void main() {
     vec2 uv = v_uv;
     float iTime = u_time * 0.12;
     float aspect = u_item_width / u_item_height;
+    vec2 uvA = vec2(uv.x * aspect, uv.y);
 
-    float rain = 0.0;
+    // Atmospheric haze
+    float n1 = rain_noise(uv * 2.0 + vec2(iTime * 0.02, iTime * 0.015));
+    float n2 = rain_noise(uv * 4.0 - vec2(iTime * 0.03, -iTime * 0.01));
+    float n3 = rain_noise(uv * 8.0 + vec2(-iTime * 0.01, iTime * 0.025));
+    float haze = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;
+    haze = smoothstep(0.25, 0.7, haze) * 0.25;
 
-    for (int layer = 0; layer < 4; layer++) {
-        float layerF = float(layer);
-        float speed = 1.2 + layerF * 0.4;
-        float density = 8.0 + layerF * 6.0;
-        float dropLength = 0.08 - layerF * 0.012;
-        float brightness = 0.6 - layerF * 0.1;
+    // 3 rain layers: columns, rows (drops per unit height), speed, dropLen (0-1 fraction visible), tilt
+    float tilt = 0.07;
+    float r1 = rainLayer(uvA, 40.0, 3.5, 2.4, 0.35, tilt,          iTime, 0.0);
+    float r2 = rainLayer(uvA, 25.0, 2.5, 1.7, 0.40, tilt * 0.7,    iTime, 100.0);
+    float r3 = rainLayer(uvA, 14.0, 1.8, 1.1, 0.50, tilt * 0.4,    iTime, 200.0);
 
-        vec2 st = vec2(uv.x * aspect * density, uv.y * density);
-        st.y -= iTime * speed * density;
-        st.x += sin(iTime * 0.3 + layerF) * 0.5;
-
-        vec2 cellId = floor(st);
-        vec2 cellUv = fract(st);
-
-        float rnd = rain_hash(cellId + layerF * 100.0);
-        if (rnd > 0.7) {
-            float xPos = rain_hash(cellId + vec2(layerF * 7.0, 33.0)) * 0.6 + 0.2;
-            float dx = abs(cellUv.x - xPos);
-            float streakWidth = 0.015 + rnd * 0.01;
-            float xMask = smoothstep(streakWidth, streakWidth * 0.3, dx);
-
-            float yStart = rain_hash(cellId + vec2(55.0, layerF * 13.0));
-            float yEnd = yStart + dropLength * (density * 0.5);
-            float yMask = smoothstep(yStart - 0.02, yStart, cellUv.y) *
-                          (1.0 - smoothstep(yEnd, yEnd + 0.02, cellUv.y));
-
-            rain += xMask * yMask * brightness;
-        }
-    }
-
+    float rain = r1 * 0.3 + r2 * 0.4 + r3 * 0.55;
     rain = clamp(rain, 0.0, 1.0);
-    vec3 rainTint = vec3(0.85, 0.9, 1.0);
-    vec3 blended = mix(u_bg_color.rgb, rainTint, rain * 0.5);
-    float blendedAlpha = mix(1.0, 1.0, rain);
+
+    // Compose: background → haze → rain
+    vec3 hazeColor = vec3(0.82, 0.85, 0.9);
+    vec3 col = mix(u_bg_color.rgb, hazeColor, haze);
+
+    vec3 rainTint = vec3(0.88, 0.91, 1.0);
+    vec3 resultRGB = mix(col, rainTint, rain * 0.45);
 
     float mask = cornerMask();
-    float finalAlpha = blendedAlpha * mask;
-    gl_FragColor = vec4(blended * finalAlpha, finalAlpha);
+    gl_FragColor = vec4(resultRGB * mask, mask);
 }
 )";
 
