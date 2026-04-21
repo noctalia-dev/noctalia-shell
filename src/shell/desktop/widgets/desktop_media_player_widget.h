@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shell/desktop/desktop_widget.h"
+#include "ui/palette.h"
 
 #include <string>
 #include <unordered_set>
@@ -14,7 +15,7 @@ class MprisService;
 
 class DesktopMediaPlayerWidget : public DesktopWidget {
 public:
-  DesktopMediaPlayerWidget(MprisService* mpris, HttpClient* httpClient, bool vertical);
+  DesktopMediaPlayerWidget(MprisService* mpris, HttpClient* httpClient, bool vertical, ThemeColor color, bool shadow);
 
   void create() override;
   [[nodiscard]] bool wantsSecondTicks() const override { return true; }
@@ -27,10 +28,13 @@ private:
   void layoutButtons(Renderer& renderer, float scale);
   void sync(Renderer& renderer);
   [[nodiscard]] std::string resolveArtworkPath() const;
+  void applyShadow();
 
   MprisService* m_mpris;
   HttpClient* m_httpClient;
   bool m_vertical;
+  ThemeColor m_color;
+  bool m_shadow;
 
   Image* m_artwork = nullptr;
   Label* m_title = nullptr;

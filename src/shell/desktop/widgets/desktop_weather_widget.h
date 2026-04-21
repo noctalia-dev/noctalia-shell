@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shell/desktop/desktop_widget.h"
+#include "ui/palette.h"
 
 #include <string>
 
@@ -10,7 +11,7 @@ class WeatherService;
 
 class DesktopWeatherWidget : public DesktopWidget {
 public:
-  explicit DesktopWeatherWidget(const WeatherService* weather);
+  DesktopWeatherWidget(const WeatherService* weather, ThemeColor color, bool shadow);
 
   void create() override;
 
@@ -18,8 +19,11 @@ private:
   void doLayout(Renderer& renderer) override;
   void doUpdate(Renderer& renderer) override;
   void sync(Renderer& renderer);
+  void applyShadow();
 
   const WeatherService* m_weather = nullptr;
+  ThemeColor m_color;
+  bool m_shadow;
 
   Glyph* m_glyph = nullptr;
   Label* m_temperature = nullptr;

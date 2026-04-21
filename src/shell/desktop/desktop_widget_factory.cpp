@@ -95,8 +95,10 @@ DesktopWidgetFactory::create(const std::string& type,
       kLog.warn("desktop widget factory: clock requires TimeService");
       return nullptr;
     }
-    auto widget =
-        std::make_unique<DesktopClockWidget>(*m_timeService, getStringSetting(settings, "format", "{:%H:%M}"));
+    auto widget = std::make_unique<DesktopClockWidget>(
+        *m_timeService, getStringSetting(settings, "format", "{:%H:%M}"),
+        getThemeColorSetting(settings, "color", roleColor(ColorRole::OnSurface)),
+        getBoolSetting(settings, "shadow", true));
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -126,7 +128,9 @@ DesktopWidgetFactory::create(const std::string& type,
       kLog.warn("desktop widget factory: weather requires WeatherService");
       return nullptr;
     }
-    auto widget = std::make_unique<DesktopWeatherWidget>(m_weather);
+    auto widget = std::make_unique<DesktopWeatherWidget>(
+        m_weather, getThemeColorSetting(settings, "color", roleColor(ColorRole::OnSurface)),
+        getBoolSetting(settings, "shadow", true));
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -137,7 +141,9 @@ DesktopWidgetFactory::create(const std::string& type,
       return nullptr;
     }
     const bool vertical = getStringSetting(settings, "layout", "horizontal") == "vertical";
-    auto widget = std::make_unique<DesktopMediaPlayerWidget>(m_mpris, m_httpClient, vertical);
+    auto widget = std::make_unique<DesktopMediaPlayerWidget>(
+        m_mpris, m_httpClient, vertical, getThemeColorSetting(settings, "color", roleColor(ColorRole::OnSurface)),
+        getBoolSetting(settings, "shadow", true));
     widget->setContentScale(contentScale);
     return widget;
   }

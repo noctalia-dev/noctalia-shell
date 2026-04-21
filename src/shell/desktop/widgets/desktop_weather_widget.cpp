@@ -23,7 +23,15 @@ namespace {
 
 } // namespace
 
-DesktopWeatherWidget::DesktopWeatherWidget(const WeatherService* weather) : m_weather(weather) {}
+namespace {
+
+  constexpr float kShadowAlpha = 0.6f;
+  constexpr float kShadowOffset = 1.5f;
+
+} // namespace
+
+DesktopWeatherWidget::DesktopWeatherWidget(const WeatherService* weather, ThemeColor color, bool shadow)
+    : m_weather(weather), m_color(std::move(color)), m_shadow(shadow) {}
 
 void DesktopWeatherWidget::create() {
   auto rootNode = std::make_unique<Node>();
@@ -31,7 +39,7 @@ void DesktopWeatherWidget::create() {
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("weather-cloud");
   glyph->setGlyphSize(glyphFontSize(contentScale()));
-  glyph->setColor(roleColor(ColorRole::OnSurface));
+  glyph->setColor(m_color);
   m_glyph = glyph.get();
   rootNode->addChild(std::move(glyph));
 
@@ -40,7 +48,7 @@ void DesktopWeatherWidget::create() {
   temperature->setTextAlign(TextAlign::Start);
   temperature->setStableBaseline(true);
   temperature->setFontSize(temperatureFontSize(contentScale()));
-  temperature->setColor(roleColor(ColorRole::OnSurface));
+  temperature->setColor(m_color);
   m_temperature = temperature.get();
   rootNode->addChild(std::move(temperature));
 
@@ -48,11 +56,12 @@ void DesktopWeatherWidget::create() {
   condition->setTextAlign(TextAlign::Start);
   condition->setStableBaseline(true);
   condition->setFontSize(conditionFontSize(contentScale()));
-  condition->setColor(roleColor(ColorRole::OnSurface));
+  condition->setColor(m_color);
   m_condition = condition.get();
   rootNode->addChild(std::move(condition));
 
   setRoot(std::move(rootNode));
+  applyShadow();
 }
 
 void DesktopWeatherWidget::doLayout(Renderer& renderer) {
@@ -63,6 +72,7 @@ void DesktopWeatherWidget::doLayout(Renderer& renderer) {
   m_temperature->setFontSize(temperatureFontSize(contentScale()));
   m_condition->setFontSize(conditionFontSize(contentScale()));
   m_glyph->setGlyphSize(glyphFontSize(contentScale()));
+  applyShadow();
 
   sync(renderer);
 
@@ -99,6 +109,23 @@ void DesktopWeatherWidget::doLayout(Renderer& renderer) {
 }
 
 void DesktopWeatherWidget::doUpdate(Renderer& renderer) { sync(renderer); }
+
+void DesktopWeatherWidget::applyShadow() {
+  if (m_glyph == nullptr || m_temperature == nullptr || m_condition == nullptr) {
+    return;
+  }
+  if (m_shadow) {
+    const float offset = kShadowOffset * contentScale();
+    const Color shadow(0.0f, 0.0f, 0.0f, kShadowAlpha);
+    m_glyph->setShadow(shadow, offset, offset);
+    m_temperature->setShadow(shadow, offset, offset);
+    m_condition->setShadow(shadow, offset, offset);
+  } else {
+    m_glyph->clearShadow();
+    m_temperature->clearShadow();
+    m_condition->clearShadow();
+  }
+}
 
 void DesktopWeatherWidget::sync(Renderer& renderer) {
   if (m_glyph == nullptr || m_temperature == nullptr || m_condition == nullptr) {

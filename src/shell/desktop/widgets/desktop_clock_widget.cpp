@@ -20,8 +20,16 @@ namespace {
 
 } // namespace
 
-DesktopClockWidget::DesktopClockWidget(const TimeService& timeService, std::string format)
-    : m_timeService(timeService), m_format(std::move(format)), m_showsSeconds(formatShowsSeconds(m_format)) {}
+namespace {
+
+  constexpr float kShadowAlpha = 0.6f;
+  constexpr float kShadowOffset = 1.5f;
+
+} // namespace
+
+DesktopClockWidget::DesktopClockWidget(const TimeService& timeService, std::string format, ThemeColor color, bool shadow)
+    : m_timeService(timeService), m_format(std::move(format)), m_color(std::move(color)), m_shadow(shadow),
+      m_showsSeconds(formatShowsSeconds(m_format)) {}
 
 void DesktopClockWidget::create() {
   auto rootNode = std::make_unique<Node>();
@@ -30,12 +38,13 @@ void DesktopClockWidget::create() {
   label->setBold(true);
   label->setTextAlign(TextAlign::Center);
   label->setStableBaseline(true);
-  label->setColor(roleColor(ColorRole::OnSurface));
+  label->setColor(m_color);
   label->setFontSize(clockFontSize(contentScale()));
   m_label = label.get();
 
   rootNode->addChild(std::move(label));
   setRoot(std::move(rootNode));
+  applyShadow();
 }
 
 bool DesktopClockWidget::wantsSecondTicks() const { return m_showsSeconds; }
@@ -48,6 +57,7 @@ void DesktopClockWidget::doLayout(Renderer& renderer) {
   }
 
   m_label->setFontSize(clockFontSize(contentScale()));
+  applyShadow();
   update(renderer);
   m_label->measure(renderer);
   m_label->setPosition(0.0f, 0.0f);
@@ -68,4 +78,16 @@ void DesktopClockWidget::doUpdate(Renderer& renderer) {
   m_lastText = text;
   m_label->setText(m_lastText);
   m_label->measure(renderer);
+}
+
+void DesktopClockWidget::applyShadow() {
+  if (m_label == nullptr) {
+    return;
+  }
+  if (m_shadow) {
+    const float offset = kShadowOffset * contentScale();
+    m_label->setShadow(Color(0.0f, 0.0f, 0.0f, kShadowAlpha), offset, offset);
+  } else {
+    m_label->clearShadow();
+  }
 }

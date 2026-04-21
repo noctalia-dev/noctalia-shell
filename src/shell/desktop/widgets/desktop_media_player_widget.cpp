@@ -26,8 +26,16 @@ namespace {
 
 } // namespace
 
-DesktopMediaPlayerWidget::DesktopMediaPlayerWidget(MprisService* mpris, HttpClient* httpClient, bool vertical)
-    : m_mpris(mpris), m_httpClient(httpClient), m_vertical(vertical) {}
+namespace {
+
+  constexpr float kShadowAlpha = 0.6f;
+  constexpr float kShadowOffset = 1.5f;
+
+} // namespace
+
+DesktopMediaPlayerWidget::DesktopMediaPlayerWidget(MprisService* mpris, HttpClient* httpClient, bool vertical,
+                                                   ThemeColor color, bool shadow)
+    : m_mpris(mpris), m_httpClient(httpClient), m_vertical(vertical), m_color(std::move(color)), m_shadow(shadow) {}
 
 void DesktopMediaPlayerWidget::create() {
   auto rootNode = std::make_unique<Node>();
@@ -42,13 +50,13 @@ void DesktopMediaPlayerWidget::create() {
   auto title = std::make_unique<Label>();
   title->setBold(true);
   title->setMaxLines(1);
-  title->setColor(roleColor(ColorRole::OnSurface));
+  title->setColor(m_color);
   m_title = title.get();
   rootNode->addChild(std::move(title));
 
   auto artist = std::make_unique<Label>();
   artist->setMaxLines(1);
-  artist->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  artist->setColor(m_color);
   m_artist = artist.get();
   rootNode->addChild(std::move(artist));
 
@@ -96,6 +104,7 @@ void DesktopMediaPlayerWidget::create() {
 
   rootNode->addChild(std::move(controls));
   setRoot(std::move(rootNode));
+  applyShadow();
 }
 
 void DesktopMediaPlayerWidget::doLayout(Renderer& renderer) {
@@ -103,6 +112,7 @@ void DesktopMediaPlayerWidget::doLayout(Renderer& renderer) {
     return;
 
   sync(renderer);
+  applyShadow();
 
   const float scale = contentScale();
   if (m_vertical) {
@@ -295,3 +305,18 @@ void DesktopMediaPlayerWidget::sync(Renderer& renderer) {
 }
 
 std::string DesktopMediaPlayerWidget::resolveArtworkPath() const { return normalizeArtPath(m_lastArtUrl); }
+
+void DesktopMediaPlayerWidget::applyShadow() {
+  if (m_title == nullptr || m_artist == nullptr) {
+    return;
+  }
+  if (m_shadow) {
+    const float offset = kShadowOffset * contentScale();
+    const Color shadow(0.0f, 0.0f, 0.0f, kShadowAlpha);
+    m_title->setShadow(shadow, offset, offset);
+    m_artist->setShadow(shadow, offset, offset);
+  } else {
+    m_title->clearShadow();
+    m_artist->clearShadow();
+  }
+}
