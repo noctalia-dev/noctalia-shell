@@ -13,6 +13,8 @@ Item {
   implicitWidth: size
   implicitHeight: size
 
+  onColorChanged: canvas.requestPaint()
+
   // GPU-optimized spinner - draw once, rotate with GPU transform
   Item {
     id: spinner
