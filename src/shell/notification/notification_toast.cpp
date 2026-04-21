@@ -5,6 +5,7 @@
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "net/http_client.h"
+#include "net/uri.h"
 #include "notification/notification_manager.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
@@ -302,58 +303,9 @@ namespace {
     bodyLabel.setSize(bodyLabel.width(), std::max(1.0f, std::floor(maxBodyHeight)));
   }
 
-  bool isRemoteIconUrl(std::string_view url) { return url.starts_with("http://") || url.starts_with("https://"); }
+  bool isRemoteIconUrl(std::string_view url) { return uri::isRemoteUrl(url); }
 
-  std::string decodeUriComponent(std::string_view text) {
-    std::string decoded;
-    decoded.reserve(text.size());
-
-    auto hexValue = [](char c) -> int {
-      if (c >= '0' && c <= '9') {
-        return c - '0';
-      }
-      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-      if (c >= 'a' && c <= 'f') {
-        return 10 + (c - 'a');
-      }
-      return -1;
-    };
-
-    for (std::size_t i = 0; i < text.size(); ++i) {
-      if (text[i] == '%' && i + 2 < text.size()) {
-        const int hi = hexValue(text[i + 1]);
-        const int lo = hexValue(text[i + 2]);
-        if (hi >= 0 && lo >= 0) {
-          decoded.push_back(static_cast<char>((hi << 4) | lo));
-          i += 2;
-          continue;
-        }
-      }
-      decoded.push_back(text[i]);
-    }
-
-    return decoded;
-  }
-
-  std::string normalizeLocalIconPath(std::string_view iconValue) {
-    if (iconValue.empty()) {
-      return {};
-    }
-
-    std::string path(iconValue);
-    constexpr std::string_view prefix = "file://";
-    if (path.starts_with(prefix)) {
-      path.erase(0, prefix.size());
-      if (path.starts_with("localhost/")) {
-        path.erase(0, std::string_view("localhost").size());
-      } else if (!path.empty() && path.front() != '/') {
-        const auto firstSlash = path.find('/');
-        path = firstSlash == std::string::npos ? std::string{} : path.substr(firstSlash);
-      }
-    }
-
-    return decodeUriComponent(path);
-  }
+  std::string normalizeLocalIconPath(std::string_view iconValue) { return uri::normalizeFileUrl(iconValue); }
 
   std::filesystem::path remoteIconCachePath(std::string_view url) {
     const std::filesystem::path cacheDir = std::filesystem::path("/tmp") / "noctalia-notification-icons";
