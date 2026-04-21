@@ -11,6 +11,7 @@
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
 #include "system/desktop_entry.h"
+#include "system/internal_app_metadata.h"
 #include "ui/controls/box.h"
 #include "ui/controls/context_menu.h"
 #include "ui/controls/flex.h"
@@ -77,6 +78,20 @@ namespace {
       return toLower(active->appId);
     }
     return {};
+  }
+
+  DesktopEntry makeSyntheticRunningEntry(const std::string& runningAppId, const std::string& runningAppIdLower) {
+    DesktopEntry fallback;
+    fallback.id = runningAppId;
+    fallback.name = runningAppId;
+    fallback.nameLower = runningAppIdLower;
+    if (const auto internal = internal_apps::metadataForAppId(runningAppId); internal.has_value()) {
+      fallback.name = internal->displayName;
+      fallback.nameLower = toLower(fallback.name);
+      fallback.icon = internal->iconPath;
+    }
+
+    return fallback;
   }
 
   wl_output* currentDockFilterOutput(const DockConfig& cfg, wl_output* instanceOutput) {
@@ -246,13 +261,18 @@ void Dock::refresh() {
             }
           }
           if (!present) {
+            bool added = false;
             for (const auto& de : allEntries) {
               if (de.hidden || de.noDisplay)
                 continue;
               if (toLower(de.startupWmClass) == runLower || de.nameLower == runLower || toLower(de.id) == runLower) {
                 entries.push_back(de);
+                added = true;
                 break;
               }
+            }
+            if (!added) {
+              entries.push_back(makeSyntheticRunningEntry(runId, runLower));
             }
           }
         }
@@ -965,13 +985,18 @@ void Dock::rebuildItems(DockInstance& instance) {
         continue;
 
       // Find desktop entry.
+      bool foundDesktopEntry = false;
       for (const auto& de : allEntries) {
         if (de.hidden || de.noDisplay)
           continue;
         if (toLower(de.startupWmClass) == runLower || de.nameLower == runLower || toLower(de.id) == runLower) {
           itemEntries.push_back(de);
+          foundDesktopEntry = true;
           break;
         }
+      }
+      if (!foundDesktopEntry) {
+        itemEntries.push_back(makeSyntheticRunningEntry(runId, runLower));
       }
     }
   }

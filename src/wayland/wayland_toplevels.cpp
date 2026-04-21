@@ -1,5 +1,6 @@
 #include "wayland/wayland_toplevels.h"
 
+#include "system/internal_app_metadata.h"
 #include "wlr-foreign-toplevel-management-unstable-v1-client-protocol.h"
 
 #include <algorithm>
@@ -61,6 +62,16 @@ namespace {
       .closed = handleClosed,
       .parent = handleParent,
   };
+
+  std::string effectiveAppId(const std::string& appId, const std::string& title) {
+    if (!appId.empty()) {
+      return appId;
+    }
+    if (const auto* app = internal_apps::appDefinitionForWindowTitle(title); app != nullptr) {
+      return std::string(app->appId);
+    }
+    return {};
+  }
 
 } // namespace
 
@@ -209,8 +220,9 @@ std::vector<std::string> WaylandToplevels::allAppIds(wl_output* outputFilter) co
     if (outputFilter != nullptr && state.output != outputFilter) {
       continue;
     }
-    if (!state.appId.empty()) {
-      ids.push_back(state.appId);
+    const auto appId = effectiveAppId(state.appId, state.title);
+    if (!appId.empty()) {
+      ids.push_back(appId);
     }
   }
   return ids;
@@ -223,10 +235,11 @@ std::vector<ToplevelInfo> WaylandToplevels::windowsForApp(const std::string& idL
     if (outputFilter != nullptr && state.output != outputFilter) {
       continue;
     }
-    if (state.appId.empty())
+    const auto appId = effectiveAppId(state.appId, state.title);
+    if (appId.empty())
       continue;
     const auto appLower = [&] {
-      std::string s = state.appId;
+      std::string s = appId;
       for (auto& c : s)
         c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
       return s;
@@ -234,7 +247,7 @@ std::vector<ToplevelInfo> WaylandToplevels::windowsForApp(const std::string& idL
     if (appLower == idLower || (!wmClassLower.empty() && appLower == wmClassLower)) {
       out.push_back(ToplevelInfo{
           .title = state.title,
-          .appId = state.appId,
+          .appId = appId,
           .handle = handle,
       });
     }

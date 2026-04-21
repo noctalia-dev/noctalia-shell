@@ -63,7 +63,7 @@ void SettingsWindow::open() {
       .width = std::max<std::uint32_t>(1, w),
       .height = std::max<std::uint32_t>(1, h),
       .title = "Noctalia Settings",
-      .appId = "dev.noctalia.Noctalia",
+      .appId = "dev.noctalia.Noctalia.Settings",
   };
 
   if (!surface->initialize(output, cfg)) {

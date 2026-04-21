@@ -434,6 +434,7 @@ _noctalia_sources = files(
   'src/system/brightness_service.cpp',
   'src/system/distro_info.cpp',
   'src/system/icon_resolver.cpp',
+  'src/system/internal_app_metadata.cpp',
   'src/system/night_light_manager.cpp',
   'src/system/system_monitor_service.cpp',
   'src/system/weather_service.cpp',

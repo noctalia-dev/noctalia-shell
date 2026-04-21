@@ -3,6 +3,7 @@
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
 #include "system/desktop_entry.h"
+#include "system/internal_app_metadata.h"
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -146,6 +147,10 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
 std::string ActiveWindowWidget::resolveIconPath(const std::string& appId) {
   if (appId.empty()) {
     return {};
+  }
+
+  if (const auto internal = internal_apps::metadataForAppId(appId); internal.has_value()) {
+    return internal->iconPath;
   }
 
   auto resolveByName = [this](const std::string& name) -> std::string {
