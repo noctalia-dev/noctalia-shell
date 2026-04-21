@@ -20,6 +20,21 @@ namespace desktop_widgets {
     return std::to_string(output.name);
   }
 
+  inline const WaylandOutput* findOutputByKey(const WaylandConnection& wayland, const std::string& key) {
+    if (key.empty()) {
+      return nullptr;
+    }
+    for (const auto& output : wayland.outputs()) {
+      if (!output.done || output.output == nullptr) {
+        continue;
+      }
+      if (outputKey(output) == key) {
+        return &output;
+      }
+    }
+    return nullptr;
+  }
+
   inline const WaylandOutput* resolveEffectiveOutput(const WaylandConnection& wayland,
                                                      const std::string& requestedOutput) {
     const auto& outputs = wayland.outputs();

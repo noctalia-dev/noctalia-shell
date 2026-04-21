@@ -450,12 +450,18 @@ void DesktopWidgetsController::normalizeSnapshot() {
     }
     seenIds.insert(widget.id);
 
-    const WaylandOutput* output = desktop_widgets::resolveEffectiveOutput(*m_wayland, widget.outputName);
-    if (output == nullptr) {
+    if (widget.outputName.empty()) {
+      const WaylandOutput* output = desktop_widgets::resolveEffectiveOutput(*m_wayland, widget.outputName);
+      if (output != nullptr) {
+        widget.outputName = desktop_widgets::outputKey(*output);
+      }
       continue;
     }
 
-    widget.outputName = desktop_widgets::outputKey(*output);
+    if (const WaylandOutput* exact = desktop_widgets::findOutputByKey(*m_wayland, widget.outputName);
+        exact != nullptr) {
+      widget.outputName = desktop_widgets::outputKey(*exact);
+    }
     // cx/cy clamping is owned by the editor (during drag) and the host (on widget creation and
     // prepareFrame). Both of those paths know the widget's actual intrinsic size; clamping here
     // with an estimate can push widgets that the editor had legitimately placed at the edge.

@@ -123,8 +123,12 @@ void DesktopWidgetsHost::syncInstances() {
       continue;
     }
 
-    const WaylandOutput* output = desktop_widgets::resolveEffectiveOutput(*m_wayland, state.outputName);
+    const WaylandOutput* output = state.outputName.empty()
+                                      ? desktop_widgets::resolveEffectiveOutput(*m_wayland, state.outputName)
+                                      : desktop_widgets::findOutputByKey(*m_wayland, state.outputName);
     if (output == nullptr) {
+      // Explicitly bound widgets are hidden while their target output is unavailable.
+      std::erase_if(m_instances, [&state](const auto& instance) { return instance->state.id == state.id; });
       continue;
     }
 
