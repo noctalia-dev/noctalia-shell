@@ -462,15 +462,16 @@ PopupWindow {
                              } else {
                                // Click on regular items triggers them
                                modelData.triggered();
-                               root.hideMenu();
-
-                               // Close the drawer if it's open
-                               if (root.screen) {
-                                 const panel = PanelService.getPanel("trayDrawerPanel", root.screen);
-                                 if (panel && panel.visible) {
-                                   panel.close();
-                                 }
-                               }
+                               const screen = root.screen;
+                               Qt.callLater(() => {
+                                              PanelService.closeTrayMenu(screen);
+                                              if (screen) {
+                                                const panel = PanelService.getPanel("trayDrawerPanel", screen);
+                                                if (panel && panel.visible) {
+                                                  panel.close();
+                                                }
+                                              }
+                                            });
                              }
                            }
                          }
@@ -541,6 +542,7 @@ PopupWindow {
             } else {
               root.addToPinned();
             }
+            PanelService.closeTrayMenu(root.screen);
           }
         }
       }

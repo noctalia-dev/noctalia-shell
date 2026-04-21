@@ -114,6 +114,8 @@ Singleton {
     // Close any previously opened menu first
     closeContextMenu(screen);
 
+    // Force refresh when reopening the same tray item.
+    trayMenu.trayItem = null;
     trayMenu.trayItem = trayItem;
     trayMenu.widgetSection = widgetSection;
     trayMenu.widgetIndex = widgetIndex;
