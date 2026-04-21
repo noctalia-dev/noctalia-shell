@@ -46,12 +46,6 @@ void Widget::setBarCapsuleScene(Node* shell, Box* box) noexcept {
   m_capsuleBox = box;
 }
 
-void Widget::onPointerEnter(float /*localX*/, float /*localY*/) {}
-void Widget::onPointerLeave() {}
-void Widget::onPointerMotion(float /*localX*/, float /*localY*/) {}
-bool Widget::onPointerButton(std::uint32_t /*button*/, bool /*pressed*/) { return false; }
-std::uint32_t Widget::cursorShape() const { return 0; }
-
 float Widget::width() const noexcept { return root() ? root()->width() : 0.0f; }
 
 float Widget::height() const noexcept { return root() ? root()->height() : 0.0f; }

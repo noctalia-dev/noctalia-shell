@@ -31,13 +31,6 @@ public:
   virtual void onFrameTick(float deltaMs) { (void)deltaMs; }
   [[nodiscard]] virtual bool needsFrameTick() const { return false; }
 
-  // Input events. Coordinates are widget-local (relative to widget root node).
-  virtual void onPointerEnter(float localX, float localY);
-  virtual void onPointerLeave();
-  virtual void onPointerMotion(float localX, float localY);
-  virtual bool onPointerButton(std::uint32_t button, bool pressed);
-  [[nodiscard]] virtual std::uint32_t cursorShape() const;
-
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
   [[nodiscard]] float width() const noexcept;
   [[nodiscard]] float height() const noexcept;
