@@ -755,7 +755,8 @@ void ConfigService::setupWatch() {
     return;
   }
 
-  m_configWatchWd = inotify_add_watch(m_inotifyFd, m_configDir.c_str(), IN_MODIFY | IN_CREATE | IN_MOVED_TO);
+  m_configWatchWd =
+      inotify_add_watch(m_inotifyFd, m_configDir.c_str(), IN_MODIFY | IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO);
   if (m_configWatchWd < 0) {
     kLog.warn("inotify_add_watch failed, hot reload disabled");
     ::close(m_inotifyFd);
@@ -799,7 +800,8 @@ void ConfigService::setupWatch() {
   // Also watch the state dir for overrides.toml edits (external writes).
   if (!m_overridesPath.empty()) {
     const auto overridesDir = std::filesystem::path(m_overridesPath).parent_path().string();
-    m_overridesWatchWd = inotify_add_watch(m_inotifyFd, overridesDir.c_str(), IN_MODIFY | IN_CREATE | IN_MOVED_TO);
+    m_overridesWatchWd =
+        inotify_add_watch(m_inotifyFd, overridesDir.c_str(), IN_MODIFY | IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO);
     if (m_overridesWatchWd < 0) {
       kLog.warn("inotify_add_watch failed for {}, overrides reload disabled", overridesDir);
     } else {
