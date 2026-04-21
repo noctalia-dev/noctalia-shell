@@ -1,0 +1,48 @@
+#pragma once
+
+#include "shell/desktop/desktop_widget.h"
+
+#include <string>
+#include <unordered_set>
+
+class Button;
+class Flex;
+class HttpClient;
+class Image;
+class Label;
+class MprisService;
+
+class DesktopMediaPlayerWidget : public DesktopWidget {
+public:
+  DesktopMediaPlayerWidget(MprisService* mpris, HttpClient* httpClient, bool vertical);
+
+  void create() override;
+  [[nodiscard]] bool wantsSecondTicks() const override { return true; }
+
+private:
+  void doLayout(Renderer& renderer) override;
+  void doUpdate(Renderer& renderer) override;
+  void layoutHorizontal(Renderer& renderer, float scale);
+  void layoutVertical(Renderer& renderer, float scale);
+  void layoutButtons(Renderer& renderer, float scale);
+  void sync(Renderer& renderer);
+  [[nodiscard]] std::string resolveArtworkPath() const;
+
+  MprisService* m_mpris;
+  HttpClient* m_httpClient;
+  bool m_vertical;
+
+  Image* m_artwork = nullptr;
+  Label* m_title = nullptr;
+  Label* m_artist = nullptr;
+  Flex* m_controls = nullptr;
+  Button* m_prev = nullptr;
+  Button* m_playPause = nullptr;
+  Button* m_next = nullptr;
+
+  std::string m_lastTitle;
+  std::string m_lastArtist;
+  std::string m_lastArtUrl;
+  std::string m_lastPlaybackStatus;
+  std::unordered_set<std::string> m_pendingArtDownloads;
+};

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/animation/animation_manager.h"
+#include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
 #include "shell/desktop/desktop_widget_factory.h"
 #include "shell/desktop/desktop_widgets_controller.h"
@@ -11,10 +12,13 @@
 #include <vector>
 
 class ConfigService;
+class HttpClient;
+class MprisService;
 class PipeWireSpectrum;
 class RenderContext;
 class WaylandConnection;
 class WeatherService;
+struct PointerEvent;
 struct WaylandOutput;
 struct wl_output;
 
@@ -23,7 +27,8 @@ public:
   DesktopWidgetsHost() = default;
 
   void initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                  PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext);
+                  PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext,
+                  MprisService* mpris, HttpClient* httpClient);
   void show(const DesktopWidgetsSnapshot& snapshot);
   void hide();
   void rebuild(const DesktopWidgetsSnapshot& snapshot);
@@ -31,6 +36,7 @@ public:
   void onSecondTick();
   void requestLayout();
   void requestRedraw();
+  bool onPointerEvent(const PointerEvent& event);
 
 private:
   struct DesktopWidgetInstance {
@@ -39,6 +45,7 @@ private:
     wl_output* output = nullptr;
     std::unique_ptr<LayerSurface> surface;
     AnimationManager animations;
+    InputDispatcher inputDispatcher;
     std::unique_ptr<Node> sceneRoot;
     Node* transformNode = nullptr;
     std::unique_ptr<DesktopWidget> widget;

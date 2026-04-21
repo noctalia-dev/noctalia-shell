@@ -17,7 +17,9 @@
 class Box;
 class Button;
 class ConfigService;
+class HttpClient;
 class InputArea;
+class MprisService;
 class PipeWireSpectrum;
 class RenderContext;
 class Select;
@@ -35,7 +37,8 @@ public:
   DesktopWidgetsEditor() = default;
 
   void initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                  PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext);
+                  PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext,
+                  MprisService* mpris, HttpClient* httpClient);
   void setExitRequestedCallback(std::function<void()> callback);
 
   void open(const DesktopWidgetsSnapshot& snapshot);

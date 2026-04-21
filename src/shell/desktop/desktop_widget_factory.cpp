@@ -4,6 +4,7 @@
 #include "pipewire/pipewire_spectrum.h"
 #include "shell/desktop/widgets/desktop_audio_visualizer_widget.h"
 #include "shell/desktop/widgets/desktop_clock_widget.h"
+#include "shell/desktop/widgets/desktop_media_player_widget.h"
 #include "shell/desktop/widgets/desktop_sticker_widget.h"
 #include "shell/desktop/widgets/desktop_weather_widget.h"
 
@@ -81,8 +82,9 @@ namespace {
 } // namespace
 
 DesktopWidgetFactory::DesktopWidgetFactory(TimeService* timeService, PipeWireSpectrum* pipewireSpectrum,
-                                           const WeatherService* weather)
-    : m_timeService(timeService), m_pipewireSpectrum(pipewireSpectrum), m_weather(weather) {}
+                                           const WeatherService* weather, MprisService* mpris, HttpClient* httpClient)
+    : m_timeService(timeService), m_pipewireSpectrum(pipewireSpectrum), m_weather(weather), m_mpris(mpris),
+      m_httpClient(httpClient) {}
 
 std::unique_ptr<DesktopWidget>
 DesktopWidgetFactory::create(const std::string& type,
@@ -125,6 +127,17 @@ DesktopWidgetFactory::create(const std::string& type,
       return nullptr;
     }
     auto widget = std::make_unique<DesktopWeatherWidget>(m_weather);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "media_player") {
+    if (m_mpris == nullptr) {
+      kLog.warn("desktop widget factory: media_player requires MprisService");
+      return nullptr;
+    }
+    const bool vertical = getStringSetting(settings, "layout", "horizontal") == "vertical";
+    auto widget = std::make_unique<DesktopMediaPlayerWidget>(m_mpris, m_httpClient, vertical);
     widget->setContentScale(contentScale);
     return widget;
   }

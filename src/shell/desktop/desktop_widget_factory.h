@@ -7,13 +7,16 @@
 #include <string>
 #include <unordered_map>
 
+class HttpClient;
+class MprisService;
 class TimeService;
 class PipeWireSpectrum;
 class WeatherService;
 
 class DesktopWidgetFactory {
 public:
-  DesktopWidgetFactory(TimeService* timeService, PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather);
+  DesktopWidgetFactory(TimeService* timeService, PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
+                       MprisService* mpris, HttpClient* httpClient);
 
   [[nodiscard]] std::unique_ptr<DesktopWidget>
   create(const std::string& type, const std::unordered_map<std::string, WidgetSettingValue>& settings,
@@ -23,4 +26,6 @@ private:
   TimeService* m_timeService = nullptr;
   PipeWireSpectrum* m_pipewireSpectrum = nullptr;
   const WeatherService* m_weather = nullptr;
+  MprisService* m_mpris = nullptr;
+  HttpClient* m_httpClient = nullptr;
 };

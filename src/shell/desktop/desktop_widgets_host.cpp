@@ -10,6 +10,7 @@
 #include "time/time_service.h"
 #include "wayland/layer_surface.h"
 #include "wayland/wayland_connection.h"
+#include "wayland/wayland_seat.h"
 
 #include <algorithm>
 #include <cmath>
@@ -32,12 +33,12 @@ namespace {
 
 void DesktopWidgetsHost::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                                     PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
-                                    RenderContext* renderContext) {
+                                    RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient) {
   m_wayland = &wayland;
   m_config = config;
   m_timeService = timeService;
   m_renderContext = renderContext;
-  m_factory = std::make_unique<DesktopWidgetFactory>(timeService, pipewireSpectrum, weather);
+  m_factory = std::make_unique<DesktopWidgetFactory>(timeService, pipewireSpectrum, weather, mpris, httpClient);
 }
 
 void DesktopWidgetsHost::show(const DesktopWidgetsSnapshot& snapshot) {
@@ -226,7 +227,6 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
     return;
   }
 
-  instance->surface->setClickThrough(true);
   m_instances.push_back(std::move(instance));
 }
 
@@ -239,6 +239,12 @@ void DesktopWidgetsHost::buildScene(DesktopWidgetInstance& instance) {
     instance.transformNode = instance.sceneRoot->addChild(std::move(transformNode));
     if (instance.widget != nullptr) {
       instance.transformNode->addChild(instance.widget->releaseRoot());
+    }
+
+    instance.inputDispatcher.setSceneRoot(instance.sceneRoot.get());
+    if (m_wayland != nullptr) {
+      instance.inputDispatcher.setCursorShapeCallback(
+          [this](std::uint32_t serial, std::uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
     }
 
     if (instance.surface != nullptr) {
@@ -300,4 +306,54 @@ void DesktopWidgetsHost::prepareFrame(DesktopWidgetInstance& instance, bool need
     instance.transformNode->setRotation(instance.state.rotationRad);
     instance.transformNode->setScale(1.0f);
   }
+}
+
+bool DesktopWidgetsHost::onPointerEvent(const PointerEvent& event) {
+  if (!m_visible || m_instances.empty())
+    return false;
+
+  wl_surface* eventSurface = event.surface;
+  if (eventSurface == nullptr && m_wayland != nullptr)
+    eventSurface = m_wayland->lastPointerSurface();
+
+  DesktopWidgetInstance* target = nullptr;
+  for (auto& instance : m_instances) {
+    if (instance->surface != nullptr && instance->surface->wlSurface() == eventSurface) {
+      target = instance.get();
+      break;
+    }
+  }
+  if (target == nullptr)
+    return false;
+
+  switch (event.type) {
+  case PointerEvent::Type::Enter:
+    target->inputDispatcher.pointerEnter(static_cast<float>(event.sx), static_cast<float>(event.sy), event.serial);
+    break;
+  case PointerEvent::Type::Leave:
+    target->inputDispatcher.pointerLeave();
+    break;
+  case PointerEvent::Type::Motion:
+    target->inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), event.serial);
+    break;
+  case PointerEvent::Type::Button:
+    target->inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy), event.button,
+                                          event.state == 1);
+    break;
+  case PointerEvent::Type::Axis:
+    target->inputDispatcher.pointerAxis(static_cast<float>(event.sx), static_cast<float>(event.sy), event.axis,
+                                        event.axisSource, event.axisValue, event.axisDiscrete, event.axisValue120,
+                                        event.axisLines);
+    break;
+  }
+
+  if (target->sceneRoot != nullptr && (target->sceneRoot->layoutDirty() || target->sceneRoot->paintDirty())) {
+    if (target->sceneRoot->layoutDirty()) {
+      target->surface->requestLayout();
+    } else {
+      target->surface->requestRedraw();
+    }
+  }
+
+  return true;
 }

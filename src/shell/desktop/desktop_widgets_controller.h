@@ -9,7 +9,9 @@
 
 class DesktopWidgetsEditor;
 class DesktopWidgetsHost;
+class HttpClient;
 class IpcService;
+class MprisService;
 class PipeWireSpectrum;
 class RenderContext;
 class TimeService;
@@ -56,7 +58,8 @@ public:
   DesktopWidgetsController& operator=(const DesktopWidgetsController&) = delete;
 
   void initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                  PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext);
+                  PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext,
+                  MprisService* mpris, HttpClient* httpClient);
 
   void registerIpc(IpcService& ipc);
   void onOutputChange();

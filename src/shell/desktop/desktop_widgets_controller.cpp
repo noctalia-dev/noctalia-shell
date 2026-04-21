@@ -121,15 +121,15 @@ DesktopWidgetsController::~DesktopWidgetsController() = default;
 
 void DesktopWidgetsController::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                                           PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
-                                          RenderContext* renderContext) {
+                                          RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient) {
   m_wayland = &wayland;
   m_config = config;
   m_timeService = timeService;
   m_renderContext = renderContext;
   m_host = std::make_unique<DesktopWidgetsHost>();
-  m_host->initialize(wayland, config, timeService, pipewireSpectrum, weather, renderContext);
+  m_host->initialize(wayland, config, timeService, pipewireSpectrum, weather, renderContext, mpris, httpClient);
   m_editor = std::make_unique<DesktopWidgetsEditor>();
-  m_editor->initialize(wayland, config, timeService, pipewireSpectrum, weather, renderContext);
+  m_editor->initialize(wayland, config, timeService, pipewireSpectrum, weather, renderContext, mpris, httpClient);
   m_editor->setExitRequestedCallback([this]() { exitEdit(); });
   loadState();
   m_initialized = true;
@@ -244,10 +244,13 @@ void DesktopWidgetsController::toggleEdit() {
 bool DesktopWidgetsController::isEditing() const noexcept { return m_editor != nullptr && m_editor->isOpen(); }
 
 bool DesktopWidgetsController::onPointerEvent(const PointerEvent& event) {
-  if (!isEditing() || m_editor == nullptr) {
-    return false;
+  if (isEditing() && m_editor != nullptr) {
+    return m_editor->onPointerEvent(event);
   }
-  return m_editor->onPointerEvent(event);
+  if (m_host != nullptr) {
+    return m_host->onPointerEvent(event);
+  }
+  return false;
 }
 
 void DesktopWidgetsController::onKeyboardEvent(const KeyboardEvent& event) {

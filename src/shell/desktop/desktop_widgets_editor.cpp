@@ -144,12 +144,12 @@ namespace {
 
 void DesktopWidgetsEditor::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                                       PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
-                                      RenderContext* renderContext) {
+                                      RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient) {
   m_wayland = &wayland;
   m_config = config;
   m_timeService = timeService;
   m_renderContext = renderContext;
-  m_factory = std::make_unique<DesktopWidgetFactory>(timeService, pipewireSpectrum, weather);
+  m_factory = std::make_unique<DesktopWidgetFactory>(timeService, pipewireSpectrum, weather, mpris, httpClient);
 }
 
 void DesktopWidgetsEditor::setExitRequestedCallback(std::function<void()> callback) {

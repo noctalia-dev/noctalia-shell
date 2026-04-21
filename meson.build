@@ -354,6 +354,7 @@ _noctalia_sources = files(
   'src/shell/desktop/desktop_widgets_host.cpp',
   'src/shell/desktop/widgets/desktop_audio_visualizer_widget.cpp',
   'src/shell/desktop/widgets/desktop_clock_widget.cpp',
+  'src/shell/desktop/widgets/desktop_media_player_widget.cpp',
   'src/shell/desktop/widgets/desktop_sticker_widget.cpp',
   'src/shell/desktop/widgets/desktop_weather_widget.cpp',
   'src/shell/clipboard/clipboard_panel.cpp',

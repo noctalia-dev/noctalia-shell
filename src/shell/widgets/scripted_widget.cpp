@@ -52,10 +52,17 @@ void ScriptedWidget::create() {
       return;
     const char* fn = nullptr;
     switch (data.button) {
-    case BTN_LEFT: fn = "onClick"; break;
-    case BTN_RIGHT: fn = "onRightClick"; break;
-    case BTN_MIDDLE: fn = "onMiddleClick"; break;
-    default: return;
+    case BTN_LEFT:
+      fn = "onClick";
+      break;
+    case BTN_RIGHT:
+      fn = "onRightClick";
+      break;
+    case BTN_MIDDLE:
+      fn = "onMiddleClick";
+      break;
+    default:
+      return;
     }
     m_host->callGlobal(fn);
     requestRedraw();
