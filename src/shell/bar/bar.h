@@ -1,7 +1,7 @@
 #pragma once
 
 #include "shell/bar/bar_instance.h"
-#include "shell/widget/widget_factory.h"
+#include "shell/bar/widget_factory.h"
 #include "ui/dialogs/layer_popup_host.h"
 
 #include <functional>

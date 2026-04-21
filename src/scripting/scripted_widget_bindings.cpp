@@ -3,7 +3,7 @@
 #include "core/process.h"
 #include "lua.h"
 #include "lualib.h"
-#include "shell/widgets/scripted_widget.h"
+#include "shell/bar/widgets/scripted_widget.h"
 
 namespace {
 

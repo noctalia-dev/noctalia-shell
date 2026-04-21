@@ -9,7 +9,7 @@
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "render/scene/rect_node.h"
-#include "shell/widget/widget.h"
+#include "shell/bar/widget.h"
 #include "system/night_light_manager.h"
 #include "system/system_monitor_service.h"
 #include "system/weather_service.h"

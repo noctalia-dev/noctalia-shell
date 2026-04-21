@@ -4,7 +4,7 @@
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
-#include "shell/widget/widget.h"
+#include "shell/bar/widget.h"
 #include "ui/signal.h"
 #include "wayland/layer_surface.h"
 
