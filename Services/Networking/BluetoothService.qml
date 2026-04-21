@@ -152,6 +152,16 @@ Singleton {
       Logger.d("Bluetooth", "Enable/Disable skipped: no adapter");
       return;
     }
+    // quickshell's BluetoothAdapter.setEnabled() refuses to write Powered
+    // while the adapter is rfkill-blocked, so a partial airplane-mode exit
+    // (wifi unblocked, bluetooth still blocked) leaves the toggle dead.
+    // Lift the soft block ourselves; logind grants the seat user rw on
+    // /dev/rfkill so no privilege escalation is needed.
+    if (state && adapter.state === BluetoothAdapter.Blocked) {
+      Logger.i("Bluetooth", "Adapter rfkill-blocked, unblocking");
+      Quickshell.execDetached(["sh", "-c", "rfkill unblock bluetooth && bluetoothctl power on"]);
+      return;
+    }
     try {
       adapter.enabled = state;
       Logger.i("Bluetooth", "SetBluetoothEnabled", state);
