@@ -18,6 +18,7 @@ Singleton {
   readonly property bool batteryPluggedIn: isPluggedIn(primaryDevice)
   readonly property bool batteryReady: isDeviceReady(primaryDevice)
   readonly property bool batteryPresent: isDevicePresent(primaryDevice)
+  readonly property bool hasLaptopBattery: _laptopBattery !== null
   readonly property real warningThreshold: Settings.data.systemMonitor.batteryWarningThreshold
   readonly property real criticalThreshold: Settings.data.systemMonitor.batteryCriticalThreshold
   readonly property string batteryIcon: getIcon(batteryPercentage, batteryCharging, batteryPluggedIn, batteryReady)
@@ -47,7 +48,8 @@ Singleton {
     return list;
   }
 
-  readonly property var _laptopBattery: UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : null)
+  readonly property var _realBatteries: UPower.devices.values.filter(d => d.isLaptopBattery && !d.nativePath.includes("DisplayDevice"))
+  readonly property var _laptopBattery: _realBatteries.length > 0 ? (UPower.displayDevice.isPresent ? UPower.displayDevice : _realBatteries[0]) : null
   readonly property var _bluetoothBattery: bluetoothBatteries.length > 0 ? bluetoothBatteries[0] : null
 
   property var deviceModel: {
