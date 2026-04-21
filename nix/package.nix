@@ -1,33 +1,14 @@
 {
   version ? "dirty",
   extraPackages ? [ ],
-  runtimeDeps ? [
-    brightnessctl
-    cliphist
-    ddcutil
-    wlsunset
-    wl-clipboard
-    wlr-randr
-    imagemagick
-    wget
-    (python3.withPackages (pp: lib.optional calendarSupport pp.pygobject3))
-  ],
+  runtimeDeps ? (callPackage ./runtime-deps.nix { inherit calendarSupport; }),
 
   lib,
+  callPackage,
   stdenvNoCC,
   # build
   qt6,
   quickshell,
-  # runtime deps
-  brightnessctl,
-  cliphist,
-  ddcutil,
-  wlsunset,
-  wl-clipboard,
-  wlr-randr,
-  imagemagick,
-  wget,
-  python3,
   wayland-scanner,
   # calendar support
   calendarSupport ? false,
