@@ -180,7 +180,10 @@ Singleton {
       if (manifest) {
         pluginsToLoad.push(enabledIds[i]);
       } else {
-        Logger.w("PluginService", "Plugin", enabledIds[i], "is enabled but not found on disk - install");
+        if (!Settings.data.general.autoNetworkEnabled) {
+          Logger.w("PluginService", "Plugin", enabledIds[i], "is enabled but not found on disk (auto-install disabled, autoNetworkEnabled=false)");
+          continue;
+        }
         var sourceUrl = PluginRegistry.getPluginSourceUrl(enabledIds[i]);
         root.installPlugin({
                              id: enabledIds[i],
@@ -269,6 +272,10 @@ Singleton {
 
   // Fetch plugin registry from a source using git sparse-checkout
   function fetchPluginRegistry(source) {
+    if (!Settings.data.general.autoNetworkEnabled) {
+      return;
+    }
+
     var repoUrl = source.url;
 
     Logger.d("PluginService", "Fetching registry from:", repoUrl);

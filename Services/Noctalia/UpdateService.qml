@@ -303,6 +303,10 @@ Singleton {
   }
 
   function showLatestChangelog() {
+    if (!Settings.data.general.autoNetworkEnabled) {
+      return;
+    }
+
     if (!currentVersion)
       return;
 
