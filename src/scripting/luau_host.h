@@ -25,8 +25,9 @@ public:
   // Convenience: loadString + run.
   bool exec(std::string_view chunkName, std::string_view source) { return loadString(chunkName, source) && run(); }
 
-  // Look up a global function by name and pcall it with no args.
-  // If the function returns a string, it is returned; otherwise nullopt.
+  bool callGlobal(const char* name);
+  bool callGlobalWithBool(const char* name, bool value);
+  bool hasGlobal(const char* name);
   std::optional<std::string> callGlobalReturningString(const char* name);
 
   lua_State* state() { return m_T; }
