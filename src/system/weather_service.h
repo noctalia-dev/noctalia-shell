@@ -81,6 +81,7 @@ public:
   void requestRefresh(bool resetLocation = false);
 
   [[nodiscard]] bool enabled() const noexcept;
+  [[nodiscard]] bool effectsEnabled() const noexcept { return m_activeConfig.effects; }
   [[nodiscard]] bool locationConfigured() const noexcept;
   [[nodiscard]] bool loading() const noexcept { return m_loading; }
   [[nodiscard]] bool hasData() const noexcept { return m_snapshot.valid; }

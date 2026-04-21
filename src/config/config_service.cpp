@@ -1539,6 +1539,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
       weather.enabled = *v;
     if (auto v = (*weatherTbl)["auto_locate"].value<bool>())
       weather.autoLocate = *v;
+    if (auto v = (*weatherTbl)["effects"].value<bool>())
+      weather.effects = *v;
     if (auto v = (*weatherTbl)["address"].value<std::string>())
       weather.address = *v;
     if (auto v = (*weatherTbl)["refresh_minutes"].value<int64_t>())

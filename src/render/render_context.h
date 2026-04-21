@@ -3,6 +3,7 @@
 #include "render/core/mat3.h"
 #include "render/core/renderer.h"
 #include "render/core/texture_manager.h"
+#include "render/programs/effect_program.h"
 #include "render/programs/glyph_program.h"
 #include "render/programs/image_program.h"
 #include "render/programs/linear_gradient_program.h"
@@ -60,6 +61,7 @@ private:
   EGLContext m_eglContext = EGL_NO_CONTEXT;
   bool m_glReady = false;
 
+  EffectProgram m_effectProgram;
   ImageProgram m_imageProgram;
   LinearGradientProgram m_linearGradientProgram;
   RectProgram m_rectProgram;

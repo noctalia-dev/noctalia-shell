@@ -1,5 +1,6 @@
 #include "shell/control_center/weather_tab.h"
 
+#include "render/scene/effect_node.h"
 #include "system/weather_service.h"
 #include "time/time_service.h"
 #include "ui/controls/flex.h"
@@ -15,6 +16,9 @@
 using namespace control_center;
 
 namespace {
+
+  // Set to a specific effect to bypass weather-code detection. Reset to None when done testing.
+  constexpr EffectType kTestEffect = EffectType::None;
 
   constexpr float kCurrentGlyphSize = Style::controlHeightLg * 2.2f;
 
@@ -69,6 +73,14 @@ std::unique_ptr<Flex> WeatherTab::create() {
   currentCard->setJustify(FlexJustify::Center);
   currentCard->setGap((Style::spaceMd + Style::spaceXs) * scale);
   currentCard->setFlexGrow(0.9f);
+  currentCard->setClipChildren(true);
+
+  auto effectNode = std::make_unique<EffectNode>();
+  effectNode->setParticipatesInLayout(false);
+  effectNode->setZIndex(-1);
+  effectNode->setVisible(false);
+  effectNode->setCornerRadius(Style::radiusXl * scale);
+  m_effectNode = static_cast<EffectNode*>(currentCard->addChild(std::move(effectNode)));
 
   auto currentGlyph = std::make_unique<Glyph>();
   currentGlyph->setGlyph("weather-cloud");
@@ -406,10 +418,19 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
     }
   }
 
+  if (m_effectNode != nullptr && m_currentCard != nullptr) {
+    m_effectNode->setPosition(0.0f, 0.0f);
+    m_effectNode->setFrameSize(m_currentCard->width(), m_currentCard->height());
+  }
+
   // The weather tab derives several width constraints from the first measurement
   // pass. Run layout again so the final geometry reflects those constraints
   // instead of keeping the placeholder/pre-constraint positions.
   m_rootLayout->layout(renderer);
+
+  if (m_effectNode != nullptr && m_currentCard != nullptr) {
+    m_effectNode->setFrameSize(m_currentCard->width(), m_currentCard->height());
+  }
 }
 
 void WeatherTab::doUpdate(Renderer& renderer) { sync(renderer); }
@@ -440,6 +461,9 @@ void WeatherTab::onClose() {
   m_dayMetas.fill(nullptr);
   m_dayDescs.fill(nullptr);
   m_dayTemps.fill(nullptr);
+  m_effectNode = nullptr;
+  m_activeEffect = EffectType::None;
+  m_shaderTime = 0.0f;
 }
 
 void WeatherTab::sync(Renderer& renderer) {
@@ -482,6 +506,9 @@ void WeatherTab::sync(Renderer& renderer) {
         card->setVisible(false);
       }
     }
+    if (m_effectNode != nullptr) {
+      m_effectNode->setVisible(false);
+    }
     return;
   }
 
@@ -518,6 +545,9 @@ void WeatherTab::sync(Renderer& renderer) {
       if (card != nullptr) {
         card->setVisible(false);
       }
+    }
+    if (m_effectNode != nullptr) {
+      m_effectNode->setVisible(false);
     }
     return;
   }
@@ -556,6 +586,9 @@ void WeatherTab::sync(Renderer& renderer) {
       if (card != nullptr) {
         card->setVisible(false);
       }
+    }
+    if (m_effectNode != nullptr) {
+      m_effectNode->setVisible(false);
     }
     return;
   }
@@ -639,6 +672,22 @@ void WeatherTab::sync(Renderer& renderer) {
       m_dayDescs[i]->measure(renderer);
     }
   }
+
+  if (m_effectNode != nullptr) {
+    const EffectType newEffect =
+        kTestEffect != EffectType::None
+            ? kTestEffect
+            : (m_weather->effectsEnabled() ? effectForWeatherCode(snapshot.current.weatherCode, snapshot.current.isDay)
+                                           : EffectType::None);
+    if (newEffect != m_activeEffect) {
+      m_activeEffect = newEffect;
+      m_shaderTime = 0.0f;
+    }
+    m_effectNode->setEffectType(m_activeEffect);
+    m_effectNode->setBgColor(resolveColorRole(ColorRole::Surface));
+    m_effectNode->setCornerRadius(Style::radiusXl * contentScale());
+    m_effectNode->setVisible(m_activeEffect != EffectType::None);
+  }
 }
 
 std::string WeatherTab::weekdayLabel(const std::string& isoDate) {
@@ -659,4 +708,34 @@ std::string WeatherTab::weekdayLabel(const std::string& isoDate) {
     return isoDate;
   }
   return buf;
+}
+
+void WeatherTab::onFrameTick(float deltaMs) {
+  if (m_effectNode == nullptr || m_activeEffect == EffectType::None) {
+    return;
+  }
+  m_shaderTime += deltaMs * 0.001f;
+  m_effectNode->setTime(m_shaderTime);
+}
+
+EffectType WeatherTab::effectForWeatherCode(std::int32_t code, bool isDay) {
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+    return EffectType::Rain;
+  }
+  if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) {
+    return EffectType::Snow;
+  }
+  if (code == 3) {
+    return EffectType::Cloud;
+  }
+  if (code >= 40 && code <= 49) {
+    return EffectType::Fog;
+  }
+  if (code == 0 && isDay) {
+    return EffectType::Sun;
+  }
+  if (code == 0 && !isDay) {
+    return EffectType::Stars;
+  }
+  return EffectType::None;
 }

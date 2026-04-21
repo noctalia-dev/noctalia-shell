@@ -5,6 +5,7 @@
 #include "core/ui_phase.h"
 #include "render/gl_shared_context.h"
 #include "render/render_target.h"
+#include "render/scene/effect_node.h"
 #include "render/scene/glyph_node.h"
 #include "render/scene/image_node.h"
 #include "render/scene/node.h"
@@ -82,6 +83,7 @@ void RenderContext::ensureGlPrograms() {
   if (m_glReady) {
     return;
   }
+  m_effectProgram.ensureInitialized();
   m_imageProgram.ensureInitialized();
   m_linearGradientProgram.ensureInitialized();
   m_rectProgram.ensureInitialized();
@@ -263,6 +265,13 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     m_spinnerProgram.draw(sw, sh, node->width(), node->height(), style, worldTransform);
     break;
   }
+  case NodeType::Effect: {
+    const auto* effect = static_cast<const EffectNode*>(node);
+    auto style = effect->style();
+    style.bgColor.a *= effectiveOpacity;
+    m_effectProgram.draw(sw, sh, node->width(), node->height(), style, worldTransform);
+    break;
+  }
   case NodeType::Base:
     break;
   }
@@ -333,6 +342,7 @@ void RenderContext::cleanup() {
   m_textRenderer.cleanup();
   m_glyphRenderer.cleanup();
   m_textureManager.cleanup();
+  m_effectProgram.destroy();
   m_imageProgram.destroy();
   m_linearGradientProgram.destroy();
   m_rectProgram.destroy();

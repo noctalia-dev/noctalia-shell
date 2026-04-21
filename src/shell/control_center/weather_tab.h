@@ -1,9 +1,12 @@
 #pragma once
 
+#include "render/programs/effect_program.h"
 #include "shell/control_center/tab.h"
 
 #include <array>
+#include <cstdint>
 
+class EffectNode;
 class Flex;
 class Glyph;
 class Label;
@@ -15,12 +18,14 @@ public:
 
   std::unique_ptr<Flex> create() override;
   void onClose() override;
+  void onFrameTick(float deltaMs) override;
 
 private:
   void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void doUpdate(Renderer& renderer) override;
   void sync(Renderer& renderer);
   [[nodiscard]] static std::string weekdayLabel(const std::string& isoDate);
+  [[nodiscard]] static EffectType effectForWeatherCode(std::int32_t code, bool isDay);
 
   static constexpr std::size_t kDayCount = 7;
   static constexpr std::size_t kDetailRowCount = 6;
@@ -51,4 +56,7 @@ private:
   std::array<Label*, kDayCount> m_dayMetas{};
   std::array<Label*, kDayCount> m_dayDescs{};
   std::array<Label*, kDayCount> m_dayTemps{};
+  EffectNode* m_effectNode = nullptr;
+  EffectType m_activeEffect = EffectType::None;
+  float m_shaderTime = 0.0f;
 };

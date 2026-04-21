@@ -265,6 +265,7 @@ struct ShellConfig {
 struct WeatherConfig {
   bool enabled = true;
   bool autoLocate = false;
+  bool effects = true;
   std::string address;
   std::int32_t refreshMinutes = 30;
   std::string unit = "celsius";
