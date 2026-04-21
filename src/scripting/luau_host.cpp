@@ -1,6 +1,7 @@
 #include "scripting/luau_host.h"
 
 #include "core/log.h"
+#include "core/process.h"
 #include "lua.h"
 #include "luacode.h"
 #include "lualib.h"
@@ -17,18 +18,37 @@ namespace {
     return 0;
   }
 
-  void registerNoctaLib(lua_State* L) {
-    lua_newtable(L);
-    lua_pushcfunction(L, luau_log, "log");
-    lua_setfield(L, -2, "log");
-    lua_setglobal(L, "nocta");
+  int luau_runAsync(lua_State* L) {
+    const char* cmd = luaL_checkstring(L, 1);
+    bool ok = process::runAsync(std::string(cmd));
+    lua_pushboolean(L, ok ? 1 : 0);
+    return 1;
+  }
+
+  int luau_runSync(lua_State* L) {
+    const char* cmd = luaL_checkstring(L, 1);
+    bool ok = process::runSync(std::string(cmd));
+    lua_pushboolean(L, ok ? 1 : 0);
+    return 1;
+  }
+
+  const luaL_Reg kNoctaliaBaseLib[] = {
+      {"log", luau_log},
+      {"runAsync", luau_runAsync},
+      {"runSync", luau_runSync},
+      {nullptr, nullptr},
+  };
+
+  void registerNoctaliaLib(lua_State* L) {
+    luaL_register(L, "noctalia", kNoctaliaBaseLib);
+    lua_pop(L, 1);
   }
 } // namespace
 
 LuauHost::LuauHost() {
   m_L = luaL_newstate();
   luaL_openlibs(m_L);
-  registerNoctaLib(m_L);
+  registerNoctaliaLib(m_L);
   // Freeze main state's stdlib + globals. The thread we create next inherits
   // reads from this frozen table but gets its own writable globals, so the
   // user script can define `function update()` without touching the parent.
