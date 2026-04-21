@@ -84,9 +84,12 @@ private:
     std::unordered_map<std::string, EditorWidgetView> views;
     Node* selectionFrameTransform = nullptr;
     Box* selectionBorder = nullptr;
+    Box* selectionBorderShadow = nullptr;
     Box* rotationRing = nullptr;
+    Box* rotationRingShadow = nullptr;
     InputArea* rotateArea = nullptr;
     std::array<Box*, 4> scaleHandles{};
+    std::array<Box*, 4> scaleHandleShadows{};
     std::array<InputArea*, 4> scaleAreas{};
     Node* toolbar = nullptr;
     float toolbarX = 0.0f;

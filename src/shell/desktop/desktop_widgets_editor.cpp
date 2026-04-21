@@ -40,6 +40,8 @@ namespace {
   constexpr float kToolbarY = 68.0f;
   constexpr float kDefaultDesktopAudioVisualizerAspectRatio = 240.0f / 96.0f;
   constexpr float kSelectionStroke = 2.0f;
+  constexpr float kShadowExpand = 1.0f;
+  const Color kShadowColor = rgba(0.0f, 0.0f, 0.0f, 0.45f);
   constexpr float kRotatePadding = 14.0f;
   constexpr float kHandleSize = 14.0f;
   constexpr float kMinScale = 0.2f;
@@ -476,10 +478,18 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     selectionFrameTransform->setZIndex(3);
     surface.selectionFrameTransform = selectionFrameTransform.get();
 
+    auto ringShadow = std::make_unique<Box>();
+    ringShadow->setBorder(kShadowColor, 1.0f + kShadowExpand * 2.0f);
+    ringShadow->setFill(clearThemeColor());
+    ringShadow->setRadius(Style::radiusMd + kRotatePadding + kShadowExpand);
+    surface.rotationRingShadow = ringShadow.get();
+    surface.selectionFrameTransform->addChild(std::move(ringShadow));
+
     auto ring = std::make_unique<Box>();
-    ring->setBorder(roleColor(ColorRole::Primary, 0.55f), 1.0f);
+    ring->setBorder(roleColor(ColorRole::Primary), 1.0f);
     ring->setFill(clearThemeColor());
     ring->setRadius(Style::radiusMd + kRotatePadding);
+    ring->setZIndex(1);
     surface.rotationRing = ring.get();
     surface.selectionFrameTransform->addChild(std::move(ring));
 
@@ -503,10 +513,19 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     surface.rotateArea = rotateArea.get();
     surface.selectionFrameTransform->addChild(std::move(rotateArea));
 
+    auto selectionBorderShadow = std::make_unique<Box>();
+    selectionBorderShadow->setBorder(kShadowColor, kSelectionStroke + kShadowExpand * 2.0f);
+    selectionBorderShadow->setFill(clearThemeColor());
+    selectionBorderShadow->setRadius(Style::radiusMd + kShadowExpand);
+    selectionBorderShadow->setZIndex(1);
+    surface.selectionBorderShadow = selectionBorderShadow.get();
+    surface.selectionFrameTransform->addChild(std::move(selectionBorderShadow));
+
     auto selectionBorder = std::make_unique<Box>();
     selectionBorder->setBorder(roleColor(ColorRole::Primary), kSelectionStroke);
     selectionBorder->setFill(clearThemeColor());
     selectionBorder->setRadius(Style::radiusMd);
+    selectionBorder->setZIndex(2);
     // Keep the selection stroke below the body InputArea so the visual outline
     // does not steal hit-tests from move-drag interactions after selection.
     surface.selectionBorder = selectionBorder.get();
@@ -515,6 +534,14 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
 
     for (std::size_t i = 0; i < kScaleCornerCount; ++i) {
       const ScaleCorner corner = static_cast<ScaleCorner>(i);
+
+      auto scaleHandleShadow = std::make_unique<Box>();
+      scaleHandleShadow->setBorder(kShadowColor, kShadowExpand);
+      scaleHandleShadow->setFill(clearThemeColor());
+      scaleHandleShadow->setRadius(Style::radiusSm + kShadowExpand);
+      scaleHandleShadow->setZIndex(5);
+      surface.scaleHandleShadows[i] = scaleHandleShadow.get();
+      root->addChild(std::move(scaleHandleShadow));
 
       auto scaleHandle = std::make_unique<Box>();
       scaleHandle->setFill(roleColor(ColorRole::Primary));
@@ -745,11 +772,22 @@ void DesktopWidgetsEditor::updateSelectionVisuals(OverlaySurface& surface) {
   surface.selectionFrameTransform->setPosition(left, top);
   surface.selectionFrameTransform->setRotation(state->rotationRad);
 
+  const float ringPadExp = kRotatePadding + kShadowExpand;
+  if (surface.rotationRingShadow != nullptr) {
+    surface.rotationRingShadow->setPosition(-ringPadExp, -ringPadExp);
+    surface.rotationRingShadow->setFrameSize(width + ringPadExp * 2.0f, height + ringPadExp * 2.0f);
+  }
+
   surface.rotationRing->setPosition(-kRotatePadding, -kRotatePadding);
   surface.rotationRing->setFrameSize(width + kRotatePadding * 2.0f, height + kRotatePadding * 2.0f);
 
   surface.rotateArea->setPosition(-kRotatePadding, -kRotatePadding);
   surface.rotateArea->setFrameSize(width + kRotatePadding * 2.0f, height + kRotatePadding * 2.0f);
+
+  if (surface.selectionBorderShadow != nullptr) {
+    surface.selectionBorderShadow->setPosition(-kShadowExpand, -kShadowExpand);
+    surface.selectionBorderShadow->setFrameSize(width + kShadowExpand * 2.0f, height + kShadowExpand * 2.0f);
+  }
 
   surface.selectionBorder->setPosition(0.0f, 0.0f);
   surface.selectionBorder->setFrameSize(width, height);
@@ -758,6 +796,13 @@ void DesktopWidgetsEditor::updateSelectionVisuals(OverlaySurface& surface) {
     const CornerSigns signs = cornerSigns(i);
     const auto [cornerX, cornerY] =
         rotatedCorner(state->cx, state->cy, width * 0.5f * signs.x, height * 0.5f * signs.y, state->rotationRad);
+
+    const float shadowSize = kHandleSize + kShadowExpand * 2.0f;
+    if (surface.scaleHandleShadows[i] != nullptr) {
+      surface.scaleHandleShadows[i]->setPosition(cornerX - shadowSize * 0.5f, cornerY - shadowSize * 0.5f);
+      surface.scaleHandleShadows[i]->setFrameSize(shadowSize, shadowSize);
+    }
+
     surface.scaleHandles[i]->setPosition(cornerX - kHandleSize * 0.5f, cornerY - kHandleSize * 0.5f);
     surface.scaleHandles[i]->setFrameSize(kHandleSize, kHandleSize);
 
