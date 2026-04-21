@@ -1144,6 +1144,7 @@ SmartPanel {
 
                         NButton {
                           text: I18n.tr("common.disconnect")
+                          visible: VPNService.disconnectingUuid !== modelData.uuid
                           fontSize: Style.fontSizeS
                           backgroundColor: Color.mSurfaceVariant
                           textColor: Color.mOnSurface
@@ -1246,6 +1247,7 @@ SmartPanel {
 
                         NButton {
                           text: I18n.tr("common.connect")
+                          visible: VPNService.connectingUuid !== modelData.uuid
                           fontSize: Style.fontSizeS
                           backgroundColor: Color.mPrimary
                           textColor: Color.mOnPrimary
