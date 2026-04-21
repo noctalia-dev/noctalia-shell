@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <numeric>
 #include <system_error>
 
 namespace {
@@ -14,15 +15,6 @@ namespace {
       out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
     }
     return out;
-  }
-
-  bool compareNames(const std::string& a, const std::string& b) {
-    const std::string lowerA = lowerText(a);
-    const std::string lowerB = lowerText(b);
-    if (lowerA != lowerB) {
-      return lowerA < lowerB;
-    }
-    return a < b;
   }
 
 } // namespace
@@ -97,8 +89,20 @@ std::vector<FileEntry> DirectoryScanner::scan(const std::filesystem::path& dir,
     entries.push_back(std::move(entry));
   }
 
+  std::vector<std::string> lowerNames;
+  lowerNames.reserve(entries.size());
+  for (const auto& entry : entries) {
+    lowerNames.push_back(lowerText(entry.name));
+  }
+
+  std::vector<std::size_t> indices(entries.size());
+  std::iota(indices.begin(), indices.end(), std::size_t{0});
+
   const bool ascending = sortOrder == FileDialogSortOrder::Ascending;
-  std::sort(entries.begin(), entries.end(), [sortField, ascending](const FileEntry& a, const FileEntry& b) {
+  std::sort(indices.begin(), indices.end(), [&](std::size_t ai, std::size_t bi) {
+    const auto& a = entries[ai];
+    const auto& b = entries[bi];
+
     if (a.isDir != b.isDir) {
       return a.isDir > b.isDir;
     }
@@ -118,11 +122,23 @@ std::vector<FileEntry> DirectoryScanner::scan(const std::filesystem::path& dir,
       break;
     }
 
-    if (a.name == b.name) {
-      return a.absPath.string() < b.absPath.string();
+    const auto& lowerA = lowerNames[ai];
+    const auto& lowerB = lowerNames[bi];
+    if (lowerA != lowerB) {
+      return ascending ? (lowerA < lowerB) : (lowerB < lowerA);
     }
-    return ascending ? compareNames(a.name, b.name) : compareNames(b.name, a.name);
+    if (a.name != b.name) {
+      return ascending ? (a.name < b.name) : (b.name < a.name);
+    }
+    return a.absPath.string() < b.absPath.string();
   });
+
+  std::vector<FileEntry> sorted;
+  sorted.reserve(entries.size());
+  for (std::size_t idx : indices) {
+    sorted.push_back(std::move(entries[idx]));
+  }
+  entries = std::move(sorted);
 
   return entries;
 }
