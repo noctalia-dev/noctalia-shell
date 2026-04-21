@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render/core/color.h"
 #include "render/scene/node.h"
 #include "ui/palette.h"
 
@@ -19,6 +20,8 @@ public:
   void setColor(const ThemeColor& color);
   // Explicit fixed color.
   void setColor(const Color& color);
+  void setShadow(const Color& color, float offsetX, float offsetY);
+  void clearShadow();
 
   void measure(Renderer& renderer);
 

@@ -214,6 +214,13 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
   case NodeType::Text: {
     const auto* text = static_cast<const TextNode*>(node);
     if (!text->text().empty()) {
+      if (text->hasShadow()) {
+        auto shadowColor = text->shadowColor();
+        shadowColor.a *= effectiveOpacity;
+        const Mat3 shadowTransform = worldTransform * Mat3::translation(text->shadowOffsetX(), text->shadowOffsetY());
+        m_textRenderer.draw(sw, sh, 0.0f, 0.0f, text->text(), text->fontSize(), shadowColor, shadowTransform,
+                            text->bold(), text->maxWidth(), text->maxLines(), text->textAlign());
+      }
       auto color = text->color();
       color.a *= effectiveOpacity;
       m_textRenderer.draw(sw, sh, 0.0f, 0.0f, text->text(), text->fontSize(), color, worldTransform, text->bold(),
@@ -236,6 +243,13 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
   case NodeType::Glyph: {
     const auto* icon = static_cast<const GlyphNode*>(node);
     if (icon->codepoint() != 0) {
+      if (icon->hasShadow()) {
+        auto shadowColor = icon->shadowColor();
+        shadowColor.a *= effectiveOpacity;
+        const Mat3 shadowTransform = worldTransform * Mat3::translation(icon->shadowOffsetX(), icon->shadowOffsetY());
+        m_glyphRenderer.drawGlyph(sw, sh, 0.0f, 0.0f, icon->codepoint(), icon->fontSize(), shadowColor,
+                                  shadowTransform);
+      }
       auto color = icon->color();
       color.a *= effectiveOpacity;
       m_glyphRenderer.drawGlyph(sw, sh, 0.0f, 0.0f, icon->codepoint(), icon->fontSize(), color, worldTransform);

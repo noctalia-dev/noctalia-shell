@@ -49,6 +49,10 @@ void Glyph::setColor(const ThemeColor& color) {
 
 void Glyph::setColor(const Color& color) { setColor(fixedColor(color)); }
 
+void Glyph::setShadow(const Color& color, float offsetX, float offsetY) { m_glyphNode->setShadow(color, offsetX, offsetY); }
+
+void Glyph::clearShadow() { m_glyphNode->clearShadow(); }
+
 void Glyph::applyPalette() { m_glyphNode->setColor(resolveThemeColor(m_color)); }
 
 void Glyph::doLayout(Renderer& renderer) { measure(renderer); }

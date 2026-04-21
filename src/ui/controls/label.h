@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render/core/color.h"
 #include "render/scene/node.h"
 #include "render/scene/text_node.h"
 #include "ui/palette.h"
@@ -30,6 +31,8 @@ public:
   // when descenders appear/disappear (e.g. "Mar" ↔ "Apr"). Also aligns with
   // dynamic-mode sibling labels that happen to contain caps-only text.
   void setStableBaseline(bool stable);
+  void setShadow(const Color& color, float offsetX, float offsetY);
+  void clearShadow();
 
   [[nodiscard]] const std::string& text() const noexcept;
   [[nodiscard]] float fontSize() const noexcept;

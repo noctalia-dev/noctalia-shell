@@ -75,6 +75,27 @@ public:
     markLayoutDirty();
   }
 
+  [[nodiscard]] bool hasShadow() const noexcept { return m_hasShadow; }
+  [[nodiscard]] const Color& shadowColor() const noexcept { return m_shadowColor; }
+  [[nodiscard]] float shadowOffsetX() const noexcept { return m_shadowOffsetX; }
+  [[nodiscard]] float shadowOffsetY() const noexcept { return m_shadowOffsetY; }
+
+  void setShadow(const Color& color, float offsetX, float offsetY) {
+    m_hasShadow = true;
+    m_shadowColor = color;
+    m_shadowOffsetX = offsetX;
+    m_shadowOffsetY = offsetY;
+    markPaintDirty();
+  }
+
+  void clearShadow() {
+    if (!m_hasShadow) {
+      return;
+    }
+    m_hasShadow = false;
+    markPaintDirty();
+  }
+
 private:
   std::string m_text;
   float m_fontSize = 14.0f;
@@ -83,4 +104,8 @@ private:
   Color m_color;
   TextAlign m_textAlign = TextAlign::Start;
   bool m_bold = false;
+  bool m_hasShadow = false;
+  Color m_shadowColor;
+  float m_shadowOffsetX = 0.0f;
+  float m_shadowOffsetY = 0.0f;
 };

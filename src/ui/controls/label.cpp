@@ -101,6 +101,10 @@ void Label::setStableBaseline(bool stable) {
   m_measureCached = false;
 }
 
+void Label::setShadow(const Color& color, float offsetX, float offsetY) { m_textNode->setShadow(color, offsetX, offsetY); }
+
+void Label::clearShadow() { m_textNode->clearShadow(); }
+
 void Label::doLayout(Renderer& renderer) { measure(renderer); }
 
 void Label::setCaptionStyle() {
