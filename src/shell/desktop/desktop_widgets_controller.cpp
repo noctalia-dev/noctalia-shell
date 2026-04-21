@@ -83,17 +83,33 @@ namespace {
       return;
     }
 
+    bool hasValidAspectRatio = false;
     const auto it = widget.settings.find("aspect_ratio");
     if (it != widget.settings.end()) {
       if (const auto* doubleValue = std::get_if<double>(&it->second); doubleValue != nullptr && *doubleValue > 0.0) {
-        return;
+        hasValidAspectRatio = true;
       }
       if (const auto* intValue = std::get_if<std::int64_t>(&it->second); intValue != nullptr && *intValue > 0) {
-        return;
+        hasValidAspectRatio = true;
       }
     }
 
-    widget.settings.insert_or_assign("aspect_ratio", static_cast<double>(kDefaultDesktopAudioVisualizerAspectRatio));
+    if (!hasValidAspectRatio) {
+      widget.settings.insert_or_assign("aspect_ratio", static_cast<double>(kDefaultDesktopAudioVisualizerAspectRatio));
+    }
+
+    const auto minValueIt = widget.settings.find("min_value");
+    if (minValueIt == widget.settings.end()) {
+      return;
+    }
+    if (const auto* doubleValue = std::get_if<double>(&minValueIt->second)) {
+      widget.settings.insert_or_assign("min_value", std::clamp(*doubleValue, 0.0, 1.0));
+      return;
+    }
+    if (const auto* intValue = std::get_if<std::int64_t>(&minValueIt->second)) {
+      const double clamped = std::clamp(static_cast<double>(*intValue), 0.0, 1.0);
+      widget.settings.insert_or_assign("min_value", clamped);
+    }
   }
 
   bool parseDesktopWidgetCounter(std::string_view id, std::uint64_t& value) {

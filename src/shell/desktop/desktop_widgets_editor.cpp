@@ -39,6 +39,7 @@ namespace {
   constexpr Logger kLog("desktop");
   constexpr float kToolbarY = 68.0f;
   constexpr float kDefaultDesktopAudioVisualizerAspectRatio = 240.0f / 96.0f;
+  constexpr float kDefaultDesktopAudioVisualizerMinValue = 0.08f;
   constexpr float kSelectionStroke = 2.0f;
   constexpr float kShadowExpand = 1.0f;
   const Color kShadowColor = rgba(0.0f, 0.0f, 0.0f, 0.45f);
@@ -46,6 +47,7 @@ namespace {
   constexpr float kHandleSize = 14.0f;
   constexpr float kMinScale = 0.2f;
   constexpr float kMaxScale = 8.0f;
+  constexpr float kDisabledWidgetOpacity = 0.25f;
   constexpr float kRotationSnap = static_cast<float>(M_PI) / 12.0f;
   constexpr std::array<const char*, 4> kWidgetTypeLabels{"Clock", "Audio Visualizer", "Sticker", "Weather"};
   constexpr std::string_view kDesktopWidgetIdPrefix = "desktop-widget-";
@@ -413,7 +415,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   }
 
   for (const auto& widgetState : m_snapshot.widgets) {
-    if (!widgetState.enabled || effectiveOutputName(widgetState) != surface.outputName || m_factory == nullptr) {
+    if (effectiveOutputName(widgetState) != surface.outputName || m_factory == nullptr) {
       continue;
     }
 
@@ -445,6 +447,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
                                     widgetState.cy - view.intrinsicHeight * 0.5f);
     view.transformNode->setRotation(widgetState.rotationRad);
     view.transformNode->setScale(1.0f);
+    view.transformNode->setOpacity(widgetState.enabled ? 1.0f : kDisabledWidgetOpacity);
     view.transformNode->setZIndex(4);
     view.bodyArea->setOnPress([this, id = widgetState.id](const InputArea::PointerData& data) {
       if (data.button != BTN_LEFT) {
@@ -632,6 +635,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   const auto selectedWidgetIt = std::find_if(m_snapshot.widgets.begin(), m_snapshot.widgets.end(),
                                              [this](const auto& widget) { return widget.id == m_selectedWidgetId; });
   const bool hasSelectedWidget = selectedWidgetIt != m_snapshot.widgets.end();
+  const bool selectedWidgetEnabled = hasSelectedWidget ? selectedWidgetIt->enabled : false;
   const bool canSendSelectedToBack = hasSelectedWidget && selectedWidgetIt != m_snapshot.widgets.begin();
   const bool canBringSelectedToFront = hasSelectedWidget && std::next(selectedWidgetIt) != m_snapshot.widgets.end();
 
@@ -681,6 +685,14 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   frontButton->setEnabled(canBringSelectedToFront);
   frontButton->setOnClick([this]() { deferEditorMutation([this]() { bringSelectedWidgetToFront(); }); });
   toolbar->addChild(std::move(frontButton));
+
+  auto enabledButton = std::make_unique<Button>();
+  enabledButton->setText(selectedWidgetEnabled ? "Enabled" : "Disabled");
+  enabledButton->setVariant(ButtonVariant::Outline);
+  enabledButton->setSelected(selectedWidgetEnabled);
+  enabledButton->setEnabled(hasSelectedWidget);
+  enabledButton->setOnClick([this]() { deferEditorMutation([this]() { toggleSelectedWidgetEnabled(); }); });
+  toolbar->addChild(std::move(enabledButton));
 
   auto deleteButton = std::make_unique<Button>();
   deleteButton->setText("Delete");
@@ -829,6 +841,7 @@ void DesktopWidgetsEditor::applyViewState(EditorWidgetView& view, const DesktopW
   view.transformNode->setPosition(state.cx - view.intrinsicWidth * 0.5f, state.cy - view.intrinsicHeight * 0.5f);
   view.transformNode->setRotation(state.rotationRad);
   view.transformNode->setScale(1.0f);
+  view.transformNode->setOpacity(state.enabled ? 1.0f : kDisabledWidgetOpacity);
 }
 
 void DesktopWidgetsEditor::updateViewTransforms(const std::string* relayoutWidgetId) {
@@ -872,6 +885,7 @@ void DesktopWidgetsEditor::addWidget(const std::string& outputName, const std::s
   if (widget.type == "audio_visualizer") {
     widget.settings.emplace("aspect_ratio", static_cast<double>(kDefaultDesktopAudioVisualizerAspectRatio));
     widget.settings.emplace("bands", static_cast<std::int64_t>(32));
+    widget.settings.emplace("min_value", static_cast<double>(kDefaultDesktopAudioVisualizerMinValue));
   }
 
   if (widget.type == "sticker") {
@@ -920,6 +934,18 @@ void DesktopWidgetsEditor::removeSelectedWidget() {
   }
   std::erase_if(m_snapshot.widgets, [this](const auto& widget) { return widget.id == m_selectedWidgetId; });
   m_selectedWidgetId.clear();
+  requestLayout();
+}
+
+void DesktopWidgetsEditor::toggleSelectedWidgetEnabled() {
+  if (m_selectedWidgetId.empty()) {
+    return;
+  }
+  DesktopWidgetState* state = findWidgetState(m_selectedWidgetId);
+  if (state == nullptr) {
+    return;
+  }
+  state->enabled = !state->enabled;
   requestLayout();
 }
 

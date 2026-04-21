@@ -27,9 +27,11 @@ namespace {
 } // namespace
 
 DesktopAudioVisualizerWidget::DesktopAudioVisualizerWidget(PipeWireSpectrum* spectrum, float aspectRatio, int bands,
-                                                           bool mirrored, ThemeColor lowColor, ThemeColor highColor)
+                                                           bool mirrored, ThemeColor lowColor, ThemeColor highColor,
+                                                           float minValue)
     : m_spectrum(spectrum), m_aspectRatio(clampAspectRatio(aspectRatio)), m_bands(std::max(1, bands)),
-      m_mirrored(mirrored), m_lowColor(lowColor), m_highColor(highColor) {}
+      m_mirrored(mirrored), m_lowColor(lowColor), m_highColor(highColor), m_minValue(std::clamp(minValue, 0.0f, 1.0f)) {
+}
 
 DesktopAudioVisualizerWidget::~DesktopAudioVisualizerWidget() {
   if (m_spectrum != nullptr && m_listenerId != 0) {
@@ -95,7 +97,13 @@ void DesktopAudioVisualizerWidget::syncSpectrum(Renderer* renderer) {
     return;
   }
 
-  m_visualizer->setValues(m_spectrum->values(m_listenerId));
+  auto values = m_spectrum->values(m_listenerId);
+  if (m_minValue > 0.0f) {
+    for (float& value : values) {
+      value = std::max(value, m_minValue);
+    }
+  }
+  m_visualizer->setValues(values);
   m_pendingSpectrumUpdate = false;
   if (renderer != nullptr) {
     m_visualizer->layout(*renderer);

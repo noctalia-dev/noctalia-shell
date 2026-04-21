@@ -126,7 +126,8 @@ DesktopWidgetFactory::create(const std::string& type,
         m_pipewireSpectrum, getFloatSetting(settings, "aspect_ratio", kDefaultDesktopAudioVisualizerAspectRatio),
         getIntSetting(settings, "bands", 32), getBoolSetting(settings, "mirrored", true),
         getThemeColorSetting(settings, "low_color", roleColor(ColorRole::Primary)),
-        getThemeColorSetting(settings, "high_color", roleColor(ColorRole::Primary)));
+        getThemeColorSetting(settings, "high_color", roleColor(ColorRole::Primary)),
+        std::clamp(getFloatSetting(settings, "min_value", 0.0f), 0.0f, 1.0f));
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);
     return widget;

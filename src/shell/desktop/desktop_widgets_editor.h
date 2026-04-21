@@ -128,6 +128,7 @@ private:
   void updateSelectionVisuals(OverlaySurface& surface);
   void addWidget(const std::string& outputName, const std::string& type);
   void removeSelectedWidget();
+  void toggleSelectedWidgetEnabled();
   void sendSelectedWidgetToBack();
   void bringSelectedWidgetToFront();
   void startToolbarDrag(const std::string& outputName);
