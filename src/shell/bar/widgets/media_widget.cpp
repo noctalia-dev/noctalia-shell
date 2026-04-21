@@ -6,6 +6,7 @@
 #include "net/http_client.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -68,12 +69,20 @@ void MediaWidget::create() {
   m_label = label.get();
   area->addChild(std::move(label));
 
+  auto emptyGlyph = std::make_unique<Glyph>();
+  emptyGlyph->setGlyph("music-off");
+  emptyGlyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  emptyGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  emptyGlyph->setVisible(false);
+  m_emptyGlyph = emptyGlyph.get();
+  area->addChild(std::move(emptyGlyph));
+
   setRoot(std::move(area));
 }
 
 void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   auto* rootNode = root();
-  if (rootNode == nullptr || m_art == nullptr || m_label == nullptr) {
+  if (rootNode == nullptr || m_art == nullptr || m_label == nullptr || m_emptyGlyph == nullptr) {
     return;
   }
   syncState(renderer);
@@ -84,6 +93,9 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   m_label->setColor(m_lastPlaybackStatus == "Playing" ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
                                                       : roleColor(ColorRole::OnSurfaceVariant));
   m_label->measure(renderer);
+  m_emptyGlyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_emptyGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  m_emptyGlyph->measure(renderer);
 
   const bool showArtSlot = m_lastText != "Nothing playing";
 
@@ -105,20 +117,32 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   const float contentHeight = m_label->height();
   const float artY = showArtSlot ? std::round((contentHeight - artSize) * 0.5f) : 0.0f;
 
+  const bool showEmptyGlyph = !showArtSlot;
   m_label->setVisible(!isVertical || !showArtSlot);
+  m_emptyGlyph->setVisible(showEmptyGlyph);
   if (isVertical) {
     if (!showArtSlot) {
       m_art->setPosition(0.0f, 0.0f);
-      m_label->setPosition(0.0f, 0.0f);
-      rootNode->setSize(m_label->width(), m_label->height());
+      m_emptyGlyph->setPosition(0.0f, 0.0f);
+      rootNode->setSize(m_emptyGlyph->width(), m_emptyGlyph->height());
     } else {
       m_art->setPosition(0.0f, artY);
       rootNode->setSize(artSize, contentHeight);
     }
   } else {
-    const float spacing = (!showArtSlot || m_label->text().empty()) ? 0.0f : Style::spaceXs;
-    m_art->setPosition(0.0f, artY);
-    m_label->setPosition(artSize + spacing, 0.0f);
+    const float emptyGlyphY = std::round((contentHeight - m_emptyGlyph->height()) * 0.5f);
+    const bool showLabel = m_label->visible() && !m_label->text().empty();
+    if (showArtSlot) {
+      const float spacing = showLabel ? Style::spaceXs : 0.0f;
+      m_art->setPosition(0.0f, artY);
+      m_emptyGlyph->setPosition(0.0f, emptyGlyphY);
+      m_label->setPosition(artSize + spacing, 0.0f);
+    } else {
+      const float spacing = showLabel ? Style::spaceXs : 0.0f;
+      m_art->setPosition(0.0f, 0.0f);
+      m_emptyGlyph->setPosition(0.0f, emptyGlyphY);
+      m_label->setPosition(m_emptyGlyph->width() + spacing, 0.0f);
+    }
     rootNode->setSize(m_label->x() + m_label->width(), contentHeight);
   }
 }

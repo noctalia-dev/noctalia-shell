@@ -73,6 +73,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"headphones", 0xEABD},        // headphones
     {"microphone", 0xEAF0},        // microphone
     {"microphone-mute", 0xED16},   // microphone-off
+    {"music-off", 0xF166},         // music-off
 
     // Volume
     {"volume-high", 0xEB51},       // volume

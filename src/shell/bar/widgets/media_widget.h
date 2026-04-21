@@ -9,6 +9,7 @@
 class Image;
 class InputArea;
 class HttpClient;
+class Glyph;
 class Label;
 class MprisService;
 class Renderer;
@@ -33,6 +34,7 @@ private:
   float m_artSize = 16.0f;
   InputArea* m_area = nullptr;
   Image* m_art = nullptr;
+  Glyph* m_emptyGlyph = nullptr;
   Label* m_label = nullptr;
 
   std::string m_lastText;
