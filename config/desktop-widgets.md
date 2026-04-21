@@ -66,7 +66,22 @@ format = "{:%H:%M}"
 
 ### Common settings
 
-The `clock`, `weather`, and `media_player` widget types support two shared settings:
+All desktop widget types support an optional rounded background rectangle:
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `background` | bool | `false` | Show a filled rounded rectangle behind the widget |
+| `background_color` | string | `"surface"` (80% opacity) | Background fill — palette role or `"#rrggbb"` |
+| `background_radius` | float | `12.0` | Corner radius in logical pixels |
+| `background_padding` | float | `10.0` | Padding between content and background edge |
+
+```toml
+[widget.settings]
+background       = true
+background_color = "surface"
+```
+
+The `clock`, `weather`, and `media_player` widget types additionally support text styling:
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|

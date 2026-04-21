@@ -2,11 +2,13 @@
 
 #include "core/ui_phase.h"
 #include "render/scene/node.h"
+#include "ui/palette.h"
 
 #include <functional>
 #include <memory>
 
 class AnimationManager;
+class Box;
 class Renderer;
 
 class DesktopWidget {
@@ -17,15 +19,8 @@ public:
 
   virtual void create() = 0;
 
-  void layout(Renderer& renderer) {
-    UiPhaseScope layoutPhase(UiPhase::Layout);
-    doLayout(renderer);
-  }
-
-  void update(Renderer& renderer) {
-    UiPhaseScope updatePhase(UiPhase::Update);
-    doUpdate(renderer);
-  }
+  void layout(Renderer& renderer);
+  void update(Renderer& renderer);
 
   [[nodiscard]] virtual bool wantsSecondTicks() const { return false; }
   [[nodiscard]] virtual bool needsFrameTick() const { return false; }
@@ -34,22 +29,19 @@ public:
     (void)renderer;
   }
 
-  [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
-  [[nodiscard]] float intrinsicWidth() const noexcept { return root() != nullptr ? root()->width() : 0.0f; }
-  [[nodiscard]] float intrinsicHeight() const noexcept { return root() != nullptr ? root()->height() : 0.0f; }
-
-  std::unique_ptr<Node> releaseRoot() {
-    m_rootPtr = m_root.get();
-    return std::move(m_root);
-  }
+  [[nodiscard]] Node* root() const noexcept { return m_contentRoot; }
+  [[nodiscard]] float intrinsicWidth() const noexcept;
+  [[nodiscard]] float intrinsicHeight() const noexcept;
+  std::unique_ptr<Node> releaseRoot();
 
   void setAnimationManager(AnimationManager* manager) noexcept { m_animations = manager; }
   void setRedrawCallback(RedrawCallback callback) { m_redrawCallback = std::move(callback); }
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
+  void setBackgroundStyle(const ThemeColor& color, float radius, float padding);
 
 protected:
-  void setRoot(std::unique_ptr<Node> root) { m_root = std::move(root); }
+  void setRoot(std::unique_ptr<Node> root);
 
   void requestRedraw() {
     if (m_redrawCallback) {
@@ -64,7 +56,17 @@ protected:
   AnimationManager* m_animations = nullptr;
 
 private:
-  std::unique_ptr<Node> m_root;
-  Node* m_rootPtr = nullptr;
+  void applyBackground();
+
+  std::unique_ptr<Node> m_outerRoot;
+  std::unique_ptr<Node> m_contentOwned;
+  Node* m_contentRoot = nullptr;
+  Node* m_outerRootPtr = nullptr;
+  Box* m_bgBox = nullptr;
   RedrawCallback m_redrawCallback;
+
+  bool m_bgEnabled = false;
+  ThemeColor m_bgColor;
+  float m_bgRadius = 0.0f;
+  float m_bgPadding = 0.0f;
 };
