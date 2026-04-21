@@ -24,6 +24,8 @@ public:
 private:
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void doUpdate(Renderer& renderer) override;
+  bool syncLabelText(const std::string& raw);
+  void syncGaugeProgress(double normalized);
   [[nodiscard]] std::string formatValue() const;
   [[nodiscard]] double currentNormalized() const;
   [[nodiscard]] static const char* glyphName(SysmonStat stat);

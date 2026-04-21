@@ -89,14 +89,41 @@ void SysmonWidget::create() {
   setRoot(std::move(container));
 }
 
+bool SysmonWidget::syncLabelText(const std::string& raw) {
+  if (m_label == nullptr) {
+    return false;
+  }
+
+  if (raw == m_lastRawValue && m_isVerticalBar == m_lastLabelVertical) {
+    return false;
+  }
+
+  m_lastRawValue = raw;
+  m_lastLabelVertical = m_isVerticalBar;
+  m_label->setText(displaySysmonLabel(raw, m_isVerticalBar));
+  requestRedraw();
+  return true;
+}
+
+void SysmonWidget::syncGaugeProgress(double normalized) {
+  if (m_gauge == nullptr) {
+    return;
+  }
+
+  const float fillAxis = m_isVerticalBar ? m_gauge->width() : m_gauge->height();
+  const float progress = (fillAxis > 0.0f && normalized * fillAxis < 1.0f) ? 0.0f : static_cast<float>(normalized);
+  m_gauge->setProgress(progress);
+  requestRedraw();
+}
+
 void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
   auto* rootNode = root();
   if (m_glyph == nullptr || rootNode == nullptr) {
     return;
   }
-  // Set before update() so doUpdate applies the same vertical sizing as volume_widget.
-  m_isVerticalBar = containerHeight > containerWidth;
-  update(renderer);
+  const bool isVerticalBar = containerHeight > containerWidth;
+  const bool orientationChanged = m_isVerticalBar != isVerticalBar;
+  m_isVerticalBar = isVerticalBar;
 
   m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
@@ -133,11 +160,15 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
       m_gauge->setSize(gaugeW, gaugeH);
       rootNode->setSize(m_gauge->x() + gaugeW, glyphH);
     }
+    syncGaugeProgress(currentNormalized());
     return;
   }
 
   if (m_label == nullptr) {
     return;
+  }
+  if (orientationChanged || m_lastRawValue.empty()) {
+    syncLabelText(m_lastRawValue.empty() ? formatValue() : m_lastRawValue);
   }
   m_label->setFontSize((verticalBar ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
   m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
@@ -197,13 +228,7 @@ void SysmonWidget::doUpdate(Renderer& renderer) {
   const double normalized = currentNormalized();
 
   if (m_displayMode == SysmonDisplayMode::Gauge) {
-    if (m_gauge != nullptr) {
-      // Sub-pixel snap: hide fill below 1px (matches QML NLinearGauge behaviour)
-      const float fillAxis = m_isVerticalBar ? m_gauge->width() : m_gauge->height();
-      const float progress = (fillAxis > 0.0f && normalized * fillAxis < 1.0f) ? 0.0f : static_cast<float>(normalized);
-      m_gauge->setProgress(progress);
-      requestRedraw();
-    }
+    syncGaugeProgress(normalized);
     return;
   }
 
@@ -211,16 +236,10 @@ void SysmonWidget::doUpdate(Renderer& renderer) {
     return;
   }
 
-  const std::string raw = formatValue();
-  const std::string display = displaySysmonLabel(raw, m_isVerticalBar);
   m_label->setFontSize((m_isVerticalBar ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
-  if (raw != m_lastRawValue || m_isVerticalBar != m_lastLabelVertical) {
-    m_lastRawValue = raw;
-    m_lastLabelVertical = m_isVerticalBar;
-    m_label->setText(display);
-    requestRedraw();
+  if (syncLabelText(formatValue())) {
+    m_label->measure(renderer);
   }
-  m_label->measure(renderer);
 
   if (m_displayMode == SysmonDisplayMode::Graph) {
     pushHistory(normalized);
