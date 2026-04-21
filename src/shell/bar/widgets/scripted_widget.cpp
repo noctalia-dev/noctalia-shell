@@ -1,6 +1,7 @@
 #include "shell/bar/widgets/scripted_widget.h"
 
 #include "core/log.h"
+#include "cursor-shape-v1-client-protocol.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "scripting/luau_host.h"
@@ -46,7 +47,7 @@ void ScriptedWidget::create() {
 
   auto area = std::make_unique<InputArea>();
   area->setAcceptedButtons(BTN_LEFT | BTN_RIGHT | BTN_MIDDLE);
-  area->setCursorShape(1);
+  area->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
   area->setOnClick([this](const InputArea::PointerData& data) {
     if (!m_host)
       return;
@@ -65,17 +66,17 @@ void ScriptedWidget::create() {
       return;
     }
     m_host->callGlobal(fn);
-    requestRedraw();
+    requestUpdate();
   });
   area->setOnEnter([this](const InputArea::PointerData&) {
     if (m_host)
       m_host->callGlobalWithBool("onHover", true);
-    requestRedraw();
+    requestUpdate();
   });
   area->setOnLeave([this]() {
     if (m_host)
       m_host->callGlobalWithBool("onHover", false);
-    requestRedraw();
+    requestUpdate();
   });
 
   auto flex = std::make_unique<Flex>();
