@@ -64,6 +64,25 @@ rotation = 0.0
 format = "{:%H:%M}"
 ```
 
+### Per-widget fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | string | (required) | Unique widget identifier |
+| `type` | string | (required) | Widget type (`clock`, `weather`, `media_player`, etc.) |
+| `output` | string | — | Monitor name (e.g. `"DP-1"`) |
+| `cx`, `cy` | float | — | Center position in logical pixels |
+| `scale` | float | `1.0` | Widget scale factor |
+| `rotation` | float | `0.0` | Rotation in radians |
+| `enabled` | bool | `true` | Set to `false` to temporarily hide a widget without removing it |
+
+```toml
+[[widget]]
+id      = "desktop-widget-0000000000000001"
+type    = "clock"
+enabled = false   # hidden, but preserved in the file
+```
+
 ### Common settings
 
 All desktop widget types support an optional rounded background rectangle:

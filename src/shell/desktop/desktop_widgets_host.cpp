@@ -113,10 +113,16 @@ void DesktopWidgetsHost::syncInstances() {
     return;
   }
 
-  std::erase_if(m_instances,
-                [this](const auto& instance) { return findStateById(m_snapshot, instance->state.id) == nullptr; });
+  std::erase_if(m_instances, [this](const auto& instance) {
+    const DesktopWidgetState* state = findStateById(m_snapshot, instance->state.id);
+    return state == nullptr || !state->enabled;
+  });
 
   for (const auto& state : m_snapshot.widgets) {
+    if (!state.enabled) {
+      continue;
+    }
+
     const WaylandOutput* output = desktop_widgets::resolveEffectiveOutput(*m_wayland, state.outputName);
     if (output == nullptr) {
       continue;

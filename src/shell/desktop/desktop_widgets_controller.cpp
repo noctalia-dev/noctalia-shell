@@ -14,6 +14,8 @@
 #include <filesystem>
 #include <fstream>
 #include <limits>
+#include <sys/inotify.h>
+#include <unistd.h>
 #include <unordered_set>
 
 namespace {
@@ -117,7 +119,14 @@ namespace {
 
 DesktopWidgetsController::DesktopWidgetsController() = default;
 
-DesktopWidgetsController::~DesktopWidgetsController() = default;
+DesktopWidgetsController::~DesktopWidgetsController() {
+  if (m_inotifyFd >= 0) {
+    if (m_watchWd >= 0) {
+      inotify_rm_watch(m_inotifyFd, m_watchWd);
+    }
+    ::close(m_inotifyFd);
+  }
+}
 
 void DesktopWidgetsController::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                                           PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
@@ -132,6 +141,7 @@ void DesktopWidgetsController::initialize(WaylandConnection& wayland, ConfigServ
   m_editor->initialize(wayland, config, timeService, pipewireSpectrum, weather, renderContext, mpris, httpClient);
   m_editor->setExitRequestedCallback([this]() { exitEdit(); });
   loadState();
+  setupWatch();
   m_initialized = true;
   applyVisibility();
 
@@ -314,6 +324,9 @@ void DesktopWidgetsController::loadState() {
         if (auto rotation = (*widgetTable)["rotation"].value<double>()) {
           widget.rotationRad = static_cast<float>(*rotation);
         }
+        if (auto enabled = (*widgetTable)["enabled"].value<bool>()) {
+          widget.enabled = *enabled;
+        }
         if (const auto* settingsTable = (*widgetTable)["settings"].as_table()) {
           for (const auto& [key, value] : *settingsTable) {
             if (auto parsed = readSetting(value); parsed.has_value()) {
@@ -333,11 +346,12 @@ void DesktopWidgetsController::loadState() {
   normalizeSnapshot();
 }
 
-void DesktopWidgetsController::saveState() const {
+void DesktopWidgetsController::saveState() {
   const std::string path = stateFilePath();
   if (path.empty()) {
     return;
   }
+  m_ownWritePending = true;
 
   std::error_code ec;
   std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
@@ -361,6 +375,9 @@ void DesktopWidgetsController::saveState() const {
     widgetTable.insert_or_assign("cy", widget.cy);
     widgetTable.insert_or_assign("scale", widget.scale);
     widgetTable.insert_or_assign("rotation", widget.rotationRad);
+    if (!widget.enabled) {
+      widgetTable.insert_or_assign("enabled", false);
+    }
     if (!widget.settings.empty()) {
       toml::table settingsTable;
       for (const auto& [key, value] : widget.settings) {
@@ -442,6 +459,77 @@ void DesktopWidgetsController::normalizeSnapshot() {
     // cx/cy clamping is owned by the editor (during drag) and the host (on widget creation and
     // prepareFrame). Both of those paths know the widget's actual intrinsic size; clamping here
     // with an estimate can push widgets that the editor had legitimately placed at the edge.
+  }
+}
+
+void DesktopWidgetsController::setupWatch() {
+  const std::string path = stateFilePath();
+  if (path.empty()) {
+    return;
+  }
+
+  const std::string dir = std::filesystem::path(path).parent_path().string();
+  std::error_code ec;
+  std::filesystem::create_directories(dir, ec);
+
+  m_inotifyFd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+  if (m_inotifyFd < 0) {
+    kLog.warn("desktop widgets: inotify_init1 failed");
+    return;
+  }
+
+  m_watchWd = inotify_add_watch(m_inotifyFd, dir.c_str(), IN_MODIFY | IN_CREATE | IN_MOVED_TO);
+  if (m_watchWd < 0) {
+    kLog.warn("desktop widgets: failed to watch {}", dir);
+    ::close(m_inotifyFd);
+    m_inotifyFd = -1;
+  }
+}
+
+void DesktopWidgetsController::checkReload() {
+  if (m_inotifyFd < 0) {
+    return;
+  }
+
+  alignas(inotify_event) char buf[4096];
+  bool changed = false;
+
+  while (true) {
+    const auto n = ::read(m_inotifyFd, buf, sizeof(buf));
+    if (n <= 0) {
+      break;
+    }
+
+    std::size_t offset = 0;
+    while (offset < static_cast<std::size_t>(n)) {
+      const auto* event = reinterpret_cast<const inotify_event*>(buf + offset);
+      if (event->len > 0 && event->wd == m_watchWd) {
+        const std::string_view name{event->name};
+        if (name == "desktop_widgets.toml") {
+          changed = true;
+        }
+      }
+      offset += sizeof(inotify_event) + event->len;
+    }
+  }
+
+  if (!changed) {
+    return;
+  }
+
+  if (m_ownWritePending) {
+    m_ownWritePending = false;
+    return;
+  }
+
+  if (isEditing()) {
+    return;
+  }
+
+  kLog.info("desktop widgets: state file changed, reloading");
+  loadState();
+  if (m_host != nullptr) {
+    m_host->rebuild(m_snapshot);
   }
 }
 

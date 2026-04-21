@@ -413,7 +413,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   }
 
   for (const auto& widgetState : m_snapshot.widgets) {
-    if (effectiveOutputName(widgetState) != surface.outputName || m_factory == nullptr) {
+    if (!widgetState.enabled || effectiveOutputName(widgetState) != surface.outputName || m_factory == nullptr) {
       continue;
     }
 

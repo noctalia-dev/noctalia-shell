@@ -36,6 +36,7 @@ struct DesktopWidgetState {
   float cy = 0.0f;
   float scale = 1.0f;
   float rotationRad = 0.0f;
+  bool enabled = true;
   std::unordered_map<std::string, WidgetSettingValue> settings;
 
   bool operator==(const DesktopWidgetState&) const = default;
@@ -72,12 +73,15 @@ public:
   void toggleEdit();
 
   [[nodiscard]] bool isEditing() const noexcept;
+  [[nodiscard]] int watchFd() const noexcept { return m_inotifyFd; }
+  void checkReload();
   bool onPointerEvent(const PointerEvent& event);
   void onKeyboardEvent(const KeyboardEvent& event);
 
 private:
   void loadState();
-  void saveState() const;
+  void saveState();
+  void setupWatch();
   void applyVisibility();
   void normalizeSnapshot();
   [[nodiscard]] std::string stateFilePath() const;
@@ -89,6 +93,9 @@ private:
 
   DesktopWidgetsSnapshot m_snapshot;
   bool m_initialized = false;
+  bool m_ownWritePending = false;
+  int m_inotifyFd = -1;
+  int m_watchWd = -1;
   std::unique_ptr<DesktopWidgetsHost> m_host;
   std::unique_ptr<DesktopWidgetsEditor> m_editor;
 };
