@@ -40,7 +40,6 @@ void WorkspacesWidget::doLayout(Renderer& renderer, float containerWidth, float 
   if (wasVertical != m_isVertical) {
     m_rebuildPending = true;
   }
-  update(renderer);
   if (m_rebuildPending) {
     rebuild(renderer);
     m_rebuildPending = false;
