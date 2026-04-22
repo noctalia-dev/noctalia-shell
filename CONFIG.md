@@ -20,5 +20,5 @@ Notification daemon toggle: use `[notification].enable_daemon` (documented in [`
 | [Desktop Widgets](config/desktop-widgets.md) | Desktop overlay widgets — edit mode, state file format |
 | [Wallpaper](config/wallpaper.md) | Wallpaper picker and overview backdrop |
 | [Theme](config/theme.md) | Color schemes, modes, wallpaper-derived palettes, app templates |
-| [Services](config/services.md) | Audio, Brightness, Night Light, Weather, Idle, Notifications |
+| [Services](config/services.md) | Audio, Sound cues, Brightness, Night Light, Weather, Idle, Notifications |
 | [Shell](config/shell.md) | Global UI settings, OSD, Keybinds, Hooks |

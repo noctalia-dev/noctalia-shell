@@ -1565,6 +1565,35 @@ void ConfigService::parseTable(const toml::table& tbl) {
     }
   }
 
+  // Parse [sound.notification] and [sound.volume]
+  if (auto* soundTbl = tbl["sound"].as_table()) {
+    auto parseSoundEvent = [](const toml::table& root, const char* key, SoundEventConfig& target) {
+      auto* eventTbl = root[key].as_table();
+      if (eventTbl == nullptr) {
+        return;
+      }
+      if (auto enabledValue = (*eventTbl)["enabled"].value<bool>()) {
+        target.enabled = *enabledValue;
+      } else if (auto legacyEnabledValue = (*eventTbl)["sound_enabled"].value<bool>()) {
+        target.enabled = *legacyEnabledValue;
+      }
+      if (auto soundValue = (*eventTbl)["sound"].value<std::string>()) {
+        target.sound = *soundValue;
+      } else if (auto legacySoundPath = (*eventTbl)["sound_path"].value<std::string>()) {
+        target.sound = *legacySoundPath;
+      }
+      if (auto volumeValue = (*eventTbl)["volume"].value<double>()) {
+        target.volume = std::clamp(static_cast<float>(*volumeValue), 0.0f, 3.0f);
+      } else if (auto legacySoundVolume = (*eventTbl)["sound_volume"].value<double>()) {
+        target.volume = std::clamp(static_cast<float>(*legacySoundVolume), 0.0f, 3.0f);
+      }
+    };
+
+    auto& sound = m_config.sound;
+    parseSoundEvent(*soundTbl, "notification", sound.notification);
+    parseSoundEvent(*soundTbl, "volume", sound.volume);
+  }
+
   // Parse [brightness]
   if (auto* brightnessTbl = tbl["brightness"].as_table()) {
     auto& brightness = m_config.brightness;

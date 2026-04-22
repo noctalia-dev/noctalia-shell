@@ -59,6 +59,7 @@
 #include "system/brightness_service.h"
 #include "system/desktop_entry_poll_source.h"
 #include "system/night_light_manager.h"
+#include "system/sound_service.h"
 #include "system/system_monitor_service.h"
 #include "system/weather_poll_source.h"
 #include "system/weather_service.h"
@@ -120,6 +121,7 @@ private:
   IdleManager m_idleManager;
   HookManager m_hookManager;
   NightLightManager m_nightLightManager;
+  SoundService m_soundService;
   std::unique_ptr<MprisService> m_mprisService;
   std::unique_ptr<PowerProfilesService> m_powerProfilesService;
   std::unique_ptr<NetworkService> m_networkService;
