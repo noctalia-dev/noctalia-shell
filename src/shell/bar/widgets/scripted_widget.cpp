@@ -123,7 +123,7 @@ void ScriptedWidget::create() {
 
 void ScriptedWidget::onFrameTick(float deltaMs) {
   m_accumMs += deltaMs;
-  if (m_accumMs >= 250.0f) {
+  if (m_accumMs >= m_updateIntervalMs) {
     m_accumMs = 0.0f;
     if (m_host)
       m_host->callGlobal("update");
@@ -178,6 +178,8 @@ void ScriptedWidget::luaSetGlyphCodepoint(char32_t codepoint) {
 void ScriptedWidget::luaSetColor(std::string_view role) { m_textColorRole = parseColorRole(role); }
 
 void ScriptedWidget::luaSetGlyphColor(std::string_view role) { m_glyphColorRole = parseColorRole(role); }
+
+void ScriptedWidget::luaSetUpdateInterval(float ms) { m_updateIntervalMs = std::max(16.0f, ms); }
 
 void ScriptedWidget::luaSetVisible(bool visible) {
   if (auto* node = root(); node)

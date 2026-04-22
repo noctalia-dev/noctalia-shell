@@ -52,6 +52,13 @@ namespace {
     return 0;
   }
 
+  int luau_setUpdateInterval(lua_State* L) {
+    auto ms = static_cast<float>(luaL_checknumber(L, 1));
+    if (auto* w = getWidget(L))
+      w->luaSetUpdateInterval(ms);
+    return 0;
+  }
+
   int luau_setVisible(lua_State* L) {
     bool visible = lua_toboolean(L, 1) != 0;
     if (auto* w = getWidget(L))
@@ -106,6 +113,7 @@ namespace {
       {"setGlyphCodepoint", luau_setGlyphCodepoint},
       {"setColor", luau_setColor},
       {"setGlyphColor", luau_setGlyphColor},
+      {"setUpdateInterval", luau_setUpdateInterval},
       {"setVisible", luau_setVisible},
       {"getConfig", luau_getConfig},
       {nullptr, nullptr},

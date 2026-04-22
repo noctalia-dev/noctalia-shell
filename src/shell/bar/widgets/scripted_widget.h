@@ -31,6 +31,7 @@ public:
   void luaSetColor(std::string_view role);
   void luaSetGlyphColor(std::string_view role);
   void luaSetVisible(bool visible);
+  void luaSetUpdateInterval(float ms);
 
   [[nodiscard]] const std::unordered_map<std::string, WidgetSettingValue>& settings() const { return m_settings; }
 
@@ -50,5 +51,6 @@ private:
   float m_accumMs = 0.0f;
   std::optional<ColorRole> m_textColorRole;
   std::optional<ColorRole> m_glyphColorRole;
+  float m_updateIntervalMs = 250.0f;
   bool m_glyphVisible = false;
 };
