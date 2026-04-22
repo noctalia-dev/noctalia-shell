@@ -413,7 +413,7 @@ void DesktopWidgetsController::saveState() {
     kLog.warn("desktop widgets: failed to open {} for writing", tmpPath);
     return;
   }
-  out << root;
+  out << toml::toml_formatter{root, toml::toml_formatter::default_flags & ~toml::format_flags::allow_literal_strings};
   out.close();
 
   std::filesystem::rename(tmpPath, path, ec);
