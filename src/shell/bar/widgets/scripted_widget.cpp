@@ -118,6 +118,7 @@ void ScriptedWidget::create() {
     return;
   }
   m_host->exec(m_scriptPath, source);
+  m_host->callGlobal("update");
 }
 
 void ScriptedWidget::onFrameTick(float deltaMs) {
