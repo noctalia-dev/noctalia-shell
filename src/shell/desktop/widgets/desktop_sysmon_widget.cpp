@@ -16,6 +16,7 @@ namespace {
 
   constexpr float kBaseWidth = 180.0f;
   constexpr float kBaseHeight = 80.0f;
+  constexpr float kGraphLineWidth = 1.35f;
   const auto kSampleInterval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::seconds(1));
   constexpr auto kSamplePublishSlack = std::chrono::milliseconds(20);
   constexpr auto kSampleRetryDelay = std::chrono::milliseconds(25);
@@ -56,7 +57,7 @@ void DesktopSysmonWidget::create() {
   rootNode->addChild(std::move(glyph));
 
   auto graph = std::make_unique<GraphNode>();
-  graph->setLineWidth(2.0f);
+  graph->setLineWidth(kGraphLineWidth);
   graph->setGraphFillOpacity(0.2f);
   m_graphNode = static_cast<GraphNode*>(rootNode->addChild(std::move(graph)));
 
@@ -104,7 +105,7 @@ void DesktopSysmonWidget::doLayout(Renderer& renderer) {
   if (m_stat2.has_value()) {
     m_graphNode->setLineColor2(resolveThemeColor(m_lineColor2));
   }
-  m_graphNode->setLineWidth(2.0f * scale);
+  m_graphNode->setLineWidth(kGraphLineWidth * scale);
 
   m_glyph->setGlyphSize(fontSize);
   m_glyph->setColor(resolveThemeColor(roleColor(ColorRole::OnSurface)));

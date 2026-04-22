@@ -25,6 +25,7 @@ namespace {
     return raw.substr(0, raw.size() - 1);
   }
 
+  constexpr float kGraphLineWidth = 1.35f;
   const auto kSampleInterval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::seconds(1));
   constexpr auto kSamplePublishSlack = std::chrono::milliseconds(20);
   constexpr auto kSampleRetryDelay = std::chrono::milliseconds(25);
@@ -80,7 +81,7 @@ void SysmonWidget::create() {
 
     auto graph = std::make_unique<GraphNode>();
     graph->setLineColor1(resolveColorRole(ColorRole::Primary));
-    graph->setLineWidth(1.5f * m_contentScale);
+    graph->setLineWidth(kGraphLineWidth * m_contentScale);
     graph->setGraphFillOpacity(0.15f);
     m_graphNode = static_cast<GraphNode*>(m_chartBg->addChild(std::move(graph)));
   }
