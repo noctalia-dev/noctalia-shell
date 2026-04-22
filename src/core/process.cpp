@@ -143,39 +143,73 @@ namespace process {
     }
   }
 
-  bool runSync(const std::vector<std::string>& args) {
-    if (args.empty() || args.front().empty()) {
-      return false;
-    }
+  RunResult runSync(const std::vector<std::string>& args) {
+    if (args.empty() || args.front().empty())
+      return {-1, {}, {}};
 
-    pid_t pid = fork();
+    int outPipe[2]{};
+    int errPipe[2]{};
+    if (::pipe(outPipe) != 0 || ::pipe(errPipe) != 0)
+      return {-1, {}, {}};
+
+    const pid_t pid = ::fork();
     if (pid < 0) {
-      return false;
+      ::close(outPipe[0]);
+      ::close(outPipe[1]);
+      ::close(errPipe[0]);
+      ::close(errPipe[1]);
+      return {-1, {}, {}};
     }
 
     if (pid == 0) {
+      ::close(outPipe[0]);
+      ::close(errPipe[0]);
+      ::dup2(outPipe[1], STDOUT_FILENO);
+      ::dup2(errPipe[1], STDERR_FILENO);
+      ::close(outPipe[1]);
+      ::close(errPipe[1]);
+
       std::vector<char*> argv;
       argv.reserve(args.size() + 1);
-      for (const auto& arg : args) {
+      for (const auto& arg : args)
         argv.push_back(const_cast<char*>(arg.c_str()));
-      }
       argv.push_back(nullptr);
 
-      execvp(argv[0], argv.data());
-      _exit(127);
+      ::execvp(argv[0], argv.data());
+      ::_exit(127);
     }
+
+    ::close(outPipe[1]);
+    ::close(errPipe[1]);
+
+    auto drain = [](int fd) {
+      std::string buf;
+      char tmp[4096];
+      for (;;) {
+        const auto n = ::read(fd, tmp, sizeof(tmp));
+        if (n <= 0)
+          break;
+        buf.append(tmp, static_cast<size_t>(n));
+      }
+      ::close(fd);
+      while (!buf.empty() && (buf.back() == '\n' || buf.back() == '\r'))
+        buf.pop_back();
+      return buf;
+    };
+
+    std::string out = drain(outPipe[0]);
+    std::string err = drain(errPipe[0]);
 
     int status = 0;
-    if (waitpid(pid, &status, 0) < 0) {
-      return false;
-    }
-    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    ::waitpid(pid, &status, 0);
+    int exitCode = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+
+    return {exitCode, std::move(out), std::move(err)};
   }
 
-  bool runSync(const std::string& command) {
-    if (command.empty()) {
-      return false;
-    }
+  RunResult runSync(const std::string& command) {
+    if (command.empty())
+      return {-1, {}, {}};
     return runSync(std::vector<std::string>{"/bin/sh", "-lc", command});
   }
 
