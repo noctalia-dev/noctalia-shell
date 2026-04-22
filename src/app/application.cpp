@@ -165,7 +165,7 @@ void Application::syncNotificationDaemon() {
     return;
   }
 
-  if (!m_configService.config().shell.notificationsDbus) {
+  if (!m_configService.config().notification.dbus) {
     if (m_notificationDbus != nullptr) {
       kLog.info("notification daemon disabled by config");
     }

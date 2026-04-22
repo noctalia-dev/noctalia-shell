@@ -228,6 +228,7 @@ struct OsdConfig {
 };
 
 struct NotificationConfig {
+  bool dbus = true;
   float backgroundOpacity = 0.97f; // toast card background alpha (0.0–1.0)
   bool backgroundBlur = true;
 };
@@ -254,7 +255,6 @@ struct ShellConfig {
   float uiScale = 1.0f;
   std::string fontFamily = "sans-serif";
   std::string lang; // empty = auto-detect from $LC_ALL/$LC_MESSAGES/$LANG
-  bool notificationsDbus = true;
   bool polkitAgent = false;
   PasswordMaskStyle passwordMaskStyle = PasswordMaskStyle::CircleFilled;
   AnimationConfig animation;

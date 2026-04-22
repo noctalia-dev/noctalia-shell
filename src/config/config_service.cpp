@@ -1267,9 +1267,6 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto v = (*shellTbl)["lang"].value<std::string>()) {
       shell.lang = *v;
     }
-    if (auto notificationsDbus = (*shellTbl)["notifications_dbus"].value<bool>()) {
-      shell.notificationsDbus = *notificationsDbus;
-    }
     if (auto polkitAgent = (*shellTbl)["polkit_agent"].value<bool>()) {
       shell.polkitAgent = *polkitAgent;
     }
@@ -1467,6 +1464,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   if (auto* notifTbl = tbl["notification"].as_table()) {
     auto& notif = m_config.notification;
+    if (auto v = (*notifTbl)["dbus"].value<bool>())
+      notif.dbus = *v;
     if (auto v = (*notifTbl)["background_opacity"].value<double>())
       notif.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
     if (auto v = (*notifTbl)["background_blur"].value<bool>())

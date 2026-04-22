@@ -167,6 +167,7 @@ Idle behavior uses the Wayland `ext_idle_notifier_v1` protocol and respects acti
 
 ```toml
 [notification]
+dbus               = true   # when false, don't claim org.freedesktop.Notifications; internal notifications still work
 background_opacity = 0.97   # toast card background alpha; lower values let compositor blur show through
 background_blur    = true   # request compositor background blur behind toasts
 ```
