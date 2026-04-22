@@ -433,3 +433,19 @@ Shows a glyph and opens the wallpaper picker panel on click.
 [widget.wallpaper]
 icon = "photo"
 ```
+
+---
+
+## `scripted`
+
+Custom widget driven by a Luau script. See [`scripted-widgets.md`](scripted-widgets.md) for the full Lua API reference, callbacks, and examples.
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `script` | string | `""` | Path to the Luau script file (`~` is expanded) |
+
+```toml
+[widget.my_widget]
+type   = "scripted"
+script = "~/.config/noctalia/scripts/my_widget.lua"
+```

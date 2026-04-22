@@ -5,6 +5,7 @@
 #include "lua.h"
 #include "luacode.h"
 #include "lualib.h"
+#include "notification/notifications.h"
 
 #include <cstdlib>
 #include <string>
@@ -27,16 +28,48 @@ namespace {
 
   int luau_runSync(lua_State* L) {
     const char* cmd = luaL_checkstring(L, 1);
-    bool ok = process::runSync(std::string(cmd));
-    lua_pushboolean(L, ok ? 1 : 0);
+    auto result = process::runSync(std::string(cmd));
+    lua_pushnumber(L, result.exitCode);
+    lua_pushlstring(L, result.out.data(), result.out.size());
+    lua_pushlstring(L, result.err.data(), result.err.size());
+    return 3;
+  }
+
+  int luau_commandExists(lua_State* L) {
+    const char* name = luaL_checkstring(L, 1);
+    lua_pushboolean(L, process::commandExists(name) ? 1 : 0);
+    return 1;
+  }
+
+  int luau_notify(lua_State* L) {
+    const char* title = luaL_checkstring(L, 1);
+    const char* body = luaL_optstring(L, 2, "");
+    notify::info("Noctalia", title, body);
+    return 0;
+  }
+
+  int luau_notifyError(lua_State* L) {
+    const char* title = luaL_checkstring(L, 1);
+    const char* body = luaL_optstring(L, 2, "");
+    notify::error("Noctalia", title, body);
+    return 0;
+  }
+
+  int luau_getenv(lua_State* L) {
+    const char* name = luaL_checkstring(L, 1);
+    const char* val = std::getenv(name);
+    if (val)
+      lua_pushstring(L, val);
+    else
+      lua_pushnil(L);
     return 1;
   }
 
   const luaL_Reg kNoctaliaBaseLib[] = {
-      {"log", luau_log},
-      {"runAsync", luau_runAsync},
-      {"runSync", luau_runSync},
-      {nullptr, nullptr},
+      {"log", luau_log},         {"runAsync", luau_runAsync},
+      {"runSync", luau_runSync}, {"commandExists", luau_commandExists},
+      {"notify", luau_notify},   {"notifyError", luau_notifyError},
+      {"getenv", luau_getenv},   {nullptr, nullptr},
   };
 
   void registerNoctaliaLib(lua_State* L) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/config_service.h"
 #include "shell/bar/widget.h"
 #include "ui/palette.h"
 
@@ -7,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 class Flex;
 class Glyph;
@@ -16,7 +18,7 @@ class LuauHost;
 
 class ScriptedWidget : public Widget {
 public:
-  explicit ScriptedWidget(std::string scriptPath);
+  explicit ScriptedWidget(std::string scriptPath, const WidgetConfig* config = nullptr);
   ~ScriptedWidget() override;
 
   void create() override;
@@ -28,6 +30,9 @@ public:
   void luaSetGlyphCodepoint(char32_t codepoint);
   void luaSetColor(std::string_view role);
   void luaSetGlyphColor(std::string_view role);
+  void luaSetVisible(bool visible);
+
+  [[nodiscard]] const std::unordered_map<std::string, WidgetSettingValue>& settings() const { return m_settings; }
 
 private:
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
@@ -36,6 +41,7 @@ private:
   static std::optional<ColorRole> parseColorRole(std::string_view name);
 
   std::string m_scriptPath;
+  std::unordered_map<std::string, WidgetSettingValue> m_settings;
   std::unique_ptr<LuauHost> m_host;
   InputArea* m_area = nullptr;
   Flex* m_flex = nullptr;

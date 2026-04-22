@@ -4,6 +4,8 @@
 #include "lualib.h"
 #include "shell/bar/widgets/scripted_widget.h"
 
+#include <variant>
+
 namespace {
 
   constexpr const char* kWidgetKey = "__scripted_widget";
@@ -50,9 +52,63 @@ namespace {
     return 0;
   }
 
+  int luau_setVisible(lua_State* L) {
+    bool visible = lua_toboolean(L, 1) != 0;
+    if (auto* w = getWidget(L))
+      w->luaSetVisible(visible);
+    return 0;
+  }
+
+  int luau_getConfig(lua_State* L) {
+    const char* key = luaL_checkstring(L, 1);
+    auto* w = getWidget(L);
+    if (!w) {
+      lua_pushnil(L);
+      return 1;
+    }
+
+    auto it = w->settings().find(key);
+    if (it == w->settings().end()) {
+      if (lua_gettop(L) >= 2) {
+        lua_pushvalue(L, 2);
+        return 1;
+      }
+      lua_pushnil(L);
+      return 1;
+    }
+
+    std::visit(
+        [L](const auto& val) {
+          using T = std::decay_t<decltype(val)>;
+          if constexpr (std::is_same_v<T, bool>)
+            lua_pushboolean(L, val ? 1 : 0);
+          else if constexpr (std::is_same_v<T, std::int64_t>)
+            lua_pushnumber(L, static_cast<double>(val));
+          else if constexpr (std::is_same_v<T, double>)
+            lua_pushnumber(L, val);
+          else if constexpr (std::is_same_v<T, std::string>)
+            lua_pushlstring(L, val.data(), val.size());
+          else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+            lua_createtable(L, static_cast<int>(val.size()), 0);
+            for (size_t i = 0; i < val.size(); ++i) {
+              lua_pushlstring(L, val[i].data(), val[i].size());
+              lua_rawseti(L, -2, static_cast<int>(i + 1));
+            }
+          }
+        },
+        it->second);
+    return 1;
+  }
+
   const luaL_Reg kWidgetLib[] = {
-      {"setText", luau_setText},   {"setGlyph", luau_setGlyph},           {"setGlyphCodepoint", luau_setGlyphCodepoint},
-      {"setColor", luau_setColor}, {"setGlyphColor", luau_setGlyphColor}, {nullptr, nullptr},
+      {"setText", luau_setText},
+      {"setGlyph", luau_setGlyph},
+      {"setGlyphCodepoint", luau_setGlyphCodepoint},
+      {"setColor", luau_setColor},
+      {"setGlyphColor", luau_setGlyphColor},
+      {"setVisible", luau_setVisible},
+      {"getConfig", luau_getConfig},
+      {nullptr, nullptr},
   };
 
 } // namespace

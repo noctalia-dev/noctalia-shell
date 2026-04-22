@@ -74,6 +74,8 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"microphone", 0xEAF0},        // microphone
     {"microphone-mute", 0xED16},   // microphone-off
     {"music-off", 0xF166},         // music-off
+    {"video", 0xED22},             // video
+    {"video-off", 0xED20},         // video-off
 
     // Volume
     {"volume-high", 0xEB51},       // volume
@@ -143,9 +145,8 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"sort-descending", 0xEB27},   // sort-descending
 
     // Wallpaper / color
-    {"camera-video", 0xED22},      // video
     {"wallpaper-selector", 0xFD4A}, // library-photo
-    {"color-picker", 0xEBE6},      // color-picker
+    {"color-picker", 0xEBE6},       // color-picker
 
     // Battery
     {"battery-0", 0xEA34},         // battery

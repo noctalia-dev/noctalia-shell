@@ -268,7 +268,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "scripted") {
     std::string script = wc != nullptr ? wc->getString("script", "") : std::string();
-    auto widget = std::make_unique<ScriptedWidget>(std::move(script));
+    auto widget = std::make_unique<ScriptedWidget>(std::move(script), wc);
     widget->setContentScale(contentScale);
     return widget;
   }

@@ -39,7 +39,11 @@ namespace {
   }
 } // namespace
 
-ScriptedWidget::ScriptedWidget(std::string scriptPath) : m_scriptPath(std::move(scriptPath)) {}
+ScriptedWidget::ScriptedWidget(std::string scriptPath, const WidgetConfig* config)
+    : m_scriptPath(std::move(scriptPath)) {
+  if (config)
+    m_settings = config->settings;
+}
 ScriptedWidget::~ScriptedWidget() = default;
 
 void ScriptedWidget::create() {
@@ -173,6 +177,12 @@ void ScriptedWidget::luaSetGlyphCodepoint(char32_t codepoint) {
 void ScriptedWidget::luaSetColor(std::string_view role) { m_textColorRole = parseColorRole(role); }
 
 void ScriptedWidget::luaSetGlyphColor(std::string_view role) { m_glyphColorRole = parseColorRole(role); }
+
+void ScriptedWidget::luaSetVisible(bool visible) {
+  if (auto* node = root(); node)
+    node->setVisible(visible);
+  requestRedraw();
+}
 
 std::optional<ColorRole> ScriptedWidget::parseColorRole(std::string_view name) {
   if (name == "primary")
