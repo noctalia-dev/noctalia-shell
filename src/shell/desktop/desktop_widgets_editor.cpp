@@ -484,8 +484,10 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
 
   const auto selectedIt = surface.views.find(m_selectedWidgetId);
   if (selectedIt != surface.views.end()) {
+    selectedIt->second.bodyArea->setZIndex(101);
+
     auto selectionFrameTransform = std::make_unique<Node>();
-    selectionFrameTransform->setZIndex(3);
+    selectionFrameTransform->setZIndex(100);
     surface.selectionFrameTransform = selectionFrameTransform.get();
 
     auto ringShadow = std::make_unique<Box>();
@@ -523,24 +525,28 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     surface.rotateArea = rotateArea.get();
     surface.selectionFrameTransform->addChild(std::move(rotateArea));
 
+    root->addChild(std::move(selectionFrameTransform));
+
+    auto selectionBorderTransform = std::make_unique<Node>();
+    selectionBorderTransform->setZIndex(102);
+    selectionBorderTransform->setHitTestVisible(false);
+    surface.selectionBorderTransform = selectionBorderTransform.get();
+
     auto selectionBorderShadow = std::make_unique<Box>();
     selectionBorderShadow->setBorder(kShadowColor, kSelectionStroke + kShadowExpand * 2.0f);
     selectionBorderShadow->setFill(clearThemeColor());
     selectionBorderShadow->setRadius(Style::radiusMd + kShadowExpand);
-    selectionBorderShadow->setZIndex(1);
     surface.selectionBorderShadow = selectionBorderShadow.get();
-    surface.selectionFrameTransform->addChild(std::move(selectionBorderShadow));
+    selectionBorderTransform->addChild(std::move(selectionBorderShadow));
 
     auto selectionBorder = std::make_unique<Box>();
     selectionBorder->setBorder(roleColor(ColorRole::Primary), kSelectionStroke);
     selectionBorder->setFill(clearThemeColor());
     selectionBorder->setRadius(Style::radiusMd);
-    selectionBorder->setZIndex(2);
-    // Keep the selection stroke below the body InputArea so the visual outline
-    // does not steal hit-tests from move-drag interactions after selection.
+    selectionBorder->setZIndex(1);
     surface.selectionBorder = selectionBorder.get();
-    surface.selectionFrameTransform->addChild(std::move(selectionBorder));
-    root->addChild(std::move(selectionFrameTransform));
+    selectionBorderTransform->addChild(std::move(selectionBorder));
+    root->addChild(std::move(selectionBorderTransform));
 
     for (std::size_t i = 0; i < kScaleCornerCount; ++i) {
       const ScaleCorner corner = static_cast<ScaleCorner>(i);
@@ -549,19 +555,19 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
       scaleHandleShadow->setBorder(kShadowColor, kShadowExpand);
       scaleHandleShadow->setFill(clearThemeColor());
       scaleHandleShadow->setRadius(Style::radiusSm + kShadowExpand);
-      scaleHandleShadow->setZIndex(5);
+      scaleHandleShadow->setZIndex(103);
       surface.scaleHandleShadows[i] = scaleHandleShadow.get();
       root->addChild(std::move(scaleHandleShadow));
 
       auto scaleHandle = std::make_unique<Box>();
       scaleHandle->setFill(roleColor(ColorRole::Primary));
       scaleHandle->setRadius(Style::radiusSm);
-      scaleHandle->setZIndex(6);
+      scaleHandle->setZIndex(104);
       surface.scaleHandles[i] = scaleHandle.get();
       root->addChild(std::move(scaleHandle));
 
       auto scaleArea = std::make_unique<InputArea>();
-      scaleArea->setZIndex(7);
+      scaleArea->setZIndex(105);
       scaleArea->setOnPress([this, id = m_selectedWidgetId, corner](const InputArea::PointerData& data) {
         if (data.button != BTN_LEFT) {
           return;
@@ -593,7 +599,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   toolbar->setBorderColor(roleColor(ColorRole::Outline));
   toolbar->setBorderWidth(Style::borderWidth);
   toolbar->setRadius(Style::radiusXl);
-  toolbar->setZIndex(20);
+  toolbar->setZIndex(200);
 
   auto toolbarHandle = std::make_unique<Flex>();
   toolbarHandle->setDirection(FlexDirection::Horizontal);
@@ -782,7 +788,8 @@ void DesktopWidgetsEditor::updateSelectionVisuals(OverlaySurface& surface) {
   const auto selectedIt = surface.views.find(m_selectedWidgetId);
   const DesktopWidgetState* state = findWidgetState(m_selectedWidgetId);
   if (selectedIt == surface.views.end() || state == nullptr || surface.selectionFrameTransform == nullptr ||
-      surface.selectionBorder == nullptr || surface.rotationRing == nullptr || surface.rotateArea == nullptr) {
+      surface.selectionBorderTransform == nullptr || surface.selectionBorder == nullptr ||
+      surface.rotationRing == nullptr || surface.rotateArea == nullptr) {
     return;
   }
   for (std::size_t i = 0; i < kScaleCornerCount; ++i) {
@@ -799,6 +806,10 @@ void DesktopWidgetsEditor::updateSelectionVisuals(OverlaySurface& surface) {
   surface.selectionFrameTransform->setFrameSize(width, height);
   surface.selectionFrameTransform->setPosition(left, top);
   surface.selectionFrameTransform->setRotation(state->rotationRad);
+
+  surface.selectionBorderTransform->setFrameSize(width, height);
+  surface.selectionBorderTransform->setPosition(left, top);
+  surface.selectionBorderTransform->setRotation(state->rotationRad);
 
   const float ringPadExp = kRotatePadding + kShadowExpand;
   if (surface.rotationRingShadow != nullptr) {

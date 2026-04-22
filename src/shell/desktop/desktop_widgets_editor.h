@@ -87,6 +87,7 @@ private:
     bool sceneRebuildRequested = true;
     std::unordered_map<std::string, EditorWidgetView> views;
     Node* selectionFrameTransform = nullptr;
+    Node* selectionBorderTransform = nullptr;
     Box* selectionBorder = nullptr;
     Box* selectionBorderShadow = nullptr;
     Box* rotationRing = nullptr;
