@@ -32,6 +32,7 @@ public:
   void luaSetGlyphColor(std::string_view role);
   void luaSetVisible(bool visible);
   void luaSetUpdateInterval(float ms);
+  [[nodiscard]] bool isVertical() const { return m_isVertical; }
 
   [[nodiscard]] const std::unordered_map<std::string, WidgetSettingValue>& settings() const { return m_settings; }
 
@@ -52,5 +53,6 @@ private:
   std::optional<ColorRole> m_textColorRole;
   std::optional<ColorRole> m_glyphColorRole;
   float m_updateIntervalMs = 250.0f;
+  bool m_isVertical = false;
   bool m_glyphVisible = false;
 };

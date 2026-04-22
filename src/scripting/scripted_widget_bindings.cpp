@@ -52,6 +52,12 @@ namespace {
     return 0;
   }
 
+  int luau_isVertical(lua_State* L) {
+    auto* w = getWidget(L);
+    lua_pushboolean(L, w && w->isVertical() ? 1 : 0);
+    return 1;
+  }
+
   int luau_setUpdateInterval(lua_State* L) {
     auto ms = static_cast<float>(luaL_checknumber(L, 1));
     if (auto* w = getWidget(L))
@@ -113,6 +119,7 @@ namespace {
       {"setGlyphCodepoint", luau_setGlyphCodepoint},
       {"setColor", luau_setColor},
       {"setGlyphColor", luau_setGlyphColor},
+      {"isVertical", luau_isVertical},
       {"setUpdateInterval", luau_setUpdateInterval},
       {"setVisible", luau_setVisible},
       {"getConfig", luau_getConfig},

@@ -131,7 +131,8 @@ void ScriptedWidget::onFrameTick(float deltaMs) {
   }
 }
 
-void ScriptedWidget::doLayout(Renderer& renderer, float, float) {
+void ScriptedWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
+  m_isVertical = containerHeight > containerWidth;
   if (!m_flex)
     return;
 
@@ -155,8 +156,10 @@ void ScriptedWidget::doLayout(Renderer& renderer, float, float) {
 void ScriptedWidget::doUpdate(Renderer&) {}
 
 void ScriptedWidget::luaSetText(std::string_view text) {
-  if (m_label)
-    m_label->setText(std::string(text));
+  if (!m_label)
+    return;
+  m_label->setText(std::string(text));
+  m_label->setVisible(!text.empty());
 }
 
 void ScriptedWidget::luaSetGlyph(std::string_view name) {
