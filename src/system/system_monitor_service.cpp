@@ -259,14 +259,14 @@ void SystemMonitorService::samplingLoop() {
       m_historyHead = (m_historyHead + 1) % kHistorySize;
     }
 
-    if (next.cpuTempC.has_value()) {
-      kLog.debug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) swap={}/{} MB temp={:.1f}C", next.cpuUsagePercent,
-                 next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb,
-                 *next.cpuTempC);
-    } else {
-      kLog.debug("system monitor cpu={:.1f}% ram={:.1f}% ({}/{} MB) swap={}/{} MB temp=n/a", next.cpuUsagePercent,
-                 next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb);
-    }
+    // if (next.cpuTempC.has_value()) {
+    //   kLog.debug("cpu={:.1f}% ram={:.1f}% ({}/{} MB) swap={}/{} MB temp={:.1f}C", next.cpuUsagePercent,
+    //              next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb,
+    //              *next.cpuTempC);
+    // } else {
+    //   kLog.debug("cpu={:.1f}% ram={:.1f}% ({}/{} MB) swap={}/{} MB temp=n/a", next.cpuUsagePercent,
+    //              next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb);
+    // }
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
