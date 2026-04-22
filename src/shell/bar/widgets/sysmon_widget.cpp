@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <cmath>
 #include <format>
-#include <sys/statvfs.h>
+#include <vector>
 
 namespace {
 
@@ -25,20 +25,37 @@ namespace {
     return raw.substr(0, raw.size() - 1);
   }
 
+  const auto kSampleInterval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::seconds(1));
+  constexpr auto kSamplePublishSlack = std::chrono::milliseconds(20);
+  constexpr auto kSampleRetryDelay = std::chrono::milliseconds(25);
+  constexpr auto kInitialSampleRetryDelay = std::chrono::milliseconds(250);
+
+  bool needsCpuTemp(SysmonStat stat) { return stat == SysmonStat::CpuTemp; }
+
 } // namespace
 
 SysmonWidget::SysmonWidget(SystemMonitorService* monitor, SysmonStat stat, std::string diskPath,
                            SysmonDisplayMode displayMode, bool showLabel)
     : m_monitor(monitor), m_stat(stat), m_displayMode(displayMode), m_showLabel(showLabel),
       m_diskPath(std::move(diskPath)) {
-  if (m_stat == SysmonStat::CpuTemp && m_monitor != nullptr) {
-    m_monitor->retainCpuTemp();
+  if (m_monitor != nullptr) {
+    if (needsCpuTemp(m_stat)) {
+      m_monitor->retainCpuTemp();
+    }
+    if (m_stat == SysmonStat::DiskPct && !m_diskPath.empty()) {
+      m_monitor->retainDiskPath(m_diskPath);
+    }
   }
 }
 
 SysmonWidget::~SysmonWidget() {
-  if (m_stat == SysmonStat::CpuTemp && m_monitor != nullptr) {
-    m_monitor->releaseCpuTemp();
+  if (m_monitor != nullptr) {
+    if (needsCpuTemp(m_stat)) {
+      m_monitor->releaseCpuTemp();
+    }
+    if (m_stat == SysmonStat::DiskPct && !m_diskPath.empty()) {
+      m_monitor->releaseDiskPath(m_diskPath);
+    }
   }
 }
 
@@ -243,8 +260,6 @@ void SysmonWidget::doUpdate(Renderer& renderer) {
     return;
   }
 
-  const double normalized = currentNormalized();
-
   if (m_label != nullptr) {
     m_label->setFontSize((m_isVerticalBar ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
     if (syncLabelText(formatValue())) {
@@ -253,86 +268,122 @@ void SysmonWidget::doUpdate(Renderer& renderer) {
   }
 
   if (m_displayMode == SysmonDisplayMode::Gauge) {
-    syncGaugeProgress(normalized);
+    syncGaugeProgress(currentNormalized());
     return;
   }
 
   if (m_displayMode == SysmonDisplayMode::Graph) {
-    pushHistory(normalized);
     updateGraph();
-    requestRedraw();
+    if (m_monitor != nullptr) {
+      scheduleNextUpdate(m_monitor->latest().sampledAt);
+    }
   }
 }
 
 void SysmonWidget::onFrameTick(float deltaMs) {
+  (void)deltaMs;
   if (m_graphNode == nullptr || m_scrollProgress >= 1.0f) {
     return;
   }
-  m_scrollProgress = std::min(1.0f, m_scrollProgress + deltaMs * 0.001f);
+  m_scrollProgress = scrollProgressForSample(m_lastSampleAt);
   m_graphNode->setScroll1(m_scrollProgress);
-  requestRedraw();
+  if (m_scrollProgress < 1.0f) {
+    requestRedraw();
+  }
 }
 
 bool SysmonWidget::needsFrameTick() const {
   return m_displayMode == SysmonDisplayMode::Graph && m_scrollProgress < 1.0f;
 }
 
-void SysmonWidget::pushHistory(double normalized) {
-  m_history[m_historyHead] = std::clamp(normalized, 0.0, 1.0);
-  m_historyHead = (m_historyHead + 1) % kHistorySamples;
-}
-
-void SysmonWidget::updateGraph() {
-  if (m_graphNode == nullptr) {
+void SysmonWidget::scheduleNextUpdate(std::chrono::steady_clock::time_point latestSampleAt) {
+  if (latestSampleAt == std::chrono::steady_clock::time_point{}) {
+    m_updateTimer.start(kInitialSampleRetryDelay, [this]() { requestUpdate(); });
     return;
   }
 
-  std::array<float, kHistorySamples + 1> data{};
-  for (int i = 0; i < kHistorySamples; ++i) {
-    const int idx = (m_historyHead + i) % kHistorySamples;
-    data[static_cast<std::size_t>(i)] = static_cast<float>(m_history[idx]);
-  }
-  const float last = data[kHistorySamples - 1];
-  const float prev = data[kHistorySamples - 2];
-  data[kHistorySamples] = std::clamp(last + (last - prev) * 0.5f, 0.0f, 1.0f);
-
-  m_graphNode->setData(data.data(), kHistorySamples + 1, nullptr, 0);
-  m_graphNode->setCount1(static_cast<float>(kHistorySamples + 1));
-  m_scrollProgress = 0.0f;
-  m_graphNode->setScroll1(0.0f);
+  const auto now = std::chrono::steady_clock::now();
+  const auto nextExpectedAt = latestSampleAt + kSampleInterval + kSamplePublishSlack;
+  const auto delay = now < nextExpectedAt ? std::chrono::duration_cast<std::chrono::milliseconds>(nextExpectedAt - now)
+                                          : kSampleRetryDelay;
+  m_updateTimer.start(delay, [this]() { requestUpdate(); });
 }
 
-double SysmonWidget::currentNormalized() const {
+void SysmonWidget::updateGraph() {
+  if (m_graphNode == nullptr || m_monitor == nullptr) {
+    return;
+  }
+
+  const auto latestSampleAt = m_monitor->latest().sampledAt;
+  const bool newData = latestSampleAt != m_lastSampleAt;
+  if (!newData && m_graphInitialized) {
+    return;
+  }
+
+  std::vector<float> data;
   if (m_stat == SysmonStat::DiskPct) {
-    struct statvfs sv{};
-    if (::statvfs(m_diskPath.c_str(), &sv) == 0 && sv.f_blocks > 0) {
-      return static_cast<double>(sv.f_blocks - sv.f_bfree) / static_cast<double>(sv.f_blocks);
+    data = m_monitor->diskHistory(m_diskPath, kHistorySamples);
+    if (data.size() < 4) {
+      return;
     }
-    return 0.0;
+    for (float& sample : data) {
+      sample = std::clamp(sample / 100.0f, 0.0f, 1.0f);
+    }
+  } else {
+    const auto hist = m_monitor->history(kHistorySamples);
+    if (hist.size() < 4) {
+      return;
+    }
+    data.resize(hist.size());
+    for (std::size_t i = 0; i < hist.size(); ++i) {
+      data[i] = static_cast<float>(std::clamp(normalizedFromStats(m_stat, hist[i], m_tempMin, m_tempMax), 0.0, 1.0));
+    }
   }
 
-  if (m_monitor == nullptr) {
-    return 0.0;
+  const int n = static_cast<int>(data.size());
+  const int texSize = n + 1;
+  data.push_back(std::clamp(data[static_cast<std::size_t>(n - 1)] +
+                                (data[static_cast<std::size_t>(n - 1)] - data[static_cast<std::size_t>(n - 2)]) * 0.5f,
+                            0.0f, 1.0f));
+
+  m_graphNode->setData(data.data(), texSize, nullptr, 0);
+  m_graphNode->setCount1(static_cast<float>(n));
+  m_graphInitialized = true;
+  m_lastSampleAt = latestSampleAt;
+  m_scrollProgress = scrollProgressForSample(m_lastSampleAt);
+  m_graphNode->setScroll1(m_scrollProgress);
+  requestRedraw();
+}
+
+float SysmonWidget::scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt) {
+  if (sampledAt == std::chrono::steady_clock::time_point{}) {
+    return 1.0f;
   }
 
-  const auto stats = m_monitor->latest();
+  const auto elapsed = std::chrono::steady_clock::now() - sampledAt;
+  const auto clamped = std::clamp(elapsed, std::chrono::steady_clock::duration::zero(), kSampleInterval);
+  return std::chrono::duration<float>(clamped).count() / std::chrono::duration<float>(kSampleInterval).count();
+}
 
-  switch (m_stat) {
+double SysmonWidget::normalizedFromStats(SysmonStat stat, const SystemStats& stats, double& tempMin, double& tempMax) {
+  switch (stat) {
   case SysmonStat::CpuUsage:
     return stats.cpuUsagePercent / 100.0;
 
   case SysmonStat::CpuTemp:
     if (stats.cpuTempC.has_value()) {
       const double temp = *stats.cpuTempC;
-      // Expand persistent range
-      if (temp < m_tempMin)
-        const_cast<SysmonWidget*>(this)->m_tempMin = temp;
-      if (temp > m_tempMax)
-        const_cast<SysmonWidget*>(this)->m_tempMax = temp;
-      const double range = m_tempMax - m_tempMin;
-      if (range <= 0.0)
+      if (temp < tempMin) {
+        tempMin = temp;
+      }
+      if (temp > tempMax) {
+        tempMax = temp;
+      }
+      const double range = tempMax - tempMin;
+      if (range <= 0.0) {
         return 0.5;
-      return std::clamp((temp - m_tempMin) / range, 0.0, 1.0);
+      }
+      return std::clamp((temp - tempMin) / range, 0.0, 1.0);
     }
     return 0.0;
 
@@ -352,25 +403,30 @@ double SysmonWidget::currentNormalized() const {
     return 0.0;
 
   case SysmonStat::DiskPct:
-    break; // handled above
+    return 0.0;
   }
-
   return 0.0;
 }
 
-std::string SysmonWidget::formatValue() const {
+double SysmonWidget::currentNormalized() {
+  if (m_monitor == nullptr) {
+    return 0.0;
+  }
+
   if (m_stat == SysmonStat::DiskPct) {
-    struct statvfs sv{};
-    if (::statvfs(m_diskPath.c_str(), &sv) == 0 && sv.f_blocks > 0) {
-      const double used = static_cast<double>(sv.f_blocks - sv.f_bfree);
-      const double total = static_cast<double>(sv.f_blocks);
-      return std::format("{:.0f}%", used / total * 100.0);
-    }
+    return std::clamp(static_cast<double>(m_monitor->diskUsagePercent(m_diskPath)) / 100.0, 0.0, 1.0);
+  }
+
+  return std::clamp(normalizedFromStats(m_stat, m_monitor->latest(), m_tempMin, m_tempMax), 0.0, 1.0);
+}
+
+std::string SysmonWidget::formatValue() const {
+  if (m_monitor == nullptr) {
     return "--";
   }
 
-  if (m_monitor == nullptr) {
-    return "--";
+  if (m_stat == SysmonStat::DiskPct) {
+    return std::format("{:.0f}%", m_monitor->diskUsagePercent(m_diskPath));
   }
 
   const auto stats = m_monitor->latest();

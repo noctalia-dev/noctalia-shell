@@ -13,6 +13,7 @@ class Renderer;
 
 class DesktopWidget {
 public:
+  using UpdateCallback = std::function<void()>;
   using RedrawCallback = std::function<void()>;
 
   virtual ~DesktopWidget() = default;
@@ -35,6 +36,7 @@ public:
   std::unique_ptr<Node> releaseRoot();
 
   void setAnimationManager(AnimationManager* manager) noexcept { m_animations = manager; }
+  void setUpdateCallback(UpdateCallback callback) { m_updateCallback = std::move(callback); }
   void setRedrawCallback(RedrawCallback callback) { m_redrawCallback = std::move(callback); }
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
@@ -42,6 +44,12 @@ public:
 
 protected:
   void setRoot(std::unique_ptr<Node> root);
+
+  void requestUpdate() {
+    if (m_updateCallback) {
+      m_updateCallback();
+    }
+  }
 
   void requestRedraw() {
     if (m_redrawCallback) {
@@ -63,6 +71,7 @@ private:
   Node* m_contentRoot = nullptr;
   Node* m_outerRootPtr = nullptr;
   Box* m_bgBox = nullptr;
+  UpdateCallback m_updateCallback;
   RedrawCallback m_redrawCallback;
 
   bool m_bgEnabled = false;

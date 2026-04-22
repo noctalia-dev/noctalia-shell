@@ -16,6 +16,10 @@ namespace {
 
   constexpr float kBaseWidth = 180.0f;
   constexpr float kBaseHeight = 80.0f;
+  const auto kSampleInterval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::seconds(1));
+  constexpr auto kSamplePublishSlack = std::chrono::milliseconds(20);
+  constexpr auto kSampleRetryDelay = std::chrono::milliseconds(25);
+  constexpr auto kInitialSampleRetryDelay = std::chrono::milliseconds(250);
 
   bool needsCpuTemp(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::CpuTemp; }
 
@@ -73,15 +77,18 @@ bool DesktopSysmonWidget::needsFrameTick() const { return m_scrollProgress < 1.0
 
 void DesktopSysmonWidget::onFrameTick(float deltaMs, Renderer& renderer) {
   (void)renderer;
+  (void)deltaMs;
   if (m_graphNode == nullptr || m_scrollProgress >= 1.0f) {
     return;
   }
-  m_scrollProgress = std::min(1.0f, m_scrollProgress + deltaMs * 0.001f);
+  m_scrollProgress = scrollProgressForSample(m_lastSampleAt);
   m_graphNode->setScroll1(m_scrollProgress);
   if (m_stat2.has_value()) {
     m_graphNode->setScroll2(m_scrollProgress);
   }
-  requestRedraw();
+  if (m_scrollProgress < 1.0f) {
+    requestRedraw();
+  }
 }
 
 void DesktopSysmonWidget::doLayout(Renderer& renderer) {
@@ -140,6 +147,7 @@ void DesktopSysmonWidget::doUpdate(Renderer& renderer) {
   }
 
   updateGraph();
+  scheduleNextUpdate(m_monitor->latest().sampledAt);
 
   if (m_label != nullptr) {
     std::string text = formatValueFor(m_stat);
@@ -152,6 +160,19 @@ void DesktopSysmonWidget::doUpdate(Renderer& renderer) {
       requestRedraw();
     }
   }
+}
+
+void DesktopSysmonWidget::scheduleNextUpdate(std::chrono::steady_clock::time_point latestSampleAt) {
+  if (latestSampleAt == std::chrono::steady_clock::time_point{}) {
+    m_updateTimer.start(kInitialSampleRetryDelay, [this]() { requestUpdate(); });
+    return;
+  }
+
+  const auto now = std::chrono::steady_clock::now();
+  const auto nextExpectedAt = latestSampleAt + kSampleInterval + kSamplePublishSlack;
+  const auto delay = now < nextExpectedAt ? std::chrono::duration_cast<std::chrono::milliseconds>(nextExpectedAt - now)
+                                          : kSampleRetryDelay;
+  m_updateTimer.start(delay, [this]() { requestUpdate(); });
 }
 
 double DesktopSysmonWidget::normalizedFromStats(DesktopSysmonStat stat, const SystemStats& stats, double& tempMin,
@@ -224,25 +245,17 @@ void DesktopSysmonWidget::updateGraph() {
   }
 
   const auto hist = m_monitor->history();
-  const auto n = static_cast<int>(hist.size());
-  if (n < 4) {
+  if (hist.size() < 4) {
     return;
   }
 
-  const bool newData = (n != m_lastHistoryCount);
-  m_lastHistoryCount = n;
-  if (!newData && m_scrollProgress < 1.0f) {
+  const auto latestSampleAt = hist.back().sampledAt;
+  const bool newData = latestSampleAt != m_lastSampleAt;
+  if (!newData && m_graphInitialized) {
     return;
   }
 
-  // Match the QML NGraph scroll pattern: pass all N real samples plus one
-  // predicted/extrapolated texel at index N. Set count = N (real only).
-  // The shader at scroll=1 reaches index N (the prediction). When the next
-  // sample arrives, count becomes N+1, scroll resets to 0, and the rightmost
-  // visible index is N — the new real value at the same position as the old
-  // prediction. Old values keep their indices so no visual snap occurs.
-  // Once the service buffer is full (120 samples), one old sample drops off
-  // the left per update — the scroll 1→0 reset compensates exactly.
+  const int n = static_cast<int>(hist.size());
   const int texSize = n + 1;
 
   std::vector<float> data1(static_cast<std::size_t>(texSize));
@@ -250,8 +263,8 @@ void DesktopSysmonWidget::updateGraph() {
     data1[static_cast<std::size_t>(i)] = static_cast<float>(
         std::clamp(normalizedFromStats(m_stat, hist[static_cast<std::size_t>(i)], m_tempMin1, m_tempMax1), 0.0, 1.0));
   }
-  float last1 = data1[n - 1];
-  float prev1 = data1[n - 2];
+  const float last1 = data1[n - 1];
+  const float prev1 = data1[n - 2];
   data1[n] = std::clamp(last1 + (last1 - prev1) * 0.5f, 0.0f, 1.0f);
 
   if (m_stat2.has_value()) {
@@ -260,21 +273,35 @@ void DesktopSysmonWidget::updateGraph() {
       data2[static_cast<std::size_t>(i)] = static_cast<float>(std::clamp(
           normalizedFromStats(*m_stat2, hist[static_cast<std::size_t>(i)], m_tempMin2, m_tempMax2), 0.0, 1.0));
     }
-    float last2 = data2[n - 1];
-    float prev2 = data2[n - 2];
+    const float last2 = data2[n - 1];
+    const float prev2 = data2[n - 2];
     data2[n] = std::clamp(last2 + (last2 - prev2) * 0.5f, 0.0f, 1.0f);
 
     m_graphNode->setData(data1.data(), texSize, data2.data(), texSize);
     m_graphNode->setCount2(static_cast<float>(n));
-    m_graphNode->setScroll2(0.0f);
   } else {
     m_graphNode->setData(data1.data(), texSize, nullptr, 0);
   }
 
   m_graphNode->setCount1(static_cast<float>(n));
-  m_scrollProgress = 0.0f;
-  m_graphNode->setScroll1(0.0f);
+  m_graphInitialized = true;
+  m_lastSampleAt = latestSampleAt;
+  m_scrollProgress = scrollProgressForSample(m_lastSampleAt);
+  m_graphNode->setScroll1(m_scrollProgress);
+  if (m_stat2.has_value()) {
+    m_graphNode->setScroll2(m_scrollProgress);
+  }
   requestRedraw();
+}
+
+float DesktopSysmonWidget::scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt) {
+  if (sampledAt == std::chrono::steady_clock::time_point{}) {
+    return 1.0f;
+  }
+
+  const auto elapsed = std::chrono::steady_clock::now() - sampledAt;
+  const auto clamped = std::clamp(elapsed, std::chrono::steady_clock::duration::zero(), kSampleInterval);
+  return std::chrono::duration<float>(clamped).count() / std::chrono::duration<float>(kSampleInterval).count();
 }
 
 const char* DesktopSysmonWidget::glyphName(DesktopSysmonStat stat) {

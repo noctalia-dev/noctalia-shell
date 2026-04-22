@@ -3,14 +3,40 @@
 #include "core/log.h"
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <sys/statvfs.h>
 #include <vector>
 
 namespace {
+
+  [[nodiscard]] SystemStats makeInitialHistoryStats() {
+    SystemStats stats;
+    stats.cpuTempC = 40.0;
+    return stats;
+  }
+
+  template <typename T, std::size_t N>
+  [[nodiscard]] std::vector<T> historyWindowFromRing(const std::array<T, N>& ring, int head, int windowSize) {
+    if (windowSize <= 0) {
+      return {};
+    }
+
+    const int ringSize = static_cast<int>(N);
+    const int clampedWindow = std::min(windowSize, ringSize);
+    std::vector<T> result;
+    result.reserve(static_cast<std::size_t>(clampedWindow));
+    const int start = (head - clampedWindow + ringSize) % ringSize;
+    for (int i = 0; i < clampedWindow; ++i) {
+      const int idx = (start + i) % ringSize;
+      result.push_back(ring[static_cast<std::size_t>(idx)]);
+    }
+    return result;
+  }
 
   std::optional<std::string> readSmallTextFile(const std::filesystem::path& path) {
     std::ifstream file{path};
@@ -83,7 +109,11 @@ namespace {
 
 } // namespace
 
-SystemMonitorService::SystemMonitorService() { start(); }
+SystemMonitorService::SystemMonitorService() {
+  m_latest = makeInitialHistoryStats();
+  m_history.fill(m_latest);
+  start();
+}
 
 SystemMonitorService::~SystemMonitorService() { stop(); }
 
@@ -94,25 +124,52 @@ SystemStats SystemMonitorService::latest() const {
   return m_latest;
 }
 
-std::vector<SystemStats> SystemMonitorService::history() const {
+std::vector<SystemStats> SystemMonitorService::history(int windowSize) const {
   std::lock_guard lock{m_statsMutex};
-  std::vector<SystemStats> result;
-  result.reserve(static_cast<std::size_t>(m_historyCount));
-  for (int i = 0; i < m_historyCount; ++i) {
-    const int idx = (m_historyHead - m_historyCount + i + kHistorySize) % kHistorySize;
-    result.push_back(m_history[idx]);
-  }
-  return result;
-}
-
-int SystemMonitorService::historyCount() const {
-  std::lock_guard lock{m_statsMutex};
-  return m_historyCount;
+  return historyWindowFromRing(m_history, m_historyHead, windowSize);
 }
 
 void SystemMonitorService::retainCpuTemp() { m_cpuTempRefs.fetch_add(1, std::memory_order_relaxed); }
 
 void SystemMonitorService::releaseCpuTemp() { m_cpuTempRefs.fetch_sub(1, std::memory_order_relaxed); }
+
+void SystemMonitorService::retainDiskPath(const std::string& path) {
+  const float initialPercent = readDiskUsagePercent(path);
+  std::lock_guard lock{m_statsMutex};
+  auto& disk = m_diskHistories[path];
+  if (disk.refs == 0) {
+    disk.latestPercent = initialPercent;
+    disk.history.fill(initialPercent);
+  }
+  ++disk.refs;
+}
+
+void SystemMonitorService::releaseDiskPath(const std::string& path) {
+  std::lock_guard lock{m_statsMutex};
+  const auto it = m_diskHistories.find(path);
+  if (it == m_diskHistories.end()) {
+    return;
+  }
+  --it->second.refs;
+  if (it->second.refs <= 0) {
+    m_diskHistories.erase(it);
+  }
+}
+
+float SystemMonitorService::diskUsagePercent(const std::string& path) const {
+  std::lock_guard lock{m_statsMutex};
+  const auto it = m_diskHistories.find(path);
+  return it != m_diskHistories.end() ? it->second.latestPercent : 0.0f;
+}
+
+std::vector<float> SystemMonitorService::diskHistory(const std::string& path, int windowSize) const {
+  std::lock_guard lock{m_statsMutex};
+  const auto it = m_diskHistories.find(path);
+  if (it == m_diskHistories.end() || windowSize <= 0) {
+    return {};
+  }
+  return historyWindowFromRing(it->second.history, m_historyHead, windowSize);
+}
 
 void SystemMonitorService::start() {
   if (m_running.load()) {
@@ -135,6 +192,9 @@ void SystemMonitorService::samplingLoop() {
 
   while (m_running.load()) {
     SystemStats next{};
+    next.sampledAt = std::chrono::steady_clock::now();
+    std::vector<std::string> diskPaths;
+    std::optional<double> previousCpuTemp;
 
     const auto currentCpu = readCpuTotals();
     if (prevCpu.has_value() && currentCpu.has_value()) {
@@ -159,18 +219,44 @@ void SystemMonitorService::samplingLoop() {
       next.swapUsedMb = memKb->swapUsedKb / 1024;
     }
 
+    {
+      std::lock_guard lock{m_statsMutex};
+      previousCpuTemp = m_latest.cpuTempC;
+      diskPaths.reserve(m_diskHistories.size());
+      for (const auto& [path, disk] : m_diskHistories) {
+        if (disk.refs > 0) {
+          diskPaths.push_back(path);
+        }
+      }
+    }
+
     if (m_cpuTempRefs.load(std::memory_order_relaxed) > 0) {
       next.cpuTempC = readCpuTempCelsius();
+    }
+    if (!next.cpuTempC.has_value()) {
+      next.cpuTempC = previousCpuTemp.value_or(40.0);
+    }
+
+    std::vector<std::pair<std::string, float>> diskPercents;
+    diskPercents.reserve(diskPaths.size());
+    for (const auto& path : diskPaths) {
+      diskPercents.emplace_back(path, readDiskUsagePercent(path));
     }
 
     {
       std::lock_guard lock{m_statsMutex};
+      const int writeIndex = m_historyHead;
       m_latest = next;
-      m_history[m_historyHead] = next;
-      m_historyHead = (m_historyHead + 1) % kHistorySize;
-      if (m_historyCount < kHistorySize) {
-        ++m_historyCount;
+      m_history[writeIndex] = next;
+      for (const auto& [path, percent] : diskPercents) {
+        const auto it = m_diskHistories.find(path);
+        if (it == m_diskHistories.end() || it->second.refs <= 0) {
+          continue;
+        }
+        it->second.latestPercent = percent;
+        it->second.history[writeIndex] = percent;
       }
+      m_historyHead = (m_historyHead + 1) % kHistorySize;
     }
 
     if (next.cpuTempC.has_value()) {
@@ -340,4 +426,14 @@ std::optional<double> SystemMonitorService::readCpuTempCelsius() {
   }
 
   return fallback_temp;
+}
+
+float SystemMonitorService::readDiskUsagePercent(const std::string& path) {
+  struct statvfs sv{};
+  if (::statvfs(path.c_str(), &sv) == 0 && sv.f_blocks > 0) {
+    const double used = static_cast<double>(sv.f_blocks - sv.f_bfree);
+    const double total = static_cast<double>(sv.f_blocks);
+    return static_cast<float>(100.0 * used / total);
+  }
+  return 0.0f;
 }

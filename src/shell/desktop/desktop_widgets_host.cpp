@@ -215,6 +215,11 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
 
   auto* rawInstance = instance.get();
   instance->widget->setAnimationManager(&instance->animations);
+  instance->widget->setUpdateCallback([rawInstance]() {
+    if (rawInstance->surface != nullptr) {
+      rawInstance->surface->requestUpdate();
+    }
+  });
   instance->widget->setRedrawCallback([rawInstance]() {
     if (rawInstance->surface != nullptr) {
       rawInstance->surface->requestRedraw();

@@ -429,6 +429,11 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     widget->create();
     widget->setAnimationManager(&surface.animations);
     auto* surfacePtr = &surface;
+    widget->setUpdateCallback([surfacePtr]() {
+      if (surfacePtr->surface != nullptr) {
+        surfacePtr->surface->requestUpdate();
+      }
+    });
     widget->setRedrawCallback([surfacePtr]() {
       if (surfacePtr->surface != nullptr) {
         surfacePtr->surface->requestRedraw();

@@ -1,8 +1,10 @@
 #pragma once
 
+#include "core/timer_manager.h"
 #include "shell/desktop/desktop_widget.h"
 #include "ui/palette.h"
 
+#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -23,7 +25,6 @@ public:
   ~DesktopSysmonWidget() override;
 
   void create() override;
-  [[nodiscard]] bool wantsSecondTicks() const override { return true; }
   [[nodiscard]] bool needsFrameTick() const override;
   void onFrameTick(float deltaMs, Renderer& renderer) override;
 
@@ -32,7 +33,9 @@ private:
   void doUpdate(Renderer& renderer) override;
 
   [[nodiscard]] std::string formatValueFor(DesktopSysmonStat stat) const;
+  void scheduleNextUpdate(std::chrono::steady_clock::time_point latestSampleAt);
   void updateGraph();
+  [[nodiscard]] static float scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt);
   [[nodiscard]] static double normalizedFromStats(DesktopSysmonStat stat, const SystemStats& stats, double& tempMin,
                                                   double& tempMax);
   [[nodiscard]] static const char* glyphName(DesktopSysmonStat stat);
@@ -49,12 +52,14 @@ private:
   Label* m_label = nullptr;
   GraphNode* m_graphNode = nullptr;
 
+  bool m_graphInitialized = false;
   float m_scrollProgress = 1.0f;
-  int m_lastHistoryCount = 0;
+  std::chrono::steady_clock::time_point m_lastSampleAt{};
   std::string m_lastRawValue;
 
   mutable double m_tempMin1 = 30.0;
   mutable double m_tempMax1 = 80.0;
   mutable double m_tempMin2 = 30.0;
   mutable double m_tempMax2 = 80.0;
+  Timer m_updateTimer;
 };

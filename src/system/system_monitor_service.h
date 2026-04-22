@@ -2,13 +2,17 @@
 
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <mutex>
 #include <optional>
+#include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 struct SystemStats {
+  std::chrono::steady_clock::time_point sampledAt{};
   double cpuUsagePercent{0.0};
   double ramUsagePercent{0.0};
   std::uint64_t ramUsedMb{0};
@@ -30,13 +34,22 @@ public:
 
   [[nodiscard]] bool isRunning() const noexcept;
   [[nodiscard]] SystemStats latest() const;
-  [[nodiscard]] std::vector<SystemStats> history() const;
-  [[nodiscard]] int historyCount() const;
+  [[nodiscard]] std::vector<SystemStats> history(int windowSize = kHistorySize) const;
 
   void retainCpuTemp();
   void releaseCpuTemp();
+  void retainDiskPath(const std::string& path);
+  void releaseDiskPath(const std::string& path);
+  [[nodiscard]] float diskUsagePercent(const std::string& path) const;
+  [[nodiscard]] std::vector<float> diskHistory(const std::string& path, int windowSize = kHistorySize) const;
 
 private:
+  struct DiskHistory {
+    int refs = 0;
+    float latestPercent = 0.0f;
+    std::array<float, kHistorySize> history{};
+  };
+
   struct CpuTotals {
     std::uint64_t total{0};
     std::uint64_t idle{0};
@@ -55,6 +68,7 @@ private:
   };
   [[nodiscard]] static std::optional<MemData> readMemoryKb();
   [[nodiscard]] static std::optional<double> readCpuTempCelsius();
+  [[nodiscard]] static float readDiskUsagePercent(const std::string& path);
 
   std::atomic<bool> m_running{false};
   std::atomic<int> m_cpuTempRefs{0};
@@ -64,5 +78,5 @@ private:
   SystemStats m_latest;
   std::array<SystemStats, kHistorySize> m_history{};
   int m_historyHead = 0;
-  int m_historyCount = 0;
+  std::unordered_map<std::string, DiskHistory> m_diskHistories;
 };
