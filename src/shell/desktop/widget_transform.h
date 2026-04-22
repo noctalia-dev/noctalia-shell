@@ -90,8 +90,8 @@ inline WidgetTransformClippedGeometry computeClippedWidgetSurfaceGeometry(float 
   geometry.surfaceHeight = std::max<std::uint32_t>(1, static_cast<std::uint32_t>(std::ceil(visibleHeight)));
   geometry.marginLeft = static_cast<std::int32_t>(std::lround(clippedLeft));
   geometry.marginTop = static_cast<std::int32_t>(std::lround(clippedTop));
-  geometry.contentOffsetX = cx - clippedLeft;
-  geometry.contentOffsetY = cy - clippedTop;
+  geometry.contentOffsetX = cx - static_cast<float>(geometry.marginLeft);
+  geometry.contentOffsetY = cy - static_cast<float>(geometry.marginTop);
   return geometry;
 }
 
