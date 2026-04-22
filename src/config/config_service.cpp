@@ -1255,7 +1255,6 @@ void ConfigService::parseTable(const toml::table& tbl) {
   // Parse [shell]
   if (auto* shellTbl = tbl["shell"].as_table()) {
     auto& shell = m_config.shell;
-    auto& notif = m_config.notification;
     if (auto v = (*shellTbl)["ui_scale"].value<double>()) {
       shell.uiScale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
     }
@@ -1270,10 +1269,6 @@ void ConfigService::parseTable(const toml::table& tbl) {
     }
     if (auto polkitAgent = (*shellTbl)["polkit_agent"].value<bool>()) {
       shell.polkitAgent = *polkitAgent;
-    }
-    if (auto enableNotificationDaemon = (*shellTbl)["enable_notification_daemon"].value<bool>()) {
-      // Backward-compat alias for older configs.
-      notif.enableDaemon = *enableNotificationDaemon;
     }
     const auto parsePasswordMaskStyle = [](std::string_view raw) -> std::optional<PasswordMaskStyle> {
       const std::string style = toLower(trim(raw));
