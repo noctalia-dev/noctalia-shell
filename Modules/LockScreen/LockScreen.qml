@@ -110,7 +110,7 @@ Loader {
                 readonly property real percent: isReady ? BatteryService.getPercentage(battery) : -1
                 readonly property bool charging: isReady ? BatteryService.isCharging(battery) : false
                 readonly property bool pluggedIn: isReady ? BatteryService.isPluggedIn(battery) : false
-                readonly property string icon: BatteryService.getIcon(percent, charging, pluggedIn, isReady)
+                readonly property string icon: BatteryService.getDeviceIcon(battery)
               }
 
               Item {

@@ -321,6 +321,10 @@ Singleton {
       return "bt-device-undefined";
     }
 
+    if (device.isLaptopBattery) {
+      return "device-laptop";
+    }
+
     const name = (device.model || device.name || "").toLowerCase();
     const nativePath = (device.nativePath || "").toLowerCase();
     const iconHint = (device.icon || device.iconName || "").toLowerCase();  // Some devices are not known to UPower (eg: Bluetooth devices, hint is often does the heavy lifting for recognition)
