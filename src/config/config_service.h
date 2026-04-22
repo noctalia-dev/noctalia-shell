@@ -228,7 +228,7 @@ struct OsdConfig {
 };
 
 struct NotificationConfig {
-  bool dbus = true;
+  bool enableDaemon = true;
   float backgroundOpacity = 0.97f; // toast card background alpha (0.0–1.0)
   bool backgroundBlur = true;
 };

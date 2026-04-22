@@ -1255,6 +1255,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
   // Parse [shell]
   if (auto* shellTbl = tbl["shell"].as_table()) {
     auto& shell = m_config.shell;
+    auto& notif = m_config.notification;
     if (auto v = (*shellTbl)["ui_scale"].value<double>()) {
       shell.uiScale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
     }
@@ -1269,6 +1270,10 @@ void ConfigService::parseTable(const toml::table& tbl) {
     }
     if (auto polkitAgent = (*shellTbl)["polkit_agent"].value<bool>()) {
       shell.polkitAgent = *polkitAgent;
+    }
+    if (auto enableNotificationDaemon = (*shellTbl)["enable_notification_daemon"].value<bool>()) {
+      // Backward-compat alias for older configs.
+      notif.enableDaemon = *enableNotificationDaemon;
     }
     const auto parsePasswordMaskStyle = [](std::string_view raw) -> std::optional<PasswordMaskStyle> {
       const std::string style = toLower(trim(raw));
@@ -1464,8 +1469,12 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   if (auto* notifTbl = tbl["notification"].as_table()) {
     auto& notif = m_config.notification;
-    if (auto v = (*notifTbl)["dbus"].value<bool>())
-      notif.dbus = *v;
+    if (auto v = (*notifTbl)["enable_daemon"].value<bool>()) {
+      notif.enableDaemon = *v;
+    } else if (auto legacyDbus = (*notifTbl)["dbus"].value<bool>()) {
+      // Backward-compat alias for older configs.
+      notif.enableDaemon = *legacyDbus;
+    }
     if (auto v = (*notifTbl)["background_opacity"].value<double>())
       notif.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
     if (auto v = (*notifTbl)["background_blur"].value<bool>())

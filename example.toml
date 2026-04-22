@@ -56,7 +56,7 @@ tint_intensity         = 0.3        # 0.0 = no tint, 1.0 = opaque
 # ── Notifications ─────────────────────────────────────────────────────────────
 
 [notification]
-dbus               = true
+enable_daemon      = true
 background_opacity = 0.97
 background_blur    = true
 

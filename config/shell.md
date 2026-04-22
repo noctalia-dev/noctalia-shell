@@ -30,6 +30,7 @@ Notes:
 - `ui_scale` is completely separate from `bar.scale`: `bar.scale` only affects bar widget content; `ui_scale` covers the control center, launcher, clipboard, and other non-bar surfaces. Neither changes Wayland output / HiDPI buffer scale.
 - `font_family` sets the primary Pango family for all shell text. Can be a concrete family like `Inter` or a generic like `sans-serif`.
 - `polkit_agent` controls registration on `org.freedesktop.PolicyKit1`. Keep disabled if another desktop agent handles auth prompts.
+- Notification daemon ownership moved out of `[shell]`: use `[notification].enable_daemon` in `config/services.md` (legacy `shell.enable_notification_daemon` is still accepted for compatibility).
 - `password_style`: `default` uses `circle-filled`; `random` cycles through multiple filled glyph shapes on polkit and lock screen inputs.
 - `clipboard_auto_paste`: `auto` = image entries use `Ctrl+V`, text entries use `Ctrl+Shift+V`; `off` = copy only, no automatic paste.
 - `shell.animation.enabled` disables all animated transitions globally. `speed` scales durations globally.

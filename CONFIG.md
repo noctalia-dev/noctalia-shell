@@ -6,6 +6,8 @@ Changes are hot-reloaded via inotify — no restart required.
 
 A ready-to-use starting config with all defaults is at [`example.toml`](example.toml).
 
+Notification daemon toggle: use `[notification].enable_daemon` (documented in [`config/services.md`](config/services.md)).
+
 ---
 
 ## Reference
