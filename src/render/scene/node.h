@@ -43,6 +43,7 @@ public:
   [[nodiscard]] bool paintDirty() const noexcept { return m_paintDirty; }
   [[nodiscard]] bool layoutDirty() const noexcept { return m_layoutDirty; }
   [[nodiscard]] bool clipChildren() const noexcept { return m_clipChildren; }
+  [[nodiscard]] bool hitTestVisible() const noexcept { return m_hitTestVisible; }
   [[nodiscard]] std::int32_t zIndex() const noexcept { return m_zIndex; }
   [[nodiscard]] Node* parent() const noexcept { return m_parent; }
   [[nodiscard]] const std::vector<std::unique_ptr<Node>>& children() const noexcept { return m_children; }
@@ -57,6 +58,7 @@ public:
   void setVisible(bool visible);
   void setParticipatesInLayout(bool participatesInLayout);
   void setClipChildren(bool clipChildren);
+  void setHitTestVisible(bool hitTestVisible);
   void setZIndex(std::int32_t zIndex);
 
   Node* addChild(std::unique_ptr<Node> child);
@@ -101,6 +103,7 @@ private:
   bool m_paintDirty = true;
   bool m_layoutDirty = true;
   bool m_clipChildren = false;
+  bool m_hitTestVisible = true;
   std::int32_t m_zIndex = 0;
   void* m_userData = nullptr;
   AnimationManager* m_animationManager = nullptr;

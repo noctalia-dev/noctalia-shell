@@ -145,6 +145,8 @@ void Node::setClipChildren(bool clipChildren) {
   markPaintDirty();
 }
 
+void Node::setHitTestVisible(bool hitTestVisible) { m_hitTestVisible = hitTestVisible; }
+
 void Node::setZIndex(std::int32_t zIndex) {
   if (m_zIndex == zIndex) {
     return;
@@ -243,7 +245,7 @@ void Node::clearDirty() {
 Node* Node::hitTest(Node* root, float x, float y) { return hitTestImpl(root, x, y); }
 
 Node* Node::hitTestImpl(Node* node, float px, float py) {
-  if (node == nullptr || !node->m_visible) {
+  if (node == nullptr || !node->m_visible || !node->m_hitTestVisible) {
     return nullptr;
   }
 
