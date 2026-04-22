@@ -341,10 +341,18 @@ void DesktopWidgetsEditor::prepareFrame(OverlaySurface& surface, bool needsUpdat
     return;
   }
 
-  if (surface.sceneRoot == nullptr || surface.sceneRebuildRequested || needsUpdate) {
+  if (surface.sceneRoot == nullptr || surface.sceneRebuildRequested) {
     rebuildScene(surface);
     surface.sceneRebuildRequested = false;
-    return;
+  }
+
+  if (needsUpdate) {
+    for (auto& [id, view] : surface.views) {
+      (void)id;
+      if (view.widget != nullptr) {
+        view.widget->update(*m_renderContext);
+      }
+    }
   }
 
   if (needsLayout && surface.sceneRoot != nullptr) {
@@ -430,6 +438,11 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
     widget->setAnimationManager(&surface.animations);
     auto* surfacePtr = &surface;
     widget->setUpdateCallback([surfacePtr]() {
+      if (surfacePtr->surface != nullptr) {
+        surfacePtr->surface->requestUpdateOnly();
+      }
+    });
+    widget->setLayoutCallback([surfacePtr]() {
       if (surfacePtr->surface != nullptr) {
         surfacePtr->surface->requestUpdate();
       }
@@ -1318,6 +1331,18 @@ void DesktopWidgetsEditor::onSecondTick() {
                                         [](const auto& widget) { return formatShowsSeconds(widget); });
   if (minuteBoundary || needsSeconds) {
     requestLayout();
+  }
+
+  for (auto& surface : m_surfaces) {
+    if (surface->surface == nullptr) {
+      continue;
+    }
+    const bool hasSecondTickWidget = std::any_of(surface->views.begin(), surface->views.end(), [](const auto& entry) {
+      return entry.second.widget != nullptr && entry.second.widget->wantsSecondTicks();
+    });
+    if (hasSecondTickWidget) {
+      surface->surface->requestUpdate();
+    }
   }
 }
 
