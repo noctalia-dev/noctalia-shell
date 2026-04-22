@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <format>
+#include <vector>
 
 namespace {
 
@@ -138,7 +139,6 @@ void DesktopSysmonWidget::doUpdate(Renderer& renderer) {
     return;
   }
 
-  pushHistory();
   updateGraph();
 
   if (m_label != nullptr) {
@@ -154,16 +154,8 @@ void DesktopSysmonWidget::doUpdate(Renderer& renderer) {
   }
 }
 
-double DesktopSysmonWidget::normalizedFor(DesktopSysmonStat stat) const {
-  if (m_monitor == nullptr) {
-    return 0.0;
-  }
-
-  const auto stats = m_monitor->latest();
-  const bool isPrimary = (stat == m_stat);
-  auto& tempMin = isPrimary ? m_tempMin1 : m_tempMin2;
-  auto& tempMax = isPrimary ? m_tempMax1 : m_tempMax2;
-
+double DesktopSysmonWidget::normalizedFromStats(DesktopSysmonStat stat, const SystemStats& stats, double& tempMin,
+                                                double& tempMax) {
   switch (stat) {
   case DesktopSysmonStat::CpuUsage:
     return stats.cpuUsagePercent / 100.0;
@@ -226,48 +218,60 @@ std::string DesktopSysmonWidget::formatValueFor(DesktopSysmonStat stat) const {
   return "--";
 }
 
-void DesktopSysmonWidget::pushHistory() {
-  m_history1[m_historyHead] = std::clamp(normalizedFor(m_stat), 0.0, 1.0);
-  if (m_stat2.has_value()) {
-    m_history2[m_historyHead] = std::clamp(normalizedFor(*m_stat2), 0.0, 1.0);
-  }
-  m_historyHead = (m_historyHead + 1) % kHistorySamples;
-}
-
 void DesktopSysmonWidget::updateGraph() {
-  if (m_graphNode == nullptr) {
+  if (m_graphNode == nullptr || m_monitor == nullptr) {
     return;
   }
 
-  std::array<float, kHistorySamples + 1> data1{};
-  for (int i = 0; i < kHistorySamples; ++i) {
-    const int idx = (m_historyHead + i) % kHistorySamples;
-    data1[static_cast<std::size_t>(i)] = static_cast<float>(m_history1[idx]);
+  const auto hist = m_monitor->history();
+  const auto n = static_cast<int>(hist.size());
+  if (n < 4) {
+    return;
   }
-  float last1 = data1[kHistorySamples - 1];
-  float prev1 = data1[kHistorySamples - 2];
-  data1[kHistorySamples] = std::clamp(last1 + (last1 - prev1) * 0.5f, 0.0f, 1.0f);
 
-  const int count = kHistorySamples + 1;
+  const bool newData = (n != m_lastHistoryCount);
+  m_lastHistoryCount = n;
+  if (!newData && m_scrollProgress < 1.0f) {
+    return;
+  }
+
+  // Match the QML NGraph scroll pattern: pass all N real samples plus one
+  // predicted/extrapolated texel at index N. Set count = N (real only).
+  // The shader at scroll=1 reaches index N (the prediction). When the next
+  // sample arrives, count becomes N+1, scroll resets to 0, and the rightmost
+  // visible index is N — the new real value at the same position as the old
+  // prediction. Old values keep their indices so no visual snap occurs.
+  // Once the service buffer is full (120 samples), one old sample drops off
+  // the left per update — the scroll 1→0 reset compensates exactly.
+  const int texSize = n + 1;
+
+  std::vector<float> data1(static_cast<std::size_t>(texSize));
+  for (int i = 0; i < n; ++i) {
+    data1[static_cast<std::size_t>(i)] = static_cast<float>(
+        std::clamp(normalizedFromStats(m_stat, hist[static_cast<std::size_t>(i)], m_tempMin1, m_tempMax1), 0.0, 1.0));
+  }
+  float last1 = data1[n - 1];
+  float prev1 = data1[n - 2];
+  data1[n] = std::clamp(last1 + (last1 - prev1) * 0.5f, 0.0f, 1.0f);
 
   if (m_stat2.has_value()) {
-    std::array<float, kHistorySamples + 1> data2{};
-    for (int i = 0; i < kHistorySamples; ++i) {
-      const int idx = (m_historyHead + i) % kHistorySamples;
-      data2[static_cast<std::size_t>(i)] = static_cast<float>(m_history2[idx]);
+    std::vector<float> data2(static_cast<std::size_t>(texSize));
+    for (int i = 0; i < n; ++i) {
+      data2[static_cast<std::size_t>(i)] = static_cast<float>(std::clamp(
+          normalizedFromStats(*m_stat2, hist[static_cast<std::size_t>(i)], m_tempMin2, m_tempMax2), 0.0, 1.0));
     }
-    float last2 = data2[kHistorySamples - 1];
-    float prev2 = data2[kHistorySamples - 2];
-    data2[kHistorySamples] = std::clamp(last2 + (last2 - prev2) * 0.5f, 0.0f, 1.0f);
+    float last2 = data2[n - 1];
+    float prev2 = data2[n - 2];
+    data2[n] = std::clamp(last2 + (last2 - prev2) * 0.5f, 0.0f, 1.0f);
 
-    m_graphNode->setData(data1.data(), count, data2.data(), count);
-    m_graphNode->setCount2(static_cast<float>(count));
+    m_graphNode->setData(data1.data(), texSize, data2.data(), texSize);
+    m_graphNode->setCount2(static_cast<float>(n));
     m_graphNode->setScroll2(0.0f);
   } else {
-    m_graphNode->setData(data1.data(), count, nullptr, 0);
+    m_graphNode->setData(data1.data(), texSize, nullptr, 0);
   }
 
-  m_graphNode->setCount1(static_cast<float>(count));
+  m_graphNode->setCount1(static_cast<float>(n));
   m_scrollProgress = 0.0f;
   m_graphNode->setScroll1(0.0f);
   requestRedraw();

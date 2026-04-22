@@ -94,6 +94,22 @@ SystemStats SystemMonitorService::latest() const {
   return m_latest;
 }
 
+std::vector<SystemStats> SystemMonitorService::history() const {
+  std::lock_guard lock{m_statsMutex};
+  std::vector<SystemStats> result;
+  result.reserve(static_cast<std::size_t>(m_historyCount));
+  for (int i = 0; i < m_historyCount; ++i) {
+    const int idx = (m_historyHead - m_historyCount + i + kHistorySize) % kHistorySize;
+    result.push_back(m_history[idx]);
+  }
+  return result;
+}
+
+int SystemMonitorService::historyCount() const {
+  std::lock_guard lock{m_statsMutex};
+  return m_historyCount;
+}
+
 void SystemMonitorService::retainCpuTemp() { m_cpuTempRefs.fetch_add(1, std::memory_order_relaxed); }
 
 void SystemMonitorService::releaseCpuTemp() { m_cpuTempRefs.fetch_sub(1, std::memory_order_relaxed); }
@@ -150,6 +166,11 @@ void SystemMonitorService::samplingLoop() {
     {
       std::lock_guard lock{m_statsMutex};
       m_latest = next;
+      m_history[m_historyHead] = next;
+      m_historyHead = (m_historyHead + 1) % kHistorySize;
+      if (m_historyCount < kHistorySize) {
+        ++m_historyCount;
+      }
     }
 
     if (next.cpuTempC.has_value()) {
@@ -161,7 +182,7 @@ void SystemMonitorService::samplingLoop() {
                  next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb);
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 }
 

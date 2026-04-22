@@ -1,10 +1,12 @@
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <cstdint>
 #include <mutex>
 #include <optional>
 #include <thread>
+#include <vector>
 
 struct SystemStats {
   double cpuUsagePercent{0.0};
@@ -24,8 +26,12 @@ public:
   SystemMonitorService(const SystemMonitorService&) = delete;
   SystemMonitorService& operator=(const SystemMonitorService&) = delete;
 
+  static constexpr int kHistorySize = 120;
+
   [[nodiscard]] bool isRunning() const noexcept;
   [[nodiscard]] SystemStats latest() const;
+  [[nodiscard]] std::vector<SystemStats> history() const;
+  [[nodiscard]] int historyCount() const;
 
   void retainCpuTemp();
   void releaseCpuTemp();
@@ -56,4 +62,7 @@ private:
 
   mutable std::mutex m_statsMutex;
   SystemStats m_latest;
+  std::array<SystemStats, kHistorySize> m_history{};
+  int m_historyHead = 0;
+  int m_historyCount = 0;
 };
