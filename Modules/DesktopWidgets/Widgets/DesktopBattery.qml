@@ -25,24 +25,21 @@ DraggableDesktopWidget {
   }
 
   function getItemColor(device) {
-    if (ringColor !== "none")
+    if (ringColor !== "none") {
       return activeRingColor;
+    }
 
     const charging = BatteryService.isCharging(device);
     const low = BatteryService.isLowBattery(device);
     const critical = BatteryService.isCriticalBattery(device);
 
-    if (critical || low)
+    if (critical || low) {
       return Color.mError;
-    if (charging)
+    }
+    if (charging) {
       return Color.mPrimary;
+    }
     return Color.mOnSurface;
-  }
-
-  function getIcon(device) {
-    if (device.isLaptopBattery)
-      return "device-laptop";
-    return BatteryService.getDeviceIcon(device);
   }
 
   readonly property real contentPadding: Math.round(Style.marginM * widgetScale)
@@ -65,7 +62,7 @@ DraggableDesktopWidget {
         delegate: NCircleStat {
           readonly property color itemColor: root.getItemColor(modelData)
           ratio: BatteryService.getPercentage(modelData) / 100
-          icon: root.getIcon(modelData)
+          icon: BatteryService.getDeviceIcon(modelData)
           fillColor: itemColor
           contentScale: root.widgetScale
           showText: root.showPercentage
