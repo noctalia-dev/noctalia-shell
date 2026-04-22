@@ -4,6 +4,7 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/process.h"
+#include "core/resource_paths.h"
 #include "i18n/i18n_service.h"
 #include "ipc/ipc_arg_parse.h"
 #include "launcher/app_provider.h"
@@ -28,6 +29,7 @@
 #include <cmath>
 #include <csignal>
 #include <cstdlib>
+#include <filesystem>
 #include <malloc.h>
 #include <stdexcept>
 #include <string_view>
@@ -38,6 +40,23 @@ std::atomic<bool> Application::s_shutdownRequested{false};
 namespace {
 
   constexpr Logger kLog("app");
+
+  std::filesystem::path expandUserPath(const std::string& path) {
+    if (!path.starts_with('~')) {
+      return std::filesystem::path(path);
+    }
+    const char* home = std::getenv("HOME");
+    if (home == nullptr || home[0] == '\0') {
+      return std::filesystem::path(path);
+    }
+    if (path.size() == 1) {
+      return std::filesystem::path(home);
+    }
+    if (path[1] == '/') {
+      return std::filesystem::path(home) / path.substr(2);
+    }
+    return std::filesystem::path(path);
+  }
 
   template <typename Factory>
   auto makeWithStartupBackoff(std::string_view label, Factory&& factory) -> decltype(factory()) {
@@ -97,11 +116,6 @@ Application::Application() : m_weatherService(m_configService, m_httpClient) {
         const char* origin = (n.origin == NotificationOrigin::Internal) ? "internal" : "external";
         kLog.debug("notification {} id={} origin={}", kind, n.id, origin);
 
-        const auto& notificationSound = m_configService.config().sound.notification;
-        if (event == NotificationEvent::Added && !m_notificationManager.doNotDisturb() && notificationSound.enabled) {
-          m_soundService.play(SoundId::NotificationGeneric, notificationSound.sound, notificationSound.volume);
-        }
-
         // Keep bar widgets in sync with notification state changes.
         m_bar.refresh();
         if (shouldRefreshControlCenter()) {
@@ -156,6 +170,7 @@ Application::~Application() {
   m_pipewireSpectrumPollSource.reset();
   m_pipewireSpectrum.reset();
   m_pipewirePollSource.reset();
+  m_soundPlayer.reset();
   m_pipewireService.reset();
 
   // MainLoop will be destroyed next, then SessionBus
@@ -538,8 +553,35 @@ void Application::initServices() {
   try {
     m_pipewireService = std::make_unique<PipeWireService>();
     m_pipewireSpectrum = std::make_unique<PipeWireSpectrum>(*m_pipewireService);
+    m_soundPlayer = std::make_unique<SoundPlayer>(m_pipewireService->loop());
+
+    auto applySoundConfig = [this]() {
+      if (m_soundPlayer == nullptr) {
+        return;
+      }
+
+      const auto& audio = m_configService.config().audio;
+      m_soundPlayer->setVolume(audio.enableSounds ? audio.soundVolume : 0.0f);
+
+      auto resolveSoundPath = [](const std::string& configured, std::string_view bundledRelative) {
+        if (configured.empty()) {
+          return paths::assetPath(bundledRelative);
+        }
+        const std::filesystem::path expanded = expandUserPath(configured);
+        if (expanded.is_absolute()) {
+          return expanded;
+        }
+        return paths::assetPath(expanded.string());
+      };
+
+      (void)m_soundPlayer->load("volume-change", resolveSoundPath(audio.volumeChangeSound, "sounds/volume-change.wav"));
+      (void)m_soundPlayer->load("notification", resolveSoundPath(audio.notificationSound, "sounds/notification.wav"));
+    };
+    applySoundConfig();
+    m_configService.addReloadCallback(applySoundConfig);
   } catch (const std::exception& e) {
     kLog.warn("pipewire disabled: {}", e.what());
+    m_soundPlayer.reset();
     m_pipewireSpectrum.reset();
     m_pipewireService.reset();
   }
@@ -724,9 +766,11 @@ void Application::initUi() {
 
   m_notificationToast.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext, &m_httpClient);
   m_configService.setNotificationManager(&m_notificationManager);
+  m_notificationManager.setSoundPlayer(m_soundPlayer.get());
 
   m_osdOverlay.initialize(m_wayland, &m_configService, &m_renderContext);
   m_audioOsd.bindOverlay(m_osdOverlay);
+  m_audioOsd.setSoundPlayer(m_soundPlayer.get());
   if (m_pipewireService != nullptr) {
     m_audioOsd.primeFromService(*m_pipewireService);
   }
@@ -804,51 +848,18 @@ void Application::initUi() {
 
   if (m_pipewireService != nullptr) {
     m_audioOsd.suppressFor(std::chrono::milliseconds(2000));
-    const AudioNode* initialSink = m_pipewireService->defaultSink();
-    const AudioNode* initialSource = m_pipewireService->defaultSource();
-    m_pipewireService->setChangeCallback(
-        [this, shouldRefreshControlCenter,
-         lastSoundSink = initialSink != nullptr ? std::optional<AudioNode>(*initialSink) : std::nullopt,
-         lastSoundSource = initialSource != nullptr ? std::optional<AudioNode>(*initialSource) : std::nullopt,
-         soundStatePrimed = true,
-         soundEnableAfter = std::chrono::steady_clock::now() + std::chrono::milliseconds(2500)]() mutable {
-          auto soundNodeChanged = [](const std::optional<AudioNode>& previous, const AudioNode* current) {
-            if (!previous.has_value()) {
-              return false;
-            }
-            if (current == nullptr) {
-              return false;
-            }
-            return previous->id != current->id || previous->muted != current->muted ||
-                   std::abs(previous->volume - current->volume) >= 0.0005f;
-          };
-
-          if (m_pipewireService != nullptr) {
-            const AudioNode* sink = m_pipewireService->defaultSink();
-            const AudioNode* source = m_pipewireService->defaultSource();
-            const bool volumeChanged = soundStatePrimed && (soundNodeChanged(lastSoundSink, sink) ||
-                                                            soundNodeChanged(lastSoundSource, source));
-            lastSoundSink = sink != nullptr ? std::optional<AudioNode>(*sink) : std::nullopt;
-            lastSoundSource = source != nullptr ? std::optional<AudioNode>(*source) : std::nullopt;
-            soundStatePrimed = true;
-
-            const auto& volumeSound = m_configService.config().sound.volume;
-            if (volumeChanged && volumeSound.enabled && std::chrono::steady_clock::now() >= soundEnableAfter) {
-              m_soundService.play(SoundId::VolumeChange, volumeSound.sound, volumeSound.volume);
-            }
-          }
-
-          if (m_pipewireSpectrum != nullptr) {
-            m_pipewireSpectrum->handleAudioStateChanged();
-          }
-          m_bar.refresh();
-          if (shouldRefreshControlCenter()) {
-            m_panelManager.refresh();
-          }
-          if (m_pipewireService != nullptr) {
-            m_audioOsd.onAudioStateChanged(*m_pipewireService);
-          }
-        });
+    m_pipewireService->setChangeCallback([this, shouldRefreshControlCenter]() {
+      if (m_pipewireSpectrum != nullptr) {
+        m_pipewireSpectrum->handleAudioStateChanged();
+      }
+      m_bar.refresh();
+      if (shouldRefreshControlCenter()) {
+        m_panelManager.refresh();
+      }
+      if (m_pipewireService != nullptr) {
+        m_audioOsd.onAudioStateChanged(*m_pipewireService);
+      }
+    });
     m_pipewireService->setVolumePreviewCallback([this](bool isInput, std::uint32_t id, float volume, bool muted) {
       if (isInput) {
         m_audioOsd.showInput(id, volume, muted);

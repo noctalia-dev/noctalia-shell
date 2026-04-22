@@ -1,6 +1,7 @@
 #include "shell/osd/audio_osd.h"
 
 #include "pipewire/pipewire_service.h"
+#include "pipewire/sound_player.h"
 #include "shell/osd/osd_overlay.h"
 
 #include <algorithm>
@@ -8,6 +9,7 @@
 #include <string>
 
 namespace {
+  constexpr auto kVolumeSoundCooldown = std::chrono::milliseconds(70);
 
   const char* volumeIconName(float volume, bool muted) {
     if (muted || volume <= 0.0f) {
@@ -40,6 +42,7 @@ namespace {
 } // namespace
 
 void AudioOsd::bindOverlay(OsdOverlay& overlay) { m_overlay = &overlay; }
+void AudioOsd::setSoundPlayer(SoundPlayer* soundPlayer) { m_soundPlayer = soundPlayer; }
 
 void AudioOsd::primeFromService(const PipeWireService& service) {
   if (const auto* sink = service.defaultSink(); sink != nullptr) {
@@ -60,11 +63,16 @@ void AudioOsd::suppressFor(std::chrono::milliseconds duration) {
 }
 
 void AudioOsd::showOutput(std::uint32_t sinkId, float volume, bool muted) {
-  if (std::chrono::steady_clock::now() < m_suppressUntil) {
+  const auto now = std::chrono::steady_clock::now();
+  if (now < m_suppressUntil) {
     return;
   }
   if (m_overlay != nullptr) {
     m_overlay->show(makeOutputContent(volume, muted));
+  }
+  if (m_soundPlayer != nullptr && now - m_lastSoundAt >= kVolumeSoundCooldown) {
+    m_soundPlayer->play("volume-change");
+    m_lastSoundAt = now;
   }
   m_lastSinkId = sinkId;
   m_lastSinkPercent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
@@ -72,11 +80,16 @@ void AudioOsd::showOutput(std::uint32_t sinkId, float volume, bool muted) {
 }
 
 void AudioOsd::showInput(std::uint32_t sourceId, float volume, bool muted) {
-  if (std::chrono::steady_clock::now() < m_suppressUntil) {
+  const auto now = std::chrono::steady_clock::now();
+  if (now < m_suppressUntil) {
     return;
   }
   if (m_overlay != nullptr) {
     m_overlay->show(makeInputContent(volume, muted));
+  }
+  if (m_soundPlayer != nullptr && now - m_lastSoundAt >= kVolumeSoundCooldown) {
+    m_soundPlayer->play("volume-change");
+    m_lastSoundAt = now;
   }
   m_lastSourceId = sourceId;
   m_lastSourcePercent = static_cast<int>(std::round(std::max(0.0f, volume) * 100.0f));
@@ -109,10 +122,10 @@ void AudioOsd::onAudioStateChanged(const PipeWireService& service) {
   if (m_overlay != nullptr) {
     if (sink != nullptr &&
         (sinkId != m_lastSinkId || sinkPercent != m_lastSinkPercent || sinkMuted != m_lastSinkMuted)) {
-      m_overlay->show(makeOutputContent(sink->volume, sinkMuted));
+      showOutput(sink->id, sink->volume, sinkMuted);
     } else if (source != nullptr && (sourceId != m_lastSourceId || sourcePercent != m_lastSourcePercent ||
                                      sourceMuted != m_lastSourceMuted)) {
-      m_overlay->show(makeInputContent(source->volume, sourceMuted));
+      showInput(source->id, source->volume, sourceMuted);
     }
   }
 

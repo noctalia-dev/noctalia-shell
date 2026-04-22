@@ -273,25 +273,10 @@ struct WeatherConfig {
 
 struct AudioConfig {
   bool enableOverdrive = false;
-};
-
-struct SoundEventConfig {
-  bool enabled = false;
-  std::string sound;
-  float volume = 1.0f;
-};
-
-struct SoundConfig {
-  SoundEventConfig notification{
-      .enabled = false,
-      .sound = "sounds/notification-generic.wav",
-      .volume = 1.0f,
-  };
-  SoundEventConfig volume{
-      .enabled = false,
-      .sound = "sounds/volume-change.wav",
-      .volume = 1.0f,
-  };
+  bool enableSounds = true;
+  float soundVolume = 1.0f;
+  std::string volumeChangeSound;
+  std::string notificationSound;
 };
 
 enum class BrightnessBackendPreference : std::uint8_t {
@@ -433,7 +418,6 @@ struct Config {
   NotificationConfig notification;
   WeatherConfig weather;
   AudioConfig audio;
-  SoundConfig sound;
   BrightnessConfig brightness;
   KeybindsConfig keybinds;
   NightLightConfig nightlight;

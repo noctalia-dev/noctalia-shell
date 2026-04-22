@@ -56,6 +56,7 @@ public:
   [[nodiscard]] int fd() const noexcept;
   void dispatch();
   [[nodiscard]] pw_core* coreHandle() const noexcept { return m_core; }
+  [[nodiscard]] pw_loop* loop() const noexcept { return m_loop; }
 
   // State
   [[nodiscard]] const AudioState& state() const noexcept { return m_state; }

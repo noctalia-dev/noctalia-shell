@@ -84,6 +84,7 @@ public:
   [[nodiscard]] bool doNotDisturb() const noexcept;
   [[nodiscard]] bool toggleDoNotDisturb();
   void setStateCallback(StateCallback callback);
+  void setSoundPlayer(class SoundPlayer* soundPlayer);
 
 private:
   void upsertHistory(const Notification& notification, bool active, std::optional<CloseReason> closeReason);
@@ -100,4 +101,5 @@ private:
   uint32_t m_nextId{1};
   std::uint64_t m_changeSerial{0};
   bool m_doNotDisturb = false;
+  class SoundPlayer* m_soundPlayer = nullptr;
 };

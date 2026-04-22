@@ -59,6 +59,16 @@ tinyexpr_dep = declare_dependency(
   include_directories: include_directories('third_party/tinyexpr', is_system: true),
 )
 
+# ── Vendored: dr_wav (single-file WAV decoder) ───────────────────────────────
+_drwav_lib = static_library('dr_wav',
+  'third_party/dr_wav/dr_wav.c',
+  override_options: ['warning_level=0'],
+)
+drwav_dep = declare_dependency(
+  link_with: _drwav_lib,
+  include_directories: include_directories('third_party/dr_wav', is_system: true),
+)
+
 # ── Vendored: Material Color Utilities (Google) ───────────────────────────────
 # Upstream uses #include "cpp/..." prefixes, so the include root is the
 # material_color_utilities/ dir itself. Built as a quiet static library.
@@ -317,6 +327,7 @@ _noctalia_sources = files(
   'src/notification/notification_manager.cpp',
   'src/pipewire/pipewire_service.cpp',
   'src/pipewire/pipewire_spectrum.cpp',
+  'src/pipewire/sound_player.cpp',
   'src/render/animation/animation.cpp',
   'src/render/animation/animation_manager.cpp',
   'src/render/animation/motion_service.cpp',
@@ -440,7 +451,6 @@ _noctalia_sources = files(
   'src/system/icon_resolver.cpp',
   'src/system/internal_app_metadata.cpp',
   'src/system/night_light_manager.cpp',
-  'src/system/sound_service.cpp',
   'src/system/system_monitor_service.cpp',
   'src/system/weather_service.cpp',
   'src/time/time_service.cpp',
@@ -545,6 +555,7 @@ executable('noctalia',
     curl_dep,
     pam_dep,
     tinyexpr_dep,
+    drwav_dep,
     mcu_dep,
     stb_dep,
     libwebp_dep,

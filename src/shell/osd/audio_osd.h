@@ -9,6 +9,7 @@ class PipeWireService;
 class AudioOsd {
 public:
   void bindOverlay(OsdOverlay& overlay);
+  void setSoundPlayer(class SoundPlayer* soundPlayer);
   void primeFromService(const PipeWireService& service);
   void suppressFor(std::chrono::milliseconds duration);
   void showOutput(std::uint32_t sinkId, float volume, bool muted);
@@ -24,4 +25,6 @@ private:
   int m_lastSourcePercent = -1;
   bool m_lastSourceMuted = false;
   std::chrono::steady_clock::time_point m_suppressUntil{};
+  std::chrono::steady_clock::time_point m_lastSoundAt{};
+  class SoundPlayer* m_soundPlayer = nullptr;
 };

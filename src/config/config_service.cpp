@@ -1558,35 +1558,18 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto v = (*audioTbl)["enable_overdrive"].value<bool>()) {
       audio.enableOverdrive = *v;
     }
-  }
-
-  // Parse [sound.notification] and [sound.volume]
-  if (auto* soundTbl = tbl["sound"].as_table()) {
-    auto parseSoundEvent = [](const toml::table& root, const char* key, SoundEventConfig& target) {
-      auto* eventTbl = root[key].as_table();
-      if (eventTbl == nullptr) {
-        return;
-      }
-      if (auto enabledValue = (*eventTbl)["enabled"].value<bool>()) {
-        target.enabled = *enabledValue;
-      } else if (auto legacyEnabledValue = (*eventTbl)["sound_enabled"].value<bool>()) {
-        target.enabled = *legacyEnabledValue;
-      }
-      if (auto soundValue = (*eventTbl)["sound"].value<std::string>()) {
-        target.sound = *soundValue;
-      } else if (auto legacySoundPath = (*eventTbl)["sound_path"].value<std::string>()) {
-        target.sound = *legacySoundPath;
-      }
-      if (auto volumeValue = (*eventTbl)["volume"].value<double>()) {
-        target.volume = std::clamp(static_cast<float>(*volumeValue), 0.0f, 3.0f);
-      } else if (auto legacySoundVolume = (*eventTbl)["sound_volume"].value<double>()) {
-        target.volume = std::clamp(static_cast<float>(*legacySoundVolume), 0.0f, 3.0f);
-      }
-    };
-
-    auto& sound = m_config.sound;
-    parseSoundEvent(*soundTbl, "notification", sound.notification);
-    parseSoundEvent(*soundTbl, "volume", sound.volume);
+    if (auto v = (*audioTbl)["enable_sounds"].value<bool>()) {
+      audio.enableSounds = *v;
+    }
+    if (auto v = (*audioTbl)["sound_volume"].value<double>()) {
+      audio.soundVolume = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
+    }
+    if (auto v = (*audioTbl)["volume_change_sound"].value<std::string>()) {
+      audio.volumeChangeSound = *v;
+    }
+    if (auto v = (*audioTbl)["notification_sound"].value<std::string>()) {
+      audio.notificationSound = *v;
+    }
   }
 
   // Parse [brightness]

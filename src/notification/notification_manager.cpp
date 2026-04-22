@@ -1,6 +1,7 @@
 #include "notification_manager.h"
 
 #include "core/log.h"
+#include "pipewire/sound_player.h"
 
 #include <string_view>
 
@@ -148,6 +149,9 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
 
   for (auto& [token, cb] : m_eventCallbacks) {
     cb(n, NotificationEvent::Added);
+  }
+  if (!m_doNotDisturb && m_soundPlayer != nullptr) {
+    m_soundPlayer->play("notification");
   }
 
   return n.id;
@@ -320,3 +324,5 @@ bool NotificationManager::toggleDoNotDisturb() {
 }
 
 void NotificationManager::setStateCallback(StateCallback callback) { m_stateCallback = std::move(callback); }
+
+void NotificationManager::setSoundPlayer(SoundPlayer* soundPlayer) { m_soundPlayer = soundPlayer; }

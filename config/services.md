@@ -1,7 +1,6 @@
 # Services
 
 - [Audio](#audio)
-- [Sound](#sound)
 - [Brightness](#brightness)
 - [Night Light](#night-light)
 - [Weather](#weather)
@@ -14,35 +13,17 @@
 
 ```toml
 [audio]
-enable_overdrive = false   # allow volume sliders above 100% (up to 150%)
+enable_overdrive     = false  # allow volume sliders above 100% (up to 150%)
+enable_sounds        = true   # master toggle for UI sounds
+sound_volume         = 1.0    # global sound volume (0.0 - 1.0)
+volume_change_sound  = ""     # empty = bundled default sounds/volume-change.wav
+notification_sound   = ""     # empty = bundled default sounds/notification.wav
 ```
 
-When `enable_overdrive = false`, the Control Center output and microphone sliders clamp to 100%. When `true`, they allow up to 150%.
-
----
-
-## Sound
-
-```toml
-[sound.notification]
-enabled = false
-sound   = "sounds/notification-generic.wav" # bundled relative path, or absolute path like "/home/me/sounds/ping.wav"
-volume  = 1.25                              # playback gain (0.0 - 3.0)
-
-[sound.volume]
-enabled = false
-sound   = "sounds/volume-change.wav"
-volume  = 1.25
-```
-
-- `sound.notification` controls the notification-added cue.
-- `sound.volume` controls playback when default sink/source volume or mute state changes.
-- When `enabled = false`, that cue is disabled.
-- `sound` may point to any file path (absolute paths are recommended for custom files outside the repo).
-- `~` home paths are supported (for example `~/Music/noctalia/notify.wav`).
-- Relative paths still support bundled assets like `sounds/notification-generic.wav`.
-- `volume` is clamped to `0.0`-`3.0` before playback.
-- Values above `1.0` are allowed and useful for quiet samples (for example `1.25` or `1.5`).
+- `enable_overdrive = false` clamps Control Center output/microphone sliders to 100%; `true` allows up to 150%.
+- `enable_sounds = false` disables all UI sound playback.
+- `sound_volume` is the global playback gain for all UI sounds.
+- `volume_change_sound` and `notification_sound` accept absolute paths, `~`-prefixed home paths, or asset-relative paths.
 
 ---
 
