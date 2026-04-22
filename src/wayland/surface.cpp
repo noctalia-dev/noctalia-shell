@@ -34,6 +34,7 @@ void Surface::handleFrameDone(void* data, wl_callback* callback, std::uint32_t c
   }
 
   self->m_frameCallback = nullptr;
+  self->m_inFrameHandler = true;
 
   float deltaMs = 0.0f;
   const auto now = std::chrono::steady_clock::now();
@@ -53,6 +54,8 @@ void Surface::handleFrameDone(void* data, wl_callback* callback, std::uint32_t c
   if (self->m_updateCallback) {
     self->m_updateCallback();
   }
+
+  self->m_inFrameHandler = false;
 
   self->preparePendingFrame();
 
@@ -338,7 +341,7 @@ void Surface::preparePendingFrame() {
 }
 
 void Surface::kickFrameLoop() {
-  if (!m_running || !m_configured || m_frameCallback != nullptr) {
+  if (!m_running || !m_configured || m_frameCallback != nullptr || m_inFrameHandler) {
     return;
   }
 
