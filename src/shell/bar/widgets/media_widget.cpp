@@ -97,7 +97,7 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   m_emptyGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_emptyGlyph->measure(renderer);
 
-  const bool showArtSlot = m_lastText != "Nothing playing";
+  const bool showArtSlot = isVertical ? m_art->hasImage() : (m_lastText != "Nothing playing");
 
   // Clamp art to the label's single-line height so oversized art_size cannot
   // distort the bar capsule. The bar uses a uniform cross-axis extent derived
@@ -118,7 +118,7 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   const float artY = showArtSlot ? std::round((contentHeight - artSize) * 0.5f) : 0.0f;
 
   const bool showEmptyGlyph = !showArtSlot;
-  m_label->setVisible(!isVertical || !showArtSlot);
+  m_label->setVisible(!isVertical);
   m_emptyGlyph->setVisible(showEmptyGlyph);
   if (isVertical) {
     if (!showArtSlot) {
@@ -126,8 +126,8 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
       m_emptyGlyph->setPosition(0.0f, 0.0f);
       rootNode->setSize(m_emptyGlyph->width(), m_emptyGlyph->height());
     } else {
-      m_art->setPosition(0.0f, artY);
-      rootNode->setSize(artSize, contentHeight);
+      m_art->setPosition(0.0f, 0.0f);
+      rootNode->setSize(artSize, artSize);
     }
   } else {
     const float emptyGlyphY = std::round((contentHeight - m_emptyGlyph->height()) * 0.5f);
