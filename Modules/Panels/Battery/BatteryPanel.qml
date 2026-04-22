@@ -201,7 +201,7 @@ SmartPanel {
                         anchors.fill: parent
 
                         NIcon {
-                          icon: BatteryService.getIcon(BatteryService.getPercentage(battery), BatteryService.isCharging(battery), BatteryService.isPluggedIn(battery), BatteryService.isDeviceReady(battery))
+                          icon: BatteryService.getDeviceIcon(battery)
                           color: (BatteryService.isCharging(battery) || BatteryService.isPluggedIn(battery)) ? Color.mPrimary : (BatteryService.isCriticalBattery(battery) || BatteryService.isLowBattery(battery)) ? Color.mError : Color.mOnSurface
                         }
 
