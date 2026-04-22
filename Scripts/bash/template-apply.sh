@@ -14,6 +14,15 @@ MODE="${2:-}" # Optional second argument for dark/light mode
 # --- Apply theme based on the application name ---
 case "$APP_NAME" in
 kitty)
+    # Many configs use: include ./current-theme.conf
+    # Point it at the generated theme whenever the hook runs (including when noctalia.conf
+    # was unchanged on disk and the hook was forced from the template processor).
+    NOCTALIA_THEME="$HOME/.config/kitty/themes/noctalia.conf"
+    CURRENT_THEME="$HOME/.config/kitty/current-theme.conf"
+    if [ -f "$NOCTALIA_THEME" ]; then
+        mkdir -p "$HOME/.config/kitty"
+        ln -sf "themes/noctalia.conf" "$CURRENT_THEME"
+    fi
     KITTY_CONF="$HOME/.config/kitty/kitty.conf"
     if [ -w "$KITTY_CONF" ]; then
         kitty +kitten themes --reload-in=all noctalia

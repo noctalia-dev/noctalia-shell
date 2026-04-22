@@ -108,7 +108,13 @@ toolbar .toolbarbutton-1 {
     }
   }
 }
+.tab-text {
+  color: var(--text);
+}
 
+toolbarbutton#tabs-newtab-button {
+  color: var(--text) !important;
+}
 /* --- URL Bar --- */
 
 #urlbar-input {
@@ -138,6 +144,10 @@ toolbar .toolbarbutton-1 {
 
 #urlbar-results {
   background-color: var(--overlay) !important;
+  color: var(--text) !important;
+}
+
+.urlbarView-row:not([selected]) :is(.urlbarView-title, .urlbarView-action) {
   color: var(--text) !important;
 }
 
@@ -175,3 +185,12 @@ toolbar .toolbarbutton-1 {
 hbox#titlebar {
   background-color: var(--base) !important;
 }
+
+.zen-current-workspace-indicator-name {
+  color: var(--text);
+}
+
+.zen-current-workspace-indicator-icon {	
+	fill: var(--text) !important;
+}
+
