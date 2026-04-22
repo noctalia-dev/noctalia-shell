@@ -16,7 +16,7 @@ namespace {
 
   constexpr float kBaseWidth = 180.0f;
   constexpr float kBaseHeight = 80.0f;
-  constexpr float kGraphLineWidth = 1.35f;
+  constexpr float kGraphLineWidth = 0.75f;
   const auto kSampleInterval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::seconds(1));
 
   bool needsCpuTemp(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::CpuTemp; }

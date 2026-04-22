@@ -25,7 +25,7 @@ namespace {
     return raw.substr(0, raw.size() - 1);
   }
 
-  constexpr float kGraphLineWidth = 1.35f;
+  constexpr float kGraphLineWidth = 0.75f;
   const auto kSampleInterval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::seconds(1));
   constexpr auto kSamplePublishSlack = std::chrono::milliseconds(20);
   constexpr auto kSampleRetryDelay = std::chrono::milliseconds(25);
