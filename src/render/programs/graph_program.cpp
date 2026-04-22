@@ -63,16 +63,27 @@ float cubicHermite(float y0, float y1, float y2, float y3, float t) {
          + (t3 - t2) * m2;
 }
 
+float graphPadNorm() {
+    float linePad = (u_line_width * 0.5 + u_aa_size * 2.0 + 1.0) / max(u_res_y, 1.0);
+    // Keep a little extra headroom so Hermite overshoot near the extrema stays visible.
+    return min(0.18, max(linePad + 0.04, 0.06));
+}
+
+float mapToPlotRange(float y) {
+    float pad = graphPadNorm();
+    return pad + (1.0 - 2.0 * pad) * y;
+}
+
 float evalCurve(float dataIdx, int ch) {
     float i = floor(dataIdx);
     float t = dataIdx - i;
-    return cubicHermite(
+    return mapToPlotRange(cubicHermite(
         fetchData(i - 1.0, ch),
         fetchData(i, ch),
         fetchData(i + 1.0, ch),
         fetchData(i + 2.0, ch),
         t
-    );
+    ));
 }
 
 float segDistSq(vec2 p, vec2 a, vec2 b) {
@@ -92,8 +103,8 @@ float curveDistance(float dataIdx, float pixStep, float normY, int ch) {
     vec2 d0 = frag - vec2(px, py);
     float best = dot(d0, d0);
 
-    for (int i = 1; i <= 8; i++) {
-        float cx = -2.0 + float(i) * 0.5;
+    for (int i = 1; i <= 16; i++) {
+        float cx = -2.0 + float(i) * 0.25;
         float cy = evalCurve(dataIdx + cx * pixStep, ch) * u_res_y;
         best = min(best, segDistSq(frag, vec2(px, py), vec2(cx, cy)));
         px = cx;
@@ -103,6 +114,26 @@ float curveDistance(float dataIdx, float pixStep, float normY, int ch) {
     return sqrt(best);
 }
 
+float lineCoverage(float dataIdx, float pixStep, float normY, int ch, float halfW) {
+    float cyPrev = evalCurve(dataIdx - pixStep, ch);
+    float cyNext = evalCurve(dataIdx + pixStep, ch);
+    float slope = (cyNext - cyPrev) * 0.5 * u_res_y;
+    float aa = max(u_aa_size * 2.0,
+                   (abs(slope) + 1.0) * inversesqrt(slope * slope + 1.0) * u_aa_size * 2.0);
+    float coverage = smoothstep(halfW + aa, halfW, curveDistance(dataIdx, pixStep, normY, ch));
+
+    if (abs(slope) > 4.0) {
+        // Near-vertical segments alias badly if we only sample the line at the
+        // pixel center while the graph scrolls horizontally.
+        float sub = pixStep * 0.3333333;
+        float left = smoothstep(halfW + aa, halfW, curveDistance(dataIdx - sub, pixStep, normY, ch));
+        float right = smoothstep(halfW + aa, halfW, curveDistance(dataIdx + sub, pixStep, normY, ch));
+        coverage = (coverage + left + right) / 3.0;
+    }
+
+    return coverage;
+}
+
 vec4 blendOver(vec4 src, vec4 dst) {
     return src + dst * (1.0 - src.a);
 }
@@ -110,6 +141,8 @@ vec4 blendOver(vec4 src, vec4 dst) {
 void main() {
     vec2 uv = v_texcoord;
     float normY = 1.0 - uv.y;
+    float pad = graphPadNorm();
+    float plotTop = 1.0 - pad;
 
     vec4 result = vec4(0.0);
     float halfW = u_line_width * 0.5;
@@ -119,17 +152,13 @@ void main() {
         float di = 2.0 + u_scroll1 + uv.x * segs;
         float pixStep = segs / u_res_x;
         float cy = evalCurve(di, 0);
-        float cyNext = evalCurve(di + pixStep, 0);
 
-        if (u_graph_fill_opacity > 0.0 && normY <= cy) {
-            float a = u_graph_fill_opacity * normY * u_line_color1.a;
+        if (u_graph_fill_opacity > 0.0 && normY >= pad && normY <= min(cy, plotTop)) {
+            float a = u_graph_fill_opacity * ((normY - pad) / max(plotTop - pad, 0.0001)) * u_line_color1.a;
             result = blendOver(vec4(u_line_color1.rgb * a, a), result);
         }
 
-        float dist = curveDistance(di, pixStep, normY, 0);
-        float slope1 = (cyNext - cy) * u_res_y;
-        float aa = (abs(slope1) + 1.0) * inversesqrt(slope1 * slope1 + 1.0) * u_aa_size * 2.0;
-        float sa = smoothstep(halfW + aa, halfW, dist) * u_line_color1.a;
+        float sa = lineCoverage(di, pixStep, normY, 0, halfW) * u_line_color1.a;
         result = blendOver(vec4(u_line_color1.rgb * sa, sa), result);
     }
 
@@ -138,17 +167,13 @@ void main() {
         float di = 2.0 + u_scroll2 + uv.x * segs;
         float pixStep = segs / u_res_x;
         float cy = evalCurve(di, 1);
-        float cyNext = evalCurve(di + pixStep, 1);
 
-        if (u_graph_fill_opacity > 0.0 && normY <= cy) {
-            float a = u_graph_fill_opacity * normY * u_line_color2.a;
+        if (u_graph_fill_opacity > 0.0 && normY >= pad && normY <= min(cy, plotTop)) {
+            float a = u_graph_fill_opacity * ((normY - pad) / max(plotTop - pad, 0.0001)) * u_line_color2.a;
             result = blendOver(vec4(u_line_color2.rgb * a, a), result);
         }
 
-        float dist = curveDistance(di, pixStep, normY, 1);
-        float slope2 = (cyNext - cy) * u_res_y;
-        float aa = (abs(slope2) + 1.0) * inversesqrt(slope2 * slope2 + 1.0) * u_aa_size * 2.0;
-        float sa = smoothstep(halfW + aa, halfW, dist) * u_line_color2.a;
+        float sa = lineCoverage(di, pixStep, normY, 1, halfW) * u_line_color2.a;
         result = blendOver(vec4(u_line_color2.rgb * sa, sa), result);
     }
 

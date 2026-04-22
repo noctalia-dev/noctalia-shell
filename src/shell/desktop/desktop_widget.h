@@ -14,6 +14,7 @@ class Renderer;
 class DesktopWidget {
 public:
   using UpdateCallback = std::function<void()>;
+  using LayoutCallback = std::function<void()>;
   using RedrawCallback = std::function<void()>;
 
   virtual ~DesktopWidget() = default;
@@ -36,7 +37,13 @@ public:
   std::unique_ptr<Node> releaseRoot();
 
   void setAnimationManager(AnimationManager* manager) noexcept { m_animations = manager; }
+  // Content updates must only mutate existing scene nodes. They are handled
+  // in-place by the desktop widget hosts and must not assume a relayout or
+  // scene rebuild.
   void setUpdateCallback(UpdateCallback callback) { m_updateCallback = std::move(callback); }
+  // Use this when a widget's intrinsic size or node geometry changed and the
+  // host must rerun update+layout on the widget.
+  void setLayoutCallback(LayoutCallback callback) { m_layoutCallback = std::move(callback); }
   void setRedrawCallback(RedrawCallback callback) { m_redrawCallback = std::move(callback); }
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
@@ -48,6 +55,12 @@ protected:
   void requestUpdate() {
     if (m_updateCallback) {
       m_updateCallback();
+    }
+  }
+
+  void requestLayout() {
+    if (m_layoutCallback) {
+      m_layoutCallback();
     }
   }
 
@@ -72,6 +85,7 @@ private:
   Node* m_outerRootPtr = nullptr;
   Box* m_bgBox = nullptr;
   UpdateCallback m_updateCallback;
+  LayoutCallback m_layoutCallback;
   RedrawCallback m_redrawCallback;
 
   bool m_bgEnabled = false;

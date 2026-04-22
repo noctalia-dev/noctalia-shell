@@ -217,6 +217,11 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
   instance->widget->setAnimationManager(&instance->animations);
   instance->widget->setUpdateCallback([rawInstance]() {
     if (rawInstance->surface != nullptr) {
+      rawInstance->surface->requestUpdateOnly();
+    }
+  });
+  instance->widget->setLayoutCallback([rawInstance]() {
+    if (rawInstance->surface != nullptr) {
       rawInstance->surface->requestUpdate();
     }
   });

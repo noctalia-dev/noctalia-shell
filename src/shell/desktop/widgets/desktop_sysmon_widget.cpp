@@ -16,11 +16,8 @@ namespace {
 
   constexpr float kBaseWidth = 180.0f;
   constexpr float kBaseHeight = 80.0f;
-  constexpr float kGraphLineWidth = 1.35f;
+  constexpr float kGraphLineWidth = 0.75f;
   const auto kSampleInterval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::seconds(1));
-  constexpr auto kSamplePublishSlack = std::chrono::milliseconds(20);
-  constexpr auto kSampleRetryDelay = std::chrono::milliseconds(25);
-  constexpr auto kInitialSampleRetryDelay = std::chrono::milliseconds(250);
 
   bool needsCpuTemp(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::CpuTemp; }
 
@@ -79,6 +76,14 @@ bool DesktopSysmonWidget::needsFrameTick() const { return m_scrollProgress < 1.0
 void DesktopSysmonWidget::onFrameTick(float deltaMs, Renderer& renderer) {
   (void)renderer;
   (void)deltaMs;
+  if (m_monitor != nullptr) {
+    const auto latestSampleAt = m_monitor->latest().sampledAt;
+    if (latestSampleAt != std::chrono::steady_clock::time_point{} && latestSampleAt != m_lastSampleAt) {
+      updateGraph();
+      syncLabel();
+    }
+  }
+
   if (m_graphNode == nullptr || m_scrollProgress >= 1.0f) {
     return;
   }
@@ -148,32 +153,23 @@ void DesktopSysmonWidget::doUpdate(Renderer& renderer) {
   }
 
   updateGraph();
-  scheduleNextUpdate(m_monitor->latest().sampledAt);
-
-  if (m_label != nullptr) {
-    std::string text = formatValueFor(m_stat);
-    if (m_stat2.has_value()) {
-      text += " / " + formatValueFor(*m_stat2);
-    }
-    if (text != m_lastRawValue) {
-      m_lastRawValue = text;
-      m_label->setText(text);
-      requestRedraw();
-    }
-  }
+  syncLabel();
 }
 
-void DesktopSysmonWidget::scheduleNextUpdate(std::chrono::steady_clock::time_point latestSampleAt) {
-  if (latestSampleAt == std::chrono::steady_clock::time_point{}) {
-    m_updateTimer.start(kInitialSampleRetryDelay, [this]() { requestUpdate(); });
+void DesktopSysmonWidget::syncLabel() {
+  if (m_label == nullptr) {
     return;
   }
 
-  const auto now = std::chrono::steady_clock::now();
-  const auto nextExpectedAt = latestSampleAt + kSampleInterval + kSamplePublishSlack;
-  const auto delay = now < nextExpectedAt ? std::chrono::duration_cast<std::chrono::milliseconds>(nextExpectedAt - now)
-                                          : kSampleRetryDelay;
-  m_updateTimer.start(delay, [this]() { requestUpdate(); });
+  std::string text = formatValueFor(m_stat);
+  if (m_stat2.has_value()) {
+    text += " / " + formatValueFor(*m_stat2);
+  }
+  if (text != m_lastRawValue) {
+    m_lastRawValue = text;
+    m_label->setText(text);
+    requestRedraw();
+  }
 }
 
 double DesktopSysmonWidget::normalizedFromStats(DesktopSysmonStat stat, const SystemStats& stats, double& tempMin,
