@@ -14,8 +14,8 @@
 ```toml
 [audio]
 enable_overdrive     = false  # allow volume sliders above 100% (up to 150%)
-enable_sounds        = true   # master toggle for UI sounds
-sound_volume         = 1.0    # global sound volume (0.0 - 1.0)
+enable_sounds        = false  # master toggle for UI sounds
+sound_volume         = 0.5    # global sound volume (0.0 - 1.0)
 volume_change_sound  = ""     # empty = bundled default sounds/volume-change.wav
 notification_sound   = ""     # empty = bundled default sounds/notification.wav
 ```

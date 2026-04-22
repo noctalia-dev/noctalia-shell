@@ -273,8 +273,8 @@ struct WeatherConfig {
 
 struct AudioConfig {
   bool enableOverdrive = false;
-  bool enableSounds = true;
-  float soundVolume = 1.0f;
+  bool enableSounds = false;
+  float soundVolume = 0.5f;
   std::string volumeChangeSound;
   std::string notificationSound;
 };

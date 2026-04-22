@@ -4,6 +4,7 @@
 #include "dr_wav.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <pipewire/pipewire.h>
 #include <spa/param/audio/format-utils.h>
@@ -13,6 +14,8 @@
 namespace {
 
   constexpr Logger kLog("sound");
+  constexpr float kUiSoundGainCeiling = 0.20f;
+  constexpr float kUiSoundGamma = 2.2f;
 
   const pw_stream_events kStreamEvents = [] {
     pw_stream_events events{};
@@ -192,9 +195,10 @@ void SoundPlayer::processStream(ActiveStream& streamState) {
   const std::size_t remaining =
       (streamState.cursor < sampleCount && !streamState.draining) ? (sampleCount - streamState.cursor) : 0;
   const std::size_t copySamples = std::min(capacitySamples, remaining);
+  const float playbackGain = std::pow(m_volume, kUiSoundGamma) * kUiSoundGainCeiling;
 
   for (std::size_t i = 0; i < copySamples; ++i) {
-    dst[i] = src[streamState.cursor + i] * m_volume;
+    dst[i] = src[streamState.cursor + i] * playbackGain;
   }
 
   if (copySamples < capacitySamples) {
