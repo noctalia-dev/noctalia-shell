@@ -106,11 +106,13 @@ Loader {
               Item {
                 id: batteryIndicator
                 readonly property var battery: BatteryService.primaryDevice
+                readonly property bool ext_battery: BatteryService.isPeripheral(battery)
                 readonly property bool isReady: BatteryService.isDeviceReady(battery)
                 readonly property real percent: isReady ? BatteryService.getPercentage(battery) : -1
                 readonly property bool charging: isReady ? BatteryService.isCharging(battery) : false
                 readonly property bool pluggedIn: isReady ? BatteryService.isPluggedIn(battery) : false
-                readonly property string icon: BatteryService.getDeviceIcon(battery)
+                // If external battery use getDeviceIcon - return deviceIcon percentage || If internal battery use getIcon - return batteryIcon percentage, just like before.
+                readonly property string icon: ext_battery ? BatteryService.getDeviceIcon(battery) : BatteryService.getIcon(percent, charging, pluggedIn, isReady)
               }
 
               Item {
