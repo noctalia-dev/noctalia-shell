@@ -63,16 +63,27 @@ float cubicHermite(float y0, float y1, float y2, float y3, float t) {
          + (t3 - t2) * m2;
 }
 
+float graphPadNorm() {
+    float linePad = (u_line_width * 0.5 + u_aa_size * 2.0 + 1.0) / max(u_res_y, 1.0);
+    // Keep a little extra headroom so Hermite overshoot near the extrema stays visible.
+    return min(0.18, max(linePad + 0.04, 0.06));
+}
+
+float mapToPlotRange(float y) {
+    float pad = graphPadNorm();
+    return pad + (1.0 - 2.0 * pad) * y;
+}
+
 float evalCurve(float dataIdx, int ch) {
     float i = floor(dataIdx);
     float t = dataIdx - i;
-    return cubicHermite(
+    return mapToPlotRange(cubicHermite(
         fetchData(i - 1.0, ch),
         fetchData(i, ch),
         fetchData(i + 1.0, ch),
         fetchData(i + 2.0, ch),
         t
-    );
+    ));
 }
 
 float segDistSq(vec2 p, vec2 a, vec2 b) {
@@ -110,6 +121,8 @@ vec4 blendOver(vec4 src, vec4 dst) {
 void main() {
     vec2 uv = v_texcoord;
     float normY = 1.0 - uv.y;
+    float pad = graphPadNorm();
+    float plotTop = 1.0 - pad;
 
     vec4 result = vec4(0.0);
     float halfW = u_line_width * 0.5;
@@ -121,8 +134,8 @@ void main() {
         float cy = evalCurve(di, 0);
         float cyNext = evalCurve(di + pixStep, 0);
 
-        if (u_graph_fill_opacity > 0.0 && normY <= cy) {
-            float a = u_graph_fill_opacity * normY * u_line_color1.a;
+        if (u_graph_fill_opacity > 0.0 && normY >= pad && normY <= min(cy, plotTop)) {
+            float a = u_graph_fill_opacity * ((normY - pad) / max(plotTop - pad, 0.0001)) * u_line_color1.a;
             result = blendOver(vec4(u_line_color1.rgb * a, a), result);
         }
 
@@ -140,8 +153,8 @@ void main() {
         float cy = evalCurve(di, 1);
         float cyNext = evalCurve(di + pixStep, 1);
 
-        if (u_graph_fill_opacity > 0.0 && normY <= cy) {
-            float a = u_graph_fill_opacity * normY * u_line_color2.a;
+        if (u_graph_fill_opacity > 0.0 && normY >= pad && normY <= min(cy, plotTop)) {
+            float a = u_graph_fill_opacity * ((normY - pad) / max(plotTop - pad, 0.0001)) * u_line_color2.a;
             result = blendOver(vec4(u_line_color2.rgb * a, a), result);
         }
 
