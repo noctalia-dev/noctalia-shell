@@ -1,0 +1,89 @@
+#pragma once
+
+#include "render/programs/graph_program.h"
+#include "render/scene/node.h"
+
+#include <GLES2/gl2.h>
+
+class GraphNode : public Node {
+public:
+  GraphNode() : Node(NodeType::Graph) {}
+  ~GraphNode() override;
+
+  GraphNode(const GraphNode&) = delete;
+  GraphNode& operator=(const GraphNode&) = delete;
+
+  [[nodiscard]] const GraphStyle& style() const noexcept { return m_style; }
+  [[nodiscard]] GLuint textureId() const noexcept { return m_texture; }
+  [[nodiscard]] int textureWidth() const noexcept { return m_texWidth; }
+
+  void setLineColor1(const Color& color) {
+    if (m_style.lineColor1 == color)
+      return;
+    m_style.lineColor1 = color;
+    markPaintDirty();
+  }
+
+  void setLineColor2(const Color& color) {
+    if (m_style.lineColor2 == color)
+      return;
+    m_style.lineColor2 = color;
+    markPaintDirty();
+  }
+
+  void setCount1(float count) {
+    if (m_style.count1 == count)
+      return;
+    m_style.count1 = count;
+    markPaintDirty();
+  }
+
+  void setCount2(float count) {
+    if (m_style.count2 == count)
+      return;
+    m_style.count2 = count;
+    markPaintDirty();
+  }
+
+  void setScroll1(float scroll) {
+    m_style.scroll1 = scroll;
+    markPaintDirty();
+  }
+
+  void setScroll2(float scroll) {
+    m_style.scroll2 = scroll;
+    markPaintDirty();
+  }
+
+  void setLineWidth(float width) {
+    if (m_style.lineWidth == width)
+      return;
+    m_style.lineWidth = width;
+    markPaintDirty();
+  }
+
+  void setGraphFillOpacity(float opacity) {
+    if (m_style.graphFillOpacity == opacity)
+      return;
+    m_style.graphFillOpacity = opacity;
+    markPaintDirty();
+  }
+
+  void setAaSize(float size) {
+    if (m_style.aaSize == size)
+      return;
+    m_style.aaSize = size;
+    markPaintDirty();
+  }
+
+  // Upload data to the GL texture. Must be called while a GL context is current.
+  // primary/secondary arrays contain normalized [0..1] values.
+  // Pass nullptr and 0 for unused channels.
+  void setData(const float* primary, int primaryCount, const float* secondary, int secondaryCount);
+
+private:
+  GraphStyle m_style;
+  GLuint m_texture = 0;
+  int m_texWidth = 0;
+  int m_texCapacity = 0;
+};

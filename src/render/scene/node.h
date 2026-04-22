@@ -17,6 +17,7 @@ enum class NodeType : std::uint8_t {
   Glyph,
   Spinner,
   Effect,
+  Graph,
 };
 
 class Node {

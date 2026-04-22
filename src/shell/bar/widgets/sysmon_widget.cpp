@@ -1,6 +1,7 @@
 #include "shell/bar/widgets/sysmon_widget.h"
 
 #include "render/core/renderer.h"
+#include "render/scene/graph_node.h"
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
 #include "system/system_monitor_service.h"
@@ -27,8 +28,9 @@ namespace {
 } // namespace
 
 SysmonWidget::SysmonWidget(SystemMonitorService* monitor, SysmonStat stat, std::string diskPath,
-                           SysmonDisplayMode displayMode)
-    : m_monitor(monitor), m_stat(stat), m_displayMode(displayMode), m_diskPath(std::move(diskPath)) {
+                           SysmonDisplayMode displayMode, bool showLabel)
+    : m_monitor(monitor), m_stat(stat), m_displayMode(displayMode), m_showLabel(showLabel),
+      m_diskPath(std::move(diskPath)) {
   if (m_stat == SysmonStat::CpuTemp && m_monitor != nullptr) {
     m_monitor->retainCpuTemp();
   }
@@ -59,15 +61,11 @@ void SysmonWidget::create() {
     chartBg->setStyle(bgStyle);
     m_chartBg = static_cast<RectNode*>(container->addChild(std::move(chartBg)));
 
-    for (int i = 0; i < kHistorySamples; i++) {
-      auto bar = std::make_unique<ProgressBar>();
-      bar->setOrientation(ProgressBarOrientation::Vertical);
-      bar->setFill(roleColor(ColorRole::Primary));
-      bar->setTrackColor(Color{0, 0, 0, 0});
-      bar->setRadius(0.0f);
-      bar->setProgress(0.0f);
-      m_bars[i] = static_cast<ProgressBar*>(m_chartBg->addChild(std::move(bar)));
-    }
+    auto graph = std::make_unique<GraphNode>();
+    graph->setLineColor1(resolveColorRole(ColorRole::Primary));
+    graph->setLineWidth(1.5f * m_contentScale);
+    graph->setGraphFillOpacity(0.15f);
+    m_graphNode = static_cast<GraphNode*>(m_chartBg->addChild(std::move(graph)));
   }
 
   if (m_displayMode == SysmonDisplayMode::Gauge) {
@@ -78,7 +76,7 @@ void SysmonWidget::create() {
     m_gauge = static_cast<ProgressBar*>(container->addChild(std::move(gauge)));
   }
 
-  if (m_displayMode != SysmonDisplayMode::Gauge) {
+  if (m_displayMode == SysmonDisplayMode::Text || m_showLabel) {
     auto label = std::make_unique<Label>();
     label->setBold(true);
     label->setFontSize(Style::fontSizeBody * m_contentScale);
@@ -131,10 +129,18 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
   const float gap = Style::spaceXs * m_contentScale;
   const bool verticalBar = m_isVerticalBar;
 
+  if (m_label != nullptr) {
+    if (orientationChanged || m_lastRawValue.empty()) {
+      syncLabelText(m_lastRawValue.empty() ? formatValue() : m_lastRawValue);
+    }
+    m_label->setFontSize((verticalBar ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
+    m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+    m_label->measure(renderer);
+  }
+  const float labelW = m_label != nullptr ? m_label->width() : 0.0f;
+  const float labelH = m_label != nullptr ? m_label->height() : 0.0f;
+
   if (m_displayMode == SysmonDisplayMode::Gauge && m_gauge != nullptr) {
-    // Size the gauge to the visible icon, not glyphH — glyphH is the full
-    // text line-box (ascent+descent) from Pango, which is noticeably taller
-    // than a tabler icon's ink. Tabler glyphs fill ~85% of the em square.
     const float baseSize = Style::fontSizeBody * m_contentScale;
     const float gaugeStem = std::round(baseSize * 0.85f);
     const float gaugeThickness = std::max(3.0f, roundf(baseSize * 0.3f));
@@ -144,11 +150,18 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
       const float trackW = std::max(m_glyph->width(), gaugeStem);
       const float trackH = gaugeThickness;
       m_gauge->setRadius(trackH / 2.0f);
-      const float contentW = std::max(m_glyph->width(), trackW);
+      float contentW = std::max(m_glyph->width(), trackW);
+      if (m_label != nullptr)
+        contentW = std::max(contentW, labelW);
       m_glyph->setPosition(std::round((contentW - m_glyph->width()) * 0.5f), 0.0f);
       m_gauge->setPosition(std::round((contentW - trackW) * 0.5f), glyphH + gap);
       m_gauge->setSize(trackW, trackH);
-      rootNode->setSize(contentW, glyphH + gap + trackH);
+      float totalH = glyphH + gap + trackH;
+      if (m_label != nullptr) {
+        m_label->setPosition(std::round((contentW - labelW) * 0.5f), totalH + gap);
+        totalH += gap + labelH;
+      }
+      rootNode->setSize(contentW, totalH);
     } else {
       m_gauge->setOrientation(ProgressBarOrientation::Vertical);
       const float gaugeW = gaugeThickness;
@@ -158,65 +171,70 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
       m_glyph->setPosition(0.0f, 0.0f);
       m_gauge->setPosition(m_glyph->width() + gap, gaugeY);
       m_gauge->setSize(gaugeW, gaugeH);
-      rootNode->setSize(m_gauge->x() + gaugeW, glyphH);
+      float totalW = m_gauge->x() + gaugeW;
+      if (m_label != nullptr) {
+        m_label->setPosition(totalW + gap, 0.0f);
+        totalW = m_label->x() + labelW;
+      }
+      rootNode->setSize(totalW, glyphH);
     }
     syncGaugeProgress(currentNormalized());
     return;
   }
-
-  if (m_label == nullptr) {
-    return;
-  }
-  if (orientationChanged || m_lastRawValue.empty()) {
-    syncLabelText(m_lastRawValue.empty() ? formatValue() : m_lastRawValue);
-  }
-  m_label->setFontSize((verticalBar ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
-  m_label->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
-  m_label->measure(renderer);
 
   if (m_displayMode == SysmonDisplayMode::Graph && m_chartBg != nullptr) {
     const float chartW =
         verticalBar ? std::min(50.0f * m_contentScale, std::max(1.0f, containerWidth)) : 50.0f * m_contentScale;
 
     if (verticalBar) {
-      const float contentW = std::max({m_glyph->width(), chartW, m_label->width()});
+      float contentW = std::max(m_glyph->width(), chartW);
+      if (m_label != nullptr)
+        contentW = std::max(contentW, labelW);
       m_glyph->setPosition(std::round((contentW - m_glyph->width()) * 0.5f), 0.0f);
       const float chartY = glyphH + gap;
       m_chartBg->setPosition(std::round((contentW - chartW) * 0.5f), chartY);
       m_chartBg->setSize(chartW, glyphH);
 
-      const float barW = chartW / static_cast<float>(kHistorySamples);
-      for (int i = 0; i < kHistorySamples; i++) {
-        m_bars[i]->setPosition(static_cast<float>(i) * barW, 0.0f);
-        m_bars[i]->setSize(barW, glyphH);
+      if (m_graphNode != nullptr) {
+        m_graphNode->setPosition(0.0f, 0.0f);
+        m_graphNode->setSize(chartW, glyphH);
       }
 
-      const float labelY = chartY + glyphH + gap;
-      m_label->setPosition(std::round((contentW - m_label->width()) * 0.5f), labelY);
-      rootNode->setSize(contentW, labelY + m_label->height());
+      float totalH = chartY + glyphH;
+      if (m_label != nullptr) {
+        m_label->setPosition(std::round((contentW - labelW) * 0.5f), totalH + gap);
+        totalH += gap + labelH;
+      }
+      rootNode->setSize(contentW, totalH);
     } else {
       m_glyph->setPosition(0.0f, 0.0f);
       m_chartBg->setPosition(m_glyph->width() + gap, 0.0f);
       m_chartBg->setSize(chartW, glyphH);
 
-      const float barW = chartW / static_cast<float>(kHistorySamples);
-      for (int i = 0; i < kHistorySamples; i++) {
-        m_bars[i]->setPosition(static_cast<float>(i) * barW, 0.0f);
-        m_bars[i]->setSize(barW, glyphH);
+      if (m_graphNode != nullptr) {
+        m_graphNode->setPosition(0.0f, 0.0f);
+        m_graphNode->setSize(chartW, glyphH);
       }
 
-      m_label->setPosition(m_chartBg->x() + chartW + gap, 0.0f);
-      rootNode->setSize(m_label->x() + m_label->width(), glyphH);
+      float totalW = m_chartBg->x() + chartW;
+      if (m_label != nullptr) {
+        m_label->setPosition(totalW + gap, 0.0f);
+        totalW = m_label->x() + labelW;
+      }
+      rootNode->setSize(totalW, glyphH);
     }
-  } else if (verticalBar) {
-    const float contentW = std::max(m_glyph->width(), m_label->width());
+  } else if (m_label != nullptr && verticalBar) {
+    const float contentW = std::max(m_glyph->width(), labelW);
     m_glyph->setPosition(std::round((contentW - m_glyph->width()) * 0.5f), 0.0f);
-    m_label->setPosition(std::round((contentW - m_label->width()) * 0.5f), glyphH + gap);
-    rootNode->setSize(contentW, glyphH + gap + m_label->height());
-  } else {
+    m_label->setPosition(std::round((contentW - labelW) * 0.5f), glyphH + gap);
+    rootNode->setSize(contentW, glyphH + gap + labelH);
+  } else if (m_label != nullptr) {
     m_glyph->setPosition(0.0f, 0.0f);
     m_label->setPosition(m_glyph->width() + gap, 0.0f);
-    rootNode->setSize(m_label->x() + m_label->width(), glyphH);
+    rootNode->setSize(m_label->x() + labelW, glyphH);
+  } else {
+    m_glyph->setPosition(0.0f, 0.0f);
+    rootNode->setSize(m_glyph->width(), glyphH);
   }
 }
 
@@ -227,25 +245,36 @@ void SysmonWidget::doUpdate(Renderer& renderer) {
 
   const double normalized = currentNormalized();
 
+  if (m_label != nullptr) {
+    m_label->setFontSize((m_isVerticalBar ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
+    if (syncLabelText(formatValue())) {
+      m_label->measure(renderer);
+    }
+  }
+
   if (m_displayMode == SysmonDisplayMode::Gauge) {
     syncGaugeProgress(normalized);
     return;
   }
 
-  if (m_label == nullptr) {
-    return;
-  }
-
-  m_label->setFontSize((m_isVerticalBar ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
-  if (syncLabelText(formatValue())) {
-    m_label->measure(renderer);
-  }
-
   if (m_displayMode == SysmonDisplayMode::Graph) {
     pushHistory(normalized);
-    updateBars();
+    updateGraph();
     requestRedraw();
   }
+}
+
+void SysmonWidget::onFrameTick(float deltaMs) {
+  if (m_graphNode == nullptr || m_scrollProgress >= 1.0f) {
+    return;
+  }
+  m_scrollProgress = std::min(1.0f, m_scrollProgress + deltaMs * 0.001f);
+  m_graphNode->setScroll1(m_scrollProgress);
+  requestRedraw();
+}
+
+bool SysmonWidget::needsFrameTick() const {
+  return m_displayMode == SysmonDisplayMode::Graph && m_scrollProgress < 1.0f;
 }
 
 void SysmonWidget::pushHistory(double normalized) {
@@ -253,11 +282,24 @@ void SysmonWidget::pushHistory(double normalized) {
   m_historyHead = (m_historyHead + 1) % kHistorySamples;
 }
 
-void SysmonWidget::updateBars() {
-  for (int i = 0; i < kHistorySamples; i++) {
-    const int idx = (m_historyHead + i) % kHistorySamples; // oldest → leftmost
-    m_bars[i]->setProgress(static_cast<float>(m_history[idx]));
+void SysmonWidget::updateGraph() {
+  if (m_graphNode == nullptr) {
+    return;
   }
+
+  std::array<float, kHistorySamples + 1> data{};
+  for (int i = 0; i < kHistorySamples; ++i) {
+    const int idx = (m_historyHead + i) % kHistorySamples;
+    data[static_cast<std::size_t>(i)] = static_cast<float>(m_history[idx]);
+  }
+  const float last = data[kHistorySamples - 1];
+  const float prev = data[kHistorySamples - 2];
+  data[kHistorySamples] = std::clamp(last + (last - prev) * 0.5f, 0.0f, 1.0f);
+
+  m_graphNode->setData(data.data(), kHistorySamples + 1, nullptr, 0);
+  m_graphNode->setCount1(static_cast<float>(kHistorySamples + 1));
+  m_scrollProgress = 0.0f;
+  m_graphNode->setScroll1(0.0f);
 }
 
 double SysmonWidget::currentNormalized() const {

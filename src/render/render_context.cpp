@@ -7,6 +7,7 @@
 #include "render/render_target.h"
 #include "render/scene/effect_node.h"
 #include "render/scene/glyph_node.h"
+#include "render/scene/graph_node.h"
 #include "render/scene/image_node.h"
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
@@ -84,6 +85,7 @@ void RenderContext::ensureGlPrograms() {
     return;
   }
   m_effectProgram.ensureInitialized();
+  m_graphProgram.ensureInitialized();
   m_imageProgram.ensureInitialized();
   m_linearGradientProgram.ensureInitialized();
   m_rectProgram.ensureInitialized();
@@ -272,6 +274,18 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     m_effectProgram.draw(sw, sh, node->width(), node->height(), style, worldTransform);
     break;
   }
+  case NodeType::Graph: {
+    const auto* graph = static_cast<const GraphNode*>(node);
+    if (graph->textureId() != 0) {
+      auto style = graph->style();
+      style.lineColor1.a *= effectiveOpacity;
+      style.lineColor2.a *= effectiveOpacity;
+      style.graphFillOpacity *= effectiveOpacity;
+      m_graphProgram.draw(graph->textureId(), graph->textureWidth(), sw, sh, node->width(), node->height(), style,
+                          worldTransform);
+    }
+    break;
+  }
   case NodeType::Base:
     break;
   }
@@ -343,6 +357,7 @@ void RenderContext::cleanup() {
   m_glyphRenderer.cleanup();
   m_textureManager.cleanup();
   m_effectProgram.destroy();
+  m_graphProgram.destroy();
   m_imageProgram.destroy();
   m_linearGradientProgram.destroy();
   m_rectProgram.destroy();

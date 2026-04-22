@@ -301,7 +301,8 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
       displayMode = SysmonDisplayMode::Text;
     else if (display == "graph")
       displayMode = SysmonDisplayMode::Graph;
-    auto widget = std::make_unique<SysmonWidget>(m_sysmon, stat, std::move(path), displayMode);
+    const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
+    auto widget = std::make_unique<SysmonWidget>(m_sysmon, stat, std::move(path), displayMode, showLabel);
     widget->setContentScale(contentScale);
     return widget;
   }

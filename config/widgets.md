@@ -84,7 +84,8 @@ System resource monitor. Shows an icon and value for one configurable stat. Mult
 |---------|------|---------|-------------|
 | `stat` | string | `"cpu_usage"` | Which stat to display (see table below) |
 | `path` | string | `"/"` | Mount path for `disk_pct` (ignored otherwise) |
-| `display` | string | `"gauge"` | `"gauge"` = icon + vertical fill bar; `"graph"` = icon + sparkline + value; `"text"` = icon + value |
+| `display` | string | `"gauge"` | `"gauge"` = icon + vertical fill bar; `"graph"` = icon + sparkline; `"text"` = icon + value |
+| `show_label` | bool | `true` | Show the text value next to the graph or gauge (always shown in `"text"` mode) |
 
 **`stat` values:**
 
@@ -101,6 +102,12 @@ System resource monitor. Shows an icon and value for one configurable stat. Mult
 [widget.cpu]
 type = "sysmon"
 stat = "cpu_usage"
+
+[widget.cpu-graph]
+type       = "sysmon"
+stat       = "cpu_usage"
+display    = "graph"
+show_label = false
 
 [widget.temp]
 type = "sysmon"

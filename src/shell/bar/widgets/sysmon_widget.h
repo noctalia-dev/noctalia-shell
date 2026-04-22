@@ -6,6 +6,7 @@
 #include <string>
 
 class Glyph;
+class GraphNode;
 class Label;
 class ProgressBar;
 class RectNode;
@@ -16,7 +17,8 @@ enum class SysmonDisplayMode { Text, Graph, Gauge };
 
 class SysmonWidget : public Widget {
 public:
-  SysmonWidget(SystemMonitorService* monitor, SysmonStat stat, std::string diskPath, SysmonDisplayMode displayMode);
+  SysmonWidget(SystemMonitorService* monitor, SysmonStat stat, std::string diskPath, SysmonDisplayMode displayMode,
+               bool showLabel = true);
   ~SysmonWidget() override;
 
   void create() override;
@@ -24,17 +26,20 @@ public:
 private:
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void doUpdate(Renderer& renderer) override;
+  void onFrameTick(float deltaMs) override;
+  [[nodiscard]] bool needsFrameTick() const override;
   bool syncLabelText(const std::string& raw);
   void syncGaugeProgress(double normalized);
   [[nodiscard]] std::string formatValue() const;
   [[nodiscard]] double currentNormalized() const;
   [[nodiscard]] static const char* glyphName(SysmonStat stat);
   void pushHistory(double normalized);
-  void updateBars();
+  void updateGraph();
 
   SystemMonitorService* m_monitor;
   SysmonStat m_stat;
   SysmonDisplayMode m_displayMode;
+  bool m_showLabel;
   std::string m_diskPath;
   std::string m_lastRawValue;
   bool m_isVerticalBar = false;
@@ -51,7 +56,8 @@ private:
   double m_tempMax = 80.0;
   // Graph mode
   RectNode* m_chartBg = nullptr;
-  std::array<ProgressBar*, kHistorySamples> m_bars{};
+  GraphNode* m_graphNode = nullptr;
+  float m_scrollProgress = 1.0f;
 
   // Gauge mode
   ProgressBar* m_gauge = nullptr;

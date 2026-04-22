@@ -5,6 +5,7 @@
 #include "render/core/texture_manager.h"
 #include "render/programs/effect_program.h"
 #include "render/programs/glyph_program.h"
+#include "render/programs/graph_program.h"
 #include "render/programs/image_program.h"
 #include "render/programs/linear_gradient_program.h"
 #include "render/programs/rect_program.h"
@@ -62,6 +63,7 @@ private:
   bool m_glReady = false;
 
   EffectProgram m_effectProgram;
+  GraphProgram m_graphProgram;
   ImageProgram m_imageProgram;
   LinearGradientProgram m_linearGradientProgram;
   RectProgram m_rectProgram;
