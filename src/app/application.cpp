@@ -760,7 +760,8 @@ void Application::initUi() {
 
   m_dock.initialize(m_wayland, &m_configService, &m_renderContext);
   m_desktopWidgetsController.initialize(m_wayland, &m_configService, &m_timeService, m_pipewireSpectrum.get(),
-                                        &m_weatherService, &m_renderContext, m_mprisService.get(), &m_httpClient);
+                                        &m_weatherService, &m_renderContext, m_mprisService.get(), &m_httpClient,
+                                        m_systemMonitor.get());
 
   std::string lastShellFontFamily = m_configService.config().shell.fontFamily;
   m_configService.addReloadCallback([this, lastShellFontFamily]() mutable {

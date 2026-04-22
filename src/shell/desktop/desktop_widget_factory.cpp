@@ -6,6 +6,7 @@
 #include "shell/desktop/widgets/desktop_clock_widget.h"
 #include "shell/desktop/widgets/desktop_media_player_widget.h"
 #include "shell/desktop/widgets/desktop_sticker_widget.h"
+#include "shell/desktop/widgets/desktop_sysmon_widget.h"
 #include "shell/desktop/widgets/desktop_weather_widget.h"
 
 namespace {
@@ -95,9 +96,10 @@ namespace {
 } // namespace
 
 DesktopWidgetFactory::DesktopWidgetFactory(TimeService* timeService, PipeWireSpectrum* pipewireSpectrum,
-                                           const WeatherService* weather, MprisService* mpris, HttpClient* httpClient)
+                                           const WeatherService* weather, MprisService* mpris, HttpClient* httpClient,
+                                           SystemMonitorService* sysmon)
     : m_timeService(timeService), m_pipewireSpectrum(pipewireSpectrum), m_weather(weather), m_mpris(mpris),
-      m_httpClient(httpClient) {}
+      m_httpClient(httpClient), m_sysmon(sysmon) {}
 
 std::unique_ptr<DesktopWidget>
 DesktopWidgetFactory::create(const std::string& type,
@@ -162,6 +164,35 @@ DesktopWidgetFactory::create(const std::string& type,
     auto widget = std::make_unique<DesktopMediaPlayerWidget>(
         m_mpris, m_httpClient, vertical, getThemeColorSetting(settings, "color", roleColor(ColorRole::OnSurface)),
         getBoolSetting(settings, "shadow", true));
+    applyCommonSettings(*widget, settings);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "sysmon") {
+    if (m_sysmon == nullptr) {
+      kLog.warn("desktop widget factory: sysmon requires SystemMonitorService");
+      return nullptr;
+    }
+    auto parseStat = [](const std::string& s) -> DesktopSysmonStat {
+      if (s == "cpu_temp")
+        return DesktopSysmonStat::CpuTemp;
+      if (s == "ram_pct")
+        return DesktopSysmonStat::RamPct;
+      if (s == "swap_pct")
+        return DesktopSysmonStat::SwapPct;
+      return DesktopSysmonStat::CpuUsage;
+    };
+    const DesktopSysmonStat stat = parseStat(getStringSetting(settings, "stat", "cpu_usage"));
+    const std::string stat2Str = getStringSetting(settings, "stat2");
+    std::optional<DesktopSysmonStat> stat2;
+    if (!stat2Str.empty()) {
+      stat2 = parseStat(stat2Str);
+    }
+    auto widget = std::make_unique<DesktopSysmonWidget>(
+        m_sysmon, stat, stat2, getThemeColorSetting(settings, "color", roleColor(ColorRole::Primary)),
+        getThemeColorSetting(settings, "color2", roleColor(ColorRole::Secondary)),
+        getBoolSetting(settings, "show_label", true), getBoolSetting(settings, "shadow", true));
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);
     return widget;

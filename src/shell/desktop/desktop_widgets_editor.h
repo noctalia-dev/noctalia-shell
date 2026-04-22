@@ -23,6 +23,7 @@ class MprisService;
 class PipeWireSpectrum;
 class RenderContext;
 class Select;
+class SystemMonitorService;
 class TimeService;
 class WaylandConnection;
 class WeatherService;
@@ -38,7 +39,7 @@ public:
 
   void initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                   PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext,
-                  MprisService* mpris, HttpClient* httpClient);
+                  MprisService* mpris, HttpClient* httpClient, SystemMonitorService* sysmon);
   void setExitRequestedCallback(std::function<void()> callback);
 
   void open(const DesktopWidgetsSnapshot& snapshot);

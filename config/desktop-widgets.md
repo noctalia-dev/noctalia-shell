@@ -10,7 +10,7 @@ Desktop widgets are enabled from `config.toml`. Widget instances and edit-mode g
 enabled = true
 ```
 
-When enabled, Noctalia renders each desktop widget as its own tightly-sized layer-shell surface on the `Bottom` layer. The current implementation ships `clock`, `audio_visualizer`, `sticker`, `weather`, and `media_player` widget types plus an interactive edit mode.
+When enabled, Noctalia renders each desktop widget as its own tightly-sized layer-shell surface on the `Bottom` layer. The current implementation ships `clock`, `audio_visualizer`, `sticker`, `weather`, `media_player`, and `sysmon` widget types plus an interactive edit mode.
 
 ---
 
@@ -100,7 +100,7 @@ background       = true
 background_color = "surface"
 ```
 
-The `clock`, `weather`, and `media_player` widget types additionally support text styling:
+The `clock`, `weather`, `media_player`, and `sysmon` widget types additionally support text styling:
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
@@ -239,3 +239,37 @@ image_path = "/path/to/image.png"
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `image_path` | string | — | Absolute path to the image file |
+
+---
+
+### sysmon
+
+GPU-accelerated system monitor graph with smooth cubic curves and optional text label. Uses the shared `SystemMonitorService`.
+
+```toml
+[[widget]]
+id       = "desktop-widget-0000000000000006"
+type     = "sysmon"
+output   = "DP-1"
+cx       = 200.0
+cy       = 800.0
+scale    = 1.0
+rotation = 0.0
+
+[widget.settings]
+stat       = "cpu_usage"
+stat2      = "cpu_temp"
+color      = "primary"
+color2     = "secondary"
+show_label = true
+shadow     = true
+background = true
+```
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `stat` | string | `"cpu_usage"` | Primary stat: `"cpu_usage"`, `"cpu_temp"`, `"ram_pct"`, `"swap_pct"` |
+| `stat2` | string | — | Optional secondary stat (same values as `stat`). Omit for single curve. |
+| `color` | string | `"primary"` | Primary line color — palette role or `"#rrggbb"` |
+| `color2` | string | `"secondary"` | Secondary line color (used when `stat2` is set) |
+| `show_label` | bool | `true` | Show the current value as text next to the icon |

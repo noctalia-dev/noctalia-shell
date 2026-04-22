@@ -49,7 +49,8 @@ namespace {
   constexpr float kMaxScale = 8.0f;
   constexpr float kDisabledWidgetOpacity = 0.25f;
   constexpr float kRotationSnap = static_cast<float>(M_PI) / 12.0f;
-  constexpr std::array<const char*, 4> kWidgetTypeLabels{"Clock", "Audio Visualizer", "Sticker", "Weather"};
+  constexpr std::array<const char*, 6> kWidgetTypeLabels{"Clock",   "Audio Visualizer", "Sticker",
+                                                         "Weather", "Media Player",     "System Monitor"};
   constexpr std::string_view kDesktopWidgetIdPrefix = "desktop-widget-";
   constexpr std::size_t kScaleCornerCount = 4;
 
@@ -146,12 +147,13 @@ namespace {
 
 void DesktopWidgetsEditor::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                                       PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
-                                      RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient) {
+                                      RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
+                                      SystemMonitorService* sysmon) {
   m_wayland = &wayland;
   m_config = config;
   m_timeService = timeService;
   m_renderContext = renderContext;
-  m_factory = std::make_unique<DesktopWidgetFactory>(timeService, pipewireSpectrum, weather, mpris, httpClient);
+  m_factory = std::make_unique<DesktopWidgetFactory>(timeService, pipewireSpectrum, weather, mpris, httpClient, sysmon);
 }
 
 void DesktopWidgetsEditor::setExitRequestedCallback(std::function<void()> callback) {
@@ -640,10 +642,13 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   const bool canBringSelectedToFront = hasSelectedWidget && std::next(selectedWidgetIt) != m_snapshot.widgets.end();
 
   auto typeSelect = std::make_unique<Select>();
-  typeSelect->setOptions({kWidgetTypeLabels[0], kWidgetTypeLabels[1], kWidgetTypeLabels[2], kWidgetTypeLabels[3]});
+  typeSelect->setOptions({kWidgetTypeLabels[0], kWidgetTypeLabels[1], kWidgetTypeLabels[2], kWidgetTypeLabels[3],
+                          kWidgetTypeLabels[4], kWidgetTypeLabels[5]});
   typeSelect->setSelectedIndex(m_addWidgetType == "audio_visualizer" ? 1
                                : m_addWidgetType == "sticker"        ? 2
                                : m_addWidgetType == "weather"        ? 3
+                               : m_addWidgetType == "media_player"   ? 4
+                               : m_addWidgetType == "sysmon"         ? 5
                                                                      : 0);
   typeSelect->setControlHeight(Style::controlHeightSm);
   typeSelect->setOnSelectionChanged([this](std::size_t index, std::string_view /*text*/) {
@@ -656,6 +661,12 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
       break;
     case 3:
       m_addWidgetType = "weather";
+      break;
+    case 4:
+      m_addWidgetType = "media_player";
+      break;
+    case 5:
+      m_addWidgetType = "sysmon";
       break;
     default:
       m_addWidgetType = "clock";

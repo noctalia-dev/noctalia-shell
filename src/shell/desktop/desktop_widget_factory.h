@@ -9,6 +9,7 @@
 
 class HttpClient;
 class MprisService;
+class SystemMonitorService;
 class TimeService;
 class PipeWireSpectrum;
 class WeatherService;
@@ -16,7 +17,7 @@ class WeatherService;
 class DesktopWidgetFactory {
 public:
   DesktopWidgetFactory(TimeService* timeService, PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
-                       MprisService* mpris, HttpClient* httpClient);
+                       MprisService* mpris, HttpClient* httpClient, SystemMonitorService* sysmon);
 
   [[nodiscard]] std::unique_ptr<DesktopWidget>
   create(const std::string& type, const std::unordered_map<std::string, WidgetSettingValue>& settings,
@@ -28,4 +29,5 @@ private:
   const WeatherService* m_weather = nullptr;
   MprisService* m_mpris = nullptr;
   HttpClient* m_httpClient = nullptr;
+  SystemMonitorService* m_sysmon = nullptr;
 };

@@ -146,15 +146,17 @@ DesktopWidgetsController::~DesktopWidgetsController() {
 
 void DesktopWidgetsController::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                                           PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
-                                          RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient) {
+                                          RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
+                                          SystemMonitorService* sysmon) {
   m_wayland = &wayland;
   m_config = config;
   m_timeService = timeService;
   m_renderContext = renderContext;
   m_host = std::make_unique<DesktopWidgetsHost>();
-  m_host->initialize(wayland, config, timeService, pipewireSpectrum, weather, renderContext, mpris, httpClient);
+  m_host->initialize(wayland, config, timeService, pipewireSpectrum, weather, renderContext, mpris, httpClient, sysmon);
   m_editor = std::make_unique<DesktopWidgetsEditor>();
-  m_editor->initialize(wayland, config, timeService, pipewireSpectrum, weather, renderContext, mpris, httpClient);
+  m_editor->initialize(wayland, config, timeService, pipewireSpectrum, weather, renderContext, mpris, httpClient,
+                       sysmon);
   m_editor->setExitRequestedCallback([this]() { exitEdit(); });
   loadState();
   setupWatch();

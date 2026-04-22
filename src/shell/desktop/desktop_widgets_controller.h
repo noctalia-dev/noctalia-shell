@@ -14,6 +14,7 @@ class IpcService;
 class MprisService;
 class PipeWireSpectrum;
 class RenderContext;
+class SystemMonitorService;
 class TimeService;
 class WaylandConnection;
 class WeatherService;
@@ -60,7 +61,7 @@ public:
 
   void initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                   PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext,
-                  MprisService* mpris, HttpClient* httpClient);
+                  MprisService* mpris, HttpClient* httpClient, SystemMonitorService* sysmon);
 
   void registerIpc(IpcService& ipc);
   void onOutputChange();

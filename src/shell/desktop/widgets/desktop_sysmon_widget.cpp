@@ -1,0 +1,288 @@
+#include "shell/desktop/widgets/desktop_sysmon_widget.h"
+
+#include "render/core/renderer.h"
+#include "render/scene/graph_node.h"
+#include "render/scene/node.h"
+#include "system/system_monitor_service.h"
+#include "ui/controls/glyph.h"
+#include "ui/controls/label.h"
+#include "ui/style.h"
+
+#include <algorithm>
+#include <format>
+
+namespace {
+
+  constexpr float kBaseWidth = 180.0f;
+  constexpr float kBaseHeight = 80.0f;
+
+  bool needsCpuTemp(DesktopSysmonStat stat) { return stat == DesktopSysmonStat::CpuTemp; }
+
+} // namespace
+
+DesktopSysmonWidget::DesktopSysmonWidget(SystemMonitorService* monitor, DesktopSysmonStat stat,
+                                         std::optional<DesktopSysmonStat> stat2, ThemeColor lineColor,
+                                         ThemeColor lineColor2, bool showLabel, bool shadow)
+    : m_monitor(monitor), m_stat(stat), m_stat2(stat2), m_lineColor(lineColor), m_lineColor2(lineColor2),
+      m_showLabel(showLabel), m_shadow(shadow) {
+  if (m_monitor != nullptr) {
+    if (needsCpuTemp(m_stat))
+      m_monitor->retainCpuTemp();
+    if (m_stat2.has_value() && needsCpuTemp(*m_stat2))
+      m_monitor->retainCpuTemp();
+  }
+}
+
+DesktopSysmonWidget::~DesktopSysmonWidget() {
+  if (m_monitor != nullptr) {
+    if (needsCpuTemp(m_stat))
+      m_monitor->releaseCpuTemp();
+    if (m_stat2.has_value() && needsCpuTemp(*m_stat2))
+      m_monitor->releaseCpuTemp();
+  }
+}
+
+void DesktopSysmonWidget::create() {
+  auto rootNode = std::make_unique<Node>();
+
+  auto glyph = std::make_unique<Glyph>();
+  glyph->setGlyph(glyphName(m_stat));
+  m_glyph = glyph.get();
+  rootNode->addChild(std::move(glyph));
+
+  auto graph = std::make_unique<GraphNode>();
+  graph->setLineWidth(2.0f);
+  graph->setGraphFillOpacity(0.2f);
+  m_graphNode = static_cast<GraphNode*>(rootNode->addChild(std::move(graph)));
+
+  if (m_showLabel) {
+    auto label = std::make_unique<Label>();
+    label->setBold(true);
+    if (m_shadow) {
+      label->setShadow(Color{0.0f, 0.0f, 0.0f, 0.5f}, 0.0f, 1.0f);
+    }
+    m_label = label.get();
+    rootNode->addChild(std::move(label));
+  }
+
+  setRoot(std::move(rootNode));
+}
+
+bool DesktopSysmonWidget::needsFrameTick() const { return m_scrollProgress < 1.0f; }
+
+void DesktopSysmonWidget::onFrameTick(float deltaMs, Renderer& renderer) {
+  (void)renderer;
+  if (m_graphNode == nullptr || m_scrollProgress >= 1.0f) {
+    return;
+  }
+  m_scrollProgress = std::min(1.0f, m_scrollProgress + deltaMs * 0.001f);
+  m_graphNode->setScroll1(m_scrollProgress);
+  if (m_stat2.has_value()) {
+    m_graphNode->setScroll2(m_scrollProgress);
+  }
+  requestRedraw();
+}
+
+void DesktopSysmonWidget::doLayout(Renderer& renderer) {
+  if (root() == nullptr || m_glyph == nullptr) {
+    return;
+  }
+
+  const float scale = m_contentScale;
+  const float fontSize = Style::fontSizeBody * scale;
+  const float gap = Style::spaceSm * scale;
+
+  m_graphNode->setLineColor1(resolveThemeColor(m_lineColor));
+  if (m_stat2.has_value()) {
+    m_graphNode->setLineColor2(resolveThemeColor(m_lineColor2));
+  }
+  m_graphNode->setLineWidth(2.0f * scale);
+
+  m_glyph->setGlyphSize(fontSize);
+  m_glyph->setColor(resolveThemeColor(roleColor(ColorRole::OnSurface)));
+  if (m_shadow) {
+    m_glyph->setShadow(Color{0.0f, 0.0f, 0.0f, 0.5f}, 0.0f, 1.0f);
+  }
+  m_glyph->measure(renderer);
+
+  const float totalW = kBaseWidth * scale;
+  const float chartH = kBaseHeight * scale;
+
+  const float headerH = m_glyph->height();
+  float headerW = m_glyph->width();
+
+  if (m_label != nullptr) {
+    m_label->setFontSize(fontSize);
+    m_label->setColor(resolveThemeColor(roleColor(ColorRole::OnSurface)));
+    m_label->measure(renderer);
+    headerW += gap + m_label->width();
+  }
+
+  const float contentW = std::max(totalW, headerW);
+  m_glyph->setPosition(0.0f, 0.0f);
+
+  if (m_label != nullptr) {
+    m_label->setPosition(m_glyph->width() + gap, 0.0f);
+  }
+
+  const float chartY = headerH + gap;
+  m_graphNode->setPosition(0.0f, chartY);
+  m_graphNode->setSize(contentW, chartH);
+
+  root()->setSize(contentW, chartY + chartH);
+}
+
+void DesktopSysmonWidget::doUpdate(Renderer& renderer) {
+  (void)renderer;
+  if (m_monitor == nullptr) {
+    return;
+  }
+
+  pushHistory();
+  updateGraph();
+
+  if (m_label != nullptr) {
+    std::string text = formatValueFor(m_stat);
+    if (m_stat2.has_value()) {
+      text += " / " + formatValueFor(*m_stat2);
+    }
+    if (text != m_lastRawValue) {
+      m_lastRawValue = text;
+      m_label->setText(text);
+      requestRedraw();
+    }
+  }
+}
+
+double DesktopSysmonWidget::normalizedFor(DesktopSysmonStat stat) const {
+  if (m_monitor == nullptr) {
+    return 0.0;
+  }
+
+  const auto stats = m_monitor->latest();
+  const bool isPrimary = (stat == m_stat);
+  auto& tempMin = isPrimary ? m_tempMin1 : m_tempMin2;
+  auto& tempMax = isPrimary ? m_tempMax1 : m_tempMax2;
+
+  switch (stat) {
+  case DesktopSysmonStat::CpuUsage:
+    return stats.cpuUsagePercent / 100.0;
+
+  case DesktopSysmonStat::CpuTemp:
+    if (stats.cpuTempC.has_value()) {
+      const double temp = *stats.cpuTempC;
+      if (temp < tempMin)
+        tempMin = temp;
+      if (temp > tempMax)
+        tempMax = temp;
+      const double range = tempMax - tempMin;
+      if (range <= 0.0)
+        return 0.5;
+      return std::clamp((temp - tempMin) / range, 0.0, 1.0);
+    }
+    return 0.0;
+
+  case DesktopSysmonStat::RamPct:
+    return stats.ramUsagePercent / 100.0;
+
+  case DesktopSysmonStat::SwapPct:
+    if (stats.swapTotalMb > 0) {
+      return static_cast<double>(stats.swapUsedMb) / static_cast<double>(stats.swapTotalMb);
+    }
+    return 0.0;
+  }
+
+  return 0.0;
+}
+
+std::string DesktopSysmonWidget::formatValueFor(DesktopSysmonStat stat) const {
+  if (m_monitor == nullptr) {
+    return "--";
+  }
+
+  const auto stats = m_monitor->latest();
+
+  switch (stat) {
+  case DesktopSysmonStat::CpuUsage:
+    return std::format("{:.0f}%", stats.cpuUsagePercent);
+
+  case DesktopSysmonStat::CpuTemp:
+    if (stats.cpuTempC.has_value()) {
+      return std::format("{:.0f}°C", *stats.cpuTempC);
+    }
+    return "--";
+
+  case DesktopSysmonStat::RamPct:
+    return std::format("{:.0f}%", stats.ramUsagePercent);
+
+  case DesktopSysmonStat::SwapPct:
+    if (stats.swapTotalMb > 0) {
+      return std::format("{:.0f}%",
+                         100.0 * static_cast<double>(stats.swapUsedMb) / static_cast<double>(stats.swapTotalMb));
+    }
+    return "--";
+  }
+
+  return "--";
+}
+
+void DesktopSysmonWidget::pushHistory() {
+  m_history1[m_historyHead] = std::clamp(normalizedFor(m_stat), 0.0, 1.0);
+  if (m_stat2.has_value()) {
+    m_history2[m_historyHead] = std::clamp(normalizedFor(*m_stat2), 0.0, 1.0);
+  }
+  m_historyHead = (m_historyHead + 1) % kHistorySamples;
+}
+
+void DesktopSysmonWidget::updateGraph() {
+  if (m_graphNode == nullptr) {
+    return;
+  }
+
+  std::array<float, kHistorySamples + 1> data1{};
+  for (int i = 0; i < kHistorySamples; ++i) {
+    const int idx = (m_historyHead + i) % kHistorySamples;
+    data1[static_cast<std::size_t>(i)] = static_cast<float>(m_history1[idx]);
+  }
+  float last1 = data1[kHistorySamples - 1];
+  float prev1 = data1[kHistorySamples - 2];
+  data1[kHistorySamples] = std::clamp(last1 + (last1 - prev1) * 0.5f, 0.0f, 1.0f);
+
+  const int count = kHistorySamples + 1;
+
+  if (m_stat2.has_value()) {
+    std::array<float, kHistorySamples + 1> data2{};
+    for (int i = 0; i < kHistorySamples; ++i) {
+      const int idx = (m_historyHead + i) % kHistorySamples;
+      data2[static_cast<std::size_t>(i)] = static_cast<float>(m_history2[idx]);
+    }
+    float last2 = data2[kHistorySamples - 1];
+    float prev2 = data2[kHistorySamples - 2];
+    data2[kHistorySamples] = std::clamp(last2 + (last2 - prev2) * 0.5f, 0.0f, 1.0f);
+
+    m_graphNode->setData(data1.data(), count, data2.data(), count);
+    m_graphNode->setCount2(static_cast<float>(count));
+    m_graphNode->setScroll2(0.0f);
+  } else {
+    m_graphNode->setData(data1.data(), count, nullptr, 0);
+  }
+
+  m_graphNode->setCount1(static_cast<float>(count));
+  m_scrollProgress = 0.0f;
+  m_graphNode->setScroll1(0.0f);
+  requestRedraw();
+}
+
+const char* DesktopSysmonWidget::glyphName(DesktopSysmonStat stat) {
+  switch (stat) {
+  case DesktopSysmonStat::CpuUsage:
+    return "cpu-usage";
+  case DesktopSysmonStat::CpuTemp:
+    return "cpu-temperature";
+  case DesktopSysmonStat::RamPct:
+    return "memory";
+  case DesktopSysmonStat::SwapPct:
+    return "storage";
+  }
+  return "cpu-usage";
+}

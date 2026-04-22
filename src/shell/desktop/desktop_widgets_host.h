@@ -16,6 +16,7 @@ class HttpClient;
 class MprisService;
 class PipeWireSpectrum;
 class RenderContext;
+class SystemMonitorService;
 class WaylandConnection;
 class WeatherService;
 struct PointerEvent;
@@ -28,7 +29,7 @@ public:
 
   void initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
                   PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext,
-                  MprisService* mpris, HttpClient* httpClient);
+                  MprisService* mpris, HttpClient* httpClient, SystemMonitorService* sysmon);
   void show(const DesktopWidgetsSnapshot& snapshot);
   void hide();
   void rebuild(const DesktopWidgetsSnapshot& snapshot);
