@@ -276,7 +276,6 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
                      BrightnessService* brightness, FileWatcher* fileWatcher) {
   m_wayland = &wayland;
   m_config = config;
-  m_time = timeService;
   m_notifications = notifications;
   m_tray = tray;
   m_audio = audio;
@@ -297,9 +296,9 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
   m_fileWatcher = fileWatcher;
 
   m_widgetFactory = std::make_unique<WidgetFactory>(
-      *m_wayland, m_time, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles,
-      m_network, m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight,
-      m_themeService, m_bluetooth, m_brightness, m_fileWatcher);
+      *m_wayland, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles, m_network,
+      m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight, m_themeService,
+      m_bluetooth, m_brightness, m_fileWatcher);
 
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
@@ -338,9 +337,9 @@ void Bar::reload() {
   m_lastBars = m_config->config().bars;
   m_lastWidgets = m_config->config().widgets;
   m_widgetFactory = std::make_unique<WidgetFactory>(
-      *m_wayland, m_time, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles,
-      m_network, m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight,
-      m_themeService, m_bluetooth, m_brightness, m_fileWatcher);
+      *m_wayland, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles, m_network,
+      m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight, m_themeService,
+      m_bluetooth, m_brightness, m_fileWatcher);
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;

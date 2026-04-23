@@ -47,14 +47,14 @@ namespace {
   constexpr Logger kLog("shell");
 } // namespace
 
-WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config,
-                             NotificationManager* notifications, TrayService* tray, PipeWireService* audio,
-                             UPowerService* upower, SystemMonitorService* sysmon, PowerProfilesService* powerProfiles,
-                             NetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
-                             PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
-                             NightLightManager* nightLight, noctalia::theme::ThemeService* themeService,
-                             BluetoothService* bluetooth, BrightnessService* brightness, FileWatcher* fileWatcher)
-    : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
+WidgetFactory::WidgetFactory(WaylandConnection& wayland, const Config& config, NotificationManager* notifications,
+                             TrayService* tray, PipeWireService* audio, UPowerService* upower,
+                             SystemMonitorService* sysmon, PowerProfilesService* powerProfiles, NetworkService* network,
+                             IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
+                             HttpClient* httpClient, WeatherService* weather, NightLightManager* nightLight,
+                             noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
+                             BrightnessService* brightness, FileWatcher* fileWatcher)
+    : m_wayland(wayland), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
       m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_network(network),
       m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_audioSpectrum(audioSpectrum), m_httpClient(httpClient),
       m_weather(weather), m_nightLight(nightLight), m_themeService(themeService), m_bluetooth(bluetooth),
@@ -73,13 +73,9 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "clock") {
-    if (m_time == nullptr) {
-      kLog.warn("widget factory: clock requires TimeService");
-      return nullptr;
-    }
     std::string format = wc != nullptr ? wc->getString("format", "{:%H:%M}") : std::string("{:%H:%M}");
     std::string verticalFormat = wc != nullptr ? wc->getString("vertical_format", "") : std::string{};
-    auto widget = std::make_unique<ClockWidget>(*m_time, output, std::move(format), std::move(verticalFormat));
+    auto widget = std::make_unique<ClockWidget>(output, std::move(format), std::move(verticalFormat));
     widget->setContentScale(contentScale);
     return widget;
   }

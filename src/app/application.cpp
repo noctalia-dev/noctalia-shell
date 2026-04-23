@@ -793,9 +793,8 @@ void Application::initUi() {
   FileDialog::setPresenter(&m_fileDialogPopup);
 
   m_dock.initialize(m_wayland, &m_configService, &m_renderContext);
-  m_desktopWidgetsController.initialize(m_wayland, &m_configService, &m_timeService, m_pipewireSpectrum.get(),
-                                        &m_weatherService, &m_renderContext, m_mprisService.get(), &m_httpClient,
-                                        m_systemMonitor.get());
+  m_desktopWidgetsController.initialize(m_wayland, &m_configService, m_pipewireSpectrum.get(), &m_weatherService,
+                                        &m_renderContext, m_mprisService.get(), &m_httpClient, m_systemMonitor.get());
 
   std::string lastShellFontFamily = m_configService.config().shell.fontFamily;
   m_configService.addReloadCallback([this, lastShellFontFamily]() mutable {
@@ -822,7 +821,7 @@ void Application::initUi() {
 
   m_timeService.setTickSecondCallback([this]() {
     if (m_lockScreen.isActive()) {
-      if (m_timeService.format("{:%S}") == "00") {
+      if (formatLocalTime("{:%S}") == "00") {
         m_lockScreen.onSecondTick();
       }
     } else {

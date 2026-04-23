@@ -1,9 +1,67 @@
 #include "time/time_service.h"
 
+#include <chrono>
 #include <cstdint>
 #include <ctime>
 #include <format>
-#include <fstream>
+#include <langinfo.h>
+#include <locale>
+
+std::string formatLocalTime(const char* fmt) {
+  using namespace std::chrono;
+  const auto now = floor<seconds>(system_clock::now());
+  const auto local = current_zone()->to_local(now);
+  try {
+    return std::vformat(std::locale(""), fmt, std::make_format_args(local));
+  } catch (...) {
+    return fmt;
+  }
+}
+
+std::string formatCurrentDate() {
+  std::string fmt = "%A, ";
+  fmt += nl_langinfo(D_FMT);
+  for (std::size_t pos = 0; (pos = fmt.find("%y", pos)) != std::string::npos;) {
+    fmt.replace(pos, 2, "%Y");
+    pos += 2;
+  }
+  const std::time_t now = std::time(nullptr);
+  const std::tm local = *std::localtime(&now);
+  char buf[64]{};
+  std::strftime(buf, sizeof(buf), fmt.c_str(), &local);
+  return std::string(buf);
+}
+
+std::string formatClockTime(std::int64_t seconds) {
+  if (seconds <= 0) {
+    return "0:00";
+  }
+  const std::int64_t totalMinutes = seconds / 60;
+  const std::int64_t hours = totalMinutes / 60;
+  const std::int64_t minutes = totalMinutes % 60;
+  const std::int64_t secs = seconds % 60;
+  if (hours > 0) {
+    return std::format("{}:{:02}:{:02}", hours, minutes, secs);
+  }
+  return std::format("{}:{:02}", minutes, secs);
+}
+
+std::string formatFileTime(const std::filesystem::file_time_type& time) {
+  if (time == std::filesystem::file_time_type{}) {
+    return "Unknown";
+  }
+  const auto systemNow = std::chrono::system_clock::now();
+  const auto fileNow = std::filesystem::file_time_type::clock::now();
+  const auto systemTime = std::chrono::time_point_cast<std::chrono::system_clock::duration>(time - fileNow + systemNow);
+  const std::time_t value = std::chrono::system_clock::to_time_t(systemTime);
+  std::tm tm{};
+  localtime_r(&value, &tm);
+  char buf[32];
+  if (std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M", &tm) == 0) {
+    return "Unknown";
+  }
+  return buf;
+}
 
 std::string formatTimeAgo(std::chrono::system_clock::time_point tp) {
   using namespace std::chrono;
@@ -30,16 +88,6 @@ std::string formatTimeAgo(std::chrono::system_clock::time_point tp) {
   char buffer[32];
   std::strftime(buffer, sizeof(buffer), "%b %e", &localTime);
   return buffer;
-}
-
-std::optional<std::chrono::seconds> systemUptime() {
-  std::ifstream in{"/proc/uptime"};
-  double up = 0.0;
-  double idleDummy = 0.0;
-  if (in >> up >> idleDummy) {
-    return std::chrono::seconds{static_cast<std::int64_t>(up)};
-  }
-  return std::nullopt;
 }
 
 std::string formatDuration(std::chrono::seconds duration) {
@@ -86,14 +134,5 @@ void TimeService::tick() {
     if (m_secondCallback) {
       m_secondCallback();
     }
-  }
-}
-
-std::string TimeService::format(const char* fmt) const {
-  const auto local = std::chrono::current_zone()->to_local(m_nowSeconds);
-  try {
-    return std::vformat(fmt, std::make_format_args(local));
-  } catch (const std::format_error&) {
-    return fmt;
   }
 }

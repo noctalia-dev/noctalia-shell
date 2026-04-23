@@ -4,6 +4,7 @@
 #include "ipc/ipc_client.h"
 #include "theme/cli.h"
 
+#include <clocale>
 #include <cstdio>
 #include <cstring>
 #include <stdexcept>
@@ -53,6 +54,7 @@ namespace {
 } // namespace
 
 int main(int argc, char* argv[]) {
+  std::setlocale(LC_ALL, "");
   if (argc >= 2) {
     if (std::strcmp(argv[1], "theme") == 0)
       return noctalia::theme::runCli(argc, argv);

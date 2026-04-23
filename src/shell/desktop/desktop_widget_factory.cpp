@@ -95,23 +95,18 @@ namespace {
 
 } // namespace
 
-DesktopWidgetFactory::DesktopWidgetFactory(TimeService* timeService, PipeWireSpectrum* pipewireSpectrum,
-                                           const WeatherService* weather, MprisService* mpris, HttpClient* httpClient,
-                                           SystemMonitorService* sysmon)
-    : m_timeService(timeService), m_pipewireSpectrum(pipewireSpectrum), m_weather(weather), m_mpris(mpris),
-      m_httpClient(httpClient), m_sysmon(sysmon) {}
+DesktopWidgetFactory::DesktopWidgetFactory(PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
+                                           MprisService* mpris, HttpClient* httpClient, SystemMonitorService* sysmon)
+    : m_pipewireSpectrum(pipewireSpectrum), m_weather(weather), m_mpris(mpris), m_httpClient(httpClient),
+      m_sysmon(sysmon) {}
 
 std::unique_ptr<DesktopWidget>
 DesktopWidgetFactory::create(const std::string& type,
                              const std::unordered_map<std::string, WidgetSettingValue>& settings,
                              float contentScale) const {
   if (type == "clock") {
-    if (m_timeService == nullptr) {
-      kLog.warn("desktop widget factory: clock requires TimeService");
-      return nullptr;
-    }
     auto widget =
-        std::make_unique<DesktopClockWidget>(*m_timeService, getStringSetting(settings, "format", "{:%H:%M}"),
+        std::make_unique<DesktopClockWidget>(getStringSetting(settings, "format", "{:%H:%M}"),
                                              getThemeColorSetting(settings, "color", roleColor(ColorRole::OnSurface)),
                                              getBoolSetting(settings, "shadow", true));
     applyCommonSettings(*widget, settings);

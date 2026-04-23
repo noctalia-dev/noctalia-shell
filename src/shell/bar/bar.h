@@ -26,8 +26,8 @@ class PowerProfilesService;
 class RenderContext;
 class SystemMonitorService;
 class UPowerService;
-class TrayService;
 class TimeService;
+class TrayService;
 class WaylandConnection;
 class NightLightManager;
 class WeatherService;
@@ -92,7 +92,6 @@ private:
   bool m_forceHidden = false;
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
-  TimeService* m_time = nullptr;
   NotificationManager* m_notifications = nullptr;
   TrayService* m_tray = nullptr;
   PipeWireService* m_audio = nullptr;

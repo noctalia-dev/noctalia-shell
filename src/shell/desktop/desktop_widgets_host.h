@@ -27,9 +27,9 @@ class DesktopWidgetsHost {
 public:
   DesktopWidgetsHost() = default;
 
-  void initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                  PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext,
-                  MprisService* mpris, HttpClient* httpClient, SystemMonitorService* sysmon);
+  void initialize(WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
+                  const WeatherService* weather, RenderContext* renderContext, MprisService* mpris,
+                  HttpClient* httpClient, SystemMonitorService* sysmon);
   void show(const DesktopWidgetsSnapshot& snapshot);
   void hide();
   void rebuild(const DesktopWidgetsSnapshot& snapshot);
@@ -62,7 +62,6 @@ private:
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
-  TimeService* m_timeService = nullptr;
   RenderContext* m_renderContext = nullptr;
   std::unique_ptr<DesktopWidgetFactory> m_factory;
   DesktopWidgetsSnapshot m_snapshot;

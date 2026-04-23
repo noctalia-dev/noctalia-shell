@@ -24,7 +24,6 @@ class PipeWireSpectrum;
 class RenderContext;
 class Select;
 class SystemMonitorService;
-class TimeService;
 class WaylandConnection;
 class WeatherService;
 struct KeyboardEvent;
@@ -37,9 +36,9 @@ class DesktopWidgetsEditor {
 public:
   DesktopWidgetsEditor() = default;
 
-  void initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                  PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext,
-                  MprisService* mpris, HttpClient* httpClient, SystemMonitorService* sysmon);
+  void initialize(WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
+                  const WeatherService* weather, RenderContext* renderContext, MprisService* mpris,
+                  HttpClient* httpClient, SystemMonitorService* sysmon);
   void setExitRequestedCallback(std::function<void()> callback);
 
   void open(const DesktopWidgetsSnapshot& snapshot);
@@ -153,7 +152,6 @@ private:
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
-  TimeService* m_timeService = nullptr;
   RenderContext* m_renderContext = nullptr;
   std::unique_ptr<DesktopWidgetFactory> m_factory;
   std::string m_addWidgetType = "clock";

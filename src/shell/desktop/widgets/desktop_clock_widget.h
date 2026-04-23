@@ -6,11 +6,10 @@
 #include <string>
 
 class Label;
-class TimeService;
 
 class DesktopClockWidget : public DesktopWidget {
 public:
-  DesktopClockWidget(const TimeService& timeService, std::string format, ThemeColor color, bool shadow);
+  DesktopClockWidget(std::string format, ThemeColor color, bool shadow);
 
   void create() override;
   [[nodiscard]] bool wantsSecondTicks() const override;
@@ -21,7 +20,6 @@ private:
   void doUpdate(Renderer& renderer) override;
   void applyShadow();
 
-  const TimeService& m_timeService;
   std::string m_format;
   ThemeColor m_color;
   bool m_shadow;

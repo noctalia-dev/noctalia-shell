@@ -145,15 +145,14 @@ namespace {
 
 } // namespace
 
-void DesktopWidgetsEditor::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
+void DesktopWidgetsEditor::initialize(WaylandConnection& wayland, ConfigService* config,
                                       PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
                                       RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
                                       SystemMonitorService* sysmon) {
   m_wayland = &wayland;
   m_config = config;
-  m_timeService = timeService;
   m_renderContext = renderContext;
-  m_factory = std::make_unique<DesktopWidgetFactory>(timeService, pipewireSpectrum, weather, mpris, httpClient, sysmon);
+  m_factory = std::make_unique<DesktopWidgetFactory>(pipewireSpectrum, weather, mpris, httpClient, sysmon);
 }
 
 void DesktopWidgetsEditor::setExitRequestedCallback(std::function<void()> callback) {
@@ -1322,11 +1321,11 @@ void DesktopWidgetsEditor::onOutputChange() {
 }
 
 void DesktopWidgetsEditor::onSecondTick() {
-  if (!m_open || m_drag.mode != DragMode::None || m_timeService == nullptr) {
+  if (!m_open || m_drag.mode != DragMode::None) {
     return;
   }
 
-  const bool minuteBoundary = m_timeService->format("{:%S}") == "00";
+  const bool minuteBoundary = formatLocalTime("{:%S}") == "00";
   const bool needsSeconds = std::any_of(m_snapshot.widgets.begin(), m_snapshot.widgets.end(),
                                         [](const auto& widget) { return formatShowsSeconds(widget); });
   if (minuteBoundary || needsSeconds) {

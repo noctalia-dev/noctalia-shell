@@ -9,24 +9,23 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
-ClockWidget::ClockWidget(const TimeService& timeService, wl_output* output, std::string format,
-                         std::string verticalFormat)
-    : m_time(timeService), m_output(output), m_format(std::move(format)), m_verticalFormat(std::move(verticalFormat)) {}
+ClockWidget::ClockWidget(wl_output* output, std::string format, std::string verticalFormat)
+    : m_output(output), m_format(std::move(format)), m_verticalFormat(std::move(verticalFormat)) {}
 
 std::string ClockWidget::formatTimeText() const {
   if (!m_isVertical) {
-    return m_time.format(m_format.c_str());
+    return formatLocalTime(m_format.c_str());
   }
 
   if (!m_verticalFormat.empty()) {
-    return m_time.format(m_verticalFormat.c_str());
+    return formatLocalTime(m_verticalFormat.c_str());
   }
 
   // Fallback for vertical bars when no explicit vertical_format is configured:
   // stack each whitespace- or colon-separated token on its own line so "21:15"
   // splits into "21" / "15". Matches Pango's lineBudget (1 + '\n' count) so
   // nothing gets ellipsized unless a single token is wider than the bar.
-  auto text = m_time.format(m_format.c_str());
+  auto text = formatLocalTime(m_format.c_str());
   std::string out;
   out.reserve(text.size());
   bool lastWasBreak = true;

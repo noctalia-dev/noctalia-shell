@@ -7,6 +7,7 @@
 #include "render/render_context.h"
 #include "render/scene/image_node.h"
 #include "render/scene/rect_node.h"
+#include "time/time_service.h"
 #include "ui/controls/button.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
@@ -16,9 +17,7 @@
 #include "wayland/wayland_seat.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
-#include <ctime>
 #include <memory>
 #include <wayland-client.h>
 
@@ -214,13 +213,8 @@ void LockSurface::onPointerEvent(const PointerEvent& event) {
 }
 
 void LockSurface::onSecondTick() {
-  using clock = std::chrono::system_clock;
-  const std::time_t t = clock::to_time_t(clock::now());
-  std::tm local{};
-  localtime_r(&t, &local);
-  char buf[16];
-  std::strftime(buf, sizeof(buf), "%H:%M", &local);
-  if (m_clock != nullptr && m_clock->text() != buf) {
+  const auto text = formatLocalTime("{:%H:%M}");
+  if (m_clock != nullptr && m_clock->text() != text) {
     requestUpdate();
   }
 }
@@ -354,12 +348,4 @@ void LockSurface::applyWallpaperTexture() {
   m_wallpaperDirty = false;
 }
 
-void LockSurface::updateClockText() {
-  using clock = std::chrono::system_clock;
-  const std::time_t t = clock::to_time_t(clock::now());
-  std::tm local{};
-  localtime_r(&t, &local);
-  char buf[16];
-  std::strftime(buf, sizeof(buf), "%H:%M", &local);
-  m_clock->setText(buf);
-}
+void LockSurface::updateClockText() { m_clock->setText(formatLocalTime("{:%H:%M}")); }

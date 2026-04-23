@@ -206,3 +206,13 @@ std::string hostName() {
   }
   return "unknown";
 }
+
+std::optional<std::chrono::seconds> systemUptime() {
+  std::ifstream in{"/proc/uptime"};
+  double up = 0.0;
+  double idleDummy = 0.0;
+  if (in >> up >> idleDummy) {
+    return std::chrono::seconds{static_cast<std::int64_t>(up)};
+  }
+  return std::nullopt;
+}

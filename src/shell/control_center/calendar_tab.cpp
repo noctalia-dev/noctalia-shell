@@ -4,6 +4,7 @@
 #include "render/core/renderer.h"
 #include "shell/control_center/tab.h"
 #include "shell/panel/panel_manager.h"
+#include "time/time_service.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/grid_tile.h"
@@ -28,24 +29,18 @@ namespace {
   constexpr float kCalendarCellSizeMax = Style::controlHeightLg + Style::spaceLg;
   constexpr float kCalendarLayoutEpsilon = 0.5f;
 
-  std::string todayLabel() {
-    std::time_t now = std::time(nullptr);
-    std::tm local = *std::localtime(&now);
+  std::string monthName(int month) {
+    if (month < 0 || month > 11) {
+      return {};
+    }
+    std::tm tm{};
+    tm.tm_mon = month;
+    tm.tm_mday = 1;
     char buf[64];
-    if (std::strftime(buf, sizeof(buf), "Today · %A, %d %B %Y", &local) == 0) {
-      return "Today";
+    if (std::strftime(buf, sizeof(buf), "%B", &tm) == 0) {
+      return {};
     }
     return buf;
-  }
-
-  std::string monthName(int month) {
-    static constexpr std::array<const char*, 12> kMonths = {"January",   "February", "March",    "April",
-                                                            "May",       "June",     "July",     "August",
-                                                            "September", "October",  "November", "December"};
-    if (month < 0 || month >= static_cast<int>(kMonths.size())) {
-      return "Calendar";
-    }
-    return kMonths[static_cast<std::size_t>(month)];
   }
 
   int daysInMonth(int yearValue, int monthValue) {
@@ -311,24 +306,32 @@ void CalendarTab::rebuild() {
   m_monthLabel->setText(monthName(month) + " " + std::to_string(year));
   m_monthLabel->setMaxWidth(monthWidth);
   if (m_monthSubLabel != nullptr) {
-    m_monthSubLabel->setText(todayLabel());
+    m_monthSubLabel->setText(formatCurrentDate());
     m_monthSubLabel->setMaxWidth(monthWidth);
   }
 
-  static constexpr std::array<const char*, 7> kWeekdays = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+  std::array<std::string, 7> weekdays;
+  for (int i = 0; i < 7; ++i) {
+    std::tm tm{};
+    tm.tm_wday = (i + 1) % 7; // Mon=1..Sat=6, Sun=0
+    tm.tm_mday = 1;
+    char buf[32];
+    std::strftime(buf, sizeof(buf), "%a", &tm);
+    weekdays[static_cast<std::size_t>(i)] = buf;
+  }
   auto weekdayRow = std::make_unique<GridView>();
-  weekdayRow->setColumns(kWeekdays.size());
+  weekdayRow->setColumns(weekdays.size());
   weekdayRow->setColumnGap(kCalendarGridGap * scale);
   weekdayRow->setSize(innerWidth, weekdayHeight);
   weekdayRow->setMinCellHeight(weekdayHeight);
-  for (std::size_t i = 0; i < kWeekdays.size(); ++i) {
+  for (std::size_t i = 0; i < weekdays.size(); ++i) {
     auto dayCell = std::make_unique<GridTile>();
     dayCell->setDirection(FlexDirection::Vertical);
     dayCell->setAlign(FlexAlign::Center);
     dayCell->setJustify(FlexJustify::Center);
 
     auto dayLabel = std::make_unique<Label>();
-    dayLabel->setText(kWeekdays[i]);
+    dayLabel->setText(weekdays[i]);
     dayLabel->setFontSize((Style::fontSizeCaption + 1.0f) * scale);
     dayLabel->setBold(true);
     dayLabel->setColor(roleColor(i >= 5 ? ColorRole::Secondary : ColorRole::OnSurfaceVariant));

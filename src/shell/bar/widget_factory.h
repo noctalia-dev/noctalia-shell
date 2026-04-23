@@ -23,7 +23,6 @@ class UPowerService;
 class WeatherService;
 struct wl_output;
 class NightLightManager;
-class TimeService;
 class WaylandConnection;
 namespace noctalia::theme {
   class ThemeService;
@@ -31,8 +30,8 @@ namespace noctalia::theme {
 
 class WidgetFactory {
 public:
-  WidgetFactory(WaylandConnection& wayland, TimeService* time, const Config& config, NotificationManager* notifications,
-                TrayService* tray, PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon,
+  WidgetFactory(WaylandConnection& wayland, const Config& config, NotificationManager* notifications, TrayService* tray,
+                PipeWireService* audio, UPowerService* upower, SystemMonitorService* sysmon,
                 PowerProfilesService* powerProfiles, NetworkService* network, IdleInhibitor* idleInhibitor,
                 MprisService* mpris, PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
                 NightLightManager* nightLight, noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
@@ -43,7 +42,6 @@ public:
 
 private:
   WaylandConnection& m_wayland;
-  TimeService* m_time;
   const Config& m_config;
   NotificationManager* m_notifications;
   TrayService* m_tray;

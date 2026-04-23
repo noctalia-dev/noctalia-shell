@@ -31,15 +31,14 @@ namespace {
 
 } // namespace
 
-void DesktopWidgetsHost::initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
+void DesktopWidgetsHost::initialize(WaylandConnection& wayland, ConfigService* config,
                                     PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather,
                                     RenderContext* renderContext, MprisService* mpris, HttpClient* httpClient,
                                     SystemMonitorService* sysmon) {
   m_wayland = &wayland;
   m_config = config;
-  m_timeService = timeService;
   m_renderContext = renderContext;
-  m_factory = std::make_unique<DesktopWidgetFactory>(timeService, pipewireSpectrum, weather, mpris, httpClient, sysmon);
+  m_factory = std::make_unique<DesktopWidgetFactory>(pipewireSpectrum, weather, mpris, httpClient, sysmon);
 }
 
 void DesktopWidgetsHost::show(const DesktopWidgetsSnapshot& snapshot) {
@@ -69,11 +68,11 @@ void DesktopWidgetsHost::onOutputChange() {
 }
 
 void DesktopWidgetsHost::onSecondTick() {
-  if (!m_visible || m_timeService == nullptr) {
+  if (!m_visible) {
     return;
   }
 
-  const bool minuteBoundary = m_timeService->format("{:%S}") == "00";
+  const bool minuteBoundary = formatLocalTime("{:%S}") == "00";
   for (auto& instance : m_instances) {
     if (instance->surface == nullptr || instance->widget == nullptr) {
       continue;

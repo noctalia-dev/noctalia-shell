@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <optional>
 #include <string>
 
@@ -29,3 +30,6 @@ public:
 
 // Machine hostname (uname nodename), or "unknown" on failure.
 [[nodiscard]] std::string hostName();
+
+// Returns system uptime (from /proc/uptime), or nullopt if unavailable.
+[[nodiscard]] std::optional<std::chrono::seconds> systemUptime();

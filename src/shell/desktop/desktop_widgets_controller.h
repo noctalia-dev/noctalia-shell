@@ -15,7 +15,6 @@ class MprisService;
 class PipeWireSpectrum;
 class RenderContext;
 class SystemMonitorService;
-class TimeService;
 class WaylandConnection;
 class WeatherService;
 struct KeyboardEvent;
@@ -59,9 +58,9 @@ public:
   DesktopWidgetsController(const DesktopWidgetsController&) = delete;
   DesktopWidgetsController& operator=(const DesktopWidgetsController&) = delete;
 
-  void initialize(WaylandConnection& wayland, ConfigService* config, TimeService* timeService,
-                  PipeWireSpectrum* pipewireSpectrum, const WeatherService* weather, RenderContext* renderContext,
-                  MprisService* mpris, HttpClient* httpClient, SystemMonitorService* sysmon);
+  void initialize(WaylandConnection& wayland, ConfigService* config, PipeWireSpectrum* pipewireSpectrum,
+                  const WeatherService* weather, RenderContext* renderContext, MprisService* mpris,
+                  HttpClient* httpClient, SystemMonitorService* sysmon);
 
   void registerIpc(IpcService& ipc);
   void onOutputChange();
@@ -89,7 +88,6 @@ private:
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
-  TimeService* m_timeService = nullptr;
   RenderContext* m_renderContext = nullptr;
 
   DesktopWidgetsSnapshot m_snapshot;

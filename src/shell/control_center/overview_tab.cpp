@@ -17,7 +17,6 @@
 #include "ui/controls/label.h"
 
 #include <cmath>
-#include <ctime>
 #include <filesystem>
 #include <format>
 #include <memory>
@@ -30,41 +29,6 @@ namespace {
   void styleOverviewCard(Flex& card, float scale) {
     applyOutlinedCard(card, scale);
     card.setGap(Style::spaceSm * scale);
-  }
-
-  std::string formatClockDuration(std::int64_t seconds) {
-    if (seconds <= 0) {
-      return "0:00";
-    }
-    const std::int64_t totalMinutes = seconds / 60;
-    const std::int64_t hours = totalMinutes / 60;
-    const std::int64_t minutes = totalMinutes % 60;
-    const std::int64_t secs = seconds % 60;
-    if (hours > 0) {
-      return std::format("{}:{:02}:{:02}", hours, minutes, secs);
-    }
-    return std::format("{}:{:02}", minutes, secs);
-  }
-
-  std::string formatEta(std::int64_t seconds) {
-    if (seconds <= 0) {
-      return {};
-    }
-    const std::int64_t totalMinutes = seconds / 60;
-    const std::int64_t hours = totalMinutes / 60;
-    const std::int64_t minutes = totalMinutes % 60;
-    if (hours > 0) {
-      return std::format("{}h {}m", hours, minutes);
-    }
-    return std::format("{}m", minutes);
-  }
-
-  std::string currentDateText() {
-    const std::time_t now = std::time(nullptr);
-    const std::tm local = *std::localtime(&now);
-    char day[32]{};
-    std::strftime(day, sizeof(day), "%d %b %Y", &local);
-    return std::string(day);
   }
 
 } // namespace
@@ -106,7 +70,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   weatherTitle->setFlexGrow(1.0f);
 
   auto weatherDate = std::make_unique<Label>();
-  weatherDate->setText(currentDateText());
+  weatherDate->setText(formatCurrentDate());
   weatherDate->setFontSize(Style::fontSizeCaption * scale);
   weatherDate->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_weatherDate = weatherDate.get();
@@ -512,7 +476,7 @@ void OverviewTab::sync(Renderer& renderer) {
     m_userFacts->setText(std::format("{}@{}\nUptime · {}", sessionDisplayName(), hostName(), uptimeText));
   }
   if (m_weatherDate != nullptr) {
-    m_weatherDate->setText(currentDateText());
+    m_weatherDate->setText(formatCurrentDate());
   }
 
   if (m_weatherGlyph != nullptr && m_weatherTemp != nullptr && m_weatherSub != nullptr) {
@@ -591,8 +555,7 @@ void OverviewTab::sync(Renderer& renderer) {
         if (active->lengthUs > 0) {
           const std::int64_t positionSec = std::max<std::int64_t>(0, active->positionUs / 1000000);
           const std::int64_t lengthSec = std::max<std::int64_t>(1, active->lengthUs / 1000000);
-          m_mediaProgress->setText(
-              std::format("{} / {}", formatClockDuration(positionSec), formatClockDuration(lengthSec)));
+          m_mediaProgress->setText(std::format("{} / {}", formatClockTime(positionSec), formatClockTime(lengthSec)));
           m_mediaProgress->setVisible(true);
         } else {
           m_mediaProgress->setText(" ");
@@ -647,30 +610,18 @@ void OverviewTab::sync(Renderer& renderer) {
       }
       if (m_powerProfiles != nullptr && !m_powerProfiles->activeProfile().empty()) {
         std::string etaSuffix;
-        if (st.isPresent && st.state == BatteryState::Discharging) {
-          const std::string eta = formatEta(st.timeToEmpty);
-          if (!eta.empty()) {
-            etaSuffix = " · " + eta + " left";
-          }
-        } else if (st.isPresent && st.state == BatteryState::Charging) {
-          const std::string eta = formatEta(st.timeToFull);
-          if (!eta.empty()) {
-            etaSuffix = " · " + eta + " to full";
-          }
+        if (st.isPresent && st.state == BatteryState::Discharging && st.timeToEmpty > 0) {
+          etaSuffix = " · " + formatDuration(std::chrono::seconds{st.timeToEmpty}) + " left";
+        } else if (st.isPresent && st.state == BatteryState::Charging && st.timeToFull > 0) {
+          etaSuffix = " · " + formatDuration(std::chrono::seconds{st.timeToFull}) + " to full";
         }
         m_powerSub->setText(std::format("Mode · {}{}", profileLabel(m_powerProfiles->activeProfile()), etaSuffix));
       } else {
         std::string etaSuffix;
-        if (st.isPresent && st.state == BatteryState::Discharging) {
-          const std::string eta = formatEta(st.timeToEmpty);
-          if (!eta.empty()) {
-            etaSuffix = " · " + eta + " left";
-          }
-        } else if (st.isPresent && st.state == BatteryState::Charging) {
-          const std::string eta = formatEta(st.timeToFull);
-          if (!eta.empty()) {
-            etaSuffix = " · " + eta + " to full";
-          }
+        if (st.isPresent && st.state == BatteryState::Discharging && st.timeToEmpty > 0) {
+          etaSuffix = " · " + formatDuration(std::chrono::seconds{st.timeToEmpty}) + " left";
+        } else if (st.isPresent && st.state == BatteryState::Charging && st.timeToFull > 0) {
+          etaSuffix = " · " + formatDuration(std::chrono::seconds{st.timeToFull}) + " to full";
         }
         m_powerSub->setText(std::format("{}{}", st.onBattery ? "Battery power" : "Plugged in", etaSuffix));
       }

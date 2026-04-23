@@ -3,6 +3,7 @@
 #include "core/files/directory_scanner.h"
 #include "render/core/color.h"
 #include "render/core/renderer.h"
+#include "time/time_service.h"
 #include "ui/controls/box.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
@@ -11,9 +12,7 @@
 #include "ui/style.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
-#include <ctime>
 #include <memory>
 #include <sstream>
 
@@ -44,26 +43,6 @@ namespace {
       out << size << ' ' << kUnits[unit];
     }
     return out.str();
-  }
-
-  std::string formatTime(const std::filesystem::file_time_type& time) {
-    if (time == std::filesystem::file_time_type{}) {
-      return "Unknown";
-    }
-
-    const auto systemNow = std::chrono::system_clock::now();
-    const auto fileNow = std::filesystem::file_time_type::clock::now();
-    const auto systemTime =
-        std::chrono::time_point_cast<std::chrono::system_clock::duration>(time - fileNow + systemNow);
-    const std::time_t value = std::chrono::system_clock::to_time_t(systemTime);
-
-    std::tm tm{};
-    localtime_r(&value, &tm);
-    char buffer[32];
-    if (std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M", &tm) == 0) {
-      return "Unknown";
-    }
-    return buffer;
   }
 
 } // namespace
@@ -151,7 +130,7 @@ void FileEntryRow::bind(Renderer& renderer, const FileEntry& entry, std::size_t 
   m_name->setText(entry.name);
   m_name->setMaxWidth(std::max(0.0f, width - (kSizeColumnWidth + kDateColumnWidth + 72.0f) * m_scale));
   m_size->setText(formatSize(entry));
-  m_date->setText(formatTime(entry.mtime));
+  m_date->setText(formatFileTime(entry.mtime));
 
   applyVisualState();
   layout(renderer);

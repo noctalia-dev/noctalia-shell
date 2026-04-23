@@ -27,9 +27,8 @@ namespace {
 
 } // namespace
 
-DesktopClockWidget::DesktopClockWidget(const TimeService& timeService, std::string format, ThemeColor color,
-                                       bool shadow)
-    : m_timeService(timeService), m_format(std::move(format)), m_color(std::move(color)), m_shadow(shadow),
+DesktopClockWidget::DesktopClockWidget(std::string format, ThemeColor color, bool shadow)
+    : m_format(std::move(format)), m_color(std::move(color)), m_shadow(shadow),
       m_showsSeconds(formatShowsSeconds(m_format)) {}
 
 void DesktopClockWidget::create() {
@@ -50,7 +49,7 @@ void DesktopClockWidget::create() {
 
 bool DesktopClockWidget::wantsSecondTicks() const { return m_showsSeconds; }
 
-std::string DesktopClockWidget::formatText() const { return m_timeService.format(m_format.c_str()); }
+std::string DesktopClockWidget::formatText() const { return formatLocalTime(m_format.c_str()); }
 
 void DesktopClockWidget::doLayout(Renderer& renderer) {
   if (m_label == nullptr || root() == nullptr) {
