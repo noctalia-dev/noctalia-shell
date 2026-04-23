@@ -79,6 +79,24 @@ namespace {
     return ptr;
   }
 
+  std::string formatMemoryUsedTotal(const SystemStats& stats) {
+    if (stats.ramTotalMb == 0) {
+      return memoryTotalLabel();
+    }
+    const double usedGb = static_cast<double>(stats.ramUsedMb) / 1024.0;
+    const double totalGb = static_cast<double>(stats.ramTotalMb) / 1024.0;
+    return std::format("{:.1f} / {:.1f} GB", usedGb, totalGb);
+  }
+
+  std::string buildSystemInfoText(const SystemStats& stats) {
+    const auto uptime = systemUptime();
+    const std::string uptimeText = uptime.has_value() ? formatDuration(*uptime) : "unknown";
+    return std::format("Distro · {}\nCompositor · {}\nKernel · {}\nUptime · {}\nOS age · {}\nBoard · {}\nCPU · {}\nGPU "
+                       "· {}\nMemory · {}\nDisk · {}",
+                       distroLabel(), compositorLabel(), kernelRelease(), uptimeText, osAgeLabel(), motherboardLabel(),
+                       cpuModelName(), gpuLabel(), formatMemoryUsedTotal(stats), diskRootUsageLabel());
+  }
+
 } // namespace
 
 SystemTab::SystemTab(SystemMonitorService* monitor) : m_monitor(monitor) {
@@ -169,6 +187,7 @@ std::unique_ptr<Flex> SystemTab::create() {
   {
     auto card = std::make_unique<Flex>();
     applyOutlinedCard(*card, sc);
+    card->setFlexGrow(1.0f);
     m_loadCard = card.get();
 
     addTitle(*card, "Load Average", sc);
@@ -182,6 +201,7 @@ std::unique_ptr<Flex> SystemTab::create() {
     auto card = std::make_unique<Flex>();
     applyOutlinedCard(*card, sc);
     card->setFlexGrow(1.0f);
+    card->setMinHeight(Style::controlHeightLg * 6.6f * sc);
     m_infoCard = card.get();
 
     addTitle(*card, "System Info", sc);
@@ -190,12 +210,7 @@ std::unique_ptr<Flex> SystemTab::create() {
     infoLabel->setFontSize(Style::fontSizeBody * sc);
     infoLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
 
-    const auto uptime = systemUptime();
-    const std::string uptimeText = uptime.has_value() ? formatDuration(*uptime) : "unknown";
-
-    infoLabel->setText(std::format("Distro · {}\nKernel · {}\nOS age · {}\nUptime · {}\nCPU · {}\nGPU · {}",
-                                   distroLabel(), kernelRelease(), osAgeLabel(), uptimeText, cpuModelName(),
-                                   gpuLabel()));
+    infoLabel->setText(buildSystemInfoText(m_monitor != nullptr ? m_monitor->latest() : SystemStats{}));
     m_infoLabel = infoLabel.get();
     card->addChild(std::move(infoLabel));
 
@@ -300,6 +315,10 @@ void SystemTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeigh
   if (m_infoLabel != nullptr && m_infoCard != nullptr) {
     m_infoLabel->setMaxWidth(innerWidth(m_infoCard));
   }
+
+  // Apply width constraints in the same frame they are set so System Info
+  // reaches its final card height immediately on open.
+  m_root->layout(renderer);
 }
 
 void SystemTab::doUpdate(Renderer& renderer) {
@@ -320,11 +339,7 @@ void SystemTab::doUpdate(Renderer& renderer) {
   }
 
   if (m_infoLabel != nullptr) {
-    const auto uptime = systemUptime();
-    const std::string uptimeText = uptime.has_value() ? formatDuration(*uptime) : "unknown";
-    m_infoLabel->setText(std::format("Distro · {}\nKernel · {}\nOS age · {}\nUptime · {}\nCPU · {}\nGPU · {}",
-                                     distroLabel(), kernelRelease(), osAgeLabel(), uptimeText, cpuModelName(),
-                                     gpuLabel()));
+    m_infoLabel->setText(buildSystemInfoText(m_monitor->latest()));
     m_infoLabel->measure(renderer);
   }
 

@@ -1,9 +1,12 @@
 #include "system/hardware_info.h"
 
+#include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <mutex>
 #include <string>
+#include <sys/statvfs.h>
 
 namespace {
 
@@ -168,6 +171,91 @@ namespace {
     return "Unknown GPU";
   }
 
+  std::string readDmiField(const char* path) { return readSysfsLine(path); }
+
+  std::string detectMotherboard() {
+    const std::string boardVendor = readDmiField("/sys/class/dmi/id/board_vendor");
+    const std::string boardName = readDmiField("/sys/class/dmi/id/board_name");
+    const std::string productName = readDmiField("/sys/class/dmi/id/product_name");
+
+    if (!boardVendor.empty() && !boardName.empty()) {
+      return boardVendor + " " + boardName;
+    }
+    if (!boardName.empty()) {
+      return boardName;
+    }
+    if (!productName.empty()) {
+      return productName;
+    }
+    return "Unknown";
+  }
+
+  std::string detectMemoryTotal() {
+    std::ifstream file{"/proc/meminfo"};
+    if (!file.is_open()) {
+      return "Unknown";
+    }
+    std::string line;
+    while (std::getline(file, line)) {
+      if (!line.starts_with("MemTotal:")) {
+        continue;
+      }
+      const std::size_t valueStart = line.find_first_of("0123456789");
+      if (valueStart == std::string::npos) {
+        break;
+      }
+      const std::size_t valueEnd = line.find_first_not_of("0123456789", valueStart);
+      const std::string kbText = line.substr(valueStart, valueEnd - valueStart);
+      std::uint64_t totalKb = 0;
+      try {
+        totalKb = static_cast<std::uint64_t>(std::stoull(kbText));
+      } catch (...) {
+        return "Unknown";
+      }
+      const double totalGb = static_cast<double>(totalKb) / (1024.0 * 1024.0);
+      return std::format("{:.1f} GB", totalGb);
+    }
+    return "Unknown";
+  }
+
+  std::string detectDiskRootUsage() {
+    struct statvfs sv{};
+    if (::statvfs("/", &sv) != 0 || sv.f_blocks == 0 || sv.f_frsize == 0) {
+      return "Unknown";
+    }
+    const double total = static_cast<double>(sv.f_blocks) * static_cast<double>(sv.f_frsize);
+    const double avail = static_cast<double>(sv.f_bavail) * static_cast<double>(sv.f_frsize);
+    const double used = std::max(0.0, total - avail);
+    const double usedGb = used / (1024.0 * 1024.0 * 1024.0);
+    const double totalGb = total / (1024.0 * 1024.0 * 1024.0);
+    const double percent = total > 0.0 ? (used / total) * 100.0 : 0.0;
+    return std::format("{:.1f} / {:.1f} GB ({:.0f}%)", usedGb, totalGb, percent);
+  }
+
+  std::string detectCompositor() {
+    const char* niriSocket = std::getenv("NIRI_SOCKET");
+    if (niriSocket != nullptr && niriSocket[0] != '\0') {
+      return "Niri";
+    }
+    const char* hypr = std::getenv("HYPRLAND_INSTANCE_SIGNATURE");
+    if (hypr != nullptr && hypr[0] != '\0') {
+      return "Hyprland";
+    }
+    const char* sway = std::getenv("SWAYSOCK");
+    if (sway != nullptr && sway[0] != '\0') {
+      return "Sway";
+    }
+    const char* desktop = std::getenv("XDG_CURRENT_DESKTOP");
+    if (desktop != nullptr && desktop[0] != '\0') {
+      return desktop;
+    }
+    const char* sessionDesktop = std::getenv("XDG_SESSION_DESKTOP");
+    if (sessionDesktop != nullptr && sessionDesktop[0] != '\0') {
+      return sessionDesktop;
+    }
+    return "Unknown";
+  }
+
 } // namespace
 
 std::string cpuModelName() {
@@ -183,3 +271,21 @@ std::string gpuLabel() {
   std::call_once(flag, [&]() { cached = detectGpu(); });
   return cached;
 }
+
+std::string motherboardLabel() {
+  static std::once_flag flag;
+  static std::string cached;
+  std::call_once(flag, [&]() { cached = detectMotherboard(); });
+  return cached;
+}
+
+std::string memoryTotalLabel() {
+  static std::once_flag flag;
+  static std::string cached;
+  std::call_once(flag, [&]() { cached = detectMemoryTotal(); });
+  return cached;
+}
+
+std::string diskRootUsageLabel() { return detectDiskRootUsage(); }
+
+std::string compositorLabel() { return detectCompositor(); }
