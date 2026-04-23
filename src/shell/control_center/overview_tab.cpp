@@ -95,14 +95,23 @@ std::unique_ptr<Flex> OverviewTab::create() {
   m_weatherCard = weatherCard.get();
   weatherCard->setFlexGrow(1.0f);
   weatherCard->setGap(Style::spaceXs * scale);
-  addTitle(*weatherCard, "Today", scale);
+
+  auto weatherHeader = std::make_unique<Flex>();
+  weatherHeader->setDirection(FlexDirection::Horizontal);
+  weatherHeader->setAlign(FlexAlign::Center);
+  weatherHeader->setJustify(FlexJustify::SpaceBetween);
+  weatherHeader->setGap(Style::spaceSm * scale);
+
+  Label* weatherTitle = addTitle(*weatherHeader, "Today", scale);
+  weatherTitle->setFlexGrow(1.0f);
 
   auto weatherDate = std::make_unique<Label>();
   weatherDate->setText(currentDateText());
   weatherDate->setFontSize(Style::fontSizeCaption * scale);
   weatherDate->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_weatherDate = weatherDate.get();
-  weatherCard->addChild(std::move(weatherDate));
+  weatherHeader->addChild(std::move(weatherDate));
+  weatherCard->addChild(std::move(weatherHeader));
 
   auto weatherRow = std::make_unique<Flex>();
   weatherRow->setDirection(FlexDirection::Horizontal);
