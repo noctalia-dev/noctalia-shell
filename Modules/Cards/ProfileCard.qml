@@ -27,7 +27,7 @@ NBox {
     NImageRounded {
       Layout.preferredWidth: Math.round(Style.baseWidgetSize * 1.25 * Style.uiScaleRatio)
       Layout.preferredHeight: Math.round(Style.baseWidgetSize * 1.25 * Style.uiScaleRatio)
-      radius: Layout.preferredWidth / 2
+      radius: Math.min(Style.iRadiusL, width / 2)
       imagePath: Settings.preprocessPath(Settings.data.general.avatarImage)
       fallbackIcon: "person"
       borderColor: Color.mPrimary
