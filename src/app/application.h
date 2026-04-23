@@ -4,6 +4,7 @@
 #include "app/timer_poll_source.h"
 #include "config/config_poll_source.h"
 #include "config/config_service.h"
+#include "core/file_watcher.h"
 #include "core/timer_manager.h"
 #include "dbus/bluetooth/bluetooth_agent.h"
 #include "dbus/bluetooth/bluetooth_service.h"
@@ -140,6 +141,8 @@ private:
   std::unique_ptr<PipeWireSpectrum> m_pipewireSpectrum;
   std::unique_ptr<SoundPlayer> m_soundPlayer;
 
+  FileWatcher m_fileWatcher;
+
   GlSharedContext m_glShared;
   SharedTextureCache m_sharedTextureCache;
   RenderContext m_renderContext;
@@ -182,6 +185,7 @@ private:
   IpcPollSource m_ipcPollSource{m_ipcService};
   WeatherService m_weatherService;
   HttpClientPollSource m_httpClientPollSource{m_httpClient};
+  FileWatchPollSource m_fileWatchPollSource{m_fileWatcher};
   WeatherPollSource m_weatherPollSource{m_weatherService};
   Timer m_clipboardAutoPasteTimer;
 

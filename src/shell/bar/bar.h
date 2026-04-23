@@ -11,6 +11,7 @@
 #include <vector>
 
 class ConfigService;
+class FileWatcher;
 class HttpClient;
 class IdleInhibitor;
 class IpcService;
@@ -46,7 +47,7 @@ public:
                   IdleInhibitor* idleInhibitor, MprisService* mpris, PipeWireSpectrum* audioSpectrum,
                   HttpClient* httpClient, WeatherService* weatherService, RenderContext* renderContext,
                   NightLightManager* nightLight, noctalia::theme::ThemeService* themeService,
-                  BluetoothService* bluetooth, BrightnessService* brightness);
+                  BluetoothService* bluetooth, BrightnessService* brightness, FileWatcher* fileWatcher = nullptr);
   void reload();
   void closeAllInstances();
   void show();
@@ -109,6 +110,7 @@ private:
   noctalia::theme::ThemeService* m_themeService = nullptr;
   BluetoothService* m_bluetooth = nullptr;
   BrightnessService* m_brightness = nullptr;
+  FileWatcher* m_fileWatcher = nullptr;
   std::unique_ptr<WidgetFactory> m_widgetFactory;
   std::vector<std::unique_ptr<BarInstance>> m_instances;
 

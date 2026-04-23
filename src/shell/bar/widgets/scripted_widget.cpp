@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "core/resource_paths.h"
 #include "cursor-shape-v1-client-protocol.h"
+#include "notification/notifications.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "scripting/luau_host.h"
@@ -45,12 +46,15 @@ namespace {
   }
 } // namespace
 
-ScriptedWidget::ScriptedWidget(std::string scriptPath, const WidgetConfig* config)
-    : m_scriptPath(std::move(scriptPath)) {
-  if (config)
+ScriptedWidget::ScriptedWidget(std::string scriptPath, const WidgetConfig* config, FileWatcher* fileWatcher)
+    : m_scriptPath(std::move(scriptPath)), m_fileWatcher(fileWatcher) {
+  if (config) {
     m_settings = config->settings;
+    m_hotReload = config->getBool("hot_reload", false);
+  }
 }
-ScriptedWidget::~ScriptedWidget() = default;
+
+ScriptedWidget::~ScriptedWidget() { teardownScriptWatch(); }
 
 void ScriptedWidget::create() {
   m_host = std::make_unique<LuauHost>();
@@ -118,14 +122,17 @@ void ScriptedWidget::create() {
     kLog.warn("scripted widget: no script path");
     return;
   }
-  auto resolved = resolveScriptPath(m_scriptPath);
-  std::string source = readFile(resolved);
+  m_resolvedPath = resolveScriptPath(m_scriptPath);
+  std::string source = readFile(m_resolvedPath);
   if (source.empty()) {
-    kLog.warn("scripted widget: failed to read '{}'", resolved.string());
+    kLog.warn("scripted widget: failed to read '{}'", m_resolvedPath.string());
     return;
   }
-  m_host->exec(resolved.string(), source);
+  m_host->exec(m_resolvedPath.string(), source);
   m_host->callGlobal("update");
+
+  if (m_hotReload)
+    setupScriptWatch();
 }
 
 void ScriptedWidget::onFrameTick(float deltaMs) {
@@ -195,6 +202,50 @@ void ScriptedWidget::luaSetVisible(bool visible) {
   if (auto* node = root(); node)
     node->setVisible(visible);
   requestRedraw();
+}
+
+void ScriptedWidget::setupScriptWatch() {
+  if (m_resolvedPath.empty() || !m_fileWatcher)
+    return;
+  m_watchId = m_fileWatcher->watch(m_resolvedPath, [this] { reloadScript(); });
+}
+
+void ScriptedWidget::teardownScriptWatch() {
+  if (m_watchId == 0 || !m_fileWatcher)
+    return;
+  m_fileWatcher->unwatch(m_watchId);
+  m_watchId = 0;
+}
+
+void ScriptedWidget::reloadScript() {
+  m_glyphVisible = false;
+  m_textColorRole = std::nullopt;
+  m_glyphColorRole = std::nullopt;
+  m_updateIntervalMs = 250.0f;
+  m_accumMs = 0.0f;
+  if (m_glyph)
+    m_glyph->setVisible(false);
+  if (m_label) {
+    m_label->setText("");
+    m_label->setVisible(false);
+  }
+
+  m_host = std::make_unique<LuauHost>();
+  registerScriptedWidgetBindings(m_host->state(), this);
+
+  std::string source = readFile(m_resolvedPath);
+  auto name = m_resolvedPath.filename().string();
+  if (source.empty() || !m_host->exec(m_resolvedPath.string(), source)) {
+    kLog.warn("hot reload: failed to reload '{}'", name);
+    notify::error("Noctalia", "Script reload failed", name);
+    requestRedraw();
+    return;
+  }
+
+  m_host->callGlobal("update");
+  requestRedraw();
+  kLog.info("hot reload: reloaded '{}'", name);
+  notify::info("Noctalia", "Reloaded script", name);
 }
 
 std::optional<ColorRole> ScriptedWidget::parseColorRole(std::string_view name) {

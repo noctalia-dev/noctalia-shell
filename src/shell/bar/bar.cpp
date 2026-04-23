@@ -273,7 +273,7 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
                      PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weatherService,
                      RenderContext* renderContext, NightLightManager* nightLight,
                      noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                     BrightnessService* brightness) {
+                     BrightnessService* brightness, FileWatcher* fileWatcher) {
   m_wayland = &wayland;
   m_config = config;
   m_time = timeService;
@@ -294,11 +294,12 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
   m_themeService = themeService;
   m_bluetooth = bluetooth;
   m_brightness = brightness;
+  m_fileWatcher = fileWatcher;
 
   m_widgetFactory = std::make_unique<WidgetFactory>(
       *m_wayland, m_time, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles,
       m_network, m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight,
-      m_themeService, m_bluetooth, m_brightness);
+      m_themeService, m_bluetooth, m_brightness, m_fileWatcher);
 
   if (timeService != nullptr) {
     timeService->setTickSecondCallback([this]() {
@@ -339,7 +340,7 @@ void Bar::reload() {
   m_widgetFactory = std::make_unique<WidgetFactory>(
       *m_wayland, m_time, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles,
       m_network, m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight,
-      m_themeService, m_bluetooth, m_brightness);
+      m_themeService, m_bluetooth, m_brightness, m_fileWatcher);
   m_instances.clear();
   m_surfaceMap.clear();
   m_hoveredInstance = nullptr;

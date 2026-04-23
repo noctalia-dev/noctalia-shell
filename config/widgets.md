@@ -443,9 +443,11 @@ Custom widget driven by a Luau script. See [`scripted-widgets.md`](scripted-widg
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `script` | string | `""` | Path to the Luau script file (`~` is expanded) |
+| `hot_reload` | bool | `false` | Watch the script file and reload on change (dev tool) |
 
 ```toml
 [widget.my_widget]
-type   = "scripted"
-script = "~/.config/noctalia/scripts/my_widget.lua"
+type       = "scripted"
+script     = "~/.config/noctalia/scripts/my_widget.lua"
+hot_reload = true
 ```

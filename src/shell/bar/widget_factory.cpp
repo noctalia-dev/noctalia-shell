@@ -53,12 +53,12 @@ WidgetFactory::WidgetFactory(WaylandConnection& wayland, TimeService* time, cons
                              NetworkService* network, IdleInhibitor* idleInhibitor, MprisService* mpris,
                              PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
                              NightLightManager* nightLight, noctalia::theme::ThemeService* themeService,
-                             BluetoothService* bluetooth, BrightnessService* brightness)
+                             BluetoothService* bluetooth, BrightnessService* brightness, FileWatcher* fileWatcher)
     : m_wayland(wayland), m_time(time), m_config(config), m_notifications(notifications), m_tray(tray), m_audio(audio),
       m_upower(upower), m_sysmon(sysmon), m_powerProfiles(powerProfiles), m_network(network),
       m_idleInhibitor(idleInhibitor), m_mpris(mpris), m_audioSpectrum(audioSpectrum), m_httpClient(httpClient),
       m_weather(weather), m_nightLight(nightLight), m_themeService(themeService), m_bluetooth(bluetooth),
-      m_brightness(brightness) {}
+      m_brightness(brightness), m_fileWatcher(fileWatcher) {}
 
 std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output* output, float contentScale) const {
   // Resolve: if name matches a [widget.<name>] entry, use its type + settings.
@@ -268,7 +268,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
 
   if (type == "scripted") {
     std::string script = wc != nullptr ? wc->getString("script", "") : std::string();
-    auto widget = std::make_unique<ScriptedWidget>(std::move(script), wc);
+    auto widget = std::make_unique<ScriptedWidget>(std::move(script), wc, m_fileWatcher);
     widget->setContentScale(contentScale);
     return widget;
   }

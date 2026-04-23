@@ -290,6 +290,7 @@ _noctalia_sources = files(
   'src/auth/pam_authenticator.cpp',
   'src/config/config_service.cpp',
   'src/core/deferred_call.cpp',
+  'src/core/file_watcher.cpp',
   'src/core/log.cpp',
   'src/core/process.cpp',
   'src/core/resource_paths.cpp',

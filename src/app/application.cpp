@@ -785,7 +785,7 @@ void Application::initUi() {
                    m_pipewireService.get(), m_upowerService.get(), m_systemMonitor.get(), m_powerProfilesService.get(),
                    m_networkService.get(), &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(),
                    &m_httpClient, &m_weatherService, &m_renderContext, &m_nightLightManager, &m_themeService,
-                   m_bluetoothService.get(), m_brightnessService.get());
+                   m_bluetoothService.get(), m_brightnessService.get(), &m_fileWatcher);
   m_bar.setAutoHideSuppressionCallback([this]() { return m_trayMenu.isOpen(); });
 
   m_layerPopupHosts.registerHost(
@@ -1064,6 +1064,7 @@ std::vector<PollSource*> Application::buildPollSources() {
     m_brightnessPollSource = std::make_unique<BrightnessPollSource>(*m_brightnessService);
     sources.push_back(m_brightnessPollSource.get());
   }
+  sources.push_back(&m_fileWatchPollSource);
   sources.push_back(&m_ipcPollSource);
   sources.push_back(&m_httpClientPollSource);
   sources.push_back(&m_weatherPollSource);

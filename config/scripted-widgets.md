@@ -15,6 +15,7 @@ my_setting = "value"
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `script` | string | `""` | Path to the Luau script file. Absolute paths and `~` paths are used directly; relative paths are resolved from the assets bundle (e.g. `scripts/screen_recorder.lua`). |
+| `hot_reload` | bool | `false` | Watch the script file for changes and reload automatically (inotify). Intended for development. |
 
 ---
 
@@ -42,6 +43,8 @@ my_setting = "value"
 | `barWidget.setColor(role)` | — | Set the label color by theme role |
 | `barWidget.setGlyphColor(role)` | — | Set the glyph color by theme role |
 | `barWidget.setVisible(visible)` | — | Show or hide the entire widget |
+| `barWidget.setUpdateInterval(ms)` | — | Set the `update()` tick interval in milliseconds (default 250, minimum 16) |
+| `barWidget.isVertical()` | `boolean` | Whether the bar is in vertical orientation |
 | `barWidget.getConfig(key, default?)` | `any` | Read a TOML config setting. Returns the typed value or default/nil. |
 
 **Theme color roles:** `primary`, `on_primary`, `secondary`, `on_secondary`, `tertiary`, `on_tertiary`, `error`, `on_error`, `surface`, `on_surface`, `surface_variant`, `on_surface_variant`, `outline`, `shadow`, `hover`, `on_hover`.

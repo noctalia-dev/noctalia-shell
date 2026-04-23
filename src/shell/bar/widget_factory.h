@@ -6,6 +6,7 @@
 #include <string>
 
 struct Config;
+class FileWatcher;
 class NotificationManager;
 class HttpClient;
 class IdleInhibitor;
@@ -35,7 +36,7 @@ public:
                 PowerProfilesService* powerProfiles, NetworkService* network, IdleInhibitor* idleInhibitor,
                 MprisService* mpris, PipeWireSpectrum* audioSpectrum, HttpClient* httpClient, WeatherService* weather,
                 NightLightManager* nightLight, noctalia::theme::ThemeService* themeService, BluetoothService* bluetooth,
-                BrightnessService* brightness);
+                BrightnessService* brightness, FileWatcher* fileWatcher = nullptr);
 
   [[nodiscard]] std::unique_ptr<Widget> create(const std::string& name, wl_output* output,
                                                float contentScale = 1.0f) const;
@@ -60,4 +61,5 @@ private:
   noctalia::theme::ThemeService* m_themeService;
   BluetoothService* m_bluetooth;
   BrightnessService* m_brightness;
+  FileWatcher* m_fileWatcher;
 };

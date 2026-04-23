@@ -1,9 +1,11 @@
 #pragma once
 
 #include "config/config_service.h"
+#include "core/file_watcher.h"
 #include "shell/bar/widget.h"
 #include "ui/palette.h"
 
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
@@ -18,7 +20,8 @@ class LuauHost;
 
 class ScriptedWidget : public Widget {
 public:
-  explicit ScriptedWidget(std::string scriptPath, const WidgetConfig* config = nullptr);
+  explicit ScriptedWidget(std::string scriptPath, const WidgetConfig* config = nullptr,
+                          FileWatcher* fileWatcher = nullptr);
   ~ScriptedWidget() override;
 
   void create() override;
@@ -42,9 +45,16 @@ private:
 
   static std::optional<ColorRole> parseColorRole(std::string_view name);
 
+  void reloadScript();
+  void setupScriptWatch();
+  void teardownScriptWatch();
+
   std::string m_scriptPath;
+  std::filesystem::path m_resolvedPath;
   std::unordered_map<std::string, WidgetSettingValue> m_settings;
   std::unique_ptr<LuauHost> m_host;
+  FileWatcher* m_fileWatcher = nullptr;
+  FileWatcher::WatchId m_watchId = 0;
   InputArea* m_area = nullptr;
   Flex* m_flex = nullptr;
   Glyph* m_glyph = nullptr;
@@ -55,4 +65,5 @@ private:
   float m_updateIntervalMs = 250.0f;
   bool m_isVertical = false;
   bool m_glyphVisible = false;
+  bool m_hotReload = false;
 };
