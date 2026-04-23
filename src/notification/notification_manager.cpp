@@ -125,6 +125,16 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
     }
   }
 
+  // Deduplicate: if an identical notification already exists, replace it.
+  for (auto& [existingId, idx] : m_idToIndex) {
+    auto& existing = m_notifications[idx];
+    if (existing.appName == app_name && existing.summary == summary && existing.body == body) {
+      existing.expiryTime = schedule_expiry(timeout);
+      log_notification(existing, "deduped");
+      return existing.id;
+    }
+  }
+
   const uint32_t id = m_nextId++;
   m_notifications.push_back(Notification{
       .id = id,
