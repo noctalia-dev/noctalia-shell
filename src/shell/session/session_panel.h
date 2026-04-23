@@ -4,6 +4,7 @@
 
 #include <array>
 #include <functional>
+#include <optional>
 
 class Button;
 class Flex;
@@ -57,7 +58,7 @@ private:
   InputArea* m_focusArea = nullptr;
   std::array<ActionId, static_cast<std::size_t>(ActionId::Count)> m_actionOrder{};
   std::array<Button*, static_cast<std::size_t>(ActionId::Count)> m_actionButtons{};
-  std::size_t m_selectedIndex = 0;
+  std::optional<std::size_t> m_selectedIndex;
   bool m_mouseActive = false;
   ConfigService* m_config = nullptr;
   SessionActionHooks m_actionHooks;

@@ -131,7 +131,7 @@ Button* SessionPanel::createActionButton(ActionId id, float scale) {
 InputArea* SessionPanel::initialFocusArea() const { return m_focusArea; }
 
 void SessionPanel::onOpen(std::string_view /*context*/) {
-  m_selectedIndex = 0;
+  m_selectedIndex.reset();
   m_mouseActive = false;
   updateSelectionVisuals();
 }
@@ -150,11 +150,11 @@ void SessionPanel::activateMouse() {
 }
 
 void SessionPanel::activateSelected() {
-  if (m_selectedIndex >= static_cast<std::size_t>(ActionId::Count)) {
+  if (!m_selectedIndex.has_value() || *m_selectedIndex >= static_cast<std::size_t>(ActionId::Count)) {
     return;
   }
 
-  const ActionId selectedAction = m_actionOrder[m_selectedIndex];
+  const ActionId selectedAction = m_actionOrder[*m_selectedIndex];
   if (Button* button = m_actionButtons[static_cast<std::size_t>(selectedAction)];
       button != nullptr && button->enabled()) {
     PanelManager::instance().close();
@@ -199,9 +199,18 @@ void SessionPanel::invokeAction(ActionId id) {
 }
 
 bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
+  const std::size_t lastIndex = static_cast<std::size_t>(ActionId::Count) - 1;
+
   if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Left, sym, modifiers)) {
-    if (m_selectedIndex > 0) {
-      --m_selectedIndex;
+    if (!m_selectedIndex.has_value()) {
+      m_selectedIndex = lastIndex;
+      updateSelectionVisuals();
+      if (root() != nullptr) {
+        root()->markPaintDirty();
+      }
+      PanelManager::instance().refresh();
+    } else if (*m_selectedIndex > 0) {
+      --(*m_selectedIndex);
       updateSelectionVisuals();
       if (root() != nullptr) {
         root()->markPaintDirty();
@@ -212,9 +221,15 @@ bool SessionPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
   }
 
   if (m_config != nullptr && m_config->matchesKeybind(KeybindAction::Right, sym, modifiers)) {
-    const std::size_t lastIndex = static_cast<std::size_t>(ActionId::Count) - 1;
-    if (m_selectedIndex < lastIndex) {
-      ++m_selectedIndex;
+    if (!m_selectedIndex.has_value()) {
+      m_selectedIndex = 0;
+      updateSelectionVisuals();
+      if (root() != nullptr) {
+        root()->markPaintDirty();
+      }
+      PanelManager::instance().refresh();
+    } else if (*m_selectedIndex < lastIndex) {
+      ++(*m_selectedIndex);
       updateSelectionVisuals();
       if (root() != nullptr) {
         root()->markPaintDirty();
@@ -240,7 +255,7 @@ void SessionPanel::updateSelectionVisuals() {
     if (button == nullptr) {
       continue;
     }
-    button->setSelected(i == m_selectedIndex);
+    button->setSelected(m_selectedIndex.has_value() && i == *m_selectedIndex);
   }
 }
 
