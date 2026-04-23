@@ -7,10 +7,10 @@
 #include "shell/desktop/desktop_widget_layout.h"
 #include "shell/desktop/desktop_widgets_editor.h"
 #include "shell/desktop/desktop_widgets_host.h"
+#include "util/file_utils.h"
 #include "wayland/wayland_connection.h"
 
 #include <charconv>
-#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <limits>
@@ -23,18 +23,6 @@ namespace {
   constexpr Logger kLog("desktop");
   constexpr std::string_view kDesktopWidgetIdPrefix = "desktop-widget-";
   constexpr float kDefaultDesktopAudioVisualizerAspectRatio = 240.0f / 96.0f;
-
-  std::string stateDir() {
-    const char* xdg = std::getenv("XDG_STATE_HOME");
-    if (xdg != nullptr && xdg[0] != '\0') {
-      return std::string(xdg) + "/noctalia";
-    }
-    const char* home = std::getenv("HOME");
-    if (home != nullptr && home[0] != '\0') {
-      return std::string(home) + "/.local/state/noctalia";
-    }
-    return {};
-  }
 
   void writeSetting(toml::table& table, const std::string& key, const WidgetSettingValue& value) {
     std::visit(
@@ -558,7 +546,7 @@ void DesktopWidgetsController::checkReload() {
 }
 
 std::string DesktopWidgetsController::stateFilePath() const {
-  const std::string dir = stateDir();
+  const std::string dir = FileUtils::stateDir();
   if (dir.empty()) {
     return {};
   }

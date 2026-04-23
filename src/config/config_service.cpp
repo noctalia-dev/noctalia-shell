@@ -4,6 +4,7 @@
 #include "ipc/ipc_service.h"
 #include "notification/notification_manager.h"
 #include "render/core/color.h"
+#include "util/file_utils.h"
 #include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
 
@@ -22,30 +23,6 @@
 #include <xkbcommon/xkbcommon.h>
 
 namespace {
-
-  std::string configDir() {
-    const char* xdg = std::getenv("XDG_CONFIG_HOME");
-    if (xdg != nullptr && xdg[0] != '\0') {
-      return std::string(xdg) + "/noctalia";
-    }
-    const char* home = std::getenv("HOME");
-    if (home != nullptr && home[0] != '\0') {
-      return std::string(home) + "/.config/noctalia";
-    }
-    return {};
-  }
-
-  std::string stateDir() {
-    const char* xdg = std::getenv("XDG_STATE_HOME");
-    if (xdg != nullptr && xdg[0] != '\0') {
-      return std::string(xdg) + "/noctalia";
-    }
-    const char* home = std::getenv("HOME");
-    if (home != nullptr && home[0] != '\0') {
-      return std::string(home) + "/.local/state/noctalia";
-    }
-    return {};
-  }
 
   const char* themeModeString(ThemeMode mode) {
     switch (mode) {
@@ -288,11 +265,11 @@ ConfigService::WallpaperBatch::~WallpaperBatch() {
 }
 
 ConfigService::ConfigService() {
-  m_configDir = configDir();
+  m_configDir = FileUtils::configDir();
 
   // Resolve overrides.toml path; create the state dir eagerly so writes don't
   // race with directory creation later.
-  if (auto dir = stateDir(); !dir.empty()) {
+  if (auto dir = FileUtils::stateDir(); !dir.empty()) {
     std::error_code ec;
     std::filesystem::create_directories(dir, ec);
     m_overridesPath = dir + "/overrides.toml";

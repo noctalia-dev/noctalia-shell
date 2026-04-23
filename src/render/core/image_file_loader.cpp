@@ -11,33 +11,11 @@
 #pragma GCC diagnostic pop
 
 #include "render/core/image_decoder.h"
+#include "util/file_utils.h"
 
 #include <fstream>
 
-namespace {
-
-  std::vector<std::uint8_t> readFile(const std::string& path) {
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-    if (!file) {
-      return {};
-    }
-
-    const auto size = file.tellg();
-    if (size <= 0) {
-      return {};
-    }
-
-    std::vector<std::uint8_t> data(static_cast<std::size_t>(size));
-    file.seekg(0);
-    file.read(reinterpret_cast<char*>(data.data()), size);
-    if (!file) {
-      return {};
-    }
-
-    return data;
-  }
-
-} // namespace
+namespace {} // namespace
 
 std::optional<LoadedImageFile> loadImageFile(const std::string& path, int targetSize, std::string* errorMessage) {
   if (path.empty()) {
@@ -47,7 +25,7 @@ std::optional<LoadedImageFile> loadImageFile(const std::string& path, int target
     return std::nullopt;
   }
 
-  auto fileData = readFile(path);
+  auto fileData = FileUtils::readBinaryFile(path);
   if (fileData.empty()) {
     if (errorMessage != nullptr) {
       *errorMessage = "failed to read image file";

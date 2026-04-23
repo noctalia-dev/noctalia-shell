@@ -1,26 +1,14 @@
 #include "launcher/usage_tracker.h"
 
-#include <cstdlib>
+#include "util/file_utils.h"
+
 #include <filesystem>
 #include <fstream>
 #include <json.hpp>
 
-namespace {
-
-  std::string dataDir() {
-    if (const char* xdgState = std::getenv("XDG_STATE_HOME"); xdgState != nullptr && xdgState[0] != '\0') {
-      return std::string(xdgState) + "/noctalia";
-    }
-    if (const char* home = std::getenv("HOME"); home != nullptr) {
-      return std::string(home) + "/.local/state/noctalia";
-    }
-    return ".";
-  }
-
-} // namespace
-
 UsageTracker::UsageTracker() {
-  m_path = dataDir() + "/usage_counts.json";
+  const std::string dir = FileUtils::stateDir();
+  m_path = (dir.empty() ? "." : dir) + "/usage_counts.json";
   load();
 }
 

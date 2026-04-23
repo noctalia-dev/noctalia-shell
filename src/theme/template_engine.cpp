@@ -10,7 +10,7 @@
 #include "cpp/scheme/scheme_rainbow.h"
 #include "cpp/scheme/scheme_tonal_spot.h"
 #include "theme/color.h"
-#include "util/path_utils.h"
+#include "util/file_utils.h"
 #include "util/string_utils.h"
 
 #include <array>
@@ -1096,7 +1096,7 @@ namespace noctalia::theme {
     }
 
     std::filesystem::path resolveConfigPath(const std::filesystem::path& configPath, const std::string& path) {
-      const std::filesystem::path expanded = PathUtils::expandUserPath(path);
+      const std::filesystem::path expanded = FileUtils::expandUserPath(path);
       if (expanded.is_absolute())
         return expanded;
       const std::filesystem::path base =

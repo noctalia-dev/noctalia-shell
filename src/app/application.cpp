@@ -24,7 +24,7 @@
 #include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/style.h"
-#include "util/path_utils.h"
+#include "util/file_utils.h"
 
 #include <chrono>
 #include <cmath>
@@ -551,7 +551,7 @@ void Application::initServices() {
         if (configured.empty()) {
           return paths::assetPath(bundledRelative);
         }
-        const std::filesystem::path expanded = PathUtils::expandUserPath(configured);
+        const std::filesystem::path expanded = FileUtils::expandUserPath(configured);
         if (expanded.is_absolute()) {
           return expanded;
         }

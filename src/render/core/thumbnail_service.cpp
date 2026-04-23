@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "render/core/image_decoder.h"
+#include "util/file_utils.h"
 
 #include <GLES2/gl2.h>
 #include <webp/encode.h>
@@ -29,24 +30,6 @@ namespace {
   constexpr std::size_t kMinWorkers = 2;
   constexpr std::size_t kMaxWorkers = 4;
   constexpr std::string_view kThumbnailCacheVersion = "thumbnail-service-v2";
-
-  std::vector<std::uint8_t> readFile(const std::string& path) {
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-    if (!file) {
-      return {};
-    }
-    const auto sz = file.tellg();
-    if (sz <= 0) {
-      return {};
-    }
-    std::vector<std::uint8_t> data(static_cast<std::size_t>(sz));
-    file.seekg(0);
-    file.read(reinterpret_cast<char*>(data.data()), sz);
-    if (!file) {
-      return {};
-    }
-    return data;
-  }
 
   std::filesystem::path thumbnailCacheDir() {
     if (const char* xdg = std::getenv("XDG_CACHE_HOME"); xdg != nullptr && xdg[0] != '\0') {
@@ -362,7 +345,7 @@ void ThumbnailService::workerLoop() {
     result.path = path;
 
     if (const auto cachePath = cachePathForSource(path); cachePath.has_value()) {
-      auto cachedBytes = readFile(cachePath->string());
+      auto cachedBytes = FileUtils::readBinaryFile(cachePath->string());
       if (!cachedBytes.empty()) {
         if (auto cached = decodeRasterImage(cachedBytes.data(), cachedBytes.size())) {
           result.rgba = std::move(cached->pixels);
@@ -377,7 +360,7 @@ void ThumbnailService::workerLoop() {
       }
     }
 
-    auto bytes = readFile(path);
+    auto bytes = FileUtils::readBinaryFile(path);
     if (bytes.empty()) {
       result.failed = true;
       pushResult(std::move(result));

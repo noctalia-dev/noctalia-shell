@@ -9,7 +9,7 @@
 #include "theme/palette_generator.h"
 #include "theme/scheme.h"
 #include "theme/template_engine.h"
-#include "util/path_utils.h"
+#include "util/file_utils.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -364,7 +364,7 @@ namespace noctalia::theme {
     std::string err;
     GeneratedPalette palette;
     if (themeJsonPath) {
-      if (!loadThemeJson(PathUtils::expandUserPath(themeJsonPath), palette, err)) {
+      if (!loadThemeJson(FileUtils::expandUserPath(themeJsonPath), palette, err)) {
         std::fprintf(stderr, "error: failed to load theme json: %s\n", err.c_str());
         return 1;
       }
@@ -411,8 +411,8 @@ namespace noctalia::theme {
           std::fprintf(stderr, "error: invalid render spec (expected input:output): %s\n", spec.c_str());
           return 1;
         }
-        const std::filesystem::path input = PathUtils::expandUserPath(spec.substr(0, colon));
-        const std::filesystem::path output = PathUtils::expandUserPath(spec.substr(colon + 1));
+        const std::filesystem::path input = FileUtils::expandUserPath(spec.substr(0, colon));
+        const std::filesystem::path output = FileUtils::expandUserPath(spec.substr(colon + 1));
         const auto result = engine.renderFile(input, output);
         if (!result.success)
           return 1;

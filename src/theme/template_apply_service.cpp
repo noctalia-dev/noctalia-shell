@@ -4,7 +4,7 @@
 #include "core/log.h"
 #include "core/resource_paths.h"
 #include "theme/template_engine.h"
-#include "util/path_utils.h"
+#include "util/file_utils.h"
 
 #include <fstream>
 #include <string>
@@ -51,7 +51,7 @@ namespace noctalia::theme {
     if (!templateCfg.enableUserTemplates)
       return;
 
-    const std::filesystem::path userConfigPath = PathUtils::expandUserPath(templateCfg.userConfig);
+    const std::filesystem::path userConfigPath = FileUtils::expandUserPath(templateCfg.userConfig);
     ensureUserConfigStub(userConfigPath);
     if (!std::filesystem::exists(userConfigPath))
       return;
