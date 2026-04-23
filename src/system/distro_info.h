@@ -26,3 +26,6 @@ public:
 
 // Display name of the current session user (gecos or login).
 [[nodiscard]] std::string sessionDisplayName();
+
+// Machine hostname (uname nodename), or "unknown" on failure.
+[[nodiscard]] std::string hostName();

@@ -377,8 +377,7 @@ void OverviewTab::sync(Renderer& renderer) {
   if (m_userFacts != nullptr) {
     const auto uptime = systemUptime();
     const std::string uptimeText = uptime.has_value() ? formatDuration(*uptime) : "unknown";
-    m_userFacts->setText(std::format("Uptime · {}\nDistro · {}\nKernel · {}\nOS age · {}", uptimeText, distroLabel(),
-                                     kernelRelease(), osAgeLabel()));
+    m_userFacts->setText(std::format("{}@{}\nUptime · {}", sessionDisplayName(), hostName(), uptimeText));
   }
 
   if (m_weatherGlyph != nullptr && m_weatherTemp != nullptr && m_weatherSub != nullptr) {

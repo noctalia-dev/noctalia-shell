@@ -8,6 +8,7 @@
 #include "shell/control_center/network_tab.h"
 #include "shell/control_center/notifications_tab.h"
 #include "shell/control_center/overview_tab.h"
+#include "shell/control_center/system_tab.h"
 #include "shell/control_center/tab.h"
 #include "shell/control_center/weather_tab.h"
 #include "shell/panel/panel.h"
@@ -32,6 +33,7 @@ class NotificationManager;
 class PipeWireService;
 class PipeWireSpectrum;
 class PowerProfilesService;
+class SystemMonitorService;
 class UPowerService;
 class WeatherService;
 
@@ -43,7 +45,7 @@ public:
                      UPowerService* upower = nullptr, PowerProfilesService* powerProfiles = nullptr,
                      NetworkService* network = nullptr, NetworkSecretAgent* networkSecrets = nullptr,
                      BluetoothService* bluetooth = nullptr, BluetoothAgent* bluetoothAgent = nullptr,
-                     BrightnessService* brightness = nullptr);
+                     BrightnessService* brightness = nullptr, SystemMonitorService* sysmon = nullptr);
 
   void create() override;
   void onFrameTick(float deltaMs) override;
@@ -68,6 +70,7 @@ private:
     Media,
     Audio,
     Display,
+    System,
     Network,
     Bluetooth,
     Weather,
@@ -87,8 +90,9 @@ private:
   static constexpr std::array<TabMeta, kTabCount> kTabs{{
       {TabId::Overview, "overview", "Overview", "person"},
       {TabId::Media, "media", "Media", "disc"},
-      {TabId::Audio, "audio", "Audio", "volume-high"},
-      {TabId::Display, "display", "Display", "settings-display"},
+      {TabId::Audio, "audio", "Audio", "device-speaker"},
+      {TabId::Display, "display", "Display", "device-desktop"},
+      {TabId::System, "system", "System", "activity"},
       {TabId::Network, "network", "Network", "wifi"},
       {TabId::Bluetooth, "bluetooth", "Bluetooth", "bluetooth"},
       {TabId::Weather, "weather", "Weather", "weather-cloud-sun"},

@@ -20,6 +20,11 @@ struct SystemStats {
   std::uint64_t swapUsedMb{0};
   std::uint64_t swapTotalMb{0};
   std::optional<double> cpuTempC;
+  double netRxBytesPerSec{0.0};
+  double netTxBytesPerSec{0.0};
+  double loadAvg1{0.0};
+  double loadAvg5{0.0};
+  double loadAvg15{0.0};
 };
 
 class SystemMonitorService {
@@ -70,6 +75,13 @@ private:
   [[nodiscard]] static std::optional<double> readCpuTempCelsius();
   [[nodiscard]] static float readDiskUsagePercent(const std::string& path);
 
+  struct NetIfaceBytes {
+    std::uint64_t rx{0};
+    std::uint64_t tx{0};
+  };
+  [[nodiscard]] static std::optional<std::unordered_map<std::string, NetIfaceBytes>> readNetBytes();
+  [[nodiscard]] static std::optional<std::array<double, 3>> readLoadAvg();
+
   std::atomic<bool> m_running{false};
   std::atomic<int> m_cpuTempRefs{0};
   std::thread m_thread;
@@ -79,4 +91,5 @@ private:
   std::array<SystemStats, kHistorySize> m_history{};
   int m_historyHead = 0;
   std::unordered_map<std::string, DiskHistory> m_diskHistories;
+  std::unordered_map<std::string, NetIfaceBytes> m_prevNetBytes;
 };

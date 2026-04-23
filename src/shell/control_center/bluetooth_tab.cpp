@@ -45,7 +45,7 @@ namespace {
     case BluetoothDeviceKind::Phone:
       return "bluetooth-device-phone";
     case BluetoothDeviceKind::Computer:
-      return "settings-display";
+      return "device-laptop";
     case BluetoothDeviceKind::Gamepad:
       return "bluetooth-device-gamepad";
     case BluetoothDeviceKind::Watch:

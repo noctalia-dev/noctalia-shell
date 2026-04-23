@@ -76,6 +76,7 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"music-off", 0xF166},         // music-off
     {"video", 0xED22},             // video
     {"video-off", 0xED20},         // video-off
+    {"device-speaker", 0xEA8B},    // device-speaker
 
     // Volume
     {"volume-high", 0xEB51},       // volume
@@ -89,10 +90,10 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"upload-speed", 0xEB47},      // upload
 
     // System monitor
+    {"activity", 0xED23},          // activity
     {"cpu-intensive", 0xECC6},     // alert-octagon
     {"cpu-usage", 0xFA77},         // brand-speedtest
     {"cpu-temperature", 0xEC2C},   // flame
-    {"gpu-temperature", 0xEA89},   // device-desktop
     {"memory", 0xEF8E},            // cpu
     {"storage", 0xEA88},           // database
     {"busy", 0xF146},              // hourglass-empty
@@ -123,7 +124,9 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"keep-awake-on", 0xEAFB},     // mug
     {"keep-awake-off", 0xF165},    // mug-off
 
-    // Brightness
+    // Brightness / Display
+    {"device-desktop", 0xEA89},    // device-desktop
+    {"device-laptop", 0xEB64},     // device-laptops
     {"brightness-low", 0xFB23},    // brightness-down-filled
     {"brightness-high", 0xFB24},   // brightness-up-filled
 
@@ -169,7 +172,6 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"ethernet-off", 0xECCD},
     {"ethernet-exclamation", 0xECCE},
     {"ethernet-question", 0xECCF},
-
 
     // Bluetooth devices
     {"bluetooth", 0xEA37},
@@ -221,29 +223,6 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"folder", 0xEAAD},            // folder
     {"file", 0xEAA4},              // file
 
-    // Settings tabs
-    {"settings-general", 0xEC38},  // adjustments-horizontal
-    {"settings-bar", 0xFD51},      // crop-16-9
-    {"settings-user-interface", 0xEF95}, // layout-board
-    {"settings-control-center", 0xEC38}, // adjustments-horizontal
-    {"settings-dock", 0xEAD3},     // layout-bottombar
-    {"settings-launcher", 0xEC45}, // rocket
-    {"settings-audio", 0xEA8B},    // device-speaker
-    {"settings-display", 0xEA89}, // device-desktop
-    {"settings-network", 0xF4C3},  // circles-relation
-    {"settings-brightness", 0xEB7E}, // brightness-up
-    {"settings-location", 0xF9E4}, // world-pin
-    {"settings-color-scheme", 0xEB01}, // palette
-    {"settings-wallpaper", 0xEB00}, // paint
-    {"settings-wallpaper-selector", 0xFD4A}, // library-photo
-    {"settings-hooks", 0xEADE},    // link
-    {"settings-notifications", 0xEA35}, // bell
-    {"settings-osd", 0xED35},      // picture-in-picture
-    {"settings-about", 0xF635},    // info-square-rounded
-    {"settings-idle", 0xEAF8},     // moon
-    {"settings-lock-screen", 0xEAE2}, // lock
-    {"settings-session-menu", 0xEB0D}, // power
-    {"settings-system-monitor", 0xED23}, // activity
 
     // Branding
     {"noctalia", 0xEC33},          // noctalia

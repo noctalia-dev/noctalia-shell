@@ -198,3 +198,11 @@ std::string sessionDisplayName() {
   }
   return login;
 }
+
+std::string hostName() {
+  struct utsname un{};
+  if (uname(&un) == 0 && un.nodename[0] != '\0') {
+    return un.nodename;
+  }
+  return "unknown";
+}

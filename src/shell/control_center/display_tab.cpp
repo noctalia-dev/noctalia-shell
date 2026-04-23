@@ -186,7 +186,7 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
     headerRow->setGap(Style::spaceSm * scale);
 
     auto icon = std::make_unique<Glyph>();
-    icon->setGlyph("settings-display");
+    icon->setGlyph("device-desktop");
     icon->setGlyphSize(Style::fontSizeTitle * scale);
     icon->setColor(roleColor(ColorRole::OnSurface));
     auto* iconPtr = icon.get();

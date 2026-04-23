@@ -15,7 +15,8 @@ ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeW
                                        PipeWireSpectrum* spectrum, UPowerService* upower,
                                        PowerProfilesService* powerProfiles, NetworkService* network,
                                        NetworkSecretAgent* networkSecrets, BluetoothService* bluetooth,
-                                       BluetoothAgent* bluetoothAgent, BrightnessService* brightness) {
+                                       BluetoothAgent* bluetoothAgent, BrightnessService* brightness,
+                                       SystemMonitorService* sysmon) {
   m_tabs[tabIndex(TabId::Overview)] =
       std::make_unique<OverviewTab>(mpris, weather, audio, upower, powerProfiles, config);
   m_tabs[tabIndex(TabId::Media)] = std::make_unique<MediaTab>(mpris, httpClient, spectrum);
@@ -26,6 +27,7 @@ ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeW
   m_tabs[tabIndex(TabId::Network)] = std::make_unique<NetworkTab>(network, networkSecrets);
   m_tabs[tabIndex(TabId::Bluetooth)] = std::make_unique<BluetoothTab>(bluetooth, bluetoothAgent);
   m_tabs[tabIndex(TabId::Display)] = std::make_unique<DisplayTab>(brightness, config);
+  m_tabs[tabIndex(TabId::System)] = std::make_unique<SystemTab>(sysmon);
   m_tabButtons.fill(nullptr);
   m_tabContainers.fill(nullptr);
   m_tabHeaderActions.fill(nullptr);

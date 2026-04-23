@@ -219,6 +219,33 @@ void SystemMonitorService::samplingLoop() {
       next.swapUsedMb = memKb->swapUsedKb / 1024;
     }
 
+    const auto currentNetBytes = readNetBytes();
+    if (currentNetBytes.has_value()) {
+      double totalRx = 0.0;
+      double totalTx = 0.0;
+      for (const auto& [iface, cur] : *currentNetBytes) {
+        const auto it = m_prevNetBytes.find(iface);
+        if (it != m_prevNetBytes.end()) {
+          if (cur.rx >= it->second.rx) {
+            totalRx += static_cast<double>(cur.rx - it->second.rx);
+          }
+          if (cur.tx >= it->second.tx) {
+            totalTx += static_cast<double>(cur.tx - it->second.tx);
+          }
+        }
+      }
+      m_prevNetBytes = *currentNetBytes;
+      next.netRxBytesPerSec = totalRx;
+      next.netTxBytesPerSec = totalTx;
+    }
+
+    const auto la = readLoadAvg();
+    if (la.has_value()) {
+      next.loadAvg1 = (*la)[0];
+      next.loadAvg5 = (*la)[1];
+      next.loadAvg15 = (*la)[2];
+    }
+
     {
       std::lock_guard lock{m_statsMutex};
       previousCpuTemp = m_latest.cpuTempC;
@@ -436,4 +463,66 @@ float SystemMonitorService::readDiskUsagePercent(const std::string& path) {
     return static_cast<float>(100.0 * used / total);
   }
   return 0.0f;
+}
+
+std::optional<std::unordered_map<std::string, SystemMonitorService::NetIfaceBytes>>
+SystemMonitorService::readNetBytes() {
+  std::ifstream file{"/proc/net/dev"};
+  if (!file.is_open()) {
+    return std::nullopt;
+  }
+
+  std::unordered_map<std::string, NetIfaceBytes> result;
+  std::string line;
+  // Skip 2 header lines
+  std::getline(file, line);
+  std::getline(file, line);
+
+  while (std::getline(file, line)) {
+    const auto colonPos = line.find(':');
+    if (colonPos == std::string::npos) {
+      continue;
+    }
+
+    std::string iface = line.substr(0, colonPos);
+    while (!iface.empty() && iface.front() == ' ') {
+      iface.erase(iface.begin());
+    }
+    if (iface == "lo") {
+      continue;
+    }
+
+    std::istringstream iss{line.substr(colonPos + 1)};
+    std::uint64_t rxBytes = 0;
+    std::uint64_t val = 0;
+    iss >> rxBytes;
+    // Skip 7 fields (rx_packets, errs, drop, fifo, frame, compressed, multicast)
+    for (int i = 0; i < 7 && iss; ++i) {
+      iss >> val;
+    }
+    std::uint64_t txBytes = 0;
+    iss >> txBytes;
+
+    if (rxBytes == 0 && txBytes == 0) {
+      continue;
+    }
+
+    result[iface] = {rxBytes, txBytes};
+  }
+
+  return result;
+}
+
+std::optional<std::array<double, 3>> SystemMonitorService::readLoadAvg() {
+  std::ifstream file{"/proc/loadavg"};
+  if (!file.is_open()) {
+    return std::nullopt;
+  }
+
+  std::array<double, 3> la{};
+  file >> la[0] >> la[1] >> la[2];
+  if (file.fail()) {
+    return std::nullopt;
+  }
+  return la;
 }
