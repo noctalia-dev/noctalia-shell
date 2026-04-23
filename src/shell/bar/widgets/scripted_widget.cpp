@@ -1,6 +1,7 @@
 #include "shell/bar/widgets/scripted_widget.h"
 
 #include "core/log.h"
+#include "core/resource_paths.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
@@ -20,17 +21,22 @@
 namespace {
   constexpr Logger kLog("scripted-widget");
 
-  std::string expandPath(const std::string& path) {
-    if (path.empty() || path[0] != '~')
+  std::filesystem::path resolveScriptPath(const std::string& path) {
+    if (path.empty())
+      return {};
+    if (path[0] == '~') {
+      const char* home = std::getenv("HOME");
+      if (home)
+        return std::string(home) + path.substr(1);
       return path;
-    const char* home = std::getenv("HOME");
-    if (!home)
+    }
+    if (path[0] == '/')
       return path;
-    return std::string(home) + path.substr(1);
+    return paths::assetPath(path);
   }
 
-  std::string readFile(const std::string& path) {
-    std::ifstream f(expandPath(path));
+  std::string readFile(const std::filesystem::path& path) {
+    std::ifstream f(path);
     if (!f)
       return {};
     std::stringstream ss;
@@ -112,12 +118,13 @@ void ScriptedWidget::create() {
     kLog.warn("scripted widget: no script path");
     return;
   }
-  std::string source = readFile(m_scriptPath);
+  auto resolved = resolveScriptPath(m_scriptPath);
+  std::string source = readFile(resolved);
   if (source.empty()) {
-    kLog.warn("scripted widget: failed to read '{}'", m_scriptPath);
+    kLog.warn("scripted widget: failed to read '{}'", resolved.string());
     return;
   }
-  m_host->exec(m_scriptPath, source);
+  m_host->exec(resolved.string(), source);
   m_host->callGlobal("update");
 }
 

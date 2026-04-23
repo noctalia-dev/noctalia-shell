@@ -14,7 +14,7 @@ my_setting = "value"
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `script` | string | `""` | Path to the Luau script file (`~` is expanded) |
+| `script` | string | `""` | Path to the Luau script file. Absolute paths and `~` paths are used directly; relative paths are resolved from the assets bundle (e.g. `scripts/screen_recorder.lua`). |
 
 ---
 
@@ -75,7 +75,7 @@ InputArea (accepts left / right / middle clicks)
 
 ## Example: GPU screen recorder
 
-A `screen_recorder.lua` script is included in `scripts/` that wraps `gpu-screen-recorder` with recording and replay buffer support.
+A `screen_recorder.lua` script is bundled in `assets/scripts/` that wraps `gpu-screen-recorder` with recording and replay buffer support.
 
 - **Left click** — toggle recording
 - **Right click** — toggle replay buffer (if enabled) or save replay (if active)
@@ -84,7 +84,7 @@ A `screen_recorder.lua` script is included in `scripts/` that wraps `gpu-screen-
 ```toml
 [widget.screen_recorder]
 type             = "scripted"
-script           = "~/.config/noctalia/scripts/screen_recorder.lua"
+script           = "scripts/screen_recorder.lua"
 directory        = ""
 filename_pattern = "recording_%Y%m%d_%H%M%S"
 video_source     = "portal"
