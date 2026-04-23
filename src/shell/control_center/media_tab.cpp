@@ -88,8 +88,8 @@ std::unique_ptr<Flex> MediaTab::create() {
   auto nowLabel = std::make_unique<Label>();
   nowLabel->setText("Now Playing");
   nowLabel->setBold(true);
-  nowLabel->setFontSize(Style::fontSizeBody * scale);
-  nowLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  nowLabel->setFontSize(Style::fontSizeTitle * scale);
+  nowLabel->setColor(roleColor(ColorRole::OnSurface));
   nowLabel->setFlexGrow(1.0f);
   nowHeader->addChild(std::move(nowLabel));
 
@@ -315,8 +315,8 @@ std::unique_ptr<Flex> MediaTab::create() {
   auto visualizerLabel = std::make_unique<Label>();
   visualizerLabel->setText("Spectrum");
   visualizerLabel->setBold(true);
-  visualizerLabel->setFontSize(Style::fontSizeBody * scale);
-  visualizerLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  visualizerLabel->setFontSize(Style::fontSizeTitle * scale);
+  visualizerLabel->setColor(roleColor(ColorRole::OnSurface));
   visualizerColumn->addChild(std::move(visualizerLabel));
 
   auto visualizerBody = std::make_unique<Flex>();
