@@ -9,7 +9,7 @@
 #include "shell/panel/panel_manager.h"
 #include "system/distro_info.h"
 #include "system/weather_service.h"
-#include "time/time_service.h"
+#include "time/time_format.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"

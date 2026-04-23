@@ -2,7 +2,7 @@
 
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
-#include "time/time_service.h"
+#include "time/time_format.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"

@@ -5,7 +5,7 @@
 #include "system/distro_info.h"
 #include "system/hardware_info.h"
 #include "system/system_monitor_service.h"
-#include "time/time_service.h"
+#include "time/time_format.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"

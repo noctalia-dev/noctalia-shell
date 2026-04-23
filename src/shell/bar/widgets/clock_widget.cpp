@@ -4,7 +4,7 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "shell/panel/panel_manager.h"
-#include "time/time_service.h"
+#include "time/time_format.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"

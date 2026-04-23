@@ -4,7 +4,7 @@
 #include "render/core/renderer.h"
 #include "shell/control_center/tab.h"
 #include "shell/panel/panel_manager.h"
-#include "time/time_service.h"
+#include "time/time_format.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/grid_tile.h"
@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <ctime>
@@ -44,13 +45,9 @@ namespace {
   }
 
   int daysInMonth(int yearValue, int monthValue) {
-    static constexpr std::array<int, 12> kDays = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-    int result = kDays[static_cast<std::size_t>(monthValue)];
-    if (monthValue == 1) {
-      const bool leap = ((yearValue % 4 == 0 && yearValue % 100 != 0) || (yearValue % 400 == 0));
-      result = leap ? 29 : 28;
-    }
-    return result;
+    const auto lastDay =
+        std::chrono::year{yearValue} / std::chrono::month{static_cast<unsigned>(monthValue + 1)} / std::chrono::last;
+    return static_cast<int>(static_cast<unsigned>(lastDay.day()));
   }
 
   struct CalendarBuildState {
