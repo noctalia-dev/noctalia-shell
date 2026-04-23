@@ -4,6 +4,7 @@
 #include "ipc/ipc_service.h"
 #include "notification/notification_manager.h"
 #include "render/core/color.h"
+#include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
@@ -120,27 +121,8 @@ namespace {
     return std::nullopt;
   }
 
-  std::string trim(std::string_view input) {
-    std::size_t start = 0;
-    while (start < input.size() && std::isspace(static_cast<unsigned char>(input[start])) != 0) {
-      ++start;
-    }
-    std::size_t end = input.size();
-    while (end > start && std::isspace(static_cast<unsigned char>(input[end - 1])) != 0) {
-      --end;
-    }
-    return std::string(input.substr(start, end - start));
-  }
-
-  std::string toLower(std::string_view input) {
-    std::string out(input);
-    std::transform(out.begin(), out.end(), out.begin(),
-                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
-    return out;
-  }
-
   std::optional<BrightnessBackendPreference> parseBrightnessBackendPreference(std::string_view raw) {
-    const std::string value = toLower(trim(raw));
+    const std::string value = StringUtils::toLower(StringUtils::trim(raw));
     if (value.empty() || value == "auto") {
       return BrightnessBackendPreference::Auto;
     }
@@ -157,7 +139,7 @@ namespace {
   }
 
   std::optional<KeyChord> parseKeyChord(std::string_view rawSpec) {
-    const std::string spec = trim(rawSpec);
+    const std::string spec = StringUtils::trim(rawSpec);
     if (spec.empty()) {
       return std::nullopt;
     }
@@ -167,7 +149,7 @@ namespace {
     while (start <= spec.size()) {
       const std::size_t plus = spec.find('+', start);
       const std::size_t len = (plus == std::string::npos) ? (spec.size() - start) : (plus - start);
-      const std::string token = trim(std::string_view(spec).substr(start, len));
+      const std::string token = StringUtils::trim(std::string_view(spec).substr(start, len));
       if (token.empty()) {
         return std::nullopt;
       }
@@ -184,7 +166,7 @@ namespace {
 
     std::uint32_t modifiers = 0;
     for (std::size_t i = 0; i + 1 < tokens.size(); ++i) {
-      const std::string mod = toLower(tokens[i]);
+      const std::string mod = StringUtils::toLower(tokens[i]);
       if (mod == "ctrl" || mod == "control" || mod == "ctl") {
         modifiers |= KeyMod::Ctrl;
       } else if (mod == "shift") {
@@ -198,7 +180,7 @@ namespace {
       }
     }
 
-    std::string keyName = toLower(tokens.back());
+    std::string keyName = StringUtils::toLower(tokens.back());
     if (keyName == "esc") {
       keyName = "Escape";
     } else if (keyName == "enter") {
@@ -550,17 +532,8 @@ namespace {
 
   constexpr Logger kCapsuleLog("config");
 
-  void trimAsciiInPlace(std::string& s) {
-    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front())) != 0) {
-      s.erase(s.begin());
-    }
-    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back())) != 0) {
-      s.pop_back();
-    }
-  }
-
   std::optional<ColorRole> colorRoleFromToken(std::string token) {
-    trimAsciiInPlace(token);
+    token = StringUtils::trim(token);
     for (auto& c : token) {
       if (c == '-') {
         c = '_';
@@ -623,8 +596,7 @@ namespace {
   }
 
   ThemeColor themeColorFromCapsuleString(const std::string& raw) {
-    std::string trimmed = raw;
-    trimAsciiInPlace(trimmed);
+    std::string trimmed = StringUtils::trim(raw);
     if (!trimmed.empty() && trimmed.front() == '#') {
       try {
         const Color c = hex(trimmed);
@@ -642,8 +614,7 @@ namespace {
   }
 
   std::optional<ThemeColor> optionalCapsuleBorder(const std::string& raw) {
-    std::string t = raw;
-    trimAsciiInPlace(t);
+    std::string t = StringUtils::trim(raw);
     if (t.empty()) {
       return std::nullopt;
     }
@@ -1259,7 +1230,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
       shell.uiScale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
     }
     if (auto v = (*shellTbl)["font_family"].value<std::string>()) {
-      shell.fontFamily = trim(*v);
+      shell.fontFamily = StringUtils::trim(*v);
       if (shell.fontFamily.empty()) {
         shell.fontFamily = "sans-serif";
       }
@@ -1271,7 +1242,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
       shell.polkitAgent = *polkitAgent;
     }
     const auto parsePasswordMaskStyle = [](std::string_view raw) -> std::optional<PasswordMaskStyle> {
-      const std::string style = toLower(trim(raw));
+      const std::string style = StringUtils::toLower(StringUtils::trim(raw));
       if (style == "default" || style == "circle_filled" || style == "circle-filled" || style == "circle") {
         return PasswordMaskStyle::CircleFilled;
       }

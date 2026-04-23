@@ -2,8 +2,8 @@
 
 #include "core/log.h"
 #include "dbus/session_bus.h"
+#include "util/string_utils.h"
 
-#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <string_view>
@@ -25,12 +25,6 @@ namespace {
 
   bool looks_like_dbus_name(std::string_view value) { return !value.empty() && value != "__path_only__"; }
 
-  std::string lower_copy(std::string_view value) {
-    std::string out(value);
-    std::ranges::transform(out, out.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return out;
-  }
-
   std::vector<std::string> path_name_hints(std::string_view objectPath) {
     std::vector<std::string> hints;
     if (objectPath.empty()) {
@@ -41,7 +35,7 @@ namespace {
       if (value.empty()) {
         return;
       }
-      value = lower_copy(value);
+      value = StringUtils::toLower(value);
       if (std::ranges::find(hints, value) == hints.end()) {
         hints.push_back(std::move(value));
       }
@@ -803,7 +797,7 @@ bool TrayService::ensureItemProxy(const std::string& itemId) {
 
   for (const auto& hint : hints) {
     for (const auto& candidate : names) {
-      if (lower_copy(candidate).find(hint) != std::string::npos && tryCandidate(candidate)) {
+      if (StringUtils::toLower(candidate).find(hint) != std::string::npos && tryCandidate(candidate)) {
         return true;
       }
     }

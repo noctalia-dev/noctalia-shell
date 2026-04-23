@@ -1,6 +1,7 @@
 #include "compositors/niri/niri_workspace_monitor.h"
 
 #include "core/log.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <array>
@@ -19,17 +20,6 @@ namespace {
   constexpr Logger kLog("niri_workspace");
   constexpr auto kReconnectDelay = std::chrono::seconds(2);
   constexpr std::string_view kEventStreamRequest = "\"EventStream\"\n";
-
-  [[nodiscard]] bool containsToken(std::string_view haystack, std::string_view needle) {
-    if (haystack.empty() || needle.empty()) {
-      return false;
-    }
-    std::string lhs(haystack);
-    std::string rhs(needle);
-    std::ranges::transform(lhs, lhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    std::ranges::transform(rhs, rhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return lhs.find(rhs) != std::string::npos;
-  }
 
   [[nodiscard]] std::optional<std::uint64_t> jsonUnsigned(const nlohmann::json& json) {
     if (json.is_number_unsigned()) {
@@ -115,7 +105,7 @@ NiriWorkspaceMonitor::NiriWorkspaceMonitor(std::string_view compositorHint) {
     m_socketPath = std::string(socketPath);
   }
 
-  m_enabled = containsToken(compositorHint, "niri") || m_socketPath.has_value();
+  m_enabled = StringUtils::containsInsensitive(compositorHint, "niri") || m_socketPath.has_value();
   if (m_enabled) {
     connectIfNeeded();
   }

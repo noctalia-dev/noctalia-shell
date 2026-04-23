@@ -1,9 +1,8 @@
 #include "compositors/niri/niri_keyboard_backend.h"
 
 #include "core/process.h"
+#include "util/string_utils.h"
 
-#include <algorithm>
-#include <cctype>
 #include <cstdlib>
 #include <cstring>
 #include <json.hpp>
@@ -12,17 +11,6 @@
 #include <unistd.h>
 
 namespace {
-
-  [[nodiscard]] bool containsToken(std::string_view haystack, std::string_view needle) {
-    if (haystack.empty() || needle.empty()) {
-      return false;
-    }
-    std::string lhs(haystack);
-    std::string rhs(needle);
-    std::ranges::transform(lhs, lhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    std::ranges::transform(rhs, rhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return lhs.find(rhs) != std::string::npos;
-  }
 
   [[nodiscard]] std::optional<nlohmann::json> makeRequest(const std::string& socketPath, std::string_view request) {
     if (socketPath.empty()) {
@@ -124,7 +112,7 @@ namespace {
 } // namespace
 
 NiriKeyboardBackend::NiriKeyboardBackend(std::string_view compositorHint) {
-  const bool hinted = containsToken(compositorHint, "niri");
+  const bool hinted = StringUtils::containsInsensitive(compositorHint, "niri");
   const char* niriSocket = std::getenv("NIRI_SOCKET");
   m_enabled = hinted || (niriSocket != nullptr && niriSocket[0] != '\0');
 }

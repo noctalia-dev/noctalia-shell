@@ -12,17 +12,9 @@
 
 #include "render/core/image_decoder.h"
 
-#include <algorithm>
 #include <fstream>
 
 namespace {
-
-  bool endsWith(const std::string& str, const std::string& suffix) {
-    if (suffix.size() > str.size()) {
-      return false;
-    }
-    return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
-  }
 
   std::vector<std::uint8_t> readFile(const std::string& path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
@@ -63,7 +55,7 @@ std::optional<LoadedImageFile> loadImageFile(const std::string& path, int target
     return std::nullopt;
   }
 
-  if (endsWith(path, ".svg") || endsWith(path, ".SVG")) {
+  if (path.ends_with(".svg") || path.ends_with(".SVG")) {
     // nsvgParse needs a null-terminated mutable string.
     fileData.push_back(0);
     auto* image = nsvgParse(reinterpret_cast<char*>(fileData.data()), "px", 96.0f);

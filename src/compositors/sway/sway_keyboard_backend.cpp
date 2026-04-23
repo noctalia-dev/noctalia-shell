@@ -1,9 +1,8 @@
 #include "compositors/sway/sway_keyboard_backend.h"
 
 #include "core/process.h"
+#include "util/string_utils.h"
 
-#include <algorithm>
-#include <cctype>
 #include <cstdlib>
 #include <json.hpp>
 #include <sys/wait.h>
@@ -11,17 +10,6 @@
 #include <vector>
 
 namespace {
-
-  [[nodiscard]] bool containsToken(std::string_view haystack, std::string_view needle) {
-    if (haystack.empty() || needle.empty()) {
-      return false;
-    }
-    std::string lhs(haystack);
-    std::string rhs(needle);
-    std::ranges::transform(lhs, lhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    std::ranges::transform(rhs, rhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return lhs.find(rhs) != std::string::npos;
-  }
 
   [[nodiscard]] std::optional<std::string> runAndCapture(const std::vector<std::string>& args) {
     if (args.empty() || args.front().empty()) {
@@ -75,7 +63,7 @@ namespace {
 } // namespace
 
 SwayKeyboardBackend::SwayKeyboardBackend(std::string_view compositorHint) {
-  const bool hinted = containsToken(compositorHint, "sway");
+  const bool hinted = StringUtils::containsInsensitive(compositorHint, "sway");
   const char* swaySock = std::getenv("SWAYSOCK");
   m_enabled = hinted || (swaySock != nullptr && swaySock[0] != '\0');
   m_msgCommand = process::commandExists("swaymsg") ? "swaymsg" : "i3-msg";

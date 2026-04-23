@@ -1,25 +1,14 @@
 #include "launcher/emoji_provider.h"
 
 #include "core/resource_paths.h"
+#include "util/string_utils.h"
 #include "wayland/clipboard_service.h"
 
-#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <json.hpp>
 #include <sstream>
 #include <string_view>
-
-namespace {
-
-  std::string toLower(std::string_view s) {
-    std::string result(s);
-    std::transform(result.begin(), result.end(), result.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return result;
-  }
-
-} // namespace
 
 void EmojiProvider::initialize() {
   const std::filesystem::path path = paths::assetPath("emoji.json");
@@ -39,13 +28,13 @@ void EmojiProvider::initialize() {
       EmojiEntry entry;
       entry.emoji = item.value("emoji", "");
       entry.name = item.value("name", "");
-      entry.nameLower = toLower(entry.name);
+      entry.nameLower = StringUtils::toLower(entry.name);
       entry.category = item.value("category", "");
 
       if (item.contains("keywords") && item["keywords"].is_array()) {
         for (const auto& kw : item["keywords"]) {
           if (kw.is_string()) {
-            entry.keywords.push_back(toLower(kw.get<std::string>()));
+            entry.keywords.push_back(StringUtils::toLower(kw.get<std::string>()));
           }
         }
       }
@@ -60,7 +49,7 @@ void EmojiProvider::initialize() {
 }
 
 std::vector<LauncherResult> EmojiProvider::query(std::string_view text) const {
-  std::string query = toLower(text);
+  std::string query = StringUtils::toLower(text);
   if (query.empty()) {
     // Show first batch when no query
     std::vector<LauncherResult> results;

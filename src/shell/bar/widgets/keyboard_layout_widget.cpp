@@ -8,10 +8,9 @@
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
 
-#include <algorithm>
-#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <memory>
@@ -27,15 +26,6 @@ namespace {
   constexpr auto kIdleProbeInterval = std::chrono::milliseconds(350);
   constexpr std::string_view kUnknownLabel = "--";
   constexpr std::string_view kVerticalStableLabel = "WWW";
-
-  std::string toLowerAscii(std::string_view text) {
-    std::string out;
-    out.reserve(text.size());
-    for (unsigned char ch : text) {
-      out.push_back(static_cast<char>(std::tolower(ch)));
-    }
-    return out;
-  }
 
   bool isAsciiAlpha(char ch) { return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'); }
 
@@ -255,7 +245,7 @@ namespace {
       return std::string(kUnknownLabel);
     }
 
-    const std::string lower = toLowerAscii(layoutName);
+    const std::string lower = StringUtils::toLower(layoutName);
 
     std::string code;
     if (extractLeadingCode(lower, code)) {

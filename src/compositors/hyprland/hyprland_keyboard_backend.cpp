@@ -1,9 +1,8 @@
 #include "compositors/hyprland/hyprland_keyboard_backend.h"
 
 #include "core/process.h"
+#include "util/string_utils.h"
 
-#include <algorithm>
-#include <cctype>
 #include <cstdlib>
 #include <json.hpp>
 #include <sys/wait.h>
@@ -11,17 +10,6 @@
 #include <vector>
 
 namespace {
-
-  [[nodiscard]] bool containsToken(std::string_view haystack, std::string_view needle) {
-    if (haystack.empty() || needle.empty()) {
-      return false;
-    }
-    std::string lhs(haystack);
-    std::string rhs(needle);
-    std::ranges::transform(lhs, lhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    std::ranges::transform(rhs, rhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return lhs.find(rhs) != std::string::npos;
-  }
 
   [[nodiscard]] std::optional<std::string> runAndCapture(const std::vector<std::string>& args) {
     if (args.empty() || args.front().empty()) {
@@ -75,7 +63,8 @@ namespace {
 } // namespace
 
 HyprlandKeyboardBackend::HyprlandKeyboardBackend(std::string_view compositorHint) {
-  const bool hinted = containsToken(compositorHint, "hyprland") || containsToken(compositorHint, "hypr");
+  const bool hinted = StringUtils::containsInsensitive(compositorHint, "hyprland") ||
+                      StringUtils::containsInsensitive(compositorHint, "hypr");
   const char* signature = std::getenv("HYPRLAND_INSTANCE_SIGNATURE");
   m_enabled = hinted || (signature != nullptr && signature[0] != '\0');
 }

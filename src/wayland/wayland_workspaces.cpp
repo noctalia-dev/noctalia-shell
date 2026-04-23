@@ -6,25 +6,13 @@
 #include "compositors/output_backend.h"
 #include "compositors/sway/sway_workspace_backend.h"
 #include "core/log.h"
+#include "util/string_utils.h"
 
-#include <algorithm>
-#include <cctype>
 #include <string>
 
 namespace {
 
   constexpr Logger kLog("workspace");
-
-  [[nodiscard]] bool containsToken(std::string_view haystack, std::string_view needle) {
-    if (haystack.empty() || needle.empty()) {
-      return false;
-    }
-    std::string lhs(haystack);
-    std::string rhs(needle);
-    std::ranges::transform(lhs, lhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    std::ranges::transform(rhs, rhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return lhs.find(rhs) != std::string::npos;
-  }
 
 } // namespace
 
@@ -63,19 +51,20 @@ void WaylandWorkspaces::setHyprlandOutputNameResolver(std::function<std::string(
 }
 
 void WaylandWorkspaces::initialize(std::string_view compositorHint) {
-  if (containsToken(compositorHint, "hyprland") || containsToken(compositorHint, "hypr")) {
+  if (StringUtils::containsInsensitive(compositorHint, "hyprland") ||
+      StringUtils::containsInsensitive(compositorHint, "hypr")) {
     if (m_hyprlandBackend != nullptr && (m_hyprlandBackend->isAvailable() || m_hyprlandBackend->connectSocket())) {
       setActiveBackend(m_hyprlandBackend.get());
       return;
     }
   }
-  if (containsToken(compositorHint, "mango")) {
+  if (StringUtils::containsInsensitive(compositorHint, "mango")) {
     if (m_mangoBackend != nullptr && m_mangoBackend->isAvailable()) {
       setActiveBackend(m_mangoBackend.get());
       return;
     }
   }
-  if (containsToken(compositorHint, "sway")) {
+  if (StringUtils::containsInsensitive(compositorHint, "sway")) {
     if (m_swayBackend != nullptr && (m_swayBackend->isAvailable() || m_swayBackend->connectSocket())) {
       setActiveBackend(m_swayBackend.get());
       return;

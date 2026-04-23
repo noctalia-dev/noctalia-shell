@@ -17,10 +17,9 @@
 #include "ui/controls/toggle.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
 
-#include <algorithm>
-#include <cctype>
 #include <chrono>
 #include <memory>
 #include <utility>
@@ -30,15 +29,6 @@ namespace {
 
   constexpr Logger kLog("wp-panel");
   constexpr auto kFilterDebounceInterval = std::chrono::milliseconds(120);
-
-  std::string toLower(std::string_view text) {
-    std::string out;
-    out.reserve(text.size());
-    for (char ch : text) {
-      out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
-    }
-    return out;
-  }
 
 } // namespace
 
@@ -546,10 +536,10 @@ void WallpaperPanel::applyFilter() {
     return;
   }
 
-  const std::string needle = toLower(m_filterQuery);
+  const std::string needle = StringUtils::toLower(m_filterQuery);
   m_visibleEntries.reserve(result.entries.size());
   for (const auto& e : result.entries) {
-    if (toLower(e.name).find(needle) != std::string::npos) {
+    if (StringUtils::toLower(e.name).find(needle) != std::string::npos) {
       m_visibleEntries.push_back(e);
     }
   }

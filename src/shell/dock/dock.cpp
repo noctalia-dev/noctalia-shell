@@ -20,6 +20,7 @@
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/string_utils.h"
 #include "wayland/layer_surface.h"
 #include "wayland/popup_surface.h"
 #include "wayland/surface.h"
@@ -27,8 +28,6 @@
 #include "wayland/wayland_toplevels.h"
 #include "xdg-shell-client-protocol.h"
 
-#include <algorithm>
-#include <cctype>
 #include <format>
 #include <wayland-client-core.h>
 
@@ -66,16 +65,9 @@ namespace {
     return {-(contentRight + k), 0.0f};
   }
 
-  std::string toLower(std::string s) {
-    for (auto& c : s) {
-      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    }
-    return s;
-  }
-
   std::string currentActiveAppIdLower(const WaylandConnection& wayland) {
     if (const auto active = wayland.activeToplevel(); active.has_value()) {
-      return toLower(active->appId);
+      return StringUtils::toLower(active->appId);
     }
     return {};
   }
@@ -87,7 +79,7 @@ namespace {
     fallback.nameLower = runningAppIdLower;
     if (const auto internal = internal_apps::metadataForAppId(runningAppId); internal.has_value()) {
       fallback.name = internal->displayName;
-      fallback.nameLower = toLower(fallback.name);
+      fallback.nameLower = StringUtils::toLower(fallback.name);
       fallback.icon = internal->iconPath;
     }
 
@@ -240,7 +232,7 @@ void Dock::refresh() {
     std::vector<std::string> runningLower;
     runningLower.reserve(runningIds.size());
     for (const auto& id : runningIds) {
-      runningLower.push_back(toLower(id));
+      runningLower.push_back(StringUtils::toLower(id));
     }
 
     // Rebuild if model changed or this instance's filter output changed.
@@ -252,10 +244,11 @@ void Dock::refresh() {
         std::vector<DesktopEntry> entries = m_pinnedEntries;
         const auto& allEntries = desktopEntries();
         for (const auto& runId : runningIds) {
-          const auto runLower = toLower(runId);
+          const auto runLower = StringUtils::toLower(runId);
           bool present = false;
           for (const auto& e : entries) {
-            if (toLower(e.id) == runLower || toLower(e.startupWmClass) == runLower || e.nameLower == runLower) {
+            if (StringUtils::toLower(e.id) == runLower || StringUtils::toLower(e.startupWmClass) == runLower ||
+                e.nameLower == runLower) {
               present = true;
               break;
             }
@@ -265,7 +258,8 @@ void Dock::refresh() {
             for (const auto& de : allEntries) {
               if (de.hidden || de.noDisplay)
                 continue;
-              if (toLower(de.startupWmClass) == runLower || de.nameLower == runLower || toLower(de.id) == runLower) {
+              if (StringUtils::toLower(de.startupWmClass) == runLower || de.nameLower == runLower ||
+                  StringUtils::toLower(de.id) == runLower) {
                 entries.push_back(de);
                 added = true;
                 break;
@@ -511,7 +505,7 @@ bool Dock::refreshPinnedAppsIfNeeded() {
   const auto& entries = desktopEntries();
 
   for (const auto& pinnedId : m_config->config().dock.pinned) {
-    const auto pinnedLower = toLower(pinnedId);
+    const auto pinnedLower = StringUtils::toLower(pinnedId);
     bool found = false;
 
     for (const auto& entry : entries) {
@@ -520,7 +514,7 @@ bool Dock::refreshPinnedAppsIfNeeded() {
       }
       // Match by entry ID (stem of the desktop file path, e.g. "firefox"),
       // by StartupWMClass (lower), or by Name (lower).
-      const auto stemLower = toLower([&] {
+      const auto stemLower = StringUtils::toLower([&] {
         // Extract stem: "org.mozilla.firefox.desktop" → "firefox" (last component, no ext)
         const auto slash = entry.id.rfind('/');
         const auto base = (slash == std::string::npos) ? entry.id : entry.id.substr(slash + 1);
@@ -528,8 +522,8 @@ bool Dock::refreshPinnedAppsIfNeeded() {
         return (dot == std::string::npos) ? base : base.substr(0, dot);
       }());
 
-      if (stemLower == pinnedLower || toLower(entry.startupWmClass) == pinnedLower || entry.nameLower == pinnedLower ||
-          entry.id == pinnedId) {
+      if (stemLower == pinnedLower || StringUtils::toLower(entry.startupWmClass) == pinnedLower ||
+          entry.nameLower == pinnedLower || entry.id == pinnedId) {
         m_pinnedEntries.push_back(entry);
         found = true;
         break;
@@ -971,12 +965,13 @@ void Dock::rebuildItems(DockInstance& instance) {
     const auto& allEntries = desktopEntries();
 
     for (const auto& runId : runningIds) {
-      const auto runLower = toLower(runId);
+      const auto runLower = StringUtils::toLower(runId);
 
       // Skip if already in itemEntries (covers pinned entries).
       bool alreadyPresent = false;
       for (const auto& itm : itemEntries) {
-        if (toLower(itm.id) == runLower || toLower(itm.startupWmClass) == runLower || itm.nameLower == runLower) {
+        if (StringUtils::toLower(itm.id) == runLower || StringUtils::toLower(itm.startupWmClass) == runLower ||
+            itm.nameLower == runLower) {
           alreadyPresent = true;
           break;
         }
@@ -989,7 +984,8 @@ void Dock::rebuildItems(DockInstance& instance) {
       for (const auto& de : allEntries) {
         if (de.hidden || de.noDisplay)
           continue;
-        if (toLower(de.startupWmClass) == runLower || de.nameLower == runLower || toLower(de.id) == runLower) {
+        if (StringUtils::toLower(de.startupWmClass) == runLower || de.nameLower == runLower ||
+            StringUtils::toLower(de.id) == runLower) {
           itemEntries.push_back(de);
           foundDesktopEntry = true;
           break;
@@ -1005,7 +1001,7 @@ void Dock::rebuildItems(DockInstance& instance) {
   const auto runningIds = m_wayland->runningAppIds(filterOutput);
   std::vector<std::string> runningLower;
   for (const auto& id : runningIds)
-    runningLower.push_back(toLower(id));
+    runningLower.push_back(StringUtils::toLower(id));
 
   // Reserve up-front so emplace_back never reallocates while lambdas hold raw pointers.
   instance.items.reserve(itemEntries.size());
@@ -1013,8 +1009,8 @@ void Dock::rebuildItems(DockInstance& instance) {
   for (const auto& entry : itemEntries) {
     auto& item = instance.items.emplace_back();
     item.entry = entry;
-    item.idLower = toLower(entry.id);
-    item.startupWmClassLower = toLower(entry.startupWmClass);
+    item.idLower = StringUtils::toLower(entry.id);
+    item.startupWmClassLower = StringUtils::toLower(entry.startupWmClass);
     item.active = matchesActiveApp(item, activeIdLower);
     item.running = matchesRunningApp(item, runningLower);
 

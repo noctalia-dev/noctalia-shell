@@ -10,8 +10,8 @@
 #include "cpp/scheme/scheme_rainbow.h"
 #include "cpp/scheme/scheme_tonal_spot.h"
 #include "theme/color.h"
+#include "util/string_utils.h"
 
-#include <algorithm>
 #include <array>
 #include <cctype>
 #include <cmath>
@@ -191,25 +191,6 @@ namespace noctalia::theme {
       return std::sqrt(dl * dl + da * da + db * db);
     }
 
-    std::string trim(std::string_view s) {
-      size_t start = 0;
-      while (start < s.size() && std::isspace(static_cast<unsigned char>(s[start])))
-        ++start;
-      size_t end = s.size();
-      while (end > start && std::isspace(static_cast<unsigned char>(s[end - 1])))
-        --end;
-      return std::string(s.substr(start, end - start));
-    }
-
-    bool startsWith(std::string_view s, std::string_view prefix) {
-      return s.size() >= prefix.size() && s.substr(0, prefix.size()) == prefix;
-    }
-
-    std::string toLower(std::string s) {
-      std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-      return s;
-    }
-
     std::string scopeValueToString(const ScopeValue& value);
 
     bool isTruthy(const ScopeValue& value) {
@@ -220,7 +201,7 @@ namespace noctalia::theme {
       if (const auto* n = std::get_if<double>(&value.value))
         return *n != 0.0;
       if (const auto* s = std::get_if<std::string>(&value.value)) {
-        const std::string lowered = toLower(trim(*s));
+        const std::string lowered = StringUtils::toLower(StringUtils::trim(*s));
         return !(lowered.empty() || lowered == "false" || lowered == "0" || lowered == "none");
       }
       if (const auto* arr = std::get_if<ScopeArray>(&value.value))
@@ -338,14 +319,14 @@ namespace noctalia::theme {
     }
 
     std::pair<std::string, std::optional<std::string>> parseFilter(std::string filterStr) {
-      filterStr = trim(filterStr);
+      filterStr = StringUtils::trim(filterStr);
       std::smatch match;
       if (std::regex_match(filterStr, match, std::regex(R"(^([a-z_]+)\s*:\s*(.+)$)")))
-        return {match[1].str(), trim(match[2].str())};
+        return {match[1].str(), StringUtils::trim(match[2].str())};
       const size_t space = filterStr.find_first_of(" \t");
       if (space == std::string::npos)
         return {filterStr, std::nullopt};
-      return {trim(filterStr.substr(0, space)), trim(filterStr.substr(space + 1))};
+      return {StringUtils::trim(filterStr.substr(0, space)), StringUtils::trim(filterStr.substr(space + 1))};
     }
 
     double parseNumber(const std::optional<std::string>& arg, double fallback = 0.0) {
@@ -397,9 +378,9 @@ namespace noctalia::theme {
       auto words = splitWords(value);
       if (words.empty())
         return value;
-      std::string out = toLower(words.front());
+      std::string out = StringUtils::toLower(words.front());
       for (size_t i = 1; i < words.size(); ++i) {
-        std::string word = toLower(words[i]);
+        std::string word = StringUtils::toLower(words[i]);
         if (!word.empty())
           word[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(word[0])));
         out += word;
@@ -413,7 +394,7 @@ namespace noctalia::theme {
         return value;
       std::string out;
       for (auto& word : words) {
-        word = toLower(word);
+        word = StringUtils::toLower(word);
         if (!word.empty())
           word[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(word[0])));
         out += word;
@@ -427,7 +408,7 @@ namespace noctalia::theme {
       for (size_t i = 0; i < words.size(); ++i) {
         if (i)
           out += sep;
-        out += toLower(words[i]);
+        out += StringUtils::toLower(words[i]);
       }
       return out;
     }
@@ -480,7 +461,8 @@ namespace noctalia::theme {
         diff += 360.0;
       double newHue = srcHue;
       if (name == "blend") {
-        const double amount = std::clamp(match[2].matched ? std::stod(trim(match[2].str())) : 0.0, 0.0, 1.0);
+        const double amount =
+            std::clamp(match[2].matched ? std::stod(StringUtils::trim(match[2].str())) : 0.0, 0.0, 1.0);
         newHue = std::fmod(srcHue + diff * amount + 360.0, 360.0);
       } else if (name == "harmonize") {
         double rotation = std::min(std::fabs(diff) * 0.5, 15.0);
@@ -605,7 +587,7 @@ namespace noctalia::theme {
           lineStart = (lineStart == std::string::npos) ? 0 : (lineStart + 1);
           size_t adjustedStart = start;
           size_t adjustedEnd = end;
-          if (trim(std::string_view(input).substr(lineStart, start - lineStart)).empty()) {
+          if (StringUtils::trim(std::string_view(input).substr(lineStart, start - lineStart)).empty()) {
             size_t afterEnd = end;
             while (afterEnd < input.size() && (input[afterEnd] == ' ' || input[afterEnd] == '\t'))
               ++afterEnd;
@@ -616,7 +598,7 @@ namespace noctalia::theme {
           }
           if (adjustedStart > lastEnd)
             tokens.emplace_back(input.substr(lastEnd, adjustedStart - lastEnd));
-          tokens.emplace_back(std::make_pair(std::string("block"), trim((*it)[1].str())));
+          tokens.emplace_back(std::make_pair(std::string("block"), StringUtils::trim((*it)[1].str())));
           lastEnd = adjustedEnd;
         }
         if (lastEnd < input.size())
@@ -637,16 +619,16 @@ namespace noctalia::theme {
           const auto& cmd = std::get<std::pair<std::string, std::string>>(tokens[pos]).second;
           bool shouldStop = false;
           for (const auto& kw : stopKeywords) {
-            if (startsWith(cmd, kw)) {
+            if (cmd.starts_with(kw)) {
               shouldStop = true;
               break;
             }
           }
           if (shouldStop)
             return nodes;
-          if (startsWith(cmd, "for ")) {
+          if (cmd.starts_with("for ")) {
             nodes.push_back(parseFor(tokens, pos));
-          } else if (startsWith(cmd, "if ")) {
+          } else if (cmd.starts_with("if ")) {
             nodes.push_back(parseIf(tokens, pos));
           } else {
             ++pos;
@@ -667,8 +649,8 @@ namespace noctalia::theme {
         std::stringstream vars(match[1].str());
         std::string item;
         while (std::getline(vars, item, ','))
-          variables.push_back(trim(item));
-        const std::string iterable = trim(match[2].str());
+          variables.push_back(StringUtils::trim(item));
+        const std::string iterable = StringUtils::trim(match[2].str());
         auto body = parseNodes(tokens, pos, {"endfor"});
         if (pos < tokens.size())
           ++pos;
@@ -679,20 +661,20 @@ namespace noctalia::theme {
         const auto& cmd = std::get<std::pair<std::string, std::string>>(tokens[pos]).second;
         ++pos;
         bool negated = false;
-        std::string conditionPart = trim(cmd.substr(3));
-        if (startsWith(conditionPart, "not ")) {
+        std::string conditionPart = StringUtils::trim(cmd.substr(3));
+        if (conditionPart.starts_with("not ")) {
           negated = true;
-          conditionPart = trim(conditionPart.substr(4));
+          conditionPart = StringUtils::trim(conditionPart.substr(4));
         }
         std::smatch match;
         std::string conditionExpr = conditionPart;
         if (std::regex_match(conditionPart, match, std::regex(R"(^\{\{(.+?)\}\}$)")))
-          conditionExpr = trim(match[1].str());
+          conditionExpr = StringUtils::trim(match[1].str());
         auto thenBody = parseNodes(tokens, pos, {"else", "endif"});
         std::vector<Node> elseBody;
         if (pos < tokens.size()) {
           const auto& stopCmd = std::get<std::pair<std::string, std::string>>(tokens[pos]).second;
-          if (trim(stopCmd) == "else") {
+          if (StringUtils::trim(stopCmd) == "else") {
             ++pos;
             elseBody = parseNodes(tokens, pos, {"endif"});
           }
@@ -794,10 +776,10 @@ namespace noctalia::theme {
         auto parts = splitPipes(expr);
         if (parts.empty())
           return {};
-        const std::string base = trim(parts.front());
+        const std::string base = StringUtils::trim(parts.front());
         std::vector<std::string> filters;
         for (size_t i = 1; i < parts.size(); ++i)
-          filters.push_back(trim(parts[i]));
+          filters.push_back(StringUtils::trim(parts[i]));
 
         ScopeValue resolved;
         if (base == "mode") {
@@ -813,7 +795,7 @@ namespace noctalia::theme {
         } else if (auto fromScope = resolveFromScope(base, scope);
                    !std::holds_alternative<std::monostate>(fromScope.value)) {
           resolved = std::move(fromScope);
-        } else if (startsWith(base, "colors.")) {
+        } else if (base.starts_with("colors.")) {
           resolved = ScopeValue(processColorExpression(base, filters));
           return resolved;
         } else {
@@ -825,7 +807,7 @@ namespace noctalia::theme {
           if (name == "replace") {
             resolved = ScopeValue(applyReplace(scopeValueToString(resolved), arg));
           } else if (name == "lower_case") {
-            resolved = ScopeValue(toLower(scopeValueToString(resolved)));
+            resolved = ScopeValue(StringUtils::toLower(scopeValueToString(resolved)));
           } else if (name == "camel_case") {
             resolved = ScopeValue(toCamelCase(scopeValueToString(resolved)));
           } else if (name == "pascal_case") {
@@ -884,7 +866,7 @@ namespace noctalia::theme {
           if (name == "replace")
             return applyReplace(formatColor(color, formatType), arg);
           if (name == "lower_case")
-            return toLower(formatColor(color, formatType));
+            return StringUtils::toLower(formatColor(color, formatType));
           if (name == "camel_case")
             return toCamelCase(formatColor(color, formatType));
           if (name == "pascal_case")
@@ -911,7 +893,7 @@ namespace noctalia::theme {
         for (auto it = std::sregex_iterator(input.begin(), input.end(), kExprRegex); it != std::sregex_iterator();
              ++it) {
           output.append(input, last, static_cast<size_t>(it->position()) - last);
-          const std::string expr = trim((*it)[1].str());
+          const std::string expr = StringUtils::trim((*it)[1].str());
           output += scopeValueToString(resolveExpressionValue(expr, scope));
           last = static_cast<size_t>(it->position() + it->length());
         }
@@ -945,7 +927,7 @@ namespace noctalia::theme {
           }
           return out;
         }
-        if (startsWith(expr, "palettes.")) {
+        if (expr.starts_with("palettes.")) {
           return getPaletteEntries(expr.substr(std::string("palettes.").size()));
         }
         if (const auto* value = scope.get(expr)) {

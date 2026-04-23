@@ -2,27 +2,16 @@
 
 #include "core/process.h"
 #include "dwl-ipc-unstable-v2-client-protocol.h"
+#include "util/string_utils.h"
 #include "wayland-client-core.h"
 #include "wayland-client-protocol.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cstdlib>
 
 namespace {
 
   constexpr auto kSyncTtl = std::chrono::milliseconds(75);
-
-  [[nodiscard]] bool containsToken(std::string_view haystack, std::string_view needle) {
-    if (haystack.empty() || needle.empty()) {
-      return false;
-    }
-    std::string lhs(haystack);
-    std::string rhs(needle);
-    std::ranges::transform(lhs, lhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    std::ranges::transform(rhs, rhs.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return lhs.find(rhs) != std::string::npos;
-  }
 
   void registryGlobal(void* data, wl_registry* /*registry*/, uint32_t name, const char* interfaceName,
                       uint32_t version) {
@@ -104,8 +93,9 @@ namespace {
 
 MangoKeyboardBackend::MangoKeyboardBackend(std::string_view compositorHint) {
   const char* currentDesktop = std::getenv("XDG_CURRENT_DESKTOP");
-  m_enabled = containsToken(compositorHint, "mango") || containsToken(compositorHint, "dwl") ||
-              (currentDesktop != nullptr && containsToken(currentDesktop, "mango"));
+  m_enabled = StringUtils::containsInsensitive(compositorHint, "mango") ||
+              StringUtils::containsInsensitive(compositorHint, "dwl") ||
+              (currentDesktop != nullptr && StringUtils::containsInsensitive(currentDesktop, "mango"));
 }
 
 MangoKeyboardBackend::~MangoKeyboardBackend() { cleanup(); }
