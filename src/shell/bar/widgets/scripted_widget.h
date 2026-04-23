@@ -63,6 +63,7 @@ private:
   std::optional<ColorRole> m_textColorRole;
   std::optional<ColorRole> m_glyphColorRole;
   int m_updateIntervalMs = 250;
+  bool m_dirty = false;
   bool m_isVertical = false;
   bool m_glyphVisible = false;
   bool m_hotReload = false;

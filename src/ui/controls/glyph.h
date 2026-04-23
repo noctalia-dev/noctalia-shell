@@ -14,8 +14,8 @@ class Glyph : public Node {
 public:
   Glyph();
 
-  void setGlyph(std::string_view name);
-  void setCodepoint(char32_t codepoint);
+  bool setGlyph(std::string_view name);
+  bool setCodepoint(char32_t codepoint);
   void setGlyphSize(float size);
   void setColor(const ThemeColor& color);
   // Explicit fixed color.

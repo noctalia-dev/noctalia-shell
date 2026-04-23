@@ -16,12 +16,12 @@ Label::Label() {
   m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
 }
 
-void Label::setText(std::string_view text) {
-  if (m_textNode->text() == text) {
-    return;
-  }
+bool Label::setText(std::string_view text) {
+  if (m_textNode->text() == text)
+    return false;
   m_textNode->setText(std::string(text));
   m_measureCached = false;
+  return true;
 }
 
 void Label::setFontSize(float size) {

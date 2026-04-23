@@ -18,19 +18,21 @@ Glyph::Glyph() {
   m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
 }
 
-void Glyph::setGlyph(std::string_view name) {
+bool Glyph::setGlyph(std::string_view name) {
   char32_t cp = GlyphRegistry::lookup(name);
-  if (cp != 0 && cp != m_glyphNode->codepoint()) {
-    m_glyphNode->setCodepoint(cp);
-    m_measureCached = false;
-  }
+  if (cp == 0 || cp == m_glyphNode->codepoint())
+    return false;
+  m_glyphNode->setCodepoint(cp);
+  m_measureCached = false;
+  return true;
 }
 
-void Glyph::setCodepoint(char32_t codepoint) {
-  if (codepoint != m_glyphNode->codepoint()) {
-    m_glyphNode->setCodepoint(codepoint);
-    m_measureCached = false;
-  }
+bool Glyph::setCodepoint(char32_t codepoint) {
+  if (codepoint == m_glyphNode->codepoint())
+    return false;
+  m_glyphNode->setCodepoint(codepoint);
+  m_measureCached = false;
+  return true;
 }
 
 void Glyph::setGlyphSize(float size) {

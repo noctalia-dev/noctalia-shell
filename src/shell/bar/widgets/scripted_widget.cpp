@@ -163,29 +163,54 @@ void ScriptedWidget::doUpdate(Renderer&) {}
 void ScriptedWidget::luaSetText(std::string_view text) {
   if (!m_label)
     return;
-  m_label->setText(std::string(text));
-  m_label->setVisible(!text.empty());
+  bool changed = m_label->setText(text);
+  bool vis = !text.empty();
+  if (m_label->visible() != vis) {
+    m_label->setVisible(vis);
+    changed = true;
+  }
+  m_dirty |= changed;
 }
 
 void ScriptedWidget::luaSetGlyph(std::string_view name) {
   if (!m_glyph)
     return;
-  m_glyph->setGlyph(name);
-  m_glyph->setVisible(true);
-  m_glyphVisible = true;
+  bool changed = m_glyph->setGlyph(name);
+  if (!m_glyphVisible) {
+    m_glyph->setVisible(true);
+    m_glyphVisible = true;
+    changed = true;
+  }
+  m_dirty |= changed;
 }
 
 void ScriptedWidget::luaSetGlyphCodepoint(char32_t codepoint) {
   if (!m_glyph)
     return;
-  m_glyph->setCodepoint(codepoint);
-  m_glyph->setVisible(true);
-  m_glyphVisible = true;
+  bool changed = m_glyph->setCodepoint(codepoint);
+  if (!m_glyphVisible) {
+    m_glyph->setVisible(true);
+    m_glyphVisible = true;
+    changed = true;
+  }
+  m_dirty |= changed;
 }
 
-void ScriptedWidget::luaSetColor(std::string_view role) { m_textColorRole = parseColorRole(role); }
+void ScriptedWidget::luaSetColor(std::string_view role) {
+  auto parsed = parseColorRole(role);
+  if (parsed != m_textColorRole) {
+    m_textColorRole = parsed;
+    m_dirty = true;
+  }
+}
 
-void ScriptedWidget::luaSetGlyphColor(std::string_view role) { m_glyphColorRole = parseColorRole(role); }
+void ScriptedWidget::luaSetGlyphColor(std::string_view role) {
+  auto parsed = parseColorRole(role);
+  if (parsed != m_glyphColorRole) {
+    m_glyphColorRole = parsed;
+    m_dirty = true;
+  }
+}
 
 void ScriptedWidget::luaSetUpdateInterval(float ms) {
   m_updateIntervalMs = std::max(16, static_cast<int>(ms));
@@ -193,16 +218,20 @@ void ScriptedWidget::luaSetUpdateInterval(float ms) {
 }
 
 void ScriptedWidget::luaSetVisible(bool visible) {
-  if (auto* node = root(); node)
-    node->setVisible(visible);
-  requestRedraw();
+  auto* node = root();
+  if (!node || node->visible() == visible)
+    return;
+  node->setVisible(visible);
+  m_dirty = true;
 }
 
 void ScriptedWidget::startUpdateTimer() {
   m_updateTimer.startRepeating(std::chrono::milliseconds(m_updateIntervalMs), [this] {
+    m_dirty = false;
     if (m_host)
       m_host->callGlobal("update");
-    requestRedraw();
+    if (m_dirty)
+      requestUpdate();
   });
 }
 

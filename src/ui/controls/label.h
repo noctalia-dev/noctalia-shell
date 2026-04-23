@@ -15,7 +15,7 @@ class Label : public Node {
 public:
   Label();
 
-  void setText(std::string_view text);
+  bool setText(std::string_view text);
   void setFontSize(float size);
   void setColor(const ThemeColor& color);
   // Explicit fixed color.
