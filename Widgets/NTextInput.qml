@@ -21,6 +21,9 @@ ColumnLayout {
   property real radius: Style.iRadiusM
   property real minimumInputWidth: 80 * Style.uiScaleRatio
   property bool showClearButton: true
+  property bool passwordMode: false
+  property bool passwordVisible: false
+  property bool showPasswordToggle: false
 
   property alias text: input.text
   property alias placeholderText: input.placeholderText
@@ -149,7 +152,7 @@ ColumnLayout {
 
             verticalAlignment: TextInput.AlignVCenter
 
-            echoMode: TextInput.Normal
+            echoMode: root.passwordMode && !root.passwordVisible ? TextInput.Password : TextInput.Normal
             readOnly: root.readOnly
             placeholderTextColor: Qt.alpha(Color.mOnSurfaceVariant, 0.6)
             color: enabled ? Color.mOnSurface : Qt.alpha(Color.mOnSurface, 0.4)
@@ -228,6 +231,27 @@ ColumnLayout {
 
             onClicked: {
               input.clear();
+              input.forceActiveFocus();
+            }
+          }
+
+          NIconButton {
+            id: passwordToggle
+            icon: root.passwordVisible ? "eye-off" : "eye"
+            tooltipText: (!root.readOnly && root.enabled) ? (root.passwordVisible ? I18n.tr("common.hide-password") : I18n.tr("common.show-password")) : ""
+
+            Layout.alignment: Qt.AlignVCenter
+            border.width: 0
+
+            colorBg: "transparent"
+            colorBgHover: "transparent"
+            colorFg: Color.mOnSurface
+            colorFgHover: Color.mError
+            visible: root.passwordMode && root.showPasswordToggle
+            enabled: !root.readOnly && root.enabled
+
+            onClicked: {
+              root.passwordVisible = !root.passwordVisible;
               input.forceActiveFocus();
             }
           }
