@@ -77,6 +77,7 @@ Singleton {
                                     "roundedCorners": true,
                                     "clockStyle": "digital",
                                     "clockColor": "none",
+                                    "clockColorAsCapsule": false,
                                     "useCustomFont": false,
                                     "customFont": "",
                                     "format": "HH:mm\\nd MMMM yyyy"

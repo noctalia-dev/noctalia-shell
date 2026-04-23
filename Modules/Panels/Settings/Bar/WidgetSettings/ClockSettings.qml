@@ -21,6 +21,7 @@ ColumnLayout {
   property string valueClockColor: widgetData.clockColor !== undefined ? widgetData.clockColor : widgetMetadata.clockColor
   property bool valueUseCustomFont: widgetData.useCustomFont !== undefined ? widgetData.useCustomFont : widgetMetadata.useCustomFont
   property string valueCustomFont: widgetData.customFont !== undefined ? widgetData.customFont : widgetMetadata.customFont
+  property bool valueClockColorAsCapsule: widgetData.clockColorAsCapsule !== undefined ? widgetData.clockColorAsCapsule : widgetMetadata.clockColorAsCapsule
   property string valueFormatHorizontal: widgetData.formatHorizontal !== undefined ? widgetData.formatHorizontal : widgetMetadata.formatHorizontal
   property string valueFormatVertical: widgetData.formatVertical !== undefined ? widgetData.formatVertical : widgetMetadata.formatVertical
   property string valueTooltipFormat: widgetData.tooltipFormat !== undefined ? widgetData.tooltipFormat : widgetMetadata.tooltipFormat
@@ -36,6 +37,7 @@ ColumnLayout {
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.clockColor = valueClockColor;
+    settings.clockColorAsCapsule = valueClockColorAsCapsule;
     settings.useCustomFont = valueUseCustomFont;
     settings.customFont = valueCustomFont;
     settings.formatHorizontal = valueFormatHorizontal.trim();
@@ -78,6 +80,18 @@ ColumnLayout {
                   saveSettings();
                 }
     defaultValue: widgetMetadata.clockColor
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("bar.clock.clock-color-as-capsule-label")
+    description: I18n.tr("bar.clock.clock-color-as-capsule-description")
+    checked: valueClockColorAsCapsule
+    onToggled: checked => {
+                 valueClockColorAsCapsule = checked;
+                 saveSettings();
+               }
+    defaultValue: widgetMetadata.clockColorAsCapsule
   }
 
   NToggle {
