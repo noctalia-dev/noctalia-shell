@@ -48,6 +48,7 @@ private:
   Image* m_userAvatar = nullptr;
 
   Glyph* m_weatherGlyph = nullptr;
+  Label* m_weatherDate = nullptr;
   Label* m_weatherTemp = nullptr;
   Label* m_weatherSub = nullptr;
 
@@ -60,6 +61,7 @@ private:
   Label* m_mediaTrack = nullptr;
   Label* m_mediaArtist = nullptr;
   Label* m_mediaStatus = nullptr;
+  Label* m_mediaProgress = nullptr;
   Image* m_mediaArt = nullptr;
   std::string m_loadedMediaArtUrl;
 

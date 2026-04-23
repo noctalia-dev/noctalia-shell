@@ -17,6 +17,7 @@
 #include "ui/controls/label.h"
 
 #include <cmath>
+#include <ctime>
 #include <filesystem>
 #include <format>
 #include <memory>
@@ -29,6 +30,41 @@ namespace {
   void styleOverviewCard(Flex& card, float scale) {
     applyOutlinedCard(card, scale);
     card.setGap(Style::spaceSm * scale);
+  }
+
+  std::string formatClockDuration(std::int64_t seconds) {
+    if (seconds <= 0) {
+      return "0:00";
+    }
+    const std::int64_t totalMinutes = seconds / 60;
+    const std::int64_t hours = totalMinutes / 60;
+    const std::int64_t minutes = totalMinutes % 60;
+    const std::int64_t secs = seconds % 60;
+    if (hours > 0) {
+      return std::format("{}:{:02}:{:02}", hours, minutes, secs);
+    }
+    return std::format("{}:{:02}", minutes, secs);
+  }
+
+  std::string formatEta(std::int64_t seconds) {
+    if (seconds <= 0) {
+      return {};
+    }
+    const std::int64_t totalMinutes = seconds / 60;
+    const std::int64_t hours = totalMinutes / 60;
+    const std::int64_t minutes = totalMinutes % 60;
+    if (hours > 0) {
+      return std::format("{}h {}m", hours, minutes);
+    }
+    return std::format("{}m", minutes);
+  }
+
+  std::string currentDateText() {
+    const std::time_t now = std::time(nullptr);
+    const std::tm local = *std::localtime(&now);
+    char day[32]{};
+    std::strftime(day, sizeof(day), "%d %b %Y", &local);
+    return std::string(day);
   }
 
 } // namespace
@@ -60,6 +96,13 @@ std::unique_ptr<Flex> OverviewTab::create() {
   weatherCard->setFlexGrow(1.0f);
   weatherCard->setGap(Style::spaceXs * scale);
   addTitle(*weatherCard, "Today", scale);
+
+  auto weatherDate = std::make_unique<Label>();
+  weatherDate->setText(currentDateText());
+  weatherDate->setFontSize(Style::fontSizeCaption * scale);
+  weatherDate->setColor(roleColor(ColorRole::OnSurfaceVariant));
+  m_weatherDate = weatherDate.get();
+  weatherCard->addChild(std::move(weatherDate));
 
   auto weatherRow = std::make_unique<Flex>();
   weatherRow->setDirection(FlexDirection::Horizontal);
@@ -148,9 +191,17 @@ std::unique_ptr<Flex> OverviewTab::create() {
   mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_mediaStatus = mediaStatus.get();
 
+  auto mediaProgress = std::make_unique<Label>();
+  mediaProgress->setText(" ");
+  mediaProgress->setFontSize(Style::fontSizeCaption * scale);
+  mediaProgress->setColor(roleColor(ColorRole::Secondary));
+  mediaProgress->setVisible(false);
+  m_mediaProgress = mediaProgress.get();
+
   mediaText->addChild(std::move(mediaTrack));
   mediaText->addChild(std::move(mediaArtist));
   mediaText->addChild(std::move(mediaStatus));
+  mediaText->addChild(std::move(mediaProgress));
   mediaContent->addChild(std::move(mediaText));
   mediaCard->addChild(std::move(mediaContent));
   topRow->addChild(std::move(mediaCard));
@@ -308,12 +359,12 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
   const float powerWrap = innerWidth(m_powerCard);
   const float audioWrap = innerWidth(m_audioCard);
 
-  for (Label* label : {m_weatherTemp, m_weatherSub}) {
+  for (Label* label : {m_weatherDate, m_weatherTemp, m_weatherSub}) {
     if (label != nullptr) {
       label->setMaxWidth(weatherWrap);
     }
   }
-  for (Label* label : {m_mediaKicker, m_mediaTrack, m_mediaArtist, m_mediaStatus}) {
+  for (Label* label : {m_mediaKicker, m_mediaTrack, m_mediaArtist, m_mediaStatus, m_mediaProgress}) {
     if (label != nullptr) {
       label->setMaxWidth(mediaWrap);
     }
@@ -322,7 +373,7 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
     const float mediaInner =
         std::max(1.0f, m_mediaCard->width() - (m_mediaCard->paddingLeft() + m_mediaCard->paddingRight()));
     const float textWidth = std::max(1.0f, mediaInner - m_mediaArt->width() - (Style::spaceSm * contentScale()));
-    for (Label* label : {m_mediaTrack, m_mediaArtist, m_mediaStatus}) {
+    for (Label* label : {m_mediaTrack, m_mediaArtist, m_mediaStatus, m_mediaProgress}) {
       if (label != nullptr) {
         label->setMaxWidth(textWidth);
       }
@@ -337,6 +388,9 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
   if (m_weatherSub != nullptr) {
     m_weatherSub->setMaxLines(2);
   }
+  if (m_weatherDate != nullptr) {
+    m_weatherDate->setMaxLines(1);
+  }
   if (m_mediaTrack != nullptr) {
     m_mediaTrack->setMaxLines(1);
   }
@@ -345,6 +399,12 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
   }
   if (m_mediaStatus != nullptr) {
     m_mediaStatus->setMaxLines(1);
+  }
+  if (m_mediaProgress != nullptr) {
+    m_mediaProgress->setMaxLines(1);
+  }
+  if (m_audioLine != nullptr) {
+    m_audioLine->setMaxLines(1);
   }
   for (Label* label : {m_userFacts}) {
     if (label != nullptr) {
@@ -402,6 +462,7 @@ void OverviewTab::onClose() {
   m_powerCard = nullptr;
   m_audioCard = nullptr;
   m_weatherGlyph = nullptr;
+  m_weatherDate = nullptr;
   m_weatherTemp = nullptr;
   m_weatherSub = nullptr;
   m_userAvatar = nullptr;
@@ -413,6 +474,7 @@ void OverviewTab::onClose() {
   m_mediaTrack = nullptr;
   m_mediaArtist = nullptr;
   m_mediaStatus = nullptr;
+  m_mediaProgress = nullptr;
   m_mediaText = nullptr;
   m_mediaArt = nullptr;
   m_loadedMediaArtUrl.clear();
@@ -440,6 +502,9 @@ void OverviewTab::sync(Renderer& renderer) {
     const std::string uptimeText = uptime.has_value() ? formatDuration(*uptime) : "unknown";
     m_userFacts->setText(std::format("{}@{}\nUptime · {}", sessionDisplayName(), hostName(), uptimeText));
   }
+  if (m_weatherDate != nullptr) {
+    m_weatherDate->setText(currentDateText());
+  }
 
   if (m_weatherGlyph != nullptr && m_weatherTemp != nullptr && m_weatherSub != nullptr) {
     if (m_weather == nullptr || !m_weather->enabled()) {
@@ -464,23 +529,34 @@ void OverviewTab::sync(Renderer& renderer) {
         m_weatherGlyph->setColor(roleColor(ColorRole::Primary));
         const int t = static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.current.temperatureC)));
         m_weatherTemp->setText(std::format("{}{}", t, m_weather->displayTemperatureUnit()));
+        std::string hiLoText;
+        if (!snapshot.forecastDays.empty()) {
+          const int hi = static_cast<int>(
+              std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMaxC)));
+          const int lo = static_cast<int>(
+              std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMinC)));
+          hiLoText = std::format(" · {} / {}{}", hi, lo, m_weather->displayTemperatureUnit());
+        }
         const bool showLocation = m_config == nullptr || m_config->config().shell.showLocation;
         if (showLocation) {
           const std::string place = snapshot.locationName.empty() ? "Current location" : snapshot.locationName;
-          m_weatherSub->setText(
-              std::format("{} · {}", WeatherService::descriptionForCode(snapshot.current.weatherCode), place));
+          m_weatherSub->setText(std::format(
+              "{}{} · {}", WeatherService::descriptionForCode(snapshot.current.weatherCode), hiLoText, place));
         } else {
-          m_weatherSub->setText(WeatherService::descriptionForCode(snapshot.current.weatherCode));
+          m_weatherSub->setText(
+              std::format("{}{}", WeatherService::descriptionForCode(snapshot.current.weatherCode), hiLoText));
         }
       }
     }
   }
 
-  if (m_mediaTrack != nullptr && m_mediaArtist != nullptr && m_mediaStatus != nullptr) {
+  if (m_mediaTrack != nullptr && m_mediaArtist != nullptr && m_mediaStatus != nullptr && m_mediaProgress != nullptr) {
     if (m_mpris == nullptr) {
       m_mediaTrack->setText("Playback unavailable");
-      m_mediaArtist->setText("MPRIS service unavailable");
+      m_mediaArtist->setText("Media service unavailable");
       m_mediaStatus->setText("Unavailable");
+      m_mediaProgress->setText(" ");
+      m_mediaProgress->setVisible(false);
       m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
       if (m_mediaArt != nullptr) {
         m_mediaArt->clear(renderer);
@@ -490,8 +566,10 @@ void OverviewTab::sync(Renderer& renderer) {
       const auto active = m_mpris->activePlayer();
       if (!active.has_value()) {
         m_mediaTrack->setText("Nothing playing");
-        m_mediaArtist->setText("Start something in an MPRIS app to see it here.");
+        m_mediaArtist->setText("Play media to see details.");
         m_mediaStatus->setText("Idle");
+        m_mediaProgress->setText(" ");
+        m_mediaProgress->setVisible(false);
         m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
         if (m_mediaArt != nullptr) {
           m_mediaArt->clear(renderer);
@@ -501,6 +579,16 @@ void OverviewTab::sync(Renderer& renderer) {
         m_mediaTrack->setText(active->title.empty() ? "Unknown track" : active->title);
         const std::string artists = joinedArtists(active->artists);
         m_mediaArtist->setText(artists.empty() ? "Unknown artist" : artists);
+        if (active->lengthUs > 0) {
+          const std::int64_t positionSec = std::max<std::int64_t>(0, active->positionUs / 1000000);
+          const std::int64_t lengthSec = std::max<std::int64_t>(1, active->lengthUs / 1000000);
+          m_mediaProgress->setText(
+              std::format("{} / {}", formatClockDuration(positionSec), formatClockDuration(lengthSec)));
+          m_mediaProgress->setVisible(true);
+        } else {
+          m_mediaProgress->setText(" ");
+          m_mediaProgress->setVisible(false);
+        }
         if (m_mediaArt != nullptr) {
           const std::string artUrl = mpris::effectiveArtUrl(*active);
           if (artUrl != m_loadedMediaArtUrl) {
@@ -549,9 +637,33 @@ void OverviewTab::sync(Renderer& renderer) {
         m_powerLine->setText(std::format("{} · {:.0f}%", batteryStateLabel(st.state), st.percentage));
       }
       if (m_powerProfiles != nullptr && !m_powerProfiles->activeProfile().empty()) {
-        m_powerSub->setText(std::format("Mode · {}", profileLabel(m_powerProfiles->activeProfile())));
+        std::string etaSuffix;
+        if (st.isPresent && st.state == BatteryState::Discharging) {
+          const std::string eta = formatEta(st.timeToEmpty);
+          if (!eta.empty()) {
+            etaSuffix = " · " + eta + " left";
+          }
+        } else if (st.isPresent && st.state == BatteryState::Charging) {
+          const std::string eta = formatEta(st.timeToFull);
+          if (!eta.empty()) {
+            etaSuffix = " · " + eta + " to full";
+          }
+        }
+        m_powerSub->setText(std::format("Mode · {}{}", profileLabel(m_powerProfiles->activeProfile()), etaSuffix));
       } else {
-        m_powerSub->setText(st.onBattery ? "Battery power" : "Plugged in");
+        std::string etaSuffix;
+        if (st.isPresent && st.state == BatteryState::Discharging) {
+          const std::string eta = formatEta(st.timeToEmpty);
+          if (!eta.empty()) {
+            etaSuffix = " · " + eta + " left";
+          }
+        } else if (st.isPresent && st.state == BatteryState::Charging) {
+          const std::string eta = formatEta(st.timeToFull);
+          if (!eta.empty()) {
+            etaSuffix = " · " + eta + " to full";
+          }
+        }
+        m_powerSub->setText(std::format("{}{}", st.onBattery ? "Battery power" : "Plugged in", etaSuffix));
       }
     }
   }
