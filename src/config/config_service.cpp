@@ -1249,6 +1249,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto v = (*shellTbl)["avatar_path"].value<std::string>()) {
       shell.avatarPath = *v;
     }
+    if (auto v = (*shellTbl)["show_location"].value<bool>()) {
+      shell.showLocation = *v;
+    }
     if (auto v = (*shellTbl)["clipboard_auto_paste"].value<std::string>()) {
       if (*v == "off") {
         shell.clipboardAutoPaste = ClipboardAutoPasteMode::Off;

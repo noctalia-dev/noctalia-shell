@@ -11,10 +11,11 @@ class Flex;
 class Glyph;
 class Label;
 class WeatherService;
+class ConfigService;
 
 class WeatherTab : public Tab {
 public:
-  explicit WeatherTab(WeatherService* weather);
+  WeatherTab(WeatherService* weather, ConfigService* config);
 
   std::unique_ptr<Flex> create() override;
   void onClose() override;
@@ -31,6 +32,7 @@ private:
   static constexpr std::size_t kDetailRowCount = 6;
 
   WeatherService* m_weather = nullptr;
+  ConfigService* m_config = nullptr;
   Flex* m_rootLayout = nullptr;
   Flex* m_leftColumn = nullptr;
   Flex* m_currentCard = nullptr;

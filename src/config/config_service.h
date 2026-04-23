@@ -259,6 +259,7 @@ struct ShellConfig {
   PasswordMaskStyle passwordMaskStyle = PasswordMaskStyle::CircleFilled;
   AnimationConfig animation;
   std::string avatarPath;
+  bool showLocation = true;
   ClipboardAutoPasteMode clipboardAutoPaste = ClipboardAutoPasteMode::Auto;
 };
 

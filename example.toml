@@ -9,6 +9,7 @@ ui_scale             = 1.0
 font_family          = "sans-serif"
 polkit_agent         = false
 password_style       = "default"    # default | random
+show_location        = true         # hide weather location text in shell UI when false
 clipboard_auto_paste = "auto"       # off | auto | ctrl_v | ctrl_shift_v | shift_insert
 # avatar_path        = "~/Pictures/avatar.png"
 # lang               = "en"

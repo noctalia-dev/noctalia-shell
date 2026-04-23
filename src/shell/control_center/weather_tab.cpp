@@ -1,5 +1,6 @@
 #include "shell/control_center/weather_tab.h"
 
+#include "config/config_service.h"
 #include "render/scene/effect_node.h"
 #include "system/weather_service.h"
 #include "time/time_service.h"
@@ -40,7 +41,7 @@ namespace {
 
 } // namespace
 
-WeatherTab::WeatherTab(WeatherService* weather) : m_weather(weather) {
+WeatherTab::WeatherTab(WeatherService* weather, ConfigService* config) : m_weather(weather), m_config(config) {
   m_detailRows.fill(nullptr);
   m_dayCards.fill(nullptr);
   m_dayIconSlots.fill(nullptr);
@@ -472,6 +473,19 @@ void WeatherTab::sync(Renderer& renderer) {
     return;
   }
 
+  const bool showLocation = m_config == nullptr || m_config->config().shell.showLocation;
+  if (m_updatedLabel != nullptr) {
+    m_updatedLabel->setVisible(showLocation);
+  }
+  if (m_detailRows.size() >= 5) {
+    if (m_detailRows[3] != nullptr) {
+      m_detailRows[3]->setVisible(showLocation);
+    }
+    if (m_detailRows[4] != nullptr) {
+      m_detailRows[4]->setVisible(showLocation);
+    }
+  }
+
   if (m_weather == nullptr || !m_weather->enabled()) {
     m_currentGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
     m_currentTempLabel->setText("--°C");
@@ -611,7 +625,7 @@ void WeatherTab::sync(Renderer& renderer) {
   }
   m_currentDescLabel->setText(WeatherService::descriptionForCode(snapshot.current.weatherCode));
   m_updatedLabel->setText(snapshot.locationName.empty() ? "Current location" : snapshot.locationName);
-  m_updatedLabel->setVisible(true);
+  m_updatedLabel->setVisible(showLocation);
   const std::string status = m_weather->loading() ? "Refreshing weather..." : m_weather->error();
   m_statusLabel->setText(status);
   m_statusLabel->setColor(roleColor(m_weather->error().empty() ? ColorRole::OnSurfaceVariant : ColorRole::Error));

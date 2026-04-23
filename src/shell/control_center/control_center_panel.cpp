@@ -21,7 +21,7 @@ ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeW
       std::make_unique<OverviewTab>(mpris, weather, audio, upower, powerProfiles, config);
   m_tabs[tabIndex(TabId::Media)] = std::make_unique<MediaTab>(mpris, httpClient, spectrum);
   m_tabs[tabIndex(TabId::Audio)] = std::make_unique<AudioTab>(audio, config);
-  m_tabs[tabIndex(TabId::Weather)] = std::make_unique<WeatherTab>(weather);
+  m_tabs[tabIndex(TabId::Weather)] = std::make_unique<WeatherTab>(weather, config);
   m_tabs[tabIndex(TabId::Calendar)] = std::make_unique<CalendarTab>();
   m_tabs[tabIndex(TabId::Notifications)] = std::make_unique<NotificationsTab>(notifications);
   m_tabs[tabIndex(TabId::Network)] = std::make_unique<NetworkTab>(network, networkSecrets);

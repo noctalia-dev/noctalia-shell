@@ -40,6 +40,7 @@ private:
   Flex* m_rootLayout = nullptr;
   Flex* m_weatherCard = nullptr;
   Flex* m_mediaCard = nullptr;
+  Flex* m_mediaText = nullptr;
   Flex* m_userCard = nullptr;
   Flex* m_userMain = nullptr;
   Flex* m_powerCard = nullptr;
@@ -59,6 +60,8 @@ private:
   Label* m_mediaTrack = nullptr;
   Label* m_mediaArtist = nullptr;
   Label* m_mediaStatus = nullptr;
+  Image* m_mediaArt = nullptr;
+  std::string m_loadedMediaArtUrl;
 
   Label* m_powerLine = nullptr;
   Label* m_powerSub = nullptr;
