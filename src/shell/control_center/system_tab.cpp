@@ -187,7 +187,8 @@ std::unique_ptr<Flex> SystemTab::create() {
   {
     auto card = std::make_unique<Flex>();
     applyOutlinedCard(*card, sc);
-    card->setFlexGrow(1.0f);
+    card->setFlexGrow(0.0f);
+    card->setMinHeight(Style::controlHeightLg * 1.9f * sc);
     m_loadCard = card.get();
 
     addTitle(*card, "Load Average", sc);
@@ -201,7 +202,7 @@ std::unique_ptr<Flex> SystemTab::create() {
     auto card = std::make_unique<Flex>();
     applyOutlinedCard(*card, sc);
     card->setFlexGrow(1.0f);
-    card->setMinHeight(Style::controlHeightLg * 6.6f * sc);
+    card->setMinHeight(Style::controlHeightLg * 6.2f * sc);
     m_infoCard = card.get();
 
     addTitle(*card, "System Info", sc);
