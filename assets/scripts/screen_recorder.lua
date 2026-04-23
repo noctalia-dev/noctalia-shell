@@ -300,7 +300,6 @@ local function updateDisplay()
 
     if not isAvailable then
         barWidget.setGlyph("video-off")
-        barWidget.setText("")
         barWidget.setGlyphColor("on_surface_variant")
         barWidget.setVisible(not hideInactive)
         return
@@ -308,25 +307,21 @@ local function updateDisplay()
 
     if state == "recording" then
         barWidget.setGlyph("video")
-        barWidget.setText("REC")
         barWidget.setGlyphColor("error")
         barWidget.setColor("error")
         barWidget.setVisible(true)
     elseif state == "pending" or state == "replay_pending" then
         barWidget.setGlyph("video")
-        barWidget.setText("...")
         barWidget.setGlyphColor("primary")
         barWidget.setColor("primary")
         barWidget.setVisible(true)
     elseif state == "replaying" then
         barWidget.setGlyph("repeat")
-        barWidget.setText("REPLAY")
         barWidget.setGlyphColor("secondary")
         barWidget.setColor("secondary")
         barWidget.setVisible(true)
     else
         barWidget.setGlyph("video")
-        barWidget.setText("")
         barWidget.setGlyphColor("on_surface")
         barWidget.setVisible(not hideInactive)
     end

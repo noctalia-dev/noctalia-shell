@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/file_watcher.h"
+#include "core/timer_manager.h"
 #include "shell/bar/widget.h"
 #include "ui/palette.h"
 
@@ -25,8 +26,6 @@ public:
   ~ScriptedWidget() override;
 
   void create() override;
-  bool needsFrameTick() const override { return true; }
-  void onFrameTick(float deltaMs) override;
 
   void luaSetText(std::string_view text);
   void luaSetGlyph(std::string_view name);
@@ -48,6 +47,7 @@ private:
   void reloadScript();
   void setupScriptWatch();
   void teardownScriptWatch();
+  void startUpdateTimer();
 
   std::string m_scriptPath;
   std::filesystem::path m_resolvedPath;
@@ -55,14 +55,14 @@ private:
   std::unique_ptr<LuauHost> m_host;
   FileWatcher* m_fileWatcher = nullptr;
   FileWatcher::WatchId m_watchId = 0;
+  Timer m_updateTimer;
   InputArea* m_area = nullptr;
   Flex* m_flex = nullptr;
   Glyph* m_glyph = nullptr;
   Label* m_label = nullptr;
-  float m_accumMs = 0.0f;
   std::optional<ColorRole> m_textColorRole;
   std::optional<ColorRole> m_glyphColorRole;
-  float m_updateIntervalMs = 250.0f;
+  int m_updateIntervalMs = 250;
   bool m_isVertical = false;
   bool m_glyphVisible = false;
   bool m_hotReload = false;

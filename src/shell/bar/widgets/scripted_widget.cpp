@@ -130,19 +130,10 @@ void ScriptedWidget::create() {
   }
   m_host->exec(m_resolvedPath.string(), source);
   m_host->callGlobal("update");
+  startUpdateTimer();
 
   if (m_hotReload)
     setupScriptWatch();
-}
-
-void ScriptedWidget::onFrameTick(float deltaMs) {
-  m_accumMs += deltaMs;
-  if (m_accumMs >= m_updateIntervalMs) {
-    m_accumMs = 0.0f;
-    if (m_host)
-      m_host->callGlobal("update");
-    requestRedraw();
-  }
 }
 
 void ScriptedWidget::doLayout(Renderer& renderer, float containerWidth, float containerHeight) {
@@ -196,12 +187,23 @@ void ScriptedWidget::luaSetColor(std::string_view role) { m_textColorRole = pars
 
 void ScriptedWidget::luaSetGlyphColor(std::string_view role) { m_glyphColorRole = parseColorRole(role); }
 
-void ScriptedWidget::luaSetUpdateInterval(float ms) { m_updateIntervalMs = std::max(16.0f, ms); }
+void ScriptedWidget::luaSetUpdateInterval(float ms) {
+  m_updateIntervalMs = std::max(16, static_cast<int>(ms));
+  startUpdateTimer();
+}
 
 void ScriptedWidget::luaSetVisible(bool visible) {
   if (auto* node = root(); node)
     node->setVisible(visible);
   requestRedraw();
+}
+
+void ScriptedWidget::startUpdateTimer() {
+  m_updateTimer.startRepeating(std::chrono::milliseconds(m_updateIntervalMs), [this] {
+    if (m_host)
+      m_host->callGlobal("update");
+    requestRedraw();
+  });
 }
 
 void ScriptedWidget::setupScriptWatch() {
@@ -218,11 +220,11 @@ void ScriptedWidget::teardownScriptWatch() {
 }
 
 void ScriptedWidget::reloadScript() {
+  m_updateTimer.stop();
   m_glyphVisible = false;
   m_textColorRole = std::nullopt;
   m_glyphColorRole = std::nullopt;
-  m_updateIntervalMs = 250.0f;
-  m_accumMs = 0.0f;
+  m_updateIntervalMs = 250;
   if (m_glyph)
     m_glyph->setVisible(false);
   if (m_label) {
@@ -243,6 +245,7 @@ void ScriptedWidget::reloadScript() {
   }
 
   m_host->callGlobal("update");
+  startUpdateTimer();
   requestRedraw();
   kLog.info("hot reload: reloaded '{}'", name);
   notify::info("Noctalia", "Reloaded script", name);
