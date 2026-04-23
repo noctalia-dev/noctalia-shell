@@ -769,6 +769,11 @@ struct BrightnessService::Impl {
 
       if (output != nullptr) {
         display.pub.label = output->description.empty() ? output->connectorName : output->description;
+        display.pub.physicalWidth = output->width;
+        display.pub.physicalHeight = output->height;
+        display.pub.logicalWidth = output->logicalWidth;
+        display.pub.logicalHeight = output->logicalHeight;
+        display.pub.scale = std::max(1, output->scale);
       }
       if (display.pub.label.empty()) {
         display.pub.label = !connectorName.empty() ? connectorName : name;
@@ -1156,6 +1161,11 @@ struct BrightnessService::Impl {
       display.pub.id = candidate.connectorName;
       display.pub.label = output->description.empty() ? output->connectorName : output->description;
       display.pub.brightness = normalizedBrightness(candidate.currentRaw, candidate.maxRaw);
+      display.pub.physicalWidth = output->width;
+      display.pub.physicalHeight = output->height;
+      display.pub.logicalWidth = output->logicalWidth;
+      display.pub.logicalHeight = output->logicalHeight;
+      display.pub.scale = std::max(1, output->scale);
       internals.push_back(std::move(display));
 
       kLog.info("found ddcutil display connector={} bus={} current={:.0f}%", candidate.connectorName, candidate.bus,

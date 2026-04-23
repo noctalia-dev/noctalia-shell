@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <vector>
@@ -14,6 +15,11 @@ struct BrightnessDisplay {
   std::string id;       // stable display id (usually connector name)
   std::string label;    // human-readable (connector name or description)
   float brightness = 0; // 0.0–1.0 normalized
+  std::int32_t physicalWidth = 0;
+  std::int32_t physicalHeight = 0;
+  std::int32_t logicalWidth = 0;
+  std::int32_t logicalHeight = 0;
+  std::int32_t scale = 1;
 
   bool operator==(const BrightnessDisplay&) const = default;
 };

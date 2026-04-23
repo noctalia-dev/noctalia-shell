@@ -37,10 +37,12 @@ private:
     std::string displayId;
     Flex* card = nullptr;
     Label* nameLabel = nullptr;
+    Label* detailsLabel = nullptr;
     Glyph* icon = nullptr;
     Slider* slider = nullptr;
     Label* valueLabel = nullptr;
     float lastBrightness = -1.0f;
+    std::string lastDisplayInfo;
   };
 
   Flex* m_rootLayout = nullptr;

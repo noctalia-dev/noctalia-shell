@@ -79,11 +79,8 @@ namespace {
     auto* self = static_cast<WaylandConnection*>(data);
     auto* out = self->findOutputByWl(wlOut);
     if (out != nullptr) {
-      const bool wasDone = out->done;
       out->done = true;
-      if (!wasDone) {
-        self->notifyOutputReady(wlOut);
-      }
+      self->notifyOutputReady(wlOut);
     }
   }
 
@@ -127,7 +124,13 @@ namespace {
     }
   }
 
-  void xdgOutputDone(void* /*data*/, zxdg_output_v1* /*xdgOutput*/) {}
+  void xdgOutputDone(void* data, zxdg_output_v1* xdgOutput) {
+    auto* self = static_cast<WaylandConnection*>(data);
+    auto* out = self->findOutputByXdg(xdgOutput);
+    if (out != nullptr && out->output != nullptr) {
+      self->notifyOutputReady(out->output);
+    }
+  }
 
   void xdgOutputName(void* /*data*/, zxdg_output_v1* /*xdgOutput*/, const char* /*name*/) {}
 

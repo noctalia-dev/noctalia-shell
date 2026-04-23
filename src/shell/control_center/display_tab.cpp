@@ -31,6 +31,27 @@ namespace {
     return key;
   }
 
+  std::string formatDisplayInfo(const BrightnessDisplay& display) {
+    const int width = display.logicalWidth > 0 ? display.logicalWidth : display.physicalWidth;
+    const int height = display.logicalHeight > 0 ? display.logicalHeight : display.physicalHeight;
+    std::string resolutionText = "Unknown resolution";
+    if (width > 0 && height > 0) {
+      resolutionText = std::to_string(width) + "x" + std::to_string(height);
+    }
+
+    const int physicalWidth = display.physicalWidth;
+    const int physicalHeight = display.physicalHeight;
+    if (physicalWidth <= 0 || physicalHeight <= 0 || width <= 0 || height <= 0) {
+      return resolutionText;
+    }
+
+    const double scaleX = static_cast<double>(physicalWidth) / static_cast<double>(width);
+    const double scaleY = static_cast<double>(physicalHeight) / static_cast<double>(height);
+    const double scale = std::max(0.01, (scaleX + scaleY) * 0.5);
+    const int scalePercent = static_cast<int>(std::lround(scale * 100.0));
+    return resolutionText + " @ " + std::to_string(scalePercent) + "%";
+  }
+
 } // namespace
 
 DisplayTab::DisplayTab(BrightnessService* brightness, ConfigService* config)
@@ -100,6 +121,10 @@ void DisplayTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
       card.nameLabel->setMaxLines(1);
       card.nameLabel->setMaxWidth(headerTextMaxWidth);
     }
+    if (card.detailsLabel != nullptr) {
+      card.detailsLabel->setMaxLines(1);
+      card.detailsLabel->setMaxWidth(cardInnerWidth);
+    }
   }
 
   m_rootLayout->setSize(contentWidth, bodyHeight);
@@ -130,6 +155,11 @@ void DisplayTab::doUpdate(Renderer& renderer) {
         isPending ? m_pendingBrightness : (holdState ? m_lastSentBrightness : display->brightness), 0.0f, 1.0f);
 
     card.slider->setEnabled(true);
+    const std::string infoText = formatDisplayInfo(*display);
+    if (card.detailsLabel != nullptr && card.lastDisplayInfo != infoText) {
+      card.detailsLabel->setText(infoText);
+      card.lastDisplayInfo = infoText;
+    }
     if (!isDragging && std::abs(displayedBrightness - card.lastBrightness) >= kBrightnessSyncEpsilon) {
       m_syncingSlider = true;
       card.slider->setValue(displayedBrightness);
@@ -203,6 +233,14 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
 
     card->addChild(std::move(headerRow));
 
+    auto detailsLabel = std::make_unique<Label>();
+    const std::string infoText = formatDisplayInfo(display);
+    detailsLabel->setText(infoText);
+    detailsLabel->setFontSize(Style::fontSizeCaption * scale);
+    detailsLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
+    auto* detailsLabelPtr = detailsLabel.get();
+    card->addChild(std::move(detailsLabel));
+
     // Slider row: sun icon + slider + percentage
     auto sliderRow = std::make_unique<Flex>();
     sliderRow->setDirection(FlexDirection::Horizontal);
@@ -267,10 +305,12 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
         .displayId = display.id,
         .card = cardPtr,
         .nameLabel = nameLabelPtr,
+        .detailsLabel = detailsLabelPtr,
         .icon = iconPtr,
         .slider = sliderPtr,
         .valueLabel = valueLabelPtr,
         .lastBrightness = display.brightness,
+        .lastDisplayInfo = infoText,
     });
   }
 }
