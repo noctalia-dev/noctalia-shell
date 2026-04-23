@@ -90,7 +90,9 @@ namespace {
 
     auto layoutWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
       for (auto& widget : widgets) {
-        widget->layout(renderer, barAreaW, barAreaH);
+        if (widget->root() != nullptr) {
+          widget->layout(renderer, barAreaW, barAreaH);
+        }
       }
     };
     layoutWidgets(instance.startWidgets);
@@ -1033,10 +1035,11 @@ void Bar::updateWidgets(BarInstance& instance) {
 
   auto updateSection = [&](std::vector<std::unique_ptr<Widget>>& widgets) {
     for (auto& widget : widgets) {
-      widget->update(*renderer);
-      if (widget->root() != nullptr) {
-        widget->layout(*renderer, barAreaW, barAreaH);
+      if (widget->root() == nullptr) {
+        continue;
       }
+      widget->update(*renderer);
+      widget->layout(*renderer, barAreaW, barAreaH);
     }
   };
 
