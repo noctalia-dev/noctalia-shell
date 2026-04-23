@@ -110,7 +110,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   currentTop->addChild(std::move(temp));
 
   auto hilo = std::make_unique<Label>();
-  hilo->setText("H/L -- / --");
+  hilo->setText("--↑ --↓");
   hilo->setFontSize(Style::fontSizeBody * scale);
   hilo->setColor(roleColor(ColorRole::Primary));
   m_currentHiLoLabel = hilo.get();
@@ -476,7 +476,7 @@ void WeatherTab::sync(Renderer& renderer) {
     m_currentGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
     m_currentTempLabel->setText("--°C");
     if (m_currentHiLoLabel != nullptr) {
-      m_currentHiLoLabel->setText("H/L -- / --");
+      m_currentHiLoLabel->setText("-- / --");
     }
     m_currentDescLabel->setText("Enable [weather] in config.toml");
     m_updatedLabel->setText("Location unavailable");
@@ -516,7 +516,7 @@ void WeatherTab::sync(Renderer& renderer) {
     m_currentGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
     m_currentTempLabel->setText(std::format("--{}", m_weather->displayTemperatureUnit()));
     if (m_currentHiLoLabel != nullptr) {
-      m_currentHiLoLabel->setText("H/L -- / --");
+      m_currentHiLoLabel->setText("-- / --");
     }
     m_currentDescLabel->setText("Set [weather].address or enable auto_locate");
     m_updatedLabel->setText("Location unavailable");
@@ -557,7 +557,7 @@ void WeatherTab::sync(Renderer& renderer) {
     m_currentGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
     m_currentTempLabel->setText(std::format("--{}", m_weather->displayTemperatureUnit()));
     if (m_currentHiLoLabel != nullptr) {
-      m_currentHiLoLabel->setText("H/L -- / --");
+      m_currentHiLoLabel->setText("-- / --");
     }
     m_currentDescLabel->setText(m_weather->loading() ? "Fetching forecast..." : "Weather data unavailable");
     m_updatedLabel->setText(snapshot.locationName.empty() ? "Current location" : snapshot.locationName);
@@ -601,12 +601,12 @@ void WeatherTab::sync(Renderer& renderer) {
   if (m_currentHiLoLabel != nullptr) {
     if (!snapshot.forecastDays.empty()) {
       m_currentHiLoLabel->setText(std::format(
-          "H/L {} / {}{}",
+          "{} / {}{}",
           static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMaxC))),
           static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.forecastDays.front().temperatureMinC))),
           m_weather->displayTemperatureUnit()));
     } else {
-      m_currentHiLoLabel->setText("H/L -- / --");
+      m_currentHiLoLabel->setText("-- / --");
     }
   }
   m_currentDescLabel->setText(WeatherService::descriptionForCode(snapshot.current.weatherCode));
