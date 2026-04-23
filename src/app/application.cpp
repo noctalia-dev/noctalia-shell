@@ -24,6 +24,7 @@
 #include "ui/dialogs/color_picker_dialog.h"
 #include "ui/dialogs/file_dialog.h"
 #include "ui/style.h"
+#include "util/path_utils.h"
 
 #include <chrono>
 #include <cmath>
@@ -40,23 +41,6 @@ std::atomic<bool> Application::s_shutdownRequested{false};
 namespace {
 
   constexpr Logger kLog("app");
-
-  std::filesystem::path expandUserPath(const std::string& path) {
-    if (!path.starts_with('~')) {
-      return std::filesystem::path(path);
-    }
-    const char* home = std::getenv("HOME");
-    if (home == nullptr || home[0] == '\0') {
-      return std::filesystem::path(path);
-    }
-    if (path.size() == 1) {
-      return std::filesystem::path(home);
-    }
-    if (path[1] == '/') {
-      return std::filesystem::path(home) / path.substr(2);
-    }
-    return std::filesystem::path(path);
-  }
 
   template <typename Factory>
   auto makeWithStartupBackoff(std::string_view label, Factory&& factory) -> decltype(factory()) {
@@ -567,7 +551,7 @@ void Application::initServices() {
         if (configured.empty()) {
           return paths::assetPath(bundledRelative);
         }
-        const std::filesystem::path expanded = expandUserPath(configured);
+        const std::filesystem::path expanded = PathUtils::expandUserPath(configured);
         if (expanded.is_absolute()) {
           return expanded;
         }

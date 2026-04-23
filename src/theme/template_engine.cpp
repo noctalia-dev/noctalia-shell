@@ -10,6 +10,7 @@
 #include "cpp/scheme/scheme_rainbow.h"
 #include "cpp/scheme/scheme_tonal_spot.h"
 #include "theme/color.h"
+#include "util/path_utils.h"
 #include "util/string_utils.h"
 
 #include <array>
@@ -411,19 +412,6 @@ namespace noctalia::theme {
         out += StringUtils::toLower(words[i]);
       }
       return out;
-    }
-
-    std::filesystem::path expandUserPath(const std::string& path) {
-      if (!path.starts_with('~'))
-        return std::filesystem::path(path);
-      const char* home = std::getenv("HOME");
-      if (home == nullptr || home[0] == '\0')
-        return std::filesystem::path(path);
-      if (path.size() == 1)
-        return std::filesystem::path(home);
-      if (path[1] == '/')
-        return std::filesystem::path(home) / path.substr(2);
-      return std::filesystem::path(path);
     }
 
     std::string findClosestColor(std::string_view compareTo, const std::vector<CompareColorEntry>& colors) {
@@ -1108,7 +1096,7 @@ namespace noctalia::theme {
     }
 
     std::filesystem::path resolveConfigPath(const std::filesystem::path& configPath, const std::string& path) {
-      const std::filesystem::path expanded = expandUserPath(path);
+      const std::filesystem::path expanded = PathUtils::expandUserPath(path);
       if (expanded.is_absolute())
         return expanded;
       const std::filesystem::path base =

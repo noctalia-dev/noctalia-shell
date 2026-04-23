@@ -4,8 +4,8 @@
 #include "core/log.h"
 #include "core/resource_paths.h"
 #include "theme/template_engine.h"
+#include "util/path_utils.h"
 
-#include <cstdlib>
 #include <fstream>
 #include <string>
 
@@ -16,19 +16,6 @@ namespace noctalia::theme {
     constexpr Logger kLog("theme_templates");
 
     std::filesystem::path builtinTemplateConfigPath() { return paths::assetPath("templates/builtin.toml"); }
-
-    std::filesystem::path expandUserPath(const std::string& path) {
-      if (path.empty() || path[0] != '~')
-        return std::filesystem::path(path);
-      const char* home = std::getenv("HOME");
-      if (home == nullptr || home[0] == '\0')
-        return std::filesystem::path(path);
-      if (path.size() == 1)
-        return std::filesystem::path(home);
-      if (path[1] == '/')
-        return std::filesystem::path(home) / path.substr(2);
-      return std::filesystem::path(path);
-    }
 
     std::string schemeTypeFromConfig(const ThemeConfig& theme) {
       if (theme.wallpaperScheme.rfind("m3-", 0) == 0)
@@ -64,7 +51,7 @@ namespace noctalia::theme {
     if (!templateCfg.enableUserTemplates)
       return;
 
-    const std::filesystem::path userConfigPath = expandUserPath(templateCfg.userConfig);
+    const std::filesystem::path userConfigPath = PathUtils::expandUserPath(templateCfg.userConfig);
     ensureUserConfigStub(userConfigPath);
     if (!std::filesystem::exists(userConfigPath))
       return;

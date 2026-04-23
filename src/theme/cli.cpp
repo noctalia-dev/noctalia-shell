@@ -9,6 +9,7 @@
 #include "theme/palette_generator.h"
 #include "theme/scheme.h"
 #include "theme/template_engine.h"
+#include "util/path_utils.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -61,19 +62,6 @@ namespace noctalia::theme {
       std::string name;
       std::string category;
     };
-
-    std::filesystem::path expandUserPath(const std::string& path) {
-      if (path.empty() || path[0] != '~')
-        return std::filesystem::path(path);
-      const char* home = std::getenv("HOME");
-      if (home == nullptr || home[0] == '\0')
-        return std::filesystem::path(path);
-      if (path.size() == 1)
-        return std::filesystem::path(home);
-      if (path[1] == '/')
-        return std::filesystem::path(home) / path.substr(2);
-      return std::filesystem::path(path);
-    }
 
     std::vector<BuiltinTemplateInfo> loadBuiltinTemplateInfo(std::string& err) {
       toml::table root;
@@ -376,7 +364,7 @@ namespace noctalia::theme {
     std::string err;
     GeneratedPalette palette;
     if (themeJsonPath) {
-      if (!loadThemeJson(expandUserPath(themeJsonPath), palette, err)) {
+      if (!loadThemeJson(PathUtils::expandUserPath(themeJsonPath), palette, err)) {
         std::fprintf(stderr, "error: failed to load theme json: %s\n", err.c_str());
         return 1;
       }
@@ -423,8 +411,8 @@ namespace noctalia::theme {
           std::fprintf(stderr, "error: invalid render spec (expected input:output): %s\n", spec.c_str());
           return 1;
         }
-        const std::filesystem::path input = expandUserPath(spec.substr(0, colon));
-        const std::filesystem::path output = expandUserPath(spec.substr(colon + 1));
+        const std::filesystem::path input = PathUtils::expandUserPath(spec.substr(0, colon));
+        const std::filesystem::path output = PathUtils::expandUserPath(spec.substr(colon + 1));
         const auto result = engine.renderFile(input, output);
         if (!result.success)
           return 1;
