@@ -6,15 +6,14 @@
 #include "core/ui_phase.h"
 #include "i18n/i18n.h"
 #include "render/render_context.h"
+#include "shell/settings/bar_widget_editor.h"
 #include "shell/settings/settings_registry.h"
-#include "shell/settings/widget_settings_registry.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
-#include "ui/controls/search_picker.h"
 #include "ui/controls/select.h"
 #include "ui/controls/separator.h"
 #include "ui/controls/slider.h"
@@ -65,113 +64,6 @@ namespace {
       labels.push_back(opt.label);
     }
     return labels;
-  }
-
-  std::string pathKey(const std::vector<std::string>& path) {
-    std::string out;
-    for (const auto& part : path) {
-      if (!out.empty()) {
-        out.push_back('.');
-      }
-      out += part;
-    }
-    return out;
-  }
-
-  bool isBarWidgetListPath(const std::vector<std::string>& path) {
-    if (path.size() < 3 || path.front() != "bar") {
-      return false;
-    }
-    const auto& key = path.back();
-    return key == "start" || key == "center" || key == "end";
-  }
-
-  bool isFirstBarWidgetListPath(const std::vector<std::string>& path) {
-    return isBarWidgetListPath(path) && path.back() == "start";
-  }
-
-  std::vector<std::string> pathWithLastSegment(std::vector<std::string> path, std::string segment) {
-    if (!path.empty()) {
-      path.back() = std::move(segment);
-    }
-    return path;
-  }
-
-  std::string laneLabel(std::string_view lane) {
-    if (lane == "start") {
-      return i18n::tr("settings.widget-lane-start");
-    }
-    if (lane == "center") {
-      return i18n::tr("settings.widget-lane-center");
-    }
-    if (lane == "end") {
-      return i18n::tr("settings.widget-lane-end");
-    }
-    return std::string(lane);
-  }
-
-  std::vector<std::string> barWidgetItemsForPath(const Config& cfg, const std::vector<std::string>& path) {
-    if (!isBarWidgetListPath(path) || path.size() < 3) {
-      return {};
-    }
-
-    const auto* bar = settings::findBar(cfg, path[1]);
-    if (bar == nullptr) {
-      return {};
-    }
-
-    const auto& lane = path.back();
-    if (path.size() >= 5 && path[2] == "monitor") {
-      const auto* ovr = settings::findMonitorOverride(*bar, path[3]);
-      if (ovr != nullptr) {
-        if (lane == "start") {
-          return ovr->startWidgets.value_or(bar->startWidgets);
-        }
-        if (lane == "center") {
-          return ovr->centerWidgets.value_or(bar->centerWidgets);
-        }
-        if (lane == "end") {
-          return ovr->endWidgets.value_or(bar->endWidgets);
-        }
-      }
-    }
-
-    if (lane == "start") {
-      return bar->startWidgets;
-    }
-    if (lane == "center") {
-      return bar->centerWidgets;
-    }
-    if (lane == "end") {
-      return bar->endWidgets;
-    }
-    return {};
-  }
-
-  ThemeColor widgetBadgeColor(settings::WidgetReferenceKind kind) {
-    switch (kind) {
-    case settings::WidgetReferenceKind::BuiltIn:
-      return roleColor(ColorRole::Primary, 0.16f);
-    case settings::WidgetReferenceKind::Named:
-      return roleColor(ColorRole::Secondary, 0.18f);
-    case settings::WidgetReferenceKind::Unknown:
-      return roleColor(ColorRole::Error, 0.16f);
-    }
-    return roleColor(ColorRole::OnSurfaceVariant, 0.12f);
-  }
-
-  std::vector<SearchPickerOption> widgetPickerOptions(const Config& cfg) {
-    std::vector<SearchPickerOption> options;
-    const auto entries = settings::widgetPickerEntries(cfg);
-    options.reserve(entries.size());
-    for (const auto& entry : entries) {
-      options.push_back(SearchPickerOption{.value = entry.value,
-                                           .label = entry.label,
-                                           .description = entry.description,
-                                           .category = entry.category,
-                                           .enabled = true});
-    }
-    return options;
   }
 
   std::vector<std::string> sectionKeys(const std::vector<settings::SettingEntry>& entries) {
@@ -813,61 +705,6 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     return input;
   };
 
-  const auto widgetSettingPath = [](std::string widgetName, std::string settingKey) {
-    return std::vector<std::string>{"widget", std::move(widgetName), std::move(settingKey)};
-  };
-
-  const auto widgetSettingValue = [&](std::string_view widgetName,
-                                      const settings::WidgetSettingSpec& spec) -> WidgetSettingValue {
-    if (const auto it = cfg.widgets.find(std::string(widgetName)); it != cfg.widgets.end()) {
-      if (const auto settingIt = it->second.settings.find(spec.key); settingIt != it->second.settings.end()) {
-        return settingIt->second;
-      }
-    }
-    return spec.defaultValue;
-  };
-
-  const auto settingValueAsBool = [](const WidgetSettingValue& value) {
-    if (const auto* v = std::get_if<bool>(&value)) {
-      return *v;
-    }
-    return false;
-  };
-
-  const auto settingValueAsInt = [](const WidgetSettingValue& value) {
-    if (const auto* v = std::get_if<std::int64_t>(&value)) {
-      return *v;
-    }
-    if (const auto* v = std::get_if<double>(&value)) {
-      return static_cast<std::int64_t>(std::llround(*v));
-    }
-    return std::int64_t{0};
-  };
-
-  const auto settingValueAsDouble = [](const WidgetSettingValue& value) {
-    if (const auto* v = std::get_if<double>(&value)) {
-      return *v;
-    }
-    if (const auto* v = std::get_if<std::int64_t>(&value)) {
-      return static_cast<double>(*v);
-    }
-    return 0.0;
-  };
-
-  const auto settingValueAsString = [](const WidgetSettingValue& value) {
-    if (const auto* v = std::get_if<std::string>(&value)) {
-      return *v;
-    }
-    return std::string{};
-  };
-
-  const auto settingValueAsStringList = [](const WidgetSettingValue& value) {
-    if (const auto* v = std::get_if<std::vector<std::string>>(&value)) {
-      return *v;
-    }
-    return std::vector<std::string>{};
-  };
-
   const auto makeListBlock = [&](Flex& section, const settings::SettingEntry& entry,
                                  const settings::ListSetting& list) {
     const bool overridden = (m_config != nullptr && m_config->hasOverride(entry.path));
@@ -916,37 +753,6 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       auto spacer = std::make_unique<Flex>();
       spacer->setFlexGrow(1.0f);
       itemRow->addChild(std::move(spacer));
-
-      if (isBarWidgetListPath(entry.path)) {
-        static constexpr std::string_view kLanes[] = {"start", "center", "end"};
-        const auto currentLane = std::string_view(entry.path.back());
-        for (const auto targetLane : kLanes) {
-          if (targetLane == currentLane) {
-            continue;
-          }
-          auto moveBtn = std::make_unique<Button>();
-          moveBtn->setText(laneLabel(targetLane));
-          moveBtn->setVariant(ButtonVariant::Ghost);
-          moveBtn->setFontSize(Style::fontSizeCaption * scale);
-          moveBtn->setMinHeight(Style::controlHeightSm * scale);
-          moveBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-          moveBtn->setRadius(Style::radiusSm * scale);
-          auto sourceItems = list.items;
-          auto sourcePath = entry.path;
-          auto targetPath = pathWithLastSegment(entry.path, std::string(targetLane));
-          auto targetItems = barWidgetItemsForPath(cfg, targetPath);
-          moveBtn->setOnClick([setOverrides, sourceItems, sourcePath, targetItems, targetPath, i]() mutable {
-            if (i >= sourceItems.size()) {
-              return;
-            }
-            auto item = sourceItems[i];
-            sourceItems.erase(sourceItems.begin() + static_cast<std::ptrdiff_t>(i));
-            targetItems.push_back(std::move(item));
-            setOverrides({{sourcePath, sourceItems}, {targetPath, targetItems}});
-          });
-          itemRow->addChild(std::move(moveBtn));
-        }
-      }
 
       if (i > 0) {
         auto upBtn = std::make_unique<Button>();
@@ -1002,447 +808,48 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       block->addChild(std::move(itemRow));
     }
 
-    if (isBarWidgetListPath(entry.path)) {
-      const std::string pickerKey = pathKey(entry.path);
-      auto addBtn = std::make_unique<Button>();
-      addBtn->setText(i18n::tr("settings.add-widget"));
-      addBtn->setGlyph("add");
-      addBtn->setVariant(ButtonVariant::Ghost);
-      addBtn->setGlyphSize(Style::fontSizeCaption * scale);
-      addBtn->setFontSize(Style::fontSizeCaption * scale);
-      addBtn->setMinHeight(Style::controlHeightSm * scale);
-      addBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-      addBtn->setRadius(Style::radiusSm * scale);
-      addBtn->setOnClick([this, pickerKey, requestRebuild]() {
-        m_openWidgetPickerPath = m_openWidgetPickerPath == pickerKey ? std::string{} : pickerKey;
-        requestRebuild();
-      });
-      block->addChild(std::move(addBtn));
+    auto addRow = std::make_unique<Flex>();
+    addRow->setDirection(FlexDirection::Horizontal);
+    addRow->setAlign(FlexAlign::Center);
+    addRow->setGap(Style::spaceXs * scale);
 
-      if (m_openWidgetPickerPath == pickerKey) {
-        auto picker = std::make_unique<SearchPicker>();
-        picker->setPlaceholder(i18n::tr("settings.widget-picker-placeholder"));
-        picker->setEmptyText(i18n::tr("settings.widget-picker-empty"));
-        picker->setOptions(widgetPickerOptions(cfg));
-        picker->setSize(360.0f * scale, 260.0f * scale);
-        auto items = list.items;
-        auto path = entry.path;
-        picker->setOnActivated([this, setOverride, items, path](const SearchPickerOption& option) mutable {
-          if (!option.value.empty()) {
-            items.push_back(option.value);
-            m_openWidgetPickerPath.clear();
-            setOverride(path, items);
-          }
-        });
-        picker->setOnCancel([this, requestRebuild]() {
-          m_openWidgetPickerPath.clear();
-          requestRebuild();
-        });
-        block->addChild(std::move(picker));
+    auto addInput = std::make_unique<Input>();
+    addInput->setFontSize(Style::fontSizeCaption * scale);
+    addInput->setControlHeight(Style::controlHeightSm * scale);
+    addInput->setHorizontalPadding(Style::spaceXs * scale);
+    addInput->setSize(140.0f * scale, Style::controlHeightSm * scale);
+    addInput->setFlexGrow(1.0f);
+    auto* addInputPtr = addInput.get();
+
+    auto addBtn = std::make_unique<Button>();
+    addBtn->setGlyph("add");
+    addBtn->setVariant(ButtonVariant::Ghost);
+    addBtn->setGlyphSize(Style::fontSizeCaption * scale);
+    addBtn->setMinWidth(Style::controlHeightSm * scale);
+    addBtn->setMinHeight(Style::controlHeightSm * scale);
+    addBtn->setPadding(Style::spaceXs * scale);
+    addBtn->setRadius(Style::radiusSm * scale);
+    auto items = list.items;
+    auto path = entry.path;
+    addBtn->setOnClick([setOverride, addInputPtr, items, path]() mutable {
+      const auto& text = addInputPtr->value();
+      if (!text.empty()) {
+        items.push_back(text);
+        setOverride(path, items);
       }
-    } else {
-      auto addRow = std::make_unique<Flex>();
-      addRow->setDirection(FlexDirection::Horizontal);
-      addRow->setAlign(FlexAlign::Center);
-      addRow->setGap(Style::spaceXs * scale);
+    });
 
-      auto addInput = std::make_unique<Input>();
-      addInput->setFontSize(Style::fontSizeCaption * scale);
-      addInput->setControlHeight(Style::controlHeightSm * scale);
-      addInput->setHorizontalPadding(Style::spaceXs * scale);
-      addInput->setSize(140.0f * scale, Style::controlHeightSm * scale);
-      addInput->setFlexGrow(1.0f);
-      auto* addInputPtr = addInput.get();
-
-      auto addBtn = std::make_unique<Button>();
-      addBtn->setGlyph("add");
-      addBtn->setVariant(ButtonVariant::Ghost);
-      addBtn->setGlyphSize(Style::fontSizeCaption * scale);
-      addBtn->setMinWidth(Style::controlHeightSm * scale);
-      addBtn->setMinHeight(Style::controlHeightSm * scale);
-      addBtn->setPadding(Style::spaceXs * scale);
-      addBtn->setRadius(Style::radiusSm * scale);
-      auto items = list.items;
-      auto path = entry.path;
-      addBtn->setOnClick([setOverride, addInputPtr, items, path]() mutable {
-        const auto& text = addInputPtr->value();
-        if (!text.empty()) {
-          items.push_back(text);
-          setOverride(path, items);
-        }
-      });
-
-      addInput->setOnSubmit([setOverride, items, path](const std::string& text) mutable {
-        if (!text.empty()) {
-          items.push_back(text);
-          setOverride(path, items);
-        }
-      });
-
-      addRow->addChild(std::move(addInput));
-      addRow->addChild(std::move(addBtn));
-      block->addChild(std::move(addRow));
-    }
-
-    section.addChild(std::move(block));
-  };
-
-  const auto makeWidgetSettingsPanel = [&](Flex& item, std::string widgetName) {
-    const auto widgetType = settings::widgetTypeForReference(cfg, widgetName);
-    if (widgetType.empty()) {
-      return;
-    }
-
-    auto specs = settings::widgetSettingSpecs(widgetType);
-    if (specs.empty()) {
-      return;
-    }
-
-    auto panel = std::make_unique<Flex>();
-    panel->setDirection(FlexDirection::Vertical);
-    panel->setAlign(FlexAlign::Stretch);
-    panel->setGap(Style::spaceXs * scale);
-    panel->setPadding(Style::spaceSm * scale);
-    panel->setRadius(Style::radiusSm * scale);
-    panel->setBackground(roleColor(ColorRole::SurfaceVariant, 0.55f));
-    panel->setBorderColor(roleColor(ColorRole::Outline, 0.22f));
-    panel->setBorderWidth(Style::borderWidth);
-
-    auto panelHeader = std::make_unique<Flex>();
-    panelHeader->setDirection(FlexDirection::Horizontal);
-    panelHeader->setAlign(FlexAlign::Center);
-    panelHeader->setGap(Style::spaceXs * scale);
-    panelHeader->addChild(makeLabel(i18n::tr("settings.widget-settings"), Style::fontSizeCaption * scale,
-                                    roleColor(ColorRole::OnSurface), true));
-    panelHeader->addChild(
-        makeLabel(widgetType, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false));
-    panel->addChild(std::move(panelHeader));
-
-    std::size_t visibleSpecs = 0;
-    for (const auto& spec : specs) {
-      if (spec.advanced && !m_showAdvanced) {
-        continue;
+    addInput->setOnSubmit([setOverride, items, path](const std::string& text) mutable {
+      if (!text.empty()) {
+        items.push_back(text);
+        setOverride(path, items);
       }
-      const auto path = widgetSettingPath(widgetName, spec.key);
-      const bool overridden = m_config != nullptr && m_config->hasOverride(path);
-      if (m_showOverriddenOnly && !overridden) {
-        continue;
-      }
+    });
 
-      const auto value = widgetSettingValue(widgetName, spec);
-      settings::SettingEntry entry{
-          .section = "bar",
-          .group = "widget-settings",
-          .title = i18n::tr(spec.labelKey),
-          .subtitle = i18n::tr(spec.descriptionKey),
-          .path = path,
-          .control = settings::TextSetting{},
-          .advanced = spec.advanced,
-          .searchText = {},
-      };
+    addRow->addChild(std::move(addInput));
+    addRow->addChild(std::move(addBtn));
+    block->addChild(std::move(addRow));
 
-      switch (spec.valueType) {
-      case settings::WidgetSettingValueType::Bool:
-        makeRow(*panel, entry, makeToggle(settingValueAsBool(value), path));
-        break;
-      case settings::WidgetSettingValueType::Int: {
-        const auto minValue = static_cast<float>(spec.minValue.value_or(0.0));
-        const auto maxValue = static_cast<float>(spec.maxValue.value_or(100.0));
-        makeRow(*panel, entry,
-                makeSlider(static_cast<float>(settingValueAsInt(value)), minValue, maxValue,
-                           static_cast<float>(spec.step), path, true));
-        break;
-      }
-      case settings::WidgetSettingValueType::Double: {
-        const auto minValue = static_cast<float>(spec.minValue.value_or(0.0));
-        const auto maxValue = static_cast<float>(spec.maxValue.value_or(1.0));
-        makeRow(*panel, entry,
-                makeSlider(static_cast<float>(settingValueAsDouble(value)), minValue, maxValue,
-                           static_cast<float>(spec.step), path, false));
-        break;
-      }
-      case settings::WidgetSettingValueType::String:
-        makeRow(*panel, entry, makeText(settingValueAsString(value), {}, path));
-        break;
-      case settings::WidgetSettingValueType::StringList:
-        makeListBlock(*panel, entry, settings::ListSetting{settingValueAsStringList(value)});
-        break;
-      case settings::WidgetSettingValueType::Select: {
-        std::vector<settings::SelectOption> options;
-        options.reserve(spec.options.size());
-        for (const auto& option : spec.options) {
-          options.push_back(settings::SelectOption{std::string(option.value), i18n::tr(option.labelKey)});
-        }
-        makeRow(*panel, entry,
-                makeSelect(settings::SelectSetting{std::move(options), settingValueAsString(value)}, path));
-        break;
-      }
-      }
-      ++visibleSpecs;
-    }
-
-    if (visibleSpecs == 0) {
-      panel->addChild(makeLabel(i18n::tr("settings.widget-settings-empty"), Style::fontSizeCaption * scale,
-                                roleColor(ColorRole::OnSurfaceVariant), false));
-    }
-
-    item.addChild(std::move(panel));
-  };
-
-  const auto makeBarWidgetLaneEditor = [&](Flex& section, const settings::SettingEntry& entry) {
-    if (!isFirstBarWidgetListPath(entry.path)) {
-      return;
-    }
-
-    auto block = std::make_unique<Flex>();
-    block->setDirection(FlexDirection::Vertical);
-    block->setAlign(FlexAlign::Stretch);
-    block->setGap(Style::spaceSm * scale);
-    block->setPadding(2.0f * scale, 0.0f);
-
-    auto titleRow = std::make_unique<Flex>();
-    titleRow->setDirection(FlexDirection::Horizontal);
-    titleRow->setAlign(FlexAlign::Center);
-    titleRow->setGap(Style::spaceSm * scale);
-    titleRow->addChild(makeLabel(i18n::tr("settings.bar-widget-editor"), Style::fontSizeBody * scale,
-                                 roleColor(ColorRole::OnSurface), false));
-    block->addChild(std::move(titleRow));
-
-    block->addChild(makeLabel(i18n::tr("settings.bar-widget-editor-desc"), Style::fontSizeCaption * scale,
-                              roleColor(ColorRole::OnSurfaceVariant), false));
-
-    auto lanes = std::make_unique<Flex>();
-    lanes->setDirection(FlexDirection::Horizontal);
-    lanes->setAlign(FlexAlign::Stretch);
-    lanes->setGap(Style::spaceSm * scale);
-    lanes->setFillParentMainAxis(true);
-
-    static constexpr std::string_view kLaneKeys[] = {"start", "center", "end"};
-    for (const auto laneKey : kLaneKeys) {
-      auto lanePath = pathWithLastSegment(entry.path, std::string(laneKey));
-      const auto laneItems = barWidgetItemsForPath(cfg, lanePath);
-      const bool overridden = m_config != nullptr && m_config->hasOverride(lanePath);
-
-      auto lane = std::make_unique<Flex>();
-      lane->setDirection(FlexDirection::Vertical);
-      lane->setAlign(FlexAlign::Stretch);
-      lane->setGap(Style::spaceXs * scale);
-      lane->setPadding(Style::spaceSm * scale);
-      lane->setRadius(Style::radiusMd * scale);
-      lane->setBackground(roleColor(ColorRole::SurfaceVariant, 0.45f));
-      lane->setBorderColor(roleColor(ColorRole::Outline, 0.35f));
-      lane->setBorderWidth(Style::borderWidth);
-      lane->setFlexGrow(1.0f);
-      lane->setMinWidth(180.0f * scale);
-
-      auto laneHeader = std::make_unique<Flex>();
-      laneHeader->setDirection(FlexDirection::Horizontal);
-      laneHeader->setAlign(FlexAlign::Center);
-      laneHeader->setGap(Style::spaceXs * scale);
-      laneHeader->addChild(
-          makeLabel(laneLabel(laneKey), Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
-      if (overridden) {
-        auto badge = std::make_unique<Flex>();
-        badge->setAlign(FlexAlign::Center);
-        badge->setPadding(1.0f * scale, Style::spaceXs * scale);
-        badge->setRadius(Style::radiusSm * scale);
-        badge->setBackground(roleColor(ColorRole::Primary, 0.15f));
-        badge->addChild(makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeCaption * scale,
-                                  roleColor(ColorRole::Primary), true));
-        laneHeader->addChild(std::move(badge));
-      }
-      auto laneSpacer = std::make_unique<Flex>();
-      laneSpacer->setFlexGrow(1.0f);
-      laneHeader->addChild(std::move(laneSpacer));
-      if (overridden) {
-        laneHeader->addChild(makeResetButton(lanePath));
-      }
-      lane->addChild(std::move(laneHeader));
-
-      for (std::size_t i = 0; i < laneItems.size(); ++i) {
-        const auto info = settings::widgetReferenceInfo(cfg, laneItems[i]);
-        auto item = std::make_unique<Flex>();
-        item->setDirection(FlexDirection::Vertical);
-        item->setAlign(FlexAlign::Stretch);
-        item->setGap(Style::spaceXs * scale);
-        item->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-        item->setRadius(Style::radiusSm * scale);
-        item->setBackground(roleColor(ColorRole::Surface, 0.72f));
-        item->setBorderColor(roleColor(ColorRole::Outline, 0.22f));
-        item->setBorderWidth(Style::borderWidth);
-
-        auto itemTop = std::make_unique<Flex>();
-        itemTop->setDirection(FlexDirection::Horizontal);
-        itemTop->setAlign(FlexAlign::Center);
-        itemTop->setGap(Style::spaceXs * scale);
-        itemTop->addChild(makeLabel(info.title, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurface), true));
-        auto itemSpacer = std::make_unique<Flex>();
-        itemSpacer->setFlexGrow(1.0f);
-        itemTop->addChild(std::move(itemSpacer));
-        auto kindBadge = std::make_unique<Flex>();
-        kindBadge->setAlign(FlexAlign::Center);
-        kindBadge->setPadding(1.0f * scale, Style::spaceXs * scale);
-        kindBadge->setRadius(Style::radiusSm * scale);
-        kindBadge->setBackground(widgetBadgeColor(info.kind));
-        kindBadge->addChild(
-            makeLabel(info.badge, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurface), true));
-        itemTop->addChild(std::move(kindBadge));
-        item->addChild(std::move(itemTop));
-
-        item->addChild(
-            makeLabel(info.detail, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false));
-
-        auto actions = std::make_unique<Flex>();
-        actions->setDirection(FlexDirection::Horizontal);
-        actions->setAlign(FlexAlign::Center);
-        actions->setGap(Style::spaceXs * scale);
-
-        const auto widgetName = laneItems[i];
-        const bool editableWidget = !settings::widgetTypeForReference(cfg, widgetName).empty();
-        if (editableWidget) {
-          auto editBtn = std::make_unique<Button>();
-          editBtn->setGlyph("settings");
-          editBtn->setVariant(m_editingWidgetName == widgetName ? ButtonVariant::Default : ButtonVariant::Ghost);
-          editBtn->setGlyphSize(Style::fontSizeCaption * scale);
-          editBtn->setMinWidth(Style::controlHeightSm * scale);
-          editBtn->setMinHeight(Style::controlHeightSm * scale);
-          editBtn->setPadding(Style::spaceXs * scale);
-          editBtn->setRadius(Style::radiusSm * scale);
-          editBtn->setOnClick([this, widgetName, requestRebuild]() {
-            m_editingWidgetName = m_editingWidgetName == widgetName ? std::string{} : widgetName;
-            m_openWidgetPickerPath.clear();
-            requestRebuild();
-          });
-          actions->addChild(std::move(editBtn));
-        }
-
-        if (i > 0) {
-          auto upBtn = std::make_unique<Button>();
-          upBtn->setGlyph("chevron-up");
-          upBtn->setVariant(ButtonVariant::Ghost);
-          upBtn->setGlyphSize(Style::fontSizeCaption * scale);
-          upBtn->setMinWidth(Style::controlHeightSm * scale);
-          upBtn->setMinHeight(Style::controlHeightSm * scale);
-          upBtn->setPadding(Style::spaceXs * scale);
-          upBtn->setRadius(Style::radiusSm * scale);
-          auto items = laneItems;
-          auto path = lanePath;
-          upBtn->setOnClick([setOverride, items, path, i]() mutable {
-            std::swap(items[i], items[i - 1]);
-            setOverride(path, items);
-          });
-          actions->addChild(std::move(upBtn));
-        }
-        if (i + 1 < laneItems.size()) {
-          auto downBtn = std::make_unique<Button>();
-          downBtn->setGlyph("chevron-down");
-          downBtn->setVariant(ButtonVariant::Ghost);
-          downBtn->setGlyphSize(Style::fontSizeCaption * scale);
-          downBtn->setMinWidth(Style::controlHeightSm * scale);
-          downBtn->setMinHeight(Style::controlHeightSm * scale);
-          downBtn->setPadding(Style::spaceXs * scale);
-          downBtn->setRadius(Style::radiusSm * scale);
-          auto items = laneItems;
-          auto path = lanePath;
-          downBtn->setOnClick([setOverride, items, path, i]() mutable {
-            std::swap(items[i], items[i + 1]);
-            setOverride(path, items);
-          });
-          actions->addChild(std::move(downBtn));
-        }
-
-        for (const auto targetLane : kLaneKeys) {
-          if (targetLane == laneKey) {
-            continue;
-          }
-          auto moveBtn = std::make_unique<Button>();
-          moveBtn->setText(laneLabel(targetLane));
-          moveBtn->setVariant(ButtonVariant::Ghost);
-          moveBtn->setFontSize(Style::fontSizeCaption * scale);
-          moveBtn->setMinHeight(Style::controlHeightSm * scale);
-          moveBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-          moveBtn->setRadius(Style::radiusSm * scale);
-          auto sourceItems = laneItems;
-          auto sourcePath = lanePath;
-          auto targetPath = pathWithLastSegment(entry.path, std::string(targetLane));
-          auto targetItems = barWidgetItemsForPath(cfg, targetPath);
-          moveBtn->setOnClick([setOverrides, sourceItems, sourcePath, targetItems, targetPath, i]() mutable {
-            if (i >= sourceItems.size()) {
-              return;
-            }
-            auto widget = sourceItems[i];
-            sourceItems.erase(sourceItems.begin() + static_cast<std::ptrdiff_t>(i));
-            targetItems.push_back(std::move(widget));
-            setOverrides({{sourcePath, sourceItems}, {targetPath, targetItems}});
-          });
-          actions->addChild(std::move(moveBtn));
-        }
-
-        auto removeBtn = std::make_unique<Button>();
-        removeBtn->setGlyph("close");
-        removeBtn->setVariant(ButtonVariant::Ghost);
-        removeBtn->setGlyphSize(Style::fontSizeCaption * scale);
-        removeBtn->setMinWidth(Style::controlHeightSm * scale);
-        removeBtn->setMinHeight(Style::controlHeightSm * scale);
-        removeBtn->setPadding(Style::spaceXs * scale);
-        removeBtn->setRadius(Style::radiusSm * scale);
-        auto items = laneItems;
-        auto path = lanePath;
-        removeBtn->setOnClick([setOverride, items, path, i]() mutable {
-          items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
-          setOverride(path, items);
-        });
-        actions->addChild(std::move(removeBtn));
-
-        item->addChild(std::move(actions));
-        if (m_editingWidgetName == widgetName) {
-          makeWidgetSettingsPanel(*item, widgetName);
-        }
-        lane->addChild(std::move(item));
-      }
-
-      const std::string pickerKey = pathKey(lanePath);
-      auto addBtn = std::make_unique<Button>();
-      addBtn->setText(i18n::tr("settings.add-widget"));
-      addBtn->setGlyph("add");
-      addBtn->setVariant(ButtonVariant::Ghost);
-      addBtn->setGlyphSize(Style::fontSizeCaption * scale);
-      addBtn->setFontSize(Style::fontSizeCaption * scale);
-      addBtn->setMinHeight(Style::controlHeightSm * scale);
-      addBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
-      addBtn->setRadius(Style::radiusSm * scale);
-      addBtn->setOnClick([this, pickerKey, requestRebuild]() {
-        m_openWidgetPickerPath = m_openWidgetPickerPath == pickerKey ? std::string{} : pickerKey;
-        requestRebuild();
-      });
-      lane->addChild(std::move(addBtn));
-
-      if (m_openWidgetPickerPath == pickerKey) {
-        auto picker = std::make_unique<SearchPicker>();
-        picker->setPlaceholder(i18n::tr("settings.widget-picker-placeholder"));
-        picker->setEmptyText(i18n::tr("settings.widget-picker-empty"));
-        picker->setOptions(widgetPickerOptions(cfg));
-        picker->setSize(320.0f * scale, 250.0f * scale);
-        auto items = laneItems;
-        auto path = lanePath;
-        picker->setOnActivated([this, setOverride, items, path](const SearchPickerOption& option) mutable {
-          if (!option.value.empty()) {
-            items.push_back(option.value);
-            m_openWidgetPickerPath.clear();
-            setOverride(path, items);
-          }
-        });
-        picker->setOnCancel([this, requestRebuild]() {
-          m_openWidgetPickerPath.clear();
-          requestRebuild();
-        });
-        lane->addChild(std::move(picker));
-      }
-
-      lanes->addChild(std::move(lane));
-    }
-
-    block->addChild(std::move(lanes));
     section.addChild(std::move(block));
   };
 
@@ -1470,6 +877,34 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   std::string activeGroupKey;
   Flex* activeSection = nullptr;
   std::size_t visibleEntries = 0;
+
+  settings::BarWidgetEditorContext barWidgetEditorCtx{
+      .config = cfg,
+      .configService = m_config,
+      .scale = scale,
+      .showAdvanced = m_showAdvanced,
+      .showOverriddenOnly = m_showOverriddenOnly,
+      .openWidgetPickerPath = m_openWidgetPickerPath,
+      .editingWidgetName = m_editingWidgetName,
+      .requestRebuild = requestRebuild,
+      .setOverride = setOverride,
+      .setOverrides = setOverrides,
+      .makeResetButton = makeResetButton,
+      .makeRow = makeRow,
+      .makeToggle = [&](bool checked, std::vector<std::string> path) -> std::unique_ptr<Node> {
+        return makeToggle(checked, std::move(path));
+      },
+      .makeSelect = [&](const settings::SelectSetting& setting, std::vector<std::string> path)
+          -> std::unique_ptr<Node> { return makeSelect(setting, std::move(path)); },
+      .makeSlider = [&](float value, float minValue, float maxValue, float step, std::vector<std::string> path,
+                        bool integerValue) -> std::unique_ptr<Node> {
+        return makeSlider(value, minValue, maxValue, step, std::move(path), integerValue);
+      },
+      .makeText = [&](const std::string& value, const std::string& placeholder, std::vector<std::string> path)
+          -> std::unique_ptr<Node> { return makeText(value, placeholder, std::move(path)); },
+      .makeListBlock = [&](Flex& section, const settings::SettingEntry& entry,
+                           const settings::ListSetting& list) { makeListBlock(section, entry, list); },
+  };
 
   for (const auto& entry : registry) {
     if (m_searchQuery.empty() && !m_selectedSection.empty() && entry.section != m_selectedSection) {
@@ -1506,9 +941,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         addGroupLabel(*activeSection, groupLabel(entry.group), isFirstGroup);
       }
       if (const auto* list = std::get_if<settings::ListSetting>(&entry.control)) {
-        if (isFirstBarWidgetListPath(entry.path)) {
-          makeBarWidgetLaneEditor(*activeSection, entry);
-        } else if (!isBarWidgetListPath(entry.path)) {
+        if (settings::isFirstBarWidgetListPath(entry.path)) {
+          settings::addBarWidgetLaneEditor(*activeSection, entry, barWidgetEditorCtx);
+        } else if (!settings::isBarWidgetListPath(entry.path)) {
           makeListBlock(*activeSection, entry, *list);
         }
       } else {
