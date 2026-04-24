@@ -11,18 +11,22 @@
 #include "ui/style.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
 
 namespace settings {
   namespace {
+
+    constexpr std::string_view kCreateInstancePrefix = "create-instance:";
 
     std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ThemeColor& color,
                                      bool bold = false) {
@@ -115,18 +119,113 @@ namespace settings {
       return roleColor(ColorRole::OnSurfaceVariant, 0.12f);
     }
 
+    const WidgetTypeSpec* widgetTypeSpecForType(std::string_view type) {
+      for (const auto& spec : widgetTypeSpecs()) {
+        if (spec.type == type) {
+          return &spec;
+        }
+      }
+      return nullptr;
+    }
+
+    bool isCreateInstanceValue(std::string_view value) { return value.starts_with(kCreateInstancePrefix); }
+
+    std::string createInstanceTypeFromValue(std::string_view value) {
+      if (!isCreateInstanceValue(value)) {
+        return {};
+      }
+      value.remove_prefix(kCreateInstancePrefix.size());
+      return std::string(value);
+    }
+
     std::vector<SearchPickerOption> widgetPickerOptions(const Config& cfg) {
       std::vector<SearchPickerOption> options;
       const auto entries = widgetPickerEntries(cfg);
-      options.reserve(entries.size());
+      options.reserve(entries.size() * 2);
       for (const auto& entry : entries) {
         options.push_back(SearchPickerOption{.value = entry.value,
                                              .label = entry.label,
                                              .description = entry.description,
                                              .category = entry.category,
                                              .enabled = true});
+        if (entry.kind != WidgetReferenceKind::BuiltIn) {
+          continue;
+        }
+        const auto* spec = widgetTypeSpecForType(entry.value);
+        if (spec == nullptr || !spec->supportsMultipleInstances) {
+          continue;
+        }
+        options.push_back(SearchPickerOption{
+            .value = std::string(kCreateInstancePrefix) + entry.value,
+            .label = i18n::tr("settings.widget-picker-create-label", "label", entry.label),
+            .description = i18n::tr("settings.widget-picker-create-desc", "type", entry.value),
+            .category = i18n::tr("settings.widget-kind-new-instance"),
+            .enabled = true,
+        });
       }
       return options;
+    }
+
+    void collectWidgetReferenceNames(const std::vector<std::string>& widgets, std::unordered_set<std::string>& seen) {
+      for (const auto& widget : widgets) {
+        seen.insert(widget);
+      }
+    }
+
+    bool widgetReferenceNameExists(const Config& cfg, std::string_view name) {
+      const std::string key(name);
+      if (isBuiltInWidgetType(name) || cfg.widgets.contains(key)) {
+        return true;
+      }
+
+      std::unordered_set<std::string> seen;
+      for (const auto& bar : cfg.bars) {
+        collectWidgetReferenceNames(bar.startWidgets, seen);
+        collectWidgetReferenceNames(bar.centerWidgets, seen);
+        collectWidgetReferenceNames(bar.endWidgets, seen);
+        for (const auto& ovr : bar.monitorOverrides) {
+          if (ovr.startWidgets.has_value()) {
+            collectWidgetReferenceNames(*ovr.startWidgets, seen);
+          }
+          if (ovr.centerWidgets.has_value()) {
+            collectWidgetReferenceNames(*ovr.centerWidgets, seen);
+          }
+          if (ovr.endWidgets.has_value()) {
+            collectWidgetReferenceNames(*ovr.endWidgets, seen);
+          }
+        }
+      }
+      return seen.contains(key);
+    }
+
+    std::string normalizedWidgetInstanceBase(std::string_view type) {
+      std::string out;
+      out.reserve(type.size());
+      bool lastUnderscore = false;
+      for (const unsigned char c : type) {
+        if (std::isalnum(c)) {
+          out.push_back(static_cast<char>(std::tolower(c)));
+          lastUnderscore = false;
+        } else if (!lastUnderscore && !out.empty()) {
+          out.push_back('_');
+          lastUnderscore = true;
+        }
+      }
+      while (!out.empty() && out.back() == '_') {
+        out.pop_back();
+      }
+      return out.empty() ? std::string("widget") : out;
+    }
+
+    std::string nextWidgetInstanceId(const Config& cfg, std::string_view type) {
+      const std::string base = normalizedWidgetInstanceBase(type);
+      for (std::size_t index = 2; index < 10000; ++index) {
+        const std::string candidate = base + "_" + std::to_string(index);
+        if (!widgetReferenceNameExists(cfg, candidate)) {
+          return candidate;
+        }
+      }
+      return base + "_custom";
     }
 
     std::vector<std::string> widgetSettingPath(std::string widgetName, std::string settingKey) {
@@ -541,9 +640,20 @@ namespace settings {
         picker->setSize(320.0f * ctx.scale, 250.0f * ctx.scale);
         auto items = laneItems;
         auto path = lanePath;
-        picker->setOnActivated([&openWidgetPickerPath = ctx.openWidgetPickerPath, setOverride = ctx.setOverride, items,
+        picker->setOnActivated([&openWidgetPickerPath = ctx.openWidgetPickerPath,
+                                &editingWidgetName = ctx.editingWidgetName, config = ctx.config,
+                                setOverride = ctx.setOverride, setOverrides = ctx.setOverrides, items,
                                 path](const SearchPickerOption& option) mutable {
           if (!option.value.empty()) {
+            if (const auto type = createInstanceTypeFromValue(option.value); !type.empty()) {
+              const auto instanceId = nextWidgetInstanceId(config, type);
+              items.push_back(instanceId);
+              openWidgetPickerPath.clear();
+              editingWidgetName = instanceId;
+              setOverrides({{{"widget", instanceId, "type"}, type}, {path, items}});
+              return;
+            }
+
             items.push_back(option.value);
             openWidgetPickerPath.clear();
             setOverride(path, items);

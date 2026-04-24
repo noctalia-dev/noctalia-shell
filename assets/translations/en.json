@@ -58,6 +58,9 @@
     "widget-settings-empty": "No settings match the current filters.",
     "widget-picker-placeholder": "Search widgets...",
     "widget-picker-empty": "No widgets found",
+    "widget-picker-create-label": "New {label} Instance",
+    "widget-picker-create-desc": "Creates [widget.*] type = \"{type}\"",
+    "widget-kind-new-instance": "New Instance",
     "widget-category": {
       "custom": "Custom",
       "info": "Info",
