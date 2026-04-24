@@ -79,6 +79,39 @@ namespace {
     return sections;
   }
 
+  bool containsPath(const std::vector<std::vector<std::string>>& paths, const std::vector<std::string>& path) {
+    return std::find(paths.begin(), paths.end(), path) != paths.end();
+  }
+
+  bool settingEntryBelongsToPage(const settings::SettingEntry& entry, std::string_view selectedSection,
+                                 std::string_view selectedBarName, std::string_view selectedMonitorOverride) {
+    if (selectedSection != "bar") {
+      return entry.section == selectedSection;
+    }
+
+    if (entry.section != "bar" || entry.path.size() < 2 || entry.path[0] != "bar" || entry.path[1] != selectedBarName) {
+      return false;
+    }
+
+    const bool entryIsMonitorOverride = entry.path.size() >= 5 && entry.path[2] == "monitor";
+    if (selectedMonitorOverride.empty()) {
+      return !entryIsMonitorOverride;
+    }
+    return entryIsMonitorOverride && entry.path[3] == selectedMonitorOverride;
+  }
+
+  std::string pageScopeKey(std::string_view selectedSection, std::string_view selectedBarName,
+                           std::string_view selectedMonitorOverride) {
+    if (selectedSection != "bar") {
+      return std::string(selectedSection);
+    }
+    std::string key = "bar:" + std::string(selectedBarName);
+    if (!selectedMonitorOverride.empty()) {
+      key += ":monitor:" + std::string(selectedMonitorOverride);
+    }
+    return key;
+  }
+
   bool monitorOverrideHasExplicitValue(const Config& cfg, const std::vector<std::string>& path) {
     if (path.size() < 5 || path[0] != "bar" || path[2] != "monitor") {
       return false;
@@ -264,6 +297,7 @@ void SettingsWindow::destroyWindow() {
   m_focusSearchOnRebuild = false;
   m_statusMessage.clear();
   m_statusIsError = false;
+  m_pendingResetPageScope.clear();
 }
 
 void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
@@ -332,6 +366,19 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     m_selectedSection = std::find(sections.begin(), sections.end(), "appearance") != sections.end()
                             ? std::string("appearance")
                             : (!sections.empty() ? sections.front() : std::string{});
+  }
+  const std::string resetPageScope = pageScopeKey(m_selectedSection, m_selectedBarName, m_selectedMonitorOverride);
+  std::vector<std::vector<std::string>> resetPagePaths;
+  if (m_config != nullptr) {
+    for (const auto& entry : registry) {
+      if (settingEntryBelongsToPage(entry, m_selectedSection, m_selectedBarName, m_selectedMonitorOverride) &&
+          m_config->hasOverride(entry.path) && !containsPath(resetPagePaths, entry.path)) {
+        resetPagePaths.push_back(entry.path);
+      }
+    }
+  }
+  if (m_pendingResetPageScope != resetPageScope) {
+    m_pendingResetPageScope.clear();
   }
 
   m_inputDispatcher.setSceneRoot(nullptr);
@@ -403,6 +450,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       if (m_config->setOverride(path, std::move(value))) {
         m_statusMessage.clear();
         m_statusIsError = false;
+        m_pendingResetPageScope.clear();
         requestRebuild();
         return;
       }
@@ -436,6 +484,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
           const bool hadStatus = !m_statusMessage.empty();
           m_statusMessage.clear();
           m_statusIsError = false;
+          m_pendingResetPageScope.clear();
           if (changed || hadStatus) {
             requestRebuild();
           }
@@ -450,12 +499,45 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       if (m_config->clearOverride(path)) {
         m_statusMessage.clear();
         m_statusIsError = false;
+        m_pendingResetPageScope.clear();
         requestRebuild();
         return;
       }
       m_statusMessage = i18n::tr("settings.clear-error");
       m_statusIsError = true;
       requestRebuild();
+    });
+  };
+
+  const auto clearOverrides = [this, requestRebuild](std::vector<std::vector<std::string>> paths) {
+    DeferredCall::callLater([this, paths = std::move(paths), requestRebuild]() mutable {
+      if (m_config == nullptr || paths.empty()) {
+        return;
+      }
+
+      bool changed = false;
+      bool failed = false;
+      for (const auto& path : paths) {
+        if (m_config->clearOverride(path)) {
+          changed = true;
+        } else {
+          failed = true;
+        }
+      }
+
+      m_pendingResetPageScope.clear();
+      if (failed) {
+        m_statusMessage = i18n::tr("settings.reset-page-error");
+        m_statusIsError = true;
+        requestRebuild();
+        return;
+      }
+
+      m_statusMessage.clear();
+      m_statusIsError = false;
+      if (changed) {
+        requestRebuild();
+      }
     });
   };
 
@@ -491,6 +573,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
           }
           m_statusMessage.clear();
           m_statusIsError = false;
+          m_pendingResetPageScope.clear();
           if (changed) {
             requestRebuild();
           }
@@ -515,6 +598,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   searchInput->setOnChange([this, requestRebuild](const std::string& value) {
     m_searchQuery = value;
     m_focusSearchOnRebuild = true;
+    m_pendingResetPageScope.clear();
     requestRebuild();
   });
   filters->addChild(std::move(searchInput));
@@ -528,6 +612,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   advancedToggle->setChecked(m_showAdvanced);
   advancedToggle->setOnChange([this, requestRebuild](bool value) {
     m_showAdvanced = value;
+    m_pendingResetPageScope.clear();
     requestRebuild();
   });
   filters->addChild(std::move(advancedToggle));
@@ -541,9 +626,31 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   overriddenToggle->setChecked(m_showOverriddenOnly);
   overriddenToggle->setOnChange([this, requestRebuild](bool value) {
     m_showOverriddenOnly = value;
+    m_pendingResetPageScope.clear();
     requestRebuild();
   });
   filters->addChild(std::move(overriddenToggle));
+
+  if (!resetPagePaths.empty()) {
+    const bool pendingReset = m_pendingResetPageScope == resetPageScope;
+    auto resetPageBtn = std::make_unique<Button>();
+    resetPageBtn->setText(pendingReset ? i18n::tr("settings.reset-page-confirm") : i18n::tr("settings.reset-page"));
+    resetPageBtn->setVariant(pendingReset ? ButtonVariant::Default : ButtonVariant::Ghost);
+    resetPageBtn->setFontSize(Style::fontSizeCaption * scale);
+    resetPageBtn->setMinHeight(Style::controlHeightSm * scale);
+    resetPageBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+    resetPageBtn->setRadius(Style::radiusMd * scale);
+    resetPageBtn->setOnClick(
+        [this, resetPageScope, resetPagePaths, requestRebuild, clearOverrides, pendingReset]() mutable {
+          if (!pendingReset) {
+            m_pendingResetPageScope = resetPageScope;
+            requestRebuild();
+            return;
+          }
+          clearOverrides(std::move(resetPagePaths));
+        });
+    filters->addChild(std::move(resetPageBtn));
+  }
 
   main->addChild(std::move(filters));
 
@@ -617,6 +724,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       m_selectedSection = section;
       m_openWidgetPickerPath.clear();
       m_editingWidgetName.clear();
+      m_pendingResetPageScope.clear();
       requestRebuild();
     });
     sidebar->addChild(std::move(navItem));
@@ -642,6 +750,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       m_selectedMonitorOverride.clear();
       m_openWidgetPickerPath.clear();
       m_editingWidgetName.clear();
+      m_pendingResetPageScope.clear();
       requestRebuild();
     });
     sidebar->addChild(std::move(navItem));
@@ -670,6 +779,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
           m_selectedMonitorOverride = match;
           m_openWidgetPickerPath.clear();
           m_editingWidgetName.clear();
+          m_pendingResetPageScope.clear();
           requestRebuild();
         });
         sidebar->addChild(std::move(ovrItem));
