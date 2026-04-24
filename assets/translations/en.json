@@ -76,6 +76,8 @@
       "focus-styling": "Focus Styling",
       "backdrop": "Backdrop",
       "widgets": "Widgets",
+      "widget-list": "Widget List",
+      "pinned-apps": "Pinned Apps",
       "weather": "Weather",
       "audio": "Audio",
       "brightness": "Brightness",
@@ -236,6 +238,14 @@
     "capsule-padding": "Capsule Padding",
     "capsule-padding-desc": "Padding inside widget capsules",
     "capsule-opacity": "Capsule Opacity",
-    "capsule-opacity-desc": "Opacity of widget capsule backgrounds"
+    "capsule-opacity-desc": "Opacity of widget capsule backgrounds",
+    "start-widgets": "Start Widgets",
+    "start-widgets-desc": "Widgets on the start (left/top) side of the bar",
+    "center-widgets": "Center Widgets",
+    "center-widgets-desc": "Widgets in the center of the bar",
+    "end-widgets": "End Widgets",
+    "end-widgets-desc": "Widgets on the end (right/bottom) side of the bar",
+    "pinned-apps": "Pinned Apps",
+    "pinned-apps-desc": "Desktop entry IDs of apps pinned to the dock"
   }
 }

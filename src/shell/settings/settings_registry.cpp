@@ -217,6 +217,8 @@ namespace settings {
                                 tr("settings.inactive-icon-opacity-desc"), {"dock", "inactive_opacity"},
                                 SliderSetting{cfg.dock.inactiveOpacity, 0.0f, 1.0f, 0.01f, false}, "unfocused alpha",
                                 true));
+    entries.push_back(makeEntry("dock", "pinned-apps", tr("settings.pinned-apps"), tr("settings.pinned-apps-desc"),
+                                {"dock", "pinned"}, ListSetting{cfg.dock.pinned}, "favorites"));
 
     // Overview
     entries.push_back(makeEntry("overview", "general", tr("common.enabled"), tr("settings.overview-enabled-desc"),
@@ -360,6 +362,14 @@ namespace settings {
                                   tr("settings.capsule-opacity-desc"), path("capsule_opacity"),
                                   SliderSetting{selectedBar->widgetCapsuleOpacity, 0.0f, 1.0f, 0.01f, false},
                                   "pill alpha", true));
+      entries.push_back(makeEntry(section, "widget-list", tr("settings.start-widgets"),
+                                  tr("settings.start-widgets-desc"), path("start"),
+                                  ListSetting{selectedBar->startWidgets}, "left"));
+      entries.push_back(makeEntry(section, "widget-list", tr("settings.center-widgets"),
+                                  tr("settings.center-widgets-desc"), path("center"),
+                                  ListSetting{selectedBar->centerWidgets}, "middle"));
+      entries.push_back(makeEntry(section, "widget-list", tr("settings.end-widgets"), tr("settings.end-widgets-desc"),
+                                  path("end"), ListSetting{selectedBar->endWidgets}, "right"));
     }
 
     return entries;

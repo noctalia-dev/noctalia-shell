@@ -617,6 +617,154 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     return input;
   };
 
+  const auto makeListBlock = [&](Flex& section, const settings::SettingEntry& entry,
+                                 const settings::ListSetting& list) {
+    const bool overridden = (m_config != nullptr && m_config->hasOverride(entry.path));
+
+    auto block = std::make_unique<Flex>();
+    block->setDirection(FlexDirection::Vertical);
+    block->setAlign(FlexAlign::Stretch);
+    block->setGap(Style::spaceXs * scale);
+    block->setPadding(2.0f * scale, 0.0f);
+
+    auto titleRow = std::make_unique<Flex>();
+    titleRow->setDirection(FlexDirection::Horizontal);
+    titleRow->setAlign(FlexAlign::Center);
+    titleRow->setGap(Style::spaceSm * scale);
+    titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
+    if (overridden) {
+      auto badge = std::make_unique<Flex>();
+      badge->setAlign(FlexAlign::Center);
+      badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+      badge->setRadius(Style::radiusSm * scale);
+      badge->setBackground(roleColor(ColorRole::Primary, 0.15f));
+      badge->addChild(makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeCaption * scale,
+                                roleColor(ColorRole::Primary), true));
+      titleRow->addChild(std::move(badge));
+    }
+    if (overridden) {
+      titleRow->addChild(makeResetButton(entry.path));
+    }
+    block->addChild(std::move(titleRow));
+
+    if (!entry.subtitle.empty()) {
+      block->addChild(
+          makeLabel(entry.subtitle, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false));
+    }
+
+    for (std::size_t i = 0; i < list.items.size(); ++i) {
+      auto itemRow = std::make_unique<Flex>();
+      itemRow->setDirection(FlexDirection::Horizontal);
+      itemRow->setAlign(FlexAlign::Center);
+      itemRow->setGap(Style::spaceXs * scale);
+      itemRow->setMinHeight(Style::controlHeightSm * scale);
+
+      itemRow->addChild(
+          makeLabel(list.items[i], Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurface), false));
+
+      auto spacer = std::make_unique<Flex>();
+      spacer->setFlexGrow(1.0f);
+      itemRow->addChild(std::move(spacer));
+
+      if (i > 0) {
+        auto upBtn = std::make_unique<Button>();
+        upBtn->setGlyph("chevron-up");
+        upBtn->setVariant(ButtonVariant::Ghost);
+        upBtn->setGlyphSize(Style::fontSizeCaption * scale);
+        upBtn->setMinWidth(Style::controlHeightSm * scale);
+        upBtn->setMinHeight(Style::controlHeightSm * scale);
+        upBtn->setPadding(Style::spaceXs * scale);
+        upBtn->setRadius(Style::radiusSm * scale);
+        auto items = list.items;
+        auto path = entry.path;
+        upBtn->setOnClick([setOverride, items, path, i]() mutable {
+          std::swap(items[i], items[i - 1]);
+          setOverride(path, items);
+        });
+        itemRow->addChild(std::move(upBtn));
+      }
+      if (i + 1 < list.items.size()) {
+        auto downBtn = std::make_unique<Button>();
+        downBtn->setGlyph("chevron-down");
+        downBtn->setVariant(ButtonVariant::Ghost);
+        downBtn->setGlyphSize(Style::fontSizeCaption * scale);
+        downBtn->setMinWidth(Style::controlHeightSm * scale);
+        downBtn->setMinHeight(Style::controlHeightSm * scale);
+        downBtn->setPadding(Style::spaceXs * scale);
+        downBtn->setRadius(Style::radiusSm * scale);
+        auto items = list.items;
+        auto path = entry.path;
+        downBtn->setOnClick([setOverride, items, path, i]() mutable {
+          std::swap(items[i], items[i + 1]);
+          setOverride(path, items);
+        });
+        itemRow->addChild(std::move(downBtn));
+      }
+
+      auto removeBtn = std::make_unique<Button>();
+      removeBtn->setGlyph("close");
+      removeBtn->setVariant(ButtonVariant::Ghost);
+      removeBtn->setGlyphSize(Style::fontSizeCaption * scale);
+      removeBtn->setMinWidth(Style::controlHeightSm * scale);
+      removeBtn->setMinHeight(Style::controlHeightSm * scale);
+      removeBtn->setPadding(Style::spaceXs * scale);
+      removeBtn->setRadius(Style::radiusSm * scale);
+      auto items = list.items;
+      auto path = entry.path;
+      removeBtn->setOnClick([setOverride, items, path, i]() mutable {
+        items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
+        setOverride(path, items);
+      });
+      itemRow->addChild(std::move(removeBtn));
+
+      block->addChild(std::move(itemRow));
+    }
+
+    auto addRow = std::make_unique<Flex>();
+    addRow->setDirection(FlexDirection::Horizontal);
+    addRow->setAlign(FlexAlign::Center);
+    addRow->setGap(Style::spaceXs * scale);
+
+    auto addInput = std::make_unique<Input>();
+    addInput->setFontSize(Style::fontSizeCaption * scale);
+    addInput->setControlHeight(Style::controlHeightSm * scale);
+    addInput->setHorizontalPadding(Style::spaceXs * scale);
+    addInput->setSize(140.0f * scale, Style::controlHeightSm * scale);
+    addInput->setFlexGrow(1.0f);
+    auto* addInputPtr = addInput.get();
+
+    auto addBtn = std::make_unique<Button>();
+    addBtn->setGlyph("add");
+    addBtn->setVariant(ButtonVariant::Ghost);
+    addBtn->setGlyphSize(Style::fontSizeCaption * scale);
+    addBtn->setMinWidth(Style::controlHeightSm * scale);
+    addBtn->setMinHeight(Style::controlHeightSm * scale);
+    addBtn->setPadding(Style::spaceXs * scale);
+    addBtn->setRadius(Style::radiusSm * scale);
+    auto items = list.items;
+    auto path = entry.path;
+    addBtn->setOnClick([setOverride, addInputPtr, items, path]() mutable {
+      const auto& text = addInputPtr->value();
+      if (!text.empty()) {
+        items.push_back(text);
+        setOverride(path, items);
+      }
+    });
+
+    addInput->setOnSubmit([setOverride, items, path](const std::string& text) mutable {
+      if (!text.empty()) {
+        items.push_back(text);
+        setOverride(path, items);
+      }
+    });
+
+    addRow->addChild(std::move(addInput));
+    addRow->addChild(std::move(addBtn));
+    block->addChild(std::move(addRow));
+
+    section.addChild(std::move(block));
+  };
+
   const auto makeControl = [&](const settings::SettingEntry& entry) -> std::unique_ptr<Node> {
     return std::visit(
         [&](const auto& control) -> std::unique_ptr<Node> {
@@ -630,6 +778,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
                               control.integerValue);
           } else if constexpr (std::is_same_v<T, settings::TextSetting>) {
             return makeText(control.value, control.placeholder, entry.path);
+          } else if constexpr (std::is_same_v<T, settings::ListSetting>) {
+            return nullptr;
           }
         },
         entry.control);
@@ -665,7 +815,11 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         activeGroupKey = entry.group;
         addGroupLabel(*activeSection, groupLabel(entry.group), isFirstGroup);
       }
-      makeRow(*activeSection, entry, makeControl(entry));
+      if (const auto* list = std::get_if<settings::ListSetting>(&entry.control)) {
+        makeListBlock(*activeSection, entry, *list);
+      } else {
+        makeRow(*activeSection, entry, makeControl(entry));
+      }
       ++visibleEntries;
     }
   }
