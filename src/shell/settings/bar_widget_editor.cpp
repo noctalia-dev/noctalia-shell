@@ -1,8 +1,10 @@
 #include "shell/settings/bar_widget_editor.h"
 
+#include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
 #include "render/scene/node.h"
 #include "shell/settings/widget_settings_registry.h"
+#include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
@@ -29,6 +31,14 @@ namespace settings {
   namespace {
 
     constexpr std::string_view kCreateInstancePrefix = "create-instance:";
+    constexpr float kDragStartThresholdPx = 6.0f;
+
+    struct LaneWidgetDragState {
+      bool active = false;
+      bool moved = false;
+      float startLocalY = 0.0f;
+      float lastLocalY = 0.0f;
+    };
 
     std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ThemeColor& color,
                                      bool bold = false) {
@@ -367,6 +377,59 @@ namespace settings {
 
     bool canCreateWidgetInstance(const Config& cfg, std::string_view name) {
       return isValidWidgetInstanceId(name) && !widgetReferenceNameExists(cfg, name);
+    }
+
+    std::vector<std::string> reorderedItems(std::vector<std::string> items, std::size_t fromIndex,
+                                            std::size_t toIndex) {
+      if (fromIndex >= items.size() || toIndex >= items.size() || fromIndex == toIndex) {
+        return items;
+      }
+      auto item = std::move(items[fromIndex]);
+      items.erase(items.begin() + static_cast<std::ptrdiff_t>(fromIndex));
+      items.insert(items.begin() + static_cast<std::ptrdiff_t>(toIndex), std::move(item));
+      return items;
+    }
+
+    std::optional<std::size_t> dragTargetIndex(float delta, float rowStep, std::size_t fromIndex, std::size_t itemCount,
+                                               float scale) {
+      if (itemCount < 2 || std::abs(delta) < kDragStartThresholdPx * scale) {
+        return std::nullopt;
+      }
+      const auto offset = static_cast<int>(std::lround(delta / std::max(1.0f, rowStep)));
+      if (offset == 0) {
+        return std::nullopt;
+      }
+
+      const auto from = static_cast<int>(fromIndex);
+      const auto maxIndex = static_cast<int>(itemCount - 1);
+      const auto target = static_cast<std::size_t>(std::clamp(from + offset, 0, maxIndex));
+      if (target == fromIndex) {
+        return std::nullopt;
+      }
+      return target;
+    }
+
+    void updateDropIndicator(Box& indicator, const Flex& lane, const std::vector<Flex*>& itemNodes,
+                             std::size_t fromIndex, std::size_t targetIndex, float scale) {
+      if (targetIndex >= itemNodes.size() || fromIndex >= itemNodes.size()) {
+        indicator.setVisible(false);
+        return;
+      }
+
+      const auto* target = itemNodes[targetIndex];
+      if (target == nullptr) {
+        indicator.setVisible(false);
+        return;
+      }
+
+      const float x = Style::spaceSm * scale;
+      const float width = std::max(1.0f, lane.width() - Style::spaceSm * scale * 2.0f);
+      const float gapHalf = Style::spaceXs * scale * 0.5f;
+      const float y = targetIndex > fromIndex ? target->y() + target->height() + gapHalf : target->y() - gapHalf;
+
+      indicator.setPosition(x, y);
+      indicator.setFrameSize(width, std::max(2.0f, 3.0f * scale));
+      indicator.setVisible(true);
     }
 
     std::vector<std::string> widgetSettingPath(std::string widgetName, std::string settingKey) {
@@ -720,6 +783,16 @@ namespace settings {
       lane->setBorderWidth(Style::borderWidth);
       lane->setFlexGrow(1.0f);
       lane->setMinWidth(180.0f * ctx.scale);
+      auto* lanePtr = lane.get();
+
+      auto dropIndicator = std::make_unique<Box>();
+      dropIndicator->setFill(roleColor(ColorRole::Primary));
+      dropIndicator->setRadius(std::max(1.0f, 1.5f * ctx.scale));
+      dropIndicator->setVisible(false);
+      dropIndicator->setParticipatesInLayout(false);
+      dropIndicator->setZIndex(10);
+      auto* dropIndicatorPtr = dropIndicator.get();
+      lane->addChild(std::move(dropIndicator));
 
       auto laneHeader = std::make_unique<Flex>();
       laneHeader->setDirection(FlexDirection::Horizontal);
@@ -773,6 +846,8 @@ namespace settings {
                                  roleColor(ColorRole::OnSurfaceVariant), false));
       }
 
+      auto itemNodes = std::make_shared<std::vector<Flex*>>();
+      itemNodes->reserve(laneItems.size());
       for (std::size_t i = 0; i < laneItems.size(); ++i) {
         const auto info = widgetReferenceInfo(ctx.config, laneItems[i]);
         auto item = std::make_unique<Flex>();
@@ -784,6 +859,8 @@ namespace settings {
         item->setBackground(roleColor(ColorRole::Surface, 0.72f));
         item->setBorderColor(roleColor(ColorRole::Outline, 0.22f));
         item->setBorderWidth(Style::borderWidth);
+        auto* itemPtr = item.get();
+        itemNodes->push_back(itemPtr);
 
         auto itemTop = std::make_unique<Flex>();
         itemTop->setDirection(FlexDirection::Horizontal);
@@ -814,6 +891,71 @@ namespace settings {
 
         const auto widgetName = laneItems[i];
         const bool editableWidget = !widgetTypeForReference(ctx.config, widgetName).empty();
+        if (!inherited && laneItems.size() > 1) {
+          auto dragBtn = std::make_unique<Button>();
+          dragBtn->setGlyph("menu");
+          dragBtn->setVariant(ButtonVariant::Ghost);
+          dragBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
+          dragBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
+          dragBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+          dragBtn->setPadding(Style::spaceXs * ctx.scale);
+          dragBtn->setRadius(Style::radiusSm * ctx.scale);
+          dragBtn->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_MOVE);
+
+          auto dragState = std::make_shared<LaneWidgetDragState>();
+          auto items = laneItems;
+          auto path = lanePath;
+          dragBtn->setOnPress([dragState, itemPtr, lanePtr, dropIndicatorPtr, itemNodes, setOverride = ctx.setOverride,
+                               items, path, i,
+                               scale = ctx.scale](float /*localX*/, float localY, bool pressed) mutable {
+            if (pressed) {
+              dragState->active = true;
+              dragState->moved = false;
+              dragState->startLocalY = localY;
+              dragState->lastLocalY = localY;
+              itemPtr->setOpacity(0.72f);
+              dropIndicatorPtr->setVisible(false);
+              return;
+            }
+
+            if (!dragState->active) {
+              return;
+            }
+            dragState->active = false;
+            itemPtr->setOpacity(1.0f);
+            dropIndicatorPtr->setVisible(false);
+            const float delta = dragState->lastLocalY - dragState->startLocalY;
+            if (!dragState->moved || std::abs(delta) < kDragStartThresholdPx * scale || items.size() < 2) {
+              return;
+            }
+
+            const float rowStep = std::clamp(itemPtr->height() + Style::spaceXs * scale, 44.0f * scale, 96.0f * scale);
+            const auto toIndex = dragTargetIndex(delta, rowStep, i, items.size(), scale);
+            if (!toIndex.has_value()) {
+              return;
+            }
+            setOverride(path, reorderedItems(std::move(items), i, *toIndex));
+          });
+          dragBtn->setOnPointerMotion([dragState, itemPtr, lanePtr, dropIndicatorPtr, itemNodes, i,
+                                       scale = ctx.scale](float /*localX*/, float localY) {
+            if (!dragState->active) {
+              return;
+            }
+            dragState->lastLocalY = localY;
+            if (std::abs(dragState->lastLocalY - dragState->startLocalY) >= kDragStartThresholdPx * scale) {
+              dragState->moved = true;
+            }
+            const float rowStep = std::clamp(itemPtr->height() + Style::spaceXs * scale, 44.0f * scale, 96.0f * scale);
+            const auto target =
+                dragTargetIndex(dragState->lastLocalY - dragState->startLocalY, rowStep, i, itemNodes->size(), scale);
+            if (target.has_value()) {
+              updateDropIndicator(*dropIndicatorPtr, *lanePtr, *itemNodes, i, *target, scale);
+            } else {
+              dropIndicatorPtr->setVisible(false);
+            }
+          });
+          actions->addChild(std::move(dragBtn));
+        }
         if (editableWidget) {
           auto editBtn = std::make_unique<Button>();
           editBtn->setGlyph("settings");

@@ -117,10 +117,18 @@ Button::Button() {
       m_onLeave();
     }
   });
-  area->setOnPress([this](const InputArea::PointerData& /*data*/) { applyVisualState(); });
-  area->setOnMotion([this](const InputArea::PointerData& /*data*/) {
+  area->setOnPress([this](const InputArea::PointerData& data) {
+    applyVisualState();
+    if (m_onPress) {
+      m_onPress(data.localX, data.localY, data.pressed);
+    }
+  });
+  area->setOnMotion([this](const InputArea::PointerData& data) {
     if (m_onMotion) {
       m_onMotion();
+    }
+    if (m_onPointerMotion) {
+      m_onPointerMotion(data.localX, data.localY);
     }
   });
   area->setOnClick([this](const InputArea::PointerData& /*data*/) {
@@ -181,8 +189,18 @@ void Button::setOnClick(std::function<void()> callback) {
   refreshInputAreaEnabled();
 }
 
+void Button::setOnPress(std::function<void(float, float, bool)> callback) {
+  m_onPress = std::move(callback);
+  refreshInputAreaEnabled();
+}
+
 void Button::setOnMotion(std::function<void()> callback) {
   m_onMotion = std::move(callback);
+  refreshInputAreaEnabled();
+}
+
+void Button::setOnPointerMotion(std::function<void(float, float)> callback) {
+  m_onPointerMotion = std::move(callback);
   refreshInputAreaEnabled();
 }
 
@@ -268,6 +286,7 @@ void Button::applyVariant() {
 void Button::refreshInputAreaEnabled() {
   if (m_inputArea != nullptr) {
     m_inputArea->setEnabled(m_enabled && (static_cast<bool>(m_onClick) || static_cast<bool>(m_onMotion) ||
+                                          static_cast<bool>(m_onPointerMotion) || static_cast<bool>(m_onPress) ||
                                           static_cast<bool>(m_onEnter) || static_cast<bool>(m_onLeave)));
   }
 }

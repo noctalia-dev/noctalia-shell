@@ -57,7 +57,9 @@ public:
   void setContentAlign(ButtonContentAlign align);
   void setVariant(ButtonVariant variant);
   void setOnClick(std::function<void()> callback);
+  void setOnPress(std::function<void(float localX, float localY, bool pressed)> callback);
   void setOnMotion(std::function<void()> callback);
+  void setOnPointerMotion(std::function<void(float localX, float localY)> callback);
   void setOnEnter(std::function<void()> callback);
   void setOnLeave(std::function<void()> callback);
   void setHoverSuppressed(bool suppressed);
@@ -88,7 +90,9 @@ private:
   InputArea* m_inputArea = nullptr;
   std::uint32_t m_animId = 0;
   std::function<void()> m_onClick;
+  std::function<void(float, float, bool)> m_onPress;
   std::function<void()> m_onMotion;
+  std::function<void(float, float)> m_onPointerMotion;
   std::function<void()> m_onEnter;
   std::function<void()> m_onLeave;
   ButtonVariant m_variant = ButtonVariant::Default;
