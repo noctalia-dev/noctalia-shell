@@ -277,8 +277,8 @@ Singleton {
     return I18n.tr("common.idle");
   }
 
-  function checkDevice(device) {
-    // Decides when to send a low/critical battery notification. I know the name 'checkDevice' isn't the best I've come up with, but it's certainly better than 'maybeNotify'.
+  function thresholdLatch(device) {
+    // Decides when to send a low/critical battery notification.
     if (!device || !isDeviceReady(device)) {
       return;
     }
@@ -465,13 +465,13 @@ Singleton {
         if (device.isLaptopBattery && modelData.key !== "__default__") {
           return;
         }
-        checkDevice(device);
+        thresholdLatch(device);
       }
       function onStateChanged() {
         if (device.isLaptopBattery && modelData.key !== "__default__") {
           return;
         }
-        checkDevice(device);
+        thresholdLatch(device);
       }
     }
   }
