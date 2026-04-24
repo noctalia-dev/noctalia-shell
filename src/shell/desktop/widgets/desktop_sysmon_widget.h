@@ -24,8 +24,7 @@ public:
   ~DesktopSysmonWidget() override;
 
   void create() override;
-  [[nodiscard]] bool wantsSecondTicks() const override { return true; }
-  [[nodiscard]] bool needsFrameTick() const override;
+  [[nodiscard]] bool needsFrameTick() const override { return true; }
   void onFrameTick(float deltaMs, Renderer& renderer) override;
 
 private:

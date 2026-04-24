@@ -71,8 +71,6 @@ void DesktopSysmonWidget::create() {
   setRoot(std::move(rootNode));
 }
 
-bool DesktopSysmonWidget::needsFrameTick() const { return m_scrollProgress < 1.0f; }
-
 void DesktopSysmonWidget::onFrameTick(float deltaMs, Renderer& renderer) {
   (void)renderer;
   (void)deltaMs;
@@ -84,17 +82,14 @@ void DesktopSysmonWidget::onFrameTick(float deltaMs, Renderer& renderer) {
     }
   }
 
-  if (m_graphNode == nullptr || m_scrollProgress >= 1.0f) {
-    return;
-  }
   m_scrollProgress = scrollProgressForSample(m_lastSampleAt);
-  m_graphNode->setScroll1(m_scrollProgress);
-  if (m_stat2.has_value()) {
-    m_graphNode->setScroll2(m_scrollProgress);
+  if (m_graphNode != nullptr) {
+    m_graphNode->setScroll1(m_scrollProgress);
+    if (m_stat2.has_value()) {
+      m_graphNode->setScroll2(m_scrollProgress);
+    }
   }
-  if (m_scrollProgress < 1.0f) {
-    requestRedraw();
-  }
+  requestRedraw();
 }
 
 void DesktopSysmonWidget::doLayout(Renderer& renderer) {
