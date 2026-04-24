@@ -76,56 +76,83 @@ void TestPanel::create() {
     return label;
   };
 
-  // Button
-  auto button = std::make_unique<Button>();
-  button->setText("Hello");
-  button->setFontSize(Style::fontSizeBody * scale);
-  button->setVariant(ButtonVariant::Default);
-  button->setMinHeight(Style::controlHeight * scale);
-  button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-  button->setRadius(Style::radiusMd * scale);
-  button->setOnClick([]() {});
-  m_button = button.get();
+  // Button variants
   {
+    struct VariantSpec {
+      const char* label;
+      ButtonVariant variant;
+    };
+    const std::vector<VariantSpec> variants = {
+        {"Default", ButtonVariant::Default},
+        {"Secondary", ButtonVariant::Secondary},
+        {"Destructive", ButtonVariant::Destructive},
+        {"Outline", ButtonVariant::Outline},
+        {"Ghost", ButtonVariant::Ghost},
+        {"Accent", ButtonVariant::Accent},
+    };
+
+    auto makeVariantButton = [scale](const VariantSpec& spec) {
+      auto btn = std::make_unique<Button>();
+      btn->setText(spec.label);
+      btn->setFontSize(Style::fontSizeBody * scale);
+      btn->setVariant(spec.variant);
+      btn->setMinHeight(Style::controlHeight * scale);
+      btn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+      btn->setRadius(Style::radiusMd * scale);
+      btn->setOnClick([]() {});
+      return btn;
+    };
+
+    auto topRow = makeRow();
+    for (size_t i = 0; i < 3 && i < variants.size(); ++i) {
+      topRow->addChild(makeVariantButton(variants[i]));
+    }
+
+    auto bottomRow = makeRow();
+    for (size_t i = 3; i < variants.size(); ++i) {
+      bottomRow->addChild(makeVariantButton(variants[i]));
+    }
+
+    auto col = makeCol();
+    col->setGap(Style::spaceSm * scale);
+    col->setAlign(FlexAlign::Start);
+    col->addChild(std::move(topRow));
+    col->addChild(std::move(bottomRow));
+
     auto row = makeRow();
-    row->addChild(makeRowLabel("Button", kRowLabelWidth));
-    row->addChild(std::move(button));
+    row->addChild(makeRowLabel("Buttons", kRowLabelWidth));
+    row->addChild(std::move(col));
     container->addChild(std::move(row));
   }
 
-  // Button w/ glyph
-  auto glyphTextButton = std::make_unique<Button>();
-  glyphTextButton->setText("Settings");
-  glyphTextButton->setGlyph("settings");
-  glyphTextButton->setFontSize(Style::fontSizeBody * scale);
-  glyphTextButton->setGlyphSize(Style::fontSizeBody * scale);
-  glyphTextButton->setVariant(ButtonVariant::Default);
-  glyphTextButton->setMinHeight(Style::controlHeight * scale);
-  glyphTextButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-  glyphTextButton->setRadius(Style::radiusMd * scale);
-  glyphTextButton->setOnClick([]() {});
-  m_glyphTextButton = glyphTextButton.get();
+  // Button w/ glyph + icon-only
   {
+    auto glyphTextButton = std::make_unique<Button>();
+    glyphTextButton->setText("Settings");
+    glyphTextButton->setGlyph("settings");
+    glyphTextButton->setFontSize(Style::fontSizeBody * scale);
+    glyphTextButton->setGlyphSize(Style::fontSizeBody * scale);
+    glyphTextButton->setVariant(ButtonVariant::Default);
+    glyphTextButton->setMinHeight(Style::controlHeight * scale);
+    glyphTextButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    glyphTextButton->setRadius(Style::radiusMd * scale);
+    glyphTextButton->setOnClick([]() {});
+    m_glyphTextButton = glyphTextButton.get();
+
+    auto glyphButton = std::make_unique<Button>();
+    glyphButton->setGlyph("home");
+    glyphButton->setGlyphSize(Style::fontSizeBody * scale);
+    glyphButton->setVariant(ButtonVariant::Default);
+    glyphButton->setMinHeight(Style::controlHeight * scale);
+    glyphButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale,
+                            Style::spaceMd * scale);
+    glyphButton->setRadius(Style::radiusMd * scale);
+    glyphButton->setOnClick([]() {});
+    m_glyphButton = glyphButton.get();
+
     auto row = makeRow();
-    row->addChild(makeRowLabel("Button w/ glyph", kRowLabelWidth));
+    row->addChild(makeRowLabel("Icon buttons", kRowLabelWidth));
     row->addChild(std::move(glyphTextButton));
-    container->addChild(std::move(row));
-  }
-
-  // Button glyph only
-  auto glyphButton = std::make_unique<Button>();
-  glyphButton->setGlyph("home");
-  glyphButton->setGlyphSize(Style::fontSizeBody * scale);
-  glyphButton->setVariant(ButtonVariant::Default);
-  glyphButton->setMinHeight(Style::controlHeight * scale);
-  glyphButton->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale,
-                          Style::spaceMd * scale);
-  glyphButton->setRadius(Style::radiusMd * scale);
-  glyphButton->setOnClick([]() {});
-  m_glyphButton = glyphButton.get();
-  {
-    auto row = makeRow();
-    row->addChild(makeRowLabel("Button glyph", kRowLabelWidth));
     row->addChild(std::move(glyphButton));
     container->addChild(std::move(row));
   }
@@ -135,18 +162,18 @@ void TestPanel::create() {
   glyphBox->setSize(Style::controlHeight * scale, Style::controlHeight * scale);
   glyphBox->setFill(roleColor(ColorRole::SurfaceVariant));
   glyphBox->setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
-  glyphBox->setRadius(Style::radiusMd * scale);
+  glyphBox->setRadius(Style::controlHeight * scale * 0.5f);
   m_glyphBox = glyphBox.get();
 
   auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyph("home");
+  glyph->setGlyph("noctalia");
   glyph->setGlyphSize(Style::fontSizeBody * scale);
   glyph->setColor(roleColor(ColorRole::OnSurface));
   m_glyph = glyph.get();
   m_glyphBox->addChild(std::move(glyph));
   {
     auto row = makeRow();
-    row->addChild(makeRowLabel("Glyph box", kRowLabelWidth));
+    row->addChild(makeRowLabel("Glyph as a child", kRowLabelWidth));
     row->addChild(std::move(glyphBox));
     container->addChild(std::move(row));
   }
@@ -632,7 +659,6 @@ void TestPanel::onClose() {
   m_sliderValueLabel = nullptr;
   m_toggleValueLabel = nullptr;
   m_checkboxValueLabel = nullptr;
-  m_button = nullptr;
   m_select = nullptr;
   m_glyphTextButton = nullptr;
   m_glyphButton = nullptr;

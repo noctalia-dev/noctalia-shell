@@ -33,7 +33,6 @@ private:
   Label* m_sliderValueLabel = nullptr;
   Label* m_toggleValueLabel = nullptr;
   Label* m_checkboxValueLabel = nullptr;
-  Button* m_button = nullptr;
   Select* m_select = nullptr;
   Button* m_glyphTextButton = nullptr;
   Button* m_glyphButton = nullptr;
