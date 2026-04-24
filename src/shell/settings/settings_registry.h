@@ -30,10 +30,12 @@ namespace settings {
 
   struct SettingEntry {
     std::string section;
+    std::string group;
     std::string title;
     std::string subtitle;
     std::vector<std::string> path;
     SettingControl control;
+    bool advanced = false;
     std::string searchText;
   };
 

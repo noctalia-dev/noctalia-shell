@@ -396,6 +396,14 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     return raw;
   };
 
+  const auto addGroupLabel = [&](Flex& section, std::string_view title) {
+    if (title.empty()) {
+      return;
+    }
+    auto label = makeLabel(title, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), true);
+    section.addChild(std::move(label));
+  };
+
   const auto makeResetButton = [&](const std::vector<std::string>& path) {
     auto reset = std::make_unique<Button>();
     reset->setText("Reset");
@@ -432,6 +440,10 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
     if (overridden) {
       auto badge = makeLabel("Override", Style::fontSizeCaption * scale, roleColor(ColorRole::Primary), true);
+      titleRow->addChild(std::move(badge));
+    }
+    if (entry.advanced) {
+      auto badge = makeLabel("Advanced", Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), true);
       titleRow->addChild(std::move(badge));
     }
     copy->addChild(std::move(titleRow));
@@ -534,6 +546,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   };
 
   std::string activeSectionTitle;
+  std::string activeGroupTitle;
   Flex* activeSection = nullptr;
   std::size_t visibleEntries = 0;
 
@@ -549,9 +562,14 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         entry.section == "Bar" && selectedBar != nullptr ? std::format("Bar: {}", selectedBar->name) : entry.section;
     if (sectionTitle != activeSectionTitle) {
       activeSectionTitle = sectionTitle;
+      activeGroupTitle.clear();
       activeSection = makeSection(activeSectionTitle);
     }
     if (activeSection != nullptr) {
+      if (entry.group != activeGroupTitle) {
+        activeGroupTitle = entry.group;
+        addGroupLabel(*activeSection, activeGroupTitle);
+      }
       makeRow(*activeSection, entry, makeControl(entry));
       ++visibleEntries;
     }
