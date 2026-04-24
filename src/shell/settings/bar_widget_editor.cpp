@@ -109,6 +109,37 @@ namespace settings {
       return {};
     }
 
+    bool isMonitorWidgetListPath(const std::vector<std::string>& path) {
+      return isBarWidgetListPath(path) && path.size() >= 5 && path[2] == "monitor";
+    }
+
+    bool monitorWidgetListHasExplicitValue(const Config& cfg, const std::vector<std::string>& path) {
+      if (!isMonitorWidgetListPath(path)) {
+        return true;
+      }
+
+      const auto* bar = findBar(cfg, path[1]);
+      if (bar == nullptr) {
+        return true;
+      }
+      const auto* ovr = findMonitorOverride(*bar, path[3]);
+      if (ovr == nullptr) {
+        return false;
+      }
+
+      const auto& lane = path.back();
+      if (lane == "start") {
+        return ovr->startWidgets.has_value();
+      }
+      if (lane == "center") {
+        return ovr->centerWidgets.has_value();
+      }
+      if (lane == "end") {
+        return ovr->endWidgets.has_value();
+      }
+      return true;
+    }
+
     ThemeColor widgetBadgeColor(WidgetReferenceKind kind) {
       switch (kind) {
       case WidgetReferenceKind::BuiltIn:
@@ -675,6 +706,8 @@ namespace settings {
       auto lanePath = pathWithLastSegment(entry.path, std::string(laneKey));
       const auto laneItems = barWidgetItemsForPath(ctx.config, lanePath);
       const bool overridden = ctx.configService != nullptr && ctx.configService->hasOverride(lanePath);
+      const bool inherited =
+          isMonitorWidgetListPath(lanePath) && !monitorWidgetListHasExplicitValue(ctx.config, lanePath);
 
       auto lane = std::make_unique<Flex>();
       lane->setDirection(FlexDirection::Vertical);
@@ -704,13 +737,41 @@ namespace settings {
                                   roleColor(ColorRole::Primary), true));
         laneHeader->addChild(std::move(badge));
       }
+      if (inherited) {
+        auto badge = std::make_unique<Flex>();
+        badge->setAlign(FlexAlign::Center);
+        badge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
+        badge->setRadius(Style::radiusSm * ctx.scale);
+        badge->setBackground(roleColor(ColorRole::OnSurfaceVariant, 0.14f));
+        badge->addChild(makeLabel(i18n::tr("settings.badge-inherited"), Style::fontSizeCaption * ctx.scale,
+                                  roleColor(ColorRole::OnSurfaceVariant), true));
+        laneHeader->addChild(std::move(badge));
+      }
       auto laneSpacer = std::make_unique<Flex>();
       laneSpacer->setFlexGrow(1.0f);
       laneHeader->addChild(std::move(laneSpacer));
+      if (inherited) {
+        auto customizeBtn = std::make_unique<Button>();
+        customizeBtn->setText(i18n::tr("settings.customize-lane"));
+        customizeBtn->setVariant(ButtonVariant::Ghost);
+        customizeBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
+        customizeBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+        customizeBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
+        customizeBtn->setRadius(Style::radiusSm * ctx.scale);
+        auto items = laneItems;
+        auto path = lanePath;
+        customizeBtn->setOnClick([setOverride = ctx.setOverride, items, path]() { setOverride(path, items); });
+        laneHeader->addChild(std::move(customizeBtn));
+      }
       if (overridden) {
         laneHeader->addChild(ctx.makeResetButton(lanePath));
       }
       lane->addChild(std::move(laneHeader));
+
+      if (inherited) {
+        lane->addChild(makeLabel(i18n::tr("settings.inherited-lane-desc"), Style::fontSizeCaption * ctx.scale,
+                                 roleColor(ColorRole::OnSurfaceVariant), false));
+      }
 
       for (std::size_t i = 0; i < laneItems.size(); ++i) {
         const auto info = widgetReferenceInfo(ctx.config, laneItems[i]);
@@ -778,7 +839,7 @@ namespace settings {
           actions->addChild(std::move(editBtn));
         }
 
-        if (isGuiManagedNamedWidgetInstance(ctx, widgetName)) {
+        if (!inherited && isGuiManagedNamedWidgetInstance(ctx, widgetName)) {
           auto renameBtn = std::make_unique<Button>();
           renameBtn->setText(i18n::tr("settings.rename-widget-instance"));
           renameBtn->setVariant(ctx.renamingWidgetName == widgetName ? ButtonVariant::Default : ButtonVariant::Ghost);
@@ -844,7 +905,7 @@ namespace settings {
           actions->addChild(std::move(deleteBtn));
         }
 
-        if (i > 0) {
+        if (!inherited && i > 0) {
           auto upBtn = std::make_unique<Button>();
           upBtn->setGlyph("chevron-up");
           upBtn->setVariant(ButtonVariant::Ghost);
@@ -861,7 +922,7 @@ namespace settings {
           });
           actions->addChild(std::move(upBtn));
         }
-        if (i + 1 < laneItems.size()) {
+        if (!inherited && i + 1 < laneItems.size()) {
           auto downBtn = std::make_unique<Button>();
           downBtn->setGlyph("chevron-down");
           downBtn->setVariant(ButtonVariant::Ghost);
@@ -879,49 +940,53 @@ namespace settings {
           actions->addChild(std::move(downBtn));
         }
 
-        for (const auto targetLane : kLaneKeys) {
-          if (targetLane == laneKey) {
-            continue;
+        if (!inherited) {
+          for (const auto targetLane : kLaneKeys) {
+            if (targetLane == laneKey) {
+              continue;
+            }
+            auto moveBtn = std::make_unique<Button>();
+            moveBtn->setText(laneLabel(targetLane));
+            moveBtn->setVariant(ButtonVariant::Ghost);
+            moveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
+            moveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+            moveBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
+            moveBtn->setRadius(Style::radiusSm * ctx.scale);
+            auto sourceItems = laneItems;
+            auto sourcePath = lanePath;
+            auto targetPath = pathWithLastSegment(entry.path, std::string(targetLane));
+            auto targetItems = barWidgetItemsForPath(ctx.config, targetPath);
+            moveBtn->setOnClick(
+                [setOverrides = ctx.setOverrides, sourceItems, sourcePath, targetItems, targetPath, i]() mutable {
+                  if (i >= sourceItems.size()) {
+                    return;
+                  }
+                  auto widget = sourceItems[i];
+                  sourceItems.erase(sourceItems.begin() + static_cast<std::ptrdiff_t>(i));
+                  targetItems.push_back(std::move(widget));
+                  setOverrides({{sourcePath, sourceItems}, {targetPath, targetItems}});
+                });
+            actions->addChild(std::move(moveBtn));
           }
-          auto moveBtn = std::make_unique<Button>();
-          moveBtn->setText(laneLabel(targetLane));
-          moveBtn->setVariant(ButtonVariant::Ghost);
-          moveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-          moveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-          moveBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          moveBtn->setRadius(Style::radiusSm * ctx.scale);
-          auto sourceItems = laneItems;
-          auto sourcePath = lanePath;
-          auto targetPath = pathWithLastSegment(entry.path, std::string(targetLane));
-          auto targetItems = barWidgetItemsForPath(ctx.config, targetPath);
-          moveBtn->setOnClick(
-              [setOverrides = ctx.setOverrides, sourceItems, sourcePath, targetItems, targetPath, i]() mutable {
-                if (i >= sourceItems.size()) {
-                  return;
-                }
-                auto widget = sourceItems[i];
-                sourceItems.erase(sourceItems.begin() + static_cast<std::ptrdiff_t>(i));
-                targetItems.push_back(std::move(widget));
-                setOverrides({{sourcePath, sourceItems}, {targetPath, targetItems}});
-              });
-          actions->addChild(std::move(moveBtn));
         }
 
-        auto removeBtn = std::make_unique<Button>();
-        removeBtn->setGlyph("close");
-        removeBtn->setVariant(ButtonVariant::Ghost);
-        removeBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
-        removeBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
-        removeBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-        removeBtn->setPadding(Style::spaceXs * ctx.scale);
-        removeBtn->setRadius(Style::radiusSm * ctx.scale);
-        auto items = laneItems;
-        auto path = lanePath;
-        removeBtn->setOnClick([setOverride = ctx.setOverride, items, path, i]() mutable {
-          items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
-          setOverride(path, items);
-        });
-        actions->addChild(std::move(removeBtn));
+        if (!inherited) {
+          auto removeBtn = std::make_unique<Button>();
+          removeBtn->setGlyph("close");
+          removeBtn->setVariant(ButtonVariant::Ghost);
+          removeBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
+          removeBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
+          removeBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+          removeBtn->setPadding(Style::spaceXs * ctx.scale);
+          removeBtn->setRadius(Style::radiusSm * ctx.scale);
+          auto items = laneItems;
+          auto path = lanePath;
+          removeBtn->setOnClick([setOverride = ctx.setOverride, items, path, i]() mutable {
+            items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
+            setOverride(path, items);
+          });
+          actions->addChild(std::move(removeBtn));
+        }
 
         item->addChild(std::move(actions));
         if (ctx.renamingWidgetName == widgetName) {
@@ -993,28 +1058,30 @@ namespace settings {
       }
 
       const std::string pickerKey = pathKey(lanePath);
-      auto addBtn = std::make_unique<Button>();
-      addBtn->setText(i18n::tr("settings.add-widget"));
-      addBtn->setGlyph("add");
-      addBtn->setVariant(ButtonVariant::Ghost);
-      addBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
-      addBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-      addBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-      addBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-      addBtn->setRadius(Style::radiusSm * ctx.scale);
-      addBtn->setOnClick([&openWidgetPickerPath = ctx.openWidgetPickerPath,
-                          &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, pickerKey,
-                          &pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
-                          &creatingWidgetType = ctx.creatingWidgetType, requestRebuild = ctx.requestRebuild]() {
-        openWidgetPickerPath = openWidgetPickerPath == pickerKey ? std::string{} : pickerKey;
-        pendingDeleteWidgetName.clear();
-        pendingDeleteWidgetSettingPath.clear();
-        creatingWidgetType.clear();
-        requestRebuild();
-      });
-      lane->addChild(std::move(addBtn));
+      if (!inherited) {
+        auto addBtn = std::make_unique<Button>();
+        addBtn->setText(i18n::tr("settings.add-widget"));
+        addBtn->setGlyph("add");
+        addBtn->setVariant(ButtonVariant::Ghost);
+        addBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
+        addBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
+        addBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+        addBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
+        addBtn->setRadius(Style::radiusSm * ctx.scale);
+        addBtn->setOnClick([&openWidgetPickerPath = ctx.openWidgetPickerPath,
+                            &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, pickerKey,
+                            &pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
+                            &creatingWidgetType = ctx.creatingWidgetType, requestRebuild = ctx.requestRebuild]() {
+          openWidgetPickerPath = openWidgetPickerPath == pickerKey ? std::string{} : pickerKey;
+          pendingDeleteWidgetName.clear();
+          pendingDeleteWidgetSettingPath.clear();
+          creatingWidgetType.clear();
+          requestRebuild();
+        });
+        lane->addChild(std::move(addBtn));
+      }
 
-      if (ctx.openWidgetPickerPath == pickerKey) {
+      if (!inherited && ctx.openWidgetPickerPath == pickerKey) {
         if (!ctx.creatingWidgetType.empty()) {
           const std::string widgetType = ctx.creatingWidgetType;
           auto createPanel = std::make_unique<Flex>();

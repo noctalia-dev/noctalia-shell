@@ -79,6 +79,100 @@ namespace {
     return sections;
   }
 
+  bool monitorOverrideHasExplicitValue(const Config& cfg, const std::vector<std::string>& path) {
+    if (path.size() < 5 || path[0] != "bar" || path[2] != "monitor") {
+      return false;
+    }
+
+    const auto* bar = settings::findBar(cfg, path[1]);
+    if (bar == nullptr) {
+      return false;
+    }
+
+    const auto* override = settings::findMonitorOverride(*bar, path[3]);
+    if (override == nullptr) {
+      return false;
+    }
+
+    const std::string_view key = path.back();
+    if (key == "enabled") {
+      return override->enabled.has_value();
+    }
+    if (key == "auto_hide") {
+      return override->autoHide.has_value();
+    }
+    if (key == "reserve_space") {
+      return override->reserveSpace.has_value();
+    }
+    if (key == "thickness") {
+      return override->thickness.has_value();
+    }
+    if (key == "scale") {
+      return override->scale.has_value();
+    }
+    if (key == "margin_h") {
+      return override->marginH.has_value();
+    }
+    if (key == "margin_v") {
+      return override->marginV.has_value();
+    }
+    if (key == "padding") {
+      return override->padding.has_value();
+    }
+    if (key == "radius") {
+      return override->radius.has_value();
+    }
+    if (key == "background_opacity") {
+      return override->backgroundOpacity.has_value();
+    }
+    if (key == "background_blur") {
+      return override->backgroundBlur.has_value();
+    }
+    if (key == "shadow_blur") {
+      return override->shadowBlur.has_value();
+    }
+    if (key == "shadow_offset_x") {
+      return override->shadowOffsetX.has_value();
+    }
+    if (key == "shadow_offset_y") {
+      return override->shadowOffsetY.has_value();
+    }
+    if (key == "widget_spacing") {
+      return override->widgetSpacing.has_value();
+    }
+    if (key == "capsule") {
+      return override->widgetCapsuleDefault.has_value();
+    }
+    if (key == "capsule_fill") {
+      return override->widgetCapsuleFill.has_value();
+    }
+    if (key == "capsule_border") {
+      return override->widgetCapsuleBorder.has_value();
+    }
+    if (key == "capsule_foreground") {
+      return override->widgetCapsuleForeground.has_value();
+    }
+    if (key == "widget_color") {
+      return override->widgetColor.has_value();
+    }
+    if (key == "capsule_padding") {
+      return override->widgetCapsulePadding.has_value();
+    }
+    if (key == "capsule_opacity") {
+      return override->widgetCapsuleOpacity.has_value();
+    }
+    if (key == "start") {
+      return override->startWidgets.has_value();
+    }
+    if (key == "center") {
+      return override->centerWidgets.has_value();
+    }
+    if (key == "end") {
+      return override->endWidgets.has_value();
+    }
+    return false;
+  }
+
 } // namespace
 
 void SettingsWindow::initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext) {
@@ -470,12 +564,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         const bool ovrSelected =
             m_selectedSection == "bar" && m_selectedBarName == barName && m_selectedMonitorOverride == ovr.match;
         auto ovrItem = std::make_unique<Button>();
-        ovrItem->setText(ovr.match);
+        ovrItem->setText(i18n::tr("settings.monitor-override-label", "name", ovr.match));
         ovrItem->setVariant(ovrSelected ? ButtonVariant::TabActive : ButtonVariant::Tab);
         ovrItem->setContentAlign(ButtonContentAlign::Start);
         ovrItem->setFontSize(Style::fontSizeCaption * scale);
-        ovrItem->setMinHeight(Style::controlHeight * scale);
-        ovrItem->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale,
+        ovrItem->setMinHeight(Style::controlHeightSm * scale);
+        ovrItem->setPadding(Style::spaceXs * scale, Style::spaceMd * scale, Style::spaceXs * scale,
                             Style::spaceLg * scale);
         ovrItem->setRadius(Style::radiusMd * scale);
         auto match = ovr.match;
@@ -566,6 +660,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   const auto makeRow = [&](Flex& section, const settings::SettingEntry& entry, std::unique_ptr<Node> control) {
     const bool overridden = (m_config != nullptr && m_config->hasOverride(entry.path));
+    const bool monitorExplicit = monitorOverrideHasExplicitValue(cfg, entry.path);
 
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
@@ -586,6 +681,16 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     titleRow->setAlign(FlexAlign::Center);
     titleRow->setGap(Style::spaceSm * scale);
     titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
+    if (monitorExplicit) {
+      auto badge = std::make_unique<Flex>();
+      badge->setAlign(FlexAlign::Center);
+      badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+      badge->setRadius(Style::radiusSm * scale);
+      badge->setBackground(roleColor(ColorRole::Secondary, 0.15f));
+      badge->addChild(makeLabel(i18n::tr("settings.badge-monitor"), Style::fontSizeCaption * scale,
+                                roleColor(ColorRole::Secondary), true));
+      titleRow->addChild(std::move(badge));
+    }
     if (overridden) {
       auto badge = std::make_unique<Flex>();
       badge->setAlign(FlexAlign::Center);
