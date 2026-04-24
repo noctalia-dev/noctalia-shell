@@ -80,13 +80,14 @@ namespace {
       return Button::ButtonPalette{
           .borderWidth = 0.0f,
           .normal = makeState(clearThemeColor(), clearThemeColor(), roleColor(ColorRole::OnSurface)),
-          .hover = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
-          .pressed = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
+          .hover = makeState(roleColor(ColorRole::SurfaceVariant), clearThemeColor(), roleColor(ColorRole::OnSurface)),
+          .pressed =
+              makeState(roleColor(ColorRole::SurfaceVariant), clearThemeColor(), roleColor(ColorRole::OnSurface)),
       };
     case ButtonVariant::TabActive:
       return Button::ButtonPalette{
           .borderWidth = 0.0f,
-          .normal = makeState(clearThemeColor(), clearThemeColor(), roleColor(ColorRole::Primary)),
+          .normal = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
           .hover = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
           .pressed = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
       };

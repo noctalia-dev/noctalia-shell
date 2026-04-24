@@ -326,6 +326,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   sidebar->setDirection(FlexDirection::Vertical);
   sidebar->setAlign(FlexAlign::Stretch);
   sidebar->setGap(Style::spaceXs * scale);
+  sidebar->setSize(132.0f * scale, 0.0f);
   sidebar->setMinWidth(132.0f * scale);
   sidebar->setPadding(Style::spaceXs * scale, 0.0f);
 
@@ -334,7 +335,6 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     auto navItem = std::make_unique<Button>();
     navItem->setText(sectionLabel(section));
     navItem->setVariant(selected ? ButtonVariant::TabActive : ButtonVariant::Tab);
-    navItem->setSelected(selected);
     navItem->setContentAlign(ButtonContentAlign::Start);
     navItem->setFontSize(Style::fontSizeBody * scale);
     navItem->setMinHeight(Style::controlHeight * scale);
@@ -352,7 +352,6 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     auto navItem = std::make_unique<Button>();
     navItem->setText(std::format("Bar: {}", barName));
     navItem->setVariant(selected ? ButtonVariant::TabActive : ButtonVariant::Tab);
-    navItem->setSelected(selected);
     navItem->setContentAlign(ButtonContentAlign::Start);
     navItem->setFontSize(Style::fontSizeBody * scale);
     navItem->setMinHeight(Style::controlHeight * scale);
@@ -368,11 +367,15 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   body->addChild(std::move(sidebar));
 
+  auto sidebarSep = std::make_unique<Separator>();
+  sidebarSep->setColor(roleColor(ColorRole::Outline, 0.25f));
+  body->addChild(std::move(sidebarSep));
+
   auto scroll = std::make_unique<ScrollView>();
   scroll->setFlexGrow(1.0f);
   scroll->setScrollbarVisible(true);
   scroll->setViewportPaddingH(0.0f);
-  scroll->setViewportPaddingV(0.0f);
+  scroll->setViewportPaddingV(Style::spaceSm * scale);
   scroll->setBackgroundStyle(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0), 0.0f);
   auto* content = scroll->content();
   content->setDirection(FlexDirection::Vertical);
@@ -383,10 +386,10 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     auto section = std::make_unique<Flex>();
     section->setDirection(FlexDirection::Vertical);
     section->setAlign(FlexAlign::Stretch);
-    section->setGap(Style::spaceXs * scale);
+    section->setGap(Style::spaceSm * scale);
     section->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    section->setBackground(roleColor(ColorRole::SurfaceVariant, 0.32f));
-    section->setBorderColor(roleColor(ColorRole::Outline, 0.35f));
+    section->setBackground(roleColor(ColorRole::SurfaceVariant));
+    section->setBorderColor(roleColor(ColorRole::Outline, 0.5f));
     section->setBorderWidth(Style::borderWidth);
     section->setRadius(Style::radiusMd * scale);
 
@@ -452,11 +455,22 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     titleRow->setGap(Style::spaceSm * scale);
     titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
     if (overridden) {
-      auto badge = makeLabel("Override", Style::fontSizeCaption * scale, roleColor(ColorRole::Primary), true);
+      auto badge = std::make_unique<Flex>();
+      badge->setAlign(FlexAlign::Center);
+      badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+      badge->setRadius(Style::radiusSm * scale);
+      badge->setBackground(roleColor(ColorRole::Primary, 0.15f));
+      badge->addChild(makeLabel("Override", Style::fontSizeCaption * scale, roleColor(ColorRole::Primary), true));
       titleRow->addChild(std::move(badge));
     }
     if (entry.advanced) {
-      auto badge = makeLabel("Advanced", Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), true);
+      auto badge = std::make_unique<Flex>();
+      badge->setAlign(FlexAlign::Center);
+      badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+      badge->setRadius(Style::radiusSm * scale);
+      badge->setBackground(roleColor(ColorRole::OnSurfaceVariant, 0.12f));
+      badge->addChild(
+          makeLabel("Advanced", Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), true));
       titleRow->addChild(std::move(badge));
     }
     copy->addChild(std::move(titleRow));
