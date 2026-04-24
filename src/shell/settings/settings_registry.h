@@ -36,7 +36,11 @@ namespace settings {
     std::string placeholder;
   };
 
-  using SettingControl = std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting>;
+  struct ListSetting {
+    std::vector<std::string> items;
+  };
+
+  using SettingControl = std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, ListSetting>;
 
   struct SettingEntry {
     std::string section;

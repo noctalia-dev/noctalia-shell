@@ -557,11 +557,14 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     wrap->setAlign(FlexAlign::Center);
     wrap->setGap(Style::spaceSm * scale);
 
-    auto valueLabel =
-        makeLabel(integerValue ? std::format("{}", static_cast<int>(std::lround(value))) : std::format("{:.2f}", value),
-                  Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false);
-    valueLabel->setMinWidth(46.0f * scale);
-    auto* valueLabelPtr = valueLabel.get();
+    auto valueInput = std::make_unique<Input>();
+    valueInput->setValue(integerValue ? std::format("{}", static_cast<int>(std::lround(value)))
+                                      : std::format("{:.2f}", value));
+    valueInput->setFontSize(Style::fontSizeCaption * scale);
+    valueInput->setControlHeight(Style::controlHeightSm * scale);
+    valueInput->setHorizontalPadding(Style::spaceXs * scale);
+    valueInput->setSize(50.0f * scale, Style::controlHeightSm * scale);
+    auto* valueInputPtr = valueInput.get();
 
     auto slider = std::make_unique<Slider>();
     slider->setRange(minValue, maxValue);
@@ -571,19 +574,33 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     slider->setThumbSize(16.0f * scale);
     slider->setTrackHeight(5.0f * scale);
     slider->setValue(value);
-    slider->setOnValueChanged([valueLabelPtr, integerValue](float next) {
-      valueLabelPtr->setText(integerValue ? std::format("{}", static_cast<int>(std::lround(next)))
-                                          : std::format("{:.2f}", next));
+    auto* sliderPtr = slider.get();
+    slider->setOnValueChanged([valueInputPtr, integerValue](float next) {
+      valueInputPtr->setValue(integerValue ? std::format("{}", static_cast<int>(std::lround(next)))
+                                           : std::format("{:.2f}", next));
     });
-    slider->setOnDragEnd([setOverride, path, slider = slider.get(), integerValue]() {
+    slider->setOnDragEnd([setOverride, path, sliderPtr, integerValue]() {
       if (integerValue) {
-        setOverride(path, static_cast<std::int64_t>(std::lround(slider->value())));
+        setOverride(path, static_cast<std::int64_t>(std::lround(sliderPtr->value())));
       } else {
-        setOverride(path, static_cast<double>(slider->value()));
+        setOverride(path, static_cast<double>(sliderPtr->value()));
       }
     });
 
-    wrap->addChild(std::move(valueLabel));
+    valueInput->setOnSubmit([setOverride, path, sliderPtr, minValue, maxValue, integerValue](const std::string& text) {
+      try {
+        float v = std::clamp(std::stof(text), minValue, maxValue);
+        sliderPtr->setValue(v);
+        if (integerValue) {
+          setOverride(path, static_cast<std::int64_t>(std::lround(v)));
+        } else {
+          setOverride(path, static_cast<double>(v));
+        }
+      } catch (...) {
+      }
+    });
+
+    wrap->addChild(std::move(valueInput));
     wrap->addChild(std::move(slider));
     return wrap;
   };
