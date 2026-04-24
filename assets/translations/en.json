@@ -47,7 +47,6 @@
     "unknown-select-value": "Unknown: {value}",
     "no-results": "No settings found",
     "no-results-hint": "Try a different setting name or config key.",
-    "section-all": "All",
     "bar-label": "Bar: {name}",
 
     "section": {

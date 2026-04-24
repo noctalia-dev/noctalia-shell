@@ -478,6 +478,7 @@ _noctalia_sources = files(
   'src/ui/controls/progress_bar.cpp',
   'src/ui/controls/radio_button.cpp',
   'src/ui/controls/scroll_view.cpp',
+  'src/ui/controls/search_picker.cpp',
   'src/ui/controls/select.cpp',
   'src/ui/controls/separator.cpp',
   'src/ui/controls/slider.cpp',

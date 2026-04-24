@@ -66,7 +66,6 @@ namespace {
 
   std::vector<std::string> sectionKeys(const std::vector<settings::SettingEntry>& entries) {
     std::vector<std::string> sections;
-    sections.emplace_back();
     for (const auto& entry : entries) {
       if (entry.section == "bar") {
         continue;
@@ -227,9 +226,14 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   const auto sections = sectionKeys(registry);
   if (m_selectedSection == "bar" && selectedBar == nullptr) {
     m_selectedSection.clear();
-  } else if (!m_selectedSection.empty() && m_selectedSection != "bar" &&
+  } else if (m_selectedSection != "bar" && !m_selectedSection.empty() &&
              std::find(sections.begin(), sections.end(), m_selectedSection) == sections.end()) {
     m_selectedSection.clear();
+  }
+  if (m_selectedSection.empty()) {
+    m_selectedSection = std::find(sections.begin(), sections.end(), "appearance") != sections.end()
+                            ? std::string("appearance")
+                            : (!sections.empty() ? sections.front() : std::string{});
   }
 
   m_inputDispatcher.setSceneRoot(nullptr);
@@ -355,9 +359,6 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   main->addChild(std::move(filters));
 
   const auto sectionLabel = [&](std::string_view section) {
-    if (section.empty()) {
-      return i18n::tr("settings.section-all");
-    }
     return i18n::tr("settings.section." + std::string(section));
   };
 
@@ -844,7 +845,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   std::size_t visibleEntries = 0;
 
   for (const auto& entry : registry) {
-    if (!m_selectedSection.empty() && entry.section != m_selectedSection) {
+    if (m_searchQuery.empty() && !m_selectedSection.empty() && entry.section != m_selectedSection) {
       continue;
     }
     if (!m_showAdvanced && entry.advanced) {
