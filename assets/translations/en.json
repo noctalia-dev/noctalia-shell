@@ -54,6 +54,8 @@
     "widget-kind-unknown": "Unknown",
     "bar-widget-editor": "Bar Widgets",
     "bar-widget-editor-desc": "Arrange widgets across the bar lanes.",
+    "widget-settings": "Widget Settings",
+    "widget-settings-empty": "No settings match the current filters.",
     "widget-picker-placeholder": "Search widgets...",
     "widget-picker-empty": "No widgets found",
     "widget-category": {
@@ -88,6 +90,7 @@
       "settings": "Settings",
       "spacer": "Spacer",
       "sysmon": "System Monitor",
+      "test": "Test",
       "theme-mode": "Theme Mode",
       "tray": "Tray",
       "volume": "Volume",

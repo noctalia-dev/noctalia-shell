@@ -517,6 +517,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     navItem->setOnClick([this, section, requestRebuild]() {
       m_selectedSection = section;
       m_openWidgetPickerPath.clear();
+      m_editingWidgetName.clear();
       requestRebuild();
     });
     sidebar->addChild(std::move(navItem));
@@ -538,6 +539,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       m_selectedBarName = barName;
       m_selectedMonitorOverride.clear();
       m_openWidgetPickerPath.clear();
+      m_editingWidgetName.clear();
       requestRebuild();
     });
     sidebar->addChild(std::move(navItem));
@@ -562,6 +564,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
           m_selectedBarName = barName;
           m_selectedMonitorOverride = match;
           m_openWidgetPickerPath.clear();
+          m_editingWidgetName.clear();
           requestRebuild();
         });
         sidebar->addChild(std::move(ovrItem));
@@ -800,6 +803,61 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     return input;
   };
 
+  const auto widgetSettingPath = [](std::string widgetName, std::string settingKey) {
+    return std::vector<std::string>{"widget", std::move(widgetName), std::move(settingKey)};
+  };
+
+  const auto widgetSettingValue = [&](std::string_view widgetName,
+                                      const settings::WidgetSettingSpec& spec) -> WidgetSettingValue {
+    if (const auto it = cfg.widgets.find(std::string(widgetName)); it != cfg.widgets.end()) {
+      if (const auto settingIt = it->second.settings.find(spec.key); settingIt != it->second.settings.end()) {
+        return settingIt->second;
+      }
+    }
+    return spec.defaultValue;
+  };
+
+  const auto settingValueAsBool = [](const WidgetSettingValue& value) {
+    if (const auto* v = std::get_if<bool>(&value)) {
+      return *v;
+    }
+    return false;
+  };
+
+  const auto settingValueAsInt = [](const WidgetSettingValue& value) {
+    if (const auto* v = std::get_if<std::int64_t>(&value)) {
+      return *v;
+    }
+    if (const auto* v = std::get_if<double>(&value)) {
+      return static_cast<std::int64_t>(std::llround(*v));
+    }
+    return std::int64_t{0};
+  };
+
+  const auto settingValueAsDouble = [](const WidgetSettingValue& value) {
+    if (const auto* v = std::get_if<double>(&value)) {
+      return *v;
+    }
+    if (const auto* v = std::get_if<std::int64_t>(&value)) {
+      return static_cast<double>(*v);
+    }
+    return 0.0;
+  };
+
+  const auto settingValueAsString = [](const WidgetSettingValue& value) {
+    if (const auto* v = std::get_if<std::string>(&value)) {
+      return *v;
+    }
+    return std::string{};
+  };
+
+  const auto settingValueAsStringList = [](const WidgetSettingValue& value) {
+    if (const auto* v = std::get_if<std::vector<std::string>>(&value)) {
+      return *v;
+    }
+    return std::vector<std::string>{};
+  };
+
   const auto makeListBlock = [&](Flex& section, const settings::SettingEntry& entry,
                                  const settings::ListSetting& list) {
     const bool overridden = (m_config != nullptr && m_config->hasOverride(entry.path));
@@ -1019,6 +1077,108 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     section.addChild(std::move(block));
   };
 
+  const auto makeWidgetSettingsPanel = [&](Flex& item, std::string widgetName) {
+    const auto widgetType = settings::widgetTypeForReference(cfg, widgetName);
+    if (widgetType.empty()) {
+      return;
+    }
+
+    auto specs = settings::widgetSettingSpecs(widgetType);
+    if (specs.empty()) {
+      return;
+    }
+
+    auto panel = std::make_unique<Flex>();
+    panel->setDirection(FlexDirection::Vertical);
+    panel->setAlign(FlexAlign::Stretch);
+    panel->setGap(Style::spaceXs * scale);
+    panel->setPadding(Style::spaceSm * scale);
+    panel->setRadius(Style::radiusSm * scale);
+    panel->setBackground(roleColor(ColorRole::SurfaceVariant, 0.55f));
+    panel->setBorderColor(roleColor(ColorRole::Outline, 0.22f));
+    panel->setBorderWidth(Style::borderWidth);
+
+    auto panelHeader = std::make_unique<Flex>();
+    panelHeader->setDirection(FlexDirection::Horizontal);
+    panelHeader->setAlign(FlexAlign::Center);
+    panelHeader->setGap(Style::spaceXs * scale);
+    panelHeader->addChild(makeLabel(i18n::tr("settings.widget-settings"), Style::fontSizeCaption * scale,
+                                    roleColor(ColorRole::OnSurface), true));
+    panelHeader->addChild(
+        makeLabel(widgetType, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false));
+    panel->addChild(std::move(panelHeader));
+
+    std::size_t visibleSpecs = 0;
+    for (const auto& spec : specs) {
+      if (spec.advanced && !m_showAdvanced) {
+        continue;
+      }
+      const auto path = widgetSettingPath(widgetName, spec.key);
+      const bool overridden = m_config != nullptr && m_config->hasOverride(path);
+      if (m_showOverriddenOnly && !overridden) {
+        continue;
+      }
+
+      const auto value = widgetSettingValue(widgetName, spec);
+      settings::SettingEntry entry{
+          .section = "bar",
+          .group = "widget-settings",
+          .title = i18n::tr(spec.labelKey),
+          .subtitle = i18n::tr(spec.descriptionKey),
+          .path = path,
+          .control = settings::TextSetting{},
+          .advanced = spec.advanced,
+          .searchText = {},
+      };
+
+      switch (spec.valueType) {
+      case settings::WidgetSettingValueType::Bool:
+        makeRow(*panel, entry, makeToggle(settingValueAsBool(value), path));
+        break;
+      case settings::WidgetSettingValueType::Int: {
+        const auto minValue = static_cast<float>(spec.minValue.value_or(0.0));
+        const auto maxValue = static_cast<float>(spec.maxValue.value_or(100.0));
+        makeRow(*panel, entry,
+                makeSlider(static_cast<float>(settingValueAsInt(value)), minValue, maxValue,
+                           static_cast<float>(spec.step), path, true));
+        break;
+      }
+      case settings::WidgetSettingValueType::Double: {
+        const auto minValue = static_cast<float>(spec.minValue.value_or(0.0));
+        const auto maxValue = static_cast<float>(spec.maxValue.value_or(1.0));
+        makeRow(*panel, entry,
+                makeSlider(static_cast<float>(settingValueAsDouble(value)), minValue, maxValue,
+                           static_cast<float>(spec.step), path, false));
+        break;
+      }
+      case settings::WidgetSettingValueType::String:
+        makeRow(*panel, entry, makeText(settingValueAsString(value), {}, path));
+        break;
+      case settings::WidgetSettingValueType::StringList:
+        makeListBlock(*panel, entry, settings::ListSetting{settingValueAsStringList(value)});
+        break;
+      case settings::WidgetSettingValueType::Select: {
+        std::vector<settings::SelectOption> options;
+        options.reserve(spec.options.size());
+        for (const auto& option : spec.options) {
+          options.push_back(settings::SelectOption{std::string(option.value), i18n::tr(option.labelKey)});
+        }
+        makeRow(*panel, entry,
+                makeSelect(settings::SelectSetting{std::move(options), settingValueAsString(value)}, path));
+        break;
+      }
+      }
+      ++visibleSpecs;
+    }
+
+    if (visibleSpecs == 0) {
+      panel->addChild(makeLabel(i18n::tr("settings.widget-settings-empty"), Style::fontSizeCaption * scale,
+                                roleColor(ColorRole::OnSurfaceVariant), false));
+    }
+
+    item.addChild(std::move(panel));
+  };
+
   const auto makeBarWidgetLaneEditor = [&](Flex& section, const settings::SettingEntry& entry) {
     if (!isFirstBarWidgetListPath(entry.path)) {
       return;
@@ -1127,6 +1287,25 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         actions->setAlign(FlexAlign::Center);
         actions->setGap(Style::spaceXs * scale);
 
+        const auto widgetName = laneItems[i];
+        const bool editableWidget = !settings::widgetTypeForReference(cfg, widgetName).empty();
+        if (editableWidget) {
+          auto editBtn = std::make_unique<Button>();
+          editBtn->setGlyph("settings");
+          editBtn->setVariant(m_editingWidgetName == widgetName ? ButtonVariant::Default : ButtonVariant::Ghost);
+          editBtn->setGlyphSize(Style::fontSizeCaption * scale);
+          editBtn->setMinWidth(Style::controlHeightSm * scale);
+          editBtn->setMinHeight(Style::controlHeightSm * scale);
+          editBtn->setPadding(Style::spaceXs * scale);
+          editBtn->setRadius(Style::radiusSm * scale);
+          editBtn->setOnClick([this, widgetName, requestRebuild]() {
+            m_editingWidgetName = m_editingWidgetName == widgetName ? std::string{} : widgetName;
+            m_openWidgetPickerPath.clear();
+            requestRebuild();
+          });
+          actions->addChild(std::move(editBtn));
+        }
+
         if (i > 0) {
           auto upBtn = std::make_unique<Button>();
           upBtn->setGlyph("chevron-up");
@@ -1206,6 +1385,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         actions->addChild(std::move(removeBtn));
 
         item->addChild(std::move(actions));
+        if (m_editingWidgetName == widgetName) {
+          makeWidgetSettingsPanel(*item, widgetName);
+        }
         lane->addChild(std::move(item));
       }
 
@@ -1436,6 +1618,13 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
   if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
     if (!m_openWidgetPickerPath.empty()) {
       m_openWidgetPickerPath.clear();
+      if (m_surface != nullptr) {
+        m_surface->requestLayout();
+      }
+      return;
+    }
+    if (!m_editingWidgetName.empty()) {
+      m_editingWidgetName.clear();
       if (m_surface != nullptr) {
         m_surface->requestLayout();
       }

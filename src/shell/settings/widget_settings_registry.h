@@ -21,6 +21,7 @@ namespace settings {
     std::string_view labelKey;
     std::string_view categoryKey;
     bool supportsMultipleInstances = true;
+    bool visibleInPicker = true;
   };
 
   struct WidgetReferenceInfo {
@@ -67,6 +68,7 @@ namespace settings {
 
   [[nodiscard]] const std::vector<WidgetTypeSpec>& widgetTypeSpecs();
   [[nodiscard]] bool isBuiltInWidgetType(std::string_view type);
+  [[nodiscard]] std::string widgetTypeForReference(const Config& cfg, std::string_view name);
   [[nodiscard]] std::string titleFromWidgetKey(std::string_view key);
   [[nodiscard]] WidgetReferenceInfo widgetReferenceInfo(const Config& cfg, std::string_view name);
   [[nodiscard]] std::vector<WidgetPickerEntry> widgetPickerEntries(const Config& cfg);

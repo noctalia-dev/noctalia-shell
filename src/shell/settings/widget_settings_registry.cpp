@@ -15,32 +15,142 @@ namespace settings {
     using i18n::tr;
 
     const std::vector<WidgetTypeSpec> kWidgetTypeSpecs = {
-        {"active_window", "settings.widget.active-window", "settings.widget-category.window"},
-        {"audio_visualizer", "settings.widget.audio-visualizer", "settings.widget-category.media"},
-        {"battery", "settings.widget.battery", "settings.widget-category.system"},
-        {"bluetooth", "settings.widget.bluetooth", "settings.widget-category.system"},
-        {"brightness", "settings.widget.brightness", "settings.widget-category.system"},
-        {"clock", "settings.widget.clock", "settings.widget-category.time"},
-        {"idle_inhibitor", "settings.widget.idle-inhibitor", "settings.widget-category.system"},
-        {"keyboard_layout", "settings.widget.keyboard-layout", "settings.widget-category.input"},
-        {"launcher", "settings.widget.launcher", "settings.widget-category.shell"},
-        {"lock_keys", "settings.widget.lock-keys", "settings.widget-category.input"},
-        {"media", "settings.widget.media", "settings.widget-category.media"},
-        {"network", "settings.widget.network", "settings.widget-category.system"},
-        {"nightlight", "settings.widget.nightlight", "settings.widget-category.system"},
-        {"notifications", "settings.widget.notifications", "settings.widget-category.shell"},
-        {"power_profiles", "settings.widget.power-profiles", "settings.widget-category.system"},
-        {"scripted", "settings.widget.scripted", "settings.widget-category.custom"},
-        {"session", "settings.widget.session", "settings.widget-category.shell"},
-        {"settings", "settings.widget.settings", "settings.widget-category.shell"},
-        {"spacer", "settings.widget.spacer", "settings.widget-category.layout"},
-        {"sysmon", "settings.widget.sysmon", "settings.widget-category.system"},
-        {"theme_mode", "settings.widget.theme-mode", "settings.widget-category.shell"},
-        {"tray", "settings.widget.tray", "settings.widget-category.shell"},
-        {"volume", "settings.widget.volume", "settings.widget-category.media"},
-        {"wallpaper", "settings.widget.wallpaper", "settings.widget-category.shell"},
-        {"weather", "settings.widget.weather", "settings.widget-category.info"},
-        {"workspaces", "settings.widget.workspaces", "settings.widget-category.window"},
+        {
+            .type = "active_window",
+            .labelKey = "settings.widget.active-window",
+            .categoryKey = "settings.widget-category.window",
+        },
+        {
+            .type = "audio_visualizer",
+            .labelKey = "settings.widget.audio-visualizer",
+            .categoryKey = "settings.widget-category.media",
+        },
+        {
+            .type = "battery",
+            .labelKey = "settings.widget.battery",
+            .categoryKey = "settings.widget-category.system",
+        },
+        {
+            .type = "bluetooth",
+            .labelKey = "settings.widget.bluetooth",
+            .categoryKey = "settings.widget-category.system",
+        },
+        {
+            .type = "brightness",
+            .labelKey = "settings.widget.brightness",
+            .categoryKey = "settings.widget-category.system",
+        },
+        {
+            .type = "clock",
+            .labelKey = "settings.widget.clock",
+            .categoryKey = "settings.widget-category.time",
+        },
+        {
+            .type = "idle_inhibitor",
+            .labelKey = "settings.widget.idle-inhibitor",
+            .categoryKey = "settings.widget-category.system",
+        },
+        {
+            .type = "keyboard_layout",
+            .labelKey = "settings.widget.keyboard-layout",
+            .categoryKey = "settings.widget-category.input",
+        },
+        {
+            .type = "launcher",
+            .labelKey = "settings.widget.launcher",
+            .categoryKey = "settings.widget-category.shell",
+        },
+        {
+            .type = "lock_keys",
+            .labelKey = "settings.widget.lock-keys",
+            .categoryKey = "settings.widget-category.input",
+        },
+        {
+            .type = "media",
+            .labelKey = "settings.widget.media",
+            .categoryKey = "settings.widget-category.media",
+        },
+        {
+            .type = "network",
+            .labelKey = "settings.widget.network",
+            .categoryKey = "settings.widget-category.system",
+        },
+        {
+            .type = "nightlight",
+            .labelKey = "settings.widget.nightlight",
+            .categoryKey = "settings.widget-category.system",
+        },
+        {
+            .type = "notifications",
+            .labelKey = "settings.widget.notifications",
+            .categoryKey = "settings.widget-category.shell",
+        },
+        {
+            .type = "power_profiles",
+            .labelKey = "settings.widget.power-profiles",
+            .categoryKey = "settings.widget-category.system",
+        },
+        {
+            .type = "scripted",
+            .labelKey = "settings.widget.scripted",
+            .categoryKey = "settings.widget-category.custom",
+        },
+        {
+            .type = "session",
+            .labelKey = "settings.widget.session",
+            .categoryKey = "settings.widget-category.shell",
+        },
+        {
+            .type = "settings",
+            .labelKey = "settings.widget.settings",
+            .categoryKey = "settings.widget-category.shell",
+        },
+        {
+            .type = "spacer",
+            .labelKey = "settings.widget.spacer",
+            .categoryKey = "settings.widget-category.layout",
+        },
+        {
+            .type = "sysmon",
+            .labelKey = "settings.widget.sysmon",
+            .categoryKey = "settings.widget-category.system",
+        },
+        {
+            .type = "test",
+            .labelKey = "settings.widget.test",
+            .categoryKey = "settings.widget-category.custom",
+            .visibleInPicker = false,
+        },
+        {
+            .type = "theme_mode",
+            .labelKey = "settings.widget.theme-mode",
+            .categoryKey = "settings.widget-category.shell",
+        },
+        {
+            .type = "tray",
+            .labelKey = "settings.widget.tray",
+            .categoryKey = "settings.widget-category.shell",
+        },
+        {
+            .type = "volume",
+            .labelKey = "settings.widget.volume",
+            .categoryKey = "settings.widget-category.media",
+        },
+        {
+            .type = "wallpaper",
+            .labelKey = "settings.widget.wallpaper",
+            .categoryKey = "settings.widget-category.shell",
+        },
+        {
+            .type = "weather",
+            .labelKey = "settings.widget.weather",
+            .categoryKey = "settings.widget-category.info",
+        },
+        {
+            .type = "workspaces",
+            .labelKey = "settings.widget.workspaces",
+            .categoryKey = "settings.widget-category.window",
+        },
     };
 
     const WidgetTypeSpec* findWidgetTypeSpec(std::string_view type) {
@@ -132,6 +242,16 @@ namespace settings {
 
   bool isBuiltInWidgetType(std::string_view type) { return findWidgetTypeSpec(type) != nullptr; }
 
+  std::string widgetTypeForReference(const Config& cfg, std::string_view name) {
+    if (const auto it = cfg.widgets.find(std::string(name)); it != cfg.widgets.end() && !it->second.type.empty()) {
+      return it->second.type;
+    }
+    if (isBuiltInWidgetType(name)) {
+      return std::string(name);
+    }
+    return {};
+  }
+
   std::string titleFromWidgetKey(std::string_view key) {
     std::string out;
     out.reserve(key.size());
@@ -191,6 +311,9 @@ namespace settings {
     std::unordered_set<std::string> seen;
 
     for (const auto& spec : kWidgetTypeSpecs) {
+      if (!spec.visibleInPicker) {
+        continue;
+      }
       addPickerEntry(entries, seen, std::string(spec.type), tr(spec.labelKey), std::string(spec.type),
                      tr(spec.categoryKey), WidgetReferenceKind::BuiltIn);
     }
