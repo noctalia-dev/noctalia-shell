@@ -12,9 +12,15 @@ edge_smoothness     = 0.3       # 0.0 – 1.0
 
 # Directory browsed by the wallpaper picker panel
 directory           = "/home/user/Wallpapers"
-# Optional per-mode directories (parsed but not yet consumed by the renderer)
+# Optional per-mode directories
 directory_light     = "/home/user/Wallpapers/Light"
 directory_dark      = "/home/user/Wallpapers/Dark"
+
+[wallpaper.automation]
+enabled                      = false
+interval_minutes             = 30       # 0 = disable automation
+order                        = "random" # random | alphabetical
+recursive                    = true     # scan subdirectories when selecting random wallpapers
 
 # Per-monitor overrides — same match rules as bar monitor overrides
 [wallpaper.monitor.DP-2]
@@ -25,6 +31,10 @@ directory_dark  = "/home/user/Wallpapers/Vertical/Dark"
 ```
 
 The wallpaper picker panel lists images in `directory` as a grid of thumbnails. Selecting a monitor in the panel toolbar switches to that monitor's override directory (falling back to the base `directory`). Clicking a tile writes the path to `state.toml` and applies it immediately. Picking a wallpaper while **ALL** is selected applies it to every connected output.
+
+When automation is enabled, Noctalia picks one image from `directory` on the configured interval and applies it to all connected outputs in sync.
+`order = "random"` chooses a random image each cycle.
+`order = "alphabetical"` sorts paths case-insensitively and advances to the next image each cycle (wrapping at the end).
 
 ---
 

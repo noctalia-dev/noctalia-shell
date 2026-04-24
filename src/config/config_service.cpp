@@ -1427,6 +1427,27 @@ void ConfigService::parseTable(const toml::table& tbl) {
       wp.directoryLight = *v;
     if (auto v = (*wpTbl)["directory_dark"].value<std::string>())
       wp.directoryDark = *v;
+    if (auto* automationTbl = (*wpTbl)["automation"].as_table()) {
+      if (auto v = (*automationTbl)["enabled"].value<bool>()) {
+        wp.automation.enabled = *v;
+      }
+      if (auto v = (*automationTbl)["interval_minutes"].value<int64_t>()) {
+        wp.automation.intervalMinutes = std::clamp(static_cast<std::int32_t>(*v), 0, 1440);
+      }
+      if (auto v = (*automationTbl)["order"].value<std::string>()) {
+        const std::string order = StringUtils::toLower(StringUtils::trim(*v));
+        if (order == "random") {
+          wp.automation.order = WallpaperAutomationConfig::Order::Random;
+        } else if (order == "alphabetical") {
+          wp.automation.order = WallpaperAutomationConfig::Order::Alphabetical;
+        } else {
+          kLog.warn("unknown wallpaper automation order \"{}\" (expected: random|alphabetical)", *v);
+        }
+      }
+      if (auto v = (*automationTbl)["recursive"].value<bool>()) {
+        wp.automation.recursive = *v;
+      }
+    }
 
     if (auto* monTblMap = (*wpTbl)["monitor"].as_table()) {
       for (const auto& [monName, monNode] : *monTblMap) {

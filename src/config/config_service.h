@@ -171,6 +171,18 @@ struct WallpaperMonitorOverride {
   std::optional<std::string> directoryDark;
 };
 
+struct WallpaperAutomationConfig {
+  enum class Order : std::uint8_t {
+    Random = 0,
+    Alphabetical = 1,
+  };
+
+  bool enabled = false;
+  std::int32_t intervalMinutes = 0; // 0 = disabled
+  Order order = Order::Random;
+  bool recursive = true;
+};
+
 struct WallpaperConfig {
   bool enabled = true;
   WallpaperFillMode fillMode = WallpaperFillMode::Crop;
@@ -182,6 +194,7 @@ struct WallpaperConfig {
   std::string directory;
   std::string directoryLight;
   std::string directoryDark;
+  WallpaperAutomationConfig automation;
   std::vector<WallpaperMonitorOverride> monitorOverrides;
 };
 

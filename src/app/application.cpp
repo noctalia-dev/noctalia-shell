@@ -821,6 +821,7 @@ void Application::initUi() {
   });
 
   m_timeService.setTickSecondCallback([this]() {
+    m_wallpaper.onSecondTick();
     if (m_lockScreen.isActive()) {
       if (formatLocalTime("{:%S}") == "00") {
         m_lockScreen.onSecondTick();

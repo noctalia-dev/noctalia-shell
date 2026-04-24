@@ -2,6 +2,7 @@
 
 #include "shell/wallpaper/wallpaper_instance.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -21,10 +22,13 @@ public:
                   SharedTextureCache* textureCache);
   void onOutputChange();
   void onStateChange();
+  void onSecondTick();
 
 private:
   void reload();
   void syncInstances();
+  void resetAutomationState();
+  void runAutomation(std::int64_t minuteStamp);
   void createInstance(const WaylandOutput& output);
   void loadWallpaper(WallpaperInstance& instance, const std::string& path);
   void startTransition(WallpaperInstance& instance);
@@ -35,5 +39,7 @@ private:
   ConfigService* m_config = nullptr;
   GlSharedContext* m_sharedGl = nullptr;
   SharedTextureCache* m_textureCache = nullptr;
+  std::int64_t m_lastAutomationMinuteStamp = -1;
+  std::int64_t m_lastAutomationSwitchMinute = -1;
   std::vector<std::unique_ptr<WallpaperInstance>> m_instances;
 };

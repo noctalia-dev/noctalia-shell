@@ -9,7 +9,13 @@
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
+#include <cctype>
+#include <chrono>
 #include <cmath>
+#include <filesystem>
+#include <string_view>
+#include <system_error>
+#include <vector>
 
 using Random::randomFloat;
 
@@ -47,6 +53,116 @@ namespace {
     return params;
   }
 
+  bool hasImageExtension(const std::filesystem::path& path) {
+    std::string ext = path.extension().string();
+    std::transform(ext.begin(), ext.end(), ext.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".webp" || ext == ".bmp" || ext == ".gif";
+  }
+
+  void collectWallpaperCandidates(const std::filesystem::path& directory, bool recursive,
+                                  std::vector<std::string>& out) {
+    out.clear();
+    std::error_code ec;
+    if (!std::filesystem::exists(directory, ec) || !std::filesystem::is_directory(directory, ec)) {
+      return;
+    }
+
+    if (recursive) {
+      for (auto it = std::filesystem::recursive_directory_iterator(
+               directory, std::filesystem::directory_options::skip_permission_denied, ec);
+           !ec && it != std::filesystem::end(it); it.increment(ec)) {
+        if (ec) {
+          break;
+        }
+        std::error_code typeEc;
+        if (!it->is_regular_file(typeEc) || typeEc) {
+          continue;
+        }
+        if (hasImageExtension(it->path())) {
+          out.push_back(it->path().string());
+        }
+      }
+      return;
+    }
+
+    for (const auto& entry : std::filesystem::directory_iterator(
+             directory, std::filesystem::directory_options::skip_permission_denied, ec)) {
+      if (ec) {
+        break;
+      }
+      std::error_code typeEc;
+      if (!entry.is_regular_file(typeEc) || typeEc) {
+        continue;
+      }
+      if (hasImageExtension(entry.path())) {
+        out.push_back(entry.path().string());
+      }
+    }
+  }
+
+  const WallpaperMonitorOverride* findWallpaperMonitorOverride(const WallpaperConfig& config,
+                                                               const WaylandOutput& output) {
+    for (const auto& ovr : config.monitorOverrides) {
+      if (outputMatchesSelector(ovr.match, output)) {
+        return &ovr;
+      }
+    }
+    return nullptr;
+  }
+
+  std::string pickRandomWallpaperPath(const std::vector<std::string>& candidates, const std::string& currentPath) {
+    if (candidates.empty()) {
+      return {};
+    }
+    if (candidates.size() == 1) {
+      return candidates.front();
+    }
+
+    const std::size_t start = std::min<std::size_t>(
+        static_cast<std::size_t>(std::floor(randomFloat(0.0f, static_cast<float>(candidates.size())))),
+        candidates.size() - 1);
+    for (std::size_t i = 0; i < candidates.size(); ++i) {
+      const std::string& candidate = candidates[(start + i) % candidates.size()];
+      if (candidate != currentPath) {
+        return candidate;
+      }
+    }
+    return candidates.front();
+  }
+
+  bool lessCaseInsensitive(std::string_view a, std::string_view b) {
+    const std::size_t minLen = std::min(a.size(), b.size());
+    for (std::size_t i = 0; i < minLen; ++i) {
+      const auto ac = static_cast<unsigned char>(a[i]);
+      const auto bc = static_cast<unsigned char>(b[i]);
+      const auto alc = static_cast<unsigned char>(std::tolower(ac));
+      const auto blc = static_cast<unsigned char>(std::tolower(bc));
+      if (alc != blc) {
+        return alc < blc;
+      }
+    }
+    return a.size() < b.size();
+  }
+
+  std::string pickAlphabeticalWallpaperPath(std::vector<std::string> candidates, const std::string& currentPath) {
+    if (candidates.empty()) {
+      return {};
+    }
+    std::sort(candidates.begin(), candidates.end(),
+              [](const std::string& a, const std::string& b) { return lessCaseInsensitive(a, b); });
+    if (candidates.size() == 1) {
+      return candidates.front();
+    }
+
+    const auto it = std::find(candidates.begin(), candidates.end(), currentPath);
+    if (it == candidates.end()) {
+      return candidates.front();
+    }
+    const std::size_t idx = static_cast<std::size_t>(std::distance(candidates.begin(), it));
+    return candidates[(idx + 1) % candidates.size()];
+  }
+
   constexpr Logger kLog("wallpaper");
 
 } // namespace
@@ -74,6 +190,7 @@ bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, Gl
   m_config->setWallpaperChangeCallback([this]() { onStateChange(); });
   m_config->addReloadCallback([this]() { reload(); });
 
+  resetAutomationState();
   syncInstances();
   return true;
 }
@@ -82,6 +199,7 @@ void Wallpaper::reload() {
   kLog.info("reloading config");
 
   const bool nowEnabled = m_config->config().wallpaper.enabled;
+  resetAutomationState();
 
   if (!nowEnabled) {
     // Wallpaper disabled — full teardown
@@ -144,6 +262,20 @@ void Wallpaper::onStateChange() {
   }
 }
 
+void Wallpaper::onSecondTick() {
+  if (m_config == nullptr || !m_config->config().wallpaper.enabled) {
+    return;
+  }
+
+  using namespace std::chrono;
+  const auto minuteStamp = duration_cast<minutes>(system_clock::now().time_since_epoch()).count();
+  if (minuteStamp == m_lastAutomationMinuteStamp) {
+    return;
+  }
+  m_lastAutomationMinuteStamp = minuteStamp;
+  runAutomation(minuteStamp);
+}
+
 void Wallpaper::syncInstances() {
   const auto& outputs = m_wayland->outputs();
 
@@ -164,15 +296,11 @@ void Wallpaper::syncInstances() {
     }
 
     // Check if a monitor override now disables this output
-    for (const auto& ovr : m_config->config().wallpaper.monitorOverrides) {
-      const auto& match = ovr.match;
-      bool hit = (!output->connectorName.empty() && match == output->connectorName) ||
-                 (!output->description.empty() && output->description.find(match) != std::string::npos);
-      if (hit && ovr.enabled && !*ovr.enabled) {
-        kLog.info("removing instance for {} — disabled by monitor override", output->connectorName);
-        releaseInstanceTextures(*inst);
-        return true;
-      }
+    if (const auto* ovr = findWallpaperMonitorOverride(m_config->config().wallpaper, *output);
+        ovr != nullptr && ovr->enabled && !*ovr->enabled) {
+      kLog.info("removing instance for {} — disabled by monitor override", output->connectorName);
+      releaseInstanceTextures(*inst);
+      return true;
     }
 
     return false;
@@ -191,14 +319,9 @@ void Wallpaper::syncInstances() {
     }
 
     bool enabled = true;
-    for (const auto& ovr : m_config->config().wallpaper.monitorOverrides) {
-      const auto& match = ovr.match;
-      bool hit = (!output.connectorName.empty() && match == output.connectorName) ||
-                 (!output.description.empty() && output.description.find(match) != std::string::npos);
-      if (hit && ovr.enabled) {
-        enabled = *ovr.enabled;
-        break;
-      }
+    if (const auto* ovr = findWallpaperMonitorOverride(m_config->config().wallpaper, output);
+        ovr != nullptr && ovr->enabled) {
+      enabled = *ovr->enabled;
     }
     if (!enabled) {
       kLog.info("skipping {} ({}) — disabled by monitor override", output.connectorName, output.description);
@@ -207,6 +330,53 @@ void Wallpaper::syncInstances() {
 
     createInstance(output);
   }
+}
+
+void Wallpaper::resetAutomationState() {
+  m_lastAutomationMinuteStamp = -1;
+  m_lastAutomationSwitchMinute = -1;
+}
+
+void Wallpaper::runAutomation(std::int64_t minuteStamp) {
+  const auto& wallpaper = m_config->config().wallpaper;
+  const auto& automation = wallpaper.automation;
+  if (!automation.enabled || automation.intervalMinutes <= 0 || m_instances.empty()) {
+    return;
+  }
+
+  if (m_lastAutomationSwitchMinute >= 0 &&
+      (minuteStamp - m_lastAutomationSwitchMinute) < static_cast<std::int64_t>(automation.intervalMinutes)) {
+    return;
+  }
+
+  std::vector<std::string> candidates;
+  collectWallpaperCandidates(wallpaper.directory, automation.recursive, candidates);
+  if (candidates.empty()) {
+    return;
+  }
+
+  const std::string currentDefault = m_config->getDefaultWallpaperPath();
+  const std::string picked = automation.order == WallpaperAutomationConfig::Order::Alphabetical
+                                 ? pickAlphabeticalWallpaperPath(candidates, currentDefault)
+                                 : pickRandomWallpaperPath(candidates, currentDefault);
+  if (picked.empty()) {
+    return;
+  }
+
+  m_lastAutomationSwitchMinute = minuteStamp;
+  if (picked == currentDefault) {
+    return;
+  }
+
+  ConfigService::WallpaperBatch batch(*m_config);
+  for (const auto& inst : m_instances) {
+    if (inst->connectorName.empty()) {
+      continue;
+    }
+    m_config->setWallpaperPath(inst->connectorName, picked);
+  }
+  m_config->setWallpaperPath(std::nullopt, picked);
+  kLog.info("automation set all outputs → {}", picked);
 }
 
 void Wallpaper::createInstance(const WaylandOutput& output) {

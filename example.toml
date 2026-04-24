@@ -27,6 +27,14 @@ transition          = ["fade", "wipe", "disc", "stripes", "zoom", "honeycomb"]
 transition_duration = 1500          # milliseconds
 edge_smoothness     = 0.3
 directory           = "~/Pictures/Wallpapers"
+directory_light     = ""            # optional day-mode directory
+directory_dark      = ""            # optional night-mode directory
+
+[wallpaper.automation]
+enabled                    = false
+interval_minutes           = 0       # 0 = disabled
+order                      = "random" # random | alphabetical
+recursive                  = true    # include subdirectories when picking random wallpapers
 
 # ── Theme ─────────────────────────────────────────────────────────────────────
 
