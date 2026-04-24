@@ -14,7 +14,7 @@ Singleton {
   id: root
 
   readonly property bool upowerInstalled: ProgramCheckerService.upowerAvailable
-  readonly property var primaryDevice: UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : (peripheralBatteries.length > 0 ? peripheralBatteries[0] : null)) // Primary battery device (prioritizes laptop over peripherals)
+  readonly property var primaryDevice: UPower.displayDevice.isPresent ? UPower.displayDevice : (laptopBatteries.length > 0 ? laptopBatteries[0] : (peripheralBatteries.length > 0 ? peripheralBatteries[0] : null)) // Primary battery device (prioritizes laptop battery over peripherals)
   readonly property real warningThreshold: Settings.data.systemMonitor.batteryWarningThreshold
   readonly property real criticalThreshold: Settings.data.systemMonitor.batteryCriticalThreshold
   readonly property var laptopBatteries: {
@@ -26,9 +26,11 @@ Singleton {
                                                                                                                                            }));
     if (UPower.displayDevice.isPresent && laptopBatteriesList.length > 0) {
       return [UPower.displayDevice].concat(laptopBatteriesList.length > 1 ? laptopBatteriesList : []);
+      // Ensuring the displayDevice is always at index 0 if it exist - If you have battery DisplayDevice always be there.
     }
     return laptopBatteriesList;
   }
+  // Peripherals are sorted by battery percentage ascending to prioritize showing low batteries first in the UI when there are multiple.
   readonly property var peripheralBatteries: upowerInstalled ? (UPower.devices?.values ?? []).filter(d => d && isPeripheral(d) && isDeviceReady(d)).sort((x, y) => (x.percentage || 0) - (y.percentage || 0)) : []
 
   property var deviceModel: {
@@ -56,6 +58,7 @@ Singleton {
   property var _hasNotified: ({})
 
   function findDevice(nativePath) {
+    // Get selected device based on nativePath, with a fallback to primaryDevice for the default entry.
     if (!nativePath || nativePath === "__default__" || nativePath === "DisplayDevice") {
       return primaryDevice;
     }
@@ -77,6 +80,7 @@ Singleton {
   }
 
   function isDevicePresent(device) {
+    // For Bluetooth devices, check if they're connected before considering them "present" in the UI. They can report battery levels even when disconnected, which is confusing. UPower remembers devices even after they disconnect.
     if (!device) {
       return false;
     }
@@ -106,6 +110,7 @@ Singleton {
   }
 
   function isDeviceReady(device) {
+    // Checks that we don't show devices that are still connecting or haven't fully initialized yet.
     if (!isDevicePresent(device)) {
       return false;
     }
@@ -113,14 +118,17 @@ Singleton {
   }
 
   function getPercentage(device) {
+    // Ensure we always return a number regardless of what the device reports. The UI expects a number.
     if (!device || isNaN(device.percentage)) {
       return -1;
     }
     const z = device.percentage;
+    // Some devices (especially Bluetooth) can report a 0-1 value instead of 0-100, so we handle both and ensure we always return a 0-100 value for the UI.
     return Math.round(z > 1.0 ? z : z * 100);
   }
 
   function isCharging(device) {
+    // Detect if the selected device is charging.
     if (!device) {
       return false;
     }
@@ -131,6 +139,7 @@ Singleton {
   }
 
   function isPluggedIn(device) {
+    // Detect if the selected device is plugged in (but not charging).
     if (!device) {
       return false;
     }
@@ -141,18 +150,22 @@ Singleton {
   }
 
   function isCriticalBattery(device) {
+    // When selected device is below the threshold and not charging or plugged in, return true - Crank up alarm level.
     return (!isCharging(device) && !isPluggedIn(device)) && getPercentage(device) <= criticalThreshold;
   }
 
   function isLowBattery(device) {
+    // When selected device is below the threshold and not charging or plugged in, return true - Give user a warning.
     return (!isCharging(device) && !isPluggedIn(device)) && getPercentage(device) <= warningThreshold && getPercentage(device) > criticalThreshold;
   }
 
   function isDisplayDevice(device) {
+    // Well for one thing we want to identify the display device as a special case. But what is a display device? It's a virtual device that represents the aggregate of all laptop batteries. - TLDR: it does math stuff laptops with multiple batteries (eg: Some Thinkpad models)
     return device === UPower.displayDevice || (device.nativePath && device.nativePath.includes("DisplayDevice"));
   }
 
   function isPeripheral(device) {
+    // Determine if a device is a peripheral with battery (e.g., Bluetooth headphones, wireless mouse, etc.)
     if (!device) {
       return false;
     }
@@ -161,11 +174,13 @@ Singleton {
   }
 
   function getDeviceName(device) {
+    // Return name for device, with various fallbacks.
     if (!device || !isDeviceReady(device)) {
       return "";
     }
 
     if (isDisplayDevice(device)) {
+      // Return correct name for display device.
       return laptopBatteries.length > 1 ? I18n.tr("battery.all-batteries") : I18n.tr("common.battery");
     }
 
@@ -180,10 +195,15 @@ Singleton {
         return I18n.tr("common.battery") + " " + dIx;
       }
     }
+    // For peripherals, not every device is equal so we press all the buttons hoping one works.
     return device.name || device.deviceName || device.model || "";
+    // device.name comes from BlueZ ~ mostly here for aliases. 
+    // device.deviceName comes from Quickshell
+    // device.model comes from UPower.
   }
 
   function getIcon(percent, charging, pluggedIn, isReady) {
+    // Return battery icon with given attributes.
     if (!isReady) {
       return percent < 0 ? "battery-off" : "battery-exclamation";
     }
@@ -218,10 +238,11 @@ Singleton {
           ];
 
     const match = icons.find(tier => percent >= tier.threshold);
-    return match ? match.icon : "battery-off"; // New fallback icon clearly represent if nothing is true here.
+    return match ? match.icon : "battery-off"; // New fallback icon to clearly represent when nothing else matches.
   }
 
   function getRateText(device) {
+    // Return charging/discharging rate text based on device status.
     if (!device || device.changeRate === undefined) {
       return "";
     }
@@ -238,6 +259,7 @@ Singleton {
   }
 
   function getTimeRemainingText(device) {
+    // Return approximate time remaining based on conditions, primarily what UPower says.
     if (!isDeviceReady(device)) {
       return I18n.tr("battery.no-battery-detected");
     }
@@ -256,6 +278,7 @@ Singleton {
   }
 
   function checkDevice(device) {
+    // Decides when to send a low/critical battery notification. I know the name 'checkDevice' isn't the best I've come up with, but it's certainly better than 'maybeNotify'.
     if (!device || !isDeviceReady(device)) {
       return;
     }
@@ -294,6 +317,7 @@ Singleton {
   }
 
   function notify(device, level) {
+    // The function that sends the notification.
     if (!Settings.data.notifications.enableBatteryToast) {
       return;
     }
@@ -308,8 +332,9 @@ Singleton {
     var icon = level === "critical" ? "battery-exclamation" : "battery-charging-2";
 
     if (isPeripheral(device) && name) {
+      // Naming for external devices.
       title = name + " - " + title;
-      // ex A: 'Turann_s AirPods Pro III - Low Battery' - I prefer this makes most sense.
+      // ex A: 'Turann_s AirPods Pro III - Low Battery' - I prefer this, it makes the most sense.
       // ex B: 'Low Battery - Turann_s AirPods Pro III'
     }
 
@@ -318,15 +343,16 @@ Singleton {
   }
 
   function getDeviceIcon(device) {
+    // This looks a bit complicated, but it's actually not. Returns specific icon based on what we know about the device.
     if (!device) {
       return "bt-device-undefined";
     }
 
     const name = (device.model || device.name || "").toLowerCase();
-    const nativePath = (device.nativePath || "").toLowerCase();
-    const iconHint = (device.icon || device.iconName || "").toLowerCase();  // Some devices are not known to UPower (eg: Bluetooth devices, hint is often does the heavy lifting for recognition)
-    const isEarbud = name.includes("pod") || name.includes("bud") || iconHint.includes("earbud");
-    // A: DisplayDevice
+    const nativePath = (device.nativePath || "").toLowerCase(); // nativePath where UPower sees the device
+    const iconHint = (device.icon || device.iconName || "").toLowerCase();  // Some devices are not known to UPower (e.g., Bluetooth devices). The icon hint often does the heavy lifting for recognition here.
+    const isEarbud = name.includes("pod") || name.includes("bud") || iconHint.includes("earbud"); // The difference between headphones and earbuds. - It works ¯\_(ツ)_/¯
+    // A: DisplayDevice - If you read you know, if not go back and read.
     if (isDisplayDevice(device)) {
       return "device-laptop";
     }
@@ -350,7 +376,7 @@ Singleton {
     if (device.type === UPowerDeviceType.Phone || nativePath.includes("phone") || iconHint.includes("phone")) {
       return "device-phone";
     }
-    // 9: Media Player
+    // 9: Media Player - don't ask me i don't know what this was.
     if (device.type === UPowerDeviceType.MediaPlayer || nativePath.includes("media_player")) {
       return "device-media-player";
     }
@@ -419,14 +445,13 @@ Singleton {
       return "device-watch";
     }
 
-    // 2. Context-aware fallback:
-    // If it's a battery-reporting device (UPower), show its battery level as the icon.
-    // Otherwise (Bluetooth), return the generic bluetooth device icon.
+    // 2. Context-aware fallback: A (simple) trick BatteryPanel when opened, knows percentages - BluetoothPanel doesn't.
+    // But wait there is more, BluetoothPanel knows icon hints, BatteryPanel doesn't.
     if (device.percentage !== undefined) {
       return getIcon(getPercentage(device), isCharging(device), isPluggedIn(device), isDeviceReady(device));
     }
-
-    return "bt-device-undefined"; // 28
+    // 28: Fallback
+    return "bt-device-undefined";
   }
 
   Instantiator {
