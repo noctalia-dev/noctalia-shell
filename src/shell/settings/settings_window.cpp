@@ -4,6 +4,7 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
+#include "i18n/i18n.h"
 #include "render/render_context.h"
 #include "shell/settings/settings_registry.h"
 #include "ui/controls/box.h"
@@ -44,19 +45,29 @@ namespace {
     return label;
   }
 
-  std::size_t optionIndex(const std::vector<std::string>& options, std::string_view value) {
-    const auto it = std::find(options.begin(), options.end(), value);
-    if (it == options.end()) {
-      return 0;
+  std::size_t optionIndex(const std::vector<settings::SelectOption>& options, std::string_view value) {
+    for (std::size_t i = 0; i < options.size(); ++i) {
+      if (options[i].value == value) {
+        return i;
+      }
     }
-    return static_cast<std::size_t>(std::distance(options.begin(), it));
+    return 0;
+  }
+
+  std::vector<std::string> optionLabels(const std::vector<settings::SelectOption>& options) {
+    std::vector<std::string> labels;
+    labels.reserve(options.size());
+    for (const auto& opt : options) {
+      labels.push_back(opt.label);
+    }
+    return labels;
   }
 
   std::vector<std::string> sectionKeys(const std::vector<settings::SettingEntry>& entries) {
     std::vector<std::string> sections;
     sections.emplace_back();
     for (const auto& entry : entries) {
-      if (entry.section == "Bar") {
+      if (entry.section == "bar") {
         continue;
       }
       if (std::find(sections.begin(), sections.end(), entry.section) == sections.end()) {
@@ -206,9 +217,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   const BarConfig* selectedBar = settings::findBar(cfg, m_selectedBarName);
   const auto registry = settings::buildSettingsRegistry(cfg, selectedBar);
   const auto sections = sectionKeys(registry);
-  if (m_selectedSection == "Bar" && selectedBar == nullptr) {
+  if (m_selectedSection == "bar" && selectedBar == nullptr) {
     m_selectedSection.clear();
-  } else if (!m_selectedSection.empty() && m_selectedSection != "Bar" &&
+  } else if (!m_selectedSection.empty() && m_selectedSection != "bar" &&
              std::find(sections.begin(), sections.end(), m_selectedSection) == sections.end()) {
     m_selectedSection.clear();
   }
@@ -239,7 +250,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   header->setGap(Style::spaceSm * scale);
 
   auto headerTitle = std::make_unique<Label>();
-  headerTitle->setText("Settings");
+  headerTitle->setText(i18n::tr("settings.title"));
   headerTitle->setBold(true);
   headerTitle->setFontSize(Style::fontSizeTitle * scale);
   headerTitle->setColor(roleColor(ColorRole::OnSurface));
@@ -292,7 +303,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   filters->setGap(Style::spaceMd * scale);
 
   auto searchInput = std::make_unique<Input>();
-  searchInput->setPlaceholder("Search settings...");
+  searchInput->setPlaceholder(i18n::tr("settings.search-placeholder"));
   searchInput->setValue(m_searchQuery);
   searchInput->setFontSize(Style::fontSizeBody * scale);
   searchInput->setControlHeight(Style::controlHeight * scale);
@@ -311,10 +322,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   const auto sectionLabel = [&](std::string_view section) {
     if (section.empty()) {
-      return std::string("All");
+      return i18n::tr("settings.section-all");
     }
-    return std::string(section);
+    return i18n::tr("settings.section." + std::string(section));
   };
+
+  const auto groupLabel = [&](std::string_view group) { return i18n::tr("settings.group." + std::string(group)); };
 
   auto body = std::make_unique<Flex>();
   body->setDirection(FlexDirection::Horizontal);
@@ -348,9 +361,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   }
 
   for (const auto& barName : availableBars) {
-    const bool selected = m_selectedSection == "Bar" && m_selectedBarName == barName;
+    const bool selected = m_selectedSection == "bar" && m_selectedBarName == barName;
     auto navItem = std::make_unique<Button>();
-    navItem->setText(std::format("Bar: {}", barName));
+    navItem->setText(i18n::tr("settings.bar-label", "name", barName));
     navItem->setVariant(selected ? ButtonVariant::TabActive : ButtonVariant::Tab);
     navItem->setContentAlign(ButtonContentAlign::Start);
     navItem->setFontSize(Style::fontSizeBody * scale);
@@ -358,7 +371,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     navItem->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
     navItem->setRadius(Style::radiusMd * scale);
     navItem->setOnClick([this, barName, requestRebuild]() {
-      m_selectedSection = "Bar";
+      m_selectedSection = "bar";
       m_selectedBarName = barName;
       requestRebuild();
     });
@@ -422,7 +435,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   const auto makeResetButton = [&](const std::vector<std::string>& path) {
     auto reset = std::make_unique<Button>();
-    reset->setText("Reset");
+    reset->setText(i18n::tr("settings.reset"));
     reset->setVariant(ButtonVariant::Ghost);
     reset->setFontSize(Style::fontSizeCaption * scale);
     reset->setMinHeight(Style::controlHeightSm * scale);
@@ -460,7 +473,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       badge->setPadding(1.0f * scale, Style::spaceXs * scale);
       badge->setRadius(Style::radiusSm * scale);
       badge->setBackground(roleColor(ColorRole::Primary, 0.15f));
-      badge->addChild(makeLabel("Override", Style::fontSizeCaption * scale, roleColor(ColorRole::Primary), true));
+      badge->addChild(makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeCaption * scale,
+                                roleColor(ColorRole::Primary), true));
       titleRow->addChild(std::move(badge));
     }
     if (entry.advanced) {
@@ -469,8 +483,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       badge->setPadding(1.0f * scale, Style::spaceXs * scale);
       badge->setRadius(Style::radiusSm * scale);
       badge->setBackground(roleColor(ColorRole::OnSurfaceVariant, 0.12f));
-      badge->addChild(
-          makeLabel("Advanced", Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), true));
+      badge->addChild(makeLabel(i18n::tr("settings.badge-advanced"), Style::fontSizeCaption * scale,
+                                roleColor(ColorRole::OnSurfaceVariant), true));
       titleRow->addChild(std::move(badge));
     }
     copy->addChild(std::move(titleRow));
@@ -505,16 +519,20 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     return toggle;
   };
 
-  const auto makeSelect = [&](std::vector<std::string> options, std::string selected, std::vector<std::string> path) {
+  const auto makeSelect = [&](const settings::SelectSetting& setting, std::vector<std::string> path) {
     auto select = std::make_unique<Select>();
-    select->setOptions(options);
-    select->setSelectedIndex(optionIndex(options, selected));
+    select->setOptions(optionLabels(setting.options));
+    select->setSelectedIndex(optionIndex(setting.options, setting.selectedValue));
     select->setFontSize(Style::fontSizeBody * scale);
     select->setControlHeight(Style::controlHeight * scale);
     select->setGlyphSize(Style::fontSizeBody * scale);
     select->setSize(190.0f * scale, Style::controlHeight * scale);
-    select->setOnSelectionChanged(
-        [setOverride, path](std::size_t /*index*/, std::string_view value) { setOverride(path, std::string(value)); });
+    auto options = setting.options;
+    select->setOnSelectionChanged([setOverride, path, options](std::size_t index, std::string_view /*label*/) {
+      if (index < options.size()) {
+        setOverride(path, options[index].value);
+      }
+    });
     return select;
   };
 
@@ -563,7 +581,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
           if constexpr (std::is_same_v<T, settings::ToggleSetting>) {
             return makeToggle(control.checked, entry.path);
           } else if constexpr (std::is_same_v<T, settings::SelectSetting>) {
-            return makeSelect(control.options, control.selected, entry.path);
+            return makeSelect(control, entry.path);
           } else if constexpr (std::is_same_v<T, settings::SliderSetting>) {
             return makeSlider(control.value, control.minValue, control.maxValue, control.step, entry.path,
                               control.integerValue);
@@ -572,8 +590,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         entry.control);
   };
 
-  std::string activeSectionTitle;
-  std::string activeGroupTitle;
+  std::string activeSectionKey;
+  std::string activeGroupKey;
   Flex* activeSection = nullptr;
   std::size_t visibleEntries = 0;
 
@@ -585,18 +603,19 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       continue;
     }
 
-    const std::string sectionTitle =
-        entry.section == "Bar" && selectedBar != nullptr ? std::format("Bar: {}", selectedBar->name) : entry.section;
-    if (sectionTitle != activeSectionTitle) {
-      activeSectionTitle = sectionTitle;
-      activeGroupTitle.clear();
-      activeSection = makeSection(activeSectionTitle);
+    if (entry.section != activeSectionKey) {
+      activeSectionKey = entry.section;
+      activeGroupKey.clear();
+      const std::string displayTitle = (entry.section == "bar" && selectedBar != nullptr)
+                                           ? i18n::tr("settings.bar-label", "name", selectedBar->name)
+                                           : sectionLabel(entry.section);
+      activeSection = makeSection(displayTitle);
     }
     if (activeSection != nullptr) {
-      if (entry.group != activeGroupTitle) {
-        const bool isFirstGroup = activeGroupTitle.empty();
-        activeGroupTitle = entry.group;
-        addGroupLabel(*activeSection, activeGroupTitle, isFirstGroup);
+      if (entry.group != activeGroupKey) {
+        const bool isFirstGroup = activeGroupKey.empty();
+        activeGroupKey = entry.group;
+        addGroupLabel(*activeSection, groupLabel(entry.group), isFirstGroup);
       }
       makeRow(*activeSection, entry, makeControl(entry));
       ++visibleEntries;
@@ -615,8 +634,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     emptyState->setBorderWidth(Style::borderWidth);
     emptyState->setRadius(Style::radiusMd * scale);
     emptyState->addChild(
-        makeLabel("No settings found", Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
-    emptyState->addChild(makeLabel("Try a different setting name or config key.", Style::fontSizeCaption * scale,
+        makeLabel(i18n::tr("settings.no-results"), Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
+    emptyState->addChild(makeLabel(i18n::tr("settings.no-results-hint"), Style::fontSizeCaption * scale,
                                    roleColor(ColorRole::OnSurfaceVariant), false));
     content->addChild(std::move(emptyState));
   }

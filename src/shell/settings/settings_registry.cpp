@@ -1,9 +1,10 @@
 #include "shell/settings/settings_registry.h"
 
+#include "i18n/i18n.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cstddef>
-#include <cstdint>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -14,56 +15,59 @@ namespace settings {
     template <typename T> struct EnumOption {
       T value;
       std::string_view key;
+      std::string_view labelKey;
     };
 
     constexpr EnumOption<ThemeMode> kThemeModes[] = {
-        {ThemeMode::Dark, "dark"},
-        {ThemeMode::Light, "light"},
-        {ThemeMode::Auto, "auto"},
+        {ThemeMode::Dark, "dark", "settings.opt.dark"},
+        {ThemeMode::Light, "light", "settings.opt.light"},
+        {ThemeMode::Auto, "auto", "common.auto"},
     };
 
     constexpr EnumOption<ThemeSource> kThemeSources[] = {
-        {ThemeSource::Builtin, "builtin"},
-        {ThemeSource::Wallpaper, "wallpaper"},
-        {ThemeSource::Community, "community"},
+        {ThemeSource::Builtin, "builtin", "settings.opt.builtin"},
+        {ThemeSource::Wallpaper, "wallpaper", "settings.opt.wallpaper"},
+        {ThemeSource::Community, "community", "settings.opt.community"},
     };
 
     constexpr EnumOption<ClipboardAutoPasteMode> kClipboardAutoPasteModes[] = {
-        {ClipboardAutoPasteMode::Off, "off"},
-        {ClipboardAutoPasteMode::Auto, "auto"},
-        {ClipboardAutoPasteMode::CtrlV, "ctrl_v"},
-        {ClipboardAutoPasteMode::CtrlShiftV, "ctrl_shift_v"},
-        {ClipboardAutoPasteMode::ShiftInsert, "shift_insert"},
+        {ClipboardAutoPasteMode::Off, "off", "common.off"},
+        {ClipboardAutoPasteMode::Auto, "auto", "common.auto"},
+        {ClipboardAutoPasteMode::CtrlV, "ctrl_v", "settings.opt.ctrl-v"},
+        {ClipboardAutoPasteMode::CtrlShiftV, "ctrl_shift_v", "settings.opt.ctrl-shift-v"},
+        {ClipboardAutoPasteMode::ShiftInsert, "shift_insert", "settings.opt.shift-insert"},
     };
 
     constexpr EnumOption<PasswordMaskStyle> kPasswordMaskStyles[] = {
-        {PasswordMaskStyle::CircleFilled, "default"},
-        {PasswordMaskStyle::RandomIcons, "random"},
+        {PasswordMaskStyle::CircleFilled, "default", "settings.opt.filled-circles"},
+        {PasswordMaskStyle::RandomIcons, "random", "settings.opt.random-icons"},
     };
 
-    template <typename T, std::size_t N> std::vector<std::string> optionKeys(const EnumOption<T> (&options)[N]) {
-      std::vector<std::string> keys;
-      keys.reserve(N);
-      for (const auto& option : options) {
-        keys.emplace_back(option.key);
-      }
-      return keys;
-    }
-
-    template <typename T, std::size_t N> std::string selectedKey(T value, const EnumOption<T> (&options)[N]) {
-      for (const auto& option : options) {
-        if (option.value == value) {
-          return std::string(option.key);
-        }
-      }
-      if constexpr (N > 0) {
-        return std::string(options[0].key);
-      }
-      return {};
-    }
-
     template <typename T, std::size_t N> SelectSetting enumSelect(const EnumOption<T> (&options)[N], T selected) {
-      return SelectSetting{optionKeys(options), selectedKey(selected, options)};
+      std::vector<SelectOption> opts;
+      opts.reserve(N);
+      std::string selectedValue;
+      for (const auto& option : options) {
+        std::string key(option.key);
+        if (option.value == selected) {
+          selectedValue = key;
+        }
+        opts.push_back(SelectOption{std::move(key), i18n::tr(option.labelKey)});
+      }
+      if (selectedValue.empty() && N > 0) {
+        selectedValue = std::string(options[0].key);
+      }
+      return SelectSetting{std::move(opts), std::move(selectedValue)};
+    }
+
+    SelectSetting plainSelect(std::initializer_list<std::pair<std::string_view, std::string_view>> items,
+                              std::string_view selected) {
+      std::vector<SelectOption> opts;
+      opts.reserve(items.size());
+      for (const auto& [value, labelKey] : items) {
+        opts.push_back(SelectOption{std::string(value), i18n::tr(labelKey)});
+      }
+      return SelectSetting{std::move(opts), std::string(selected)};
     }
 
     std::string pathText(const std::vector<std::string>& path) {
@@ -132,224 +136,254 @@ namespace settings {
   }
 
   std::vector<SettingEntry> buildSettingsRegistry(const Config& cfg, const BarConfig* selectedBar) {
+    using i18n::tr;
+    const auto positionSelect = [](std::string_view selected) {
+      return plainSelect(
+          {{"top", "common.top"}, {"bottom", "common.bottom"}, {"left", "common.left"}, {"right", "common.right"}},
+          selected);
+    };
     std::vector<SettingEntry> entries;
 
-    entries.push_back(makeEntry("Appearance", "Theme", "Theme mode", "Final light/dark mode preference.",
+    // Appearance
+    entries.push_back(makeEntry("appearance", "theme", tr("settings.theme-mode"), tr("settings.theme-mode-desc"),
                                 {"theme", "mode"}, enumSelect(kThemeModes, cfg.theme.mode), "dark light auto colors"));
-    entries.push_back(makeEntry("Appearance", "Theme", "Theme source", "Palette source used by the shell.",
+    entries.push_back(makeEntry("appearance", "theme", tr("settings.theme-source"), tr("settings.theme-source-desc"),
                                 {"theme", "source"}, enumSelect(kThemeSources, cfg.theme.source), "palette colors"));
-    entries.push_back(makeEntry("Appearance", "Interface", "UI scale", "Global shell content scale.",
+    entries.push_back(makeEntry("appearance", "interface", tr("settings.ui-scale"), tr("settings.ui-scale-desc"),
                                 {"shell", "ui_scale"}, SliderSetting{cfg.shell.uiScale, 0.5f, 2.5f, 0.05f, false},
                                 "size"));
-    entries.push_back(makeEntry("Appearance", "Motion", "Animations", "Enable shell transitions and motion.",
+    entries.push_back(makeEntry("appearance", "motion", tr("settings.animations"), tr("settings.animations-desc"),
                                 {"shell", "animation", "enabled"}, ToggleSetting{cfg.shell.animation.enabled},
                                 "motion"));
-    entries.push_back(makeEntry("Appearance", "Motion", "Animation speed", "Multiplier for transition speed.",
-                                {"shell", "animation", "speed"},
+    entries.push_back(makeEntry("appearance", "motion", tr("settings.animation-speed"),
+                                tr("settings.animation-speed-desc"), {"shell", "animation", "speed"},
                                 SliderSetting{cfg.shell.animation.speed, 0.1f, 4.0f, 0.05f, false}, "motion"));
 
-    entries.push_back(makeEntry("Shell", "Security", "Polkit agent", "Run Noctalia's authentication agent.",
+    // Shell
+    entries.push_back(makeEntry("shell", "security", tr("settings.polkit-agent"), tr("settings.polkit-agent-desc"),
                                 {"shell", "polkit_agent"}, ToggleSetting{cfg.shell.polkitAgent}, "auth password"));
-    entries.push_back(makeEntry("Shell", "Security", "Password style", "Mask style used by password inputs.",
+    entries.push_back(makeEntry("shell", "security", tr("settings.password-style"), tr("settings.password-style-desc"),
                                 {"shell", "password_style"},
                                 enumSelect(kPasswordMaskStyles, cfg.shell.passwordMaskStyle), "polkit lock mask"));
-    entries.push_back(makeEntry("Shell", "Location", "Show location", "Allow shell surfaces to show location names.",
+    entries.push_back(makeEntry("shell", "location", tr("settings.show-location"), tr("settings.show-location-desc"),
                                 {"shell", "show_location"}, ToggleSetting{cfg.shell.showLocation}, "weather"));
-    entries.push_back(makeEntry("Shell", "Clipboard", "Clipboard auto paste",
-                                "Paste clipboard picker selections automatically.", {"shell", "clipboard_auto_paste"},
+    entries.push_back(makeEntry("shell", "clipboard", tr("settings.clipboard-auto-paste"),
+                                tr("settings.clipboard-auto-paste-desc"), {"shell", "clipboard_auto_paste"},
                                 enumSelect(kClipboardAutoPasteModes, cfg.shell.clipboardAutoPaste), "clipboard paste"));
-    entries.push_back(makeEntry(
-        "Shell", "OSD", "OSD position", "Screen location for volume and brightness HUDs.", {"osd", "position"},
-        SelectSetting{{"top_right", "top_left", "top_center", "bottom_right", "bottom_left", "bottom_center"},
-                      cfg.osd.position},
-        "hud overlay volume brightness"));
+    entries.push_back(makeEntry("shell", "osd", tr("settings.osd-position"), tr("settings.osd-position-desc"),
+                                {"osd", "position"},
+                                plainSelect({{"top_right", "settings.opt.top-right"},
+                                             {"top_left", "settings.opt.top-left"},
+                                             {"top_center", "settings.opt.top-center"},
+                                             {"bottom_right", "settings.opt.bottom-right"},
+                                             {"bottom_left", "settings.opt.bottom-left"},
+                                             {"bottom_center", "settings.opt.bottom-center"}},
+                                            cfg.osd.position),
+                                "hud overlay volume brightness"));
 
-    entries.push_back(makeEntry("Dock", "General", "Enabled", "Show the application dock.", {"dock", "enabled"},
-                                ToggleSetting{cfg.dock.enabled}, "launcher apps"));
-    entries.push_back(makeEntry("Dock", "General", "Active monitor only", "Render the dock only on the active output.",
-                                {"dock", "active_monitor_only"}, ToggleSetting{cfg.dock.activeMonitorOnly}, "monitor"));
-    entries.push_back(makeEntry("Dock", "Layout", "Position", "Screen edge used by the dock.", {"dock", "position"},
-                                SelectSetting{{"top", "bottom", "left", "right"}, cfg.dock.position}, "edge"));
-    entries.push_back(makeEntry("Dock", "Layout", "Icon size", "Dock icon size in pixels.", {"dock", "icon_size"},
-                                SliderSetting{static_cast<float>(cfg.dock.iconSize), 16.0f, 128.0f, 1.0f, true},
-                                "apps"));
-    entries.push_back(makeEntry("Dock", "Layout", "Padding", "Inner padding around dock items.", {"dock", "padding"},
-                                SliderSetting{static_cast<float>(cfg.dock.padding), 0.0f, 100.0f, 1.0f, true},
-                                "inset"));
-    entries.push_back(makeEntry("Dock", "Layout", "Item spacing", "Gap between dock items.", {"dock", "item_spacing"},
-                                SliderSetting{static_cast<float>(cfg.dock.itemSpacing), 0.0f, 100.0f, 1.0f, true},
-                                "gap"));
+    // Dock
+    entries.push_back(makeEntry("dock", "general", tr("common.enabled"), tr("settings.dock-enabled-desc"),
+                                {"dock", "enabled"}, ToggleSetting{cfg.dock.enabled}, "launcher apps"));
+    entries.push_back(makeEntry("dock", "general", tr("settings.active-monitor-only"),
+                                tr("settings.active-monitor-only-desc"), {"dock", "active_monitor_only"},
+                                ToggleSetting{cfg.dock.activeMonitorOnly}, "monitor"));
+    entries.push_back(makeEntry("dock", "layout", tr("common.position"), tr("settings.dock-position-desc"),
+                                {"dock", "position"}, positionSelect(cfg.dock.position), "edge"));
     entries.push_back(
-        makeEntry("Dock", "Layout", "Horizontal margin", "Horizontal margin from screen edges.", {"dock", "margin_h"},
-                  SliderSetting{static_cast<float>(cfg.dock.marginH), 0.0f, 500.0f, 1.0f, true}, "gap inset"));
+        makeEntry("dock", "layout", tr("settings.icon-size"), tr("settings.icon-size-desc"), {"dock", "icon_size"},
+                  SliderSetting{static_cast<float>(cfg.dock.iconSize), 16.0f, 128.0f, 1.0f, true}, "apps"));
     entries.push_back(
-        makeEntry("Dock", "Layout", "Vertical margin", "Gap between dock and screen edge.", {"dock", "margin_v"},
-                  SliderSetting{static_cast<float>(cfg.dock.marginV), 0.0f, 100.0f, 1.0f, true}, "gap inset"));
-    entries.push_back(makeEntry("Dock", "Shape", "Corner radius", "Dock background corner radius.", {"dock", "radius"},
-                                SliderSetting{static_cast<float>(cfg.dock.radius), 0.0f, 80.0f, 1.0f, true},
-                                "rounded"));
-    entries.push_back(makeEntry("Dock", "Shape", "Background opacity", "Dock background alpha.",
+        makeEntry("dock", "layout", tr("common.padding"), tr("settings.dock-padding-desc"), {"dock", "padding"},
+                  SliderSetting{static_cast<float>(cfg.dock.padding), 0.0f, 100.0f, 1.0f, true}, "inset"));
+    entries.push_back(makeEntry(
+        "dock", "layout", tr("settings.item-spacing"), tr("settings.item-spacing-desc"), {"dock", "item_spacing"},
+        SliderSetting{static_cast<float>(cfg.dock.itemSpacing), 0.0f, 100.0f, 1.0f, true}, "gap"));
+    entries.push_back(makeEntry(
+        "dock", "layout", tr("common.horizontal-margin"), tr("settings.dock-margin-h-desc"), {"dock", "margin_h"},
+        SliderSetting{static_cast<float>(cfg.dock.marginH), 0.0f, 500.0f, 1.0f, true}, "gap inset"));
+    entries.push_back(makeEntry(
+        "dock", "layout", tr("common.vertical-margin"), tr("settings.dock-margin-v-desc"), {"dock", "margin_v"},
+        SliderSetting{static_cast<float>(cfg.dock.marginV), 0.0f, 100.0f, 1.0f, true}, "gap inset"));
+    entries.push_back(
+        makeEntry("dock", "shape", tr("common.corner-radius"), tr("settings.dock-radius-desc"), {"dock", "radius"},
+                  SliderSetting{static_cast<float>(cfg.dock.radius), 0.0f, 80.0f, 1.0f, true}, "rounded"));
+    entries.push_back(makeEntry("dock", "shape", tr("common.background-opacity"), tr("settings.dock-bg-opacity-desc"),
                                 {"dock", "background_opacity"},
                                 SliderSetting{cfg.dock.backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
-    entries.push_back(makeEntry("Dock", "Effects", "Background blur", "Request compositor blur behind the dock.",
+    entries.push_back(makeEntry("dock", "effects", tr("common.background-blur"), tr("settings.dock-bg-blur-desc"),
                                 {"dock", "background_blur"}, ToggleSetting{cfg.dock.backgroundBlur}, "blur"));
-    entries.push_back(makeEntry("Dock", "Effects", "Shadow blur", "Dock shadow blur radius.", {"dock", "shadow_blur"},
-                                SliderSetting{static_cast<float>(cfg.dock.shadowBlur), 0.0f, 100.0f, 1.0f, true},
-                                "shadow", true));
     entries.push_back(makeEntry(
-        "Dock", "Effects", "Shadow X offset", "Horizontal shadow offset.", {"dock", "shadow_offset_x"},
+        "dock", "effects", tr("common.shadow-blur"), tr("settings.dock-shadow-blur-desc"), {"dock", "shadow_blur"},
+        SliderSetting{static_cast<float>(cfg.dock.shadowBlur), 0.0f, 100.0f, 1.0f, true}, "shadow", true));
+    entries.push_back(makeEntry(
+        "dock", "effects", tr("common.shadow-x"), tr("settings.dock-shadow-x-desc"), {"dock", "shadow_offset_x"},
         SliderSetting{static_cast<float>(cfg.dock.shadowOffsetX), -40.0f, 40.0f, 1.0f, true}, "shadow", true));
     entries.push_back(makeEntry(
-        "Dock", "Effects", "Shadow Y offset", "Vertical shadow offset.", {"dock", "shadow_offset_y"},
+        "dock", "effects", tr("common.shadow-y"), tr("settings.dock-shadow-y-desc"), {"dock", "shadow_offset_y"},
         SliderSetting{static_cast<float>(cfg.dock.shadowOffsetY), -40.0f, 40.0f, 1.0f, true}, "shadow", true));
-    entries.push_back(makeEntry("Dock", "Behavior", "Auto hide", "Hide the dock until pointer approach.",
+    entries.push_back(makeEntry("dock", "behavior", tr("common.auto-hide"), tr("settings.dock-auto-hide-desc"),
                                 {"dock", "auto_hide"}, ToggleSetting{cfg.dock.autoHide}, "autohide"));
-    entries.push_back(makeEntry("Dock", "Behavior", "Reserve space", "Keep compositor exclusive zone for the dock.",
+    entries.push_back(makeEntry("dock", "behavior", tr("common.reserve-space"), tr("settings.dock-reserve-space-desc"),
                                 {"dock", "reserve_space"}, ToggleSetting{cfg.dock.reserveSpace}, "exclusive zone"));
-    entries.push_back(makeEntry("Dock", "Behavior", "Show running apps", "Include unpinned running applications.",
+    entries.push_back(makeEntry("dock", "behavior", tr("settings.show-running"), tr("settings.show-running-desc"),
                                 {"dock", "show_running"}, ToggleSetting{cfg.dock.showRunning}, "windows"));
-    entries.push_back(makeEntry("Dock", "Behavior", "Show instance count",
-                                "Show a badge when an app has multiple windows.", {"dock", "show_instance_count"},
+    entries.push_back(makeEntry("dock", "behavior", tr("settings.show-instance-count"),
+                                tr("settings.show-instance-count-desc"), {"dock", "show_instance_count"},
                                 ToggleSetting{cfg.dock.showInstanceCount}, "badge windows"));
-    entries.push_back(makeEntry("Dock", "Focus styling", "Active icon scale", "Scale for the focused app icon.",
-                                {"dock", "active_scale"},
+    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.active-icon-scale"),
+                                tr("settings.active-icon-scale-desc"), {"dock", "active_scale"},
                                 SliderSetting{cfg.dock.activeScale, 0.1f, 1.75f, 0.05f, false}, "focused", true));
-    entries.push_back(makeEntry("Dock", "Focus styling", "Inactive icon scale", "Scale for non-focused app icons.",
-                                {"dock", "inactive_scale"},
+    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.inactive-icon-scale"),
+                                tr("settings.inactive-icon-scale-desc"), {"dock", "inactive_scale"},
                                 SliderSetting{cfg.dock.inactiveScale, 0.1f, 1.0f, 0.05f, false}, "unfocused", true));
-    entries.push_back(makeEntry(
-        "Dock", "Focus styling", "Active icon opacity", "Opacity for the focused app icon.", {"dock", "active_opacity"},
-        SliderSetting{cfg.dock.activeOpacity, 0.0f, 1.0f, 0.01f, false}, "focused alpha", true));
-    entries.push_back(makeEntry("Dock", "Focus styling", "Inactive icon opacity", "Opacity for non-focused app icons.",
-                                {"dock", "inactive_opacity"},
+    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.active-icon-opacity"),
+                                tr("settings.active-icon-opacity-desc"), {"dock", "active_opacity"},
+                                SliderSetting{cfg.dock.activeOpacity, 0.0f, 1.0f, 0.01f, false}, "focused alpha",
+                                true));
+    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.inactive-icon-opacity"),
+                                tr("settings.inactive-icon-opacity-desc"), {"dock", "inactive_opacity"},
                                 SliderSetting{cfg.dock.inactiveOpacity, 0.0f, 1.0f, 0.01f, false}, "unfocused alpha",
                                 true));
 
-    entries.push_back(makeEntry("Overview", "General", "Enabled", "Show the overview backdrop surface.",
+    // Overview
+    entries.push_back(makeEntry("overview", "general", tr("common.enabled"), tr("settings.overview-enabled-desc"),
                                 {"overview", "enabled"}, ToggleSetting{cfg.overview.enabled}, "wallpaper backdrop"));
-    entries.push_back(makeEntry("Overview", "General", "Unload when hidden",
-                                "Release overview resources when not in use.", {"overview", "unload_when_not_in_use"},
+    entries.push_back(makeEntry("overview", "general", tr("settings.unload-when-hidden"),
+                                tr("settings.unload-when-hidden-desc"), {"overview", "unload_when_not_in_use"},
                                 ToggleSetting{cfg.overview.unloadWhenNotInUse}, "memory"));
-    entries.push_back(makeEntry("Overview", "Backdrop", "Blur intensity", "Overview wallpaper blur amount.",
-                                {"overview", "blur_intensity"},
+    entries.push_back(makeEntry("overview", "backdrop", tr("settings.blur-intensity"),
+                                tr("settings.overview-blur-desc"), {"overview", "blur_intensity"},
                                 SliderSetting{cfg.overview.blurIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
-    entries.push_back(makeEntry("Overview", "Backdrop", "Tint intensity", "Overview wallpaper tint amount.",
-                                {"overview", "tint_intensity"},
+    entries.push_back(makeEntry("overview", "backdrop", tr("settings.tint-intensity"),
+                                tr("settings.overview-tint-desc"), {"overview", "tint_intensity"},
                                 SliderSetting{cfg.overview.tintIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
 
-    entries.push_back(makeEntry("Desktop", "Widgets", "Desktop widgets", "Render configured desktop widgets.",
-                                {"desktop_widgets", "enabled"}, ToggleSetting{cfg.desktopWidgets.enabled}, "desktop"));
+    // Desktop
+    entries.push_back(makeEntry("desktop", "widgets", tr("settings.desktop-widgets"),
+                                tr("settings.desktop-widgets-desc"), {"desktop_widgets", "enabled"},
+                                ToggleSetting{cfg.desktopWidgets.enabled}, "desktop"));
 
-    entries.push_back(makeEntry("Services", "Weather", "Weather", "Enable forecast data and weather surfaces.",
+    // Services
+    entries.push_back(makeEntry("services", "weather", tr("settings.weather"), tr("settings.weather-desc"),
                                 {"weather", "enabled"}, ToggleSetting{cfg.weather.enabled}, "forecast"));
-    entries.push_back(makeEntry("Services", "Weather", "Weather location",
-                                "Resolve location from IP instead of address.", {"weather", "auto_locate"},
+    entries.push_back(makeEntry("services", "weather", tr("settings.weather-location"),
+                                tr("settings.weather-location-desc"), {"weather", "auto_locate"},
                                 ToggleSetting{cfg.weather.autoLocate}, "forecast gps"));
-    entries.push_back(makeEntry("Services", "Weather", "Weather unit", "Temperature unit for forecasts.",
-                                {"weather", "unit"}, SelectSetting{{"celsius", "fahrenheit"}, cfg.weather.unit},
-                                "temperature"));
-    entries.push_back(makeEntry("Services", "Weather", "Weather effects", "Enable weather visual effects.",
-                                {"weather", "effects"}, ToggleSetting{cfg.weather.effects}, "forecast visuals"));
     entries.push_back(makeEntry(
-        "Services", "Weather", "Refresh interval", "Minutes between weather refreshes.", {"weather", "refresh_minutes"},
-        SliderSetting{static_cast<float>(cfg.weather.refreshMinutes), 5.0f, 240.0f, 5.0f, true}, "forecast"));
-    entries.push_back(makeEntry("Services", "Audio", "Audio overdrive", "Allow volume above 100%.",
-                                {"audio", "enable_overdrive"}, ToggleSetting{cfg.audio.enableOverdrive}, "volume"));
-    entries.push_back(makeEntry("Services", "Audio", "Shell sounds", "Enable shell feedback sounds.",
+        "services", "weather", tr("settings.weather-unit"), tr("settings.weather-unit-desc"), {"weather", "unit"},
+        plainSelect({{"celsius", "settings.opt.celsius"}, {"fahrenheit", "settings.opt.fahrenheit"}}, cfg.weather.unit),
+        "temperature"));
+    entries.push_back(makeEntry("services", "weather", tr("settings.weather-effects"),
+                                tr("settings.weather-effects-desc"), {"weather", "effects"},
+                                ToggleSetting{cfg.weather.effects}, "forecast visuals"));
+    entries.push_back(makeEntry("services", "weather", tr("settings.refresh-interval"),
+                                tr("settings.refresh-interval-desc"), {"weather", "refresh_minutes"},
+                                SliderSetting{static_cast<float>(cfg.weather.refreshMinutes), 5.0f, 240.0f, 5.0f, true},
+                                "forecast"));
+    entries.push_back(makeEntry("services", "audio", tr("settings.audio-overdrive"),
+                                tr("settings.audio-overdrive-desc"), {"audio", "enable_overdrive"},
+                                ToggleSetting{cfg.audio.enableOverdrive}, "volume"));
+    entries.push_back(makeEntry("services", "audio", tr("settings.shell-sounds"), tr("settings.shell-sounds-desc"),
                                 {"audio", "enable_sounds"}, ToggleSetting{cfg.audio.enableSounds}, "sound"));
-    entries.push_back(makeEntry("Services", "Audio", "Sound volume", "Volume for shell feedback sounds.",
+    entries.push_back(makeEntry("services", "audio", tr("settings.sound-volume"), tr("settings.sound-volume-desc"),
                                 {"audio", "sound_volume"},
                                 SliderSetting{cfg.audio.soundVolume, 0.0f, 1.0f, 0.01f, false}, "sound"));
-    entries.push_back(makeEntry("Services", "Brightness", "DDC/CI brightness", "Enable ddcutil for external monitors.",
+    entries.push_back(makeEntry("services", "brightness", tr("settings.ddcutil"), tr("settings.ddcutil-desc"),
                                 {"brightness", "enable_ddcutil"}, ToggleSetting{cfg.brightness.enableDdcutil},
                                 "monitor ddcutil"));
-    entries.push_back(makeEntry("Services", "Night light", "Night light", "Enable scheduled display warmth.",
+    entries.push_back(makeEntry("services", "night-light", tr("settings.night-light"), tr("settings.night-light-desc"),
                                 {"nightlight", "enabled"}, ToggleSetting{cfg.nightlight.enabled}, "wlsunset"));
-    entries.push_back(makeEntry("Services", "Night light", "Force night light", "Keep night light active now.",
-                                {"nightlight", "force"}, ToggleSetting{cfg.nightlight.force}, "wlsunset"));
-    entries.push_back(makeEntry("Services", "Night light", "Use weather location",
-                                "Use weather coordinates for the schedule.", {"nightlight", "use_weather_location"},
+    entries.push_back(makeEntry("services", "night-light", tr("settings.force-night-light"),
+                                tr("settings.force-night-light-desc"), {"nightlight", "force"},
+                                ToggleSetting{cfg.nightlight.force}, "wlsunset"));
+    entries.push_back(makeEntry("services", "night-light", tr("settings.use-weather-location"),
+                                tr("settings.use-weather-location-desc"), {"nightlight", "use_weather_location"},
                                 ToggleSetting{cfg.nightlight.useWeatherLocation}, "location"));
     entries.push_back(
-        makeEntry("Services", "Night light", "Day temperature", "Day color temperature in Kelvin.",
+        makeEntry("services", "night-light", tr("settings.day-temperature"), tr("settings.day-temperature-desc"),
                   {"nightlight", "temperature_day"},
                   SliderSetting{static_cast<float>(cfg.nightlight.dayTemperature), 1000.0f, 10000.0f, 100.0f, true},
                   "wlsunset kelvin"));
     entries.push_back(
-        makeEntry("Services", "Night light", "Night temperature", "Warm color temperature in Kelvin.",
+        makeEntry("services", "night-light", tr("settings.night-temperature"), tr("settings.night-temperature-desc"),
                   {"nightlight", "temperature_night"},
                   SliderSetting{static_cast<float>(cfg.nightlight.nightTemperature), 1000.0f, 10000.0f, 100.0f, true},
                   "wlsunset kelvin"));
 
-    entries.push_back(makeEntry("Notifications", "General", "Notification daemon",
-                                "Claim org.freedesktop.Notifications.", {"notification", "enable_daemon"},
+    // Notifications
+    entries.push_back(makeEntry("notifications", "general", tr("settings.notification-daemon"),
+                                tr("settings.notification-daemon-desc"), {"notification", "enable_daemon"},
                                 ToggleSetting{cfg.notification.enableDaemon}, "dbus"));
-    entries.push_back(makeEntry("Notifications", "Toasts", "Toast blur", "Request compositor blur behind toasts.",
+    entries.push_back(makeEntry("notifications", "toasts", tr("settings.toast-blur"), tr("settings.toast-blur-desc"),
                                 {"notification", "background_blur"}, ToggleSetting{cfg.notification.backgroundBlur},
                                 "popup"));
-    entries.push_back(makeEntry("Notifications", "Toasts", "Toast opacity", "Toast card background alpha.",
-                                {"notification", "background_opacity"},
+    entries.push_back(makeEntry("notifications", "toasts", tr("settings.toast-opacity"),
+                                tr("settings.toast-opacity-desc"), {"notification", "background_opacity"},
                                 SliderSetting{cfg.notification.backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "popup"));
 
+    // Bar
     if (selectedBar != nullptr) {
-      const std::string section = "Bar";
+      const std::string section = "bar";
       const std::vector<std::string> root = {"bar", selectedBar->name};
       auto path = [&](std::string key) {
         std::vector<std::string> p = root;
         p.push_back(std::move(key));
         return p;
       };
-      entries.push_back(makeEntry(section, "General", "Enabled", "Show this bar.", path("enabled"),
-                                  ToggleSetting{selectedBar->enabled}, "visible"));
-      entries.push_back(makeEntry(section, "General", "Position", "Screen edge used by this bar.", path("position"),
-                                  SelectSetting{{"top", "bottom", "left", "right"}, selectedBar->position}, "edge"));
-      entries.push_back(makeEntry(section, "General", "Auto hide", "Slide the bar out when inactive.",
+      entries.push_back(makeEntry(section, "general", tr("common.enabled"), tr("settings.bar-enabled-desc"),
+                                  path("enabled"), ToggleSetting{selectedBar->enabled}, "visible"));
+      entries.push_back(makeEntry(section, "general", tr("common.position"), tr("settings.bar-position-desc"),
+                                  path("position"), positionSelect(selectedBar->position), "edge"));
+      entries.push_back(makeEntry(section, "general", tr("common.auto-hide"), tr("settings.bar-auto-hide-desc"),
                                   path("auto_hide"), ToggleSetting{selectedBar->autoHide}, "autohide"));
-      entries.push_back(makeEntry(section, "General", "Reserve space", "Keep compositor exclusive zone for the bar.",
+      entries.push_back(makeEntry(section, "general", tr("common.reserve-space"), tr("settings.bar-reserve-space-desc"),
                                   path("reserve_space"), ToggleSetting{selectedBar->reserveSpace}, "exclusive zone"));
-      entries.push_back(makeEntry(section, "Layout", "Thickness", "Bar cross-axis size in pixels.", path("thickness"),
-                                  SliderSetting{static_cast<float>(selectedBar->thickness), 10.0f, 120.0f, 1.0f, true},
-                                  "height width"));
-      entries.push_back(makeEntry(section, "Layout", "Content scale", "Scale widgets and labels in this bar.",
+      entries.push_back(makeEntry(
+          section, "layout", tr("settings.thickness"), tr("settings.thickness-desc"), path("thickness"),
+          SliderSetting{static_cast<float>(selectedBar->thickness), 10.0f, 120.0f, 1.0f, true}, "height width"));
+      entries.push_back(makeEntry(section, "layout", tr("settings.content-scale"), tr("settings.content-scale-desc"),
                                   path("scale"), SliderSetting{selectedBar->scale, 0.5f, 4.0f, 0.05f, false},
                                   "zoom size"));
+      entries.push_back(makeEntry(
+          section, "layout", tr("common.horizontal-margin"), tr("settings.bar-margin-h-desc"), path("margin_h"),
+          SliderSetting{static_cast<float>(selectedBar->marginH), 0.0f, 500.0f, 1.0f, true}, "gap inset"));
       entries.push_back(
-          makeEntry(section, "Layout", "Horizontal margin", "Left and right compositor margin.", path("margin_h"),
-                    SliderSetting{static_cast<float>(selectedBar->marginH), 0.0f, 500.0f, 1.0f, true}, "gap inset"));
-      entries.push_back(
-          makeEntry(section, "Layout", "Vertical margin", "Gap between the bar and screen edge.", path("margin_v"),
+          makeEntry(section, "layout", tr("common.vertical-margin"), tr("settings.bar-margin-v-desc"), path("margin_v"),
                     SliderSetting{static_cast<float>(selectedBar->marginV), 0.0f, 100.0f, 1.0f, true}, "gap inset"));
+      entries.push_back(makeEntry(
+          section, "layout", tr("settings.content-padding"), tr("settings.content-padding-desc"), path("padding"),
+          SliderSetting{static_cast<float>(selectedBar->padding), 0.0f, 80.0f, 1.0f, true}, "inset"));
       entries.push_back(
-          makeEntry(section, "Layout", "Content padding", "Inset between bar edges and widget lanes.", path("padding"),
-                    SliderSetting{static_cast<float>(selectedBar->padding), 0.0f, 80.0f, 1.0f, true}, "inset"));
-      entries.push_back(makeEntry(section, "Shape", "Corner radius", "Round all bar corners.", path("radius"),
-                                  SliderSetting{static_cast<float>(selectedBar->radius), 0.0f, 80.0f, 1.0f, true},
-                                  "rounded"));
-      entries.push_back(makeEntry(section, "Shape", "Background opacity", "Bar background alpha.",
+          makeEntry(section, "shape", tr("common.corner-radius"), tr("settings.bar-radius-desc"), path("radius"),
+                    SliderSetting{static_cast<float>(selectedBar->radius), 0.0f, 80.0f, 1.0f, true}, "rounded"));
+      entries.push_back(makeEntry(section, "shape", tr("common.background-opacity"), tr("settings.bar-bg-opacity-desc"),
                                   path("background_opacity"),
                                   SliderSetting{selectedBar->backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
-      entries.push_back(makeEntry(section, "Effects", "Background blur", "Request compositor blur behind this bar.",
+      entries.push_back(makeEntry(section, "effects", tr("common.background-blur"), tr("settings.bar-bg-blur-desc"),
                                   path("background_blur"), ToggleSetting{selectedBar->backgroundBlur}, "blur"));
-      entries.push_back(makeEntry(section, "Effects", "Shadow blur", "Bar shadow blur radius.", path("shadow_blur"),
-                                  SliderSetting{static_cast<float>(selectedBar->shadowBlur), 0.0f, 100.0f, 1.0f, true},
-                                  "shadow", true));
       entries.push_back(makeEntry(
-          section, "Effects", "Shadow X offset", "Horizontal shadow offset.", path("shadow_offset_x"),
+          section, "effects", tr("common.shadow-blur"), tr("settings.bar-shadow-blur-desc"), path("shadow_blur"),
+          SliderSetting{static_cast<float>(selectedBar->shadowBlur), 0.0f, 100.0f, 1.0f, true}, "shadow", true));
+      entries.push_back(makeEntry(
+          section, "effects", tr("common.shadow-x"), tr("settings.bar-shadow-x-desc"), path("shadow_offset_x"),
           SliderSetting{static_cast<float>(selectedBar->shadowOffsetX), -40.0f, 40.0f, 1.0f, true}, "shadow", true));
       entries.push_back(makeEntry(
-          section, "Effects", "Shadow Y offset", "Vertical shadow offset.", path("shadow_offset_y"),
+          section, "effects", tr("common.shadow-y"), tr("settings.bar-shadow-y-desc"), path("shadow_offset_y"),
           SliderSetting{static_cast<float>(selectedBar->shadowOffsetY), -40.0f, 40.0f, 1.0f, true}, "shadow", true));
-      entries.push_back(makeEntry(section, "Widgets", "Widget capsules", "Default capsule background for widgets.",
-                                  path("capsule"), ToggleSetting{selectedBar->widgetCapsuleDefault}, "pill"));
-      entries.push_back(
-          makeEntry(section, "Widgets", "Widget spacing", "Gap between widgets in each lane.", path("widget_spacing"),
-                    SliderSetting{static_cast<float>(selectedBar->widgetSpacing), 0.0f, 32.0f, 1.0f, true}, "gap"));
+      entries.push_back(makeEntry(section, "widgets", tr("settings.widget-capsules"),
+                                  tr("settings.widget-capsules-desc"), path("capsule"),
+                                  ToggleSetting{selectedBar->widgetCapsuleDefault}, "pill"));
       entries.push_back(makeEntry(
-          section, "Widgets", "Capsule padding", "Inset inside inherited widget capsules.", path("capsule_padding"),
-          SliderSetting{selectedBar->widgetCapsulePadding, 0.0f, 48.0f, 1.0f, false}, "pill inset", true));
-      entries.push_back(makeEntry(
-          section, "Widgets", "Capsule opacity", "Opacity multiplier for widget capsules.", path("capsule_opacity"),
-          SliderSetting{selectedBar->widgetCapsuleOpacity, 0.0f, 1.0f, 0.01f, false}, "pill alpha", true));
+          section, "widgets", tr("settings.widget-spacing"), tr("settings.widget-spacing-desc"), path("widget_spacing"),
+          SliderSetting{static_cast<float>(selectedBar->widgetSpacing), 0.0f, 32.0f, 1.0f, true}, "gap"));
+      entries.push_back(makeEntry(section, "widgets", tr("settings.capsule-padding"),
+                                  tr("settings.capsule-padding-desc"), path("capsule_padding"),
+                                  SliderSetting{selectedBar->widgetCapsulePadding, 0.0f, 48.0f, 1.0f, false},
+                                  "pill inset", true));
+      entries.push_back(makeEntry(section, "widgets", tr("settings.capsule-opacity"),
+                                  tr("settings.capsule-opacity-desc"), path("capsule_opacity"),
+                                  SliderSetting{selectedBar->widgetCapsuleOpacity, 0.0f, 1.0f, 0.01f, false},
+                                  "pill alpha", true));
     }
 
     return entries;

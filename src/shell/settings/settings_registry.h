@@ -13,9 +13,14 @@ namespace settings {
     bool checked = false;
   };
 
+  struct SelectOption {
+    std::string value;
+    std::string label;
+  };
+
   struct SelectSetting {
-    std::vector<std::string> options;
-    std::string selected;
+    std::vector<SelectOption> options;
+    std::string selectedValue;
   };
 
   struct SliderSetting {
