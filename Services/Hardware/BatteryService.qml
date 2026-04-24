@@ -24,8 +24,8 @@ Singleton {
     let laptopBatteriesList = (UPower.devices?.values ?? []).filter(d => d && d.isLaptopBattery).sort((x, y) => x.nativePath.localeCompare(y.nativePath, undefined, {
                                                                                                                                              numeric: true
                                                                                                                                            }));
-    if (laptopBatteriesList.length > 1 && UPower.displayDevice.isPresent) {
-      return [UPower.displayDevice].concat(laptopBatteriesList);
+    if (UPower.displayDevice.isPresent && laptopBatteriesList.length > 0) {
+      return [UPower.displayDevice].concat(laptopBatteriesList.length > 1 ? laptopBatteriesList : []);
     }
     return laptopBatteriesList;
   }
@@ -148,6 +148,10 @@ Singleton {
     return (!isCharging(device) && !isPluggedIn(device)) && getPercentage(device) <= warningThreshold && getPercentage(device) > criticalThreshold;
   }
 
+  function isDisplayDevice(device) {
+    return device === UPower.displayDevice || (device.nativePath && device.nativePath.includes("DisplayDevice"));
+  }
+
   function isPeripheral(device) {
     if (!device) {
       return false;
@@ -161,23 +165,20 @@ Singleton {
       return "";
     }
 
-    const isDD = device === UPower.displayDevice || (device.nativePath && device.nativePath.includes("DisplayDevice"));
-    if (isDD) {
-      return I18n.tr("battery.all-batteries");
+    if (isDisplayDevice(device)) {
+      return laptopBatteries.length > 1 ? I18n.tr("battery.all-batteries") : I18n.tr("common.battery");
     }
 
     if (device.isLaptopBattery) {
       // If there is more than one battery explicitly name them
       // Logger.e("BatteryDebug", "Available Battery count: " + laptopBatteries.length); // can be useful for debugging
       const i = laptopBatteries.indexOf(device);
-      const hasDD = laptopBatteries.length > 0 && (laptopBatteries[0] === UPower.displayDevice || (laptopBatteries[0].nativePath && laptopBatteries[0].nativePath.includes("DisplayDevice")));
+      const hasDD = laptopBatteries.length > 0 && isDisplayDevice(laptopBatteries[0]);
       if (i !== -1 && laptopBatteries.length > (hasDD ? 2 : 1)) {
         // If there's an aggregate device at 0, physical batteries start at index (dIx) 1 and we want them labeled starting at 'Battery 1'
         const dIx = hasDD ? i : i + 1;
         return I18n.tr("common.battery") + " " + dIx;
       }
-      // Return Battery if there is only one
-      return I18n.tr("common.battery");
     }
     return device.name || device.deviceName || device.model || "";
   }
@@ -321,14 +322,14 @@ Singleton {
       return "bt-device-undefined";
     }
 
-    if (device.isLaptopBattery) {
-      return "device-laptop";
-    }
-
     const name = (device.model || device.name || "").toLowerCase();
     const nativePath = (device.nativePath || "").toLowerCase();
     const iconHint = (device.icon || device.iconName || "").toLowerCase();  // Some devices are not known to UPower (eg: Bluetooth devices, hint is often does the heavy lifting for recognition)
     const isEarbud = name.includes("pod") || name.includes("bud") || iconHint.includes("earbud");
+    // A: DisplayDevice
+    if (isDisplayDevice(device)) {
+      return "device-laptop";
+    }
     // 3: UPS
     if (device.type === UPowerDeviceType.Ups || nativePath.includes("ups")) {
       return "device-ups";
