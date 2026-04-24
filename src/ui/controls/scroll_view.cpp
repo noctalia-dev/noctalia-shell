@@ -135,6 +135,9 @@ void ScrollView::setScrollOffset(float offset) {
     return;
   }
   m_scrollOffset = clamped;
+  if (m_boundState != nullptr) {
+    m_boundState->offset = m_scrollOffset;
+  }
   applyScrollOffset();
   markPaintDirty();
   if (m_onScrollChanged) {
@@ -167,6 +170,14 @@ void ScrollView::clearBackgroundStyle() { setBackgroundStyle(clearThemeColor(), 
 
 void ScrollView::setBackgroundRoles(ColorRole fillRole, ColorRole borderRole, float borderWidth) {
   setBackgroundStyle(roleColor(fillRole), roleColor(borderRole), borderWidth);
+}
+
+void ScrollView::bindState(ScrollViewState* state) {
+  m_boundState = state;
+  if (m_boundState != nullptr) {
+    m_scrollOffset = m_boundState->offset;
+  }
+  markLayoutDirty();
 }
 
 void ScrollView::setOnScrollChanged(std::function<void(float)> callback) { m_onScrollChanged = std::move(callback); }
@@ -240,7 +251,12 @@ void ScrollView::doLayout(Renderer& renderer) {
 
   const float contentHeight = m_content->height();
   m_maxScrollOffset = std::max(0.0f, contentHeight - viewportH);
-  m_scrollOffset = clampOffset(m_scrollOffset);
+  if (m_boundState != nullptr) {
+    m_scrollOffset = clampOffset(m_boundState->offset);
+    m_boundState->offset = m_scrollOffset;
+  } else {
+    m_scrollOffset = clampOffset(m_scrollOffset);
+  }
 
   updateScrollbarGeometry(viewportH, contentHeight);
   applyScrollOffset();

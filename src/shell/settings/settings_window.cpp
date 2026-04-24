@@ -515,6 +515,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     navItem->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
     navItem->setRadius(Style::radiusMd * scale);
     navItem->setOnClick([this, section, requestRebuild]() {
+      if (m_selectedSection != section) {
+        m_contentScrollState.offset = 0.0f;
+      }
       m_selectedSection = section;
       m_openWidgetPickerPath.clear();
       m_editingWidgetName.clear();
@@ -535,6 +538,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     navItem->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
     navItem->setRadius(Style::radiusMd * scale);
     navItem->setOnClick([this, barName, requestRebuild]() {
+      if (m_selectedSection != "bar" || m_selectedBarName != barName || !m_selectedMonitorOverride.empty()) {
+        m_contentScrollState.offset = 0.0f;
+      }
       m_selectedSection = "bar";
       m_selectedBarName = barName;
       m_selectedMonitorOverride.clear();
@@ -560,6 +566,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         ovrItem->setRadius(Style::radiusMd * scale);
         auto match = ovr.match;
         ovrItem->setOnClick([this, barName, match, requestRebuild]() {
+          if (m_selectedSection != "bar" || m_selectedBarName != barName || m_selectedMonitorOverride != match) {
+            m_contentScrollState.offset = 0.0f;
+          }
           m_selectedSection = "bar";
           m_selectedBarName = barName;
           m_selectedMonitorOverride = match;
@@ -579,6 +588,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   body->addChild(std::move(sidebarSep));
 
   auto scroll = std::make_unique<ScrollView>();
+  scroll->bindState(&m_contentScrollState);
   scroll->setFlexGrow(1.0f);
   scroll->setScrollbarVisible(true);
   scroll->setViewportPaddingH(0.0f);

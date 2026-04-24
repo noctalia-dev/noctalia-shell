@@ -12,6 +12,10 @@ class InputArea;
 class RectNode;
 class Renderer;
 
+struct ScrollViewState {
+  float offset = 0.0f;
+};
+
 class ScrollView : public Flex {
 public:
   ScrollView();
@@ -28,6 +32,7 @@ public:
   void setBackgroundStyle(const Color& fill, const Color& border, float borderWidth);
   void clearBackgroundStyle();
   void setBackgroundRoles(ColorRole fillRole, ColorRole borderRole, float borderWidth);
+  void bindState(ScrollViewState* state);
   void setOnScrollChanged(std::function<void(float)> callback);
 
   [[nodiscard]] float scrollOffset() const noexcept { return m_scrollOffset; }
@@ -50,6 +55,7 @@ private:
   InputArea* m_scrollbarTrackArea = nullptr;
   InputArea* m_scrollbarThumbArea = nullptr;
 
+  ScrollViewState* m_boundState = nullptr;
   std::function<void(float)> m_onScrollChanged;
   ThemeColor m_backgroundFill = clearThemeColor();
   ThemeColor m_backgroundBorder = clearThemeColor();
