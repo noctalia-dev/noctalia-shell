@@ -31,7 +31,12 @@ namespace settings {
     bool integerValue = false;
   };
 
-  using SettingControl = std::variant<ToggleSetting, SelectSetting, SliderSetting>;
+  struct TextSetting {
+    std::string value;
+    std::string placeholder;
+  };
+
+  using SettingControl = std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting>;
 
   struct SettingEntry {
     std::string section;

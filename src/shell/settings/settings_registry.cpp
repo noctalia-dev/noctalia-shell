@@ -121,6 +121,8 @@ namespace settings {
     entries.push_back(makeEntry("appearance", "interface", tr("settings.ui-scale"), tr("settings.ui-scale-desc"),
                                 {"shell", "ui_scale"}, SliderSetting{cfg.shell.uiScale, 0.5f, 2.5f, 0.05f, false},
                                 "size"));
+    entries.push_back(makeEntry("appearance", "interface", tr("settings.font-family"), tr("settings.font-family-desc"),
+                                {"shell", "font_family"}, TextSetting{cfg.shell.fontFamily, "sans-serif"}, "typeface"));
     entries.push_back(makeEntry("appearance", "motion", tr("settings.animations"), tr("settings.animations-desc"),
                                 {"shell", "animation", "enabled"}, ToggleSetting{cfg.shell.animation.enabled},
                                 "motion"));
@@ -129,6 +131,8 @@ namespace settings {
                                 SliderSetting{cfg.shell.animation.speed, 0.1f, 4.0f, 0.05f, false}, "motion"));
 
     // Shell
+    entries.push_back(makeEntry("shell", "profile", tr("settings.avatar-path"), tr("settings.avatar-path-desc"),
+                                {"shell", "avatar_path"}, TextSetting{cfg.shell.avatarPath, ""}, "image picture"));
     entries.push_back(makeEntry("shell", "security", tr("settings.polkit-agent"), tr("settings.polkit-agent-desc"),
                                 {"shell", "polkit_agent"}, ToggleSetting{cfg.shell.polkitAgent}, "auth password"));
     entries.push_back(makeEntry("shell", "security", tr("settings.password-style"), tr("settings.password-style-desc"),
@@ -242,6 +246,9 @@ namespace settings {
         "services", "weather", tr("settings.weather-unit"), tr("settings.weather-unit-desc"), {"weather", "unit"},
         plainSelect({{"celsius", "settings.opt.celsius"}, {"fahrenheit", "settings.opt.fahrenheit"}}, cfg.weather.unit),
         "temperature"));
+    entries.push_back(makeEntry("services", "weather", tr("settings.weather-address"),
+                                tr("settings.weather-address-desc"), {"weather", "address"},
+                                TextSetting{cfg.weather.address, "City, Country"}, "location"));
     entries.push_back(makeEntry("services", "weather", tr("settings.weather-effects"),
                                 tr("settings.weather-effects-desc"), {"weather", "effects"},
                                 ToggleSetting{cfg.weather.effects}, "forecast visuals"));

@@ -55,4 +55,5 @@ private:
   std::string m_searchQuery;
   std::string m_selectedBarName;
   std::string m_selectedSection;
+  bool m_showAdvanced = false;
 };

@@ -318,6 +318,19 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   });
   filters->addChild(std::move(searchInput));
 
+  auto advancedLabel = makeLabel(i18n::tr("settings.badge-advanced"), Style::fontSizeBody * scale,
+                                 roleColor(ColorRole::OnSurfaceVariant), false);
+  filters->addChild(std::move(advancedLabel));
+
+  auto advancedToggle = std::make_unique<Toggle>();
+  advancedToggle->setScale(scale);
+  advancedToggle->setChecked(m_showAdvanced);
+  advancedToggle->setOnChange([this, requestRebuild](bool value) {
+    m_showAdvanced = value;
+    requestRebuild();
+  });
+  filters->addChild(std::move(advancedToggle));
+
   main->addChild(std::move(filters));
 
   const auto sectionLabel = [&](std::string_view section) {
@@ -418,16 +431,17 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       return;
     }
     if (!isFirst) {
-      auto header = std::make_unique<Flex>();
-      header->setDirection(FlexDirection::Vertical);
-      header->setAlign(FlexAlign::Stretch);
-      header->setGap(Style::spaceSm * scale);
-      header->setPadding(Style::spaceSm * scale, 0.0f, 0.0f, 0.0f);
+      auto groupHeader = std::make_unique<Flex>();
+      groupHeader->setDirection(FlexDirection::Vertical);
+      groupHeader->setAlign(FlexAlign::Stretch);
+      groupHeader->setGap(Style::spaceSm * scale);
+      groupHeader->setPadding(Style::spaceSm * scale, 0.0f, 0.0f, 0.0f);
       auto sep = std::make_unique<Separator>();
       sep->setColor(roleColor(ColorRole::Outline, 0.20f));
-      header->addChild(std::move(sep));
-      header->addChild(makeLabel(title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurfaceVariant), true));
-      section.addChild(std::move(header));
+      groupHeader->addChild(std::move(sep));
+      groupHeader->addChild(
+          makeLabel(title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurfaceVariant), true));
+      section.addChild(std::move(groupHeader));
     } else {
       section.addChild(makeLabel(title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurfaceVariant), true));
     }
@@ -574,6 +588,18 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     return wrap;
   };
 
+  const auto makeText = [&](const std::string& value, const std::string& placeholder, std::vector<std::string> path) {
+    auto input = std::make_unique<Input>();
+    input->setValue(value);
+    input->setPlaceholder(placeholder);
+    input->setFontSize(Style::fontSizeBody * scale);
+    input->setControlHeight(Style::controlHeight * scale);
+    input->setHorizontalPadding(Style::spaceSm * scale);
+    input->setSize(190.0f * scale, Style::controlHeight * scale);
+    input->setOnSubmit([setOverride, path](const std::string& v) { setOverride(path, v); });
+    return input;
+  };
+
   const auto makeControl = [&](const settings::SettingEntry& entry) -> std::unique_ptr<Node> {
     return std::visit(
         [&](const auto& control) -> std::unique_ptr<Node> {
@@ -585,6 +611,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
           } else if constexpr (std::is_same_v<T, settings::SliderSetting>) {
             return makeSlider(control.value, control.minValue, control.maxValue, control.step, entry.path,
                               control.integerValue);
+          } else if constexpr (std::is_same_v<T, settings::TextSetting>) {
+            return makeText(control.value, control.placeholder, entry.path);
           }
         },
         entry.control);
@@ -597,6 +625,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   for (const auto& entry : registry) {
     if (!m_selectedSection.empty() && entry.section != m_selectedSection) {
+      continue;
+    }
+    if (!m_showAdvanced && entry.advanced) {
       continue;
     }
     if (!settings::matchesSettingQuery(entry, m_searchQuery)) {
