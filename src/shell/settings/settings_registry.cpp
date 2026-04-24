@@ -87,6 +87,15 @@ namespace settings {
     return nullptr;
   }
 
+  const BarMonitorOverride* findMonitorOverride(const BarConfig& bar, std::string_view match) {
+    for (const auto& ovr : bar.monitorOverrides) {
+      if (ovr.match == match) {
+        return &ovr;
+      }
+    }
+    return nullptr;
+  }
+
   std::vector<std::string> barNames(const Config& cfg) {
     std::vector<std::string> names;
     names.reserve(cfg.bars.size());
@@ -104,7 +113,8 @@ namespace settings {
     return entry.searchText.find(q) != std::string::npos;
   }
 
-  std::vector<SettingEntry> buildSettingsRegistry(const Config& cfg, const BarConfig* selectedBar) {
+  std::vector<SettingEntry> buildSettingsRegistry(const Config& cfg, const BarConfig* selectedBar,
+                                                  const BarMonitorOverride* selectedMonitorOverride) {
     using i18n::tr;
     const auto positionSelect = [](std::string_view selected) {
       return plainSelect(
@@ -300,7 +310,7 @@ namespace settings {
                                 SliderSetting{cfg.notification.backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "popup"));
 
     // Bar
-    if (selectedBar != nullptr) {
+    if (selectedBar != nullptr && selectedMonitorOverride == nullptr) {
       const std::string section = "bar";
       const std::vector<std::string> root = {"bar", selectedBar->name};
       auto path = [&](std::string key) {
@@ -370,6 +380,81 @@ namespace settings {
                                   ListSetting{selectedBar->centerWidgets}, "middle"));
       entries.push_back(makeEntry(section, "widget-list", tr("settings.end-widgets"), tr("settings.end-widgets-desc"),
                                   path("end"), ListSetting{selectedBar->endWidgets}, "right"));
+    }
+
+    // Bar monitor override
+    if (selectedBar != nullptr && selectedMonitorOverride != nullptr) {
+      const auto& ovr = *selectedMonitorOverride;
+      const auto& bar = *selectedBar;
+      const std::string section = "bar";
+      const std::vector<std::string> root = {"bar", bar.name, "monitor", ovr.match};
+      auto mpath = [&](std::string key) {
+        std::vector<std::string> p = root;
+        p.push_back(std::move(key));
+        return p;
+      };
+
+      entries.push_back(makeEntry(section, "general", tr("common.enabled"), tr("settings.bar-enabled-desc"),
+                                  mpath("enabled"), ToggleSetting{ovr.enabled.value_or(bar.enabled)}, "visible"));
+      entries.push_back(makeEntry(section, "general", tr("common.auto-hide"), tr("settings.bar-auto-hide-desc"),
+                                  mpath("auto_hide"), ToggleSetting{ovr.autoHide.value_or(bar.autoHide)}, "autohide"));
+      entries.push_back(makeEntry(section, "general", tr("common.reserve-space"), tr("settings.bar-reserve-space-desc"),
+                                  mpath("reserve_space"), ToggleSetting{ovr.reserveSpace.value_or(bar.reserveSpace)},
+                                  "exclusive zone"));
+      entries.push_back(
+          makeEntry(section, "layout", tr("settings.thickness"), tr("settings.thickness-desc"), mpath("thickness"),
+                    SliderSetting{static_cast<float>(ovr.thickness.value_or(bar.thickness)), 10.0f, 120.0f, 1.0f, true},
+                    "height width"));
+      entries.push_back(makeEntry(section, "layout", tr("settings.content-scale"), tr("settings.content-scale-desc"),
+                                  mpath("scale"),
+                                  SliderSetting{ovr.scale.value_or(bar.scale), 0.5f, 4.0f, 0.05f, false}, "zoom size"));
+      entries.push_back(makeEntry(
+          section, "layout", tr("common.horizontal-margin"), tr("settings.bar-margin-h-desc"), mpath("margin_h"),
+          SliderSetting{static_cast<float>(ovr.marginH.value_or(bar.marginH)), 0.0f, 500.0f, 1.0f, true}, "gap inset"));
+      entries.push_back(makeEntry(
+          section, "layout", tr("common.vertical-margin"), tr("settings.bar-margin-v-desc"), mpath("margin_v"),
+          SliderSetting{static_cast<float>(ovr.marginV.value_or(bar.marginV)), 0.0f, 100.0f, 1.0f, true}, "gap inset"));
+      entries.push_back(makeEntry(
+          section, "layout", tr("settings.content-padding"), tr("settings.content-padding-desc"), mpath("padding"),
+          SliderSetting{static_cast<float>(ovr.padding.value_or(bar.padding)), 0.0f, 80.0f, 1.0f, true}, "inset"));
+      entries.push_back(makeEntry(
+          section, "shape", tr("common.corner-radius"), tr("settings.bar-radius-desc"), mpath("radius"),
+          SliderSetting{static_cast<float>(ovr.radius.value_or(bar.radius)), 0.0f, 80.0f, 1.0f, true}, "rounded"));
+      entries.push_back(makeEntry(
+          section, "shape", tr("common.background-opacity"), tr("settings.bar-bg-opacity-desc"),
+          mpath("background_opacity"),
+          SliderSetting{ovr.backgroundOpacity.value_or(bar.backgroundOpacity), 0.0f, 1.0f, 0.01f, false}, "alpha"));
+      entries.push_back(makeEntry(section, "effects", tr("common.background-blur"), tr("settings.bar-bg-blur-desc"),
+                                  mpath("background_blur"),
+                                  ToggleSetting{ovr.backgroundBlur.value_or(bar.backgroundBlur)}, "blur"));
+      entries.push_back(makeEntry(
+          section, "effects", tr("common.shadow-blur"), tr("settings.bar-shadow-blur-desc"), mpath("shadow_blur"),
+          SliderSetting{static_cast<float>(ovr.shadowBlur.value_or(bar.shadowBlur)), 0.0f, 100.0f, 1.0f, true},
+          "shadow", true));
+      entries.push_back(makeEntry(
+          section, "effects", tr("common.shadow-x"), tr("settings.bar-shadow-x-desc"), mpath("shadow_offset_x"),
+          SliderSetting{static_cast<float>(ovr.shadowOffsetX.value_or(bar.shadowOffsetX)), -40.0f, 40.0f, 1.0f, true},
+          "shadow", true));
+      entries.push_back(makeEntry(
+          section, "effects", tr("common.shadow-y"), tr("settings.bar-shadow-y-desc"), mpath("shadow_offset_y"),
+          SliderSetting{static_cast<float>(ovr.shadowOffsetY.value_or(bar.shadowOffsetY)), -40.0f, 40.0f, 1.0f, true},
+          "shadow", true));
+      entries.push_back(makeEntry(
+          section, "widgets", tr("settings.widget-spacing"), tr("settings.widget-spacing-desc"),
+          mpath("widget_spacing"),
+          SliderSetting{static_cast<float>(ovr.widgetSpacing.value_or(bar.widgetSpacing)), 0.0f, 32.0f, 1.0f, true},
+          "gap"));
+      entries.push_back(makeEntry(section, "widgets", tr("settings.widget-capsules"),
+                                  tr("settings.widget-capsules-desc"), mpath("capsule"),
+                                  ToggleSetting{ovr.widgetCapsuleDefault.value_or(bar.widgetCapsuleDefault)}, "pill"));
+      entries.push_back(makeEntry(section, "widget-list", tr("settings.start-widgets"),
+                                  tr("settings.start-widgets-desc"), mpath("start"),
+                                  ListSetting{ovr.startWidgets.value_or(bar.startWidgets)}, "left"));
+      entries.push_back(makeEntry(section, "widget-list", tr("settings.center-widgets"),
+                                  tr("settings.center-widgets-desc"), mpath("center"),
+                                  ListSetting{ovr.centerWidgets.value_or(bar.centerWidgets)}, "middle"));
+      entries.push_back(makeEntry(section, "widget-list", tr("settings.end-widgets"), tr("settings.end-widgets-desc"),
+                                  mpath("end"), ListSetting{ovr.endWidgets.value_or(bar.endWidgets)}, "right"));
     }
 
     return entries;

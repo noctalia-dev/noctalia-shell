@@ -215,7 +215,14 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     m_selectedBarName = availableBars.front();
   }
   const BarConfig* selectedBar = settings::findBar(cfg, m_selectedBarName);
-  const auto registry = settings::buildSettingsRegistry(cfg, selectedBar);
+  const BarMonitorOverride* selectedMonitorOverride = nullptr;
+  if (selectedBar != nullptr && !m_selectedMonitorOverride.empty()) {
+    selectedMonitorOverride = settings::findMonitorOverride(*selectedBar, m_selectedMonitorOverride);
+    if (selectedMonitorOverride == nullptr) {
+      m_selectedMonitorOverride.clear();
+    }
+  }
+  const auto registry = settings::buildSettingsRegistry(cfg, selectedBar, selectedMonitorOverride);
   const auto sections = sectionKeys(registry);
   if (m_selectedSection == "bar" && selectedBar == nullptr) {
     m_selectedSection.clear();
@@ -374,10 +381,11 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   }
 
   for (const auto& barName : availableBars) {
-    const bool selected = m_selectedSection == "bar" && m_selectedBarName == barName;
+    const bool barSelected =
+        m_selectedSection == "bar" && m_selectedBarName == barName && m_selectedMonitorOverride.empty();
     auto navItem = std::make_unique<Button>();
     navItem->setText(i18n::tr("settings.bar-label", "name", barName));
-    navItem->setVariant(selected ? ButtonVariant::TabActive : ButtonVariant::Tab);
+    navItem->setVariant(barSelected ? ButtonVariant::TabActive : ButtonVariant::Tab);
     navItem->setContentAlign(ButtonContentAlign::Start);
     navItem->setFontSize(Style::fontSizeBody * scale);
     navItem->setMinHeight(Style::controlHeight * scale);
@@ -386,9 +394,35 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     navItem->setOnClick([this, barName, requestRebuild]() {
       m_selectedSection = "bar";
       m_selectedBarName = barName;
+      m_selectedMonitorOverride.clear();
       requestRebuild();
     });
     sidebar->addChild(std::move(navItem));
+
+    const auto* bar = settings::findBar(cfg, barName);
+    if (bar != nullptr) {
+      for (const auto& ovr : bar->monitorOverrides) {
+        const bool ovrSelected =
+            m_selectedSection == "bar" && m_selectedBarName == barName && m_selectedMonitorOverride == ovr.match;
+        auto ovrItem = std::make_unique<Button>();
+        ovrItem->setText(ovr.match);
+        ovrItem->setVariant(ovrSelected ? ButtonVariant::TabActive : ButtonVariant::Tab);
+        ovrItem->setContentAlign(ButtonContentAlign::Start);
+        ovrItem->setFontSize(Style::fontSizeCaption * scale);
+        ovrItem->setMinHeight(Style::controlHeight * scale);
+        ovrItem->setPadding(Style::spaceSm * scale, Style::spaceMd * scale, Style::spaceSm * scale,
+                            Style::spaceLg * scale);
+        ovrItem->setRadius(Style::radiusMd * scale);
+        auto match = ovr.match;
+        ovrItem->setOnClick([this, barName, match, requestRebuild]() {
+          m_selectedSection = "bar";
+          m_selectedBarName = barName;
+          m_selectedMonitorOverride = match;
+          requestRebuild();
+        });
+        sidebar->addChild(std::move(ovrItem));
+      }
+    }
   }
 
   body->addChild(std::move(sidebar));
@@ -804,9 +838,15 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     if (entry.section != activeSectionKey) {
       activeSectionKey = entry.section;
       activeGroupKey.clear();
-      const std::string displayTitle = (entry.section == "bar" && selectedBar != nullptr)
-                                           ? i18n::tr("settings.bar-label", "name", selectedBar->name)
-                                           : sectionLabel(entry.section);
+      std::string displayTitle;
+      if (entry.section == "bar" && selectedBar != nullptr) {
+        displayTitle = i18n::tr("settings.bar-label", "name", selectedBar->name);
+        if (selectedMonitorOverride != nullptr) {
+          displayTitle += " / " + selectedMonitorOverride->match;
+        }
+      } else {
+        displayTitle = sectionLabel(entry.section);
+      }
       activeSection = makeSection(displayTitle);
     }
     if (activeSection != nullptr) {
