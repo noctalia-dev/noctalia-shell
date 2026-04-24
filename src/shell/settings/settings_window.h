@@ -57,4 +57,5 @@ private:
   std::string m_selectedMonitorOverride;
   std::string m_selectedSection;
   bool m_showAdvanced = false;
+  bool m_showOverriddenOnly = false;
 };

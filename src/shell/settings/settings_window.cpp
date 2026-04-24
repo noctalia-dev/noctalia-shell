@@ -338,6 +338,19 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   });
   filters->addChild(std::move(advancedToggle));
 
+  auto overriddenLabel = makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeBody * scale,
+                                   roleColor(ColorRole::OnSurfaceVariant), false);
+  filters->addChild(std::move(overriddenLabel));
+
+  auto overriddenToggle = std::make_unique<Toggle>();
+  overriddenToggle->setScale(scale);
+  overriddenToggle->setChecked(m_showOverriddenOnly);
+  overriddenToggle->setOnChange([this, requestRebuild](bool value) {
+    m_showOverriddenOnly = value;
+    requestRebuild();
+  });
+  filters->addChild(std::move(overriddenToggle));
+
   main->addChild(std::move(filters));
 
   const auto sectionLabel = [&](std::string_view section) {
@@ -829,6 +842,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       continue;
     }
     if (!m_showAdvanced && entry.advanced) {
+      continue;
+    }
+    if (m_showOverriddenOnly && m_config != nullptr && !m_config->hasOverride(entry.path)) {
       continue;
     }
     if (!settings::matchesSettingQuery(entry, m_searchQuery)) {
