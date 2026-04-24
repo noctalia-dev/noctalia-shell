@@ -1646,8 +1646,6 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
       }
       return;
     }
-    close();
-    return;
   }
   m_inputDispatcher.keyEvent(event.sym, event.utf32, event.modifiers, event.pressed, event.preedit);
   if (m_sceneRoot != nullptr && m_surface != nullptr && (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty())) {
