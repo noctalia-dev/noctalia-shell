@@ -59,6 +59,7 @@ private:
   std::string m_editingWidgetName;
   std::string m_pendingDeleteWidgetName;
   std::string m_renamingWidgetName;
+  std::string m_creatingWidgetType;
   std::string m_selectedBarName;
   std::string m_selectedMonitorOverride;
   std::string m_selectedSection;

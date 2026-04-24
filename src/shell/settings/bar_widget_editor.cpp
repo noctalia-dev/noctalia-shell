@@ -333,6 +333,10 @@ namespace settings {
       return isValidWidgetInstanceId(newName) && oldName != newName && !widgetReferenceNameExists(cfg, newName);
     }
 
+    bool canCreateWidgetInstance(const Config& cfg, std::string_view name) {
+      return isValidWidgetInstanceId(name) && !widgetReferenceNameExists(cfg, name);
+    }
+
     std::vector<std::string> widgetSettingPath(std::string widgetName, std::string settingKey) {
       return {"widget", std::move(widgetName), std::move(settingKey)};
     }
@@ -624,16 +628,17 @@ namespace settings {
           editBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           editBtn->setPadding(Style::spaceXs * ctx.scale);
           editBtn->setRadius(Style::radiusSm * ctx.scale);
-          editBtn->setOnClick([&editingWidgetName = ctx.editingWidgetName,
-                               &openWidgetPickerPath = ctx.openWidgetPickerPath, widgetName,
-                               &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
-                               &renamingWidgetName = ctx.renamingWidgetName, requestRebuild = ctx.requestRebuild]() {
-            editingWidgetName = editingWidgetName == widgetName ? std::string{} : widgetName;
-            openWidgetPickerPath.clear();
-            pendingDeleteWidgetName.clear();
-            renamingWidgetName.clear();
-            requestRebuild();
-          });
+          editBtn->setOnClick(
+              [&editingWidgetName = ctx.editingWidgetName, &openWidgetPickerPath = ctx.openWidgetPickerPath, widgetName,
+               &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
+               &creatingWidgetType = ctx.creatingWidgetType, requestRebuild = ctx.requestRebuild]() {
+                editingWidgetName = editingWidgetName == widgetName ? std::string{} : widgetName;
+                openWidgetPickerPath.clear();
+                pendingDeleteWidgetName.clear();
+                renamingWidgetName.clear();
+                creatingWidgetType.clear();
+                requestRebuild();
+              });
           actions->addChild(std::move(editBtn));
         }
 
@@ -647,10 +652,12 @@ namespace settings {
           renameBtn->setRadius(Style::radiusSm * ctx.scale);
           renameBtn->setOnClick(
               [&renamingWidgetName = ctx.renamingWidgetName, &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
-               &openWidgetPickerPath = ctx.openWidgetPickerPath, widgetName, requestRebuild = ctx.requestRebuild]() {
+               &openWidgetPickerPath = ctx.openWidgetPickerPath, &creatingWidgetType = ctx.creatingWidgetType,
+               widgetName, requestRebuild = ctx.requestRebuild]() {
                 renamingWidgetName = renamingWidgetName == widgetName ? std::string{} : widgetName;
                 pendingDeleteWidgetName.clear();
                 openWidgetPickerPath.clear();
+                creatingWidgetType.clear();
                 requestRebuild();
               });
           actions->addChild(std::move(renameBtn));
@@ -668,30 +675,32 @@ namespace settings {
           deleteBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           deleteBtn->setPadding(Style::spaceXs * ctx.scale);
           deleteBtn->setRadius(Style::radiusSm * ctx.scale);
-          deleteBtn->setOnClick(
-              [&editingWidgetName = ctx.editingWidgetName, &openWidgetPickerPath = ctx.openWidgetPickerPath,
-               config = ctx.config, widgetName, &renamingWidgetName = ctx.renamingWidgetName,
-               &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, clearOverride = ctx.clearOverride,
-               requestRebuild = ctx.requestRebuild, setOverrides = ctx.setOverrides]() {
-                openWidgetPickerPath.clear();
-                renamingWidgetName.clear();
-                if (pendingDeleteWidgetName != widgetName) {
-                  pendingDeleteWidgetName = widgetName;
-                  requestRebuild();
-                  return;
-                }
+          deleteBtn->setOnClick([&editingWidgetName = ctx.editingWidgetName,
+                                 &openWidgetPickerPath = ctx.openWidgetPickerPath, config = ctx.config, widgetName,
+                                 &renamingWidgetName = ctx.renamingWidgetName,
+                                 &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
+                                 &creatingWidgetType = ctx.creatingWidgetType, clearOverride = ctx.clearOverride,
+                                 requestRebuild = ctx.requestRebuild, setOverrides = ctx.setOverrides]() {
+            openWidgetPickerPath.clear();
+            renamingWidgetName.clear();
+            creatingWidgetType.clear();
+            if (pendingDeleteWidgetName != widgetName) {
+              pendingDeleteWidgetName = widgetName;
+              requestRebuild();
+              return;
+            }
 
-                pendingDeleteWidgetName.clear();
-                if (editingWidgetName == widgetName) {
-                  editingWidgetName.clear();
-                }
+            pendingDeleteWidgetName.clear();
+            if (editingWidgetName == widgetName) {
+              editingWidgetName.clear();
+            }
 
-                auto referenceRemovals = widgetReferenceRemovalOverrides(config, widgetName);
-                if (!referenceRemovals.empty()) {
-                  setOverrides(std::move(referenceRemovals));
-                }
-                clearOverride({"widget", widgetName});
-              });
+            auto referenceRemovals = widgetReferenceRemovalOverrides(config, widgetName);
+            if (!referenceRemovals.empty()) {
+              setOverrides(std::move(referenceRemovals));
+            }
+            clearOverride({"widget", widgetName});
+          });
           actions->addChild(std::move(deleteBtn));
         }
 
@@ -852,14 +861,93 @@ namespace settings {
       addBtn->setRadius(Style::radiusSm * ctx.scale);
       addBtn->setOnClick([&openWidgetPickerPath = ctx.openWidgetPickerPath,
                           &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, pickerKey,
-                          requestRebuild = ctx.requestRebuild]() {
+                          &creatingWidgetType = ctx.creatingWidgetType, requestRebuild = ctx.requestRebuild]() {
         openWidgetPickerPath = openWidgetPickerPath == pickerKey ? std::string{} : pickerKey;
         pendingDeleteWidgetName.clear();
+        creatingWidgetType.clear();
         requestRebuild();
       });
       lane->addChild(std::move(addBtn));
 
       if (ctx.openWidgetPickerPath == pickerKey) {
+        if (!ctx.creatingWidgetType.empty()) {
+          const std::string widgetType = ctx.creatingWidgetType;
+          auto createPanel = std::make_unique<Flex>();
+          createPanel->setDirection(FlexDirection::Vertical);
+          createPanel->setAlign(FlexAlign::Stretch);
+          createPanel->setGap(Style::spaceXs * ctx.scale);
+          createPanel->setPadding(Style::spaceSm * ctx.scale);
+          createPanel->setRadius(Style::radiusSm * ctx.scale);
+          createPanel->setBackground(roleColor(ColorRole::Surface, 0.72f));
+          createPanel->setBorderColor(roleColor(ColorRole::Outline, 0.22f));
+          createPanel->setBorderWidth(Style::borderWidth);
+
+          createPanel->addChild(makeLabel(i18n::tr("settings.create-widget-instance-title", "type", widgetType),
+                                          Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurface), true));
+
+          auto createRow = std::make_unique<Flex>();
+          createRow->setDirection(FlexDirection::Horizontal);
+          createRow->setAlign(FlexAlign::Center);
+          createRow->setGap(Style::spaceXs * ctx.scale);
+
+          auto input = std::make_unique<Input>();
+          input->setValue(nextWidgetInstanceId(ctx.config, widgetType));
+          input->setPlaceholder(i18n::tr("settings.rename-widget-placeholder"));
+          input->setFontSize(Style::fontSizeCaption * ctx.scale);
+          input->setControlHeight(Style::controlHeightSm * ctx.scale);
+          input->setHorizontalPadding(Style::spaceXs * ctx.scale);
+          input->setSize(140.0f * ctx.scale, Style::controlHeightSm * ctx.scale);
+          input->setFlexGrow(1.0f);
+          auto* inputPtr = input.get();
+
+          auto items = laneItems;
+          auto path = lanePath;
+          auto doCreate = [&openWidgetPickerPath = ctx.openWidgetPickerPath, &editingWidgetName = ctx.editingWidgetName,
+                           &creatingWidgetType = ctx.creatingWidgetType, config = ctx.config,
+                           setOverrides = ctx.setOverrides, items, path, widgetType](std::string instanceId) mutable {
+            if (!canCreateWidgetInstance(config, instanceId)) {
+              return;
+            }
+            items.push_back(instanceId);
+            openWidgetPickerPath.clear();
+            creatingWidgetType.clear();
+            editingWidgetName = instanceId;
+            setOverrides({{{"widget", instanceId, "type"}, widgetType}, {path, items}});
+          };
+
+          input->setOnSubmit([doCreate](const std::string& text) mutable { doCreate(text); });
+
+          auto createBtn = std::make_unique<Button>();
+          createBtn->setText(i18n::tr("settings.create-widget-instance-save"));
+          createBtn->setVariant(ButtonVariant::Default);
+          createBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
+          createBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+          createBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
+          createBtn->setRadius(Style::radiusSm * ctx.scale);
+          createBtn->setOnClick([doCreate, inputPtr]() mutable { doCreate(inputPtr->value()); });
+
+          auto cancelBtn = std::make_unique<Button>();
+          cancelBtn->setGlyph("close");
+          cancelBtn->setVariant(ButtonVariant::Ghost);
+          cancelBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
+          cancelBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
+          cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+          cancelBtn->setPadding(Style::spaceXs * ctx.scale);
+          cancelBtn->setRadius(Style::radiusSm * ctx.scale);
+          cancelBtn->setOnClick([&creatingWidgetType = ctx.creatingWidgetType, requestRebuild = ctx.requestRebuild]() {
+            creatingWidgetType.clear();
+            requestRebuild();
+          });
+
+          createRow->addChild(std::move(input));
+          createRow->addChild(std::move(createBtn));
+          createRow->addChild(std::move(cancelBtn));
+          createPanel->addChild(std::move(createRow));
+          lane->addChild(std::move(createPanel));
+          lanes->addChild(std::move(lane));
+          continue;
+        }
+
         auto picker = std::make_unique<SearchPicker>();
         picker->setPlaceholder(i18n::tr("settings.widget-picker-placeholder"));
         picker->setEmptyText(i18n::tr("settings.widget-picker-empty"));
@@ -869,26 +957,28 @@ namespace settings {
         auto path = lanePath;
         picker->setOnActivated(
             [&openWidgetPickerPath = ctx.openWidgetPickerPath, &editingWidgetName = ctx.editingWidgetName,
-             config = ctx.config, &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, setOverride = ctx.setOverride,
-             setOverrides = ctx.setOverrides, items, path](const SearchPickerOption& option) mutable {
+             &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, &creatingWidgetType = ctx.creatingWidgetType,
+             setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, items,
+             path](const SearchPickerOption& option) mutable {
               if (!option.value.empty()) {
                 pendingDeleteWidgetName.clear();
                 if (const auto type = createInstanceTypeFromValue(option.value); !type.empty()) {
-                  const auto instanceId = nextWidgetInstanceId(config, type);
-                  items.push_back(instanceId);
-                  openWidgetPickerPath.clear();
-                  editingWidgetName = instanceId;
-                  setOverrides({{{"widget", instanceId, "type"}, type}, {path, items}});
+                  creatingWidgetType = type;
+                  editingWidgetName.clear();
+                  requestRebuild();
                   return;
                 }
 
+                creatingWidgetType.clear();
                 items.push_back(option.value);
                 openWidgetPickerPath.clear();
                 setOverride(path, items);
               }
             });
-        picker->setOnCancel([&openWidgetPickerPath = ctx.openWidgetPickerPath, requestRebuild = ctx.requestRebuild]() {
+        picker->setOnCancel([&openWidgetPickerPath = ctx.openWidgetPickerPath,
+                             &creatingWidgetType = ctx.creatingWidgetType, requestRebuild = ctx.requestRebuild]() {
           openWidgetPickerPath.clear();
+          creatingWidgetType.clear();
           requestRebuild();
         });
         lane->addChild(std::move(picker));

@@ -24,6 +24,7 @@ namespace settings {
     std::string& editingWidgetName;
     std::string& pendingDeleteWidgetName;
     std::string& renamingWidgetName;
+    std::string& creatingWidgetType;
 
     std::function<void()> requestRebuild;
     std::function<void(std::vector<std::string>, ConfigOverrideValue)> setOverride;

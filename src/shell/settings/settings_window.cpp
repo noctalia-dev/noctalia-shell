@@ -910,6 +910,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       .editingWidgetName = m_editingWidgetName,
       .pendingDeleteWidgetName = m_pendingDeleteWidgetName,
       .renamingWidgetName = m_renamingWidgetName,
+      .creatingWidgetType = m_creatingWidgetType,
       .requestRebuild = requestRebuild,
       .setOverride = setOverride,
       .setOverrides = setOverrides,
