@@ -28,6 +28,8 @@ ColumnLayout {
   property int valueTitleWidth: widgetData.titleWidth !== undefined ? widgetData.titleWidth : widgetMetadata.titleWidth
   property bool valueShowPinnedApps: widgetData.showPinnedApps !== undefined ? widgetData.showPinnedApps : widgetMetadata.showPinnedApps
   property real valueIconScale: widgetData.iconScale !== undefined ? widgetData.iconScale : widgetMetadata.iconScale
+  property string valueFocusedColor: widgetData.focusedColor !== undefined ? widgetData.focusedColor : widgetMetadata.focusedColor
+  property string valueUnfocusedColor: widgetData.unfocusedColor !== undefined ? widgetData.unfocusedColor : widgetMetadata.unfocusedColor
 
   Component.onCompleted: {
     if (widgetData && widgetData.hideMode !== undefined) {
@@ -49,6 +51,8 @@ ColumnLayout {
     settings.titleWidth = parseInt(titleWidthInput.text) || widgetMetadata.titleWidth;
     settings.showPinnedApps = valueShowPinnedApps;
     settings.iconScale = valueIconScale;
+    settings.focusedColor = valueFocusedColor;
+    settings.unfocusedColor = valueUnfocusedColor;
     settingsChanged(settings);
   }
 
@@ -197,5 +201,25 @@ ColumnLayout {
                saveSettings();
              }
     text: Math.round(root.valueMaxTaskbarWidth) + "%"
+  }
+
+  NColorChoice {
+    label: "Focused Window Color"
+    description: "Color for the currently active window"
+    currentKey: valueFocusedColor
+    onSelected: key => {
+                  valueFocusedColor = key;
+                  saveSettings();
+                }
+  }
+
+  NColorChoice {
+    label: "Unfocused Window Color"
+    description: "Color for unfocused window"
+    currentKey: valueUnfocusedColor
+    onSelected: key => {
+                  valueUnfocusedColor = key;
+                  saveSettings();
+                }
   }
 }

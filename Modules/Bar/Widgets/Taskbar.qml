@@ -49,6 +49,8 @@ Item {
   readonly property int maxTaskbarWidthPercent: (widgetSettings.maxTaskbarWidth !== undefined) ? widgetSettings.maxTaskbarWidth : widgetMetadata.maxTaskbarWidth
   readonly property real iconScale: (widgetSettings.iconScale !== undefined) ? widgetSettings.iconScale : widgetMetadata.iconScale
   readonly property int itemSize: Style.toOdd(capsuleHeight * Math.max(0.1, iconScale))
+  readonly property string focusedColor: (widgetSettings.focusedColor !== undefined) ? widgetSettings.focusedColor : widgetMetadata.focusedColor
+  readonly property string unfocusedColor: (widgetSettings.unfocusedColor !== undefined) ? widgetSettings.unfocusedColor : widgetMetadata.unfocusedColor
 
   // Maximum width for the taskbar widget to prevent overlapping with other widgets
   readonly property real maxTaskbarWidth: {
@@ -691,8 +693,8 @@ Item {
           readonly property real contentWidth: shouldShowTitle ? root.itemSize + itemSpacing + root.titleWidth : root.itemSize
 
           readonly property string title: modelData.title || modelData.appId || "Unknown application"
-          readonly property color titleBgColor: (isHovered || isFocused) ? Color.mHover : Style.capsuleColor
-          readonly property color titleFgColor: (isHovered || isFocused) ? Color.mOnHover : Color.mOnSurface
+          readonly property color titleBgColor: isHovered ? Color.mHover : (isFocused ? Color.resolveColorKey(root.focusedColor) : Color.resolveColorKey(root.unfocusedColor))
+          readonly property color titleFgColor: isHovered ? Color.mOnHover : (isFocused ? Color.resolveOnColorKey(root.focusedColor) : Color.resolveOnColorKey(root.unfocusedColor))
 
           Layout.preferredWidth: root.isVerticalBar ? root.barHeight : (root.showTitle ? Math.round(contentWidth + Style.margin2M) : Math.round(contentWidth)) // Add margins for both pinned and running apps
           Layout.preferredHeight: root.isVerticalBar ? root.itemSize : root.barHeight
@@ -875,7 +877,7 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     width: Style.toOdd(root.itemSize * 0.25)
                     height: 4
-                    color: taskbarItem.isFocused ? Color.mPrimary : (taskbarItem.isHovered ? Color.mHover : "transparent")
+                    color: taskbarItem.isHovered ? Color.mHover : (taskbarItem.isFocused ? Color.resolveColorKey(root.focusedColor) : Color.resolveColorKey(root.unfocusedColor))
                     radius: Math.min(Style.radiusXXS, width / 2)
 
                     Behavior on color {
