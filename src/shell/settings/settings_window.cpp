@@ -33,6 +33,7 @@
 #include <string_view>
 #include <type_traits>
 #include <unordered_set>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -84,6 +85,64 @@ namespace {
     }
     const auto& key = path.back();
     return key == "start" || key == "center" || key == "end";
+  }
+
+  std::vector<std::string> pathWithLastSegment(std::vector<std::string> path, std::string segment) {
+    if (!path.empty()) {
+      path.back() = std::move(segment);
+    }
+    return path;
+  }
+
+  std::string laneLabel(std::string_view lane) {
+    if (lane == "start") {
+      return i18n::tr("settings.widget-lane-start");
+    }
+    if (lane == "center") {
+      return i18n::tr("settings.widget-lane-center");
+    }
+    if (lane == "end") {
+      return i18n::tr("settings.widget-lane-end");
+    }
+    return std::string(lane);
+  }
+
+  std::vector<std::string> barWidgetItemsForPath(const Config& cfg, const std::vector<std::string>& path) {
+    if (!isBarWidgetListPath(path) || path.size() < 3) {
+      return {};
+    }
+
+    const auto* bar = settings::findBar(cfg, path[1]);
+    if (bar == nullptr) {
+      return {};
+    }
+
+    const auto& lane = path.back();
+    if (path.size() >= 5 && path[2] == "monitor") {
+      const auto* ovr = settings::findMonitorOverride(*bar, path[3]);
+      if (ovr != nullptr) {
+        if (lane == "start") {
+          return ovr->startWidgets.value_or(bar->startWidgets);
+        }
+        if (lane == "center") {
+          return ovr->centerWidgets.value_or(bar->centerWidgets);
+        }
+        if (lane == "end") {
+          return ovr->endWidgets.value_or(bar->endWidgets);
+        }
+      }
+    }
+
+    if (lane == "start") {
+      return bar->startWidgets;
+    }
+    if (lane == "center") {
+      return bar->centerWidgets;
+    }
+    if (lane == "end") {
+      return bar->endWidgets;
+    }
+    return {};
   }
 
   std::string titleFromKey(std::string_view key) {
@@ -376,6 +435,22 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       }
     });
   };
+
+  const auto setOverrides =
+      [this, requestRebuild](std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides) {
+        DeferredCall::callLater([this, overrides = std::move(overrides), requestRebuild]() mutable {
+          if (m_config == nullptr) {
+            return;
+          }
+          bool changed = false;
+          for (auto& [path, value] : overrides) {
+            changed = m_config->setOverride(path, std::move(value)) || changed;
+          }
+          if (changed) {
+            requestRebuild();
+          }
+        });
+      };
 
   const auto clearOverride = [this, requestRebuild](std::vector<std::string> path) {
     DeferredCall::callLater([this, path = std::move(path), requestRebuild]() mutable {
@@ -799,6 +874,37 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       auto spacer = std::make_unique<Flex>();
       spacer->setFlexGrow(1.0f);
       itemRow->addChild(std::move(spacer));
+
+      if (isBarWidgetListPath(entry.path)) {
+        static constexpr std::string_view kLanes[] = {"start", "center", "end"};
+        const auto currentLane = std::string_view(entry.path.back());
+        for (const auto targetLane : kLanes) {
+          if (targetLane == currentLane) {
+            continue;
+          }
+          auto moveBtn = std::make_unique<Button>();
+          moveBtn->setText(laneLabel(targetLane));
+          moveBtn->setVariant(ButtonVariant::Ghost);
+          moveBtn->setFontSize(Style::fontSizeCaption * scale);
+          moveBtn->setMinHeight(Style::controlHeightSm * scale);
+          moveBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+          moveBtn->setRadius(Style::radiusSm * scale);
+          auto sourceItems = list.items;
+          auto sourcePath = entry.path;
+          auto targetPath = pathWithLastSegment(entry.path, std::string(targetLane));
+          auto targetItems = barWidgetItemsForPath(cfg, targetPath);
+          moveBtn->setOnClick([setOverrides, sourceItems, sourcePath, targetItems, targetPath, i]() mutable {
+            if (i >= sourceItems.size()) {
+              return;
+            }
+            auto item = sourceItems[i];
+            sourceItems.erase(sourceItems.begin() + static_cast<std::ptrdiff_t>(i));
+            targetItems.push_back(std::move(item));
+            setOverrides({{sourcePath, sourceItems}, {targetPath, targetItems}});
+          });
+          itemRow->addChild(std::move(moveBtn));
+        }
+      }
 
       if (i > 0) {
         auto upBtn = std::make_unique<Button>();
