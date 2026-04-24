@@ -11,9 +11,12 @@
 #include "ui/style.h"
 
 #include <algorithm>
+#include <cctype>
+#include <chrono>
 #include <cmath>
 #include <linux/input-event-codes.h>
 #include <memory>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 namespace {
 
@@ -26,8 +29,17 @@ namespace {
   constexpr float kGlyphSize = 14.0f;
   constexpr std::int32_t kOpenSelectZIndex = 100;
   constexpr std::size_t kMaxVisibleOptions = 6;
+  constexpr auto kTypeaheadTimeout = std::chrono::milliseconds(800);
 
   Color resolved(ColorRole role, float alpha = 1.0f) { return resolveThemeColor(roleColor(role, alpha)); }
+
+  char asciiLower(char c) { return static_cast<char>(std::tolower(static_cast<unsigned char>(c))); }
+
+  std::string asciiLower(std::string_view value) {
+    std::string out(value);
+    std::transform(out.begin(), out.end(), out.begin(), [](char c) { return asciiLower(c); });
+    return out;
+  }
 
 } // namespace
 
@@ -46,6 +58,7 @@ Select::Select() {
   m_triggerGlyph->setGlyphSize(m_glyphSize);
 
   auto triggerArea = std::make_unique<InputArea>();
+  triggerArea->setFocusable(true);
   triggerArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
   triggerArea->setOnEnter([this](const InputArea::PointerData& /*data*/) {
     applyVisualState();
@@ -65,6 +78,16 @@ Select::Select() {
     }
     toggleOpen();
   });
+  triggerArea->setOnFocusGain([this]() {
+    applyVisualState();
+    markPaintDirty();
+  });
+  triggerArea->setOnFocusLoss([this]() {
+    closeMenu();
+    applyVisualState();
+    markPaintDirty();
+  });
+  triggerArea->setOnKeyDown([this](const InputArea::KeyData& key) { handleKey(key.sym, key.utf32, key.pressed); });
   m_triggerArea = static_cast<InputArea*>(addChild(std::move(triggerArea)));
 
   auto menuViewport = std::make_unique<Node>();
@@ -126,6 +149,17 @@ void Select::setSelectedIndex(std::size_t index) {
   if (m_onSelectionChanged) {
     m_onSelectionChanged(m_selectedIndex, selectedText());
   }
+}
+
+void Select::clearSelection() {
+  if (m_selectedIndex == npos) {
+    return;
+  }
+  m_selectedIndex = npos;
+  m_hoveredOptionIndex = npos;
+  syncTriggerText();
+  applyVisualState();
+  markLayoutDirty();
 }
 
 void Select::setEnabled(bool enabled) {
@@ -377,6 +411,139 @@ void Select::rebuildOptionViews() {
   }
 }
 
+void Select::handleKey(std::uint32_t sym, std::uint32_t utf32, bool pressed) {
+  if (!m_enabled || !pressed) {
+    return;
+  }
+
+  if (sym == XKB_KEY_Down) {
+    if (!m_open) {
+      toggleOpen();
+    }
+    moveKeyboardHighlight(1);
+  } else if (sym == XKB_KEY_Up) {
+    if (!m_open) {
+      toggleOpen();
+    }
+    moveKeyboardHighlight(-1);
+  } else if (sym == XKB_KEY_Home) {
+    if (!m_open) {
+      toggleOpen();
+    }
+    setKeyboardHighlight(0);
+  } else if (sym == XKB_KEY_End) {
+    if (!m_open) {
+      toggleOpen();
+    }
+    if (!m_options.empty()) {
+      setKeyboardHighlight(m_options.size() - 1);
+    }
+  } else if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter || sym == XKB_KEY_space) {
+    if (m_open) {
+      selectHighlightedOption();
+    } else {
+      toggleOpen();
+    }
+  } else if (utf32 >= 0x20U && utf32 < 0x7fU) {
+    if (!m_open) {
+      toggleOpen();
+    }
+    (void)handleTypeahead(utf32);
+  }
+}
+
+void Select::selectHighlightedOption() {
+  if (m_hoveredOptionIndex >= m_options.size()) {
+    closeMenu();
+    return;
+  }
+  const std::size_t index = m_hoveredOptionIndex;
+  closeMenu();
+  setSelectedIndex(index);
+}
+
+void Select::moveKeyboardHighlight(int delta) {
+  if (m_options.empty()) {
+    return;
+  }
+
+  std::size_t base = m_hoveredOptionIndex < m_options.size() ? m_hoveredOptionIndex : m_selectedIndex;
+  if (base >= m_options.size()) {
+    base = delta >= 0 ? 0 : m_options.size() - 1;
+    setKeyboardHighlight(base);
+    return;
+  }
+
+  const int count = static_cast<int>(m_options.size());
+  const int next = (static_cast<int>(base) + delta + count) % count;
+  setKeyboardHighlight(static_cast<std::size_t>(next));
+}
+
+void Select::setKeyboardHighlight(std::size_t index) {
+  if (index >= m_options.size()) {
+    return;
+  }
+  m_hoveredOptionIndex = index;
+  ensureHighlightedOptionVisible();
+  applyVisualState();
+  markLayoutDirty();
+}
+
+void Select::ensureHighlightedOptionVisible() {
+  if (m_hoveredOptionIndex >= m_options.size()) {
+    return;
+  }
+
+  const float optionTop = static_cast<float>(m_hoveredOptionIndex) * m_controlHeight;
+  const float optionBottom = optionTop + m_controlHeight;
+  const float viewportHeight = menuViewportHeight();
+  if (optionTop < m_scrollOffset) {
+    m_scrollOffset = optionTop;
+  } else if (optionBottom > m_scrollOffset + viewportHeight) {
+    m_scrollOffset = optionBottom - viewportHeight;
+  }
+  clampScrollOffset();
+}
+
+bool Select::handleTypeahead(std::uint32_t utf32) {
+  if (utf32 < 0x20U || utf32 >= 0x7fU || m_options.empty()) {
+    return false;
+  }
+
+  const auto now = std::chrono::steady_clock::now();
+  if (m_typeaheadBuffer.empty() || now - m_lastTypeaheadAt > kTypeaheadTimeout) {
+    m_typeaheadBuffer.clear();
+  }
+  m_lastTypeaheadAt = now;
+  m_typeaheadBuffer.push_back(asciiLower(static_cast<char>(utf32)));
+
+  const std::size_t current = m_hoveredOptionIndex < m_options.size()
+                                  ? m_hoveredOptionIndex
+                                  : (m_selectedIndex < m_options.size() ? m_selectedIndex : 0);
+  const std::size_t match = typeaheadMatch(m_typeaheadBuffer, current + 1);
+  if (match == npos) {
+    return true;
+  }
+  setKeyboardHighlight(match);
+  return true;
+}
+
+std::size_t Select::typeaheadMatch(std::string_view query, std::size_t start) const {
+  if (query.empty() || m_options.empty()) {
+    return npos;
+  }
+
+  const std::size_t count = m_options.size();
+  for (std::size_t offset = 0; offset < count; ++offset) {
+    const std::size_t index = (start + offset) % count;
+    const std::string option = asciiLower(m_options[index]);
+    if (option.starts_with(query)) {
+      return index;
+    }
+  }
+  return npos;
+}
+
 void Select::applyVisualState() {
   if (m_triggerLabel == nullptr || m_triggerGlyph == nullptr || m_triggerBackground == nullptr ||
       m_menuBackground == nullptr) {
@@ -385,6 +552,7 @@ void Select::applyVisualState() {
 
   const bool triggerHovered = m_triggerArea != nullptr && m_triggerArea->hovered();
   const bool triggerPressed = m_triggerArea != nullptr && m_triggerArea->pressed();
+  const bool triggerFocused = m_triggerArea != nullptr && m_triggerArea->focused();
 
   Color triggerBg = resolved(ColorRole::SurfaceVariant);
   Color triggerBorder = resolved(ColorRole::Outline);
@@ -398,6 +566,8 @@ void Select::applyVisualState() {
   } else if (triggerHovered || triggerPressed) {
     triggerBg = brighten(resolved(ColorRole::SurfaceVariant), 1.14f);
     triggerBorder = brighten(resolved(ColorRole::Outline), 1.14f);
+  } else if (triggerFocused) {
+    triggerBorder = resolved(ColorRole::Primary);
   }
 
   m_triggerLabel->setColor(triggerText);
@@ -472,8 +642,9 @@ void Select::toggleOpen() {
   }
   m_open = opening;
   if (m_open) {
+    m_hoveredOptionIndex = m_selectedIndex < m_options.size() ? m_selectedIndex : 0;
     const float selectedTop =
-        m_selectedIndex < m_optionViews.size() ? static_cast<float>(m_selectedIndex) * m_controlHeight : 0.0f;
+        m_hoveredOptionIndex < m_optionViews.size() ? static_cast<float>(m_hoveredOptionIndex) * m_controlHeight : 0.0f;
     const float selectedBottom = selectedTop + m_controlHeight;
     const float viewportHeight = menuViewportHeight();
     if (selectedTop < m_scrollOffset) {
@@ -503,6 +674,7 @@ void Select::closeMenu() {
   }
   m_open = false;
   m_hoveredOptionIndex = npos;
+  m_typeaheadBuffer.clear();
   if (s_openSelect == this) {
     s_openSelect = nullptr;
   }
@@ -572,8 +744,10 @@ void Select::handleGlobalPointerPress(InputArea* target) {
   s_openSelect->closeMenu();
 }
 
-void Select::closeAnyOpen() {
+bool Select::closeAnyOpen() {
   if (s_openSelect != nullptr) {
     s_openSelect->closeMenu();
+    return true;
   }
+  return false;
 }

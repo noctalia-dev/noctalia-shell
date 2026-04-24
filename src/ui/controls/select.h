@@ -4,7 +4,9 @@
 #include "ui/signal.h"
 #include "ui/style.h"
 
+#include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <string_view>
@@ -25,6 +27,7 @@ public:
 
   void setOptions(std::vector<std::string> options);
   void setSelectedIndex(std::size_t index);
+  void clearSelection();
   void setEnabled(bool enabled);
   void setPlaceholder(std::string_view placeholder);
   void setFontSize(float size);
@@ -33,7 +36,7 @@ public:
   void setGlyphSize(float size);
   void setOnSelectionChanged(std::function<void(std::size_t, std::string_view)> callback);
   static void handleGlobalPointerPress(InputArea* target);
-  static void closeAnyOpen();
+  static bool closeAnyOpen();
 
   [[nodiscard]] std::size_t selectedIndex() const noexcept { return m_selectedIndex; }
   [[nodiscard]] std::string_view selectedText() const noexcept;
@@ -55,8 +58,15 @@ private:
   void rebuildOptionViews();
   void syncTriggerText();
   void applyVisualState();
+  void handleKey(std::uint32_t sym, std::uint32_t utf32, bool pressed);
   void toggleOpen();
   void closeMenu();
+  void selectHighlightedOption();
+  void moveKeyboardHighlight(int delta);
+  void setKeyboardHighlight(std::size_t index);
+  void ensureHighlightedOptionVisible();
+  bool handleTypeahead(std::uint32_t utf32);
+  [[nodiscard]] std::size_t typeaheadMatch(std::string_view query, std::size_t start) const;
   bool containsNode(const Node* node) const noexcept;
   void scrollBy(float delta);
   void clampScrollOffset();
@@ -79,6 +89,8 @@ private:
   std::size_t m_selectedIndex = npos;
   std::size_t m_hoveredOptionIndex = npos;
   std::string m_placeholder = "Select an option";
+  std::string m_typeaheadBuffer;
+  std::chrono::steady_clock::time_point m_lastTypeaheadAt{};
   bool m_enabled = true;
   bool m_open = false;
   bool m_openUpward = false;

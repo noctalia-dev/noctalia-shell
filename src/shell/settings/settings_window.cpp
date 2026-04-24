@@ -26,6 +26,7 @@
 #include <cstdint>
 #include <format>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -45,13 +46,13 @@ namespace {
     return label;
   }
 
-  std::size_t optionIndex(const std::vector<settings::SelectOption>& options, std::string_view value) {
+  std::optional<std::size_t> optionIndex(const std::vector<settings::SelectOption>& options, std::string_view value) {
     for (std::size_t i = 0; i < options.size(); ++i) {
       if (options[i].value == value) {
         return i;
       }
     }
-    return 0;
+    return std::nullopt;
   }
 
   std::vector<std::string> optionLabels(const std::vector<settings::SelectOption>& options) {
@@ -583,7 +584,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   const auto makeSelect = [&](const settings::SelectSetting& setting, std::vector<std::string> path) {
     auto select = std::make_unique<Select>();
     select->setOptions(optionLabels(setting.options));
-    select->setSelectedIndex(optionIndex(setting.options, setting.selectedValue));
+    if (const auto index = optionIndex(setting.options, setting.selectedValue)) {
+      select->setSelectedIndex(*index);
+    } else if (!setting.selectedValue.empty()) {
+      select->clearSelection();
+      select->setPlaceholder(i18n::tr("settings.unknown-select-value", "value", setting.selectedValue));
+    }
     select->setFontSize(Style::fontSizeBody * scale);
     select->setControlHeight(Style::controlHeight * scale);
     select->setGlyphSize(Style::fontSizeBody * scale);
@@ -988,6 +994,12 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
   if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
+    if (Select::closeAnyOpen()) {
+      if (m_surface != nullptr) {
+        m_surface->requestLayout();
+      }
+      return;
+    }
     close();
     return;
   }
