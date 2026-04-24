@@ -1625,19 +1625,21 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
   if (!isOpen() || m_config == nullptr) {
     return;
   }
+  const auto requestRebuild = [this]() {
+    if (m_surface != nullptr) {
+      m_rebuildRequested = true;
+      m_surface->requestLayout();
+    }
+  };
   if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
     if (!m_openWidgetPickerPath.empty()) {
       m_openWidgetPickerPath.clear();
-      if (m_surface != nullptr) {
-        m_surface->requestLayout();
-      }
+      requestRebuild();
       return;
     }
     if (!m_editingWidgetName.empty()) {
       m_editingWidgetName.clear();
-      if (m_surface != nullptr) {
-        m_surface->requestLayout();
-      }
+      requestRebuild();
       return;
     }
     if (Select::closeAnyOpen()) {
