@@ -61,6 +61,9 @@
     "widget-picker-create-label": "New {label} Instance",
     "widget-picker-create-desc": "Creates [widget.*] type = \"{type}\"",
     "widget-kind-new-instance": "New Instance",
+    "rename-widget-instance": "Rename",
+    "rename-widget-placeholder": "Widget id",
+    "rename-widget-save": "Save",
     "delete-widget-instance": "Delete",
     "widget-category": {
       "custom": "Custom",

@@ -5,6 +5,7 @@
 #include "shell/settings/widget_settings_registry.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
+#include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/search_picker.h"
 #include "ui/palette.h"
@@ -270,6 +271,43 @@ namespace settings {
       return overrides;
     }
 
+    std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>
+    widgetReferenceRenameOverrides(const Config& cfg, std::string_view oldName, std::string_view newName) {
+      std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides;
+      for (const auto& bar : cfg.bars) {
+        auto appendRename = [&](std::vector<std::string> path, std::vector<std::string> items) {
+          bool changed = false;
+          for (auto& item : items) {
+            if (item == oldName) {
+              item = std::string(newName);
+              changed = true;
+            }
+          }
+          if (changed) {
+            overrides.push_back({std::move(path), std::move(items)});
+          }
+        };
+
+        appendRename({"bar", bar.name, "start"}, bar.startWidgets);
+        appendRename({"bar", bar.name, "center"}, bar.centerWidgets);
+        appendRename({"bar", bar.name, "end"}, bar.endWidgets);
+
+        for (const auto& ovr : bar.monitorOverrides) {
+          const std::vector<std::string> prefix = {"bar", bar.name, "monitor", ovr.match};
+          if (ovr.startWidgets.has_value()) {
+            appendRename({prefix[0], prefix[1], prefix[2], prefix[3], "start"}, *ovr.startWidgets);
+          }
+          if (ovr.centerWidgets.has_value()) {
+            appendRename({prefix[0], prefix[1], prefix[2], prefix[3], "center"}, *ovr.centerWidgets);
+          }
+          if (ovr.endWidgets.has_value()) {
+            appendRename({prefix[0], prefix[1], prefix[2], prefix[3], "end"}, *ovr.endWidgets);
+          }
+        }
+      }
+      return overrides;
+    }
+
     bool isNamedWidgetInstance(const Config& cfg, std::string_view widgetName) {
       return cfg.widgets.contains(std::string(widgetName)) && !isBuiltInWidgetType(widgetName);
     }
@@ -277,6 +315,22 @@ namespace settings {
     bool isGuiManagedNamedWidgetInstance(const BarWidgetEditorContext& ctx, std::string_view widgetName) {
       return isNamedWidgetInstance(ctx.config, widgetName) && ctx.configService != nullptr &&
              ctx.configService->hasOverride({"widget", std::string(widgetName)});
+    }
+
+    bool isValidWidgetInstanceId(std::string_view id) {
+      if (id.empty()) {
+        return false;
+      }
+      for (const unsigned char c : id) {
+        if (!std::isalnum(c) && c != '_' && c != '-') {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    bool canRenameWidgetInstance(const Config& cfg, std::string_view oldName, std::string_view newName) {
+      return isValidWidgetInstanceId(newName) && oldName != newName && !widgetReferenceNameExists(cfg, newName);
     }
 
     std::vector<std::string> widgetSettingPath(std::string widgetName, std::string settingKey) {
@@ -570,18 +624,37 @@ namespace settings {
           editBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           editBtn->setPadding(Style::spaceXs * ctx.scale);
           editBtn->setRadius(Style::radiusSm * ctx.scale);
-          editBtn->setOnClick(
-              [&editingWidgetName = ctx.editingWidgetName, &openWidgetPickerPath = ctx.openWidgetPickerPath, widgetName,
-               &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, requestRebuild = ctx.requestRebuild]() {
-                editingWidgetName = editingWidgetName == widgetName ? std::string{} : widgetName;
-                openWidgetPickerPath.clear();
-                pendingDeleteWidgetName.clear();
-                requestRebuild();
-              });
+          editBtn->setOnClick([&editingWidgetName = ctx.editingWidgetName,
+                               &openWidgetPickerPath = ctx.openWidgetPickerPath, widgetName,
+                               &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
+                               &renamingWidgetName = ctx.renamingWidgetName, requestRebuild = ctx.requestRebuild]() {
+            editingWidgetName = editingWidgetName == widgetName ? std::string{} : widgetName;
+            openWidgetPickerPath.clear();
+            pendingDeleteWidgetName.clear();
+            renamingWidgetName.clear();
+            requestRebuild();
+          });
           actions->addChild(std::move(editBtn));
         }
 
         if (isGuiManagedNamedWidgetInstance(ctx, widgetName)) {
+          auto renameBtn = std::make_unique<Button>();
+          renameBtn->setText(i18n::tr("settings.rename-widget-instance"));
+          renameBtn->setVariant(ctx.renamingWidgetName == widgetName ? ButtonVariant::Default : ButtonVariant::Ghost);
+          renameBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
+          renameBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+          renameBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
+          renameBtn->setRadius(Style::radiusSm * ctx.scale);
+          renameBtn->setOnClick(
+              [&renamingWidgetName = ctx.renamingWidgetName, &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
+               &openWidgetPickerPath = ctx.openWidgetPickerPath, widgetName, requestRebuild = ctx.requestRebuild]() {
+                renamingWidgetName = renamingWidgetName == widgetName ? std::string{} : widgetName;
+                pendingDeleteWidgetName.clear();
+                openWidgetPickerPath.clear();
+                requestRebuild();
+              });
+          actions->addChild(std::move(renameBtn));
+
           const bool pendingDelete = ctx.pendingDeleteWidgetName == widgetName;
           auto deleteBtn = std::make_unique<Button>();
           deleteBtn->setGlyph("trash");
@@ -595,29 +668,30 @@ namespace settings {
           deleteBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           deleteBtn->setPadding(Style::spaceXs * ctx.scale);
           deleteBtn->setRadius(Style::radiusSm * ctx.scale);
-          deleteBtn->setOnClick([&editingWidgetName = ctx.editingWidgetName,
-                                 &openWidgetPickerPath = ctx.openWidgetPickerPath, config = ctx.config, widgetName,
-                                 &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
-                                 clearOverride = ctx.clearOverride, requestRebuild = ctx.requestRebuild,
-                                 setOverrides = ctx.setOverrides]() {
-            openWidgetPickerPath.clear();
-            if (pendingDeleteWidgetName != widgetName) {
-              pendingDeleteWidgetName = widgetName;
-              requestRebuild();
-              return;
-            }
+          deleteBtn->setOnClick(
+              [&editingWidgetName = ctx.editingWidgetName, &openWidgetPickerPath = ctx.openWidgetPickerPath,
+               config = ctx.config, widgetName, &renamingWidgetName = ctx.renamingWidgetName,
+               &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, clearOverride = ctx.clearOverride,
+               requestRebuild = ctx.requestRebuild, setOverrides = ctx.setOverrides]() {
+                openWidgetPickerPath.clear();
+                renamingWidgetName.clear();
+                if (pendingDeleteWidgetName != widgetName) {
+                  pendingDeleteWidgetName = widgetName;
+                  requestRebuild();
+                  return;
+                }
 
-            pendingDeleteWidgetName.clear();
-            if (editingWidgetName == widgetName) {
-              editingWidgetName.clear();
-            }
+                pendingDeleteWidgetName.clear();
+                if (editingWidgetName == widgetName) {
+                  editingWidgetName.clear();
+                }
 
-            auto referenceRemovals = widgetReferenceRemovalOverrides(config, widgetName);
-            if (!referenceRemovals.empty()) {
-              setOverrides(std::move(referenceRemovals));
-            }
-            clearOverride({"widget", widgetName});
-          });
+                auto referenceRemovals = widgetReferenceRemovalOverrides(config, widgetName);
+                if (!referenceRemovals.empty()) {
+                  setOverrides(std::move(referenceRemovals));
+                }
+                clearOverride({"widget", widgetName});
+              });
           actions->addChild(std::move(deleteBtn));
         }
 
@@ -701,6 +775,65 @@ namespace settings {
         actions->addChild(std::move(removeBtn));
 
         item->addChild(std::move(actions));
+        if (ctx.renamingWidgetName == widgetName) {
+          auto renameRow = std::make_unique<Flex>();
+          renameRow->setDirection(FlexDirection::Horizontal);
+          renameRow->setAlign(FlexAlign::Center);
+          renameRow->setGap(Style::spaceXs * ctx.scale);
+
+          auto input = std::make_unique<Input>();
+          input->setValue(widgetName);
+          input->setPlaceholder(i18n::tr("settings.rename-widget-placeholder"));
+          input->setFontSize(Style::fontSizeCaption * ctx.scale);
+          input->setControlHeight(Style::controlHeightSm * ctx.scale);
+          input->setHorizontalPadding(Style::spaceXs * ctx.scale);
+          input->setSize(140.0f * ctx.scale, Style::controlHeightSm * ctx.scale);
+          input->setFlexGrow(1.0f);
+          auto* inputPtr = input.get();
+
+          auto doRename = [&editingWidgetName = ctx.editingWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
+                           config = ctx.config, renameWidgetInstance = ctx.renameWidgetInstance,
+                           widgetName](std::string newName) mutable {
+            if (!canRenameWidgetInstance(config, widgetName, newName)) {
+              return;
+            }
+            auto referenceRenames = widgetReferenceRenameOverrides(config, widgetName, newName);
+            renamingWidgetName.clear();
+            if (editingWidgetName == widgetName) {
+              editingWidgetName = newName;
+            }
+            renameWidgetInstance(widgetName, std::move(newName), std::move(referenceRenames));
+          };
+
+          input->setOnSubmit([doRename](const std::string& text) mutable { doRename(text); });
+
+          auto saveBtn = std::make_unique<Button>();
+          saveBtn->setText(i18n::tr("settings.rename-widget-save"));
+          saveBtn->setVariant(ButtonVariant::Default);
+          saveBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
+          saveBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+          saveBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
+          saveBtn->setRadius(Style::radiusSm * ctx.scale);
+          saveBtn->setOnClick([doRename, inputPtr]() mutable { doRename(inputPtr->value()); });
+
+          auto cancelBtn = std::make_unique<Button>();
+          cancelBtn->setGlyph("close");
+          cancelBtn->setVariant(ButtonVariant::Ghost);
+          cancelBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
+          cancelBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
+          cancelBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+          cancelBtn->setPadding(Style::spaceXs * ctx.scale);
+          cancelBtn->setRadius(Style::radiusSm * ctx.scale);
+          cancelBtn->setOnClick([&renamingWidgetName = ctx.renamingWidgetName, requestRebuild = ctx.requestRebuild]() {
+            renamingWidgetName.clear();
+            requestRebuild();
+          });
+
+          renameRow->addChild(std::move(input));
+          renameRow->addChild(std::move(saveBtn));
+          renameRow->addChild(std::move(cancelBtn));
+          item->addChild(std::move(renameRow));
+        }
         if (ctx.editingWidgetName == widgetName) {
           addWidgetSettingsPanel(*item, widgetName, ctx);
         }

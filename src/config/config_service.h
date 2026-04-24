@@ -542,6 +542,7 @@ public:
   [[nodiscard]] bool hasOverride(const std::vector<std::string>& path) const;
   bool setOverride(const std::vector<std::string>& path, ConfigOverrideValue value);
   bool clearOverride(const std::vector<std::string>& path);
+  bool renameOverrideTable(const std::vector<std::string>& oldPath, const std::vector<std::string>& newPath);
 
   [[nodiscard]] static BarConfig resolveForOutput(const BarConfig& base, const WaylandOutput& output);
 

@@ -326,6 +326,28 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     });
   };
 
+  const auto renameWidgetInstance =
+      [this, requestRebuild](std::string oldName, std::string newName,
+                             std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> referenceOverrides) {
+        DeferredCall::callLater([this, oldName = std::move(oldName), newName = std::move(newName),
+                                 referenceOverrides = std::move(referenceOverrides), requestRebuild]() mutable {
+          if (m_config == nullptr) {
+            return;
+          }
+
+          bool changed = m_config->renameOverrideTable({"widget", oldName}, {"widget", newName});
+          if (!changed) {
+            return;
+          }
+          for (auto& [path, value] : referenceOverrides) {
+            changed = m_config->setOverride(path, std::move(value)) || changed;
+          }
+          if (changed) {
+            requestRebuild();
+          }
+        });
+      };
+
   auto filters = std::make_unique<Flex>();
   filters->setDirection(FlexDirection::Horizontal);
   filters->setAlign(FlexAlign::Center);
@@ -887,10 +909,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       .openWidgetPickerPath = m_openWidgetPickerPath,
       .editingWidgetName = m_editingWidgetName,
       .pendingDeleteWidgetName = m_pendingDeleteWidgetName,
+      .renamingWidgetName = m_renamingWidgetName,
       .requestRebuild = requestRebuild,
       .setOverride = setOverride,
       .setOverrides = setOverrides,
       .clearOverride = clearOverride,
+      .renameWidgetInstance = renameWidgetInstance,
       .makeResetButton = makeResetButton,
       .makeRow = makeRow,
       .makeToggle = [&](bool checked, std::vector<std::string> path) -> std::unique_ptr<Node> {

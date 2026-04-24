@@ -23,11 +23,14 @@ namespace settings {
     std::string& openWidgetPickerPath;
     std::string& editingWidgetName;
     std::string& pendingDeleteWidgetName;
+    std::string& renamingWidgetName;
 
     std::function<void()> requestRebuild;
     std::function<void(std::vector<std::string>, ConfigOverrideValue)> setOverride;
     std::function<void(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>)> setOverrides;
     std::function<void(std::vector<std::string>)> clearOverride;
+    std::function<void(std::string, std::string, std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>)>
+        renameWidgetInstance;
     std::function<std::unique_ptr<Button>(const std::vector<std::string>&)> makeResetButton;
     std::function<void(Flex&, const SettingEntry&, std::unique_ptr<Node>)> makeRow;
     std::function<std::unique_ptr<Node>(bool, std::vector<std::string>)> makeToggle;

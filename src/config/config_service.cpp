@@ -527,6 +527,53 @@ bool ConfigService::clearOverride(const std::vector<std::string>& path) {
   return true;
 }
 
+bool ConfigService::renameOverrideTable(const std::vector<std::string>& oldPath,
+                                        const std::vector<std::string>& newPath) {
+  if (m_overridesPath.empty() || oldPath.empty() || newPath.empty() || oldPath == newPath) {
+    return false;
+  }
+
+  toml::table* oldParent = &m_overridesTable;
+  for (std::size_t i = 0; i + 1 < oldPath.size(); ++i) {
+    auto* next = oldParent->get_as<toml::table>(oldPath[i]);
+    if (next == nullptr) {
+      return false;
+    }
+    oldParent = next;
+  }
+
+  toml::node* oldNode = oldParent->get(oldPath.back());
+  if (oldNode == nullptr || oldNode->as_table() == nullptr) {
+    return false;
+  }
+
+  toml::table* newParent = &m_overridesTable;
+  for (std::size_t i = 0; i + 1 < newPath.size(); ++i) {
+    newParent = ensureTable(*newParent, newPath[i]);
+    if (newParent == nullptr) {
+      return false;
+    }
+  }
+
+  if (newParent->get(newPath.back()) != nullptr) {
+    return false;
+  }
+
+  newParent->insert_or_assign(newPath.back(), *oldNode);
+  oldParent->erase(oldPath.back());
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return false;
+  }
+
+  m_ownOverridesWritePending = true;
+  extractWallpaperFromOverrides();
+  loadAll();
+  fireReloadCallbacks();
+  return true;
+}
+
 std::string ConfigService::getWallpaperPath(const std::string& connectorName) const {
   auto it = m_monitorWallpaperPaths.find(connectorName);
   if (it != m_monitorWallpaperPaths.end()) {
