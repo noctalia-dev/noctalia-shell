@@ -886,9 +886,11 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       .showOverriddenOnly = m_showOverriddenOnly,
       .openWidgetPickerPath = m_openWidgetPickerPath,
       .editingWidgetName = m_editingWidgetName,
+      .pendingDeleteWidgetName = m_pendingDeleteWidgetName,
       .requestRebuild = requestRebuild,
       .setOverride = setOverride,
       .setOverrides = setOverrides,
+      .clearOverride = clearOverride,
       .makeResetButton = makeResetButton,
       .makeRow = makeRow,
       .makeToggle = [&](bool checked, std::vector<std::string> path) -> std::unique_ptr<Node> {

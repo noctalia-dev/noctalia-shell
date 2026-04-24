@@ -228,6 +228,57 @@ namespace settings {
       return base + "_custom";
     }
 
+    bool removeWidgetReference(std::vector<std::string>& items, std::string_view widgetName) {
+      const auto oldSize = items.size();
+      const std::string key(widgetName);
+      items.erase(std::remove(items.begin(), items.end(), key), items.end());
+      return items.size() != oldSize;
+    }
+
+    void appendReferenceRemoval(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>& overrides,
+                                std::vector<std::string> path, std::vector<std::string> items,
+                                std::string_view widgetName) {
+      if (removeWidgetReference(items, widgetName)) {
+        overrides.push_back({std::move(path), std::move(items)});
+      }
+    }
+
+    std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>
+    widgetReferenceRemovalOverrides(const Config& cfg, std::string_view widgetName) {
+      std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides;
+      for (const auto& bar : cfg.bars) {
+        appendReferenceRemoval(overrides, {"bar", bar.name, "start"}, bar.startWidgets, widgetName);
+        appendReferenceRemoval(overrides, {"bar", bar.name, "center"}, bar.centerWidgets, widgetName);
+        appendReferenceRemoval(overrides, {"bar", bar.name, "end"}, bar.endWidgets, widgetName);
+
+        for (const auto& ovr : bar.monitorOverrides) {
+          const std::vector<std::string> prefix = {"bar", bar.name, "monitor", ovr.match};
+          if (ovr.startWidgets.has_value()) {
+            appendReferenceRemoval(overrides, {prefix[0], prefix[1], prefix[2], prefix[3], "start"}, *ovr.startWidgets,
+                                   widgetName);
+          }
+          if (ovr.centerWidgets.has_value()) {
+            appendReferenceRemoval(overrides, {prefix[0], prefix[1], prefix[2], prefix[3], "center"},
+                                   *ovr.centerWidgets, widgetName);
+          }
+          if (ovr.endWidgets.has_value()) {
+            appendReferenceRemoval(overrides, {prefix[0], prefix[1], prefix[2], prefix[3], "end"}, *ovr.endWidgets,
+                                   widgetName);
+          }
+        }
+      }
+      return overrides;
+    }
+
+    bool isNamedWidgetInstance(const Config& cfg, std::string_view widgetName) {
+      return cfg.widgets.contains(std::string(widgetName)) && !isBuiltInWidgetType(widgetName);
+    }
+
+    bool isGuiManagedNamedWidgetInstance(const BarWidgetEditorContext& ctx, std::string_view widgetName) {
+      return isNamedWidgetInstance(ctx.config, widgetName) && ctx.configService != nullptr &&
+             ctx.configService->hasOverride({"widget", std::string(widgetName)});
+    }
+
     std::vector<std::string> widgetSettingPath(std::string widgetName, std::string settingKey) {
       return {"widget", std::move(widgetName), std::move(settingKey)};
     }
@@ -519,14 +570,55 @@ namespace settings {
           editBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
           editBtn->setPadding(Style::spaceXs * ctx.scale);
           editBtn->setRadius(Style::radiusSm * ctx.scale);
-          editBtn->setOnClick([&editingWidgetName = ctx.editingWidgetName,
-                               &openWidgetPickerPath = ctx.openWidgetPickerPath, widgetName,
-                               requestRebuild = ctx.requestRebuild]() {
-            editingWidgetName = editingWidgetName == widgetName ? std::string{} : widgetName;
-            openWidgetPickerPath.clear();
-            requestRebuild();
-          });
+          editBtn->setOnClick(
+              [&editingWidgetName = ctx.editingWidgetName, &openWidgetPickerPath = ctx.openWidgetPickerPath, widgetName,
+               &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, requestRebuild = ctx.requestRebuild]() {
+                editingWidgetName = editingWidgetName == widgetName ? std::string{} : widgetName;
+                openWidgetPickerPath.clear();
+                pendingDeleteWidgetName.clear();
+                requestRebuild();
+              });
           actions->addChild(std::move(editBtn));
+        }
+
+        if (isGuiManagedNamedWidgetInstance(ctx, widgetName)) {
+          const bool pendingDelete = ctx.pendingDeleteWidgetName == widgetName;
+          auto deleteBtn = std::make_unique<Button>();
+          deleteBtn->setGlyph("trash");
+          deleteBtn->setVariant(pendingDelete ? ButtonVariant::Default : ButtonVariant::Ghost);
+          if (pendingDelete) {
+            deleteBtn->setText(i18n::tr("settings.delete-widget-instance"));
+            deleteBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
+          }
+          deleteBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
+          deleteBtn->setMinWidth(Style::controlHeightSm * ctx.scale);
+          deleteBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+          deleteBtn->setPadding(Style::spaceXs * ctx.scale);
+          deleteBtn->setRadius(Style::radiusSm * ctx.scale);
+          deleteBtn->setOnClick([&editingWidgetName = ctx.editingWidgetName,
+                                 &openWidgetPickerPath = ctx.openWidgetPickerPath, config = ctx.config, widgetName,
+                                 &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
+                                 clearOverride = ctx.clearOverride, requestRebuild = ctx.requestRebuild,
+                                 setOverrides = ctx.setOverrides]() {
+            openWidgetPickerPath.clear();
+            if (pendingDeleteWidgetName != widgetName) {
+              pendingDeleteWidgetName = widgetName;
+              requestRebuild();
+              return;
+            }
+
+            pendingDeleteWidgetName.clear();
+            if (editingWidgetName == widgetName) {
+              editingWidgetName.clear();
+            }
+
+            auto referenceRemovals = widgetReferenceRemovalOverrides(config, widgetName);
+            if (!referenceRemovals.empty()) {
+              setOverrides(std::move(referenceRemovals));
+            }
+            clearOverride({"widget", widgetName});
+          });
+          actions->addChild(std::move(deleteBtn));
         }
 
         if (i > 0) {
@@ -625,11 +717,13 @@ namespace settings {
       addBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
       addBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
       addBtn->setRadius(Style::radiusSm * ctx.scale);
-      addBtn->setOnClick(
-          [&openWidgetPickerPath = ctx.openWidgetPickerPath, pickerKey, requestRebuild = ctx.requestRebuild]() {
-            openWidgetPickerPath = openWidgetPickerPath == pickerKey ? std::string{} : pickerKey;
-            requestRebuild();
-          });
+      addBtn->setOnClick([&openWidgetPickerPath = ctx.openWidgetPickerPath,
+                          &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, pickerKey,
+                          requestRebuild = ctx.requestRebuild]() {
+        openWidgetPickerPath = openWidgetPickerPath == pickerKey ? std::string{} : pickerKey;
+        pendingDeleteWidgetName.clear();
+        requestRebuild();
+      });
       lane->addChild(std::move(addBtn));
 
       if (ctx.openWidgetPickerPath == pickerKey) {
@@ -640,25 +734,26 @@ namespace settings {
         picker->setSize(320.0f * ctx.scale, 250.0f * ctx.scale);
         auto items = laneItems;
         auto path = lanePath;
-        picker->setOnActivated([&openWidgetPickerPath = ctx.openWidgetPickerPath,
-                                &editingWidgetName = ctx.editingWidgetName, config = ctx.config,
-                                setOverride = ctx.setOverride, setOverrides = ctx.setOverrides, items,
-                                path](const SearchPickerOption& option) mutable {
-          if (!option.value.empty()) {
-            if (const auto type = createInstanceTypeFromValue(option.value); !type.empty()) {
-              const auto instanceId = nextWidgetInstanceId(config, type);
-              items.push_back(instanceId);
-              openWidgetPickerPath.clear();
-              editingWidgetName = instanceId;
-              setOverrides({{{"widget", instanceId, "type"}, type}, {path, items}});
-              return;
-            }
+        picker->setOnActivated(
+            [&openWidgetPickerPath = ctx.openWidgetPickerPath, &editingWidgetName = ctx.editingWidgetName,
+             config = ctx.config, &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, setOverride = ctx.setOverride,
+             setOverrides = ctx.setOverrides, items, path](const SearchPickerOption& option) mutable {
+              if (!option.value.empty()) {
+                pendingDeleteWidgetName.clear();
+                if (const auto type = createInstanceTypeFromValue(option.value); !type.empty()) {
+                  const auto instanceId = nextWidgetInstanceId(config, type);
+                  items.push_back(instanceId);
+                  openWidgetPickerPath.clear();
+                  editingWidgetName = instanceId;
+                  setOverrides({{{"widget", instanceId, "type"}, type}, {path, items}});
+                  return;
+                }
 
-            items.push_back(option.value);
-            openWidgetPickerPath.clear();
-            setOverride(path, items);
-          }
-        });
+                items.push_back(option.value);
+                openWidgetPickerPath.clear();
+                setOverride(path, items);
+              }
+            });
         picker->setOnCancel([&openWidgetPickerPath = ctx.openWidgetPickerPath, requestRebuild = ctx.requestRebuild]() {
           openWidgetPickerPath.clear();
           requestRebuild();

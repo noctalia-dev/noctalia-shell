@@ -57,6 +57,7 @@ private:
   std::string m_searchQuery;
   std::string m_openWidgetPickerPath;
   std::string m_editingWidgetName;
+  std::string m_pendingDeleteWidgetName;
   std::string m_selectedBarName;
   std::string m_selectedMonitorOverride;
   std::string m_selectedSection;
