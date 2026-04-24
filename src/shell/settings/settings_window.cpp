@@ -7,6 +7,7 @@
 #include "i18n/i18n.h"
 #include "render/render_context.h"
 #include "shell/settings/settings_registry.h"
+#include "shell/settings/widget_settings_registry.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
@@ -23,7 +24,6 @@
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <format>
@@ -32,7 +32,6 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -85,6 +84,10 @@ namespace {
     }
     const auto& key = path.back();
     return key == "start" || key == "center" || key == "end";
+  }
+
+  bool isFirstBarWidgetListPath(const std::vector<std::string>& path) {
+    return isBarWidgetListPath(path) && path.back() == "start";
   }
 
   std::vector<std::string> pathWithLastSegment(std::vector<std::string> path, std::string segment) {
@@ -145,58 +148,29 @@ namespace {
     return {};
   }
 
-  std::string titleFromKey(std::string_view key) {
-    std::string out;
-    out.reserve(key.size());
-    bool upperNext = true;
-    for (const char c : key) {
-      if (c == '_' || c == '-') {
-        out.push_back(' ');
-        upperNext = true;
-      } else if (upperNext) {
-        out.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
-        upperNext = false;
-      } else {
-        out.push_back(c);
-      }
+  ThemeColor widgetBadgeColor(settings::WidgetReferenceKind kind) {
+    switch (kind) {
+    case settings::WidgetReferenceKind::BuiltIn:
+      return roleColor(ColorRole::Primary, 0.16f);
+    case settings::WidgetReferenceKind::Named:
+      return roleColor(ColorRole::Secondary, 0.18f);
+    case settings::WidgetReferenceKind::Unknown:
+      return roleColor(ColorRole::Error, 0.16f);
     }
-    return out;
+    return roleColor(ColorRole::OnSurfaceVariant, 0.12f);
   }
 
   std::vector<SearchPickerOption> widgetPickerOptions(const Config& cfg) {
-    static constexpr std::string_view kBuiltinTypes[] = {
-        "active_window",  "audio_visualizer", "battery",        "bluetooth", "brightness", "clock",
-        "idle_inhibitor", "keyboard_layout",  "launcher",       "lock_keys", "media",      "network",
-        "nightlight",     "notifications",    "power_profiles", "scripted",  "session",    "settings",
-        "spacer",         "sysmon",           "theme_mode",     "tray",      "volume",     "wallpaper",
-        "weather",        "workspaces",
-    };
-
     std::vector<SearchPickerOption> options;
-    std::unordered_set<std::string> seen;
-    auto add = [&](std::string value, std::string label, std::string description, std::string category) {
-      if (!seen.insert(value).second) {
-        return;
-      }
-      options.push_back(SearchPickerOption{.value = std::move(value),
-                                           .label = std::move(label),
-                                           .description = std::move(description),
-                                           .category = std::move(category),
+    const auto entries = settings::widgetPickerEntries(cfg);
+    options.reserve(entries.size());
+    for (const auto& entry : entries) {
+      options.push_back(SearchPickerOption{.value = entry.value,
+                                           .label = entry.label,
+                                           .description = entry.description,
+                                           .category = entry.category,
                                            .enabled = true});
-    };
-
-    for (const auto type : kBuiltinTypes) {
-      add(std::string(type), titleFromKey(type), std::string(type), "Built-in");
     }
-    for (const auto& [name, widget] : cfg.widgets) {
-      add(name, name, widget.type.empty() ? std::string("custom widget") : ("type: " + widget.type), "Named");
-    }
-    std::sort(options.begin(), options.end(), [](const auto& a, const auto& b) {
-      if (a.category == b.category) {
-        return a.label < b.label;
-      }
-      return a.category < b.category;
-    });
     return options;
   }
 
@@ -1045,6 +1019,241 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     section.addChild(std::move(block));
   };
 
+  const auto makeBarWidgetLaneEditor = [&](Flex& section, const settings::SettingEntry& entry) {
+    if (!isFirstBarWidgetListPath(entry.path)) {
+      return;
+    }
+
+    auto block = std::make_unique<Flex>();
+    block->setDirection(FlexDirection::Vertical);
+    block->setAlign(FlexAlign::Stretch);
+    block->setGap(Style::spaceSm * scale);
+    block->setPadding(2.0f * scale, 0.0f);
+
+    auto titleRow = std::make_unique<Flex>();
+    titleRow->setDirection(FlexDirection::Horizontal);
+    titleRow->setAlign(FlexAlign::Center);
+    titleRow->setGap(Style::spaceSm * scale);
+    titleRow->addChild(makeLabel(i18n::tr("settings.bar-widget-editor"), Style::fontSizeBody * scale,
+                                 roleColor(ColorRole::OnSurface), false));
+    block->addChild(std::move(titleRow));
+
+    block->addChild(makeLabel(i18n::tr("settings.bar-widget-editor-desc"), Style::fontSizeCaption * scale,
+                              roleColor(ColorRole::OnSurfaceVariant), false));
+
+    auto lanes = std::make_unique<Flex>();
+    lanes->setDirection(FlexDirection::Horizontal);
+    lanes->setAlign(FlexAlign::Stretch);
+    lanes->setGap(Style::spaceSm * scale);
+    lanes->setFillParentMainAxis(true);
+
+    static constexpr std::string_view kLaneKeys[] = {"start", "center", "end"};
+    for (const auto laneKey : kLaneKeys) {
+      auto lanePath = pathWithLastSegment(entry.path, std::string(laneKey));
+      const auto laneItems = barWidgetItemsForPath(cfg, lanePath);
+      const bool overridden = m_config != nullptr && m_config->hasOverride(lanePath);
+
+      auto lane = std::make_unique<Flex>();
+      lane->setDirection(FlexDirection::Vertical);
+      lane->setAlign(FlexAlign::Stretch);
+      lane->setGap(Style::spaceXs * scale);
+      lane->setPadding(Style::spaceSm * scale);
+      lane->setRadius(Style::radiusMd * scale);
+      lane->setBackground(roleColor(ColorRole::SurfaceVariant, 0.45f));
+      lane->setBorderColor(roleColor(ColorRole::Outline, 0.35f));
+      lane->setBorderWidth(Style::borderWidth);
+      lane->setFlexGrow(1.0f);
+      lane->setMinWidth(180.0f * scale);
+
+      auto laneHeader = std::make_unique<Flex>();
+      laneHeader->setDirection(FlexDirection::Horizontal);
+      laneHeader->setAlign(FlexAlign::Center);
+      laneHeader->setGap(Style::spaceXs * scale);
+      laneHeader->addChild(
+          makeLabel(laneLabel(laneKey), Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
+      if (overridden) {
+        auto badge = std::make_unique<Flex>();
+        badge->setAlign(FlexAlign::Center);
+        badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+        badge->setRadius(Style::radiusSm * scale);
+        badge->setBackground(roleColor(ColorRole::Primary, 0.15f));
+        badge->addChild(makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeCaption * scale,
+                                  roleColor(ColorRole::Primary), true));
+        laneHeader->addChild(std::move(badge));
+      }
+      auto laneSpacer = std::make_unique<Flex>();
+      laneSpacer->setFlexGrow(1.0f);
+      laneHeader->addChild(std::move(laneSpacer));
+      if (overridden) {
+        laneHeader->addChild(makeResetButton(lanePath));
+      }
+      lane->addChild(std::move(laneHeader));
+
+      for (std::size_t i = 0; i < laneItems.size(); ++i) {
+        const auto info = settings::widgetReferenceInfo(cfg, laneItems[i]);
+        auto item = std::make_unique<Flex>();
+        item->setDirection(FlexDirection::Vertical);
+        item->setAlign(FlexAlign::Stretch);
+        item->setGap(Style::spaceXs * scale);
+        item->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+        item->setRadius(Style::radiusSm * scale);
+        item->setBackground(roleColor(ColorRole::Surface, 0.72f));
+        item->setBorderColor(roleColor(ColorRole::Outline, 0.22f));
+        item->setBorderWidth(Style::borderWidth);
+
+        auto itemTop = std::make_unique<Flex>();
+        itemTop->setDirection(FlexDirection::Horizontal);
+        itemTop->setAlign(FlexAlign::Center);
+        itemTop->setGap(Style::spaceXs * scale);
+        itemTop->addChild(makeLabel(info.title, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurface), true));
+        auto itemSpacer = std::make_unique<Flex>();
+        itemSpacer->setFlexGrow(1.0f);
+        itemTop->addChild(std::move(itemSpacer));
+        auto kindBadge = std::make_unique<Flex>();
+        kindBadge->setAlign(FlexAlign::Center);
+        kindBadge->setPadding(1.0f * scale, Style::spaceXs * scale);
+        kindBadge->setRadius(Style::radiusSm * scale);
+        kindBadge->setBackground(widgetBadgeColor(info.kind));
+        kindBadge->addChild(
+            makeLabel(info.badge, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurface), true));
+        itemTop->addChild(std::move(kindBadge));
+        item->addChild(std::move(itemTop));
+
+        item->addChild(
+            makeLabel(info.detail, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false));
+
+        auto actions = std::make_unique<Flex>();
+        actions->setDirection(FlexDirection::Horizontal);
+        actions->setAlign(FlexAlign::Center);
+        actions->setGap(Style::spaceXs * scale);
+
+        if (i > 0) {
+          auto upBtn = std::make_unique<Button>();
+          upBtn->setGlyph("chevron-up");
+          upBtn->setVariant(ButtonVariant::Ghost);
+          upBtn->setGlyphSize(Style::fontSizeCaption * scale);
+          upBtn->setMinWidth(Style::controlHeightSm * scale);
+          upBtn->setMinHeight(Style::controlHeightSm * scale);
+          upBtn->setPadding(Style::spaceXs * scale);
+          upBtn->setRadius(Style::radiusSm * scale);
+          auto items = laneItems;
+          auto path = lanePath;
+          upBtn->setOnClick([setOverride, items, path, i]() mutable {
+            std::swap(items[i], items[i - 1]);
+            setOverride(path, items);
+          });
+          actions->addChild(std::move(upBtn));
+        }
+        if (i + 1 < laneItems.size()) {
+          auto downBtn = std::make_unique<Button>();
+          downBtn->setGlyph("chevron-down");
+          downBtn->setVariant(ButtonVariant::Ghost);
+          downBtn->setGlyphSize(Style::fontSizeCaption * scale);
+          downBtn->setMinWidth(Style::controlHeightSm * scale);
+          downBtn->setMinHeight(Style::controlHeightSm * scale);
+          downBtn->setPadding(Style::spaceXs * scale);
+          downBtn->setRadius(Style::radiusSm * scale);
+          auto items = laneItems;
+          auto path = lanePath;
+          downBtn->setOnClick([setOverride, items, path, i]() mutable {
+            std::swap(items[i], items[i + 1]);
+            setOverride(path, items);
+          });
+          actions->addChild(std::move(downBtn));
+        }
+
+        for (const auto targetLane : kLaneKeys) {
+          if (targetLane == laneKey) {
+            continue;
+          }
+          auto moveBtn = std::make_unique<Button>();
+          moveBtn->setText(laneLabel(targetLane));
+          moveBtn->setVariant(ButtonVariant::Ghost);
+          moveBtn->setFontSize(Style::fontSizeCaption * scale);
+          moveBtn->setMinHeight(Style::controlHeightSm * scale);
+          moveBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+          moveBtn->setRadius(Style::radiusSm * scale);
+          auto sourceItems = laneItems;
+          auto sourcePath = lanePath;
+          auto targetPath = pathWithLastSegment(entry.path, std::string(targetLane));
+          auto targetItems = barWidgetItemsForPath(cfg, targetPath);
+          moveBtn->setOnClick([setOverrides, sourceItems, sourcePath, targetItems, targetPath, i]() mutable {
+            if (i >= sourceItems.size()) {
+              return;
+            }
+            auto widget = sourceItems[i];
+            sourceItems.erase(sourceItems.begin() + static_cast<std::ptrdiff_t>(i));
+            targetItems.push_back(std::move(widget));
+            setOverrides({{sourcePath, sourceItems}, {targetPath, targetItems}});
+          });
+          actions->addChild(std::move(moveBtn));
+        }
+
+        auto removeBtn = std::make_unique<Button>();
+        removeBtn->setGlyph("close");
+        removeBtn->setVariant(ButtonVariant::Ghost);
+        removeBtn->setGlyphSize(Style::fontSizeCaption * scale);
+        removeBtn->setMinWidth(Style::controlHeightSm * scale);
+        removeBtn->setMinHeight(Style::controlHeightSm * scale);
+        removeBtn->setPadding(Style::spaceXs * scale);
+        removeBtn->setRadius(Style::radiusSm * scale);
+        auto items = laneItems;
+        auto path = lanePath;
+        removeBtn->setOnClick([setOverride, items, path, i]() mutable {
+          items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
+          setOverride(path, items);
+        });
+        actions->addChild(std::move(removeBtn));
+
+        item->addChild(std::move(actions));
+        lane->addChild(std::move(item));
+      }
+
+      const std::string pickerKey = pathKey(lanePath);
+      auto addBtn = std::make_unique<Button>();
+      addBtn->setText(i18n::tr("settings.add-widget"));
+      addBtn->setGlyph("add");
+      addBtn->setVariant(ButtonVariant::Ghost);
+      addBtn->setGlyphSize(Style::fontSizeCaption * scale);
+      addBtn->setFontSize(Style::fontSizeCaption * scale);
+      addBtn->setMinHeight(Style::controlHeightSm * scale);
+      addBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      addBtn->setRadius(Style::radiusSm * scale);
+      addBtn->setOnClick([this, pickerKey, requestRebuild]() {
+        m_openWidgetPickerPath = m_openWidgetPickerPath == pickerKey ? std::string{} : pickerKey;
+        requestRebuild();
+      });
+      lane->addChild(std::move(addBtn));
+
+      if (m_openWidgetPickerPath == pickerKey) {
+        auto picker = std::make_unique<SearchPicker>();
+        picker->setPlaceholder(i18n::tr("settings.widget-picker-placeholder"));
+        picker->setEmptyText(i18n::tr("settings.widget-picker-empty"));
+        picker->setOptions(widgetPickerOptions(cfg));
+        picker->setSize(320.0f * scale, 250.0f * scale);
+        auto items = laneItems;
+        auto path = lanePath;
+        picker->setOnActivated([this, setOverride, items, path](const SearchPickerOption& option) mutable {
+          if (!option.value.empty()) {
+            items.push_back(option.value);
+            m_openWidgetPickerPath.clear();
+            setOverride(path, items);
+          }
+        });
+        picker->setOnCancel([this, requestRebuild]() {
+          m_openWidgetPickerPath.clear();
+          requestRebuild();
+        });
+        lane->addChild(std::move(picker));
+      }
+
+      lanes->addChild(std::move(lane));
+    }
+
+    block->addChild(std::move(lanes));
+    section.addChild(std::move(block));
+  };
+
   const auto makeControl = [&](const settings::SettingEntry& entry) -> std::unique_ptr<Node> {
     return std::visit(
         [&](const auto& control) -> std::unique_ptr<Node> {
@@ -1105,7 +1314,11 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         addGroupLabel(*activeSection, groupLabel(entry.group), isFirstGroup);
       }
       if (const auto* list = std::get_if<settings::ListSetting>(&entry.control)) {
-        makeListBlock(*activeSection, entry, *list);
+        if (isFirstBarWidgetListPath(entry.path)) {
+          makeBarWidgetLaneEditor(*activeSection, entry);
+        } else if (!isBarWidgetListPath(entry.path)) {
+          makeListBlock(*activeSection, entry, *list);
+        }
       } else {
         makeRow(*activeSection, entry, makeControl(entry));
       }
