@@ -639,7 +639,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   });
   filters->addChild(std::move(advancedToggle));
 
-  auto overriddenLabel = makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeBody * scale,
+  auto overriddenLabel = makeLabel(i18n::tr("settings.filter-modified"), Style::fontSizeBody * scale,
                                    roleColor(ColorRole::OnSurfaceVariant), false);
   filters->addChild(std::move(overriddenLabel));
 

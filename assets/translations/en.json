@@ -41,6 +41,7 @@
   "settings": {
     "title": "Settings",
     "search-placeholder": "Search settings…",
+    "filter-modified": "Modified",
     "badge-override": "Override",
     "badge-monitor": "Monitor",
     "badge-advanced": "Advanced",
