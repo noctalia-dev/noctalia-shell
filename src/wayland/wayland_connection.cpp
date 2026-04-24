@@ -509,6 +509,16 @@ std::string WaylandConnection::requestActivationToken(wl_surface* surface) const
   return tokenData.token;
 }
 
+void WaylandConnection::activateSurface(wl_surface* surface) {
+  if (m_xdgActivation == nullptr || surface == nullptr) {
+    return;
+  }
+  auto token = requestActivationToken(surface);
+  if (!token.empty()) {
+    xdg_activation_v1_activate(m_xdgActivation, token.c_str(), surface);
+  }
+}
+
 wl_display* WaylandConnection::display() const noexcept { return m_display; }
 
 wl_compositor* WaylandConnection::compositor() const noexcept { return m_compositor; }

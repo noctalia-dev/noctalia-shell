@@ -71,6 +71,7 @@ void SettingsWindow::open() {
     return;
   }
   if (isOpen()) {
+    m_wayland->activateSurface(m_surface->wlSurface());
     return;
   }
 
