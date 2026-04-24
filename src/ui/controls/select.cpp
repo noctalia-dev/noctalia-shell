@@ -357,8 +357,8 @@ void Select::rebuildOptionViews() {
       if (!m_enabled || data.button != BTN_LEFT) {
         return;
       }
-      setSelectedIndex(i);
       closeMenu();
+      setSelectedIndex(i);
     });
     area->setOnAxis([this](const InputArea::PointerData& data) {
       if (!m_open) {

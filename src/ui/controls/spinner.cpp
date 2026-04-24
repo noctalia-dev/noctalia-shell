@@ -79,7 +79,8 @@ void Spinner::startLoop() {
         if (m_spinning) {
           startLoop();
         }
-      });
+      },
+      this);
   markPaintDirty();
 }
 
