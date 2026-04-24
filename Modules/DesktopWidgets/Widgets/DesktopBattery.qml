@@ -12,23 +12,17 @@ DraggableDesktopWidget {
 
   readonly property var widgetMetadata: DesktopWidgetRegistry.widgetMetadata["Battery"]
   readonly property string mode: (widgetData && widgetData.mode !== undefined) ? widgetData.mode : (widgetMetadata.mode !== undefined ? widgetMetadata.mode : "ring")
-  readonly property string ringColor: (widgetData && widgetData.ringColor !== undefined) ? widgetData.ringColor : (widgetMetadata.ringColor !== undefined ? widgetMetadata.ringColor : "none")
   readonly property bool showPercentage: (widgetData && widgetData.showPercentage !== undefined) ? widgetData.showPercentage : (widgetMetadata.showPercentage !== undefined ? widgetMetadata.showPercentage : false)
   readonly property bool fullCircle: (widgetData && widgetData.fullCircle !== undefined) ? widgetData.fullCircle : (widgetMetadata.fullCircle !== undefined ? widgetMetadata.fullCircle : true)
 
-  readonly property color activeRingColor: Color.resolveColorKey(ringColor)
-
-  readonly property var allDevices: {
-    let devices = BatteryService.laptopBatteries.filter(d => BatteryService.isDeviceReady(d));
-    devices = devices.concat(BatteryService.peripheralBatteries);
-    return devices;
+  readonly property var all_batteries: {
+    const pd = BatteryService.primaryDevice;
+    const pb = BatteryService.peripheralBatteries;
+    const batteries = BatteryService.isDeviceReady(pd) ? [pd] : [];
+    return batteries.concat(pb);
   }
 
   function getItemColor(device) {
-    if (ringColor !== "none") {
-      return activeRingColor;
-    }
-
     const charging = BatteryService.isCharging(device);
     const low = BatteryService.isLowBattery(device);
     const critical = BatteryService.isCriticalBattery(device);
@@ -58,16 +52,14 @@ DraggableDesktopWidget {
 
       Repeater {
         // Limit to 4 devices max in ring mode
-        model: root.allDevices.slice(0, 4)
+        model: root.all_batteries.slice(0, 4)
         delegate: NCircleStat {
-          readonly property color itemColor: root.getItemColor(modelData)
           ratio: BatteryService.getPercentage(modelData) / 100
           icon: BatteryService.getDeviceIcon(modelData)
-          fillColor: itemColor
+          fillColor: root.getItemColor(modelData)
           contentScale: root.widgetScale
           showText: root.showPercentage
           fullCircle: root.fullCircle
-          tooltipText: BatteryService.getDeviceName(modelData) + ": " + Math.round(ratio * 100) + "%"
         }
       }
     }
@@ -79,15 +71,14 @@ DraggableDesktopWidget {
       spacing: Math.round(Style.marginS * widgetScale)
 
       Repeater {
-        model: root.allDevices
+        model: root.all_batteries
         delegate: RowLayout {
-          readonly property color itemColor: root.getItemColor(modelData)
           Layout.fillWidth: true
           spacing: Math.round(Style.marginM * widgetScale)
 
           NIcon {
-            icon: root.getIcon(modelData)
-            color: itemColor
+            icon: BatteryService.getDeviceIcon(modelData)
+            color: root.getItemColor(modelData)
             pointSize: Style.fontSizeM * root.widgetScale
           }
 
@@ -101,12 +92,11 @@ DraggableDesktopWidget {
           }
 
           NText {
-            readonly property int percent: BatteryService.getPercentage(modelData)
-            text: percent + "%"
+            text: BatteryService.getPercentage(modelData) + "%"
             pointSize: Style.fontSizeS * root.widgetScale
             font.weight: Style.fontWeightBold
             font.family: Settings.data.ui.fontFixed
-            color: itemColor
+            color: root.getItemColor(modelData)
           }
         }
       }
