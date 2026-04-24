@@ -54,4 +54,5 @@ private:
   bool m_focusSearchOnRebuild = false;
   std::string m_searchQuery;
   std::string m_selectedBarName;
+  std::string m_selectedSection;
 };

@@ -51,6 +51,20 @@ namespace {
     return static_cast<std::size_t>(std::distance(options.begin(), it));
   }
 
+  std::vector<std::string> sectionKeys(const std::vector<settings::SettingEntry>& entries) {
+    std::vector<std::string> sections;
+    sections.emplace_back();
+    for (const auto& entry : entries) {
+      if (entry.section == "Bar") {
+        continue;
+      }
+      if (std::find(sections.begin(), sections.end(), entry.section) == sections.end()) {
+        sections.push_back(entry.section);
+      }
+    }
+    return sections;
+  }
+
 } // namespace
 
 void SettingsWindow::initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext) {
@@ -190,6 +204,13 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   }
   const BarConfig* selectedBar = settings::findBar(cfg, m_selectedBarName);
   const auto registry = settings::buildSettingsRegistry(cfg, selectedBar);
+  const auto sections = sectionKeys(registry);
+  if (m_selectedSection == "Bar" && selectedBar == nullptr) {
+    m_selectedSection.clear();
+  } else if (!m_selectedSection.empty() && m_selectedSection != "Bar" &&
+             std::find(sections.begin(), sections.end(), m_selectedSection) == sections.end()) {
+    m_selectedSection.clear();
+  }
 
   m_inputDispatcher.setSceneRoot(nullptr);
   m_sceneRoot = std::make_unique<Node>();
@@ -285,29 +306,66 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   });
   filters->addChild(std::move(searchInput));
 
-  if (availableBars.size() > 1) {
-    auto barPicker = std::make_unique<Flex>();
-    barPicker->setDirection(FlexDirection::Horizontal);
-    barPicker->setAlign(FlexAlign::Center);
-    barPicker->setGap(Style::spaceSm * scale);
-    barPicker->addChild(makeLabel("Bar", Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), true));
+  main->addChild(std::move(filters));
 
-    auto barSelect = std::make_unique<Select>();
-    barSelect->setOptions(availableBars);
-    barSelect->setSelectedIndex(optionIndex(availableBars, m_selectedBarName));
-    barSelect->setFontSize(Style::fontSizeBody * scale);
-    barSelect->setControlHeight(Style::controlHeight * scale);
-    barSelect->setGlyphSize(Style::fontSizeBody * scale);
-    barSelect->setSize(150.0f * scale, Style::controlHeight * scale);
-    barSelect->setOnSelectionChanged([this, requestRebuild](std::size_t /*index*/, std::string_view value) {
-      m_selectedBarName = std::string(value);
+  const auto sectionLabel = [&](std::string_view section) {
+    if (section.empty()) {
+      return std::string("All");
+    }
+    return std::string(section);
+  };
+
+  auto body = std::make_unique<Flex>();
+  body->setDirection(FlexDirection::Horizontal);
+  body->setAlign(FlexAlign::Stretch);
+  body->setGap(Style::spaceMd * scale);
+  body->setFlexGrow(1.0f);
+
+  auto sidebar = std::make_unique<Flex>();
+  sidebar->setDirection(FlexDirection::Vertical);
+  sidebar->setAlign(FlexAlign::Stretch);
+  sidebar->setGap(Style::spaceXs * scale);
+  sidebar->setMinWidth(132.0f * scale);
+  sidebar->setPadding(Style::spaceXs * scale, 0.0f);
+
+  for (const auto& section : sections) {
+    const bool selected = section == m_selectedSection;
+    auto navItem = std::make_unique<Button>();
+    navItem->setText(sectionLabel(section));
+    navItem->setVariant(selected ? ButtonVariant::TabActive : ButtonVariant::Tab);
+    navItem->setSelected(selected);
+    navItem->setContentAlign(ButtonContentAlign::Start);
+    navItem->setFontSize(Style::fontSizeBody * scale);
+    navItem->setMinHeight(Style::controlHeight * scale);
+    navItem->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    navItem->setRadius(Style::radiusMd * scale);
+    navItem->setOnClick([this, section, requestRebuild]() {
+      m_selectedSection = section;
       requestRebuild();
     });
-    barPicker->addChild(std::move(barSelect));
-    filters->addChild(std::move(barPicker));
+    sidebar->addChild(std::move(navItem));
   }
 
-  main->addChild(std::move(filters));
+  for (const auto& barName : availableBars) {
+    const bool selected = m_selectedSection == "Bar" && m_selectedBarName == barName;
+    auto navItem = std::make_unique<Button>();
+    navItem->setText(std::format("Bar: {}", barName));
+    navItem->setVariant(selected ? ButtonVariant::TabActive : ButtonVariant::Tab);
+    navItem->setSelected(selected);
+    navItem->setContentAlign(ButtonContentAlign::Start);
+    navItem->setFontSize(Style::fontSizeBody * scale);
+    navItem->setMinHeight(Style::controlHeight * scale);
+    navItem->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    navItem->setRadius(Style::radiusMd * scale);
+    navItem->setOnClick([this, barName, requestRebuild]() {
+      m_selectedSection = "Bar";
+      m_selectedBarName = barName;
+      requestRebuild();
+    });
+    sidebar->addChild(std::move(navItem));
+  }
+
+  body->addChild(std::move(sidebar));
 
   auto scroll = std::make_unique<ScrollView>();
   scroll->setFlexGrow(1.0f);
@@ -324,14 +382,14 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     auto section = std::make_unique<Flex>();
     section->setDirection(FlexDirection::Vertical);
     section->setAlign(FlexAlign::Stretch);
-    section->setGap(Style::spaceSm * scale);
-    section->setPadding(Style::spaceMd * scale);
+    section->setGap(Style::spaceXs * scale);
+    section->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
     section->setBackground(roleColor(ColorRole::SurfaceVariant, 0.32f));
     section->setBorderColor(roleColor(ColorRole::Outline, 0.35f));
     section->setBorderWidth(Style::borderWidth);
     section->setRadius(Style::radiusMd * scale);
 
-    auto titleLabel = makeLabel(title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true);
+    auto titleLabel = makeLabel(title, Style::fontSizeTitle * scale, roleColor(ColorRole::OnSurface), true);
     section->addChild(std::move(titleLabel));
     auto* raw = section.get();
     content->addChild(std::move(section));
@@ -357,9 +415,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
     row->setJustify(FlexJustify::SpaceBetween);
-    row->setGap(Style::spaceMd * scale);
-    row->setPadding(Style::spaceSm * scale, 0.0f);
-    row->setMinHeight(Style::controlHeightLg * scale);
+    row->setGap(Style::spaceXs * scale);
+    row->setPadding(2.0f * scale, 0.0f);
+    row->setMinHeight(Style::controlHeight * scale);
 
     auto copy = std::make_unique<Flex>();
     copy->setDirection(FlexDirection::Vertical);
@@ -480,6 +538,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   std::size_t visibleEntries = 0;
 
   for (const auto& entry : registry) {
+    if (!m_selectedSection.empty() && entry.section != m_selectedSection) {
+      continue;
+    }
     if (!settings::matchesSettingQuery(entry, m_searchQuery)) {
       continue;
     }
@@ -514,7 +575,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     content->addChild(std::move(emptyState));
   }
 
-  main->addChild(std::move(scroll));
+  body->addChild(std::move(scroll));
+  main->addChild(std::move(body));
 
   main->setSize(w, h);
   main->layout(*m_renderContext);
