@@ -228,6 +228,15 @@ void Input::setPasswordMode(bool enabled) {
   markLayoutDirty();
 }
 
+void Input::setInvalid(bool invalid) {
+  if (m_invalid == invalid) {
+    return;
+  }
+  m_invalid = invalid;
+  applyVisualState();
+  markPaintDirty();
+}
+
 void Input::setOnChange(std::function<void(const std::string&)> callback) { m_onChange = std::move(callback); }
 
 void Input::setOnSubmit(std::function<void(const std::string&)> callback) { m_onSubmit = std::move(callback); }
@@ -462,9 +471,10 @@ void Input::applyVisualState() {
   const bool readOnly = isReadOnlyVisual();
 
   const Color fill = focused ? resolved(ColorRole::Surface) : resolved(ColorRole::SurfaceVariant);
-  const Color border = focused
-                           ? resolved(ColorRole::Primary)
-                           : (hovered ? brighten(resolved(ColorRole::Outline), 1.3f) : resolved(ColorRole::Outline));
+  const Color border =
+      m_invalid ? resolved(ColorRole::Error)
+                : (focused ? resolved(ColorRole::Primary)
+                           : (hovered ? brighten(resolved(ColorRole::Outline), 1.3f) : resolved(ColorRole::Outline)));
 
   m_background->setStyle(RoundedRectStyle{
       .fill = fill,
@@ -488,7 +498,9 @@ void Input::applyVisualState() {
   m_cursor->setStyle(cursorStyle);
 
   const ColorRole textRole =
-      ((m_value.empty() && !m_placeholder.empty()) || readOnly) ? ColorRole::OnSurfaceVariant : ColorRole::OnSurface;
+      m_invalid ? ColorRole::Error
+                : (((m_value.empty() && !m_placeholder.empty()) || readOnly) ? ColorRole::OnSurfaceVariant
+                                                                             : ColorRole::OnSurface);
   m_label->setColor(roleColor(textRole));
   const Color passwordGlyphColor = resolveThemeColor(roleColor(textRole));
   for (auto* glyph : m_passwordGlyphs) {

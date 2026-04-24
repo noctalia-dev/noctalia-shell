@@ -33,6 +33,7 @@ public:
   void setControlHeight(float height);
   void setHorizontalPadding(float padding);
   void setPasswordMode(bool enabled);
+  void setInvalid(bool invalid);
   void setOnChange(std::function<void(const std::string&)> callback);
   void setOnSubmit(std::function<void(const std::string&)> callback);
   void setOnKeyEvent(std::function<bool(std::uint32_t sym, std::uint32_t modifiers)> callback);
@@ -45,6 +46,7 @@ public:
 
   [[nodiscard]] const std::string& value() const noexcept { return m_value; }
   [[nodiscard]] InputArea* inputArea() const noexcept { return m_inputArea; }
+  [[nodiscard]] bool invalid() const noexcept { return m_invalid; }
 
 private:
   void doLayout(Renderer& renderer) override;
@@ -93,6 +95,7 @@ private:
   float m_controlHeight = Style::controlHeight;
   float m_horizontalPadding = Style::spaceMd;
   bool m_passwordMode = false;
+  bool m_invalid = false;
   std::chrono::steady_clock::time_point m_lastPrimaryPressTime{};
   float m_lastPrimaryPressX = 0.0f;
   float m_lastPrimaryPressY = 0.0f;

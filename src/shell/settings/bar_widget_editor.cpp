@@ -1006,11 +1006,13 @@ namespace settings {
           auto* inputPtr = input.get();
 
           auto doRename = [&editingWidgetName = ctx.editingWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
-                           config = ctx.config, renameWidgetInstance = ctx.renameWidgetInstance,
-                           widgetName](std::string newName) mutable {
+                           config = ctx.config, renameWidgetInstance = ctx.renameWidgetInstance, widgetName,
+                           inputPtr](std::string newName) mutable {
             if (!canRenameWidgetInstance(config, widgetName, newName)) {
+              inputPtr->setInvalid(true);
               return;
             }
+            inputPtr->setInvalid(false);
             auto referenceRenames = widgetReferenceRenameOverrides(config, widgetName, newName);
             renamingWidgetName.clear();
             if (editingWidgetName == widgetName) {
@@ -1019,6 +1021,7 @@ namespace settings {
             renameWidgetInstance(widgetName, std::move(newName), std::move(referenceRenames));
           };
 
+          input->setOnChange([inputPtr](const std::string& /*text*/) { inputPtr->setInvalid(false); });
           input->setOnSubmit([doRename](const std::string& text) mutable { doRename(text); });
 
           auto saveBtn = std::make_unique<Button>();
@@ -1117,10 +1120,13 @@ namespace settings {
           auto doCreate = [&openWidgetPickerPath = ctx.openWidgetPickerPath, &editingWidgetName = ctx.editingWidgetName,
                            &pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
                            &creatingWidgetType = ctx.creatingWidgetType, config = ctx.config,
-                           setOverrides = ctx.setOverrides, items, path, widgetType](std::string instanceId) mutable {
+                           setOverrides = ctx.setOverrides, items, path, widgetType,
+                           inputPtr](std::string instanceId) mutable {
             if (!canCreateWidgetInstance(config, instanceId)) {
+              inputPtr->setInvalid(true);
               return;
             }
+            inputPtr->setInvalid(false);
             items.push_back(instanceId);
             openWidgetPickerPath.clear();
             pendingDeleteWidgetSettingPath.clear();
@@ -1129,6 +1135,7 @@ namespace settings {
             setOverrides({{{"widget", instanceId, "type"}, widgetType}, {path, items}});
           };
 
+          input->setOnChange([inputPtr](const std::string& /*text*/) { inputPtr->setInvalid(false); });
           input->setOnSubmit([doCreate](const std::string& text) mutable { doCreate(text); });
 
           auto createBtn = std::make_unique<Button>();

@@ -23,6 +23,7 @@
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <format>
@@ -110,6 +111,27 @@ namespace {
       key += ":monitor:" + std::string(selectedMonitorOverride);
     }
     return key;
+  }
+
+  std::optional<float> parseFloatInput(std::string_view text) {
+    const auto first = std::find_if_not(text.begin(), text.end(), [](unsigned char c) { return std::isspace(c) != 0; });
+    const auto last =
+        std::find_if_not(text.rbegin(), text.rend(), [](unsigned char c) { return std::isspace(c) != 0; }).base();
+    if (first >= last) {
+      return std::nullopt;
+    }
+
+    std::string trimmed(first, last);
+    try {
+      std::size_t parsed = 0;
+      const float value = std::stof(trimmed, &parsed);
+      if (parsed != trimmed.size() || !std::isfinite(value)) {
+        return std::nullopt;
+      }
+      return value;
+    } catch (...) {
+      return std::nullopt;
+    }
   }
 
   bool monitorOverrideHasExplicitValue(const Config& cfg, const std::vector<std::string>& path) {
@@ -989,6 +1011,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     slider->setValue(value);
     auto* sliderPtr = slider.get();
     slider->setOnValueChanged([valueInputPtr, integerValue](float next) {
+      valueInputPtr->setInvalid(false);
       valueInputPtr->setValue(integerValue ? std::format("{}", static_cast<int>(std::lround(next)))
                                            : std::format("{:.2f}", next));
     });
@@ -1000,18 +1023,23 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       }
     });
 
-    valueInput->setOnSubmit([setOverride, path, sliderPtr, minValue, maxValue, integerValue](const std::string& text) {
-      try {
-        float v = std::clamp(std::stof(text), minValue, maxValue);
-        sliderPtr->setValue(v);
-        if (integerValue) {
-          setOverride(path, static_cast<std::int64_t>(std::lround(v)));
-        } else {
-          setOverride(path, static_cast<double>(v));
-        }
-      } catch (...) {
-      }
-    });
+    valueInput->setOnChange([valueInputPtr](const std::string& /*text*/) { valueInputPtr->setInvalid(false); });
+    valueInput->setOnSubmit(
+        [setOverride, path, sliderPtr, valueInputPtr, minValue, maxValue, integerValue](const std::string& text) {
+          const auto parsed = parseFloatInput(text);
+          if (!parsed.has_value() || *parsed < minValue || *parsed > maxValue) {
+            valueInputPtr->setInvalid(true);
+            return;
+          }
+          const float v = *parsed;
+          valueInputPtr->setInvalid(false);
+          sliderPtr->setValue(v);
+          if (integerValue) {
+            setOverride(path, static_cast<std::int64_t>(std::lround(v)));
+          } else {
+            setOverride(path, static_cast<double>(v));
+          }
+        });
 
     wrap->addChild(std::move(valueInput));
     wrap->addChild(std::move(slider));
