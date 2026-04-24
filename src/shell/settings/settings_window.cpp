@@ -13,6 +13,7 @@
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
+#include "ui/controls/search_picker.h"
 #include "ui/controls/select.h"
 #include "ui/controls/separator.h"
 #include "ui/controls/slider.h"
@@ -22,6 +23,7 @@
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <format>
@@ -30,6 +32,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -62,6 +65,80 @@ namespace {
       labels.push_back(opt.label);
     }
     return labels;
+  }
+
+  std::string pathKey(const std::vector<std::string>& path) {
+    std::string out;
+    for (const auto& part : path) {
+      if (!out.empty()) {
+        out.push_back('.');
+      }
+      out += part;
+    }
+    return out;
+  }
+
+  bool isBarWidgetListPath(const std::vector<std::string>& path) {
+    if (path.size() < 3 || path.front() != "bar") {
+      return false;
+    }
+    const auto& key = path.back();
+    return key == "start" || key == "center" || key == "end";
+  }
+
+  std::string titleFromKey(std::string_view key) {
+    std::string out;
+    out.reserve(key.size());
+    bool upperNext = true;
+    for (const char c : key) {
+      if (c == '_' || c == '-') {
+        out.push_back(' ');
+        upperNext = true;
+      } else if (upperNext) {
+        out.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
+        upperNext = false;
+      } else {
+        out.push_back(c);
+      }
+    }
+    return out;
+  }
+
+  std::vector<SearchPickerOption> widgetPickerOptions(const Config& cfg) {
+    static constexpr std::string_view kBuiltinTypes[] = {
+        "active_window",  "audio_visualizer", "battery",        "bluetooth", "brightness", "clock",
+        "idle_inhibitor", "keyboard_layout",  "launcher",       "lock_keys", "media",      "network",
+        "nightlight",     "notifications",    "power_profiles", "scripted",  "session",    "settings",
+        "spacer",         "sysmon",           "theme_mode",     "tray",      "volume",     "wallpaper",
+        "weather",        "workspaces",
+    };
+
+    std::vector<SearchPickerOption> options;
+    std::unordered_set<std::string> seen;
+    auto add = [&](std::string value, std::string label, std::string description, std::string category) {
+      if (!seen.insert(value).second) {
+        return;
+      }
+      options.push_back(SearchPickerOption{.value = std::move(value),
+                                           .label = std::move(label),
+                                           .description = std::move(description),
+                                           .category = std::move(category),
+                                           .enabled = true});
+    };
+
+    for (const auto type : kBuiltinTypes) {
+      add(std::string(type), titleFromKey(type), std::string(type), "Built-in");
+    }
+    for (const auto& [name, widget] : cfg.widgets) {
+      add(name, name, widget.type.empty() ? std::string("custom widget") : ("type: " + widget.type), "Named");
+    }
+    std::sort(options.begin(), options.end(), [](const auto& a, const auto& b) {
+      if (a.category == b.category) {
+        return a.label < b.label;
+      }
+      return a.category < b.category;
+    });
+    return options;
   }
 
   std::vector<std::string> sectionKeys(const std::vector<settings::SettingEntry>& entries) {
@@ -390,6 +467,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     navItem->setRadius(Style::radiusMd * scale);
     navItem->setOnClick([this, section, requestRebuild]() {
       m_selectedSection = section;
+      m_openWidgetPickerPath.clear();
       requestRebuild();
     });
     sidebar->addChild(std::move(navItem));
@@ -410,6 +488,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       m_selectedSection = "bar";
       m_selectedBarName = barName;
       m_selectedMonitorOverride.clear();
+      m_openWidgetPickerPath.clear();
       requestRebuild();
     });
     sidebar->addChild(std::move(navItem));
@@ -433,6 +512,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
           m_selectedSection = "bar";
           m_selectedBarName = barName;
           m_selectedMonitorOverride = match;
+          m_openWidgetPickerPath.clear();
           requestRebuild();
         });
         sidebar->addChild(std::move(ovrItem));
@@ -774,47 +854,87 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       block->addChild(std::move(itemRow));
     }
 
-    auto addRow = std::make_unique<Flex>();
-    addRow->setDirection(FlexDirection::Horizontal);
-    addRow->setAlign(FlexAlign::Center);
-    addRow->setGap(Style::spaceXs * scale);
+    if (isBarWidgetListPath(entry.path)) {
+      const std::string pickerKey = pathKey(entry.path);
+      auto addBtn = std::make_unique<Button>();
+      addBtn->setText(i18n::tr("settings.add-widget"));
+      addBtn->setGlyph("add");
+      addBtn->setVariant(ButtonVariant::Ghost);
+      addBtn->setGlyphSize(Style::fontSizeCaption * scale);
+      addBtn->setFontSize(Style::fontSizeCaption * scale);
+      addBtn->setMinHeight(Style::controlHeightSm * scale);
+      addBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      addBtn->setRadius(Style::radiusSm * scale);
+      addBtn->setOnClick([this, pickerKey, requestRebuild]() {
+        m_openWidgetPickerPath = m_openWidgetPickerPath == pickerKey ? std::string{} : pickerKey;
+        requestRebuild();
+      });
+      block->addChild(std::move(addBtn));
 
-    auto addInput = std::make_unique<Input>();
-    addInput->setFontSize(Style::fontSizeCaption * scale);
-    addInput->setControlHeight(Style::controlHeightSm * scale);
-    addInput->setHorizontalPadding(Style::spaceXs * scale);
-    addInput->setSize(140.0f * scale, Style::controlHeightSm * scale);
-    addInput->setFlexGrow(1.0f);
-    auto* addInputPtr = addInput.get();
-
-    auto addBtn = std::make_unique<Button>();
-    addBtn->setGlyph("add");
-    addBtn->setVariant(ButtonVariant::Ghost);
-    addBtn->setGlyphSize(Style::fontSizeCaption * scale);
-    addBtn->setMinWidth(Style::controlHeightSm * scale);
-    addBtn->setMinHeight(Style::controlHeightSm * scale);
-    addBtn->setPadding(Style::spaceXs * scale);
-    addBtn->setRadius(Style::radiusSm * scale);
-    auto items = list.items;
-    auto path = entry.path;
-    addBtn->setOnClick([setOverride, addInputPtr, items, path]() mutable {
-      const auto& text = addInputPtr->value();
-      if (!text.empty()) {
-        items.push_back(text);
-        setOverride(path, items);
+      if (m_openWidgetPickerPath == pickerKey) {
+        auto picker = std::make_unique<SearchPicker>();
+        picker->setPlaceholder(i18n::tr("settings.widget-picker-placeholder"));
+        picker->setEmptyText(i18n::tr("settings.widget-picker-empty"));
+        picker->setOptions(widgetPickerOptions(cfg));
+        picker->setSize(360.0f * scale, 260.0f * scale);
+        auto items = list.items;
+        auto path = entry.path;
+        picker->setOnActivated([this, setOverride, items, path](const SearchPickerOption& option) mutable {
+          if (!option.value.empty()) {
+            items.push_back(option.value);
+            m_openWidgetPickerPath.clear();
+            setOverride(path, items);
+          }
+        });
+        picker->setOnCancel([this, requestRebuild]() {
+          m_openWidgetPickerPath.clear();
+          requestRebuild();
+        });
+        block->addChild(std::move(picker));
       }
-    });
+    } else {
+      auto addRow = std::make_unique<Flex>();
+      addRow->setDirection(FlexDirection::Horizontal);
+      addRow->setAlign(FlexAlign::Center);
+      addRow->setGap(Style::spaceXs * scale);
 
-    addInput->setOnSubmit([setOverride, items, path](const std::string& text) mutable {
-      if (!text.empty()) {
-        items.push_back(text);
-        setOverride(path, items);
-      }
-    });
+      auto addInput = std::make_unique<Input>();
+      addInput->setFontSize(Style::fontSizeCaption * scale);
+      addInput->setControlHeight(Style::controlHeightSm * scale);
+      addInput->setHorizontalPadding(Style::spaceXs * scale);
+      addInput->setSize(140.0f * scale, Style::controlHeightSm * scale);
+      addInput->setFlexGrow(1.0f);
+      auto* addInputPtr = addInput.get();
 
-    addRow->addChild(std::move(addInput));
-    addRow->addChild(std::move(addBtn));
-    block->addChild(std::move(addRow));
+      auto addBtn = std::make_unique<Button>();
+      addBtn->setGlyph("add");
+      addBtn->setVariant(ButtonVariant::Ghost);
+      addBtn->setGlyphSize(Style::fontSizeCaption * scale);
+      addBtn->setMinWidth(Style::controlHeightSm * scale);
+      addBtn->setMinHeight(Style::controlHeightSm * scale);
+      addBtn->setPadding(Style::spaceXs * scale);
+      addBtn->setRadius(Style::radiusSm * scale);
+      auto items = list.items;
+      auto path = entry.path;
+      addBtn->setOnClick([setOverride, addInputPtr, items, path]() mutable {
+        const auto& text = addInputPtr->value();
+        if (!text.empty()) {
+          items.push_back(text);
+          setOverride(path, items);
+        }
+      });
+
+      addInput->setOnSubmit([setOverride, items, path](const std::string& text) mutable {
+        if (!text.empty()) {
+          items.push_back(text);
+          setOverride(path, items);
+        }
+      });
+
+      addRow->addChild(std::move(addInput));
+      addRow->addChild(std::move(addBtn));
+      block->addChild(std::move(addRow));
+    }
 
     section.addChild(std::move(block));
   };
@@ -995,6 +1115,13 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
     return;
   }
   if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
+    if (!m_openWidgetPickerPath.empty()) {
+      m_openWidgetPickerPath.clear();
+      if (m_surface != nullptr) {
+        m_surface->requestLayout();
+      }
+      return;
+    }
     if (Select::closeAnyOpen()) {
       if (m_surface != nullptr) {
         m_surface->requestLayout();

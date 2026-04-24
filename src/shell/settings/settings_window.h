@@ -53,6 +53,7 @@ private:
   bool m_rebuildRequested = false;
   bool m_focusSearchOnRebuild = false;
   std::string m_searchQuery;
+  std::string m_openWidgetPickerPath;
   std::string m_selectedBarName;
   std::string m_selectedMonitorOverride;
   std::string m_selectedSection;
