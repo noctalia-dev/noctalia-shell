@@ -262,6 +262,8 @@ void SettingsWindow::destroyWindow() {
   m_lastSceneHeight = 0;
   m_rebuildRequested = false;
   m_focusSearchOnRebuild = false;
+  m_statusMessage.clear();
+  m_statusIsError = false;
 }
 
 void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
@@ -388,11 +390,25 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     });
   };
 
+  const auto clearStatus = [this]() {
+    m_statusMessage.clear();
+    m_statusIsError = false;
+  };
+
   const auto setOverride = [this, requestRebuild](std::vector<std::string> path, ConfigOverrideValue value) {
     DeferredCall::callLater([this, path = std::move(path), value = std::move(value), requestRebuild]() mutable {
-      if (m_config != nullptr && m_config->setOverride(path, std::move(value))) {
-        requestRebuild();
+      if (m_config == nullptr) {
+        return;
       }
+      if (m_config->setOverride(path, std::move(value))) {
+        m_statusMessage.clear();
+        m_statusIsError = false;
+        requestRebuild();
+        return;
+      }
+      m_statusMessage = i18n::tr("settings.write-error");
+      m_statusIsError = true;
+      requestRebuild();
     });
   };
 
@@ -403,10 +419,24 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
             return;
           }
           bool changed = false;
+          bool failed = false;
           for (auto& [path, value] : overrides) {
-            changed = m_config->setOverride(path, std::move(value)) || changed;
+            if (m_config->setOverride(path, std::move(value))) {
+              changed = true;
+            } else {
+              failed = true;
+            }
           }
-          if (changed) {
+          if (failed) {
+            m_statusMessage = i18n::tr("settings.batch-write-error");
+            m_statusIsError = true;
+            requestRebuild();
+            return;
+          }
+          const bool hadStatus = !m_statusMessage.empty();
+          m_statusMessage.clear();
+          m_statusIsError = false;
+          if (changed || hadStatus) {
             requestRebuild();
           }
         });
@@ -414,9 +444,18 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   const auto clearOverride = [this, requestRebuild](std::vector<std::string> path) {
     DeferredCall::callLater([this, path = std::move(path), requestRebuild]() mutable {
-      if (m_config != nullptr && m_config->clearOverride(path)) {
-        requestRebuild();
+      if (m_config == nullptr) {
+        return;
       }
+      if (m_config->clearOverride(path)) {
+        m_statusMessage.clear();
+        m_statusIsError = false;
+        requestRebuild();
+        return;
+      }
+      m_statusMessage = i18n::tr("settings.clear-error");
+      m_statusIsError = true;
+      requestRebuild();
     });
   };
 
@@ -431,11 +470,27 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
           bool changed = m_config->renameOverrideTable({"widget", oldName}, {"widget", newName});
           if (!changed) {
+            m_statusMessage = i18n::tr("settings.rename-widget-error");
+            m_statusIsError = true;
+            requestRebuild();
             return;
           }
+          bool failed = false;
           for (auto& [path, value] : referenceOverrides) {
-            changed = m_config->setOverride(path, std::move(value)) || changed;
+            if (m_config->setOverride(path, std::move(value))) {
+              changed = true;
+            } else {
+              failed = true;
+            }
           }
+          if (failed) {
+            m_statusMessage = i18n::tr("settings.batch-write-error");
+            m_statusIsError = true;
+            requestRebuild();
+            return;
+          }
+          m_statusMessage.clear();
+          m_statusIsError = false;
           if (changed) {
             requestRebuild();
           }
@@ -491,6 +546,39 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   filters->addChild(std::move(overriddenToggle));
 
   main->addChild(std::move(filters));
+
+  if (!m_statusMessage.empty()) {
+    auto status = std::make_unique<Flex>();
+    status->setDirection(FlexDirection::Horizontal);
+    status->setAlign(FlexAlign::Center);
+    status->setGap(Style::spaceSm * scale);
+    status->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+    status->setRadius(Style::radiusMd * scale);
+    status->setBackground(roleColor(m_statusIsError ? ColorRole::Error : ColorRole::Secondary, 0.14f));
+    status->setBorderColor(roleColor(m_statusIsError ? ColorRole::Error : ColorRole::Secondary, 0.45f));
+    status->setBorderWidth(Style::borderWidth);
+
+    auto message = makeLabel(m_statusMessage, Style::fontSizeCaption * scale,
+                             roleColor(m_statusIsError ? ColorRole::Error : ColorRole::Secondary), true);
+    message->setFlexGrow(1.0f);
+    status->addChild(std::move(message));
+
+    auto dismiss = std::make_unique<Button>();
+    dismiss->setGlyph("close");
+    dismiss->setVariant(ButtonVariant::Ghost);
+    dismiss->setGlyphSize(Style::fontSizeCaption * scale);
+    dismiss->setMinWidth(Style::controlHeightSm * scale);
+    dismiss->setMinHeight(Style::controlHeightSm * scale);
+    dismiss->setPadding(Style::spaceXs * scale);
+    dismiss->setRadius(Style::radiusSm * scale);
+    dismiss->setOnClick([clearStatus, requestRebuild]() {
+      clearStatus();
+      requestRebuild();
+    });
+    status->addChild(std::move(dismiss));
+
+    main->addChild(std::move(status));
+  }
 
   const auto sectionLabel = [&](std::string_view section) {
     return i18n::tr("settings.section." + std::string(section));

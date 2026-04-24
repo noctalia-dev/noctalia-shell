@@ -64,6 +64,8 @@ private:
   std::string m_selectedBarName;
   std::string m_selectedMonitorOverride;
   std::string m_selectedSection;
+  std::string m_statusMessage;
   bool m_showAdvanced = false;
   bool m_showOverriddenOnly = false;
+  bool m_statusIsError = false;
 };
