@@ -121,7 +121,7 @@ NIconButton {
   IconImage {
     id: customOrDistroLogo
     anchors.centerIn: parent
-    width: root.buttonSize * 0.8
+    width: root.buttonSize * 0.7
     height: width
     source: {
       if (useDistroLogo)
