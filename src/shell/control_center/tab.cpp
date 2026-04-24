@@ -15,7 +15,7 @@ namespace control_center {
     card.setRadius(Style::radiusXl * scale);
     card.setBackground(roleColor(ColorRole::Surface, 0.75f));
     card.setBorderWidth(Style::borderWidth);
-    card.setBorderColor(roleColor(ColorRole::Outline));
+    card.setBorderColor(roleColor(ColorRole::Outline, 0.5f));
   }
 
   Label* addTitle(Flex& parent, const std::string& text, float scale) {
