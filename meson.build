@@ -1,5 +1,5 @@
 project('noctalia', ['c', 'cpp'],
-  version: '0.1.0',
+  version: '5.0.0',
   default_options: [
     'cpp_std=c++20',
     'cpp_extensions=false',
