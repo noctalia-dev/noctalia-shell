@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include <string_view>
 #include <sys/inotify.h>
+#include <type_traits>
 #include <unistd.h>
 #include <vector>
 #include <xkbcommon/xkbcommon.h>
@@ -42,6 +43,38 @@ namespace {
     }
     auto [it, _] = parent.insert_or_assign(key, toml::table{});
     return it->second.as_table();
+  }
+
+  void insertOverrideValue(toml::table& table, std::string_view key, const ConfigOverrideValue& value) {
+    std::visit(
+        [&](const auto& concrete) {
+          using T = std::decay_t<decltype(concrete)>;
+          if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+            toml::array array;
+            for (const auto& item : concrete) {
+              array.push_back(item);
+            }
+            table.insert_or_assign(key, std::move(array));
+          } else {
+            table.insert_or_assign(key, concrete);
+          }
+        },
+        value);
+  }
+
+  const toml::node* findOverrideNode(const toml::table& root, const std::vector<std::string>& path) {
+    const toml::table* table = &root;
+    for (std::size_t i = 0; i < path.size(); ++i) {
+      if (i + 1 == path.size()) {
+        return table->get(path[i]);
+      }
+      auto* next = table->get_as<toml::table>(path[i]);
+      if (next == nullptr) {
+        return nullptr;
+      }
+      table = next;
+    }
+    return nullptr;
   }
 
   std::vector<std::string> readStringArray(const toml::node& node) {
@@ -442,6 +475,70 @@ void ConfigService::setDockEnabled(bool enabled) {
   fireReloadCallbacks();
 }
 
+bool ConfigService::hasOverride(const std::vector<std::string>& path) const {
+  if (path.empty()) {
+    return false;
+  }
+  return findOverrideNode(m_overridesTable, path) != nullptr;
+}
+
+bool ConfigService::setOverride(const std::vector<std::string>& path, ConfigOverrideValue value) {
+  if (m_overridesPath.empty() || path.empty()) {
+    return false;
+  }
+
+  toml::table* table = &m_overridesTable;
+  for (std::size_t i = 0; i + 1 < path.size(); ++i) {
+    table = ensureTable(*table, path[i]);
+    if (table == nullptr) {
+      return false;
+    }
+  }
+
+  insertOverrideValue(*table, path.back(), value);
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return false;
+  }
+
+  m_ownOverridesWritePending = true;
+  extractWallpaperFromOverrides();
+  loadAll();
+  fireReloadCallbacks();
+  return true;
+}
+
+bool ConfigService::clearOverride(const std::vector<std::string>& path) {
+  if (m_overridesPath.empty() || path.empty()) {
+    return false;
+  }
+
+  toml::table* table = &m_overridesTable;
+  for (std::size_t i = 0; i + 1 < path.size(); ++i) {
+    auto* next = table->get_as<toml::table>(path[i]);
+    if (next == nullptr) {
+      return false;
+    }
+    table = next;
+  }
+
+  if (table->erase(path.back()) == 0) {
+    return false;
+  }
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return false;
+  }
+
+  m_ownOverridesWritePending = true;
+  extractWallpaperFromOverrides();
+  loadAll();
+  fireReloadCallbacks();
+  return true;
+}
+
 std::string ConfigService::getWallpaperPath(const std::string& connectorName) const {
   auto it = m_monitorWallpaperPaths.find(connectorName);
   if (it != m_monitorWallpaperPaths.end()) {
@@ -779,6 +876,9 @@ void ConfigService::loadOverridesFromFile() {
 }
 
 void ConfigService::extractWallpaperFromOverrides() {
+  m_defaultWallpaperPath.clear();
+  m_monitorWallpaperPaths.clear();
+
   if (auto* wpDefault = m_overridesTable["wallpaper"]["default"].as_table()) {
     if (auto v = (*wpDefault)["path"].value<std::string>()) {
       m_defaultWallpaperPath = *v;

@@ -6,6 +6,7 @@
 #include "wayland/toplevel_surface.h"
 
 #include <memory>
+#include <string>
 
 class ConfigService;
 class RenderContext;
@@ -49,4 +50,8 @@ private:
 
   std::uint32_t m_lastSceneWidth = 0;
   std::uint32_t m_lastSceneHeight = 0;
+  bool m_rebuildRequested = false;
+  bool m_focusSearchOnRebuild = false;
+  std::string m_searchQuery;
+  std::string m_selectedBarName;
 };

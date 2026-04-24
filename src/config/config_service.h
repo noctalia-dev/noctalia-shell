@@ -100,6 +100,7 @@ struct BarConfig {
 };
 
 using WidgetSettingValue = std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>>;
+using ConfigOverrideValue = std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>>;
 
 // Optional rounded “capsule” behind a bar widget (see `[widget.*] capsule_*` in CONFIG.md).
 // Corner shape (pill), border width, and edge softness are fixed in the shell code; padding is configurable.
@@ -473,6 +474,9 @@ public:
   void setThemeMode(ThemeMode mode);
   // Persist dock enabled override to overrides.toml and trigger the reload pipeline.
   void setDockEnabled(bool enabled);
+  [[nodiscard]] bool hasOverride(const std::vector<std::string>& path) const;
+  bool setOverride(const std::vector<std::string>& path, ConfigOverrideValue value);
+  bool clearOverride(const std::vector<std::string>& path);
 
   [[nodiscard]] static BarConfig resolveForOutput(const BarConfig& base, const WaylandOutput& output);
 

@@ -1,24 +1,55 @@
 #include "shell/settings/settings_window.h"
 
 #include "config/config_service.h"
+#include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "render/render_context.h"
+#include "shell/settings/settings_registry.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
+#include "ui/controls/input.h"
 #include "ui/controls/label.h"
+#include "ui/controls/scroll_view.h"
+#include "ui/controls/select.h"
+#include "ui/controls/slider.h"
+#include "ui/controls/toggle.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "wayland/wayland_connection.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <format>
 #include <memory>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <variant>
+#include <vector>
 
 namespace {
 
   constexpr Logger kLog("settings");
+
+  std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ThemeColor& color, bool bold = false) {
+    auto label = std::make_unique<Label>();
+    label->setText(text);
+    label->setFontSize(fontSize);
+    label->setColor(color);
+    label->setBold(bold);
+    return label;
+  }
+
+  std::size_t optionIndex(const std::vector<std::string>& options, std::string_view value) {
+    const auto it = std::find(options.begin(), options.end(), value);
+    if (it == options.end()) {
+      return 0;
+    }
+    return static_cast<std::size_t>(std::distance(options.begin(), it));
+  }
 
 } // namespace
 
@@ -51,9 +82,22 @@ void SettingsWindow::open() {
     }
   }
 
-  auto surface = std::make_unique<ToplevelSurface>(*m_wayland);
-  surface->setRenderContext(m_renderContext);
-  surface->setAnimationManager(&m_animations);
+  m_surface = std::make_unique<ToplevelSurface>(*m_wayland);
+  m_surface->setRenderContext(m_renderContext);
+  m_surface->setAnimationManager(&m_animations);
+
+  m_surface->setClosedCallback([this]() { destroyWindow(); });
+
+  m_surface->setConfigureCallback([this](std::uint32_t /*width*/, std::uint32_t /*height*/) {
+    if (m_surface != nullptr) {
+      m_surface->requestLayout();
+    }
+  });
+
+  m_surface->setPrepareFrameCallback(
+      [this](bool needsUpdate, bool needsLayout) { prepareFrame(needsUpdate, needsLayout); });
+
+  m_surface->setUpdateCallback([]() {});
 
   const float scale = uiScale();
   const std::uint32_t w = static_cast<std::uint32_t>(std::round(640.0f * scale));
@@ -66,25 +110,11 @@ void SettingsWindow::open() {
       .appId = "dev.noctalia.Noctalia.Settings",
   };
 
-  if (!surface->initialize(output, cfg)) {
+  if (!m_surface->initialize(output, cfg)) {
     kLog.warn("settings: failed to create toplevel surface");
+    m_surface.reset();
     return;
   }
-
-  surface->setClosedCallback([this]() { destroyWindow(); });
-
-  surface->setConfigureCallback([this](std::uint32_t /*width*/, std::uint32_t /*height*/) {
-    if (m_surface != nullptr) {
-      m_surface->requestLayout();
-    }
-  });
-
-  surface->setPrepareFrameCallback(
-      [this](bool needsUpdate, bool needsLayout) { prepareFrame(needsUpdate, needsLayout); });
-
-  surface->setUpdateCallback([]() {});
-
-  m_surface = std::move(surface);
   m_pointerInside = false;
   m_lastSceneWidth = 0;
   m_lastSceneHeight = 0;
@@ -107,6 +137,8 @@ void SettingsWindow::destroyWindow() {
   m_pointerInside = false;
   m_lastSceneWidth = 0;
   m_lastSceneHeight = 0;
+  m_rebuildRequested = false;
+  m_focusSearchOnRebuild = false;
 }
 
 void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
@@ -124,13 +156,18 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
   m_renderContext->syncContentScale(m_surface->renderTarget());
 
   const bool sizeChanged = m_sceneRoot == nullptr || m_lastSceneWidth != width || m_lastSceneHeight != height;
-  const bool needRebuild = sizeChanged || needsLayout;
+  const bool needRebuild = sizeChanged || m_rebuildRequested;
 
   if (needRebuild) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     buildScene(width, height);
     m_lastSceneWidth = width;
     m_lastSceneHeight = height;
+    m_rebuildRequested = false;
+  } else if (needsLayout && m_sceneRoot != nullptr) {
+    UiPhaseScope layoutPhase(UiPhase::Layout);
+    m_sceneRoot->setSize(static_cast<float>(width), static_cast<float>(height));
+    m_sceneRoot->layout(*m_renderContext);
   }
 }
 
@@ -143,7 +180,17 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   const float w = static_cast<float>(width);
   const float h = static_cast<float>(height);
   const float scale = uiScale();
+  const Config cfg = m_config != nullptr ? m_config->config() : Config{};
+  const auto availableBars = settings::barNames(cfg);
+  if (availableBars.empty()) {
+    m_selectedBarName.clear();
+  } else if (settings::findBar(cfg, m_selectedBarName) == nullptr) {
+    m_selectedBarName = availableBars.front();
+  }
+  const BarConfig* selectedBar = settings::findBar(cfg, m_selectedBarName);
+  const auto registry = settings::buildSettingsRegistry(cfg, selectedBar);
 
+  m_inputDispatcher.setSceneRoot(nullptr);
   m_sceneRoot = std::make_unique<Node>();
   m_sceneRoot->setSize(w, h);
   m_sceneRoot->setAnimationManager(&m_animations);
@@ -160,6 +207,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   main->setJustify(FlexJustify::Start);
   main->setGap(Style::spaceMd * scale);
   main->setPadding(Style::spaceLg * scale);
+  main->setSize(w, h);
 
   auto header = std::make_unique<Flex>();
   header->setDirection(FlexDirection::Horizontal);
@@ -167,13 +215,13 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   header->setJustify(FlexJustify::SpaceBetween);
   header->setGap(Style::spaceSm * scale);
 
-  auto title = std::make_unique<Label>();
-  title->setText("Settings");
-  title->setBold(true);
-  title->setFontSize(Style::fontSizeTitle * scale);
-  title->setColor(roleColor(ColorRole::OnSurface));
-  title->setFlexGrow(1.0f);
-  header->addChild(std::move(title));
+  auto headerTitle = std::make_unique<Label>();
+  headerTitle->setText("Settings");
+  headerTitle->setBold(true);
+  headerTitle->setFontSize(Style::fontSizeTitle * scale);
+  headerTitle->setColor(roleColor(ColorRole::OnSurface));
+  headerTitle->setFlexGrow(1.0f);
+  header->addChild(std::move(headerTitle));
 
   auto closeBtn = std::make_unique<Button>();
   closeBtn->setGlyph("close");
@@ -188,11 +236,284 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   main->addChild(std::move(header));
 
-  auto body = std::make_unique<Label>();
-  body->setText("Shell settings will live here... at some point :p.");
-  body->setFontSize(Style::fontSizeBody * scale);
-  body->setColor(roleColor(ColorRole::OnSurfaceVariant));
-  main->addChild(std::move(body));
+  const auto requestRebuild = [this]() {
+    DeferredCall::callLater([this]() {
+      if (m_surface == nullptr) {
+        return;
+      }
+      m_rebuildRequested = true;
+      m_surface->requestLayout();
+    });
+  };
+
+  const auto setOverride = [this, requestRebuild](std::vector<std::string> path, ConfigOverrideValue value) {
+    DeferredCall::callLater([this, path = std::move(path), value = std::move(value), requestRebuild]() mutable {
+      if (m_config != nullptr && m_config->setOverride(path, std::move(value))) {
+        requestRebuild();
+      }
+    });
+  };
+
+  const auto clearOverride = [this, requestRebuild](std::vector<std::string> path) {
+    DeferredCall::callLater([this, path = std::move(path), requestRebuild]() mutable {
+      if (m_config != nullptr && m_config->clearOverride(path)) {
+        requestRebuild();
+      }
+    });
+  };
+
+  auto filters = std::make_unique<Flex>();
+  filters->setDirection(FlexDirection::Horizontal);
+  filters->setAlign(FlexAlign::Center);
+  filters->setJustify(FlexJustify::SpaceBetween);
+  filters->setGap(Style::spaceMd * scale);
+
+  auto searchInput = std::make_unique<Input>();
+  searchInput->setPlaceholder("Search settings...");
+  searchInput->setValue(m_searchQuery);
+  searchInput->setFontSize(Style::fontSizeBody * scale);
+  searchInput->setControlHeight(Style::controlHeight * scale);
+  searchInput->setHorizontalPadding(Style::spaceSm * scale);
+  searchInput->setSize(320.0f * scale, Style::controlHeight * scale);
+  searchInput->setFlexGrow(1.0f);
+  Input* searchInputPtr = searchInput.get();
+  searchInput->setOnChange([this, requestRebuild](const std::string& value) {
+    m_searchQuery = value;
+    m_focusSearchOnRebuild = true;
+    requestRebuild();
+  });
+  filters->addChild(std::move(searchInput));
+
+  if (availableBars.size() > 1) {
+    auto barPicker = std::make_unique<Flex>();
+    barPicker->setDirection(FlexDirection::Horizontal);
+    barPicker->setAlign(FlexAlign::Center);
+    barPicker->setGap(Style::spaceSm * scale);
+    barPicker->addChild(makeLabel("Bar", Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), true));
+
+    auto barSelect = std::make_unique<Select>();
+    barSelect->setOptions(availableBars);
+    barSelect->setSelectedIndex(optionIndex(availableBars, m_selectedBarName));
+    barSelect->setFontSize(Style::fontSizeBody * scale);
+    barSelect->setControlHeight(Style::controlHeight * scale);
+    barSelect->setGlyphSize(Style::fontSizeBody * scale);
+    barSelect->setSize(150.0f * scale, Style::controlHeight * scale);
+    barSelect->setOnSelectionChanged([this, requestRebuild](std::size_t /*index*/, std::string_view value) {
+      m_selectedBarName = std::string(value);
+      requestRebuild();
+    });
+    barPicker->addChild(std::move(barSelect));
+    filters->addChild(std::move(barPicker));
+  }
+
+  main->addChild(std::move(filters));
+
+  auto scroll = std::make_unique<ScrollView>();
+  scroll->setFlexGrow(1.0f);
+  scroll->setScrollbarVisible(true);
+  scroll->setViewportPaddingH(0.0f);
+  scroll->setViewportPaddingV(0.0f);
+  scroll->setBackgroundStyle(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0), 0.0f);
+  auto* content = scroll->content();
+  content->setDirection(FlexDirection::Vertical);
+  content->setAlign(FlexAlign::Stretch);
+  content->setGap(Style::spaceMd * scale);
+
+  const auto makeSection = [&](std::string_view title) -> Flex* {
+    auto section = std::make_unique<Flex>();
+    section->setDirection(FlexDirection::Vertical);
+    section->setAlign(FlexAlign::Stretch);
+    section->setGap(Style::spaceSm * scale);
+    section->setPadding(Style::spaceMd * scale);
+    section->setBackground(roleColor(ColorRole::SurfaceVariant, 0.32f));
+    section->setBorderColor(roleColor(ColorRole::Outline, 0.35f));
+    section->setBorderWidth(Style::borderWidth);
+    section->setRadius(Style::radiusMd * scale);
+
+    auto titleLabel = makeLabel(title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true);
+    section->addChild(std::move(titleLabel));
+    auto* raw = section.get();
+    content->addChild(std::move(section));
+    return raw;
+  };
+
+  const auto makeResetButton = [&](const std::vector<std::string>& path) {
+    auto reset = std::make_unique<Button>();
+    reset->setText("Reset");
+    reset->setVariant(ButtonVariant::Ghost);
+    reset->setFontSize(Style::fontSizeCaption * scale);
+    reset->setMinHeight(Style::controlHeightSm * scale);
+    reset->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+    reset->setRadius(Style::radiusMd * scale);
+    reset->setOnClick([clearOverride, path]() { clearOverride(path); });
+    return reset;
+  };
+
+  const auto makeRow = [&](Flex& section, const settings::SettingEntry& entry, std::unique_ptr<Node> control) {
+    const bool overridden = (m_config != nullptr && m_config->hasOverride(entry.path));
+
+    auto row = std::make_unique<Flex>();
+    row->setDirection(FlexDirection::Horizontal);
+    row->setAlign(FlexAlign::Center);
+    row->setJustify(FlexJustify::SpaceBetween);
+    row->setGap(Style::spaceMd * scale);
+    row->setPadding(Style::spaceSm * scale, 0.0f);
+    row->setMinHeight(Style::controlHeightLg * scale);
+
+    auto copy = std::make_unique<Flex>();
+    copy->setDirection(FlexDirection::Vertical);
+    copy->setAlign(FlexAlign::Start);
+    copy->setGap(Style::spaceXs * scale);
+    copy->setFlexGrow(1.0f);
+
+    auto titleRow = std::make_unique<Flex>();
+    titleRow->setDirection(FlexDirection::Horizontal);
+    titleRow->setAlign(FlexAlign::Center);
+    titleRow->setGap(Style::spaceSm * scale);
+    titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
+    if (overridden) {
+      auto badge = makeLabel("Override", Style::fontSizeCaption * scale, roleColor(ColorRole::Primary), true);
+      titleRow->addChild(std::move(badge));
+    }
+    copy->addChild(std::move(titleRow));
+
+    if (!entry.subtitle.empty()) {
+      auto detail =
+          makeLabel(entry.subtitle, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false);
+      detail->setMaxWidth(360.0f * scale);
+      copy->addChild(std::move(detail));
+    }
+
+    row->addChild(std::move(copy));
+
+    auto actions = std::make_unique<Flex>();
+    actions->setDirection(FlexDirection::Horizontal);
+    actions->setAlign(FlexAlign::Center);
+    actions->setGap(Style::spaceSm * scale);
+    if (overridden) {
+      actions->addChild(makeResetButton(entry.path));
+    }
+    actions->addChild(std::move(control));
+    row->addChild(std::move(actions));
+
+    section.addChild(std::move(row));
+  };
+
+  const auto makeToggle = [&](bool checked, std::vector<std::string> path) {
+    auto toggle = std::make_unique<Toggle>();
+    toggle->setScale(scale);
+    toggle->setChecked(checked);
+    toggle->setOnChange([setOverride, path](bool value) { setOverride(path, value); });
+    return toggle;
+  };
+
+  const auto makeSelect = [&](std::vector<std::string> options, std::string selected, std::vector<std::string> path) {
+    auto select = std::make_unique<Select>();
+    select->setOptions(options);
+    select->setSelectedIndex(optionIndex(options, selected));
+    select->setFontSize(Style::fontSizeBody * scale);
+    select->setControlHeight(Style::controlHeight * scale);
+    select->setGlyphSize(Style::fontSizeBody * scale);
+    select->setSize(190.0f * scale, Style::controlHeight * scale);
+    select->setOnSelectionChanged(
+        [setOverride, path](std::size_t /*index*/, std::string_view value) { setOverride(path, std::string(value)); });
+    return select;
+  };
+
+  const auto makeSlider = [&](float value, float minValue, float maxValue, float step, std::vector<std::string> path,
+                              bool integerValue = false) {
+    auto wrap = std::make_unique<Flex>();
+    wrap->setDirection(FlexDirection::Horizontal);
+    wrap->setAlign(FlexAlign::Center);
+    wrap->setGap(Style::spaceSm * scale);
+
+    auto valueLabel =
+        makeLabel(integerValue ? std::format("{}", static_cast<int>(std::lround(value))) : std::format("{:.2f}", value),
+                  Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false);
+    valueLabel->setMinWidth(46.0f * scale);
+    auto* valueLabelPtr = valueLabel.get();
+
+    auto slider = std::make_unique<Slider>();
+    slider->setRange(minValue, maxValue);
+    slider->setStep(step);
+    slider->setSize(180.0f * scale, Style::controlHeight * scale);
+    slider->setControlHeight(Style::controlHeight * scale);
+    slider->setThumbSize(16.0f * scale);
+    slider->setTrackHeight(5.0f * scale);
+    slider->setValue(value);
+    slider->setOnValueChanged([valueLabelPtr, integerValue](float next) {
+      valueLabelPtr->setText(integerValue ? std::format("{}", static_cast<int>(std::lround(next)))
+                                          : std::format("{:.2f}", next));
+    });
+    slider->setOnDragEnd([setOverride, path, slider = slider.get(), integerValue]() {
+      if (integerValue) {
+        setOverride(path, static_cast<std::int64_t>(std::lround(slider->value())));
+      } else {
+        setOverride(path, static_cast<double>(slider->value()));
+      }
+    });
+
+    wrap->addChild(std::move(valueLabel));
+    wrap->addChild(std::move(slider));
+    return wrap;
+  };
+
+  const auto makeControl = [&](const settings::SettingEntry& entry) -> std::unique_ptr<Node> {
+    return std::visit(
+        [&](const auto& control) -> std::unique_ptr<Node> {
+          using T = std::decay_t<decltype(control)>;
+          if constexpr (std::is_same_v<T, settings::ToggleSetting>) {
+            return makeToggle(control.checked, entry.path);
+          } else if constexpr (std::is_same_v<T, settings::SelectSetting>) {
+            return makeSelect(control.options, control.selected, entry.path);
+          } else if constexpr (std::is_same_v<T, settings::SliderSetting>) {
+            return makeSlider(control.value, control.minValue, control.maxValue, control.step, entry.path,
+                              control.integerValue);
+          }
+        },
+        entry.control);
+  };
+
+  std::string activeSectionTitle;
+  Flex* activeSection = nullptr;
+  std::size_t visibleEntries = 0;
+
+  for (const auto& entry : registry) {
+    if (!settings::matchesSettingQuery(entry, m_searchQuery)) {
+      continue;
+    }
+
+    const std::string sectionTitle =
+        entry.section == "Bar" && selectedBar != nullptr ? std::format("Bar: {}", selectedBar->name) : entry.section;
+    if (sectionTitle != activeSectionTitle) {
+      activeSectionTitle = sectionTitle;
+      activeSection = makeSection(activeSectionTitle);
+    }
+    if (activeSection != nullptr) {
+      makeRow(*activeSection, entry, makeControl(entry));
+      ++visibleEntries;
+    }
+  }
+
+  if (visibleEntries == 0) {
+    auto emptyState = std::make_unique<Flex>();
+    emptyState->setDirection(FlexDirection::Vertical);
+    emptyState->setAlign(FlexAlign::Center);
+    emptyState->setJustify(FlexJustify::Center);
+    emptyState->setGap(Style::spaceXs * scale);
+    emptyState->setPadding((Style::spaceLg + Style::spaceMd) * scale);
+    emptyState->setBackground(roleColor(ColorRole::SurfaceVariant, 0.24f));
+    emptyState->setBorderColor(roleColor(ColorRole::Outline, 0.28f));
+    emptyState->setBorderWidth(Style::borderWidth);
+    emptyState->setRadius(Style::radiusMd * scale);
+    emptyState->addChild(
+        makeLabel("No settings found", Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
+    emptyState->addChild(makeLabel("Try a different setting name or config key.", Style::fontSizeCaption * scale,
+                                   roleColor(ColorRole::OnSurfaceVariant), false));
+    content->addChild(std::move(emptyState));
+  }
+
+  main->addChild(std::move(scroll));
 
   main->setSize(w, h);
   main->layout(*m_renderContext);
@@ -202,6 +523,10 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   m_inputDispatcher.setSceneRoot(m_sceneRoot.get());
   m_inputDispatcher.setCursorShapeCallback(
       [this](std::uint32_t serial, std::uint32_t shape) { m_wayland->setCursorShape(serial, shape); });
+  if (m_focusSearchOnRebuild && searchInputPtr != nullptr && searchInputPtr->inputArea() != nullptr) {
+    m_inputDispatcher.setFocus(searchInputPtr->inputArea());
+    m_focusSearchOnRebuild = false;
+  }
   m_surface->setSceneRoot(m_sceneRoot.get());
 }
 
@@ -241,6 +566,9 @@ bool SettingsWindow::onPointerEvent(const PointerEvent& event) {
     if (onThis || m_pointerInside) {
       if (onThis) {
         m_pointerInside = true;
+      }
+      if (pressed) {
+        Select::handleGlobalPointerPress(m_inputDispatcher.hoveredArea());
       }
       m_inputDispatcher.pointerButton(static_cast<float>(event.sx), static_cast<float>(event.sy), event.button,
                                       pressed);
