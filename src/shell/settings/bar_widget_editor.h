@@ -23,6 +23,7 @@ namespace settings {
     std::string& openWidgetPickerPath;
     std::string& editingWidgetName;
     std::string& pendingDeleteWidgetName;
+    std::string& pendingDeleteWidgetSettingPath;
     std::string& renamingWidgetName;
     std::string& creatingWidgetType;
 

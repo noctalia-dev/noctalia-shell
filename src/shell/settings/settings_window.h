@@ -58,6 +58,7 @@ private:
   std::string m_openWidgetPickerPath;
   std::string m_editingWidgetName;
   std::string m_pendingDeleteWidgetName;
+  std::string m_pendingDeleteWidgetSettingPath;
   std::string m_renamingWidgetName;
   std::string m_creatingWidgetType;
   std::string m_selectedBarName;

@@ -909,6 +909,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       .openWidgetPickerPath = m_openWidgetPickerPath,
       .editingWidgetName = m_editingWidgetName,
       .pendingDeleteWidgetName = m_pendingDeleteWidgetName,
+      .pendingDeleteWidgetSettingPath = m_pendingDeleteWidgetSettingPath,
       .renamingWidgetName = m_renamingWidgetName,
       .creatingWidgetType = m_creatingWidgetType,
       .requestRebuild = requestRebuild,

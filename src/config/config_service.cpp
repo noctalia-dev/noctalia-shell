@@ -940,7 +940,8 @@ bool ConfigService::writeOverridesToFile() {
     if (!out.is_open()) {
       return false;
     }
-    out << m_overridesTable;
+    out << toml::toml_formatter{m_overridesTable,
+                                toml::toml_formatter::default_flags & ~toml::format_flags::allow_literal_strings};
     if (!out.good()) {
       return false;
     }
