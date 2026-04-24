@@ -204,11 +204,11 @@ void Slider::applyVisualState() {
   Color thumbColor = resolved(ColorRole::Primary);
   Color thumbBorder = resolved(ColorRole::OnPrimary);
 
+  m_thumb->setVisible(m_enabled);
+
   if (!m_enabled) {
     trackColor = resolved(ColorRole::Outline, 0.5f);
     fillColor = resolved(ColorRole::Primary, 0.5f);
-    thumbColor = resolved(ColorRole::Surface, 0.7f);
-    thumbBorder = resolved(ColorRole::Primary, 0.6f);
   } else if (pressing) {
     thumbColor = resolved(ColorRole::Primary);
     thumbBorder = resolved(ColorRole::Primary);
