@@ -25,18 +25,6 @@
 
 namespace {
 
-  const char* themeModeString(ThemeMode mode) {
-    switch (mode) {
-    case ThemeMode::Dark:
-      return "dark";
-    case ThemeMode::Light:
-      return "light";
-    case ThemeMode::Auto:
-      return "auto";
-    }
-    return "dark";
-  }
-
   toml::table* ensureTable(toml::table& parent, std::string_view key) {
     if (auto* existing = parent.get_as<toml::table>(key)) {
       return existing;
@@ -437,7 +425,7 @@ void ConfigService::setThemeMode(ThemeMode mode) {
   }
 
   auto* themeTbl = ensureTable(m_overridesTable, "theme");
-  themeTbl->insert_or_assign("mode", std::string(themeModeString(mode)));
+  themeTbl->insert_or_assign("mode", std::string(enumToKey(kThemeModes, mode)));
 
   if (!writeOverridesToFile()) {
     kLog.warn("failed to write {}", m_overridesPath);
@@ -1318,23 +1306,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto polkitAgent = (*shellTbl)["polkit_agent"].value<bool>()) {
       shell.polkitAgent = *polkitAgent;
     }
-    const auto parsePasswordMaskStyle = [](std::string_view raw) -> std::optional<PasswordMaskStyle> {
-      const std::string style = StringUtils::toLower(StringUtils::trim(raw));
-      if (style == "default" || style == "circle_filled" || style == "circle-filled" || style == "circle") {
-        return PasswordMaskStyle::CircleFilled;
-      }
-      if (style == "random" || style == "random_icons" || style == "random-icons") {
-        return PasswordMaskStyle::RandomIcons;
-      }
-      return std::nullopt;
-    };
-    if (auto passwordStyle = (*shellTbl)["password_style"].value<std::string>()) {
-      if (const auto parsed = parsePasswordMaskStyle(*passwordStyle); parsed.has_value()) {
-        shell.passwordMaskStyle = *parsed;
-      }
-    } else if (auto passwordMaskStyle = (*shellTbl)["password_mask_style"].value<std::string>()) {
-      // Backward-compat alias for older configs.
-      if (const auto parsed = parsePasswordMaskStyle(*passwordMaskStyle); parsed.has_value()) {
+    if (auto v = (*shellTbl)["password_mask_style"].value<std::string>()) {
+      if (auto parsed = enumFromKey(kPasswordMaskStyles, *v)) {
         shell.passwordMaskStyle = *parsed;
       }
     }
@@ -1353,16 +1326,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
       shell.showLocation = *v;
     }
     if (auto v = (*shellTbl)["clipboard_auto_paste"].value<std::string>()) {
-      if (*v == "off") {
-        shell.clipboardAutoPaste = ClipboardAutoPasteMode::Off;
-      } else if (*v == "auto") {
-        shell.clipboardAutoPaste = ClipboardAutoPasteMode::Auto;
-      } else if (*v == "ctrl_v") {
-        shell.clipboardAutoPaste = ClipboardAutoPasteMode::CtrlV;
-      } else if (*v == "ctrl_shift_v") {
-        shell.clipboardAutoPaste = ClipboardAutoPasteMode::CtrlShiftV;
-      } else if (*v == "shift_insert") {
-        shell.clipboardAutoPaste = ClipboardAutoPasteMode::ShiftInsert;
+      if (auto parsed = enumFromKey(kClipboardAutoPasteModes, *v)) {
+        shell.clipboardAutoPaste = *parsed;
       }
     }
   }
@@ -1371,12 +1336,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
   if (auto* themeTbl = tbl["theme"].as_table()) {
     auto& theme = m_config.theme;
     if (auto v = (*themeTbl)["source"].value<std::string>()) {
-      if (*v == "builtin")
-        theme.source = ThemeSource::Builtin;
-      else if (*v == "wallpaper")
-        theme.source = ThemeSource::Wallpaper;
-      else if (*v == "community")
-        theme.source = ThemeSource::Community;
+      if (auto parsed = enumFromKey(kThemeSources, *v)) {
+        theme.source = *parsed;
+      }
     }
     if (auto builtinPalette = (*themeTbl)["builtin_palette"].value<std::string>()) {
       theme.builtinPalette = *builtinPalette;
@@ -1389,12 +1351,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto v = (*themeTbl)["wallpaper_scheme"].value<std::string>())
       theme.wallpaperScheme = *v;
     if (auto v = (*themeTbl)["mode"].value<std::string>()) {
-      if (*v == "dark")
-        theme.mode = ThemeMode::Dark;
-      else if (*v == "light")
-        theme.mode = ThemeMode::Light;
-      else if (*v == "auto")
-        theme.mode = ThemeMode::Auto;
+      if (auto parsed = enumFromKey(kThemeModes, *v)) {
+        theme.mode = *parsed;
+      }
     }
     if (const auto* templatesTbl = (*themeTbl)["templates"].as_table()) {
       auto& templates = theme.templates;

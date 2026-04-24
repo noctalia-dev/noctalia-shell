@@ -5,10 +5,12 @@
 #include "ui/style.h"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -234,6 +236,31 @@ struct NotificationConfig {
   bool backgroundBlur = true;
 };
 
+template <typename T> struct EnumOption {
+  T value;
+  std::string_view key;
+  std::string_view labelKey;
+};
+
+template <typename T, std::size_t N>
+constexpr std::optional<T> enumFromKey(const EnumOption<T> (&options)[N], std::string_view key) {
+  for (const auto& opt : options) {
+    if (opt.key == key) {
+      return opt.value;
+    }
+  }
+  return std::nullopt;
+}
+
+template <typename T, std::size_t N> constexpr std::string_view enumToKey(const EnumOption<T> (&options)[N], T value) {
+  for (const auto& opt : options) {
+    if (opt.value == value) {
+      return opt.key;
+    }
+  }
+  return {};
+}
+
 enum class ClipboardAutoPasteMode : std::uint8_t {
   Off = 0,
   Auto = 1,
@@ -242,9 +269,22 @@ enum class ClipboardAutoPasteMode : std::uint8_t {
   ShiftInsert = 4,
 };
 
+constexpr EnumOption<ClipboardAutoPasteMode> kClipboardAutoPasteModes[] = {
+    {ClipboardAutoPasteMode::Off, "off", "common.off"},
+    {ClipboardAutoPasteMode::Auto, "auto", "common.auto"},
+    {ClipboardAutoPasteMode::CtrlV, "ctrl_v", "settings.opt.ctrl-v"},
+    {ClipboardAutoPasteMode::CtrlShiftV, "ctrl_shift_v", "settings.opt.ctrl-shift-v"},
+    {ClipboardAutoPasteMode::ShiftInsert, "shift_insert", "settings.opt.shift-insert"},
+};
+
 enum class PasswordMaskStyle : std::uint8_t {
   CircleFilled = 0,
   RandomIcons = 1,
+};
+
+constexpr EnumOption<PasswordMaskStyle> kPasswordMaskStyles[] = {
+    {PasswordMaskStyle::CircleFilled, "default", "settings.opt.filled-circles"},
+    {PasswordMaskStyle::RandomIcons, "random", "settings.opt.random-icons"},
 };
 
 struct ShellConfig {
@@ -384,10 +424,22 @@ enum class ThemeSource : std::uint8_t {
   Community = 2,
 };
 
+constexpr EnumOption<ThemeSource> kThemeSources[] = {
+    {ThemeSource::Builtin, "builtin", "settings.opt.builtin"},
+    {ThemeSource::Wallpaper, "wallpaper", "settings.opt.wallpaper"},
+    {ThemeSource::Community, "community", "settings.opt.community"},
+};
+
 enum class ThemeMode : std::uint8_t {
   Dark = 0,
   Light = 1,
   Auto = 2,
+};
+
+constexpr EnumOption<ThemeMode> kThemeModes[] = {
+    {ThemeMode::Dark, "dark", "settings.opt.dark"},
+    {ThemeMode::Light, "light", "settings.opt.light"},
+    {ThemeMode::Auto, "auto", "common.auto"},
 };
 
 struct ThemeConfig {

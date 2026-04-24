@@ -12,37 +12,6 @@
 namespace settings {
   namespace {
 
-    template <typename T> struct EnumOption {
-      T value;
-      std::string_view key;
-      std::string_view labelKey;
-    };
-
-    constexpr EnumOption<ThemeMode> kThemeModes[] = {
-        {ThemeMode::Dark, "dark", "settings.opt.dark"},
-        {ThemeMode::Light, "light", "settings.opt.light"},
-        {ThemeMode::Auto, "auto", "common.auto"},
-    };
-
-    constexpr EnumOption<ThemeSource> kThemeSources[] = {
-        {ThemeSource::Builtin, "builtin", "settings.opt.builtin"},
-        {ThemeSource::Wallpaper, "wallpaper", "settings.opt.wallpaper"},
-        {ThemeSource::Community, "community", "settings.opt.community"},
-    };
-
-    constexpr EnumOption<ClipboardAutoPasteMode> kClipboardAutoPasteModes[] = {
-        {ClipboardAutoPasteMode::Off, "off", "common.off"},
-        {ClipboardAutoPasteMode::Auto, "auto", "common.auto"},
-        {ClipboardAutoPasteMode::CtrlV, "ctrl_v", "settings.opt.ctrl-v"},
-        {ClipboardAutoPasteMode::CtrlShiftV, "ctrl_shift_v", "settings.opt.ctrl-shift-v"},
-        {ClipboardAutoPasteMode::ShiftInsert, "shift_insert", "settings.opt.shift-insert"},
-    };
-
-    constexpr EnumOption<PasswordMaskStyle> kPasswordMaskStyles[] = {
-        {PasswordMaskStyle::CircleFilled, "default", "settings.opt.filled-circles"},
-        {PasswordMaskStyle::RandomIcons, "random", "settings.opt.random-icons"},
-    };
-
     template <typename T, std::size_t N> SelectSetting enumSelect(const EnumOption<T> (&options)[N], T selected) {
       std::vector<SelectOption> opts;
       opts.reserve(N);
