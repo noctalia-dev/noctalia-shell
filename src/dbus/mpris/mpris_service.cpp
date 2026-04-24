@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cmath>
 #include <format>
+#include <limits>
 #include <map>
 #include <sdbus-c++/IObject.h>
 #include <sdbus-c++/IProxy.h>
@@ -271,6 +272,19 @@ namespace {
     player["can_go_previous"] = sdbus::Variant(info.canGoPrevious);
     player["can_seek"] = sdbus::Variant(info.canSeek);
     return player;
+  }
+
+  // Some players report "infinite" stream duration as a sentinel near int64 max.
+  // Treat those as unknown length (0) so UI duration/progress stays sane.
+  int64_t sanitizeLengthUs(int64_t rawLengthUs) {
+    if (rawLengthUs <= 0) {
+      return 0;
+    }
+    constexpr int64_t kInfiniteLengthUsFloor = std::numeric_limits<int64_t>::max() / 1024;
+    if (rawLengthUs >= kInfiniteLengthUsFloor) {
+      return 0;
+    }
+    return rawLengthUs;
   }
 
   constexpr Logger kLog("mpris");
@@ -1551,7 +1565,7 @@ MprisPlayerInfo MprisService::readPlayerInfo(sdbus::IProxy& proxy, const std::st
       .shuffle = get_bool_from_props(playerProps, "Shuffle"),
       .volume = get_double_from_props(playerProps, "Volume", 1.0),
       .positionUs = get_int64_from_props(playerProps, "Position"),
-      .lengthUs = get_int64_from_variant(metadata, "mpris:length"),
+      .lengthUs = sanitizeLengthUs(get_int64_from_variant(metadata, "mpris:length")),
       .canPlay = get_bool_from_props(playerProps, "CanPlay"),
       .canPause = get_bool_from_props(playerProps, "CanPause"),
       .canGoNext = get_bool_from_props(playerProps, "CanGoNext"),
