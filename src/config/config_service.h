@@ -516,15 +516,15 @@ public:
 
   void registerIpc(IpcService& ipc);
 
-  // Persisted wallpaper paths (written to overrides.toml, app-managed).
+  // Persisted wallpaper paths (written to settings.toml, app-managed).
   [[nodiscard]] std::string getWallpaperPath(const std::string& connectorName) const;
   [[nodiscard]] std::string getDefaultWallpaperPath() const;
   void setWallpaperPath(const std::optional<std::string>& connectorName, const std::string& path);
   void setWallpaperChangeCallback(ChangeCallback callback);
 
-  // Persist a theme-mode override to overrides.toml and trigger the reload pipeline.
+  // Persist a theme-mode override to settings.toml and trigger the reload pipeline.
   void setThemeMode(ThemeMode mode);
-  // Persist dock enabled override to overrides.toml and trigger the reload pipeline.
+  // Persist dock enabled override to settings.toml and trigger the reload pipeline.
   void setDockEnabled(bool enabled);
   [[nodiscard]] bool hasOverride(const std::vector<std::string>& path) const;
   bool setOverride(const std::vector<std::string>& path, ConfigOverrideValue value);
@@ -548,7 +548,7 @@ private:
   // Hand-authored config directory: all *.toml merged alphabetically.
   std::string m_configDir;
 
-  // App-writable overrides file (state dir): lives outside config dir so it
+  // App-writable settings file (state dir): lives outside config dir so it
   // can still be written when the config dir is read-only (e.g. NixOS).
   std::string m_overridesPath;
   toml::table m_overridesTable;

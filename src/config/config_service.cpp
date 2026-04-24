@@ -288,12 +288,12 @@ ConfigService::WallpaperBatch::~WallpaperBatch() {
 ConfigService::ConfigService() {
   m_configDir = FileUtils::configDir();
 
-  // Resolve overrides.toml path; create the state dir eagerly so writes don't
+  // Resolve settings.toml path; create the state dir eagerly so writes don't
   // race with directory creation later.
   if (auto dir = FileUtils::stateDir(); !dir.empty()) {
     std::error_code ec;
     std::filesystem::create_directories(dir, ec);
-    m_overridesPath = dir + "/overrides.toml";
+    m_overridesPath = dir + "/settings.toml";
   }
 
   loadOverridesFromFile();
@@ -830,7 +830,7 @@ void ConfigService::setupWatch() {
     }
   }
 
-  // Also watch the state dir for overrides.toml edits (external writes).
+  // Also watch the state dir for settings.toml edits (external writes).
   if (!m_overridesPath.empty()) {
     const auto overridesDir = std::filesystem::path(m_overridesPath).parent_path().string();
     m_overridesWatchWd =
