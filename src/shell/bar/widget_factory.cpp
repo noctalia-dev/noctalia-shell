@@ -140,7 +140,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "launcher") {
-    auto barGlyph = wc != nullptr ? wc->getString("icon", "search") : std::string{"search"};
+    auto barGlyph = wc != nullptr ? wc->getString("glyph", "search") : std::string{"search"};
     if (barGlyph.empty()) {
       barGlyph = "search";
     }
@@ -203,7 +203,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "session") {
-    auto barGlyph = wc != nullptr ? wc->getString("icon", "shutdown") : std::string{"shutdown"};
+    auto barGlyph = wc != nullptr ? wc->getString("glyph", "shutdown") : std::string{"shutdown"};
     if (barGlyph.empty()) {
       barGlyph = "shutdown";
     }
@@ -213,7 +213,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "settings") {
-    auto barGlyph = wc != nullptr ? wc->getString("icon", "settings") : std::string{"settings"};
+    auto barGlyph = wc != nullptr ? wc->getString("glyph", "settings") : std::string{"settings"};
     if (barGlyph.empty()) {
       barGlyph = "search";
     }
@@ -282,7 +282,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "wallpaper") {
-    auto barGlyph = wc != nullptr ? wc->getString("icon", "wallpaper-selector") : std::string{"wallpaper-selector"};
+    auto barGlyph = wc != nullptr ? wc->getString("glyph", "wallpaper-selector") : std::string{"wallpaper-selector"};
     if (barGlyph.empty()) {
       barGlyph = "wallpaper-selector";
     }

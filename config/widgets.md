@@ -289,11 +289,11 @@ Opens the launcher panel on click.
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `icon` | string | `"search"` | Bar glyph id (Tabler-backed aliases) |
+| `glyph` | string | `"search"` | Bar glyph id (Tabler-backed aliases) |
 
 ```toml
 [widget.launcher]
-icon = "menu"
+glyph = "menu"
 ```
 
 ---
@@ -412,11 +412,11 @@ Shows a power glyph and opens the session menu panel on click.
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `icon` | string | `"shutdown"` | Bar glyph id (Tabler-backed aliases) |
+| `glyph` | string | `"shutdown"` | Bar glyph id (Tabler-backed aliases) |
 
 ```toml
 [widget.session]
-icon = "lock"
+glyph = "lock"
 ```
 
 ---
@@ -427,11 +427,11 @@ Shows a glyph and opens the wallpaper picker panel on click.
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `icon` | string | `"wallpaper-selector"` | Bar glyph id (Tabler-backed aliases) |
+| `glyph` | string | `"wallpaper-selector"` | Bar glyph id (Tabler-backed aliases) |
 
 ```toml
 [widget.wallpaper]
-icon = "photo"
+glyph = "photo"
 ```
 
 ---
