@@ -63,24 +63,25 @@ Slider::Slider() {
     }
     updateFromLocalX(data.localX);
   });
-  area->setOnAxis([this](const InputArea::PointerData& data) {
-    if (!m_enabled || data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
-      return;
+  area->setOnAxisHandler([this](const InputArea::PointerData& data) {
+    if (!m_enabled || !m_wheelAdjustEnabled || data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
+      return false;
     }
     const float lines = data.scrollDelta(1.0f);
     if (lines == 0.0f) {
-      return;
+      return false;
     }
     // Per-line step: use the slider's snap step, else 5% of range.
     const float step = m_step > 0.0f ? m_step : (m_max - m_min) * 0.05f;
     if (step <= 0.0f) {
-      return;
+      return false;
     }
     // Wayland convention: positive axisLines = scroll down. Scroll up should increase.
     setValue(m_value - lines * step);
     if (m_onDragEnd) {
       m_onDragEnd();
     }
+    return true;
   });
   m_inputArea = static_cast<InputArea*>(addChild(std::move(area)));
   m_inputArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
@@ -144,6 +145,8 @@ void Slider::setControlHeight(float height) {
   updateGeometry();
   markLayoutDirty();
 }
+
+void Slider::setWheelAdjustEnabled(bool enabled) { m_wheelAdjustEnabled = enabled; }
 
 void Slider::setOnValueChanged(std::function<void(float)> callback) { m_onValueChanged = std::move(callback); }
 

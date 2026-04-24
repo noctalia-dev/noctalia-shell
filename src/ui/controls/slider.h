@@ -20,6 +20,7 @@ public:
   void setTrackHeight(float height);
   void setThumbSize(float size);
   void setControlHeight(float height);
+  void setWheelAdjustEnabled(bool enabled);
   void setOnValueChanged(std::function<void(float)> callback);
   void setOnDragEnd(std::function<void()> callback);
 
@@ -27,6 +28,7 @@ public:
   [[nodiscard]] float minValue() const noexcept { return m_min; }
   [[nodiscard]] float maxValue() const noexcept { return m_max; }
   [[nodiscard]] bool enabled() const noexcept { return m_enabled; }
+  [[nodiscard]] bool wheelAdjustEnabled() const noexcept { return m_wheelAdjustEnabled; }
   [[nodiscard]] bool dragging() const noexcept;
 
 private:
@@ -50,6 +52,7 @@ private:
   float m_step = 1.0f;
   float m_value = 50.0f;
   bool m_enabled = true;
+  bool m_wheelAdjustEnabled = false;
   float m_trackHeight = 6.0f;
   float m_thumbSizePx = 16.0f;
   float m_controlHeightPx = Style::controlHeight;

@@ -37,6 +37,7 @@ public:
   };
 
   using PointerCallback = std::function<void(const PointerData&)>;
+  using AxisCallback = std::function<bool(const PointerData&)>;
   using KeyCallback = std::function<void(const KeyData&)>;
   using VoidCallback = std::function<void()>;
   using DestroyCallback = std::function<void(InputArea*)>;
@@ -55,6 +56,7 @@ public:
   void setOnPress(PointerCallback callback);
   void setOnClick(PointerCallback callback);
   void setOnAxis(PointerCallback callback);
+  void setOnAxisHandler(AxisCallback callback);
 
   // Keyboard / focus
   void setFocusable(bool focusable);
@@ -90,8 +92,9 @@ public:
   void dispatchLeave();
   void dispatchMotion(float localX, float localY);
   void dispatchPress(float localX, float localY, std::uint32_t button, bool isPressed);
-  void dispatchAxis(float localX, float localY, std::uint32_t axis, std::uint32_t axisSource, double axisValue,
-                    std::int32_t axisDiscrete, std::int32_t axisValue120, float axisLines);
+  [[nodiscard]] bool dispatchAxis(float localX, float localY, std::uint32_t axis, std::uint32_t axisSource,
+                                  double axisValue, std::int32_t axisDiscrete, std::int32_t axisValue120,
+                                  float axisLines);
   void dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed, bool preedit = false);
   void dispatchFocusGain();
   void dispatchFocusLoss();
@@ -104,7 +107,7 @@ private:
   PointerCallback m_onMotion;
   PointerCallback m_onPress;
   PointerCallback m_onClick;
-  PointerCallback m_onAxis;
+  AxisCallback m_onAxis;
   KeyCallback m_onKeyDown;
   KeyCallback m_onKeyUp;
   VoidCallback m_onFocusGain;

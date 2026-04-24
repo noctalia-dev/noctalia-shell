@@ -85,7 +85,7 @@ bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, std::uin
     return false;
   }
 
-  bool dispatched = false;
+  bool consumedAny = false;
   for (Node* node = target; node != nullptr; node = node->parent()) {
     auto* area = dynamic_cast<InputArea*>(node);
     if (area == nullptr || !area->enabled()) {
@@ -95,14 +95,18 @@ bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, std::uin
     float localX = 0.0f;
     float localY = 0.0f;
     (void)Node::mapFromScene(area, x, y, localX, localY);
-    area->dispatchAxis(localX, localY, axis, axisSource, value, discrete, value120, lines);
-    dispatched = true;
+    const bool consumed = area->dispatchAxis(localX, localY, axis, axisSource, value, discrete, value120, lines);
 
+    if (!consumed) {
+      continue;
+    }
+
+    consumedAny = true;
     if (!area->propagateEvents()) {
       break;
     }
   }
-  return dispatched;
+  return consumedAny;
 }
 
 void InputDispatcher::keyEvent(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed,

@@ -16,7 +16,13 @@ void InputArea::setOnEnter(PointerCallback callback) { m_onEnter = std::move(cal
 void InputArea::setOnLeave(VoidCallback callback) { m_onLeave = std::move(callback); }
 void InputArea::setOnMotion(PointerCallback callback) { m_onMotion = std::move(callback); }
 void InputArea::setOnPress(PointerCallback callback) { m_onPress = std::move(callback); }
-void InputArea::setOnAxis(PointerCallback callback) { m_onAxis = std::move(callback); }
+void InputArea::setOnAxis(PointerCallback callback) {
+  m_onAxis = [callback = std::move(callback)](const PointerData& data) {
+    callback(data);
+    return true;
+  };
+}
+void InputArea::setOnAxisHandler(AxisCallback callback) { m_onAxis = std::move(callback); }
 void InputArea::setOnClick(PointerCallback callback) {
   m_onClick = std::move(callback);
   if (m_onClick && m_cursorShape == 0) {
@@ -79,19 +85,20 @@ void InputArea::dispatchPress(float localX, float localY, std::uint32_t button, 
   }
 }
 
-void InputArea::dispatchAxis(float localX, float localY, std::uint32_t axis, std::uint32_t axisSource, double axisValue,
+bool InputArea::dispatchAxis(float localX, float localY, std::uint32_t axis, std::uint32_t axisSource, double axisValue,
                              std::int32_t axisDiscrete, std::int32_t axisValue120, float axisLines) {
   if (m_onAxis) {
-    m_onAxis({.localX = localX,
-              .localY = localY,
-              .axis = axis,
-              .axisSource = axisSource,
-              .pressed = false,
-              .axisValue = axisValue,
-              .axisDiscrete = axisDiscrete,
-              .axisValue120 = axisValue120,
-              .axisLines = axisLines});
+    return m_onAxis({.localX = localX,
+                     .localY = localY,
+                     .axis = axis,
+                     .axisSource = axisSource,
+                     .pressed = false,
+                     .axisValue = axisValue,
+                     .axisDiscrete = axisDiscrete,
+                     .axisValue120 = axisValue120,
+                     .axisLines = axisLines});
   }
+  return false;
 }
 
 void InputArea::dispatchKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed,
