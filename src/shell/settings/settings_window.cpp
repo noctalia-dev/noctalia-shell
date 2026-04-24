@@ -13,6 +13,7 @@
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/select.h"
+#include "ui/controls/separator.h"
 #include "ui/controls/slider.h"
 #include "ui/controls/toggle.h"
 #include "ui/palette.h"
@@ -396,12 +397,24 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     return raw;
   };
 
-  const auto addGroupLabel = [&](Flex& section, std::string_view title) {
+  const auto addGroupLabel = [&](Flex& section, std::string_view title, bool isFirst) {
     if (title.empty()) {
       return;
     }
-    auto label = makeLabel(title, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), true);
-    section.addChild(std::move(label));
+    if (!isFirst) {
+      auto header = std::make_unique<Flex>();
+      header->setDirection(FlexDirection::Vertical);
+      header->setAlign(FlexAlign::Stretch);
+      header->setGap(Style::spaceSm * scale);
+      header->setPadding(Style::spaceSm * scale, 0.0f, 0.0f, 0.0f);
+      auto sep = std::make_unique<Separator>();
+      sep->setColor(roleColor(ColorRole::Outline, 0.20f));
+      header->addChild(std::move(sep));
+      header->addChild(makeLabel(title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurfaceVariant), true));
+      section.addChild(std::move(header));
+    } else {
+      section.addChild(makeLabel(title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurfaceVariant), true));
+    }
   };
 
   const auto makeResetButton = [&](const std::vector<std::string>& path) {
@@ -567,8 +580,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     }
     if (activeSection != nullptr) {
       if (entry.group != activeGroupTitle) {
+        const bool isFirstGroup = activeGroupTitle.empty();
         activeGroupTitle = entry.group;
-        addGroupLabel(*activeSection, activeGroupTitle);
+        addGroupLabel(*activeSection, activeGroupTitle, isFirstGroup);
       }
       makeRow(*activeSection, entry, makeControl(entry));
       ++visibleEntries;
