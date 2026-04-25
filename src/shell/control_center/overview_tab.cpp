@@ -129,11 +129,10 @@ std::unique_ptr<Flex> OverviewTab::create() {
   mediaContent->setAlign(FlexAlign::Center);
   mediaContent->setGap(Style::spaceSm * scale);
 
-  auto mediaArt = std::make_unique<Image>();
   const float artSize = Style::controlHeightLg * 1.55f * scale;
+  auto mediaArt = std::make_unique<Image>();
   mediaArt->setSize(artSize, artSize);
   mediaArt->setRadius(Style::radiusLg * scale);
-  mediaArt->setFill(roleColor(ColorRole::SurfaceVariant));
   mediaArt->setFit(ImageFit::Cover);
   m_mediaArt = mediaArt.get();
   mediaContent->addChild(std::move(mediaArt));
@@ -188,13 +187,12 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userRow->setAlign(FlexAlign::Center);
   userRow->setGap(Style::spaceMd * scale);
 
+  const float avatarSize = Style::controlHeightLg * 2.2f * scale;
   auto avatar = std::make_unique<Image>();
   avatar->setRadius(Style::radiusLg * scale);
-  avatar->setFill(roleColor(ColorRole::SurfaceVariant));
   avatar->setBorder(roleColor(ColorRole::Primary), Style::borderWidth * 2.0f);
   avatar->setFit(ImageFit::Cover);
   avatar->setPadding(1.0f * scale);
-  const float avatarSize = Style::controlHeightLg * 2.2f * scale;
   avatar->setSize(avatarSize, avatarSize);
   m_userAvatar = avatar.get();
   userRow->addChild(std::move(avatar));
@@ -407,6 +405,8 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
     const float desiredAvatar = std::max(minAvatar, m_userMain->height());
     if (std::abs(m_userAvatar->width() - desiredAvatar) > 0.5f) {
       m_userAvatar->setSize(desiredAvatar, desiredAvatar);
+      m_userAvatar->setRadius(Style::radiusLg * scale);
+      m_userAvatar->setPadding(1.0f * scale);
     }
     m_userMain->setMinHeight(desiredAvatar);
   }

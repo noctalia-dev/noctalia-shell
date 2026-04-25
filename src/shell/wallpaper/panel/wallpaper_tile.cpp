@@ -70,7 +70,6 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   image->setFit(ImageFit::Cover);
   image->setRadius(frameRadius);
   image->setBorder(roleColor(ColorRole::Outline), outlineWidth);
-  image->setFill(roleColor(ColorRole::Surface));
   image->setFrameSize(frameWidth, frameHeight);
   m_thumb = static_cast<Image*>(m_thumbBox->addChild(std::move(image)));
 
@@ -225,12 +224,26 @@ void WallpaperTile::setHoveredVisual(bool hovered) {
   applyVisualState();
 }
 
+void WallpaperTile::setLightTheme(bool lightTheme) {
+  if (m_lightTheme == lightTheme) {
+    return;
+  }
+  m_lightTheme = lightTheme;
+  applyVisualState();
+}
+
+Color WallpaperTile::inactiveThumbnailTint() const {
+  const float multiplier = m_lightTheme ? 1.22f : 0.62f;
+  return rgba(multiplier, multiplier, multiplier, 1.0f);
+}
+
 void WallpaperTile::applyVisualState() {
   if (m_thumbBox == nullptr || m_thumb == nullptr) {
     return;
   }
   const bool active = m_selected || m_hoveredVisual;
-  setOpacity(active ? 1.0f : 0.75f);
+  setOpacity(1.0f);
+  m_thumb->setTint(active ? rgba(1.0f, 1.0f, 1.0f, 1.0f) : inactiveThumbnailTint());
 
   const float outlineWidth = Style::borderWidth * 2.0f;
   ThemeColor borderColor = active ? roleColor(ColorRole::Primary) : roleColor(ColorRole::Outline);

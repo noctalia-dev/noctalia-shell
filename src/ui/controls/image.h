@@ -7,7 +7,6 @@
 
 #include <string>
 
-class Box;
 class ImageNode;
 class Renderer;
 class AsyncTextureCache;
@@ -24,8 +23,6 @@ public:
   ~Image() override;
 
   void setRadius(float radius);
-  void setFill(const ThemeColor& color);
-  void setFill(const Color& color);
   void setBorder(const ThemeColor& color, float width);
   void setBorder(const Color& color, float width);
   void setTint(const Color& tint);
@@ -60,12 +57,10 @@ public:
 
 private:
   void doLayout(Renderer& renderer) override;
-  void ensureBackground();
   void applyPalette();
   void updateLayout();
   void clearAsyncSource();
 
-  Box* m_background = nullptr;
   ImageNode* m_image = nullptr;
   TextureHandle m_texture{};
   bool m_ownsTexture = false;
@@ -73,7 +68,6 @@ private:
   float m_radius = 0.0f;
   float m_padding = 0.0f;
   ImageFit m_fit = ImageFit::Contain;
-  ThemeColor m_fill = clearThemeColor();
   ThemeColor m_border = clearThemeColor();
   float m_borderWidth = 0.0f;
   Renderer* m_renderer = nullptr;

@@ -38,6 +38,7 @@ public:
   void setOnScroll(ScrollCallback callback);
   void setRenderer(Renderer* renderer);
   void setThumbnailService(ThumbnailService* service);
+  void setLightTheme(bool lightTheme);
   void setHighlightedIndex(std::size_t selectedIndex, std::size_t hoverIndex, bool hoverEnabled);
   void refreshVisibleThumbnails(Renderer& renderer);
 
@@ -71,4 +72,5 @@ private:
   std::size_t m_selectedIndex = kPageSize;
   std::size_t m_hoverIndex = kPageSize;
   bool m_hoverEnabled = false;
+  bool m_lightTheme = false;
 };

@@ -43,6 +43,18 @@ void WallpaperPageGrid::setThumbnailService(ThumbnailService* service) {
   }
 }
 
+void WallpaperPageGrid::setLightTheme(bool lightTheme) {
+  if (m_lightTheme == lightTheme) {
+    return;
+  }
+  m_lightTheme = lightTheme;
+  for (WallpaperTile* tile : m_pool) {
+    if (tile != nullptr) {
+      tile->setLightTheme(lightTheme);
+    }
+  }
+}
+
 void WallpaperPageGrid::setHighlightedIndex(std::size_t selectedIndex, std::size_t hoverIndex, bool hoverEnabled) {
   m_selectedIndex = selectedIndex;
   m_hoverIndex = hoverIndex;
@@ -71,6 +83,7 @@ void WallpaperPageGrid::buildPool(float cellW, float cellH) {
     auto tile = std::make_unique<WallpaperTile>(cellW, cellH, m_contentScale);
     tile->setVisible(false);
     tile->setThumbnailService(m_thumbnails);
+    tile->setLightTheme(m_lightTheme);
     if (m_onTileClick) {
       tile->setOnTileClick(m_onTileClick);
     }

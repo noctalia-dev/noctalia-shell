@@ -208,6 +208,7 @@ void WallpaperPanel::create() {
   grid->setFlexGrow(1.0f);
   m_grid = grid.get();
   m_grid->setThumbnailService(m_thumbnails);
+  m_grid->setLightTheme(lightTheme());
   m_grid->setOnTileClick([this](const WallpaperEntry& entry) {
     if (entry.isDir) {
       navigateInto(entry.absPath);
@@ -369,6 +370,7 @@ void WallpaperPanel::doLayout(Renderer& renderer, float width, float height) {
 
   if (m_grid != nullptr) {
     m_grid->setRenderer(&renderer);
+    m_grid->setLightTheme(lightTheme());
   }
 
   m_rootLayout->setSize(width, height);
@@ -612,6 +614,10 @@ void WallpaperPanel::syncGridSelection() {
                                      : WallpaperPageGrid::kPageSize;
 
   m_grid->setHighlightedIndex(selectedIndex, hoverIndex, m_mouseActive);
+}
+
+bool WallpaperPanel::lightTheme() const {
+  return m_config != nullptr && m_config->config().theme.mode == ThemeMode::Light;
 }
 
 void WallpaperPanel::selectVisibleIndex(std::size_t index) {

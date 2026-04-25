@@ -53,7 +53,6 @@ void MediaWidget::create() {
 
   auto art = std::make_unique<Image>();
   art->setRadius((m_artSize * m_contentScale) * 0.5f);
-  art->setFill(roleColor(ColorRole::SurfaceVariant, 0.9f));
   art->setFit(ImageFit::Cover);
   art->setSize(m_artSize * m_contentScale, m_artSize * m_contentScale);
   m_art = art.get();
@@ -97,7 +96,7 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
   m_emptyGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_emptyGlyph->measure(renderer);
 
-  const bool showArtSlot = isVertical ? m_art->hasImage() : (m_lastText != "Nothing playing");
+  const bool showArtSlot = m_art->hasImage();
 
   // Clamp art to the label's single-line height so oversized art_size cannot
   // distort the bar capsule. The bar uses a uniform cross-axis extent derived

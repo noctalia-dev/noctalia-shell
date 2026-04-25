@@ -2,6 +2,7 @@
 
 #include "render/scene/input_area.h"
 #include "shell/wallpaper/panel/wallpaper_scanner.h"
+#include "ui/palette.h"
 
 #include <functional>
 #include <string>
@@ -39,6 +40,7 @@ public:
 
   void setSelected(bool selected);
   void setHoveredVisual(bool hovered);
+  void setLightTheme(bool lightTheme);
   void setOnTileClick(ClickCallback callback);
   void setOnTileMotion(HoverCallback callback);
   void setOnTileEnter(HoverCallback callback);
@@ -47,6 +49,8 @@ public:
   [[nodiscard]] const WallpaperEntry* entry() const noexcept { return m_hasEntry ? &m_entry : nullptr; }
 
 private:
+  [[nodiscard]] Color inactiveThumbnailTint() const;
+
   void applyVisualState();
   void doLayout(Renderer& renderer) override;
 
@@ -65,6 +69,7 @@ private:
   bool m_hasEntry = false;
   bool m_selected = false;
   bool m_hoveredVisual = false;
+  bool m_lightTheme = false;
   bool m_loadingThumbnail = false;
   std::string m_thumbPath;
   ClickCallback m_onClick;
