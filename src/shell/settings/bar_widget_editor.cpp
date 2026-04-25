@@ -1318,11 +1318,6 @@ namespace settings {
       }
       lane->addChild(std::move(laneHeader));
 
-      if (inherited) {
-        lane->addChild(makeLabel(i18n::tr("settings.base-bar-lane-desc"), Style::fontSizeCaption * ctx.scale,
-                                 roleColor(ColorRole::OnSurfaceVariant), false));
-      }
-
       auto itemNodes = std::make_shared<std::vector<Flex*>>();
       itemNodes->reserve(laneItems.size());
       for (std::size_t i = 0; i < laneItems.size(); ++i) {

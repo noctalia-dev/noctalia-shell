@@ -61,7 +61,6 @@
     "widget-lane-center": "Center",
     "widget-lane-end": "End",
     "customize-lane": "Customize",
-    "base-bar-lane-desc": "Using the base bar lane. Customize this lane to create a monitor override.",
     "widget-kind-builtin": "Built-in",
     "widget-kind-named": "Named",
     "widget-kind-unknown": "Unknown",
