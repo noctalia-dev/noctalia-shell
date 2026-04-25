@@ -79,6 +79,8 @@ private:
   void createInstance(const WaylandOutput& output, const BarConfig& barConfig);
   void destroyInstance(std::uint32_t outputName);
   void populateWidgets(BarInstance& instance);
+  void attachWidgetsToSections(BarInstance& instance);
+  void rebuildInstanceContents(BarInstance& instance, const BarConfig& newConfig);
   void buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t height);
   void prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout);
   void updateWidgets(BarInstance& instance);

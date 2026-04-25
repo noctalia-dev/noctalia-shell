@@ -57,6 +57,18 @@ namespace {
     std::int32_t left = 0, right = 0, up = 0, down = 0;
   };
 
+  // Returns true when two bar configs would produce an identical layer-shell
+  // surface (same anchor, size, exclusive zone, namespace). When true, an
+  // existing BarInstance can be retained on reload and only its widget tree
+  // rebuilt — avoiding the screen-shift caused by destroying and recreating
+  // the exclusive zone.
+  bool barConfigSurfaceFieldsEqual(const BarConfig& a, const BarConfig& b) {
+    return a.name == b.name && a.position == b.position && a.enabled == b.enabled && a.autoHide == b.autoHide &&
+           a.reserveSpace == b.reserveSpace && a.thickness == b.thickness && a.marginH == b.marginH &&
+           a.marginV == b.marginV && a.shadowBlur == b.shadowBlur && a.shadowOffsetX == b.shadowOffsetX &&
+           a.shadowOffsetY == b.shadowOffsetY && a.monitorOverrides == b.monitorOverrides;
+  }
+
   ShadowBleed computeShadowBleed(const BarConfig& cfg) {
     if (cfg.shadowBlur <= 0)
       return {};
@@ -340,14 +352,61 @@ void Bar::reload() {
       *m_wayland, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles, m_network,
       m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight, m_themeService,
       m_bluetooth, m_brightness, m_fileWatcher);
-  m_instances.clear();
-  m_surfaceMap.clear();
-  m_hoveredInstance = nullptr;
 
-  // Drain any pending Wayland events for the just-destroyed surfaces before
-  // creating new ones. Without this, the roundtrip inside LayerSurface::initialize
-  // reads stale closures for dead proxies, which libwayland drops without freeing.
-  wl_display_roundtrip(m_wayland->display());
+  // Look up new bar configs by name.
+  std::unordered_map<std::string, std::pair<const BarConfig*, std::size_t>> newBarsByName;
+  newBarsByName.reserve(m_lastBars.size());
+  for (std::size_t i = 0; i < m_lastBars.size(); ++i) {
+    newBarsByName[m_lastBars[i].name] = {&m_lastBars[i], i};
+  }
+
+  // For each existing instance, decide whether to rebuild contents in place
+  // (surface preserved → no exclusive-zone churn) or destroy (will be recreated
+  // by syncInstances below).
+  bool destroyedAny = false;
+  std::erase_if(m_instances, [&](const std::unique_ptr<BarInstance>& instUp) {
+    auto& inst = *instUp;
+    auto it = newBarsByName.find(inst.barConfig.name);
+    auto destroy = [&]() {
+      if (inst.surface != nullptr) {
+        m_surfaceMap.erase(inst.surface->wlSurface());
+      }
+      if (m_hoveredInstance == &inst) {
+        m_hoveredInstance = nullptr;
+      }
+      destroyedAny = true;
+      return true;
+    };
+    if (it == newBarsByName.end()) {
+      return destroy();
+    }
+
+    const auto& outputs = m_wayland->outputs();
+    auto outIt =
+        std::find_if(outputs.begin(), outputs.end(), [&inst](const auto& o) { return o.name == inst.outputName; });
+    if (outIt == outputs.end()) {
+      return destroy();
+    }
+
+    auto resolved = ConfigService::resolveForOutput(*it->second.first, *outIt);
+    if (!resolved.enabled) {
+      return destroy();
+    }
+    if (!barConfigSurfaceFieldsEqual(inst.barConfig, resolved)) {
+      return destroy();
+    }
+
+    inst.barIndex = it->second.second;
+    rebuildInstanceContents(inst, resolved);
+    return false;
+  });
+
+  if (destroyedAny) {
+    // Drain pending Wayland events for the just-destroyed surfaces before
+    // creating new ones. Without this, the roundtrip inside LayerSurface::initialize
+    // reads stale closures for dead proxies, which libwayland drops without freeing.
+    wl_display_roundtrip(m_wayland->display());
+  }
 
   syncInstances();
 }
@@ -642,6 +701,114 @@ void Bar::populateWidgets(BarInstance& instance) {
   createWidgets(instance.barConfig.endWidgets, instance.endWidgets);
 }
 
+void Bar::attachWidgetsToSections(BarInstance& instance) {
+  auto attach = [&](std::vector<std::unique_ptr<Widget>>& widgets, Flex* section) {
+    if (section == nullptr) {
+      return;
+    }
+    for (auto& widget : widgets) {
+      widget->setAnimationManager(&instance.animations);
+      widget->setUpdateCallback([surface = instance.surface.get()]() {
+        if (surface != nullptr) {
+          surface->requestUpdate();
+        }
+      });
+      widget->setRedrawCallback([surface = instance.surface.get()]() {
+        if (surface != nullptr) {
+          surface->requestRedraw();
+        }
+      });
+      widget->create();
+      if (widget->root() == nullptr) {
+        continue;
+      }
+      if (widget->barCapsuleSpec().enabled) {
+        const auto& cap = widget->barCapsuleSpec();
+        auto shell = std::make_unique<Node>();
+        Node* shellPtr = shell.get();
+        auto capsuleBg = std::make_unique<Box>();
+        Box* bgPtr = capsuleBg.get();
+        capsuleBg->setFill(withOpacity(cap.fill, cap.opacity));
+        const float scale = widget->contentScale();
+        if (cap.border.has_value()) {
+          capsuleBg->setBorder(*cap.border, Style::borderWidth * scale);
+        } else {
+          capsuleBg->clearBorder();
+        }
+        capsuleBg->setZIndex(-1);
+        shellPtr->addChild(std::move(capsuleBg));
+        shellPtr->addChild(widget->releaseRoot());
+        widget->setBarCapsuleScene(shellPtr, bgPtr);
+        section->addChild(std::move(shell));
+      } else {
+        widget->setBarCapsuleScene(nullptr, nullptr);
+        section->addChild(widget->releaseRoot());
+      }
+    }
+  };
+
+  attach(instance.startWidgets, instance.startSection);
+  attach(instance.centerWidgets, instance.centerSection);
+  attach(instance.endWidgets, instance.endSection);
+}
+
+void Bar::rebuildInstanceContents(BarInstance& instance, const BarConfig& newConfig) {
+  // Drop any pointer hover/capture state pointing into the widgets we're about
+  // to destroy. Hover will be re-acquired on the next pointer motion.
+  instance.inputDispatcher.pointerLeave();
+
+  instance.barConfig = newConfig;
+
+  // Detach old widget root nodes from their sections and destroy the widgets.
+  // Widgets release their root into the section on creation, so the section
+  // owns those nodes — clearing the section frees the scene tree.
+  auto clearChildren = [](Node* node) {
+    if (node == nullptr) {
+      return;
+    }
+    while (!node->children().empty()) {
+      node->removeChild(node->children().back().get());
+    }
+  };
+  clearChildren(instance.startSection);
+  clearChildren(instance.centerSection);
+  clearChildren(instance.endSection);
+  instance.startWidgets.clear();
+  instance.centerWidgets.clear();
+  instance.endWidgets.clear();
+
+  // Refresh section-level layout knobs that may have changed (gap; direction
+  // doesn't change because position is part of the surface-fields gate).
+  const float widgetSpacing = static_cast<float>(instance.barConfig.widgetSpacing);
+  if (instance.startSection != nullptr) {
+    instance.startSection->setGap(widgetSpacing);
+  }
+  if (instance.centerSection != nullptr) {
+    instance.centerSection->setGap(widgetSpacing);
+  }
+  if (instance.endSection != nullptr) {
+    instance.endSection->setGap(widgetSpacing);
+  }
+
+  populateWidgets(instance);
+  attachWidgetsToSections(instance);
+
+  applyBackgroundPalette(instance);
+  applyBarCompositorBlur(instance);
+
+  if (instance.surface != nullptr) {
+    // Re-run buildScene at the current surface size so radii / styling pick
+    // up changes. The first-frame branch is skipped because sceneRoot is
+    // already in place.
+    const auto w = instance.surface->width();
+    const auto h = instance.surface->height();
+    if (w > 0 && h > 0) {
+      buildScene(instance, w, h);
+    }
+    instance.surface->requestLayout();
+  }
+}
+
 void Bar::tickWidgets(std::vector<std::unique_ptr<Widget>>& widgets, float deltaMs) { ::tickWidgets(widgets, deltaMs); }
 
 bool Bar::widgetsNeedFrameTick(const std::vector<std::unique_ptr<Widget>>& widgets) {
@@ -835,52 +1002,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     instance.centerSection = static_cast<Flex*>(instance.centerSlot->addChild(makeSection()));
     instance.endSection = static_cast<Flex*>(instance.endSlot->addChild(makeSection()));
 
-    // Create widgets and transfer their roots to section boxes
-    auto initWidgets = [&](std::vector<std::unique_ptr<Widget>>& widgets, Flex* section) {
-      for (auto& widget : widgets) {
-        widget->setAnimationManager(&instance.animations);
-        widget->setUpdateCallback([surface = instance.surface.get()]() {
-          if (surface != nullptr) {
-            surface->requestUpdate();
-          }
-        });
-        widget->setRedrawCallback([surface = instance.surface.get()]() {
-          if (surface != nullptr) {
-            surface->requestRedraw();
-          }
-        });
-        widget->create();
-        if (widget->root() == nullptr) {
-          continue;
-        }
-        if (widget->barCapsuleSpec().enabled) {
-          const auto& cap = widget->barCapsuleSpec();
-          auto shell = std::make_unique<Node>();
-          Node* shellPtr = shell.get();
-          auto capsuleBg = std::make_unique<Box>();
-          Box* bgPtr = capsuleBg.get();
-          capsuleBg->setFill(withOpacity(cap.fill, cap.opacity));
-          const float scale = widget->contentScale();
-          if (cap.border.has_value()) {
-            capsuleBg->setBorder(*cap.border, Style::borderWidth * scale);
-          } else {
-            capsuleBg->clearBorder();
-          }
-          capsuleBg->setZIndex(-1);
-          shellPtr->addChild(std::move(capsuleBg));
-          shellPtr->addChild(widget->releaseRoot());
-          widget->setBarCapsuleScene(shellPtr, bgPtr);
-          section->addChild(std::move(shell));
-        } else {
-          widget->setBarCapsuleScene(nullptr, nullptr);
-          section->addChild(widget->releaseRoot());
-        }
-      }
-    };
-
-    initWidgets(instance.startWidgets, instance.startSection);
-    initWidgets(instance.centerWidgets, instance.centerSection);
-    initWidgets(instance.endWidgets, instance.endSection);
+    attachWidgetsToSections(instance);
 
     // Wire up InputDispatcher for this instance
     instance.inputDispatcher.setSceneRoot(instance.sceneRoot.get());

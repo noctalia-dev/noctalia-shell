@@ -278,8 +278,8 @@ void SettingsWindow::open() {
   m_surface->setUpdateCallback([]() {});
 
   const float scale = uiScale();
-  const std::uint32_t w = static_cast<std::uint32_t>(std::round(640.0f * scale));
-  const std::uint32_t h = static_cast<std::uint32_t>(std::round(420.0f * scale));
+  const std::uint32_t w = static_cast<std::uint32_t>(std::round(900.0f * scale));
+  const std::uint32_t h = static_cast<std::uint32_t>(std::round(600.0f * scale));
 
   ToplevelSurfaceConfig cfg{
       .width = std::max<std::uint32_t>(1, w),
@@ -422,6 +422,18 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   main->setPadding(Style::spaceLg * scale);
   main->setSize(w, h);
 
+  const float bodyMaxWidth = 1024.0f * scale;
+  const auto centeredRow = [&](std::unique_ptr<Flex> child) {
+    child->setFlexGrow(1.0f);
+    child->setMaxWidth(bodyMaxWidth);
+    auto row = std::make_unique<Flex>();
+    row->setDirection(FlexDirection::Horizontal);
+    row->setAlign(FlexAlign::Stretch);
+    row->setJustify(FlexJustify::Center);
+    row->addChild(std::move(child));
+    return row;
+  };
+
   auto header = std::make_unique<Flex>();
   header->setDirection(FlexDirection::Horizontal);
   header->setAlign(FlexAlign::Center);
@@ -447,7 +459,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   closeBtn->setOnClick([this]() { close(); });
   header->addChild(std::move(closeBtn));
 
-  main->addChild(std::move(header));
+  main->addChild(centeredRow(std::move(header)));
 
   const auto requestRebuild = [this]() {
     DeferredCall::callLater([this]() {
@@ -674,7 +686,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     filters->addChild(std::move(resetPageBtn));
   }
 
-  main->addChild(std::move(filters));
+  main->addChild(centeredRow(std::move(filters)));
 
   if (!m_statusMessage.empty()) {
     auto status = std::make_unique<Flex>();
@@ -706,7 +718,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     });
     status->addChild(std::move(dismiss));
 
-    main->addChild(std::move(status));
+    main->addChild(centeredRow(std::move(status)));
   }
 
   const auto sectionLabel = [&](std::string_view section) {
@@ -719,7 +731,6 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   body->setDirection(FlexDirection::Horizontal);
   body->setAlign(FlexAlign::Stretch);
   body->setGap(Style::spaceMd * scale);
-  body->setFlexGrow(1.0f);
 
   auto sidebar = std::make_unique<Flex>();
   sidebar->setDirection(FlexDirection::Vertical);
@@ -746,6 +757,10 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       m_selectedSection = section;
       m_openWidgetPickerPath.clear();
       m_editingWidgetName.clear();
+      m_renamingWidgetName.clear();
+      m_pendingDeleteWidgetName.clear();
+      m_pendingDeleteWidgetSettingPath.clear();
+      m_creatingWidgetType.clear();
       m_pendingResetPageScope.clear();
       requestRebuild();
     });
@@ -772,6 +787,10 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       m_selectedMonitorOverride.clear();
       m_openWidgetPickerPath.clear();
       m_editingWidgetName.clear();
+      m_renamingWidgetName.clear();
+      m_pendingDeleteWidgetName.clear();
+      m_pendingDeleteWidgetSettingPath.clear();
+      m_creatingWidgetType.clear();
       m_pendingResetPageScope.clear();
       requestRebuild();
     });
@@ -801,6 +820,10 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
           m_selectedMonitorOverride = match;
           m_openWidgetPickerPath.clear();
           m_editingWidgetName.clear();
+          m_renamingWidgetName.clear();
+          m_pendingDeleteWidgetName.clear();
+          m_pendingDeleteWidgetSettingPath.clear();
+          m_creatingWidgetType.clear();
           m_pendingResetPageScope.clear();
           requestRebuild();
         });
@@ -1244,6 +1267,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       .renamingWidgetName = m_renamingWidgetName,
       .creatingWidgetType = m_creatingWidgetType,
       .requestRebuild = requestRebuild,
+      .resetContentScroll = [this]() { m_contentScrollState.offset = 0.0f; },
       .setOverride = setOverride,
       .setOverrides = setOverrides,
       .clearOverride = clearOverride,
@@ -1331,7 +1355,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   }
 
   body->addChild(std::move(scroll));
-  main->addChild(std::move(body));
+  auto bodyRow = centeredRow(std::move(body));
+  bodyRow->setFlexGrow(1.0f);
+  main->addChild(std::move(bodyRow));
 
   main->setSize(w, h);
   main->layout(*m_renderContext);
@@ -1426,13 +1452,16 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
     }
   };
   if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
-    if (!m_openWidgetPickerPath.empty()) {
+    if (!m_openWidgetPickerPath.empty() || !m_editingWidgetName.empty() || !m_creatingWidgetType.empty() ||
+        !m_renamingWidgetName.empty() || !m_pendingDeleteWidgetName.empty() ||
+        !m_pendingDeleteWidgetSettingPath.empty()) {
       m_openWidgetPickerPath.clear();
-      requestRebuild();
-      return;
-    }
-    if (!m_editingWidgetName.empty()) {
       m_editingWidgetName.clear();
+      m_renamingWidgetName.clear();
+      m_pendingDeleteWidgetName.clear();
+      m_pendingDeleteWidgetSettingPath.clear();
+      m_creatingWidgetType.clear();
+      m_contentScrollState.offset = 0.0f;
       requestRebuild();
       return;
     }

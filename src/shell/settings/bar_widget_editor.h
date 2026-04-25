@@ -28,6 +28,7 @@ namespace settings {
     std::string& creatingWidgetType;
 
     std::function<void()> requestRebuild;
+    std::function<void()> resetContentScroll;
     std::function<void(std::vector<std::string>, ConfigOverrideValue)> setOverride;
     std::function<void(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>)> setOverrides;
     std::function<void(std::vector<std::string>)> clearOverride;
