@@ -355,8 +355,8 @@ Singleton {
     const name = (device.model || device.name || "").toLowerCase();
     const nativePath = (device.nativePath || "").toLowerCase(); // nativePath where UPower sees the device
     const iconHint = (device.icon || device.iconName || "").toLowerCase();  // Some devices are not known to UPower (e.g., Bluetooth devices). The icon hint often does the heavy lifting for recognition here.
-    // A: DisplayDevice - If you read you know, if not go back and read.
-    if (isDisplayDevice(device)) {
+    // A: DisplayDevice & Primary Laptop Battery
+    if (isDisplayDevice(device) || (device.isLaptopBattery && laptopBatteries.length === 1)) {
       return "device-laptop";
     }
     // 3: UPS
