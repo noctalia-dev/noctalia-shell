@@ -139,7 +139,7 @@ Singleton {
     "device-earbuds": "device-airpods",
     "device-headphones": "headphones",
     "device-mouse": "mouse-2",
-    "device-keyboard": "bluetooth",
+    "device-keyboard": "keyboard",
     "device-phone": "device-mobile",
     "device-tablet": "device-ipad-horizontal",
     "device-watch": "device-watch",
