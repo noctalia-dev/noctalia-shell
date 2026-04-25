@@ -28,10 +28,15 @@ public:
   void setScrollbarVisible(bool visible);
   void setViewportPaddingH(float padding);
   void setViewportPaddingV(float padding);
-  void setBackgroundStyle(const ThemeColor& fill, const ThemeColor& border, float borderWidth);
-  void setBackgroundStyle(const Color& fill, const Color& border, float borderWidth);
-  void clearBackgroundStyle();
-  void setBackgroundRoles(ColorRole fillRole, ColorRole borderRole, float borderWidth);
+  void setFill(const ThemeColor& fill);
+  void setFill(const Color& fill);
+  void clearFill();
+  void setBorder(const ThemeColor& border, float width);
+  void setBorder(const Color& border, float width);
+  void clearBorder();
+  void setRadius(float radius);
+  void setSoftness(float softness);
+  void setCardStyle(float scale = 1.0f);
   void bindState(ScrollViewState* state);
   void setOnScrollChanged(std::function<void(float)> callback);
 
@@ -74,6 +79,8 @@ private:
   float m_viewportHeight = 0.0f;
   float m_viewportWidth = 0.0f;
   float m_backgroundBorderWidth = 0.0f;
+  float m_backgroundRadius = Style::radiusMd;
+  float m_backgroundSoftness = 1.0f;
   bool m_scrollbarShown = false;
   bool m_showScrollbar = true;
 };

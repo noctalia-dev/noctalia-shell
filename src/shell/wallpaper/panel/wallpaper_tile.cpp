@@ -68,9 +68,9 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
 
   auto image = std::make_unique<Image>();
   image->setFit(ImageFit::Cover);
-  image->setCornerRadius(frameRadius);
+  image->setRadius(frameRadius);
   image->setBorder(roleColor(ColorRole::Outline), outlineWidth);
-  image->setBackground(roleColor(ColorRole::Surface));
+  image->setFill(roleColor(ColorRole::Surface));
   image->setFrameSize(frameWidth, frameHeight);
   m_thumb = static_cast<Image*>(m_thumbBox->addChild(std::move(image)));
 
@@ -236,11 +236,10 @@ void WallpaperTile::applyVisualState() {
   ThemeColor borderColor = active ? roleColor(ColorRole::Primary) : roleColor(ColorRole::Outline);
   ThemeColor frameBg = roleColor(ColorRole::SurfaceVariant);
 
-  m_thumbBox->setBackground(frameBg);
+  m_thumbBox->setFill(frameBg);
   if (m_entry.isDir) {
     // Folder tiles hide the image node, so draw the state outline on the frame.
-    m_thumbBox->setBorderColor(borderColor);
-    m_thumbBox->setBorderWidth(outlineWidth);
+    m_thumbBox->setBorder(borderColor, outlineWidth);
     m_thumb->setBorder(roleColor(ColorRole::Outline), outlineWidth);
   } else {
     m_thumbBox->clearBorder();

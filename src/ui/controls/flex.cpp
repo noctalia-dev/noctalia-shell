@@ -3,6 +3,7 @@
 #include "render/core/renderer.h"
 #include "render/programs/rect_program.h"
 #include "render/scene/rect_node.h"
+#include "ui/card_style.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -75,16 +76,16 @@ void Flex::setPadding(float all) { setPadding(all, all, all, all); }
 
 void Flex::setPadding(float vertical, float horizontal) { setPadding(vertical, horizontal, vertical, horizontal); }
 
-void Flex::setBackground(const ThemeColor& color) {
-  m_backgroundColor = color;
+void Flex::setFill(const ThemeColor& color) {
+  m_fill = color;
   ensureBackground();
   applyPalette();
 }
 
-void Flex::setBackground(const Color& color) { setBackground(fixedColor(color)); }
+void Flex::setFill(const Color& color) { setFill(fixedColor(color)); }
 
-void Flex::clearBackground() {
-  m_backgroundColor = clearThemeColor();
+void Flex::clearFill() {
+  m_fill = clearThemeColor();
   if (m_background != nullptr) {
     applyPalette();
   }
@@ -97,16 +98,19 @@ void Flex::setRadius(float radius) {
   m_background->setStyle(style);
 }
 
-void Flex::setBorderColor(const ThemeColor& color) {
-  m_borderColor = color;
+void Flex::setBorder(const ThemeColor& color, float width) {
+  m_border = color;
   ensureBackground();
+  auto style = m_background->style();
+  style.borderWidth = width;
+  m_background->setStyle(style);
   applyPalette();
 }
 
-void Flex::setBorderColor(const Color& color) { setBorderColor(fixedColor(color)); }
+void Flex::setBorder(const Color& color, float width) { setBorder(fixedColor(color), width); }
 
 void Flex::clearBorder() {
-  m_borderColor = clearThemeColor();
+  m_border = clearThemeColor();
   if (m_background != nullptr) {
     auto style = m_background->style();
     style.borderWidth = 0.0f;
@@ -120,16 +124,9 @@ void Flex::applyPalette() {
     return;
   }
   auto style = m_background->style();
-  style.fill = resolveThemeColor(m_backgroundColor);
-  style.border = resolveThemeColor(m_borderColor);
+  style.fill = resolveThemeColor(m_fill);
+  style.border = resolveThemeColor(m_border);
   style.fillMode = FillMode::Solid;
-  m_background->setStyle(style);
-}
-
-void Flex::setBorderWidth(float bw) {
-  ensureBackground();
-  auto style = m_background->style();
-  style.borderWidth = bw;
   m_background->setStyle(style);
 }
 
@@ -139,6 +136,8 @@ void Flex::setSoftness(float softness) {
   style.softness = softness;
   m_background->setStyle(style);
 }
+
+void Flex::setCardStyle(float scale) { ui::applyCardStyle(*this, scale); }
 
 void Flex::setMinWidth(float minWidth) {
   if (m_minWidth == minWidth) {

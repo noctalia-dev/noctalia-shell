@@ -39,17 +39,19 @@ public:
   void setPadding(float all);
   void setPadding(float vertical, float horizontal);
 
-  void setBackground(const ThemeColor& color);
+  void setFill(const ThemeColor& color);
   // Explicit fixed color.
-  void setBackground(const Color& color);
-  void clearBackground();
+  void setFill(const Color& color);
+  void clearFill();
   void setRadius(float radius);
-  void setBorderColor(const ThemeColor& color);
+  void setBorder(const ThemeColor& color, float width);
   // Explicit fixed color.
-  void setBorderColor(const Color& color);
+  void setBorder(const Color& color, float width);
   void clearBorder();
-  void setBorderWidth(float width);
   void setSoftness(float softness);
+
+  // Default app card chrome: filled surface variant with a soft outline.
+  void setCardStyle(float scale = 1.0f);
 
   void setMinWidth(float minWidth);
   void setMinHeight(float minHeight);
@@ -79,8 +81,8 @@ private:
   void applyPalette();
 
   RectNode* m_background = nullptr;
-  ThemeColor m_backgroundColor = clearThemeColor();
-  ThemeColor m_borderColor = clearThemeColor();
+  ThemeColor m_fill = clearThemeColor();
+  ThemeColor m_border = clearThemeColor();
   Signal<>::ScopedConnection m_paletteConn;
   FlexDirection m_direction = FlexDirection::Horizontal;
   FlexAlign m_align = FlexAlign::Center;

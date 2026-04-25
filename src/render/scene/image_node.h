@@ -17,7 +17,7 @@ public:
 
   [[nodiscard]] std::uint32_t textureId() const noexcept { return m_textureId; }
   [[nodiscard]] const Color& tint() const noexcept { return m_tint; }
-  [[nodiscard]] float cornerRadius() const noexcept { return m_cornerRadius; }
+  [[nodiscard]] float radius() const noexcept { return m_radius; }
   [[nodiscard]] const Color& borderColor() const noexcept { return m_borderColor; }
   [[nodiscard]] float borderWidth() const noexcept { return m_borderWidth; }
   [[nodiscard]] ImageFitMode fitMode() const noexcept { return m_fitMode; }
@@ -40,11 +40,11 @@ public:
     markPaintDirty();
   }
 
-  void setCornerRadius(float radius) {
-    if (m_cornerRadius == radius) {
+  void setRadius(float radius) {
+    if (m_radius == radius) {
       return;
     }
-    m_cornerRadius = radius;
+    m_radius = radius;
     markPaintDirty();
   }
 
@@ -77,7 +77,7 @@ public:
 private:
   std::uint32_t m_textureId = 0;
   Color m_tint = {1.0f, 1.0f, 1.0f, 1.0f};
-  float m_cornerRadius = 0.0f;
+  float m_radius = 0.0f;
   Color m_borderColor = {0.0f, 0.0f, 0.0f, 0.0f};
   float m_borderWidth = 0.0f;
   ImageFitMode m_fitMode = ImageFitMode::Stretch;

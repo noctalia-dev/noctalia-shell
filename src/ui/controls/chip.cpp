@@ -21,15 +21,14 @@ void Chip::setText(std::string_view text) { m_label->setText(text); }
 
 void Chip::setActive(bool active) {
   if (active) {
-    setBackground(roleColor(ColorRole::Primary));
+    setFill(roleColor(ColorRole::Primary));
     m_label->setColor(roleColor(ColorRole::OnPrimary));
     m_label->setBold(true);
-    setBorderWidth(0.0f);
+    clearBorder();
   } else {
-    setBackground(roleColor(ColorRole::SurfaceVariant));
+    setFill(roleColor(ColorRole::SurfaceVariant));
     m_label->setColor(roleColor(ColorRole::OnSurfaceVariant));
     m_label->setBold(false);
-    setBorderColor(roleColor(ColorRole::Outline));
-    setBorderWidth(Style::borderWidth);
+    setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
   }
 }

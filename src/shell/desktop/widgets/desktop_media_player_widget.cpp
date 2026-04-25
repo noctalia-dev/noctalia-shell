@@ -42,8 +42,8 @@ void DesktopMediaPlayerWidget::create() {
 
   auto artwork = std::make_unique<Image>();
   artwork->setFit(ImageFit::Cover);
-  artwork->setCornerRadius(Style::radiusMd * contentScale());
-  artwork->setBackground(roleColor(ColorRole::SurfaceVariant, 0.5f));
+  artwork->setRadius(Style::radiusMd * contentScale());
+  artwork->setFill(roleColor(ColorRole::SurfaceVariant, 0.5f));
   m_artwork = artwork.get();
   rootNode->addChild(std::move(artwork));
 
@@ -128,7 +128,7 @@ void DesktopMediaPlayerWidget::layoutVertical(Renderer& renderer, float scale) {
   const float fontSize = Style::fontSizeBody * scale;
 
   m_artwork->setSize(artW, artW);
-  m_artwork->setCornerRadius(Style::radiusMd * scale);
+  m_artwork->setRadius(Style::radiusMd * scale);
   m_artwork->setPosition(0.0f, 0.0f);
 
   m_title->setFontSize(fontSize);
@@ -159,7 +159,7 @@ void DesktopMediaPlayerWidget::layoutHorizontal(Renderer& renderer, float scale)
   const float textWidth = artH * 1.5f;
 
   m_artwork->setSize(artH, artH);
-  m_artwork->setCornerRadius(Style::radiusMd * scale);
+  m_artwork->setRadius(Style::radiusMd * scale);
   m_artwork->setPosition(0.0f, 0.0f);
 
   const float textX = artH + spacing;

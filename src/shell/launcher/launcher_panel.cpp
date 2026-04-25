@@ -237,11 +237,11 @@ namespace {
   private:
     void applyVisualState() {
       if (m_selected) {
-        m_row->setBackground(roleColor(ColorRole::SurfaceVariant));
+        m_row->setFill(roleColor(ColorRole::SurfaceVariant));
       } else if (m_hovered) {
-        m_row->setBackground(roleColor(ColorRole::SurfaceVariant, 0.45f));
+        m_row->setFill(roleColor(ColorRole::SurfaceVariant, 0.45f));
       } else {
-        m_row->setBackground(rgba(0, 0, 0, 0));
+        m_row->setFill(rgba(0, 0, 0, 0));
       }
     }
 

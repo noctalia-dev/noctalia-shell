@@ -40,8 +40,8 @@ namespace {
       setPadding(Style::spaceSm, Style::spaceMd);
       setMinHeight(Style::controlHeightLg);
       setRadius(Style::radiusMd);
-      setBackground(roleColor(ColorRole::Surface));
-      setBorderWidth(0.0f);
+      setFill(roleColor(ColorRole::Surface));
+      clearBorder();
 
       auto radio = std::make_unique<RadioButton>();
       radio->setOnChange([this](bool /*checked*/) {
@@ -108,18 +108,20 @@ namespace {
   private:
     void applyState() {
       if (pressed()) {
-        setBackground(roleColor(ColorRole::Primary));
-        setBorderColor(roleColor(ColorRole::Primary));
-        setBorderWidth(Style::borderWidth);
+        setFill(roleColor(ColorRole::Primary));
+        setBorder(roleColor(ColorRole::Primary), Style::borderWidth);
         if (m_title != nullptr) {
           m_title->setColor(roleColor(ColorRole::OnPrimary));
         }
         return;
       }
 
-      setBackground(roleColor(ColorRole::Surface));
-      setBorderColor(roleColor(hovered() ? ColorRole::Primary : ColorRole::Surface));
-      setBorderWidth(hovered() ? Style::borderWidth : 0.0f);
+      setFill(roleColor(ColorRole::Surface));
+      if (hovered()) {
+        setBorder(roleColor(ColorRole::Primary), Style::borderWidth);
+      } else {
+        clearBorder();
+      }
       if (m_title != nullptr) {
         m_title->setColor(roleColor(ColorRole::OnSurface));
       }
@@ -165,8 +167,8 @@ namespace {
     card->setGap(Style::spaceXs * scale);
     card->setPadding(Style::spaceMd * scale);
     card->setRadius(Style::radiusMd * scale);
-    card->setBackground(roleColor(ColorRole::Surface));
-    card->setBorderWidth(0.0f);
+    card->setFill(roleColor(ColorRole::Surface));
+    card->clearBorder();
 
     auto titleLabel = std::make_unique<Label>();
     titleLabel->setText(title);
@@ -233,7 +235,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   m_deviceColumn = deviceRow.get();
 
   auto outputCard = std::make_unique<Flex>();
-  applyOutlinedCard(*outputCard, scale);
+  applySectionCardStyle(*outputCard, scale);
   outputCard->setFlexGrow(1.0f);
   m_outputCard = outputCard.get();
   addTitle(*outputCard, "Outputs", scale);
@@ -244,7 +246,8 @@ std::unique_ptr<Flex> AudioTab::create() {
   outputScroll->setScrollbarVisible(true);
   outputScroll->setViewportPaddingH(0.0f);
   outputScroll->setViewportPaddingV(0.0f);
-  outputScroll->setBackgroundStyle(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0), 0.0f);
+  outputScroll->clearFill();
+  outputScroll->clearBorder();
   m_outputScroll = outputScroll.get();
   m_outputList = outputScroll->content();
   m_outputList->setDirection(FlexDirection::Vertical);
@@ -254,7 +257,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   deviceRow->addChild(std::move(outputCard));
 
   auto inputCard = std::make_unique<Flex>();
-  applyOutlinedCard(*inputCard, scale);
+  applySectionCardStyle(*inputCard, scale);
   inputCard->setFlexGrow(1.0f);
   m_inputCard = inputCard.get();
   addTitle(*inputCard, "Inputs", scale);
@@ -265,7 +268,8 @@ std::unique_ptr<Flex> AudioTab::create() {
   inputScroll->setScrollbarVisible(true);
   inputScroll->setViewportPaddingH(0.0f);
   inputScroll->setViewportPaddingV(0.0f);
-  inputScroll->setBackgroundStyle(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0), 0.0f);
+  inputScroll->clearFill();
+  inputScroll->clearBorder();
   m_inputScroll = inputScroll.get();
   m_inputList = inputScroll->content();
   m_inputList->setDirection(FlexDirection::Vertical);
@@ -284,7 +288,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   m_volumeColumn = volumeRow.get();
 
   auto outputVolumeCard = std::make_unique<Flex>();
-  applyOutlinedCard(*outputVolumeCard, scale);
+  applySectionCardStyle(*outputVolumeCard, scale);
   outputVolumeCard->setFlexGrow(1.0f);
   m_outputVolumeCard = outputVolumeCard.get();
   addTitle(*outputVolumeCard, "Output Volume", scale);
@@ -338,7 +342,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   volumeRow->addChild(std::move(outputVolumeCard));
 
   auto inputVolumeCard = std::make_unique<Flex>();
-  applyOutlinedCard(*inputVolumeCard, scale);
+  applySectionCardStyle(*inputVolumeCard, scale);
   inputVolumeCard->setFlexGrow(1.0f);
   m_inputVolumeCard = inputVolumeCard.get();
   addTitle(*inputVolumeCard, "Input Volume", scale);

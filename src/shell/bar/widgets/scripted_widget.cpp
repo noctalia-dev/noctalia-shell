@@ -197,7 +197,7 @@ void ScriptedWidget::luaSetGlyphCodepoint(char32_t codepoint) {
 }
 
 void ScriptedWidget::luaSetColor(std::string_view role) {
-  auto parsed = parseColorRole(role);
+  auto parsed = colorRoleFromToken(role);
   if (parsed != m_textColorRole) {
     m_textColorRole = parsed;
     m_dirty = true;
@@ -205,7 +205,7 @@ void ScriptedWidget::luaSetColor(std::string_view role) {
 }
 
 void ScriptedWidget::luaSetGlyphColor(std::string_view role) {
-  auto parsed = parseColorRole(role);
+  auto parsed = colorRoleFromToken(role);
   if (parsed != m_glyphColorRole) {
     m_glyphColorRole = parsed;
     m_dirty = true;
@@ -278,40 +278,4 @@ void ScriptedWidget::reloadScript() {
   requestRedraw();
   kLog.info("hot reload: reloaded '{}'", name);
   notify::info("Noctalia", "Reloaded script", name);
-}
-
-std::optional<ColorRole> ScriptedWidget::parseColorRole(std::string_view name) {
-  if (name == "primary")
-    return ColorRole::Primary;
-  if (name == "on_primary")
-    return ColorRole::OnPrimary;
-  if (name == "secondary")
-    return ColorRole::Secondary;
-  if (name == "on_secondary")
-    return ColorRole::OnSecondary;
-  if (name == "tertiary")
-    return ColorRole::Tertiary;
-  if (name == "on_tertiary")
-    return ColorRole::OnTertiary;
-  if (name == "error")
-    return ColorRole::Error;
-  if (name == "on_error")
-    return ColorRole::OnError;
-  if (name == "surface")
-    return ColorRole::Surface;
-  if (name == "on_surface")
-    return ColorRole::OnSurface;
-  if (name == "surface_variant")
-    return ColorRole::SurfaceVariant;
-  if (name == "on_surface_variant")
-    return ColorRole::OnSurfaceVariant;
-  if (name == "outline")
-    return ColorRole::Outline;
-  if (name == "shadow")
-    return ColorRole::Shadow;
-  if (name == "hover")
-    return ColorRole::Hover;
-  if (name == "on_hover")
-    return ColorRole::OnHover;
-  return std::nullopt;
 }

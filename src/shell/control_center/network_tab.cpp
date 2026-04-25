@@ -69,8 +69,8 @@ namespace {
       setPadding(Style::spaceSm, Style::spaceMd);
       setMinHeight(kRowMinHeight);
       setRadius(Style::radiusMd);
-      setBackground(roleColor(ColorRole::Surface));
-      setBorderWidth(0.0f);
+      setFill(roleColor(ColorRole::Surface));
+      clearBorder();
 
       auto signalGlyph = std::make_unique<Glyph>();
       signalGlyph->setGlyph(NetworkTab_rowGlyph(m_ap));
@@ -162,17 +162,19 @@ namespace {
       const bool hov = m_inputArea != nullptr && m_inputArea->hovered();
       const bool pressed = m_inputArea != nullptr && m_inputArea->pressed();
       if (pressed) {
-        setBackground(roleColor(ColorRole::Primary));
-        setBorderColor(roleColor(ColorRole::Primary));
-        setBorderWidth(Style::borderWidth);
+        setFill(roleColor(ColorRole::Primary));
+        setBorder(roleColor(ColorRole::Primary), Style::borderWidth);
         if (m_title != nullptr) {
           m_title->setColor(roleColor(ColorRole::OnPrimary));
         }
         return;
       }
-      setBackground(roleColor(m_ap.active ? ColorRole::Secondary : ColorRole::Surface, m_ap.active ? 0.25f : 1.0f));
-      setBorderColor(roleColor(hov ? ColorRole::Primary : ColorRole::Surface));
-      setBorderWidth(hov ? Style::borderWidth : 0.0f);
+      setFill(roleColor(m_ap.active ? ColorRole::Secondary : ColorRole::Surface, m_ap.active ? 0.25f : 1.0f));
+      if (hov) {
+        setBorder(roleColor(ColorRole::Primary), Style::borderWidth);
+      } else {
+        clearBorder();
+      }
       if (m_title != nullptr) {
         m_title->setColor(roleColor(ColorRole::OnSurface));
       }
@@ -215,7 +217,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   m_rootLayout = tab.get();
 
   auto currentCard = std::make_unique<Flex>();
-  applyOutlinedCard(*currentCard, scale);
+  applySectionCardStyle(*currentCard, scale);
   m_currentCard = currentCard.get();
   addTitle(*currentCard, "Current connection", scale);
 
@@ -254,7 +256,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   tab->addChild(std::move(currentCard));
 
   auto passwordCard = std::make_unique<Flex>();
-  applyOutlinedCard(*passwordCard, scale);
+  applySectionCardStyle(*passwordCard, scale);
   passwordCard->setVisible(false);
   m_passwordCard = passwordCard.get();
 
@@ -311,7 +313,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   tab->addChild(std::move(passwordCard));
 
   auto listCard = std::make_unique<Flex>();
-  applyOutlinedCard(*listCard, scale);
+  applySectionCardStyle(*listCard, scale);
   listCard->setFlexGrow(1.0f);
   m_listCard = listCard.get();
   addTitle(*listCard, "Available networks", scale);
@@ -321,7 +323,8 @@ std::unique_ptr<Flex> NetworkTab::create() {
   listScroll->setScrollbarVisible(true);
   listScroll->setViewportPaddingH(0.0f);
   listScroll->setViewportPaddingV(0.0f);
-  listScroll->setBackgroundStyle(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0), 0.0f);
+  listScroll->clearFill();
+  listScroll->clearBorder();
   m_listScroll = listScroll.get();
   m_list = listScroll->content();
   m_list->setDirection(FlexDirection::Vertical);

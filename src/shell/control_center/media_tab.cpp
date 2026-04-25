@@ -72,7 +72,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   m_mediaColumn = mediaColumn.get();
 
   auto nowCard = std::make_unique<Flex>();
-  applyOutlinedCard(*nowCard, scale);
+  applySectionCardStyle(*nowCard, scale);
   nowCard->setGap(Style::spaceMd * scale);
   nowCard->setFlexGrow(1.0f);
   nowCard->setMinHeight(kMediaNowCardMinHeight * scale);
@@ -128,7 +128,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   m_artworkRow = artworkRow.get();
 
   auto artwork = std::make_unique<Image>();
-  artwork->setCornerRadius(Style::radiusXl * scale);
+  artwork->setRadius(Style::radiusXl * scale);
   artwork->setFit(ImageFit::Contain);
   artwork->setSize(kArtworkSize * scale, kArtworkSize * scale);
   m_artwork = artwork.get();
@@ -308,7 +308,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerColumn->setAlign(FlexAlign::Stretch);
   visualizerColumn->setGap(Style::spaceSm * scale);
   visualizerColumn->setFlexGrow(2.0f);
-  applyOutlinedCard(*visualizerColumn, scale);
+  applySectionCardStyle(*visualizerColumn, scale);
   visualizerColumn->setClipChildren(true);
   m_visualizerColumn = visualizerColumn.get();
 
@@ -458,7 +458,7 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
       }
     }
     m_artwork->setSize(targetWidth, targetHeight);
-    m_artwork->setCornerRadius(Style::radiusXl * scale);
+    m_artwork->setRadius(Style::radiusXl * scale);
     m_mediaStack->layout(renderer);
   }
 

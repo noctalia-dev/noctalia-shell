@@ -1,6 +1,7 @@
 #include "shell/settings/settings_registry.h"
 
 #include "i18n/i18n.h"
+#include "theme/builtin_palettes.h"
 
 #include <algorithm>
 #include <cctype>
@@ -37,6 +38,28 @@ namespace settings {
         opts.push_back(SelectOption{std::string(value), i18n::tr(labelKey)});
       }
       return SelectSetting{std::move(opts), std::string(selected)};
+    }
+
+    SelectSetting builtinPaletteSelect(std::string_view selected) {
+      std::vector<SelectOption> opts;
+      opts.reserve(noctalia::theme::builtinPalettes().size());
+      for (const auto& palette : noctalia::theme::builtinPalettes()) {
+        opts.push_back(SelectOption{std::string(palette.name), std::string(palette.name)});
+      }
+      return SelectSetting{std::move(opts), std::string(selected)};
+    }
+
+    SelectSetting wallpaperSchemeSelect(std::string_view selected) {
+      return plainSelect({{"m3-content", "theme.scheme.m3-content"},
+                          {"m3-tonal-spot", "theme.scheme.m3-tonal-spot"},
+                          {"m3-fruit-salad", "theme.scheme.m3-fruit-salad"},
+                          {"m3-rainbow", "theme.scheme.m3-rainbow"},
+                          {"m3-monochrome", "theme.scheme.m3-monochrome"},
+                          {"vibrant", "theme.scheme.vibrant"},
+                          {"faithful", "theme.scheme.faithful"},
+                          {"dysfunctional", "theme.scheme.dysfunctional"},
+                          {"muted", "theme.scheme.muted"}},
+                         selected);
     }
 
     std::string pathText(const std::vector<std::string>& path) {
@@ -128,6 +151,20 @@ namespace settings {
                                 {"theme", "mode"}, enumSelect(kThemeModes, cfg.theme.mode), "dark light auto colors"));
     entries.push_back(makeEntry("appearance", "theme", tr("settings.theme-source"), tr("settings.theme-source-desc"),
                                 {"theme", "source"}, enumSelect(kThemeSources, cfg.theme.source), "palette colors"));
+    if (cfg.theme.source == ThemeSource::Builtin) {
+      entries.push_back(makeEntry("appearance", "theme", tr("settings.theme-palette"),
+                                  tr("settings.theme-palette-desc"), {"theme", "builtin"},
+                                  builtinPaletteSelect(cfg.theme.builtinPalette), "builtin palette colors"));
+    } else if (cfg.theme.source == ThemeSource::Wallpaper) {
+      entries.push_back(makeEntry("appearance", "theme", tr("settings.wallpaper-generation-scheme"),
+                                  tr("settings.wallpaper-generation-scheme-desc"), {"theme", "wallpaper_scheme"},
+                                  wallpaperSchemeSelect(cfg.theme.wallpaperScheme),
+                                  "wallpaper palette generator scheme material you m3 colors"));
+    } else if (cfg.theme.source == ThemeSource::Community) {
+      entries.push_back(makeEntry("appearance", "theme", tr("settings.community-palette"),
+                                  tr("settings.community-palette-desc"), {"theme", "community_palette"},
+                                  TextSetting{cfg.theme.communityPalette, "Noctalia"}, "community palette colors"));
+    }
     entries.push_back(makeEntry("appearance", "interface", tr("settings.ui-scale"), tr("settings.ui-scale-desc"),
                                 {"shell", "ui_scale"}, SliderSetting{cfg.shell.uiScale, 0.5f, 2.5f, 0.05f, false},
                                 "size"));

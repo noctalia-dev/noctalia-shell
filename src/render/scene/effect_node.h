@@ -23,11 +23,11 @@ public:
     markPaintDirty();
   }
 
-  void setCornerRadius(float radius) {
-    if (m_style.cornerRadius == radius) {
+  void setRadius(float radius) {
+    if (m_style.radius == radius) {
       return;
     }
-    m_style.cornerRadius = radius;
+    m_style.radius = radius;
     markPaintDirty();
   }
 

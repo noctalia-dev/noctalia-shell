@@ -280,8 +280,8 @@ void SettingsWindow::open() {
   const float scale = uiScale();
   const std::uint32_t w = static_cast<std::uint32_t>(std::round(900.0f * scale));
   const std::uint32_t h = static_cast<std::uint32_t>(std::round(600.0f * scale));
-  const std::uint32_t minW = static_cast<std::uint32_t>(std::round(640.0f * scale));
-  const std::uint32_t minH = static_cast<std::uint32_t>(std::round(400.0f * scale));
+  const std::uint32_t minW = static_cast<std::uint32_t>(std::round(800.0f * scale));
+  const std::uint32_t minH = static_cast<std::uint32_t>(std::round(500.0f * scale));
 
   ToplevelSurfaceConfig cfg{
       .width = std::max<std::uint32_t>(1, w),
@@ -719,9 +719,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     status->setGap(Style::spaceSm * scale);
     status->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
     status->setRadius(Style::radiusMd * scale);
-    status->setBackground(roleColor(m_statusIsError ? ColorRole::Error : ColorRole::Secondary, 0.14f));
-    status->setBorderColor(roleColor(m_statusIsError ? ColorRole::Error : ColorRole::Secondary, 0.45f));
-    status->setBorderWidth(Style::borderWidth);
+    status->setFill(roleColor(m_statusIsError ? ColorRole::Error : ColorRole::Secondary, 0.14f));
+    status->setBorder(roleColor(m_statusIsError ? ColorRole::Error : ColorRole::Secondary, 0.45f), Style::borderWidth);
 
     auto message = makeLabel(m_statusMessage, Style::fontSizeCaption * scale,
                              roleColor(m_statusIsError ? ColorRole::Error : ColorRole::Secondary), true);
@@ -868,7 +867,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   scroll->setScrollbarVisible(true);
   scroll->setViewportPaddingH(0.0f);
   scroll->setViewportPaddingV(Style::spaceSm * scale);
-  scroll->setBackgroundStyle(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0), 0.0f);
+  scroll->clearFill();
+  scroll->clearBorder();
   auto* content = scroll->content();
   content->setDirection(FlexDirection::Vertical);
   content->setAlign(FlexAlign::Stretch);
@@ -880,10 +880,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     section->setAlign(FlexAlign::Stretch);
     section->setGap(Style::spaceSm * scale);
     section->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    section->setBackground(roleColor(ColorRole::SurfaceVariant));
-    section->setBorderColor(roleColor(ColorRole::Outline, 0.5f));
-    section->setBorderWidth(Style::borderWidth);
-    section->setRadius(Style::radiusMd * scale);
+    section->setCardStyle(scale);
 
     auto titleLabel = makeLabel(title, Style::fontSizeTitle * scale, roleColor(ColorRole::OnSurface), true);
     section->addChild(std::move(titleLabel));
@@ -953,7 +950,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       badge->setAlign(FlexAlign::Center);
       badge->setPadding(1.0f * scale, Style::spaceXs * scale);
       badge->setRadius(Style::radiusSm * scale);
-      badge->setBackground(roleColor(ColorRole::Secondary, 0.15f));
+      badge->setFill(roleColor(ColorRole::Secondary, 0.15f));
       badge->addChild(makeLabel(i18n::tr("settings.badge-monitor"), Style::fontSizeCaption * scale,
                                 roleColor(ColorRole::Secondary), true));
       titleRow->addChild(std::move(badge));
@@ -963,7 +960,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       badge->setAlign(FlexAlign::Center);
       badge->setPadding(1.0f * scale, Style::spaceXs * scale);
       badge->setRadius(Style::radiusSm * scale);
-      badge->setBackground(roleColor(ColorRole::Primary, 0.15f));
+      badge->setFill(roleColor(ColorRole::Primary, 0.15f));
       badge->addChild(makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeCaption * scale,
                                 roleColor(ColorRole::Primary), true));
       titleRow->addChild(std::move(badge));
@@ -973,7 +970,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       badge->setAlign(FlexAlign::Center);
       badge->setPadding(1.0f * scale, Style::spaceXs * scale);
       badge->setRadius(Style::radiusSm * scale);
-      badge->setBackground(roleColor(ColorRole::OnSurfaceVariant, 0.12f));
+      badge->setFill(roleColor(ColorRole::OnSurfaceVariant, 0.12f));
       badge->addChild(makeLabel(i18n::tr("settings.badge-advanced"), Style::fontSizeCaption * scale,
                                 roleColor(ColorRole::OnSurfaceVariant), true));
       titleRow->addChild(std::move(badge));
@@ -1125,7 +1122,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       badge->setAlign(FlexAlign::Center);
       badge->setPadding(1.0f * scale, Style::spaceXs * scale);
       badge->setRadius(Style::radiusSm * scale);
-      badge->setBackground(roleColor(ColorRole::Primary, 0.15f));
+      badge->setFill(roleColor(ColorRole::Primary, 0.15f));
       badge->addChild(makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeCaption * scale,
                                 roleColor(ColorRole::Primary), true));
       titleRow->addChild(std::move(badge));
@@ -1367,9 +1364,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     emptyState->setJustify(FlexJustify::Center);
     emptyState->setGap(Style::spaceXs * scale);
     emptyState->setPadding((Style::spaceLg + Style::spaceMd) * scale);
-    emptyState->setBackground(roleColor(ColorRole::SurfaceVariant, 0.24f));
-    emptyState->setBorderColor(roleColor(ColorRole::Outline, 0.28f));
-    emptyState->setBorderWidth(Style::borderWidth);
+    emptyState->setFill(roleColor(ColorRole::SurfaceVariant, 0.24f));
+    emptyState->setBorder(roleColor(ColorRole::Outline, 0.28f), Style::borderWidth);
     emptyState->setRadius(Style::radiusMd * scale);
     emptyState->addChild(
         makeLabel(i18n::tr("settings.no-results"), Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));

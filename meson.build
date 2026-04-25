@@ -480,6 +480,7 @@ _noctalia_sources = files(
   'src/system/weather_service.cpp',
   'src/time/time_format.cpp',
   'src/time/time_service.cpp',
+  'src/ui/card_style.cpp',
   'src/ui/controls/audio_spectrum.cpp',
   'src/ui/controls/box.cpp',
   'src/ui/controls/button.cpp',

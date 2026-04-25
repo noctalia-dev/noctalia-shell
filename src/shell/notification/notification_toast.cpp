@@ -1409,7 +1409,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
     auto appIcon = std::make_unique<Image>();
     appIcon->setSize(kNotificationIconSize, kNotificationIconSize);
     appIcon->setPosition(0.0f, 0.0f);
-    appIcon->setCornerRadius(kNotificationIconRadius);
+    appIcon->setRadius(kNotificationIconRadius);
     appIcon->setFit(ImageFit::Cover);
     if (appIcon->setSourceFile(*m_renderContext, iconPath, static_cast<int>(std::round(kNotificationIconSize)))) {
       *outAppIcon = iconSlot->addChild(std::move(appIcon));
@@ -1423,7 +1423,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
       auto appIcon = std::make_unique<Image>();
       appIcon->setSize(kNotificationIconSize, kNotificationIconSize);
       appIcon->setPosition(0.0f, 0.0f);
-      appIcon->setCornerRadius(kNotificationIconRadius);
+      appIcon->setRadius(kNotificationIconRadius);
       appIcon->setFit(ImageFit::Cover);
       const bool validImageMetadata = image.bitsPerSample == 8 && ((image.channels == 4 && image.hasAlpha) ||
                                                                    (image.channels == 3 && !image.hasAlpha));

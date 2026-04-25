@@ -52,8 +52,8 @@ void MediaWidget::create() {
   m_area = area.get();
 
   auto art = std::make_unique<Image>();
-  art->setCornerRadius((m_artSize * m_contentScale) * 0.5f);
-  art->setBackground(roleColor(ColorRole::SurfaceVariant, 0.9f));
+  art->setRadius((m_artSize * m_contentScale) * 0.5f);
+  art->setFill(roleColor(ColorRole::SurfaceVariant, 0.9f));
   art->setFit(ImageFit::Cover);
   art->setSize(m_artSize * m_contentScale, m_artSize * m_contentScale);
   m_art = art.get();
@@ -107,11 +107,11 @@ void MediaWidget::doLayout(Renderer& renderer, float containerWidth, float conta
     artSize = std::min(m_artSize * m_contentScale, m_label->height());
     m_art->setVisible(true);
     m_art->setSize(artSize, artSize);
-    m_art->setCornerRadius(artSize * 0.5f);
+    m_art->setRadius(artSize * 0.5f);
   } else {
     m_art->setVisible(false);
     m_art->setSize(0.0f, 0.0f);
-    m_art->setCornerRadius(0.0f);
+    m_art->setRadius(0.0f);
   }
 
   const float contentHeight = m_label->height();

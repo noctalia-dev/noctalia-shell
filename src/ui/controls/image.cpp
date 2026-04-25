@@ -32,18 +32,18 @@ void Image::ensureBackground() {
   m_background->setZIndex(-1);
   m_background->setFlatStyle();
   m_background->setFrameSize(width(), height());
-  if (m_cornerRadius != 0.0f) {
-    m_background->setRadius(m_cornerRadius);
+  if (m_radius != 0.0f) {
+    m_background->setRadius(m_radius);
   }
 }
 
-void Image::setCornerRadius(float radius) {
-  if (m_cornerRadius == radius) {
+void Image::setRadius(float radius) {
+  if (m_radius == radius) {
     return;
   }
-  m_cornerRadius = radius;
+  m_radius = radius;
   if (m_image != nullptr) {
-    m_image->setCornerRadius(radius);
+    m_image->setRadius(radius);
   }
   if (m_background != nullptr) {
     m_background->setRadius(radius);
@@ -51,17 +51,18 @@ void Image::setCornerRadius(float radius) {
   markPaintDirty();
 }
 
-void Image::setBackground(const ThemeColor& color) {
-  m_backgroundColor = color;
+void Image::setFill(const ThemeColor& color) {
+  m_fill = color;
   ensureBackground();
   applyPalette();
 }
 
-void Image::setBackground(const Color& color) { setBackground(fixedColor(color)); }
+void Image::setFill(const Color& color) { setFill(fixedColor(color)); }
 
 void Image::setBorder(const ThemeColor& color, float width) {
-  m_borderColor = color;
+  m_border = color;
   m_borderWidth = width;
+  ensureBackground();
   applyPalette();
 }
 
@@ -290,11 +291,8 @@ void Image::doLayout(Renderer& /*renderer*/) {
 
 void Image::applyPalette() {
   if (m_background != nullptr) {
-    m_background->setFill(m_backgroundColor);
-    m_background->clearBorder();
-  }
-  if (m_image != nullptr) {
-    m_image->setBorder(resolveThemeColor(m_borderColor), m_borderWidth);
+    m_background->setFill(m_fill);
+    m_background->setBorder(m_border, m_borderWidth);
   }
 }
 

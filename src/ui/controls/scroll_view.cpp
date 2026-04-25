@@ -4,6 +4,7 @@
 #include "render/programs/rect_program.h"
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
+#include "ui/card_style.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -155,22 +156,43 @@ void ScrollView::setScrollbarVisible(bool visible) {
   markLayoutDirty();
 }
 
-void ScrollView::setBackgroundStyle(const ThemeColor& fill, const ThemeColor& border, float borderWidth) {
+void ScrollView::setFill(const ThemeColor& fill) {
   m_backgroundFill = fill;
-  m_backgroundBorder = border;
-  m_backgroundBorderWidth = borderWidth;
   applyPalette();
 }
 
-void ScrollView::setBackgroundStyle(const Color& fill, const Color& border, float borderWidth) {
-  setBackgroundStyle(fixedColor(fill), fixedColor(border), borderWidth);
+void ScrollView::setFill(const Color& fill) { setFill(fixedColor(fill)); }
+
+void ScrollView::clearFill() {
+  m_backgroundFill = clearThemeColor();
+  applyPalette();
 }
 
-void ScrollView::clearBackgroundStyle() { setBackgroundStyle(clearThemeColor(), clearThemeColor(), 0.0f); }
-
-void ScrollView::setBackgroundRoles(ColorRole fillRole, ColorRole borderRole, float borderWidth) {
-  setBackgroundStyle(roleColor(fillRole), roleColor(borderRole), borderWidth);
+void ScrollView::setBorder(const ThemeColor& border, float width) {
+  m_backgroundBorder = border;
+  m_backgroundBorderWidth = width;
+  applyPalette();
 }
+
+void ScrollView::setBorder(const Color& border, float width) { setBorder(fixedColor(border), width); }
+
+void ScrollView::clearBorder() {
+  m_backgroundBorder = clearThemeColor();
+  m_backgroundBorderWidth = 0.0f;
+  applyPalette();
+}
+
+void ScrollView::setRadius(float radius) {
+  m_backgroundRadius = radius;
+  applyPalette();
+}
+
+void ScrollView::setSoftness(float softness) {
+  m_backgroundSoftness = softness;
+  applyPalette();
+}
+
+void ScrollView::setCardStyle(float scale) { ui::applyCardStyle(*this, scale); }
 
 void ScrollView::bindState(ScrollViewState* state) {
   m_boundState = state;
@@ -209,8 +231,8 @@ void ScrollView::applyPalette() {
         .fill = resolveThemeColor(m_backgroundFill),
         .border = resolveThemeColor(m_backgroundBorder),
         .fillMode = FillMode::Solid,
-        .radius = Style::radiusMd,
-        .softness = 1.0f,
+        .radius = m_backgroundRadius,
+        .softness = m_backgroundSoftness,
         .borderWidth = m_backgroundBorderWidth,
     });
   }

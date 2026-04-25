@@ -18,7 +18,7 @@ public:
   void destroy();
 
   void draw(GLuint texture, float surfaceWidth, float surfaceHeight, float width, float height, const Color& tint,
-            float opacity, float cornerRadius = 0.0f, const Color& borderColor = {0.0f, 0.0f, 0.0f, 0.0f},
+            float opacity, float radius = 0.0f, const Color& borderColor = {0.0f, 0.0f, 0.0f, 0.0f},
             float borderWidth = 0.0f, int fitMode = 0, float textureWidth = 0.0f, float textureHeight = 0.0f,
             const Mat3& transform = Mat3::identity()) const;
 
@@ -30,7 +30,7 @@ private:
   GLint m_rectLocation = -1;
   GLint m_tintLocation = -1;
   GLint m_opacityLocation = -1;
-  GLint m_cornerRadiusLocation = -1;
+  GLint m_radiusLocation = -1;
   GLint m_borderColorLocation = -1;
   GLint m_borderWidthLocation = -1;
   GLint m_texSizeLocation = -1;

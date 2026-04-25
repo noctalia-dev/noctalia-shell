@@ -42,8 +42,6 @@ private:
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void doUpdate(Renderer& renderer) override;
 
-  static std::optional<ColorRole> parseColorRole(std::string_view name);
-
   void reloadScript();
   void setupScriptWatch();
   void teardownScriptWatch();

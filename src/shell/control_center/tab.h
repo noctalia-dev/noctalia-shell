@@ -13,7 +13,7 @@ class Renderer;
 
 namespace control_center {
 
-  void applyOutlinedCard(Flex& card, float scale = 1.0f);
+  void applySectionCardStyle(Flex& card, float scale = 1.0f);
   Label* addTitle(Flex& parent, const std::string& text, float scale = 1.0f);
   void addBody(Flex& parent, const std::string& text, float scale = 1.0f);
 

@@ -84,8 +84,8 @@ namespace {
       setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
       setMinHeight(kRowMinHeight * scale);
       setRadius(Style::radiusMd * scale);
-      setBackground(roleColor(ColorRole::Surface));
-      setBorderWidth(0.0f);
+      setFill(roleColor(ColorRole::Surface));
+      clearBorder();
 
       auto icon = std::make_unique<Glyph>();
       icon->setGlyph(glyphFor(m_device.kind));
@@ -202,7 +202,7 @@ std::unique_ptr<Flex> BluetoothTab::create() {
   m_rootLayout = tab.get();
 
   auto pairingCard = std::make_unique<Flex>();
-  applyOutlinedCard(*pairingCard, scale);
+  applySectionCardStyle(*pairingCard, scale);
   pairingCard->setVisible(false);
   m_pairingCard = pairingCard.get();
 
@@ -317,7 +317,7 @@ std::unique_ptr<Flex> BluetoothTab::create() {
   tab->addChild(std::move(pairingCard));
 
   auto listCard = std::make_unique<Flex>();
-  applyOutlinedCard(*listCard, scale);
+  applySectionCardStyle(*listCard, scale);
   listCard->setFlexGrow(1.0f);
   m_listCard = listCard.get();
   addTitle(*listCard, "Devices", scale);
@@ -327,7 +327,8 @@ std::unique_ptr<Flex> BluetoothTab::create() {
   listScroll->setScrollbarVisible(true);
   listScroll->setViewportPaddingH(0.0f);
   listScroll->setViewportPaddingV(0.0f);
-  listScroll->setBackgroundStyle(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0), 0.0f);
+  listScroll->clearFill();
+  listScroll->clearBorder();
   m_listScroll = listScroll.get();
   m_list = listScroll->content();
   m_list->setDirection(FlexDirection::Vertical);

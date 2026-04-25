@@ -651,9 +651,8 @@ namespace settings {
       panel->setGap(Style::spaceXs * ctx.scale);
       panel->setPadding(Style::spaceSm * ctx.scale);
       panel->setRadius(Style::radiusSm * ctx.scale);
-      panel->setBackground(roleColor(ColorRole::SurfaceVariant, 0.55f));
-      panel->setBorderColor(roleColor(ColorRole::Outline, 0.22f));
-      panel->setBorderWidth(Style::borderWidth);
+      panel->setFill(roleColor(ColorRole::SurfaceVariant, 0.55f));
+      panel->setBorder(roleColor(ColorRole::Outline, 0.22f), Style::borderWidth);
 
       auto panelHeader = std::make_unique<Flex>();
       panelHeader->setDirection(FlexDirection::Horizontal);
@@ -749,9 +748,8 @@ namespace settings {
       inspector->setGap(Style::spaceSm * ctx.scale);
       inspector->setPadding(Style::spaceMd * ctx.scale);
       inspector->setRadius(Style::radiusMd * ctx.scale);
-      inspector->setBackground(roleColor(ColorRole::Surface, 0.85f));
-      inspector->setBorderColor(roleColor(ColorRole::Outline, 0.35f));
-      inspector->setBorderWidth(Style::borderWidth);
+      inspector->setFill(roleColor(ColorRole::Surface, 0.85f));
+      inspector->setBorder(roleColor(ColorRole::Outline, 0.35f), Style::borderWidth);
 
       if (hasEdit) {
         const std::string widgetName = ctx.editingWidgetName;
@@ -788,7 +786,7 @@ namespace settings {
         kindBadge->setAlign(FlexAlign::Center);
         kindBadge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
         kindBadge->setRadius(Style::radiusSm * ctx.scale);
-        kindBadge->setBackground(widgetBadgeColor(info.kind));
+        kindBadge->setFill(widgetBadgeColor(info.kind));
         kindBadge->addChild(
             makeLabel(info.badge, Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurface), true));
         headerRow->addChild(std::move(kindBadge));
@@ -891,9 +889,8 @@ namespace settings {
           confirmPanel->setGap(Style::spaceXs * ctx.scale);
           confirmPanel->setPadding(Style::spaceSm * ctx.scale);
           confirmPanel->setRadius(Style::radiusSm * ctx.scale);
-          confirmPanel->setBackground(roleColor(ColorRole::Error, 0.10f));
-          confirmPanel->setBorderColor(roleColor(ColorRole::Error, 0.35f));
-          confirmPanel->setBorderWidth(Style::borderWidth);
+          confirmPanel->setFill(roleColor(ColorRole::Error, 0.10f));
+          confirmPanel->setBorder(roleColor(ColorRole::Error, 0.35f), Style::borderWidth);
 
           confirmPanel->addChild(makeLabel(i18n::tr("settings.delete-widget-confirm-title", "name", widgetName),
                                            Style::fontSizeBody * ctx.scale, roleColor(ColorRole::Error), true));
@@ -1255,9 +1252,8 @@ namespace settings {
       lane->setGap(Style::spaceXs * ctx.scale);
       lane->setPadding(Style::spaceSm * ctx.scale);
       lane->setRadius(Style::radiusMd * ctx.scale);
-      lane->setBackground(roleColor(ColorRole::SurfaceVariant, 0.45f));
-      lane->setBorderColor(roleColor(ColorRole::Outline, 0.35f));
-      lane->setBorderWidth(Style::borderWidth);
+      lane->setFill(roleColor(ColorRole::SurfaceVariant, 0.45f));
+      lane->setBorder(roleColor(ColorRole::Outline, 0.35f), Style::borderWidth);
       lane->setFlexGrow(1.0f);
       lane->setMinWidth(160.0f * ctx.scale);
       auto* lanePtr = lane.get();
@@ -1282,7 +1278,7 @@ namespace settings {
         badge->setAlign(FlexAlign::Center);
         badge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
         badge->setRadius(Style::radiusSm * ctx.scale);
-        badge->setBackground(roleColor(ColorRole::Primary, 0.15f));
+        badge->setFill(roleColor(ColorRole::Primary, 0.15f));
         badge->addChild(makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeCaption * ctx.scale,
                                   roleColor(ColorRole::Primary), true));
         laneHeader->addChild(std::move(badge));
@@ -1292,7 +1288,7 @@ namespace settings {
         badge->setAlign(FlexAlign::Center);
         badge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
         badge->setRadius(Style::radiusSm * ctx.scale);
-        badge->setBackground(roleColor(ColorRole::OnSurfaceVariant, 0.14f));
+        badge->setFill(roleColor(ColorRole::OnSurfaceVariant, 0.14f));
         badge->addChild(makeLabel(i18n::tr("settings.badge-base-bar"), Style::fontSizeCaption * ctx.scale,
                                   roleColor(ColorRole::OnSurfaceVariant), true));
         laneHeader->addChild(std::move(badge));
@@ -1328,9 +1324,8 @@ namespace settings {
         item->setGap(Style::spaceXs * ctx.scale);
         item->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
         item->setRadius(Style::radiusSm * ctx.scale);
-        item->setBackground(roleColor(ColorRole::Surface, 0.72f));
-        item->setBorderColor(roleColor(ColorRole::Outline, 0.22f));
-        item->setBorderWidth(Style::borderWidth);
+        item->setFill(roleColor(ColorRole::Surface, 0.72f));
+        item->setBorder(roleColor(ColorRole::Outline, 0.22f), Style::borderWidth);
         auto* itemPtr = item.get();
         itemNodes->push_back(itemPtr);
 
@@ -1347,7 +1342,7 @@ namespace settings {
         kindBadge->setAlign(FlexAlign::Center);
         kindBadge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
         kindBadge->setRadius(Style::radiusSm * ctx.scale);
-        kindBadge->setBackground(widgetBadgeColor(info.kind));
+        kindBadge->setFill(widgetBadgeColor(info.kind));
         kindBadge->addChild(
             makeLabel(info.badge, Style::fontSizeCaption * ctx.scale, roleColor(ColorRole::OnSurface), true));
         itemTop->addChild(std::move(kindBadge));
@@ -1490,9 +1485,8 @@ namespace settings {
         emptyState->setGap(2.0f * ctx.scale);
         emptyState->setPadding(Style::spaceMd * ctx.scale, Style::spaceSm * ctx.scale);
         emptyState->setRadius(Style::radiusSm * ctx.scale);
-        emptyState->setBackground(roleColor(ColorRole::SurfaceVariant, 0.25f));
-        emptyState->setBorderColor(roleColor(ColorRole::Outline, 0.18f));
-        emptyState->setBorderWidth(Style::borderWidth);
+        emptyState->setFill(roleColor(ColorRole::SurfaceVariant, 0.25f));
+        emptyState->setBorder(roleColor(ColorRole::Outline, 0.18f), Style::borderWidth);
         emptyState->addChild(makeLabel(i18n::tr("settings.lane-empty"), Style::fontSizeCaption * ctx.scale,
                                        roleColor(ColorRole::OnSurfaceVariant), true));
         emptyState->addChild(makeLabel(i18n::tr("settings.lane-empty-hint"), Style::fontSizeCaption * ctx.scale,

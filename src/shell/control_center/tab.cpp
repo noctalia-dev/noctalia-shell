@@ -7,15 +7,13 @@
 
 namespace control_center {
 
-  void applyOutlinedCard(Flex& card, float scale) {
+  void applySectionCardStyle(Flex& card, float scale) {
+    card.setCardStyle(scale);
+    card.setFill(roleColor(ColorRole::Surface));
     card.setDirection(FlexDirection::Vertical);
     card.setAlign(FlexAlign::Stretch);
     card.setGap(Style::spaceSm * scale);
     card.setPadding((Style::spaceSm + Style::spaceXs) * scale, Style::spaceMd * scale);
-    card.setRadius(Style::radiusXl * scale);
-    card.setBackground(roleColor(ColorRole::Surface, 0.75f));
-    card.setBorderWidth(Style::borderWidth);
-    card.setBorderColor(roleColor(ColorRole::Outline, 0.5f));
   }
 
   Label* addTitle(Flex& parent, const std::string& text, float scale) {

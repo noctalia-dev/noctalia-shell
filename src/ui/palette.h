@@ -3,7 +3,9 @@
 #include "render/core/color.h"
 #include "ui/signal.h"
 
+#include <cstdint>
 #include <optional>
+#include <string_view>
 
 enum class ColorRole : std::uint8_t {
   Primary,
@@ -71,6 +73,7 @@ constexpr bool operator==(const Palette& lhs, const Palette& rhs) noexcept {
 extern Palette palette;
 
 [[nodiscard]] const Color& resolveColorRole(ColorRole role) noexcept;
+[[nodiscard]] std::optional<ColorRole> colorRoleFromToken(std::string_view token);
 [[nodiscard]] ThemeColor roleColor(ColorRole role, float alpha = 1.0f) noexcept;
 [[nodiscard]] ThemeColor fixedColor(const Color& color) noexcept;
 [[nodiscard]] Color resolveThemeColor(const ThemeColor& color) noexcept;
