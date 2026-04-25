@@ -25,6 +25,9 @@ public:
   // cb is called on the main loop thread when the transfer completes or fails.
   void download(std::string_view url, const std::filesystem::path& destPath, CompletionCallback cb);
 
+  // Fire-and-forget async POST. cb is called on the main loop thread when done.
+  void post(std::string_view url, std::string body, std::string_view contentType, CompletionCallback cb);
+
   // PollSource integration — called by HttpClientPollSource.
   void addPollFds(std::vector<pollfd>& fds);
   [[nodiscard]] int timeoutMs() const;
@@ -39,11 +42,20 @@ private:
     std::string destKey;
   };
 
+  struct PostTransfer {
+    std::string body;
+    curl_slist* headers = nullptr;
+    CompletionCallback callback;
+  };
+
   void finishTransfer(CURL* easy, bool success);
+  void finishPostTransfer(CURL* easy, bool success);
+  [[nodiscard]] bool hasActiveTransfers() const;
 
   CURLM* m_multi = nullptr;
   int m_running = 0;
   bool m_offlineMode = false;
   std::unordered_map<CURL*, Transfer> m_transfers;
+  std::unordered_map<CURL*, PostTransfer> m_postTransfers;
   std::unordered_map<std::string, CURL*> m_activeByDest;
 };

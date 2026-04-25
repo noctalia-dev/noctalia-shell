@@ -19,9 +19,18 @@ HttpClient::~HttpClient() {
     }
     std::filesystem::remove(transfer.tempPath);
   }
+  for (auto& [easy, post] : m_postTransfers) {
+    curl_multi_remove_handle(m_multi, easy);
+    curl_easy_cleanup(easy);
+    if (post.headers != nullptr) {
+      curl_slist_free_all(post.headers);
+    }
+  }
   curl_multi_cleanup(m_multi);
   curl_global_cleanup();
 }
+
+bool HttpClient::hasActiveTransfers() const { return !m_transfers.empty() || !m_postTransfers.empty(); }
 
 void HttpClient::download(std::string_view url, const std::filesystem::path& destPath, CompletionCallback cb) {
   if (m_offlineMode) {
@@ -73,8 +82,46 @@ void HttpClient::download(std::string_view url, const std::filesystem::path& des
   curl_multi_perform(m_multi, &m_running);
 }
 
+void HttpClient::post(std::string_view url, std::string body, std::string_view contentType, CompletionCallback cb) {
+  if (m_offlineMode) {
+    if (cb) {
+      cb(false);
+    }
+    return;
+  }
+
+  CURL* easy = curl_easy_init();
+  if (easy == nullptr) {
+    if (cb) {
+      cb(false);
+    }
+    return;
+  }
+
+  PostTransfer post{};
+  post.body = std::move(body);
+  post.callback = std::move(cb);
+
+  const std::string header = "Content-Type: " + std::string(contentType);
+  post.headers = curl_slist_append(nullptr, header.c_str());
+
+  const std::string urlStr(url);
+  curl_easy_setopt(easy, CURLOPT_URL, urlStr.c_str());
+  curl_easy_setopt(easy, CURLOPT_POST, 1L);
+  curl_easy_setopt(easy, CURLOPT_POSTFIELDSIZE, static_cast<long>(post.body.size()));
+  curl_easy_setopt(easy, CURLOPT_POSTFIELDS, post.body.c_str());
+  curl_easy_setopt(easy, CURLOPT_HTTPHEADER, post.headers);
+  curl_easy_setopt(easy, CURLOPT_TIMEOUT, 10L);
+  curl_easy_setopt(easy, CURLOPT_NOSIGNAL, 1L);
+  curl_easy_setopt(easy, CURLOPT_FAILONERROR, 1L);
+
+  m_postTransfers[easy] = std::move(post);
+  curl_multi_add_handle(m_multi, easy);
+  curl_multi_perform(m_multi, &m_running);
+}
+
 void HttpClient::addPollFds(std::vector<pollfd>& fds) {
-  if (m_transfers.empty()) {
+  if (!hasActiveTransfers()) {
     return;
   }
 
@@ -100,7 +147,7 @@ void HttpClient::addPollFds(std::vector<pollfd>& fds) {
 }
 
 int HttpClient::timeoutMs() const {
-  if (m_transfers.empty()) {
+  if (!hasActiveTransfers()) {
     return -1;
   }
   long timeout = -1;
@@ -112,7 +159,7 @@ int HttpClient::timeoutMs() const {
 }
 
 void HttpClient::dispatch(const std::vector<pollfd>& /*fds*/, std::size_t /*startIdx*/) {
-  if (m_transfers.empty()) {
+  if (!hasActiveTransfers()) {
     return;
   }
 
@@ -124,7 +171,11 @@ void HttpClient::dispatch(const std::vector<pollfd>& /*fds*/, std::size_t /*star
     if (msg->msg == CURLMSG_DONE) {
       CURL* easy = msg->easy_handle;
       const bool success = (msg->data.result == CURLE_OK);
-      finishTransfer(easy, success);
+      if (m_postTransfers.contains(easy)) {
+        finishPostTransfer(easy, success);
+      } else {
+        finishTransfer(easy, success);
+      }
     }
   }
 }
@@ -164,5 +215,28 @@ void HttpClient::finishTransfer(CURL* easy, bool success) {
 
   for (auto& callback : transfer.callbacks) {
     callback(success);
+  }
+}
+
+void HttpClient::finishPostTransfer(CURL* easy, bool success) {
+  auto it = m_postTransfers.find(easy);
+  if (it == m_postTransfers.end()) {
+    curl_multi_remove_handle(m_multi, easy);
+    curl_easy_cleanup(easy);
+    return;
+  }
+
+  PostTransfer post = std::move(it->second);
+  m_postTransfers.erase(it);
+
+  curl_multi_remove_handle(m_multi, easy);
+  curl_easy_cleanup(easy);
+
+  if (post.headers != nullptr) {
+    curl_slist_free_all(post.headers);
+  }
+
+  if (post.callback) {
+    post.callback(success);
   }
 }
