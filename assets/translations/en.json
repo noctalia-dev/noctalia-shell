@@ -39,6 +39,34 @@
     "truncated": "… truncated"
   },
 
+  "theme": {
+    "scheme": {
+      "m3-content": "M3 Content",
+      "m3-tonal-spot": "M3 Tonal Spot",
+      "m3-fruit-salad": "M3 Fruit Salad",
+      "m3-rainbow": "M3 Rainbow",
+      "m3-monochrome": "M3 Monochrome",
+      "vibrant": "Vibrant",
+      "faithful": "Faithful",
+      "dysfunctional": "Dysfunctional",
+      "muted": "Muted"
+    }
+  },
+
+  "setup-wizard": {
+    "title": "Welcome to Noctalia",
+    "subtitle": "A few quick choices to get you started.",
+    "mode": "Mode",
+    "premade-scheme": "Premade Scheme",
+    "wallpaper-scheme": "Wallpaper Scheme",
+    "wallpaper": "Wallpaper",
+    "no-wallpaper-selected": "No wallpaper selected",
+    "browse": "Browse",
+    "select-wallpaper": "Select Wallpaper",
+    "footer-note": "You can change these later in settings.",
+    "get-started": "Get Started"
+  },
+
   "settings": {
     "title": "Settings",
     "search-placeholder": "Search settings…",

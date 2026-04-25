@@ -2,6 +2,7 @@
 
 #include "shell/panel/panel.h"
 
+#include <cstdint>
 #include <string>
 
 class Button;
@@ -13,6 +14,7 @@ class Renderer;
 class Select;
 class Toggle;
 class WaylandConnection;
+enum class ThemeSource : std::uint8_t;
 
 class SetupWizardPanel : public Panel {
 public:
@@ -22,7 +24,7 @@ public:
   void onClose() override;
 
   [[nodiscard]] float preferredWidth() const override { return scaled(560.0f); }
-  [[nodiscard]] float preferredHeight() const override { return scaled(500.0f); }
+  [[nodiscard]] float preferredHeight() const override { return scaled(530.0f); }
   [[nodiscard]] bool centeredHorizontally() const override { return true; }
   [[nodiscard]] bool centeredVertically() const override { return true; }
   [[nodiscard]] bool hasDecoration() const override { return true; }
@@ -33,6 +35,7 @@ public:
 
 private:
   void doLayout(Renderer& renderer, float width, float height) override;
+  void configureThemeOptionSelect();
   void commit();
 
   ConfigService* m_config = nullptr;
@@ -41,7 +44,12 @@ private:
   Image* m_logo = nullptr;
   Toggle* m_telemetryToggle = nullptr;
   Select* m_modeSelect = nullptr;
-  Select* m_paletteSelect = nullptr;
+  Select* m_themeSourceSelect = nullptr;
+  Label* m_themeOptionLabel = nullptr;
+  Select* m_themeOptionSelect = nullptr;
   Label* m_wallpaperLabel = nullptr;
+  ThemeSource m_themeSource{};
+  bool m_configuringThemeOptionSelect = false;
+  std::string m_builtinPalette;
   std::string m_wallpaperDir;
 };
