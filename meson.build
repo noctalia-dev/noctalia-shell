@@ -408,6 +408,7 @@ _noctalia_sources = files(
   'src/shell/panel/panel_manager.cpp',
   'src/shell/polkit/polkit_panel.cpp',
   'src/shell/session/session_panel.cpp',
+  'src/shell/setup_wizard/setup_wizard_panel.cpp',
   'src/system/telemetry_service.cpp',
   'src/shell/settings/bar_widget_editor.cpp',
   'src/shell/settings/settings_registry.cpp',

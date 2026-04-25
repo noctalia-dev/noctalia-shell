@@ -17,6 +17,7 @@
 #include "shell/control_center/control_center_panel.h"
 #include "shell/launcher/launcher_panel.h"
 #include "shell/session/session_panel.h"
+#include "shell/setup_wizard/setup_wizard_panel.h"
 #include "shell/test/test_panel.h"
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 #include "system/distro_info.h"
@@ -753,6 +754,11 @@ void Application::initUi() {
   m_panelManager.registerPanel("wallpaper",
                                std::make_unique<WallpaperPanel>(&m_wayland, &m_configService, &m_thumbnailService));
   m_panelManager.registerPanel("polkit", std::make_unique<PolkitPanel>([this]() { return m_polkitAgent.get(); }));
+  m_panelManager.registerPanel("setup-wizard", std::make_unique<SetupWizardPanel>(&m_configService, &m_wayland));
+
+  if (SetupWizardPanel::isFirstRun()) {
+    DeferredCall::callLater([]() { PanelManager::instance().togglePanel("setup-wizard"); });
+  }
 
   m_notificationToast.initialize(m_wayland, &m_configService, &m_notificationManager, &m_renderContext, &m_httpClient);
   m_configService.setNotificationManager(&m_notificationManager);

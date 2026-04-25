@@ -13,8 +13,14 @@ enum class FileDialogMode : std::uint8_t {
   SelectFolder,
 };
 
+enum class FileDialogViewMode : std::uint8_t {
+  List,
+  Grid,
+};
+
 struct FileDialogOptions {
   FileDialogMode mode = FileDialogMode::Open;
+  FileDialogViewMode defaultViewMode = FileDialogViewMode::List;
   std::filesystem::path startDirectory;
   std::vector<std::string> extensions;
   std::string defaultFilename;

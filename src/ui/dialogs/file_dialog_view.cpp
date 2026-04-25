@@ -328,7 +328,7 @@ void FileDialogView::onOpen(std::string_view /*context*/) {
   m_options = FileDialog::currentOptions();
   m_currentDirectory = resolveStartDirectory(m_options.startDirectory);
   m_filterQuery.clear();
-  m_viewMode = ViewMode::List;
+  m_viewMode = m_options.defaultViewMode == FileDialogViewMode::Grid ? ViewMode::Grid : ViewMode::List;
   m_sortField = FileDialogSortField::Name;
   m_sortOrder = FileDialogSortOrder::Ascending;
   m_showHiddenFiles = m_options.showHiddenFiles;
@@ -356,7 +356,7 @@ void FileDialogView::onOpen(std::string_view /*context*/) {
     m_filenameInput->inputArea()->setFocusable(m_options.mode == FileDialogMode::Save);
   }
 
-  setViewMode(ViewMode::List);
+  setViewMode(m_viewMode);
   refreshDirectory();
 }
 
