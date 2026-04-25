@@ -67,6 +67,25 @@ namespace {
   }
 
   void normalizeDesktopWidgetSettings(DesktopWidgetState& widget) {
+    if (widget.type == "sticker") {
+      const auto opacityIt = widget.settings.find("opacity");
+      if (opacityIt == widget.settings.end()) {
+        widget.settings.insert_or_assign("opacity", static_cast<double>(1.0));
+        return;
+      }
+      if (const auto* doubleValue = std::get_if<double>(&opacityIt->second)) {
+        widget.settings.insert_or_assign("opacity", std::clamp(*doubleValue, 0.0, 1.0));
+        return;
+      }
+      if (const auto* intValue = std::get_if<std::int64_t>(&opacityIt->second)) {
+        const double clamped = std::clamp(static_cast<double>(*intValue), 0.0, 1.0);
+        widget.settings.insert_or_assign("opacity", clamped);
+        return;
+      }
+      widget.settings.insert_or_assign("opacity", static_cast<double>(1.0));
+      return;
+    }
+
     if (widget.type != "audio_visualizer") {
       return;
     }

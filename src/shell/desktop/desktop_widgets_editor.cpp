@@ -928,6 +928,7 @@ void DesktopWidgetsEditor::addWidget(const std::string& outputName, const std::s
   }
 
   if (widget.type == "sticker") {
+    widget.settings.emplace("opacity", static_cast<double>(1.0));
     auto widgetId = widget.id;
     m_snapshot.widgets.push_back(std::move(widget));
 

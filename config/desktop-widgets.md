@@ -234,11 +234,13 @@ rotation = 0.0
 
 [widget.settings]
 image_path = "/path/to/image.png"
+opacity    = 1.0
 ```
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `image_path` | string | — | Absolute path to the image file |
+| `opacity` | float | `1.0` | Sticker image opacity from `0.0` to `1.0` |
 
 ---
 

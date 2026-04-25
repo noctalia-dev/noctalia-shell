@@ -4,6 +4,7 @@
 #include "render/scene/node.h"
 #include "ui/controls/image.h"
 
+#include <algorithm>
 #include <memory>
 
 namespace {
@@ -12,10 +13,12 @@ namespace {
 
 } // namespace
 
-DesktopStickerWidget::DesktopStickerWidget(std::string imagePath) : m_imagePath(std::move(imagePath)) {}
+DesktopStickerWidget::DesktopStickerWidget(std::string imagePath, float opacity)
+    : m_imagePath(std::move(imagePath)), m_opacity(std::clamp(opacity, 0.0f, 1.0f)) {}
 
 void DesktopStickerWidget::create() {
   auto rootNode = std::make_unique<Node>();
+  rootNode->setOpacity(m_opacity);
 
   auto image = std::make_unique<Image>();
   image->setFit(ImageFit::Contain);

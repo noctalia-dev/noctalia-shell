@@ -9,6 +9,8 @@
 #include "shell/desktop/widgets/desktop_sysmon_widget.h"
 #include "shell/desktop/widgets/desktop_weather_widget.h"
 
+#include <algorithm>
+
 namespace {
 
   constexpr Logger kLog("desktop");
@@ -131,7 +133,8 @@ DesktopWidgetFactory::create(const std::string& type,
   }
 
   if (type == "sticker") {
-    auto widget = std::make_unique<DesktopStickerWidget>(getStringSetting(settings, "image_path"));
+    auto widget = std::make_unique<DesktopStickerWidget>(
+        getStringSetting(settings, "image_path"), std::clamp(getFloatSetting(settings, "opacity", 1.0f), 0.0f, 1.0f));
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);
     return widget;
