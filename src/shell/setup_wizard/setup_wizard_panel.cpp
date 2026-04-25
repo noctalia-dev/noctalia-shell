@@ -133,9 +133,9 @@ namespace {
     card->setGap(Style::spaceMd * scale);
     card->setPadding(Style::spaceMd * scale, Style::spaceLg * scale);
     card->setRadius(Style::radiusLg * scale);
-    card->setBackground(roleColor(ColorRole::Surface, 0.82f));
+    card->setBackground(roleColor(ColorRole::SurfaceVariant));
     card->setBorderWidth(Style::borderWidth);
-    card->setBorderColor(roleColor(ColorRole::Outline, 0.42f));
+    card->setBorderColor(roleColor(ColorRole::Outline, 0.5f));
     return card;
   }
 
