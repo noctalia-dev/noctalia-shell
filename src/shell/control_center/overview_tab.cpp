@@ -26,8 +26,8 @@ using namespace control_center;
 
 namespace {
 
-  void styleOverviewCard(Flex& card, float scale) {
-    applyOutlinedCard(card, scale);
+  void applyOverviewCardStyle(Flex& card, float scale) {
+    applySectionCardStyle(card, scale);
     card.setGap(Style::spaceSm * scale);
   }
 
@@ -55,7 +55,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   // --- Weather ---
   auto weatherCard = std::make_unique<Flex>();
-  styleOverviewCard(*weatherCard, scale);
+  applyOverviewCardStyle(*weatherCard, scale);
   m_weatherCard = weatherCard.get();
   weatherCard->setFlexGrow(1.0f);
   weatherCard->setGap(Style::spaceXs * scale);
@@ -116,7 +116,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   // --- Media ---
   auto mediaCard = std::make_unique<Flex>();
-  styleOverviewCard(*mediaCard, scale);
+  applyOverviewCardStyle(*mediaCard, scale);
   m_mediaCard = mediaCard.get();
   mediaCard->setFlexGrow(1.0f);
   mediaCard->setGap(Style::spaceXs * scale);
@@ -181,7 +181,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   // --- Session (display name + uptime) ---
   auto userCard = std::make_unique<Flex>();
-  styleOverviewCard(*userCard, scale);
+  applyOverviewCardStyle(*userCard, scale);
   m_userCard = userCard.get();
   auto userRow = std::make_unique<Flex>();
   userRow->setDirection(FlexDirection::Horizontal);
@@ -266,7 +266,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   bottomRow->setGap(Style::spaceMd * scale);
 
   auto powerCard = std::make_unique<Flex>();
-  styleOverviewCard(*powerCard, scale);
+  applyOverviewCardStyle(*powerCard, scale);
   m_powerCard = powerCard.get();
   powerCard->setFlexGrow(1.0f);
   addTitle(*powerCard, "Power", scale);
@@ -287,7 +287,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   bottomRow->addChild(std::move(powerCard));
 
   auto audioCard = std::make_unique<Flex>();
-  styleOverviewCard(*audioCard, scale);
+  applyOverviewCardStyle(*audioCard, scale);
   m_audioCard = audioCard.get();
   audioCard->setFlexGrow(1.0f);
   addTitle(*audioCard, "Audio", scale);

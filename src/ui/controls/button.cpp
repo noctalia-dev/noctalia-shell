@@ -270,7 +270,7 @@ void Button::applyVariant() {
   setRadius(Style::radiusMd);
 
   m_palette = paletteForVariant(m_variant);
-  setBorderWidth(m_palette.borderWidth);
+  setBorder(m_palette.normal.border, m_palette.borderWidth);
 
   // Only seed targets before the first visual state application. Once the
   // button has been painted, applyVisualState() must compare against the
@@ -335,8 +335,8 @@ void Button::ensureGlyph() {
 }
 
 void Button::applyColors(const Color& bg, const Color& border, const Color& label) {
-  setBackground(bg);
-  setBorderColor(border);
+  setFill(bg);
+  setBorder(border, m_palette.borderWidth);
   if (m_label != nullptr) {
     m_label->setColor(label);
   }

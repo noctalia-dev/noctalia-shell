@@ -14,8 +14,7 @@
 Toggle::Toggle() {
   setAlign(FlexAlign::Center);
   setDirection(FlexDirection::Horizontal);
-  setBorderColor(roleColor(ColorRole::Outline));
-  setBorderWidth(Style::borderWidth);
+  setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
 
   auto thumb = std::make_unique<RectNode>();
   m_thumb = static_cast<RectNode*>(addChild(std::move(thumb)));
@@ -144,8 +143,8 @@ void Toggle::applyAnimatedState(float t) {
     borderColor = roleColor(ColorRole::Primary);
   }
 
-  setBackground(trackColor);
-  setBorderColor(borderColor);
+  setFill(trackColor);
+  setBorder(borderColor, Style::borderWidth);
   m_thumb->setPosition(thumbX, m_inset);
 
   auto thumbStyle = m_thumb->style();

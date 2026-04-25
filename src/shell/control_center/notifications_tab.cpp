@@ -52,7 +52,7 @@ namespace {
     return ColorRole::OnSurfaceVariant;
   }
 
-  void applyNotificationCardStyle(Flex& card, float scale) { applyOutlinedCard(card, scale); }
+  void applyNotificationCardStyle(Flex& card, float scale) { applySectionCardStyle(card, scale); }
 
   bool canExpandText(Renderer& renderer, std::string_view text, float fontSize, bool bold, float maxWidth,
                      int collapsedMaxLines) {
@@ -81,7 +81,8 @@ std::unique_ptr<Flex> NotificationsTab::create() {
 
   auto scroll = std::make_unique<ScrollView>();
   scroll->setScrollbarVisible(true);
-  scroll->clearBackgroundStyle();
+  scroll->clearFill();
+  scroll->clearBorder();
   scroll->setFlexGrow(1.0f);
   m_scroll = scroll.get();
   m_list = scroll->content();

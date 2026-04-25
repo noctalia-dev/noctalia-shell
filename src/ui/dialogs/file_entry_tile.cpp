@@ -3,6 +3,7 @@
 #include "render/core/color.h"
 #include "render/core/renderer.h"
 #include "render/core/thumbnail_service.h"
+#include "ui/card_style.h"
 #include "ui/controls/box.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/image.h"
@@ -49,9 +50,8 @@ FileEntryTile::FileEntryTile(float scale, ThumbnailService* thumbnails) : m_scal
   m_background = static_cast<Box*>(addChild(std::move(background)));
 
   auto preview = std::make_unique<Box>();
+  ui::applyCardStyle(*preview, scale);
   preview->setRadius(Style::radiusMd * scale);
-  preview->setFill(roleColor(ColorRole::SurfaceVariant));
-  preview->setBorder(roleColor(ColorRole::Outline, 0.5f), Style::borderWidth);
   m_preview = static_cast<Box*>(addChild(std::move(preview)));
 
   auto image = std::make_unique<Image>();

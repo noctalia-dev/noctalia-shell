@@ -2,6 +2,7 @@
 
 #include "render/programs/rect_program.h"
 #include "render/scene/rect_node.h"
+#include "ui/card_style.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 
@@ -56,6 +57,15 @@ void Box::setFrameSize(float w, float h) {
   m_rect->setFrameSize(w, h);
 }
 
+void Box::applyPalette() {
+  auto style = m_rect->style();
+  style.fill = resolveThemeColor(m_fill);
+  style.border = resolveThemeColor(m_border);
+  style.borderWidth = m_borderWidth;
+  style.fillMode = FillMode::Solid;
+  m_rect->setStyle(style);
+}
+
 void Box::setFlatStyle() {
   m_fill = roleColor(ColorRole::Surface);
   m_border = roleColor(ColorRole::Outline);
@@ -67,20 +77,6 @@ void Box::setFlatStyle() {
   style.fillMode = FillMode::Solid;
   style.radius = 0;
   style.softness = 0;
-  m_rect->setStyle(style);
-}
-
-void Box::setCardStyle() {
-  m_fill = roleColor(ColorRole::Surface);
-  m_border = roleColor(ColorRole::Outline);
-  m_borderWidth = Style::borderWidth;
-  auto style = m_rect->style();
-  style.fill = resolveThemeColor(m_fill);
-  style.border = resolveThemeColor(m_border);
-  style.borderWidth = m_borderWidth;
-  style.fillMode = FillMode::Solid;
-  style.radius = Style::radiusMd;
-  style.softness = 1.0f;
   m_rect->setStyle(style);
 }
 
@@ -98,11 +94,4 @@ void Box::setPanelStyle() {
   m_rect->setStyle(style);
 }
 
-void Box::applyPalette() {
-  auto style = m_rect->style();
-  style.fill = resolveThemeColor(m_fill);
-  style.border = resolveThemeColor(m_border);
-  style.borderWidth = m_borderWidth;
-  style.fillMode = FillMode::Solid;
-  m_rect->setStyle(style);
-}
+void Box::setCardStyle(float scale) { ui::applyCardStyle(*this, scale); }

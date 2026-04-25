@@ -236,11 +236,10 @@ void WallpaperTile::applyVisualState() {
   ThemeColor borderColor = active ? roleColor(ColorRole::Primary) : roleColor(ColorRole::Outline);
   ThemeColor frameBg = roleColor(ColorRole::SurfaceVariant);
 
-  m_thumbBox->setBackground(frameBg);
+  m_thumbBox->setFill(frameBg);
   if (m_entry.isDir) {
     // Folder tiles hide the image node, so draw the state outline on the frame.
-    m_thumbBox->setBorderColor(borderColor);
-    m_thumbBox->setBorderWidth(outlineWidth);
+    m_thumbBox->setBorder(borderColor, outlineWidth);
     m_thumb->setBorder(roleColor(ColorRole::Outline), outlineWidth);
   } else {
     m_thumbBox->clearBorder();

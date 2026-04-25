@@ -131,7 +131,7 @@ std::unique_ptr<Flex> SystemTab::create() {
   // CPU card
   {
     auto card = std::make_unique<Flex>();
-    applyOutlinedCard(*card, sc);
+    applySectionCardStyle(*card, sc);
     card->setFlexGrow(1.0f);
     m_cpuCard = card.get();
 
@@ -146,7 +146,7 @@ std::unique_ptr<Flex> SystemTab::create() {
   // Memory card
   {
     auto card = std::make_unique<Flex>();
-    applyOutlinedCard(*card, sc);
+    applySectionCardStyle(*card, sc);
     card->setFlexGrow(1.0f);
     m_ramCard = card.get();
 
@@ -160,7 +160,7 @@ std::unique_ptr<Flex> SystemTab::create() {
   // Network card
   {
     auto card = std::make_unique<Flex>();
-    applyOutlinedCard(*card, sc);
+    applySectionCardStyle(*card, sc);
     card->setFlexGrow(1.0f);
     m_netCard = card.get();
 
@@ -186,7 +186,7 @@ std::unique_ptr<Flex> SystemTab::create() {
   // Load Average card
   {
     auto card = std::make_unique<Flex>();
-    applyOutlinedCard(*card, sc);
+    applySectionCardStyle(*card, sc);
     card->setFlexGrow(0.0f);
     card->setMinHeight(Style::controlHeightLg * 1.9f * sc);
     m_loadCard = card.get();
@@ -200,7 +200,7 @@ std::unique_ptr<Flex> SystemTab::create() {
   // System Info card
   {
     auto card = std::make_unique<Flex>();
-    applyOutlinedCard(*card, sc);
+    applySectionCardStyle(*card, sc);
     card->setFlexGrow(1.0f);
     card->setMinHeight(Style::controlHeightLg * 6.2f * sc);
     m_infoCard = card.get();

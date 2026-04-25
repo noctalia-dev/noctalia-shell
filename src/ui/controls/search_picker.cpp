@@ -44,9 +44,8 @@ SearchPicker::SearchPicker() {
   setAlign(FlexAlign::Stretch);
   setGap(Style::spaceSm);
   setPadding(Style::spaceSm);
-  setBackground(roleColor(ColorRole::Surface));
-  setBorderColor(roleColor(ColorRole::Outline));
-  setBorderWidth(Style::borderWidth);
+  setFill(roleColor(ColorRole::Surface));
+  setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
   setRadius(Style::radiusMd);
   setSize(kDefaultWidth, kDefaultHeight);
 
@@ -248,8 +247,8 @@ void SearchPicker::applyRowStates() {
     const bool selected = option.value == m_selectedValue;
     const bool enabled = option.enabled;
 
-    row.row->setBackground(highlighted ? roleColor(ColorRole::Primary)
-                                       : (selected ? roleColor(ColorRole::Primary, 0.16f) : clearThemeColor()));
+    row.row->setFill(highlighted ? roleColor(ColorRole::Primary)
+                                 : (selected ? roleColor(ColorRole::Primary, 0.16f) : clearThemeColor()));
     row.title->setColor(highlighted
                             ? roleColor(ColorRole::OnPrimary)
                             : (enabled ? roleColor(ColorRole::OnSurface) : roleColor(ColorRole::OnSurface, 0.55f)));

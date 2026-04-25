@@ -235,7 +235,7 @@ void ClipboardPanel::create() {
 
   auto previewScroll = std::make_unique<ScrollView>();
   previewScroll->setScrollbarVisible(true);
-  previewScroll->setBackgroundRoles(ColorRole::SurfaceVariant, ColorRole::Outline, Style::borderWidth);
+  previewScroll->setCardStyle(scale);
   previewScroll->setFlexGrow(1.0f);
   m_previewScrollView = previewScroll.get();
   m_previewContent = previewScroll->content();
@@ -454,7 +454,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
     row->setMinHeight(kRowHeight);
     row->setRadius(Style::radiusMd);
     if (i == m_selectedIndex) {
-      row->setBackground(roleColor(ColorRole::SurfaceVariant));
+      row->setFill(roleColor(ColorRole::SurfaceVariant));
     }
 
     auto* rowPtr = row.get();
@@ -472,7 +472,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
         m_mouseActive = true;
         if (idx != m_selectedIndex && m_hoverIndex != idx) {
           m_hoverIndex = idx;
-          rowPtr->setBackground(roleColor(ColorRole::SurfaceVariant, 0.45f));
+          rowPtr->setFill(roleColor(ColorRole::SurfaceVariant, 0.45f));
           PanelManager::instance().refresh();
         }
       }
@@ -482,7 +482,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
         return;
       }
       m_hoverIndex = idx;
-      rowPtr->setBackground(roleColor(ColorRole::SurfaceVariant, 0.45f));
+      rowPtr->setFill(roleColor(ColorRole::SurfaceVariant, 0.45f));
       PanelManager::instance().refresh();
     });
     area->setOnLeave([this, idx = i, rowPtr]() {
@@ -490,7 +490,7 @@ void ClipboardPanel::rebuildList(Renderer& renderer, float width) {
         return;
       }
       m_hoverIndex = static_cast<std::size_t>(-1);
-      rowPtr->setBackground(rgba(0, 0, 0, 0));
+      rowPtr->setFill(rgba(0, 0, 0, 0));
       PanelManager::instance().refresh();
     });
 
@@ -711,13 +711,13 @@ void ClipboardPanel::updateRowSelection(std::size_t previousIndex) {
   if (previousIndex < m_rowFlexes.size() && m_rowFlexes[previousIndex] != nullptr) {
     Flex* prev = m_rowFlexes[previousIndex];
     if (m_hoverIndex == previousIndex) {
-      prev->setBackground(roleColor(ColorRole::SurfaceVariant, 0.45f));
+      prev->setFill(roleColor(ColorRole::SurfaceVariant, 0.45f));
     } else {
-      prev->setBackground(rgba(0, 0, 0, 0));
+      prev->setFill(rgba(0, 0, 0, 0));
     }
   }
   if (m_selectedIndex < m_rowFlexes.size() && m_rowFlexes[m_selectedIndex] != nullptr) {
-    m_rowFlexes[m_selectedIndex]->setBackground(roleColor(ColorRole::SurfaceVariant));
+    m_rowFlexes[m_selectedIndex]->setFill(roleColor(ColorRole::SurfaceVariant));
   }
 }
 

@@ -221,7 +221,7 @@ void FileDialogView::create() {
   auto listScroll = std::make_unique<ScrollView>();
   listScroll->setFlexGrow(1.0f);
   listScroll->setScrollbarVisible(true);
-  listScroll->setBackgroundRoles(ColorRole::SurfaceVariant, ColorRole::Outline, Style::borderWidth);
+  listScroll->setCardStyle(scale);
   listScroll->setOnScrollChanged([this](float offset) {
     if (m_visibleEntries.empty() || m_listRowHeight <= 0.0f) {
       return;
@@ -250,7 +250,7 @@ void FileDialogView::create() {
   auto gridScroll = std::make_unique<ScrollView>();
   gridScroll->setFlexGrow(1.0f);
   gridScroll->setScrollbarVisible(true);
-  gridScroll->setBackgroundRoles(ColorRole::SurfaceVariant, ColorRole::Outline, Style::borderWidth);
+  gridScroll->setCardStyle(scale);
   gridScroll->setViewportPaddingH(0.0f);
   gridScroll->setVisible(false);
   gridScroll->setOnScrollChanged([this](float offset) {

@@ -92,7 +92,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
   m_rootLayout = tab.get();
 
   auto calendarCard = std::make_unique<Flex>();
-  control_center::applyOutlinedCard(*calendarCard, scale);
+  control_center::applySectionCardStyle(*calendarCard, scale);
   calendarCard->setGap(Style::spaceMd * scale);
   calendarCard->setFlexGrow(3.0f);
   m_card = calendarCard.get();
@@ -180,7 +180,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
   tab->addChild(std::move(calendarCard));
 
   auto tasksCard = std::make_unique<Flex>();
-  control_center::applyOutlinedCard(*tasksCard, scale);
+  control_center::applySectionCardStyle(*tasksCard, scale);
   tasksCard->setFlexGrow(2.0f);
 
   auto tasksTitle = std::make_unique<Label>();

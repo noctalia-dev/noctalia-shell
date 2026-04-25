@@ -25,7 +25,7 @@ public:
 
   // Presets
   void setFlatStyle();
-  void setCardStyle();
+  void setCardStyle(float scale = 1.0f);
   void setPanelStyle();
 
   void setSize(float width, float height) override;

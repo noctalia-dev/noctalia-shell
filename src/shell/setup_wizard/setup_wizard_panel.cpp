@@ -132,10 +132,7 @@ namespace {
     card->setAlign(FlexAlign::Stretch);
     card->setGap(Style::spaceMd * scale);
     card->setPadding(Style::spaceMd * scale, Style::spaceLg * scale);
-    card->setRadius(Style::radiusLg * scale);
-    card->setBackground(roleColor(ColorRole::SurfaceVariant));
-    card->setBorderWidth(Style::borderWidth);
-    card->setBorderColor(roleColor(ColorRole::Outline, 0.5f));
+    card->setCardStyle(scale);
     return card;
   }
 

@@ -607,9 +607,8 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   toolbar->setAlign(FlexAlign::Center);
   toolbar->setGap(Style::spaceSm);
   toolbar->setPadding(Style::spaceSm, Style::spaceMd);
-  toolbar->setBackground(roleColor(ColorRole::Surface, 0.94f));
-  toolbar->setBorderColor(roleColor(ColorRole::Outline));
-  toolbar->setBorderWidth(Style::borderWidth);
+  toolbar->setFill(roleColor(ColorRole::Surface, 0.94f));
+  toolbar->setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
   toolbar->setRadius(Style::radiusXl);
   toolbar->setZIndex(200);
 
@@ -618,7 +617,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   toolbarHandle->setAlign(FlexAlign::Center);
   toolbarHandle->setGap(Style::spaceXs);
   toolbarHandle->setPadding(Style::spaceXs, Style::spaceSm);
-  toolbarHandle->setBackground(roleColor(ColorRole::SurfaceVariant, 0.85f));
+  toolbarHandle->setFill(roleColor(ColorRole::SurfaceVariant, 0.85f));
   toolbarHandle->setRadius(Style::radiusLg);
   toolbarHandle->setMinHeight(Style::controlHeightSm);
 

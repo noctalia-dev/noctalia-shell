@@ -72,7 +72,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   m_mediaColumn = mediaColumn.get();
 
   auto nowCard = std::make_unique<Flex>();
-  applyOutlinedCard(*nowCard, scale);
+  applySectionCardStyle(*nowCard, scale);
   nowCard->setGap(Style::spaceMd * scale);
   nowCard->setFlexGrow(1.0f);
   nowCard->setMinHeight(kMediaNowCardMinHeight * scale);
@@ -308,7 +308,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   visualizerColumn->setAlign(FlexAlign::Stretch);
   visualizerColumn->setGap(Style::spaceSm * scale);
   visualizerColumn->setFlexGrow(2.0f);
-  applyOutlinedCard(*visualizerColumn, scale);
+  applySectionCardStyle(*visualizerColumn, scale);
   visualizerColumn->setClipChildren(true);
   m_visualizerColumn = visualizerColumn.get();
 

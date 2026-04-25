@@ -519,10 +519,14 @@ void TestPanel::create() {
       tile->setJustify(FlexJustify::Center);
       tile->setGap(Style::spaceXs * scale);
       tile->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
-      tile->setRadius(Style::radiusMd * scale);
-      tile->setBackground(roleColor(tileData.accent ? ColorRole::Primary : ColorRole::SurfaceVariant));
-      tile->setBorderColor(roleColor(tileData.accent ? ColorRole::Primary : ColorRole::Outline));
-      tile->setBorderWidth(Style::borderWidth);
+      if (tileData.accent) {
+        tile->setRadius(Style::radiusMd * scale);
+        tile->setFill(roleColor(ColorRole::Primary));
+        tile->setBorder(roleColor(ColorRole::Primary), Style::borderWidth);
+      } else {
+        tile->setCardStyle(scale);
+        tile->setRadius(Style::radiusMd * scale);
+      }
 
       auto icon = std::make_unique<Glyph>();
       icon->setGlyph(tileData.glyph);
