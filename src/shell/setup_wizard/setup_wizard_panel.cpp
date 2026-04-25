@@ -64,12 +64,12 @@ namespace {
     auto card = std::make_unique<Flex>();
     card->setDirection(FlexDirection::Vertical);
     card->setAlign(FlexAlign::Stretch);
-    card->setGap(Style::spaceSm * scale);
-    card->setPadding(Style::spaceMd * scale, Style::spaceMd * scale);
-    card->setRadius(Style::radiusXl * scale);
-    card->setBackground(roleColor(ColorRole::Surface, 0.75f));
+    card->setGap(Style::spaceMd * scale);
+    card->setPadding(Style::spaceMd * scale, Style::spaceLg * scale);
+    card->setRadius(Style::radiusLg * scale);
+    card->setBackground(roleColor(ColorRole::Surface, 0.82f));
     card->setBorderWidth(Style::borderWidth);
-    card->setBorderColor(roleColor(ColorRole::Outline, 0.5f));
+    card->setBorderColor(roleColor(ColorRole::Outline, 0.42f));
     return card;
   }
 
@@ -77,8 +77,18 @@ namespace {
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
     row->setAlign(FlexAlign::Center);
+    row->setJustify(FlexJustify::SpaceBetween);
     row->setGap(Style::spaceMd * scale);
     return row;
+  }
+
+  std::unique_ptr<Flex> makeTextColumn() {
+    auto col = std::make_unique<Flex>();
+    col->setDirection(FlexDirection::Vertical);
+    col->setAlign(FlexAlign::Start);
+    col->setGap(2.0f);
+    col->setFlexGrow(1.0f);
+    return col;
   }
 
 } // namespace
@@ -98,52 +108,45 @@ void SetupWizardPanel::create() {
   auto root = std::make_unique<Flex>();
   root->setDirection(FlexDirection::Vertical);
   root->setAlign(FlexAlign::Stretch);
-  root->setGap(Style::spaceMd * scale);
-  root->setPadding(Style::spaceLg * scale, Style::spaceLg * scale);
+  root->setGap(Style::spaceLg * scale);
+  root->setPadding(24.0f * scale, 28.0f * scale);
   m_root = root.get();
 
-  // ── Header: logo + title ──
+  // Header
   {
     auto header = std::make_unique<Flex>();
-    header->setDirection(FlexDirection::Vertical);
-    header->setAlign(FlexAlign::Stretch);
-    header->setGap(Style::spaceSm * scale);
+    header->setDirection(FlexDirection::Horizontal);
+    header->setAlign(FlexAlign::Center);
+    header->setGap(Style::spaceMd * scale);
 
-    {
-      auto logoRow = std::make_unique<Flex>();
-      logoRow->setDirection(FlexDirection::Horizontal);
-      logoRow->setJustify(FlexJustify::Center);
-      auto logo = std::make_unique<Image>();
-      logo->setSize(48.0f * scale, 48.0f * scale);
-      m_logo = logo.get();
-      logoRow->addChild(std::move(logo));
-      header->addChild(std::move(logoRow));
-    }
+    auto logo = std::make_unique<Image>();
+    logo->setSize(44.0f * scale, 44.0f * scale);
+    m_logo = logo.get();
+    header->addChild(std::move(logo));
 
-    auto title = makeLabel("Welcome to Noctalia", Style::fontSizeTitle * scale, roleColor(ColorRole::OnSurface), true);
-    title->setTextAlign(TextAlign::Center);
-    header->addChild(std::move(title));
-    auto subtitle = makeLabel("A few quick choices to get you started.", Style::fontSizeBody * scale,
-                              roleColor(ColorRole::OnSurfaceVariant));
-    subtitle->setTextAlign(TextAlign::Center);
-    header->addChild(std::move(subtitle));
+    auto copy = makeTextColumn();
+    copy->setGap(Style::spaceXs * scale);
+    copy->addChild(makeLabel("Welcome to Noctalia", 18.0f * scale, roleColor(ColorRole::OnSurface), true));
+    copy->addChild(makeLabel("A few quick choices to get you started.", Style::fontSizeBody * scale,
+                             roleColor(ColorRole::OnSurfaceVariant)));
+    header->addChild(std::move(copy));
     root->addChild(std::move(header));
   }
 
   root->addChild(std::make_unique<Separator>());
 
-  // ── Telemetry ──
+  // Telemetry
   {
     auto card = makeCard(scale);
 
     auto row = makeRow(scale);
     {
-      auto col = std::make_unique<Flex>();
-      col->setDirection(FlexDirection::Vertical);
-      col->setFlexGrow(1.0f);
+      auto col = makeTextColumn();
       col->addChild(makeLabel("Usage Statistics", Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
-      col->addChild(makeLabel("Send an anonymous ping on startup to help improve Noctalia.",
-                              Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant)));
+      auto description = makeLabel("Send an anonymous ping on startup to help improve Noctalia.",
+                                   Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant));
+      description->setMaxWidth(360.0f * scale);
+      col->addChild(std::move(description));
       row->addChild(std::move(col));
     }
     {
@@ -157,7 +160,7 @@ void SetupWizardPanel::create() {
     root->addChild(std::move(card));
   }
 
-  // ── Theme ──
+  // Theme
   {
     auto card = makeCard(scale);
 
@@ -180,6 +183,7 @@ void SetupWizardPanel::create() {
       select->setFontSize(Style::fontSizeBody * scale);
       select->setControlHeight(Style::controlHeight * scale);
       select->setHorizontalPadding(Style::spaceMd * scale);
+      select->setMinWidth(220.0f * scale);
       select->setOnSelectionChanged([this](std::size_t index, std::string_view /*label*/) {
         static constexpr const char* kModes[] = {"dark", "light", "auto"};
         if (index < 3) {
@@ -212,6 +216,7 @@ void SetupWizardPanel::create() {
       select->setFontSize(Style::fontSizeBody * scale);
       select->setControlHeight(Style::controlHeight * scale);
       select->setHorizontalPadding(Style::spaceMd * scale);
+      select->setMinWidth(220.0f * scale);
       select->setOnSelectionChanged([this](std::size_t /*index*/, std::string_view name) {
         m_config->setOverride({"theme", "source"}, std::string("builtin"));
         m_config->setOverride({"theme", "builtin"}, std::string(name));
@@ -224,20 +229,19 @@ void SetupWizardPanel::create() {
     root->addChild(std::move(card));
   }
 
-  // ── Wallpaper ──
+  // Wallpaper
   {
     auto card = makeCard(scale);
 
     auto row = makeRow(scale);
     {
-      auto col = std::make_unique<Flex>();
-      col->setDirection(FlexDirection::Vertical);
-      col->setFlexGrow(1.0f);
+      auto col = makeTextColumn();
       col->addChild(makeLabel("Wallpaper", Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
       const std::string currentPath = m_config->getDefaultWallpaperPath();
       auto pathLabel = makeLabel(currentPath.empty() ? "No wallpaper selected" : currentPath,
                                  Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant));
-      pathLabel->setMaxWidth(280.0f * scale);
+      pathLabel->setMaxWidth(330.0f * scale);
+      pathLabel->setMaxLines(1);
       m_wallpaperLabel = pathLabel.get();
       col->addChild(std::move(pathLabel));
       row->addChild(std::move(col));
@@ -252,6 +256,7 @@ void SetupWizardPanel::create() {
       button->setMinHeight(Style::controlHeight * scale);
       button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
       button->setRadius(Style::radiusMd * scale);
+      button->setMinWidth(112.0f * scale);
       button->setOnClick([this]() {
         FileDialogOptions options;
         options.mode = FileDialogMode::Open;
@@ -275,6 +280,7 @@ void SetupWizardPanel::create() {
           if (m_wallpaperLabel != nullptr) {
             m_wallpaperLabel->setText(fullPath);
             m_wallpaperLabel->setColor(roleColor(ColorRole::Primary));
+            m_wallpaperLabel->setMaxLines(1);
           }
           m_config->setOverride({"wallpaper", "directory"}, parentDir);
           m_config->setWallpaperPath(std::nullopt, fullPath);
@@ -286,7 +292,7 @@ void SetupWizardPanel::create() {
     root->addChild(std::move(card));
   }
 
-  // ── Spacer + Get Started button ──
+  // Footer
   {
     auto spacer = std::make_unique<Flex>();
     spacer->setFlexGrow(1.0f);
@@ -295,17 +301,22 @@ void SetupWizardPanel::create() {
   {
     auto footer = std::make_unique<Flex>();
     footer->setDirection(FlexDirection::Horizontal);
-    footer->setJustify(FlexJustify::End);
+    footer->setAlign(FlexAlign::Center);
+    footer->setJustify(FlexJustify::SpaceBetween);
+
+    footer->addChild(makeLabel("You can change these later in settings.", Style::fontSizeCaption * scale,
+                               roleColor(ColorRole::OnSurfaceVariant)));
 
     auto button = std::make_unique<Button>();
     button->setText("Get Started");
     button->setGlyph("chevron-right");
-    button->setVariant(ButtonVariant::Default);
+    button->setVariant(ButtonVariant::Accent);
     button->setFontSize(Style::fontSizeBody * scale);
     button->setGlyphSize(Style::fontSizeBody * scale);
     button->setMinHeight(Style::controlHeight * scale);
     button->setPadding(Style::spaceSm * scale, Style::spaceLg * scale);
     button->setRadius(Style::radiusMd * scale);
+    button->setMinWidth(132.0f * scale);
     button->setOnClick([this]() { commit(); });
     footer->addChild(std::move(button));
     root->addChild(std::move(footer));

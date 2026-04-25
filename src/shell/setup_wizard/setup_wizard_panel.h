@@ -21,8 +21,8 @@ public:
   void create() override;
   void onClose() override;
 
-  [[nodiscard]] float preferredWidth() const override { return scaled(520.0f); }
-  [[nodiscard]] float preferredHeight() const override { return scaled(540.0f); }
+  [[nodiscard]] float preferredWidth() const override { return scaled(560.0f); }
+  [[nodiscard]] float preferredHeight() const override { return scaled(500.0f); }
   [[nodiscard]] bool centeredHorizontally() const override { return true; }
   [[nodiscard]] bool centeredVertically() const override { return true; }
   [[nodiscard]] bool hasDecoration() const override { return true; }
