@@ -132,7 +132,6 @@ Singleton {
     "settings-session-menu": "power",
     "settings-system-monitor": "activity",
     "bluetooth": "bluetooth",
-    "bt-device-undefined": "bluetooth",
     "device-gamepad": "device-gamepad-2",
     "device-microphone": "microphone",
     "device-headset": "headset",

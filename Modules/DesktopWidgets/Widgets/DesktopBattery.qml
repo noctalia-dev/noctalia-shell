@@ -17,9 +17,8 @@ DraggableDesktopWidget {
 
   readonly property var all_batteries: {
     const pd = BatteryService.primaryDevice;
-    const pb = BatteryService.peripheralBatteries;
-    const batteries = BatteryService.isDeviceReady(pd) ? [pd] : [];
-    return batteries.concat(pb);
+    const pb = BatteryService.peripheralBatteries.filter(d => d !== pd);
+    return BatteryService.isDeviceReady(pd) ? [pd].concat(pb) : pb;
   }
 
   function getItemColor(device) {

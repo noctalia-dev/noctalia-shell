@@ -125,10 +125,8 @@ Singleton {
     if (!device || isNaN(device.percentage)) {
       return -1;
     }
-    const z = device.percentage;
-    // Some devices (especially Bluetooth) can report a 0-1 value instead of 0-100, so we handle both and ensure we always return a 0-100 value for the UI.
-    return Math.round(z > 1.0 ? z : z * 100);
-  }
+    return Math.round(device.percentage * 100);
+}
 
   function isCharging(device) {
     // Detect if the selected device is charging.
@@ -349,7 +347,7 @@ Singleton {
   function getDeviceIcon(device) {
     // This looks a bit complicated, but it's actually not. Returns specific icon based on what we know about the device.
     if (!device) {
-      return "bt-device-undefined";
+      return "bluetooth";
     }
 
     const name = (device.model || device.name || "").toLowerCase();
@@ -454,7 +452,7 @@ Singleton {
       return getIcon(getPercentage(device), isCharging(device), isPluggedIn(device), isDeviceReady(device));
     }
     // 28: Fallback
-    return "bt-device-undefined";
+    return "bluetooth";
   }
 
   Instantiator {
