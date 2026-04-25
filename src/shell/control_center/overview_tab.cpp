@@ -132,8 +132,8 @@ std::unique_ptr<Flex> OverviewTab::create() {
   auto mediaArt = std::make_unique<Image>();
   const float artSize = Style::controlHeightLg * 1.55f * scale;
   mediaArt->setSize(artSize, artSize);
-  mediaArt->setCornerRadius(Style::radiusLg * scale);
-  mediaArt->setBackground(roleColor(ColorRole::SurfaceVariant));
+  mediaArt->setRadius(Style::radiusLg * scale);
+  mediaArt->setFill(roleColor(ColorRole::SurfaceVariant));
   mediaArt->setFit(ImageFit::Cover);
   m_mediaArt = mediaArt.get();
   mediaContent->addChild(std::move(mediaArt));
@@ -189,8 +189,8 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userRow->setGap(Style::spaceMd * scale);
 
   auto avatar = std::make_unique<Image>();
-  avatar->setCornerRadius(Style::radiusLg * scale);
-  avatar->setBackground(roleColor(ColorRole::SurfaceVariant));
+  avatar->setRadius(Style::radiusLg * scale);
+  avatar->setFill(roleColor(ColorRole::SurfaceVariant));
   avatar->setBorder(roleColor(ColorRole::Primary), Style::borderWidth * 2.0f);
   avatar->setFit(ImageFit::Cover);
   avatar->setPadding(1.0f * scale);

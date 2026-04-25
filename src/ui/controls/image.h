@@ -23,9 +23,9 @@ public:
   Image();
   ~Image() override;
 
-  void setCornerRadius(float radius);
-  void setBackground(const ThemeColor& color);
-  void setBackground(const Color& color);
+  void setRadius(float radius);
+  void setFill(const ThemeColor& color);
+  void setFill(const Color& color);
   void setBorder(const ThemeColor& color, float width);
   void setBorder(const Color& color, float width);
   void setTint(const Color& tint);
@@ -70,11 +70,11 @@ private:
   TextureHandle m_texture{};
   bool m_ownsTexture = false;
   std::string m_sourcePath;
-  float m_cornerRadius = 0.0f;
+  float m_radius = 0.0f;
   float m_padding = 0.0f;
   ImageFit m_fit = ImageFit::Contain;
-  ThemeColor m_backgroundColor = clearThemeColor();
-  ThemeColor m_borderColor = clearThemeColor();
+  ThemeColor m_fill = clearThemeColor();
+  ThemeColor m_border = clearThemeColor();
   float m_borderWidth = 0.0f;
   Renderer* m_renderer = nullptr;
   AsyncTextureCache* m_asyncTextureCache = nullptr;

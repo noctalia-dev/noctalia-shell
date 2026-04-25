@@ -35,8 +35,8 @@ void ActiveWindowWidget::create() {
   auto rootNode = std::make_unique<Node>();
 
   auto icon = std::make_unique<Image>();
-  icon->setCornerRadius(Style::radiusSm);
-  icon->setBackground(roleColor(ColorRole::SurfaceVariant, 0.75f));
+  icon->setRadius(Style::radiusSm);
+  icon->setFill(roleColor(ColorRole::SurfaceVariant, 0.75f));
   icon->setFit(ImageFit::Contain);
   icon->setSize(m_iconSize * m_contentScale, m_iconSize * m_contentScale);
   m_icon = static_cast<Image*>(rootNode->addChild(std::move(icon)));

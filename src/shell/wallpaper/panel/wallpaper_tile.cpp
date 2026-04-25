@@ -68,9 +68,9 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
 
   auto image = std::make_unique<Image>();
   image->setFit(ImageFit::Cover);
-  image->setCornerRadius(frameRadius);
+  image->setRadius(frameRadius);
   image->setBorder(roleColor(ColorRole::Outline), outlineWidth);
-  image->setBackground(roleColor(ColorRole::Surface));
+  image->setFill(roleColor(ColorRole::Surface));
   image->setFrameSize(frameWidth, frameHeight);
   m_thumb = static_cast<Image*>(m_thumbBox->addChild(std::move(image)));
 

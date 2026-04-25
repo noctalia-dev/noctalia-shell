@@ -128,7 +128,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   m_artworkRow = artworkRow.get();
 
   auto artwork = std::make_unique<Image>();
-  artwork->setCornerRadius(Style::radiusXl * scale);
+  artwork->setRadius(Style::radiusXl * scale);
   artwork->setFit(ImageFit::Contain);
   artwork->setSize(kArtworkSize * scale, kArtworkSize * scale);
   m_artwork = artwork.get();
@@ -458,7 +458,7 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
       }
     }
     m_artwork->setSize(targetWidth, targetHeight);
-    m_artwork->setCornerRadius(Style::radiusXl * scale);
+    m_artwork->setRadius(Style::radiusXl * scale);
     m_mediaStack->layout(renderer);
   }
 

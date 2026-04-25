@@ -39,7 +39,7 @@ uniform float u_time;
 uniform float u_item_width;
 uniform float u_item_height;
 uniform vec4 u_bg_color;
-uniform float u_corner_radius;
+uniform float u_radius;
 uniform float u_alternative;
 varying vec2 v_uv;
 varying vec2 v_pixel;
@@ -53,7 +53,7 @@ float cornerMask() {
     vec2 pixelPos = v_uv * vec2(u_item_width, u_item_height);
     vec2 center = pixelPos - vec2(u_item_width, u_item_height) * 0.5;
     vec2 halfSize = vec2(u_item_width, u_item_height) * 0.5;
-    float dist = roundedBoxSDF(center, halfSize, u_corner_radius);
+    float dist = roundedBoxSDF(center, halfSize, u_radius);
     return 1.0 - smoothstep(-1.0, 0.0, dist);
 }
 )";
@@ -517,7 +517,7 @@ void EffectProgram::initProgram(std::size_t index, const char* fragSource) {
   pd.itemWidthLoc = glGetUniformLocation(id, "u_item_width");
   pd.itemHeightLoc = glGetUniformLocation(id, "u_item_height");
   pd.bgColorLoc = glGetUniformLocation(id, "u_bg_color");
-  pd.cornerRadiusLoc = glGetUniformLocation(id, "u_corner_radius");
+  pd.radiusLoc = glGetUniformLocation(id, "u_radius");
   pd.alternativeLoc = glGetUniformLocation(id, "u_alternative");
 
   if (pd.positionLoc < 0 || pd.surfaceSizeLoc < 0 || pd.transformLoc < 0) {
@@ -567,8 +567,8 @@ void EffectProgram::draw(float surfaceWidth, float surfaceHeight, float width, f
   if (pd.bgColorLoc >= 0) {
     glUniform4f(pd.bgColorLoc, style.bgColor.r, style.bgColor.g, style.bgColor.b, style.bgColor.a);
   }
-  if (pd.cornerRadiusLoc >= 0) {
-    glUniform1f(pd.cornerRadiusLoc, style.cornerRadius);
+  if (pd.radiusLoc >= 0) {
+    glUniform1f(pd.radiusLoc, style.radius);
   }
   if (pd.alternativeLoc >= 0) {
     glUniform1f(pd.alternativeLoc, isFog ? 1.0f : 0.0f);

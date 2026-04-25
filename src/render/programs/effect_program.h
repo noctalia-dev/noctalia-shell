@@ -13,7 +13,7 @@ enum class EffectType : std::uint8_t { None, Sun, Snow, Rain, Cloud, Fog, Stars 
 struct EffectStyle {
   EffectType type = EffectType::None;
   float time = 0.0f;
-  float cornerRadius = 0.0f;
+  float radius = 0.0f;
   Color bgColor{};
 };
 
@@ -46,7 +46,7 @@ private:
     GLint itemWidthLoc = -1;
     GLint itemHeightLoc = -1;
     GLint bgColorLoc = -1;
-    GLint cornerRadiusLoc = -1;
+    GLint radiusLoc = -1;
     GLint alternativeLoc = -1;
   };
 
