@@ -32,8 +32,8 @@ endif
 sdbus_cpp_dep       = dependency('sdbus-c++')
 wayland_client_dep  = dependency('wayland-client')
 wayland_protos_dep  = dependency('wayland-protocols')
-egl_dep             = dependency('egl')
-glesv2_dep          = dependency('glesv2')
+#egl_dep             = dependency('egl')
+#glesv2_dep          = dependency('glesv2')
 wayland_egl_dep     = dependency('wayland-egl')
 freetype2_dep       = dependency('freetype2')
 fontconfig_dep      = dependency('fontconfig')
@@ -47,6 +47,22 @@ xkbcommon_dep       = dependency('xkbcommon')
 pipewire_dep        = dependency('libpipewire-0.3', include_type: 'system')
 curl_dep            = dependency('libcurl')
 pam_dep             = cc.find_library('pam')
+
+egl_dep = dependency('egl', required: false)
+gles2_dep = dependency('glesv2', required: false)
+
+
+if not egl_dep.found()
+  egl_dep = dependency('wayland-egl', required: false)
+endif
+
+if not egl_dep.found()
+  egl_dep = dependency('epoxy')
+endif
+
+if not gles2_dep.found()
+  gles2_dep = dependency('epoxy')
+endif
 
 # ── Vendored: tinyexpr (C, needs suppressed warnings) ─────────────────────────
 _tinyexpr_lib = static_library('tinyexpr',
@@ -553,7 +569,7 @@ executable('noctalia',
     sdbus_cpp_dep,
     wayland_client_dep,
     egl_dep,
-    glesv2_dep,
+    gles2_dep,
     wayland_egl_dep,
     freetype2_dep,
     fontconfig_dep,
