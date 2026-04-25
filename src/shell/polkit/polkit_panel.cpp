@@ -110,12 +110,7 @@ void PolkitPanel::create() {
   auto cancel = std::make_unique<Button>();
   cancel->setText("Cancel");
   cancel->setVariant(ButtonVariant::Outline);
-  cancel->setOnClick([this]() {
-    if (PolkitAgent* agent = m_agentProvider != nullptr ? m_agentProvider() : nullptr; agent != nullptr) {
-      agent->cancelRequest();
-    }
-    PanelManager::instance().close();
-  });
+  cancel->setOnClick([]() { PanelManager::instance().close(); });
   m_cancelButton = cancel.get();
   actions->addChild(std::move(cancel));
 
