@@ -2,7 +2,33 @@
 
 #include "theme/builtin_palettes.h"
 
+#include <cctype>
+#include <string>
+
 Palette palette = noctalia::theme::findBuiltinPalette("Noctalia")->dark;
+
+namespace {
+
+  std::string normalizedRoleToken(std::string_view token) {
+    while (!token.empty() && std::isspace(static_cast<unsigned char>(token.front())) != 0) {
+      token.remove_prefix(1);
+    }
+    while (!token.empty() && std::isspace(static_cast<unsigned char>(token.back())) != 0) {
+      token.remove_suffix(1);
+    }
+
+    std::string normalized(token);
+    for (auto& c : normalized) {
+      if (c == '-') {
+        c = '_';
+      } else {
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+      }
+    }
+    return normalized;
+  }
+
+} // namespace
 
 const Color& resolveColorRole(ColorRole role) noexcept {
   switch (role) {
@@ -41,6 +67,62 @@ const Color& resolveColorRole(ColorRole role) noexcept {
   }
 
   return palette.onSurface;
+}
+
+std::optional<ColorRole> colorRoleFromToken(std::string_view token) {
+  const std::string normalized = normalizedRoleToken(token);
+  if (normalized == "primary") {
+    return ColorRole::Primary;
+  }
+  if (normalized == "on_primary") {
+    return ColorRole::OnPrimary;
+  }
+  if (normalized == "secondary") {
+    return ColorRole::Secondary;
+  }
+  if (normalized == "on_secondary") {
+    return ColorRole::OnSecondary;
+  }
+  if (normalized == "tertiary") {
+    return ColorRole::Tertiary;
+  }
+  if (normalized == "on_tertiary") {
+    return ColorRole::OnTertiary;
+  }
+  if (normalized == "error") {
+    return ColorRole::Error;
+  }
+  if (normalized == "on_error") {
+    return ColorRole::OnError;
+  }
+  if (normalized == "surface") {
+    return ColorRole::Surface;
+  }
+  if (normalized == "on_surface") {
+    return ColorRole::OnSurface;
+  }
+  if (normalized == "surface_variant") {
+    return ColorRole::SurfaceVariant;
+  }
+  if (normalized == "surface_secondary") {
+    return ColorRole::Secondary;
+  }
+  if (normalized == "on_surface_variant") {
+    return ColorRole::OnSurfaceVariant;
+  }
+  if (normalized == "outline") {
+    return ColorRole::Outline;
+  }
+  if (normalized == "shadow") {
+    return ColorRole::Shadow;
+  }
+  if (normalized == "hover") {
+    return ColorRole::Hover;
+  }
+  if (normalized == "on_hover") {
+    return ColorRole::OnHover;
+  }
+  return std::nullopt;
 }
 
 ThemeColor roleColor(ColorRole role, float alpha) noexcept {

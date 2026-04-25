@@ -641,69 +641,6 @@ namespace {
 
   constexpr Logger kCapsuleLog("config");
 
-  std::optional<ColorRole> colorRoleFromToken(std::string token) {
-    token = StringUtils::trim(token);
-    for (auto& c : token) {
-      if (c == '-') {
-        c = '_';
-      } else {
-        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-      }
-    }
-    if (token == "primary") {
-      return ColorRole::Primary;
-    }
-    if (token == "on_primary") {
-      return ColorRole::OnPrimary;
-    }
-    if (token == "secondary") {
-      return ColorRole::Secondary;
-    }
-    if (token == "on_secondary") {
-      return ColorRole::OnSecondary;
-    }
-    if (token == "tertiary") {
-      return ColorRole::Tertiary;
-    }
-    if (token == "on_tertiary") {
-      return ColorRole::OnTertiary;
-    }
-    if (token == "error") {
-      return ColorRole::Error;
-    }
-    if (token == "on_error") {
-      return ColorRole::OnError;
-    }
-    if (token == "surface") {
-      return ColorRole::Surface;
-    }
-    if (token == "on_surface") {
-      return ColorRole::OnSurface;
-    }
-    if (token == "surface_variant") {
-      return ColorRole::SurfaceVariant;
-    }
-    if (token == "surface_secondary") {
-      return ColorRole::Secondary;
-    }
-    if (token == "on_surface_variant") {
-      return ColorRole::OnSurfaceVariant;
-    }
-    if (token == "outline") {
-      return ColorRole::Outline;
-    }
-    if (token == "shadow") {
-      return ColorRole::Shadow;
-    }
-    if (token == "hover") {
-      return ColorRole::Hover;
-    }
-    if (token == "on_hover") {
-      return ColorRole::OnHover;
-    }
-    return std::nullopt;
-  }
-
   ThemeColor themeColorFromCapsuleString(const std::string& raw) {
     std::string trimmed = StringUtils::trim(raw);
     if (!trimmed.empty() && trimmed.front() == '#') {
