@@ -7,7 +7,7 @@ Bars are defined as named subtables under `[bar.*]`. Each bar is spawned on ever
 position           = "top"       # top | bottom | left | right
 enabled            = true
 auto_hide          = false       # slide out after pointer leaves; reveal from edge trigger strip
-reserve_space      = false       # keep exclusive zone even when auto-hidden
+reserve_space      = true        # reserve compositor exclusive zone / push windows away
 
 thickness          = 34          # bar cross-axis size in pixels (height for horizontal, width for vertical)
 background_opacity = 1.0         # 0.0 (transparent) to 1.0 (opaque)
@@ -79,11 +79,11 @@ Only the fields you specify are overridden; everything else falls through to the
 ## Auto-hide
 
 When `auto_hide = true`, the bar:
-- Does **not** reserve compositor exclusive zone (windows are not pushed away).
 - Slides out once the pointer leaves the bar.
 - Slides back in when the pointer reaches the matching screen edge trigger strip.
 
-Set `reserve_space = true` to keep the exclusive zone while auto-hidden.
+`reserve_space = true` reserves compositor exclusive zone and pushes windows away. Set it to `false` for overlay
+behavior. This applies whether `auto_hide` is enabled or disabled.
 
 ---
 

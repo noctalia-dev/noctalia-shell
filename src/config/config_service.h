@@ -58,8 +58,8 @@ struct BarConfig {
   std::string name = "default";
   std::string position = "top";
   bool enabled = true;
-  bool autoHide = false;     // slide out when the pointer leaves; reveal on edge approach
-  bool reserveSpace = false; // keep compositor exclusive zone even while auto-hidden
+  bool autoHide = false;    // slide out when the pointer leaves; reveal on edge approach
+  bool reserveSpace = true; // reserve compositor exclusive zone for this bar
   std::int32_t thickness = Style::barThicknessDefault;
   float backgroundOpacity = 1.0f;
   std::int32_t radius = Style::radiusXl;

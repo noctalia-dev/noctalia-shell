@@ -596,7 +596,7 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
   const std::int32_t mH = barConfig.marginH;
   const std::int32_t mV = barConfig.marginV;
   const auto sb = computeShadowBleed(barConfig);
-  const bool hiddenOverlayMode = barConfig.autoHide && !barConfig.reserveSpace;
+  const bool reserveExclusiveZone = barConfig.reserveSpace;
 
   // Compositor margins absorb the visual gap where the shadow doesn't reach.
   // The surface is sized to cover only the bar rect plus its shadow footprint.
@@ -610,11 +610,11 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
     if (isBottom) {
       mBottom = std::max(0, mV - sb.down);
       surfH = static_cast<std::uint32_t>(sb.up + barConfig.thickness + std::min(mV, sb.down));
-      exclusiveZone = hiddenOverlayMode ? 0 : (barConfig.thickness + std::min(mV, sb.down));
+      exclusiveZone = reserveExclusiveZone ? (barConfig.thickness + std::min(mV, sb.down)) : 0;
     } else {
       mTop = std::max(0, mV - sb.up);
       surfH = static_cast<std::uint32_t>(std::min(mV, sb.up) + barConfig.thickness + sb.down);
-      exclusiveZone = hiddenOverlayMode ? 0 : (std::min(mV, sb.up) + barConfig.thickness);
+      exclusiveZone = reserveExclusiveZone ? (std::min(mV, sb.up) + barConfig.thickness) : 0;
     }
   } else {
     mTop = std::max(0, mV - sb.up);
@@ -622,11 +622,11 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
     if (isRight) {
       mRight = std::max(0, mH - sb.right);
       surfW = static_cast<std::uint32_t>(sb.left + barConfig.thickness + std::min(mH, sb.right));
-      exclusiveZone = hiddenOverlayMode ? 0 : (barConfig.thickness + std::min(mH, sb.right));
+      exclusiveZone = reserveExclusiveZone ? (barConfig.thickness + std::min(mH, sb.right)) : 0;
     } else {
       mLeft = std::max(0, mH - sb.left);
       surfW = static_cast<std::uint32_t>(std::min(mH, sb.left) + barConfig.thickness + sb.right);
-      exclusiveZone = hiddenOverlayMode ? 0 : (std::min(mH, sb.left) + barConfig.thickness);
+      exclusiveZone = reserveExclusiveZone ? (std::min(mH, sb.left) + barConfig.thickness) : 0;
     }
   }
 
