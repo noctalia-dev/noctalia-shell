@@ -13,6 +13,8 @@ struct xdg_toplevel;
 struct ToplevelSurfaceConfig {
   std::uint32_t width = 720;
   std::uint32_t height = 480;
+  std::uint32_t minWidth = 0;
+  std::uint32_t minHeight = 0;
   const char* title = "Noctalia";
   const char* appId = "dev.noctalia.Noctalia";
 };

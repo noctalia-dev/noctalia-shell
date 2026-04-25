@@ -294,6 +294,8 @@
 
     "avatar-path": "Avatar Path",
     "avatar-path-desc": "Path to a custom avatar image",
+    "offline-mode": "Offline Mode",
+    "offline-mode-desc": "Block all outgoing network requests",
     "polkit-agent": "Polkit Agent",
     "polkit-agent-desc": "Enable the built-in authentication agent",
     "password-style": "Password Style",

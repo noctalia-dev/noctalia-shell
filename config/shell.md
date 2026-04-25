@@ -16,6 +16,7 @@ Global UI settings that apply across all shell surfaces.
 ui_scale             = 1.0             # content scale for panels and non-bar shell UI
 font_family          = "sans-serif"    # Pango family string; Fontconfig handles fallback
 lang                 = "en"            # override language detection
+offline_mode         = false           # block all outgoing HTTP requests
 polkit_agent         = false           # register Noctalia's native polkit authentication agent
 password_style       = "default"       # default | random
 avatar_path          = "~/Pictures/avatar.png"
@@ -30,6 +31,7 @@ speed   = 1.0   # 1.0 = normal, 0.5 = 2× slower, 2.0 = 2× faster
 Notes:
 - `ui_scale` is completely separate from `bar.scale`: `bar.scale` only affects bar widget content; `ui_scale` covers the control center, launcher, clipboard, and other non-bar surfaces. Neither changes Wayland output / HiDPI buffer scale.
 - `font_family` sets the primary Pango family for all shell text. Can be a concrete family like `Inter` or a generic like `sans-serif`.
+- `offline_mode` prevents the shell from making any outgoing HTTP requests (weather, community palettes, album art, remote notification icons). Distro packagers can default to `true` to comply with policies requiring explicit user consent for network access.
 - `polkit_agent` controls registration on `org.freedesktop.PolicyKit1`. Keep disabled if another desktop agent handles auth prompts.
 - Notification daemon ownership moved out of `[shell]`: use `[notification].enable_daemon` in `config/services.md`.
 - `password_style`: `default` uses `circle-filled`; `random` cycles through multiple filled glyph shapes on polkit and lock screen inputs.

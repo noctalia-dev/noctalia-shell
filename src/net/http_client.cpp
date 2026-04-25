@@ -24,6 +24,11 @@ HttpClient::~HttpClient() {
 }
 
 void HttpClient::download(std::string_view url, const std::filesystem::path& destPath, CompletionCallback cb) {
+  if (m_offlineMode) {
+    cb(false);
+    return;
+  }
+
   const std::string destKey = destPath.string();
   if (auto activeIt = m_activeByDest.find(destKey); activeIt != m_activeByDest.end()) {
     if (auto transferIt = m_transfers.find(activeIt->second); transferIt != m_transfers.end()) {

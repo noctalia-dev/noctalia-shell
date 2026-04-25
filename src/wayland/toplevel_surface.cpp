@@ -73,6 +73,10 @@ bool ToplevelSurface::initialize(wl_output* output, ToplevelSurfaceConfig config
   xdg_toplevel_add_listener(m_toplevel, &kToplevelListener, this);
   xdg_toplevel_set_title(m_toplevel, config.title != nullptr ? config.title : "Noctalia");
   xdg_toplevel_set_app_id(m_toplevel, config.appId != nullptr ? config.appId : "dev.noctalia.Noctalia");
+  if (config.minWidth > 0 || config.minHeight > 0) {
+    xdg_toplevel_set_min_size(m_toplevel, static_cast<std::int32_t>(config.minWidth),
+                              static_cast<std::int32_t>(config.minHeight));
+  }
 
   wl_surface_commit(m_surface);
   wl_display_flush(m_connection.display());

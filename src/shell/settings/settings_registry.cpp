@@ -143,6 +143,9 @@ namespace settings {
     // Shell
     entries.push_back(makeEntry("shell", "profile", tr("settings.avatar-path"), tr("settings.avatar-path-desc"),
                                 {"shell", "avatar_path"}, TextSetting{cfg.shell.avatarPath, ""}, "image picture"));
+    entries.push_back(makeEntry("shell", "network", tr("settings.offline-mode"), tr("settings.offline-mode-desc"),
+                                {"shell", "offline_mode"}, ToggleSetting{cfg.shell.offlineMode},
+                                "network http fetch download"));
     entries.push_back(makeEntry("shell", "security", tr("settings.polkit-agent"), tr("settings.polkit-agent-desc"),
                                 {"shell", "polkit_agent"}, ToggleSetting{cfg.shell.polkitAgent}, "auth password"));
     entries.push_back(makeEntry("shell", "security", tr("settings.password-style"), tr("settings.password-style-desc"),

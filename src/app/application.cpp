@@ -289,8 +289,11 @@ void Application::initServices() {
   };
   applyMotionConfig();
   applyPasswordMaskStyle();
+  m_httpClient.setOfflineMode(m_configService.config().shell.offlineMode);
   m_configService.addReloadCallback(applyMotionConfig);
   m_configService.addReloadCallback(applyPasswordMaskStyle);
+  m_configService.addReloadCallback(
+      [this]() { m_httpClient.setOfflineMode(m_configService.config().shell.offlineMode); });
 
   // i18n has no dependencies on other services and must be ready before any
   // UI construction reads a translated string.

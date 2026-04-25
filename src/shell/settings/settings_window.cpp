@@ -280,10 +280,14 @@ void SettingsWindow::open() {
   const float scale = uiScale();
   const std::uint32_t w = static_cast<std::uint32_t>(std::round(900.0f * scale));
   const std::uint32_t h = static_cast<std::uint32_t>(std::round(600.0f * scale));
+  const std::uint32_t minW = static_cast<std::uint32_t>(std::round(640.0f * scale));
+  const std::uint32_t minH = static_cast<std::uint32_t>(std::round(400.0f * scale));
 
   ToplevelSurfaceConfig cfg{
       .width = std::max<std::uint32_t>(1, w),
       .height = std::max<std::uint32_t>(1, h),
+      .minWidth = minW,
+      .minHeight = minH,
       .title = "Noctalia Settings",
       .appId = "dev.noctalia.Noctalia.Settings",
   };

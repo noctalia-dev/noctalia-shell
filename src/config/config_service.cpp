@@ -1351,6 +1351,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto v = (*shellTbl)["lang"].value<std::string>()) {
       shell.lang = *v;
     }
+    if (auto v = (*shellTbl)["offline_mode"].value<bool>()) {
+      shell.offlineMode = *v;
+    }
     if (auto polkitAgent = (*shellTbl)["polkit_agent"].value<bool>()) {
       shell.polkitAgent = *polkitAgent;
     }

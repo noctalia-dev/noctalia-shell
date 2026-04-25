@@ -19,6 +19,8 @@ public:
   HttpClient(const HttpClient&) = delete;
   HttpClient& operator=(const HttpClient&) = delete;
 
+  void setOfflineMode(bool offline) { m_offlineMode = offline; }
+
   // Start an async download of url to destPath.
   // cb is called on the main loop thread when the transfer completes or fails.
   void download(std::string_view url, const std::filesystem::path& destPath, CompletionCallback cb);
@@ -41,6 +43,7 @@ private:
 
   CURLM* m_multi = nullptr;
   int m_running = 0;
+  bool m_offlineMode = false;
   std::unordered_map<CURL*, Transfer> m_transfers;
   std::unordered_map<std::string, CURL*> m_activeByDest;
 };
