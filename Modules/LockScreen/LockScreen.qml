@@ -111,7 +111,6 @@ Loader {
                 readonly property real percent: isReady ? BatteryService.getPercentage(battery) : -1
                 readonly property bool charging: isReady ? BatteryService.isCharging(battery) : false
                 readonly property bool pluggedIn: isReady ? BatteryService.isPluggedIn(battery) : false
-                // If external battery use getDeviceIcon - return deviceIcon percentage || If internal battery use getIcon - return batteryIcon percentage, just like before.
                 readonly property string icon: ext_battery ? BatteryService.getDeviceIcon(battery) : BatteryService.getIcon(percent, charging, pluggedIn, isReady)
               }
 
