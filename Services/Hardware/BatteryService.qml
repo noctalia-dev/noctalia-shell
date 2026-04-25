@@ -339,9 +339,7 @@ Singleton {
 
     if (isPeripheral(device) && name) {
       // Naming for external devices.
-      title = name + " - " + title;
-      // ex A: 'Turann_s AirPods Pro III - Low Battery' - I prefer this, it makes the most sense.
-      // ex B: 'Low Battery - Turann_s AirPods Pro III'
+      title = title + ": " + name;
     }
 
     // Only 'showNotice' supports custom icons
@@ -357,7 +355,6 @@ Singleton {
     const name = (device.model || device.name || "").toLowerCase();
     const nativePath = (device.nativePath || "").toLowerCase(); // nativePath where UPower sees the device
     const iconHint = (device.icon || device.iconName || "").toLowerCase();  // Some devices are not known to UPower (e.g., Bluetooth devices). The icon hint often does the heavy lifting for recognition here.
-    const isEarbud = name.includes("pod") || name.includes("bud") || iconHint.includes("earbud"); // The difference between headphones and earbuds. - It works ¯\_(ツ)_/¯
     // A: DisplayDevice - If you read you know, if not go back and read.
     if (isDisplayDevice(device)) {
       return "device-laptop";
@@ -412,7 +409,7 @@ Singleton {
     }
     // 17: Headset
     if (device.type === UPowerDeviceType.Headset || nativePath.includes("headset") || iconHint.includes("headset")) {
-      return isEarbud ? "device-earbuds" : "device-headset";
+      return (name.includes("pod") || name.includes("bud")) ? "device-earbuds" : "device-headset";
     }
     // 18: Speakers
     if (device.type === UPowerDeviceType.Speakers || nativePath.includes("speaker") || iconHint.includes("speaker")) {
@@ -420,7 +417,7 @@ Singleton {
     }
     // 19: Headphones
     if (device.type === UPowerDeviceType.Headphones || nativePath.includes("headphones") || iconHint.includes("headphones")) {
-      return isEarbud ? "device-earbuds" : "device-headphones";
+      return (name.includes("pod") || name.includes("bud")) ? "device-earbuds" : "device-headphones";
     }
     // 20: Video
     if (device.type === UPowerDeviceType.Video || device.type === UPowerDeviceType.OtherVideo || nativePath.includes("video")) {
