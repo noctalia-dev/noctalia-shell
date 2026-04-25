@@ -49,8 +49,6 @@ public:
   [[nodiscard]] const WallpaperEntry* entry() const noexcept { return m_hasEntry ? &m_entry : nullptr; }
 
 private:
-  [[nodiscard]] Color inactiveThumbnailTint() const;
-
   void applyVisualState();
   void doLayout(Renderer& renderer) override;
 
@@ -69,7 +67,6 @@ private:
   bool m_hasEntry = false;
   bool m_selected = false;
   bool m_hoveredVisual = false;
-  bool m_lightTheme = false;
   bool m_loadingThumbnail = false;
   std::string m_thumbPath;
   ClickCallback m_onClick;
