@@ -310,6 +310,7 @@ void SettingsWindow::destroyWindow() {
     m_inputDispatcher.setSceneRoot(nullptr);
     m_surface->setSceneRoot(nullptr);
   }
+  m_mainContainer = nullptr;
   m_sceneRoot.reset();
   m_surface.reset();
   m_pointerInside = false;
@@ -336,8 +337,15 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
   m_renderContext->makeCurrent(m_surface->renderTarget());
   m_renderContext->syncContentScale(m_surface->renderTarget());
 
-  const bool sizeChanged = m_sceneRoot == nullptr || m_lastSceneWidth != width || m_lastSceneHeight != height;
-  const bool needRebuild = sizeChanged || m_rebuildRequested;
+  // Rebuild the entire scene only on first build or when something explicitly
+  // requested it (config change, nav click, etc.). Pure size changes — which
+  // niri delivers at refresh rate during window animations (slide-in on focus
+  // return, workspace transitions) — should just re-layout the existing tree.
+  // Rebuilding on every configure causes a 25+ rebuild storm during niri
+  // animations, freezing input response for ~150 ms.
+  const bool firstBuild = m_sceneRoot == nullptr;
+  const bool sizeChanged = !firstBuild && (m_lastSceneWidth != width || m_lastSceneHeight != height);
+  const bool needRebuild = firstBuild || m_rebuildRequested;
 
   if (needRebuild) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
@@ -345,10 +353,20 @@ void SettingsWindow::prepareFrame(bool /*needsUpdate*/, bool needsLayout) {
     m_lastSceneWidth = width;
     m_lastSceneHeight = height;
     m_rebuildRequested = false;
-  } else if (needsLayout && m_sceneRoot != nullptr) {
+  } else if ((sizeChanged || needsLayout) && m_sceneRoot != nullptr) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
-    m_sceneRoot->setSize(static_cast<float>(width), static_cast<float>(height));
+    const float w = static_cast<float>(width);
+    const float h = static_cast<float>(height);
+    m_sceneRoot->setSize(w, h);
+    if (m_panelBackground != nullptr) {
+      m_panelBackground->setSize(w, h);
+    }
+    if (m_mainContainer != nullptr) {
+      m_mainContainer->setSize(w, h);
+    }
     m_sceneRoot->layout(*m_renderContext);
+    m_lastSceneWidth = width;
+    m_lastSceneHeight = height;
   }
 }
 
@@ -404,6 +422,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   }
 
   m_inputDispatcher.setSceneRoot(nullptr);
+  m_mainContainer = nullptr;
+  m_panelBackground = nullptr;
   m_sceneRoot = std::make_unique<Node>();
   m_sceneRoot->setSize(w, h);
   m_sceneRoot->setAnimationManager(&m_animations);
@@ -412,7 +432,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   bg->setPanelStyle();
   bg->setPosition(0.0f, 0.0f);
   bg->setSize(w, h);
-  m_sceneRoot->addChild(std::move(bg));
+  m_panelBackground = static_cast<Box*>(m_sceneRoot->addChild(std::move(bg)));
 
   auto main = std::make_unique<Flex>();
   main->setDirection(FlexDirection::Vertical);
@@ -1362,7 +1382,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   main->setSize(w, h);
   main->layout(*m_renderContext);
 
-  m_sceneRoot->addChild(std::move(main));
+  m_mainContainer = static_cast<Flex*>(m_sceneRoot->addChild(std::move(main)));
 
   m_inputDispatcher.setSceneRoot(m_sceneRoot.get());
   m_inputDispatcher.setCursorShapeCallback(

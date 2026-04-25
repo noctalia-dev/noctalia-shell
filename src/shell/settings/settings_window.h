@@ -9,7 +9,9 @@
 #include <memory>
 #include <string>
 
+class Box;
 class ConfigService;
+class Flex;
 class RenderContext;
 class WaylandConnection;
 struct KeyboardEvent;
@@ -45,6 +47,8 @@ private:
 
   std::unique_ptr<ToplevelSurface> m_surface;
   std::unique_ptr<Node> m_sceneRoot;
+  Flex* m_mainContainer = nullptr;  // Outer Flex inside m_sceneRoot, sized to the window
+  Box* m_panelBackground = nullptr; // Window-sized background panel inside m_sceneRoot
   InputDispatcher m_inputDispatcher;
   AnimationManager m_animations;
   bool m_pointerInside = false;
