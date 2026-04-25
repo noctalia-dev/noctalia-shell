@@ -8,6 +8,7 @@
 ui_scale             = 1.0
 font_family          = "sans-serif"
 offline_mode         = false          # block all outgoing HTTP when true
+telemetry_enabled    = false          # send an anonymous usage ping on startup
 polkit_agent         = false
 password_style       = "default"    # default | random
 show_location        = true         # hide weather location text in shell UI when false

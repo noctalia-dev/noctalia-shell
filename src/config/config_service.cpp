@@ -1354,6 +1354,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto v = (*shellTbl)["offline_mode"].value<bool>()) {
       shell.offlineMode = *v;
     }
+    if (auto v = (*shellTbl)["telemetry_enabled"].value<bool>()) {
+      shell.telemetryEnabled = *v;
+    }
     if (auto polkitAgent = (*shellTbl)["polkit_agent"].value<bool>()) {
       shell.polkitAgent = *polkitAgent;
     }

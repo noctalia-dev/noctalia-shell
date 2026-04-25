@@ -17,6 +17,7 @@ ui_scale             = 1.0             # content scale for panels and non-bar sh
 font_family          = "sans-serif"    # Pango family string; Fontconfig handles fallback
 lang                 = "en"            # override language detection
 offline_mode         = false           # block all outgoing HTTP requests
+telemetry_enabled    = false           # anonymous startup ping
 polkit_agent         = false           # register Noctalia's native polkit authentication agent
 password_style       = "default"       # default | random
 avatar_path          = "~/Pictures/avatar.png"
@@ -32,6 +33,7 @@ Notes:
 - `ui_scale` is completely separate from `bar.scale`: `bar.scale` only affects bar widget content; `ui_scale` covers the control center, launcher, clipboard, and other non-bar surfaces. Neither changes Wayland output / HiDPI buffer scale.
 - `font_family` sets the primary Pango family for all shell text. Can be a concrete family like `Inter` or a generic like `sans-serif`.
 - `offline_mode` prevents the shell from making any outgoing HTTP requests (weather, community palettes, album art, remote notification icons). Distro packagers can default to `true` to comply with policies requiring explicit user consent for network access.
+- `telemetry_enabled` sends a single anonymous POST to `api.noctalia.dev/ping` on each startup containing: a random instance ID, shell version, compositor name, OS name, RAM, monitor resolutions, and UI scale. No personal data is collected. The instance ID is a random UUID stored in `~/.local/state/noctalia/instance.id`.
 - `polkit_agent` controls registration on `org.freedesktop.PolicyKit1`. Keep disabled if another desktop agent handles auth prompts.
 - Notification daemon ownership moved out of `[shell]`: use `[notification].enable_daemon` in `config/services.md`.
 - `password_style`: `default` uses `circle-filled`; `random` cycles through multiple filled glyph shapes on polkit and lock screen inputs.

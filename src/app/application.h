@@ -62,6 +62,7 @@
 #include "system/desktop_entry_poll_source.h"
 #include "system/night_light_manager.h"
 #include "system/system_monitor_service.h"
+#include "system/telemetry_service.h"
 #include "system/weather_poll_source.h"
 #include "system/weather_service.h"
 #include "theme/template_apply_service.h"
@@ -141,6 +142,7 @@ private:
   std::unique_ptr<PipeWireSpectrum> m_pipewireSpectrum;
   std::unique_ptr<SoundPlayer> m_soundPlayer;
 
+  TelemetryService m_telemetryService;
   FileWatcher m_fileWatcher;
 
   GlSharedContext m_glShared;

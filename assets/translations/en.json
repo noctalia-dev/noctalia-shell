@@ -296,6 +296,8 @@
     "avatar-path-desc": "Path to a custom avatar image",
     "offline-mode": "Offline Mode",
     "offline-mode-desc": "Block all outgoing network requests",
+    "telemetry": "Usage Statistics",
+    "telemetry-desc": "Send an anonymous ping on startup to help improve Noctalia",
     "polkit-agent": "Polkit Agent",
     "polkit-agent-desc": "Enable the built-in authentication agent",
     "password-style": "Password Style",

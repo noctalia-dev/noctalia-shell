@@ -260,6 +260,7 @@ void Application::run() {
 
   m_hookManager.reload(m_configService.config().hooks);
   m_hookManager.fire(HookKind::Started);
+  m_telemetryService.maybeSend(m_configService, m_httpClient, m_wayland);
 
   malloc_trim(0);
 
