@@ -60,6 +60,7 @@ private:
   void syncGridSelection();
   void selectVisibleIndex(std::size_t index);
   void activateSelectedEntry();
+  [[nodiscard]] bool lightTheme() const;
   [[nodiscard]] bool handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers);
   [[nodiscard]] std::size_t pageCount() const noexcept;
   [[nodiscard]] std::filesystem::path activeDirectoryForSelection() const;

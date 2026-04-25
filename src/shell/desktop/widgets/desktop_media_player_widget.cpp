@@ -43,7 +43,6 @@ void DesktopMediaPlayerWidget::create() {
   auto artwork = std::make_unique<Image>();
   artwork->setFit(ImageFit::Cover);
   artwork->setRadius(Style::radiusMd * contentScale());
-  artwork->setFill(roleColor(ColorRole::SurfaceVariant, 0.5f));
   m_artwork = artwork.get();
   rootNode->addChild(std::move(artwork));
 

@@ -3,7 +3,6 @@
 #include "render/core/async_texture_cache.h"
 #include "render/core/renderer.h"
 #include "render/scene/image_node.h"
-#include "ui/controls/box.h"
 
 #include <algorithm>
 #include <memory>
@@ -23,20 +22,6 @@ Image::~Image() {
   }
 }
 
-void Image::ensureBackground() {
-  if (m_background != nullptr) {
-    return;
-  }
-  auto background = std::make_unique<Box>();
-  m_background = static_cast<Box*>(addChild(std::move(background)));
-  m_background->setZIndex(-1);
-  m_background->setFlatStyle();
-  m_background->setFrameSize(width(), height());
-  if (m_radius != 0.0f) {
-    m_background->setRadius(m_radius);
-  }
-}
-
 void Image::setRadius(float radius) {
   if (m_radius == radius) {
     return;
@@ -45,24 +30,12 @@ void Image::setRadius(float radius) {
   if (m_image != nullptr) {
     m_image->setRadius(radius);
   }
-  if (m_background != nullptr) {
-    m_background->setRadius(radius);
-  }
   markPaintDirty();
 }
-
-void Image::setFill(const ThemeColor& color) {
-  m_fill = color;
-  ensureBackground();
-  applyPalette();
-}
-
-void Image::setFill(const Color& color) { setFill(fixedColor(color)); }
 
 void Image::setBorder(const ThemeColor& color, float width) {
   m_border = color;
   m_borderWidth = width;
-  ensureBackground();
   applyPalette();
 }
 
@@ -290,17 +263,13 @@ void Image::doLayout(Renderer& /*renderer*/) {
 }
 
 void Image::applyPalette() {
-  if (m_background != nullptr) {
-    m_background->setFill(m_fill);
-    m_background->setBorder(m_border, m_borderWidth);
+  const Color border = resolveThemeColor(m_border);
+  if (m_image != nullptr) {
+    m_image->setBorder(border, m_borderWidth);
   }
 }
 
 void Image::updateLayout() {
-  if (m_background != nullptr) {
-    m_background->setFrameSize(width(), height());
-  }
-
   if (m_image == nullptr) {
     return;
   }

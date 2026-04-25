@@ -2,6 +2,7 @@
 
 #include "render/scene/input_area.h"
 #include "shell/wallpaper/panel/wallpaper_scanner.h"
+#include "ui/palette.h"
 
 #include <functional>
 #include <string>
@@ -39,6 +40,7 @@ public:
 
   void setSelected(bool selected);
   void setHoveredVisual(bool hovered);
+  void setLightTheme(bool lightTheme);
   void setOnTileClick(ClickCallback callback);
   void setOnTileMotion(HoverCallback callback);
   void setOnTileEnter(HoverCallback callback);

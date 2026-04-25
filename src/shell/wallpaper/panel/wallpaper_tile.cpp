@@ -70,7 +70,6 @@ WallpaperTile::WallpaperTile(float cellWidth, float cellHeight, float contentSca
   image->setFit(ImageFit::Cover);
   image->setRadius(frameRadius);
   image->setBorder(roleColor(ColorRole::Outline), outlineWidth);
-  image->setFill(roleColor(ColorRole::Surface));
   image->setFrameSize(frameWidth, frameHeight);
   m_thumb = static_cast<Image*>(m_thumbBox->addChild(std::move(image)));
 
@@ -230,9 +229,10 @@ void WallpaperTile::applyVisualState() {
     return;
   }
   const bool active = m_selected || m_hoveredVisual;
-  setOpacity(active ? 1.0f : 0.75f);
+  setOpacity(1.0f);
+  m_thumb->setTint(active ? rgba(1.0f, 1.0f, 1.0f, 1.0f) : rgba(0.5f, 0.5f, 0.5f, 1.0f));
 
-  const float outlineWidth = Style::borderWidth * 2.0f;
+  const float outlineWidth = Style::borderWidth * 3.0f;
   ThemeColor borderColor = active ? roleColor(ColorRole::Primary) : roleColor(ColorRole::Outline);
   ThemeColor frameBg = roleColor(ColorRole::SurfaceVariant);
 

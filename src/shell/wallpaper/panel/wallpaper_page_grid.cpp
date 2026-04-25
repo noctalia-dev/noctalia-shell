@@ -43,6 +43,13 @@ void WallpaperPageGrid::setThumbnailService(ThumbnailService* service) {
   }
 }
 
+void WallpaperPageGrid::setLightTheme(bool lightTheme) {
+  if (m_lightTheme == lightTheme) {
+    return;
+  }
+  m_lightTheme = lightTheme;
+}
+
 void WallpaperPageGrid::setHighlightedIndex(std::size_t selectedIndex, std::size_t hoverIndex, bool hoverEnabled) {
   m_selectedIndex = selectedIndex;
   m_hoverIndex = hoverIndex;
