@@ -479,6 +479,109 @@ SmartPanel {
             }
 
             Item {
+              id: volumeWrapper
+              visible: MediaService.volumeSupported
+              Layout.fillWidth: true
+              Layout.preferredHeight: volumeColumn.implicitHeight
+
+              property real localVolume: -1
+              property real lastSentVolume: -1
+              property real volumeEpsilon: 0.01
+              property real volume: {
+                if (!MediaService.volumeSupported)
+                  return 0;
+                return MediaService.volume;
+              }
+
+              Timer {
+                id: volumeDebounce
+                interval: 75
+                repeat: false
+                onTriggered: {
+                  if (volumeWrapper.localVolume >= 0) {
+                    const next = Math.max(0, Math.min(1, volumeWrapper.localVolume));
+                    if (volumeWrapper.lastSentVolume < 0 || Math.abs(next - volumeWrapper.lastSentVolume) >= volumeWrapper.volumeEpsilon) {
+                      MediaService.setVolume(next);
+                      volumeWrapper.lastSentVolume = next;
+                    }
+                  }
+                }
+              }
+
+
+
+              ColumnLayout {
+                id: volumeColumn
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                spacing: 2
+
+                RowLayout {
+                  anchors.fill: parent
+                  spacing: 2
+
+                  NIcon {
+                    icon: "volume"
+                    color: Color.mOnSurfaceVariant
+                  }
+
+                  Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: root.compactMode ? (Style.baseWidgetSize * 0.4) : (Style.baseWidgetSize * 0.5)
+
+                    NSlider {
+                      id: volumeSlider
+                      anchors.fill: parent
+                      from: 0
+                      to: 1
+                      stepSize: 0
+                      snapAlways: false
+                      heightRatio: 0.4
+
+                      value: MediaService.volume
+
+                      onMoved: {
+                        volumeWrapper.localVolume = value;
+                        volumeDebounce.restart();
+                      }
+                      onPressedChanged: {
+                        if (pressed) {
+                          volumeWrapper.localVolume = value;
+                          MediaService.setVolume(value);
+                          volumeWrapper.lastSentVolume = value;
+                        } else {
+                          volumeDebounce.stop();
+                          MediaService.setVolume(value);
+                          volumeWrapper.localVolume = -1;
+                          volumeWrapper.lastSentVolume = -1;
+                        }
+                      }
+                    }
+                  }
+                }
+
+                RowLayout {
+                  Layout.fillWidth: true
+                  spacing: 0
+
+                  Item {
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                  }
+
+                  NText {
+                    text: MediaService.volumeString
+                    pointSize: Style.fontSizeXS
+                    color: Color.mOnSurfaceVariant
+                    horizontalAlignment: Text.AlignRight
+                    visible: volumeWrapper.visible
+                  }
+                }
+              }
+            }
+
+            Item {
               Layout.preferredHeight: root.isSideBySide ? Style.marginM : Style.marginS
             }
 

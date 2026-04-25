@@ -420,6 +420,77 @@ NBox {
             }
           }
 
+          // Volume slider
+          Item {
+            id: volumeWrapper
+            visible: MediaService.volumeSupported
+            Layout.fillWidth: true
+            height: Style.baseWidgetSize * 0.5
+
+            property real localVolume: -1
+            property real lastSentVolume: -1
+            property real volumeEpsilon: 0.01
+            property real volume: {
+              if (!MediaService.volumeSupported)
+                return 0;
+              return MediaService.volume;
+            }
+
+            Timer {
+              id: volumeDebounce
+              interval: 75
+              repeat: false
+              onTriggered: {
+                if (volumeWrapper.localVolume >= 0) {
+                  const next = Math.max(0, Math.min(1, volumeWrapper.localVolume));
+                  if (volumeWrapper.lastSentVolume < 0 || Math.abs(next - volumeWrapper.lastSentVolume) >= volumeWrapper.volumeEpsilon) {
+                    MediaService.setVolume(next);
+                    volumeWrapper.lastSentVolume = next;
+                  }
+                }
+              }
+            }
+
+            RowLayout {
+              anchors.fill: parent
+              spacing: 2
+
+              NIcon {
+                icon: "volume"
+                color: Color.mOnSurfaceVariant
+              }
+
+              NSlider {
+                id: volumeSlider
+                Layout.fillWidth: true
+                from: 0
+                to: 1
+                stepSize: 0
+                snapAlways: false
+                heightRatio: 0.6
+
+                value: MediaService.volume
+
+                onMoved: {
+                  volumeWrapper.localVolume = value;
+                  volumeDebounce.restart();
+                }
+                onPressedChanged: {
+                  if (pressed) {
+                    volumeWrapper.localVolume = value;
+                    MediaService.setVolume(value);
+                    volumeWrapper.lastSentVolume = value;
+                  } else {
+                    volumeDebounce.stop();
+                    MediaService.setVolume(value);
+                    volumeWrapper.localVolume = -1;
+                    volumeWrapper.lastSentVolume = -1;
+                  }
+                }
+              }
+            }
+          }
+
           // Spacer to push media controls down
           Item {
             Layout.preferredHeight: Style.marginL
