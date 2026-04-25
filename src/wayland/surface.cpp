@@ -345,7 +345,11 @@ void Surface::kickFrameLoop() {
     return;
   }
 
-  m_lastFrameAt.reset();
+  // Anchor the animation clock at "now" instead of clearing it. On the next
+  // handleFrameDone, deltaMs is computed against this anchor, so animations
+  // that start while the surface was idle get a real first-tick deltaMs
+  // instead of zero (which would waste the first tick at t=0).
+  m_lastFrameAt = std::chrono::steady_clock::now();
   preparePendingFrame();
 
   const bool invalidated = m_sceneRoot != nullptr && (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty());
