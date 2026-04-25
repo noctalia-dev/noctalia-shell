@@ -41,6 +41,8 @@ Singleton {
   property bool canGoNext: currentPlayer ? currentPlayer.canGoNext : false
   property bool canGoPrevious: currentPlayer ? currentPlayer.canGoPrevious : false
   property bool canSeek: currentPlayer ? currentPlayer.canSeek : false
+  property bool isMuted: currentPlayer ? currentPlayer.volume < root.epsilon : false
+  property real volume: currentPlayer ? currentPlayer.volume : 0.0
   property string positionString: formatTime(currentPosition)
   property string lengthString: formatTime(trackLength)
   property real infiniteTrackLength: 922337203685

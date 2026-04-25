@@ -19,7 +19,8 @@ Variants {
     Volume,
     InputVolume,
     Brightness,
-    LockKey
+    LockKey,
+    MediaVolume
   }
 
   model: Quickshell.screens.filter(screen => (Settings.data.osd.monitors.includes(screen.name) || Settings.data.osd.monitors.length === 0) && Settings.data.osd.enabled)
@@ -45,6 +46,7 @@ Variants {
     readonly property bool isMuted: AudioService.muted
     readonly property real currentInputVolume: AudioService.inputVolume
     readonly property bool isInputMuted: AudioService.inputMuted
+    readonly property real currentMediaVolume: MediaService.volume
     readonly property real epsilon: 0.005
 
     // LockKey OSD enabled state (reactive to settings)
@@ -72,6 +74,9 @@ Variants {
         return currentVolume <= 0.5 ? "volume-low" : "volume-high";
       case OSD.Type.InputVolume:
         return isInputMuted ? "microphone-off" : "microphone";
+      case OSD.Type.MediaVolume:
+        // Show music-off icon when volume is effectively 0% (within rounding threshold)
+        return currentMediaVolume < root.epsilon ? "music-off" : "music";
       case OSD.Type.Brightness:
         // Show sun-off icon when brightness is effectively 0% (within rounding threshold)
         if (currentBrightness < root.epsilon)
@@ -90,6 +95,8 @@ Variants {
         return isMuted ? 0 : currentVolume;
       case OSD.Type.InputVolume:
         return isInputMuted ? 0 : currentInputVolume;
+      case OSD.Type.MediaVolume:
+        return currentMediaVolume;
       case OSD.Type.Brightness:
         return currentBrightness;
       case OSD.Type.LockKey:
@@ -124,7 +131,7 @@ Variants {
     }
 
     function getProgressColor() {
-      const isMutedState = (currentOSDType === OSD.Type.Volume && isMuted) || (currentOSDType === OSD.Type.InputVolume && isInputMuted);
+      const isMutedState = (currentOSDType === OSD.Type.Volume && isMuted) || (currentOSDType === OSD.Type.InputVolume && isInputMuted) || (currentOSDType === OSD.Type.MediaVolume && currentMediaVolume < root.epsilon);
       if (isMutedState) {
         return Color.mError;
       }
@@ -150,7 +157,7 @@ Variants {
     }
 
     function getIconColor() {
-      const isMutedState = (currentOSDType === OSD.Type.Volume && isMuted) || (currentOSDType === OSD.Type.InputVolume && isInputMuted);
+      const isMutedState = (currentOSDType === OSD.Type.Volume && isMuted) || (currentOSDType === OSD.Type.InputVolume && isInputMuted) || (currentOSDType === OSD.Type.MediaVolume && currentMediaVolume < root.epsilon);
       if (isMutedState)
         return Color.mError;
 
@@ -310,6 +317,15 @@ Variants {
                          showOSD(OSD.Type.InputVolume);
                        });
         }
+      }
+    }
+
+    // MediaService monitoring
+    Connections {
+      target: MediaService
+
+      function onVolumeChanged() {
+        showOSD(OSD.Type.MediaVolume);
       }
     }
 
