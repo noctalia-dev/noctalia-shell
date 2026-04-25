@@ -105,7 +105,13 @@ Loader {
             Item {
               Item {
                 id: batteryIndicator
-                readonly property var battery: BatteryService.primaryDevice
+                readonly property var battery: {
+                  const pb = BatteryService.peripheralBatteries;
+                  if (pb.length > 0 && (BatteryService.isCriticalBattery(pb[0]) || BatteryService.isLowBattery(pb[0]))) {
+                    return pb[0]; // If peripheral battery lower than one or other threshold show in LockScreen.
+                  }
+                  return BatteryService.primaryDevice;
+                }
                 readonly property bool ext_battery: BatteryService.isPeripheral(battery)
                 readonly property bool isReady: BatteryService.isDeviceReady(battery)
                 readonly property real percent: isReady ? BatteryService.getPercentage(battery) : -1
