@@ -21,16 +21,19 @@ Singleton {
     if (!upowerInstalled) {
       return [];
     }
-    let laptopBatteriesList = (UPower.devices?.values ?? []).filter(d => d && d.isLaptopBattery).sort((x, y) => x.nativePath.localeCompare(y.nativePath, undefined, {
-                                                                                                                                             numeric: true
-                                                                                                                                           }));
-    if (UPower.displayDevice.isPresent && laptopBatteriesList.length > 0) {
-      return [UPower.displayDevice].concat(laptopBatteriesList.length > 1 ? laptopBatteriesList : []);
-      // Ensuring the displayDevice is always at index 0 if it exist - If you have battery DisplayDevice always be there.
+    let physicalBatteries = (UPower.devices?.values ?? []).filter(d => d && d.isLaptopBattery && !isDisplayDevice(d));
+    physicalBatteries.sort((x, y) => x.nativePath.localeCompare(y.nativePath, undefined, {
+                                                                  numeric: true
+                                                                }));
+
+    if (UPower.displayDevice.isPresent && physicalBatteries.length > 0) {
+      // displayDevice only makes sense there is > 1 battery.
+      // Prefer primary physical battery because DisplayDevice doesn't have infornation we use (BatteryHealth) - and possibly stuff (e.g: Vendor/Model)
+      return (physicalBatteries.length > 1) ? [UPower.displayDevice].concat(physicalBatteries) : physicalBatteries;
     }
-    return laptopBatteriesList;
+    return physicalBatteries;
   }
-  // Peripherals are sorted by battery percentage ascending to prioritize showing low batteries first in the UI when there are multiple.
+  // Peripherals are sorted by battery percentage asending to prioritize showing low batteries first in the UI when there are multiple.
   readonly property var peripheralBatteries: upowerInstalled ? (UPower.devices?.values ?? []).filter(d => d && isPeripheral(d) && isDeviceReady(d)).sort((x, y) => (x.percentage || 0) - (y.percentage || 0)) : []
 
   property var deviceModel: {
@@ -180,8 +183,8 @@ Singleton {
     }
 
     if (isDisplayDevice(device)) {
-      // Return correct name for display device.
-      return laptopBatteries.length > 1 ? I18n.tr("battery.all-batteries") : I18n.tr("common.battery");
+      // Return correct name for display device. - DisplayDevice only shown when matters (when there more batteries than 1)
+      return I18n.tr("battery.all-batteries");
     }
 
     if (device.isLaptopBattery) {
@@ -193,11 +196,14 @@ Singleton {
         // If there's an aggregate device at 0, physical batteries start at index (dIx) 1 and we want them labeled starting at 'Battery 1'
         const dIx = hasDD ? i : i + 1;
         return I18n.tr("common.battery") + " " + dIx;
+      } else {
+        // If there is only one battery do not append numbers.
+        return I18n.tr("common.battery");
       }
     }
     // For peripherals, not every device is equal so we press all the buttons hoping one works.
-    return device.name || device.deviceName || device.model || "";
-    // device.name comes from BlueZ ~ mostly here for aliases. 
+    return device.name || device.deviceName || device.model || I18n.tr("common.battery");
+    // device.name comes from BlueZ ~ mostly here for aliases.
     // device.deviceName comes from Quickshell
     // device.model comes from UPower.
   }
