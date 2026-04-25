@@ -699,7 +699,7 @@ void Select::scrollBy(float delta) {
   }
   m_scrollOffset += delta;
   clampScrollOffset();
-  markPaintDirty();
+  markLayoutDirty();
 }
 
 void Select::clampScrollOffset() {
