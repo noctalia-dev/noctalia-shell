@@ -45,6 +45,8 @@ Singleton {
   property string lengthString: formatTime(trackLength)
   property real infiniteTrackLength: 922337203685
 
+  readonly property real stepVolume: Settings.data.audio.volumeStep / 100.0
+
   Component.onCompleted: {
     updateCurrentPlayer();
   }
@@ -289,6 +291,20 @@ Singleton {
       let seekPosition = ratio * target.length;
       target.position = seekPosition;
       currentPosition = seekPosition;
+    }
+  }
+
+  function increaseVolume() {
+    let target = currentPlayer ? (currentPlayer._controlTarget || currentPlayer) : null;
+    if (target && target.canControl && target.volumeSupported) {
+      target.volume = Math.min(1.0, target.volume + stepVolume);
+    }
+  }
+
+  function decreaseVolume() {
+    let target = currentPlayer ? (currentPlayer._controlTarget || currentPlayer) : null;
+    if (target && target.canControl && target.volumeSupported) {
+      target.volume = Math.max(0.0, target.volume - stepVolume);
     }
   }
 

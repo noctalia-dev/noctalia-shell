@@ -814,6 +814,14 @@ Singleton {
       }
       MediaService.seekByRatio(positionVal);
     }
+
+    function increase() {
+      MediaService.increaseVolume();
+    }
+
+    function decrease() {
+      MediaService.decreaseVolume();
+    }
   }
 
   IpcHandler {
