@@ -156,6 +156,22 @@ void Flex::setMinHeight(float minHeight) {
   markLayoutDirty();
 }
 
+void Flex::setMaxWidth(float maxWidth) {
+  if (m_maxWidth == maxWidth) {
+    return;
+  }
+  m_maxWidth = maxWidth;
+  markLayoutDirty();
+}
+
+void Flex::setMaxHeight(float maxHeight) {
+  if (m_maxHeight == maxHeight) {
+    return;
+  }
+  m_maxHeight = maxHeight;
+  markLayoutDirty();
+}
+
 void Flex::setFillParentMainAxis(bool fill) {
   if (m_fillParentMainAxis == fill) {
     return;
@@ -191,6 +207,16 @@ void Flex::ensureBackground() {
 }
 
 void Flex::doLayout(Renderer& renderer) {
+  // Clamp own size from above before measuring children so the rest of the
+  // layout uses the capped width/height. minWidth/minHeight are still applied
+  // at the end via std::max in the final setSize.
+  if (m_maxWidth > 0.0f && width() > m_maxWidth) {
+    setSize(m_maxWidth, height());
+  }
+  if (m_maxHeight > 0.0f && height() > m_maxHeight) {
+    setSize(width(), m_maxHeight);
+  }
+
   auto& kids = children();
   const bool horizontal = m_direction == FlexDirection::Horizontal;
   const float containerMain = horizontal ? width() : height();
