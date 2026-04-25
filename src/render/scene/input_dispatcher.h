@@ -35,6 +35,8 @@ public:
 
 private:
   InputArea* findInputAreaAt(float x, float y);
+  [[nodiscard]] bool isAttachedToScene(const InputArea* area) const;
+  void pruneDetachedAreas();
   void updateHover(float x, float y, std::uint32_t serial);
   void updateCursor(std::uint32_t serial);
   void trackArea(InputArea* area);

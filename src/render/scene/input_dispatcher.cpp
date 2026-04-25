@@ -3,6 +3,22 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 
+namespace {
+
+  bool nodeAttachedToRoot(const Node* node, const Node* root) {
+    if (node == nullptr || root == nullptr) {
+      return false;
+    }
+    for (auto* current = node; current != nullptr; current = current->parent()) {
+      if (current == root) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+} // namespace
+
 void InputDispatcher::setSceneRoot(Node* root) {
   if (root != m_sceneRoot) {
     m_capturedArea = nullptr;
@@ -55,6 +71,7 @@ void InputDispatcher::pointerMotion(float x, float y, std::uint32_t serial) {
 }
 
 bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool pressed) {
+  pruneDetachedAreas();
   InputArea* target = m_capturedArea != nullptr ? m_capturedArea : m_hoveredArea;
   if (target != nullptr) {
     float localX = 0.0f;
@@ -80,6 +97,7 @@ bool InputDispatcher::pointerButton(float x, float y, std::uint32_t button, bool
 
 bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, std::uint32_t axisSource, double value,
                                   std::int32_t discrete, std::int32_t value120, float lines) {
+  pruneDetachedAreas();
   InputArea* target = m_capturedArea != nullptr ? m_capturedArea : m_hoveredArea;
   if (target == nullptr) {
     return false;
@@ -111,6 +129,7 @@ bool InputDispatcher::pointerAxis(float x, float y, std::uint32_t axis, std::uin
 
 void InputDispatcher::keyEvent(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modifiers, bool pressed,
                                bool preedit) {
+  pruneDetachedAreas();
   if (m_focusedArea != nullptr) {
     m_focusedArea->dispatchKey(sym, utf32, modifiers, pressed, preedit);
   }
@@ -151,6 +170,8 @@ InputArea* InputDispatcher::findInputAreaAt(float x, float y) {
 }
 
 void InputDispatcher::updateHover(float x, float y, std::uint32_t serial) {
+  pruneDetachedAreas();
+
   // While a button is held, all motion goes to the captured area; hover stays frozen.
   if (m_capturedArea != nullptr) {
     float localX = 0.0f;
@@ -183,6 +204,26 @@ void InputDispatcher::updateHover(float x, float y, std::uint32_t serial) {
   }
 
   updateCursor(serial);
+}
+
+bool InputDispatcher::isAttachedToScene(const InputArea* area) const { return nodeAttachedToRoot(area, m_sceneRoot); }
+
+void InputDispatcher::pruneDetachedAreas() {
+  if (!isAttachedToScene(m_hoveredArea)) {
+    if (m_hoveredArea != nullptr) {
+      m_hoveredArea->dispatchLeave();
+    }
+    m_hoveredArea = nullptr;
+  }
+  if (!isAttachedToScene(m_capturedArea)) {
+    m_capturedArea = nullptr;
+  }
+  if (!isAttachedToScene(m_focusedArea)) {
+    if (m_focusedArea != nullptr) {
+      m_focusedArea->dispatchFocusLoss();
+    }
+    m_focusedArea = nullptr;
+  }
 }
 
 void InputDispatcher::trackArea(InputArea* area) {

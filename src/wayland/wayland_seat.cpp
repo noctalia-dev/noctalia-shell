@@ -64,9 +64,10 @@ void WaylandSeat::setKeyboardEventCallback(KeyboardEventCallback callback) {
 }
 
 void WaylandSeat::setCursorShape(std::uint32_t serial, std::uint32_t shape) {
-  if (m_cursorShapeDevice != nullptr) {
-    wp_cursor_shape_device_v1_set_shape(m_cursorShapeDevice, serial, shape);
+  if (m_cursorShapeDevice == nullptr || serial == 0) {
+    return;
   }
+  wp_cursor_shape_device_v1_set_shape(m_cursorShapeDevice, serial, shape);
 }
 
 void WaylandSeat::cleanup() {
