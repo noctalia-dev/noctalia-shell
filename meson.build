@@ -600,6 +600,30 @@ executable('noctalia',
   install: true,
 )
 
+executable('lockscreen-layer-probe',
+  sources: files('tools/lockscreen_layer_probe.cpp') + _protocol_sources,
+  dependencies: [
+    wayland_client_dep,
+  ],
+  include_directories: _noctalia_inc,
+  cpp_args: [
+    '-Wall', '-Wextra', '-Wpedantic', '-Wconversion', '-Wshadow',
+  ],
+  build_by_default: false,
+)
+
+executable('subsurface-overflow-probe',
+  sources: files('tools/subsurface_overflow_probe.cpp') + _protocol_sources,
+  dependencies: [
+    wayland_client_dep,
+  ],
+  include_directories: _noctalia_inc,
+  cpp_args: [
+    '-Wall', '-Wextra', '-Wpedantic', '-Wconversion', '-Wshadow',
+  ],
+  build_by_default: false,
+)
+
 install_subdir('assets',
   install_dir: get_option('datadir') / 'noctalia',
 )
