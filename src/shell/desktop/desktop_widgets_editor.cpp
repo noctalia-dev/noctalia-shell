@@ -934,7 +934,7 @@ void DesktopWidgetsEditor::addWidget(const std::string& outputName, const std::s
     FileDialogOptions options;
     options.mode = FileDialogMode::Open;
     options.title = "Select Sticker Image";
-    options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".svg"};
+    options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif"};
     if (!FileDialog::open(std::move(options), [this, widgetId](std::optional<std::filesystem::path> result) {
           deferEditorMutation([this, widgetId, result = std::move(result)]() {
             auto* state = findWidgetState(widgetId);

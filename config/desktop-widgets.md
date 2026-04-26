@@ -220,7 +220,7 @@ shadow = true
 
 ### sticker
 
-Displays a static image file on the desktop.
+Displays an image file on the desktop. PNG, JPEG, WebP, SVG, and GIF are supported; animated GIFs play at their encoded per-frame durations and loop forever.
 
 ```toml
 [[widget]]
@@ -239,7 +239,7 @@ opacity    = 1.0
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `image_path` | string | — | Absolute path to the image file |
+| `image_path` | string | — | Absolute path to the image file (PNG, JPEG, WebP, SVG, or GIF) |
 | `opacity` | float | `1.0` | Sticker image opacity from `0.0` to `1.0` |
 
 ---
