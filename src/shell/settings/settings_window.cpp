@@ -163,8 +163,12 @@ namespace {
     }
   }
 
+  bool isMonitorOverrideSettingPath(const std::vector<std::string>& path) {
+    return path.size() >= 5 && path[0] == "bar" && path[2] == "monitor";
+  }
+
   bool monitorOverrideHasExplicitValue(const Config& cfg, const std::vector<std::string>& path) {
-    if (path.size() < 5 || path[0] != "bar" || path[2] != "monitor") {
+    if (!isMonitorOverrideSettingPath(path)) {
       return false;
     }
 
@@ -959,7 +963,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   const auto makeRow = [&](Flex& section, const settings::SettingEntry& entry, std::unique_ptr<Node> control) {
     const bool overridden = (m_config != nullptr && m_config->hasOverride(entry.path));
+    const bool monitorSetting = isMonitorOverrideSettingPath(entry.path);
     const bool monitorExplicit = monitorOverrideHasExplicitValue(cfg, entry.path);
+    const bool monitorInherited = monitorSetting && !monitorExplicit;
 
     auto row = std::make_unique<Flex>();
     row->setDirection(FlexDirection::Horizontal);
@@ -980,35 +986,31 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     titleRow->setAlign(FlexAlign::Center);
     titleRow->setGap(Style::spaceSm * scale);
     titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
-    if (monitorExplicit) {
+
+    const auto makeBadge = [&](std::string_view label, const ThemeColor& fill, const ThemeColor& color) {
       auto badge = std::make_unique<Flex>();
       badge->setAlign(FlexAlign::Center);
       badge->setPadding(1.0f * scale, Style::spaceXs * scale);
       badge->setRadius(Style::radiusSm * scale);
-      badge->setFill(roleColor(ColorRole::Secondary, 0.15f));
-      badge->addChild(makeLabel(i18n::tr("settings.badge-monitor"), Style::fontSizeCaption * scale,
-                                roleColor(ColorRole::Secondary), true));
-      titleRow->addChild(std::move(badge));
+      badge->setFill(fill);
+      badge->addChild(makeLabel(label, Style::fontSizeCaption * scale, color, true));
+      return badge;
+    };
+
+    if (monitorExplicit) {
+      titleRow->addChild(makeBadge(i18n::tr("settings.badge-monitor"), roleColor(ColorRole::Secondary, 0.15f),
+                                   roleColor(ColorRole::Secondary)));
+    } else if (monitorInherited) {
+      titleRow->addChild(makeBadge(i18n::tr("settings.badge-inherited"), roleColor(ColorRole::OnSurfaceVariant, 0.12f),
+                                   roleColor(ColorRole::OnSurfaceVariant)));
     }
     if (overridden) {
-      auto badge = std::make_unique<Flex>();
-      badge->setAlign(FlexAlign::Center);
-      badge->setPadding(1.0f * scale, Style::spaceXs * scale);
-      badge->setRadius(Style::radiusSm * scale);
-      badge->setFill(roleColor(ColorRole::Primary, 0.15f));
-      badge->addChild(makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeCaption * scale,
-                                roleColor(ColorRole::Primary), true));
-      titleRow->addChild(std::move(badge));
+      titleRow->addChild(makeBadge(i18n::tr("settings.badge-override"), roleColor(ColorRole::Primary, 0.15f),
+                                   roleColor(ColorRole::Primary)));
     }
     if (entry.advanced) {
-      auto badge = std::make_unique<Flex>();
-      badge->setAlign(FlexAlign::Center);
-      badge->setPadding(1.0f * scale, Style::spaceXs * scale);
-      badge->setRadius(Style::radiusSm * scale);
-      badge->setFill(roleColor(ColorRole::OnSurfaceVariant, 0.12f));
-      badge->addChild(makeLabel(i18n::tr("settings.badge-advanced"), Style::fontSizeCaption * scale,
-                                roleColor(ColorRole::OnSurfaceVariant), true));
-      titleRow->addChild(std::move(badge));
+      titleRow->addChild(makeBadge(i18n::tr("settings.badge-advanced"), roleColor(ColorRole::OnSurfaceVariant, 0.12f),
+                                   roleColor(ColorRole::OnSurfaceVariant)));
     }
     copy->addChild(std::move(titleRow));
 

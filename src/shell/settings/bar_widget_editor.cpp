@@ -1289,7 +1289,7 @@ namespace settings {
         badge->setPadding(1.0f * ctx.scale, Style::spaceXs * ctx.scale);
         badge->setRadius(Style::radiusSm * ctx.scale);
         badge->setFill(roleColor(ColorRole::OnSurfaceVariant, 0.14f));
-        badge->addChild(makeLabel(i18n::tr("settings.badge-base-bar"), Style::fontSizeCaption * ctx.scale,
+        badge->addChild(makeLabel(i18n::tr("settings.badge-inherited"), Style::fontSizeCaption * ctx.scale,
                                   roleColor(ColorRole::OnSurfaceVariant), true));
         laneHeader->addChild(std::move(badge));
       }
