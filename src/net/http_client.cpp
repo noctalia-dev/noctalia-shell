@@ -1,9 +1,20 @@
 #include "net/http_client.h"
 
+#include "core/deferred_call.h"
+
 #include <cstdio>
 #include <filesystem>
 #include <limits>
 #include <string>
+
+namespace {
+  void deferFailure(HttpClient::CompletionCallback cb) {
+    if (!cb) {
+      return;
+    }
+    DeferredCall::callLater([cb = std::move(cb)]() { cb(false); });
+  }
+} // namespace
 
 HttpClient::HttpClient() {
   curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -34,7 +45,7 @@ bool HttpClient::hasActiveTransfers() const { return !m_transfers.empty() || !m_
 
 void HttpClient::download(std::string_view url, const std::filesystem::path& destPath, CompletionCallback cb) {
   if (m_offlineMode) {
-    cb(false);
+    deferFailure(std::move(cb));
     return;
   }
 
@@ -51,14 +62,14 @@ void HttpClient::download(std::string_view url, const std::filesystem::path& des
 
   FILE* f = std::fopen(tempPath.c_str(), "wb");
   if (f == nullptr) {
-    cb(false);
+    deferFailure(std::move(cb));
     return;
   }
 
   CURL* easy = curl_easy_init();
   if (easy == nullptr) {
     std::fclose(f);
-    cb(false);
+    deferFailure(std::move(cb));
     return;
   }
 
@@ -84,17 +95,13 @@ void HttpClient::download(std::string_view url, const std::filesystem::path& des
 
 void HttpClient::post(std::string_view url, std::string body, std::string_view contentType, CompletionCallback cb) {
   if (m_offlineMode) {
-    if (cb) {
-      cb(false);
-    }
+    deferFailure(std::move(cb));
     return;
   }
 
   CURL* easy = curl_easy_init();
   if (easy == nullptr) {
-    if (cb) {
-      cb(false);
-    }
+    deferFailure(std::move(cb));
     return;
   }
 

@@ -22,10 +22,13 @@ public:
   void setOfflineMode(bool offline) { m_offlineMode = offline; }
 
   // Start an async download of url to destPath.
-  // cb is called on the main loop thread when the transfer completes or fails.
+  // cb is always invoked on the main loop thread on a later iteration — never
+  // synchronously from inside this call, even when offline mode or an early
+  // local error means the request is never issued. Callers can rely on this
+  // to avoid reentrant state mutation.
   void download(std::string_view url, const std::filesystem::path& destPath, CompletionCallback cb);
 
-  // Fire-and-forget async POST. cb is called on the main loop thread when done.
+  // Fire-and-forget async POST. Same callback semantics as download().
   void post(std::string_view url, std::string body, std::string_view contentType, CompletionCallback cb);
 
   // PollSource integration — called by HttpClientPollSource.
