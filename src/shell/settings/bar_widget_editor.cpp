@@ -1549,17 +1549,13 @@ namespace settings {
               [&editingWidgetName = ctx.editingWidgetName, &openWidgetPickerPath = ctx.openWidgetPickerPath, widgetName,
                &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
                &pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
-               &creatingWidgetType = ctx.creatingWidgetType, resetContentScroll = ctx.resetContentScroll,
-               requestRebuild = ctx.requestRebuild]() {
+               &creatingWidgetType = ctx.creatingWidgetType, requestRebuild = ctx.requestRebuild]() {
                 editingWidgetName = editingWidgetName == widgetName ? std::string{} : widgetName;
                 openWidgetPickerPath.clear();
                 pendingDeleteWidgetName.clear();
                 pendingDeleteWidgetSettingPath.clear();
                 renamingWidgetName.clear();
                 creatingWidgetType.clear();
-                if (resetContentScroll) {
-                  resetContentScroll();
-                }
                 requestRebuild();
               });
           actions->addChild(std::move(editBtn));
