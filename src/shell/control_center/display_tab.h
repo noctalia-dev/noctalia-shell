@@ -42,6 +42,7 @@ private:
     Slider* slider = nullptr;
     Label* valueLabel = nullptr;
     float lastBrightness = -1.0f;
+    bool lastControllable = true;
     std::string lastDisplayInfo;
   };
 

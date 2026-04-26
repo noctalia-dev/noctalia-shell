@@ -26,6 +26,7 @@ namespace {
     std::string key;
     for (const auto& d : displays) {
       key += d.id;
+      key += d.controllable ? ":1" : ":0";
       key += ';';
     }
     return key;
@@ -52,6 +53,13 @@ namespace {
     return resolutionText + " @ " + std::to_string(scalePercent) + "%";
   }
 
+  std::string formatBrightnessValue(const BrightnessDisplay& display, float brightness) {
+    if (!display.controllable) {
+      return "Disabled";
+    }
+    return std::to_string(static_cast<int>(std::round(brightness * 100.0f))) + "%";
+  }
+
 } // namespace
 
 DisplayTab::DisplayTab(BrightnessService* brightness, ConfigService* config)
@@ -66,14 +74,14 @@ std::unique_ptr<Flex> DisplayTab::create() {
   tab->setGap(Style::spaceMd * scale);
   m_rootLayout = tab.get();
 
-  // Empty state (shown when no displays have brightness control)
+  // Empty state (shown when no displays are known)
   auto emptyState = std::make_unique<Flex>();
   emptyState->setDirection(FlexDirection::Vertical);
   emptyState->setAlign(FlexAlign::Center);
   emptyState->setJustify(FlexJustify::Center);
   emptyState->setFlexGrow(1.0f);
   auto emptyLabel = std::make_unique<Label>();
-  emptyLabel->setText("No brightness control available");
+  emptyLabel->setText("No displays available");
   emptyLabel->setFontSize(Style::fontSizeBody * scale);
   emptyLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
   emptyState->addChild(std::move(emptyLabel));
@@ -146,6 +154,28 @@ void DisplayTab::doUpdate(Renderer& renderer) {
       continue;
     }
 
+    card.slider->setEnabled(display->controllable);
+
+    const std::string infoText = formatDisplayInfo(*display);
+    if (card.detailsLabel != nullptr && card.lastDisplayInfo != infoText) {
+      card.detailsLabel->setText(infoText);
+      card.lastDisplayInfo = infoText;
+    }
+
+    if (!display->controllable) {
+      if (card.valueLabel != nullptr) {
+        card.valueLabel->setText(formatBrightnessValue(*display, display->brightness));
+      }
+      if (!card.slider->dragging() && std::abs(display->brightness - card.lastBrightness) >= kBrightnessSyncEpsilon) {
+        m_syncingSlider = true;
+        card.slider->setValue(display->brightness);
+        m_syncingSlider = false;
+        card.lastBrightness = display->brightness;
+      }
+      card.lastControllable = false;
+      continue;
+    }
+
     const bool isDragging = card.slider->dragging();
     const bool isPending = m_pendingDisplayId == card.displayId && m_pendingBrightness >= 0.0f;
     const bool holdState = isDragging && m_lastSentBrightness >= 0.0f && now < m_ignoreStateUntil &&
@@ -154,21 +184,17 @@ void DisplayTab::doUpdate(Renderer& renderer) {
     const float displayedBrightness = std::clamp(
         isPending ? m_pendingBrightness : (holdState ? m_lastSentBrightness : display->brightness), 0.0f, 1.0f);
 
-    card.slider->setEnabled(true);
-    const std::string infoText = formatDisplayInfo(*display);
-    if (card.detailsLabel != nullptr && card.lastDisplayInfo != infoText) {
-      card.detailsLabel->setText(infoText);
-      card.lastDisplayInfo = infoText;
-    }
-    if (!isDragging && std::abs(displayedBrightness - card.lastBrightness) >= kBrightnessSyncEpsilon) {
+    if (!isDragging &&
+        (!card.lastControllable || std::abs(displayedBrightness - card.lastBrightness) >= kBrightnessSyncEpsilon)) {
       m_syncingSlider = true;
       card.slider->setValue(displayedBrightness);
       m_syncingSlider = false;
       if (card.valueLabel != nullptr) {
-        card.valueLabel->setText(std::to_string(static_cast<int>(std::round(displayedBrightness * 100.0f))) + "%");
+        card.valueLabel->setText(formatBrightnessValue(*display, displayedBrightness));
       }
       card.lastBrightness = displayedBrightness;
     }
+    card.lastControllable = true;
   }
 }
 
@@ -261,17 +287,22 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
     slider->setTrackHeight(6.0f * scale);
     slider->setThumbSize(16.0f * scale);
     slider->setValue(display.brightness);
+    slider->setEnabled(display.controllable);
 
     const std::string displayId = display.id;
     slider->setOnValueChanged([this, displayId](float value) {
       if (m_syncingSlider) {
         return;
       }
+      const auto* currentDisplay = m_brightness != nullptr ? m_brightness->findDisplay(displayId) : nullptr;
+      if (currentDisplay == nullptr || !currentDisplay->controllable) {
+        return;
+      }
       queueBrightness(displayId, value);
       // Update the value label immediately
       for (auto& c : m_cards) {
         if (c.displayId == displayId && c.valueLabel != nullptr) {
-          c.valueLabel->setText(std::to_string(static_cast<int>(std::round(value * 100.0f))) + "%");
+          c.valueLabel->setText(formatBrightnessValue(*currentDisplay, value));
           c.lastBrightness = value;
           break;
         }
@@ -289,7 +320,7 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
     sliderRow->addChild(std::move(sunHighIcon));
 
     auto valueLabel = std::make_unique<Label>();
-    valueLabel->setText(std::to_string(static_cast<int>(std::round(display.brightness * 100.0f))) + "%");
+    valueLabel->setText(formatBrightnessValue(display, display.brightness));
     valueLabel->setFontSize(Style::fontSizeBody * scale);
     valueLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
     valueLabel->setMinWidth(Style::controlHeightLg * scale);
@@ -310,6 +341,7 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
         .slider = sliderPtr,
         .valueLabel = valueLabelPtr,
         .lastBrightness = display.brightness,
+        .lastControllable = display.controllable,
         .lastDisplayInfo = infoText,
     });
   }
@@ -334,6 +366,12 @@ void DisplayTab::flushPendingBrightness(bool /*force*/) {
   m_debounceTimer.stop();
 
   if (m_pendingBrightness < 0.0f || m_brightness == nullptr) {
+    return;
+  }
+
+  const auto* display = m_brightness->findDisplay(m_pendingDisplayId);
+  if (display == nullptr || !display->controllable) {
+    m_pendingBrightness = -1.0f;
     return;
   }
 

@@ -12,9 +12,10 @@ struct BrightnessConfig;
 struct wl_output;
 
 struct BrightnessDisplay {
-  std::string id;       // stable display id (usually connector name)
-  std::string label;    // human-readable (connector name or description)
-  float brightness = 0; // 0.0–1.0 normalized
+  std::string id;           // stable display id (usually connector name)
+  std::string label;        // human-readable (connector name or description)
+  float brightness = 0;     // 0.0–1.0 normalized
+  bool controllable = true; // false when listed for display info only
   std::int32_t physicalWidth = 0;
   std::int32_t physicalHeight = 0;
   std::int32_t logicalWidth = 0;

@@ -120,6 +120,9 @@ namespace {
   std::string joinBrightnessDisplayIds(const BrightnessService& service) {
     std::string out;
     for (const auto& display : service.displays()) {
+      if (!display.controllable) {
+        continue;
+      }
       if (!out.empty()) {
         out += ", ";
       }
@@ -197,6 +200,26 @@ namespace {
     }
 
     return BrightnessBackendPreference::Auto;
+  }
+
+  void applyOutputMetadata(BrightnessDisplay& display, const WaylandOutput& output) {
+    display.label = output.description.empty() ? output.connectorName : output.description;
+    display.physicalWidth = output.width;
+    display.physicalHeight = output.height;
+    display.logicalWidth = output.logicalWidth;
+    display.logicalHeight = output.logicalHeight;
+    display.scale = std::max(1, output.scale);
+  }
+
+  BrightnessDisplay disabledDisplayForOutput(const WaylandOutput& output) {
+    BrightnessDisplay display;
+    display.id = output.connectorName;
+    display.controllable = false;
+    applyOutputMetadata(display, output);
+    if (display.label.empty()) {
+      display.label = output.connectorName;
+    }
+    return display;
   }
 
   std::string resolveBacklightConnector(const std::string& sysfsPath, const WaylandConnection& wayland) {
@@ -768,12 +791,7 @@ struct BrightnessService::Impl {
       display.pub.brightness = readBacklightBrightness(path, maxBrightness);
 
       if (output != nullptr) {
-        display.pub.label = output->description.empty() ? output->connectorName : output->description;
-        display.pub.physicalWidth = output->width;
-        display.pub.physicalHeight = output->height;
-        display.pub.logicalWidth = output->logicalWidth;
-        display.pub.logicalHeight = output->logicalHeight;
-        display.pub.scale = std::max(1, output->scale);
+        applyOutputMetadata(display.pub, *output);
       }
       if (display.pub.label.empty()) {
         display.pub.label = !connectorName.empty() ? connectorName : name;
@@ -828,9 +846,25 @@ struct BrightnessService::Impl {
 
   void rebuildPublic() {
     publicDisplays.clear();
-    publicDisplays.reserve(internals.size());
+    publicDisplays.reserve(internals.size() + wayland.outputs().size());
     for (const auto& display : internals) {
       publicDisplays.push_back(display.pub);
+    }
+
+    for (const auto& output : wayland.outputs()) {
+      if (!output.done || output.connectorName.empty()) {
+        continue;
+      }
+
+      const bool hasDisplay =
+          std::any_of(internals.begin(), internals.end(), [&output](const DisplayInternal& display) {
+            return display.connectorName == output.connectorName;
+          });
+      if (hasDisplay) {
+        continue;
+      }
+
+      publicDisplays.push_back(disabledDisplayForOutput(output));
     }
   }
 
@@ -1159,13 +1193,8 @@ struct BrightnessService::Impl {
       display.ddcBus = candidate.bus;
       display.maxRaw = candidate.maxRaw;
       display.pub.id = candidate.connectorName;
-      display.pub.label = output->description.empty() ? output->connectorName : output->description;
       display.pub.brightness = normalizedBrightness(candidate.currentRaw, candidate.maxRaw);
-      display.pub.physicalWidth = output->width;
-      display.pub.physicalHeight = output->height;
-      display.pub.logicalWidth = output->logicalWidth;
-      display.pub.logicalHeight = output->logicalHeight;
-      display.pub.scale = std::max(1, output->scale);
+      applyOutputMetadata(display.pub, *output);
       internals.push_back(std::move(display));
 
       kLog.info("found ddcutil display connector={} bus={} current={:.0f}%", candidate.connectorName, candidate.bus,
@@ -1301,7 +1330,10 @@ const BrightnessDisplay* BrightnessService::findByOutput(wl_output* output) cons
   return m_impl->findByOutput(output);
 }
 
-bool BrightnessService::available() const noexcept { return !m_impl->publicDisplays.empty(); }
+bool BrightnessService::available() const noexcept {
+  return std::any_of(m_impl->publicDisplays.begin(), m_impl->publicDisplays.end(),
+                     [](const BrightnessDisplay& display) { return display.controllable; });
+}
 
 void BrightnessService::setBrightness(const std::string& displayId, float value) {
   m_impl->setBrightness(displayId, value);
@@ -1344,12 +1376,18 @@ void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBat
 
     if (token == "all" || token == "*") {
       for (const auto& display : displays()) {
-        appendUnique(display.id);
+        if (display.controllable) {
+          appendUnique(display.id);
+        }
       }
       return !ids.empty();
     }
 
     if (const auto* display = findDisplay(std::string(token)); display != nullptr) {
+      if (!display->controllable) {
+        error = "error: brightness target '" + std::string(token) + "' has no brightness control\n";
+        return false;
+      }
       appendUnique(display->id);
       return true;
     }
@@ -1359,6 +1397,9 @@ void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBat
         continue;
       }
       if (const auto* display = findByOutput(output.output); display != nullptr) {
+        if (!display->controllable) {
+          continue;
+        }
         appendUnique(display->id);
       }
     }
@@ -1388,7 +1429,7 @@ void BrightnessService::registerIpc(IpcService& ipc, std::function<void()> onBat
 
     for (const auto& id : ids) {
       const auto* display = findDisplay(id);
-      if (display == nullptr) {
+      if (display == nullptr || !display->controllable) {
         continue;
       }
       apply(*display);

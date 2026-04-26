@@ -32,6 +32,9 @@ void BrightnessOsd::bindOverlay(OsdOverlay& overlay) { m_overlay = &overlay; }
 void BrightnessOsd::primeFromService(const BrightnessService& service) {
   m_snapshots.clear();
   for (const auto& display : service.displays()) {
+    if (!display.controllable) {
+      continue;
+    }
     m_snapshots.push_back({
         .id = display.id,
         .percent = static_cast<int>(std::round(std::max(0.0f, display.brightness) * 100.0f)),
@@ -50,6 +53,9 @@ void BrightnessOsd::onBrightnessChanged(const BrightnessService& service) {
   // Find the display whose brightness actually changed
   const BrightnessDisplay* changed = nullptr;
   for (const auto& display : displays) {
+    if (!display.controllable) {
+      continue;
+    }
     const int percent = static_cast<int>(std::round(std::max(0.0f, display.brightness) * 100.0f));
 
     // Find previous snapshot
