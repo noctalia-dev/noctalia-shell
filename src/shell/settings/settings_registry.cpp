@@ -62,6 +62,16 @@ namespace settings {
                          selected);
     }
 
+    SelectSetting languageSelect(std::string_view selected) {
+      std::vector<SelectOption> opts;
+      opts.reserve(i18n::kSupportedLanguages.size() + 1);
+      opts.push_back(SelectOption{"", i18n::tr("common.auto")});
+      for (const auto& language : i18n::kSupportedLanguages) {
+        opts.push_back(SelectOption{std::string(language.code), std::string(language.displayName)});
+      }
+      return SelectSetting{std::move(opts), std::string(selected)};
+    }
+
     std::string pathText(const std::vector<std::string>& path) {
       std::string out;
       for (const auto& part : path) {
@@ -170,6 +180,8 @@ namespace settings {
                                 "size"));
     entries.push_back(makeEntry("appearance", "interface", tr("settings.font-family"), tr("settings.font-family-desc"),
                                 {"shell", "font_family"}, TextSetting{cfg.shell.fontFamily, "sans-serif"}, "typeface"));
+    entries.push_back(makeEntry("appearance", "interface", tr("settings.language"), tr("settings.language-desc"),
+                                {"shell", "lang"}, languageSelect(cfg.shell.lang), "locale translation", true));
     entries.push_back(makeEntry("appearance", "motion", tr("settings.animations"), tr("settings.animations-desc"),
                                 {"shell", "animation", "enabled"}, ToggleSetting{cfg.shell.animation.enabled},
                                 "motion"));
@@ -328,6 +340,12 @@ namespace settings {
     entries.push_back(makeEntry("services", "audio", tr("settings.sound-volume"), tr("settings.sound-volume-desc"),
                                 {"audio", "sound_volume"},
                                 SliderSetting{cfg.audio.soundVolume, 0.0f, 1.0f, 0.01f, false}, "sound"));
+    entries.push_back(makeEntry("services", "audio", tr("settings.volume-change-sound"),
+                                tr("settings.volume-change-sound-desc"), {"audio", "volume_change_sound"},
+                                TextSetting{cfg.audio.volumeChangeSound, ""}, "sound path file", true));
+    entries.push_back(makeEntry("services", "audio", tr("settings.notification-sound"),
+                                tr("settings.notification-sound-desc"), {"audio", "notification_sound"},
+                                TextSetting{cfg.audio.notificationSound, ""}, "sound path file", true));
     entries.push_back(makeEntry("services", "brightness", tr("settings.ddcutil"), tr("settings.ddcutil-desc"),
                                 {"brightness", "enable_ddcutil"}, ToggleSetting{cfg.brightness.enableDdcutil},
                                 "monitor ddcutil"));
@@ -339,6 +357,12 @@ namespace settings {
     entries.push_back(makeEntry("services", "night-light", tr("settings.use-weather-location"),
                                 tr("settings.use-weather-location-desc"), {"nightlight", "use_weather_location"},
                                 ToggleSetting{cfg.nightlight.useWeatherLocation}, "location"));
+    entries.push_back(makeEntry("services", "night-light", tr("settings.night-light-start-time"),
+                                tr("settings.night-light-start-time-desc"), {"nightlight", "start_time"},
+                                TextSetting{cfg.nightlight.startTime, "20:30"}, "time schedule sunset"));
+    entries.push_back(makeEntry("services", "night-light", tr("settings.night-light-stop-time"),
+                                tr("settings.night-light-stop-time-desc"), {"nightlight", "stop_time"},
+                                TextSetting{cfg.nightlight.stopTime, "07:30"}, "time schedule sunrise"));
     entries.push_back(
         makeEntry("services", "night-light", tr("settings.day-temperature"), tr("settings.day-temperature-desc"),
                   {"nightlight", "temperature_day"},
@@ -396,6 +420,26 @@ namespace settings {
       entries.push_back(
           makeEntry(section, "shape", tr("common.corner-radius"), tr("settings.bar-radius-desc"), path("radius"),
                     SliderSetting{static_cast<float>(selectedBar->radius), 0.0f, 80.0f, 1.0f, true}, "rounded"));
+      entries.push_back(
+          makeEntry(section, "shape", tr("settings.corner-top-left"), tr("settings.corner-top-left-desc"),
+                    path("radius_top_left"),
+                    SliderSetting{static_cast<float>(selectedBar->radiusTopLeft), 0.0f, 80.0f, 1.0f, true},
+                    "rounded corner", true));
+      entries.push_back(
+          makeEntry(section, "shape", tr("settings.corner-top-right"), tr("settings.corner-top-right-desc"),
+                    path("radius_top_right"),
+                    SliderSetting{static_cast<float>(selectedBar->radiusTopRight), 0.0f, 80.0f, 1.0f, true},
+                    "rounded corner", true));
+      entries.push_back(
+          makeEntry(section, "shape", tr("settings.corner-bottom-left"), tr("settings.corner-bottom-left-desc"),
+                    path("radius_bottom_left"),
+                    SliderSetting{static_cast<float>(selectedBar->radiusBottomLeft), 0.0f, 80.0f, 1.0f, true},
+                    "rounded corner", true));
+      entries.push_back(
+          makeEntry(section, "shape", tr("settings.corner-bottom-right"), tr("settings.corner-bottom-right-desc"),
+                    path("radius_bottom_right"),
+                    SliderSetting{static_cast<float>(selectedBar->radiusBottomRight), 0.0f, 80.0f, 1.0f, true},
+                    "rounded corner", true));
       entries.push_back(makeEntry(section, "shape", tr("common.background-opacity"), tr("settings.bar-bg-opacity-desc"),
                                   path("background_opacity"),
                                   SliderSetting{selectedBar->backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
@@ -466,6 +510,27 @@ namespace settings {
           section, "shape", tr("common.corner-radius"), tr("settings.bar-radius-desc"), mpath("radius"),
           SliderSetting{static_cast<float>(ovr.radius.value_or(bar.radius)), 0.0f, 80.0f, 1.0f, true}, "rounded"));
       entries.push_back(makeEntry(
+          section, "shape", tr("settings.corner-top-left"), tr("settings.corner-top-left-desc"),
+          mpath("radius_top_left"),
+          SliderSetting{static_cast<float>(ovr.radiusTopLeft.value_or(bar.radiusTopLeft)), 0.0f, 80.0f, 1.0f, true},
+          "rounded corner", true));
+      entries.push_back(makeEntry(
+          section, "shape", tr("settings.corner-top-right"), tr("settings.corner-top-right-desc"),
+          mpath("radius_top_right"),
+          SliderSetting{static_cast<float>(ovr.radiusTopRight.value_or(bar.radiusTopRight)), 0.0f, 80.0f, 1.0f, true},
+          "rounded corner", true));
+      entries.push_back(makeEntry(section, "shape", tr("settings.corner-bottom-left"),
+                                  tr("settings.corner-bottom-left-desc"), mpath("radius_bottom_left"),
+                                  SliderSetting{static_cast<float>(ovr.radiusBottomLeft.value_or(bar.radiusBottomLeft)),
+                                                0.0f, 80.0f, 1.0f, true},
+                                  "rounded corner", true));
+      entries.push_back(
+          makeEntry(section, "shape", tr("settings.corner-bottom-right"), tr("settings.corner-bottom-right-desc"),
+                    mpath("radius_bottom_right"),
+                    SliderSetting{static_cast<float>(ovr.radiusBottomRight.value_or(bar.radiusBottomRight)), 0.0f,
+                                  80.0f, 1.0f, true},
+                    "rounded corner", true));
+      entries.push_back(makeEntry(
           section, "shape", tr("common.background-opacity"), tr("settings.bar-bg-opacity-desc"),
           mpath("background_opacity"),
           SliderSetting{ovr.backgroundOpacity.value_or(bar.backgroundOpacity), 0.0f, 1.0f, 0.01f, false}, "alpha"));
@@ -482,6 +547,18 @@ namespace settings {
       entries.push_back(makeEntry(section, "widgets", tr("settings.widget-capsules"),
                                   tr("settings.widget-capsules-desc"), mpath("capsule"),
                                   ToggleSetting{ovr.widgetCapsuleDefault.value_or(bar.widgetCapsuleDefault)}, "pill"));
+      entries.push_back(
+          makeEntry(section, "widgets", tr("settings.capsule-padding"), tr("settings.capsule-padding-desc"),
+                    mpath("capsule_padding"),
+                    SliderSetting{static_cast<float>(ovr.widgetCapsulePadding.value_or(bar.widgetCapsulePadding)), 0.0f,
+                                  48.0f, 1.0f, false},
+                    "pill inset", true));
+      entries.push_back(
+          makeEntry(section, "widgets", tr("settings.capsule-opacity"), tr("settings.capsule-opacity-desc"),
+                    mpath("capsule_opacity"),
+                    SliderSetting{static_cast<float>(ovr.widgetCapsuleOpacity.value_or(bar.widgetCapsuleOpacity)), 0.0f,
+                                  1.0f, 0.01f, false},
+                    "pill alpha", true));
       entries.push_back(makeEntry(section, "widget-list", tr("settings.start-widgets"),
                                   tr("settings.start-widgets-desc"), mpath("start"),
                                   ListSetting{ovr.startWidgets.value_or(bar.startWidgets)}, "left"));

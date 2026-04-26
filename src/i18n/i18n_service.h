@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <functional>
 #include <string>
@@ -23,6 +24,15 @@ namespace i18n {
   };
 
   using Catalog = std::unordered_map<std::string, std::string, StringHash, StringEq>;
+
+  struct LanguageOption {
+    std::string_view code;
+    std::string_view displayName;
+  };
+
+  inline constexpr std::array<LanguageOption, 1> kSupportedLanguages = {{
+      {"en", "English"},
+  }};
 
   // Loads translation catalogs and resolves dotted keys against them.
   // English is always loaded as a fallback alongside the active language.

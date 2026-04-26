@@ -177,6 +177,18 @@ namespace {
     if (key == "radius") {
       return override->radius.has_value();
     }
+    if (key == "radius_top_left") {
+      return override->radiusTopLeft.has_value();
+    }
+    if (key == "radius_top_right") {
+      return override->radiusTopRight.has_value();
+    }
+    if (key == "radius_bottom_left") {
+      return override->radiusBottomLeft.has_value();
+    }
+    if (key == "radius_bottom_right") {
+      return override->radiusBottomRight.has_value();
+    }
     if (key == "background_opacity") {
       return override->backgroundOpacity.has_value();
     }
