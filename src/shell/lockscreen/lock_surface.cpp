@@ -170,6 +170,24 @@ void LockSurface::setWallpaperFillMode(WallpaperFillMode fillMode) {
   requestRedraw();
 }
 
+void LockSurface::setWallpaperFillColor(Color fillColor) {
+  if (m_wallpaperFillColor == fillColor) {
+    return;
+  }
+  m_wallpaperFillColor = fillColor;
+  if (m_wallpaper != nullptr) {
+    m_wallpaper->setFillColor(m_wallpaperFillColor);
+  }
+  if (m_backdrop != nullptr) {
+    m_backdrop->setVisible(m_wallpaperFillColor.a > 0.0f);
+    m_backdrop->setStyle(RoundedRectStyle{
+        .fill = m_wallpaperFillColor,
+        .fillMode = FillMode::Solid,
+    });
+  }
+  requestRedraw();
+}
+
 void LockSurface::setOnLogin(std::function<void()> onLogin) { m_onLogin = std::move(onLogin); }
 
 void LockSurface::setOnPasswordChanged(std::function<void(const std::string&)> onPasswordChanged) {
@@ -288,10 +306,15 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   m_wallpaper->setPosition(0.0f, 0.0f);
   m_wallpaper->setSize(sw, sh);
   m_wallpaper->setFillMode(m_wallpaperFillMode);
+  m_wallpaper->setFillColor(m_wallpaperFillColor);
 
   m_backdrop->setPosition(0.0f, 0.0f);
   m_backdrop->setSize(sw, sh);
-  m_backdrop->setVisible(false);
+  m_backdrop->setVisible(m_wallpaperFillColor.a > 0.0f);
+  m_backdrop->setStyle(RoundedRectStyle{
+      .fill = m_wallpaperFillColor,
+      .fillMode = FillMode::Solid,
+  });
 
   constexpr float kClockFontSize = 64.0f;
   m_clock->setFontSize(kClockFontSize);
@@ -353,6 +376,7 @@ void LockSurface::applyWallpaperTexture() {
                              static_cast<float>(m_wallpaperTexture.height), 0.0f, 0.0f);
     m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
     m_wallpaper->setFillMode(m_wallpaperFillMode);
+    m_wallpaper->setFillColor(m_wallpaperFillColor);
   } else {
     m_wallpaperTexture = {};
     m_wallpaper->setTextures(0, 0, 0.0f, 0.0f, 0.0f, 0.0f);

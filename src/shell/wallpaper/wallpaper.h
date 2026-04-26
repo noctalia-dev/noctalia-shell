@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shell/wallpaper/wallpaper_instance.h"
+#include "ui/signal.h"
 
 #include <cstdint>
 #include <memory>
@@ -41,5 +42,6 @@ private:
   SharedTextureCache* m_textureCache = nullptr;
   std::int64_t m_lastAutomationMinuteStamp = -1;
   std::int64_t m_lastAutomationSwitchMinute = -1;
+  Signal<>::ScopedConnection m_paletteConn;
   std::vector<std::unique_ptr<WallpaperInstance>> m_instances;
 };

@@ -11,6 +11,8 @@
 #include <memory>
 #include <string>
 
+class RectNode;
+
 struct WallpaperInstance {
   std::uint32_t outputName = 0;
   struct wl_output* output = nullptr;
@@ -19,6 +21,7 @@ struct WallpaperInstance {
 
   std::unique_ptr<LayerSurface> surface;
   std::unique_ptr<Node> sceneRoot;
+  RectNode* fillNode = nullptr;
   WallpaperNode* wallpaperNode = nullptr;
   AnimationManager animations;
 

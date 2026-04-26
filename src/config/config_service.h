@@ -183,6 +183,7 @@ struct WallpaperAutomationConfig {
 struct WallpaperConfig {
   bool enabled = true;
   WallpaperFillMode fillMode = WallpaperFillMode::Crop;
+  std::optional<ThemeColor> fillColor;
   std::vector<WallpaperTransition> transitions = {WallpaperTransition::Fade, WallpaperTransition::Wipe,
                                                   WallpaperTransition::Disc, WallpaperTransition::Stripes,
                                                   WallpaperTransition::Zoom, WallpaperTransition::Honeycomb};

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/config_service.h"
+#include "render/core/color.h"
 #include "render/programs/wallpaper_program.h"
 
 #include <EGL/egl.h>
@@ -56,5 +57,6 @@ private:
   float m_progress = 0.0f;
   WallpaperTransition m_transition = WallpaperTransition::Fade;
   WallpaperFillMode m_fillMode = WallpaperFillMode::Crop;
+  Color m_fillColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
   TransitionParams m_params;
 };

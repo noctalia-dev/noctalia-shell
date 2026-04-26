@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/config_service.h"
+#include "render/core/color.h"
 #include "render/core/texture_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
@@ -37,6 +38,7 @@ public:
   void setTextureCache(SharedTextureCache* cache) noexcept { m_textureCache = cache; }
   void setWallpaperPath(std::string wallpaperPath);
   void setWallpaperFillMode(WallpaperFillMode fillMode);
+  void setWallpaperFillColor(Color fillColor);
   void setOnLogin(std::function<void()> onLogin);
   void setOnPasswordChanged(std::function<void(const std::string&)> onPasswordChanged);
   void selectAllPassword();
@@ -71,6 +73,7 @@ private:
   TextureHandle m_wallpaperTexture{};
   std::string m_wallpaperPath;
   WallpaperFillMode m_wallpaperFillMode = WallpaperFillMode::Crop;
+  Color m_wallpaperFillColor = rgba(0.0f, 0.0f, 0.0f, 0.0f);
   bool m_wallpaperDirty = false;
   InputDispatcher m_inputDispatcher;
   std::function<void()> m_onLogin;

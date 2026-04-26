@@ -4,7 +4,10 @@
 #include "core/log.h"
 #include "core/random.h"
 #include "render/core/shared_texture_cache.h"
+#include "render/programs/rect_program.h"
 #include "render/render_context.h"
+#include "render/scene/rect_node.h"
+#include "ui/palette.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
@@ -164,6 +167,13 @@ namespace {
 
   constexpr Logger kLog("wallpaper");
 
+  Color resolveWallpaperFillColor(const WallpaperConfig& config) {
+    if (!config.fillColor) {
+      return rgba(0.0f, 0.0f, 0.0f, 0.0f);
+    }
+    return resolveThemeColor(*config.fillColor);
+  }
+
 } // namespace
 
 Wallpaper::Wallpaper() = default;
@@ -187,6 +197,14 @@ bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, Re
   }
 
   m_config->addReloadCallback([this]() { reload(); });
+  m_paletteConn = paletteChanged().connect([this] {
+    for (auto& inst : m_instances) {
+      updateRendererState(*inst);
+      if (inst->surface != nullptr) {
+        inst->surface->requestRedraw();
+      }
+    }
+  });
 
   resetAutomationState();
   syncInstances();
@@ -233,11 +251,26 @@ void Wallpaper::onStateChange() {
 
   for (auto& inst : m_instances) {
     auto newPath = m_config->getWallpaperPath(inst->connectorName);
-    if (newPath.empty()) {
+    if (inst->surface == nullptr || inst->wallpaperNode == nullptr) {
       continue;
     }
 
-    if (inst->surface == nullptr || inst->wallpaperNode == nullptr) {
+    if (newPath.empty()) {
+      if (!inst->currentPath.empty() || inst->currentTexture.id != 0 || inst->nextTexture.id != 0) {
+        if (inst->transitionAnimId != 0) {
+          inst->animations.cancel(inst->transitionAnimId);
+          inst->transitionAnimId = 0;
+        }
+        releaseInstanceTextures(*inst);
+        inst->currentTexture = {};
+        inst->nextTexture = {};
+        inst->currentPath.clear();
+        inst->pendingPath.clear();
+        inst->queuedPath.clear();
+        inst->transitioning = false;
+        updateRendererState(*inst);
+        inst->surface->requestRedraw();
+      }
       continue;
     }
 
@@ -401,6 +434,8 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
 
   instance->sceneRoot = std::make_unique<Node>();
   instance->sceneRoot->setAnimationManager(&instance->animations);
+  auto fillNode = std::make_unique<RectNode>();
+  instance->fillNode = static_cast<RectNode*>(instance->sceneRoot->addChild(std::move(fillNode)));
   auto wallpaperNode = std::make_unique<WallpaperNode>();
   instance->wallpaperNode = static_cast<WallpaperNode*>(instance->sceneRoot->addChild(std::move(wallpaperNode)));
   instance->surface->setSceneRoot(instance->sceneRoot.get());
@@ -410,6 +445,8 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
     const float sw = static_cast<float>(width);
     const float sh = static_cast<float>(height);
     inst->sceneRoot->setSize(sw, sh);
+    inst->fillNode->setPosition(0.0f, 0.0f);
+    inst->fillNode->setSize(sw, sh);
     inst->wallpaperNode->setPosition(0.0f, 0.0f);
     inst->wallpaperNode->setSize(sw, sh);
 
@@ -529,11 +566,19 @@ void Wallpaper::updateRendererState(WallpaperInstance& instance) {
   }
 
   const auto& wpConfig = m_config->config().wallpaper;
+  const Color fillColor = resolveWallpaperFillColor(wpConfig);
 
+  if (instance.fillNode != nullptr) {
+    instance.fillNode->setStyle(RoundedRectStyle{
+        .fill = fillColor,
+        .fillMode = FillMode::Solid,
+    });
+  }
   wallpaperNode->setTextures(
       instance.currentTexture.id, instance.nextTexture.id, static_cast<float>(instance.currentTexture.width),
       static_cast<float>(instance.currentTexture.height), static_cast<float>(instance.nextTexture.width),
       static_cast<float>(instance.nextTexture.height));
   wallpaperNode->setTransition(instance.activeTransition, instance.transitionProgress, instance.transitionParams);
   wallpaperNode->setFillMode(wpConfig.fillMode);
+  wallpaperNode->setFillColor(fillColor);
 }

@@ -243,7 +243,12 @@ namespace {
   constexpr Logger kLog("config");
 
   ThemeColor themeColorFromRoleString(const std::string& raw) {
-    if (auto role = colorRoleFromToken(raw)) {
+    const std::string trimmed = StringUtils::trim(raw);
+    Color fixed;
+    if (tryParseHexColor(trimmed, fixed)) {
+      return fixedColor(fixed);
+    }
+    if (auto role = colorRoleFromToken(trimmed)) {
       return roleColor(*role);
     }
     kLog.warn("unknown theme color role \"{}\", using surface_variant", raw);
@@ -1356,6 +1361,13 @@ void ConfigService::parseTable(const toml::table& tbl) {
         wp.fillMode = WallpaperFillMode::Stretch;
       else if (*v == "repeat")
         wp.fillMode = WallpaperFillMode::Repeat;
+    }
+    if (auto v = (*wpTbl)["fill_color"].value<std::string>()) {
+      if (StringUtils::trim(*v).empty()) {
+        wp.fillColor = std::nullopt;
+      } else {
+        wp.fillColor = themeColorFromConfigString(*v);
+      }
     }
     auto parseTransition = [](const std::string& s) -> std::optional<WallpaperTransition> {
       if (s == "fade")

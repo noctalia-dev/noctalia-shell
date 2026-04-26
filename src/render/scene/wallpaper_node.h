@@ -19,6 +19,7 @@ public:
   [[nodiscard]] float progress() const noexcept { return m_progress; }
   [[nodiscard]] WallpaperTransition transition() const noexcept { return m_transition; }
   [[nodiscard]] WallpaperFillMode fillMode() const noexcept { return m_fillMode; }
+  [[nodiscard]] const Color& fillColor() const noexcept { return m_fillColor; }
   [[nodiscard]] const TransitionParams& transitionParams() const noexcept { return m_params; }
 
   void setTextures(std::uint32_t texture1, std::uint32_t texture2, float imageWidth1, float imageHeight1,
@@ -58,6 +59,14 @@ public:
     markPaintDirty();
   }
 
+  void setFillColor(const Color& fillColor) {
+    if (m_fillColor == fillColor) {
+      return;
+    }
+    m_fillColor = fillColor;
+    markPaintDirty();
+  }
+
 private:
   std::uint32_t m_texture1 = 0;
   std::uint32_t m_texture2 = 0;
@@ -68,5 +77,6 @@ private:
   float m_progress = 0.0f;
   WallpaperTransition m_transition = WallpaperTransition::Fade;
   WallpaperFillMode m_fillMode = WallpaperFillMode::Crop;
+  Color m_fillColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
   TransitionParams m_params;
 };

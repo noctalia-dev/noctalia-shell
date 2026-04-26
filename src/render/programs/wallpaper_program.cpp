@@ -375,7 +375,7 @@ void WallpaperProgram::initProgram(std::size_t index, const char* fragSource) {
 void WallpaperProgram::draw(WallpaperTransition type, GLuint texture1, GLuint texture2, float surfaceWidth,
                             float surfaceHeight, float quadWidth, float quadHeight, float imageWidth1,
                             float imageHeight1, float imageWidth2, float imageHeight2, float progress, float fillMode,
-                            const TransitionParams& params, const Mat3& transform) const {
+                            const TransitionParams& params, const Color& fillColor, const Mat3& transform) const {
   auto idx = static_cast<std::size_t>(type);
   if (idx >= kTransitionCount || !m_programs[idx].program.isValid() || texture1 == 0 || quadWidth <= 0.0f ||
       quadHeight <= 0.0f) {
@@ -421,7 +421,7 @@ void WallpaperProgram::draw(WallpaperTransition type, GLuint texture1, GLuint te
   if (pd.screenHeightLoc >= 0)
     glUniform1f(pd.screenHeightLoc, quadHeight);
   if (pd.fillColorLoc >= 0)
-    glUniform4f(pd.fillColorLoc, 0.0f, 0.0f, 0.0f, 1.0f);
+    glUniform4f(pd.fillColorLoc, fillColor.r, fillColor.g, fillColor.b, fillColor.a);
 
   // Per-transition uniforms
   if (pd.directionLoc >= 0)

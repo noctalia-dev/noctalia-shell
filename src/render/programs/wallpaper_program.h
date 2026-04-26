@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/config_service.h"
+#include "render/core/color.h"
 #include "render/core/mat3.h"
 #include "render/core/shader_program.h"
 
@@ -33,7 +34,7 @@ public:
   void draw(WallpaperTransition type, GLuint texture1, GLuint texture2, float surfaceWidth, float surfaceHeight,
             float quadWidth, float quadHeight, float imageWidth1, float imageHeight1, float imageWidth2,
             float imageHeight2, float progress, float fillMode, const TransitionParams& params,
-            const Mat3& transform = Mat3::identity()) const;
+            const Color& fillColor = rgba(0.0f, 0.0f, 0.0f, 1.0f), const Mat3& transform = Mat3::identity()) const;
 
 private:
   static constexpr std::size_t kTransitionCount = 6;

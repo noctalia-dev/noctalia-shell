@@ -9,6 +9,7 @@ A ready-to-use starting config with all defaults is at [`example.toml`](example.
 Notification daemon toggle: use `[notification].enable_daemon` (documented in [`config/services.md`](config/services.md)).
 Weather location visibility toggle: use `[shell].show_location` (documented in [`config/shell.md`](config/shell.md)).
 Wallpaper automation: use `[wallpaper.automation]` (documented in [`config/wallpaper.md`](config/wallpaper.md)).
+Wallpaper single-color fallback/fill: use `[wallpaper].fill_color` (documented in [`config/wallpaper.md`](config/wallpaper.md)).
 
 ---
 

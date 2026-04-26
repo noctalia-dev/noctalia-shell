@@ -6,6 +6,7 @@
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "shell/lockscreen/lock_surface.h"
+#include "ui/palette.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
 
@@ -17,6 +18,13 @@
 namespace {
 
   constexpr Logger kLog("lockscreen");
+
+  Color resolveWallpaperFillColor(const WallpaperConfig& config) {
+    if (!config.fillColor) {
+      return rgba(0.0f, 0.0f, 0.0f, 0.0f);
+    }
+    return resolveThemeColor(*config.fillColor);
+  }
 
   const ext_session_lock_v1_listener kSessionLockListener = {
       .locked = &LockScreen::handleLocked,
@@ -160,6 +168,9 @@ void LockScreen::onThemeChanged() {
   }
   for (auto& instance : m_instances) {
     if (instance.surface != nullptr) {
+      if (m_configService != nullptr) {
+        instance.surface->setWallpaperFillColor(resolveWallpaperFillColor(m_configService->config().wallpaper));
+      }
       instance.surface->onThemeChanged();
     }
   }
@@ -177,6 +188,7 @@ void LockScreen::onWallpaperChanged() {
     const std::string connectorName = output != nullptr ? output->connectorName : std::string{};
     instance.surface->setWallpaperPath(m_configService->getWallpaperPath(connectorName));
     instance.surface->setWallpaperFillMode(m_configService->config().wallpaper.fillMode);
+    instance.surface->setWallpaperFillColor(resolveWallpaperFillColor(m_configService->config().wallpaper));
   }
 }
 
@@ -323,6 +335,7 @@ void LockScreen::createInstance(const WaylandOutput& output) {
   if (m_configService != nullptr) {
     surface->setWallpaperPath(m_configService->getWallpaperPath(output.connectorName));
     surface->setWallpaperFillMode(m_configService->config().wallpaper.fillMode);
+    surface->setWallpaperFillColor(resolveWallpaperFillColor(m_configService->config().wallpaper));
   }
   surface->setOnLogin([this]() { tryAuthenticate(); });
   surface->setOnPasswordChanged([this](const std::string& value) { handlePasswordEdited(value); });
