@@ -237,6 +237,17 @@ namespace settings {
       return options;
     }
 
+    SelectSetting widgetTypeSelect(std::string_view selectedType) {
+      std::vector<SelectOption> options;
+      for (const auto& spec : widgetTypeSpecs()) {
+        if (!spec.visibleInPicker) {
+          continue;
+        }
+        options.push_back(SelectOption{std::string(spec.type), i18n::tr(spec.labelKey)});
+      }
+      return SelectSetting{std::move(options), std::string(selectedType)};
+    }
+
     void collectWidgetReferenceNames(const std::vector<std::string>& widgets, std::unordered_set<std::string>& seen) {
       for (const auto& widget : widgets) {
         seen.insert(widget);
@@ -683,6 +694,44 @@ namespace settings {
       }
     }
 
+    void addWidgetTypeSettingRow(Flex& panel, std::string_view widgetName, std::string_view widgetType,
+                                 std::size_t& visibleSpecs, const BarWidgetEditorContext& ctx) {
+      if (!isNamedWidgetInstance(ctx.config, widgetName)) {
+        return;
+      }
+
+      auto path = widgetSettingPath(std::string(widgetName), "type");
+      const bool overridden = ctx.configService != nullptr && ctx.configService->hasOverride(path);
+      if (ctx.showOverriddenOnly && !overridden) {
+        return;
+      }
+
+      auto row = std::make_unique<Flex>();
+      row->setDirection(FlexDirection::Horizontal);
+      row->setAlign(FlexAlign::Center);
+      row->setJustify(FlexJustify::SpaceBetween);
+      row->setGap(Style::spaceXs * ctx.scale);
+      row->setPadding(2.0f * ctx.scale, 0.0f);
+      row->setMinHeight(Style::controlHeight * ctx.scale);
+
+      auto copy = std::make_unique<Flex>();
+      copy->setDirection(FlexDirection::Vertical);
+      copy->setAlign(FlexAlign::Start);
+      copy->setGap(Style::spaceXs * ctx.scale);
+      copy->setFlexGrow(1.0f);
+      copy->addChild(makeLabel(i18n::tr("settings.widget-setting.type"), Style::fontSizeBody * ctx.scale,
+                               roleColor(ColorRole::OnSurface), false));
+      auto detail = makeLabel(i18n::tr("settings.widget-setting-desc.type"), Style::fontSizeCaption * ctx.scale,
+                              roleColor(ColorRole::OnSurfaceVariant), false);
+      detail->setMaxWidth(360.0f * ctx.scale);
+      copy->addChild(std::move(detail));
+      row->addChild(std::move(copy));
+
+      row->addChild(ctx.makeSelect(widgetTypeSelect(widgetType), path));
+      panel.addChild(std::move(row));
+      ++visibleSpecs;
+    }
+
     void addWidgetSettingsPanel(Flex& item, std::string widgetName, const BarWidgetEditorContext& ctx) {
       const auto widgetType = widgetTypeForReference(ctx.config, widgetName);
       if (widgetType.empty()) {
@@ -714,6 +763,7 @@ namespace settings {
       panel->addChild(std::move(panelHeader));
 
       std::size_t visibleSpecs = 0;
+      addWidgetTypeSettingRow(*panel, widgetName, widgetType, visibleSpecs, ctx);
       for (const auto& spec : specs) {
         if (spec.advanced && !ctx.showAdvanced) {
           continue;

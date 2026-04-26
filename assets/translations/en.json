@@ -161,6 +161,7 @@
       "workspaces": "Workspaces"
     },
     "widget-setting": {
+      "type": "Type",
       "anchor": "Anchor",
       "color": "Color",
       "capsule": "Capsule",
@@ -197,6 +198,7 @@
       "show_condition": "Show Condition"
     },
     "widget-setting-desc": {
+      "type": "Built-in widget type for this named instance",
       "anchor": "Pin this widget as the center alignment anchor",
       "color": "Theme role for widget foreground",
       "capsule": "Draw a capsule behind this widget",
