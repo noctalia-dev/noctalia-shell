@@ -363,6 +363,14 @@ namespace settings {
     entries.push_back(makeEntry("services", "night-light", tr("settings.night-light-stop-time"),
                                 tr("settings.night-light-stop-time-desc"), {"nightlight", "stop_time"},
                                 TextSetting{cfg.nightlight.stopTime, "07:30"}, "time schedule sunrise"));
+    entries.push_back(makeEntry("services", "night-light", tr("settings.latitude"), tr("settings.latitude-desc"),
+                                {"nightlight", "latitude"},
+                                OptionalNumberSetting{cfg.nightlight.latitude, -90.0, 90.0, "52.5200"},
+                                "coordinate location sunrise sunset", true));
+    entries.push_back(makeEntry("services", "night-light", tr("settings.longitude"), tr("settings.longitude-desc"),
+                                {"nightlight", "longitude"},
+                                OptionalNumberSetting{cfg.nightlight.longitude, -180.0, 180.0, "13.4050"},
+                                "coordinate location sunrise sunset", true));
     entries.push_back(
         makeEntry("services", "night-light", tr("settings.day-temperature"), tr("settings.day-temperature-desc"),
                   {"nightlight", "temperature_day"},

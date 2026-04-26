@@ -113,18 +113,47 @@ namespace {
     return key;
   }
 
-  std::optional<float> parseFloatInput(std::string_view text) {
+  std::string_view trimInput(std::string_view text) {
     const auto first = std::find_if_not(text.begin(), text.end(), [](unsigned char c) { return std::isspace(c) != 0; });
     const auto last =
         std::find_if_not(text.rbegin(), text.rend(), [](unsigned char c) { return std::isspace(c) != 0; }).base();
     if (first >= last) {
+      return {};
+    }
+    return std::string_view(first, static_cast<std::size_t>(last - first));
+  }
+
+  bool isBlankInput(std::string_view text) { return trimInput(text).empty(); }
+
+  std::optional<float> parseFloatInput(std::string_view text) {
+    const auto trimmedView = trimInput(text);
+    if (trimmedView.empty()) {
       return std::nullopt;
     }
 
-    std::string trimmed(first, last);
+    std::string trimmed(trimmedView);
     try {
       std::size_t parsed = 0;
       const float value = std::stof(trimmed, &parsed);
+      if (parsed != trimmed.size() || !std::isfinite(value)) {
+        return std::nullopt;
+      }
+      return value;
+    } catch (...) {
+      return std::nullopt;
+    }
+  }
+
+  std::optional<double> parseDoubleInput(std::string_view text) {
+    const auto trimmedView = trimInput(text);
+    if (trimmedView.empty()) {
+      return std::nullopt;
+    }
+
+    std::string trimmed(trimmedView);
+    try {
+      std::size_t parsed = 0;
+      const double value = std::stod(trimmed, &parsed);
       if (parsed != trimmed.size() || !std::isfinite(value)) {
         return std::nullopt;
       }
@@ -1108,6 +1137,38 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     return input;
   };
 
+  const auto makeOptionalNumber = [&](const settings::OptionalNumberSetting& setting, std::vector<std::string> path) {
+    auto input = std::make_unique<Input>();
+    input->setValue(setting.value.has_value() ? std::format("{}", *setting.value) : "");
+    input->setPlaceholder(setting.placeholder);
+    input->setFontSize(Style::fontSizeBody * scale);
+    input->setControlHeight(Style::controlHeight * scale);
+    input->setHorizontalPadding(Style::spaceSm * scale);
+    input->setSize(190.0f * scale, Style::controlHeight * scale);
+    auto* inputPtr = input.get();
+    input->setOnChange([inputPtr](const std::string& /*text*/) { inputPtr->setInvalid(false); });
+    input->setOnSubmit([this, clearOverride, setOverride, path, inputPtr, minValue = setting.minValue,
+                        maxValue = setting.maxValue](const std::string& text) {
+      if (isBlankInput(text)) {
+        inputPtr->setInvalid(false);
+        if (m_config != nullptr && m_config->hasOverride(path)) {
+          clearOverride(path);
+        }
+        return;
+      }
+
+      const auto parsed = parseDoubleInput(text);
+      if (!parsed.has_value() || *parsed < minValue || *parsed > maxValue) {
+        inputPtr->setInvalid(true);
+        return;
+      }
+
+      inputPtr->setInvalid(false);
+      setOverride(path, *parsed);
+    });
+    return input;
+  };
+
   const auto makeListBlock = [&](Flex& section, const settings::SettingEntry& entry,
                                  const settings::ListSetting& list) {
     const bool overridden = (m_config != nullptr && m_config->hasOverride(entry.path));
@@ -1269,6 +1330,8 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
                               control.integerValue);
           } else if constexpr (std::is_same_v<T, settings::TextSetting>) {
             return makeText(control.value, control.placeholder, entry.path);
+          } else if constexpr (std::is_same_v<T, settings::OptionalNumberSetting>) {
+            return makeOptionalNumber(control, entry.path);
           } else if constexpr (std::is_same_v<T, settings::ListSetting>) {
             return nullptr;
           }

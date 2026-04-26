@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 
+#include <optional>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -36,11 +37,19 @@ namespace settings {
     std::string placeholder;
   };
 
+  struct OptionalNumberSetting {
+    std::optional<double> value;
+    double minValue = 0.0;
+    double maxValue = 1.0;
+    std::string placeholder;
+  };
+
   struct ListSetting {
     std::vector<std::string> items;
   };
 
-  using SettingControl = std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, ListSetting>;
+  using SettingControl =
+      std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting, ListSetting>;
 
   struct SettingEntry {
     std::string section;
