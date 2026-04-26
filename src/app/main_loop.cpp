@@ -34,13 +34,27 @@ void MainLoop::run() {
     if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
       throw std::runtime_error("failed to dispatch pending Wayland events");
     }
-    if (wl_display_flush(m_wayland.display()) < 0) {
-      throw std::runtime_error("failed to flush Wayland display");
+
+    // Try to flush queued requests. If the kernel send buffer is full we get
+    // EAGAIN; that is the standard Wayland backpressure signal, not a fatal
+    // error. In that case ask poll() to also wake us when the fd is writable
+    // and retry the flush before dispatching anything else.
+    short waylandPollEvents = POLLIN;
+    int flushRet = 0;
+    do {
+      flushRet = wl_display_flush(m_wayland.display());
+    } while (flushRet < 0 && errno == EINTR);
+    const bool flushBlocked = flushRet < 0;
+    if (flushBlocked) {
+      if (errno != EAGAIN) {
+        throw std::runtime_error("failed to flush Wayland display");
+      }
+      waylandPollEvents |= POLLOUT;
     }
 
     // Collect poll fds and compute timeout from all sources
     std::vector<pollfd> pollFds;
-    pollFds.push_back({.fd = wl_display_get_fd(m_wayland.display()), .events = POLLIN, .revents = 0});
+    pollFds.push_back({.fd = wl_display_get_fd(m_wayland.display()), .events = waylandPollEvents, .revents = 0});
 
     int pollTimeout = -1;
     std::vector<std::size_t> sourceStartIndices;
@@ -55,12 +69,30 @@ void MainLoop::run() {
       }
     }
 
+    // If the flush was blocked, raise the timeout floor so we actually wait
+    // for POLLOUT instead of tight-looping with a 0-timeout source on top of
+    // a full kernel buffer. ~16ms caps the spin at one frame at 60Hz.
+    if (flushBlocked && pollTimeout >= 0 && pollTimeout < 16) {
+      pollTimeout = 16;
+    }
+
     const int pollResult = ::poll(pollFds.data(), pollFds.size(), pollTimeout);
     if (pollResult < 0) {
       if (errno == EINTR) {
         continue;
       }
       throw std::runtime_error("failed to poll fds");
+    }
+
+    // If we were waiting for the wayland fd to become writable, retry the
+    // flush now. A persistent EAGAIN just defers to the next iteration.
+    if ((waylandPollEvents & POLLOUT) != 0 && (pollFds[0].revents & POLLOUT) != 0) {
+      do {
+        flushRet = wl_display_flush(m_wayland.display());
+      } while (flushRet < 0 && errno == EINTR);
+      if (flushRet < 0 && errno != EAGAIN) {
+        throw std::runtime_error("failed to flush Wayland display");
+      }
     }
 
     // Dispatch Wayland events
