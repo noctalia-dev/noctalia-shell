@@ -149,16 +149,25 @@ Singleton {
 
   function isCriticalBattery(device) {
     // When selected device is below the threshold and not charging or plugged in, return true - Crank up alarm level.
+    if (!device) {
+      return false;
+    }
     return (!isCharging(device) && !isPluggedIn(device)) && getPercentage(device) <= criticalThreshold;
   }
 
   function isLowBattery(device) {
     // When selected device is below the threshold and not charging or plugged in, return true - Give user a warning.
+    if (!device) {
+      return false;
+    }
     return (!isCharging(device) && !isPluggedIn(device)) && getPercentage(device) <= warningThreshold && getPercentage(device) > criticalThreshold;
   }
 
   function isDisplayDevice(device) {
     // Well for one thing we want to identify the display device as a special case. But what is a display device? It's a virtual device that represents the aggregate of all laptop batteries. - TLDR: it does math stuff laptops with multiple batteries (eg: Some Thinkpad models)
+    if (!device) {
+      return false;
+    }
     return device === UPower.displayDevice || (device.nativePath && device.nativePath.includes("DisplayDevice"));
   }
 
