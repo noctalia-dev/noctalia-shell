@@ -99,8 +99,7 @@ Set under `[bar.<name>]` or `[bar.<name>.monitor.*]`:
 | `capsule` | bool | `false` | `true` gives every widget a capsule unless `[widget.*]` sets `capsule = false`. |
 | `color` | string | *(unset)* | Default icon + label color for every widget on this bar. |
 | `capsule_fill` | string | `surface_variant` | Default capsule background. Theme role or `#` hex; hex alpha is ignored — use `capsule_opacity`. |
-| `capsule_color` | string | — | Synonym for `capsule_fill` when that key is absent. |
-| `capsule_foreground` | string | *(unset)* | Default icon + label color for capped widgets. `capsule_ink` is accepted as a deprecated alias. |
+| `capsule_foreground` | string | *(unset)* | Default icon + label color for capped widgets. |
 | `capsule_padding` | number | `6` | Inner padding in logical pixels before `scale` is applied (clamped 0–48). |
 | `capsule_opacity` | number | `1.0` | Capsule background opacity (0.0–1.0). |
 | `capsule_border` | string | *(omitted)* | If omitted, no border by default. If present (even `""`), per-widget border rules apply. |
@@ -113,7 +112,6 @@ Set under `[widget.<name>]`:
 |---------|------|---------|-------------|
 | `capsule` | bool | *(from bar)* | Omit to inherit bar flag; `false` disables; `true` forces on. |
 | `capsule_fill` | string | *(from bar)* | Capsule background color. |
-| `capsule_color` | string | *(from bar)* | Synonym for `capsule_fill` when that key is absent. |
 | `capsule_foreground` | string | *(from bar)* | Icon + label color when capsule is visible. `color` takes priority over this. |
 | `capsule_padding` | number | *(from bar)* | Per-widget inner padding (0–48). |
 | `capsule_opacity` | number | *(from bar)* | Per-widget capsule background opacity. |
@@ -134,7 +132,7 @@ capsule_border  = "outline"
 # Accent bar: primary fill + matching text
 [bar.accent]
 capsule            = true
-capsule_color      = "primary"
+capsule_fill       = "primary"
 capsule_foreground = "on_primary"
 capsule_padding    = 10
 

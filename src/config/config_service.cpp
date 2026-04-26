@@ -1098,13 +1098,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
       }
       if (auto fillStr = (*barTbl)["capsule_fill"].value<std::string>()) {
         bar.widgetCapsuleFill = themeColorFromCapsuleString(*fillStr);
-      } else if (auto colorStr = (*barTbl)["capsule_color"].value<std::string>()) {
-        bar.widgetCapsuleFill = themeColorFromCapsuleString(*colorStr);
       }
       if (auto fgStr = (*barTbl)["capsule_foreground"].value<std::string>()) {
         bar.widgetCapsuleForeground = themeColorFromCapsuleString(*fgStr);
-      } else if (auto legacyInk = (*barTbl)["capsule_ink"].value<std::string>()) {
-        bar.widgetCapsuleForeground = themeColorFromCapsuleString(*legacyInk);
       }
       if (auto v = (*barTbl)["capsule_padding"].value<double>()) {
         bar.widgetCapsulePadding = std::clamp(static_cast<float>(*v), 0.0f, 48.0f);
@@ -1185,13 +1181,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
           }
           if (auto fillStr = (*monTbl)["capsule_fill"].value<std::string>()) {
             ovr.widgetCapsuleFill = *fillStr;
-          } else if (auto colorStr = (*monTbl)["capsule_color"].value<std::string>()) {
-            ovr.widgetCapsuleFill = *colorStr;
           }
           if (auto fgStr = (*monTbl)["capsule_foreground"].value<std::string>()) {
             ovr.widgetCapsuleForeground = *fgStr;
-          } else if (auto legacyInk = (*monTbl)["capsule_ink"].value<std::string>()) {
-            ovr.widgetCapsuleForeground = *legacyInk;
           }
           if (auto v = (*monTbl)["capsule_padding"].value<double>()) {
             ovr.widgetCapsulePadding = *v;
@@ -1285,7 +1277,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto polkitAgent = (*shellTbl)["polkit_agent"].value<bool>()) {
       shell.polkitAgent = *polkitAgent;
     }
-    if (auto v = (*shellTbl)["password_mask_style"].value<std::string>()) {
+    if (auto v = (*shellTbl)["password_style"].value<std::string>()) {
       if (auto parsed = enumFromKey(kPasswordMaskStyles, *v)) {
         shell.passwordMaskStyle = *parsed;
       }
@@ -1333,9 +1325,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
         theme.source = *parsed;
       }
     }
-    if (auto builtinPalette = (*themeTbl)["builtin_palette"].value<std::string>()) {
-      theme.builtinPalette = *builtinPalette;
-    } else if (auto builtin = (*themeTbl)["builtin"].value<std::string>()) {
+    if (auto builtin = (*themeTbl)["builtin"].value<std::string>()) {
       theme.builtinPalette = *builtin;
     }
     if (auto v = (*themeTbl)["community_palette"].value<std::string>()) {
@@ -1488,12 +1478,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
 
   if (auto* notifTbl = tbl["notification"].as_table()) {
     auto& notif = m_config.notification;
-    if (auto v = (*notifTbl)["enable_daemon"].value<bool>()) {
+    if (auto v = (*notifTbl)["enable_daemon"].value<bool>())
       notif.enableDaemon = *v;
-    } else if (auto legacyDbus = (*notifTbl)["dbus"].value<bool>()) {
-      // Backward-compat alias for older configs.
-      notif.enableDaemon = *legacyDbus;
-    }
     if (auto v = (*notifTbl)["background_opacity"].value<double>())
       notif.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
     if (auto v = (*notifTbl)["background_blur"].value<bool>())
@@ -1849,7 +1835,6 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
   WidgetBarCapsuleSpec spec{};
   const bool widgetHasCapsuleKey = widget != nullptr && widget->hasSetting("capsule");
   const bool widgetHasFillKey = widget != nullptr && widget->hasSetting("capsule_fill");
-  const bool widgetHasColorKey = widget != nullptr && widget->hasSetting("capsule_color");
   const bool widgetHasBorderKey = widget != nullptr && widget->hasSetting("capsule_border");
 
   if (widgetHasCapsuleKey) {
@@ -1863,8 +1848,6 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
 
   if (widgetHasFillKey) {
     spec.fill = themeColorFromCapsuleString(widget->getString("capsule_fill", ""));
-  } else if (widgetHasColorKey) {
-    spec.fill = themeColorFromCapsuleString(widget->getString("capsule_color", ""));
   } else {
     spec.fill = bar.widgetCapsuleFill;
   }
@@ -1890,8 +1873,6 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
 
   if (widget != nullptr && widget->hasSetting("capsule_foreground")) {
     spec.foreground = themeColorFromCapsuleString(widget->getString("capsule_foreground", ""));
-  } else if (widget != nullptr && widget->hasSetting("capsule_ink")) {
-    spec.foreground = themeColorFromCapsuleString(widget->getString("capsule_ink", ""));
   } else if (bar.widgetCapsuleForeground.has_value()) {
     spec.foreground = bar.widgetCapsuleForeground;
   } else {
