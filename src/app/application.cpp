@@ -372,15 +372,14 @@ void Application::initServices() {
   m_nightLightManager.setChangeCallback([this]() { m_bar.refresh(); });
   m_configService.addReloadCallback([this]() { m_nightLightManager.reload(m_configService.config().nightlight); });
 
-  m_wallpaper.initialize(m_wayland, &m_configService, &m_glShared, &m_sharedTextureCache);
   m_overview.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
   m_overview.setActive(m_wayland.isNiriOverviewOpen());
 
-  // Override the single-callback slot set by Wallpaper::initialize() so both
-  // wallpaper and overview are notified of wallpaper path changes.
+  // Register all wallpaper consumers in the single-callback slot.
   m_configService.setWallpaperChangeCallback([this]() {
     m_wallpaper.onStateChange();
     m_overview.onStateChange();
+    m_lockScreen.onWallpaperChanged();
     m_themeService.onWallpaperChange();
     m_hookManager.fire(HookKind::WallpaperChanged);
   });
@@ -657,6 +656,7 @@ void Application::initUi() {
 
   m_renderContext.initialize(m_glShared);
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
+  m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache);
   m_settingsWindow.initialize(m_wayland, &m_configService, &m_renderContext);
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache);
   m_lockScreen.setSessionHooks([this]() { m_hookManager.fire(HookKind::SessionLocked); },

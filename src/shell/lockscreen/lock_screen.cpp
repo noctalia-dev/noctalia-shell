@@ -165,6 +165,21 @@ void LockScreen::onThemeChanged() {
   }
 }
 
+void LockScreen::onWallpaperChanged() {
+  if (!isActive() || m_configService == nullptr) {
+    return;
+  }
+  for (auto& instance : m_instances) {
+    if (instance.surface == nullptr) {
+      continue;
+    }
+    const auto* output = m_wayland != nullptr ? m_wayland->findOutputByWl(instance.output) : nullptr;
+    const std::string connectorName = output != nullptr ? output->connectorName : std::string{};
+    instance.surface->setWallpaperPath(m_configService->getWallpaperPath(connectorName));
+    instance.surface->setWallpaperFillMode(m_configService->config().wallpaper.fillMode);
+  }
+}
+
 void LockScreen::onPointerEvent(const PointerEvent& event) {
   if (!isActive()) {
     return;
@@ -307,6 +322,7 @@ void LockScreen::createInstance(const WaylandOutput& output) {
   surface->setLockedState(m_locked);
   if (m_configService != nullptr) {
     surface->setWallpaperPath(m_configService->getWallpaperPath(output.connectorName));
+    surface->setWallpaperFillMode(m_configService->config().wallpaper.fillMode);
   }
   surface->setOnLogin([this]() { tryAuthenticate(); });
   surface->setOnPasswordChanged([this](const std::string& value) { handlePasswordEdited(value); });

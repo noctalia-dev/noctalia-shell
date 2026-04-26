@@ -436,7 +436,6 @@ _noctalia_sources = files(
   'src/shell/overview/overview.cpp',
   'src/shell/overview/overview_surface.cpp',
   'src/shell/wallpaper/wallpaper.cpp',
-  'src/shell/wallpaper/wallpaper_surface.cpp',
   'src/shell/wallpaper/panel/wallpaper_page_grid.cpp',
   'src/shell/wallpaper/panel/wallpaper_panel.cpp',
   'src/shell/wallpaper/panel/wallpaper_scanner.cpp',

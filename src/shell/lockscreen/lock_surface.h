@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/config_service.h"
 #include "render/core/texture_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
@@ -14,12 +15,12 @@ struct ext_session_lock_surface_v1;
 struct ext_session_lock_v1;
 struct wl_output;
 
-class ImageNode;
 class Button;
 class Input;
 class Label;
 class RectNode;
 class SharedTextureCache;
+class WallpaperNode;
 struct KeyboardEvent;
 struct PointerEvent;
 
@@ -35,6 +36,7 @@ public:
   void setPromptState(std::string user, std::string password, std::string status, bool error);
   void setTextureCache(SharedTextureCache* cache) noexcept { m_textureCache = cache; }
   void setWallpaperPath(std::string wallpaperPath);
+  void setWallpaperFillMode(WallpaperFillMode fillMode);
   void setOnLogin(std::function<void()> onLogin);
   void setOnPasswordChanged(std::function<void(const std::string&)> onPasswordChanged);
   void selectAllPassword();
@@ -58,7 +60,7 @@ private:
   ext_session_lock_surface_v1* m_lockSurface = nullptr;
   wl_output* m_output = nullptr;
   Node m_root;
-  ImageNode* m_wallpaper = nullptr;
+  WallpaperNode* m_wallpaper = nullptr;
   RectNode* m_backdrop = nullptr;
   Label* m_clockShadow = nullptr;
   Label* m_clock = nullptr;
@@ -68,6 +70,7 @@ private:
   SharedTextureCache* m_textureCache = nullptr;
   TextureHandle m_wallpaperTexture{};
   std::string m_wallpaperPath;
+  WallpaperFillMode m_wallpaperFillMode = WallpaperFillMode::Crop;
   bool m_wallpaperDirty = false;
   InputDispatcher m_inputDispatcher;
   std::function<void()> m_onLogin;

@@ -8,7 +8,7 @@
 #include <vector>
 
 class ConfigService;
-class GlSharedContext;
+class RenderContext;
 class SharedTextureCache;
 class WaylandConnection;
 struct WaylandOutput;
@@ -18,7 +18,7 @@ public:
   Wallpaper();
   ~Wallpaper();
 
-  bool initialize(WaylandConnection& wayland, ConfigService* config, GlSharedContext* sharedGl,
+  bool initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext,
                   SharedTextureCache* textureCache);
   void onOutputChange();
   void onStateChange();
@@ -37,7 +37,7 @@ private:
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
-  GlSharedContext* m_sharedGl = nullptr;
+  RenderContext* m_renderContext = nullptr;
   SharedTextureCache* m_textureCache = nullptr;
   std::int64_t m_lastAutomationMinuteStamp = -1;
   std::int64_t m_lastAutomationSwitchMinute = -1;

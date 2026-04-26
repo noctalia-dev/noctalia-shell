@@ -3,7 +3,9 @@
 #include "render/animation/animation_manager.h"
 #include "render/core/texture_manager.h"
 #include "render/programs/wallpaper_program.h"
-#include "shell/wallpaper/wallpaper_surface.h"
+#include "render/scene/node.h"
+#include "render/scene/wallpaper_node.h"
+#include "wayland/layer_surface.h"
 
 #include <cstdint>
 #include <memory>
@@ -15,7 +17,9 @@ struct WallpaperInstance {
   std::int32_t scale = 1;
   std::string connectorName;
 
-  std::unique_ptr<WallpaperSurface> surface;
+  std::unique_ptr<LayerSurface> surface;
+  std::unique_ptr<Node> sceneRoot;
+  WallpaperNode* wallpaperNode = nullptr;
   AnimationManager animations;
 
   // Wallpaper state

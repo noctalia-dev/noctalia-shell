@@ -4,8 +4,7 @@
 #include "core/log.h"
 #include "core/random.h"
 #include "render/core/shared_texture_cache.h"
-#include "render/wallpaper_renderer.h"
-#include "shell/wallpaper/wallpaper_surface.h"
+#include "render/render_context.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
@@ -175,11 +174,11 @@ Wallpaper::~Wallpaper() {
   }
 }
 
-bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, GlSharedContext* sharedGl,
+bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext,
                            SharedTextureCache* textureCache) {
   m_wayland = &wayland;
   m_config = config;
-  m_sharedGl = sharedGl;
+  m_renderContext = renderContext;
   m_textureCache = textureCache;
 
   if (!m_config->config().wallpaper.enabled) {
@@ -187,7 +186,6 @@ bool Wallpaper::initialize(WaylandConnection& wayland, ConfigService* config, Gl
     return true;
   }
 
-  m_config->setWallpaperChangeCallback([this]() { onStateChange(); });
   m_config->addReloadCallback([this]() { reload(); });
 
   resetAutomationState();
@@ -239,7 +237,7 @@ void Wallpaper::onStateChange() {
       continue;
     }
 
-    if (inst->surface == nullptr || inst->surface->wallpaperRenderer() == nullptr) {
+    if (inst->surface == nullptr || inst->wallpaperNode == nullptr) {
       continue;
     }
 
@@ -398,16 +396,29 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
       .exclusiveZone = -1,
   };
 
-  instance->surface = std::make_unique<WallpaperSurface>(*m_wayland, std::move(surfaceConfig));
-  instance->surface->setSharedGl(m_sharedGl);
+  instance->surface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
+  instance->surface->setRenderContext(m_renderContext);
+
+  instance->sceneRoot = std::make_unique<Node>();
+  instance->sceneRoot->setAnimationManager(&instance->animations);
+  auto wallpaperNode = std::make_unique<WallpaperNode>();
+  instance->wallpaperNode = static_cast<WallpaperNode*>(instance->sceneRoot->addChild(std::move(wallpaperNode)));
+  instance->surface->setSceneRoot(instance->sceneRoot.get());
 
   auto* inst = instance.get();
-  instance->surface->setConfigureCallback(
-      [this, inst, wallpaperPath](std::uint32_t /*width*/, std::uint32_t /*height*/) {
-        if (inst->currentPath.empty() && !wallpaperPath.empty()) {
-          loadWallpaper(*inst, wallpaperPath);
-        }
-      });
+  instance->surface->setConfigureCallback([this, inst, wallpaperPath](std::uint32_t width, std::uint32_t height) {
+    const float sw = static_cast<float>(width);
+    const float sh = static_cast<float>(height);
+    inst->sceneRoot->setSize(sw, sh);
+    inst->wallpaperNode->setPosition(0.0f, 0.0f);
+    inst->wallpaperNode->setSize(sw, sh);
+
+    if (inst->currentPath.empty() && !wallpaperPath.empty()) {
+      loadWallpaper(*inst, wallpaperPath);
+    } else {
+      updateRendererState(*inst);
+    }
+  });
 
   instance->surface->setAnimationManager(&instance->animations);
 
@@ -512,16 +523,17 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
 }
 
 void Wallpaper::updateRendererState(WallpaperInstance& instance) {
-  auto* renderer = instance.surface->wallpaperRenderer();
-  if (renderer == nullptr) {
+  auto* wallpaperNode = instance.wallpaperNode;
+  if (wallpaperNode == nullptr) {
     return;
   }
 
   const auto& wpConfig = m_config->config().wallpaper;
 
-  renderer->setTransitionState(
+  wallpaperNode->setTextures(
       instance.currentTexture.id, instance.nextTexture.id, static_cast<float>(instance.currentTexture.width),
       static_cast<float>(instance.currentTexture.height), static_cast<float>(instance.nextTexture.width),
-      static_cast<float>(instance.nextTexture.height), instance.transitionProgress, instance.activeTransition,
-      wpConfig.fillMode, instance.transitionParams);
+      static_cast<float>(instance.nextTexture.height));
+  wallpaperNode->setTransition(instance.activeTransition, instance.transitionProgress, instance.transitionParams);
+  wallpaperNode->setFillMode(wpConfig.fillMode);
 }

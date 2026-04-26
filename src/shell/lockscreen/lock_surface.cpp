@@ -5,8 +5,8 @@
 #include "render/core/shared_texture_cache.h"
 #include "render/programs/rect_program.h"
 #include "render/render_context.h"
-#include "render/scene/image_node.h"
 #include "render/scene/rect_node.h"
+#include "render/scene/wallpaper_node.h"
 #include "time/time_format.h"
 #include "ui/controls/button.h"
 #include "ui/controls/input.h"
@@ -30,8 +30,8 @@ namespace {
 } // namespace
 
 LockSurface::LockSurface(WaylandConnection& connection) : Surface(connection) {
-  auto wallpaper = std::make_unique<ImageNode>();
-  m_wallpaper = static_cast<ImageNode*>(m_root.addChild(std::move(wallpaper)));
+  auto wallpaper = std::make_unique<WallpaperNode>();
+  m_wallpaper = static_cast<WallpaperNode*>(m_root.addChild(std::move(wallpaper)));
 
   auto backdrop = std::make_unique<RectNode>();
   m_backdrop = static_cast<RectNode*>(m_root.addChild(std::move(backdrop)));
@@ -159,6 +159,17 @@ void LockSurface::setWallpaperPath(std::string wallpaperPath) {
   requestLayout();
 }
 
+void LockSurface::setWallpaperFillMode(WallpaperFillMode fillMode) {
+  if (m_wallpaperFillMode == fillMode) {
+    return;
+  }
+  m_wallpaperFillMode = fillMode;
+  if (m_wallpaper != nullptr) {
+    m_wallpaper->setFillMode(m_wallpaperFillMode);
+  }
+  requestRedraw();
+}
+
 void LockSurface::setOnLogin(std::function<void()> onLogin) { m_onLogin = std::move(onLogin); }
 
 void LockSurface::setOnPasswordChanged(std::function<void(const std::string&)> onPasswordChanged) {
@@ -276,7 +287,7 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
 
   m_wallpaper->setPosition(0.0f, 0.0f);
   m_wallpaper->setSize(sw, sh);
-  m_wallpaper->setTint(Color{1.0f, 1.0f, 1.0f, 0.95f});
+  m_wallpaper->setFillMode(m_wallpaperFillMode);
 
   m_backdrop->setPosition(0.0f, 0.0f);
   m_backdrop->setSize(sw, sh);
@@ -338,11 +349,13 @@ void LockSurface::applyWallpaperTexture() {
 
   if (m_textureCache != nullptr && !m_wallpaperPath.empty()) {
     m_wallpaperTexture = m_textureCache->acquire(m_wallpaperPath);
-    m_wallpaper->setTextureId(m_wallpaperTexture.id);
-    m_wallpaper->setTint(Color{1.0f, 1.0f, 1.0f, 1.0f});
+    m_wallpaper->setTextures(m_wallpaperTexture.id, 0, static_cast<float>(m_wallpaperTexture.width),
+                             static_cast<float>(m_wallpaperTexture.height), 0.0f, 0.0f);
+    m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
+    m_wallpaper->setFillMode(m_wallpaperFillMode);
   } else {
     m_wallpaperTexture = {};
-    m_wallpaper->setTextureId(0);
+    m_wallpaper->setTextures(0, 0, 0.0f, 0.0f, 0.0f, 0.0f);
   }
 
   m_wallpaperDirty = false;
