@@ -58,6 +58,8 @@ public:
   void requestSize(std::uint32_t width, std::uint32_t height);
   void setMargins(std::int32_t top, std::int32_t right, std::int32_t bottom, std::int32_t left);
   void setClickThrough(bool clickThrough);
+  void setKeyboardInteractivity(LayerShellKeyboard mode);
+  [[nodiscard]] LayerShellKeyboard keyboardInteractivity() const noexcept { return m_config.keyboard; }
 
   static void handleConfigure(void* data, zwlr_layer_surface_v1* layerSurface, std::uint32_t serial,
                               std::uint32_t width, std::uint32_t height);

@@ -120,6 +120,18 @@ void LayerSurface::setMargins(std::int32_t top, std::int32_t right, std::int32_t
   wl_surface_commit(m_surface);
 }
 
+void LayerSurface::setKeyboardInteractivity(LayerShellKeyboard mode) {
+  if (m_config.keyboard == mode) {
+    return;
+  }
+  m_config.keyboard = mode;
+  if (m_layerSurface == nullptr || m_surface == nullptr) {
+    return;
+  }
+  zwlr_layer_surface_v1_set_keyboard_interactivity(m_layerSurface, static_cast<std::uint32_t>(mode));
+  wl_surface_commit(m_surface);
+}
+
 void LayerSurface::setClickThrough(bool clickThrough) {
   if (m_clickThrough == clickThrough) {
     return;

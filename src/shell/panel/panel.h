@@ -46,6 +46,13 @@ public:
   [[nodiscard]] virtual LayerShellLayer layer() const { return LayerShellLayer::Top; }
   [[nodiscard]] virtual LayerShellKeyboard keyboardMode() const { return LayerShellKeyboard::OnDemand; }
   [[nodiscard]] virtual InputArea* initialFocusArea() const { return nullptr; }
+  // Opt-in: when true and a suitable bar exists, the panel renders as a wl_subsurface
+  // attached to the bar with concave-corner merging. Falls back to a layer surface if no
+  // matching bar is available.
+  [[nodiscard]] virtual bool prefersAttachedToBar() const noexcept { return false; }
+  // For attached panels: which bar edge to attach to when more than one bar exists on
+  // the target output. Returned value must outlive the call (use a string literal).
+  [[nodiscard]] virtual std::string_view preferredAttachedBarPosition() const noexcept { return "top"; }
 
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }

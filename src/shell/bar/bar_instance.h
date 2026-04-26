@@ -57,4 +57,7 @@ struct BarInstance {
 
   Signal<>::ScopedConnection paletteConn;
   std::optional<AttachedPanelGeometry> attachedPanelGeometry;
+  // Set when an attached panel borrows the bar surface for keyboard focus.
+  // Holds the value the bar's layer surface had before the borrow so it can be restored.
+  std::optional<LayerShellKeyboard> attachedKeyboardSavedMode;
 };

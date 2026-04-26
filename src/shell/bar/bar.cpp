@@ -23,6 +23,7 @@
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <wayland-client-core.h>
 
@@ -31,24 +32,6 @@ namespace {
   constexpr float kCircularCapsuleNarrowWidthEpsilon = 1.0f;
   constexpr std::int32_t kAutoHideTriggerPx = 2;
   constexpr float kAutoHideSlideExtraPx = 16.0f;
-
-  [[nodiscard]] CornerShapes attachedPanelCornerShapes() {
-    return CornerShapes{
-        .tl = CornerShape::Concave,
-        .tr = CornerShape::Concave,
-        .br = CornerShape::Convex,
-        .bl = CornerShape::Convex,
-    };
-  }
-
-  [[nodiscard]] RectInsets attachedPanelLogicalInset(float radius) {
-    return RectInsets{
-        .left = radius,
-        .top = 0.0f,
-        .right = radius,
-        .bottom = 0.0f,
-    };
-  }
 
   std::uint32_t positionToAnchor(const std::string& position) {
     if (position == "bottom") {
@@ -543,42 +526,103 @@ std::optional<LayerPopupParentContext> Bar::preferredPopupParentContext(wl_outpu
              : std::nullopt;
 }
 
-std::optional<AttachedPanelParentContext> Bar::attachedPanelParentContext(wl_output* output) const noexcept {
-  BarInstance* instance = instanceForOutput(output);
-  if (instance == nullptr) {
+std::optional<AttachedPanelParentContext>
+Bar::attachedPanelParentContext(wl_output* output, std::string_view preferredPosition) const noexcept {
+  // Selection order:
+  //   1. Bar on `output` matching `preferredPosition`.
+  //   2. Bar on `output` with any position (deterministic order top, bottom, left, right).
+  //   3. First bar anywhere matching `preferredPosition`.
+  static constexpr std::array<std::string_view, 4> kPositionFallback{"top", "bottom", "left", "right"};
+
+  const auto isUsable = [](const BarInstance* inst) {
+    return inst != nullptr && inst->surface != nullptr && inst->surface->wlSurface() != nullptr &&
+           inst->surface->width() > 0 && inst->surface->height() > 0;
+  };
+
+  BarInstance* chosen = nullptr;
+  if (output != nullptr) {
     for (const auto& candidate : m_instances) {
-      if (candidate != nullptr && candidate->surface != nullptr && candidate->barConfig.position == "top") {
-        instance = candidate.get();
+      if (isUsable(candidate.get()) && candidate->output == output &&
+          candidate->barConfig.position == preferredPosition) {
+        chosen = candidate.get();
+        break;
+      }
+    }
+    if (chosen == nullptr) {
+      for (const auto& position : kPositionFallback) {
+        for (const auto& candidate : m_instances) {
+          if (isUsable(candidate.get()) && candidate->output == output && candidate->barConfig.position == position) {
+            chosen = candidate.get();
+            break;
+          }
+        }
+        if (chosen != nullptr) {
+          break;
+        }
+      }
+    }
+  }
+  if (chosen == nullptr) {
+    for (const auto& candidate : m_instances) {
+      if (isUsable(candidate.get()) && candidate->barConfig.position == preferredPosition) {
+        chosen = candidate.get();
         break;
       }
     }
   }
-  if (instance == nullptr || instance->surface == nullptr || instance->barConfig.position != "top") {
+  if (chosen == nullptr) {
     return std::nullopt;
   }
 
-  const auto surfaceWidth = instance->surface->width();
-  const auto surfaceHeight = instance->surface->height();
-  if (instance->surface->wlSurface() == nullptr || surfaceWidth == 0 || surfaceHeight == 0) {
-    return std::nullopt;
-  }
+  const auto surfaceWidth = chosen->surface->width();
+  const auto surfaceHeight = chosen->surface->height();
 
-  const auto bar = computeBarVisualGeometry(instance->barConfig, m_config->config().shell.shadow,
+  const auto bar = computeBarVisualGeometry(chosen->barConfig, m_config->config().shell.shadow,
                                             static_cast<float>(surfaceWidth), static_cast<float>(surfaceHeight));
   if (bar.width <= 0.0f || bar.height <= 0.0f) {
     return std::nullopt;
   }
 
   return AttachedPanelParentContext{
-      .parentSurface = instance->surface->wlSurface(),
-      .output = instance->output,
+      .parentSurface = chosen->surface->wlSurface(),
+      .parentLayerSurface = chosen->surface.get(),
+      .output = chosen->output,
       .barX = static_cast<std::int32_t>(std::lround(bar.x)),
       .barY = static_cast<std::int32_t>(std::lround(bar.y)),
       .barWidth = static_cast<std::int32_t>(std::lround(bar.width)),
       .barHeight = static_cast<std::int32_t>(std::lround(bar.height)),
       .parentWidth = surfaceWidth,
       .parentHeight = surfaceHeight,
+      .barPosition = chosen->barConfig.position,
   };
+}
+
+void Bar::beginAttachedKeyboard(wl_output* output) {
+  BarInstance* instance = instanceForOutput(output);
+  if (instance == nullptr || instance->surface == nullptr) {
+    return;
+  }
+  if (instance->attachedKeyboardSavedMode.has_value()) {
+    return; // already borrowed
+  }
+  instance->attachedKeyboardSavedMode = instance->surface->keyboardInteractivity();
+  // Exclusive (not OnDemand): the compositor focuses the bar surface immediately on commit
+  // so attached panels with text inputs (search field, etc.) work without a prior click, and
+  // Escape works on open. OnDemand only promotes focus on user click, leaving the panel keyless
+  // until then. The borrow is released on close, so global focus returns to the prior toplevel.
+  instance->surface->setKeyboardInteractivity(LayerShellKeyboard::Exclusive);
+}
+
+void Bar::endAttachedKeyboard(wl_output* output) {
+  BarInstance* instance = instanceForOutput(output);
+  if (instance == nullptr || instance->surface == nullptr) {
+    return;
+  }
+  if (!instance->attachedKeyboardSavedMode.has_value()) {
+    return;
+  }
+  instance->surface->setKeyboardInteractivity(*instance->attachedKeyboardSavedMode);
+  instance->attachedKeyboardSavedMode.reset();
 }
 
 void Bar::setAttachedPanelGeometry(wl_output* output, std::optional<AttachedPanelGeometry> geometry) {
@@ -1168,19 +1212,20 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     const float shadowY = barAreaY + shadowOffsetY;
     RoundedRectStyle shadowStyle =
         shell::surface_shadow::style(shadowConfig, bgOpacity, shell::surface_shadow::Shape{.radius = barRadii});
-    const bool panelShadowExclusion = !isVertical && !isBottom && instance.attachedPanelGeometry.has_value() &&
+    const bool panelShadowExclusion = instance.attachedPanelGeometry.has_value() &&
                                       instance.attachedPanelGeometry->width > 0.0f &&
                                       instance.attachedPanelGeometry->height > 0.0f;
     if (panelShadowExclusion) {
       const auto& attached = *instance.attachedPanelGeometry;
       const float radius = std::max(0.0f, attached.cornerRadius);
+      const std::string_view barPosition = instance.barConfig.position;
       shadowStyle.shadowExclusion = true;
       shadowStyle.shadowExclusionOffsetX = shadowX - attached.x;
       shadowStyle.shadowExclusionOffsetY = shadowY - attached.y;
       shadowStyle.shadowExclusionWidth = attached.width;
       shadowStyle.shadowExclusionHeight = attached.height;
-      shadowStyle.shadowExclusionCorners = attachedPanelCornerShapes();
-      shadowStyle.shadowExclusionLogicalInset = attachedPanelLogicalInset(radius);
+      shadowStyle.shadowExclusionCorners = attached_panel::cornerShapes(barPosition);
+      shadowStyle.shadowExclusionLogicalInset = attached_panel::logicalInset(barPosition, radius);
       shadowStyle.shadowExclusionRadius = Radii{radius, radius, radius, radius};
     }
 

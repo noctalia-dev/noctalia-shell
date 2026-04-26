@@ -26,26 +26,7 @@ PanelManager* PanelManager::s_instance = nullptr;
 namespace {
 
   constexpr Logger kLog("panel");
-  constexpr const char* kAttachedControlCenterPanelId = "control-center";
   constexpr std::int32_t kAttachedPanelBarOverlap = 1;
-
-  [[nodiscard]] CornerShapes attachedPanelCornerShapes() {
-    return CornerShapes{
-        .tl = CornerShape::Concave,
-        .tr = CornerShape::Concave,
-        .br = CornerShape::Convex,
-        .bl = CornerShape::Convex,
-    };
-  }
-
-  [[nodiscard]] RectInsets attachedPanelLogicalInset(float radius) {
-    return RectInsets{
-        .left = radius,
-        .top = 0.0f,
-        .right = radius,
-        .bottom = 0.0f,
-    };
-  }
 
   BarConfig resolvePanelBarConfig(ConfigService* configService, WaylandConnection* wayland, wl_output* output) {
     BarConfig barConfig;
@@ -101,13 +82,19 @@ void PanelManager::openSettingsWindow() {
 }
 
 void PanelManager::setAttachedPanelParentResolver(
-    std::function<std::optional<AttachedPanelParentContext>(wl_output*)> resolver) {
+    std::function<std::optional<AttachedPanelParentContext>(wl_output*, std::string_view)> resolver) {
   m_attachedPanelParentResolver = std::move(resolver);
 }
 
 void PanelManager::setAttachedPanelGeometryCallback(
     std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> callback) {
   m_attachedPanelGeometryCallback = std::move(callback);
+}
+
+void PanelManager::setAttachedKeyboardCallbacks(std::function<void(wl_output*)> begin,
+                                                std::function<void(wl_output*)> end) {
+  m_beginAttachedKeyboard = std::move(begin);
+  m_endAttachedKeyboard = std::move(end);
 }
 
 void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> content) {
@@ -226,6 +213,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
     m_layerSurface = nullptr;
     m_output = nullptr;
     m_wlSurface = nullptr;
+    m_attachedParentSurface = nullptr;
     m_activePanel = nullptr;
     m_activePanelId.clear();
     m_pendingOpenContext.clear();
@@ -236,49 +224,113 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
     m_attachedBackgroundOpacity = 1.0f;
     m_attachedRevealProgress = 1.0f;
     m_attachedRevealDirection = AttachedRevealDirection::Down;
+    m_attachedBarPosition.clear();
     m_attachedPanelGeometry.reset();
     m_attachedToBar = false;
   };
 
-  if (panelId == kAttachedControlCenterPanelId && m_attachedPanelParentResolver) {
-    const auto parentContext = m_attachedPanelParentResolver(output);
+  if (m_activePanel->prefersAttachedToBar() && m_attachedPanelParentResolver) {
+    const auto parentContext = m_attachedPanelParentResolver(output, m_activePanel->preferredAttachedBarPosition());
     if (parentContext.has_value() && parentContext->parentSurface != nullptr && parentContext->barWidth > 0 &&
         parentContext->barHeight > 0) {
+      const std::string_view barPosition = parentContext->barPosition;
+      const bool barIsBottom = barPosition == "bottom";
+      const bool barIsLeft = barPosition == "left";
+      const bool barIsRight = barPosition == "right";
+      const bool barIsVertical = barIsLeft || barIsRight;
+
       const float scale = m_activePanel->contentScale();
       const float cornerRadius = Style::radiusXl * scale;
       const auto& shadowConfig = m_config->config().shell.shadow;
       const auto shadowBleed = shell::surface_shadow::bleed(true, shadowConfig);
       const auto cornerOutset = static_cast<std::int32_t>(std::ceil(cornerRadius));
-      const auto sideOutset = std::max(shadowBleed.left, shadowBleed.right) + cornerOutset + 2;
-      const auto shadowBleedBottom = shadowBleed.down + 2;
-      m_panelInsetX = sideOutset;
-      m_panelInsetY = 0;
+
+      // Cross-axis outset wraps the concave-corner overhang and shadow bleed on both
+      // sides perpendicular to the bar's main axis. Main-axis bleed extends only away
+      // from the bar (panel grows out from the bar edge).
+      std::int32_t crossOutsetStart = 0;
+      std::int32_t crossOutsetEnd = 0;
+      std::int32_t mainBleedAway = 0;
+      if (barIsVertical) {
+        crossOutsetStart = std::max(shadowBleed.up, shadowBleed.down) + cornerOutset + 2;
+        crossOutsetEnd = crossOutsetStart;
+        mainBleedAway = (barIsLeft ? shadowBleed.right : shadowBleed.left) + 2;
+      } else {
+        crossOutsetStart = std::max(shadowBleed.left, shadowBleed.right) + cornerOutset + 2;
+        crossOutsetEnd = crossOutsetStart;
+        mainBleedAway = (barIsBottom ? shadowBleed.up : shadowBleed.down) + 2;
+      }
+
+      const auto crossPad = static_cast<std::uint32_t>(std::max(0, crossOutsetStart + crossOutsetEnd));
+      const auto mainPad = static_cast<std::uint32_t>(std::max(0, mainBleedAway));
+      const std::uint32_t surfaceWidth = barIsVertical ? (panelWidth + mainPad) : (panelWidth + crossPad);
+      const std::uint32_t surfaceHeight = barIsVertical ? (panelHeight + crossPad) : (panelHeight + mainPad);
+
+      // visualX/Y is where the panel's body (content rect) sits in parent-surface coords.
+      std::int32_t visualX = 0;
+      std::int32_t visualY = 0;
+      if (barIsVertical) {
+        const auto centeredY =
+            parentContext->barY +
+            static_cast<std::int32_t>(
+                std::lround((static_cast<float>(parentContext->barHeight) - static_cast<float>(panelHeight)) * 0.5f));
+        visualY = centeredY;
+        if (barIsLeft) {
+          visualX = parentContext->barX + parentContext->barWidth - kAttachedPanelBarOverlap;
+        } else { // right
+          visualX = parentContext->barX - static_cast<std::int32_t>(panelWidth) + kAttachedPanelBarOverlap;
+        }
+      } else {
+        const auto centeredX =
+            parentContext->barX +
+            static_cast<std::int32_t>(
+                std::lround((static_cast<float>(parentContext->barWidth) - static_cast<float>(panelWidth)) * 0.5f));
+        visualX = centeredX;
+        if (barIsBottom) {
+          visualY = parentContext->barY - static_cast<std::int32_t>(panelHeight) + kAttachedPanelBarOverlap;
+        } else { // top
+          visualY = parentContext->barY + parentContext->barHeight - kAttachedPanelBarOverlap;
+        }
+      }
+
+      // Subsurface origin sits crossOutset away from the visual rect on each cross-axis side,
+      // and the main-axis bleed sits on the side opposite the bar.
+      std::int32_t surfaceX = 0;
+      std::int32_t surfaceY = 0;
+      if (barIsVertical) {
+        surfaceY = visualY - crossOutsetStart;
+        surfaceX = barIsLeft ? visualX : visualX - mainBleedAway;
+      } else {
+        surfaceX = visualX - crossOutsetStart;
+        surfaceY = barIsBottom ? visualY - mainBleedAway : visualY;
+      }
+
+      m_panelInsetX = visualX - surfaceX;
+      m_panelInsetY = visualY - surfaceY;
       m_panelVisualWidth = panelWidth;
       m_panelVisualHeight = panelHeight;
       m_attachedBackgroundOpacity = resolvePanelBarConfig(m_config, m_wayland, parentContext->output).backgroundOpacity;
       m_attachedRevealProgress = 0.0f;
-      m_attachedRevealDirection = isBottom  ? AttachedRevealDirection::Up
-                                  : isLeft  ? AttachedRevealDirection::Right
-                                  : isRight ? AttachedRevealDirection::Left
-                                            : AttachedRevealDirection::Down;
+      m_attachedRevealDirection = attached_panel::revealDirection(barPosition);
+      m_attachedBarPosition = std::string(barPosition);
       m_attachedToBar = true;
       m_layerSurface = nullptr;
 
-      const auto surfaceWidth = static_cast<std::uint32_t>(panelWidth + sideOutset * 2);
-      const auto surfaceHeight = static_cast<std::uint32_t>(panelHeight + shadowBleedBottom);
-      const auto visualX = parentContext->barX +
-                           static_cast<std::int32_t>(std::lround(
-                               (static_cast<float>(parentContext->barWidth) - static_cast<float>(panelWidth)) * 0.5f));
-      const auto visualY = parentContext->barY + parentContext->barHeight - kAttachedPanelBarOverlap;
-      const auto surfaceX = visualX - m_panelInsetX;
-      const auto surfaceY = visualY - m_panelInsetY;
-      const AttachedPanelGeometry attachedGeometry{
-          .x = static_cast<float>(visualX) - cornerRadius,
-          .y = static_cast<float>(visualY),
-          .width = static_cast<float>(panelWidth) + cornerRadius * 2.0f,
-          .height = static_cast<float>(panelHeight),
-          .cornerRadius = cornerRadius,
-      };
+      // Geometry passed to the bar for shadow exclusion. The visible rect extends past
+      // the body by `cornerRadius` along the cross axis to cover the concave-corner notches.
+      AttachedPanelGeometry attachedGeometry;
+      attachedGeometry.cornerRadius = cornerRadius;
+      if (barIsVertical) {
+        attachedGeometry.x = static_cast<float>(visualX);
+        attachedGeometry.y = static_cast<float>(visualY) - cornerRadius;
+        attachedGeometry.width = static_cast<float>(panelWidth);
+        attachedGeometry.height = static_cast<float>(panelHeight) + cornerRadius * 2.0f;
+      } else {
+        attachedGeometry.x = static_cast<float>(visualX) - cornerRadius;
+        attachedGeometry.y = static_cast<float>(visualY);
+        attachedGeometry.width = static_cast<float>(panelWidth) + cornerRadius * 2.0f;
+        attachedGeometry.height = static_cast<float>(panelHeight);
+      }
       m_attachedPanelGeometry = attachedGeometry;
 
       auto subsurface = std::make_unique<Subsurface>(*m_wayland, SubsurfaceConfig{
@@ -300,9 +352,13 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
       if (ok) {
         m_output = parentContext->output;
         m_wlSurface = m_surface->wlSurface();
+        m_attachedParentSurface = parentContext->parentSurface;
         m_surface->setInputRegion(
             {InputRect{m_panelInsetX, m_panelInsetY, static_cast<int>(panelWidth), static_cast<int>(panelHeight)}});
         publishAttachedPanelGeometry(m_attachedRevealProgress);
+        if (m_beginAttachedKeyboard) {
+          m_beginAttachedKeyboard(parentContext->output);
+        }
         m_surface->requestRedraw();
         kLog.debug("panel manager: opened \"{}\" as attached subsurface", panelId);
         return;
@@ -320,6 +376,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
       m_attachedBackgroundOpacity = 1.0f;
       m_attachedRevealProgress = 1.0f;
       m_attachedRevealDirection = AttachedRevealDirection::Down;
+      m_attachedBarPosition.clear();
       m_attachedPanelGeometry.reset();
       kLog.warn("panel manager: attached subsurface failed for \"{}\", falling back to layer-shell", panelId);
     }
@@ -411,6 +468,9 @@ void PanelManager::destroyPanel() {
   if (m_attachedToBar && m_attachedPanelGeometryCallback && m_output != nullptr) {
     m_attachedPanelGeometryCallback(m_output, std::nullopt);
   }
+  if (m_attachedToBar && m_endAttachedKeyboard && m_output != nullptr) {
+    m_endAttachedKeyboard(m_output);
+  }
   m_animations.cancelAll();
   m_closing = false;
   m_pointerInside = false;
@@ -430,6 +490,7 @@ void PanelManager::destroyPanel() {
   m_layerSurface = nullptr;
   m_output = nullptr;
   m_wlSurface = nullptr;
+  m_attachedParentSurface = nullptr;
   m_activePanel = nullptr;
   m_activePanelId.clear();
   m_pendingOpenContext.clear();
@@ -440,6 +501,7 @@ void PanelManager::destroyPanel() {
   m_attachedBackgroundOpacity = 1.0f;
   m_attachedRevealProgress = 1.0f;
   m_attachedRevealDirection = AttachedRevealDirection::Down;
+  m_attachedBarPosition.clear();
   m_attachedPanelGeometry.reset();
   m_attachedToBar = false;
   if (m_wayland != nullptr) {
@@ -553,6 +615,8 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
 
 bool PanelManager::isOpen() const noexcept { return m_surface != nullptr && m_activePanel != nullptr; }
 
+bool PanelManager::isAttachedOpen() const noexcept { return isOpen() && m_attachedToBar; }
+
 const std::string& PanelManager::activePanelId() const noexcept { return m_activePanelId; }
 
 void PanelManager::refresh() {
@@ -637,6 +701,17 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
   // arrive during this window must be ignored because the panel is not ready for input yet.
   if (!isOpen() || m_inTransition) {
     return;
+  }
+
+  // Gate on compositor focus: route keys only when the surface owning this panel's
+  // input is the one the compositor reports as keyboard-focused. For attached panels
+  // that's the bar's wl_surface (subsurfaces cannot hold focus directly); for layer
+  // surfaces it's the panel's own wl_surface.
+  if (m_wayland != nullptr) {
+    wl_surface* const focusTarget = m_attachedToBar ? m_attachedParentSurface : m_wlSurface;
+    if (focusTarget == nullptr || m_wayland->lastKeyboardSurface() != focusTarget) {
+      return;
+    }
   }
 
   if (event.pressed && m_config != nullptr &&
@@ -794,8 +869,8 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
         const float radius = Style::radiusXl * m_activePanel->contentScale();
         bg->setFill(roleColor(ColorRole::Surface, m_attachedBackgroundOpacity));
         bg->clearBorder();
-        bg->setCornerShapes(attachedPanelCornerShapes());
-        bg->setLogicalInset(attachedPanelLogicalInset(radius));
+        bg->setCornerShapes(attached_panel::cornerShapes(m_attachedBarPosition));
+        bg->setLogicalInset(attached_panel::logicalInset(m_attachedBarPosition, radius));
         bg->setRadii(Radii{radius, radius, radius, radius});
       }
       m_bgNode = sceneParent->addChild(std::move(bg));
@@ -877,8 +952,12 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
   const float panelW = m_panelVisualWidth > 0 ? static_cast<float>(m_panelVisualWidth) : w;
   const float panelH = m_panelVisualHeight > 0 ? static_cast<float>(m_panelVisualHeight) : h;
   const float attachedRadius = m_attachedToBar ? Style::radiusXl * m_activePanel->contentScale() : 0.0f;
-  const float bgX = panelX - attachedRadius;
-  const float bgW = panelW + attachedRadius * 2.0f;
+  const bool barIsVertical = m_attachedToBar && (m_attachedBarPosition == "left" || m_attachedBarPosition == "right");
+  // The bg extends past the body along the bar's CROSS axis to host the concave-corner notches.
+  const float bgX = barIsVertical ? panelX : panelX - attachedRadius;
+  const float bgY = barIsVertical ? panelY - attachedRadius : panelY;
+  const float bgW = barIsVertical ? panelW : panelW + attachedRadius * 2.0f;
+  const float bgH = barIsVertical ? panelH + attachedRadius * 2.0f : panelH;
 
   if (m_panelShadowNode != nullptr) {
     const float scale = m_activePanel->contentScale();
@@ -889,40 +968,60 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     const RoundedRectStyle shadowStyle =
         shell::surface_shadow::style(shadowConfig, m_attachedBackgroundOpacity,
                                      shell::surface_shadow::Shape{
-                                         .corners = attachedPanelCornerShapes(),
-                                         .logicalInset = attachedPanelLogicalInset(radius),
+                                         .corners = attached_panel::cornerShapes(m_attachedBarPosition),
+                                         .logicalInset = attached_panel::logicalInset(m_attachedBarPosition, radius),
                                          .radius = Radii{radius, radius, radius, radius},
                                      });
     m_panelShadowNode->setStyle(shadowStyle);
-    m_panelShadowNode->setPosition(bgX + shadowOffsetX, panelY + shadowOffsetY);
-    m_panelShadowNode->setSize(bgW, panelH);
+    m_panelShadowNode->setPosition(bgX + shadowOffsetX, bgY + shadowOffsetY);
+    m_panelShadowNode->setSize(bgW, bgH);
   }
 
   if (m_bgNode != nullptr) {
-    m_bgNode->setPosition(bgX, panelY);
-    m_bgNode->setSize(bgW, panelH);
+    m_bgNode->setPosition(bgX, bgY);
+    m_bgNode->setSize(bgW, bgH);
   }
 
   if (m_panelContactShadowNode != nullptr) {
-    constexpr float kContactShadowBaseHeight = 16.0f;
+    constexpr float kContactShadowBaseThickness = 16.0f;
     const float scale = m_activePanel->contentScale();
-    const float contactHeight = std::min(std::max(kContactShadowBaseHeight * scale, attachedRadius * 2.0f), panelH);
+    const float contactThickness =
+        std::min(std::max(kContactShadowBaseThickness * scale, attachedRadius * 2.0f), barIsVertical ? panelW : panelH);
     const float contactAlpha = 0.16f * std::clamp(m_attachedBackgroundOpacity, 0.0f, 1.0f);
+    // Gradient runs perpendicular to the bar edge, dark next to the bar, transparent toward the panel interior.
+    const bool barIsBottom = m_attachedBarPosition == "bottom";
+    const bool barIsRight = m_attachedBarPosition == "right";
+    const bool darkAtStart = !(barIsBottom || barIsRight);
     const RoundedRectStyle contactStyle{
-        .fill = rgba(0.0f, 0.0f, 0.0f, contactAlpha),
-        .fillEnd = rgba(0.0f, 0.0f, 0.0f, 0.0f),
+        .fill = darkAtStart ? rgba(0.0f, 0.0f, 0.0f, contactAlpha) : rgba(0.0f, 0.0f, 0.0f, 0.0f),
+        .fillEnd = darkAtStart ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : rgba(0.0f, 0.0f, 0.0f, contactAlpha),
         .border = clearColor(),
         .fillMode = FillMode::LinearGradient,
-        .gradientDirection = GradientDirection::Vertical,
-        .corners = attachedPanelCornerShapes(),
-        .logicalInset = attachedPanelLogicalInset(attachedRadius),
-        .radius = Radii{attachedRadius, attachedRadius, 0.0f, 0.0f},
+        .gradientDirection = barIsVertical ? GradientDirection::Horizontal : GradientDirection::Vertical,
+        .corners = attached_panel::cornerShapes(m_attachedBarPosition),
+        .logicalInset = attached_panel::logicalInset(m_attachedBarPosition, attachedRadius),
+        .radius = attached_panel::cornerRadii(m_attachedBarPosition, attachedRadius),
         .softness = 1.0f,
         .borderWidth = 0.0f,
     };
+    float contactX = bgX;
+    float contactY = bgY;
+    float contactW = bgW;
+    float contactH = bgH;
+    if (barIsVertical) {
+      contactW = contactThickness;
+      if (barIsRight) {
+        contactX = bgX + bgW - contactThickness;
+      }
+    } else {
+      contactH = contactThickness;
+      if (barIsBottom) {
+        contactY = bgY + bgH - contactThickness;
+      }
+    }
     m_panelContactShadowNode->setStyle(contactStyle);
-    m_panelContactShadowNode->setPosition(bgX, panelY);
-    m_panelContactShadowNode->setSize(bgW, contactHeight);
+    m_panelContactShadowNode->setPosition(contactX, contactY);
+    m_panelContactShadowNode->setSize(contactW, contactH);
   }
 
   const float kPadding = hasDecoration ? m_activePanel->contentScale() * 12.0f : 0.0f;
