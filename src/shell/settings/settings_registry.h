@@ -22,6 +22,7 @@ namespace settings {
   struct SelectSetting {
     std::vector<SelectOption> options;
     std::string selectedValue;
+    bool clearOnEmpty = false;
   };
 
   struct SliderSetting {

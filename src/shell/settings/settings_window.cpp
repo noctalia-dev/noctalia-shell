@@ -242,7 +242,7 @@ namespace {
     if (key == "capsule_foreground") {
       return override->widgetCapsuleForeground.has_value();
     }
-    if (key == "widget_color") {
+    if (key == "color") {
       return override->widgetColor.has_value();
     }
     if (key == "capsule_padding") {
@@ -1056,8 +1056,18 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     select->setGlyphSize(Style::fontSizeBody * scale);
     select->setSize(190.0f * scale, Style::controlHeight * scale);
     auto options = setting.options;
-    select->setOnSelectionChanged([setOverride, path, options](std::size_t index, std::string_view /*label*/) {
+    const bool clearOnEmpty = setting.clearOnEmpty;
+    select->setOnSelectionChanged([this, clearOverride, setOverride, requestRebuild, path, options,
+                                   clearOnEmpty](std::size_t index, std::string_view /*label*/) {
       if (index < options.size()) {
+        if (clearOnEmpty && options[index].value.empty()) {
+          if (m_config != nullptr && m_config->hasOverride(path)) {
+            clearOverride(path);
+          } else {
+            requestRebuild();
+          }
+          return;
+        }
         setOverride(path, options[index].value);
       }
     });

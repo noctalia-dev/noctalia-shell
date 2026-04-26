@@ -58,55 +58,21 @@ const Color& resolveColorRole(ColorRole role) noexcept {
 
 std::optional<ColorRole> colorRoleFromToken(std::string_view token) {
   const std::string normalized = normalizedRoleToken(token);
-  if (normalized == "primary") {
-    return ColorRole::Primary;
-  }
-  if (normalized == "on_primary") {
-    return ColorRole::OnPrimary;
-  }
-  if (normalized == "secondary") {
-    return ColorRole::Secondary;
-  }
-  if (normalized == "on_secondary") {
-    return ColorRole::OnSecondary;
-  }
-  if (normalized == "tertiary") {
-    return ColorRole::Tertiary;
-  }
-  if (normalized == "on_tertiary") {
-    return ColorRole::OnTertiary;
-  }
-  if (normalized == "error") {
-    return ColorRole::Error;
-  }
-  if (normalized == "on_error") {
-    return ColorRole::OnError;
-  }
-  if (normalized == "surface") {
-    return ColorRole::Surface;
-  }
-  if (normalized == "on_surface") {
-    return ColorRole::OnSurface;
-  }
-  if (normalized == "surface_variant") {
-    return ColorRole::SurfaceVariant;
-  }
-  if (normalized == "on_surface_variant") {
-    return ColorRole::OnSurfaceVariant;
-  }
-  if (normalized == "outline") {
-    return ColorRole::Outline;
-  }
-  if (normalized == "shadow") {
-    return ColorRole::Shadow;
-  }
-  if (normalized == "hover") {
-    return ColorRole::Hover;
-  }
-  if (normalized == "on_hover") {
-    return ColorRole::OnHover;
+  for (const auto& option : kColorRoleTokens) {
+    if (normalized == option.token) {
+      return option.role;
+    }
   }
   return std::nullopt;
+}
+
+std::string_view colorRoleToken(ColorRole role) noexcept {
+  for (const auto& option : kColorRoleTokens) {
+    if (option.role == role) {
+      return option.token;
+    }
+  }
+  return "on_surface";
 }
 
 ThemeColor roleColor(ColorRole role, float alpha) noexcept {

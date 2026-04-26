@@ -3,6 +3,7 @@
 #include "render/core/color.h"
 #include "ui/signal.h"
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <string_view>
@@ -25,6 +26,30 @@ enum class ColorRole : std::uint8_t {
   Hover,
   OnHover,
 };
+
+struct ColorRoleToken {
+  ColorRole role;
+  std::string_view token;
+};
+
+inline constexpr std::array<ColorRoleToken, 16> kColorRoleTokens = {{
+    {ColorRole::Primary, "primary"},
+    {ColorRole::OnPrimary, "on_primary"},
+    {ColorRole::Secondary, "secondary"},
+    {ColorRole::OnSecondary, "on_secondary"},
+    {ColorRole::Tertiary, "tertiary"},
+    {ColorRole::OnTertiary, "on_tertiary"},
+    {ColorRole::Error, "error"},
+    {ColorRole::OnError, "on_error"},
+    {ColorRole::Surface, "surface"},
+    {ColorRole::OnSurface, "on_surface"},
+    {ColorRole::SurfaceVariant, "surface_variant"},
+    {ColorRole::OnSurfaceVariant, "on_surface_variant"},
+    {ColorRole::Outline, "outline"},
+    {ColorRole::Shadow, "shadow"},
+    {ColorRole::Hover, "hover"},
+    {ColorRole::OnHover, "on_hover"},
+}};
 
 [[nodiscard]] constexpr Color clearColor() noexcept { return rgba(0.0f, 0.0f, 0.0f, 0.0f); }
 
@@ -74,6 +99,7 @@ extern Palette palette;
 
 [[nodiscard]] const Color& resolveColorRole(ColorRole role) noexcept;
 [[nodiscard]] std::optional<ColorRole> colorRoleFromToken(std::string_view token);
+[[nodiscard]] std::string_view colorRoleToken(ColorRole role) noexcept;
 [[nodiscard]] ThemeColor roleColor(ColorRole role, float alpha = 1.0f) noexcept;
 [[nodiscard]] ThemeColor fixedColor(const Color& color) noexcept;
 [[nodiscard]] Color resolveThemeColor(const ThemeColor& color) noexcept;
