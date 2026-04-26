@@ -36,8 +36,20 @@ namespace settings {
     struct LaneWidgetDragState {
       bool active = false;
       bool moved = false;
+      float startLocalX = 0.0f;
       float startLocalY = 0.0f;
+      float lastLocalX = 0.0f;
       float lastLocalY = 0.0f;
+      std::optional<std::size_t> targetLaneIndex;
+      std::optional<std::size_t> targetInsertionIndex;
+    };
+
+    struct LaneDropTarget {
+      std::vector<std::string> path;
+      std::vector<std::string> items;
+      Flex* lane = nullptr;
+      Box* indicator = nullptr;
+      std::shared_ptr<std::vector<Flex*>> itemNodes;
     };
 
     std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ThemeColor& color,
@@ -395,45 +407,55 @@ namespace settings {
       return isValidWidgetInstanceId(name) && !widgetReferenceNameExists(cfg, name);
     }
 
-    std::vector<std::string> reorderedItems(std::vector<std::string> items, std::size_t fromIndex,
-                                            std::size_t toIndex) {
-      if (fromIndex >= items.size() || toIndex >= items.size() || fromIndex == toIndex) {
-        return items;
+    std::size_t insertionIndexForSceneY(float sceneY, const std::vector<Flex*>& itemNodes) {
+      for (std::size_t i = 0; i < itemNodes.size(); ++i) {
+        const auto* item = itemNodes[i];
+        if (item == nullptr) {
+          continue;
+        }
+        float ignoredX = 0.0f;
+        float itemY = 0.0f;
+        Node::absolutePosition(item, ignoredX, itemY);
+        if (sceneY < itemY + item->height() * 0.5f) {
+          return i;
+        }
       }
-      auto item = std::move(items[fromIndex]);
-      items.erase(items.begin() + static_cast<std::ptrdiff_t>(fromIndex));
-      items.insert(items.begin() + static_cast<std::ptrdiff_t>(toIndex), std::move(item));
-      return items;
+      return itemNodes.size();
     }
 
-    std::optional<std::size_t> dragTargetIndex(float delta, float rowStep, std::size_t fromIndex, std::size_t itemCount,
-                                               float scale) {
-      if (itemCount < 2 || std::abs(delta) < kDragStartThresholdPx * scale) {
-        return std::nullopt;
-      }
-      const auto offset = static_cast<int>(std::lround(delta / std::max(1.0f, rowStep)));
-      if (offset == 0) {
-        return std::nullopt;
-      }
+    bool insertionWouldNotMove(std::size_t sourceLaneIndex, std::size_t targetLaneIndex, std::size_t fromIndex,
+                               std::size_t insertionIndex) {
+      return sourceLaneIndex == targetLaneIndex && (insertionIndex == fromIndex || insertionIndex == fromIndex + 1);
+    }
 
-      const auto from = static_cast<int>(fromIndex);
-      const auto maxIndex = static_cast<int>(itemCount - 1);
-      const auto target = static_cast<std::size_t>(std::clamp(from + offset, 0, maxIndex));
-      if (target == fromIndex) {
-        return std::nullopt;
+    std::optional<std::size_t> laneIndexAtScenePoint(const std::vector<LaneDropTarget>& lanes, float sceneX,
+                                                     float sceneY) {
+      for (std::size_t i = 0; i < lanes.size(); ++i) {
+        const auto* lane = lanes[i].lane;
+        if (lane == nullptr) {
+          continue;
+        }
+        float laneX = 0.0f;
+        float laneY = 0.0f;
+        Node::absolutePosition(lane, laneX, laneY);
+        if (sceneX >= laneX && sceneX < laneX + lane->width() && sceneY >= laneY && sceneY < laneY + lane->height()) {
+          return i;
+        }
       }
-      return target;
+      return std::nullopt;
+    }
+
+    void hideDropIndicators(const std::vector<LaneDropTarget>& lanes) {
+      for (const auto& lane : lanes) {
+        if (lane.indicator != nullptr) {
+          lane.indicator->setVisible(false);
+        }
+      }
     }
 
     void updateDropIndicator(Box& indicator, const Flex& lane, const std::vector<Flex*>& itemNodes,
-                             std::size_t fromIndex, std::size_t targetIndex, float scale) {
-      if (targetIndex >= itemNodes.size() || fromIndex >= itemNodes.size()) {
-        indicator.setVisible(false);
-        return;
-      }
-
-      const auto* target = itemNodes[targetIndex];
-      if (target == nullptr) {
+                             std::size_t insertionIndex, float scale) {
+      if (insertionIndex > itemNodes.size()) {
         indicator.setVisible(false);
         return;
       }
@@ -441,11 +463,38 @@ namespace settings {
       const float x = Style::spaceSm * scale;
       const float width = std::max(1.0f, lane.width() - Style::spaceSm * scale * 2.0f);
       const float gapHalf = Style::spaceXs * scale * 0.5f;
-      const float y = targetIndex > fromIndex ? target->y() + target->height() + gapHalf : target->y() - gapHalf;
+      float y = Style::controlHeightSm * scale + Style::spaceSm * scale;
+      if (!itemNodes.empty()) {
+        if (insertionIndex == itemNodes.size()) {
+          const auto* target = itemNodes.back();
+          y = target != nullptr ? target->y() + target->height() + gapHalf : y;
+        } else {
+          const auto* target = itemNodes[insertionIndex];
+          y = target != nullptr ? target->y() - gapHalf : y;
+        }
+      }
 
       indicator.setPosition(x, y);
       indicator.setFrameSize(width, std::max(2.0f, 3.0f * scale));
       indicator.setVisible(true);
+    }
+
+    std::vector<std::string> movedWithinLane(std::vector<std::string> items, std::size_t fromIndex,
+                                             std::size_t insertionIndex) {
+      if (fromIndex >= items.size() || insertionIndex > items.size()) {
+        return items;
+      }
+      if (insertionIndex == fromIndex || insertionIndex == fromIndex + 1) {
+        return items;
+      }
+
+      auto item = std::move(items[fromIndex]);
+      items.erase(items.begin() + static_cast<std::ptrdiff_t>(fromIndex));
+      if (insertionIndex > fromIndex) {
+        --insertionIndex;
+      }
+      items.insert(items.begin() + static_cast<std::ptrdiff_t>(insertionIndex), std::move(item));
+      return items;
     }
 
     std::vector<std::string> widgetSettingPath(std::string widgetName, std::string settingKey) {
@@ -1239,6 +1288,9 @@ namespace settings {
     lanes->setFillParentMainAxis(true);
 
     static constexpr std::string_view kLaneKeys[] = {"start", "center", "end"};
+    static constexpr std::size_t kLaneCount = sizeof(kLaneKeys) / sizeof(kLaneKeys[0]);
+    auto laneTargets = std::make_shared<std::vector<LaneDropTarget>>();
+    laneTargets->reserve(kLaneCount);
     for (const auto laneKey : kLaneKeys) {
       auto lanePath = pathWithLastSegment(entry.path, std::string(laneKey));
       const auto laneItems = barWidgetItemsForPath(ctx.config, lanePath);
@@ -1266,6 +1318,15 @@ namespace settings {
       dropIndicator->setZIndex(10);
       auto* dropIndicatorPtr = dropIndicator.get();
       lane->addChild(std::move(dropIndicator));
+
+      auto itemNodes = std::make_shared<std::vector<Flex*>>();
+      itemNodes->reserve(laneItems.size());
+      const std::size_t laneTargetIndex = laneTargets->size();
+      laneTargets->push_back(LaneDropTarget{.path = lanePath,
+                                            .items = laneItems,
+                                            .lane = lanePtr,
+                                            .indicator = dropIndicatorPtr,
+                                            .itemNodes = itemNodes});
 
       auto laneHeader = std::make_unique<Flex>();
       laneHeader->setDirection(FlexDirection::Horizontal);
@@ -1314,8 +1375,6 @@ namespace settings {
       }
       lane->addChild(std::move(laneHeader));
 
-      auto itemNodes = std::make_shared<std::vector<Flex*>>();
-      itemNodes->reserve(laneItems.size());
       for (std::size_t i = 0; i < laneItems.size(); ++i) {
         const auto info = widgetReferenceInfo(ctx.config, laneItems[i]);
         auto item = std::make_unique<Flex>();
@@ -1358,7 +1417,7 @@ namespace settings {
 
         const auto widgetName = laneItems[i];
         const bool editableWidget = !widgetTypeForReference(ctx.config, widgetName).empty();
-        if (!inherited && laneItems.size() > 1) {
+        if (!inherited) {
           auto dragBtn = std::make_unique<Button>();
           dragBtn->setGlyph("menu");
           dragBtn->setVariant(ButtonVariant::Ghost);
@@ -1368,20 +1427,25 @@ namespace settings {
           dragBtn->setPadding(Style::spaceXs * ctx.scale);
           dragBtn->setRadius(Style::radiusSm * ctx.scale);
           dragBtn->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_MOVE);
+          auto* dragBtnPtr = dragBtn.get();
 
           auto dragState = std::make_shared<LaneWidgetDragState>();
           auto items = laneItems;
           auto path = lanePath;
-          dragBtn->setOnPress([dragState, itemPtr, lanePtr, dropIndicatorPtr, itemNodes, setOverride = ctx.setOverride,
-                               items, path, i,
-                               scale = ctx.scale](float /*localX*/, float localY, bool pressed) mutable {
+          dragBtn->setOnPress([dragState, itemPtr, dragBtnPtr, laneTargets, setOverride = ctx.setOverride,
+                               setOverrides = ctx.setOverrides, items, path, i, laneTargetIndex,
+                               scale = ctx.scale](float localX, float localY, bool pressed) mutable {
             if (pressed) {
               dragState->active = true;
               dragState->moved = false;
+              dragState->startLocalX = localX;
               dragState->startLocalY = localY;
+              dragState->lastLocalX = localX;
               dragState->lastLocalY = localY;
+              dragState->targetLaneIndex = std::nullopt;
+              dragState->targetInsertionIndex = std::nullopt;
               itemPtr->setOpacity(0.72f);
-              dropIndicatorPtr->setVisible(false);
+              hideDropIndicators(*laneTargets);
               return;
             }
 
@@ -1390,37 +1454,86 @@ namespace settings {
             }
             dragState->active = false;
             itemPtr->setOpacity(1.0f);
-            dropIndicatorPtr->setVisible(false);
-            const float delta = dragState->lastLocalY - dragState->startLocalY;
-            if (!dragState->moved || std::abs(delta) < kDragStartThresholdPx * scale || items.size() < 2) {
+            hideDropIndicators(*laneTargets);
+            if (!dragState->moved || !dragState->targetLaneIndex.has_value() ||
+                !dragState->targetInsertionIndex.has_value() || laneTargetIndex >= laneTargets->size() ||
+                *dragState->targetLaneIndex >= laneTargets->size()) {
               return;
             }
 
-            const float rowStep = std::clamp(itemPtr->height() + Style::spaceXs * scale, 44.0f * scale, 96.0f * scale);
-            const auto toIndex = dragTargetIndex(delta, rowStep, i, items.size(), scale);
-            if (!toIndex.has_value()) {
+            const std::size_t targetLaneIndex = *dragState->targetLaneIndex;
+            std::size_t insertionIndex = *dragState->targetInsertionIndex;
+            if (insertionWouldNotMove(laneTargetIndex, targetLaneIndex, i, insertionIndex)) {
               return;
             }
-            setOverride(path, reorderedItems(std::move(items), i, *toIndex));
-          });
-          dragBtn->setOnPointerMotion([dragState, itemPtr, lanePtr, dropIndicatorPtr, itemNodes, i,
-                                       scale = ctx.scale](float /*localX*/, float localY) {
-            if (!dragState->active) {
+
+            if (targetLaneIndex == laneTargetIndex) {
+              setOverride(path, movedWithinLane(std::move(items), i, insertionIndex));
               return;
             }
-            dragState->lastLocalY = localY;
-            if (std::abs(dragState->lastLocalY - dragState->startLocalY) >= kDragStartThresholdPx * scale) {
-              dragState->moved = true;
+
+            auto sourceItems = items;
+            if (i >= sourceItems.size()) {
+              return;
             }
-            const float rowStep = std::clamp(itemPtr->height() + Style::spaceXs * scale, 44.0f * scale, 96.0f * scale);
-            const auto target =
-                dragTargetIndex(dragState->lastLocalY - dragState->startLocalY, rowStep, i, itemNodes->size(), scale);
-            if (target.has_value()) {
-              updateDropIndicator(*dropIndicatorPtr, *lanePtr, *itemNodes, i, *target, scale);
-            } else {
-              dropIndicatorPtr->setVisible(false);
-            }
+            auto movedItem = std::move(sourceItems[i]);
+            sourceItems.erase(sourceItems.begin() + static_cast<std::ptrdiff_t>(i));
+
+            const auto& target = (*laneTargets)[targetLaneIndex];
+            auto targetItems = target.items;
+            insertionIndex = std::min(insertionIndex, targetItems.size());
+            targetItems.insert(targetItems.begin() + static_cast<std::ptrdiff_t>(insertionIndex), std::move(movedItem));
+            setOverrides({{path, sourceItems}, {target.path, targetItems}});
           });
+          dragBtn->setOnPointerMotion(
+              [dragState, dragBtnPtr, laneTargets, laneTargetIndex, i, scale = ctx.scale](float localX, float localY) {
+                if (!dragState->active) {
+                  return;
+                }
+                dragState->lastLocalX = localX;
+                dragState->lastLocalY = localY;
+                if (std::hypot(dragState->lastLocalX - dragState->startLocalX,
+                               dragState->lastLocalY - dragState->startLocalY) >= kDragStartThresholdPx * scale) {
+                  dragState->moved = true;
+                }
+                if (!dragState->moved) {
+                  return;
+                }
+
+                float dragAbsX = 0.0f;
+                float dragAbsY = 0.0f;
+                Node::absolutePosition(dragBtnPtr, dragAbsX, dragAbsY);
+                const float sceneX = dragAbsX + localX;
+                const float sceneY = dragAbsY + localY;
+                const auto targetLaneIndex = laneIndexAtScenePoint(*laneTargets, sceneX, sceneY);
+                if (!targetLaneIndex.has_value() || *targetLaneIndex >= laneTargets->size()) {
+                  dragState->targetLaneIndex = std::nullopt;
+                  dragState->targetInsertionIndex = std::nullopt;
+                  hideDropIndicators(*laneTargets);
+                  return;
+                }
+
+                const auto& target = (*laneTargets)[*targetLaneIndex];
+                if (target.itemNodes == nullptr || target.lane == nullptr || target.indicator == nullptr) {
+                  dragState->targetLaneIndex = std::nullopt;
+                  dragState->targetInsertionIndex = std::nullopt;
+                  hideDropIndicators(*laneTargets);
+                  return;
+                }
+
+                const std::size_t insertionIndex = insertionIndexForSceneY(sceneY, *target.itemNodes);
+                if (insertionWouldNotMove(laneTargetIndex, *targetLaneIndex, i, insertionIndex)) {
+                  dragState->targetLaneIndex = std::nullopt;
+                  dragState->targetInsertionIndex = std::nullopt;
+                  hideDropIndicators(*laneTargets);
+                  return;
+                }
+
+                dragState->targetLaneIndex = *targetLaneIndex;
+                dragState->targetInsertionIndex = insertionIndex;
+                hideDropIndicators(*laneTargets);
+                updateDropIndicator(*target.indicator, *target.lane, *target.itemNodes, insertionIndex, scale);
+              });
           actions->addChild(std::move(dragBtn));
         }
         if (editableWidget) {
