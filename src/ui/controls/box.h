@@ -6,6 +6,9 @@
 #include <optional>
 
 class RectNode;
+struct CornerShapes;
+struct Radii;
+struct RectInsets;
 
 // A styled rectangle that keeps its internal RectNode sized to match itself.
 // Use this anywhere you need a background, separator, or decorative shape in
@@ -21,6 +24,9 @@ public:
   void setBorder(const Color& color, float width);
   void clearBorder();
   void setRadius(float radius);
+  void setRadii(const Radii& radii);
+  void setCornerShapes(const CornerShapes& corners);
+  void setLogicalInset(const RectInsets& inset);
   void setSoftness(float softness);
 
   // Presets

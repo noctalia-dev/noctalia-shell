@@ -832,6 +832,10 @@ void Dock::buildScene(DockInstance& instance) {
         .fillMode = FillMode::Solid,
         .radius = radii,
         .softness = sSize,
+        .borderWidth = 0.0f,
+        .outerShadow = true,
+        .shadowCutoutOffsetX = static_cast<float>(cfg.shadowOffsetX),
+        .shadowCutoutOffsetY = static_cast<float>(cfg.shadowOffsetY),
     };
     instance.shadow->setStyle(shadowStyle);
     instance.shadow->setZIndex(-1);

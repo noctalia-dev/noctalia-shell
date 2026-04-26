@@ -20,6 +20,7 @@ struct wl_output;
 struct wl_registry;
 struct wl_seat;
 struct wl_shm;
+struct wl_subcompositor;
 struct zwlr_layer_shell_v1;
 struct zwlr_layer_surface_v1;
 struct zxdg_output_manager_v1;
@@ -93,6 +94,7 @@ public:
   [[nodiscard]] bool isConnected() const noexcept;
   [[nodiscard]] bool hasRequiredGlobals() const noexcept;
   [[nodiscard]] bool hasLayerShell() const noexcept;
+  [[nodiscard]] bool hasSubcompositor() const noexcept;
   [[nodiscard]] bool hasXdgOutputManager() const noexcept;
   [[nodiscard]] bool hasXdgShell() const noexcept;
   [[nodiscard]] bool hasExtWorkspaceManager() const noexcept;
@@ -107,6 +109,7 @@ public:
   [[nodiscard]] wl_compositor* compositor() const noexcept;
   [[nodiscard]] wl_seat* seat() const noexcept;
   [[nodiscard]] wl_shm* shm() const noexcept;
+  [[nodiscard]] wl_subcompositor* subcompositor() const noexcept;
   [[nodiscard]] zwlr_layer_shell_v1* layerShell() const noexcept;
   [[nodiscard]] xdg_wm_base* xdgWmBase() const noexcept;
   [[nodiscard]] ext_session_lock_manager_v1* sessionLockManager() const noexcept;
@@ -171,6 +174,7 @@ private:
   wl_compositor* m_compositor = nullptr;
   wl_seat* m_seat = nullptr;
   wl_shm* m_shm = nullptr;
+  wl_subcompositor* m_subcompositor = nullptr;
   zwlr_layer_shell_v1* m_layerShell = nullptr;
   zxdg_output_manager_v1* m_xdgOutputManager = nullptr;
   xdg_wm_base* m_xdgWmBase = nullptr;

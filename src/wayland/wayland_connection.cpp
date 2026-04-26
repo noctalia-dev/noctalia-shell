@@ -31,6 +31,7 @@ namespace {
   constexpr std::uint32_t kCompositorVersion = 4;
   constexpr std::uint32_t kSeatVersion = 5;
   constexpr std::uint32_t kShmVersion = 1;
+  constexpr std::uint32_t kSubcompositorVersion = 1;
   constexpr std::uint32_t kLayerShellVersion = 4;
   constexpr std::uint32_t kXdgOutputManagerVersion = 3;
   constexpr std::uint32_t kXdgWmBaseVersion = 6;
@@ -466,6 +467,7 @@ bool WaylandConnection::hasRequiredGlobals() const noexcept {
 }
 
 bool WaylandConnection::hasLayerShell() const noexcept { return m_hasLayerShellGlobal; }
+bool WaylandConnection::hasSubcompositor() const noexcept { return m_subcompositor != nullptr; }
 
 bool WaylandConnection::hasXdgOutputManager() const noexcept { return m_xdgOutputManager != nullptr; }
 bool WaylandConnection::hasXdgShell() const noexcept { return m_xdgWmBase != nullptr; }
@@ -526,6 +528,8 @@ wl_compositor* WaylandConnection::compositor() const noexcept { return m_composi
 wl_seat* WaylandConnection::seat() const noexcept { return m_seatHandler.seat(); }
 
 wl_shm* WaylandConnection::shm() const noexcept { return m_shm; }
+
+wl_subcompositor* WaylandConnection::subcompositor() const noexcept { return m_subcompositor; }
 
 zwlr_layer_shell_v1* WaylandConnection::layerShell() const noexcept { return m_layerShell; }
 xdg_wm_base* WaylandConnection::xdgWmBase() const noexcept { return m_xdgWmBase; }
@@ -611,6 +615,13 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
   if (interfaceName == wl_shm_interface.name) {
     const auto bindVersion = std::min(version, kShmVersion);
     m_shm = static_cast<wl_shm*>(wl_registry_bind(registry, name, &wl_shm_interface, bindVersion));
+    return;
+  }
+
+  if (interfaceName == wl_subcompositor_interface.name) {
+    const auto bindVersion = std::min(version, kSubcompositorVersion);
+    m_subcompositor =
+        static_cast<wl_subcompositor*>(wl_registry_bind(registry, name, &wl_subcompositor_interface, bindVersion));
     return;
   }
 
@@ -861,6 +872,11 @@ void WaylandConnection::cleanup() {
   if (m_shm != nullptr) {
     wl_shm_destroy(m_shm);
     m_shm = nullptr;
+  }
+
+  if (m_subcompositor != nullptr) {
+    wl_subcompositor_destroy(m_subcompositor);
+    m_subcompositor = nullptr;
   }
 
   if (m_compositor != nullptr) {

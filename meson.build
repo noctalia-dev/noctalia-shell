@@ -523,6 +523,7 @@ _noctalia_sources = files(
   'src/compositors/sway/sway_workspace_backend.cpp',
   'src/wayland/layer_surface.cpp',
   'src/wayland/popup_surface.cpp',
+  'src/wayland/subsurface.cpp',
   'src/wayland/surface.cpp',
   'src/wayland/toplevel_surface.cpp',
   'src/wayland/wayland_connection.cpp',

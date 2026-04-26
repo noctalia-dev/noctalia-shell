@@ -31,6 +31,24 @@ namespace {
   constexpr std::int32_t kAutoHideTriggerPx = 2;
   constexpr float kAutoHideSlideExtraPx = 16.0f;
 
+  [[nodiscard]] CornerShapes attachedPanelCornerShapes() {
+    return CornerShapes{
+        .tl = CornerShape::Concave,
+        .tr = CornerShape::Concave,
+        .br = CornerShape::Convex,
+        .bl = CornerShape::Convex,
+    };
+  }
+
+  [[nodiscard]] RectInsets attachedPanelLogicalInset(float radius) {
+    return RectInsets{
+        .left = radius,
+        .top = 0.0f,
+        .right = radius,
+        .bottom = 0.0f,
+    };
+  }
+
   std::uint32_t positionToAnchor(const std::string& position) {
     if (position == "bottom") {
       return LayerShellAnchor::Bottom | LayerShellAnchor::Left | LayerShellAnchor::Right;
@@ -57,6 +75,13 @@ namespace {
     std::int32_t left = 0, right = 0, up = 0, down = 0;
   };
 
+  struct BarVisualGeometry {
+    float x = 0.0f;
+    float y = 0.0f;
+    float width = 0.0f;
+    float height = 0.0f;
+  };
+
   // Returns true when two bar configs would produce an identical layer-shell
   // surface (same anchor, size, exclusive zone, namespace). When true, an
   // existing BarInstance can be retained on reload and only its widget tree
@@ -77,6 +102,40 @@ namespace {
         cfg.shadowBlur + std::max(0, cfg.shadowOffsetX),
         cfg.shadowBlur + std::max(0, -cfg.shadowOffsetY),
         cfg.shadowBlur + std::max(0, cfg.shadowOffsetY),
+    };
+  }
+
+  BarVisualGeometry computeBarVisualGeometry(const BarConfig& cfg, float surfaceWidth, float surfaceHeight) {
+    const float barThickness = static_cast<float>(cfg.thickness);
+    const float marginH = static_cast<float>(cfg.marginH);
+    const float marginV = static_cast<float>(cfg.marginV);
+    const bool isBottom = cfg.position == "bottom";
+    const bool isRight = cfg.position == "right";
+    const bool isVertical = (cfg.position == "left" || cfg.position == "right");
+    const auto sbi = computeShadowBleed(cfg);
+    const float bleedLeft = static_cast<float>(sbi.left);
+    const float bleedRight = static_cast<float>(sbi.right);
+    const float bleedUp = static_cast<float>(sbi.up);
+    const float bleedDown = static_cast<float>(sbi.down);
+
+    if (isVertical) {
+      const float x = isRight ? bleedLeft : std::min(marginH, bleedLeft);
+      const float y = std::min(marginV, bleedUp);
+      return {
+          .x = x,
+          .y = y,
+          .width = barThickness,
+          .height = surfaceHeight - y - std::min(marginV, bleedDown),
+      };
+    }
+
+    const float x = std::min(marginH, bleedLeft);
+    const float y = isBottom ? bleedUp : std::min(marginV, bleedUp);
+    return {
+        .x = x,
+        .y = y,
+        .width = surfaceWidth - x - std::min(marginH, bleedRight),
+        .height = barThickness,
     };
   }
 
@@ -488,6 +547,57 @@ std::optional<LayerPopupParentContext> Bar::preferredPopupParentContext(wl_outpu
   return instance != nullptr && instance->surface != nullptr
              ? popupParentContextForSurface(instance->surface->wlSurface())
              : std::nullopt;
+}
+
+std::optional<AttachedPanelParentContext> Bar::attachedPanelParentContext(wl_output* output) const noexcept {
+  BarInstance* instance = instanceForOutput(output);
+  if (instance == nullptr) {
+    for (const auto& candidate : m_instances) {
+      if (candidate != nullptr && candidate->surface != nullptr && candidate->barConfig.position == "top") {
+        instance = candidate.get();
+        break;
+      }
+    }
+  }
+  if (instance == nullptr || instance->surface == nullptr || instance->barConfig.position != "top") {
+    return std::nullopt;
+  }
+
+  const auto surfaceWidth = instance->surface->width();
+  const auto surfaceHeight = instance->surface->height();
+  if (instance->surface->wlSurface() == nullptr || surfaceWidth == 0 || surfaceHeight == 0) {
+    return std::nullopt;
+  }
+
+  const auto bar = computeBarVisualGeometry(instance->barConfig, static_cast<float>(surfaceWidth),
+                                            static_cast<float>(surfaceHeight));
+  if (bar.width <= 0.0f || bar.height <= 0.0f) {
+    return std::nullopt;
+  }
+
+  return AttachedPanelParentContext{
+      .parentSurface = instance->surface->wlSurface(),
+      .output = instance->output,
+      .barX = static_cast<std::int32_t>(std::lround(bar.x)),
+      .barY = static_cast<std::int32_t>(std::lround(bar.y)),
+      .barWidth = static_cast<std::int32_t>(std::lround(bar.width)),
+      .barHeight = static_cast<std::int32_t>(std::lround(bar.height)),
+      .parentWidth = surfaceWidth,
+      .parentHeight = surfaceHeight,
+  };
+}
+
+void Bar::setAttachedPanelGeometry(wl_output* output, std::optional<AttachedPanelGeometry> geometry) {
+  BarInstance* instance = instanceForOutput(output);
+  if (instance == nullptr) {
+    return;
+  }
+
+  instance->attachedPanelGeometry = geometry;
+  if (instance->surface != nullptr && instance->surface->width() > 0 && instance->surface->height() > 0) {
+    buildScene(*instance, instance->surface->width(), instance->surface->height());
+    instance->surface->requestRedraw();
+  }
 }
 
 void Bar::beginAttachedPopup(wl_surface* surface) {
@@ -920,9 +1030,6 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   const float shadowSize = static_cast<float>(std::max(0, instance.barConfig.shadowBlur));
   const float shadowOffsetX = static_cast<float>(instance.barConfig.shadowOffsetX);
   const float shadowOffsetY = static_cast<float>(instance.barConfig.shadowOffsetY);
-  const float barThickness = static_cast<float>(instance.barConfig.thickness);
-  const float marginH = static_cast<float>(instance.barConfig.marginH);
-  const float marginV = static_cast<float>(instance.barConfig.marginV);
   const bool isBottom = instance.barConfig.position == "bottom";
   const bool isRight = instance.barConfig.position == "right";
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
@@ -933,28 +1040,11 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
       static_cast<float>(instance.barConfig.radiusBottomLeft),
   };
 
-  // Shadow bleed in each direction (matches createInstance geometry).
-  const auto sbi = computeShadowBleed(instance.barConfig);
-  const float bleedLeft = static_cast<float>(sbi.left);
-  const float bleedRight = static_cast<float>(sbi.right);
-  const float bleedUp = static_cast<float>(sbi.up);
-  const float bleedDown = static_cast<float>(sbi.down);
-
-  // The bar's visual area within the tight surface.
-  // compositor margins absorbed the outer gap; only the shadow bleed (capped at the gap)
-  // remains as padding between the surface edge and the bar rect.
-  float barAreaX, barAreaY, barAreaW, barAreaH;
-  if (isVertical) {
-    barAreaX = isRight ? bleedLeft : std::min(marginH, bleedLeft);
-    barAreaY = std::min(marginV, bleedUp);
-    barAreaW = barThickness;
-    barAreaH = h - barAreaY - std::min(marginV, bleedDown);
-  } else {
-    barAreaX = std::min(marginH, bleedLeft);
-    barAreaY = isBottom ? bleedUp : std::min(marginV, bleedUp);
-    barAreaW = w - barAreaX - std::min(marginH, bleedRight);
-    barAreaH = barThickness;
-  }
+  const auto barVisual = computeBarVisualGeometry(instance.barConfig, w, h);
+  const float barAreaX = barVisual.x;
+  const float barAreaY = barVisual.y;
+  const float barAreaW = barVisual.width;
+  const float barAreaH = barVisual.height;
 
   if (instance.sceneRoot == nullptr) {
     instance.sceneRoot = std::make_unique<Node>();
@@ -973,6 +1063,20 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     if (shadowSize > 0.0f) {
       auto shadow = std::make_unique<RectNode>();
       instance.shadow = static_cast<RectNode*>(instance.slideRoot->addChild(std::move(shadow)));
+
+      auto leftClip = std::make_unique<Node>();
+      leftClip->setClipChildren(true);
+      leftClip->setZIndex(-1);
+      instance.shadowLeftClip = instance.slideRoot->addChild(std::move(leftClip));
+      auto leftShadow = std::make_unique<RectNode>();
+      instance.shadowLeft = static_cast<RectNode*>(instance.shadowLeftClip->addChild(std::move(leftShadow)));
+
+      auto rightClip = std::make_unique<Node>();
+      rightClip->setClipChildren(true);
+      rightClip->setZIndex(-1);
+      instance.shadowRightClip = instance.slideRoot->addChild(std::move(rightClip));
+      auto rightShadow = std::make_unique<RectNode>();
+      instance.shadowRight = static_cast<RectNode*>(instance.shadowRightClip->addChild(std::move(rightShadow)));
     }
     // Note: shadow is inserted before bar sections so it renders below them (z=-1 is set below).
 
@@ -1030,7 +1134,8 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   }
 
   // Background covers only the bar visual area (not the shadow extension).
-  // Expand 1px beyond its edges so SDF fringe lands inside the rect.
+  // Keep it exactly aligned with the shadow shape; the shadow shader now
+  // draws only outside the rect, so any size mismatch is visible at corners.
   if (instance.bg != nullptr) {
     const RoundedRectStyle bgStyle{
         .fill = resolveThemeColor(roleColor(ColorRole::Surface, instance.barConfig.backgroundOpacity)),
@@ -1042,8 +1147,8 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
         .borderWidth = 0.0f,
     };
     instance.bg->setStyle(bgStyle);
-    instance.bg->setPosition(barAreaX - 1.0f, barAreaY - 1.0f);
-    instance.bg->setSize(barAreaW + 2.0f, barAreaH + 2.0f);
+    instance.bg->setPosition(barAreaX, barAreaY);
+    instance.bg->setSize(barAreaW, barAreaH);
   }
 
   instance.paletteConn = paletteChanged().connect([inst = &instance] {
@@ -1063,18 +1168,55 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   if (instance.shadow != nullptr) {
     const float bgOpacity = std::clamp(instance.barConfig.backgroundOpacity, 0.0f, 1.0f);
     constexpr float baseShadowAlpha = 0.55f;
-    const RoundedRectStyle shadowStyle{
+    const float shadowX = barAreaX + shadowOffsetX;
+    const float shadowY = barAreaY + shadowOffsetY;
+    RoundedRectStyle shadowStyle{
         .fill = rgba(0.0f, 0.0f, 0.0f, baseShadowAlpha * bgOpacity),
         .fillEnd = {},
         .border = clearColor(),
         .fillMode = FillMode::Solid,
         .radius = barRadii,
         .softness = shadowSize,
+        .borderWidth = 0.0f,
+        .outerShadow = true,
+        .shadowCutoutOffsetX = shadowOffsetX,
+        .shadowCutoutOffsetY = shadowOffsetY,
     };
-    instance.shadow->setStyle(shadowStyle);
-    instance.shadow->setZIndex(-1);
-    instance.shadow->setPosition(barAreaX + shadowOffsetX, barAreaY + shadowOffsetY);
-    instance.shadow->setSize(barAreaW, barAreaH);
+    const bool panelShadowExclusion = !isVertical && !isBottom && instance.attachedPanelGeometry.has_value() &&
+                                      instance.attachedPanelGeometry->width > 0.0f &&
+                                      instance.attachedPanelGeometry->height > 0.0f;
+    if (panelShadowExclusion) {
+      const auto& attached = *instance.attachedPanelGeometry;
+      const float radius = std::max(0.0f, attached.cornerRadius);
+      shadowStyle.shadowExclusion = true;
+      shadowStyle.shadowExclusionOffsetX = shadowX - attached.x;
+      shadowStyle.shadowExclusionOffsetY = shadowY - attached.y;
+      shadowStyle.shadowExclusionWidth = attached.width;
+      shadowStyle.shadowExclusionHeight = attached.height;
+      shadowStyle.shadowExclusionCorners = attachedPanelCornerShapes();
+      shadowStyle.shadowExclusionLogicalInset = attachedPanelLogicalInset(radius);
+      shadowStyle.shadowExclusionRadius = Radii{radius, radius, radius, radius};
+    }
+
+    auto configureShadow = [&](RectNode* node, float x, float y) {
+      if (node == nullptr) {
+        return;
+      }
+      node->setStyle(shadowStyle);
+      node->setZIndex(-1);
+      node->setPosition(x, y);
+      node->setSize(barAreaW, barAreaH);
+    };
+
+    instance.shadow->setVisible(true);
+    configureShadow(instance.shadow, shadowX, shadowY);
+
+    if (instance.shadowLeftClip != nullptr) {
+      instance.shadowLeftClip->setVisible(false);
+    }
+    if (instance.shadowRightClip != nullptr) {
+      instance.shadowRightClip->setVisible(false);
+    }
   }
 
   layoutBarSections(instance, *renderer, barAreaW, barAreaH, padding, isVertical);

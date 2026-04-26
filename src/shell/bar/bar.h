@@ -2,6 +2,7 @@
 
 #include "shell/bar/bar_instance.h"
 #include "shell/bar/widget_factory.h"
+#include "shell/panel/attached_panel_context.h"
 #include "ui/dialogs/layer_popup_host.h"
 
 #include <functional>
@@ -66,6 +67,8 @@ public:
   [[nodiscard]] bool isRunning() const noexcept;
   [[nodiscard]] std::optional<LayerPopupParentContext> popupParentContextForSurface(wl_surface* surface) const noexcept;
   [[nodiscard]] std::optional<LayerPopupParentContext> preferredPopupParentContext(wl_output* output) const noexcept;
+  [[nodiscard]] std::optional<AttachedPanelParentContext> attachedPanelParentContext(wl_output* output) const noexcept;
+  void setAttachedPanelGeometry(wl_output* output, std::optional<AttachedPanelGeometry> geometry);
   void beginAttachedPopup(wl_surface* surface);
   void endAttachedPopup(wl_surface* surface);
 

@@ -41,6 +41,24 @@ void Box::setRadius(float radius) {
   m_rect->setStyle(style);
 }
 
+void Box::setRadii(const Radii& radii) {
+  auto style = m_rect->style();
+  style.radius = radii;
+  m_rect->setStyle(style);
+}
+
+void Box::setCornerShapes(const CornerShapes& corners) {
+  auto style = m_rect->style();
+  style.corners = corners;
+  m_rect->setStyle(style);
+}
+
+void Box::setLogicalInset(const RectInsets& inset) {
+  auto style = m_rect->style();
+  style.logicalInset = inset;
+  m_rect->setStyle(style);
+}
+
 void Box::setSoftness(float softness) {
   auto style = m_rect->style();
   style.softness = softness;
@@ -75,6 +93,8 @@ void Box::setFlatStyle() {
   style.border = resolveThemeColor(m_border);
   style.borderWidth = m_borderWidth;
   style.fillMode = FillMode::Solid;
+  style.corners = {};
+  style.logicalInset = {};
   style.radius = 0;
   style.softness = 0;
   m_rect->setStyle(style);
@@ -89,6 +109,8 @@ void Box::setPanelStyle() {
   style.border = resolveThemeColor(m_border);
   style.borderWidth = m_borderWidth;
   style.fillMode = FillMode::Solid;
+  style.corners = {};
+  style.logicalInset = {};
   style.radius = Style::radiusXl;
   style.softness = 1.0f;
   m_rect->setStyle(style);

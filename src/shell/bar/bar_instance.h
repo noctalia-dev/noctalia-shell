@@ -5,11 +5,13 @@
 #include "render/scene/input_dispatcher.h"
 #include "render/scene/node.h"
 #include "shell/bar/widget.h"
+#include "shell/panel/attached_panel_context.h"
 #include "ui/signal.h"
 #include "wayland/layer_surface.h"
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 
 class Flex;
@@ -37,6 +39,10 @@ struct BarInstance {
   // Bar background, shadow, and layout sections (start/center/end along main axis)
   RectNode* bg = nullptr;
   RectNode* shadow = nullptr;
+  Node* shadowLeftClip = nullptr;
+  Node* shadowRightClip = nullptr;
+  RectNode* shadowLeft = nullptr;
+  RectNode* shadowRight = nullptr;
   Node* contentClip = nullptr;
   Node* startSlot = nullptr;
   Node* centerSlot = nullptr;
@@ -50,4 +56,5 @@ struct BarInstance {
   std::vector<std::unique_ptr<Widget>> endWidgets;
 
   Signal<>::ScopedConnection paletteConn;
+  std::optional<AttachedPanelGeometry> attachedPanelGeometry;
 };

@@ -34,6 +34,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <malloc.h>
+#include <optional>
 #include <stdexcept>
 #include <string_view>
 #include <thread>
@@ -782,7 +783,15 @@ void Application::initUi() {
                    m_networkService.get(), &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(),
                    &m_httpClient, &m_weatherService, &m_renderContext, &m_nightLightManager, &m_themeService,
                    m_bluetoothService.get(), m_brightnessService.get(), &m_fileWatcher);
-  m_bar.setAutoHideSuppressionCallback([this]() { return m_trayMenu.isOpen(); });
+  m_panelManager.setAttachedPanelParentResolver(
+      [this](wl_output* output) { return m_bar.attachedPanelParentContext(output); });
+  m_panelManager.setAttachedPanelGeometryCallback(
+      [this](wl_output* output, std::optional<AttachedPanelGeometry> geometry) {
+        m_bar.setAttachedPanelGeometry(output, geometry);
+      });
+  m_bar.setAutoHideSuppressionCallback([this]() {
+    return m_trayMenu.isOpen() || (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center");
+  });
 
   m_layerPopupHosts.registerHost(
       [this](wl_surface* surface) { return m_panelManager.popupParentContextForSurface(surface); },

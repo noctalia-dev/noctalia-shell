@@ -38,9 +38,19 @@ uniform vec4 u_fill_end_color;
 uniform vec4 u_border_color;
 uniform int u_fill_mode;
 uniform vec2 u_gradient_direction;
+uniform vec4 u_corner_shapes; // tl, tr, br, bl: 0 = convex, 1 = concave
+uniform vec4 u_logical_inset; // left, top, right, bottom
 uniform vec4 u_radii;  // tl, tr, br, bl
 uniform float u_softness;
 uniform float u_border_width;
+uniform int u_outer_shadow;
+uniform vec2 u_shadow_cutout_offset;
+uniform int u_shadow_exclusion;
+uniform vec2 u_shadow_exclusion_offset;
+uniform vec2 u_shadow_exclusion_size;
+uniform vec4 u_shadow_exclusion_corner_shapes;
+uniform vec4 u_shadow_exclusion_logical_inset;
+uniform vec4 u_shadow_exclusion_radii;
 varying vec2 v_pixel;
 
 float rounded_rect_distance(vec2 point, vec2 size, vec4 radii) {
@@ -54,13 +64,153 @@ float rounded_rect_distance(vec2 point, vec2 size, vec4 radii) {
     return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
 }
 
+float circle_extent(float radius, float delta) {
+    return sqrt(max(0.0, radius * radius - delta * delta));
+}
+
+float shape_distance(vec2 point, vec2 size, vec4 radii, vec4 corner_shapes, vec4 logical_inset) {
+    vec4 safe_inset = max(logical_inset, vec4(0.0));
+    vec2 body_min = min(safe_inset.xy, size);
+    vec2 body_max = max(body_min, size - safe_inset.zw);
+    vec2 body_size = max(body_max - body_min, vec2(0.0));
+    float max_radius = max(min(body_size.x, body_size.y) * 0.5, 0.0);
+    vec4 r = clamp(radii, vec4(0.0), vec4(max_radius));
+
+    bool tl_concave = corner_shapes.x > 0.5;
+    bool tr_concave = corner_shapes.y > 0.5;
+    bool br_concave = corner_shapes.z > 0.5;
+    bool bl_concave = corner_shapes.w > 0.5;
+    bool any_concave = tl_concave || tr_concave || br_concave || bl_concave;
+
+    if (!any_concave) {
+        return rounded_rect_distance(point - body_min, body_size, r);
+    }
+
+    float x = point.x;
+    float y = point.y;
+    float left = body_min.x;
+    float right = body_max.x;
+    float top = body_min.y;
+    float bottom = body_max.y;
+
+    float radius = r.x;
+    if (radius > 0.0 && y < body_min.y + radius) {
+        float sample_y = clamp(y, body_min.y, body_min.y + radius);
+        float dy = sample_y - (body_min.y + radius);
+        float extent = circle_extent(radius, dy);
+        if (tl_concave) {
+            left = min(left, body_min.x - radius + extent);
+        } else {
+            left = max(left, body_min.x + radius - extent);
+        }
+    }
+    if (radius > 0.0 && x < body_min.x + radius) {
+        float sample_x = clamp(x, body_min.x, body_min.x + radius);
+        float dx = sample_x - (body_min.x + radius);
+        float extent = circle_extent(radius, dx);
+        if (tl_concave) {
+            top = min(top, body_min.y - radius + extent);
+        } else {
+            top = max(top, body_min.y + radius - extent);
+        }
+    }
+
+    radius = r.y;
+    if (radius > 0.0 && y < body_min.y + radius) {
+        float sample_y = clamp(y, body_min.y, body_min.y + radius);
+        float dy = sample_y - (body_min.y + radius);
+        float extent = circle_extent(radius, dy);
+        if (tr_concave) {
+            right = max(right, body_max.x + radius - extent);
+        } else {
+            right = min(right, body_max.x - radius + extent);
+        }
+    }
+    if (radius > 0.0 && x > body_max.x - radius) {
+        float sample_x = clamp(x, body_max.x - radius, body_max.x);
+        float dx = sample_x - (body_max.x - radius);
+        float extent = circle_extent(radius, dx);
+        if (tr_concave) {
+            top = min(top, body_min.y - radius + extent);
+        } else {
+            top = max(top, body_min.y + radius - extent);
+        }
+    }
+
+    radius = r.z;
+    if (radius > 0.0 && y > body_max.y - radius) {
+        float sample_y = clamp(y, body_max.y - radius, body_max.y);
+        float dy = sample_y - (body_max.y - radius);
+        float extent = circle_extent(radius, dy);
+        if (br_concave) {
+            right = max(right, body_max.x + radius - extent);
+        } else {
+            right = min(right, body_max.x - radius + extent);
+        }
+    }
+    if (radius > 0.0 && x > body_max.x - radius) {
+        float sample_x = clamp(x, body_max.x - radius, body_max.x);
+        float dx = sample_x - (body_max.x - radius);
+        float extent = circle_extent(radius, dx);
+        if (br_concave) {
+            bottom = max(bottom, body_max.y + radius - extent);
+        } else {
+            bottom = min(bottom, body_max.y - radius + extent);
+        }
+    }
+
+    radius = r.w;
+    if (radius > 0.0 && y > body_max.y - radius) {
+        float sample_y = clamp(y, body_max.y - radius, body_max.y);
+        float dy = sample_y - (body_max.y - radius);
+        float extent = circle_extent(radius, dy);
+        if (bl_concave) {
+            left = min(left, body_min.x - radius + extent);
+        } else {
+            left = max(left, body_min.x + radius - extent);
+        }
+    }
+    if (radius > 0.0 && x < body_min.x + radius) {
+        float sample_x = clamp(x, body_min.x, body_min.x + radius);
+        float dx = sample_x - (body_min.x + radius);
+        float extent = circle_extent(radius, dx);
+        if (bl_concave) {
+            bottom = max(bottom, body_max.y + radius - extent);
+        } else {
+            bottom = min(bottom, body_max.y - radius + extent);
+        }
+    }
+
+    float boundary_distance = max(max(left - x, x - right), max(top - y, y - bottom));
+    float visual_clip = max(max(-point.x, point.x - size.x), max(-point.y, point.y - size.y));
+    return max(boundary_distance, visual_clip);
+}
+
 void main() {
     float aa = max(u_softness, 0.85);
     vec2 local_point = v_pixel;
     vec2 uv = clamp(local_point / u_rect_size, vec2(0.0), vec2(1.0));
 
-    float outer_distance = rounded_rect_distance(local_point, u_rect_size, u_radii);
+    float outer_distance = shape_distance(local_point, u_rect_size, u_radii, u_corner_shapes, u_logical_inset);
     float outer_coverage = 1.0 - smoothstep(-aa, aa, outer_distance);
+
+    if (u_outer_shadow == 1) {
+        float cutout_aa = 0.85;
+        float cutout_distance = shape_distance(local_point + u_shadow_cutout_offset, u_rect_size, u_radii, u_corner_shapes, u_logical_inset);
+        float cutout_mask = 1.0 - smoothstep(-cutout_aa, cutout_aa, cutout_distance);
+        float shadow_coverage = outer_coverage * (1.0 - cutout_mask);
+        if (u_shadow_exclusion == 1 && u_shadow_exclusion_size.x > 0.0 && u_shadow_exclusion_size.y > 0.0) {
+            float exclusion_distance = shape_distance(local_point + u_shadow_exclusion_offset, u_shadow_exclusion_size, u_shadow_exclusion_radii, u_shadow_exclusion_corner_shapes, u_shadow_exclusion_logical_inset);
+            float exclusion_mask = 1.0 - smoothstep(-cutout_aa, cutout_aa, exclusion_distance);
+            shadow_coverage *= 1.0 - exclusion_mask;
+        }
+        float out_alpha = u_color.a * shadow_coverage;
+        if (out_alpha <= 0.0) {
+            discard;
+        }
+        gl_FragColor = vec4(u_color.rgb * out_alpha, out_alpha);
+        return;
+    }
 
     float gradient_t = clamp(dot(uv, u_gradient_direction), 0.0, 1.0);
     vec4 fill_base;
@@ -84,7 +234,8 @@ void main() {
     vec4 inner_radii = max(u_radii - vec4(u_border_width), vec4(0.0));
     vec2 inner_size = max(u_rect_size - vec2(u_border_width * 2.0), vec2(0.0));
     vec2 inner_point = local_point - vec2(u_border_width);
-    float inner_distance = rounded_rect_distance(inner_point, inner_size, inner_radii);
+    vec4 inner_inset = max(u_logical_inset - vec4(u_border_width), vec4(0.0));
+    float inner_distance = shape_distance(inner_point, inner_size, inner_radii, u_corner_shapes, inner_inset);
     float inner_coverage = 1.0 - smoothstep(-aa, aa, inner_distance);
 
     if (fill_base.a <= 0.0) {
@@ -136,15 +287,29 @@ void RectProgram::ensureInitialized() {
   m_borderColorLocation = glGetUniformLocation(m_program.id(), "u_border_color");
   m_fillModeLocation = glGetUniformLocation(m_program.id(), "u_fill_mode");
   m_gradientDirectionLocation = glGetUniformLocation(m_program.id(), "u_gradient_direction");
+  m_cornerShapesLocation = glGetUniformLocation(m_program.id(), "u_corner_shapes");
+  m_logicalInsetLocation = glGetUniformLocation(m_program.id(), "u_logical_inset");
   m_radiiLocation = glGetUniformLocation(m_program.id(), "u_radii");
   m_softnessLocation = glGetUniformLocation(m_program.id(), "u_softness");
   m_borderWidthLocation = glGetUniformLocation(m_program.id(), "u_border_width");
+  m_outerShadowLocation = glGetUniformLocation(m_program.id(), "u_outer_shadow");
+  m_shadowCutoutOffsetLocation = glGetUniformLocation(m_program.id(), "u_shadow_cutout_offset");
+  m_shadowExclusionLocation = glGetUniformLocation(m_program.id(), "u_shadow_exclusion");
+  m_shadowExclusionOffsetLocation = glGetUniformLocation(m_program.id(), "u_shadow_exclusion_offset");
+  m_shadowExclusionSizeLocation = glGetUniformLocation(m_program.id(), "u_shadow_exclusion_size");
+  m_shadowExclusionCornerShapesLocation = glGetUniformLocation(m_program.id(), "u_shadow_exclusion_corner_shapes");
+  m_shadowExclusionLogicalInsetLocation = glGetUniformLocation(m_program.id(), "u_shadow_exclusion_logical_inset");
+  m_shadowExclusionRadiiLocation = glGetUniformLocation(m_program.id(), "u_shadow_exclusion_radii");
   m_transformLocation = glGetUniformLocation(m_program.id(), "u_transform");
 
   if (m_positionLocation < 0 || m_surfaceSizeLocation < 0 || m_quadSizeLocation < 0 || m_rectOriginLocation < 0 ||
       m_rectSizeLocation < 0 || m_colorLocation < 0 || m_fillEndColorLocation < 0 || m_borderColorLocation < 0 ||
       m_fillModeLocation < 0 || m_gradientDirectionLocation < 0 || m_radiiLocation < 0 || m_softnessLocation < 0 ||
-      m_borderWidthLocation < 0 || m_transformLocation < 0) {
+      m_cornerShapesLocation < 0 || m_logicalInsetLocation < 0 || m_borderWidthLocation < 0 ||
+      m_outerShadowLocation < 0 || m_shadowCutoutOffsetLocation < 0 || m_shadowExclusionLocation < 0 ||
+      m_shadowExclusionOffsetLocation < 0 || m_shadowExclusionSizeLocation < 0 ||
+      m_shadowExclusionCornerShapesLocation < 0 || m_shadowExclusionLogicalInsetLocation < 0 ||
+      m_shadowExclusionRadiiLocation < 0 || m_transformLocation < 0) {
     throw std::runtime_error("failed to query rounded-rect shader locations");
   }
 }
@@ -161,9 +326,19 @@ void RectProgram::destroy() {
   m_borderColorLocation = -1;
   m_fillModeLocation = -1;
   m_gradientDirectionLocation = -1;
+  m_cornerShapesLocation = -1;
+  m_logicalInsetLocation = -1;
   m_radiiLocation = -1;
   m_softnessLocation = -1;
   m_borderWidthLocation = -1;
+  m_outerShadowLocation = -1;
+  m_shadowCutoutOffsetLocation = -1;
+  m_shadowExclusionLocation = -1;
+  m_shadowExclusionOffsetLocation = -1;
+  m_shadowExclusionSizeLocation = -1;
+  m_shadowExclusionCornerShapesLocation = -1;
+  m_shadowExclusionLogicalInsetLocation = -1;
+  m_shadowExclusionRadiiLocation = -1;
   m_transformLocation = -1;
 }
 
@@ -200,9 +375,27 @@ void RectProgram::draw(float surfaceWidth, float surfaceHeight, float width, flo
   glUniform1i(m_fillModeLocation, fillMode);
   glUniform2f(m_gradientDirectionLocation, style.gradientDirection == GradientDirection::Horizontal ? 1.0f : 0.0f,
               style.gradientDirection == GradientDirection::Vertical ? 1.0f : 0.0f);
+  const auto cornerShapeValue = [](CornerShape shape) { return shape == CornerShape::Concave ? 1.0f : 0.0f; };
+  glUniform4f(m_cornerShapesLocation, cornerShapeValue(style.corners.tl), cornerShapeValue(style.corners.tr),
+              cornerShapeValue(style.corners.br), cornerShapeValue(style.corners.bl));
+  glUniform4f(m_logicalInsetLocation, style.logicalInset.left, style.logicalInset.top, style.logicalInset.right,
+              style.logicalInset.bottom);
   glUniform4f(m_radiiLocation, style.radius.tl, style.radius.tr, style.radius.br, style.radius.bl);
   glUniform1f(m_softnessLocation, style.softness);
   glUniform1f(m_borderWidthLocation, style.borderWidth);
+  glUniform1i(m_outerShadowLocation, style.outerShadow ? 1 : 0);
+  glUniform2f(m_shadowCutoutOffsetLocation, style.shadowCutoutOffsetX, style.shadowCutoutOffsetY);
+  glUniform1i(m_shadowExclusionLocation, style.shadowExclusion ? 1 : 0);
+  glUniform2f(m_shadowExclusionOffsetLocation, style.shadowExclusionOffsetX, style.shadowExclusionOffsetY);
+  glUniform2f(m_shadowExclusionSizeLocation, style.shadowExclusionWidth, style.shadowExclusionHeight);
+  glUniform4f(m_shadowExclusionCornerShapesLocation, cornerShapeValue(style.shadowExclusionCorners.tl),
+              cornerShapeValue(style.shadowExclusionCorners.tr), cornerShapeValue(style.shadowExclusionCorners.br),
+              cornerShapeValue(style.shadowExclusionCorners.bl));
+  glUniform4f(m_shadowExclusionLogicalInsetLocation, style.shadowExclusionLogicalInset.left,
+              style.shadowExclusionLogicalInset.top, style.shadowExclusionLogicalInset.right,
+              style.shadowExclusionLogicalInset.bottom);
+  glUniform4f(m_shadowExclusionRadiiLocation, style.shadowExclusionRadius.tl, style.shadowExclusionRadius.tr,
+              style.shadowExclusionRadius.br, style.shadowExclusionRadius.bl);
   glUniformMatrix3fv(m_transformLocation, 1, GL_FALSE, quadTransform.m.data());
   glVertexAttribPointer(m_positionLocation, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
   glEnableVertexAttribArray(m_positionLocation);
