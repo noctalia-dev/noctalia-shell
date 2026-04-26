@@ -31,7 +31,7 @@ speed   = 1.0   # 1.0 = normal, 0.5 = 2× slower, 2.0 = 2× faster
 [shell.shadow]
 blur     = 12    # global surface shadow blur radius; 0 disables all rendered surface shadows
 offset_x = 2
-offset_y = 4     # positive = down
+offset_y = 2     # positive = down
 alpha    = 0.55  # multiplied by each component's background opacity
 ```
 

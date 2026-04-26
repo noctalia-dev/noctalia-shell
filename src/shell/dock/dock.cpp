@@ -10,6 +10,7 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
+#include "shell/surface_shadow.h"
 #include "system/desktop_entry.h"
 #include "system/internal_app_metadata.h"
 #include "ui/controls/box.h"
@@ -102,21 +103,6 @@ namespace {
     if (pos == "right")
       return LayerShellAnchor::Right;
     return LayerShellAnchor::Bottom; // default
-  }
-
-  // Shadow bleed helpers (identical to bar's logic).
-  struct ShadowBleed {
-    std::int32_t left = 0, right = 0, up = 0, down = 0;
-  };
-  ShadowBleed computeBleed(const DockConfig& cfg, const ShellConfig::ShadowConfig& shadow) {
-    if (!cfg.shadow || shadow.blur <= 0)
-      return {};
-    return {
-        shadow.blur + std::max(0, -shadow.offsetX),
-        shadow.blur + std::max(0, shadow.offsetX),
-        shadow.blur + std::max(0, -shadow.offsetY),
-        shadow.blur + std::max(0, shadow.offsetY),
-    };
   }
 
 } // namespace
@@ -581,7 +567,7 @@ void Dock::createInstance(const WaylandOutput& output) {
 
   const bool vert = isVertical();
   const auto& shadowConfig = m_config->config().shell.shadow;
-  const auto sb = computeBleed(cfg, shadowConfig);
+  const auto sb = shell::surface_shadow::bleed(cfg.shadow, shadowConfig);
   const bool hiddenOverlayMode = cfg.autoHide && !cfg.reserveSpace;
   const auto panelW = dockContentSize(cfg.pinned.size());
   const auto panelH = dockThickness();
@@ -742,7 +728,7 @@ void Dock::buildScene(DockInstance& instance) {
   const float h = static_cast<float>(instance.surface->height());
 
   const auto& shadowConfig = m_config->config().shell.shadow;
-  const auto sb = computeBleed(cfg, shadowConfig);
+  const auto sb = shell::surface_shadow::bleed(cfg.shadow, shadowConfig);
   const float bleedL = static_cast<float>(sb.left);
   const float bleedR = static_cast<float>(sb.right);
   const float bleedU = static_cast<float>(sb.up);
@@ -780,7 +766,7 @@ void Dock::buildScene(DockInstance& instance) {
     instance.slideRoot = instance.sceneRoot->addChild(std::move(slide));
 
     // Shadow
-    if (cfg.shadow && shadowConfig.blur > 0) {
+    if (shell::surface_shadow::enabled(cfg.shadow, shadowConfig)) {
       auto shadow = std::make_unique<RectNode>();
       instance.shadow = static_cast<RectNode*>(instance.slideRoot->addChild(std::move(shadow)));
     }
@@ -829,23 +815,10 @@ void Dock::buildScene(DockInstance& instance) {
 
   // Shadow
   if (instance.shadow != nullptr) {
-    const float sSize = static_cast<float>(shadowConfig.blur);
     const float shadowOffsetX = static_cast<float>(shadowConfig.offsetX);
     const float shadowOffsetY = static_cast<float>(shadowConfig.offsetY);
-    const float shadowAlpha =
-        std::clamp(shadowConfig.alpha, 0.0f, 1.0f) * std::clamp(cfg.backgroundOpacity, 0.0f, 1.0f);
-    const RoundedRectStyle shadowStyle{
-        .fill = rgba(0.0f, 0.0f, 0.0f, shadowAlpha),
-        .fillEnd = {},
-        .border = clearColor(),
-        .fillMode = FillMode::Solid,
-        .radius = radii,
-        .softness = sSize,
-        .borderWidth = 0.0f,
-        .outerShadow = true,
-        .shadowCutoutOffsetX = shadowOffsetX,
-        .shadowCutoutOffsetY = shadowOffsetY,
-    };
+    const RoundedRectStyle shadowStyle = shell::surface_shadow::style(shadowConfig, cfg.backgroundOpacity,
+                                                                      shell::surface_shadow::Shape{.radius = radii});
     instance.shadow->setStyle(shadowStyle);
     instance.shadow->setZIndex(-1);
     instance.shadow->setPosition(panelX + shadowOffsetX, panelY + shadowOffsetY);
@@ -1137,7 +1110,7 @@ void Dock::resizeSurface(DockInstance& instance) {
 
   const auto& cfg = m_config->config().dock;
   const bool vert = isVertical();
-  const auto sb = computeBleed(cfg, m_config->config().shell.shadow);
+  const auto sb = shell::surface_shadow::bleed(cfg.shadow, m_config->config().shell.shadow);
   const auto panelW = dockContentSize(instance.items.size());
   const auto panelH = dockThickness();
   const bool isBottom = (cfg.position == "bottom");
@@ -1361,7 +1334,7 @@ void Dock::openWindowPicker(DockInstance& instance, DockItemView& item, std::vec
     offsetX = kGap;
   }
 
-  const auto sb = computeBleed(cfg, m_config->config().shell.shadow);
+  const auto sb = shell::surface_shadow::bleed(cfg.shadow, m_config->config().shell.shadow);
   const std::int32_t panelThk = dockThickness();
   const std::int32_t ptrX = static_cast<std::int32_t>(m_wayland->lastPointerX());
   const std::int32_t ptrY = static_cast<std::int32_t>(m_wayland->lastPointerY());
@@ -1572,7 +1545,7 @@ void Dock::startHideFadeOut(DockInstance& inst) {
           return;
         const auto& cfg = m_config->config().dock;
         const bool vert = isVertical();
-        const auto sb = computeBleed(cfg, m_config->config().shell.shadow);
+        const auto sb = shell::surface_shadow::bleed(cfg.shadow, m_config->config().shell.shadow);
         const auto panelW = dockContentSize(inst.items.size());
         const auto panelH = dockThickness();
         const auto surfW = static_cast<int>(vert ? (sb.left + panelH + sb.right) : (panelW + sb.left + sb.right));
@@ -1711,7 +1684,7 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
     offsetX = kGap;
   }
 
-  const auto sb = computeBleed(cfg, m_config->config().shell.shadow);
+  const auto sb = shell::surface_shadow::bleed(cfg.shadow, m_config->config().shell.shadow);
   const std::int32_t panelThk = dockThickness();
   const std::int32_t ptrX = static_cast<std::int32_t>(m_wayland->lastPointerX());
   const std::int32_t ptrY = static_cast<std::int32_t>(m_wayland->lastPointerY());

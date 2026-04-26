@@ -186,6 +186,60 @@ float shape_distance(vec2 point, vec2 size, vec4 radii, vec4 corner_shapes, vec4
     return max(boundary_distance, visual_clip);
 }
 
+float shadow_shape_distance(vec2 point, vec2 size, vec4 radii, vec4 corner_shapes, vec4 logical_inset) {
+    float distance = shape_distance(point, size, radii, corner_shapes, logical_inset);
+
+    vec4 safe_inset = max(logical_inset, vec4(0.0));
+    vec2 body_min = min(safe_inset.xy, size);
+    vec2 body_max = max(body_min, size - safe_inset.zw);
+    vec2 body_size = max(body_max - body_min, vec2(0.0));
+    float max_radius = max(min(body_size.x, body_size.y) * 0.5, 0.0);
+    vec4 r = clamp(radii, vec4(0.0), vec4(max_radius));
+
+    bool tl_concave = corner_shapes.x > 0.5;
+    bool tr_concave = corner_shapes.y > 0.5;
+    bool br_concave = corner_shapes.z > 0.5;
+    bool bl_concave = corner_shapes.w > 0.5;
+    bool any_concave = tl_concave || tr_concave || br_concave || bl_concave;
+    if (!any_concave) {
+        return distance;
+    }
+
+    float x = point.x;
+    float y = point.y;
+    float left_distance = body_min.x - x;
+    float right_distance = x - body_max.x;
+    float top_distance = body_min.y - y;
+    float bottom_distance = y - body_max.y;
+
+    float radius = r.x;
+    if (!tl_concave && radius > 0.0 && x < body_min.x + radius && y < body_min.y + radius) {
+        float corner_distance = length(point - vec2(body_min.x + radius, body_min.y + radius)) - radius;
+        distance = max(max(right_distance, bottom_distance), corner_distance);
+    }
+
+    radius = r.y;
+    if (!tr_concave && radius > 0.0 && x > body_max.x - radius && y < body_min.y + radius) {
+        float corner_distance = length(point - vec2(body_max.x - radius, body_min.y + radius)) - radius;
+        distance = max(max(left_distance, bottom_distance), corner_distance);
+    }
+
+    radius = r.z;
+    if (!br_concave && radius > 0.0 && x > body_max.x - radius && y > body_max.y - radius) {
+        float corner_distance = length(point - vec2(body_max.x - radius, body_max.y - radius)) - radius;
+        distance = max(max(left_distance, top_distance), corner_distance);
+    }
+
+    radius = r.w;
+    if (!bl_concave && radius > 0.0 && x < body_min.x + radius && y > body_max.y - radius) {
+        float corner_distance = length(point - vec2(body_min.x + radius, body_max.y - radius)) - radius;
+        distance = max(max(right_distance, top_distance), corner_distance);
+    }
+
+    float visual_clip = max(max(-point.x, point.x - size.x), max(-point.y, point.y - size.y));
+    return max(distance, visual_clip);
+}
+
 void main() {
     float aa = max(u_softness, 0.85);
     vec2 local_point = v_pixel;
@@ -196,9 +250,11 @@ void main() {
 
     if (u_outer_shadow == 1) {
         float cutout_aa = 0.85;
+        float shadow_distance = shadow_shape_distance(local_point, u_rect_size, u_radii, u_corner_shapes, u_logical_inset);
+        float shadow_outer_coverage = 1.0 - smoothstep(-aa, aa, shadow_distance);
         float cutout_distance = shape_distance(local_point + u_shadow_cutout_offset, u_rect_size, u_radii, u_corner_shapes, u_logical_inset);
         float cutout_mask = 1.0 - smoothstep(-cutout_aa, cutout_aa, cutout_distance);
-        float shadow_coverage = outer_coverage * (1.0 - cutout_mask);
+        float shadow_coverage = shadow_outer_coverage * (1.0 - cutout_mask);
         if (u_shadow_exclusion == 1 && u_shadow_exclusion_size.x > 0.0 && u_shadow_exclusion_size.y > 0.0) {
             float exclusion_distance = shape_distance(local_point + u_shadow_exclusion_offset, u_shadow_exclusion_size, u_shadow_exclusion_radii, u_shadow_exclusion_corner_shapes, u_shadow_exclusion_logical_inset);
             float exclusion_mask = 1.0 - smoothstep(-cutout_aa, cutout_aa, exclusion_distance);

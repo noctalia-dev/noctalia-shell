@@ -8,6 +8,7 @@
 #include "render/core/renderer.h"
 #include "render/render_context.h"
 #include "render/scene/rect_node.h"
+#include "shell/surface_shadow.h"
 #include "ui/controls/box.h"
 #include "ui/controls/select.h"
 #include "ui/palette.h"
@@ -246,13 +247,10 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
       const float scale = m_activePanel->contentScale();
       const float cornerRadius = Style::radiusXl * scale;
       const auto& shadowConfig = m_config->config().shell.shadow;
-      const auto shadowBlur = std::max(0, shadowConfig.blur);
-      const auto shadowBleedLeft = shadowBlur + std::max(0, -shadowConfig.offsetX);
-      const auto shadowBleedRight = shadowBlur + std::max(0, shadowConfig.offsetX);
+      const auto shadowBleed = shell::surface_shadow::bleed(true, shadowConfig);
       const auto cornerOutset = static_cast<std::int32_t>(std::ceil(cornerRadius));
-      const auto sideOutset = std::max(shadowBleedLeft, shadowBleedRight) + cornerOutset + 2;
-      const auto shadowBleedBottom = static_cast<std::int32_t>(
-          std::ceil(static_cast<float>(shadowBlur + std::max(0, shadowConfig.offsetY)) + 2.0f));
+      const auto sideOutset = std::max(shadowBleed.left, shadowBleed.right) + cornerOutset + 2;
+      const auto shadowBleedBottom = shadowBleed.down + 2;
       m_panelInsetX = sideOutset;
       m_panelInsetY = 0;
       m_panelVisualWidth = panelWidth;
@@ -782,7 +780,8 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
       sceneParent = m_attachedRevealContentNode;
     }
 
-    if (hasDecoration && m_attachedToBar && m_config != nullptr && m_config->config().shell.shadow.blur > 0) {
+    if (hasDecoration && m_attachedToBar && m_config != nullptr &&
+        shell::surface_shadow::enabled(true, m_config->config().shell.shadow)) {
       auto shadow = std::make_unique<RectNode>();
       m_panelShadowNode = static_cast<RectNode*>(sceneParent->addChild(std::move(shadow)));
       m_panelShadowNode->setZIndex(-1);
@@ -885,25 +884,15 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     const float scale = m_activePanel->contentScale();
     const float radius = Style::radiusXl * scale;
     const auto& shadowConfig = m_config->config().shell.shadow;
-    const float shadowBlur = static_cast<float>(std::max(0, shadowConfig.blur));
     const float shadowOffsetX = static_cast<float>(shadowConfig.offsetX);
     const float shadowOffsetY = static_cast<float>(shadowConfig.offsetY);
-    const float shadowAlpha =
-        std::clamp(shadowConfig.alpha, 0.0f, 1.0f) * std::clamp(m_attachedBackgroundOpacity, 0.0f, 1.0f);
-    const RoundedRectStyle shadowStyle{
-        .fill = rgba(0.0f, 0.0f, 0.0f, shadowAlpha),
-        .fillEnd = {},
-        .border = clearColor(),
-        .fillMode = FillMode::Solid,
-        .corners = attachedPanelCornerShapes(),
-        .logicalInset = attachedPanelLogicalInset(radius),
-        .radius = Radii{radius, radius, radius, radius},
-        .softness = shadowBlur,
-        .borderWidth = 0.0f,
-        .outerShadow = true,
-        .shadowCutoutOffsetX = shadowOffsetX,
-        .shadowCutoutOffsetY = shadowOffsetY,
-    };
+    const RoundedRectStyle shadowStyle =
+        shell::surface_shadow::style(shadowConfig, m_attachedBackgroundOpacity,
+                                     shell::surface_shadow::Shape{
+                                         .corners = attachedPanelCornerShapes(),
+                                         .logicalInset = attachedPanelLogicalInset(radius),
+                                         .radius = Radii{radius, radius, radius, radius},
+                                     });
     m_panelShadowNode->setStyle(shadowStyle);
     m_panelShadowNode->setPosition(bgX + shadowOffsetX, panelY + shadowOffsetY);
     m_panelShadowNode->setSize(bgW, panelH);

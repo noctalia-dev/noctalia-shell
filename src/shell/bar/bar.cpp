@@ -10,6 +10,7 @@
 #include "render/render_context.h"
 #include "render/scene/rect_node.h"
 #include "shell/bar/widget.h"
+#include "shell/surface_shadow.h"
 #include "system/night_light_manager.h"
 #include "system/system_monitor_service.h"
 #include "system/weather_service.h"
@@ -71,10 +72,6 @@ namespace {
     return out;
   }
 
-  struct ShadowBleed {
-    std::int32_t left = 0, right = 0, up = 0, down = 0;
-  };
-
   struct BarVisualGeometry {
     float x = 0.0f;
     float y = 0.0f;
@@ -90,22 +87,12 @@ namespace {
   bool barConfigSurfaceFieldsEqual(const BarConfig& a, const BarConfig& b,
                                    const ShellConfig::ShadowConfig& previousShadow,
                                    const ShellConfig::ShadowConfig& nextShadow) {
-    const bool sameShadowSurface = (!a.shadow && !b.shadow) || previousShadow == nextShadow;
+    const bool sameShadowSurface =
+        (!a.shadow && !b.shadow) || shell::surface_shadow::sameSurfaceMetrics(previousShadow, nextShadow);
     return a.name == b.name && a.position == b.position && a.enabled == b.enabled && a.autoHide == b.autoHide &&
            a.reserveSpace == b.reserveSpace && a.thickness == b.thickness && a.marginH == b.marginH &&
            a.marginV == b.marginV && a.shadow == b.shadow && sameShadowSurface &&
            a.monitorOverrides == b.monitorOverrides;
-  }
-
-  ShadowBleed computeShadowBleed(const BarConfig& cfg, const ShellConfig::ShadowConfig& shadow) {
-    if (!cfg.shadow || shadow.blur <= 0)
-      return {};
-    return {
-        shadow.blur + std::max(0, -shadow.offsetX),
-        shadow.blur + std::max(0, shadow.offsetX),
-        shadow.blur + std::max(0, -shadow.offsetY),
-        shadow.blur + std::max(0, shadow.offsetY),
-    };
   }
 
   BarVisualGeometry computeBarVisualGeometry(const BarConfig& cfg, const ShellConfig::ShadowConfig& shadow,
@@ -116,7 +103,7 @@ namespace {
     const bool isBottom = cfg.position == "bottom";
     const bool isRight = cfg.position == "right";
     const bool isVertical = (cfg.position == "left" || cfg.position == "right");
-    const auto sbi = computeShadowBleed(cfg, shadow);
+    const auto sbi = shell::surface_shadow::bleed(cfg.shadow, shadow);
     const float bleedLeft = static_cast<float>(sbi.left);
     const float bleedRight = static_cast<float>(sbi.right);
     const float bleedUp = static_cast<float>(sbi.up);
@@ -712,7 +699,7 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
 
   const std::int32_t mH = barConfig.marginH;
   const std::int32_t mV = barConfig.marginV;
-  const auto sb = computeShadowBleed(barConfig, m_config->config().shell.shadow);
+  const auto sb = shell::surface_shadow::bleed(barConfig.shadow, m_config->config().shell.shadow);
   const bool reserveExclusiveZone = barConfig.reserveSpace;
 
   // Compositor margins absorb the visual gap where the shadow doesn't reach.
@@ -1035,7 +1022,9 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   const float padding = static_cast<float>(instance.barConfig.padding);
   const float widgetSpacing = static_cast<float>(instance.barConfig.widgetSpacing);
   const auto& shadowConfig = m_config->config().shell.shadow;
-  const float shadowSize = instance.barConfig.shadow ? static_cast<float>(std::max(0, shadowConfig.blur)) : 0.0f;
+  const float shadowSize = shell::surface_shadow::enabled(instance.barConfig.shadow, shadowConfig)
+                               ? static_cast<float>(shadowConfig.blur)
+                               : 0.0f;
   const float shadowOffsetX = static_cast<float>(shadowConfig.offsetX);
   const float shadowOffsetY = static_cast<float>(shadowConfig.offsetY);
   const bool isBottom = instance.barConfig.position == "bottom";
@@ -1175,21 +1164,10 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   // on top and hides the shadow's opaque interior.
   if (instance.shadow != nullptr) {
     const float bgOpacity = std::clamp(instance.barConfig.backgroundOpacity, 0.0f, 1.0f);
-    const float baseShadowAlpha = std::clamp(shadowConfig.alpha, 0.0f, 1.0f);
     const float shadowX = barAreaX + shadowOffsetX;
     const float shadowY = barAreaY + shadowOffsetY;
-    RoundedRectStyle shadowStyle{
-        .fill = rgba(0.0f, 0.0f, 0.0f, baseShadowAlpha * bgOpacity),
-        .fillEnd = {},
-        .border = clearColor(),
-        .fillMode = FillMode::Solid,
-        .radius = barRadii,
-        .softness = shadowSize,
-        .borderWidth = 0.0f,
-        .outerShadow = true,
-        .shadowCutoutOffsetX = shadowOffsetX,
-        .shadowCutoutOffsetY = shadowOffsetY,
-    };
+    RoundedRectStyle shadowStyle =
+        shell::surface_shadow::style(shadowConfig, bgOpacity, shell::surface_shadow::Shape{.radius = barRadii});
     const bool panelShadowExclusion = !isVertical && !isBottom && instance.attachedPanelGeometry.has_value() &&
                                       instance.attachedPanelGeometry->width > 0.0f &&
                                       instance.attachedPanelGeometry->height > 0.0f;
@@ -1289,7 +1267,7 @@ void Bar::updateWidgets(BarInstance& instance) {
   const float marginH = static_cast<float>(instance.barConfig.marginH);
   const float marginV = static_cast<float>(instance.barConfig.marginV);
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
-  const auto sbi = computeShadowBleed(instance.barConfig, m_config->config().shell.shadow);
+  const auto sbi = shell::surface_shadow::bleed(instance.barConfig.shadow, m_config->config().shell.shadow);
   const float bleedLeft = static_cast<float>(sbi.left);
   const float bleedRight = static_cast<float>(sbi.right);
   const float bleedUp = static_cast<float>(sbi.up);
@@ -1346,7 +1324,7 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
   const float marginH = static_cast<float>(instance.barConfig.marginH);
   const float marginV = static_cast<float>(instance.barConfig.marginV);
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
-  const auto sbi = computeShadowBleed(instance.barConfig, m_config->config().shell.shadow);
+  const auto sbi = shell::surface_shadow::bleed(instance.barConfig.shadow, m_config->config().shell.shadow);
   const float bleedLeft = static_cast<float>(sbi.left);
   const float bleedRight = static_cast<float>(sbi.right);
   const float bleedUp = static_cast<float>(sbi.up);
