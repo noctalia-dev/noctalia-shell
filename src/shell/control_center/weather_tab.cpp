@@ -619,7 +619,8 @@ void WeatherTab::sync(Renderer& renderer) {
   m_currentDescLabel->setText(WeatherService::descriptionForCode(snapshot.current.weatherCode));
   m_updatedLabel->setText(snapshot.locationName.empty() ? "Current location" : snapshot.locationName);
   m_updatedLabel->setVisible(showLocation);
-  const std::string status = m_weather->loading() ? "Refreshing weather..." : m_weather->error();
+  const std::string status = m_weather->loading() ? std::string("Refreshing weather...")
+                                                  : (snapshot.valid ? std::string{} : m_weather->error());
   m_statusLabel->setText(status);
   m_statusLabel->setColor(roleColor(m_weather->error().empty() ? ColorRole::OnSurfaceVariant : ColorRole::Error));
   m_statusLabel->setVisible(!status.empty());
