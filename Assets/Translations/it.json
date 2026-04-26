@@ -472,7 +472,7 @@
     "local": "Locale",
     "location": "Posizione",
     "lock": "Blocca",
-    "logout": "Disconnetti sessione",
+    "logout": "Termina sessione",
     "look": "Aspetto",
     "margins": "Margini",
     "media": "Media",
@@ -1224,7 +1224,7 @@
       "language-select-auto-detect": "Automatico",
       "language-select-description": "Seleziona la lingua usata nell’interfaccia dell’applicazione.",
       "language-select-label": "Lingua applicazione",
-      "launch-setup-wizard": "Guidata di configurazione",
+      "launch-setup-wizard": "Configurazione guidata",
       "profile-desc": "Modifica i dettagli utente e l’avatar.",
       "profile-picture-description": "La tua immagine profilo mostrata in tutta l’interfaccia.",
       "profile-picture-label": "Immagine profilo",
@@ -1453,7 +1453,7 @@
       "show-hibernate-label": "Mostra ibernazione",
       "show-session-buttons-description": "Consenti accesso alle impostazioni di alimentazione dalla schermata blocco.",
       "show-session-buttons-label": "Controlli alimentazione",
-      "title": "Schermata blocco"
+      "title": "Schermata di blocco"
     },
     "network": {
       "bluetooth-description": "Attiva la gestione Bluetooth.",
@@ -1882,10 +1882,10 @@
       "select-prompt": "Seleziona uno sfondo qui sotto",
       "subheader": "Imposta l’atmosfera con uno sfondo bellissimo."
     },
-    "welcome": "Benvenuto",
+    "welcome": "Ti diamo il benvenuto",
     "welcome-note": "Solo poche basi per iniziare: tutte le opzioni sono nelle impostazioni",
     "welcome-subtitle": "Rendiamo il tuo desktop davvero tuo",
-    "welcome-title": "Benvenuto in Noctalia!"
+    "welcome-title": "Ti diamo il benvenuto in Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1896,9 +1896,9 @@
     "scaling-percentage": "{percentage}%",
     "signal-strength": "{signal}%",
     "unknown-app": "App sconosciuta",
-    "uptime": "Attivo da: {uptime}",
+    "uptime": "Acceso da: {uptime}",
     "user-requested": "Richiesto dall'utente",
-    "welcome-back": "Bentornato,",
+    "welcome-back": "Ciao,",
     "widget-settings-title": "Impostazioni {widget}"
   },
   "system-monitor": {
@@ -1918,7 +1918,7 @@
       "title": "Modalità aereo"
     },
     "battery": {
-      "critical": "Batteria critica",
+      "critical": "Batteria molto scarica",
       "critical-desc": "Batteria al {percent}% — collega subito il caricatore",
       "low": "Batteria scarica",
       "low-desc": "Batteria al {percent}% — collega il caricatore"
@@ -2147,7 +2147,7 @@
     "drizzle": "Pioviggine",
     "fog": "Nebbia",
     "mainly-clear": "Prevalentemente sereno",
-    "overcast": "Coperto",
+    "overcast": "Nuvoloso",
     "partly-cloudy": "Parzialmente nuvoloso",
     "rain-showers": "Rovesci di pioggia",
     "snow": "Neve",
