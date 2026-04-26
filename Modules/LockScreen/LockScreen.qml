@@ -105,7 +105,7 @@ Loader {
             Item {
               Item {
                 id: batteryIndicator
-                readonly property var battery: (BatteryService.peripheralBatteries.length > 0 && (BatteryService.isCriticalBattery(BatteryService.peripheralBatteries[0]) || BatteryService.isLowBattery(BatteryService.peripheralBatteries[0]))) ? BatteryService.peripheralBatteries[0] : BatteryService.primaryDevice
+                readonly property var battery: BatteryService.peripheralBatteries.find(b => BatteryService.isCriticalBattery(b)) || BatteryService.peripheralBatteries.find(b => BatteryService.isLowBattery(b)) || BatteryService.primaryDevice;
                 readonly property bool ext_battery: BatteryService.isPeripheral(battery)
                 readonly property bool isReady: BatteryService.isDeviceReady(battery)
                 readonly property real percent: isReady ? BatteryService.getPercentage(battery) : -1
