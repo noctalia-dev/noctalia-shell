@@ -26,12 +26,9 @@ Singleton {
                                                                   numeric: true
                                                                 }));
 
-    if (UPower.displayDevice.isPresent && physicalBatteries.length > 0) {
-      // displayDevice only makes sense there is > 1 battery.
-      // Prefer primary physical battery because DisplayDevice doesn't have infornation we use (BatteryHealth) - and possibly stuff (e.g: Vendor/Model)
-      return (physicalBatteries.length > 1) ? [UPower.displayDevice].concat(physicalBatteries) : physicalBatteries;
-    }
-    return physicalBatteries;
+    // displayDevice only makes sense there is > 1 battery.
+    // Prefer primary physical battery because DisplayDevice doesn't have infornation we use (BatteryHealth) - and possibly stuff (e.g: Vendor/Model)
+    return (UPower.displayDevice.isPresent && physicalBatteries.length > 1) ? [UPower.displayDevice].concat(physicalBatteries) : physicalBatteries;
   }
   // Peripherals are sorted by battery percentage asending to prioritize showing low batteries first in the UI when there are multiple.
   readonly property var peripheralBatteries: upowerInstalled ? (UPower.devices?.values ?? []).filter(d => d && isPeripheral(d) && isDeviceReady(d)).sort((x, y) => (x.percentage || 0) - (y.percentage || 0)) : []
@@ -126,7 +123,7 @@ Singleton {
       return -1;
     }
     return Math.round(device.percentage * 100);
-}
+  }
 
   function isCharging(device) {
     // Detect if the selected device is charging.
