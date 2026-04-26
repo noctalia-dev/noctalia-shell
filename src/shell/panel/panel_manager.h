@@ -91,7 +91,7 @@ private:
   void destroyPanel();
   void applyAttachedReveal(float progress);
   void publishAttachedPanelGeometry(float revealProgress);
-  // Restyle the attached-panel decoration nodes (bg fill, drop shadow)
+  // Restyle the attached-panel decoration nodes (bg fill, drop shadow, contact shadow)
   // using m_attachedBackgroundOpacity / m_attachedBarPosition. Geometry/positions are not
   // touched. Safe to call any time after buildScene has run.
   void applyAttachedDecorationStyle();
@@ -117,6 +117,7 @@ private:
   Node* m_attachedRevealClipNode = nullptr;
   Node* m_attachedRevealContentNode = nullptr;
   RectNode* m_panelShadowNode = nullptr;
+  RectNode* m_panelContactShadowNode = nullptr;
   InputDispatcher m_inputDispatcher;
 
   std::unordered_map<std::string, std::unique_ptr<Panel>> m_panels;

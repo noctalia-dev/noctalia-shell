@@ -320,21 +320,19 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
       m_layerSurface = nullptr;
 
       // Geometry passed to the bar for shadow exclusion. The visible rect extends past
-      // the body by `cornerRadius` along the cross axis to cover the concave-corner notches,
-      // and toward the bar so the two attached surfaces read as one merged shape.
-      const float mainMergeOutset = static_cast<float>(mainBleedAway + kAttachedPanelBarOverlap);
+      // the body by `cornerRadius` along the cross axis to cover the concave-corner notches.
       AttachedPanelGeometry attachedGeometry;
       attachedGeometry.cornerRadius = cornerRadius;
       if (barIsVertical) {
-        attachedGeometry.x = static_cast<float>(visualX) - (barIsLeft ? mainMergeOutset : 0.0f);
+        attachedGeometry.x = static_cast<float>(visualX);
         attachedGeometry.y = static_cast<float>(visualY) - cornerRadius;
-        attachedGeometry.width = static_cast<float>(panelWidth) + mainMergeOutset;
+        attachedGeometry.width = static_cast<float>(panelWidth);
         attachedGeometry.height = static_cast<float>(panelHeight) + cornerRadius * 2.0f;
       } else {
         attachedGeometry.x = static_cast<float>(visualX) - cornerRadius;
-        attachedGeometry.y = static_cast<float>(visualY) - (barIsBottom ? 0.0f : mainMergeOutset);
+        attachedGeometry.y = static_cast<float>(visualY);
         attachedGeometry.width = static_cast<float>(panelWidth) + cornerRadius * 2.0f;
-        attachedGeometry.height = static_cast<float>(panelHeight) + mainMergeOutset;
+        attachedGeometry.height = static_cast<float>(panelHeight);
       }
       m_attachedPanelGeometry = attachedGeometry;
 
@@ -489,6 +487,7 @@ void PanelManager::destroyPanel() {
   m_attachedRevealClipNode = nullptr;
   m_attachedRevealContentNode = nullptr;
   m_panelShadowNode = nullptr;
+  m_panelContactShadowNode = nullptr;
   m_sceneRoot.reset();
   m_surface.reset();
   m_layerSurface = nullptr;
@@ -846,7 +845,6 @@ void PanelManager::applyAttachedDecorationStyle() {
 
   if (m_panelShadowNode != nullptr && m_config != nullptr) {
     const auto& shadowConfig = m_config->config().shell.shadow;
-    const auto shadowBleed = shell::surface_shadow::bleed(true, shadowConfig);
     const RoundedRectStyle shadowStyle =
         shell::surface_shadow::style(shadowConfig, m_attachedBackgroundOpacity,
                                      shell::surface_shadow::Shape{
@@ -854,36 +852,30 @@ void PanelManager::applyAttachedDecorationStyle() {
                                          .logicalInset = attached_panel::logicalInset(m_attachedBarPosition, radius),
                                          .radius = Radii{radius, radius, radius, radius},
                                      });
-    RoundedRectStyle mergedShadowStyle = shadowStyle;
-    const float panelW = m_panelVisualWidth > 0 ? static_cast<float>(m_panelVisualWidth) : 0.0f;
-    const float panelH = m_panelVisualHeight > 0 ? static_cast<float>(m_panelVisualHeight) : 0.0f;
-    if (panelW > 0.0f && panelH > 0.0f) {
-      const bool barIsBottom = m_attachedBarPosition == "bottom";
-      const bool barIsLeft = m_attachedBarPosition == "left";
-      const bool barIsRight = m_attachedBarPosition == "right";
-      const bool barIsVertical = barIsLeft || barIsRight;
-      const float bgX = barIsVertical ? static_cast<float>(m_panelInsetX) : static_cast<float>(m_panelInsetX) - radius;
-      const float bgY = barIsVertical ? static_cast<float>(m_panelInsetY) - radius : static_cast<float>(m_panelInsetY);
-      const float bgW = barIsVertical ? panelW : panelW + radius * 2.0f;
-      const float bgH = barIsVertical ? panelH + radius * 2.0f : panelH;
-      const float strip =
-          static_cast<float>(std::max(1, barIsVertical ? (barIsLeft ? shadowBleed.left : shadowBleed.right)
-                                                       : (barIsBottom ? shadowBleed.down : shadowBleed.up)));
-      const float stripW = barIsVertical ? std::min(strip, panelW) : panelW;
-      const float stripH = barIsVertical ? panelH : std::min(strip, panelH);
-      const float stripX = barIsVertical ? (barIsRight ? bgX + bgW - stripW : bgX) : static_cast<float>(m_panelInsetX);
-      const float stripY = barIsVertical ? static_cast<float>(m_panelInsetY) : (barIsBottom ? bgY + bgH - stripH : bgY);
+    m_panelShadowNode->setStyle(shadowStyle);
+  }
 
-      mergedShadowStyle.shadowExclusion = true;
-      mergedShadowStyle.shadowExclusionOffsetX = bgX + static_cast<float>(shadowConfig.offsetX) - stripX;
-      mergedShadowStyle.shadowExclusionOffsetY = bgY + static_cast<float>(shadowConfig.offsetY) - stripY;
-      mergedShadowStyle.shadowExclusionWidth = stripW;
-      mergedShadowStyle.shadowExclusionHeight = stripH;
-      mergedShadowStyle.shadowExclusionCorners = CornerShapes{};
-      mergedShadowStyle.shadowExclusionLogicalInset = RectInsets{};
-      mergedShadowStyle.shadowExclusionRadius = Radii{};
-    }
-    m_panelShadowNode->setStyle(mergedShadowStyle);
+  if (m_panelContactShadowNode != nullptr) {
+    const float contactAlpha = 0.16f * std::clamp(m_attachedBackgroundOpacity, 0.0f, 1.0f);
+    const bool barIsBottom = m_attachedBarPosition == "bottom";
+    const bool barIsRight = m_attachedBarPosition == "right";
+    const bool barIsVertical = m_attachedBarPosition == "left" || m_attachedBarPosition == "right";
+    // Gradient runs perpendicular to the bar edge, dark next to the bar, transparent toward
+    // the panel interior. For top/left: dark at start. For bottom/right: dark at end.
+    const bool darkAtStart = !(barIsBottom || barIsRight);
+    const RoundedRectStyle contactStyle{
+        .fill = darkAtStart ? rgba(0.0f, 0.0f, 0.0f, contactAlpha) : rgba(0.0f, 0.0f, 0.0f, 0.0f),
+        .fillEnd = darkAtStart ? rgba(0.0f, 0.0f, 0.0f, 0.0f) : rgba(0.0f, 0.0f, 0.0f, contactAlpha),
+        .border = clearColor(),
+        .fillMode = FillMode::LinearGradient,
+        .gradientDirection = barIsVertical ? GradientDirection::Horizontal : GradientDirection::Vertical,
+        .corners = attached_panel::cornerShapes(m_attachedBarPosition),
+        .logicalInset = attached_panel::logicalInset(m_attachedBarPosition, radius),
+        .radius = attached_panel::cornerRadii(m_attachedBarPosition, radius),
+        .softness = 1.0f,
+        .borderWidth = 0.0f,
+    };
+    m_panelContactShadowNode->setStyle(contactStyle);
   }
 }
 
@@ -952,6 +944,11 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
         // Fill (opacity-dependent) is applied via applyAttachedDecorationStyle() below.
       }
       m_bgNode = sceneParent->addChild(std::move(bg));
+    }
+
+    if (hasDecoration && m_attachedToBar) {
+      auto contactShadow = std::make_unique<RectNode>();
+      m_panelContactShadowNode = static_cast<RectNode*>(sceneParent->addChild(std::move(contactShadow)));
     }
 
     // Create panel content inside a wrapper node for staggered fade-in
@@ -1045,7 +1042,33 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     m_bgNode->setSize(bgW, bgH);
   }
 
-  // Re-apply opacity-dependent styling for bg/shadow. Cheap and ensures
+  if (m_panelContactShadowNode != nullptr) {
+    constexpr float kContactShadowBaseThickness = 16.0f;
+    const float scale = m_activePanel->contentScale();
+    const float contactThickness =
+        std::min(std::max(kContactShadowBaseThickness * scale, attachedRadius * 2.0f), barIsVertical ? panelW : panelH);
+    const bool barIsBottom = m_attachedBarPosition == "bottom";
+    const bool barIsRight = m_attachedBarPosition == "right";
+    float contactX = bgX;
+    float contactY = bgY;
+    float contactW = bgW;
+    float contactH = bgH;
+    if (barIsVertical) {
+      contactW = contactThickness;
+      if (barIsRight) {
+        contactX = bgX + bgW - contactThickness;
+      }
+    } else {
+      contactH = contactThickness;
+      if (barIsBottom) {
+        contactY = bgY + bgH - contactThickness;
+      }
+    }
+    m_panelContactShadowNode->setPosition(contactX, contactY);
+    m_panelContactShadowNode->setSize(contactW, contactH);
+  }
+
+  // Re-apply opacity-dependent styling for bg/shadow/contact-shadow. Cheap and ensures
   // these stay in sync with m_attachedBackgroundOpacity if the bar config changed and
   // we got here via a buildScene path rather than refreshAttachedFromBarConfig().
   if (m_attachedToBar) {
