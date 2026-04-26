@@ -390,6 +390,12 @@ void SettingsWindow::destroyWindow() {
   m_creatingBarName.clear();
   m_renamingBarName.clear();
   m_pendingDeleteBarName.clear();
+  m_creatingMonitorOverrideBarName.clear();
+  m_creatingMonitorOverrideMatch.clear();
+  m_renamingMonitorOverrideBarName.clear();
+  m_renamingMonitorOverrideMatch.clear();
+  m_pendingDeleteMonitorOverrideBarName.clear();
+  m_pendingDeleteMonitorOverrideMatch.clear();
   m_pendingResetPageScope.clear();
 }
 
@@ -716,6 +722,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         m_creatingBarName.clear();
         m_renamingBarName.clear();
         m_pendingDeleteBarName.clear();
+        m_creatingMonitorOverrideBarName.clear();
+        m_creatingMonitorOverrideMatch.clear();
+        m_renamingMonitorOverrideBarName.clear();
+        m_renamingMonitorOverrideMatch.clear();
+        m_pendingDeleteMonitorOverrideBarName.clear();
+        m_pendingDeleteMonitorOverrideMatch.clear();
         m_contentScrollState.offset = 0.0f;
         m_statusMessage.clear();
         m_statusIsError = false;
@@ -741,6 +753,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         m_selectedMonitorOverride.clear();
         m_renamingBarName.clear();
         m_pendingDeleteBarName.clear();
+        m_creatingMonitorOverrideBarName.clear();
+        m_creatingMonitorOverrideMatch.clear();
+        m_renamingMonitorOverrideBarName.clear();
+        m_renamingMonitorOverrideMatch.clear();
+        m_pendingDeleteMonitorOverrideBarName.clear();
+        m_pendingDeleteMonitorOverrideMatch.clear();
         m_contentScrollState.offset = 0.0f;
         m_statusMessage.clear();
         m_statusIsError = false;
@@ -767,6 +785,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         }
         m_renamingBarName.clear();
         m_pendingDeleteBarName.clear();
+        m_creatingMonitorOverrideBarName.clear();
+        m_creatingMonitorOverrideMatch.clear();
+        m_renamingMonitorOverrideBarName.clear();
+        m_renamingMonitorOverrideMatch.clear();
+        m_pendingDeleteMonitorOverrideBarName.clear();
+        m_pendingDeleteMonitorOverrideMatch.clear();
         m_statusMessage.clear();
         m_statusIsError = false;
         m_pendingResetPageScope.clear();
@@ -774,6 +798,88 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         return;
       }
       m_statusMessage = i18n::tr("settings.delete-bar-error");
+      m_statusIsError = true;
+      requestRebuild();
+    });
+  };
+
+  const auto createMonitorOverride = [this, requestRebuild](std::string barName, std::string match) {
+    DeferredCall::callLater([this, barName = std::move(barName), match = std::move(match), requestRebuild]() {
+      if (m_config == nullptr) {
+        return;
+      }
+      if (m_config->createMonitorOverride(barName, match)) {
+        m_selectedSection = "bar";
+        m_selectedBarName = barName;
+        m_selectedMonitorOverride = match;
+        m_creatingMonitorOverrideBarName.clear();
+        m_creatingMonitorOverrideMatch.clear();
+        m_renamingMonitorOverrideBarName.clear();
+        m_renamingMonitorOverrideMatch.clear();
+        m_pendingDeleteMonitorOverrideBarName.clear();
+        m_pendingDeleteMonitorOverrideMatch.clear();
+        m_contentScrollState.offset = 0.0f;
+        m_statusMessage.clear();
+        m_statusIsError = false;
+        m_pendingResetPageScope.clear();
+        requestRebuild();
+        return;
+      }
+      m_statusMessage = i18n::tr("settings.create-monitor-override-error");
+      m_statusIsError = true;
+      requestRebuild();
+    });
+  };
+
+  const auto renameMonitorOverride = [this, requestRebuild](std::string barName, std::string oldMatch,
+                                                            std::string newMatch) {
+    DeferredCall::callLater([this, barName = std::move(barName), oldMatch = std::move(oldMatch),
+                             newMatch = std::move(newMatch), requestRebuild]() {
+      if (m_config == nullptr) {
+        return;
+      }
+      if (m_config->renameMonitorOverride(barName, oldMatch, newMatch)) {
+        if (m_selectedBarName == barName && m_selectedMonitorOverride == oldMatch) {
+          m_selectedMonitorOverride = newMatch;
+        }
+        m_renamingMonitorOverrideBarName.clear();
+        m_renamingMonitorOverrideMatch.clear();
+        m_pendingDeleteMonitorOverrideBarName.clear();
+        m_pendingDeleteMonitorOverrideMatch.clear();
+        m_contentScrollState.offset = 0.0f;
+        m_statusMessage.clear();
+        m_statusIsError = false;
+        m_pendingResetPageScope.clear();
+        requestRebuild();
+        return;
+      }
+      m_statusMessage = i18n::tr("settings.rename-monitor-override-error");
+      m_statusIsError = true;
+      requestRebuild();
+    });
+  };
+
+  const auto deleteMonitorOverride = [this, requestRebuild](std::string barName, std::string match) {
+    DeferredCall::callLater([this, barName = std::move(barName), match = std::move(match), requestRebuild]() {
+      if (m_config == nullptr) {
+        return;
+      }
+      if (m_config->deleteMonitorOverride(barName, match)) {
+        if (m_selectedBarName == barName && m_selectedMonitorOverride == match) {
+          m_selectedMonitorOverride.clear();
+          m_contentScrollState.offset = 0.0f;
+        }
+        m_renamingMonitorOverrideBarName.clear();
+        m_renamingMonitorOverrideMatch.clear();
+        m_pendingDeleteMonitorOverrideBarName.clear();
+        m_pendingDeleteMonitorOverrideMatch.clear();
+        m_statusMessage.clear();
+        m_statusIsError = false;
+        m_pendingResetPageScope.clear();
+        requestRebuild();
+        return;
+      }
+      m_statusMessage = i18n::tr("settings.delete-monitor-override-error");
       m_statusIsError = true;
       requestRebuild();
     });
@@ -928,6 +1034,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       m_creatingBarName.clear();
       m_renamingBarName.clear();
       m_pendingDeleteBarName.clear();
+      m_creatingMonitorOverrideBarName.clear();
+      m_creatingMonitorOverrideMatch.clear();
+      m_renamingMonitorOverrideBarName.clear();
+      m_renamingMonitorOverrideMatch.clear();
+      m_pendingDeleteMonitorOverrideBarName.clear();
+      m_pendingDeleteMonitorOverrideMatch.clear();
       m_pendingResetPageScope.clear();
       requestRebuild();
     });
@@ -961,6 +1073,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       m_creatingBarName.clear();
       m_renamingBarName.clear();
       m_pendingDeleteBarName.clear();
+      m_creatingMonitorOverrideBarName.clear();
+      m_creatingMonitorOverrideMatch.clear();
+      m_renamingMonitorOverrideBarName.clear();
+      m_renamingMonitorOverrideMatch.clear();
+      m_pendingDeleteMonitorOverrideBarName.clear();
+      m_pendingDeleteMonitorOverrideMatch.clear();
       m_pendingResetPageScope.clear();
       requestRebuild();
     });
@@ -997,10 +1115,119 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
           m_creatingBarName.clear();
           m_renamingBarName.clear();
           m_pendingDeleteBarName.clear();
+          m_creatingMonitorOverrideBarName.clear();
+          m_creatingMonitorOverrideMatch.clear();
+          m_renamingMonitorOverrideBarName.clear();
+          m_renamingMonitorOverrideMatch.clear();
+          m_pendingDeleteMonitorOverrideBarName.clear();
+          m_pendingDeleteMonitorOverrideMatch.clear();
           m_pendingResetPageScope.clear();
           requestRebuild();
         });
         sidebar->addChild(std::move(ovrItem));
+      }
+
+      if (m_selectedSection == "bar" && m_selectedBarName == barName) {
+        auto newMonitorBtn = std::make_unique<Button>();
+        newMonitorBtn->setText(i18n::tr("settings.new-monitor-override"));
+        newMonitorBtn->setGlyph("add");
+        newMonitorBtn->setVariant(ButtonVariant::Ghost);
+        newMonitorBtn->setContentAlign(ButtonContentAlign::Start);
+        newMonitorBtn->setFontSize(Style::fontSizeCaption * scale);
+        newMonitorBtn->setGlyphSize(Style::fontSizeCaption * scale);
+        newMonitorBtn->setMinHeight(Style::controlHeightSm * scale);
+        newMonitorBtn->setPadding(Style::spaceXs * scale, Style::spaceMd * scale, Style::spaceXs * scale,
+                                  Style::spaceLg * scale);
+        newMonitorBtn->setRadius(Style::radiusMd * scale);
+        newMonitorBtn->setOnClick([this, barName, requestRebuild]() {
+          m_creatingMonitorOverrideBarName = barName;
+          m_creatingMonitorOverrideMatch.clear();
+          m_renamingMonitorOverrideBarName.clear();
+          m_renamingMonitorOverrideMatch.clear();
+          m_pendingDeleteMonitorOverrideBarName.clear();
+          m_pendingDeleteMonitorOverrideMatch.clear();
+          m_creatingBarName.clear();
+          m_renamingBarName.clear();
+          m_pendingDeleteBarName.clear();
+          m_pendingResetPageScope.clear();
+          requestRebuild();
+        });
+        sidebar->addChild(std::move(newMonitorBtn));
+
+        if (m_creatingMonitorOverrideBarName == barName) {
+          auto createPanel = std::make_unique<Flex>();
+          createPanel->setDirection(FlexDirection::Vertical);
+          createPanel->setAlign(FlexAlign::Stretch);
+          createPanel->setGap(Style::spaceXs * scale);
+          createPanel->setPadding(0.0f, Style::spaceXs * scale, 0.0f, Style::spaceLg * scale);
+
+          auto input = std::make_unique<Input>();
+          input->setValue(m_creatingMonitorOverrideMatch);
+          input->setPlaceholder(i18n::tr("settings.monitor-match-placeholder"));
+          input->setFontSize(Style::fontSizeCaption * scale);
+          input->setControlHeight(Style::controlHeightSm * scale);
+          input->setHorizontalPadding(Style::spaceXs * scale);
+          input->setSize(112.0f * scale, Style::controlHeightSm * scale);
+          auto* inputPtr = input.get();
+
+          std::vector<std::string> existingMatches;
+          existingMatches.reserve(bar->monitorOverrides.size());
+          for (const auto& monitorOverride : bar->monitorOverrides) {
+            existingMatches.push_back(monitorOverride.match);
+          }
+
+          auto doCreate = [barName, createMonitorOverride, inputPtr,
+                           existingMatches = std::move(existingMatches)](std::string rawMatch) {
+            const std::string match = normalizedConfigId(rawMatch);
+            if (match.empty() ||
+                std::find(existingMatches.begin(), existingMatches.end(), match) != existingMatches.end()) {
+              inputPtr->setInvalid(true);
+              return;
+            }
+            inputPtr->setInvalid(false);
+            createMonitorOverride(barName, match);
+          };
+
+          input->setOnChange([this, inputPtr](const std::string& value) {
+            m_creatingMonitorOverrideMatch = value;
+            inputPtr->setInvalid(false);
+          });
+          input->setOnSubmit([doCreate](const std::string& text) mutable { doCreate(text); });
+
+          auto actions = std::make_unique<Flex>();
+          actions->setDirection(FlexDirection::Horizontal);
+          actions->setAlign(FlexAlign::Center);
+          actions->setGap(Style::spaceXs * scale);
+
+          auto saveBtn = std::make_unique<Button>();
+          saveBtn->setText(i18n::tr("settings.create-monitor-override"));
+          saveBtn->setVariant(ButtonVariant::Default);
+          saveBtn->setFontSize(Style::fontSizeCaption * scale);
+          saveBtn->setMinHeight(Style::controlHeightSm * scale);
+          saveBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+          saveBtn->setRadius(Style::radiusSm * scale);
+          saveBtn->setOnClick([doCreate, inputPtr]() mutable { doCreate(inputPtr->value()); });
+          actions->addChild(std::move(saveBtn));
+
+          auto cancelBtn = std::make_unique<Button>();
+          cancelBtn->setGlyph("close");
+          cancelBtn->setVariant(ButtonVariant::Ghost);
+          cancelBtn->setGlyphSize(Style::fontSizeCaption * scale);
+          cancelBtn->setMinWidth(Style::controlHeightSm * scale);
+          cancelBtn->setMinHeight(Style::controlHeightSm * scale);
+          cancelBtn->setPadding(Style::spaceXs * scale);
+          cancelBtn->setRadius(Style::radiusSm * scale);
+          cancelBtn->setOnClick([this, requestRebuild]() {
+            m_creatingMonitorOverrideBarName.clear();
+            m_creatingMonitorOverrideMatch.clear();
+            requestRebuild();
+          });
+          actions->addChild(std::move(cancelBtn));
+
+          createPanel->addChild(std::move(input));
+          createPanel->addChild(std::move(actions));
+          sidebar->addChild(std::move(createPanel));
+        }
       }
     }
   }
@@ -1019,6 +1246,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     m_creatingBarName = nextAvailableBarName(cfg);
     m_renamingBarName.clear();
     m_pendingDeleteBarName.clear();
+    m_creatingMonitorOverrideBarName.clear();
+    m_creatingMonitorOverrideMatch.clear();
+    m_renamingMonitorOverrideBarName.clear();
+    m_renamingMonitorOverrideMatch.clear();
+    m_pendingDeleteMonitorOverrideBarName.clear();
+    m_pendingDeleteMonitorOverrideMatch.clear();
     m_pendingResetPageScope.clear();
     requestRebuild();
   });
@@ -1588,6 +1821,188 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   };
 
   if (m_searchQuery.empty() && m_selectedSection == "bar" && selectedBar != nullptr &&
+      selectedMonitorOverride != nullptr && m_config != nullptr &&
+      m_config->isOverrideOnlyMonitorOverride(selectedBar->name, selectedMonitorOverride->match)) {
+    const std::string barName = selectedBar->name;
+    const std::string match = selectedMonitorOverride->match;
+    const bool pendingDelete =
+        m_pendingDeleteMonitorOverrideBarName == barName && m_pendingDeleteMonitorOverrideMatch == match;
+    const bool renaming = m_renamingMonitorOverrideBarName == barName && m_renamingMonitorOverrideMatch == match;
+    auto* management = makeSection(i18n::tr("settings.monitor-override-management"));
+
+    if (renaming) {
+      auto renameRow = std::make_unique<Flex>();
+      renameRow->setDirection(FlexDirection::Horizontal);
+      renameRow->setAlign(FlexAlign::Center);
+      renameRow->setGap(Style::spaceXs * scale);
+
+      auto input = std::make_unique<Input>();
+      input->setValue(match);
+      input->setPlaceholder(i18n::tr("settings.monitor-match-placeholder"));
+      input->setFontSize(Style::fontSizeBody * scale);
+      input->setControlHeight(Style::controlHeight * scale);
+      input->setHorizontalPadding(Style::spaceSm * scale);
+      input->setSize(190.0f * scale, Style::controlHeight * scale);
+      input->setFlexGrow(1.0f);
+      auto* inputPtr = input.get();
+
+      std::vector<std::string> existingMatches;
+      existingMatches.reserve(selectedBar->monitorOverrides.size());
+      for (const auto& monitorOverride : selectedBar->monitorOverrides) {
+        if (monitorOverride.match != match) {
+          existingMatches.push_back(monitorOverride.match);
+        }
+      }
+
+      auto doRename = [this, barName, match, renameMonitorOverride, inputPtr,
+                       existingMatches = std::move(existingMatches), requestRebuild](std::string rawMatch) {
+        const std::string newMatch = normalizedConfigId(rawMatch);
+        if (newMatch == match) {
+          m_renamingMonitorOverrideBarName.clear();
+          m_renamingMonitorOverrideMatch.clear();
+          inputPtr->setInvalid(false);
+          requestRebuild();
+          return;
+        }
+        if (newMatch.empty() ||
+            std::find(existingMatches.begin(), existingMatches.end(), newMatch) != existingMatches.end()) {
+          inputPtr->setInvalid(true);
+          return;
+        }
+        inputPtr->setInvalid(false);
+        renameMonitorOverride(barName, match, newMatch);
+      };
+
+      input->setOnChange([inputPtr](const std::string& /*value*/) { inputPtr->setInvalid(false); });
+      input->setOnSubmit([doRename](const std::string& text) mutable { doRename(text); });
+
+      auto saveBtn = std::make_unique<Button>();
+      saveBtn->setText(i18n::tr("settings.rename-monitor-override-save"));
+      saveBtn->setVariant(ButtonVariant::Default);
+      saveBtn->setFontSize(Style::fontSizeCaption * scale);
+      saveBtn->setMinHeight(Style::controlHeightSm * scale);
+      saveBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      saveBtn->setRadius(Style::radiusSm * scale);
+      saveBtn->setOnClick([doRename, inputPtr]() mutable { doRename(inputPtr->value()); });
+
+      auto cancelBtn = std::make_unique<Button>();
+      cancelBtn->setText(i18n::tr("common.cancel"));
+      cancelBtn->setVariant(ButtonVariant::Ghost);
+      cancelBtn->setFontSize(Style::fontSizeCaption * scale);
+      cancelBtn->setMinHeight(Style::controlHeightSm * scale);
+      cancelBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      cancelBtn->setRadius(Style::radiusSm * scale);
+      cancelBtn->setOnClick([this, requestRebuild]() {
+        m_renamingMonitorOverrideBarName.clear();
+        m_renamingMonitorOverrideMatch.clear();
+        requestRebuild();
+      });
+
+      renameRow->addChild(std::move(input));
+      renameRow->addChild(std::move(saveBtn));
+      renameRow->addChild(std::move(cancelBtn));
+      management->addChild(std::move(renameRow));
+    } else if (pendingDelete) {
+      auto confirmPanel = std::make_unique<Flex>();
+      confirmPanel->setDirection(FlexDirection::Vertical);
+      confirmPanel->setAlign(FlexAlign::Stretch);
+      confirmPanel->setGap(Style::spaceXs * scale);
+      confirmPanel->setPadding(Style::spaceSm * scale);
+      confirmPanel->setRadius(Style::radiusSm * scale);
+      confirmPanel->setFill(roleColor(ColorRole::Error, 0.10f));
+      confirmPanel->setBorder(roleColor(ColorRole::Error, 0.35f), Style::borderWidth);
+
+      confirmPanel->addChild(makeLabel(i18n::tr("settings.delete-monitor-override-confirm-title", "name", match),
+                                       Style::fontSizeBody * scale, roleColor(ColorRole::Error), true));
+      confirmPanel->addChild(makeLabel(i18n::tr("settings.delete-monitor-override-confirm-desc"),
+                                       Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false));
+
+      auto confirmRow = std::make_unique<Flex>();
+      confirmRow->setDirection(FlexDirection::Horizontal);
+      confirmRow->setAlign(FlexAlign::Center);
+      confirmRow->setGap(Style::spaceSm * scale);
+
+      auto confirmSpacer = std::make_unique<Flex>();
+      confirmSpacer->setFlexGrow(1.0f);
+      confirmRow->addChild(std::move(confirmSpacer));
+
+      auto cancelBtn = std::make_unique<Button>();
+      cancelBtn->setText(i18n::tr("common.cancel"));
+      cancelBtn->setVariant(ButtonVariant::Ghost);
+      cancelBtn->setFontSize(Style::fontSizeCaption * scale);
+      cancelBtn->setMinHeight(Style::controlHeightSm * scale);
+      cancelBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      cancelBtn->setRadius(Style::radiusSm * scale);
+      cancelBtn->setOnClick([this, requestRebuild]() {
+        m_pendingDeleteMonitorOverrideBarName.clear();
+        m_pendingDeleteMonitorOverrideMatch.clear();
+        requestRebuild();
+      });
+      confirmRow->addChild(std::move(cancelBtn));
+
+      auto confirmBtn = std::make_unique<Button>();
+      confirmBtn->setGlyph("trash");
+      confirmBtn->setText(i18n::tr("settings.delete-monitor-override"));
+      confirmBtn->setVariant(ButtonVariant::Destructive);
+      confirmBtn->setFontSize(Style::fontSizeCaption * scale);
+      confirmBtn->setGlyphSize(Style::fontSizeCaption * scale);
+      confirmBtn->setMinHeight(Style::controlHeightSm * scale);
+      confirmBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      confirmBtn->setRadius(Style::radiusSm * scale);
+      confirmBtn->setOnClick([deleteMonitorOverride, barName, match]() { deleteMonitorOverride(barName, match); });
+      confirmRow->addChild(std::move(confirmBtn));
+
+      confirmPanel->addChild(std::move(confirmRow));
+      management->addChild(std::move(confirmPanel));
+    } else {
+      auto actionRow = std::make_unique<Flex>();
+      actionRow->setDirection(FlexDirection::Horizontal);
+      actionRow->setAlign(FlexAlign::Center);
+      actionRow->setGap(Style::spaceXs * scale);
+
+      auto spacer = std::make_unique<Flex>();
+      spacer->setFlexGrow(1.0f);
+      actionRow->addChild(std::move(spacer));
+
+      auto renameBtn = std::make_unique<Button>();
+      renameBtn->setText(i18n::tr("settings.rename-monitor-override"));
+      renameBtn->setVariant(ButtonVariant::Ghost);
+      renameBtn->setFontSize(Style::fontSizeCaption * scale);
+      renameBtn->setMinHeight(Style::controlHeightSm * scale);
+      renameBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      renameBtn->setRadius(Style::radiusSm * scale);
+      renameBtn->setOnClick([this, barName, match, requestRebuild]() {
+        m_renamingMonitorOverrideBarName = barName;
+        m_renamingMonitorOverrideMatch = match;
+        m_pendingDeleteMonitorOverrideBarName.clear();
+        m_pendingDeleteMonitorOverrideMatch.clear();
+        requestRebuild();
+      });
+      actionRow->addChild(std::move(renameBtn));
+
+      auto deleteBtn = std::make_unique<Button>();
+      deleteBtn->setGlyph("trash");
+      deleteBtn->setText(i18n::tr("settings.delete-monitor-override"));
+      deleteBtn->setVariant(ButtonVariant::Ghost);
+      deleteBtn->setFontSize(Style::fontSizeCaption * scale);
+      deleteBtn->setGlyphSize(Style::fontSizeCaption * scale);
+      deleteBtn->setMinHeight(Style::controlHeightSm * scale);
+      deleteBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      deleteBtn->setRadius(Style::radiusSm * scale);
+      deleteBtn->setOnClick([this, barName, match, requestRebuild]() {
+        m_pendingDeleteMonitorOverrideBarName = barName;
+        m_pendingDeleteMonitorOverrideMatch = match;
+        m_renamingMonitorOverrideBarName.clear();
+        m_renamingMonitorOverrideMatch.clear();
+        requestRebuild();
+      });
+      actionRow->addChild(std::move(deleteBtn));
+
+      management->addChild(std::move(actionRow));
+    }
+  }
+
+  if (m_searchQuery.empty() && m_selectedSection == "bar" && selectedBar != nullptr &&
       selectedMonitorOverride == nullptr && m_config != nullptr && m_config->isOverrideOnlyBar(selectedBar->name)) {
     const std::string barName = selectedBar->name;
     const bool pendingDelete = m_pendingDeleteBarName == barName;
@@ -1923,7 +2338,8 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
     if (!m_openWidgetPickerPath.empty() || !m_editingWidgetName.empty() || !m_creatingWidgetType.empty() ||
         !m_renamingWidgetName.empty() || !m_pendingDeleteWidgetName.empty() ||
         !m_pendingDeleteWidgetSettingPath.empty() || !m_creatingBarName.empty() || !m_renamingBarName.empty() ||
-        !m_pendingDeleteBarName.empty()) {
+        !m_pendingDeleteBarName.empty() || !m_creatingMonitorOverrideBarName.empty() ||
+        !m_renamingMonitorOverrideBarName.empty() || !m_pendingDeleteMonitorOverrideBarName.empty()) {
       m_openWidgetPickerPath.clear();
       m_editingWidgetName.clear();
       m_renamingWidgetName.clear();
@@ -1933,6 +2349,12 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
       m_creatingBarName.clear();
       m_renamingBarName.clear();
       m_pendingDeleteBarName.clear();
+      m_creatingMonitorOverrideBarName.clear();
+      m_creatingMonitorOverrideMatch.clear();
+      m_renamingMonitorOverrideBarName.clear();
+      m_renamingMonitorOverrideMatch.clear();
+      m_pendingDeleteMonitorOverrideBarName.clear();
+      m_pendingDeleteMonitorOverrideMatch.clear();
       m_contentScrollState.offset = 0.0f;
       requestRebuild();
       return;

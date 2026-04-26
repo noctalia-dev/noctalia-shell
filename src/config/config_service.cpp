@@ -64,6 +64,34 @@ namespace {
     return nullptr;
   }
 
+  void pruneEmptyOverrideTables(toml::table& root, const std::vector<std::string>& changedPath,
+                                std::size_t preserveDepth = 0) {
+    if (changedPath.size() < 2) {
+      return;
+    }
+
+    for (std::size_t depth = changedPath.size() - 1; depth > 0; --depth) {
+      if (preserveDepth > 0 && depth <= preserveDepth) {
+        break;
+      }
+
+      toml::table* parent = &root;
+      for (std::size_t i = 0; i + 1 < depth; ++i) {
+        parent = parent->get_as<toml::table>(changedPath[i]);
+        if (parent == nullptr) {
+          return;
+        }
+      }
+
+      auto* node = parent->get(changedPath[depth - 1]);
+      auto* table = node != nullptr ? node->as_table() : nullptr;
+      if (table == nullptr || !table->empty()) {
+        break;
+      }
+      parent->erase(changedPath[depth - 1]);
+    }
+  }
+
   std::vector<std::string> readStringArray(const toml::node& node) {
     std::vector<std::string> result;
     if (auto* arr = node.as_array()) {
@@ -500,6 +528,18 @@ bool ConfigService::canDeleteBarOverride(std::string_view name) const {
   return m_config.bars.size() > 1 && isOverrideOnlyBar(name);
 }
 
+bool ConfigService::isOverrideOnlyMonitorOverride(std::string_view barName, std::string_view match) const {
+  if (barName.empty() || match.empty() || !hasOverride({"bar", std::string(barName), "monitor", std::string(match)})) {
+    return false;
+  }
+
+  const auto barIt = m_configFileMonitorOverrideNames.find(std::string(barName));
+  if (barIt == m_configFileMonitorOverrideNames.end()) {
+    return true;
+  }
+  return !barIt->second.contains(std::string(match));
+}
+
 bool ConfigService::createBarOverride(std::string_view name) {
   if (m_overridesPath.empty() || name.empty()) {
     return false;
@@ -563,6 +603,78 @@ bool ConfigService::deleteBarOverride(std::string_view name) {
   return clearOverride({"bar", std::string(name)});
 }
 
+bool ConfigService::createMonitorOverride(std::string_view barName, std::string_view match) {
+  if (m_overridesPath.empty() || barName.empty() || match.empty()) {
+    return false;
+  }
+
+  const auto barIt = std::find_if(m_config.bars.begin(), m_config.bars.end(),
+                                  [barName](const BarConfig& bar) { return bar.name == barName; });
+  if (barIt == m_config.bars.end()) {
+    return false;
+  }
+  const auto monitorIt = std::find_if(barIt->monitorOverrides.begin(), barIt->monitorOverrides.end(),
+                                      [match](const BarMonitorOverride& ovr) { return ovr.match == match; });
+  if (monitorIt != barIt->monitorOverrides.end()) {
+    return false;
+  }
+
+  auto* barRoot = ensureTable(m_overridesTable, "bar");
+  if (barRoot == nullptr) {
+    return false;
+  }
+  auto* barTbl = ensureTable(*barRoot, barName);
+  if (barTbl == nullptr) {
+    return false;
+  }
+  auto* monitorRoot = ensureTable(*barTbl, "monitor");
+  if (monitorRoot == nullptr || monitorRoot->get(std::string(match)) != nullptr) {
+    return false;
+  }
+  if (ensureTable(*monitorRoot, match) == nullptr) {
+    return false;
+  }
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return false;
+  }
+
+  m_ownOverridesWritePending = true;
+  loadAll();
+  fireReloadCallbacks();
+  return true;
+}
+
+bool ConfigService::renameMonitorOverride(std::string_view barName, std::string_view oldMatch,
+                                          std::string_view newMatch) {
+  if (barName.empty() || oldMatch.empty() || newMatch.empty() || oldMatch == newMatch ||
+      !isOverrideOnlyMonitorOverride(barName, oldMatch)) {
+    return false;
+  }
+
+  const auto barIt = std::find_if(m_config.bars.begin(), m_config.bars.end(),
+                                  [barName](const BarConfig& bar) { return bar.name == barName; });
+  if (barIt == m_config.bars.end()) {
+    return false;
+  }
+  const auto monitorIt = std::find_if(barIt->monitorOverrides.begin(), barIt->monitorOverrides.end(),
+                                      [newMatch](const BarMonitorOverride& ovr) { return ovr.match == newMatch; });
+  if (monitorIt != barIt->monitorOverrides.end()) {
+    return false;
+  }
+
+  return renameOverrideTable({"bar", std::string(barName), "monitor", std::string(oldMatch)},
+                             {"bar", std::string(barName), "monitor", std::string(newMatch)});
+}
+
+bool ConfigService::deleteMonitorOverride(std::string_view barName, std::string_view match) {
+  if (!isOverrideOnlyMonitorOverride(barName, match)) {
+    return false;
+  }
+  return clearOverride({"bar", std::string(barName), "monitor", std::string(match)});
+}
+
 bool ConfigService::setOverride(const std::vector<std::string>& path, ConfigOverrideValue value) {
   if (m_overridesPath.empty() || path.empty()) {
     return false;
@@ -595,6 +707,13 @@ bool ConfigService::clearOverride(const std::vector<std::string>& path) {
     return false;
   }
 
+  std::size_t preserveDepth = 0;
+  if (path.size() > 4 && path[0] == "bar" && path[2] == "monitor" && isOverrideOnlyMonitorOverride(path[1], path[3])) {
+    preserveDepth = 4;
+  } else if (path.size() > 2 && path[0] == "bar" && isOverrideOnlyBar(path[1])) {
+    preserveDepth = 2;
+  }
+
   toml::table* table = &m_overridesTable;
   for (std::size_t i = 0; i + 1 < path.size(); ++i) {
     auto* next = table->get_as<toml::table>(path[i]);
@@ -607,6 +726,7 @@ bool ConfigService::clearOverride(const std::vector<std::string>& path) {
   if (table->erase(path.back()) == 0) {
     return false;
   }
+  pruneEmptyOverrideTables(m_overridesTable, path, preserveDepth);
 
   if (!writeOverridesToFile()) {
     kLog.warn("failed to write {}", m_overridesPath);
@@ -654,6 +774,7 @@ bool ConfigService::renameOverrideTable(const std::vector<std::string>& oldPath,
 
   newParent->insert_or_assign(newPath.back(), *oldNode);
   oldParent->erase(oldPath.back());
+  pruneEmptyOverrideTables(m_overridesTable, oldPath);
 
   if (!writeOverridesToFile()) {
     kLog.warn("failed to write {}", m_overridesPath);
@@ -1051,10 +1172,28 @@ void ConfigService::loadAll() {
   }
 
   m_configFileBarNames.clear();
+  m_configFileMonitorOverrideNames.clear();
   if (auto* barTblMap = merged["bar"].as_table()) {
     for (const auto& [barName, barNode] : *barTblMap) {
-      if (barNode.as_table() != nullptr) {
-        m_configFileBarNames.insert(std::string(barName.str()));
+      auto* barTbl = barNode.as_table();
+      if (barTbl == nullptr) {
+        continue;
+      }
+      const std::string barNameStr(barName.str());
+      m_configFileBarNames.insert(barNameStr);
+      if (auto* monTblMap = (*barTbl)["monitor"].as_table()) {
+        auto& monitorNames = m_configFileMonitorOverrideNames[barNameStr];
+        for (const auto& [monName, monNode] : *monTblMap) {
+          auto* monTbl = monNode.as_table();
+          if (monTbl == nullptr) {
+            continue;
+          }
+          if (auto match = (*monTbl)["match"].value<std::string>()) {
+            monitorNames.insert(*match);
+          } else {
+            monitorNames.insert(std::string(monName.str()));
+          }
+        }
       }
     }
   }
