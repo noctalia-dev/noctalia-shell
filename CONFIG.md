@@ -10,6 +10,7 @@ Notification daemon toggle: use `[notification].enable_daemon` (documented in [`
 Weather location visibility toggle: use `[shell].show_location` (documented in [`config/shell.md`](config/shell.md)).
 Wallpaper automation: use `[wallpaper.automation]` (documented in [`config/wallpaper.md`](config/wallpaper.md)).
 Wallpaper single-color fallback/fill: use `[wallpaper].fill_color` (documented in [`config/wallpaper.md`](config/wallpaper.md)).
+Bar creation order: use `[bar].order` (documented in [`config/bar.md`](config/bar.md)).
 
 ---
 

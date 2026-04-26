@@ -83,7 +83,7 @@ private:
   [[nodiscard]] static bool widgetsNeedFrameTick(const std::vector<std::unique_ptr<Widget>>& widgets);
   [[nodiscard]] static bool instanceNeedsFrameTick(const BarInstance& instance);
   void syncInstances();
-  void createInstance(const WaylandOutput& output, const BarConfig& barConfig);
+  void createInstance(const WaylandOutput& output, std::size_t barIndex, const BarConfig& barConfig);
   void destroyInstance(std::uint32_t outputName);
   void populateWidgets(BarInstance& instance);
   void attachWidgetsToSections(BarInstance& instance);

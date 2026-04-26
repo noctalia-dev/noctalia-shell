@@ -13,6 +13,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <optional>
 #include <stdexcept>
 #include <string_view>
@@ -47,6 +48,24 @@ namespace {
           }
         },
         value);
+  }
+
+  std::vector<std::string> barOrderNames(const std::vector<BarConfig>& bars) {
+    std::vector<std::string> order;
+    order.reserve(bars.size());
+    for (const auto& bar : bars) {
+      order.push_back(bar.name);
+    }
+    return order;
+  }
+
+  bool setBarOverrideOrder(toml::table& root, const std::vector<std::string>& order) {
+    auto* barRoot = ensureTable(root, "bar");
+    if (barRoot == nullptr) {
+      return false;
+    }
+    insertOverrideValue(*barRoot, "order", order);
+    return true;
   }
 
   const toml::node* findOverrideNode(const toml::table& root, const std::vector<std::string>& path) {
@@ -524,6 +543,24 @@ bool ConfigService::isOverrideOnlyBar(std::string_view name) const {
   return !m_configFileBarNames.contains(std::string(name));
 }
 
+bool ConfigService::canMoveBarOverride(std::string_view name, int direction) const {
+  if (direction == 0 || name.empty()) {
+    return false;
+  }
+
+  const auto barIt = std::find_if(m_config.bars.begin(), m_config.bars.end(),
+                                  [name](const BarConfig& bar) { return bar.name == name; });
+  if (barIt == m_config.bars.end()) {
+    return false;
+  }
+
+  if (direction < 0) {
+    return barIt != m_config.bars.begin();
+  }
+
+  return std::next(barIt) != m_config.bars.end();
+}
+
 bool ConfigService::canDeleteBarOverride(std::string_view name) const {
   return m_config.bars.size() > 1 && isOverrideOnlyBar(name);
 }
@@ -571,6 +608,44 @@ bool ConfigService::createBarOverride(std::string_view name) {
   }
   barTbl->insert_or_assign("enabled", true);
 
+  auto order = barOrderNames(m_config.bars);
+  order.push_back(std::string(name));
+  if (!setBarOverrideOrder(m_overridesTable, order)) {
+    return false;
+  }
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return false;
+  }
+
+  m_ownOverridesWritePending = true;
+  loadAll();
+  fireReloadCallbacks();
+  return true;
+}
+
+bool ConfigService::moveBarOverride(std::string_view name, int direction) {
+  if (!canMoveBarOverride(name, direction)) {
+    return false;
+  }
+
+  auto order = barOrderNames(m_config.bars);
+  const auto currentIt = std::find(order.begin(), order.end(), std::string(name));
+  if (currentIt == order.end()) {
+    return false;
+  }
+
+  if (direction < 0) {
+    std::iter_swap(currentIt, std::prev(currentIt));
+  } else {
+    std::iter_swap(currentIt, std::next(currentIt));
+  }
+
+  if (!setBarOverrideOrder(m_overridesTable, order)) {
+    return false;
+  }
+
   if (!writeOverridesToFile()) {
     kLog.warn("failed to write {}", m_overridesPath);
     return false;
@@ -593,11 +668,27 @@ bool ConfigService::renameBarOverride(std::string_view oldName, std::string_view
     }
   }
 
+  auto order = barOrderNames(m_config.bars);
+  for (auto& item : order) {
+    if (item == oldName) {
+      item = std::string(newName);
+      break;
+    }
+  }
+  if (!setBarOverrideOrder(m_overridesTable, order)) {
+    return false;
+  }
+
   return renameOverrideTable({"bar", std::string(oldName)}, {"bar", std::string(newName)});
 }
 
 bool ConfigService::deleteBarOverride(std::string_view name) {
   if (!canDeleteBarOverride(name)) {
+    return false;
+  }
+  auto order = barOrderNames(m_config.bars);
+  std::erase(order, std::string(name));
+  if (!setBarOverrideOrder(m_overridesTable, order)) {
     return false;
   }
   return clearOverride({"bar", std::string(name)});
@@ -772,9 +863,27 @@ bool ConfigService::renameOverrideTable(const std::vector<std::string>& oldPath,
     return false;
   }
 
-  newParent->insert_or_assign(newPath.back(), *oldNode);
-  oldParent->erase(oldPath.back());
-  pruneEmptyOverrideTables(m_overridesTable, oldPath);
+  if (oldParent == newParent) {
+    std::vector<std::pair<std::string, const toml::node*>> entries;
+    entries.reserve(oldParent->size());
+    for (const auto& [key, node] : *oldParent) {
+      std::string entryKey(key.str());
+      if (entryKey == oldPath.back()) {
+        entryKey = newPath.back();
+      }
+      entries.emplace_back(std::move(entryKey), &node);
+    }
+
+    toml::table renamed;
+    for (const auto& [key, node] : entries) {
+      renamed.insert_or_assign(key, *node);
+    }
+    *oldParent = std::move(renamed);
+  } else {
+    newParent->insert_or_assign(newPath.back(), *oldNode);
+    oldParent->erase(oldPath.back());
+    pruneEmptyOverrideTables(m_overridesTable, oldPath);
+  }
 
   if (!writeOverridesToFile()) {
     kLog.warn("failed to write {}", m_overridesPath);
@@ -1245,6 +1354,7 @@ void ConfigService::loadAll() {
 void ConfigService::parseTable(const toml::table& tbl) {
   // Parse [bar.*] named subtables
   if (auto* barTblMap = tbl["bar"].as_table()) {
+    std::vector<BarConfig> parsedBars;
     for (const auto& [barName, barNode] : *barTblMap) {
       auto* barTbl = barNode.as_table();
       if (barTbl == nullptr) {
@@ -1416,7 +1526,29 @@ void ConfigService::parseTable(const toml::table& tbl) {
         }
       }
 
-      m_config.bars.push_back(std::move(bar));
+      parsedBars.push_back(std::move(bar));
+    }
+
+    std::vector<std::string> order;
+    if (auto* orderNode = (*barTblMap)["order"].as_array()) {
+      order = readStringArray(*orderNode);
+    }
+
+    std::vector<bool> used(parsedBars.size(), false);
+    for (const auto& orderedName : order) {
+      for (std::size_t i = 0; i < parsedBars.size(); ++i) {
+        if (!used[i] && parsedBars[i].name == orderedName) {
+          used[i] = true;
+          m_config.bars.push_back(std::move(parsedBars[i]));
+          break;
+        }
+      }
+    }
+
+    for (std::size_t i = 0; i < parsedBars.size(); ++i) {
+      if (!used[i]) {
+        m_config.bars.push_back(std::move(parsedBars[i]));
+      }
     }
   }
 
@@ -1961,7 +2093,15 @@ void ConfigService::parseTable(const toml::table& tbl) {
     m_config.bars.push_back(BarConfig{});
   }
 
+  std::string barOrder;
+  for (const auto& bar : m_config.bars) {
+    if (!barOrder.empty()) {
+      barOrder += ", ";
+    }
+    barOrder += bar.name;
+  }
   kLog.info("{} bar(s) defined", m_config.bars.size());
+  kLog.info("bar order: {}", barOrder);
   kLog.info("idle behaviors={}", m_config.idle.behaviors.size());
   std::size_t hookKindsUsed = 0;
   for (const auto& cmds : m_config.hooks.commands) {

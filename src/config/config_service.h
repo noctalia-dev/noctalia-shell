@@ -550,9 +550,11 @@ public:
   void setDockEnabled(bool enabled);
   [[nodiscard]] bool hasOverride(const std::vector<std::string>& path) const;
   [[nodiscard]] bool isOverrideOnlyBar(std::string_view name) const;
+  [[nodiscard]] bool canMoveBarOverride(std::string_view name, int direction) const;
   [[nodiscard]] bool canDeleteBarOverride(std::string_view name) const;
   [[nodiscard]] bool isOverrideOnlyMonitorOverride(std::string_view barName, std::string_view match) const;
   bool createBarOverride(std::string_view name);
+  bool moveBarOverride(std::string_view name, int direction);
   bool renameBarOverride(std::string_view oldName, std::string_view newName);
   bool deleteBarOverride(std::string_view name);
   bool createMonitorOverride(std::string_view barName, std::string_view match);

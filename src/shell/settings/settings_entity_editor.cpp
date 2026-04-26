@@ -264,11 +264,17 @@ namespace settings {
 
     void addBarManagement(Flex& content, SettingsEntityEditorContext& ctx) {
       if (ctx.searchQuery.empty() && ctx.selectedSection == "bar" && ctx.selectedBar != nullptr &&
-          ctx.selectedMonitorOverride == nullptr && ctx.configService != nullptr &&
-          ctx.configService->isOverrideOnlyBar(ctx.selectedBar->name)) {
+          ctx.selectedMonitorOverride == nullptr && ctx.configService != nullptr) {
         const std::string barName = ctx.selectedBar->name;
-        const bool pendingDelete = ctx.pendingDeleteBarName == barName;
-        const bool renaming = ctx.renamingBarName == barName;
+        const bool overrideOnly = ctx.configService->isOverrideOnlyBar(barName);
+        const bool canMoveUp = ctx.configService->canMoveBarOverride(barName, -1);
+        const bool canMoveDown = ctx.configService->canMoveBarOverride(barName, 1);
+        if (!overrideOnly && !canMoveUp && !canMoveDown) {
+          return;
+        }
+
+        const bool pendingDelete = overrideOnly && ctx.pendingDeleteBarName == barName;
+        const bool renaming = overrideOnly && ctx.renamingBarName == barName;
         auto* management = makeSection(content, i18n::tr("settings.bar-management"), ctx.scale);
 
         if (renaming) {
@@ -396,21 +402,51 @@ namespace settings {
           spacer->setFlexGrow(1.0f);
           actionRow->addChild(std::move(spacer));
 
-          auto renameBtn = std::make_unique<Button>();
-          renameBtn->setText(i18n::tr("settings.rename-bar"));
-          renameBtn->setVariant(ButtonVariant::Ghost);
-          renameBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
-          renameBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
-          renameBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
-          renameBtn->setRadius(Style::radiusSm * ctx.scale);
-          renameBtn->setOnClick([&renamingBarName = ctx.renamingBarName,
-                                 &pendingDeleteBarName = ctx.pendingDeleteBarName, barName,
-                                 requestRebuild = ctx.requestRebuild]() {
-            renamingBarName = barName;
-            pendingDeleteBarName.clear();
-            requestRebuild();
-          });
-          actionRow->addChild(std::move(renameBtn));
+          if (canMoveUp || canMoveDown) {
+            auto moveUpBtn = std::make_unique<Button>();
+            moveUpBtn->setGlyph("chevron-up");
+            moveUpBtn->setText(i18n::tr("settings.move-bar-up"));
+            moveUpBtn->setVariant(ButtonVariant::Ghost);
+            moveUpBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
+            moveUpBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
+            moveUpBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+            moveUpBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
+            moveUpBtn->setRadius(Style::radiusSm * ctx.scale);
+            moveUpBtn->setEnabled(canMoveUp);
+            moveUpBtn->setOnClick([moveBar = ctx.moveBar, barName]() { moveBar(barName, -1); });
+            actionRow->addChild(std::move(moveUpBtn));
+
+            auto moveDownBtn = std::make_unique<Button>();
+            moveDownBtn->setGlyph("chevron-down");
+            moveDownBtn->setText(i18n::tr("settings.move-bar-down"));
+            moveDownBtn->setVariant(ButtonVariant::Ghost);
+            moveDownBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
+            moveDownBtn->setGlyphSize(Style::fontSizeCaption * ctx.scale);
+            moveDownBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+            moveDownBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
+            moveDownBtn->setRadius(Style::radiusSm * ctx.scale);
+            moveDownBtn->setEnabled(canMoveDown);
+            moveDownBtn->setOnClick([moveBar = ctx.moveBar, barName]() { moveBar(barName, 1); });
+            actionRow->addChild(std::move(moveDownBtn));
+          }
+
+          if (overrideOnly) {
+            auto renameBtn = std::make_unique<Button>();
+            renameBtn->setText(i18n::tr("settings.rename-bar"));
+            renameBtn->setVariant(ButtonVariant::Ghost);
+            renameBtn->setFontSize(Style::fontSizeCaption * ctx.scale);
+            renameBtn->setMinHeight(Style::controlHeightSm * ctx.scale);
+            renameBtn->setPadding(Style::spaceXs * ctx.scale, Style::spaceSm * ctx.scale);
+            renameBtn->setRadius(Style::radiusSm * ctx.scale);
+            renameBtn->setOnClick([&renamingBarName = ctx.renamingBarName,
+                                   &pendingDeleteBarName = ctx.pendingDeleteBarName, barName,
+                                   requestRebuild = ctx.requestRebuild]() {
+              renamingBarName = barName;
+              pendingDeleteBarName.clear();
+              requestRebuild();
+            });
+            actionRow->addChild(std::move(renameBtn));
+          }
 
           if (ctx.configService->canDeleteBarOverride(barName)) {
             auto deleteBtn = std::make_unique<Button>();

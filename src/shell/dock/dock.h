@@ -147,6 +147,7 @@ private:
   DockConfig m_lastDockConfig{};
   ShellConfig::ShadowConfig m_lastShadow;
   std::vector<std::string> m_lastPinnedConfig;
+  std::vector<std::string> m_lastBarLayerStack;
   std::vector<DesktopEntry> m_pinnedEntries;
   std::uint64_t m_modelSerial = 0;
   std::uint64_t m_entriesVersion = 0;

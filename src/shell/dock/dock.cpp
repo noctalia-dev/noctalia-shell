@@ -30,6 +30,7 @@
 #include "xdg-shell-client-protocol.h"
 
 #include <format>
+#include <optional>
 #include <wayland-client-core.h>
 
 namespace {
@@ -94,6 +95,40 @@ namespace {
     return instanceOutput;
   }
 
+  template <typename T> void appendOptionalStackPart(std::string& out, const std::optional<T>& value) {
+    out += value.has_value() ? std::format("{}", *value) : "-";
+    out.push_back('\x1f');
+  }
+
+  std::vector<std::string> barLayerStackSignature(const Config& config) {
+    std::vector<std::string> signature;
+    signature.reserve(config.bars.size());
+
+    for (const auto& bar : config.bars) {
+      std::string item =
+          std::format("{}\x1f{}\x1f{}\x1f{}\x1f{}\x1f{}\x1f{}\x1f{}\x1f{}", bar.name, bar.position, bar.enabled,
+                      bar.autoHide, bar.reserveSpace, bar.thickness, bar.marginH, bar.marginV, bar.shadow);
+
+      item.push_back('\x1e');
+      for (const auto& override : bar.monitorOverrides) {
+        item += override.match;
+        item.push_back('\x1f');
+        appendOptionalStackPart(item, override.enabled);
+        appendOptionalStackPart(item, override.autoHide);
+        appendOptionalStackPart(item, override.reserveSpace);
+        appendOptionalStackPart(item, override.thickness);
+        appendOptionalStackPart(item, override.marginH);
+        appendOptionalStackPart(item, override.marginV);
+        appendOptionalStackPart(item, override.shadow);
+        item.push_back('\x1e');
+      }
+
+      signature.push_back(std::move(item));
+    }
+
+    return signature;
+  }
+
   // Returns an anchor bitmask for the given position string.
   std::uint32_t positionToAnchor(const std::string& pos) {
     if (pos == "top")
@@ -120,8 +155,12 @@ bool Dock::initialize(WaylandConnection& wayland, ConfigService* config, RenderC
   m_config->addReloadCallback([this]() {
     const auto& newCfg = m_config->config().dock;
     const auto& newShadow = m_config->config().shell.shadow;
-    if (newCfg == m_lastDockConfig && newShadow == m_lastShadow) {
+    const auto newBarLayerStack = barLayerStackSignature(m_config->config());
+    if (newCfg == m_lastDockConfig && newShadow == m_lastShadow && newBarLayerStack == m_lastBarLayerStack) {
       return;
+    }
+    if (newBarLayerStack != m_lastBarLayerStack && newCfg == m_lastDockConfig && newShadow == m_lastShadow) {
+      kLog.info("bar layer stack changed; recreating dock surfaces");
     }
     reload();
   });
@@ -129,6 +168,7 @@ bool Dock::initialize(WaylandConnection& wayland, ConfigService* config, RenderC
   m_lastDockConfig = cfg;
   m_lastShadow = m_config->config().shell.shadow;
   m_lastPinnedConfig = cfg.pinned;
+  m_lastBarLayerStack = barLayerStackSignature(m_config->config());
 
   if (!cfg.enabled) {
     kLog.info("dock disabled in config");
@@ -146,6 +186,7 @@ void Dock::reload() {
   m_lastDockConfig = cfg;
   m_lastShadow = m_config->config().shell.shadow;
   m_lastPinnedConfig = cfg.pinned;
+  m_lastBarLayerStack = barLayerStackSignature(m_config->config());
 
   if (!cfg.enabled) {
     closeAllInstances();

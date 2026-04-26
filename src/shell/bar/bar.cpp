@@ -78,6 +78,28 @@ namespace {
            a.monitorOverrides == b.monitorOverrides;
   }
 
+  bool barSurfaceOrderRequiresRecreate(const std::vector<BarConfig>& previous, const std::vector<BarConfig>& next) {
+    std::vector<std::string> preserved;
+    preserved.reserve(previous.size());
+    for (const auto& oldBar : previous) {
+      const auto it =
+          std::find_if(next.begin(), next.end(), [&](const BarConfig& newBar) { return newBar.name == oldBar.name; });
+      if (it != next.end()) {
+        preserved.push_back(oldBar.name);
+      }
+    }
+
+    if (preserved.size() > next.size()) {
+      return true;
+    }
+    for (std::size_t i = 0; i < preserved.size(); ++i) {
+      if (next[i].name != preserved[i]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   BarVisualGeometry computeBarVisualGeometry(const BarConfig& cfg, const ShellConfig::ShadowConfig& shadow,
                                              float surfaceWidth, float surfaceHeight) {
     const float barThickness = static_cast<float>(cfg.thickness);
@@ -380,7 +402,9 @@ void Bar::onSecondTick() {
 
 void Bar::reload() {
   kLog.info("reloading config");
+  const auto previousBars = m_lastBars;
   const auto previousShadow = m_lastShadow;
+  const bool recreateForOrder = barSurfaceOrderRequiresRecreate(previousBars, m_config->config().bars);
   m_lastBars = m_config->config().bars;
   m_lastWidgets = m_config->config().widgets;
   m_lastShadow = m_config->config().shell.shadow;
@@ -388,6 +412,14 @@ void Bar::reload() {
       *m_wayland, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles, m_network,
       m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight, m_themeService,
       m_bluetooth, m_brightness, m_fileWatcher);
+
+  if (recreateForOrder) {
+    kLog.info("bar order changed; recreating layer-shell surfaces");
+    closeAllInstances();
+    wl_display_roundtrip(m_wayland->display());
+    syncInstances();
+    return;
+  }
 
   // Look up new bar configs by name.
   std::unordered_map<std::string, std::pair<const BarConfig*, std::size_t>> newBarsByName;
@@ -719,22 +751,19 @@ void Bar::syncInstances() {
         if (!resolved.enabled) {
           continue;
         }
-        createInstance(output, resolved);
-        m_instances.back()->barIndex = barIdx;
+        createInstance(output, barIdx, resolved);
       }
     }
   }
 }
 
-void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig) {
-  kLog.info("creating \"{}\" on {} ({}), height={} position={}", barConfig.name, output.connectorName,
-            output.description, barConfig.thickness, barConfig.position);
-
+void Bar::createInstance(const WaylandOutput& output, std::size_t barIndex, const BarConfig& barConfig) {
   auto instance = std::make_unique<BarInstance>();
   instance->outputName = output.name;
   instance->output = output.output;
   instance->scale = output.scale;
   instance->barConfig = barConfig;
+  instance->barIndex = barIndex;
 
   const auto anchor = positionToAnchor(barConfig.position);
   const bool vertical = (barConfig.position == "left" || barConfig.position == "right");
@@ -750,7 +779,7 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
   // The surface is sized to cover only the bar rect plus its shadow footprint.
   std::int32_t mLeft = 0, mRight = 0, mTop = 0, mBottom = 0;
   std::uint32_t surfW = 0, surfH = 0;
-  std::int32_t exclusiveZone = 0;
+  std::int32_t exclusiveZone = reserveExclusiveZone ? 0 : -1;
 
   if (!vertical) {
     mLeft = std::max(0, mH - sb.left);
@@ -758,11 +787,15 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
     if (isBottom) {
       mBottom = std::max(0, mV - sb.down);
       surfH = static_cast<std::uint32_t>(sb.up + barConfig.thickness + std::min(mV, sb.down));
-      exclusiveZone = reserveExclusiveZone ? (barConfig.thickness + std::min(mV, sb.down)) : 0;
+      if (reserveExclusiveZone) {
+        exclusiveZone = barConfig.thickness + std::min(mV, sb.down);
+      }
     } else {
       mTop = std::max(0, mV - sb.up);
       surfH = static_cast<std::uint32_t>(std::min(mV, sb.up) + barConfig.thickness + sb.down);
-      exclusiveZone = reserveExclusiveZone ? (std::min(mV, sb.up) + barConfig.thickness) : 0;
+      if (reserveExclusiveZone) {
+        exclusiveZone = std::min(mV, sb.up) + barConfig.thickness;
+      }
     }
   } else {
     mTop = std::max(0, mV - sb.up);
@@ -770,13 +803,21 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
     if (isRight) {
       mRight = std::max(0, mH - sb.right);
       surfW = static_cast<std::uint32_t>(sb.left + barConfig.thickness + std::min(mH, sb.right));
-      exclusiveZone = reserveExclusiveZone ? (barConfig.thickness + std::min(mH, sb.right)) : 0;
+      if (reserveExclusiveZone) {
+        exclusiveZone = barConfig.thickness + std::min(mH, sb.right);
+      }
     } else {
       mLeft = std::max(0, mH - sb.left);
       surfW = static_cast<std::uint32_t>(std::min(mH, sb.left) + barConfig.thickness + sb.right);
-      exclusiveZone = reserveExclusiveZone ? (std::min(mH, sb.left) + barConfig.thickness) : 0;
+      if (reserveExclusiveZone) {
+        exclusiveZone = std::min(mH, sb.left) + barConfig.thickness;
+      }
     }
   }
+
+  kLog.info("creating #{} \"{}\" on {} ({}), thickness={} position={} reserve_space={} exclusive_zone={}", barIndex,
+            barConfig.name, output.connectorName, output.description, barConfig.thickness, barConfig.position,
+            barConfig.reserveSpace, exclusiveZone);
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-" + barConfig.name,

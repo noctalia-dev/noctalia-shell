@@ -3,6 +3,9 @@
 Bars are defined as named subtables under `[bar.*]`. Each bar is spawned on every connected output, then per-monitor overrides are applied.
 
 ```toml
+[bar]
+order = ["main"]              # layer-shell creation order
+
 [bar.main]
 position           = "top"       # top | bottom | left | right
 enabled            = true
@@ -38,6 +41,10 @@ end    = ["media", "tray", "notifications", "network", "bluetooth", "volume", "b
 Radius precedence: `radius` is the global fallback; per-corner values override it when provided.
 
 Multiple `[bar.*]` entries are supported — each is independently configured and rendered on all outputs.
+
+`[bar].order` controls the order Noctalia creates bar layer-shell surfaces. This matters only for bars with
+`reserve_space = true`, and the compositor still owns the final exclusive-zone arrangement. Names omitted from `order`
+are appended after the listed names.
 
 ---
 
@@ -82,7 +89,8 @@ When `auto_hide = true`, the bar:
 - Slides back in when the pointer reaches the matching screen edge trigger strip.
 
 `reserve_space = true` reserves compositor exclusive zone and pushes windows away. Set it to `false` for overlay
-behavior. This applies whether `auto_hide` is enabled or disabled.
+behavior; overlay bars do not reserve space and do not ask to be moved away from other exclusive zones. This applies
+whether `auto_hide` is enabled or disabled.
 
 ---
 

@@ -603,6 +603,24 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
     });
   };
 
+  const auto moveBar = [this, requestRebuild](std::string name, int direction) {
+    DeferredCall::callLater([this, name = std::move(name), direction, requestRebuild]() {
+      if (m_config == nullptr) {
+        return;
+      }
+      if (m_config->moveBarOverride(name, direction)) {
+        m_statusMessage.clear();
+        m_statusIsError = false;
+        m_pendingResetPageScope.clear();
+        requestRebuild();
+        return;
+      }
+      m_statusMessage = i18n::tr("settings.move-bar-error");
+      m_statusIsError = true;
+      requestRebuild();
+    });
+  };
+
   const auto createMonitorOverride = [this, requestRebuild](std::string barName, std::string match) {
     DeferredCall::callLater([this, barName = std::move(barName), match = std::move(match), requestRebuild]() {
       if (m_config == nullptr) {
@@ -870,6 +888,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
                     .requestRebuild = requestRebuild,
                     .renameBar = renameBar,
                     .deleteBar = deleteBar,
+                    .moveBar = moveBar,
                     .renameMonitorOverride = renameMonitorOverride,
                     .deleteMonitorOverride = deleteMonitorOverride,
                 });

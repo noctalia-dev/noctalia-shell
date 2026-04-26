@@ -30,6 +30,7 @@ namespace settings {
     std::function<void()> requestRebuild;
     std::function<void(std::string, std::string)> renameBar;
     std::function<void(std::string)> deleteBar;
+    std::function<void(std::string, int)> moveBar;
     std::function<void(std::string, std::string, std::string)> renameMonitorOverride;
     std::function<void(std::string, std::string)> deleteMonitorOverride;
   };
