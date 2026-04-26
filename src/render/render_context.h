@@ -10,6 +10,7 @@
 #include "render/programs/linear_gradient_program.h"
 #include "render/programs/rect_program.h"
 #include "render/programs/spinner_program.h"
+#include "render/programs/wallpaper_program.h"
 #include "render/text/cairo_glyph_renderer.h"
 #include "render/text/cairo_text_renderer.h"
 
@@ -68,6 +69,7 @@ private:
   LinearGradientProgram m_linearGradientProgram;
   RectProgram m_rectProgram;
   SpinnerProgram m_spinnerProgram;
+  WallpaperProgram m_wallpaperProgram;
   GlyphProgram m_glyphProgram;
   CairoTextRenderer m_textRenderer;
   CairoGlyphRenderer m_glyphRenderer;

@@ -18,6 +18,7 @@ enum class NodeType : std::uint8_t {
   Spinner,
   Effect,
   Graph,
+  Wallpaper,
 };
 
 class Node {

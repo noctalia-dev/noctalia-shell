@@ -13,6 +13,7 @@
 #include "render/scene/rect_node.h"
 #include "render/scene/spinner_node.h"
 #include "render/scene/text_node.h"
+#include "render/scene/wallpaper_node.h"
 #include "ui/style.h"
 
 #include <GLES2/gl2.h>
@@ -90,6 +91,7 @@ void RenderContext::ensureGlPrograms() {
   m_linearGradientProgram.ensureInitialized();
   m_rectProgram.ensureInitialized();
   m_spinnerProgram.ensureInitialized();
+  m_wallpaperProgram.ensureInitialized();
   m_glyphProgram.ensureInitialized();
   m_glReady = true;
 }
@@ -286,6 +288,20 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
     }
     break;
   }
+  case NodeType::Wallpaper: {
+    const auto* wallpaper = static_cast<const WallpaperNode*>(node);
+    if (wallpaper->texture1() != 0) {
+      const std::uint32_t texture2 = wallpaper->texture2() != 0 ? wallpaper->texture2() : wallpaper->texture1();
+      const float imageWidth2 = wallpaper->texture2() != 0 ? wallpaper->imageWidth2() : wallpaper->imageWidth1();
+      const float imageHeight2 = wallpaper->texture2() != 0 ? wallpaper->imageHeight2() : wallpaper->imageHeight1();
+      const float progress = wallpaper->texture2() != 0 ? wallpaper->progress() : 0.0f;
+      m_wallpaperProgram.draw(wallpaper->transition(), wallpaper->texture1(), texture2, sw, sh, node->width(),
+                              node->height(), wallpaper->imageWidth1(), wallpaper->imageHeight1(), imageWidth2,
+                              imageHeight2, progress, static_cast<float>(wallpaper->fillMode()),
+                              wallpaper->transitionParams(), worldTransform);
+    }
+    break;
+  }
   case NodeType::Base:
     break;
   }
@@ -362,6 +378,7 @@ void RenderContext::cleanup() {
   m_linearGradientProgram.destroy();
   m_rectProgram.destroy();
   m_spinnerProgram.destroy();
+  m_wallpaperProgram.destroy();
   m_glyphProgram.destroy();
   m_glReady = false;
 

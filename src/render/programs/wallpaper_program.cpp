@@ -7,12 +7,20 @@ namespace {
   constexpr char kVertexShader[] = R"(
 precision highp float;
 attribute vec2 a_position;
+uniform vec2 u_surface_size;
+uniform vec2 u_quad_size;
+uniform mat3 u_transform;
 varying vec2 v_texcoord;
+
+vec2 to_ndc(vec2 pixel_pos) {
+    vec2 normalized = pixel_pos / u_surface_size;
+    return vec2(normalized.x * 2.0 - 1.0, 1.0 - normalized.y * 2.0);
+}
 
 void main() {
     v_texcoord = a_position;
-    vec2 ndc = a_position * 2.0 - 1.0;
-    gl_Position = vec4(ndc.x, -ndc.y, 0.0, 1.0);
+    vec3 pixel = u_transform * vec3(a_position * u_quad_size, 1.0);
+    gl_Position = vec4(to_ndc(pixel.xy), 0.0, 1.0);
 }
 )";
 
@@ -332,7 +340,9 @@ void WallpaperProgram::initProgram(std::size_t index, const char* fragSource) {
 
   auto id = pd.program.id();
   pd.positionLoc = glGetAttribLocation(id, "a_position");
-  pd.texCoordLoc = -1; // texcoord derived from position in vertex shader
+  pd.surfaceSizeLoc = glGetUniformLocation(id, "u_surface_size");
+  pd.quadSizeLoc = glGetUniformLocation(id, "u_quad_size");
+  pd.transformLoc = glGetUniformLocation(id, "u_transform");
   pd.source1Loc = glGetUniformLocation(id, "u_source1");
   pd.source2Loc = glGetUniformLocation(id, "u_source2");
   pd.progressLoc = glGetUniformLocation(id, "u_progress");
@@ -356,16 +366,19 @@ void WallpaperProgram::initProgram(std::size_t index, const char* fragSource) {
   pd.maxBlockSizeLoc = glGetUniformLocation(id, "u_maxBlockSize");
   pd.cellSizeLoc = glGetUniformLocation(id, "u_cellSize");
 
-  if (pd.positionLoc < 0 || pd.source1Loc < 0 || pd.progressLoc < 0) {
+  if (pd.positionLoc < 0 || pd.surfaceSizeLoc < 0 || pd.quadSizeLoc < 0 || pd.transformLoc < 0 || pd.source1Loc < 0 ||
+      pd.progressLoc < 0) {
     throw std::runtime_error("failed to query wallpaper shader locations");
   }
 }
 
 void WallpaperProgram::draw(WallpaperTransition type, GLuint texture1, GLuint texture2, float surfaceWidth,
-                            float surfaceHeight, float imageWidth1, float imageHeight1, float imageWidth2,
-                            float imageHeight2, float progress, float fillMode, const TransitionParams& params) const {
+                            float surfaceHeight, float quadWidth, float quadHeight, float imageWidth1,
+                            float imageHeight1, float imageWidth2, float imageHeight2, float progress, float fillMode,
+                            const TransitionParams& params, const Mat3& transform) const {
   auto idx = static_cast<std::size_t>(type);
-  if (idx >= kTransitionCount || !m_programs[idx].program.isValid()) {
+  if (idx >= kTransitionCount || !m_programs[idx].program.isValid() || texture1 == 0 || quadWidth <= 0.0f ||
+      quadHeight <= 0.0f) {
     return;
   }
 
@@ -376,6 +389,9 @@ void WallpaperProgram::draw(WallpaperTransition type, GLuint texture1, GLuint te
   };
 
   glUseProgram(pd.program.id());
+  glUniform2f(pd.surfaceSizeLoc, surfaceWidth, surfaceHeight);
+  glUniform2f(pd.quadSizeLoc, quadWidth, quadHeight);
+  glUniformMatrix3fv(pd.transformLoc, 1, GL_FALSE, transform.m.data());
 
   // Textures
   glActiveTexture(GL_TEXTURE0);
@@ -401,9 +417,9 @@ void WallpaperProgram::draw(WallpaperTransition type, GLuint texture1, GLuint te
   if (pd.imageHeight2Loc >= 0)
     glUniform1f(pd.imageHeight2Loc, imageHeight2);
   if (pd.screenWidthLoc >= 0)
-    glUniform1f(pd.screenWidthLoc, surfaceWidth);
+    glUniform1f(pd.screenWidthLoc, quadWidth);
   if (pd.screenHeightLoc >= 0)
-    glUniform1f(pd.screenHeightLoc, surfaceHeight);
+    glUniform1f(pd.screenHeightLoc, quadHeight);
   if (pd.fillColorLoc >= 0)
     glUniform4f(pd.fillColorLoc, 0.0f, 0.0f, 0.0f, 1.0f);
 

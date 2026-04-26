@@ -1,0 +1,72 @@
+#pragma once
+
+#include "config/config_service.h"
+#include "render/programs/wallpaper_program.h"
+#include "render/scene/node.h"
+
+#include <cstdint>
+
+class WallpaperNode : public Node {
+public:
+  WallpaperNode() : Node(NodeType::Wallpaper) {}
+
+  [[nodiscard]] std::uint32_t texture1() const noexcept { return m_texture1; }
+  [[nodiscard]] std::uint32_t texture2() const noexcept { return m_texture2; }
+  [[nodiscard]] float imageWidth1() const noexcept { return m_imageWidth1; }
+  [[nodiscard]] float imageHeight1() const noexcept { return m_imageHeight1; }
+  [[nodiscard]] float imageWidth2() const noexcept { return m_imageWidth2; }
+  [[nodiscard]] float imageHeight2() const noexcept { return m_imageHeight2; }
+  [[nodiscard]] float progress() const noexcept { return m_progress; }
+  [[nodiscard]] WallpaperTransition transition() const noexcept { return m_transition; }
+  [[nodiscard]] WallpaperFillMode fillMode() const noexcept { return m_fillMode; }
+  [[nodiscard]] const TransitionParams& transitionParams() const noexcept { return m_params; }
+
+  void setTextures(std::uint32_t texture1, std::uint32_t texture2, float imageWidth1, float imageHeight1,
+                   float imageWidth2, float imageHeight2) {
+    if (m_texture1 == texture1 && m_texture2 == texture2 && m_imageWidth1 == imageWidth1 &&
+        m_imageHeight1 == imageHeight1 && m_imageWidth2 == imageWidth2 && m_imageHeight2 == imageHeight2) {
+      return;
+    }
+    m_texture1 = texture1;
+    m_texture2 = texture2;
+    m_imageWidth1 = imageWidth1;
+    m_imageHeight1 = imageHeight1;
+    m_imageWidth2 = imageWidth2;
+    m_imageHeight2 = imageHeight2;
+    markPaintDirty();
+  }
+
+  void setTransition(WallpaperTransition transition, float progress, const TransitionParams& params) {
+    if (m_transition == transition && m_progress == progress && m_params.direction == params.direction &&
+        m_params.centerX == params.centerX && m_params.centerY == params.centerY &&
+        m_params.stripeCount == params.stripeCount && m_params.angle == params.angle &&
+        m_params.maxBlockSize == params.maxBlockSize && m_params.cellSize == params.cellSize &&
+        m_params.smoothness == params.smoothness && m_params.aspectRatio == params.aspectRatio) {
+      return;
+    }
+    m_transition = transition;
+    m_progress = progress;
+    m_params = params;
+    markPaintDirty();
+  }
+
+  void setFillMode(WallpaperFillMode fillMode) {
+    if (m_fillMode == fillMode) {
+      return;
+    }
+    m_fillMode = fillMode;
+    markPaintDirty();
+  }
+
+private:
+  std::uint32_t m_texture1 = 0;
+  std::uint32_t m_texture2 = 0;
+  float m_imageWidth1 = 0.0f;
+  float m_imageHeight1 = 0.0f;
+  float m_imageWidth2 = 0.0f;
+  float m_imageHeight2 = 0.0f;
+  float m_progress = 0.0f;
+  WallpaperTransition m_transition = WallpaperTransition::Fade;
+  WallpaperFillMode m_fillMode = WallpaperFillMode::Crop;
+  TransitionParams m_params;
+};

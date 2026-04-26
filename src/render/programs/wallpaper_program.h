@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/config_service.h"
+#include "render/core/mat3.h"
 #include "render/core/shader_program.h"
 
 #include <GLES2/gl2.h>
@@ -30,8 +31,9 @@ public:
   void destroy();
 
   void draw(WallpaperTransition type, GLuint texture1, GLuint texture2, float surfaceWidth, float surfaceHeight,
-            float imageWidth1, float imageHeight1, float imageWidth2, float imageHeight2, float progress,
-            float fillMode, const TransitionParams& params) const;
+            float quadWidth, float quadHeight, float imageWidth1, float imageHeight1, float imageWidth2,
+            float imageHeight2, float progress, float fillMode, const TransitionParams& params,
+            const Mat3& transform = Mat3::identity()) const;
 
 private:
   static constexpr std::size_t kTransitionCount = 6;
@@ -39,7 +41,9 @@ private:
   struct ProgramData {
     ShaderProgram program;
     GLint positionLoc = -1;
-    GLint texCoordLoc = -1;
+    GLint surfaceSizeLoc = -1;
+    GLint quadSizeLoc = -1;
+    GLint transformLoc = -1;
     // Samplers
     GLint source1Loc = -1;
     GLint source2Loc = -1;
