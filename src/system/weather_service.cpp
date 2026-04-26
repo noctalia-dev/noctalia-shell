@@ -418,6 +418,7 @@ void WeatherService::handleLocationResponse(const std::filesystem::path& path, b
   if (!success) {
     m_loading = false;
     m_error = autoLocated ? "IP geolocation failed" : "Address lookup failed";
+    scheduleRetryAfterFailure();
     notifyChanged();
     return;
   }
@@ -444,6 +445,7 @@ void WeatherService::handleLocationResponse(const std::filesystem::path& path, b
   } catch (const std::exception& e) {
     m_loading = false;
     m_error = autoLocated ? "Could not parse IP geolocation response" : "Could not parse geocode response";
+    scheduleRetryAfterFailure();
     kLog.warn("{}: {}", m_error, e.what());
     notifyChanged();
   }
@@ -457,6 +459,7 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
   m_loading = false;
   if (!success) {
     m_error = "Weather fetch failed";
+    scheduleRetryAfterFailure();
     notifyChanged();
     return;
   }
@@ -534,9 +537,15 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
     notifyChanged();
   } catch (const std::exception& e) {
     m_error = "Could not parse weather response";
+    scheduleRetryAfterFailure();
     kLog.warn("{}: {}", m_error, e.what());
     notifyChanged();
   }
+}
+
+void WeatherService::scheduleRetryAfterFailure() {
+  m_refreshQueued = false;
+  m_nextRefreshAt = Clock::now() + std::chrono::minutes(std::max(5, m_activeConfig.refreshMinutes));
 }
 
 std::filesystem::path WeatherService::transportCacheDir() { return std::filesystem::path("/tmp") / "noctalia-weather"; }

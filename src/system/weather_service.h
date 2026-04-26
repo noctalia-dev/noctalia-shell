@@ -111,6 +111,7 @@ private:
   void startWeatherFetch();
   void handleLocationResponse(const std::filesystem::path& path, bool autoLocated, bool success, std::uint64_t serial);
   void handleWeatherResponse(const std::filesystem::path& path, bool success, std::uint64_t serial);
+  void scheduleRetryAfterFailure();
   void loadCache();
   void saveCache() const;
 
