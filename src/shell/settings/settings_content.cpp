@@ -1,0 +1,770 @@
+#include "shell/settings/settings_content.h"
+
+#include "i18n/i18n.h"
+#include "shell/settings/bar_widget_editor.h"
+#include "ui/controls/button.h"
+#include "ui/controls/flex.h"
+#include "ui/controls/input.h"
+#include "ui/controls/label.h"
+#include "ui/controls/select.h"
+#include "ui/controls/separator.h"
+#include "ui/controls/slider.h"
+#include "ui/controls/toggle.h"
+#include "ui/palette.h"
+#include "ui/style.h"
+#include "util/string_utils.h"
+
+#include <cmath>
+#include <cstdint>
+#include <format>
+#include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
+#include <variant>
+#include <vector>
+
+namespace settings {
+  namespace {
+
+    std::unique_ptr<Label> makeLabel(std::string_view text, float fontSize, const ThemeColor& color,
+                                     bool bold = false) {
+      auto label = std::make_unique<Label>();
+      label->setText(text);
+      label->setFontSize(fontSize);
+      label->setColor(color);
+      label->setBold(bold);
+      return label;
+    }
+
+    std::optional<std::size_t> optionIndex(const std::vector<SelectOption>& options, std::string_view value) {
+      for (std::size_t i = 0; i < options.size(); ++i) {
+        if (options[i].value == value) {
+          return i;
+        }
+      }
+      return std::nullopt;
+    }
+
+    std::vector<std::string> optionLabels(const std::vector<SelectOption>& options) {
+      std::vector<std::string> labels;
+      labels.reserve(options.size());
+      for (const auto& opt : options) {
+        labels.push_back(opt.label);
+      }
+      return labels;
+    }
+
+    bool isBlankInput(std::string_view text) { return StringUtils::trim(text).empty(); }
+
+    std::optional<float> parseFloatInput(std::string_view text) {
+      const std::string trimmed = StringUtils::trim(text);
+      if (trimmed.empty()) {
+        return std::nullopt;
+      }
+
+      try {
+        std::size_t parsed = 0;
+        const float value = std::stof(trimmed, &parsed);
+        if (parsed != trimmed.size() || !std::isfinite(value)) {
+          return std::nullopt;
+        }
+        return value;
+      } catch (...) {
+        return std::nullopt;
+      }
+    }
+
+    std::optional<double> parseDoubleInput(std::string_view text) {
+      const std::string trimmed = StringUtils::trim(text);
+      if (trimmed.empty()) {
+        return std::nullopt;
+      }
+
+      try {
+        std::size_t parsed = 0;
+        const double value = std::stod(trimmed, &parsed);
+        if (parsed != trimmed.size() || !std::isfinite(value)) {
+          return std::nullopt;
+        }
+        return value;
+      } catch (...) {
+        return std::nullopt;
+      }
+    }
+
+    bool isMonitorOverrideSettingPath(const std::vector<std::string>& path) {
+      return path.size() >= 5 && path[0] == "bar" && path[2] == "monitor";
+    }
+
+    bool monitorOverrideHasExplicitValue(const Config& cfg, const std::vector<std::string>& path) {
+      if (!isMonitorOverrideSettingPath(path)) {
+        return false;
+      }
+
+      const auto* bar = findBar(cfg, path[1]);
+      if (bar == nullptr) {
+        return false;
+      }
+
+      const auto* override = findMonitorOverride(*bar, path[3]);
+      if (override == nullptr) {
+        return false;
+      }
+
+      const std::string_view key = path.back();
+      if (key == "enabled") {
+        return override->enabled.has_value();
+      }
+      if (key == "auto_hide") {
+        return override->autoHide.has_value();
+      }
+      if (key == "reserve_space") {
+        return override->reserveSpace.has_value();
+      }
+      if (key == "thickness") {
+        return override->thickness.has_value();
+      }
+      if (key == "scale") {
+        return override->scale.has_value();
+      }
+      if (key == "margin_h") {
+        return override->marginH.has_value();
+      }
+      if (key == "margin_v") {
+        return override->marginV.has_value();
+      }
+      if (key == "padding") {
+        return override->padding.has_value();
+      }
+      if (key == "radius") {
+        return override->radius.has_value();
+      }
+      if (key == "radius_top_left") {
+        return override->radiusTopLeft.has_value();
+      }
+      if (key == "radius_top_right") {
+        return override->radiusTopRight.has_value();
+      }
+      if (key == "radius_bottom_left") {
+        return override->radiusBottomLeft.has_value();
+      }
+      if (key == "radius_bottom_right") {
+        return override->radiusBottomRight.has_value();
+      }
+      if (key == "background_opacity") {
+        return override->backgroundOpacity.has_value();
+      }
+      if (key == "background_blur") {
+        return override->backgroundBlur.has_value();
+      }
+      if (key == "shadow") {
+        return override->shadow.has_value();
+      }
+      if (key == "widget_spacing") {
+        return override->widgetSpacing.has_value();
+      }
+      if (key == "capsule") {
+        return override->widgetCapsuleDefault.has_value();
+      }
+      if (key == "capsule_fill") {
+        return override->widgetCapsuleFill.has_value();
+      }
+      if (key == "capsule_border") {
+        return override->widgetCapsuleBorderSpecified;
+      }
+      if (key == "capsule_foreground") {
+        return override->widgetCapsuleForeground.has_value();
+      }
+      if (key == "color") {
+        return override->widgetColor.has_value();
+      }
+      if (key == "capsule_padding") {
+        return override->widgetCapsulePadding.has_value();
+      }
+      if (key == "capsule_opacity") {
+        return override->widgetCapsuleOpacity.has_value();
+      }
+      if (key == "start") {
+        return override->startWidgets.has_value();
+      }
+      if (key == "center") {
+        return override->centerWidgets.has_value();
+      }
+      if (key == "end") {
+        return override->endWidgets.has_value();
+      }
+      return false;
+    }
+
+  } // namespace
+
+  std::size_t addSettingsContentSections(Flex& content, const std::vector<SettingEntry>& registry,
+                                         SettingsContentContext ctx) {
+    const Config& cfg = ctx.config;
+    const float scale = ctx.scale;
+
+    const auto sectionLabel = [](std::string_view section) {
+      return i18n::tr("settings.section." + std::string(section));
+    };
+
+    const auto groupLabel = [](std::string_view group) { return i18n::tr("settings.group." + std::string(group)); };
+
+    const auto makeSection = [&](std::string_view title) -> Flex* {
+      auto section = std::make_unique<Flex>();
+      section->setDirection(FlexDirection::Vertical);
+      section->setAlign(FlexAlign::Stretch);
+      section->setGap(Style::spaceSm * scale);
+      section->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+      section->setCardStyle(scale);
+
+      auto titleLabel = makeLabel(title, Style::fontSizeTitle * scale, roleColor(ColorRole::OnSurface), true);
+      section->addChild(std::move(titleLabel));
+      auto* raw = section.get();
+      content.addChild(std::move(section));
+      return raw;
+    };
+
+    const auto addGroupLabel = [&](Flex& section, std::string_view title, bool isFirst) {
+      if (title.empty()) {
+        return;
+      }
+      if (!isFirst) {
+        auto groupHeader = std::make_unique<Flex>();
+        groupHeader->setDirection(FlexDirection::Vertical);
+        groupHeader->setAlign(FlexAlign::Stretch);
+        groupHeader->setGap(Style::spaceSm * scale);
+        groupHeader->setPadding(Style::spaceSm * scale, 0.0f, 0.0f, 0.0f);
+        auto sep = std::make_unique<Separator>();
+        sep->setColor(roleColor(ColorRole::Outline, 0.20f));
+        groupHeader->addChild(std::move(sep));
+        groupHeader->addChild(
+            makeLabel(title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurfaceVariant), true));
+        section.addChild(std::move(groupHeader));
+      } else {
+        section.addChild(makeLabel(title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurfaceVariant), true));
+      }
+    };
+
+    const auto makeResetButton = [&](const std::vector<std::string>& path) {
+      auto reset = std::make_unique<Button>();
+      reset->setText(i18n::tr("settings.reset"));
+      reset->setVariant(ButtonVariant::Ghost);
+      reset->setFontSize(Style::fontSizeCaption * scale);
+      reset->setMinHeight(Style::controlHeightSm * scale);
+      reset->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      reset->setRadius(Style::radiusMd * scale);
+      reset->setOnClick([clearOverride = ctx.clearOverride, path]() { clearOverride(path); });
+      return reset;
+    };
+
+    const auto makeRow = [&](Flex& section, const SettingEntry& entry, std::unique_ptr<Node> control) {
+      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasOverride(entry.path));
+      const bool monitorSetting = isMonitorOverrideSettingPath(entry.path);
+      const bool monitorExplicit = monitorOverrideHasExplicitValue(cfg, entry.path);
+      const bool monitorInherited = monitorSetting && !monitorExplicit;
+
+      auto row = std::make_unique<Flex>();
+      row->setDirection(FlexDirection::Horizontal);
+      row->setAlign(FlexAlign::Center);
+      row->setJustify(FlexJustify::SpaceBetween);
+      row->setGap(Style::spaceXs * scale);
+      row->setPadding(2.0f * scale, 0.0f);
+      row->setMinHeight(Style::controlHeight * scale);
+
+      auto copy = std::make_unique<Flex>();
+      copy->setDirection(FlexDirection::Vertical);
+      copy->setAlign(FlexAlign::Start);
+      copy->setGap(Style::spaceXs * scale);
+      copy->setFlexGrow(1.0f);
+
+      auto titleRow = std::make_unique<Flex>();
+      titleRow->setDirection(FlexDirection::Horizontal);
+      titleRow->setAlign(FlexAlign::Center);
+      titleRow->setGap(Style::spaceSm * scale);
+      titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
+
+      const auto makeBadge = [&](std::string_view label, const ThemeColor& fill, const ThemeColor& color) {
+        auto badge = std::make_unique<Flex>();
+        badge->setAlign(FlexAlign::Center);
+        badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+        badge->setRadius(Style::radiusSm * scale);
+        badge->setFill(fill);
+        badge->addChild(makeLabel(label, Style::fontSizeCaption * scale, color, true));
+        return badge;
+      };
+
+      if (monitorExplicit) {
+        titleRow->addChild(makeBadge(i18n::tr("settings.badge-monitor"), roleColor(ColorRole::Secondary, 0.15f),
+                                     roleColor(ColorRole::Secondary)));
+      } else if (monitorInherited) {
+        titleRow->addChild(makeBadge(i18n::tr("settings.badge-inherited"),
+                                     roleColor(ColorRole::OnSurfaceVariant, 0.12f),
+                                     roleColor(ColorRole::OnSurfaceVariant)));
+      }
+      if (overridden) {
+        titleRow->addChild(makeBadge(i18n::tr("settings.badge-override"), roleColor(ColorRole::Primary, 0.15f),
+                                     roleColor(ColorRole::Primary)));
+      }
+      if (entry.advanced) {
+        titleRow->addChild(makeBadge(i18n::tr("settings.badge-advanced"), roleColor(ColorRole::OnSurfaceVariant, 0.12f),
+                                     roleColor(ColorRole::OnSurfaceVariant)));
+      }
+      copy->addChild(std::move(titleRow));
+
+      if (!entry.subtitle.empty()) {
+        auto detail =
+            makeLabel(entry.subtitle, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false);
+        detail->setMaxWidth(360.0f * scale);
+        copy->addChild(std::move(detail));
+      }
+
+      row->addChild(std::move(copy));
+
+      auto actions = std::make_unique<Flex>();
+      actions->setDirection(FlexDirection::Horizontal);
+      actions->setAlign(FlexAlign::Center);
+      actions->setGap(Style::spaceSm * scale);
+      if (overridden) {
+        actions->addChild(makeResetButton(entry.path));
+      }
+      actions->addChild(std::move(control));
+      row->addChild(std::move(actions));
+
+      section.addChild(std::move(row));
+    };
+
+    const auto makeToggle = [&](bool checked, std::vector<std::string> path) {
+      auto toggle = std::make_unique<Toggle>();
+      toggle->setScale(scale);
+      toggle->setChecked(checked);
+      toggle->setOnChange([setOverride = ctx.setOverride, path](bool value) { setOverride(path, value); });
+      return toggle;
+    };
+
+    const auto makeSelect = [&](const SelectSetting& setting, std::vector<std::string> path) {
+      auto select = std::make_unique<Select>();
+      select->setOptions(optionLabels(setting.options));
+      if (const auto index = optionIndex(setting.options, setting.selectedValue)) {
+        select->setSelectedIndex(*index);
+      } else if (!setting.selectedValue.empty()) {
+        select->clearSelection();
+        select->setPlaceholder(i18n::tr("settings.unknown-select-value", "value", setting.selectedValue));
+      }
+      select->setFontSize(Style::fontSizeBody * scale);
+      select->setControlHeight(Style::controlHeight * scale);
+      select->setGlyphSize(Style::fontSizeBody * scale);
+      select->setSize(190.0f * scale, Style::controlHeight * scale);
+      auto options = setting.options;
+      const bool clearOnEmpty = setting.clearOnEmpty;
+      select->setOnSelectionChanged([configService = ctx.configService, clearOverride = ctx.clearOverride,
+                                     setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, path, options,
+                                     clearOnEmpty](std::size_t index, std::string_view /*label*/) {
+        if (index < options.size()) {
+          if (clearOnEmpty && options[index].value.empty()) {
+            if (configService != nullptr && configService->hasOverride(path)) {
+              clearOverride(path);
+            } else {
+              requestRebuild();
+            }
+            return;
+          }
+          setOverride(path, options[index].value);
+        }
+      });
+      return select;
+    };
+
+    const auto makeSlider = [&](float value, float minValue, float maxValue, float step, std::vector<std::string> path,
+                                bool integerValue = false) {
+      auto wrap = std::make_unique<Flex>();
+      wrap->setDirection(FlexDirection::Horizontal);
+      wrap->setAlign(FlexAlign::Center);
+      wrap->setGap(Style::spaceSm * scale);
+
+      auto valueInput = std::make_unique<Input>();
+      valueInput->setValue(integerValue ? std::format("{}", static_cast<int>(std::lround(value)))
+                                        : std::format("{:.2f}", value));
+      valueInput->setFontSize(Style::fontSizeCaption * scale);
+      valueInput->setControlHeight(Style::controlHeightSm * scale);
+      valueInput->setHorizontalPadding(Style::spaceXs * scale);
+      valueInput->setSize(50.0f * scale, Style::controlHeightSm * scale);
+      auto* valueInputPtr = valueInput.get();
+
+      auto slider = std::make_unique<Slider>();
+      slider->setRange(minValue, maxValue);
+      slider->setStep(step);
+      slider->setSize(180.0f * scale, Style::controlHeight * scale);
+      slider->setControlHeight(Style::controlHeight * scale);
+      slider->setThumbSize(16.0f * scale);
+      slider->setTrackHeight(5.0f * scale);
+      slider->setValue(value);
+      auto* sliderPtr = slider.get();
+      slider->setOnValueChanged([valueInputPtr, integerValue](float next) {
+        valueInputPtr->setInvalid(false);
+        valueInputPtr->setValue(integerValue ? std::format("{}", static_cast<int>(std::lround(next)))
+                                             : std::format("{:.2f}", next));
+      });
+      slider->setOnDragEnd([setOverride = ctx.setOverride, path, sliderPtr, integerValue]() {
+        if (integerValue) {
+          setOverride(path, static_cast<std::int64_t>(std::lround(sliderPtr->value())));
+        } else {
+          setOverride(path, static_cast<double>(sliderPtr->value()));
+        }
+      });
+
+      valueInput->setOnChange([valueInputPtr](const std::string& /*text*/) { valueInputPtr->setInvalid(false); });
+      valueInput->setOnSubmit([setOverride = ctx.setOverride, path, sliderPtr, valueInputPtr, minValue, maxValue,
+                               integerValue](const std::string& text) {
+        const auto parsed = parseFloatInput(text);
+        if (!parsed.has_value() || *parsed < minValue || *parsed > maxValue) {
+          valueInputPtr->setInvalid(true);
+          return;
+        }
+        const float v = *parsed;
+        valueInputPtr->setInvalid(false);
+        sliderPtr->setValue(v);
+        if (integerValue) {
+          setOverride(path, static_cast<std::int64_t>(std::lround(v)));
+        } else {
+          setOverride(path, static_cast<double>(v));
+        }
+      });
+
+      wrap->addChild(std::move(valueInput));
+      wrap->addChild(std::move(slider));
+      return wrap;
+    };
+
+    const auto makeText = [&](const std::string& value, const std::string& placeholder, std::vector<std::string> path) {
+      auto input = std::make_unique<Input>();
+      input->setValue(value);
+      input->setPlaceholder(placeholder);
+      input->setFontSize(Style::fontSizeBody * scale);
+      input->setControlHeight(Style::controlHeight * scale);
+      input->setHorizontalPadding(Style::spaceSm * scale);
+      input->setSize(190.0f * scale, Style::controlHeight * scale);
+      input->setOnSubmit([setOverride = ctx.setOverride, path](const std::string& v) { setOverride(path, v); });
+      return input;
+    };
+
+    const auto makeOptionalNumber = [&](const OptionalNumberSetting& setting, std::vector<std::string> path) {
+      auto input = std::make_unique<Input>();
+      input->setValue(setting.value.has_value() ? std::format("{}", *setting.value) : "");
+      input->setPlaceholder(setting.placeholder);
+      input->setFontSize(Style::fontSizeBody * scale);
+      input->setControlHeight(Style::controlHeight * scale);
+      input->setHorizontalPadding(Style::spaceSm * scale);
+      input->setSize(190.0f * scale, Style::controlHeight * scale);
+      auto* inputPtr = input.get();
+      input->setOnChange([inputPtr](const std::string& /*text*/) { inputPtr->setInvalid(false); });
+      input->setOnSubmit([configService = ctx.configService, clearOverride = ctx.clearOverride,
+                          setOverride = ctx.setOverride, path, inputPtr, minValue = setting.minValue,
+                          maxValue = setting.maxValue](const std::string& text) {
+        if (isBlankInput(text)) {
+          inputPtr->setInvalid(false);
+          if (configService != nullptr && configService->hasOverride(path)) {
+            clearOverride(path);
+          }
+          return;
+        }
+
+        const auto parsed = parseDoubleInput(text);
+        if (!parsed.has_value() || *parsed < minValue || *parsed > maxValue) {
+          inputPtr->setInvalid(true);
+          return;
+        }
+
+        inputPtr->setInvalid(false);
+        setOverride(path, *parsed);
+      });
+      return input;
+    };
+
+    const auto makeListBlock = [&](Flex& section, const SettingEntry& entry, const ListSetting& list) {
+      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasOverride(entry.path));
+
+      auto block = std::make_unique<Flex>();
+      block->setDirection(FlexDirection::Vertical);
+      block->setAlign(FlexAlign::Stretch);
+      block->setGap(Style::spaceXs * scale);
+      block->setPadding(2.0f * scale, 0.0f);
+
+      auto titleRow = std::make_unique<Flex>();
+      titleRow->setDirection(FlexDirection::Horizontal);
+      titleRow->setAlign(FlexAlign::Center);
+      titleRow->setGap(Style::spaceSm * scale);
+      titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
+      if (overridden) {
+        auto badge = std::make_unique<Flex>();
+        badge->setAlign(FlexAlign::Center);
+        badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+        badge->setRadius(Style::radiusSm * scale);
+        badge->setFill(roleColor(ColorRole::Primary, 0.15f));
+        badge->addChild(makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeCaption * scale,
+                                  roleColor(ColorRole::Primary), true));
+        titleRow->addChild(std::move(badge));
+      }
+      if (overridden) {
+        titleRow->addChild(makeResetButton(entry.path));
+      }
+      block->addChild(std::move(titleRow));
+
+      if (!entry.subtitle.empty()) {
+        block->addChild(
+            makeLabel(entry.subtitle, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false));
+      }
+
+      for (std::size_t i = 0; i < list.items.size(); ++i) {
+        auto itemRow = std::make_unique<Flex>();
+        itemRow->setDirection(FlexDirection::Horizontal);
+        itemRow->setAlign(FlexAlign::Center);
+        itemRow->setGap(Style::spaceXs * scale);
+        itemRow->setMinHeight(Style::controlHeightSm * scale);
+
+        itemRow->addChild(
+            makeLabel(list.items[i], Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurface), false));
+
+        auto spacer = std::make_unique<Flex>();
+        spacer->setFlexGrow(1.0f);
+        itemRow->addChild(std::move(spacer));
+
+        if (i > 0) {
+          auto upBtn = std::make_unique<Button>();
+          upBtn->setGlyph("chevron-up");
+          upBtn->setVariant(ButtonVariant::Ghost);
+          upBtn->setGlyphSize(Style::fontSizeCaption * scale);
+          upBtn->setMinWidth(Style::controlHeightSm * scale);
+          upBtn->setMinHeight(Style::controlHeightSm * scale);
+          upBtn->setPadding(Style::spaceXs * scale);
+          upBtn->setRadius(Style::radiusSm * scale);
+          auto items = list.items;
+          auto path = entry.path;
+          upBtn->setOnClick([setOverride = ctx.setOverride, items, path, i]() mutable {
+            std::swap(items[i], items[i - 1]);
+            setOverride(path, items);
+          });
+          itemRow->addChild(std::move(upBtn));
+        }
+        if (i + 1 < list.items.size()) {
+          auto downBtn = std::make_unique<Button>();
+          downBtn->setGlyph("chevron-down");
+          downBtn->setVariant(ButtonVariant::Ghost);
+          downBtn->setGlyphSize(Style::fontSizeCaption * scale);
+          downBtn->setMinWidth(Style::controlHeightSm * scale);
+          downBtn->setMinHeight(Style::controlHeightSm * scale);
+          downBtn->setPadding(Style::spaceXs * scale);
+          downBtn->setRadius(Style::radiusSm * scale);
+          auto items = list.items;
+          auto path = entry.path;
+          downBtn->setOnClick([setOverride = ctx.setOverride, items, path, i]() mutable {
+            std::swap(items[i], items[i + 1]);
+            setOverride(path, items);
+          });
+          itemRow->addChild(std::move(downBtn));
+        }
+
+        auto removeBtn = std::make_unique<Button>();
+        removeBtn->setGlyph("close");
+        removeBtn->setVariant(ButtonVariant::Ghost);
+        removeBtn->setGlyphSize(Style::fontSizeCaption * scale);
+        removeBtn->setMinWidth(Style::controlHeightSm * scale);
+        removeBtn->setMinHeight(Style::controlHeightSm * scale);
+        removeBtn->setPadding(Style::spaceXs * scale);
+        removeBtn->setRadius(Style::radiusSm * scale);
+        auto items = list.items;
+        auto path = entry.path;
+        removeBtn->setOnClick([setOverride = ctx.setOverride, items, path, i]() mutable {
+          items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
+          setOverride(path, items);
+        });
+        itemRow->addChild(std::move(removeBtn));
+
+        block->addChild(std::move(itemRow));
+      }
+
+      auto addRow = std::make_unique<Flex>();
+      addRow->setDirection(FlexDirection::Horizontal);
+      addRow->setAlign(FlexAlign::Center);
+      addRow->setGap(Style::spaceXs * scale);
+
+      auto addInput = std::make_unique<Input>();
+      addInput->setFontSize(Style::fontSizeCaption * scale);
+      addInput->setControlHeight(Style::controlHeightSm * scale);
+      addInput->setHorizontalPadding(Style::spaceXs * scale);
+      addInput->setSize(140.0f * scale, Style::controlHeightSm * scale);
+      addInput->setFlexGrow(1.0f);
+      auto* addInputPtr = addInput.get();
+
+      auto addBtn = std::make_unique<Button>();
+      addBtn->setGlyph("add");
+      addBtn->setVariant(ButtonVariant::Ghost);
+      addBtn->setGlyphSize(Style::fontSizeCaption * scale);
+      addBtn->setMinWidth(Style::controlHeightSm * scale);
+      addBtn->setMinHeight(Style::controlHeightSm * scale);
+      addBtn->setPadding(Style::spaceXs * scale);
+      addBtn->setRadius(Style::radiusSm * scale);
+      auto items = list.items;
+      auto path = entry.path;
+      addBtn->setOnClick([setOverride = ctx.setOverride, addInputPtr, items, path]() mutable {
+        const auto& text = addInputPtr->value();
+        if (!text.empty()) {
+          items.push_back(text);
+          setOverride(path, items);
+        }
+      });
+
+      addInput->setOnSubmit([setOverride = ctx.setOverride, items, path](const std::string& text) mutable {
+        if (!text.empty()) {
+          items.push_back(text);
+          setOverride(path, items);
+        }
+      });
+
+      addRow->addChild(std::move(addInput));
+      addRow->addChild(std::move(addBtn));
+      block->addChild(std::move(addRow));
+
+      section.addChild(std::move(block));
+    };
+
+    const auto makeControl = [&](const SettingEntry& entry) -> std::unique_ptr<Node> {
+      return std::visit(
+          [&](const auto& control) -> std::unique_ptr<Node> {
+            using T = std::decay_t<decltype(control)>;
+            if constexpr (std::is_same_v<T, ToggleSetting>) {
+              return makeToggle(control.checked, entry.path);
+            } else if constexpr (std::is_same_v<T, SelectSetting>) {
+              return makeSelect(control, entry.path);
+            } else if constexpr (std::is_same_v<T, SliderSetting>) {
+              return makeSlider(control.value, control.minValue, control.maxValue, control.step, entry.path,
+                                control.integerValue);
+            } else if constexpr (std::is_same_v<T, TextSetting>) {
+              return makeText(control.value, control.placeholder, entry.path);
+            } else if constexpr (std::is_same_v<T, OptionalNumberSetting>) {
+              return makeOptionalNumber(control, entry.path);
+            } else if constexpr (std::is_same_v<T, ListSetting>) {
+              return nullptr;
+            }
+          },
+          entry.control);
+    };
+
+    std::string activeSectionKey;
+    std::string activeGroupKey;
+    Flex* activeSection = nullptr;
+    std::size_t visibleEntries = 0;
+
+    BarWidgetEditorContext barWidgetEditorCtx{
+        .config = cfg,
+        .configService = ctx.configService,
+        .scale = scale,
+        .showAdvanced = ctx.showAdvanced,
+        .showOverriddenOnly = ctx.showOverriddenOnly,
+        .openWidgetPickerPath = ctx.openWidgetPickerPath,
+        .editingWidgetName = ctx.editingWidgetName,
+        .pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
+        .pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
+        .renamingWidgetName = ctx.renamingWidgetName,
+        .creatingWidgetType = ctx.creatingWidgetType,
+        .requestRebuild = ctx.requestRebuild,
+        .resetContentScroll = ctx.resetContentScroll,
+        .setOverride = ctx.setOverride,
+        .setOverrides = ctx.setOverrides,
+        .clearOverride = ctx.clearOverride,
+        .renameWidgetInstance = ctx.renameWidgetInstance,
+        .makeResetButton = makeResetButton,
+        .makeRow = makeRow,
+        .makeToggle = [&](bool checked, std::vector<std::string> path) -> std::unique_ptr<Node> {
+          return makeToggle(checked, std::move(path));
+        },
+        .makeSelect = [&](const SelectSetting& setting, std::vector<std::string> path) -> std::unique_ptr<Node> {
+          return makeSelect(setting, std::move(path));
+        },
+        .makeSlider = [&](float value, float minValue, float maxValue, float step, std::vector<std::string> path,
+                          bool integerValue) -> std::unique_ptr<Node> {
+          return makeSlider(value, minValue, maxValue, step, std::move(path), integerValue);
+        },
+        .makeText = [&](const std::string& value, const std::string& placeholder, std::vector<std::string> path)
+            -> std::unique_ptr<Node> { return makeText(value, placeholder, std::move(path)); },
+        .makeListBlock = [&](Flex& section, const SettingEntry& entry,
+                             const ListSetting& list) { makeListBlock(section, entry, list); },
+    };
+
+    for (const auto& entry : registry) {
+      if (ctx.searchQuery.empty() && !ctx.selectedSection.empty() && entry.section != ctx.selectedSection) {
+        continue;
+      }
+      if (!ctx.showAdvanced && entry.advanced) {
+        continue;
+      }
+      if (ctx.showOverriddenOnly && ctx.configService != nullptr && !ctx.configService->hasOverride(entry.path)) {
+        continue;
+      }
+      if (!matchesSettingQuery(entry, ctx.searchQuery)) {
+        continue;
+      }
+
+      if (entry.section != activeSectionKey) {
+        activeSectionKey = entry.section;
+        activeGroupKey.clear();
+        std::string displayTitle;
+        if (entry.section == "bar" && ctx.selectedBar != nullptr) {
+          displayTitle = i18n::tr("settings.bar-label", "name", ctx.selectedBar->name);
+          if (ctx.selectedMonitorOverride != nullptr) {
+            displayTitle += " / " + ctx.selectedMonitorOverride->match;
+          }
+        } else {
+          displayTitle = sectionLabel(entry.section);
+        }
+        activeSection = makeSection(displayTitle);
+      }
+      if (activeSection != nullptr) {
+        if (entry.group != activeGroupKey) {
+          const bool isFirstGroup = activeGroupKey.empty();
+          activeGroupKey = entry.group;
+          addGroupLabel(*activeSection, groupLabel(entry.group), isFirstGroup);
+        }
+        if (const auto* list = std::get_if<ListSetting>(&entry.control)) {
+          if (isFirstBarWidgetListPath(entry.path)) {
+            addBarWidgetLaneEditor(*activeSection, entry, barWidgetEditorCtx);
+          } else if (!isBarWidgetListPath(entry.path)) {
+            makeListBlock(*activeSection, entry, *list);
+          }
+        } else {
+          makeRow(*activeSection, entry, makeControl(entry));
+        }
+        ++visibleEntries;
+      }
+    }
+
+    if (visibleEntries == 0) {
+      auto emptyState = std::make_unique<Flex>();
+      emptyState->setDirection(FlexDirection::Vertical);
+      emptyState->setAlign(FlexAlign::Center);
+      emptyState->setJustify(FlexJustify::Center);
+      emptyState->setGap(Style::spaceXs * scale);
+      emptyState->setPadding((Style::spaceLg + Style::spaceMd) * scale);
+      emptyState->setFill(roleColor(ColorRole::SurfaceVariant, 0.24f));
+      emptyState->setBorder(roleColor(ColorRole::Outline, 0.28f), Style::borderWidth);
+      emptyState->setRadius(Style::radiusMd * scale);
+      emptyState->addChild(makeLabel(i18n::tr("settings.no-results"), Style::fontSizeBody * scale,
+                                     roleColor(ColorRole::OnSurface), true));
+      emptyState->addChild(makeLabel(i18n::tr("settings.no-results-hint"), Style::fontSizeCaption * scale,
+                                     roleColor(ColorRole::OnSurfaceVariant), false));
+
+      auto emptyRow = std::make_unique<Flex>();
+      emptyRow->setDirection(FlexDirection::Horizontal);
+      emptyRow->setAlign(FlexAlign::Center);
+      emptyRow->setJustify(FlexJustify::Center);
+      emptyRow->setFillParentMainAxis(true);
+      emptyRow->addChild(std::move(emptyState));
+      content.addChild(std::move(emptyRow));
+    }
+
+    return visibleEntries;
+  }
+
+} // namespace settings
