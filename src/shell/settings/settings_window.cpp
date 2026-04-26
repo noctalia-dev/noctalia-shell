@@ -1452,7 +1452,14 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         makeLabel(i18n::tr("settings.no-results"), Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
     emptyState->addChild(makeLabel(i18n::tr("settings.no-results-hint"), Style::fontSizeCaption * scale,
                                    roleColor(ColorRole::OnSurfaceVariant), false));
-    content->addChild(std::move(emptyState));
+
+    auto emptyRow = std::make_unique<Flex>();
+    emptyRow->setDirection(FlexDirection::Horizontal);
+    emptyRow->setAlign(FlexAlign::Center);
+    emptyRow->setJustify(FlexJustify::Center);
+    emptyRow->setFillParentMainAxis(true);
+    emptyRow->addChild(std::move(emptyState));
+    content->addChild(std::move(emptyRow));
   }
 
   body->addChild(std::move(scroll));
