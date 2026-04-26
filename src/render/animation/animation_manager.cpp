@@ -11,6 +11,19 @@ AnimationManager::~AnimationManager() { MotionService::instance().unregisterMana
 AnimationManager::Id AnimationManager::animate(float from, float to, float durationMs, Easing easing,
                                                std::function<void(float)> setter, std::function<void()> onComplete,
                                                const void* owner) {
+  return animateInternal(from, to, durationMs, easing, std::move(setter), std::move(onComplete), owner, true);
+}
+
+AnimationManager::Id AnimationManager::animateUnscaled(float from, float to, float durationMs, Easing easing,
+                                                       std::function<void(float)> setter,
+                                                       std::function<void()> onComplete, const void* owner) {
+  return animateInternal(from, to, durationMs, easing, std::move(setter), std::move(onComplete), owner, false);
+}
+
+AnimationManager::Id AnimationManager::animateInternal(float from, float to, float durationMs, Easing easing,
+                                                       std::function<void(float)> setter,
+                                                       std::function<void()> onComplete, const void* owner,
+                                                       bool scaleDuration) {
   const auto& motion = MotionService::instance();
   if (!motion.enabled()) {
     if (setter) {
@@ -22,7 +35,7 @@ AnimationManager::Id AnimationManager::animate(float from, float to, float durat
     return 0;
   }
 
-  const float effectiveDurationMs = durationMs / motion.speed();
+  const float effectiveDurationMs = scaleDuration ? durationMs / motion.speed() : durationMs;
   if (effectiveDurationMs <= 0.0f) {
     if (setter) {
       setter(to);

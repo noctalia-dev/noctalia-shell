@@ -20,6 +20,8 @@ public:
 
   Id animate(float from, float to, float durationMs, Easing easing, std::function<void(float)> setter,
              std::function<void()> onComplete = {}, const void* owner = nullptr);
+  Id animateUnscaled(float from, float to, float durationMs, Easing easing, std::function<void(float)> setter,
+                     std::function<void()> onComplete = {}, const void* owner = nullptr);
   void cancel(Id id);
   void cancelAll();
   // Cancels any animations tagged with the given owner. Called from Node's destructor so that
@@ -37,4 +39,7 @@ private:
 
   std::vector<Entry> m_animations;
   Id m_nextId = 1;
+
+  Id animateInternal(float from, float to, float durationMs, Easing easing, std::function<void(float)> setter,
+                     std::function<void()> onComplete, const void* owner, bool scaleDuration);
 };

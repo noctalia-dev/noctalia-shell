@@ -481,7 +481,7 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
             if (hovered) {
               cs.countdownAnimId = 0;
             } else {
-              cs.countdownAnimId = inst->animations.animate(
+              cs.countdownAnimId = inst->animations.animateUnscaled(
                   1.0f, 0.0f, static_cast<float>(newDuration), Easing::Linear,
                   [this, pb = cs.progressBar, notificationId = n.id](float v) {
                     pb->setProgress(v);
@@ -683,7 +683,7 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
     const float startProgress = std::clamp(entry.remainingProgress, 0.0f, 1.0f);
     cs.progressBar->setOpacity(1.0f);
     cs.progressBar->setProgress(startProgress);
-    cs.countdownAnimId = inst.animations.animate(
+    cs.countdownAnimId = inst.animations.animateUnscaled(
         startProgress, 0.0f, static_cast<float>(entry.displayDurationMs) * startProgress, Easing::Linear,
         [this, pb = cs.progressBar, notificationId = entry.notificationId](float v) {
           pb->setProgress(v);
@@ -944,7 +944,7 @@ void NotificationToast::resumeCountdowns(uint32_t notificationId) {
     state->progressBar->setOpacity(1.0f);
     state->progressBar->setProgress(remaining);
     const bool isDriver = (m_instances.size() > 0 && m_instances[0].get() == inst.get());
-    state->countdownAnimId = inst->animations.animate(
+    state->countdownAnimId = inst->animations.animateUnscaled(
         remaining, 0.0f, static_cast<float>(entry->displayDurationMs) * remaining, Easing::Linear,
         [this, progressBar = state->progressBar, notificationId](float v) {
           progressBar->setProgress(v);
