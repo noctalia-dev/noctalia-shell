@@ -3,7 +3,6 @@
 #include "core/log.h"
 #include "ipc/ipc_service.h"
 #include "notification/notification_manager.h"
-#include "render/core/color.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
@@ -242,6 +241,21 @@ namespace {
   }
 
   constexpr Logger kLog("config");
+
+  ThemeColor themeColorFromRoleString(const std::string& raw) {
+    if (auto role = colorRoleFromToken(raw)) {
+      return roleColor(*role);
+    }
+    kLog.warn("unknown theme color role \"{}\", using surface_variant", raw);
+    return roleColor(ColorRole::SurfaceVariant);
+  }
+
+  std::optional<ThemeColor> optionalCapsuleBorder(const std::string& raw) {
+    if (StringUtils::trim(raw).empty()) {
+      return std::nullopt;
+    }
+    return themeColorFromRoleString(raw);
+  }
 
 } // namespace
 
@@ -637,39 +651,7 @@ void ConfigService::setWallpaperPath(const std::optional<std::string>& connector
   }
 }
 
-namespace {
-
-  constexpr Logger kCapsuleLog("config");
-
-  ThemeColor themeColorFromCapsuleString(const std::string& raw) {
-    std::string trimmed = StringUtils::trim(raw);
-    if (!trimmed.empty() && trimmed.front() == '#') {
-      try {
-        const Color c = hex(trimmed);
-        return fixedColor(withAlpha(c, 1.0f));
-      } catch (const std::invalid_argument&) {
-        kCapsuleLog.warn("invalid capsule color \"{}\", using surface_variant", raw);
-        return roleColor(ColorRole::SurfaceVariant);
-      }
-    }
-    if (auto role = colorRoleFromToken(trimmed)) {
-      return roleColor(*role);
-    }
-    kCapsuleLog.warn("unknown capsule color role \"{}\", using surface_variant", raw);
-    return roleColor(ColorRole::SurfaceVariant);
-  }
-
-  std::optional<ThemeColor> optionalCapsuleBorder(const std::string& raw) {
-    std::string t = StringUtils::trim(raw);
-    if (t.empty()) {
-      return std::nullopt;
-    }
-    return themeColorFromCapsuleString(t);
-  }
-
-} // namespace
-
-ThemeColor themeColorFromConfigString(const std::string& raw) { return themeColorFromCapsuleString(raw); }
+ThemeColor themeColorFromConfigString(const std::string& raw) { return themeColorFromRoleString(raw); }
 
 BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOutput& output) {
   BarConfig resolved = base;
@@ -729,16 +711,16 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
     if (ovr.widgetCapsuleDefault)
       resolved.widgetCapsuleDefault = *ovr.widgetCapsuleDefault;
     if (ovr.widgetCapsuleFill)
-      resolved.widgetCapsuleFill = themeColorFromCapsuleString(*ovr.widgetCapsuleFill);
-    if (ovr.widgetCapsuleBorder) {
+      resolved.widgetCapsuleFill = *ovr.widgetCapsuleFill;
+    if (ovr.widgetCapsuleBorderSpecified) {
       resolved.widgetCapsuleBorderSpecified = true;
-      resolved.widgetCapsuleBorder = optionalCapsuleBorder(*ovr.widgetCapsuleBorder);
+      resolved.widgetCapsuleBorder = ovr.widgetCapsuleBorder;
     }
     if (ovr.widgetCapsuleForeground) {
-      resolved.widgetCapsuleForeground = themeColorFromCapsuleString(*ovr.widgetCapsuleForeground);
+      resolved.widgetCapsuleForeground = *ovr.widgetCapsuleForeground;
     }
     if (ovr.widgetColor) {
-      resolved.widgetColor = themeColorFromCapsuleString(*ovr.widgetColor);
+      resolved.widgetColor = *ovr.widgetColor;
     }
     if (ovr.widgetCapsulePadding) {
       resolved.widgetCapsulePadding = std::clamp(static_cast<float>(*ovr.widgetCapsulePadding), 0.0f, 48.0f);
@@ -1097,10 +1079,10 @@ void ConfigService::parseTable(const toml::table& tbl) {
         bar.widgetCapsuleDefault = *v;
       }
       if (auto fillStr = (*barTbl)["capsule_fill"].value<std::string>()) {
-        bar.widgetCapsuleFill = themeColorFromCapsuleString(*fillStr);
+        bar.widgetCapsuleFill = themeColorFromRoleString(*fillStr);
       }
       if (auto fgStr = (*barTbl)["capsule_foreground"].value<std::string>()) {
-        bar.widgetCapsuleForeground = themeColorFromCapsuleString(*fgStr);
+        bar.widgetCapsuleForeground = themeColorFromRoleString(*fgStr);
       }
       if (auto v = (*barTbl)["capsule_padding"].value<double>()) {
         bar.widgetCapsulePadding = std::clamp(static_cast<float>(*v), 0.0f, 48.0f);
@@ -1117,7 +1099,7 @@ void ConfigService::parseTable(const toml::table& tbl) {
         bar.widgetCapsuleBorder = optionalCapsuleBorder(borderStr);
       }
       if (auto widgetColorStr = (*barTbl)["color"].value<std::string>()) {
-        bar.widgetColor = themeColorFromCapsuleString(*widgetColorStr);
+        bar.widgetColor = themeColorFromRoleString(*widgetColorStr);
       }
 
       // Parse [bar.<name>.monitor.*] overrides — insertion order preserved by toml++
@@ -1180,10 +1162,10 @@ void ConfigService::parseTable(const toml::table& tbl) {
             ovr.widgetCapsuleDefault = *v;
           }
           if (auto fillStr = (*monTbl)["capsule_fill"].value<std::string>()) {
-            ovr.widgetCapsuleFill = *fillStr;
+            ovr.widgetCapsuleFill = themeColorFromRoleString(*fillStr);
           }
           if (auto fgStr = (*monTbl)["capsule_foreground"].value<std::string>()) {
-            ovr.widgetCapsuleForeground = *fgStr;
+            ovr.widgetCapsuleForeground = themeColorFromRoleString(*fgStr);
           }
           if (auto v = (*monTbl)["capsule_padding"].value<double>()) {
             ovr.widgetCapsulePadding = *v;
@@ -1192,14 +1174,15 @@ void ConfigService::parseTable(const toml::table& tbl) {
             ovr.widgetCapsuleOpacity = *v;
           }
           if (monTbl->contains("capsule_border")) {
+            ovr.widgetCapsuleBorderSpecified = true;
             std::string borderStr;
             if (auto v = (*monTbl)["capsule_border"].value<std::string>()) {
               borderStr = *v;
             }
-            ovr.widgetCapsuleBorder = borderStr;
+            ovr.widgetCapsuleBorder = optionalCapsuleBorder(borderStr);
           }
           if (auto cStr = (*monTbl)["color"].value<std::string>()) {
-            ovr.widgetColor = *cStr;
+            ovr.widgetColor = themeColorFromRoleString(*cStr);
           }
 
           bar.monitorOverrides.push_back(std::move(ovr));
@@ -1847,7 +1830,7 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
   }
 
   if (widgetHasFillKey) {
-    spec.fill = themeColorFromCapsuleString(widget->getString("capsule_fill", ""));
+    spec.fill = themeColorFromRoleString(widget->getString("capsule_fill", ""));
   } else {
     spec.fill = bar.widgetCapsuleFill;
   }
@@ -1872,7 +1855,7 @@ WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const Wid
   }
 
   if (widget != nullptr && widget->hasSetting("capsule_foreground")) {
-    spec.foreground = themeColorFromCapsuleString(widget->getString("capsule_foreground", ""));
+    spec.foreground = themeColorFromRoleString(widget->getString("capsule_foreground", ""));
   } else if (bar.widgetCapsuleForeground.has_value()) {
     spec.foreground = bar.widgetCapsuleForeground;
   } else {

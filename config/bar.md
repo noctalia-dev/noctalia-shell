@@ -98,7 +98,7 @@ Set under `[bar.<name>]` or `[bar.<name>.monitor.*]`:
 |---------|------|---------|-------------|
 | `capsule` | bool | `false` | `true` gives every widget a capsule unless `[widget.*]` sets `capsule = false`. |
 | `color` | string | *(unset)* | Default icon + label color for every widget on this bar. |
-| `capsule_fill` | string | `surface_variant` | Default capsule background. Theme role or `#` hex; hex alpha is ignored — use `capsule_opacity`. |
+| `capsule_fill` | string | `surface_variant` | Default capsule background theme role. |
 | `capsule_foreground` | string | *(unset)* | Default icon + label color for capped widgets. |
 | `capsule_padding` | number | `6` | Inner padding in logical pixels before `scale` is applied (clamped 0–48). |
 | `capsule_opacity` | number | `1.0` | Capsule background opacity (0.0–1.0). |
@@ -118,14 +118,14 @@ Set under `[widget.<name>]`:
 | `capsule_border` | string | *(from bar)* | Omit to inherit bar policy. Present but empty/whitespace-only = no border. |
 | `color` | string | *(unset)* | Icon + label color with or without capsule. Resolution order: `color` → `capsule_foreground` → built-in defaults. |
 
-Theme role names use **snake_case** (e.g. `on_surface`, `surface_variant`, `secondary`). Hyphens are accepted and normalized to underscores.
+Theme role names use **snake_case** (e.g. `on_surface`, `surface_variant`, `secondary`). Arbitrary hex colors are not accepted here; these settings use the shell's classic 16 theme roles.
 
 The capsule is hidden automatically when a widget reports no visible ink (empty tray, absent battery, invisible root). Subclasses may override `Widget::shouldShowBarCapsule()`.
 
 ```toml
 [bar.main]
 capsule         = true
-capsule_fill    = "surface_secondary"
+capsule_fill    = "surface_variant"
 capsule_opacity = 0.9
 capsule_border  = "outline"
 
@@ -137,7 +137,7 @@ capsule_foreground = "on_primary"
 capsule_padding    = 10
 
 [widget.volume]
-capsule_fill   = "#2a2a33"
+capsule_fill   = "secondary"
 capsule_border = ""          # no border on this widget
 
 [widget.spacer]

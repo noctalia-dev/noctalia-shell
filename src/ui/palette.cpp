@@ -1,8 +1,8 @@
 #include "ui/palette.h"
 
 #include "theme/builtin_palettes.h"
+#include "util/string_utils.h"
 
-#include <cctype>
 #include <string>
 
 Palette palette = noctalia::theme::findBuiltinPalette("Noctalia")->dark;
@@ -10,21 +10,8 @@ Palette palette = noctalia::theme::findBuiltinPalette("Noctalia")->dark;
 namespace {
 
   std::string normalizedRoleToken(std::string_view token) {
-    while (!token.empty() && std::isspace(static_cast<unsigned char>(token.front())) != 0) {
-      token.remove_prefix(1);
-    }
-    while (!token.empty() && std::isspace(static_cast<unsigned char>(token.back())) != 0) {
-      token.remove_suffix(1);
-    }
-
-    std::string normalized(token);
-    for (auto& c : normalized) {
-      if (c == '-') {
-        c = '_';
-      } else {
-        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-      }
-    }
+    std::string normalized = StringUtils::trim(token);
+    StringUtils::toLowerInPlace(normalized);
     return normalized;
   }
 
@@ -103,9 +90,6 @@ std::optional<ColorRole> colorRoleFromToken(std::string_view token) {
   }
   if (normalized == "surface_variant") {
     return ColorRole::SurfaceVariant;
-  }
-  if (normalized == "surface_secondary") {
-    return ColorRole::Secondary;
   }
   if (normalized == "on_surface_variant") {
     return ColorRole::OnSurfaceVariant;

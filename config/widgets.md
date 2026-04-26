@@ -163,8 +163,8 @@ Horizontal audio spectrum using the current PipeWire monitor stream.
 | `height` | number | `16` | Widget height in screen pixels |
 | `bands` | number | `16` | Number of spectrum bands |
 | `mirrored` | bool | `false` | Mirror the spectrum around the center line |
-| `low_color` | string | `"primary"` | Color for the first bars (theme role or `#` hex) |
-| `high_color` | string | `"primary"` | Color for the last bars (theme role or `#` hex) |
+| `low_color` | string | `"primary"` | Theme role for the first bars |
+| `high_color` | string | `"primary"` | Theme role for the last bars |
 
 ```toml
 [widget.audio-vis]

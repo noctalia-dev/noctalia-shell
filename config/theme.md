@@ -65,6 +65,14 @@ Picks the generator when `source = "wallpaper"`:
 
 `dark` or `light` selects the palette variant. `auto` is treated as `dark` until system light/dark tracking lands.
 
+## Shell Color Roles
+
+User-facing shell color settings use these 16 theme roles:
+
+`primary`, `on_primary`, `secondary`, `on_secondary`, `tertiary`, `on_tertiary`, `error`, `on_error`, `surface`, `on_surface`, `surface_variant`, `on_surface_variant`, `outline`, `shadow`, `hover`, `on_hover`
+
+Role names are lowercase `snake_case`. Arbitrary hex colors are intentionally not accepted in shell/widget config.
+
 ### IPC
 
 ```sh

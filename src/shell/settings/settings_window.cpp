@@ -237,7 +237,7 @@ namespace {
       return override->widgetCapsuleFill.has_value();
     }
     if (key == "capsule_border") {
-      return override->widgetCapsuleBorder.has_value();
+      return override->widgetCapsuleBorderSpecified;
     }
     if (key == "capsule_foreground") {
       return override->widgetCapsuleForeground.has_value();

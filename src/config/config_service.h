@@ -42,10 +42,11 @@ struct BarMonitorOverride {
   std::optional<std::vector<std::string>> centerWidgets;
   std::optional<std::vector<std::string>> endWidgets;
   std::optional<bool> widgetCapsuleDefault;
-  std::optional<std::string> widgetCapsuleFill;
-  std::optional<std::string> widgetCapsuleBorder;
-  std::optional<std::string> widgetCapsuleForeground;
-  std::optional<std::string> widgetColor;
+  std::optional<ThemeColor> widgetCapsuleFill;
+  bool widgetCapsuleBorderSpecified = false;
+  std::optional<ThemeColor> widgetCapsuleBorder;
+  std::optional<ThemeColor> widgetCapsuleForeground;
+  std::optional<ThemeColor> widgetColor;
   std::optional<double> widgetCapsulePadding;
   std::optional<double> widgetCapsuleOpacity;
 
@@ -107,7 +108,7 @@ struct WidgetBarCapsuleSpec {
   ThemeColor fill = roleColor(ColorRole::SurfaceVariant);
   // Set only when `capsule_border` is present and non-empty in config; otherwise no outline.
   std::optional<ThemeColor> border;
-  // Icon + primary label color when the capsule is visible (theme role or `#` hex); unset = widget defaults.
+  // Icon + primary label color when the capsule is visible; unset = widget defaults.
   std::optional<ThemeColor> foreground;
   // Inner padding in logical pixels before content-scale (see `capsule_padding` / bar default).
   float padding = Style::barCapsulePadding;
@@ -135,7 +136,7 @@ struct WidgetConfig {
 // Merges `[bar.*]` capsule defaults with `[widget.*]` overrides (see CONFIG.md).
 [[nodiscard]] WidgetBarCapsuleSpec resolveWidgetBarCapsuleSpec(const BarConfig& bar, const WidgetConfig* widget);
 
-// Theme role or `#` hex for `[widget.*] color` and other user color strings (same rules as `capsule_fill`).
+// Theme role for `[widget.*] color` and other user color strings (same rules as `capsule_fill`).
 [[nodiscard]] ThemeColor themeColorFromConfigString(const std::string& raw);
 
 // Shared output selector matching used by monitor-scoped config and IPC selectors.
