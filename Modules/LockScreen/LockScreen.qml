@@ -106,8 +106,17 @@ Loader {
               Item {
                 id: batteryIndicator
                 readonly property var battery: {
-                  const pb = BatteryService.peripheralBatteries;
-                  return (pb.length > 0 && (pb.find(b => BatteryService.isCriticalBattery(b)) || pb.find(b => BatteryService.isLowBattery(b)))) || BatteryService.primaryDevice;
+                  const lb = BatteryService.laptopBatteries[0]; // BAT0 or DD
+                  const pb = BatteryService.peripheralBatteries[0]; // Peripheral with lowest battery
+                  if (lb && (BatteryService.isCriticalBattery(lb) || BatteryService.isLowBattery(lb))) {
+                    // If lb exist and Critical or Low battery, return it - Whenever LaptopBattery is critical or low - Has highest priority.
+                    return lb;
+                  }
+                  if (pb && (BatteryService.isCriticalBattery(pb) || BatteryService.isLowBattery(pb))) {
+                    // If pb exist and Critical or Low battery, return it - If Laptop Battery is not critical or low - Has higher priority.
+                    return pb;
+                  }
+                  return lb ? lb : pb; // If both exist lb has priority (LaptopBattery) otherwise return pb (PeripheralBattery)
                 }
                 readonly property bool ext_battery: BatteryService.isPeripheral(battery)
                 readonly property bool isReady: BatteryService.isDeviceReady(battery)
