@@ -87,32 +87,36 @@ namespace {
   // existing BarInstance can be retained on reload and only its widget tree
   // rebuilt — avoiding the screen-shift caused by destroying and recreating
   // the exclusive zone.
-  bool barConfigSurfaceFieldsEqual(const BarConfig& a, const BarConfig& b) {
+  bool barConfigSurfaceFieldsEqual(const BarConfig& a, const BarConfig& b,
+                                   const ShellConfig::ShadowConfig& previousShadow,
+                                   const ShellConfig::ShadowConfig& nextShadow) {
+    const bool sameShadowSurface = (!a.shadow && !b.shadow) || previousShadow == nextShadow;
     return a.name == b.name && a.position == b.position && a.enabled == b.enabled && a.autoHide == b.autoHide &&
            a.reserveSpace == b.reserveSpace && a.thickness == b.thickness && a.marginH == b.marginH &&
-           a.marginV == b.marginV && a.shadowBlur == b.shadowBlur && a.shadowOffsetX == b.shadowOffsetX &&
-           a.shadowOffsetY == b.shadowOffsetY && a.monitorOverrides == b.monitorOverrides;
+           a.marginV == b.marginV && a.shadow == b.shadow && sameShadowSurface &&
+           a.monitorOverrides == b.monitorOverrides;
   }
 
-  ShadowBleed computeShadowBleed(const BarConfig& cfg) {
-    if (cfg.shadowBlur <= 0)
+  ShadowBleed computeShadowBleed(const BarConfig& cfg, const ShellConfig::ShadowConfig& shadow) {
+    if (!cfg.shadow || shadow.blur <= 0)
       return {};
     return {
-        cfg.shadowBlur + std::max(0, -cfg.shadowOffsetX),
-        cfg.shadowBlur + std::max(0, cfg.shadowOffsetX),
-        cfg.shadowBlur + std::max(0, -cfg.shadowOffsetY),
-        cfg.shadowBlur + std::max(0, cfg.shadowOffsetY),
+        shadow.blur + std::max(0, -shadow.offsetX),
+        shadow.blur + std::max(0, shadow.offsetX),
+        shadow.blur + std::max(0, -shadow.offsetY),
+        shadow.blur + std::max(0, shadow.offsetY),
     };
   }
 
-  BarVisualGeometry computeBarVisualGeometry(const BarConfig& cfg, float surfaceWidth, float surfaceHeight) {
+  BarVisualGeometry computeBarVisualGeometry(const BarConfig& cfg, const ShellConfig::ShadowConfig& shadow,
+                                             float surfaceWidth, float surfaceHeight) {
     const float barThickness = static_cast<float>(cfg.thickness);
     const float marginH = static_cast<float>(cfg.marginH);
     const float marginV = static_cast<float>(cfg.marginV);
     const bool isBottom = cfg.position == "bottom";
     const bool isRight = cfg.position == "right";
     const bool isVertical = (cfg.position == "left" || cfg.position == "right");
-    const auto sbi = computeShadowBleed(cfg);
+    const auto sbi = computeShadowBleed(cfg, shadow);
     const float bleedLeft = static_cast<float>(sbi.left);
     const float bleedRight = static_cast<float>(sbi.right);
     const float bleedUp = static_cast<float>(sbi.up);
@@ -383,9 +387,10 @@ bool Bar::initialize(WaylandConnection& wayland, ConfigService* config, TimeServ
 
   m_lastBars = m_config->config().bars;
   m_lastWidgets = m_config->config().widgets;
+  m_lastShadow = m_config->config().shell.shadow;
   m_config->addReloadCallback([this]() {
     const auto& cfg = m_config->config();
-    if (cfg.bars == m_lastBars && cfg.widgets == m_lastWidgets) {
+    if (cfg.bars == m_lastBars && cfg.widgets == m_lastWidgets && cfg.shell.shadow == m_lastShadow) {
       return;
     }
     reload();
@@ -405,8 +410,10 @@ void Bar::onSecondTick() {
 
 void Bar::reload() {
   kLog.info("reloading config");
+  const auto previousShadow = m_lastShadow;
   m_lastBars = m_config->config().bars;
   m_lastWidgets = m_config->config().widgets;
+  m_lastShadow = m_config->config().shell.shadow;
   m_widgetFactory = std::make_unique<WidgetFactory>(
       *m_wayland, m_config->config(), m_notifications, m_tray, m_audio, m_upower, m_sysmon, m_powerProfiles, m_network,
       m_idleInhibitor, m_mpris, m_audioSpectrum, m_httpClient, m_weatherService, m_nightLight, m_themeService,
@@ -451,7 +458,7 @@ void Bar::reload() {
     if (!resolved.enabled) {
       return destroy();
     }
-    if (!barConfigSurfaceFieldsEqual(inst.barConfig, resolved)) {
+    if (!barConfigSurfaceFieldsEqual(inst.barConfig, resolved, previousShadow, m_lastShadow)) {
       return destroy();
     }
 
@@ -569,8 +576,8 @@ std::optional<AttachedPanelParentContext> Bar::attachedPanelParentContext(wl_out
     return std::nullopt;
   }
 
-  const auto bar = computeBarVisualGeometry(instance->barConfig, static_cast<float>(surfaceWidth),
-                                            static_cast<float>(surfaceHeight));
+  const auto bar = computeBarVisualGeometry(instance->barConfig, m_config->config().shell.shadow,
+                                            static_cast<float>(surfaceWidth), static_cast<float>(surfaceHeight));
   if (bar.width <= 0.0f || bar.height <= 0.0f) {
     return std::nullopt;
   }
@@ -705,7 +712,7 @@ void Bar::createInstance(const WaylandOutput& output, const BarConfig& barConfig
 
   const std::int32_t mH = barConfig.marginH;
   const std::int32_t mV = barConfig.marginV;
-  const auto sb = computeShadowBleed(barConfig);
+  const auto sb = computeShadowBleed(barConfig, m_config->config().shell.shadow);
   const bool reserveExclusiveZone = barConfig.reserveSpace;
 
   // Compositor margins absorb the visual gap where the shadow doesn't reach.
@@ -1027,9 +1034,10 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   const auto h = static_cast<float>(height);
   const float padding = static_cast<float>(instance.barConfig.padding);
   const float widgetSpacing = static_cast<float>(instance.barConfig.widgetSpacing);
-  const float shadowSize = static_cast<float>(std::max(0, instance.barConfig.shadowBlur));
-  const float shadowOffsetX = static_cast<float>(instance.barConfig.shadowOffsetX);
-  const float shadowOffsetY = static_cast<float>(instance.barConfig.shadowOffsetY);
+  const auto& shadowConfig = m_config->config().shell.shadow;
+  const float shadowSize = instance.barConfig.shadow ? static_cast<float>(std::max(0, shadowConfig.blur)) : 0.0f;
+  const float shadowOffsetX = static_cast<float>(shadowConfig.offsetX);
+  const float shadowOffsetY = static_cast<float>(shadowConfig.offsetY);
   const bool isBottom = instance.barConfig.position == "bottom";
   const bool isRight = instance.barConfig.position == "right";
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
@@ -1040,7 +1048,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
       static_cast<float>(instance.barConfig.radiusBottomLeft),
   };
 
-  const auto barVisual = computeBarVisualGeometry(instance.barConfig, w, h);
+  const auto barVisual = computeBarVisualGeometry(instance.barConfig, shadowConfig, w, h);
   const float barAreaX = barVisual.x;
   const float barAreaY = barVisual.y;
   const float barAreaW = barVisual.width;
@@ -1167,7 +1175,7 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
   // on top and hides the shadow's opaque interior.
   if (instance.shadow != nullptr) {
     const float bgOpacity = std::clamp(instance.barConfig.backgroundOpacity, 0.0f, 1.0f);
-    constexpr float baseShadowAlpha = 0.55f;
+    const float baseShadowAlpha = std::clamp(shadowConfig.alpha, 0.0f, 1.0f);
     const float shadowX = barAreaX + shadowOffsetX;
     const float shadowY = barAreaY + shadowOffsetY;
     RoundedRectStyle shadowStyle{
@@ -1281,7 +1289,7 @@ void Bar::updateWidgets(BarInstance& instance) {
   const float marginH = static_cast<float>(instance.barConfig.marginH);
   const float marginV = static_cast<float>(instance.barConfig.marginV);
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
-  const auto sbi = computeShadowBleed(instance.barConfig);
+  const auto sbi = computeShadowBleed(instance.barConfig, m_config->config().shell.shadow);
   const float bleedLeft = static_cast<float>(sbi.left);
   const float bleedRight = static_cast<float>(sbi.right);
   const float bleedUp = static_cast<float>(sbi.up);
@@ -1338,7 +1346,7 @@ void Bar::prepareFrame(BarInstance& instance, bool needsUpdate, bool needsLayout
   const float marginH = static_cast<float>(instance.barConfig.marginH);
   const float marginV = static_cast<float>(instance.barConfig.marginV);
   const bool isVertical = (instance.barConfig.position == "left" || instance.barConfig.position == "right");
-  const auto sbi = computeShadowBleed(instance.barConfig);
+  const auto sbi = computeShadowBleed(instance.barConfig, m_config->config().shell.shadow);
   const float bleedLeft = static_cast<float>(sbi.left);
   const float bleedRight = static_cast<float>(sbi.right);
   const float bleedUp = static_cast<float>(sbi.up);

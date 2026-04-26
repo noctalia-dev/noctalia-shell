@@ -714,12 +714,8 @@ BarConfig ConfigService::resolveForOutput(const BarConfig& base, const WaylandOu
       resolved.padding = *ovr.padding;
     if (ovr.widgetSpacing)
       resolved.widgetSpacing = *ovr.widgetSpacing;
-    if (ovr.shadowBlur)
-      resolved.shadowBlur = *ovr.shadowBlur;
-    if (ovr.shadowOffsetX)
-      resolved.shadowOffsetX = *ovr.shadowOffsetX;
-    if (ovr.shadowOffsetY)
-      resolved.shadowOffsetY = *ovr.shadowOffsetY;
+    if (ovr.shadow)
+      resolved.shadow = *ovr.shadow;
     if (ovr.backgroundBlur)
       resolved.backgroundBlur = *ovr.backgroundBlur;
     if (ovr.startWidgets)
@@ -1084,12 +1080,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
         bar.padding = static_cast<std::int32_t>(*v);
       if (auto v = (*barTbl)["widget_spacing"].value<int64_t>())
         bar.widgetSpacing = static_cast<std::int32_t>(*v);
-      if (auto v = (*barTbl)["shadow_blur"].value<int64_t>())
-        bar.shadowBlur = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
-      if (auto v = (*barTbl)["shadow_offset_x"].value<int64_t>())
-        bar.shadowOffsetX = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
-      if (auto v = (*barTbl)["shadow_offset_y"].value<int64_t>())
-        bar.shadowOffsetY = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
+      if (auto v = (*barTbl)["shadow"].value<bool>())
+        bar.shadow = *v;
       if (auto v = (*barTbl)["background_blur"].value<bool>())
         bar.backgroundBlur = *v;
       if (auto v = (*barTbl)["scale"].value<double>())
@@ -1177,12 +1169,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
             ovr.widgetSpacing = static_cast<std::int32_t>(*v);
           if (auto v = (*monTbl)["scale"].value<double>())
             ovr.scale = std::clamp(static_cast<float>(*v), 0.5f, 4.0f);
-          if (auto v = (*monTbl)["shadow_blur"].value<int64_t>())
-            ovr.shadowBlur = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
-          if (auto v = (*monTbl)["shadow_offset_x"].value<int64_t>())
-            ovr.shadowOffsetX = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
-          if (auto v = (*monTbl)["shadow_offset_y"].value<int64_t>())
-            ovr.shadowOffsetY = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
+          if (auto v = (*monTbl)["shadow"].value<bool>())
+            ovr.shadow = *v;
           if (auto v = (*monTbl)["background_blur"].value<bool>())
             ovr.backgroundBlur = *v;
           if (auto* n = (*monTbl)["start"].as_array())
@@ -1308,6 +1296,20 @@ void ConfigService::parseTable(const toml::table& tbl) {
       }
       if (auto v = (*animationTbl)["speed"].value<double>()) {
         shell.animation.speed = std::clamp(static_cast<float>(*v), 0.05f, 4.0f);
+      }
+    }
+    if (const auto* shadowTbl = (*shellTbl)["shadow"].as_table()) {
+      if (auto v = (*shadowTbl)["blur"].value<int64_t>()) {
+        shell.shadow.blur = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
+      }
+      if (auto v = (*shadowTbl)["offset_x"].value<int64_t>()) {
+        shell.shadow.offsetX = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
+      }
+      if (auto v = (*shadowTbl)["offset_y"].value<int64_t>()) {
+        shell.shadow.offsetY = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
+      }
+      if (auto v = (*shadowTbl)["alpha"].value<double>()) {
+        shell.shadow.alpha = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
       }
     }
     if (auto v = (*shellTbl)["avatar_path"].value<std::string>()) {
@@ -1521,12 +1523,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
       dock.marginH = std::clamp(static_cast<std::int32_t>(*v), 0, 500);
     if (auto v = (*dockTbl)["margin_v"].value<int64_t>())
       dock.marginV = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
-    if (auto v = (*dockTbl)["shadow_blur"].value<int64_t>())
-      dock.shadowBlur = std::clamp(static_cast<std::int32_t>(*v), 0, 100);
-    if (auto v = (*dockTbl)["shadow_offset_x"].value<int64_t>())
-      dock.shadowOffsetX = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
-    if (auto v = (*dockTbl)["shadow_offset_y"].value<int64_t>())
-      dock.shadowOffsetY = std::clamp(static_cast<std::int32_t>(*v), -40, 40);
+    if (auto v = (*dockTbl)["shadow"].value<bool>())
+      dock.shadow = *v;
     if (auto v = (*dockTbl)["background_blur"].value<bool>())
       dock.backgroundBlur = *v;
     if (auto v = (*dockTbl)["show_running"].value<bool>())

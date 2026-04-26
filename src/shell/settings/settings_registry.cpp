@@ -176,6 +176,22 @@ namespace settings {
     entries.push_back(makeEntry("appearance", "motion", tr("settings.animation-speed"),
                                 tr("settings.animation-speed-desc"), {"shell", "animation", "speed"},
                                 SliderSetting{cfg.shell.animation.speed, 0.1f, 4.0f, 0.05f, false}, "motion"));
+    entries.push_back(makeEntry("appearance", "effects", tr("common.shadow-blur"),
+                                tr("settings.global-shadow-blur-desc"), {"shell", "shadow", "blur"},
+                                SliderSetting{static_cast<float>(cfg.shell.shadow.blur), 0.0f, 100.0f, 1.0f, true},
+                                "shadow depth"));
+    entries.push_back(makeEntry("appearance", "effects", tr("common.shadow-x"), tr("settings.global-shadow-x-desc"),
+                                {"shell", "shadow", "offset_x"},
+                                SliderSetting{static_cast<float>(cfg.shell.shadow.offsetX), -40.0f, 40.0f, 1.0f, true},
+                                "shadow offset", true));
+    entries.push_back(makeEntry("appearance", "effects", tr("common.shadow-y"), tr("settings.global-shadow-y-desc"),
+                                {"shell", "shadow", "offset_y"},
+                                SliderSetting{static_cast<float>(cfg.shell.shadow.offsetY), -40.0f, 40.0f, 1.0f, true},
+                                "shadow offset", true));
+    entries.push_back(makeEntry("appearance", "effects", tr("common.shadow-alpha"),
+                                tr("settings.global-shadow-alpha-desc"), {"shell", "shadow", "alpha"},
+                                SliderSetting{cfg.shell.shadow.alpha, 0.0f, 1.0f, 0.01f, false}, "shadow opacity",
+                                true));
 
     // Shell
     entries.push_back(makeEntry("shell", "profile", tr("settings.avatar-path"), tr("settings.avatar-path-desc"),
@@ -238,15 +254,8 @@ namespace settings {
                                 SliderSetting{cfg.dock.backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
     entries.push_back(makeEntry("dock", "effects", tr("common.background-blur"), tr("settings.dock-bg-blur-desc"),
                                 {"dock", "background_blur"}, ToggleSetting{cfg.dock.backgroundBlur}, "blur"));
-    entries.push_back(makeEntry(
-        "dock", "effects", tr("common.shadow-blur"), tr("settings.dock-shadow-blur-desc"), {"dock", "shadow_blur"},
-        SliderSetting{static_cast<float>(cfg.dock.shadowBlur), 0.0f, 100.0f, 1.0f, true}, "shadow", true));
-    entries.push_back(makeEntry(
-        "dock", "effects", tr("common.shadow-x"), tr("settings.dock-shadow-x-desc"), {"dock", "shadow_offset_x"},
-        SliderSetting{static_cast<float>(cfg.dock.shadowOffsetX), -40.0f, 40.0f, 1.0f, true}, "shadow", true));
-    entries.push_back(makeEntry(
-        "dock", "effects", tr("common.shadow-y"), tr("settings.dock-shadow-y-desc"), {"dock", "shadow_offset_y"},
-        SliderSetting{static_cast<float>(cfg.dock.shadowOffsetY), -40.0f, 40.0f, 1.0f, true}, "shadow", true));
+    entries.push_back(makeEntry("dock", "effects", tr("common.shadow"), tr("settings.dock-shadow-desc"),
+                                {"dock", "shadow"}, ToggleSetting{cfg.dock.shadow}, "shadow"));
     entries.push_back(makeEntry("dock", "behavior", tr("common.auto-hide"), tr("settings.dock-auto-hide-desc"),
                                 {"dock", "auto_hide"}, ToggleSetting{cfg.dock.autoHide}, "autohide"));
     entries.push_back(makeEntry("dock", "behavior", tr("common.reserve-space"), tr("settings.dock-reserve-space-desc"),
@@ -392,15 +401,8 @@ namespace settings {
                                   SliderSetting{selectedBar->backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
       entries.push_back(makeEntry(section, "effects", tr("common.background-blur"), tr("settings.bar-bg-blur-desc"),
                                   path("background_blur"), ToggleSetting{selectedBar->backgroundBlur}, "blur"));
-      entries.push_back(makeEntry(
-          section, "effects", tr("common.shadow-blur"), tr("settings.bar-shadow-blur-desc"), path("shadow_blur"),
-          SliderSetting{static_cast<float>(selectedBar->shadowBlur), 0.0f, 100.0f, 1.0f, true}, "shadow", true));
-      entries.push_back(makeEntry(
-          section, "effects", tr("common.shadow-x"), tr("settings.bar-shadow-x-desc"), path("shadow_offset_x"),
-          SliderSetting{static_cast<float>(selectedBar->shadowOffsetX), -40.0f, 40.0f, 1.0f, true}, "shadow", true));
-      entries.push_back(makeEntry(
-          section, "effects", tr("common.shadow-y"), tr("settings.bar-shadow-y-desc"), path("shadow_offset_y"),
-          SliderSetting{static_cast<float>(selectedBar->shadowOffsetY), -40.0f, 40.0f, 1.0f, true}, "shadow", true));
+      entries.push_back(makeEntry(section, "effects", tr("common.shadow"), tr("settings.bar-shadow-desc"),
+                                  path("shadow"), ToggleSetting{selectedBar->shadow}, "shadow"));
       entries.push_back(makeEntry(section, "widgets", tr("settings.widget-capsules"),
                                   tr("settings.widget-capsules-desc"), path("capsule"),
                                   ToggleSetting{selectedBar->widgetCapsuleDefault}, "pill"));
@@ -470,18 +472,8 @@ namespace settings {
       entries.push_back(makeEntry(section, "effects", tr("common.background-blur"), tr("settings.bar-bg-blur-desc"),
                                   mpath("background_blur"),
                                   ToggleSetting{ovr.backgroundBlur.value_or(bar.backgroundBlur)}, "blur"));
-      entries.push_back(makeEntry(
-          section, "effects", tr("common.shadow-blur"), tr("settings.bar-shadow-blur-desc"), mpath("shadow_blur"),
-          SliderSetting{static_cast<float>(ovr.shadowBlur.value_or(bar.shadowBlur)), 0.0f, 100.0f, 1.0f, true},
-          "shadow", true));
-      entries.push_back(makeEntry(
-          section, "effects", tr("common.shadow-x"), tr("settings.bar-shadow-x-desc"), mpath("shadow_offset_x"),
-          SliderSetting{static_cast<float>(ovr.shadowOffsetX.value_or(bar.shadowOffsetX)), -40.0f, 40.0f, 1.0f, true},
-          "shadow", true));
-      entries.push_back(makeEntry(
-          section, "effects", tr("common.shadow-y"), tr("settings.bar-shadow-y-desc"), mpath("shadow_offset_y"),
-          SliderSetting{static_cast<float>(ovr.shadowOffsetY.value_or(bar.shadowOffsetY)), -40.0f, 40.0f, 1.0f, true},
-          "shadow", true));
+      entries.push_back(makeEntry(section, "effects", tr("common.shadow"), tr("settings.bar-shadow-desc"),
+                                  mpath("shadow"), ToggleSetting{ovr.shadow.value_or(bar.shadow)}, "shadow"));
       entries.push_back(makeEntry(
           section, "widgets", tr("settings.widget-spacing"), tr("settings.widget-spacing-desc"),
           mpath("widget_spacing"),

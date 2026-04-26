@@ -27,6 +27,12 @@ clipboard_auto_paste = "auto"          # off | auto | ctrl_v | ctrl_shift_v | sh
 [shell.animation]
 enabled = true
 speed   = 1.0   # 1.0 = normal, 0.5 = 2× slower, 2.0 = 2× faster
+
+[shell.shadow]
+blur     = 12    # global surface shadow blur radius; 0 disables all rendered surface shadows
+offset_x = 2
+offset_y = 4     # positive = down
+alpha    = 0.55  # multiplied by each component's background opacity
 ```
 
 Notes:
@@ -40,6 +46,7 @@ Notes:
 - `show_location`: when `false`, weather location text/coordinates are hidden in shell surfaces.
 - `clipboard_auto_paste`: `auto` = image entries use `Ctrl+V`, text entries use `Ctrl+Shift+V`; `off` = copy only, no automatic paste.
 - `shell.animation.enabled` disables all animated transitions globally. `speed` scales durations globally.
+- `shell.shadow` defines the shared shadow metrics for shell surfaces. Components such as bars and the dock only opt in/out with `shadow = true|false`; they do not define their own blur or offset.
 
 ---
 

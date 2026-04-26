@@ -35,9 +35,7 @@ struct BarMonitorOverride {
   std::optional<std::int32_t> marginV;       // vertical compositor margin (gap between bar and screen edge)
   std::optional<std::int32_t> padding;       // main-axis padding from bar edges to start/end sections
   std::optional<std::int32_t> widgetSpacing; // gap between widgets within a section
-  std::optional<std::int32_t> shadowBlur;    // shadow blur radius in pixels (0 = no shadow)
-  std::optional<std::int32_t> shadowOffsetX; // horizontal shadow offset in pixels
-  std::optional<std::int32_t> shadowOffsetY; // vertical shadow offset in pixels (positive = down)
+  std::optional<bool> shadow;                // use the global shell shadow on this bar
   std::optional<bool> backgroundBlur;        // request compositor blur via ext-background-effect-v1
   std::optional<float> scale;
   std::optional<std::vector<std::string>> startWidgets;
@@ -71,9 +69,7 @@ struct BarConfig {
   std::int32_t marginV = 10;      // vertical compositor margin (gap between bar and screen edge)
   std::int32_t padding = 14;      // main-axis padding from bar edges to start/end sections
   std::int32_t widgetSpacing = 6; // gap between widgets within a section
-  std::int32_t shadowBlur = 12;   // shadow blur radius in pixels (0 = no shadow)
-  std::int32_t shadowOffsetX = 0; // horizontal shadow offset in pixels
-  std::int32_t shadowOffsetY = 6; // vertical shadow offset in pixels (positive = down)
+  bool shadow = true;             // use the global shell shadow
   bool backgroundBlur =
       true;           // request compositor blur behind the bar via ext-background-effect-v1 (inert where unsupported)
   float scale = 1.0f; // content scale multiplier for glyphs and text
@@ -216,9 +212,7 @@ struct DockConfig {
   std::int32_t radius = 16; // dock background corner radius
   std::int32_t marginH = 0; // horizontal compositor margin from screen edges
   std::int32_t marginV = 8; // vertical gap between dock and screen edge
-  std::int32_t shadowBlur = 12;
-  std::int32_t shadowOffsetX = 0;
-  std::int32_t shadowOffsetY = 4;
+  bool shadow = true;       // use the global shell shadow
   bool backgroundBlur = true;
   bool showRunning = true;         // also show running apps not in pinned list
   bool autoHide = false;           // fade out when not hovered (overlay mode)
@@ -306,6 +300,15 @@ struct ShellConfig {
     float speed = 1.0f;
   };
 
+  struct ShadowConfig {
+    std::int32_t blur = 12;
+    std::int32_t offsetX = 0;
+    std::int32_t offsetY = 6;
+    float alpha = 0.55f;
+
+    bool operator==(const ShadowConfig&) const = default;
+  };
+
   float uiScale = 1.0f;
   std::string fontFamily = "sans-serif";
   std::string lang; // empty = auto-detect from $LC_ALL/$LC_MESSAGES/$LANG
@@ -317,6 +320,7 @@ struct ShellConfig {
   std::string avatarPath;
   bool showLocation = true;
   ClipboardAutoPasteMode clipboardAutoPaste = ClipboardAutoPasteMode::Auto;
+  ShadowConfig shadow;
 };
 
 struct WeatherConfig {

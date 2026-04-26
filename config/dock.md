@@ -13,13 +13,10 @@ padding             = 8          # inner padding around the icon row (all sides)
 item_spacing        = 6          # gap between items in pixels
 background_opacity  = 0.88
 background_blur     = true       # request compositor blur via ext-background-effect-v1 (niri)
+shadow              = true       # cast the global [shell.shadow]
 radius              = 16
 margin_h            = 0          # horizontal compositor margin
 margin_v            = 8          # vertical gap between dock and screen edge
-
-shadow_blur         = 12
-shadow_offset_x     = 0
-shadow_offset_y     = 4
 
 show_running        = true       # also show running apps not in the pinned list
 auto_hide           = false      # fade out when pointer leaves; fade in on approach
@@ -34,6 +31,8 @@ show_instance_count = true       # badge with window count when an app has 2+ wi
 # Desktop entry IDs, StartupWMClass, or human-readable names
 pinned = ["firefox", "code", "kitty"]
 ```
+
+Shadow blur, offset, and alpha are global under `[shell.shadow]`. The dock only exposes `shadow = true|false`.
 
 ---
 

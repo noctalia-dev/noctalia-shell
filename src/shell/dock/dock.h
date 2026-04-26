@@ -145,6 +145,7 @@ private:
   ConfigService* m_config = nullptr;
   RenderContext* m_renderContext = nullptr;
   DockConfig m_lastDockConfig{};
+  ShellConfig::ShadowConfig m_lastShadow;
   std::vector<std::string> m_lastPinnedConfig;
   std::vector<DesktopEntry> m_pinnedEntries;
   std::uint64_t m_modelSerial = 0;

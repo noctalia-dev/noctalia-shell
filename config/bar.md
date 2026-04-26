@@ -12,6 +12,7 @@ reserve_space      = true        # reserve compositor exclusive zone / push wind
 thickness          = 34          # bar cross-axis size in pixels (height for horizontal, width for vertical)
 background_opacity = 1.0         # 0.0 (transparent) to 1.0 (opaque)
 background_blur    = true        # request compositor blur via ext-background-effect-v1 (niri)
+shadow             = true        # cast the global [shell.shadow]
 radius             = 12          # global corner radius fallback
 radius_top_left    = 12
 radius_top_right   = 12
@@ -22,10 +23,6 @@ margin_v           = 10          # vertical gap between bar and screen edge
 padding            = 14          # main-axis padding from bar edges to start/end widget sections
 widget_spacing     = 6           # gap between widgets within a section
 scale              = 1.0         # content scale multiplier for icons and text
-
-shadow_blur        = 12          # blur radius in pixels (0 = no shadow)
-shadow_offset_x    = 0
-shadow_offset_y    = 6           # positive = down
 
 # Default capsule style for all widgets on this bar (see Widget Capsule section)
 capsule            = false
@@ -73,6 +70,8 @@ end                = ["volume", "clock"]
 `match` defaults to the subtable key name when omitted, so `[bar.main.monitor."DP-1"]` without a `match` field works too.
 
 Only the fields you specify are overridden; everything else falls through to the `[bar.*]` defaults. Supported override fields: all bar fields, plus `auto_hide`, `reserve_space`, `scale`, `background_opacity`, `color`, and all `capsule_*` keys.
+
+Shadow blur, offset, and alpha are global under `[shell.shadow]`. Bars only expose `shadow = true|false`.
 
 ---
 

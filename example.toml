@@ -20,6 +20,12 @@ clipboard_auto_paste = "auto"       # off | auto | ctrl_v | ctrl_shift_v | shift
 enabled = true
 speed   = 1.0                       # 0.5 = 2× slower, 2.0 = 2× faster
 
+[shell.shadow]
+blur     = 10                       # global surface shadow blur radius
+offset_x = 2
+offset_y = 4                        # positive = down
+alpha    = 0.55                     # multiplied by each component's background opacity
+
 # ── Wallpaper ─────────────────────────────────────────────────────────────────
 
 [wallpaper]
@@ -153,9 +159,7 @@ margin_v           = 10
 padding            = 14
 widget_spacing     = 6
 scale              = 1.0
-shadow_blur        = 12
-shadow_offset_x    = 0
-shadow_offset_y    = 6
+shadow             = true
 auto_hide          = false
 reserve_space      = true
 capsule            = false
@@ -185,9 +189,7 @@ background_blur     = true
 radius              = 16
 margin_h            = 0
 margin_v            = 8
-shadow_blur         = 12
-shadow_offset_x     = 0
-shadow_offset_y     = 4
+shadow              = true
 show_running        = true
 auto_hide           = false
 reserve_space       = false

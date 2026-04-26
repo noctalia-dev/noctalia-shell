@@ -122,6 +122,7 @@ private:
   // triggered by unrelated config changes (theme, weather, idle, etc.).
   std::vector<BarConfig> m_lastBars;
   std::unordered_map<std::string, WidgetConfig> m_lastWidgets;
+  ShellConfig::ShadowConfig m_lastShadow;
 
   // Surface → BarInstance mapping for pointer event routing
   std::unordered_map<wl_surface*, BarInstance*> m_surfaceMap;

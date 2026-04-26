@@ -28,10 +28,6 @@ namespace {
   constexpr const char* kAttachedControlCenterPanelId = "control-center";
   constexpr std::int32_t kAttachedPanelBarOverlap = 1;
 
-  [[nodiscard]] float attachedPanelShadowBlur(float scale) { return 18.0f * std::max(0.1f, scale); }
-
-  [[nodiscard]] float attachedPanelShadowOffsetY(float scale) { return 8.0f * std::max(0.1f, scale); }
-
   [[nodiscard]] CornerShapes attachedPanelCornerShapes() {
     return CornerShapes{
         .tl = CornerShape::Concave,
@@ -249,11 +245,14 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
         parentContext->barHeight > 0) {
       const float scale = m_activePanel->contentScale();
       const float cornerRadius = Style::radiusXl * scale;
-      const auto shadowBleedX = static_cast<std::int32_t>(std::ceil(attachedPanelShadowBlur(scale) + 2.0f));
+      const auto& shadowConfig = m_config->config().shell.shadow;
+      const auto shadowBlur = std::max(0, shadowConfig.blur);
+      const auto shadowBleedLeft = shadowBlur + std::max(0, -shadowConfig.offsetX);
+      const auto shadowBleedRight = shadowBlur + std::max(0, shadowConfig.offsetX);
       const auto cornerOutset = static_cast<std::int32_t>(std::ceil(cornerRadius));
-      const auto sideOutset = shadowBleedX + cornerOutset;
+      const auto sideOutset = std::max(shadowBleedLeft, shadowBleedRight) + cornerOutset + 2;
       const auto shadowBleedBottom = static_cast<std::int32_t>(
-          std::ceil(attachedPanelShadowBlur(scale) + attachedPanelShadowOffsetY(scale) + 2.0f));
+          std::ceil(static_cast<float>(shadowBlur + std::max(0, shadowConfig.offsetY)) + 2.0f));
       m_panelInsetX = sideOutset;
       m_panelInsetY = 0;
       m_panelVisualWidth = panelWidth;
@@ -678,29 +677,43 @@ void PanelManager::applyAttachedReveal(float progress) {
 
   const float w = m_sceneRoot->width();
   const float h = m_sceneRoot->height();
-  const float visibleW = (m_attachedRevealDirection == AttachedRevealDirection::Left ||
-                          m_attachedRevealDirection == AttachedRevealDirection::Right)
-                             ? w * m_attachedRevealProgress
-                             : w;
-  const float visibleH = (m_attachedRevealDirection == AttachedRevealDirection::Up ||
-                          m_attachedRevealDirection == AttachedRevealDirection::Down)
-                             ? h * m_attachedRevealProgress
-                             : h;
+  const float panelW = m_panelVisualWidth > 0 ? static_cast<float>(m_panelVisualWidth) : w;
+  const float panelH = m_panelVisualHeight > 0 ? static_cast<float>(m_panelVisualHeight) : h;
+  const float travelX = (m_attachedRevealDirection == AttachedRevealDirection::Left ||
+                         m_attachedRevealDirection == AttachedRevealDirection::Right)
+                            ? panelW * (1.0f - m_attachedRevealProgress)
+                            : 0.0f;
+  const float travelY = (m_attachedRevealDirection == AttachedRevealDirection::Up ||
+                         m_attachedRevealDirection == AttachedRevealDirection::Down)
+                            ? panelH * (1.0f - m_attachedRevealProgress)
+                            : 0.0f;
 
-  float clipX = 0.0f;
-  float clipY = 0.0f;
-  if (m_attachedRevealDirection == AttachedRevealDirection::Up) {
-    clipY = h - visibleH;
-  } else if (m_attachedRevealDirection == AttachedRevealDirection::Left) {
-    clipX = w - visibleW;
+  float contentX = 0.0f;
+  float contentY = 0.0f;
+  switch (m_attachedRevealDirection) {
+  case AttachedRevealDirection::Down:
+    contentY = -travelY;
+    break;
+  case AttachedRevealDirection::Up:
+    contentY = travelY;
+    break;
+  case AttachedRevealDirection::Right:
+    contentX = -travelX;
+    break;
+  case AttachedRevealDirection::Left:
+    contentX = travelX;
+    break;
   }
 
-  m_attachedRevealClipNode->setPosition(clipX, clipY);
-  m_attachedRevealClipNode->setFrameSize(visibleW, visibleH);
+  m_attachedRevealClipNode->setPosition(0.0f, 0.0f);
+  m_attachedRevealClipNode->setFrameSize(w, h);
 
   if (m_attachedRevealContentNode != nullptr) {
-    m_attachedRevealContentNode->setPosition(-clipX, -clipY);
+    m_attachedRevealContentNode->setPosition(contentX, contentY);
     m_attachedRevealContentNode->setFrameSize(w, h);
+  }
+  if (m_panelShadowNode != nullptr) {
+    m_panelShadowNode->setOpacity(m_attachedRevealProgress);
   }
 
   publishAttachedPanelGeometry(m_attachedRevealProgress);
@@ -769,7 +782,7 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
       sceneParent = m_attachedRevealContentNode;
     }
 
-    if (hasDecoration && m_attachedToBar) {
+    if (hasDecoration && m_attachedToBar && m_config != nullptr && m_config->config().shell.shadow.blur > 0) {
       auto shadow = std::make_unique<RectNode>();
       m_panelShadowNode = static_cast<RectNode*>(sceneParent->addChild(std::move(shadow)));
       m_panelShadowNode->setZIndex(-1);
@@ -871,22 +884,28 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
   if (m_panelShadowNode != nullptr) {
     const float scale = m_activePanel->contentScale();
     const float radius = Style::radiusXl * scale;
+    const auto& shadowConfig = m_config->config().shell.shadow;
+    const float shadowBlur = static_cast<float>(std::max(0, shadowConfig.blur));
+    const float shadowOffsetX = static_cast<float>(shadowConfig.offsetX);
+    const float shadowOffsetY = static_cast<float>(shadowConfig.offsetY);
+    const float shadowAlpha =
+        std::clamp(shadowConfig.alpha, 0.0f, 1.0f) * std::clamp(m_attachedBackgroundOpacity, 0.0f, 1.0f);
     const RoundedRectStyle shadowStyle{
-        .fill = rgba(0.0f, 0.0f, 0.0f, 0.28f),
+        .fill = rgba(0.0f, 0.0f, 0.0f, shadowAlpha),
         .fillEnd = {},
         .border = clearColor(),
         .fillMode = FillMode::Solid,
         .corners = attachedPanelCornerShapes(),
         .logicalInset = attachedPanelLogicalInset(radius),
         .radius = Radii{radius, radius, radius, radius},
-        .softness = attachedPanelShadowBlur(scale),
+        .softness = shadowBlur,
         .borderWidth = 0.0f,
         .outerShadow = true,
-        .shadowCutoutOffsetX = 0.0f,
-        .shadowCutoutOffsetY = attachedPanelShadowOffsetY(scale),
+        .shadowCutoutOffsetX = shadowOffsetX,
+        .shadowCutoutOffsetY = shadowOffsetY,
     };
     m_panelShadowNode->setStyle(shadowStyle);
-    m_panelShadowNode->setPosition(bgX, panelY + attachedPanelShadowOffsetY(scale));
+    m_panelShadowNode->setPosition(bgX + shadowOffsetX, panelY + shadowOffsetY);
     m_panelShadowNode->setSize(bgW, panelH);
   }
 

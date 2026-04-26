@@ -183,14 +183,8 @@ namespace {
     if (key == "background_blur") {
       return override->backgroundBlur.has_value();
     }
-    if (key == "shadow_blur") {
-      return override->shadowBlur.has_value();
-    }
-    if (key == "shadow_offset_x") {
-      return override->shadowOffsetX.has_value();
-    }
-    if (key == "shadow_offset_y") {
-      return override->shadowOffsetY.has_value();
+    if (key == "shadow") {
+      return override->shadow.has_value();
     }
     if (key == "widget_spacing") {
       return override->widgetSpacing.has_value();
