@@ -82,6 +82,9 @@
     "clear-error": "Failed to reset setting.",
     "reset-page-error": "Failed to reset some settings.",
     "rename-widget-error": "Could not rename widget instance.",
+    "create-bar-error": "Could not create bar.",
+    "rename-bar-error": "Could not rename bar.",
+    "delete-bar-error": "Could not delete bar.",
     "reset": "Reset",
     "reset-page": "Reset Page",
     "reset-page-confirm": "Confirm Reset",
@@ -253,6 +256,15 @@
     "no-results": "No settings found",
     "no-results-hint": "Try a different setting name or config key.",
     "bar-label": "Bar: {name}",
+    "new-bar": "New Bar",
+    "bar-id-placeholder": "Bar id",
+    "create-bar": "Create",
+    "bar-management": "Bar",
+    "rename-bar": "Rename",
+    "rename-bar-save": "Save",
+    "delete-bar": "Delete",
+    "delete-bar-confirm-title": "Delete \"{name}\"?",
+    "delete-bar-confirm-desc": "This GUI-created bar will be removed from settings.toml.",
 
     "section": {
       "appearance": "Appearance",
@@ -287,7 +299,8 @@
       "audio": "Audio",
       "brightness": "Brightness",
       "night-light": "Night Light",
-      "toasts": "Toasts"
+      "toasts": "Toasts",
+      "network": "Network"
     },
 
     "opt": {

@@ -65,6 +65,9 @@ private:
   std::string m_pendingDeleteWidgetSettingPath;
   std::string m_renamingWidgetName;
   std::string m_creatingWidgetType;
+  std::string m_creatingBarName;
+  std::string m_renamingBarName;
+  std::string m_pendingDeleteBarName;
   std::string m_selectedBarName;
   std::string m_selectedMonitorOverride;
   std::string m_selectedSection;

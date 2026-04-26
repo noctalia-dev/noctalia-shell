@@ -125,6 +125,30 @@ namespace {
 
   bool isBlankInput(std::string_view text) { return trimInput(text).empty(); }
 
+  std::string normalizedConfigId(std::string_view text) { return std::string(trimInput(text)); }
+
+  bool isValidConfigId(std::string_view text) {
+    const auto trimmed = trimInput(text);
+    if (trimmed.empty()) {
+      return false;
+    }
+    return std::all_of(trimmed.begin(), trimmed.end(),
+                       [](unsigned char c) { return std::isalnum(c) != 0 || c == '_' || c == '-'; });
+  }
+
+  bool barNameExists(const Config& cfg, std::string_view name) {
+    return std::any_of(cfg.bars.begin(), cfg.bars.end(), [name](const BarConfig& bar) { return bar.name == name; });
+  }
+
+  std::string nextAvailableBarName(const Config& cfg) {
+    for (std::size_t i = 1;; ++i) {
+      const std::string candidate = i == 1 ? "bar" : std::format("bar_{}", i);
+      if (!barNameExists(cfg, candidate)) {
+        return candidate;
+      }
+    }
+  }
+
   std::optional<float> parseFloatInput(std::string_view text) {
     const auto trimmedView = trimInput(text);
     if (trimmedView.empty()) {
@@ -363,6 +387,9 @@ void SettingsWindow::destroyWindow() {
   m_focusSearchOnRebuild = false;
   m_statusMessage.clear();
   m_statusIsError = false;
+  m_creatingBarName.clear();
+  m_renamingBarName.clear();
+  m_pendingDeleteBarName.clear();
   m_pendingResetPageScope.clear();
 }
 
@@ -677,6 +704,81 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
         });
       };
 
+  const auto createBar = [this, requestRebuild](std::string name) {
+    DeferredCall::callLater([this, name = std::move(name), requestRebuild]() {
+      if (m_config == nullptr) {
+        return;
+      }
+      if (m_config->createBarOverride(name)) {
+        m_selectedSection = "bar";
+        m_selectedBarName = name;
+        m_selectedMonitorOverride.clear();
+        m_creatingBarName.clear();
+        m_renamingBarName.clear();
+        m_pendingDeleteBarName.clear();
+        m_contentScrollState.offset = 0.0f;
+        m_statusMessage.clear();
+        m_statusIsError = false;
+        m_pendingResetPageScope.clear();
+        requestRebuild();
+        return;
+      }
+      m_statusMessage = i18n::tr("settings.create-bar-error");
+      m_statusIsError = true;
+      requestRebuild();
+    });
+  };
+
+  const auto renameBar = [this, requestRebuild](std::string oldName, std::string newName) {
+    DeferredCall::callLater([this, oldName = std::move(oldName), newName = std::move(newName), requestRebuild]() {
+      if (m_config == nullptr) {
+        return;
+      }
+      if (m_config->renameBarOverride(oldName, newName)) {
+        if (m_selectedBarName == oldName) {
+          m_selectedBarName = newName;
+        }
+        m_selectedMonitorOverride.clear();
+        m_renamingBarName.clear();
+        m_pendingDeleteBarName.clear();
+        m_contentScrollState.offset = 0.0f;
+        m_statusMessage.clear();
+        m_statusIsError = false;
+        m_pendingResetPageScope.clear();
+        requestRebuild();
+        return;
+      }
+      m_statusMessage = i18n::tr("settings.rename-bar-error");
+      m_statusIsError = true;
+      requestRebuild();
+    });
+  };
+
+  const auto deleteBar = [this, requestRebuild](std::string name) {
+    DeferredCall::callLater([this, name = std::move(name), requestRebuild]() {
+      if (m_config == nullptr) {
+        return;
+      }
+      if (m_config->deleteBarOverride(name)) {
+        if (m_selectedBarName == name) {
+          m_selectedBarName.clear();
+          m_selectedMonitorOverride.clear();
+          m_contentScrollState.offset = 0.0f;
+        }
+        m_renamingBarName.clear();
+        m_pendingDeleteBarName.clear();
+        m_statusMessage.clear();
+        m_statusIsError = false;
+        m_pendingResetPageScope.clear();
+        requestRebuild();
+        return;
+      }
+      m_statusMessage = i18n::tr("settings.delete-bar-error");
+      m_statusIsError = true;
+      requestRebuild();
+    });
+  };
+
   auto filters = std::make_unique<Flex>();
   filters->setDirection(FlexDirection::Horizontal);
   filters->setAlign(FlexAlign::Center);
@@ -823,6 +925,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       m_pendingDeleteWidgetName.clear();
       m_pendingDeleteWidgetSettingPath.clear();
       m_creatingWidgetType.clear();
+      m_creatingBarName.clear();
+      m_renamingBarName.clear();
+      m_pendingDeleteBarName.clear();
       m_pendingResetPageScope.clear();
       requestRebuild();
     });
@@ -853,6 +958,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       m_pendingDeleteWidgetName.clear();
       m_pendingDeleteWidgetSettingPath.clear();
       m_creatingWidgetType.clear();
+      m_creatingBarName.clear();
+      m_renamingBarName.clear();
+      m_pendingDeleteBarName.clear();
       m_pendingResetPageScope.clear();
       requestRebuild();
     });
@@ -886,12 +994,100 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
           m_pendingDeleteWidgetName.clear();
           m_pendingDeleteWidgetSettingPath.clear();
           m_creatingWidgetType.clear();
+          m_creatingBarName.clear();
+          m_renamingBarName.clear();
+          m_pendingDeleteBarName.clear();
           m_pendingResetPageScope.clear();
           requestRebuild();
         });
         sidebar->addChild(std::move(ovrItem));
       }
     }
+  }
+
+  auto newBarBtn = std::make_unique<Button>();
+  newBarBtn->setText(i18n::tr("settings.new-bar"));
+  newBarBtn->setGlyph("add");
+  newBarBtn->setVariant(ButtonVariant::Ghost);
+  newBarBtn->setContentAlign(ButtonContentAlign::Start);
+  newBarBtn->setFontSize(Style::fontSizeBody * scale);
+  newBarBtn->setGlyphSize(Style::fontSizeBody * scale);
+  newBarBtn->setMinHeight(Style::controlHeight * scale);
+  newBarBtn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+  newBarBtn->setRadius(Style::radiusMd * scale);
+  newBarBtn->setOnClick([this, cfg, requestRebuild]() {
+    m_creatingBarName = nextAvailableBarName(cfg);
+    m_renamingBarName.clear();
+    m_pendingDeleteBarName.clear();
+    m_pendingResetPageScope.clear();
+    requestRebuild();
+  });
+  sidebar->addChild(std::move(newBarBtn));
+
+  if (!m_creatingBarName.empty()) {
+    auto createPanel = std::make_unique<Flex>();
+    createPanel->setDirection(FlexDirection::Vertical);
+    createPanel->setAlign(FlexAlign::Stretch);
+    createPanel->setGap(Style::spaceXs * scale);
+    createPanel->setPadding(0.0f, Style::spaceXs * scale);
+
+    auto input = std::make_unique<Input>();
+    input->setValue(m_creatingBarName);
+    input->setPlaceholder(i18n::tr("settings.bar-id-placeholder"));
+    input->setFontSize(Style::fontSizeCaption * scale);
+    input->setControlHeight(Style::controlHeightSm * scale);
+    input->setHorizontalPadding(Style::spaceXs * scale);
+    input->setSize(120.0f * scale, Style::controlHeightSm * scale);
+    auto* inputPtr = input.get();
+
+    auto doCreate = [cfg, createBar, inputPtr](std::string rawName) {
+      const std::string name = normalizedConfigId(rawName);
+      if (!isValidConfigId(name) || barNameExists(cfg, name)) {
+        inputPtr->setInvalid(true);
+        return;
+      }
+      inputPtr->setInvalid(false);
+      createBar(name);
+    };
+
+    input->setOnChange([this, inputPtr](const std::string& value) {
+      m_creatingBarName = value;
+      inputPtr->setInvalid(false);
+    });
+    input->setOnSubmit([doCreate](const std::string& text) mutable { doCreate(text); });
+
+    auto actions = std::make_unique<Flex>();
+    actions->setDirection(FlexDirection::Horizontal);
+    actions->setAlign(FlexAlign::Center);
+    actions->setGap(Style::spaceXs * scale);
+
+    auto saveBtn = std::make_unique<Button>();
+    saveBtn->setText(i18n::tr("settings.create-bar"));
+    saveBtn->setVariant(ButtonVariant::Default);
+    saveBtn->setFontSize(Style::fontSizeCaption * scale);
+    saveBtn->setMinHeight(Style::controlHeightSm * scale);
+    saveBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+    saveBtn->setRadius(Style::radiusSm * scale);
+    saveBtn->setOnClick([doCreate, inputPtr]() mutable { doCreate(inputPtr->value()); });
+    actions->addChild(std::move(saveBtn));
+
+    auto cancelBtn = std::make_unique<Button>();
+    cancelBtn->setGlyph("close");
+    cancelBtn->setVariant(ButtonVariant::Ghost);
+    cancelBtn->setGlyphSize(Style::fontSizeCaption * scale);
+    cancelBtn->setMinWidth(Style::controlHeightSm * scale);
+    cancelBtn->setMinHeight(Style::controlHeightSm * scale);
+    cancelBtn->setPadding(Style::spaceXs * scale);
+    cancelBtn->setRadius(Style::radiusSm * scale);
+    cancelBtn->setOnClick([this, requestRebuild]() {
+      m_creatingBarName.clear();
+      requestRebuild();
+    });
+    actions->addChild(std::move(cancelBtn));
+
+    createPanel->addChild(std::move(input));
+    createPanel->addChild(std::move(actions));
+    sidebar->addChild(std::move(createPanel));
   }
 
   body->addChild(std::move(sidebar));
@@ -1391,6 +1587,170 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
                            const settings::ListSetting& list) { makeListBlock(section, entry, list); },
   };
 
+  if (m_searchQuery.empty() && m_selectedSection == "bar" && selectedBar != nullptr &&
+      selectedMonitorOverride == nullptr && m_config != nullptr && m_config->isOverrideOnlyBar(selectedBar->name)) {
+    const std::string barName = selectedBar->name;
+    const bool pendingDelete = m_pendingDeleteBarName == barName;
+    const bool renaming = m_renamingBarName == barName;
+    auto* management = makeSection(i18n::tr("settings.bar-management"));
+
+    if (renaming) {
+      auto renameRow = std::make_unique<Flex>();
+      renameRow->setDirection(FlexDirection::Horizontal);
+      renameRow->setAlign(FlexAlign::Center);
+      renameRow->setGap(Style::spaceXs * scale);
+
+      auto input = std::make_unique<Input>();
+      input->setValue(barName);
+      input->setPlaceholder(i18n::tr("settings.bar-id-placeholder"));
+      input->setFontSize(Style::fontSizeBody * scale);
+      input->setControlHeight(Style::controlHeight * scale);
+      input->setHorizontalPadding(Style::spaceSm * scale);
+      input->setSize(190.0f * scale, Style::controlHeight * scale);
+      input->setFlexGrow(1.0f);
+      auto* inputPtr = input.get();
+
+      auto doRename = [this, cfg, barName, renameBar, inputPtr, requestRebuild](std::string rawName) {
+        const std::string newName = normalizedConfigId(rawName);
+        if (newName == barName) {
+          m_renamingBarName.clear();
+          inputPtr->setInvalid(false);
+          requestRebuild();
+          return;
+        }
+        if (!isValidConfigId(newName) || barNameExists(cfg, newName)) {
+          inputPtr->setInvalid(true);
+          return;
+        }
+        inputPtr->setInvalid(false);
+        renameBar(barName, newName);
+      };
+
+      input->setOnChange([inputPtr](const std::string& /*value*/) { inputPtr->setInvalid(false); });
+      input->setOnSubmit([doRename](const std::string& text) mutable { doRename(text); });
+
+      auto saveBtn = std::make_unique<Button>();
+      saveBtn->setText(i18n::tr("settings.rename-bar-save"));
+      saveBtn->setVariant(ButtonVariant::Default);
+      saveBtn->setFontSize(Style::fontSizeCaption * scale);
+      saveBtn->setMinHeight(Style::controlHeightSm * scale);
+      saveBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      saveBtn->setRadius(Style::radiusSm * scale);
+      saveBtn->setOnClick([doRename, inputPtr]() mutable { doRename(inputPtr->value()); });
+
+      auto cancelBtn = std::make_unique<Button>();
+      cancelBtn->setText(i18n::tr("common.cancel"));
+      cancelBtn->setVariant(ButtonVariant::Ghost);
+      cancelBtn->setFontSize(Style::fontSizeCaption * scale);
+      cancelBtn->setMinHeight(Style::controlHeightSm * scale);
+      cancelBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      cancelBtn->setRadius(Style::radiusSm * scale);
+      cancelBtn->setOnClick([this, requestRebuild]() {
+        m_renamingBarName.clear();
+        requestRebuild();
+      });
+
+      renameRow->addChild(std::move(input));
+      renameRow->addChild(std::move(saveBtn));
+      renameRow->addChild(std::move(cancelBtn));
+      management->addChild(std::move(renameRow));
+    } else if (pendingDelete) {
+      auto confirmPanel = std::make_unique<Flex>();
+      confirmPanel->setDirection(FlexDirection::Vertical);
+      confirmPanel->setAlign(FlexAlign::Stretch);
+      confirmPanel->setGap(Style::spaceXs * scale);
+      confirmPanel->setPadding(Style::spaceSm * scale);
+      confirmPanel->setRadius(Style::radiusSm * scale);
+      confirmPanel->setFill(roleColor(ColorRole::Error, 0.10f));
+      confirmPanel->setBorder(roleColor(ColorRole::Error, 0.35f), Style::borderWidth);
+
+      confirmPanel->addChild(makeLabel(i18n::tr("settings.delete-bar-confirm-title", "name", barName),
+                                       Style::fontSizeBody * scale, roleColor(ColorRole::Error), true));
+      confirmPanel->addChild(makeLabel(i18n::tr("settings.delete-bar-confirm-desc"), Style::fontSizeCaption * scale,
+                                       roleColor(ColorRole::OnSurfaceVariant), false));
+
+      auto confirmRow = std::make_unique<Flex>();
+      confirmRow->setDirection(FlexDirection::Horizontal);
+      confirmRow->setAlign(FlexAlign::Center);
+      confirmRow->setGap(Style::spaceSm * scale);
+
+      auto confirmSpacer = std::make_unique<Flex>();
+      confirmSpacer->setFlexGrow(1.0f);
+      confirmRow->addChild(std::move(confirmSpacer));
+
+      auto cancelBtn = std::make_unique<Button>();
+      cancelBtn->setText(i18n::tr("common.cancel"));
+      cancelBtn->setVariant(ButtonVariant::Ghost);
+      cancelBtn->setFontSize(Style::fontSizeCaption * scale);
+      cancelBtn->setMinHeight(Style::controlHeightSm * scale);
+      cancelBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      cancelBtn->setRadius(Style::radiusSm * scale);
+      cancelBtn->setOnClick([this, requestRebuild]() {
+        m_pendingDeleteBarName.clear();
+        requestRebuild();
+      });
+      confirmRow->addChild(std::move(cancelBtn));
+
+      auto confirmBtn = std::make_unique<Button>();
+      confirmBtn->setGlyph("trash");
+      confirmBtn->setText(i18n::tr("settings.delete-bar"));
+      confirmBtn->setVariant(ButtonVariant::Destructive);
+      confirmBtn->setFontSize(Style::fontSizeCaption * scale);
+      confirmBtn->setGlyphSize(Style::fontSizeCaption * scale);
+      confirmBtn->setMinHeight(Style::controlHeightSm * scale);
+      confirmBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      confirmBtn->setRadius(Style::radiusSm * scale);
+      confirmBtn->setOnClick([deleteBar, barName]() { deleteBar(barName); });
+      confirmRow->addChild(std::move(confirmBtn));
+
+      confirmPanel->addChild(std::move(confirmRow));
+      management->addChild(std::move(confirmPanel));
+    } else {
+      auto actionRow = std::make_unique<Flex>();
+      actionRow->setDirection(FlexDirection::Horizontal);
+      actionRow->setAlign(FlexAlign::Center);
+      actionRow->setGap(Style::spaceXs * scale);
+
+      auto spacer = std::make_unique<Flex>();
+      spacer->setFlexGrow(1.0f);
+      actionRow->addChild(std::move(spacer));
+
+      auto renameBtn = std::make_unique<Button>();
+      renameBtn->setText(i18n::tr("settings.rename-bar"));
+      renameBtn->setVariant(ButtonVariant::Ghost);
+      renameBtn->setFontSize(Style::fontSizeCaption * scale);
+      renameBtn->setMinHeight(Style::controlHeightSm * scale);
+      renameBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+      renameBtn->setRadius(Style::radiusSm * scale);
+      renameBtn->setOnClick([this, barName, requestRebuild]() {
+        m_renamingBarName = barName;
+        m_pendingDeleteBarName.clear();
+        requestRebuild();
+      });
+      actionRow->addChild(std::move(renameBtn));
+
+      if (m_config->canDeleteBarOverride(barName)) {
+        auto deleteBtn = std::make_unique<Button>();
+        deleteBtn->setGlyph("trash");
+        deleteBtn->setText(i18n::tr("settings.delete-bar"));
+        deleteBtn->setVariant(ButtonVariant::Ghost);
+        deleteBtn->setFontSize(Style::fontSizeCaption * scale);
+        deleteBtn->setGlyphSize(Style::fontSizeCaption * scale);
+        deleteBtn->setMinHeight(Style::controlHeightSm * scale);
+        deleteBtn->setPadding(Style::spaceXs * scale, Style::spaceSm * scale);
+        deleteBtn->setRadius(Style::radiusSm * scale);
+        deleteBtn->setOnClick([this, barName, requestRebuild]() {
+          m_pendingDeleteBarName = barName;
+          m_renamingBarName.clear();
+          requestRebuild();
+        });
+        actionRow->addChild(std::move(deleteBtn));
+      }
+
+      management->addChild(std::move(actionRow));
+    }
+  }
+
   for (const auto& entry : registry) {
     if (m_searchQuery.empty() && !m_selectedSection.empty() && entry.section != m_selectedSection) {
       continue;
@@ -1562,13 +1922,17 @@ void SettingsWindow::onKeyboardEvent(const KeyboardEvent& event) {
   if (event.pressed && m_config->matchesKeybind(KeybindAction::Cancel, event.sym, event.modifiers)) {
     if (!m_openWidgetPickerPath.empty() || !m_editingWidgetName.empty() || !m_creatingWidgetType.empty() ||
         !m_renamingWidgetName.empty() || !m_pendingDeleteWidgetName.empty() ||
-        !m_pendingDeleteWidgetSettingPath.empty()) {
+        !m_pendingDeleteWidgetSettingPath.empty() || !m_creatingBarName.empty() || !m_renamingBarName.empty() ||
+        !m_pendingDeleteBarName.empty()) {
       m_openWidgetPickerPath.clear();
       m_editingWidgetName.clear();
       m_renamingWidgetName.clear();
       m_pendingDeleteWidgetName.clear();
       m_pendingDeleteWidgetSettingPath.clear();
       m_creatingWidgetType.clear();
+      m_creatingBarName.clear();
+      m_renamingBarName.clear();
+      m_pendingDeleteBarName.clear();
       m_contentScrollState.offset = 0.0f;
       requestRebuild();
       return;

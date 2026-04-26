@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -548,6 +549,11 @@ public:
   // Persist dock enabled override to settings.toml and trigger the reload pipeline.
   void setDockEnabled(bool enabled);
   [[nodiscard]] bool hasOverride(const std::vector<std::string>& path) const;
+  [[nodiscard]] bool isOverrideOnlyBar(std::string_view name) const;
+  [[nodiscard]] bool canDeleteBarOverride(std::string_view name) const;
+  bool createBarOverride(std::string_view name);
+  bool renameBarOverride(std::string_view oldName, std::string_view newName);
+  bool deleteBarOverride(std::string_view name);
   bool setOverride(const std::vector<std::string>& path, ConfigOverrideValue value);
   bool clearOverride(const std::vector<std::string>& path);
   bool renameOverrideTable(const std::vector<std::string>& oldPath, const std::vector<std::string>& newPath);
@@ -574,6 +580,7 @@ private:
   // can still be written when the config dir is read-only (e.g. NixOS).
   std::string m_overridesPath;
   toml::table m_overridesTable;
+  std::unordered_set<std::string> m_configFileBarNames;
   std::string m_defaultWallpaperPath;
   std::unordered_map<std::string, std::string> m_monitorWallpaperPaths;
 

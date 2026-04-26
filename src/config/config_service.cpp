@@ -489,6 +489,80 @@ bool ConfigService::hasOverride(const std::vector<std::string>& path) const {
   return findOverrideNode(m_overridesTable, path) != nullptr;
 }
 
+bool ConfigService::isOverrideOnlyBar(std::string_view name) const {
+  if (name.empty() || !hasOverride({"bar", std::string(name)})) {
+    return false;
+  }
+  return !m_configFileBarNames.contains(std::string(name));
+}
+
+bool ConfigService::canDeleteBarOverride(std::string_view name) const {
+  return m_config.bars.size() > 1 && isOverrideOnlyBar(name);
+}
+
+bool ConfigService::createBarOverride(std::string_view name) {
+  if (m_overridesPath.empty() || name.empty()) {
+    return false;
+  }
+
+  for (const auto& bar : m_config.bars) {
+    if (bar.name == name) {
+      return false;
+    }
+  }
+
+  auto* barRoot = ensureTable(m_overridesTable, "bar");
+  if (barRoot == nullptr || barRoot->get(std::string(name)) != nullptr) {
+    return false;
+  }
+
+  if (m_configFileBarNames.empty() && barRoot->empty() && m_config.bars.size() == 1 &&
+      m_config.bars.front().name == "default") {
+    auto* defaultBar = ensureTable(*barRoot, "default");
+    if (defaultBar == nullptr) {
+      return false;
+    }
+    defaultBar->insert_or_assign("enabled", m_config.bars.front().enabled);
+  }
+
+  auto* barTbl = ensureTable(*barRoot, name);
+  if (barTbl == nullptr) {
+    return false;
+  }
+  barTbl->insert_or_assign("enabled", true);
+
+  if (!writeOverridesToFile()) {
+    kLog.warn("failed to write {}", m_overridesPath);
+    return false;
+  }
+
+  m_ownOverridesWritePending = true;
+  loadAll();
+  fireReloadCallbacks();
+  return true;
+}
+
+bool ConfigService::renameBarOverride(std::string_view oldName, std::string_view newName) {
+  if (oldName.empty() || newName.empty() || oldName == newName || !isOverrideOnlyBar(oldName)) {
+    return false;
+  }
+
+  for (const auto& bar : m_config.bars) {
+    if (bar.name == newName) {
+      return false;
+    }
+  }
+
+  return renameOverrideTable({"bar", std::string(oldName)}, {"bar", std::string(newName)});
+}
+
+bool ConfigService::deleteBarOverride(std::string_view name) {
+  if (!canDeleteBarOverride(name)) {
+    return false;
+  }
+  return clearOverride({"bar", std::string(name)});
+}
+
 bool ConfigService::setOverride(const std::vector<std::string>& path, ConfigOverrideValue value) {
   if (m_overridesPath.empty() || path.empty()) {
     return false;
@@ -972,6 +1046,15 @@ void ConfigService::loadAll() {
       if (firstError.empty()) {
         firstError = std::format("{} line {}, column {}: {}", path.filename().string(), src.begin.line,
                                  src.begin.column, e.description());
+      }
+    }
+  }
+
+  m_configFileBarNames.clear();
+  if (auto* barTblMap = merged["bar"].as_table()) {
+    for (const auto& [barName, barNode] : *barTblMap) {
+      if (barNode.as_table() != nullptr) {
+        m_configFileBarNames.insert(std::string(barName.str()));
       }
     }
   }
