@@ -35,6 +35,8 @@ public:
   [[nodiscard]] bool centeredHorizontally() const override { return true; }
   [[nodiscard]] bool centeredVertically() const override { return true; }
   [[nodiscard]] bool prefersAttachedToBar() const noexcept override { return true; }
+  // Wallpaper thumbnails need a stable backdrop, so don't track the bar's translucency.
+  [[nodiscard]] bool inheritsBarBackgroundOpacity() const noexcept override { return false; }
   [[nodiscard]] LayerShellLayer layer() const override { return LayerShellLayer::Overlay; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
   [[nodiscard]] InputArea* initialFocusArea() const override;

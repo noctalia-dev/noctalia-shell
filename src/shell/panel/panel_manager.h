@@ -68,6 +68,10 @@ public:
   [[nodiscard]] std::optional<LayerPopupParentContext> fallbackPopupParentContext() const noexcept;
 
   void refresh();
+  // Re-pulls the host bar's per-panel-relevant config (currently backgroundOpacity) and
+  // re-applies the attached decoration styles in place. No-op when no attached panel is open.
+  // Called from the ConfigService reload callback.
+  void refreshAttachedFromBarConfig();
   void requestUpdateOnly();
   void requestLayout();
   // Requests a redraw on the active panel surface without re-running panel
@@ -87,6 +91,10 @@ private:
   void destroyPanel();
   void applyAttachedReveal(float progress);
   void publishAttachedPanelGeometry(float revealProgress);
+  // Restyle the attached-panel decoration nodes (bg fill, drop shadow, contact shadow)
+  // using m_attachedBackgroundOpacity / m_attachedBarPosition. Geometry/positions are not
+  // touched. Safe to call any time after buildScene has run.
+  void applyAttachedDecorationStyle();
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;

@@ -793,6 +793,8 @@ void Application::initUi() {
   m_panelManager.setAttachedKeyboardCallbacks([this](wl_output* output) { m_bar.beginAttachedKeyboard(output); },
                                               [this](wl_output* output) { m_bar.endAttachedKeyboard(output); });
   m_bar.setAutoHideSuppressionCallback([this]() { return m_trayMenu.isOpen() || m_panelManager.isAttachedOpen(); });
+  // When the bar config reloads (e.g. backgroundOpacity slider), restyle any open attached panel.
+  m_configService.addReloadCallback([this]() { m_panelManager.refreshAttachedFromBarConfig(); });
 
   m_layerPopupHosts.registerHost(
       [this](wl_surface* surface) { return m_panelManager.popupParentContextForSurface(surface); },

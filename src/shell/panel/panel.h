@@ -53,6 +53,12 @@ public:
   // For attached panels: which bar edge to attach to when more than one bar exists on
   // the target output. Returned value must outlive the call (use a string literal).
   [[nodiscard]] virtual std::string_view preferredAttachedBarPosition() const noexcept { return "top"; }
+  // For attached panels: when true (default), the panel's background opacity tracks the
+  // host bar's `backgroundOpacity` config and updates live. When false, the panel uses
+  // attachedBackgroundOpacityOverride() instead — useful for panels whose contents need
+  // a fixed alpha for legibility (e.g. wallpaper thumbnails).
+  [[nodiscard]] virtual bool inheritsBarBackgroundOpacity() const noexcept { return true; }
+  [[nodiscard]] virtual float attachedBackgroundOpacityOverride() const noexcept { return 1.0f; }
 
   [[nodiscard]] Node* root() const noexcept { return m_root ? m_root.get() : m_rootPtr; }
   [[nodiscard]] float contentScale() const noexcept { return m_contentScale; }
