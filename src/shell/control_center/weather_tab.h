@@ -25,6 +25,7 @@ private:
   void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void doUpdate(Renderer& renderer) override;
   void sync(Renderer& renderer);
+  void hideEffect();
   [[nodiscard]] static std::string weekdayLabel(const std::string& isoDate);
   [[nodiscard]] static EffectType effectForWeatherCode(std::int32_t code, bool isDay);
 

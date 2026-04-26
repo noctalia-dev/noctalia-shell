@@ -519,9 +519,7 @@ void WeatherTab::sync(Renderer& renderer) {
         card->setVisible(false);
       }
     }
-    if (m_effectNode != nullptr) {
-      m_effectNode->setVisible(false);
-    }
+    hideEffect();
     return;
   }
 
@@ -559,9 +557,7 @@ void WeatherTab::sync(Renderer& renderer) {
         card->setVisible(false);
       }
     }
-    if (m_effectNode != nullptr) {
-      m_effectNode->setVisible(false);
-    }
+    hideEffect();
     return;
   }
 
@@ -600,9 +596,7 @@ void WeatherTab::sync(Renderer& renderer) {
         card->setVisible(false);
       }
     }
-    if (m_effectNode != nullptr) {
-      m_effectNode->setVisible(false);
-    }
+    hideEffect();
     return;
   }
 
@@ -723,8 +717,17 @@ std::string WeatherTab::weekdayLabel(const std::string& isoDate) {
   return buf;
 }
 
+void WeatherTab::hideEffect() {
+  m_activeEffect = EffectType::None;
+  m_shaderTime = 0.0f;
+  if (m_effectNode != nullptr) {
+    m_effectNode->setEffectType(EffectType::None);
+    m_effectNode->setVisible(false);
+  }
+}
+
 void WeatherTab::onFrameTick(float deltaMs) {
-  if (m_effectNode == nullptr || m_activeEffect == EffectType::None) {
+  if (m_effectNode == nullptr || !m_effectNode->visible() || m_activeEffect == EffectType::None) {
     return;
   }
   m_shaderTime += deltaMs * 0.001f;
