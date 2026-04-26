@@ -147,162 +147,120 @@ Examples:
     return parser.parse_args()
 
 
-def main() -> int:
-    """Main entry point."""
-    args = parse_args()
+# M3 schemes use Triangle filter (matches matugen); others use Box for k-means
+_M3_SCHEMES = {"tonal-spot", "content", "fruit-salad", "rainbow", "monochrome"}
 
-    # Initialize result dictionary
-    result: dict[str, dict[str, str]] = {}
+# K-means-based schemes and their scoring strategy
+_KMEANS_SCORING: dict[str, str] = {
+    "vibrant": "chroma",
+    "faithful": "count",
+    "dysfunctional": "dysfunctional",
+    "muted": "muted",
+}
 
-    # Determine mode from arguments
-    if args.mode == 'dark':
-        modes = ["dark"]
-    elif args.mode == 'light':
-        modes = ["light"]
-    elif args.dark:
-        modes = ["dark"]
-    elif args.light:
-        modes = ["light"]
-    else:
-        modes = ["dark", "light"]
 
-    # Path 1: Predefined scheme (--scheme flag)
-    if args.scheme:
-        if not args.scheme.exists():
-            print(f"Error: Scheme file not found: {args.scheme}", file=sys.stderr)
-            return 1
+def _determine_modes(args: argparse.Namespace) -> list[str]:
+    if args.mode in ('dark', 'light'):
+        return [args.mode]
+    if args.dark:
+        return ["dark"]
+    if args.light:
+        return ["light"]
+    return ["dark", "light"]
 
-        try:
-            with open(args.scheme, 'r') as f:
-                scheme_data = json.load(f)
 
-            # Scheme format: {"dark": {"mPrimary": "#...", ...}, "light": {...}}
-            # or single mode: {"mPrimary": "#...", ...}
-            for mode in modes:
-                if mode in scheme_data:
-                    # Multi-mode format
-                    result[mode] = expand_predefined_scheme(scheme_data[mode], mode)
-                    inject_terminal_colors(result[mode], scheme_data[mode])
-                elif "mPrimary" in scheme_data:
-                    # Single-mode format - use same colors for requested mode
-                    result[mode] = expand_predefined_scheme(scheme_data, mode)
-                    inject_terminal_colors(result[mode], scheme_data)
-                else:
-                    print(f"Error: Invalid scheme format - missing '{mode}' or 'mPrimary'", file=sys.stderr)
-                    return 1
-
-        except json.JSONDecodeError as e:
-            print(f"Error parsing scheme JSON: {e}", file=sys.stderr)
-            return 1
-        except KeyError as e:
-            print(f"Error: Missing required color in scheme: {e}", file=sys.stderr)
-            return 1
-        except Exception as e:
-            print(f"Error processing scheme: {e}", file=sys.stderr)
-            return 1
-
-    # Path 2: Image-based extraction (default)
-    else:
-        # Validate image argument is provided
-        if args.image is None:
-            print("Error: Image path is required (unless --scheme is used)", file=sys.stderr)
-            return 1
-
-        # Validate image path
-        if not args.image.exists():
-            print(f"Error: Image not found: {args.image}", file=sys.stderr)
-            return 1
-
-        # Check if input is a JSON palette (Predefined Color Scheme)
-        if args.image.suffix.lower() == '.json':
-            try:
-                with open(args.image, 'r') as f:
-                    input_data = json.load(f)
-
-                # Expect {"colors": ...} or direct dict
-                colors_data = input_data.get("colors", input_data)
-
-                # Flatten QML-style object structure if needed
-                # structure: key -> { default: { hex: "#..." } } or key -> "#..."
-                flat_colors = {}
-                for k, v in colors_data.items():
-                    if isinstance(v, dict) and 'default' in v and 'hex' in v['default']:
-                        flat_colors[k] = v['default']['hex']
-                    elif isinstance(v, str):
-                        flat_colors[k] = v
-                    else:
-                        # Best effort fallback
-                        flat_colors[k] = str(v)
-
-                # Assign to requested modes
-                for mode in modes:
-                    result[mode] = flat_colors
-
-            except Exception as e:
-                print(f"Error reading JSON palette: {e}", file=sys.stderr)
-                return 1
-        else:
-            # Standard Image Extraction
-            if not args.image.is_file():
-                print(f"Error: Not a file: {args.image}", file=sys.stderr)
-                return 1
-
-            # Determine scheme type
-            scheme_type = args.scheme_type
-
-            # M3 schemes use Triangle filter (matches matugen), others use Box
-            # (sharper downscale preserves distinct color regions for k-means)
-            m3_schemes = {"tonal-spot", "content", "fruit-salad", "rainbow", "monochrome"}
-            resize_filter = "Triangle" if scheme_type in m3_schemes else "Box"
-
-            try:
-                pixels = read_image(args.image, resize_filter)
-            except ImageReadError as e:
-                print(f"Error reading image: {e}", file=sys.stderr)
-                return 1
-            except Exception as e:
-                print(f"Unexpected error reading image: {e}", file=sys.stderr)
-                return 1
-
-            # Extract palette based on scheme type:
-            # - M3 schemes (tonal-spot, fruit-salad, rainbow, content): Use Wu quantizer + Score
-            #   This matches matugen's color extraction exactly
-            # - vibrant: Use k-means clustering for colorful/blended colors
-            # - faithful: Use Wu quantizer for primary (dominant by area), k-means for accents
-            # - dysfunctional: Like faithful but picks 2nd most dominant color family
-            # - muted: Like count but without chroma filtering (for monochrome wallpapers)
-            if scheme_type == "vibrant":
-                # K-means with chroma scoring for vibrant, blended colors
-                palette = extract_palette(pixels, k=5, scoring="chroma")
-            elif scheme_type == "faithful":
-                # K-means with count scoring - picks dominant color by area coverage
-                # This ensures primary reflects what you actually see in the image
-                palette = extract_palette(pixels, k=5, scoring="count")
-            elif scheme_type == "dysfunctional":
-                # K-means with dysfunctional scoring - picks 2nd most dominant color family
-                # For when the dominant color is not what you want as primary
-                palette = extract_palette(pixels, k=5, scoring="dysfunctional")
-            elif scheme_type == "muted":
-                # K-means with muted scoring - accepts low/zero chroma colors
-                # For monochrome/monotonal wallpapers where dominant color has low saturation
-                palette = extract_palette(pixels, k=5, scoring="muted")
+def _load_scheme_file(path: Path, modes: list[str]) -> "dict[str, dict[str, str]] | int":
+    if not path.exists():
+        print(f"Error: Scheme file not found: {path}", file=sys.stderr)
+        return 1
+    try:
+        scheme_data = json.loads(path.read_text())
+        result: dict[str, dict[str, str]] = {}
+        for mode in modes:
+            if mode in scheme_data:
+                result[mode] = expand_predefined_scheme(scheme_data[mode], mode)
+                inject_terminal_colors(result[mode], scheme_data[mode])
+            elif "mPrimary" in scheme_data:
+                result[mode] = expand_predefined_scheme(scheme_data, mode)
+                inject_terminal_colors(result[mode], scheme_data)
             else:
-                # Wu quantizer + Score algorithm (matches matugen)
-                source_argb = extract_source_color(pixels)
-                r, g, b = source_color_to_rgb(source_argb)
-                palette = [Color(r, g, b)]
-
-            if not palette:
-                print("Error: Could not extract colors from image", file=sys.stderr)
+                print(f"Error: Invalid scheme format - missing '{mode}' or 'mPrimary'", file=sys.stderr)
                 return 1
+        return result
+    except json.JSONDecodeError as e:
+        print(f"Error parsing scheme JSON: {e}", file=sys.stderr)
+        return 1
+    except KeyError as e:
+        print(f"Error: Missing required color in scheme: {e}", file=sys.stderr)
+        return 1
+    except Exception as e:
+        print(f"Error processing scheme: {e}", file=sys.stderr)
+        return 1
 
-            # Generate theme for each mode
-            for mode in modes:
-                result[mode] = generate_theme(palette, mode, scheme_type)
 
-    # Output JSON
-    json_output = json.dumps(result, indent=2)
+def _load_json_palette(image_path: Path, modes: list[str]) -> "dict[str, dict[str, str]] | int":
+    try:
+        input_data = json.loads(image_path.read_text())
+        colors_data = input_data.get("colors", input_data)
+        # Flatten QML-style structure: key -> { default: { hex: "#..." } } or key -> "#..."
+        flat_colors: dict[str, str] = {}
+        for k, v in colors_data.items():
+            if isinstance(v, dict) and 'default' in v and 'hex' in v['default']:
+                flat_colors[k] = v['default']['hex']
+            elif isinstance(v, str):
+                flat_colors[k] = v
+            else:
+                flat_colors[k] = str(v)
+        return dict.fromkeys(modes, flat_colors)
+    except Exception as e:
+        print(f"Error reading JSON palette: {e}", file=sys.stderr)
+        return 1
 
+
+def _build_palette_from_pixels(pixels, scheme_type: str):
+    scoring = _KMEANS_SCORING.get(scheme_type)
+    if scoring:
+        return extract_palette(pixels, k=5, scoring=scoring)
+    # Wu quantizer + Score algorithm (matches matugen) for M3 schemes
+    source_argb = extract_source_color(pixels)
+    r, g, b = source_color_to_rgb(source_argb)
+    return [Color(r, g, b)]
+
+
+def _extract_from_image(args: argparse.Namespace, modes: list[str]) -> "dict[str, dict[str, str]] | int":
+    if args.image is None:
+        print("Error: Image path is required (unless --scheme is used)", file=sys.stderr)
+        return 1
+    if not args.image.exists():
+        print(f"Error: Image not found: {args.image}", file=sys.stderr)
+        return 1
+    if args.image.suffix.lower() == '.json':
+        return _load_json_palette(args.image, modes)
+    if not args.image.is_file():
+        print(f"Error: Not a file: {args.image}", file=sys.stderr)
+        return 1
+
+    scheme_type = args.scheme_type
+    resize_filter = "Triangle" if scheme_type in _M3_SCHEMES else "Box"
+
+    try:
+        pixels = read_image(args.image, resize_filter)
+    except ImageReadError as e:
+        print(f"Error reading image: {e}", file=sys.stderr)
+        return 1
+    except Exception as e:
+        print(f"Unexpected error reading image: {e}", file=sys.stderr)
+        return 1
+
+    palette = _build_palette_from_pixels(pixels, scheme_type)
+    if not palette:
+        print("Error: Could not extract colors from image", file=sys.stderr)
+        return 1
+
+    return {mode: generate_theme(palette, mode, scheme_type) for mode in modes}
+
+
+def _write_output(args: argparse.Namespace, json_output: str) -> int:
     if args.output:
         try:
             args.output.write_text(json_output)
@@ -312,33 +270,48 @@ def main() -> int:
             return 1
     elif not args.render and not args.config:
         print(json_output)
+    return 0
 
-    # Process templates
+
+def _process_templates(args: argparse.Namespace, result: dict) -> None:
+    image_path = str(args.image) if args.image else None
+    renderer = TemplateRenderer(result, default_mode=args.default_mode, image_path=image_path, scheme_type=args.scheme_type)
+
+    if args.render:
+        for render_spec in args.render:
+            if ':' not in render_spec:
+                print(f"Error: Invalid render spec (must be input:output): {render_spec}", file=sys.stderr)
+                continue
+            input_str, output_str = render_spec.split(':', 1)
+            input_path = Path(input_str).expanduser()
+            output_path = Path(output_str).expanduser()
+            if not input_path.exists():
+                print(f"Error: Template not found: {input_path}", file=sys.stderr)
+                continue
+            renderer.render_file(input_path, output_path)
+
+    if args.config:
+        if not args.config.exists():
+            print(f"Error: Config file not found: {args.config}", file=sys.stderr)
+        else:
+            renderer.process_config_file(args.config)
+
+
+def main() -> int:
+    """Main entry point."""
+    args = parse_args()
+    modes = _determine_modes(args)
+
+    result = _load_scheme_file(args.scheme, modes) if args.scheme else _extract_from_image(args, modes)
+    if isinstance(result, int):
+        return result
+
+    rc = _write_output(args, json.dumps(result, indent=2))
+    if rc:
+        return rc
+
     if args.render or args.config:
-        image_path = str(args.image) if args.image else None
-        renderer = TemplateRenderer(result, default_mode=args.default_mode, image_path=image_path, scheme_type=args.scheme_type)
-
-        if args.render:
-            for render_spec in args.render:
-                if ':' not in render_spec:
-                    print(f"Error: Invalid render spec (must be input:output): {render_spec}", file=sys.stderr)
-                    continue
-
-                input_str, output_str = render_spec.split(':', 1)
-                input_path = Path(input_str).expanduser()
-                output_path = Path(output_str).expanduser()
-
-                if not input_path.exists():
-                    print(f"Error: Template not found: {input_path}", file=sys.stderr)
-                    continue
-
-                renderer.render_file(input_path, output_path)
-
-        if args.config:
-            if not args.config.exists():
-                print(f"Error: Config file not found: {args.config}", file=sys.stderr)
-            else:
-                renderer.process_config_file(args.config)
+        _process_templates(args, result)
 
     return 0
 
