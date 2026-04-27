@@ -84,6 +84,12 @@ An asset root is only accepted if it contains the expected shipped files such as
 This project uses [clang-format](https://clang.llvm.org/docs/ClangFormat.html) for formatting. Run `just format`
 before committing.
 
+For editor integration, the repo includes a `.clangd` file. It points clangd at the Meson compilation database under
+`build-release`, so run `just configure release` at least once if your editor uses clangd.
+
+The repo also includes `lefthook.yml`. Run `lefthook install` to install the pre-commit hook; it runs `just format`
+before commits and refreshes the git index for tracked formatting changes.
+
 ### Naming Conventions
 
 | | Convention | Example |
