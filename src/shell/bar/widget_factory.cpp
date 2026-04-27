@@ -125,7 +125,7 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     return widget;
   }
 
- if (type == "control-center") {
+  if (type == "control-center") {
     auto barGlyph = wc != nullptr ? wc->getString("glyph", "noctalia") : std::string{"noctalia"};
     if (barGlyph.empty()) {
       barGlyph = "search";
@@ -134,7 +134,6 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     widget->setContentScale(contentScale);
     return widget;
   }
-
 
   if (type == "idle_inhibitor") {
     auto widget = std::make_unique<IdleInhibitorWidget>(m_idleInhibitor);

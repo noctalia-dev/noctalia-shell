@@ -77,8 +77,8 @@ struct BarConfig {
   float scale = 1.0f; // content scale multiplier for glyphs and text
   std::vector<std::string> startWidgets = {"launcher", "wallpaper", "workspaces"};
   std::vector<std::string> centerWidgets = {"clock"};
-  std::vector<std::string> endWidgets = {"media",  "tray",       "notifications", "network", "bluetooth",
-                                         "volume", "brightness", "battery", "control-center", "session"};
+  std::vector<std::string> endWidgets = {"media",  "tray",       "notifications", "network",        "bluetooth",
+                                         "volume", "brightness", "battery",       "control-center", "session"};
   // When true, widgets on this bar use a capsule unless `[widget.*] capsule = false`.
   bool widgetCapsuleDefault = false;
   ThemeColor widgetCapsuleFill = roleColor(ColorRole::SurfaceVariant);
