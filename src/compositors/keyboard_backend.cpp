@@ -1,36 +1,15 @@
 #include "compositors/keyboard_backend.h"
 
+#include "compositors/compositor_detect.h"
 #include "compositors/hyprland/hyprland_keyboard_backend.h"
 #include "compositors/mango/mango_keyboard_backend.h"
 #include "compositors/niri/niri_keyboard_backend.h"
 #include "compositors/sway/sway_keyboard_backend.h"
-#include "util/string_utils.h"
 
-#include <cstdlib>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
-
-namespace {
-
-  [[nodiscard]] std::string compositorHintFromEnv() {
-    constexpr const char* vars[] = {"XDG_CURRENT_DESKTOP", "XDG_SESSION_DESKTOP", "DESKTOP_SESSION"};
-    std::string hint;
-    for (const char* var : vars) {
-      const char* value = std::getenv(var);
-      if (value == nullptr || value[0] == '\0') {
-        continue;
-      }
-      if (!hint.empty()) {
-        hint += ':';
-      }
-      hint += value;
-    }
-    return hint;
-  }
-
-} // namespace
 
 class KeyboardBackend::Impl {
 public:
@@ -61,28 +40,23 @@ namespace {
 } // namespace
 
 KeyboardBackend::KeyboardBackend() {
-  const std::string compositorHint = compositorHintFromEnv();
+  const std::string compositorHint(compositors::envHint());
 
-  if (StringUtils::containsInsensitive(compositorHint, "niri") || std::getenv("NIRI_SOCKET") != nullptr) {
+  switch (compositors::detect()) {
+  case compositors::CompositorKind::Niri:
     m_impl = std::make_unique<BackendAdapter<NiriKeyboardBackend>>(compositorHint);
     return;
-  }
-
-  if (StringUtils::containsInsensitive(compositorHint, "hyprland") ||
-      StringUtils::containsInsensitive(compositorHint, "hypr") ||
-      std::getenv("HYPRLAND_INSTANCE_SIGNATURE") != nullptr) {
+  case compositors::CompositorKind::Hyprland:
     m_impl = std::make_unique<BackendAdapter<HyprlandKeyboardBackend>>(compositorHint);
     return;
-  }
-
-  if (StringUtils::containsInsensitive(compositorHint, "mango") ||
-      StringUtils::containsInsensitive(compositorHint, "dwl")) {
+  case compositors::CompositorKind::Mango:
     m_impl = std::make_unique<BackendAdapter<MangoKeyboardBackend>>(compositorHint);
     return;
-  }
-
-  if (StringUtils::containsInsensitive(compositorHint, "sway") || std::getenv("SWAYSOCK") != nullptr) {
+  case compositors::CompositorKind::Sway:
     m_impl = std::make_unique<BackendAdapter<SwayKeyboardBackend>>(compositorHint);
+    return;
+  case compositors::CompositorKind::Unknown:
+    break;
   }
 }
 

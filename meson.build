@@ -516,6 +516,7 @@ _noctalia_sources = files(
   'src/util/fuzzy_match.cpp',
   'src/wayland/clipboard_service.cpp',
   'src/wayland/virtual_keyboard_service.cpp',
+  'src/compositors/compositor_detect.cpp',
   'src/compositors/ext_workspace_backend.cpp',
   'src/compositors/keyboard_backend.cpp',
   'src/compositors/hyprland/hyprland_workspace_backend.cpp',

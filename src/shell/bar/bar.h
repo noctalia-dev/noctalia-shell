@@ -68,11 +68,7 @@ public:
   [[nodiscard]] bool isRunning() const noexcept;
   [[nodiscard]] std::optional<LayerPopupParentContext> popupParentContextForSurface(wl_surface* surface) const noexcept;
   [[nodiscard]] std::optional<LayerPopupParentContext> preferredPopupParentContext(wl_output* output) const noexcept;
-  [[nodiscard]] std::optional<AttachedPanelParentContext>
-  attachedPanelParentContext(wl_output* output, std::string_view preferredPosition = "top") const noexcept;
   void setAttachedPanelGeometry(wl_output* output, std::optional<AttachedPanelGeometry> geometry);
-  void beginAttachedKeyboard(wl_output* output);
-  void endAttachedKeyboard(wl_output* output);
   void beginAttachedPopup(wl_surface* surface);
   void endAttachedPopup(wl_surface* surface);
 

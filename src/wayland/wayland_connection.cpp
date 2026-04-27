@@ -1,5 +1,6 @@
 #include "wayland/wayland_connection.h"
 
+#include "compositors/compositor_detect.h"
 #include "compositors/niri/niri_output_backend.h"
 #include "compositors/niri/niri_workspace_monitor.h"
 #include "core/log.h"
@@ -22,7 +23,6 @@
 #include "xdg-shell-client-protocol.h"
 
 #include <algorithm>
-#include <cstdlib>
 #include <stdexcept>
 #include <wayland-client.h>
 
@@ -153,22 +153,6 @@ namespace {
       .ping = xdgWmBasePing,
   };
 
-  [[nodiscard]] std::string compositorHintFromEnv() {
-    constexpr const char* vars[] = {"XDG_CURRENT_DESKTOP", "XDG_SESSION_DESKTOP", "DESKTOP_SESSION"};
-    std::string hint;
-    for (const char* var : vars) {
-      const char* value = std::getenv(var);
-      if (value == nullptr || value[0] == '\0') {
-        continue;
-      }
-      if (!hint.empty()) {
-        hint += ':';
-      }
-      hint += value;
-    }
-    return hint;
-  }
-
 } // namespace
 
 WaylandConnection::WaylandConnection() = default;
@@ -206,7 +190,7 @@ bool WaylandConnection::connect() {
     throw std::runtime_error("failed during Wayland output discovery roundtrip");
   }
 
-  const std::string compositorHint = compositorHintFromEnv();
+  const std::string compositorHint(compositors::envHint());
   m_workspacesHandler.initialize(compositorHint);
   m_niriOutputBackend = std::make_unique<NiriOutputBackend>(compositorHint);
   m_niriWorkspaceMonitor = std::make_unique<NiriWorkspaceMonitor>(compositorHint);

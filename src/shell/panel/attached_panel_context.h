@@ -5,30 +5,11 @@
 #include <cstdint>
 #include <string_view>
 
-class LayerSurface;
-struct wl_output;
-struct wl_surface;
-
 enum class AttachedRevealDirection : std::uint8_t {
   Down,
   Up,
   Right,
   Left,
-};
-
-struct AttachedPanelParentContext {
-  wl_surface* parentSurface = nullptr;
-  LayerSurface* parentLayerSurface = nullptr;
-  wl_output* output = nullptr;
-  std::int32_t barX = 0;
-  std::int32_t barY = 0;
-  std::int32_t barWidth = 0;
-  std::int32_t barHeight = 0;
-  std::uint32_t parentWidth = 0;
-  std::uint32_t parentHeight = 0;
-  // Bar's edge position ("top" / "bottom" / "left" / "right"). Drives concave-corner
-  // orientation, reveal direction, and subsurface placement on the cross axis.
-  std::string_view barPosition = "top";
 };
 
 struct AttachedPanelGeometry {

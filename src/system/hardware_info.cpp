@@ -1,5 +1,7 @@
 #include "system/hardware_info.h"
 
+#include "compositors/compositor_detect.h"
+
 #include <cstdlib>
 #include <filesystem>
 #include <format>
@@ -233,24 +235,17 @@ namespace {
   }
 
   std::string detectCompositor() {
-    const char* niriSocket = std::getenv("NIRI_SOCKET");
-    if (niriSocket != nullptr && niriSocket[0] != '\0') {
-      return "Niri";
+    const auto kind = compositors::detect();
+    if (kind != compositors::CompositorKind::Unknown) {
+      return std::string(compositors::name(kind));
     }
-    const char* hypr = std::getenv("HYPRLAND_INSTANCE_SIGNATURE");
-    if (hypr != nullptr && hypr[0] != '\0') {
-      return "Hyprland";
-    }
-    const char* sway = std::getenv("SWAYSOCK");
-    if (sway != nullptr && sway[0] != '\0') {
-      return "Sway";
-    }
-    const char* desktop = std::getenv("XDG_CURRENT_DESKTOP");
-    if (desktop != nullptr && desktop[0] != '\0') {
+    // Fall back to whatever the desktop env vars say, which is friendlier than "Unknown"
+    // for compositors we don't have a backend for (KDE, GNOME, etc.).
+    if (const char* desktop = std::getenv("XDG_CURRENT_DESKTOP"); desktop != nullptr && desktop[0] != '\0') {
       return desktop;
     }
-    const char* sessionDesktop = std::getenv("XDG_SESSION_DESKTOP");
-    if (sessionDesktop != nullptr && sessionDesktop[0] != '\0') {
+    if (const char* sessionDesktop = std::getenv("XDG_SESSION_DESKTOP");
+        sessionDesktop != nullptr && sessionDesktop[0] != '\0') {
       return sessionDesktop;
     }
     return "Unknown";
