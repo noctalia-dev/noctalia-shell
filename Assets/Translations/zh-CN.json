@@ -227,6 +227,8 @@
     "system-monitor": {
       "compact-mode-description": "将数据以条形图显示以防止布局偏移。",
       "compact-mode-label": "紧凑模式",
+      "show-icons-description": "为每个监控资源显示图标。",
+      "show-icons-label": "显示图标",
       "cpu-cores-description": "单独显示 CPU 核心使用率。",
       "cpu-cores-label": "CPU 核心",
       "cpu-frequency-description": "显示当前 CPU 时钟速度（GHz）。",

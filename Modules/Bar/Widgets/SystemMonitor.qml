@@ -40,6 +40,7 @@ Item {
   readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
 
   readonly property bool compactMode: widgetSettings.compactMode !== undefined ? widgetSettings.compactMode : widgetMetadata.compactMode
+  readonly property bool showIcons: widgetSettings.showIcons !== undefined ? widgetSettings.showIcons : widgetMetadata.showIcons
   readonly property string iconColorKey: widgetSettings.iconColor !== undefined ? widgetSettings.iconColor : widgetMetadata.iconColor
   readonly property string textColorKey: widgetSettings.textColor !== undefined ? widgetSettings.textColor : widgetMetadata.textColor
 
@@ -247,6 +248,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             Layout.row: (isVertical && !compactMode) ? 1 : 0
             Layout.column: 0
+            visible: root.showIcons
 
             NIcon {
               icon: "cpu-usage"
@@ -329,6 +331,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             Layout.row: (isVertical && !compactMode) ? 1 : 0
             Layout.column: 0
+            visible: root.showIcons
 
             NIcon {
               icon: "cpu-usage"
@@ -396,6 +399,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             Layout.row: (isVertical && !compactMode) ? 1 : 0
             Layout.column: 0
+            visible: root.showIcons
 
             NIcon {
               icon: "cpu-temperature"
@@ -464,6 +468,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             Layout.row: (isVertical && !compactMode) ? 1 : 0
             Layout.column: 0
+            visible: root.showIcons
 
             NIcon {
               icon: "gpu-temperature"
@@ -532,6 +537,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             Layout.row: (isVertical && !compactMode) ? 1 : 0
             Layout.column: 0
+            visible: root.showIcons
 
             NIcon {
               icon: "weight"
@@ -599,6 +605,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             Layout.row: (isVertical && !compactMode) ? 1 : 0
             Layout.column: 0
+            visible: root.showIcons
 
             NIcon {
               icon: "memory"
@@ -670,6 +677,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             Layout.row: (isVertical && !compactMode) ? 1 : 0
             Layout.column: 0
+            visible: root.showIcons
 
             NIcon {
               icon: "exchange"
@@ -741,6 +749,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             Layout.row: (isVertical && !compactMode) ? 1 : 0
             Layout.column: 0
+            visible: root.showIcons
 
             NIcon {
               icon: "download-speed"
@@ -807,6 +816,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             Layout.row: (isVertical && !compactMode) ? 1 : 0
             Layout.column: 0
+            visible: root.showIcons
 
             NIcon {
               icon: "upload-speed"
@@ -874,6 +884,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             Layout.row: (isVertical && !compactMode) ? 1 : 0
             Layout.column: 0
+            visible: root.showIcons
 
             NIcon {
               icon: "storage"
