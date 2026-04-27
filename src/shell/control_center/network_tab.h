@@ -52,6 +52,7 @@ private:
 
   Button* m_rescanButton = nullptr;
   Toggle* m_wifiToggle = nullptr;
+  Flex* m_disconnectRow = nullptr;
   Button* m_disconnectButton = nullptr;
   Spinner* m_scanSpinner = nullptr;
 

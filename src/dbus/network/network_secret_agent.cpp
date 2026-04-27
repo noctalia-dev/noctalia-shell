@@ -21,7 +21,8 @@ namespace {
 
   using SecretsDict = std::map<std::string, std::map<std::string, sdbus::Variant>>;
 
-  const sdbus::ServiceName k_agentBusName{"org.noctalia.SecretAgent"};
+  // No well-known name on the system bus — NM tracks the agent by the sender's
+  // unique name from Register, and claiming a name would need a dbus policy.
   const sdbus::ObjectPath k_agentObjectPath{"/org/freedesktop/NetworkManager/SecretAgent"};
   constexpr auto k_agentInterface = "org.freedesktop.NetworkManager.SecretAgent";
   constexpr auto k_agentIdentifier = "org.noctalia.SecretAgent";
@@ -124,7 +125,6 @@ struct NetworkSecretAgent::Impl {
 };
 
 NetworkSecretAgent::NetworkSecretAgent(SystemBus& bus) : m_impl(std::make_unique<Impl>(bus)) {
-  bus.connection().requestName(k_agentBusName);
   m_impl->object = sdbus::createObject(bus.connection(), k_agentObjectPath);
 
   m_impl->object

@@ -214,23 +214,27 @@ bool NetworkService::activateAccessPoint(const AccessPointInfo& ap) {
     return false;
   }
 
-  // First try ActivateConnection with "/" as the connection path — NM picks an
-  // existing saved profile for the AP. Falls back to AddAndActivateConnection
-  // when no saved profile exists, which creates a temporary profile and (for
-  // secured networks) triggers GetSecrets against our agent.
-  try {
-    const sdbus::ObjectPath emptyConnectionPath{"/"};
-    const sdbus::ObjectPath devicePath{ap.devicePath};
-    const sdbus::ObjectPath apPath{ap.path};
-    sdbus::ObjectPath activePath;
-    m_nm->callMethod("ActivateConnection")
-        .onInterface(k_nmInterface)
-        .withArguments(emptyConnectionPath, devicePath, apPath)
-        .storeResultsTo(activePath);
-    kLog.info("activating ap ssid={} active={}", ap.ssid, std::string(activePath));
-    return true;
-  } catch (const sdbus::Error& e) {
-    kLog.debug("ActivateConnection(/) failed for ssid={}: {}; trying AddAndActivate", ap.ssid, e.what());
+  // Only try ActivateConnection("/") when we actually have a saved profile for
+  // this SSID — NM matches by best fit, and a stray saved connection (e.g. for
+  // another device, or a profile we thought was forgotten) would otherwise be
+  // silently reused with whatever PSK it carries. When there is no saved
+  // profile we go straight to AddAndActivateConnection so NM creates a fresh
+  // one and (for secured APs) calls GetSecrets against our agent.
+  if (hasSavedConnection(ap.ssid)) {
+    try {
+      const sdbus::ObjectPath emptyConnectionPath{"/"};
+      const sdbus::ObjectPath devicePath{ap.devicePath};
+      const sdbus::ObjectPath apPath{ap.path};
+      sdbus::ObjectPath activePath;
+      m_nm->callMethod("ActivateConnection")
+          .onInterface(k_nmInterface)
+          .withArguments(emptyConnectionPath, devicePath, apPath)
+          .storeResultsTo(activePath);
+      kLog.info("activating ap ssid={} active={}", ap.ssid, std::string(activePath));
+      return true;
+    } catch (const sdbus::Error& e) {
+      kLog.debug("ActivateConnection(/) failed for ssid={}: {}; trying AddAndActivate", ap.ssid, e.what());
+    }
   }
 
   try {
@@ -284,15 +288,23 @@ void NetworkService::forgetSsid(const std::string& ssid) {
   if (ssid.empty()) {
     return;
   }
+  // Tear down the live connection before deleting the saved profile, so a
+  // subsequent reconnect attempt cannot silently reuse the still-active
+  // connection (which would skip the password prompt).
+  if (m_state.kind == NetworkConnectivity::Wireless && m_state.connected && m_state.ssid == ssid) {
+    disconnect();
+  }
   try {
     auto settings = sdbus::createProxy(m_bus.connection(), k_nmBusName, k_nmSettingsObjectPath);
     std::vector<sdbus::ObjectPath> connectionPaths;
     settings->callMethod("ListConnections").onInterface(k_nmSettingsInterface).storeResultsTo(connectionPaths);
+    int matched = 0;
     int removed = 0;
+    int failed = 0;
     for (const auto& connectionPath : connectionPaths) {
+      std::map<std::string, std::map<std::string, sdbus::Variant>> cfg;
       try {
         auto connection = sdbus::createProxy(m_bus.connection(), k_nmBusName, connectionPath);
-        std::map<std::string, std::map<std::string, sdbus::Variant>> cfg;
         connection->callMethod("GetSettings").onInterface(k_nmSettingsConnectionInterface).storeResultsTo(cfg);
         auto wifiIt = cfg.find("802-11-wireless");
         if (wifiIt == cfg.end()) {
@@ -312,17 +324,29 @@ void NetworkService::forgetSsid(const std::string& ssid) {
         if (foundSsid != ssid) {
           continue;
         }
-        connection->callMethod("Delete").onInterface(k_nmSettingsConnectionInterface);
-        ++removed;
+        ++matched;
+        try {
+          connection->callMethod("Delete").onInterface(k_nmSettingsConnectionInterface);
+          ++removed;
+        } catch (const sdbus::Error& e) {
+          // Common cause: system-owned profile + no polkit agent running, so
+          // the Delete is denied. Surface the real error name so the user can
+          // tell — it's otherwise indistinguishable from "nothing happened".
+          ++failed;
+          kLog.warn("forgetSsid: Delete refused for {} ssid=\"{}\": {}", std::string(connectionPath), ssid, e.what());
+        }
       } catch (const sdbus::Error& e) {
         kLog.debug("forgetSsid: failed to inspect {}: {}", std::string(connectionPath), e.what());
       }
     }
-    kLog.info("forgetSsid ssid=\"{}\" removed={}", ssid, removed);
+    kLog.info("forgetSsid ssid=\"{}\" matched={} removed={} failed={}", ssid, matched, removed, failed);
   } catch (const sdbus::Error& e) {
     kLog.warn("forgetSsid failed ssid=\"{}\": {}", ssid, e.what());
   }
-  refreshSavedConnections();
+  // Full refresh: pulls saved-connection list, AP list, and live state, and
+  // fires the change callback so the UI rebuilds (no Forget button, no active
+  // tint) without waiting for an NM PropertiesChanged signal to land.
+  refresh();
 }
 
 bool NetworkService::hasSavedConnection(const std::string& ssid) const {

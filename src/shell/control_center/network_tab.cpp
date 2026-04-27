@@ -221,18 +221,12 @@ std::unique_ptr<Flex> NetworkTab::create() {
   m_currentCard = currentCard.get();
   addTitle(*currentCard, "Current connection", scale);
 
-  auto detailRow = std::make_unique<Flex>();
-  detailRow->setDirection(FlexDirection::Horizontal);
-  detailRow->setAlign(FlexAlign::Center);
-  detailRow->setGap(Style::spaceSm * scale);
-
   auto title = std::make_unique<Label>();
   title->setBold(true);
-  title->setFontSize(Style::fontSizeBody * scale);
+  title->setFontSize(Style::fontSizeTitle * scale);
   title->setColor(roleColor(ColorRole::OnSurface));
   m_currentTitle = title.get();
-  detailRow->addChild(std::move(title));
-  currentCard->addChild(std::move(detailRow));
+  currentCard->addChild(std::move(title));
 
   auto detail = std::make_unique<Label>();
   detail->setCaptionStyle();
@@ -241,8 +235,14 @@ std::unique_ptr<Flex> NetworkTab::create() {
   m_currentDetail = detail.get();
   currentCard->addChild(std::move(detail));
 
+  auto disconnectRow = std::make_unique<Flex>();
+  disconnectRow->setDirection(FlexDirection::Horizontal);
+  disconnectRow->setAlign(FlexAlign::Center);
+  disconnectRow->setJustify(FlexJustify::End);
+  m_disconnectRow = disconnectRow.get();
+
   auto disconnect = std::make_unique<Button>();
-  disconnect->setVariant(ButtonVariant::Outline);
+  disconnect->setVariant(ButtonVariant::Destructive);
   disconnect->setText("Disconnect");
   disconnect->setOnClick([this]() {
     if (m_network != nullptr) {
@@ -251,7 +251,8 @@ std::unique_ptr<Flex> NetworkTab::create() {
     PanelManager::instance().refresh();
   });
   m_disconnectButton = disconnect.get();
-  currentCard->addChild(std::move(disconnect));
+  disconnectRow->addChild(std::move(disconnect));
+  currentCard->addChild(std::move(disconnectRow));
 
   tab->addChild(std::move(currentCard));
 
@@ -416,6 +417,7 @@ void NetworkTab::onClose() {
   m_list = nullptr;
   m_rescanButton = nullptr;
   m_wifiToggle = nullptr;
+  m_disconnectRow = nullptr;
   m_disconnectButton = nullptr;
   m_scanSpinner = nullptr;
   m_lastListKey.clear();
@@ -456,16 +458,16 @@ void NetworkTab::syncCurrentCard() {
   if (m_network == nullptr) {
     m_currentTitle->setText("NetworkManager unavailable");
     m_currentDetail->setText("Install and enable NetworkManager to manage networks from here.");
-    if (m_disconnectButton != nullptr) {
-      m_disconnectButton->setVisible(false);
+    if (m_disconnectRow != nullptr) {
+      m_disconnectRow->setVisible(false);
     }
     return;
   }
   const NetworkState& s = m_network->state();
   m_currentTitle->setText(currentTitle(s));
   m_currentDetail->setText(currentDetail(s));
-  if (m_disconnectButton != nullptr) {
-    m_disconnectButton->setVisible(s.connected);
+  if (m_disconnectRow != nullptr) {
+    m_disconnectRow->setVisible(s.connected);
   }
   if (m_wifiToggle != nullptr) {
     m_wifiToggle->setChecked(s.wirelessEnabled);
