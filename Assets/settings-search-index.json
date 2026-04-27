@@ -1710,6 +1710,18 @@
     ]
   },
   {
+    "labelKey": "panels.lock-screen.enable-lock-screen-wallpaper-label",
+    "descriptionKey": "panels.lock-screen.enable-lock-screen-wallpaper-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance",
+    "visibleWhen": [
+      "!Settings.data.wallpaper.enabled"
+    ]
+  },
+  {
     "labelKey": "panels.lock-screen.lock-screen-animations-label",
     "descriptionKey": "panels.lock-screen.lock-screen-animations-description",
     "widget": "NToggle",

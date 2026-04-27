@@ -13,6 +13,7 @@ Item {
   // Cached wallpaper path - exposed for parent components
   property string resolvedWallpaperPath: ""
   property color tintColor: Settings.data.colorSchemes.darkMode ? Color.mSurface : Color.mOnSurface
+  readonly property bool lockScreenWallpaperEnabled: Settings.data.wallpaper.enabled || Settings.data.wallpaper.enableLockScreenWallpaper
 
   required property var screen
 
@@ -43,6 +44,19 @@ Item {
         Qt.callLater(requestCachedWallpaper);
       }
     }
+    function onLockScreenWallpaperChanged(path) {
+      Qt.callLater(requestCachedWallpaper);
+    }
+  }
+
+  Connections {
+    target: Settings.data.wallpaper
+    function onEnabledChanged() {
+      Qt.callLater(requestCachedWallpaper);
+    }
+    function onEnableLockScreenWallpaperChanged() {
+      Qt.callLater(requestCachedWallpaper);
+    }
   }
 
   // Listen for display scale changes
@@ -60,13 +74,18 @@ Item {
       return;
     }
 
+    if (!lockScreenWallpaperEnabled) {
+      resolvedWallpaperPath = "";
+      return;
+    }
+
     // Check for solid color mode first
     if (Settings.data.wallpaper.useSolidColor) {
       resolvedWallpaperPath = "";
       return;
     }
 
-    const originalPath = WallpaperService.getWallpaper(screen.name) || "";
+    const originalPath = WallpaperService.getLockScreenWallpaper(screen.name) || "";
     if (originalPath === "") {
       resolvedWallpaperPath = "";
       return;
@@ -111,7 +130,7 @@ Item {
 
   Image {
     id: lockBgImage
-    visible: source !== "" && Settings.data.wallpaper.enabled && !Settings.data.wallpaper.useSolidColor && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableWallpaper)
+    visible: source !== "" && lockScreenWallpaperEnabled && !Settings.data.wallpaper.useSolidColor && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableWallpaper)
     anchors.fill: parent
     fillMode: Image.PreserveAspectCrop
     source: resolvedWallpaperPath

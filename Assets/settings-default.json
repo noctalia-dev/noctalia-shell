@@ -192,6 +192,7 @@
   },
   "wallpaper": {
     "enabled": true,
+    "enableLockScreenWallpaper": false,
     "overviewEnabled": false,
     "directory": "",
     "monitorDirectories": [],
@@ -200,6 +201,8 @@
     "viewMode": "single",
     "setWallpaperOnAllMonitors": true,
     "linkLightAndDarkWallpapers": true,
+    "lockScreenWallpaperLight": "",
+    "lockScreenWallpaperDark": "",
     "fillMode": "crop",
     "fillColor": "#000000",
     "useSolidColor": false,

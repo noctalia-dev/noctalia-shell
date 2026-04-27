@@ -32,7 +32,7 @@ NIconButton {
 
   readonly property string iconColorKey: widgetSettings.iconColor !== undefined ? widgetSettings.iconColor : widgetMetadata.iconColor
 
-  enabled: Settings.data.wallpaper.enabled
+  enabled: Settings.data.wallpaper.enabled || Settings.data.wallpaper.enableLockScreenWallpaper
   baseSize: Style.getCapsuleHeightForScreen(screen?.name)
   applyUiScale: false
   customRadius: Style.radiusL

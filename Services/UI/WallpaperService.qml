@@ -44,14 +44,13 @@ Singleton {
 
   // Signals for reactive UI updates
   signal wallpaperChanged(string screenName, string path)
+  signal lockScreenWallpaperChanged(string path)
   // Emitted when a wallpaper changes
   signal wallpaperProcessingComplete(string screenName, string path, string cachedPath)
   // Emitted when wallpaper processing (resize/cache) is complete. cachedPath is the resized version.
   signal wallpaperDirectoryChanged(string screenName, string directory)
   // Emitted when a monitor's directory changes
   signal wallpaperListChanged(string screenName, int count)
-
-  // Emitted when available wallpapers list changes
 
   // Browse mode: track current browse path per screen (separate from root directory)
   property var currentBrowsePaths: ({})
@@ -167,6 +166,7 @@ Singleton {
           root.wallpaperChanged(screenName, root.getWallpaper(screenName) || root.defaultWallpaper);
         }
       }
+      root.lockScreenWallpaperChanged(root.getLockScreenWallpaper(""));
     }
     function onSolidColorChanged() {
       if (Settings.data.wallpaper.useSolidColor) {
@@ -175,16 +175,25 @@ Singleton {
           root.wallpaperChanged(Quickshell.screens[i].name, solidPath);
         }
       }
+      root.lockScreenWallpaperChanged(root.getLockScreenWallpaper(""));
     }
     function onSortOrderChanged() {
       root.refreshWallpapersList();
+    }
+    function onLockScreenWallpaperLightChanged() {
+      root.lockScreenWallpaperChanged(root.getLockScreenWallpaper(""));
+    }
+    function onLockScreenWallpaperDarkChanged() {
+      root.lockScreenWallpaperChanged(root.getLockScreenWallpaper(""));
     }
     function onLinkLightAndDarkWallpapersChanged() {
       if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
         root.wallpaperSelectionAppearance = Settings.data.colorSchemes.darkMode ? "dark" : "light";
         root._syncWallpaperSlotsWhenLinking();
+        root._syncLockScreenWallpaperSlotsWhenLinking();
       }
       root._notifyAllWallpapersChanged();
+      root.lockScreenWallpaperChanged(root.getLockScreenWallpaper(""));
     }
   }
 
@@ -197,6 +206,7 @@ Singleton {
       // Restore scheme from favorite for this light/dark slot before wallpaper refresh
       root.reapplyFavoriteThemeForActiveWallpaper();
       root._notifyAllWallpapersChanged();
+      root.lockScreenWallpaperChanged(root.getLockScreenWallpaper(""));
     }
   }
 
@@ -589,6 +599,62 @@ Singleton {
   }
 
   // -------------------------------------------------------------------
+  function getLockScreenWallpaperPathForSlot(appearanceSlot) {
+    if (Settings.data.wallpaper.useSolidColor) {
+      return createSolidColorPath(Settings.data.wallpaper.solidColor.toString());
+    }
+
+    var slot = _normalizeAppearanceSlot(appearanceSlot);
+    var light = Settings.preprocessPath((Settings.data.wallpaper.lockScreenWallpaperLight || "").trim());
+    var dark = Settings.preprocessPath((Settings.data.wallpaper.lockScreenWallpaperDark || "").trim());
+    if (slot === "dark") {
+      return dark || light || "";
+    }
+    return light || dark || "";
+  }
+
+  // -------------------------------------------------------------------
+  function getLockScreenWallpaper(screenName) {
+    var lockPath = getLockScreenWallpaperPathForSlot(Settings.data.colorSchemes.darkMode ? "dark" : "light");
+    if (lockPath) {
+      return lockPath;
+    }
+    return getWallpaper(screenName);
+  }
+
+  // -------------------------------------------------------------------
+  function changeLockScreenWallpaper(path, appearanceSlot) {
+    if (path === "" || path === undefined) {
+      return;
+    }
+
+    if (Settings.data.wallpaper.useSolidColor) {
+      Settings.data.wallpaper.useSolidColor = false;
+    }
+
+    var slot = _defaultAppearanceSlotForChange(appearanceSlot);
+    var light = Settings.preprocessPath((Settings.data.wallpaper.lockScreenWallpaperLight || "").trim());
+    var dark = Settings.preprocessPath((Settings.data.wallpaper.lockScreenWallpaperDark || "").trim());
+
+    if (Settings.data.wallpaper.linkLightAndDarkWallpapers) {
+      light = path;
+      dark = path;
+    } else if (slot === "dark") {
+      dark = path;
+    } else {
+      light = path;
+    }
+
+    if (Settings.data.wallpaper.lockScreenWallpaperLight === light && Settings.data.wallpaper.lockScreenWallpaperDark === dark) {
+      return;
+    }
+
+    Settings.data.wallpaper.lockScreenWallpaperLight = light;
+    Settings.data.wallpaper.lockScreenWallpaperDark = dark;
+    root.lockScreenWallpaperChanged(root.getLockScreenWallpaper(""));
+  }
+
+  // -------------------------------------------------------------------
   function changeWallpaper(path, screenName, appearanceSlot) {
     // Turn off solid color mode when selecting a wallpaper
     if (Settings.data.wallpaper.useSolidColor) {
@@ -735,6 +801,20 @@ Singleton {
     if (randomWallpaperTimer.running) {
       randomWallpaperTimer.restart();
     }
+  }
+
+  function _syncLockScreenWallpaperSlotsWhenLinking() {
+    var light = Settings.preprocessPath((Settings.data.wallpaper.lockScreenWallpaperLight || "").trim());
+    var dark = Settings.preprocessPath((Settings.data.wallpaper.lockScreenWallpaperDark || "").trim());
+    var eff = dark || light || "";
+    if (!eff) {
+      return;
+    }
+    if (light === eff && dark === eff) {
+      return;
+    }
+    Settings.data.wallpaper.lockScreenWallpaperLight = eff;
+    Settings.data.wallpaper.lockScreenWallpaperDark = eff;
   }
 
   function _setWallpaper(screenName, path, appearanceSlot) {
