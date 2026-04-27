@@ -43,10 +43,7 @@ public:
   // Optional: invoked from shell UI (e.g. control center) to spawn the standalone settings toplevel.
   void setOpenSettingsWindowCallback(std::function<void()> callback);
   void openSettingsWindow();
-  void setAttachedPanelParentResolver(
-      std::function<std::optional<AttachedPanelParentContext>(wl_output*, std::string_view)> resolver);
   void setAttachedPanelGeometryCallback(std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> callback);
-  void setAttachedKeyboardCallbacks(std::function<void(wl_output*)> begin, std::function<void(wl_output*)> end);
 
   void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 
@@ -105,10 +102,7 @@ private:
   ConfigService* m_config = nullptr;
   RenderContext* m_renderContext = nullptr;
   std::function<void()> m_openSettingsWindow;
-  std::function<std::optional<AttachedPanelParentContext>(wl_output*, std::string_view)> m_attachedPanelParentResolver;
   std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> m_attachedPanelGeometryCallback;
-  std::function<void(wl_output*)> m_beginAttachedKeyboard;
-  std::function<void(wl_output*)> m_endAttachedKeyboard;
 
   std::unique_ptr<Surface> m_surface;
   LayerSurface* m_layerSurface = nullptr;
@@ -132,10 +126,6 @@ private:
 
   wl_output* m_output = nullptr;
   wl_surface* m_wlSurface = nullptr;
-  // For attached panels: the bar's wl_surface that hosts our subsurface. The compositor
-  // grants keyboard focus to this surface (not the subsurface), so key gating compares
-  // WaylandSeat::lastKeyboardSurface() against it.
-  wl_surface* m_attachedParentSurface = nullptr;
   float m_contentWidth = 0.0f;
   float m_contentHeight = 0.0f;
   std::int32_t m_panelInsetX = 0;

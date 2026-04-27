@@ -13,7 +13,6 @@
 #include "ui/controls/select.h"
 #include "ui/palette.h"
 #include "ui/style.h"
-#include "wayland/subsurface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
 
@@ -81,20 +80,9 @@ void PanelManager::openSettingsWindow() {
   }
 }
 
-void PanelManager::setAttachedPanelParentResolver(
-    std::function<std::optional<AttachedPanelParentContext>(wl_output*, std::string_view)> resolver) {
-  m_attachedPanelParentResolver = std::move(resolver);
-}
-
 void PanelManager::setAttachedPanelGeometryCallback(
     std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> callback) {
   m_attachedPanelGeometryCallback = std::move(callback);
-}
-
-void PanelManager::setAttachedKeyboardCallbacks(std::function<void(wl_output*)> begin,
-                                                std::function<void(wl_output*)> end) {
-  m_beginAttachedKeyboard = std::move(begin);
-  m_endAttachedKeyboard = std::move(end);
 }
 
 void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> content) {
@@ -213,7 +201,6 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
     m_layerSurface = nullptr;
     m_output = nullptr;
     m_wlSurface = nullptr;
-    m_attachedParentSurface = nullptr;
     m_activePanel = nullptr;
     m_activePanelId.clear();
     m_pendingOpenContext.clear();
@@ -229,161 +216,185 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
     m_attachedToBar = false;
   };
 
-  if (m_activePanel->prefersAttachedToBar() && m_attachedPanelParentResolver) {
-    const auto parentContext = m_attachedPanelParentResolver(output, m_activePanel->preferredAttachedBarPosition());
-    if (parentContext.has_value() && parentContext->parentSurface != nullptr && parentContext->barWidth > 0 &&
-        parentContext->barHeight > 0) {
-      const std::string_view barPosition = parentContext->barPosition;
-      const bool barIsBottom = barPosition == "bottom";
-      const bool barIsLeft = barPosition == "left";
-      const bool barIsRight = barPosition == "right";
-      const bool barIsVertical = barIsLeft || barIsRight;
+  if (m_activePanel->prefersAttachedToBar() && barConfig.thickness > 0 && outputWidth > 0 && outputHeight > 0) {
+    const std::string_view barPosition = barConfig.position;
+    const bool barIsBottom = barPosition == "bottom";
+    const bool barIsLeft = barPosition == "left";
+    const bool barIsRight = barPosition == "right";
+    const bool barIsVertical = barIsLeft || barIsRight;
 
-      const float scale = m_activePanel->contentScale();
-      const float cornerRadius = Style::radiusXl * scale;
-      const auto& shadowConfig = m_config->config().shell.shadow;
-      const auto shadowBleed = shell::surface_shadow::bleed(true, shadowConfig);
-      const auto cornerOutset = static_cast<std::int32_t>(std::ceil(cornerRadius));
+    const float scale = m_activePanel->contentScale();
+    const float cornerRadius = Style::radiusXl * scale;
+    const auto& shadowConfig = m_config->config().shell.shadow;
+    const auto shadowBleed = shell::surface_shadow::bleed(true, shadowConfig);
+    const auto cornerOutset = static_cast<std::int32_t>(std::ceil(cornerRadius));
 
-      // Cross-axis outset wraps the concave-corner overhang and shadow bleed on both
-      // sides perpendicular to the bar's main axis. Main-axis bleed extends only away
-      // from the bar (panel grows out from the bar edge).
-      std::int32_t crossOutsetStart = 0;
-      std::int32_t crossOutsetEnd = 0;
-      std::int32_t mainBleedAway = 0;
-      if (barIsVertical) {
-        crossOutsetStart = std::max(shadowBleed.up, shadowBleed.down) + cornerOutset + 2;
-        crossOutsetEnd = crossOutsetStart;
-        mainBleedAway = (barIsLeft ? shadowBleed.right : shadowBleed.left) + 2;
-      } else {
-        crossOutsetStart = std::max(shadowBleed.left, shadowBleed.right) + cornerOutset + 2;
-        crossOutsetEnd = crossOutsetStart;
-        mainBleedAway = (barIsBottom ? shadowBleed.up : shadowBleed.down) + 2;
-      }
-
-      const auto crossPad = static_cast<std::uint32_t>(std::max(0, crossOutsetStart + crossOutsetEnd));
-      const auto mainPad = static_cast<std::uint32_t>(std::max(0, mainBleedAway));
-      const std::uint32_t surfaceWidth = barIsVertical ? (panelWidth + mainPad) : (panelWidth + crossPad);
-      const std::uint32_t surfaceHeight = barIsVertical ? (panelHeight + crossPad) : (panelHeight + mainPad);
-
-      // visualX/Y is where the panel's body (content rect) sits in parent-surface coords.
-      std::int32_t visualX = 0;
-      std::int32_t visualY = 0;
-      if (barIsVertical) {
-        const auto centeredY =
-            parentContext->barY +
-            static_cast<std::int32_t>(
-                std::lround((static_cast<float>(parentContext->barHeight) - static_cast<float>(panelHeight)) * 0.5f));
-        visualY = centeredY;
-        if (barIsLeft) {
-          visualX = parentContext->barX + parentContext->barWidth - kAttachedPanelBarOverlap;
-        } else { // right
-          visualX = parentContext->barX - static_cast<std::int32_t>(panelWidth) + kAttachedPanelBarOverlap;
-        }
-      } else {
-        const auto centeredX =
-            parentContext->barX +
-            static_cast<std::int32_t>(
-                std::lround((static_cast<float>(parentContext->barWidth) - static_cast<float>(panelWidth)) * 0.5f));
-        visualX = centeredX;
-        if (barIsBottom) {
-          visualY = parentContext->barY - static_cast<std::int32_t>(panelHeight) + kAttachedPanelBarOverlap;
-        } else { // top
-          visualY = parentContext->barY + parentContext->barHeight - kAttachedPanelBarOverlap;
-        }
-      }
-
-      // Subsurface origin sits crossOutset away from the visual rect on each cross-axis side,
-      // and the main-axis bleed sits on the side opposite the bar.
-      std::int32_t surfaceX = 0;
-      std::int32_t surfaceY = 0;
-      if (barIsVertical) {
-        surfaceY = visualY - crossOutsetStart;
-        surfaceX = barIsLeft ? visualX : visualX - mainBleedAway;
-      } else {
-        surfaceX = visualX - crossOutsetStart;
-        surfaceY = barIsBottom ? visualY - mainBleedAway : visualY;
-      }
-
-      m_panelInsetX = visualX - surfaceX;
-      m_panelInsetY = visualY - surfaceY;
-      m_panelVisualWidth = panelWidth;
-      m_panelVisualHeight = panelHeight;
-      m_attachedBackgroundOpacity =
-          m_activePanel->inheritsBarBackgroundOpacity()
-              ? resolvePanelBarConfig(m_config, m_wayland, parentContext->output).backgroundOpacity
-              : m_activePanel->attachedBackgroundOpacityOverride();
-      m_attachedRevealProgress = 0.0f;
-      m_attachedRevealDirection = attached_panel::revealDirection(barPosition);
-      m_attachedBarPosition = std::string(barPosition);
-      m_attachedToBar = true;
-      m_layerSurface = nullptr;
-
-      // Geometry passed to the bar for shadow exclusion. The visible rect extends past
-      // the body by `cornerRadius` along the cross axis to cover the concave-corner notches.
-      AttachedPanelGeometry attachedGeometry;
-      attachedGeometry.cornerRadius = cornerRadius;
-      if (barIsVertical) {
-        attachedGeometry.x = static_cast<float>(visualX);
-        attachedGeometry.y = static_cast<float>(visualY) - cornerRadius;
-        attachedGeometry.width = static_cast<float>(panelWidth);
-        attachedGeometry.height = static_cast<float>(panelHeight) + cornerRadius * 2.0f;
-      } else {
-        attachedGeometry.x = static_cast<float>(visualX) - cornerRadius;
-        attachedGeometry.y = static_cast<float>(visualY);
-        attachedGeometry.width = static_cast<float>(panelWidth) + cornerRadius * 2.0f;
-        attachedGeometry.height = static_cast<float>(panelHeight);
-      }
-      m_attachedPanelGeometry = attachedGeometry;
-
-      auto subsurface = std::make_unique<Subsurface>(*m_wayland, SubsurfaceConfig{
-                                                                     .width = surfaceWidth,
-                                                                     .height = surfaceHeight,
-                                                                     .x = surfaceX,
-                                                                     .y = surfaceY,
-                                                                     .stacking = SubsurfaceStacking::BelowParent,
-                                                                     .desynchronized = true,
-                                                                 });
-      auto* rawSubsurface = subsurface.get();
-      m_surface = std::move(subsurface);
-      configureSurfaceCallbacks(*m_surface);
-
-      m_inTransition = true;
-      const bool ok = rawSubsurface->initialize(parentContext->parentSurface, parentContext->output);
-      m_inTransition = false;
-
-      if (ok) {
-        m_output = parentContext->output;
-        m_wlSurface = m_surface->wlSurface();
-        m_attachedParentSurface = parentContext->parentSurface;
-        m_surface->setInputRegion(
-            {InputRect{m_panelInsetX, m_panelInsetY, static_cast<int>(panelWidth), static_cast<int>(panelHeight)}});
-        applyPanelCompositorBlur();
-        publishAttachedPanelGeometry(m_attachedRevealProgress);
-        if (m_beginAttachedKeyboard) {
-          m_beginAttachedKeyboard(parentContext->output);
-        }
-        m_surface->requestRedraw();
-        kLog.debug("panel manager: opened \"{}\" as attached subsurface", panelId);
-        return;
-      }
-
-      if (m_attachedPanelGeometryCallback) {
-        m_attachedPanelGeometryCallback(parentContext->output, std::nullopt);
-      }
-      m_surface.reset();
-      m_attachedToBar = false;
-      m_panelInsetX = 0;
-      m_panelInsetY = 0;
-      m_panelVisualWidth = 0;
-      m_panelVisualHeight = 0;
-      m_attachedBackgroundOpacity = 1.0f;
-      m_attachedRevealProgress = 1.0f;
-      m_attachedRevealDirection = AttachedRevealDirection::Down;
-      m_attachedBarPosition.clear();
-      m_attachedPanelGeometry.reset();
-      kLog.warn("panel manager: attached subsurface failed for \"{}\", falling back to layer-shell", panelId);
+    // Cross-axis outset wraps the concave-corner overhang and shadow bleed on both sides
+    // perpendicular to the bar. Main-axis bleed extends only away from the bar (panel grows
+    // outward from the bar edge).
+    std::int32_t crossOutsetStart = 0;
+    std::int32_t crossOutsetEnd = 0;
+    std::int32_t mainBleedAway = 0;
+    if (barIsVertical) {
+      crossOutsetStart = std::max(shadowBleed.up, shadowBleed.down) + cornerOutset + 2;
+      crossOutsetEnd = crossOutsetStart;
+      mainBleedAway = (barIsLeft ? shadowBleed.right : shadowBleed.left) + 2;
+    } else {
+      crossOutsetStart = std::max(shadowBleed.left, shadowBleed.right) + cornerOutset + 2;
+      crossOutsetEnd = crossOutsetStart;
+      mainBleedAway = (barIsBottom ? shadowBleed.up : shadowBleed.down) + 2;
     }
+
+    const auto crossPad = static_cast<std::uint32_t>(std::max(0, crossOutsetStart + crossOutsetEnd));
+    const auto mainPad = static_cast<std::uint32_t>(std::max(0, mainBleedAway));
+    const std::uint32_t surfaceWidth = barIsVertical ? (panelWidth + mainPad) : (panelWidth + crossPad);
+    const std::uint32_t surfaceHeight = barIsVertical ? (panelHeight + crossPad) : (panelHeight + mainPad);
+
+    // Bar visible rect in screen coords, derived from BarConfig + output dimensions.
+    const std::int32_t marginH = std::max(0, barConfig.marginH);
+    const std::int32_t marginV = std::max(0, barConfig.marginV);
+    const std::int32_t barLeft = barIsRight ? std::max(0, outputWidth - marginH - barConfig.thickness) : marginH;
+    const std::int32_t barTop = barIsBottom ? std::max(0, outputHeight - marginV - barConfig.thickness) : marginV;
+    const std::int32_t barRight =
+        barIsVertical ? barLeft + barConfig.thickness : std::max(barLeft, outputWidth - marginH);
+    const std::int32_t barBottom =
+        barIsVertical ? std::max(barTop, outputHeight - marginV) : barTop + barConfig.thickness;
+
+    // Panel body rect in screen coords. Centered on the bar's main axis; 1 px bar overlap
+    // so the concave-corner notches read as merged with the bar edge.
+    std::int32_t visualX = 0;
+    std::int32_t visualY = 0;
+    if (barIsVertical) {
+      const auto centeredY = barTop + (barBottom - barTop - static_cast<std::int32_t>(panelHeight)) / 2;
+      visualY = centeredY;
+      visualX = barIsLeft ? barRight - kAttachedPanelBarOverlap
+                          : barLeft - static_cast<std::int32_t>(panelWidth) + kAttachedPanelBarOverlap;
+    } else {
+      const auto centeredX = barLeft + (barRight - barLeft - static_cast<std::int32_t>(panelWidth)) / 2;
+      visualX = centeredX;
+      visualY = barIsBottom ? barTop - static_cast<std::int32_t>(panelHeight) + kAttachedPanelBarOverlap
+                            : barBottom - kAttachedPanelBarOverlap;
+    }
+
+    // Surface origin: cross-axis outset on each side, main-axis bleed on the side opposite the bar.
+    std::int32_t surfaceX = 0;
+    std::int32_t surfaceY = 0;
+    if (barIsVertical) {
+      surfaceY = visualY - crossOutsetStart;
+      surfaceX = barIsLeft ? visualX : visualX - mainBleedAway;
+    } else {
+      surfaceX = visualX - crossOutsetStart;
+      surfaceY = barIsBottom ? visualY - mainBleedAway : visualY;
+    }
+
+    m_panelInsetX = visualX - surfaceX;
+    m_panelInsetY = visualY - surfaceY;
+    m_panelVisualWidth = panelWidth;
+    m_panelVisualHeight = panelHeight;
+    m_attachedBackgroundOpacity = m_activePanel->inheritsBarBackgroundOpacity()
+                                      ? barConfig.backgroundOpacity
+                                      : m_activePanel->attachedBackgroundOpacityOverride();
+    m_attachedRevealProgress = 0.0f;
+    m_attachedRevealDirection = attached_panel::revealDirection(barPosition);
+    m_attachedBarPosition = std::string(barPosition);
+    m_attachedToBar = true;
+
+    // Convert panel screen coords to bar-surface-local coords for the shadow exclusion callback.
+    // Bar's surface is bigger than its visible rect (it includes shadow padding), so its origin
+    // sits one shadow bleed inset from the visible bar's top-left. Mirrors the layout in
+    // bar.cpp's bar surface creation (the "mLeft, mTop" anchor offsets).
+    const auto barShadowBleed = shell::surface_shadow::bleed(barConfig.shadow, shadowConfig);
+    std::int32_t barSurfaceLocalVisualX = visualX;
+    std::int32_t barSurfaceLocalVisualY = visualY;
+    if (barIsVertical) {
+      barSurfaceLocalVisualY = visualY - (barTop - std::min(marginV, barShadowBleed.up));
+      const std::int32_t barSurfaceOriginX =
+          barIsLeft ? std::max(0, marginH - barShadowBleed.left) : barLeft - barShadowBleed.left;
+      barSurfaceLocalVisualX = visualX - barSurfaceOriginX;
+    } else {
+      barSurfaceLocalVisualX = visualX - (barLeft - std::min(marginH, barShadowBleed.left));
+      const std::int32_t barSurfaceOriginY =
+          barIsBottom ? barTop - barShadowBleed.up : std::max(0, marginV - barShadowBleed.up);
+      barSurfaceLocalVisualY = visualY - barSurfaceOriginY;
+    }
+
+    // Geometry passed to the bar for shadow exclusion (bar-surface-local coords). The visible
+    // rect extends past the body by `cornerRadius` on the cross axis to cover concave-corner notches.
+    AttachedPanelGeometry attachedGeometry;
+    attachedGeometry.cornerRadius = cornerRadius;
+    if (barIsVertical) {
+      attachedGeometry.x = static_cast<float>(barSurfaceLocalVisualX);
+      attachedGeometry.y = static_cast<float>(barSurfaceLocalVisualY) - cornerRadius;
+      attachedGeometry.width = static_cast<float>(panelWidth);
+      attachedGeometry.height = static_cast<float>(panelHeight) + cornerRadius * 2.0f;
+    } else {
+      attachedGeometry.x = static_cast<float>(barSurfaceLocalVisualX) - cornerRadius;
+      attachedGeometry.y = static_cast<float>(barSurfaceLocalVisualY);
+      attachedGeometry.width = static_cast<float>(panelWidth) + cornerRadius * 2.0f;
+      attachedGeometry.height = static_cast<float>(panelHeight);
+    }
+    m_attachedPanelGeometry = attachedGeometry;
+
+    // Layer-shell surface anchored top-left of the output for absolute positioning. The panel
+    // sits on top of the bar in stacking order; the clip-reveal animation hides any pre-reveal
+    // overdraw. exclusive_zone = -1 so the bar's reservation does NOT shift our marginTop —
+    // we compute marginTop directly in screen coords and want the compositor to honor it.
+    auto attachedConfig = LayerSurfaceConfig{
+        .nameSpace = "noctalia-panel",
+        .layer = m_activePanel->layer(),
+        .anchor = LayerShellAnchor::Top | LayerShellAnchor::Left,
+        .width = surfaceWidth,
+        .height = surfaceHeight,
+        .exclusiveZone = -1,
+        .marginTop = surfaceY,
+        .marginRight = 0,
+        .marginBottom = 0,
+        .marginLeft = surfaceX,
+        // Force exclusive keyboard so panels with text inputs (search field, etc.) work without
+        // a prior click — matches the previous subsurface behavior where the bar borrowed
+        // exclusive focus on the panel's behalf.
+        .keyboard = LayerShellKeyboard::Exclusive,
+        .defaultWidth = surfaceWidth,
+        .defaultHeight = surfaceHeight,
+    };
+
+    auto layerSurfaceUnique = std::make_unique<LayerSurface>(*m_wayland, std::move(attachedConfig));
+    m_layerSurface = layerSurfaceUnique.get();
+    m_surface = std::move(layerSurfaceUnique);
+    configureSurfaceCallbacks(*m_surface);
+
+    m_inTransition = true;
+    const bool ok = m_layerSurface->initialize(output);
+    m_inTransition = false;
+
+    if (ok) {
+      m_output = output;
+      m_wlSurface = m_surface->wlSurface();
+      m_surface->setInputRegion(
+          {InputRect{m_panelInsetX, m_panelInsetY, static_cast<int>(panelWidth), static_cast<int>(panelHeight)}});
+      applyPanelCompositorBlur();
+      publishAttachedPanelGeometry(m_attachedRevealProgress);
+      m_surface->requestRedraw();
+      kLog.debug("panel manager: opened \"{}\" as attached layer-shell", panelId);
+      return;
+    }
+
+    if (m_attachedPanelGeometryCallback) {
+      m_attachedPanelGeometryCallback(output, std::nullopt);
+    }
+    m_surface.reset();
+    m_layerSurface = nullptr;
+    m_attachedToBar = false;
+    m_panelInsetX = 0;
+    m_panelInsetY = 0;
+    m_panelVisualWidth = 0;
+    m_panelVisualHeight = 0;
+    m_attachedBackgroundOpacity = 1.0f;
+    m_attachedRevealProgress = 1.0f;
+    m_attachedRevealDirection = AttachedRevealDirection::Down;
+    m_attachedBarPosition.clear();
+    m_attachedPanelGeometry.reset();
+    kLog.warn("panel manager: attached layer-shell failed for \"{}\", falling back to standalone", panelId);
   }
 
   auto layerSurface = std::make_unique<LayerSurface>(*m_wayland, std::move(surfaceConfig));
@@ -472,9 +483,6 @@ void PanelManager::destroyPanel() {
   if (m_attachedToBar && m_attachedPanelGeometryCallback && m_output != nullptr) {
     m_attachedPanelGeometryCallback(m_output, std::nullopt);
   }
-  if (m_attachedToBar && m_endAttachedKeyboard && m_output != nullptr) {
-    m_endAttachedKeyboard(m_output);
-  }
   m_animations.cancelAll();
   m_closing = false;
   m_pointerInside = false;
@@ -494,7 +502,6 @@ void PanelManager::destroyPanel() {
   m_layerSurface = nullptr;
   m_output = nullptr;
   m_wlSurface = nullptr;
-  m_attachedParentSurface = nullptr;
   m_activePanel = nullptr;
   m_activePanelId.clear();
   m_pendingOpenContext.clear();
@@ -712,7 +719,7 @@ void PanelManager::onKeyboardEvent(const KeyboardEvent& event) {
   // that's the bar's wl_surface (subsurfaces cannot hold focus directly); for layer
   // surfaces it's the panel's own wl_surface.
   if (m_wayland != nullptr) {
-    wl_surface* const focusTarget = m_attachedToBar ? m_attachedParentSurface : m_wlSurface;
+    wl_surface* const focusTarget = m_wlSurface;
     if (focusTarget == nullptr || m_wayland->lastKeyboardSurface() != focusTarget) {
       return;
     }

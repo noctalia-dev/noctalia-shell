@@ -791,15 +791,10 @@ void Application::initUi() {
                    m_networkService.get(), &m_idleInhibitor, m_mprisService.get(), m_pipewireSpectrum.get(),
                    &m_httpClient, &m_weatherService, &m_renderContext, &m_nightLightManager, &m_themeService,
                    m_bluetoothService.get(), m_brightnessService.get(), &m_fileWatcher);
-  m_panelManager.setAttachedPanelParentResolver([this](wl_output* output, std::string_view preferredPosition) {
-    return m_bar.attachedPanelParentContext(output, preferredPosition);
-  });
   m_panelManager.setAttachedPanelGeometryCallback(
       [this](wl_output* output, std::optional<AttachedPanelGeometry> geometry) {
         m_bar.setAttachedPanelGeometry(output, geometry);
       });
-  m_panelManager.setAttachedKeyboardCallbacks([this](wl_output* output) { m_bar.beginAttachedKeyboard(output); },
-                                              [this](wl_output* output) { m_bar.endAttachedKeyboard(output); });
   m_bar.setAutoHideSuppressionCallback([this]() { return m_trayMenu.isOpen() || m_panelManager.isAttachedOpen(); });
   // When config reloads, refresh any open panel: bar-driven attached decoration restyle and
   // shell-driven compositor blur.
