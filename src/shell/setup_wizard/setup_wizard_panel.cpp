@@ -444,7 +444,7 @@ void SetupWizardPanel::configureThemeOptionSelect() {
       m_config->setOverride({"theme", "wallpaper_scheme"}, std::string(kWallpaperSchemes[index].value));
     });
   } else {
-    m_themeOptionLabel->setText(i18n::tr("setup-wizard.premade-scheme"));
+    m_themeOptionLabel->setText(i18n::tr("setup-wizard.builtin-palette"));
     m_builtinPalette = std::string(kDefaultBuiltinPalette);
     m_themeOptionSelect->setOptions(builtinPaletteNames());
     m_themeOptionSelect->setSelectedIndex(selectedBuiltinPaletteIndex(kDefaultBuiltinPalette));
