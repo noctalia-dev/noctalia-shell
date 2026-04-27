@@ -1,18 +1,27 @@
-# Noctalia Configuration
+# Configuration
 
-Config file: `$XDG_CONFIG_HOME/noctalia/config.toml` (defaults to `~/.config/noctalia/config.toml`)
+Noctalia has two configuration layers:
 
-Changes are hot-reloaded via inotify — no restart required.
+- Declarative user config lives in `$XDG_CONFIG_HOME/noctalia/` or `~/.config/noctalia/`.
+  Noctalia reads every `*.toml` file in that directory, sorted alphabetically, and deep-merges them into one config.
+  A single `config.toml` is the simplest setup, but splitting config into files such as `bar.toml`, `theme.toml`,
+  or `widgets.toml` is also supported.
+- GUI-managed overrides live in `$XDG_STATE_HOME/noctalia/settings.toml` or
+  `~/.local/state/noctalia/settings.toml`. This file is written by Noctalia itself for settings changed through the
+  UI, IPC-backed controls, setup flows, and other runtime actions that need persistence.
 
-A ready-to-use starting config with all defaults is at [`example.toml`](example.toml).
+Load order is built-in defaults first, then declarative config files, then `settings.toml`.
+Because the state file is applied last, GUI overrides win over matching values in `config.toml`.
 
-Notification daemon toggle: use `[notification].enable_daemon` (documented in [`config/services.md`](config/services.md)).
-Weather location visibility toggle: use `[shell].show_location` (documented in [`config/shell.md`](config/shell.md)).
-Wallpaper automation: use `[wallpaper.automation]` (documented in [`config/wallpaper.md`](config/wallpaper.md)).
-Wallpaper single-color fallback/fill: use `[wallpaper].fill_color` (documented in [`config/wallpaper.md`](config/wallpaper.md)).
-Bar creation order: use `[bar].order` (documented in [`config/bar.md`](config/bar.md)).
+Use the declarative config directory for hand-authored, dotfile-managed configuration. Treat `settings.toml` as an
+app-managed override layer: inspect or delete it when you want to understand or clear GUI changes, but do not rely on
+it as the primary place for curated config. Keeping the override file outside `~/.config` also allows the GUI to save
+changes when the config directory is read-only, such as on NixOS.
 
----
+Both layers are watched for changes and hot-reloaded. If neither declarative config nor state overrides exist,
+Noctalia falls back to built-in defaults in code.
+
+A ready-to-use starting config with all defaults is at [example.toml](example.toml).
 
 ## Reference
 
@@ -20,9 +29,11 @@ Bar creation order: use `[bar].order` (documented in [`config/bar.md`](config/ba
 |---------|-------------|
 | [Bar](config/bar.md) | Bar layout, per-monitor overrides, auto-hide, widget capsule styling |
 | [Widgets](config/widgets.md) | Widget definitions and all built-in widget types |
-| [Dock](config/dock.md) | Application dock — pinned apps, auto-hide, IPC |
-| [Desktop Widgets](config/desktop-widgets.md) | Desktop overlay widgets — edit mode, state file format |
-| [Wallpaper](config/wallpaper.md) | Wallpaper picker and overview backdrop |
-| [Theme](config/theme.md) | Color schemes, modes, wallpaper-derived palettes, app templates |
-| [Services](config/services.md) | Audio, Sound cues, Brightness, Night Light, Weather, Idle, Notifications |
-| [Shell](config/shell.md) | Global UI settings, OSD, Keybinds, Hooks |
+| [Scripted Widgets](config/scripted-widgets.md) | Custom Luau-driven bar widgets |
+| [Dock](config/dock.md) | Application dock, pinned apps, auto-hide, IPC |
+| [Desktop Widgets](config/desktop-widgets.md) | Desktop overlay widgets, edit mode, state file format |
+| [Wallpaper](config/wallpaper.md) | Wallpaper picker, overview backdrop, automation |
+| [Theme](config/theme.md) | Color schemes, modes, wallpaper-derived palettes |
+| [Theming Templates](config/theming-templates.md) | App theme template generation and export paths |
+| [Services](config/services.md) | Audio, sound cues, brightness, night light, weather, idle, notifications |
+| [Shell](config/shell.md) | Global UI settings, OSD, keybinds, hooks |

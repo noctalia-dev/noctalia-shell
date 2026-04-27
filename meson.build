@@ -133,7 +133,7 @@ stb_dep = declare_dependency(
   include_directories: include_directories('third_party/stb', is_system: true),
 )
 
-# ── System: libwebp (VP8 lossy WebP; wuffs only handles VP8L lossless) ────────
+# ── System: libwebp (WebP decode and thumbnail encode) ───────────────────────
 libwebp_dep = dependency('libwebp', required: true)
 
 # ── Vendored: Luau (Roblox's Lua fork) ────────────────────────────────────────
