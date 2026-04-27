@@ -52,5 +52,6 @@ struct Notification {
   std::optional<NotificationImageData> imageData;
   std::optional<std::string> category;
   std::optional<std::string> desktopEntry;
+  TimePoint receivedTime;              // add/replace time used for duplicate burst suppression
   std::optional<TimePoint> expiryTime; // absent = never expires
 };

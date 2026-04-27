@@ -8,6 +8,7 @@
 namespace {
 
   constexpr Logger kLog("notification");
+  constexpr auto kImplicitDuplicateWindow = std::chrono::seconds(1);
 
   constexpr std::string_view urgency_str(Urgency u) noexcept {
     switch (u) {
@@ -31,11 +32,16 @@ namespace {
     return "unknown";
   }
 
-  std::optional<TimePoint> schedule_expiry(int32_t timeout_ms) noexcept {
+  std::optional<TimePoint> schedule_expiry(TimePoint now, int32_t timeout_ms) noexcept {
     if (timeout_ms > 0) {
-      return Clock::now() + std::chrono::milliseconds(timeout_ms);
+      return now + std::chrono::milliseconds(timeout_ms);
     }
     return std::nullopt; // 0 = persistent, -1 = server default (treat as persistent for now)
+  }
+
+  bool has_same_content(const Notification& notification, const std::string& appName, const std::string& summary,
+                        const std::string& body) {
+    return notification.appName == appName && notification.summary == summary && notification.body == body;
   }
 
 } // namespace
@@ -85,6 +91,7 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
                                            std::optional<NotificationImageData> image_data,
                                            std::optional<std::string> category,
                                            std::optional<std::string> desktop_entry) {
+  const auto now = Clock::now();
   auto log_notification = [](const Notification& n, std::string_view action) {
     kLog.debug("notification {} #{} origin={} from=\"{}\" urgency={} summary=\"{}\" body=\"{}\" timeout={}ms", action,
                n.id, origin_str(n.origin), n.appName, urgency_str(n.urgency), n.summary, n.body, n.timeout);
@@ -110,7 +117,8 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
       n.imageData = std::move(image_data);
       n.category = std::move(category);
       n.desktopEntry = std::move(desktop_entry);
-      n.expiryTime = schedule_expiry(timeout);
+      n.receivedTime = now;
+      n.expiryTime = schedule_expiry(now, timeout);
 
       log_notification(n, "updated");
       upsertHistory(n, true, std::nullopt);
@@ -125,12 +133,11 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
     }
   }
 
-  // Deduplicate: if an identical notification already exists, replace it.
-  for (auto& [existingId, idx] : m_idToIndex) {
-    auto& existing = m_notifications[idx];
-    if (existing.appName == app_name && existing.summary == summary && existing.body == body) {
-      existing.expiryTime = schedule_expiry(timeout);
-      log_notification(existing, "deduped");
+  // Suppress immediate duplicate bursts. Later same-content notifications should still be visible.
+  for (auto it = m_notifications.rbegin(); it != m_notifications.rend(); ++it) {
+    const auto& existing = *it;
+    if (has_same_content(existing, app_name, summary, body) && now - existing.receivedTime < kImplicitDuplicateWindow) {
+      log_notification(existing, "duplicate ignored");
       return existing.id;
     }
   }
@@ -149,7 +156,8 @@ uint32_t NotificationManager::addOrReplace(uint32_t replaces_id, std::string app
       .imageData = std::move(image_data),
       .category = std::move(category),
       .desktopEntry = std::move(desktop_entry),
-      .expiryTime = schedule_expiry(timeout),
+      .receivedTime = now,
+      .expiryTime = schedule_expiry(now, timeout),
   });
   m_idToIndex.emplace(id, m_notifications.size() - 1);
 
