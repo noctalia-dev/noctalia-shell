@@ -170,7 +170,7 @@ capsule            = false
 
 start  = ["launcher", "wallpaper", "workspaces"]
 center = ["clock"]
-end    = ["media", "tray", "notifications", "network", "bluetooth", "volume", "brightness", "battery", "session"]
+end    = ["media", "tray", "notifications", "network", "bluetooth", "volume", "brightness", "battery", "control-center", "session"]
 
 # Per-monitor override example — only the fields you list are overridden:
 # [bar.main.monitor.dp1]

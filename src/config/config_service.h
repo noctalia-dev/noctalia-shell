@@ -78,7 +78,7 @@ struct BarConfig {
   std::vector<std::string> startWidgets = {"launcher", "wallpaper", "workspaces"};
   std::vector<std::string> centerWidgets = {"clock"};
   std::vector<std::string> endWidgets = {"media",  "tray",       "notifications", "network", "bluetooth",
-                                         "volume", "brightness", "battery",       "session"};
+                                         "volume", "brightness", "battery", "control-center", "session"};
   // When true, widgets on this bar use a capsule unless `[widget.*] capsule = false`.
   bool widgetCapsuleDefault = false;
   ThemeColor widgetCapsuleFill = roleColor(ColorRole::SurfaceVariant);

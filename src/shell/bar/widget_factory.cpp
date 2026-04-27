@@ -15,6 +15,7 @@
 #include "shell/bar/widgets/bluetooth_widget.h"
 #include "shell/bar/widgets/brightness_widget.h"
 #include "shell/bar/widgets/clock_widget.h"
+#include "shell/bar/widgets/control_center_widget.h"
 #include "shell/bar/widgets/idle_inhibitor_widget.h"
 #include "shell/bar/widgets/keyboard_layout_widget.h"
 #include "shell/bar/widgets/launcher_widget.h"
@@ -123,6 +124,17 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
     widget->setContentScale(contentScale);
     return widget;
   }
+
+ if (type == "control-center") {
+    auto barGlyph = wc != nullptr ? wc->getString("glyph", "noctalia") : std::string{"noctalia"};
+    if (barGlyph.empty()) {
+      barGlyph = "search";
+    }
+    auto widget = std::make_unique<ControlCenterWidget>(output, std::move(barGlyph));
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
 
   if (type == "idle_inhibitor") {
     auto widget = std::make_unique<IdleInhibitorWidget>(m_idleInhibitor);
