@@ -43,7 +43,7 @@ void ControlCenterPanel::create() {
   auto rootLayout = std::make_unique<Flex>();
   rootLayout->setDirection(FlexDirection::Horizontal);
   rootLayout->setAlign(FlexAlign::Stretch);
-  rootLayout->setGap(Style::spaceLg * scale);
+  rootLayout->setGap(Style::spaceMd * scale);
   rootLayout->setPadding(0.0f);
   m_rootLayout = rootLayout.get();
 
@@ -52,7 +52,9 @@ void ControlCenterPanel::create() {
   sidebar->setAlign(FlexAlign::Stretch);
   sidebar->setGap(Style::spaceXs * scale);
   sidebar->setPadding(Style::spaceMd * scale);
-  sidebar->setFlexGrow(1.0f);
+  sidebar->setFillParentMainAxis(true);
+  sidebar->setFill(roleColor(ColorRole::Surface));
+  sidebar->setRadius(Style::radiusXl * scale);
   m_sidebar = sidebar.get();
 
   for (const auto& tab : kTabs) {
