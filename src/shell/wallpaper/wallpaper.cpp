@@ -181,6 +181,14 @@ namespace {
     return resolveThemeColor(*fillColor);
   }
 
+  bool parseColorWallpaperPath(std::string_view path, Color& out) {
+    constexpr std::string_view kPrefix = "color:";
+    if (!path.starts_with(kPrefix)) {
+      return false;
+    }
+    return tryParseHexColor(path.substr(kPrefix.size()), out);
+  }
+
 } // namespace
 
 Wallpaper::Wallpaper() = default;
@@ -271,6 +279,10 @@ void Wallpaper::onStateChange() {
         releaseInstanceTextures(*inst);
         inst->currentTexture = {};
         inst->nextTexture = {};
+        inst->currentSourceKind = WallpaperSourceKind::Image;
+        inst->nextSourceKind = WallpaperSourceKind::Image;
+        inst->currentColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
+        inst->nextColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
         inst->currentPath.clear();
         inst->pendingPath.clear();
         inst->queuedPath.clear();
@@ -498,15 +510,24 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
     return;
   }
 
-  auto newTex = m_textureCache->acquire(path);
-  if (newTex.id == 0) {
-    kLog.warn("failed to load {}", path);
-    return;
+  TextureHandle newTex;
+  Color newColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
+  WallpaperSourceKind newSourceKind = WallpaperSourceKind::Image;
+  if (parseColorWallpaperPath(path, newColor)) {
+    newSourceKind = WallpaperSourceKind::Color;
+  } else {
+    newTex = m_textureCache->acquire(path);
+    if (newTex.id == 0) {
+      kLog.warn("failed to load {}", path);
+      return;
+    }
   }
 
-  if (instance.currentTexture.id == 0) {
+  if (instance.currentPath.empty()) {
     // First wallpaper — display immediately, no transition
+    instance.currentSourceKind = newSourceKind;
     instance.currentTexture = newTex;
+    instance.currentColor = newColor;
     instance.currentPath = path;
     instance.pendingPath.clear();
     instance.queuedPath.clear();
@@ -515,7 +536,9 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
     return;
   }
 
+  instance.nextSourceKind = newSourceKind;
   instance.nextTexture = newTex;
+  instance.nextColor = newColor;
   instance.pendingPath = path;
   startTransition(instance);
 }
@@ -543,8 +566,12 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
       [this, inst]() {
         // Transition complete — release old current, promote next to current
         m_textureCache->release(inst->currentTexture, inst->currentPath);
+        inst->currentSourceKind = inst->nextSourceKind;
         inst->currentTexture = inst->nextTexture;
+        inst->currentColor = inst->nextColor;
         inst->nextTexture = {};
+        inst->nextSourceKind = WallpaperSourceKind::Image;
+        inst->nextColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
         inst->currentPath = inst->pendingPath;
         inst->pendingPath.clear();
         inst->transitionProgress = 0.0f;
@@ -589,8 +616,9 @@ void Wallpaper::updateRendererState(WallpaperInstance& instance) {
         .fillMode = FillMode::Solid,
     });
   }
-  wallpaperNode->setTextures(
-      instance.currentTexture.id, instance.nextTexture.id, static_cast<float>(instance.currentTexture.width),
+  wallpaperNode->setSources(
+      instance.currentSourceKind, instance.currentTexture.id, instance.currentColor, instance.nextSourceKind,
+      instance.nextTexture.id, instance.nextColor, static_cast<float>(instance.currentTexture.width),
       static_cast<float>(instance.currentTexture.height), static_cast<float>(instance.nextTexture.width),
       static_cast<float>(instance.nextTexture.height));
   wallpaperNode->setTransition(instance.activeTransition, instance.transitionProgress, instance.transitionParams);

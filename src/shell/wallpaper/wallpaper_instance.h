@@ -30,6 +30,10 @@ struct WallpaperInstance {
   std::string currentPath;
   std::string pendingPath;
   std::string queuedPath;
+  WallpaperSourceKind currentSourceKind = WallpaperSourceKind::Image;
+  WallpaperSourceKind nextSourceKind = WallpaperSourceKind::Image;
+  Color currentColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
+  Color nextColor = rgba(0.0f, 0.0f, 0.0f, 1.0f);
   TextureHandle currentTexture;
   TextureHandle nextTexture;
 

@@ -7,6 +7,12 @@
 
 #include <GLES2/gl2.h>
 #include <array>
+#include <cstdint>
+
+enum class WallpaperSourceKind : std::uint8_t {
+  Image = 0,
+  Color = 1,
+};
 
 struct TransitionParams {
   float direction = 0.0f;     // wipe: 0=left, 1=right, 2=up, 3=down
@@ -31,9 +37,10 @@ public:
   void ensureInitialized();
   void destroy();
 
-  void draw(WallpaperTransition type, GLuint texture1, GLuint texture2, float surfaceWidth, float surfaceHeight,
-            float quadWidth, float quadHeight, float imageWidth1, float imageHeight1, float imageWidth2,
-            float imageHeight2, float progress, float fillMode, const TransitionParams& params,
+  void draw(WallpaperTransition type, WallpaperSourceKind sourceKind1, GLuint texture1, const Color& sourceColor1,
+            WallpaperSourceKind sourceKind2, GLuint texture2, const Color& sourceColor2, float surfaceWidth,
+            float surfaceHeight, float quadWidth, float quadHeight, float imageWidth1, float imageHeight1,
+            float imageWidth2, float imageHeight2, float progress, float fillMode, const TransitionParams& params,
             const Color& fillColor = rgba(0.0f, 0.0f, 0.0f, 1.0f), const Mat3& transform = Mat3::identity()) const;
 
 private:
@@ -48,6 +55,10 @@ private:
     // Samplers
     GLint source1Loc = -1;
     GLint source2Loc = -1;
+    GLint sourceKind1Loc = -1;
+    GLint sourceKind2Loc = -1;
+    GLint sourceColor1Loc = -1;
+    GLint sourceColor2Loc = -1;
     // Common uniforms
     GLint progressLoc = -1;
     GLint fillModeLoc = -1;

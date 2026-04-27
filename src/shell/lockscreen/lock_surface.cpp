@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <string_view>
 #include <wayland-client.h>
 
 namespace {
@@ -26,6 +27,14 @@ namespace {
   const ext_session_lock_surface_v1_listener kLockSurfaceListener = {
       .configure = &LockSurface::handleConfigure,
   };
+
+  bool parseColorWallpaperPath(std::string_view path, Color& out) {
+    constexpr std::string_view kPrefix = "color:";
+    if (!path.starts_with(kPrefix)) {
+      return false;
+    }
+    return tryParseHexColor(path.substr(kPrefix.size()), out);
+  }
 
 } // namespace
 
@@ -370,7 +379,15 @@ void LockSurface::applyWallpaperTexture() {
     return;
   }
 
-  if (m_textureCache != nullptr && !m_wallpaperPath.empty()) {
+  Color color = rgba(0.0f, 0.0f, 0.0f, 1.0f);
+  if (parseColorWallpaperPath(m_wallpaperPath, color)) {
+    m_wallpaperTexture = {};
+    m_wallpaper->setSources(WallpaperSourceKind::Color, 0, color, WallpaperSourceKind::Image, 0,
+                            rgba(0.0f, 0.0f, 0.0f, 1.0f), 0.0f, 0.0f, 0.0f, 0.0f);
+    m_wallpaper->setTransition(WallpaperTransition::Fade, 0.0f, TransitionParams{});
+    m_wallpaper->setFillMode(m_wallpaperFillMode);
+    m_wallpaper->setFillColor(m_wallpaperFillColor);
+  } else if (m_textureCache != nullptr && !m_wallpaperPath.empty()) {
     m_wallpaperTexture = m_textureCache->acquire(m_wallpaperPath);
     m_wallpaper->setTextures(m_wallpaperTexture.id, 0, static_cast<float>(m_wallpaperTexture.width),
                              static_cast<float>(m_wallpaperTexture.height), 0.0f, 0.0f);

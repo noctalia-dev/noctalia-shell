@@ -98,8 +98,9 @@ void WallpaperRenderer::render() {
   GLuint tex2 = (m_tex2 != 0) ? m_tex2 : m_tex1;
   float progress = (m_tex2 != 0) ? m_progress : 0.0f;
 
-  m_program.draw(m_transition, m_tex1, tex2, sw, sh, sw, sh, m_imgW1, m_imgH1, m_imgW2, m_imgH2, progress,
-                 static_cast<float>(m_fillMode), m_params, m_fillColor);
+  m_program.draw(m_transition, WallpaperSourceKind::Image, m_tex1, rgba(0.0f, 0.0f, 0.0f, 1.0f),
+                 WallpaperSourceKind::Image, tex2, rgba(0.0f, 0.0f, 0.0f, 1.0f), sw, sh, sw, sh, m_imgW1, m_imgH1,
+                 m_imgW2, m_imgH2, progress, static_cast<float>(m_fillMode), m_params, m_fillColor);
 
   eglSwapBuffers(m_eglDisplay, m_eglSurface);
 }
@@ -124,8 +125,9 @@ void WallpaperRenderer::renderToFbo(GLuint targetFbo) {
   GLuint tex2 = (m_tex2 != 0) ? m_tex2 : m_tex1;
   float progress = (m_tex2 != 0) ? m_progress : 0.0f;
 
-  m_program.draw(m_transition, m_tex1, tex2, sw, sh, sw, sh, m_imgW1, m_imgH1, m_imgW2, m_imgH2, progress,
-                 static_cast<float>(m_fillMode), m_params, m_fillColor);
+  m_program.draw(m_transition, WallpaperSourceKind::Image, m_tex1, rgba(0.0f, 0.0f, 0.0f, 1.0f),
+                 WallpaperSourceKind::Image, tex2, rgba(0.0f, 0.0f, 0.0f, 1.0f), sw, sh, sw, sh, m_imgW1, m_imgH1,
+                 m_imgW2, m_imgH2, progress, static_cast<float>(m_fillMode), m_params, m_fillColor);
   // No eglSwapBuffers — caller is responsible for presentation
 }
 

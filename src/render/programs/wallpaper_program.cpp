@@ -31,6 +31,10 @@ precision highp float;
 
 uniform sampler2D u_source1;
 uniform sampler2D u_source2;
+uniform float u_sourceKind1;
+uniform float u_sourceKind2;
+uniform vec4 u_sourceColor1;
+uniform vec4 u_sourceColor2;
 uniform float u_progress;
 uniform float u_fillMode;
 uniform float u_imageWidth1;
@@ -95,13 +99,20 @@ vec4 sampleWithFillMode(sampler2D tex, vec2 uv, float imgWidth, float imgHeight)
 
     return texture2D(tex, transformedUV);
 }
+
+vec4 sampleSource(sampler2D tex, vec2 uv, float imgWidth, float imgHeight, float sourceKind, vec4 sourceColor) {
+    if (sourceKind > 0.5) {
+        return sourceColor;
+    }
+    return sampleWithFillMode(tex, uv, imgWidth, imgHeight);
+}
 )";
 
   constexpr char kFadeFragment[] = R"(
 void main() {
     vec2 uv = v_texcoord;
-    vec4 color1 = sampleWithFillMode(u_source1, uv, u_imageWidth1, u_imageHeight1);
-    vec4 color2 = sampleWithFillMode(u_source2, uv, u_imageWidth2, u_imageHeight2);
+    vec4 color1 = sampleSource(u_source1, uv, u_imageWidth1, u_imageHeight1, u_sourceKind1, u_sourceColor1);
+    vec4 color2 = sampleSource(u_source2, uv, u_imageWidth2, u_imageHeight2, u_sourceKind2, u_sourceColor2);
     gl_FragColor = mix(color1, color2, u_progress);
 }
 )";
@@ -112,8 +123,8 @@ uniform float u_smoothness;
 
 void main() {
     vec2 uv = v_texcoord;
-    vec4 color1 = sampleWithFillMode(u_source1, uv, u_imageWidth1, u_imageHeight1);
-    vec4 color2 = sampleWithFillMode(u_source2, uv, u_imageWidth2, u_imageHeight2);
+    vec4 color1 = sampleSource(u_source1, uv, u_imageWidth1, u_imageHeight1, u_sourceKind1, u_sourceColor1);
+    vec4 color2 = sampleSource(u_source2, uv, u_imageWidth2, u_imageHeight2, u_sourceKind2, u_sourceColor2);
 
     float mappedSmoothness = mix(0.001, 0.5, u_smoothness * u_smoothness);
     float extendedProgress = u_progress * (1.0 + 2.0 * mappedSmoothness) - mappedSmoothness;
@@ -151,8 +162,8 @@ uniform float u_aspectRatio;
 
 void main() {
     vec2 uv = v_texcoord;
-    vec4 color1 = sampleWithFillMode(u_source1, uv, u_imageWidth1, u_imageHeight1);
-    vec4 color2 = sampleWithFillMode(u_source2, uv, u_imageWidth2, u_imageHeight2);
+    vec4 color1 = sampleSource(u_source1, uv, u_imageWidth1, u_imageHeight1, u_sourceKind1, u_sourceColor1);
+    vec4 color2 = sampleSource(u_source2, uv, u_imageWidth2, u_imageHeight2, u_sourceKind2, u_sourceColor2);
 
     float mappedSmoothness = mix(0.001, 0.5, u_smoothness * u_smoothness);
 
@@ -182,8 +193,8 @@ uniform float u_angle;
 
 void main() {
     vec2 uv = v_texcoord;
-    vec4 color1 = sampleWithFillMode(u_source1, uv, u_imageWidth1, u_imageHeight1);
-    vec4 color2 = sampleWithFillMode(u_source2, uv, u_imageWidth2, u_imageHeight2);
+    vec4 color1 = sampleSource(u_source1, uv, u_imageWidth1, u_imageHeight1, u_sourceKind1, u_sourceColor1);
+    vec4 color2 = sampleSource(u_source2, uv, u_imageWidth2, u_imageHeight2, u_sourceKind2, u_sourceColor2);
 
     float mappedSmoothness = mix(0.001, 0.3, u_smoothness * u_smoothness);
 
@@ -238,8 +249,8 @@ void main() {
     float scale2 = 1.0 + zoom * (1.0 - u_progress);
     vec2 uv2 = (uv - 0.5) / scale2 + 0.5;
 
-    vec4 color1 = sampleWithFillMode(u_source1, uv1, u_imageWidth1, u_imageHeight1);
-    vec4 color2 = sampleWithFillMode(u_source2, uv2, u_imageWidth2, u_imageHeight2);
+    vec4 color1 = sampleSource(u_source1, uv1, u_imageWidth1, u_imageHeight1, u_sourceKind1, u_sourceColor1);
+    vec4 color2 = sampleSource(u_source2, uv2, u_imageWidth2, u_imageHeight2, u_sourceKind2, u_sourceColor2);
 
     gl_FragColor = mix(color1, color2, u_progress);
 }
@@ -278,8 +289,8 @@ vec2 hexRound(float q, float r) {
 
 void main() {
     vec2 uv = v_texcoord;
-    vec4 color1 = sampleWithFillMode(u_source1, uv, u_imageWidth1, u_imageHeight1);
-    vec4 color2 = sampleWithFillMode(u_source2, uv, u_imageWidth2, u_imageHeight2);
+    vec4 color1 = sampleSource(u_source1, uv, u_imageWidth1, u_imageHeight1, u_sourceKind1, u_sourceColor1);
+    vec4 color2 = sampleSource(u_source2, uv, u_imageWidth2, u_imageHeight2, u_sourceKind2, u_sourceColor2);
 
     float mappedSmoothness = mix(0.001, 0.5, u_smoothness * u_smoothness);
 
@@ -345,6 +356,10 @@ void WallpaperProgram::initProgram(std::size_t index, const char* fragSource) {
   pd.transformLoc = glGetUniformLocation(id, "u_transform");
   pd.source1Loc = glGetUniformLocation(id, "u_source1");
   pd.source2Loc = glGetUniformLocation(id, "u_source2");
+  pd.sourceKind1Loc = glGetUniformLocation(id, "u_sourceKind1");
+  pd.sourceKind2Loc = glGetUniformLocation(id, "u_sourceKind2");
+  pd.sourceColor1Loc = glGetUniformLocation(id, "u_sourceColor1");
+  pd.sourceColor2Loc = glGetUniformLocation(id, "u_sourceColor2");
   pd.progressLoc = glGetUniformLocation(id, "u_progress");
   pd.fillModeLoc = glGetUniformLocation(id, "u_fillMode");
   pd.imageWidth1Loc = glGetUniformLocation(id, "u_imageWidth1");
@@ -372,13 +387,17 @@ void WallpaperProgram::initProgram(std::size_t index, const char* fragSource) {
   }
 }
 
-void WallpaperProgram::draw(WallpaperTransition type, GLuint texture1, GLuint texture2, float surfaceWidth,
-                            float surfaceHeight, float quadWidth, float quadHeight, float imageWidth1,
-                            float imageHeight1, float imageWidth2, float imageHeight2, float progress, float fillMode,
-                            const TransitionParams& params, const Color& fillColor, const Mat3& transform) const {
+void WallpaperProgram::draw(WallpaperTransition type, WallpaperSourceKind sourceKind1, GLuint texture1,
+                            const Color& sourceColor1, WallpaperSourceKind sourceKind2, GLuint texture2,
+                            const Color& sourceColor2, float surfaceWidth, float surfaceHeight, float quadWidth,
+                            float quadHeight, float imageWidth1, float imageHeight1, float imageWidth2,
+                            float imageHeight2, float progress, float fillMode, const TransitionParams& params,
+                            const Color& fillColor, const Mat3& transform) const {
   auto idx = static_cast<std::size_t>(type);
-  if (idx >= kTransitionCount || !m_programs[idx].program.isValid() || texture1 == 0 || quadWidth <= 0.0f ||
-      quadHeight <= 0.0f) {
+  if (idx >= kTransitionCount || !m_programs[idx].program.isValid() || quadWidth <= 0.0f || quadHeight <= 0.0f) {
+    return;
+  }
+  if (sourceKind1 == WallpaperSourceKind::Image && texture1 == 0) {
     return;
   }
 
@@ -405,6 +424,14 @@ void WallpaperProgram::draw(WallpaperTransition type, GLuint texture1, GLuint te
   }
 
   // Common uniforms
+  if (pd.sourceKind1Loc >= 0)
+    glUniform1f(pd.sourceKind1Loc, sourceKind1 == WallpaperSourceKind::Color ? 1.0f : 0.0f);
+  if (pd.sourceKind2Loc >= 0)
+    glUniform1f(pd.sourceKind2Loc, sourceKind2 == WallpaperSourceKind::Color ? 1.0f : 0.0f);
+  if (pd.sourceColor1Loc >= 0)
+    glUniform4f(pd.sourceColor1Loc, sourceColor1.r, sourceColor1.g, sourceColor1.b, sourceColor1.a);
+  if (pd.sourceColor2Loc >= 0)
+    glUniform4f(pd.sourceColor2Loc, sourceColor2.r, sourceColor2.g, sourceColor2.b, sourceColor2.a);
   glUniform1f(pd.progressLoc, progress);
   if (pd.fillModeLoc >= 0)
     glUniform1f(pd.fillModeLoc, fillMode);

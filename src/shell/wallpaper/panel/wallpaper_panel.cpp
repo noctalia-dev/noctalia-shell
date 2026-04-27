@@ -23,6 +23,7 @@
 
 #include <chrono>
 #include <memory>
+#include <string_view>
 #include <utility>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
@@ -30,6 +31,16 @@ namespace {
 
   constexpr Logger kLog("wp-panel");
   constexpr auto kFilterDebounceInterval = std::chrono::milliseconds(120);
+
+  bool parseColorWallpaperPath(std::string_view path, Color& out) {
+    constexpr std::string_view kPrefix = "color:";
+    if (!path.starts_with(kPrefix)) {
+      return false;
+    }
+    return tryParseHexColor(path.substr(kPrefix.size()), out);
+  }
+
+  std::string colorWallpaperPath(const Color& color) { return "color:" + formatRgbHex(color); }
 
 } // namespace
 
@@ -531,6 +542,13 @@ std::optional<Color> WallpaperPanel::selectedFillColor() const {
 
   const auto& wp = m_config->config().wallpaper;
   const auto& choice = m_monitorChoices[m_selectedMonitorIndex];
+  Color sourceColor;
+  const std::string currentPath =
+      choice.connector.empty() ? m_config->getDefaultWallpaperPath() : m_config->getWallpaperPath(choice.connector);
+  if (parseColorWallpaperPath(currentPath, sourceColor)) {
+    return sourceColor;
+  }
+
   if (!choice.connector.empty()) {
     for (const auto& ovr : wp.monitorOverrides) {
       if (ovr.match == choice.connector && ovr.fillColor.has_value()) {
@@ -830,26 +848,23 @@ void WallpaperPanel::applyColorWallpaper() {
 
     Color rgb = *result;
     rgb.a = 1.0f;
-    const std::string hex = formatRgbHex(rgb);
+    const std::string path = colorWallpaperPath(rgb);
 
     if (choice.connector.empty()) {
-      m_config->setOverride({"wallpaper", "fill_color"}, hex);
       ConfigService::WallpaperBatch batch(*m_config);
       if (m_wayland != nullptr) {
         for (const auto& out : m_wayland->outputs()) {
           if (!out.connectorName.empty()) {
-            m_config->setOverride({"wallpaper", "monitor", out.connectorName, "fill_color"}, hex);
-            m_config->setWallpaperPath(out.connectorName, "");
+            m_config->setWallpaperPath(out.connectorName, path);
           }
         }
       }
-      m_config->setWallpaperPath(std::nullopt, "");
-      kLog.info("applied color wallpaper {} to ALL", hex);
+      m_config->setWallpaperPath(std::nullopt, path);
+      kLog.info("applied color wallpaper {} to ALL", path);
       return;
     }
 
-    m_config->setOverride({"wallpaper", "monitor", choice.connector, "fill_color"}, hex);
-    m_config->setWallpaperPath(choice.connector, "");
-    kLog.info("applied color wallpaper {} to {}", hex, choice.connector);
+    m_config->setWallpaperPath(choice.connector, path);
+    kLog.info("applied color wallpaper {} to {}", path, choice.connector);
   });
 }

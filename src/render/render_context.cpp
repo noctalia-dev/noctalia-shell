@@ -290,12 +290,17 @@ void RenderContext::renderNode(const Node* node, const Mat3& parentTransform, fl
   }
   case NodeType::Wallpaper: {
     const auto* wallpaper = static_cast<const WallpaperNode*>(node);
-    if (wallpaper->texture1() != 0) {
-      const std::uint32_t texture2 = wallpaper->texture2() != 0 ? wallpaper->texture2() : wallpaper->texture1();
-      const float imageWidth2 = wallpaper->texture2() != 0 ? wallpaper->imageWidth2() : wallpaper->imageWidth1();
-      const float imageHeight2 = wallpaper->texture2() != 0 ? wallpaper->imageHeight2() : wallpaper->imageHeight1();
-      const float progress = wallpaper->texture2() != 0 ? wallpaper->progress() : 0.0f;
-      m_wallpaperProgram.draw(wallpaper->transition(), wallpaper->texture1(), texture2, sw, sh, node->width(),
+    const bool hasSource1 = wallpaper->sourceKind1() == WallpaperSourceKind::Color || wallpaper->texture1() != 0;
+    if (hasSource1) {
+      const bool hasSource2 = wallpaper->sourceKind2() == WallpaperSourceKind::Color || wallpaper->texture2() != 0;
+      const WallpaperSourceKind sourceKind2 = hasSource2 ? wallpaper->sourceKind2() : wallpaper->sourceKind1();
+      const std::uint32_t texture2 = hasSource2 ? wallpaper->texture2() : wallpaper->texture1();
+      const Color& sourceColor2 = hasSource2 ? wallpaper->sourceColor2() : wallpaper->sourceColor1();
+      const float imageWidth2 = hasSource2 ? wallpaper->imageWidth2() : wallpaper->imageWidth1();
+      const float imageHeight2 = hasSource2 ? wallpaper->imageHeight2() : wallpaper->imageHeight1();
+      const float progress = hasSource2 ? wallpaper->progress() : 0.0f;
+      m_wallpaperProgram.draw(wallpaper->transition(), wallpaper->sourceKind1(), wallpaper->texture1(),
+                              wallpaper->sourceColor1(), sourceKind2, texture2, sourceColor2, sw, sh, node->width(),
                               node->height(), wallpaper->imageWidth1(), wallpaper->imageHeight1(), imageWidth2,
                               imageHeight2, progress, static_cast<float>(wallpaper->fillMode()),
                               wallpaper->transitionParams(), wallpaper->fillColor(), worldTransform);
