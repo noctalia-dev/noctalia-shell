@@ -1716,27 +1716,13 @@ void ConfigService::parseTable(const toml::table& tbl) {
         wp.fillColor = themeColorFromConfigString(*v);
       }
     }
-    auto parseTransition = [](const std::string& s) -> std::optional<WallpaperTransition> {
-      if (s == "fade")
-        return WallpaperTransition::Fade;
-      if (s == "wipe")
-        return WallpaperTransition::Wipe;
-      if (s == "disc")
-        return WallpaperTransition::Disc;
-      if (s == "stripes")
-        return WallpaperTransition::Stripes;
-      if (s == "zoom")
-        return WallpaperTransition::Zoom;
-      if (s == "honeycomb")
-        return WallpaperTransition::Honeycomb;
-      return std::nullopt;
-    };
     if (auto* arr = (*wpTbl)["transition"].as_array()) {
       wp.transitions.clear();
       for (const auto& item : *arr) {
         if (auto s = item.value<std::string>()) {
-          if (auto t = parseTransition(*s))
+          if (auto t = enumFromKey(kWallpaperTransitions, *s)) {
             wp.transitions.push_back(*t);
+          }
         }
       }
       if (wp.transitions.empty())

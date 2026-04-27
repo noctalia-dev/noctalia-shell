@@ -310,6 +310,15 @@ constexpr EnumOption<WallpaperAutomationConfig::Order> kWallpaperAutomationOrder
     {WallpaperAutomationConfig::Order::Alphabetical, "alphabetical", "settings.opt.alphabetical"},
 };
 
+constexpr EnumOption<WallpaperTransition> kWallpaperTransitions[] = {
+    {WallpaperTransition::Disc, "disc", "settings.opt.transition-disc"},
+    {WallpaperTransition::Fade, "fade", "settings.opt.transition-fade"},
+    {WallpaperTransition::Honeycomb, "honeycomb", "settings.opt.transition-honeycomb"},
+    {WallpaperTransition::Stripes, "stripes", "settings.opt.transition-stripes"},
+    {WallpaperTransition::Wipe, "wipe", "settings.opt.transition-wipe"},
+    {WallpaperTransition::Zoom, "zoom", "settings.opt.transition-zoom"},
+};
+
 struct ShellConfig {
   struct AnimationConfig {
     bool enabled = true;

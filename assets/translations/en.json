@@ -347,7 +347,13 @@
       "wallpaper-stretch": "Stretch",
       "wallpaper-repeat": "Repeat",
       "random": "Random",
-      "alphabetical": "Alphabetical"
+      "alphabetical": "Alphabetical",
+      "transition-fade": "Fade",
+      "transition-wipe": "Wipe",
+      "transition-disc": "Disc",
+      "transition-stripes": "Stripes",
+      "transition-zoom": "Zoom",
+      "transition-honeycomb": "Honeycomb"
     },
 
     "theme-mode": "Theme Mode",
@@ -445,6 +451,8 @@
     "wallpaper-directory-light-desc": "Wallpaper folder used in Light theme mode",
     "wallpaper-directory-dark": "Dark Mode Directory",
     "wallpaper-directory-dark-desc": "Wallpaper folder used in Dark theme mode",
+    "wallpaper-transitions": "Transition Effects",
+    "wallpaper-transitions-desc": "Effects available when changing wallpaper (one is picked at random per change)",
     "wallpaper-transition-duration": "Transition Duration",
     "wallpaper-transition-duration-desc": "Length of the wallpaper change animation in milliseconds",
     "wallpaper-edge-smoothness": "Edge Smoothness",

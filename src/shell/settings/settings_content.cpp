@@ -5,6 +5,7 @@
 #include "shell/settings/bar_widget_editor.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
+#include "ui/controls/checkbox.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
@@ -17,6 +18,7 @@
 #include "ui/style.h"
 #include "util/string_utils.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <format>
@@ -537,6 +539,96 @@ namespace settings {
       return wrap;
     };
 
+    const auto makeMultiSelectBlock = [&](Flex& section, const SettingEntry& entry, const MultiSelectSetting& setting) {
+      const bool overridden = (ctx.configService != nullptr && ctx.configService->hasOverride(entry.path));
+
+      auto block = std::make_unique<Flex>();
+      block->setDirection(FlexDirection::Vertical);
+      block->setAlign(FlexAlign::Stretch);
+      block->setGap(Style::spaceXs * scale);
+      block->setPadding(2.0f * scale, 0.0f);
+
+      auto titleRow = std::make_unique<Flex>();
+      titleRow->setDirection(FlexDirection::Horizontal);
+      titleRow->setAlign(FlexAlign::Center);
+      titleRow->setGap(Style::spaceSm * scale);
+      titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
+      if (overridden) {
+        auto badge = std::make_unique<Flex>();
+        badge->setAlign(FlexAlign::Center);
+        badge->setPadding(1.0f * scale, Style::spaceXs * scale);
+        badge->setRadius(Style::radiusSm * scale);
+        badge->setFill(roleColor(ColorRole::Primary, 0.15f));
+        badge->addChild(makeLabel(i18n::tr("settings.badge-override"), Style::fontSizeCaption * scale,
+                                  roleColor(ColorRole::Primary), true));
+        titleRow->addChild(std::move(badge));
+        titleRow->addChild(makeResetButton(entry.path));
+      }
+      block->addChild(std::move(titleRow));
+
+      if (!entry.subtitle.empty()) {
+        block->addChild(
+            makeLabel(entry.subtitle, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false));
+      }
+
+      auto checkRow = std::make_unique<Flex>();
+      checkRow->setDirection(FlexDirection::Horizontal);
+      checkRow->setAlign(FlexAlign::Center);
+      checkRow->setGap(Style::spaceMd * scale);
+      checkRow->setPadding(Style::spaceXs * scale, 0.0f);
+
+      auto options = setting.options;
+      auto selected = setting.selectedValues;
+      const bool requireAtLeastOne = setting.requireAtLeastOne;
+      auto path = entry.path;
+
+      for (const auto& option : options) {
+        auto item = std::make_unique<Flex>();
+        item->setDirection(FlexDirection::Horizontal);
+        item->setAlign(FlexAlign::Center);
+        item->setGap(Style::spaceXs * scale);
+
+        auto checkbox = std::make_unique<Checkbox>();
+        checkbox->setScale(scale);
+        const bool isSelected = std::find(selected.begin(), selected.end(), option.value) != selected.end();
+        checkbox->setChecked(isSelected);
+        const std::string optionValue = option.value;
+        checkbox->setOnChange([setOverride = ctx.setOverride, requestRebuild = ctx.requestRebuild, path, options,
+                               selected, optionValue, requireAtLeastOne](bool checked) mutable {
+          auto it = std::find(selected.begin(), selected.end(), optionValue);
+          if (checked) {
+            if (it == selected.end()) {
+              selected.push_back(optionValue);
+            }
+          } else {
+            if (it != selected.end()) {
+              if (requireAtLeastOne && selected.size() <= 1) {
+                requestRebuild();
+                return;
+              }
+              selected.erase(it);
+            }
+          }
+          // Preserve the option order so the override file is stable.
+          std::vector<std::string> ordered;
+          ordered.reserve(selected.size());
+          for (const auto& opt : options) {
+            if (std::find(selected.begin(), selected.end(), opt.value) != selected.end()) {
+              ordered.push_back(opt.value);
+            }
+          }
+          setOverride(path, ordered);
+        });
+        item->addChild(std::move(checkbox));
+        item->addChild(makeLabel(option.label, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
+
+        checkRow->addChild(std::move(item));
+      }
+
+      block->addChild(std::move(checkRow));
+      section.addChild(std::move(block));
+    };
+
     const auto makeListBlock = [&](Flex& section, const SettingEntry& entry, const ListSetting& list) {
       const bool overridden = (ctx.configService != nullptr && ctx.configService->hasOverride(entry.path));
 
@@ -701,6 +793,8 @@ namespace settings {
               return makeOptionalNumber(control, entry.path);
             } else if constexpr (std::is_same_v<T, ColorSetting>) {
               return makeColor(control, entry.path);
+            } else if constexpr (std::is_same_v<T, MultiSelectSetting>) {
+              return nullptr;
             } else if constexpr (std::is_same_v<T, ListSetting>) {
               return nullptr;
             }
@@ -789,6 +883,8 @@ namespace settings {
           } else if (!isBarWidgetListPath(entry.path)) {
             makeListBlock(*activeSection, entry, *list);
           }
+        } else if (const auto* multi = std::get_if<MultiSelectSetting>(&entry.control)) {
+          makeMultiSelectBlock(*activeSection, entry, *multi);
         } else {
           makeRow(*activeSection, entry, makeControl(entry));
         }

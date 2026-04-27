@@ -54,8 +54,14 @@ namespace settings {
     bool unset = true;
   };
 
+  struct MultiSelectSetting {
+    std::vector<SelectOption> options;
+    std::vector<std::string> selectedValues;
+    bool requireAtLeastOne = false; // disable removing the last selected entry
+  };
+
   using SettingControl = std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting,
-                                      ListSetting, ColorSetting>;
+                                      ListSetting, ColorSetting, MultiSelectSetting>;
 
   struct SettingEntry {
     std::string section;

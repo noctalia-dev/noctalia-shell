@@ -376,6 +376,21 @@ namespace settings {
     entries.push_back(makeEntry("wallpaper", "directories", tr("settings.wallpaper-directory-dark"),
                                 tr("settings.wallpaper-directory-dark-desc"), {"wallpaper", "directory_dark"},
                                 TextSetting{cfg.wallpaper.directoryDark, ""}, "folder path dark theme", true));
+    {
+      MultiSelectSetting transitions;
+      transitions.options.reserve(std::size(kWallpaperTransitions));
+      for (const auto& opt : kWallpaperTransitions) {
+        transitions.options.push_back(SelectOption{std::string(opt.key), tr(opt.labelKey)});
+      }
+      transitions.selectedValues.reserve(cfg.wallpaper.transitions.size());
+      for (const auto& t : cfg.wallpaper.transitions) {
+        transitions.selectedValues.emplace_back(enumToKey(kWallpaperTransitions, t));
+      }
+      transitions.requireAtLeastOne = true;
+      entries.push_back(makeEntry("wallpaper", "transition", tr("settings.wallpaper-transitions"),
+                                  tr("settings.wallpaper-transitions-desc"), {"wallpaper", "transition"},
+                                  std::move(transitions), "effects animation pool"));
+    }
     entries.push_back(makeEntry("wallpaper", "transition", tr("settings.wallpaper-transition-duration"),
                                 tr("settings.wallpaper-transition-duration-desc"), {"wallpaper", "transition_duration"},
                                 SliderSetting{cfg.wallpaper.transitionDurationMs, 100.0f, 30000.0f, 100.0f, true},
