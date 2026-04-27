@@ -1097,6 +1097,13 @@ void ConfigService::parseTable(const toml::table& tbl) {
           ovr.match = std::string(monName.str());
         if (auto v = (*monTbl)["enabled"].value<bool>())
           ovr.enabled = *v;
+        if (auto v = (*monTbl)["fill_color"].value<std::string>()) {
+          if (StringUtils::trim(*v).empty()) {
+            ovr.fillColor = std::nullopt;
+          } else {
+            ovr.fillColor = themeColorFromConfigString(*v);
+          }
+        }
         if (auto v = (*monTbl)["directory"].value<std::string>())
           ovr.directory = *v;
         if (auto v = (*monTbl)["directory_light"].value<std::string>())

@@ -10,6 +10,7 @@
 #include "launcher/app_provider.h"
 #include "launcher/emoji_provider.h"
 #include "launcher/math_provider.h"
+#include "launcher/wallpaper_provider.h"
 #include "notification/notifications.h"
 #include "render/animation/motion_service.h"
 #include "shell/clipboard/clipboard_panel.h"
@@ -718,7 +719,13 @@ void Application::initUi() {
 
   // Panel manager must be before bar so widgets can access PanelManager::instance()
   m_panelManager.initialize(m_wayland, &m_configService, &m_renderContext);
-  m_panelManager.setOpenSettingsWindowCallback([this]() { m_settingsWindow.open(); });
+  m_panelManager.setOpenSettingsWindowCallback([this]() {
+    if (m_settingsWindow.isOpen()) {
+      m_settingsWindow.close();
+    } else {
+      m_settingsWindow.open();
+    }
+  });
   auto clipboardPanel = std::make_unique<ClipboardPanel>(&m_clipboardService, &m_configService);
   clipboardPanel->setActivateCallback([this](const ClipboardEntry& entry) {
     m_panelManager.close();
@@ -748,6 +755,7 @@ void Application::initUi() {
   {
     auto launcherPanel = std::make_unique<LauncherPanel>(&m_configService, &m_asyncTextureCache);
     launcherPanel->addProvider(std::make_unique<AppProvider>(&m_wayland));
+    launcherPanel->addProvider(std::make_unique<WallpaperProvider>(&m_configService, &m_wayland));
     launcherPanel->addProvider(std::make_unique<MathProvider>(&m_clipboardService));
     launcherPanel->addProvider(std::make_unique<EmojiProvider>(&m_clipboardService));
     m_panelManager.registerPanel("launcher", std::move(launcherPanel));

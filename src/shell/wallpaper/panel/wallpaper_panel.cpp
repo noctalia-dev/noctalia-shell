@@ -15,6 +15,7 @@
 #include "ui/controls/select.h"
 #include "ui/controls/spacer.h"
 #include "ui/controls/toggle.h"
+#include "ui/dialogs/color_picker_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
@@ -186,6 +187,13 @@ void WallpaperPanel::create() {
     PanelManager::instance().refresh();
   });
   m_monitorSelect = static_cast<Select*>(toolbar->addChild(std::move(monitorSelect)));
+
+  auto color = std::make_unique<Button>();
+  color->setGlyph("color-picker");
+  color->setVariant(ButtonVariant::Secondary);
+  configureIconButton(color.get());
+  color->setOnClick([this]() { applyColorWallpaper(); });
+  m_colorButton = static_cast<Button*>(toolbar->addChild(std::move(color)));
 
   auto refresh = std::make_unique<Button>();
   refresh->setGlyph("refresh");
@@ -440,6 +448,7 @@ void WallpaperPanel::onClose() {
   m_flattenToggle = nullptr;
   m_flattenLabel = nullptr;
   m_refreshButton = nullptr;
+  m_colorButton = nullptr;
   m_closeButton = nullptr;
   m_grid = nullptr;
   m_pagination = nullptr;
@@ -513,6 +522,27 @@ std::filesystem::path WallpaperPanel::activeDirectoryForSelection() const {
     return m_navStack.back();
   }
   return rootDirectoryForSelection();
+}
+
+std::optional<Color> WallpaperPanel::selectedFillColor() const {
+  if (m_config == nullptr || m_selectedMonitorIndex >= m_monitorChoices.size()) {
+    return std::nullopt;
+  }
+
+  const auto& wp = m_config->config().wallpaper;
+  const auto& choice = m_monitorChoices[m_selectedMonitorIndex];
+  if (!choice.connector.empty()) {
+    for (const auto& ovr : wp.monitorOverrides) {
+      if (ovr.match == choice.connector && ovr.fillColor.has_value()) {
+        return resolveThemeColor(*ovr.fillColor);
+      }
+    }
+  }
+
+  if (wp.fillColor.has_value()) {
+    return resolveThemeColor(*wp.fillColor);
+  }
+  return std::nullopt;
 }
 
 void WallpaperPanel::refreshScan() {
@@ -777,4 +807,49 @@ void WallpaperPanel::applyWallpaperFromEntry(const WallpaperEntry& entry) {
     m_config->setWallpaperPath(choice.connector, path);
   }
   kLog.info("applied wallpaper {} to {}", path, choice.connector.empty() ? "ALL" : choice.connector);
+}
+
+void WallpaperPanel::applyColorWallpaper() {
+  if (m_config == nullptr || m_selectedMonitorIndex >= m_monitorChoices.size()) {
+    return;
+  }
+
+  ColorPickerDialogOptions options;
+  options.title = "Wallpaper color";
+  if (auto color = selectedFillColor()) {
+    options.initialColor = *color;
+  } else if (auto last = ColorPickerDialog::lastResult()) {
+    options.initialColor = *last;
+  }
+
+  const auto choice = m_monitorChoices[m_selectedMonitorIndex];
+  (void)ColorPickerDialog::open(std::move(options), [this, choice](std::optional<Color> result) {
+    if (!result.has_value() || m_config == nullptr) {
+      return;
+    }
+
+    Color rgb = *result;
+    rgb.a = 1.0f;
+    const std::string hex = formatRgbHex(rgb);
+
+    if (choice.connector.empty()) {
+      m_config->setOverride({"wallpaper", "fill_color"}, hex);
+      ConfigService::WallpaperBatch batch(*m_config);
+      if (m_wayland != nullptr) {
+        for (const auto& out : m_wayland->outputs()) {
+          if (!out.connectorName.empty()) {
+            m_config->setOverride({"wallpaper", "monitor", out.connectorName, "fill_color"}, hex);
+            m_config->setWallpaperPath(out.connectorName, "");
+          }
+        }
+      }
+      m_config->setWallpaperPath(std::nullopt, "");
+      kLog.info("applied color wallpaper {} to ALL", hex);
+      return;
+    }
+
+    m_config->setOverride({"wallpaper", "monitor", choice.connector, "fill_color"}, hex);
+    m_config->setWallpaperPath(choice.connector, "");
+    kLog.info("applied color wallpaper {} to {}", hex, choice.connector);
+  });
 }

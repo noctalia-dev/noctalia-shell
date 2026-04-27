@@ -159,6 +159,7 @@ enum class WallpaperTransition : std::uint8_t {
 struct WallpaperMonitorOverride {
   std::string match;
   std::optional<bool> enabled;
+  std::optional<ThemeColor> fillColor;
   std::optional<std::string> directory;
   std::optional<std::string> directoryLight;
   std::optional<std::string> directoryDark;

@@ -26,6 +26,7 @@ recursive                    = true     # scan subdirectories when selecting ran
 # Per-monitor overrides — same match rules as bar monitor overrides
 [wallpaper.monitor.DP-2]
 enabled         = false
+fill_color      = "#202020"
 directory       = "/home/user/Wallpapers/Vertical"
 directory_light = "/home/user/Wallpapers/Vertical/Light"
 directory_dark  = "/home/user/Wallpapers/Vertical/Dark"
@@ -34,6 +35,8 @@ directory_dark  = "/home/user/Wallpapers/Vertical/Dark"
 The wallpaper picker panel lists images in `directory` as a grid of thumbnails. Selecting a monitor in the panel toolbar switches to that monitor's override directory (falling back to the base `directory`). Clicking a tile writes the path to `state.toml` and applies it immediately. Picking a wallpaper while **ALL** is selected applies it to every connected output.
 
 `fill_color` accepts hex colors (`#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`) or theme role names such as `surface` and `primary`. It is used behind image wallpapers, in uncovered areas for `center`/`fit`, and as the full wallpaper when no image path is selected.
+
+Monitor overrides may also set `fill_color`. The wallpaper picker's color action writes a per-monitor color and clears that monitor's selected image path, so the color replaces the wallpaper on that screen only.
 
 When automation is enabled, Noctalia picks one image from `directory` on the configured interval and applies it to all connected outputs in sync.
 `order = "random"` chooses a random image each cycle.

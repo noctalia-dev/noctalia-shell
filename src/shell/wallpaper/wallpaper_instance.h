@@ -18,6 +18,7 @@ struct WallpaperInstance {
   struct wl_output* output = nullptr;
   std::int32_t scale = 1;
   std::string connectorName;
+  std::string description;
 
   std::unique_ptr<LayerSurface> surface;
   std::unique_ptr<Node> sceneRoot;
