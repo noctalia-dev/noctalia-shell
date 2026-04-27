@@ -187,7 +187,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   userRow->setAlign(FlexAlign::Center);
   userRow->setGap(Style::spaceMd * scale);
 
-  const float avatarSize = Style::controlHeightLg * 2.2f * scale;
+  const float avatarSize = Style::controlHeightLg * 3.2f * scale;
   auto avatar = std::make_unique<Image>();
   avatar->setRadius(Style::radiusLg * scale);
   avatar->setBorder(roleColor(ColorRole::Primary), Style::borderWidth * 2.0f);
@@ -401,7 +401,7 @@ void OverviewTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
 
   if (m_userAvatar != nullptr && m_userMain != nullptr) {
     const float scale = contentScale();
-    const float minAvatar = Style::controlHeightLg * 2.2f * scale;
+    const float minAvatar = Style::controlHeightLg * 3.2f * scale;
     const float desiredAvatar = std::max(minAvatar, m_userMain->height());
     if (std::abs(m_userAvatar->width() - desiredAvatar) > 0.5f) {
       m_userAvatar->setSize(desiredAvatar, desiredAvatar);
@@ -473,7 +473,8 @@ void OverviewTab::sync(Renderer& renderer) {
   if (m_userFacts != nullptr) {
     const auto uptime = systemUptime();
     const std::string uptimeText = uptime.has_value() ? formatDuration(*uptime) : "unknown";
-    m_userFacts->setText(std::format("{}@{}\nUptime · {}", sessionDisplayName(), hostName(), uptimeText));
+    m_userFacts->setText(std::format("{}@{}\nUptime · {}\nNoctalia v{}", sessionDisplayName(), hostName(), uptimeText,
+                                     NOCTALIA_VERSION));
   }
   if (m_weatherDate != nullptr) {
     m_weatherDate->setText(formatCurrentDate());
