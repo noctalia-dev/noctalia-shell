@@ -33,6 +33,9 @@ blur     = 12    # global surface shadow blur radius; 0 disables all rendered su
 offset_x = 2
 offset_y = 2     # positive = down
 alpha    = 0.55  # multiplied by each component's background opacity
+
+[shell.panel]
+background_blur = true   # request compositor blur behind panels via ext-background-effect-v1
 ```
 
 Notes:
@@ -47,6 +50,7 @@ Notes:
 - `clipboard_auto_paste`: `auto` = image entries use `Ctrl+V`, text entries use `Ctrl+Shift+V`; `off` = copy only, no automatic paste.
 - `shell.animation.enabled` disables all animated transitions globally. `speed` scales durations globally.
 - `shell.shadow` defines the shared shadow metrics for shell surfaces. Components such as bars and the dock only opt in/out with `shadow = true|false`; they do not define their own blur or offset.
+- `shell.panel.background_blur` toggles compositor blur on every shell panel (control center, launcher, clipboard, attached menus, etc.). Inert on compositors that do not implement `ext-background-effect-v1`. As of niri 26.04 the protocol is honored on layer-shell surfaces only — attached panels (rendered as `wl_subsurface` children of the bar) submit the request but are ignored until subsurface support lands upstream.
 
 ---
 

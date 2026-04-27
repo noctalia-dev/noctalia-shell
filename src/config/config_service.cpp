@@ -967,6 +967,11 @@ void ConfigService::parseTable(const toml::table& tbl) {
         shell.shadow.alpha = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
       }
     }
+    if (const auto* panelTbl = (*shellTbl)["panel"].as_table()) {
+      if (auto v = (*panelTbl)["background_blur"].value<bool>()) {
+        shell.panel.backgroundBlur = *v;
+      }
+    }
     if (auto v = (*shellTbl)["avatar_path"].value<std::string>()) {
       shell.avatarPath = *v;
     }

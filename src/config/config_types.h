@@ -329,6 +329,12 @@ struct ShellConfig {
     bool operator==(const ShadowConfig&) const = default;
   };
 
+  struct PanelConfig {
+    bool backgroundBlur = true; // request compositor blur behind panels via ext-background-effect-v1
+
+    bool operator==(const PanelConfig&) const = default;
+  };
+
   float uiScale = 1.0f;
   std::string fontFamily = "sans-serif";
   std::string lang; // empty = auto-detect from $LC_ALL/$LC_MESSAGES/$LANG
@@ -341,6 +347,7 @@ struct ShellConfig {
   bool showLocation = true;
   ClipboardAutoPasteMode clipboardAutoPaste = ClipboardAutoPasteMode::Auto;
   ShadowConfig shadow;
+  PanelConfig panel;
 };
 
 struct WeatherConfig {

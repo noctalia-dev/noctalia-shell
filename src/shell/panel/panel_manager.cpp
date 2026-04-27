@@ -358,6 +358,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
         m_attachedParentSurface = parentContext->parentSurface;
         m_surface->setInputRegion(
             {InputRect{m_panelInsetX, m_panelInsetY, static_cast<int>(panelWidth), static_cast<int>(panelHeight)}});
+        applyPanelCompositorBlur();
         publishAttachedPanelGeometry(m_attachedRevealProgress);
         if (m_beginAttachedKeyboard) {
           m_beginAttachedKeyboard(parentContext->output);
@@ -413,7 +414,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
 
   m_output = output;
   m_wlSurface = m_surface->wlSurface();
-  m_surface->setBlurRegion({});
+  applyPanelCompositorBlur();
   kLog.debug("panel manager: opened \"{}\"", panelId);
 }
 
@@ -793,6 +794,7 @@ void PanelManager::applyAttachedReveal(float progress) {
   }
 
   publishAttachedPanelGeometry(m_attachedRevealProgress);
+  applyPanelCompositorBlur();
 }
 
 void PanelManager::publishAttachedPanelGeometry(float revealProgress) {
@@ -829,6 +831,71 @@ void PanelManager::publishAttachedPanelGeometry(float revealProgress) {
   }
 
   m_attachedPanelGeometryCallback(m_output, geometry);
+}
+
+void PanelManager::applyPanelCompositorBlur() {
+  // The blur region is submitted on every panel surface (attached subsurface or layer-shell),
+  // but as of niri 26.04 the ext-background-effect-v1 implementation honors regions on
+  // layer-shell / xdg-toplevel surfaces only — subsurfaces are ignored. Attached panels will
+  // start blurring automatically once niri (or another compositor) gains subsurface support.
+  if (m_surface == nullptr || m_activePanel == nullptr) {
+    return;
+  }
+  if (m_config == nullptr || !m_config->config().shell.panel.backgroundBlur) {
+    m_surface->clearBlurRegion();
+    return;
+  }
+
+  int bx = m_panelInsetX;
+  int by = m_panelInsetY;
+  int bw = static_cast<int>(m_panelVisualWidth);
+  int bh = static_cast<int>(m_panelVisualHeight);
+  if (bw <= 0 || bh <= 0) {
+    m_surface->clearBlurRegion();
+    return;
+  }
+
+  if (m_attachedToBar) {
+    const float progress = std::clamp(m_attachedRevealProgress, 0.0f, 1.0f);
+    if (progress < 0.001f) {
+      m_surface->clearBlurRegion();
+      return;
+    }
+    switch (m_attachedRevealDirection) {
+    case AttachedRevealDirection::Down:
+      bh = static_cast<int>(std::lround(static_cast<float>(bh) * progress));
+      break;
+    case AttachedRevealDirection::Up: {
+      const int visible = static_cast<int>(std::lround(static_cast<float>(bh) * progress));
+      by += bh - visible;
+      bh = visible;
+      break;
+    }
+    case AttachedRevealDirection::Right:
+      bw = static_cast<int>(std::lround(static_cast<float>(bw) * progress));
+      break;
+    case AttachedRevealDirection::Left: {
+      const int visible = static_cast<int>(std::lround(static_cast<float>(bw) * progress));
+      bx += bw - visible;
+      bw = visible;
+      break;
+    }
+    }
+    if (bw <= 0 || bh <= 0) {
+      m_surface->clearBlurRegion();
+      return;
+    }
+  }
+
+  const float radius = Style::radiusXl * m_activePanel->contentScale();
+  Radii radii = m_attachedToBar ? attached_panel::cornerRadii(m_attachedBarPosition, radius)
+                                : Radii{radius, radius, radius, radius};
+  auto strips = Surface::tessellateRoundedRect(bx, by, bw, bh, radii.tl, radii.tr, radii.br, radii.bl);
+  if (strips.empty()) {
+    m_surface->clearBlurRegion();
+    return;
+  }
+  m_surface->setBlurRegion(strips);
 }
 
 void PanelManager::applyAttachedDecorationStyle() {
@@ -879,8 +946,17 @@ void PanelManager::applyAttachedDecorationStyle() {
   }
 }
 
-void PanelManager::refreshAttachedFromBarConfig() {
-  if (!isAttachedOpen() || m_config == nullptr || m_output == nullptr || m_activePanel == nullptr) {
+void PanelManager::onConfigReloaded() {
+  if (!isOpen() || m_config == nullptr || m_activePanel == nullptr) {
+    return;
+  }
+
+  // Re-apply compositor blur for any open panel — covers both attached and layer-shell
+  // panels reacting to shell.panel.background_blur changes.
+  applyPanelCompositorBlur();
+
+  // The remaining work is bar-config-driven and only applies to attached panels.
+  if (!isAttachedOpen() || m_output == nullptr) {
     return;
   }
   // Panels that opt out of inheritance hold a fixed alpha; bar config reload doesn't affect them.
@@ -1070,7 +1146,7 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
 
   // Re-apply opacity-dependent styling for bg/shadow/contact-shadow. Cheap and ensures
   // these stay in sync with m_attachedBackgroundOpacity if the bar config changed and
-  // we got here via a buildScene path rather than refreshAttachedFromBarConfig().
+  // we got here via a buildScene path rather than onConfigReloaded().
   if (m_attachedToBar) {
     applyAttachedDecorationStyle();
   }

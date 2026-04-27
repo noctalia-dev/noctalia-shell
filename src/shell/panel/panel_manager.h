@@ -68,10 +68,11 @@ public:
   [[nodiscard]] std::optional<LayerPopupParentContext> fallbackPopupParentContext() const noexcept;
 
   void refresh();
-  // Re-pulls the host bar's per-panel-relevant config (currently backgroundOpacity) and
-  // re-applies the attached decoration styles in place. No-op when no attached panel is open.
-  // Called from the ConfigService reload callback.
-  void refreshAttachedFromBarConfig();
+  // Reacts to a ConfigService reload while a panel is open: re-pulls the host bar's
+  // per-panel-relevant config (currently backgroundOpacity, attached panels only) and
+  // re-applies the compositor blur region (which depends on shell.panel.background_blur,
+  // affects both attached and layer-shell panels). No-op when no panel is open.
+  void onConfigReloaded();
   void requestUpdateOnly();
   void requestLayout();
   // Requests a redraw on the active panel surface without re-running panel
@@ -95,6 +96,10 @@ private:
   // using m_attachedBackgroundOpacity / m_attachedBarPosition. Geometry/positions are not
   // touched. Safe to call any time after buildScene has run.
   void applyAttachedDecorationStyle();
+  // Submit a wl_region matching the visible panel body to the compositor for blur.
+  // Honors shell.panel.background_blur; clips by m_attachedRevealProgress so the blur
+  // grows in lock-step with the open/close animation.
+  void applyPanelCompositorBlur();
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
