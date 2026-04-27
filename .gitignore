@@ -3,7 +3,7 @@ build*/
 cmake-build-*/
 
 # Python cache
-tools/__pycache__
+__pycache__
 
 # Compiled binary
 noctalia

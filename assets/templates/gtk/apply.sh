@@ -111,7 +111,7 @@ main() {
         shift
     fi
     if [ $# -ne 1 ] || { [ "$1" != "dark" ] && [ "$1" != "light" ]; }; then
-        echo "Usage: gtk-refresh.sh [--appearance-only] (dark|light)" >&2
+        echo "Usage: apply.sh [--appearance-only] (dark|light)" >&2
         exit 1
     fi
     mode="$1"

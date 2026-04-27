@@ -100,12 +100,12 @@ post_hook = "bash '{{ config_dir }}/ghostty/apply.sh'"
 [templates.gtk3]
 input_path = "./gtk/gtk3.css"
 output_path = "~/.config/gtk-3.0/noctalia.css"
-post_hook = "bash '{{ config_dir }}/gtk/gtk-refresh.sh' {{ mode }}"
+post_hook = "bash '{{ config_dir }}/gtk/apply.sh' {{ mode }}"
 
 [templates.gtk4]
 input_path = "./gtk/gtk4.css"
 output_path = "~/.config/gtk-4.0/noctalia.css"
-post_hook = "bash '{{ config_dir }}/gtk/gtk-refresh.sh' {{ mode }}"
+post_hook = "bash '{{ config_dir }}/gtk/apply.sh' {{ mode }}"
 
 [templates.helix]
 input_path = "./helix/helix.toml"
@@ -114,7 +114,7 @@ output_path = "~/.config/helix/themes/noctalia.toml"
 [templates.kcolorscheme]
 input_path = "./kde/kcolorscheme.colors"
 output_path = "~/.local/share/color-schemes/noctalia.colors"
-post_hook = "python3 '{{ config_dir }}/kde/kde-apply-scheme.py' noctalia"
+post_hook = "python3 '{{ config_dir }}/kde/apply.py' noctalia"
 
 [templates.kitty]
 input_path = "./kitty/kitty.conf"
