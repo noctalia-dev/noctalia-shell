@@ -1,5 +1,6 @@
 #include "dbus/tray/tray_service.h"
 
+#include "core/deferred_call.h"
 #include "core/log.h"
 #include "dbus/session_bus.h"
 #include "util/string_utils.h"
@@ -20,6 +21,9 @@ namespace {
   static constexpr auto k_item_interface = "org.kde.StatusNotifierItem";
   static constexpr auto k_menu_interface = "com.canonical.dbusmenu";
   static constexpr auto k_default_item_path = "/StatusNotifierItem";
+  static constexpr auto k_ayatana_item_path = "/org/ayatana/NotificationItem";
+
+  bool isStatusNotifierItemBusName(std::string_view value) { return value.starts_with("org.kde.StatusNotifierItem-"); }
 
   bool starts_with_slash(std::string_view value) { return !value.empty() && value.front() == '/'; }
 
@@ -285,6 +289,11 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
   m_dbusProxy->uponSignal("NameOwnerChanged")
       .onInterface(k_dbus_interface)
       .call([this](const std::string& name, const std::string& old_owner, const std::string& new_owner) {
+        if (old_owner.empty() && !new_owner.empty() && isStatusNotifierItemBusName(name)) {
+          // Some apps miss the re-registration signal race at startup; probing
+          // newly-owned SNI bus names keeps tray entries self-healing.
+          DeferredCall::callLater([this, name]() { tryRegisterItemForBusName(name); });
+        }
         if (!old_owner.empty() && new_owner.empty()) {
           removeItemsForBusName(name);
         }
@@ -296,6 +305,8 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
   // (libayatana-appindicator, libappindicator) watch for StatusNotifierHostRegistered
   // and call RegisterStatusNotifierItem again when they see it.
   m_watcherObject->emitSignal("StatusNotifierHostRegistered").onInterface(k_watcher_interface);
+  DeferredCall::callLater([this]() { discoverExistingItems(); });
+  DeferredCall::callLater([this]() { discoverExistingItems(); });
 }
 
 TrayService::~TrayService() = default;
@@ -428,12 +439,17 @@ std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) {
     }
   }
 
-  const auto& byParent = cacheIt->second.entriesByParent;
-  const auto it = byParent.find(0);
-  if (it == byParent.end()) {
-    return {};
+  auto rootIt = cacheIt->second.entriesByParent.find(0);
+  if (rootIt == cacheIt->second.entriesByParent.end() || rootIt->second.empty()) {
+    if (!fetchMenuSubtree(itemId, 0)) {
+      return {};
+    }
+    rootIt = cacheIt->second.entriesByParent.find(0);
+    if (rootIt == cacheIt->second.entriesByParent.end()) {
+      return {};
+    }
   }
-  return it->second;
+  return rootIt->second;
 }
 
 std::vector<TrayMenuEntry> TrayService::menuEntriesForParent(const std::string& itemId, std::int32_t parentId) {
@@ -651,6 +667,50 @@ void TrayService::onRegisterStatusNotifierHost(const std::string& host) {
   m_watcherObject->emitPropertiesChangedSignal(
       k_watcher_interface, std::vector<sdbus::PropertyName>{sdbus::PropertyName{"IsStatusNotifierHostRegistered"}});
   emitChanged();
+}
+
+void TrayService::discoverExistingItems() {
+  std::vector<std::string> names;
+  try {
+    m_dbusProxy->callMethod("ListNames").onInterface(k_dbus_interface).storeResultsTo(names);
+  } catch (const sdbus::Error& e) {
+    kLog.warn("tray discover failed: {}", e.what());
+    return;
+  }
+
+  for (const auto& name : names) {
+    if (isStatusNotifierItemBusName(name)) {
+      tryRegisterItemForBusName(name);
+    }
+  }
+}
+
+void TrayService::tryRegisterItemForBusName(const std::string& busName) {
+  if (!looks_like_dbus_name(busName)) {
+    return;
+  }
+  for (const auto& [_, item] : m_items) {
+    if (item.busName == busName) {
+      return;
+    }
+  }
+
+  const std::array<std::string_view, 2> candidatePaths = {k_default_item_path, k_ayatana_item_path};
+  for (const auto candidatePath : candidatePaths) {
+    try {
+      auto probe = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{busName},
+                                      sdbus::ObjectPath{std::string(candidatePath)});
+      std::map<std::string, sdbus::Variant> props;
+      probe->callMethod("GetAll")
+          .onInterface("org.freedesktop.DBus.Properties")
+          .withTimeout(std::chrono::milliseconds(500))
+          .withArguments(k_item_interface)
+          .storeResultsTo(props);
+      registerOrRefreshItem(busName, std::string(candidatePath));
+      return;
+    } catch (const sdbus::Error&) {
+    }
+  }
 }
 
 std::string TrayService::busNameFromItemId(const std::string& itemId) {

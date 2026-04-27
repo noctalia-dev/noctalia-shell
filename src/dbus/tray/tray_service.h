@@ -83,6 +83,8 @@ private:
 
   void onRegisterStatusNotifierItem(const std::string& serviceOrPath, const std::string& senderBusName);
   void onRegisterStatusNotifierHost(const std::string& host);
+  void discoverExistingItems();
+  void tryRegisterItemForBusName(const std::string& busName);
   void registerOrRefreshItem(const std::string& busName, const std::string& objectPath);
   void refreshItemMetadata(const std::string& itemId);
   void ensureMenuCache(const std::string& itemId, const std::string& busName, const std::string& menuPath);
