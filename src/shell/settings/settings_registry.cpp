@@ -192,7 +192,8 @@ namespace settings {
   }
 
   std::vector<SettingEntry> buildSettingsRegistry(const Config& cfg, const BarConfig* selectedBar,
-                                                  const BarMonitorOverride* selectedMonitorOverride) {
+                                                  const BarMonitorOverride* selectedMonitorOverride,
+                                                  const RegistryEnvironment& env) {
     using i18n::tr;
     const auto positionSelect = [](std::string_view selected) {
       return plainSelect(
@@ -249,135 +250,6 @@ namespace settings {
                                 tr("settings.global-shadow-alpha-desc"), {"shell", "shadow", "alpha"},
                                 SliderSetting{cfg.shell.shadow.alpha, 0.0f, 1.0f, 0.01f, false}, "shadow opacity",
                                 true));
-
-    // Templates
-    entries.push_back(makeEntry("templates", "built-in", tr("settings.templates-enable-builtins"),
-                                tr("settings.templates-enable-builtins-desc"),
-                                {"theme", "templates", "enable_builtins"},
-                                ToggleSetting{cfg.theme.templates.enableBuiltins}, "theme templates"));
-    {
-      const auto availableTemplates = noctalia::theme::availableTemplates();
-      std::vector<SelectOption> templateOptions;
-      templateOptions.reserve(availableTemplates.size());
-      for (const auto& t : availableTemplates) {
-        templateOptions.push_back(SelectOption{t.id, t.displayName});
-      }
-      entries.push_back(makeEntry(
-          "templates", "built-in", tr("settings.templates-builtin-ids"), tr("settings.templates-builtin-ids-desc"),
-          {"theme", "templates", "builtin_ids"},
-          ListSetting{.items = cfg.theme.templates.builtinIds, .suggestedOptions = std::move(templateOptions)},
-          "theme templates apps foot walker gtk"));
-    }
-    entries.push_back(makeEntry("templates", "user", tr("settings.templates-enable-user-templates"),
-                                tr("settings.templates-enable-user-templates-desc"),
-                                {"theme", "templates", "enable_user_templates"},
-                                ToggleSetting{cfg.theme.templates.enableUserTemplates}, "theme templates user custom"));
-    entries.push_back(makeEntry("templates", "user", tr("settings.templates-user-config"),
-                                tr("settings.templates-user-config-desc"), {"theme", "templates", "user_config"},
-                                TextSetting{cfg.theme.templates.userConfig, "~/.config/noctalia/user-templates.toml"},
-                                "theme templates path file", true));
-
-    // Shell
-    entries.push_back(makeEntry("shell", "profile", tr("settings.avatar-path"), tr("settings.avatar-path-desc"),
-                                {"shell", "avatar_path"}, TextSetting{cfg.shell.avatarPath, ""}, "image picture"));
-    entries.push_back(makeEntry("shell", "network", tr("settings.offline-mode"), tr("settings.offline-mode-desc"),
-                                {"shell", "offline_mode"}, ToggleSetting{cfg.shell.offlineMode},
-                                "network http fetch download"));
-    entries.push_back(makeEntry("shell", "network", tr("settings.telemetry"), tr("settings.telemetry-desc"),
-                                {"shell", "telemetry_enabled"}, ToggleSetting{cfg.shell.telemetryEnabled},
-                                "analytics ping privacy"));
-    entries.push_back(makeEntry("shell", "security", tr("settings.polkit-agent"), tr("settings.polkit-agent-desc"),
-                                {"shell", "polkit_agent"}, ToggleSetting{cfg.shell.polkitAgent}, "auth password"));
-    entries.push_back(makeEntry("shell", "security", tr("settings.password-style"), tr("settings.password-style-desc"),
-                                {"shell", "password_style"},
-                                enumSelect(kPasswordMaskStyles, cfg.shell.passwordMaskStyle), "polkit lock mask"));
-    entries.push_back(makeEntry("shell", "location", tr("settings.show-location"), tr("settings.show-location-desc"),
-                                {"shell", "show_location"}, ToggleSetting{cfg.shell.showLocation}, "weather"));
-    entries.push_back(makeEntry("shell", "clipboard", tr("settings.clipboard-auto-paste"),
-                                tr("settings.clipboard-auto-paste-desc"), {"shell", "clipboard_auto_paste"},
-                                enumSelect(kClipboardAutoPasteModes, cfg.shell.clipboardAutoPaste), "clipboard paste"));
-    entries.push_back(makeEntry("shell", "osd", tr("settings.osd-position"), tr("settings.osd-position-desc"),
-                                {"osd", "position"},
-                                plainSelect({{"top_right", "settings.opt.top-right"},
-                                             {"top_left", "settings.opt.top-left"},
-                                             {"top_center", "settings.opt.top-center"},
-                                             {"bottom_right", "settings.opt.bottom-right"},
-                                             {"bottom_left", "settings.opt.bottom-left"},
-                                             {"bottom_center", "settings.opt.bottom-center"}},
-                                            cfg.osd.position),
-                                "hud overlay volume brightness"));
-
-    // Dock
-    entries.push_back(makeEntry("dock", "general", tr("common.enabled"), tr("settings.dock-enabled-desc"),
-                                {"dock", "enabled"}, ToggleSetting{cfg.dock.enabled}, "launcher apps"));
-    entries.push_back(makeEntry("dock", "general", tr("settings.active-monitor-only"),
-                                tr("settings.active-monitor-only-desc"), {"dock", "active_monitor_only"},
-                                ToggleSetting{cfg.dock.activeMonitorOnly}, "monitor"));
-    entries.push_back(makeEntry("dock", "layout", tr("common.position"), tr("settings.dock-position-desc"),
-                                {"dock", "position"}, positionSelect(cfg.dock.position), "edge"));
-    entries.push_back(
-        makeEntry("dock", "layout", tr("settings.icon-size"), tr("settings.icon-size-desc"), {"dock", "icon_size"},
-                  SliderSetting{static_cast<float>(cfg.dock.iconSize), 16.0f, 128.0f, 1.0f, true}, "apps"));
-    entries.push_back(
-        makeEntry("dock", "layout", tr("common.padding"), tr("settings.dock-padding-desc"), {"dock", "padding"},
-                  SliderSetting{static_cast<float>(cfg.dock.padding), 0.0f, 100.0f, 1.0f, true}, "inset"));
-    entries.push_back(makeEntry(
-        "dock", "layout", tr("settings.item-spacing"), tr("settings.item-spacing-desc"), {"dock", "item_spacing"},
-        SliderSetting{static_cast<float>(cfg.dock.itemSpacing), 0.0f, 100.0f, 1.0f, true}, "gap"));
-    entries.push_back(makeEntry(
-        "dock", "layout", tr("common.horizontal-margin"), tr("settings.dock-margin-h-desc"), {"dock", "margin_h"},
-        SliderSetting{static_cast<float>(cfg.dock.marginH), 0.0f, 500.0f, 1.0f, true}, "gap inset"));
-    entries.push_back(makeEntry(
-        "dock", "layout", tr("common.vertical-margin"), tr("settings.dock-margin-v-desc"), {"dock", "margin_v"},
-        SliderSetting{static_cast<float>(cfg.dock.marginV), 0.0f, 100.0f, 1.0f, true}, "gap inset"));
-    entries.push_back(
-        makeEntry("dock", "shape", tr("common.corner-radius"), tr("settings.dock-radius-desc"), {"dock", "radius"},
-                  SliderSetting{static_cast<float>(cfg.dock.radius), 0.0f, 80.0f, 1.0f, true}, "rounded"));
-    entries.push_back(makeEntry("dock", "shape", tr("common.background-opacity"), tr("settings.dock-bg-opacity-desc"),
-                                {"dock", "background_opacity"},
-                                SliderSetting{cfg.dock.backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
-    entries.push_back(makeEntry("dock", "effects", tr("common.background-blur"), tr("settings.dock-bg-blur-desc"),
-                                {"dock", "background_blur"}, ToggleSetting{cfg.dock.backgroundBlur}, "blur"));
-    entries.push_back(makeEntry("dock", "effects", tr("common.shadow"), tr("settings.dock-shadow-desc"),
-                                {"dock", "shadow"}, ToggleSetting{cfg.dock.shadow}, "shadow"));
-    entries.push_back(makeEntry("dock", "behavior", tr("common.auto-hide"), tr("settings.dock-auto-hide-desc"),
-                                {"dock", "auto_hide"}, ToggleSetting{cfg.dock.autoHide}, "autohide"));
-    entries.push_back(makeEntry("dock", "behavior", tr("common.reserve-space"), tr("settings.dock-reserve-space-desc"),
-                                {"dock", "reserve_space"}, ToggleSetting{cfg.dock.reserveSpace}, "exclusive zone"));
-    entries.push_back(makeEntry("dock", "behavior", tr("settings.show-running"), tr("settings.show-running-desc"),
-                                {"dock", "show_running"}, ToggleSetting{cfg.dock.showRunning}, "windows"));
-    entries.push_back(makeEntry("dock", "behavior", tr("settings.show-instance-count"),
-                                tr("settings.show-instance-count-desc"), {"dock", "show_instance_count"},
-                                ToggleSetting{cfg.dock.showInstanceCount}, "badge windows"));
-    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.active-icon-scale"),
-                                tr("settings.active-icon-scale-desc"), {"dock", "active_scale"},
-                                SliderSetting{cfg.dock.activeScale, 0.1f, 1.75f, 0.05f, false}, "focused", true));
-    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.inactive-icon-scale"),
-                                tr("settings.inactive-icon-scale-desc"), {"dock", "inactive_scale"},
-                                SliderSetting{cfg.dock.inactiveScale, 0.1f, 1.0f, 0.05f, false}, "unfocused", true));
-    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.active-icon-opacity"),
-                                tr("settings.active-icon-opacity-desc"), {"dock", "active_opacity"},
-                                SliderSetting{cfg.dock.activeOpacity, 0.0f, 1.0f, 0.01f, false}, "focused alpha",
-                                true));
-    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.inactive-icon-opacity"),
-                                tr("settings.inactive-icon-opacity-desc"), {"dock", "inactive_opacity"},
-                                SliderSetting{cfg.dock.inactiveOpacity, 0.0f, 1.0f, 0.01f, false}, "unfocused alpha",
-                                true));
-    entries.push_back(makeEntry("dock", "pinned-apps", tr("settings.pinned-apps"), tr("settings.pinned-apps-desc"),
-                                {"dock", "pinned"}, ListSetting{.items = cfg.dock.pinned}, "favorites"));
-
-    // Overview
-    entries.push_back(makeEntry("overview", "general", tr("common.enabled"), tr("settings.overview-enabled-desc"),
-                                {"overview", "enabled"}, ToggleSetting{cfg.overview.enabled}, "wallpaper backdrop"));
-    entries.push_back(makeEntry("overview", "general", tr("settings.unload-when-hidden"),
-                                tr("settings.unload-when-hidden-desc"), {"overview", "unload_when_not_in_use"},
-                                ToggleSetting{cfg.overview.unloadWhenNotInUse}, "memory"));
-    entries.push_back(makeEntry("overview", "backdrop", tr("settings.blur-intensity"),
-                                tr("settings.overview-blur-desc"), {"overview", "blur_intensity"},
-                                SliderSetting{cfg.overview.blurIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
-    entries.push_back(makeEntry("overview", "backdrop", tr("settings.tint-intensity"),
-                                tr("settings.overview-tint-desc"), {"overview", "tint_intensity"},
-                                SliderSetting{cfg.overview.tintIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
 
     // Wallpaper
     entries.push_back(makeEntry("wallpaper", "general", tr("common.enabled"), tr("settings.wallpaper-enabled-desc"),
@@ -444,10 +316,141 @@ namespace settings {
                                 {"wallpaper", "automation", "recursive"},
                                 ToggleSetting{cfg.wallpaper.automation.recursive}, "subdirectories", true));
 
+    // Overview (niri-only: surface only renders when niri's overview IPC is available)
+    if (env.niriOverviewSupported) {
+      entries.push_back(makeEntry("overview", "general", tr("common.enabled"), tr("settings.overview-enabled-desc"),
+                                  {"overview", "enabled"}, ToggleSetting{cfg.overview.enabled}, "wallpaper backdrop"));
+      entries.push_back(makeEntry("overview", "general", tr("settings.unload-when-hidden"),
+                                  tr("settings.unload-when-hidden-desc"), {"overview", "unload_when_not_in_use"},
+                                  ToggleSetting{cfg.overview.unloadWhenNotInUse}, "memory"));
+      entries.push_back(makeEntry("overview", "backdrop", tr("settings.blur-intensity"),
+                                  tr("settings.overview-blur-desc"), {"overview", "blur_intensity"},
+                                  SliderSetting{cfg.overview.blurIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
+      entries.push_back(makeEntry("overview", "backdrop", tr("settings.tint-intensity"),
+                                  tr("settings.overview-tint-desc"), {"overview", "tint_intensity"},
+                                  SliderSetting{cfg.overview.tintIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
+    }
+
+    // Templates
+    entries.push_back(makeEntry("templates", "built-in", tr("settings.templates-enable-builtins"),
+                                tr("settings.templates-enable-builtins-desc"),
+                                {"theme", "templates", "enable_builtins"},
+                                ToggleSetting{cfg.theme.templates.enableBuiltins}, "theme templates"));
+    {
+      const auto availableTemplates = noctalia::theme::availableTemplates();
+      std::vector<SelectOption> templateOptions;
+      templateOptions.reserve(availableTemplates.size());
+      for (const auto& t : availableTemplates) {
+        templateOptions.push_back(SelectOption{t.id, t.displayName});
+      }
+      entries.push_back(makeEntry(
+          "templates", "built-in", tr("settings.templates-builtin-ids"), tr("settings.templates-builtin-ids-desc"),
+          {"theme", "templates", "builtin_ids"},
+          ListSetting{.items = cfg.theme.templates.builtinIds, .suggestedOptions = std::move(templateOptions)},
+          "theme templates apps foot walker gtk"));
+    }
+    entries.push_back(makeEntry("templates", "user", tr("settings.templates-enable-user-templates"),
+                                tr("settings.templates-enable-user-templates-desc"),
+                                {"theme", "templates", "enable_user_templates"},
+                                ToggleSetting{cfg.theme.templates.enableUserTemplates}, "theme templates user custom"));
+    entries.push_back(makeEntry("templates", "user", tr("settings.templates-user-config"),
+                                tr("settings.templates-user-config-desc"), {"theme", "templates", "user_config"},
+                                TextSetting{cfg.theme.templates.userConfig, "~/.config/noctalia/user-templates.toml"},
+                                "theme templates path file", true));
+
+    // Dock
+    entries.push_back(makeEntry("dock", "general", tr("common.enabled"), tr("settings.dock-enabled-desc"),
+                                {"dock", "enabled"}, ToggleSetting{cfg.dock.enabled}, "launcher apps"));
+    entries.push_back(makeEntry("dock", "general", tr("settings.active-monitor-only"),
+                                tr("settings.active-monitor-only-desc"), {"dock", "active_monitor_only"},
+                                ToggleSetting{cfg.dock.activeMonitorOnly}, "monitor"));
+    entries.push_back(makeEntry("dock", "layout", tr("common.position"), tr("settings.dock-position-desc"),
+                                {"dock", "position"}, positionSelect(cfg.dock.position), "edge"));
+    entries.push_back(
+        makeEntry("dock", "layout", tr("settings.icon-size"), tr("settings.icon-size-desc"), {"dock", "icon_size"},
+                  SliderSetting{static_cast<float>(cfg.dock.iconSize), 16.0f, 128.0f, 1.0f, true}, "apps"));
+    entries.push_back(
+        makeEntry("dock", "layout", tr("common.padding"), tr("settings.dock-padding-desc"), {"dock", "padding"},
+                  SliderSetting{static_cast<float>(cfg.dock.padding), 0.0f, 100.0f, 1.0f, true}, "inset"));
+    entries.push_back(makeEntry(
+        "dock", "layout", tr("settings.item-spacing"), tr("settings.item-spacing-desc"), {"dock", "item_spacing"},
+        SliderSetting{static_cast<float>(cfg.dock.itemSpacing), 0.0f, 100.0f, 1.0f, true}, "gap"));
+    entries.push_back(makeEntry(
+        "dock", "layout", tr("common.horizontal-margin"), tr("settings.dock-margin-h-desc"), {"dock", "margin_h"},
+        SliderSetting{static_cast<float>(cfg.dock.marginH), 0.0f, 500.0f, 1.0f, true}, "gap inset"));
+    entries.push_back(makeEntry(
+        "dock", "layout", tr("common.vertical-margin"), tr("settings.dock-margin-v-desc"), {"dock", "margin_v"},
+        SliderSetting{static_cast<float>(cfg.dock.marginV), 0.0f, 100.0f, 1.0f, true}, "gap inset"));
+    entries.push_back(
+        makeEntry("dock", "shape", tr("common.corner-radius"), tr("settings.dock-radius-desc"), {"dock", "radius"},
+                  SliderSetting{static_cast<float>(cfg.dock.radius), 0.0f, 80.0f, 1.0f, true}, "rounded"));
+    entries.push_back(makeEntry("dock", "shape", tr("common.background-opacity"), tr("settings.dock-bg-opacity-desc"),
+                                {"dock", "background_opacity"},
+                                SliderSetting{cfg.dock.backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
+    entries.push_back(makeEntry("dock", "effects", tr("common.background-blur"), tr("settings.dock-bg-blur-desc"),
+                                {"dock", "background_blur"}, ToggleSetting{cfg.dock.backgroundBlur}, "blur"));
+    entries.push_back(makeEntry("dock", "effects", tr("common.shadow"), tr("settings.dock-shadow-desc"),
+                                {"dock", "shadow"}, ToggleSetting{cfg.dock.shadow}, "shadow"));
+    entries.push_back(makeEntry("dock", "behavior", tr("common.auto-hide"), tr("settings.dock-auto-hide-desc"),
+                                {"dock", "auto_hide"}, ToggleSetting{cfg.dock.autoHide}, "autohide"));
+    entries.push_back(makeEntry("dock", "behavior", tr("common.reserve-space"), tr("settings.dock-reserve-space-desc"),
+                                {"dock", "reserve_space"}, ToggleSetting{cfg.dock.reserveSpace}, "exclusive zone"));
+    entries.push_back(makeEntry("dock", "behavior", tr("settings.show-running"), tr("settings.show-running-desc"),
+                                {"dock", "show_running"}, ToggleSetting{cfg.dock.showRunning}, "windows"));
+    entries.push_back(makeEntry("dock", "behavior", tr("settings.show-instance-count"),
+                                tr("settings.show-instance-count-desc"), {"dock", "show_instance_count"},
+                                ToggleSetting{cfg.dock.showInstanceCount}, "badge windows"));
+    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.active-icon-scale"),
+                                tr("settings.active-icon-scale-desc"), {"dock", "active_scale"},
+                                SliderSetting{cfg.dock.activeScale, 0.1f, 1.75f, 0.05f, false}, "focused", true));
+    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.inactive-icon-scale"),
+                                tr("settings.inactive-icon-scale-desc"), {"dock", "inactive_scale"},
+                                SliderSetting{cfg.dock.inactiveScale, 0.1f, 1.0f, 0.05f, false}, "unfocused", true));
+    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.active-icon-opacity"),
+                                tr("settings.active-icon-opacity-desc"), {"dock", "active_opacity"},
+                                SliderSetting{cfg.dock.activeOpacity, 0.0f, 1.0f, 0.01f, false}, "focused alpha",
+                                true));
+    entries.push_back(makeEntry("dock", "focus-styling", tr("settings.inactive-icon-opacity"),
+                                tr("settings.inactive-icon-opacity-desc"), {"dock", "inactive_opacity"},
+                                SliderSetting{cfg.dock.inactiveOpacity, 0.0f, 1.0f, 0.01f, false}, "unfocused alpha",
+                                true));
+    entries.push_back(makeEntry("dock", "pinned-apps", tr("settings.pinned-apps"), tr("settings.pinned-apps-desc"),
+                                {"dock", "pinned"}, ListSetting{.items = cfg.dock.pinned}, "favorites"));
+
     // Desktop
     entries.push_back(makeEntry("desktop", "widgets", tr("settings.desktop-widgets"),
                                 tr("settings.desktop-widgets-desc"), {"desktop_widgets", "enabled"},
                                 ToggleSetting{cfg.desktopWidgets.enabled}, "desktop"));
+
+    // Shell
+    entries.push_back(makeEntry("shell", "profile", tr("settings.avatar-path"), tr("settings.avatar-path-desc"),
+                                {"shell", "avatar_path"}, TextSetting{cfg.shell.avatarPath, ""}, "image picture"));
+    entries.push_back(makeEntry("shell", "network", tr("settings.offline-mode"), tr("settings.offline-mode-desc"),
+                                {"shell", "offline_mode"}, ToggleSetting{cfg.shell.offlineMode},
+                                "network http fetch download"));
+    entries.push_back(makeEntry("shell", "network", tr("settings.telemetry"), tr("settings.telemetry-desc"),
+                                {"shell", "telemetry_enabled"}, ToggleSetting{cfg.shell.telemetryEnabled},
+                                "analytics ping privacy"));
+    entries.push_back(makeEntry("shell", "security", tr("settings.polkit-agent"), tr("settings.polkit-agent-desc"),
+                                {"shell", "polkit_agent"}, ToggleSetting{cfg.shell.polkitAgent}, "auth password"));
+    entries.push_back(makeEntry("shell", "security", tr("settings.password-style"), tr("settings.password-style-desc"),
+                                {"shell", "password_style"},
+                                enumSelect(kPasswordMaskStyles, cfg.shell.passwordMaskStyle), "polkit lock mask"));
+    entries.push_back(makeEntry("shell", "location", tr("settings.show-location"), tr("settings.show-location-desc"),
+                                {"shell", "show_location"}, ToggleSetting{cfg.shell.showLocation}, "weather"));
+    entries.push_back(makeEntry("shell", "clipboard", tr("settings.clipboard-auto-paste"),
+                                tr("settings.clipboard-auto-paste-desc"), {"shell", "clipboard_auto_paste"},
+                                enumSelect(kClipboardAutoPasteModes, cfg.shell.clipboardAutoPaste), "clipboard paste"));
+    entries.push_back(makeEntry("shell", "osd", tr("settings.osd-position"), tr("settings.osd-position-desc"),
+                                {"osd", "position"},
+                                plainSelect({{"top_right", "settings.opt.top-right"},
+                                             {"top_left", "settings.opt.top-left"},
+                                             {"top_center", "settings.opt.top-center"},
+                                             {"bottom_right", "settings.opt.bottom-right"},
+                                             {"bottom_left", "settings.opt.bottom-left"},
+                                             {"bottom_center", "settings.opt.bottom-center"}},
+                                            cfg.osd.position),
+                                "hud overlay volume brightness"));
 
     // Services
     entries.push_back(makeEntry("services", "weather", tr("settings.weather"), tr("settings.weather-desc"),

@@ -78,12 +78,18 @@ namespace settings {
     std::string searchText;
   };
 
+  // Runtime conditions that gate optional sections (e.g. compositor-specific features).
+  struct RegistryEnvironment {
+    bool niriOverviewSupported = false; // hide the [overview] section when false
+  };
+
   [[nodiscard]] const BarConfig* findBar(const Config& cfg, std::string_view name);
   [[nodiscard]] const BarMonitorOverride* findMonitorOverride(const BarConfig& bar, std::string_view match);
   [[nodiscard]] std::vector<std::string> barNames(const Config& cfg);
   [[nodiscard]] std::vector<SettingEntry>
   buildSettingsRegistry(const Config& cfg, const BarConfig* selectedBar,
-                        const BarMonitorOverride* selectedMonitorOverride = nullptr);
+                        const BarMonitorOverride* selectedMonitorOverride = nullptr,
+                        const RegistryEnvironment& env = {});
   [[nodiscard]] bool matchesSettingQuery(const SettingEntry& entry, std::string_view query);
 
 } // namespace settings

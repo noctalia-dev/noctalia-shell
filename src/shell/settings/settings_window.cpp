@@ -270,7 +270,9 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
       m_selectedMonitorOverride.clear();
     }
   }
-  const auto registry = settings::buildSettingsRegistry(cfg, selectedBar, selectedMonitorOverride);
+  settings::RegistryEnvironment env;
+  env.niriOverviewSupported = (m_wayland != nullptr && m_wayland->hasNiriOverviewState());
+  const auto registry = settings::buildSettingsRegistry(cfg, selectedBar, selectedMonitorOverride, env);
   const auto sections = sectionKeys(registry);
   if (m_selectedSection == "bar" && selectedBar == nullptr) {
     m_selectedSection.clear();
