@@ -1225,4 +1225,12 @@ void PanelManager::registerIpc(IpcService& ipc) {
         return "ok\n";
       },
       "panel-toggle <id> [context]", "Toggle a panel by id, optionally with context (e.g. launcher /emo)");
+
+  ipc.registerHandler(
+      "settings-toggle",
+      [this](const std::string&) -> std::string {
+        openSettingsWindow();
+        return "ok\n";
+      },
+      "settings-toggle", "Toggle the settings window");
 }
