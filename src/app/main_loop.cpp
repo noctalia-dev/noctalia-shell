@@ -7,6 +7,7 @@
 #include "shell/bar/bar.h"
 #include "wayland/wayland_connection.h"
 
+#include <algorithm>
 #include <cerrno>
 #include <poll.h>
 #include <stdexcept>
@@ -109,9 +110,19 @@ void MainLoop::run() {
       }
     }
 
-    // Dispatch all sources
+    // Dispatch all sources. A source callback (notably config reload) can
+    // synchronously rebuild services and destroy optional poll sources (e.g.
+    // polkit) mid-iteration. Re-check liveness before each dispatch to avoid
+    // dereferencing a pointer that was valid when we built `sources` but was
+    // freed by an earlier source in this same pass.
     for (std::size_t i = 0; i < sources.size(); ++i) {
-      sources[i]->dispatch(pollFds, sourceStartIndices[i]);
+      auto* source = sources[i];
+      const std::vector<PollSource*> latestSources =
+          m_sourcesProvider ? m_sourcesProvider() : std::vector<PollSource*>{};
+      if (std::find(latestSources.begin(), latestSources.end(), source) == latestSources.end()) {
+        continue;
+      }
+      source->dispatch(pollFds, sourceStartIndices[i]);
     }
   }
 
