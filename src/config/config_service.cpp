@@ -1705,16 +1705,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto v = (*wpTbl)["enabled"].value<bool>())
       wp.enabled = *v;
     if (auto v = (*wpTbl)["fill_mode"].value<std::string>()) {
-      if (*v == "center")
-        wp.fillMode = WallpaperFillMode::Center;
-      else if (*v == "crop")
-        wp.fillMode = WallpaperFillMode::Crop;
-      else if (*v == "fit")
-        wp.fillMode = WallpaperFillMode::Fit;
-      else if (*v == "stretch")
-        wp.fillMode = WallpaperFillMode::Stretch;
-      else if (*v == "repeat")
-        wp.fillMode = WallpaperFillMode::Repeat;
+      if (auto mode = enumFromKey(kWallpaperFillModes, *v)) {
+        wp.fillMode = *mode;
+      }
     }
     if (auto v = (*wpTbl)["fill_color"].value<std::string>()) {
       if (StringUtils::trim(*v).empty()) {
@@ -1768,10 +1761,8 @@ void ConfigService::parseTable(const toml::table& tbl) {
       }
       if (auto v = (*automationTbl)["order"].value<std::string>()) {
         const std::string order = StringUtils::toLower(StringUtils::trim(*v));
-        if (order == "random") {
-          wp.automation.order = WallpaperAutomationConfig::Order::Random;
-        } else if (order == "alphabetical") {
-          wp.automation.order = WallpaperAutomationConfig::Order::Alphabetical;
+        if (auto parsed = enumFromKey(kWallpaperAutomationOrders, order)) {
+          wp.automation.order = *parsed;
         } else {
           kLog.warn("unknown wallpaper automation order \"{}\" (expected: random|alphabetical)", *v);
         }

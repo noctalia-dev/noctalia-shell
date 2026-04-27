@@ -297,6 +297,19 @@ constexpr EnumOption<PasswordMaskStyle> kPasswordMaskStyles[] = {
     {PasswordMaskStyle::RandomIcons, "random", "settings.opt.random-icons"},
 };
 
+constexpr EnumOption<WallpaperFillMode> kWallpaperFillModes[] = {
+    {WallpaperFillMode::Center, "center", "settings.opt.wallpaper-center"},
+    {WallpaperFillMode::Crop, "crop", "settings.opt.wallpaper-crop"},
+    {WallpaperFillMode::Fit, "fit", "settings.opt.wallpaper-fit"},
+    {WallpaperFillMode::Stretch, "stretch", "settings.opt.wallpaper-stretch"},
+    {WallpaperFillMode::Repeat, "repeat", "settings.opt.wallpaper-repeat"},
+};
+
+constexpr EnumOption<WallpaperAutomationConfig::Order> kWallpaperAutomationOrders[] = {
+    {WallpaperAutomationConfig::Order::Random, "random", "settings.opt.random"},
+    {WallpaperAutomationConfig::Order::Alphabetical, "alphabetical", "settings.opt.alphabetical"},
+};
+
 struct ShellConfig {
   struct AnimationConfig {
     bool enabled = true;

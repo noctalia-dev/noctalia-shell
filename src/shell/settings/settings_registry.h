@@ -49,8 +49,13 @@ namespace settings {
     std::vector<std::string> items;
   };
 
-  using SettingControl =
-      std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting, ListSetting>;
+  struct ColorSetting {
+    std::string hex; // current resolved value as #RRGGBB; empty when unset
+    bool unset = true;
+  };
+
+  using SettingControl = std::variant<ToggleSetting, SelectSetting, SliderSetting, TextSetting, OptionalNumberSetting,
+                                      ListSetting, ColorSetting>;
 
   struct SettingEntry {
     std::string section;

@@ -286,6 +286,7 @@
       "shell": "Shell",
       "dock": "Dock",
       "overview": "Overview",
+      "wallpaper": "Wallpaper",
       "desktop": "Desktop",
       "services": "Services",
       "notifications": "Notifications"
@@ -315,7 +316,10 @@
       "brightness": "Brightness",
       "night-light": "Night Light",
       "toasts": "Toasts",
-      "network": "Network"
+      "network": "Network",
+      "directories": "Directories",
+      "transition": "Transition",
+      "automation": "Automation"
     },
 
     "opt": {
@@ -336,7 +340,14 @@
       "bottom-left": "Bottom Left",
       "bottom-center": "Bottom Center",
       "celsius": "Celsius",
-      "fahrenheit": "Fahrenheit"
+      "fahrenheit": "Fahrenheit",
+      "wallpaper-center": "Center",
+      "wallpaper-crop": "Crop",
+      "wallpaper-fit": "Fit",
+      "wallpaper-stretch": "Stretch",
+      "wallpaper-repeat": "Repeat",
+      "random": "Random",
+      "alphabetical": "Alphabetical"
     },
 
     "theme-mode": "Theme Mode",
@@ -421,6 +432,31 @@
 
     "desktop-widgets": "Desktop Widgets",
     "desktop-widgets-desc": "Show widgets on the desktop",
+
+    "wallpaper-enabled-desc": "Enable the wallpaper service",
+    "wallpaper-fill-mode": "Fill Mode",
+    "wallpaper-fill-mode-desc": "How wallpapers fit the screen",
+    "wallpaper-fill-color": "Fill Color",
+    "wallpaper-fill-color-desc": "Solid color shown behind images, in uncovered areas, and as the wallpaper when no image is selected",
+    "color-picker-title": "Pick a Color",
+    "wallpaper-directory": "Wallpaper Directory",
+    "wallpaper-directory-desc": "Folder containing wallpapers",
+    "wallpaper-directory-light": "Light Mode Directory",
+    "wallpaper-directory-light-desc": "Wallpaper folder used in Light theme mode",
+    "wallpaper-directory-dark": "Dark Mode Directory",
+    "wallpaper-directory-dark-desc": "Wallpaper folder used in Dark theme mode",
+    "wallpaper-transition-duration": "Transition Duration",
+    "wallpaper-transition-duration-desc": "Length of the wallpaper change animation in milliseconds",
+    "wallpaper-edge-smoothness": "Edge Smoothness",
+    "wallpaper-edge-smoothness-desc": "Feathering of transition edges between wallpapers",
+    "wallpaper-automation": "Automatic Rotation",
+    "wallpaper-automation-desc": "Cycle wallpapers automatically on a timer",
+    "wallpaper-automation-interval": "Rotation Interval",
+    "wallpaper-automation-interval-desc": "Minutes between wallpaper changes (0 disables)",
+    "wallpaper-automation-order": "Order",
+    "wallpaper-automation-order-desc": "Pick wallpapers randomly or alphabetically",
+    "wallpaper-automation-recursive": "Include Subfolders",
+    "wallpaper-automation-recursive-desc": "Search nested folders for wallpapers",
 
     "weather": "Weather",
     "weather-desc": "Enable the weather service",

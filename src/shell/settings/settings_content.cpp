@@ -1,7 +1,9 @@
 #include "shell/settings/settings_content.h"
 
 #include "i18n/i18n.h"
+#include "render/core/color.h"
 #include "shell/settings/bar_widget_editor.h"
+#include "ui/controls/box.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
@@ -10,6 +12,7 @@
 #include "ui/controls/separator.h"
 #include "ui/controls/slider.h"
 #include "ui/controls/toggle.h"
+#include "ui/dialogs/color_picker_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
@@ -483,6 +486,57 @@ namespace settings {
       return input;
     };
 
+    const auto makeColor = [&](const ColorSetting& setting, std::vector<std::string> path) {
+      auto wrap = std::make_unique<Flex>();
+      wrap->setDirection(FlexDirection::Horizontal);
+      wrap->setAlign(FlexAlign::Center);
+      wrap->setGap(Style::spaceSm * scale);
+
+      const float swatchSize = Style::controlHeight * scale;
+      auto swatch = std::make_unique<Box>();
+      swatch->setSize(swatchSize, swatchSize);
+      swatch->setRadius(Style::radiusSm * scale);
+      swatch->setBorder(roleColor(ColorRole::Outline), 1.0f);
+      Color initialColor;
+      const bool hasColor = !setting.unset && tryParseHexColor(setting.hex, initialColor);
+      if (hasColor) {
+        swatch->setFill(initialColor);
+      } else {
+        swatch->setFill(roleColor(ColorRole::SurfaceVariant));
+      }
+
+      auto button = std::make_unique<Button>();
+      button->setVariant(ButtonVariant::Outline);
+      button->setText(setting.unset ? i18n::tr("settings.color-default") : setting.hex);
+      button->setFontSize(Style::fontSizeBody * scale);
+      button->setMinHeight(Style::controlHeight * scale);
+      button->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+      button->setRadius(Style::radiusMd * scale);
+      const std::optional<Color> initialOpt = hasColor ? std::optional<Color>{initialColor} : std::nullopt;
+      const std::string title = i18n::tr("settings.color-picker-title");
+      button->setOnClick([setOverride = ctx.setOverride, path, initialOpt, title]() {
+        ColorPickerDialogOptions options;
+        options.title = title;
+        if (initialOpt.has_value()) {
+          options.initialColor = *initialOpt;
+        } else if (const auto last = ColorPickerDialog::lastResult()) {
+          options.initialColor = *last;
+        }
+        (void)ColorPickerDialog::open(std::move(options), [setOverride, path](std::optional<Color> result) {
+          if (!result.has_value()) {
+            return;
+          }
+          Color rgb = *result;
+          rgb.a = 1.0f;
+          setOverride(path, formatRgbHex(rgb));
+        });
+      });
+
+      wrap->addChild(std::move(swatch));
+      wrap->addChild(std::move(button));
+      return wrap;
+    };
+
     const auto makeListBlock = [&](Flex& section, const SettingEntry& entry, const ListSetting& list) {
       const bool overridden = (ctx.configService != nullptr && ctx.configService->hasOverride(entry.path));
 
@@ -645,6 +699,8 @@ namespace settings {
               return makeText(control.value, control.placeholder, entry.path);
             } else if constexpr (std::is_same_v<T, OptionalNumberSetting>) {
               return makeOptionalNumber(control, entry.path);
+            } else if constexpr (std::is_same_v<T, ColorSetting>) {
+              return makeColor(control, entry.path);
             } else if constexpr (std::is_same_v<T, ListSetting>) {
               return nullptr;
             }

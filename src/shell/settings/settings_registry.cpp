@@ -1,6 +1,7 @@
 #include "shell/settings/settings_registry.h"
 
 #include "i18n/i18n.h"
+#include "render/core/color.h"
 #include "theme/builtin_palettes.h"
 
 #include <algorithm>
@@ -349,6 +350,56 @@ namespace settings {
     entries.push_back(makeEntry("overview", "backdrop", tr("settings.tint-intensity"),
                                 tr("settings.overview-tint-desc"), {"overview", "tint_intensity"},
                                 SliderSetting{cfg.overview.tintIntensity, 0.0f, 1.0f, 0.01f, false}, "wallpaper"));
+
+    // Wallpaper
+    entries.push_back(makeEntry("wallpaper", "general", tr("common.enabled"), tr("settings.wallpaper-enabled-desc"),
+                                {"wallpaper", "enabled"}, ToggleSetting{cfg.wallpaper.enabled}, "background image"));
+    entries.push_back(makeEntry("wallpaper", "general", tr("settings.wallpaper-fill-mode"),
+                                tr("settings.wallpaper-fill-mode-desc"), {"wallpaper", "fill_mode"},
+                                enumSelect(kWallpaperFillModes, cfg.wallpaper.fillMode), "scale aspect"));
+    {
+      ColorSetting fillColor;
+      fillColor.unset = !cfg.wallpaper.fillColor.has_value();
+      if (!fillColor.unset) {
+        fillColor.hex = formatRgbHex(resolveThemeColor(*cfg.wallpaper.fillColor));
+      }
+      entries.push_back(makeEntry("wallpaper", "general", tr("settings.wallpaper-fill-color"),
+                                  tr("settings.wallpaper-fill-color-desc"), {"wallpaper", "fill_color"},
+                                  std::move(fillColor), "background solid color"));
+    }
+    entries.push_back(makeEntry("wallpaper", "directories", tr("settings.wallpaper-directory"),
+                                tr("settings.wallpaper-directory-desc"), {"wallpaper", "directory"},
+                                TextSetting{cfg.wallpaper.directory, "~/Pictures/Wallpapers"}, "folder path"));
+    entries.push_back(makeEntry("wallpaper", "directories", tr("settings.wallpaper-directory-light"),
+                                tr("settings.wallpaper-directory-light-desc"), {"wallpaper", "directory_light"},
+                                TextSetting{cfg.wallpaper.directoryLight, ""}, "folder path light theme", true));
+    entries.push_back(makeEntry("wallpaper", "directories", tr("settings.wallpaper-directory-dark"),
+                                tr("settings.wallpaper-directory-dark-desc"), {"wallpaper", "directory_dark"},
+                                TextSetting{cfg.wallpaper.directoryDark, ""}, "folder path dark theme", true));
+    entries.push_back(makeEntry("wallpaper", "transition", tr("settings.wallpaper-transition-duration"),
+                                tr("settings.wallpaper-transition-duration-desc"), {"wallpaper", "transition_duration"},
+                                SliderSetting{cfg.wallpaper.transitionDurationMs, 100.0f, 30000.0f, 100.0f, true},
+                                "fade animation"));
+    entries.push_back(makeEntry("wallpaper", "transition", tr("settings.wallpaper-edge-smoothness"),
+                                tr("settings.wallpaper-edge-smoothness-desc"), {"wallpaper", "edge_smoothness"},
+                                SliderSetting{cfg.wallpaper.edgeSmoothness, 0.0f, 1.0f, 0.01f, false},
+                                "transition feathering", true));
+    entries.push_back(makeEntry("wallpaper", "automation", tr("settings.wallpaper-automation"),
+                                tr("settings.wallpaper-automation-desc"), {"wallpaper", "automation", "enabled"},
+                                ToggleSetting{cfg.wallpaper.automation.enabled}, "rotate slideshow"));
+    entries.push_back(makeEntry(
+        "wallpaper", "automation", tr("settings.wallpaper-automation-interval"),
+        tr("settings.wallpaper-automation-interval-desc"), {"wallpaper", "automation", "interval_minutes"},
+        SliderSetting{static_cast<float>(cfg.wallpaper.automation.intervalMinutes), 0.0f, 1440.0f, 1.0f, true},
+        "rotate slideshow"));
+    entries.push_back(makeEntry("wallpaper", "automation", tr("settings.wallpaper-automation-order"),
+                                tr("settings.wallpaper-automation-order-desc"), {"wallpaper", "automation", "order"},
+                                enumSelect(kWallpaperAutomationOrders, cfg.wallpaper.automation.order),
+                                "rotate slideshow"));
+    entries.push_back(makeEntry("wallpaper", "automation", tr("settings.wallpaper-automation-recursive"),
+                                tr("settings.wallpaper-automation-recursive-desc"),
+                                {"wallpaper", "automation", "recursive"},
+                                ToggleSetting{cfg.wallpaper.automation.recursive}, "subdirectories", true));
 
     // Desktop
     entries.push_back(makeEntry("desktop", "widgets", tr("settings.desktop-widgets"),
