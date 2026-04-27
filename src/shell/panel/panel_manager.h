@@ -105,9 +105,7 @@ private:
   std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> m_attachedPanelGeometryCallback;
 
   std::unique_ptr<Surface> m_surface;
-  std::unique_ptr<LayerSurface> m_clickCatcherSurface;
   LayerSurface* m_layerSurface = nullptr;
-  wl_surface* m_clickCatcherWlSurface = nullptr;
   // m_sceneRoot must be destroyed before m_animations — ~Node() calls cancelForOwner().
   // Also m_panels (which own their own Nodes parented under m_sceneRoot) must be destroyed
   // before m_animations for the same reason.

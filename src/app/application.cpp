@@ -355,16 +355,7 @@ void Application::initServices() {
     m_bar.refresh();
     m_overview.setActive(m_wayland.isNiriOverviewOpen());
   });
-  m_wayland.setToplevelChangeCallback([this, lastActiveToplevelId = std::optional<std::string>{}]() mutable {
-    const auto active = m_wayland.activeToplevel();
-    const auto activeId = active.has_value() ? std::optional<std::string>{active->identifier} : std::nullopt;
-    const bool activeChanged = (activeId != lastActiveToplevelId);
-    lastActiveToplevelId = activeId;
-
-    if (activeChanged && m_panelManager.isOpen() && m_panelManager.activePanelId() != "polkit") {
-      m_panelManager.close();
-    }
-
+  m_wayland.setToplevelChangeCallback([this]() {
     m_bar.refresh();
     m_dock.refresh();
   });
