@@ -959,6 +959,9 @@ void Application::initIpc() {
   m_nightLightManager.registerIpc(m_ipcService);
   m_themeService.registerIpc(m_ipcService);
   m_dock.registerIpc(m_ipcService);
+  if (m_mprisService) {
+    m_mprisService->registerIpc(m_ipcService);
+  }
   if (m_pipewireService) {
     m_pipewireService->registerIpc(m_ipcService, m_configService);
   }

@@ -16,6 +16,7 @@ namespace sdbus {
 } // namespace sdbus
 
 class SessionBus;
+class IpcService;
 
 struct MprisPlayerInfo {
   std::string busName;
@@ -53,6 +54,7 @@ public:
   [[nodiscard]] std::vector<MprisPlayerInfo> listPlayers() const;
   [[nodiscard]] std::optional<MprisPlayerInfo> activePlayer() const;
   void refreshPlayers();
+  void registerIpc(IpcService& ipc);
 
   bool playPause(const std::string& busName);
   bool next(const std::string& busName);

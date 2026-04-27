@@ -3,6 +3,8 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "dbus/session_bus.h"
+#include "ipc/ipc_arg_parse.h"
+#include "ipc/ipc_service.h"
 
 #include <algorithm>
 #include <chrono>
@@ -328,6 +330,31 @@ std::optional<MprisPlayerInfo> MprisService::activePlayer() const {
 void MprisService::refreshPlayers() {
   kLog.debug("manual player refresh requested players_cached={}", m_players.size());
   discoverPlayers();
+}
+
+void MprisService::registerIpc(IpcService& ipc) {
+  ipc.registerHandler(
+      "media",
+      [this](const std::string& args) -> std::string {
+        const auto parts = noctalia::ipc::splitWords(args);
+        if (parts.size() != 1) {
+          return "error: media requires exactly one action <next|previous|playPause>\n";
+        }
+
+        const std::string& action = parts[0];
+        if (action == "next") {
+          return nextActive() ? "ok\n" : "error: no active player or Next unsupported\n";
+        }
+        if (action == "previous") {
+          return previousActive() ? "ok\n" : "error: no active player or Previous unsupported\n";
+        }
+        if (action == "playPause" || action == "play-pause") {
+          return playPauseActive() ? "ok\n" : "error: no active player or PlayPause unsupported\n";
+        }
+
+        return "error: invalid media action (use next, previous, playPause)\n";
+      },
+      "media <next|previous|playPause>", "Control active media playback");
 }
 
 bool MprisService::playPause(const std::string& busName) {
