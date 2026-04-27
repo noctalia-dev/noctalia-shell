@@ -160,6 +160,34 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
   const auto marginTop = clampMargin(anchorY - static_cast<float>(panelHeight) * 0.5f,
                                      static_cast<std::int32_t>(panelHeight), outputHeight, screenPadding);
 
+  auto clickCatcherConfig = LayerSurfaceConfig{
+      .nameSpace = "noctalia-panel-catcher",
+      .layer = m_activePanel->layer(),
+      .anchor = LayerShellAnchor::Top | LayerShellAnchor::Bottom | LayerShellAnchor::Left | LayerShellAnchor::Right,
+      .width = 0,
+      .height = 0,
+      .exclusiveZone = 0,
+      .marginTop = 0,
+      .marginRight = 0,
+      .marginBottom = 0,
+      .marginLeft = 0,
+      .keyboard = LayerShellKeyboard::None,
+      .defaultWidth = static_cast<std::uint32_t>(std::max(1, outputWidth)),
+      .defaultHeight = static_cast<std::uint32_t>(std::max(1, outputHeight)),
+  };
+  if (m_wayland != nullptr) {
+    auto clickCatcher = std::make_unique<LayerSurface>(*m_wayland, std::move(clickCatcherConfig));
+    clickCatcher->setRenderContext(m_renderContext);
+    if (clickCatcher->initialize(output)) {
+      m_clickCatcherSurface = std::move(clickCatcher);
+      m_clickCatcherWlSurface = m_clickCatcherSurface->wlSurface();
+    } else {
+      m_clickCatcherSurface.reset();
+      m_clickCatcherWlSurface = nullptr;
+      kLog.warn("panel manager: click catcher layer-surface failed for \"{}\"", panelId);
+    }
+  }
+
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-panel",
       .layer = m_activePanel->layer(),
@@ -197,6 +225,8 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
   };
 
   const auto resetPanelOpenState = [this]() {
+    m_clickCatcherSurface.reset();
+    m_clickCatcherWlSurface = nullptr;
     m_surface.reset();
     m_layerSurface = nullptr;
     m_output = nullptr;
@@ -499,7 +529,9 @@ void PanelManager::destroyPanel() {
   m_panelContactShadowNode = nullptr;
   m_sceneRoot.reset();
   m_surface.reset();
+  m_clickCatcherSurface.reset();
   m_layerSurface = nullptr;
+  m_clickCatcherWlSurface = nullptr;
   m_output = nullptr;
   m_wlSurface = nullptr;
   m_activePanel = nullptr;
@@ -558,6 +590,14 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
       }
     }
     return false;
+  }
+
+  if (event.surface == m_clickCatcherWlSurface) {
+    if (event.type == PointerEvent::Type::Button && event.state == 1) {
+      m_pointerInside = false;
+      closePanel();
+    }
+    return true;
   }
 
   switch (event.type) {

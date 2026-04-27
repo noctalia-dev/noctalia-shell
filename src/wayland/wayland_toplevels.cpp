@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdint>
 #include <wayland-client.h>
 
 namespace {
@@ -109,7 +110,9 @@ std::optional<ActiveToplevel> WaylandToplevels::current() const {
   return ActiveToplevel{
       .title = it->second.title,
       .appId = it->second.appId,
-      .identifier = it->second.appId + ":" + it->second.title,
+      // Stable per-handle token (titles/appIds are mutable and should not be
+      // used as focus identity for activation-change detection).
+      .identifier = std::to_string(reinterpret_cast<std::uintptr_t>(m_currentHandle)),
   };
 }
 
