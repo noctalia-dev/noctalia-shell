@@ -2,6 +2,7 @@
 
 #include "core/resource_paths.h"
 #include "core/toml.h"
+#include "theme/builtin_templates.h"
 #include "theme/color.h"
 #include "theme/fixed_palette.h"
 #include "theme/image_loader.h"
@@ -56,47 +57,6 @@ namespace noctalia::theme {
                                       "  --default-mode    Template default mode: dark or light";
 
     std::filesystem::path builtinTemplateConfigPath() { return paths::assetPath("templates/builtin.toml"); }
-
-    struct BuiltinTemplateInfo {
-      std::string id;
-      std::string name;
-      std::string category;
-    };
-
-    std::vector<BuiltinTemplateInfo> loadBuiltinTemplateInfo(std::string& err) {
-      toml::table root;
-      try {
-        root = toml::parse_file(builtinTemplateConfigPath().string());
-      } catch (const toml::parse_error& e) {
-        err = e.description();
-        return {};
-      }
-
-      std::vector<BuiltinTemplateInfo> out;
-      const toml::table* catalog = root["catalog"].as_table();
-      if (catalog == nullptr)
-        return out;
-
-      for (const auto& [idNode, node] : *catalog) {
-        const toml::table* info = node.as_table();
-        if (info == nullptr)
-          continue;
-        BuiltinTemplateInfo entry;
-        entry.id = std::string(idNode.str());
-        if (const auto name = info->get_as<std::string>("name"))
-          entry.name = name->get();
-        if (const auto category = info->get_as<std::string>("category"))
-          entry.category = category->get();
-        out.push_back(std::move(entry));
-      }
-
-      std::sort(out.begin(), out.end(), [](const BuiltinTemplateInfo& lhs, const BuiltinTemplateInfo& rhs) {
-        if (lhs.category != rhs.category)
-          return lhs.category < rhs.category;
-        return lhs.id < rhs.id;
-      });
-      return out;
-    }
 
     using TokenMap = std::unordered_map<std::string, uint32_t>;
 
@@ -327,7 +287,7 @@ namespace noctalia::theme {
 
     if (listBuiltins) {
       std::string err;
-      const auto builtins = loadBuiltinTemplateInfo(err);
+      const auto builtins = noctalia::theme::loadBuiltinTemplateInfo(&err);
       if (!err.empty()) {
         std::fprintf(stderr, "error: failed to load built-in templates: %s\n", err.c_str());
         return 1;

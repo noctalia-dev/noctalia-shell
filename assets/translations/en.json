@@ -283,6 +283,7 @@
 
     "section": {
       "appearance": "Appearance",
+      "templates": "Templates",
       "shell": "Shell",
       "dock": "Dock",
       "overview": "Overview",
@@ -319,7 +320,9 @@
       "network": "Network",
       "directories": "Directories",
       "transition": "Transition",
-      "automation": "Automation"
+      "automation": "Automation",
+      "built-in": "Built-in",
+      "user": "User"
     },
 
     "opt": {
@@ -366,6 +369,15 @@
     "wallpaper-generation-scheme-desc": "Choose how wallpaper colors are converted into a palette",
     "community-palette": "Community Palette",
     "community-palette-desc": "Palette name to fetch from the community catalog",
+    "templates-enable-builtins": "Enable Built-in Templates",
+    "templates-enable-builtins-desc": "Use the bundled catalog of theme templates for apps like foot, walker, and GTK",
+    "templates-builtin-ids": "Active Built-in Templates",
+    "templates-builtin-ids-desc": "Template IDs to render on each theme change. List available IDs with: noctalia theme --list-builtins",
+    "templates-enable-user-templates": "Enable User Templates",
+    "templates-enable-user-templates-desc": "Load additional theme templates from the user template config file",
+    "templates-user-config": "User Template Config",
+    "templates-user-config-desc": "Path to the user template TOML file (created on first use when enabled)",
+    "add-list-item-placeholder": "Pick…",
     "ui-scale": "UI Scale",
     "ui-scale-desc": "Scale the entire interface up or down",
     "animations": "Animations",

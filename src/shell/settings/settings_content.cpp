@@ -663,6 +663,16 @@ namespace settings {
             makeLabel(entry.subtitle, Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurfaceVariant), false));
       }
 
+      const auto resolveItemLabel = [&list](const std::string& value) -> std::string {
+        for (const auto& opt : list.suggestedOptions) {
+          if (opt.value == value) {
+            return opt.label;
+          }
+        }
+        return value;
+      };
+
+      const float labelCellWidth = 200.0f * scale;
       for (std::size_t i = 0; i < list.items.size(); ++i) {
         auto itemRow = std::make_unique<Flex>();
         itemRow->setDirection(FlexDirection::Horizontal);
@@ -670,12 +680,31 @@ namespace settings {
         itemRow->setGap(Style::spaceXs * scale);
         itemRow->setMinHeight(Style::controlHeightSm * scale);
 
-        itemRow->addChild(
-            makeLabel(list.items[i], Style::fontSizeCaption * scale, roleColor(ColorRole::OnSurface), false));
+        auto labelCell = std::make_unique<Flex>();
+        labelCell->setDirection(FlexDirection::Horizontal);
+        labelCell->setAlign(FlexAlign::Center);
+        labelCell->setMinWidth(labelCellWidth);
+        labelCell->addChild(makeLabel(resolveItemLabel(list.items[i]), Style::fontSizeCaption * scale,
+                                      roleColor(ColorRole::OnSurface), false));
+        itemRow->addChild(std::move(labelCell));
 
-        auto spacer = std::make_unique<Flex>();
-        spacer->setFlexGrow(1.0f);
-        itemRow->addChild(std::move(spacer));
+        auto removeBtn = std::make_unique<Button>();
+        removeBtn->setGlyph("close");
+        removeBtn->setVariant(ButtonVariant::Ghost);
+        removeBtn->setGlyphSize(Style::fontSizeCaption * scale);
+        removeBtn->setMinWidth(Style::controlHeightSm * scale);
+        removeBtn->setMinHeight(Style::controlHeightSm * scale);
+        removeBtn->setPadding(Style::spaceXs * scale);
+        removeBtn->setRadius(Style::radiusSm * scale);
+        {
+          auto items = list.items;
+          auto path = entry.path;
+          removeBtn->setOnClick([setOverride = ctx.setOverride, items, path, i]() mutable {
+            items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
+            setOverride(path, items);
+          });
+        }
+        itemRow->addChild(std::move(removeBtn));
 
         if (i > 0) {
           auto upBtn = std::make_unique<Button>();
@@ -712,22 +741,6 @@ namespace settings {
           itemRow->addChild(std::move(downBtn));
         }
 
-        auto removeBtn = std::make_unique<Button>();
-        removeBtn->setGlyph("close");
-        removeBtn->setVariant(ButtonVariant::Ghost);
-        removeBtn->setGlyphSize(Style::fontSizeCaption * scale);
-        removeBtn->setMinWidth(Style::controlHeightSm * scale);
-        removeBtn->setMinHeight(Style::controlHeightSm * scale);
-        removeBtn->setPadding(Style::spaceXs * scale);
-        removeBtn->setRadius(Style::radiusSm * scale);
-        auto items = list.items;
-        auto path = entry.path;
-        removeBtn->setOnClick([setOverride = ctx.setOverride, items, path, i]() mutable {
-          items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
-          setOverride(path, items);
-        });
-        itemRow->addChild(std::move(removeBtn));
-
         block->addChild(std::move(itemRow));
       }
 
@@ -736,41 +749,99 @@ namespace settings {
       addRow->setAlign(FlexAlign::Center);
       addRow->setGap(Style::spaceXs * scale);
 
-      auto addInput = std::make_unique<Input>();
-      addInput->setFontSize(Style::fontSizeCaption * scale);
-      addInput->setControlHeight(Style::controlHeightSm * scale);
-      addInput->setHorizontalPadding(Style::spaceXs * scale);
-      addInput->setSize(140.0f * scale, Style::controlHeightSm * scale);
-      addInput->setFlexGrow(1.0f);
-      auto* addInputPtr = addInput.get();
-
-      auto addBtn = std::make_unique<Button>();
-      addBtn->setGlyph("add");
-      addBtn->setVariant(ButtonVariant::Ghost);
-      addBtn->setGlyphSize(Style::fontSizeCaption * scale);
-      addBtn->setMinWidth(Style::controlHeightSm * scale);
-      addBtn->setMinHeight(Style::controlHeightSm * scale);
-      addBtn->setPadding(Style::spaceXs * scale);
-      addBtn->setRadius(Style::radiusSm * scale);
-      auto items = list.items;
-      auto path = entry.path;
-      addBtn->setOnClick([setOverride = ctx.setOverride, addInputPtr, items, path]() mutable {
-        const auto& text = addInputPtr->value();
-        if (!text.empty()) {
-          items.push_back(text);
-          setOverride(path, items);
+      const bool useSelectAdder = !list.suggestedOptions.empty();
+      std::vector<SelectOption> remaining;
+      if (useSelectAdder) {
+        remaining.reserve(list.suggestedOptions.size());
+        for (const auto& opt : list.suggestedOptions) {
+          if (std::find(list.items.begin(), list.items.end(), opt.value) == list.items.end()) {
+            remaining.push_back(opt);
+          }
         }
-      });
+      }
 
-      addInput->setOnSubmit([setOverride = ctx.setOverride, items, path](const std::string& text) mutable {
-        if (!text.empty()) {
-          items.push_back(text);
-          setOverride(path, items);
+      if (useSelectAdder) {
+        if (remaining.empty()) {
+          // Every suggested value is already in the list — nothing to add.
+          section.addChild(std::move(block));
+          return;
         }
-      });
 
-      addRow->addChild(std::move(addInput));
-      addRow->addChild(std::move(addBtn));
+        std::vector<std::string> remainingLabels;
+        remainingLabels.reserve(remaining.size());
+        for (const auto& opt : remaining) {
+          remainingLabels.push_back(opt.label);
+        }
+
+        auto select = std::make_unique<Select>();
+        select->setOptions(remainingLabels);
+        select->setPlaceholder(i18n::tr("settings.add-list-item-placeholder"));
+        select->setFontSize(Style::fontSizeCaption * scale);
+        select->setControlHeight(Style::controlHeightSm * scale);
+        select->setGlyphSize(Style::fontSizeCaption * scale);
+        select->setSize(labelCellWidth, Style::controlHeightSm * scale);
+        auto* selectPtr = select.get();
+
+        auto addBtn = std::make_unique<Button>();
+        addBtn->setGlyph("add");
+        addBtn->setVariant(ButtonVariant::Ghost);
+        addBtn->setGlyphSize(Style::fontSizeCaption * scale);
+        addBtn->setMinWidth(Style::controlHeightSm * scale);
+        addBtn->setMinHeight(Style::controlHeightSm * scale);
+        addBtn->setPadding(Style::spaceXs * scale);
+        addBtn->setRadius(Style::radiusSm * scale);
+
+        auto items = list.items;
+        auto path = entry.path;
+        addBtn->setOnClick([setOverride = ctx.setOverride, selectPtr, remaining, items, path]() mutable {
+          const std::size_t index = selectPtr->selectedIndex();
+          if (index >= remaining.size()) {
+            return;
+          }
+          items.push_back(remaining[index].value);
+          setOverride(path, items);
+        });
+
+        addRow->addChild(std::move(select));
+        addRow->addChild(std::move(addBtn));
+      } else {
+        auto addInput = std::make_unique<Input>();
+        addInput->setFontSize(Style::fontSizeCaption * scale);
+        addInput->setControlHeight(Style::controlHeightSm * scale);
+        addInput->setHorizontalPadding(Style::spaceXs * scale);
+        addInput->setSize(140.0f * scale, Style::controlHeightSm * scale);
+        addInput->setFlexGrow(1.0f);
+        auto* addInputPtr = addInput.get();
+
+        auto addBtn = std::make_unique<Button>();
+        addBtn->setGlyph("add");
+        addBtn->setVariant(ButtonVariant::Ghost);
+        addBtn->setGlyphSize(Style::fontSizeCaption * scale);
+        addBtn->setMinWidth(Style::controlHeightSm * scale);
+        addBtn->setMinHeight(Style::controlHeightSm * scale);
+        addBtn->setPadding(Style::spaceXs * scale);
+        addBtn->setRadius(Style::radiusSm * scale);
+        auto items = list.items;
+        auto path = entry.path;
+        addBtn->setOnClick([setOverride = ctx.setOverride, addInputPtr, items, path]() mutable {
+          const auto& text = addInputPtr->value();
+          if (!text.empty()) {
+            items.push_back(text);
+            setOverride(path, items);
+          }
+        });
+
+        addInput->setOnSubmit([setOverride = ctx.setOverride, items, path](const std::string& text) mutable {
+          if (!text.empty()) {
+            items.push_back(text);
+            setOverride(path, items);
+          }
+        });
+
+        addRow->addChild(std::move(addInput));
+        addRow->addChild(std::move(addBtn));
+      }
+
       block->addChild(std::move(addRow));
 
       section.addChild(std::move(block));

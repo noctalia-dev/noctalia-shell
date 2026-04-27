@@ -810,7 +810,7 @@ namespace settings {
           ctx.makeRow(*panel, entry, ctx.makeText(settingValueAsString(value), {}, path));
           break;
         case WidgetSettingValueType::StringList:
-          ctx.makeListBlock(*panel, entry, ListSetting{settingValueAsStringList(value)});
+          ctx.makeListBlock(*panel, entry, ListSetting{.items = settingValueAsStringList(value)});
           break;
         case WidgetSettingValueType::Select: {
           std::vector<SelectOption> options;

@@ -3,6 +3,7 @@
 #include "i18n/i18n.h"
 #include "render/core/color.h"
 #include "theme/builtin_palettes.h"
+#include "theme/builtin_templates.h"
 
 #include <algorithm>
 #include <cctype>
@@ -249,6 +250,33 @@ namespace settings {
                                 SliderSetting{cfg.shell.shadow.alpha, 0.0f, 1.0f, 0.01f, false}, "shadow opacity",
                                 true));
 
+    // Templates
+    entries.push_back(makeEntry("templates", "built-in", tr("settings.templates-enable-builtins"),
+                                tr("settings.templates-enable-builtins-desc"),
+                                {"theme", "templates", "enable_builtins"},
+                                ToggleSetting{cfg.theme.templates.enableBuiltins}, "theme templates"));
+    {
+      const auto availableTemplates = noctalia::theme::availableTemplates();
+      std::vector<SelectOption> templateOptions;
+      templateOptions.reserve(availableTemplates.size());
+      for (const auto& t : availableTemplates) {
+        templateOptions.push_back(SelectOption{t.id, t.displayName});
+      }
+      entries.push_back(makeEntry(
+          "templates", "built-in", tr("settings.templates-builtin-ids"), tr("settings.templates-builtin-ids-desc"),
+          {"theme", "templates", "builtin_ids"},
+          ListSetting{.items = cfg.theme.templates.builtinIds, .suggestedOptions = std::move(templateOptions)},
+          "theme templates apps foot walker gtk"));
+    }
+    entries.push_back(makeEntry("templates", "user", tr("settings.templates-enable-user-templates"),
+                                tr("settings.templates-enable-user-templates-desc"),
+                                {"theme", "templates", "enable_user_templates"},
+                                ToggleSetting{cfg.theme.templates.enableUserTemplates}, "theme templates user custom"));
+    entries.push_back(makeEntry("templates", "user", tr("settings.templates-user-config"),
+                                tr("settings.templates-user-config-desc"), {"theme", "templates", "user_config"},
+                                TextSetting{cfg.theme.templates.userConfig, "~/.config/noctalia/user-templates.toml"},
+                                "theme templates path file", true));
+
     // Shell
     entries.push_back(makeEntry("shell", "profile", tr("settings.avatar-path"), tr("settings.avatar-path-desc"),
                                 {"shell", "avatar_path"}, TextSetting{cfg.shell.avatarPath, ""}, "image picture"));
@@ -336,7 +364,7 @@ namespace settings {
                                 SliderSetting{cfg.dock.inactiveOpacity, 0.0f, 1.0f, 0.01f, false}, "unfocused alpha",
                                 true));
     entries.push_back(makeEntry("dock", "pinned-apps", tr("settings.pinned-apps"), tr("settings.pinned-apps-desc"),
-                                {"dock", "pinned"}, ListSetting{cfg.dock.pinned}, "favorites"));
+                                {"dock", "pinned"}, ListSetting{.items = cfg.dock.pinned}, "favorites"));
 
     // Overview
     entries.push_back(makeEntry("overview", "general", tr("common.enabled"), tr("settings.overview-enabled-desc"),
@@ -593,12 +621,12 @@ namespace settings {
                                   "pill alpha", true));
       entries.push_back(makeEntry(section, "widget-list", tr("settings.start-widgets"),
                                   tr("settings.start-widgets-desc"), path("start"),
-                                  ListSetting{selectedBar->startWidgets}, "left"));
+                                  ListSetting{.items = selectedBar->startWidgets}, "left"));
       entries.push_back(makeEntry(section, "widget-list", tr("settings.center-widgets"),
                                   tr("settings.center-widgets-desc"), path("center"),
-                                  ListSetting{selectedBar->centerWidgets}, "middle"));
+                                  ListSetting{.items = selectedBar->centerWidgets}, "middle"));
       entries.push_back(makeEntry(section, "widget-list", tr("settings.end-widgets"), tr("settings.end-widgets-desc"),
-                                  path("end"), ListSetting{selectedBar->endWidgets}, "right"));
+                                  path("end"), ListSetting{.items = selectedBar->endWidgets}, "right"));
     }
 
     // Bar monitor override
@@ -709,12 +737,13 @@ namespace settings {
                     "pill alpha", true));
       entries.push_back(makeEntry(section, "widget-list", tr("settings.start-widgets"),
                                   tr("settings.start-widgets-desc"), mpath("start"),
-                                  ListSetting{ovr.startWidgets.value_or(bar.startWidgets)}, "left"));
+                                  ListSetting{.items = ovr.startWidgets.value_or(bar.startWidgets)}, "left"));
       entries.push_back(makeEntry(section, "widget-list", tr("settings.center-widgets"),
                                   tr("settings.center-widgets-desc"), mpath("center"),
-                                  ListSetting{ovr.centerWidgets.value_or(bar.centerWidgets)}, "middle"));
+                                  ListSetting{.items = ovr.centerWidgets.value_or(bar.centerWidgets)}, "middle"));
       entries.push_back(makeEntry(section, "widget-list", tr("settings.end-widgets"), tr("settings.end-widgets-desc"),
-                                  mpath("end"), ListSetting{ovr.endWidgets.value_or(bar.endWidgets)}, "right"));
+                                  mpath("end"), ListSetting{.items = ovr.endWidgets.value_or(bar.endWidgets)},
+                                  "right"));
     }
 
     return entries;
