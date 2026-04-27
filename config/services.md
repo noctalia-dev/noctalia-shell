@@ -165,7 +165,7 @@ noctalia:panel-toggle clipboard
 noctalia:panel-toggle wallpaper
 noctalia:panel-toggle control-center
 noctalia:media previous
-noctalia:media playPause
+noctalia:media toggle
 noctalia:media next
 ```
 

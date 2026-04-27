@@ -338,7 +338,7 @@ void MprisService::registerIpc(IpcService& ipc) {
       [this](const std::string& args) -> std::string {
         const auto parts = noctalia::ipc::splitWords(args);
         if (parts.size() != 1) {
-          return "error: media requires exactly one action <next|previous|playPause>\n";
+          return "error: media requires exactly one action <next|previous|toggle>\n";
         }
 
         const std::string& action = parts[0];
@@ -348,13 +348,13 @@ void MprisService::registerIpc(IpcService& ipc) {
         if (action == "previous") {
           return previousActive() ? "ok\n" : "error: no active player or Previous unsupported\n";
         }
-        if (action == "playPause" || action == "play-pause") {
+        if (action == "toggle" || action == "playPause" || action == "play-pause") {
           return playPauseActive() ? "ok\n" : "error: no active player or PlayPause unsupported\n";
         }
 
-        return "error: invalid media action (use next, previous, playPause)\n";
+        return "error: invalid media action (use next, previous, toggle)\n";
       },
-      "media <next|previous|playPause>", "Control active media playback");
+      "media <next|previous|toggle>", "Control active media playback");
 }
 
 bool MprisService::playPause(const std::string& busName) {
