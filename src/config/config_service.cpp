@@ -21,6 +21,13 @@
 
 namespace {
 
+  std::string expandUserPathString(const std::string& path) {
+    if (path.empty()) {
+      return path;
+    }
+    return FileUtils::expandUserPath(path).string();
+  }
+
   std::vector<std::string> readStringArray(const toml::node& node) {
     std::vector<std::string> result;
     if (auto* arr = node.as_array()) {
@@ -1059,11 +1066,11 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto v = (*wpTbl)["edge_smoothness"].value<double>())
       wp.edgeSmoothness = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
     if (auto v = (*wpTbl)["directory"].value<std::string>())
-      wp.directory = *v;
+      wp.directory = expandUserPathString(*v);
     if (auto v = (*wpTbl)["directory_light"].value<std::string>())
-      wp.directoryLight = *v;
+      wp.directoryLight = expandUserPathString(*v);
     if (auto v = (*wpTbl)["directory_dark"].value<std::string>())
-      wp.directoryDark = *v;
+      wp.directoryDark = expandUserPathString(*v);
     if (auto* automationTbl = (*wpTbl)["automation"].as_table()) {
       if (auto v = (*automationTbl)["enabled"].value<bool>()) {
         wp.automation.enabled = *v;
@@ -1105,11 +1112,11 @@ void ConfigService::parseTable(const toml::table& tbl) {
           }
         }
         if (auto v = (*monTbl)["directory"].value<std::string>())
-          ovr.directory = *v;
+          ovr.directory = expandUserPathString(*v);
         if (auto v = (*monTbl)["directory_light"].value<std::string>())
-          ovr.directoryLight = *v;
+          ovr.directoryLight = expandUserPathString(*v);
         if (auto v = (*monTbl)["directory_dark"].value<std::string>())
-          ovr.directoryDark = *v;
+          ovr.directoryDark = expandUserPathString(*v);
         wp.monitorOverrides.push_back(std::move(ovr));
       }
     }

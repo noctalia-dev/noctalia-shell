@@ -1,5 +1,6 @@
 #include "config/config_service.h"
 #include "core/log.h"
+#include "util/file_utils.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -579,14 +580,14 @@ void ConfigService::extractWallpaperFromOverrides() {
 
   if (auto* wpDefault = m_overridesTable["wallpaper"]["default"].as_table()) {
     if (auto v = (*wpDefault)["path"].value<std::string>()) {
-      m_defaultWallpaperPath = *v;
+      m_defaultWallpaperPath = FileUtils::expandUserPath(*v).string();
     }
   }
   if (auto* monitors = m_overridesTable["wallpaper"]["monitors"].as_table()) {
     for (const auto& [key, value] : *monitors) {
       if (auto* monTbl = value.as_table()) {
         if (auto v = (*monTbl)["path"].value<std::string>()) {
-          m_monitorWallpaperPaths[std::string(key.str())] = *v;
+          m_monitorWallpaperPaths[std::string(key.str())] = FileUtils::expandUserPath(*v).string();
         }
       }
     }
