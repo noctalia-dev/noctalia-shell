@@ -6,6 +6,7 @@ Noctalia is made possible by the incredible work of many open-source projects an
 
 - **MrDowntempo** - Creator of the Noctalia Owl and moon logo
 - **[SaberJ2X](https://www.reddit.com/user/SaberJ64/)** - Creator of Talia, the Noctalia mascot
+- **[Tabler icons](https://tabler.io/icons)** - The fantastic tabler icons.
 
 ## Runtime Dependencies
 
