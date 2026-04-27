@@ -169,7 +169,7 @@ namespace {
         }
         return;
       }
-      setFill(roleColor(m_ap.active ? ColorRole::Secondary : ColorRole::Surface, m_ap.active ? 0.25f : 1.0f));
+      setFill(roleColor(m_ap.active ? ColorRole::SurfaceVariant : ColorRole::Surface));
       if (hov) {
         setBorder(roleColor(ColorRole::Primary), Style::borderWidth);
       } else {
