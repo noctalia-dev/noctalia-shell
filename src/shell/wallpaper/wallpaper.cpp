@@ -167,11 +167,18 @@ namespace {
 
   constexpr Logger kLog("wallpaper");
 
-  Color resolveWallpaperFillColor(const WallpaperConfig& config) {
-    if (!config.fillColor) {
+  Color resolveWallpaperFillColor(const WallpaperConfig& config, const WaylandOutput& output) {
+    const ThemeColor* fillColor = nullptr;
+    if (const auto* ovr = findWallpaperMonitorOverride(config, output); ovr != nullptr && ovr->fillColor) {
+      fillColor = &*ovr->fillColor;
+    } else if (config.fillColor) {
+      fillColor = &*config.fillColor;
+    }
+
+    if (fillColor == nullptr) {
       return rgba(0.0f, 0.0f, 0.0f, 0.0f);
     }
-    return resolveThemeColor(*config.fillColor);
+    return resolveThemeColor(*fillColor);
   }
 
 } // namespace
@@ -419,6 +426,7 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
   instance->output = output.output;
   instance->scale = output.scale;
   instance->connectorName = output.connectorName;
+  instance->description = output.description;
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-wallpaper",
@@ -566,7 +574,14 @@ void Wallpaper::updateRendererState(WallpaperInstance& instance) {
   }
 
   const auto& wpConfig = m_config->config().wallpaper;
-  const Color fillColor = resolveWallpaperFillColor(wpConfig);
+  WaylandOutput output;
+  output.name = instance.outputName;
+  output.connectorName = instance.connectorName;
+  output.description = instance.description;
+  output.output = instance.output;
+  output.scale = instance.scale;
+  output.done = true;
+  const Color fillColor = resolveWallpaperFillColor(wpConfig, output);
 
   if (instance.fillNode != nullptr) {
     instance.fillNode->setStyle(RoundedRectStyle{

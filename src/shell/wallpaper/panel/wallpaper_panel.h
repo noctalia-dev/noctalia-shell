@@ -1,11 +1,13 @@
 #pragma once
 
 #include "core/timer_manager.h"
+#include "render/core/color.h"
 #include "shell/panel/panel.h"
 #include "shell/wallpaper/panel/wallpaper_scanner.h"
 
 #include <cstddef>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -55,6 +57,7 @@ private:
   void navigateInto(const std::filesystem::path& dir);
   void navigateUp();
   void applyWallpaperFromEntry(const WallpaperEntry& entry);
+  void applyColorWallpaper();
   void applyPage();
   void resetPage();
   void resetSelection();
@@ -66,6 +69,7 @@ private:
   [[nodiscard]] std::size_t pageCount() const noexcept;
   [[nodiscard]] std::filesystem::path activeDirectoryForSelection() const;
   [[nodiscard]] std::filesystem::path rootDirectoryForSelection() const;
+  [[nodiscard]] std::optional<Color> selectedFillColor() const;
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
@@ -85,6 +89,7 @@ private:
   Toggle* m_flattenToggle = nullptr;
   Label* m_flattenLabel = nullptr;
   Button* m_refreshButton = nullptr;
+  Button* m_colorButton = nullptr;
   Button* m_closeButton = nullptr;
   WallpaperPageGrid* m_grid = nullptr;
   Flex* m_pagination = nullptr;
