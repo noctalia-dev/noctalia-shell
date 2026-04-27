@@ -7,8 +7,8 @@
 #include <memory>
 
 Separator::Separator() {
-  auto rect = std::make_unique<RectNode>();
-  m_rect = static_cast<RectNode*>(addChild(std::move(rect)));
+  m_rectStart = static_cast<RectNode*>(addChild(std::make_unique<RectNode>()));
+  m_rectEnd = static_cast<RectNode*>(addChild(std::make_unique<RectNode>()));
   m_paletteConn = paletteChanged().connect([this] { applyPalette(); });
   applyPalette();
 }
@@ -32,19 +32,52 @@ void Separator::doLayout(Renderer& /*renderer*/) {
   if (horizontal) {
     const float w = width() > 0.0f ? width() : (parent() != nullptr ? parent()->width() : 0.0f);
     setSize(w, m_thickness);
-    m_rect->setFrameSize(w, m_thickness);
+    const float halfW = w * 0.5f;
+    m_rectStart->setPosition(0.0f, 0.0f);
+    m_rectStart->setFrameSize(halfW, m_thickness);
+    m_rectEnd->setPosition(halfW, 0.0f);
+    m_rectEnd->setFrameSize(w - halfW, m_thickness);
   } else {
     const float h = height() > 0.0f ? height() : (parent() != nullptr ? parent()->height() : 0.0f);
     setSize(m_thickness, h);
-    m_rect->setFrameSize(m_thickness, h);
+    const float halfH = h * 0.5f;
+    m_rectStart->setPosition(0.0f, 0.0f);
+    m_rectStart->setFrameSize(m_thickness, halfH);
+    m_rectEnd->setPosition(0.0f, halfH);
+    m_rectEnd->setFrameSize(m_thickness, h - halfH);
   }
+
+  applyPalette();
 }
 
 void Separator::applyPalette() {
-  m_rect->setStyle(RoundedRectStyle{
-      .fill = resolveThemeColor(m_color),
+  bool horizontal = true;
+  if (auto* flex = dynamic_cast<Flex*>(parent()); flex != nullptr) {
+    horizontal = flex->direction() == FlexDirection::Vertical;
+  }
+
+  const Color opaque = resolveThemeColor(m_color);
+  Color transparent = opaque;
+  transparent.a = 0.0f;
+  const GradientDirection dir = horizontal ? GradientDirection::Horizontal : GradientDirection::Vertical;
+
+  m_rectStart->setStyle(RoundedRectStyle{
+      .fill = transparent,
+      .fillEnd = opaque,
       .border = clearColor(),
-      .fillMode = FillMode::Solid,
+      .fillMode = FillMode::LinearGradient,
+      .gradientDirection = dir,
+      .radius = 0.0f,
+      .softness = 0.0f,
+      .borderWidth = 0.0f,
+  });
+
+  m_rectEnd->setStyle(RoundedRectStyle{
+      .fill = opaque,
+      .fillEnd = transparent,
+      .border = clearColor(),
+      .fillMode = FillMode::LinearGradient,
+      .gradientDirection = dir,
       .radius = 0.0f,
       .softness = 0.0f,
       .borderWidth = 0.0f,

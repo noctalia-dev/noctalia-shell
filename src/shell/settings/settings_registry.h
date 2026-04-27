@@ -91,5 +91,6 @@ namespace settings {
                         const BarMonitorOverride* selectedMonitorOverride = nullptr,
                         const RegistryEnvironment& env = {});
   [[nodiscard]] bool matchesSettingQuery(const SettingEntry& entry, std::string_view query);
+  [[nodiscard]] std::string_view sectionGlyph(std::string_view section);
 
 } // namespace settings

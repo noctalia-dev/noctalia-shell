@@ -5,6 +5,7 @@
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/input.h"
+#include "ui/controls/label.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
 
@@ -67,19 +68,25 @@ namespace settings {
     sidebar->setDirection(FlexDirection::Vertical);
     sidebar->setAlign(FlexAlign::Stretch);
     sidebar->setGap(Style::spaceXs * scale);
-    sidebar->setSize(132.0f * scale, 0.0f);
-    sidebar->setMinWidth(132.0f * scale);
+    sidebar->setSize(168.0f * scale, 0.0f);
+    sidebar->setMinWidth(168.0f * scale);
     sidebar->setPadding(Style::spaceXs * scale, 0.0f);
 
     for (const auto& section : ctx.sections) {
       const bool selected = section == *selectedSection;
       auto navItem = std::make_unique<Button>();
+      navItem->setGlyph(sectionGlyph(section));
+      navItem->setGlyphSize(Style::fontSizeBody * scale);
       navItem->setText(sectionLabel(section));
+      if (navItem->label() != nullptr) {
+        navItem->label()->setBold(true);
+      }
       navItem->setVariant(selected ? ButtonVariant::TabActive : ButtonVariant::Tab);
       navItem->setContentAlign(ButtonContentAlign::Start);
       navItem->setFontSize(Style::fontSizeBody * scale);
-      navItem->setMinHeight(Style::controlHeight * scale);
+      navItem->setMinHeight(Style::controlHeightLg * scale);
       navItem->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+      navItem->setGap(Style::spaceMd * scale);
       navItem->setRadius(Style::radiusMd * scale);
       navItem->setOnClick([selectedSection, scroll, section, clearTransientState, requestRebuild]() {
         if (*selectedSection != section) {
@@ -96,12 +103,18 @@ namespace settings {
       const bool barSelected =
           *selectedSection == "bar" && *selectedBarName == barName && selectedMonitorOverride->empty();
       auto navItem = std::make_unique<Button>();
+      navItem->setGlyph("menu");
+      navItem->setGlyphSize(Style::fontSizeBody * scale);
       navItem->setText(i18n::tr("settings.bar-label", "name", barName));
+      if (navItem->label() != nullptr) {
+        navItem->label()->setBold(true);
+      }
       navItem->setVariant(barSelected ? ButtonVariant::TabActive : ButtonVariant::Tab);
       navItem->setContentAlign(ButtonContentAlign::Start);
       navItem->setFontSize(Style::fontSizeBody * scale);
-      navItem->setMinHeight(Style::controlHeight * scale);
+      navItem->setMinHeight(Style::controlHeightLg * scale);
       navItem->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+      navItem->setGap(Style::spaceMd * scale);
       navItem->setRadius(Style::radiusMd * scale);
       navItem->setOnClick([selectedSection, selectedBarName, selectedMonitorOverride, scroll, barName,
                            clearTransientState, requestRebuild]() {
@@ -125,13 +138,15 @@ namespace settings {
         const bool ovrSelected =
             *selectedSection == "bar" && *selectedBarName == barName && *selectedMonitorOverride == ovr.match;
         auto ovrItem = std::make_unique<Button>();
+        ovrItem->setGlyph("device-desktop");
+        ovrItem->setGlyphSize(Style::fontSizeCaption * scale);
         ovrItem->setText(i18n::tr("settings.monitor-override-label", "name", ovr.match));
         ovrItem->setVariant(ovrSelected ? ButtonVariant::TabActive : ButtonVariant::Tab);
         ovrItem->setContentAlign(ButtonContentAlign::Start);
         ovrItem->setFontSize(Style::fontSizeCaption * scale);
         ovrItem->setMinHeight(Style::controlHeightSm * scale);
         ovrItem->setPadding(Style::spaceXs * scale, Style::spaceMd * scale, Style::spaceXs * scale,
-                            Style::spaceLg * scale);
+                            Style::spaceMd * 2 * scale);
         ovrItem->setRadius(Style::radiusMd * scale);
         auto match = ovr.match;
         ovrItem->setOnClick([selectedSection, selectedBarName, selectedMonitorOverride, scroll, barName, match,
@@ -255,10 +270,11 @@ namespace settings {
     newBarBtn->setGlyph("add");
     newBarBtn->setVariant(ButtonVariant::Ghost);
     newBarBtn->setContentAlign(ButtonContentAlign::Start);
-    newBarBtn->setFontSize(Style::fontSizeBody * scale);
-    newBarBtn->setGlyphSize(Style::fontSizeBody * scale);
-    newBarBtn->setMinHeight(Style::controlHeight * scale);
+    newBarBtn->setFontSize(Style::fontSizeTitle * scale);
+    newBarBtn->setGlyphSize(Style::fontSizeTitle * scale);
+    newBarBtn->setMinHeight(Style::controlHeightLg * scale);
     newBarBtn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+    newBarBtn->setGap(Style::spaceMd * scale);
     newBarBtn->setRadius(Style::radiusMd * scale);
     newBarBtn->setOnClick([creatingBarName, cfg, clearTransientState, requestRebuild]() {
       clearTransientState();

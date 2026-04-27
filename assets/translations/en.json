@@ -125,7 +125,7 @@
     "inspector-edit-title": "Editing widget",
     "inspector-add-title": "Add widget to {lane}",
     "move-to-lane": "Move to {lane}",
-    "monitor-override-label": "↳ Monitor: {name}",
+    "monitor-override-label": "Monitor: {name}",
     "widget-category": {
       "custom": "Custom",
       "info": "Info",

@@ -161,6 +161,7 @@ void Button::setText(std::string_view text) {
   ensureLabel();
   m_label->setText(text);
   m_label->setVisible(!text.empty());
+  m_label->setStableBaseline(true);
 }
 
 void Button::setGlyph(std::string_view name) {

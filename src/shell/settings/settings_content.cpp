@@ -7,6 +7,7 @@
 #include "ui/controls/button.h"
 #include "ui/controls/checkbox.h"
 #include "ui/controls/flex.h"
+#include "ui/controls/glyph.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/select.h"
@@ -217,16 +218,28 @@ namespace settings {
 
     const auto groupLabel = [](std::string_view group) { return i18n::tr("settings.group." + std::string(group)); };
 
-    const auto makeSection = [&](std::string_view title) -> Flex* {
+    const auto makeSection = [&](std::string_view title, std::string_view sectionKey) -> Flex* {
       auto section = std::make_unique<Flex>();
       section->setDirection(FlexDirection::Vertical);
       section->setAlign(FlexAlign::Stretch);
       section->setGap(Style::spaceSm * scale);
-      section->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
+      section->setPadding(Style::spaceLg * scale);
       section->setCardStyle(scale);
 
-      auto titleLabel = makeLabel(title, Style::fontSizeTitle * scale, roleColor(ColorRole::OnSurface), true);
-      section->addChild(std::move(titleLabel));
+      auto titleRow = std::make_unique<Flex>();
+      titleRow->setDirection(FlexDirection::Horizontal);
+      titleRow->setAlign(FlexAlign::Center);
+      titleRow->setGap(Style::spaceSm * scale);
+
+      auto titleGlyph = std::make_unique<Glyph>();
+      titleGlyph->setGlyph(sectionGlyph(sectionKey));
+      titleGlyph->setGlyphSize(Style::fontSizeHeader * scale);
+      titleGlyph->setColor(roleColor(ColorRole::Primary));
+      titleRow->addChild(std::move(titleGlyph));
+
+      titleRow->addChild(makeLabel(title, Style::fontSizeHeader * scale, roleColor(ColorRole::Primary), true));
+
+      section->addChild(std::move(titleRow));
       auto* raw = section.get();
       content.addChild(std::move(section));
       return raw;
@@ -242,9 +255,7 @@ namespace settings {
         groupHeader->setAlign(FlexAlign::Stretch);
         groupHeader->setGap(Style::spaceSm * scale);
         groupHeader->setPadding(Style::spaceSm * scale, 0.0f, 0.0f, 0.0f);
-        auto sep = std::make_unique<Separator>();
-        sep->setColor(roleColor(ColorRole::Outline, 0.20f));
-        groupHeader->addChild(std::move(sep));
+        groupHeader->addChild(std::make_unique<Separator>());
         groupHeader->addChild(
             makeLabel(title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurfaceVariant), true));
         section.addChild(std::move(groupHeader));
@@ -289,7 +300,7 @@ namespace settings {
       titleRow->setDirection(FlexDirection::Horizontal);
       titleRow->setAlign(FlexAlign::Center);
       titleRow->setGap(Style::spaceSm * scale);
-      titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
+      titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
 
       const auto makeBadge = [&](std::string_view label, const ThemeColor& fill, const ThemeColor& color) {
         auto badge = std::make_unique<Flex>();
@@ -552,7 +563,7 @@ namespace settings {
       titleRow->setDirection(FlexDirection::Horizontal);
       titleRow->setAlign(FlexAlign::Center);
       titleRow->setGap(Style::spaceSm * scale);
-      titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
+      titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
       if (overridden) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
@@ -642,7 +653,7 @@ namespace settings {
       titleRow->setDirection(FlexDirection::Horizontal);
       titleRow->setAlign(FlexAlign::Center);
       titleRow->setGap(Style::spaceSm * scale);
-      titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), false));
+      titleRow->addChild(makeLabel(entry.title, Style::fontSizeBody * scale, roleColor(ColorRole::OnSurface), true));
       if (overridden) {
         auto badge = std::make_unique<Flex>();
         badge->setAlign(FlexAlign::Center);
@@ -940,7 +951,7 @@ namespace settings {
         } else {
           displayTitle = sectionLabel(entry.section);
         }
-        activeSection = makeSection(displayTitle);
+        activeSection = makeSection(displayTitle, entry.section);
       }
       if (activeSection != nullptr) {
         if (entry.group != activeGroupKey) {

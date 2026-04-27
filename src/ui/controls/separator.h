@@ -20,8 +20,9 @@ protected:
 private:
   void applyPalette();
 
-  RectNode* m_rect = nullptr;
-  ThemeColor m_color = roleColor(ColorRole::Outline, 0.5f);
+  RectNode* m_rectStart = nullptr;
+  RectNode* m_rectEnd = nullptr;
+  ThemeColor m_color = roleColor(ColorRole::Outline);
   float m_thickness = 1.0f;
   Signal<>::ScopedConnection m_paletteConn;
 };

@@ -17,7 +17,6 @@
 #include "ui/controls/label.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/controls/select.h"
-#include "ui/controls/separator.h"
 #include "ui/controls/toggle.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -854,10 +853,6 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   });
 
   body->addChild(std::move(sidebar));
-
-  auto sidebarSep = std::make_unique<Separator>();
-  sidebarSep->setColor(roleColor(ColorRole::Outline, 0.25f));
-  body->addChild(std::move(sidebarSep));
 
   auto scroll = std::make_unique<ScrollView>();
   scroll->bindState(&m_contentScrollState);

@@ -229,7 +229,11 @@ const std::unordered_map<std::string, char32_t> kIcons = {
     {"hyprland", 0xEC6A},          // hyprland
 
     // Experimental
-    {"flask", 0xEBD2}             // flask
+    {"flask", 0xEBD2},                  // flask
+    {"color-swatch", 0xEB61},           // color-swatch
+    {"adjustments-horizontal", 0xEC38},  // adjustments-horizontal
+    {"stack-2", 0xEEF7},                // stack-2
+
 };
   // clang-format on
 

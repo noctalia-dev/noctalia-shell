@@ -28,6 +28,7 @@ namespace Style {
   inline constexpr float fontSizeCaption = 12.0f;
   inline constexpr float fontSizeBody = 14.0f;
   inline constexpr float fontSizeTitle = 16.0f;
+  inline constexpr float fontSizeHeader = 20.0f;
 
   inline constexpr float controlHeightSm = 28.0f;
   inline constexpr float controlHeight = 32.0f;

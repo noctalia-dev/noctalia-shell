@@ -191,6 +191,30 @@ namespace settings {
     return entry.searchText.find(q) != std::string::npos;
   }
 
+  std::string_view sectionGlyph(std::string_view section) {
+    if (section == "appearance")
+      return "adjustments-horizontal";
+    if (section == "templates")
+      return "color-swatch";
+    if (section == "shell")
+      return "app-window";
+    if (section == "dock")
+      return "apps";
+    if (section == "overview")
+      return "layout-grid";
+    if (section == "wallpaper")
+      return "wallpaper-selector";
+    if (section == "desktop")
+      return "device-desktop";
+    if (section == "services")
+      return "stack-2";
+    if (section == "notifications")
+      return "bell";
+    if (section == "bar")
+      return "menu";
+    return "settings";
+  }
+
   std::vector<SettingEntry> buildSettingsRegistry(const Config& cfg, const BarConfig* selectedBar,
                                                   const BarMonitorOverride* selectedMonitorOverride,
                                                   const RegistryEnvironment& env) {
