@@ -104,6 +104,7 @@ private:
   void onUpowerStateChangedForHooks();
   void onNetworkStateChangedForHooks(const NetworkState& state);
   void onBluetoothStateChangedForHooks(const BluetoothState& state);
+  [[nodiscard]] std::vector<PollSource*> currentPollSources();
   [[nodiscard]] std::vector<PollSource*> buildPollSources();
 
   WaylandConnection m_wayland;

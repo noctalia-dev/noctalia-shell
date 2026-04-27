@@ -260,6 +260,7 @@ void Application::run() {
   initServices();
   initUi();
   initIpc();
+  (void)buildPollSources();
 
   m_hookManager.reload(m_configService.config().hooks);
   m_hookManager.fire(HookKind::Started);
@@ -267,7 +268,7 @@ void Application::run() {
 
   malloc_trim(0);
 
-  m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, buildPollSources());
+  m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, [this]() { return currentPollSources(); });
   m_mainLoop->run();
   kLog.info("shutdown");
 }
@@ -1045,14 +1046,12 @@ void Application::onBluetoothStateChangedForHooks(const BluetoothState& state) {
   m_prevBluetoothPoweredForHooks = state.powered;
 }
 
-std::vector<PollSource*> Application::buildPollSources() {
+std::vector<PollSource*> Application::currentPollSources() {
   std::vector<PollSource*> sources;
-  if (m_bus != nullptr) {
-    m_busPollSource = std::make_unique<SessionBusPollSource>(*m_bus);
+  if (m_busPollSource != nullptr) {
     sources.push_back(m_busPollSource.get());
   }
-  if (m_systemBus != nullptr) {
-    m_systemBusPollSource = std::make_unique<SystemBusPollSource>(*m_systemBus);
+  if (m_systemBusPollSource != nullptr) {
     sources.push_back(m_systemBusPollSource.get());
   }
   sources.push_back(&m_notificationPollSource);
@@ -1064,19 +1063,16 @@ std::vector<PollSource*> Application::buildPollSources() {
   sources.push_back(&m_timerPollSource);
   sources.push_back(&m_keyRepeatPollSource);
   sources.push_back(&m_workspacePollSource);
-  if (m_pipewireService != nullptr) {
-    m_pipewirePollSource = std::make_unique<PipeWirePollSource>(*m_pipewireService);
+  if (m_pipewirePollSource != nullptr) {
     sources.push_back(m_pipewirePollSource.get());
   }
-  if (m_pipewireSpectrum != nullptr) {
-    m_pipewireSpectrumPollSource = std::make_unique<PipeWireSpectrumPollSource>(*m_pipewireSpectrum);
+  if (m_pipewireSpectrumPollSource != nullptr) {
     sources.push_back(m_pipewireSpectrumPollSource.get());
   }
   if (m_polkitPollSource != nullptr) {
     sources.push_back(m_polkitPollSource.get());
   }
-  if (m_brightnessService != nullptr) {
-    m_brightnessPollSource = std::make_unique<BrightnessPollSource>(*m_brightnessService);
+  if (m_brightnessPollSource != nullptr) {
     sources.push_back(m_brightnessPollSource.get());
   }
   sources.push_back(&m_fileWatchPollSource);
@@ -1086,4 +1082,43 @@ std::vector<PollSource*> Application::buildPollSources() {
   sources.push_back(&m_thumbnailService);
   sources.push_back(&m_asyncTextureCache);
   return sources;
+}
+
+std::vector<PollSource*> Application::buildPollSources() {
+  if (m_bus != nullptr) {
+    if (m_busPollSource == nullptr) {
+      m_busPollSource = std::make_unique<SessionBusPollSource>(*m_bus);
+    }
+  } else {
+    m_busPollSource.reset();
+  }
+  if (m_systemBus != nullptr) {
+    if (m_systemBusPollSource == nullptr) {
+      m_systemBusPollSource = std::make_unique<SystemBusPollSource>(*m_systemBus);
+    }
+  } else {
+    m_systemBusPollSource.reset();
+  }
+  if (m_pipewireService != nullptr) {
+    if (m_pipewirePollSource == nullptr) {
+      m_pipewirePollSource = std::make_unique<PipeWirePollSource>(*m_pipewireService);
+    }
+  } else {
+    m_pipewirePollSource.reset();
+  }
+  if (m_pipewireSpectrum != nullptr) {
+    if (m_pipewireSpectrumPollSource == nullptr) {
+      m_pipewireSpectrumPollSource = std::make_unique<PipeWireSpectrumPollSource>(*m_pipewireSpectrum);
+    }
+  } else {
+    m_pipewireSpectrumPollSource.reset();
+  }
+  if (m_brightnessService != nullptr) {
+    if (m_brightnessPollSource == nullptr) {
+      m_brightnessPollSource = std::make_unique<BrightnessPollSource>(*m_brightnessService);
+    }
+  } else {
+    m_brightnessPollSource.reset();
+  }
+  return currentPollSources();
 }

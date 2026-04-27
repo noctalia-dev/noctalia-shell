@@ -16,8 +16,8 @@ namespace {
   constexpr Logger kLog("main");
 } // namespace
 
-MainLoop::MainLoop(WaylandConnection& wayland, Bar& bar, std::vector<PollSource*> sources)
-    : m_wayland(wayland), m_bar(bar), m_sources(std::move(sources)) {}
+MainLoop::MainLoop(WaylandConnection& wayland, Bar& bar, PollSourcesProvider sourcesProvider)
+    : m_wayland(wayland), m_bar(bar), m_sourcesProvider(std::move(sourcesProvider)) {}
 
 void MainLoop::run() {
   while (m_bar.isRunning() && !Application::s_shutdownRequested) {
@@ -52,15 +52,18 @@ void MainLoop::run() {
       waylandPollEvents |= POLLOUT;
     }
 
-    // Collect poll fds and compute timeout from all sources
+    // Collect poll fds and compute timeout from all sources. The source list is
+    // fetched fresh each iteration so config reloads can add/remove poll sources
+    // (e.g. polkit/brightness) without leaving stale pointers in the loop.
+    const std::vector<PollSource*> sources = m_sourcesProvider ? m_sourcesProvider() : std::vector<PollSource*>{};
     std::vector<pollfd> pollFds;
     pollFds.push_back({.fd = wl_display_get_fd(m_wayland.display()), .events = waylandPollEvents, .revents = 0});
 
     int pollTimeout = -1;
     std::vector<std::size_t> sourceStartIndices;
-    sourceStartIndices.reserve(m_sources.size());
+    sourceStartIndices.reserve(sources.size());
 
-    for (auto* source : m_sources) {
+    for (auto* source : sources) {
       sourceStartIndices.push_back(source->addPollFds(pollFds));
 
       const int t = source->pollTimeoutMs();
@@ -107,8 +110,8 @@ void MainLoop::run() {
     }
 
     // Dispatch all sources
-    for (std::size_t i = 0; i < m_sources.size(); ++i) {
-      m_sources[i]->dispatch(pollFds, sourceStartIndices[i]);
+    for (std::size_t i = 0; i < sources.size(); ++i) {
+      sources[i]->dispatch(pollFds, sourceStartIndices[i]);
     }
   }
 

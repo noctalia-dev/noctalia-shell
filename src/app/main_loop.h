@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <vector>
 
 class Bar;
@@ -8,12 +9,14 @@ class WaylandConnection;
 
 class MainLoop {
 public:
-  MainLoop(WaylandConnection& wayland, Bar& bar, std::vector<PollSource*> sources);
+  using PollSourcesProvider = std::function<std::vector<PollSource*>()>;
+
+  MainLoop(WaylandConnection& wayland, Bar& bar, PollSourcesProvider sourcesProvider);
 
   void run();
 
 private:
   WaylandConnection& m_wayland;
   Bar& m_bar;
-  std::vector<PollSource*> m_sources;
+  PollSourcesProvider m_sourcesProvider;
 };
