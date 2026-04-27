@@ -243,7 +243,25 @@ gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug
 
 ## Configuration
 
-Noctalia reads `$XDG_CONFIG_HOME/noctalia/config.toml` or `~/.config/noctalia/config.toml`.
-If no config file exists, it falls back to built-in defaults in code.
+Noctalia has two configuration layers:
+
+- Declarative user config lives in `$XDG_CONFIG_HOME/noctalia/` or `~/.config/noctalia/`.
+  Noctalia reads every `*.toml` file in that directory, sorted alphabetically, and deep-merges them into one config.
+  A single `config.toml` is the simplest setup, but splitting config into files such as `bar.toml`, `theme.toml`,
+  or `widgets.toml` is also supported.
+- GUI-managed overrides live in `$XDG_STATE_HOME/noctalia/settings.toml` or
+  `~/.local/state/noctalia/settings.toml`. This file is written by Noctalia itself for settings changed through the
+  UI, IPC-backed controls, setup flows, and other runtime actions that need persistence.
+
+Load order is built-in defaults first, then declarative config files, then `settings.toml`.
+Because the state file is applied last, GUI overrides win over matching values in `config.toml`.
+
+Use the declarative config directory for hand-authored, dotfile-managed configuration. Treat `settings.toml` as an
+app-managed override layer: inspect or delete it when you want to understand or clear GUI changes, but do not rely on
+it as the primary place for curated config. Keeping the override file outside `~/.config` also allows the GUI to save
+changes when the config directory is read-only, such as on NixOS.
+
+Both layers are watched for changes and hot-reloaded. If neither declarative config nor state overrides exist,
+Noctalia falls back to built-in defaults in code.
 
 See [CONFIG.md](CONFIG.md) for the full configuration reference, including shell IPC command examples.
