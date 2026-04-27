@@ -90,20 +90,16 @@ Requires [just](https://github.com/casey/just) and [meson](https://mesonbuild.co
 # Debug (default) — builds in build-debug/
 just configure
 just build
+just run
 
 # Optimized release (-march=native, LTO, gc-sections) — builds in build-release/
 just configure release
 just build release
+just run release
 
 # Clean rebuild
 just rebuild          # debug
 just rebuild release  # release
-
-# Run debug
-just run
-
-# Run release
-just run release
 ```
 
 <details>
