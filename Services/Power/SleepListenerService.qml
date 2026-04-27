@@ -25,11 +25,12 @@ Singleton {
         // dbus-monitor output for the signal contains the boolean argument (true for sleep, false for wake).
         // We look for "boolean true" to trigger the lock screen.
         if (line.includes("boolean true")) {
-          Logger.i("SleepListener", "System is preparing for sleep, triggering lock");
-          
-          // Trigger the lock screen via CompositorService.
-          // CompositorService.lock() handles checking if it's already locked.
-          CompositorService.lock();
+          if (Settings.data.general.lockOnSuspend) {
+            Logger.i("SleepListener", "System is preparing for sleep, triggering lock");
+            CompositorService.lock();
+          } else {
+            Logger.d("SleepListener", "System is preparing for sleep, but lockOnSuspend is disabled");
+          }
         } else if (line.includes("boolean false")) {
           Logger.i("SleepListener", "System has resumed from sleep");
         }
