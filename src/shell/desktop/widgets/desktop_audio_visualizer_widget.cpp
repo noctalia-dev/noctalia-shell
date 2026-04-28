@@ -48,7 +48,6 @@ void DesktopAudioVisualizerWidget::create() {
   visualizer->setCentered(true);
   visualizer->setMirrored(m_mirrored);
   visualizer->setSpacingRatio(0.4f);
-  visualizer->setSmoothingTimeMs(60.0f);
   visualizer->setGradient(m_lowColor, m_highColor);
   m_visualizer = visualizer.get();
   rootNode->addChild(std::move(visualizer));

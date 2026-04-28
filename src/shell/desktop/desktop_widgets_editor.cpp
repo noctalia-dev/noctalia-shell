@@ -39,7 +39,7 @@ namespace {
   constexpr Logger kLog("desktop");
   constexpr float kToolbarY = 68.0f;
   constexpr float kDefaultDesktopAudioVisualizerAspectRatio = 240.0f / 96.0f;
-  constexpr float kDefaultDesktopAudioVisualizerMinValue = 0.08f;
+  constexpr float kDefaultDesktopAudioVisualizerMinValue = 0.02f;
   constexpr float kSelectionStroke = 2.0f;
   constexpr float kShadowExpand = 1.0f;
   const Color kShadowColor = rgba(0.0f, 0.0f, 0.0f, 0.45f);

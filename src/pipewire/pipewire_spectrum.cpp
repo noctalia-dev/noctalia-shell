@@ -22,6 +22,9 @@ namespace {
   constexpr Logger kLog{"pipewire_spectrum"};
   constexpr int kDefaultViewBandCount = 32;
   constexpr int kMaxSpectrumBands = 4096 / 2;
+  constexpr float kMinSensitivity = 0.001f;
+  constexpr float kMaxSensitivity = 30.0f;
+  constexpr float kMaxBandLevel = 0.9f;
 
   int clampBandCount(int count) { return std::clamp(count, 1, kMaxSpectrumBands); }
 
@@ -608,9 +611,8 @@ bool PipeWireSpectrum::processListenerView(ListenerState& state, float nrFactor,
     }
     state.prevBands[i] = bands[i];
 
-    bands[i] = state.mem[i] * nrFactor + bands[i];
+    bands[i] = std::clamp(state.mem[i] * nrFactor + bands[i] * (1.0f - nrFactor), 0.0f, kMaxBandLevel);
     state.mem[i] = bands[i];
-    bands[i] = std::clamp(bands[i], 0.0f, 1.0f);
   }
 
   if (m_smoothing) {
@@ -632,7 +634,7 @@ bool PipeWireSpectrum::processListenerView(ListenerState& state, float nrFactor,
 
   bool changed = false;
   for (int i = 0; i < state.bandCount; ++i) {
-    const float clamped = std::clamp(bands[i], 0.0f, 1.0f);
+    const float clamped = std::clamp(bands[i], 0.0f, kMaxBandLevel);
     if (state.values[i] != clamped) {
       state.values[i] = clamped;
       changed = true;
@@ -705,9 +707,9 @@ void PipeWireSpectrum::processFrame() {
   bool silence = true;
 
   for (int i = 0; i < m_analysisBandCount; ++i) {
-    if (bands[i] > 1.0f) {
+    if (bands[i] > kMaxBandLevel) {
       overshoot = true;
-      bands[i] = 1.0f;
+      bands[i] = kMaxBandLevel;
     }
     if (bands[i] > 0.01f) {
       silence = false;
@@ -723,10 +725,10 @@ void PipeWireSpectrum::processFrame() {
       m_sensitivity *= 1.1f;
     }
   }
-  m_sensitivity = std::clamp(m_sensitivity, 0.001f, 50.0f);
+  m_sensitivity = std::clamp(m_sensitivity, kMinSensitivity, kMaxSensitivity);
 
   for (auto& band : bands) {
-    band = std::clamp(band, 0.0f, 1.0f);
+    band = std::clamp(band, 0.0f, kMaxBandLevel);
   }
 
   if (silence) {

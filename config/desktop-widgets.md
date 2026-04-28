@@ -156,6 +156,7 @@ rotation = 0.0
 [widget.settings]
 bands        = 32
 aspect_ratio = 2.5
+min_value    = 0.02
 mirrored     = true
 low_color    = "primary"
 high_color   = "secondary"
@@ -165,6 +166,7 @@ high_color   = "secondary"
 |---------|------|---------|-------------|
 | `bands` | int | `32` | Number of frequency bands |
 | `aspect_ratio` | float | `2.5` | Width-to-height ratio |
+| `min_value` | float | `0.02` | Minimum displayed band height for widgets created in edit mode; omit or set `0.0` for no floor |
 | `mirrored` | bool | `true` | Mirror the spectrum horizontally |
 | `low_color` | string | `"primary"` | Gradient low-end theme role |
 | `high_color` | string | `"primary"` | Gradient high-end theme role |
