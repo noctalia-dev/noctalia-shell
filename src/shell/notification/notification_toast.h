@@ -128,6 +128,9 @@ private:
                                       std::optional<uint32_t> ignoreNotificationId = std::nullopt) const;
   [[nodiscard]] bool fitsOnSurface(const PopupEntry& entry, float surfaceHeight) const;
   [[nodiscard]] float entryHeight(const PopupEntry& entry) const;
+  [[nodiscard]] std::string notificationPosition() const;
+  [[nodiscard]] bool isBottomStacking() const;
+  [[nodiscard]] bool revealFromLeftEdge() const;
   void refreshEntryGeometry(PopupEntry& entry) const;
   [[nodiscard]] float layoutBottomForSurfaceHeight(float surfaceHeight) const;
   [[nodiscard]] float maxPlacementBottom() const;
@@ -149,4 +152,5 @@ private:
   std::unordered_map<std::string, std::string> m_remoteIconCache;
   std::unordered_set<std::string> m_pendingRemoteIconDownloads;
   std::unordered_set<std::string> m_failedRemoteIconDownloads;
+  std::string m_lastPosition;
 };

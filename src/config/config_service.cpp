@@ -1150,14 +1150,24 @@ void ConfigService::parseTable(const toml::table& tbl) {
       osd.position = *v;
   }
 
-  if (auto* notifTbl = tbl["notification"].as_table()) {
+  auto parseNotificationTable = [this](const toml::table& notifTable) {
     auto& notif = m_config.notification;
-    if (auto v = (*notifTbl)["enable_daemon"].value<bool>())
+    if (auto v = notifTable["enable_daemon"].value<bool>())
       notif.enableDaemon = *v;
-    if (auto v = (*notifTbl)["background_opacity"].value<double>())
+    if (auto v = notifTable["position"].value<std::string>())
+      notif.position = *v;
+    if (auto v = notifTable["background_opacity"].value<double>())
       notif.backgroundOpacity = std::clamp(static_cast<float>(*v), 0.0f, 1.0f);
-    if (auto v = (*notifTbl)["background_blur"].value<bool>())
+    if (auto v = notifTable["background_blur"].value<bool>())
       notif.backgroundBlur = *v;
+  };
+
+  if (auto* notifTbl = tbl["notification"].as_table()) {
+    parseNotificationTable(*notifTbl);
+  }
+  // Compatibility alias: accept [notifications] as well.
+  if (auto* notifTbl = tbl["notifications"].as_table()) {
+    parseNotificationTable(*notifTbl);
   }
 
   // Parse [dock]

@@ -105,7 +105,8 @@ namespace {
     return std::clamp(cardNode->width() / static_cast<float>(kCardWidth), 0.0f, 1.0f);
   }
 
-  void applyCardRevealNodes(Node* cardNode, Node* cardContent, Node* cardForeground, float reveal, float y) {
+  void applyCardRevealNodes(Node* cardNode, Node* cardContent, Node* cardForeground, float reveal, float y,
+                            bool revealFromLeft) {
     if (cardNode == nullptr || cardContent == nullptr || cardForeground == nullptr) {
       return;
     }
@@ -114,11 +115,21 @@ namespace {
     const float visibleWidth = std::round(static_cast<float>(kCardWidth) * clampedReveal);
     const float hiddenWidth = static_cast<float>(kCardWidth) - visibleWidth;
 
+    const float contentSlide = contentOffsetForReveal(clampedReveal);
+    if (revealFromLeft) {
+      cardNode->setPosition(kPaddingX, y);
+      cardNode->setSize(visibleWidth, cardNode->height());
+      cardContent->setPosition(0.0f, 0.0f);
+      cardForeground->setOpacity(contentOpacityForReveal(clampedReveal));
+      cardForeground->setPosition(-contentSlide, 0.0f);
+      return;
+    }
+
     cardNode->setPosition(kPaddingX + hiddenWidth, y);
     cardNode->setSize(visibleWidth, cardNode->height());
     cardContent->setPosition(-hiddenWidth, 0.0f);
     cardForeground->setOpacity(contentOpacityForReveal(clampedReveal));
-    cardForeground->setPosition(contentOffsetForReveal(clampedReveal), 0.0f);
+    cardForeground->setPosition(contentSlide, 0.0f);
   }
 
   float cardHeightForEntry(bool hasActions) {
@@ -306,6 +317,10 @@ namespace {
   bool isRemoteIconUrl(std::string_view url) { return uri::isRemoteUrl(url); }
 
   std::string normalizeLocalIconPath(std::string_view iconValue) { return uri::normalizeFileUrl(iconValue); }
+
+  bool isBottomPosition(std::string_view position) { return position.starts_with("bottom_"); }
+
+  bool isLeftPosition(std::string_view position) { return position.ends_with("_left"); }
 
   std::filesystem::path remoteIconCachePath(std::string_view url) {
     const std::filesystem::path cacheDir = std::filesystem::path("/tmp") / "noctalia-notification-icons";
@@ -661,8 +676,8 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
   // Entry animation
   cs.entryAnimId = inst.animations.animate(
       0.0f, 1.0f, Style::animNormal, Easing::EaseOutCubic,
-      [viewport = cs.cardNode, content = cs.cardContent, foreground = cs.cardForeground, targetY](float v) {
-        applyCardRevealNodes(viewport, content, foreground, v, targetY);
+      [this, viewport = cs.cardNode, content = cs.cardContent, foreground = cs.cardForeground, targetY](float v) {
+        applyCardRevealNodes(viewport, content, foreground, v, targetY, revealFromLeftEdge());
       },
       [&inst, entryIndex]() {
         if (entryIndex < inst.cards.size()) {
@@ -862,7 +877,9 @@ void NotificationToast::dismissCardFromInstance(Instance& inst, std::size_t entr
   bool isDriver = (m_instances.size() > 0 && m_instances[0].get() == &inst);
   cs.exitAnimId = inst.animations.animate(
       startReveal, 0.0f, Style::animNormal, Easing::EaseInOutQuad,
-      [card, content, foreground, targetY](float v) { applyCardRevealNodes(card, content, foreground, v, targetY); },
+      [this, card, content, foreground, targetY](float v) {
+        applyCardRevealNodes(card, content, foreground, v, targetY, revealFromLeftEdge());
+      },
       [this, &inst, entryIndex, isDriver, removingId]() {
         if (entryIndex < inst.cards.size()) {
           inst.cards[entryIndex].exitAnimId = 0;
@@ -1001,10 +1018,9 @@ void NotificationToast::evictOverlappingEntries(std::size_t anchorIndex) {
     }
 
     const float entryTop = m_entries[i].y;
-    if (entryTop + 0.5f <= anchorTop) {
-      continue;
-    }
-    if (entryTop + 0.5f >= anchorBottom + kGap) {
+    const float entryBottom = entryTop + m_entries[i].height;
+    const bool separated = (entryBottom + kGap <= anchorTop + 0.5f) || (anchorBottom + kGap <= entryTop + 0.5f);
+    if (separated) {
       continue;
     }
 
@@ -1057,6 +1073,17 @@ float NotificationToast::entryHeight(const PopupEntry& entry) const {
   }
   return cardHeightForEntry(!entry.actions.empty());
 }
+
+std::string NotificationToast::notificationPosition() const {
+  if (m_config == nullptr || m_config->config().notification.position.empty()) {
+    return "top_right";
+  }
+  return m_config->config().notification.position;
+}
+
+bool NotificationToast::isBottomStacking() const { return isBottomPosition(notificationPosition()); }
+
+bool NotificationToast::revealFromLeftEdge() const { return isLeftPosition(notificationPosition()); }
 
 void NotificationToast::refreshEntryGeometry(PopupEntry& entry) const {
   if (m_renderContext == nullptr) {
@@ -1119,10 +1146,27 @@ std::optional<float> NotificationToast::findPlacementY(float candidateHeight,
     }
     occupied.push_back({entry.y, entry.y + entry.height});
   }
-  std::sort(occupied.begin(), occupied.end(), [](const Interval& a, const Interval& b) { return a.top < b.top; });
-
-  float cursor = kPaddingTop;
   const float bottom = maxPlacementBottom();
+  if (isBottomStacking()) {
+    std::sort(occupied.begin(), occupied.end(),
+              [](const Interval& a, const Interval& b) { return a.bottom > b.bottom; });
+    float cursorBottom = bottom;
+    for (const auto& interval : occupied) {
+      const float candidateTop = cursorBottom - candidateHeight;
+      if (candidateTop >= interval.bottom + kGap - 0.5f) {
+        return candidateTop;
+      }
+      cursorBottom = std::min(cursorBottom, interval.top - kGap);
+    }
+    const float candidateTop = cursorBottom - candidateHeight;
+    if (candidateTop >= kPaddingTop - 0.5f) {
+      return candidateTop;
+    }
+    return std::nullopt;
+  }
+
+  std::sort(occupied.begin(), occupied.end(), [](const Interval& a, const Interval& b) { return a.top < b.top; });
+  float cursor = kPaddingTop;
   for (const auto& interval : occupied) {
     if (cursor + candidateHeight <= interval.top - kGap + 0.5f) {
       return cursor;
@@ -1158,6 +1202,15 @@ void NotificationToast::ensureSurfaces() {
   }
 
   const auto surfaceWidth = static_cast<uint32_t>(kSurfaceWidth);
+  const std::string position = notificationPosition();
+  if (!m_instances.empty() && position != m_lastPosition) {
+    for (auto& inst : m_instances) {
+      inst->animations.cancelAll();
+      inst->inputDispatcher.setSceneRoot(nullptr);
+    }
+    m_instances.clear();
+  }
+  m_lastPosition = position;
 
   for (const auto& output : m_wayland->outputs()) {
     if (output.output == nullptr) {
@@ -1182,17 +1235,38 @@ void NotificationToast::ensureSurfaces() {
     inst->output = output.output;
     inst->scale = output.scale;
 
+    std::uint32_t anchor = LayerShellAnchor::Top | LayerShellAnchor::Right;
+    std::int32_t marginTop = kSurfaceMargin;
+    std::int32_t marginRight = kSurfaceMargin;
+    std::int32_t marginBottom = kSurfaceMargin;
+    std::int32_t marginLeft = kSurfaceMargin;
+    if (position == "top_left") {
+      anchor = LayerShellAnchor::Top | LayerShellAnchor::Left;
+    } else if (position == "top_center") {
+      anchor = LayerShellAnchor::Top;
+      marginLeft = 0;
+      marginRight = 0;
+    } else if (position == "bottom_left") {
+      anchor = LayerShellAnchor::Bottom | LayerShellAnchor::Left;
+    } else if (position == "bottom_center") {
+      anchor = LayerShellAnchor::Bottom;
+      marginLeft = 0;
+      marginRight = 0;
+    } else if (position == "bottom_right") {
+      anchor = LayerShellAnchor::Bottom | LayerShellAnchor::Right;
+    }
+
     auto surfaceConfig = LayerSurfaceConfig{
         .nameSpace = "noctalia-notifications",
         .layer = LayerShellLayer::Top,
-        .anchor = LayerShellAnchor::Top | LayerShellAnchor::Right,
+        .anchor = anchor,
         .width = surfaceWidth,
         .height = surfaceHeight,
         .exclusiveZone = 0,
-        .marginTop = kSurfaceMargin,
-        .marginRight = kSurfaceMargin,
-        .marginBottom = kSurfaceMargin,
-        .marginLeft = kSurfaceMargin,
+        .marginTop = marginTop,
+        .marginRight = marginRight,
+        .marginBottom = marginBottom,
+        .marginLeft = marginLeft,
         .keyboard = LayerShellKeyboard::None,
         .defaultWidth = surfaceWidth,
         .defaultHeight = surfaceHeight,
@@ -1327,7 +1401,7 @@ void NotificationToast::updateInputRegion(Instance& inst) const {
 float NotificationToast::cardReveal(const Instance::CardState& cs) const { return cardRevealFromNode(cs.cardNode); }
 
 void NotificationToast::applyCardReveal(Instance::CardState& cs, float reveal, float y) const {
-  applyCardRevealNodes(cs.cardNode, cs.cardContent, cs.cardForeground, reveal, y);
+  applyCardRevealNodes(cs.cardNode, cs.cardContent, cs.cardForeground, reveal, y, revealFromLeftEdge());
 }
 
 InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardContent, Node** outCardForeground,

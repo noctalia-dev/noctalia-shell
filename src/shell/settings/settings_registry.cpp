@@ -556,6 +556,16 @@ namespace settings {
     entries.push_back(makeEntry("notifications", "toasts", tr("settings.toast-blur"), tr("settings.toast-blur-desc"),
                                 {"notification", "background_blur"}, ToggleSetting{cfg.notification.backgroundBlur},
                                 "popup"));
+    entries.push_back(makeEntry("notifications", "toasts", tr("settings.osd-position"),
+                                tr("settings.osd-position-desc"), {"notification", "position"},
+                                plainSelect({{"top_right", "settings.opt.top-right"},
+                                             {"top_left", "settings.opt.top-left"},
+                                             {"top_center", "settings.opt.top-center"},
+                                             {"bottom_right", "settings.opt.bottom-right"},
+                                             {"bottom_left", "settings.opt.bottom-left"},
+                                             {"bottom_center", "settings.opt.bottom-center"}},
+                                            cfg.notification.position),
+                                "toast popup placement anchor"));
     entries.push_back(makeEntry("notifications", "toasts", tr("settings.toast-opacity"),
                                 tr("settings.toast-opacity-desc"), {"notification", "background_opacity"},
                                 SliderSetting{cfg.notification.backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "popup"));
