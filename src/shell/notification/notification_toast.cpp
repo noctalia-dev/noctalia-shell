@@ -39,9 +39,11 @@ namespace {
   constexpr int kCardHeightWithActions = 170;
 
   constexpr float kGap = Style::spaceSm;
-  constexpr float kPadding = Style::spaceMd;
+  constexpr float kPaddingX = Style::spaceMd;
+  constexpr float kPaddingTop = 0.0f;
+  constexpr float kPaddingBottom = Style::spaceMd;
   constexpr int kFallbackVisibleCards = 5;
-  constexpr std::int32_t kSurfaceMarginTopExtra = 4;
+  constexpr std::int32_t kSurfaceMarginTopExtra = 0;
   constexpr std::int32_t kSurfaceMarginRight = 8;
   constexpr std::int32_t kSurfaceMarginBottom = 8;
   constexpr float kQueuedY = -1.0f;
@@ -82,9 +84,9 @@ namespace {
   constexpr int kToastMaxBodyLines = 3;
   constexpr int kMaxToastCardHeight = 320;
 
-  constexpr int kSurfaceWidth = static_cast<int>(kCardWidth + kPadding * 2);
-  constexpr int kFallbackSurfaceHeight =
-      static_cast<int>(kMaxToastCardHeight * kFallbackVisibleCards + kGap * (kFallbackVisibleCards - 1) + kPadding * 2);
+  constexpr int kSurfaceWidth = static_cast<int>(kCardWidth + kPaddingX * 2);
+  constexpr int kFallbackSurfaceHeight = static_cast<int>(
+      kMaxToastCardHeight * kFallbackVisibleCards + kGap * (kFallbackVisibleCards - 1) + kPaddingTop + kPaddingBottom);
 
   float contentOpacityForReveal(float reveal) {
     const float v = std::clamp(reveal, 0.0f, 1.0f);
@@ -114,7 +116,7 @@ namespace {
     const float visibleWidth = std::round(static_cast<float>(kCardWidth) * clampedReveal);
     const float hiddenWidth = static_cast<float>(kCardWidth) - visibleWidth;
 
-    cardNode->setPosition(kPadding + hiddenWidth, y);
+    cardNode->setPosition(kPaddingX + hiddenWidth, y);
     cardNode->setSize(visibleWidth, cardNode->height());
     cardContent->setPosition(-hiddenWidth, 0.0f);
     cardForeground->setOpacity(contentOpacityForReveal(clampedReveal));
@@ -133,6 +135,23 @@ namespace {
       return output.height / std::max(1, output.scale);
     }
     return 0;
+  }
+
+  BarConfig resolvedBarConfigForOutput(ConfigService* configService, WaylandConnection* wayland, wl_output* output) {
+    BarConfig barConfig;
+    if (configService == nullptr || configService->config().bars.empty()) {
+      return barConfig;
+    }
+
+    barConfig = configService->config().bars.front();
+    if (wayland == nullptr || output == nullptr) {
+      return barConfig;
+    }
+
+    if (const auto* wlOutput = wayland->findOutputByWl(output); wlOutput != nullptr) {
+      return ConfigService::resolveForOutput(barConfig, *wlOutput);
+    }
+    return barConfig;
   }
 
   float bodyTopForSummary(float summaryHeight) {
@@ -1074,7 +1093,7 @@ void NotificationToast::refreshEntryGeometry(PopupEntry& entry) const {
 }
 
 float NotificationToast::layoutBottomForSurfaceHeight(float surfaceHeight) const {
-  return std::max(kPadding, surfaceHeight - kPadding);
+  return std::max(kPaddingTop, surfaceHeight - kPaddingBottom);
 }
 
 float NotificationToast::maxPlacementBottom() const {
@@ -1121,7 +1140,7 @@ std::optional<float> NotificationToast::findPlacementY(float candidateHeight,
   }
   std::sort(occupied.begin(), occupied.end(), [](const Interval& a, const Interval& b) { return a.top < b.top; });
 
-  float cursor = kPadding;
+  float cursor = kPaddingTop;
   const float bottom = maxPlacementBottom();
   for (const auto& interval : occupied) {
     if (cursor + candidateHeight <= interval.top - kGap + 0.5f) {
@@ -1137,17 +1156,20 @@ std::optional<float> NotificationToast::findPlacementY(float candidateHeight,
 }
 
 uint32_t NotificationToast::surfaceHeightForOutput(wl_output* output) const {
-  std::uint32_t barThickness = Style::barThicknessDefault;
-  if (m_config != nullptr && !m_config->config().bars.empty()) {
-    barThickness = static_cast<uint32_t>(m_config->config().bars[0].thickness);
-  }
+  const BarConfig barConfig = resolvedBarConfigForOutput(m_config, m_wayland, output);
+  const bool barTop = barConfig.position == "top";
+  const bool barBottom = barConfig.position == "bottom";
+  const std::int32_t barThickness = std::max(0, barConfig.thickness);
+  const std::int32_t barMarginV = std::max(0, barConfig.marginV);
+  const std::int32_t topReserved = (barTop ? barThickness : 0) + static_cast<std::int32_t>(kSurfaceMarginTopExtra);
+  const std::int32_t bottomReserved =
+      (barBottom ? (barMarginV + barThickness) : 0) + static_cast<std::int32_t>(kSurfaceMarginBottom);
 
   if (m_wayland != nullptr && output != nullptr) {
     if (const auto* wlOutput = m_wayland->findOutputByWl(output); wlOutput != nullptr) {
       const std::int32_t logicalHeight = outputLogicalHeight(*wlOutput);
       if (logicalHeight > 0) {
-        const std::int32_t available =
-            logicalHeight - static_cast<std::int32_t>(barThickness) - kSurfaceMarginTopExtra - kSurfaceMarginBottom;
+        const std::int32_t available = logicalHeight - topReserved - bottomReserved;
         return static_cast<uint32_t>(std::max(1, available));
       }
     }
@@ -1161,11 +1183,6 @@ uint32_t NotificationToast::surfaceHeightForOutput(wl_output* output) const {
 void NotificationToast::ensureSurfaces() {
   if (m_wayland == nullptr || m_renderContext == nullptr) {
     return;
-  }
-
-  std::uint32_t barThickness = Style::barThicknessDefault;
-  if (m_config != nullptr && !m_config->config().bars.empty()) {
-    barThickness = static_cast<uint32_t>(m_config->config().bars[0].thickness);
   }
 
   const auto surfaceWidth = static_cast<uint32_t>(kSurfaceWidth);
@@ -1192,6 +1209,10 @@ void NotificationToast::ensureSurfaces() {
     auto inst = std::make_unique<Instance>();
     inst->output = output.output;
     inst->scale = output.scale;
+    const BarConfig barConfig = resolvedBarConfigForOutput(m_config, m_wayland, output.output);
+    const bool barTop = barConfig.position == "top";
+    const std::int32_t barThickness = std::max(0, barConfig.thickness);
+    const std::int32_t marginTop = (barTop ? barThickness : 0) + static_cast<std::int32_t>(kSurfaceMarginTopExtra);
 
     auto surfaceConfig = LayerSurfaceConfig{
         .nameSpace = "noctalia-notifications",
@@ -1200,7 +1221,7 @@ void NotificationToast::ensureSurfaces() {
         .width = surfaceWidth,
         .height = surfaceHeight,
         .exclusiveZone = 0,
-        .marginTop = static_cast<std::int32_t>(barThickness) + kSurfaceMarginTopExtra,
+        .marginTop = marginTop,
         .marginRight = kSurfaceMarginRight,
         .keyboard = LayerShellKeyboard::None,
         .defaultWidth = surfaceWidth,
