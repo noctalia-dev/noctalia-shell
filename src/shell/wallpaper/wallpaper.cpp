@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/log.h"
 #include "core/random.h"
+#include "ipc/ipc_service.h"
 #include "render/core/shared_texture_cache.h"
 #include "render/programs/rect_program.h"
 #include "render/render_context.h"
@@ -326,6 +327,18 @@ void Wallpaper::onSecondTick() {
   runAutomation(minuteStamp);
 }
 
+void Wallpaper::registerIpc(IpcService& ipc) {
+  ipc.registerHandler(
+      "wallpaper-random",
+      [this](const std::string&) -> std::string {
+        if (!switchToRandomWallpaper()) {
+          return "error: failed to pick a random wallpaper\n";
+        }
+        return "ok\n";
+      },
+      "wallpaper-random", "Switch to a random wallpaper immediately");
+}
+
 void Wallpaper::syncInstances() {
   const auto& outputs = m_wayland->outputs();
 
@@ -427,6 +440,35 @@ void Wallpaper::runAutomation(std::int64_t minuteStamp) {
   }
   m_config->setWallpaperPath(std::nullopt, picked);
   kLog.info("automation set all outputs → {}", picked);
+}
+
+bool Wallpaper::switchToRandomWallpaper() {
+  if (m_config == nullptr || !m_config->config().wallpaper.enabled || m_instances.empty()) {
+    return false;
+  }
+
+  const auto& wallpaper = m_config->config().wallpaper;
+  std::vector<std::string> candidates;
+  collectWallpaperCandidates(wallpaper.directory, wallpaper.automation.recursive, candidates);
+  if (candidates.empty()) {
+    return false;
+  }
+
+  const std::string currentDefault = m_config->getDefaultWallpaperPath();
+  const std::string picked = pickRandomWallpaperPath(candidates, currentDefault);
+  if (picked.empty() || picked == currentDefault) {
+    return false;
+  }
+
+  ConfigService::WallpaperBatch batch(*m_config);
+  for (const auto& inst : m_instances) {
+    if (!inst->connectorName.empty()) {
+      m_config->setWallpaperPath(inst->connectorName, picked);
+    }
+  }
+  m_config->setWallpaperPath(std::nullopt, picked);
+  kLog.info("ipc set all outputs → {}", picked);
+  return true;
 }
 
 void Wallpaper::createInstance(const WaylandOutput& output) {

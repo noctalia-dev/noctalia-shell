@@ -9,6 +9,7 @@
 #include <vector>
 
 class ConfigService;
+class IpcService;
 class RenderContext;
 class SharedTextureCache;
 class WaylandConnection;
@@ -24,12 +25,14 @@ public:
   void onOutputChange();
   void onStateChange();
   void onSecondTick();
+  void registerIpc(IpcService& ipc);
 
 private:
   void reload();
   void syncInstances();
   void resetAutomationState();
   void runAutomation(std::int64_t minuteStamp);
+  [[nodiscard]] bool switchToRandomWallpaper();
   void createInstance(const WaylandOutput& output);
   void loadWallpaper(WallpaperInstance& instance, const std::string& path);
   void startTransition(WallpaperInstance& instance);
