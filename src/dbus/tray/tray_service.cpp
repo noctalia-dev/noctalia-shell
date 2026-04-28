@@ -23,7 +23,12 @@ namespace {
   static constexpr auto k_default_item_path = "/StatusNotifierItem";
   static constexpr auto k_ayatana_item_path = "/org/ayatana/NotificationItem";
 
-  bool isStatusNotifierItemBusName(std::string_view value) { return value.starts_with("org.kde.StatusNotifierItem-"); }
+  bool isStatusNotifierItemBusName(std::string_view value) {
+    // Different implementations use different bus-name prefixes for SNI items.
+    return value.starts_with("org.kde.StatusNotifierItem-") ||
+           value.starts_with("org.freedesktop.StatusNotifierItem-") ||
+           value.starts_with("org.ayatana.StatusNotifierItem-");
+  }
 
   bool starts_with_slash(std::string_view value) { return !value.empty() && value.front() == '/'; }
 
@@ -170,6 +175,18 @@ namespace {
         out.emplace_back(std::get<0>(entry), std::get<1>(entry), std::get<2>(entry));
       }
       return out;
+    } catch (const sdbus::Error&) {
+    }
+
+    try {
+      const auto single = value.get<IconPixmapTuple>();
+      return {single};
+    } catch (const sdbus::Error&) {
+    }
+
+    try {
+      const auto single = value.get<IconPixmapStruct>();
+      return {IconPixmapTuple{std::get<0>(single), std::get<1>(single), std::get<2>(single)}};
     } catch (const sdbus::Error&) {
     }
 
