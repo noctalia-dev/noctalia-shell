@@ -75,6 +75,9 @@ void PanelManager::setOpenSettingsWindowCallback(std::function<void()> callback)
 }
 
 void PanelManager::openSettingsWindow() {
+  if (isOpen() && !m_closing) {
+    closePanel();
+  }
   if (m_openSettingsWindow) {
     m_openSettingsWindow();
   }
