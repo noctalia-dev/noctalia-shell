@@ -1759,6 +1759,8 @@
       "automation-change-mode-alphabetical": "Alphabetical",
       "automation-change-mode-description": "Choose how wallpapers are selected when changing automatically.",
       "automation-change-mode-label": "Change mode",
+      "automation-favorites-only-description": "Only use wallpapers marked as favorites for scheduled changes.",
+      "automation-favorites-only-label": "Favorites only",
       "automation-custom-interval-description": "Enter time as HH:MM (e.g. 01:30).",
       "automation-custom-interval-label": "Custom interval",
       "automation-interval-description": "How often to change wallpapers automatically.",

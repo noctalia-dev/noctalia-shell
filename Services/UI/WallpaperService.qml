@@ -147,6 +147,14 @@ Singleton {
         root.setNextWallpaper();
       }
     }
+    function onAutomationFavoritesOnlyChanged() {
+      // Reset alphabetical indices when source list changes
+      root.alphabeticalIndices = {};
+      if (Settings.data.wallpaper.automationEnabled) {
+        root.restartRandomWallpaperTimer();
+        root.setNextWallpaper();
+      }
+    }
     function onViewModeChanged() {
       // Reset browse paths to root when mode changes
       root.currentBrowsePaths = {};
@@ -790,7 +798,7 @@ Singleton {
         // Pick a random wallpaper per screen
         for (var i = 0; i < Quickshell.screens.length; i++) {
           var screenName = Quickshell.screens[i].name;
-          var wallpaperList = getWallpapersList(screenName);
+          var wallpaperList = _getAutomationWallpapersList(screenName);
 
           if (wallpaperList.length > 0) {
             var randomPath = _pickUnusedRandom(screenName, wallpaperList);
@@ -799,7 +807,7 @@ Singleton {
         }
       } else {
         // Pick a random wallpaper for the specified screen
-        var wallpaperList = getWallpapersList(screen);
+        var wallpaperList = _getAutomationWallpapersList(screen);
         if (wallpaperList.length > 0) {
           var randomPath = _pickUnusedRandom(screen, wallpaperList);
           changeWallpaper(randomPath, screen);
@@ -808,7 +816,7 @@ Singleton {
     } else {
       // Pick a random wallpaper common to all screens
       // We can use any screenName here, so we just pick the primary one.
-      var wallpaperList = getWallpapersList(Screen.name);
+      var wallpaperList = _getAutomationWallpapersList(Screen.name);
       if (wallpaperList.length > 0) {
         var randomPath = _pickUnusedRandom("all", wallpaperList);
         changeWallpaper(randomPath, screen);
@@ -870,7 +878,7 @@ Singleton {
       // Pick next alphabetical wallpaper per screen
       for (var i = 0; i < Quickshell.screens.length; i++) {
         var screenName = Quickshell.screens[i].name;
-        var wallpaperList = getWallpapersList(screenName);
+        var wallpaperList = _getAutomationWallpapersList(screenName);
 
         if (wallpaperList.length > 0) {
           // Get or initialize index for this screen
@@ -892,7 +900,7 @@ Singleton {
       }
     } else {
       // Pick next alphabetical wallpaper common to all screens
-      var wallpaperList = getWallpapersList(Screen.name);
+      var wallpaperList = _getAutomationWallpapersList(Screen.name);
       if (wallpaperList.length > 0) {
         // Use primary screen name as key for single directory mode
         var key = "all";
@@ -946,6 +954,29 @@ Singleton {
       return wallpaperLists[screenName];
     }
     return [];
+  }
+
+  function _getAutomationWallpapersList(screenName) {
+    var wallpapers = getWallpapersList(screenName);
+    if (!Settings.data.wallpaper.automationFavoritesOnly) {
+      return wallpapers;
+    }
+
+    var favorites = Settings.data.wallpaper.favorites || [];
+    if (favorites.length === 0) {
+      return [];
+    }
+
+    var favoriteSet = new Set();
+    for (var i = 0; i < favorites.length; i++) {
+      if (favorites[i] && favorites[i].path) {
+        favoriteSet.add(Settings.preprocessPath(favorites[i].path));
+      }
+    }
+
+    return wallpapers.filter(function (path) {
+      return favoriteSet.has(Settings.preprocessPath(path));
+    });
   }
 
   // -------------------------------------------------------------------
