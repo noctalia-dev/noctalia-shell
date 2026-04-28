@@ -664,6 +664,13 @@ void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath,
       busName = serviceOrPath.substr(0, slash);
       objectPath = serviceOrPath.substr(slash);
     }
+
+    if (looks_like_dbus_name(senderBusName) && !senderBusName.empty() && !busName.empty() && busName.front() == ':' &&
+        senderBusName.front() == ':' && busName != senderBusName) {
+      kLog.info("tray register unique-name mismatch serviceBus='{}' senderBus='{}' -> using sender", busName,
+                senderBusName);
+      busName = senderBusName;
+    }
   }
 
   if (busName.empty() || objectPath.empty()) {
@@ -973,6 +980,7 @@ bool TrayService::ensureItemProxy(const std::string& itemId) {
 }
 
 void TrayService::refreshItemMetadata(const std::string& itemId) {
+  const auto t0 = std::chrono::steady_clock::now();
   const auto itemIt = m_items.find(itemId);
   const auto proxyIt = m_itemProxies.find(itemId);
   if (itemIt == m_items.end() || proxyIt == m_itemProxies.end()) {
@@ -1035,6 +1043,9 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
              itemIt->second.overlayWidth, itemIt->second.overlayHeight, itemIt->second.attentionWidth,
              itemIt->second.attentionHeight);
   ensureMenuCache(itemId, itemIt->second.busName, itemIt->second.menuObjectPath);
+  const auto elapsedMs =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+  kLog.info("refreshItemMetadata done id={} elapsed={}ms", itemId, elapsedMs);
   emitChanged();
 }
 
