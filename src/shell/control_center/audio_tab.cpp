@@ -313,6 +313,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   outputSlider->setControlHeight(Style::controlHeight * scale);
   outputSlider->setTrackHeight(6.0f * scale);
   outputSlider->setThumbSize(16.0f * scale);
+  outputSlider->setWheelAdjustEnabled(true);
   outputSlider->setOnValueChanged([this](float value) {
     if (m_syncingOutputSlider || m_audio == nullptr) {
       return;
@@ -367,6 +368,7 @@ std::unique_ptr<Flex> AudioTab::create() {
   inputSlider->setControlHeight(Style::controlHeight * scale);
   inputSlider->setTrackHeight(6.0f * scale);
   inputSlider->setThumbSize(16.0f * scale);
+  inputSlider->setWheelAdjustEnabled(true);
   inputSlider->setOnValueChanged([this](float value) {
     if (m_syncingInputSlider || m_audio == nullptr) {
       return;
