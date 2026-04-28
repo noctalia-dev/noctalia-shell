@@ -9,8 +9,11 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <chrono>
+#include <optional>
 #include <poll.h>
 #include <stdexcept>
+#include <typeinfo>
 #include <wayland-client-core.h>
 
 namespace {
@@ -79,6 +82,33 @@ void MainLoop::run() {
     if (flushBlocked && pollTimeout >= 0 && pollTimeout < 16) {
       pollTimeout = 16;
     }
+
+#ifndef NDEBUG
+    // Spin canary: if a source votes pollTimeoutMs()==0 for >100ms continuously,
+    // the loop is hot-looping. Asymmetric guards between pollTimeoutMs() and
+    // dispatch() are the usual cause. Throttled to one warn per 5s.
+    {
+      using SteadyClock = std::chrono::steady_clock;
+      static std::optional<SteadyClock::time_point> s_zeroSince;
+      static std::optional<SteadyClock::time_point> s_lastWarn;
+      const auto now = SteadyClock::now();
+      if (pollTimeout == 0) {
+        if (!s_zeroSince) {
+          s_zeroSince = now;
+        } else if (now - *s_zeroSince > std::chrono::milliseconds(100) &&
+                   (!s_lastWarn || now - *s_lastWarn > std::chrono::seconds(5))) {
+          s_lastWarn = now;
+          for (auto* src : sources) {
+            if (src->pollTimeoutMs() == 0) {
+              kLog.warn("main loop spin: {} keeps voting timeout=0", typeid(*src).name());
+            }
+          }
+        }
+      } else {
+        s_zeroSince.reset();
+      }
+    }
+#endif
 
     const int pollResult = ::poll(pollFds.data(), pollFds.size(), pollTimeout);
     if (pollResult < 0) {
