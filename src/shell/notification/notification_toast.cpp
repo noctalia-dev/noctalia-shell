@@ -43,7 +43,7 @@ namespace {
   constexpr float kPaddingTop = 0.0f;
   constexpr float kPaddingBottom = Style::spaceMd;
   constexpr int kFallbackVisibleCards = 5;
-  constexpr std::int32_t kSurfaceMarginTopExtra = 0;
+  constexpr std::int32_t kSurfaceMarginTopExtra = 8;
   constexpr std::int32_t kSurfaceMarginRight = 8;
   constexpr std::int32_t kSurfaceMarginBottom = 8;
   constexpr float kQueuedY = -1.0f;
@@ -1220,7 +1220,7 @@ void NotificationToast::ensureSurfaces() {
         .anchor = LayerShellAnchor::Top | LayerShellAnchor::Right,
         .width = surfaceWidth,
         .height = surfaceHeight,
-        .exclusiveZone = 0,
+        .exclusiveZone = -1,
         .marginTop = marginTop,
         .marginRight = kSurfaceMarginRight,
         .keyboard = LayerShellKeyboard::None,
