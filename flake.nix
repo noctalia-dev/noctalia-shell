@@ -103,10 +103,10 @@
       );
 
       apps = forEachSystem (
-        { system, ... }: {
+        { pkgs, system }: {
           default = {
             type = "app";
-            program = "${self.packages.${system}.default}/bin/noctalia";
+            program = lib.getExe self.packages.${system}.default;
           };
         }
       );
