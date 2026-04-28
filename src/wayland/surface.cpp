@@ -17,6 +17,18 @@ namespace {
       .done = &Surface::handleFrameDone,
   };
 
+  class ScopedBoolFlag {
+  public:
+    explicit ScopedBoolFlag(bool& flag) noexcept : m_flag(flag) { m_flag = true; }
+    ~ScopedBoolFlag() { m_flag = false; }
+
+    ScopedBoolFlag(const ScopedBoolFlag&) = delete;
+    ScopedBoolFlag& operator=(const ScopedBoolFlag&) = delete;
+
+  private:
+    bool& m_flag;
+  };
+
 } // namespace
 
 Surface::Surface(WaylandConnection& connection) : m_connection(connection) {}
@@ -337,11 +349,12 @@ void Surface::preparePendingFrame() {
   const bool needsLayout = m_layoutRequested;
   m_updateRequested = false;
   m_layoutRequested = false;
+  ScopedBoolFlag preparing{m_inPrepareFrame};
   m_prepareFrameCallback(needsUpdate, needsLayout);
 }
 
 void Surface::kickFrameLoop() {
-  if (!m_running || !m_configured || m_frameCallback != nullptr || m_inFrameHandler) {
+  if (!m_running || !m_configured || m_frameCallback != nullptr || m_inFrameHandler || m_inPrepareFrame) {
     return;
   }
 

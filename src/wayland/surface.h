@@ -109,6 +109,7 @@ private:
   bool m_running = false;
   bool m_configured = false;
   bool m_inFrameHandler = false;
+  bool m_inPrepareFrame = false;
   std::uint32_t m_width = 0;
   std::uint32_t m_height = 0;
   std::int32_t m_bufferScale = 1;
