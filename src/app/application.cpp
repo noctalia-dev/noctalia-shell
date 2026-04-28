@@ -860,6 +860,7 @@ void Application::initUi() {
   m_dock.initialize(m_wayland, &m_configService, &m_renderContext);
   m_desktopWidgetsController.initialize(m_wayland, &m_configService, m_pipewireSpectrum.get(), &m_weatherService,
                                         &m_renderContext, m_mprisService.get(), &m_httpClient, m_systemMonitor.get());
+  m_iconThemePollSource.setChangeCallback([this]() { onIconThemeChanged(); });
 
   std::string lastShellFontFamily = m_configService.config().shell.fontFamily;
   m_configService.addReloadCallback([this, lastShellFontFamily]() mutable {
@@ -1076,6 +1077,14 @@ bool Application::runUserCommand(const std::string& command) {
 
 bool Application::runIdleCommand(const std::string& command) { return runUserCommand(command); }
 
+void Application::onIconThemeChanged() {
+  kLog.info("system icon theme changed; refreshing icon consumers");
+  m_bar.reload();
+  m_dock.reload();
+  m_panelManager.onIconThemeChanged();
+  m_notificationToast.requestLayout();
+}
+
 void Application::onUpowerStateChangedForHooks() {
   if (m_upowerService == nullptr) {
     return;
@@ -1146,6 +1155,7 @@ std::vector<PollSource*> Application::currentPollSources() {
   sources.push_back(&m_configPollSource);
   sources.push_back(&m_desktopWidgetsPollSource);
   sources.push_back(&m_desktopEntryPollSource);
+  sources.push_back(&m_iconThemePollSource);
   sources.push_back(&m_clipboardPollSource);
   sources.push_back(&m_timerPollSource);
   sources.push_back(&m_keyRepeatPollSource);

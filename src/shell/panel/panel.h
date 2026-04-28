@@ -28,6 +28,7 @@ public:
   virtual void onFrameTick(float deltaMs) { (void)deltaMs; }
   virtual void onOpen(std::string_view context) { (void)context; }
   virtual void onClose() {}
+  virtual void onIconThemeChanged() {}
   [[nodiscard]] virtual bool isContextActive(std::string_view context) const {
     (void)context;
     return false;

@@ -417,6 +417,27 @@ void LauncherPanel::onClose() {
   clearReleasedRoot();
 }
 
+void LauncherPanel::onIconThemeChanged() {
+  std::string selectedProvider;
+  std::string selectedId;
+  if (m_selectedIndex < m_results.size()) {
+    selectedProvider = m_results[m_selectedIndex].providerName;
+    selectedId = m_results[m_selectedIndex].id;
+  }
+
+  onInputChanged(m_query);
+
+  if (!selectedId.empty()) {
+    for (std::size_t i = 0; i < m_results.size(); ++i) {
+      if (m_results[i].providerName == selectedProvider && m_results[i].id == selectedId) {
+        m_selectedIndex = i;
+        break;
+      }
+    }
+  }
+  m_pendingScrollToSelected = true;
+}
+
 InputArea* LauncherPanel::initialFocusArea() const { return m_input != nullptr ? m_input->inputArea() : nullptr; }
 
 void LauncherPanel::onInputChanged(const std::string& text) {

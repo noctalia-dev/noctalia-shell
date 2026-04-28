@@ -648,6 +648,15 @@ void PanelManager::refresh() {
   m_surface->requestUpdate();
 }
 
+void PanelManager::onIconThemeChanged() {
+  if (!isOpen() || m_activePanel == nullptr || m_surface == nullptr) {
+    return;
+  }
+
+  m_activePanel->onIconThemeChanged();
+  m_surface->requestUpdate();
+}
+
 void PanelManager::requestUpdateOnly() {
   if (!isOpen() || m_surface == nullptr) {
     return;

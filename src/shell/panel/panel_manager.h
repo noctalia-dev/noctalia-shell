@@ -70,6 +70,7 @@ public:
   // re-applies the compositor blur region (which depends on shell.panel.background_blur,
   // affects both attached and layer-shell panels). No-op when no panel is open.
   void onConfigReloaded();
+  void onIconThemeChanged();
   void requestUpdateOnly();
   void requestLayout();
   // Requests a redraw on the active panel surface without re-running panel

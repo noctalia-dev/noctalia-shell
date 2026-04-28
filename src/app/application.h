@@ -60,6 +60,7 @@
 #include "system/brightness_poll_source.h"
 #include "system/brightness_service.h"
 #include "system/desktop_entry_poll_source.h"
+#include "system/icon_theme_poll_source.h"
 #include "system/night_light_manager.h"
 #include "system/system_monitor_service.h"
 #include "system/telemetry_service.h"
@@ -101,6 +102,7 @@ private:
   void syncPolkitAgent();
   bool runUserCommand(const std::string& command);
   bool runIdleCommand(const std::string& command);
+  void onIconThemeChanged();
   void onUpowerStateChangedForHooks();
   void onNetworkStateChangedForHooks(const NetworkState& state);
   void onBluetoothStateChangedForHooks(const BluetoothState& state);
@@ -176,6 +178,7 @@ private:
   ConfigPollSource m_configPollSource{m_configService};
   DesktopWidgetsPollSource m_desktopWidgetsPollSource{m_desktopWidgetsController};
   DesktopEntryPollSource m_desktopEntryPollSource;
+  IconThemePollSource m_iconThemePollSource;
   ClipboardPollSource m_clipboardPollSource{m_clipboardService};
   TimerPollSource m_timerPollSource;
   KeyRepeatPollSource m_keyRepeatPollSource{m_wayland};

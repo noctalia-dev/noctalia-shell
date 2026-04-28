@@ -31,6 +31,7 @@ public:
   void create() override;
   void onOpen(std::string_view context) override;
   void onClose() override;
+  void onIconThemeChanged() override;
 
   [[nodiscard]] float preferredWidth() const override { return scaled(560.0f); }
   [[nodiscard]] float preferredHeight() const override { return scaled(460.0f); }
