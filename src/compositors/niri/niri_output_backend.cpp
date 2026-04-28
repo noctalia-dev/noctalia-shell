@@ -1,6 +1,7 @@
 #include "compositors/niri/niri_output_backend.h"
 
 #include "core/log.h"
+#include "core/process.h"
 #include "util/string_utils.h"
 
 #include <array>
@@ -116,3 +117,11 @@ std::optional<std::string> NiriOutputBackend::focusedOutputName() const {
   kLog.debug("failed to resolve focused output from niri IPC");
   return std::nullopt;
 }
+
+namespace compositors::niri {
+
+  bool setOutputPower(bool on) {
+    return process::runAsync({"niri", "msg", "action", on ? "power-on-monitors" : "power-off-monitors"});
+  }
+
+} // namespace compositors::niri

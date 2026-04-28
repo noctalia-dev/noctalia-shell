@@ -14,3 +14,9 @@ public:
 private:
   bool m_enabled = false;
 };
+
+namespace compositors::niri {
+
+  [[nodiscard]] bool setOutputPower(bool on);
+
+} // namespace compositors::niri

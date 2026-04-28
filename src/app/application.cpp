@@ -1,6 +1,7 @@
 #include "application.h"
 
 #include "app/poll_source.h"
+#include "compositors/output_backend.h"
 #include "core/build_info.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
@@ -976,6 +977,26 @@ void Application::initIpc() {
         return "ok\n";
       },
       "notification-clear-history", "Clear notification history");
+
+  m_ipcService.registerHandler(
+      "dpms-on",
+      [this](const std::string&) -> std::string {
+        if (!compositors::setOutputPower(m_wayland, true)) {
+          return "error: failed to execute dpms-on command\n";
+        }
+        return "ok\n";
+      },
+      "dpms-on", "Turn monitors on");
+
+  m_ipcService.registerHandler(
+      "dpms-off",
+      [this](const std::string&) -> std::string {
+        if (!compositors::setOutputPower(m_wayland, false)) {
+          return "error: failed to execute dpms-off command\n";
+        }
+        return "ok\n";
+      },
+      "dpms-off", "Turn monitors off");
 
   if (m_brightnessService != nullptr) {
     m_brightnessService->registerIpc(m_ipcService,
