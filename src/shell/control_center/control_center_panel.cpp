@@ -213,6 +213,10 @@ void ControlCenterPanel::onFrameTick(float deltaMs) {
 
 void ControlCenterPanel::onOpen(std::string_view context) { selectTab(tabFromContext(context)); }
 
+bool ControlCenterPanel::isContextActive(std::string_view context) const {
+  return m_activeTab == tabFromContext(context);
+}
+
 void ControlCenterPanel::onClose() {
   for (auto& tab : m_tabs) {
     tab->setActive(false);

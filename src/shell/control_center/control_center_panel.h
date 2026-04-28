@@ -51,6 +51,7 @@ public:
   void onFrameTick(float deltaMs) override;
   void onOpen(std::string_view context) override;
   void onClose() override;
+  [[nodiscard]] bool isContextActive(std::string_view context) const override;
   [[nodiscard]] bool deferExternalRefresh() const override;
   [[nodiscard]] bool deferPointerRelayout() const override;
 

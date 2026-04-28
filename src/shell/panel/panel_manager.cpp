@@ -525,6 +525,10 @@ void PanelManager::togglePanel(const std::string& panelId, wl_output* output, fl
   // Treat a closing panel as closed: re-clicking while it animates out reopens it immediately.
   if (isOpen() && !m_closing && m_activePanelId == panelId) {
     if (!context.empty() && m_activePanel != nullptr) {
+      if (m_activePanel->isContextActive(context)) {
+        closePanel();
+        return;
+      }
       m_activePanel->onOpen(context);
       refresh();
       return;
