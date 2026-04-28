@@ -948,6 +948,35 @@ void Application::initIpc() {
       [this](const std::string&) -> std::string { return m_notificationManager.doNotDisturb() ? "on\n" : "off\n"; },
       "notification-dnd-status", "Print notification Do Not Disturb state");
 
+  m_ipcService.registerHandler(
+      "notification-clear-active",
+      [this](const std::string&) -> std::string {
+        std::vector<uint32_t> activeIds;
+        activeIds.reserve(m_notificationManager.all().size());
+        for (const auto& notification : m_notificationManager.all()) {
+          activeIds.push_back(notification.id);
+        }
+        for (const uint32_t id : activeIds) {
+          (void)m_notificationManager.close(id, CloseReason::Dismissed);
+        }
+        if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
+          m_panelManager.refresh();
+        }
+        return "ok\n";
+      },
+      "notification-clear-active", "Dismiss all currently active notifications");
+
+  m_ipcService.registerHandler(
+      "notification-clear-history",
+      [this](const std::string&) -> std::string {
+        m_notificationManager.clearHistory();
+        if (m_panelManager.isOpen() && m_panelManager.activePanelId() == "control-center") {
+          m_panelManager.refresh();
+        }
+        return "ok\n";
+      },
+      "notification-clear-history", "Clear notification history");
+
   if (m_brightnessService != nullptr) {
     m_brightnessService->registerIpc(m_ipcService,
                                      [this]() { m_brightnessOsd.suppressFor(std::chrono::milliseconds(250)); });

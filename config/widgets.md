@@ -326,6 +326,8 @@ No configurable settings.
 ```sh
 noctalia msg toggle-notification-dnd
 noctalia msg notification-dnd-status
+noctalia msg notification-clear-active
+noctalia msg notification-clear-history
 ```
 
 When DND is enabled, incoming notifications are stored in history/control center but toast popups are suppressed.
