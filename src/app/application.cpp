@@ -833,6 +833,9 @@ void Application::initUi() {
       [this](wl_output* output, std::optional<AttachedPanelGeometry> geometry) {
         m_bar.setAttachedPanelGeometry(output, geometry);
       });
+  m_panelManager.setClickShieldExcludeRectsProvider(
+      [this](wl_output* output) { return m_bar.surfaceRectsForOutput(output); });
+  m_panelManager.setFocusGrabBarSurfacesProvider([this]() { return m_bar.allBarSurfaces(); });
   m_bar.setAutoHideSuppressionCallback([this]() { return m_trayMenu.isOpen() || m_panelManager.isAttachedOpen(); });
   // When config reloads, refresh any open panel: bar-driven attached decoration restyle and
   // shell-driven compositor blur.

@@ -68,6 +68,13 @@ void PanelManager::initialize(WaylandConnection& wayland, ConfigService* config,
   m_wayland = &wayland;
   m_config = config;
   m_renderContext = renderContext;
+  m_clickShield.initialize(wayland);
+  m_focusGrab.initialize(wayland);
+  m_focusGrab.setOnCleared([this]() {
+    if (isOpen() && !m_closing) {
+      closePanel();
+    }
+  });
 }
 
 void PanelManager::setOpenSettingsWindowCallback(std::function<void()> callback) {
@@ -86,6 +93,14 @@ void PanelManager::openSettingsWindow() {
 void PanelManager::setAttachedPanelGeometryCallback(
     std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> callback) {
   m_attachedPanelGeometryCallback = std::move(callback);
+}
+
+void PanelManager::setClickShieldExcludeRectsProvider(std::function<std::vector<InputRect>(wl_output*)> provider) {
+  m_clickShieldExcludeRectsProvider = std::move(provider);
+}
+
+void PanelManager::setFocusGrabBarSurfacesProvider(std::function<std::vector<wl_surface*>()> provider) {
+  m_focusGrabBarSurfacesProvider = std::move(provider);
 }
 
 void PanelManager::registerPanel(const std::string& id, std::unique_ptr<Panel> content) {
@@ -116,6 +131,11 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
   m_activePanelId = panelId;
   m_activePanel->setContentScale(resolvePanelContentScale(m_config));
   m_pendingOpenContext = std::string(context);
+
+  // Map shields BEFORE the panel surface is created/committed. Within a
+  // single layer, wlroots stacks surfaces by mapping order — the shields
+  // need to be mapped first so the panel ends up on top of them.
+  activateClickShield();
 
   const auto panelWidth = static_cast<std::uint32_t>(m_activePanel->preferredWidth());
   const auto panelHeight = static_cast<std::uint32_t>(m_activePanel->preferredHeight());
@@ -200,6 +220,7 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
   };
 
   const auto resetPanelOpenState = [this]() {
+    deactivateOutsideClickHandlers();
     m_surface.reset();
     m_layerSurface = nullptr;
     m_output = nullptr;
@@ -353,10 +374,13 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
         .marginRight = 0,
         .marginBottom = 0,
         .marginLeft = surfaceX,
-        // Force exclusive keyboard so panels with text inputs (search field, etc.) work without
-        // a prior click — matches the previous subsurface behavior where the bar borrowed
-        // exclusive focus on the panel's behalf.
-        .keyboard = LayerShellKeyboard::Exclusive,
+        // Default: force exclusive keyboard so panels with text inputs (search field, etc.) work
+        // without a prior click — matches the previous subsurface behavior where the bar
+        // borrowed exclusive focus on the panel's behalf. On Hyprland, Exclusive on a layer
+        // surface also grabs the pointer (any click anywhere reports on this surface), which
+        // breaks outside-click dismissal. When the focus_grab protocol is available we drop to
+        // OnDemand and let the grab grant keyboard focus to the panel per the spec.
+        .keyboard = m_focusGrab.available() ? LayerShellKeyboard::OnDemand : LayerShellKeyboard::Exclusive,
         .defaultWidth = surfaceWidth,
         .defaultHeight = surfaceHeight,
     };
@@ -378,6 +402,15 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
       applyPanelCompositorBlur();
       publishAttachedPanelGeometry(m_attachedRevealProgress);
       m_surface->requestRedraw();
+      // Defer the focus grab to the next tick: Hyprland's focus_grab seems to
+      // need the whitelisted surfaces to actually be mapped, which only
+      // happens after the configure round-trip completes.
+      const std::uint64_t gen = m_destroyGeneration;
+      DeferredCall::callLater([this, gen]() {
+        if (m_destroyGeneration == gen) {
+          activateFocusGrab();
+        }
+      });
       kLog.debug("panel manager: opened \"{}\" as attached layer-shell", panelId);
       return;
     }
@@ -429,7 +462,59 @@ void PanelManager::openPanel(const std::string& panelId, wl_output* output, floa
   m_output = output;
   m_wlSurface = m_surface->wlSurface();
   applyPanelCompositorBlur();
+  // Defer the focus grab to the next tick — see attached-path comment above.
+  const std::uint64_t gen = m_destroyGeneration;
+  DeferredCall::callLater([this, gen]() {
+    if (m_destroyGeneration == gen) {
+      activateFocusGrab();
+    }
+  });
   kLog.debug("panel manager: opened \"{}\"", panelId);
+}
+
+void PanelManager::activateClickShield() {
+  if (m_activePanel == nullptr || m_wayland == nullptr) {
+    return;
+  }
+  // Hyprland: prefer the native focus-grab path; the shield can't reliably
+  // exclude bar surfaces there (input region exclusion isn't honored when
+  // keyboard_interactivity is Exclusive, which is what unlocks pointer
+  // delivery). Skip the shield and let activateFocusGrab() handle it later.
+  if (m_focusGrab.available()) {
+    return;
+  }
+  std::vector<wl_output*> outputs;
+  outputs.reserve(m_wayland->outputs().size());
+  for (const auto& wlOutput : m_wayland->outputs()) {
+    if (wlOutput.output != nullptr) {
+      outputs.push_back(wlOutput.output);
+    }
+  }
+  m_clickShield.activate(outputs, m_activePanel->layer(), m_clickShieldExcludeRectsProvider);
+}
+
+void PanelManager::activateFocusGrab() {
+  if (!m_focusGrab.available() || m_wlSurface == nullptr) {
+    return;
+  }
+  // Whitelist the panel + every bar surface. Clicks on whitelisted surfaces
+  // pass through normally so bar widgets can toggle the next panel; clicks
+  // anywhere else clear the grab and we close the panel via the `cleared`
+  // event handler. The panel uses OnDemand keyboard mode on Hyprland (the
+  // focus_grab grants keyboard focus to the panel on its own) so the panel
+  // surface no longer grabs the pointer the way Exclusive does.
+  std::vector<wl_surface*> whitelist;
+  whitelist.push_back(m_wlSurface);
+  if (m_focusGrabBarSurfacesProvider) {
+    auto bars = m_focusGrabBarSurfacesProvider();
+    whitelist.insert(whitelist.end(), bars.begin(), bars.end());
+  }
+  m_focusGrab.activate(whitelist);
+}
+
+void PanelManager::deactivateOutsideClickHandlers() {
+  m_clickShield.deactivate();
+  m_focusGrab.deactivate();
 }
 
 void PanelManager::closePanel() {
@@ -438,6 +523,10 @@ void PanelManager::closePanel() {
   }
 
   kLog.debug("panel manager: closing \"{}\"", m_activePanelId);
+
+  // Drop the outside-click handlers as soon as close starts. During the close
+  // animation we want clicks on apps to behave normally, not re-trigger close.
+  deactivateOutsideClickHandlers();
 
   // Disable input during close animation
   m_inputDispatcher.setSceneRoot(nullptr);
@@ -486,6 +575,9 @@ void PanelManager::destroyPanel() {
   if (m_attachedToBar && m_attachedPanelGeometryCallback && m_output != nullptr) {
     m_attachedPanelGeometryCallback(m_output, std::nullopt);
   }
+  // Defensive: closePanel deactivates first, but destroyPanel can also be
+  // reached directly (e.g. when openPanel preempts an open panel).
+  deactivateOutsideClickHandlers();
   m_animations.cancelAll();
   m_closing = false;
   m_pointerInside = false;

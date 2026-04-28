@@ -4,6 +4,7 @@
 #include "shell/bar/widget_factory.h"
 #include "shell/panel/attached_panel_context.h"
 #include "ui/dialogs/layer_popup_host.h"
+#include "wayland/surface.h"
 
 #include <functional>
 #include <memory>
@@ -68,6 +69,13 @@ public:
   [[nodiscard]] bool isRunning() const noexcept;
   [[nodiscard]] std::optional<LayerPopupParentContext> popupParentContextForSurface(wl_surface* surface) const noexcept;
   [[nodiscard]] std::optional<LayerPopupParentContext> preferredPopupParentContext(wl_output* output) const noexcept;
+  // Returns the bar surface rects on the given output in output-local logical
+  // coordinates. Used by the panel click shield to keep clicks on bar widgets
+  // flowing to the bar instead of dismissing the active panel.
+  [[nodiscard]] std::vector<InputRect> surfaceRectsForOutput(wl_output* output) const;
+  // Returns every bar wl_surface across all outputs. Used as the focus-grab
+  // whitelist on Hyprland so bar widgets keep receiving clicks.
+  [[nodiscard]] std::vector<wl_surface*> allBarSurfaces() const;
   void setAttachedPanelGeometry(wl_output* output, std::optional<AttachedPanelGeometry> geometry);
   void beginAttachedPopup(wl_surface* surface);
   void endAttachedPopup(wl_surface* surface);

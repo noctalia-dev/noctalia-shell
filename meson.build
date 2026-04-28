@@ -265,6 +265,8 @@ foreach _p : [
     'protocols/wlr-foreign-toplevel-management-unstable-v1.xml'],
   ['wlr-data-control-unstable-v1',
     'protocols/wlr-data-control-unstable-v1.xml'],
+  ['hyprland-focus-grab-v1',
+    'protocols/hyprland-focus-grab-v1.xml'],
 ]
   _name = _p[0]
   _xml  = _p[1]
@@ -428,6 +430,8 @@ _noctalia_sources = files(
   'src/shell/osd/audio_osd.cpp',
   'src/shell/osd/brightness_osd.cpp',
   'src/shell/osd/osd_overlay.cpp',
+  'src/shell/panel/panel_click_shield.cpp',
+  'src/shell/panel/panel_focus_grab.cpp',
   'src/shell/panel/panel_manager.cpp',
   'src/shell/polkit/polkit_panel.cpp',
   'src/shell/session/session_panel.cpp',

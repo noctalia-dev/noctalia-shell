@@ -571,6 +571,87 @@ std::optional<LayerPopupParentContext> Bar::preferredPopupParentContext(wl_outpu
              : std::nullopt;
 }
 
+std::vector<InputRect> Bar::surfaceRectsForOutput(wl_output* output) const {
+  std::vector<InputRect> rects;
+  if (m_wayland == nullptr || output == nullptr) {
+    return rects;
+  }
+
+  const WaylandOutput* wlOutput = m_wayland->findOutputByWl(output);
+  if (wlOutput == nullptr) {
+    return rects;
+  }
+  // logicalWidth/Height become valid only after xdg_output.done; before that
+  // we cannot accurately place a bottom/right anchored bar.
+  if (wlOutput->logicalWidth <= 0 || wlOutput->logicalHeight <= 0) {
+    return rects;
+  }
+  const std::int32_t outputW = wlOutput->logicalWidth;
+  const std::int32_t outputH = wlOutput->logicalHeight;
+
+  for (const auto& instance : m_instances) {
+    if (instance == nullptr || instance->output != output || instance->surface == nullptr) {
+      continue;
+    }
+    const auto* surface = instance->surface.get();
+    const std::uint32_t anchor = surface->anchor();
+    const bool aTop = (anchor & LayerShellAnchor::Top) != 0;
+    const bool aBottom = (anchor & LayerShellAnchor::Bottom) != 0;
+    const bool aLeft = (anchor & LayerShellAnchor::Left) != 0;
+    const bool aRight = (anchor & LayerShellAnchor::Right) != 0;
+    const std::int32_t mTop = surface->marginTop();
+    const std::int32_t mRight = surface->marginRight();
+    const std::int32_t mBottom = surface->marginBottom();
+    const std::int32_t mLeft = surface->marginLeft();
+    // surface->width()/height() may be 0 before configure; fall back to BarConfig
+    // thickness so we still publish a sensible exclusion for fresh surfaces.
+    const std::int32_t surfW = static_cast<std::int32_t>(surface->width());
+    const std::int32_t surfH = static_cast<std::int32_t>(surface->height());
+
+    std::int32_t rectW = surfW;
+    std::int32_t rectH = surfH;
+    std::int32_t rectX = 0;
+    std::int32_t rectY = 0;
+
+    if (aLeft && aRight) {
+      rectW = std::max(0, outputW - mLeft - mRight);
+      rectX = mLeft;
+    } else if (aRight) {
+      rectX = std::max(0, outputW - mRight - rectW);
+    } else {
+      rectX = mLeft;
+    }
+
+    if (aTop && aBottom) {
+      rectH = std::max(0, outputH - mTop - mBottom);
+      rectY = mTop;
+    } else if (aBottom) {
+      rectY = std::max(0, outputH - mBottom - rectH);
+    } else {
+      rectY = mTop;
+    }
+
+    if (rectW > 0 && rectH > 0) {
+      rects.push_back(InputRect{rectX, rectY, rectW, rectH});
+    }
+  }
+
+  return rects;
+}
+
+std::vector<wl_surface*> Bar::allBarSurfaces() const {
+  std::vector<wl_surface*> surfaces;
+  surfaces.reserve(m_instances.size());
+  for (const auto& instance : m_instances) {
+    if (instance != nullptr && instance->surface != nullptr) {
+      if (wl_surface* s = instance->surface->wlSurface(); s != nullptr) {
+        surfaces.push_back(s);
+      }
+    }
+  }
+  return surfaces;
+}
+
 void Bar::setAttachedPanelGeometry(wl_output* output, std::optional<AttachedPanelGeometry> geometry) {
   BarInstance* instance = instanceForOutput(output);
   if (instance == nullptr) {

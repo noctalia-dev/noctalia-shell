@@ -5,6 +5,8 @@
 #include "render/scene/node.h"
 #include "shell/panel/attached_panel_context.h"
 #include "shell/panel/panel.h"
+#include "shell/panel/panel_click_shield.h"
+#include "shell/panel/panel_focus_grab.h"
 #include "ui/dialogs/layer_popup_host.h"
 #include "wayland/layer_surface.h"
 #include "wayland/surface.h"
@@ -44,6 +46,13 @@ public:
   void setOpenSettingsWindowCallback(std::function<void()> callback);
   void openSettingsWindow();
   void setAttachedPanelGeometryCallback(std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> callback);
+  // Callback to query the bar surface rects on a given output, in output-local
+  // coordinates. The click shield's input region excludes these rects so
+  // clicks on bar widgets keep flowing to the bar while a panel is open.
+  void setClickShieldExcludeRectsProvider(std::function<std::vector<InputRect>(wl_output*)> provider);
+  // Callback returning every bar wl_surface. Used to seed the Hyprland focus
+  // grab whitelist so bar widgets keep receiving clicks while a panel is open.
+  void setFocusGrabBarSurfacesProvider(std::function<std::vector<wl_surface*>()> provider);
 
   void registerPanel(const std::string& id, std::unique_ptr<Panel> content);
 
@@ -88,6 +97,13 @@ private:
   void buildScene(std::uint32_t width, std::uint32_t height);
   void prepareFrame(bool needsUpdate, bool needsLayout);
   void destroyPanel();
+  // Called BEFORE the panel surface commits so shields sit below the panel
+  // within the layer-shell layer. No-op when the focus-grab path is in use.
+  void activateClickShield();
+  // Called AFTER the panel surface is mapped so the panel wl_surface is
+  // available for the whitelist. No-op when focus-grab is unavailable.
+  void activateFocusGrab();
+  void deactivateOutsideClickHandlers();
   void applyAttachedReveal(float progress);
   void publishAttachedPanelGeometry(float revealProgress);
   // Restyle the attached-panel decoration nodes (bg fill, drop shadow, contact shadow)
@@ -104,6 +120,10 @@ private:
   RenderContext* m_renderContext = nullptr;
   std::function<void()> m_openSettingsWindow;
   std::function<void(wl_output*, std::optional<AttachedPanelGeometry>)> m_attachedPanelGeometryCallback;
+  std::function<std::vector<InputRect>(wl_output*)> m_clickShieldExcludeRectsProvider;
+  std::function<std::vector<wl_surface*>()> m_focusGrabBarSurfacesProvider;
+  PanelClickShield m_clickShield;
+  PanelFocusGrab m_focusGrab;
 
   std::unique_ptr<Surface> m_surface;
   LayerSurface* m_layerSurface = nullptr;

@@ -60,6 +60,11 @@ public:
   void setClickThrough(bool clickThrough);
   void setKeyboardInteractivity(LayerShellKeyboard mode);
   [[nodiscard]] LayerShellKeyboard keyboardInteractivity() const noexcept { return m_config.keyboard; }
+  [[nodiscard]] std::uint32_t anchor() const noexcept { return m_config.anchor; }
+  [[nodiscard]] std::int32_t marginTop() const noexcept { return m_config.marginTop; }
+  [[nodiscard]] std::int32_t marginRight() const noexcept { return m_config.marginRight; }
+  [[nodiscard]] std::int32_t marginBottom() const noexcept { return m_config.marginBottom; }
+  [[nodiscard]] std::int32_t marginLeft() const noexcept { return m_config.marginLeft; }
 
   static void handleConfigure(void* data, zwlr_layer_surface_v1* layerSurface, std::uint32_t serial,
                               std::uint32_t width, std::uint32_t height);
