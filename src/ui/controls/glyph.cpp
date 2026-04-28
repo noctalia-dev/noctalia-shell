@@ -70,24 +70,19 @@ void Glyph::measure(Renderer& renderer) {
     return;
   }
   auto metrics = renderer.measureGlyph(m_glyphNode->codepoint(), m_glyphNode->fontSize());
-  auto refMetrics = renderer.measureText("A", m_logicalFontSize);
 
-  // Bounding box uses the "A" text reference — same height as Label — so glyphs
-  // and labels at the same font size are treated identically by Flex layout.
-  m_baselineOffset = -refMetrics.top;
+  // Tabler icons are designed on a square viewport. Keep layout stable by
+  // exposing that square instead of each icon's ink box; only the internal
+  // glyph origin uses measured ink extents for centering.
   const bool preserveAssignedWidth = flexGrow() > 0.0f && assignedWidth > 0.0f;
-  const float finalWidth = preserveAssignedWidth ? assignedWidth : metrics.width;
-  Node::setSize(std::round(finalWidth), std::round(refMetrics.bottom - refMetrics.top));
+  const float boxSize = std::round(m_logicalFontSize);
+  const float finalWidth = preserveAssignedWidth ? assignedWidth : boxSize;
+  Node::setSize(std::round(finalWidth), boxSize);
 
-  // MDI glyphs fill more of the em-square than text, so placing the glyph at
-  // the text baseline leaves its ink above the label's ink. Center the glyph
-  // ink on the reference ink center (computed from rounded container height so
-  // glyph and label containers agree on the same midline at any scale).
-  const float containerHeight = height();
   const float glyphCenterX = (metrics.left + metrics.right) * 0.5f;
   const float glyphInkCenter = (metrics.top + metrics.bottom) * 0.5f; // relative to baseline
-  const float glyphNodeY = containerHeight * 0.5f - glyphInkCenter;
-  m_glyphNode->setPosition(std::round(width() * 0.5f - glyphCenterX), std::round(glyphNodeY));
+  m_baselineOffset = height() * 0.5f - glyphInkCenter;
+  m_glyphNode->setPosition(width() * 0.5f - glyphCenterX, m_baselineOffset);
 
   m_cachedCodepoint = m_glyphNode->codepoint();
   m_cachedFontSize = m_glyphNode->fontSize();

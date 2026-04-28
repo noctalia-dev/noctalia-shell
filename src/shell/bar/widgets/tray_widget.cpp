@@ -331,10 +331,10 @@ void TrayWidget::rebuild(Renderer& renderer) {
       continue;
     }
     const std::string iconPath = resolveIconPath(item);
-    const float logicalFontSize = Style::fontSizeBody * m_contentScale;
-    const float slotSize = logicalFontSize;
-    const float iconSize = logicalFontSize;
-    const float itemSize = std::max(slotSize, iconSize);
+    const float slotSize = Style::barGlyphSize * m_contentScale;
+    const float iconSize = Style::fontSizeBody * m_contentScale;
+    const float fallbackGlyphSize = Style::barGlyphSize * m_contentScale;
+    float itemSize = std::max(slotSize, iconSize);
     const int iconRequestSize = static_cast<int>(std::round(iconSize));
 
     std::unique_ptr<Node> iconNode;
@@ -387,12 +387,13 @@ void TrayWidget::rebuild(Renderer& renderer) {
       auto glyph = std::make_unique<Glyph>();
       const std::string fallback = iconForItem(item);
       glyph->setGlyph(fallback);
-      glyph->setGlyphSize(logicalFontSize);
+      glyph->setGlyphSize(fallbackGlyphSize);
       glyph->setColor(item.needsAttention ? roleColor(ColorRole::Error)
                                           : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
       glyph->measure(renderer);
       iconW = glyph->width();
       iconH = glyph->height();
+      itemSize = std::max({itemSize, iconW, iconH});
       iconNode = std::move(glyph);
       kLog.debug("tray widget icon id={} source=glyph name={}", item.id, fallback);
     }

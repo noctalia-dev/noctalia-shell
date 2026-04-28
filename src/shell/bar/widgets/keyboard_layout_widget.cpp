@@ -313,7 +313,7 @@ void KeyboardLayoutWidget::create() {
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("keyboard");
-  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
@@ -347,7 +347,7 @@ void KeyboardLayoutWidget::doLayout(Renderer& renderer, float containerWidth, fl
   sync(renderer);
 
   if (m_glyph != nullptr) {
-    m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+    m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
     m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
     m_glyph->measure(renderer);
     if (m_glyph->width() <= 0.0f) {

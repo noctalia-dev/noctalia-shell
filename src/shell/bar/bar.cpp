@@ -198,29 +198,28 @@ namespace {
           cachedBodyExtentScale = scale;
         }
         const float bodyExtent = cachedBodyExtent;
+        const float iconExtent = std::max(bodyExtent, std::round(Style::barGlyphSize * scale));
         const float pad = w->barCapsuleSpec().padding * scale;
         const float padMain = pad;
         const float padCross = std::min(pad, Style::spaceXs * scale);
-        float shellMain = (isVertical ? ih : iw) + 2.0f * padMain;
-        float shellCross = bodyExtent + 2.0f * padCross;
+        float capsuleCross = bodyExtent + 2.0f * padCross;
         if (isVertical) {
-          shellCross = std::min(shellCross, slotCross);
+          capsuleCross = std::min(capsuleCross, slotCross);
         }
+        float shellMain = (isVertical ? ih : iw) + 2.0f * padMain;
+        float shellCross = capsuleCross;
         float shellW = isVertical ? shellCross : shellMain;
         float shellH = isVertical ? shellMain : shellCross;
         float innerX = std::round((shellW - iw) * 0.5f);
         float innerY = std::round((shellH - ih) * 0.5f);
-        // Glyph-only widgets have content close to bodyExtent on both axes — round
-        // them into a circular capsule. Multi-line / wide content (e.g. stacked
-        // vertical clock) must NOT be squared, or the capsule collapses on the
-        // main axis.
-        const float iconThreshold = bodyExtent + (kCircularCapsuleNarrowWidthEpsilon * scale);
+        // Glyph-only widgets become a fixed circle based on the bar capsule
+        // cross-size, not on the measured content width. Multi-line / wide
+        // content (e.g. stacked vertical clock) must NOT be squared, or the
+        // capsule collapses on the main axis.
+        const float iconThreshold = iconExtent + (kCircularCapsuleNarrowWidthEpsilon * scale);
         const bool iconSized = iw <= iconThreshold && ih <= iconThreshold;
         if (iconSized) {
-          float side = std::max(shellW, shellH);
-          if (isVertical) {
-            side = std::min(side, slotCross);
-          }
+          const float side = capsuleCross;
           shellW = side;
           shellH = side;
           innerX = std::round((shellW - iw) * 0.5f);

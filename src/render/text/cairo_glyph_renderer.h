@@ -65,7 +65,10 @@ private:
     GLuint texture = 0;
     int pixelWidth = 0;
     int pixelHeight = 0;
-    float baselinePx = 0.0f; // baseline from top of surface, raster pixels
+    float baselineXPx = 0.0f; // baseline from left of surface, raster pixels
+    float baselinePx = 0.0f;  // baseline from top of surface, raster pixels
+    float inkOffsetXPx = 0.0f;
+    float inkOffsetYPx = 0.0f;
     TextMetrics metrics;
     std::size_t bytes = 0;
     LruList::iterator lruIt;

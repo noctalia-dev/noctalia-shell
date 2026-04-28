@@ -28,7 +28,7 @@ void IdleInhibitorWidget::create() {
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph(glyphForState(false));
-  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   glyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
@@ -42,7 +42,7 @@ void IdleInhibitorWidget::doLayout(Renderer& renderer, float /*containerWidth*/,
   }
 
   syncState(renderer);
-  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_glyph->measure(renderer);
 
   if (auto* node = root(); node != nullptr) {
@@ -68,7 +68,7 @@ void IdleInhibitorWidget::syncState(Renderer& renderer) {
   m_lastEnabled = enabled;
 
   m_glyph->setGlyph(glyphForState(enabled));
-  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   if (!available) {
     m_glyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
   } else if (enabled) {

@@ -52,7 +52,7 @@ void VolumeWidget::create() {
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("volume-high");
-  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
@@ -83,10 +83,10 @@ void VolumeWidget::doLayout(Renderer& renderer, float containerWidth, float cont
     m_label->setPosition(std::round((w - m_label->width()) * 0.5f), m_glyph->height());
     rootNode->setSize(w, m_glyph->height() + m_label->height());
   } else {
-    // Glyph and label share the same reference line height, so y=0 aligns both.
-    m_glyph->setPosition(0.0f, 0.0f);
-    m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
-    rootNode->setSize(m_label->x() + m_label->width(), m_glyph->height());
+    const float h = std::max(m_glyph->height(), m_label->height());
+    m_glyph->setPosition(0.0f, std::round((h - m_glyph->height()) * 0.5f));
+    m_label->setPosition(m_glyph->width() + Style::spaceXs, std::round((h - m_label->height()) * 0.5f));
+    rootNode->setSize(m_label->x() + m_label->width(), h);
   }
 }
 
@@ -110,7 +110,7 @@ void VolumeWidget::syncState(Renderer& renderer) {
   m_lastVertical = m_isVertical;
 
   m_glyph->setGlyph(volumeGlyphName(volume, muted));
-  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_glyph->setColor(muted ? roleColor(ColorRole::OnSurfaceVariant)
                           : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);

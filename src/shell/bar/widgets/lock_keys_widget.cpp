@@ -108,7 +108,7 @@ void LockKeysWidget::create() {
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("lock");
-  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   rootNode->addChild(std::move(glyph));
@@ -157,7 +157,7 @@ void LockKeysWidget::doLayout(Renderer& renderer, float containerWidth, float co
   float w = 0.0f;
 
   if (m_glyph != nullptr) {
-    m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+    m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
     m_glyph->measure(renderer);
     if (m_isVertical) {
       y += m_glyph->height() + spacing;
@@ -218,6 +218,15 @@ void LockKeysWidget::doLayout(Renderer& renderer, float containerWidth, float co
       const float glyphY = std::round((h - m_glyph->height()) * 0.5f);
       m_glyph->setPosition(0.0f, glyphY);
     }
+    auto centerLabel = [h](Label* label) {
+      if (label == nullptr || !label->visible()) {
+        return;
+      }
+      label->setPosition(label->x(), std::round((h - label->height()) * 0.5f));
+    };
+    centerLabel(m_capsLabel);
+    centerLabel(m_numLabel);
+    centerLabel(m_scrollLabel);
     root()->setSize(x, h);
   }
 }
@@ -263,7 +272,7 @@ void LockKeysWidget::sync(Renderer& renderer) {
   }
 
   if (m_glyph != nullptr) {
-    m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+    m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
     m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   }
 

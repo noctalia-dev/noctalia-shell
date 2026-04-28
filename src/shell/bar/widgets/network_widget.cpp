@@ -52,7 +52,7 @@ void NetworkWidget::create() {
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("wifi-off");
-  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
@@ -90,13 +90,14 @@ void NetworkWidget::doLayout(Renderer& renderer, float containerWidth, float con
     m_label->setPosition(std::round((w - m_label->width()) * 0.5f), m_glyph->height());
     rootNode->setSize(w, m_glyph->height() + m_label->height());
   } else {
-    m_glyph->setPosition(0.0f, 0.0f);
+    const float h = labelVisible ? std::max(m_glyph->height(), m_label->height()) : m_glyph->height();
+    m_glyph->setPosition(0.0f, std::round((h - m_glyph->height()) * 0.5f));
     float totalWidth = m_glyph->width();
     if (labelVisible) {
-      m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
+      m_label->setPosition(m_glyph->width() + Style::spaceXs, std::round((h - m_label->height()) * 0.5f));
       totalWidth = m_label->x() + m_label->width();
     }
-    rootNode->setSize(totalWidth, m_glyph->height());
+    rootNode->setSize(totalWidth, h);
   }
 }
 
@@ -116,7 +117,7 @@ void NetworkWidget::syncState(Renderer& renderer) {
   m_lastVertical = m_isVertical;
 
   m_glyph->setGlyph(glyphForState(s));
-  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_glyph->setColor(s.connected ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
                                 : roleColor(ColorRole::OnSurfaceVariant));
   m_glyph->measure(renderer);

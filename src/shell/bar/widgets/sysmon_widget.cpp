@@ -65,7 +65,7 @@ void SysmonWidget::create() {
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph(glyphName(m_stat));
-  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   container->addChild(std::move(glyph));
@@ -185,16 +185,19 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
       const float gaugeW = gaugeThickness;
       const float gaugeH = gaugeStem;
       m_gauge->setRadius(gaugeW / 2.0f);
-      const float gaugeY = std::round((glyphH - gaugeH) * 0.5f);
-      m_glyph->setPosition(0.0f, 0.0f);
+      float contentH = std::max(glyphH, gaugeH);
+      if (m_label != nullptr)
+        contentH = std::max(contentH, labelH);
+      const float gaugeY = std::round((contentH - gaugeH) * 0.5f);
+      m_glyph->setPosition(0.0f, std::round((contentH - glyphH) * 0.5f));
       m_gauge->setPosition(m_glyph->width() + gap, gaugeY);
       m_gauge->setSize(gaugeW, gaugeH);
       float totalW = m_gauge->x() + gaugeW;
       if (m_label != nullptr) {
-        m_label->setPosition(totalW + gap, 0.0f);
+        m_label->setPosition(totalW + gap, std::round((contentH - labelH) * 0.5f));
         totalW = m_label->x() + labelW;
       }
-      rootNode->setSize(totalW, glyphH);
+      rootNode->setSize(totalW, contentH);
     }
     syncGaugeProgress(currentNormalized());
     return;
@@ -225,8 +228,11 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
       }
       rootNode->setSize(contentW, totalH);
     } else {
-      m_glyph->setPosition(0.0f, 0.0f);
-      m_chartBg->setPosition(m_glyph->width() + gap, 0.0f);
+      float contentH = glyphH;
+      if (m_label != nullptr)
+        contentH = std::max(contentH, labelH);
+      m_glyph->setPosition(0.0f, std::round((contentH - glyphH) * 0.5f));
+      m_chartBg->setPosition(m_glyph->width() + gap, std::round((contentH - glyphH) * 0.5f));
       m_chartBg->setSize(chartW, glyphH);
 
       if (m_graphNode != nullptr) {
@@ -236,10 +242,10 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
 
       float totalW = m_chartBg->x() + chartW;
       if (m_label != nullptr) {
-        m_label->setPosition(totalW + gap, 0.0f);
+        m_label->setPosition(totalW + gap, std::round((contentH - labelH) * 0.5f));
         totalW = m_label->x() + labelW;
       }
-      rootNode->setSize(totalW, glyphH);
+      rootNode->setSize(totalW, contentH);
     }
   } else if (m_label != nullptr && verticalBar) {
     const float contentW = std::max(m_glyph->width(), labelW);
@@ -247,9 +253,10 @@ void SysmonWidget::doLayout(Renderer& renderer, float containerWidth, float cont
     m_label->setPosition(std::round((contentW - labelW) * 0.5f), glyphH + gap);
     rootNode->setSize(contentW, glyphH + gap + labelH);
   } else if (m_label != nullptr) {
-    m_glyph->setPosition(0.0f, 0.0f);
-    m_label->setPosition(m_glyph->width() + gap, 0.0f);
-    rootNode->setSize(m_label->x() + labelW, glyphH);
+    const float contentH = std::max(glyphH, labelH);
+    m_glyph->setPosition(0.0f, std::round((contentH - glyphH) * 0.5f));
+    m_label->setPosition(m_glyph->width() + gap, std::round((contentH - labelH) * 0.5f));
+    rootNode->setSize(m_label->x() + labelW, contentH);
   } else {
     m_glyph->setPosition(0.0f, 0.0f);
     rootNode->setSize(m_glyph->width(), glyphH);

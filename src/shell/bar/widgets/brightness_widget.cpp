@@ -50,7 +50,7 @@ void BrightnessWidget::create() {
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("brightness-high");
-  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
@@ -85,9 +85,10 @@ void BrightnessWidget::doLayout(Renderer& renderer, float containerWidth, float 
     m_label->setPosition(std::round((w - m_label->width()) * 0.5f), m_glyph->height());
     rootNode->setSize(w, m_glyph->height() + m_label->height());
   } else {
-    m_glyph->setPosition(0.0f, 0.0f);
-    m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
-    rootNode->setSize(m_label->x() + m_label->width(), m_glyph->height());
+    const float h = std::max(m_glyph->height(), m_label->height());
+    m_glyph->setPosition(0.0f, std::round((h - m_glyph->height()) * 0.5f));
+    m_label->setPosition(m_glyph->width() + Style::spaceXs, std::round((h - m_label->height()) * 0.5f));
+    rootNode->setSize(m_label->x() + m_label->width(), h);
   }
 }
 
@@ -125,7 +126,7 @@ void BrightnessWidget::syncState(Renderer& renderer) {
   m_lastVertical = m_isVertical;
 
   m_glyph->setGlyph(brightnessGlyphName(brightness));
-  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
 

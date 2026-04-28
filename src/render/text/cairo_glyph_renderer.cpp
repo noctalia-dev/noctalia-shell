@@ -31,6 +31,35 @@ namespace {
 
   void hashCombine(std::size_t& seed, std::size_t v) { seed ^= v + 0x9E3779B97F4A7C15ULL + (seed << 12) + (seed >> 4); }
 
+  cairo_scaled_font_t* create_scaled_font(cairo_font_face_t* face, float rasterSize) {
+    cairo_matrix_t fontMatrix;
+    cairo_matrix_init_scale(&fontMatrix, rasterSize, rasterSize);
+    cairo_matrix_t ctm;
+    cairo_matrix_init_identity(&ctm);
+
+    // Disable hinting for icons: tabler glyphs are monoline strokes with
+    // fractional widths by design. Autohinter snaps each stroke to the nearest
+    // integer pixel, which visibly thins the icons. Grayscale AA without
+    // hinting preserves the intended stroke thickness.
+    cairo_font_options_t* fontOptions = cairo_font_options_create();
+    cairo_font_options_set_antialias(fontOptions, CAIRO_ANTIALIAS_GRAY);
+    cairo_font_options_set_hint_style(fontOptions, CAIRO_HINT_STYLE_NONE);
+    cairo_font_options_set_hint_metrics(fontOptions, CAIRO_HINT_METRICS_OFF);
+    cairo_scaled_font_t* scaledFont = cairo_scaled_font_create(face, &fontMatrix, &ctm, fontOptions);
+    cairo_font_options_destroy(fontOptions);
+    return scaledFont;
+  }
+
+  CairoGlyphRenderer::TextMetrics metrics_from_extents(const cairo_text_extents_t& extents, float invScale) {
+    return CairoGlyphRenderer::TextMetrics{
+        .width = static_cast<float>(extents.x_advance) * invScale,
+        .left = static_cast<float>(extents.x_bearing) * invScale,
+        .right = static_cast<float>(extents.x_bearing + extents.width) * invScale,
+        .top = static_cast<float>(extents.y_bearing) * invScale,
+        .bottom = static_cast<float>(extents.y_bearing + extents.height) * invScale,
+    };
+  }
+
 } // namespace
 
 bool CairoGlyphRenderer::CacheKey::operator==(const CacheKey& other) const noexcept {
@@ -130,27 +159,28 @@ CairoGlyphRenderer::TextMetrics CairoGlyphRenderer::measureGlyph(char32_t codepo
   const float rasterSize = std::max(1.0f, fontSize * m_contentScale);
   const float invScale = 1.0f / m_contentScale;
 
-  FT_Set_Pixel_Sizes(m_face, 0, static_cast<FT_UInt>(std::round(rasterSize)));
   const FT_UInt glyphIndex = FT_Get_Char_Index(m_face, codepoint);
   if (glyphIndex == 0) {
     return {};
   }
-  if (FT_Load_Glyph(m_face, glyphIndex, FT_LOAD_DEFAULT) != 0) {
+
+  cairo_scaled_font_t* scaledFont = create_scaled_font(m_cairoFace, rasterSize);
+  if (scaledFont == nullptr || cairo_scaled_font_status(scaledFont) != CAIRO_STATUS_SUCCESS) {
+    if (scaledFont != nullptr) {
+      cairo_scaled_font_destroy(scaledFont);
+    }
     return {};
   }
 
-  const auto& m = m_face->glyph->metrics;
-  // metrics are in 26.6 fixed point.
-  const float w = static_cast<float>(m.width) / 64.0f * invScale;
-  const float bearingY = static_cast<float>(m.horiBearingY) / 64.0f * invScale;
-  const float height = static_cast<float>(m.height) / 64.0f * invScale;
+  cairo_glyph_t glyph;
+  glyph.index = glyphIndex;
+  glyph.x = 0.0;
+  glyph.y = 0.0;
 
-  TextMetrics out;
-  out.width = static_cast<float>(m.horiAdvance) / 64.0f * invScale;
-  out.left = 0.0f;
-  out.right = w;
-  out.top = -bearingY; // top of ink = -bearingY relative to baseline
-  out.bottom = height - bearingY;
+  cairo_text_extents_t extents;
+  cairo_scaled_font_glyph_extents(scaledFont, &glyph, 1, &extents);
+  const TextMetrics out = metrics_from_extents(extents, invScale);
+  cairo_scaled_font_destroy(scaledFont);
   return out;
 }
 
@@ -174,24 +204,11 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
     return nullptr;
   }
 
-  // Build a Cairo scaled font for this size.
-  cairo_matrix_t fontMatrix;
-  cairo_matrix_init_scale(&fontMatrix, rasterSize, rasterSize);
-  cairo_matrix_t ctm;
-  cairo_matrix_init_identity(&ctm);
-  // Disable hinting for icons: tabler glyphs are monoline strokes with
-  // fractional widths by design. Autohinter snaps each stroke to the nearest
-  // integer pixel, which visibly thins the icons. Grayscale AA without
-  // hinting preserves the intended stroke thickness.
-  cairo_font_options_t* fontOptions = cairo_font_options_create();
-  cairo_font_options_set_antialias(fontOptions, CAIRO_ANTIALIAS_GRAY);
-  cairo_font_options_set_hint_style(fontOptions, CAIRO_HINT_STYLE_NONE);
-  cairo_font_options_set_hint_metrics(fontOptions, CAIRO_HINT_METRICS_OFF);
-  cairo_scaled_font_t* scaledFont = cairo_scaled_font_create(m_cairoFace, &fontMatrix, &ctm, fontOptions);
-  cairo_font_options_destroy(fontOptions);
-
-  if (cairo_scaled_font_status(scaledFont) != CAIRO_STATUS_SUCCESS) {
-    cairo_scaled_font_destroy(scaledFont);
+  cairo_scaled_font_t* scaledFont = create_scaled_font(m_cairoFace, rasterSize);
+  if (scaledFont == nullptr || cairo_scaled_font_status(scaledFont) != CAIRO_STATUS_SUCCESS) {
+    if (scaledFont != nullptr) {
+      cairo_scaled_font_destroy(scaledFont);
+    }
     return nullptr;
   }
 
@@ -216,9 +233,12 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
   CacheEntry entry{};
   entry.pixelWidth = pxWidth;
   entry.pixelHeight = pxHeight;
+  entry.baselineXPx = static_cast<float>(glyph.x);
   // Baseline from top of surface = glyph.y (since cairo baseline = y offset
   // of origin, and we placed origin so that ink-top = pad).
   entry.baselinePx = static_cast<float>(glyph.y);
+  entry.inkOffsetXPx = static_cast<float>(pad);
+  entry.inkOffsetYPx = static_cast<float>(pad);
 
   // A8 (alpha coverage) rasterization: color gets applied in the shader via
   // u_tint, so the cache is color-independent. cairo draws coverage by setting
@@ -259,18 +279,8 @@ CairoGlyphRenderer::CacheEntry* CairoGlyphRenderer::lookupOrRasterize(char32_t c
   entry.texture = tex;
   entry.bytes = static_cast<std::size_t>(pxWidth) * static_cast<std::size_t>(pxHeight);
 
-  // Logical metrics (unscaled).
   const float invScale = 1.0f / m_contentScale;
-  TextMetrics metrics;
-  metrics.width = static_cast<float>(m_face->glyph->metrics.horiAdvance) / 64.0f * invScale;
-  const float w = static_cast<float>(m_face->glyph->metrics.width) / 64.0f * invScale;
-  const float bearingY = static_cast<float>(m_face->glyph->metrics.horiBearingY) / 64.0f * invScale;
-  const float height = static_cast<float>(m_face->glyph->metrics.height) / 64.0f * invScale;
-  metrics.left = 0.0f;
-  metrics.right = w;
-  metrics.top = -bearingY;
-  metrics.bottom = height - bearingY;
-  entry.metrics = metrics;
+  entry.metrics = metrics_from_extents(extents, invScale);
 
   auto [ins, inserted] = m_cache.emplace(std::move(key), std::move(entry));
   m_lru.push_front(ins->first);
@@ -295,19 +305,22 @@ void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, floa
   const float invScale = 1.0f / m_contentScale;
   const float quadW = static_cast<float>(entry->pixelWidth) * invScale;
   const float quadH = static_cast<float>(entry->pixelHeight) * invScale;
+  const float baselineXLocal = entry->baselineXPx * invScale;
   const float baselineLocal = entry->baselinePx * invScale;
 
-  const Mat3 localTranslation = Mat3::translation(x, baselineY - baselineLocal);
+  const Mat3 localTranslation = Mat3::translation(x - baselineXLocal, baselineY - baselineLocal);
   Mat3 world = transform * localTranslation;
 
-  // Snap the quad origin to the nearest buffer pixel so GL_LINEAR samples
-  // land on texel centers (see cairo_text_renderer.cpp for the full story).
+  // Snap the visible ink origin to the nearest buffer pixel so GL_LINEAR samples
+  // land on texel centers without the 1px texture pad biasing icon alignment.
   // Skip when the transform has rotation/skew — snapping then introduces
   // whole-pixel jumps per frame and makes animations look jittery on 1x.
   const bool axisAligned = world.m[1] == 0.0f && world.m[3] == 0.0f;
   if (axisAligned) {
-    world.m[6] = std::round(world.m[6] * m_contentScale) / m_contentScale;
-    world.m[7] = std::round(world.m[7] * m_contentScale) / m_contentScale;
+    const float inkOffsetX = entry->inkOffsetXPx * invScale;
+    const float inkOffsetY = entry->inkOffsetYPx * invScale;
+    world.m[6] = std::round((world.m[6] + inkOffsetX) * m_contentScale) / m_contentScale - inkOffsetX;
+    world.m[7] = std::round((world.m[7] + inkOffsetY) * m_contentScale) / m_contentScale - inkOffsetY;
   }
 
   m_program->drawTinted(entry->texture, surfaceWidth, surfaceHeight, quadW, quadH, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, color,

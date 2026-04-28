@@ -26,7 +26,7 @@ void WeatherWidget::create() {
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("weather-cloud");
-  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
@@ -48,7 +48,7 @@ void WeatherWidget::doLayout(Renderer& renderer, float containerWidth, float con
   m_isVertical = containerHeight > containerWidth;
   sync(renderer);
 
-  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
   m_label->setTextAlign(m_isVertical ? TextAlign::Center : TextAlign::Start);

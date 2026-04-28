@@ -9,6 +9,8 @@
 #include "ui/palette.h"
 #include "ui/style.h"
 
+#include <algorithm>
+#include <cmath>
 #include <memory>
 
 namespace {
@@ -55,7 +57,7 @@ void BluetoothWidget::create() {
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("bluetooth");
-  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   glyph->setColor(widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
@@ -79,17 +81,19 @@ void BluetoothWidget::doLayout(Renderer& renderer, float /*containerWidth*/, flo
   syncState(renderer);
 
   m_glyph->measure(renderer);
-  m_glyph->setPosition(0.0f, 0.0f);
 
   float totalWidth = m_glyph->width();
+  float contentHeight = m_glyph->height();
   if (m_label != nullptr) {
     m_label->measure(renderer);
     if (m_label->width() > 0.0f) {
-      m_label->setPosition(m_glyph->width() + Style::spaceXs, 0.0f);
+      contentHeight = std::max(contentHeight, m_label->height());
+      m_label->setPosition(m_glyph->width() + Style::spaceXs, std::round((contentHeight - m_label->height()) * 0.5f));
       totalWidth = m_label->x() + m_label->width();
     }
   }
-  rootNode->setSize(totalWidth, m_glyph->height());
+  m_glyph->setPosition(0.0f, std::round((contentHeight - m_glyph->height()) * 0.5f));
+  rootNode->setSize(totalWidth, contentHeight);
 }
 
 void BluetoothWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
@@ -128,7 +132,7 @@ void BluetoothWidget::syncState(Renderer& renderer) {
   }
 
   m_glyph->setGlyph(glyphForState(s, numConnected));
-  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_glyph->setColor(s.powered ? widgetForegroundOr(roleColor(ColorRole::OnSurface))
                               : roleColor(ColorRole::OnSurfaceVariant));
   m_glyph->measure(renderer);

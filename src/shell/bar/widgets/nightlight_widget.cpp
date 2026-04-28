@@ -44,7 +44,7 @@ void NightLightWidget::create() {
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph("nightlight-off");
-  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   glyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_glyph = glyph.get();
   area->addChild(std::move(glyph));
@@ -58,7 +58,7 @@ void NightLightWidget::doLayout(Renderer& renderer, float /*containerWidth*/, fl
   }
 
   syncState(renderer);
-  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   m_glyph->measure(renderer);
 
   if (auto* node = root(); node != nullptr) {
@@ -86,7 +86,7 @@ void NightLightWidget::syncState(Renderer& renderer) {
   m_lastForced = forced;
 
   m_glyph->setGlyph(glyphForState(enabled, forced));
-  m_glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  m_glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
 
   if (forced || (enabled && active)) {
     m_glyph->setColor(roleColor(ColorRole::Primary));

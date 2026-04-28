@@ -99,13 +99,14 @@ void ScriptedWidget::create() {
   flex->setGap(Style::spaceXs);
 
   auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyphSize(Style::fontSizeBody * m_contentScale);
+  glyph->setGlyphSize(Style::barGlyphSize * m_contentScale);
   glyph->setVisible(false);
   m_glyph = glyph.get();
 
   auto label = std::make_unique<Label>();
   label->setFontSize(Style::fontSizeBody * m_contentScale);
   label->setStableBaseline(true);
+  label->setVisible(false);
   m_label = label.get();
 
   flex->addChild(std::move(glyph));
@@ -143,7 +144,10 @@ void ScriptedWidget::doLayout(Renderer& renderer, float containerWidth, float co
 
   auto textColor = m_textColorRole ? roleColor(*m_textColorRole) : widgetForegroundOr(roleColor(ColorRole::OnSurface));
   m_label->setColor(textColor);
-  m_label->measure(renderer);
+  m_label->setVisible(!m_label->text().empty());
+  if (m_label->visible()) {
+    m_label->measure(renderer);
+  }
 
   if (m_glyphVisible) {
     auto glyphColor =
