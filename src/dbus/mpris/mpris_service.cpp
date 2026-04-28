@@ -5,6 +5,7 @@
 #include "dbus/session_bus.h"
 #include "ipc/ipc_arg_parse.h"
 #include "ipc/ipc_service.h"
+#include "util/string_utils.h"
 
 #include <algorithm>
 #include <chrono>
@@ -291,6 +292,8 @@ namespace {
 
   constexpr Logger kLog("mpris");
 
+  std::string normalizeFilterToken(std::string_view value) { return StringUtils::toLower(StringUtils::trim(value)); }
+
 } // namespace
 
 MprisService::MprisService(SessionBus& bus)
@@ -307,6 +310,9 @@ std::vector<MprisPlayerInfo> MprisService::listPlayers() const {
   std::vector<MprisPlayerInfo> result;
   result.reserve(m_players.size());
   for (const auto& [_, player] : m_players) {
+    if (isBlacklisted(player)) {
+      continue;
+    }
     result.push_back(player);
   }
 
@@ -650,7 +656,8 @@ std::optional<std::string> MprisService::loopStatusActive() const {
 }
 
 bool MprisService::setPinnedPlayerPreference(const std::string& busName) {
-  if (!m_players.contains(busName)) {
+  const auto it = m_players.find(busName);
+  if (it == m_players.end() || isBlacklisted(it->second)) {
     return false;
   }
 
@@ -694,6 +701,42 @@ void MprisService::setPreferredPlayers(std::vector<std::string> preferredBusName
   }
 }
 
+void MprisService::setBlacklist(std::vector<std::string> blacklist) {
+  std::unordered_set<std::string> seen;
+  std::vector<std::string> normalized;
+  normalized.reserve(blacklist.size());
+
+  for (const auto& raw : blacklist) {
+    const std::string token = normalizeFilterToken(raw);
+    if (token.empty()) {
+      continue;
+    }
+    if (seen.insert(token).second) {
+      normalized.push_back(token);
+    }
+  }
+
+  if (m_blacklist == normalized) {
+    return;
+  }
+
+  const auto previousActive = activePlayer();
+  m_blacklist = std::move(normalized);
+
+  if (m_pinnedPlayerPreference.has_value()) {
+    const auto it = m_players.find(*m_pinnedPlayerPreference);
+    if (it == m_players.end() || isBlacklisted(it->second)) {
+      m_pinnedPlayerPreference.reset();
+    }
+  }
+
+  emitPlayersChanged();
+  syncSignals(previousActive);
+  if (m_changeCallback) {
+    m_changeCallback();
+  }
+}
+
 void MprisService::setChangeCallback(std::function<void()> callback) {
   m_changeCallback = std::move(callback);
   if (m_changeCallback && !m_players.empty()) {
@@ -704,6 +747,8 @@ void MprisService::setChangeCallback(std::function<void()> callback) {
 std::optional<std::string> MprisService::pinnedPlayerPreference() const { return m_pinnedPlayerPreference; }
 
 const std::vector<std::string>& MprisService::preferredPlayers() const noexcept { return m_preferredPlayers; }
+
+const std::vector<std::string>& MprisService::blacklist() const noexcept { return m_blacklist; }
 
 void MprisService::registerControlApi() {
   m_bus.connection().requestName(k_noctalia_mpris_bus_name);
@@ -1164,15 +1209,18 @@ void MprisService::removePlayer(const std::string& busName) {
 }
 
 std::optional<std::string> MprisService::chooseActivePlayer() const {
-  if (m_pinnedPlayerPreference.has_value() && m_players.contains(*m_pinnedPlayerPreference)) {
-    // kLog.debug("choose active player source=pinned name={}", *m_pinnedPlayerPreference);
-    return *m_pinnedPlayerPreference;
+  if (m_pinnedPlayerPreference.has_value()) {
+    const auto it = m_players.find(*m_pinnedPlayerPreference);
+    if (it != m_players.end() && !isBlacklisted(it->second)) {
+      // kLog.debug("choose active player source=pinned name={}", *m_pinnedPlayerPreference);
+      return *m_pinnedPlayerPreference;
+    }
   }
 
   std::optional<std::string> mostRecentPlaying;
   std::chrono::steady_clock::time_point mostRecentPlayingAt{};
   for (const auto& [busName, player] : m_players) {
-    if (player.playbackStatus != "Playing") {
+    if (isBlacklisted(player) || player.playbackStatus != "Playing") {
       continue;
     }
     const auto playingIt = m_lastPlayingUpdate.find(busName);
@@ -1190,31 +1238,58 @@ std::optional<std::string> MprisService::chooseActivePlayer() const {
 
   for (const auto& busName : m_preferredPlayers) {
     const auto it = m_players.find(busName);
-    if (it != m_players.end() && it->second.playbackStatus == "Playing") {
+    if (it != m_players.end() && !isBlacklisted(it->second) && it->second.playbackStatus == "Playing") {
       // kLog.debug("choose active player source=preferred_playing name={}", busName);
       return busName;
     }
   }
 
   for (const auto& busName : m_preferredPlayers) {
-    if (m_players.contains(busName)) {
+    const auto it = m_players.find(busName);
+    if (it != m_players.end() && !isBlacklisted(it->second)) {
       // kLog.debug("choose active player source=preferred_any name={}", busName);
       return busName;
     }
   }
 
-  if (!m_lastActivePlayer.empty() && m_players.contains(m_lastActivePlayer)) {
-    // kLog.debug("choose active player source=last_active name={}", m_lastActivePlayer);
-    return m_lastActivePlayer;
+  if (!m_lastActivePlayer.empty()) {
+    const auto it = m_players.find(m_lastActivePlayer);
+    if (it != m_players.end() && !isBlacklisted(it->second)) {
+      // kLog.debug("choose active player source=last_active name={}", m_lastActivePlayer);
+      return m_lastActivePlayer;
+    }
   }
 
-  if (!m_players.empty()) {
-    // kLog.debug("choose active player source=first_cached name={}", m_players.begin()->first);
-    return m_players.begin()->first;
+  for (const auto& [busName, player] : m_players) {
+    if (!isBlacklisted(player)) {
+      // kLog.debug("choose active player source=first_cached name={}", busName);
+      return busName;
+    }
   }
 
   // kLog.debug("choose active player source=none");
   return std::nullopt;
+}
+
+bool MprisService::isBlacklisted(const MprisPlayerInfo& player) const {
+  if (m_blacklist.empty()) {
+    return false;
+  }
+
+  const std::string busName = normalizeFilterToken(player.busName);
+  const std::string identity = normalizeFilterToken(player.identity);
+  const std::string desktopEntry = normalizeFilterToken(player.desktopEntry);
+
+  for (const auto& token : m_blacklist) {
+    if (token == busName || token == identity || token == desktopEntry) {
+      return true;
+    }
+    if (!token.empty() && busName.find(token) != std::string::npos) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool MprisService::callPlayerMethod(const std::string& busName, const char* methodName) {

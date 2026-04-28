@@ -27,6 +27,9 @@ offset_x = 2
 offset_y = 2                        # positive = down
 alpha    = 0.55                     # multiplied by each component's background opacity
 
+[shell.mpris]
+blacklist = []                      # ignore MPRIS players by bus/identity/desktop entry token
+
 # ── Wallpaper ─────────────────────────────────────────────────────────────────
 
 [wallpaper]

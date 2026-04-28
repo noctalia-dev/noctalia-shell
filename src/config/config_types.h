@@ -336,6 +336,12 @@ struct ShellConfig {
     bool operator==(const PanelConfig&) const = default;
   };
 
+  struct MprisConfig {
+    std::vector<std::string> blacklist;
+
+    bool operator==(const MprisConfig&) const = default;
+  };
+
   float uiScale = 1.0f;
   std::string fontFamily = "sans-serif";
   std::string lang; // empty = auto-detect from $LC_ALL/$LC_MESSAGES/$LANG
@@ -350,6 +356,7 @@ struct ShellConfig {
   ClipboardAutoPasteMode clipboardAutoPaste = ClipboardAutoPasteMode::Auto;
   ShadowConfig shadow;
   PanelConfig panel;
+  MprisConfig mpris;
 };
 
 struct WeatherConfig {

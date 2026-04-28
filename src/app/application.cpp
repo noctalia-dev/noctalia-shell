@@ -601,6 +601,14 @@ void Application::initServices() {
     try {
       m_mprisService =
           makeWithStartupBackoff("mpris service", [this]() { return std::make_unique<MprisService>(*m_bus); });
+      auto applyMprisConfig = [this]() {
+        if (m_mprisService == nullptr) {
+          return;
+        }
+        m_mprisService->setBlacklist(m_configService.config().shell.mpris.blacklist);
+      };
+      applyMprisConfig();
+      m_configService.addReloadCallback(applyMprisConfig);
       m_mprisService->setChangeCallback([this, shouldRefreshControlCenter]() {
         m_bar.refresh();
         if (shouldRefreshControlCenter()) {

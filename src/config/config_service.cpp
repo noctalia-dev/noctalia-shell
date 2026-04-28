@@ -979,6 +979,11 @@ void ConfigService::parseTable(const toml::table& tbl) {
         shell.panel.backgroundBlur = *v;
       }
     }
+    if (const auto* mprisTbl = (*shellTbl)["mpris"].as_table()) {
+      if (const auto* blacklistNode = mprisTbl->get("blacklist")) {
+        shell.mpris.blacklist = readStringArray(*blacklistNode);
+      }
+    }
     if (auto v = (*shellTbl)["avatar_path"].value<std::string>()) {
       shell.avatarPath = *v;
     }

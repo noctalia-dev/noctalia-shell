@@ -84,9 +84,11 @@ public:
   bool setPinnedPlayerPreference(const std::string& busName);
   void clearPinnedPlayerPreference();
   void setPreferredPlayers(std::vector<std::string> preferredBusNames);
+  void setBlacklist(std::vector<std::string> blacklist);
   void setChangeCallback(std::function<void()> callback);
   [[nodiscard]] std::optional<std::string> pinnedPlayerPreference() const;
   [[nodiscard]] const std::vector<std::string>& preferredPlayers() const noexcept;
+  [[nodiscard]] const std::vector<std::string>& blacklist() const noexcept;
 
 private:
   void registerControlApi();
@@ -102,6 +104,7 @@ private:
   void removePlayer(const std::string& busName);
   [[nodiscard]] MprisPlayerInfo readPlayerInfo(sdbus::IProxy& proxy, const std::string& busName) const;
   [[nodiscard]] std::optional<std::string> chooseActivePlayer() const;
+  [[nodiscard]] bool isBlacklisted(const MprisPlayerInfo& player) const;
   [[nodiscard]] bool callPlayerMethod(const std::string& busName, const char* methodName);
   [[nodiscard]] bool canInvoke(const MprisPlayerInfo& player, const char* methodName) const;
 
@@ -146,6 +149,7 @@ private:
   std::string m_lastEmittedActivePlayer;
   std::optional<std::string> m_pinnedPlayerPreference;
   std::vector<std::string> m_preferredPlayers;
+  std::vector<std::string> m_blacklist;
   std::function<void()> m_changeCallback;
   int m_startupRediscoveryPassesRemaining = 4;
   bool m_recoveryDiscoveryScheduled = false;

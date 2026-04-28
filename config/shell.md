@@ -37,6 +37,9 @@ alpha    = 0.55  # multiplied by each component's background opacity
 
 [shell.panel]
 background_blur = true   # request compositor blur behind panels via ext-background-effect-v1
+
+[shell.mpris]
+blacklist = []           # optional list of players to hide from media widgets/control-center
 ```
 
 Notes:
@@ -53,6 +56,7 @@ Notes:
 - `shell.animation.enabled` disables all animated transitions globally. `speed` scales durations globally.
 - `shell.shadow` defines the shared shadow metrics for shell surfaces. Components such as bars and the dock only opt in/out with `shadow = true|false`; they do not define their own blur or offset.
 - `shell.panel.background_blur` toggles compositor blur on every shell panel (control center, launcher, clipboard, attached menus, etc.). Inert on compositors that do not implement `ext-background-effect-v1`.
+- `shell.mpris.blacklist` excludes matching MPRIS players from Noctalia media UI and active-player selection. Entries are case-insensitive and match player bus name, identity, desktop entry, or a bus-name substring token (for example `"spotify"`).
 
 ---
 
