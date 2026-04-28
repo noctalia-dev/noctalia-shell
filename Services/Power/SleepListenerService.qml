@@ -17,11 +17,13 @@ Singleton {
   // This signal is emitted when the system is about to suspend or hibernate.
   Process {
     id: sleepMonitor
-    command: ["dbus-monitor", "--system", "type='signal',interface='org.freedesktop.login1.Manager',member='PrepareForSleep'"]
+    command: ["stdbuf", "-oL", "dbus-monitor", "--system", "type='signal',interface='org.freedesktop.login1.Manager',member='PrepareForSleep'"]
     running: true
 
-    stdout: StdioCollector {
-      onLine: line => {
+    stdout: SplitParser {
+      splitMarker: "\n"
+      onRead: line => {
+        Logger.d("SleepListener", "Received line: " + line);
         // dbus-monitor output for the signal contains the boolean argument (true for sleep, false for wake).
         // We look for "boolean true" to trigger the lock screen.
         if (line.includes("boolean true")) {
@@ -37,8 +39,9 @@ Singleton {
       }
     }
 
-    stderr: StdioCollector {
-      onLine: line => Logger.w("SleepListener", "dbus-monitor error: " + line)
+    stderr: SplitParser {
+      splitMarker: "\n"
+      onRead: line => Logger.w("SleepListener", "dbus-monitor error: " + line)
     }
 
     onExited: (code, status) => {
