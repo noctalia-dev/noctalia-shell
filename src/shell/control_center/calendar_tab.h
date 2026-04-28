@@ -5,6 +5,7 @@
 #include <limits>
 
 class Button;
+class InputArea;
 class Label;
 
 class CalendarTab : public Tab {
@@ -17,6 +18,7 @@ private:
   void rebuild();
 
   Flex* m_rootLayout = nullptr;
+  InputArea* m_calendarArea = nullptr;
   Flex* m_card = nullptr;
   Flex* m_header = nullptr;
   Flex* m_previousSlot = nullptr;

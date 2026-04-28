@@ -2,6 +2,7 @@
 
 #include "core/ui_phase.h"
 #include "render/core/renderer.h"
+#include "render/scene/input_area.h"
 #include "shell/control_center/tab.h"
 #include "shell/panel/panel_manager.h"
 #include "time/time_format.h"
@@ -19,6 +20,7 @@
 #include <ctime>
 #include <memory>
 #include <string>
+#include <wayland-client-protocol.h>
 
 namespace {
 
@@ -91,10 +93,25 @@ std::unique_ptr<Flex> CalendarTab::create() {
   tab->setGap(Style::spaceMd * scale);
   m_rootLayout = tab.get();
 
+  auto calendarArea = std::make_unique<InputArea>();
+  calendarArea->setFlexGrow(3.0f);
+  calendarArea->setOnAxis([this](const InputArea::PointerData& data) {
+    if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
+      return;
+    }
+    const float delta = data.scrollDelta(1.0f);
+    if (delta == 0.0f) {
+      return;
+    }
+    // Wayland wheel convention: positive is scroll down.
+    m_monthOffset += (delta > 0.0f) ? 1 : -1;
+    PanelManager::instance().refresh();
+  });
+  m_calendarArea = calendarArea.get();
+
   auto calendarCard = std::make_unique<Flex>();
   control_center::applySectionCardStyle(*calendarCard, scale);
   calendarCard->setGap(Style::spaceMd * scale);
-  calendarCard->setFlexGrow(3.0f);
   m_card = calendarCard.get();
 
   auto header = std::make_unique<Flex>();
@@ -177,7 +194,8 @@ std::unique_ptr<Flex> CalendarTab::create() {
   grid->setFlexGrow(1.0f);
   m_grid = grid.get();
   calendarCard->addChild(std::move(grid));
-  tab->addChild(std::move(calendarCard));
+  calendarArea->addChild(std::move(calendarCard));
+  tab->addChild(std::move(calendarArea));
 
   auto tasksCard = std::make_unique<Flex>();
   control_center::applySectionCardStyle(*tasksCard, scale);
@@ -203,12 +221,14 @@ std::unique_ptr<Flex> CalendarTab::create() {
 }
 
 void CalendarTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
-  if (m_rootLayout == nullptr || m_card == nullptr) {
+  if (m_rootLayout == nullptr || m_card == nullptr || m_calendarArea == nullptr) {
     return;
   }
 
   m_rootLayout->setSize(contentWidth, bodyHeight);
   m_rootLayout->layout(renderer);
+  m_card->setSize(m_calendarArea->width(), m_calendarArea->height());
+  m_card->layout(renderer);
 
   const float innerWidth = std::max(0.0f, m_card->width() - (m_card->paddingLeft() + m_card->paddingRight()));
   const float innerHeight = std::max(0.0f, m_card->height() - (m_card->paddingTop() + m_card->paddingBottom()));
@@ -237,6 +257,7 @@ void CalendarTab::doLayout(Renderer& renderer, float contentWidth, float bodyHei
 
 void CalendarTab::onClose() {
   m_rootLayout = nullptr;
+  m_calendarArea = nullptr;
   m_card = nullptr;
   m_header = nullptr;
   m_previousSlot = nullptr;
