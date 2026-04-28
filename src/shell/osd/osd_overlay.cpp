@@ -34,8 +34,16 @@ namespace {
   constexpr float kProgressHeight = Style::spaceXs + Style::borderWidth * 2;
   constexpr float kCardPadding = Style::spaceMd;
   constexpr float kInnerGap = Style::spaceSm + Style::spaceXs;
-  constexpr int kScreenMargin = static_cast<int>(Style::spaceLg);
-  constexpr int kBarGap = static_cast<int>(Style::spaceXs);
+  constexpr float kSlideOffset = Style::spaceSm;
+  constexpr int kScreenMargin = static_cast<int>(Style::spaceSm);
+
+  bool isBottomPosition(const std::string& position) { return position.starts_with("bottom_"); }
+
+  float cardBaseYForPosition(const std::string& position, float surfaceHeight) {
+    return isBottomPosition(position) ? std::max(0.0f, surfaceHeight - kCardHeight) : 0.0f;
+  }
+
+  float cardSlideDirectionForPosition(const std::string& position) { return isBottomPosition(position) ? -1.0f : 1.0f; }
 
 } // namespace
 
@@ -99,12 +107,6 @@ void OsdOverlay::ensureSurfaces() {
 
   const auto surfaceWidth = static_cast<std::uint32_t>(kSurfaceWidth);
   const auto surfaceHeight = static_cast<std::uint32_t>(kSurfaceHeight);
-  std::int32_t barThickness = Style::barThicknessDefault;
-  std::string barPosition = "top";
-  if (m_config != nullptr && !m_config->config().bars.empty()) {
-    barThickness = m_config->config().bars[0].thickness;
-    barPosition = m_config->config().bars[0].position;
-  }
 
   for (const auto& output : m_wayland->outputs()) {
     auto inst = std::make_unique<Instance>();
@@ -141,21 +143,13 @@ void OsdOverlay::ensureSurfaces() {
       marginBottom = kScreenMargin;
     }
 
-    if ((position == "top_left" || position == "top_center" || position == "top_right") && barPosition == "top") {
-      marginTop += barThickness + kBarGap;
-    }
-    if ((position == "bottom_left" || position == "bottom_center" || position == "bottom_right") &&
-        barPosition == "bottom") {
-      marginBottom += barThickness + kBarGap;
-    }
-
     auto surfaceConfig = LayerSurfaceConfig{
         .nameSpace = "noctalia-osd",
         .layer = LayerShellLayer::Overlay,
         .anchor = anchor,
         .width = surfaceWidth,
         .height = surfaceHeight,
-        .exclusiveZone = -1,
+        .exclusiveZone = 0,
         .marginTop = marginTop,
         .marginRight = marginRight,
         .marginBottom = marginBottom,
@@ -239,7 +233,7 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   inst.surface->setSceneRoot(inst.sceneRoot.get());
 
   const float cardX = (w - kCardWidth) * 0.5f;
-  const float cardY = (h - kCardHeight) * 0.5f;
+  const float cardY = cardBaseYForPosition(m_lastPosition, h);
 
   auto background = std::make_unique<Box>();
   background->setCardStyle();
@@ -325,25 +319,26 @@ void OsdOverlay::animateInstance(Instance& inst) {
     inst.hideAnimId = 0;
   }
 
-  const float baseY = (inst.sceneRoot->height() - kCardHeight) * 0.5f;
+  const float baseY = cardBaseYForPosition(m_lastPosition, inst.sceneRoot->height());
+  const float slideDirection = cardSlideDirectionForPosition(m_lastPosition);
   if (!inst.visible) {
     // During fast updates (e.g. slider drag), don't restart the show animation
     // every tick; keep the current show motion and only extend hide timing.
     if (inst.showAnimId == 0) {
       const float startOpacity = inst.sceneRoot->opacity();
       if (startOpacity == 0.0f) {
-        inst.card->setPosition(inst.card->x(), baseY + 8.0f);
+        inst.card->setPosition(inst.card->x(), baseY + slideDirection * kSlideOffset);
         if (inst.background != nullptr) {
-          inst.background->setPosition(inst.background->x(), baseY + 8.0f);
+          inst.background->setPosition(inst.background->x(), baseY + slideDirection * kSlideOffset);
         }
       }
       inst.showAnimId = inst.animations.animate(
           startOpacity, 1.0f, Style::animNormal, Easing::EaseOutCubic,
-          [&inst, baseY](float v) {
+          [&inst, baseY, slideDirection](float v) {
             inst.sceneRoot->setOpacity(v);
-            inst.card->setPosition(inst.card->x(), baseY + (1.0f - v) * 8.0f);
+            inst.card->setPosition(inst.card->x(), baseY + slideDirection * (1.0f - v) * kSlideOffset);
             if (inst.background != nullptr) {
-              inst.background->setPosition(inst.background->x(), baseY + (1.0f - v) * 8.0f);
+              inst.background->setPosition(inst.background->x(), baseY + slideDirection * (1.0f - v) * kSlideOffset);
             }
           },
           [&inst]() {
@@ -361,14 +356,14 @@ void OsdOverlay::animateInstance(Instance& inst) {
 
   inst.hideAnimId = inst.animations.animate(
       1.0f, 0.0f, kHideDelayMs, Easing::Linear, [](float /*v*/) {},
-      [this, &inst, baseY]() {
+      [this, &inst, baseY, slideDirection]() {
         inst.hideAnimId = inst.animations.animate(
             1.0f, 0.0f, Style::animNormal, Easing::EaseInOutQuad,
-            [&inst, baseY](float v) {
+            [&inst, baseY, slideDirection](float v) {
               inst.sceneRoot->setOpacity(v);
-              inst.card->setPosition(inst.card->x(), baseY + (1.0f - v) * 6.0f);
+              inst.card->setPosition(inst.card->x(), baseY + slideDirection * (1.0f - v) * kSlideOffset);
               if (inst.background != nullptr) {
-                inst.background->setPosition(inst.background->x(), baseY + (1.0f - v) * 6.0f);
+                inst.background->setPosition(inst.background->x(), baseY + slideDirection * (1.0f - v) * kSlideOffset);
               }
             },
             [this, &inst]() {
