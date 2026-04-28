@@ -689,13 +689,9 @@ void TrayService::tryRegisterItemForBusName(const std::string& busName) {
   if (!looks_like_dbus_name(busName)) {
     return;
   }
-  for (const auto& [_, item] : m_items) {
-    if (item.busName == busName) {
-      return;
-    }
-  }
 
   const std::array<std::string_view, 2> candidatePaths = {k_default_item_path, k_ayatana_item_path};
+  bool registeredAny = false;
   for (const auto candidatePath : candidatePaths) {
     try {
       auto probe = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{busName},
@@ -703,13 +699,17 @@ void TrayService::tryRegisterItemForBusName(const std::string& busName) {
       std::map<std::string, sdbus::Variant> props;
       probe->callMethod("GetAll")
           .onInterface("org.freedesktop.DBus.Properties")
-          .withTimeout(std::chrono::milliseconds(500))
+          .withTimeout(std::chrono::milliseconds(200))
           .withArguments(k_item_interface)
           .storeResultsTo(props);
       registerOrRefreshItem(busName, std::string(candidatePath));
-      return;
+      registeredAny = true;
     } catch (const sdbus::Error&) {
     }
+  }
+
+  if (registeredAny) {
+    emitChanged();
   }
 }
 
