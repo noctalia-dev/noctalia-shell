@@ -13,14 +13,15 @@ class ProgressBar;
 class RectNode;
 class SystemMonitorService;
 struct SystemStats;
+struct wl_output;
 
 enum class SysmonStat { CpuUsage, CpuTemp, RamUsed, RamPct, SwapPct, DiskPct };
 enum class SysmonDisplayMode { Text, Graph, Gauge };
 
 class SysmonWidget : public Widget {
 public:
-  SysmonWidget(SystemMonitorService* monitor, SysmonStat stat, std::string diskPath, SysmonDisplayMode displayMode,
-               bool showLabel = true);
+  SysmonWidget(SystemMonitorService* monitor, wl_output* output, SysmonStat stat, std::string diskPath,
+               SysmonDisplayMode displayMode, bool showLabel = true);
   ~SysmonWidget() override;
 
   void create() override;
@@ -36,12 +37,14 @@ private:
   [[nodiscard]] double currentNormalized();
   [[nodiscard]] static const char* glyphName(SysmonStat stat);
   void scheduleNextUpdate(std::chrono::steady_clock::time_point latestSampleAt);
+  void clearGraph();
   void updateGraph();
   [[nodiscard]] static float scrollProgressForSample(std::chrono::steady_clock::time_point sampledAt);
   [[nodiscard]] static double normalizedFromStats(SysmonStat stat, const SystemStats& stats, double& tempMin,
                                                   double& tempMax);
 
   SystemMonitorService* m_monitor;
+  wl_output* m_output;
   SysmonStat m_stat;
   SysmonDisplayMode m_displayMode;
   bool m_showLabel;

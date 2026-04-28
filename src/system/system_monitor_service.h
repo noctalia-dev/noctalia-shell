@@ -3,6 +3,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <mutex>
 #include <optional>
@@ -29,7 +30,7 @@ struct SystemStats {
 
 class SystemMonitorService {
 public:
-  SystemMonitorService();
+  explicit SystemMonitorService(bool enabled = true);
   ~SystemMonitorService();
 
   SystemMonitorService(const SystemMonitorService&) = delete;
@@ -38,6 +39,7 @@ public:
   static constexpr int kHistorySize = 120;
 
   [[nodiscard]] bool isRunning() const noexcept;
+  void setEnabled(bool enabled);
   [[nodiscard]] SystemStats latest() const;
   [[nodiscard]] std::vector<SystemStats> history(int windowSize = kHistorySize) const;
 
@@ -85,6 +87,8 @@ private:
   std::atomic<bool> m_running{false};
   std::atomic<int> m_cpuTempRefs{0};
   std::thread m_thread;
+  std::mutex m_wakeMutex;
+  std::condition_variable m_wakeCv;
 
   mutable std::mutex m_statsMutex;
   SystemStats m_latest;

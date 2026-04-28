@@ -2,8 +2,10 @@
 
 #include "render/core/renderer.h"
 #include "render/scene/graph_node.h"
+#include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
+#include "shell/panel/panel_manager.h"
 #include "system/system_monitor_service.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
@@ -35,9 +37,9 @@ namespace {
 
 } // namespace
 
-SysmonWidget::SysmonWidget(SystemMonitorService* monitor, SysmonStat stat, std::string diskPath,
+SysmonWidget::SysmonWidget(SystemMonitorService* monitor, wl_output* output, SysmonStat stat, std::string diskPath,
                            SysmonDisplayMode displayMode, bool showLabel)
-    : m_monitor(monitor), m_stat(stat), m_displayMode(displayMode), m_showLabel(showLabel),
+    : m_monitor(monitor), m_output(output), m_stat(stat), m_displayMode(displayMode), m_showLabel(showLabel),
       m_diskPath(std::move(diskPath)) {
   if (m_monitor != nullptr) {
     if (needsCpuTemp(m_stat)) {
@@ -61,7 +63,10 @@ SysmonWidget::~SysmonWidget() {
 }
 
 void SysmonWidget::create() {
-  auto container = std::make_unique<Node>();
+  auto container = std::make_unique<InputArea>();
+  container->setOnClick([this](const InputArea::PointerData& /*data*/) {
+    PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "system");
+  });
 
   auto glyph = std::make_unique<Glyph>();
   glyph->setGlyph(glyphName(m_stat));
@@ -281,9 +286,11 @@ void SysmonWidget::doUpdate(Renderer& renderer) {
   }
 
   if (m_displayMode == SysmonDisplayMode::Graph) {
-    updateGraph();
-    if (m_monitor != nullptr) {
+    if (m_monitor != nullptr && m_monitor->isRunning()) {
+      updateGraph();
       scheduleNextUpdate(m_monitor->latest().sampledAt);
+    } else {
+      clearGraph();
     }
   }
 }
@@ -317,8 +324,20 @@ void SysmonWidget::scheduleNextUpdate(std::chrono::steady_clock::time_point late
   m_updateTimer.start(delay, [this]() { requestUpdate(); });
 }
 
+void SysmonWidget::clearGraph() {
+  if (m_graphNode == nullptr || !m_graphInitialized) {
+    return;
+  }
+
+  m_graphNode->setCount1(0.0f);
+  m_graphInitialized = false;
+  m_lastSampleAt = {};
+  m_scrollProgress = 1.0f;
+  requestRedraw();
+}
+
 void SysmonWidget::updateGraph() {
-  if (m_graphNode == nullptr || m_monitor == nullptr) {
+  if (m_graphNode == nullptr || m_monitor == nullptr || !m_monitor->isRunning()) {
     return;
   }
 
@@ -417,7 +436,7 @@ double SysmonWidget::normalizedFromStats(SysmonStat stat, const SystemStats& sta
 }
 
 double SysmonWidget::currentNormalized() {
-  if (m_monitor == nullptr) {
+  if (m_monitor == nullptr || !m_monitor->isRunning()) {
     return 0.0;
   }
 
@@ -429,7 +448,7 @@ double SysmonWidget::currentNormalized() {
 }
 
 std::string SysmonWidget::formatValue() const {
-  if (m_monitor == nullptr) {
+  if (m_monitor == nullptr || !m_monitor->isRunning()) {
     return "--";
   }
 

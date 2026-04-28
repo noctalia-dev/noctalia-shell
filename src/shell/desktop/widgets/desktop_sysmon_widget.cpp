@@ -75,9 +75,14 @@ void DesktopSysmonWidget::onFrameTick(float deltaMs, Renderer& renderer) {
   (void)renderer;
   (void)deltaMs;
   if (m_monitor != nullptr) {
-    const auto latestSampleAt = m_monitor->latest().sampledAt;
-    if (latestSampleAt != std::chrono::steady_clock::time_point{} && latestSampleAt != m_lastSampleAt) {
-      updateGraph();
+    if (m_monitor->isRunning()) {
+      const auto latestSampleAt = m_monitor->latest().sampledAt;
+      if (latestSampleAt != std::chrono::steady_clock::time_point{} && latestSampleAt != m_lastSampleAt) {
+        updateGraph();
+        syncLabel();
+      }
+    } else {
+      clearGraph();
       syncLabel();
     }
   }
@@ -147,7 +152,11 @@ void DesktopSysmonWidget::doUpdate(Renderer& renderer) {
     return;
   }
 
-  updateGraph();
+  if (m_monitor->isRunning()) {
+    updateGraph();
+  } else {
+    clearGraph();
+  }
   syncLabel();
 }
 
@@ -201,7 +210,7 @@ double DesktopSysmonWidget::normalizedFromStats(DesktopSysmonStat stat, const Sy
 }
 
 std::string DesktopSysmonWidget::formatValueFor(DesktopSysmonStat stat) const {
-  if (m_monitor == nullptr) {
+  if (m_monitor == nullptr || !m_monitor->isRunning()) {
     return "--";
   }
 
@@ -231,8 +240,21 @@ std::string DesktopSysmonWidget::formatValueFor(DesktopSysmonStat stat) const {
   return "--";
 }
 
+void DesktopSysmonWidget::clearGraph() {
+  if (m_graphNode == nullptr || !m_graphInitialized) {
+    return;
+  }
+
+  m_graphNode->setCount1(0.0f);
+  m_graphNode->setCount2(0.0f);
+  m_graphInitialized = false;
+  m_lastSampleAt = {};
+  m_scrollProgress = 1.0f;
+  requestRedraw();
+}
+
 void DesktopSysmonWidget::updateGraph() {
-  if (m_graphNode == nullptr || m_monitor == nullptr) {
+  if (m_graphNode == nullptr || m_monitor == nullptr || !m_monitor->isRunning()) {
     return;
   }
 

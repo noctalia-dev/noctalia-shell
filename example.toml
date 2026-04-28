@@ -90,6 +90,11 @@ background_blur    = true
 [osd]
 position = "top_right"              # top_right | top_left | top_center | bottom_right | bottom_left | bottom_center
 
+# ── System Monitor ────────────────────────────────────────────────────────────
+
+[system.monitor]
+enabled = true                      # sample CPU, memory, network, load, temperature, and disk statistics
+
 # ── Weather ───────────────────────────────────────────────────────────────────
 
 [weather]

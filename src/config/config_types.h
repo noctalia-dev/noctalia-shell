@@ -368,6 +368,14 @@ struct WeatherConfig {
   std::string unit = "celsius";
 };
 
+struct SystemConfig {
+  struct MonitorConfig {
+    bool enabled = true;
+  };
+
+  MonitorConfig monitor;
+};
+
 struct AudioConfig {
   bool enableOverdrive = false;
   bool enableSounds = false;
@@ -555,6 +563,7 @@ struct Config {
   OsdConfig osd;
   NotificationConfig notification;
   WeatherConfig weather;
+  SystemConfig system;
   AudioConfig audio;
   BrightnessConfig brightness;
   KeybindsConfig keybinds;

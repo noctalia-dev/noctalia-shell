@@ -3,6 +3,7 @@
 - [Audio](#audio)
 - [Brightness](#brightness)
 - [Night Light](#night-light)
+- [System Monitor](#system-monitor)
 - [Weather](#weather)
 - [Idle](#idle)
 - [Notifications](#notifications)
@@ -103,6 +104,18 @@ noctalia msg toggle-force-nightlight
 ```
 
 `enable-nightlight` / `disable-nightlight` / `toggle-nightlight` control schedule enable state. `toggle-force-nightlight` toggles forced-on mode regardless of schedule.
+
+---
+
+## System Monitor
+
+```toml
+[system.monitor]
+enabled = true  # sample CPU, memory, network, load, temperature, and disk statistics
+```
+
+When disabled, Noctalia keeps system-monitor UI available but stops the background sampling thread. System-monitor
+widgets and the Control Center System tab show unavailable values until the setting is enabled again.
 
 ---
 

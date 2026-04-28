@@ -1232,6 +1232,16 @@ void ConfigService::parseTable(const toml::table& tbl) {
       weather.unit = *v;
   }
 
+  // Parse [system]
+  if (auto* systemTbl = tbl["system"].as_table()) {
+    auto& system = m_config.system;
+    if (const auto* monitorTbl = (*systemTbl)["monitor"].as_table()) {
+      if (auto v = (*monitorTbl)["enabled"].value<bool>()) {
+        system.monitor.enabled = *v;
+      }
+    }
+  }
+
   // Parse [audio]
   if (auto* audioTbl = tbl["audio"].as_table()) {
     auto& audio = m_config.audio;

@@ -109,15 +109,25 @@ namespace {
 
 } // namespace
 
-SystemMonitorService::SystemMonitorService() {
+SystemMonitorService::SystemMonitorService(bool enabled) {
   m_latest = makeInitialHistoryStats();
   m_history.fill(m_latest);
-  start();
+  if (enabled) {
+    start();
+  }
 }
 
 SystemMonitorService::~SystemMonitorService() { stop(); }
 
 bool SystemMonitorService::isRunning() const noexcept { return m_running.load(); }
+
+void SystemMonitorService::setEnabled(bool enabled) {
+  if (enabled) {
+    start();
+  } else {
+    stop();
+  }
+}
 
 SystemStats SystemMonitorService::latest() const {
   std::lock_guard lock{m_statsMutex};
@@ -134,7 +144,7 @@ void SystemMonitorService::retainCpuTemp() { m_cpuTempRefs.fetch_add(1, std::mem
 void SystemMonitorService::releaseCpuTemp() { m_cpuTempRefs.fetch_sub(1, std::memory_order_relaxed); }
 
 void SystemMonitorService::retainDiskPath(const std::string& path) {
-  const float initialPercent = readDiskUsagePercent(path);
+  const float initialPercent = isRunning() ? readDiskUsagePercent(path) : 0.0f;
   std::lock_guard lock{m_statsMutex};
   auto& disk = m_diskHistories[path];
   if (disk.refs == 0) {
@@ -177,11 +187,18 @@ void SystemMonitorService::start() {
   }
 
   m_running = true;
-  m_thread = std::thread([this]() { samplingLoop(); });
+  m_prevNetBytes.clear();
+  try {
+    m_thread = std::thread([this]() { samplingLoop(); });
+  } catch (...) {
+    m_running = false;
+    throw;
+  }
 }
 
 void SystemMonitorService::stop() {
   m_running = false;
+  m_wakeCv.notify_all();
   if (m_thread.joinable()) {
     m_thread.join();
   }
@@ -295,7 +312,8 @@ void SystemMonitorService::samplingLoop() {
     //              next.ramUsagePercent, next.ramUsedMb, next.ramTotalMb, next.swapUsedMb, next.swapTotalMb);
     // }
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::unique_lock wakeLock{m_wakeMutex};
+    m_wakeCv.wait_for(wakeLock, std::chrono::seconds(1), [this]() { return !m_running.load(); });
   }
 }
 

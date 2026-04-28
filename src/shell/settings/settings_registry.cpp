@@ -477,6 +477,9 @@ namespace settings {
                                 "hud overlay volume brightness"));
 
     // Services
+    entries.push_back(makeEntry("services", "system", tr("settings.system-monitor"), tr("settings.system-monitor-desc"),
+                                {"system", "monitor", "enabled"}, ToggleSetting{cfg.system.monitor.enabled},
+                                "system monitor cpu ram memory"));
     entries.push_back(makeEntry("services", "weather", tr("settings.weather"), tr("settings.weather-desc"),
                                 {"weather", "enabled"}, ToggleSetting{cfg.weather.enabled}, "forecast"));
     entries.push_back(makeEntry("services", "weather", tr("settings.weather-location"),

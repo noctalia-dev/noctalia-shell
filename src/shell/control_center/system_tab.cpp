@@ -211,7 +211,8 @@ std::unique_ptr<Flex> SystemTab::create() {
     infoLabel->setFontSize(Style::fontSizeBody * sc);
     infoLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
 
-    infoLabel->setText(buildSystemInfoText(m_monitor != nullptr ? m_monitor->latest() : SystemStats{}));
+    infoLabel->setText(
+        buildSystemInfoText(m_monitor != nullptr && m_monitor->isRunning() ? m_monitor->latest() : SystemStats{}));
     m_infoLabel = infoLabel.get();
     card->addChild(std::move(infoLabel));
 
@@ -252,7 +253,7 @@ void SystemTab::onClose() {
 void SystemTab::onFrameTick(float deltaMs) {
   (void)deltaMs;
 
-  if (!m_active || m_monitor == nullptr) {
+  if (!m_active || m_monitor == nullptr || !m_monitor->isRunning()) {
     return;
   }
 
@@ -339,17 +340,36 @@ void SystemTab::doUpdate(Renderer& renderer) {
     m_netGraph->setLineColor2(resolveThemeColor(roleColor(ColorRole::Secondary)));
   }
 
+  const bool monitorRunning = m_monitor->isRunning();
+
   if (m_infoLabel != nullptr) {
-    m_infoLabel->setText(buildSystemInfoText(m_monitor->latest()));
+    m_infoLabel->setText(buildSystemInfoText(monitorRunning ? m_monitor->latest() : SystemStats{}));
     m_infoLabel->measure(renderer);
   }
 
-  updateGraphs();
+  if (monitorRunning) {
+    updateGraphs();
+  } else {
+    if (m_cpuGraph != nullptr) {
+      m_cpuGraph->setCount1(0.0f);
+      m_cpuGraph->setCount2(0.0f);
+    }
+    if (m_ramGraph != nullptr) {
+      m_ramGraph->setCount1(0.0f);
+    }
+    if (m_netGraph != nullptr) {
+      m_netGraph->setCount1(0.0f);
+      m_netGraph->setCount2(0.0f);
+    }
+    m_graphInitialized = false;
+    m_lastSampleAt = {};
+    m_scrollProgress = 1.0f;
+  }
   syncLabels();
 }
 
 void SystemTab::updateGraphs() {
-  if (m_monitor == nullptr) {
+  if (m_monitor == nullptr || !m_monitor->isRunning()) {
     return;
   }
 
@@ -451,7 +471,25 @@ void SystemTab::updateGraphs() {
 }
 
 void SystemTab::syncLabels() {
-  if (m_monitor == nullptr) {
+  if (m_monitor == nullptr || !m_monitor->isRunning()) {
+    if (m_cpuPctLabel != nullptr) {
+      m_cpuPctLabel->setText("--");
+    }
+    if (m_cpuTempLabel != nullptr) {
+      m_cpuTempLabel->setText("--");
+    }
+    if (m_ramLabel != nullptr) {
+      m_ramLabel->setText("--");
+    }
+    if (m_rxLabel != nullptr) {
+      m_rxLabel->setText("--");
+    }
+    if (m_txLabel != nullptr) {
+      m_txLabel->setText("--");
+    }
+    if (m_loadLabel != nullptr) {
+      m_loadLabel->setText("--");
+    }
     return;
   }
 

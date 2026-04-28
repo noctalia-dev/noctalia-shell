@@ -316,6 +316,7 @@
       "audio": "Audio",
       "brightness": "Brightness",
       "night-light": "Night Light",
+      "system": "System",
       "toasts": "Toasts",
       "network": "Network",
       "directories": "Directories",
@@ -480,6 +481,8 @@
 
     "weather": "Weather",
     "weather-desc": "Enable the weather service",
+    "system-monitor": "System Monitor",
+    "system-monitor-desc": "Sample CPU, memory, network, load, temperature, and disk statistics",
     "weather-location": "Auto-Locate",
     "weather-location-desc": "Automatically detect location for weather",
     "weather-unit": "Temperature Unit",

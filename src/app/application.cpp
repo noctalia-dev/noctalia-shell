@@ -413,10 +413,37 @@ void Application::initServices() {
   }
 
   try {
-    m_systemMonitor = std::make_unique<SystemMonitorService>();
+    m_systemMonitor = std::make_unique<SystemMonitorService>(m_configService.config().system.monitor.enabled);
     if (m_systemMonitor->isRunning()) {
       kLog.info("system monitor service active");
+    } else {
+      kLog.info("system monitor service disabled by config");
     }
+    m_configService.addReloadCallback([this, shouldRefreshControlCenter]() {
+      if (m_systemMonitor == nullptr) {
+        return;
+      }
+
+      const bool enabled = m_configService.config().system.monitor.enabled;
+      const bool wasRunning = m_systemMonitor->isRunning();
+      if (enabled == wasRunning) {
+        return;
+      }
+
+      try {
+        m_systemMonitor->setEnabled(enabled);
+      } catch (const std::exception& e) {
+        kLog.warn("system monitor service failed to start: {}", e.what());
+        return;
+      }
+
+      kLog.info("system monitor service {}", m_systemMonitor->isRunning() ? "active" : "disabled by config");
+      m_bar.refresh();
+      m_desktopWidgetsController.requestLayout();
+      if (shouldRefreshControlCenter()) {
+        m_panelManager.refresh();
+      }
+    });
   } catch (const std::exception& e) {
     kLog.warn("system monitor service disabled: {}", e.what());
     m_systemMonitor.reset();

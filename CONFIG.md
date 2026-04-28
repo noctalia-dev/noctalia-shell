@@ -35,5 +35,5 @@ A ready-to-use starting config with all defaults is at [example.toml](example.to
 | [Wallpaper](config/wallpaper.md) | Wallpaper picker, overview backdrop, automation |
 | [Theme](config/theme.md) | Color schemes, modes, wallpaper-derived palettes |
 | [Theming Templates](config/theming-templates.md) | App theme template generation and export paths |
-| [Services](config/services.md) | Audio, sound cues, brightness, night light, weather, idle, notifications |
+| [Services](config/services.md) | Audio, sound cues, brightness, system monitor, night light, weather, idle, notifications |
 | [Shell](config/shell.md) | Global UI settings, OSD, keybinds, hooks |
