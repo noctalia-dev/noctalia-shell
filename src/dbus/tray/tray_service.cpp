@@ -275,6 +275,7 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
     msg >> serviceOrPath;
     const char* sender = msg.getSender();
     onRegisterStatusNotifierItem(serviceOrPath, sender != nullptr ? sender : "");
+    msg.createReply().send();
   };
 
   m_watcherObject
