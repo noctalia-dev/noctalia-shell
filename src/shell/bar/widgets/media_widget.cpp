@@ -6,6 +6,7 @@
 #include "net/http_client.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
+#include "shell/panel/panel_manager.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/image.h"
 #include "ui/controls/label.h"
@@ -15,6 +16,7 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <linux/input-event-codes.h>
 
 using namespace mpris;
 
@@ -24,28 +26,18 @@ namespace {
 
 } // namespace
 
-MediaWidget::MediaWidget(MprisService* mpris, HttpClient* httpClient, float maxWidth, float artSize)
-    : m_mpris(mpris), m_httpClient(httpClient), m_maxWidth(maxWidth), m_artSize(artSize) {}
+MediaWidget::MediaWidget(MprisService* mpris, HttpClient* httpClient, wl_output* output, float maxWidth, float artSize)
+    : m_mpris(mpris), m_httpClient(httpClient), m_output(output), m_maxWidth(maxWidth), m_artSize(artSize) {}
 
 void MediaWidget::create() {
   auto area = std::make_unique<InputArea>();
-  area->setOnMotion([this](const InputArea::PointerData& /*data*/) { m_clickReady = true; });
-  area->setOnLeave([this]() {
-    m_clickReady = false;
-    m_clickArmed = false;
-  });
-  area->setOnPress([this](const InputArea::PointerData& data) {
-    if (!data.pressed) {
-      return;
-    }
-    m_clickArmed = m_clickReady && data.button == BTN_LEFT;
-  });
+  area->setAcceptedButtons(BTN_LEFT | BTN_RIGHT);
   area->setOnClick([this](const InputArea::PointerData& data) {
-    if (!m_clickArmed || data.button != BTN_LEFT) {
+    if (data.button == BTN_LEFT) {
+      PanelManager::instance().togglePanel("control-center", m_output, 0.0f, 0.0f, "media");
       return;
     }
-    m_clickArmed = false;
-    if (m_mpris != nullptr) {
+    if (data.button == BTN_RIGHT && m_mpris != nullptr) {
       m_mpris->playPauseActive();
     }
   });

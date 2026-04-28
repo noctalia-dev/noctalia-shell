@@ -14,10 +14,11 @@ class Label;
 class MprisService;
 class Renderer;
 struct MprisPlayerInfo;
+struct wl_output;
 
 class MediaWidget : public Widget {
 public:
-  MediaWidget(MprisService* mpris, HttpClient* httpClient, float maxWidth, float artSize);
+  MediaWidget(MprisService* mpris, HttpClient* httpClient, wl_output* output, float maxWidth, float artSize);
 
   void create() override;
 
@@ -30,6 +31,7 @@ private:
 
   MprisService* m_mpris = nullptr;
   HttpClient* m_httpClient = nullptr;
+  wl_output* m_output = nullptr;
   float m_maxWidth = 220.0f;
   float m_artSize = 16.0f;
   InputArea* m_area = nullptr;
@@ -41,6 +43,4 @@ private:
   std::string m_lastArtUrl;
   std::string m_lastPlaybackStatus;
   std::unordered_set<std::string> m_pendingArtDownloads;
-  bool m_clickReady = false;
-  bool m_clickArmed = false;
 };
