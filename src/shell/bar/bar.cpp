@@ -10,6 +10,7 @@
 #include "render/render_context.h"
 #include "render/scene/rect_node.h"
 #include "shell/bar/widget.h"
+#include "shell/panel/panel_manager.h"
 #include "shell/surface_shadow.h"
 #include "system/night_light_manager.h"
 #include "system/system_monitor_service.h"
@@ -25,6 +26,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <linux/input-event-codes.h>
 #include <wayland-client-core.h>
 
 namespace {
@@ -32,6 +34,18 @@ namespace {
   constexpr float kCircularCapsuleNarrowWidthEpsilon = 1.0f;
   constexpr std::int32_t kAutoHideTriggerPx = 2;
   constexpr float kAutoHideSlideExtraPx = 16.0f;
+
+  bool pointInsideNode(const Node* node, float sceneX, float sceneY) {
+    if (node == nullptr) {
+      return false;
+    }
+    float localX = 0.0f;
+    float localY = 0.0f;
+    if (!Node::mapFromScene(node, sceneX, sceneY, localX, localY)) {
+      return false;
+    }
+    return localX >= 0.0f && localX < node->width() && localY >= 0.0f && localY < node->height();
+  }
 
   std::uint32_t positionToAnchor(const std::string& position) {
     if (position == "bottom") {
@@ -1366,6 +1380,15 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
     case PointerEvent::Type::Motion:
     case PointerEvent::Type::Button:
     case PointerEvent::Type::Axis:
+      if (event.type == PointerEvent::Type::Button && event.button == BTN_RIGHT && event.state == 1) {
+        auto& panelManager = PanelManager::instance();
+        if (panelManager.isOpen() && panelManager.activePanelId() == "control-center") {
+          panelManager.closePanel();
+        } else {
+          panelManager.openPanel("control-center", targetInstance->output, 0.0f, 0.0f, "overview");
+        }
+        return true;
+      }
       break;
     }
     return false;
@@ -1423,6 +1446,22 @@ bool Bar::onPointerEvent(const PointerEvent& event) {
     bool pressed = (event.state == 1); // WL_POINTER_BUTTON_STATE_PRESSED
     consumed = m_hoveredInstance->inputDispatcher.pointerButton(static_cast<float>(event.sx),
                                                                 static_cast<float>(event.sy), event.button, pressed);
+    if (pressed && event.button == BTN_RIGHT && !consumed) {
+      const float sx = static_cast<float>(event.sx);
+      const float sy = static_cast<float>(event.sy);
+      const bool insideAnySection = pointInsideNode(m_hoveredInstance->startSection, sx, sy) ||
+                                    pointInsideNode(m_hoveredInstance->centerSection, sx, sy) ||
+                                    pointInsideNode(m_hoveredInstance->endSection, sx, sy);
+      if (!insideAnySection) {
+        auto& panelManager = PanelManager::instance();
+        if (panelManager.isOpen() && panelManager.activePanelId() == "control-center") {
+          panelManager.closePanel();
+        } else {
+          panelManager.openPanel("control-center", m_hoveredInstance->output, 0.0f, 0.0f, "overview");
+        }
+        consumed = true;
+      }
+    }
     break;
   }
   case PointerEvent::Type::Axis: {
