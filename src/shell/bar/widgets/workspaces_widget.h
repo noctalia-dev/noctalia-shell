@@ -36,6 +36,8 @@ private:
   void startAnimation();
   void cancelAnimation();
   void applyItemLayout(std::size_t i);
+  [[nodiscard]] std::optional<std::size_t> activeWorkspaceIndex() const;
+  void activateAdjacentWorkspace(int direction);
 
   [[nodiscard]] static std::optional<std::size_t> numericWorkspaceId(const Workspace& workspace);
   [[nodiscard]] std::string workspaceLabel(const Workspace& workspace, std::size_t displayIndex) const;

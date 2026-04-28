@@ -15,6 +15,7 @@
 #include <cctype>
 #include <cmath>
 #include <linux/input-event-codes.h>
+#include <wayland-client-protocol.h>
 
 namespace {
   constexpr Logger kLog("workspace");
@@ -204,6 +205,18 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
         m_connection.activateWorkspace(m_output, wsCopy);
       }
     });
+    area->setOnAxis([this](const InputArea::PointerData& data) {
+      if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
+        return;
+      }
+      const float delta = data.scrollDelta(1.0f);
+      if (delta == 0.0f) {
+        return;
+      }
+      // Wayland reports positive wheel deltas for "scroll down", so treat that
+      // as moving to the next workspace and negative as previous.
+      activateAdjacentWorkspace(delta > 0.0f ? 1 : -1);
+    });
     item.area = static_cast<InputArea*>(m_container->addChild(std::move(area)));
     m_items.push_back(item);
   }
@@ -343,6 +356,42 @@ void WorkspacesWidget::applyItemLayout(std::size_t i) {
 }
 
 WorkspacesWidget::~WorkspacesWidget() { cancelAnimation(); }
+
+std::optional<std::size_t> WorkspacesWidget::activeWorkspaceIndex() const {
+  for (std::size_t i = 0; i < m_cachedState.size(); ++i) {
+    if (m_cachedState[i].active) {
+      return i;
+    }
+  }
+  return std::nullopt;
+}
+
+void WorkspacesWidget::activateAdjacentWorkspace(int direction) {
+  if (m_cachedState.empty() || direction == 0) {
+    return;
+  }
+
+  const auto active = activeWorkspaceIndex();
+  std::size_t targetIndex = 0;
+  if (!active.has_value()) {
+    targetIndex = direction > 0 ? 0 : (m_cachedState.size() - 1);
+  } else {
+    const std::size_t current = *active;
+    if (direction > 0) {
+      if (current + 1 >= m_cachedState.size()) {
+        return;
+      }
+      targetIndex = current + 1;
+    } else {
+      if (current == 0) {
+        return;
+      }
+      targetIndex = current - 1;
+    }
+  }
+
+  m_connection.activateWorkspace(m_output, m_cachedState[targetIndex]);
+}
 
 std::string WorkspacesWidget::workspaceLabel(const Workspace& workspace, std::size_t displayIndex) const {
   if (m_displayMode == DisplayMode::Id) {
