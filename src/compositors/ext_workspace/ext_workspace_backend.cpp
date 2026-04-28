@@ -1,4 +1,4 @@
-#include "compositors/ext_workspace_backend.h"
+#include "compositors/ext_workspace/ext_workspace_backend.h"
 
 #include "core/log.h"
 #include "ext-workspace-v1-client-protocol.h"

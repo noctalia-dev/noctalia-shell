@@ -1,4 +1,4 @@
-#include "compositors/ext_workspace_output_backend.h"
+#include "compositors/ext_workspace/ext_workspace_output_backend.h"
 
 #include "core/process.h"
 

@@ -1,7 +1,7 @@
 #include "compositors/output_backend.h"
 
 #include "compositors/compositor_detect.h"
-#include "compositors/ext_workspace_output_backend.h"
+#include "compositors/ext_workspace/ext_workspace_output_backend.h"
 #include "compositors/hyprland/hyprland_output_backend.h"
 #include "compositors/mango/mango_output_backend.h"
 #include "compositors/niri/niri_output_backend.h"

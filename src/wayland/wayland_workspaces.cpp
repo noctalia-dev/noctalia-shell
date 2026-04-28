@@ -1,6 +1,6 @@
 #include "wayland/wayland_workspaces.h"
 
-#include "compositors/ext_workspace_backend.h"
+#include "compositors/ext_workspace/ext_workspace_backend.h"
 #include "compositors/hyprland/hyprland_workspace_backend.h"
 #include "compositors/mango/mango_workspace_backend.h"
 #include "compositors/output_backend.h"
