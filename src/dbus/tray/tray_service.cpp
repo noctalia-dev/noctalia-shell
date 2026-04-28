@@ -837,7 +837,7 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
   }
 
   if (looks_like_dbus_name(busName)) {
-    refreshItemMetadata(itemId);
+    DeferredCall::callLater([this, itemId]() { refreshItemMetadata(itemId); });
   }
 }
 
