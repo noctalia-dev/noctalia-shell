@@ -59,7 +59,7 @@ void IdleInhibitor::ensureSurface() {
       .anchor = LayerShellAnchor::Top | LayerShellAnchor::Left,
       .width = 1,
       .height = 1,
-      .exclusiveZone = 0,
+      .exclusiveZone = -1,
       .marginTop = 0,
       .marginRight = 0,
       .marginBottom = 0,
