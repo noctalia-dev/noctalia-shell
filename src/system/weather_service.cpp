@@ -9,9 +9,11 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 #include <format>
 #include <fstream>
 #include <stdexcept>
+#include <string_view>
 #include <system_error>
 
 namespace {
@@ -27,6 +29,49 @@ namespace {
 
   std::int64_t toUnixSeconds(std::chrono::system_clock::time_point tp) {
     return std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
+  }
+
+  bool isIsoDate(std::string_view text) {
+    return text.size() == 10 && std::isdigit(static_cast<unsigned char>(text[0])) != 0 &&
+           std::isdigit(static_cast<unsigned char>(text[1])) != 0 &&
+           std::isdigit(static_cast<unsigned char>(text[2])) != 0 &&
+           std::isdigit(static_cast<unsigned char>(text[3])) != 0 && text[4] == '-' &&
+           std::isdigit(static_cast<unsigned char>(text[5])) != 0 &&
+           std::isdigit(static_cast<unsigned char>(text[6])) != 0 && text[7] == '-' &&
+           std::isdigit(static_cast<unsigned char>(text[8])) != 0 &&
+           std::isdigit(static_cast<unsigned char>(text[9])) != 0;
+  }
+
+  std::string todayIsoForOffset(std::int32_t utcOffsetSeconds) {
+    const auto shiftedNow = Clock::now() + std::chrono::seconds{utcOffsetSeconds};
+    const std::time_t time = Clock::to_time_t(shiftedNow);
+    std::tm tm{};
+    gmtime_r(&time, &tm);
+
+    char buffer[11]{};
+    if (std::strftime(buffer, sizeof(buffer), "%Y-%m-%d", &tm) == 0) {
+      return {};
+    }
+    return buffer;
+  }
+
+  bool dropPastForecastDays(WeatherSnapshot& snapshot) {
+    if (!snapshot.valid || snapshot.forecastDays.empty()) {
+      return false;
+    }
+
+    const std::string todayIso = todayIsoForOffset(snapshot.utcOffsetSeconds);
+    if (!isIsoDate(todayIso)) {
+      return false;
+    }
+
+    const auto oldSize = snapshot.forecastDays.size();
+    snapshot.forecastDays.erase(std::remove_if(snapshot.forecastDays.begin(), snapshot.forecastDays.end(),
+                                               [&todayIso](const WeatherForecastDay& day) {
+                                                 return isIsoDate(day.dateIso) && day.dateIso < todayIso;
+                                               }),
+                                snapshot.forecastDays.end());
+    return snapshot.forecastDays.size() != oldSize;
   }
 
   double readNumber(const nlohmann::json& json, const char* key) {
@@ -420,6 +465,7 @@ void WeatherService::handleLocationResponse(const std::filesystem::path& path, b
     m_loading = false;
     m_error = autoLocated ? "IP geolocation failed" : "Address lookup failed";
     scheduleRetryAfterFailure();
+    dropPastForecastDays(m_snapshot);
     notifyChanged();
     return;
   }
@@ -461,6 +507,7 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
   if (!success) {
     m_error = "Weather fetch failed";
     scheduleRetryAfterFailure();
+    dropPastForecastDays(m_snapshot);
     notifyChanged();
     return;
   }
@@ -530,6 +577,7 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
           .sunsetIso = sunsets[i].is_string() ? sunsets[i].get<std::string>() : std::string{},
       });
     }
+    dropPastForecastDays(next);
 
     m_snapshot = std::move(next);
     m_error.clear();
@@ -640,6 +688,7 @@ void WeatherService::loadCache() {
       }
     }
     m_snapshot.fetchedAt = fromUnixSeconds(readOptionalInt(snapshot, "fetched_at"));
+    dropPastForecastDays(m_snapshot);
 
     m_resolvedLatitude = m_snapshot.latitude;
     m_resolvedLongitude = m_snapshot.longitude;
