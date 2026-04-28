@@ -28,6 +28,11 @@
 
             src = ./.;
 
+            postPatch = ''
+            sed -i "s/'-march=native', '-mtune=native',//" meson.build
+            '';
+
+
             nativeBuildInputs = with pkgs; [
               meson
               ninja
@@ -65,7 +70,7 @@
             
             buildPhase = ''
               runHook preBuild
-              meson compile -C build
+              meson compile -C build -v
               runHook postBuild
             '';
             
