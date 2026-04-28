@@ -20,6 +20,7 @@ namespace {
 
   constexpr std::uint32_t kSizeQuant = 64;
   constexpr std::uint32_t kScaleQuant = 64;
+  constexpr float kAxisAlignedEpsilon = 0.0001f;
 
   inline std::uint32_t quantizeSize(float v) {
     return static_cast<std::uint32_t>(std::max(0.0f, v) * static_cast<float>(kSizeQuant) + 0.5f);
@@ -27,6 +28,10 @@ namespace {
 
   inline std::uint16_t quantizeScale(float v) {
     return static_cast<std::uint16_t>(std::max(0.0f, v) * static_cast<float>(kScaleQuant) + 0.5f);
+  }
+
+  bool isAxisAligned(const Mat3& transform) {
+    return std::abs(transform.m[1]) <= kAxisAlignedEpsilon && std::abs(transform.m[3]) <= kAxisAlignedEpsilon;
   }
 
   void hashCombine(std::size_t& seed, std::size_t v) { seed ^= v + 0x9E3779B97F4A7C15ULL + (seed << 12) + (seed >> 4); }
@@ -315,8 +320,7 @@ void CairoGlyphRenderer::drawGlyph(float surfaceWidth, float surfaceHeight, floa
   // land on texel centers without the 1px texture pad biasing icon alignment.
   // Skip when the transform has rotation/skew — snapping then introduces
   // whole-pixel jumps per frame and makes animations look jittery on 1x.
-  const bool axisAligned = world.m[1] == 0.0f && world.m[3] == 0.0f;
-  if (axisAligned) {
+  if (isAxisAligned(world)) {
     const float inkOffsetX = entry->inkOffsetXPx * invScale;
     const float inkOffsetY = entry->inkOffsetYPx * invScale;
     world.m[6] = std::round((world.m[6] + inkOffsetX) * m_contentScale) / m_contentScale - inkOffsetX;

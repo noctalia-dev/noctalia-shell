@@ -11,6 +11,8 @@
 struct wl_callback;
 struct wl_surface;
 struct ext_background_effect_surface_v1;
+struct wp_fractional_scale_v1;
+struct wp_viewport;
 
 class AnimationManager;
 class Node;
@@ -72,13 +74,20 @@ public:
   [[nodiscard]] std::uint32_t width() const noexcept { return m_width; }
   [[nodiscard]] std::uint32_t height() const noexcept { return m_height; }
   [[nodiscard]] std::int32_t bufferScale() const noexcept { return m_bufferScale; }
+  [[nodiscard]] float effectiveBufferScale() const noexcept;
+  [[nodiscard]] std::uint32_t bufferWidthFor(std::uint32_t logicalWidth) const noexcept;
+  [[nodiscard]] std::uint32_t bufferHeightFor(std::uint32_t logicalHeight) const noexcept;
 
   static void handleFrameDone(void* data, wl_callback* callback, std::uint32_t callbackData);
+  void onPreferredFractionalScale(std::uint32_t numerator);
 
 protected:
   virtual bool createWlSurface();
   virtual void onConfigure(std::uint32_t width, std::uint32_t height);
   virtual void render();
+  virtual void onScaleChanged();
+  void initializeSurfaceScaleProtocol();
+  void applySurfaceScaleState();
   void requestFrame();
   void destroySurface();
 
@@ -91,6 +100,7 @@ protected:
 private:
   void preparePendingFrame();
   void kickFrameLoop();
+  void resizeRenderTarget();
 
   RenderContext* m_renderContext = nullptr;
   RenderTarget m_renderTarget;
@@ -102,6 +112,8 @@ private:
   FrameTickCallback m_frameTickCallback;
   wl_callback* m_frameCallback = nullptr;
   ext_background_effect_surface_v1* m_backgroundEffect = nullptr;
+  wp_viewport* m_viewport = nullptr;
+  wp_fractional_scale_v1* m_fractionalScale = nullptr;
   std::optional<std::chrono::steady_clock::time_point> m_lastFrameAt;
   bool m_updateRequested = false;
   bool m_layoutRequested = false;
@@ -113,4 +125,5 @@ private:
   std::uint32_t m_width = 0;
   std::uint32_t m_height = 0;
   std::int32_t m_bufferScale = 1;
+  std::uint32_t m_fractionalScaleNumerator = 0;
 };

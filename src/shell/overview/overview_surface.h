@@ -33,6 +33,7 @@ protected:
   bool createWlSurface() override;
   void onConfigure(std::uint32_t width, std::uint32_t height) override;
   void render() override;
+  void onScaleChanged() override;
 
 private:
   void ensurePrograms();

@@ -20,6 +20,7 @@ namespace {
 
   constexpr std::uint32_t kSizeQuant = 64;
   constexpr std::uint32_t kScaleQuant = 64;
+  constexpr float kAxisAlignedEpsilon = 0.0001f;
 
   inline std::uint32_t quantizeSize(float v) {
     return static_cast<std::uint32_t>(std::max(0.0f, v) * static_cast<float>(kSizeQuant) + 0.5f);
@@ -27,6 +28,10 @@ namespace {
 
   inline std::uint16_t quantizeScale(float v) {
     return static_cast<std::uint16_t>(std::max(0.0f, v) * static_cast<float>(kScaleQuant) + 0.5f);
+  }
+
+  bool isAxisAligned(const Mat3& transform) {
+    return std::abs(transform.m[1]) <= kAxisAlignedEpsilon && std::abs(transform.m[3]) <= kAxisAlignedEpsilon;
   }
 
   void hashCombine(std::size_t& seed, std::size_t v) { seed ^= v + 0x9E3779B97F4A7C15ULL + (seed << 12) + (seed >> 4); }
@@ -664,8 +669,7 @@ void CairoTextRenderer::draw(float surfaceWidth, float surfaceHeight, float x, f
   // Only snap when the transform is axis-aligned (no rotation/skew). During
   // a rotation animation, snapping causes the translation to jump by whole
   // buffer pixels between frames, which looks jittery on 1x outputs.
-  const bool axisAligned = baseWorld.m[1] == 0.0f && baseWorld.m[3] == 0.0f;
-  if (axisAligned) {
+  if (isAxisAligned(baseWorld)) {
     baseWorld.m[6] = std::round(baseWorld.m[6] * m_contentScale) / m_contentScale;
     baseWorld.m[7] = std::round(baseWorld.m[7] * m_contentScale) / m_contentScale;
   }

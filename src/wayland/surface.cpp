@@ -2,9 +2,11 @@
 
 #include "core/ui_phase.h"
 #include "ext-background-effect-v1-client-protocol.h"
+#include "fractional-scale-v1-client-protocol.h"
 #include "render/animation/animation_manager.h"
 #include "render/render_context.h"
 #include "render/scene/node.h"
+#include "viewporter-client-protocol.h"
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
@@ -16,6 +18,22 @@ namespace {
   const wl_callback_listener kFrameListener = {
       .done = &Surface::handleFrameDone,
   };
+
+  void preferredFractionalScale(void* data, wp_fractional_scale_v1* /*fractionalScale*/, std::uint32_t scale) {
+    auto* self = static_cast<Surface*>(data);
+    self->onPreferredFractionalScale(scale);
+  }
+
+  const wp_fractional_scale_v1_listener kFractionalScaleListener = {
+      .preferred_scale = preferredFractionalScale,
+  };
+
+  std::uint32_t scaledExtent(std::uint32_t logical, float scale) noexcept {
+    if (logical == 0) {
+      return 0;
+    }
+    return std::max<std::uint32_t>(1, static_cast<std::uint32_t>(std::lround(static_cast<float>(logical) * scale)));
+  }
 
   class ScopedBoolFlag {
   public:
@@ -36,6 +54,24 @@ Surface::Surface(WaylandConnection& connection) : m_connection(connection) {}
 Surface::~Surface() { destroySurface(); }
 
 bool Surface::isRunning() const noexcept { return m_running; }
+
+float Surface::effectiveBufferScale() const noexcept {
+  if (m_fractionalScale != nullptr && m_viewport != nullptr) {
+    if (m_fractionalScaleNumerator > 0) {
+      return std::max(1.0f, static_cast<float>(m_fractionalScaleNumerator) / 120.0f);
+    }
+    return static_cast<float>(std::max(1, m_bufferScale));
+  }
+  return static_cast<float>(std::max(1, m_bufferScale));
+}
+
+std::uint32_t Surface::bufferWidthFor(std::uint32_t logicalWidth) const noexcept {
+  return scaledExtent(logicalWidth, effectiveBufferScale());
+}
+
+std::uint32_t Surface::bufferHeightFor(std::uint32_t logicalHeight) const noexcept {
+  return scaledExtent(logicalHeight, effectiveBufferScale());
+}
 
 void Surface::handleFrameDone(void* data, wl_callback* callback, std::uint32_t callbackData) {
   auto* self = static_cast<Surface*>(data);
@@ -91,6 +127,8 @@ bool Surface::createWlSurface() {
     return false;
   }
 
+  initializeSurfaceScaleProtocol();
+
   if (m_renderContext != nullptr) {
     m_renderTarget.create(m_surface, *m_renderContext);
   }
@@ -102,16 +140,8 @@ void Surface::onConfigure(std::uint32_t width, std::uint32_t height) {
   m_height = height;
   m_configured = true;
 
-  if (m_bufferScale > 1) {
-    wl_surface_set_buffer_scale(m_surface, m_bufferScale);
-  }
-
-  if (m_renderContext != nullptr) {
-    const auto bufferWidth = m_width * static_cast<std::uint32_t>(m_bufferScale);
-    const auto bufferHeight = m_height * static_cast<std::uint32_t>(m_bufferScale);
-    m_renderTarget.setLogicalSize(m_width, m_height);
-    m_renderTarget.resize(bufferWidth, bufferHeight);
-  }
+  applySurfaceScaleState();
+  resizeRenderTarget();
 
   if (m_configureCallback) {
     m_configureCallback(m_width, m_height);
@@ -127,6 +157,72 @@ void Surface::setPrepareFrameCallback(PrepareFrameCallback callback) { m_prepare
 void Surface::setUpdateCallback(UpdateCallback callback) { m_updateCallback = std::move(callback); }
 
 void Surface::setFrameTickCallback(FrameTickCallback callback) { m_frameTickCallback = std::move(callback); }
+
+void Surface::initializeSurfaceScaleProtocol() {
+  if (m_surface == nullptr || !m_connection.hasFractionalScale()) {
+    return;
+  }
+
+  auto* viewporter = m_connection.viewporter();
+  auto* fractionalScaleManager = m_connection.fractionalScaleManager();
+  if (viewporter == nullptr || fractionalScaleManager == nullptr) {
+    return;
+  }
+
+  m_viewport = wp_viewporter_get_viewport(viewporter, m_surface);
+  m_fractionalScale = wp_fractional_scale_manager_v1_get_fractional_scale(fractionalScaleManager, m_surface);
+  if (m_fractionalScale != nullptr) {
+    wp_fractional_scale_v1_add_listener(m_fractionalScale, &kFractionalScaleListener, this);
+  }
+
+  // Fractional-scale-v1 requires wl_surface buffer scale to remain 1; viewport
+  // destination keeps the surface-local size equal to the role configure size.
+  wl_surface_set_buffer_scale(m_surface, 1);
+}
+
+void Surface::applySurfaceScaleState() {
+  if (m_surface == nullptr) {
+    return;
+  }
+
+  if (m_fractionalScale != nullptr && m_viewport != nullptr) {
+    wl_surface_set_buffer_scale(m_surface, 1);
+    if (m_width > 0 && m_height > 0) {
+      wp_viewport_set_destination(m_viewport, static_cast<std::int32_t>(m_width), static_cast<std::int32_t>(m_height));
+    }
+    return;
+  }
+
+  wl_surface_set_buffer_scale(m_surface, std::max(1, m_bufferScale));
+}
+
+void Surface::resizeRenderTarget() {
+  if (m_renderContext == nullptr || m_width == 0 || m_height == 0) {
+    return;
+  }
+
+  m_renderTarget.setLogicalSize(m_width, m_height);
+  m_renderTarget.resize(bufferWidthFor(m_width), bufferHeightFor(m_height));
+}
+
+void Surface::onPreferredFractionalScale(std::uint32_t numerator) {
+  if (numerator == 0 || numerator == m_fractionalScaleNumerator) {
+    return;
+  }
+
+  m_fractionalScaleNumerator = numerator;
+  if (!m_configured) {
+    return;
+  }
+
+  onScaleChanged();
+}
+
+void Surface::onScaleChanged() {
+  applySurfaceScaleState();
+  resizeRenderTarget();
+  requestRedraw();
+}
 
 void Surface::setInputRegion(const std::vector<InputRect>& rects) {
   if (m_surface == nullptr) {
@@ -328,6 +424,16 @@ void Surface::destroySurface() {
   if (m_backgroundEffect != nullptr) {
     ext_background_effect_surface_v1_destroy(m_backgroundEffect);
     m_backgroundEffect = nullptr;
+  }
+
+  if (m_fractionalScale != nullptr) {
+    wp_fractional_scale_v1_destroy(m_fractionalScale);
+    m_fractionalScale = nullptr;
+  }
+
+  if (m_viewport != nullptr) {
+    wp_viewport_destroy(m_viewport);
+    m_viewport = nullptr;
   }
 
   if (m_surface != nullptr) {

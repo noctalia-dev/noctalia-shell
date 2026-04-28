@@ -11,7 +11,9 @@
 #include "ext-idle-notify-v1-client-protocol.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "ext-workspace-v1-client-protocol.h"
+#include "fractional-scale-v1-client-protocol.h"
 #include "idle-inhibit-unstable-v1-client-protocol.h"
+#include "viewporter-client-protocol.h"
 #include "virtual-keyboard-unstable-v1-client-protocol.h"
 #include "wayland/clipboard_service.h"
 #include "wayland/virtual_keyboard_service.h"
@@ -43,6 +45,8 @@ namespace {
   constexpr std::uint32_t kExtIdleNotifierVersion = 1;
   constexpr std::uint32_t kIdleInhibitManagerVersion = 1;
   constexpr std::uint32_t kExtBackgroundEffectManagerVersion = 1;
+  constexpr std::uint32_t kFractionalScaleManagerVersion = 1;
+  constexpr std::uint32_t kViewporterVersion = 1;
   constexpr std::uint32_t kOutputVersion = 4;
   constexpr std::uint32_t kVirtualKeyboardManagerVersion = 1;
 
@@ -463,6 +467,9 @@ bool WaylandConnection::hasSessionLockManager() const noexcept { return m_sessio
 bool WaylandConnection::hasIdleNotifier() const noexcept { return m_idleNotifier != nullptr; }
 bool WaylandConnection::hasIdleInhibitManager() const noexcept { return m_idleInhibitManager != nullptr; }
 bool WaylandConnection::hasXdgActivation() const noexcept { return m_xdgActivation != nullptr; }
+bool WaylandConnection::hasFractionalScale() const noexcept {
+  return m_fractionalScaleManager != nullptr && m_viewporter != nullptr;
+}
 
 std::string WaylandConnection::requestActivationToken(wl_surface* surface) const {
   if (m_xdgActivation == nullptr || m_display == nullptr) {
@@ -525,6 +532,10 @@ bool WaylandConnection::hasBackgroundEffectBlur() const noexcept { return m_back
 ext_background_effect_manager_v1* WaylandConnection::backgroundEffectManager() const noexcept {
   return m_backgroundEffectManager;
 }
+wp_fractional_scale_manager_v1* WaylandConnection::fractionalScaleManager() const noexcept {
+  return m_fractionalScaleManager;
+}
+wp_viewporter* WaylandConnection::viewporter() const noexcept { return m_viewporter; }
 
 void WaylandConnection::onBackgroundEffectCapabilities(std::uint32_t capabilities) noexcept {
   m_backgroundEffectBlurSupported = (capabilities & EXT_BACKGROUND_EFFECT_MANAGER_V1_CAPABILITY_BLUR) != 0;
@@ -701,6 +712,19 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     return;
   }
 
+  if (interfaceName == wp_fractional_scale_manager_v1_interface.name) {
+    const auto bindVersion = std::min(version, kFractionalScaleManagerVersion);
+    m_fractionalScaleManager = static_cast<wp_fractional_scale_manager_v1*>(
+        wl_registry_bind(registry, name, &wp_fractional_scale_manager_v1_interface, bindVersion));
+    return;
+  }
+
+  if (interfaceName == wp_viewporter_interface.name) {
+    const auto bindVersion = std::min(version, kViewporterVersion);
+    m_viewporter = static_cast<wp_viewporter*>(wl_registry_bind(registry, name, &wp_viewporter_interface, bindVersion));
+    return;
+  }
+
   if (interfaceName == ext_data_control_manager_v1_interface.name) {
     if (m_dataControlManager != nullptr && m_dataControlOps != extDataControlOps()) {
       m_dataControlOps->destroyManager(m_dataControlManager);
@@ -832,6 +856,16 @@ void WaylandConnection::cleanup() {
     m_backgroundEffectBlurSupported = false;
   }
 
+  if (m_fractionalScaleManager != nullptr) {
+    wp_fractional_scale_manager_v1_destroy(m_fractionalScaleManager);
+    m_fractionalScaleManager = nullptr;
+  }
+
+  if (m_viewporter != nullptr) {
+    wp_viewporter_destroy(m_viewporter);
+    m_viewporter = nullptr;
+  }
+
   if (m_dataControlManager != nullptr && m_dataControlOps != nullptr) {
     m_dataControlOps->destroyManager(m_dataControlManager);
     m_dataControlManager = nullptr;
@@ -899,11 +933,11 @@ void WaylandConnection::cleanup() {
 void WaylandConnection::logStartupSummary() const {
   kLog.info(
       "connected compositor={} shm={} layer-shell={} xdg-shell={} xdg-output={} ext-workspace={} mango-workspace={} "
-      "session-lock={} outputs={} workspace-backend={}",
+      "session-lock={} fractional-scale={} outputs={} workspace-backend={}",
       m_compositor != nullptr ? "yes" : "no", m_shm != nullptr ? "yes" : "no", hasLayerShell() ? "yes" : "no",
       hasXdgShell() ? "yes" : "no", hasXdgOutputManager() ? "yes" : "no", hasExtWorkspaceManager() ? "yes" : "no",
-      hasMangoWorkspaceManager() ? "yes" : "no", hasSessionLockManager() ? "yes" : "no", m_outputs.size(),
-      m_workspacesHandler.backendName());
+      hasMangoWorkspaceManager() ? "yes" : "no", hasSessionLockManager() ? "yes" : "no",
+      hasFractionalScale() ? "yes" : "no", m_outputs.size(), m_workspacesHandler.backendName());
 
   for (const auto& output : m_outputs) {
     kLog.info("output {} global={} scale={} mode={}x{} desc=\"{}\"", output.connectorName, output.name, output.scale,

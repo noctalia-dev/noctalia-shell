@@ -60,6 +60,8 @@ bool OverviewSurface::createWlSurface() {
     return false;
   }
 
+  initializeSurfaceScaleProtocol();
+
   if (m_shared == nullptr) {
     throw std::runtime_error("OverviewSurface requires a GlSharedContext");
   }
@@ -68,8 +70,8 @@ bool OverviewSurface::createWlSurface() {
 }
 
 void OverviewSurface::onConfigure(std::uint32_t width, std::uint32_t height) {
-  const auto bw = width * static_cast<std::uint32_t>(bufferScale());
-  const auto bh = height * static_cast<std::uint32_t>(bufferScale());
+  const auto bw = bufferWidthFor(width);
+  const auto bh = bufferHeightFor(height);
 
   m_bufW = bw;
   m_bufH = bh;
@@ -84,6 +86,13 @@ void OverviewSurface::onConfigure(std::uint32_t width, std::uint32_t height) {
   }
 
   Surface::onConfigure(width, height);
+}
+
+void OverviewSurface::onScaleChanged() {
+  if (width() == 0 || height() == 0) {
+    return;
+  }
+  onConfigure(width(), height());
 }
 
 void OverviewSurface::render() {
