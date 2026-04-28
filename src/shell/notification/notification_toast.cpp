@@ -43,9 +43,7 @@ namespace {
   constexpr float kPaddingTop = 0.0f;
   constexpr float kPaddingBottom = Style::spaceMd;
   constexpr int kFallbackVisibleCards = 5;
-  constexpr std::int32_t kSurfaceMarginTopExtra = 8;
-  constexpr std::int32_t kSurfaceMarginRight = 8;
-  constexpr std::int32_t kSurfaceMarginBottom = 8;
+  constexpr std::int32_t kSurfaceMargin = 8;
   constexpr float kQueuedY = -1.0f;
   constexpr float kCardInnerPad = Style::spaceMd;
   constexpr float kCloseButtonSize = 20.0f;
@@ -135,23 +133,6 @@ namespace {
       return output.height / std::max(1, output.scale);
     }
     return 0;
-  }
-
-  BarConfig resolvedBarConfigForOutput(ConfigService* configService, WaylandConnection* wayland, wl_output* output) {
-    BarConfig barConfig;
-    if (configService == nullptr || configService->config().bars.empty()) {
-      return barConfig;
-    }
-
-    barConfig = configService->config().bars.front();
-    if (wayland == nullptr || output == nullptr) {
-      return barConfig;
-    }
-
-    if (const auto* wlOutput = wayland->findOutputByWl(output); wlOutput != nullptr) {
-      return ConfigService::resolveForOutput(barConfig, *wlOutput);
-    }
-    return barConfig;
   }
 
   float bodyTopForSummary(float summaryHeight) {
@@ -1156,20 +1137,11 @@ std::optional<float> NotificationToast::findPlacementY(float candidateHeight,
 }
 
 uint32_t NotificationToast::surfaceHeightForOutput(wl_output* output) const {
-  const BarConfig barConfig = resolvedBarConfigForOutput(m_config, m_wayland, output);
-  const bool barTop = barConfig.position == "top";
-  const bool barBottom = barConfig.position == "bottom";
-  const std::int32_t barThickness = std::max(0, barConfig.thickness);
-  const std::int32_t barMarginV = std::max(0, barConfig.marginV);
-  const std::int32_t topReserved = (barTop ? barThickness : 0) + static_cast<std::int32_t>(kSurfaceMarginTopExtra);
-  const std::int32_t bottomReserved =
-      (barBottom ? (barMarginV + barThickness) : 0) + static_cast<std::int32_t>(kSurfaceMarginBottom);
-
   if (m_wayland != nullptr && output != nullptr) {
     if (const auto* wlOutput = m_wayland->findOutputByWl(output); wlOutput != nullptr) {
       const std::int32_t logicalHeight = outputLogicalHeight(*wlOutput);
       if (logicalHeight > 0) {
-        const std::int32_t available = logicalHeight - topReserved - bottomReserved;
+        const std::int32_t available = logicalHeight - (kSurfaceMargin * 2);
         return static_cast<uint32_t>(std::max(1, available));
       }
     }
@@ -1209,10 +1181,6 @@ void NotificationToast::ensureSurfaces() {
     auto inst = std::make_unique<Instance>();
     inst->output = output.output;
     inst->scale = output.scale;
-    const BarConfig barConfig = resolvedBarConfigForOutput(m_config, m_wayland, output.output);
-    const bool barTop = barConfig.position == "top";
-    const std::int32_t barThickness = std::max(0, barConfig.thickness);
-    const std::int32_t marginTop = (barTop ? barThickness : 0) + static_cast<std::int32_t>(kSurfaceMarginTopExtra);
 
     auto surfaceConfig = LayerSurfaceConfig{
         .nameSpace = "noctalia-notifications",
@@ -1220,9 +1188,11 @@ void NotificationToast::ensureSurfaces() {
         .anchor = LayerShellAnchor::Top | LayerShellAnchor::Right,
         .width = surfaceWidth,
         .height = surfaceHeight,
-        .exclusiveZone = -1,
-        .marginTop = marginTop,
-        .marginRight = kSurfaceMarginRight,
+        .exclusiveZone = 0,
+        .marginTop = kSurfaceMargin,
+        .marginRight = kSurfaceMargin,
+        .marginBottom = kSurfaceMargin,
+        .marginLeft = kSurfaceMargin,
         .keyboard = LayerShellKeyboard::None,
         .defaultWidth = surfaceWidth,
         .defaultHeight = surfaceHeight,
