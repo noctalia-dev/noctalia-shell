@@ -188,6 +188,7 @@ void WeatherService::tick() {
     return;
   }
   if (!locationConfigured()) {
+    m_refreshQueued = false;
     if (m_snapshot.valid || !m_error.empty()) {
       clearState();
       notifyChanged();
