@@ -6,7 +6,9 @@
 #include "ui/controls/flex.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
+#include "ui/controls/separator.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <ctime>
@@ -42,7 +44,8 @@ namespace {
 
 WeatherTab::WeatherTab(WeatherService* weather, ConfigService* config) : m_weather(weather), m_config(config) {
   m_detailRows.fill(nullptr);
-  m_dayCards.fill(nullptr);
+  m_dayRows.fill(nullptr);
+  m_daySeparators.fill(nullptr);
   m_dayIconSlots.fill(nullptr);
   m_dayGlyphs.fill(nullptr);
   m_dayMetas.fill(nullptr);
@@ -210,21 +213,21 @@ std::unique_ptr<Flex> WeatherTab::create() {
   tab->addChild(std::move(leftColumn));
 
   auto forecastColumn = std::make_unique<Flex>();
-  forecastColumn->setDirection(FlexDirection::Vertical);
-  forecastColumn->setAlign(FlexAlign::Stretch);
-  forecastColumn->setGap(Style::spaceSm * scale);
+  applySectionCardStyle(*forecastColumn, scale);
+  forecastColumn->setGap(0.0f);
+  forecastColumn->setPadding(0.0f, Style::spaceMd * scale);
   forecastColumn->setFlexGrow(2.0f);
+  forecastColumn->setFillParentMainAxis(true);
   m_forecastColumn = forecastColumn.get();
 
   for (std::size_t i = 0; i < kDayCount; ++i) {
-    auto card = std::make_unique<Flex>();
-    applySectionCardStyle(*card, scale);
-    card->setDirection(FlexDirection::Horizontal);
-    card->setAlign(FlexAlign::Center);
-    card->setGap(Style::spaceSm * scale);
-    card->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
-    card->setFlexGrow(1.0f);
-    m_dayCards[i] = card.get();
+    auto row = std::make_unique<Flex>();
+    row->setDirection(FlexDirection::Horizontal);
+    row->setAlign(FlexAlign::Center);
+    row->setGap(Style::spaceSm * scale);
+    row->setPadding(Style::spaceSm * scale, 0.0f);
+    row->setFlexGrow(1.0f);
+    m_dayRows[i] = row.get();
 
     auto iconSlot = std::make_unique<Flex>();
     iconSlot->setDirection(FlexDirection::Horizontal);
@@ -238,7 +241,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     glyph->setColor(roleColor(ColorRole::OnSurface));
     m_dayGlyphs[i] = glyph.get();
     iconSlot->addChild(std::move(glyph));
-    card->addChild(std::move(iconSlot));
+    row->addChild(std::move(iconSlot));
 
     auto infoStack = std::make_unique<Flex>();
     infoStack->setDirection(FlexDirection::Vertical);
@@ -277,8 +280,15 @@ std::unique_ptr<Flex> WeatherTab::create() {
 
     infoStack->addChild(std::move(topRow));
     infoStack->addChild(std::move(desc));
-    card->addChild(std::move(infoStack));
-    forecastColumn->addChild(std::move(card));
+    row->addChild(std::move(infoStack));
+    forecastColumn->addChild(std::move(row));
+
+    if (i + 1 < kDayCount) {
+      auto separator = std::make_unique<Separator>();
+      separator->setThickness(std::max(1.0f, scale));
+      m_daySeparators[i] = separator.get();
+      forecastColumn->addChild(std::move(separator));
+    }
   }
 
   tab->addChild(std::move(forecastColumn));
@@ -380,28 +390,38 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
   const float iconSlotWidth = Style::fontSizeTitle * 2.6f * scale;
   std::size_t visibleForecastDays = 0;
   for (std::size_t i = 0; i < kDayCount; ++i) {
-    if (m_dayCards[i] != nullptr && m_dayCards[i]->visible()) {
+    if (m_dayRows[i] != nullptr && m_dayRows[i]->visible()) {
       ++visibleForecastDays;
     }
   }
 
   if (m_forecastColumn != nullptr && visibleForecastDays > 0) {
+    const float separatorThickness = std::max(1.0f, scale);
+    std::size_t visibleSeparators = 0;
+    for (auto* separator : m_daySeparators) {
+      if (separator != nullptr) {
+        separator->setThickness(separatorThickness);
+        if (separator->visible()) {
+          ++visibleSeparators;
+        }
+      }
+    }
     const float forecastInnerHeight = std::max(
         0.0f, m_forecastColumn->height() - (m_forecastColumn->paddingTop() + m_forecastColumn->paddingBottom()));
-    const float gapsTotal = m_forecastColumn->gap() * static_cast<float>(visibleForecastDays - 1);
+    const float separatorsTotal = separatorThickness * static_cast<float>(visibleSeparators);
     const float rowHeight = std::max(Style::controlHeightLg * scale,
-                                     (forecastInnerHeight - gapsTotal) / static_cast<float>(visibleForecastDays));
+                                     (forecastInnerHeight - separatorsTotal) / static_cast<float>(visibleForecastDays));
 
     for (std::size_t i = 0; i < kDayCount; ++i) {
-      if (m_dayCards[i] == nullptr) {
+      if (m_dayRows[i] == nullptr) {
         continue;
       }
-      m_dayCards[i]->setMinHeight(m_dayCards[i]->visible() ? rowHeight : 0.0f);
+      m_dayRows[i]->setMinHeight(m_dayRows[i]->visible() ? rowHeight : 0.0f);
     }
   }
 
   for (std::size_t i = 0; i < kDayCount; ++i) {
-    if (m_dayCards[i] == nullptr) {
+    if (m_dayRows[i] == nullptr) {
       continue;
     }
     if (m_dayIconSlots[i] != nullptr) {
@@ -435,6 +455,18 @@ void WeatherTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeig
 
 void WeatherTab::doUpdate(Renderer& renderer) { sync(renderer); }
 
+void WeatherTab::setForecastVisibleDayCount(std::size_t count) {
+  const std::size_t visibleCount = std::min(count, kDayCount);
+  for (std::size_t i = 0; i < kDayCount; ++i) {
+    if (m_dayRows[i] != nullptr) {
+      m_dayRows[i]->setVisible(i < visibleCount);
+    }
+    if (i + 1 < kDayCount && m_daySeparators[i] != nullptr) {
+      m_daySeparators[i]->setVisible(i + 1 < visibleCount);
+    }
+  }
+}
+
 void WeatherTab::onClose() {
   m_rootLayout = nullptr;
   m_leftColumn = nullptr;
@@ -455,7 +487,8 @@ void WeatherTab::onClose() {
   m_longitudeLabel = nullptr;
   m_elevationLabel = nullptr;
   m_detailRows.fill(nullptr);
-  m_dayCards.fill(nullptr);
+  m_dayRows.fill(nullptr);
+  m_daySeparators.fill(nullptr);
   m_dayIconSlots.fill(nullptr);
   m_dayGlyphs.fill(nullptr);
   m_dayMetas.fill(nullptr);
@@ -514,11 +547,7 @@ void WeatherTab::sync(Renderer& renderer) {
     if (m_longitudeLabel != nullptr) {
       m_longitudeLabel->setText("--");
     }
-    for (auto* card : m_dayCards) {
-      if (card != nullptr) {
-        card->setVisible(false);
-      }
-    }
+    setForecastVisibleDayCount(0);
     hideEffect();
     return;
   }
@@ -552,11 +581,7 @@ void WeatherTab::sync(Renderer& renderer) {
     if (m_longitudeLabel != nullptr) {
       m_longitudeLabel->setText("--");
     }
-    for (auto* card : m_dayCards) {
-      if (card != nullptr) {
-        card->setVisible(false);
-      }
-    }
+    setForecastVisibleDayCount(0);
     hideEffect();
     return;
   }
@@ -591,11 +616,7 @@ void WeatherTab::sync(Renderer& renderer) {
     if (m_longitudeLabel != nullptr) {
       m_longitudeLabel->setText("--");
     }
-    for (auto* card : m_dayCards) {
-      if (card != nullptr) {
-        card->setVisible(false);
-      }
-    }
+    setForecastVisibleDayCount(0);
     hideEffect();
     return;
   }
@@ -649,11 +670,9 @@ void WeatherTab::sync(Renderer& renderer) {
                                   : std::format("{} ({})", snapshot.timezoneAbbreviation, snapshot.timezone));
   }
 
+  setForecastVisibleDayCount(snapshot.forecastDays.size());
   for (std::size_t i = 0; i < kDayCount; ++i) {
     const bool visible = i < snapshot.forecastDays.size();
-    if (m_dayCards[i] != nullptr) {
-      m_dayCards[i]->setVisible(visible);
-    }
     if (!visible) {
       continue;
     }

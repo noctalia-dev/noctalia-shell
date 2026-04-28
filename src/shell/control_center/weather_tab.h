@@ -10,6 +10,7 @@ class EffectNode;
 class Flex;
 class Glyph;
 class Label;
+class Separator;
 class WeatherService;
 class ConfigService;
 
@@ -25,6 +26,7 @@ private:
   void doLayout(Renderer& renderer, float contentWidth, float bodyHeight) override;
   void doUpdate(Renderer& renderer) override;
   void sync(Renderer& renderer);
+  void setForecastVisibleDayCount(std::size_t count);
   void hideEffect();
   [[nodiscard]] static std::string weekdayLabel(const std::string& isoDate);
   [[nodiscard]] static EffectType effectForWeatherCode(std::int32_t code, bool isDay);
@@ -53,7 +55,8 @@ private:
   Label* m_longitudeLabel = nullptr;
   Label* m_elevationLabel = nullptr;
   std::array<Flex*, kDetailRowCount> m_detailRows{};
-  std::array<Flex*, kDayCount> m_dayCards{};
+  std::array<Flex*, kDayCount> m_dayRows{};
+  std::array<Separator*, kDayCount - 1> m_daySeparators{};
   std::array<Flex*, kDayCount> m_dayIconSlots{};
   std::array<Glyph*, kDayCount> m_dayGlyphs{};
   std::array<Label*, kDayCount> m_dayMetas{};
