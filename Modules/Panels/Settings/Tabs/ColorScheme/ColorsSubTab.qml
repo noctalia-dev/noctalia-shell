@@ -22,21 +22,7 @@ ColumnLayout {
   signal openDownloadPopup
 
   function extractSchemeName(schemePath) {
-    var pathParts = schemePath.split("/");
-    var filename = pathParts[pathParts.length - 1];
-    var schemeName = filename.replace(".json", "");
-
-    if (schemeName === "Noctalia-default") {
-      schemeName = "Noctalia (default)";
-    } else if (schemeName === "Noctalia-legacy") {
-      schemeName = "Noctalia (legacy)";
-    } else if (schemeName === "Tokyo-Night") {
-      schemeName = "Tokyo Night";
-    } else if (schemeName === "Rosepine") {
-      schemeName = "Rose Pine";
-    }
-
-    return schemeName;
+    return ColorSchemeService.getBasename(schemePath);
   }
 
   function getSchemeColor(schemeName, colorKey) {
@@ -304,6 +290,25 @@ ColumnLayout {
             radius: width * 0.5
             color: modelData
           }
+        }
+      }
+
+      RowLayout {
+        width: parent.width
+        spacing: Style.marginM
+
+        NText {
+          Layout.fillWidth: true
+          wrapMode: Text.WordWrap
+          text: I18n.tr("panels.color-scheme.save-current-description")
+          pointSize: Style.fontSizeS
+          color: Color.mOnSurfaceVariant
+        }
+
+        NButton {
+          text: I18n.tr("common.save")
+          icon: "device-floppy"
+          onClicked: ColorSchemeService.saveCurrentAsUserScheme()
         }
       }
     }

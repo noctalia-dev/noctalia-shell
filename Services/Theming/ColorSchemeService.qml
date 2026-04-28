@@ -13,13 +13,16 @@ Singleton {
 
   property var schemes: []
   property bool scanning: false
+  property bool activateUserSavedAfterSave: false
   property string schemesDirectory: Quickshell.shellDir + "/Assets/ColorScheme"
   property string downloadedSchemesDirectory: Settings.configDir + "colorschemes"
+  readonly property string userSavedSchemeId: "User-saved-theme"
   property string colorsJsonFilePath: Settings.configDir + "colors.json"
   // Last successfully parsed predefined scheme JSON (full object). Used to refresh app templates
   // on wallpaper changes without re-running applyScheme (avoids rewriting colors.json when unchanged).
   property var lastPredefinedSchemeData: null
   readonly property string gtkRefreshScript: Quickshell.shellDir + "/Scripts/python/src/theming/gtk-refresh.py"
+  readonly property string templateProcessorScript: Quickshell.shellDir + "/Scripts/python/src/theming/template-processor.py"
 
   // prefer-light/prefer-dark only; GTK template post_hook still runs full gtk-refresh.
   function pushSystemColorScheme() {
@@ -84,6 +87,8 @@ Singleton {
       return "Tokyo Night";
     } else if (schemeName === "Rosepine") {
       return "Rose Pine";
+    } else if (schemeName === userSavedSchemeId) {
+      return I18n.tr("panels.color-scheme.user-saved-theme-name");
     }
     return schemeName;
   }
@@ -104,17 +109,18 @@ Singleton {
       schemeName = "Tokyo-Night";
     } else if (schemeName === "Rose Pine") {
       schemeName = "Rosepine";
+    } else if (schemeName === I18n.tr("panels.color-scheme.user-saved-theme-name")) {
+      schemeName = userSavedSchemeId;
     }
     // Check preinstalled directory first, then downloaded directory
     var preinstalledPath = schemesDirectory + "/" + schemeName + "/" + schemeName + ".json";
-    var downloadedPath = downloadedSchemesDirectory + "/" + schemeName + "/" + schemeName + ".json";
     // Try to find the scheme in the loaded schemes list to determine which directory it's in
     for (var i = 0; i < schemes.length; i++) {
       if (schemes[i].indexOf("/" + schemeName + "/") !== -1 || schemes[i].indexOf("/" + schemeName + ".json") !== -1) {
         return schemes[i];
       }
     }
-    // Fallback: prefer preinstalled, then downloaded
+    // Fallback: prefer preinstalled path
     return preinstalledPath;
   }
 
@@ -150,6 +156,97 @@ Singleton {
     }
   }
 
+  function pickGeneratedColor(modeData, key, fallback) {
+    if (modeData && modeData[key]) {
+      return modeData[key];
+    }
+    return fallback;
+  }
+
+  function buildVariantFromGenerated(modeData) {
+    return {
+      "mPrimary": pickGeneratedColor(modeData, "primary", "#000000"),
+      "mOnPrimary": pickGeneratedColor(modeData, "on_primary", "#000000"),
+      "mSecondary": pickGeneratedColor(modeData, "secondary", "#000000"),
+      "mOnSecondary": pickGeneratedColor(modeData, "on_secondary", "#000000"),
+      "mTertiary": pickGeneratedColor(modeData, "tertiary", "#000000"),
+      "mOnTertiary": pickGeneratedColor(modeData, "on_tertiary", "#000000"),
+      "mError": pickGeneratedColor(modeData, "error", "#000000"),
+      "mOnError": pickGeneratedColor(modeData, "on_error", "#000000"),
+      "mSurface": pickGeneratedColor(modeData, "surface", "#000000"),
+      "mOnSurface": pickGeneratedColor(modeData, "on_surface", "#000000"),
+      "mSurfaceVariant": pickGeneratedColor(modeData, "surface_container", pickGeneratedColor(modeData, "surface_variant", "#000000")),
+      "mOnSurfaceVariant": pickGeneratedColor(modeData, "on_surface_variant", "#000000"),
+      "mOutline": pickGeneratedColor(modeData, "outline_variant", pickGeneratedColor(modeData, "outline", "#000000")),
+      "mShadow": pickGeneratedColor(modeData, "shadow", pickGeneratedColor(modeData, "surface", "#000000")),
+      "mHover": pickGeneratedColor(modeData, "tertiary", "#000000"),
+      "mOnHover": pickGeneratedColor(modeData, "on_tertiary", "#000000")
+    };
+  }
+
+  function buildTerminalSectionFromGenerated(modeData) {
+    return {
+      "foreground": pickGeneratedColor(modeData, "on_surface", "#ffffff"),
+      "background": pickGeneratedColor(modeData, "surface", "#000000"),
+      "selectionFg": pickGeneratedColor(modeData, "on_surface_variant", "#ffffff"),
+      "selectionBg": pickGeneratedColor(modeData, "surface_variant", "#222222"),
+      "cursorText": pickGeneratedColor(modeData, "surface", "#000000"),
+      "cursor": pickGeneratedColor(modeData, "on_surface", "#ffffff"),
+      "normal": {
+        "black": pickGeneratedColor(modeData, "surface", "#000000"),
+        "red": pickGeneratedColor(modeData, "error", "#ff5f5f"),
+        "green": pickGeneratedColor(modeData, "primary", "#5fff87"),
+        "yellow": pickGeneratedColor(modeData, "secondary", "#ffd75f"),
+        "blue": pickGeneratedColor(modeData, "tertiary", "#5f87ff"),
+        "magenta": pickGeneratedColor(modeData, "primary_fixed_dim", pickGeneratedColor(modeData, "primary", "#af5fff")),
+        "cyan": pickGeneratedColor(modeData, "secondary_fixed_dim", pickGeneratedColor(modeData, "secondary", "#5fd7d7")),
+        "white": pickGeneratedColor(modeData, "on_surface", "#d0d0d0")
+      },
+      "bright": {
+        "black": pickGeneratedColor(modeData, "outline", "#303030"),
+        "red": pickGeneratedColor(modeData, "error", "#ff5f5f"),
+        "green": pickGeneratedColor(modeData, "primary", "#5fff87"),
+        "yellow": pickGeneratedColor(modeData, "secondary", "#ffd75f"),
+        "blue": pickGeneratedColor(modeData, "tertiary", "#5f87ff"),
+        "magenta": pickGeneratedColor(modeData, "primary_fixed_dim", pickGeneratedColor(modeData, "primary", "#af5fff")),
+        "cyan": pickGeneratedColor(modeData, "secondary_fixed_dim", pickGeneratedColor(modeData, "secondary", "#5fd7d7")),
+        "white": pickGeneratedColor(modeData, "on_surface", "#ffffff")
+      }
+    };
+  }
+
+  function buildSavedSchemeMode(modeData) {
+    var outVariant = buildVariantFromGenerated(modeData);
+    outVariant.terminal = buildTerminalSectionFromGenerated(modeData);
+    return outVariant;
+  }
+
+  function resolveWallpaperForThemeGeneration() {
+    var effectiveMonitor = Settings.data.colorSchemes.monitorForColors;
+    if (effectiveMonitor === "" || effectiveMonitor === undefined) {
+      effectiveMonitor = Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "";
+    }
+    return WallpaperService.getWallpaper(effectiveMonitor);
+  }
+
+  function saveCurrentAsUserScheme() {
+    if (saveSchemeProcess.running || generateSchemeProcess.running)
+      return;
+
+    saveSchemeProcess.schemeDisplayName = I18n.tr("panels.color-scheme.user-saved-theme-name");
+    saveSchemeProcess.schemePath = downloadedSchemesDirectory + "/" + userSavedSchemeId + "/" + userSavedSchemeId + ".json";
+
+    var wallpaperPath = resolveWallpaperForThemeGeneration();
+    if (!wallpaperPath) {
+      Logger.e("ColorScheme", "Cannot save user scheme: wallpaper path missing");
+      ToastService.showError(I18n.tr("panels.color-scheme.title"), I18n.tr("common.error"));
+      return;
+    }
+
+    generateSchemeProcess.command = ["python3", templateProcessorScript, wallpaperPath, "--scheme-type", Settings.data.colorSchemes.generationMethod];
+    generateSchemeProcess.running = true;
+  }
+
   Process {
     id: findProcess
     running: false
@@ -161,6 +258,15 @@ Singleton {
           return line.length > 0;
         });
         files.sort(function (a, b) {
+          var fileA = a.split("/");
+          var fileB = b.split("/");
+          var idA = fileA[fileA.length - 1].replace(".json", "");
+          var idB = fileB[fileB.length - 1].replace(".json", "");
+          if (idA === userSavedSchemeId && idB !== userSavedSchemeId)
+            return -1;
+          if (idB === userSavedSchemeId && idA !== userSavedSchemeId)
+            return 1;
+
           var nameA = getBasename(a).toLowerCase();
           var nameB = getBasename(b).toLowerCase();
           return nameA.localeCompare(nameB);
@@ -168,6 +274,14 @@ Singleton {
         schemes = files;
         scanning = false;
         Logger.d("ColorScheme", "Listed", schemes.length, "schemes");
+
+        if (activateUserSavedAfterSave) {
+          activateUserSavedAfterSave = false;
+          Settings.data.colorSchemes.useWallpaperColors = false;
+          setPredefinedScheme(I18n.tr("panels.color-scheme.user-saved-theme-name"));
+          return;
+        }
+
         // Normalize stored scheme to basename and re-apply if necessary
         var stored = Settings.data.colorSchemes.predefinedScheme;
         if (stored) {
@@ -188,6 +302,58 @@ Singleton {
 
     stdout: StdioCollector {}
     stderr: StdioCollector {}
+  }
+
+  Process {
+    id: generateSchemeProcess
+    running: false
+
+    onExited: function (exitCode) {
+      if (exitCode !== 0) {
+        Logger.e("ColorScheme", "Failed to generate dark/light wallpaper palettes for user scheme");
+        ToastService.showError(I18n.tr("panels.color-scheme.title"), I18n.tr("common.error"));
+        return;
+      }
+
+      try {
+        var generatedData = JSON.parse(stdout.text || "{}");
+        var darkModeData = generatedData.dark || generatedData.light || {};
+        var lightModeData = generatedData.light || generatedData.dark || {};
+
+        saveSchemeProcess.schemePayload = {
+          "dark": buildSavedSchemeMode(darkModeData),
+          "light": buildSavedSchemeMode(lightModeData)
+        };
+
+        saveSchemeProcess.command = ["python3", "-c", "import json, pathlib, sys; p=pathlib.Path(sys.argv[1]); p.parent.mkdir(parents=True, exist_ok=True); p.write_text(json.dumps(json.loads(sys.argv[2]), indent=2) + '\\n', encoding='utf-8')", saveSchemeProcess.schemePath, JSON.stringify(saveSchemeProcess.schemePayload)];
+        saveSchemeProcess.running = true;
+      } catch (e) {
+        Logger.e("ColorScheme", "Failed to parse generated wallpaper palettes:", e);
+        ToastService.showError(I18n.tr("panels.color-scheme.title"), I18n.tr("common.error"));
+      }
+    }
+
+    stdout: StdioCollector {}
+    stderr: StdioCollector {}
+  }
+
+  Process {
+    id: saveSchemeProcess
+    running: false
+    property string schemePath: ""
+    property string schemeDisplayName: ""
+    property var schemePayload: ({})
+
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        ToastService.showNotice(I18n.tr("panels.color-scheme.title"), I18n.tr("common.save") + ": " + schemeDisplayName, "settings-color-scheme");
+        activateUserSavedAfterSave = true;
+        loadColorSchemes();
+      } else {
+        Logger.e("ColorScheme", "Failed to save user scheme:", schemePath);
+        ToastService.showError(I18n.tr("panels.color-scheme.title"), I18n.tr("common.error"));
+      }
+    }
   }
 
   // Internal loader to read a scheme file
