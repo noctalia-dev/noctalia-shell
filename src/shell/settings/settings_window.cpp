@@ -307,6 +307,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
 
   auto bg = std::make_unique<Box>();
   bg->setPanelStyle();
+  bg->setRadius(0.0f);
   bg->setPosition(0.0f, 0.0f);
   bg->setSize(w, h);
   m_panelBackground = static_cast<Box*>(m_sceneRoot->addChild(std::move(bg)));
