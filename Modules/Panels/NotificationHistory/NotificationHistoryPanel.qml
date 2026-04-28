@@ -455,7 +455,7 @@ SmartPanel {
             NTabButton {
               tabIndex: 0
               text: I18n.tr("launcher.categories.all") + " (" + panelContent.countForRange(0) + ")"
-              checked: tabsBox.currentIndex === 0
+              checked: panelContent.currentRange === 0
               onClicked: panelContent.currentRange = 0
               pointSize: Style.fontSizeXS
             }
@@ -463,7 +463,7 @@ SmartPanel {
             NTabButton {
               tabIndex: 1
               text: I18n.tr("notifications.range.today") + " (" + panelContent.countForRange(1) + ")"
-              checked: tabsBox.currentIndex === 1
+              checked: panelContent.currentRange === 1
               onClicked: panelContent.currentRange = 1
               pointSize: Style.fontSizeXS
             }
@@ -471,7 +471,7 @@ SmartPanel {
             NTabButton {
               tabIndex: 2
               text: I18n.tr("notifications.range.yesterday") + " (" + panelContent.countForRange(2) + ")"
-              checked: tabsBox.currentIndex === 2
+              checked: panelContent.currentRange === 2
               onClicked: panelContent.currentRange = 2
               pointSize: Style.fontSizeXS
             }
@@ -479,7 +479,7 @@ SmartPanel {
             NTabButton {
               tabIndex: 3
               text: I18n.tr("notifications.range.earlier") + " (" + panelContent.countForRange(3) + ")"
-              checked: tabsBox.currentIndex === 3
+              checked: panelContent.currentRange === 3
               onClicked: panelContent.currentRange = 3
               pointSize: Style.fontSizeXS
             }
