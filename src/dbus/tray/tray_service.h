@@ -16,6 +16,7 @@ struct TrayItemInfo {
   std::string objectPath;
   std::string iconName;
   std::string iconThemePath;
+  std::string overlayIconName;
   std::string attentionIconName;
   std::string menuObjectPath;
   std::string itemName;
@@ -24,6 +25,9 @@ struct TrayItemInfo {
   std::vector<std::uint8_t> iconArgb32;
   std::int32_t iconWidth = 0;
   std::int32_t iconHeight = 0;
+  std::vector<std::uint8_t> overlayArgb32;
+  std::int32_t overlayWidth = 0;
+  std::int32_t overlayHeight = 0;
   std::vector<std::uint8_t> attentionArgb32;
   std::int32_t attentionWidth = 0;
   std::int32_t attentionHeight = 0;

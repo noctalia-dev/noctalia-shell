@@ -273,7 +273,13 @@ void TrayWidget::doLayout(Renderer& renderer, float containerWidth, float contai
   m_container->layout(renderer);
 }
 
-void TrayWidget::doUpdate(Renderer& renderer) { syncState(renderer); }
+void TrayWidget::doUpdate(Renderer& renderer) {
+  syncState(renderer);
+  if (m_rebuildPending) {
+    rebuild(renderer);
+    m_rebuildPending = false;
+  }
+}
 
 void TrayWidget::syncState(Renderer& renderer) {
   (void)renderer;
@@ -289,10 +295,36 @@ void TrayWidget::syncState(Renderer& renderer) {
     return;
   }
 
+  std::unordered_map<std::string, const TrayItemInfo*> previousById;
+  previousById.reserve(m_items.size());
+  for (const auto& oldItem : m_items) {
+    previousById[oldItem.id] = &oldItem;
+  }
+
   std::unordered_map<std::string, bool> stillPresent;
   stillPresent.reserve(next_items.size());
   for (const auto& item : next_items) {
     stillPresent[item.id] = true;
+
+    const auto prevIt = previousById.find(item.id);
+    if (prevIt == previousById.end() || prevIt->second == nullptr) {
+      continue;
+    }
+    const TrayItemInfo& prev = *prevIt->second;
+
+    // Resolved icon path cache is keyed by item id. Invalidate when icon-relevant
+    // metadata changes, or we can keep showing stale paths after icon switches.
+    if (prev.iconName != item.iconName || prev.overlayIconName != item.overlayIconName ||
+        prev.attentionIconName != item.attentionIconName || prev.iconThemePath != item.iconThemePath ||
+        prev.needsAttention != item.needsAttention || prev.status != item.status ||
+        prev.overlayWidth != item.overlayWidth || prev.overlayHeight != item.overlayHeight ||
+        prev.overlayArgb32 != item.overlayArgb32) {
+      kLog.info("tray widget invalidate icon cache id={} icon='{}'->'{}' overlay='{}'->'{}' attention='{}'->'{}' "
+                "status={}=>{}",
+                item.id, prev.iconName, item.iconName, prev.overlayIconName, item.overlayIconName,
+                prev.attentionIconName, item.attentionIconName, prev.status, item.status);
+      m_preferredIconPaths.erase(item.id);
+    }
   }
   for (auto it = m_preferredIconPaths.begin(); it != m_preferredIconPaths.end();) {
     if (!stillPresent.contains(it->first)) {
@@ -307,6 +339,7 @@ void TrayWidget::syncState(Renderer& renderer) {
   if (root() != nullptr) {
     root()->markLayoutDirty();
   }
+  requestRedraw();
 }
 
 void TrayWidget::rebuild(Renderer& renderer) {
@@ -317,6 +350,8 @@ void TrayWidget::rebuild(Renderer& renderer) {
 
   for (auto* image : m_loadedImages) {
     if (image != nullptr) {
+      kLog.info("tray widget image clear ptr={} path={} tex={}", static_cast<const void*>(image), image->sourcePath(),
+                image->textureId());
       image->clear(renderer);
     }
   }
@@ -333,24 +368,31 @@ void TrayWidget::rebuild(Renderer& renderer) {
     const std::string iconPath = resolveIconPath(item);
     const float itemSize = Style::barGlyphSize * m_contentScale;
     const float iconSize = itemSize;
-    const int iconRequestSize = static_cast<int>(std::round(iconSize));
+    const int iconRequestSize = std::max(32, static_cast<int>(std::round(iconSize * 2.0f)));
 
     std::unique_ptr<Node> iconNode;
     float iconW = iconSize;
     float iconH = iconSize;
 
     if (!iconPath.empty()) {
+      kLog.info("tray widget rebuild id={} preferred='{}' resolvedPath={}", item.id,
+                (item.needsAttention && !item.attentionIconName.empty()) ? item.attentionIconName : item.iconName,
+                iconPath);
       auto image = std::make_unique<Image>();
       image->setFit(ImageFit::Contain);
       image->setSize(iconSize, iconSize);
       if (image->setSourceFile(renderer, iconPath, iconRequestSize, true)) {
         iconW = iconSize;
         iconH = iconSize;
+        kLog.info("tray widget image load ok id={} path={} size={}x{} tex={} ptr={}", item.id, iconPath,
+                  image->sourceWidth(), image->sourceHeight(), image->textureId(),
+                  static_cast<const void*>(image.get()));
         kLog.debug("tray widget icon id={} source=file path={} size={}x{}", item.id, iconPath, image->sourceWidth(),
                    image->sourceHeight());
         m_loadedImages.push_back(image.get());
         iconNode = std::move(image);
       } else {
+        kLog.info("tray widget image load FAILED id={} path={}", item.id, iconPath);
         kLog.debug("tray widget icon id={} source=file path={} failed-to-load", item.id, iconPath);
       }
     }
@@ -381,6 +423,61 @@ void TrayWidget::rebuild(Renderer& renderer) {
       }
     }
 
+    std::unique_ptr<Node> overlayNode;
+    float overlayW = iconSize;
+    float overlayH = iconSize;
+    if (!item.needsAttention) {
+      auto resolveOverlayPath = [this, &item](const std::string& overlayName) -> std::string {
+        if (overlayName.empty()) {
+          return {};
+        }
+        if (const auto themed = resolveFromTrayThemePath(item.iconThemePath, overlayName); !themed.empty()) {
+          return themed;
+        }
+        if (const auto direct = m_iconResolver.resolve(overlayName); !direct.empty()) {
+          return direct;
+        }
+        if (const auto it = m_appIcons.find(overlayName); it != m_appIcons.end()) {
+          return m_iconResolver.resolve(it->second);
+        }
+        const std::string lower = toLower(overlayName);
+        if (const auto it = m_appIcons.find(lower); it != m_appIcons.end()) {
+          return m_iconResolver.resolve(it->second);
+        }
+        return {};
+      };
+
+      const std::string overlayPath = resolveOverlayPath(item.overlayIconName);
+      if (!overlayPath.empty()) {
+        auto overlayImage = std::make_unique<Image>();
+        overlayImage->setFit(ImageFit::Contain);
+        overlayImage->setSize(iconSize, iconSize);
+        if (overlayImage->setSourceFile(renderer, overlayPath, iconRequestSize, true)) {
+          overlayW = iconSize;
+          overlayH = iconSize;
+          kLog.debug("tray widget overlay id={} source=file path={} size={}x{}", item.id, overlayPath,
+                     overlayImage->sourceWidth(), overlayImage->sourceHeight());
+          m_loadedImages.push_back(overlayImage.get());
+          overlayNode = std::move(overlayImage);
+        }
+      }
+
+      if (overlayNode == nullptr && !item.overlayArgb32.empty() && item.overlayWidth > 0 && item.overlayHeight > 0) {
+        auto overlayImage = std::make_unique<Image>();
+        overlayImage->setFit(ImageFit::Contain);
+        overlayImage->setSize(iconSize, iconSize);
+        if (overlayImage->setSourceRaw(renderer, item.overlayArgb32.data(), item.overlayArgb32.size(),
+                                       item.overlayWidth, item.overlayHeight, 0, PixmapFormat::ARGB, true)) {
+          overlayW = iconSize;
+          overlayH = iconSize;
+          kLog.debug("tray widget overlay id={} source=pixmap size={}x{} (bytes={})", item.id, item.overlayWidth,
+                     item.overlayHeight, item.overlayArgb32.size());
+          m_loadedImages.push_back(overlayImage.get());
+          overlayNode = std::move(overlayImage);
+        }
+      }
+    }
+
     if (iconNode == nullptr) {
       auto glyph = std::make_unique<Glyph>();
       const std::string fallback = iconForItem(item);
@@ -393,6 +490,18 @@ void TrayWidget::rebuild(Renderer& renderer) {
       iconH = glyph->height();
       iconNode = std::move(glyph);
       kLog.debug("tray widget icon id={} source=glyph name={}", item.id, fallback);
+    }
+
+    if (overlayNode != nullptr && iconNode != nullptr) {
+      auto stack = std::make_unique<Node>();
+      stack->setSize(itemSize, itemSize);
+      iconNode->setPosition(std::round((itemSize - iconW) * 0.5f), std::round((itemSize - iconH) * 0.5f));
+      overlayNode->setPosition(std::round((itemSize - overlayW) * 0.5f), std::round((itemSize - overlayH) * 0.5f));
+      stack->addChild(std::move(iconNode));
+      stack->addChild(std::move(overlayNode));
+      iconNode = std::move(stack);
+      iconW = itemSize;
+      iconH = itemSize;
     }
 
     // Wrap icon in InputArea for click handling
@@ -467,7 +576,7 @@ void TrayWidget::buildDesktopIconIndex() {
 
 std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
   if (const auto it = m_preferredIconPaths.find(item.id); it != m_preferredIconPaths.end() && !it->second.empty()) {
-    kLog.debug("tray widget resolve id={} source=cached path={}", item.id, it->second);
+    kLog.info("tray widget resolve id={} source=cached path={}", item.id, it->second);
     return it->second;
   }
 
@@ -475,7 +584,7 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
       item.needsAttention && !item.attentionIconName.empty() ? item.attentionIconName : item.iconName;
 
   if (const auto themed = resolveFromTrayThemePath(item.iconThemePath, preferred); !themed.empty()) {
-    kLog.debug("tray widget resolve id={} source=theme-path variant='{}' path={}", item.id, preferred, themed);
+    kLog.info("tray widget resolve id={} source=theme-path variant='{}' path={}", item.id, preferred, themed);
     m_preferredIconPaths[item.id] = themed;
     return themed;
   }
@@ -530,18 +639,26 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
                                        ? item.id
                                        : (isUniqueBusName(item.busName) ? item.objectPath : item.id);
 
-  for (const auto& [label, candidate] :
-       std::array<std::pair<const char*, const std::string*>, 6>{{{"preferred", &preferred},
-                                                                  {"itemName", &item.itemName},
-                                                                  {"title", &item.title},
-                                                                  {"objectPath", &item.objectPath},
-                                                                  {"busName", &stableBusName},
-                                                                  {"id", &stableItemId}}}) {
+  std::vector<std::pair<const char*, const std::string*>> candidates;
+  candidates.reserve(6);
+  candidates.emplace_back("preferred", &preferred);
+  // When an explicit tray IconName is provided, treat it as authoritative.
+  // Falling back to generic app-id/title mappings can hide stateful icon
+  // changes (e.g. indicator on/off variants) behind a constant app icon.
+  if (preferred.empty()) {
+    candidates.emplace_back("itemName", &item.itemName);
+    candidates.emplace_back("title", &item.title);
+    candidates.emplace_back("objectPath", &item.objectPath);
+    candidates.emplace_back("busName", &stableBusName);
+    candidates.emplace_back("id", &stableItemId);
+  }
+
+  for (const auto& [label, candidate] : candidates) {
     for (const auto& variant : identifierVariants(*candidate)) {
       if (const auto mapped = resolveMapped(variant); !mapped.empty()) {
         if (!isSymbolicIconPath(mapped)) {
-          kLog.debug("tray widget resolve id={} source=mapped label={} variant='{}' path={}", item.id, label, variant,
-                     mapped);
+          kLog.info("tray widget resolve id={} source=mapped label={} variant='{}' path={}", item.id, label, variant,
+                    mapped);
           m_preferredIconPaths[item.id] = mapped;
           return mapped;
         }
@@ -554,8 +671,8 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
 
       if (const auto direct = resolveDirect(variant); !direct.empty()) {
         if (!isSymbolicIconName(variant) && !isSymbolicIconPath(direct)) {
-          kLog.debug("tray widget resolve id={} source=direct label={} variant='{}' path={}", item.id, label, variant,
-                     direct);
+          kLog.info("tray widget resolve id={} source=direct label={} variant='{}' path={}", item.id, label, variant,
+                    direct);
           m_preferredIconPaths[item.id] = direct;
           return direct;
         }

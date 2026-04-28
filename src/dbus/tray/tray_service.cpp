@@ -768,6 +768,7 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
                                 .objectPath = objectPath,
                                 .iconName = {},
                                 .iconThemePath = {},
+                                .overlayIconName = {},
                                 .attentionIconName = {},
                                 .menuObjectPath = {},
                                 .itemName = {},
@@ -776,6 +777,9 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
                                 .iconArgb32 = {},
                                 .iconWidth = 0,
                                 .iconHeight = 0,
+                                .overlayArgb32 = {},
+                                .overlayWidth = 0,
+                                .overlayHeight = 0,
                                 .attentionArgb32 = {},
                                 .attentionWidth = 0,
                                 .attentionHeight = 0,
@@ -787,17 +791,43 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
           itemId, sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{busName}, sdbus::ObjectPath{objectPath}));
 
       proxyIt->second->uponSignal("NewIcon").onInterface(k_item_interface).call([this, itemId]() {
+        kLog.info("tray signal NewIcon id={}", itemId);
         refreshItemMetadata(itemId);
       });
       proxyIt->second->uponSignal("NewAttentionIcon").onInterface(k_item_interface).call([this, itemId]() {
+        kLog.info("tray signal NewAttentionIcon id={}", itemId);
+        refreshItemMetadata(itemId);
+      });
+      proxyIt->second->uponSignal("NewOverlayIcon").onInterface(k_item_interface).call([this, itemId]() {
+        kLog.info("tray signal NewOverlayIcon id={}", itemId);
+        refreshItemMetadata(itemId);
+      });
+      proxyIt->second->uponSignal("NewToolTip").onInterface(k_item_interface).call([this, itemId]() {
+        kLog.info("tray signal NewToolTip id={}", itemId);
         refreshItemMetadata(itemId);
       });
       proxyIt->second->uponSignal("NewStatus")
           .onInterface(k_item_interface)
-          .call([this, itemId](const std::string& /*status*/) { refreshItemMetadata(itemId); });
+          .call([this, itemId](const std::string& status) {
+            kLog.info("tray signal NewStatus id={} status={}", itemId, status);
+            refreshItemMetadata(itemId);
+          });
       proxyIt->second->uponSignal("NewTitle")
           .onInterface(k_item_interface)
-          .call([this, itemId](const std::string& /*title*/) { refreshItemMetadata(itemId); });
+          .call([this, itemId](const std::string& title) {
+            kLog.info("tray signal NewTitle id={} title='{}'", itemId, title);
+            refreshItemMetadata(itemId);
+          });
+      proxyIt->second->uponSignal("PropertiesChanged")
+          .onInterface("org.freedesktop.DBus.Properties")
+          .call([this, itemId](const std::string& iface, const std::map<std::string, sdbus::Variant>& changed,
+                               const std::vector<std::string>& invalidated) {
+            if (iface == k_item_interface) {
+              kLog.info("tray signal PropertiesChanged id={} iface={} changed={} invalidated={}", itemId, iface,
+                        changed.size(), invalidated.size());
+              refreshItemMetadata(itemId);
+            }
+          });
     }
 
     kLog.debug("item registered: {}", itemId);
@@ -852,17 +882,43 @@ bool TrayService::ensureItemProxy(const std::string& itemId) {
                                                            sdbus::ObjectPath{item.objectPath}));
 
       proxyIt->second->uponSignal("NewIcon").onInterface(k_item_interface).call([this, itemId]() {
+        kLog.info("tray signal NewIcon id={}", itemId);
         refreshItemMetadata(itemId);
       });
       proxyIt->second->uponSignal("NewAttentionIcon").onInterface(k_item_interface).call([this, itemId]() {
+        kLog.info("tray signal NewAttentionIcon id={}", itemId);
+        refreshItemMetadata(itemId);
+      });
+      proxyIt->second->uponSignal("NewOverlayIcon").onInterface(k_item_interface).call([this, itemId]() {
+        kLog.info("tray signal NewOverlayIcon id={}", itemId);
+        refreshItemMetadata(itemId);
+      });
+      proxyIt->second->uponSignal("NewToolTip").onInterface(k_item_interface).call([this, itemId]() {
+        kLog.info("tray signal NewToolTip id={}", itemId);
         refreshItemMetadata(itemId);
       });
       proxyIt->second->uponSignal("NewStatus")
           .onInterface(k_item_interface)
-          .call([this, itemId](const std::string& /*status*/) { refreshItemMetadata(itemId); });
+          .call([this, itemId](const std::string& status) {
+            kLog.info("tray signal NewStatus id={} status={}", itemId, status);
+            refreshItemMetadata(itemId);
+          });
       proxyIt->second->uponSignal("NewTitle")
           .onInterface(k_item_interface)
-          .call([this, itemId](const std::string& /*title*/) { refreshItemMetadata(itemId); });
+          .call([this, itemId](const std::string& title) {
+            kLog.info("tray signal NewTitle id={} title='{}'", itemId, title);
+            refreshItemMetadata(itemId);
+          });
+      proxyIt->second->uponSignal("PropertiesChanged")
+          .onInterface("org.freedesktop.DBus.Properties")
+          .call([this, itemId](const std::string& iface, const std::map<std::string, sdbus::Variant>& changed,
+                               const std::vector<std::string>& invalidated) {
+            if (iface == k_item_interface) {
+              kLog.info("tray signal PropertiesChanged id={} iface={} changed={} invalidated={}", itemId, iface,
+                        changed.size(), invalidated.size());
+              refreshItemMetadata(itemId);
+            }
+          });
 
       kLog.info("resolved path-only tray item lazily path={} bus={}", item.objectPath, candidate);
       refreshItemMetadata(itemId);
@@ -906,6 +962,7 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
   // wipe out data that was successfully fetched earlier (e.g. menuObjectPath).
   next.iconName = get_item_property_string_or(*proxyIt->second, "IconName", cur.iconName);
   next.iconThemePath = get_item_property_string_or(*proxyIt->second, "IconThemePath", cur.iconThemePath);
+  next.overlayIconName = get_item_property_string_or(*proxyIt->second, "OverlayIconName", cur.overlayIconName);
   next.attentionIconName = get_item_property_string_or(*proxyIt->second, "AttentionIconName", cur.attentionIconName);
   next.menuObjectPath = get_item_property_string_or(*proxyIt->second, "Menu", cur.menuObjectPath);
   next.itemName = get_item_property_string_or(*proxyIt->second, "Id", cur.itemName);
@@ -916,16 +973,26 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
   const auto iconPixmaps = get_icon_pixmaps_or(*proxyIt->second, "IconPixmap", {});
   pickBestPixmap(iconPixmaps, next.iconArgb32, next.iconWidth, next.iconHeight);
 
+  const auto overlayPixmaps = get_icon_pixmaps_or(*proxyIt->second, "OverlayIconPixmap", {});
+  pickBestPixmap(overlayPixmaps, next.overlayArgb32, next.overlayWidth, next.overlayHeight);
+
   const auto attentionPixmaps = get_icon_pixmaps_or(*proxyIt->second, "AttentionIconPixmap", {});
   pickBestPixmap(attentionPixmaps, next.attentionArgb32, next.attentionWidth, next.attentionHeight);
 
-  kLog.debug("item metadata id={} itemName='{}' status={} iconName='{}' attentionIconName='{}' menu='{}' "
-             "iconThemePath='{}' iconPixmap={}x{} (bytes={}) attentionPixmap={}x{} (bytes={})",
-             itemId, next.itemName, next.status, next.iconName, next.attentionIconName, next.menuObjectPath,
-             next.iconThemePath, next.iconWidth, next.iconHeight, next.iconArgb32.size(), next.attentionWidth,
+  kLog.debug("item metadata id={} itemName='{}' status={} iconName='{}' overlayIconName='{}' attentionIconName='{}' "
+             "menu='{}' iconThemePath='{}' iconPixmap={}x{} (bytes={}) overlayPixmap={}x{} (bytes={}) "
+             "attentionPixmap={}x{} (bytes={})",
+             itemId, next.itemName, next.status, next.iconName, next.overlayIconName, next.attentionIconName,
+             next.menuObjectPath, next.iconThemePath, next.iconWidth, next.iconHeight, next.iconArgb32.size(),
+             next.overlayWidth, next.overlayHeight, next.overlayArgb32.size(), next.attentionWidth,
              next.attentionHeight, next.attentionArgb32.size());
 
   if (next == itemIt->second) {
+    kLog.info(
+        "tray metadata unchanged id={} status={} icon='{}' overlay='{}' attention='{}' pixmap={}x{} overlay={}x{} "
+        "attention={}x{}",
+        itemId, next.status, next.iconName, next.overlayIconName, next.attentionIconName, next.iconWidth,
+        next.iconHeight, next.overlayWidth, next.overlayHeight, next.attentionWidth, next.attentionHeight);
     // Menu path unchanged — make sure the cache/subscription exists (may not have
     // been set up yet if the Menu property was empty on first registration).
     ensureMenuCache(itemId, next.busName, next.menuObjectPath);
@@ -938,6 +1005,12 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
   }
 
   itemIt->second = std::move(next);
+  kLog.info("tray metadata updated id={} status={} icon='{}' overlay='{}' attention='{}' pixmap={}x{} overlay={}x{} "
+            "attention={}x{}",
+            itemId, itemIt->second.status, itemIt->second.iconName, itemIt->second.overlayIconName,
+            itemIt->second.attentionIconName, itemIt->second.iconWidth, itemIt->second.iconHeight,
+            itemIt->second.overlayWidth, itemIt->second.overlayHeight, itemIt->second.attentionWidth,
+            itemIt->second.attentionHeight);
   ensureMenuCache(itemId, itemIt->second.busName, itemIt->second.menuObjectPath);
   emitChanged();
 }
