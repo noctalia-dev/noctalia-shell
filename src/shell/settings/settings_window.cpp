@@ -96,6 +96,7 @@ void SettingsWindow::initialize(WaylandConnection& wayland, ConfigService* confi
   m_wayland = &wayland;
   m_config = config;
   m_renderContext = renderContext;
+  m_showAdvanced = m_config != nullptr ? m_config->config().shell.settingsShowAdvanced : false;
 }
 
 float SettingsWindow::uiScale() const {
@@ -113,6 +114,8 @@ void SettingsWindow::open() {
     m_wayland->activateSurface(m_surface->wlSurface());
     return;
   }
+
+  m_showAdvanced = m_config != nullptr ? m_config->config().shell.settingsShowAdvanced : false;
 
   wl_output* output = m_wayland->lastPointerOutput();
   if (output == nullptr) {
@@ -736,6 +739,12 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   advancedToggle->setScale(scale);
   advancedToggle->setChecked(m_showAdvanced);
   advancedToggle->setOnChange([this, requestRebuild](bool value) {
+    if (m_config != nullptr && !m_config->setOverride({"shell", "settings_show_advanced"}, value)) {
+      m_statusMessage = i18n::tr("settings.write-error");
+      m_statusIsError = true;
+      requestRebuild();
+      return;
+    }
     m_showAdvanced = value;
     m_pendingResetPageScope.clear();
     requestRebuild();

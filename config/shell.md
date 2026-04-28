@@ -13,16 +13,17 @@ Global UI settings that apply across all shell surfaces.
 
 ```toml
 [shell]
-ui_scale             = 1.0             # content scale for panels and non-bar shell UI
-font_family          = "sans-serif"    # Pango family string; Fontconfig handles fallback
-lang                 = "en"            # override language detection
-offline_mode         = false           # block all outgoing HTTP requests
-telemetry_enabled    = false           # anonymous startup ping
-polkit_agent         = false           # register Noctalia's native polkit authentication agent
-password_style       = "default"       # default | random
-avatar_path          = "~/Pictures/avatar.png"
-show_location        = true            # show weather location text in shell UI
-clipboard_auto_paste = "auto"          # off | auto | ctrl_v | ctrl_shift_v | shift_insert
+ui_scale              = 1.0             # content scale for panels and non-bar shell UI
+font_family           = "sans-serif"    # Pango family string; Fontconfig handles fallback
+lang                  = "en"            # override language detection
+offline_mode          = false           # block all outgoing HTTP requests
+telemetry_enabled     = false           # anonymous startup ping
+polkit_agent          = false           # register Noctalia's native polkit authentication agent
+password_style        = "default"       # default | random
+avatar_path           = "~/Pictures/avatar.png"
+settings_show_advanced = false          # show advanced settings by default in Settings
+show_location         = true            # show weather location text in shell UI
+clipboard_auto_paste  = "auto"          # off | auto | ctrl_v | ctrl_shift_v | shift_insert
 
 [shell.animation]
 enabled = true
@@ -46,6 +47,7 @@ Notes:
 - `polkit_agent` controls registration on `org.freedesktop.PolicyKit1`. Keep disabled if another desktop agent handles auth prompts.
 - Notification daemon ownership moved out of `[shell]`: use `[notification].enable_daemon` in `config/services.md`.
 - `password_style`: `default` uses `circle-filled`; `random` cycles through multiple filled glyph shapes on polkit and lock screen inputs.
+- `settings_show_advanced`: when `true`, Settings opens with advanced entries visible.
 - `show_location`: when `false`, weather location text/coordinates are hidden in shell surfaces.
 - `clipboard_auto_paste`: `auto` = image entries use `Ctrl+V`, text entries use `Ctrl+Shift+V`; `off` = copy only, no automatic paste.
 - `shell.animation.enabled` disables all animated transitions globally. `speed` scales durations globally.

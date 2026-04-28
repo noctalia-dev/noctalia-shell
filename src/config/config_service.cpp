@@ -982,6 +982,9 @@ void ConfigService::parseTable(const toml::table& tbl) {
     if (auto v = (*shellTbl)["avatar_path"].value<std::string>()) {
       shell.avatarPath = *v;
     }
+    if (auto v = (*shellTbl)["settings_show_advanced"].value<bool>()) {
+      shell.settingsShowAdvanced = *v;
+    }
     if (auto v = (*shellTbl)["show_location"].value<bool>()) {
       shell.showLocation = *v;
     }
