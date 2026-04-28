@@ -61,25 +61,7 @@
 
             mesonBuildType = "release";
             
-            dontUseMesonConfigure = true;
-            
-            configurePhase = ''
-              runHook preConfigure
-              meson setup build --prefix=$out --buildtype=release
-              runHook postConfigure
-            '';
-            
-            buildPhase = ''
-              runHook preBuild
-              meson compile -C build -v
-              runHook postBuild
-            '';
-            
-            installPhase = ''
-              runHook preInstall
-              meson install -C build
-              runHook postInstall
-            '';
+            ninjaFlags = [ "-v" ];
 
             meta = with pkgs.lib; {
               description = "A lightweight Wayland shell and bar built directly on Wayland + OpenGL ES";
