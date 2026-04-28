@@ -6,6 +6,12 @@ import Quickshell.Io
 import qs.Commons
 import qs.Services.Compositor
 
+/**
+* SleepListenerService — native system sleep detection via D-Bus.
+*
+* Listens for the PrepareForSleep signal from logind to ensure the
+* session is locked before the system suspends (e.g. lid close).
+*/
 Singleton {
   id: root
 
