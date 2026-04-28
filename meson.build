@@ -560,6 +560,24 @@ if sanitize
   _noctalia_sources += files('src/pipewire/pipewire_lsan.cpp')
 endif
 
+git_program = find_program('git', required: false)
+if git_program.found()
+  _git_revision_h = vcs_tag(
+    input: 'src/core/git_revision.h.in',
+    output: 'noctalia_git_revision.h',
+    command: [git_program, 'describe', '--tags', '--always', '--dirty=-dirty', '--abbrev=12'],
+    fallback: 'unknown',
+  )
+else
+  _git_revision_config = configuration_data()
+  _git_revision_config.set('VCS_TAG', 'unknown')
+  _git_revision_h = configure_file(
+    input: 'src/core/git_revision.h.in',
+    output: 'noctalia_git_revision.h',
+    configuration: _git_revision_config,
+  )
+endif
+
 # ── Include directories ────────────────────────────────────────────────────────
 _noctalia_inc = [
   include_directories('src'),
@@ -575,7 +593,7 @@ _noctalia_inc = [
 
 # ── Executable ────────────────────────────────────────────────────────────────
 executable('noctalia',
-  sources: _noctalia_sources + _protocol_sources,
+  sources: _noctalia_sources + _protocol_sources + [_git_revision_h],
   dependencies: [
     sdbus_cpp_dep,
     wayland_client_dep,

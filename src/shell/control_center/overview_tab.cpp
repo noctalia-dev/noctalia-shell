@@ -1,6 +1,7 @@
 #include "shell/control_center/overview_tab.h"
 
 #include "config/config_service.h"
+#include "core/build_info.h"
 #include "dbus/mpris/mpris_art.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/power/power_profiles_service.h"
@@ -189,8 +190,8 @@ std::unique_ptr<Flex> OverviewTab::create() {
 
   const float avatarSize = Style::controlHeightLg * 3.2f * scale;
   auto avatar = std::make_unique<Image>();
-  avatar->setRadius(Style::radiusLg * scale);
-  avatar->setBorder(roleColor(ColorRole::Primary), Style::borderWidth * 2.0f);
+  avatar->setRadius(avatarSize * 0.5f);
+  avatar->setBorder(roleColor(ColorRole::Primary), Style::borderWidth * 3.0f);
   avatar->setFit(ImageFit::Cover);
   avatar->setPadding(1.0f * scale);
   avatar->setSize(avatarSize, avatarSize);
@@ -473,8 +474,8 @@ void OverviewTab::sync(Renderer& renderer) {
   if (m_userFacts != nullptr) {
     const auto uptime = systemUptime();
     const std::string uptimeText = uptime.has_value() ? formatDuration(*uptime) : "unknown";
-    m_userFacts->setText(std::format("{}@{}\nUptime · {}\nNoctalia v{}", sessionDisplayName(), hostName(), uptimeText,
-                                     NOCTALIA_VERSION));
+    m_userFacts->setText(std::format("{}@{}\nUptime · {}\nNoctalia {}", sessionDisplayName(), hostName(), uptimeText,
+                                     noctalia::build_info::displayVersion()));
   }
   if (m_weatherDate != nullptr) {
     m_weatherDate->setText(formatCurrentDate());

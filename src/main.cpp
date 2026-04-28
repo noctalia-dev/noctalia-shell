@@ -1,4 +1,5 @@
 #include "app/application.h"
+#include "core/build_info.h"
 #include "core/log.h"
 #include "ipc/cli.h"
 #include "ipc/ipc_client.h"
@@ -8,12 +9,14 @@
 #include <cstdio>
 #include <cstring>
 #include <stdexcept>
+#include <string>
 
 namespace {
 
   int runTopLevelFlag(const char* flag) {
     if (std::strcmp(flag, "--version") == 0) {
-      std::puts("noctalia v" NOCTALIA_VERSION);
+      const std::string version = noctalia::build_info::displayVersion();
+      std::printf("noctalia %s\n", version.c_str());
       return 0;
     }
     if (std::strcmp(flag, "--help") == 0) {

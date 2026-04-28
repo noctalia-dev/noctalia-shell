@@ -1,6 +1,7 @@
 #include "application.h"
 
 #include "app/poll_source.h"
+#include "core/build_info.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/process.h"
@@ -256,7 +257,7 @@ void Application::syncPolkitAgent() {
 
 void Application::run() {
   initLogFile();
-  kLog.info("noctalia v{}", NOCTALIA_VERSION);
+  kLog.info("noctalia {}", noctalia::build_info::displayVersion());
   initServices();
   initUi();
   initIpc();
