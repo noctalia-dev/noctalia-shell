@@ -403,13 +403,19 @@ bool Dock::onPointerEvent(const PointerEvent& event) {
                                                     event.serial);
     // Auto-hide: show the dock when the pointer enters.
     if (m_config->config().dock.autoHide && m_hoveredInstance->sceneRoot != nullptr) {
+      if (m_hoveredInstance->hideAnimId != 0) {
+        m_hoveredInstance->animations.cancel(m_hoveredInstance->hideAnimId);
+        m_hoveredInstance->hideAnimId = 0;
+      }
       const float current = m_hoveredInstance->hideOpacity;
-      m_hoveredInstance->animations.animate(current, 1.0f, Style::animNormal, Easing::EaseOutCubic,
-                                            [inst = m_hoveredInstance, this](float v) {
-                                              inst->hideOpacity = v;
-                                              syncDockSlideLayerTransform(*inst);
-                                              applyDockCompositorBlur(*inst);
-                                            });
+      m_hoveredInstance->hideAnimId = m_hoveredInstance->animations.animate(
+          current, 1.0f, Style::animNormal, Easing::EaseOutCubic,
+          [inst = m_hoveredInstance, this](float v) {
+            inst->hideOpacity = v;
+            syncDockSlideLayerTransform(*inst);
+            applyDockCompositorBlur(*inst);
+          },
+          [inst = m_hoveredInstance]() { inst->hideAnimId = 0; });
       // Restore full input region (full surface so shadow-margin edges don't
       // cause an immediate Leave when triggered from the edge of the strip).
       if (m_hoveredInstance->surface != nullptr) {
@@ -1573,8 +1579,12 @@ bool Dock::routePopupEvent(DockPopup* popup, const PointerEvent& event) {
 // ── Private: item context menu (right-click) ──────────────────────────────────
 
 void Dock::startHideFadeOut(DockInstance& inst) {
+  if (inst.hideAnimId != 0) {
+    inst.animations.cancel(inst.hideAnimId);
+    inst.hideAnimId = 0;
+  }
   const float current = inst.hideOpacity;
-  inst.animations.animate(
+  inst.hideAnimId = inst.animations.animate(
       current, 0.0f, Style::animSlow, Easing::EaseInQuad,
       [&inst, this](float v) {
         inst.hideOpacity = v;
@@ -1582,6 +1592,7 @@ void Dock::startHideFadeOut(DockInstance& inst) {
         applyDockCompositorBlur(inst);
       },
       [&inst, this]() {
+        inst.hideAnimId = 0;
         if (inst.surface == nullptr)
           return;
         const auto& cfg = m_config->config().dock;

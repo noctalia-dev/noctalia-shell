@@ -95,6 +95,7 @@ private:
     bool pointerInside = false;
     // Auto-hide: tracks visibility [0,1] driven by hover.
     float hideOpacity = 1.0f;
+    AnimationManager::Id hideAnimId = 0;
     Signal<>::ScopedConnection paletteConn;
   };
 
