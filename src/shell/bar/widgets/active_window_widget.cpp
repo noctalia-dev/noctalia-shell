@@ -140,7 +140,7 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
     }
   }
 
-  requestRedraw();
+  requestUpdate();
 }
 
 std::string ActiveWindowWidget::resolveIconPath(const std::string& appId) {
