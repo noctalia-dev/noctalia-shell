@@ -641,6 +641,7 @@ bool TrayService::openContextMenu(const std::string& itemId, std::int32_t x, std
 }
 
 void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath, const std::string& senderBusName) {
+  const auto t0 = std::chrono::steady_clock::now();
   kLog.info("RegisterStatusNotifierItem: service/path='{}' sender='{}'", serviceOrPath, senderBusName);
   if (serviceOrPath.empty()) {
     kLog.warn("register item ignored: empty service/path");
@@ -670,7 +671,11 @@ void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath,
     return;
   }
 
+  kLog.info("tray register parsed service/path='{}' -> bus='{}' objectPath='{}'", serviceOrPath, busName, objectPath);
   registerOrRefreshItem(busName, objectPath);
+  const auto elapsedMs =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+  kLog.info("RegisterStatusNotifierItem done service/path='{}' elapsed={}ms", serviceOrPath, elapsedMs);
 }
 
 void TrayService::onRegisterStatusNotifierHost(const std::string& host) {
@@ -703,6 +708,7 @@ void TrayService::discoverExistingItems() {
 }
 
 void TrayService::tryRegisterItemForBusName(const std::string& busName) {
+  const auto t0 = std::chrono::steady_clock::now();
   if (!looks_like_dbus_name(busName)) {
     return;
   }
@@ -710,6 +716,8 @@ void TrayService::tryRegisterItemForBusName(const std::string& busName) {
   const std::array<std::string_view, 2> candidatePaths = {k_default_item_path, k_ayatana_item_path};
   bool registeredAny = false;
   for (const auto candidatePath : candidatePaths) {
+    const auto probeStart = std::chrono::steady_clock::now();
+    kLog.info("tray probe begin bus='{}' path='{}'", busName, candidatePath);
     try {
       auto probe = sdbus::createProxy(m_bus.connection(), sdbus::ServiceName{busName},
                                       sdbus::ObjectPath{std::string(candidatePath)});
@@ -721,13 +729,23 @@ void TrayService::tryRegisterItemForBusName(const std::string& busName) {
           .storeResultsTo(props);
       registerOrRefreshItem(busName, std::string(candidatePath));
       registeredAny = true;
+      const auto probeElapsed =
+          std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - probeStart).count();
+      kLog.info("tray probe ok bus='{}' path='{}' props={} elapsed={}ms", busName, candidatePath, props.size(),
+                probeElapsed);
     } catch (const sdbus::Error&) {
+      const auto probeElapsed =
+          std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - probeStart).count();
+      kLog.info("tray probe failed bus='{}' path='{}' elapsed={}ms", busName, candidatePath, probeElapsed);
     }
   }
 
   if (registeredAny) {
     emitChanged();
   }
+  const auto elapsedMs =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+  kLog.info("tray probe done bus='{}' registeredAny={} elapsed={}ms", busName, registeredAny, elapsedMs);
 }
 
 std::string TrayService::busNameFromItemId(const std::string& itemId) {
@@ -754,6 +772,7 @@ std::string TrayService::canonicalItemId(const std::string& busName, const std::
 }
 
 void TrayService::registerOrRefreshItem(const std::string& busName, const std::string& objectPath) {
+  const auto t0 = std::chrono::steady_clock::now();
   const std::string itemId = canonicalItemId(busName, objectPath);
   if (itemId.empty()) {
     return;
@@ -837,8 +856,12 @@ void TrayService::registerOrRefreshItem(const std::string& busName, const std::s
   }
 
   if (looks_like_dbus_name(busName)) {
+    kLog.info("tray metadata refresh scheduled id={} bus='{}' path='{}'", itemId, busName, objectPath);
     DeferredCall::callLater([this, itemId]() { refreshItemMetadata(itemId); });
   }
+  const auto elapsedMs =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+  kLog.info("registerOrRefreshItem done id={} inserted={} elapsed={}ms", itemId, inserted, elapsedMs);
 }
 
 bool TrayService::ensureItemProxy(const std::string& itemId) {
@@ -988,7 +1011,7 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
              next.attentionHeight, next.attentionArgb32.size());
 
   if (next == itemIt->second) {
-    kLog.info(
+    kLog.debug(
         "tray metadata unchanged id={} status={} icon='{}' overlay='{}' attention='{}' pixmap={}x{} overlay={}x{} "
         "attention={}x{}",
         itemId, next.status, next.iconName, next.overlayIconName, next.attentionIconName, next.iconWidth,
@@ -1005,12 +1028,12 @@ void TrayService::refreshItemMetadata(const std::string& itemId) {
   }
 
   itemIt->second = std::move(next);
-  kLog.info("tray metadata updated id={} status={} icon='{}' overlay='{}' attention='{}' pixmap={}x{} overlay={}x{} "
-            "attention={}x{}",
-            itemId, itemIt->second.status, itemIt->second.iconName, itemIt->second.overlayIconName,
-            itemIt->second.attentionIconName, itemIt->second.iconWidth, itemIt->second.iconHeight,
-            itemIt->second.overlayWidth, itemIt->second.overlayHeight, itemIt->second.attentionWidth,
-            itemIt->second.attentionHeight);
+  kLog.debug("tray metadata updated id={} status={} icon='{}' overlay='{}' attention='{}' pixmap={}x{} overlay={}x{} "
+             "attention={}x{}",
+             itemId, itemIt->second.status, itemIt->second.iconName, itemIt->second.overlayIconName,
+             itemIt->second.attentionIconName, itemIt->second.iconWidth, itemIt->second.iconHeight,
+             itemIt->second.overlayWidth, itemIt->second.overlayHeight, itemIt->second.attentionWidth,
+             itemIt->second.attentionHeight);
   ensureMenuCache(itemId, itemIt->second.busName, itemIt->second.menuObjectPath);
   emitChanged();
 }

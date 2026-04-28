@@ -319,10 +319,10 @@ void TrayWidget::syncState(Renderer& renderer) {
         prev.needsAttention != item.needsAttention || prev.status != item.status ||
         prev.overlayWidth != item.overlayWidth || prev.overlayHeight != item.overlayHeight ||
         prev.overlayArgb32 != item.overlayArgb32) {
-      kLog.info("tray widget invalidate icon cache id={} icon='{}'->'{}' overlay='{}'->'{}' attention='{}'->'{}' "
-                "status={}=>{}",
-                item.id, prev.iconName, item.iconName, prev.overlayIconName, item.overlayIconName,
-                prev.attentionIconName, item.attentionIconName, prev.status, item.status);
+      kLog.debug("tray widget invalidate icon cache id={} icon='{}'->'{}' overlay='{}'->'{}' attention='{}'->'{}' "
+                 "status={}=>{}",
+                 item.id, prev.iconName, item.iconName, prev.overlayIconName, item.overlayIconName,
+                 prev.attentionIconName, item.attentionIconName, prev.status, item.status);
       m_preferredIconPaths.erase(item.id);
     }
   }
@@ -350,8 +350,8 @@ void TrayWidget::rebuild(Renderer& renderer) {
 
   for (auto* image : m_loadedImages) {
     if (image != nullptr) {
-      kLog.info("tray widget image clear ptr={} path={} tex={}", static_cast<const void*>(image), image->sourcePath(),
-                image->textureId());
+      kLog.debug("tray widget image clear ptr={} path={} tex={}", static_cast<const void*>(image), image->sourcePath(),
+                 image->textureId());
       image->clear(renderer);
     }
   }
@@ -375,24 +375,24 @@ void TrayWidget::rebuild(Renderer& renderer) {
     float iconH = iconSize;
 
     if (!iconPath.empty()) {
-      kLog.info("tray widget rebuild id={} preferred='{}' resolvedPath={}", item.id,
-                (item.needsAttention && !item.attentionIconName.empty()) ? item.attentionIconName : item.iconName,
-                iconPath);
+      kLog.debug("tray widget rebuild id={} preferred='{}' resolvedPath={}", item.id,
+                 (item.needsAttention && !item.attentionIconName.empty()) ? item.attentionIconName : item.iconName,
+                 iconPath);
       auto image = std::make_unique<Image>();
       image->setFit(ImageFit::Contain);
       image->setSize(iconSize, iconSize);
       if (image->setSourceFile(renderer, iconPath, iconRequestSize, true)) {
         iconW = iconSize;
         iconH = iconSize;
-        kLog.info("tray widget image load ok id={} path={} size={}x{} tex={} ptr={}", item.id, iconPath,
-                  image->sourceWidth(), image->sourceHeight(), image->textureId(),
-                  static_cast<const void*>(image.get()));
+        kLog.debug("tray widget image load ok id={} path={} size={}x{} tex={} ptr={}", item.id, iconPath,
+                   image->sourceWidth(), image->sourceHeight(), image->textureId(),
+                   static_cast<const void*>(image.get()));
         kLog.debug("tray widget icon id={} source=file path={} size={}x{}", item.id, iconPath, image->sourceWidth(),
                    image->sourceHeight());
         m_loadedImages.push_back(image.get());
         iconNode = std::move(image);
       } else {
-        kLog.info("tray widget image load FAILED id={} path={}", item.id, iconPath);
+        kLog.debug("tray widget image load FAILED id={} path={}", item.id, iconPath);
         kLog.debug("tray widget icon id={} source=file path={} failed-to-load", item.id, iconPath);
       }
     }
@@ -576,7 +576,7 @@ void TrayWidget::buildDesktopIconIndex() {
 
 std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
   if (const auto it = m_preferredIconPaths.find(item.id); it != m_preferredIconPaths.end() && !it->second.empty()) {
-    kLog.info("tray widget resolve id={} source=cached path={}", item.id, it->second);
+    kLog.debug("tray widget resolve id={} source=cached path={}", item.id, it->second);
     return it->second;
   }
 
@@ -584,7 +584,7 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
       item.needsAttention && !item.attentionIconName.empty() ? item.attentionIconName : item.iconName;
 
   if (const auto themed = resolveFromTrayThemePath(item.iconThemePath, preferred); !themed.empty()) {
-    kLog.info("tray widget resolve id={} source=theme-path variant='{}' path={}", item.id, preferred, themed);
+    kLog.debug("tray widget resolve id={} source=theme-path variant='{}' path={}", item.id, preferred, themed);
     m_preferredIconPaths[item.id] = themed;
     return themed;
   }
@@ -657,8 +657,8 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
     for (const auto& variant : identifierVariants(*candidate)) {
       if (const auto mapped = resolveMapped(variant); !mapped.empty()) {
         if (!isSymbolicIconPath(mapped)) {
-          kLog.info("tray widget resolve id={} source=mapped label={} variant='{}' path={}", item.id, label, variant,
-                    mapped);
+          kLog.debug("tray widget resolve id={} source=mapped label={} variant='{}' path={}", item.id, label, variant,
+                     mapped);
           m_preferredIconPaths[item.id] = mapped;
           return mapped;
         }
@@ -671,8 +671,8 @@ std::string TrayWidget::resolveIconPath(const TrayItemInfo& item) {
 
       if (const auto direct = resolveDirect(variant); !direct.empty()) {
         if (!isSymbolicIconName(variant) && !isSymbolicIconPath(direct)) {
-          kLog.info("tray widget resolve id={} source=direct label={} variant='{}' path={}", item.id, label, variant,
-                    direct);
+          kLog.debug("tray widget resolve id={} source=direct label={} variant='{}' path={}", item.id, label, variant,
+                     direct);
           m_preferredIconPaths[item.id] = direct;
           return direct;
         }
