@@ -9,6 +9,7 @@
 #include <vector>
 
 class ConfigService;
+class Button;
 class Flex;
 class Label;
 class PipeWireService;
@@ -52,8 +53,10 @@ private:
   Label* m_inputDeviceLabel = nullptr;
   Slider* m_outputSlider = nullptr;
   Label* m_outputValue = nullptr;
+  Button* m_outputMuteButton = nullptr;
   Slider* m_inputSlider = nullptr;
   Label* m_inputValue = nullptr;
+  Button* m_inputMuteButton = nullptr;
 
   float m_lastOutputWidth = -1.0f;
   float m_lastInputWidth = -1.0f;

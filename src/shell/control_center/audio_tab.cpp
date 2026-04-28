@@ -7,6 +7,7 @@
 #include "render/scene/input_area.h"
 #include "shell/control_center/tab.h"
 #include "shell/panel/panel_manager.h"
+#include "ui/controls/button.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/label.h"
 #include "ui/controls/radio_button.h"
@@ -339,6 +340,26 @@ std::unique_ptr<Flex> AudioTab::create() {
   outputValue->setMinWidth(kValueLabelWidth * scale);
   m_outputValue = outputValue.get();
   outputRow->addChild(std::move(outputValue));
+
+  auto outputMuteButton = std::make_unique<Button>();
+  outputMuteButton->setGlyph("volume-high");
+  outputMuteButton->setVariant(ButtonVariant::Default);
+  outputMuteButton->setGlyphSize(Style::fontSizeBody * scale);
+  outputMuteButton->setMinWidth(Style::controlHeightSm * scale);
+  outputMuteButton->setMinHeight(Style::controlHeightSm * scale);
+  outputMuteButton->setPadding(Style::spaceXs * scale);
+  outputMuteButton->setRadius(Style::radiusMd * scale);
+  outputMuteButton->setOnClick([this]() {
+    if (m_audio == nullptr) {
+      return;
+    }
+    if (const AudioNode* sink = m_audio->defaultSink(); sink != nullptr) {
+      m_audio->setSinkMuted(sink->id, !sink->muted);
+      PanelManager::instance().refresh();
+    }
+  });
+  m_outputMuteButton = outputMuteButton.get();
+  outputRow->addChild(std::move(outputMuteButton));
   outputVolumeCard->addChild(std::move(outputRow));
   volumeRow->addChild(std::move(outputVolumeCard));
 
@@ -394,6 +415,26 @@ std::unique_ptr<Flex> AudioTab::create() {
   inputValue->setMinWidth(kValueLabelWidth * scale);
   m_inputValue = inputValue.get();
   inputRow->addChild(std::move(inputValue));
+
+  auto inputMuteButton = std::make_unique<Button>();
+  inputMuteButton->setGlyph("microphone");
+  inputMuteButton->setVariant(ButtonVariant::Default);
+  inputMuteButton->setGlyphSize(Style::fontSizeBody * scale);
+  inputMuteButton->setMinWidth(Style::controlHeightSm * scale);
+  inputMuteButton->setMinHeight(Style::controlHeightSm * scale);
+  inputMuteButton->setPadding(Style::spaceXs * scale);
+  inputMuteButton->setRadius(Style::radiusMd * scale);
+  inputMuteButton->setOnClick([this]() {
+    if (m_audio == nullptr) {
+      return;
+    }
+    if (const AudioNode* source = m_audio->defaultSource(); source != nullptr) {
+      m_audio->setSourceMuted(source->id, !source->muted);
+      PanelManager::instance().refresh();
+    }
+  });
+  m_inputMuteButton = inputMuteButton.get();
+  inputRow->addChild(std::move(inputMuteButton));
   inputVolumeCard->addChild(std::move(inputRow));
   volumeRow->addChild(std::move(inputVolumeCard));
 
@@ -482,6 +523,10 @@ void AudioTab::doUpdate(Renderer& renderer) {
       m_lastSinkVolume = displayedSinkVolume;
     }
   }
+  if (m_outputMuteButton != nullptr) {
+    m_outputMuteButton->setEnabled(sink != nullptr);
+    m_outputMuteButton->setGlyph((sink != nullptr && sink->muted) ? "volume-mute" : "volume-high");
+  }
 
   if (m_inputSlider != nullptr) {
     m_inputSlider->setEnabled(source != nullptr);
@@ -494,6 +539,10 @@ void AudioTab::doUpdate(Renderer& renderer) {
       }
       m_lastSourceVolume = displayedSourceVolume;
     }
+  }
+  if (m_inputMuteButton != nullptr) {
+    m_inputMuteButton->setEnabled(source != nullptr);
+    m_inputMuteButton->setGlyph((source != nullptr && source->muted) ? "microphone-mute" : "microphone");
   }
 }
 
@@ -516,8 +565,10 @@ void AudioTab::onClose() {
   m_inputDeviceLabel = nullptr;
   m_outputSlider = nullptr;
   m_outputValue = nullptr;
+  m_outputMuteButton = nullptr;
   m_inputSlider = nullptr;
   m_inputValue = nullptr;
+  m_inputMuteButton = nullptr;
   m_lastOutputWidth = -1.0f;
   m_lastInputWidth = -1.0f;
   m_lastOutputListKey.clear();
