@@ -55,6 +55,7 @@ namespace {
   constexpr float kDefaultWidth = 200.0f;
   constexpr float kCursorWidth = 1.5f;
   constexpr float kCursorPadV = 3.0f;
+  constexpr float kCursorRevealPadding = 4.0f;
   constexpr float kPasswordGlyphScale = 0.82f;
   constexpr auto kDoubleClickThreshold = std::chrono::milliseconds(400);
   constexpr float kDoubleClickDistance = 6.0f;
@@ -139,7 +140,7 @@ Input::Input() {
   });
   area->setOnPress([this](const InputArea::PointerData& data) {
     if (data.pressed) {
-      const std::size_t offset = xToByteOffset(data.localX - m_horizontalPadding);
+      const std::size_t offset = xToByteOffset(data.localX - m_horizontalPadding + m_scrollOffset);
       const auto now = std::chrono::steady_clock::now();
       const bool isDoubleClick = data.button == BTN_LEFT && m_hasLastPrimaryPress &&
                                  now - m_lastPrimaryPressTime <= kDoubleClickThreshold &&
@@ -167,7 +168,7 @@ Input::Input() {
   });
   area->setOnMotion([this](const InputArea::PointerData& data) {
     if (m_inputArea != nullptr && m_inputArea->pressed()) {
-      m_cursorPos = xToByteOffset(data.localX - m_horizontalPadding);
+      m_cursorPos = xToByteOffset(data.localX - m_horizontalPadding + m_scrollOffset);
       updateInteractiveGeometry();
       markPaintDirty();
     }
@@ -271,8 +272,6 @@ void Input::doLayout(Renderer& renderer) {
   m_label->setVisible(!showPasswordGlyphs);
   if (!showPasswordGlyphs) {
     m_label->measure(renderer);
-    const float labelY = std::round((h - m_label->height()) * 0.5f);
-    m_label->setPosition(m_horizontalPadding, labelY);
   }
 
   m_stopByte.clear();
@@ -305,6 +304,7 @@ void Input::doLayout(Renderer& renderer) {
     }
   }
 
+  ensureCursorVisible();
   updateInteractiveGeometry();
 
   if (showPasswordGlyphs) {
@@ -317,12 +317,14 @@ void Input::doLayout(Renderer& renderer) {
       glyph->setCodepoint(codepoint);
       glyph->setFontSize(glyphSize);
       glyph->setColor(resolveThemeColor(roleColor(ColorRole::OnSurface)));
-      glyph->setPosition(m_horizontalPadding + maskX, maskGlyphY);
+      glyph->setPosition(m_horizontalPadding + maskX - m_scrollOffset, maskGlyphY);
       glyph->setVisible(true);
       maskX += metrics.width;
     }
   } else {
     syncPasswordGlyphNodes(0);
+    const float labelY = std::round((h - m_label->height()) * 0.5f);
+    m_label->setPosition(m_horizontalPadding - m_scrollOffset, labelY);
   }
 
   m_background->setPosition(0.0f, 0.0f);
@@ -524,21 +526,57 @@ void Input::updateInteractiveGeometry() {
     return;
   }
 
+  ensureCursorVisible();
+
   const float controlHeight = height() > 0.0f ? height() : m_controlHeight;
   const float cursorHeight = std::max(0.0f, controlHeight - kCursorPadV * 2.0f);
-  const float cursorX = m_horizontalPadding + stopXForByte(m_cursorPos);
+  const float cursorX = m_horizontalPadding + stopXForByte(m_cursorPos) - m_scrollOffset;
   m_cursor->setPosition(cursorX, kCursorPadV);
   m_cursor->setFrameSize(kCursorWidth, cursorHeight);
 
   if (hasSelection()) {
-    const float selX0 = m_horizontalPadding + stopXForByte(selectionStart());
-    const float selX1 = m_horizontalPadding + stopXForByte(selectionEnd());
+    const float selX0 = m_horizontalPadding + stopXForByte(selectionStart()) - m_scrollOffset;
+    const float selX1 = m_horizontalPadding + stopXForByte(selectionEnd()) - m_scrollOffset;
     m_selectionRect->setPosition(selX0, kCursorPadV);
     m_selectionRect->setFrameSize(std::max(0.0f, selX1 - selX0), cursorHeight);
     m_selectionRect->setVisible(true);
   } else {
     m_selectionRect->setVisible(false);
   }
+}
+
+void Input::ensureCursorVisible() {
+  if (m_value.empty() || m_stopX.empty()) {
+    m_scrollOffset = 0.0f;
+    return;
+  }
+
+  const float viewportWidth = textViewportWidth();
+  if (viewportWidth <= 0.0f) {
+    m_scrollOffset = 0.0f;
+    return;
+  }
+
+  const float cursorContentX = stopXForByte(m_cursorPos);
+  const float leftEdge = m_scrollOffset + kCursorRevealPadding;
+  const float rightEdge = m_scrollOffset + viewportWidth - kCursorRevealPadding - kCursorWidth;
+
+  if (cursorContentX < leftEdge) {
+    m_scrollOffset = cursorContentX - kCursorRevealPadding;
+  } else if (cursorContentX > rightEdge) {
+    m_scrollOffset = cursorContentX - viewportWidth + kCursorRevealPadding + kCursorWidth;
+  }
+
+  clampScrollOffset();
+}
+
+void Input::clampScrollOffset() {
+  if (m_value.empty() || m_stopX.empty()) {
+    m_scrollOffset = 0.0f;
+    return;
+  }
+  const float maxOffset = std::max(0.0f, m_stopX.back() - textViewportWidth());
+  m_scrollOffset = std::clamp(m_scrollOffset, 0.0f, maxOffset);
 }
 
 void Input::selectWordAtByteOffset(std::size_t offset) {
@@ -611,6 +649,11 @@ float Input::measureCursorX(Renderer& renderer) const {
     return 0.0f;
   }
   return renderer.measureText(m_value.substr(0, m_cursorPos), m_fontSize).width;
+}
+
+float Input::textViewportWidth() const noexcept {
+  const float w = width() > 0.0f ? width() : kDefaultWidth;
+  return std::max(0.0f, w - m_horizontalPadding * 2.0f);
 }
 
 bool Input::hasSelection() const noexcept { return m_selectionAnchor != m_cursorPos; }

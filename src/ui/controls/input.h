@@ -54,10 +54,13 @@ private:
   void applyVisualState();
   void updateDisplayText();
   void updateInteractiveGeometry();
+  void ensureCursorVisible();
+  void clampScrollOffset();
   void selectWordAtByteOffset(std::size_t offset);
   [[nodiscard]] std::size_t wordStartForByteOffset(std::size_t offset) const;
   [[nodiscard]] std::size_t wordEndForByteOffset(std::size_t offset) const;
   [[nodiscard]] float measureCursorX(Renderer& renderer) const;
+  [[nodiscard]] float textViewportWidth() const noexcept;
   [[nodiscard]] bool hasSelection() const noexcept;
   [[nodiscard]] std::size_t selectionStart() const noexcept;
   [[nodiscard]] std::size_t selectionEnd() const noexcept;
@@ -87,6 +90,7 @@ private:
   std::vector<float> m_stopX;
   std::vector<std::size_t> m_stopByte;
   std::vector<GlyphNode*> m_passwordGlyphs;
+  float m_scrollOffset = 0.0f;
 
   std::function<void(const std::string&)> m_onChange;
   std::function<void(const std::string&)> m_onSubmit;
