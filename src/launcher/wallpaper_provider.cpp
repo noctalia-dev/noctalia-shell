@@ -89,11 +89,11 @@ std::vector<LauncherResult> WallpaperProvider::query(std::string_view text) cons
     return {};
   }
 
-  std::vector<std::pair<int, WallpaperCandidate>> scored;
+  std::vector<std::pair<double, WallpaperCandidate>> scored;
   scored.reserve(candidates.size());
   for (auto& candidate : candidates) {
-    const int score = query.empty() ? 1 : FuzzyMatch::score(query, candidate.searchable);
-    if (score > 0) {
+    const double score = query.empty() ? 0.0 : FuzzyMatch::score(query, candidate.searchable);
+    if (query.empty() || FuzzyMatch::isMatch(score)) {
       scored.emplace_back(score, std::move(candidate));
     }
   }

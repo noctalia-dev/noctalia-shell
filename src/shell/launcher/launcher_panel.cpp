@@ -17,6 +17,7 @@
 #include "ui/controls/scroll_view.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "util/fuzzy_match.h"
 #include "wayland/clipboard_service.h"
 
 #include <algorithm>
@@ -32,24 +33,25 @@ namespace {
   constexpr std::size_t kRowOverscan = 3;
   constexpr float kIconSize = 32.0f;
   constexpr float kScrollViewPaddingV = Style::spaceSm;
-  constexpr int kUsageScorePerCount = 20;
+  constexpr double kUsageScorePerCount = 0.1;
+  constexpr double kTypedUsageScoreCap = 0.5;
 
-  int usageBoostForScore(int score, int usageCount, bool typedQuery) {
+  double usageBoostForScore(double score, int usageCount, bool typedQuery) {
     if (usageCount <= 0) {
-      return 0;
+      return 0.0;
     }
 
-    const int rawBoost = usageCount * kUsageScorePerCount;
+    const double rawBoost = static_cast<double>(usageCount) * kUsageScorePerCount;
     if (!typedQuery) {
       return rawBoost;
     }
-    if (score <= 0) {
-      return 0;
+    if (!FuzzyMatch::isMatch(score)) {
+      return 0.0;
     }
 
     // For typed searches, usage should nudge close matches without letting a
     // weak fuzzy hit outrank a much stronger lexical match.
-    return std::min(rawBoost, std::max(1, score / 2));
+    return std::min(rawBoost, kTypedUsageScoreCap);
   }
 
   float launcherRowHeight(float scale) {

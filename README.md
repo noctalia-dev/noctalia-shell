@@ -47,7 +47,7 @@ sudo apt install meson g++ just \
 ```
 
 Vendored dependencies, with no system package needed: `Wuffs`, `nanosvg`, `tomlplusplus`, `tinyexpr`,
-`nlohmann/json`, `Luau`, `dr_wav`, `stb_image_resize2`, and Material Color Utilities.
+`nlohmann/json`, `Luau`, `dr_wav`, `fzy`, `stb_image_resize2`, and Material Color Utilities.
 
 System packages required beyond the Wayland/GL stack: `libwebp` handles WebP decoding and thumbnail encoding. Wuffs
 handles the other supported raster image formats.

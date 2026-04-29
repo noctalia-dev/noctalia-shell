@@ -17,16 +17,16 @@ namespace {
   constexpr std::size_t kMaxSearchResults = 50;
   constexpr std::string_view kDefaultAppIcon = "application-x-executable";
 
-  int scoreEntry(std::string_view pattern, const DesktopEntry& entry) {
+  double scoreEntry(std::string_view pattern, const DesktopEntry& entry) {
     if (pattern.empty()) {
-      return 1;
+      return 0.0;
     }
 
-    int nameScore = FuzzyMatch::score(pattern, entry.nameLower) * 3;
-    int genericScore = FuzzyMatch::score(pattern, entry.genericNameLower) * 2;
+    const double nameScore = FuzzyMatch::score(pattern, entry.nameLower) * 3.0;
+    const double genericScore = FuzzyMatch::score(pattern, entry.genericNameLower) * 2.0;
 
     auto scoreList = [&](std::string_view list) {
-      int best = 0;
+      double best = FuzzyMatch::noMatchScore;
       std::size_t start = 0;
       while (start < list.size()) {
         auto semi = list.find(';', start);
@@ -41,8 +41,8 @@ namespace {
       return best;
     };
 
-    int keywordScore = scoreList(entry.keywordsLower);
-    int catScore = scoreList(entry.categoriesLower);
+    const double keywordScore = scoreList(entry.keywordsLower);
+    const double catScore = scoreList(entry.categoriesLower);
 
     return std::max({nameScore, genericScore, keywordScore, catScore});
   }
@@ -252,7 +252,7 @@ void AppProvider::refreshEntriesIfNeeded() const {
 std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
   refreshEntriesIfNeeded();
 
-  auto buildResult = [&](const DesktopEntry& entry, int s) {
+  auto buildResult = [&](const DesktopEntry& entry, double s) {
     LauncherResult result;
     result.id = entry.path;
     result.title = entry.name;
@@ -273,10 +273,10 @@ std::vector<LauncherResult> AppProvider::query(std::string_view text) const {
     return results;
   }
 
-  std::vector<std::pair<int, const DesktopEntry*>> scored;
+  std::vector<std::pair<double, const DesktopEntry*>> scored;
   for (const auto& entry : m_entries) {
-    int s = scoreEntry(text, entry);
-    if (s > 0) {
+    const double s = scoreEntry(text, entry);
+    if (FuzzyMatch::isMatch(s)) {
       scored.emplace_back(s, &entry);
     }
   }

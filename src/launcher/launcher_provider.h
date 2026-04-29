@@ -13,7 +13,7 @@ struct LauncherResult {
   std::string iconName;
   std::string iconPath;
   std::string actionText;
-  int score = 0;
+  double score = 0.0;
 };
 
 class LauncherProvider {

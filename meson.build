@@ -89,6 +89,17 @@ drwav_dep = declare_dependency(
   include_directories: include_directories('third_party/dr_wav', is_system: true),
 )
 
+# ── Vendored: fzy matcher (C fuzzy scoring) ──────────────────────────────────
+_fzy_lib = static_library('fzy',
+  'third_party/fzy/src/match.c',
+  c_args: ['-Wno-pedantic', '-Wno-conversion'],
+  override_options: ['warning_level=0'],
+)
+fzy_dep = declare_dependency(
+  link_with: _fzy_lib,
+  include_directories: include_directories('third_party/fzy/src', is_system: true),
+)
+
 # ── Vendored: Material Color Utilities (Google) ───────────────────────────────
 # Upstream uses #include "cpp/..." prefixes, so the include root is the
 # material_color_utilities/ dir itself. Built as a quiet static library.
@@ -633,6 +644,7 @@ executable('noctalia',
     pam_dep,
     tinyexpr_dep,
     drwav_dep,
+    fzy_dep,
     mcu_dep,
     stb_dep,
     libwebp_dep,

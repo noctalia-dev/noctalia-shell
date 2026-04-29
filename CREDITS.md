@@ -10,6 +10,10 @@ Noctalia is made possible by the incredible work of many open-source projects an
 
 ## Runtime Dependencies
 
+### Vendored Libraries
+
+- **[fzy](https://github.com/jhawthorn/fzy)** - Fuzzy matching algorithm used for launcher ranking
+
 ### System Integration
 - **[wlsunset](https://sr.ht/~kennylevinsen/wlsunset/)** - Night light and blue light filter support
 - **[ddcutil](https://www.ddcutil.com/)** - External display brightness control
