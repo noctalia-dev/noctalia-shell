@@ -25,6 +25,21 @@ namespace {
     const char* password = nullptr;
   };
 
+  struct PamHandle {
+    pam_handle_t* h = nullptr;
+    int lastRc = PAM_SUCCESS;
+
+    PamHandle() = default;
+    PamHandle(const PamHandle&) = delete;
+    PamHandle& operator=(const PamHandle&) = delete;
+
+    ~PamHandle() {
+      if (h != nullptr) {
+        pam_end(h, lastRc);
+      }
+    }
+  };
+
   int pamConversation(int numMsg, const pam_message** msg, pam_response** response, void* appdataPtr) {
     if (numMsg <= 0 || msg == nullptr || response == nullptr || appdataPtr == nullptr) {
       return PAM_CONV_ERR;
@@ -98,19 +113,20 @@ PamAuthenticator::Result PamAuthenticator::authenticateCurrentUser(std::string_v
       .appdata_ptr = &convData,
   };
 
-  pam_handle_t* pamh = nullptr;
-  const int startRc = pam_start("login", user.c_str(), &conv, &pamh);
-  if (startRc != PAM_SUCCESS || pamh == nullptr) {
+  PamHandle pamh;
+  const int startRc = pam_start("login", user.c_str(), &conv, &pamh.h);
+  if (startRc != PAM_SUCCESS || pamh.h == nullptr) {
     secureClear(passwordCopy);
     return Result{.success = false, .message = i18n::tr("auth.pam.start-failed")};
   }
 
-  int rc = pam_authenticate(pamh, 0);
+  int rc = pam_authenticate(pamh.h, 0);
   if (rc == PAM_SUCCESS) {
-    rc = pam_acct_mgmt(pamh, 0);
+    rc = pam_acct_mgmt(pamh.h, 0);
   }
-  const char* err = pam_strerror(pamh, rc);
-  pam_end(pamh, rc);
+  const char* err = pam_strerror(pamh.h, rc);
+  const std::string errStr = err != nullptr ? err : i18n::tr("auth.pam.authentication-failed");
+  pamh.lastRc = rc;
 
   secureClear(passwordCopy);
 
@@ -118,7 +134,7 @@ PamAuthenticator::Result PamAuthenticator::authenticateCurrentUser(std::string_v
     return Result{.success = true, .message = {}};
   }
 
-  return Result{.success = false, .message = err != nullptr ? err : i18n::tr("auth.pam.authentication-failed")};
+  return Result{.success = false, .message = errStr};
 }
 
 std::string PamAuthenticator::currentUsername() {
