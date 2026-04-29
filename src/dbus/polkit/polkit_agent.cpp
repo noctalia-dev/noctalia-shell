@@ -534,10 +534,17 @@ struct PolkitAgent::Impl {
           pollIndex < fds.size() ? static_cast<gushort>(fds[pollIndex].revents) : static_cast<gushort>(0);
     }
 
-    if (g_main_context_check(context, glibMaxPriority, glibPollFds.data(), static_cast<gint>(glibPollFds.size()))) {
-      g_main_context_dispatch(context);
-    }
+    const gboolean ready =
+        g_main_context_check(context, glibMaxPriority, glibPollFds.data(), static_cast<gint>(glibPollFds.size()));
     g_main_context_release(context);
+
+    if (ready) {
+      if (!g_main_context_acquire(context)) {
+        return;
+      }
+      g_main_context_dispatch(context);
+      g_main_context_release(context);
+    }
 
     while (g_main_context_pending(context)) {
       g_main_context_iteration(context, FALSE);
