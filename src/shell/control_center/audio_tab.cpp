@@ -224,32 +224,6 @@ namespace {
     return value;
   }
 
-  std::string execBinaryName(std::string_view exec) {
-    while (!exec.empty() && std::isspace(static_cast<unsigned char>(exec.front())) != 0) {
-      exec.remove_prefix(1);
-    }
-    if (exec.empty()) {
-      return {};
-    }
-
-    std::string token;
-    if (exec.front() == '"' || exec.front() == '\'') {
-      const char quote = exec.front();
-      exec.remove_prefix(1);
-      const auto end = exec.find(quote);
-      token = std::string(exec.substr(0, end));
-    } else {
-      const auto end = exec.find_first_of(" \t\r\n");
-      token = std::string(exec.substr(0, end));
-    }
-
-    const auto lastSlash = token.find_last_of('/');
-    if (lastSlash != std::string::npos) {
-      token = token.substr(lastSlash + 1);
-    }
-    return lowerIdentifier(std::move(token));
-  }
-
   void pushUnique(std::vector<std::string>& values, std::string value) {
     if (value.empty()) {
       return;
@@ -302,74 +276,64 @@ namespace {
     return tokens;
   }
 
-  std::string resolveDesktopDisplayName(const AudioNode& node, std::string_view resolvedAppName) {
-    auto canonical = [](std::string value) {
-      value = lowerIdentifier(std::move(value));
-      for (char& ch : value) {
-        if (ch == '-' || ch == '_' || ch == '.' || std::isspace(static_cast<unsigned char>(ch)) != 0) {
-          ch = ' ';
-        }
-      }
-      std::string out;
-      out.reserve(value.size());
-      bool prevSpace = true;
-      for (const char ch : value) {
-        const bool isSpace = std::isspace(static_cast<unsigned char>(ch)) != 0;
-        if (isSpace) {
-          if (!prevSpace) {
-            out.push_back(' ');
-          }
-        } else {
-          out.push_back(ch);
-        }
-        prevSpace = isSpace;
-      }
-      if (!out.empty() && out.back() == ' ') {
-        out.pop_back();
-      }
-      return out;
-    };
+  bool isValidDesktopMatch(std::string_view searchTerm, const DesktopEntry& entry) {
+    if (searchTerm.empty()) {
+      return false;
+    }
+    const std::string search = lowerIdentifier(std::string(searchTerm));
+    const std::string id = lowerIdentifier(entry.id);
+    const std::string name = lowerIdentifier(entry.name);
+    const std::string icon = lowerIdentifier(entry.icon);
+    return (!id.empty() && (id.find(search) != std::string::npos || search.find(id) != std::string::npos)) ||
+           (!name.empty() && (name.find(search) != std::string::npos || search.find(name) != std::string::npos)) ||
+           (!icon.empty() && (icon.find(search) != std::string::npos || search.find(icon) != std::string::npos));
+  }
 
-    std::vector<std::string> keys;
-    pushUnique(keys, lowerIdentifier(node.applicationBinary));
-    pushUnique(keys, lowerIdentifier(node.applicationId));
-    pushUnique(keys, lowerIdentifier(node.applicationName));
-    pushUnique(keys, lowerIdentifier(std::string(resolvedAppName)));
-    pushUnique(keys, lowerIdentifier(node.streamTitle));
-    pushUnique(keys, lowerIdentifier(node.name));
-    pushUnique(keys, lowerIdentifier(node.description));
-
+  const DesktopEntry* findDesktopEntryByTerm(std::string_view term) {
+    if (term.empty()) {
+      return nullptr;
+    }
+    const std::string key = lowerIdentifier(std::string(term));
     for (const auto& entry : desktopEntries()) {
-      const std::string entryId = lowerIdentifier(entry.id);
-      const std::string entryName = lowerIdentifier(entry.name);
-      const std::string entryStartupWmClass = lowerIdentifier(entry.startupWmClass);
-      const std::string entryExec = execBinaryName(entry.exec);
-      const std::string canonicalId = canonical(entry.id);
-      const std::string canonicalName = canonical(entry.name);
-      const std::string canonicalStartupWmClass = canonical(entry.startupWmClass);
-      const std::string canonicalExec = canonical(entry.exec);
-
-      for (const auto& key : keys) {
-        if (key.empty() || isGenericAudioLabel(key) || looksLikeRuntimeLauncher(key)) {
-          continue;
-        }
-        const std::string canonicalKey = canonical(key);
-        if (key == entryId || key == entryName || key == entryStartupWmClass || key == entryExec ||
-            (!canonicalKey.empty() &&
-             (canonicalKey == canonicalId || canonicalKey == canonicalName || canonicalKey == canonicalStartupWmClass ||
-              canonicalKey == canonicalExec || canonicalKey.find(canonicalId) != std::string::npos ||
-              canonicalId.find(canonicalKey) != std::string::npos ||
-              canonicalKey.find(canonicalName) != std::string::npos ||
-              canonicalName.find(canonicalKey) != std::string::npos ||
-              canonicalKey.find(canonicalExec) != std::string::npos ||
-              canonicalExec.find(canonicalKey) != std::string::npos))) {
-          if (!entry.name.empty() && !isGenericAudioLabel(entry.name)) {
-            return entry.name;
-          }
-        }
+      if (isValidDesktopMatch(key, entry)) {
+        return &entry;
       }
     }
-    return {};
+    return nullptr;
+  }
+
+  const DesktopEntry* findDesktopEntryForNode(const AudioNode& node, std::string_view resolvedAppName) {
+    const std::string binary = lowerIdentifier(node.applicationBinary);
+    if (!binary.empty()) {
+      if (const DesktopEntry* entry = findDesktopEntryByTerm(binary)) {
+        return entry;
+      }
+    }
+    const std::string appId = lowerIdentifier(node.applicationId);
+    if (!appId.empty()) {
+      if (const DesktopEntry* entry = findDesktopEntryByTerm(appId)) {
+        return entry;
+      }
+    }
+    const std::string appName = lowerIdentifier(node.applicationName);
+    if (!appName.empty() && !isGenericAudioLabel(appName) && !looksLikeRuntimeLauncher(appName)) {
+      if (const DesktopEntry* entry = findDesktopEntryByTerm(appName)) {
+        return entry;
+      }
+    }
+    const std::string resolved = lowerIdentifier(std::string(resolvedAppName));
+    if (!resolved.empty() && !isGenericAudioLabel(resolved) && !looksLikeRuntimeLauncher(resolved)) {
+      if (const DesktopEntry* entry = findDesktopEntryByTerm(resolved)) {
+        return entry;
+      }
+    }
+    const std::string nodeName = lowerIdentifier(node.name);
+    if (!nodeName.empty()) {
+      if (const DesktopEntry* entry = findDesktopEntryByTerm(nodeName)) {
+        return entry;
+      }
+    }
+    return nullptr;
   }
 
   std::string resolveProgramAppName(const AudioNode& node, const MprisPlayerInfo* player) {
@@ -402,9 +366,9 @@ namespace {
         player != nullptr && !player->identity.empty() && !isGenericAudioLabel(player->identity)) {
       resolved = player->identity;
     }
-    if (const std::string desktopName = resolveDesktopDisplayName(node, resolved);
-        !desktopName.empty() && !isGenericAudioLabel(desktopName)) {
-      resolved = desktopName;
+    if (const DesktopEntry* entry = findDesktopEntryForNode(node, resolved);
+        entry != nullptr && !entry->name.empty() && !isGenericAudioLabel(entry->name)) {
+      resolved = entry->name;
     }
     if (resolved.empty() || isGenericAudioLabel(resolved)) {
       resolved = !node.name.empty() ? node.name : node.description;
@@ -479,77 +443,10 @@ namespace {
 
   void appendDesktopIconCandidates(std::vector<std::string>& candidates, const AudioNode& node,
                                    std::string_view resolvedAppName) {
-    auto canonical = [](std::string value) {
-      value = lowerIdentifier(std::move(value));
-      for (char& ch : value) {
-        if (ch == '-' || ch == '_' || ch == '.' || std::isspace(static_cast<unsigned char>(ch)) != 0) {
-          ch = ' ';
-        }
-      }
-      std::string out;
-      out.reserve(value.size());
-      bool prevSpace = true;
-      for (const char ch : value) {
-        const bool isSpace = std::isspace(static_cast<unsigned char>(ch)) != 0;
-        if (isSpace) {
-          if (!prevSpace) {
-            out.push_back(' ');
-          }
-        } else {
-          out.push_back(ch);
-        }
-        prevSpace = isSpace;
-      }
-      if (!out.empty() && out.back() == ' ') {
-        out.pop_back();
-      }
-      return out;
-    };
-
-    std::vector<std::string> keys;
-    pushUnique(keys, lowerIdentifier(node.applicationId));
-    pushUnique(keys, lowerIdentifier(node.applicationBinary));
-    pushUnique(keys, lowerIdentifier(node.applicationName));
-    pushUnique(keys, lowerIdentifier(std::string(resolvedAppName)));
-    pushUnique(keys, lowerIdentifier(node.iconName));
-    pushUnique(keys, lowerIdentifier(node.streamTitle));
-    pushUnique(keys, lowerIdentifier(node.name));
-    pushUnique(keys, lowerIdentifier(node.description));
-
-    for (const auto& entry : desktopEntries()) {
-      const std::string entryId = lowerIdentifier(entry.id);
-      const std::string entryName = lowerIdentifier(entry.name);
-      const std::string entryStartupWmClass = lowerIdentifier(entry.startupWmClass);
-      const std::string entryExec = execBinaryName(entry.exec);
-      const std::string canonicalId = canonical(entry.id);
-      const std::string canonicalName = canonical(entry.name);
-      const std::string canonicalStartupWmClass = canonical(entry.startupWmClass);
-      const std::string canonicalExec = canonical(entry.exec);
-
-      bool matches = false;
-      for (const auto& key : keys) {
-        if (key.empty() || isGenericAudioLabel(key)) {
-          continue;
-        }
-        const std::string canonicalKey = canonical(key);
-        if (key == entryId || key == entryName || key == entryStartupWmClass || key == entryExec ||
-            (!canonicalKey.empty() &&
-             (canonicalKey == canonicalId || canonicalKey == canonicalName || canonicalKey == canonicalStartupWmClass ||
-              canonicalKey == canonicalExec || canonicalKey.find(canonicalId) != std::string::npos ||
-              canonicalId.find(canonicalKey) != std::string::npos ||
-              canonicalKey.find(canonicalName) != std::string::npos ||
-              canonicalName.find(canonicalKey) != std::string::npos ||
-              canonicalKey.find(canonicalExec) != std::string::npos ||
-              canonicalExec.find(canonicalKey) != std::string::npos))) {
-          matches = true;
-          break;
-        }
-      }
-      if (!matches || entry.icon.empty()) {
-        continue;
-      }
-      pushUnique(candidates, entry.icon);
-      pushUnique(candidates, entry.id);
+    if (const DesktopEntry* entry = findDesktopEntryForNode(node, resolvedAppName);
+        entry != nullptr && !entry->icon.empty()) {
+      pushUnique(candidates, entry->icon);
+      pushUnique(candidates, entry->id);
     }
   }
 
