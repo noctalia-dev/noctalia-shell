@@ -43,6 +43,7 @@ public:
     ButtonStateColors normal;
     ButtonStateColors hover;
     ButtonStateColors pressed;
+    ButtonStateColors disabled;
   };
 
   Button();

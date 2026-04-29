@@ -43,7 +43,7 @@ void TestPanel::create() {
 
   auto content = std::make_unique<Flex>();
   content->setDirection(FlexDirection::Horizontal);
-  content->setGap(Style::spaceLg * scale);
+  content->setGap(Style::spaceLg * 2 * scale);
   content->setAlign(FlexAlign::Start);
 
   auto container = std::make_unique<Flex>();
@@ -84,15 +84,12 @@ void TestPanel::create() {
       ButtonVariant variant;
     };
     const std::vector<VariantSpec> variants = {
-        {"Default", ButtonVariant::Default},
-        {"Secondary", ButtonVariant::Secondary},
-        {"Destructive", ButtonVariant::Destructive},
-        {"Outline", ButtonVariant::Outline},
-        {"Ghost", ButtonVariant::Ghost},
-        {"Accent", ButtonVariant::Accent},
+        {"Default", ButtonVariant::Default},     {"Accent", ButtonVariant::Accent},
+        {"Secondary", ButtonVariant::Secondary}, {"Destructive", ButtonVariant::Destructive},
+        {"Outline", ButtonVariant::Outline},     {"Ghost", ButtonVariant::Ghost},
     };
 
-    auto makeVariantButton = [scale](const VariantSpec& spec) {
+    auto makeVariantButton = [scale](const VariantSpec& spec, bool enabled = true) {
       auto btn = std::make_unique<Button>();
       btn->setText(spec.label);
       btn->setFontSize(Style::fontSizeBody * scale);
@@ -101,24 +98,25 @@ void TestPanel::create() {
       btn->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
       btn->setRadius(Style::radiusMd * scale);
       btn->setOnClick([]() {});
+      btn->setEnabled(enabled);
       return btn;
     };
 
-    auto topRow = makeRow();
-    for (size_t i = 0; i < 3 && i < variants.size(); ++i) {
-      topRow->addChild(makeVariantButton(variants[i]));
+    auto enabledRow = makeRow();
+    for (const auto& v : variants) {
+      enabledRow->addChild(makeVariantButton(v));
     }
 
-    auto bottomRow = makeRow();
-    for (size_t i = 3; i < variants.size(); ++i) {
-      bottomRow->addChild(makeVariantButton(variants[i]));
+    auto disabledRow = makeRow();
+    for (const auto& v : variants) {
+      disabledRow->addChild(makeVariantButton(v, false));
     }
 
     auto col = makeCol();
     col->setGap(Style::spaceSm * scale);
     col->setAlign(FlexAlign::Start);
-    col->addChild(std::move(topRow));
-    col->addChild(std::move(bottomRow));
+    col->addChild(std::move(enabledRow));
+    col->addChild(std::move(disabledRow));
 
     auto row = makeRow();
     row->addChild(makeRowLabel("Buttons", kRowLabelWidth));

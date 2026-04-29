@@ -21,6 +21,7 @@ namespace {
   }
 
   Button::ButtonPalette paletteForVariant(ButtonVariant variant) {
+    constexpr float kDisabledAlpha = 0.55f;
     switch (variant) {
     case ButtonVariant::Default:
       return Button::ButtonPalette{
@@ -30,6 +31,9 @@ namespace {
           .hover = makeState(roleColor(ColorRole::Hover), clearThemeColor(), roleColor(ColorRole::OnHover)),
           .pressed =
               makeState(roleColor(ColorRole::Primary), roleColor(ColorRole::Primary), roleColor(ColorRole::OnPrimary)),
+          .disabled =
+              makeState(roleColor(ColorRole::SurfaceVariant, kDisabledAlpha),
+                        roleColor(ColorRole::Outline, kDisabledAlpha), roleColor(ColorRole::OnSurface, kDisabledAlpha)),
       };
     case ButtonVariant::Secondary:
       return Button::ButtonPalette{
@@ -39,6 +43,9 @@ namespace {
           .hover = makeState(roleColor(ColorRole::Hover), clearThemeColor(), roleColor(ColorRole::OnHover)),
           .pressed =
               makeState(roleColor(ColorRole::Primary), roleColor(ColorRole::Primary), roleColor(ColorRole::OnPrimary)),
+
+          .disabled = makeState(roleColor(ColorRole::Secondary, kDisabledAlpha),
+                                roleColor(ColorRole::Outline, kDisabledAlpha), roleColor(ColorRole::OnSecondary)),
       };
     case ButtonVariant::Destructive:
       return Button::ButtonPalette{
@@ -47,6 +54,8 @@ namespace {
               makeState(roleColor(ColorRole::Error), roleColor(ColorRole::Outline), roleColor(ColorRole::OnError)),
           .hover = makeState(roleColor(ColorRole::Hover), clearThemeColor(), roleColor(ColorRole::OnHover)),
           .pressed = makeState(roleColor(ColorRole::Error), roleColor(ColorRole::Error), roleColor(ColorRole::OnError)),
+          .disabled = makeState(roleColor(ColorRole::Error, kDisabledAlpha),
+                                roleColor(ColorRole::Outline, kDisabledAlpha), roleColor(ColorRole::OnError)),
       };
     case ButtonVariant::Outline:
       return Button::ButtonPalette{
@@ -57,6 +66,9 @@ namespace {
 
           .pressed =
               makeState(roleColor(ColorRole::Primary), roleColor(ColorRole::Primary), roleColor(ColorRole::OnPrimary)),
+          .disabled =
+              makeState(roleColor(ColorRole::Surface, kDisabledAlpha), roleColor(ColorRole::Outline, kDisabledAlpha),
+                        roleColor(ColorRole::OnSurface, kDisabledAlpha)),
       };
     case ButtonVariant::Ghost:
       return Button::ButtonPalette{
@@ -65,6 +77,7 @@ namespace {
           .hover = makeState(roleColor(ColorRole::Hover), clearThemeColor(), roleColor(ColorRole::OnHover)),
           .pressed =
               makeState(roleColor(ColorRole::SurfaceVariant), clearThemeColor(), roleColor(ColorRole::OnSurface)),
+          .disabled = makeState(clearThemeColor(), clearThemeColor(), roleColor(ColorRole::OnSurface, kDisabledAlpha)),
       };
     case ButtonVariant::Accent:
       return Button::ButtonPalette{
@@ -72,6 +85,8 @@ namespace {
           .normal = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
           .hover = makeState(roleColor(ColorRole::Hover), clearThemeColor(), roleColor(ColorRole::OnHover)),
           .pressed = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
+          .disabled = makeState(roleColor(ColorRole::Primary, kDisabledAlpha), clearThemeColor(),
+                                roleColor(ColorRole::OnPrimary)),
       };
     case ButtonVariant::Tab:
       return Button::ButtonPalette{
@@ -80,6 +95,7 @@ namespace {
           .hover = makeState(roleColor(ColorRole::Hover), clearThemeColor(), roleColor(ColorRole::OnHover)),
           .pressed =
               makeState(roleColor(ColorRole::SurfaceVariant), clearThemeColor(), roleColor(ColorRole::OnSurface)),
+          .disabled = makeState(clearThemeColor(), clearThemeColor(), roleColor(ColorRole::OnSurface)),
       };
     case ButtonVariant::TabActive:
       return Button::ButtonPalette{
@@ -87,6 +103,8 @@ namespace {
           .normal = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
           .hover = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
           .pressed = makeState(roleColor(ColorRole::Primary), clearThemeColor(), roleColor(ColorRole::OnPrimary)),
+          .disabled = makeState(roleColor(ColorRole::Primary, kDisabledAlpha), clearThemeColor(),
+                                roleColor(ColorRole::OnPrimary)),
       };
     }
 
@@ -349,10 +367,9 @@ void Button::resolveVisualStateColors(Color& targetBg, Color& targetBorder, Colo
   bool isPressed = m_enabled && pressed();
 
   if (!m_enabled) {
-    constexpr float kDisabledAlpha = 0.5f;
-    targetBg = withAlpha(resolveThemeColor(m_palette.normal.bg), kDisabledAlpha);
-    targetBorder = withAlpha(resolveThemeColor(m_palette.normal.border), kDisabledAlpha);
-    targetLabel = withAlpha(resolveThemeColor(m_palette.normal.label), kDisabledAlpha);
+    targetBg = resolveThemeColor(m_palette.disabled.bg);
+    targetBorder = resolveThemeColor(m_palette.disabled.border);
+    targetLabel = resolveThemeColor(m_palette.disabled.label);
   } else if (isPressed) {
     targetBg = resolveThemeColor(m_palette.pressed.bg);
     targetBorder = resolveThemeColor(m_palette.pressed.border);
