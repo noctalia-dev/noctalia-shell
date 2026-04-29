@@ -238,7 +238,7 @@ static gboolean noctalia_polkit_listener_initiate_authentication_finish(PolkitAg
 static void noctalia_polkit_request_cancelled(GCancellable* /*cancellable*/, gpointer user_data) {
   auto* request = static_cast<InternalAuthRequest*>(user_data);
   request->cancelHandlerId = 0;
-  auto* source = G_TASK(request->task) != nullptr ? g_task_get_source_object(request->task) : nullptr;
+  auto* source = G_IS_TASK(request->task) ? g_task_get_source_object(request->task) : nullptr;
   auto* listener = source != nullptr ? reinterpret_cast<NoctaliaPolkitListener*>(source) : nullptr;
   if (listener != nullptr && listener->cancel != nullptr && listener->owner != nullptr) {
     listener->cancel(listener->owner, request);
