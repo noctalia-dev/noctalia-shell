@@ -359,7 +359,7 @@ void Application::initServices() {
   });
   m_wayland.setWorkspaceChangeCallback([this]() {
     m_bar.refresh();
-    m_overview.setActive(m_wayland.isNiriOverviewOpen());
+    m_overview.setActive(m_configService.config().overview.enabled && m_wayland.isNiriOverviewOpen());
   });
   m_wayland.setToplevelChangeCallback([this]() {
     m_bar.refresh();
@@ -381,7 +381,7 @@ void Application::initServices() {
   m_configService.addReloadCallback([this]() { m_nightLightManager.reload(m_configService.config().nightlight); });
 
   m_overview.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
-  m_overview.setActive(m_wayland.isNiriOverviewOpen());
+  m_overview.setActive(m_configService.config().overview.enabled && m_wayland.isNiriOverviewOpen());
 
   // Register all wallpaper consumers in the single-callback slot.
   m_configService.setWallpaperChangeCallback([this]() {
