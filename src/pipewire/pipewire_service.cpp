@@ -12,10 +12,12 @@
 #include <cstring>
 #include <memory>
 #include <optional>
+#include <pipewire/device.h>
 #include <pipewire/extensions/metadata.h>
 #include <pipewire/pipewire.h>
 #include <spa/param/audio/format-utils.h>
 #include <spa/param/props.h>
+#include <spa/param/route.h>
 #include <spa/pod/builder.h>
 #include <spa/pod/iter.h>
 #include <spa/pod/parser.h>
@@ -54,6 +56,23 @@ namespace {
       .version = PW_VERSION_CLIENT_EVENTS,
       .info = onClientInfo,
       .permissions = nullptr,
+  };
+
+  // Device events
+  void onDeviceInfo(void* data, const pw_device_info* info) {
+    auto* dev = static_cast<PipeWireService::DeviceData*>(data);
+    dev->service->onDeviceInfo(dev->id, info);
+  }
+
+  void onDeviceParam(void* data, int, std::uint32_t id, std::uint32_t index, std::uint32_t next, const spa_pod* param) {
+    auto* dev = static_cast<PipeWireService::DeviceData*>(data);
+    dev->service->onDeviceParam(dev->id, id, index, next, param);
+  }
+
+  const pw_device_events kDeviceEvents = {
+      .version = PW_VERSION_DEVICE_EVENTS,
+      .info = onDeviceInfo,
+      .param = onDeviceParam,
   };
 
   // Node events.
@@ -339,6 +358,17 @@ PipeWireService::~PipeWireService() {
   }
   m_clients.clear();
 
+  for (auto& [id, device] : m_devices) {
+    if (device.listener != nullptr) {
+      spa_hook_remove(device.listener);
+      delete device.listener;
+    }
+    if (device.proxy != nullptr) {
+      pw_proxy_destroy(reinterpret_cast<pw_proxy*>(device.proxy));
+    }
+  }
+  m_devices.clear();
+
   for (auto& cleanup : m_metadataCleanups) {
     cleanup();
   }
@@ -430,6 +460,28 @@ void PipeWireService::onRegistryGlobal(std::uint32_t id, const char* type, std::
     return;
   }
 
+  if (std::strcmp(type, PW_TYPE_INTERFACE_Device) == 0) {
+    DeviceData device;
+    device.service = this;
+    device.id = id;
+    auto [it, inserted] = m_devices.insert_or_assign(id, std::move(device));
+
+    auto& stored = it->second;
+    if (inserted) {
+      auto* proxy = static_cast<pw_device*>(pw_registry_bind(m_registry, id, type, PW_VERSION_DEVICE, sizeof(void*)));
+      if (proxy != nullptr) {
+        stored.proxy = proxy;
+        stored.listener = new spa_hook{};
+        spa_zero(*stored.listener);
+        pw_device_add_listener(proxy, stored.listener, &kDeviceEvents, &stored);
+        std::uint32_t params[] = {SPA_PARAM_Route};
+        pw_device_subscribe_params(proxy, params, 1);
+        pw_device_enum_params(proxy, 0, SPA_PARAM_Route, 0, UINT32_MAX, nullptr);
+      }
+    }
+    return;
+  }
+
   // Track audio sink/source nodes
   if (std::strcmp(type, PW_TYPE_INTERFACE_Node) == 0) {
     std::string mediaClass = dictGet(props, PW_KEY_MEDIA_CLASS);
@@ -449,6 +501,7 @@ void PipeWireService::onRegistryGlobal(std::uint32_t id, const char* type, std::
       nd->description = nd->name;
     }
     nd->clientId = parseUint32Or(dictGet(props, "client.id"));
+    nd->deviceId = parseUint32Or(dictGet(props, "device.id"));
     nd->applicationName = dictGet(props, "application.name");
     if (nd->applicationName.empty()) {
       nd->applicationName = dictGet(props, "client.name");
@@ -497,10 +550,11 @@ void PipeWireService::onRegistryGlobal(std::uint32_t id, const char* type, std::
       pw_node_add_listener(proxy, nd->listener, &kNodeEvents, nd.get());
 
       // Subscribe to Props param changes
-      std::uint32_t params[] = {SPA_PARAM_Props};
-      pw_node_subscribe_params(proxy, params, 1);
+      std::uint32_t params[] = {SPA_PARAM_Props, SPA_PARAM_Route};
+      pw_node_subscribe_params(proxy, params, 2);
       // Fetch current props so initial UI state does not sit at 100%.
       pw_node_enum_params(proxy, 0, SPA_PARAM_Props, 0, UINT32_MAX, nullptr);
+      pw_node_enum_params(proxy, 0, SPA_PARAM_Route, 0, UINT32_MAX, nullptr);
     }
 
     m_nodes[id] = std::move(nd);
@@ -552,6 +606,18 @@ void PipeWireService::onRegistryGlobalRemove(std::uint32_t id) {
       }
     }
     rebuildState();
+    return;
+  }
+
+  if (auto it = m_devices.find(id); it != m_devices.end()) {
+    if (it->second.listener != nullptr) {
+      spa_hook_remove(it->second.listener);
+      delete it->second.listener;
+    }
+    if (it->second.proxy != nullptr) {
+      pw_proxy_destroy(reinterpret_cast<pw_proxy*>(it->second.proxy));
+    }
+    m_devices.erase(it);
     return;
   }
 
@@ -610,6 +676,10 @@ void PipeWireService::onNodeInfo(std::uint32_t id, const pw_node_info* info) {
     if (clientId != 0) {
       it->second->clientId = clientId;
     }
+    const std::uint32_t deviceId = parseUint32Or(dictGet(info->props, "device.id"), it->second->deviceId);
+    if (deviceId != 0) {
+      it->second->deviceId = deviceId;
+    }
     std::string appBinary = dictGet(info->props, "application.process.binary");
     if (!appBinary.empty()) {
       it->second->applicationBinary = appBinary;
@@ -641,7 +711,8 @@ void PipeWireService::onNodeInfo(std::uint32_t id, const pw_node_info* info) {
     for (std::uint32_t i = 0; i < info->n_params; ++i) {
       if (info->params[i].id == SPA_PARAM_Props) {
         pw_node_enum_params(it->second->proxy, 0, SPA_PARAM_Props, 0, UINT32_MAX, nullptr);
-        break;
+      } else if (info->params[i].id == SPA_PARAM_Route) {
+        pw_node_enum_params(it->second->proxy, 0, SPA_PARAM_Route, 0, UINT32_MAX, nullptr);
       }
     }
   }
@@ -649,7 +720,7 @@ void PipeWireService::onNodeInfo(std::uint32_t id, const pw_node_info* info) {
 
 void PipeWireService::onNodeParam(std::uint32_t id, std::uint32_t paramId, std::uint32_t, std::uint32_t,
                                   const spa_pod* param) {
-  if (paramId != SPA_PARAM_Props || param == nullptr) {
+  if ((paramId != SPA_PARAM_Props && paramId != SPA_PARAM_Route) || param == nullptr) {
     return;
   }
 
@@ -659,6 +730,38 @@ void PipeWireService::onNodeParam(std::uint32_t id, std::uint32_t paramId, std::
   }
 
   auto& nd = *it->second;
+  if (paramId == SPA_PARAM_Route) {
+    std::int32_t routeIndex = -1;
+    std::int32_t routeDevice = -1;
+    std::uint32_t routeDirection = nd.routeDirection;
+    const spa_pod* routeProps = nullptr;
+    if (spa_pod_parse_object(param, SPA_TYPE_OBJECT_ParamRoute, nullptr, SPA_PARAM_ROUTE_index,
+                             SPA_POD_Int(&routeIndex), SPA_PARAM_ROUTE_direction, SPA_POD_Id(&routeDirection),
+                             SPA_PARAM_ROUTE_device, SPA_POD_Int(&routeDevice), SPA_PARAM_ROUTE_props,
+                             SPA_POD_Pod(&routeProps)) >= 0) {
+      if (routeIndex >= 0) {
+        nd.routeIndex = routeIndex;
+        nd.routeDevice = routeDevice;
+        nd.routeDirection = routeDirection;
+        nd.hasRoute = true;
+      }
+      if (routeProps != nullptr) {
+        spa_pod_prop* prop = nullptr;
+        auto* propsObj = reinterpret_cast<spa_pod_object*>(const_cast<spa_pod*>(routeProps));
+        SPA_POD_OBJECT_FOREACH(propsObj, prop) {
+          if (prop->key == SPA_PROP_mute) {
+            bool muted = false;
+            if (spa_pod_get_bool(&prop->value, &muted) == 0) {
+              nd.muted = muted;
+            }
+          }
+        }
+      }
+      rebuildState();
+    }
+    return;
+  }
+
   float parsedChannelVolumes = nd.volume;
   float parsedVolume = nd.volume;
   float parsedSoftVolumes = nd.volume;
@@ -730,6 +833,76 @@ void PipeWireService::onClientInfo(std::uint32_t id, const pw_client_info* info)
     }
   }
   rebuildState();
+}
+
+void PipeWireService::onDeviceInfo(std::uint32_t id, const pw_device_info* info) {
+  if (info == nullptr) {
+    return;
+  }
+  auto it = m_devices.find(id);
+  if (it == m_devices.end() || it->second.proxy == nullptr) {
+    return;
+  }
+
+  if ((info->change_mask & PW_DEVICE_CHANGE_MASK_PARAMS) != 0) {
+    for (std::uint32_t i = 0; i < info->n_params; ++i) {
+      if (info->params[i].id == SPA_PARAM_Route) {
+        pw_device_enum_params(it->second.proxy, 0, SPA_PARAM_Route, 0, UINT32_MAX, nullptr);
+      }
+    }
+  }
+}
+
+void PipeWireService::onDeviceParam(std::uint32_t id, std::uint32_t paramId, std::uint32_t index, std::uint32_t,
+                                    const spa_pod* param) {
+  if (paramId != SPA_PARAM_Route || param == nullptr) {
+    return;
+  }
+
+  auto it = m_devices.find(id);
+  if (it == m_devices.end()) {
+    return;
+  }
+
+  std::int32_t routeIndex = -1;
+  std::int32_t routeDevice = -1;
+  std::uint32_t routeDirection = 0;
+  const spa_pod* routeProps = nullptr;
+  if (spa_pod_parse_object(param, SPA_TYPE_OBJECT_ParamRoute, nullptr, SPA_PARAM_ROUTE_index, SPA_POD_Int(&routeIndex),
+                           SPA_PARAM_ROUTE_direction, SPA_POD_Id(&routeDirection), SPA_PARAM_ROUTE_device,
+                           SPA_POD_Int(&routeDevice), SPA_PARAM_ROUTE_props, SPA_POD_Pod(&routeProps)) < 0) {
+    return;
+  }
+
+  bool muted = false;
+  if (routeProps != nullptr) {
+    spa_pod_prop* prop = nullptr;
+    auto* propsObj = reinterpret_cast<spa_pod_object*>(const_cast<spa_pod*>(routeProps));
+    SPA_POD_OBJECT_FOREACH(propsObj, prop) {
+      if (prop->key == SPA_PROP_mute) {
+        bool routeMuted = false;
+        if (spa_pod_get_bool(&prop->value, &routeMuted) == 0) {
+          muted = routeMuted;
+        }
+      }
+    }
+  }
+
+  auto& routes = it->second.routes;
+  auto existing =
+      std::find_if(routes.begin(), routes.end(), [routeIndex](const auto& route) { return route.index == routeIndex; });
+  if (existing == routes.end()) {
+    DeviceRouteData route;
+    route.index = routeIndex >= 0 ? routeIndex : static_cast<std::int32_t>(index);
+    route.device = routeDevice;
+    route.direction = routeDirection;
+    route.muted = muted;
+    routes.push_back(route);
+  } else {
+    existing->device = routeDevice;
+    existing->direction = routeDirection;
+    existing->muted = muted;
+  }
 }
 
 void PipeWireService::parseDefaultNodes(const spa_dict* props) {
@@ -883,6 +1056,78 @@ void PipeWireService::setNodeMuted(std::uint32_t id, bool muted) {
   auto& nd = *it->second;
   if (nd.proxy == nullptr) {
     return;
+  }
+
+  const bool isDeviceNode = nd.mediaClass == "Audio/Sink" || nd.mediaClass == "Audio/Source";
+  if (isDeviceNode && nd.deviceId != 0) {
+    auto devIt = m_devices.find(nd.deviceId);
+    if (devIt != m_devices.end() && devIt->second.proxy != nullptr) {
+      const std::uint32_t targetDirection =
+          (nd.mediaClass == "Audio/Source") ? SPA_DIRECTION_INPUT : SPA_DIRECTION_OUTPUT;
+      bool wroteDeviceRoute = false;
+      for (const auto& route : devIt->second.routes) {
+        if (route.index < 0 || route.direction != targetDirection) {
+          continue;
+        }
+
+        std::uint8_t routeBuffer[512];
+        spa_pod_builder routeBuilder;
+        spa_pod_builder_init(&routeBuilder, routeBuffer, sizeof(routeBuffer));
+
+        spa_pod_frame routeFrame;
+        spa_pod_builder_push_object(&routeBuilder, &routeFrame, SPA_TYPE_OBJECT_ParamRoute, SPA_PARAM_Route);
+        spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_index, 0);
+        spa_pod_builder_int(&routeBuilder, route.index);
+        spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_direction, 0);
+        spa_pod_builder_id(&routeBuilder, route.direction);
+        spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_device, 0);
+        spa_pod_builder_int(&routeBuilder, route.device);
+        spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_props, 0);
+        spa_pod_frame routePropsFrame;
+        spa_pod_builder_push_object(&routeBuilder, &routePropsFrame, SPA_TYPE_OBJECT_Props, SPA_PARAM_Props);
+        spa_pod_builder_prop(&routeBuilder, SPA_PROP_mute, 0);
+        spa_pod_builder_bool(&routeBuilder, muted);
+        spa_pod_builder_pop(&routeBuilder, &routePropsFrame);
+        spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_save, 0);
+        spa_pod_builder_bool(&routeBuilder, true);
+        auto* routePod = static_cast<spa_pod*>(spa_pod_builder_pop(&routeBuilder, &routeFrame));
+        pw_device_set_param(devIt->second.proxy, SPA_PARAM_Route, 0, routePod);
+        wroteDeviceRoute = true;
+      }
+
+      if (wroteDeviceRoute) {
+        if (nd.muted != muted) {
+          nd.muted = muted;
+          rebuildState();
+        }
+        return;
+      }
+    }
+  }
+
+  if (nd.hasRoute && nd.routeIndex >= 0) {
+    std::uint8_t routeBuffer[512];
+    spa_pod_builder routeBuilder;
+    spa_pod_builder_init(&routeBuilder, routeBuffer, sizeof(routeBuffer));
+
+    spa_pod_frame routeFrame;
+    spa_pod_builder_push_object(&routeBuilder, &routeFrame, SPA_TYPE_OBJECT_ParamRoute, SPA_PARAM_Route);
+    spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_index, 0);
+    spa_pod_builder_int(&routeBuilder, nd.routeIndex);
+    spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_direction, 0);
+    spa_pod_builder_id(&routeBuilder, nd.routeDirection);
+    spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_device, 0);
+    spa_pod_builder_int(&routeBuilder, nd.routeDevice);
+    spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_props, 0);
+    spa_pod_frame routePropsFrame;
+    spa_pod_builder_push_object(&routeBuilder, &routePropsFrame, SPA_TYPE_OBJECT_Props, SPA_PARAM_Props);
+    spa_pod_builder_prop(&routeBuilder, SPA_PROP_mute, 0);
+    spa_pod_builder_bool(&routeBuilder, muted);
+    spa_pod_builder_pop(&routeBuilder, &routePropsFrame);
+    spa_pod_builder_prop(&routeBuilder, SPA_PARAM_ROUTE_save, 0);
+    spa_pod_builder_bool(&routeBuilder, true);
+    auto* routePod = static_cast<spa_pod*>(spa_pod_builder_pop(&routeBuilder, &routeFrame));
+    pw_node_set_param(nd.proxy, SPA_PARAM_Route, 0, routePod);
   }
 
   std::uint8_t buffer[256];
