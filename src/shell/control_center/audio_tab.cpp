@@ -1,6 +1,7 @@
 #include "shell/control_center/audio_tab.h"
 
 #include "config/config_service.h"
+#include "core/log.h"
 #include "core/ui_phase.h"
 #include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
@@ -39,6 +40,7 @@ namespace {
   constexpr float kVolumeSyncEpsilon = 0.005f; // 0.5%
   constexpr auto kVolumeCommitInterval = std::chrono::milliseconds(16);
   constexpr auto kVolumeStateHoldoff = std::chrono::milliseconds(180);
+  Logger kLog("audio-tab");
 
   // Used to resolve application icons in AudioTab.
   IconResolver g_iconResolver;
@@ -741,14 +743,7 @@ namespace {
       const std::string candidateApp = sanitize(resolvedAppName);
       const std::string candidateFallback =
           sanitize(node.applicationBinary.empty() ? node.name : node.applicationBinary);
-      if (!candidateIcon.empty()) {
-        pushUnique(m_iconCandidates, candidateIcon);
-        pushUnique(m_iconCandidates, candidateIcon + ".desktop");
-      }
-      if (!candidateId.empty() && candidateId != candidateIcon) {
-        pushUnique(m_iconCandidates, candidateId);
-        pushUnique(m_iconCandidates, candidateId + ".desktop");
-      }
+      const bool lowConfidenceAppName = isLowConfidenceProgramAppName(node);
       if (!candidateApp.empty()) {
         pushUnique(m_iconCandidates, candidateApp);
         pushUnique(m_iconCandidates, candidateApp + ".desktop");
@@ -757,12 +752,29 @@ namespace {
         pushUnique(m_iconCandidates, candidateFallback);
         pushUnique(m_iconCandidates, candidateFallback + ".desktop");
       }
+      if (!candidateId.empty() && candidateId != candidateApp && candidateId != candidateFallback) {
+        pushUnique(m_iconCandidates, candidateId);
+        pushUnique(m_iconCandidates, candidateId + ".desktop");
+      }
       appendDesktopIconCandidates(m_iconCandidates, node, resolvedAppName);
+      // Keep raw node icon as final fallback (Electron streams often report Chromium icon names).
+      if (!candidateIcon.empty()) {
+        pushUnique(m_iconCandidates, candidateIcon);
+        pushUnique(m_iconCandidates, candidateIcon + ".desktop");
+      }
       for (const auto& candidate : m_iconCandidates) {
         m_iconKey += candidate;
         m_iconKey.push_back('|');
       }
       m_iconKey += title;
+
+      if (m_lastLoggedIconKey != m_iconKey) {
+        kLog.info("[program-icon] id={} app='{}' appId='{}' appBinary='{}' iconName='{}' lowConfidenceAppName={} "
+                  "resolvedApp='{}' candidates='{}'",
+                  node.id, node.applicationName, node.applicationId, node.applicationBinary, node.iconName,
+                  lowConfidenceAppName, resolvedAppName, m_iconKey);
+        m_lastLoggedIconKey = m_iconKey;
+      }
     }
 
     [[nodiscard]] std::uint32_t id() const noexcept { return m_id; }
@@ -783,6 +795,7 @@ namespace {
     std::string m_iconKey;
     std::string m_lastIconKey;
     std::string m_lastIconPath;
+    std::string m_lastLoggedIconKey;
     std::vector<std::string> m_iconCandidates;
 
     Slider* m_slider = nullptr;
