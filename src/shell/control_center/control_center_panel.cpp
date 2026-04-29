@@ -81,12 +81,9 @@ void ControlCenterPanel::create() {
   rootLayout->addChild(std::move(sidebar));
 
   auto content = std::make_unique<Flex>();
-  content->setCardStyle(scale);
   content->setDirection(FlexDirection::Vertical);
   content->setAlign(FlexAlign::Stretch);
   content->setGap(Style::spaceMd * scale);
-  content->setPadding(Style::spaceLg * scale);
-  content->setRadius(Style::radiusXl * scale);
   content->setFlexGrow(4.0f);
   content->setClipChildren(true);
   m_content = content.get();
