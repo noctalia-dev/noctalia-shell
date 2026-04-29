@@ -218,6 +218,18 @@ void Application::syncPolkitAgent() {
   }
 }
 
+bool Application::overviewShouldBeActive() const {
+  if (!m_configService.config().overview.enabled) {
+    return false;
+  }
+
+  if (!m_wayland.tracksNiriOverviewState()) {
+    return true;
+  }
+
+  return m_wayland.hasNiriOverviewState() && m_wayland.isNiriOverviewOpen();
+}
+
 void Application::run() {
   initLogFile();
   kLog.info("noctalia {}", noctalia::build_info::displayVersion());
@@ -319,7 +331,7 @@ void Application::initServices() {
   });
   m_wayland.setWorkspaceChangeCallback([this]() {
     m_bar.refresh();
-    m_overview.setActive(m_configService.config().overview.enabled && m_wayland.isNiriOverviewOpen());
+    m_overview.setActive(overviewShouldBeActive());
   });
   m_wayland.setToplevelChangeCallback([this]() {
     m_bar.refresh();
@@ -339,9 +351,6 @@ void Application::initServices() {
   m_nightLightManager.reload(m_configService.config().nightlight);
   m_nightLightManager.setChangeCallback([this]() { m_bar.refresh(); });
   m_configService.addReloadCallback([this]() { m_nightLightManager.reload(m_configService.config().nightlight); });
-
-  m_overview.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
-  m_overview.setActive(m_configService.config().overview.enabled && m_wayland.isNiriOverviewOpen());
 
   // Register all wallpaper consumers in the single-callback slot.
   m_configService.setWallpaperChangeCallback([this]() {
@@ -668,6 +677,7 @@ void Application::initUi() {
   m_renderContext.initialize(m_glShared);
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
   m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache);
+  m_overview.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared, overviewShouldBeActive());
   m_settingsWindow.initialize(m_wayland, &m_configService, &m_renderContext);
   m_lockScreen.initialize(m_wayland, &m_renderContext, &m_configService, &m_sharedTextureCache);
   m_lockScreen.setSessionHooks([this]() { m_hookManager.fire(HookKind::SessionLocked); },

@@ -19,6 +19,16 @@ namespace {
 Overview::Overview() = default;
 Overview::~Overview() = default;
 
+bool Overview::shouldBeActiveForCurrentCompositorState() const {
+  if (m_config == nullptr || !m_config->config().overview.enabled) {
+    return false;
+  }
+  if (m_wayland == nullptr || !m_wayland->tracksNiriOverviewState()) {
+    return true;
+  }
+  return m_wayland->hasNiriOverviewState() && m_wayland->isNiriOverviewOpen();
+}
+
 void Overview::destroyInstances() {
   for (auto& inst : m_instances) {
     releaseInstanceTexture(*inst);
@@ -27,11 +37,15 @@ void Overview::destroyInstances() {
 }
 
 bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache,
-                          GlSharedContext* sharedGl) {
+                          GlSharedContext* sharedGl, bool active) {
   m_wayland = &wayland;
   m_config = config;
   m_textureCache = textureCache;
   m_sharedGl = sharedGl;
+  // Use the compositor's current overview state instead of preloading hidden
+  // surfaces. Otherwise hidden-unload can briefly make overview the only owner
+  // of the selected wallpaper texture during startup.
+  m_active = active && m_config->config().overview.enabled;
 
   // Register reload callback unconditionally so toggling enabled in config works.
   m_config->addReloadCallback([this]() { reload(); });
@@ -50,6 +64,7 @@ bool Overview::initialize(WaylandConnection& wayland, ConfigService* config, Sha
 void Overview::reload() {
   kLog.info("reloading config");
   m_destroyDelayTimer.stop();
+  m_active = shouldBeActiveForCurrentCompositorState();
 
   // Always tear down existing instances. This is necessary because a
   // wallpaper enable/disable cycle resets the wallpaper share context, and any

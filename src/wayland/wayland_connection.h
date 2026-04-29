@@ -153,6 +153,7 @@ public:
   [[nodiscard]] bool hasFreshPointerOutput(std::chrono::milliseconds maxAge) const noexcept;
   [[nodiscard]] wl_output*
   preferredPanelOutput(std::chrono::milliseconds pointerMaxAge = std::chrono::milliseconds(1200)) const;
+  [[nodiscard]] bool tracksNiriOverviewState() const noexcept;
   [[nodiscard]] bool hasNiriOverviewState() const noexcept;
   [[nodiscard]] bool isNiriOverviewOpen() const noexcept;
 

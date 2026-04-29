@@ -18,7 +18,7 @@ public:
   ~Overview();
 
   bool initialize(WaylandConnection& wayland, ConfigService* config, SharedTextureCache* textureCache,
-                  GlSharedContext* sharedGl);
+                  GlSharedContext* sharedGl, bool active);
   void onOutputChange();
   void onFontChanged();
   void onStateChange();
@@ -28,6 +28,7 @@ public:
   [[nodiscard]] bool isActive() const noexcept { return m_active; }
 
 private:
+  [[nodiscard]] bool shouldBeActiveForCurrentCompositorState() const;
   void reload();
   void destroyInstances();
   void syncInstances();
@@ -41,6 +42,6 @@ private:
   SharedTextureCache* m_textureCache = nullptr;
   GlSharedContext* m_sharedGl = nullptr;
   std::vector<std::unique_ptr<OverviewInstance>> m_instances;
-  bool m_active = true;
+  bool m_active = false;
   Timer m_destroyDelayTimer;
 };

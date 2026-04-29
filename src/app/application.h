@@ -101,6 +101,7 @@ private:
   void startTrayService();
   void syncNotificationDaemon();
   void syncPolkitAgent();
+  [[nodiscard]] bool overviewShouldBeActive() const;
   bool runUserCommand(const std::string& command);
   bool runIdleCommand(const std::string& command);
   void onIconThemeChanged();
