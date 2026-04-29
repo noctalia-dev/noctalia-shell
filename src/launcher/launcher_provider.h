@@ -6,7 +6,7 @@
 
 struct LauncherResult {
   std::string id;
-  std::string providerName; // Set by LauncherPanel after query; used for usage tracking
+  std::string providerName; // Set by LauncherPanel after query; used for activation dispatch and usage tracking
   std::string title;
   std::string subtitle;
   std::string glyphName;

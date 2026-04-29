@@ -646,15 +646,22 @@ void LauncherPanel::activateSelected() {
 
   const auto& result = m_results[m_selectedIndex];
 
-  // Find the provider that owns this result
+  // Dispatch only to the provider that produced this result. Providers can use
+  // overlapping id shapes, so probing every provider risks side effects.
   for (auto& provider : m_providers) {
-    if (provider->activate(result)) {
-      if (provider->trackUsage()) {
-        m_usageTracker.record(provider->name(), result.id);
-      }
-      PanelManager::instance().closePanel();
+    if (provider->name() != std::string_view(result.providerName)) {
+      continue;
+    }
+
+    if (!provider->activate(result)) {
       return;
     }
+
+    if (provider->trackUsage()) {
+      m_usageTracker.record(provider->name(), result.id);
+    }
+    PanelManager::instance().closePanel();
+    return;
   }
 }
 

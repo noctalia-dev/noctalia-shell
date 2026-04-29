@@ -122,6 +122,15 @@ bool WallpaperProvider::activate(const LauncherResult& result) {
   if (m_config == nullptr || result.id.empty()) {
     return false;
   }
+  if (!result.providerName.empty() && result.providerName != name()) {
+    return false;
+  }
+
+  const std::filesystem::path path(result.id);
+  std::error_code ec;
+  if (!hasImageExtension(path) || !std::filesystem::is_regular_file(path, ec) || ec) {
+    return false;
+  }
 
   ConfigService::WallpaperBatch batch(*m_config);
   if (m_wayland != nullptr) {
