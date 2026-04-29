@@ -30,7 +30,19 @@ WorkspacesWidget::WorkspacesWidget(WaylandConnection& connection, wl_output* out
     : m_connection(connection), m_output(output), m_displayMode(displayMode) {}
 
 void WorkspacesWidget::create() {
-  auto container = std::make_unique<Node>();
+  auto container = std::make_unique<InputArea>();
+  container->setOnAxis([this](const InputArea::PointerData& data) {
+    if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
+      return;
+    }
+    const float delta = data.scrollDelta(1.0f);
+    if (delta == 0.0f) {
+      return;
+    }
+    // Wayland reports positive wheel deltas for "scroll down", so treat that
+    // as moving to the next workspace and negative as previous.
+    activateAdjacentWorkspace(delta > 0.0f ? 1 : -1);
+  });
   m_container = container.get();
   setRoot(std::move(container));
 }
@@ -204,18 +216,6 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
       if (data.button == BTN_LEFT) {
         m_connection.activateWorkspace(m_output, wsCopy);
       }
-    });
-    area->setOnAxis([this](const InputArea::PointerData& data) {
-      if (data.axis != WL_POINTER_AXIS_VERTICAL_SCROLL) {
-        return;
-      }
-      const float delta = data.scrollDelta(1.0f);
-      if (delta == 0.0f) {
-        return;
-      }
-      // Wayland reports positive wheel deltas for "scroll down", so treat that
-      // as moving to the next workspace and negative as previous.
-      activateAdjacentWorkspace(delta > 0.0f ? 1 : -1);
     });
     item.area = static_cast<InputArea*>(m_container->addChild(std::move(area)));
     m_items.push_back(item);

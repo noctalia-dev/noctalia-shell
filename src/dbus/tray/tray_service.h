@@ -88,7 +88,10 @@ private:
   void onRegisterStatusNotifierItem(const std::string& serviceOrPath, const std::string& senderBusName);
   void onRegisterStatusNotifierHost(const std::string& host);
   void discoverExistingItems();
-  void tryRegisterItemForBusName(const std::string& busName);
+  [[nodiscard]] bool tryRegisterItemForBusName(const std::string& busName);
+  void scheduleBusOnlyRegistrationProbe(const std::string& busName, int retriesRemaining);
+  void scheduleMetadataRefreshRetry(const std::string& itemId, int retriesRemaining);
+  [[nodiscard]] bool isMetadataReady(const TrayItemInfo& item) const;
   void registerOrRefreshItem(const std::string& busName, const std::string& objectPath);
   void refreshItemMetadata(const std::string& itemId);
   void ensureMenuCache(const std::string& itemId, const std::string& busName, const std::string& menuPath);
@@ -96,6 +99,7 @@ private:
   bool fetchMenuSubtree(const std::string& itemId, std::int32_t parentId);
   void sendMenuEvent(const std::string& itemId, std::int32_t entryId, const std::string& eventName);
   [[nodiscard]] bool ensureItemProxy(const std::string& itemId);
+  [[nodiscard]] bool hasServiceOwner(const std::string& serviceName) const;
   void removeItemsForBusName(const std::string& busName);
   void emitChanged();
 
