@@ -10,6 +10,7 @@
 #include "ui/controls/glyph.h"
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
+#include "ui/controls/segmented.h"
 #include "ui/controls/select.h"
 #include "ui/controls/separator.h"
 #include "ui/controls/slider.h"
@@ -363,7 +364,25 @@ namespace settings {
       return toggle;
     };
 
-    const auto makeSelect = [&](const SelectSetting& setting, std::vector<std::string> path) {
+    const auto makeSelect = [&](const SelectSetting& setting, std::vector<std::string> path) -> std::unique_ptr<Node> {
+      if (setting.segmented) {
+        auto segmented = std::make_unique<Segmented>();
+        segmented->setScale(scale);
+        for (const auto& opt : setting.options) {
+          segmented->addOption(opt.label);
+        }
+        if (const auto index = optionIndex(setting.options, setting.selectedValue)) {
+          segmented->setSelectedIndex(*index);
+        }
+        auto options = setting.options;
+        segmented->setOnChange([setOverride = ctx.setOverride, path, options](std::size_t index) {
+          if (index < options.size()) {
+            setOverride(path, options[index].value);
+          }
+        });
+        return segmented;
+      }
+
       auto select = std::make_unique<Select>();
       select->setOptions(optionLabels(setting.options));
       if (const auto index = optionIndex(setting.options, setting.selectedValue)) {

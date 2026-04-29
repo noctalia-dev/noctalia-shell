@@ -64,6 +64,7 @@ namespace settings {
     double step = 1.0;
     std::vector<WidgetSettingSelectOption> options;
     bool advanced = false;
+    bool segmented = false; // applies when valueType == Select
   };
 
   [[nodiscard]] const std::vector<WidgetTypeSpec>& widgetTypeSpecs();

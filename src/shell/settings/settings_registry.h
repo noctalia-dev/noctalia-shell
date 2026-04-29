@@ -23,6 +23,7 @@ namespace settings {
     std::vector<SelectOption> options;
     std::string selectedValue;
     bool clearOnEmpty = false;
+    bool segmented = false; // render as Segmented pill group instead of dropdown Select
   };
 
   struct SliderSetting {

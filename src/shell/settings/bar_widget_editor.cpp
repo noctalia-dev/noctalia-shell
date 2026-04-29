@@ -818,8 +818,9 @@ namespace settings {
           for (const auto& option : spec.options) {
             options.push_back(SelectOption{std::string(option.value), i18n::tr(option.labelKey)});
           }
-          ctx.makeRow(*panel, entry,
-                      ctx.makeSelect(SelectSetting{std::move(options), settingValueAsString(value)}, path));
+          SelectSetting selectSetting{std::move(options), settingValueAsString(value)};
+          selectSetting.segmented = spec.segmented;
+          ctx.makeRow(*panel, entry, ctx.makeSelect(std::move(selectSetting), path));
           break;
         }
         }

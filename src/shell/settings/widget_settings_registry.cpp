@@ -212,6 +212,13 @@ namespace settings {
       return spec;
     }
 
+    WidgetSettingSpec segmentedSpec(std::string_view key, std::string defaultValue,
+                                    std::vector<WidgetSettingSelectOption> options, bool advanced = false) {
+      auto spec = selectSpec(key, std::move(defaultValue), std::move(options), advanced);
+      spec.segmented = true;
+      return spec;
+    }
+
     void addPickerEntry(std::vector<WidgetPickerEntry>& entries, std::unordered_set<std::string>& seen,
                         std::string value, std::string label, std::string description, std::string category,
                         WidgetReferenceKind kind) {
@@ -409,7 +416,7 @@ namespace settings {
       add(stringSpec("vertical_format"));
     } else if (type == "keyboard_layout") {
       add(stringSpec("cycle_command"));
-      add(selectSpec("display", "short", shortFull));
+      add(segmentedSpec("display", "short", shortFull));
     } else if (type == "launcher") {
       add(stringSpec("glyph", "search"));
     } else if (type == "lock_keys") {
@@ -417,7 +424,7 @@ namespace settings {
       add(boolSpec("show_num_lock", true));
       add(boolSpec("show_scroll_lock", false));
       add(boolSpec("hide_when_off", false));
-      add(selectSpec("display", "short", shortFull));
+      add(segmentedSpec("display", "short", shortFull));
     } else if (type == "media") {
       add(doubleSpec("max_length", 220.0, 40.0, 800.0, 1.0));
       add(doubleSpec("art_size", 16.0, 8.0, 96.0, 1.0));
@@ -435,7 +442,7 @@ namespace settings {
     } else if (type == "sysmon") {
       add(selectSpec("stat", "cpu_usage", sysmonStats));
       add(stringSpec("path", "/"));
-      add(selectSpec("display", "gauge", sysmonDisplay));
+      add(segmentedSpec("display", "gauge", sysmonDisplay));
       add(boolSpec("show_label", true));
     } else if (type == "tray") {
       add(stringListSpec("hidden"));
@@ -445,7 +452,7 @@ namespace settings {
       add(doubleSpec("max_length", 160.0, 40.0, 800.0, 1.0));
       add(boolSpec("show_condition", true));
     } else if (type == "workspaces") {
-      add(selectSpec("display", "id", workspaceDisplay));
+      add(segmentedSpec("display", "id", workspaceDisplay));
     }
 
     return specs;

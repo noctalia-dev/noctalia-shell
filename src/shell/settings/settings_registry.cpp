@@ -15,6 +15,11 @@
 namespace settings {
   namespace {
 
+    SelectSetting asSegmented(SelectSetting setting) {
+      setting.segmented = true;
+      return setting;
+    }
+
     template <typename T, std::size_t N> SelectSetting enumSelect(const EnumOption<T> (&options)[N], T selected) {
       std::vector<SelectOption> opts;
       opts.reserve(N);
@@ -220,21 +225,21 @@ namespace settings {
                                                   const RegistryEnvironment& env) {
     using i18n::tr;
     const auto positionSelect = [](std::string_view selected) {
-      return plainSelect({{"top", "settings.options.edge.top"},
-                          {"bottom", "settings.options.edge.bottom"},
-                          {"left", "settings.options.edge.left"},
-                          {"right", "settings.options.edge.right"}},
-                         selected);
+      return asSegmented(plainSelect({{"top", "settings.options.edge.top"},
+                                      {"bottom", "settings.options.edge.bottom"},
+                                      {"left", "settings.options.edge.left"},
+                                      {"right", "settings.options.edge.right"}},
+                                     selected));
     };
     std::vector<SettingEntry> entries;
 
     // Appearance
     entries.push_back(makeEntry("appearance", "theme", tr("settings.schema.appearance.theme-mode.label"),
                                 tr("settings.schema.appearance.theme-mode.description"), {"theme", "mode"},
-                                enumSelect(kThemeModes, cfg.theme.mode), "dark light auto colors"));
+                                asSegmented(enumSelect(kThemeModes, cfg.theme.mode)), "dark light auto colors"));
     entries.push_back(makeEntry("appearance", "theme", tr("settings.schema.appearance.theme-source.label"),
                                 tr("settings.schema.appearance.theme-source.description"), {"theme", "source"},
-                                enumSelect(kThemeSources, cfg.theme.source), "palette colors"));
+                                asSegmented(enumSelect(kThemeSources, cfg.theme.source)), "palette colors"));
     if (cfg.theme.source == ThemeSource::Builtin) {
       entries.push_back(makeEntry("appearance", "theme", tr("settings.schema.appearance.theme-palette.label"),
                                   tr("settings.schema.appearance.theme-palette.description"), {"theme", "builtin"},
@@ -291,7 +296,7 @@ namespace settings {
                                 ToggleSetting{cfg.wallpaper.enabled}, "background image"));
     entries.push_back(makeEntry("wallpaper", "general", tr("settings.schema.wallpaper.fill-mode.label"),
                                 tr("settings.schema.wallpaper.fill-mode.description"), {"wallpaper", "fill_mode"},
-                                enumSelect(kWallpaperFillModes, cfg.wallpaper.fillMode), "scale aspect"));
+                                asSegmented(enumSelect(kWallpaperFillModes, cfg.wallpaper.fillMode)), "scale aspect"));
     {
       ColorSetting fillColor;
       fillColor.unset = !cfg.wallpaper.fillColor.has_value();
@@ -346,10 +351,10 @@ namespace settings {
         {"wallpaper", "automation", "interval_minutes"},
         SliderSetting{static_cast<float>(cfg.wallpaper.automation.intervalMinutes), 0.0f, 1440.0f, 1.0f, true},
         "rotate slideshow"));
-    entries.push_back(
-        makeEntry("wallpaper", "automation", tr("settings.schema.wallpaper.automation-order.label"),
-                  tr("settings.schema.wallpaper.automation-order.description"), {"wallpaper", "automation", "order"},
-                  enumSelect(kWallpaperAutomationOrders, cfg.wallpaper.automation.order), "rotate slideshow"));
+    entries.push_back(makeEntry(
+        "wallpaper", "automation", tr("settings.schema.wallpaper.automation-order.label"),
+        tr("settings.schema.wallpaper.automation-order.description"), {"wallpaper", "automation", "order"},
+        asSegmented(enumSelect(kWallpaperAutomationOrders, cfg.wallpaper.automation.order)), "rotate slideshow"));
     entries.push_back(makeEntry("wallpaper", "automation", tr("settings.schema.wallpaper.automation-recursive.label"),
                                 tr("settings.schema.wallpaper.automation-recursive.description"),
                                 {"wallpaper", "automation", "recursive"},
@@ -496,7 +501,8 @@ namespace settings {
                                 ToggleSetting{cfg.shell.polkitAgent}, "auth password"));
     entries.push_back(makeEntry("shell", "security", tr("settings.schema.shell.password-style.label"),
                                 tr("settings.schema.shell.password-style.description"), {"shell", "password_style"},
-                                enumSelect(kPasswordMaskStyles, cfg.shell.passwordMaskStyle), "polkit lock mask"));
+                                asSegmented(enumSelect(kPasswordMaskStyles, cfg.shell.passwordMaskStyle)),
+                                "polkit lock mask"));
     entries.push_back(makeEntry("shell", "location", tr("settings.schema.shell.show-location.label"),
                                 tr("settings.schema.shell.show-location.description"), {"shell", "show_location"},
                                 ToggleSetting{cfg.shell.showLocation}, "weather"));
@@ -528,9 +534,9 @@ namespace settings {
                                 ToggleSetting{cfg.weather.autoLocate}, "forecast gps"));
     entries.push_back(makeEntry("services", "weather", tr("settings.schema.services.weather-unit.label"),
                                 tr("settings.schema.services.weather-unit.description"), {"weather", "unit"},
-                                plainSelect({{"celsius", "settings.options.weather.unit.celsius"},
-                                             {"fahrenheit", "settings.options.weather.unit.fahrenheit"}},
-                                            cfg.weather.unit),
+                                asSegmented(plainSelect({{"celsius", "settings.options.weather.unit.celsius"},
+                                                         {"fahrenheit", "settings.options.weather.unit.fahrenheit"}},
+                                                        cfg.weather.unit)),
                                 "temperature"));
     entries.push_back(makeEntry(
         "services", "weather", tr("settings.schema.services.weather-address.label"),
