@@ -680,12 +680,19 @@ Singleton {
           newActiveWifiDetails.signal = signal;
         }
 
+        let wifiWasAvailable = root._wifiAvailable;
         root._wifiAvailable = wifiAvailable;
         root._ethernetAvailable = ethernetAvailable;
         root.ethernetConnected = (activeEthIf !== "");
         root.wifiConnected = (activeWifiIf !== "");
 
         Logger.d("Network", "Device sync: wifiAvailable: " + wifiAvailable + ", ethAvailable: " + ethernetAvailable + ", wifiConnected: " + root.wifiConnected + " (" + activeWifiIf + "), ethConnected: " + root.ethernetConnected + " (" + activeEthIf + ")");
+
+        // Adapter (re-)appeared: trigger a scan so the network list populates
+        if (wifiAvailable && !wifiWasAvailable && root.wifiEnabled && !root.scanningActive) {
+          delayedScanTimer.interval = 2000;
+          delayedScanTimer.restart();
+        }
 
         ethList.sort((a, b) => (a.connected !== b.connected) ? (a.connected ? -1 : 1) : a.ifname.localeCompare(b.ifname));
         root.ethernetInterfaces = ethList;
@@ -1137,6 +1144,9 @@ Singleton {
           Logger.d("Network", "State changed: " + data);
           deviceStatusProcess.running = true;
           connectivityCheckProcess.running = true;
+        } else if (data.endsWith(": unavailable") || data.indexOf(": device removed") !== -1 || data.indexOf(": device created") !== -1) {
+          Logger.d("Network", "Device event: " + data);
+          deviceStatusProcess.running = true;
         }
       }
     }

@@ -43,6 +43,7 @@ Singleton {
   }
 
   readonly property bool hasActiveConnection: activeConnections.length > 0
+  readonly property bool hasConnections: Object.keys(connections).length > 0
 
   Timer {
     id: refreshTimer
@@ -87,6 +88,7 @@ Singleton {
     lastError = "";
     connectProcess.uuid = uuid;
     connectProcess.name = conn.name;
+    connectProcess._stderrText = "";
     connectProcess.running = true;
   }
 
@@ -103,6 +105,7 @@ Singleton {
     lastError = "";
     disconnectProcess.uuid = uuid;
     disconnectProcess.name = conn.name;
+    disconnectProcess._stderrText = "";
     disconnectProcess.running = true;
   }
 
@@ -176,6 +179,7 @@ Singleton {
           map[uuid] = {
             "uuid": uuid,
             "name": name,
+            "type": type,
             "device": device,
             "active": active
           };
@@ -210,39 +214,38 @@ Singleton {
     id: connectProcess
     property string uuid: ""
     property string name: ""
+    property string _stderrText: ""
     running: false
     command: ["nmcli", "connection", "up", "uuid", uuid]
 
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const output = text.trim();
-        if (!output || (!output.includes("successfully activated") && !output.includes("Connection successfully"))) {
-          return;
-        }
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
         setConnection(connectProcess.uuid, {
                         "active": true
                       });
-        connecting = false;
-        connectingUuid = "";
         lastError = "";
         Logger.i("VPN", "Connected to " + connectProcess.name);
         ToastService.showNotice(connectProcess.name, I18n.tr("toast.vpn.connected", {
-                                                               "name": connectProcess.name
-                                                             }), "shield-lock");
+                                                                "name": connectProcess.name
+                                                              }), "shield-lock");
         scheduleRefresh(1000);
+      } else {
+        const errText = connectProcess._stderrText.trim();
+        if (errText) {
+          lastError = errText.split("\n")[0].trim();
+        } else {
+          lastError = "Connection failed (exit code " + exitCode + ")";
+        }
+        Logger.w("VPN", "Connect error (exit " + exitCode + "): " + lastError);
+        ToastService.showWarning(connectProcess.name, lastError);
       }
+      connecting = false;
+      connectingUuid = "";
     }
 
     stderr: StdioCollector {
       onStreamFinished: {
-        const trimmed = text.trim();
-        if (trimmed) {
-          lastError = trimmed.split("\n")[0].trim();
-          Logger.w("VPN", "Connect error: " + trimmed);
-          ToastService.showWarning(connectProcess.name, lastError);
-        }
-        connecting = false;
-        connectingUuid = "";
+        connectProcess._stderrText = text;
       }
     }
   }
@@ -251,36 +254,39 @@ Singleton {
     id: disconnectProcess
     property string uuid: ""
     property string name: ""
+    property string _stderrText: ""
     running: false
     command: ["nmcli", "connection", "down", "uuid", uuid]
 
-    stdout: StdioCollector {
-      onStreamFinished: {
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
         Logger.i("VPN", "Disconnected from " + disconnectProcess.name);
         setConnection(disconnectProcess.uuid, {
                         "active": false,
                         "device": ""
                       });
-        disconnecting = false;
-        disconnectingUuid = "";
         lastError = "";
         ToastService.showNotice(disconnectProcess.name, I18n.tr("toast.vpn.disconnected", {
-                                                                  "name": disconnectProcess.name
-                                                                }), "shield-off");
+                                                                   "name": disconnectProcess.name
+                                                                 }), "shield-off");
         scheduleRefresh(1000);
+      } else {
+        const errText = disconnectProcess._stderrText.trim();
+        if (errText) {
+          lastError = errText.split("\n")[0].trim();
+        } else {
+          lastError = "Disconnect failed (exit code " + exitCode + ")";
+        }
+        Logger.w("VPN", "Disconnect error (exit " + exitCode + "): " + lastError);
+        ToastService.showWarning(disconnectProcess.name, lastError);
       }
+      disconnecting = false;
+      disconnectingUuid = "";
     }
 
     stderr: StdioCollector {
       onStreamFinished: {
-        const trimmed = text.trim();
-        if (trimmed) {
-          lastError = trimmed.split("\n")[0].trim();
-          Logger.w("VPN", "Disconnect error: " + trimmed);
-          ToastService.showWarning(disconnectProcess.name, lastError);
-        }
-        disconnecting = false;
-        disconnectingUuid = "";
+        disconnectProcess._stderrText = text;
       }
     }
   }
