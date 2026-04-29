@@ -52,6 +52,7 @@ namespace settings {
       section->setGap(Style::spaceSm * scale);
       section->setPadding(Style::spaceSm * scale, Style::spaceMd * scale);
       section->setCardStyle(scale);
+      section->setFill(roleColor(ColorRole::Surface));
       section->addChild(makeLabel(title, Style::fontSizeTitle * scale, roleColor(ColorRole::OnSurface), true));
 
       auto* raw = section.get();
