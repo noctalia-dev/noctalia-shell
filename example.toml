@@ -80,7 +80,6 @@ tint_intensity         = 0.3        # 0.0 = no tint, 1.0 = opaque
 [notification]
 enable_daemon      = true
 background_opacity = 0.97
-background_blur    = true
 # IPC examples:
 # noctalia msg notification-clear-active
 # noctalia msg notification-clear-history
@@ -165,7 +164,6 @@ down     = ["down"]
 position           = "top"          # top | bottom | left | right
 thickness          = 34
 background_opacity = 1.0
-background_blur    = true           # ext-background-effect-v1 (niri); inert on other compositors
 radius             = 12
 margin_h           = 180
 margin_v           = 10
@@ -198,7 +196,6 @@ icon_size           = 48
 padding             = 8
 item_spacing        = 6
 background_opacity  = 0.88
-background_blur     = true
 radius              = 16
 margin_h            = 0
 margin_v            = 8

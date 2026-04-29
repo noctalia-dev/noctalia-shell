@@ -14,7 +14,6 @@ reserve_space      = true        # reserve compositor exclusive zone / push wind
 
 thickness          = 34          # bar cross-axis size in pixels (height for horizontal, width for vertical)
 background_opacity = 1.0         # 0.0 (transparent) to 1.0 (opaque)
-background_blur    = true        # request compositor blur via ext-background-effect-v1 (niri)
 shadow             = true        # cast the global [shell.shadow]
 radius             = 12          # global corner radius fallback
 radius_top_left    = 12

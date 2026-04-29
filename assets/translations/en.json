@@ -977,9 +977,6 @@
         "background-opacity": {
           "label": "Background Opacity"
         },
-        "background-blur": {
-          "label": "Background Blur"
-        },
         "shadow": {
           "label": "Shadow"
         },
@@ -1170,9 +1167,6 @@
         "background-opacity": {
           "description": "Background opacity of the dock"
         },
-        "background-blur": {
-          "description": "Blur the background behind the dock"
-        },
         "shadow": {
           "description": "Cast the global surface shadow from the dock"
         },
@@ -1355,10 +1349,6 @@
           "label": "Notification Daemon",
           "description": "Enable the built-in notification daemon"
         },
-        "toast-blur": {
-          "label": "Toast Blur",
-          "description": "Blur background behind notification toasts"
-        },
         "position": {
           "label": "Toast Position",
           "description": "Screen position for notification toasts"
@@ -1464,9 +1454,6 @@
         },
         "background-opacity": {
           "description": "Background opacity of the bar"
-        },
-        "background-blur": {
-          "description": "Blur the background behind the bar"
         },
         "shadow": {
           "description": "Cast the global surface shadow from the bar"

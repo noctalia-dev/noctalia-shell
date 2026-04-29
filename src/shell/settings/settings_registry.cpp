@@ -444,9 +444,6 @@ namespace settings {
                                 tr("settings.schema.dock.background-opacity.description"),
                                 {"dock", "background_opacity"},
                                 SliderSetting{cfg.dock.backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
-    entries.push_back(makeEntry("dock", "effects", tr("settings.schema.shared.background-blur.label"),
-                                tr("settings.schema.dock.background-blur.description"), {"dock", "background_blur"},
-                                ToggleSetting{cfg.dock.backgroundBlur}, "blur"));
     entries.push_back(makeEntry("dock", "effects", tr("settings.schema.shared.shadow.label"),
                                 tr("settings.schema.dock.shadow.description"), {"dock", "shadow"},
                                 ToggleSetting{cfg.dock.shadow}, "shadow"));
@@ -611,10 +608,6 @@ namespace settings {
                                 tr("settings.schema.notifications.daemon.description"),
                                 {"notification", "enable_daemon"}, ToggleSetting{cfg.notification.enableDaemon},
                                 "dbus"));
-    entries.push_back(makeEntry("notifications", "toasts", tr("settings.schema.notifications.toast-blur.label"),
-                                tr("settings.schema.notifications.toast-blur.description"),
-                                {"notification", "background_blur"}, ToggleSetting{cfg.notification.backgroundBlur},
-                                "popup"));
     entries.push_back(makeEntry("notifications", "toasts", tr("settings.schema.notifications.position.label"),
                                 tr("settings.schema.notifications.position.description"), {"notification", "position"},
                                 plainSelect({{"top_right", "settings.options.screen-position.top-right"},
@@ -697,9 +690,6 @@ namespace settings {
       entries.push_back(makeEntry(section, "shape", tr("settings.schema.shared.background-opacity.label"),
                                   tr("settings.schema.bar.background-opacity.description"), path("background_opacity"),
                                   SliderSetting{selectedBar->backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "alpha"));
-      entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.background-blur.label"),
-                                  tr("settings.schema.bar.background-blur.description"), path("background_blur"),
-                                  ToggleSetting{selectedBar->backgroundBlur}, "blur"));
       entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.shadow.label"),
                                   tr("settings.schema.bar.shadow.description"), path("shadow"),
                                   ToggleSetting{selectedBar->shadow}, "shadow"));
@@ -813,9 +803,6 @@ namespace settings {
           section, "shape", tr("settings.schema.shared.background-opacity.label"),
           tr("settings.schema.bar.background-opacity.description"), mpath("background_opacity"),
           SliderSetting{ovr.backgroundOpacity.value_or(bar.backgroundOpacity), 0.0f, 1.0f, 0.01f, false}, "alpha"));
-      entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.background-blur.label"),
-                                  tr("settings.schema.bar.background-blur.description"), mpath("background_blur"),
-                                  ToggleSetting{ovr.backgroundBlur.value_or(bar.backgroundBlur)}, "blur"));
       entries.push_back(makeEntry(section, "effects", tr("settings.schema.shared.shadow.label"),
                                   tr("settings.schema.bar.shadow.description"), mpath("shadow"),
                                   ToggleSetting{ovr.shadow.value_or(bar.shadow)}, "shadow"));

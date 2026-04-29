@@ -1031,11 +1031,6 @@ void Bar::applyBarCompositorBlur(BarInstance& instance) const {
   if (instance.surface == nullptr) {
     return;
   }
-  if (!instance.barConfig.backgroundBlur) {
-    instance.surface->clearBlurRegion();
-    return;
-  }
-
   constexpr float kBlurVisibleOpacity = 0.02f;
   if (instance.barConfig.autoHide && instance.hideOpacity < kBlurVisibleOpacity) {
     instance.surface->clearBlurRegion();
