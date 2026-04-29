@@ -415,10 +415,10 @@ namespace settings {
       auto slider = std::make_unique<Slider>();
       slider->setRange(minValue, maxValue);
       slider->setStep(step);
-      slider->setSize(180.0f * scale, Style::controlHeight * scale);
+      slider->setSize(Style::sliderDefaultWidth * scale, Style::controlHeight * scale);
       slider->setControlHeight(Style::controlHeight * scale);
-      slider->setThumbSize(16.0f * scale);
-      slider->setTrackHeight(5.0f * scale);
+      slider->setThumbSize(Style::sliderThumbSize * scale);
+      slider->setTrackHeight(Style::sliderTrackHeight * scale);
       slider->setValue(value);
       auto* sliderPtr = slider.get();
       slider->setOnValueChanged([valueInputPtr, integerValue](float next) {

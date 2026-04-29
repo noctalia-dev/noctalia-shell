@@ -65,7 +65,9 @@ private:
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
   static constexpr float kPreferredPanelWidth = 932.0f;
-  static constexpr float kPreferredPanelHeight = Style::controlHeightLg * 15 + Style::spaceLg + Style::spaceSm;
+  // Inner content area, sized for the tallest tab. Outer chrome adds panelPadding on each side.
+  static constexpr float kPreferredPanelContentHeight = 540.0f;
+  static constexpr float kPreferredPanelHeight = kPreferredPanelContentHeight + 2.0f * Style::panelPadding;
 
   enum class TabId : std::uint8_t {
     Overview,

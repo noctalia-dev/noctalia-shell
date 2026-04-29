@@ -189,15 +189,15 @@ void ContextMenuControl::rebuildRows(Renderer& renderer) {
 
     if (rowBgPtr != nullptr && labelPtr != nullptr) {
       const auto applyRowState = [rowBgPtr, labelPtr, chevronPtr, interactive, separator](bool highlighted) {
-        rowBgPtr->setFill(highlighted ? roleColor(ColorRole::Primary) : clearThemeColor());
+        rowBgPtr->setFill(highlighted ? roleColor(ColorRole::Hover) : clearThemeColor());
         if (separator) {
           labelPtr->setColor(roleColor(ColorRole::OnSurfaceVariant));
         } else {
-          labelPtr->setColor(highlighted ? roleColor(ColorRole::OnPrimary)
+          labelPtr->setColor(highlighted ? roleColor(ColorRole::OnHover)
                                          : (interactive ? enabledItemColor() : disabledItemColor()));
         }
         if (chevronPtr != nullptr) {
-          chevronPtr->setColor(highlighted ? roleColor(ColorRole::OnPrimary)
+          chevronPtr->setColor(highlighted ? roleColor(ColorRole::OnHover)
                                            : (interactive ? enabledItemColor() : disabledItemColor()));
         }
       };

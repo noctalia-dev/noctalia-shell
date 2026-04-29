@@ -471,10 +471,9 @@ void Input::applyVisualState() {
   const bool readOnly = isReadOnlyVisual();
 
   const Color fill = focused ? resolved(ColorRole::Surface) : resolved(ColorRole::SurfaceVariant);
-  const Color border =
-      m_invalid ? resolved(ColorRole::Error)
-                : (focused ? resolved(ColorRole::Primary)
-                           : (hovered ? brighten(resolved(ColorRole::Outline), 1.3f) : resolved(ColorRole::Outline)));
+  const Color border = m_invalid ? resolved(ColorRole::Error)
+                                 : (focused ? resolved(ColorRole::Primary)
+                                            : (hovered ? resolved(ColorRole::Hover) : resolved(ColorRole::Outline)));
 
   m_background->setStyle(RoundedRectStyle{
       .fill = fill,

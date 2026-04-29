@@ -19,7 +19,6 @@ using namespace control_center;
 
 namespace {
 
-  constexpr float kNotificationListRightPadding = Style::spaceSm;
   constexpr float kNotificationActionButtonSize = Style::controlHeightSm;
   constexpr int kSummaryMaxLines = 2;
   constexpr int kBodyMaxLines = 3;
@@ -82,6 +81,8 @@ std::unique_ptr<Flex> NotificationsTab::create() {
 
   auto scroll = std::make_unique<ScrollView>();
   scroll->setScrollbarVisible(true);
+  scroll->setViewportPaddingH(0.0f);
+  scroll->setViewportPaddingV(0.0f);
   scroll->clearFill();
   scroll->clearBorder();
   scroll->setFlexGrow(1.0f);
@@ -90,7 +91,6 @@ std::unique_ptr<Flex> NotificationsTab::create() {
   m_list->setDirection(FlexDirection::Vertical);
   m_list->setAlign(FlexAlign::Stretch);
   m_list->setGap(Style::spaceMd * scale);
-  m_list->setPadding(0.0f, kNotificationListRightPadding * scale, 0.0f, 0.0f);
   tab->addChild(std::move(scroll));
 
   return tab;
@@ -223,7 +223,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
   }
 
   const float scale = contentScale();
-  const float cardWidth = std::max(0.0f, width - kNotificationListRightPadding * scale);
+  const float cardWidth = std::max(0.0f, width);
   const float actionButtonSize = kNotificationActionButtonSize * scale;
   const float actionButtonsGap = Style::spaceXs * scale;
   const float cardHorizontalPadding = Style::spaceMd * scale * 2.0f;

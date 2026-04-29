@@ -14,11 +14,6 @@
 
 namespace {
 
-  constexpr float kDefaultWidth = 180.0f;
-  constexpr float kTrackHeight = 6.0f;
-  constexpr float kThumbSize = 16.0f;
-  constexpr float kHorizontalPadding = 2.0f;
-
   RoundedRectStyle solidStyle(const Color& fill, float radius) {
     return RoundedRectStyle{
         .fill = fill,
@@ -45,17 +40,29 @@ Slider::Slider() {
   m_thumb = static_cast<RectNode*>(addChild(std::move(thumb)));
 
   auto area = std::make_unique<InputArea>();
+  area->setOnEnter([this](const InputArea::PointerData& /*data*/) {
+    applyVisualState();
+    markPaintDirty();
+  });
+  area->setOnLeave([this]() {
+    applyVisualState();
+    markPaintDirty();
+  });
   area->setOnPress([this](const InputArea::PointerData& data) {
     if (!m_enabled || data.button != BTN_LEFT) {
       return;
     }
     if (!data.pressed) {
+      applyVisualState();
+      markPaintDirty();
       if (m_onDragEnd) {
         m_onDragEnd();
       }
       return;
     }
+    applyVisualState();
     updateFromLocalX(data.localX);
+    markPaintDirty();
   });
   area->setOnMotion([this](const InputArea::PointerData& data) {
     if (!m_enabled || m_inputArea == nullptr || !m_inputArea->pressed()) {
@@ -160,13 +167,13 @@ void Slider::doLayout(Renderer& /*renderer*/) {
 }
 
 void Slider::updateGeometry() {
-  const float widthPx = width() > 0.0f ? width() : kDefaultWidth;
+  const float widthPx = width() > 0.0f ? width() : Style::sliderDefaultWidth;
   const float heightPx = std::max({m_thumbSizePx, m_trackHeight, m_controlHeightPx});
   setSize(widthPx, heightPx);
 
   const float trackY = (heightPx - m_trackHeight) * 0.5f;
-  const float trackX = kHorizontalPadding;
-  const float trackW = std::max(0.0f, widthPx - kHorizontalPadding * 2.0f);
+  const float trackX = Style::sliderHorizontalPadding;
+  const float trackW = std::max(0.0f, widthPx - Style::sliderHorizontalPadding * 2.0f);
   const float t = normalizedValue();
   const float thumbX = trackX + t * trackW;
   const float thumbY = (heightPx - m_thumbSizePx) * 0.5f;
@@ -185,9 +192,9 @@ void Slider::updateGeometry() {
 }
 
 void Slider::updateFromLocalX(float x) {
-  const float widthPx = width() > 0.0f ? width() : kDefaultWidth;
-  const float trackX = kHorizontalPadding;
-  const float trackW = std::max(0.0f, widthPx - kHorizontalPadding * 2.0f);
+  const float widthPx = width() > 0.0f ? width() : Style::sliderDefaultWidth;
+  const float trackX = Style::sliderHorizontalPadding;
+  const float trackW = std::max(0.0f, widthPx - Style::sliderHorizontalPadding * 2.0f);
   if (trackW <= 0.0f) {
     return;
   }
@@ -201,8 +208,8 @@ void Slider::applyVisualState() {
 
   Color trackColor = resolved(ColorRole::Outline);
   Color fillColor = resolved(ColorRole::Primary);
-  Color thumbColor = resolved(ColorRole::Primary);
-  Color thumbBorder = resolved(ColorRole::OnPrimary);
+  Color thumbColor = resolved(ColorRole::OnPrimary);
+  Color thumbBorder = resolved(ColorRole::Outline);
 
   m_thumb->setVisible(m_enabled);
 
@@ -210,10 +217,9 @@ void Slider::applyVisualState() {
     trackColor = resolved(ColorRole::Outline, 0.5f);
     fillColor = resolved(ColorRole::Primary, 0.5f);
   } else if (pressing) {
-    thumbColor = resolved(ColorRole::Primary);
-    thumbBorder = resolved(ColorRole::Primary);
+    fillColor = resolved(ColorRole::Primary);
   } else if (hovering) {
-    thumbBorder = resolved(ColorRole::Secondary);
+    thumbBorder = resolved(ColorRole::Hover);
   }
 
   auto trackStyle = solidStyle(trackColor, m_trackHeight * 0.5f);

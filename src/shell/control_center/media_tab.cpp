@@ -35,11 +35,17 @@ namespace {
 
   const Logger kLog{"media_tab"};
 
-  constexpr float kArtworkSize = Style::controlHeightLg * 6;
-  constexpr float kMediaNowCardMinHeight = Style::controlHeightLg * 11 + Style::spaceSm * 2;
-  constexpr float kMediaControlsHeight = Style::controlHeightLg + Style::spaceXs;
-  constexpr float kMediaPlayPauseHeight = Style::controlHeightLg + Style::spaceSm;
-  constexpr float kMediaArtworkMinHeight = Style::controlHeightLg * 4;
+  // Layout-grid unit for the media tab. Calibrated visual size, decoupled from
+  // Style::controlHeightLg which is a control-row height — bumping that token to
+  // a roomier value would otherwise inflate the artwork, card, and menu widths
+  // and overflow the panel content area.
+  constexpr float kMediaUnit = 36.0f;
+
+  constexpr float kArtworkSize = kMediaUnit * 6;
+  constexpr float kMediaNowCardMinHeight = kMediaUnit * 11 + Style::spaceSm * 2;
+  constexpr float kMediaControlsHeight = kMediaUnit + Style::spaceXs;
+  constexpr float kMediaPlayPauseHeight = kMediaUnit + Style::spaceSm;
+  constexpr float kMediaArtworkMinHeight = kMediaUnit * 4;
   constexpr auto kNoActivePlayerGrace = std::chrono::milliseconds(2000);
 
   std::string playPauseGlyph(const std::string& playbackStatus) {
@@ -358,7 +364,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   playerMenu->setParticipatesInLayout(false);
   playerMenu->setVisible(false);
   playerMenu->setMaxVisible(10);
-  playerMenu->setMenuWidth(Style::controlHeightLg * 6.0f * scale);
+  playerMenu->setMenuWidth(kMediaUnit * 6.0f * scale);
   playerMenu->setOnActivate([this](const ContextMenuControlEntry& entry) {
     if (m_mpris == nullptr) {
       return;
@@ -392,7 +398,7 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
 
   const float cardInnerWidth =
       std::max(0.0f, m_nowCard->width() - (m_nowCard->paddingLeft() + m_nowCard->paddingRight()));
-  const float mediaWidth = std::clamp(cardInnerWidth, 1.0f, Style::controlHeightLg * 11.0f * scale);
+  const float mediaWidth = std::clamp(cardInnerWidth, 1.0f, kMediaUnit * 11.0f * scale);
   const float mediaStackHeight = m_mediaStack->height();
   m_mediaStack->setSize(mediaWidth, mediaStackHeight);
 
@@ -473,7 +479,7 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
 
   if (m_playerMenu != nullptr && m_nowCard != nullptr) {
     const float menuWidth =
-        std::clamp(Style::controlHeightLg * 6.0f * scale, Style::controlHeightLg * 4.2f * scale,
+        std::clamp(kMediaUnit * 6.0f * scale, kMediaUnit * 4.2f * scale,
                    std::max(1.0f, m_nowCard->width() - (m_nowCard->paddingLeft() + m_nowCard->paddingRight())));
     m_playerMenu->setMenuWidth(menuWidth);
     m_playerMenu->setVisible(m_playerMenuOpen);

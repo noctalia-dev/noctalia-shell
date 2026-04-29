@@ -102,8 +102,8 @@ void RadioButton::applyState() {
   if (m_checked) {
     fill = roleColor(ColorRole::Primary);
     border = roleColor(ColorRole::Primary);
-  } else if (pressed() || hovered()) {
-    border = roleColor(ColorRole::Primary);
+  } else if (hovered()) {
+    border = roleColor(ColorRole::Hover);
   }
 
   m_outer->setFill(fill);

@@ -233,7 +233,7 @@ void WallpaperTile::applyVisualState() {
   m_thumb->setTint(active ? rgba(1.0f, 1.0f, 1.0f, 1.0f) : rgba(0.5f, 0.5f, 0.5f, 1.0f));
 
   const float outlineWidth = Style::borderWidth * 3.0f;
-  ThemeColor borderColor = active ? roleColor(ColorRole::Primary) : roleColor(ColorRole::Outline);
+  ThemeColor borderColor = active ? roleColor(ColorRole::Hover) : roleColor(ColorRole::Outline);
   ThemeColor frameBg = roleColor(ColorRole::SurfaceVariant);
 
   m_thumbBox->setFill(frameBg);

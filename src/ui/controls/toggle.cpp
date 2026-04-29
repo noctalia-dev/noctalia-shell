@@ -109,19 +109,19 @@ void Toggle::doLayout(Renderer& renderer) {
 void Toggle::applySize() {
   switch (m_size) {
   case ToggleSize::Small:
-    m_thumbSize = 12.0f * m_scale;
-    m_inset = 2.0f * m_scale;
-    m_travel = 10.0f * m_scale;
+    m_thumbSize = Style::toggleThumbSizeSm * m_scale;
+    m_inset = Style::toggleInsetSm * m_scale;
+    m_travel = Style::toggleTravelSm * m_scale;
     break;
   case ToggleSize::Medium:
-    m_thumbSize = 16.0f * m_scale;
-    m_inset = 2.0f * m_scale;
-    m_travel = 14.0f * m_scale;
+    m_thumbSize = Style::toggleThumbSizeMd * m_scale;
+    m_inset = Style::toggleInsetMd * m_scale;
+    m_travel = Style::toggleTravelMd * m_scale;
     break;
   case ToggleSize::Large:
-    m_thumbSize = 18.0f * m_scale;
-    m_inset = 3.0f * m_scale;
-    m_travel = 16.0f * m_scale;
+    m_thumbSize = Style::toggleThumbSizeLg * m_scale;
+    m_inset = Style::toggleInsetLg * m_scale;
+    m_travel = Style::toggleTravelLg * m_scale;
     break;
   }
 
@@ -133,14 +133,17 @@ void Toggle::applyState() { applyAnimatedState(m_checked ? 1.0f : 0.0f); }
 
 void Toggle::applyAnimatedState(float t) {
   m_animationProgress = t;
-  const Color trackColor =
-      lerpColor(resolveColorRole(ColorRole::SurfaceVariant), resolveColorRole(ColorRole::Primary), t);
-  const Color thumbColor =
-      lerpColor(resolveColorRole(ColorRole::OnSurfaceVariant), resolveColorRole(ColorRole::OnPrimary), t);
+  const Color trackColor = lerpColor(resolveColorRole(ColorRole::Outline), resolveColorRole(ColorRole::Primary), t);
+  const Color thumbColor = lerpColor(resolveColorRole(ColorRole::OnPrimary), resolveColorRole(ColorRole::OnPrimary), t);
   const float thumbX = m_inset + m_travel * t;
   ThemeColor borderColor = roleColor(ColorRole::Outline);
-  if (m_enabled && (pressed() || hovered())) {
-    borderColor = roleColor(ColorRole::Primary);
+
+  if (m_enabled) {
+    if (m_checked) {
+      borderColor = roleColor(ColorRole::Primary);
+    } else if (hovered()) {
+      borderColor = roleColor(ColorRole::Hover);
+    }
   }
 
   setFill(trackColor);

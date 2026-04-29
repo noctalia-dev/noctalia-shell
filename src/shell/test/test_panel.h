@@ -9,6 +9,7 @@ class Checkbox;
 class Glyph;
 class Input;
 class RadioButton;
+class Segmented;
 class Select;
 class Label;
 class Slider;
@@ -21,7 +22,7 @@ public:
   void onClose() override;
 
   [[nodiscard]] float preferredWidth() const override { return scaled(950.0f); }
-  [[nodiscard]] float preferredHeight() const override { return scaled(900.0f); }
+  [[nodiscard]] float preferredHeight() const override { return scaled(1000.0f); }
   // [[nodiscard]] bool centeredHorizontally() const override { return true; }
   // [[nodiscard]] bool centeredVertically() const override { return true; }
 
@@ -57,4 +58,6 @@ private:
   Label* m_transformHelp = nullptr;
   Box* m_colorPickerResultSwatch = nullptr;
   Button* m_openColorPickerButton = nullptr;
+  Segmented* m_segmented = nullptr;
+  Label* m_segmentedValueLabel = nullptr;
 };

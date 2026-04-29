@@ -171,8 +171,8 @@ ColorPicker::ColorPicker() {
   auto svThumb = std::make_unique<Box>();
   svThumb->setParticipatesInLayout(false);
   svThumb->setZIndex(6);
-  svThumb->setSize(20.0f, 20.0f);
-  svThumb->setRadius(10.0f);
+  svThumb->setSize(24.0f, 24.0f);
+  svThumb->setRadius(12.0f);
   svThumb->setFill(rgba(0.0f, 0.0f, 0.0f, 0.0f));
   svThumb->setBorder(rgba(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
   m_svThumb = static_cast<Box*>(addChild(std::move(svThumb)));
@@ -180,8 +180,8 @@ ColorPicker::ColorPicker() {
   auto hueThumb = std::make_unique<Box>();
   hueThumb->setParticipatesInLayout(false);
   hueThumb->setZIndex(6);
-  hueThumb->setSize(18.0f, 18.0f);
-  hueThumb->setRadius(9.0f);
+  hueThumb->setSize(20.0f, 20.0f);
+  hueThumb->setRadius(10.0f);
   m_hueThumb = static_cast<Box*>(addChild(std::move(hueThumb)));
 
   m_svTextureDirty = true;
@@ -210,13 +210,13 @@ void ColorPicker::setScale(float scale) {
     }
   }
   if (m_svThumb != nullptr) {
-    const float t = 20.0f * m_scale;
+    const float t = 24.0f * m_scale;
     m_svThumb->setSize(t, t);
     m_svThumb->setRadius(t * 0.5f);
     m_svThumb->setBorder(rgba(1.0f, 1.0f, 1.0f, 1.0f), 2.5f * m_scale);
   }
   if (m_hueThumb != nullptr) {
-    const float t = 18.0f * m_scale;
+    const float t = 20.0f * m_scale;
     m_hueThumb->setSize(t, t);
     m_hueThumb->setRadius(t * 0.5f);
   }

@@ -285,8 +285,8 @@ void DisplayTab::rebuildCards(Renderer& /*renderer*/) {
     slider->setStep(0.01f);
     slider->setFlexGrow(1.0f);
     slider->setControlHeight(Style::controlHeight * scale);
-    slider->setTrackHeight(6.0f * scale);
-    slider->setThumbSize(16.0f * scale);
+    slider->setTrackHeight(Style::sliderTrackHeight * scale);
+    slider->setThumbSize(Style::sliderThumbSize * scale);
     slider->setValue(display.brightness);
     slider->setEnabled(display.controllable);
 

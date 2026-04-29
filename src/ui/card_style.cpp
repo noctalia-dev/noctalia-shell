@@ -20,7 +20,7 @@ namespace ui {
     flex.setBorder(roleColor(ColorRole::Outline, 0.5f), Style::borderWidth);
     flex.setRadius(Style::radiusXl * scale);
     flex.setSoftness(1.0f);
-    flex.setPadding(Style::spaceMd * scale);
+    flex.setPadding(Style::cardPadding * scale);
   }
 
   void applyCardStyle(ScrollView& scrollView, float scale) {
@@ -28,8 +28,8 @@ namespace ui {
     scrollView.setBorder(roleColor(ColorRole::Outline, 0.5f), Style::borderWidth);
     scrollView.setRadius(Style::radiusXl * scale);
     scrollView.setSoftness(1.0f);
-    scrollView.setViewportPaddingH(Style::spaceMd * scale);
-    scrollView.setViewportPaddingV(Style::spaceMd * scale);
+    scrollView.setViewportPaddingH(Style::cardPadding * scale);
+    scrollView.setViewportPaddingV(Style::cardPadding * scale);
   }
 
 } // namespace ui

@@ -98,6 +98,13 @@ void Flex::setRadius(float radius) {
   m_background->setStyle(style);
 }
 
+void Flex::setRadii(const Radii& radii) {
+  ensureBackground();
+  auto style = m_background->style();
+  style.radius = radii;
+  m_background->setStyle(style);
+}
+
 void Flex::setBorder(const ThemeColor& color, float width) {
   m_border = color;
   ensureBackground();

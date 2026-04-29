@@ -270,8 +270,9 @@ void Select::doLayout(Renderer& renderer) {
   m_triggerLabel->setMaxWidth(triggerLabelMax);
   m_triggerLabel->measure(renderer);
   float triggerLabelY = std::round((m_controlHeight - m_triggerLabel->height()) * 0.5f);
+  float triggerGlyphY = std::round((m_controlHeight - m_triggerGlyph->height()) * 0.5f);
   m_triggerLabel->setPosition(m_horizontalPadding, triggerLabelY);
-  m_triggerGlyph->setPosition(dropdownWidth - m_horizontalPadding - m_triggerGlyph->width(), triggerLabelY);
+  m_triggerGlyph->setPosition(dropdownWidth - m_horizontalPadding - m_triggerGlyph->width(), triggerGlyphY);
   m_triggerArea->setPosition(0.0f, 0.0f);
   m_triggerArea->setFrameSize(dropdownWidth, m_controlHeight);
 
@@ -327,7 +328,8 @@ void Select::doLayout(Renderer& renderer) {
     option.label->setZIndex(4);
 
     option.checkGlyph->measure(renderer);
-    option.checkGlyph->setPosition(dropdownWidth - m_horizontalPadding - option.checkGlyph->width(), rowY + optLabelY);
+    float optGlyphY = std::round((m_controlHeight - option.checkGlyph->height()) * 0.5f);
+    option.checkGlyph->setPosition(dropdownWidth - m_horizontalPadding - option.checkGlyph->width(), rowY + optGlyphY);
     option.checkGlyph->setZIndex(4);
 
     option.area->setPosition(0.0f, rowY);
@@ -567,8 +569,8 @@ void Select::applyVisualState() {
     triggerBorder = resolved(ColorRole::Outline, 0.6f);
     triggerText = roleColor(ColorRole::OnSurface, 0.55f);
   } else if (triggerHovered || triggerPressed) {
-    triggerBg = brighten(resolved(ColorRole::SurfaceVariant), 1.14f);
-    triggerBorder = brighten(resolved(ColorRole::Outline), 1.14f);
+    triggerBg = resolved(ColorRole::SurfaceVariant);
+    triggerBorder = resolved(ColorRole::Hover);
   } else if (triggerFocused) {
     triggerBorder = resolved(ColorRole::Primary);
   }

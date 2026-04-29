@@ -173,7 +173,7 @@ void SearchPicker::rebuildRows() {
     row->setGap(1.0f);
     row->setPadding(Style::spaceXs, Style::spaceSm);
     row->setRadius(Style::radiusSm);
-    row->setMinHeight(46.0f);
+    row->setMinHeight(Style::controlHeightLg);
     row->setFillParentMainAxis(true);
 
     auto title = std::make_unique<Label>();

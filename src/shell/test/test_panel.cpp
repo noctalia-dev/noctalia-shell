@@ -12,6 +12,7 @@
 #include "ui/controls/input.h"
 #include "ui/controls/label.h"
 #include "ui/controls/radio_button.h"
+#include "ui/controls/segmented.h"
 #include "ui/controls/select.h"
 #include "ui/controls/slider.h"
 #include "ui/controls/spinner.h"
@@ -157,27 +158,6 @@ void TestPanel::create() {
     container->addChild(std::move(row));
   }
 
-  // Glyph in a box
-  auto glyphBox = std::make_unique<Box>();
-  glyphBox->setSize(Style::controlHeight * scale, Style::controlHeight * scale);
-  glyphBox->setFill(roleColor(ColorRole::SurfaceVariant));
-  glyphBox->setBorder(roleColor(ColorRole::Outline), Style::borderWidth);
-  glyphBox->setRadius(Style::controlHeight * scale * 0.5f);
-  m_glyphBox = glyphBox.get();
-
-  auto glyph = std::make_unique<Glyph>();
-  glyph->setGlyph("noctalia");
-  glyph->setGlyphSize(Style::fontSizeBody * scale);
-  glyph->setColor(roleColor(ColorRole::OnSurface));
-  m_glyph = glyph.get();
-  m_glyphBox->addChild(std::move(glyph));
-  {
-    auto row = makeRow();
-    row->addChild(makeRowLabel("Glyph as a child", kRowLabelWidth));
-    row->addChild(std::move(glyphBox));
-    container->addChild(std::move(row));
-  }
-
   // Select
   auto select = std::make_unique<Select>();
   select->setSize(220.0f * scale, 0.0f);
@@ -202,10 +182,10 @@ void TestPanel::create() {
   slider->setRange(0.0f, 100.0f);
   slider->setStep(1.0f);
   slider->setValue(50.0f);
-  slider->setSize(180.0f * scale, 0.0f);
+  slider->setSize(Style::sliderDefaultWidth * scale, 0.0f);
   slider->setControlHeight(Style::controlHeight * scale);
-  slider->setTrackHeight(6.0f * scale);
-  slider->setThumbSize(16.0f * scale);
+  slider->setTrackHeight(Style::sliderTrackHeight * scale);
+  slider->setThumbSize(Style::sliderThumbSize * scale);
   slider->setOnValueChanged([this](float value) {
     if (m_sliderValueLabel != nullptr) {
       const int percent = static_cast<int>(std::round(value));
@@ -252,6 +232,36 @@ void TestPanel::create() {
     row->addChild(makeRowLabel("Toggle", kRowLabelWidth));
     row->addChild(std::move(toggle));
     row->addChild(std::move(toggleValueLabel));
+    container->addChild(std::move(row));
+  }
+
+  // Segmented
+  {
+    auto segmented = std::make_unique<Segmented>();
+    segmented->setScale(scale);
+    segmented->addOption("Light");
+    segmented->addOption("Dark");
+    segmented->addOption("System");
+    segmented->setSelectedIndex(2);
+
+    auto segmentedValueLabel = std::make_unique<Label>();
+    segmentedValueLabel->setText("System");
+    segmentedValueLabel->setCaptionStyle();
+    segmentedValueLabel->setFontSize(Style::fontSizeCaption * scale);
+    m_segmentedValueLabel = segmentedValueLabel.get();
+
+    static const char* const kLabels[] = {"Light", "Dark", "System"};
+    segmented->setOnChange([this](std::size_t index) {
+      if (m_segmentedValueLabel != nullptr && index < std::size(kLabels)) {
+        m_segmentedValueLabel->setText(kLabels[index]);
+      }
+    });
+    m_segmented = segmented.get();
+
+    auto row = makeRow();
+    row->addChild(makeRowLabel("Segmented", kRowLabelWidth));
+    row->addChild(std::move(segmented));
+    row->addChild(std::move(segmentedValueLabel));
     container->addChild(std::move(row));
   }
 
@@ -687,6 +697,8 @@ void TestPanel::onClose() {
   m_transformHelp = nullptr;
   m_colorPickerResultSwatch = nullptr;
   m_openColorPickerButton = nullptr;
+  m_segmented = nullptr;
+  m_segmentedValueLabel = nullptr;
 }
 
 void TestPanel::doLayout(Renderer& renderer, float /*width*/, float /*height*/) {

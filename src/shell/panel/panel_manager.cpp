@@ -1266,7 +1266,7 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     applyAttachedDecorationStyle();
   }
 
-  const float kPadding = hasDecoration ? m_activePanel->contentScale() * 12.0f : 0.0f;
+  const float kPadding = hasDecoration ? m_activePanel->contentScale() * Style::panelPadding : 0.0f;
   m_contentWidth = panelW - kPadding * 2.0f;
   m_contentHeight = panelH - kPadding * 2.0f;
   {

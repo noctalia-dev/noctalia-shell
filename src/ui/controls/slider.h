@@ -53,7 +53,7 @@ private:
   float m_value = 50.0f;
   bool m_enabled = true;
   bool m_wheelAdjustEnabled = false;
-  float m_trackHeight = 6.0f;
-  float m_thumbSizePx = 16.0f;
+  float m_trackHeight = Style::sliderTrackHeight;
+  float m_thumbSizePx = Style::sliderThumbSize;
   float m_controlHeightPx = Style::controlHeight;
 };
