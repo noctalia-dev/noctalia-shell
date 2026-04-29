@@ -32,6 +32,25 @@ namespace {
   constexpr std::size_t kRowOverscan = 3;
   constexpr float kIconSize = 32.0f;
   constexpr float kScrollViewPaddingV = Style::spaceSm;
+  constexpr int kUsageScorePerCount = 20;
+
+  int usageBoostForScore(int score, int usageCount, bool typedQuery) {
+    if (usageCount <= 0) {
+      return 0;
+    }
+
+    const int rawBoost = usageCount * kUsageScorePerCount;
+    if (!typedQuery) {
+      return rawBoost;
+    }
+    if (score <= 0) {
+      return 0;
+    }
+
+    // For typed searches, usage should nudge close matches without letting a
+    // weak fuzzy hit outrank a much stronger lexical match.
+    return std::min(rawBoost, std::max(1, score / 2));
+  }
 
   float launcherRowHeight(float scale) {
     const float paddingY = Style::spaceXs * scale;
@@ -466,14 +485,15 @@ void LauncherPanel::onInputChanged(const std::string& text) {
     }
   }
 
-  constexpr int kUsageScorePerCount = 20;
+  const bool typedQuery = !queryText.empty();
 
   auto applyUsageBoost = [&](std::vector<LauncherResult>& results, const LauncherProvider& provider) {
     if (!provider.trackUsage()) {
       return;
     }
     for (auto& result : results) {
-      result.score += m_usageTracker.getCount(provider.name(), result.id) * kUsageScorePerCount;
+      const int usageCount = m_usageTracker.getCount(provider.name(), result.id);
+      result.score += usageBoostForScore(result.score, usageCount, typedQuery);
     }
   };
 
