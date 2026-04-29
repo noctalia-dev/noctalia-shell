@@ -20,14 +20,17 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <format>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace {
 
   constexpr Logger kLog("render");
-  constexpr float kSlowRenderOperationWarnMs = 50.0f;
+  constexpr float kSlowRenderOperationDebugMs = 50.0f;
+  constexpr float kSlowRenderOperationWarnMs = 1000.0f;
 
   constexpr EGLint kContextAttributes[] = {
       EGL_CONTEXT_CLIENT_VERSION,
@@ -43,6 +46,14 @@ namespace {
 
   float elapsedSince(std::chrono::steady_clock::time_point start) {
     return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
+  }
+
+  template <typename... Args> void logSlowRenderOperation(float ms, std::format_string<Args...> fmt, Args&&... args) {
+    if (ms >= kSlowRenderOperationWarnMs) {
+      kLog.warn(fmt, std::forward<Args>(args)...);
+    } else if (ms >= kSlowRenderOperationDebugMs) {
+      kLog.debug(fmt, std::forward<Args>(args)...);
+    }
   }
 
   void applyScissor(float sw, float sh, float bw, float bh, float left, float top, float right, float bottom) {
@@ -127,18 +138,16 @@ void RenderContext::makeCurrent(RenderTarget& target) {
   if (eglMakeCurrent(m_eglDisplay, target.eglSurface(), target.eglSurface(), m_eglContext) != EGL_TRUE) {
     throw std::runtime_error("eglMakeCurrent failed");
   }
-  if (const float ms = elapsedSince(start); ms >= kSlowRenderOperationWarnMs) {
-    kLog.warn("eglMakeCurrent blocked for {:.1f}ms", ms);
-  }
+  float ms = elapsedSince(start);
+  logSlowRenderOperation(ms, "eglMakeCurrent took {:.1f}ms", ms);
   // Non-blocking swap: pacing is driven by wl_surface.frame callbacks, not by
   // eglSwapBuffers. Default interval=1 blocks indefinitely in Mesa when the
   // compositor holds our buffer (e.g. niri direct-scanout of a fullscreen
   // client occludes our overlay layer), which would freeze the whole main loop.
   const auto intervalStart = std::chrono::steady_clock::now();
   eglSwapInterval(m_eglDisplay, 0);
-  if (const float ms = elapsedSince(intervalStart); ms >= kSlowRenderOperationWarnMs) {
-    kLog.warn("eglSwapInterval(0) blocked for {:.1f}ms", ms);
-  }
+  ms = elapsedSince(intervalStart);
+  logSlowRenderOperation(ms, "eglSwapInterval(0) took {:.1f}ms", ms);
 }
 
 void RenderContext::syncContentScale(RenderTarget& target) {
@@ -177,22 +186,19 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
     const auto bh = static_cast<float>(target.bufferHeight());
     renderNode(sceneRoot, Mat3::identity(), 1.0f, sw, sh, bw, bh, 0.0f, 0.0f, sw, sh, false);
   }
-  if (const float ms = elapsedSince(drawStart); ms >= kSlowRenderOperationWarnMs) {
-    kLog.warn("scene draw took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, target.logicalWidth(),
-              target.logicalHeight(), target.bufferWidth(), target.bufferHeight());
-  }
+  float ms = elapsedSince(drawStart);
+  logSlowRenderOperation(ms, "scene draw took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, target.logicalWidth(),
+                         target.logicalHeight(), target.bufferWidth(), target.bufferHeight());
 
   const auto swapStart = std::chrono::steady_clock::now();
   if (eglSwapBuffers(m_eglDisplay, target.eglSurface()) != EGL_TRUE) {
     throw std::runtime_error("eglSwapBuffers failed");
   }
-  if (const float ms = elapsedSince(swapStart); ms >= kSlowRenderOperationWarnMs) {
-    kLog.warn("eglSwapBuffers blocked for {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, target.logicalWidth(),
-              target.logicalHeight(), target.bufferWidth(), target.bufferHeight());
-  }
-  if (const float ms = elapsedSince(totalStart); ms >= kSlowRenderOperationWarnMs) {
-    kLog.warn("renderScene took {:.1f}ms total", ms);
-  }
+  ms = elapsedSince(swapStart);
+  logSlowRenderOperation(ms, "eglSwapBuffers took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, target.logicalWidth(),
+                         target.logicalHeight(), target.bufferWidth(), target.bufferHeight());
+  ms = elapsedSince(totalStart);
+  logSlowRenderOperation(ms, "renderScene took {:.1f}ms total", ms);
 }
 
 TextMetrics RenderContext::measureText(std::string_view text, float fontSize, bool bold, float maxWidth, int maxLines,

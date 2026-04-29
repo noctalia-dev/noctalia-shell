@@ -12,12 +12,15 @@
 
 #include <algorithm>
 #include <cmath>
+#include <format>
+#include <utility>
 #include <wayland-client.h>
 
 namespace {
 
   constexpr Logger kLog("surface");
-  constexpr float kSlowSurfaceOperationWarnMs = 50.0f;
+  constexpr float kSlowSurfaceOperationDebugMs = 50.0f;
+  constexpr float kSlowSurfaceOperationWarnMs = 1000.0f;
 
   const wl_callback_listener kFrameListener = {
       .done = &Surface::handleFrameDone,
@@ -53,6 +56,14 @@ namespace {
     const auto start = std::chrono::steady_clock::now();
     fn();
     return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
+  }
+
+  template <typename... Args> void logSlowSurfaceOperation(float ms, std::format_string<Args...> fmt, Args&&... args) {
+    if (ms >= kSlowSurfaceOperationWarnMs) {
+      kLog.warn(fmt, std::forward<Args>(args)...);
+    } else if (ms >= kSlowSurfaceOperationDebugMs) {
+      kLog.debug(fmt, std::forward<Args>(args)...);
+    }
   }
 
   class ScopedBoolFlag {
@@ -140,17 +151,13 @@ void Surface::onConfigure(std::uint32_t width, std::uint32_t height) {
     applySurfaceScaleState();
     resizeRenderTarget();
   });
-  if (resizeMs >= kSlowSurfaceOperationWarnMs) {
-    kLog.warn("surface configure resize blocked for {:.1f}ms ({}, {}x{} logical)", resizeMs,
-              static_cast<const void*>(this), m_width, m_height);
-  }
+  logSlowSurfaceOperation(resizeMs, "surface configure resize took {:.1f}ms ({}, {}x{} logical)", resizeMs,
+                          static_cast<const void*>(this), m_width, m_height);
 
   if (m_configureCallback) {
     const float callbackMs = elapsedMs([this] { m_configureCallback(m_width, m_height); });
-    if (callbackMs >= kSlowSurfaceOperationWarnMs) {
-      kLog.warn("surface configure callback blocked for {:.1f}ms ({}, {}x{} logical)", callbackMs,
-                static_cast<const void*>(this), m_width, m_height);
-    }
+    logSlowSurfaceOperation(callbackMs, "surface configure callback took {:.1f}ms ({}, {}x{} logical)", callbackMs,
+                            static_cast<const void*>(this), m_width, m_height);
   }
   m_redrawRequested = true;
   queueFrameWork();
@@ -403,10 +410,8 @@ void Surface::render() {
 
   requestFrame();
   const float renderMs = elapsedMs([this] { m_renderContext->renderScene(m_renderTarget, m_sceneRoot); });
-  if (renderMs >= kSlowSurfaceOperationWarnMs) {
-    kLog.warn("surface render blocked for {:.1f}ms ({}x{} logical, {}x{} buffer)", renderMs, m_width, m_height,
-              m_renderTarget.bufferWidth(), m_renderTarget.bufferHeight());
-  }
+  logSlowSurfaceOperation(renderMs, "surface render took {:.1f}ms ({}x{} logical, {}x{} buffer)", renderMs, m_width,
+                          m_height, m_renderTarget.bufferWidth(), m_renderTarget.bufferHeight());
 
   if (m_sceneRoot != nullptr) {
     m_sceneRoot->clearDirty();
@@ -473,10 +478,8 @@ void Surface::preparePendingFrame() {
   ScopedBoolFlag preparing{m_inPrepareFrame};
   const float callbackMs =
       elapsedMs([this, needsUpdate, needsLayout] { m_prepareFrameCallback(needsUpdate, needsLayout); });
-  if (callbackMs >= kSlowSurfaceOperationWarnMs) {
-    kLog.warn("surface prepareFrame callback blocked for {:.1f}ms ({}, {}x{} logical)", callbackMs,
-              static_cast<const void*>(this), m_width, m_height);
-  }
+  logSlowSurfaceOperation(callbackMs, "surface prepareFrame callback took {:.1f}ms ({}, {}x{} logical)", callbackMs,
+                          static_cast<const void*>(this), m_width, m_height);
 }
 
 void Surface::kickFrameLoop() {
@@ -540,26 +543,20 @@ void Surface::processQueuedFrameWork() {
 
     if (m_animationManager != nullptr) {
       const float tickMs = elapsedMs([this, deltaMs] { m_animationManager->tick(deltaMs); });
-      if (tickMs >= kSlowSurfaceOperationWarnMs) {
-        kLog.warn("surface animation tick blocked for {:.1f}ms ({}, {}x{} logical)", tickMs,
-                  static_cast<const void*>(this), m_width, m_height);
-      }
+      logSlowSurfaceOperation(tickMs, "surface animation tick took {:.1f}ms ({}, {}x{} logical)", tickMs,
+                              static_cast<const void*>(this), m_width, m_height);
     }
 
     if (m_frameTickCallback) {
       const float callbackMs = elapsedMs([this, deltaMs] { m_frameTickCallback(deltaMs); });
-      if (callbackMs >= kSlowSurfaceOperationWarnMs) {
-        kLog.warn("surface frame tick callback blocked for {:.1f}ms ({}, {}x{} logical)", callbackMs,
-                  static_cast<const void*>(this), m_width, m_height);
-      }
+      logSlowSurfaceOperation(callbackMs, "surface frame tick callback took {:.1f}ms ({}, {}x{} logical)", callbackMs,
+                              static_cast<const void*>(this), m_width, m_height);
     }
 
     if (m_updateCallback) {
       const float updateMs = elapsedMs([this] { m_updateCallback(); });
-      if (updateMs >= kSlowSurfaceOperationWarnMs) {
-        kLog.warn("surface update callback blocked for {:.1f}ms ({}, {}x{} logical)", updateMs,
-                  static_cast<const void*>(this), m_width, m_height);
-      }
+      logSlowSurfaceOperation(updateMs, "surface update callback took {:.1f}ms ({}, {}x{} logical)", updateMs,
+                              static_cast<const void*>(this), m_width, m_height);
     }
   }
 
