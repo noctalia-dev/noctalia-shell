@@ -23,6 +23,7 @@ namespace {
   constexpr float kWorkspaceDotRatio = 0.62f;
   constexpr float kWorkspacePillMinWidth = Style::controlHeightLg + Style::spaceXs;
   constexpr float kWorkspaceLabelPadH = Style::spaceSm;
+  constexpr float kWorkspacePillMinHeight = Style::fontSizeCaption;
   constexpr float kWorkspaceAnimDurationMs = static_cast<float>(Style::animNormal);
 } // namespace
 
@@ -116,14 +117,14 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
   m_items.clear();
 
   const auto& workspaces = m_cachedState;
-  // Match the bar's uniform capsule body extent (reference "A" height at
-  // fontSizeBody) so the workspaces capsule aligns with sibling widgets.
-  const auto refMetrics = renderer.measureText("A", Style::fontSizeBody * m_contentScale);
-  const float indicatorHeight = std::round(refMetrics.bottom - refMetrics.top);
-  const float dotWidth = std::round(indicatorHeight * kWorkspaceDotRatio);
   const float gap = kWorkspaceGap * m_contentScale;
   const float pillMin = kWorkspacePillMinWidth * m_contentScale;
   const float labelFontSize = Style::fontSizeCaption * m_contentScale;
+  // Workspace pills are decorative indicators, so keep their body closer to
+  // caption text than to the full bar capsule height used by regular widgets.
+  const auto labelRefMetrics = renderer.measureText("A", labelFontSize, true);
+  const float labelRefHeight = labelRefMetrics.bottom - labelRefMetrics.top;
+  float indicatorHeight = std::round(std::max(labelRefHeight, kWorkspacePillMinHeight * m_contentScale));
 
   std::vector<std::string> labels;
   labels.reserve(workspaces.size());
@@ -146,8 +147,11 @@ void WorkspacesWidget::rebuild(Renderer& renderer) {
     }
     const TextMetrics tm = renderer.measureText(labels[i], labelFontSize, true);
     const float inkWidth = tm.right - tm.left;
+    const float inkHeight = std::max(0.0f, tm.inkBottom - tm.inkTop);
+    indicatorHeight = std::max(indicatorHeight, std::round(std::max(labelRefHeight, inkHeight)));
     labelPadded[i] = std::max(pillMin, inkWidth + (kWorkspaceLabelPadH * m_contentScale * 2.0f));
   }
+  const float dotWidth = std::round(indicatorHeight * kWorkspaceDotRatio);
 
   // Pick per-slot active/inactive widths so (active - inactive) is constant across slots,
   // guaranteeing stable total width regardless of which slot is active.
