@@ -42,9 +42,11 @@ namespace {
 LockSurface::LockSurface(WaylandConnection& connection) : Surface(connection) {
   auto wallpaper = std::make_unique<WallpaperNode>();
   m_wallpaper = static_cast<WallpaperNode*>(m_root.addChild(std::move(wallpaper)));
+  m_wallpaper->setZIndex(0);
 
   auto backdrop = std::make_unique<RectNode>();
   m_backdrop = static_cast<RectNode*>(m_root.addChild(std::move(backdrop)));
+  m_backdrop->setZIndex(-1);
 
   auto clockShadow = std::make_unique<Label>();
   m_clockShadow = static_cast<Label*>(m_root.addChild(std::move(clockShadow)));
