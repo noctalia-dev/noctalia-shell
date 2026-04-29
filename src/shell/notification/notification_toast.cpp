@@ -1394,9 +1394,7 @@ void NotificationToast::updateInputRegion(Instance& inst) const {
   }
 
   inst.surface->setInputRegion(rects);
-
-  const bool blur = m_config != nullptr ? m_config->config().notification.backgroundBlur : true;
-  inst.surface->setBlurRegion(blur ? blurRects : std::vector<InputRect>{});
+  inst.surface->setBlurRegion(blurRects);
 }
 
 float NotificationToast::cardReveal(const Instance::CardState& cs) const { return cardRevealFromNode(cs.cardNode); }

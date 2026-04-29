@@ -736,10 +736,6 @@ void Dock::applyDockCompositorBlur(DockInstance& instance) {
   if (instance.surface == nullptr) {
     return;
   }
-  if (!cfg.backgroundBlur) {
-    instance.surface->clearBlurRegion();
-    return;
-  }
   // Compositor blur is independent of scene opacity — clear it while auto-hide
   // has faded the dock out so a transparent buffer does not leave a blur halo.
   constexpr float kBlurVisibleOpacity = 0.02f;

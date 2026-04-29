@@ -164,9 +164,6 @@ namespace settings {
       if (key == "background_opacity") {
         return override->backgroundOpacity.has_value();
       }
-      if (key == "background_blur") {
-        return override->backgroundBlur.has_value();
-      }
       if (key == "shadow") {
         return override->shadow.has_value();
       }

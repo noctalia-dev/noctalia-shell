@@ -12,7 +12,6 @@ icon_size           = 48
 padding             = 8          # inner padding around the icon row (all sides)
 item_spacing        = 6          # gap between items in pixels
 background_opacity  = 0.88
-background_blur     = true       # request compositor blur via ext-background-effect-v1 (niri)
 shadow              = true       # cast the global [shell.shadow]
 radius              = 16
 margin_h            = 0          # horizontal compositor margin
