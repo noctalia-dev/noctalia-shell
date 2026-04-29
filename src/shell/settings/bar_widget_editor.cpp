@@ -1676,17 +1676,13 @@ namespace settings {
                             &editingWidgetName = ctx.editingWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
                             &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName, pickerKey,
                             &pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
-                            &creatingWidgetType = ctx.creatingWidgetType, resetContentScroll = ctx.resetContentScroll,
-                            requestRebuild = ctx.requestRebuild]() {
+                            &creatingWidgetType = ctx.creatingWidgetType, requestRebuild = ctx.requestRebuild]() {
           openWidgetPickerPath = openWidgetPickerPath == pickerKey ? std::string{} : pickerKey;
           editingWidgetName.clear();
           renamingWidgetName.clear();
           pendingDeleteWidgetName.clear();
           pendingDeleteWidgetSettingPath.clear();
           creatingWidgetType.clear();
-          if (resetContentScroll) {
-            resetContentScroll();
-          }
           requestRebuild();
         });
         lane->addChild(std::move(addBtn));
