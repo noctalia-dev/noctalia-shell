@@ -21,6 +21,8 @@
   pam,
   curl,
   libwebp,
+  glib,
+  polkit
 }:
 
 stdenv.mkDerivation {
@@ -57,6 +59,8 @@ stdenv.mkDerivation {
     pam
     curl
     libwebp
+    glib
+    polkit
   ];
 
   mesonBuildType = "release";
