@@ -1001,8 +1001,6 @@ void MprisService::discoverPlayers() {
     return;
   }
 
-  std::size_t matched = 0;
-
   for (const auto& name : names) {
     if (is_mpris_bus_name(name)) {
       ++matched;
