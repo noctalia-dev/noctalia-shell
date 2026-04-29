@@ -592,7 +592,7 @@ void Surface::cancelQueuedRender() {
 
 void Surface::renderQueuedFrame() {
   m_renderQueued = false;
-  if (m_surface == nullptr || !m_configured || m_renderContext == nullptr || !m_renderTarget.isReady()) {
+  if (m_surface == nullptr || !m_configured) {
     return;
   }
 
