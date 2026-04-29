@@ -167,8 +167,8 @@ namespace {
   }
 
   float readBacklightBrightness(const std::string& sysfsPath, int maxRaw) {
-    const int actual = readSysfsInt(sysfsPath + "/actual_brightness");
-    return normalizedBrightness(actual, maxRaw);
+    const int requested = readSysfsInt(sysfsPath + "/brightness");
+    return normalizedBrightness(requested, maxRaw);
   }
 
   const WaylandOutput* findOutputByConnector(const WaylandConnection& wayland, std::string_view connectorName) {
@@ -798,7 +798,7 @@ struct BrightnessService::Impl {
       }
 
       if (inotifyFd >= 0) {
-        const std::string watchPath = path + "/actual_brightness";
+        const std::string watchPath = path + "/brightness";
         display.inotifyWd = inotify_add_watch(inotifyFd, watchPath.c_str(), IN_MODIFY);
         if (display.inotifyWd < 0) {
           kLog.debug("inotify_add_watch failed for {}", watchPath);
