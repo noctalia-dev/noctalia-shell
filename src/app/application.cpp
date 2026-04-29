@@ -125,46 +125,6 @@ Application::Application() : m_weatherService(m_configService, m_httpClient) {
 Application::~Application() {
   m_wayland.setClipboardService(nullptr);
   m_wayland.setVirtualKeyboardService(nullptr);
-
-  if (m_systemBus != nullptr) {
-    m_systemBus->processPendingEvents();
-    m_brightnessPollSource.reset();
-    m_brightnessService.reset();
-    m_upowerService.reset();
-    m_polkitPollSource.reset();
-    m_polkitAgent.reset();
-    m_networkSecretAgent.reset();
-    m_networkService.reset();
-    m_bluetoothAgent.reset();
-    m_bluetoothService.reset();
-    m_powerProfilesService.reset();
-    m_systemBus->processPendingEvents();
-  }
-
-  // Explicitly clean up D-Bus services before the bus connection is destroyed
-  // This ensures clean disconnection and prevents blocking on shutdown
-  if (m_bus != nullptr) {
-    // Process any pending D-Bus events to ensure clean state
-    m_bus->processPendingEvents();
-
-    // Destroy services in reverse order they were created
-    m_trayService.reset();
-    m_notificationDbus.reset();
-    m_mprisService.reset();
-    m_debugService.reset();
-
-    // Process any final cleanup events
-    m_bus->processPendingEvents();
-  }
-
-  // PipeWire cleanup
-  m_pipewireSpectrumPollSource.reset();
-  m_pipewireSpectrum.reset();
-  m_pipewirePollSource.reset();
-  m_soundPlayer.reset();
-  m_pipewireService.reset();
-
-  // MainLoop will be destroyed next, then SessionBus
   LockScreen::setInstance(nullptr);
   notify::setInstance(nullptr);
 }
