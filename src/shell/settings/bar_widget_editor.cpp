@@ -65,16 +65,13 @@ namespace settings {
     void closeInspector(std::string& openWidgetPickerPath, std::string& editingWidgetName,
                         std::string& renamingWidgetName, std::string& pendingDeleteWidgetName,
                         std::string& pendingDeleteWidgetSettingPath, std::string& creatingWidgetType,
-                        const std::function<void()>& resetContentScroll, const std::function<void()>& requestRebuild) {
+                        const std::function<void()>& requestRebuild) {
       openWidgetPickerPath.clear();
       editingWidgetName.clear();
       renamingWidgetName.clear();
       pendingDeleteWidgetName.clear();
       pendingDeleteWidgetSettingPath.clear();
       creatingWidgetType.clear();
-      if (resetContentScroll) {
-        resetContentScroll();
-      }
       requestRebuild();
     }
 
@@ -908,10 +905,9 @@ namespace settings {
                               &editingWidgetName = ctx.editingWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
                               &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
                               &pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
-                              &creatingWidgetType = ctx.creatingWidgetType, resetContentScroll = ctx.resetContentScroll,
-                              requestRebuild = ctx.requestRebuild]() {
+                              &creatingWidgetType = ctx.creatingWidgetType, requestRebuild = ctx.requestRebuild]() {
           closeInspector(openWidgetPickerPath, editingWidgetName, renamingWidgetName, pendingDeleteWidgetName,
-                         pendingDeleteWidgetSettingPath, creatingWidgetType, resetContentScroll, requestRebuild);
+                         pendingDeleteWidgetSettingPath, creatingWidgetType, requestRebuild);
         });
         headerRow->addChild(std::move(closeBtn));
         inspector->addChild(std::move(headerRow));
@@ -1171,10 +1167,9 @@ namespace settings {
                               &editingWidgetName = ctx.editingWidgetName, &renamingWidgetName = ctx.renamingWidgetName,
                               &pendingDeleteWidgetName = ctx.pendingDeleteWidgetName,
                               &pendingDeleteWidgetSettingPath = ctx.pendingDeleteWidgetSettingPath,
-                              &creatingWidgetType = ctx.creatingWidgetType, resetContentScroll = ctx.resetContentScroll,
-                              requestRebuild = ctx.requestRebuild]() {
+                              &creatingWidgetType = ctx.creatingWidgetType, requestRebuild = ctx.requestRebuild]() {
           closeInspector(openWidgetPickerPath, editingWidgetName, renamingWidgetName, pendingDeleteWidgetName,
-                         pendingDeleteWidgetSettingPath, creatingWidgetType, resetContentScroll, requestRebuild);
+                         pendingDeleteWidgetSettingPath, creatingWidgetType, requestRebuild);
         });
         headerRow->addChild(std::move(closeBtn));
         inspector->addChild(std::move(headerRow));
