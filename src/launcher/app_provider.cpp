@@ -4,6 +4,7 @@
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
+#include <array>
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
@@ -109,16 +110,83 @@ namespace {
     return args;
   }
 
+  bool isExecutableOnPath(std::string_view binary) {
+    if (binary.empty()) {
+      return false;
+    }
+    if (binary.find('/') != std::string_view::npos) {
+      return access(std::string(binary).c_str(), X_OK) == 0;
+    }
+
+    const char* pathEnv = std::getenv("PATH");
+    if (pathEnv == nullptr || pathEnv[0] == '\0') {
+      return false;
+    }
+
+    std::string_view path(pathEnv);
+    std::size_t start = 0;
+    while (start <= path.size()) {
+      const auto sep = path.find(':', start);
+      const auto segment = sep == std::string_view::npos ? path.substr(start) : path.substr(start, sep - start);
+      if (!segment.empty()) {
+        std::string candidate(segment);
+        candidate.push_back('/');
+        candidate.append(binary);
+        if (access(candidate.c_str(), X_OK) == 0) {
+          return true;
+        }
+      }
+      if (sep == std::string_view::npos) {
+        break;
+      }
+      start = sep + 1;
+    }
+    return false;
+  }
+
+  std::vector<std::string> terminalLaunchArgs(const std::string& command) {
+    std::vector<std::string> terminal;
+    if (const char* envTerminal = std::getenv("TERMINAL"); envTerminal != nullptr && envTerminal[0] != '\0') {
+      terminal = tokenize(envTerminal);
+      if (!terminal.empty() && !isExecutableOnPath(terminal.front())) {
+        terminal.clear();
+      }
+    }
+
+    if (terminal.empty()) {
+      static constexpr std::array<std::string_view, 9> kTerminalCandidates = {
+          "x-terminal-emulator", "ghostty", "kitty", "alacritty", "wezterm", "foot", "konsole",
+          "gnome-terminal",      "xterm"};
+      for (const auto candidate : kTerminalCandidates) {
+        if (isExecutableOnPath(candidate)) {
+          terminal.emplace_back(candidate);
+          break;
+        }
+      }
+    }
+
+    if (terminal.empty()) {
+      return {};
+    }
+
+    const std::string& termBin = terminal.front();
+    if (termBin == "gnome-terminal" || termBin == "kgx" || termBin == "ptyxis") {
+      terminal.emplace_back("--");
+      terminal.emplace_back("sh");
+      terminal.emplace_back("-lc");
+      terminal.emplace_back(command);
+    } else {
+      terminal.emplace_back("-e");
+      terminal.emplace_back("sh");
+      terminal.emplace_back("-lc");
+      terminal.emplace_back(command);
+    }
+    return terminal;
+  }
+
   void launchCommand(const std::string& exec, bool terminal, const std::string& activationToken) {
     std::string cleanExec = stripFieldCodes(exec);
-
-    if (terminal) {
-      const char* term = std::getenv("TERMINAL");
-      if (term == nullptr) {
-        term = "xterm";
-      }
-      cleanExec = std::string(term) + " -e " + cleanExec;
-    }
+    std::vector<std::string> args = terminal ? terminalLaunchArgs(cleanExec) : tokenize(cleanExec);
 
     pid_t pid = fork();
     if (pid < 0) {
@@ -146,7 +214,6 @@ namespace {
         }
       }
 
-      auto args = tokenize(cleanExec);
       if (args.empty()) {
         _exit(1);
       }
