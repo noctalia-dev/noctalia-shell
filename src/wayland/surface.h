@@ -79,6 +79,8 @@ public:
   [[nodiscard]] std::uint32_t bufferHeightFor(std::uint32_t logicalHeight) const noexcept;
 
   static void handleFrameDone(void* data, wl_callback* callback, std::uint32_t callbackData);
+  [[nodiscard]] static bool hasPendingRenders();
+  static void drainPendingRenders();
   void onPreferredFractionalScale(std::uint32_t numerator);
 
 protected:
@@ -100,6 +102,9 @@ protected:
 private:
   void preparePendingFrame();
   void kickFrameLoop();
+  void queueRender();
+  void cancelQueuedRender();
+  void renderQueuedFrame();
   void resizeRenderTarget();
 
   RenderContext* m_renderContext = nullptr;
@@ -122,6 +127,7 @@ private:
   bool m_configured = false;
   bool m_inFrameHandler = false;
   bool m_inPrepareFrame = false;
+  bool m_renderQueued = false;
   std::uint32_t m_width = 0;
   std::uint32_t m_height = 0;
   std::int32_t m_bufferScale = 1;

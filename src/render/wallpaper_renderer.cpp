@@ -1,18 +1,27 @@
 #include "render/wallpaper_renderer.h"
 
+#include "core/log.h"
 #include "render/gl_shared_context.h"
 
 #include <GLES2/gl2.h>
+#include <chrono>
 #include <stdexcept>
 #include <wayland-egl.h>
 
 namespace {
+
+  constexpr Logger kLog("wallpaper-render");
+  constexpr float kSlowWallpaperRenderOperationWarnMs = 50.0f;
 
   constexpr EGLint kContextAttributes[] = {
       EGL_CONTEXT_CLIENT_VERSION,
       2,
       EGL_NONE,
   };
+
+  float elapsedSince(std::chrono::steady_clock::time_point start) {
+    return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
+  }
 
 } // namespace
 
@@ -37,7 +46,11 @@ void WallpaperRenderer::bind(GlSharedContext& shared, wl_surface* surface) {
 
 void WallpaperRenderer::makeCurrent() {
   if (m_eglDisplay != EGL_NO_DISPLAY && m_eglSurface != EGL_NO_SURFACE && m_eglContext != EGL_NO_CONTEXT) {
+    const auto start = std::chrono::steady_clock::now();
     eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
+    if (const float ms = elapsedSince(start); ms >= kSlowWallpaperRenderOperationWarnMs) {
+      kLog.warn("eglMakeCurrent blocked for {:.1f}ms", ms);
+    }
   }
 }
 
@@ -66,7 +79,7 @@ void WallpaperRenderer::resize(std::uint32_t bufferWidth, std::uint32_t bufferHe
     wl_egl_window_resize(m_window, static_cast<int>(bufferWidth), static_cast<int>(bufferHeight), 0, 0);
   }
 
-  eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
+  makeCurrent();
 
   m_bufferWidth = bufferWidth;
   m_bufferHeight = bufferHeight;
@@ -83,7 +96,9 @@ void WallpaperRenderer::render() {
     return;
   }
 
-  eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
+  const auto totalStart = std::chrono::steady_clock::now();
+  makeCurrent();
+  const auto drawStart = std::chrono::steady_clock::now();
   glViewport(0, 0, static_cast<GLsizei>(m_bufferWidth), static_cast<GLsizei>(m_bufferHeight));
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
@@ -102,7 +117,20 @@ void WallpaperRenderer::render() {
                  WallpaperSourceKind::Image, tex2, rgba(0.0f, 0.0f, 0.0f, 1.0f), sw, sh, sw, sh, m_imgW1, m_imgH1,
                  m_imgW2, m_imgH2, progress, static_cast<float>(m_fillMode), m_params, m_fillColor);
 
+  if (const float ms = elapsedSince(drawStart); ms >= kSlowWallpaperRenderOperationWarnMs) {
+    kLog.warn("wallpaper draw took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, m_logicalWidth, m_logicalHeight,
+              m_bufferWidth, m_bufferHeight);
+  }
+
+  const auto swapStart = std::chrono::steady_clock::now();
   eglSwapBuffers(m_eglDisplay, m_eglSurface);
+  if (const float ms = elapsedSince(swapStart); ms >= kSlowWallpaperRenderOperationWarnMs) {
+    kLog.warn("eglSwapBuffers blocked for {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, m_logicalWidth, m_logicalHeight,
+              m_bufferWidth, m_bufferHeight);
+  }
+  if (const float ms = elapsedSince(totalStart); ms >= kSlowWallpaperRenderOperationWarnMs) {
+    kLog.warn("wallpaper render took {:.1f}ms total", ms);
+  }
 }
 
 void WallpaperRenderer::renderToFbo(GLuint targetFbo) {
@@ -110,7 +138,9 @@ void WallpaperRenderer::renderToFbo(GLuint targetFbo) {
     return;
   }
 
-  eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
+  const auto totalStart = std::chrono::steady_clock::now();
+  makeCurrent();
+  const auto drawStart = std::chrono::steady_clock::now();
   glBindFramebuffer(GL_FRAMEBUFFER, targetFbo);
   glViewport(0, 0, static_cast<GLsizei>(m_bufferWidth), static_cast<GLsizei>(m_bufferHeight));
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -128,10 +158,24 @@ void WallpaperRenderer::renderToFbo(GLuint targetFbo) {
   m_program.draw(m_transition, WallpaperSourceKind::Image, m_tex1, rgba(0.0f, 0.0f, 0.0f, 1.0f),
                  WallpaperSourceKind::Image, tex2, rgba(0.0f, 0.0f, 0.0f, 1.0f), sw, sh, sw, sh, m_imgW1, m_imgH1,
                  m_imgW2, m_imgH2, progress, static_cast<float>(m_fillMode), m_params, m_fillColor);
+  if (const float ms = elapsedSince(drawStart); ms >= kSlowWallpaperRenderOperationWarnMs) {
+    kLog.warn("wallpaper FBO draw took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, m_logicalWidth, m_logicalHeight,
+              m_bufferWidth, m_bufferHeight);
+  }
+  if (const float ms = elapsedSince(totalStart); ms >= kSlowWallpaperRenderOperationWarnMs) {
+    kLog.warn("wallpaper FBO render took {:.1f}ms total", ms);
+  }
   // No eglSwapBuffers — caller is responsible for presentation
 }
 
-void WallpaperRenderer::swapBuffers() { eglSwapBuffers(m_eglDisplay, m_eglSurface); }
+void WallpaperRenderer::swapBuffers() {
+  const auto start = std::chrono::steady_clock::now();
+  eglSwapBuffers(m_eglDisplay, m_eglSurface);
+  if (const float ms = elapsedSince(start); ms >= kSlowWallpaperRenderOperationWarnMs) {
+    kLog.warn("eglSwapBuffers blocked for {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, m_logicalWidth, m_logicalHeight,
+              m_bufferWidth, m_bufferHeight);
+  }
+}
 
 void WallpaperRenderer::setTransitionState(GLuint tex1, GLuint tex2, float imgW1, float imgH1, float imgW2, float imgH2,
                                            float progress, WallpaperTransition transition, WallpaperFillMode fillMode,

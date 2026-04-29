@@ -18,6 +18,7 @@
 
 #include <GLES2/gl2.h>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <optional>
 #include <stdexcept>
@@ -26,6 +27,7 @@
 namespace {
 
   constexpr Logger kLog("render");
+  constexpr float kSlowRenderOperationWarnMs = 50.0f;
 
   constexpr EGLint kContextAttributes[] = {
       EGL_CONTEXT_CLIENT_VERSION,
@@ -36,6 +38,12 @@ namespace {
 } // namespace
 
 namespace {
+
+  const char* safeCString(const char* value) { return value != nullptr ? value : "unknown"; }
+
+  float elapsedSince(std::chrono::steady_clock::time_point start) {
+    return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
+  }
 
   void applyScissor(float sw, float sh, float bw, float bh, float left, float top, float right, float bottom) {
     const float scaleX = sw > 0.0f ? bw / sw : 1.0f;
@@ -79,6 +87,14 @@ void RenderContext::initialize(GlSharedContext& shared) {
   m_textureManager.probeExtensions();
   m_textRenderer.initialize(&m_glyphProgram);
   m_glyphRenderer.initialize(paths::assetPath("fonts/tabler.ttf").string(), &m_glyphProgram);
+
+  kLog.info("EGL vendor=\"{}\" version=\"{}\" APIs=\"{}\"", safeCString(eglQueryString(m_eglDisplay, EGL_VENDOR)),
+            safeCString(eglQueryString(m_eglDisplay, EGL_VERSION)),
+            safeCString(eglQueryString(m_eglDisplay, EGL_CLIENT_APIS)));
+  kLog.info("OpenGL ES vendor=\"{}\" renderer=\"{}\" version=\"{}\"",
+            safeCString(reinterpret_cast<const char*>(glGetString(GL_VENDOR))),
+            safeCString(reinterpret_cast<const char*>(glGetString(GL_RENDERER))),
+            safeCString(reinterpret_cast<const char*>(glGetString(GL_VERSION))));
 }
 
 void RenderContext::ensureGlPrograms() {
@@ -107,14 +123,22 @@ void RenderContext::makeCurrentNoSurface() {
 }
 
 void RenderContext::makeCurrent(RenderTarget& target) {
+  const auto start = std::chrono::steady_clock::now();
   if (eglMakeCurrent(m_eglDisplay, target.eglSurface(), target.eglSurface(), m_eglContext) != EGL_TRUE) {
     throw std::runtime_error("eglMakeCurrent failed");
+  }
+  if (const float ms = elapsedSince(start); ms >= kSlowRenderOperationWarnMs) {
+    kLog.warn("eglMakeCurrent blocked for {:.1f}ms", ms);
   }
   // Non-blocking swap: pacing is driven by wl_surface.frame callbacks, not by
   // eglSwapBuffers. Default interval=1 blocks indefinitely in Mesa when the
   // compositor holds our buffer (e.g. niri direct-scanout of a fullscreen
   // client occludes our overlay layer), which would freeze the whole main loop.
+  const auto intervalStart = std::chrono::steady_clock::now();
   eglSwapInterval(m_eglDisplay, 0);
+  if (const float ms = elapsedSince(intervalStart); ms >= kSlowRenderOperationWarnMs) {
+    kLog.warn("eglSwapInterval(0) blocked for {:.1f}ms", ms);
+  }
 }
 
 void RenderContext::syncContentScale(RenderTarget& target) {
@@ -132,10 +156,12 @@ void RenderContext::setTextFontFamily(std::string family) {
 
 void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
   UiPhaseScope renderPhase(UiPhase::Render);
+  const auto totalStart = std::chrono::steady_clock::now();
   makeCurrent(target);
   ensureGlPrograms();
   syncContentScale(target);
 
+  const auto drawStart = std::chrono::steady_clock::now();
   glViewport(0, 0, static_cast<GLint>(target.bufferWidth()), static_cast<GLint>(target.bufferHeight()));
   glEnable(GL_BLEND);
   glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -151,9 +177,21 @@ void RenderContext::renderScene(RenderTarget& target, Node* sceneRoot) {
     const auto bh = static_cast<float>(target.bufferHeight());
     renderNode(sceneRoot, Mat3::identity(), 1.0f, sw, sh, bw, bh, 0.0f, 0.0f, sw, sh, false);
   }
+  if (const float ms = elapsedSince(drawStart); ms >= kSlowRenderOperationWarnMs) {
+    kLog.warn("scene draw took {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, target.logicalWidth(),
+              target.logicalHeight(), target.bufferWidth(), target.bufferHeight());
+  }
 
+  const auto swapStart = std::chrono::steady_clock::now();
   if (eglSwapBuffers(m_eglDisplay, target.eglSurface()) != EGL_TRUE) {
     throw std::runtime_error("eglSwapBuffers failed");
+  }
+  if (const float ms = elapsedSince(swapStart); ms >= kSlowRenderOperationWarnMs) {
+    kLog.warn("eglSwapBuffers blocked for {:.1f}ms ({}x{} logical, {}x{} buffer)", ms, target.logicalWidth(),
+              target.logicalHeight(), target.bufferWidth(), target.bufferHeight());
+  }
+  if (const float ms = elapsedSince(totalStart); ms >= kSlowRenderOperationWarnMs) {
+    kLog.warn("renderScene took {:.1f}ms total", ms);
   }
 }
 

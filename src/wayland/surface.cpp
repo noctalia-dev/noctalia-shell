@@ -1,5 +1,6 @@
 #include "wayland/surface.h"
 
+#include "core/log.h"
 #include "core/ui_phase.h"
 #include "ext-background-effect-v1-client-protocol.h"
 #include "fractional-scale-v1-client-protocol.h"
@@ -14,6 +15,9 @@
 #include <wayland-client.h>
 
 namespace {
+
+  constexpr Logger kLog("surface");
+  constexpr float kSlowSurfaceOperationWarnMs = 50.0f;
 
   const wl_callback_listener kFrameListener = {
       .done = &Surface::handleFrameDone,
@@ -35,6 +39,17 @@ namespace {
     return std::max<std::uint32_t>(1, static_cast<std::uint32_t>(std::lround(static_cast<float>(logical) * scale)));
   }
 
+  std::vector<Surface*>& pendingRenderQueue() {
+    static std::vector<Surface*> queue;
+    return queue;
+  }
+
+  template <typename Fn> float elapsedMs(Fn&& fn) {
+    const auto start = std::chrono::steady_clock::now();
+    fn();
+    return std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
+  }
+
   class ScopedBoolFlag {
   public:
     explicit ScopedBoolFlag(bool& flag) noexcept : m_flag(flag) { m_flag = true; }
@@ -51,7 +66,10 @@ namespace {
 
 Surface::Surface(WaylandConnection& connection) : m_connection(connection) {}
 
-Surface::~Surface() { destroySurface(); }
+Surface::~Surface() {
+  cancelQueuedRender();
+  destroySurface();
+}
 
 bool Surface::isRunning() const noexcept { return m_running; }
 
@@ -114,8 +132,7 @@ void Surface::handleFrameDone(void* data, wl_callback* callback, std::uint32_t c
     const bool redrawRequested = self->m_redrawRequested;
 
     if (invalidated || animating || redrawRequested) {
-      self->m_redrawRequested = false;
-      self->render();
+      self->queueRender();
     }
     // Frame loop stops here when idle. Restarted by requestRedraw().
   }
@@ -147,7 +164,7 @@ void Surface::onConfigure(std::uint32_t width, std::uint32_t height) {
     m_configureCallback(m_width, m_height);
   }
   preparePendingFrame();
-  render();
+  queueRender();
 }
 
 void Surface::setConfigureCallback(ConfigureCallback callback) { m_configureCallback = std::move(callback); }
@@ -383,6 +400,7 @@ void Surface::requestRedraw() {
 
 void Surface::renderNow() {
   if (m_running && m_configured) {
+    cancelQueuedRender();
     preparePendingFrame();
     render();
   }
@@ -394,7 +412,11 @@ void Surface::render() {
   }
 
   requestFrame();
-  m_renderContext->renderScene(m_renderTarget, m_sceneRoot);
+  const float renderMs = elapsedMs([this] { m_renderContext->renderScene(m_renderTarget, m_sceneRoot); });
+  if (renderMs >= kSlowSurfaceOperationWarnMs) {
+    kLog.warn("surface render blocked for {:.1f}ms ({}x{} logical, {}x{} buffer)", renderMs, m_width, m_height,
+              m_renderTarget.bufferWidth(), m_renderTarget.bufferHeight());
+  }
 
   if (m_sceneRoot != nullptr) {
     m_sceneRoot->clearDirty();
@@ -414,6 +436,8 @@ void Surface::requestFrame() {
 }
 
 void Surface::destroySurface() {
+  cancelQueuedRender();
+
   if (m_frameCallback != nullptr) {
     wl_callback_destroy(m_frameCallback);
     m_frameCallback = nullptr;
@@ -474,7 +498,56 @@ void Surface::kickFrameLoop() {
   const bool invalidated = m_sceneRoot != nullptr && (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty());
   const bool animating = m_animationManager != nullptr && m_animationManager->hasActive();
   if (m_redrawRequested || invalidated || animating) {
+    queueRender();
+  }
+}
+
+void Surface::queueRender() {
+  if (m_renderQueued) {
+    return;
+  }
+  m_renderQueued = true;
+  pendingRenderQueue().push_back(this);
+}
+
+void Surface::cancelQueuedRender() {
+  if (!m_renderQueued) {
+    return;
+  }
+  auto& queue = pendingRenderQueue();
+  queue.erase(std::remove(queue.begin(), queue.end(), this), queue.end());
+  m_renderQueued = false;
+}
+
+void Surface::renderQueuedFrame() {
+  m_renderQueued = false;
+  if (m_surface == nullptr || !m_configured || m_renderContext == nullptr || !m_renderTarget.isReady()) {
+    return;
+  }
+
+  preparePendingFrame();
+  const bool invalidated = m_sceneRoot != nullptr && (m_sceneRoot->paintDirty() || m_sceneRoot->layoutDirty());
+  const bool animating = m_animationManager != nullptr && m_animationManager->hasActive();
+  if (m_redrawRequested || invalidated || animating) {
     m_redrawRequested = false;
     render();
+  }
+}
+
+bool Surface::hasPendingRenders() { return !pendingRenderQueue().empty(); }
+
+void Surface::drainPendingRenders() {
+  auto& queue = pendingRenderQueue();
+  if (queue.empty()) {
+    return;
+  }
+
+  auto pending = std::move(queue);
+  queue.clear();
+  for (auto* surface : pending) {
+    if (surface == nullptr || !surface->m_renderQueued) {
+      continue;
+    }
+    surface->renderQueuedFrame();
   }
 }
