@@ -12,6 +12,7 @@
 #include "ext-session-lock-v1-client-protocol.h"
 #include "ext-workspace-v1-client-protocol.h"
 #include "fractional-scale-v1-client-protocol.h"
+#include "hyprland-focus-grab-v1-client-protocol.h"
 #include "idle-inhibit-unstable-v1-client-protocol.h"
 #include "viewporter-client-protocol.h"
 #include "virtual-keyboard-unstable-v1-client-protocol.h"
@@ -46,6 +47,7 @@ namespace {
   constexpr std::uint32_t kIdleInhibitManagerVersion = 1;
   constexpr std::uint32_t kExtBackgroundEffectManagerVersion = 1;
   constexpr std::uint32_t kFractionalScaleManagerVersion = 1;
+  constexpr std::uint32_t kHyprlandFocusGrabManagerVersion = 1;
   constexpr std::uint32_t kViewporterVersion = 1;
   constexpr std::uint32_t kOutputVersion = 4;
   constexpr std::uint32_t kVirtualKeyboardManagerVersion = 1;
@@ -535,6 +537,10 @@ ext_background_effect_manager_v1* WaylandConnection::backgroundEffectManager() c
 wp_fractional_scale_manager_v1* WaylandConnection::fractionalScaleManager() const noexcept {
   return m_fractionalScaleManager;
 }
+
+hyprland_focus_grab_manager_v1* WaylandConnection::hyprlandFocusGrabManager() const noexcept {
+  return m_hyprlandFocusGrabManager;
+}
 wp_viewporter* WaylandConnection::viewporter() const noexcept { return m_viewporter; }
 
 void WaylandConnection::onBackgroundEffectCapabilities(std::uint32_t capabilities) noexcept {
@@ -725,6 +731,13 @@ void WaylandConnection::bindGlobal(wl_registry* registry, std::uint32_t name, co
     return;
   }
 
+  if (interfaceName == hyprland_focus_grab_manager_v1_interface.name) {
+    const auto bindVersion = std::min(version, kHyprlandFocusGrabManagerVersion);
+    m_hyprlandFocusGrabManager = static_cast<hyprland_focus_grab_manager_v1*>(
+        wl_registry_bind(registry, name, &hyprland_focus_grab_manager_v1_interface, bindVersion));
+    return;
+  }
+
   if (interfaceName == ext_data_control_manager_v1_interface.name) {
     if (m_dataControlManager != nullptr && m_dataControlOps != extDataControlOps()) {
       m_dataControlOps->destroyManager(m_dataControlManager);
@@ -859,6 +872,11 @@ void WaylandConnection::cleanup() {
   if (m_fractionalScaleManager != nullptr) {
     wp_fractional_scale_manager_v1_destroy(m_fractionalScaleManager);
     m_fractionalScaleManager = nullptr;
+  }
+
+  if (m_hyprlandFocusGrabManager != nullptr) {
+    hyprland_focus_grab_manager_v1_destroy(m_hyprlandFocusGrabManager);
+    m_hyprlandFocusGrabManager = nullptr;
   }
 
   if (m_viewporter != nullptr) {

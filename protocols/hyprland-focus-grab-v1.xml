@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="hyprland_focus_grab_v1">
+  <copyright>
+    Copyright © 2024 outfoxxed
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
+
+    3. Neither the name of the copyright holder nor the names of its
+       contributors may be used to endorse or promote products derived from
+       this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  </copyright>
+
+  <description summary="limit input focus to a set of surfaces">
+    This protocol allows clients to limit input focus to a specific set
+    of surfaces and receive a notification when the limiter is removed as
+    detailed below.
+  </description>
+
+  <interface name="hyprland_focus_grab_manager_v1" version="1">
+    <description summary="manager for focus grab objects">
+      This interface allows a client to create surface grab objects.
+    </description>
+
+    <request name="create_grab">
+      <description summary="create a focus grab object">
+        Create a surface grab object.
+      </description>
+
+      <arg name="grab" type="new_id" interface="hyprland_focus_grab_v1"/>
+    </request>
+
+    <request name="destroy" type="destructor">
+      <description summary="destroy the focus grab manager">
+        Destroy the focus grab manager.
+        This doesn't destroy existing focus grab objects.
+      </description>
+    </request>
+  </interface>
+
+  <interface name="hyprland_focus_grab_v1" version="1">
+    <description summary="input focus limiter">
+      This interface restricts input focus to a specified whitelist of
+      surfaces as long as the focus grab object exists and has at least
+      one comitted surface.
+
+      Mouse and touch events inside a whitelisted surface will be passed
+      to the surface normally, while events outside of a whitelisted surface
+      will clear the grab object. Keyboard events will be passed to the client
+      and a compositor-picked surface in the whitelist will receive a
+      wl_keyboard::enter event if a whitelisted surface is not already entered.
+
+      Upon meeting implementation-defined criteria usually meaning a mouse or
+      touch input outside of any whitelisted surfaces, the compositor will
+      clear the whitelist, rendering the grab inert and sending the cleared
+      event. The same will happen if another focus grab or similar action
+      is started at the compositor's discretion.
+    </description>
+
+    <request name="add_surface">
+      <description summary="add a surface to the focus whitelist">
+        Add a surface to the whitelist. Destroying the surface is treated the
+        same as an explicit call to remove_surface and duplicate additions are
+        ignored.
+
+        Does not take effect until commit is called.
+      </description>
+
+      <arg name="surface" type="object" interface="wl_surface"/>
+    </request>
+
+    <request name="remove_surface">
+      <description summary="remove a surface from the focus whitelist">
+        Remove a surface from the whitelist. Destroying the surface is treated
+        the same as an explicit call to this function.
+
+        If the grab was active and the removed surface was entered by the
+        keyboard, another surface will be entered on commit.
+
+        Does not take effect until commit is called.
+      </description>
+
+      <arg name="surface" type="object" interface="wl_surface"/>
+    </request>
+
+    <request name="commit">
+      <description summary="commit the focus whitelist">
+        Commit pending changes to the surface whitelist.
+
+        If the list previously had no entries and now has at least one, the grab
+        will start. If it previously had entries and now has none, the grab will
+        become inert.
+      </description>
+    </request>
+
+    <request name="destroy" type="destructor">
+      <description summary="destroy the focus grab">
+        Destroy the grab object and remove the grab if active.
+      </description>
+    </request>
+
+    <event name="cleared">
+      <description summary="the focus grab was cleared">
+        Sent when an active grab is cancelled by the compositor,
+        regardless of cause.
+      </description>
+    </event>
+  </interface>
+</protocol>

@@ -36,6 +36,7 @@ struct zwlr_foreign_toplevel_manager_v1;
 struct zwlr_foreign_toplevel_handle_v1;
 struct zdwl_ipc_manager_v2;
 struct zwp_virtual_keyboard_manager_v1;
+struct hyprland_focus_grab_manager_v1;
 struct wp_fractional_scale_manager_v1;
 struct wp_viewporter;
 class ClipboardService;
@@ -109,6 +110,7 @@ public:
   [[nodiscard]] bool hasBackgroundEffectBlur() const noexcept;
   [[nodiscard]] ext_background_effect_manager_v1* backgroundEffectManager() const noexcept;
   [[nodiscard]] wp_fractional_scale_manager_v1* fractionalScaleManager() const noexcept;
+  [[nodiscard]] hyprland_focus_grab_manager_v1* hyprlandFocusGrabManager() const noexcept;
   [[nodiscard]] wp_viewporter* viewporter() const noexcept;
   [[nodiscard]] wl_display* display() const noexcept;
   [[nodiscard]] wl_compositor* compositor() const noexcept;
@@ -190,6 +192,7 @@ private:
   zwp_idle_inhibit_manager_v1* m_idleInhibitManager = nullptr;
   ext_background_effect_manager_v1* m_backgroundEffectManager = nullptr;
   wp_fractional_scale_manager_v1* m_fractionalScaleManager = nullptr;
+  hyprland_focus_grab_manager_v1* m_hyprlandFocusGrabManager = nullptr;
   wp_viewporter* m_viewporter = nullptr;
   bool m_backgroundEffectBlurSupported = false;
   void* m_dataControlManager = nullptr;
