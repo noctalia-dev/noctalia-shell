@@ -66,6 +66,87 @@ namespace {
     return false;
   }
 
+  bool isLowConfidenceProgramAppName(const AudioNode& node) {
+    auto normalizeId = [](std::string value) {
+      if (value.ends_with(".desktop")) {
+        value.erase(value.size() - std::string_view(".desktop").size());
+      }
+      const auto lastSlash = value.find_last_of('/');
+      if (lastSlash != std::string::npos) {
+        value = value.substr(lastSlash + 1);
+      }
+      std::ranges::transform(value, value.begin(),
+                             [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+      return value;
+    };
+
+    if (node.applicationName.empty()) {
+      return true;
+    }
+    if (isGenericAudioLabel(node.applicationName)) {
+      return true;
+    }
+
+    const std::string appName = normalizeId(node.applicationName);
+    const std::string appId = normalizeId(node.applicationId);
+    const std::string appBinary = normalizeId(node.applicationBinary);
+    if (appName.empty()) {
+      return true;
+    }
+    if (!appId.empty() && appName == appId) {
+      return false;
+    }
+    if (!appBinary.empty() && appName == appBinary) {
+      return false;
+    }
+
+    auto canonical = [](std::string value) {
+      for (char& ch : value) {
+        if (ch == '-' || ch == '_' || ch == '.' || std::isspace(static_cast<unsigned char>(ch)) != 0) {
+          ch = ' ';
+        }
+      }
+      // collapse spaces
+      std::string out;
+      out.reserve(value.size());
+      bool prevSpace = true;
+      for (const char ch : value) {
+        const bool isSpace = std::isspace(static_cast<unsigned char>(ch)) != 0;
+        if (isSpace) {
+          if (!prevSpace) {
+            out.push_back(' ');
+          }
+        } else {
+          out.push_back(ch);
+        }
+        prevSpace = isSpace;
+      }
+      if (!out.empty() && out.back() == ' ') {
+        out.pop_back();
+      }
+      return out;
+    };
+
+    const std::string canonicalName = canonical(appName);
+    const std::string canonicalBinary = canonical(appBinary);
+    const bool binaryMatchesName =
+        !canonicalBinary.empty() &&
+        (canonicalName == canonicalBinary || canonicalName.find(canonicalBinary) != std::string::npos ||
+         canonicalBinary.find(canonicalName) != std::string::npos);
+    // If we have no application.id and the binary disagrees with appName, appName is usually a runtime wrapper label.
+    if (appId.empty() && !appBinary.empty() && !binaryMatchesName) {
+      return true;
+    }
+
+    // Some stream clients expose a runtime/container name in application.name.
+    // If application.id is more specific and does not match, prefer the id label.
+    const bool idLooksSpecific = appId.find('.') != std::string::npos || appId.find('-') != std::string::npos ||
+                                 appId.find('_') != std::string::npos;
+    const bool nameLooksSimple = appName.find('.') == std::string::npos && appName.find('-') == std::string::npos &&
+                                 appName.find('_') == std::string::npos && appName.find(' ') == std::string::npos;
+    return !appId.empty() && appName != appId && idLooksSpecific && nameLooksSimple;
+  }
+
   std::string prettifyIdentifier(std::string value) {
     if (value.empty()) {
       return value;
@@ -177,6 +258,39 @@ namespace {
     appendMatchToken(tokens, player.identity);
     appendMatchToken(tokens, player.busName);
     return tokens;
+  }
+
+  std::string resolveProgramAppName(const AudioNode& node, const MprisPlayerInfo* player) {
+    std::string resolved = node.applicationName;
+    const bool appNameIsGeneric = isLowConfidenceProgramAppName(node);
+
+    if (appNameIsGeneric) {
+      // Force fallback chain when app name is considered low-confidence.
+      resolved.clear();
+    }
+    if (resolved.empty()) {
+      if (!node.applicationId.empty() && !isGenericAudioLabel(node.applicationId)) {
+        resolved = prettifyIdentifier(node.applicationId);
+      }
+    }
+    if (resolved.empty() || isGenericAudioLabel(resolved)) {
+      if (!node.applicationBinary.empty() && !isGenericAudioLabel(node.applicationBinary)) {
+        resolved = prettifyIdentifier(node.applicationBinary);
+      }
+    }
+    if (resolved.empty() || isGenericAudioLabel(resolved)) {
+      resolved = !node.description.empty() ? node.description : node.name;
+    }
+    if (isGenericAudioLabel(resolved) && !node.iconName.empty()) {
+      resolved = prettifyIdentifier(node.iconName);
+    }
+    if ((resolved.empty() || isGenericAudioLabel(resolved)) && player != nullptr && !player->identity.empty()) {
+      resolved = player->identity;
+    }
+    if (resolved.empty()) {
+      resolved = "Application";
+    }
+    return resolved;
   }
 
   bool tokenListsMatch(const std::vector<std::string>& left, const std::vector<std::string>& right) {
@@ -544,30 +658,7 @@ namespace {
 
     void syncFromNode(const AudioNode& node, const MprisPlayerInfo* player, bool isDefault, float sliderMax,
                       bool nodeEnabled) {
-      std::string resolvedAppName = !node.applicationName.empty() ? node.applicationName : std::string{};
-      if (resolvedAppName.empty() || isGenericAudioLabel(resolvedAppName)) {
-        if (!node.applicationId.empty()) {
-          resolvedAppName = prettifyIdentifier(node.applicationId);
-        }
-      }
-      if (resolvedAppName.empty() || isGenericAudioLabel(resolvedAppName)) {
-        if (!node.applicationBinary.empty()) {
-          resolvedAppName = prettifyIdentifier(node.applicationBinary);
-        }
-      }
-      if (resolvedAppName.empty() || isGenericAudioLabel(resolvedAppName)) {
-        resolvedAppName = !node.description.empty() ? node.description : node.name;
-      }
-      if (isGenericAudioLabel(resolvedAppName) && !node.iconName.empty()) {
-        resolvedAppName = prettifyIdentifier(node.iconName);
-      }
-      if ((resolvedAppName.empty() || isGenericAudioLabel(resolvedAppName)) && player != nullptr &&
-          !player->identity.empty()) {
-        resolvedAppName = player->identity;
-      }
-      if (resolvedAppName.empty()) {
-        resolvedAppName = "Application";
-      }
+      std::string resolvedAppName = resolveProgramAppName(node, player);
 
       std::string title = node.streamTitle;
       if (title.empty() && !node.name.empty() && node.name != resolvedAppName) {
@@ -1324,14 +1415,12 @@ void AudioTab::rebuildProgramVolumes(Renderer& renderer) {
     std::string key;
     const auto sorted = sortedDevices(devices);
     for (const auto& node : sorted) {
-      std::string resolvedAppName = !node.applicationName.empty() ? node.applicationName : node.applicationBinary;
-      if (resolvedAppName.empty()) {
-        resolvedAppName = !node.description.empty() ? node.description : node.name;
-      }
+      const MprisPlayerInfo* player = findMatchingPlayer(players, node, node.applicationName);
+      std::string resolvedAppName = resolveProgramAppName(node, player);
       key += std::to_string(node.id);
       key.push_back(':');
       key += !node.description.empty() ? node.description : node.name;
-      if (const MprisPlayerInfo* player = findMatchingPlayer(players, node, resolvedAppName); player != nullptr) {
+      if (player != nullptr) {
         key.push_back(':');
         key += player->busName;
         key.push_back(':');
@@ -1371,11 +1460,11 @@ void AudioTab::rebuildProgramVolumes(Renderer& renderer) {
                   i18n::tr("control-center.audio.no-application-audio-body"), scale);
   } else {
     for (const auto& sink : sortedDevices(state.programOutputs)) {
+      const MprisPlayerInfo* player = findMatchingPlayer(players, sink, sink.applicationName);
       auto row = std::make_unique<ProgramVolumeRow>(
           m_audio, sink.id, sliderMax, scale,
           [this, sinkId = sink.id](float value) { queueProgramSinkVolume(sinkId, value); },
           [this]() { flushPendingProgramVolumes(true); });
-      const MprisPlayerInfo* player = findMatchingPlayer(players, sink, sink.applicationName);
       row->syncFromNode(sink, player, false, sliderMax, true);
       m_programRows.push_back(row.get());
       m_programList->addChild(std::move(row));
