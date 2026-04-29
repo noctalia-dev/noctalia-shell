@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "dbus/mpris/mpris_art.h"
 #include "dbus/mpris/mpris_service.h"
+#include "i18n/i18n.h"
 #include "net/http_client.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
@@ -153,7 +154,7 @@ void MediaWidget::syncState(Renderer& renderer) {
   const auto active = m_mpris != nullptr ? m_mpris->activePlayer() : std::nullopt;
 
   std::string playbackStatus;
-  std::string displayText = "Nothing playing";
+  std::string displayText = i18n::tr("bar.widgets.media.nothing-playing");
   std::string artUrl;
 
   if (active.has_value()) {
@@ -248,9 +249,9 @@ std::string MediaWidget::buildDisplayText(const MprisPlayerInfo& player) {
     return player.busName;
   }
   if (player.playbackStatus == "Playing") {
-    return "Playing";
+    return i18n::tr("bar.widgets.media.playing");
   }
-  return "Nothing playing";
+  return i18n::tr("bar.widgets.media.nothing-playing");
 }
 
 std::string MediaWidget::resolveArtworkPath() const { return normalizeArtPath(m_lastArtUrl); }

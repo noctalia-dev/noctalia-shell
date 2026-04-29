@@ -1,6 +1,7 @@
 #include "shell/control_center/notifications_tab.h"
 
 #include "core/ui_phase.h"
+#include "i18n/i18n.h"
 #include "notification/notification_manager.h"
 #include "render/core/renderer.h"
 #include "shell/panel/panel_manager.h"
@@ -26,20 +27,20 @@ namespace {
 
   std::string statusText(const NotificationHistoryEntry& entry) {
     if (entry.active) {
-      return "Active";
+      return i18n::tr("control-center.notifications.status.active");
     }
     if (!entry.closeReason.has_value()) {
-      return "Closed";
+      return i18n::tr("control-center.notifications.status.closed");
     }
     switch (*entry.closeReason) {
     case CloseReason::Expired:
-      return "Expired";
+      return i18n::tr("control-center.notifications.status.expired");
     case CloseReason::Dismissed:
-      return "Dismissed";
+      return i18n::tr("control-center.notifications.status.dismissed");
     case CloseReason::ClosedByCall:
-      return "Closed";
+      return i18n::tr("control-center.notifications.status.closed");
     }
-    return "Closed";
+    return i18n::tr("control-center.notifications.status.closed");
   }
 
   ColorRole statusColorRole(const NotificationHistoryEntry& entry) {
@@ -237,14 +238,14 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
     empty->setMinWidth(cardWidth);
 
     auto title = std::make_unique<Label>();
-    title->setText("No notifications");
+    title->setText(i18n::tr("control-center.notifications.empty-title"));
     title->setBold(true);
     title->setFontSize(Style::fontSizeBody * scale);
     title->setColor(roleColor(ColorRole::OnSurface));
     empty->addChild(std::move(title));
 
     auto body = std::make_unique<Label>();
-    body->setText("Recent notifications will show here.");
+    body->setText(i18n::tr("control-center.notifications.empty-body"));
     body->setCaptionStyle();
     body->setFontSize(Style::fontSizeCaption * scale);
     body->setColor(roleColor(ColorRole::OnSurfaceVariant));
@@ -258,7 +259,7 @@ void NotificationsTab::rebuild(Renderer& renderer, float width) {
 
   for (auto it = m_notifications->history().rbegin(); it != m_notifications->history().rend(); ++it) {
     const std::string summaryText =
-        it->notification.summary.empty() ? "Untitled notification" : it->notification.summary;
+        it->notification.summary.empty() ? i18n::tr("control-center.notifications.untitled") : it->notification.summary;
     const std::string& bodyText = it->notification.body;
     const bool summaryExpandable =
         canExpandText(renderer, summaryText, Style::fontSizeBody * scale, true, cardTextWidth, kSummaryMaxLines);

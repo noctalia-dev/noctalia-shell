@@ -1,5 +1,6 @@
 #include "shell/control_center/system_tab.h"
 
+#include "i18n/i18n.h"
 #include "render/scene/graph_node.h"
 #include "shell/panel/panel_manager.h"
 #include "system/distro_info.h"
@@ -90,11 +91,12 @@ namespace {
 
   std::string buildSystemInfoText(const SystemStats& stats) {
     const auto uptime = systemUptime();
-    const std::string uptimeText = uptime.has_value() ? formatDuration(*uptime) : "unknown";
-    return std::format("Distro · {}\nCompositor · {}\nKernel · {}\nUptime · {}\nOS age · {}\nBoard · {}\nCPU · {}\nGPU "
-                       "· {}\nMemory · {}\nDisk · {}",
-                       distroLabel(), compositorLabel(), kernelRelease(), uptimeText, osAgeLabel(), motherboardLabel(),
-                       cpuModelName(), gpuLabel(), formatMemoryUsedTotal(stats), diskRootUsageLabel());
+    const std::string uptimeText =
+        uptime.has_value() ? formatDuration(*uptime) : i18n::tr("control-center.system.unknown");
+    return i18n::tr("control-center.system.info", "distro", distroLabel(), "compositor", compositorLabel(), "kernel",
+                    kernelRelease(), "uptime", uptimeText, "osAge", osAgeLabel(), "board", motherboardLabel(), "cpu",
+                    cpuModelName(), "gpu", gpuLabel(), "memory", formatMemoryUsedTotal(stats), "disk",
+                    diskRootUsageLabel());
   }
 
 } // namespace
@@ -135,7 +137,7 @@ std::unique_ptr<Flex> SystemTab::create() {
     card->setFlexGrow(1.0f);
     m_cpuCard = card.get();
 
-    auto* header = makeHeaderRow(*card, "CPU", sc);
+    auto* header = makeHeaderRow(*card, i18n::tr("control-center.system.titles.cpu"), sc);
     m_cpuPctLabel = makeValueLabel(*header, sc);
     m_cpuTempLabel = makeValueLabel(*header, sc);
     m_cpuGraph = addGraph(*card, sc);
@@ -150,7 +152,7 @@ std::unique_ptr<Flex> SystemTab::create() {
     card->setFlexGrow(1.0f);
     m_ramCard = card.get();
 
-    auto* header = makeHeaderRow(*card, "Memory", sc);
+    auto* header = makeHeaderRow(*card, i18n::tr("control-center.system.titles.memory"), sc);
     m_ramLabel = makeValueLabel(*header, sc);
     m_ramGraph = addGraph(*card, sc);
 
@@ -164,7 +166,7 @@ std::unique_ptr<Flex> SystemTab::create() {
     card->setFlexGrow(1.0f);
     m_netCard = card.get();
 
-    auto* header = makeHeaderRow(*card, "Network", sc);
+    auto* header = makeHeaderRow(*card, i18n::tr("control-center.system.titles.network"), sc);
     auto* rxGroup = makeIconLabel(*header, "download-speed", sc);
     m_rxLabel = makeValueLabel(*rxGroup, sc);
     auto* txGroup = makeIconLabel(*header, "upload-speed", sc);
@@ -191,7 +193,7 @@ std::unique_ptr<Flex> SystemTab::create() {
     card->setMinHeight(Style::controlHeightLg * 1.9f * sc);
     m_loadCard = card.get();
 
-    addTitle(*card, "Load Average", sc);
+    addTitle(*card, i18n::tr("control-center.system.titles.load-average"), sc);
     m_loadLabel = makeValueLabel(*card, sc);
 
     rightCol->addChild(std::move(card));
@@ -205,7 +207,7 @@ std::unique_ptr<Flex> SystemTab::create() {
     card->setMinHeight(Style::controlHeightLg * 6.2f * sc);
     m_infoCard = card.get();
 
-    addTitle(*card, "System Info", sc);
+    addTitle(*card, i18n::tr("control-center.system.titles.system-info"), sc);
 
     auto infoLabel = std::make_unique<Label>();
     infoLabel->setFontSize(Style::fontSizeBody * sc);

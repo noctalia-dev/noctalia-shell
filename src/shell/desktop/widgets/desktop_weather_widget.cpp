@@ -1,5 +1,6 @@
 #include "shell/desktop/widgets/desktop_weather_widget.h"
 
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
 #include "system/weather_service.h"
@@ -137,9 +138,9 @@ void DesktopWeatherWidget::sync(Renderer& renderer) {
   std::string conditionText;
 
   if (m_weather == nullptr || !m_weather->enabled()) {
-    temperatureText = "Weather off";
+    temperatureText = i18n::tr("desktop-widgets.weather.off");
   } else if (!m_weather->locationConfigured()) {
-    temperatureText = "No location";
+    temperatureText = i18n::tr("desktop-widgets.weather.no-location");
   } else if (m_weather->hasData()) {
     const auto& snapshot = m_weather->snapshot();
     glyphName = WeatherService::glyphForCode(snapshot.current.weatherCode, snapshot.current.isDay);
@@ -147,9 +148,9 @@ void DesktopWeatherWidget::sync(Renderer& renderer) {
     temperatureText = std::format("{}{}", temp, m_weather->displayTemperatureUnit());
     conditionText = WeatherService::shortDescriptionForCode(snapshot.current.weatherCode);
   } else if (m_weather->loading()) {
-    temperatureText = "Loading";
+    temperatureText = i18n::tr("desktop-widgets.weather.loading");
   } else if (!m_weather->error().empty()) {
-    temperatureText = "Error";
+    temperatureText = i18n::tr("desktop-widgets.weather.error");
   }
 
   bool changed = false;

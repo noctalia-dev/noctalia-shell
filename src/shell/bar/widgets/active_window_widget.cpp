@@ -1,5 +1,6 @@
 #include "shell/bar/widgets/active_window_widget.h"
 
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
 #include "system/desktop_entry.h"
@@ -110,7 +111,7 @@ void ActiveWindowWidget::syncState(Renderer& renderer) {
   }
 
   if (title.empty()) {
-    title = !appId.empty() ? appId : "Desktop";
+    title = !appId.empty() ? appId : i18n::tr("bar.widgets.active-window.desktop");
   }
 
   if (!desktopEntriesChanged && identifier == m_lastIdentifier && title == m_lastTitle && appId == m_lastAppId) {

@@ -84,22 +84,22 @@ private:
   struct TabMeta {
     TabId id;
     const char* key;
-    const char* title;
+    const char* titleKey;
     const char* glyph;
   };
 
   static constexpr std::size_t kTabCount = static_cast<std::size_t>(TabId::Count);
   static constexpr std::array<TabMeta, kTabCount> kTabs{{
-      {TabId::Overview, "overview", "Overview", "person"},
-      {TabId::Media, "media", "Media", "disc"},
-      {TabId::Audio, "audio", "Audio", "device-speaker"},
-      {TabId::Display, "display", "Display", "device-desktop"},
-      {TabId::System, "system", "System", "activity"},
-      {TabId::Network, "network", "Network", "wifi"},
-      {TabId::Bluetooth, "bluetooth", "Bluetooth", "bluetooth"},
-      {TabId::Weather, "weather", "Weather", "weather-cloud-sun"},
-      {TabId::Calendar, "calendar", "Calendar", "calendar"},
-      {TabId::Notifications, "notifications", "Notifications", "bell"},
+      {TabId::Overview, "overview", "control-center.tabs.overview", "person"},
+      {TabId::Media, "media", "control-center.tabs.media", "disc"},
+      {TabId::Audio, "audio", "control-center.tabs.audio", "device-speaker"},
+      {TabId::Display, "display", "control-center.tabs.display", "device-desktop"},
+      {TabId::System, "system", "control-center.tabs.system", "activity"},
+      {TabId::Network, "network", "control-center.tabs.network", "wifi"},
+      {TabId::Bluetooth, "bluetooth", "control-center.tabs.bluetooth", "bluetooth"},
+      {TabId::Weather, "weather", "control-center.tabs.weather", "weather-cloud-sun"},
+      {TabId::Calendar, "calendar", "control-center.tabs.calendar", "calendar"},
+      {TabId::Notifications, "notifications", "control-center.tabs.notifications", "bell"},
   }};
 
   void selectTab(TabId tab);

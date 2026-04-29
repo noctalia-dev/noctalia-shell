@@ -1,5 +1,7 @@
 #include "system/distro_info.h"
 
+#include "i18n/i18n.h"
+
 #include <cctype>
 #include <cstdint>
 #include <cstdlib>
@@ -128,7 +130,7 @@ std::string distroLabel() {
       return distro->id;
     }
   }
-  return "Unknown distro";
+  return i18n::tr("system.hardware.unknown-distro");
 }
 
 std::string kernelRelease() {
@@ -136,7 +138,7 @@ std::string kernelRelease() {
   if (uname(&un) == 0 && un.release[0] != '\0') {
     return un.release;
   }
-  return "unknown";
+  return i18n::tr("control-center.system.unknown");
 }
 
 std::string osAgeLabel() {
@@ -161,7 +163,7 @@ std::string osAgeLabel() {
   }
 
   if (oldest == 0) {
-    return "unknown";
+    return i18n::tr("control-center.system.unknown");
   }
   const std::time_t now = std::time(nullptr);
   if (now <= 0 || static_cast<std::uint64_t>(now) <= oldest) {
@@ -204,7 +206,7 @@ std::string hostName() {
   if (uname(&un) == 0 && un.nodename[0] != '\0') {
     return un.nodename;
   }
-  return "unknown";
+  return i18n::tr("control-center.system.unknown");
 }
 
 std::optional<std::chrono::seconds> systemUptime() {

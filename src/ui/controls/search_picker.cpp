@@ -41,6 +41,8 @@ namespace {
 } // namespace
 
 SearchPicker::SearchPicker() {
+  m_emptyText = i18n::tr("ui.controls.search-picker.empty");
+
   setDirection(FlexDirection::Vertical);
   setAlign(FlexAlign::Stretch);
   setGap(Style::spaceSm);

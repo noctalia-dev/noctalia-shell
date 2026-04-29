@@ -1,6 +1,7 @@
 #include "shell/control_center/network_tab.h"
 
 #include "core/ui_phase.h"
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
@@ -30,14 +31,15 @@ namespace {
       return s.ssid;
     }
     if (s.kind == NetworkConnectivity::Wired && s.connected) {
-      return s.interfaceName.empty() ? std::string("Wired connection") : s.interfaceName;
+      return s.interfaceName.empty() ? i18n::tr("control-center.network.wired-connection") : s.interfaceName;
     }
-    return "Not connected";
+    return i18n::tr("control-center.network.not-connected");
   }
 
   std::string currentDetail(const NetworkState& s) {
     if (!s.connected) {
-      return s.wirelessEnabled ? "Wi-Fi is on" : "Wi-Fi is off";
+      return s.wirelessEnabled ? i18n::tr("control-center.network.wifi-on")
+                               : i18n::tr("control-center.network.wifi-off");
     }
     std::string out;
     if (!s.interfaceName.empty()) {
@@ -105,7 +107,7 @@ namespace {
       if (saved) {
         auto forget = std::make_unique<Button>();
         forget->setVariant(ButtonVariant::Ghost);
-        forget->setText("Forget");
+        forget->setText(i18n::tr("control-center.network.forget"));
         forget->setOnClick([this]() {
           if (m_onForget) {
             m_onForget(m_ap);
@@ -219,7 +221,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   auto currentCard = std::make_unique<Flex>();
   applySectionCardStyle(*currentCard, scale);
   m_currentCard = currentCard.get();
-  addTitle(*currentCard, "Current connection", scale);
+  addTitle(*currentCard, i18n::tr("control-center.network.current-connection"), scale);
 
   auto title = std::make_unique<Label>();
   title->setBold(true);
@@ -243,7 +245,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
 
   auto disconnect = std::make_unique<Button>();
   disconnect->setVariant(ButtonVariant::Destructive);
-  disconnect->setText("Disconnect");
+  disconnect->setText(i18n::tr("control-center.network.disconnect"));
   disconnect->setOnClick([this]() {
     if (m_network != nullptr) {
       m_network->disconnect();
@@ -274,7 +276,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   inputRow->setGap(Style::spaceSm * scale);
 
   auto passwordInput = std::make_unique<Input>();
-  passwordInput->setPlaceholder("Password");
+  passwordInput->setPlaceholder(i18n::tr("control-center.network.password"));
   passwordInput->setFlexGrow(1.0f);
   passwordInput->setOnSubmit([this](const std::string& value) {
     if (m_secrets != nullptr) {
@@ -288,7 +290,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
 
   auto connectButton = std::make_unique<Button>();
   connectButton->setVariant(ButtonVariant::Default);
-  connectButton->setText("Connect");
+  connectButton->setText(i18n::tr("control-center.network.connect"));
   connectButton->setOnClick([this]() {
     if (m_secrets != nullptr && m_passwordInput != nullptr) {
       m_secrets->submitSecret(m_passwordInput->value());
@@ -300,7 +302,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
 
   auto cancelButton = std::make_unique<Button>();
   cancelButton->setVariant(ButtonVariant::Ghost);
-  cancelButton->setText("Cancel");
+  cancelButton->setText(i18n::tr("common.actions.cancel"));
   cancelButton->setOnClick([this]() {
     if (m_secrets != nullptr) {
       m_secrets->cancelSecret();
@@ -317,7 +319,7 @@ std::unique_ptr<Flex> NetworkTab::create() {
   applySectionCardStyle(*listCard, scale);
   listCard->setFlexGrow(1.0f);
   m_listCard = listCard.get();
-  addTitle(*listCard, "Available networks", scale);
+  addTitle(*listCard, i18n::tr("control-center.network.available-networks"), scale);
 
   auto listScroll = std::make_unique<ScrollView>();
   listScroll->setFlexGrow(1.0f);
@@ -346,7 +348,7 @@ std::unique_ptr<Flex> NetworkTab::createHeaderActions() {
   row->setMinHeight(Style::controlHeightSm * scale);
 
   auto wifiLabel = std::make_unique<Label>();
-  wifiLabel->setText("Wi-Fi");
+  wifiLabel->setText(i18n::tr("control-center.network.wifi"));
   wifiLabel->setFontSize(Style::fontSizeCaption * scale);
   wifiLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
   row->addChild(std::move(wifiLabel));
@@ -430,8 +432,9 @@ void NetworkTab::syncPasswordCard() {
   }
   m_passwordCard->setVisible(m_hasPendingSecret);
   if (m_hasPendingSecret && m_passwordTitle != nullptr) {
-    m_passwordTitle->setText(m_pendingSsid.empty() ? std::string("Enter password")
-                                                   : ("Enter password for " + m_pendingSsid));
+    m_passwordTitle->setText(m_pendingSsid.empty()
+                                 ? i18n::tr("control-center.network.password-prompt")
+                                 : i18n::tr("control-center.network.password-prompt-for", "ssid", m_pendingSsid));
   }
 }
 
@@ -456,8 +459,8 @@ void NetworkTab::syncCurrentCard() {
     return;
   }
   if (m_network == nullptr) {
-    m_currentTitle->setText("NetworkManager unavailable");
-    m_currentDetail->setText("Install and enable NetworkManager to manage networks from here.");
+    m_currentTitle->setText(i18n::tr("control-center.network.unavailable-title"));
+    m_currentDetail->setText(i18n::tr("control-center.network.unavailable-detail"));
     if (m_disconnectRow != nullptr) {
       m_disconnectRow->setVisible(false);
     }
@@ -523,7 +526,8 @@ void NetworkTab::rebuildApList(Renderer& renderer) {
 
   if (aps.empty()) {
     auto empty = std::make_unique<Label>();
-    empty->setText(m_network != nullptr ? "No networks in range" : "NetworkManager unavailable");
+    empty->setText(m_network != nullptr ? i18n::tr("control-center.network.no-networks")
+                                        : i18n::tr("control-center.network.unavailable-title"));
     empty->setCaptionStyle();
     empty->setFontSize(Style::fontSizeCaption);
     empty->setColor(roleColor(ColorRole::OnSurfaceVariant));

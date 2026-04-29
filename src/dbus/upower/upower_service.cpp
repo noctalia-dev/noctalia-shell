@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "dbus/system_bus.h"
+#include "i18n/i18n.h"
 
 #include <map>
 #include <sdbus-c++/IProxy.h>
@@ -33,20 +34,20 @@ namespace {
 std::string batteryStateLabel(BatteryState state) {
   switch (state) {
   case BatteryState::Charging:
-    return "Charging";
+    return i18n::tr("power.battery.states.charging");
   case BatteryState::Discharging:
-    return "Discharging";
+    return i18n::tr("power.battery.states.discharging");
   case BatteryState::FullyCharged:
-    return "Charged";
+    return i18n::tr("power.battery.states.charged");
   case BatteryState::Empty:
-    return "Empty";
+    return i18n::tr("power.battery.states.empty");
   case BatteryState::PendingCharge:
-    return "Pending charge";
+    return i18n::tr("power.battery.states.pending-charge");
   case BatteryState::PendingDischarge:
-    return "Pending discharge";
+    return i18n::tr("power.battery.states.pending-discharge");
   case BatteryState::Unknown:
   default:
-    return "Battery";
+    return i18n::tr("power.battery.states.battery");
   }
 }
 

@@ -1,5 +1,7 @@
 #include "auth/pam_authenticator.h"
 
+#include "i18n/i18n.h"
+
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
@@ -81,12 +83,12 @@ namespace {
 
 PamAuthenticator::Result PamAuthenticator::authenticateCurrentUser(std::string_view password) const {
   if (password.empty()) {
-    return Result{.success = false, .message = "Password required"};
+    return Result{.success = false, .message = i18n::tr("auth.pam.password-required")};
   }
 
   std::string user = currentUsername();
   if (user.empty()) {
-    return Result{.success = false, .message = "Unable to resolve current user"};
+    return Result{.success = false, .message = i18n::tr("auth.pam.user-unavailable")};
   }
 
   std::string passwordCopy(password);
@@ -100,7 +102,7 @@ PamAuthenticator::Result PamAuthenticator::authenticateCurrentUser(std::string_v
   const int startRc = pam_start("login", user.c_str(), &conv, &pamh);
   if (startRc != PAM_SUCCESS || pamh == nullptr) {
     secureClear(passwordCopy);
-    return Result{.success = false, .message = "PAM start failed"};
+    return Result{.success = false, .message = i18n::tr("auth.pam.start-failed")};
   }
 
   int rc = pam_authenticate(pamh, 0);
@@ -116,7 +118,7 @@ PamAuthenticator::Result PamAuthenticator::authenticateCurrentUser(std::string_v
     return Result{.success = true, .message = {}};
   }
 
-  return Result{.success = false, .message = err != nullptr ? err : "Authentication failed"};
+  return Result{.success = false, .message = err != nullptr ? err : i18n::tr("auth.pam.authentication-failed")};
 }
 
 std::string PamAuthenticator::currentUsername() {

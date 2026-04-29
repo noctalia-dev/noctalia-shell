@@ -2,6 +2,7 @@
 
 #include "dbus/mpris/mpris_art.h"
 #include "dbus/mpris/mpris_service.h"
+#include "i18n/i18n.h"
 #include "net/http_client.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
@@ -254,7 +255,7 @@ void DesktopMediaPlayerWidget::sync(Renderer& renderer) {
   m_lastArtUrl = artUrl;
   m_lastPlaybackStatus = playbackStatus;
 
-  m_title->setText(m_lastTitle.empty() ? "Nothing playing" : m_lastTitle);
+  m_title->setText(m_lastTitle.empty() ? i18n::tr("desktop-widgets.media.nothing-playing") : m_lastTitle);
   m_artist->setText(m_lastArtist);
   m_artist->setVisible(!m_lastArtist.empty());
 

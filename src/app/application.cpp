@@ -7,6 +7,7 @@
 #include "core/log.h"
 #include "core/process.h"
 #include "core/resource_paths.h"
+#include "i18n/i18n.h"
 #include "i18n/i18n_service.h"
 #include "ipc/ipc_arg_parse.h"
 #include "launcher/app_provider.h"
@@ -198,7 +199,8 @@ void Application::syncNotificationDaemon() {
     kLog.warn("notifications disabled: {}", e.what());
     m_notificationDbus.reset();
     m_notificationPollSource.setDbusService(nullptr);
-    m_notificationManager.addInternal("Noctalia", "DBus notifications disabled", e.what(), Urgency::Low);
+    m_notificationManager.addInternal("Noctalia", i18n::tr("notifications.internal.dbus-disabled"), e.what(),
+                                      Urgency::Low);
   }
 }
 
@@ -614,7 +616,8 @@ void Application::initServices() {
     kLog.info("connected to session bus");
   } catch (const std::exception& e) {
     kLog.warn("dbus disabled: {}", e.what());
-    m_notificationManager.addInternal("Noctalia", "Session bus unavailable", e.what(), Urgency::Low);
+    m_notificationManager.addInternal("Noctalia", i18n::tr("notifications.internal.session-bus-unavailable"), e.what(),
+                                      Urgency::Low);
   }
 
   if (m_bus != nullptr) {
@@ -648,7 +651,8 @@ void Application::initServices() {
     } catch (const std::exception& e) {
       kLog.warn("mpris disabled: {}", e.what());
       m_mprisService.reset();
-      m_notificationManager.addInternal("Noctalia", "MPRIS disabled", e.what(), Urgency::Low);
+      m_notificationManager.addInternal("Noctalia", i18n::tr("notifications.internal.mpris-disabled"), e.what(),
+                                        Urgency::Low);
     }
 
     syncNotificationDaemon();

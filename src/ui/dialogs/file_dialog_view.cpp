@@ -907,16 +907,16 @@ void FileDialogView::updateVisibleStates() {
 }
 
 void FileDialogView::updateControls() {
-  const char* okText = "Open";
+  std::string okText = i18n::tr("ui.dialogs.file.actions.open");
   switch (m_options.mode) {
   case FileDialogMode::Open:
-    okText = "Open";
+    okText = i18n::tr("ui.dialogs.file.actions.open");
     break;
   case FileDialogMode::Save:
-    okText = "Save";
+    okText = i18n::tr("ui.dialogs.file.actions.save");
     break;
   case FileDialogMode::SelectFolder:
-    okText = "Select Folder";
+    okText = i18n::tr("ui.dialogs.file.actions.select-folder");
     break;
   }
 
@@ -948,19 +948,22 @@ void FileDialogView::updateControls() {
   }
 
   if (m_sortLabel != nullptr) {
-    const char* field = "Name";
+    std::string field = i18n::tr("ui.dialogs.file.sort.name");
     switch (m_sortField) {
     case FileDialogSortField::Name:
-      field = "Name";
+      field = i18n::tr("ui.dialogs.file.sort.name");
       break;
     case FileDialogSortField::Size:
-      field = "Size";
+      field = i18n::tr("ui.dialogs.file.sort.size");
       break;
     case FileDialogSortField::Modified:
-      field = "Date";
+      field = i18n::tr("ui.dialogs.file.sort.date");
       break;
     }
-    m_sortLabel->setText(std::string("Sort: ") + field + (m_sortOrder == FileDialogSortOrder::Ascending ? " ↑" : " ↓"));
+    m_sortLabel->setText(i18n::tr("ui.dialogs.file.sort.summary", "field", field, "direction",
+                                  m_sortOrder == FileDialogSortOrder::Ascending
+                                      ? i18n::tr("ui.dialogs.file.sort.ascending")
+                                      : i18n::tr("ui.dialogs.file.sort.descending")));
   }
 
   if (m_listContainer != nullptr) {

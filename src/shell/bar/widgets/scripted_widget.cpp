@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "core/resource_paths.h"
 #include "cursor-shape-v1-client-protocol.h"
+#include "i18n/i18n.h"
 #include "notification/notifications.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
@@ -272,7 +273,7 @@ void ScriptedWidget::reloadScript() {
   auto name = m_resolvedPath.filename().string();
   if (source.empty() || !m_host->exec(m_resolvedPath.string(), source)) {
     kLog.warn("hot reload: failed to reload '{}'", name);
-    notify::error("Noctalia", "Script reload failed", name);
+    notify::error("Noctalia", i18n::tr("bar.widgets.scripted.reload-failed"), name);
     requestRedraw();
     return;
   }
@@ -281,5 +282,5 @@ void ScriptedWidget::reloadScript() {
   startUpdateTimer();
   requestRedraw();
   kLog.info("hot reload: reloaded '{}'", name);
-  notify::info("Noctalia", "Reloaded script", name);
+  notify::info("Noctalia", i18n::tr("bar.widgets.scripted.reloaded"), name);
 }

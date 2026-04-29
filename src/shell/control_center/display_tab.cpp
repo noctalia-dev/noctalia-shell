@@ -1,6 +1,7 @@
 #include "shell/control_center/display_tab.h"
 
 #include "config/config_service.h"
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "system/brightness_service.h"
 #include "ui/controls/flex.h"
@@ -35,7 +36,7 @@ namespace {
   std::string formatDisplayInfo(const BrightnessDisplay& display) {
     const int width = display.logicalWidth > 0 ? display.logicalWidth : display.physicalWidth;
     const int height = display.logicalHeight > 0 ? display.logicalHeight : display.physicalHeight;
-    std::string resolutionText = "Unknown resolution";
+    std::string resolutionText = i18n::tr("control-center.display.unknown-resolution");
     if (width > 0 && height > 0) {
       resolutionText = std::to_string(width) + "x" + std::to_string(height);
     }
@@ -55,7 +56,7 @@ namespace {
 
   std::string formatBrightnessValue(const BrightnessDisplay& display, float brightness) {
     if (!display.controllable) {
-      return "Disabled";
+      return i18n::tr("control-center.display.disabled");
     }
     return std::to_string(static_cast<int>(std::round(brightness * 100.0f))) + "%";
   }
@@ -81,7 +82,7 @@ std::unique_ptr<Flex> DisplayTab::create() {
   emptyState->setJustify(FlexJustify::Center);
   emptyState->setFlexGrow(1.0f);
   auto emptyLabel = std::make_unique<Label>();
-  emptyLabel->setText("No displays available");
+  emptyLabel->setText(i18n::tr("control-center.display.no-displays"));
   emptyLabel->setFontSize(Style::fontSizeBody * scale);
   emptyLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
   emptyState->addChild(std::move(emptyLabel));

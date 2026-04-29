@@ -6,6 +6,7 @@
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/power/power_profiles_service.h"
 #include "dbus/upower/upower_service.h"
+#include "i18n/i18n.h"
 #include "pipewire/pipewire_service.h"
 #include "shell/panel/panel_manager.h"
 #include "system/distro_info.h"
@@ -67,7 +68,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   weatherHeader->setJustify(FlexJustify::SpaceBetween);
   weatherHeader->setGap(Style::spaceSm * scale);
 
-  Label* weatherTitle = addTitle(*weatherHeader, "Today", scale);
+  Label* weatherTitle = addTitle(*weatherHeader, i18n::tr("control-center.overview.sections.today"), scale);
   weatherTitle->setFlexGrow(1.0f);
 
   auto weatherDate = std::make_unique<Label>();
@@ -103,7 +104,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   m_weatherTemp = weatherTemp.get();
 
   auto weatherSub = std::make_unique<Label>();
-  weatherSub->setText("Weather unavailable");
+  weatherSub->setText(i18n::tr("control-center.overview.weather.unavailable"));
   weatherSub->setFontSize(Style::fontSizeCaption * scale);
   weatherSub->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_weatherSub = weatherSub.get();
@@ -122,7 +123,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   mediaCard->setFlexGrow(1.0f);
   mediaCard->setGap(Style::spaceXs * scale);
 
-  m_mediaKicker = addTitle(*mediaCard, "Now playing", scale);
+  m_mediaKicker = addTitle(*mediaCard, i18n::tr("control-center.overview.sections.now-playing"), scale);
   m_mediaKicker->setFontSize(Style::fontSizeBody * scale);
 
   auto mediaContent = std::make_unique<Flex>();
@@ -153,13 +154,13 @@ std::unique_ptr<Flex> OverviewTab::create() {
   m_mediaTrack = mediaTrack.get();
 
   auto mediaArtist = std::make_unique<Label>();
-  mediaArtist->setText("No active player");
+  mediaArtist->setText(i18n::tr("control-center.overview.media.no-active-player"));
   mediaArtist->setFontSize(Style::fontSizeCaption * scale);
   mediaArtist->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_mediaArtist = mediaArtist.get();
 
   auto mediaStatus = std::make_unique<Label>();
-  mediaStatus->setText("Idle");
+  mediaStatus->setText(i18n::tr("control-center.overview.media.idle"));
   mediaStatus->setFontSize(Style::fontSizeCaption * scale);
   mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_mediaStatus = mediaStatus.get();
@@ -268,7 +269,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   applyOverviewCardStyle(*powerCard, scale);
   m_powerCard = powerCard.get();
   powerCard->setFlexGrow(1.0f);
-  addTitle(*powerCard, "Power", scale);
+  addTitle(*powerCard, i18n::tr("control-center.overview.sections.power"), scale);
 
   auto powerLine = std::make_unique<Label>();
   powerLine->setText("…");
@@ -289,7 +290,7 @@ std::unique_ptr<Flex> OverviewTab::create() {
   applyOverviewCardStyle(*audioCard, scale);
   m_audioCard = audioCard.get();
   audioCard->setFlexGrow(1.0f);
-  addTitle(*audioCard, "Audio", scale);
+  addTitle(*audioCard, i18n::tr("control-center.overview.sections.audio"), scale);
 
   auto audioLine = std::make_unique<Label>();
   audioLine->setText("…");
@@ -473,9 +474,10 @@ void OverviewTab::sync(Renderer& renderer) {
 
   if (m_userFacts != nullptr) {
     const auto uptime = systemUptime();
-    const std::string uptimeText = uptime.has_value() ? formatDuration(*uptime) : "unknown";
-    m_userFacts->setText(std::format("{}@{}\nUptime · {}\nNoctalia {}", sessionDisplayName(), hostName(), uptimeText,
-                                     noctalia::build_info::displayVersion()));
+    const std::string uptimeText =
+        uptime.has_value() ? formatDuration(*uptime) : i18n::tr("control-center.overview.unknown");
+    m_userFacts->setText(i18n::tr("control-center.overview.user-facts", "user", sessionDisplayName(), "host",
+                                  hostName(), "uptime", uptimeText, "version", noctalia::build_info::displayVersion()));
   }
   if (m_weatherDate != nullptr) {
     m_weatherDate->setText(formatCurrentDate());
@@ -486,19 +488,20 @@ void OverviewTab::sync(Renderer& renderer) {
       m_weatherGlyph->setGlyph("weather-cloud-off");
       m_weatherGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
       m_weatherTemp->setText("—");
-      m_weatherSub->setText("Weather is disabled in config.");
+      m_weatherSub->setText(i18n::tr("control-center.overview.weather.disabled"));
     } else if (!m_weather->locationConfigured()) {
       m_weatherGlyph->setGlyph("weather-cloud");
       m_weatherGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
       m_weatherTemp->setText("—");
-      m_weatherSub->setText("Add [weather].address or enable auto_locate.");
+      m_weatherSub->setText(i18n::tr("control-center.overview.weather.configure-location"));
     } else {
       const auto& snapshot = m_weather->snapshot();
       if (!snapshot.valid) {
         m_weatherGlyph->setGlyph("weather-cloud");
         m_weatherGlyph->setColor(roleColor(ColorRole::OnSurfaceVariant));
         m_weatherTemp->setText("—");
-        m_weatherSub->setText(m_weather->loading() ? "Fetching forecast…" : "Weather data unavailable.");
+        m_weatherSub->setText(m_weather->loading() ? i18n::tr("control-center.overview.weather.fetching")
+                                                   : i18n::tr("control-center.overview.weather.data-unavailable"));
       } else {
         m_weatherGlyph->setGlyph(WeatherService::glyphForCode(snapshot.current.weatherCode, snapshot.current.isDay));
         m_weatherGlyph->setColor(roleColor(ColorRole::Primary));
@@ -514,7 +517,8 @@ void OverviewTab::sync(Renderer& renderer) {
         }
         const bool showLocation = m_config == nullptr || m_config->config().shell.showLocation;
         if (showLocation) {
-          const std::string place = snapshot.locationName.empty() ? "Current location" : snapshot.locationName;
+          const std::string place =
+              snapshot.locationName.empty() ? i18n::tr("weather.locations.current") : snapshot.locationName;
           m_weatherSub->setText(std::format(
               "{}{} · {}", WeatherService::descriptionForCode(snapshot.current.weatherCode), hiLoText, place));
         } else {
@@ -527,9 +531,9 @@ void OverviewTab::sync(Renderer& renderer) {
 
   if (m_mediaTrack != nullptr && m_mediaArtist != nullptr && m_mediaStatus != nullptr && m_mediaProgress != nullptr) {
     if (m_mpris == nullptr) {
-      m_mediaTrack->setText("Playback unavailable");
-      m_mediaArtist->setText("Media service unavailable");
-      m_mediaStatus->setText("Unavailable");
+      m_mediaTrack->setText(i18n::tr("control-center.overview.media.playback-unavailable"));
+      m_mediaArtist->setText(i18n::tr("control-center.overview.media.service-unavailable"));
+      m_mediaStatus->setText(i18n::tr("control-center.overview.media.unavailable"));
       m_mediaProgress->setText(" ");
       m_mediaProgress->setVisible(false);
       m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
@@ -540,9 +544,9 @@ void OverviewTab::sync(Renderer& renderer) {
     } else {
       const auto active = m_mpris->activePlayer();
       if (!active.has_value()) {
-        m_mediaTrack->setText("Nothing playing");
-        m_mediaArtist->setText("Play media to see details.");
-        m_mediaStatus->setText("Idle");
+        m_mediaTrack->setText(i18n::tr("control-center.overview.media.nothing-playing"));
+        m_mediaArtist->setText(i18n::tr("control-center.overview.media.play-media-hint"));
+        m_mediaStatus->setText(i18n::tr("control-center.overview.media.idle"));
         m_mediaProgress->setText(" ");
         m_mediaProgress->setVisible(false);
         m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
@@ -551,9 +555,10 @@ void OverviewTab::sync(Renderer& renderer) {
         }
         m_loadedMediaArtUrl.clear();
       } else {
-        m_mediaTrack->setText(active->title.empty() ? "Unknown track" : active->title);
+        m_mediaTrack->setText(active->title.empty() ? i18n::tr("control-center.overview.media.unknown-track")
+                                                    : active->title);
         const std::string artists = joinedArtists(active->artists);
-        m_mediaArtist->setText(artists.empty() ? "Unknown artist" : artists);
+        m_mediaArtist->setText(artists.empty() ? i18n::tr("control-center.overview.media.unknown-artist") : artists);
         if (active->lengthUs > 0) {
           const std::int64_t positionSec = std::max<std::int64_t>(0, active->positionUs / 1000000);
           const std::int64_t lengthSec = std::max<std::int64_t>(1, active->lengthUs / 1000000);
@@ -586,10 +591,10 @@ void OverviewTab::sync(Renderer& renderer) {
           }
         }
         if (active->playbackStatus == "Playing") {
-          m_mediaStatus->setText("Playing");
+          m_mediaStatus->setText(i18n::tr("control-center.overview.media.playing"));
           m_mediaStatus->setColor(roleColor(ColorRole::Primary));
         } else if (active->playbackStatus == "Paused") {
-          m_mediaStatus->setText("Paused");
+          m_mediaStatus->setText(i18n::tr("control-center.overview.media.paused"));
           m_mediaStatus->setColor(roleColor(ColorRole::OnSurfaceVariant));
         } else {
           m_mediaStatus->setText(active->playbackStatus);
@@ -601,45 +606,53 @@ void OverviewTab::sync(Renderer& renderer) {
 
   if (m_powerLine != nullptr && m_powerSub != nullptr) {
     if (m_upower == nullptr) {
-      m_powerLine->setText("Power unavailable");
+      m_powerLine->setText(i18n::tr("control-center.overview.power.unavailable"));
       m_powerSub->setText(" ");
     } else {
       const auto& st = m_upower->state();
       if (!st.isPresent) {
-        m_powerLine->setText(st.onBattery ? "On battery" : "AC connected");
+        m_powerLine->setText(st.onBattery ? i18n::tr("control-center.overview.power.on-battery")
+                                          : i18n::tr("control-center.overview.power.ac-connected"));
       } else {
         m_powerLine->setText(std::format("{} · {:.0f}%", batteryStateLabel(st.state), st.percentage));
       }
       if (m_powerProfiles != nullptr && !m_powerProfiles->activeProfile().empty()) {
         std::string etaSuffix;
         if (st.isPresent && st.state == BatteryState::Discharging && st.timeToEmpty > 0) {
-          etaSuffix = " · " + formatDuration(std::chrono::seconds{st.timeToEmpty}) + " left";
+          etaSuffix = i18n::tr("control-center.overview.power.eta-left", "duration",
+                               formatDuration(std::chrono::seconds{st.timeToEmpty}));
         } else if (st.isPresent && st.state == BatteryState::Charging && st.timeToFull > 0) {
-          etaSuffix = " · " + formatDuration(std::chrono::seconds{st.timeToFull}) + " to full";
+          etaSuffix = i18n::tr("control-center.overview.power.eta-to-full", "duration",
+                               formatDuration(std::chrono::seconds{st.timeToFull}));
         }
-        m_powerSub->setText(std::format("Mode · {}{}", profileLabel(m_powerProfiles->activeProfile()), etaSuffix));
+        m_powerSub->setText(i18n::tr("control-center.overview.power.mode", "profile",
+                                     profileLabel(m_powerProfiles->activeProfile()), "eta", etaSuffix));
       } else {
         std::string etaSuffix;
         if (st.isPresent && st.state == BatteryState::Discharging && st.timeToEmpty > 0) {
-          etaSuffix = " · " + formatDuration(std::chrono::seconds{st.timeToEmpty}) + " left";
+          etaSuffix = i18n::tr("control-center.overview.power.eta-left", "duration",
+                               formatDuration(std::chrono::seconds{st.timeToEmpty}));
         } else if (st.isPresent && st.state == BatteryState::Charging && st.timeToFull > 0) {
-          etaSuffix = " · " + formatDuration(std::chrono::seconds{st.timeToFull}) + " to full";
+          etaSuffix = i18n::tr("control-center.overview.power.eta-to-full", "duration",
+                               formatDuration(std::chrono::seconds{st.timeToFull}));
         }
-        m_powerSub->setText(std::format("{}{}", st.onBattery ? "Battery power" : "Plugged in", etaSuffix));
+        m_powerSub->setText(st.onBattery ? i18n::tr("control-center.overview.power.battery-power", "eta", etaSuffix)
+                                         : i18n::tr("control-center.overview.power.plugged-in", "eta", etaSuffix));
       }
     }
   }
 
   if (m_audioLine != nullptr && m_audioSub != nullptr) {
     if (m_audio == nullptr) {
-      m_audioLine->setText("Audio unavailable");
+      m_audioLine->setText(i18n::tr("control-center.overview.audio.unavailable"));
       m_audioSub->setText(" ");
     } else if (const AudioNode* sink = m_audio->defaultSink(); sink != nullptr) {
       const int volumePct = static_cast<int>(std::lround(std::clamp(sink->volume, 0.0f, 1.5f) * 100.0f));
       m_audioLine->setText(sink->description.empty() ? sink->name : sink->description);
-      m_audioSub->setText(std::format("{}{}%", sink->muted ? "Muted · " : "Volume · ", volumePct));
+      m_audioSub->setText(sink->muted ? i18n::tr("control-center.overview.audio.muted-volume", "volume", volumePct)
+                                      : i18n::tr("control-center.overview.audio.volume", "volume", volumePct));
     } else {
-      m_audioLine->setText("No output device");
+      m_audioLine->setText(i18n::tr("control-center.overview.audio.no-output-device"));
       m_audioSub->setText(" ");
     }
   }

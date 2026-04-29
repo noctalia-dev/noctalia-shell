@@ -1,6 +1,7 @@
 #include "system/hardware_info.h"
 
 #include "compositors/compositor_detect.h"
+#include "i18n/i18n.h"
 
 #include <cstdlib>
 #include <filesystem>
@@ -23,7 +24,7 @@ namespace {
   std::string readCpuModel() {
     std::ifstream file{"/proc/cpuinfo"};
     if (!file.is_open()) {
-      return "Unknown CPU";
+      return i18n::tr("system.hardware.unknown-cpu");
     }
 
     std::string line;
@@ -35,7 +36,7 @@ namespace {
         }
       }
     }
-    return "Unknown CPU";
+    return i18n::tr("system.hardware.unknown-cpu");
   }
 
   std::string lookupPciIds(const std::string& vendorId, const std::string& deviceId) {
@@ -106,7 +107,7 @@ namespace {
 
     const fs::path drmRoot{"/sys/class/drm"};
     if (!fs::exists(drmRoot) || !fs::is_directory(drmRoot)) {
-      return "Unknown GPU";
+      return i18n::tr("system.hardware.unknown-gpu");
     }
 
     for (const auto& entry : fs::directory_iterator{drmRoot}) {
@@ -170,7 +171,7 @@ namespace {
       }
     }
 
-    return "Unknown GPU";
+    return i18n::tr("system.hardware.unknown-gpu");
   }
 
   std::string readDmiField(const char* path) { return readSysfsLine(path); }
@@ -189,13 +190,13 @@ namespace {
     if (!productName.empty()) {
       return productName;
     }
-    return "Unknown";
+    return i18n::tr("system.hardware.unknown");
   }
 
   std::string detectMemoryTotal() {
     std::ifstream file{"/proc/meminfo"};
     if (!file.is_open()) {
-      return "Unknown";
+      return i18n::tr("system.hardware.unknown");
     }
     std::string line;
     while (std::getline(file, line)) {
@@ -212,18 +213,18 @@ namespace {
       try {
         totalKb = static_cast<std::uint64_t>(std::stoull(kbText));
       } catch (...) {
-        return "Unknown";
+        return i18n::tr("system.hardware.unknown");
       }
       const double totalGb = static_cast<double>(totalKb) / (1024.0 * 1024.0);
       return std::format("{:.1f} GB", totalGb);
     }
-    return "Unknown";
+    return i18n::tr("system.hardware.unknown");
   }
 
   std::string detectDiskRootUsage() {
     struct statvfs sv{};
     if (::statvfs("/", &sv) != 0 || sv.f_blocks == 0 || sv.f_frsize == 0) {
-      return "Unknown";
+      return i18n::tr("system.hardware.unknown");
     }
     const double total = static_cast<double>(sv.f_blocks) * static_cast<double>(sv.f_frsize);
     const double avail = static_cast<double>(sv.f_bavail) * static_cast<double>(sv.f_frsize);
@@ -248,7 +249,7 @@ namespace {
         sessionDesktop != nullptr && sessionDesktop[0] != '\0') {
       return sessionDesktop;
     }
-    return "Unknown";
+    return i18n::tr("system.hardware.unknown");
   }
 
 } // namespace

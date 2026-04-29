@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "dbus/session_bus.h"
+#include "i18n/i18n.h"
 
 #include <algorithm>
 #include <cctype>
@@ -85,8 +86,6 @@ namespace {
   }
 
   std::vector<std::string> sanitize_actions(const std::vector<std::string>& actions) {
-    static constexpr std::string_view kFallbackActionLabel = "Action";
-
     std::vector<std::string> sanitized;
     sanitized.reserve(actions.size() - (actions.size() % 2));
 
@@ -99,7 +98,7 @@ namespace {
       }
 
       if (isBlankText(label)) {
-        label = kFallbackActionLabel;
+        label = i18n::tr("notifications.actions.fallback");
       }
 
       sanitized.push_back(std::move(actionKey));

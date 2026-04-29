@@ -1,5 +1,7 @@
 #include "ui/dialogs/file_dialog.h"
 
+#include "i18n/i18n.h"
+
 #include <utility>
 
 namespace {
@@ -12,13 +14,13 @@ namespace {
   std::string defaultTitle(FileDialogMode mode) {
     switch (mode) {
     case FileDialogMode::Open:
-      return "Open File";
+      return i18n::tr("ui.dialogs.file.title.open");
     case FileDialogMode::Save:
-      return "Save File";
+      return i18n::tr("ui.dialogs.file.title.save");
     case FileDialogMode::SelectFolder:
-      return "Select Folder";
+      return i18n::tr("ui.dialogs.file.title.select-folder");
     }
-    return "File Dialog";
+    return i18n::tr("ui.dialogs.file.title.default");
   }
 
 } // namespace

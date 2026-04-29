@@ -4,6 +4,7 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
+#include "i18n/i18n.h"
 #include "net/http_client.h"
 #include "net/uri.h"
 #include "notification/notification_manager.h"
@@ -55,7 +56,7 @@ namespace {
   constexpr float kActionGap = Style::spaceXs;
   constexpr float kActionRowGap = Style::spaceSm;
   constexpr int kMaxActionButtons = 2;
-  constexpr std::string_view kFallbackActionLabel = "Action";
+  std::string fallbackActionLabel() { return i18n::tr("notifications.actions.fallback"); }
 
   // Maps the raw DBus timeout value to a popup display duration.
   // Returns -1 to mean "persistent — never auto-dismiss".
@@ -180,7 +181,7 @@ namespace {
       const std::string& actionKey = actions[i];
       std::string actionLabel = actions[i + 1];
       if (isBlankText(actionLabel)) {
-        actionLabel = std::string{kFallbackActionLabel};
+        actionLabel = fallbackActionLabel();
       }
       if (actionKey.empty()) {
         continue;
@@ -1566,7 +1567,7 @@ InputArea* NotificationToast::buildCard(const PopupEntry& entry, Node** outCardC
       const std::string actionKey = entry.actions[i];
       std::string actionLabel = entry.actions[i + 1];
       if (isBlankText(actionLabel)) {
-        actionLabel = kFallbackActionLabel;
+        actionLabel = fallbackActionLabel();
       }
       if (actionKey.empty()) {
         continue;

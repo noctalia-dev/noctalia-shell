@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "dbus/mpris/mpris_art.h"
 #include "dbus/mpris/mpris_service.h"
+#include "i18n/i18n.h"
 #include "net/http_client.h"
 #include "pipewire/pipewire_spectrum.h"
 #include "render/core/renderer.h"
@@ -86,7 +87,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   nowHeader->setMinHeight(Style::controlHeightSm * scale);
 
   auto nowLabel = std::make_unique<Label>();
-  nowLabel->setText("Now Playing");
+  nowLabel->setText(i18n::tr("control-center.media.now-playing"));
   nowLabel->setBold(true);
   nowLabel->setFontSize(Style::fontSizeTitle * scale);
   nowLabel->setColor(roleColor(ColorRole::OnSurface));
@@ -141,7 +142,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   metadataStack->setGap(Style::spaceSm * scale);
 
   auto title = std::make_unique<Label>();
-  title->setText("Nothing playing");
+  title->setText(i18n::tr("control-center.media.nothing-playing"));
   title->setBold(true);
   title->setFontSize((Style::fontSizeTitle + Style::spaceXs) * scale);
   title->setColor(roleColor(ColorRole::OnSurface));
@@ -149,7 +150,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   metadataStack->addChild(std::move(title));
 
   auto artist = std::make_unique<Label>();
-  artist->setText("Start playback in an MPRIS app");
+  artist->setText(i18n::tr("control-center.media.start-playback"));
   artist->setFontSize(Style::fontSizeBody * scale);
   artist->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_trackArtist = artist.get();
@@ -313,7 +314,7 @@ std::unique_ptr<Flex> MediaTab::create() {
   m_visualizerColumn = visualizerColumn.get();
 
   auto visualizerLabel = std::make_unique<Label>();
-  visualizerLabel->setText("Spectrum");
+  visualizerLabel->setText(i18n::tr("control-center.media.spectrum"));
   visualizerLabel->setBold(true);
   visualizerLabel->setFontSize(Style::fontSizeTitle * scale);
   visualizerLabel->setColor(roleColor(ColorRole::OnSurface));
@@ -635,7 +636,11 @@ void MediaTab::refresh(Renderer& renderer) {
     playerBusNames.reserve(players.size());
     std::vector<ContextMenuControlEntry> entries;
     entries.reserve(players.size() + 1);
-    entries.push_back({.id = 0, .label = "Active player", .enabled = true, .separator = false, .hasSubmenu = false});
+    entries.push_back({.id = 0,
+                       .label = i18n::tr("control-center.media.active-player"),
+                       .enabled = true,
+                       .separator = false,
+                       .hasSubmenu = false});
 
     for (std::size_t i = 0; i < players.size(); ++i) {
       const auto& player = players[i];
@@ -787,8 +792,8 @@ void MediaTab::refresh(Renderer& renderer) {
   m_positionTrackId.clear();
   m_positionUs = 0;
   m_positionSampleAt = {};
-  m_trackTitle->setText("Nothing playing");
-  m_trackArtist->setText("Start playback in an MPRIS app");
+  m_trackTitle->setText(i18n::tr("control-center.media.nothing-playing"));
+  m_trackArtist->setText(i18n::tr("control-center.media.start-playback"));
   if (m_trackAlbum != nullptr) {
     m_trackAlbum->setText("");
     m_trackAlbum->setVisible(false);

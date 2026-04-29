@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "dbus/system_bus.h"
+#include "i18n/i18n.h"
 
 #include <algorithm>
 #include <map>
@@ -10,13 +11,13 @@
 
 std::string profileLabel(std::string_view profile) {
   if (profile == "power-saver") {
-    return "Power saver";
+    return i18n::tr("power.profiles.power-saver");
   }
   if (profile == "balanced") {
-    return "Balanced";
+    return i18n::tr("power.profiles.balanced");
   }
   if (profile == "performance") {
-    return "Performance";
+    return i18n::tr("power.profiles.performance");
   }
   return std::string(profile);
 }

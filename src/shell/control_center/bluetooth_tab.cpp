@@ -1,6 +1,7 @@
 #include "shell/control_center/bluetooth_tab.h"
 
 #include "core/ui_phase.h"
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
@@ -135,14 +136,16 @@ namespace {
       primary->setVariant(ButtonVariant::Default);
       switch (bucketFor(m_device)) {
       case DeviceBucket::Connected:
-        primary->setText("Disconnect");
+        primary->setText(i18n::tr("control-center.bluetooth.disconnect"));
         primary->setVariant(ButtonVariant::Outline);
         break;
       case DeviceBucket::Paired:
-        primary->setText(m_device.connecting ? "Connecting…" : "Connect");
+        primary->setText(m_device.connecting ? i18n::tr("control-center.bluetooth.connecting")
+                                             : i18n::tr("control-center.bluetooth.connect"));
         break;
       case DeviceBucket::Available:
-        primary->setText(m_device.connecting ? "Pairing…" : "Pair");
+        primary->setText(m_device.connecting ? i18n::tr("control-center.bluetooth.pairing")
+                                             : i18n::tr("control-center.bluetooth.pair"));
         break;
       }
       primary->setOnClick([this]() {
@@ -167,7 +170,7 @@ namespace {
       if (m_device.paired) {
         auto forget = std::make_unique<Button>();
         forget->setVariant(ButtonVariant::Ghost);
-        forget->setText("Forget");
+        forget->setText(i18n::tr("control-center.bluetooth.forget"));
         forget->setOnClick([this]() {
           if (m_service != nullptr) {
             m_service->forget(m_device.path);
@@ -235,7 +238,7 @@ std::unique_ptr<Flex> BluetoothTab::create() {
   m_pairingInputRow = pairingInputRow.get();
 
   auto pairingInput = std::make_unique<Input>();
-  pairingInput->setPlaceholder("Enter code");
+  pairingInput->setPlaceholder(i18n::tr("control-center.bluetooth.enter-code"));
   pairingInput->setFlexGrow(1.0f);
   pairingInput->setOnSubmit([this](const std::string& value) {
     if (m_agent == nullptr) {
@@ -265,7 +268,7 @@ std::unique_ptr<Flex> BluetoothTab::create() {
 
   auto accept = std::make_unique<Button>();
   accept->setVariant(ButtonVariant::Default);
-  accept->setText("Accept");
+  accept->setText(i18n::tr("control-center.bluetooth.accept"));
   accept->setOnClick([this]() {
     if (m_agent == nullptr) {
       return;
@@ -303,7 +306,7 @@ std::unique_ptr<Flex> BluetoothTab::create() {
 
   auto reject = std::make_unique<Button>();
   reject->setVariant(ButtonVariant::Ghost);
-  reject->setText("Reject");
+  reject->setText(i18n::tr("control-center.bluetooth.reject"));
   reject->setOnClick([this]() {
     if (m_agent != nullptr) {
       m_agent->rejectConfirm();
@@ -320,7 +323,7 @@ std::unique_ptr<Flex> BluetoothTab::create() {
   applySectionCardStyle(*listCard, scale);
   listCard->setFlexGrow(1.0f);
   m_listCard = listCard.get();
-  addTitle(*listCard, "Devices", scale);
+  addTitle(*listCard, i18n::tr("control-center.bluetooth.devices"), scale);
 
   auto listScroll = std::make_unique<ScrollView>();
   listScroll->setFlexGrow(1.0f);
@@ -349,7 +352,7 @@ std::unique_ptr<Flex> BluetoothTab::createHeaderActions() {
   row->setMinHeight(Style::controlHeightSm * scale);
 
   auto powerLabel = std::make_unique<Label>();
-  powerLabel->setText("Bluetooth");
+  powerLabel->setText(i18n::tr("control-center.bluetooth.bluetooth"));
   powerLabel->setFontSize(Style::fontSizeCaption * scale);
   powerLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
   row->addChild(std::move(powerLabel));
@@ -366,7 +369,7 @@ std::unique_ptr<Flex> BluetoothTab::createHeaderActions() {
   row->addChild(std::move(powerToggle));
 
   auto discoverLabel = std::make_unique<Label>();
-  discoverLabel->setText("Visible");
+  discoverLabel->setText(i18n::tr("control-center.bluetooth.visible"));
   discoverLabel->setFontSize(Style::fontSizeCaption * scale);
   discoverLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
   row->addChild(std::move(discoverLabel));
@@ -501,7 +504,7 @@ void BluetoothTab::syncPairingCard() {
   }
 
   if (m_pairingTitle != nullptr) {
-    m_pairingTitle->setText("Pair " + alias);
+    m_pairingTitle->setText(i18n::tr("control-center.bluetooth.pair-title", "device", alias));
   }
   const bool needsInput = req.kind == BluetoothPairingKind::PinCode || req.kind == BluetoothPairingKind::Passkey;
   const bool showsCode = req.kind == BluetoothPairingKind::Confirm ||
@@ -511,25 +514,25 @@ void BluetoothTab::syncPairingCard() {
   if (m_pairingDetail != nullptr) {
     switch (req.kind) {
     case BluetoothPairingKind::Confirm:
-      m_pairingDetail->setText("Confirm that this code matches the one shown on the device:");
+      m_pairingDetail->setText(i18n::tr("control-center.bluetooth.pairing-detail.confirm"));
       break;
     case BluetoothPairingKind::Authorize:
-      m_pairingDetail->setText("Accept the incoming pairing request?");
+      m_pairingDetail->setText(i18n::tr("control-center.bluetooth.pairing-detail.authorize"));
       break;
     case BluetoothPairingKind::AuthorizeService:
-      m_pairingDetail->setText("Allow access to service " + req.uuid + "?");
+      m_pairingDetail->setText(i18n::tr("control-center.bluetooth.pairing-detail.authorize-service", "uuid", req.uuid));
       break;
     case BluetoothPairingKind::DisplayPinCode:
-      m_pairingDetail->setText("Enter this PIN on the device:");
+      m_pairingDetail->setText(i18n::tr("control-center.bluetooth.pairing-detail.display-pin"));
       break;
     case BluetoothPairingKind::DisplayPasskey:
-      m_pairingDetail->setText("Enter this code on the device:");
+      m_pairingDetail->setText(i18n::tr("control-center.bluetooth.pairing-detail.display-passkey"));
       break;
     case BluetoothPairingKind::PinCode:
-      m_pairingDetail->setText("Enter the PIN shown on the device:");
+      m_pairingDetail->setText(i18n::tr("control-center.bluetooth.pairing-detail.pin-code"));
       break;
     case BluetoothPairingKind::Passkey:
-      m_pairingDetail->setText("Enter the passkey shown on the device:");
+      m_pairingDetail->setText(i18n::tr("control-center.bluetooth.pairing-detail.passkey"));
       break;
     case BluetoothPairingKind::None:
       break;
@@ -605,7 +608,7 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
 
   if (m_service == nullptr) {
     auto empty = std::make_unique<Label>();
-    empty->setText("Bluetooth service unavailable");
+    empty->setText(i18n::tr("control-center.bluetooth.unavailable"));
     empty->setCaptionStyle();
     empty->setFontSize(Style::fontSizeCaption);
     empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
@@ -633,8 +636,8 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
 
   if (devices.empty()) {
     auto empty = std::make_unique<Label>();
-    empty->setText(m_service->state().powered ? "No devices found. Start scanning to discover nearby Bluetooth devices."
-                                              : "Bluetooth is off");
+    empty->setText(m_service->state().powered ? i18n::tr("control-center.bluetooth.no-devices")
+                                              : i18n::tr("control-center.bluetooth.off"));
     empty->setCaptionStyle();
     empty->setFontSize(Style::fontSizeCaption);
     empty->setColor(roleColor(ColorRole::OnSurfaceVariant));
@@ -648,16 +651,16 @@ void BluetoothTab::rebuildDeviceList(Renderer& renderer) {
   for (const auto& device : devices) {
     const auto bucket = bucketFor(device);
     if (first || bucket != currentBucket) {
-      const char* sectionText = "";
+      std::string sectionText;
       switch (bucket) {
       case DeviceBucket::Connected:
-        sectionText = "Connected";
+        sectionText = i18n::tr("control-center.bluetooth.sections.connected");
         break;
       case DeviceBucket::Paired:
-        sectionText = "Paired";
+        sectionText = i18n::tr("control-center.bluetooth.sections.paired");
         break;
       case DeviceBucket::Available:
-        sectionText = "Available";
+        sectionText = i18n::tr("control-center.bluetooth.sections.available");
         break;
       }
       auto header = std::make_unique<Label>();

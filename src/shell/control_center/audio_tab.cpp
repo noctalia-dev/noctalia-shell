@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/ui_phase.h"
+#include "i18n/i18n.h"
 #include "pipewire/pipewire_service.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
@@ -239,8 +240,8 @@ std::unique_ptr<Flex> AudioTab::create() {
   applySectionCardStyle(*outputCard, scale);
   outputCard->setFlexGrow(1.0f);
   m_outputCard = outputCard.get();
-  addTitle(*outputCard, "Outputs", scale);
-  addSubtitle(*outputCard, "Default playback device", scale);
+  addTitle(*outputCard, i18n::tr("control-center.audio.outputs"), scale);
+  addSubtitle(*outputCard, i18n::tr("control-center.audio.default-playback-device"), scale);
 
   auto outputScroll = std::make_unique<ScrollView>();
   outputScroll->setFlexGrow(1.0f);
@@ -261,8 +262,8 @@ std::unique_ptr<Flex> AudioTab::create() {
   applySectionCardStyle(*inputCard, scale);
   inputCard->setFlexGrow(1.0f);
   m_inputCard = inputCard.get();
-  addTitle(*inputCard, "Inputs", scale);
-  addSubtitle(*inputCard, "Default recording device", scale);
+  addTitle(*inputCard, i18n::tr("control-center.audio.inputs"), scale);
+  addSubtitle(*inputCard, i18n::tr("control-center.audio.default-recording-device"), scale);
 
   auto inputScroll = std::make_unique<ScrollView>();
   inputScroll->setFlexGrow(1.0f);
@@ -292,10 +293,10 @@ std::unique_ptr<Flex> AudioTab::create() {
   applySectionCardStyle(*outputVolumeCard, scale);
   outputVolumeCard->setFlexGrow(1.0f);
   m_outputVolumeCard = outputVolumeCard.get();
-  addTitle(*outputVolumeCard, "Output Volume", scale);
+  addTitle(*outputVolumeCard, i18n::tr("control-center.audio.output-volume"), scale);
 
   auto outputDeviceLabel = std::make_unique<Label>();
-  outputDeviceLabel->setText("No output device selected");
+  outputDeviceLabel->setText(i18n::tr("control-center.audio.no-output-selected"));
   outputDeviceLabel->setCaptionStyle();
   outputDeviceLabel->setFontSize(Style::fontSizeCaption * scale);
   outputDeviceLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
@@ -367,10 +368,10 @@ std::unique_ptr<Flex> AudioTab::create() {
   applySectionCardStyle(*inputVolumeCard, scale);
   inputVolumeCard->setFlexGrow(1.0f);
   m_inputVolumeCard = inputVolumeCard.get();
-  addTitle(*inputVolumeCard, "Input Volume", scale);
+  addTitle(*inputVolumeCard, i18n::tr("control-center.audio.input-volume"), scale);
 
   auto inputDeviceLabel = std::make_unique<Label>();
-  inputDeviceLabel->setText("No input device selected");
+  inputDeviceLabel->setText(i18n::tr("control-center.audio.no-input-selected"));
   inputDeviceLabel->setCaptionStyle();
   inputDeviceLabel->setFontSize(Style::fontSizeCaption * scale);
   inputDeviceLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
@@ -489,11 +490,11 @@ void AudioTab::doUpdate(Renderer& renderer) {
 
   if (m_outputDeviceLabel != nullptr) {
     m_outputDeviceLabel->setText(sink != nullptr ? (!sink->description.empty() ? sink->description : sink->name)
-                                                 : "No output device selected");
+                                                 : i18n::tr("control-center.audio.no-output-selected"));
   }
   if (m_inputDeviceLabel != nullptr) {
     m_inputDeviceLabel->setText(source != nullptr ? (!source->description.empty() ? source->description : source->name)
-                                                  : "No input device selected");
+                                                  : i18n::tr("control-center.audio.no-input-selected"));
   }
 
   const float sinkVolume = sink != nullptr ? sink->volume : 0.0f;
@@ -612,8 +613,10 @@ void AudioTab::rebuildLists(Renderer& renderer) {
     while (!m_inputList->children().empty()) {
       m_inputList->removeChild(m_inputList->children().front().get());
     }
-    addEmptyState(*m_outputList, "Audio unavailable", "PipeWire is not active.", scale);
-    addEmptyState(*m_inputList, "Audio unavailable", "PipeWire is not active.", scale);
+    addEmptyState(*m_outputList, i18n::tr("control-center.audio.unavailable-title"),
+                  i18n::tr("control-center.audio.unavailable-body"), scale);
+    addEmptyState(*m_inputList, i18n::tr("control-center.audio.unavailable-title"),
+                  i18n::tr("control-center.audio.unavailable-body"), scale);
     m_lastOutputWidth = outputWidth;
     m_lastInputWidth = inputWidth;
     m_lastOutputListKey = "unavailable";
@@ -638,7 +641,8 @@ void AudioTab::rebuildLists(Renderer& renderer) {
   }
 
   if (state.sinks.empty()) {
-    addEmptyState(*m_outputList, "No output devices", "No playback sinks are currently available.", scale);
+    addEmptyState(*m_outputList, i18n::tr("control-center.audio.no-output-devices"),
+                  i18n::tr("control-center.audio.no-output-devices-body"), scale);
   } else {
     for (const auto& sink : sortedDevices(state.sinks)) {
       auto row = std::make_unique<AudioDeviceRow>([this, id = sink.id]() {
@@ -653,7 +657,8 @@ void AudioTab::rebuildLists(Renderer& renderer) {
   }
 
   if (state.sources.empty()) {
-    addEmptyState(*m_inputList, "No input devices", "No recording sources are currently available.", scale);
+    addEmptyState(*m_inputList, i18n::tr("control-center.audio.no-input-devices"),
+                  i18n::tr("control-center.audio.no-input-devices-body"), scale);
   } else {
     for (const auto& source : sortedDevices(state.sources)) {
       auto row = std::make_unique<AudioDeviceRow>([this, id = source.id]() {

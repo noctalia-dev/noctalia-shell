@@ -1,5 +1,7 @@
 #include "time/time_format.h"
 
+#include "i18n/i18n.h"
+
 #include <chrono>
 #include <cstdint>
 #include <ctime>
@@ -48,7 +50,7 @@ std::string formatClockTime(std::int64_t seconds) {
 
 std::string formatFileTime(const std::filesystem::file_time_type& time) {
   if (time == std::filesystem::file_time_type{}) {
-    return "Unknown";
+    return i18n::tr("time.file.unknown");
   }
   const auto systemNow = std::chrono::system_clock::now();
   const auto fileNow = std::filesystem::file_time_type::clock::now();
@@ -58,7 +60,7 @@ std::string formatFileTime(const std::filesystem::file_time_type& time) {
   localtime_r(&value, &tm);
   char buf[32];
   if (std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M", &tm) == 0) {
-    return "Unknown";
+    return i18n::tr("time.file.unknown");
   }
   return buf;
 }
@@ -68,19 +70,19 @@ std::string formatTimeAgo(std::chrono::system_clock::time_point tp) {
   const auto secs = duration_cast<seconds>(system_clock::now() - tp).count();
 
   if (secs < 60) {
-    return "just now";
+    return i18n::tr("time.relative.just-now");
   }
   if (secs < 3600) {
     const long mins = secs / 60;
-    return std::to_string(mins) + " min ago";
+    return i18n::trp("time.relative.minutes-ago", mins);
   }
   if (secs < 86400) {
     const long hrs = secs / 3600;
-    return std::to_string(hrs) + " hr ago";
+    return i18n::trp("time.relative.hours-ago", hrs);
   }
   if (secs < 7 * 86400) {
     const long days = secs / 86400;
-    return std::to_string(days) + (days == 1 ? " day ago" : " days ago");
+    return i18n::trp("time.relative.days-ago", days);
   }
   const std::time_t rawTime = system_clock::to_time_t(tp);
   std::tm localTime{};
@@ -98,13 +100,13 @@ std::string formatDuration(std::chrono::seconds duration) {
   rem %= 3600;
   const std::uint64_t minutes = rem / 60;
   if (days > 0) {
-    return std::format("{}d {}h {}m", days, hours, minutes);
+    return i18n::tr("time.duration.days-hours-minutes", "days", days, "hours", hours, "minutes", minutes);
   }
   if (hours > 0) {
-    return std::format("{}h {}m", hours, minutes);
+    return i18n::tr("time.duration.hours-minutes", "hours", hours, "minutes", minutes);
   }
   if (minutes > 0) {
-    return std::format("{}m", minutes);
+    return i18n::tr("time.duration.minutes", "minutes", minutes);
   }
-  return "<1m";
+  return i18n::tr("time.duration.less-than-minute");
 }

@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "dbus/system_bus.h"
+#include "i18n/i18n.h"
 
 #include <array>
 #include <csignal>
@@ -161,7 +162,7 @@ namespace {
 
   std::string extractPromptText(const std::string& line, const std::string& token) {
     if (line.size() <= token.size()) {
-      return "Authentication required";
+      return i18n::tr("auth.polkit.default-message");
     }
     std::string prompt = line.substr(token.size());
     if (!prompt.empty() && prompt.front() == ' ') {
@@ -423,7 +424,7 @@ struct PolkitAgent::Impl {
     responseRequired = false;
     responseVisible = false;
     inputPrompt.clear();
-    supplementaryMessage = "Invalid password";
+    supplementaryMessage = i18n::tr("auth.polkit.invalid-password");
     supplementaryError = true;
     emitStateChanged();
 
@@ -589,7 +590,7 @@ void PolkitAgent::submitResponse(const std::string& response) {
   }
   m_impl->responseRequired = false;
   m_impl->inputPrompt.clear();
-  m_impl->supplementaryMessage = "Authenticating...";
+  m_impl->supplementaryMessage = i18n::tr("auth.polkit.authenticating");
   m_impl->supplementaryError = false;
   m_impl->emitStateChanged();
 }

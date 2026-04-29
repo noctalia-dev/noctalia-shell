@@ -1,5 +1,6 @@
 #include "shell/bar/widgets/network_widget.h"
 
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
@@ -34,7 +35,7 @@ namespace {
       return s.ssid;
     }
     if (s.kind == NetworkConnectivity::Wired && s.connected) {
-      return s.interfaceName.empty() ? std::string("Wired") : s.interfaceName;
+      return s.interfaceName.empty() ? i18n::tr("bar.widgets.network.wired") : s.interfaceName;
     }
     return {};
   }

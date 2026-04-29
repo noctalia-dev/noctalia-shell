@@ -5,6 +5,7 @@
 #include "core/log.h"
 #include "core/ui_phase.h"
 #include "dbus/tray/tray_service.h"
+#include "i18n/i18n.h"
 #include "render/render_context.h"
 #include "ui/controls/context_menu.h"
 #include "ui/style.h"
@@ -367,7 +368,7 @@ void TrayMenu::refreshEntries() {
   if (m_entries.empty()) {
     m_entries.push_back(TrayMenuEntry{
         .id = -1,
-        .label = "No menu items...",
+        .label = i18n::tr("tray.menu.empty"),
         .enabled = false,
         .visible = true,
         .separator = false,

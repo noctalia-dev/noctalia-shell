@@ -1,6 +1,7 @@
 #include "shell/control_center/calendar_tab.h"
 
 #include "core/ui_phase.h"
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/control_center/tab.h"
@@ -157,7 +158,7 @@ std::unique_ptr<Flex> CalendarTab::create() {
   monthWrap->addChild(std::move(month));
 
   auto monthSub = std::make_unique<Label>();
-  monthSub->setText("Today");
+  monthSub->setText(i18n::tr("control-center.calendar.today"));
   monthSub->setCaptionStyle();
   monthSub->setFontSize(Style::fontSizeCaption * scale);
   monthSub->setColor(roleColor(ColorRole::OnSurfaceVariant));
@@ -202,14 +203,14 @@ std::unique_ptr<Flex> CalendarTab::create() {
   tasksCard->setFlexGrow(2.0f);
 
   auto tasksTitle = std::make_unique<Label>();
-  tasksTitle->setText("Tasks");
+  tasksTitle->setText(i18n::tr("control-center.calendar.tasks"));
   tasksTitle->setBold(true);
   tasksTitle->setFontSize(Style::fontSizeTitle * scale);
   tasksTitle->setColor(roleColor(ColorRole::OnSurface));
   tasksCard->addChild(std::move(tasksTitle));
 
   auto tasksBody = std::make_unique<Label>();
-  tasksBody->setText("No tasks yet.");
+  tasksBody->setText(i18n::tr("control-center.calendar.no-tasks"));
   tasksBody->setFontSize(Style::fontSizeBody * scale);
   tasksBody->setColor(roleColor(ColorRole::OnSurfaceVariant));
   tasksBody->setMaxLines(3);

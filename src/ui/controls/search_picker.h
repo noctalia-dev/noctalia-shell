@@ -58,7 +58,7 @@ private:
   std::vector<std::size_t> m_visible;
   std::vector<RowView> m_rows;
   std::string m_filter;
-  std::string m_emptyText = "No results";
+  std::string m_emptyText;
   std::string m_selectedValue;
   std::size_t m_highlightedVisibleIndex = 0;
   std::function<void(const SearchPickerOption&)> m_onActivated;

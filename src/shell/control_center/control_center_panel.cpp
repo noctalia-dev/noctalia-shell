@@ -1,5 +1,6 @@
 #include "shell/control_center/control_center_panel.h"
 
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "shell/panel/panel_manager.h"
 #include "ui/controls/button.h"
@@ -59,7 +60,7 @@ void ControlCenterPanel::create() {
 
   for (const auto& tab : kTabs) {
     auto button = std::make_unique<Button>();
-    button->setText(tab.title);
+    button->setText(i18n::tr(tab.titleKey));
     button->setGlyph(tab.glyph);
     button->setGlyphSize(21.0f * scale);
     button->setGap(Style::spaceSm * scale);
@@ -98,7 +99,7 @@ void ControlCenterPanel::create() {
   m_contentHeader = header.get();
 
   auto title = std::make_unique<Label>();
-  title->setText("Overview");
+  title->setText(i18n::tr("control-center.tabs.overview"));
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle * scale);
   title->setColor(roleColor(ColorRole::Primary));
@@ -260,7 +261,7 @@ void ControlCenterPanel::selectTab(TabId tab) {
       m_tabButtons[idx]->setVariant(meta.id == tab ? ButtonVariant::TabActive : ButtonVariant::Tab);
     }
     if (meta.id == tab && m_contentTitle != nullptr) {
-      m_contentTitle->setText(meta.title);
+      m_contentTitle->setText(i18n::tr(meta.titleKey));
     }
     if (m_tabHeaderActions[idx] != nullptr) {
       m_tabHeaderActions[idx]->setVisible(meta.id == tab);

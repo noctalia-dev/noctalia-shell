@@ -1,6 +1,7 @@
 #include "system/weather_service.h"
 
 #include "core/log.h"
+#include "i18n/i18n.h"
 #include "json.hpp"
 #include "net/http_client.h"
 
@@ -316,70 +317,70 @@ std::string WeatherService::glyphForCode(std::int32_t code, bool isDay) {
 
 std::string WeatherService::shortDescriptionForCode(std::int32_t code) {
   if (code == 0) {
-    return "Clear";
+    return i18n::tr("weather.conditions.short.clear");
   }
   if (code == 1) {
-    return "Mostly clear";
+    return i18n::tr("weather.conditions.short.mostly-clear");
   }
   if (code == 2) {
-    return "Cloudy";
+    return i18n::tr("weather.conditions.short.cloudy");
   }
   if (code == 3) {
-    return "Overcast";
+    return i18n::tr("weather.conditions.short.overcast");
   }
   if (code == 45 || code == 48) {
-    return "Fog";
+    return i18n::tr("weather.conditions.short.fog");
   }
   if (code >= 51 && code <= 67) {
-    return "Drizzle";
+    return i18n::tr("weather.conditions.short.drizzle");
   }
   if (code >= 71 && code <= 77) {
-    return "Snow";
+    return i18n::tr("weather.conditions.short.snow");
   }
   if (code >= 80 && code <= 82) {
-    return "Showers";
+    return i18n::tr("weather.conditions.short.showers");
   }
   if (code >= 85 && code <= 86) {
-    return "Snow showers";
+    return i18n::tr("weather.conditions.short.snow-showers");
   }
   if (code >= 95 && code <= 99) {
-    return "Storm";
+    return i18n::tr("weather.conditions.short.storm");
   }
-  return "Weather";
+  return i18n::tr("weather.conditions.short.weather");
 }
 
 std::string WeatherService::descriptionForCode(std::int32_t code) {
   if (code == 0) {
-    return "Clear sky";
+    return i18n::tr("weather.conditions.full.clear-sky");
   }
   if (code == 1) {
-    return "Mainly clear";
+    return i18n::tr("weather.conditions.full.mainly-clear");
   }
   if (code == 2) {
-    return "Partly cloudy";
+    return i18n::tr("weather.conditions.full.partly-cloudy");
   }
   if (code == 3) {
-    return "Overcast";
+    return i18n::tr("weather.conditions.full.overcast");
   }
   if (code == 45 || code == 48) {
-    return "Fog";
+    return i18n::tr("weather.conditions.full.fog");
   }
   if (code >= 51 && code <= 67) {
-    return "Drizzle";
+    return i18n::tr("weather.conditions.full.drizzle");
   }
   if (code >= 71 && code <= 77) {
-    return "Snow";
+    return i18n::tr("weather.conditions.full.snow");
   }
   if (code >= 80 && code <= 82) {
-    return "Rain showers";
+    return i18n::tr("weather.conditions.full.rain-showers");
   }
   if (code >= 85 && code <= 86) {
-    return "Snow showers";
+    return i18n::tr("weather.conditions.full.snow-showers");
   }
   if (code >= 95 && code <= 99) {
-    return "Thunderstorm";
+    return i18n::tr("weather.conditions.full.thunderstorm");
   }
-  return "Unknown";
+  return i18n::tr("weather.conditions.full.unknown");
 }
 
 void WeatherService::onConfigReload() {
@@ -463,7 +464,8 @@ void WeatherService::handleLocationResponse(const std::filesystem::path& path, b
   m_requestKind = RequestKind::None;
   if (!success) {
     m_loading = false;
-    m_error = autoLocated ? "IP geolocation failed" : "Address lookup failed";
+    m_error = autoLocated ? i18n::tr("weather.errors.ip-geolocation-failed")
+                          : i18n::tr("weather.errors.address-lookup-failed");
     scheduleRetryAfterFailure();
     dropPastForecastDays(m_snapshot);
     notifyChanged();
@@ -484,14 +486,14 @@ void WeatherService::handleLocationResponse(const std::filesystem::path& path, b
     m_resolvedAddress = m_activeConfig.address;
     m_resolvedLocationName = compactLocationLabel(name, country);
     if (m_resolvedLocationName.empty()) {
-      m_resolvedLocationName = autoLocated ? "Current location" : m_activeConfig.address;
+      m_resolvedLocationName = autoLocated ? i18n::tr("weather.locations.current") : m_activeConfig.address;
     }
 
     kLog.info("location resolved: {} ({}, {})", m_resolvedLocationName, m_resolvedLatitude, m_resolvedLongitude);
     startWeatherFetch();
   } catch (const std::exception& e) {
     m_loading = false;
-    m_error = autoLocated ? "Could not parse IP geolocation response" : "Could not parse geocode response";
+    m_error = autoLocated ? i18n::tr("weather.errors.parse-ip-geolocation") : i18n::tr("weather.errors.parse-geocode");
     scheduleRetryAfterFailure();
     kLog.warn("{}: {}", m_error, e.what());
     notifyChanged();
@@ -505,7 +507,7 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
   m_requestKind = RequestKind::None;
   m_loading = false;
   if (!success) {
-    m_error = "Weather fetch failed";
+    m_error = i18n::tr("weather.errors.fetch-failed");
     scheduleRetryAfterFailure();
     dropPastForecastDays(m_snapshot);
     notifyChanged();
@@ -527,7 +529,7 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
     WeatherSnapshot next;
     next.valid = true;
     next.locationName = m_resolvedLocationName;
-    next.sourceLabel = m_activeConfig.autoLocate ? "Auto" : "Address";
+    next.sourceLabel = m_activeConfig.autoLocate ? i18n::tr("weather.source.auto") : i18n::tr("weather.source.address");
     next.latitude = m_resolvedLatitude;
     next.longitude = m_resolvedLongitude;
     next.generationTimeMs = readOptionalNumber(json, "generationtime_ms");
@@ -585,7 +587,7 @@ void WeatherService::handleWeatherResponse(const std::filesystem::path& path, bo
     saveCache();
     notifyChanged();
   } catch (const std::exception& e) {
-    m_error = "Could not parse weather response";
+    m_error = i18n::tr("weather.errors.parse-weather");
     scheduleRetryAfterFailure();
     kLog.warn("{}: {}", m_error, e.what());
     notifyChanged();

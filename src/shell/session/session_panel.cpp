@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/log.h"
 #include "core/process.h"
+#include "i18n/i18n.h"
 #include "notification/notifications.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
@@ -25,16 +26,16 @@ namespace {
 
   struct ActionSpec {
     SessionPanel::ActionId id;
-    const char* label;
+    const char* labelKey;
     const char* glyph;
     ButtonVariant variant;
   };
 
   constexpr std::array<ActionSpec, 4> kActionSpecs{{
-      {SessionPanel::ActionId::Lock, "Lock", "lock", ButtonVariant::Outline},
-      {SessionPanel::ActionId::Logout, "Log Out", "logout", ButtonVariant::Outline},
-      {SessionPanel::ActionId::Reboot, "Reboot", "reboot", ButtonVariant::Outline},
-      {SessionPanel::ActionId::Shutdown, "Shut Down", "shutdown", ButtonVariant::Destructive},
+      {SessionPanel::ActionId::Lock, "session.actions.lock", "lock", ButtonVariant::Outline},
+      {SessionPanel::ActionId::Logout, "session.actions.logout", "logout", ButtonVariant::Outline},
+      {SessionPanel::ActionId::Reboot, "session.actions.reboot", "reboot", ButtonVariant::Outline},
+      {SessionPanel::ActionId::Shutdown, "session.actions.shutdown", "shutdown", ButtonVariant::Destructive},
   }};
 
   bool doLogout() {
@@ -100,7 +101,7 @@ Button* SessionPanel::createActionButton(ActionId id, float scale) {
   }
 
   auto button = std::make_unique<Button>();
-  button->setText(spec->label);
+  button->setText(i18n::tr(spec->labelKey));
   button->setGlyph(spec->glyph);
   button->setVariant(spec->variant);
   button->setDirection(FlexDirection::Vertical);
@@ -169,7 +170,7 @@ void SessionPanel::invokeAction(ActionId id) {
       m_actionHooks.onLogout();
     }
     if (!doLogout()) {
-      notify::error("Noctalia", "Logout unavailable", "Could not determine how to terminate this session.");
+      notify::error("Noctalia", i18n::tr("session.errors.logout-title"), i18n::tr("session.errors.logout-body"));
     }
     break;
   case ActionId::Reboot:
@@ -177,7 +178,7 @@ void SessionPanel::invokeAction(ActionId id) {
       m_actionHooks.onReboot();
     }
     if (!doReboot()) {
-      notify::error("Noctalia", "Reboot failed", "Could not launch systemctl reboot.");
+      notify::error("Noctalia", i18n::tr("session.errors.reboot-title"), i18n::tr("session.errors.reboot-body"));
     }
     break;
   case ActionId::Shutdown:
@@ -185,12 +186,12 @@ void SessionPanel::invokeAction(ActionId id) {
       m_actionHooks.onShutdown();
     }
     if (!doShutdown()) {
-      notify::error("Noctalia", "Shutdown failed", "Could not launch a shutdown command.");
+      notify::error("Noctalia", i18n::tr("session.errors.shutdown-title"), i18n::tr("session.errors.shutdown-body"));
     }
     break;
   case ActionId::Lock:
     if (auto* ls = LockScreen::instance(); ls == nullptr || !ls->lock()) {
-      notify::error("Noctalia", "Lock unavailable", "The session lock protocol is not available.");
+      notify::error("Noctalia", i18n::tr("session.errors.lock-title"), i18n::tr("session.errors.lock-body"));
     }
     break;
   case ActionId::Count:

@@ -1,6 +1,7 @@
 #include "system/internal_app_metadata.h"
 
 #include "core/resource_paths.h"
+#include "i18n/i18n.h"
 
 namespace internal_apps {
 
@@ -41,7 +42,9 @@ namespace internal_apps {
       return std::nullopt;
     }
     return AppMetadata{
-        .displayName = std::string(app->displayName),
+        .displayName = app->appId == std::string_view("dev.noctalia.Noctalia.Settings")
+                           ? i18n::tr("internal-apps.settings.display-name")
+                           : std::string(app->displayName),
         .iconPath = paths::assetPath(app->iconAssetPath).string(),
     };
   }

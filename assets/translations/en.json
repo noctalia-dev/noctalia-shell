@@ -56,6 +56,447 @@
     "wallpaper": "Wallpaper",
     "wallpaper-scheme": "Wallpaper Scheme"
   },
+  "launcher": {
+    "search-placeholder": "Search applications...",
+    "empty": {
+      "type-to-search": "Type to search...",
+      "no-results": "No results found"
+    }
+  },
+  "wallpaper": {
+    "panel": {
+      "title": "Wallpaper",
+      "filter-placeholder": "Filter...",
+      "flatten": "Flatten",
+      "all-monitors": "ALL",
+      "no-directory-configured": "No directory configured",
+      "color-title": "Wallpaper color"
+    }
+  },
+  "weather": {
+    "locations": {
+      "current": "Current location"
+    },
+    "source": {
+      "auto": "Auto",
+      "address": "Address"
+    },
+    "conditions": {
+      "short": {
+        "clear": "Clear",
+        "mostly-clear": "Mostly clear",
+        "cloudy": "Cloudy",
+        "overcast": "Overcast",
+        "fog": "Fog",
+        "drizzle": "Drizzle",
+        "snow": "Snow",
+        "showers": "Showers",
+        "snow-showers": "Snow showers",
+        "storm": "Storm",
+        "weather": "Weather"
+      },
+      "full": {
+        "clear-sky": "Clear sky",
+        "mainly-clear": "Mainly clear",
+        "partly-cloudy": "Partly cloudy",
+        "overcast": "Overcast",
+        "fog": "Fog",
+        "drizzle": "Drizzle",
+        "snow": "Snow",
+        "rain-showers": "Rain showers",
+        "snow-showers": "Snow showers",
+        "thunderstorm": "Thunderstorm",
+        "unknown": "Unknown"
+      }
+    },
+    "errors": {
+      "ip-geolocation-failed": "IP geolocation failed",
+      "address-lookup-failed": "Address lookup failed",
+      "parse-ip-geolocation": "Could not parse IP geolocation response",
+      "parse-geocode": "Could not parse geocode response",
+      "fetch-failed": "Weather fetch failed",
+      "parse-weather": "Could not parse weather response"
+    }
+  },
+  "time": {
+    "file": {
+      "unknown": "Unknown"
+    },
+    "relative": {
+      "just-now": "just now",
+      "minutes-ago": "{count} min ago",
+      "minutes-ago-plural": "{count} min ago",
+      "hours-ago": "{count} hr ago",
+      "hours-ago-plural": "{count} hr ago",
+      "days-ago": "{count} day ago",
+      "days-ago-plural": "{count} days ago"
+    },
+    "duration": {
+      "days-hours-minutes": "{days}d {hours}h {minutes}m",
+      "hours-minutes": "{hours}h {minutes}m",
+      "minutes": "{minutes}m",
+      "less-than-minute": "<1m"
+    }
+  },
+  "control-center": {
+    "tabs": {
+      "overview": "Overview",
+      "media": "Media",
+      "audio": "Audio",
+      "display": "Display",
+      "system": "System",
+      "network": "Network",
+      "bluetooth": "Bluetooth",
+      "weather": "Weather",
+      "calendar": "Calendar",
+      "notifications": "Notifications"
+    },
+    "overview": {
+      "sections": {
+        "today": "Today",
+        "now-playing": "Now playing",
+        "power": "Power",
+        "audio": "Audio"
+      },
+      "user-facts": "{user}@{host}\nUptime - {uptime}\nNoctalia {version}",
+      "unknown": "unknown",
+      "weather": {
+        "unavailable": "Weather unavailable",
+        "disabled": "Weather is disabled in config.",
+        "configure-location": "Add [weather].address or enable auto_locate.",
+        "fetching": "Fetching forecast...",
+        "data-unavailable": "Weather data unavailable."
+      },
+      "media": {
+        "no-active-player": "No active player",
+        "idle": "Idle",
+        "playback-unavailable": "Playback unavailable",
+        "service-unavailable": "Media service unavailable",
+        "unavailable": "Unavailable",
+        "nothing-playing": "Nothing playing",
+        "play-media-hint": "Play media to see details.",
+        "unknown-track": "Unknown track",
+        "unknown-artist": "Unknown artist",
+        "playing": "Playing",
+        "paused": "Paused"
+      },
+      "power": {
+        "unavailable": "Power unavailable",
+        "on-battery": "On battery",
+        "ac-connected": "AC connected",
+        "mode": "Mode - {profile}{eta}",
+        "battery-power": "Battery power{eta}",
+        "plugged-in": "Plugged in{eta}",
+        "eta-left": " - {duration} left",
+        "eta-to-full": " - {duration} to full"
+      },
+      "audio": {
+        "unavailable": "Audio unavailable",
+        "no-output-device": "No output device",
+        "volume": "Volume - {volume}%",
+        "muted-volume": "Muted - {volume}%"
+      }
+    },
+    "network": {
+      "current-connection": "Current connection",
+      "available-networks": "Available networks",
+      "wired-connection": "Wired connection",
+      "not-connected": "Not connected",
+      "wifi-on": "Wi-Fi is on",
+      "wifi-off": "Wi-Fi is off",
+      "forget": "Forget",
+      "disconnect": "Disconnect",
+      "password": "Password",
+      "connect": "Connect",
+      "wifi": "Wi-Fi",
+      "password-prompt": "Enter password",
+      "password-prompt-for": "Enter password for {ssid}",
+      "unavailable-title": "NetworkManager unavailable",
+      "unavailable-detail": "Install and enable NetworkManager to manage networks from here.",
+      "no-networks": "No networks in range"
+    },
+    "bluetooth": {
+      "devices": "Devices",
+      "bluetooth": "Bluetooth",
+      "visible": "Visible",
+      "connect": "Connect",
+      "connecting": "Connecting...",
+      "disconnect": "Disconnect",
+      "pair": "Pair",
+      "pairing": "Pairing...",
+      "forget": "Forget",
+      "enter-code": "Enter code",
+      "accept": "Accept",
+      "reject": "Reject",
+      "pair-title": "Pair {device}",
+      "unknown-device": "Unknown device",
+      "unavailable": "Bluetooth service unavailable",
+      "off": "Bluetooth is off",
+      "no-devices": "No devices found. Start scanning to discover nearby Bluetooth devices.",
+      "sections": {
+        "connected": "Connected",
+        "paired": "Paired",
+        "available": "Available"
+      },
+      "pairing-detail": {
+        "confirm": "Confirm that this code matches the one shown on the device:",
+        "authorize": "Accept the incoming pairing request?",
+        "authorize-service": "Allow access to service {uuid}?",
+        "display-pin": "Enter this PIN on the device:",
+        "display-passkey": "Enter this code on the device:",
+        "pin-code": "Enter the PIN shown on the device:",
+        "passkey": "Enter the passkey shown on the device:"
+      }
+    },
+    "weather": {
+      "waiting": "Waiting for weather data",
+      "disabled": "Enable [weather] in config.toml",
+      "location-unavailable": "Location unavailable",
+      "configure-location": "Set [weather].address or enable auto_locate",
+      "fetching": "Fetching forecast...",
+      "data-unavailable": "Weather data unavailable",
+      "refreshing": "Refreshing weather...",
+      "details": {
+        "wind": "Wind",
+        "sunrise": "Sunrise",
+        "sunset": "Sunset",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
+        "timezone": "Timezone"
+      },
+      "forecast-placeholder": {
+        "day": "Sunday",
+        "temperature": "10 / 4C",
+        "description": "Weather"
+      }
+    },
+    "media": {
+      "now-playing": "Now Playing",
+      "nothing-playing": "Nothing playing",
+      "start-playback": "Start playback in an MPRIS app",
+      "spectrum": "Spectrum",
+      "active-player": "Active player"
+    },
+    "audio": {
+      "outputs": "Outputs",
+      "inputs": "Inputs",
+      "output-volume": "Output Volume",
+      "input-volume": "Input Volume",
+      "default-playback-device": "Default playback device",
+      "default-recording-device": "Default recording device",
+      "no-output-selected": "No output device selected",
+      "no-input-selected": "No input device selected",
+      "unavailable-title": "Audio unavailable",
+      "unavailable-body": "PipeWire is not active.",
+      "no-output-devices": "No output devices",
+      "no-output-devices-body": "No playback sinks are currently available.",
+      "no-input-devices": "No input devices",
+      "no-input-devices-body": "No recording sources are currently available."
+    },
+    "display": {
+      "no-displays": "No displays available",
+      "unknown-resolution": "Unknown resolution",
+      "disabled": "Disabled"
+    },
+    "notifications": {
+      "empty-title": "No notifications",
+      "empty-body": "Recent notifications will show here.",
+      "untitled": "Untitled notification",
+      "status": {
+        "active": "Active",
+        "closed": "Closed",
+        "expired": "Expired",
+        "dismissed": "Dismissed"
+      }
+    },
+    "calendar": {
+      "today": "Today",
+      "tasks": "Tasks",
+      "no-tasks": "No tasks yet."
+    },
+    "system": {
+      "titles": {
+        "cpu": "CPU",
+        "memory": "Memory",
+        "network": "Network",
+        "load-average": "Load Average",
+        "system-info": "System Info"
+      },
+      "unknown": "unknown",
+      "info": "Distro - {distro}\nCompositor - {compositor}\nKernel - {kernel}\nUptime - {uptime}\nOS age - {osAge}\nBoard - {board}\nCPU - {cpu}\nGPU - {gpu}\nMemory - {memory}\nDisk - {disk}"
+    }
+  },
+  "auth": {
+    "polkit": {
+      "title": "Authentication Required",
+      "default-message": "Authentication required",
+      "password-placeholder": "Password",
+      "authenticate": "Authenticate",
+      "invalid-password": "Invalid password",
+      "authenticating": "Authenticating..."
+    },
+    "pam": {
+      "password-required": "Password required",
+      "user-unavailable": "Unable to resolve current user",
+      "start-failed": "PAM start failed",
+      "authentication-failed": "Authentication failed"
+    }
+  },
+  "lockscreen": {
+    "password-placeholder": "Password",
+    "waiting": "Waiting for lock confirmation...",
+    "password-cleared": "Password cleared",
+    "ready": "Type your password and press Enter.",
+    "password-required": "Password required",
+    "authenticating": "Authenticating...",
+    "unlocked": "Unlocked",
+    "authentication-failed": "Authentication failed"
+  },
+  "session": {
+    "actions": {
+      "lock": "Lock",
+      "logout": "Log Out",
+      "reboot": "Reboot",
+      "shutdown": "Shut Down"
+    },
+    "errors": {
+      "logout-title": "Logout unavailable",
+      "logout-body": "Could not determine how to terminate this session.",
+      "reboot-title": "Reboot failed",
+      "reboot-body": "Could not launch systemctl reboot.",
+      "shutdown-title": "Shutdown failed",
+      "shutdown-body": "Could not launch a shutdown command.",
+      "lock-title": "Lock unavailable",
+      "lock-body": "The session lock protocol is not available."
+    }
+  },
+  "desktop-widgets": {
+    "editor": {
+      "title": "Desktop Widgets",
+      "types": {
+        "clock": "Clock",
+        "audio-visualizer": "Audio Visualizer",
+        "sticker": "Sticker",
+        "weather": "Weather",
+        "media-player": "Media Player",
+        "system-monitor": "System Monitor"
+      },
+      "actions": {
+        "back": "Back",
+        "front": "Front",
+        "delete": "Delete",
+        "done": "Done"
+      },
+      "state": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "grid-on": "Grid On",
+        "grid-off": "Grid Off"
+      },
+      "dialogs": {
+        "select-sticker-image": "Select Sticker Image"
+      }
+    },
+    "weather": {
+      "off": "Weather off",
+      "no-location": "No location",
+      "loading": "Loading",
+      "error": "Error"
+    },
+    "media": {
+      "nothing-playing": "Nothing playing"
+    }
+  },
+  "bar": {
+    "widgets": {
+      "weather": {
+        "default": "Weather",
+        "off": "Weather off",
+        "no-location": "No location",
+        "loading": "Weather...",
+        "error": "Weather err",
+        "vertical-default": "W\nX",
+        "vertical-off": "O\nF\nF",
+        "vertical-no-location": "N\nO\nL\nO\nC",
+        "vertical-loading": ".\n.\n.",
+        "vertical-error": "E\nR\nR"
+      },
+      "media": {
+        "nothing-playing": "Nothing playing",
+        "playing": "Playing"
+      },
+      "network": {
+        "wired": "Wired"
+      },
+      "active-window": {
+        "desktop": "Desktop"
+      },
+      "lock-keys": {
+        "caps": "Caps",
+        "caps-short": "C",
+        "num": "Num",
+        "num-short": "N",
+        "scroll": "Scroll",
+        "scroll-short": "S"
+      },
+      "scripted": {
+        "reload-failed": "Script reload failed",
+        "reloaded": "Reloaded script"
+      }
+    }
+  },
+  "dock": {
+    "actions": {
+      "close": "Close",
+      "close-all": "Close All"
+    }
+  },
+  "tray": {
+    "menu": {
+      "empty": "No menu items..."
+    }
+  },
+  "notifications": {
+    "actions": {
+      "fallback": "Action"
+    },
+    "internal": {
+      "dbus-disabled": "DBus notifications disabled",
+      "session-bus-unavailable": "Session bus unavailable",
+      "mpris-disabled": "MPRIS disabled"
+    }
+  },
+  "system": {
+    "hardware": {
+      "unknown": "Unknown",
+      "unknown-cpu": "Unknown CPU",
+      "unknown-gpu": "Unknown GPU",
+      "unknown-distro": "Unknown distro"
+    }
+  },
+  "power": {
+    "battery": {
+      "states": {
+        "charging": "Charging",
+        "discharging": "Discharging",
+        "charged": "Charged",
+        "empty": "Empty",
+        "pending-charge": "Pending charge",
+        "pending-discharge": "Pending discharge",
+        "battery": "Battery"
+      }
+    },
+    "profiles": {
+      "power-saver": "Power saver",
+      "balanced": "Balanced",
+      "performance": "Performance"
+    }
+  },
+  "internal-apps": {
+    "settings": {
+      "display-name": "Settings"
+    }
+  },
   "settings": {
     "window": {
       "title": "Settings",
@@ -834,7 +1275,8 @@
         },
         "weather-address": {
           "label": "Address",
-          "description": "Manual location for weather (used when auto-locate is off)"
+          "description": "Manual location for weather (used when auto-locate is off)",
+          "placeholder": "City, Country"
         },
         "weather-effects": {
           "label": "Weather Effects",
@@ -1032,14 +1474,31 @@
   "ui": {
     "dialogs": {
       "file": {
+        "title": {
+          "open": "Open File",
+          "save": "Save File",
+          "select-folder": "Select Folder",
+          "default": "File Dialog"
+        },
         "filter-placeholder": "Filter...",
         "sort": {
+          "summary": "Sort: {field} {direction}",
           "name": "Name",
           "size": "Size",
-          "date": "Date"
+          "date": "Date",
+          "ascending": "↑",
+          "descending": "↓"
+        },
+        "actions": {
+          "open": "Open",
+          "save": "Save",
+          "select-folder": "Select Folder"
         },
         "filename-placeholder": "Filename",
-        "empty-filtered": "No files match the current filter"
+        "empty-filtered": "No files match the current filter",
+        "entry": {
+          "folder": "Folder"
+        }
       },
       "color-picker": {
         "title": "Color"
@@ -1047,7 +1506,11 @@
     },
     "controls": {
       "search-picker": {
-        "placeholder": "Search..."
+        "placeholder": "Search...",
+        "empty": "No results"
+      },
+      "select": {
+        "placeholder": "Select an option"
       }
     }
   }

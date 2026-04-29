@@ -88,7 +88,7 @@ private:
   std::vector<std::string> m_options;
   std::size_t m_selectedIndex = npos;
   std::size_t m_hoveredOptionIndex = npos;
-  std::string m_placeholder = "Select an option";
+  std::string m_placeholder;
   std::string m_typeaheadBuffer;
   std::chrono::steady_clock::time_point m_lastTypeaheadAt{};
   bool m_enabled = true;

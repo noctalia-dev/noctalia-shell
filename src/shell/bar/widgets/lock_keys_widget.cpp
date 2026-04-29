@@ -1,5 +1,6 @@
 #include "shell/bar/widgets/lock_keys_widget.h"
 
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
 #include "ui/controls/glyph.h"
@@ -277,9 +278,14 @@ void LockKeysWidget::sync(Renderer& renderer) {
   }
 
   const bool full = m_displayMode == DisplayMode::Full;
-  configureLabel(m_capsLabel, full ? "Caps" : "C", capsVisible, m_contentScale);
-  configureLabel(m_numLabel, full ? "Num" : "N", numVisible, m_contentScale);
-  configureLabel(m_scrollLabel, full ? "Scroll" : "S", scrollVisible, m_contentScale);
+  configureLabel(m_capsLabel,
+                 full ? i18n::tr("bar.widgets.lock-keys.caps") : i18n::tr("bar.widgets.lock-keys.caps-short"),
+                 capsVisible, m_contentScale);
+  configureLabel(m_numLabel, full ? i18n::tr("bar.widgets.lock-keys.num") : i18n::tr("bar.widgets.lock-keys.num-short"),
+                 numVisible, m_contentScale);
+  configureLabel(m_scrollLabel,
+                 full ? i18n::tr("bar.widgets.lock-keys.scroll") : i18n::tr("bar.widgets.lock-keys.scroll-short"),
+                 scrollVisible, m_contentScale);
 
   if (m_capsLabel != nullptr) {
     m_capsLabel->setColor(lockState.capsLock ? roleColor(ColorRole::Primary)

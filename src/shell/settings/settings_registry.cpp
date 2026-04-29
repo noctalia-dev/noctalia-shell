@@ -532,9 +532,10 @@ namespace settings {
                                              {"fahrenheit", "settings.options.weather.unit.fahrenheit"}},
                                             cfg.weather.unit),
                                 "temperature"));
-    entries.push_back(makeEntry("services", "weather", tr("settings.schema.services.weather-address.label"),
-                                tr("settings.schema.services.weather-address.description"), {"weather", "address"},
-                                TextSetting{cfg.weather.address, "City, Country"}, "location"));
+    entries.push_back(makeEntry(
+        "services", "weather", tr("settings.schema.services.weather-address.label"),
+        tr("settings.schema.services.weather-address.description"), {"weather", "address"},
+        TextSetting{cfg.weather.address, tr("settings.schema.services.weather-address.placeholder")}, "location"));
     entries.push_back(makeEntry("services", "weather", tr("settings.schema.services.weather-effects.label"),
                                 tr("settings.schema.services.weather-effects.description"), {"weather", "effects"},
                                 ToggleSetting{cfg.weather.effects}, "forecast visuals"));

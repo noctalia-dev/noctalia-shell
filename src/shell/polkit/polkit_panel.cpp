@@ -1,6 +1,7 @@
 #include "shell/polkit/polkit_panel.h"
 
 #include "dbus/polkit/polkit_agent.h"
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
@@ -60,7 +61,7 @@ void PolkitPanel::create() {
   topContent->setGap(Style::spaceSm * scale);
 
   auto title = std::make_unique<Label>();
-  title->setText("Authentication Required");
+  title->setText(i18n::tr("auth.polkit.title"));
   title->setBold(true);
   title->setFontSize(Style::fontSizeTitle * scale);
   title->setColor(roleColor(ColorRole::Primary));
@@ -88,7 +89,7 @@ void PolkitPanel::create() {
   bottomContent->addChild(std::move(prompt));
 
   auto input = std::make_unique<Input>();
-  input->setPlaceholder("Password");
+  input->setPlaceholder(i18n::tr("auth.polkit.password-placeholder"));
   input->setPasswordMode(true);
   input->setOnSubmit([this](const std::string&) { submit(); });
   m_input = input.get();
@@ -108,14 +109,14 @@ void PolkitPanel::create() {
   actions->setGap(Style::spaceSm * scale);
 
   auto cancel = std::make_unique<Button>();
-  cancel->setText("Cancel");
+  cancel->setText(i18n::tr("common.actions.cancel"));
   cancel->setVariant(ButtonVariant::Outline);
   cancel->setOnClick([]() { PanelManager::instance().close(); });
   m_cancelButton = cancel.get();
   actions->addChild(std::move(cancel));
 
   auto submitButton = std::make_unique<Button>();
-  submitButton->setText("Authenticate");
+  submitButton->setText(i18n::tr("auth.polkit.authenticate"));
   submitButton->setVariant(ButtonVariant::Accent);
   submitButton->setOnClick([this]() { submit(); });
   m_submitButton = submitButton.get();
@@ -170,10 +171,11 @@ void PolkitPanel::doUpdate(Renderer& /*renderer*/) {
   const PolkitRequest request = agent->pendingRequest();
   const std::string supplementaryRaw = agent->supplementaryMessage();
   const bool supplementaryError = agent->supplementaryIsError();
-  const bool isInvalidPassword = supplementaryError && supplementaryRaw == "Invalid password";
+  const bool isInvalidPassword = supplementaryError && supplementaryRaw == i18n::tr("auth.polkit.invalid-password");
   std::string promptText = wrapLongRuns(agent->inputPrompt());
   std::string supplementaryText = wrapLongRuns(supplementaryRaw);
-  if (!supplementaryText.empty() && (supplementaryError || supplementaryText == "Authenticating...")) {
+  if (!supplementaryText.empty() &&
+      (supplementaryError || supplementaryText == i18n::tr("auth.polkit.authenticating"))) {
     promptText = supplementaryText;
     supplementaryText.clear();
   }

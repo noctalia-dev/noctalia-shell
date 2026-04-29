@@ -1,5 +1,6 @@
 #include "shell/bar/widgets/weather_widget.h"
 
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
@@ -82,12 +83,14 @@ void WeatherWidget::sync(Renderer& renderer) {
   auto verticalTemperature = [](int temp) { return std::format("{}\xC2\xB0", temp); };
 
   std::string glyph = "weather-cloud";
-  std::string text = m_isVertical ? "W\nX" : "Weather";
+  std::string text =
+      m_isVertical ? i18n::tr("bar.widgets.weather.vertical-default") : i18n::tr("bar.widgets.weather.default");
 
   if (m_weather == nullptr || !m_weather->enabled()) {
-    text = m_isVertical ? "O\nF\nF" : "Weather off";
+    text = m_isVertical ? i18n::tr("bar.widgets.weather.vertical-off") : i18n::tr("bar.widgets.weather.off");
   } else if (!m_weather->locationConfigured()) {
-    text = m_isVertical ? "N\nO\nL\nO\nC" : "No location";
+    text = m_isVertical ? i18n::tr("bar.widgets.weather.vertical-no-location")
+                        : i18n::tr("bar.widgets.weather.no-location");
   } else if (m_weather->hasData()) {
     const auto& snapshot = m_weather->snapshot();
     glyph = WeatherService::glyphForCode(snapshot.current.weatherCode, snapshot.current.isDay);
@@ -103,9 +106,9 @@ void WeatherWidget::sync(Renderer& renderer) {
       text += WeatherService::shortDescriptionForCode(snapshot.current.weatherCode);
     }
   } else if (m_weather->loading()) {
-    text = m_isVertical ? ".\n.\n." : "Weather...";
+    text = m_isVertical ? i18n::tr("bar.widgets.weather.vertical-loading") : i18n::tr("bar.widgets.weather.loading");
   } else if (!m_weather->error().empty()) {
-    text = m_isVertical ? "E\nR\nR" : "Weather err";
+    text = m_isVertical ? i18n::tr("bar.widgets.weather.vertical-error") : i18n::tr("bar.widgets.weather.error");
   }
 
   bool changed = false;

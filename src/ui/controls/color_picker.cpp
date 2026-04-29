@@ -491,7 +491,7 @@ InputArea* ColorPickerSheet::initialFocusArea() const noexcept {
 
 void ColorPickerSheet::setTitle(std::string_view title) {
   if (m_title != nullptr) {
-    m_title->setText(title.empty() ? "Color" : title);
+    m_title->setText(title.empty() ? i18n::tr("ui.dialogs.color-picker.title") : std::string(title));
   }
 }
 

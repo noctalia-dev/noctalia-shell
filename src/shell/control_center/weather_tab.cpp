@@ -1,6 +1,7 @@
 #include "shell/control_center/weather_tab.h"
 
 #include "config/config_service.h"
+#include "i18n/i18n.h"
 #include "render/scene/effect_node.h"
 #include "system/weather_service.h"
 #include "ui/controls/flex.h"
@@ -125,7 +126,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
   currentBottom->setGap(Style::spaceXs * 0.5f * scale);
 
   auto currentDesc = std::make_unique<Label>();
-  currentDesc->setText("Waiting for weather data");
+  currentDesc->setText(i18n::tr("control-center.weather.waiting"));
   currentDesc->setFontSize(Style::fontSizeBody * scale);
   currentDesc->setColor(roleColor(ColorRole::OnSurface));
   m_currentDescLabel = currentDesc.get();
@@ -201,12 +202,12 @@ std::unique_ptr<Flex> WeatherTab::create() {
     detailsCard->addChild(std::move(row));
   };
 
-  addDetailRow("wind", "Wind", m_windLabel);
-  addDetailRow("weather-sunrise", "Sunrise", m_sunriseLabel);
-  addDetailRow("weather-sunset", "Sunset", m_sunsetLabel);
-  addDetailRow("world-pin", "Latitude", m_timezoneLabel);
-  addDetailRow("map-pin", "Longitude", m_longitudeLabel);
-  addDetailRow("clock", "Timezone", m_elevationLabel);
+  addDetailRow("wind", i18n::tr("control-center.weather.details.wind"), m_windLabel);
+  addDetailRow("weather-sunrise", i18n::tr("control-center.weather.details.sunrise"), m_sunriseLabel);
+  addDetailRow("weather-sunset", i18n::tr("control-center.weather.details.sunset"), m_sunsetLabel);
+  addDetailRow("world-pin", i18n::tr("control-center.weather.details.latitude"), m_timezoneLabel);
+  addDetailRow("map-pin", i18n::tr("control-center.weather.details.longitude"), m_longitudeLabel);
+  addDetailRow("clock", i18n::tr("control-center.weather.details.timezone"), m_elevationLabel);
 
   leftColumn->addChild(std::move(detailsCard));
 
@@ -256,7 +257,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     topRow->setGap(Style::spaceSm * scale);
 
     auto meta = std::make_unique<Label>();
-    meta->setText("Sunday");
+    meta->setText(i18n::tr("control-center.weather.forecast-placeholder.day"));
     meta->setBold(true);
     meta->setFontSize(Style::fontSizeBody * scale);
     meta->setColor(roleColor(ColorRole::OnSurface));
@@ -265,7 +266,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     topRow->addChild(std::move(meta));
 
     auto temps = std::make_unique<Label>();
-    temps->setText("10 / 4C");
+    temps->setText(i18n::tr("control-center.weather.forecast-placeholder.temperature"));
     temps->setBold(true);
     temps->setFontSize(Style::fontSizeBody * scale);
     temps->setColor(roleColor(ColorRole::OnSurface));
@@ -273,7 +274,7 @@ std::unique_ptr<Flex> WeatherTab::create() {
     topRow->addChild(std::move(temps));
 
     auto desc = std::make_unique<Label>();
-    desc->setText("Weather");
+    desc->setText(i18n::tr("control-center.weather.forecast-placeholder.description"));
     desc->setFontSize(Style::fontSizeCaption * scale);
     desc->setColor(roleColor(ColorRole::OnSurfaceVariant));
     m_dayDescs[i] = desc.get();
@@ -524,8 +525,8 @@ void WeatherTab::sync(Renderer& renderer) {
     if (m_currentHiLoLabel != nullptr) {
       m_currentHiLoLabel->setText("-- / --");
     }
-    m_currentDescLabel->setText("Enable [weather] in config.toml");
-    m_updatedLabel->setText("Location unavailable");
+    m_currentDescLabel->setText(i18n::tr("control-center.weather.disabled"));
+    m_updatedLabel->setText(i18n::tr("control-center.weather.location-unavailable"));
     m_updatedLabel->setVisible(false);
     m_statusLabel->setText("");
     m_statusLabel->setVisible(false);
@@ -558,8 +559,8 @@ void WeatherTab::sync(Renderer& renderer) {
     if (m_currentHiLoLabel != nullptr) {
       m_currentHiLoLabel->setText("-- / --");
     }
-    m_currentDescLabel->setText("Set [weather].address or enable auto_locate");
-    m_updatedLabel->setText("Location unavailable");
+    m_currentDescLabel->setText(i18n::tr("control-center.weather.configure-location"));
+    m_updatedLabel->setText(i18n::tr("control-center.weather.location-unavailable"));
     m_updatedLabel->setVisible(false);
     m_statusLabel->setText("");
     m_statusLabel->setVisible(false);
@@ -593,8 +594,10 @@ void WeatherTab::sync(Renderer& renderer) {
     if (m_currentHiLoLabel != nullptr) {
       m_currentHiLoLabel->setText("-- / --");
     }
-    m_currentDescLabel->setText(m_weather->loading() ? "Fetching forecast..." : "Weather data unavailable");
-    m_updatedLabel->setText(snapshot.locationName.empty() ? "Current location" : snapshot.locationName);
+    m_currentDescLabel->setText(m_weather->loading() ? i18n::tr("control-center.weather.fetching")
+                                                     : i18n::tr("control-center.weather.data-unavailable"));
+    m_updatedLabel->setText(snapshot.locationName.empty() ? i18n::tr("weather.locations.current")
+                                                          : snapshot.locationName);
     m_updatedLabel->setVisible(false);
     m_statusLabel->setText(m_weather->error());
     m_statusLabel->setVisible(!m_weather->error().empty());
@@ -638,9 +641,10 @@ void WeatherTab::sync(Renderer& renderer) {
     }
   }
   m_currentDescLabel->setText(WeatherService::descriptionForCode(snapshot.current.weatherCode));
-  m_updatedLabel->setText(snapshot.locationName.empty() ? "Current location" : snapshot.locationName);
+  m_updatedLabel->setText(snapshot.locationName.empty() ? i18n::tr("weather.locations.current")
+                                                        : snapshot.locationName);
   m_updatedLabel->setVisible(showLocation);
-  const std::string status = m_weather->loading() ? std::string("Refreshing weather...")
+  const std::string status = m_weather->loading() ? i18n::tr("control-center.weather.refreshing")
                                                   : (snapshot.valid ? std::string{} : m_weather->error());
   m_statusLabel->setText(status);
   m_statusLabel->setColor(roleColor(m_weather->error().empty() ? ColorRole::OnSurfaceVariant : ColorRole::Error));

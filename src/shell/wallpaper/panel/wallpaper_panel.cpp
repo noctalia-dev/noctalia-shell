@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
+#include "i18n/i18n.h"
 #include "render/core/renderer.h"
 #include "render/core/thumbnail_service.h"
 #include "render/scene/input_area.h"
@@ -84,7 +85,7 @@ void WallpaperPanel::create() {
   headerLeft->setFillParentMainAxis(true);
 
   auto title = std::make_unique<Label>();
-  title->setText("Wallpaper");
+  title->setText(i18n::tr("wallpaper.panel.title"));
   title->setFontSize(Style::fontSizeTitle * scale);
   title->setBold(true);
   title->setColor(roleColor(ColorRole::Primary));
@@ -126,7 +127,7 @@ void WallpaperPanel::create() {
   m_toolbar = toolbar.get();
 
   auto filter = std::make_unique<Input>();
-  filter->setPlaceholder("Filter…");
+  filter->setPlaceholder(i18n::tr("wallpaper.panel.filter-placeholder"));
   filter->setFontSize(Style::fontSizeBody * scale);
   filter->setControlHeight(Style::controlHeight * scale);
   filter->setHorizontalPadding(Style::spaceMd * scale);
@@ -163,7 +164,7 @@ void WallpaperPanel::create() {
   toolbar->addChild(std::move(spacer));
 
   auto flattenLabel = std::make_unique<Label>();
-  flattenLabel->setText("Flatten");
+  flattenLabel->setText(i18n::tr("wallpaper.panel.flatten"));
   flattenLabel->setFontSize(Style::fontSizeBody * scale);
   flattenLabel->setColor(roleColor(ColorRole::OnSurfaceVariant));
   m_flattenLabel = static_cast<Label*>(toolbar->addChild(std::move(flattenLabel)));
@@ -486,7 +487,7 @@ InputArea* WallpaperPanel::initialFocusArea() const {
 
 void WallpaperPanel::populateMonitorChoices() {
   m_monitorChoices.clear();
-  m_monitorChoices.push_back({"", "ALL"});
+  m_monitorChoices.push_back({"", i18n::tr("wallpaper.panel.all-monitors")});
   if (m_wayland != nullptr) {
     for (const auto& out : m_wayland->outputs()) {
       if (out.connectorName.empty()) {
@@ -754,7 +755,7 @@ void WallpaperPanel::rebuildBreadcrumb() {
   const auto root = rootDirectoryForSelection();
   const auto current = activeDirectoryForSelection();
   if (current.empty()) {
-    m_breadcrumb->setText("No directory configured");
+    m_breadcrumb->setText(i18n::tr("wallpaper.panel.no-directory-configured"));
     if (m_backButton != nullptr) {
       m_backButton->setEnabled(false);
       m_backButton->setVisible(false);
@@ -833,7 +834,7 @@ void WallpaperPanel::applyColorWallpaper() {
   }
 
   ColorPickerDialogOptions options;
-  options.title = "Wallpaper color";
+  options.title = i18n::tr("wallpaper.panel.color-title");
   if (auto color = selectedFillColor()) {
     options.initialColor = *color;
   } else if (auto last = ColorPickerDialog::lastResult()) {

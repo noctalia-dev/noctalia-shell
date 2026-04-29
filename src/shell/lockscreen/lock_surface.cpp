@@ -2,6 +2,7 @@
 
 #include "core/ui_phase.h"
 #include "ext-session-lock-v1-client-protocol.h"
+#include "i18n/i18n.h"
 #include "render/core/shared_texture_cache.h"
 #include "render/programs/rect_program.h"
 #include "render/render_context.h"
@@ -56,7 +57,7 @@ LockSurface::LockSurface(WaylandConnection& connection) : Surface(connection) {
   m_loginPanel = static_cast<RectNode*>(m_root.addChild(std::move(loginPanel)));
 
   auto passwordField = std::make_unique<Input>();
-  passwordField->setPlaceholder("Password");
+  passwordField->setPlaceholder(i18n::tr("lockscreen.password-placeholder"));
   passwordField->setPasswordMode(true);
   passwordField->setOnChange([this](const std::string& value) {
     if (m_onPasswordChanged) {

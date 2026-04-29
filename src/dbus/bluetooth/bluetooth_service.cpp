@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "dbus/system_bus.h"
+#include "i18n/i18n.h"
 
 #include <algorithm>
 #include <map>
@@ -207,7 +208,7 @@ namespace {
       }
     }
     if (out.alias.empty()) {
-      out.alias = out.address.empty() ? std::string("Unknown device") : out.address;
+      out.alias = out.address.empty() ? i18n::tr("control-center.bluetooth.unknown-device") : out.address;
     }
   }
 

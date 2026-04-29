@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/deferred_call.h"
 #include "core/ui_phase.h"
+#include "i18n/i18n.h"
 #include "render/core/async_texture_cache.h"
 #include "render/core/renderer.h"
 #include "render/scene/input_area.h"
@@ -286,7 +287,7 @@ void LauncherPanel::create() {
   container->setGap(Style::spaceSm * scale);
 
   auto input = std::make_unique<Input>();
-  input->setPlaceholder("Search applications...");
+  input->setPlaceholder(i18n::tr("launcher.search-placeholder"));
   input->setFontSize(Style::fontSizeBody * scale);
   input->setControlHeight(Style::controlHeight * scale);
   input->setHorizontalPadding(Style::spaceMd * scale);
@@ -536,7 +537,8 @@ void LauncherPanel::rebuildResults(Renderer& renderer, float width) {
 
   if (m_results.empty()) {
     m_emptyLabel->setVisible(true);
-    m_emptyLabel->setText(m_query.empty() ? "Type to search..." : "No results found");
+    m_emptyLabel->setText(m_query.empty() ? i18n::tr("launcher.empty.type-to-search")
+                                          : i18n::tr("launcher.empty.no-results"));
     m_emptyLabel->setMaxWidth(width);
     m_emptyLabel->measure(renderer);
     m_emptyLabel->setPosition(0.0f, 0.0f);

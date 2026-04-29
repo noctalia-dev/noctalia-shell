@@ -5,6 +5,7 @@
 #include "core/log.h"
 #include "core/process.h"
 #include "core/ui_phase.h"
+#include "i18n/i18n.h"
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
@@ -1692,10 +1693,13 @@ void Dock::openItemMenu(DockInstance& instance, DockItemView& item) {
     }
     if (runCount == 1) {
       entries.push_back(ContextMenuControlEntry{
-          .id = -1, .label = "Close", .enabled = true, .separator = false, .hasSubmenu = false});
+          .id = -1, .label = i18n::tr("dock.actions.close"), .enabled = true, .separator = false, .hasSubmenu = false});
     } else {
-      entries.push_back(ContextMenuControlEntry{
-          .id = -2, .label = "Close All", .enabled = true, .separator = false, .hasSubmenu = false});
+      entries.push_back(ContextMenuControlEntry{.id = -2,
+                                                .label = i18n::tr("dock.actions.close-all"),
+                                                .enabled = true,
+                                                .separator = false,
+                                                .hasSubmenu = false});
     }
   }
 

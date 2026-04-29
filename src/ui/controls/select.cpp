@@ -1,6 +1,7 @@
 #include "ui/controls/select.h"
 
 #include "cursor-shape-v1-client-protocol.h"
+#include "i18n/i18n.h"
 #include "render/programs/rect_program.h"
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
@@ -46,6 +47,8 @@ namespace {
 Select* Select::s_openSelect = nullptr;
 
 Select::Select() {
+  m_placeholder = i18n::tr("ui.controls.select.placeholder");
+
   auto triggerBackground = std::make_unique<RectNode>();
   m_triggerBackground = static_cast<RectNode*>(addChild(std::move(triggerBackground)));
 

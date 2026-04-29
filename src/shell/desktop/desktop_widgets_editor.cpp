@@ -4,6 +4,7 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "cursor-shape-v1-client-protocol.h"
+#include "i18n/i18n.h"
 #include "pipewire/pipewire_spectrum.h"
 #include "render/render_context.h"
 #include "render/scene/input_area.h"
@@ -49,8 +50,10 @@ namespace {
   constexpr float kMaxScale = 8.0f;
   constexpr float kDisabledWidgetOpacity = 0.25f;
   constexpr float kRotationSnap = static_cast<float>(M_PI) / 12.0f;
-  constexpr std::array<const char*, 6> kWidgetTypeLabels{"Clock",   "Audio Visualizer", "Sticker",
-                                                         "Weather", "Media Player",     "System Monitor"};
+  constexpr std::array<const char*, 6> kWidgetTypeLabelKeys{
+      "desktop-widgets.editor.types.clock",        "desktop-widgets.editor.types.audio-visualizer",
+      "desktop-widgets.editor.types.sticker",      "desktop-widgets.editor.types.weather",
+      "desktop-widgets.editor.types.media-player", "desktop-widgets.editor.types.system-monitor"};
   constexpr std::string_view kDesktopWidgetIdPrefix = "desktop-widget-";
   constexpr std::size_t kScaleCornerCount = 4;
 
@@ -627,7 +630,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   toolbarHandle->addChild(std::move(handleGlyph));
 
   auto title = std::make_unique<Label>();
-  title->setText("Desktop Widgets");
+  title->setText(i18n::tr("desktop-widgets.editor.title"));
   title->setBold(true);
   title->setFontSize(Style::fontSizeBody);
   toolbarHandle->addChild(std::move(title));
@@ -664,8 +667,9 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   const bool canBringSelectedToFront = hasSelectedWidget && std::next(selectedWidgetIt) != m_snapshot.widgets.end();
 
   auto typeSelect = std::make_unique<Select>();
-  typeSelect->setOptions({kWidgetTypeLabels[0], kWidgetTypeLabels[1], kWidgetTypeLabels[2], kWidgetTypeLabels[3],
-                          kWidgetTypeLabels[4], kWidgetTypeLabels[5]});
+  typeSelect->setOptions({i18n::tr(kWidgetTypeLabelKeys[0]), i18n::tr(kWidgetTypeLabelKeys[1]),
+                          i18n::tr(kWidgetTypeLabelKeys[2]), i18n::tr(kWidgetTypeLabelKeys[3]),
+                          i18n::tr(kWidgetTypeLabelKeys[4]), i18n::tr(kWidgetTypeLabelKeys[5])});
   typeSelect->setSelectedIndex(m_addWidgetType == "audio_visualizer" ? 1
                                : m_addWidgetType == "sticker"        ? 2
                                : m_addWidgetType == "weather"        ? 3
@@ -706,21 +710,22 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   toolbar->addChild(std::move(addButton));
 
   auto backButton = std::make_unique<Button>();
-  backButton->setText("Back");
+  backButton->setText(i18n::tr("desktop-widgets.editor.actions.back"));
   backButton->setVariant(ButtonVariant::Outline);
   backButton->setEnabled(canSendSelectedToBack);
   backButton->setOnClick([this]() { deferEditorMutation([this]() { sendSelectedWidgetToBack(); }); });
   toolbar->addChild(std::move(backButton));
 
   auto frontButton = std::make_unique<Button>();
-  frontButton->setText("Front");
+  frontButton->setText(i18n::tr("desktop-widgets.editor.actions.front"));
   frontButton->setVariant(ButtonVariant::Outline);
   frontButton->setEnabled(canBringSelectedToFront);
   frontButton->setOnClick([this]() { deferEditorMutation([this]() { bringSelectedWidgetToFront(); }); });
   toolbar->addChild(std::move(frontButton));
 
   auto enabledButton = std::make_unique<Button>();
-  enabledButton->setText(selectedWidgetEnabled ? "Enabled" : "Disabled");
+  enabledButton->setText(selectedWidgetEnabled ? i18n::tr("desktop-widgets.editor.state.enabled")
+                                               : i18n::tr("desktop-widgets.editor.state.disabled"));
   enabledButton->setVariant(ButtonVariant::Outline);
   enabledButton->setSelected(selectedWidgetEnabled);
   enabledButton->setEnabled(hasSelectedWidget);
@@ -728,14 +733,15 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   toolbar->addChild(std::move(enabledButton));
 
   auto deleteButton = std::make_unique<Button>();
-  deleteButton->setText("Delete");
+  deleteButton->setText(i18n::tr("desktop-widgets.editor.actions.delete"));
   deleteButton->setVariant(ButtonVariant::Destructive);
   deleteButton->setEnabled(hasSelectedWidget);
   deleteButton->setOnClick([this]() { deferEditorMutation([this]() { removeSelectedWidget(); }); });
   toolbar->addChild(std::move(deleteButton));
 
   auto gridButton = std::make_unique<Button>();
-  gridButton->setText(m_snapshot.grid.visible ? "Grid On" : "Grid Off");
+  gridButton->setText(m_snapshot.grid.visible ? i18n::tr("desktop-widgets.editor.state.grid-on")
+                                              : i18n::tr("desktop-widgets.editor.state.grid-off"));
   gridButton->setVariant(ButtonVariant::Outline);
   gridButton->setSelected(m_snapshot.grid.visible);
   gridButton->setOnClick([this]() {
@@ -770,7 +776,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
   toolbar->addChild(std::move(gridSizeSelect));
 
   auto doneButton = std::make_unique<Button>();
-  doneButton->setText("Done");
+  doneButton->setText(i18n::tr("desktop-widgets.editor.actions.done"));
   doneButton->setVariant(ButtonVariant::Secondary);
   doneButton->setOnClick([this]() { requestExit(); });
   toolbar->addChild(std::move(doneButton));
@@ -933,7 +939,7 @@ void DesktopWidgetsEditor::addWidget(const std::string& outputName, const std::s
 
     FileDialogOptions options;
     options.mode = FileDialogMode::Open;
-    options.title = "Select Sticker Image";
+    options.title = i18n::tr("desktop-widgets.editor.dialogs.select-sticker-image");
     options.extensions = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif"};
     if (!FileDialog::open(std::move(options), [this, widgetId](std::optional<std::filesystem::path> result) {
           deferEditorMutation([this, widgetId, result = std::move(result)]() {

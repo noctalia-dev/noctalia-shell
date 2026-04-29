@@ -3,6 +3,7 @@
 #include "config/config_service.h"
 #include "core/log.h"
 #include "ext-session-lock-v1-client-protocol.h"
+#include "i18n/i18n.h"
 #include "ipc/ipc_service.h"
 #include "render/render_context.h"
 #include "shell/lockscreen/lock_surface.h"
@@ -89,7 +90,7 @@ bool LockScreen::lock() {
   m_lockPending = true;
   m_locked = false;
   clearSensitiveString(m_password);
-  m_status = "Waiting for lock confirmation...";
+  m_status = i18n::tr("lockscreen.waiting");
   m_statusIsError = false;
   syncInstances();
   if (m_instances.empty()) {
@@ -237,7 +238,7 @@ void LockScreen::onKeyboardEvent(const KeyboardEvent& event) {
 
   if (event.sym == XKB_KEY_Escape) {
     clearSensitiveString(m_password);
-    m_status = "Password cleared";
+    m_status = i18n::tr("lockscreen.password-cleared");
     m_statusIsError = false;
     updatePromptOnSurfaces();
     return;
@@ -271,7 +272,7 @@ void LockScreen::handleLocked(void* data, ext_session_lock_v1* /*lock*/) {
   auto* self = static_cast<LockScreen*>(data);
   self->m_lockPending = false;
   self->m_locked = true;
-  self->m_status = "Type your password and press Enter.";
+  self->m_status = i18n::tr("lockscreen.ready");
   self->m_statusIsError = false;
   for (auto& instance : self->m_instances) {
     instance.surface->setLockedState(true);
@@ -389,13 +390,13 @@ void LockScreen::handlePasswordEdited(const std::string& value) {
 
 void LockScreen::tryAuthenticate() {
   if (m_password.empty()) {
-    m_status = "Password required";
+    m_status = i18n::tr("lockscreen.password-required");
     m_statusIsError = true;
     updatePromptOnSurfaces();
     return;
   }
 
-  m_status = "Authenticating...";
+  m_status = i18n::tr("lockscreen.authenticating");
   m_statusIsError = false;
   updatePromptOnSurfaces();
 
@@ -403,14 +404,14 @@ void LockScreen::tryAuthenticate() {
   clearSensitiveString(m_password);
 
   if (result.success) {
-    m_status = "Unlocked";
+    m_status = i18n::tr("lockscreen.unlocked");
     m_statusIsError = false;
     updatePromptOnSurfaces();
     unlock();
     return;
   }
 
-  m_status = result.message.empty() ? "Authentication failed" : result.message;
+  m_status = result.message.empty() ? i18n::tr("lockscreen.authentication-failed") : result.message;
   m_statusIsError = true;
   updatePromptOnSurfaces();
 }
