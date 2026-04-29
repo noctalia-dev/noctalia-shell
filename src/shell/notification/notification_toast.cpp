@@ -1280,7 +1280,7 @@ void NotificationToast::ensureSurfaces() {
     }
 
     auto surfaceConfig = LayerSurfaceConfig{
-        .nameSpace = "noctalia-notifications",
+        .nameSpace = "noctalia-notification",
         .layer = LayerShellLayer::Top,
         .anchor = anchor,
         .width = surfaceWidth,
