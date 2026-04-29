@@ -34,6 +34,7 @@ namespace {
   constexpr float kCircularCapsuleNarrowWidthEpsilon = 1.0f;
   constexpr std::int32_t kAutoHideTriggerPx = 2;
   constexpr float kAutoHideSlideExtraPx = 16.0f;
+  constexpr std::int32_t kAutoHideTriggerRegionPx = 4;
 
   bool pointInsideNode(const Node* node, float sceneX, float sceneY) {
     if (node == nullptr) {
@@ -1076,13 +1077,13 @@ void Bar::startHideFadeOut(BarInstance& instance) {
         const int surfW = static_cast<int>(inst->surface->width());
         const int surfH = static_cast<int>(inst->surface->height());
         if (!isVertical) {
-          const int triggerY = isBottom ? std::max(0, surfH - kAutoHideTriggerPx) : 0;
-          inst->surface->setInputRegion({InputRect{0, triggerY, surfW, kAutoHideTriggerPx}});
+          const int triggerY = isBottom ? std::max(0, surfH - kAutoHideTriggerRegionPx) : 0;
+          inst->surface->setInputRegion({InputRect{0, triggerY, surfW, kAutoHideTriggerRegionPx}});
         } else if (inst->barConfig.position == "left") {
           inst->surface->setInputRegion(
-              {InputRect{std::max(0, surfW - kAutoHideTriggerPx), 0, kAutoHideTriggerPx, surfH}});
+              {InputRect{std::max(0, surfW - kAutoHideTriggerRegionPx), 0, kAutoHideTriggerRegionPx, surfH}});
         } else {
-          inst->surface->setInputRegion({InputRect{0, 0, kAutoHideTriggerPx, surfH}});
+          inst->surface->setInputRegion({InputRect{0, 0, kAutoHideTriggerRegionPx, surfH}});
         }
       });
   if (instance.surface != nullptr) {
@@ -1321,13 +1322,13 @@ void Bar::buildScene(BarInstance& instance, std::uint32_t width, std::uint32_t h
     const int surfW = static_cast<int>(w);
     const int surfH = static_cast<int>(h);
     if (!isVertical) {
-      const int triggerY = isBottom ? std::max(0, surfH - kAutoHideTriggerPx) : 0;
-      instance.surface->setInputRegion({InputRect{0, triggerY, surfW, kAutoHideTriggerPx}});
+      const int triggerY = isBottom ? std::max(0, surfH - kAutoHideTriggerRegionPx) : 0;
+      instance.surface->setInputRegion({InputRect{0, triggerY, surfW, kAutoHideTriggerRegionPx}});
     } else if (instance.barConfig.position == "left") {
       instance.surface->setInputRegion(
-          {InputRect{std::max(0, surfW - kAutoHideTriggerPx), 0, kAutoHideTriggerPx, surfH}});
+          {InputRect{std::max(0, surfW - kAutoHideTriggerRegionPx), 0, kAutoHideTriggerRegionPx, surfH}});
     } else {
-      instance.surface->setInputRegion({InputRect{0, 0, kAutoHideTriggerPx, surfH}});
+      instance.surface->setInputRegion({InputRect{0, 0, kAutoHideTriggerRegionPx, surfH}});
     }
   } else {
     instance.surface->setInputRegion({barRect});

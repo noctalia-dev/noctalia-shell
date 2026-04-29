@@ -32,7 +32,7 @@ For dependencies and normal build commands, start with [README.md](README.md).
 | Images | `Wuffs` (vendored), `nanosvg` (vendored), `stb_image_resize2` (vendored), `libwebp` |
 | IPC | `sdbus-c++` |
 | Audio | `libpipewire`, `dr_wav` (vendored) |
-| Authentication | `PAM` |
+| Authentication | `PAM`, `polkit-agent-1`, `polkit-gobject-1`, `glib-2.0`, `gobject-2.0` |
 | HTTP | `libcurl` |
 | Config | `tomlplusplus` (vendored) |
 | JSON | `nlohmann/json` (vendored) |

@@ -282,6 +282,7 @@
       "inputs": "Inputs",
       "output-volume": "Output Volume",
       "input-volume": "Input Volume",
+      "application-volumes": "Application Volumes",
       "default-playback-device": "Default playback device",
       "default-recording-device": "Default recording device",
       "no-output-selected": "No output device selected",
@@ -291,7 +292,9 @@
       "no-output-devices": "No output devices",
       "no-output-devices-body": "No playback sinks are currently available.",
       "no-input-devices": "No input devices",
-      "no-input-devices-body": "No recording sources are currently available."
+      "no-input-devices-body": "No recording sources are currently available.",
+      "no-application-audio": "No application audio",
+      "no-application-audio-body": "No application playback streams are currently available."
     },
     "display": {
       "no-displays": "No displays available",

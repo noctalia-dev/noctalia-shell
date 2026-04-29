@@ -1,297 +1,260 @@
 #include "dbus/polkit/polkit_agent.h"
 
 #include "core/log.h"
-#include "dbus/system_bus.h"
 #include "i18n/i18n.h"
 
+#include <algorithm>
 #include <array>
-#include <csignal>
 #include <cstdlib>
 #include <cstring>
-#include <fcntl.h>
-#include <fstream>
-#include <map>
+#include <gio/gio.h>
+#include <glib-object.h>
+#include <glib.h>
+#include <memory>
 #include <optional>
 #include <poll.h>
 #include <pwd.h>
-#include <sdbus-c++/IConnection.h>
-#include <sdbus-c++/IObject.h>
-#include <sdbus-c++/MethodResult.h>
-#include <sdbus-c++/Types.h>
-#include <sdbus-c++/VTableItems.h>
-#include <sstream>
-#include <string_view>
+#include <stdexcept>
+#include <string>
 #include <sys/types.h>
-#include <sys/wait.h>
-#include <tuple>
 #include <unistd.h>
 #include <utility>
+#include <vector>
+
+#define POLKIT_AGENT_I_KNOW_API_IS_SUBJECT_TO_CHANGE
+#include <polkit/polkit.h>
+#include <polkitagent/polkitagent.h>
 
 namespace {
 
   constexpr Logger kLog("polkit");
+  constexpr auto k_agentObjectPath = "/org/noctalia/PolkitAuthenticationAgent";
 
-  const sdbus::ServiceName k_authorityBusName{"org.freedesktop.PolicyKit1"};
-  const sdbus::ObjectPath k_authorityObjectPath{"/org/freedesktop/PolicyKit1/Authority"};
-  constexpr auto k_authorityInterface = "org.freedesktop.PolicyKit1.Authority";
-  const sdbus::ServiceName k_logindBusName{"org.freedesktop.login1"};
-  const sdbus::ObjectPath k_logindObjectPath{"/org/freedesktop/login1"};
-  constexpr auto k_logindManagerInterface = "org.freedesktop.login1.Manager";
-  constexpr auto k_logindSessionInterface = "org.freedesktop.login1.Session";
-
-  const sdbus::ObjectPath k_agentObjectPath{"/org/noctalia/PolkitAuthenticationAgent"};
-  constexpr auto k_agentInterface = "org.freedesktop.PolicyKit1.AuthenticationAgent";
-
-  using Subject = sdbus::Struct<std::string, std::map<std::string, sdbus::Variant>>;
-  using Identity = sdbus::Struct<std::string, std::map<std::string, sdbus::Variant>>;
-  using IdentityDetails = std::map<std::string, sdbus::Variant>;
-
-  std::string localeFromEnvironment() {
-    if (const char* lang = std::getenv("LANG"); lang != nullptr && lang[0] != '\0') {
-      return lang;
-    }
-    return "C";
-  }
-
-  std::optional<std::string> usernameFromUid(std::uint32_t uid) {
+  std::optional<std::string> usernameFromUid(uid_t uid) {
     passwd pwd{};
     passwd* result = nullptr;
     std::array<char, 4096> buffer{};
-    const int rc = getpwuid_r(static_cast<uid_t>(uid), &pwd, buffer.data(), buffer.size(), &result);
+    const int rc = getpwuid_r(uid, &pwd, buffer.data(), buffer.size(), &result);
     if (rc != 0 || result == nullptr || result->pw_name == nullptr || result->pw_name[0] == '\0') {
       return std::nullopt;
     }
     return std::string(result->pw_name);
   }
 
-  std::optional<std::string> identityUsername(const Identity& identity) {
-    const std::string& kind = std::get<0>(identity);
-    const IdentityDetails& details = std::get<1>(identity);
-    if (kind != "unix-user") {
-      return std::nullopt;
+  PolkitRequestIdentity toRequestIdentity(PolkitIdentity* identity) {
+    PolkitRequestIdentity out;
+    if (POLKIT_IS_UNIX_USER(identity)) {
+      const uid_t uid = polkit_unix_user_get_uid(POLKIT_UNIX_USER(identity));
+      out.kind = "unix-user";
+      out.uid = static_cast<std::uint32_t>(uid);
+      out.userName = usernameFromUid(uid).value_or(std::to_string(uid));
+    } else if (POLKIT_IS_UNIX_GROUP(identity)) {
+      out.kind = "unix-group";
+      out.uid = static_cast<std::uint32_t>(polkit_unix_group_get_gid(POLKIT_UNIX_GROUP(identity)));
     }
-    const auto nameIt = details.find("name");
-    if (nameIt != details.end()) {
-      try {
-        const std::string name = nameIt->second.get<std::string>();
-        if (!name.empty()) {
-          return name;
-        }
-      } catch (const sdbus::Error&) {
-      }
-    }
-    const auto uidIt = details.find("uid");
-    if (uidIt != details.end()) {
-      try {
-        return usernameFromUid(uidIt->second.get<std::uint32_t>());
-      } catch (const sdbus::Error&) {
-      }
-    }
-    return std::nullopt;
+    return out;
   }
 
-  bool writeAll(int fd, std::string_view payload) {
-    const char* cursor = payload.data();
-    std::size_t remaining = payload.size();
-    while (remaining > 0) {
-      const ssize_t written = ::write(fd, cursor, remaining);
-      if (written < 0) {
-        if (errno == EINTR) {
-          continue;
-        }
-        return false;
-      }
-      cursor += static_cast<std::size_t>(written);
-      remaining -= static_cast<std::size_t>(written);
+  std::string identityDisplayName(PolkitIdentity* identity) {
+    if (POLKIT_IS_UNIX_USER(identity)) {
+      const uid_t uid = polkit_unix_user_get_uid(POLKIT_UNIX_USER(identity));
+      return usernameFromUid(uid).value_or(std::to_string(uid));
     }
-    return true;
+    if (POLKIT_IS_UNIX_GROUP(identity)) {
+      return "group " + std::to_string(polkit_unix_group_get_gid(POLKIT_UNIX_GROUP(identity)));
+    }
+    return "unknown";
   }
 
-  std::optional<std::string> readLineNonBlocking(int fd, std::string& buffer) {
-    char chunk[256];
-    while (true) {
-      const ssize_t n = ::read(fd, chunk, sizeof(chunk));
-      if (n < 0) {
-        if (errno == EINTR) {
-          continue;
-        }
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-          break;
-        }
-        return std::nullopt;
-      }
-      if (n == 0) {
-        if (buffer.empty()) {
-          return std::nullopt;
-        }
-        std::string out = std::move(buffer);
-        buffer.clear();
-        return out;
-      }
-      buffer.append(chunk, static_cast<std::size_t>(n));
-      const std::size_t newlinePos = buffer.find('\n');
-      if (newlinePos != std::string::npos) {
-        std::string line = buffer.substr(0, newlinePos);
-        buffer.erase(0, newlinePos + 1);
-        return line;
+  class IdentityRef {
+  public:
+    explicit IdentityRef(PolkitIdentity* identity = nullptr) : m_identity(identity) {
+      if (m_identity != nullptr) {
+        g_object_ref(m_identity);
       }
     }
-    return std::string{};
-  }
 
-  bool setFdNonBlocking(int fd) {
-    const int flags = ::fcntl(fd, F_GETFL, 0);
-    if (flags < 0) {
-      return false;
-    }
-    return ::fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0;
-  }
-
-  std::optional<std::string> helperPath() {
-    constexpr std::array<const char*, 2> candidates = {
-        "/usr/lib/polkit-1/polkit-agent-helper-1",
-        "/usr/libexec/polkit-agent-helper-1",
-    };
-    for (const char* path : candidates) {
-      if (::access(path, X_OK) == 0) {
-        return std::string(path);
+    ~IdentityRef() {
+      if (m_identity != nullptr) {
+        g_object_unref(m_identity);
       }
     }
-    return std::nullopt;
-  }
 
-  std::string extractPromptText(const std::string& line, const std::string& token) {
-    if (line.size() <= token.size()) {
-      return i18n::tr("auth.polkit.default-message");
-    }
-    std::string prompt = line.substr(token.size());
-    if (!prompt.empty() && prompt.front() == ' ') {
-      prompt.erase(prompt.begin());
-    }
-    return prompt;
-  }
+    IdentityRef(const IdentityRef&) = delete;
+    IdentityRef& operator=(const IdentityRef&) = delete;
 
-  std::optional<std::string> sessionIdFromLogind(SystemBus& bus) {
-    try {
-      auto manager = sdbus::createProxy(bus.connection(), k_logindBusName, k_logindObjectPath);
-      sdbus::ObjectPath sessionPath;
-      manager->callMethod("GetSessionByPID")
-          .onInterface(k_logindManagerInterface)
-          .withArguments(static_cast<std::uint32_t>(::getpid()))
-          .storeResultsTo(sessionPath);
+    IdentityRef(IdentityRef&& other) noexcept : m_identity(std::exchange(other.m_identity, nullptr)) {}
 
-      auto session = sdbus::createProxy(bus.connection(), k_logindBusName, sessionPath);
-      const sdbus::Variant idVar = session->getProperty("Id").onInterface(k_logindSessionInterface);
-      const std::string sessionId = idVar.get<std::string>();
-      if (!sessionId.empty()) {
-        return sessionId;
+    IdentityRef& operator=(IdentityRef&& other) noexcept {
+      if (this == &other) {
+        return *this;
       }
-    } catch (const sdbus::Error&) {
-    }
-    return std::nullopt;
-  }
-
-  Subject makeSessionSubject(SystemBus& bus) {
-    if (const auto sessionId = sessionIdFromLogind(bus); sessionId.has_value()) {
-      std::map<std::string, sdbus::Variant> sessionDetails;
-      sessionDetails.emplace("session-id", sdbus::Variant{*sessionId});
-      return Subject{"unix-session", std::move(sessionDetails)};
+      if (m_identity != nullptr) {
+        g_object_unref(m_identity);
+      }
+      m_identity = std::exchange(other.m_identity, nullptr);
+      return *this;
     }
 
-    if (const char* sessionId = std::getenv("XDG_SESSION_ID"); sessionId != nullptr && sessionId[0] != '\0') {
-      std::map<std::string, sdbus::Variant> sessionDetails;
-      sessionDetails.emplace("session-id", sdbus::Variant{std::string(sessionId)});
-      return Subject{"unix-session", std::move(sessionDetails)};
-    }
+    [[nodiscard]] PolkitIdentity* get() const noexcept { return m_identity; }
 
-    // Fallback when the session id is unavailable: register for this process.
-    std::map<std::string, sdbus::Variant> details;
-    const pid_t pid = ::getpid();
-    std::ifstream statFile("/proc/self/stat");
-    if (statFile.is_open()) {
-      std::string line;
-      std::getline(statFile, line);
-      const std::size_t rightParen = line.rfind(')');
-      if (rightParen != std::string::npos && rightParen + 2 < line.size()) {
-        // /proc/<pid>/stat field 22 is process start time (clock ticks since boot).
-        std::istringstream rest(line.substr(rightParen + 2));
-        std::string field;
-        std::uint64_t startTime = 0;
-        for (int fieldIndex = 3; fieldIndex <= 22; ++fieldIndex) {
-          if (!(rest >> field)) {
-            break;
-          }
-          if (fieldIndex == 22) {
-            try {
-              startTime = static_cast<std::uint64_t>(std::stoull(field));
-            } catch (const std::exception&) {
-              startTime = 0;
-            }
-            break;
-          }
-        }
-        details.emplace("pid", sdbus::Variant{static_cast<std::uint32_t>(pid)});
-        details.emplace("start-time", sdbus::Variant{startTime});
-        return Subject{"unix-process", std::move(details)};
+  private:
+    PolkitIdentity* m_identity = nullptr;
+  };
+
+  struct InternalAuthRequest {
+    std::string actionId;
+    std::string message;
+    std::string iconName;
+    std::string cookie;
+    std::vector<IdentityRef> identities;
+    GTask* task = nullptr;
+    GCancellable* cancellable = nullptr;
+    gulong cancelHandlerId = 0;
+    bool finished = false;
+
+    ~InternalAuthRequest() {
+      if (cancellable != nullptr && cancelHandlerId != 0) {
+        g_cancellable_disconnect(cancellable, cancelHandlerId);
+      }
+      if (cancellable != nullptr) {
+        g_object_unref(cancellable);
+      }
+      if (!finished && task != nullptr) {
+        g_task_return_new_error(task, POLKIT_ERROR, POLKIT_ERROR_CANCELLED, "%s",
+                                "Authentication request was destroyed");
+      }
+      if (task != nullptr) {
+        g_object_unref(task);
       }
     }
-    // Fallback when /proc parsing fails.
-    details.emplace("pid", sdbus::Variant{static_cast<std::uint32_t>(pid)});
-    details.emplace("start-time", sdbus::Variant{static_cast<std::uint64_t>(0)});
-    return Subject{"unix-process", std::move(details)};
-  }
 
-  PolkitIdentity toPolkitIdentity(const Identity& wireIdentity) {
-    PolkitIdentity identity;
-    identity.kind = std::get<0>(wireIdentity);
-    const auto& details = std::get<1>(wireIdentity);
+    void complete() {
+      if (finished || task == nullptr) {
+        return;
+      }
+      finished = true;
+      g_task_return_boolean(task, TRUE);
+    }
 
-    const auto uidIt = details.find("uid");
-    if (uidIt != details.end()) {
-      try {
-        identity.uid = uidIt->second.get<std::uint32_t>();
-      } catch (const sdbus::Error&) {
+    void cancel(const char* reason) {
+      if (finished || task == nullptr) {
+        return;
       }
+      finished = true;
+      g_task_return_new_error(task, POLKIT_ERROR, POLKIT_ERROR_CANCELLED, "%s", reason);
     }
-    const auto userNameIt = details.find("name");
-    if (userNameIt != details.end()) {
-      try {
-        identity.userName = userNameIt->second.get<std::string>();
-      } catch (const sdbus::Error&) {
-      }
-    }
-    return identity;
-  }
+  };
 
-  std::optional<std::size_t> firstSupportedIdentityIndex(const std::vector<Identity>& identities,
-                                                         std::string& outUser) {
-    for (std::size_t i = 0; i < identities.size(); ++i) {
-      if (auto resolved = identityUsername(identities[i]); resolved.has_value()) {
-        outUser = *resolved;
-        return i;
-      }
-    }
-    return std::nullopt;
-  }
+  using InitiateCallback = void (*)(void*, std::unique_ptr<InternalAuthRequest>);
+  using CancelCallback = void (*)(void*, InternalAuthRequest*);
 
 } // namespace
 
+// GObject code follows GLib naming conventions because the virtual method
+// signatures are defined by libpolkit-agent.
+// NOLINTBEGIN(readability-identifier-naming)
+
+using NoctaliaPolkitListener = struct _NoctaliaPolkitListener {
+  PolkitAgentListener parent_instance;
+  void* owner = nullptr;
+  InitiateCallback initiate = nullptr;
+  CancelCallback cancel = nullptr;
+  gpointer registration_handle = nullptr;
+};
+
+using NoctaliaPolkitListenerClass = struct _NoctaliaPolkitListenerClass {
+  PolkitAgentListenerClass parent_class;
+};
+
+static void noctalia_polkit_listener_initiate_authentication(PolkitAgentListener* listener, const gchar* action_id,
+                                                             const gchar* message, const gchar* icon_name,
+                                                             PolkitDetails* /*details*/, const gchar* cookie,
+                                                             GList* identities, GCancellable* cancellable,
+                                                             GAsyncReadyCallback callback, gpointer user_data);
+static gboolean noctalia_polkit_listener_initiate_authentication_finish(PolkitAgentListener* listener,
+                                                                        GAsyncResult* result, GError** error);
+static void noctalia_polkit_request_cancelled(GCancellable* cancellable, gpointer user_data);
+
+G_DEFINE_TYPE(NoctaliaPolkitListener, noctalia_polkit_listener, POLKIT_AGENT_TYPE_LISTENER)
+
+static void noctalia_polkit_listener_init(NoctaliaPolkitListener* self) {
+  self->owner = nullptr;
+  self->initiate = nullptr;
+  self->cancel = nullptr;
+  self->registration_handle = nullptr;
+}
+
+static void noctalia_polkit_listener_class_init(NoctaliaPolkitListenerClass* klass) {
+  auto* listenerClass = POLKIT_AGENT_LISTENER_CLASS(klass);
+  listenerClass->initiate_authentication = noctalia_polkit_listener_initiate_authentication;
+  listenerClass->initiate_authentication_finish = noctalia_polkit_listener_initiate_authentication_finish;
+}
+
+static void noctalia_polkit_listener_initiate_authentication(PolkitAgentListener* listener, const gchar* action_id,
+                                                             const gchar* message, const gchar* icon_name,
+                                                             PolkitDetails* /*details*/, const gchar* cookie,
+                                                             GList* identities, GCancellable* cancellable,
+                                                             GAsyncReadyCallback callback, gpointer user_data) {
+  auto* self = reinterpret_cast<NoctaliaPolkitListener*>(listener);
+  auto request = std::make_unique<InternalAuthRequest>();
+  request->actionId = action_id != nullptr ? action_id : "";
+  request->message = message != nullptr ? message : "";
+  request->iconName = icon_name != nullptr ? icon_name : "";
+  request->cookie = cookie != nullptr ? cookie : "";
+  request->task = g_task_new(G_OBJECT(listener), nullptr, callback, user_data);
+  request->cancellable = cancellable != nullptr ? static_cast<GCancellable*>(g_object_ref(cancellable)) : nullptr;
+
+  for (GList* item = g_list_first(identities); item != nullptr; item = g_list_next(item)) {
+    auto* identity = static_cast<PolkitIdentity*>(item->data);
+    if (identity == nullptr) {
+      continue;
+    }
+    const auto duplicate = std::ranges::find_if(request->identities, [identity](const IdentityRef& existing) {
+      return polkit_identity_equal(existing.get(), identity);
+    });
+    if (duplicate == request->identities.end()) {
+      request->identities.emplace_back(identity);
+    }
+  }
+
+  if (cancellable != nullptr) {
+    request->cancelHandlerId =
+        g_cancellable_connect(cancellable, G_CALLBACK(noctalia_polkit_request_cancelled), request.get(), nullptr);
+  }
+
+  if (self->initiate == nullptr || self->owner == nullptr) {
+    request->cancel("Polkit listener is not attached");
+    return;
+  }
+  self->initiate(self->owner, std::move(request));
+}
+
+static gboolean noctalia_polkit_listener_initiate_authentication_finish(PolkitAgentListener* /*listener*/,
+                                                                        GAsyncResult* result, GError** error) {
+  return g_task_propagate_boolean(G_TASK(result), error);
+}
+
+static void noctalia_polkit_request_cancelled(GCancellable* /*cancellable*/, gpointer user_data) {
+  auto* request = static_cast<InternalAuthRequest*>(user_data);
+  request->cancelHandlerId = 0;
+  auto* source = G_TASK(request->task) != nullptr ? g_task_get_source_object(request->task) : nullptr;
+  auto* listener = source != nullptr ? reinterpret_cast<NoctaliaPolkitListener*>(source) : nullptr;
+  if (listener != nullptr && listener->cancel != nullptr && listener->owner != nullptr) {
+    listener->cancel(listener->owner, request);
+  }
+}
+
+// NOLINTEND(readability-identifier-naming)
+
 struct PolkitAgent::Impl {
-  SystemBus& bus;
-  std::unique_ptr<sdbus::IObject> object;
-  Subject subject;
   StateCallback stateCallback;
-  std::optional<sdbus::Result<>> pendingBeginResult;
-
-  std::optional<PolkitRequest> pending;
-  std::vector<Identity> pendingIdentitiesWire;
-  std::size_t activeIdentityIndex = 0;
-  std::string activeUser;
-
-  int helperInputFd = -1;
-  int helperOutputFd = -1;
-  pid_t helperPid = -1;
-  std::string helperLineBuffer;
+  NoctaliaPolkitListener* listener = nullptr;
+  PolkitAgentSession* session = nullptr;
+  GMainContext* context = nullptr;
+  std::unique_ptr<InternalAuthRequest> pending;
+  PolkitIdentity* activeIdentity = nullptr;
+  bool cancelling = false;
 
   bool responseRequired = false;
   bool responseVisible = false;
@@ -299,8 +262,77 @@ struct PolkitAgent::Impl {
   std::string supplementaryMessage;
   bool supplementaryError = false;
 
-  explicit Impl(SystemBus& systemBus) : bus(systemBus), subject(makeSessionSubject(systemBus)) {}
-  ~Impl() { stopHelper(); }
+  mutable std::vector<GPollFD> glibPollFds;
+  mutable gint glibMaxPriority = G_PRIORITY_DEFAULT;
+  mutable int glibPollTimeoutMs = -1;
+
+  Impl() : context(g_main_context_default()) {
+    listener = static_cast<NoctaliaPolkitListener*>(g_object_new(noctalia_polkit_listener_get_type(), nullptr));
+    listener->owner = this;
+    listener->initiate = &Impl::initiateBridge;
+    listener->cancel = &Impl::cancelBridge;
+
+    GError* error = nullptr;
+    PolkitSubject* subject = polkit_unix_session_new_for_process_sync(::getpid(), nullptr, &error);
+    if (subject == nullptr || error != nullptr) {
+      std::string message = error != nullptr ? error->message : "failed to create polkit session subject";
+      g_clear_error(&error);
+      throw std::runtime_error(message);
+    }
+
+    listener->registration_handle = polkit_agent_listener_register(
+        POLKIT_AGENT_LISTENER(listener), POLKIT_AGENT_REGISTER_FLAGS_NONE, subject, k_agentObjectPath, nullptr, &error);
+    g_object_unref(subject);
+
+    if (error != nullptr) {
+      std::string message = error->message;
+      g_clear_error(&error);
+      throw std::runtime_error(message);
+    }
+    if (listener->registration_handle == nullptr) {
+      throw std::runtime_error("polkit listener registration returned no handle");
+    }
+
+    kLog.info("registered Polkit authentication agent at {}", k_agentObjectPath);
+  }
+
+  ~Impl() {
+    clearPending("PolkitAgent is being destroyed", true);
+    if (listener != nullptr) {
+      listener->owner = nullptr;
+      listener->initiate = nullptr;
+      listener->cancel = nullptr;
+      if (listener->registration_handle != nullptr) {
+        polkit_agent_listener_unregister(listener->registration_handle);
+        listener->registration_handle = nullptr;
+      }
+      g_object_unref(listener);
+    }
+  }
+
+  static void initiateBridge(void* owner, std::unique_ptr<InternalAuthRequest> request) {
+    static_cast<Impl*>(owner)->beginAuthentication(std::move(request));
+  }
+
+  static void cancelBridge(void* owner, InternalAuthRequest* request) {
+    static_cast<Impl*>(owner)->cancelFromAuthority(request);
+  }
+
+  static void completedCallback(PolkitAgentSession* /*session*/, gboolean gainedAuthorization, gpointer userData) {
+    static_cast<Impl*>(userData)->handleCompleted(gainedAuthorization != FALSE);
+  }
+
+  static void requestCallback(PolkitAgentSession* /*session*/, gchar* request, gboolean echoOn, gpointer userData) {
+    static_cast<Impl*>(userData)->handleRequest(request != nullptr ? request : "", echoOn != FALSE);
+  }
+
+  static void showErrorCallback(PolkitAgentSession* /*session*/, gchar* text, gpointer userData) {
+    static_cast<Impl*>(userData)->setSupplementary(text != nullptr ? text : "", true);
+  }
+
+  static void showInfoCallback(PolkitAgentSession* /*session*/, gchar* text, gpointer userData) {
+    static_cast<Impl*>(userData)->setSupplementary(text != nullptr ? text : "", false);
+  }
 
   void emitStateChanged() {
     if (stateCallback) {
@@ -316,111 +348,111 @@ struct PolkitAgent::Impl {
     supplementaryError = false;
   }
 
-  void finishBeginAuthenticationCall() {
-    if (pendingBeginResult.has_value()) {
-      pendingBeginResult->returnResults();
-      pendingBeginResult.reset();
+  void stopSession() {
+    activeIdentity = nullptr;
+    if (session != nullptr) {
+      g_signal_handlers_disconnect_by_data(session, this);
+      g_object_unref(session);
+      session = nullptr;
     }
   }
 
-  void stopHelper() {
-    if (helperInputFd >= 0) {
-      ::close(helperInputFd);
-      helperInputFd = -1;
+  void clearPending(const char* cancelReason = "Authentication request cancelled", bool silent = false) {
+    stopSession();
+    if (pending != nullptr && !pending->finished) {
+      pending->cancel(cancelReason);
     }
-    if (helperOutputFd >= 0) {
-      ::close(helperOutputFd);
-      helperOutputFd = -1;
-    }
-    if (helperPid > 0) {
-      int status = 0;
-      (void)::waitpid(helperPid, &status, 0);
-      helperPid = -1;
-    }
-    helperLineBuffer.clear();
-  }
-
-  void clearPending() {
-    stopHelper();
-    finishBeginAuthenticationCall();
     pending.reset();
-    pendingIdentitiesWire.clear();
-    activeIdentityIndex = 0;
-    activeUser.clear();
+    cancelling = false;
     clearConversationState();
+    if (!silent) {
+      emitStateChanged();
+    }
+  }
+
+  void beginAuthentication(std::unique_ptr<InternalAuthRequest> request) {
+    if (pending != nullptr) {
+      clearPending("Replaced by a newer authentication request", true);
+    }
+
+    if (request->identities.empty()) {
+      kLog.warn("polkit request \"{}\" has no identities", request->actionId);
+      request->cancel("Authentication request has no identities");
+      return;
+    }
+
+    pending = std::move(request);
+    clearConversationState();
+    if (!startSession()) {
+      kLog.warn("polkit session startup failed for action \"{}\"", pending->actionId);
+      clearPending("Failed to start authentication session");
+      return;
+    }
     emitStateChanged();
   }
 
-  bool startHelperSession(bool preserveSupplementaryMessage = false) {
-    if (!pending.has_value()) {
-      return false;
-    }
-    stopHelper();
-
-    auto helper = helperPath();
-    if (!helper.has_value()) {
-      kLog.warn("polkit-agent-helper-1 not found");
+  bool startSession() {
+    if (pending == nullptr) {
       return false;
     }
 
-    int stdinPipe[2] = {-1, -1};
-    int stdoutPipe[2] = {-1, -1};
-    if (::pipe2(stdinPipe, O_CLOEXEC) != 0) {
-      return false;
-    }
-    if (::pipe2(stdoutPipe, O_CLOEXEC) != 0) {
-      ::close(stdinPipe[0]);
-      ::close(stdinPipe[1]);
+    stopSession();
+    const auto identityIt = std::ranges::find_if(pending->identities, [](const IdentityRef& identity) {
+      return POLKIT_IS_UNIX_USER(identity.get()) || POLKIT_IS_UNIX_GROUP(identity.get());
+    });
+    if (identityIt == pending->identities.end()) {
       return false;
     }
 
-    const pid_t pid = ::fork();
-    if (pid < 0) {
-      ::close(stdinPipe[0]);
-      ::close(stdinPipe[1]);
-      ::close(stdoutPipe[0]);
-      ::close(stdoutPipe[1]);
+    activeIdentity = identityIt->get();
+    session = polkit_agent_session_new(activeIdentity, pending->cookie.c_str());
+    if (session == nullptr) {
       return false;
     }
 
-    if (pid == 0) {
-      ::dup2(stdinPipe[0], STDIN_FILENO);
-      ::dup2(stdoutPipe[1], STDOUT_FILENO);
-      ::close(stdinPipe[0]);
-      ::close(stdinPipe[1]);
-      ::close(stdoutPipe[0]);
-      ::close(stdoutPipe[1]);
-      ::execl(helper->c_str(), helper->c_str(), activeUser.c_str(), static_cast<char*>(nullptr));
-      _exit(127);
-    }
+    g_signal_connect(G_OBJECT(session), "completed", G_CALLBACK(completedCallback), this);
+    g_signal_connect(G_OBJECT(session), "request", G_CALLBACK(requestCallback), this);
+    g_signal_connect(G_OBJECT(session), "show-error", G_CALLBACK(showErrorCallback), this);
+    g_signal_connect(G_OBJECT(session), "show-info", G_CALLBACK(showInfoCallback), this);
 
-    ::close(stdinPipe[0]);
-    ::close(stdoutPipe[1]);
-    helperInputFd = stdinPipe[1];
-    helperOutputFd = stdoutPipe[0];
-    helperPid = pid;
-    if (!setFdNonBlocking(helperOutputFd)) {
-      kLog.warn("failed to set helper output non-blocking");
-    }
-    // polkit-agent-helper-1 expects the cookie as the first stdin line.
-    if (!writeAll(helperInputFd, pending->cookie + "\n")) {
-      stopHelper();
-      return false;
-    }
-    if (preserveSupplementaryMessage) {
-      responseRequired = false;
-      responseVisible = false;
-      inputPrompt.clear();
-    } else {
-      clearConversationState();
-    }
-    emitStateChanged();
+    polkit_agent_session_initiate(session);
     return true;
   }
 
-  void handleFailure() {
-    // Keep the request active and start a fresh helper attempt.
-    stopHelper();
+  void handleRequest(const std::string& prompt, bool echoOn) {
+    inputPrompt = prompt.empty() ? i18n::tr("auth.polkit.default-message") : prompt;
+    responseVisible = echoOn;
+    responseRequired = true;
+    emitStateChanged();
+  }
+
+  void setSupplementary(const std::string& text, bool isError) {
+    supplementaryMessage = text;
+    supplementaryError = isError;
+    emitStateChanged();
+  }
+
+  void handleCompleted(bool gainedAuthorization) {
+    if (pending == nullptr) {
+      return;
+    }
+
+    if (gainedAuthorization) {
+      kLog.info("polkit action \"{}\" authorized as {}", pending->actionId,
+                activeIdentity != nullptr ? identityDisplayName(activeIdentity) : std::string("unknown"));
+      pending->complete();
+      pending.reset();
+      stopSession();
+      clearConversationState();
+      emitStateChanged();
+      return;
+    }
+
+    if (cancelling) {
+      clearPending("Authentication request cancelled");
+      return;
+    }
+
     responseRequired = false;
     responseVisible = false;
     inputPrompt.clear();
@@ -428,151 +460,117 @@ struct PolkitAgent::Impl {
     supplementaryError = true;
     emitStateChanged();
 
-    if (!pending.has_value()) {
-      return;
-    }
-    if (!startHelperSession(true)) {
-      kLog.warn("polkit helper restart failed for action \"{}\"", pending->actionId);
-      clearPending();
+    if (!startSession()) {
+      kLog.warn("polkit session restart failed for action \"{}\"", pending->actionId);
+      clearPending("Failed to restart authentication session");
     }
   }
 
-  void handleHelperLine(const std::string& line) {
-    if (line.rfind("PAM_PROMPT_ECHO_OFF", 0) == 0) {
-      inputPrompt = extractPromptText(line, "PAM_PROMPT_ECHO_OFF");
-      responseVisible = false;
-      responseRequired = true;
-      emitStateChanged();
+  void cancelFromAuthority(InternalAuthRequest* request) {
+    if (pending == nullptr || pending.get() != request) {
       return;
     }
-    if (line.rfind("PAM_PROMPT_ECHO_ON", 0) == 0) {
-      inputPrompt = extractPromptText(line, "PAM_PROMPT_ECHO_ON");
-      responseVisible = true;
-      responseRequired = true;
-      emitStateChanged();
+    cancelling = true;
+    clearPending("Authentication request cancelled by polkit");
+  }
+
+  void submitResponse(const std::string& response) {
+    if (pending == nullptr || session == nullptr || !responseRequired) {
       return;
     }
-    if (line.rfind("PAM_TEXT_INFO", 0) == 0) {
-      supplementaryMessage = extractPromptText(line, "PAM_TEXT_INFO");
-      supplementaryError = false;
-      emitStateChanged();
+    polkit_agent_session_response(session, response.c_str());
+    responseRequired = false;
+    inputPrompt.clear();
+    supplementaryMessage = i18n::tr("auth.polkit.authenticating");
+    supplementaryError = false;
+    emitStateChanged();
+  }
+
+  void cancelRequest() {
+    if (pending == nullptr) {
       return;
     }
-    if (line.rfind("PAM_ERROR_MSG", 0) == 0) {
-      supplementaryMessage = extractPromptText(line, "PAM_ERROR_MSG");
-      supplementaryError = true;
-      emitStateChanged();
+    cancelling = true;
+    if (session != nullptr) {
+      polkit_agent_session_cancel(session);
+    }
+    clearPending("Authentication request cancelled by user");
+  }
+
+  void addPollFds(std::vector<pollfd>& fds) const {
+    glibPollFds.clear();
+    glibMaxPriority = G_PRIORITY_DEFAULT;
+    glibPollTimeoutMs = -1;
+
+    if (!g_main_context_acquire(context)) {
       return;
     }
-    if (line.rfind("PAM_ERROR", 0) == 0) {
-      supplementaryMessage = extractPromptText(line, "PAM_ERROR");
-      supplementaryError = true;
-      emitStateChanged();
+
+    const gboolean ready = g_main_context_prepare(context, &glibMaxPriority);
+    gint timeout = -1;
+    const gint count = g_main_context_query(context, glibMaxPriority, &timeout, nullptr, 0);
+    glibPollTimeoutMs = ready ? 0 : timeout;
+    if (count > 0) {
+      glibPollFds.resize(static_cast<std::size_t>(count));
+      g_main_context_query(context, glibMaxPriority, &timeout, glibPollFds.data(), count);
+      glibPollTimeoutMs = ready ? 0 : timeout;
+      for (const GPollFD& glibFd : glibPollFds) {
+        fds.push_back({.fd = glibFd.fd, .events = static_cast<short>(glibFd.events), .revents = 0});
+      }
+    }
+    g_main_context_release(context);
+  }
+
+  int pollTimeoutMs() const { return glibPollTimeoutMs; }
+
+  void dispatch(const std::vector<pollfd>& fds, std::size_t startIdx) {
+    if (!g_main_context_acquire(context)) {
       return;
     }
-    if (line == "SUCCESS") {
-      kLog.info("polkit action \"{}\" authorized as {}", pending->actionId, activeUser);
-      supplementaryMessage = "Authorized";
-      supplementaryError = false;
-      emitStateChanged();
-      clearPending();
-      return;
+
+    for (std::size_t i = 0; i < glibPollFds.size(); ++i) {
+      const std::size_t pollIndex = startIdx + i;
+      glibPollFds[i].revents =
+          pollIndex < fds.size() ? static_cast<gushort>(fds[pollIndex].revents) : static_cast<gushort>(0);
     }
-    if (line == "FAILURE") {
-      handleFailure();
+
+    const gboolean ready =
+        g_main_context_check(context, glibMaxPriority, glibPollFds.data(), static_cast<gint>(glibPollFds.size()));
+    g_main_context_release(context);
+
+    if (ready) {
+      if (!g_main_context_acquire(context)) {
+        return;
+      }
+      g_main_context_dispatch(context);
+      g_main_context_release(context);
     }
+
+    while (g_main_context_pending(context)) {
+      g_main_context_iteration(context, FALSE);
+    }
+  }
+
+  PolkitRequest pendingRequest() const {
+    if (pending == nullptr) {
+      return {};
+    }
+    PolkitRequest request;
+    request.actionId = pending->actionId;
+    request.message = pending->message;
+    request.iconName = pending->iconName;
+    request.cookie = pending->cookie;
+    request.identities.reserve(pending->identities.size());
+    for (const IdentityRef& identity : pending->identities) {
+      request.identities.push_back(toRequestIdentity(identity.get()));
+    }
+    return request;
   }
 };
 
-PolkitAgent::PolkitAgent(SystemBus& bus) : m_impl(std::make_unique<Impl>(bus)) {
-  m_impl->object = sdbus::createObject(bus.connection(), k_agentObjectPath);
+PolkitAgent::PolkitAgent(SystemBus& /*bus*/) : m_impl(std::make_unique<Impl>()) {}
 
-  m_impl->object
-      ->addVTable(sdbus::registerMethod("BeginAuthentication")
-                      .withInputParamNames("action_id", "message", "icon_name", "details", "cookie", "identities")
-                      .implementedAs([this](sdbus::Result<>&& result, std::string actionId, std::string message,
-                                            std::string iconName, std::map<std::string, std::string> /*details*/,
-                                            std::string cookie, std::vector<Identity> identities) {
-                        if (m_impl == nullptr) {
-                          result.returnResults();
-                          return;
-                        }
-                        if (m_impl->pendingBeginResult.has_value()) {
-                          // Defensive: finish any previous deferred call before replacing state.
-                          m_impl->finishBeginAuthenticationCall();
-                        }
-                        if (m_impl->pending.has_value()) {
-                          m_impl->stopHelper();
-                          m_impl->clearConversationState();
-                        }
-                        m_impl->pendingBeginResult = std::move(result);
-                        PolkitRequest request;
-                        request.actionId = std::move(actionId);
-                        request.message = std::move(message);
-                        request.iconName = std::move(iconName);
-                        request.cookie = std::move(cookie);
-                        request.identities.reserve(identities.size());
-                        for (const auto& identity : identities) {
-                          request.identities.push_back(toPolkitIdentity(identity));
-                        }
-                        m_impl->pending = request;
-                        m_impl->pendingIdentitiesWire = std::move(identities);
-
-                        std::string userName;
-                        const auto selectedIdentityIndex =
-                            firstSupportedIdentityIndex(m_impl->pendingIdentitiesWire, userName);
-                        if (!selectedIdentityIndex.has_value()) {
-                          kLog.warn("polkit request \"{}\" has no unix-user identity", request.actionId);
-                          m_impl->clearPending();
-                          return;
-                        }
-                        m_impl->activeIdentityIndex = *selectedIdentityIndex;
-                        m_impl->activeUser = userName;
-                        if (!m_impl->startHelperSession()) {
-                          kLog.warn("polkit helper startup failed for action \"{}\"", request.actionId);
-                          m_impl->clearPending();
-                          return;
-                        }
-                      }),
-                  sdbus::registerMethod("CancelAuthentication")
-                      .withInputParamNames("cookie")
-                      .implementedAs([this](const std::string& cookie) {
-                        if (m_impl == nullptr || !m_impl->pending.has_value()) {
-                          return;
-                        }
-                        if (m_impl->pending->cookie == cookie) {
-                          m_impl->clearPending();
-                        }
-                      }))
-      .forInterface(k_agentInterface);
-
-  try {
-    auto authority = sdbus::createProxy(bus.connection(), k_authorityBusName, k_authorityObjectPath);
-    authority->callMethod("RegisterAuthenticationAgent")
-        .onInterface(k_authorityInterface)
-        .withArguments(m_impl->subject, localeFromEnvironment(), std::string(k_agentObjectPath));
-    kLog.info("registered Polkit authentication agent at {}", std::string(k_agentObjectPath));
-  } catch (const sdbus::Error& e) {
-    kLog.warn("polkit agent registration failed: {}", e.what());
-    throw;
-  }
-}
-
-PolkitAgent::~PolkitAgent() {
-  if (m_impl == nullptr) {
-    return;
-  }
-  m_impl->clearPending();
-
-  try {
-    auto authority = sdbus::createProxy(m_impl->bus.connection(), k_authorityBusName, k_authorityObjectPath);
-    authority->callMethod("UnregisterAuthenticationAgent")
-        .onInterface(k_authorityInterface)
-        .withArguments(m_impl->subject, std::string(k_agentObjectPath));
-  } catch (const sdbus::Error& e) {
-    kLog.debug("polkit agent unregister failed: {}", e.what());
-  }
-}
+PolkitAgent::~PolkitAgent() = default;
 
 void PolkitAgent::setStateCallback(StateCallback callback) {
   if (m_impl != nullptr) {
@@ -581,68 +579,35 @@ void PolkitAgent::setStateCallback(StateCallback callback) {
 }
 
 void PolkitAgent::submitResponse(const std::string& response) {
-  if (m_impl == nullptr || !m_impl->pending.has_value() || !m_impl->responseRequired || m_impl->helperInputFd < 0) {
-    return;
+  if (m_impl != nullptr) {
+    m_impl->submitResponse(response);
   }
-  if (!writeAll(m_impl->helperInputFd, response + "\n")) {
-    m_impl->handleFailure();
-    return;
-  }
-  m_impl->responseRequired = false;
-  m_impl->inputPrompt.clear();
-  m_impl->supplementaryMessage = i18n::tr("auth.polkit.authenticating");
-  m_impl->supplementaryError = false;
-  m_impl->emitStateChanged();
 }
 
 void PolkitAgent::cancelRequest() {
-  if (m_impl == nullptr || !m_impl->pending.has_value()) {
-    return;
+  if (m_impl != nullptr) {
+    m_impl->cancelRequest();
   }
-  if (m_impl->helperInputFd >= 0) {
-    (void)writeAll(m_impl->helperInputFd, "CANCEL\n");
-  }
-  m_impl->clearPending();
 }
 
 void PolkitAgent::addPollFds(std::vector<pollfd>& fds) const {
-  if (m_impl != nullptr && m_impl->helperOutputFd >= 0) {
-    fds.push_back({.fd = m_impl->helperOutputFd, .events = POLLIN | POLLHUP | POLLERR, .revents = 0});
+  if (m_impl != nullptr) {
+    m_impl->addPollFds(fds);
   }
 }
+
+int PolkitAgent::pollTimeoutMs() const { return m_impl != nullptr ? m_impl->pollTimeoutMs() : -1; }
 
 void PolkitAgent::dispatch(const std::vector<pollfd>& fds, std::size_t startIdx) {
-  if (m_impl == nullptr || m_impl->helperOutputFd < 0 || startIdx >= fds.size()) {
-    return;
-  }
-  const auto revents = fds[startIdx].revents;
-  if ((revents & (POLLIN | POLLHUP | POLLERR)) == 0) {
-    return;
-  }
-
-  while (true) {
-    const auto line = readLineNonBlocking(m_impl->helperOutputFd, m_impl->helperLineBuffer);
-    if (!line.has_value()) {
-      m_impl->handleFailure();
-      break;
-    }
-    if (line->empty()) {
-      break;
-    }
-    m_impl->handleHelperLine(*line);
-    if (!m_impl->pending.has_value()) {
-      break;
-    }
+  if (m_impl != nullptr) {
+    m_impl->dispatch(fds, startIdx);
   }
 }
 
-bool PolkitAgent::hasPendingRequest() const noexcept { return m_impl != nullptr && m_impl->pending.has_value(); }
+bool PolkitAgent::hasPendingRequest() const noexcept { return m_impl != nullptr && m_impl->pending != nullptr; }
 
 PolkitRequest PolkitAgent::pendingRequest() const {
-  if (m_impl == nullptr || !m_impl->pending.has_value()) {
-    return {};
-  }
-  return *m_impl->pending;
+  return m_impl != nullptr ? m_impl->pendingRequest() : PolkitRequest{};
 }
 
 bool PolkitAgent::isResponseRequired() const noexcept { return m_impl != nullptr && m_impl->responseRequired; }

@@ -9,6 +9,7 @@
 
 struct pw_context;
 struct pw_core;
+struct pw_client;
 struct pw_loop;
 struct pw_registry;
 struct spa_hook;
@@ -20,6 +21,11 @@ struct AudioNode {
   std::uint32_t id = 0;
   std::string name;
   std::string description;
+  std::string applicationName;
+  std::string applicationId;
+  std::string applicationBinary;
+  std::string streamTitle;
+  std::string iconName;
   std::string mediaClass; // "Audio/Sink", "Audio/Source"
   float volume = 1.0f;
   bool muted = false;
@@ -32,6 +38,7 @@ struct AudioNode {
 struct AudioState {
   std::vector<AudioNode> sinks;
   std::vector<AudioNode> sources;
+  std::vector<AudioNode> programOutputs; // "Stream/Output/Audio" (application playback streams)
   std::uint32_t defaultSinkId = 0;
   std::uint32_t defaultSourceId = 0;
 
@@ -78,17 +85,27 @@ public:
   void setMicMuted(bool muted);
   void emitVolumePreview(bool isInput, std::uint32_t id, float volume) const;
 
+  // Program/application streams (PipeWire "Stream/*/Audio")
+  void setProgramOutputVolume(std::uint32_t id, float volume);
+  void setProgramOutputMuted(std::uint32_t id, bool muted);
+
   // Registers audio-related IPC commands (set/raise/lower-volume, mute, set/raise/lower-mic-volume, mute-mic).
   void registerIpc(IpcService& ipc, const ConfigService& config);
 
   [[nodiscard]] std::uint64_t changeSerial() const noexcept { return m_changeSerial; }
 
-  // Called from C callbacks in the .cpp — must be public
+  // Called from C callbacks in the .cpp - must be public
   struct NodeData {
     PipeWireService* service = nullptr;
     std::uint32_t id = 0;
+    std::uint32_t clientId = 0;
     std::string name;
     std::string description;
+    std::string applicationName;
+    std::string applicationId;
+    std::string applicationBinary;
+    std::string streamTitle;
+    std::string iconName;
     std::string mediaClass;
     float volume = 1.0f;
     bool muted = false;
@@ -96,8 +113,19 @@ public:
     struct pw_node* proxy = nullptr;
     spa_hook* listener = nullptr;
   };
+  struct ClientData {
+    PipeWireService* service = nullptr;
+    std::uint32_t id = 0;
+    std::string name;
+    std::string appId;
+    std::string binary;
+    std::string iconName;
+    struct pw_client* proxy = nullptr;
+    spa_hook* listener = nullptr;
+  };
   void onRegistryGlobal(std::uint32_t id, const char* type, std::uint32_t version, const struct spa_dict* props);
   void onRegistryGlobalRemove(std::uint32_t id);
+  void onClientInfo(std::uint32_t id, const struct pw_client_info* info);
   void onNodeInfo(std::uint32_t id, const struct pw_node_info* info);
   void onNodeParam(std::uint32_t id, std::uint32_t paramId, std::uint32_t index, std::uint32_t next,
                    const struct spa_pod* param);
@@ -105,6 +133,7 @@ public:
 
 private:
   void rebuildState();
+  void refreshNodeIdentity(NodeData& nd);
   void setNodeVolume(std::uint32_t id, float volume);
   void setNodeMuted(std::uint32_t id, bool muted);
   void setDefaultNode(std::uint32_t id, const char* key);
@@ -120,6 +149,7 @@ private:
   spa_hook* m_registryListener = nullptr;
 
   std::unordered_map<std::uint32_t, std::unique_ptr<NodeData>> m_nodes;
+  std::unordered_map<std::uint32_t, ClientData> m_clients;
   std::vector<std::function<void()>> m_metadataCleanups;
   std::string m_defaultSinkName;
   std::string m_defaultSourceName;
