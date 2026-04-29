@@ -3,7 +3,6 @@
 #include "render/core/renderer.h"
 #include "render/programs/rect_program.h"
 #include "render/scene/rect_node.h"
-#include "ui/card_style.h"
 #include "ui/controls/glyph.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
@@ -144,7 +143,12 @@ void Flex::setSoftness(float softness) {
   m_background->setStyle(style);
 }
 
-void Flex::setCardStyle(float scale) { ui::applyCardStyle(*this, scale); }
+void Flex::setCardStyle(float scale) {
+  setFill(roleColor(ColorRole::Surface));
+  setBorder(roleColor(ColorRole::Outline, 0.5f), Style::borderWidth);
+  setRadius(Style::radiusXl * scale);
+  setPadding(Style::cardPadding * scale);
+}
 
 void Flex::setMinWidth(float minWidth) {
   if (m_minWidth == minWidth) {

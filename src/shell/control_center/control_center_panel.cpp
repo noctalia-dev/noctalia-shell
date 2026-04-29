@@ -44,7 +44,7 @@ void ControlCenterPanel::create() {
   auto rootLayout = std::make_unique<Flex>();
   rootLayout->setDirection(FlexDirection::Horizontal);
   rootLayout->setAlign(FlexAlign::Stretch);
-  rootLayout->setGap(Style::spaceMd * scale);
+  rootLayout->setGap(Style::panelPadding * scale);
   rootLayout->setPadding(0.0f);
   m_rootLayout = rootLayout.get();
 
