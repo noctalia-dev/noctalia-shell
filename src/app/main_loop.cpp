@@ -42,12 +42,16 @@ void MainLoop::run() {
     }
 
     auto opStart = std::chrono::steady_clock::now();
-    if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
-      throw std::runtime_error("failed to dispatch pending Wayland events");
+    while (wl_display_prepare_read(m_wayland.display()) != 0) {
+      opStart = std::chrono::steady_clock::now();
+      if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
+        throw std::runtime_error("failed to dispatch pending Wayland events");
+      }
+      if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
+        kLog.warn("wl_display_dispatch_pending blocked for {:.1f}ms before poll", ms);
+      }
     }
-    if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
-      kLog.warn("wl_display_dispatch_pending blocked for {:.1f}ms before poll", ms);
-    }
+    bool waylandReadPrepared = true;
 
     // Try to flush queued requests. If the kernel send buffer is full we get
     // EAGAIN; that is the standard Wayland backpressure signal, not a fatal
@@ -65,6 +69,8 @@ void MainLoop::run() {
     const bool flushBlocked = flushRet < 0;
     if (flushBlocked) {
       if (errno != EAGAIN) {
+        wl_display_cancel_read(m_wayland.display());
+        waylandReadPrepared = false;
         throw std::runtime_error("failed to flush Wayland display");
       }
       waylandPollEvents |= POLLOUT;
@@ -129,6 +135,10 @@ void MainLoop::run() {
 
     const int pollResult = ::poll(pollFds.data(), pollFds.size(), pollTimeout);
     if (pollResult < 0) {
+      if (waylandReadPrepared) {
+        wl_display_cancel_read(m_wayland.display());
+        waylandReadPrepared = false;
+      }
       if (errno == EINTR) {
         continue;
       }
@@ -146,25 +156,40 @@ void MainLoop::run() {
         kLog.warn("wl_display_flush blocked for {:.1f}ms after POLLOUT", ms);
       }
       if (flushRet < 0 && errno != EAGAIN) {
+        if (waylandReadPrepared) {
+          wl_display_cancel_read(m_wayland.display());
+          waylandReadPrepared = false;
+        }
         throw std::runtime_error("failed to flush Wayland display");
       }
     }
 
-    // Dispatch Wayland events
-    if ((pollFds[0].revents & POLLIN) != 0) {
+    // Read and dispatch Wayland events. Keep socket reads separate from
+    // callback dispatch so stalls identify which half is actually slow.
+    const bool waylandReadable = (pollFds[0].revents & (POLLIN | POLLERR | POLLHUP)) != 0;
+    if (waylandReadable) {
       opStart = std::chrono::steady_clock::now();
-      if (wl_display_dispatch(m_wayland.display()) < 0) {
-        throw std::runtime_error("failed to dispatch Wayland events");
+      if (wl_display_read_events(m_wayland.display()) < 0) {
+        waylandReadPrepared = false;
+        throw std::runtime_error("failed to read Wayland events");
       }
       if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
-        kLog.warn("wl_display_dispatch blocked for {:.1f}ms", ms);
+        kLog.warn("wl_display_read_events blocked for {:.1f}ms", ms);
       }
+      waylandReadPrepared = false;
     } else {
-      opStart = std::chrono::steady_clock::now();
-      if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
-        throw std::runtime_error("failed to dispatch pending Wayland events");
-      }
-      if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
+      wl_display_cancel_read(m_wayland.display());
+      waylandReadPrepared = false;
+    }
+
+    opStart = std::chrono::steady_clock::now();
+    if (wl_display_dispatch_pending(m_wayland.display()) < 0) {
+      throw std::runtime_error("failed to dispatch pending Wayland events");
+    }
+    if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
+      if (waylandReadable) {
+        kLog.warn("wl_display_dispatch_pending blocked for {:.1f}ms after read", ms);
+      } else {
         kLog.warn("wl_display_dispatch_pending blocked for {:.1f}ms after poll", ms);
       }
     }
