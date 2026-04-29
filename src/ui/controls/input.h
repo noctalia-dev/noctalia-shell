@@ -75,6 +75,7 @@ private:
   static std::string utf32ToUtf8(std::uint32_t codepoint);
 
   RectNode* m_background = nullptr;
+  Node* m_textViewport = nullptr;
   RectNode* m_selectionRect = nullptr;
   Label* m_label = nullptr;
   RectNode* m_cursor = nullptr;
