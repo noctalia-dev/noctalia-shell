@@ -411,6 +411,8 @@ namespace settings {
       add(stringSpec("high_color", "primary"));
     } else if (type == "bluetooth") {
       add(boolSpec("show_label", false));
+    } else if (type == "brightness") {
+      add(boolSpec("show_label", true));
     } else if (type == "clock") {
       add(stringSpec("format", "{:%H:%M}"));
       add(stringSpec("vertical_format"));
@@ -446,6 +448,8 @@ namespace settings {
       add(boolSpec("show_label", true));
     } else if (type == "tray") {
       add(stringListSpec("hidden"));
+    } else if (type == "volume") {
+      add(boolSpec("show_label", true));
     } else if (type == "wallpaper") {
       add(stringSpec("glyph", "wallpaper-selector"));
     } else if (type == "weather") {

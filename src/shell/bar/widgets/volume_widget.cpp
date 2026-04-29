@@ -30,7 +30,8 @@ namespace {
 
 } // namespace
 
-VolumeWidget::VolumeWidget(PipeWireService* audio, wl_output* output) : m_audio(audio), m_output(output) {}
+VolumeWidget::VolumeWidget(PipeWireService* audio, wl_output* output, bool showLabel)
+    : m_audio(audio), m_output(output), m_showLabel(showLabel) {}
 
 void VolumeWidget::create() {
   auto area = std::make_unique<InputArea>();
@@ -60,6 +61,7 @@ void VolumeWidget::create() {
   auto label = std::make_unique<Label>();
   label->setBold(true);
   label->setFontSize(Style::fontSizeBody * m_contentScale);
+  label->setVisible(m_showLabel);
   m_label = label.get();
   area->addChild(std::move(label));
 
@@ -75,18 +77,25 @@ void VolumeWidget::doLayout(Renderer& renderer, float containerWidth, float cont
   syncState(renderer);
 
   m_glyph->measure(renderer);
-  m_label->measure(renderer);
+  if (m_label->visible()) {
+    m_label->measure(renderer);
+  }
 
-  if (m_isVertical) {
+  const bool labelVisible = m_label->visible();
+  if (m_isVertical && labelVisible) {
     const float w = std::max(m_glyph->width(), m_label->width());
     m_glyph->setPosition(std::round((w - m_glyph->width()) * 0.5f), 0.0f);
     m_label->setPosition(std::round((w - m_label->width()) * 0.5f), m_glyph->height());
     rootNode->setSize(w, m_glyph->height() + m_label->height());
   } else {
-    const float h = std::max(m_glyph->height(), m_label->height());
+    const float h = labelVisible ? std::max(m_glyph->height(), m_label->height()) : m_glyph->height();
     m_glyph->setPosition(0.0f, std::round((h - m_glyph->height()) * 0.5f));
-    m_label->setPosition(m_glyph->width() + Style::spaceXs, std::round((h - m_label->height()) * 0.5f));
-    rootNode->setSize(m_label->x() + m_label->width(), h);
+    float totalWidth = m_glyph->width();
+    if (labelVisible) {
+      m_label->setPosition(m_glyph->width() + Style::spaceXs, std::round((h - m_label->height()) * 0.5f));
+      totalWidth = m_label->x() + m_label->width();
+    }
+    rootNode->setSize(totalWidth, h);
   }
 }
 
@@ -115,12 +124,15 @@ void VolumeWidget::syncState(Renderer& renderer) {
                           : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
   m_glyph->measure(renderer);
 
-  int pct = static_cast<int>(std::round(volume * 100.0f));
-  m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
-  m_label->setText(m_isVertical ? std::to_string(pct) : std::to_string(pct) + "%");
-  m_label->setColor(muted ? roleColor(ColorRole::OnSurfaceVariant)
-                          : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
-  m_label->measure(renderer);
+  m_label->setVisible(m_showLabel);
+  if (m_showLabel) {
+    int pct = static_cast<int>(std::round(volume * 100.0f));
+    m_label->setFontSize((m_isVertical ? Style::fontSizeCaption : Style::fontSizeBody) * m_contentScale);
+    m_label->setText(m_isVertical ? std::to_string(pct) : std::to_string(pct) + "%");
+    m_label->setColor(muted ? roleColor(ColorRole::OnSurfaceVariant)
+                            : widgetForegroundOr(roleColor(ColorRole::OnSurface)));
+    m_label->measure(renderer);
+  }
 
   requestRedraw();
 }

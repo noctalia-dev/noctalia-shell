@@ -112,7 +112,8 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "brightness") {
-    auto widget = std::make_unique<BrightnessWidget>(m_brightness, output);
+    const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
+    auto widget = std::make_unique<BrightnessWidget>(m_brightness, output, showLabel);
     widget->setContentScale(contentScale);
     return widget;
   }
@@ -287,7 +288,8 @@ std::unique_ptr<Widget> WidgetFactory::create(const std::string& name, wl_output
   }
 
   if (type == "volume") {
-    auto widget = std::make_unique<VolumeWidget>(m_audio, output);
+    const bool showLabel = wc != nullptr ? wc->getBool("show_label", true) : true;
+    auto widget = std::make_unique<VolumeWidget>(m_audio, output, showLabel);
     widget->setContentScale(contentScale);
     return widget;
   }

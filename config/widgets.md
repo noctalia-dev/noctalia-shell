@@ -127,7 +127,16 @@ path = "/"
 
 ## `volume`
 
-Shows the default audio sink volume and mute state via PipeWire. No configurable settings.
+Shows the default audio sink volume and mute state via PipeWire.
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `show_label` | bool | `true` | Show the volume percentage next to the glyph |
+
+```toml
+[widget.volume]
+show_label = false
+```
 
 ### IPC
 
@@ -208,7 +217,16 @@ No configurable settings.
 
 Shows the current display brightness level and adjusts it via scroll wheel (±5% per step). Hides itself when no controllable display is found. Click opens the display tab in the control center.
 
-No configurable settings. See [`[brightness]`](services.md#brightness) for backend configuration.
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `show_label` | bool | `true` | Show the brightness percentage next to the glyph |
+
+```toml
+[widget.brightness]
+show_label = false
+```
+
+See [`[brightness]`](services.md#brightness) for backend configuration.
 
 ---
 
