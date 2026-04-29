@@ -32,9 +32,9 @@ namespace {
   };
 
   constexpr std::array<ActionSpec, 4> kActionSpecs{{
-      {SessionPanel::ActionId::Lock, "session.actions.lock", "lock", ButtonVariant::Outline},
-      {SessionPanel::ActionId::Logout, "session.actions.logout", "logout", ButtonVariant::Outline},
-      {SessionPanel::ActionId::Reboot, "session.actions.reboot", "reboot", ButtonVariant::Outline},
+      {SessionPanel::ActionId::Lock, "session.actions.lock", "lock", ButtonVariant::Default},
+      {SessionPanel::ActionId::Logout, "session.actions.logout", "logout", ButtonVariant::Default},
+      {SessionPanel::ActionId::Reboot, "session.actions.reboot", "reboot", ButtonVariant::Default},
       {SessionPanel::ActionId::Shutdown, "session.actions.shutdown", "shutdown", ButtonVariant::Destructive},
   }};
 
@@ -114,7 +114,7 @@ Button* SessionPanel::createActionButton(ActionId id, float scale) {
   button->setPadding(Style::spaceMd * scale, Style::spaceLg * scale);
   button->setRadius(Style::radiusLg * scale);
   button->setMinWidth(152.0f * scale);
-  button->setMinHeight(112.0f * scale);
+  button->setMinHeight(kActionButtonMinHeight * scale);
   button->setFlexGrow(1.0f);
 
   button->setOnClick([this, id]() {

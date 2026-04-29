@@ -1,8 +1,10 @@
 #pragma once
 
 #include "shell/panel/panel.h"
+#include "ui/style.h"
 
 #include <array>
+#include <cmath>
 #include <functional>
 #include <optional>
 
@@ -36,7 +38,9 @@ public:
   void onClose() override;
 
   [[nodiscard]] float preferredWidth() const override { return scaled(680.0f); }
-  [[nodiscard]] float preferredHeight() const override { return scaled(136.0f); }
+  [[nodiscard]] float preferredHeight() const override {
+    return std::ceil(scaled(kActionButtonMinHeight + Style::panelPadding * 2.0f));
+  }
   [[nodiscard]] bool centeredHorizontally() const override { return true; }
   [[nodiscard]] bool centeredVertically() const override { return true; }
   [[nodiscard]] bool hasDecoration() const override { return true; }
@@ -45,6 +49,8 @@ public:
   [[nodiscard]] InputArea* initialFocusArea() const override;
 
 private:
+  static constexpr float kActionButtonMinHeight = 112.0f;
+
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
   void activateSelected();
