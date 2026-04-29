@@ -501,6 +501,8 @@
     "sound-volume-desc": "Volume for shell sound effects",
     "volume-change-sound": "Volume Change Sound",
     "volume-change-sound-desc": "Sound file used for volume feedback",
+    "notification-position": "Toast Position",
+    "notification-position-desc": "Screen position for notification toasts",
     "notification-sound": "Notification Sound",
     "notification-sound-desc": "Sound file used for notification feedback",
     "ddcutil": "DDC/CI (ddcutil)",

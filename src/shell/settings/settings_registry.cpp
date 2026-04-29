@@ -556,8 +556,8 @@ namespace settings {
     entries.push_back(makeEntry("notifications", "toasts", tr("settings.toast-blur"), tr("settings.toast-blur-desc"),
                                 {"notification", "background_blur"}, ToggleSetting{cfg.notification.backgroundBlur},
                                 "popup"));
-    entries.push_back(makeEntry("notifications", "toasts", tr("settings.osd-position"),
-                                tr("settings.osd-position-desc"), {"notification", "position"},
+    entries.push_back(makeEntry("notifications", "toasts", tr("settings.notification-position"),
+                                tr("settings.notification-position-desc"), {"notification", "position"},
                                 plainSelect({{"top_right", "settings.opt.top-right"},
                                              {"top_left", "settings.opt.top-left"},
                                              {"top_center", "settings.opt.top-center"},
