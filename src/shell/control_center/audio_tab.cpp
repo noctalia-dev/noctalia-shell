@@ -956,6 +956,14 @@ bool AudioTab::dragging() const noexcept {
   return false;
 }
 
+bool AudioTab::dismissTransientUi() {
+  if (!m_deviceMenuOpen) {
+    return false;
+  }
+  m_deviceMenuOpen = false;
+  return true;
+}
+
 std::unique_ptr<Flex> AudioTab::create() {
   const float scale = contentScale();
   const float sliderMax = sliderMaxPercent() / 100.0f;

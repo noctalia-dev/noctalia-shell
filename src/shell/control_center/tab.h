@@ -54,6 +54,10 @@ public:
   // Called when the panel closes. Null out all raw pointers to freed nodes.
   virtual void onClose() {}
 
+  // Allows a tab to close transient UI (menus/popovers) when external empty
+  // chrome areas are clicked.
+  virtual bool dismissTransientUi() { return false; }
+
   void setContentScale(float scale) noexcept { m_contentScale = scale; }
 
 protected:

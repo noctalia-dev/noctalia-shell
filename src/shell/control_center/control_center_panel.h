@@ -25,6 +25,7 @@ class Button;
 class ConfigService;
 class Flex;
 class HttpClient;
+class InputArea;
 class Label;
 class MprisService;
 class NetworkSecretAgent;
@@ -51,6 +52,7 @@ public:
   void onFrameTick(float deltaMs) override;
   void onOpen(std::string_view context) override;
   void onClose() override;
+  [[nodiscard]] bool dismissTransientUi();
   [[nodiscard]] bool isContextActive(std::string_view context) const override;
   [[nodiscard]] bool deferExternalRefresh() const override;
   [[nodiscard]] bool deferPointerRelayout() const override;
@@ -115,6 +117,7 @@ private:
   Flex* m_rootLayout = nullptr;
   Flex* m_sidebar = nullptr;
   Flex* m_content = nullptr;
+  InputArea* m_contentDismissArea = nullptr;
   Flex* m_contentHeader = nullptr;
   Flex* m_contentHeaderActions = nullptr;
   Label* m_contentTitle = nullptr;

@@ -26,6 +26,7 @@ public:
 
   std::unique_ptr<Flex> create() override;
   void onClose() override;
+  bool dismissTransientUi() override;
   [[nodiscard]] bool dragging() const noexcept;
 
 private:

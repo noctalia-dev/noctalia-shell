@@ -2,6 +2,7 @@
 
 #include "i18n/i18n.h"
 #include "render/core/renderer.h"
+#include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
 #include "ui/controls/button.h"
 #include "ui/controls/flex.h"
@@ -32,6 +33,11 @@ ControlCenterPanel::ControlCenterPanel(NotificationManager* notifications, PipeW
   m_tabButtons.fill(nullptr);
   m_tabContainers.fill(nullptr);
   m_tabHeaderActions.fill(nullptr);
+}
+
+bool ControlCenterPanel::dismissTransientUi() {
+  const std::size_t activeIdx = tabIndex(m_activeTab);
+  return m_tabs[activeIdx] != nullptr && m_tabs[activeIdx]->dismissTransientUi();
 }
 
 void ControlCenterPanel::create() {
@@ -87,6 +93,17 @@ void ControlCenterPanel::create() {
   content->setFlexGrow(4.0f);
   content->setClipChildren(true);
   m_content = content.get();
+
+  auto dismissArea = std::make_unique<InputArea>();
+  dismissArea->setParticipatesInLayout(false);
+  dismissArea->setZIndex(-1);
+  dismissArea->setOnPress([this](const InputArea::PointerData&) {
+    const std::size_t activeIdx = tabIndex(m_activeTab);
+    if (m_tabs[activeIdx] != nullptr && m_tabs[activeIdx]->dismissTransientUi()) {
+      PanelManager::instance().refresh();
+    }
+  });
+  m_contentDismissArea = static_cast<InputArea*>(content->addChild(std::move(dismissArea)));
 
   auto header = std::make_unique<Flex>();
   header->setDirection(FlexDirection::Horizontal);
@@ -172,6 +189,11 @@ void ControlCenterPanel::doLayout(Renderer& renderer, float width, float height)
   const float bodyWidth = m_tabBodies->width();
   const float bodyHeight = m_tabBodies->height();
 
+  if (m_contentDismissArea != nullptr) {
+    m_contentDismissArea->setPosition(0.0f, 0.0f);
+    m_contentDismissArea->setFrameSize(m_content->width(), m_content->height());
+  }
+
   if (m_contentHeader != nullptr) {
     m_contentHeader->setSize(contentInnerWidth, 0.0f);
   }
@@ -223,6 +245,7 @@ void ControlCenterPanel::onClose() {
   m_rootLayout = nullptr;
   m_sidebar = nullptr;
   m_content = nullptr;
+  m_contentDismissArea = nullptr;
   m_contentHeader = nullptr;
   m_contentHeaderActions = nullptr;
   m_contentTitle = nullptr;
