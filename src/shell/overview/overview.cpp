@@ -117,6 +117,16 @@ void Overview::requestLayout() {
 }
 
 void Overview::setActive(bool active) {
+  const bool overviewEnabled = (m_config != nullptr) ? m_config->config().overview.enabled : false;
+  if (!overviewEnabled) {
+    m_destroyDelayTimer.stop();
+    if (!m_instances.empty()) {
+      destroyInstances();
+    }
+    m_active = false;
+    return;
+  }
+
   if (m_active == active) {
     return;
   }

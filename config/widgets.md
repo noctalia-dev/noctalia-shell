@@ -131,7 +131,7 @@ Shows the default audio sink volume and mute state via PipeWire.
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `show_label` | bool | `true` | Show the volume percentage next to the glyph |
+| `show_label` | bool | `true` | Show the volume percentage next to the glyph (horizontal and vertical bars) |
 
 ```toml
 [widget.volume]
@@ -219,7 +219,7 @@ Shows the current display brightness level and adjusts it via scroll wheel (±5%
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `show_label` | bool | `true` | Show the brightness percentage next to the glyph |
+| `show_label` | bool | `true` | Show the brightness percentage next to the glyph (horizontal and vertical bars) |
 
 ```toml
 [widget.brightness]
