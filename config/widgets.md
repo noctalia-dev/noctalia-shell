@@ -29,13 +29,17 @@ Displays the current time.
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `format` | string | `{:%H:%M}` | `std::format`-style chrono format string (horizontal bars and vertical fallback) |
-| `vertical_format` | string | `""` | Format used when the bar is vertical. When empty, falls back to `format` with `:` replaced by line breaks. |
+| `format` | string | `{:%H:%M}` | `std::format`-style chrono format string (horizontal bars and vertical fallback). Bare chrono specs such as `%H:%M` are also accepted. Numeric specifiers support the strftime-style no-pad modifier, e.g. `{:%-I:%M %p}`. |
+| `vertical_format` | string | `""` | Format used when the bar is vertical. When empty, falls back to `format` with `:` replaced by line breaks. Supports the same chrono syntax as `format`. |
 
 ```toml
 [widget.clock]
 format = "{:%H:%M}"
 vertical_format = "{:%H\n%M}"
+
+[widget.clock-12h]
+type   = "clock"
+format = "{:%-I:%M %p}"
 
 [widget.clock-seconds]
 type   = "clock"

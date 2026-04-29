@@ -2,16 +2,104 @@
 
 #include "i18n/i18n.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <ctime>
 #include <format>
 #include <langinfo.h>
 #include <locale>
+#include <optional>
+#include <string_view>
+
+namespace {
+
+  bool shouldUseStrftimeCompat(std::string_view fmt) {
+    return fmt.find("%-") != std::string_view::npos ||
+           (fmt.find('{') == std::string_view::npos && fmt.find('%') != std::string_view::npos);
+  }
+
+  std::string strftimeSpec(std::string_view spec, const std::tm& local) {
+    std::string fmt(spec);
+    std::size_t size = std::max<std::size_t>(64, fmt.size() * 4 + 16);
+    for (int attempt = 0; attempt < 4; ++attempt) {
+      std::string buffer(size, '\0');
+      std::tm copy = local;
+      const std::size_t written = std::strftime(buffer.data(), buffer.size(), fmt.c_str(), &copy);
+      if (written > 0 || fmt.empty()) {
+        buffer.resize(written);
+        return buffer;
+      }
+      size *= 2;
+    }
+    return {};
+  }
+
+  std::optional<std::string> formatStrftimeCompat(std::string_view fmt, const std::tm& local) {
+    if (!shouldUseStrftimeCompat(fmt)) {
+      return std::nullopt;
+    }
+    if (fmt.find('{') == std::string_view::npos) {
+      return strftimeSpec(fmt, local);
+    }
+
+    std::string out;
+    out.reserve(fmt.size());
+    bool formattedField = false;
+    for (std::size_t i = 0; i < fmt.size();) {
+      if (fmt[i] == '{' && i + 1 < fmt.size() && fmt[i + 1] == '{') {
+        out.push_back('{');
+        i += 2;
+        continue;
+      }
+      if (fmt[i] == '}' && i + 1 < fmt.size() && fmt[i + 1] == '}') {
+        out.push_back('}');
+        i += 2;
+        continue;
+      }
+      if (fmt[i] != '{') {
+        out.push_back(fmt[i++]);
+        continue;
+      }
+
+      const std::size_t end = fmt.find('}', i + 1);
+      if (end == std::string_view::npos) {
+        return std::nullopt;
+      }
+      const std::string_view field = fmt.substr(i + 1, end - i - 1);
+      const std::size_t colon = field.find(':');
+      if (colon == std::string_view::npos) {
+        return std::nullopt;
+      }
+      std::string_view spec = field.substr(colon + 1);
+      const std::size_t firstPercent = spec.find('%');
+      if (firstPercent == std::string_view::npos) {
+        return std::nullopt;
+      }
+      spec.remove_prefix(firstPercent);
+      out += strftimeSpec(spec, local);
+      formattedField = true;
+      i = end + 1;
+    }
+
+    if (!formattedField) {
+      return std::nullopt;
+    }
+    return out;
+  }
+
+} // namespace
 
 std::string formatLocalTime(const char* fmt) {
   using namespace std::chrono;
   const auto now = floor<seconds>(system_clock::now());
+  const std::time_t raw = system_clock::to_time_t(now);
+  std::tm localTm{};
+  localtime_r(&raw, &localTm);
+  if (auto compat = formatStrftimeCompat(fmt, localTm)) {
+    return *compat;
+  }
+
   const auto local = current_zone()->to_local(now);
   try {
     return std::vformat(std::locale(""), fmt, std::make_format_args(local));
