@@ -21,7 +21,7 @@ namespace {
   constexpr Logger kLog("workspace");
   constexpr float kWorkspaceGap = Style::spaceSm;
   constexpr float kWorkspaceDotRatio = 0.62f;
-  constexpr float kWorkspacePillMinWidth = Style::controlHeightLg + Style::spaceXs;
+  constexpr float kWorkspacePillMinWidth = Style::controlHeight + Style::spaceXs;
   constexpr float kWorkspaceLabelPadH = Style::spaceSm;
   constexpr float kWorkspacePillMinHeight = Style::fontSizeCaption;
   constexpr float kWorkspaceAnimDurationMs = static_cast<float>(Style::animNormal);
