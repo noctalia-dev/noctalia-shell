@@ -57,6 +57,7 @@ public:
   TrayService(const TrayService&) = delete;
   TrayService& operator=(const TrayService&) = delete;
 
+  void start();
   void setChangeCallback(ChangeCallback callback);
   void setMenuToggleCallback(MenuToggleCallback callback);
   void requestMenuToggle(const std::string& itemId) const;
@@ -113,6 +114,7 @@ private:
   std::unordered_map<std::string, std::unique_ptr<sdbus::IProxy>> m_itemProxies;
   std::unordered_map<std::string, MenuCache> m_menuCache;
   bool m_hostRegistered = true;
+  bool m_started = false;
   ChangeCallback m_changeCallback;
   MenuToggleCallback m_menuToggleCallback;
 };

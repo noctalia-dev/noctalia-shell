@@ -270,6 +270,8 @@ void Application::run() {
 
   malloc_trim(0);
 
+  m_trayInitTimer.start(std::chrono::milliseconds(500), [this]() { startTrayService(); });
+
   m_mainLoop = std::make_unique<MainLoop>(m_wayland, m_bar, [this]() { return currentPollSources(); });
   m_mainLoop->run();
   kLog.info("shutdown");
@@ -652,18 +654,12 @@ void Application::initServices() {
     syncNotificationDaemon();
     m_configService.addReloadCallback([this]() { syncNotificationDaemon(); });
 
-    try {
-      m_trayService =
-          makeWithStartupBackoff("tray service", [this]() { return std::make_unique<TrayService>(*m_bus); });
-      m_trayService->setChangeCallback([this]() {
-        m_bar.refresh();
-        m_trayMenu.onTrayChanged();
-      });
-      m_trayService->setMenuToggleCallback([this](const std::string& itemId) { m_trayMenu.toggleForItem(itemId); });
-    } catch (const std::exception& e) {
-      kLog.warn("tray watcher disabled: {}", e.what());
-      m_trayService.reset();
-    }
+    m_trayService = std::make_unique<TrayService>(*m_bus);
+    m_trayService->setChangeCallback([this]() {
+      m_bar.refresh();
+      m_trayMenu.onTrayChanged();
+    });
+    m_trayService->setMenuToggleCallback([this](const std::string& itemId) { m_trayMenu.toggleForItem(itemId); });
   }
 
   m_weatherService.initialize();
@@ -686,6 +682,18 @@ void Application::initServices() {
       m_panelManager.refresh();
     }
   });
+}
+
+void Application::startTrayService() {
+  if (m_bus == nullptr || m_trayService == nullptr) {
+    return;
+  }
+
+  try {
+    m_trayService->start();
+  } catch (const std::exception& e) {
+    kLog.warn("tray watcher disabled: {}", e.what());
+  }
 }
 
 void Application::initUi() {

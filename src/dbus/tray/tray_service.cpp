@@ -263,7 +263,13 @@ namespace {
 
 } // namespace
 
-TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
+TrayService::TrayService(SessionBus& bus) : m_bus(bus) {}
+
+void TrayService::start() {
+  if (m_started) {
+    return;
+  }
+
   m_watcherObject = sdbus::createObject(m_bus.connection(), k_watcher_object_path);
 
   // RegisterStatusNotifierItem needs raw MethodCall access to capture the sender's unique
@@ -274,8 +280,11 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
     std::string serviceOrPath;
     msg >> serviceOrPath;
     const char* sender = msg.getSender();
-    onRegisterStatusNotifierItem(serviceOrPath, sender != nullptr ? sender : "");
     msg.createReply().send();
+    DeferredCall::callLater([this, serviceOrPath = std::move(serviceOrPath),
+                             senderBusName = std::string(sender != nullptr ? sender : "")]() {
+      onRegisterStatusNotifierItem(serviceOrPath, senderBusName);
+    });
   };
 
   m_watcherObject
@@ -319,6 +328,7 @@ TrayService::TrayService(SessionBus& bus) : m_bus(bus) {
       });
 
   kLog.debug("watcher active on {}", std::string(k_watcher_bus_name));
+  m_started = true;
 
   // Tell apps that started before us to re-register. Compliant implementations
   // (libayatana-appindicator, libappindicator) watch for StatusNotifierHostRegistered

@@ -98,6 +98,7 @@ private:
   void initServices();
   void initUi();
   void initIpc();
+  void startTrayService();
   void syncNotificationDaemon();
   void syncPolkitAgent();
   bool runUserCommand(const std::string& command);
@@ -193,6 +194,7 @@ private:
   HttpClientPollSource m_httpClientPollSource{m_httpClient};
   FileWatchPollSource m_fileWatchPollSource{m_fileWatcher};
   WeatherPollSource m_weatherPollSource{m_weatherService};
+  Timer m_trayInitTimer;
   Timer m_clipboardAutoPasteTimer;
 
   std::unique_ptr<MainLoop> m_mainLoop;
