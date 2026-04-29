@@ -816,7 +816,7 @@ void Bar::createInstance(const WaylandOutput& output, std::size_t barIndex, cons
             barConfig.reserveSpace, exclusiveZone);
 
   auto surfaceConfig = LayerSurfaceConfig{
-      .nameSpace = "noctalia-" + barConfig.name,
+      .nameSpace = "noctalia-bar-" + barConfig.name,
       .layer = LayerShellLayer::Top,
       .anchor = anchor,
       .width = surfW,
