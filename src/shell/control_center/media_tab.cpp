@@ -518,7 +518,9 @@ void MediaTab::doUpdate(Renderer& renderer) {
     return;
   }
   if (m_visualizerSpectrum != nullptr && m_spectrum != nullptr && m_spectrumListenerId != 0) {
-    m_visualizerSpectrum->setValues(m_spectrum->values(m_spectrumListenerId));
+    if (!m_spectrum->idle() || !m_visualizerSpectrum->converged()) {
+      m_visualizerSpectrum->setValues(m_spectrum->values(m_spectrumListenerId));
+    }
   }
   refresh(renderer);
 }
@@ -528,6 +530,9 @@ void MediaTab::onFrameTick(float deltaMs) {
     return;
   }
   if (m_spectrum != nullptr && m_spectrumListenerId != 0) {
+    if (m_spectrum->idle() && m_visualizerSpectrum->converged()) {
+      return;
+    }
     m_visualizerSpectrum->setValues(m_spectrum->values(m_spectrumListenerId));
   }
   m_visualizerSpectrum->tick(deltaMs);
@@ -539,7 +544,7 @@ void MediaTab::setActive(bool active) {
   if (m_spectrum != nullptr) {
     if (active && m_spectrumListenerId == 0) {
       m_spectrumListenerId = m_spectrum->addChangeListener(kVisualizerBandCount, [this]() {
-        if (!m_active) {
+        if (!m_active || m_spectrum->idle()) {
           return;
         }
         PanelManager::instance().requestRedraw();
