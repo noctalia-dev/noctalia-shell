@@ -1,25 +1,29 @@
-{ pkgs, noctalia }:
-
+{
+  pkgs,
+  noctalia,
+}:
 pkgs.mkShell {
   inputsFrom = [ noctalia ];
-  
-  buildInputs = with pkgs; [
+
+  nativeBuildInputs = with pkgs; [
+    # Workflow & Hooks
     just
+    lefthook
+
+    # Formatting (required by justfile)
     clang-tools
+    gnugrep
+    gnused
+    findutils
+
+    # Debugging
     gdb
   ];
 
   shellHook = ''
-    echo "Noctalia development environment"
-    echo ""
-    echo "Available commands:"
-    echo "  just configure       - Configure debug build"
-    echo "  just build           - Build debug"
-    echo "  just run             - Run debug build"
-    echo "  just configure release - Configure release build"
-    echo "  just build release   - Build release"
-    echo "  just run release     - Run release build"
-    echo ""
-    echo "Note: Use 'just build' instead of 'nix build' due to sdbus-c++ API compatibility"
+    # Point to local assets so binaries find resources without installation
+    export NOCTALIA_ASSETS_DIR="$PWD/assets"
+
+    echo " Noctalia dev-shell | 'just --list' to see available tasks"
   '';
 }

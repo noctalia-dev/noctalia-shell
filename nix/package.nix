@@ -1,31 +1,33 @@
-{ lib,
- stdenv, 
- meson, 
- ninja, 
- pkg-config,
- wayland-scanner, 
- wayland, 
- wayland-protocols, 
- libGL, 
- libglvnd, 
- freetype, 
- fontconfig, 
- cairo, 
- pango, 
- libxkbcommon, 
- sdbus-cpp_2, 
- systemd, 
- pipewire, 
- pam, 
- curl, 
- libwebp
+{
+  lib,
+  stdenv,
+  version,
+  meson,
+  ninja,
+  pkg-config,
+  wayland-scanner,
+  wayland,
+  wayland-protocols,
+  libGL,
+  libglvnd,
+  freetype,
+  fontconfig,
+  cairo,
+  pango,
+  libxkbcommon,
+  sdbus-cpp_2,
+  systemd,
+  pipewire,
+  pam,
+  curl,
+  libwebp,
 }:
 
 stdenv.mkDerivation {
   pname = "noctalia";
-  version = "5.0.0";
+  inherit version;
 
-  src = ../.;
+  src = lib.cleanSource ../.;
 
   postPatch = ''
     # Remove -march=native and -mtune=native for reproducible builds
@@ -58,12 +60,12 @@ stdenv.mkDerivation {
   ];
 
   mesonBuildType = "release";
-  
+
   ninjaFlags = [ "-v" ];
 
   meta = with lib; {
     description = "A lightweight Wayland shell and bar built directly on Wayland + OpenGL ES";
-    homepage = "https://github.com/anomalyco/noctalia-shell";
+    homepage = "https://github.com/noctalia-dev/noctalia-shell";
     license = licenses.mit;
     platforms = platforms.linux;
     mainProgram = "noctalia";
