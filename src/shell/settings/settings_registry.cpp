@@ -622,6 +622,11 @@ namespace settings {
                                 tr("settings.schema.notifications.toast-opacity.description"),
                                 {"notification", "background_opacity"},
                                 SliderSetting{cfg.notification.backgroundOpacity, 0.0f, 1.0f, 0.01f, false}, "popup"));
+    entries.push_back(
+        makeEntry("notifications", "toasts", tr("settings.schema.notifications.monitors.label"),
+                  tr("settings.schema.notifications.monitors.description"), {"notification", "monitors"},
+                  ListSetting{.items = cfg.notification.monitors, .suggestedOptions = env.availableOutputs},
+                  "monitor output display screen"));
 
     // Bar
     if (selectedBar != nullptr && selectedMonitorOverride == nullptr) {

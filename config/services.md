@@ -193,4 +193,9 @@ Idle behavior uses the Wayland `ext_idle_notifier_v1` protocol and respects acti
 enable_daemon      = true   # when false, don't claim org.freedesktop.Notifications; internal notifications still work
 position           = "top_right" # top_right | top_left | top_center | bottom_right | bottom_left | bottom_center
 background_opacity = 0.97   # toast card background alpha; lower values let compositor blur show through
+monitors           = []     # empty = all displays; otherwise connector/description selectors (e.g. ["eDP-1", "DP-1"])
 ```
+
+- `monitors = []` shows notifications on all displays (default).
+- When `monitors` is non-empty, toasts are only created on matching outputs.
+- Selector matching follows monitor override rules: exact connector name (`eDP-1`) or a word-boundary token in output description.
