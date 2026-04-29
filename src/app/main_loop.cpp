@@ -89,7 +89,7 @@ void MainLoop::run() {
         pollTimeout = t;
       }
     }
-    if (Surface::hasPendingRenders()) {
+    if (Surface::hasPendingFrameWork() || Surface::hasPendingRenders()) {
       pollTimeout = 0;
     }
 
@@ -186,6 +186,12 @@ void MainLoop::run() {
       if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
         kLog.warn("poll source {} dispatch blocked for {:.1f}ms", typeid(*source).name(), ms);
       }
+    }
+
+    opStart = std::chrono::steady_clock::now();
+    Surface::drainPendingFrameWork();
+    if (const float ms = elapsedSince(opStart); ms >= kSlowMainLoopOperationWarnMs) {
+      kLog.warn("queued surface frame work blocked main loop for {:.1f}ms", ms);
     }
 
     opStart = std::chrono::steady_clock::now();
