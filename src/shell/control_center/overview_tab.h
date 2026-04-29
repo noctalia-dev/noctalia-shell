@@ -55,6 +55,7 @@ private:
   Label* m_userFacts = nullptr;
   Button* m_sessionMenuButton = nullptr;
   Button* m_settingsButton = nullptr;
+  Button* m_wallpaperButton = nullptr;
   std::string m_loadedAvatarPath;
 
   Label* m_mediaKicker = nullptr;

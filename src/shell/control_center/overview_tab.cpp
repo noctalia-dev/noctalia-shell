@@ -225,6 +225,16 @@ std::unique_ptr<Flex> OverviewTab::create() {
   actions->setAlign(FlexAlign::Center);
   actions->setGap(Style::spaceSm * scale);
 
+  auto wallpaperBtn = std::make_unique<Button>();
+  wallpaperBtn->setGlyph("wallpaper-selector");
+  wallpaperBtn->setVariant(ButtonVariant::Default);
+  wallpaperBtn->setMinHeight(Style::controlHeight * scale);
+  wallpaperBtn->setMinWidth(Style::controlHeight * scale);
+  wallpaperBtn->setPadding(Style::spaceSm * scale, Style::spaceSm * scale);
+  wallpaperBtn->setOnClick([]() { PanelManager::instance().togglePanel("wallpaper"); });
+  m_wallpaperButton = wallpaperBtn.get();
+  actions->addChild(std::move(wallpaperBtn));
+
   auto settingsBtn = std::make_unique<Button>();
   settingsBtn->setGlyph("settings");
   settingsBtn->setVariant(ButtonVariant::Default);
@@ -444,6 +454,7 @@ void OverviewTab::onClose() {
   m_userFacts = nullptr;
   m_sessionMenuButton = nullptr;
   m_settingsButton = nullptr;
+  m_wallpaperButton = nullptr;
   m_loadedAvatarPath.clear();
   m_mediaKicker = nullptr;
   m_mediaTrack = nullptr;
@@ -460,6 +471,11 @@ void OverviewTab::onClose() {
 }
 
 void OverviewTab::sync(Renderer& renderer) {
+  if (m_wallpaperButton != nullptr) {
+    const bool wallpaperManagementEnabled = (m_config == nullptr) || m_config->config().wallpaper.enabled;
+    m_wallpaperButton->setVisible(wallpaperManagementEnabled);
+  }
+
   if (m_userAvatar != nullptr && m_config != nullptr) {
     const std::string avatarPath = m_config->config().shell.avatarPath;
     if (avatarPath != m_loadedAvatarPath) {
