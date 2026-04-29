@@ -41,7 +41,7 @@ MainLoop::MainLoop(WaylandConnection& wayland, Bar& bar, PollSourcesProvider sou
     : m_wayland(wayland), m_bar(bar), m_sourcesProvider(std::move(sourcesProvider)) {}
 
 void MainLoop::run() {
-  while (m_bar.isRunning() && !Application::s_shutdownRequested) {
+  while (!Application::s_shutdownRequested) {
     // Process deferred callbacks from the previous iteration
     auto& deferred = DeferredCall::queue();
     if (!deferred.empty()) {
