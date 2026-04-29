@@ -425,24 +425,24 @@ bool TrayService::fetchMenuSubtree(const std::string& itemId, std::int32_t paren
     }
     return true;
   } catch (const sdbus::Error& e) {
-    kLog.warn("GetLayout failed id={} parentId={} err={}", itemId, parentId, e.what());
+    kLog.debug("GetLayout failed id={} parentId={} err={}", itemId, parentId, e.what());
     return false;
   }
 }
 
 std::vector<TrayMenuEntry> TrayService::menuEntries(const std::string& itemId) {
   if (!ensureItemProxy(itemId)) {
-    kLog.warn("menuEntries: no proxy for id={}", itemId);
+    kLog.debug("menuEntries: no proxy for id={}", itemId);
     return {};
   }
   const auto itemIt = m_items.find(itemId);
   if (itemIt == m_items.end()) {
-    kLog.warn("menuEntries: item not found id={}", itemId);
+    kLog.debug("menuEntries: item not found id={}", itemId);
     return {};
   }
   if (itemIt->second.busName.empty() || itemIt->second.menuObjectPath.empty()) {
-    kLog.warn("menuEntries: missing bus/menu path id={} bus='{}' menu='{}'", itemId, itemIt->second.busName,
-              itemIt->second.menuObjectPath);
+    kLog.debug("menuEntries: missing bus/menu path id={} bus='{}' menu='{}'", itemId, itemIt->second.busName,
+               itemIt->second.menuObjectPath);
     return {};
   }
 
@@ -547,7 +547,7 @@ void TrayService::ensureMenuCache(const std::string& itemId, const std::string& 
     m_menuCache[itemId] = std::move(cache);
     kLog.debug("menuCache: persistent proxy + signals for id={}", itemId);
   } catch (const sdbus::Error& e) {
-    kLog.warn("menuCache: failed to create proxy for id={} err={}", itemId, e.what());
+    kLog.debug("menuCache: failed to create proxy for id={} err={}", itemId, e.what());
   }
 }
 
@@ -646,7 +646,7 @@ void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath,
   const auto t0 = std::chrono::steady_clock::now();
   kLog.debug("RegisterStatusNotifierItem: service/path='{}' sender='{}'", serviceOrPath, senderBusName);
   if (serviceOrPath.empty()) {
-    kLog.warn("register item ignored: empty service/path");
+    kLog.debug("register item ignored: empty service/path");
     return;
   }
 
@@ -672,7 +672,7 @@ void TrayService::onRegisterStatusNotifierItem(const std::string& serviceOrPath,
   }
 
   if (busName.empty() || objectPath.empty()) {
-    kLog.warn("register item ignored: invalid id ({})", serviceOrPath);
+    kLog.debug("register item ignored: invalid id ({})", serviceOrPath);
     return;
   }
 
@@ -713,7 +713,7 @@ void TrayService::discoverExistingItems() {
   try {
     m_dbusProxy->callMethod("ListNames").onInterface(k_dbus_interface).storeResultsTo(names);
   } catch (const sdbus::Error& e) {
-    kLog.warn("tray discover failed: {}", e.what());
+    kLog.debug("tray discover failed: {}", e.what());
     return;
   }
 
@@ -959,7 +959,7 @@ bool TrayService::ensureItemProxy(const std::string& itemId) {
   try {
     m_dbusProxy->callMethod("ListNames").onInterface(k_dbus_interface).storeResultsTo(names);
   } catch (const sdbus::Error& e) {
-    kLog.warn("lazy path-only resolve failed to list dbus names path={} err={}", itemIt->second.objectPath, e.what());
+    kLog.debug("lazy path-only resolve failed to list dbus names path={} err={}", itemIt->second.objectPath, e.what());
     return false;
   }
 
@@ -1049,7 +1049,7 @@ bool TrayService::ensureItemProxy(const std::string& itemId) {
     }
   }
 
-  kLog.warn("could not resolve bus name for path-only tray item path={}", itemIt->second.objectPath);
+  kLog.debug("could not resolve bus name for path-only tray item path={}", itemIt->second.objectPath);
   return false;
 }
 

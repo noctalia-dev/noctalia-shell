@@ -402,7 +402,7 @@ void TrayMenu::scheduleEntryRetry(int attempt) {
       scheduleEntryRetry(attempt + 1);
       return;
     }
-    kLog.info("tray menu recovered (attempt {}) for id={}", attempt + 1, capturedItemId);
+    kLog.debug("tray menu recovered (attempt {}) for id={}", attempt + 1, capturedItemId);
     m_entries = std::move(fresh);
     rebuildScenes();
   });
@@ -456,8 +456,8 @@ void TrayMenu::ensureSurface() {
   const std::uint32_t serial = m_wayland->lastInputSerial();
 
   if (parentLayerSurface == nullptr || output == nullptr || serial == 0) {
-    kLog.warn("tray menu: missing popup anchor context (parent={}, output={}, serial={})",
-              parentLayerSurface != nullptr, output != nullptr, serial);
+    kLog.debug("tray menu: missing popup anchor context (parent={}, output={}, serial={})",
+               parentLayerSurface != nullptr, output != nullptr, serial);
     return;
   }
 
@@ -507,7 +507,7 @@ void TrayMenu::ensureSurface() {
   };
 
   if (!inst->surface->initialize(parentLayerSurface, output, popupConfig)) {
-    kLog.warn("tray menu: failed to create popup surface");
+    kLog.debug("tray menu: failed to create popup surface");
     return;
   }
 
@@ -686,7 +686,7 @@ void TrayMenu::openSubmenu(std::int32_t parentEntryId, float rowCenterY) {
 
   xdg_surface* parentXdg = m_instance->surface->xdgSurface();
   if (!inst->surface->initializeAsChild(parentXdg, m_instance->output, popupConfig)) {
-    kLog.warn("tray submenu: failed to create child popup surface");
+    kLog.debug("tray submenu: failed to create child popup surface");
     m_submenuEntries.clear();
     m_submenuParentEntryId = 0;
     return;
